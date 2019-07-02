@@ -11,11 +11,12 @@ from pathlib import Path
 from typing import Any, Callable, Dict, List, Optional, Tuple  # pylint: disable=unused-import
 
 import annofabapi
-import annofabcli
 import PIL
 import PIL.Image
 import PIL.ImageDraw
 from annofabapi.typing import Annotation
+
+import annofabcli
 from annofabcli import AnnofabApiFacade
 from annofabcli.common.typing import RGB, InputDataSize, SubInputDataList
 
@@ -202,7 +203,8 @@ class WriteAnnotationImage:
 
         """
         logger.debug(
-            f"args: {annotation_dir}, {default_input_data_size}, {label_color_dict}, {output_dir}, {output_image_extension}"
+            f"args: {annotation_dir}, {default_input_data_size}, {label_color_dict}, "
+            f"{output_dir}, {output_image_extension}"
         )
         annotation_dir_path = Path(annotation_dir)
         output_dir_path = Path(output_dir)

@@ -8,11 +8,11 @@ import logging
 import time
 from typing import Any, Callable, Dict, List, Optional  # pylint: disable=unused-import
 
-import requests
-
 import annofabapi
-import annofabcli
+import requests
 from annofabapi.typing import Inspection, Task
+
+import annofabcli
 from annofabcli import AnnofabApiFacade
 from annofabcli.common.utils import build_annofabapi_resource_and_login
 

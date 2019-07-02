@@ -6,13 +6,12 @@ import argparse
 import logging
 from typing import Any, Callable, Dict, List, Optional, Tuple, Union  # pylint: disable=unused-import
 
+import annofabapi
 import requests
 
-import annofabapi
 import annofabcli
 from annofabcli import AnnofabApiFacade
 from annofabcli.common.utils import build_annofabapi_resource_and_login
-
 
 logger = logging.getLogger(__name__)
 

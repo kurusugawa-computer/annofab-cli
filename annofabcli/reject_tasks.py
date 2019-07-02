@@ -8,15 +8,13 @@ import time
 import uuid
 from typing import Any, Dict, List, Optional  # pylint: disable=unused-import
 
-import requests
-
 import annofabapi
 import annofabapi.utils
+import requests
+
 import annofabcli
 from annofabcli import AnnofabApiFacade
-from annofabcli.common.utils import read_lines_except_blank_line
-from annofabcli.common.utils import build_annofabapi_resource_and_login
-
+from annofabcli.common.utils import build_annofabapi_resource_and_login, read_lines_except_blank_line
 
 logger = logging.getLogger(__name__)
 

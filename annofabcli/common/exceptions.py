@@ -10,10 +10,12 @@ class AnnofabCliException(Exception):
     annofabcliに関するException
     """
 
+
 class UnauthorizationError(AnnofabCliException):
     """
     AnnoFabの認証エラー
     """
+
     def __init__(self, loing_user_id: str):
         msg = f"AnnoFabにログインできませんでした。User ID: {loing_user_id}"
-        super(AnnofabCliException, self).__init__(msg)
+        super().__init__(msg)

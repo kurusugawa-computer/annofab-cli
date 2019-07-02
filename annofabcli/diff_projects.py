@@ -9,9 +9,9 @@ import pprint
 from typing import Any, Dict, List  # pylint: disable=unused-import
 
 import annofabapi
-import annofabcli
-
 import dictdiffer
+
+import annofabcli
 from annofabcli import AnnofabApiFacade
 from annofabcli.common.utils import build_annofabapi_resource_and_login
 

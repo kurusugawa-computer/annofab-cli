@@ -10,15 +10,15 @@ from pathlib import Path
 from typing import Any, Callable, Dict, List, Optional  # pylint: disable=unused-import
 
 import annofabapi
-import annofabcli
 import PIL
 import PIL.Image
 import PIL.ImageDraw
 from annofabapi.typing import Annotation
+
+import annofabcli
 from annofabcli import AnnofabApiFacade
 from annofabcli.common.typing import InputDataSize
 from annofabcli.common.utils import build_annofabapi_resource_and_login
-
 
 logger = logging.getLogger(__name__)
 
@@ -140,7 +140,8 @@ class RegisterAnnotation:
         annotation_list = [e for e in input_data["detail"] if e["label_id"] == label_id]
         if len(annotation_list) == 0:
             logger.info(
-                f"{input_data['task_id']}, {input_data['input_data_id']} に label:{label}, label_id:{label_id} のアノテーションがない"
+                f"{input_data['task_id']}, {input_data['input_data_id']} に "
+                f"label:{label}, label_id:{label_id} のアノテーションがない"
             )
             return False
 
@@ -270,8 +271,10 @@ class RegisterAnnotation:
 
             """
             exclude_label_ids = [
-                "030bc859-4933-4bec-baa0-18fc80fb1eea",  #vehicle
-                "4bc53fa5-bb2e-44a5-adb2-04c76d87bfde"  # motorcycle
+                # vehicle
+                "030bc859-4933-4bec-baa0-18fc80fb1eea",
+                # motorcycle
+                "4bc53fa5-bb2e-44a5-adb2-04c76d87bfde"
             ]
             label_id = annotation["label_id"]
             # 除外するlabel_idにマッチしたらFalse

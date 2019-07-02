@@ -1,19 +1,21 @@
 import argparse
+import getpass
 import logging.config
 import os
 import pkgutil
-import getpass
-import requests
 from pathlib import Path
 from typing import Any, Callable, Dict, List, Optional  # pylint: disable=unused-import
 
-import yaml
 import annofabapi
-import annofabcli
-from annofabcli.common.typing import InputDataSize
+import requests
+import yaml
 from annofabapi.exceptions import AnnofabApiException
 
+import annofabcli
+from annofabcli.common.typing import InputDataSize
+
 logger = logging.getLogger(__name__)
+
 
 def create_parent_parser():
     """
@@ -99,12 +101,18 @@ def load_logging_config(log_dir: str, log_filename: str, logging_yaml_file: Opti
             logging_config = yaml.safe_load(f)
 
     else:
-        logging_config = yaml.safe_load(pkgutil.get_data('annofabcli', 'data/logging.yaml').decode("utf-8"))
+        data = pkgutil.get_data('annofabcli', 'data/logging.yaml')
+        if data is None:
+            logger.warning("data/logging.yaml が読み込めませんでした")
+            return
+
+        logging_config = yaml.safe_load(data.decode("utf-8"))
         log_filename = f"{str(log_dir)}/{log_filename}"
         logging_config["handlers"]["fileRotatingHandler"]["filename"] = log_filename
         Path(log_dir).mkdir(exist_ok=True, parents=True)
 
     logging.config.dictConfig(logging_config)
+
 
 def build_annofabapi_resource() -> annofabapi.Resource:
     """
@@ -122,12 +130,12 @@ def build_annofabapi_resource() -> annofabapi.Resource:
 
     try:
         return annofabapi.build_from_netrc()
-    except AnnofabApiException as e:
+    except AnnofabApiException:
         logger.debug("`.netrc`ファイルにはAnnoFab認証情報が存在しなかった")
 
     try:
         return annofabapi.build_from_env()
-    except AnnofabApiException as e:
+    except AnnofabApiException:
         logger.debug("`環境変数`ANNOFAB_USER_ID` or  `ANNOFAB_PASSWORD`が空だった")
 
     # 標準入力から入力させる
@@ -156,13 +164,10 @@ def build_annofabapi_resource_and_login() -> annofabapi.Resource:
 
     try:
         service.api.login()
+        return service
 
     except requests.exceptions.HTTPError as e:
         if e.response.status_code == requests.codes.unauthorized:
             raise annofabcli.exceptions.UnauthorizationError(service.api.login_user_id)
         else:
             raise e
-
-    else:
-        return service
-
