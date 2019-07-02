@@ -5,5 +5,13 @@ verify_ssl = true
 
 [dev-packages]
 annofabcli = {editable = true,path = "."} # For reading setup.py
+pytest = "*"
+pytest-cov = "*"
+isort = "*"
+yapf = "*"
+mypy = "*"
+flake8 = "*"
+pylint = "*"
+twine = "*"
 
 [packages]

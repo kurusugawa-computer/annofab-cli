@@ -2,12 +2,18 @@ import argparse
 import logging.config
 import os
 import pkgutil
+import getpass
+import requests
 from pathlib import Path
 from typing import Any, Callable, Dict, List, Optional  # pylint: disable=unused-import
 
 import yaml
+import annofabapi
+import annofabcli
 from annofabcli.common.typing import InputDataSize
+from annofabapi.exceptions import AnnofabApiException
 
+logger = logging.getLogger(__name__)
 
 def create_parent_parser():
     """
@@ -99,3 +105,64 @@ def load_logging_config(log_dir: str, log_filename: str, logging_yaml_file: Opti
         Path(log_dir).mkdir(exist_ok=True, parents=True)
 
     logging.config.dictConfig(logging_config)
+
+def build_annofabapi_resource() -> annofabapi.Resource:
+    """
+    annofabapi.Resourceインスタナスを生成する。
+    以下の順にAnnoFabの認証情報を読み込む。
+    1. `.netrc`ファイル
+    2. 環境変数`ANNOFAB_USER_ID` , `ANNOFAB_PASSWORD`
+
+    認証情報を読み込めなかった場合は、標準入力からUser IDとパスワードを入力させる。
+
+    Returns:
+        annofabapi.Resourceインスタンス
+
+    """
+
+    try:
+        return annofabapi.build_from_netrc()
+    except AnnofabApiException as e:
+        logger.debug("`.netrc`ファイルにはAnnoFab認証情報が存在しなかった")
+
+    try:
+        return annofabapi.build_from_env()
+    except AnnofabApiException as e:
+        logger.debug("`環境変数`ANNOFAB_USER_ID` or  `ANNOFAB_PASSWORD`が空だった")
+
+    # 標準入力から入力させる
+    login_user_id = ""
+    while login_user_id == "":
+        login_user_id = input("Enter AnnoFab User ID: ")
+
+    login_password = ""
+    while login_password == "":
+        login_password = getpass.getpass("Enter AnnoFab Password: ")
+
+    return annofabapi.build(login_user_id, login_password)
+
+
+def build_annofabapi_resource_and_login() -> annofabapi.Resource:
+    """
+    annofabapi.Resourceインスタナスを生成する。
+    ログインできなければ、UnauthorizationErrorをraiseする。
+
+    Returns:
+        annofabapi.Resourceインスタンス
+
+    """
+
+    service = build_annofabapi_resource()
+
+    try:
+        service.api.login()
+
+    except requests.exceptions.HTTPError as e:
+        if e.response.status_code == requests.codes.unauthorized:
+            raise annofabcli.exceptions.UnauthorizationError(service.api.login_user_id)
+        else:
+            raise e
+
+    else:
+        return service
+

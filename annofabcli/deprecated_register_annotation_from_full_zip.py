@@ -17,6 +17,8 @@ import PIL.ImageDraw
 from annofabapi.typing import Annotation
 from annofabcli import AnnofabApiFacade
 from annofabcli.common.typing import InputDataSize
+from annofabcli.common.utils import build_annofabapi_resource_and_login
+
 
 logger = logging.getLogger(__name__)
 
@@ -304,7 +306,7 @@ def parse_args(parser: argparse.ArgumentParser):
 
 
 def main(args):
-    service = annofabapi.build_from_netrc()
+    service = build_annofabapi_resource_and_login()
     facade = AnnofabApiFacade(service)
     RegisterAnnotation(service, facade).main(args)
 

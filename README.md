@@ -5,7 +5,7 @@ annofabapiを使ったCLI(Command Line Interface)ツールです。
 # 注意
 * 作者または著作権者は、ソフトウェアに関してなんら責任を負いません。
 * 予告なく互換性のない変更がある可能性をご了承ください。
-* AnnoFabプロジェクトに大きな変更を及ぼすツールも存在します。間違えて実行してしまわないよう、注意してください。
+* AnnoFabプロジェクトに大きな変更を及ぼすツールも存在します。間違えて実行してしまわないよう、注意してご利用ください。
 
 
 # Requirements
@@ -37,10 +37,23 @@ $ pip install . -U
 # Usage
 
 ## AnnoFabの認証情報の設定
-`.netrc`ファイルにAnnoFabの認証情報を記載してください。
-詳しくは[annofab-api-python-client/README.md](https://github.com/kurusugawa-computer/annofab-api-python-client#netrc%E3%81%AB%E8%A8%98%E8%BC%89%E3%81%95%E3%82%8C%E3%81%9Fuser_id-password%E3%81%8B%E3%82%89%E7%94%9F%E6%88%90)を参照してください。
+AnnoFabの認証情報を設定する方法は2つあります。
+* `.netrc`ファイル
+* 環境変数`ANNOFAB_USER_ID` , `ANNOFAB_PASSWORD`
 
+`.netrc`ファイルへの記載方法は、[annofab-api-python-client/README.md](https://github.com/kurusugawa-computer/annofab-api-python-client#netrc%E3%81%AB%E8%A8%98%E8%BC%89%E3%81%95%E3%82%8C%E3%81%9Fuser_id-password%E3%81%8B%E3%82%89%E7%94%9F%E6%88%90)を参照してください。
 
+`annofabcli`コマンド実行時、AnnoFabの認証情報が設定されていない場合、標準入力からAnnoFabの認証情報を入力できるようになります。
+
+```
+$ annofabcli diff_projects aaa bbb
+Enter AnnoFab User ID: XXXXXX
+Enter AnnoFab Password: 
+```
+
+AnnoFabの認証情報は、以下の順に読み込まれます。
+1. `.netrc`ファイル
+2. 環境変数
 
 
 ## 共通のオプション引数

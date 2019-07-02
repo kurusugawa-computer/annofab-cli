@@ -11,6 +11,7 @@ import annofabapi
 import annofabcli
 from annofabapi.typing import Inspection
 from annofabcli import AnnofabApiFacade
+from annofabcli.common.utils import build_annofabapi_resource_and_login
 
 logger = logging.getLogger(__name__)
 
@@ -125,7 +126,7 @@ def parse_args(parser: argparse.ArgumentParser):
 
 
 def main(args):
-    service = annofabapi.build_from_netrc()
+    service = build_annofabapi_resource_and_login()
     facade = AnnofabApiFacade(service)
     PrintUnprocessedInspections(service, facade).main(args)
 

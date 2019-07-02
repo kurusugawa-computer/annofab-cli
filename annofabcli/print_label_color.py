@@ -10,6 +10,7 @@ from typing import Any, Callable, Dict, List, Optional, Tuple  # pylint: disable
 import annofabapi
 import annofabcli
 from annofabcli import AnnofabApiFacade
+from annofabcli.common.utils import build_annofabapi_resource_and_login
 
 logger = logging.getLogger(__name__)
 
@@ -57,7 +58,7 @@ def parse_args(parser: argparse.ArgumentParser):
 
 
 def main(args):
-    service = annofabapi.build_from_netrc()
+    service = build_annofabapi_resource_and_login()
     facade = AnnofabApiFacade(service)
     PrintLabelColor(service, facade).main(args)
 

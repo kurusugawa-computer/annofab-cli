@@ -10,8 +10,10 @@ from typing import Any, Dict, List  # pylint: disable=unused-import
 
 import annofabapi
 import annofabcli
+
 import dictdiffer
 from annofabcli import AnnofabApiFacade
+from annofabcli.common.utils import build_annofabapi_resource_and_login
 
 logger = logging.getLogger(__name__)
 
@@ -261,7 +263,7 @@ def parse_args(parser: argparse.ArgumentParser):
 
 
 def main(args):
-    service = annofabapi.build_from_netrc()
+    service = build_annofabapi_resource_and_login()
     facade = AnnofabApiFacade(service)
     DiffProjecs(service, facade).main(args)
 

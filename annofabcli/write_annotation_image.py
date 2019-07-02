@@ -27,10 +27,6 @@ AnnotationSortKeyFunc = Callable[[Annotation], Any]
 
 
 class WriteAnnotationImage:
-    def __init__(self, service: annofabapi.Resource, facade: AnnofabApiFacade):
-        self.service = service
-        self.facade = facade
-
     def _create_sub_input_data_list(self, sub_annotation_dir_list: List[str],
                                     input_data_json: Path) -> SubInputDataList:
         """
@@ -315,9 +311,7 @@ def parse_args(parser: argparse.ArgumentParser):
 
 
 def main(args):
-    service = annofabapi.build_from_netrc()
-    facade = AnnofabApiFacade(service)
-    WriteAnnotationImage(service, facade).main(args)
+    WriteAnnotationImage().main(args)
 
 
 def add_parser(subparsers: argparse._SubParsersAction):

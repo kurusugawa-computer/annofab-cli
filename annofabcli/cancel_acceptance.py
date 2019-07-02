@@ -12,6 +12,7 @@ import annofabapi
 import annofabcli
 from annofabcli import AnnofabApiFacade
 from annofabcli.common.utils import read_lines_except_blank_line
+from annofabcli.common.utils import build_annofabapi_resource_and_login
 
 logger = logging.getLogger(__name__)
 
@@ -61,7 +62,7 @@ class CancelAcceptance:
 
 
 def main(args):
-    service = annofabapi.build_from_netrc()
+    service = build_annofabapi_resource_and_login()
     facade = AnnofabApiFacade(service)
     CancelAcceptance(service, facade).main(args)
 
