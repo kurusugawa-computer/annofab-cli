@@ -4,7 +4,7 @@ import logging.config
 import os
 import pkgutil
 from pathlib import Path
-from typing import Any, Callable, Dict, List, Optional  # pylint: disable=unused-import
+from typing import Any, Callable, Dict, List, Set, Optional, TypeVar  # pylint: disable=unused-import
 
 import annofabapi
 import requests
@@ -16,6 +16,7 @@ from annofabcli.common.typing import InputDataSize
 
 logger = logging.getLogger(__name__)
 
+T = TypeVar('T')  # Can be anything
 
 def create_parent_parser():
     """
@@ -171,3 +172,15 @@ def build_annofabapi_resource_and_login() -> annofabapi.Resource:
             raise annofabcli.exceptions.UnauthorizationError(service.api.login_user_id)
         else:
             raise e
+
+def duplicated_set(l: List[T]) -> Set[T]:
+    """
+    重複しているsetを返す
+    Args:
+        l: 確認するList
+
+    Returns:
+        重複しているset
+
+    """
+    return {x for x in set(l) if l.count(x) > 1}

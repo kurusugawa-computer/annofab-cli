@@ -160,6 +160,25 @@ $ annofabcli diff_projects  prj1 prj2 --target settings
 
 ```
 
+プロジェクト間の差分は、以下のように出力されます。
+`dict`型の差分は、[dictdiffer](https://dictdiffer.readthedocs.io/en/latest/)のフォーマットで出力します。
+
+```
+=== prj1_title1(prj1) と prj1_title2(prj2) の差分を表示
+=== プロジェクトメンバの差分 ===
+プロジェクトメンバは同一
+=== プロジェクト設定の差分 ===
+プロジェクト設定は同一
+=== 定型指摘の差分 ===
+定型指摘は同一
+=== アノテーションラベル情報の差分 ===
+ラベル名(en): car は差分あり
+[('change', 'color.red', (4, 0)),
+ ('change', 'color.green', (251, 255)),
+ ('change', 'color.blue', (171, 204))]
+ラベル名(en): bike は同一
+```
+
 
 ### invite_users
 複数のプロジェクトに、ユーザを招待します。

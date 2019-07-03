@@ -10,6 +10,7 @@ from typing import Any, Dict, List  # pylint: disable=unused-import
 
 import annofabapi
 import dictdiffer
+import more_itertools
 
 import annofabcli
 from annofabcli import AnnofabApiFacade
@@ -96,6 +97,32 @@ class DiffProjecs:
 
         return is_different
 
+    def is_duplicated(self, label_names1: List[str], label_names2: List[str]) -> bool:
+        """
+        label_nameが重複しているか確認する
+        Args:
+            label_names1:
+            label_names2:
+
+        Returns:
+            Trueなら、label_names1 or label_names2が重複している
+
+        """
+        duplicated_set1 = annofabcli.utils.duplicated_set(label_names1)
+        duplicated_set2 = annofabcli.utils.duplicated_set(label_names2)
+
+        flag = False
+        if len(duplicated_set1) > 0:
+            print(f"{self.project_title1}のラベル名(en)が重複しています。{duplicated_set1}")
+            flag = True
+
+        if len(duplicated_set2) > 0:
+            print(f"{self.project_title2}のラベル名(en)が重複しています。{duplicated_set2}")
+            flag = True
+
+        return flag
+
+
     def diff_labels_of_annotation_specs(self, labels1: List[Dict[str, Any]], labels2: List[Dict[str, Any]]) -> bool:
         """
         アノテーションラベル情報の差分を表示する。ラベル名(英語)を基準に差分を表示する。
@@ -112,23 +139,37 @@ class DiffProjecs:
         """
         print("=== アノテーションラベル情報の差分 ===")
 
-        label_names1 = [self.facade.get_label_name_en(e) for e in labels1]
-        label_names2 = [self.facade.get_label_name_en(e) for e in labels2]
+        label_names1 = [AnnofabApiFacade.get_label_name_en(e) for e in labels1]
+        label_names2 = [AnnofabApiFacade.get_label_name_en(e) for e in labels2]
+
+        # 重複チェック
+        if self.is_duplicated(label_names1, label_names2):
+            print("ラベル名(en)が重複しているので、アノテーションラベル情報の差分は確認しません。")
 
         if label_names1 != label_names2:
             print("ラベル名(en)のListに差分あり")
             print(f"label_names1: {label_names1}")
             print(f"label_names2: {label_names2}")
-            return True
+            # 両方に存在するlabel_nameのみ確認する
+            is_different = True
+            label_names = list(set(label_names1) & set(label_names2))
+        else:
+            is_different = False
+            label_names = label_names1
 
-        is_different = False
-        for label1, label2 in zip(labels1, labels2):
+        for label_name in label_names:
+
+            get_label_func = lambda x: AnnofabApiFacade.get_label_name_en(x) == label_name
+            label1 = more_itertools.first_true(labels1, pred=get_label_func)
+            label2 = more_itertools.first_true(labels2, pred=get_label_func)
 
             diff_result = list(dictdiffer.diff(create_ignored_label(label1), create_ignored_label(label2)))
             if len(diff_result) > 0:
                 is_different = True
-                print(f"差分のあるラベル情報: {self.facade.get_label_name_en(label1)}")
+                print(f"ラベル名(en): {label_name} は差分あり")
                 pprint.pprint(diff_result)
+            else:
+                print(f"ラベル名(en): {label_name} は同一")
 
         if not is_different:
             print("アノテーションラベル情報は同一")
@@ -232,6 +273,9 @@ class DiffProjecs:
         project_id2 = args.project_id2
         project_title1 = self.facade.get_project_title(project_id1)
         project_title2 = self.facade.get_project_title(project_id2)
+
+        self.project_title1 = project_title1
+        self.project_title2 = project_title2
 
         print(f"=== {project_title1}({project_id1}) と {project_title2}({project_id1}) の差分を表示")
 
