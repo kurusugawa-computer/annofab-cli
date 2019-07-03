@@ -14,10 +14,10 @@ annofabapiを使ったCLI(Command Line Interface)ツールです。
 # Install
 
 ```
-$ git clone https://github.com/kurusugawa-computer/annofab-api-python-client.git
-$ cd annofab-api-python-client/examples
-$ pip install . -U
+$ pip install annofabcli
 ```
+
+https://pypi.org/project/annofabcli/
 
 
 # 機能一覧

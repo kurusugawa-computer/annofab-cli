@@ -24,7 +24,7 @@ setup(
     author_email='yuji38kwmt@gmail.com',
     maintainer='yuji38kwmt',
     license='MIT', keywords='annofab api cli',
-    url='https://github.com/kurusugawa-computer/annofab-api-python-client/examples',
+    url='https://github.com/kurusugawa-computer/annofab-cli',
     install_requires=['annofabapi>=0.7.1',
                       'requests',
                       'pillow',
