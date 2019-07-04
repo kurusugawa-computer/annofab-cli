@@ -66,10 +66,8 @@ def add_parser(subparsers: argparse._SubParsersAction, subcommand_name: str, sub
         サブコマンドのparser
 
     """
-    epilog = "AnnoFabの認証情報は、`$HOME/.netrc`に記載すること"
-
     return subparsers.add_parser(subcommand_name, parents=[create_parent_parser()], description=description,
-                                 help=subcommand_help, epilog=epilog)
+                                 help=subcommand_help)
 
 
 def load_logging_config_from_args(args: argparse.Namespace, py_filepath: str):
@@ -97,6 +95,18 @@ def load_logging_config(log_dir: str, log_filename: str, logging_yaml_file: Opti
 
     """
 
+
+    if logging_yaml_file is not None:
+        if os.path.exists(logging_yaml_file):
+            with open(logging_yaml_file, encoding='utf-8') as f:
+                logging_config = yaml.safe_load(f)
+        else:
+            logger.warning(f"{logging_yaml_file} does not exist.")
+
+    else:
+        _set_default_logger(log_dir, log_filename)
+
+
     if logging_yaml_file is not None and os.path.exists(logging_yaml_file):
         with open(logging_yaml_file, encoding='utf-8') as f:
             logging_config = yaml.safe_load(f)
@@ -111,6 +121,24 @@ def load_logging_config(log_dir: str, log_filename: str, logging_yaml_file: Opti
         log_filename = f"{str(log_dir)}/{log_filename}"
         logging_config["handlers"]["fileRotatingHandler"]["filename"] = log_filename
         Path(log_dir).mkdir(exist_ok=True, parents=True)
+
+    logging.config.dictConfig(logging_config)
+
+
+def _set_default_logger(log_dir:str, log_filename):
+    """
+    デフォルトのロガーを設定する。パッケージ内のlogging.yamlを読み込む。
+    """
+    data = pkgutil.get_data('annofabcli', 'data/logging.yaml')
+    if data is None:
+        logger.warning("data/logging.yaml が読み込めませんでした")
+        return
+
+    logging_config = yaml.safe_load(data.decode("utf-8"))
+
+    log_filename = f"{str(log_dir)}/{log_filename}"
+    logging_config["handlers"]["fileRotatingHandler"]["filename"] = log_filename
+    Path(log_dir).mkdir(exist_ok=True, parents=True)
 
     logging.config.dictConfig(logging_config)
 
