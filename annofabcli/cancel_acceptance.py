@@ -34,7 +34,12 @@ class CancelAcceptance:
         acceptor_account_id = self.facade.get_account_id_from_user_id(
             project_id, acceptor_user_id) if acceptor_user_id is not None else None
 
-        for task_id in task_id_list:
+        logger.info(f"受け入れを取り消すタスク数: {len(task_id_list)}")
+
+        success_count = 0
+        for task_index, task_id in enumerate(task_id_list):
+            str_progress = annofabcli.utils.progress_msg(task_index, len(task_id_list))
+
             try:
                 task, _ = self.service.api.get_task(project_id, task_id)
                 if task["status"] != "complete":
@@ -45,11 +50,14 @@ class CancelAcceptance:
                     "last_updated_datetime": task["updated_datetime"],
                 }
                 self.service.api.operate_task(project_id, task_id, request_body=request_body)
-                logger.info(f"task_id = {task_id} の受け入れ取り消し完了")
+                logger.info(f"{str_progress} : task_id = {task_id} の受け入れ取り消し成功")
+                success_count += 1
 
             except requests.exceptions.HTTPError as e:
                 logger.warning(e)
-                logger.warning(f"task_id = {task_id} の受け入れ取り消し失敗")
+                logger.warning(f"{str_progress} : task_id = {task_id} の受け入れ取り消し失敗")
+
+        logger.info(f"{success_count} / {len(task_id_list)}件 受け入れ取り消しに成功した")
 
     def main(self, args):
         annofabcli.utils.load_logging_config_from_args(args, __file__)
@@ -68,7 +76,7 @@ def main(args):
 
 def parse_args(parser: argparse.ArgumentParser):
 
-    parser.add_argument('--project_id', type=str, required=True, help='対象のプロジェクトのproject_id')
+    parser.add_argument('-p', '--project_id', type=str, required=True, help='対象のプロジェクトのproject_id')
 
     parser.add_argument('--task_id_file', type=str, required=True,
                         help='task_idの一覧が記載されたファイル。task_idは改行(LF or CRLF)で区切る。')

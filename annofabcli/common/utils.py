@@ -212,3 +212,12 @@ def duplicated_set(l: List[T]) -> Set[T]:
 
     """
     return {x for x in set(l) if l.count(x) > 1}
+
+def progress_msg(index:int, size: int):
+    """
+    `1/100件目`という進捗率を表示する
+    """
+    digit = len(str(size))
+    str_format ='{{:{digit}}} / {{:{digit}}} 件目'
+    return str_format.format(index, size)
+
