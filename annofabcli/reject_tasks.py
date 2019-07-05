@@ -159,18 +159,18 @@ def main(args):
 
 
 def parse_args(parser: argparse.ArgumentParser):
-    parser.add_argument('--project_id', type=str, required=True, help='対象のプロジェクトのproject_id')
+    parser.add_argument('-p', '--project_id', type=str, required=True, help='対象のプロジェクトのproject_idを指定します。')
 
-    parser.add_argument('--task_id_file', type=str, required=True,
-                        help='差し戻すタスク(inspection/acceptance phase)のtask_idの一覧が記載されたファイル。task_idは改行(LF or CRLF)で区切る。')
+    parser.add_argument('-t', '--task_id', type=str, required=True, nargs='+',
+                        help='対象のタスクのtask_idを指定します。`file://`を先頭に付けると、task_idの一覧が記載されたファイルを指定できます。')
 
-    parser.add_argument('--comment', type=str, required=True, help='差し戻すときに付与する検査コメントの内容')
+    parser.add_argument('--comment', type=str, required=True, help='差し戻すときに付与する検査コメントを指定します。')
 
     parser.add_argument('--assign_last_annotator', action="store_true",
-                        help='指定した場合、差し戻したタスクに、最後のannotation phaseの担当者を割り当てる。')
+                        help='差し戻したタスクに、最後のannotation phaseの担当者を割り当てます。')
 
     parser.add_argument('--assigned_annotator_user_id', type=str,
-                        help='差し戻したタスクに割り当てるユーザのuser_id. 指定しなければ割り当てない。`--assign_last_annotator`と同時に指定できない')
+                        help='差し戻したタスクに割り当てるユーザのuser_idを指定します。指定しない場合、タスクの担当者は未割り当てになります。`--assign_last_annotator`と同時には指定できません。')
 
     parser.set_defaults(subcommand_func=main)
 

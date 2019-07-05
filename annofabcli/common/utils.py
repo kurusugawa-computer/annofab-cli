@@ -23,12 +23,15 @@ def create_parent_parser() -> argparse.ArgumentParser:
     共通の引数セットを生成する。
     """
     parent_parser = argparse.ArgumentParser(add_help=False)
-    parent_parser.add_argument('--logdir', type=str, default=".log", help='ログファイルを保存するディレクトリ。指定しない場合は`.log`ディレクトリ')
+    group = parent_parser.add_argument_group("global optional arguments")
 
-    parent_parser.add_argument(
-        "--logging_yaml", type=str, help="ロギグングの設定ファイル(YAML)。指定した場合、`--logdir`オプションは無視される。"
-        "指定しない場合、デフォルトのロギング設定ファイルが読み込まれる。"
-        "設定ファイルの書き方は https://docs.python.org/ja/3/howto/logging.html 参照。")
+    group.add_argument('--logdir', type=str, default=".log",
+                       help="ログファイルを保存するディレクトリを指定します。指定しない場合は`.log`ディレクトリ'にログファイルが保存されます。")
+
+    group.add_argument(
+        "--logging_yaml", type=str, help="ロギグングの設定ファイル(YAML)を指定します。指定した場合、`--logdir`オプションは無視されます。"
+        "指定しない場合、デフォルトのロギングが設定されます。"
+        "設定ファイルの書き方は https://docs.python.org/ja/3/howto/logging.html 参照してください。")
     return parent_parser
 
 

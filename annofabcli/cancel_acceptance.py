@@ -82,7 +82,7 @@ def parse_args(parser: argparse.ArgumentParser):
     parser.add_argument('-t', '--task_id', type=str, required=True, nargs='+',
                         help='対象のタスクのtask_idを指定します。`file://`を先頭に付けると、task_idの一覧が記載されたファイルを指定できます。')
 
-    parser.add_argument('-u', '--user_id', type=str, help='再度受入を担当させたいユーザのuser_idを指定します。指定しない場合、担当は未割り当てになります。')
+    parser.add_argument('-u', '--user_id', type=str, help='再度受入を担当させたいユーザのuser_idを指定します。指定しない場合、タスクの担当者は未割り当てになります。')
 
     parser.set_defaults(subcommand_func=main)
 
