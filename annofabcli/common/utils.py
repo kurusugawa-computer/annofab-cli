@@ -18,7 +18,7 @@ logger = logging.getLogger(__name__)
 
 T = TypeVar('T')  # Can be anything
 
-def create_parent_parser():
+def create_parent_parser() -> argparse.ArgumentParser:
     """
     共通の引数セットを生成する。
     """
@@ -44,6 +44,28 @@ def read_lines_except_blank_line(filepath: str) -> List[str]:
     lines = read_lines(filepath)
     return [line for line in lines if line != ""]
 
+def _is_file_scheme(value: str):
+    return value.startswith('file://')
+
+def get_list_from_args(str_list: Optional[List[str]] = None) -> List[str]:
+    """
+    文字列のListのサイズが1で、プレフィックスが`file://`ならば、ファイルパスとしてファイルを読み込み、行をListとして返す。
+    そうでなければ、引数の値をそのままかえす。
+    ただしNoneの場合は空Listを変えす
+    Listが1小
+    """
+    if str_list is None or len(str_list) == 0:
+        return []
+
+    if len(str_list) > 1:
+        return str_list
+
+    str_value = str_list[0]
+    if str_value.startswith('file://'):
+        path = str_value[len('file://'):]
+        return read_lines_except_blank_line(path)
+    else:
+        return str_list
 
 def get_input_data_size(str_input_data_size: str) -> InputDataSize:
     """400x300を(400,300)に変換する"""
@@ -52,7 +74,7 @@ def get_input_data_size(str_input_data_size: str) -> InputDataSize:
 
 
 def add_parser(subparsers: argparse._SubParsersAction, subcommand_name: str, subcommand_help: str,
-               description: str) -> argparse.ArgumentParser:
+               description: str, epilog: Optional[str] = None) -> argparse.ArgumentParser:
     """
     サブコマンド用にparserを追加する
 
@@ -61,13 +83,14 @@ def add_parser(subparsers: argparse._SubParsersAction, subcommand_name: str, sub
         subcommand_name:
         subcommand_help:
         description:
+        epilog:
 
     Returns:
         サブコマンドのparser
 
     """
     return subparsers.add_parser(subcommand_name, parents=[create_parent_parser()], description=description,
-                                 help=subcommand_help)
+                                 help=subcommand_help, epilog=epilog)
 
 
 def load_logging_config_from_args(args: argparse.Namespace, py_filepath: str):
@@ -218,6 +241,6 @@ def progress_msg(index:int, size: int):
     `1/100件目`という進捗率を表示する
     """
     digit = len(str(size))
-    str_format ='{{:{digit}}} / {{:{digit}}} 件目'
+    str_format = f'{{:{digit}}} / {{:{digit}}} 件目'
     return str_format.format(index, size)
 

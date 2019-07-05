@@ -38,7 +38,7 @@ class CancelAcceptance:
 
         success_count = 0
         for task_index, task_id in enumerate(task_id_list):
-            str_progress = annofabcli.utils.progress_msg(task_index, len(task_id_list))
+            str_progress = annofabcli.utils.progress_msg(task_index+1, len(task_id_list))
 
             try:
                 task, _ = self.service.api.get_task(project_id, task_id)
@@ -64,7 +64,8 @@ class CancelAcceptance:
 
         logger.info(f"args: {args}")
 
-        task_id_list = read_lines_except_blank_line(args.task_id_file)
+        task_id_list = annofabcli.utils.get_list_from_args(args.task_id)
+
         self.cancel_acceptance(args.project_id, task_id_list, args.user_id)
 
 
@@ -76,20 +77,21 @@ def main(args):
 
 def parse_args(parser: argparse.ArgumentParser):
 
-    parser.add_argument('-p', '--project_id', type=str, required=True, help='対象のプロジェクトのproject_id')
+    parser.add_argument('-p', '--project_id', type=str, required=True, help='対象のプロジェクトのproject_idを指定します。')
 
-    parser.add_argument('--task_id_file', type=str, required=True,
-                        help='task_idの一覧が記載されたファイル。task_idは改行(LF or CRLF)で区切る。')
+    parser.add_argument('-t', '--task_id', type=str, required=True, nargs='+',
+                        help='対象のタスクのtask_idを指定します。`file://`を先頭に付けると、task_idの一覧が記載されたファイルを指定できます。')
 
-    parser.add_argument('--user_id', type=str, help='再度受入を担当させたいユーザのuser_id。指定しなければ未割り当てになる。')
+    parser.add_argument('-u', '--user_id', type=str, help='再度受入を担当させたいユーザのuser_idを指定します。指定しない場合、担当は未割り当てになります。')
 
     parser.set_defaults(subcommand_func=main)
 
 
 def add_parser(subparsers: argparse._SubParsersAction):
     subcommand_name = "cancel_acceptance"
-    subcommand_help = "受け入れ完了タスクを、受け入れ取り消しする。"
-    description = ("受け入れ完了タスクを、受け入れ取り消しする。" "オーナ権限を持つユーザで実行すること。")
+    subcommand_help = "受入が完了したタスクに対して、受入を取り消します。"
+    description = "受入が完了したタスクに対して、受入を取り消します。"
+    epilog = "オーナ権限を持つユーザで実行してください。"
 
-    parser = annofabcli.utils.add_parser(subparsers, subcommand_name, subcommand_help, description)
+    parser = annofabcli.utils.add_parser(subparsers, subcommand_name, subcommand_help, description, epilog=epilog)
     parse_args(parser)
