@@ -15,15 +15,12 @@ import requests
 import annofabcli
 from annofabcli import AnnofabApiFacade
 from annofabcli.common.utils import build_annofabapi_resource_and_login, read_lines_except_blank_line
+from annofabcli.common.cli import AbstractCommandLineInterface
 
 logger = logging.getLogger(__name__)
 
 
-class RejectTasks:
-    def __init__(self, service: annofabapi.Resource, facade: AnnofabApiFacade):
-        self.service = service
-        self.facade = facade
-
+class RejectTasks(AbstractCommandLineInterface):
     def add_inspection_comment(self, project_id: str, task: Dict[str, Any], inspection_comment: str,
                                commenter_account_id: str):
         """
@@ -77,6 +74,8 @@ class RejectTasks:
 
         """
 
+        super().validate_project(project_id, required_owner=True)
+
         commenter_account_id = self.facade.get_account_id_from_user_id(project_id, commenter_user_id)
 
         assigned_annotator_account_id = self.facade.get_account_id_from_user_id(
@@ -94,6 +93,10 @@ class RejectTasks:
             if task["phase"] == "annotation":
                 logger.warning(f"{str_progress} : task_id = {task_id} はannofation phaseのため、差し戻しできません。")
                 continue
+
+            if not super().confirm_processing_task(task_id, f"task_id = {task_id} のタスクを差し戻しますか？"):
+                continue
+
 
             try:
                 # 担当者を変更して、作業中にする
@@ -138,26 +141,16 @@ class RejectTasks:
             logger.info(f"{str_progress} : task_id = {task_id} の差し戻し完了")
             success_count += 1
 
-        logger.info(f"{success_count} / {len(task_id_list)}件 タスクの差し戻しに成功した")
+        logger.info(f"{success_count} / {len(task_id_list)} 件 タスクの差し戻しに成功した")
 
-    @staticmethod
-    def validate_args(args):
-        if args.assign_last_annotator and args.assigned_annotator_user_id is not None:
-            logger.error("引数に --assign_last_annotator と --assigned_annotator_user_id は同時に指定できません")
-            return False
-
-        return True
 
     def main(self, args):
-        annofabcli.utils.load_logging_config_from_args(args, __file__)
+        super().process_common_args(args, __file__, logger)
 
-        logger.info(f"args: {args}")
+        task_id_list = annofabcli.utils.get_list_from_args(args.task_id)
 
-        if not self.validate_args(args):
-            return
-
-        task_id_list = read_lines_except_blank_line(args.task_id_file)
         user_id = self.service.api.login_user_id
+
         self.reject_tasks_with_adding_comment(args.project_id, task_id_list, args.comment, commenter_user_id=user_id,
                                               assign_last_annotator=args.assign_last_annotator,
                                               assigned_annotator_user_id=args.assigned_annotator_user_id)

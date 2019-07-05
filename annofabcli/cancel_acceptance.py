@@ -12,16 +12,12 @@ import requests
 import annofabcli
 from annofabcli import AnnofabApiFacade
 from annofabcli.common.utils import build_annofabapi_resource_and_login
-from annofabcli.common.exceptions import AuthorizationError
 from annofabcli.common.cli import AbstractCommandLineInterface
 
 logger = logging.getLogger(__name__)
 
 
 class CancelAcceptance(AbstractCommandLineInterface):
-
-    def __init__(self, service: annofabapi.Resource, facade: AnnofabApiFacade):
-        super().__init__(service, facade)
 
     def cancel_acceptance(self, project_id: str, task_id_list: List[str], acceptor_user_id: Optional[str] = None):
         """
@@ -50,14 +46,8 @@ class CancelAcceptance(AbstractCommandLineInterface):
                     logger.warning(f"task_id = {task_id} は受入完了でありません。status = {task['status']}, phase={task['phase']}")
                     continue
 
-                if not self.all_yes:
-                    yes, all_yes = annofabcli.utils.prompt_yesno(f"task_id = {task_id} のタスクの受入を取り消しますか？")
-                    if not yes:
-                        logger.info(f"task_id = {task_id} をスキップします。")
-                        continue
-
-                    if all_yes:
-                        self.all_yes = True
+                if not super().confirm_processing_task(task_id, f"task_id = {task_id} のタスクの受入を取り消しますか？"):
+                    continue
 
                 request_body = {
                     "status": "not_started",
