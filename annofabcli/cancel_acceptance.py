@@ -11,15 +11,17 @@ import requests
 
 import annofabcli
 from annofabcli import AnnofabApiFacade
-from annofabcli.common.utils import build_annofabapi_resource_and_login, read_lines_except_blank_line
+from annofabcli.common.utils import build_annofabapi_resource_and_login
+from annofabcli.common.exceptions import AuthorizationError
+from annofabcli.common.cli import AbstractCommandLineInterface
 
 logger = logging.getLogger(__name__)
 
 
-class CancelAcceptance:
+class CancelAcceptance(AbstractCommandLineInterface):
+
     def __init__(self, service: annofabapi.Resource, facade: AnnofabApiFacade):
-        self.service = service
-        self.facade = facade
+        super().__init__(service, facade)
 
     def cancel_acceptance(self, project_id: str, task_id_list: List[str], acceptor_user_id: Optional[str] = None):
         """
@@ -30,6 +32,8 @@ class CancelAcceptance:
             task_id_list: 受け入れ取り消しするtask_id_list
             acceptor_user_id: 再度受入を担当させたいユーザのuser_id
         """
+
+        super().validate_project(project_id, required_owner=True)
 
         acceptor_account_id = self.facade.get_account_id_from_user_id(
             project_id, acceptor_user_id) if acceptor_user_id is not None else None
@@ -44,6 +48,8 @@ class CancelAcceptance:
                 task, _ = self.service.api.get_task(project_id, task_id)
                 if task["status"] != "complete":
                     logger.warning(f"task_id = {task_id} は受入完了でありません。status = {task['status']}, phase={task['phase']}")
+                    continue
+
                 request_body = {
                     "status": "not_started",
                     "account_id": acceptor_account_id,
@@ -57,12 +63,11 @@ class CancelAcceptance:
                 logger.warning(e)
                 logger.warning(f"{str_progress} : task_id = {task_id} の受け入れ取り消し失敗")
 
-        logger.info(f"{success_count} / {len(task_id_list)}件 受け入れ取り消しに成功した")
+        logger.info(f"{success_count} / {len(task_id_list)} 件 受け入れ取り消しに成功した")
+
 
     def main(self, args):
-        annofabcli.utils.load_logging_config_from_args(args, __file__)
-
-        logger.info(f"args: {args}")
+        super().process_common_args(args, __file__, logger)
 
         task_id_list = annofabcli.utils.get_list_from_args(args.task_id)
 

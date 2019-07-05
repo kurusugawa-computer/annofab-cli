@@ -4,7 +4,7 @@ import logging.config
 import os
 import pkgutil
 from pathlib import Path
-from typing import Any, Callable, Dict, List, Set, Optional, TypeVar  # pylint: disable=unused-import
+from typing import Any, Callable, Dict, List, Set, Optional, TypeVar, Tuple  # pylint: disable=unused-import
 
 import annofabapi
 import requests
@@ -24,6 +24,8 @@ def create_parent_parser() -> argparse.ArgumentParser:
     """
     parent_parser = argparse.ArgumentParser(add_help=False)
     group = parent_parser.add_argument_group("global optional arguments")
+
+    group.add_argument('--yes', action="store_true", help="処理中に現れる問い合わせに対して、常に'yes'と回答します。")
 
     group.add_argument('--logdir', type=str, default=".log",
                        help="ログファイルを保存するディレクトリを指定します。指定しない場合は`.log`ディレクトリ'にログファイルが保存されます。")
@@ -223,7 +225,7 @@ def build_annofabapi_resource_and_login() -> annofabapi.Resource:
 
     except requests.exceptions.HTTPError as e:
         if e.response.status_code == requests.codes.unauthorized:
-            raise annofabcli.exceptions.UnauthorizationError(service.api.login_user_id)
+            raise annofabcli.exceptions.AuthenticationError(service.api.login_user_id)
         else:
             raise e
 
@@ -247,3 +249,24 @@ def progress_msg(index:int, size: int):
     str_format = f'{{:{digit}}} / {{:{digit}}} 件目'
     return str_format.format(index, size)
 
+
+def prompt_yesno(msg: str) -> Tuple[bool, bool]:
+    """
+    標準入力で yes, no, all(すべてyes)を選択できるようにする。
+    Args:
+        msg: 確認メッセージ
+
+    Returns:
+        Tuple[yesno, allflag]. yesno:Trueならyes. allflag: Trueならall.
+
+    """
+    while True:
+        choice = input(f"{msg} [y/N/ALL] : ")
+        if choice == 'y':
+            return True, False
+
+        elif choice == 'N':
+            return False, False
+
+        elif choice == 'ALL':
+            return True, True
