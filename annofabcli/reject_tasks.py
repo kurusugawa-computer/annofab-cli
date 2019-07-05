@@ -82,23 +82,30 @@ class RejectTasks:
         assigned_annotator_account_id = self.facade.get_account_id_from_user_id(
             project_id, assigned_annotator_user_id) if assigned_annotator_user_id is not None else None
 
-        for task_id in task_id_list:
+        logger.info(f"差し戻すタスク数: {len(task_id_list)}")
+        success_count = 0
+
+        for task_index, task_id in enumerate(task_id_list):
+            str_progress = annofabcli.utils.progress_msg(task_index + 1, len(task_id_list))
+
             task, _ = self.service.api.get_task(project_id, task_id)
+
             logger.debug(f"task_id = {task_id}, {task['status']}, {task['phase']}")
             if task["phase"] == "annotation":
-                logger.warning(f"task_id = {task_id} はannofation phaseのため、差し戻しできません。")
+                logger.warning(f"{str_progress} : task_id = {task_id} はannofation phaseのため、差し戻しできません。")
                 continue
 
             try:
                 # 担当者を変更して、作業中にする
                 self.facade.change_operator_of_task(project_id, task_id, commenter_account_id)
-                logger.debug(f"task_id = {task_id}, phase={task['phase']}, {commenter_user_id}に担当者変更 完了")
+                logger.debug(f"{str_progress} : task_id = {task_id}, phase={task['phase']}, {commenter_user_id}に担当者変更 完了")
 
                 self.facade.change_to_working_phase(project_id, task_id, commenter_account_id)
-                logger.debug(f"task_id = {task_id}, phase={task['phase']}, working statusに変更 完了")
+                logger.debug(f"{str_progress} : task_id = {task_id}, phase={task['phase']}, working statusに変更 完了")
+
             except requests.exceptions.HTTPError as e:
                 logger.warning(e)
-                logger.warning(f"task_id = {task_id}, phase={task['phase']} の担当者変更 or 作業phaseへの変更に失敗")
+                logger.warning(f"{str_progress} : task_id = {task_id}, phase={task['phase']} の担当者変更 or 作業phaseへの変更に失敗")
                 continue
 
             # 少し待たないと検査コメントが登録できない場合があるため
@@ -106,10 +113,11 @@ class RejectTasks:
             try:
                 # 検査コメントを付与する
                 self.add_inspection_comment(project_id, task, inspection_comment, commenter_account_id)
-                logger.debug(f"task_id = {task_id}, 検査コメントの付与 完了")
+                logger.debug(f"{str_progress} : task_id = {task_id}, 検査コメントの付与 完了")
+
             except requests.exceptions.HTTPError as e:
                 logger.warning(e)
-                logger.warning(f"task_id = {task_id} 検査コメントの付与に失敗")
+                logger.warning(f"{str_progress} : task_id = {task_id} 検査コメントの付与に失敗")
                 continue
 
             try:
@@ -124,10 +132,13 @@ class RejectTasks:
 
             except requests.exceptions.HTTPError as e:
                 logger.warning(e)
-                logger.warning(f"task_id = {task_id} タスクの差し戻しに失敗")
+                logger.warning(f"{str_progress} : task_id = {task_id} タスクの差し戻しに失敗")
                 continue
 
-            logger.info(f"task_id = {task_id} の差し戻し完了")
+            logger.info(f"{str_progress} : task_id = {task_id} の差し戻し完了")
+            success_count += 1
+
+        logger.info(f"{success_count} / {len(task_id_list)}件 タスクの差し戻しに成功した")
 
     @staticmethod
     def validate_args(args):
@@ -164,13 +175,15 @@ def parse_args(parser: argparse.ArgumentParser):
     parser.add_argument('-t', '--task_id', type=str, required=True, nargs='+',
                         help='対象のタスクのtask_idを指定します。`file://`を先頭に付けると、task_idの一覧が記載されたファイルを指定できます。')
 
-    parser.add_argument('--comment', type=str, required=True, help='差し戻すときに付与する検査コメントを指定します。')
+    parser.add_argument('-c', '--comment', type=str, required=True, help='差し戻すときに付与する検査コメントを指定します。')
 
-    parser.add_argument('--assign_last_annotator', action="store_true",
-                        help='差し戻したタスクに、最後のannotation phaseの担当者を割り当てます。')
+    # 差し戻したタスクの担当者の割当に関して
+    assign_group = parser.add_mutually_exclusive_group()
+    assign_group.add_argument('--assign_last_annotator', action="store_true",
+                        help='差し戻したタスクに、最後のannotation phaseの担当者を割り当てます。指定しない場合、タスクの担当者は未割り当てになります。')
 
-    parser.add_argument('--assigned_annotator_user_id', type=str,
-                        help='差し戻したタスクに割り当てるユーザのuser_idを指定します。指定しない場合、タスクの担当者は未割り当てになります。`--assign_last_annotator`と同時には指定できません。')
+    assign_group.add_argument('--assigned_annotator_user_id', type=str,
+                        help='差し戻したタスクに割り当てるユーザのuser_idを指定します。指定しない場合、タスクの担当者は未割り当てになります。')
 
     parser.set_defaults(subcommand_func=main)
 
