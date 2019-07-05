@@ -89,7 +89,8 @@ class RejectTasks(AbstractCommandLineInterface):
 
             task, _ = self.service.api.get_task(project_id, task_id)
 
-            logger.debug(f"task_id = {task_id}, {task['status']}, {task['phase']}")
+            logger.debug(f"{str_progress} : task_id = {task_id} の現状: status = {task['status']}, phase = {task['phase']}")
+
             if task["phase"] == "annotation":
                 logger.warning(f"{str_progress} : task_id = {task_id} はannofation phaseのため、差し戻しできません。")
                 continue
