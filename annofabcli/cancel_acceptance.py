@@ -50,6 +50,15 @@ class CancelAcceptance(AbstractCommandLineInterface):
                     logger.warning(f"task_id = {task_id} は受入完了でありません。status = {task['status']}, phase={task['phase']}")
                     continue
 
+                if not self.all_yes:
+                    yes, all_yes = annofabcli.utils.prompt_yesno(f"task_id = {task_id} のタスクの受入を取り消しますか？")
+                    if not yes:
+                        logger.info(f"task_id = {task_id} をスキップします。")
+                        continue
+
+                    if all_yes:
+                        self.all_yes = True
+
                 request_body = {
                     "status": "not_started",
                     "account_id": acceptor_account_id,
