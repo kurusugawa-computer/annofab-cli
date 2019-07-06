@@ -12,7 +12,7 @@ from annofabcli import AnnofabApiFacade
 import abc
 import logging
 from annofabcli.common.exceptions import AuthorizationError
-
+from annofabapi.enums import ProjectMemberRole
 
 # TODO argsparser系のメソッドを作成する
 
@@ -58,19 +58,23 @@ class AbstractCommandLineInterface(abc.ABC):
         pass
 
 
-    def validate_project(self, project_id, required_owner:bool = False):
+    def validate_project(self, project_id, roles: List[ProjectMemberRole]):
         """
         プロジェクトに対する権限が付与されているかを確認する。
         Args:
             project_id:　
+            roles: Roleの一覧。
+
+        Raises:
+             AuthorizationError: 自分自身のRoleがいずれかのRoleにも合致しなければ、AuthorizationErrorが発生する。
 
         """
         self.project_title = self.facade.get_project_title(project_id)
         self.logger.info(f"project_title = {self.project_title}, project_id = {project_id}")
 
-        if required_owner:
-            if not self.facade.my_role_is_owner(project_id):
-                raise AuthorizationError(self.project_title, ["owner"])
+        if not self.facade.contains_anys_role(project_id, roles):
+            role_values = [e.value for e in roles]
+            raise AuthorizationError(self.project_title, role_values)
 
 
     def confirm_processing_task(self, task_id: str, confirm_message: str) -> bool:

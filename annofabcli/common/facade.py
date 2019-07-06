@@ -5,7 +5,7 @@ annofabapiのfacadeクラス
 from typing import Any, Callable, Dict, List, Optional  # pylint: disable=unused-import
 
 import annofabapi
-
+from annofabapi.enums import ProjectMemberRole
 
 class AnnofabApiFacade:
     """
@@ -76,6 +76,21 @@ class AnnofabApiFacade:
     def my_role_is_owner(self, project_id: str) -> bool:
         my_member, _ = self.service.api.get_my_member_in_project(project_id)
         return my_member["member_role"] == "owner"
+
+    def contains_anys_role(self, project_id: str, roles: List[ProjectMemberRole]) -> bool:
+        """
+        自分自身のプロジェクトメンバとしてのロールが、指定されたロールのいずれかに合致するかどうか
+        Args:
+            project_id:
+            roles: ロール一覧
+
+        Returns:
+            Trueなら、自分自身のロールが、指定されたロールのいずれかに合致する。
+
+        """
+        my_member, _ = self.service.api.get_my_member_in_project(project_id)
+        my_role = my_member["member_role"]
+        return ProjectMemberRole(my_role) in roles
 
     ##################
     # operateTaskのfacade

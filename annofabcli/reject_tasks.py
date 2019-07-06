@@ -16,6 +16,7 @@ import annofabcli
 from annofabcli import AnnofabApiFacade
 from annofabcli.common.utils import build_annofabapi_resource_and_login, read_lines_except_blank_line
 from annofabcli.common.cli import AbstractCommandLineInterface
+from annofabapi.enums import ProjectMemberRole
 
 logger = logging.getLogger(__name__)
 
@@ -74,7 +75,7 @@ class RejectTasks(AbstractCommandLineInterface):
 
         """
 
-        super().validate_project(project_id, required_owner=True)
+        super().validate_project(project_id, [ProjectMemberRole.OWNER])
 
         commenter_account_id = self.facade.get_account_id_from_user_id(project_id, commenter_user_id)
 

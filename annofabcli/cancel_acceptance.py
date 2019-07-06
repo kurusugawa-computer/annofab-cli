@@ -13,6 +13,7 @@ import annofabcli
 from annofabcli import AnnofabApiFacade
 from annofabcli.common.utils import build_annofabapi_resource_and_login
 from annofabcli.common.cli import AbstractCommandLineInterface
+from annofabapi.enums import ProjectMemberRole
 
 logger = logging.getLogger(__name__)
 
@@ -29,7 +30,7 @@ class CancelAcceptance(AbstractCommandLineInterface):
             acceptor_user_id: 再度受入を担当させたいユーザのuser_id
         """
 
-        super().validate_project(project_id, required_owner=True)
+        super().validate_project(project_id, [ProjectMemberRole.OWNER])
 
         acceptor_account_id = self.facade.get_account_id_from_user_id(
             project_id, acceptor_user_id) if acceptor_user_id is not None else None
