@@ -96,7 +96,7 @@ def add_parser(subparsers: argparse._SubParsersAction):
     subcommand_name = "cancel_acceptance"
     subcommand_help = "受入が完了したタスクに対して、受入を取り消します。"
     description = "受入が完了したタスクに対して、受入を取り消します。"
-    epilog = "オーナ権限を持つユーザで実行してください。"
+    epilog = "オーナロールを持つユーザで実行してください。"
 
     parser = annofabcli.utils.add_parser(subparsers, subcommand_name, subcommand_help, description, epilog=epilog)
     parse_args(parser)

@@ -5,6 +5,7 @@ This module contains the set of annofabapi exceptions.
 """
 
 from typing import List, Optional  # pylint: disable=unused-import
+from annofabapi.enums import ProjectMemberRole
 
 class AnnofabCliException(Exception):
     """
@@ -26,6 +27,7 @@ class AuthorizationError(AnnofabCliException):
     AnnoFabの認可エラー
     """
 
-    def __init__(self, project_title:str, roles: List[str]):
-        msg = f"プロジェクト: {project_title} に、ロール: {roles} のいずれかが付与されていません。"
+    def __init__(self, project_title:str, roles: List[ProjectMemberRole]):
+        role_values = [e.value for e in roles]
+        msg = f"プロジェクト: {project_title} に、ロール: {role_values} のいずれかが付与されていません。"
         super().__init__(msg)

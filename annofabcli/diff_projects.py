@@ -15,6 +15,9 @@ import more_itertools
 import annofabcli
 from annofabcli import AnnofabApiFacade
 from annofabcli.common.utils import build_annofabapi_resource_and_login
+from annofabcli.common.cli import AbstractCommandLineInterface
+from annofabapi.enums import ProjectMemberRole
+from annofabcli.common.exceptions import AuthorizationError
 
 logger = logging.getLogger(__name__)
 
@@ -45,14 +48,10 @@ def create_ignored_label(label: Dict[str, Any]):
     return copied_label
 
 
-class DiffProjecs:
+class DiffProjecs(AbstractCommandLineInterface):
     """
     プロジェクト間の差分を表示する
     """
-
-    def __init__(self, service: annofabapi.Resource, facade: AnnofabApiFacade):
-        self.service = service
-        self.facade = facade
 
     def diff_project_members(self, project_id1: str, project_id2: str):
         """
@@ -264,10 +263,30 @@ class DiffProjecs:
             print("プロジェクト設定は同一")
             return False
 
-    def main(self, args):
-        annofabcli.utils.load_logging_config_from_args(args, __file__)
 
-        logger.info(f"args: {args}")
+    def validate_project(self, project_id1: str, project_id2: str):
+        """
+        適切なRoleが付与されているかを確認する。
+        Args:
+            project_id1:　
+            project_id2:　
+
+        Raises:
+             AuthorizationError: 自分自身のRoleがいずれかのRoleにも合致しなければ、AuthorizationErrorが発生する。
+
+        """
+
+        roles = [ProjectMemberRole.OWNER, ProjectMemberRole.ACCEPTER, ProjectMemberRole.TRAINING_DATA_USER]
+
+        if not self.facade.contains_anys_role(project_id1, roles):
+            raise AuthorizationError(self.project_title1, roles)
+
+        if not self.facade.contains_anys_role(project_id2, roles):
+            raise AuthorizationError(self.project_title2, roles)
+
+
+    def main(self, args: argparse.Namespace):
+        super().process_common_args(args, __file__, logger)
 
         project_id1 = args.project_id1
         project_id2 = args.project_id2
@@ -278,6 +297,8 @@ class DiffProjecs:
         self.project_title2 = project_title2
 
         print(f"=== {project_title1}({project_id1}) と {project_title2}({project_id1}) の差分を表示")
+
+        self.validate_project(project_id1, project_id2)
 
         diff_targets = args.target
         if "members" in diff_targets:
@@ -316,6 +337,7 @@ def add_parser(subparsers: argparse._SubParsersAction):
     subcommand_name = "diff_projects"
     subcommand_help = "プロジェクト間の差分を表示する。"
     description = ("プロジェクト間の差分を表示する。" "ただし、AnnoFabで生成されるIDや、変化する日時などは比較しない。")
+    epilog = "オーナ、チェッカー、アノテーションユーザロールのいずれかを持つユーザで実行してください。"
 
-    parser = annofabcli.utils.add_parser(subparsers, subcommand_name, subcommand_help, description)
+    parser = annofabcli.utils.add_parser(subparsers, subcommand_name, subcommand_help, description, epilog=epilog)
     parse_args(parser)

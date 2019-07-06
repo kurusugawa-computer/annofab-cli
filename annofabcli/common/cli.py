@@ -73,8 +73,7 @@ class AbstractCommandLineInterface(abc.ABC):
         self.logger.info(f"project_title = {self.project_title}, project_id = {project_id}")
 
         if not self.facade.contains_anys_role(project_id, roles):
-            role_values = [e.value for e in roles]
-            raise AuthorizationError(self.project_title, role_values)
+            raise AuthorizationError(self.project_title, roles)
 
 
     def confirm_processing_task(self, task_id: str, confirm_message: str) -> bool:
