@@ -145,7 +145,7 @@ class RejectTasks(AbstractCommandLineInterface):
         logger.info(f"{success_count} / {len(task_id_list)} 件 タスクの差し戻しに成功した")
 
 
-    def main(self, args):
+    def main(self, args: argparse.Namespace):
         super().process_common_args(args, __file__, logger)
 
         task_id_list = annofabcli.utils.get_list_from_args(args.task_id)
@@ -157,7 +157,7 @@ class RejectTasks(AbstractCommandLineInterface):
                                               assigned_annotator_user_id=args.assigned_annotator_user_id)
 
 
-def main(args):
+def main(args: argparse.Namespace):
     service = build_annofabapi_resource_and_login()
     facade = AnnofabApiFacade(service)
     RejectTasks(service, facade).main(args)
@@ -184,10 +184,9 @@ def parse_args(parser: argparse.ArgumentParser):
 
 def add_parser(subparsers: argparse._SubParsersAction):
     subcommand_name = "reject_tasks"
+    subcommand_help = "検査コメントを付与してタスクを差し戻します。"
+    description = ("検査コメントを付与してタスクを差し戻します。検査コメントは、タスク内の先頭の画像の左上(x=0,y=0)に付与します。アノテーションルールを途中で変更したときなどに、利用します。")
+    epilog = "オーナ権限を持つユーザで実行してください。"
 
-    subcommand_help = "検査コメントを付与してタスクを差し戻す。検査コメントは先頭の画像の左上(0,0)に付与する。"
-
-    description = ("検査コメントを付与してタスクを差し戻す。検査コメントは先頭の画像の左上(0,0)に付与する。" "オーナ権限を持つユーザで実行すること。")
-
-    parser = annofabcli.utils.add_parser(subparsers, subcommand_name, subcommand_help, description)
+    parser = annofabcli.utils.add_parser(subparsers, subcommand_name, subcommand_help, description, epilog=epilog)
     parse_args(parser)

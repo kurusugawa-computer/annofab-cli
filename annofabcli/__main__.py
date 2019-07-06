@@ -10,16 +10,23 @@ import annofabcli.print_unprocessed_inspections
 import annofabcli.reject_tasks
 import annofabcli.write_annotation_image
 
+from typing import List, Optional, Sequence  # pylint: disable=unused-import
+
 logger = logging.getLogger(__name__)
 
 
-def main():
+def main(arguments: Optional[Sequence[str]] = None):
     """
-    サブコマンドとして利用できるようにする。
-    ただし`deprecated`なツールは、サブコマンド化しない。
+    annofabcliコマンドのメイン処理
+    注意： `deprecated`なツールは、サブコマンド化しない。
+
+    Args:
+        arguments: コマンドライン引数。テストコード用
+
     """
 
     parser = argparse.ArgumentParser(description="annofabapiを使ったCLIツール")
+    parser.add_argument('--version', action='version', version=f'annofabcli {annofabcli.__version__}')
 
     subparsers = parser.add_subparsers()
 
@@ -40,7 +47,11 @@ def main():
 
     annofabcli.write_annotation_image.add_parser(subparsers)
 
-    args = parser.parse_args()
+    if arguments is None:
+        args = parser.parse_args()
+    else:
+        args = parser.parse_args(arguments)
+
     if hasattr(args, 'subcommand_func'):
         try:
             args.subcommand_func(args)

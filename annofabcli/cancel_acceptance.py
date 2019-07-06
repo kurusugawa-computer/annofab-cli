@@ -65,7 +65,7 @@ class CancelAcceptance(AbstractCommandLineInterface):
         logger.info(f"{success_count} / {len(task_id_list)} 件 受け入れ取り消しに成功した")
 
 
-    def main(self, args):
+    def main(self, args: argparse.Namespace):
         super().process_common_args(args, __file__, logger)
 
         task_id_list = annofabcli.utils.get_list_from_args(args.task_id)
@@ -73,7 +73,7 @@ class CancelAcceptance(AbstractCommandLineInterface):
         self.cancel_acceptance(args.project_id, task_id_list, args.user_id)
 
 
-def main(args):
+def main(args: argparse.Namespace):
     service = build_annofabapi_resource_and_login()
     facade = AnnofabApiFacade(service)
     CancelAcceptance(service, facade).main(args)
