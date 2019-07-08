@@ -129,19 +129,24 @@ class RejectTasks(AbstractCommandLineInterface):
                 # タスクを差し戻す
                 if assign_last_annotator:
                     # 最後のannotation phaseに担当を割り当てる
-                    self.facade.reject_task_assign_last_annotator(project_id, task_id, commenter_account_id)
+                    _, last_annotator_account_id = self.facade.reject_task_assign_last_annotator(project_id, task_id, commenter_account_id)
+                    last_annotator_user_id = self.facade.get_user_id_from_account_id(project_id, last_annotator_account_id)
+                    str_annotator_user = f"タスクの担当者: {last_annotator_user_id}"
+
                 else:
                     # 指定したユーザに担当を割り当てる
                     self.facade.reject_task(project_id, task_id, account_id=commenter_account_id,
                                             annotator_account_id=assigned_annotator_account_id)
+                    str_annotator_user = f"タスクの担当者: {assigned_annotator_user_id}"
+
+                logger.info(f"{str_progress} : task_id = {task_id} の差し戻し完了. {str_annotator_user}")
+                success_count += 1
 
             except requests.exceptions.HTTPError as e:
                 logger.warning(e)
                 logger.warning(f"{str_progress} : task_id = {task_id} タスクの差し戻しに失敗")
                 continue
 
-            logger.info(f"{str_progress} : task_id = {task_id} の差し戻し完了")
-            success_count += 1
 
         logger.info(f"{success_count} / {len(task_id_list)} 件 タスクの差し戻しに成功した")
 
