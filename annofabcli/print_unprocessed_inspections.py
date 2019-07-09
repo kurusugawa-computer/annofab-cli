@@ -99,7 +99,7 @@ class PrintUnprocessedInspections(AbstractCommandLineInterface):
             task_dict[task_id] = input_data_dict
 
         # 出力
-        print(json.dumps(task_dict, indent=2))
+        print(json.dumps(task_dict, indent=2, ensure_ascii=False))
 
     def main(self, args):
         super().process_common_args(args, __file__, logger)
