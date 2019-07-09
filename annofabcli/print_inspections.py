@@ -43,6 +43,8 @@ class PrintInspections(AbstractCommandLineInterface):
         """
 
         inspections = self.get_inspections(project_id, task_id_list)
+        if len(inspections) == 0:
+            logger.warning("検査コメントは0件です。")
 
         if format == "json":
             annofabcli.utils.print_json(inspections, output)

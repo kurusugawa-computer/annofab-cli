@@ -12,18 +12,16 @@ import annofabapi
 import annofabcli
 from annofabcli import AnnofabApiFacade
 from annofabcli.common.utils import build_annofabapi_resource_and_login
+from annofabcli.common.cli import AbstractCommandLineInterface
+from annofabapi.models import ProjectMemberRole
 
 logger = logging.getLogger(__name__)
 
 
-class PrintLabelColor:
+class PrintLabelColor(AbstractCommandLineInterface):
     """
     アノテーションラベルの色(RGB)を出力する
     """
-
-    def __init__(self, service: annofabapi.Resource, facade: AnnofabApiFacade):
-        self.service = service
-        self.facade = facade
 
     @staticmethod
     def get_rgb(label: Dict[str, Any]) -> Tuple[int, int, int]:
@@ -38,6 +36,9 @@ class PrintLabelColor:
 
         Returns:
         """
+
+        super().validate_project(project_id, [ProjectMemberRole.OWNER, ProjectMemberRole.ACCEPTER])
+
         annotation_specs = self.service.api.get_annotation_specs(project_id)[0]
         labels = annotation_specs["labels"]
 
@@ -46,8 +47,7 @@ class PrintLabelColor:
         print(json.dumps(label_color_dict, indent=2))
 
     def main(self, args):
-        annofabcli.utils.load_logging_config_from_args(args, __file__)
-        logger.info(args)
+        super().process_common_args(args, __file__, logger)
 
         self.print_label_color(args.project_id)
 
@@ -73,5 +73,7 @@ def add_parser(subparsers: argparse._SubParsersAction):
                    "出力された内容は、`write_annotation_image`ツールに利用する。"
                    "出力内容は`Dict[LabelName, [R,G,B]]`である.")
 
-    parser = annofabcli.utils.add_parser(subparsers, subcommand_name, subcommand_help, description)
+    epilog = "チェッカーまたはオーナロールを持つユーザで実行してください。"
+
+    parser = annofabcli.utils.add_parser(subparsers, subcommand_name, subcommand_help, description, epilog=epilog)
     parse_args(parser)

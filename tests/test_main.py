@@ -17,8 +17,8 @@ annofab_config = dict(inifile.items('annofab'))
 project_id = annofab_config['project_id']
 task_id = annofab_config['task_id']
 
-def test_complete_tasks():
-    #main(['complete_tasks', '--project_id', project_id, '--task_id', task_id, '--yes' ])
+# def test_complete_tasks():
+#     #main(['complete_tasks', '--project_id', project_id, '--task_id', task_id, '--yes' ])
 
 
 def test_cancel_acceptance():
@@ -33,4 +33,11 @@ def test_reject_tasks():
 def test_diff_projects():
     main(['diff_projects', project_id, project_id])
 
+
+def test_print_inspections():
+    main(['print_inspections',  '--project_id', project_id, '--task_id', task_id])
+
+
+def test_print_label_color():
+    main(['print_label_color', project_id])
 

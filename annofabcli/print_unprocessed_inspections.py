@@ -13,18 +13,16 @@ from annofabapi.models import Inspection
 import annofabcli
 from annofabcli import AnnofabApiFacade
 from annofabcli.common.utils import build_annofabapi_resource_and_login
+from annofabcli.common.cli import AbstractCommandLineInterface
+from annofabapi.models import ProjectMemberRole
 
 logger = logging.getLogger(__name__)
 
 
-class PrintUnprocessedInspections:
+class PrintUnprocessedInspections(AbstractCommandLineInterface):
     """
     検査コメントIDのList(task_id, input_data_idごと)を出力する
     """
-
-    def __init__(self, service: annofabapi.Resource, facade: AnnofabApiFacade):
-        self.service = service
-        self.facade = facade
 
     def get_unprocessed_inspections(self, project_id: str, task_id: str, input_data_id: str,
                                     inspection_comment: Optional[str] = None,
@@ -104,24 +102,23 @@ class PrintUnprocessedInspections:
         print(json.dumps(task_dict, indent=2))
 
     def main(self, args):
+        super().process_common_args(args, __file__, logger)
 
-        annofabcli.utils.load_logging_config_from_args(args, __file__)
-        logger.info(f"args: {args}")
-
-        task_id_list = annofabcli.utils.read_lines_except_blank_line(args.task_id_file)
+        task_id_list = annofabcli.utils.get_list_from_args(args.task_id)
 
         self.print_unprocessed_inspections(args.project_id, task_id_list, args.inspection_comment,
                                            args.commenter_user_id)
 
 
 def parse_args(parser: argparse.ArgumentParser):
-    parser.add_argument('--project_id', type=str, required=True, help='対象のプロジェクトのproject_id')
+    parser.add_argument('-p', '--project_id', type=str, required=True, help='対象のプロジェクトのproject_idを指定します。')
 
-    parser.add_argument('--task_id_file', type=str, required=True, help='対象のタスクのtask_idの一覧が記載されたファイル')
+    parser.add_argument('-t', '--task_id', type=str, required=True, nargs='+',
+                        help='対象のタスクのtask_idを指定します。`file://`を先頭に付けると、task_idの一覧が記載されたファイルを指定できます。')
 
-    parser.add_argument('--inspection_comment', type=str, help='絞り込み条件となる、検査コメントの中身。指定しない場合は絞り込まない。')
+    parser.add_argument('-c', '--inspection_comment', type=str, help='絞り込み条件となる、検査コメントの中身。指定しない場合は絞り込まない。')
 
-    parser.add_argument('--commenter_user_id', type=str, help='絞り込み条件となる、検査コメントを付与したユーザのuser_id。 指定しない場合は絞り込まない。')
+    parser.add_argument('-u', '--commenter_user_id', type=str, help='絞り込み条件となる、検査コメントを付与したユーザのuser_id。 指定しない場合は絞り込まない。')
 
     parser.set_defaults(subcommand_func=main)
 
