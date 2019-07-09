@@ -8,7 +8,7 @@ import logging
 from typing import Any, Callable, Dict, List, Optional  # pylint: disable=unused-import
 
 import annofabapi
-from annofabapi.typing import Inspection
+from annofabapi.models import Inspection
 
 import annofabcli
 from annofabcli import AnnofabApiFacade

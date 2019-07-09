@@ -14,7 +14,7 @@ import annofabapi
 import PIL
 import PIL.Image
 import PIL.ImageDraw
-from annofabapi.typing import Annotation
+from annofabapi.models import Annotation
 
 import annofabcli
 from annofabcli import AnnofabApiFacade

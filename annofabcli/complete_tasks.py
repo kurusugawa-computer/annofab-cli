@@ -10,7 +10,7 @@ from typing import Any, Callable, Dict, List, Optional  # pylint: disable=unused
 
 import annofabapi
 import requests
-from annofabapi.typing import Inspection, Task
+from annofabapi.models import Inspection, Task
 
 import annofabcli
 from annofabcli import AnnofabApiFacade

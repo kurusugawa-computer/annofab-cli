@@ -6,7 +6,7 @@ from typing import Any, Callable, Dict, List, Optional, Tuple  # pylint: disable
 
 import annofabapi
 import more_itertools
-from annofabapi.enums import ProjectMemberRole
+from annofabapi.models import ProjectMemberRole
 
 class AnnofabApiFacade:
     """
@@ -76,6 +76,18 @@ class AnnofabApiFacade:
         """
         member, _ = self.service.api.get_project_member(project_id, user_id)
         return member['account_id']
+
+    def get_organization_member_from_account_id(self, project_id: str, account_id: str) -> Dict[str, Any]:
+        """
+        account_idからuser_idを取得する.
+        内部で組織メンバを保持する。
+        Args:
+            project_id:
+            accoaunt_id:
+
+        Returns:
+            account_id
+        """
 
     def get_user_id_from_account_id(self, project_id: str, account_id: str) -> str:
         """

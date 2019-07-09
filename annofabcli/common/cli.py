@@ -12,7 +12,7 @@ from annofabcli import AnnofabApiFacade
 import abc
 import logging
 from annofabcli.common.exceptions import AuthorizationError
-from annofabapi.enums import ProjectMemberRole
+from annofabapi.models import ProjectMemberRole
 
 # TODO argsparser系のメソッドを作成する
 

@@ -16,7 +16,7 @@ import annofabcli
 from annofabcli import AnnofabApiFacade
 from annofabcli.common.utils import build_annofabapi_resource_and_login
 from annofabcli.common.cli import AbstractCommandLineInterface
-from annofabapi.enums import ProjectMemberRole
+from annofabapi.models import ProjectMemberRole
 from annofabcli.common.exceptions import AuthorizationError
 
 logger = logging.getLogger(__name__)

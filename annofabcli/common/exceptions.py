@@ -5,7 +5,7 @@ This module contains the set of annofabapi exceptions.
 """
 
 from typing import List, Optional  # pylint: disable=unused-import
-from annofabapi.enums import ProjectMemberRole
+from annofabapi.models import ProjectMemberRole
 
 class AnnofabCliException(Exception):
     """
