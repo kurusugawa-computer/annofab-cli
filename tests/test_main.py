@@ -1,12 +1,13 @@
 """
 
 """
-import annofabcli
 import configparser
-import os
 import datetime
+import os
+
 import annofabapi
 
+import annofabcli
 from annofabcli.__main__ import main
 
 # プロジェクトトップに移動する
@@ -26,25 +27,28 @@ user_id = service.api.login_user_id
 
 
 def test_cancel_acceptance():
-    main(['cancel_acceptance', '--project_id', project_id, '--task_id', task_id, '--yes' ])
+    main(['cancel_acceptance', '--project_id', project_id, '--task_id', task_id, '--yes'])
 
 
 def test_reject_tasks():
     inspection_comment = str_now = datetime.datetime.now().isoformat()
-    main(['reject_tasks', '--project_id', project_id, '--task_id', task_id, '--comment', inspection_comment, '--assign_last_annotator', '--yes' ])
+    main([
+        'reject_tasks', '--project_id', project_id, '--task_id', task_id, '--comment', inspection_comment,
+        '--assign_last_annotator', '--yes'
+    ])
 
 
 def test_diff_projects():
     main(['diff_projects', project_id, project_id])
 
+
 def test_invite_users():
-    main(['invite_users',  '--user_id', user_id, '--role', 'owner', '--project_id', project_id])
+    main(['invite_users', '--user_id', user_id, '--role', 'owner', '--project_id', project_id])
 
 
 def test_print_inspections():
-    main(['print_inspections',  '--project_id', project_id, '--task_id', task_id])
+    main(['print_inspections', '--project_id', project_id, '--task_id', task_id])
 
 
 def test_print_label_color():
     main(['print_label_color', project_id])
-
