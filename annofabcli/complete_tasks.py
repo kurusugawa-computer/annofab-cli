@@ -1,6 +1,3 @@
-"""
-タスクを一括で受け入れ完了にする
-"""
 
 import argparse
 import json
@@ -15,6 +12,8 @@ from annofabapi.models import Inspection, Task
 import annofabcli
 from annofabcli import AnnofabApiFacade
 from annofabcli.common.utils import build_annofabapi_resource_and_login
+from annofabcli.common.cli import AbstractCommandLineInterface
+from annofabapi.models import ProjectMemberRole
 
 logger = logging.getLogger(__name__)
 
@@ -23,14 +22,10 @@ InputDataId = str
 InspectionJson = Dict[TaskId, Dict[InputDataId, List[Inspection]]]
 
 
-class ComleteTasks:
+class ComleteTasks(AbstractCommandLineInterface):
     """
     タスクを受け入れ完了にする
     """
-
-    def __init__(self, service: annofabapi.Resource, facade: AnnofabApiFacade):
-        self.service = service
-        self.facade = facade
 
     def complete_tasks_with_changing_inspection_status(self, project_id: str, task_id_list: List[str],
                                                        inspection_status: str, inspection_json: InspectionJson):
@@ -43,6 +38,8 @@ class ComleteTasks:
             inspection_json: 変更対象の検査コメントのJSON情報
 
         """
+
+        super().validate_project(project_id, [ProjectMemberRole.OWNER, ProjectMemberRole.ACCEPTER])
 
         account_id = self.facade.get_my_account_id()
 
@@ -137,10 +134,8 @@ class ComleteTasks:
         return is_valid
 
     def main(self, args):
-        annofabcli.utils.load_logging_config_from_args(args, __file__)
-        logger.info(f"args: {args}")
-
-        task_id_list = annofabcli.utils.read_lines_except_blank_line(args.task_id_file)
+        super().process_common_args(args, __file__, logger)
+        task_id_list = annofabcli.utils.get_list_from_args(args.task_id)
 
         with open(args.inspection_json) as f:
             inspection_json = json.load(f)
@@ -150,9 +145,10 @@ class ComleteTasks:
 
 
 def parse_args(parser: argparse.ArgumentParser):
-    parser.add_argument('--project_id', type=str, required=True, help='対象のプロジェクトのproject_id')
+    parser.add_argument('-p', '--project_id', type=str, required=True, help='対象のプロジェクトのproject_idを指定します。')
 
-    parser.add_argument('--task_id_file', type=str, required=True, help='受入を完了するタスクのtask_idの一覧が記載されたファイル')
+    parser.add_argument('-t', '--task_id', type=str, required=True, nargs='+',
+                        help='対象のタスクのtask_idを指定します。`file://`を先頭に付けると、task_idの一覧が記載されたファイルを指定できます。')
 
     parser.add_argument(
         '--inspection_json', type=str, required=True, help='未処置の検査コメントの一覧。このファイルに記載された検査コメントの状態を変更する。'
@@ -177,6 +173,7 @@ def add_parser(subparsers: argparse._SubParsersAction):
     subcommand_name = "complete_tasks"
     subcommand_help = "未処置の検査コメントを適切な状態に変更して、タスクを受け入れ完了にする。"
     description = ("未処置の検査コメントを適切な状態に変更して、タスクを受け入れ完了にする。" "オーナ権限を持つユーザで実行すること。")
+    epilog = "チェッカーまたはオーナロールを持つユーザで実行してください。"
 
-    parser = annofabcli.utils.add_parser(subparsers, subcommand_name, subcommand_help, description)
+    parser = annofabcli.utils.add_parser(subparsers, subcommand_name, subcommand_help, description, epilog=epilog)
     parse_args(parser)

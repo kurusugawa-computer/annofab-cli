@@ -75,7 +75,7 @@ class RejectTasks(AbstractCommandLineInterface):
 
         """
 
-        super().validate_project(project_id, [ProjectMemberRole.OWNER])
+        super().validate_project(project_id, [ProjectMemberRole.OWNER, ProjectMemberRole.ACCEPTER])
 
         commenter_account_id = self.facade.get_account_id_from_user_id(project_id, commenter_user_id)
 
@@ -192,7 +192,7 @@ def add_parser(subparsers: argparse._SubParsersAction):
     subcommand_name = "reject_tasks"
     subcommand_help = "検査コメントを付与してタスクを差し戻します。"
     description = ("検査コメントを付与してタスクを差し戻します。検査コメントは、タスク内の先頭の画像の左上(x=0,y=0)に付与します。アノテーションルールを途中で変更したときなどに、利用します。")
-    epilog = "オーナロールを持つユーザで実行してください。"
+    epilog = "チェッカーまたはオーナロールを持つユーザで実行してください。"
 
     parser = annofabcli.utils.add_parser(subparsers, subcommand_name, subcommand_help, description, epilog=epilog)
     parse_args(parser)
