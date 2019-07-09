@@ -64,7 +64,7 @@ class DiffProjecs(AbstractCommandLineInterface):
             差分があれば Trueを返す
 
         """
-        print("=== プロジェクトメンバの差分 ===")
+        logger.info("=== プロジェクトメンバの差分 ===")
 
         project_members1 = self.service.wrapper.get_all_project_members(project_id1)
         project_members2 = self.service.wrapper.get_all_project_members(project_id2)
@@ -92,7 +92,7 @@ class DiffProjecs(AbstractCommandLineInterface):
                 pprint.pprint(diff_result)
 
         if not is_different:
-            print("プロジェクトメンバは同一")
+            logger.info("プロジェクトメンバは同じ")
 
         return is_different
 
@@ -136,7 +136,7 @@ class DiffProjecs(AbstractCommandLineInterface):
         Returns:
             差分があれば Trueを返す
         """
-        print("=== アノテーションラベル情報の差分 ===")
+        logger.info("=== アノテーションラベル情報の差分 ===")
 
         label_names1 = [AnnofabApiFacade.get_label_name_en(e) for e in labels1]
         label_names2 = [AnnofabApiFacade.get_label_name_en(e) for e in labels2]
@@ -168,10 +168,10 @@ class DiffProjecs(AbstractCommandLineInterface):
                 print(f"ラベル名(en): {label_name} は差分あり")
                 pprint.pprint(diff_result)
             else:
-                print(f"ラベル名(en): {label_name} は同一")
+                logger.debug(f"ラベル名(en): {label_name} は同じ")
 
         if not is_different:
-            print("アノテーションラベル情報は同一")
+            logger.info("アノテーションラベルは同じ")
 
         return is_different
 
@@ -188,7 +188,7 @@ class DiffProjecs(AbstractCommandLineInterface):
             差分があれば Trueを返す
 
         """
-        print("=== 定型指摘の差分 ===")
+        logger.info("=== 定型指摘の差分 ===")
 
         # 定型指摘は順番に意味がないので、ソートしたリストを比較する
         sorted_inspection_phrases1 = sorted_inspection_phrases(inspection_phrases1)
@@ -208,11 +208,11 @@ class DiffProjecs(AbstractCommandLineInterface):
             diff_result = list(dictdiffer.diff(phrase1, phrase2))
             if len(diff_result) > 0:
                 is_different = True
-                print(f"差分のある定型指摘: {phrase1['id']}")
+                print(f"定型指摘に: {phrase1['id']} は差分あり")
                 pprint.pprint(diff_result)
 
         if not is_different:
-            print("定型指摘は同一")
+            logger.info("定型指摘は同じ")
 
         return is_different
 
@@ -248,7 +248,7 @@ class DiffProjecs(AbstractCommandLineInterface):
             差分があれば Trueを返す
 
         """
-        print("=== プロジェクト設定の差分 ===")
+        logger.info("=== プロジェクト設定の差分 ===")
 
         config1 = self.service.api.get_project(project_id1)[0]["configuration"]
         config2 = self.service.api.get_project(project_id2)[0]["configuration"]
@@ -260,7 +260,7 @@ class DiffProjecs(AbstractCommandLineInterface):
             pprint.pprint(diff_result)
             return True
         else:
-            print("プロジェクト設定は同一")
+            logger.info("プロジェクト設定は同じ")
             return False
 
 
@@ -296,7 +296,7 @@ class DiffProjecs(AbstractCommandLineInterface):
         self.project_title1 = project_title1
         self.project_title2 = project_title2
 
-        print(f"=== {project_title1}({project_id1}) と {project_title2}({project_id1}) の差分を表示")
+        logger.info(f"=== {project_title1}({project_id1}) と {project_title2}({project_id1}) の差分を表示")
 
         self.validate_project(project_id1, project_id2)
 
@@ -337,7 +337,7 @@ def add_parser(subparsers: argparse._SubParsersAction):
     subcommand_name = "diff_projects"
     subcommand_help = "プロジェクト間の差分を表示する。"
     description = ("プロジェクト間の差分を表示する。" "ただし、AnnoFabで生成されるIDや、変化する日時などは比較しない。")
-    epilog = "オーナ、チェッカー、アノテーションユーザロールのいずれかを持つユーザで実行してください。"
+    epilog = "オーナ、チェッカーロールのいずれかを持つユーザで実行してください。"
 
     parser = annofabcli.utils.add_parser(subparsers, subcommand_name, subcommand_help, description, epilog=epilog)
     parse_args(parser)

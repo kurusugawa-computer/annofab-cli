@@ -22,17 +22,17 @@ https://pypi.org/project/annofabcli/
 
 # 機能一覧
 
-| サブコマンド                  | 内容                                                                                                     |
-|-------------------------------|----------------------------------------------------------------------------------------------------------|
-| cancel_acceptance             | 受け入れ完了タスクを、受け入れ取り消しする。                                                             |
-| complete_tasks                | 未処置の検査コメントを適切な状態に変更して、タスクを受け入れ完了にする。                                 |
-| diff_projects                 | プロジェクト間の差分を表示する                                                                           |
-| invite_users                  | 複数のプロジェクトに、ユーザを招待する。                                                                 |
-| print_inspections | 検査コメントを出力する。                               |
-| print_unprocessed_inspections | 未処置の検査コメントList(task_id, input_data_idごと)をJSONとして出力する。                               |
-| print_label_color             | アノテーション仕様から、label_nameとRGBを対応付けたJSONを出力する。                                      |
-| reject_tasks                  | 検査コメントを付与してタスクを差し戻す。                                                                 |
-| write_annotation_image        | アノテーションzipを展開したディレクトリから、アノテーションの画像（Semantic Segmentation用）を生成する。 |
+| サブコマンド                  | 内容                                                                                                     |必要なロール|
+|-------------------------------|----------------------------------------------------------------------------------------------------------|------------|
+| cancel_acceptance             | 受け入れ完了タスクを、受け入れ取り消しする。                                                             |オーナ|
+| complete_tasks                | 未処置の検査コメントを適切な状態に変更して、タスクを受け入れ完了にする。                                 |チェッカー/オーナ|
+| diff_projects                 | プロジェクト間の差分を表示する                                                                           |チェッカー/オーナ|
+| invite_users                  | 複数のプロジェクトに、ユーザを招待する。                                                                 |オーナ|
+| print_inspections | 検査コメントを出力する。                               |-|
+| print_unprocessed_inspections | 未処置の検査コメントList(task_id, input_data_idごと)をJSONとして出力する。                               |-|
+| print_label_color             | アノテーション仕様から、label_nameとRGBを対応付けたJSONを出力する。                                      |チェッカー/オーナ|
+| reject_tasks                  | 検査コメントを付与してタスクを差し戻す。                                                                 |チェッカー/オーナ|
+| write_annotation_image        | アノテーションzipを展開したディレクトリから、アノテーションの画像（Semantic Segmentation用）を生成する。 |-|
 
 
 # Usage
@@ -123,7 +123,6 @@ $ annofabcli cancel_acceptance --project_id prj1 --task_id file://task.txt
 $ annofabcli cancel_acceptance --project_id prj1 --task_id file://task.txt --user_id user1
 ```
 
-* オーナロールを持つユーザで実行してください。
 
 
 ### complete_tasks
@@ -138,12 +137,11 @@ $ annofabcli complete_tasks --project_id prj1 --task_id file://task.txt　 --ins
 $ annofabcli complete_tasks --project_id prj1 --task_id file://task.txt　 --inspection_json inspection.json --inspection_status no_correction_required
 ```
 
-* チェッカーまたはオーナロールを持つユーザで実行してください。
 * inspection.jsonは、未処置の検査コメントです。ファイルのフォーマットは、[print_unprocessed_inspections](#print_unprocessed_inspections)の出力結果と同じです。
 
 
 ### diff_projects
-プロジェクト間の差分を表示します。
+プロジェクト間の差分を表示します。差分がない場合、標準出力は空になります。
 同じアノテーションルールのプロジェクトが複数ある場合、各種情報が同一であることを確認するときに、利用します。
 
 
@@ -165,7 +163,7 @@ $ annofabcli diff_projects  prj1 prj2 --target settings
 
 ```
 
-* チェッカーまたはオーナロールを持つユーザで実行してください。
+
 
 プロジェクト間の差分は、以下のように出力されます。
 `dict`型の差分は、[dictdiffer](https://dictdiffer.readthedocs.io/en/latest/)のフォーマットで出力します。
@@ -198,7 +196,7 @@ $ annofabcli invite_users --user_id user1 user2 --role owner --organization ORG
 $ annofabcli invite_users --user_id user1 --role accepter --project_id prj1 prj2
 ```
 
-* オーナ権限を持つユーザで実行してください。
+
 
 
 ### print_unprocessed_inspections
@@ -265,16 +263,16 @@ $ annofabcli print_unprocessed_inspections --project_id prj1 --task_id file://ta
 
 ```
 # prj1プロジェクトに、"hoge"という検査コメントを付与して、タスクを差し戻す。差し戻したタスクに担当者を割り当てない。
-$ annofabcli reject_tasks --project_id prj1 --task_id_file tasks.txt --comment "hoge"
+$ annofabcli reject_tasks --project_id prj1 --task_id file://tasks.txt --comment "hoge"
 
 # 差し戻したタスクに、最後のannotation phaseを担当したユーザを割り当てる（画面と同じ動き）
-$ annofabcli reject_tasks --project_id prj1 --task_id_file tasks.txt --comment "hoge" --assign_last_annotator
+$ annofabcli reject_tasks --project_id prj1 --task_id file://tasks.txt --comment "hoge" --assign_last_annotator
 
 # 差し戻したタスクに、ユーザuser1を割り当てる
-$ annofabcli reject_tasks --project_id prj1 --task_id_file tasks.txt --comment "hoge" --assigned_annotator_user_id user1
+$ annofabcli reject_tasks --project_id prj1 --task_id file://tasks.txt --comment "hoge" --assigned_annotator_user_id user1
 ```
 
-* オーナ権限を持つユーザで実行してください。
+
 
 
 
