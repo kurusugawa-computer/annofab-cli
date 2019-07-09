@@ -93,7 +93,7 @@ class AddProps:
         return self.get_message(label['label_name'], locale)
 
 
-    def add_properties_to_inspection(self, inspection: Inspection) -> Inspection:
+    def add_properties_to_inspection(self, inspection: Inspection, detail: Optional[Dict[str, Any]] = None) -> Inspection:
         """
         検査コメントに、以下のキーを追加する.
         commenter_user_id
@@ -105,6 +105,7 @@ class AddProps:
 
         Args:
             inspection:
+            detail: 検査コメント情報に追加する詳細な情報
 
         Returns:
 
@@ -124,6 +125,9 @@ class AddProps:
 
         inspection['label_name_en'] = self.get_label_name(inspection['label_id'], MessageLocale.EN)
         inspection['label_name_ja'] = self.get_label_name(inspection['label_id'], MessageLocale.JA)
+
+        if detail is not None:
+            inspection.update(detail)
 
         return inspection
 

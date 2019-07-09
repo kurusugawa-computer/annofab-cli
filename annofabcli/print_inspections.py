@@ -52,7 +52,7 @@ class PrintInspections(AbstractCommandLineInterface):
             annofabcli.utils.print_csv(df, output, csv_format)
 
 
-    def get_inspections_by_input_data(self, project_id: str, task_id: str, input_data_id: str):
+    def get_inspections_by_input_data(self, project_id: str, task_id: str, input_data_id: str, input_data_index: int):
         """
         入力データごとに検査コメント一覧を取得する。
 
@@ -60,13 +60,14 @@ class PrintInspections(AbstractCommandLineInterface):
             project_id:
             task_id:
             input_data_id:
+            input_data_index: タスク内のinput_dataの番号
 
         Returns:
             対象の検査コメント一覧
         """
-
+        detail = {"input_data_index": input_data_index}
         inspectins, _ = self.service.api.get_inspections(project_id, task_id, input_data_id)
-        return [self.visualize.add_properties_to_inspection(e) for e in inspectins]
+        return [self.visualize.add_properties_to_inspection(e, detail) for e in inspectins]
 
 
     def get_inspections(self, project_id: str, task_id_list: List[str]) -> List[Inspection]:
@@ -86,9 +87,9 @@ class PrintInspections(AbstractCommandLineInterface):
             try:
                 task, _ = self.service.api.get_task(project_id, task_id)
 
-                for input_data_id in task["input_data_id_list"]:
+                for input_data_index, input_data_id in enumerate(task["input_data_id_list"]):
 
-                    inspections = self.get_inspections_by_input_data(project_id, task_id, input_data_id)
+                    inspections = self.get_inspections_by_input_data(project_id, task_id, input_data_id, input_data_index)
                     all_inspections.extend(inspections)
 
             except Exception as e:
@@ -140,9 +141,9 @@ def main(args):
 def add_parser(subparsers: argparse._SubParsersAction):
     subcommand_name = "print_inspections"
 
-    subcommand_help = "検査コメントを出力する。"
+    subcommand_help = "検査コメント一覧を出力します。"
 
-    description = "検査コメントを出力する。"
+    description = "検査コメント一覧を出力します。"
 
     parser = annofabcli.utils.add_parser(subparsers, subcommand_name, subcommand_help, description)
     parse_args(parser)
