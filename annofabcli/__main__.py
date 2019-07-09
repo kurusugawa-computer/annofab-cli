@@ -9,6 +9,7 @@ import annofabcli.print_label_color
 import annofabcli.print_unprocessed_inspections
 import annofabcli.reject_tasks
 import annofabcli.write_annotation_image
+import annofabcli.print_inspections
 
 from typing import List, Optional, Sequence  # pylint: disable=unused-import
 
@@ -38,6 +39,8 @@ def main(arguments: Optional[Sequence[str]] = None):
     annofabcli.diff_projects.add_parser(subparsers)
 
     annofabcli.invite_users.add_parser(subparsers)
+
+    annofabcli.print_inspections.add_parser(subparsers)
 
     annofabcli.print_unprocessed_inspections.add_parser(subparsers)
 

@@ -6,9 +6,12 @@ import pkgutil
 from pathlib import Path
 from typing import Any, Callable, Dict, List, Set, Optional, TypeVar, Tuple  # pylint: disable=unused-import
 
+import sys
+import pandas
 import annofabapi
 import requests
 import yaml
+import json
 from annofabapi.exceptions import AnnofabApiException
 
 import annofabcli
@@ -71,6 +74,22 @@ def get_list_from_args(str_list: Optional[List[str]] = None) -> List[str]:
         return read_lines_except_blank_line(path)
     else:
         return str_list
+
+def get_json_from_args(target: Optional[str] = None) -> Any:
+    """
+    JSON形式をPythonオブジェクトに変換する。
+    プレフィックスが`file://`ならば、ファイルパスとしてファイルを読み込み、Pythonオブジェクトを返す。
+    """
+
+    if target is None:
+        return None
+
+    if target.startswith('file://'):
+        path = target[len('file://'):]
+        with open(path, encoding="utf-8") as f:
+            return json.load(f)
+    else:
+        return json.loads(target)
 
 def get_input_data_size(str_input_data_size: str) -> InputDataSize:
     """400x300を(400,300)に変換する"""
@@ -270,3 +289,32 @@ def prompt_yesno(msg: str) -> Tuple[bool, bool]:
 
         elif choice == 'ALL':
             return True, True
+
+
+
+def output_string(target: str, output: Optional[str] = None):
+    """
+    ファイルパスが指定されていればファイルに、指定しなければ標準出力に出力する。
+
+    Args:
+        target:
+        output:
+    """
+    if output is None:
+        print(target)
+    else:
+        Path(output).parent.mkdir(parents=True, exist_ok=True)
+        with open(output, mode='w', encoding='utf-8') as f:
+            f.write(target)
+
+
+def print_json(target: Any, output: Optional[str] = None):
+    output_string(json.dumps(target, indent=2, ensure_ascii=False), output)
+
+def print_csv(df: pandas.DataFrame, output: Optional[str] = None, to_csv_kwargs: Optional[Dict[str, Any]] = None):
+    if output is None:
+        df.to_csv(sys.stdout, **to_csv_kwargs)
+
+    else:
+        Path(output).parent.mkdir(parents=True, exist_ok=True)
+        df.to_csv(output, **to_csv_kwargs)
