@@ -83,12 +83,17 @@ class PrintInspections(AbstractCommandLineInterface):
 
         all_inspections = []
         for task_id in task_id_list:
-            task, _ = self.service.api.get_task(project_id, task_id)
+            try:
+                task, _ = self.service.api.get_task(project_id, task_id)
 
-            for input_data_id in task["input_data_id_list"]:
+                for input_data_id in task["input_data_id_list"]:
 
-                inspections = self.get_inspections_by_input_data(project_id, task_id, input_data_id)
-                all_inspections.extend(inspections)
+                    inspections = self.get_inspections_by_input_data(project_id, task_id, input_data_id)
+                    all_inspections.extend(inspections)
+
+            except Exception as e:
+                logger.warning(e)
+                logger.warning(f"タスク task_id = {task_id} の検査コメントが出力できなかった。")
 
         return all_inspections
 
