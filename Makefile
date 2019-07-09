@@ -13,8 +13,8 @@ lint:
 	pipenv run mypy annofabcli --config-file setup.cfg
 	pipenv run pylint annofabcli --rcfile setup.cfg
 
-#test:
-#	pipenv run pytest tests -v --cov=annofabcli --cov-report=html
+test:
+	pipenv run pytest tests -v --cov=annofabcli --cov-report=html
 
 publish_test:
 	rm -fr build/ dist/ annofabcli.egg-info

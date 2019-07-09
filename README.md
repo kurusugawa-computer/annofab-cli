@@ -20,23 +20,6 @@ $ pip install annofabcli
 https://pypi.org/project/annofabcli/
 
 
-# 機能一覧
-
-| サブコマンド                  | 内容                                                                                                     |必要なロール|
-|-------------------------------|----------------------------------------------------------------------------------------------------------|------------|
-| cancel_acceptance             | 受け入れ完了タスクを、受け入れ取り消しする。                                                             |オーナ|
-| complete_tasks                | 未処置の検査コメントを適切な状態に変更して、タスクを受け入れ完了にする。                                 |チェッカー/オーナ|
-| diff_projects                 | プロジェクト間の差分を表示する                                                                           |チェッカー/オーナ|
-| invite_users                  | 複数のプロジェクトに、ユーザを招待する。                                                                 |オーナ|
-| print_inspections | 検査コメントを出力する。                               |-|
-| print_unprocessed_inspections | 未処置の検査コメントList(task_id, input_data_idごと)をJSONとして出力する。                               |-|
-| print_label_color             | アノテーション仕様から、label_nameとRGBを対応付けたJSONを出力する。                                      |チェッカー/オーナ|
-| reject_tasks                  | 検査コメントを付与してタスクを差し戻す。                                                                 |チェッカー/オーナ|
-| write_annotation_image        | アノテーションzipを展開したディレクトリから、アノテーションの画像（Semantic Segmentation用）を生成する。 |-|
-
-
-# Usage
-
 ## AnnoFabの認証情報の設定
 AnnoFabの認証情報を設定する方法は2つあります。
 * `.netrc`ファイル
@@ -55,6 +38,42 @@ Enter AnnoFab Password:
 AnnoFabの認証情報は、以下の順に読み込まれます。
 1. `.netrc`ファイル
 2. 環境変数
+
+## Dockerを利用する場合
+
+```
+$ git clone https://github.com/kurusugawa-computer/annofab-cli.git
+$ cd annofab-cli
+$ chmod u+x docker-build.sh
+$ ./docker-build.sh
+
+$ docker run -it annofab-cli annofabcli --help
+
+# AnnoFabの認証情報を標準入力から指定する
+$ docker run -it annofab-cli annofabcli diff_projects prj1 prj2
+Enter AnnoFab User ID: XXXXXX
+Enter AnnoFab Password: 
+
+# AnnoFabの認証情報を環境変数で指定する
+$ docker run -it -e ANNOFAB_USER_ID=XXXX -e ANNOFAB_PASSWORD=YYYYY annofab-cli annofabcli diff_projects prj1 prj2
+```
+
+# 機能一覧
+
+| サブコマンド                  | 内容                                                                                                     |必要なロール|
+|-------------------------------|----------------------------------------------------------------------------------------------------------|------------|
+| cancel_acceptance             | 受け入れ完了タスクを、受け入れ取り消しする。                                                             |オーナ|
+| complete_tasks                | 未処置の検査コメントを適切な状態に変更して、タスクを受け入れ完了にする。                                 |チェッカー/オーナ|
+| diff_projects                 | プロジェクト間の差分を表示する                                                                           |チェッカー/オーナ|
+| invite_users                  | 複数のプロジェクトに、ユーザを招待する。                                                                 |オーナ|
+| print_inspections | 検査コメントを出力する。                               |-|
+| print_unprocessed_inspections | 未処置の検査コメントList(task_id, input_data_idごと)をJSONとして出力する。                               |-|
+| print_label_color             | アノテーション仕様から、label_nameとRGBを対応付けたJSONを出力する。                                      |チェッカー/オーナ|
+| reject_tasks                  | 検査コメントを付与してタスクを差し戻す。                                                                 |チェッカー/オーナ|
+| write_annotation_image        | アノテーションzipを展開したディレクトリから、アノテーションの画像（Semantic Segmentation用）を生成する。 |-|
+
+
+# Usage
 
 
 ## 共通のオプション引数
