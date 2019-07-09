@@ -28,6 +28,7 @@ https://pypi.org/project/annofabcli/
 | complete_tasks                | 未処置の検査コメントを適切な状態に変更して、タスクを受け入れ完了にする。                                 |
 | diff_projects                 | プロジェクト間の差分を表示する                                                                           |
 | invite_users                  | 複数のプロジェクトに、ユーザを招待する。                                                                 |
+| print_inspections | 検査コメントを出力する。                               |
 | print_unprocessed_inspections | 未処置の検査コメントList(task_id, input_data_idごと)をJSONとして出力する。                               |
 | print_label_color             | アノテーション仕様から、label_nameとRGBを対応付けたJSONを出力する。                                      |
 | reject_tasks                  | 検査コメントを付与してタスクを差し戻す。                                                                 |
@@ -58,7 +59,7 @@ AnnoFabの認証情報は、以下の順に読み込まれます。
 
 ## 共通のオプション引数
 
-### `-h` or `--help`
+### `-h` / `--help`
 コマンドのヘルプを出力します。
 
 ```
@@ -91,16 +92,20 @@ root:
 disable_existing_loggers: False
 ```
 
+### `--yes`
+処理中に現れる問い合わせに対して、常に'yes'と回答します。
 
-### `--task_id_file`
-`task_id`の一覧が記載されたファイルです。`task_id`は改行（CR/LF）で区切られています。
-`--task_id_file`を指定できないサブコマンドもあります。
 
-```plain:task.txt
-task_id_1
-task_id_2
-...
-```
+### '-p' / `--project_id`
+対象のプロジェクトのproject_idを指定します。
+
+
+### '-t' / `--task_id`
+対象のタスクのtask_idを指定します。`file://`を先頭に付けると、task_idの一覧が記載されたファイルを指定できます。
+
+* 相対パスで指定： `--task_id file://task.txt`
+* 絶対パスで指定： `--task_id file:///tmp/task.txt`
+
 
 
 ## サブコマンドの使い方
@@ -112,13 +117,13 @@ task_id_2
 
 ```
 # prj1プロジェクトのタスクを、受け入れ取り消しにする。再度受け入れを担当させるユーザは未担当
-$ annofabcli cancel_acceptance --project_id prj1 --task_id_file task.txt
+$ annofabcli cancel_acceptance --project_id prj1 --task_id file://task.txt
 
 # prj1プロジェクトのタスクを、受け入れ取り消しにする。再度受け入れを担当させるユーザはuser1
-$ annofabcli cancel_acceptance --project_id prj1 --task_id_file task.txt --user_id user1
+$ annofabcli cancel_acceptance --project_id prj1 --task_id file://task.txt --user_id user1
 ```
 
-* オーナ権限を持つユーザで実行してください。
+* オーナロールを持つユーザで実行してください。
 
 
 ### complete_tasks
@@ -127,13 +132,13 @@ $ annofabcli cancel_acceptance --project_id prj1 --task_id_file task.txt --user_
 
 ```
 # 未処置の検査コメントは"対応完了"状態にして、prj1プロジェクトのタスクを受け入れ完了にする。
-$ annofabcli complete_tasks --project_id prj1 --task_id_file task.txt　 --inspection_json inspection.json --inspection_status error_corrected
+$ annofabcli complete_tasks --project_id prj1 --task_id file://task.txt　 --inspection_json inspection.json --inspection_status error_corrected
 
 # 未処置の検査コメントは"対応不要"状態にして、prj1プロジェクトのタスクを受け入れ完了にする。
-$ annofabcli complete_tasks --project_id prj1 --task_id_file task.txt　 --inspection_json inspection.json --inspection_status no_correction_required
+$ annofabcli complete_tasks --project_id prj1 --task_id file://task.txt　 --inspection_json inspection.json --inspection_status no_correction_required
 ```
 
-* オーナ権限を持つユーザで実行してください。
+* チェッカーまたはオーナロールを持つユーザで実行してください。
 * inspection.jsonは、未処置の検査コメントです。ファイルのフォーマットは、[print_unprocessed_inspections](#print_unprocessed_inspections)の出力結果と同じです。
 
 
@@ -159,6 +164,8 @@ $ annofabcli diff_projects  prj1 prj2 --target members
 $ annofabcli diff_projects  prj1 prj2 --target settings
 
 ```
+
+* チェッカーまたはオーナロールを持つユーザで実行してください。
 
 プロジェクト間の差分は、以下のように出力されます。
 `dict`型の差分は、[dictdiffer](https://dictdiffer.readthedocs.io/en/latest/)のフォーマットで出力します。
@@ -199,10 +206,10 @@ $ annofabcli invite_users --user_id user1 --role accepter --project_id prj1 prj2
 
 ```
 # 未処置の検査コメント一覧を出力する
-$ annofabcli print_unprocessed_inspections --project_id prj1 --task_id_file task.txt
+$ annofabcli print_unprocessed_inspections --project_id prj1 --task_id file://task.txt
 
 # 未処置で、user1が"hoge"とコメントした検査コメント一覧を出力する
-$ annofabcli print_unprocessed_inspections --project_id prj1 --task_id_file task.txt --inspection_comment "hoge" --commenter_user_id user1
+$ annofabcli print_unprocessed_inspections --project_id prj1 --task_id file://task.txt --inspection_comment "hoge" --commenter_user_id user1
 ```
 
 ```json:出力結果
@@ -229,10 +236,10 @@ $ annofabcli print_unprocessed_inspections --project_id prj1 --task_id_file task
 
 ```
 # 未処置の検査コメント一覧を出力する
-$ annofabcli print_label_color --project_id prj1 --task_id_file task.txt
+$ annofabcli print_label_color --project_id prj1 --task_id file://task.txt
 
 # 未処置で、user1が"hoge"とコメントした検査コメント一覧を出力する
-$ annofabcli print_unprocessed_inspections --project_id prj1 --task_id_file task.txt --inspection_comment "hoge" --commenter_user_id user1
+$ annofabcli print_unprocessed_inspections --project_id prj1 --task_id file://task.txt --inspection_comment "hoge" --commenter_user_id user1
 ```
 
 ```json:出力結果

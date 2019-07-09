@@ -12,18 +12,17 @@ import requests
 import annofabcli
 from annofabcli import AnnofabApiFacade
 from annofabcli.common.utils import build_annofabapi_resource_and_login
+from annofabcli.common.cli import AbstractCommandLineInterface
+
 
 logger = logging.getLogger(__name__)
 
 
-class InviteUser:
+class InviteUser(AbstractCommandLineInterface):
     """
     ユーザをプロジェクトに招待する
     """
 
-    def __init__(self, service: annofabapi.Resource, facade: AnnofabApiFacade):
-        self.service = service
-        self.facade = facade
 
     def assign_role_with_organization(self, organization_name: str, user_id_list: List[str], member_role: str):
 
@@ -69,18 +68,16 @@ class InviteUser:
                 logger.warning(f"エラーのため、招待できなかった。project_id={project_id}")
 
     def main(self, args):
-        annofabcli.utils.load_logging_config_from_args(args, __file__)
-        logger.info(args)
+        super().process_common_args(args, __file__, logger)
+
+        user_id_list = annofabcli.utils.get_list_from_args(args.user_id)
 
         if args.organization is not None:
             self.assign_role_with_organization(args.organization, args.user_id, args.role)
 
         elif args.project_id is not None:
-            self.assign_role_with_project_id(args.project_id, args.user_id, args.role)
-
-        else:
-            logger.error("引数に`--organization` or `--project_id_list`を指定してください。")
-
+            project_id_list = annofabcli.utils.get_list_from_args(args.project_id)
+            self.assign_role_with_project_id(project_id_list, args.user_id, args.role)
 
 def main(args):
     service = build_annofabapi_resource_and_login()
@@ -89,12 +86,13 @@ def main(args):
 
 
 def parse_args(parser: argparse.ArgumentParser):
-    parser.add_argument('--user_id', type=str, nargs='+', required=True, help='招待するユーザのuser_id')
+    parser.add_argument('-u', '--user_id', type=str, nargs='+', required=True, help='招待するユーザのuser_idを指定してください。`file://`を先頭に付けると、一覧が記載されたファイルを指定できます。')
     parser.add_argument('--role', type=str, required=True,
                         choices=['owner', 'worker', 'accepter', 'training_data_user'], help='ユーザに割り当てるロール')
 
-    parser.add_argument('--organization', type=str, help='招待先の組織名.組織配下のプロジェクトに招待する。')
-    parser.add_argument('--project_id', type=str, nargs='+', help='組織名が指定されていない場合は、必要')
+    assign_group = parser.add_mutually_exclusive_group(required=True)
+    assign_group.add_argument('-p', '--project_id', type=str, nargs='+', help='招待するプロジェクトのproject_idを指定してください。`file://`を先頭に付けると、一覧が記載されたファイルを指定できます。')
+    assign_group.add_argument('--organization', type=str, help='組織配下のすべてのプロジェクトに招待したい場合は、組織名を指定してください。')
 
     parser.set_defaults(subcommand_func=main)
 
@@ -102,7 +100,8 @@ def parse_args(parser: argparse.ArgumentParser):
 def add_parser(subparsers: argparse._SubParsersAction):
     subcommand_name = "invite_users"
     subcommand_help = "複数のプロジェクトに、ユーザを招待する。"
-    description = ("複数のプロジェクトに、ユーザを招待する。" "オーナ権限を持つユーザで実行すること。")
+    description = ("複数のプロジェクトに、ユーザを招待する。" )
+    epilog = "オーナロールを持つユーザで実行してください。"
 
-    parser = annofabcli.utils.add_parser(subparsers, subcommand_name, subcommand_help, description)
+    parser = annofabcli.utils.add_parser(subparsers, subcommand_name, subcommand_help, description, epilog=epilog)
     parse_args(parser)

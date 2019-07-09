@@ -5,6 +5,7 @@ import annofabcli
 import configparser
 import os
 import datetime
+import annofabapi
 
 from annofabcli.__main__ import main
 
@@ -16,6 +17,9 @@ annofab_config = dict(inifile.items('annofab'))
 
 project_id = annofab_config['project_id']
 task_id = annofab_config['task_id']
+
+service = annofabapi.build_from_netrc()
+user_id = service.api.login_user_id
 
 # def test_complete_tasks():
 #     #main(['complete_tasks', '--project_id', project_id, '--task_id', task_id, '--yes' ])
@@ -32,6 +36,9 @@ def test_reject_tasks():
 
 def test_diff_projects():
     main(['diff_projects', project_id, project_id])
+
+def test_invite_users():
+    main(['invite_users',  '--user_id', user_id, '--role', 'owner', '--project_id', project_id])
 
 
 def test_print_inspections():
