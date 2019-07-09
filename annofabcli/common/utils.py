@@ -75,6 +75,20 @@ def get_list_from_args(str_list: Optional[List[str]] = None) -> List[str]:
     else:
         return str_list
 
+def get_csv_format_from_args(target: Optional[str] = None) -> Dict[str, Any]:
+    """
+    コマンドライン引数の値から csv_format を取得する。
+    Default: {"encoding": "utf_8_sig", "index": True}
+
+    """
+    csv_format = {"encoding": "utf_8_sig", "index": True}
+    if target is not None:
+        arg_csv_format = get_json_from_args(target)
+        csv_format.update(arg_csv_format)
+
+    return csv_format
+
+
 def get_json_from_args(target: Optional[str] = None) -> Any:
     """
     JSON形式をPythonオブジェクトに変換する。

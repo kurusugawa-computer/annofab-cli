@@ -28,7 +28,7 @@ class PrintInspections(AbstractCommandLineInterface):
     """
 
 
-    def print_inspections(self, project_id: str, task_id_list: List[str], format: str, output: Optional[str]=None, csv_format: Optional[str] = None):
+    def print_inspections(self, project_id: str, task_id_list: List[str], format: str, output: Optional[str]=None, csv_format: Optional[Dict[str, Any]] = None):
         """
         検査コメントを出力する
 
@@ -104,7 +104,7 @@ class PrintInspections(AbstractCommandLineInterface):
     def main(self, args:argparse.Namespace):
         super().process_common_args(args, __file__, logger)
         task_id_list = annofabcli.utils.get_list_from_args(args.task_id)
-        csv_format = annofabcli.utils.get_json_from_args(args.csv_format)
+        csv_format = annofabcli.utils.get_csv_format_from_args(args.csv_format)
 
         self.visualize = AddProps(self.service, args.project_id)
 
@@ -124,7 +124,7 @@ def parse_args(parser: argparse.ArgumentParser):
 
     parser.add_argument('-o', '--output', type=str, help='出力先のファイルパスを指定します。指定しない場合は、標準出力に出力されます。')
 
-    parser.add_argument('--csv_format', type=str, default='{"encoding": "utf_8_sig", "index": true}',
+    parser.add_argument('--csv_format', type=str,
                         help='CSVのフォーマットをJSON形式で指定します。`--format`が`csv`でないときは、このオプションは無視されます。'
                              '`file://`を先頭に付けると、JSON形式のファイルを指定できます。'
                              '指定した値は、[pandas.DataFrame.to_csv](https://pandas.pydata.org/pandas-docs/stable/reference/api/pandas.DataFrame.to_csv.html) の引数として渡されます。'

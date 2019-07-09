@@ -216,6 +216,20 @@ $ annofabcli invite_users --user_id user1 --role accepter --project_id prj1 prj2
 ```
 
 
+### print_inspections
+検査コメント一覧を出力します。
+
+```
+# task1, task2の検査コメント一覧を、CSVで出力する
+$ annofabcli print_inspections --project_id prj1 --task_id task1 task2
+
+# タブ区切りの"out.tsv"を出力する
+$ annofabcli print_inspections --project_id prj1 --task_id task1 task2 --format csv --csv_format '{"sep":"\t"}'  --output out.tsv
+
+# JSONで出力する
+$ annofabcli print_inspections --project_id prj1 --task_id file://task.txt --format json
+ 
+```
 
 
 ### print_unprocessed_inspections
