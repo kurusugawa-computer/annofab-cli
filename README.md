@@ -115,11 +115,11 @@ disable_existing_loggers: False
 処理中に現れる問い合わせに対して、常に'yes'と回答します。
 
 
-### '-p' / `--project_id`
+### `-p` / `--project_id`
 対象のプロジェクトのproject_idを指定します。
 
 
-### '-t' / `--task_id`
+### `-t` / `--task_id`
 対象のタスクのtask_idを指定します。`file://`を先頭に付けると、task_idの一覧が記載されたファイルを指定できます。
 
 * 相対パスで指定： `--task_id file://task.txt`

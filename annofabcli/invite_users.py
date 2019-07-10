@@ -10,6 +10,7 @@ import annofabapi
 import requests
 
 import annofabcli
+import annofabcli.common.cli
 from annofabcli import AnnofabApiFacade
 from annofabcli.common.cli import AbstractCommandLineInterface
 from annofabcli.common.utils import build_annofabapi_resource_and_login
@@ -68,13 +69,13 @@ class InviteUser(AbstractCommandLineInterface):
     def main(self, args):
         super().process_common_args(args, __file__, logger)
 
-        user_id_list = annofabcli.utils.get_list_from_args(args.user_id)
+        user_id_list = annofabcli.common.cli.get_list_from_args(args.user_id)
 
         if args.organization is not None:
             self.assign_role_with_organization(args.organization, user_id_list, args.role)
 
         elif args.project_id is not None:
-            project_id_list = annofabcli.utils.get_list_from_args(args.project_id)
+            project_id_list = annofabcli.common.cli.get_list_from_args(args.project_id)
             self.assign_role_with_project_id(project_id_list, user_id_list, args.role)
 
 
@@ -104,5 +105,5 @@ def add_parser(subparsers: argparse._SubParsersAction):
     description = ("複数のプロジェクトに、ユーザを招待する。")
     epilog = "オーナロールを持つユーザで実行してください。"
 
-    parser = annofabcli.utils.add_parser(subparsers, subcommand_name, subcommand_help, description, epilog=epilog)
+    parser = annofabcli.common.cli.add_parser(subparsers, subcommand_name, subcommand_help, description, epilog=epilog)
     parse_args(parser)

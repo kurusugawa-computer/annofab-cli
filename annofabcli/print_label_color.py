@@ -11,6 +11,7 @@ import annofabapi
 from annofabapi.models import ProjectMemberRole
 
 import annofabcli
+import annofabcli.common.cli
 from annofabcli import AnnofabApiFacade
 from annofabcli.common.cli import AbstractCommandLineInterface
 from annofabcli.common.utils import build_annofabapi_resource_and_login
@@ -75,5 +76,5 @@ def add_parser(subparsers: argparse._SubParsersAction):
 
     epilog = "チェッカーまたはオーナロールを持つユーザで実行してください。"
 
-    parser = annofabcli.utils.add_parser(subparsers, subcommand_name, subcommand_help, description, epilog=epilog)
+    parser = annofabcli.common.cli.add_parser(subparsers, subcommand_name, subcommand_help, description, epilog=epilog)
     parse_args(parser)

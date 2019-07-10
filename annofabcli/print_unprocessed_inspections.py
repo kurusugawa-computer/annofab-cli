@@ -11,6 +11,7 @@ import annofabapi
 from annofabapi.models import Inspection, ProjectMemberRole
 
 import annofabcli
+import annofabcli.common.cli
 from annofabcli import AnnofabApiFacade
 from annofabcli.common.cli import AbstractCommandLineInterface
 from annofabcli.common.utils import build_annofabapi_resource_and_login
@@ -103,7 +104,7 @@ class PrintUnprocessedInspections(AbstractCommandLineInterface):
     def main(self, args):
         super().process_common_args(args, __file__, logger)
 
-        task_id_list = annofabcli.utils.get_list_from_args(args.task_id)
+        task_id_list = annofabcli.common.cli.get_list_from_args(args.task_id)
 
         self.print_unprocessed_inspections(args.project_id, task_id_list, args.inspection_comment,
                                            args.commenter_user_id)
@@ -137,5 +138,5 @@ def add_parser(subparsers: argparse._SubParsersAction):
                    "出力された内容は、`complete_tasks`ツールに利用する。"
                    "出力内容は`Dict[TaskId, Dict[InputDatId, List[Inspection]]]`である.")
 
-    parser = annofabcli.utils.add_parser(subparsers, subcommand_name, subcommand_help, description)
+    parser = annofabcli.common.cli.add_parser(subparsers, subcommand_name, subcommand_help, description)
     parse_args(parser)

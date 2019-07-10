@@ -17,6 +17,7 @@ import PIL.ImageDraw
 from annofabapi.models import Annotation
 
 import annofabcli
+import annofabcli.common.cli
 from annofabcli import AnnofabApiFacade
 from annofabcli.common.typing import RGB, InputDataSize, SubInputDataList
 
@@ -235,12 +236,12 @@ class WriteAnnotationImage:
                     logger.warning(f"{str(output_file)} の生成失敗")
 
     def main(self, args):
-        annofabcli.utils.load_logging_config_from_args(args, __file__)
+        annofabcli.common.cli.load_logging_config_from_args(args, __file__)
 
         logger.debug(f"args: {args}")
 
         try:
-            default_input_data_size = annofabcli.utils.get_input_data_size(args.input_data_size)
+            default_input_data_size = annofabcli.common.cli.get_input_data_size(args.input_data_size)
 
         except Exception as e:
             logger.error("--default_input_data_size のフォーマットが不正です")
@@ -323,5 +324,5 @@ def add_parser(subparsers: argparse._SubParsersAction):
                    "矩形、ポリゴン、塗りつぶし、塗りつぶしv2が対象。"
                    "複数のアノテーションディレクトリを指定して、画像をマージすることもできる。")
 
-    parser = annofabcli.utils.add_parser(subparsers, subcommand_name, subcommand_help, description)
+    parser = annofabcli.common.cli.add_parser(subparsers, subcommand_name, subcommand_help, description)
     parse_args(parser)

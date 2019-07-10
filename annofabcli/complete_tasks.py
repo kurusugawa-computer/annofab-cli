@@ -9,6 +9,7 @@ import requests
 from annofabapi.models import Inspection, ProjectMemberRole, Task
 
 import annofabcli
+import annofabcli.common.cli
 from annofabcli import AnnofabApiFacade
 from annofabcli.common.cli import AbstractCommandLineInterface
 from annofabcli.common.utils import build_annofabapi_resource_and_login
@@ -133,7 +134,7 @@ class ComleteTasks(AbstractCommandLineInterface):
 
     def main(self, args):
         super().process_common_args(args, __file__, logger)
-        task_id_list = annofabcli.utils.get_list_from_args(args.task_id)
+        task_id_list = annofabcli.common.cli.get_list_from_args(args.task_id)
 
         with open(args.inspection_json) as f:
             inspection_json = json.load(f)
@@ -173,5 +174,5 @@ def add_parser(subparsers: argparse._SubParsersAction):
     description = ("未処置の検査コメントを適切な状態に変更して、タスクを受け入れ完了にする。" "オーナ権限を持つユーザで実行すること。")
     epilog = "チェッカーまたはオーナロールを持つユーザで実行してください。"
 
-    parser = annofabcli.utils.add_parser(subparsers, subcommand_name, subcommand_help, description, epilog=epilog)
+    parser = annofabcli.common.cli.add_parser(subparsers, subcommand_name, subcommand_help, description, epilog=epilog)
     parse_args(parser)

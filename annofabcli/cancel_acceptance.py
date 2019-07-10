@@ -11,6 +11,7 @@ import requests
 from annofabapi.models import ProjectMemberRole
 
 import annofabcli
+import annofabcli.common.cli
 from annofabcli import AnnofabApiFacade
 from annofabcli.common.cli import AbstractCommandLineInterface
 from annofabcli.common.utils import build_annofabapi_resource_and_login
@@ -67,7 +68,7 @@ class CancelAcceptance(AbstractCommandLineInterface):
     def main(self, args: argparse.Namespace):
         super().process_common_args(args, __file__, logger)
 
-        task_id_list = annofabcli.utils.get_list_from_args(args.task_id)
+        task_id_list = annofabcli.common.cli.get_list_from_args(args.task_id)
 
         self.cancel_acceptance(args.project_id, task_id_list, args.user_id)
 
@@ -96,5 +97,5 @@ def add_parser(subparsers: argparse._SubParsersAction):
     description = "受入が完了したタスクに対して、受入を取り消します。"
     epilog = "オーナロールを持つユーザで実行してください。"
 
-    parser = annofabcli.utils.add_parser(subparsers, subcommand_name, subcommand_help, description, epilog=epilog)
+    parser = annofabcli.common.cli.add_parser(subparsers, subcommand_name, subcommand_help, description, epilog=epilog)
     parse_args(parser)

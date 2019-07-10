@@ -14,6 +14,7 @@ import more_itertools
 from annofabapi.models import ProjectMemberRole
 
 import annofabcli
+import annofabcli.common.cli
 from annofabcli import AnnofabApiFacade
 from annofabcli.common.cli import AbstractCommandLineInterface
 from annofabcli.common.exceptions import AuthorizationError
@@ -334,5 +335,5 @@ def add_parser(subparsers: argparse._SubParsersAction):
     description = ("プロジェクト間の差分を表示する。" "ただし、AnnoFabで生成されるIDや、変化する日時などは比較しない。")
     epilog = "オーナ、チェッカーロールのいずれかを持つユーザで実行してください。"
 
-    parser = annofabcli.utils.add_parser(subparsers, subcommand_name, subcommand_help, description, epilog=epilog)
+    parser = annofabcli.common.cli.add_parser(subparsers, subcommand_name, subcommand_help, description, epilog=epilog)
     parse_args(parser)

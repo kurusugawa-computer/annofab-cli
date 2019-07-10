@@ -16,6 +16,7 @@ import PIL.ImageDraw
 from annofabapi.models import Annotation
 
 import annofabcli
+import annofabcli.common.cli
 from annofabcli import AnnofabApiFacade
 from annofabcli.common.typing import InputDataSize
 from annofabcli.common.utils import build_annofabapi_resource_and_login
@@ -248,12 +249,12 @@ class RegisterAnnotation:
         注意：このメソッドを修正すること
         """
 
-        annofabcli.utils.load_logging_config_from_args(args, __file__)
+        annofabcli.common.cli.load_logging_config_from_args(args, __file__)
 
         logger.info(f"args: {args}")
 
         try:
-            default_input_data_size = annofabcli.utils.get_input_data_size(args.input_data_size)
+            default_input_data_size = annofabcli.common.cli.get_input_data_size(args.input_data_size)
 
         except Exception as e:
             logger.error("--default_input_data_size のフォーマットが不正です")
@@ -315,7 +316,7 @@ def main(args):
 if __name__ == "__main__":
     global_parser = argparse.ArgumentParser(
         description="deprecated: 矩形/ポリゴンアノテーションを、塗りつぶしv2アノテーションとして登録する。"
-        "注意：対象プロジェクトに合わせてスクリプトを修正すること。そのままでは実行できに。", parents=[annofabcli.utils.create_parent_parser()])
+        "注意：対象プロジェクトに合わせてスクリプトを修正すること。そのままでは実行できに。", parents=[annofabcli.common.cli.create_parent_parser()])
 
     parse_args(global_parser)
 

@@ -11,6 +11,7 @@ import requests
 from annofabapi.models import Inspection
 
 import annofabcli
+import annofabcli.common.cli
 from annofabcli import AnnofabApiFacade
 from annofabcli.common.cli import AbstractCommandLineInterface
 from annofabcli.common.utils import build_annofabapi_resource_and_login
@@ -100,8 +101,8 @@ class PrintInspections(AbstractCommandLineInterface):
 
     def main(self, args: argparse.Namespace):
         super().process_common_args(args, __file__, logger)
-        task_id_list = annofabcli.utils.get_list_from_args(args.task_id)
-        csv_format = annofabcli.utils.get_csv_format_from_args(args.csv_format)
+        task_id_list = annofabcli.common.cli.get_list_from_args(args.task_id)
+        csv_format = annofabcli.common.cli.get_csv_format_from_args(args.csv_format)
 
         self.visualize = AddProps(self.service, args.project_id)
 
@@ -145,5 +146,5 @@ def add_parser(subparsers: argparse._SubParsersAction):
 
     description = "検査コメント一覧を出力します。"
 
-    parser = annofabcli.utils.add_parser(subparsers, subcommand_name, subcommand_help, description)
+    parser = annofabcli.common.cli.add_parser(subparsers, subcommand_name, subcommand_help, description)
     parse_args(parser)

@@ -14,6 +14,7 @@ import requests
 from annofabapi.models import ProjectMemberRole
 
 import annofabcli
+import annofabcli.common.cli
 from annofabcli import AnnofabApiFacade
 from annofabcli.common.cli import AbstractCommandLineInterface
 from annofabcli.common.utils import build_annofabapi_resource_and_login
@@ -155,7 +156,7 @@ class RejectTasks(AbstractCommandLineInterface):
     def main(self, args: argparse.Namespace):
         super().process_common_args(args, __file__, logger)
 
-        task_id_list = annofabcli.utils.get_list_from_args(args.task_id)
+        task_id_list = annofabcli.common.cli.get_list_from_args(args.task_id)
 
         user_id = self.service.api.login_user_id
 
@@ -195,5 +196,5 @@ def add_parser(subparsers: argparse._SubParsersAction):
     description = ("検査コメントを付与してタスクを差し戻します。検査コメントは、タスク内の先頭の画像の左上(x=0,y=0)に付与します。アノテーションルールを途中で変更したときなどに、利用します。")
     epilog = "チェッカーまたはオーナロールを持つユーザで実行してください。"
 
-    parser = annofabcli.utils.add_parser(subparsers, subcommand_name, subcommand_help, description, epilog=epilog)
+    parser = annofabcli.common.cli.add_parser(subparsers, subcommand_name, subcommand_help, description, epilog=epilog)
     parse_args(parser)
