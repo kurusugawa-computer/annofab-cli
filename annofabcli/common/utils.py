@@ -15,6 +15,7 @@ import yaml
 from annofabapi.exceptions import AnnofabApiException
 
 import annofabcli
+from annofabcli.common.exceptions import AnnofabCliException
 from annofabcli.common.typing import InputDataSize
 
 logger = logging.getLogger(__name__)
@@ -165,38 +166,23 @@ def load_logging_config(log_dir: str, log_filename: str, logging_yaml_file: Opti
         if os.path.exists(logging_yaml_file):
             with open(logging_yaml_file, encoding='utf-8') as f:
                 logging_config = yaml.safe_load(f)
+                logging.config.dictConfig(logging_config)
         else:
             logger.warning(f"{logging_yaml_file} does not exist.")
+            set_default_logger(log_dir, log_filename)
 
     else:
-        _set_default_logger(log_dir, log_filename)
-
-    if logging_yaml_file is not None and os.path.exists(logging_yaml_file):
-        with open(logging_yaml_file, encoding='utf-8') as f:
-            logging_config = yaml.safe_load(f)
-
-    else:
-        data = pkgutil.get_data('annofabcli', 'data/logging.yaml')
-        if data is None:
-            logger.warning("data/logging.yaml が読み込めませんでした")
-            return
-
-        logging_config = yaml.safe_load(data.decode("utf-8"))
-        log_filename = f"{str(log_dir)}/{log_filename}"
-        logging_config["handlers"]["fileRotatingHandler"]["filename"] = log_filename
-        Path(log_dir).mkdir(exist_ok=True, parents=True)
-
-    logging.config.dictConfig(logging_config)
+        set_default_logger(log_dir, log_filename)
 
 
-def _set_default_logger(log_dir: str, log_filename):
+def set_default_logger(log_dir: str = ".log", log_filename: str = "annofabcli.log"):
     """
     デフォルトのロガーを設定する。パッケージ内のlogging.yamlを読み込む。
     """
     data = pkgutil.get_data('annofabcli', 'data/logging.yaml')
     if data is None:
-        logger.warning("data/logging.yaml が読み込めませんでした")
-        return
+        logger.warning("annofabcli/data/logging.yaml が読み込めませんでした")
+        raise AnnofabCliException("annofabcli/data/logging.yaml が読み込めませんでした")
 
     logging_config = yaml.safe_load(data.decode("utf-8"))
 

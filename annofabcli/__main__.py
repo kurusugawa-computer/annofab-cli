@@ -25,6 +25,9 @@ def main(arguments: Optional[Sequence[str]] = None):
 
     """
 
+    # loggerの設定
+    annofabcli.utils.set_default_logger()
+
     parser = argparse.ArgumentParser(description="annofabapiを使ったCLIツール")
     parser.add_argument('--version', action='version', version=f'annofabcli {annofabcli.__version__}')
 
