@@ -150,10 +150,10 @@ $ annofabcli cancel_acceptance --project_id prj1 --task_id file://task.txt --use
 
 ```
 # 未処置の検査コメントは"対応完了"状態にして、prj1プロジェクトのタスクを受け入れ完了にする。
-$ annofabcli complete_tasks --project_id prj1 --task_id file://task.txt　 --inspection_json inspection.json --inspection_status error_corrected
+$ annofabcli complete_tasks --project_id prj1 --task_id file://task.txt --inspection_json inspection.json --inspection_status error_corrected
 
 # 未処置の検査コメントは"対応不要"状態にして、prj1プロジェクトのタスクを受け入れ完了にする。
-$ annofabcli complete_tasks --project_id prj1 --task_id file://task.txt　 --inspection_json inspection.json --inspection_status no_correction_required
+$ annofabcli complete_tasks --project_id prj1 --task_id file://task.txt --inspection_json inspection.json --inspection_status no_correction_required
 ```
 
 * inspection.jsonは、未処置の検査コメントです。ファイルのフォーマットは、[print_unprocessed_inspections](#print_unprocessed_inspections)の出力結果と同じです。
