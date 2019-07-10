@@ -8,7 +8,7 @@ import logging
 from typing import List, Optional  # pylint: disable=unused-import
 
 import annofabapi
-from annofabapi.models import ProjectMemberRole
+from annofabapi.models import ProjectMemberRole  # pylint: disable=unused-import
 
 import annofabcli
 from annofabcli import AnnofabApiFacade
@@ -68,11 +68,11 @@ class AbstractCommandLineInterface(abc.ABC):
              AuthorizationError: 自分自身のRoleがいずれかのRoleにも合致しなければ、AuthorizationErrorが発生する。
 
         """
-        self.project_title = self.facade.get_project_title(project_id)
-        self.logger.info(f"project_title = {self.project_title}, project_id = {project_id}")
+        project_title = self.facade.get_project_title(project_id)
+        self.logger.info(f"project_title = {project_title}, project_id = {project_id}")
 
         if not self.facade.contains_anys_role(project_id, roles):
-            raise AuthorizationError(self.project_title, roles)
+            raise AuthorizationError(project_title, roles)
 
     def confirm_processing_task(self, task_id: str, confirm_message: str) -> bool:
         """

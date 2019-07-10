@@ -245,8 +245,7 @@ def build_annofabapi_resource() -> annofabapi.Resource:
 
 def build_annofabapi_resource_and_login() -> annofabapi.Resource:
     """
-    annofabapi.Resourceインスタナスを生成する。
-    ログインできなければ、UnauthorizationErrorをraiseする。
+    annofabapi.Resourceインスタンスを生成する。
 
     Returns:
         annofabapi.Resourceインスタンス
@@ -262,8 +261,7 @@ def build_annofabapi_resource_and_login() -> annofabapi.Resource:
     except requests.exceptions.HTTPError as e:
         if e.response.status_code == requests.codes.unauthorized:
             raise annofabcli.exceptions.AuthenticationError(service.api.login_user_id)
-        else:
-            raise e
+        raise e
 
 
 def duplicated_set(l: List[T]) -> Set[T]:

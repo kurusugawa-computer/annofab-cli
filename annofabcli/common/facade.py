@@ -6,7 +6,7 @@ from typing import Any, Callable, Dict, List, Optional, Tuple  # pylint: disable
 
 import annofabapi
 import more_itertools
-from annofabapi.models import ProjectMemberRole
+from annofabapi.models import OrganizationMember, ProjectMemberRole
 
 
 class AnnofabApiFacade:
@@ -15,7 +15,7 @@ class AnnofabApiFacade:
     """
 
     #: 組織メンバ一覧のキャッシュ
-    _organization_members: List[Dict[str, Any]] = None
+    _organization_members: Optional[List[OrganizationMember]] = None
 
     def __init__(self, service: annofabapi.Resource):
         self.service = service

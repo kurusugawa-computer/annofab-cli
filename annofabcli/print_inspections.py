@@ -3,12 +3,11 @@
 """
 
 import argparse
-import json
 import logging
 from typing import Any, Callable, Dict, List, Optional  # pylint: disable=unused-import
 
-import annofabapi
 import pandas
+import requests
 from annofabapi.models import Inspection
 
 import annofabcli
@@ -24,6 +23,8 @@ class PrintInspections(AbstractCommandLineInterface):
     """
     検査コメント一覧を出力する。
     """
+
+    visualize: AddProps
 
     def print_inspections(self, project_id: str, task_id_list: List[str], format: str, output: Optional[str] = None,
                           csv_format: Optional[Dict[str, Any]] = None):
@@ -80,7 +81,7 @@ class PrintInspections(AbstractCommandLineInterface):
             対象の検査コメント一覧
         """
 
-        all_inspections = []
+        all_inspections: List[Inspection] = []
         for task_id in task_id_list:
             try:
                 task, _ = self.service.api.get_task(project_id, task_id)
@@ -91,9 +92,9 @@ class PrintInspections(AbstractCommandLineInterface):
                                                                      input_data_index)
                     all_inspections.extend(inspections)
 
-            except Exception as e:
+            except requests.HTTPError as e:
                 logger.warning(e)
-                logger.warning(f"タスク task_id = {task_id} の検査コメントが出力できなかった。")
+                logger.warning(f"タスク task_id = {task_id} の検査コメントを取得できなかった。")
 
         return all_inspections
 
@@ -110,21 +111,19 @@ class PrintInspections(AbstractCommandLineInterface):
 
 def parse_args(parser: argparse.ArgumentParser):
 
-    parser.add_argument('-p', '--project_id', type=str, required=True,
-                        help='対象のプロジェクトのproject_idを指定します。')
+    parser.add_argument('-p', '--project_id', type=str, required=True, help='対象のプロジェクトのproject_idを指定します。')
 
-    parser.add_argument('-t', '--task_id', type=str, required=True, nargs='+',
-                        help='対象のタスクのtask_idを指定します。'
-                             '`file://`を先頭に付けると、task_idの一覧が記載されたファイルを指定できます。')
+    parser.add_argument('-t', '--task_id', type=str, required=True, nargs='+', help='対象のタスクのtask_idを指定します。'
+                        '`file://`を先頭に付けると、task_idの一覧が記載されたファイルを指定できます。')
 
     parser.add_argument('-f', '--format', type=str, choices=['csv', 'json'], default='csv',
                         help='出力フォーマットを指定します。指定しない場合は、"csv"フォーマットになります。')
 
-    parser.add_argument('-o', '--output', type=str,
-                        help='出力先のファイルパスを指定します。指定しない場合は、標準出力に出力されます。')
+    parser.add_argument('-o', '--output', type=str, help='出力先のファイルパスを指定します。指定しない場合は、標準出力に出力されます。')
 
     parser.add_argument(
-        '--csv_format', type=str,
+        '--csv_format',
+        type=str,
         help='CSVのフォーマットをJSON形式で指定します。`--format`が`csv`でないときは、このオプションは無視されます。'
         '`file://`を先頭に付けると、JSON形式のファイルを指定できます。'
         '指定した値は、[pandas.DataFrame.to_csv](https://pandas.pydata.org/pandas-docs/stable/reference/api/pandas.DataFrame.to_csv.html) の引数として渡されます。'  # noqa: E501

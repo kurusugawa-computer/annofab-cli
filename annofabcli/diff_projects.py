@@ -156,6 +156,7 @@ class DiffProjecs(AbstractCommandLineInterface):
             label_names = label_names1
 
         for label_name in label_names:
+
             def get_label_func(x):
                 return AnnofabApiFacade.get_label_name_en(x) == label_name
 
@@ -263,7 +264,7 @@ class DiffProjecs(AbstractCommandLineInterface):
             logger.info("プロジェクト設定は同じ")
             return False
 
-    def validate_project(self, project_id1: str, project_id2: str):
+    def validate_projects(self, project_id1: str, project_id2: str):
         """
         適切なRoleが付与されているかを確認する。
         Args:
@@ -276,12 +277,8 @@ class DiffProjecs(AbstractCommandLineInterface):
         """
 
         roles = [ProjectMemberRole.OWNER, ProjectMemberRole.ACCEPTER, ProjectMemberRole.TRAINING_DATA_USER]
-
-        if not self.facade.contains_anys_role(project_id1, roles):
-            raise AuthorizationError(self.project_title1, roles)
-
-        if not self.facade.contains_anys_role(project_id2, roles):
-            raise AuthorizationError(self.project_title2, roles)
+        super().validate_project(project_id1, roles)
+        super().validate_project(project_id2, roles)
 
     def main(self, args: argparse.Namespace):
         super().process_common_args(args, __file__, logger)

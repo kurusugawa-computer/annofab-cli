@@ -21,7 +21,7 @@ class AddProps:
     """
 
     #: 組織メンバ一覧のキャッシュ
-    _organization_members: List[Dict[str, Any]] = None
+    _organization_members: Optional[List[OrganizationMember]] = None
 
     def __init__(self, service: annofabapi.Resource, project_id: str):
         self.service = service
@@ -111,15 +111,21 @@ class AddProps:
 
         """
 
-        commenter_account_id = inspection["commenter_account_id"]
-        if commenter_account_id is not None:
-            member = self.get_organization_member_from_account_id(commenter_account_id)
-            inspection['commenter_user_id'] = member['user_id']
-            inspection['commenter_username'] = member['username']
-        else:
-            inspection['commenter_user_id'] = None
-            inspection['commenter_username'] = None
+        def add_commenter_info():
+            commenter_user_id = None
+            commenter_username = None
 
+            commenter_account_id = inspection["commenter_account_id"]
+            if commenter_account_id is not None:
+                member = self.get_organization_member_from_account_id(commenter_account_id)
+                if member is not None:
+                    commenter_user_id = member['user_id']
+                    commenter_username = member['username']
+
+            inspection['commenter_user_id'] = commenter_user_id
+            inspection['commenter_username'] = commenter_username
+
+        add_commenter_info()
         inspection['phrase_names_en'] = [self.get_phrase_name(e, MessageLocale.EN) for e in inspection['phrases']]
         inspection['phrase_names_ja'] = [self.get_phrase_name(e, MessageLocale.JA) for e in inspection['phrases']]
 
