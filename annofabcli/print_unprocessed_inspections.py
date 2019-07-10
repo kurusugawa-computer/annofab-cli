@@ -13,8 +13,7 @@ from annofabapi.models import Inspection, ProjectMemberRole
 import annofabcli
 import annofabcli.common.cli
 from annofabcli import AnnofabApiFacade
-from annofabcli.common.cli import AbstractCommandLineInterface
-from annofabcli.common.utils import build_annofabapi_resource_and_login
+from annofabcli.common.cli import AbstractCommandLineInterface, build_annofabapi_resource_and_login
 
 logger = logging.getLogger(__name__)
 

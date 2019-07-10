@@ -6,13 +6,9 @@ import sys
 from pathlib import Path
 from typing import Any, Dict, List, Optional, Set, TypeVar  # pylint: disable=unused-import
 
-import annofabapi
 import pandas
-import requests
 import yaml
 
-import annofabcli
-from annofabcli.common.cli import build_annofabapi_resource
 from annofabcli.common.exceptions import AnnofabCliException
 
 logger = logging.getLogger(__name__)
@@ -77,27 +73,6 @@ def set_default_logger(log_dir: str = ".log", log_filename: str = "annofabcli.lo
     Path(log_dir).mkdir(exist_ok=True, parents=True)
 
     logging.config.dictConfig(logging_config)
-
-
-def build_annofabapi_resource_and_login() -> annofabapi.Resource:
-    """
-    annofabapi.Resourceインスタンスを生成する。
-
-    Returns:
-        annofabapi.Resourceインスタンス
-
-    """
-
-    service = build_annofabapi_resource()
-
-    try:
-        service.api.login()
-        return service
-
-    except requests.exceptions.HTTPError as e:
-        if e.response.status_code == requests.codes.unauthorized:
-            raise annofabcli.exceptions.AuthenticationError(service.api.login_user_id)
-        raise e
 
 
 def duplicated_set(l: List[T]) -> Set[T]:

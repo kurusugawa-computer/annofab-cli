@@ -11,15 +11,37 @@ import os
 from typing import Any, Dict, List, Optional, Tuple  # pylint: disable=unused-import
 
 import annofabapi
+import requests
 from annofabapi.exceptions import AnnofabApiException
 from annofabapi.models import ProjectMemberRole  # pylint: disable=unused-import
 
 import annofabcli
-from annofabcli import AnnofabApiFacade
 from annofabcli.common.exceptions import AuthorizationError
-# TODO argsparser系のメソッドを作成する
+from annofabcli.common.facade import AnnofabApiFacade
 from annofabcli.common.typing import InputDataSize
-from annofabcli.common.utils import load_logging_config, logger, read_lines_except_blank_line
+
+logger = logging.getLogger(__name__)
+
+
+def build_annofabapi_resource_and_login() -> annofabapi.Resource:
+    """
+    annofabapi.Resourceインスタンスを生成する。
+
+    Returns:
+        annofabapi.Resourceインスタンス
+
+    """
+
+    service = build_annofabapi_resource()
+
+    try:
+        service.api.login()
+        return service
+
+    except requests.exceptions.HTTPError as e:
+        if e.response.status_code == requests.codes.unauthorized:
+            raise annofabcli.exceptions.AuthenticationError(service.api.login_user_id)
+        raise e
 
 
 def add_parser(subparsers: argparse._SubParsersAction, subcommand_name: str, subcommand_help: str, description: str,
@@ -77,7 +99,7 @@ def get_list_from_args(str_list: Optional[List[str]] = None) -> List[str]:
     str_value = str_list[0]
     if str_value.startswith('file://'):
         path = str_value[len('file://'):]
-        return read_lines_except_blank_line(path)
+        return annofabcli.utils.read_lines_except_blank_line(path)
     else:
         return str_list
 
@@ -130,7 +152,7 @@ def load_logging_config_from_args(args: argparse.Namespace, py_filepath: str):
     logging_yaml_file = args.logging_yaml if hasattr(args, "logging_yaml") else None
 
     log_filename = f"{os.path.basename(py_filepath)}.log"
-    load_logging_config(log_dir, log_filename, logging_yaml_file)
+    annofabcli.utils.load_logging_config(log_dir, log_filename, logging_yaml_file)
 
 
 def build_annofabapi_resource() -> annofabapi.Resource:
@@ -212,7 +234,7 @@ class AbstractCommandLineInterface(abc.ABC):
         self.service = service
         self.facade = facade
 
-    def process_common_args(self, args: argparse.Namespace, py_filepath: str, logger: logging.Logger):
+    def process_common_args(self, args: argparse.Namespace, py_filepath: str, arg_logger: logging.Logger):
         """
         共通のコマンドライン引数を処理する。
         Args:
@@ -221,11 +243,11 @@ class AbstractCommandLineInterface(abc.ABC):
 
 
         """
-        self.logger = logger
+        self.logger = arg_logger
         load_logging_config_from_args(args, py_filepath)
         self.all_yes = args.yes
 
-        logger.info(f"args: {args}")
+        self.logger.info(f"args: {args}")
 
     @abc.abstractmethod
     def main(self, args: argparse.Namespace):

@@ -18,8 +18,8 @@ from annofabapi.models import Annotation
 import annofabcli
 import annofabcli.common.cli
 from annofabcli import AnnofabApiFacade
+from annofabcli.common.cli import build_annofabapi_resource_and_login
 from annofabcli.common.typing import InputDataSize
-from annofabcli.common.utils import build_annofabapi_resource_and_login
 
 logger = logging.getLogger(__name__)
 
