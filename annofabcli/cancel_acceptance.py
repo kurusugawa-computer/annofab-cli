@@ -8,18 +8,17 @@ from typing import List, Optional  # pylint: disable=unused-import
 
 import annofabapi
 import requests
+from annofabapi.models import ProjectMemberRole
 
 import annofabcli
 from annofabcli import AnnofabApiFacade
-from annofabcli.common.utils import build_annofabapi_resource_and_login
 from annofabcli.common.cli import AbstractCommandLineInterface
-from annofabapi.models import ProjectMemberRole
+from annofabcli.common.utils import build_annofabapi_resource_and_login
 
 logger = logging.getLogger(__name__)
 
 
 class CancelAcceptance(AbstractCommandLineInterface):
-
     def cancel_acceptance(self, project_id: str, task_id_list: List[str], acceptor_user_id: Optional[str] = None):
         """
         タスクを受け入れ取り消しする
@@ -39,7 +38,7 @@ class CancelAcceptance(AbstractCommandLineInterface):
 
         success_count = 0
         for task_index, task_id in enumerate(task_id_list):
-            str_progress = annofabcli.utils.progress_msg(task_index+1, len(task_id_list))
+            str_progress = annofabcli.utils.progress_msg(task_index + 1, len(task_id_list))
 
             try:
                 task, _ = self.service.api.get_task(project_id, task_id)
@@ -64,7 +63,6 @@ class CancelAcceptance(AbstractCommandLineInterface):
                 logger.warning(f"{str_progress} : task_id = {task_id} の受け入れ取り消し失敗")
 
         logger.info(f"{success_count} / {len(task_id_list)} 件 受け入れ取り消しに成功した")
-
 
     def main(self, args: argparse.Namespace):
         super().process_common_args(args, __file__, logger)

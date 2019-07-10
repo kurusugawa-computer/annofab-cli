@@ -11,12 +11,12 @@ from typing import Any, Dict, List, Optional  # pylint: disable=unused-import
 import annofabapi
 import annofabapi.utils
 import requests
+from annofabapi.models import ProjectMemberRole
 
 import annofabcli
 from annofabcli import AnnofabApiFacade
-from annofabcli.common.utils import build_annofabapi_resource_and_login, read_lines_except_blank_line
 from annofabcli.common.cli import AbstractCommandLineInterface
-from annofabapi.models import ProjectMemberRole
+from annofabcli.common.utils import build_annofabapi_resource_and_login, read_lines_except_blank_line
 
 logger = logging.getLogger(__name__)
 
@@ -90,7 +90,8 @@ class RejectTasks(AbstractCommandLineInterface):
 
             task, _ = self.service.api.get_task(project_id, task_id)
 
-            logger.debug(f"{str_progress} : task_id = {task_id} の現状: status = {task['status']}, phase = {task['phase']}")
+            logger.debug(
+                f"{str_progress} : task_id = {task_id} の現状: status = {task['status']}, phase = {task['phase']}")
 
             if task["phase"] == "annotation":
                 logger.warning(f"{str_progress} : task_id = {task_id} はannofation phaseのため、差し戻しできません。")
@@ -99,11 +100,11 @@ class RejectTasks(AbstractCommandLineInterface):
             if not super().confirm_processing_task(task_id, f"task_id = {task_id} のタスクを差し戻しますか？"):
                 continue
 
-
             try:
                 # 担当者を変更して、作業中にする
                 self.facade.change_operator_of_task(project_id, task_id, commenter_account_id)
-                logger.debug(f"{str_progress} : task_id = {task_id}, phase={task['phase']}, {commenter_user_id}に担当者変更 完了")
+                logger.debug(
+                    f"{str_progress} : task_id = {task_id}, phase={task['phase']}, {commenter_user_id}に担当者変更 完了")
 
                 self.facade.change_to_working_phase(project_id, task_id, commenter_account_id)
                 logger.debug(f"{str_progress} : task_id = {task_id}, phase={task['phase']}, working statusに変更 完了")
@@ -129,8 +130,10 @@ class RejectTasks(AbstractCommandLineInterface):
                 # タスクを差し戻す
                 if assign_last_annotator:
                     # 最後のannotation phaseに担当を割り当てる
-                    _, last_annotator_account_id = self.facade.reject_task_assign_last_annotator(project_id, task_id, commenter_account_id)
-                    last_annotator_user_id = self.facade.get_user_id_from_account_id(project_id, last_annotator_account_id)
+                    _, last_annotator_account_id = self.facade.reject_task_assign_last_annotator(
+                        project_id, task_id, commenter_account_id)
+                    last_annotator_user_id = self.facade.get_user_id_from_account_id(
+                        project_id, last_annotator_account_id)
                     str_annotator_user = f"タスクの担当者: {last_annotator_user_id}"
 
                 else:
@@ -147,9 +150,7 @@ class RejectTasks(AbstractCommandLineInterface):
                 logger.warning(f"{str_progress} : task_id = {task_id} タスクの差し戻しに失敗")
                 continue
 
-
         logger.info(f"{success_count} / {len(task_id_list)} 件 タスクの差し戻しに成功した")
-
 
     def main(self, args: argparse.Namespace):
         super().process_common_args(args, __file__, logger)
@@ -180,10 +181,10 @@ def parse_args(parser: argparse.ArgumentParser):
     # 差し戻したタスクの担当者の割当に関して
     assign_group = parser.add_mutually_exclusive_group()
     assign_group.add_argument('--assign_last_annotator', action="store_true",
-                        help='差し戻したタスクに、最後のannotation phaseの担当者を割り当てます。指定しない場合、タスクの担当者は未割り当てになります。')
+                              help='差し戻したタスクに、最後のannotation phaseの担当者を割り当てます。指定しない場合、タスクの担当者は未割り当てになります。')
 
     assign_group.add_argument('--assigned_annotator_user_id', type=str,
-                        help='差し戻したタスクに割り当てるユーザのuser_idを指定します。指定しない場合、タスクの担当者は未割り当てになります。')
+                              help='差し戻したタスクに割り当てるユーザのuser_idを指定します。指定しない場合、タスクの担当者は未割り当てになります。')
 
     parser.set_defaults(subcommand_func=main)
 

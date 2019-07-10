@@ -2,19 +2,20 @@
 Command Line Interfaceの共通部分
 """
 
+import abc
 import argparse
+import logging
 from typing import List, Optional  # pylint: disable=unused-import
 
 import annofabapi
+from annofabapi.models import ProjectMemberRole
 
 import annofabcli
 from annofabcli import AnnofabApiFacade
-import abc
-import logging
 from annofabcli.common.exceptions import AuthorizationError
-from annofabapi.models import ProjectMemberRole
 
 # TODO argsparser系のメソッドを作成する
+
 
 class AbstractCommandLineInterface(abc.ABC):
     """
@@ -52,11 +53,9 @@ class AbstractCommandLineInterface(abc.ABC):
 
         logger.info(f"args: {args}")
 
-
     @abc.abstractmethod
     def main(self, args: argparse.Namespace):
         pass
-
 
     def validate_project(self, project_id, roles: List[ProjectMemberRole]):
         """
@@ -74,7 +73,6 @@ class AbstractCommandLineInterface(abc.ABC):
 
         if not self.facade.contains_anys_role(project_id, roles):
             raise AuthorizationError(self.project_title, roles)
-
 
     def confirm_processing_task(self, task_id: str, confirm_message: str) -> bool:
         """

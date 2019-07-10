@@ -8,6 +8,7 @@ import annofabapi
 import more_itertools
 from annofabapi.models import ProjectMemberRole
 
+
 class AnnofabApiFacade:
     """
     AnnofabApiのFacadeクラス。annofabapiの複雑な処理を簡単に呼び出せるようにする。
@@ -106,7 +107,6 @@ class AnnofabApiFacade:
             organization_name = self.get_organization_name_from_project_id(project_id)
             self._organization_members = self.service.wrapper.get_all_organization_members(organization_name)
 
-
         if self._organization_members is not None:
             member = more_itertools.first_true(self._organization_members, pred=lambda e: e["account_id"] == account_id)
             if member is not None:
@@ -126,7 +126,6 @@ class AnnofabApiFacade:
         """
         organization, _ = self.service.api.get_organization_of_project(project_id)
         return organization["organization_name"]
-
 
     def my_role_is_owner(self, project_id: str) -> bool:
         my_member, _ = self.service.api.get_my_member_in_project(project_id)
@@ -242,7 +241,8 @@ class AnnofabApiFacade:
         updated_task, _ = self.service.api.operate_task(project_id, task["task_id"], request_body=req_change_operator)
         return updated_task
 
-    def reject_task_assign_last_annotator(self, project_id: str, task_id: str, account_id: str) -> Tuple[Dict[str, Any], str]:
+    def reject_task_assign_last_annotator(self, project_id: str, task_id: str,
+                                          account_id: str) -> Tuple[Dict[str, Any], str]:
         """
         タスクを差し戻したあとに、最後のannotation phase担当者に割り当てる。
 
@@ -260,7 +260,6 @@ class AnnofabApiFacade:
         last_annotator_account_id = self.get_account_id_last_annotation_phase(task["histories_by_phase"])
         updated_task = self.reject_task(project_id, task_id, account_id, last_annotator_account_id)
         return updated_task, last_annotator_account_id
-
 
     def complete_task(self, project_id: str, task_id: str, account_id: str) -> Dict[str, Any]:
         """

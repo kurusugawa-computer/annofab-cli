@@ -11,13 +11,13 @@ from typing import Any, Dict, List  # pylint: disable=unused-import
 import annofabapi
 import dictdiffer
 import more_itertools
+from annofabapi.models import ProjectMemberRole
 
 import annofabcli
 from annofabcli import AnnofabApiFacade
-from annofabcli.common.utils import build_annofabapi_resource_and_login
 from annofabcli.common.cli import AbstractCommandLineInterface
-from annofabapi.models import ProjectMemberRole
 from annofabcli.common.exceptions import AuthorizationError
+from annofabcli.common.utils import build_annofabapi_resource_and_login
 
 logger = logging.getLogger(__name__)
 
@@ -120,7 +120,6 @@ class DiffProjecs(AbstractCommandLineInterface):
             flag = True
 
         return flag
-
 
     def diff_labels_of_annotation_specs(self, labels1: List[Dict[str, Any]], labels2: List[Dict[str, Any]]) -> bool:
         """
@@ -263,7 +262,6 @@ class DiffProjecs(AbstractCommandLineInterface):
             logger.info("プロジェクト設定は同じ")
             return False
 
-
     def validate_project(self, project_id1: str, project_id2: str):
         """
         適切なRoleが付与されているかを確認する。
@@ -283,7 +281,6 @@ class DiffProjecs(AbstractCommandLineInterface):
 
         if not self.facade.contains_anys_role(project_id2, roles):
             raise AuthorizationError(self.project_title2, roles)
-
 
     def main(self, args: argparse.Namespace):
         super().process_common_args(args, __file__, logger)

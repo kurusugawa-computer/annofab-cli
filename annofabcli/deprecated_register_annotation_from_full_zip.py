@@ -139,10 +139,8 @@ class RegisterAnnotation:
         # labelで絞り込み
         annotation_list = [e for e in input_data["detail"] if e["label_id"] == label_id]
         if len(annotation_list) == 0:
-            logger.info(
-                f"{input_data['task_id']}, {input_data['input_data_id']} に "
-                f"label:{label}, label_id:{label_id} のアノテーションがない"
-            )
+            logger.info(f"{input_data['task_id']}, {input_data['input_data_id']} に "
+                        f"label:{label}, label_id:{label_id} のアノテーションがない")
             return False
 
         # アノテーションを描画する

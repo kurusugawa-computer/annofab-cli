@@ -1,4 +1,3 @@
-
 import argparse
 import json
 import logging
@@ -7,13 +6,12 @@ from typing import Any, Callable, Dict, List, Optional  # pylint: disable=unused
 
 import annofabapi
 import requests
-from annofabapi.models import Inspection, Task
+from annofabapi.models import Inspection, ProjectMemberRole, Task
 
 import annofabcli
 from annofabcli import AnnofabApiFacade
-from annofabcli.common.utils import build_annofabapi_resource_and_login
 from annofabcli.common.cli import AbstractCommandLineInterface
-from annofabapi.models import ProjectMemberRole
+from annofabcli.common.utils import build_annofabapi_resource_and_login
 
 logger = logging.getLogger(__name__)
 

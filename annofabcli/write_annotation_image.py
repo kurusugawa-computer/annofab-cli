@@ -202,10 +202,8 @@ class WriteAnnotationImage:
         Returns:
 
         """
-        logger.debug(
-            f"args: {annotation_dir}, {default_input_data_size}, {label_color_dict}, "
-            f"{output_dir}, {output_image_extension}"
-        )
+        logger.debug(f"args: {annotation_dir}, {default_input_data_size}, {label_color_dict}, "
+                     f"{output_dir}, {output_image_extension}")
         annotation_dir_path = Path(annotation_dir)
         output_dir_path = Path(output_dir)
 

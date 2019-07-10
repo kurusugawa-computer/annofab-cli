@@ -8,13 +8,12 @@ import logging
 from typing import Any, Callable, Dict, List, Optional  # pylint: disable=unused-import
 
 import annofabapi
-from annofabapi.models import Inspection
+from annofabapi.models import Inspection, ProjectMemberRole
 
 import annofabcli
 from annofabcli import AnnofabApiFacade
-from annofabcli.common.utils import build_annofabapi_resource_and_login
 from annofabcli.common.cli import AbstractCommandLineInterface
-from annofabapi.models import ProjectMemberRole
+from annofabcli.common.utils import build_annofabapi_resource_and_login
 
 logger = logging.getLogger(__name__)
 

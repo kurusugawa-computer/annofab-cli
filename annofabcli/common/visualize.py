@@ -2,12 +2,13 @@
 annofabapiのfacadeクラス
 """
 
+import enum
 from typing import Any, Callable, Dict, List, Optional, Tuple  # pylint: disable=unused-import
 
 import annofabapi
-import enum
 import more_itertools
-from annofabapi.models import ProjectMemberRole, OrganizationMember, Inspection
+from annofabapi.models import Inspection, OrganizationMember, ProjectMemberRole
+
 
 class MessageLocale(enum.Enum):
     EN = "en-US"
@@ -21,7 +22,6 @@ class AddProps:
 
     #: 組織メンバ一覧のキャッシュ
     _organization_members: List[Dict[str, Any]] = None
-
 
     def __init__(self, service: annofabapi.Resource, project_id: str):
         self.service = service
@@ -50,6 +50,7 @@ class AddProps:
         Returns:
             組織メンバ
         """
+
         def update_organization_members():
             self._organization_members = self.service.wrapper.get_all_organization_members(self.organization_name)
 
@@ -69,7 +70,6 @@ class AddProps:
         else:
             update_organization_members()
             return get_member()
-
 
     def _get_organization_name_from_project_id(self, project_id: str) -> str:
         """
@@ -92,8 +92,8 @@ class AddProps:
 
         return self.get_message(label['label_name'], locale)
 
-
-    def add_properties_to_inspection(self, inspection: Inspection, detail: Optional[Dict[str, Any]] = None) -> Inspection:
+    def add_properties_to_inspection(self, inspection: Inspection,
+                                     detail: Optional[Dict[str, Any]] = None) -> Inspection:
         """
         検査コメントに、以下のキーを追加する.
         commenter_user_id
@@ -130,4 +130,3 @@ class AddProps:
             inspection.update(detail)
 
         return inspection
-

@@ -1,17 +1,17 @@
 import argparse
 import getpass
+import json
 import logging.config
 import os
 import pkgutil
-from pathlib import Path
-from typing import Any, Callable, Dict, List, Set, Optional, TypeVar, Tuple  # pylint: disable=unused-import
-
 import sys
-import pandas
+from pathlib import Path
+from typing import Any, Callable, Dict, List, Optional, Set, Tuple, TypeVar  # pylint: disable=unused-import
+
 import annofabapi
+import pandas
 import requests
 import yaml
-import json
 from annofabapi.exceptions import AnnofabApiException
 
 import annofabcli
@@ -20,6 +20,7 @@ from annofabcli.common.typing import InputDataSize
 logger = logging.getLogger(__name__)
 
 T = TypeVar('T')  # Can be anything
+
 
 def create_parent_parser() -> argparse.ArgumentParser:
     """
@@ -52,8 +53,10 @@ def read_lines_except_blank_line(filepath: str) -> List[str]:
     lines = read_lines(filepath)
     return [line for line in lines if line != ""]
 
+
 def _is_file_scheme(value: str):
     return value.startswith('file://')
+
 
 def get_list_from_args(str_list: Optional[List[str]] = None) -> List[str]:
     """
@@ -74,6 +77,7 @@ def get_list_from_args(str_list: Optional[List[str]] = None) -> List[str]:
         return read_lines_except_blank_line(path)
     else:
         return str_list
+
 
 def get_csv_format_from_args(target: Optional[str] = None) -> Dict[str, Any]:
     """
@@ -105,14 +109,15 @@ def get_json_from_args(target: Optional[str] = None) -> Any:
     else:
         return json.loads(target)
 
+
 def get_input_data_size(str_input_data_size: str) -> InputDataSize:
     """400x300を(400,300)に変換する"""
     splited_list = str_input_data_size.split("x")
     return (int(splited_list[0]), int(splited_list[1]))
 
 
-def add_parser(subparsers: argparse._SubParsersAction, subcommand_name: str, subcommand_help: str,
-               description: str, epilog: Optional[str] = None) -> argparse.ArgumentParser:
+def add_parser(subparsers: argparse._SubParsersAction, subcommand_name: str, subcommand_help: str, description: str,
+               epilog: Optional[str] = None) -> argparse.ArgumentParser:
     """
     サブコマンド用にparserを追加する
 
@@ -156,7 +161,6 @@ def load_logging_config(log_dir: str, log_filename: str, logging_yaml_file: Opti
 
     """
 
-
     if logging_yaml_file is not None:
         if os.path.exists(logging_yaml_file):
             with open(logging_yaml_file, encoding='utf-8') as f:
@@ -166,7 +170,6 @@ def load_logging_config(log_dir: str, log_filename: str, logging_yaml_file: Opti
 
     else:
         _set_default_logger(log_dir, log_filename)
-
 
     if logging_yaml_file is not None and os.path.exists(logging_yaml_file):
         with open(logging_yaml_file, encoding='utf-8') as f:
@@ -186,7 +189,7 @@ def load_logging_config(log_dir: str, log_filename: str, logging_yaml_file: Opti
     logging.config.dictConfig(logging_config)
 
 
-def _set_default_logger(log_dir:str, log_filename):
+def _set_default_logger(log_dir: str, log_filename):
     """
     デフォルトのロガーを設定する。パッケージ内のlogging.yamlを読み込む。
     """
@@ -262,6 +265,7 @@ def build_annofabapi_resource_and_login() -> annofabapi.Resource:
         else:
             raise e
 
+
 def duplicated_set(l: List[T]) -> Set[T]:
     """
     重複しているsetを返す
@@ -274,7 +278,8 @@ def duplicated_set(l: List[T]) -> Set[T]:
     """
     return {x for x in set(l) if l.count(x) > 1}
 
-def progress_msg(index:int, size: int):
+
+def progress_msg(index: int, size: int):
     """
     `1/100件目`という進捗率を表示する
     """
@@ -305,7 +310,6 @@ def prompt_yesno(msg: str) -> Tuple[bool, bool]:
             return True, True
 
 
-
 def output_string(target: str, output: Optional[str] = None):
     """
     ファイルパスが指定されていればファイルに、指定しなければ標準出力に出力する。
@@ -324,6 +328,7 @@ def output_string(target: str, output: Optional[str] = None):
 
 def print_json(target: Any, output: Optional[str] = None):
     output_string(json.dumps(target, indent=2, ensure_ascii=False), output)
+
 
 def print_csv(df: pandas.DataFrame, output: Optional[str] = None, to_csv_kwargs: Optional[Dict[str, Any]] = None):
     if output is None:

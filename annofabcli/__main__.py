@@ -1,17 +1,16 @@
 import argparse
 import logging
+from typing import List, Optional, Sequence  # pylint: disable=unused-import
 
 import annofabcli.cancel_acceptance
 import annofabcli.complete_tasks
 import annofabcli.diff_projects
 import annofabcli.invite_users
+import annofabcli.print_inspections
 import annofabcli.print_label_color
 import annofabcli.print_unprocessed_inspections
 import annofabcli.reject_tasks
 import annofabcli.write_annotation_image
-import annofabcli.print_inspections
-
-from typing import List, Optional, Sequence  # pylint: disable=unused-import
 
 logger = logging.getLogger(__name__)
 
