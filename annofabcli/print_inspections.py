@@ -109,20 +109,25 @@ class PrintInspections(AbstractCommandLineInterface):
 
 
 def parse_args(parser: argparse.ArgumentParser):
-    parser.add_argument('-p', '--project_id', type=str, required=True, help='対象のプロジェクトのproject_idを指定します。')
+
+    parser.add_argument('-p', '--project_id', type=str, required=True,
+                        help='対象のプロジェクトのproject_idを指定します。')
 
     parser.add_argument('-t', '--task_id', type=str, required=True, nargs='+',
-                        help='対象のタスクのtask_idを指定します。`file://`を先頭に付けると、task_idの一覧が記載されたファイルを指定できます。')
+                        help='対象のタスクのtask_idを指定します。'
+                             '`file://`を先頭に付けると、task_idの一覧が記載されたファイルを指定できます。')
 
     parser.add_argument('-f', '--format', type=str, choices=['csv', 'json'], default='csv',
                         help='出力フォーマットを指定します。指定しない場合は、"csv"フォーマットになります。')
 
-    parser.add_argument('-o', '--output', type=str, help='出力先のファイルパスを指定します。指定しない場合は、標準出力に出力されます。')
+    parser.add_argument('-o', '--output', type=str,
+                        help='出力先のファイルパスを指定します。指定しない場合は、標準出力に出力されます。')
 
     parser.add_argument(
-        '--csv_format', type=str, help='CSVのフォーマットをJSON形式で指定します。`--format`が`csv`でないときは、このオプションは無視されます。'
+        '--csv_format', type=str,
+        help='CSVのフォーマットをJSON形式で指定します。`--format`が`csv`でないときは、このオプションは無視されます。'
         '`file://`を先頭に付けると、JSON形式のファイルを指定できます。'
-        '指定した値は、[pandas.DataFrame.to_csv](https://pandas.pydata.org/pandas-docs/stable/reference/api/pandas.DataFrame.to_csv.html) の引数として渡されます。'
+        '指定した値は、[pandas.DataFrame.to_csv](https://pandas.pydata.org/pandas-docs/stable/reference/api/pandas.DataFrame.to_csv.html) の引数として渡されます。'  # noqa: E501
     )
 
     parser.set_defaults(subcommand_func=main)

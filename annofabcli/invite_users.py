@@ -71,11 +71,11 @@ class InviteUser(AbstractCommandLineInterface):
         user_id_list = annofabcli.utils.get_list_from_args(args.user_id)
 
         if args.organization is not None:
-            self.assign_role_with_organization(args.organization, args.user_id, args.role)
+            self.assign_role_with_organization(args.organization, user_id_list, args.role)
 
         elif args.project_id is not None:
             project_id_list = annofabcli.utils.get_list_from_args(args.project_id)
-            self.assign_role_with_project_id(project_id_list, args.user_id, args.role)
+            self.assign_role_with_project_id(project_id_list, user_id_list, args.role)
 
 
 def main(args):

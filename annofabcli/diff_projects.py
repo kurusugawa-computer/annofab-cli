@@ -156,8 +156,9 @@ class DiffProjecs(AbstractCommandLineInterface):
             label_names = label_names1
 
         for label_name in label_names:
+            def get_label_func(x):
+                return AnnofabApiFacade.get_label_name_en(x) == label_name
 
-            get_label_func = lambda x: AnnofabApiFacade.get_label_name_en(x) == label_name
             label1 = more_itertools.first_true(labels1, pred=get_label_func)
             label2 = more_itertools.first_true(labels2, pred=get_label_func)
 
