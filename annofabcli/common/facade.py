@@ -143,8 +143,8 @@ class AnnofabApiFacade:
 
         """
         my_member, _ = self.service.api.get_my_member_in_project(project_id)
-        my_role = my_member["member_role"]
-        return ProjectMemberRole(my_role) in roles
+        my_role = ProjectMemberRole(my_member["member_role"])
+        return my_role in roles
 
     ##################
     # operateTaskのfacade

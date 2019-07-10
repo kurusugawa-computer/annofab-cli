@@ -293,7 +293,7 @@ class DiffProjecs(AbstractCommandLineInterface):
 
         logger.info(f"=== {project_title1}({project_id1}) と {project_title2}({project_id1}) の差分を表示")
 
-        self.validate_project(project_id1, project_id2)
+        self.validate_projects(project_id1, project_id2)
 
         diff_targets = args.target
         if "members" in diff_targets:
