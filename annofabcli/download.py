@@ -10,6 +10,7 @@ import annofabcli
 import annofabcli.common.cli
 from annofabcli import AnnofabApiFacade
 from annofabcli.common.cli import AbstractCommandLineInterface, build_annofabapi_resource_and_login
+from annofabcli.common.exceptions import AnnofabCliException
 
 logger = logging.getLogger(__name__)
 
@@ -23,12 +24,14 @@ class Download(AbstractCommandLineInterface):
             target: str,
             project_id: str,
             output: str,
-    ):
+    ) -> bool:
         if target == 'simple_annotation':
             return self.facade.download_latest_simple_annotation_archive_with_waiting(project_id, output)
 
         elif target == 'full_annotation':
             return self.facade.download_latest_simple_annotation_archive_with_waiting(project_id, output)
+        else:
+            raise AnnofabCliException(f"target = {target} が不正です。")
 
     def download(self, target: str, project_id: str, output: str, latest: bool = False):
         if target == 'task':
@@ -40,7 +43,7 @@ class Download(AbstractCommandLineInterface):
         elif target == 'history_event':
             self.service.wrapper.download_project_task_history_events_url(project_id, output)
 
-        elif target == 'simple_annotation' or target == 'full_annotation':
+        elif target in ['simple_annotation', 'full_annotation']:
             if latest:
                 # アノテーション情報を最新化してからダウンロードする
                 result = self.download_latest_annotation(target, project_id, output)
