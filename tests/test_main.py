@@ -4,10 +4,10 @@
 import configparser
 import datetime
 import os
+from pathlib import Path
 
 import annofabapi
 
-from pathlib import Path
 import annofabcli
 from annofabcli.__main__ import main
 
@@ -31,6 +31,7 @@ out_path = Path('./tests/out')
 
 def test_cancel_acceptance():
     main(['cancel_acceptance', '--project_id', project_id, '--task_id', task_id, '--yes'])
+
 
 def test_download():
     out_file = str(out_path / 'tasks.json')

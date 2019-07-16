@@ -4,14 +4,7 @@
 
 import argparse
 import logging
-import time
-import uuid
 from typing import Any, Dict, List, Optional  # pylint: disable=unused-import
-
-import annofabapi
-import annofabapi.utils
-import requests
-from annofabapi.models import ProjectMemberRole
 
 import annofabcli
 import annofabcli.common.cli
@@ -25,7 +18,12 @@ class Download(AbstractCommandLineInterface):
 
     TARGETS = ['task', 'inspection', 'history_event', 'simple_annotation', 'full_annotation']
 
-    def download_latest_annotation(self, target: str, project_id: str, output: str,):
+    def download_latest_annotation(
+            self,
+            target: str,
+            project_id: str,
+            output: str,
+    ):
         if target == 'simple_annotation':
             return self.facade.download_latest_simple_annotation_archive_with_waiting(project_id, output)
 
@@ -56,7 +54,6 @@ class Download(AbstractCommandLineInterface):
                 elif target == 'full_annotation':
                     self.service.wrapper.download_full_annotation_archive(project_id, output)
 
-
     def main(self, args: argparse.Namespace):
         super().process_common_args(args, __file__, logger)
         self.download(args.target, args.project_id, args.output, latest=args.latest)
@@ -69,16 +66,14 @@ def main(args: argparse.Namespace):
 
 
 def parse_args(parser: argparse.ArgumentParser):
-    parser.add_argument('target', type=str, choices=Download.TARGETS,
-                        help='ダウンロード対象の項目を指定します。')
+    parser.add_argument('target', type=str, choices=Download.TARGETS, help='ダウンロード対象の項目を指定します。')
 
     parser.add_argument('-p', '--project_id', type=str, required=True, help='対象のプロジェクトのproject_idを指定します。')
 
     parser.add_argument('-o', '--output', type=str, required=True, help='ダウンロード先を指定します。')
 
-    parser.add_argument('--latest', action='store_true',
-                        help='最新のアノテーションをダウンロードする場合は指定してください。'
-                             'ただしアノテーション情報を更新するのに数分かかります。')
+    parser.add_argument('--latest', action='store_true', help='最新のアノテーションをダウンロードする場合は指定してください。'
+                        'ただしアノテーション情報を更新するのに数分かかります。')
 
     parser.set_defaults(subcommand_func=main)
 

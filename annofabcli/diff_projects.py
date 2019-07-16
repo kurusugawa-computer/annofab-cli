@@ -8,7 +8,6 @@ import logging
 import pprint
 from typing import Any, Dict, List  # pylint: disable=unused-import
 
-import annofabapi
 import dictdiffer
 import more_itertools
 from annofabapi.models import ProjectMemberRole
@@ -17,7 +16,6 @@ import annofabcli
 import annofabcli.common.cli
 from annofabcli import AnnofabApiFacade
 from annofabcli.common.cli import AbstractCommandLineInterface, build_annofabapi_resource_and_login
-from annofabcli.common.exceptions import AuthorizationError
 
 logger = logging.getLogger(__name__)
 
@@ -52,7 +50,6 @@ class DiffProjecs(AbstractCommandLineInterface):
     """
     プロジェクト間の差分を表示する
     """
-
     def diff_project_members(self, project_id1: str, project_id2: str):
         """
         プロジェクト間のプロジェクトメンバの差分を表示する。

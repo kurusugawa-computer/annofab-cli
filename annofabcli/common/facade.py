@@ -2,15 +2,14 @@
 annofabapiのfacadeクラス
 """
 
+import logging
+import time
 from typing import Any, Callable, Dict, List, Optional, Tuple  # pylint: disable=unused-import
 
-import time
 import annofabapi
 import annofabapi.utils
 import more_itertools
-import logging
 from annofabapi.models import OrganizationMember, ProjectMemberRole
-
 
 logger = logging.getLogger(__name__)
 
@@ -95,7 +94,6 @@ class AnnofabApiFacade:
         Returns:
             account_id
         """
-
     def get_user_id_from_account_id(self, project_id: str, account_id: str) -> str:
         """
         account_idからuser_idを取得する.
@@ -108,7 +106,6 @@ class AnnofabApiFacade:
             account_id
 
         """
-
         def update_organization_members():
             organization_name = self.get_organization_name_from_project_id(project_id)
             self._organization_members = self.service.wrapper.get_all_organization_members(organization_name)
@@ -152,9 +149,11 @@ class AnnofabApiFacade:
         my_role = ProjectMemberRole(my_member["member_role"])
         return my_role in roles
 
-    def _download_annotation_archive_with_waiting(self, project_id: str, dest_path: str, download_func: Callable[[str, str],Any], job_access_interval: int, max_job_access: int) -> bool:
+    def _download_annotation_archive_with_waiting(self, project_id: str, dest_path: str,
+                                                  download_func: Callable[[str, str], Any], job_access_interval: int,
+                                                  max_job_access: int) -> bool:
         def get_latest_job():
-            job_list= self.service.api.get_project_job(project_id, query_params={"type": "gen-annotation"})[0]["list"]
+            job_list = self.service.api.get_project_job(project_id, query_params={"type": "gen-annotation"})[0]["list"]
             assert len(job_list) == 1
             return job_list[0]
 
@@ -184,8 +183,9 @@ class AnnofabApiFacade:
                     logger.info(f"job_id = {job['job_id']} のジョブが失敗しました。")
                     return False
 
-
-    def download_latest_full_annotation_archive_with_waiting(self, project_id: str, dest_path: str, job_access_interval: int = 60, max_job_access: int = 10) -> bool:
+    def download_latest_full_annotation_archive_with_waiting(self, project_id: str, dest_path: str,
+                                                             job_access_interval: int = 60,
+                                                             max_job_access: int = 10) -> bool:
         """
         最新のFullアノテーションをダウンロードする。アノテーション情報が最新化するまで、数分待つ。
         Args:
@@ -198,9 +198,14 @@ class AnnofabApiFacade:
             True: ダウンロード成功。False: ダウンロード失敗。
         """
 
-        return self._download_annotation_archive_with_waiting(project_id, dest_path, self.service.wrapper.download_full_annotation_archive, job_access_interval=job_access_interval, max_job_access=max_job_access)
+        return self._download_annotation_archive_with_waiting(project_id, dest_path,
+                                                              self.service.wrapper.download_full_annotation_archive,
+                                                              job_access_interval=job_access_interval,
+                                                              max_job_access=max_job_access)
 
-    def download_latest_simple_annotation_archive_with_waiting(self, project_id: str, dest_path: str, job_access_interval: int = 60, max_job_access: int = 10) -> bool:
+    def download_latest_simple_annotation_archive_with_waiting(self, project_id: str, dest_path: str,
+                                                               job_access_interval: int = 60,
+                                                               max_job_access: int = 10) -> bool:
         """
         最新のSimpleアノテーションをダウンロードする。アノテーション情報が最新化するまで、数分待つ。
         Args:
@@ -213,8 +218,10 @@ class AnnofabApiFacade:
             True: ダウンロード成功。False: ダウンロード失敗。
         """
 
-        return self._download_annotation_archive_with_waiting(project_id, dest_path, self.service.wrapper.download_annotation_archive, job_access_interval=job_access_interval, max_job_access=max_job_access)
-
+        return self._download_annotation_archive_with_waiting(project_id, dest_path,
+                                                              self.service.wrapper.download_annotation_archive,
+                                                              job_access_interval=job_access_interval,
+                                                              max_job_access=max_job_access)
 
     ##################
     # operateTaskのfacade

@@ -7,7 +7,6 @@ import json
 import logging
 from typing import Any, Callable, Dict, List, Optional, Tuple  # pylint: disable=unused-import
 
-import annofabapi
 from annofabapi.models import ProjectMemberRole
 
 import annofabcli
@@ -22,7 +21,6 @@ class PrintLabelColor(AbstractCommandLineInterface):
     """
     アノテーションラベルの色(RGB)を出力する
     """
-
     @staticmethod
     def get_rgb(label: Dict[str, Any]) -> Tuple[int, int, int]:
         color = label["color"]

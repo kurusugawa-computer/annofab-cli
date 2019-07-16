@@ -10,7 +10,6 @@ import os.path
 from pathlib import Path
 from typing import Any, Callable, Dict, List, Optional, Tuple  # pylint: disable=unused-import
 
-import annofabapi
 import PIL
 import PIL.Image
 import PIL.ImageDraw
@@ -18,7 +17,6 @@ from annofabapi.models import Annotation
 
 import annofabcli
 import annofabcli.common.cli
-from annofabcli import AnnofabApiFacade
 from annofabcli.common.typing import RGB, InputDataSize, SubInputDataList
 
 logger = logging.getLogger(__name__)

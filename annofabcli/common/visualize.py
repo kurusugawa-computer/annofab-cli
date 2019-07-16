@@ -7,7 +7,7 @@ from typing import Any, Callable, Dict, List, Optional, Tuple  # pylint: disable
 
 import annofabapi
 import more_itertools
-from annofabapi.models import Inspection, OrganizationMember, ProjectMemberRole
+from annofabapi.models import Inspection, OrganizationMember
 
 
 class MessageLocale(enum.Enum):
@@ -50,7 +50,6 @@ class AddProps:
         Returns:
             組織メンバ
         """
-
         def update_organization_members():
             self._organization_members = self.service.wrapper.get_all_organization_members(self.organization_name)
 
@@ -110,7 +109,6 @@ class AddProps:
         Returns:
 
         """
-
         def add_commenter_info():
             commenter_user_id = None
             commenter_username = None

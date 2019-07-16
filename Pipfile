@@ -13,5 +13,6 @@ mypy = "*"
 flake8 = "*"
 pylint = "*"
 twine = "*"
+autoflake = "*"
 
 [packages]
