@@ -2,6 +2,7 @@
 プロジェクトのユーザを表示する。
 """
 import argparse
+import logging
 from typing import Any, Callable, Dict, List, Optional, Tuple, Union  # pylint: disable=unused-import
 
 import requests
@@ -10,8 +11,6 @@ import annofabcli
 from annofabcli import AnnofabApiFacade
 from annofabcli.common.cli import AbstractCommandLineInterface, build_annofabapi_resource_and_login
 
-import logging
-
 logger = logging.getLogger(__name__)
 
 
@@ -19,11 +18,10 @@ class ListUser(AbstractCommandLineInterface):
     """
     ユーザを表示する
     """
-
     def list_role_with_organization(self, organization_name: str):
 
         # 進行中で自分自身が所属しているプロジェクトの一覧を取得する
-        my_account_id = self.facade.get_my_account_id()
+        # my_account_id = self.facade.get_my_account_id()
         try:
             for user in self.service.wrapper.get_all_organization_members(organization_name):
                 print(f"{user['user_id']}\t{user['username']}")

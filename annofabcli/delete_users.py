@@ -2,16 +2,14 @@
 プロジェクトから複数のユーザを削除する。
 """
 import argparse
+import logging
 from typing import Any, Callable, Dict, List, Optional, Tuple, Union  # pylint: disable=unused-import
 
 import requests
 
-import annofabapi
 import annofabcli
 from annofabcli import AnnofabApiFacade
 from annofabcli.common.cli import AbstractCommandLineInterface, build_annofabapi_resource_and_login
-
-import logging
 
 logger = logging.getLogger(__name__)
 
@@ -20,7 +18,6 @@ class DeleteUser(AbstractCommandLineInterface):
     """
     ユーザをプロジェクトから削除する
     """
-
     def drop_role_with_organization(self, organization_name: str, user_id_list: List[str]):
 
         # 進行中で自分自身が所属しているプロジェクトの一覧を取得する

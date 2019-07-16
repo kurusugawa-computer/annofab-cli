@@ -75,10 +75,10 @@ def parse_args(parser: argparse.ArgumentParser):
 
     parser.add_argument('-o', '--output', type=str, required=True, help='ダウンロード先を指定します。')
 
-    parser.add_argument('--latest', action='store_true',
-                        help='最新のアノテーションをダウンロードする場合は指定してください。'
-                        'ただしアノテーション情報を更新するのに数分かかります。'
-                             'タスク、検査コメント、タスク履歴イベントに対しては無視されます。')
+    parser.add_argument(
+        '--latest', action='store_true', help='最新のアノテーションをダウンロードする場合は指定してください。'
+        'ただしアノテーション情報を更新するのに数分かかります。'
+        'タスク、検査コメント、タスク履歴イベントに対しては無視されます。')
 
     parser.set_defaults(subcommand_func=main)
 
@@ -86,8 +86,7 @@ def parse_args(parser: argparse.ArgumentParser):
 def add_parser(subparsers: argparse._SubParsersAction):
     subcommand_name = "download"
     subcommand_help = "タスクや検査コメント、アノテーションなどをダウンロードします。"
-    description = ("タスクや検査コメント、アノテーションなどをダウンロードします。"
-                   "タスク、検査コメント、タスク履歴イベントは毎日AM 02:00 JSTに更新されます。")
+    description = ("タスクや検査コメント、アノテーションなどをダウンロードします。" "タスク、検査コメント、タスク履歴イベントは毎日AM 02:00 JSTに更新されます。")
     epilog = "オーナロールを持つユーザで実行してください。"
 
     parser = annofabcli.common.cli.add_parser(subparsers, subcommand_name, subcommand_help, description, epilog=epilog)
