@@ -155,7 +155,7 @@ class DiffProjecs(AbstractCommandLineInterface):
         for label_name in label_names:
 
             def get_label_func(x):
-                return AnnofabApiFacade.get_label_name_en(x) == label_name
+                return AnnofabApiFacade.get_label_name_en(x) == label_name  # pylint: disable=cell-var-from-loop
 
             label1 = more_itertools.first_true(labels1, pred=get_label_func)
             label2 = more_itertools.first_true(labels2, pred=get_label_func)
@@ -173,7 +173,8 @@ class DiffProjecs(AbstractCommandLineInterface):
 
         return is_different
 
-    def diff_inspection_phrases(self, inspection_phrases1: List[Dict[str, Any]],
+    @staticmethod
+    def diff_inspection_phrases(inspection_phrases1: List[Dict[str, Any]],
                                 inspection_phrases2: List[Dict[str, Any]]) -> bool:
         """
         定型指摘の差分を表示する。定型指摘IDを基準に差分を表示する。
