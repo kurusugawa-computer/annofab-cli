@@ -4,7 +4,6 @@ import logging
 import time
 from typing import Any, Callable, Dict, List, Optional  # pylint: disable=unused-import
 
-import annofabapi
 import requests
 from annofabapi.models import Inspection, ProjectMemberRole, Task
 
@@ -24,7 +23,6 @@ class ComleteTasks(AbstractCommandLineInterface):
     """
     タスクを受け入れ完了にする
     """
-
     def complete_tasks_with_changing_inspection_status(self, project_id: str, task_id_list: List[str],
                                                        inspection_status: str, inspection_json: InspectionJson):
         """

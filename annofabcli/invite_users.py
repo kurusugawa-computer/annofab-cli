@@ -6,7 +6,6 @@ import argparse
 import logging
 from typing import Any, Callable, Dict, List, Optional, Tuple, Union  # pylint: disable=unused-import
 
-import annofabapi
 import requests
 
 import annofabcli
@@ -21,7 +20,6 @@ class InviteUser(AbstractCommandLineInterface):
     """
     ユーザをプロジェクトに招待する
     """
-
     def assign_role_with_organization(self, organization_name: str, user_id_list: List[str], member_role: str):
 
         # 進行中で自分自身が所属しているプロジェクトの一覧を取得する

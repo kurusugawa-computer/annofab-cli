@@ -7,8 +7,7 @@ import json
 import logging
 from typing import Any, Callable, Dict, List, Optional  # pylint: disable=unused-import
 
-import annofabapi
-from annofabapi.models import Inspection, ProjectMemberRole
+from annofabapi.models import Inspection
 
 import annofabcli
 import annofabcli.common.cli
@@ -22,7 +21,6 @@ class PrintUnprocessedInspections(AbstractCommandLineInterface):
     """
     検査コメントIDのList(task_id, input_data_idごと)を出力する
     """
-
     def get_unprocessed_inspections(self, project_id: str, task_id: str, input_data_id: str,
                                     inspection_comment: Optional[str] = None,
                                     commenter_account_id: Optional[str] = None):
@@ -39,7 +37,6 @@ class PrintUnprocessedInspections(AbstractCommandLineInterface):
         Returns:
             対象の検査コメント一覧
         """
-
         def filter_inspection(arg_inspection: Inspection) -> bool:
             # 未処置コメントのみ、変更する
             if arg_inspection["status"] != "annotator_action_required":

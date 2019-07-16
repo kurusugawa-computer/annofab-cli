@@ -8,7 +8,6 @@ import logging
 import pprint
 from typing import Any, Dict, List  # pylint: disable=unused-import
 
-import annofabapi
 import dictdiffer
 import more_itertools
 from annofabapi.models import ProjectMemberRole
@@ -17,7 +16,6 @@ import annofabcli
 import annofabcli.common.cli
 from annofabcli import AnnofabApiFacade
 from annofabcli.common.cli import AbstractCommandLineInterface, build_annofabapi_resource_and_login
-from annofabcli.common.exceptions import AuthorizationError
 
 logger = logging.getLogger(__name__)
 
@@ -52,7 +50,6 @@ class DiffProjecs(AbstractCommandLineInterface):
     """
     プロジェクト間の差分を表示する
     """
-
     def diff_project_members(self, project_id1: str, project_id2: str):
         """
         プロジェクト間のプロジェクトメンバの差分を表示する。
@@ -158,7 +155,7 @@ class DiffProjecs(AbstractCommandLineInterface):
         for label_name in label_names:
 
             def get_label_func(x):
-                return AnnofabApiFacade.get_label_name_en(x) == label_name
+                return AnnofabApiFacade.get_label_name_en(x) == label_name  # pylint: disable=cell-var-from-loop
 
             label1 = more_itertools.first_true(labels1, pred=get_label_func)
             label2 = more_itertools.first_true(labels2, pred=get_label_func)
@@ -176,7 +173,8 @@ class DiffProjecs(AbstractCommandLineInterface):
 
         return is_different
 
-    def diff_inspection_phrases(self, inspection_phrases1: List[Dict[str, Any]],
+    @staticmethod
+    def diff_inspection_phrases(inspection_phrases1: List[Dict[str, Any]],
                                 inspection_phrases2: List[Dict[str, Any]]) -> bool:
         """
         定型指摘の差分を表示する。定型指摘IDを基準に差分を表示する。

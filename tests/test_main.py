@@ -4,6 +4,7 @@
 import configparser
 import datetime
 import os
+from pathlib import Path
 
 import annofabapi
 
@@ -22,12 +23,19 @@ task_id = annofab_config['task_id']
 service = annofabapi.build_from_netrc()
 user_id = service.api.login_user_id
 
+out_path = Path('./tests/out')
+
 # def test_complete_tasks():
 #     #main(['complete_tasks', '--project_id', project_id, '--task_id', task_id, '--yes' ])
 
 
 def test_cancel_acceptance():
     main(['cancel_acceptance', '--project_id', project_id, '--task_id', task_id, '--yes'])
+
+
+def test_download():
+    out_file = str(out_path / 'tasks.json')
+    main(['download', 'tasks', '--project_id', project_id, '--output', out_file])
 
 
 def test_reject_tasks():

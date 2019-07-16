@@ -5,6 +5,7 @@ from typing import List, Optional, Sequence  # pylint: disable=unused-import
 import annofabcli.cancel_acceptance
 import annofabcli.complete_tasks
 import annofabcli.diff_projects
+import annofabcli.download
 import annofabcli.list_users
 import annofabcli.invite_users
 import annofabcli.delete_users
@@ -39,6 +40,8 @@ def main(arguments: Optional[Sequence[str]] = None):
     annofabcli.cancel_acceptance.add_parser(subparsers)
 
     annofabcli.complete_tasks.add_parser(subparsers)
+
+    annofabcli.download.add_parser(subparsers)
 
     annofabcli.diff_projects.add_parser(subparsers)
 

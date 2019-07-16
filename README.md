@@ -65,6 +65,7 @@ $ docker run -it -e ANNOFAB_USER_ID=XXXX -e ANNOFAB_PASSWORD=YYYYY annofab-cli a
 | cancel_acceptance             | 受け入れ完了タスクを、受け入れ取り消しする。                                                             |オーナ|
 | complete_tasks                | 未処置の検査コメントを適切な状態に変更して、タスクを受け入れ完了にする。                                 |チェッカー/オーナ|
 | diff_projects                 | プロジェクト間の差分を表示する                                                                           |チェッカー/オーナ|
+| download                 | タスクや検査コメント、アノテーションなどをダウンロードします。                                                                           |オーナ|
 | invite_users                  | 複数のプロジェクトに、ユーザを招待する。                                                                 |オーナ|
 | print_inspections | 検査コメントを出力する。                               |-|
 | print_unprocessed_inspections | 未処置の検査コメントList(task_id, input_data_idごと)をJSONとして出力する。                               |-|
@@ -201,6 +202,34 @@ $ annofabcli diff_projects  prj1 prj2 --target settings
  ('change', 'color.green', (251, 255)),
  ('change', 'color.blue', (171, 204))]
 ラベル名(en): bike は同一
+```
+
+
+
+### download
+タスクや検査コメント、アノテーションなどをダウンロードします。
+
+
+```
+# タスクの全一覧が記載されたJSONファイルをダウンロードする
+$ annofabcli download task --project_id prj1 --output task.json
+
+# 検査コメントの全一覧が記載されたJSONファイルをダウンロードする
+$ annofabcli download inspection --project_id prj1 --output inspection.json
+
+# タスク履歴イベントの全一覧が記載されたJSONファイルをダウンロードする
+$ annofabcli download history_event --project_id prj1 --output history_event.json
+
+# Simpleアノテーションのzipファイルをダウンロードする
+$ annofabcli download simple_annotation --project_id prj1 --output simple_annotation.zip
+
+# 最新のFullアノテーションのzipファイルをダウンロードする（数分待つ）
+$ annofabcli download full_annotation --project_id prj1 --output full_annotation.zip --latest
+DEBUG    : 2019-07-16 12:15:14,647 : annofabcli.common.facade       : job_id = c566c842-d84c-43d8-9f61-42fe5960c0fb のジョブが進行中です。60秒間待ちます。
+DEBUG    : 2019-07-16 12:16:15,053 : annofabcli.common.facade       : job_id = c566c842-d84c-43d8-9f61-42fe5960c0fb のジョブが進行中です。60秒間待ちます。
+DEBUG    : 2019-07-16 12:17:15,457 : annofabcli.common.facade       : job_id = c566c842-d84c-43d8-9f61-42fe5960c0fb のジョブが進行中です。60秒間待ちます。
+DEBUG    : 2019-07-16 12:18:15,710 : annofabcli.common.facade       : job_id = c566c842-d84c-43d8-9f61-42fe5960c0fb のジョブが成功しました。ダウンロードを開始します。
+
 ```
 
 

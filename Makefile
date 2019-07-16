@@ -5,6 +5,7 @@ init:
 	pipenv install --dev
 
 format:
+	pipenv run autoflake  --in-place --remove-all-unused-imports  --ignore-init-module-imports --recursive annofabcli
 	pipenv run isort --verbose --recursive annofabcli tests
 	pipenv run yapf --verbose --in-place --recursive annofabcli tests
 
