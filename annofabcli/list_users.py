@@ -6,7 +6,6 @@ from typing import Any, Callable, Dict, List, Optional, Tuple, Union  # pylint: 
 
 import requests
 
-import annofabapi
 import annofabcli
 from annofabcli import AnnofabApiFacade
 from annofabcli.common.cli import AbstractCommandLineInterface, build_annofabapi_resource_and_login
@@ -27,7 +26,7 @@ class ListUser(AbstractCommandLineInterface):
         my_account_id = self.facade.get_my_account_id()
         try:
             for user in self.service.wrapper.get_all_organization_members(organization_name):
-                print(f"{user['project_id']}\t{user['user_id']}\t{user['username']}")
+                print(f"{user['user_id']}\t{user['username']}")
 
             logger.info(f"{organization_name}のユーザ表示成功。")
 
@@ -50,7 +49,7 @@ class ListUser(AbstractCommandLineInterface):
 
             except requests.exceptions.HTTPError as e:
                 logger.warning(e)
-                logger.warning(f"エラーのため、{project_title} から表示できなかった。")
+                logger.warning(f"エラーのため、project_id = {project_id} のプロジェクトから表示できなかった。")
 
     def main(self, args):
         super().process_common_args(args, __file__, logger)

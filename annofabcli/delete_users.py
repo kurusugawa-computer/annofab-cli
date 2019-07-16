@@ -62,7 +62,7 @@ class DeleteUser(AbstractCommandLineInterface):
 
             except requests.exceptions.HTTPError as e:
                 logger.warning(e)
-                logger.warning(f"エラーのため、{project_title} から削除できなかった。")
+                logger.warning(f"エラーのため、project_id = {project_id} のプロジェクトから削除できなかった。")
 
     def main(self, args):
         super().process_common_args(args, __file__, logger)
