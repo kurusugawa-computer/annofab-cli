@@ -76,8 +76,18 @@ def parse_args(parser: argparse.ArgumentParser):
     parser.set_defaults(subcommand_func=main)
 
 
-def add_parser(subparsers: argparse._SubParsersAction):
+def add_parser_deprecated(subparsers: argparse._SubParsersAction):
     subcommand_name = "list_users"
+    subcommand_help = "複数のプロジェクトのユーザを表示する。"
+    description = ("複数のプロジェクトのユーザを表示する。")
+    epilog = "オーナロールを持つユーザで実行してください。"
+
+    parser = annofabcli.common.cli.add_parser(subparsers, subcommand_name, subcommand_help, description, epilog=epilog)
+    parse_args(parser)
+
+
+def add_parser(subparsers: argparse._SubParsersAction):
+    subcommand_name = "list"
     subcommand_help = "複数のプロジェクトのユーザを表示する。"
     description = ("複数のプロジェクトのユーザを表示する。")
     epilog = "オーナロールを持つユーザで実行してください。"
