@@ -35,7 +35,7 @@ def test_cancel_acceptance():
 
 def test_download():
     out_file = str(out_path / 'tasks.json')
-    main(['download', 'tasks', '--project_id', project_id, '--output', out_file])
+    main(['download', 'task', '--project_id', project_id, '--output', out_file])
 
 
 def test_reject_tasks():

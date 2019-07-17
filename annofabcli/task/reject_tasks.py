@@ -189,8 +189,18 @@ def parse_args(parser: argparse.ArgumentParser):
     parser.set_defaults(subcommand_func=main)
 
 
-def add_parser(subparsers: argparse._SubParsersAction):
+def add_parser_dprecated(subparsers: argparse._SubParsersAction):
     subcommand_name = "reject_tasks"
+    subcommand_help = "検査コメントを付与してタスクを差し戻します。"
+    description = ("検査コメントを付与してタスクを差し戻します。検査コメントは、タスク内の先頭の画像の左上(x=0,y=0)に付与します。アノテーションルールを途中で変更したときなどに、利用します。")
+    epilog = "チェッカーまたはオーナロールを持つユーザで実行してください。"
+
+    parser = annofabcli.common.cli.add_parser(subparsers, subcommand_name, subcommand_help, description, epilog=epilog)
+    parse_args(parser)
+
+
+def add_parser(subparsers: argparse._SubParsersAction):
+    subcommand_name = "reject"
     subcommand_help = "検査コメントを付与してタスクを差し戻します。"
     description = ("検査コメントを付与してタスクを差し戻します。検査コメントは、タスク内の先頭の画像の左上(x=0,y=0)に付与します。アノテーションルールを途中で変更したときなどに、利用します。")
     epilog = "チェッカーまたはオーナロールを持つユーザで実行してください。"

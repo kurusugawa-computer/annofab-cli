@@ -1,6 +1,6 @@
 import argparse
 import logging
-from typing import List, Optional, Sequence  # pylint: disable=unused-import
+from typing import Optional, Sequence  # pylint: disable=unused-import
 
 import annofabcli.cancel_acceptance
 import annofabcli.complete_tasks
@@ -12,8 +12,10 @@ import annofabcli.list_users
 import annofabcli.print_inspections
 import annofabcli.print_label_color
 import annofabcli.print_unprocessed_inspections
-import annofabcli.reject_tasks
+import annofabcli.task.reject_tasks
 import annofabcli.write_annotation_image
+import annofabcli.subcommand_task
+
 
 logger = logging.getLogger(__name__)
 
@@ -36,6 +38,8 @@ def main(arguments: Optional[Sequence[str]] = None):
 
     subparsers = parser.add_subparsers()
 
+    annofabcli.subcommand_task.add_parser(subparsers)
+
     # サブコマンドの定義
     annofabcli.cancel_acceptance.add_parser(subparsers)
 
@@ -57,7 +61,7 @@ def main(arguments: Optional[Sequence[str]] = None):
 
     annofabcli.print_label_color.add_parser(subparsers)
 
-    annofabcli.reject_tasks.add_parser(subparsers)
+    annofabcli.task.reject_tasks.add_parser_dprecated(subparsers)
 
     annofabcli.write_annotation_image.add_parser(subparsers)
 
