@@ -13,6 +13,7 @@ import annofabcli.inspection.print_inspections
 import annofabcli.print_label_color
 import annofabcli.print_unprocessed_inspections
 import annofabcli.task.reject_tasks
+import annofabcli.print_specs
 import annofabcli.write_annotation_image
 import annofabcli.subcommand_task
 import annofabcli.subcommand_inspection
@@ -55,7 +56,6 @@ def main(arguments: Optional[Sequence[str]] = None):
 
     annofabcli.write_annotation_image.add_parser(subparsers)
 
-
     # deprecated コマンド
     annofabcli.task.complete_tasks.add_parser_deprecated(subparsers)
     annofabcli.task.reject_tasks.add_parser_dprecated(subparsers)
@@ -69,6 +69,7 @@ def main(arguments: Optional[Sequence[str]] = None):
     annofabcli.project_member.invite_users.add_parser_deprecated(subparsers)
     annofabcli.project_member.delete_users.add_parser_deprecated(subparsers)
 
+    annofabcli.print_specs.add_parser(subparsers)
 
     if arguments is None:
         args = parser.parse_args()
