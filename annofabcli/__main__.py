@@ -5,7 +5,7 @@ from typing import Optional, Sequence  # pylint: disable=unused-import
 import annofabcli.task.cancel_acceptance
 import annofabcli.task.complete_tasks
 import annofabcli.project_member.delete_users
-import annofabcli.diff_projects
+import annofabcli.project.diff_projects
 import annofabcli.download
 import annofabcli.project_member.invite_users
 import annofabcli.project_member.list_users
@@ -15,6 +15,8 @@ import annofabcli.print_unprocessed_inspections
 import annofabcli.task.reject_tasks
 import annofabcli.write_annotation_image
 import annofabcli.subcommand_task
+import annofabcli.subcommand_inspection
+import annofabcli.subcommand_project_member
 
 
 logger = logging.getLogger(__name__)
@@ -47,7 +49,7 @@ def main(arguments: Optional[Sequence[str]] = None):
 
     annofabcli.download.add_parser(subparsers)
 
-    annofabcli.diff_projects.add_parser(subparsers)
+    annofabcli.project.diff_projects.add_parser(subparsers)
 
     annofabcli.print_unprocessed_inspections.add_parser(subparsers)
 
