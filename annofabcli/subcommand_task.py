@@ -1,6 +1,8 @@
 import annofabcli
 import annofabcli.common.cli
 import annofabcli.task.reject_tasks
+import annofabcli.task.complete_tasks
+import annofabcli.task.cancel_acceptance
 import argparse
 
 def parse_args(parser: argparse.ArgumentParser):
@@ -9,6 +11,8 @@ def parse_args(parser: argparse.ArgumentParser):
 
     # サブコマンドの定義
     annofabcli.task.reject_tasks.add_parser(subparsers)
+    annofabcli.task.complete_tasks.add_parser(subparsers)
+    annofabcli.task.cancel_acceptance.add_parser(subparsers)
 
 
 def add_parser(subparsers: argparse._SubParsersAction):
