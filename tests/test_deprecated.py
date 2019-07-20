@@ -1,6 +1,7 @@
 """
-
+廃止予定のサブコマンドをテストする
 """
+
 import configparser
 import datetime
 import os
@@ -28,9 +29,12 @@ out_path = Path('./tests/out')
 # def test_complete_tasks():
 #     #main(['complete_tasks', '--project_id', project_id, '--task_id', task_id, '--yes' ])
 
-def test_task():
-    main(['task', 'cancel_acceptance', '--project_id', project_id, '--task_id', task_id, '--yes'])
 
+def test_cancel_acceptance():
+    main(['cancel_acceptance', '--project_id', project_id, '--task_id', task_id, '--yes'])
+
+
+def test_reject_tasks():
     inspection_comment = datetime.datetime.now().isoformat()
     main([
         'reject_tasks', '--project_id', project_id, '--task_id', task_id, '--comment', inspection_comment,
@@ -38,23 +42,17 @@ def test_task():
     ])
 
 
-def test_project():
-    main(['project', 'diff', project_id, project_id])
+def test_diff_projects():
+    main(['diff_projects', project_id, project_id])
 
 
-def test_inspection_comment():
-    main(['inspection_comment', 'list', '--project_id', project_id, '--task_id', task_id])
+def test_invite_users():
+    main(['invite_users', '--user_id', user_id, '--role', 'owner', '--project_id', project_id])
 
 
-def test_project_member():
-    main(['project_member','invite', '--user_id', user_id, '--role', 'owner', '--project_id', project_id])
+def test_print_inspections():
+    main(['print_inspections', '--project_id', project_id, '--task_id', task_id])
 
 
-#
-# def test_print_label_color():
-#     main(['print_label_color', project_id])
-
-def test_download():
-    out_file = str(out_path / 'tasks.json')
-    main(['download', 'task', '--project_id', project_id, '--output', out_file])
-
+def test_print_label_color():
+    main(['print_label_color', project_id])
