@@ -1,7 +1,9 @@
+import argparse
+
 import annofabcli
 import annofabcli.common.cli
 import annofabcli.inspection_comment.print_inspections
-import argparse
+
 
 def parse_args(parser: argparse.ArgumentParser):
 

@@ -1,9 +1,11 @@
+import argparse
+
 import annofabcli
 import annofabcli.common.cli
-import annofabcli.task.reject_tasks
-import annofabcli.task.complete_tasks
 import annofabcli.task.cancel_acceptance
-import argparse
+import annofabcli.task.complete_tasks
+import annofabcli.task.reject_tasks
+
 
 def parse_args(parser: argparse.ArgumentParser):
 

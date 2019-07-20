@@ -8,10 +8,10 @@ from typing import Any, Dict, List, Optional, Set, TypeVar  # pylint: disable=un
 
 import pandas
 import yaml
-import annofabcli
 
-from annofabcli.common.exceptions import AnnofabCliException
+import annofabcli
 from annofabcli.common.enums import FormatArgument
+from annofabcli.common.exceptions import AnnofabCliException
 
 logger = logging.getLogger(__name__)
 
@@ -127,7 +127,8 @@ def print_csv(df: pandas.DataFrame, output: Optional[str] = None, to_csv_kwargs:
         df.to_csv(sys.stdout, **to_csv_kwargs)
 
 
-def print_according_to_format(target: Any, format: FormatArgument, output: Optional[str] = None, csv_format: Optional[Dict[str, Any]] = None):
+def print_according_to_format(target: Any, format: FormatArgument, output: Optional[str] = None,
+                              csv_format: Optional[Dict[str, Any]] = None):
     """
     コマンドライン引数 ``--format`` の値にしたがって、内容を出力する。
 
@@ -139,7 +140,6 @@ def print_according_to_format(target: Any, format: FormatArgument, output: Optio
 
 
     """
-
 
     if format == FormatArgument.PRETTY_JSON:
         annofabcli.utils.print_json(target, is_pretty=True, output=output)

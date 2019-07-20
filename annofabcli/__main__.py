@@ -2,24 +2,23 @@ import argparse
 import logging
 from typing import Optional, Sequence  # pylint: disable=unused-import
 
-import annofabcli.task.cancel_acceptance
-import annofabcli.task.complete_tasks
-import annofabcli.project_member.delete_users
-import annofabcli.project.diff_projects
+import annofabcli.annotation_specs.subcommand_annotation_specs
 import annofabcli.download
-import annofabcli.project_member.invite_users
-import annofabcli.project_member.list_users
 import annofabcli.inspection_comment.print_inspections
+import annofabcli.inspection_comment.subcommand_inspection_comment
 import annofabcli.print_label_color
 import annofabcli.print_unprocessed_inspections
-import annofabcli.task.reject_tasks
-import annofabcli.annotation_specs.subcommand_annotation_specs
-import annofabcli.write_annotation_image
-import annofabcli.task.subcommand_task
-import annofabcli.inspection_comment.subcommand_inspection_comment
-import annofabcli.project_member.subcommand_project_member
+import annofabcli.project.diff_projects
 import annofabcli.project.subcommand_project
-
+import annofabcli.project_member.delete_users
+import annofabcli.project_member.invite_users
+import annofabcli.project_member.list_users
+import annofabcli.project_member.subcommand_project_member
+import annofabcli.task.cancel_acceptance
+import annofabcli.task.complete_tasks
+import annofabcli.task.reject_tasks
+import annofabcli.task.subcommand_task
+import annofabcli.write_annotation_image
 
 logger = logging.getLogger(__name__)
 
@@ -33,7 +32,6 @@ def main(arguments: Optional[Sequence[str]] = None):
         arguments: コマンドライン引数。テストコード用
 
     """
-
 
     parser = argparse.ArgumentParser(description="annofabapiを使ったCLIツール")
     parser.add_argument('--version', action='version', version=f'annofabcli {annofabcli.__version__}')
@@ -54,8 +52,6 @@ def main(arguments: Optional[Sequence[str]] = None):
     annofabcli.print_label_color.add_parser(subparsers)
 
     annofabcli.write_annotation_image.add_parser(subparsers)
-
-
 
     # deprecated コマンド
     annofabcli.task.complete_tasks.add_parser_deprecated(subparsers)

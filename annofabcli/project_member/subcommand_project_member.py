@@ -1,9 +1,11 @@
+import argparse
+
 import annofabcli
 import annofabcli.common.cli
 import annofabcli.project_member.delete_users
 import annofabcli.project_member.invite_users
 import annofabcli.project_member.list_users
-import argparse
+
 
 def parse_args(parser: argparse.ArgumentParser):
 

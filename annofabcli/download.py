@@ -4,6 +4,7 @@
 
 import argparse
 import logging
+from enum import Enum
 from typing import Any, Dict, List, Optional  # pylint: disable=unused-import
 
 import annofabcli
@@ -11,8 +12,9 @@ import annofabcli.common.cli
 from annofabcli import AnnofabApiFacade
 from annofabcli.common.cli import AbstractCommandLineInterface, build_annofabapi_resource_and_login
 from annofabcli.common.exceptions import AnnofabCliException
-from enum import Enum
+
 logger = logging.getLogger(__name__)
+
 
 class DownloadTarget(Enum):
     TASK = "task"
@@ -23,9 +25,6 @@ class DownloadTarget(Enum):
 
 
 class Download(AbstractCommandLineInterface):
-
-
-
     def download_latest_annotation(
             self,
             target: DownloadTarget,
@@ -77,11 +76,8 @@ def main(args: argparse.Namespace):
 
 def parse_args(parser: argparse.ArgumentParser):
     TARGETS = [
-        DownloadTarget.TASK.value,
-        DownloadTarget.TASK_HISTORY_EVENT.value,
-        DownloadTarget.INSPECTION_COMMENT.value,
-        DownloadTarget.SIMPLE_ANNOTATION.value,
-        DownloadTarget.FULL_ANNOTATION.value
+        DownloadTarget.TASK.value, DownloadTarget.TASK_HISTORY_EVENT.value, DownloadTarget.INSPECTION_COMMENT.value,
+        DownloadTarget.SIMPLE_ANNOTATION.value, DownloadTarget.FULL_ANNOTATION.value
     ]
 
     parser.add_argument('target', type=str, choices=TARGETS, help='ダウンロード対象の項目を指定します。')

@@ -1,7 +1,9 @@
-import annofabcli
-import annofabcli.common.cli
-import annofabcli.annotation_specs.print_annotation_specs_label
 import argparse
+
+import annofabcli
+import annofabcli.annotation_specs.print_annotation_specs_label
+import annofabcli.common.cli
+
 
 def parse_args(parser: argparse.ArgumentParser):
 

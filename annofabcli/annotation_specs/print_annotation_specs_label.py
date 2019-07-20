@@ -1,11 +1,9 @@
 # coding: utf-8
-
 """
 アノテーション仕様を出力する
 """
 
 import argparse
-import json
 import logging
 from typing import Any, Callable, Dict, List, Optional, Tuple  # pylint: disable=unused-import
 
@@ -17,7 +15,6 @@ from annofabcli import AnnofabApiFacade
 from annofabcli.common.cli import AbstractCommandLineInterface, build_annofabapi_resource_and_login
 from annofabcli.common.enums import FormatArgument
 
-
 logger = logging.getLogger(__name__)
 
 
@@ -25,7 +22,6 @@ class PrintAnnotationSpecsLabel(AbstractCommandLineInterface):
     """
     アノテーション仕様を出力する
     """
-
     def print_annotation_specs_label(self, project_id: str, arg_format: str, output: Optional[str] = None):
         super().validate_project(project_id, [ProjectMemberRole.OWNER, ProjectMemberRole.ACCEPTER])
 
@@ -36,35 +32,28 @@ class PrintAnnotationSpecsLabel(AbstractCommandLineInterface):
             self._print_text_format_labels(labels)
 
         elif arg_format in [FormatArgument.JSON.value, FormatArgument.PRETTY_JSON.value]:
-            annofabcli.utils.print_according_to_format(target=labels, format=FormatArgument(arg_format),
-                                                       output=output)
+            annofabcli.utils.print_according_to_format(target=labels, format=FormatArgument(arg_format), output=output)
 
     def _print_text_format_labels(self, labels):
         for label in labels:
-            print('\t'.join(
-                [
-                    label['label_id'],
-                    label['annotation_type'],
-                ] + [m['message'] for m in label['label_name']['messages']]
-            ))
+            print('\t'.join([
+                label['label_id'],
+                label['annotation_type'],
+            ] + [m['message'] for m in label['label_name']['messages']]))
             for additional_data_definition in label['additional_data_definitions']:
-                print('\t'.join(
-                    [
-                        '',
-                        additional_data_definition['additional_data_definition_id'],
-                        additional_data_definition['type'],
-                    ] + [m['message'] for m in additional_data_definition['name']['messages']]
-                ))
+                print('\t'.join([
+                    '',
+                    additional_data_definition['additional_data_definition_id'],
+                    additional_data_definition['type'],
+                ] + [m['message'] for m in additional_data_definition['name']['messages']]))
                 if 'choice' == additional_data_definition['type']:
                     for choice in additional_data_definition['choices']:
-                        print('\t'.join(
-                            [
-                                '',
-                                '',
-                                choice['choice_id'],
-                                '',
-                            ] + [m['message'] for m in choice['name']['messages']]
-                        ))
+                        print('\t'.join([
+                            '',
+                            '',
+                            choice['choice_id'],
+                            '',
+                        ] + [m['message'] for m in choice['name']['messages']]))
 
     def main(self, args):
         super().process_common_args(args, __file__, logger)
@@ -79,8 +68,7 @@ def parse_args(parser: argparse.ArgumentParser):
         default='text', help=f'出力フォーマット '
         'text: 人が見やすい内容, '
         '{FormatArgument.PRETTY_JSON.value}: インデントされたJSON, '
-        '{FormatArgument.JSON.value}: フラットなJSON'
-    )
+        '{FormatArgument.JSON.value}: フラットなJSON')
 
     parser.set_defaults(subcommand_func=main)
 

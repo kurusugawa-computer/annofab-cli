@@ -6,7 +6,6 @@ import argparse
 import logging
 from typing import Any, Callable, Dict, List, Optional  # pylint: disable=unused-import
 
-import pandas
 import requests
 from annofabapi.models import Inspection
 
@@ -14,9 +13,8 @@ import annofabcli
 import annofabcli.common.cli
 from annofabcli import AnnofabApiFacade
 from annofabcli.common.cli import AbstractCommandLineInterface, build_annofabapi_resource_and_login
-from annofabcli.common.visualize import AddProps
 from annofabcli.common.enums import FormatArgument
-
+from annofabcli.common.visualize import AddProps
 
 logger = logging.getLogger(__name__)
 
@@ -47,7 +45,8 @@ class PrintInspections(AbstractCommandLineInterface):
         if len(inspections) == 0:
             logger.warning("検査コメントは0件です。")
 
-        annofabcli.utils.print_according_to_format(target=inspections, format=FormatArgument(arg_format), output=output, csv_format=csv_format)
+        annofabcli.utils.print_according_to_format(target=inspections, format=FormatArgument(arg_format), output=output,
+                                                   csv_format=csv_format)
 
     def get_inspections_by_input_data(self, project_id: str, task_id: str, input_data_id: str, input_data_index: int):
         """
@@ -113,8 +112,9 @@ def parse_args(parser: argparse.ArgumentParser):
     parser.add_argument('-t', '--task_id', type=str, required=True, nargs='+', help='対象のタスクのtask_idを指定します。'
                         '`file://`を先頭に付けると、task_idの一覧が記載されたファイルを指定できます。')
 
-    parser.add_argument('-f', '--format', type=str, choices=[FormatArgument.CSV.value, FormatArgument.JSON.value, FormatArgument.PRETTY_JSON.value], default=FormatArgument.CSV.value,
-                        help='出力フォーマットを指定します。指定しない場合は、"csv"フォーマットになります。')
+    parser.add_argument('-f', '--format', type=str,
+                        choices=[FormatArgument.CSV.value, FormatArgument.JSON.value, FormatArgument.PRETTY_JSON.value],
+                        default=FormatArgument.CSV.value, help='出力フォーマットを指定します。指定しない場合は、"csv"フォーマットになります。')
 
     parser.add_argument('-o', '--output', type=str, help='出力先のファイルパスを指定します。指定しない場合は、標準出力に出力されます。')
 

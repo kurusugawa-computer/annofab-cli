@@ -109,6 +109,9 @@ $ annofabcli diff_projects -h
 ### `--logdir`
 ログファイルを保存するディレクトリを指定します。指定しない場合、`.log`ディレクトリにログファイルを出力します。
 
+### `--disable_log`
+ログを無効化する。
+
 ### `--logging_yaml`
 ロギグングの設定ファイル(YAML)を指定します。指定した場合、`--logdir`オプションは無視されます。指定しない場合、デフォルトのロギング設定ファイルが読み込まれます。
 設定ファイルの書き方は https://docs.python.org/ja/3/howto/logging.html を参照してください。
