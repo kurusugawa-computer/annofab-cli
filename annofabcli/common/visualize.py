@@ -38,6 +38,13 @@ class AddProps:
         dict_message = more_itertools.first_true(messages, pred=lambda e: e["lang"] == locale.value)
         return dict_message['message']
 
+
+    @staticmethod
+    def add_properties_of_project(target: Dict[str, Any], project_title: str) -> Dict[str, Any]:
+        target['project_title'] = project_title
+        return target
+
+
     def get_organization_member_from_account_id(self, account_id: str) -> Optional[OrganizationMember]:
         """
         account_idから組織メンバを取得する.

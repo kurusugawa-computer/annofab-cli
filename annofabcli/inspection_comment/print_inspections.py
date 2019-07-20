@@ -28,7 +28,7 @@ class PrintInspections(AbstractCommandLineInterface):
 
     visualize: AddProps
 
-    def print_inspections(self, project_id: str, task_id_list: List[str], format: str, output: Optional[str] = None,
+    def print_inspections(self, project_id: str, task_id_list: List[str], arg_format: str, output: Optional[str] = None,
                           csv_format: Optional[Dict[str, Any]] = None):
         """
         検査コメントを出力する
@@ -47,7 +47,7 @@ class PrintInspections(AbstractCommandLineInterface):
         if len(inspections) == 0:
             logger.warning("検査コメントは0件です。")
 
-        annofabcli.utils.print_according_to_format(target=inspections, format=FormatArgument(format), output=output, csv_format=csv_format)
+        annofabcli.utils.print_according_to_format(target=inspections, format=FormatArgument(arg_format), output=output, csv_format=csv_format)
 
     def get_inspections_by_input_data(self, project_id: str, task_id: str, input_data_id: str, input_data_index: int):
         """
@@ -102,7 +102,7 @@ class PrintInspections(AbstractCommandLineInterface):
 
         self.visualize = AddProps(self.service, args.project_id)
 
-        self.print_inspections(args.project_id, task_id_list, format=args.format, output=args.output,
+        self.print_inspections(args.project_id, task_id_list, arg_format=args.format, output=args.output,
                                csv_format=csv_format)
 
 

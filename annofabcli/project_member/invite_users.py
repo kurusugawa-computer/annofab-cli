@@ -91,7 +91,7 @@ def parse_args(parser: argparse.ArgumentParser):
     assign_group = parser.add_mutually_exclusive_group(required=True)
     assign_group.add_argument('-p', '--project_id', type=str, nargs='+',
                               help='招待するプロジェクトのproject_idを指定してください。`file://`を先頭に付けると、一覧が記載されたファイルを指定できます。')
-    assign_group.add_argument('--organization', type=str, help='組織配下のすべての進行中のプロジェクトに招待したい場合は、組織名を指定してください。')
+    assign_group.add_argument('-org', '--organization', type=str, help='組織配下のすべての進行中のプロジェクトに招待したい場合は、組織名を指定してください。')
 
     parser.set_defaults(subcommand_func=main)
 

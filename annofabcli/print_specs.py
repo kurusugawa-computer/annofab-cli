@@ -24,17 +24,17 @@ class PrintSpecs(AbstractCommandLineInterface):
     アノテーション仕様を出力する
     """
 
-    def print_specs(self, project_id: str, format: str):
+    def print_specs(self, project_id: str, arg_format: str):
         super().validate_project(project_id, [ProjectMemberRole.OWNER, ProjectMemberRole.ACCEPTER])
 
         annotation_specs = self.service.api.get_annotation_specs(project_id)[0]
         labels = annotation_specs['labels']
 
-        if format == 'text':
+        if arg_format == 'text':
             self._print_text_format_labels(labels)
-        elif format == 'pretty_json':
+        elif arg_format == 'pretty_json':
             print(json.dumps(labels, indent=2, ensure_ascii=False))
-        elif format == 'json':
+        elif arg_format == 'json':
             print(json.dumps(labels))
 
     def _print_text_format_labels(self, labels):
