@@ -21,6 +21,34 @@ class ListUser(AbstractCommandLineInterface):
     def list_role_with_organization(self, organization_name: str):
 
         # 進行中で自分自身が所属しているプロジェクトの一覧を取得する
+        my_account_id = self.facade.get_my_account_id()
+        projects = self.service.wrapper.get_all_projects_of_organization(
+            organization_name, query_params={
+                "status": "active",
+                "account_id": my_account_id
+            })
+
+        for project in projects:
+            project_id = project["project_id"]
+            project_title = project["title"]
+
+            try:
+                if not self.facade.my_role_is_owner(project_id):
+                    logger.warning(f"オーナではないため、プロジェクトメンバを招待できません。"
+                                   f"project_id = {project_id}, project_tilte = {project_title}")
+                    continue
+
+                self.service.wrapper.assign_role_to_project_members(project_id, user_id_list, member_role)
+                logger.info(f"{project_title}に招待成功. project_id = {project_id}")
+
+            except requests.exceptions.HTTPError as e:
+                logger.warning(e)
+                logger.warning(f"エラーのため、{project_title} に招待できなかった。")
+
+
+
+
+        # 進行中で自分自身が所属しているプロジェクトの一覧を取得する
         # my_account_id = self.facade.get_my_account_id()
         try:
             for user in self.service.wrapper.get_all_organization_members(organization_name):
@@ -71,25 +99,15 @@ def parse_args(parser: argparse.ArgumentParser):
     list_group.add_argument('-p', '--project_id', type=str, nargs='+',
                             help='ユーザを表示するプロジェクトのproject_idを指定してください。`file://`を先頭に付けると、一覧が記載されたファイルを指定できます。')
 
-    list_group.add_argument('--organization', type=str, help='組織配下のすべてのプロジェクトのユーザを表示したい場合は、組織名を指定してください。')
+    list_group.add_argument('--organization', type=str, help='組織配下のすべての進行中のプロジェクトのプロジェクトメンバを表示したい場合は、組織名を指定してください。')
 
     parser.set_defaults(subcommand_func=main)
 
 
-def add_parser_deprecated(subparsers: argparse._SubParsersAction):
-    subcommand_name = "list_users"
-    subcommand_help = "複数のプロジェクトのユーザを表示する。"
-    description = ("複数のプロジェクトのユーザを表示する。")
-    epilog = "オーナロールを持つユーザで実行してください。"
-
-    parser = annofabcli.common.cli.add_parser(subparsers, subcommand_name, subcommand_help, description, epilog=epilog)
-    parse_args(parser)
-
-
 def add_parser(subparsers: argparse._SubParsersAction):
     subcommand_name = "list"
-    subcommand_help = "複数のプロジェクトのユーザを表示する。"
-    description = ("複数のプロジェクトのユーザを表示する。")
+    subcommand_help = "複数のプロジェクトのプロジェクトメンバを表示する。"
+    description = ("複数のプロジェクトのプロジェクトメンバを表示する。")
     epilog = "オーナロールを持つユーザで実行してください。"
 
     parser = annofabcli.common.cli.add_parser(subparsers, subcommand_name, subcommand_help, description, epilog=epilog)

@@ -65,7 +65,6 @@ def main(arguments: Optional[Sequence[str]] = None):
 
     annofabcli.project.diff_projects.add_parser_deprecated(subparsers)
 
-    annofabcli.project_member.list_users.add_parser_deprecated(subparsers)
     annofabcli.project_member.invite_users.add_parser_deprecated(subparsers)
     annofabcli.project_member.delete_users.add_parser_deprecated(subparsers)
 

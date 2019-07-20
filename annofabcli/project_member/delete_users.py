@@ -88,7 +88,7 @@ def parse_args(parser: argparse.ArgumentParser):
     drop_group.add_argument('-p', '--project_id', type=str, nargs='+',
                             help='削除するプロジェクトのproject_idを指定してください。`file://`を先頭に付けると、一覧が記載されたファイルを指定できます。')
 
-    drop_group.add_argument('--organization', type=str, help='組織配下のすべてのプロジェクトから削除したい場合は、組織名を指定してください。')
+    drop_group.add_argument('--organization', type=str, help='組織配下のすべての進行中のプロジェクトから削除したい場合は、組織名を指定してください。')
 
     parser.set_defaults(subcommand_func=main)
 

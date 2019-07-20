@@ -1,3 +1,4 @@
+from annofabcli.common import enums
 from annofabcli.common import typing
 from annofabcli.common import exceptions
 from annofabcli.common import utils

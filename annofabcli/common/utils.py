@@ -8,8 +8,10 @@ from typing import Any, Dict, List, Optional, Set, TypeVar  # pylint: disable=un
 
 import pandas
 import yaml
+import annofabcli
 
 from annofabcli.common.exceptions import AnnofabCliException
+from annofabcli.common.enums import FormatArgument
 
 logger = logging.getLogger(__name__)
 
@@ -113,14 +115,38 @@ def output_string(target: str, output: Optional[str] = None):
             f.write(target)
 
 
-def print_json(target: Any, output: Optional[str] = None):
-    output_string(json.dumps(target, indent=2, ensure_ascii=False), output)
+def print_json(target: Any, is_pretty: bool = False, output: Optional[str] = None):
+    if is_pretty:
+        output_string(json.dumps(target, indent=2, ensure_ascii=False), output)
+    else:
+        output_string(json.dumps(target, ensure_ascii=False), output)
 
 
 def print_csv(df: pandas.DataFrame, output: Optional[str] = None, to_csv_kwargs: Optional[Dict[str, Any]] = None):
     if output is None:
         df.to_csv(sys.stdout, **to_csv_kwargs)
 
-    else:
-        Path(output).parent.mkdir(parents=True, exist_ok=True)
-        df.to_csv(output, **to_csv_kwargs)
+
+def print_according_to_format(target: Any, format: FormatArgument, output: Optional[str] = None, csv_format: Optional[Dict[str, Any]] = None):
+    """
+    コマンドライン引数 ``--format`` の値にしたがって、内容を出力する。
+
+    Args:
+        target: 
+        format: 
+        output: 
+        csv_format: 
+
+
+    """
+
+
+    if format == FormatArgument.PRETTY_JSON:
+        annofabcli.utils.print_json(target, is_pretty=True, output=output)
+
+    elif format == FormatArgument.JSON:
+        annofabcli.utils.print_json(target, is_pretty=False, output=output)
+
+    elif format == FormatArgument.CSV:
+        df = pandas.DataFrame(target)
+        annofabcli.utils.print_csv(df, output, csv_format)
