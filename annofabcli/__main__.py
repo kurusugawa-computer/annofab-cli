@@ -13,7 +13,7 @@ import annofabcli.inspection_comment.print_inspections
 import annofabcli.print_label_color
 import annofabcli.print_unprocessed_inspections
 import annofabcli.task.reject_tasks
-import annofabcli.print_specs
+import annofabcli.annotation_specs.subcommand_annotation_specs
 import annofabcli.write_annotation_image
 import annofabcli.task.subcommand_task
 import annofabcli.inspection_comment.subcommand_inspection_comment
@@ -46,6 +46,7 @@ def main(arguments: Optional[Sequence[str]] = None):
     annofabcli.task.subcommand_task.add_parser(subparsers)
     annofabcli.project.subcommand_project.add_parser(subparsers)
     annofabcli.project_member.subcommand_project_member.add_parser(subparsers)
+    annofabcli.annotation_specs.subcommand_annotation_specs.add_parser(subparsers)
 
     # サブコマンドの定義
     annofabcli.download.add_parser(subparsers)
@@ -56,19 +57,15 @@ def main(arguments: Optional[Sequence[str]] = None):
 
     annofabcli.write_annotation_image.add_parser(subparsers)
 
+
+
     # deprecated コマンド
     annofabcli.task.complete_tasks.add_parser_deprecated(subparsers)
     annofabcli.task.reject_tasks.add_parser_dprecated(subparsers)
     annofabcli.task.cancel_acceptance.add_parser(subparsers)
-
     annofabcli.inspection_comment.print_inspections.add_parser_deprecated(subparsers)
-
     annofabcli.project.diff_projects.add_parser_deprecated(subparsers)
-
     annofabcli.project_member.invite_users.add_parser_deprecated(subparsers)
-    annofabcli.project_member.delete_users.add_parser_deprecated(subparsers)
-
-    annofabcli.print_specs.add_parser(subparsers)
 
     if arguments is None:
         args = parser.parse_args()

@@ -1,0 +1,20 @@
+import annofabcli
+import annofabcli.common.cli
+import annofabcli.annotation_specs.print_annotation_specs_label
+import argparse
+
+def parse_args(parser: argparse.ArgumentParser):
+
+    subparsers = parser.add_subparsers()
+
+    # サブコマンドの定義
+    annofabcli.annotation_specs.print_annotation_specs_label.add_parser(subparsers)
+
+
+def add_parser(subparsers: argparse._SubParsersAction):
+    subcommand_name = "annotation_specs"
+    subcommand_help = "アノテーション仕様関係のサブコマンド"
+    description = "アノテーション仕様関係のサブコマンド"
+
+    parser = annofabcli.common.cli.add_parser(subparsers, subcommand_name, subcommand_help, description)
+    parse_args(parser)

@@ -15,16 +15,18 @@ import annofabcli
 import annofabcli.common.cli
 from annofabcli import AnnofabApiFacade
 from annofabcli.common.cli import AbstractCommandLineInterface, build_annofabapi_resource_and_login
+from annofabcli.common.enums import FormatArgument
+
 
 logger = logging.getLogger(__name__)
 
 
-class PrintSpecs(AbstractCommandLineInterface):
+class PrintAnnotationSpecsLabel(AbstractCommandLineInterface):
     """
     アノテーション仕様を出力する
     """
 
-    def print_specs(self, project_id: str, arg_format: str):
+    def print_annotation_specs_label(self, project_id: str, arg_format: str, output: Optional[str] = None):
         super().validate_project(project_id, [ProjectMemberRole.OWNER, ProjectMemberRole.ACCEPTER])
 
         annotation_specs = self.service.api.get_annotation_specs(project_id)[0]
@@ -32,10 +34,10 @@ class PrintSpecs(AbstractCommandLineInterface):
 
         if arg_format == 'text':
             self._print_text_format_labels(labels)
-        elif arg_format == 'pretty_json':
-            print(json.dumps(labels, indent=2, ensure_ascii=False))
-        elif arg_format == 'json':
-            print(json.dumps(labels))
+
+        elif arg_format in [FormatArgument.JSON.value, FormatArgument.PRETTY_JSON.value]:
+            annofabcli.utils.print_according_to_format(target=labels, format=FormatArgument(arg_format),
+                                                       output=output)
 
     def _print_text_format_labels(self, labels):
         for label in labels:
@@ -66,19 +68,18 @@ class PrintSpecs(AbstractCommandLineInterface):
 
     def main(self, args):
         super().process_common_args(args, __file__, logger)
-
-        self.print_specs(args.project_id, args.format)
+        self.print_annotation_specs_label(args.project_id, args.format)
 
 
 def parse_args(parser: argparse.ArgumentParser):
-    parser.add_argument('project_id', type=str, help='対象のプロジェクトのproject_id')
+    parser.add_argument('-p', '--project_id', type=str, required=True, help='対象のプロジェクトのproject_idを指定します。')
 
     parser.add_argument(
-        '-f', '--format', type=str, choices=['text', 'pretty_json', 'json'],
-        default='text', help='出力フォーマット '
+        '-f', '--format', type=str, choices=['text', FormatArgument.PRETTY_JSON.value, FormatArgument.JSON.value],
+        default='text', help=f'出力フォーマット '
         'text: 人が見やすい内容, '
-        'pretty_json: インデントされたJSON, '
-        'json: フラットなJSON'
+        '{FormatArgument.PRETTY_JSON.value}: インデントされたJSON, '
+        '{FormatArgument.JSON.value}: フラットなJSON'
     )
 
     parser.set_defaults(subcommand_func=main)
@@ -87,15 +88,15 @@ def parse_args(parser: argparse.ArgumentParser):
 def main(args):
     service = build_annofabapi_resource_and_login()
     facade = AnnofabApiFacade(service)
-    PrintSpecs(service, facade).main(args)
+    PrintAnnotationSpecsLabel(service, facade).main(args)
 
 
 def add_parser(subparsers: argparse._SubParsersAction):
-    subcommand_name = 'print_specs'
+    subcommand_name = 'list_label'
 
-    subcommand_help = ('アノテーション仕様を出力する')
+    subcommand_help = ('アノテーション仕様のラベル情報を出力する')
 
-    description = ('アノテーション仕様を出力する')
+    description = ('アノテーション仕様のラベル情報を出力する')
 
     epilog = 'チェッカーまたはオーナロールを持つユーザで実行してください。'
 

@@ -11,39 +11,46 @@ import annofabcli.common.cli
 from annofabcli import AnnofabApiFacade
 from annofabcli.common.cli import AbstractCommandLineInterface, build_annofabapi_resource_and_login
 from annofabcli.common.exceptions import AnnofabCliException
-
+from enum import Enum
 logger = logging.getLogger(__name__)
+
+class DownloadTarget(Enum):
+    TASK = "task"
+    INSPECTION_COMMENT = "inspection_comment"
+    TASK_HISTORY_EVENT = "task_history_event"
+    SIMPLE_ANNOTATION = "simple_annotation"
+    FULL_ANNOTATION = "full_annotation"
 
 
 class Download(AbstractCommandLineInterface):
 
-    TARGETS = ['task', 'inspection', 'history_event', 'simple_annotation', 'full_annotation']
+
 
     def download_latest_annotation(
             self,
-            target: str,
+            target: DownloadTarget,
             project_id: str,
             output: str,
     ) -> bool:
-        if target == 'simple_annotation':
+        if target == DownloadTarget.SIMPLE_ANNOTATION:
             return self.facade.download_latest_simple_annotation_archive_with_waiting(project_id, output)
 
-        elif target == 'full_annotation':
+        elif target == DownloadTarget.FULL_ANNOTATION:
             return self.facade.download_latest_simple_annotation_archive_with_waiting(project_id, output)
         else:
-            raise AnnofabCliException(f"target = {target} が不正です。")
+            raise AnnofabCliException(f"target = {target.value} が不正です。")
 
-    def download(self, target: str, project_id: str, output: str, latest: bool = False):
-        if target == 'task':
+    def download(self, target: DownloadTarget, project_id: str, output: str, latest: bool = False):
+        if target == DownloadTarget.TASK:
             self.service.wrapper.download_project_tasks_url(project_id, output)
 
-        elif target == 'inspection':
+        elif target == DownloadTarget.INSPECTION_COMMENT:
             self.service.wrapper.download_project_inspections_url(project_id, output)
 
-        elif target == 'history_event':
+        elif target == DownloadTarget.TASK_HISTORY_EVENT:
             self.service.wrapper.download_project_task_history_events_url(project_id, output)
 
-        elif target in ['simple_annotation', 'full_annotation']:
+        elif target in [DownloadTarget.SIMPLE_ANNOTATION, DownloadTarget.FULL_ANNOTATION]:
             if latest:
                 # アノテーション情報を最新化してからダウンロードする
                 result = self.download_latest_annotation(target, project_id, output)
@@ -51,15 +58,15 @@ class Download(AbstractCommandLineInterface):
                     logger.error(f"アノテーションのダウンロードが失敗しました。 target = {target}")
 
             else:
-                if target == 'simple_annotation':
+                if target == DownloadTarget.SIMPLE_ANNOTATION:
                     self.service.wrapper.download_annotation_archive(project_id, output)
 
-                elif target == 'full_annotation':
+                elif target == DownloadTarget.FULL_ANNOTATION:
                     self.service.wrapper.download_full_annotation_archive(project_id, output)
 
     def main(self, args: argparse.Namespace):
         super().process_common_args(args, __file__, logger)
-        self.download(args.target, args.project_id, args.output, latest=args.latest)
+        self.download(DownloadTarget(args.target), args.project_id, args.output, latest=args.latest)
 
 
 def main(args: argparse.Namespace):
@@ -69,7 +76,15 @@ def main(args: argparse.Namespace):
 
 
 def parse_args(parser: argparse.ArgumentParser):
-    parser.add_argument('target', type=str, choices=Download.TARGETS, help='ダウンロード対象の項目を指定します。')
+    TARGETS = [
+        DownloadTarget.TASK.value,
+        DownloadTarget.TASK_HISTORY_EVENT.value,
+        DownloadTarget.INSPECTION_COMMENT.value,
+        DownloadTarget.SIMPLE_ANNOTATION.value,
+        DownloadTarget.FULL_ANNOTATION.value
+    ]
+
+    parser.add_argument('target', type=str, choices=TARGETS, help='ダウンロード対象の項目を指定します。')
 
     parser.add_argument('-p', '--project_id', type=str, required=True, help='対象のプロジェクトのproject_idを指定します。')
 
