@@ -76,6 +76,8 @@ def create_parent_parser() -> argparse.ArgumentParser:
     group.add_argument('--logdir', type=str, default=".log",
                        help="ログファイルを保存するディレクトリを指定します。指定しない場合は`.log`ディレクトリ'にログファイルが保存されます。")
 
+    group.add_argument('--disable_log', action="store_true", help="ログを無効にします。")
+
     group.add_argument(
         "--logging_yaml", type=str, help="ロギグングの設定ファイル(YAML)を指定します。指定した場合、`--logdir`オプションは無視されます。"
         "指定しない場合、デフォルトのロギングが設定されます。"
@@ -151,8 +153,7 @@ def load_logging_config_from_args(args: argparse.Namespace, py_filepath: str):
     log_dir = args.logdir
     logging_yaml_file = args.logging_yaml if hasattr(args, "logging_yaml") else None
 
-    log_filename = f"{os.path.basename(py_filepath)}.log"
-    annofabcli.utils.load_logging_config(log_dir, log_filename, logging_yaml_file)
+    annofabcli.utils.load_logging_config(log_dir, logging_yaml_file)
 
 
 def build_annofabapi_resource() -> annofabapi.Resource:
@@ -244,9 +245,10 @@ class AbstractCommandLineInterface(abc.ABC):
 
         """
         self.logger = arg_logger
-        load_logging_config_from_args(args, py_filepath)
-        self.all_yes = args.yes
+        if not args.disable_log:
+            load_logging_config_from_args(args, py_filepath)
 
+        self.all_yes = args.yes
         self.logger.info(f"args: {args}")
 
     @abc.abstractmethod

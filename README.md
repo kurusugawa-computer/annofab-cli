@@ -84,6 +84,7 @@ $ docker run -it -e ANNOFAB_USER_ID=XXXX -e ANNOFAB_PASSWORD=YYYYY annofab-cli a
 |project_member| invite                  | 複数のプロジェクトに、ユーザを招待する。                                                                 |オーナ|
 |project_member| delete                  | 複数のプロジェクトからユーザを削除する。                                                                 |オーナ|
 |inspection_comment| list | 検査コメントを出力する。                               |-|
+|annotation_specs| list_label | アノテーション仕様のラベル情報を出力する                              |チェッカー/オーナ|
 || print_unprocessed_inspections | 未処置の検査コメントList(task_id, input_data_idごと)をJSONとして出力する。                               |-|
 || print_label_color             | アノテーション仕様から、label_nameとRGBを対応付けたJSONを出力する。                                      |チェッカー/オーナ|
 || write_annotation_image        | アノテーションzipを展開したディレクトリから、アノテーションの画像（Semantic Segmentation用）を生成する。 |-|
@@ -317,6 +318,19 @@ $ annofabcli inspection_comment list --project_id prj1 --task_id task1 task2 --f
 # JSONで出力する
 $ annofabcli inspection_comment list --project_id prj1 --task_id file://task.txt --format json
  
+```
+
+
+### annotation_specs list_label
+アノテーション仕様のラベル情報を出力します。
+
+```
+# prj1のアノテーション仕様のラベル情報を、人間が見やすい形式で出力する
+$ annofabcli annotation_specs list_label --project_id prj1
+
+# prj1のアノテーション仕様のラベル情報を、インデントされたJSONで出力する。
+$ annofabcli annotation_specs list_label --project_id prj1 --format pretty_json
+
 ```
 
 

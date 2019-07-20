@@ -35,7 +35,7 @@ def _is_file_scheme(value: str):
     return value.startswith('file://')
 
 
-def load_logging_config(log_dir: str, log_filename: str, logging_yaml_file: Optional[str] = None):
+def load_logging_config(log_dir: str, logging_yaml_file: Optional[str] = None):
     """
     ログ設定ファイルを読み込み、loggingを設定する。
 
@@ -53,10 +53,10 @@ def load_logging_config(log_dir: str, log_filename: str, logging_yaml_file: Opti
                 logging.config.dictConfig(logging_config)
         else:
             logger.warning(f"{logging_yaml_file} does not exist.")
-            set_default_logger(log_dir, log_filename)
+            set_default_logger(log_dir)
 
     else:
-        set_default_logger(log_dir, log_filename)
+        set_default_logger(log_dir)
 
 
 def set_default_logger(log_dir: str = ".log", log_filename: str = "annofabcli.log"):
