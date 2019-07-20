@@ -49,8 +49,7 @@ class PrintInspections(AbstractCommandLineInterface):
                                                    csv_format=csv_format)
 
     def get_inspections_by_input_data(self, project_id: str, task_id: str, input_data_id: str, input_data_index: int):
-        """
-        入力データごとに検査コメント一覧を取得する。
+        """入力データごとに検査コメント一覧を取得する。
 
         Args:
             project_id:
@@ -61,13 +60,13 @@ class PrintInspections(AbstractCommandLineInterface):
         Returns:
             対象の検査コメント一覧
         """
+
         detail = {"input_data_index": input_data_index}
         inspectins, _ = self.service.api.get_inspections(project_id, task_id, input_data_id)
         return [self.visualize.add_properties_to_inspection(e, detail) for e in inspectins]
 
     def get_inspections(self, project_id: str, task_id_list: List[str]) -> List[Inspection]:
-        """
-        検査コメント一覧を取得する。
+        """検査コメント一覧を取得する。
 
         Args:
             project_id:
