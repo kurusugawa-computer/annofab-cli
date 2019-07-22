@@ -133,10 +133,10 @@ def print_according_to_format(target: Any, format: FormatArgument, output: Optio
     コマンドライン引数 ``--format`` の値にしたがって、内容を出力する。
 
     Args:
-        target: 
-        format: 
-        output: 
-        csv_format: 
+        target: 出力する内容
+        format: 出力フォーマット
+        output: 出力先（オプション）
+        csv_format: CSVのフォーマット（オプション）
 
 
     """

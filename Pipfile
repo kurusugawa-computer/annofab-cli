@@ -10,10 +10,9 @@ pytest-cov = "*"
 isort = "*"
 yapf = "*"
 mypy = "*"
-flake8 = "*"
 pylint = "*"
 twine = "*"
 autoflake = "*"
-# hacking = "*"
+flake8 = "*"
 
 [packages]
