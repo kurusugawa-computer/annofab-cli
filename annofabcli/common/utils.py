@@ -127,7 +127,7 @@ def print_csv(df: pandas.DataFrame, output: Optional[str] = None, to_csv_kwargs:
         df.to_csv(sys.stdout, **to_csv_kwargs)
 
 
-def print_according_to_format(target: Any, format: FormatArgument, output: Optional[str] = None,
+def print_according_to_format(target: Any, arg_format: FormatArgument, output: Optional[str] = None,
                               csv_format: Optional[Dict[str, Any]] = None):
     """
     コマンドライン引数 ``--format`` の値にしたがって、内容を出力する。
@@ -141,12 +141,12 @@ def print_according_to_format(target: Any, format: FormatArgument, output: Optio
 
     """
 
-    if format == FormatArgument.PRETTY_JSON:
+    if arg_format == FormatArgument.PRETTY_JSON:
         annofabcli.utils.print_json(target, is_pretty=True, output=output)
 
-    elif format == FormatArgument.JSON:
+    elif arg_format == FormatArgument.JSON:
         annofabcli.utils.print_json(target, is_pretty=False, output=output)
 
-    elif format == FormatArgument.CSV:
+    elif arg_format == FormatArgument.CSV:
         df = pandas.DataFrame(target)
         annofabcli.utils.print_csv(df, output, csv_format)

@@ -32,9 +32,10 @@ class PrintAnnotationSpecsLabel(AbstractCommandLineInterface):
             self._print_text_format_labels(labels)
 
         elif arg_format in [FormatArgument.JSON.value, FormatArgument.PRETTY_JSON.value]:
-            annofabcli.utils.print_according_to_format(target=labels, format=FormatArgument(arg_format), output=output)
+            annofabcli.utils.print_according_to_format(target=labels, arg_format=FormatArgument(arg_format), output=output)
 
-    def _print_text_format_labels(self, labels):
+    @staticmethod
+    def _print_text_format_labels(labels):
         for label in labels:
             print('\t'.join([
                 label['label_id'],
@@ -46,7 +47,7 @@ class PrintAnnotationSpecsLabel(AbstractCommandLineInterface):
                     additional_data_definition['additional_data_definition_id'],
                     additional_data_definition['type'],
                 ] + [m['message'] for m in additional_data_definition['name']['messages']]))
-                if 'choice' == additional_data_definition['type']:
+                if additional_data_definition['type'] == 'choice':
                     for choice in additional_data_definition['choices']:
                         print('\t'.join([
                             '',
