@@ -45,8 +45,8 @@ class PrintInspections(AbstractCommandLineInterface):
         if len(inspections) == 0:
             logger.warning("検査コメントは0件です。")
 
-        annofabcli.utils.print_according_to_format(target=inspections, arg_format=FormatArgument(arg_format), output=output,
-                                                   csv_format=csv_format)
+        annofabcli.utils.print_according_to_format(target=inspections, arg_format=FormatArgument(arg_format),
+                                                   output=output, csv_format=csv_format)
 
     def get_inspections_by_input_data(self, project_id: str, task_id: str, input_data_id: str, input_data_index: int):
         """入力データごとに検査コメント一覧を取得する。
@@ -94,7 +94,7 @@ class PrintInspections(AbstractCommandLineInterface):
         return all_inspections
 
     def main(self, args: argparse.Namespace):
-        super().process_common_args(args, __file__, logger)
+        super().process_common_args(args, logger)
         task_id_list = annofabcli.common.cli.get_list_from_args(args.task_id)
         csv_format = annofabcli.common.cli.get_csv_format_from_args(args.csv_format)
 

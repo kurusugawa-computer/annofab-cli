@@ -64,7 +64,7 @@ class InviteUser(AbstractCommandLineInterface):
                 logger.warning(f"エラーのため、招待できなかった。project_id={project_id}")
 
     def main(self, args):
-        super().process_common_args(args, __file__, logger)
+        super().process_common_args(args, logger)
 
         user_id_list = annofabcli.common.cli.get_list_from_args(args.user_id)
 

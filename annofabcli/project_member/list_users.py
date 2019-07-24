@@ -70,7 +70,7 @@ class ListUser(AbstractCommandLineInterface):
         return all_project_members
 
     def main(self, args):
-        super().process_common_args(args, __file__, logger)
+        super().process_common_args(args, logger)
 
         csv_format = annofabcli.common.cli.get_csv_format_from_args(args.csv_format)
 

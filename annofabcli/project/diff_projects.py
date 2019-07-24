@@ -279,7 +279,7 @@ class DiffProjecs(AbstractCommandLineInterface):
         super().validate_project(project_id2, roles)
 
     def main(self, args: argparse.Namespace):
-        super().process_common_args(args, __file__, logger)
+        super().process_common_args(args, logger)
 
         project_id1 = args.project_id1
         project_id2 = args.project_id2

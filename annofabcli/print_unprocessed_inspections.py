@@ -98,7 +98,7 @@ class PrintUnprocessedInspections(AbstractCommandLineInterface):
         print(json.dumps(task_dict, indent=2, ensure_ascii=False))
 
     def main(self, args):
-        super().process_common_args(args, __file__, logger)
+        super().process_common_args(args, logger)
 
         task_id_list = annofabcli.common.cli.get_list_from_args(args.task_id)
 

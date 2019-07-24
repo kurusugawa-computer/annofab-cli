@@ -45,7 +45,7 @@ class PrintLabelColor(AbstractCommandLineInterface):
         print(json.dumps(label_color_dict, indent=2))
 
     def main(self, args):
-        super().process_common_args(args, __file__, logger)
+        super().process_common_args(args, logger)
 
         self.print_label_color(args.project_id)
 

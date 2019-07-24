@@ -64,7 +64,7 @@ class Download(AbstractCommandLineInterface):
                     self.service.wrapper.download_full_annotation_archive(project_id, output)
 
     def main(self, args: argparse.Namespace):
-        super().process_common_args(args, __file__, logger)
+        super().process_common_args(args, logger)
         self.download(DownloadTarget(args.target), args.project_id, args.output, latest=args.latest)
 
 

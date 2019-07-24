@@ -64,7 +64,7 @@ class CancelAcceptance(AbstractCommandLineInterface):
         logger.info(f"{success_count} / {len(task_id_list)} 件 受け入れ取り消しに成功した")
 
     def main(self, args: argparse.Namespace):
-        super().process_common_args(args, __file__, logger)
+        super().process_common_args(args, logger)
 
         task_id_list = annofabcli.common.cli.get_list_from_args(args.task_id)
 

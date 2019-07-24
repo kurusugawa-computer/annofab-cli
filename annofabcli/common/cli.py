@@ -18,6 +18,7 @@ import annofabcli
 from annofabcli.common.exceptions import AuthorizationError
 from annofabcli.common.facade import AnnofabApiFacade
 from annofabcli.common.typing import InputDataSize
+from annofabcli.common.enums import FormatArgument
 
 logger = logging.getLogger(__name__)
 
@@ -142,12 +143,11 @@ def get_input_data_size(str_input_data_size: str) -> InputDataSize:
     return (int(splited_list[0]), int(splited_list[1]))
 
 
-def load_logging_config_from_args(args: argparse.Namespace, py_filepath: str):
+def load_logging_config_from_args(args: argparse.Namespace):
     """
     args情報から、logging設定ファイルを読み込む
     Args:
         args: Command引数情報
-        py_filepath: Python Filepath. この名前を元にログファイル名が決まる。
     """
     log_dir = args.logdir
     logging_yaml_file = args.logging_yaml if hasattr(args, "logging_yaml") else None
@@ -212,6 +212,70 @@ def prompt_yesno(msg: str) -> Tuple[bool, bool]:
         elif choice == 'ALL':
             return True, True
 
+class ArgumentParser:
+    """
+    共通のコマンドライン引数を追加するためのクラス
+    """
+
+    def __init__(self, parser: argparse.ArgumentParser):
+        self.parser = parser
+
+    def add_project_id(self, help_message: Optional[str] = None):
+        """
+        '--project_id` 引数を追加
+        """
+        if help_message is None:
+            help_message = '対象のプロジェクトのproject_idを指定します。'
+
+        self.parser.add_argument('-p', '--project_id', type=str, required=True, help=help_message)
+
+
+    def add_task_id(self, help_message: Optional[str] = None):
+        """
+        '--task_id` 引数を追加
+        """
+        if help_message is None:
+            help_message = ('対象のタスクのtask_idを指定します。'
+                        '`file://`を先頭に付けると、task_idの一覧が記載されたファイルを指定できます。')
+
+        self.parser.add_argument('-t', '--task_id', type=str, required=True, nargs='+', help=help_message)
+
+
+    def add_format(self, choices: List[FormatArgument], default: FormatArgument, help_message: Optional[str] = None):
+        """
+        '--format` 引数を追加
+        """
+        if help_message is None:
+            help_message = (f'出力フォーマットを指定します。指定しない場合は、{default.value} フォーマットになります。')
+
+        self.parser.add_argument('-f', '--format', type=str,
+                            choices=[e.value for e in choices],
+                            default=default.value, help=help_message)
+
+
+    def add_csv_format(self, help_message: Optional[str] = None):
+        """
+        '--csv_format` 引数を追加
+        """
+        if help_message is None:
+            help_message ='CSVのフォーマットをJSON形式で指定します。`--format`が`csv`でないときは、このオプションは無視されます。'
+            '`file://`を先頭に付けると、JSON形式のファイルを指定できます。'
+            '指定した値は、[pandas.DataFrame.to_csv](https://pandas.pydata.org/pandas-docs/stable/reference/api/pandas.DataFrame.to_csv.html) の引数として渡されます。'  # noqa: E501
+
+        self.parser.add_argument(
+            '--csv_format',
+            type=str,
+            help=help_message)
+
+    def add_output(self, help_message: Optional[str] = None):
+        """
+        '--csv_format` 引数を追加
+        """
+        if help_message is None:
+            help_message = '出力先のファイルパスを指定します。指定しない場合は、標準出力に出力されます。'
+
+        self.parser.add_argument('-o', '--output', type=str, help=help_message)
+
 
 class AbstractCommandLineInterface(abc.ABC):
     """
@@ -234,18 +298,17 @@ class AbstractCommandLineInterface(abc.ABC):
         self.service = service
         self.facade = facade
 
-    def process_common_args(self, args: argparse.Namespace, py_filepath: str, arg_logger: logging.Logger):
+    def process_common_args(self, args: argparse.Namespace, arg_logger: logging.Logger):
         """
         共通のコマンドライン引数を処理する。
         Args:
             args: コマンドライン引数
-            py_filepath: Python Filepath. この名前を元にログファイル名が決まる。
-
+            arg_logger: 対象コマンドのロガー
 
         """
         self.logger = arg_logger
         if not args.disable_log:
-            load_logging_config_from_args(args, py_filepath)
+            load_logging_config_from_args(args)
 
         self.all_yes = args.yes
         self.logger.info(f"args: {args}")
