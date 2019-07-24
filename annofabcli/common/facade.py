@@ -19,8 +19,10 @@ class AnnofabApiFacade:
     AnnofabApiのFacadeクラス。annofabapiの複雑な処理を簡単に呼び出せるようにする。
     """
 
-    #: 組織メンバ一覧のキャッシュ
-    _organization_members: Optional[List[OrganizationMember]] = None
+    ProjectId = str
+
+    #: 組織メンバ一覧のキャッシュ(
+    _organization_members: Optional[Tuple[ProjectId, List[OrganizationMember]]] = None
 
     def __init__(self, service: annofabapi.Resource):
         self.service = service
@@ -69,59 +71,108 @@ class AnnofabApiFacade:
         account, _ = self.service.api.get_my_account()
         return account['account_id']
 
-    def get_account_id_from_user_id(self, project_id: str, user_id: str) -> str:
+
+    def _get_organization_member_with_predicate(self, project_id: str, predicate: Callable[[Any], bool]) -> Optional[OrganizationMember]:
         """
-        usre_idからaccount_idを取得する
+        account_idから組織メンバを取得する。
+        インスタンス変数に組織メンバがあれば、WebAPIは実行しない。
+
+        Args:
+            project_id:
+            predicate: 組織メンバの検索条件
+
+        Returns:
+            組織メンバ。見つからない場合はNone
+        """
+        def update_organization_members():
+            organization_name = self.get_organization_name_from_project_id(project_id)
+            members = self.service.wrapper.get_all_organization_members(organization_name)
+            self._organization_members = (project_id, members)
+
+        if self._organization_members is not None:
+            if self._organization_members[0] == project_id:
+                member = more_itertools.first_true(self._organization_members[1], pred=predicate)
+                return member
+
+            else:
+                # 別の組織の可能性があるので、再度組織メンバを取得する
+                update_organization_members()
+                return self._get_organization_member_with_predicate(project_id, predicate)
+
+        else:
+            update_organization_members()
+            return self._get_organization_member_with_predicate(project_id, predicate)
+
+
+    def get_organization_member_from_account_id(self, project_id: str, account_id: str) -> Optional[OrganizationMember]:
+        """
+        account_idから組織メンバを取得する。
+        インスタンス変数に組織メンバがあれば、WebAPIは実行しない。
+
+        Args:
+            project_id:
+            accoaunt_id:
+
+        Returns:
+            組織メンバ。見つからない場合はNone
+        """
+        return self._get_organization_member_with_predicate(project_id, lambda e: e["account_id"] == account_id)
+
+
+    def get_organization_member_from_user_id(self, project_id: str, user_id: str) -> Optional[OrganizationMember]:
+        """
+        user_idから組織メンバを取得する。
+        インスタンス変数に組織メンバがあれば、WebAPIは実行しない。
+
         Args:
             project_id:
             user_id:
 
         Returns:
-            account_id
-
+            組織メンバ
         """
-        member, _ = self.service.api.get_project_member(project_id, user_id)
-        return member['account_id']
+        return self._get_organization_member_with_predicate(project_id, lambda e: e["user_id"] == user_id)
 
-    def get_organization_member_from_account_id(self, project_id: str, account_id: str) -> Dict[str, Any]:
+
+    def get_user_id_from_account_id(self, project_id: str, account_id: str) -> Optional[str]:
         """
         account_idからuser_idを取得する.
-        内部で組織メンバを保持する。
+        インスタンス変数に組織メンバがあれば、WebAPIは実行しない。
+
         Args:
             project_id:
             accoaunt_id:
 
         Returns:
-            account_id
-        """
-    def get_user_id_from_account_id(self, project_id: str, account_id: str) -> str:
-        """
-        account_idからuser_idを取得する.
-        内部で組織メンバを保持する。
-        Args:
-            project_id:
-            accoaunt_id:
-
-        Returns:
-            account_id
+            user_id. 見つからなければNone
 
         """
-        def update_organization_members():
-            organization_name = self.get_organization_name_from_project_id(project_id)
-            self._organization_members = self.service.wrapper.get_all_organization_members(organization_name)
-
-        if self._organization_members is not None:
-            member = more_itertools.first_true(self._organization_members, pred=lambda e: e["account_id"] == account_id)
-            if member is not None:
-                return member["user_id"]
-
-            else:
-                update_organization_members()
-                return self.get_user_id_from_account_id(project_id, account_id)
-
+        member = self.get_organization_member_from_account_id(project_id, account_id)
+        if member is None:
+            return None
         else:
-            update_organization_members()
-            return self.get_user_id_from_account_id(project_id, account_id)
+            return member.get('user_id')
+
+
+    def get_account_id_from_user_id(self, project_id: str, user_id: str) -> Optional[str]:
+        """
+        usre_idからaccount_idを取得する。
+        インスタンス変数に組織メンバがあれば、WebAPIは実行しない。
+
+        Args:
+            project_id:
+            user_id:
+
+        Returns:
+            account_id. 見つからなければNone
+
+        """
+        member = self.get_organization_member_from_user_id(project_id, user_id)
+        if member is None:
+            return None
+        else:
+            return member.get('account_id')
+
 
     def get_organization_name_from_project_id(self, project_id: str) -> str:
         """
