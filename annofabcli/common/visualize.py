@@ -7,7 +7,7 @@ from typing import Any, Callable, Dict, List, Optional, Tuple  # pylint: disable
 
 import annofabapi
 import more_itertools
-from annofabapi.models import Inspection, OrganizationMember, Task, TaskPhase, TaskHistoryShort
+from annofabapi.models import Inspection, OrganizationMember, Task, TaskHistoryShort, TaskPhase
 
 
 class MessageLocale(enum.Enum):
@@ -182,12 +182,12 @@ class AddProps:
         histories = [add_user_info(e) for e in task['histories_by_phase']]
         task['histories_by_phase'] = histories
 
-        task['number_of_rejections_by_inspection'] = self.get_number_of_rejections_by_phase(TaskPhase.INSPECTION, histories)
-        task['number_of_rejections_by_acceptance'] = self.get_number_of_rejections_by_phase(TaskPhase.ACCEPTANCE, histories)
+        task['number_of_rejections_by_inspection'] = self.get_number_of_rejections_by_phase(
+            TaskPhase.INSPECTION, histories)
+        task['number_of_rejections_by_acceptance'] = self.get_number_of_rejections_by_phase(
+            TaskPhase.ACCEPTANCE, histories)
 
         return task
-
-
 
     @staticmethod
     def get_number_of_rejections_by_phase(phase: TaskPhase, task_histories: List[TaskHistoryShort]) -> int:
@@ -212,4 +212,3 @@ class AddProps:
                 rejections_by_phase += 1
 
         return rejections_by_phase
-

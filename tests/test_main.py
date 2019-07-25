@@ -30,7 +30,10 @@ out_path = Path('./tests/out')
 
 
 def test_task():
-    main(['task', 'list', '--project_id', project_id, '--query', f'{{"user_id": "{user_id}", "phase":"acceptance", "status": "complete"}}', '--format', 'csv'])
+    main([
+        'task', 'list', '--project_id', project_id, '--query',
+        f'{{"user_id": "{user_id}", "phase":"acceptance", "status": "complete"}}', '--format', 'csv'
+    ])
 
     main(['task', 'cancel_acceptance', '--project_id', project_id, '--task_id', task_id, '--yes'])
 

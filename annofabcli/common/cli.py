@@ -15,10 +15,10 @@ from annofabapi.exceptions import AnnofabApiException
 from annofabapi.models import ProjectMemberRole  # pylint: disable=unused-import
 
 import annofabcli
+from annofabcli.common.enums import FormatArgument
 from annofabcli.common.exceptions import AuthorizationError
 from annofabcli.common.facade import AnnofabApiFacade
 from annofabcli.common.typing import InputDataSize
-from annofabcli.common.enums import FormatArgument
 
 logger = logging.getLogger(__name__)
 
@@ -212,11 +212,11 @@ def prompt_yesno(msg: str) -> Tuple[bool, bool]:
         elif choice == 'ALL':
             return True, True
 
+
 class ArgumentParser:
     """
     共通のコマンドライン引数を追加するためのクラス
     """
-
     def __init__(self, parser: argparse.ArgumentParser):
         self.parser = parser
 
@@ -229,17 +229,14 @@ class ArgumentParser:
 
         self.parser.add_argument('-p', '--project_id', type=str, required=True, help=help_message)
 
-
     def add_task_id(self, help_message: Optional[str] = None):
         """
         '--task_id` 引数を追加
         """
         if help_message is None:
-            help_message = ('対象のタスクのtask_idを指定します。'
-                        '`file://`を先頭に付けると、task_idの一覧が記載されたファイルを指定できます。')
+            help_message = ('対象のタスクのtask_idを指定します。' '`file://`を先頭に付けると、task_idの一覧が記載されたファイルを指定できます。')
 
         self.parser.add_argument('-t', '--task_id', type=str, required=True, nargs='+', help=help_message)
-
 
     def add_format(self, choices: List[FormatArgument], default: FormatArgument, help_message: Optional[str] = None):
         """
@@ -248,24 +245,19 @@ class ArgumentParser:
         if help_message is None:
             help_message = (f'出力フォーマットを指定します。指定しない場合は、{default.value} フォーマットになります。')
 
-        self.parser.add_argument('-f', '--format', type=str,
-                            choices=[e.value for e in choices],
-                            default=default.value, help=help_message)
-
+        self.parser.add_argument('-f', '--format', type=str, choices=[e.value for e in choices], default=default.value,
+                                 help=help_message)
 
     def add_csv_format(self, help_message: Optional[str] = None):
         """
         '--csv_format` 引数を追加
         """
         if help_message is None:
-            help_message ='CSVのフォーマットをJSON形式で指定します。`--format`が`csv`でないときは、このオプションは無視されます。'
+            help_message = 'CSVのフォーマットをJSON形式で指定します。`--format`が`csv`でないときは、このオプションは無視されます。'
             '`file://`を先頭に付けると、JSON形式のファイルを指定できます。'
             '指定した値は、[pandas.DataFrame.to_csv](https://pandas.pydata.org/pandas-docs/stable/reference/api/pandas.DataFrame.to_csv.html) の引数として渡されます。'  # noqa: E501
 
-        self.parser.add_argument(
-            '--csv_format',
-            type=str,
-            help=help_message)
+        self.parser.add_argument('--csv_format', type=str, help=help_message)
 
     def add_output(self, help_message: Optional[str] = None):
         """
@@ -316,7 +308,6 @@ class AbstractCommandLineInterface(abc.ABC):
     @abc.abstractmethod
     def main(self, args: argparse.Namespace):
         pass
-
 
     def validate_project(self, project_id, roles: List[ProjectMemberRole]):
         """

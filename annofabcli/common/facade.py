@@ -71,8 +71,8 @@ class AnnofabApiFacade:
         account, _ = self.service.api.get_my_account()
         return account['account_id']
 
-
-    def _get_organization_member_with_predicate(self, project_id: str, predicate: Callable[[Any], bool]) -> Optional[OrganizationMember]:
+    def _get_organization_member_with_predicate(self, project_id: str,
+                                                predicate: Callable[[Any], bool]) -> Optional[OrganizationMember]:
         """
         account_idから組織メンバを取得する。
         インスタンス変数に組織メンバがあれば、WebAPIは実行しない。
@@ -103,7 +103,6 @@ class AnnofabApiFacade:
             update_organization_members()
             return self._get_organization_member_with_predicate(project_id, predicate)
 
-
     def get_organization_member_from_account_id(self, project_id: str, account_id: str) -> Optional[OrganizationMember]:
         """
         account_idから組織メンバを取得する。
@@ -118,7 +117,6 @@ class AnnofabApiFacade:
         """
         return self._get_organization_member_with_predicate(project_id, lambda e: e["account_id"] == account_id)
 
-
     def get_organization_member_from_user_id(self, project_id: str, user_id: str) -> Optional[OrganizationMember]:
         """
         user_idから組織メンバを取得する。
@@ -132,7 +130,6 @@ class AnnofabApiFacade:
             組織メンバ
         """
         return self._get_organization_member_with_predicate(project_id, lambda e: e["user_id"] == user_id)
-
 
     def get_user_id_from_account_id(self, project_id: str, account_id: str) -> Optional[str]:
         """
@@ -153,7 +150,6 @@ class AnnofabApiFacade:
         else:
             return member.get('user_id')
 
-
     def get_account_id_from_user_id(self, project_id: str, user_id: str) -> Optional[str]:
         """
         usre_idからaccount_idを取得する。
@@ -172,7 +168,6 @@ class AnnofabApiFacade:
             return None
         else:
             return member.get('account_id')
-
 
     def get_organization_name_from_project_id(self, project_id: str) -> str:
         """

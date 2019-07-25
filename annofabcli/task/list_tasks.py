@@ -5,17 +5,14 @@ import argparse
 import logging
 from typing import Any, Callable, Dict, List, Optional, Tuple, Union  # pylint: disable=unused-import
 
-import requests
-import copy
 import annofabapi
 from annofabapi.models import Task
 
 import annofabcli
 from annofabcli import AnnofabApiFacade
-from annofabcli.common.cli import AbstractCommandLineInterface, build_annofabapi_resource_and_login
+from annofabcli.common.cli import AbstractCommandLineInterface, ArgumentParser, build_annofabapi_resource_and_login
 from annofabcli.common.enums import FormatArgument
 from annofabcli.common.visualize import AddProps
-from annofabcli.common.cli import ArgumentParser
 
 logger = logging.getLogger(__name__)
 
@@ -24,13 +21,11 @@ class ListTasks(AbstractCommandLineInterface):
     """
     タスクの一覧を表示する
     """
-
     def __init__(self, service: annofabapi.Resource, facade: AnnofabApiFacade, args: argparse.Namespace):
         super().__init__(service, facade)
         self.service = service
         self.facade = facade
         self.visualize = AddProps(self.service, args.project_id)
-
 
     def get_inspections_by_input_data(self, project_id: str, task_id: str, input_data_id: str, input_data_index: int):
         """入力データごとに検査コメント一覧を取得する。
@@ -63,8 +58,6 @@ class ListTasks(AbstractCommandLineInterface):
             修正したタスク検索クエリ
 
         """
-
-
         def remove_key(arg_key: str):
             if arg_key in task_query:
                 logger.info(f"タスク検索クエリから、`{arg_key}`　キーを削除しました。")
@@ -108,9 +101,8 @@ class ListTasks(AbstractCommandLineInterface):
         tasks = self.service.wrapper.get_all_tasks(project_id, query_params=task_query)
         return [self.visualize.add_properties_to_task(e) for e in tasks]
 
-
     def print_tasks(self, project_id: str, task_query: Dict[str, Any], arg_format: str, output: Optional[str] = None,
-                          csv_format: Optional[Dict[str, Any]] = None):
+                    csv_format: Optional[Dict[str, Any]] = None):
         """
         タスク一覧を出力する
 
@@ -125,8 +117,8 @@ class ListTasks(AbstractCommandLineInterface):
         if len(tasks) == 10000:
             logger.warning("タスク一覧は10,000件で打ち切られている可能性があります。")
 
-        annofabcli.utils.print_according_to_format(target=tasks, arg_format=FormatArgument(arg_format),
-                                                   output=output, csv_format=csv_format)
+        annofabcli.utils.print_according_to_format(target=tasks, arg_format=FormatArgument(arg_format), output=output,
+                                                   csv_format=csv_format)
 
     def main(self, args: argparse.Namespace):
         super().process_common_args(args, logger)
@@ -135,7 +127,8 @@ class ListTasks(AbstractCommandLineInterface):
         csv_format = annofabcli.common.cli.get_csv_format_from_args(args.csv_format)
 
         self.print_tasks(args.project_id, task_query=task_query, arg_format=args.format, output=args.output,
-                               csv_format=csv_format)
+                         csv_format=csv_format)
+
 
 def main(args):
     service = build_annofabapi_resource_and_login()
@@ -149,14 +142,15 @@ def parse_args(parser: argparse.ArgumentParser):
     argument_parser.add_project_id()
 
     # タスク検索クエリ
-    parser.add_argument('-q', '--query', type=str, required=True,
-                        help='タスクの検索クエリをJSON形式で指定します。'
-                             '`file://`を先頭に付けると、JSON形式のファイルを指定できます。'
-                             'クエリのフォーマットは、[getTasks API](https://annofab.com/docs/api/#operation/getTasks)のクエリパラメータと同じです。'
-                             'さらに追加で、`user_id`, `previous_user_id` キーも指定できます。'
-                             'ただし `page`, `limit`キーは指定できません。')
+    parser.add_argument(
+        '-q', '--query', type=str, required=True, help='タスクの検索クエリをJSON形式で指定します。'
+        '`file://`を先頭に付けると、JSON形式のファイルを指定できます。'
+        'クエリのフォーマットは、[getTasks API](https://annofab.com/docs/api/#operation/getTasks)のクエリパラメータと同じです。'
+        'さらに追加で、`user_id`, `previous_user_id` キーも指定できます。'
+        'ただし `page`, `limit`キーは指定できません。')
 
-    argument_parser.add_format(choices=[FormatArgument.CSV, FormatArgument.JSON, FormatArgument.PRETTY_JSON], default=FormatArgument.CSV)
+    argument_parser.add_format(choices=[FormatArgument.CSV, FormatArgument.JSON, FormatArgument.PRETTY_JSON],
+                               default=FormatArgument.CSV)
     argument_parser.add_output()
     argument_parser.add_csv_format()
 
