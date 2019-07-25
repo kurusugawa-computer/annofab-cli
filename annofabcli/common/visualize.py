@@ -7,7 +7,7 @@ from typing import Any, Callable, Dict, List, Optional, Tuple  # pylint: disable
 
 import annofabapi
 import more_itertools
-from annofabapi.models import Inspection, OrganizationMember
+from annofabapi.models import Inspection, OrganizationMember, Task
 
 
 class MessageLocale(enum.Enum):
@@ -31,6 +31,10 @@ class AddProps:
         annotation_specs, _ = self.service.api.get_annotation_specs(project_id)
         self.specs_labels = annotation_specs['labels']
         self.specs_inspection_phrases = annotation_specs['inspection_phrases']
+
+    @staticmethod
+    def millisecond_to_hour(millisecond: int):
+        return millisecond / 1000 / 3600
 
     @staticmethod
     def get_message(i18n_messages: Dict[str, Any], locale: MessageLocale) -> str:
@@ -139,3 +143,39 @@ class AddProps:
             inspection.update(detail)
 
         return inspection
+
+    def add_properties_to_task(self, task: Task) -> Task:
+        """
+        タスクに、以下のキーを追加する.
+        user_id
+        username
+        worktime_hour
+
+        Args:
+            task:
+
+        Returns:
+            Task情報
+
+        """
+        def add_user_info(target: Any):
+            user_id = None
+            username = None
+
+            account_id = target["account_id"]
+            if account_id is not None:
+                member = self.get_organization_member_from_account_id(account_id)
+                if member is not None:
+                    user_id = member['user_id']
+                    username = member['username']
+
+            target['user_id'] = user_id
+            target['username'] = username
+            return target
+
+        add_user_info(task)
+        task['worktime_hour'] = self.millisecond_to_hour(task['work_time_span'])
+
+        histories = [add_user_info(e) for e in task['histories_by_phase']]
+        task['histories_by_phase'] = histories
+        return task

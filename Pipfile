@@ -14,5 +14,6 @@ pylint = "*"
 twine = "*"
 autoflake = "*"
 flake8 = "*"
+docutils = "==0.15.0"
 
 [packages]

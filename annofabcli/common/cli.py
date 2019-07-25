@@ -317,6 +317,7 @@ class AbstractCommandLineInterface(abc.ABC):
     def main(self, args: argparse.Namespace):
         pass
 
+
     def validate_project(self, project_id, roles: List[ProjectMemberRole]):
         """
         プロジェクトに対する権限が付与されているかを確認する。

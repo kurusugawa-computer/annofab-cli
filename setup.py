@@ -31,7 +31,7 @@ setup(
                       'pyyaml',
                       'dictdiffer',
                       'more-itertools',
-                      'pandas'],
+                      'pandas <= 0.24.2'],
     python_requires='>=3.6',
     classifiers=[
         "Development Status :: 4 - Beta",
