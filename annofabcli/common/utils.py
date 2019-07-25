@@ -123,8 +123,8 @@ def print_json(target: Any, is_pretty: bool = False, output: Optional[str] = Non
 
 
 def print_csv(df: pandas.DataFrame, output: Optional[str] = None, to_csv_kwargs: Optional[Dict[str, Any]] = None):
-    if output is None:
-        df.to_csv(sys.stdout, **to_csv_kwargs)
+    path_or_buf =  sys.stdout if output is None else output
+    df.to_csv(path_or_buf, **to_csv_kwargs)
 
 
 def print_according_to_format(target: Any, arg_format: FormatArgument, output: Optional[str] = None,
