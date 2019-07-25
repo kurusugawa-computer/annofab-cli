@@ -49,7 +49,7 @@ class ListTasks(AbstractCommandLineInterface):
         inspectins, _ = self.service.api.get_inspections(project_id, task_id, input_data_id)
         return [self.visualize.add_properties_to_inspection(e, detail) for e in inspectins]
 
-    def _modify_task_query(self, project_id: str, task_query: Dict[str, Any]):
+    def _modify_task_query(self, project_id: str, task_query: Dict[str, Any]) -> Dict[str, Any]:
         """
         タスク検索クエリを修正する。
         ``user_id`` から ``account_id`` に変換する。
@@ -89,6 +89,7 @@ class ListTasks(AbstractCommandLineInterface):
             else:
                 f"user_id: {previous_user_id} のユーザが見つかりませんでした。"
 
+        return task_query
 
     def get_tasks(self, project_id: str, task_query: Dict[str, Any]) -> List[Task]:
         """
@@ -103,6 +104,7 @@ class ListTasks(AbstractCommandLineInterface):
         """
 
         task_query = self._modify_task_query(project_id, task_query)
+        logger.debug(f"task_query: {task_query}")
         tasks = self.service.wrapper.get_all_tasks(project_id, query_params=task_query)
         return [self.visualize.add_properties_to_task(e) for e in tasks]
 
@@ -119,9 +121,8 @@ class ListTasks(AbstractCommandLineInterface):
         """
 
         tasks = self.get_tasks(project_id, task_query)
-        if len(tasks) == 0:
-            logger.warning("タスク一覧は0件です。")
-        elif len(tasks) == 10000:
+        logger.debug(f"タスク一覧の件数: {len(tasks)}")
+        if len(tasks) == 10000:
             logger.warning("タスク一覧は10,000件で打ち切られている可能性があります。")
 
         annofabcli.utils.print_according_to_format(target=tasks, arg_format=FormatArgument(arg_format),

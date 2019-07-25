@@ -149,4 +149,4 @@ def print_according_to_format(target: Any, arg_format: FormatArgument, output: O
 
     elif arg_format == FormatArgument.CSV:
         df = pandas.DataFrame(target)
-        annofabcli.utils.print_csv(df, output, csv_format)
+        annofabcli.utils.print_csv(df, output=output, to_csv_kwargs=csv_format)
