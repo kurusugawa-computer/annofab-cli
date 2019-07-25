@@ -149,6 +149,20 @@ disable_existing_loggers: False
 
 ## コマンドの使い方
 
+
+### task list
+検査コメント一覧を出力します。
+
+```
+# 受入フェーズで、"usr1"が担当しているタスクの一覧を出力する
+$ annofabcli task list --project_id prj1 --query '{"user_id": "usr1","phase":"acceptance"}' 
+
+# 休憩中で、過去の担当者が"usr1"であるタスクの一覧を出力する。task.jsonファイルにJSON形式で出力する。
+$ annofabcli task list --project_id prj1 --query '{"previous_user_id": "usr1","status":"break"}' --format json --out task.json
+
+ 
+```
+
 ### task cancel_acceptance
 受け入れ完了タスクを、受け入れ取り消しにします。
 アノテーションルールを途中で変更したときなどに、利用します。
