@@ -30,11 +30,13 @@ out_path = Path('./tests/out')
 
 
 def test_task():
+    main(['task', 'list', '--project_id', project_id, '--query' f'{"user_id": {user_id}, "phase":"acceptance", "status": "complete"}', '--format', 'csv'])
+
     main(['task', 'cancel_acceptance', '--project_id', project_id, '--task_id', task_id, '--yes'])
 
     inspection_comment = datetime.datetime.now().isoformat()
     main([
-        'reject_tasks', '--project_id', project_id, '--task_id', task_id, '--comment', inspection_comment,
+        'task', 'reject', '--project_id', project_id, '--task_id', task_id, '--comment', inspection_comment,
         '--assign_last_annotator', '--yes'
     ])
 
