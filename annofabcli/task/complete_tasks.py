@@ -21,20 +21,20 @@ class ComleteTasks(AbstractCommandLineInterface):
     タスクを受け入れ完了にする
     """
     @staticmethod
-    def inspection_list_to_dict(inspection_list: List[Inspection]) -> InspectionJson:
+    def inspection_list_to_dict(all_inspection_list: List[Inspection]) -> InspectionJson:
         """
         検査コメントのListを、Dict[TaskId, Dict[InputDataId, List[Inspection]]] の形式に変換する。
 
         """
-        task_dict = {}
-        for inspection in inspection_list:
+        task_dict: InspectionJson = {}
+        for inspection in all_inspection_list:
             task_id = inspection['task_id']
-            input_data_dict = task_dict.get(task_id, default={})
+            input_data_dict: Dict[InputDataId, List[Inspection]] = task_dict.get(task_id, default={})
 
             input_data_id = inspection['input_data_id']
-            l = input_data_dict.get(input_data_id, default=[])
-            l.append(inspection)
-            input_data_dict[input_data_id] = l
+            inspection_list = input_data_dict.get(input_data_id, default=[])
+            inspection_list.append(inspection)
+            input_data_dict[input_data_id] = inspection_list
 
             task_dict[task_id] = input_data_dict
 
