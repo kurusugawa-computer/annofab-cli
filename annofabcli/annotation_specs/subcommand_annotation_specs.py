@@ -1,7 +1,7 @@
 import argparse
 
 import annofabcli
-import annofabcli.annotation_specs.print_annotation_specs_label
+import annofabcli.annotation_specs.list_annotation_specs_label
 import annofabcli.common.cli
 
 
@@ -10,7 +10,7 @@ def parse_args(parser: argparse.ArgumentParser):
     subparsers = parser.add_subparsers()
 
     # サブコマンドの定義
-    annofabcli.annotation_specs.print_annotation_specs_label.add_parser(subparsers)
+    annofabcli.annotation_specs.list_annotation_specs_label.add_parser(subparsers)
 
 
 def add_parser(subparsers: argparse._SubParsersAction):

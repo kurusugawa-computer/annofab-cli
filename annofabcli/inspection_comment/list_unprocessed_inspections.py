@@ -12,7 +12,7 @@ import annofabcli
 import annofabcli.common.cli
 from annofabcli import AnnofabApiFacade
 from annofabcli.common.cli import ArgumentParser, FormatArgument, build_annofabapi_resource_and_login
-from annofabcli.inspection_comment.print_inspections import PrintInspections
+from annofabcli.inspection_comment.list_inspections import PrintInspections
 
 logger = logging.getLogger(__name__)
 
