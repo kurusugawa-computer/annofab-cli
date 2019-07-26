@@ -12,7 +12,7 @@ def parse_args(parser: argparse.ArgumentParser):
 
     # サブコマンドの定義
     annofabcli.project.diff_projects.add_parser(subparsers)
-    annofabcli.project.downlowd.add_parser(subparsers)
+    annofabcli.project.download.add_parser(subparsers)
 
 
 def add_parser(subparsers: argparse._SubParsersAction):

@@ -9,7 +9,7 @@ from typing import Any, Callable, Dict, List, NewType, Optional, Tuple  # pylint
 import annofabapi
 import annofabapi.utils
 import more_itertools
-from annofabapi.models import OrganizationMember, ProjectMemberRole
+from annofabapi.models import OrganizationMember, ProjectMemberRole, ProjectId
 
 logger = logging.getLogger(__name__)
 
@@ -18,8 +18,6 @@ class AnnofabApiFacade:
     """
     AnnofabApiのFacadeクラス。annofabapiの複雑な処理を簡単に呼び出せるようにする。
     """
-
-    ProjectId = NewType('ProjectId', str)
 
     #: 組織メンバ一覧のキャッシュ(
     _organization_members: Optional[Tuple[ProjectId, List[OrganizationMember]]] = None

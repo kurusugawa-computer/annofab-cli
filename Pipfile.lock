@@ -17,10 +17,10 @@
     "develop": {
         "annofabapi": {
             "hashes": [
-                "sha256:39f40b4cdbc233e030071f1a3100a449b184f9780a2d22e32abc7335eddc3e17",
-                "sha256:e93324bca207718490e1efc68c0e0acd553c0f61afe567d07b8b425bf0f490b6"
+                "sha256:345e953e66f1dadbfef60424ebb4062cb7157be14e0a167e529216cc720bcb73",
+                "sha256:e6f150b7fde8738e95bc4263bcbbfc922aea9e44958af833ecce5e3c80289b23"
             ],
-            "version": "==0.9.0"
+            "version": "==0.9.1"
         },
         "annofabcli": {
             "editable": true,
@@ -169,6 +169,13 @@
             ],
             "index": "pypi",
             "version": "==4.3.21"
+        },
+        "jmespath": {
+            "hashes": [
+                "sha256:3720a4b1bd659dd2eecad0666459b9788813e032b83e7ba58578e48254e0a0e6",
+                "sha256:bde2aef6f44302dfb30320115b17d030798de8c4110e28d5cf6cf91a7a31074c"
+            ],
+            "version": "==0.9.4"
         },
         "lazy-object-proxy": {
             "hashes": [

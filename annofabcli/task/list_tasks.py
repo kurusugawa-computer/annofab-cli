@@ -25,23 +25,6 @@ class ListTasks(AbstractCommandLineInterface):
         super().__init__(service, facade, args)
         self.visualize = AddProps(self.service, args.project_id)
 
-    def get_inspections_by_input_data(self, project_id: str, task_id: str, input_data_id: str, input_data_index: int):
-        """入力データごとに検査コメント一覧を取得する。
-
-        Args:
-            project_id:
-            task_id:
-            input_data_id:
-            input_data_index: タスク内のinput_dataの番号
-
-        Returns:
-            対象の検査コメント一覧
-        """
-
-        detail = {"input_data_index": input_data_index}
-        inspectins, _ = self.service.api.get_inspections(project_id, task_id, input_data_id)
-        return [self.visualize.add_properties_to_inspection(e, detail) for e in inspectins]
-
     def _modify_task_query(self, project_id: str, task_query: Dict[str, Any]) -> Dict[str, Any]:
         """
         タスク検索クエリを修正する。
@@ -111,6 +94,8 @@ class ListTasks(AbstractCommandLineInterface):
         """
 
         tasks = self.get_tasks(project_id, task_query)
+        tasks = self.search_with_jmespath_expression(tasks)
+
         logger.debug(f"タスク一覧の件数: {len(tasks)}")
         if len(tasks) == 10000:
             logger.warning("タスク一覧は10,000件で打ち切られている可能性があります。")
@@ -120,7 +105,7 @@ class ListTasks(AbstractCommandLineInterface):
 
     def main(self):
         args = self.args
-        task_query = annofabcli.common.cli.get_json_from_args(args.query)
+        task_query = annofabcli.common.cli.get_json_from_args(args.task_query)
         csv_format = annofabcli.common.cli.get_csv_format_from_args(args.csv_format)
 
         self.print_tasks(args.project_id, task_query=task_query, arg_format=args.format, output=args.output,
@@ -140,7 +125,7 @@ def parse_args(parser: argparse.ArgumentParser):
 
     # タスク検索クエリ
     parser.add_argument(
-        '-q', '--query', type=str, required=True, help='タスクの検索クエリをJSON形式で指定します。'
+        '--task_query', type=str, required=True, help='タスクの検索クエリをJSON形式で指定します。'
         '`file://`を先頭に付けると、JSON形式のファイルを指定できます。'
         'クエリのフォーマットは、[getTasks API](https://annofab.com/docs/api/#operation/getTasks)のクエリパラメータと同じです。'
         'さらに追加で、`user_id`, `previous_user_id` キーも指定できます。'

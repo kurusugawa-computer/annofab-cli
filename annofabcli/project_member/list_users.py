@@ -81,6 +81,7 @@ class ListUser(AbstractCommandLineInterface):
             project_id_list = annofabcli.common.cli.get_list_from_args(args.project_id)
             project_members = self.get_project_members_with_project_id(project_id_list)
 
+        project_members = self.search_with_jmespath_expression(project_members)
         annofabcli.utils.print_according_to_format(target=project_members, arg_format=FormatArgument(args.format),
                                                    output=args.output, csv_format=csv_format)
 

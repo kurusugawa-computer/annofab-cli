@@ -7,12 +7,13 @@ import logging
 from typing import Any, Callable, Dict, List, Optional  # pylint: disable=unused-import
 
 import requests
+import jmespath
 from annofabapi.models import Inspection
 
 import annofabcli
 import annofabcli.common.cli
 from annofabcli import AnnofabApiFacade
-from annofabcli.common.cli import AbstractCommandLineInterface, build_annofabapi_resource_and_login
+from annofabcli.common.cli import AbstractCommandLineInterface, build_annofabapi_resource_and_login, ArgumentParser
 from annofabcli.common.enums import FormatArgument
 from annofabcli.common.visualize import AddProps
 
@@ -27,7 +28,7 @@ class PrintInspections(AbstractCommandLineInterface):
     visualize: AddProps
 
     def print_inspections(self, project_id: str, task_id_list: List[str], arg_format: str, output: Optional[str] = None,
-                          csv_format: Optional[Dict[str, Any]] = None):
+                          csv_format: Optional[Dict[str, Any]] = None, jmespath_query: Optional[str] = None):
         """
         検査コメントを出力する
 
@@ -42,8 +43,9 @@ class PrintInspections(AbstractCommandLineInterface):
         """
 
         inspections = self.get_inspections(project_id, task_id_list)
-        if len(inspections) == 0:
-            logger.warning("検査コメントは0件です。")
+        inspections = self.search_with_jmespath_expression(inspections)
+
+        logger.info(f"検査コメントの件数: {len(inspections)}")
 
         annofabcli.utils.print_according_to_format(target=inspections, arg_format=FormatArgument(arg_format),
                                                    output=output, csv_format=csv_format)
@@ -101,29 +103,20 @@ class PrintInspections(AbstractCommandLineInterface):
         self.visualize = AddProps(self.service, args.project_id)
 
         self.print_inspections(args.project_id, task_id_list, arg_format=args.format, output=args.output,
-                               csv_format=csv_format)
+                               csv_format=csv_format, jmespath_query=args.query)
 
 
 def parse_args(parser: argparse.ArgumentParser):
+    argument_parser = ArgumentParser(parser)
 
-    parser.add_argument('-p', '--project_id', type=str, required=True, help='対象のプロジェクトのproject_idを指定します。')
+    argument_parser.add_project_id()
+    argument_parser.add_task_id()
+    argument_parser.add_format(choices=[FormatArgument.CSV, FormatArgument.JSON, FormatArgument.PRETTY_JSON],
+                               default=FormatArgument.CSV)
+    argument_parser.add_output()
+    argument_parser.add_csv_format()
+    argument_parser.add_query()
 
-    parser.add_argument('-t', '--task_id', type=str, required=True, nargs='+', help='対象のタスクのtask_idを指定します。'
-                        '`file://`を先頭に付けると、task_idの一覧が記載されたファイルを指定できます。')
-
-    parser.add_argument('-f', '--format', type=str,
-                        choices=[FormatArgument.CSV.value, FormatArgument.JSON.value, FormatArgument.PRETTY_JSON.value],
-                        default=FormatArgument.CSV.value, help='出力フォーマットを指定します。指定しない場合は、"csv"フォーマットになります。')
-
-    parser.add_argument('-o', '--output', type=str, help='出力先のファイルパスを指定します。指定しない場合は、標準出力に出力されます。')
-
-    parser.add_argument(
-        '--csv_format',
-        type=str,
-        help='CSVのフォーマットをJSON形式で指定します。`--format`が`csv`でないときは、このオプションは無視されます。'
-        '`file://`を先頭に付けると、JSON形式のファイルを指定できます。'
-        '指定した値は、[pandas.DataFrame.to_csv](https://pandas.pydata.org/pandas-docs/stable/reference/api/pandas.DataFrame.to_csv.html) の引数として渡されます。'  # noqa: E501
-    )
 
     parser.set_defaults(subcommand_func=main)
 

@@ -3,6 +3,7 @@ Command Line Interfaceの共通部分
 """
 
 import abc
+import jmespath
 import argparse
 import getpass
 import json
@@ -270,6 +271,15 @@ class ArgumentParser:
 
         self.parser.add_argument('-o', '--output', type=str, help=help_message)
 
+    def add_query(self, help_message: Optional[str] = None):
+        """
+        '--query` 引数を追加
+        """
+        if help_message is None:
+            help_message = 'JMESPath形式で指定します。出力結果の抽出や、出力内容の変更に利用できます。'
+
+        self.parser.add_argument('-q', '--query', type=str, help=help_message)
+
 
 class AbstractCommandLineInterface(abc.ABC):
     """
@@ -285,6 +295,9 @@ class AbstractCommandLineInterface(abc.ABC):
     #: Trueならば、処理中に現れる問い合わせに対して、常に'yes'と回答したものとして処理する。
     all_yes: bool = False
 
+    #: JMesPath
+    query: str = None
+
     def __init__(self, service: annofabapi.Resource, facade: AnnofabApiFacade, args: argparse.Namespace):
         self.service = service
         self.facade = facade
@@ -297,11 +310,14 @@ class AbstractCommandLineInterface(abc.ABC):
         Args:
             args: コマンドライン引数
         """
+        logger.info(f"args: {args}")
         if not args.disable_log:
             load_logging_config_from_args(args)
 
         self.all_yes = args.yes
-        logger.info(f"args: {args}")
+        if hasattr(args, 'query'):
+            self.query = args.query
+
 
     def validate_project(self, project_id, roles: List[ProjectMemberRole]):
         """
@@ -346,3 +362,17 @@ class AbstractCommandLineInterface(abc.ABC):
             self.all_yes = True
 
         return True
+
+    def search_with_jmespath_expression(self, target: Any):
+        """
+        インスタンスで保持しているJMespath情報で、targetの中身を探す。
+        Args:
+            target: 検索対象
+
+        Returns:
+            JMesPathで検索した結果。``self.query`` がNoneなら引数 ``target`` を返す。
+
+        """
+        if self.query is not None:
+            return jmespath.search(self.query, target)
+        return target

@@ -97,9 +97,8 @@ class PrintUnprocessedInspections(AbstractCommandLineInterface):
         # 出力
         print(json.dumps(task_dict, indent=2, ensure_ascii=False))
 
-    def main(self, args):
-        super().process_common_args(args, logger)
-
+    def main(self):
+        args = self.args
         task_id_list = annofabcli.common.cli.get_list_from_args(args.task_id)
 
         self.print_unprocessed_inspections(args.project_id, task_id_list, args.inspection_comment,
@@ -122,7 +121,7 @@ def parse_args(parser: argparse.ArgumentParser):
 def main(args):
     service = build_annofabapi_resource_and_login()
     facade = AnnofabApiFacade(service)
-    PrintUnprocessedInspections(service, facade).main(args)
+    PrintUnprocessedInspections(service, facade, args).main()
 
 
 def add_parser(subparsers: argparse._SubParsersAction):
