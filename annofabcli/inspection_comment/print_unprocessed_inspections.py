@@ -3,7 +3,6 @@
 """
 
 import argparse
-import json
 import logging
 from typing import Any, Callable, Dict, List, Optional  # pylint: disable=unused-import
 
@@ -12,9 +11,8 @@ from annofabapi.models import Inspection
 import annofabcli
 import annofabcli.common.cli
 from annofabcli import AnnofabApiFacade
-from annofabcli.common.cli import AbstractCommandLineInterface, build_annofabapi_resource_and_login, ArgumentParser, FormatArgument
+from annofabcli.common.cli import ArgumentParser, FormatArgument, build_annofabapi_resource_and_login
 from annofabcli.inspection_comment.print_inspections import PrintInspections
-
 
 logger = logging.getLogger(__name__)
 
@@ -38,6 +36,7 @@ def create_filter_func(commenter_user_id: str, inspection_comment: str) -> Calla
                 return False
 
         return True
+
     return filter_inspection
 
 
@@ -69,7 +68,9 @@ def main(args):
 
     filter_inspection = create_filter_func(args.commenter_user_id, args.inspection_comment)
 
-    PrintInspections(service, facade, args).print_inspections(project_id=args.project_id, task_id_list=task_id_list, arg_format=args.format, csv_format=csv_format, output=args.output, filter_inspection=filter_inspection)
+    PrintInspections(service, facade, args).print_inspections(project_id=args.project_id, task_id_list=task_id_list,
+                                                              arg_format=args.format, csv_format=csv_format,
+                                                              output=args.output, filter_inspection=filter_inspection)
 
 
 def add_parser(subparsers: argparse._SubParsersAction):

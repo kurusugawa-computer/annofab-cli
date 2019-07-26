@@ -31,7 +31,7 @@ out_path = Path('./tests/out')
 
 def test_task():
     main([
-        'task', 'list', '--project_id', project_id, '--query',
+        'task', 'list', '--project_id', project_id, '--task_query',
         f'{{"user_id": "{user_id}", "phase":"acceptance", "status": "complete"}}', '--format', 'csv'
     ])
 
@@ -50,6 +50,7 @@ def test_project():
 
 def test_inspection_comment():
     main(['inspection_comment', 'list', '--project_id', project_id, '--task_id', task_id])
+    main(['inspection_comment', 'list_unprocessed', '--project_id', project_id, '--task_id', task_id])
 
 
 def test_annotation_specs():

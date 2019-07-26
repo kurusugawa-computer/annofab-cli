@@ -9,7 +9,7 @@ from typing import Any, Callable, Dict, List, NewType, Optional, Tuple  # pylint
 import annofabapi
 import annofabapi.utils
 import more_itertools
-from annofabapi.models import OrganizationMember, ProjectMemberRole, ProjectId
+from annofabapi.models import OrganizationMember, ProjectId, ProjectMemberRole
 
 logger = logging.getLogger(__name__)
 

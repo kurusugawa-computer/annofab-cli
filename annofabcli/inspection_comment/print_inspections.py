@@ -6,15 +6,14 @@ import argparse
 import logging
 from typing import Any, Callable, Dict, List, Optional  # pylint: disable=unused-import
 
+import annofabapi
 import requests
-import jmespath
 from annofabapi.models import Inspection
 
-import annofabapi
 import annofabcli
 import annofabcli.common.cli
 from annofabcli import AnnofabApiFacade
-from annofabcli.common.cli import AbstractCommandLineInterface, build_annofabapi_resource_and_login, ArgumentParser
+from annofabcli.common.cli import AbstractCommandLineInterface, ArgumentParser, build_annofabapi_resource_and_login
 from annofabcli.common.enums import FormatArgument
 from annofabcli.common.visualize import AddProps
 
@@ -22,17 +21,18 @@ logger = logging.getLogger(__name__)
 
 FilterInspectionFunc = Callable[[Inspection], bool]
 
+
 class PrintInspections(AbstractCommandLineInterface):
     """
     検査コメント一覧を出力する。
     """
-
     def __init__(self, service: annofabapi.Resource, facade: AnnofabApiFacade, args: argparse.Namespace):
         super().__init__(service, facade, args)
         self.visualize = AddProps(self.service, args.project_id)
 
     def print_inspections(self, project_id: str, task_id_list: List[str], arg_format: str, output: Optional[str] = None,
-                          csv_format: Optional[Dict[str, Any]] = None, filter_inspection: Optional[FilterInspectionFunc] = None):
+                          csv_format: Optional[Dict[str, Any]] = None,
+                          filter_inspection: Optional[FilterInspectionFunc] = None):
         """
         検査コメントを出力する
 
@@ -72,7 +72,8 @@ class PrintInspections(AbstractCommandLineInterface):
         inspectins, _ = self.service.api.get_inspections(project_id, task_id, input_data_id)
         return [self.visualize.add_properties_to_inspection(e, detail) for e in inspectins]
 
-    def get_inspections(self, project_id: str, task_id_list: List[str], filter_inspection: Optional[FilterInspectionFunc] = None) -> List[Inspection]:
+    def get_inspections(self, project_id: str, task_id_list: List[str],
+                        filter_inspection: Optional[FilterInspectionFunc] = None) -> List[Inspection]:
         """検査コメント一覧を取得する。
 
         Args:
@@ -123,7 +124,6 @@ def parse_args(parser: argparse.ArgumentParser):
     argument_parser.add_output()
     argument_parser.add_csv_format()
     argument_parser.add_query()
-
 
     parser.set_defaults(subcommand_func=main)
 

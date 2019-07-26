@@ -1,16 +1,15 @@
 import argparse
-import json
 import logging
 import time
 from typing import Any, Callable, Dict, List, Optional  # pylint: disable=unused-import
 
 import requests
-from annofabapi.models import Inspection, ProjectMemberRole, Task, TaskId, InputDataId
+from annofabapi.models import InputDataId, Inspection, ProjectMemberRole, Task, TaskId
 
 import annofabcli
 import annofabcli.common.cli
 from annofabcli import AnnofabApiFacade
-from annofabcli.common.cli import AbstractCommandLineInterface, build_annofabapi_resource_and_login, ArgumentParser
+from annofabcli.common.cli import AbstractCommandLineInterface, ArgumentParser, build_annofabapi_resource_and_login
 
 logger = logging.getLogger(__name__)
 
@@ -21,7 +20,6 @@ class ComleteTasks(AbstractCommandLineInterface):
     """
     タスクを受け入れ完了にする
     """
-
     @staticmethod
     def inspection_list_to_dict(inspection_list: List[Inspection]) -> InspectionJson:
         """
@@ -41,12 +39,6 @@ class ComleteTasks(AbstractCommandLineInterface):
             task_dict[task_id] = input_data_dict
 
         return task_dict
-
-
-
-
-
-
 
     def complete_tasks_with_changing_inspection_status(self, project_id: str, task_id_list: List[str],
                                                        inspection_status: str, inspection_list: List[Inspection]):
@@ -175,7 +167,6 @@ def parse_args(parser: argparse.ArgumentParser):
     parser.add_argument(
         '--inspection_list', type=str, required=True, help='未処置の検査コメントの一覧を指定してください。指定された検査コメントの状態が変更されます。'
         '検査コメントの一覧は `inspection_comment list_unprocessed` コマンドで出力できます。')
-
 
     parser.add_argument('--inspection_status', type=str, required=True,
                         choices=["error_corrected", "no_correction_required"], help='未処置の検査コメントをどの状態に変更するか。'

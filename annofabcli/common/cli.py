@@ -3,7 +3,6 @@ Command Line Interfaceの共通部分
 """
 
 import abc
-import jmespath
 import argparse
 import getpass
 import json
@@ -11,6 +10,7 @@ import logging
 from typing import Any, Dict, List, Optional, Tuple  # pylint: disable=unused-import
 
 import annofabapi
+import jmespath
 import requests
 from annofabapi.exceptions import AnnofabApiException
 from annofabapi.models import ProjectMemberRole  # pylint: disable=unused-import
@@ -317,7 +317,6 @@ class AbstractCommandLineInterface(abc.ABC):
         self.all_yes = args.yes
         if hasattr(args, 'query'):
             self.query = args.query
-
 
     def validate_project(self, project_id, roles: List[ProjectMemberRole]):
         """

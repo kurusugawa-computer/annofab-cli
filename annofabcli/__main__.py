@@ -4,9 +4,9 @@ from typing import Optional, Sequence  # pylint: disable=unused-import
 
 import annofabcli.annotation_specs.subcommand_annotation_specs
 import annofabcli.inspection_comment.print_inspections
+import annofabcli.inspection_comment.print_unprocessed_inspections
 import annofabcli.inspection_comment.subcommand_inspection_comment
 import annofabcli.print_label_color
-import annofabcli.inspection_comment.print_unprocessed_inspections
 import annofabcli.project.diff_projects
 import annofabcli.project.download
 import annofabcli.project.subcommand_project
