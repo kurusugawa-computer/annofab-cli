@@ -44,8 +44,8 @@ class PrintLabelColor(AbstractCommandLineInterface):
 
         print(json.dumps(label_color_dict, indent=2))
 
-    def main(self, args):
-        super().process_common_args(args, logger)
+    def main(self):
+        args = self.args
 
         self.print_label_color(args.project_id)
 
@@ -59,7 +59,7 @@ def parse_args(parser: argparse.ArgumentParser):
 def main(args):
     service = build_annofabapi_resource_and_login()
     facade = AnnofabApiFacade(service)
-    PrintLabelColor(service, facade).main(args)
+    PrintLabelColor(service, facade, args).main()
 
 
 def add_parser(subparsers: argparse._SubParsersAction):

@@ -138,9 +138,12 @@ def get_json_from_args(target: Optional[str] = None) -> Any:
         return json.loads(target)
 
 
-def get_input_data_size(str_input_data_size: str) -> InputDataSize:
+def get_input_data_size(str_input_data_size: str) -> Optional[InputDataSize]:
     """400x300を(400,300)に変換する"""
     splited_list = str_input_data_size.split("x")
+    if len(splited_list) < 2:
+        return None
+
     return (int(splited_list[0]), int(splited_list[1]))
 
 

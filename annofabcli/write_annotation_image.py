@@ -27,7 +27,8 @@ AnnotationSortKeyFunc = Callable[[Annotation], Any]
 
 
 class WriteAnnotationImage:
-    def _create_sub_input_data_list(self, sub_annotation_dir_list: List[str],
+    @staticmethod
+    def _create_sub_input_data_list(sub_annotation_dir_list: List[str],
                                     input_data_json: Path) -> SubInputDataList:
         """
         マージ対象の sub_input_data_listを生成する
@@ -45,7 +46,8 @@ class WriteAnnotationImage:
 
         return sub_input_data_list
 
-    def draw_annotation_list(self, annotation_list: List[Annotation], input_data_dir: str,
+    @staticmethod
+    def draw_annotation_list(annotation_list: List[Annotation], input_data_dir: str,
                              label_color_dict: Dict[str, RGB], draw: PIL.ImageDraw.Draw) -> PIL.ImageDraw.Draw:
         """
         矩形、ポリゴン、塗りつぶし、塗りつぶしv2アノテーションを描画する。
@@ -229,21 +231,19 @@ class WriteAnnotationImage:
                         task_status_complete=task_status_complete, annotation_sort_key_func=annotation_sort_key_func,
                         sub_input_data_list=sub_input_data_list)
 
-                except Exception as e:
+                except Exception as e:  # pylint: disable=broad-except
                     logger.warning(e)
                     logger.warning(f"{str(output_file)} の生成失敗")
 
     def main(self, args):
-        annofabcli.common.cli.load_logging_config_from_args(args, __file__)
+        annofabcli.common.cli.load_logging_config_from_args(args)
 
         logger.debug(f"args: {args}")
 
-        try:
-            default_input_data_size = annofabcli.common.cli.get_input_data_size(args.input_data_size)
-
-        except Exception as e:
+        default_input_data_size = annofabcli.common.cli.get_input_data_size(args.input_data_size)
+        if default_input_data_size is None:
             logger.error("--default_input_data_size のフォーマットが不正です")
-            raise e
+            return
 
         try:
             with open(args.label_color_file) as f:
