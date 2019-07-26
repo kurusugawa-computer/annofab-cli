@@ -5,17 +5,15 @@ import time
 from typing import Any, Callable, Dict, List, Optional  # pylint: disable=unused-import
 
 import requests
-from annofabapi.models import Inspection, ProjectMemberRole, Task
+from annofabapi.models import Inspection, ProjectMemberRole, Task, TaskId, InputDataId
 
 import annofabcli
 import annofabcli.common.cli
 from annofabcli import AnnofabApiFacade
-from annofabcli.common.cli import AbstractCommandLineInterface, build_annofabapi_resource_and_login
+from annofabcli.common.cli import AbstractCommandLineInterface, build_annofabapi_resource_and_login, ArgumentParser
 
 logger = logging.getLogger(__name__)
 
-TaskId = str
-InputDataId = str
 InspectionJson = Dict[TaskId, Dict[InputDataId, List[Inspection]]]
 
 
@@ -23,8 +21,35 @@ class ComleteTasks(AbstractCommandLineInterface):
     """
     タスクを受け入れ完了にする
     """
+
+    @staticmethod
+    def inspection_list_to_dict(inspection_list: List[Inspection]) -> InspectionJson:
+        """
+        検査コメントのListを、Dict[TaskId, Dict[InputDataId, List[Inspection]]] の形式に変換する。
+
+        """
+        task_dict = {}
+        for inspection in inspection_list:
+            task_id = inspection['task_id']
+            input_data_dict = task_dict.get(task_id, default={})
+
+            input_data_id = inspection['input_data_id']
+            l = input_data_dict.get(input_data_id, default=[])
+            l.append(inspection)
+            input_data_dict[input_data_id] = l
+
+            task_dict[task_id] = input_data_dict
+
+        return task_dict
+
+
+
+
+
+
+
     def complete_tasks_with_changing_inspection_status(self, project_id: str, task_id_list: List[str],
-                                                       inspection_status: str, inspection_json: InspectionJson):
+                                                       inspection_status: str, inspection_list: List[Inspection]):
         """
         検査コメントのstatusを変更（対応完了 or 対応不要）にした上で、タスクを受け入れ完了状態にする
         Args:
@@ -38,6 +63,8 @@ class ComleteTasks(AbstractCommandLineInterface):
         super().validate_project(project_id, [ProjectMemberRole.OWNER, ProjectMemberRole.ACCEPTER])
 
         account_id = self.facade.get_my_account_id()
+
+        inspection_json = self.inspection_list_to_dict(inspection_list)
 
         for task_id in task_id_list:
             task, _ = self.service.api.get_task(project_id, task_id)
@@ -133,23 +160,22 @@ class ComleteTasks(AbstractCommandLineInterface):
         args = self.args
         task_id_list = annofabcli.common.cli.get_list_from_args(args.task_id)
 
-        with open(args.inspection_json) as f:
-            inspection_json = json.load(f)
+        inspection_list = annofabcli.common.cli.get_json_from_args(args.inspection_list)
 
         self.complete_tasks_with_changing_inspection_status(args.project_id, task_id_list, args.inspection_status,
-                                                            inspection_json)
+                                                            inspection_list)
 
 
 def parse_args(parser: argparse.ArgumentParser):
-    parser.add_argument('-p', '--project_id', type=str, required=True, help='対象のプロジェクトのproject_idを指定します。')
+    argument_parser = ArgumentParser(parser)
 
-    parser.add_argument('-t', '--task_id', type=str, required=True, nargs='+',
-                        help='対象のタスクのtask_idを指定します。`file://`を先頭に付けると、task_idの一覧が記載されたファイルを指定できます。')
+    argument_parser.add_project_id()
+    argument_parser.add_task_id()
 
     parser.add_argument(
-        '--inspection_json', type=str, required=True, help='未処置の検査コメントの一覧。このファイルに記載された検査コメントの状態を変更する。'
-        'jsonの構成は`Dict[TaskId, Dict[InputDatId, List[Inspection]]]。'
-        '`print_unprocessed_inspections`ツールの出力結果である。')
+        '--inspection_list', type=str, required=True, help='未処置の検査コメントの一覧を指定してください。指定された検査コメントの状態が変更されます。'
+        '検査コメントの一覧は `inspection_comment list_unprocessed` コマンドで出力できます。')
+
 
     parser.add_argument('--inspection_status', type=str, required=True,
                         choices=["error_corrected", "no_correction_required"], help='未処置の検査コメントをどの状態に変更するか。'
