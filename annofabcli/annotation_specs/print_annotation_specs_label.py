@@ -57,8 +57,8 @@ class PrintAnnotationSpecsLabel(AbstractCommandLineInterface):
                             '',
                         ] + [m['message'] for m in choice['name']['messages']]))
 
-    def main(self, args):
-        super().process_common_args(args, logger)
+    def main(self):
+        args = self.args
         self.print_annotation_specs_label(args.project_id, args.format)
 
 
@@ -78,7 +78,7 @@ def parse_args(parser: argparse.ArgumentParser):
 def main(args):
     service = build_annofabapi_resource_and_login()
     facade = AnnofabApiFacade(service)
-    PrintAnnotationSpecsLabel(service, facade).main(args)
+    PrintAnnotationSpecsLabel(service, facade, args).main()
 
 
 def add_parser(subparsers: argparse._SubParsersAction):

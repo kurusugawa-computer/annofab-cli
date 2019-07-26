@@ -155,8 +155,8 @@ class RejectTasks(AbstractCommandLineInterface):
 
         logger.info(f"{success_count} / {len(task_id_list)} 件 タスクの差し戻しに成功した")
 
-    def main(self, args: argparse.Namespace):
-        super().process_common_args(args, logger)
+    def main(self):
+        args = self.args
 
         task_id_list = annofabcli.common.cli.get_list_from_args(args.task_id)
 
@@ -170,7 +170,7 @@ class RejectTasks(AbstractCommandLineInterface):
 def main(args: argparse.Namespace):
     service = build_annofabapi_resource_and_login()
     facade = AnnofabApiFacade(service)
-    RejectTasks(service, facade).main(args)
+    RejectTasks(service, facade, args).main()
 
 
 def parse_args(parser: argparse.ArgumentParser):

@@ -129,8 +129,8 @@ class ComleteTasks(AbstractCommandLineInterface):
 
         return is_valid
 
-    def main(self, args):
-        super().process_common_args(args, logger)
+    def main(self):
+        args = self.args
         task_id_list = annofabcli.common.cli.get_list_from_args(args.task_id)
 
         with open(args.inspection_json) as f:
@@ -162,7 +162,7 @@ def parse_args(parser: argparse.ArgumentParser):
 def main(args):
     service = build_annofabapi_resource_and_login()
     facade = AnnofabApiFacade(service)
-    ComleteTasks(service, facade).main(args)
+    ComleteTasks(service, facade, args).main()
 
 
 def add_parser_deprecated(subparsers: argparse._SubParsersAction):

@@ -3,12 +3,12 @@ import logging
 from typing import Optional, Sequence  # pylint: disable=unused-import
 
 import annofabcli.annotation_specs.subcommand_annotation_specs
-import annofabcli.download
 import annofabcli.inspection_comment.print_inspections
 import annofabcli.inspection_comment.subcommand_inspection_comment
 import annofabcli.print_label_color
 import annofabcli.print_unprocessed_inspections
 import annofabcli.project.diff_projects
+import annofabcli.project.download
 import annofabcli.project.subcommand_project
 import annofabcli.project_member.delete_users
 import annofabcli.project_member.invite_users
@@ -45,7 +45,7 @@ def main(arguments: Optional[Sequence[str]] = None):
     annofabcli.annotation_specs.subcommand_annotation_specs.add_parser(subparsers)
 
     # サブコマンドの定義
-    annofabcli.download.add_parser(subparsers)
+    annofabcli.project.download.add_parser(subparsers)
 
     annofabcli.print_unprocessed_inspections.add_parser(subparsers)
 

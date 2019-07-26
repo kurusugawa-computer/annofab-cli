@@ -69,9 +69,8 @@ class ListUser(AbstractCommandLineInterface):
 
         return all_project_members
 
-    def main(self, args):
-        super().process_common_args(args, logger)
-
+    def main(self):
+        args = self.args
         csv_format = annofabcli.common.cli.get_csv_format_from_args(args.csv_format)
 
         project_members = []
@@ -89,7 +88,7 @@ class ListUser(AbstractCommandLineInterface):
 def main(args):
     service = build_annofabapi_resource_and_login()
     facade = AnnofabApiFacade(service)
-    ListUser(service, facade).main(args)
+    ListUser(service, facade, args).main()
 
 
 def parse_args(parser: argparse.ArgumentParser):

@@ -93,8 +93,8 @@ class PrintInspections(AbstractCommandLineInterface):
 
         return all_inspections
 
-    def main(self, args: argparse.Namespace):
-        super().process_common_args(args, logger)
+    def main(self):
+        args = self.args
         task_id_list = annofabcli.common.cli.get_list_from_args(args.task_id)
         csv_format = annofabcli.common.cli.get_csv_format_from_args(args.csv_format)
 
@@ -131,7 +131,7 @@ def parse_args(parser: argparse.ArgumentParser):
 def main(args):
     service = build_annofabapi_resource_and_login()
     facade = AnnofabApiFacade(service)
-    PrintInspections(service, facade).main(args)
+    PrintInspections(service, facade, args).main()
 
 
 def add_parser_deprecated(subparsers: argparse._SubParsersAction):

@@ -61,9 +61,8 @@ class DeleteUser(AbstractCommandLineInterface):
                 logger.warning(e)
                 logger.warning(f"エラーのため、project_id = {project_id} のプロジェクトから削除できなかった。")
 
-    def main(self, args):
-        super().process_common_args(args, logger)
-
+    def main(self):
+        args = self.args
         user_id_list = annofabcli.common.cli.get_list_from_args(args.user_id)
 
         if args.organization is not None:
@@ -77,7 +76,7 @@ class DeleteUser(AbstractCommandLineInterface):
 def main(args):
     service = build_annofabapi_resource_and_login()
     facade = AnnofabApiFacade(service)
-    DeleteUser(service, facade).main(args)
+    DeleteUser(service, facade, args).main()
 
 
 def parse_args(parser: argparse.ArgumentParser):

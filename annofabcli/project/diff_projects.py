@@ -8,6 +8,7 @@ import logging
 import pprint
 from typing import Any, Dict, List  # pylint: disable=unused-import
 
+import annofabapi
 import dictdiffer
 import more_itertools
 from annofabapi.models import ProjectMemberRole
@@ -50,6 +51,17 @@ class DiffProjecs(AbstractCommandLineInterface):
     """
     プロジェクト間の差分を表示する
     """
+    def __init__(self, service: annofabapi.Resource, facade: AnnofabApiFacade, args: argparse.Namespace):
+        super().__init__(service, facade, args)
+
+        project_id1 = args.project_id1
+        project_id2 = args.project_id2
+        project_title1 = self.facade.get_project_title(project_id1)
+        project_title2 = self.facade.get_project_title(project_id2)
+
+        self.project_title1 = project_title1
+        self.project_title2 = project_title2
+
     def diff_project_members(self, project_id1: str, project_id2: str):
         """
         プロジェクト間のプロジェクトメンバの差分を表示する。
@@ -278,18 +290,12 @@ class DiffProjecs(AbstractCommandLineInterface):
         super().validate_project(project_id1, roles)
         super().validate_project(project_id2, roles)
 
-    def main(self, args: argparse.Namespace):
-        super().process_common_args(args, logger)
-
+    def main(self):
+        args = self.args
         project_id1 = args.project_id1
         project_id2 = args.project_id2
-        project_title1 = self.facade.get_project_title(project_id1)
-        project_title2 = self.facade.get_project_title(project_id2)
 
-        self.project_title1 = project_title1
-        self.project_title2 = project_title2
-
-        logger.info(f"=== {project_title1}({project_id1}) と {project_title2}({project_id1}) の差分を表示")
+        logger.info(f"=== {self.project_title1}({project_id1}) と {self.project_title2}({project_id1}) の差分を表示")
 
         self.validate_projects(project_id1, project_id2)
 
@@ -323,7 +329,7 @@ def parse_args(parser: argparse.ArgumentParser):
 def main(args):
     service = build_annofabapi_resource_and_login()
     facade = AnnofabApiFacade(service)
-    DiffProjecs(service, facade).main(args)
+    DiffProjecs(service, facade, args).main()
 
 
 def add_parser_deprecated(subparsers: argparse._SubParsersAction):

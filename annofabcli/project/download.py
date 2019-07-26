@@ -63,15 +63,15 @@ class Download(AbstractCommandLineInterface):
                 elif target == DownloadTarget.FULL_ANNOTATION:
                     self.service.wrapper.download_full_annotation_archive(project_id, output)
 
-    def main(self, args: argparse.Namespace):
-        super().process_common_args(args, logger)
+    def main(self):
+        args = self.args
         self.download(DownloadTarget(args.target), args.project_id, args.output, latest=args.latest)
 
 
 def main(args: argparse.Namespace):
     service = build_annofabapi_resource_and_login()
     facade = AnnofabApiFacade(service)
-    Download(service, facade).main(args)
+    Download(service, facade, args).main()
 
 
 def parse_args(parser: argparse.ArgumentParser):

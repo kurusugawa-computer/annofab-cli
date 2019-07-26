@@ -4,7 +4,7 @@ annofabapiのfacadeクラス
 
 import logging
 import time
-from typing import Any, Callable, Dict, List, Optional, Tuple, NewType  # pylint: disable=unused-import
+from typing import Any, Callable, Dict, List, NewType, Optional, Tuple  # pylint: disable=unused-import
 
 import annofabapi
 import annofabapi.utils
