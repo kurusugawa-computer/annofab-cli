@@ -172,13 +172,16 @@ def parse_args(parser: argparse.ArgumentParser):
     argument_parser.add_task_id()
 
     parser.add_argument(
-        '--inspection_list', type=str, required=True, help='未処置の検査コメントの一覧を指定してください。指定された検査コメントの状態が変更されます。'
-        '検査コメントの一覧は `inspection_comment list_unprocessed` コマンドで出力できます。')
+        '--inspection_list', type=str, required=True,
+        help=('未処置の検査コメントの一覧を指定します。指定された検査コメントの状態が変更されます。'
+              '検査コメントの一覧は `inspection_comment list_unprocessed` コマンドで出力できます。'
+              '`file://`を先頭に付けると、JSON形式のファイルを指定できます。'
+              '実際に参照する値は `task_id`, `input_data_id`, `inspection_id` です。'))
 
     parser.add_argument(
         '--inspection_status', type=str, required=True,
         choices=[InspectionStatus.ERROR_CORRECTED.value, InspectionStatus.NO_CORRECTION_REQUIRED.value],
-        help=('未処置の検査コメントをどの状態に変更するか。'
+        help=('未処置の検査コメントをどの状態に変更するかを指定します。'
               f'{InspectionStatus.ERROR_CORRECTED.value}: 対応完了,'
               f'{InspectionStatus.NO_CORRECTION_REQUIRED.value}: 対応不要'))
 
