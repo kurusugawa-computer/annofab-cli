@@ -22,9 +22,7 @@ class ListTasks(AbstractCommandLineInterface):
     タスクの一覧を表示する
     """
     def __init__(self, service: annofabapi.Resource, facade: AnnofabApiFacade, args: argparse.Namespace):
-        super().__init__(service, facade)
-        self.service = service
-        self.facade = facade
+        super().__init__(service, facade, args)
         self.visualize = AddProps(self.service, args.project_id)
 
     def get_inspections_by_input_data(self, project_id: str, task_id: str, input_data_id: str, input_data_index: int):
@@ -72,7 +70,7 @@ class ListTasks(AbstractCommandLineInterface):
             if account_id is not None:
                 task_query['account_id'] = account_id
             else:
-                f"user_id: {user_id} のユーザが見つかりませんでした。"
+                logger.warning(f"タスク検索クエリに含まれている user_id: {user_id} のユーザが見つかりませんでした。")
 
         if 'previous_user_id' in task_query:
             previous_user_id = task_query['previous_user_id']
@@ -80,7 +78,7 @@ class ListTasks(AbstractCommandLineInterface):
             if previous_account_id is not None:
                 task_query['previous_account_id'] = previous_account_id
             else:
-                f"user_id: {previous_user_id} のユーザが見つかりませんでした。"
+                logger.warning(f"タスク検索クエリに含まれている previous_user_id: {previous_user_id} のユーザが見つかりませんでした。")
 
         return task_query
 
@@ -120,9 +118,8 @@ class ListTasks(AbstractCommandLineInterface):
         annofabcli.utils.print_according_to_format(target=tasks, arg_format=FormatArgument(arg_format), output=output,
                                                    csv_format=csv_format)
 
-    def main(self, args: argparse.Namespace):
-        super().process_common_args(args, logger)
-
+    def main(self):
+        args = self.args
         task_query = annofabcli.common.cli.get_json_from_args(args.query)
         csv_format = annofabcli.common.cli.get_csv_format_from_args(args.csv_format)
 
@@ -133,7 +130,7 @@ class ListTasks(AbstractCommandLineInterface):
 def main(args):
     service = build_annofabapi_resource_and_login()
     facade = AnnofabApiFacade(service)
-    ListTasks(service, facade, args).main(args)
+    ListTasks(service, facade, args).main()
 
 
 def parse_args(parser: argparse.ArgumentParser):

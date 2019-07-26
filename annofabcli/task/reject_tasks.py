@@ -69,7 +69,7 @@ class RejectTasks(AbstractCommandLineInterface):
             project_id:
             task_id_list:
             inspection_comment: 検査コメントの中身
-            commenter_user_id: 検査コメントを付与して、タスlクを差し戻すユーザのuser_id
+            commenter_user_id: 検査コメントを付与して、タスクを差し戻すユーザのuser_id
             assign_last_annotator: Trueなら差し戻したタスクに対して、最後のannotation phaseを担当者を割り当てる
             assigned_annotator_user_id: 差し戻したタスクに割り当てるユーザのuser_id. assign_last_annotatorがTrueの場合、この引数は無視される。
 
@@ -78,6 +78,9 @@ class RejectTasks(AbstractCommandLineInterface):
         super().validate_project(project_id, [ProjectMemberRole.OWNER, ProjectMemberRole.ACCEPTER])
 
         commenter_account_id = self.facade.get_account_id_from_user_id(project_id, commenter_user_id)
+        if commenter_account_id is None:
+            logger.error(f"検査コメントを付与するユーザ( {commenter_user_id} の account_idが見つかりませんでした。終了します。")
+            return
 
         assigned_annotator_account_id = self.facade.get_account_id_from_user_id(
             project_id, assigned_annotator_user_id) if assigned_annotator_user_id is not None else None

@@ -4,7 +4,7 @@ annofabapiのfacadeクラス
 
 import logging
 import time
-from typing import Any, Callable, Dict, List, Optional, Tuple  # pylint: disable=unused-import
+from typing import Any, Callable, Dict, List, Optional, Tuple, NewType  # pylint: disable=unused-import
 
 import annofabapi
 import annofabapi.utils
@@ -19,7 +19,7 @@ class AnnofabApiFacade:
     AnnofabApiのFacadeクラス。annofabapiの複雑な処理を簡単に呼び出せるようにする。
     """
 
-    ProjectId = str
+    ProjectId = NewType('ProjectId', str)
 
     #: 組織メンバ一覧のキャッシュ(
     _organization_members: Optional[Tuple[ProjectId, List[OrganizationMember]]] = None

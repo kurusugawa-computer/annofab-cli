@@ -253,9 +253,9 @@ class ArgumentParser:
         '--csv_format` 引数を追加
         """
         if help_message is None:
-            help_message = 'CSVのフォーマットをJSON形式で指定します。`--format`が`csv`でないときは、このオプションは無視されます。'
-            '`file://`を先頭に付けると、JSON形式のファイルを指定できます。'
-            '指定した値は、[pandas.DataFrame.to_csv](https://pandas.pydata.org/pandas-docs/stable/reference/api/pandas.DataFrame.to_csv.html) の引数として渡されます。'  # noqa: E501
+            help_message = ('CSVのフォーマットをJSON形式で指定します。`--format`が`csv`でないときは、このオプションは無視されます。'
+                            '`file://`を先頭に付けると、JSON形式のファイルを指定できます。'
+                            '指定した値は、[pandas.DataFrame.to_csv](https://pandas.pydata.org/pandas-docs/stable/reference/api/pandas.DataFrame.to_csv.html) の引数として渡されます。')  # noqa: E501
 
         self.parser.add_argument('--csv_format', type=str, help=help_message)
 
@@ -283,31 +283,23 @@ class AbstractCommandLineInterface(abc.ABC):
     #: Trueならば、処理中に現れる問い合わせに対して、常に'yes'と回答したものとして処理する。
     all_yes: bool = False
 
-    #: サブコマンドpyファイルで設定されたlogger
-    logger: logging.Logger
-
-    def __init__(self, service: annofabapi.Resource, facade: AnnofabApiFacade):
+    def __init__(self, service: annofabapi.Resource, facade: AnnofabApiFacade, args: argparse.Namespace):
         self.service = service
         self.facade = facade
+        self.args = args
+        self.process_common_args(args)
 
-    def process_common_args(self, args: argparse.Namespace, arg_logger: logging.Logger):
+    def process_common_args(self, args: argparse.Namespace):
         """
         共通のコマンドライン引数を処理する。
         Args:
             args: コマンドライン引数
-            arg_logger: 対象コマンドのロガー
-
         """
-        self.logger = arg_logger
         if not args.disable_log:
             load_logging_config_from_args(args)
 
         self.all_yes = args.yes
-        self.logger.info(f"args: {args}")
-
-    @abc.abstractmethod
-    def main(self, args: argparse.Namespace):
-        pass
+        logger.info(f"args: {args}")
 
     def validate_project(self, project_id, roles: List[ProjectMemberRole]):
         """
@@ -321,7 +313,7 @@ class AbstractCommandLineInterface(abc.ABC):
 
         """
         project_title = self.facade.get_project_title(project_id)
-        self.logger.info(f"project_title = {project_title}, project_id = {project_id}")
+        logger.info(f"project_title = {project_title}, project_id = {project_id}")
 
         if not self.facade.contains_anys_role(project_id, roles):
             raise AuthorizationError(project_title, roles)
@@ -345,7 +337,7 @@ class AbstractCommandLineInterface(abc.ABC):
         yes, all_yes = prompt_yesno(confirm_message)
 
         if not yes:
-            self.logger.info(f"task_id = {task_id} をスキップします。")
+            logger.info(f"task_id = {task_id} をスキップします。")
             return False
 
         if all_yes:
