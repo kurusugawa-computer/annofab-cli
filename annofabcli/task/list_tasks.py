@@ -131,11 +131,13 @@ def parse_args(parser: argparse.ArgumentParser):
         'さらに追加で、`user_id`, `previous_user_id` キーも指定できます。'
         'ただし `page`, `limit`キーは指定できません。')
 
-    argument_parser.add_format(choices=[FormatArgument.CSV, FormatArgument.JSON, FormatArgument.PRETTY_JSON],
-                               default=FormatArgument.CSV)
+    argument_parser.add_format(
+        choices=[FormatArgument.CSV, FormatArgument.JSON, FormatArgument.PRETTY_JSON, FormatArgument.TASK_ID_LIST],
+        default=FormatArgument.CSV)
     argument_parser.add_output()
     argument_parser.add_csv_format()
 
+    argument_parser.add_query()
     parser.set_defaults(subcommand_func=main)
 
 

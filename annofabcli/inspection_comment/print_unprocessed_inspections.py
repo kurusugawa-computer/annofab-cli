@@ -50,8 +50,10 @@ def parse_args(parser: argparse.ArgumentParser):
 
     parser.add_argument('--commenter_user_id', type=str, help='絞り込み条件となる、検査コメントを付与したユーザのuser_id。 指定しない場合は絞り込まない。')
 
-    argument_parser.add_format(choices=[FormatArgument.CSV, FormatArgument.JSON, FormatArgument.PRETTY_JSON],
-                               default=FormatArgument.CSV)
+    argument_parser.add_format(
+        choices=[
+            FormatArgument.CSV, FormatArgument.JSON, FormatArgument.PRETTY_JSON, FormatArgument.INSPECTION_ID_LIST
+        ], default=FormatArgument.CSV)
     argument_parser.add_output()
     argument_parser.add_csv_format()
     argument_parser.add_query()

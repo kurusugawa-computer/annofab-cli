@@ -127,6 +127,11 @@ def print_csv(df: pandas.DataFrame, output: Optional[str] = None, to_csv_kwargs:
     df.to_csv(path_or_buf, **to_csv_kwargs)
 
 
+def print_id_list(id_list: List[Any], output: Optional[str]):
+    s = '\n'.join(id_list)
+    output_string(s, output)
+
+
 def print_according_to_format(target: Any, arg_format: FormatArgument, output: Optional[str] = None,
                               csv_format: Optional[Dict[str, Any]] = None):
     """
@@ -150,3 +155,15 @@ def print_according_to_format(target: Any, arg_format: FormatArgument, output: O
     elif arg_format == FormatArgument.CSV:
         df = pandas.DataFrame(target)
         annofabcli.utils.print_csv(df, output=output, to_csv_kwargs=csv_format)
+
+    elif arg_format == FormatArgument.TASK_ID_LIST:
+        task_id_list = [e['task_id'] for e in target]
+        print_id_list(task_id_list, output)
+
+    elif arg_format == FormatArgument.USER_ID_LIST:
+        user_id_list = [e['user_id'] for e in target]
+        print_id_list(user_id_list, output)
+
+    elif arg_format == FormatArgument.INSPECTION_ID_LIST:
+        inspection_id_list = [e['inspection_id'] for e in target]
+        print_id_list(inspection_id_list, output)

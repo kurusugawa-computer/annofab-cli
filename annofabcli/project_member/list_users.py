@@ -10,7 +10,7 @@ from annofabapi.models import ProjectMember
 
 import annofabcli
 from annofabcli import AnnofabApiFacade
-from annofabcli.common.cli import AbstractCommandLineInterface, build_annofabapi_resource_and_login
+from annofabcli.common.cli import AbstractCommandLineInterface, ArgumentParser, build_annofabapi_resource_and_login
 from annofabcli.common.enums import FormatArgument
 from annofabcli.common.visualize import AddProps
 
@@ -93,6 +93,8 @@ def main(args):
 
 
 def parse_args(parser: argparse.ArgumentParser):
+    argument_parser = ArgumentParser(parser)
+
     list_group = parser.add_mutually_exclusive_group(required=True)
     list_group.add_argument('-p', '--project_id', type=str, nargs='+',
                             help='ユーザを表示するプロジェクトのproject_idを指定してください。`file://`を先頭に付けると、一覧が記載されたファイルを指定できます。')
@@ -100,19 +102,12 @@ def parse_args(parser: argparse.ArgumentParser):
     list_group.add_argument('-org', '--organization', type=str,
                             help='組織配下のすべての進行中のプロジェクトのプロジェクトメンバを表示したい場合は、組織名を指定してください。')
 
-    parser.add_argument('-f', '--format', type=str,
-                        choices=[FormatArgument.CSV.value, FormatArgument.JSON.value, FormatArgument.PRETTY_JSON.value],
-                        default=FormatArgument.CSV.value, help='出力フォーマットを指定します。指定しない場合は、"csv"フォーマットになります。')
-
-    parser.add_argument('-o', '--output', type=str, help='出力先のファイルパスを指定します。指定しない場合は、標準出力に出力されます。')
-
-    parser.add_argument(
-        '--csv_format',
-        type=str,
-        help='CSVのフォーマットをJSON形式で指定します。`--format`が`csv`でないときは、このオプションは無視されます。'
-        '`file://`を先頭に付けると、JSON形式のファイルを指定できます。'
-        '指定した値は、[pandas.DataFrame.to_csv](https://pandas.pydata.org/pandas-docs/stable/reference/api/pandas.DataFrame.to_csv.html) の引数として渡されます。'  # noqa: E501
-    )
+    argument_parser.add_format(
+        choices=[FormatArgument.CSV, FormatArgument.JSON, FormatArgument.PRETTY_JSON, FormatArgument.USER_ID_LIST],
+        default=FormatArgument.CSV)
+    argument_parser.add_output()
+    argument_parser.add_csv_format()
+    argument_parser.add_query()
 
     parser.set_defaults(subcommand_func=main)
 

@@ -299,7 +299,7 @@ class AbstractCommandLineInterface(abc.ABC):
     all_yes: bool = False
 
     #: JMesPath
-    query: str
+    query: Optional[str] = None
 
     def __init__(self, service: annofabapi.Resource, facade: AnnofabApiFacade, args: argparse.Namespace):
         self.service = service

@@ -28,8 +28,7 @@ AnnotationSortKeyFunc = Callable[[Annotation], Any]
 
 class WriteAnnotationImage:
     @staticmethod
-    def _create_sub_input_data_list(sub_annotation_dir_list: List[str],
-                                    input_data_json: Path) -> SubInputDataList:
+    def _create_sub_input_data_list(sub_annotation_dir_list: List[str], input_data_json: Path) -> SubInputDataList:
         """
         マージ対象の sub_input_data_listを生成する
         """
@@ -47,8 +46,8 @@ class WriteAnnotationImage:
         return sub_input_data_list
 
     @staticmethod
-    def draw_annotation_list(annotation_list: List[Annotation], input_data_dir: str,
-                             label_color_dict: Dict[str, RGB], draw: PIL.ImageDraw.Draw) -> PIL.ImageDraw.Draw:
+    def draw_annotation_list(annotation_list: List[Annotation], input_data_dir: str, label_color_dict: Dict[str, RGB],
+                             draw: PIL.ImageDraw.Draw) -> PIL.ImageDraw.Draw:
         """
         矩形、ポリゴン、塗りつぶし、塗りつぶしv2アノテーションを描画する。
         Args:
