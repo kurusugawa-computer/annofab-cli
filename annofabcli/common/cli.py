@@ -256,8 +256,8 @@ class ArgumentParser:
             help_message = (
                 'CSVのフォーマットをJSON形式で指定します。`--format`が`csv`でないときは、このオプションは無視されます。'
                 '`file://`を先頭に付けると、JSON形式のファイルを指定できます。'
-                '指定した値は、[pandas.DataFrame.to_csv](https://pandas.pydata.org/pandas-docs/stable/reference/api/pandas.DataFrame.to_csv.html) の引数として渡されます。'
-            )  # noqa: E501
+                '指定した値は、[pandas.DataFrame.to_csv](https://pandas.pydata.org/pandas-docs/stable/reference/api/pandas.DataFrame.to_csv.html) の引数として渡されます。'  # noqa: E501
+            )
 
         self.parser.add_argument('--csv_format', type=str, help=help_message)
 
