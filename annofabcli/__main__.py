@@ -6,7 +6,7 @@ import annofabcli.annotation_specs.subcommand_annotation_specs
 import annofabcli.inspection_comment.print_inspections
 import annofabcli.inspection_comment.subcommand_inspection_comment
 import annofabcli.print_label_color
-import annofabcli.print_unprocessed_inspections
+import annofabcli.inspection_comment.print_unprocessed_inspections
 import annofabcli.project.diff_projects
 import annofabcli.project.download
 import annofabcli.project.subcommand_project
@@ -47,7 +47,7 @@ def main(arguments: Optional[Sequence[str]] = None):
     # サブコマンドの定義
     annofabcli.project.download.add_parser(subparsers)
 
-    annofabcli.print_unprocessed_inspections.add_parser(subparsers)
+    annofabcli.inspection_comment.print_unprocessed_inspections.add_parser_deprecated(subparsers)
 
     annofabcli.print_label_color.add_parser(subparsers)
 
