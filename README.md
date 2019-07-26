@@ -75,6 +75,7 @@ $ docker run -it -e ANNOFAB_USER_ID=XXXX -e ANNOFAB_PASSWORD=YYYYY annofab-cli a
 
 |コマンド| サブコマンド                  | 内容                                                                                                     |必要なロール|
 |----|-------------------------------|----------------------------------------------------------------------------------------------------------|------------|
+|task|list             | タスク一覧を出力する。                                                            |-|
 |task| cancel_acceptance             | 受け入れ完了タスクを、受け入れ取り消しする。                                                             |オーナ|
 |task| complete                | 未処置の検査コメントを適切な状態に変更して、タスクを受け入れ完了にする。                                 |チェッカー/オーナ|
 |task| reject                  | 検査コメントを付与してタスクを差し戻す。                                                                 |チェッカー/オーナ|
@@ -84,8 +85,8 @@ $ docker run -it -e ANNOFAB_USER_ID=XXXX -e ANNOFAB_PASSWORD=YYYYY annofab-cli a
 |project_member| invite                  | 複数のプロジェクトに、ユーザを招待する。                                                                 |オーナ|
 |project_member| delete                  | 複数のプロジェクトからユーザを削除する。                                                                 |オーナ|
 |inspection_comment| list | 検査コメントを出力する。                               |-|
+|inspection_comment| list_unprocessed | 未処置の検査コメントを出力する。                               |-|
 |annotation_specs| list_label | アノテーション仕様のラベル情報を出力する                              |チェッカー/オーナ|
-|| print_unprocessed_inspections | 未処置の検査コメントList(task_id, input_data_idごと)をJSONとして出力する。                               |-|
 || print_label_color             | アノテーション仕様から、label_nameとRGBを対応付けたJSONを出力する。                                      |チェッカー/オーナ|
 || write_annotation_image        | アノテーションzipを展開したディレクトリから、アノテーションの画像（Semantic Segmentation用）を生成する。 |-|
 
@@ -138,6 +139,10 @@ disable_existing_loggers: False
 ### `-p` / `--project_id`
 対象のプロジェクトのproject_idを指定します。
 
+### `-q` / `--query`
+JMESPathを指定します。出力結果の抽出や、出力内容の変更に利用できます。
+http://jmespath.org/
+
 
 ### `-t` / `--task_id`
 対象のタスクのtask_idを指定します。`file://`を先頭に付けると、task_idの一覧が記載されたファイルを指定できます。
@@ -155,10 +160,13 @@ disable_existing_loggers: False
 
 ```
 # 受入フェーズで、"usr1"が担当しているタスクの一覧を出力する
-$ annofabcli task list --project_id prj1 --query '{"user_id": "usr1","phase":"acceptance"}' 
+$ annofabcli task list --project_id prj1 --task_query '{"user_id": "usr1","phase":"acceptance"}' 
 
 # 休憩中で、過去の担当者が"usr1"であるタスクの一覧を出力する。task.jsonファイルにJSON形式で出力する。
-$ annofabcli task list --project_id prj1 --query '{"previous_user_id": "usr1","status":"break"}' --format json --out task.json
+$ annofabcli task list --project_id prj1 --task_query '{"previous_user_id": "usr1","status":"break"}' --format json --out task.json
+
+# 差し戻されたタスクのtask_idを出力する
+$ annofabcli task list --project_id prj1 --task_query '{"rejected_only": true}' --format task_id_list
 
  
 ```
@@ -184,13 +192,13 @@ $ annofabcli task cancel_acceptance --project_id prj1 --task_id file://task.txt 
 
 ```
 # 未処置の検査コメントは"対応完了"状態にして、prj1プロジェクトのタスクを受け入れ完了にする。
-$ annofabcli complete_tasks --project_id prj1 --task_id file://task.txt --inspection_json inspection.json --inspection_status error_corrected
+$ annofabcli complete_tasks --project_id prj1  --inspection_list inspection.json --inspection_status error_corrected
 
 # 未処置の検査コメントは"対応不要"状態にして、prj1プロジェクトのタスクを受け入れ完了にする。
-$ annofabcli complete_tasks --project_id prj1 --task_id file://task.txt --inspection_json inspection.json --inspection_status no_correction_required
+$ annofabcli complete_tasks --project_id prj1  --inspection_list inspection.json --inspection_status no_correction_required
 ```
 
-* inspection.jsonは、未処置の検査コメントです。ファイルのフォーマットは、[print_unprocessed_inspections](#print_unprocessed_inspections)の出力結果と同じです。
+inspection.jsonは、未処置の検査コメント一覧です。[inspection_comment list_unprocessed](#inspection_comment list_unprocessed) コマンドで出力できます。
 
 
 
@@ -338,6 +346,18 @@ $ annofabcli inspection_comment list --project_id prj1 --task_id file://task.txt
 ```
 
 
+### inspection_comment list_unprocessed
+未処置の検査コメント一覧を出力します。
+
+```
+# 未処置の検査コメント一覧を出力する
+$ annofabcli inspection_comment list_unprocessed --project_id prj1 --task_id file://task.txt
+
+# 未処置で、user1が"hoge"とコメントした検査コメント一覧を出力する
+$ annofabcli inspection_comment list_unprocessed  --project_id prj1 --task_id file://task.txt --inspection_comment "hoge" --commenter_user_id user1 --format pretty_json --output inspection.json
+```
+
+
 ### annotation_specs list_label
 アノテーション仕様のラベル情報を出力します。
 
@@ -348,33 +368,6 @@ $ annofabcli annotation_specs list_label --project_id prj1
 # prj1のアノテーション仕様のラベル情報を、インデントされたJSONで出力する。
 $ annofabcli annotation_specs list_label --project_id prj1 --format pretty_json
 
-```
-
-
-### print_unprocessed_inspections
-未処置の検査コメントList(task_id, input_data_idごと)をJSONとして出力します。出力結果は[complete_tasks](#complete_tasks)に利用します。
-
-```
-# 未処置の検査コメント一覧を出力する
-$ annofabcli print_unprocessed_inspections --project_id prj1 --task_id file://task.txt
-
-# 未処置で、user1が"hoge"とコメントした検査コメント一覧を出力する
-$ annofabcli print_unprocessed_inspections --project_id prj1 --task_id file://task.txt --inspection_comment "hoge" --commenter_user_id user1
-```
-
-```json:出力結果
-{
-  "task_id_1": {
-    "input_data_id_1": [
-      {
-        "inspection_id": "inspection_id_1",
-        ...
-      }
-    ],
-    ...
-  },
-  ...
-}
 ```
 
 
