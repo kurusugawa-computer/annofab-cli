@@ -3,12 +3,13 @@
 """
 import argparse
 import logging
+import pandas
 from enum import Enum
 from typing import Any, Callable, Dict, List, Optional, Tuple, Union  # pylint: disable=unused-import
 
 import annofabapi
 import more_itertools
-from annofabapi.models import AdditionalDataDefinition, Task
+from annofabapi.models import AdditionalDataDefinition, Task, SingleAnnotation
 
 import annofabcli
 from annofabcli import AnnofabApiFacade
@@ -117,13 +118,28 @@ class ListAnnotationCount(AbstractCommandLineInterface):
 
         return annotation_query
 
+    def aggregate_annotations(self, annotations: List[SingleAnnotation], group_by: GroupBy) -> pandas.DataFrame:
+        df = pandas.DataFrame(annotations)
+        df = df[['task_id', 'input_data_id']]
+        df['annotation_count'] = 1
+
+        if group_by == GroupBy.INPUT_DATA_ID:
+            return df.groupby(['task_id', 'input_data_id'], as_index=False).count()
+        elif group_by == GroupBy.TASK_ID:
+            return df.groupby(['task_id'], as_index=False).count()
+        else:
+            return pandas.DataFrame()
+
+
+
     def get_annotations(self, project_id: str, annotation_query: Dict[str, Any]) -> List[Task]:
         task_query = self._modify_annotation_query(project_id, annotation_query)
         logger.debug(f"annotation_query: {annotation_query}")
         annotations = self.service.wrapper.get_all_annotation_list(project_id, query_params={'query': annotation_query})
         return annotations
 
-    def list_annotations(self, project_id: str, annotation_query: Dict[str, Any]):
+
+    def list_annotations(self, project_id: str, annotation_query: Dict[str, Any], group_by: GroupBy):
         """
         アノテーション一覧を出力する
         """
@@ -134,8 +150,7 @@ class ListAnnotationCount(AbstractCommandLineInterface):
         if len(annotations) == 10000:
             logger.warning("アノテーション一覧は10,000件で打ち切られている可能性があります。")
 
-        # annofabcli.utils.print_according_to_format(target=tasks, arg_format=FormatArgument(arg_format), output=output,
-        #                                            csv_format=csv_format)
+        df = self.aggregate_annotations(annotations, group_by)
 
     def main(self):
         args = self.args
