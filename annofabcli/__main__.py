@@ -18,6 +18,7 @@ import annofabcli.task.cancel_acceptance
 import annofabcli.task.complete_tasks
 import annofabcli.task.reject_tasks
 import annofabcli.task.subcommand_task
+import annofabcli.annotation.subcommand_annotation
 import annofabcli.write_annotation_image
 
 logger = logging.getLogger(__name__)
@@ -38,6 +39,7 @@ def main(arguments: Optional[Sequence[str]] = None):
 
     subparsers = parser.add_subparsers()
 
+    annofabcli.annotation.subcommand_annotation.add_parser(subparsers)
     annofabcli.inspection_comment.subcommand_inspection_comment.add_parser(subparsers)
     annofabcli.task.subcommand_task.add_parser(subparsers)
     annofabcli.project.subcommand_project.add_parser(subparsers)

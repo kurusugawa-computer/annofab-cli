@@ -49,6 +49,18 @@ class AnnofabApiFacade:
         label_name_messages = label["label_name"]["messages"]
         return [e["message"] for e in label_name_messages if e["lang"] == "en-US"][0]
 
+    @staticmethod
+    def get_additional_data_definition_name_en(additional_data_definition: Dict[str, Any]):
+        """additional_data_definitionから英語名を取得する"""
+        messages = additional_data_definition["name"]["messages"]
+        return [e["message"] for e in messages if e["lang"] == "en-US"][0]
+
+    @staticmethod
+    def get_choice_name_en(choice: Dict[str, Any]):
+        """choiceから英語名を取得する"""
+        messages = choice["name"]["messages"]
+        return [e["message"] for e in messages if e["lang"] == "en-US"][0]
+
     def get_project_title(self, project_id: str) -> str:
         """
         プロジェクトのタイトルを取得する
