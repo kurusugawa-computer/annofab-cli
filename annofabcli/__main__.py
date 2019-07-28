@@ -2,9 +2,10 @@ import argparse
 import logging
 from typing import Optional, Sequence  # pylint: disable=unused-import
 
+import annofabcli.annotation.subcommand_annotation
 import annofabcli.annotation_specs.subcommand_annotation_specs
-import annofabcli.inspection_comment.list_unprocessed_inspections
 import annofabcli.inspection_comment.list_inspections
+import annofabcli.inspection_comment.list_unprocessed_inspections
 import annofabcli.inspection_comment.subcommand_inspection_comment
 import annofabcli.print_label_color
 import annofabcli.project.diff_projects
@@ -18,7 +19,6 @@ import annofabcli.task.cancel_acceptance
 import annofabcli.task.complete_tasks
 import annofabcli.task.reject_tasks
 import annofabcli.task.subcommand_task
-import annofabcli.annotation.subcommand_annotation
 import annofabcli.write_annotation_image
 
 logger = logging.getLogger(__name__)
