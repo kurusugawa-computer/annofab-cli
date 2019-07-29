@@ -124,7 +124,8 @@ class ListAnnotationCount(AbstractCommandLineInterface):
 
         return annotation_query
 
-    def aggregate_annotations(self, annotations: List[SingleAnnotation], group_by: GroupBy) -> pandas.DataFrame:
+    @staticmethod
+    def aggregate_annotations(annotations: List[SingleAnnotation], group_by: GroupBy) -> pandas.DataFrame:
         df = pandas.DataFrame(annotations)
         df = df[['task_id', 'input_data_id']]
         df['annotation_count'] = 1
