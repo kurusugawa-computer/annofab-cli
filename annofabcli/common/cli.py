@@ -7,6 +7,7 @@ import argparse
 import getpass
 import json
 import logging
+import pandas
 from typing import Any, Dict, List, Optional, Tuple  # pylint: disable=unused-import
 
 import annofabapi
@@ -110,10 +111,10 @@ def get_list_from_args(str_list: Optional[List[str]] = None) -> List[str]:
 def get_csv_format_from_args(target: Optional[str] = None) -> Dict[str, Any]:
     """
     コマンドライン引数の値から csv_format を取得する。
-    Default: {"encoding": "utf_8_sig", "index": True}
+    Default: {"encoding": "utf_8_sig", "index": False}
 
     """
-    csv_format = {"encoding": "utf_8_sig", "index": True}
+    csv_format = {"encoding": "utf_8_sig", "index": False}
     if target is not None:
         arg_csv_format = get_json_from_args(target)
         csv_format.update(arg_csv_format)
@@ -233,14 +234,14 @@ class ArgumentParser:
 
         self.parser.add_argument('-p', '--project_id', type=str, required=True, help=help_message)
 
-    def add_task_id(self, help_message: Optional[str] = None):
+    def add_task_id(self, required: bool = True, help_message: Optional[str] = None):
         """
         '--task_id` 引数を追加
         """
         if help_message is None:
             help_message = ('対象のタスクのtask_idを指定します。' '`file://`を先頭に付けると、task_idの一覧が記載されたファイルを指定できます。')
 
-        self.parser.add_argument('-t', '--task_id', type=str, required=True, nargs='+', help=help_message)
+        self.parser.add_argument('-t', '--task_id', type=str, required=required, nargs='+', help=help_message)
 
     def add_format(self, choices: List[FormatArgument], default: FormatArgument, help_message: Optional[str] = None):
         """
@@ -301,6 +302,12 @@ class AbstractCommandLineInterface(abc.ABC):
     #: JMesPath
     query: Optional[str] = None
 
+    #: 出力先
+    output: Optional[str] = None
+
+    #: 出力先
+    csv_format: Optional[Dict[str, Any]] = None
+
     def __init__(self, service: annofabapi.Resource, facade: AnnofabApiFacade, args: argparse.Namespace):
         self.service = service
         self.facade = facade
@@ -320,6 +327,13 @@ class AbstractCommandLineInterface(abc.ABC):
         self.all_yes = args.yes
         if hasattr(args, 'query'):
             self.query = args.query
+
+        if hasattr(args, 'csv_format'):
+            self.csv_format = annofabcli.common.cli.get_csv_format_from_args(args.csv_format)
+
+        if hasattr(args, 'output'):
+            self.output = self.output
+
 
     def validate_project(self, project_id, roles: List[ProjectMemberRole]):
         """
@@ -378,3 +392,6 @@ class AbstractCommandLineInterface(abc.ABC):
         if self.query is not None:
             return jmespath.search(self.query, target)
         return target
+
+    def print_csv(self, df: pandas.DataFrame):
+        annofabcli.utils.print_csv(df, output=self.output, to_csv_kwargs=self.csv_format)

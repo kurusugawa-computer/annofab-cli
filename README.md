@@ -330,6 +330,13 @@ $ annofabcli project_member invite --user_id user1  --project_id prj1 prj2
 ```
 
 
+### annotation list_count
+
+```
+$ annofabcli annotation list_count -p 58a2a621-7d4b-41e7-927b-cdc570c1114a --annotation_query '{"label_name_en": "car", "attributes":[{"additional_data_definition_name_en": "occluded", "flag": false}]}'
+
+```
+
 ### inspection_comment list
 検査コメント一覧を出力します。
 
