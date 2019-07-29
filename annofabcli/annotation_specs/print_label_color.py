@@ -12,7 +12,7 @@ from annofabapi.models import ProjectMemberRole
 import annofabcli
 import annofabcli.common.cli
 from annofabcli import AnnofabApiFacade
-from annofabcli.common.cli import AbstractCommandLineInterface, build_annofabapi_resource_and_login
+from annofabcli.common.cli import AbstractCommandLineInterface, build_annofabapi_resource_and_login, ArgumentParser, FormatArgument
 
 logger = logging.getLogger(__name__)
 
@@ -29,10 +29,6 @@ class PrintLabelColor(AbstractCommandLineInterface):
     def print_label_color(self, project_id: str):
         """
         今のアノテーション仕様から、label名とRGBを紐付ける
-        Args:
-            args:
-
-        Returns:
         """
 
         super().validate_project(project_id, [ProjectMemberRole.OWNER, ProjectMemberRole.ACCEPTER])
@@ -42,7 +38,7 @@ class PrintLabelColor(AbstractCommandLineInterface):
 
         label_color_dict = {self.facade.get_label_name_en(l): self.get_rgb(l) for l in labels}
 
-        print(json.dumps(label_color_dict, indent=2))
+        self.print_according_to_format(label_color_dict)
 
     def main(self):
         args = self.args
@@ -51,7 +47,15 @@ class PrintLabelColor(AbstractCommandLineInterface):
 
 
 def parse_args(parser: argparse.ArgumentParser):
-    parser.add_argument('project_id', type=str, help='対象のプロジェクトのproject_id')
+    argument_parser = ArgumentParser(parser)
+
+    argument_parser.add_project_id()
+
+    argument_parser.add_format(
+        choices=[FormatArgument.JSON, FormatArgument.PRETTY_JSON],
+        default=FormatArgument.PRETTY_JSON)
+
+    argument_parser.add_output()
 
     parser.set_defaults(subcommand_func=main)
 
@@ -63,13 +67,28 @@ def main(args):
 
 
 def add_parser(subparsers: argparse._SubParsersAction):
+    subcommand_name = "list_label_color"
+
+    subcommand_help = ("label_name(英名)とRGBの関係をJSONで出力します。")
+
+    description = ("label_name(英名)とRGBの関係をJSONで出力します。"
+                   "出力された内容は、`write_annotation_image`ツールに利用します。"
+                   "出力内容は`Dict[LabelName, [R,G,B]]`です。")
+
+    epilog = "チェッカーまたはオーナロールを持つユーザで実行してください。"
+
+    parser = annofabcli.common.cli.add_parser(subparsers, subcommand_name, subcommand_help, description, epilog=epilog)
+    parse_args(parser)
+
+
+def add_parser_deprecated(subparsers: argparse._SubParsersAction):
     subcommand_name = "print_label_color"
 
-    subcommand_help = ("アノテーション仕様から、label_nameとRGBを対応付けたJSONを出力する。" "出力された内容は、`write_annotation_image`ツールに利用する。")
+    subcommand_help = ("label_name(英名)とRGBの関係をJSONで出力します。")
 
-    description = ("アノテーション仕様から、label_nameとRGBを対応付けたJSONを出力する。"
-                   "出力された内容は、`write_annotation_image`ツールに利用する。"
-                   "出力内容は`Dict[LabelName, [R,G,B]]`である.")
+    description = ("label_name(英名)とRGBの関係をJSONで出力します。"
+                   "出力された内容は、`write_annotation_image`ツールに利用します。"
+                   "出力内容は`Dict[LabelName, [R,G,B]]`です。")
 
     epilog = "チェッカーまたはオーナロールを持つユーザで実行してください。"
 

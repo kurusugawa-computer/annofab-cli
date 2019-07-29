@@ -53,8 +53,14 @@ def test_inspection_comment():
     main(['inspection_comment', 'list_unprocessed', '--project_id', project_id, '--task_id', task_id])
 
 
+def test_annotation():
+    main(['annotation', 'list_count', '--project_id', project_id, '--annotation_query' , '{"label_name_en": "car"}'
+          ,'--output', str(out_path / 'annotation_count.csv')])
+
+
 def test_annotation_specs():
     main(['annotation_specs', 'list_label', '--project_id', project_id])
+    main(['annotation_specs', 'list_label_color', '--project_id', project_id])
 
 
 def test_project_member():

@@ -21,7 +21,7 @@ logger = logging.getLogger(__name__)
 
 
 class GroupBy(Enum):
-    TASK_ID = 'tasi_id'
+    TASK_ID = 'task_id'
     INPUT_DATA_ID = 'input_data_id'
 
 
@@ -131,15 +131,17 @@ class ListAnnotationCount(AbstractCommandLineInterface):
 
         if group_by == GroupBy.INPUT_DATA_ID:
             return df.groupby(['task_id', 'input_data_id'], as_index=False).count()
+
         elif group_by == GroupBy.TASK_ID:
-            return df.groupby(['task_id'], as_index=False).count()
+            return df.groupby(['task_id'], as_index=False).count().drop(['input_data_id'], axis=1)
+
         else:
             return pandas.DataFrame()
 
 
 
     def get_annotations(self, project_id: str, annotation_query: Dict[str, Any], task_id: Optional[str] = None) -> List[SingleAnnotation]:
-        task_query = self._modify_annotation_query(project_id, annotation_query)
+        annotation_query = self._modify_annotation_query(project_id, annotation_query, task_id)
         logger.debug(f"annotation_query: {annotation_query}")
         annotations = self.service.wrapper.get_all_annotation_list(project_id, query_params={'query': annotation_query})
         return annotations
@@ -149,6 +151,8 @@ class ListAnnotationCount(AbstractCommandLineInterface):
         """
         アノテーション一覧を出力する
         """
+
+        super().validate_project(project_id, roles=None)
 
         all_annotations = []
         if len(task_id_list) > 0:
@@ -190,10 +194,10 @@ def parse_args(parser: argparse.ArgumentParser):
     argument_parser.add_project_id()
 
     parser.add_argument(
-        '--annotation_query', type=str, required=True, help='アノテーションの検索クエリをJSON形式で指定します。'
+        '-aq', '--annotation_query', type=str, required=True, help='アノテーションの検索クエリをJSON形式で指定します。'
         '`file://`を先頭に付けると、JSON形式のファイルを指定できます。'
         'クエリのフォーマットは、[getAnnotationList API](https://annofab.com/docs/api/#operation/getAnnotationList)のクエリパラメータの`query`キー配下と同じです。'
-        'さらに追加で、`label_name_en`(label_idに対応), `additional_data_definition_name_en`(additional_data_definition_id)に対応する キーも指定できます。'
+        'さらに追加で、`label_name_en`(label_idに対応), `additional_data_definition_name_en`(additional_data_definition_idに対応) キーも指定できます。'
     )
 
     argument_parser.add_task_id(required=False,
@@ -213,7 +217,7 @@ def parse_args(parser: argparse.ArgumentParser):
 def add_parser(subparsers: argparse._SubParsersAction):
     subcommand_name = "list_count"
     subcommand_help = "task_idまたはinput_data_idで集約したアノテーションの個数を出力します。"
-    description = ("task_idまたはinput_data_idで集約したアノテーションの個数を出力します。AnnoFabの制約上、10,000件までしか出力されません。")
+    description = ("task_idまたはinput_data_idで集約したアノテーションの個数を出力します。")
 
     parser = annofabcli.common.cli.add_parser(subparsers, subcommand_name, subcommand_help, description)
     parse_args(parser)

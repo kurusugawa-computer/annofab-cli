@@ -7,7 +7,7 @@ import annofabcli.annotation_specs.subcommand_annotation_specs
 import annofabcli.inspection_comment.list_inspections
 import annofabcli.inspection_comment.list_unprocessed_inspections
 import annofabcli.inspection_comment.subcommand_inspection_comment
-import annofabcli.print_label_color
+import annofabcli.annotation_specs.print_label_color
 import annofabcli.project.diff_projects
 import annofabcli.project.download
 import annofabcli.project.subcommand_project
@@ -51,7 +51,7 @@ def main(arguments: Optional[Sequence[str]] = None):
 
     annofabcli.inspection_comment.list_unprocessed_inspections.add_parser_deprecated(subparsers)
 
-    annofabcli.print_label_color.add_parser(subparsers)
+
 
     annofabcli.write_annotation_image.add_parser(subparsers)
 
@@ -62,6 +62,7 @@ def main(arguments: Optional[Sequence[str]] = None):
     annofabcli.inspection_comment.list_inspections.add_parser_deprecated(subparsers)
     annofabcli.project.diff_projects.add_parser_deprecated(subparsers)
     annofabcli.project_member.invite_users.add_parser_deprecated(subparsers)
+    annofabcli.annotation_specs.print_label_color.add_parser_deprecated(subparsers)
 
     if arguments is None:
         args = parser.parse_args()

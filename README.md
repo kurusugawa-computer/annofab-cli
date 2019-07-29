@@ -19,6 +19,7 @@ annofabapiを使ったCLI(Command Line Interface)ツールです。
 | print_inspections | 2019/08/02                            |inspection_comment list|
 | reject_tasks                  | 2019/08/02                                                                |task reject|
 | download                  | 2019/08/02                                                                |project download|
+| print_label_color                  | 2019/08/09                                                                |annotation_specs list_label_color|
 
 
 # Requirements
@@ -86,8 +87,9 @@ $ docker run -it -e ANNOFAB_USER_ID=XXXX -e ANNOFAB_PASSWORD=YYYYY annofab-cli a
 |project_member| delete                  | 複数のプロジェクトからユーザを削除する。                                                                 |オーナ|
 |inspection_comment| list | 検査コメントを出力する。                               |-|
 |inspection_comment| list_unprocessed | 未処置の検査コメントを出力する。                               |-|
+|annotation| list_count | task_idまたはinput_data_idで集約したアノテーションの個数を出力します                              |-|
 |annotation_specs| list_label | アノテーション仕様のラベル情報を出力する                              |チェッカー/オーナ|
-|| print_label_color             | アノテーション仕様から、label_nameとRGBを対応付けたJSONを出力する。                                      |チェッカー/オーナ|
+|annotation_specs| list_label_color             | アノテーション仕様から、label_nameとRGBを対応付けたJSONを出力する。                                      |チェッカー/オーナ|
 || write_annotation_image        | アノテーションzipを展開したディレクトリから、アノテーションの画像（Semantic Segmentation用）を生成する。 |-|
 
 
@@ -331,11 +333,26 @@ $ annofabcli project_member invite --user_id user1  --project_id prj1 prj2
 
 
 ### annotation list_count
+task_idまたはinput_data_idで集約したアノテーションの個数をCSV形式で出力します。
+クエリのフォーマットは、[getAnnotationList API](https://annofab.com/docs/api/#operation/getAnnotationList)のクエリパラメータの`query`キー配下と同じです。
+`label_name_en`(label_idに対応), `additional_data_definition_name_en`(additional_data_definition_idに対応) キーも指定できます。
+
 
 ```
-$ annofabcli annotation list_count -p 58a2a621-7d4b-41e7-927b-cdc570c1114a --annotation_query '{"label_name_en": "car", "attributes":[{"additional_data_definition_name_en": "occluded", "flag": false}]}'
+# car ラベルのアノテーション個数を出力する(task_idで集約)
+$ annofabcli annotation list_count -p prj1 --annotation_query '{"label_name_en": "car"}'
+
+# car ラベルのアノテーション個数を出力する(input_data_idで集約)
+$ annofabcli annotation list_count -p prj1 --annotation_query '{"label_name_en": "car"}' --gropu_by input_data_id
+
+# task.txtに記載されたtask_idの一覧から、car ラベルのアノテーション個数を出力する
+$ annofabcli annotation list_count -p prj1 --annotation_query '{"label_name_en": "car"}'  --task_id file://task.txt
+
+# carラベルの"occluded"チェックボックスがONのアノテーションの個数を出力する
+$ annofabcli annotation list_count -p prj1 --annotation_query '{"label_name_en": "car", "attributes":[{"additional_data_definition_name_en": "occluded", "flag": true}]}'
 
 ```
+
 
 ### inspection_comment list
 検査コメント一覧を出力します。
@@ -379,17 +396,11 @@ $ annofabcli annotation_specs list_label --project_id prj1 --format pretty_json
 
 
 
-
-
-### print_label_color
-アノテーション仕様から、label_name(english)とRGBを対応付けたJSONを出力します。出力結果は[write_annotation_image](#write_annotation_image)に利用します。
+### annotation_specs label_color
+アノテーション仕様から、label_name(english)とRGBを対応付けたJSONを出力します。
 
 ```
-# 未処置の検査コメント一覧を出力する
-$ annofabcli print_label_color --project_id prj1 --task_id file://task.txt
-
-# 未処置で、user1が"hoge"とコメントした検査コメント一覧を出力する
-$ annofabcli print_unprocessed_inspections --project_id prj1 --task_id file://task.txt --inspection_comment "hoge" --commenter_user_id user1
+$ annofabcli annotation_specs label_color --project_id prj1 
 ```
 
 ```json:出力結果
@@ -436,5 +447,5 @@ $ python  -m annofabcli.write_semantic_segmentation_images write  --annotation_d
  --sub_annotation_dir af-annotation-1 af-annotation-2
 ```
 
-* `label_color.json`は、`label_name`とRGBを対応付けたJSONファイルです。ファイルのフォーマットは、[print_label_color](#print_label_color)の出力結果と同じです。
+* `label_color.json`は、`label_name`とRGBを対応付けたJSONファイルです。ファイルのフォーマットは、[annotation_specs label_color](#annotation_specs label_color)の出力結果と同じです。
 

@@ -305,8 +305,11 @@ class AbstractCommandLineInterface(abc.ABC):
     #: 出力先
     output: Optional[str] = None
 
-    #: 出力先
+    #: CSVのフォーマット
     csv_format: Optional[Dict[str, Any]] = None
+
+    #: 出力フォーマット
+    str_format: Optional[str] = None
 
     def __init__(self, service: annofabapi.Resource, facade: AnnofabApiFacade, args: argparse.Namespace):
         self.service = service
@@ -320,7 +323,6 @@ class AbstractCommandLineInterface(abc.ABC):
         Args:
             args: コマンドライン引数
         """
-        logger.info(f"args: {args}")
         if not args.disable_log:
             load_logging_config_from_args(args)
 
@@ -332,10 +334,15 @@ class AbstractCommandLineInterface(abc.ABC):
             self.csv_format = annofabcli.common.cli.get_csv_format_from_args(args.csv_format)
 
         if hasattr(args, 'output'):
-            self.output = self.output
+            self.output = args.output
+
+        if hasattr(args, 'format'):
+            self.str_format = args.format
+
+        logger.info(f"args: {args}")
 
 
-    def validate_project(self, project_id, roles: List[ProjectMemberRole]):
+    def validate_project(self, project_id, roles: Optional[List[ProjectMemberRole]]=None):
         """
         プロジェクトに対する権限が付与されているかを確認する。
         Args:
@@ -349,8 +356,9 @@ class AbstractCommandLineInterface(abc.ABC):
         project_title = self.facade.get_project_title(project_id)
         logger.info(f"project_title = {project_title}, project_id = {project_id}")
 
-        if not self.facade.contains_anys_role(project_id, roles):
-            raise AuthorizationError(project_title, roles)
+        if roles is not None:
+            if not self.facade.contains_anys_role(project_id, roles):
+                raise AuthorizationError(project_title, roles)
 
     def confirm_processing_task(self, task_id: str, confirm_message: str) -> bool:
         """
@@ -395,3 +403,7 @@ class AbstractCommandLineInterface(abc.ABC):
 
     def print_csv(self, df: pandas.DataFrame):
         annofabcli.utils.print_csv(df, output=self.output, to_csv_kwargs=self.csv_format)
+
+    def print_according_to_format(self, target: Any):
+        annofabcli.utils.print_according_to_format(target, arg_format=FormatArgument(self.str_format), output=self.output, csv_format=self.csv_format)
+
