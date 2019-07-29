@@ -7,11 +7,11 @@ import argparse
 import getpass
 import json
 import logging
-import pandas
 from typing import Any, Dict, List, Optional, Tuple  # pylint: disable=unused-import
 
 import annofabapi
 import jmespath
+import pandas
 import requests
 from annofabapi.exceptions import AnnofabApiException
 from annofabapi.models import ProjectMemberRole  # pylint: disable=unused-import
@@ -341,8 +341,7 @@ class AbstractCommandLineInterface(abc.ABC):
 
         logger.info(f"args: {args}")
 
-
-    def validate_project(self, project_id, roles: Optional[List[ProjectMemberRole]]=None):
+    def validate_project(self, project_id, roles: Optional[List[ProjectMemberRole]] = None):
         """
         プロジェクトに対する権限が付与されているかを確認する。
         Args:
@@ -405,5 +404,5 @@ class AbstractCommandLineInterface(abc.ABC):
         annofabcli.utils.print_csv(df, output=self.output, to_csv_kwargs=self.csv_format)
 
     def print_according_to_format(self, target: Any):
-        annofabcli.utils.print_according_to_format(target, arg_format=FormatArgument(self.str_format), output=self.output, csv_format=self.csv_format)
-
+        annofabcli.utils.print_according_to_format(target, arg_format=FormatArgument(self.str_format),
+                                                   output=self.output, csv_format=self.csv_format)

@@ -3,18 +3,17 @@
 """
 import argparse
 import logging
-import pandas
 from enum import Enum
 from typing import Any, Callable, Dict, List, Optional, Tuple, Union  # pylint: disable=unused-import
 
 import annofabapi
 import more_itertools
-from annofabapi.models import AdditionalDataDefinition, Task, SingleAnnotation
+import pandas
+from annofabapi.models import AdditionalDataDefinition, SingleAnnotation
 
 import annofabcli
 from annofabcli import AnnofabApiFacade
 from annofabcli.common.cli import AbstractCommandLineInterface, ArgumentParser, build_annofabapi_resource_and_login
-from annofabcli.common.enums import FormatArgument
 from annofabcli.common.visualize import AddProps
 
 logger = logging.getLogger(__name__)
@@ -67,8 +66,8 @@ class ListAnnotationCount(AbstractCommandLineInterface):
                         'additional_data_definition_id']
 
             additional_data_definition = more_itertools.first_true(
-                additional_data_definitions, pred=lambda e: e['additional_data_definition_id'] == attribute_query[
-                    'additional_data_definition_id'])
+                additional_data_definitions,
+                pred=lambda e: e['additional_data_definition_id'] == attribute_query['additional_data_definition_id'])
             if additional_data_definition is None:
                 logger.warning(
                     f"additional_data_definition_id = {attribute_query['additional_data_definition_id']} の属性は存在しませんでした。"
@@ -79,7 +78,8 @@ class ListAnnotationCount(AbstractCommandLineInterface):
 
         return attributes_of_query
 
-    def _modify_annotation_query(self, project_id: str, annotation_query: Dict[str, Any], task_id: Optional[str] = None) -> Dict[str, Any]:
+    def _modify_annotation_query(self, project_id: str, annotation_query: Dict[str, Any],
+                                 task_id: Optional[str] = None) -> Dict[str, Any]:
         """
         タスク検索クエリを修正する。
         * ``label_name_en`` から ``label_id`` に変換する。
@@ -138,16 +138,15 @@ class ListAnnotationCount(AbstractCommandLineInterface):
         else:
             return pandas.DataFrame()
 
-
-
-    def get_annotations(self, project_id: str, annotation_query: Dict[str, Any], task_id: Optional[str] = None) -> List[SingleAnnotation]:
+    def get_annotations(self, project_id: str, annotation_query: Dict[str, Any],
+                        task_id: Optional[str] = None) -> List[SingleAnnotation]:
         annotation_query = self._modify_annotation_query(project_id, annotation_query, task_id)
         logger.debug(f"annotation_query: {annotation_query}")
         annotations = self.service.wrapper.get_all_annotation_list(project_id, query_params={'query': annotation_query})
         return annotations
 
-
-    def list_annotations(self, project_id: str, annotation_query: Dict[str, Any], group_by: GroupBy, task_id_list: List[str]):
+    def list_annotations(self, project_id: str, annotation_query: Dict[str, Any], group_by: GroupBy,
+                         task_id_list: List[str]):
         """
         アノテーション一覧を出力する
         """
@@ -172,14 +171,14 @@ class ListAnnotationCount(AbstractCommandLineInterface):
         df = self.aggregate_annotations(all_annotations, group_by)
         self.print_csv(df)
 
-
     def main(self):
         args = self.args
         annotation_query = annofabcli.common.cli.get_json_from_args(args.annotation_query)
 
         group_by = GroupBy(args.group_by)
         task_id_list = annofabcli.common.cli.get_list_from_args(args.task_id)
-        self.list_annotations(args.project_id, annotation_query=annotation_query, group_by=group_by, task_id_list=task_id_list)
+        self.list_annotations(args.project_id, annotation_query=annotation_query, group_by=group_by,
+                              task_id_list=task_id_list)
 
 
 def main(args):
@@ -200,10 +199,10 @@ def parse_args(parser: argparse.ArgumentParser):
         'さらに追加で、`label_name_en`(label_idに対応), `additional_data_definition_name_en`(additional_data_definition_idに対応) キーも指定できます。'
     )
 
-    argument_parser.add_task_id(required=False,
-                                help_message=('対象のタスクのtask_idを指定します。'
-                                              '`file://`を先頭に付けると、task_idの一覧が記載されたファイルを指定できます。'
-                                              '指定した場合、`--annotation_query`のtask_id, exact_match_task_idが上書きされます'))
+    argument_parser.add_task_id(
+        required=False, help_message=('対象のタスクのtask_idを指定します。'
+                                      '`file://`を先頭に付けると、task_idの一覧が記載されたファイルを指定できます。'
+                                      '指定した場合、`--annotation_query`のtask_id, exact_match_task_idが上書きされます'))
 
     parser.add_argument('--group_by', type=str, choices=[GroupBy.TASK_ID.value, GroupBy.INPUT_DATA_ID.value],
                         default=GroupBy.TASK_ID.value, help='アノテーションの個数をどの単位で集約するかを指定してます。')

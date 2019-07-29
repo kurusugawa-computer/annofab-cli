@@ -14,6 +14,7 @@ def parse_args(parser: argparse.ArgumentParser):
     annofabcli.annotation_specs.list_annotation_specs_label.add_parser(subparsers)
     annofabcli.annotation_specs.print_label_color.add_parser(subparsers)
 
+
 def add_parser(subparsers: argparse._SubParsersAction):
     subcommand_name = "annotation_specs"
     subcommand_help = "アノテーション仕様関係のサブコマンド"

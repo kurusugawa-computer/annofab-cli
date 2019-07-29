@@ -54,8 +54,11 @@ def test_inspection_comment():
 
 
 def test_annotation():
-    main(['annotation', 'list_count', '--project_id', project_id, '--annotation_query' , '{"label_name_en": "car"}'
-          ,'--output', str(out_path / 'annotation_count.csv')])
+    main([
+        'annotation', 'list_count', '--project_id', project_id, '--annotation_query', '{"label_name_en": "car"}',
+        '--output',
+        str(out_path / 'annotation_count.csv')
+    ])
 
 
 def test_annotation_specs():

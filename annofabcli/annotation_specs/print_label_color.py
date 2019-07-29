@@ -3,7 +3,6 @@
 """
 
 import argparse
-import json
 import logging
 from typing import Any, Callable, Dict, List, Optional, Tuple  # pylint: disable=unused-import
 
@@ -12,7 +11,8 @@ from annofabapi.models import ProjectMemberRole
 import annofabcli
 import annofabcli.common.cli
 from annofabcli import AnnofabApiFacade
-from annofabcli.common.cli import AbstractCommandLineInterface, build_annofabapi_resource_and_login, ArgumentParser, FormatArgument
+from annofabcli.common.cli import (AbstractCommandLineInterface, ArgumentParser, FormatArgument,
+                                   build_annofabapi_resource_and_login)
 
 logger = logging.getLogger(__name__)
 
@@ -51,9 +51,8 @@ def parse_args(parser: argparse.ArgumentParser):
 
     argument_parser.add_project_id()
 
-    argument_parser.add_format(
-        choices=[FormatArgument.JSON, FormatArgument.PRETTY_JSON],
-        default=FormatArgument.PRETTY_JSON)
+    argument_parser.add_format(choices=[FormatArgument.JSON, FormatArgument.PRETTY_JSON],
+                               default=FormatArgument.PRETTY_JSON)
 
     argument_parser.add_output()
 

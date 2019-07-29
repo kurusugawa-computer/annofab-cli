@@ -3,11 +3,11 @@ import logging
 from typing import Optional, Sequence  # pylint: disable=unused-import
 
 import annofabcli.annotation.subcommand_annotation
+import annofabcli.annotation_specs.print_label_color
 import annofabcli.annotation_specs.subcommand_annotation_specs
 import annofabcli.inspection_comment.list_inspections
 import annofabcli.inspection_comment.list_unprocessed_inspections
 import annofabcli.inspection_comment.subcommand_inspection_comment
-import annofabcli.annotation_specs.print_label_color
 import annofabcli.project.diff_projects
 import annofabcli.project.download
 import annofabcli.project.subcommand_project
@@ -50,8 +50,6 @@ def main(arguments: Optional[Sequence[str]] = None):
     annofabcli.project.download.add_parser(subparsers)
 
     annofabcli.inspection_comment.list_unprocessed_inspections.add_parser_deprecated(subparsers)
-
-
 
     annofabcli.write_annotation_image.add_parser(subparsers)
 
