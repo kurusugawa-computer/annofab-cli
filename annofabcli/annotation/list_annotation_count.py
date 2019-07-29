@@ -47,9 +47,10 @@ class ListAnnotationCount(AbstractCommandLineInterface):
 
         return attribute_query
 
-    def _modify_attributes_of_query(self, attributes_of_query: List[Dict[str, Any]],
+    def _modify_attributes_of_query(self,
+                                    attributes_of_query: List[Dict[str, Any]],
                                     additional_data_definitions: List[AdditionalDataDefinition]
-                                   ) -> List[Dict[str, Any]]:
+                                    ) -> List[Dict[str, Any]]:
         for attribute_query in attributes_of_query:
             if 'additional_data_definition_name_en' in attribute_query:
                 additional_data_definition = more_itertools.first_true(
@@ -57,7 +58,7 @@ class ListAnnotationCount(AbstractCommandLineInterface):
                         e) == attribute_query['additional_data_definition_name_en'])
                 if additional_data_definition is None:
                     logger.warning(
-                        f"additional_data_definition_name_name_en = {attribute_query['additional_data_definition_name_en']} の属性は存在しませんでした。"
+                        f"additional_data_definition_name_name_en = {attribute_query['additional_data_definition_name_en']} の属性は存在しませんでした。"  # noqa: E501
                     )
                     continue
 
@@ -110,7 +111,6 @@ class ListAnnotationCount(AbstractCommandLineInterface):
                 logger.warning(f"label_name_en: {label_name_en} の label_id が見つかりませんでした。")
 
         if annotation_query.keys() >= {'label_id', 'attributes'}:
-            attributes = annotation_query['attributes']
             label = more_itertools.first_true(specs_labels,
                                               pred=lambda e: e['label_id'] == annotation_query['label_id'])
             if label is not None:
@@ -195,8 +195,8 @@ def parse_args(parser: argparse.ArgumentParser):
     parser.add_argument(
         '-aq', '--annotation_query', type=str, required=True, help='アノテーションの検索クエリをJSON形式で指定します。'
         '`file://`を先頭に付けると、JSON形式のファイルを指定できます。'
-        'クエリのフォーマットは、[getAnnotationList API](https://annofab.com/docs/api/#operation/getAnnotationList)のクエリパラメータの`query`キー配下と同じです。'
-        'さらに追加で、`label_name_en`(label_idに対応), `additional_data_definition_name_en`(additional_data_definition_idに対応) キーも指定できます。'
+        'クエリのフォーマットは、[getAnnotationList API](https://annofab.com/docs/api/#operation/getAnnotationList)のクエリパラメータの`query`キー配下と同じです。'  # noqa: E501
+        'さらに追加で、`label_name_en`(label_idに対応), `additional_data_definition_name_en`(additional_data_definition_idに対応) キーも指定できます。'  # noqa: E501
     )
 
     argument_parser.add_task_id(
