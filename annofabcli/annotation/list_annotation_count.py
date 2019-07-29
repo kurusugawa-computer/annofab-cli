@@ -47,8 +47,7 @@ class ListAnnotationCount(AbstractCommandLineInterface):
 
         return attribute_query
 
-    def _modify_attributes_of_query(self,
-                                    attributes_of_query: List[Dict[str, Any]],
+    def _modify_attributes_of_query(self, attributes_of_query: List[Dict[str, Any]],
                                     additional_data_definitions: List[AdditionalDataDefinition]
                                     ) -> List[Dict[str, Any]]:
         for attribute_query in attributes_of_query:
@@ -194,7 +193,11 @@ def parse_args(parser: argparse.ArgumentParser):
     argument_parser.add_project_id()
 
     parser.add_argument(
-        '-aq', '--annotation_query', type=str, required=True, help='アノテーションの検索クエリをJSON形式で指定します。'
+        '-aq',
+        '--annotation_query',
+        type=str,
+        required=True,
+        help='アノテーションの検索クエリをJSON形式で指定します。'
         '`file://`を先頭に付けると、JSON形式のファイルを指定できます。'
         'クエリのフォーマットは、[getAnnotationList API](https://annofab.com/docs/api/#operation/getAnnotationList)のクエリパラメータの`query`キー配下と同じです。'  # noqa: E501
         'さらに追加で、`label_name_en`(label_idに対応), `additional_data_definition_name_en`(additional_data_definition_idに対応) キーも指定できます。'  # noqa: E501

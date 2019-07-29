@@ -55,4 +55,4 @@ def test_print_inspections():
 
 
 def test_print_label_color():
-    main(['print_label_color', project_id])
+    main(['print_label_color', '--project_id', project_id])
