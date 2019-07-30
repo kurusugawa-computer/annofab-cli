@@ -108,3 +108,6 @@ venv.bak/
 
 # Visual Studio Code
 .vscode
+
+# output directory of tests
+tests/out/
