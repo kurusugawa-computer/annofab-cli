@@ -165,9 +165,12 @@ class WriteAnnotationImage:
         image = PIL.Image.new(mode="RGB", size=input_dat_size)
         draw = PIL.ImageDraw.Draw(image)
 
-        annotation_list = input_data_json["details"] if annotation_sort_key_func is None else sorted(
-            input_data_json["details"], key=annotation_sort_key_func)
         # アノテーションを描画する
+        if annotation_sort_key_func is None:
+            annotation_list = list(reversed(input_data_json["details"]))
+        else:
+            annotation_list = sorted(input_data_json["details"], key=annotation_sort_key_func)
+
         self.draw_annotation_list(annotation_list, input_data_dir, label_color_dict, draw)
 
         if sub_input_data_list is not None:
