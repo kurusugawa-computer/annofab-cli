@@ -138,7 +138,8 @@ class WriteAnnotationImage:
                                               input_dat_size: InputDataSize, label_color_dict: Dict[str, RGB],
                                               output_image_file: str, task_status_complete: bool = False,
                                               annotation_sort_key_func: Optional[AnnotationSortKeyFunc] = None,
-                                              sub_input_data_list: Optional[SubInputDataList] = None):
+                                              sub_input_data_list: Optional[SubInputDataList] = None,
+                                              str_background_color: Optional[str] = None):
         """
         アノテーション情報が記載されたJSONファイルから、Semantic Segmentation用の画像を生成する。
         Semantic Segmentation用のアノテーションがなくても、画像は生成する。
@@ -162,7 +163,7 @@ class WriteAnnotationImage:
             logger.info(f"task_statusがcompleteでない( {input_data_json['task_status']})ため、{output_image_file} は生成しない。")
             return
 
-        image = PIL.Image.new(mode="RGB", size=input_dat_size)
+        image = PIL.Image.new(mode="RGB", size=input_dat_size, color=str_background_color)
         draw = PIL.ImageDraw.Draw(image)
 
         # アノテーションを描画する
@@ -187,7 +188,8 @@ class WriteAnnotationImage:
                                            label_color_dict: Dict[str, RGB], output_dir: str,
                                            output_image_extension: str, task_status_complete: bool = False,
                                            annotation_sort_key_func: Optional[AnnotationSortKeyFunc] = None,
-                                           sub_annotation_dir_list: Optional[List[str]] = None):
+                                           sub_annotation_dir_list: Optional[List[str]] = None,
+                                           str_background_color: Optional[str] = None):
         """
         アノテーションzipを展開したディレクトリから、Semantic Segmentation用の画像を生成する。
         出力ディレクトリの構成は `{output_dir/{task_id}/{input_data_name}.{image_extension}`
@@ -231,7 +233,7 @@ class WriteAnnotationImage:
                         str(input_data_json), str(input_data_dir), input_dat_size=default_input_data_size,
                         label_color_dict=label_color_dict, output_image_file=str(output_file),
                         task_status_complete=task_status_complete, annotation_sort_key_func=annotation_sort_key_func,
-                        sub_input_data_list=sub_input_data_list)
+                        sub_input_data_list=sub_input_data_list, str_background_color=str_background_color)
 
                 except Exception as e:  # pylint: disable=broad-except
                     logger.warning(e)
@@ -280,7 +282,8 @@ class WriteAnnotationImage:
                 annotation_dir=args.annotation_dir, default_input_data_size=default_input_data_size,
                 label_color_dict=label_color_dict, output_dir=args.output_dir,
                 output_image_extension=args.image_extension, task_status_complete=args.task_status_complete,
-                annotation_sort_key_func=annotation_sort_key_func, sub_annotation_dir_list=args.sub_annotation_dir)
+                annotation_sort_key_func=annotation_sort_key_func, sub_annotation_dir_list=args.sub_annotation_dir,
+                str_background_color=args.background_color)
 
         except Exception as e:
             logger.exception(e)
@@ -304,6 +307,12 @@ def parse_args(parser: argparse.ArgumentParser):
 
     parser.add_argument('--label_order_file', type=str,
                         help='ラベルごとのレイヤの順序を指定したファイル。ファイルに記載されたラベルの順に塗りつぶす。指定しなければ、アノテーションJSONに記載された逆順に塗りつぶす。')
+
+    parser.add_argument('--background_color', type=str,
+                        help=('アノテーションの画像の背景色を指定します。'
+                              'ex):  "rgb(173, 216, 230)", "lightgrey",  "#add8e6"'
+                              '[ImageColor Module](https://hhsprings.bitbucket.io/docs/programming/examples/python/PIL/ImageColor.html) がサポートする文字列を利用できます。'
+                             '指定しない場合は、黒（rgb(0,0,0)）になります。'))
 
     parser.add_argument('--sub_annotation_dir', type=str, nargs="+",
                         help='`annotation_dir`にマージして描画するディレクトリ.複数のプロジェクトを統合する場合に利用する。')

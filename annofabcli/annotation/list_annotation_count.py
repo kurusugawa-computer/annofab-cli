@@ -48,9 +48,8 @@ class ListAnnotationCount(AbstractCommandLineInterface):
         return attribute_query
 
     @staticmethod
-    def _find_additional_data_with_name(
-            additional_data_definitions: List[AdditionalDataDefinition],
-            name: str) -> AdditionalDataDefinition:
+    def _find_additional_data_with_name(additional_data_definitions: List[AdditionalDataDefinition],
+                                        name: str) -> AdditionalDataDefinition:
 
         additional_data_definition = more_itertools.first_true(
             additional_data_definitions,
@@ -58,23 +57,21 @@ class ListAnnotationCount(AbstractCommandLineInterface):
         return additional_data_definition
 
     @staticmethod
-    def _find_additional_data_with_id(
-            additional_data_definitions: List[AdditionalDataDefinition],
-            definition_id: str) -> AdditionalDataDefinition:
+    def _find_additional_data_with_id(additional_data_definitions: List[AdditionalDataDefinition],
+                                      definition_id: str) -> AdditionalDataDefinition:
 
         additional_data_definition = more_itertools.first_true(
-            additional_data_definitions,
-            pred=lambda e: e['additional_data_definition_id'] == definition_id)
+            additional_data_definitions, pred=lambda e: e['additional_data_definition_id'] == definition_id)
         return additional_data_definition
 
     def _modify_attributes_of_query(self, attributes_of_query: List[Dict[str, Any]],
                                     additional_data_definitions: List[AdditionalDataDefinition]
-                                    ) -> List[Dict[str, Any]]:
+                                   ) -> List[Dict[str, Any]]:
         for attribute_query in attributes_of_query:
             definition_name = attribute_query.get('additional_data_definition_name_en')
             if definition_name is not None:
-                additional_data_definition = self._find_additional_data_with_name(
-                    additional_data_definitions, definition_name)
+                additional_data_definition = self._find_additional_data_with_name(additional_data_definitions,
+                                                                                  definition_name)
                 if additional_data_definition is None:
                     logger.warning(
                         f"additional_data_definition_name_name_en = {attribute_query['additional_data_definition_name_en']} の属性は存在しませんでした。"  # noqa: E501
