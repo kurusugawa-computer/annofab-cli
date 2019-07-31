@@ -87,8 +87,8 @@ class CopyProjectMembers(AbstractCommandLineInterface):
 
             updated_members = updated_members + deleted_dest_members
 
-        if self.confirm_processing(f"{self.src_project_title} ({src_project_id}) プロジェクトのメンバを、"
-                                   f"{self.dest_project_title} ({dest_project_id}) にコピーしますか？"
+        if self.confirm_processing(f"{self.src_project_title} プロジェクトのメンバを、"
+                                   f"{self.dest_project_title} にコピーしますか？"
                                    f"追加対象: {len(added_members)} 件, 削除対象: {len(deleted_dest_members)} 件"):
             self.service.wrapper.put_project_members(dest_project_id, updated_members)
 
