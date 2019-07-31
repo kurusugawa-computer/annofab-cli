@@ -71,7 +71,7 @@ def test_project_member():
 
     main(['project_member', 'list', '--project_id', project_id])
 
-    main(['project_member', 'copy', project_id, project_id])
+    main(['project_member', 'copy', project_id, project_id, '--yes'])
 
 
 #
