@@ -85,6 +85,7 @@ $ docker run -it -e ANNOFAB_USER_ID=XXXX -e ANNOFAB_PASSWORD=YYYYY annofab-cli a
 |project_member| list                  | プロジェクトメンバ一覧を出力する                                                                |-|
 |project_member| invite                  | 複数のプロジェクトに、ユーザを招待する。                                                                 |オーナ|
 |project_member| delete                  | 複数のプロジェクトからユーザを削除する。                                                                 |オーナ|
+|project_member| copy                  | プロジェクトメンバをコピーする。|オーナ(コピー先プロジェクトに対して)|
 |inspection_comment| list | 検査コメントを出力する。                               |-|
 |inspection_comment| list_unprocessed | 未処置の検査コメントを出力する。                               |-|
 |annotation| list_count | task_idまたはinput_data_idで集約したアノテーションの個数を出力します                              |-|
@@ -329,6 +330,18 @@ $ annofabcli project_member delete --user_id user1 user2  --organization ORG
 
 # prj1, prj2のプロジェクトからuser1をaccepterロールで招待する
 $ annofabcli project_member invite --user_id user1  --project_id prj1 prj2
+```
+
+
+### project_member copy
+プロジェクトメンバをコピーします。
+
+```
+# prj1のメンバをprj2にコピーする。
+$ annofabcli project_member copy prj1 prj2
+
+# prj1のメンバをprj2にコピーする。prj2にしか存在しないメンバは削除される。
+$ annofabcli project_member copy prj1 prj2 --delete_dest
 ```
 
 
