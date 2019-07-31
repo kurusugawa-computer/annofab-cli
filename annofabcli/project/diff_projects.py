@@ -337,7 +337,7 @@ class DiffProjecs(AbstractCommandLineInterface):
     def diff(self, project_id1: str, project_id2: str, diff_targets: List[DiffTarget]) -> DiffResult:
         self.validate_projects(project_id1, project_id2)
 
-        logger.info(f"=== {self.project_title1}({project_id1}) と {self.project_title2}({project_id1}) の差分を表示")
+        logger.info(f"=== {self.project_title1}({project_id1}) と {self.project_title2}({project_id2}) の差分を表示")
 
         diff_message = ""
         is_different = False
@@ -357,6 +357,9 @@ class DiffProjecs(AbstractCommandLineInterface):
             is_different = is_different or bool_result
             diff_message += message
 
+        if is_different:
+            diff_message = (f"!!! {self.project_title1}({project_id1}) と "
+                            f"{self.project_title2}({project_id2}) に差分あり\n" + diff_message)
         return is_different, diff_message
 
     def main(self):
