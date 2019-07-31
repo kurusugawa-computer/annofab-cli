@@ -6,13 +6,13 @@ import argparse
 import copy
 import logging
 import pprint
+from enum import Enum
 from typing import Any, Dict, List, Tuple  # pylint: disable=unused-import
 
 import annofabapi
 import dictdiffer
 import more_itertools
 from annofabapi.models import ProjectMemberRole
-from enum import Enum
 
 import annofabcli
 import annofabcli.common.cli
@@ -23,6 +23,7 @@ DiffResult = Tuple[bool, str]
 """差分があるかどうかと、差分メッセージ"""
 
 logger = logging.getLogger(__name__)
+
 
 class DiffTarget(Enum):
     """
@@ -113,8 +114,7 @@ class DiffProjecs(AbstractCommandLineInterface):
             diff_result = list(dictdiffer.diff(member1, member2, ignore=ignored_key))
             if len(diff_result) > 0:
                 is_different = True
-                diff_message += (f"差分のあるuser_id: {member1['user_id']}\n"
-                                 f"{pprint.pformat(diff_result)}\n")
+                diff_message += (f"差分のあるuser_id: {member1['user_id']}\n" f"{pprint.pformat(diff_result)}\n")
 
         if not is_different:
             logger.info("プロジェクトメンバは同じ")
@@ -150,7 +150,8 @@ class DiffProjecs(AbstractCommandLineInterface):
 
         return flag, diff_message
 
-    def diff_labels_of_annotation_specs(self, labels1: List[Dict[str, Any]], labels2: List[Dict[str, Any]]) -> DiffResult:
+    def diff_labels_of_annotation_specs(self, labels1: List[Dict[str, Any]],
+                                        labels2: List[Dict[str, Any]]) -> DiffResult:
         """
         アノテーションラベル情報の差分を表示する。ラベル名(英語)を基準に差分を表示する。
         以下の項目は無視して比較する。
@@ -201,8 +202,7 @@ class DiffProjecs(AbstractCommandLineInterface):
             diff_result = list(dictdiffer.diff(create_ignored_label(label1), create_ignored_label(label2)))
             if len(diff_result) > 0:
                 is_different = True
-                diff_message += (f"ラベル名(en): {label_name} は差分あり\n"
-                                 f"{pprint.pformat(diff_result)}\n")
+                diff_message += (f"ラベル名(en): {label_name} は差分あり\n" f"{pprint.pformat(diff_result)}\n")
 
             else:
                 logger.debug(f"ラベル名(en): {label_name} は同じ")
@@ -239,8 +239,8 @@ class DiffProjecs(AbstractCommandLineInterface):
 
         if phrase_ids1 != phrase_ids2:
             diff_message += (f"定型指摘IDのListに差分あり\n"
-                f"set(phrase_ids1) - set(phrase_ids2) = {set(phrase_ids1) - set(phrase_ids2)}\n"
-                f"set(phrase_ids2) - set(phrase_ids1) = {set(phrase_ids2) - set(phrase_ids1)}\n")
+                             f"set(phrase_ids1) - set(phrase_ids2) = {set(phrase_ids1) - set(phrase_ids2)}\n"
+                             f"set(phrase_ids2) - set(phrase_ids1) = {set(phrase_ids2) - set(phrase_ids1)}\n")
             return True, diff_message
 
         is_different = False
@@ -248,10 +248,7 @@ class DiffProjecs(AbstractCommandLineInterface):
             diff_result = list(dictdiffer.diff(phrase1, phrase2))
             if len(diff_result) > 0:
                 is_different = True
-                diff_message += (
-                    f"定型指摘に: {phrase1['id']} は差分あり\n"
-                    f"{pprint.pformat(diff_result)}\n"
-                )
+                diff_message += (f"定型指摘に: {phrase1['id']} は差分あり\n" f"{pprint.pformat(diff_result)}\n")
 
         if not is_different:
             logger.info("定型指摘は同じ")
@@ -279,12 +276,13 @@ class DiffProjecs(AbstractCommandLineInterface):
 
         if DiffTarget.INSPECTION_PHRASES in diff_targets:
             bool_result, message = self.diff_inspection_phrases(annotation_specs1["inspection_phrases"],
-                                         annotation_specs2["inspection_phrases"])
+                                                                annotation_specs2["inspection_phrases"])
             is_different = is_different or bool_result
             diff_message += message
 
         if DiffTarget.ANNOTATION_LABELS in diff_targets:
-            bool_result, message = self.diff_labels_of_annotation_specs(annotation_specs1["labels"], annotation_specs2["labels"])
+            bool_result, message = self.diff_labels_of_annotation_specs(annotation_specs1["labels"],
+                                                                        annotation_specs2["labels"])
             is_different = is_different or bool_result
             diff_message += message
 
@@ -313,8 +311,7 @@ class DiffProjecs(AbstractCommandLineInterface):
         # ignored_key = {"updated_datetime", "created_datetime", "project_id"}
         diff_result = list(dictdiffer.diff(config1, config2))
         if len(diff_result) > 0:
-            diff_message += (f"プロジェクト設定に差分あり\n"
-                             f"{pprint.pformat(diff_result)}\n")
+            diff_message += (f"プロジェクト設定に差分あり\n" f"{pprint.pformat(diff_result)}\n")
             return True, diff_message
         else:
             logger.info("プロジェクト設定は同じ")

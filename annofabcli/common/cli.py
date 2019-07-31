@@ -196,7 +196,26 @@ def build_annofabapi_resource() -> annofabapi.Resource:
     return annofabapi.build(login_user_id, login_password)
 
 
-def prompt_yesno(msg: str) -> Tuple[bool, bool]:
+def prompt_yesno(msg: str) -> bool:
+    """
+    標準入力で yes, noを選択できるようにする。
+    Args:
+        msg: 確認メッセージ
+
+    Returns:
+        True: Yes, False: No
+
+    """
+    while True:
+        choice = input(f"{msg} [y/N] : ")
+        if choice == 'y':
+            return True
+
+        elif choice == 'N':
+            return False
+
+
+def prompt_yesnoall(msg: str) -> Tuple[bool, bool]:
     """
     標準入力で yes, no, all(すべてyes)を選択できるようにする。
     Args:
@@ -359,6 +378,29 @@ class AbstractCommandLineInterface(abc.ABC):
             if not self.facade.contains_anys_role(project_id, roles):
                 raise AuthorizationError(project_title, roles)
 
+    def confirm_processing(self, confirm_message: str) -> bool:
+        """
+        `all_yes`属性を見て、処理するかどうかユーザに問い合わせる。
+        "ALL"が入力されたら、`all_yes`属性をTrueにする
+
+        Args:
+            task_id: 処理するtask_id
+            confirm_message: 確認メッセージ
+
+        Returns:
+            True: Yes, False: No
+
+        """
+        if self.all_yes:
+            return True
+
+        yes, all_yes = prompt_yesnoall(confirm_message)
+
+        if all_yes:
+            self.all_yes = True
+
+        return yes
+
     def confirm_processing_task(self, task_id: str, confirm_message: str) -> bool:
         """
         タスクに対して処理するかどうか問い合わせる。
@@ -375,7 +417,7 @@ class AbstractCommandLineInterface(abc.ABC):
         if self.all_yes:
             return True
 
-        yes, all_yes = prompt_yesno(confirm_message)
+        yes, all_yes = prompt_yesnoall(confirm_message)
 
         if not yes:
             logger.info(f"task_id = {task_id} をスキップします。")
