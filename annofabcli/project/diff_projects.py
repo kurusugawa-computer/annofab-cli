@@ -103,7 +103,7 @@ class DiffProjecs(AbstractCommandLineInterface):
         user_ids2 = [e["user_id"] for e in sorted_members2]
 
         if user_ids1 != user_ids2:
-            diff_message += (f"user_idのListに差分あり\n"
+            diff_message += (f"### user_idのListに差分あり\n"
                              f"set(user_ids1) - set(user_ids2) = {set(user_ids1) - set(user_ids2)}\n"
                              f"set(user_ids2) - set(user_ids1) = {set(user_ids2) - set(user_ids1)}\n")
 
@@ -181,7 +181,7 @@ class DiffProjecs(AbstractCommandLineInterface):
             diff_message += (f"ラベル名(en)が重複しているので、アノテーションラベル情報の差分は確認しません。\n")
 
         if label_names1 != label_names2:
-            diff_message += (f"ラベル名(en)のListに差分あり\n"
+            diff_message += (f"### ラベル名(en)のListに差分あり\n"
                              f"label_names1: {label_names1}\n"
                              f"label_names2: {label_names2}\n")
 
@@ -239,7 +239,7 @@ class DiffProjecs(AbstractCommandLineInterface):
         phrase_ids2 = [e["id"] for e in sorted_inspection_phrases2]
 
         if phrase_ids1 != phrase_ids2:
-            diff_message += (f"定型指摘IDのListに差分あり\n"
+            diff_message += (f"### 定型指摘IDのListに差分あり\n"
                              f"set(phrase_ids1) - set(phrase_ids2) = {set(phrase_ids1) - set(phrase_ids2)}\n"
                              f"set(phrase_ids2) - set(phrase_ids1) = {set(phrase_ids2) - set(phrase_ids1)}\n")
             return True, diff_message
@@ -311,7 +311,8 @@ class DiffProjecs(AbstractCommandLineInterface):
         # ignored_key = {"updated_datetime", "created_datetime", "project_id"}
         diff_result = list(dictdiffer.diff(config1, config2))
         if len(diff_result) > 0:
-            diff_message += (f"プロジェクト設定に差分あり\n" f"{pprint.pformat(diff_result)}\n")
+            diff_message += (f"### プロジェクト設定に差分あり\n" 
+                             f"{pprint.pformat(diff_result)}\n")
             return True, diff_message
         else:
             logger.info("プロジェクト設定は同じ")
