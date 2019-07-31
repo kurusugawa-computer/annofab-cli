@@ -305,15 +305,18 @@ def parse_args(parser: argparse.ArgumentParser):
 
     parser.add_argument('--task_status_complete', action="store_true", help='taskのstatusがcompleteの場合のみ画像を生成する')
 
-    parser.add_argument('--label_order_file', type=str,
-                        help='ラベルごとのレイヤの順序を指定したファイル。ファイルに記載されたラベルの順に塗りつぶす。指定しなければ、アノテーションJSONに記載された逆順に塗りつぶす。')
+    parser.add_argument('--label_order_file', type=str, help=('ラベルごとのレイヤの順序を指定したファイル。'
+                                                              'ファイルに記載されたラベルの順に塗りつぶす。'
+                                                              '指定しなければ、アノテーションJSONに記載された逆順に塗りつぶす。'))
 
     parser.add_argument(
-        '--background_color', type=str, help=
-        ('アノテーションの画像の背景色を指定します。'
-         'ex):  "rgb(173, 216, 230)", "lightgrey",  "#add8e6"'
-         '[ImageColor Module](https://hhsprings.bitbucket.io/docs/programming/examples/python/PIL/ImageColor.html) がサポートする文字列を利用できます。'
-         '指定しない場合は、黒（rgb(0,0,0)）になります。'))
+        '--background_color',
+        type=str,
+        help=(
+            'アノテーションの画像の背景色を指定します。'
+            'ex):  "rgb(173, 216, 230)", "lightgrey",  "#add8e6" '
+            '[ImageColor Module](https://hhsprings.bitbucket.io/docs/programming/examples/python/PIL/ImageColor.html) がサポートする文字列を利用できます。'  # noqa: E501
+            '指定しない場合は、黒（rgb(0,0,0)）になります。'))
 
     parser.add_argument('--sub_annotation_dir', type=str, nargs="+",
                         help='`annotation_dir`にマージして描画するディレクトリ.複数のプロジェクトを統合する場合に利用する。')

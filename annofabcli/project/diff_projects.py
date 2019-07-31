@@ -3,6 +3,7 @@
 """
 
 import argparse
+import functools
 import copy
 import logging
 import pprint
@@ -193,11 +194,11 @@ class DiffProjecs(AbstractCommandLineInterface):
 
         for label_name in label_names:
 
-            def get_label_func(x):
-                return AnnofabApiFacade.get_label_name_en(x) == label_name
+            def get_label_func(label_name: str, label: Dict[str, Any]):
+                return AnnofabApiFacade.get_label_name_en(label) == label_name
 
-            label1 = more_itertools.first_true(labels1, pred=get_label_func)
-            label2 = more_itertools.first_true(labels2, pred=get_label_func)
+            label1 = more_itertools.first_true(labels1, pred=functools.partial(get_label_func, label_name))
+            label2 = more_itertools.first_true(labels2, pred=functools.partial(get_label_func, label_name))
 
             diff_result = list(dictdiffer.diff(create_ignored_label(label1), create_ignored_label(label2)))
             if len(diff_result) > 0:
@@ -288,7 +289,7 @@ class DiffProjecs(AbstractCommandLineInterface):
 
         return is_different, diff_message
 
-    def diff_project_settingss(self, project_id1: str, project_id2: str) -> Tuple[bool, str]:
+    def diff_project_settingss(self, project_id1: str, project_id2: str) -> DiffResult:
         """
         プロジェクト間のプロジェクト設定の差分を表示する。
         Args:
@@ -303,7 +304,6 @@ class DiffProjecs(AbstractCommandLineInterface):
         logger.info("=== プロジェクト設定の差分 ===")
 
         diff_message = ""
-        is_different = False
 
         config1 = self.service.api.get_project(project_id1)[0]["configuration"]
         config2 = self.service.api.get_project(project_id2)[0]["configuration"]

@@ -3,7 +3,7 @@ import logging
 from typing import Any, Callable, Dict, List, Optional, Tuple, Union  # pylint: disable=unused-import
 
 import annofabapi
-from annofabapi.models import ProjectMemberRole
+from annofabapi.models import ProjectMember, ProjectMemberRole
 
 import annofabcli
 from annofabcli import AnnofabApiFacade
@@ -70,7 +70,7 @@ class CopyProjectMembers(AbstractCommandLineInterface):
 
         # 更新対象のプロジェクトメンバ
         updated_members = src_project_members
-        deleted_dest_members = []
+        deleted_dest_members: List[ProjectMember] = []
 
         if delete_dest:
             # コピー先にしかいないメンバを削除する
