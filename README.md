@@ -288,7 +288,7 @@ $ annofabcli project download task_history_event --project_id prj1 --output task
 $ annofabcli project download simple_annotation --project_id prj1 --output simple_annotation.zip
 
 # 最新のFullアノテーションのzipファイルをダウンロードする（数分待つ）
-$ annofabcli download full_annotation --project_id prj1 --output full_annotation.zip --latest
+$ annofabcli project download full_annotation --project_id prj1 --output full_annotation.zip --latest
 DEBUG    : 2019-07-16 12:15:14,647 : annofabcli.common.facade       : job_id = c566c842-d84c-43d8-9f61-42fe5960c0fb のジョブが進行中です。60秒間待ちます。
 DEBUG    : 2019-07-16 12:16:15,053 : annofabcli.common.facade       : job_id = c566c842-d84c-43d8-9f61-42fe5960c0fb のジョブが進行中です。60秒間待ちます。
 DEBUG    : 2019-07-16 12:17:15,457 : annofabcli.common.facade       : job_id = c566c842-d84c-43d8-9f61-42fe5960c0fb のジョブが進行中です。60秒間待ちます。
