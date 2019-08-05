@@ -77,14 +77,9 @@ def test_project_member():
     main(['project_member', 'copy', project_id, project_id, '--yes'])
 
 
-#
-# def test_print_label_color():
-#     main(['print_label_color', project_id])
-
-
 def test_input_data():
     out_file = str(out_path / 'input_data.json')
     main([
         'input_data', 'list', '--project_id', project_id, '--input_data_query', '{"input_data_name": "abcdefg"}',
-        '--output', out_file
+        '--add_details', '--output', out_file
     ])

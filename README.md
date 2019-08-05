@@ -76,6 +76,7 @@ $ docker run -it -e ANNOFAB_USER_ID=XXXX -e ANNOFAB_PASSWORD=YYYYY annofab-cli a
 
 |コマンド| サブコマンド                  | 内容                                                                                                     |必要なロール|
 |----|-------------------------------|----------------------------------------------------------------------------------------------------------|------------|
+|input_data|list             | 入力データ一覧を出力する。                                                            |-|
 |task|list             | タスク一覧を出力する。                                                            |-|
 |task| cancel_acceptance             | 受け入れ完了タスクを、受け入れ取り消しする。                                                             |オーナ|
 |task| complete                | 未処置の検査コメントを適切な状態に変更して、タスクを受け入れ完了にする。                                 |チェッカー/オーナ|
@@ -158,8 +159,21 @@ http://jmespath.org/
 ## コマンドの使い方
 
 
+### input_data list
+入力データ一覧を出力します。
+
+```
+# input_data_nameが"sample"の入力データ一覧を出力する
+$ annofabcli input_data list --project_id prj1 --input_data_query '{"input_data_name": "sample"}' 
+
+# 入力データの詳細情報も出力する
+$ annofabcli input_data list --project_id prj1 --input_data_query '{"input_data_name": "sample"}' --add_details
+
+```
+
+
 ### task list
-検査コメント一覧を出力します。
+タスク一覧を出力します。
 
 ```
 # 受入フェーズで、"usr1"が担当しているタスクの一覧を出力する
