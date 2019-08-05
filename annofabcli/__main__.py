@@ -5,6 +5,7 @@ from typing import Optional, Sequence  # pylint: disable=unused-import
 import annofabcli.annotation.subcommand_annotation
 import annofabcli.annotation_specs.print_label_color
 import annofabcli.annotation_specs.subcommand_annotation_specs
+import annofabcli.input_data.subcommand_input_data
 import annofabcli.inspection_comment.list_inspections
 import annofabcli.inspection_comment.list_unprocessed_inspections
 import annofabcli.inspection_comment.subcommand_inspection_comment
@@ -41,6 +42,7 @@ def main(arguments: Optional[Sequence[str]] = None):
 
     annofabcli.annotation.subcommand_annotation.add_parser(subparsers)
     annofabcli.inspection_comment.subcommand_inspection_comment.add_parser(subparsers)
+    annofabcli.input_data.subcommand_input_data.add_parser(subparsers)
     annofabcli.task.subcommand_task.add_parser(subparsers)
     annofabcli.project.subcommand_project.add_parser(subparsers)
     annofabcli.project_member.subcommand_project_member.add_parser(subparsers)
