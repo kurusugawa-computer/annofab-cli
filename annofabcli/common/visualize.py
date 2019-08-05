@@ -7,7 +7,7 @@ from typing import Any, Callable, Dict, List, Optional, Tuple  # pylint: disable
 
 import annofabapi
 import more_itertools
-from annofabapi.models import Inspection, OrganizationMember, Task, TaskHistoryShort, TaskPhase
+from annofabapi.models import InputData, Inspection, OrganizationMember, Task, TaskHistoryShort, TaskPhase
 
 
 class MessageLocale(enum.Enum):
@@ -188,6 +188,24 @@ class AddProps:
             TaskPhase.ACCEPTANCE, histories)
 
         return task
+
+    @staticmethod
+    def add_properties_to_input_data(input_data: InputData, task_id_list: List[str]) -> InputData:
+        """
+        入力データ情報に、以下のキーを追加する。
+
+        * parent_task_id_list
+
+        Args:
+            input_data:
+            task_id_list:
+
+        Returns:
+            入力データ情報
+
+        """
+        input_data['parent_task_id_list'] = task_id_list
+        return input_data
 
     @staticmethod
     def get_number_of_rejections_by_phase(phase: TaskPhase, task_histories: List[TaskHistoryShort]) -> int:

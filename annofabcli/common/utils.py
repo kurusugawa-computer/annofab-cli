@@ -160,6 +160,10 @@ def print_according_to_format(target: Any, arg_format: FormatArgument, output: O
         task_id_list = [e['task_id'] for e in target]
         print_id_list(task_id_list, output)
 
+    elif arg_format == FormatArgument.INPUT_DATA_ID_LIST:
+        input_data_id_list = [e['input_data_id'] for e in target]
+        print_id_list(input_data_id_list, output)
+
     elif arg_format == FormatArgument.USER_ID_LIST:
         user_id_list = [e['user_id'] for e in target]
         print_id_list(user_id_list, output)

@@ -3,8 +3,8 @@
 """
 
 import argparse
-import functools
 import copy
+import functools
 import logging
 import pprint
 from enum import Enum
@@ -311,8 +311,7 @@ class DiffProjecs(AbstractCommandLineInterface):
         # ignored_key = {"updated_datetime", "created_datetime", "project_id"}
         diff_result = list(dictdiffer.diff(config1, config2))
         if len(diff_result) > 0:
-            diff_message += (f"### プロジェクト設定に差分あり\n" 
-                             f"{pprint.pformat(diff_result)}\n")
+            diff_message += (f"### プロジェクト設定に差分あり\n" f"{pprint.pformat(diff_result)}\n")
             return True, diff_message
         else:
             logger.info("プロジェクト設定は同じ")

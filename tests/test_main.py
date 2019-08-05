@@ -47,6 +47,9 @@ def test_task():
 def test_project():
     main(['project', 'diff', project_id, project_id])
 
+    out_file = str(out_path / 'tasks.json')
+    main(['project', 'download', 'task', '--project_id', project_id, '--output', out_file])
+
 
 def test_inspection_comment():
     main(['inspection_comment', 'list', '--project_id', project_id, '--task_id', task_id])
@@ -79,6 +82,9 @@ def test_project_member():
 #     main(['print_label_color', project_id])
 
 
-def test_download():
-    out_file = str(out_path / 'tasks.json')
-    main(['download', 'task', '--project_id', project_id, '--output', out_file])
+def test_input_data():
+    out_file = str(out_path / 'input_data.json')
+    main([
+        'input_data', 'list', '--project_id', project_id, '--input_data_query', '{"input_data_name": "abcdefg"}',
+        '--output', out_file
+    ])

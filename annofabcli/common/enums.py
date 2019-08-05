@@ -21,6 +21,9 @@ class FormatArgument(Enum):
     #: インデントされたJSON形式
     PRETTY_JSON = 'pretty_json'
 
+    #: input_data_idの一覧
+    INPUT_DATA_ID_LIST = 'input_data_id_list'
+
     #: task_idの一覧
     TASK_ID_LIST = 'task_id_list'
 
