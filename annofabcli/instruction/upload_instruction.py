@@ -1,19 +1,15 @@
 import argparse
-import logging
-import logging.config
 import logging.handlers
 import time
 import uuid
 from pathlib import Path
 from typing import Any, Callable, Dict, List, Optional, Tuple, Union  # pylint: disable=unused-import
 
-import annofabapi
 import pyquery
 
 import annofabcli
 from annofabcli import AnnofabApiFacade
 from annofabcli.common.cli import AbstractCommandLineInterface, ArgumentParser, build_annofabapi_resource_and_login
-from annofabcli.common.visualize import AddProps
 
 logger = logging.getLogger(__name__)
 
@@ -22,15 +18,6 @@ class UploadInstruction(AbstractCommandLineInterface):
     """
     作業ガイドをアップロードする
     """
-
-    #: 入力データIDの平均長さ
-    average_input_data_id_length: int = 36
-
-    def __init__(self, service: annofabapi.Resource, facade: AnnofabApiFacade, args: argparse.Namespace):
-        super().__init__(service, facade, args)
-        self.visualize = AddProps(self.service, args.project_id)
-        self.average_input_data_id_length = args.averate_input_data_id_length
-
     def upload_html_to_instruction(self, project_id: str, html_path: Path):
         pq_html = pyquery.PyQuery(filename=str(html_path))
         pq_img = pq_html('img')
@@ -51,11 +38,9 @@ class UploadInstruction(AbstractCommandLineInterface):
 
             if img_path.exists():
                 image_id = str(uuid.uuid4())
-                instruction_image_id = self.service.wrapper.upload_instruction_image(
-                    project_id, image_id, str(img_path))
-                img_url = (f'https://annofab.com/projects/{project_id}/instruction-images/' f'{instruction_image_id}')
+                img_url = self.service.wrapper.upload_instruction_image(project_id, image_id, str(img_path))
 
-                logger.debug(f"image uploaded. file={img_path}, image_id={instruction_image_id}")
+                logger.debug(f"image uploaded. file={img_path}, instruction_image_url={img_url}")
                 img_elm.attrib['src'] = img_url
                 time.sleep(1)
 
@@ -91,7 +76,7 @@ def parse_args(parser: argparse.ArgumentParser):
 
 
 def add_parser(subparsers: argparse._SubParsersAction):
-    subcommand_name = "upload_html"
+    subcommand_name = "upload"
     subcommand_help = "HTMLファイルを作業ガイドとして登録します。"
     description = ("HTMLファイルを作業ガイドとして登録します。"
                    "img要素のsrc属性がローカルの画像を参照している場合（http, https, dataスキーマが付与されていない）、"

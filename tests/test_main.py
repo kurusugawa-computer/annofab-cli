@@ -24,6 +24,7 @@ service = annofabapi.build_from_netrc()
 user_id = service.api.login_user_id
 
 out_path = Path('./tests/out')
+data_path = Path('./tests/data')
 
 # def test_complete_tasks():
 #     #main(['complete_tasks', '--project_id', project_id, '--task_id', task_id, '--yes' ])
@@ -83,3 +84,9 @@ def test_input_data():
         'input_data', 'list', '--project_id', project_id, '--input_data_query', '{"input_data_name": "abcdefg"}',
         '--add_details', '--output', out_file
     ])
+
+
+def test_instruction():
+    html_file = str(data_path / 'instruction.html')
+    print(html_file)
+    main(['instruction', 'upload', '--project_id', project_id, '--html', html_file])
