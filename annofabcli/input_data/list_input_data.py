@@ -19,9 +19,14 @@ class ListInputData(AbstractCommandLineInterface):
     """
     入力データの一覧を表示する
     """
+
+    #: 入力データIDの平均長さ
+    average_input_data_id_length: int = 36
+
     def __init__(self, service: annofabapi.Resource, facade: AnnofabApiFacade, args: argparse.Namespace):
         super().__init__(service, facade, args)
         self.visualize = AddProps(self.service, args.project_id)
+        self.average_input_data_id_length = args.averate_input_data_id_length
 
     @staticmethod
     def _find_task_id_list(task_list: List[Task], input_data_id: str) -> List[TaskId]:
@@ -49,8 +54,8 @@ class ListInputData(AbstractCommandLineInterface):
             # AWS CloudFrontのURLの上限が8,192byte
             # https://docs.aws.amazon.com/AmazonCloudFront/latest/DeveloperGuide/cloudfront-limits.html
             MAX_URL_QUERY_LENGTH = 8000  # input_dat_ids部分のURLクエリの最大値
-            AVERAGE_INPUT_DATA_ID_LENGTH = 37  # input_data_idの平均長さ
-            chunk_size = MAX_URL_QUERY_LENGTH // AVERAGE_INPUT_DATA_ID_LENGTH
+            average_input_data_id_length = self.average_input_data_id_length + 1  # カンマの分だけ長さを増やす
+            chunk_size = MAX_URL_QUERY_LENGTH // average_input_data_id_length
             initial_index = 0
             while True:
                 sub_input_data_list = input_data_list[initial_index:initial_index + chunk_size]
@@ -59,7 +64,7 @@ class ListInputData(AbstractCommandLineInterface):
                 encoded_input_data_id_list = urllib.parse.quote(str_input_data_id_list)
                 if len(encoded_input_data_id_list) > MAX_URL_QUERY_LENGTH:
                     differential_length = (len(encoded_input_data_id_list) - MAX_URL_QUERY_LENGTH)
-                    decreasing_size = (differential_length // AVERAGE_INPUT_DATA_ID_LENGTH) + 1
+                    decreasing_size = (differential_length // average_input_data_id_length) + 1
                     logger.debug(f"chunk_sizeを {chunk_size} から、{chunk_size - decreasing_size} に減らした. "
                                  f"len(encoded_input_data_id_list) = {len(encoded_input_data_id_list)}")
                     chunk_size = chunk_size - decreasing_size
@@ -81,16 +86,6 @@ class ListInputData(AbstractCommandLineInterface):
                 initial_index = initial_index + chunk_size
                 if initial_index >= len(input_data_list):
                     break
-
-            for input_data_index, input_data in enumerate(input_data_list):
-                input_data_id = input_data['input_data_id']
-
-                logger.debug(f"{input_data_index} 件目: input_data_id = {input_data_id} を使用しているタスクを取得する。")
-                task_list = self.service.wrapper.get_all_tasks(project_id,
-                                                               query_params={'input_data_ids': input_data_id})
-
-                task_id_list = self._find_task_id_list(task_list, input_data_id)
-                self.visualize.add_properties_to_input_data(input_data, task_id_list)
 
         return input_data_list
 
@@ -142,6 +137,11 @@ def parse_args(parser: argparse.ArgumentParser):
         'ただし `page`, `limit`キーは指定できません。')
 
     parser.add_argument('--add_details', action='store_true', help='入力データの詳細情報を表示します（`parent_task_id_list`）')
+
+    parser.add_argument(
+        '--averate_input_data_id_length', type=int, default=36, help=('入力データIDの平均長さを指定します。`add_details`がTrueのときのみ有効です。'
+                                                                      'デフォルトはUUIDv4の長さです。'
+                                                                      'この値を元にして、タスク一括取得APIの実行回数を決めます。'))
 
     argument_parser.add_format(
         choices=[
