@@ -12,13 +12,6 @@ annofabapiを使ったCLI(Command Line Interface)ツールです。
 
 | 廃止予定のコマンド                  | 廃止予定日                                                                                                     |代替コマンド|
 |-------------------------------|----------------------------------------------------------------------------------------------------------|------------|
-| cancel_acceptance             | 2019/08/02                                                             |task cancel_acceptance|
-| complete_tasks                | 2019/08/02          |task complete|
-| diff_projects                 |2019/08/02                                                                    |project diff|
-| invite_users                  | 2019/08/02                                                                 |project_member invite|
-| print_inspections | 2019/08/02                            |inspection_comment list|
-| reject_tasks                  | 2019/08/02                                                                |task reject|
-| download                  | 2019/08/02                                                                |project download|
 | print_label_color                  | 2019/08/09                                                                |annotation_specs list_label_color|
 
 
@@ -69,7 +62,7 @@ Enter AnnoFab User ID: XXXXXX
 Enter AnnoFab Password: 
 
 # AnnoFabの認証情報を環境変数で指定する
-$ docker run -it -e ANNOFAB_USER_ID=XXXX -e ANNOFAB_PASSWORD=YYYYY annofab-cli annofabcli diff_projects prj1 prj2
+$ docker run -it -e ANNOFAB_USER_ID=XXXX -e ANNOFAB_PASSWORD=YYYYY annofab-cli annofabcli project diff prj1 prj2
 ```
 
 # 機能一覧
@@ -101,6 +94,29 @@ $ docker run -it -e ANNOFAB_USER_ID=XXXX -e ANNOFAB_PASSWORD=YYYYY annofab-cli a
 
 ## 共通のオプション引数
 
+
+### `--csv_format`
+CSVのフォーマットをJSON形式で指定します。`--format`が`csv`でないときは、このオプションは無視されます。
+先頭に`file://`を付けると、JSON形式のファイルを指定できます。
+指定した値は、[pandas.DataFrame.to_csv](https://pandas.pydata.org/pandas-docs/stable/reference/api/pandas.DataFrame.to_csv.html) の引数として渡されます。
+デフォルトはカンマ区切り、BOM付きUTF-8で出力されます。
+
+```
+--csv_format '{"sep": "\t"}'
+```
+
+
+### `--disable_log`
+ログを無効化する。
+
+### `f` / `--format`
+出力フォーマットを指定します。基本的に以下のフォーマットを指定できます。
+* csv : CSV(デフォルとはカンマ区切り)
+* json : インデントや空白がないJSON
+* pretty_json : インデントされたJSON
+
+list系のコマンドで利用できます。
+
 ### `-h` / `--help`
 コマンドのヘルプを出力します。
 
@@ -108,15 +124,13 @@ $ docker run -it -e ANNOFAB_USER_ID=XXXX -e ANNOFAB_PASSWORD=YYYYY annofab-cli a
 # annofabcli全体のヘルプ
 $ annofabcli -h
 
-# diff_projectsサブコマンドのヘルプ
-$ annofabcli diff_projects -h
+# project diff コマンドのヘルプ
+$ annofabcli project diff -h
 ```
+
 
 ### `--logdir`
 ログファイルを保存するディレクトリを指定します。指定しない場合、`.log`ディレクトリにログファイルを出力します。
-
-### `--disable_log`
-ログを無効化する。
 
 ### `--logging_yaml`
 ロギグングの設定ファイル(YAML)を指定します。指定した場合、`--logdir`オプションは無視されます。指定しない場合、デフォルトのロギング設定ファイルが読み込まれます。
@@ -137,8 +151,10 @@ root:
 disable_existing_loggers: False
 ```
 
-### `--yes`
-処理中に現れる問い合わせに対して、常に'yes'と回答します。
+
+### `-o` / `--output`
+出力先のファイルパスを指定します。指定しない場合は、標準出力に出力されます。
+list系のコマンドで利用できます。
 
 
 ### `-p` / `--project_id`
@@ -155,9 +171,48 @@ http://jmespath.org/
 * 相対パスで指定： `--task_id file://task.txt`
 * 絶対パスで指定： `--task_id file:///tmp/task.txt`
 
+### `--yes`
+処理中に現れる問い合わせに対して、常に'yes'と回答します。
 
 
-## コマンドの使い方
+## デフォルトのログ設定
+* 標準エラー出力とログファイルに出力されます。
+* カレントディレクトリの`.log`ディレクトリに、`annofabcli.log`というログファイルが生成されます。
+* 1日ごとにログロテートされます
+
+詳細は https://github.com/kurusugawa-computer/annofab-cli/blob/master/annofabcli/data/logging.yaml を参照してください。
+
+
+## よくある使い方
+
+### 受入完了のタスクを差し戻す
+"car"ラベルの"occluded"属性のアノテーションルールに間違いがあったため、以下の条件を満たすタスクを一括で差し戻します。
+* "car"ラベルの"occluded"チェックボックスがONのアノテーションが、タスクに1つ以上存在する。
+
+前提条件
+* プロジェクトのオーナが、annofabcliコマンドを実行する
+
+
+```
+# 受入完了のタスクのtask_id一覧を、acceptance_complete_task_id.txtに出力する。
+$ annofabcli task list --project_id prj1  --task_query '{"phase": "complete","phase":"acceptance"}' --format task_id_list --output acceptance_complete_task_id.txt
+
+# 受入完了タスクの中で、 "car"ラベルの"occluded"チェックボックスがONのアノテーションの個数を出力する。
+$ annofabcli annotation list_count --project_id prj1 --task_id file://task.txt --output annotation_count.csv \
+ --annotation_query '{"label_name_en": "car", "attributes":[{"additional_data_definition_name_en": "occluded", "flag": true}]}'
+
+# annotation_count.csvを表計算ソフトで開き、アノテーションの個数が1個以上のタスクのtask_id一覧を、task_id.txtに保存する。
+
+# task_id.txtに記載されたタスクに対して、受入完了状態を取り消す。
+$ annofabcli task cancel_acceptance --project_id prj1 --task_id file://task_id.txt
+
+# task_id.txtに記載されたタスクを差し戻す。検査コメントは「carラベルのoccluded属性を見直してください」。差し戻したタスクには、最後のannotation phaseを担当したユーザを割り当てる（画面と同じ動き）。
+$ annofabcli task reject --project_id prj1 --task_id file://tasks.txt --comment "carラベルのoccluded属性を見直してください" --assign_last_annotator
+
+```
+
+
+## コマンド一覧
 
 
 ### input_data list
@@ -261,7 +316,7 @@ $ annofabcli complete_tasks --project_id prj1  --inspection_list inspection.json
 $ annofabcli complete_tasks --project_id prj1  --inspection_list inspection.json --inspection_status no_correction_required
 ```
 
-inspection.jsonは、未処置の検査コメント一覧です。[inspection_comment list_unprocessed](#inspection_comment list_unprocessed) コマンドで出力できます。
+inspection.jsonは、未処置の検査コメント一覧です。`inspection_comment list_unprocessed`コマンドで出力できます。
 
 
 
@@ -469,11 +524,11 @@ $ annofabcli annotation_specs list_label --project_id prj1 --format pretty_json
 
 
 
-### annotation_specs label_color
+### annotation_specs list_label_color
 アノテーション仕様から、label_name(english)とRGBを対応付けたJSONを出力します。
 
 ```
-$ annofabcli annotation_specs label_color --project_id prj1 
+$ annofabcli annotation_specs list_label_color --project_id prj1 
 ```
 
 ```json:出力結果
@@ -520,5 +575,5 @@ $ python  -m annofabcli.write_semantic_segmentation_images write  --annotation_d
  --sub_annotation_dir af-annotation-1 af-annotation-2
 ```
 
-* `label_color.json`は、`label_name`とRGBを対応付けたJSONファイルです。ファイルのフォーマットは、[annotation_specs label_color](#annotation_specs label_color)の出力結果と同じです。
+* `label_color.json`は、`label_name`とRGBを対応付けたJSONファイルです。ファイルのフォーマットは、`annotation_specs list_label_color`の出力結果と同じです。
 

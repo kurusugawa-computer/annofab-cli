@@ -194,16 +194,6 @@ def main(args):
     ComleteTasks(service, facade, args).main()
 
 
-def add_parser_deprecated(subparsers: argparse._SubParsersAction):
-    subcommand_name = "complete_tasks"
-    subcommand_help = "未処置の検査コメントを適切な状態に変更して、タスクを受け入れ完了にする。"
-    description = ("未処置の検査コメントを適切な状態に変更して、タスクを受け入れ完了にする。" "オーナ権限を持つユーザで実行すること。")
-    epilog = "チェッカーまたはオーナロールを持つユーザで実行してください。"
-
-    parser = annofabcli.common.cli.add_parser(subparsers, subcommand_name, subcommand_help, description, epilog=epilog)
-    parse_args(parser)
-
-
 def add_parser(subparsers: argparse._SubParsersAction):
     subcommand_name = "complete"
     subcommand_help = "未処置の検査コメントを適切な状態に変更して、タスクを受け入れ完了にする。"

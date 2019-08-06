@@ -78,18 +78,3 @@ def add_parser(subparsers: argparse._SubParsersAction):
 
     parser = annofabcli.common.cli.add_parser(subparsers, subcommand_name, subcommand_help, description, epilog=epilog)
     parse_args(parser)
-
-
-def add_parser_deprecated(subparsers: argparse._SubParsersAction):
-    subcommand_name = "print_label_color"
-
-    subcommand_help = ("label_name(英名)とRGBの関係をJSONで出力します。")
-
-    description = ("label_name(英名)とRGBの関係をJSONで出力します。"
-                   "出力された内容は、`write_annotation_image`ツールに利用します。"
-                   "出力内容は`Dict[LabelName, [R,G,B]]`です。")
-
-    epilog = "チェッカーまたはオーナロールを持つユーザで実行してください。"
-
-    parser = annofabcli.common.cli.add_parser(subparsers, subcommand_name, subcommand_help, description, epilog=epilog)
-    parse_args(parser)

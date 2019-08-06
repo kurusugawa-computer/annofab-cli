@@ -16,7 +16,7 @@ from annofabapi.models import ProjectMemberRole
 import annofabcli
 import annofabcli.common.cli
 from annofabcli import AnnofabApiFacade
-from annofabcli.common.cli import AbstractCommandLineInterface, build_annofabapi_resource_and_login
+from annofabcli.common.cli import AbstractCommandLineInterface, ArgumentParser, build_annofabapi_resource_and_login
 
 logger = logging.getLogger(__name__)
 
@@ -174,10 +174,10 @@ def main(args: argparse.Namespace):
 
 
 def parse_args(parser: argparse.ArgumentParser):
-    parser.add_argument('-p', '--project_id', type=str, required=True, help='対象のプロジェクトのproject_idを指定します。')
+    argument_parser = ArgumentParser(parser)
 
-    parser.add_argument('-t', '--task_id', type=str, required=True, nargs='+',
-                        help='対象のタスクのtask_idを指定します。`file://`を先頭に付けると、task_idの一覧が記載されたファイルを指定できます。')
+    argument_parser.add_project_id()
+    argument_parser.add_task_id()
 
     parser.add_argument('-c', '--comment', type=str, required=True, help='差し戻すときに付与する検査コメントを指定します。')
 
@@ -190,16 +190,6 @@ def parse_args(parser: argparse.ArgumentParser):
                               help='差し戻したタスクに割り当てるユーザのuser_idを指定します。指定しない場合、タスクの担当者は未割り当てになります。')
 
     parser.set_defaults(subcommand_func=main)
-
-
-def add_parser_dprecated(subparsers: argparse._SubParsersAction):
-    subcommand_name = "reject_tasks"
-    subcommand_help = "検査コメントを付与してタスクを差し戻します。"
-    description = ("検査コメントを付与してタスクを差し戻します。検査コメントは、タスク内の先頭の画像の左上(x=0,y=0)に付与します。アノテーションルールを途中で変更したときなどに、利用します。")
-    epilog = "チェッカーまたはオーナロールを持つユーザで実行してください。"
-
-    parser = annofabcli.common.cli.add_parser(subparsers, subcommand_name, subcommand_help, description, epilog=epilog)
-    parse_args(parser)
 
 
 def add_parser(subparsers: argparse._SubParsersAction):

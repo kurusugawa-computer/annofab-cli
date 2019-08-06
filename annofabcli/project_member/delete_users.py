@@ -92,16 +92,6 @@ def parse_args(parser: argparse.ArgumentParser):
     parser.set_defaults(subcommand_func=main)
 
 
-def add_parser_deprecated(subparsers: argparse._SubParsersAction):
-    subcommand_name = "delete_users"
-    subcommand_help = "複数のプロジェクトから、ユーザを削除する。"
-    description = ("複数のプロジェクトから、ユーザを削除する。")
-    epilog = "オーナロールを持つユーザで実行してください。"
-
-    parser = annofabcli.common.cli.add_parser(subparsers, subcommand_name, subcommand_help, description, epilog=epilog)
-    parse_args(parser)
-
-
 def add_parser(subparsers: argparse._SubParsersAction):
     subcommand_name = "delete"
     subcommand_help = "複数のプロジェクトから、ユーザを削除する。"

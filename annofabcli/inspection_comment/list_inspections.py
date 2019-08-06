@@ -136,17 +136,6 @@ def main(args):
     PrintInspections(service, facade, args).main()
 
 
-def add_parser_deprecated(subparsers: argparse._SubParsersAction):
-    subcommand_name = "print_inspections"
-
-    subcommand_help = "検査コメント一覧を出力します。"
-
-    description = "検査コメント一覧を出力します。"
-
-    parser = annofabcli.common.cli.add_parser(subparsers, subcommand_name, subcommand_help, description)
-    parse_args(parser)
-
-
 def add_parser(subparsers: argparse._SubParsersAction):
     subcommand_name = "list"
 

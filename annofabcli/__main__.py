@@ -3,23 +3,12 @@ import logging
 from typing import Optional, Sequence  # pylint: disable=unused-import
 
 import annofabcli.annotation.subcommand_annotation
-import annofabcli.annotation_specs.print_label_color
 import annofabcli.annotation_specs.subcommand_annotation_specs
 import annofabcli.input_data.subcommand_input_data
-import annofabcli.inspection_comment.list_inspections
-import annofabcli.inspection_comment.list_unprocessed_inspections
 import annofabcli.inspection_comment.subcommand_inspection_comment
 import annofabcli.instruction.subcommand_instruction
-import annofabcli.project.diff_projects
-import annofabcli.project.download
 import annofabcli.project.subcommand_project
-import annofabcli.project_member.delete_users
-import annofabcli.project_member.invite_users
-import annofabcli.project_member.list_users
 import annofabcli.project_member.subcommand_project_member
-import annofabcli.task.cancel_acceptance
-import annofabcli.task.complete_tasks
-import annofabcli.task.reject_tasks
 import annofabcli.task.subcommand_task
 import annofabcli.write_annotation_image
 
@@ -50,21 +39,7 @@ def main(arguments: Optional[Sequence[str]] = None):
     annofabcli.project_member.subcommand_project_member.add_parser(subparsers)
     annofabcli.annotation_specs.subcommand_annotation_specs.add_parser(subparsers)
 
-    # サブコマンドの定義
-    annofabcli.project.download.add_parser(subparsers)
-
-    annofabcli.inspection_comment.list_unprocessed_inspections.add_parser_deprecated(subparsers)
-
     annofabcli.write_annotation_image.add_parser(subparsers)
-
-    # deprecated コマンド
-    annofabcli.task.complete_tasks.add_parser_deprecated(subparsers)
-    annofabcli.task.reject_tasks.add_parser_dprecated(subparsers)
-    annofabcli.task.cancel_acceptance.add_parser(subparsers)
-    annofabcli.inspection_comment.list_inspections.add_parser_deprecated(subparsers)
-    annofabcli.project.diff_projects.add_parser_deprecated(subparsers)
-    annofabcli.project_member.invite_users.add_parser_deprecated(subparsers)
-    annofabcli.annotation_specs.print_label_color.add_parser_deprecated(subparsers)
 
     if arguments is None:
         args = parser.parse_args()
