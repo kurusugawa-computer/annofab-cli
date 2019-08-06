@@ -32,6 +32,7 @@ setup(
                       'dictdiffer',
                       'more-itertools',
                       'jmespath',
+                      'pyquery',
                       'pandas <= 0.24.2'],
     python_requires='>=3.6',
     classifiers=[
