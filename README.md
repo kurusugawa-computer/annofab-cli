@@ -77,6 +77,7 @@ $ docker run -it -e ANNOFAB_USER_ID=XXXX -e ANNOFAB_PASSWORD=YYYYY annofab-cli a
 |コマンド| サブコマンド                  | 内容                                                                                                     |必要なロール|
 |----|-------------------------------|----------------------------------------------------------------------------------------------------------|------------|
 |input_data|list             | 入力データ一覧を出力する。                                                            |-|
+|instruction| upload             | HTMLファイルを作業ガイドとして登録する。                                                           |チェッカー/オーナ|
 |task|list             | タスク一覧を出力する。                                                            |-|
 |task| cancel_acceptance             | 受け入れ完了タスクを、受け入れ取り消しする。                                                             |オーナ|
 |task| complete                | 未処置の検査コメントを適切な状態に変更して、タスクを受け入れ完了にする。                                 |チェッカー/オーナ|
@@ -170,6 +171,51 @@ $ annofabcli input_data list --project_id prj1 --input_data_query '{"input_data_
 $ annofabcli input_data list --project_id prj1 --input_data_query '{"input_data_name": "sample"}' --add_details
 
 ```
+
+
+### instruction upload
+HTMLファイルを作業ガイドとして登録します。
+img要素のsrc属性がローカルの画像を参照している場合（http, https, dataスキーマが付与されていない）、画像もアップロードします。
+
+`instruction.html`の中身。
+
+```html
+<html>
+<head></head>
+<body>
+作業ガイドのサンプル
+<img src="lena.png">
+</body>
+</html>
+```
+
+```
+$ annofabcli instruction upload --project_id prj1 --html instruction.html
+```
+
+
+#### Confluenceのページを作業ガイド用にHTMLとして保存する場合
+1. Confluenceのエクスポート機能で、ページをエクスポートする。
+    * HTMLファイルと添付画像が含まれたzipファイルをダウンロードする。
+2. エクスポートしたHTMLのスタイルを、style属性に反映させる。AnnoFabの作業ガイドには、スタイルシートを登録できないため。
+    1. エクスポートしたファイルをChromeで開く
+    2. Chrome開発ツールのConfoleタブで以下のJavaScriptを実行して、全要素のborder, color, backgroundスタイルを、style属性に反映させる
+
+        ```js
+        elms = document.querySelectorAll("body *");
+        for (let e of elms) {
+            s = window.getComputedStyle(e);
+            e.style.background = s.background;
+            e.style.color = s.color;
+            e.style.border = s.border;
+        }
+        ```
+    3. Chrome開発ツールのElementタブで、html要素をコピー(Copy outerHTML)して、HTMLファイルを上書きする
+
+
+
+
+
 
 
 ### task list

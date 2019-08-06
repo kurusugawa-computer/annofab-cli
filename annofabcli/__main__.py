@@ -9,6 +9,7 @@ import annofabcli.input_data.subcommand_input_data
 import annofabcli.inspection_comment.list_inspections
 import annofabcli.inspection_comment.list_unprocessed_inspections
 import annofabcli.inspection_comment.subcommand_inspection_comment
+import annofabcli.instruction.subcommand_instruction
 import annofabcli.project.diff_projects
 import annofabcli.project.download
 import annofabcli.project.subcommand_project
@@ -19,7 +20,6 @@ import annofabcli.project_member.subcommand_project_member
 import annofabcli.task.cancel_acceptance
 import annofabcli.task.complete_tasks
 import annofabcli.task.reject_tasks
-import annofabcli.instruction.subcommand_instruction
 import annofabcli.task.subcommand_task
 import annofabcli.write_annotation_image
 
