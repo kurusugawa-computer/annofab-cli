@@ -1,9 +1,9 @@
 import argparse
 import logging
+import urllib.parse
 from typing import Any, Callable, Dict, List, Optional, Tuple, Union  # pylint: disable=unused-import
 
 import annofabapi
-import urllib.parse
 from annofabapi.models import InputData, Task, TaskId
 
 import annofabcli
@@ -53,15 +53,19 @@ class ListInputData(AbstractCommandLineInterface):
             chunk_size = MAX_URL_QUERY_LENGTH // AVERAGE_INPUT_DATA_ID_LENGTH
             initial_index = 0
             while True:
-                sub_input_data_list = input_data_list[initial_index:initial_index+chunk_size]
+                sub_input_data_list = input_data_list[initial_index:initial_index + chunk_size]
                 sub_input_data_id_list = [e['input_data_id'] for e in sub_input_data_list]
                 str_input_data_id_list = ",".join(sub_input_data_id_list)
                 encoded_input_data_id_list = urllib.parse.quote(str_input_data_id_list)
                 if len(encoded_input_data_id_list) > MAX_URL_QUERY_LENGTH:
-                    decreasing_size = (len(encoded_input_data_id_list) - MAX_URL_QUERY_LENGTH) // AVERAGE_INPUT_DATA_ID_LENGTH
+                    differential_length = (len(encoded_input_data_id_list) - MAX_URL_QUERY_LENGTH)
+                    decreasing_size = (differential_length // AVERAGE_INPUT_DATA_ID_LENGTH) + 1
                     logger.debug(f"chunk_sizeを {chunk_size} から、{chunk_size - decreasing_size} に減らした. "
                                  f"len(encoded_input_data_id_list) = {len(encoded_input_data_id_list)}")
                     chunk_size = chunk_size - decreasing_size
+                    if chunk_size <= 0:
+                        chunk_size = 1
+
                     continue
 
                 logger.debug(f"input_data_list[{initial_index}:{initial_index+chunk_size}] を使用しているタスクを取得する。")
@@ -74,9 +78,9 @@ class ListInputData(AbstractCommandLineInterface):
                     task_id_list = self._find_task_id_list(task_list, input_data['input_data_id'])
                     self.visualize.add_properties_to_input_data(input_data, task_id_list)
 
-
-
-
+                initial_index = initial_index + chunk_size
+                if initial_index >= len(input_data_list):
+                    break
 
             for input_data_index, input_data in enumerate(input_data_list):
                 input_data_id = input_data['input_data_id']
