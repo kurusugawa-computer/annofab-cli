@@ -3,6 +3,7 @@ import logging
 from typing import Any, Callable, Dict, List, Optional, Tuple, Union  # pylint: disable=unused-import
 
 import annofabapi
+import urllib.parse
 from annofabapi.models import InputData, Task, TaskId
 
 import annofabcli
@@ -41,10 +42,42 @@ class ListInputData(AbstractCommandLineInterface):
 
         logger.debug(f"input_data_query: {input_data_query}")
         input_data_list = self.service.wrapper.get_all_input_data_list(project_id, query_params=input_data_query)
-        print(f"len(input_data_list) = {len(input_data_list)}")
         # 詳細な情報を追加する
         if add_details:
-            logger.info(f"{len(input_data_list)} 件、タスク一覧取得APIを実行する。")
+            logger.debug(f"入力データ一覧の件数: {len(input_data_list)}")
+
+            # AWS CloudFrontのURLの上限が8,192byte
+            # https://docs.aws.amazon.com/AmazonCloudFront/latest/DeveloperGuide/cloudfront-limits.html
+            MAX_URL_QUERY_LENGTH = 8000  # input_dat_ids部分のURLクエリの最大値
+            AVERAGE_INPUT_DATA_ID_LENGTH = 37  # input_data_idの平均長さ
+            chunk_size = MAX_URL_QUERY_LENGTH // AVERAGE_INPUT_DATA_ID_LENGTH
+            initial_index = 0
+            while True:
+                sub_input_data_list = input_data_list[initial_index:initial_index+chunk_size]
+                sub_input_data_id_list = [e['input_data_id'] for e in sub_input_data_list]
+                str_input_data_id_list = ",".join(sub_input_data_id_list)
+                encoded_input_data_id_list = urllib.parse.quote(str_input_data_id_list)
+                if len(encoded_input_data_id_list) > MAX_URL_QUERY_LENGTH:
+                    decreasing_size = (len(encoded_input_data_id_list) - MAX_URL_QUERY_LENGTH) // AVERAGE_INPUT_DATA_ID_LENGTH
+                    logger.debug(f"chunk_sizeを {chunk_size} から、{chunk_size - decreasing_size} に減らした. "
+                                 f"len(encoded_input_data_id_list) = {len(encoded_input_data_id_list)}")
+                    chunk_size = chunk_size - decreasing_size
+                    continue
+
+                logger.debug(f"input_data_list[{initial_index}:{initial_index+chunk_size}] を使用しているタスクを取得する。")
+                task_list = self.service.wrapper.get_all_tasks(project_id,
+                                                               query_params={'input_data_ids': str_input_data_id_list})
+
+                for input_data in sub_input_data_list:
+                    # input_data_idで絞り込んでいるが、大文字小文字を区別しない。
+                    # したがって、確認のため `_find_task_id_list`を実行する
+                    task_id_list = self._find_task_id_list(task_list, input_data['input_data_id'])
+                    self.visualize.add_properties_to_input_data(input_data, task_id_list)
+
+
+
+
+
             for input_data_index, input_data in enumerate(input_data_list):
                 input_data_id = input_data['input_data_id']
 
@@ -52,8 +85,6 @@ class ListInputData(AbstractCommandLineInterface):
                 task_list = self.service.wrapper.get_all_tasks(project_id,
                                                                query_params={'input_data_ids': input_data_id})
 
-                # input_data_idで絞り込んでいるが、大文字小文字を区別しない。
-                # したがって、確認のため `_find_task_id_list`を実行する
                 task_id_list = self._find_task_id_list(task_list, input_data_id)
                 self.visualize.add_properties_to_input_data(input_data, task_id_list)
 
