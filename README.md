@@ -41,7 +41,7 @@ AnnoFabの認証情報を設定する方法は2つあります。
 
 `.netrc`ファイルへの記載方法は、[annofab-api-python-client/README.md](https://github.com/kurusugawa-computer/annofab-api-python-client#netrc%E3%81%AB%E8%A8%98%E8%BC%89%E3%81%95%E3%82%8C%E3%81%9Fuser_id-password%E3%81%8B%E3%82%89%E7%94%9F%E6%88%90)を参照してください。
 
-`annofabcli`コマンド実行時、AnnoFabの認証情報が設定されていない場合、標準入力からAnnoFabの認証情報を入力できるようになります。
+AnnoFabの認証情報が設定されていない状態で`annofabcli`コマンドを実行すると、標準入力からAnnoFabの認証情報を入力できるようになります。
 
 ```
 $ annofabcli diff_projects aaa bbb

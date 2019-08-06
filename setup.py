@@ -46,7 +46,7 @@ setup(
         "Topic :: Utilities",
         "Operating System :: OS Independent",
     ],
-    packages=find_packages(),
+    packages=find_packages(exclude=["tests"]),
     package_data={'annofabcli': ['data/logging.yaml']},
     entry_points={
         'console_scripts': ['annofabcli=annofabcli.__main__:main'],
