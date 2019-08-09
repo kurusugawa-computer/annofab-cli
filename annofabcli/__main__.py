@@ -27,6 +27,7 @@ def main(arguments: Optional[Sequence[str]] = None):
 
     parser = argparse.ArgumentParser(description="annofabapiを使ったCLIツール")
     parser.add_argument('--version', action='version', version=f'annofabcli {annofabcli.__version__}')
+    parser.set_defaults(command_help=parser.print_help)
 
     subparsers = parser.add_subparsers()
 
@@ -55,7 +56,8 @@ def main(arguments: Optional[Sequence[str]] = None):
 
     else:
         # 未知のサブコマンドの場合はヘルプを表示
-        parser.print_help()
+        args.command_help()
+        # parser.print_help()
 
 
 if __name__ == "__main__":
