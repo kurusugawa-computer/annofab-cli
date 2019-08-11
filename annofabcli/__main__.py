@@ -57,7 +57,6 @@ def main(arguments: Optional[Sequence[str]] = None):
     else:
         # 未知のサブコマンドの場合はヘルプを表示
         args.command_help()
-        # parser.print_help()
 
 
 if __name__ == "__main__":
