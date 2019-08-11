@@ -8,7 +8,7 @@ import annofabcli.project.download
 
 def parse_args(parser: argparse.ArgumentParser):
 
-    subparsers = parser.add_subparsers()
+    subparsers = parser.add_subparsers(dest='subcommand_name')
 
     # サブコマンドの定義
     annofabcli.project.diff_projects.add_parser(subparsers)

@@ -29,7 +29,7 @@ def main(arguments: Optional[Sequence[str]] = None):
     parser.add_argument('--version', action='version', version=f'annofabcli {annofabcli.__version__}')
     parser.set_defaults(command_help=parser.print_help)
 
-    subparsers = parser.add_subparsers()
+    subparsers = parser.add_subparsers(dest='command_name')
 
     annofabcli.annotation.subcommand_annotation.add_parser(subparsers)
     annofabcli.instruction.subcommand_instruction.add_parser(subparsers)
