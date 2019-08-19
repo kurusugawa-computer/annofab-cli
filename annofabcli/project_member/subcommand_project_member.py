@@ -10,7 +10,7 @@ import annofabcli.project_member.list_users
 
 def parse_args(parser: argparse.ArgumentParser):
 
-    subparsers = parser.add_subparsers()
+    subparsers = parser.add_subparsers(dest='subcommand_name')
 
     # サブコマンドの定義
     annofabcli.project_member.list_users.add_parser(subparsers)
