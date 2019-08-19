@@ -3,7 +3,7 @@ import logging
 from typing import Any, Callable, Dict, List, Optional, Tuple, Union  # pylint: disable=unused-import
 
 import annofabapi
-from annofabapi.models import ProjectMember, ProjectMemberRole
+from annofabapi.models import OrganizationMember, ProjectMember, ProjectMemberRole
 
 import annofabcli
 from annofabcli import AnnofabApiFacade
@@ -39,6 +39,18 @@ class CopyProjectMembers(AbstractCommandLineInterface):
         super().validate_project(src_project_id, roles=None)
         super().validate_project(dest_project_id, roles=[ProjectMemberRole.OWNER])
 
+    def get_organization_members_from_project_id(self, project_id: str) -> List[OrganizationMember]:
+        organization_name = self.facade.get_organization_name_from_project_id(project_id)
+        return self.service.wrapper.get_all_project_member(organization_name)
+
+    @staticmethod
+    def find_member(members: List[Dict[str, Any]], account_id: str) -> Optional[Dict[str, Any]]:
+        for m in members:
+            if m["account_id"] == account_id:
+                return m
+
+        return None
+
     def copy_project_members(self, src_project_id: str, dest_project_id: str, delete_dest: bool = False):
         """
         プロジェクトメンバを、別のプロジェクトにコピーする。
@@ -59,11 +71,28 @@ class CopyProjectMembers(AbstractCommandLineInterface):
         self.validate_projects(src_project_id, dest_project_id)
 
         src_project_members = self.service.wrapper.get_all_project_members(src_project_id)
+        src_organization_members = self.get_organization_members_from_project_id(src_project_id)
+        # 組織外のメンバが含まれている可能性があるので、除去する
+        src_project_members = [
+            e for e in src_project_members if self.find_member(src_organization_members, e["account_id"]) is not None
+        ]
+
         dest_project_members = self.service.wrapper.get_all_project_members(dest_project_id)
+        dest_organization_members = self.get_organization_members_from_project_id(dest_project_id)
 
         # 追加対象のプロジェクトメンバ
-        dest_account_ids = [e["account_id"] for e in dest_project_members]
-        added_members = [e for e in src_project_members if e["account_id"] not in dest_account_ids]
+        added_members = []
+        for member in src_project_members:
+            account_id = member["account_id"]
+            if self.find_member(dest_project_members, account_id) is not None:
+                # すでにコピー先のプロジェクトに存在するので、コピーしない
+                continue
+
+            if self.find_member(dest_organization_members, account_id) is None:
+                # コピー先の組織メンバでないので、コピーしない
+                continue
+
+            added_members.append(member)
 
         for member in added_members:
             logger.info(f"{self.dest_project_title} プロジェクトに追加するメンバ: {member['user_id']} , {member['username']}")
