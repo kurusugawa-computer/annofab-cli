@@ -41,7 +41,7 @@ class CopyProjectMembers(AbstractCommandLineInterface):
 
     def get_organization_members_from_project_id(self, project_id: str) -> List[OrganizationMember]:
         organization_name = self.facade.get_organization_name_from_project_id(project_id)
-        return self.service.wrapper.get_all_project_member(organization_name)
+        return self.service.wrapper.get_all_organization_members(organization_name)
 
     @staticmethod
     def find_member(members: List[Dict[str, Any]], account_id: str) -> Optional[Dict[str, Any]]:
@@ -98,7 +98,7 @@ class CopyProjectMembers(AbstractCommandLineInterface):
             logger.info(f"{self.dest_project_title} プロジェクトに追加するメンバ: {member['user_id']} , {member['username']}")
 
         # 更新対象のプロジェクトメンバ
-        updated_members = src_project_members
+        updated_members = added_members
         deleted_dest_members: List[ProjectMember] = []
 
         if delete_dest:
@@ -116,10 +116,13 @@ class CopyProjectMembers(AbstractCommandLineInterface):
 
             updated_members = updated_members + deleted_dest_members
 
-        if self.confirm_processing(f"{self.src_project_title} プロジェクトのメンバを、"
-                                   f"{self.dest_project_title} にコピーしますか？"
-                                   f"追加対象: {len(added_members)} 件, 削除対象: {len(deleted_dest_members)} 件"):
-            self.service.wrapper.put_project_members(dest_project_id, updated_members)
+        if len(added_members) > 0:
+            if self.confirm_processing(f"{self.src_project_title} プロジェクトのメンバを、"
+                                       f"{self.dest_project_title} にコピーしますか？"
+                                       f"追加対象: {len(added_members)} 件, 削除対象: {len(deleted_dest_members)} 件"):
+                self.service.wrapper.put_project_members(dest_project_id, updated_members)
+        else:
+            logger.info( f"{self.dest_project_title}のプロジェクトメンバに追加/更新はありません。")
 
     def main(self):
         args = self.args
