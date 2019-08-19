@@ -8,7 +8,7 @@ import logging
 import os
 import os.path
 from pathlib import Path
-from typing import Any, Callable, Dict, List, Optional, Tuple  # pylint: disable=unused-import
+from typing import Any, Callable, Dict, List, Optional, Tuple, Iterator  # pylint: disable=unused-import
 
 import PIL
 import PIL.Image
@@ -18,7 +18,7 @@ from annofabapi.models import Annotation
 import annofabcli
 import annofabcli.common.cli
 from annofabcli.common.typing import RGB, InputDataSize, SubInputDataList
-from annofabapi.parser import parse_simple_annotation_zip, LazyAnnotationParser
+from annofabapi.parser import parse_simple_annotation_zip, LazySimpleAnnotationParser
 from annofabapi.dataclass.annotation import SimpleAnnotationDetail
 logger = logging.getLogger(__name__)
 
@@ -26,15 +26,77 @@ logger = logging.getLogger(__name__)
 AnnotationSortKeyFunc = Callable[[Annotation], Any]
 """アノテーションをsortするときのkey関数のType"""
 
-
-def fill_annotation(parser: LazyAnnotationParser, label_color_dict: Dict[str, RGB], draw: PIL.ImageDraw.Draw) -> PIL.ImageDraw.Draw:
+def get_data_uri_of_outer_file(annotation: SimpleAnnotationDetail) -> Optional[str]:
     """
-    矩形、ポリゴン、塗りつぶし、塗りつぶしv2アノテーションを描画する（塗りつぶし）
+    外部ファイルの data_uri を取得する
+    Args:
+        annotation: アノテーション
+
+    Returns:
+        外部ファイルの data_uri
+
+    """
+    data = annotation.data
+    if data is None:
+        return None
+
+    return data.get("data_uri")
+
+
+def fill_annotation(draw: PIL.ImageDraw.Draw, annotation: SimpleAnnotationDetail, label_color_dict: Dict[str, RGB], outer_image: Optional[PIL.Image] = None) -> PIL.ImageDraw.Draw:
+    """
+    1個のアノテーションを、塗りつぶしで描画する。（矩形、ポリゴン、塗りつぶし、塗りつぶしv2）
 
     Args:
+        draw: draw: (IN/OUT) PillowのDrawing Object. 変更される。
+        annotation: 描画対象のアノテーション
+        label_color_dict: label_nameとRGBを対応付けたdict
+        outer_image: 外部ファイル（塗りつぶし）の画像オブジェクト
+
+    Returns:
+        アノテーションを描画した状態のDrawing Object
+    """
+
+    data = annotation.data
+    if data is None:
+        # 画像全体アノテーション
+        return draw
+
+    color = label_color_dict.get(annotation.label)
+    if color is None:
+        logger.warning(f"label_name = {annotation['label']} のcolorが指定されていません")
+        color = (255, 255, 255)
+
+    data_type = data["_type"]
+    if data_type == "BoundingBox":
+        xy = [(data["left_top"]["x"], data["left_top"]["y"]),
+              (data["right_bottom"]["x"], data["right_bottom"]["y"])]
+        draw.rectangle(xy, fill=color)
+
+    elif data_type == "Points":
+        # Polygon
+        xy = [(e["x"], e["y"]) for e in data["points"]]
+        draw.polygon(xy, fill=color)
+
+    elif data_type in ["SegmentationV2", "Segmentation"]:
+        # 塗りつぶしv2 or 塗りつぶし
+        if outer_image is not None:
+            draw.bitmap([0, 0], outer_image, fill=color)
+        else:
+            logger.warning(f"アノテーション種類が塗りつぶし or 塗りつぶしv2ですが、`outer_image`がNoneです。")
+
+    return draw
+
+
+def fill_annotation_list(draw: PIL.ImageDraw.Draw, parser: LazySimpleAnnotationParser, label_color_dict: Dict[str, RGB],
+                         annotation_sort_key_func: Callable[[SimpleAnnotationDetail],int], exclude_annotion_func) -> PIL.ImageDraw.Draw:
+    """
+    1個の入力データに属するアノテーションlistを描画する
+
+    Args:
+        draw: draw: (IN/OUT) PillowのDrawing Object. 変更される。
         parser: annotationの遅延Parser
         label_color_dict: label_nameとRGBを対応付けたdict
-        draw: draw: (IN/OUT) PillowのDrawing Object. 変更される。
 
     Returns:
         アノテーションを描画した状態のDrawing Object
@@ -42,86 +104,38 @@ def fill_annotation(parser: LazyAnnotationParser, label_color_dict: Dict[str, RG
     simple_annotation = parser.parse()
 
     for annotation in reversed(simple_annotation.details):
-        data = annotation.data
-        if data is None:
-            # 画像全体アノテーション
-            continue
-
-        color = label_color_dict.get(annotation.label)
-        if color is None:
-            logger.warning(f"label_name = {annotation['label']} のcolorが指定されていません")
-            color = (255, 255, 255)
-
-        data_type = data["_type"]
-        if data_type == "BoundingBox":
-            xy = [(data["left_top"]["x"], data["left_top"]["y"]),
-                  (data["right_bottom"]["x"], data["right_bottom"]["y"])]
-            draw.rectangle(xy, fill=color)
-
-        elif data_type == "Points":
-            # Polygon
-            xy = [(e["x"], e["y"]) for e in data["points"]]
-            draw.polygon(xy, fill=color)
-
-        elif data_type in ["SegmentationV2", "Segmentation"]:
-            # 塗りつぶしv2 or 塗りつぶし
-            with parser.open_outer_file(data["data_uri"]) as f:
+        # 外部ファイルのImage情報を取得する
+        data_uri_outer_image = get_data_uri_of_outer_file(annotation)
+        if data_uri_outer_image is not None:
+            with parser.open_outer_file(data_uri_outer_image) as f:
                 outer_image = PIL.Image.open(f)
-                draw.bitmap([0, 0], outer_image, fill=color)
+
+        # アノテーション情報を描画する
+        fill_annotation(draw=draw, annotation=annotation, label_color_dict=label_color_dict, outer_image=outer_image)
 
     return draw
 
 
 
-def draw_annotation_list(annotation_list: List[SimpleAnnotationDetail], input_data_dir: str, label_color_dict: Dict[str, RGB],
-                         draw: PIL.ImageDraw.Draw) -> PIL.ImageDraw.Draw:
+def write_annotation_image(output_image_file: Path, parser: LazySimpleAnnotationParser,
+                                          image_size: InputDataSize, label_color_dict: Dict[str, RGB],
+                                            background_color: Optional[Any] = None):
     """
-    矩形、ポリゴン、塗りつぶし、塗りつぶしv2アノテーションを描画する。
-    Args:
-        annotation_list: アノテーション List
-        input_data_dir: input_data_dir: 塗りつぶしアノテーションが格納されたディレクトリのパス
-        label_color_dict: label_nameとRGBを対応付けたdict
-        draw: (IN/OUT) PillowのDrawing Object. 変更される。
-    Returns:
-        描画したPillowのDrawing Object
-
+    アノテーション情報が記載されたJSONファイルから、Semantic Segmentation用の画像を生成する。
+    Semantic Segmentation用のアノテーションがなくても、画像は生成する。
     """
-    for annotation in annotation_list:
-        data = annotation["data"]
-        if data is None:
-            # 画像全体アノテーション
-            continue
 
-        data_type = data["_type"]
-        if data_type not in ["BoundingBox", "Points", "SegmentationV2", "Segmentation"]:
-            continue
+    image = PIL.Image.new(mode="RGB", size=image_size, color=background_color)
+    draw = PIL.ImageDraw.Draw(image)
 
-        color = label_color_dict.get(annotation["label"])
-        if color is None:
-            logger.warning(f"label_name = {annotation['label']} のcolorが指定されていません")
-            color = (255, 255, 255)
+    fill_annotation_list(draw, parser, label_color_dict)
 
-        if data_type == "BoundingBox":
-            xy = [(data["left_top"]["x"], data["left_top"]["y"]),
-                  (data["right_bottom"]["x"], data["right_bottom"]["y"])]
-            draw.rectangle(xy, fill=color)
+    output_image_file.parent.mkdir(parents=True, exist_ok=True)
+    image.save(output_image_file)
 
-        elif data_type == "Points":
-            # Polygon
-            xy = [(e["x"], e["y"]) for e in data["points"]]
-            draw.polygon(xy, fill=color)
+    logger.info(f"{str(output_image_file)} の生成完了")
 
-        elif data_type in ["SegmentationV2", "Segmentation"]:
-            # 塗りつぶしv2 or 塗りつぶし
-            outer_image_path = Path(input_data_dir, data["data_uri"])
-            if not outer_image_path.exists():
-                logger.warning(f"{outer_image_path} が存在しません")
-                continue
 
-            outer_image = PIL.Image.open(outer_image_path)
-            draw.bitmap([0, 0], outer_image, fill=color)
-
-    return draw
 
 class WriteAnnotationImage:
     @staticmethod
