@@ -14,7 +14,7 @@ def parse_args(parser: argparse.ArgumentParser):
 
 
 def add_parser(subparsers: argparse._SubParsersAction):
-    subcommand_name = "project"
+    subcommand_name = "filesystem"
     subcommand_help = "ファイル操作関係（Web APIにアクセスしない）のサブコマンド"
     description = "ファイル操作関係（Web APIにアクセスしない）のサブコマンド"
 
