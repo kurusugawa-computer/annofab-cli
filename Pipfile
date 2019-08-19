@@ -17,7 +17,6 @@ flake8 = "*"
 docutils = "==0.15.0"
 
 [packages]
-annofabcli = {path = "."}
 
 [pipenv]
 # For install marshmallow==3.0.0rc6
