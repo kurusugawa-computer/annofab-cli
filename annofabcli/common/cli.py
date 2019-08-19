@@ -63,7 +63,7 @@ def add_parser(subparsers: argparse._SubParsersAction, subcommand_name: str, sub
 
     """
     parser = subparsers.add_parser(subcommand_name, parents=[create_parent_parser()], description=description,
-                                 help=subcommand_help, epilog=epilog)
+                                   help=subcommand_help, epilog=epilog)
     parser.set_defaults(command_help=parser.print_help)
     return parser
 
