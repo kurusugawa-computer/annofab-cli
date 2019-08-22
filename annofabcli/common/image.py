@@ -1,5 +1,3 @@
-import argparse
-import json
 import logging
 from pathlib import Path
 from typing import Any, Callable, Dict, Iterator, List, Optional, Tuple  # pylint: disable=unused-import
@@ -8,16 +6,11 @@ import PIL
 import PIL.Image
 import PIL.ImageDraw
 from annofabapi.dataclass.annotation import SimpleAnnotationDetail
-from annofabapi.models import Annotation, TaskStatus
-from annofabapi.parser import LazySimpleAnnotationParser, parse_simple_annotation_dir, parse_simple_annotation_zip
+from annofabapi.parser import LazySimpleAnnotationParser
 
-import annofabcli
-import annofabcli.common.cli
-from annofabcli.common.cli import ArgumentParser
 from annofabcli.common.typing import RGB, InputDataSize
 
 logger = logging.getLogger(__name__)
-
 
 
 def get_data_uri_of_outer_file(annotation: SimpleAnnotationDetail) -> Optional[str]:
@@ -100,6 +93,7 @@ def fill_annotation_list(draw: PIL.ImageDraw.Draw, parser: LazySimpleAnnotationP
     for annotation in reversed(simple_annotation.details):
         # 外部ファイルのImage情報を取得する
         data_uri_outer_image = get_data_uri_of_outer_file(annotation)
+        outer_image = None
         if data_uri_outer_image is not None:
             with parser.open_outer_file(data_uri_outer_image) as f:
                 outer_image = PIL.Image.open(f)
@@ -124,6 +118,3 @@ def write_annotation_image(parser: LazySimpleAnnotationParser, image_size: Input
 
     output_image_file.parent.mkdir(parents=True, exist_ok=True)
     image.save(output_image_file)
-
-    logger.info(f"{str(output_image_file)} の生成完了")
-

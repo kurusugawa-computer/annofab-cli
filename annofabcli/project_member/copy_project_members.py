@@ -122,7 +122,7 @@ class CopyProjectMembers(AbstractCommandLineInterface):
                                        f"追加対象: {len(added_members)} 件, 削除対象: {len(deleted_dest_members)} 件"):
                 self.service.wrapper.put_project_members(dest_project_id, updated_members)
         else:
-            logger.info( f"{self.dest_project_title}のプロジェクトメンバに追加/更新はありません。")
+            logger.info(f"{self.dest_project_title}のプロジェクトメンバに追加/更新はありません。")
 
     def main(self):
         args = self.args
