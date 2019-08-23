@@ -9,4 +9,4 @@ script:
    - flake8 annofabcli
    - mypy annofabcli --config-file setup.cfg
    - pylint annofabcli --rcfile setup.cfg
-#   - pytest tests/test_local*.py
+   - pytest tests/test_local*.py
