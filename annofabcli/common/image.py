@@ -6,8 +6,8 @@ import PIL
 import PIL.Image
 import PIL.ImageDraw
 from annofabapi.dataclass.annotation import SimpleAnnotationDetail
-from annofabapi.parser import SimpleAnnotationParser
 from annofabapi.exceptions import AnnotationOuterFileNotFoundError
+from annofabapi.parser import SimpleAnnotationParser
 
 from annofabcli.common.typing import RGB, InputDataSize
 
@@ -132,6 +132,15 @@ def write_annotation_image(parser: SimpleAnnotationParser, image_size: InputData
 
 
     Examples:
+        "simple-annotation.json" を読み込み、"out.png"画像を生成する。
+
+
+            from pathlib import Path
+            from annofabapi.parser import SimpleAnnotationDirParser
+            parser = SimpleAnnotationDirParser( "simple-annotation.json")
+            label_color_dict = {"dog": (255,0,0), "bird": (0,255,0)}
+            write_annotation_image(parser=parser, image_size=(64,64), label_color_dict=label_color_dict,
+                               output_image_file=Path("out.png"), background_color=(64,64,64))
 
     """
 
