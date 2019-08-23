@@ -79,23 +79,22 @@ class CopyProjectMembers(AbstractCommandLineInterface):
 
         dest_project_members = self.service.wrapper.get_all_project_members(dest_project_id)
         dest_organization_members = self.get_organization_members_from_project_id(dest_project_id)
+        dest_organization_name = self.facade.get_organization_name_from_project_id(dest_project_id)
 
         # 追加対象のプロジェクトメンバ
         added_members = []
         for member in src_project_members:
             account_id = member["account_id"]
-            if self.find_member(dest_project_members, account_id) is not None:
-                # すでにコピー先のプロジェクトに存在するので、コピーしない
-                continue
-
             if self.find_member(dest_organization_members, account_id) is None:
                 # コピー先の組織メンバでないので、コピーしない
+                logger.debug(f"コピーしないメンバ: {member['user_id']} , {member['username']} : "
+                             f"(コピー先の所属組織 {dest_organization_name} の組織メンバでないため)")
                 continue
 
             added_members.append(member)
 
         for member in added_members:
-            logger.info(f"{self.dest_project_title} プロジェクトに追加するメンバ: {member['user_id']} , {member['username']}")
+            logger.debug(f"{self.dest_project_title} プロジェクトに追加/更新するメンバ: {member['user_id']} , {member['username']}")
 
         # 更新対象のプロジェクトメンバ
         updated_members = added_members
@@ -112,7 +111,7 @@ class CopyProjectMembers(AbstractCommandLineInterface):
 
             deleted_dest_members = list(map(to_inactive, deleted_dest_members))
             for member in deleted_dest_members:
-                logger.info(f"{self.dest_project_title} プロジェクトから削除するメンバ: {member['user_id']} , {member['username']}")
+                logger.debug(f"{self.dest_project_title} プロジェクトから削除するメンバ: {member['user_id']} , {member['username']}")
 
             updated_members = updated_members + deleted_dest_members
 
