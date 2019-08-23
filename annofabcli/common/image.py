@@ -53,7 +53,7 @@ def fill_annotation(draw: PIL.ImageDraw.Draw, annotation: SimpleAnnotationDetail
 
     color = label_color_dict.get(annotation.label)
     if color is None:
-        logger.warning(f"label_name = {annotation['label']} のcolorが指定されていません")
+        logger.warning(f"label_name = {annotation['label']} のcolorが指定されていません。")
         color = (255, 255, 255)
 
     data_type = data["_type"]
@@ -71,7 +71,8 @@ def fill_annotation(draw: PIL.ImageDraw.Draw, annotation: SimpleAnnotationDetail
         if outer_image is not None:
             draw.bitmap([0, 0], outer_image, fill=color)
         else:
-            logger.warning(f"アノテーション種類が塗りつぶし or 塗りつぶしv2ですが、`outer_image`がNoneです。")
+            logger.warning(f"アノテーション種類が`{data_type}`ですが、`outer_image`がNoneです。 "
+                           f"annotation_id={annotation.annotation_id}")
 
     return draw
 
@@ -103,7 +104,7 @@ def fill_annotation_list(draw: PIL.ImageDraw.Draw, parser: SimpleAnnotationParse
                                     outer_image=outer_image)
 
             except AnnotationOuterFileNotFoundError as e:
-                logger.warning(e.message)
+                logger.warning(str(e))
                 fill_annotation(draw=draw, annotation=annotation, label_color_dict=label_color_dict, outer_image=None)
 
         else:
