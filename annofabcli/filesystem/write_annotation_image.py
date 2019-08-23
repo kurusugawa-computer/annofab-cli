@@ -9,7 +9,7 @@ from pathlib import Path
 from typing import Any, Callable, Dict, Iterator, List, Optional, Tuple  # pylint: disable=unused-import
 
 from annofabapi.models import TaskStatus
-from annofabapi.parser import LazySimpleAnnotationParser, parse_simple_annotation_dir, parse_simple_annotation_zip
+from annofabapi.parser import SimpleAnnotationParser, lazy_parse_simple_annotation_dir, lazy_parse_simple_annotation_zip
 
 import annofabcli
 import annofabcli.common.cli
@@ -22,13 +22,13 @@ logger = logging.getLogger(__name__)
 
 class WriteAnnotationImage:
     @staticmethod
-    def write_annotation_images(iter_lazy_parser: Iterator[LazySimpleAnnotationParser],
+    def write_annotation_images(iter_lazy_parser: Iterator[SimpleAnnotationParser],
                                 default_input_data_size: InputDataSize, label_color_dict: Dict[str, RGB],
                                 output_dir: Path, output_image_extension: str, task_status_complete: bool = False,
                                 task_id_list: Optional[List[str]] = None, background_color: Optional[str] = None):
 
         for parser in iter_lazy_parser:
-            logger.debug(f"JSONファイルを読み込みます。task_id={parser.task_id}, json_file_basename={parser.json_file_basename}")
+            logger.debug(f"{parser.json_file_path} を読み込みます。")
             simple_annotation = parser.parse()
 
             if task_status_complete:
@@ -42,12 +42,11 @@ class WriteAnnotationImage:
                     logger.debug(f"タスク {simple_annotation.task_id} はスキップする")
                     continue
 
-            output_image_file = output_dir / parser.task_id / f"{parser.json_file_basename}.{output_image_extension}"
+            output_image_file = output_dir / f"{parser.json_file_path}.{output_image_extension}"
             write_annotation_image(parser, image_size=default_input_data_size, label_color_dict=label_color_dict,
                                    background_color=background_color, output_image_file=output_image_file)
 
-            logger.debug(
-                f"{str(output_image_file)} の生成完了. task_id={parser.task_id}, json_basename={parser.json_file_basename}")
+            logger.debug(f"{str(output_image_file)} の生成完了.")
 
     def main(self, args):
         annofabcli.common.cli.load_logging_config_from_args(args)
@@ -69,17 +68,16 @@ class WriteAnnotationImage:
 
         annotation_path = Path(args.annotation)
         if annotation_path.is_dir():
-            iter_lazy_parser = parse_simple_annotation_dir(annotation_path)
+            iter_lazy_parser = lazy_parse_simple_annotation_dir(annotation_path)
         elif annotation_path.suffix.lower() == ".zip":
-            iter_lazy_parser = parse_simple_annotation_zip(annotation_path)
+            iter_lazy_parser = lazy_parse_simple_annotation_zip(annotation_path)
         else:
             logger.error("--annotation には、アノテーションzip、またはzipを展開したディレクトリのパスを渡してください。")
             return
 
         task_id_list = annofabcli.common.cli.get_list_from_args(args.task_id)
 
-        self.write_annotation_images(iter_lazy_parser=iter_lazy_parser,
-                                     default_input_data_size=default_input_data_size,
+        self.write_annotation_images(iter_lazy_parser=iter_lazy_parser, default_input_data_size=default_input_data_size,
                                      label_color_dict=label_color_dict, output_dir=Path(args.output_dir),
                                      output_image_extension=args.image_extension,
                                      task_status_complete=args.task_status_complete, task_id_list=task_id_list,

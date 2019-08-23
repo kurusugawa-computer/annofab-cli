@@ -8,7 +8,6 @@ from pathlib import Path
 
 import annofabapi
 
-import annofabcli
 from annofabcli.__main__ import main
 
 # プロジェクトトップに移動する
