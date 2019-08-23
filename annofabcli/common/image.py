@@ -7,6 +7,7 @@ import PIL.Image
 import PIL.ImageDraw
 from annofabapi.dataclass.annotation import SimpleAnnotationDetail
 from annofabapi.parser import SimpleAnnotationParser
+from annofabapi.exceptions import AnnotationOuterFileNotFoundError
 
 from annofabcli.common.typing import RGB, InputDataSize
 
@@ -94,11 +95,17 @@ def fill_annotation_list(draw: PIL.ImageDraw.Draw, parser: SimpleAnnotationParse
         # 外部ファイルのImage情報を取得する
         data_uri_outer_image = get_data_uri_of_outer_file(annotation)
         if data_uri_outer_image is not None:
-            with parser.open_outer_file(data_uri_outer_image) as f:
-                outer_image = PIL.Image.open(f)
-                # アノテーション情報を描画する
-                fill_annotation(draw=draw, annotation=annotation, label_color_dict=label_color_dict,
-                                outer_image=outer_image)
+            try:
+                with parser.open_outer_file(data_uri_outer_image) as f:
+                    outer_image = PIL.Image.open(f)
+                    # アノテーション情報を描画する
+                    fill_annotation(draw=draw, annotation=annotation, label_color_dict=label_color_dict,
+                                    outer_image=outer_image)
+
+            except AnnotationOuterFileNotFoundError as e:
+                logger.warning(e.message)
+                fill_annotation(draw=draw, annotation=annotation, label_color_dict=label_color_dict, outer_image=None)
+
         else:
             fill_annotation(draw=draw, annotation=annotation, label_color_dict=label_color_dict, outer_image=None)
 
