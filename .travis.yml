@@ -1,0 +1,12 @@
+dist: xenial
+language: python
+python:
+  - "3.6"
+  - "3.7"
+install:
+  - pip install . flake8 mypy pylint pytest
+script:
+   - flake8 annofabapi
+   - mypy annofabapi --config-file setup.cfg
+   - pylint annofabapi --rcfile setup.cfg
+#   - pytest tests/test_local*.py
