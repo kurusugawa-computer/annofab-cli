@@ -1,6 +1,3 @@
-"""
-
-"""
 import configparser
 import datetime
 import os
