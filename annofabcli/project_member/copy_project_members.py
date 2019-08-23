@@ -94,7 +94,7 @@ class CopyProjectMembers(AbstractCommandLineInterface):
             added_members.append(member)
 
         for member in added_members:
-            logger.debug(f"{self.dest_project_title} プロジェクトに追加するメンバ: {member['user_id']} , {member['username']}")
+            logger.debug(f"{self.dest_project_title} プロジェクトに追加/更新するメンバ: {member['user_id']} , {member['username']}")
 
         # 更新対象のプロジェクトメンバ
         updated_members = added_members
