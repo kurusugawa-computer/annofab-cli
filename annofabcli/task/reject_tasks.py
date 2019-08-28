@@ -11,7 +11,7 @@ from typing import Any, Dict, List, Optional  # pylint: disable=unused-import
 import annofabapi
 import annofabapi.utils
 import requests
-from annofabapi.models import ProjectMemberRole
+from annofabapi.models import ProjectMemberRole, TaskPhase
 
 import annofabcli
 import annofabcli.common.cli
@@ -60,8 +60,20 @@ class RejectTasks(AbstractCommandLineInterface):
         return self.service.api.batch_update_inspections(project_id, task["task_id"], first_input_data_id,
                                                          request_body=req_inspection)[0]
 
+    def confirm_reject_task(self, task_id, assign_last_annotator: bool,
+                            assigned_annotator_user_id: Optional[str]) -> bool:
+        confirm_message = f"task_id = {task_id} のタスクを差し戻しますか？"
+        if assign_last_annotator:
+            confirm_message += "最後のannotation phaseの担当者を割り当てます。"
+        elif assigned_annotator_user_id is not None:
+            confirm_message += f"ユーザ '{assigned_annotator_user_id}' を担当者に割り当てます。"
+        else:
+            confirm_message += f"担当者は割り当てません。"
+
+        return self.confirm_processing_task(task_id, confirm_message)
+
     def reject_tasks_with_adding_comment(self, project_id: str, task_id_list: List[str], inspection_comment: str,
-                                         commenter_user_id: str, assign_last_annotator: bool = False,
+                                         commenter_user_id: str, assign_last_annotator: bool = True,
                                          assigned_annotator_user_id: Optional[str] = None):
         """
         検査コメントを付与して、タスクを差し戻す
@@ -96,11 +108,11 @@ class RejectTasks(AbstractCommandLineInterface):
             logger.debug(
                 f"{str_progress} : task_id = {task_id} の現状: status = {task['status']}, phase = {task['phase']}")
 
-            if task["phase"] == "annotation":
+            if task["phase"] == TaskPhase.ANNOTATION.value:
                 logger.warning(f"{str_progress} : task_id = {task_id} はannofation phaseのため、差し戻しできません。")
                 continue
 
-            if not super().confirm_processing_task(task_id, f"task_id = {task_id} のタスクを差し戻しますか？"):
+            if not self.confirm_reject_task(task_id, assign_last_annotator, assigned_annotator_user_id):
                 continue
 
             try:
@@ -159,11 +171,10 @@ class RejectTasks(AbstractCommandLineInterface):
         args = self.args
 
         task_id_list = annofabcli.common.cli.get_list_from_args(args.task_id)
-
         user_id = self.service.api.login_user_id
-
+        assign_last_annotator = not args.not_assign and args.assigned_annotator_user_id is None
         self.reject_tasks_with_adding_comment(args.project_id, task_id_list, args.comment, commenter_user_id=user_id,
-                                              assign_last_annotator=args.assign_last_annotator,
+                                              assign_last_annotator=assign_last_annotator,
                                               assigned_annotator_user_id=args.assigned_annotator_user_id)
 
 
@@ -183,11 +194,12 @@ def parse_args(parser: argparse.ArgumentParser):
 
     # 差し戻したタスクの担当者の割当に関して
     assign_group = parser.add_mutually_exclusive_group()
-    assign_group.add_argument('--assign_last_annotator', action="store_true",
-                              help='差し戻したタスクに、最後のannotation phaseの担当者を割り当てます。指定しない場合、タスクの担当者は未割り当てになります。')
 
-    assign_group.add_argument('--assigned_annotator_user_id', type=str,
-                              help='差し戻したタスクに割り当てるユーザのuser_idを指定します。指定しない場合、タスクの担当者は未割り当てになります。')
+    assign_group.add_argument('--not_assign', action="store_true", help='差し戻したタスクに担当者を割り当てません。'
+                              '指定しない場合は、最後のannotation phaseの担当者が割り当てられます。')
+
+    assign_group.add_argument('--assigned_annotator_user_id', type=str, help='差し戻したタスクに割り当てるユーザのuser_idを指定します。'
+                              '指定しない場合は、最後のannotation phaseの担当者が割り当てられます。')
 
     parser.set_defaults(subcommand_func=main)
 
@@ -195,7 +207,7 @@ def parse_args(parser: argparse.ArgumentParser):
 def add_parser(subparsers: argparse._SubParsersAction):
     subcommand_name = "reject"
     subcommand_help = "検査コメントを付与してタスクを差し戻します。"
-    description = ("検査コメントを付与してタスクを差し戻します。検査コメントは、タスク内の先頭の画像の左上(x=0,y=0)に付与します。アノテーションルールを途中で変更したときなどに、利用します。")
+    description = ("検査コメントを付与してタスクを差し戻します。" "検査コメントは、タスク内の先頭の画像の左上(x=0,y=0)に付与します。" "アノテーションルールを途中で変更したときなどに、利用します。")
     epilog = "チェッカーまたはオーナロールを持つユーザで実行してください。"
 
     parser = annofabcli.common.cli.add_parser(subparsers, subcommand_name, subcommand_help, description, epilog=epilog)

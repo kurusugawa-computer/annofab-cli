@@ -144,8 +144,7 @@ class PutProjectMembers(AbstractCommandLineInterface):
             return Member(user_id=e.user_id, member_role=ProjectMemberRole(e.member_role))
 
         df = pandas.read_csv(str(csv_path), sep=',', header=None, names=('user_id', 'member_role'))
-        # mypyの "has no attribute "from_dict" " をignore
-        members = [create_member(e) for e in df.itertuples()]  # type: ignore
+        members = [create_member(e) for e in df.itertuples()]
         return members
 
     def main(self):
