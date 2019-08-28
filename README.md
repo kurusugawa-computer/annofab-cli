@@ -83,6 +83,7 @@ $ docker run -it -e ANNOFAB_USER_ID=XXXX -e ANNOFAB_PASSWORD=YYYYY annofab-cli a
 |project_member| invite                  | 複数のプロジェクトに、ユーザを招待する。                                                                 |オーナ|
 |project_member| delete                  | 複数のプロジェクトからユーザを削除する。                                                                 |オーナ|
 |project_member| copy                  | プロジェクトメンバをコピーする。|オーナ(コピー先プロジェクトに対して)|
+|project_member| put                  | プロジェクトメンバに、CSVに記載されたユーザを登録する。|オーナ|
 |inspection_comment| list | 検査コメントを出力する。                               |-|
 |inspection_comment| list_unprocessed | 未処置の検査コメントを出力する。                               |-|
 |annotation| list_count | task_idまたはinput_data_idで集約したアノテーションの個数を出力します                              |-|
