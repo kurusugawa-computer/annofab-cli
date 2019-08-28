@@ -213,6 +213,26 @@ $ annofabcli task reject --project_id prj1 --task_id file://tasks.txt --comment 
 
 ```
 
+### プロジェクトメンバをCSVで管理する
+
+```
+# prj1のプロジェクトメンバをCSVで出力する
+$ annofabcli project_member list -p prj1 -f csv -o members.csv \
+ --csv_format '{"columns": ["user_id","member_role"],"header":false}' 
+
+
+# members.csvの中身を確認
+$ head members.csv
+user1,worker
+user2,accepter
+...
+
+
+# members.csvに記載れたメンバを prj2に登録する
+$ annofabcli project_member put -p prj2 --csv members.csv
+
+```
+
 
 ## コマンド一覧
 
@@ -460,6 +480,26 @@ $ annofabcli project_member copy prj1 prj2
 # prj1のメンバをprj2にコピーする。prj2にしか存在しないメンバは削除される。
 $ annofabcli project_member copy prj1 prj2 --delete_dest
 ```
+
+### project_member put
+CSVに記載されたユーザを、プロジェクトメンバとして登録します。
+
+members.csvの中身は以下の通り。
+
+```
+user1, worker
+user2, accepter
+```
+
+
+```
+# CSVに記載れたユーザを、prj1プロジェクトのメンバとして登録します。
+$ annofabcli project_member put --project_id prj1 --csv members.csv
+
+# CSVに記載れたユーザを、prj1プロジェクトのメンバとして登録します。csvに記載されていないユーザは削除します。
+$ annofabcli project_member put --project_id prj1 --csv members.csv --delete
+```
+
 
 
 ### annotation list_count
