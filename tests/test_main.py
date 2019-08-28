@@ -29,6 +29,11 @@ data_path = Path('./tests/data')
 #     #main(['complete_tasks', '--project_id', project_id, '--task_id', task_id, '--yes' ])
 
 
+def get_organization_name(project_id: str) -> str:
+    organization, _ = service.api.get_organization_of_project(project_id)
+    return organization["organization_name"]
+
+
 def test_task():
     main([
         'task', 'list', '--project_id', project_id, '--task_query',
@@ -73,6 +78,8 @@ def test_project_member():
     main(['project_member', 'invite', '--user_id', user_id, '--role', 'owner', '--project_id', project_id])
 
     main(['project_member', 'list', '--project_id', project_id])
+    organization_name = get_organization_name(project_id)
+    main(['project_member', 'list', '--organization', organization_name])
 
     main(['project_member', 'copy', project_id, project_id, '--yes'])
 
