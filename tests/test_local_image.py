@@ -1,5 +1,4 @@
 import json
-import logging
 import os
 import zipfile
 from pathlib import Path
@@ -17,10 +16,6 @@ out_dir = Path('./tests/out')
 with (test_dir / "label_color.json").open(encoding="utf-8") as f:
     label_color_json = json.load(f)
     label_color_dict = {label_name: tuple(rgb) for label_name, rgb in label_color_json.items()}
-
-logging_formatter = '%(levelname)s : %(asctime)s : %(name)s : %(funcName)s : %(message)s'
-logging.basicConfig(format=logging_formatter)
-logging.getLogger("annofabapi").setLevel(level=logging.DEBUG)
 
 
 def test_write_image():
