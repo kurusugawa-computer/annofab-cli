@@ -76,6 +76,9 @@ def test_project_member():
 
     main(['project_member', 'copy', project_id, project_id, '--yes'])
 
+    csv_file = str(data_path / "project_members.csv")
+    main(['project_member', 'put', '--project_id', project_id, '--csv', csv_file, '--yes'])
+
 
 def test_input_data():
     out_file = str(out_path / 'input_data.json')
