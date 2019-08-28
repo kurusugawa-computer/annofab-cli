@@ -55,16 +55,10 @@ class CopyProjectMembers(AbstractCommandLineInterface):
         """
         プロジェクトメンバを、別のプロジェクトにコピーする。
 
-        Note:
-            誤って実行しないようにすること
-
         Args:
             src_project_id: コピー元のproject_id
             dest_project_id: コピー先のproject_id
             delete_dest: Trueならばコピー先にしか存在しないプロジェクトメンバを削除する。
-
-        Returns:
-            `putProjectMember` APIのContentのList
 
         """
 
