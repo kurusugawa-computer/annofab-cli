@@ -43,10 +43,7 @@ def test_task():
     main(['task', 'cancel_acceptance', '--project_id', project_id, '--task_id', task_id, '--yes'])
 
     inspection_comment = datetime.datetime.now().isoformat()
-    main([
-        'task', 'reject', '--project_id', project_id, '--task_id', task_id, '--comment', inspection_comment,
-        '--assign_last_annotator', '--yes'
-    ])
+    main(['task', 'reject', '--project_id', project_id, '--task_id', task_id, '--comment', inspection_comment, '--yes'])
 
 
 def test_project():

@@ -210,7 +210,7 @@ $ annofabcli annotation list_count --project_id prj1 --task_id file://task.txt -
 $ annofabcli task cancel_acceptance --project_id prj1 --task_id file://task_id.txt
 
 # task_id.txtに記載されたタスクを差し戻す。検査コメントは「carラベルのoccluded属性を見直してください」。差し戻したタスクには、最後のannotation phaseを担当したユーザを割り当てる（画面と同じ動き）。
-$ annofabcli task reject --project_id prj1 --task_id file://tasks.txt --comment "carラベルのoccluded属性を見直してください" --assign_last_annotator
+$ annofabcli task reject --project_id prj1 --task_id file://tasks.txt --comment "carラベルのoccluded属性を見直してください"
 
 ```
 
@@ -349,11 +349,11 @@ inspection.jsonは、未処置の検査コメント一覧です。`inspection_co
 
 
 ```
-# prj1プロジェクトに、"hoge"という検査コメントを付与して、タスクを差し戻す。差し戻したタスクに担当者を割り当てない。
+# prj1プロジェクトに、"hoge"という検査コメントを付与して、タスクを差し戻す。最後のannotation phaseを担当したユーザを割り当てる（画面と同じ動き）
 $ annofabcli task reject --project_id prj1 --task_id file://tasks.txt --comment "hoge"
 
-# 差し戻したタスクに、最後のannotation phaseを担当したユーザを割り当てる（画面と同じ動き）
-$ annofabcli task reject --project_id prj1 --task_id file://tasks.txt --comment "hoge" --assign_last_annotator
+# 差し戻したタスクに、担当者は割り当てない
+$ annofabcli task reject --project_id prj1 --task_id file://tasks.txt --comment "hoge" --not_assign
 
 # 差し戻したタスクに、ユーザuser1を割り当てる
 $ annofabcli task reject --project_id prj1 --task_id file://tasks.txt --comment "hoge" --assigned_annotator_user_id user1
