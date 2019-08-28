@@ -186,6 +186,10 @@ class AnnofabApiFacade:
         organization, _ = self.service.api.get_organization_of_project(project_id)
         return organization["organization_name"]
 
+    def get_organization_members_from_project_id(self, project_id: str) -> List[OrganizationMember]:
+        organization_name = self.get_organization_name_from_project_id(project_id)
+        return self.service.wrapper.get_all_organization_members(organization_name)
+
     def my_role_is_owner(self, project_id: str) -> bool:
         my_member, _ = self.service.api.get_my_member_in_project(project_id)
         return my_member["member_role"] == "owner"
