@@ -17,10 +17,10 @@
     "develop": {
         "annofabapi": {
             "hashes": [
-                "sha256:3a0cbb2e20cca665a128c4523fd7f25c9dbd3627e7ad6ae042b017e7d3c225ac",
-                "sha256:912e226046031b8770d79c188f5a538c46f744c237b2d502051ad3b21a88650b"
+                "sha256:089b51e95065d5d57814cd56ac7b325c22e46be8fb7f7b6c0afda1eb23eb9fa8",
+                "sha256:134de5a286f2c4c030e402f61d2da09d3472b967a08a79bbe98c2c9039c75076"
             ],
-            "version": "==0.13.1"
+            "version": "==0.14.0"
         },
         "annofabcli": {
             "editable": true,
