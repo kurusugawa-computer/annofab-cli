@@ -3,7 +3,6 @@ Semantic Segmentation(Multi Class)用の画像を生成する。
 """
 
 import argparse
-import json
 import logging
 import zipfile
 from pathlib import Path
@@ -15,7 +14,7 @@ from annofabapi.parser import SimpleAnnotationParser
 import annofabcli
 import annofabcli.common.cli
 from annofabcli.common.cli import ArgumentParser
-from annofabcli.common.image import write_annotation_image, write_annotation_images_from_path, IsParserFunc
+from annofabcli.common.image import IsParserFunc, write_annotation_image, write_annotation_images_from_path
 from annofabcli.common.typing import RGB, InputDataSize
 
 logger = logging.getLogger(__name__)
@@ -76,28 +75,21 @@ class WriteAnnotationImage:
         annofabcli.common.cli.load_logging_config_from_args(args)
         logger.info(f"args: {args}")
 
-        default_input_data_size = annofabcli.common.cli.get_input_data_size(args.image_size)
-        if default_input_data_size is None:
+        image_size = annofabcli.common.cli.get_input_data_size(args.image_size)
+        if image_size is None:
             logger.error("--image_size のフォーマットが不正です")
             return
 
-        try:
-            with open(args.label_color_file) as f:
-                label_color_dict = json.load(f)
-                label_color_dict = {k: tuple(v) for k, v in label_color_dict.items()}
-
-        except Exception as e:
-            logger.error("--label_color_json_file のJSON Parseに失敗しました。")
-            raise e
+        # label_color_dict を取得する
+        label_color_dict = annofabcli.common.cli.get_json_from_args(args.label_color)
+        label_color_dict = {k: tuple(v) for k, v in label_color_dict.items()}
 
         annotation_path = Path(args.annotation)
-
         task_id_list = annofabcli.common.cli.get_list_from_args(args.task_id)
-
         is_target_parser_func = self.create_is_target_parser_func(args.task_status_complete, task_id_list)
 
         # 画像生成
-        result = write_annotation_images_from_path(annotation_path, image_size=default_input_data_size,
+        result = write_annotation_images_from_path(annotation_path, image_size=image_size,
                                                    label_color_dict=label_color_dict,
                                                    output_dir_path=Path(args.output_dir),
                                                    output_image_extension=args.image_extension,
