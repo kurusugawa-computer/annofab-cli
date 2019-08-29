@@ -5,19 +5,22 @@ Semantic Segmentation(Multi Class)用の画像を生成する。
 import argparse
 import json
 import logging
+import zipfile
 from pathlib import Path
 from typing import Any, Callable, Dict, Iterator, List, Optional, Tuple  # pylint: disable=unused-import
 
 from annofabapi.models import TaskStatus
-from annofabapi.parser import SimpleAnnotationParser, lazy_parse_simple_annotation_dir, lazy_parse_simple_annotation_zip
+from annofabapi.parser import SimpleAnnotationParser
 
 import annofabcli
 import annofabcli.common.cli
 from annofabcli.common.cli import ArgumentParser
-from annofabcli.common.image import write_annotation_image
+from annofabcli.common.image import write_annotation_image, write_annotation_images_from_path
 from annofabcli.common.typing import RGB, InputDataSize
 
 logger = logging.getLogger(__name__)
+
+zipfile.is_zipfile("ab")
 
 
 class WriteAnnotationImage:
@@ -48,6 +51,28 @@ class WriteAnnotationImage:
 
             logger.debug(f"{str(output_image_file)} の生成完了.")
 
+    @staticmethod
+    def create_is_target_parser_func(
+            task_status_complete: bool = False,
+            task_id_list: Optional[List[str]] = None) -> Callable[[SimpleAnnotationParser], bool]:
+        def is_target_parser(parser: SimpleAnnotationParser) -> bool:
+            simple_annotation = parser.parse()
+            if task_status_complete:
+                if simple_annotation.task_status != TaskStatus.COMPLETE:
+                    logger.debug(f"task_statusがcompleteでない( {simple_annotation.task_status.value})ため、"
+                                 f"{simple_annotation.task_id}, {simple_annotation.input_data_name} はスキップします。")
+                    return False
+
+            if task_id_list is not None and len(task_id_list) > 0:
+                if simple_annotation.task_id not in task_id_list:
+                    logger.debug(
+                        f"画像化対象外のタスク {simple_annotation.task_id} であるため、 {simple_annotation.input_data_name} はスキップします。")
+                    return False
+
+            return True
+
+        return is_target_parser
+
     def main(self, args):
         annofabcli.common.cli.load_logging_config_from_args(args)
         logger.info(f"args: {args}")
@@ -67,21 +92,20 @@ class WriteAnnotationImage:
             raise e
 
         annotation_path = Path(args.annotation)
-        if annotation_path.is_dir():
-            iter_lazy_parser = lazy_parse_simple_annotation_dir(annotation_path)
-        elif annotation_path.suffix.lower() == ".zip":
-            iter_lazy_parser = lazy_parse_simple_annotation_zip(annotation_path)
-        else:
-            logger.error("--annotation には、アノテーションzip、またはzipを展開したディレクトリのパスを渡してください。")
-            return
 
         task_id_list = annofabcli.common.cli.get_list_from_args(args.task_id)
 
-        self.write_annotation_images(iter_lazy_parser=iter_lazy_parser, default_input_data_size=default_input_data_size,
-                                     label_color_dict=label_color_dict, output_dir=Path(args.output_dir),
-                                     output_image_extension=args.image_extension,
-                                     task_status_complete=args.task_status_complete, task_id_list=task_id_list,
-                                     background_color=args.background_color)
+        is_target_parser_func = self.create_is_target_parser_func(args.task_status_complete, task_id_list)
+
+        # 画像生成
+        result = write_annotation_images_from_path(annotation_path, image_size=default_input_data_size,
+                                                   label_color_dict=label_color_dict,
+                                                   output_dir_path=Path(args.output_dir),
+                                                   output_image_extension=args.image_extension,
+                                                   background_color=args.background_color,
+                                                   is_target_parser_func=is_target_parser_func)
+        if not result:
+            logger.error("'{annotation_path}' のアノテーション情報の画像化に失敗しました。")
 
 
 def main(args):
