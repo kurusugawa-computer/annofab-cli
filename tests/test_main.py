@@ -88,16 +88,13 @@ def test_project_member():
 def test_filesystem():
     zip_path = test_dir / "simple-annotation.zip"
     output_image_dir = out_dir / "annotation-image"
-
-    with (test_dir / "label_color.json").open(encoding="utf-8") as f:
-        label_color_json = json.load(f)
-        label_color_dict = {label_name: tuple(rgb) for label_name, rgb in label_color_json.items()}
+    label_color_file = test_dir / "label_color.json"
 
     main([
         'filesystem', 'write_annotation_image', '--annotation',
         str(zip_path), '--output_dir',
-        str(output_image_dir), '--image_size', '64x64', '--label_color_file'
-        '--add_details', '--output', out_file
+        str(output_image_dir), '--image_size', '64x64', '--label_color',
+        str(label_color_file), '--image_extension', 'jpg'
     ])
 
 
