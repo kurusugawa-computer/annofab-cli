@@ -3,9 +3,9 @@ import os
 import zipfile
 from pathlib import Path
 
-from annofabapi.parser import SimpleAnnotationDirParser, SimpleAnnotationZipParser
+from annofabapi.parser import SimpleAnnotationDirParser, SimpleAnnotationParser, SimpleAnnotationZipParser
 
-from annofabcli.common.image import write_annotation_image
+from annofabcli.common.image import write_annotation_image, write_annotation_images_from_path
 
 # プロジェクトトップに移動する
 os.chdir(os.path.dirname(os.path.abspath(__file__)) + "/../")
@@ -36,3 +36,15 @@ def test_write_image_wihtout_outer_file():
     parser = SimpleAnnotationDirParser(test_dir / "simple-annotation.json")
     write_annotation_image(parser=parser, image_size=(64, 64), label_color_dict=label_color_dict,
                            output_image_file=output_image_file, background_color=(64, 64, 64))
+
+
+def test_write_annotation_images_from_path():
+    zip_path = test_dir / "simple-annotation.zip"
+    output_image_dir = out_dir / "annotation-image"
+
+    def is_target_parser_func(parser: SimpleAnnotationParser) -> bool:
+        return parser.task_id == "sample_1"
+
+    write_annotation_images_from_path(annotation_path=zip_path, image_size=(64, 64), label_color_dict=label_color_dict,
+                                      output_dir_path=output_image_dir, background_color=(64, 64, 64),
+                                      is_target_parser_func=is_target_parser_func)

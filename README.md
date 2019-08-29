@@ -9,13 +9,7 @@ annofabapiを使ったCLI(Command Line Interface)ツールです。
 
 
 ## 廃止予定
-
-* 2019/08/31廃止予定: Pythonの最低バージョンを3.6から3.7に変更
-
-| 廃止予定のコマンド                  | 廃止予定日                                                                                                     |代替コマンド|
-|-------------------------------|----------------------------------------------------------------------------------------------------------|------------|
-| print_label_color                  | 2019/08/09                                                                |annotation_specs list_label_color|
-
+なし
 
 # Requirements
 * Python 3.6+
@@ -89,7 +83,7 @@ $ docker run -it -e ANNOFAB_USER_ID=XXXX -e ANNOFAB_PASSWORD=YYYYY annofab-cli a
 |annotation| list_count | task_idまたはinput_data_idで集約したアノテーションの個数を出力します                              |-|
 |annotation_specs| list_label | アノテーション仕様のラベル情報を出力する                              |チェッカー/オーナ|
 |annotation_specs| list_label_color             | アノテーション仕様から、label_nameとRGBを対応付けたJSONを出力する。                                      |チェッカー/オーナ|
-|| write_annotation_image        | アノテーションzipを展開したディレクトリから、アノテーションの画像（Semantic Segmentation用）を生成する。 |-|
+|filesystem| write_annotation_image        | アノテーションzip、またはそれを展開したディレクトリから、アノテーションの画像（Semantic Segmentation用）を生成する。 |-|
 
 
 # Usage
@@ -593,30 +587,37 @@ $ annofabcli annotation_specs list_label_color --project_id prj1
 
 
 
-### write_annotation_image
-アノテーションzipを展開したディレクトリから、アノテーションの画像（Semantic Segmentation用）を生成します。
-アノテーション種類が矩形、ポリゴン、塗りつぶし、塗りつぶしv2のアノテーションが生成対象です。
-複数のアノテーションディレクトリを指定して、画像をマージすることも可能です。ただし、各プロジェクトでtask_id, input_data_idが一致している必要があります。
+### filesystem write_annotation_image
+アノテーションzip、またはそれを展開したディレクトリから、アノテーションの画像（Semantic Segmentation用）を生成します。
+以下のアノテーションが画像化対象です。
+* 矩形
+* ポリゴン
+* 塗りつぶし
+* 塗りつぶしv2
 
 
 ```
-# af-annotation-xxxx ディレクトリからアノテーションの画像を生成する。タスクのstatusがcompleteのみ画像を生成する。
-$ annofabcli write_annotation_image  --annotation_dir af-annotation-xxxx \
- --input_data_size 1280x720 \
- --label_color_file label_color.json \
- --output_dir output \
- --task_status_complete
- --image_extension png 
- 
- 
-# af-annotation-xxxx ディレクトリに、af-annotation-1、af-annotation-2ディレクトリをマージしたアノテーションの画像を生成する。
-# af-annotation-xxxxに存在するすべてのタスクに対して、画像を生成する。
-$ python  -m annofabcli.write_semantic_segmentation_images write  --annotation_dir af-annotation-xxxx \
- --input_data_size 1280x720 \
- --label_color_file label_color.json \
- --output_dir output \
- --sub_annotation_dir af-annotation-1 af-annotation-2
-```
+# アノテーションzipをダウンロードする。
+$ annofabcli project download simple_annotation --project_id prj1 --output annotation.zip
 
-* `label_color.json`は、`label_name`とRGBを対応付けたJSONファイルです。ファイルのフォーマットは、`annotation_specs list_label_color`の出力結果と同じです。
+
+# label_nameとRGBを対応付けたファイルを生成する
+$ annofabcli annotation_specs list_label_color --project_id prj1 --output label_color.json
+
+
+# annotation.zip から、アノテーション画像を生成する
+$ annofabcli filesystem write_annotation_image  --annotation annotation.zip \
+ --image_size 1280x720 \
+ --label_color file://label_color.json \
+ --output_dir /tmp/output
+
+
+# annotation.zip から、アノテーション画像を生成する。ただしタスクのステータスが"完了"で、task.txtに記載れたタスクのみ画像化する。
+$ annofabcli filesystem write_annotation_image  --annotation annotation.zip \
+ --image_size 1280x720 \
+ --label_color file://label_color.json \
+ --output_dir /tmp/output \
+ --task_status_complete \
+ --task_id file://task.txt
+```
 

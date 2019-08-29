@@ -3,21 +3,23 @@ Semantic Segmentation(Multi Class)用の画像を生成する。
 """
 
 import argparse
-import json
 import logging
+import zipfile
 from pathlib import Path
 from typing import Any, Callable, Dict, Iterator, List, Optional, Tuple  # pylint: disable=unused-import
 
 from annofabapi.models import TaskStatus
-from annofabapi.parser import SimpleAnnotationParser, lazy_parse_simple_annotation_dir, lazy_parse_simple_annotation_zip
+from annofabapi.parser import SimpleAnnotationParser
 
 import annofabcli
 import annofabcli.common.cli
 from annofabcli.common.cli import ArgumentParser
-from annofabcli.common.image import write_annotation_image
+from annofabcli.common.image import IsParserFunc, write_annotation_image, write_annotation_images_from_path
 from annofabcli.common.typing import RGB, InputDataSize
 
 logger = logging.getLogger(__name__)
+
+zipfile.is_zipfile("ab")
 
 
 class WriteAnnotationImage:
@@ -48,40 +50,53 @@ class WriteAnnotationImage:
 
             logger.debug(f"{str(output_image_file)} の生成完了.")
 
+    @staticmethod
+    def create_is_target_parser_func(task_status_complete: bool = False,
+                                     task_id_list: Optional[List[str]] = None) -> IsParserFunc:
+        def is_target_parser(parser: SimpleAnnotationParser) -> bool:
+            simple_annotation = parser.parse()
+            if task_status_complete:
+                if simple_annotation.task_status != TaskStatus.COMPLETE:
+                    logger.debug(f"task_statusがcompleteでない( {simple_annotation.task_status.value})ため、"
+                                 f"{simple_annotation.task_id}, {simple_annotation.input_data_name} はスキップします。")
+                    return False
+
+            if task_id_list is not None and len(task_id_list) > 0:
+                if simple_annotation.task_id not in task_id_list:
+                    logger.debug(
+                        f"画像化対象外のタスク {simple_annotation.task_id} であるため、 {simple_annotation.input_data_name} はスキップします。")
+                    return False
+
+            return True
+
+        return is_target_parser
+
     def main(self, args):
         annofabcli.common.cli.load_logging_config_from_args(args)
         logger.info(f"args: {args}")
 
-        default_input_data_size = annofabcli.common.cli.get_input_data_size(args.input_data_size)
-        if default_input_data_size is None:
-            logger.error("--default_input_data_size のフォーマットが不正です")
+        image_size = annofabcli.common.cli.get_input_data_size(args.image_size)
+        if image_size is None:
+            logger.error("--image_size のフォーマットが不正です")
             return
 
-        try:
-            with open(args.label_color_file) as f:
-                label_color_dict = json.load(f)
-                label_color_dict = {k: tuple(v) for k, v in label_color_dict.items()}
-
-        except Exception as e:
-            logger.error("--label_color_json_file のJSON Parseに失敗しました。")
-            raise e
+        # label_color_dict を取得する
+        label_color_dict = annofabcli.common.cli.get_json_from_args(args.label_color)
+        label_color_dict = {k: tuple(v) for k, v in label_color_dict.items()}
 
         annotation_path = Path(args.annotation)
-        if annotation_path.is_dir():
-            iter_lazy_parser = lazy_parse_simple_annotation_dir(annotation_path)
-        elif annotation_path.suffix.lower() == ".zip":
-            iter_lazy_parser = lazy_parse_simple_annotation_zip(annotation_path)
-        else:
-            logger.error("--annotation には、アノテーションzip、またはzipを展開したディレクトリのパスを渡してください。")
-            return
-
         task_id_list = annofabcli.common.cli.get_list_from_args(args.task_id)
+        is_target_parser_func = self.create_is_target_parser_func(args.task_status_complete, task_id_list)
 
-        self.write_annotation_images(iter_lazy_parser=iter_lazy_parser, default_input_data_size=default_input_data_size,
-                                     label_color_dict=label_color_dict, output_dir=Path(args.output_dir),
-                                     output_image_extension=args.image_extension,
-                                     task_status_complete=args.task_status_complete, task_id_list=task_id_list,
-                                     background_color=args.background_color)
+        # 画像生成
+        result = write_annotation_images_from_path(annotation_path, image_size=image_size,
+                                                   label_color_dict=label_color_dict,
+                                                   output_dir_path=Path(args.output_dir),
+                                                   output_image_extension=args.image_extension,
+                                                   background_color=args.background_color,
+                                                   is_target_parser_func=is_target_parser_func)
+        if not result:
+            logger.error(f"'{annotation_path}' のアノテーション情報の画像化に失敗しました。")
 
 
 def main(args):
@@ -93,10 +108,12 @@ def parse_args(parser: argparse.ArgumentParser):
 
     parser.add_argument('--annotation', type=str, required=True, help='アノテーションzip、またはzipを展開したディレクトリ')
 
-    parser.add_argument('--input_data_size', type=str, required=True, help='入力データ画像のサイズ。{width}x{height}。ex. 1280x720')
+    parser.add_argument('--image_size', type=str, required=True, help='入力データ画像のサイズ。{width}x{height}。ex) 1280x720')
 
-    parser.add_argument('--label_color_file', type=str, required=True,
-                        help='label_nameとRGBを対応付けたJSONファイルのパス. key: label_name, value:[R,G,B]')
+    parser.add_argument(
+        '--label_color', type=str, required=True,
+        help='label_nameとRGBの関係をJSON形式で指定します。ex) `{"dog":[255,128,64], "cat":[0,0,255]}`'
+        '`file://`を先頭に付けると、JSON形式のファイルを指定できます。')
 
     parser.add_argument('--output_dir', type=str, required=True, help='出力ディレクトリのパス')
 
@@ -126,9 +143,7 @@ def add_parser(subparsers: argparse._SubParsersAction):
 
     subcommand_help = "アノテーションzipを展開したディレクトリから、アノテーションの画像（Semantic Segmentation用）を生成する。"
 
-    description = ("アノテーションzipを展開したディレクトリから、アノテーションの画像（Semantic Segmentation用）を生成する。"
-                   "矩形、ポリゴン、塗りつぶし、塗りつぶしv2が対象。"
-                   "複数のアノテーションディレクトリを指定して、画像をマージすることもできる。")
+    description = ("アノテーションzipを展開したディレクトリから、アノテーションの画像（Semantic Segmentation用）を生成する。" "矩形、ポリゴン、塗りつぶし、塗りつぶしv2が対象。")
 
     parser = annofabcli.common.cli.add_parser(subparsers, subcommand_name, subcommand_help, description)
     parse_args(parser)

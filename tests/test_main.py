@@ -3,6 +3,7 @@
 """
 import configparser
 import datetime
+import json
 import os
 from pathlib import Path
 
@@ -82,6 +83,19 @@ def test_project_member():
 
     csv_file = str(data_path / "project_members.csv")
     main(['project_member', 'put', '--project_id', project_id, '--csv', csv_file, '--yes'])
+
+
+def test_filesystem():
+    zip_path = data_path / "simple-annotation.zip"
+    output_image_dir = out_path / "annotation-image"
+    label_color_file = data_path / "label_color.json"
+
+    main([
+        'filesystem', 'write_annotation_image', '--annotation',
+        str(zip_path), '--output_dir',
+        str(output_image_dir), '--image_size', '64x64', '--label_color',
+        f"file://{str(label_color_file)}", '--image_extension', 'jpg'
+    ])
 
 
 def test_input_data():
