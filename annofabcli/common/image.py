@@ -161,7 +161,7 @@ def write_annotation_images_from_path(annotation_path: Path, image_size: InputDa
                                       label_color_dict: Dict[str, RGB], output_dir_path: Path,
                                       output_image_extension: str = "png", background_color: Optional[Any] = None,
                                       is_target_parser_func: Optional[Callable[[SimpleAnnotationParser], bool]] = None
-                                      ) -> bool:
+                                     ) -> bool:
     """
     AnnoFabからダウンロードしたアノテーションzipファイル、またはそのzipを展開したディレクトリから、アノテーション情報を画像化します。
 

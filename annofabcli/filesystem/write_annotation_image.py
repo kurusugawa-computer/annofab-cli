@@ -52,9 +52,8 @@ class WriteAnnotationImage:
             logger.debug(f"{str(output_image_file)} の生成完了.")
 
     @staticmethod
-    def create_is_target_parser_func(
-            task_status_complete: bool = False,
-            task_id_list: Optional[List[str]] = None) -> Callable[[SimpleAnnotationParser], bool]:
+    def create_is_target_parser_func(task_status_complete: bool = False, task_id_list: Optional[List[str]] = None
+                                    ) -> Callable[[SimpleAnnotationParser], bool]:
         def is_target_parser(parser: SimpleAnnotationParser) -> bool:
             simple_annotation = parser.parse()
             if task_status_complete:
