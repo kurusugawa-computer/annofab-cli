@@ -18,6 +18,9 @@ from annofabcli.common.typing import RGB, InputDataSize
 
 logger = logging.getLogger(__name__)
 
+IsParserFunc = Callable[[SimpleAnnotationParser], bool]
+"""アノテーションparserに対してboolを返す関数"""
+
 
 def get_data_uri_of_outer_file(annotation: SimpleAnnotationDetail) -> Optional[str]:
     """
@@ -160,8 +163,7 @@ def write_annotation_image(parser: SimpleAnnotationParser, image_size: InputData
 def write_annotation_images_from_path(annotation_path: Path, image_size: InputDataSize,
                                       label_color_dict: Dict[str, RGB], output_dir_path: Path,
                                       output_image_extension: str = "png", background_color: Optional[Any] = None,
-                                      is_target_parser_func: Optional[Callable[[SimpleAnnotationParser], bool]] = None
-                                     ) -> bool:
+                                      is_target_parser_func: Optional[IsParserFunc] = None) -> bool:
     """
     AnnoFabからダウンロードしたアノテーションzipファイル、またはそのzipを展開したディレクトリから、アノテーション情報を画像化します。
 
@@ -195,6 +197,7 @@ def write_annotation_images_from_path(annotation_path: Path, image_size: InputDa
         logger.warning(f"annotation_path: '{annotation_path}' は、zipファイルまたはディレクトリではありませんでした。")
         return False
 
+    count_created_image = 0
     for parser in iter_lazy_parser:
         logger.debug(f"{parser.json_file_path} を読み込みます。")
         if is_target_parser_func is not None and not is_target_parser_func(parser):
@@ -205,5 +208,7 @@ def write_annotation_images_from_path(annotation_path: Path, image_size: InputDa
         write_annotation_image(parser, image_size=image_size, label_color_dict=label_color_dict,
                                background_color=background_color, output_image_file=output_image_file)
         logger.debug(f"画像ファイル '{str(output_image_file)}' を生成しました。")
+        count_created_image += 1
 
+    logger.info(f"{str(output_dir_path)} に、{count_created_image} 件の画像ファイルを生成しました。")
     return True

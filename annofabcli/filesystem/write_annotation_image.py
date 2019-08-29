@@ -15,7 +15,7 @@ from annofabapi.parser import SimpleAnnotationParser
 import annofabcli
 import annofabcli.common.cli
 from annofabcli.common.cli import ArgumentParser
-from annofabcli.common.image import write_annotation_image, write_annotation_images_from_path
+from annofabcli.common.image import write_annotation_image, write_annotation_images_from_path, IsParserFunc
 from annofabcli.common.typing import RGB, InputDataSize
 
 logger = logging.getLogger(__name__)
@@ -52,8 +52,8 @@ class WriteAnnotationImage:
             logger.debug(f"{str(output_image_file)} の生成完了.")
 
     @staticmethod
-    def create_is_target_parser_func(task_status_complete: bool = False, task_id_list: Optional[List[str]] = None
-                                    ) -> Callable[[SimpleAnnotationParser], bool]:
+    def create_is_target_parser_func(task_status_complete: bool = False,
+                                     task_id_list: Optional[List[str]] = None) -> IsParserFunc:
         def is_target_parser(parser: SimpleAnnotationParser) -> bool:
             simple_annotation = parser.parse()
             if task_status_complete:
@@ -76,9 +76,9 @@ class WriteAnnotationImage:
         annofabcli.common.cli.load_logging_config_from_args(args)
         logger.info(f"args: {args}")
 
-        default_input_data_size = annofabcli.common.cli.get_input_data_size(args.input_data_size)
+        default_input_data_size = annofabcli.common.cli.get_input_data_size(args.image_size)
         if default_input_data_size is None:
-            logger.error("--default_input_data_size のフォーマットが不正です")
+            logger.error("--image_size のフォーマットが不正です")
             return
 
         try:
@@ -104,7 +104,7 @@ class WriteAnnotationImage:
                                                    background_color=args.background_color,
                                                    is_target_parser_func=is_target_parser_func)
         if not result:
-            logger.error("'{annotation_path}' のアノテーション情報の画像化に失敗しました。")
+            logger.error(f"'{annotation_path}' のアノテーション情報の画像化に失敗しました。")
 
 
 def main(args):
@@ -116,10 +116,12 @@ def parse_args(parser: argparse.ArgumentParser):
 
     parser.add_argument('--annotation', type=str, required=True, help='アノテーションzip、またはzipを展開したディレクトリ')
 
-    parser.add_argument('--input_data_size', type=str, required=True, help='入力データ画像のサイズ。{width}x{height}。ex. 1280x720')
+    parser.add_argument('--image_size', type=str, required=True, help='入力データ画像のサイズ。{width}x{height}。ex) 1280x720')
 
-    parser.add_argument('--label_color_file', type=str, required=True,
-                        help='label_nameとRGBを対応付けたJSONファイルのパス. key: label_name, value:[R,G,B]')
+    parser.add_argument(
+        '--label_color', type=str, required=True,
+        help='label_nameとRGBの関係をJSON形式で指定します。ex) `{"dog":[255,128,64], "cat":[0,0,255]}`'
+        '`file://`を先頭に付けると、JSON形式のファイルを指定できます。')
 
     parser.add_argument('--output_dir', type=str, required=True, help='出力ディレクトリのパス')
 
@@ -149,9 +151,7 @@ def add_parser(subparsers: argparse._SubParsersAction):
 
     subcommand_help = "アノテーションzipを展開したディレクトリから、アノテーションの画像（Semantic Segmentation用）を生成する。"
 
-    description = ("アノテーションzipを展開したディレクトリから、アノテーションの画像（Semantic Segmentation用）を生成する。"
-                   "矩形、ポリゴン、塗りつぶし、塗りつぶしv2が対象。"
-                   "複数のアノテーションディレクトリを指定して、画像をマージすることもできる。")
+    description = ("アノテーションzipを展開したディレクトリから、アノテーションの画像（Semantic Segmentation用）を生成する。" "矩形、ポリゴン、塗りつぶし、塗りつぶしv2が対象。")
 
     parser = annofabcli.common.cli.add_parser(subparsers, subcommand_name, subcommand_help, description)
     parse_args(parser)
