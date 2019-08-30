@@ -5,7 +5,7 @@ annofabapiを使ったCLI(Command Line Interface)ツールです。
 # 注意
 * 作者または著作権者は、ソフトウェアに関してなんら責任を負いません。
 * 予告なく互換性のない変更がある可能性をご了承ください。
-* AnnoFabプロジェクトに大きな変更を及ぼすツールも存在します。間違えて実行してしまわないよう、注意してご利用ください。
+* AnnoFabプロジェクトに大きな変更を及ぼすコマンドも存在します。間違えて実行してしまわないよう、注意してご利用ください。
 
 
 ## 廃止予定
@@ -33,7 +33,7 @@ AnnoFabの認証情報を設定する方法は2つあります。
 AnnoFabの認証情報が設定されていない状態で`annofabcli`コマンドを実行すると、標準入力からAnnoFabの認証情報を入力できるようになります。
 
 ```
-$ annofabcli diff_projects aaa bbb
+$ annofabcli project diff aaa bbb
 Enter AnnoFab User ID: XXXXXX
 Enter AnnoFab Password: 
 ```
@@ -67,9 +67,10 @@ $ docker run -it -e ANNOFAB_USER_ID=XXXX -e ANNOFAB_PASSWORD=YYYYY annofab-cli a
 |----|-------------------------------|----------------------------------------------------------------------------------------------------------|------------|
 |input_data|list             | 入力データ一覧を出力する。                                                            |-|
 |instruction| upload             | HTMLファイルを作業ガイドとして登録する。                                                           |チェッカー/オーナ|
-|task|list             | タスク一覧を出力する。                                                            |-|
 |task| cancel_acceptance             | 受け入れ完了タスクを、受け入れ取り消しする。                                                             |オーナ|
+|task| change_operator             | タスクの担当者を変更する。                                                             |チェッカー/オーナ|
 |task| complete                | 未処置の検査コメントを適切な状態に変更して、タスクを受け入れ完了にする。                                 |チェッカー/オーナ|
+|task|list             | タスク一覧を出力する。                                                            |-|
 |task| reject                  | 検査コメントを付与してタスクを差し戻す。                                                                 |チェッカー/オーナ|
 |project| diff                 | プロジェクト間の差分を表示する                                                                           |チェッカー/オーナ|
 |project| download                 | タスクや検査コメント、アノテーションなどをダウンロードします。                                                                           |オーナ|
@@ -104,13 +105,13 @@ CSVのフォーマットをJSON形式で指定します。`--format`が`csv`で�
 
 
 ### `--disable_log`
-ログを無効化する。
+ログを無効化にします。
 
 ### `f` / `--format`
 出力フォーマットを指定します。基本的に以下のフォーマットを指定できます。
-* csv : CSV(デフォルとはカンマ区切り)
-* json : インデントや空白がないJSON
-* pretty_json : インデントされたJSON
+* `csv` : CSV(デフォルとはカンマ区切り)
+* `json` : インデントや空白がないJSON
+* `pretty_json` : インデントされたJSON
 
 list系のコマンドで利用できます。
 
@@ -130,7 +131,7 @@ $ annofabcli project diff -h
 ログファイルを保存するディレクトリを指定します。指定しない場合、`.log`ディレクトリにログファイルを出力します。
 
 ### `--logging_yaml`
-ロギグングの設定ファイル(YAML)を指定します。指定した場合、`--logdir`オプションは無視されます。指定しない場合、デフォルトのロギング設定ファイルが読み込まれます。
+以下のような、ロギグングの設定ファイル(YAML)を指定します。指定した場合、`--logdir`オプションは無視されます。指定しない場合、デフォルトのロギング設定ファイルが読み込まれます。
 設定ファイルの書き方は https://docs.python.org/ja/3/howto/logging.html を参照してください。
 
 ```yaml:logging-sample.yaml
@@ -319,6 +320,18 @@ $ annofabcli task cancel_acceptance --project_id prj1 --task_id file://task.txt
 $ annofabcli task cancel_acceptance --project_id prj1 --task_id file://task.txt --user_id user1
 ```
 
+
+### task change_operator
+タスクの担当者を変更します。
+
+
+```
+# 指定されたタスクの担当者を 'user1' に変更する。
+$ annofabcli task change_operator --project_id prj1 --task_id file://task.txt --user_id usr1
+
+# 指定されたタスクの担当者を未割り当てに変更する。
+$ annofabcli task change_operator --project_id prj1 --task_id file://task.txt --not_assign
+```
 
 
 ### task complete

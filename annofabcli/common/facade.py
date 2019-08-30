@@ -287,14 +287,15 @@ class AnnofabApiFacade:
     # operateTaskのfacade
     ##################
 
-    def change_operator_of_task(self, project_id: str, task_id: str, account_id: str) -> Dict[str, Any]:
+    def change_operator_of_task(self, project_id: str, task_id: str,
+                                account_id: Optional[str] = None) -> Dict[str, Any]:
         """
         タスクの担当者を変更する
         Args:
             self:
             project_id:
             task_id:
-            account_id:
+            account_id: 新しい担当者のuser_id. Noneの場合未割り当てになる。
 
         Returns:
             変更後のtask情報
