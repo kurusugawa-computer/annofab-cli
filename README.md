@@ -67,9 +67,10 @@ $ docker run -it -e ANNOFAB_USER_ID=XXXX -e ANNOFAB_PASSWORD=YYYYY annofab-cli a
 |----|-------------------------------|----------------------------------------------------------------------------------------------------------|------------|
 |input_data|list             | 入力データ一覧を出力する。                                                            |-|
 |instruction| upload             | HTMLファイルを作業ガイドとして登録する。                                                           |チェッカー/オーナ|
-|task|list             | タスク一覧を出力する。                                                            |-|
 |task| cancel_acceptance             | 受け入れ完了タスクを、受け入れ取り消しする。                                                             |オーナ|
+|task| change_operator             | タスクの担当者を変更する。                                                             |チェッカー/オーナ|
 |task| complete                | 未処置の検査コメントを適切な状態に変更して、タスクを受け入れ完了にする。                                 |チェッカー/オーナ|
+|task|list             | タスク一覧を出力する。                                                            |-|
 |task| reject                  | 検査コメントを付与してタスクを差し戻す。                                                                 |チェッカー/オーナ|
 |project| diff                 | プロジェクト間の差分を表示する                                                                           |チェッカー/オーナ|
 |project| download                 | タスクや検査コメント、アノテーションなどをダウンロードします。                                                                           |オーナ|
@@ -319,6 +320,18 @@ $ annofabcli task cancel_acceptance --project_id prj1 --task_id file://task.txt
 $ annofabcli task cancel_acceptance --project_id prj1 --task_id file://task.txt --user_id user1
 ```
 
+
+### task change_operator
+タスクの担当者を変更します。
+
+
+```
+# 指定されたタスクの担当者を 'user1' に変更する。
+$ annofabcli task change_operator --project_id prj1 --task_id file://task.txt --user_id usr1
+
+# 指定されたタスクの担当者を未割り当てに変更する。
+$ annofabcli task change_operator --project_id prj1 --task_id file://task.txt --not_assign
+```
 
 
 ### task complete
