@@ -5,7 +5,7 @@ annofabapiを使ったCLI(Command Line Interface)ツールです。
 # 注意
 * 作者または著作権者は、ソフトウェアに関してなんら責任を負いません。
 * 予告なく互換性のない変更がある可能性をご了承ください。
-* AnnoFabプロジェクトに大きな変更を及ぼすツールも存在します。間違えて実行してしまわないよう、注意してご利用ください。
+* AnnoFabプロジェクトに大きな変更を及ぼすコマンドも存在します。間違えて実行してしまわないよう、注意してご利用ください。
 
 
 ## 廃止予定
@@ -33,7 +33,7 @@ AnnoFabの認証情報を設定する方法は2つあります。
 AnnoFabの認証情報が設定されていない状態で`annofabcli`コマンドを実行すると、標準入力からAnnoFabの認証情報を入力できるようになります。
 
 ```
-$ annofabcli diff_projects aaa bbb
+$ annofabcli project diff aaa bbb
 Enter AnnoFab User ID: XXXXXX
 Enter AnnoFab Password: 
 ```
@@ -104,13 +104,13 @@ CSVのフォーマットをJSON形式で指定します。`--format`が`csv`で�
 
 
 ### `--disable_log`
-ログを無効化する。
+ログを無効化にします。
 
 ### `f` / `--format`
 出力フォーマットを指定します。基本的に以下のフォーマットを指定できます。
-* csv : CSV(デフォルとはカンマ区切り)
-* json : インデントや空白がないJSON
-* pretty_json : インデントされたJSON
+* `csv` : CSV(デフォルとはカンマ区切り)
+* `json` : インデントや空白がないJSON
+* `pretty_json` : インデントされたJSON
 
 list系のコマンドで利用できます。
 
@@ -130,7 +130,7 @@ $ annofabcli project diff -h
 ログファイルを保存するディレクトリを指定します。指定しない場合、`.log`ディレクトリにログファイルを出力します。
 
 ### `--logging_yaml`
-ロギグングの設定ファイル(YAML)を指定します。指定した場合、`--logdir`オプションは無視されます。指定しない場合、デフォルトのロギング設定ファイルが読み込まれます。
+以下のような、ロギグングの設定ファイル(YAML)を指定します。指定した場合、`--logdir`オプションは無視されます。指定しない場合、デフォルトのロギング設定ファイルが読み込まれます。
 設定ファイルの書き方は https://docs.python.org/ja/3/howto/logging.html を参照してください。
 
 ```yaml:logging-sample.yaml

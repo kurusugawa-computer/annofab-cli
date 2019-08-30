@@ -3,7 +3,6 @@
 """
 import configparser
 import datetime
-import json
 import os
 from pathlib import Path
 
@@ -93,8 +92,8 @@ def test_filesystem():
     main([
         'filesystem', 'write_annotation_image', '--annotation',
         str(zip_path), '--output_dir',
-        str(output_image_dir), '--image_size', '64x64', '--label_color',
-        f"file://{str(label_color_file)}", '--image_extension', 'jpg'
+        str(output_image_dir), '--image_size', '64x64', '--label_color', f"file://{str(label_color_file)}",
+        '--image_extension', 'jpg'
     ])
 
 
