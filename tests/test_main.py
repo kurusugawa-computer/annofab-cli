@@ -34,16 +34,37 @@ def get_organization_name(project_id: str) -> str:
     return organization["organization_name"]
 
 
-def test_task():
-    main([
-        'task', 'list', '--project_id', project_id, '--task_query',
-        f'{{"user_id": "{user_id}", "phase":"acceptance", "status": "complete"}}', '--format', 'csv'
-    ])
+class TestTask:
+    command_name = "task"
 
-    main(['task', 'cancel_acceptance', '--project_id', project_id, '--task_id', task_id, '--yes'])
+    def test_list(self):
+        main([
+            self.command_name, 'list', '--project_id', project_id, '--task_query',
+            f'{{"user_id": "{user_id}", "phase":"acceptance", "status": "complete"}}', '--format', 'csv'
+        ])
 
-    inspection_comment = datetime.datetime.now().isoformat()
-    main(['task', 'reject', '--project_id', project_id, '--task_id', task_id, '--comment', inspection_comment, '--yes'])
+    def test_cancel_acceptance(self):
+        main([self.command_name, 'cancel_acceptance', '--project_id', project_id, '--task_id', task_id, '--yes'])
+
+    def test_reject_task(self):
+        inspection_comment = datetime.datetime.now().isoformat()
+        main([
+            self.command_name, 'reject', '--project_id', project_id, '--task_id', task_id, '--comment',
+            inspection_comment, '--yes'
+        ])
+
+    def test_change_operator(self):
+        # user指定
+        main([
+            self.command_name, 'change_operator', '--project_id', project_id, '--task_id', task_id, '--user_id',
+            user_id, '--yes'
+        ])
+
+        # 未割り当て
+        main([
+            self.command_name, 'change_operator', '--project_id', project_id, '--task_id', task_id, '--not_assign',
+            '--yes'
+        ])
 
 
 def test_project():

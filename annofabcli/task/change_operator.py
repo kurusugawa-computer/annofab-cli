@@ -59,7 +59,7 @@ class ChangeOperator(AbstractCommandLineInterface):
 
             logger.debug(f"{str_progress} : task_id = {task.task_id}, "
                          f"status = {task.status.value}, "
-                         f"phase = {task.phase.value}"
+                         f"phase = {task.phase.value}, "
                          f"user_id = {self.facade.get_user_id_from_account_id(project_id, task.account_id)}")
 
             if task.status in [TaskStatus.COMPLETE, TaskStatus.WORKING]:
@@ -110,9 +110,9 @@ def parse_args(parser: argparse.ArgumentParser):
     argument_parser.add_project_id()
     argument_parser.add_task_id()
 
-    assign_group = parser.add_mutually_exclusive_group()
+    assign_group = parser.add_mutually_exclusive_group(required=True)
 
-    assign_group.add_argument('-u', '--user_id', type=str, required=True, help='タスクを新しく担当するユーザのuser_idを指定してください。')
+    assign_group.add_argument('-u', '--user_id', type=str, help='タスクを新しく担当するユーザのuser_idを指定してください。')
 
     assign_group.add_argument('--not_assign', action="store_true", help='指定した場合、タスクの担当者は未割り当てになります。')
 
