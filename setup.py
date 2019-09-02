@@ -33,7 +33,7 @@ setup(
                       'more-itertools',
                       'jmespath',
                       'pyquery',
-                      'pandas <= 0.24.2'],
+                      'pandas'],
     python_requires='>=3.6',
     classifiers=[
         "Development Status :: 4 - Beta",
