@@ -11,7 +11,8 @@ from typing import Any, Dict, List, Optional, Set
 import annofabapi
 import annofabapi.utils
 from annofabapi.models import Annotation, InputDataId, Inspection, Task, TaskHistory, TaskId
-
+from annofabapi.dataclass.annotation import FullAnnotationDetail
+from annofabapi.parser import lazy_parse_full_annotation_zip
 logger = logging.getLogger(__name__)
 
 
@@ -47,6 +48,7 @@ class Database:
         self.tasks_json_path = Path(f"{self.checkpoint_dir}/tasks.json")
         self.inspection_json_path = Path(f"{self.checkpoint_dir}/inspections.json")
         self.annotations_dir_path = Path(f"{self.checkpoint_dir}/full-annotations")
+        self.annotations_zip_path = Path(f"{self.checkpoint_dir}/full-annotations.zip")
 
     def __write_checkpoint(self, obj, pickle_file_name):
         """
@@ -102,24 +104,21 @@ class Database:
         return annotation_list
 
     def read_annotations_from_full_annotion_dir(self, task_list: List[Task]
-                                               ) -> Dict[TaskId, Dict[InputDataId, List[Annotation]]]:
+                                               ) -> Dict[TaskId, Dict[InputDataId, List[FullAnnotationDetail]]]:
         logger.debug(f"reading {self.annotations_dir_path}")
 
-        tasks_dict: Dict[TaskId, Dict[InputDataId, List[Annotation]]] = {}
+        tasks_dict: Dict[TaskId, Dict[InputDataId, List[FullAnnotationDetail]]] = {}
+        iter_parser = lazy_parse_full_annotation_zip(self.annotations_zip_path)
+        for parser in iter_parser:
+            full_annotation = parser.parse()
+            task_id = full_annotation.task_id
+            input_data_id = full_annotation.input_data_id
 
-        for task in task_list:
-            task_id = task["task_id"]
-            input_data_id_list = task["input_data_id_list"]
+            input_data_dict = tasks_dict.get(task_id)
+            if input_data_dict is None:
+                input_data_dict = {}
 
-            task_dir = self.annotations_dir_path / task_id
-            input_data_dict: Dict[InputDataId, List[Annotation]] = {}
-
-            for input_data_id in input_data_id_list:
-                input_data_json = task_dir / f"{input_data_id}.json"
-
-                annotation_list = self._read_annotations_from_json(input_data_json)
-                input_data_dict[input_data_id] = annotation_list
-
+            input_data_dict[input_data_id] = full_annotation.detail
             tasks_dict[task_id] = input_data_dict
 
         return tasks_dict
@@ -175,10 +174,10 @@ class Database:
             shutil.rmtree(str(self.annotations_dir_path))
 
         # ダウンロードしたzipを展開する
-        logger.debug(f"now extracting zip: {str(annotations_zip_file)}")
-        Path(self.annotations_dir_path).mkdir(exist_ok=True, parents=True)
-        with zipfile.ZipFile(annotations_zip_file) as existing_zip:
-            existing_zip.extractall(str(self.annotations_dir_path))
+        # logger.debug(f"now extracting zip: {str(annotations_zip_file)}")
+        # Path(self.annotations_dir_path).mkdir(exist_ok=True, parents=True)
+        # with zipfile.ZipFile(annotations_zip_file) as existing_zip:
+        #     existing_zip.extractall(str(self.annotations_dir_path))
 
     def read_tasks_from_json(self, task_query_param: Optional[Dict[str, Any]] = None,
                              ignored_task_id_list: Optional[List[TaskId]] = None) -> List[Task]:

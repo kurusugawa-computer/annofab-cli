@@ -103,7 +103,6 @@ class Tsv:
 
         prior_columns = [
             "project_id",
-            "project_title",
             "task_id",
             "phase",
             "status",

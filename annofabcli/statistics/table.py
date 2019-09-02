@@ -5,6 +5,7 @@ from typing import Any, Dict, List, Optional, Set, Tuple  # pylint: disable=unus
 import dateutil.parser
 import pandas as pd
 from annofabapi.models import Annotation, InputDataId, Inspection, Task, TaskHistory, TaskId
+from annofabapi.dataclass.annotation import FullAnnotationDetail
 
 import annofabcli
 from annofabcli.statistics.database import Database
@@ -72,7 +73,7 @@ class Table:
             self.inspections_dict = self.database.read_inspections_from_json(task_id_list)
             return self.inspections_dict
 
-    def _get_annotations_dict(self) -> Dict[TaskId, Dict[InputDataId, List[Annotation]]]:
+    def _get_annotations_dict(self) -> Dict[TaskId, Dict[InputDataId, List[FullAnnotationDetail]]]:
         if self.annotations_dict is not None:
             return self.annotations_dict
         else:
@@ -299,12 +300,6 @@ class Table:
                 arg_task["first_annotation_started_datetime"] = None
                 arg_task["first_annotation_worktime_hour"] = 0
 
-            if len(acceptance_histories) > 0:
-                for count, history in enumerate(acceptance_histories):
-                    arg_task[f"acceptance_username_{count:02d}"] = self._get_username(history["account_id"])
-                    arg_task[f"acceptance_worktime_hour_{count:02d}"] = annofabcli.utils.isoduration_to_hour(
-                        history['accumulated_labor_time_milliseconds'])
-
             arg_task["annotation_worktime_hour"] = sum([
                 annofabcli.utils.isoduration_to_hour(e["accumulated_labor_time_milliseconds"])
                 for e in annotation_histories
@@ -368,7 +363,6 @@ class Table:
             task["username"] = self._get_username(account_id)
 
             task["input_data_count"] = len(task["input_data_id_list"])
-            task["project_title"] = self.project_title
 
             task["started_date"] = str(dateutil.parser.parse(
                 task["started_datetime"]).date()) if task["started_datetime"] is not None else None
@@ -406,7 +400,7 @@ class Table:
             for label_id, label_name in self.label_dict.items():
                 annotation_count = 0
                 for annotation_list in input_data_dict.values():
-                    annotation_count += len([e for e in annotation_list if e["label_id"] == label_id])
+                    annotation_count += len([e for e in annotation_list if e.label_id == label_id])
 
                 new_task[label_name] = annotation_count
 
