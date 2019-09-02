@@ -1,7 +1,7 @@
 """
 型タイプを定義する
 """
-from typing import Any, Dict, List, Optional
+from typing import Any, Dict
 
 # 型タイプ
 Task = Dict[str, Any]

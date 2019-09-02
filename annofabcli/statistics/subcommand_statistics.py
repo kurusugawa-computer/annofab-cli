@@ -4,6 +4,7 @@ import annofabcli
 import annofabcli.common.cli
 import annofabcli.statistics.visualize
 
+
 def parse_args(parser: argparse.ArgumentParser):
 
     subparsers = parser.add_subparsers(dest='subcommand_name')

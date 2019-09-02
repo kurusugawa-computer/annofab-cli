@@ -1,21 +1,16 @@
-import configparser
 import datetime
-import logging
 import json
+import logging
 import os
 import pickle
 import shutil
-import time
+import zipfile
+from pathlib import Path
+from typing import Any, Dict, List, Optional, Set
+
 import annofabapi
 import annofabapi.utils
-import zipfile
-from typing import Any, Dict, List, Optional, Set
-from pathlib import Path
-import dateutil.parser
-
-
-from annofabapi import AnnofabApi
-from annofabapi.models import Task, Inspection, Annotation, TaskHistory, TaskId, InputDataId
+from annofabapi.models import Annotation, InputDataId, Inspection, Task, TaskHistory, TaskId
 
 logger = logging.getLogger(__name__)
 
@@ -52,7 +47,6 @@ class Database:
         self.tasks_json_path = Path(f"{self.checkpoint_dir}/tasks.json")
         self.inspection_json_path = Path(f"{self.checkpoint_dir}/inspections.json")
         self.annotations_dir_path = Path(f"{self.checkpoint_dir}/full-annotations")
-
 
     def __write_checkpoint(self, obj, pickle_file_name):
         """
@@ -107,7 +101,8 @@ class Database:
         annotation_list = full_annotation["detail"]
         return annotation_list
 
-    def read_annotations_from_full_annotion_dir(self, task_list: List[Task]) -> Dict[TaskId, Dict[InputDataId, List[Annotation]]]:
+    def read_annotations_from_full_annotion_dir(self, task_list: List[Task]
+                                               ) -> Dict[TaskId, Dict[InputDataId, List[Annotation]]]:
         logger.debug(f"reading {self.annotations_dir_path}")
 
         tasks_dict: Dict[TaskId, Dict[InputDataId, List[Annotation]]] = {}
@@ -129,7 +124,8 @@ class Database:
 
         return tasks_dict
 
-    def read_inspections_from_json(self, task_id_list: List[TaskId]) -> Dict[TaskId, Dict[InputDataId, List[Inspection]]]:
+    def read_inspections_from_json(self,
+                                   task_id_list: List[TaskId]) -> Dict[TaskId, Dict[InputDataId, List[Inspection]]]:
         logger.debug(f"reading {self.inspection_json_path}")
 
         with open(str(self.inspection_json_path)) as f:
@@ -184,7 +180,8 @@ class Database:
         with zipfile.ZipFile(annotations_zip_file) as existing_zip:
             existing_zip.extractall(str(self.annotations_dir_path))
 
-    def read_tasks_from_json(self, task_query_param: Optional[Dict[str, Any]] = None, ignored_task_id_list: Optional[List[TaskId]] = None) -> List[Task]:
+    def read_tasks_from_json(self, task_query_param: Optional[Dict[str, Any]] = None,
+                             ignored_task_id_list: Optional[List[TaskId]] = None) -> List[Task]:
         """
         tass.jsonからqueryに合致するタスクを調べる
         Args:
@@ -215,7 +212,6 @@ class Database:
             all_tasks = json.load(f)
 
         return [task for task in all_tasks if filter_task(task)]
-
 
     def update_db(self, task_query_param: Dict[str, Any], ignored_task_ids: Optional[List[str]] = None):
         """
@@ -307,4 +303,3 @@ class Database:
             tasks_dict.update({task_id: task_histories})
 
         return tasks_dict
-

@@ -2,10 +2,12 @@ import json
 import logging.config
 import os
 import pkgutil
+import re
 import sys
 from pathlib import Path
 from typing import Any, Dict, List, Optional, Set, TypeVar  # pylint: disable=unused-import
 
+import isodate
 import pandas
 import yaml
 
@@ -186,3 +188,14 @@ def to_filename(s: str):
     return re.sub(r'[\\|/|:|?|.|"|<|>|\|]', '__', s)
 
 
+def isoduration_to_hour(duration):
+    """
+    ISO 8601 duration を 時間に変換する
+    Args:
+        duration (str): ISO 8601 Durationの文字
+
+    Returns:
+        変換後の時間。
+
+    """
+    return isodate.parse_duration(duration).total_seconds() / 3600

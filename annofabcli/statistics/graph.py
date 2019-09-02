@@ -1,17 +1,16 @@
 import logging
-from typing import Any, Dict, List, Optional, Set
-
-import numpy as np
-import pandas as pd
+from typing import List
 
 import bokeh
-import bokeh.palettes
 import bokeh.layouts
+import bokeh.palettes
 import holoviews as hv
-import more_itertools
+import numpy as np
+import pandas as pd
 from bokeh.models import HoverTool
 from bokeh.plotting import ColumnDataSource, figure
-from visualize_statistics import Table, database
+
+from annofabcli.statistics.table import Table
 
 logger = logging.getLogger(__name__)
 
@@ -47,11 +46,10 @@ class Graph:
 
         detail_tooltips = [(e, "@{%s}" % e) for e in tool_tip_items]
 
-        hover_tool = HoverTool(
-            tooltips=[("index", "$index"),
-                      ("(x,y)", "($x, $y)"),
-                      ] + detail_tooltips
-        )
+        hover_tool = HoverTool(tooltips=[
+            ("index", "$index"),
+            ("(x,y)", "($x, $y)"),
+        ] + detail_tooltips)
         return hover_tool
 
     @staticmethod
@@ -70,12 +68,9 @@ class Graph:
 
         """
 
-        fig.line(x=x, y=y, source=source,
-                 legend=username,
-                 line_color=color, line_width=1, muted_alpha=0.2, muted_color=color)
-        fig.circle(x=x, y=y, source=source,
-                   legend=username, muted_alpha=0.0, muted_color=color,
-                   color=color)
+        fig.line(x=x, y=y, source=source, legend=username, line_color=color, line_width=1, muted_alpha=0.2,
+                 muted_color=color)
+        fig.circle(x=x, y=y, source=source, legend=username, muted_alpha=0.0, muted_color=color, color=color)
 
     @staticmethod
     def _set_legend(fig: bokeh.plotting.Figure, hover_tool):
@@ -111,15 +106,12 @@ class Graph:
 
         renderer = hv.renderer('bokeh')
 
-        columns = [("annotation_count", "アノテーション数", "アノテーション数"),
-                   ("sum_worktime_hour", "総作業時間[hour]", "総作業時間"),
+        columns = [("annotation_count", "アノテーション数", "アノテーション数"), ("sum_worktime_hour", "総作業時間[hour]", "総作業時間"),
                    ("annotation_worktime_hour", "教師付作業時間[hour]", "教師付作業時間"),
                    ("inspection_worktime_hour", "中間検査作業時間[hour]", "中間検査作業時間"),
                    ("acceptance_worktime_hour", "受入作業時間[hour]", "受入作業時間"),
                    ("inspection_count", "検査コメント数", "検査コメント数別タスク数"),
-                   ("input_data_count_of_inspection", "指摘を受けた画像枚数", "指摘を受けた画像枚数"),
-                   ("input_data_count", "画像枚数", "画像枚数")
-                   ]
+                   ("input_data_count_of_inspection", "指摘を受けた画像枚数", "指摘を受けた画像枚数"), ("input_data_count", "画像枚数", "画像枚数")]
 
         histograms1 = []
         for col, col_name, title_name in columns:
@@ -195,7 +187,8 @@ class Graph:
 
         max_user_length = len(self.my_palette)
         if first_annotation_user_id_list is None:
-            first_annotation_user_id_list = task_df["first_annotation_user_id"].dropna().unique().tolist()[0:max_user_length]
+            first_annotation_user_id_list = task_df["first_annotation_user_id"].dropna().unique().tolist(
+            )[0:max_user_length]
             first_annotation_user_id_list.sort()
 
         if len(first_annotation_user_id_list) > max_user_length:
@@ -210,25 +203,18 @@ class Graph:
         # グラフの情報
         fig_info_list = [
             dict(x="cumulative_annotation_count", y="cumulative_annotation_worktime_hour",
-                 title="アノテーション数と教師付作業時間の累積グラフ",
-                 x_axis_label="アノテーション数", y_axis_label="教師付作業時間[hour]"),
-
+                 title="アノテーション数と教師付作業時間の累積グラフ", x_axis_label="アノテーション数", y_axis_label="教師付作業時間[hour]"),
             dict(x="cumulative_annotation_count", y="cumulative_inspection_worktime_hour",
-                 title="アノテーション数と中間検査作業時間の累積グラフ",
-                 x_axis_label="アノテーション数", y_axis_label="中間検査作業時間[hour]"),
-
+                 title="アノテーション数と中間検査作業時間の累積グラフ", x_axis_label="アノテーション数", y_axis_label="中間検査作業時間[hour]"),
             dict(x="cumulative_annotation_count", y="cumulative_acceptance_worktime_hour",
-                 title="アノテーション数と受入作業時間の累積グラフ",
-                 x_axis_label="アノテーション数", y_axis_label="受入作業時間[hour]"),
+                 title="アノテーション数と受入作業時間の累積グラフ", x_axis_label="アノテーション数", y_axis_label="受入作業時間[hour]"),
         ]
 
         figs = []
         for fig_info in fig_info_list:
             figs.append(
-                figure(plot_width=1200, plot_height=600, title=fig_info["title"],
-                       x_axis_label=fig_info["x_axis_label"],
-                       y_axis_label=fig_info["y_axis_label"])
-            )
+                figure(plot_width=1200, plot_height=600, title=fig_info["title"], x_axis_label=fig_info["x_axis_label"],
+                       y_axis_label=fig_info["y_axis_label"]))
 
         for user_index, user_id in enumerate(first_annotation_user_id_list):
             filtered_df = df[df["first_annotation_user_id"] == user_id]
@@ -250,8 +236,8 @@ class Graph:
             username = filtered_df.iloc[0]["first_annotation_username"]
 
             for fig, fig_info in zip(figs, fig_info_list):
-                self._plot_line_and_circle(fig, x=fig_info["x"], y=fig_info["y"],
-                                           source=source, username=username, color=color)
+                self._plot_line_and_circle(fig, x=fig_info["x"], y=fig_info["y"], source=source, username=username,
+                                           color=color)
 
         hover_tool = self._create_hover_tool(tooltip_item)
         for fig in figs:

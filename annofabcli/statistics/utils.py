@@ -3,9 +3,10 @@ utils
 
 """
 
-import re
-import isodate
 from typing import Any, Callable, Dict, List, Optional, Tuple, Union  # pylint: disable=unused-import
+
+import isodate
+
 
 def isoduration_to_hour(duration):
     """

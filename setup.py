@@ -34,6 +34,7 @@ setup(
                       'jmespath',
                       'pyquery',
                       'pandas',
+                      'isodate',
                       'bokeh >=1.2.0',
                       'holoviews'],
     python_requires='>=3.6',

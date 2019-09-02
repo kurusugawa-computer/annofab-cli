@@ -1,15 +1,13 @@
 import copy
 import logging
+from typing import Any, Dict, List, Optional, Set, Tuple  # pylint: disable=unused-import
+
 import dateutil.parser
-from typing import Any, Dict, List, Optional, Set, Tuple # pylint: disable=unused-import
-
 import pandas as pd
-import visualize_statistics.config
+from annofabapi.models import Annotation, InputDataId, Inspection, Task, TaskHistory, TaskId
 
-import isodate
-import more_itertools
-from visualize_statistics import Database, utils
-from annofabapi.models import Task, Inspection, Annotation, TaskHistory, TaskId, InputDataId
+import annofabcli
+from annofabcli.statistics.database import Database
 
 logger = logging.getLogger(__name__)
 
@@ -42,7 +40,8 @@ class Table:
     inspections_dict: Dict[TaskId, Dict[InputDataId, List[Inspection]]] = None
     annotations_dict: Dict[TaskId, Dict[InputDataId, List[Annotation]]] = None
 
-    def __init__(self, database: Database, task_query_param: Dict[str, Any], ignored_task_id_list: Optional[List[TaskId]] = None):
+    def __init__(self, database: Database, task_query_param: Dict[str, Any],
+                 ignored_task_id_list: Optional[List[TaskId]] = None):
         self.annofab_service = database.annofab_service
         self.database = database
         self.task_query_param = task_query_param
@@ -52,8 +51,7 @@ class Table:
         self._update_annotaion_specs()
         self.project_title = self.annofab_service.api.get_project(self.project_id)[0]['title']
 
-        self.custom_count_annotations_info = visualize_statistics.config.custom_count_annotations_info.get(self.project_id, {})
-
+        # self.custom_count_annotations_info = visualize_statistics.config.custom_count_annotations_info.get(self.project_id, {})
 
     def _get_task_list(self) -> List[Task]:
         """
@@ -139,7 +137,6 @@ class Table:
         logger.debug("annofab_service.wrapper.get_all_project_members()")
         self.project_members_dict = self.get_project_members_dict()
 
-
     @staticmethod
     def _get_acceptance_count_and_histories(task_histories: List[TaskHistory]) -> List[Tuple[int, TaskHistory]]:
         """
@@ -150,14 +147,13 @@ class Table:
         rejections_by_phase = 0
         for i, history in enumerate(task_histories):
             if history['phase'] == 'annotation':
-                if i-1 >= 0 and task_histories[i-1]['phase'] == 'acceptance':
+                if i - 1 >= 0 and task_histories[i - 1]['phase'] == 'acceptance':
                     rejections_by_phase += 1
 
             elm = rejections_by_phase, history
             new_list.append(elm)
 
         return new_list
-
 
     def get_project_members_dict(self):
         project_members_dict = {}
@@ -166,19 +162,6 @@ class Table:
         for member in project_members:
             project_members_dict[member["account_id"]] = member
         return project_members_dict
-
-    @staticmethod
-    def isoduration_to_hour(duration):
-        """
-        ISO 8601 duration を 時間に変換する
-        Args:
-            duration (str): ISO 8601 Durationの文字
-
-        Returns:
-            変換後の時間。
-
-        """
-        return isodate.parse_duration(duration).total_seconds() / 3600
 
     @staticmethod
     def get_labels_dict(labels):
@@ -246,8 +229,9 @@ class Table:
             for input_data_id, inspection_list in input_data_dict.items():
 
                 # 検査コメントを絞り込む
-                filtered_inspection_list = [e for e in inspection_list if self._inspection_condition(
-                    e, exclude_reply, only_error_corrected)]
+                filtered_inspection_list = [
+                    e for e in inspection_list if self._inspection_condition(e, exclude_reply, only_error_corrected)
+                ]
 
                 for inspection in filtered_inspection_list:
                     commenter_account_id = inspection["commenter_account_id"]
@@ -255,8 +239,9 @@ class Table:
                     inspection["commenter_username"] = self._get_username(commenter_account_id)
 
                     # inspection_phrases_dict に存在しないkeyを取得する可能性があるので、dict.getを用いる
-                    inspection["phrases_name"] = [self.inspection_phrases_dict.get(key)
-                                                  for key in inspection["phrases"]]
+                    inspection["phrases_name"] = [
+                        self.inspection_phrases_dict.get(key) for key in inspection["phrases"]
+                    ]
 
                     annotation_id = inspection["annotation_id"]
                     inspection["label_name"] = None
@@ -275,7 +260,6 @@ class Table:
             first_annotation_user_id, first_annotation_started_datetime,
             annotation_worktime_hour, inspection_worktime_hour, acceptance_worktime_hour, sum_worktime_hour
         """
-
         def get_rejections_by_phase(phase, arg_task_histories) -> int:
             """
             phaseごとの差し戻し回数を算出
@@ -306,7 +290,8 @@ class Table:
                 arg_task["first_annotation_user_id"] = self._get_user_id(first_annotation_account_id)
                 arg_task["first_annotation_username"] = self._get_username(first_annotation_account_id)
                 arg_task["first_annotation_started_datetime"] = first_annotation_history["started_datetime"]
-                arg_task["first_annotation_worktime_hour"] = self.isoduration_to_hour(first_annotation_history["accumulated_labor_time_milliseconds"])
+                arg_task["first_annotation_worktime_hour"] = annofabcli.utils.isoduration_to_hour(
+                    first_annotation_history["accumulated_labor_time_milliseconds"])
             else:
                 arg_task["first_annotation_account_id"] = None
                 arg_task["first_annotation_user_id"] = None
@@ -317,17 +302,26 @@ class Table:
             if len(acceptance_histories) > 0:
                 for count, history in enumerate(acceptance_histories):
                     arg_task[f"acceptance_username_{count:02d}"] = self._get_username(history["account_id"])
-                    arg_task[f"acceptance_worktime_hour_{count:02d}"] = utils.isoduration_to_hour(history['accumulated_labor_time_milliseconds'])
+                    arg_task[f"acceptance_worktime_hour_{count:02d}"] = annofabcli.utils.isoduration_to_hour(
+                        history['accumulated_labor_time_milliseconds'])
 
-            arg_task["annotation_worktime_hour"] = sum(
-                [self.isoduration_to_hour(e["accumulated_labor_time_milliseconds"]) for e in annotation_histories])
-            arg_task["inspection_worktime_hour"] = sum(
-                [self.isoduration_to_hour(e["accumulated_labor_time_milliseconds"]) for e in inspection_histories])
-            arg_task["acceptance_worktime_hour"] = sum(
-                [self.isoduration_to_hour(e["accumulated_labor_time_milliseconds"]) for e in acceptance_histories])
+            arg_task["annotation_worktime_hour"] = sum([
+                annofabcli.utils.isoduration_to_hour(e["accumulated_labor_time_milliseconds"])
+                for e in annotation_histories
+            ])
+            arg_task["inspection_worktime_hour"] = sum([
+                annofabcli.utils.isoduration_to_hour(e["accumulated_labor_time_milliseconds"])
+                for e in inspection_histories
+            ])
+            arg_task["acceptance_worktime_hour"] = sum([
+                annofabcli.utils.isoduration_to_hour(e["accumulated_labor_time_milliseconds"])
+                for e in acceptance_histories
+            ])
 
-            arg_task["sum_worktime_hour"] = sum(
-                [self.isoduration_to_hour(e["accumulated_labor_time_milliseconds"]) for e in arg_task_histories])
+            arg_task["sum_worktime_hour"] = sum([
+                annofabcli.utils.isoduration_to_hour(e["accumulated_labor_time_milliseconds"])
+                for e in arg_task_histories
+            ])
 
             arg_task['number_of_rejections_by_inspection'] = get_rejections_by_phase('inspection', arg_task_histories)
             arg_task['number_of_rejections_by_acceptance'] = get_rejections_by_phase('acceptance', arg_task_histories)
@@ -342,18 +336,6 @@ class Table:
 
             arg_task["annotation_count"] = total_annotation_count
 
-
-        def set_custom_annotation_info(arg_task):
-            """アノテーションに関する独自の情報を設定する"""
-            input_data_dict = annotations_dict[arg_task["task_id"]]
-
-            for column_name, count_annotations_func in self.custom_count_annotations_info.items():
-                total_annotation_count = 0
-                for annotation_list in input_data_dict.values():
-                    total_annotation_count += count_annotations_func(annotation_list)
-
-                arg_task[column_name] = total_annotation_count
-
         def set_inspection_info(arg_task):
             # 指摘枚数
             inspection_count = 0
@@ -364,8 +346,7 @@ class Table:
             if input_data_dict is not None:
                 for input_data_id, inspection_list in input_data_dict.items():
                     # 検査コメントを絞り込む
-                    filtered_inspection_list = [e for e in inspection_list if self._inspection_condition(
-                        e, True, True)]
+                    filtered_inspection_list = [e for e in inspection_list if self._inspection_condition(e, True, True)]
                     inspection_count += len(filtered_inspection_list)
                     if len(filtered_inspection_list) > 0:
                         input_data_count_of_inspection += 1
@@ -389,16 +370,16 @@ class Table:
             task["input_data_count"] = len(task["input_data_id_list"])
             task["project_title"] = self.project_title
 
-            task["started_date"] = str(dateutil.parser.parse(task["started_datetime"]).date()) if task["started_datetime"] is not None else None
-            task["updated_date"] = str(dateutil.parser.parse(task["updated_datetime"]).date())  if task["updated_datetime"] is not None else None
+            task["started_date"] = str(dateutil.parser.parse(
+                task["started_datetime"]).date()) if task["started_datetime"] is not None else None
+            task["updated_date"] = str(dateutil.parser.parse(
+                task["updated_datetime"]).date()) if task["updated_datetime"] is not None else None
 
             set_task_histories(task, task_histories)
             set_annotation_info(task)
             set_inspection_info(task)
-            set_custom_annotation_info(task)
 
         df = pd.DataFrame(tasks)
-
 
         return df
 
@@ -483,7 +464,7 @@ class Table:
                     continue
 
                 phase = history["phase"]
-                worktime_hour = self.isoduration_to_hour(history["accumulated_labor_time_milliseconds"])
+                worktime_hour = annofabcli.utils.isoduration_to_hour(history["accumulated_labor_time_milliseconds"])
                 if history["account_id"] in member_dict:
                     member = member_dict[history["account_id"]]
                     member[f"{phase}_worktime_hour"] += worktime_hour
@@ -511,7 +492,7 @@ class Table:
             member_info = self.project_members_dict.get(account_id)
 
             for history in histories:
-                history['worktime_hour'] = utils.isoduration_to_hour(history['worktime'])
+                history['worktime_hour'] = annofabcli.utils.isoduration_to_hour(history['worktime'])
                 history['account_id'] = account_id
                 history['user_id'] = self._get_user_id(account_id)
                 history['username'] = self._get_username(account_id)
