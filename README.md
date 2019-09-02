@@ -234,6 +234,69 @@ $ annofabcli project_member put -p prj2 --csv members.csv
 ## コマンド一覧
 
 
+
+
+### annotation list_count
+task_idまたはinput_data_idで集約したアノテーションの個数をCSV形式で出力します。
+クエリのフォーマットは、[getAnnotationList API](https://annofab.com/docs/api/#operation/getAnnotationList)のクエリパラメータの`query`キー配下と同じです。
+`label_name_en`(label_idに対応), `additional_data_definition_name_en`(additional_data_definition_idに対応) キーも指定できます。
+
+
+```
+# car ラベルのアノテーション個数を出力する(task_idで集約)
+$ annofabcli annotation list_count -p prj1 --annotation_query '{"label_name_en": "car"}'
+
+# car ラベルのアノテーション個数を出力する(input_data_idで集約)
+$ annofabcli annotation list_count -p prj1 --annotation_query '{"label_name_en": "car"}' --gropu_by input_data_id
+
+# task.txtに記載されたtask_idの一覧から、car ラベルのアノテーション個数を出力する
+$ annofabcli annotation list_count -p prj1 --annotation_query '{"label_name_en": "car"}'  --task_id file://task.txt
+
+# carラベルの"occluded"チェックボックスがONのアノテーションの個数を出力する
+$ annofabcli annotation list_count -p prj1 --annotation_query '{"label_name_en": "car", "attributes":[{"additional_data_definition_name_en": "occluded", "flag": true}]}'
+
+```
+
+
+
+### annotation_specs list_label
+アノテーション仕様のラベル情報を出力します。
+
+```
+# prj1のアノテーション仕様のラベル情報を、人間が見やすい形式で出力する
+$ annofabcli annotation_specs list_label --project_id prj1
+
+# prj1のアノテーション仕様のラベル情報を、インデントされたJSONで出力する。
+$ annofabcli annotation_specs list_label --project_id prj1 --format pretty_json
+
+```
+
+
+
+### annotation_specs list_label_color
+アノテーション仕様から、label_name(english)とRGBを対応付けたJSONを出力します。
+
+```
+$ annofabcli annotation_specs list_label_color --project_id prj1 
+```
+
+```json:出力結果
+{
+  "cat": [
+    255,
+    99,
+    71
+  ],
+  "dog": [
+    255,
+    0,
+    255
+  ],
+```
+
+
+
+
 ### input_data list
 入力データ一覧を出力します。
 
@@ -245,6 +308,36 @@ $ annofabcli input_data list --project_id prj1 --input_data_query '{"input_data_
 $ annofabcli input_data list --project_id prj1 --input_data_query '{"input_data_name": "sample"}' --add_details
 
 ```
+
+
+
+### inspection_comment list
+検査コメント一覧を出力します。
+
+```
+# task1, task2の検査コメント一覧を、CSVで出力する
+$ annofabcli inspection_comment list --project_id prj1 --task_id task1 task2
+
+# タブ区切りの"out.tsv"を出力する
+$ annofabcli inspection_comment list --project_id prj1 --task_id task1 task2 --format csv --csv_format '{"sep":"\t"}'  --output out.tsv
+
+# JSONで出力する
+$ annofabcli inspection_comment list --project_id prj1 --task_id file://task.txt --format json
+ 
+```
+
+
+### inspection_comment list_unprocessed
+未処置の検査コメント一覧を出力します。
+
+```
+# 未処置の検査コメント一覧を出力する
+$ annofabcli inspection_comment list_unprocessed --project_id prj1 --task_id file://task.txt
+
+# 未処置で、user1が"hoge"とコメントした検査コメント一覧を出力する
+$ annofabcli inspection_comment list_unprocessed  --project_id prj1 --task_id file://task.txt --inspection_comment "hoge" --commenter_user_id user1 --format pretty_json --output inspection.json
+```
+
 
 
 ### instruction upload
@@ -288,98 +381,6 @@ $ annofabcli instruction upload --project_id prj1 --html instruction.html
 
 
 
-
-### staistics visualize
-統計情報を可視化します。
-
-```
-# prj1の統計情報を可視化したファイルを、/tmp/outputに出力する
-$ annofabcli staistics visualize --project_id prj1 --output_dir /tmp/output
-
-# statusがcompleteのタスクを統計情報を可視化したファイルを、/tmp/outputに出力する
-$ annofabcli staistics visualize --project_id prj1 --output_dir /tmp/output \
-  --task_query '{"status": "complete"}' 
-
-# 作業ディレクトリ（`.annofab-cli`）内のファイルから、統計情報を可視化する。
-$ annofabcli staistics visualize --project_id prj1 --not_update
-```
-
-
-
-### task list
-タスク一覧を出力します。
-
-```
-# 受入フェーズで、"usr1"が担当しているタスクの一覧を出力する
-$ annofabcli task list --project_id prj1 --task_query '{"user_id": "usr1","phase":"acceptance"}' 
-
-# 休憩中で、過去の担当者が"usr1"であるタスクの一覧を出力する。task.jsonファイルにJSON形式で出力する。
-$ annofabcli task list --project_id prj1 --task_query '{"previous_user_id": "usr1","status":"break"}' --format json --out task.json
-
-# 差し戻されたタスクのtask_idを出力する
-$ annofabcli task list --project_id prj1 --task_query '{"rejected_only": true}' --format task_id_list
-
- 
-```
-
-### task cancel_acceptance
-受け入れ完了タスクを、受け入れ取り消しにします。
-アノテーションルールを途中で変更したときなどに、利用します。
-
-
-```
-# prj1プロジェクトのタスクを、受け入れ取り消しにする。再度受け入れを担当させるユーザは未担当
-$ annofabcli task cancel_acceptance --project_id prj1 --task_id file://task.txt
-
-# prj1プロジェクトのタスクを、受け入れ取り消しにする。再度受け入れを担当させるユーザはuser1
-$ annofabcli task cancel_acceptance --project_id prj1 --task_id file://task.txt --user_id user1
-```
-
-
-### task change_operator
-タスクの担当者を変更します。
-
-
-```
-# 指定されたタスクの担当者を 'user1' に変更する。
-$ annofabcli task change_operator --project_id prj1 --task_id file://task.txt --user_id usr1
-
-# 指定されたタスクの担当者を未割り当てに変更する。
-$ annofabcli task change_operator --project_id prj1 --task_id file://task.txt --not_assign
-```
-
-
-### task complete
-未処置の検査コメントを適切な状態に変更して、タスクを受け入れ完了にします。
-特定のタスクのみ受け入れをスキップしたいときに、利用します。
-
-```
-# 未処置の検査コメントは"対応完了"状態にして、prj1プロジェクトのタスクを受け入れ完了にする。
-$ annofabcli complete_tasks --project_id prj1  --inspection_list inspection.json --inspection_status error_corrected
-
-# 未処置の検査コメントは"対応不要"状態にして、prj1プロジェクトのタスクを受け入れ完了にする。
-$ annofabcli complete_tasks --project_id prj1  --inspection_list inspection.json --inspection_status no_correction_required
-```
-
-inspection.jsonは、未処置の検査コメント一覧です。`inspection_comment list_unprocessed`コマンドで出力できます。
-
-
-
-### task reject
-検査コメントを付与して、タスクを差し戻します。検査コメントは、タスク内の先頭の画像の左上に付与します。
-アノテーションルールを途中で変更したときなどに、利用します。
-
-
-```
-# prj1プロジェクトに、"hoge"という検査コメントを付与して、タスクを差し戻す。最後のannotation phaseを担当したユーザを割り当てる（画面と同じ動き）
-$ annofabcli task reject --project_id prj1 --task_id file://tasks.txt --comment "hoge"
-
-# 差し戻したタスクに、担当者は割り当てない
-$ annofabcli task reject --project_id prj1 --task_id file://tasks.txt --comment "hoge" --not_assign
-
-# 差し戻したタスクに、ユーザuser1を割り当てる
-$ annofabcli task reject --project_id prj1 --task_id file://tasks.txt --comment "hoge" --assigned_annotator_user_id user1
-```
 
 
 
@@ -523,92 +524,98 @@ $ annofabcli project_member put --project_id prj1 --csv members.csv
 $ annofabcli project_member put --project_id prj1 --csv members.csv --delete
 ```
 
-
-
-### annotation list_count
-task_idまたはinput_data_idで集約したアノテーションの個数をCSV形式で出力します。
-クエリのフォーマットは、[getAnnotationList API](https://annofab.com/docs/api/#operation/getAnnotationList)のクエリパラメータの`query`キー配下と同じです。
-`label_name_en`(label_idに対応), `additional_data_definition_name_en`(additional_data_definition_idに対応) キーも指定できます。
-
+### staistics visualize
+統計情報を可視化します。
 
 ```
-# car ラベルのアノテーション個数を出力する(task_idで集約)
-$ annofabcli annotation list_count -p prj1 --annotation_query '{"label_name_en": "car"}'
+# prj1の統計情報を可視化したファイルを、/tmp/outputに出力する
+$ annofabcli staistics visualize --project_id prj1 --output_dir /tmp/output
 
-# car ラベルのアノテーション個数を出力する(input_data_idで集約)
-$ annofabcli annotation list_count -p prj1 --annotation_query '{"label_name_en": "car"}' --gropu_by input_data_id
+# statusがcompleteのタスクを統計情報を可視化したファイルを、/tmp/outputに出力する
+$ annofabcli staistics visualize --project_id prj1 --output_dir /tmp/output \
+  --task_query '{"status": "complete"}' 
 
-# task.txtに記載されたtask_idの一覧から、car ラベルのアノテーション個数を出力する
-$ annofabcli annotation list_count -p prj1 --annotation_query '{"label_name_en": "car"}'  --task_id file://task.txt
-
-# carラベルの"occluded"チェックボックスがONのアノテーションの個数を出力する
-$ annofabcli annotation list_count -p prj1 --annotation_query '{"label_name_en": "car", "attributes":[{"additional_data_definition_name_en": "occluded", "flag": true}]}'
-
+# 作業ディレクトリ（`.annofab-cli`）内のファイルから、統計情報を可視化する。
+$ annofabcli staistics visualize --project_id prj1 --not_update
 ```
 
 
-### inspection_comment list
-検査コメント一覧を出力します。
+
+### task list
+タスク一覧を出力します。
 
 ```
-# task1, task2の検査コメント一覧を、CSVで出力する
-$ annofabcli inspection_comment list --project_id prj1 --task_id task1 task2
+# 受入フェーズで、"usr1"が担当しているタスクの一覧を出力する
+$ annofabcli task list --project_id prj1 --task_query '{"user_id": "usr1","phase":"acceptance"}' 
 
-# タブ区切りの"out.tsv"を出力する
-$ annofabcli inspection_comment list --project_id prj1 --task_id task1 task2 --format csv --csv_format '{"sep":"\t"}'  --output out.tsv
+# 休憩中で、過去の担当者が"usr1"であるタスクの一覧を出力する。task.jsonファイルにJSON形式で出力する。
+$ annofabcli task list --project_id prj1 --task_query '{"previous_user_id": "usr1","status":"break"}' --format json --out task.json
 
-# JSONで出力する
-$ annofabcli inspection_comment list --project_id prj1 --task_id file://task.txt --format json
+# 差し戻されたタスクのtask_idを出力する
+$ annofabcli task list --project_id prj1 --task_query '{"rejected_only": true}' --format task_id_list
+
  
 ```
 
+### task cancel_acceptance
+受け入れ完了タスクを、受け入れ取り消しにします。
+アノテーションルールを途中で変更したときなどに、利用します。
 
-### inspection_comment list_unprocessed
-未処置の検査コメント一覧を出力します。
 
 ```
-# 未処置の検査コメント一覧を出力する
-$ annofabcli inspection_comment list_unprocessed --project_id prj1 --task_id file://task.txt
+# prj1プロジェクトのタスクを、受け入れ取り消しにする。再度受け入れを担当させるユーザは未担当
+$ annofabcli task cancel_acceptance --project_id prj1 --task_id file://task.txt
 
-# 未処置で、user1が"hoge"とコメントした検査コメント一覧を出力する
-$ annofabcli inspection_comment list_unprocessed  --project_id prj1 --task_id file://task.txt --inspection_comment "hoge" --commenter_user_id user1 --format pretty_json --output inspection.json
-```
-
-
-### annotation_specs list_label
-アノテーション仕様のラベル情報を出力します。
-
-```
-# prj1のアノテーション仕様のラベル情報を、人間が見やすい形式で出力する
-$ annofabcli annotation_specs list_label --project_id prj1
-
-# prj1のアノテーション仕様のラベル情報を、インデントされたJSONで出力する。
-$ annofabcli annotation_specs list_label --project_id prj1 --format pretty_json
-
+# prj1プロジェクトのタスクを、受け入れ取り消しにする。再度受け入れを担当させるユーザはuser1
+$ annofabcli task cancel_acceptance --project_id prj1 --task_id file://task.txt --user_id user1
 ```
 
 
+### task change_operator
+タスクの担当者を変更します。
 
-### annotation_specs list_label_color
-アノテーション仕様から、label_name(english)とRGBを対応付けたJSONを出力します。
 
 ```
-$ annofabcli annotation_specs list_label_color --project_id prj1 
+# 指定されたタスクの担当者を 'user1' に変更する。
+$ annofabcli task change_operator --project_id prj1 --task_id file://task.txt --user_id usr1
+
+# 指定されたタスクの担当者を未割り当てに変更する。
+$ annofabcli task change_operator --project_id prj1 --task_id file://task.txt --not_assign
 ```
 
-```json:出力結果
-{
-  "cat": [
-    255,
-    99,
-    71
-  ],
-  "dog": [
-    255,
-    0,
-    255
-  ],
+
+### task complete
+未処置の検査コメントを適切な状態に変更して、タスクを受け入れ完了にします。
+特定のタスクのみ受け入れをスキップしたいときに、利用します。
+
 ```
+# 未処置の検査コメントは"対応完了"状態にして、prj1プロジェクトのタスクを受け入れ完了にする。
+$ annofabcli complete_tasks --project_id prj1  --inspection_list inspection.json --inspection_status error_corrected
+
+# 未処置の検査コメントは"対応不要"状態にして、prj1プロジェクトのタスクを受け入れ完了にする。
+$ annofabcli complete_tasks --project_id prj1  --inspection_list inspection.json --inspection_status no_correction_required
+```
+
+inspection.jsonは、未処置の検査コメント一覧です。`inspection_comment list_unprocessed`コマンドで出力できます。
+
+
+
+### task reject
+検査コメントを付与して、タスクを差し戻します。検査コメントは、タスク内の先頭の画像の左上に付与します。
+アノテーションルールを途中で変更したときなどに、利用します。
+
+
+```
+# prj1プロジェクトに、"hoge"という検査コメントを付与して、タスクを差し戻す。最後のannotation phaseを担当したユーザを割り当てる（画面と同じ動き）
+$ annofabcli task reject --project_id prj1 --task_id file://tasks.txt --comment "hoge"
+
+# 差し戻したタスクに、担当者は割り当てない
+$ annofabcli task reject --project_id prj1 --task_id file://tasks.txt --comment "hoge" --not_assign
+
+# 差し戻したタスクに、ユーザuser1を割り当てる
+$ annofabcli task reject --project_id prj1 --task_id file://tasks.txt --comment "hoge" --assigned_annotator_user_id user1
+```
+
 
 
 
