@@ -2,10 +2,12 @@ import json
 import logging.config
 import os
 import pkgutil
+import re
 import sys
 from pathlib import Path
 from typing import Any, Dict, List, Optional, Set, TypeVar  # pylint: disable=unused-import
 
+import isodate
 import pandas
 import yaml
 
@@ -171,3 +173,29 @@ def print_according_to_format(target: Any, arg_format: FormatArgument, output: O
     elif arg_format == FormatArgument.INSPECTION_ID_LIST:
         inspection_id_list = [e['inspection_id'] for e in target]
         print_id_list(inspection_id_list, output)
+
+
+def to_filename(s: str):
+    """
+    文字列をファイル名に使えるよう変換する。ファイル名に使えない文字は"__"に変換する。
+    Args:
+        s:
+
+    Returns:
+        ファイル名用の文字列
+
+    """
+    return re.sub(r'[\\|/|:|?|.|"|<|>|\|]', '__', s)
+
+
+def isoduration_to_hour(duration):
+    """
+    ISO 8601 duration を 時間に変換する
+    Args:
+        duration (str): ISO 8601 Durationの文字
+
+    Returns:
+        変換後の時間。
+
+    """
+    return isodate.parse_duration(duration).total_seconds() / 3600

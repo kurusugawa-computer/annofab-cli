@@ -33,7 +33,10 @@ setup(
                       'more-itertools',
                       'jmespath',
                       'pyquery',
-                      'pandas <= 0.24.2'],
+                      'pandas',
+                      'isodate',
+                      'bokeh >=1.2.0',
+                      'holoviews'],
     python_requires='>=3.6',
     classifiers=[
         "Development Status :: 4 - Beta",
