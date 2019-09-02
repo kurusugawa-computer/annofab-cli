@@ -11,6 +11,7 @@ import annofabcli.instruction.subcommand_instruction
 import annofabcli.project.subcommand_project
 import annofabcli.project_member.subcommand_project_member
 import annofabcli.task.subcommand_task
+import annofabcli.statistics.subcommand_statistics
 
 logger = logging.getLogger(__name__)
 
@@ -39,6 +40,7 @@ def main(arguments: Optional[Sequence[str]] = None):
     annofabcli.project.subcommand_project.add_parser(subparsers)
     annofabcli.project_member.subcommand_project_member.add_parser(subparsers)
     annofabcli.task.subcommand_task.add_parser(subparsers)
+    annofabcli.statistics.subcommand_statistics.add_parser(subparsers)
 
     annofabcli.filesystem.subcommand_filesystem.add_parser(subparsers)
 
@@ -61,3 +63,4 @@ def main(arguments: Optional[Sequence[str]] = None):
 
 if __name__ == "__main__":
     main()
+

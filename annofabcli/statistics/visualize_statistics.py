@@ -44,7 +44,7 @@ class VisualizeStatistics(AbstractCommandLineInterface):
     統計情報を可視化する。
     """
     def visualize_statistics(self, project_id: str, work_dir: Path, output_dir: Path, task_query: Dict[str, Any],
-                             ignored_task_id_list: List[TaskId], user_id_list: List[str]):
+                             ignored_task_id_list: List[TaskId], user_id_list: List[str], update:bool=False):
         """
         タスク一覧を出力する
 
@@ -60,7 +60,8 @@ class VisualizeStatistics(AbstractCommandLineInterface):
         checkpoint_dir.mkdir(exist_ok=True, parents=True)
 
         database = Database(self.service, project_id, str(checkpoint_dir))
-        database.update_db(task_query, ignored_task_id_list)
+        if update:
+            database.update_db(task_query, ignored_task_id_list)
 
         table_obj = Table(database, task_query, ignored_task_id_list)
         write_project_name_file(self.service, project_id, str(output_dir))
@@ -87,7 +88,7 @@ class VisualizeStatistics(AbstractCommandLineInterface):
 
         self.visualize_statistics(args.project_id, output_dir=Path(args.output_dir), work_dir=Path(args.work_dir),
                                   task_query=task_query, ignored_task_id_list=ignored_task_id_list,
-                                  user_id_list=user_id_list)
+                                  user_id_list=user_id_list, update=not args.not_update)
 
 
 def main(args):
@@ -117,7 +118,7 @@ def parse_args(parser: argparse.ArgumentParser):
                                               "指定しない場合は、すべてのタスクが可視化対象です。"
                                               "file://`を先頭に付けると、一覧が記載されたファイルを指定できます。"))
 
-    parser.add_argument('--update', action="store_true", help='内部でほぞしているキャッシュフォルダを更新します。')
+    parser.add_argument('--not_update', action="store_true", help='APIにアクセスして、作業ディレクトリ内のファイルを更新します。')
 
     parser.add_argument('--work_dir', type=str, default=".annofab-cli",
                         help="作業ディレクトリのパス。指定しない場合カレントの'.annofab-cli'ディレクトリに保存する")

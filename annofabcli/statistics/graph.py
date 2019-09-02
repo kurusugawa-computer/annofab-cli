@@ -186,7 +186,7 @@ class Graph:
             return
 
         max_user_length = len(self.my_palette)
-        if first_annotation_user_id_list is None:
+        if first_annotation_user_id_list is None or len(first_annotation_user_id_list) == 0:
             first_annotation_user_id_list = task_df["first_annotation_user_id"].dropna().unique().tolist(
             )[0:max_user_length]
             first_annotation_user_id_list.sort()
