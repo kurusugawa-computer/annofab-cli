@@ -65,13 +65,13 @@ $ docker run -it -e ANNOFAB_USER_ID=XXXX -e ANNOFAB_PASSWORD=YYYYY annofab-cli a
 
 |コマンド| サブコマンド                  | 内容                                                                                                     |必要なロール|
 |----|-------------------------------|----------------------------------------------------------------------------------------------------------|------------|
+|annotation| list_count | task_idまたはinput_data_idで集約したアノテーションの個数を出力します                              |-|
+|annotation_specs| list_label | アノテーション仕様のラベル情報を出力する                              |チェッカー/オーナ|
+|annotation_specs| list_label_color             | アノテーション仕様から、label_nameとRGBを対応付けたJSONを出力する。                                      |チェッカー/オーナ|
 |input_data|list             | 入力データ一覧を出力する。                                                            |-|
+|inspection_comment| list | 検査コメントを出力する。                               |-|
+|inspection_comment| list_unprocessed | 未処置の検査コメントを出力する。                               |-|
 |instruction| upload             | HTMLファイルを作業ガイドとして登録する。                                                           |チェッカー/オーナ|
-|task| cancel_acceptance             | 受け入れ完了タスクを、受け入れ取り消しする。                                                             |オーナ|
-|task| change_operator             | タスクの担当者を変更する。                                                             |チェッカー/オーナ|
-|task| complete                | 未処置の検査コメントを適切な状態に変更して、タスクを受け入れ完了にする。                                 |チェッカー/オーナ|
-|task|list             | タスク一覧を出力する。                                                            |-|
-|task| reject                  | 検査コメントを付与してタスクを差し戻す。                                                                 |チェッカー/オーナ|
 |project| diff                 | プロジェクト間の差分を表示する                                                                           |チェッカー/オーナ|
 |project| download                 | タスクや検査コメント、アノテーションなどをダウンロードします。                                                                           |オーナ|
 |project_member| list                  | プロジェクトメンバ一覧を出力する                                                                |-|
@@ -79,11 +79,12 @@ $ docker run -it -e ANNOFAB_USER_ID=XXXX -e ANNOFAB_PASSWORD=YYYYY annofab-cli a
 |project_member| delete                  | 複数のプロジェクトからユーザを削除する。                                                                 |オーナ|
 |project_member| copy                  | プロジェクトメンバをコピーする。|オーナ(コピー先プロジェクトに対して)|
 |project_member| put                  | プロジェクトメンバに、CSVに記載されたユーザを登録する。|オーナ|
-|inspection_comment| list | 検査コメントを出力する。                               |-|
-|inspection_comment| list_unprocessed | 未処置の検査コメントを出力する。                               |-|
-|annotation| list_count | task_idまたはinput_data_idで集約したアノテーションの個数を出力します                              |-|
-|annotation_specs| list_label | アノテーション仕様のラベル情報を出力する                              |チェッカー/オーナ|
-|annotation_specs| list_label_color             | アノテーション仕様から、label_nameとRGBを対応付けたJSONを出力する。                                      |チェッカー/オーナ|
+|statistics| visualize             | 統計情報を可視化する。                                                            |オーナ|
+|task| cancel_acceptance             | 受け入れ完了タスクを、受け入れ取り消しする。                                                             |オーナ|
+|task| change_operator             | タスクの担当者を変更する。                                                             |チェッカー/オーナ|
+|task| complete                | 未処置の検査コメントを適切な状態に変更して、タスクを受け入れ完了にする。                                 |チェッカー/オーナ|
+|task|list             | タスク一覧を出力する。                                                            |-|
+|task| reject                  | 検査コメントを付与してタスクを差し戻す。                                                                 |チェッカー/オーナ|
 |filesystem| write_annotation_image        | アノテーションzip、またはそれを展開したディレクトリから、アノテーションの画像（Semantic Segmentation用）を生成する。 |-|
 
 
@@ -288,6 +289,20 @@ $ annofabcli instruction upload --project_id prj1 --html instruction.html
 
 
 
+### staistics visualize
+統計情報を可視化します。
+
+```
+# prj1の統計情報を可視化したファイルを、/tmp/outputに出力する
+$ annofabcli staistics visualize --project_id prj1 --output_dir /tmp/output
+
+# statusがcompleteのタスクを統計情報を可視化したファイルを、/tmp/outputに出力する
+$ annofabcli staistics visualize --project_id prj1 --output_dir /tmp/output \
+  --task_query '{"status": "complete"}' 
+
+# 作業ディレクトリ（`.annofab-cli`）内のファイルから、統計情報を可視化する。
+$ annofabcli staistics visualize --project_id prj1 --not_update
+```
 
 
 

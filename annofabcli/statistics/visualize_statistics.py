@@ -129,7 +129,7 @@ def parse_args(parser: argparse.ArgumentParser):
 def add_parser(subparsers: argparse._SubParsersAction):
     subcommand_name = "visualize"
     subcommand_help = "統計情報を可視化したファイルを出力します。"
-    description = ("統計情報を可視化したファイルを出力します。")
+    description = ("統計情報を可視化したファイルを出力します。毎日 03:00JST頃に更新されます。")
     epilog = "チェッカーまたはオーナロールを持つユーザで実行してください。"
 
     parser = annofabcli.common.cli.add_parser(subparsers, subcommand_name, subcommand_help, description, epilog)
