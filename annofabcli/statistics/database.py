@@ -4,16 +4,19 @@ import logging
 import os
 import pickle
 import shutil
-import zipfile
 from pathlib import Path
 from typing import Any, Dict, List, Optional, Set
 
 import annofabapi
 import annofabapi.utils
-from annofabapi.models import Annotation, InputDataId, Inspection, Task, TaskHistory, TaskId
+import more_itertools
 from annofabapi.dataclass.annotation import FullAnnotationDetail
+from annofabapi.models import Annotation, InputDataId, Inspection, Task, TaskHistory, TaskId
 from annofabapi.parser import lazy_parse_full_annotation_zip
+
 logger = logging.getLogger(__name__)
+
+AnnotationDict = Dict[TaskId, Dict[InputDataId, List[FullAnnotationDetail]]]
 
 
 class Database:
@@ -103,15 +106,25 @@ class Database:
         annotation_list = full_annotation["detail"]
         return annotation_list
 
-    def read_annotations_from_full_annotion_dir(self, task_list: List[Task]
-                                               ) -> Dict[TaskId, Dict[InputDataId, List[FullAnnotationDetail]]]:
+    @staticmethod
+    def task_exists(task_list: List[Task], task_id) -> bool:
+        task = more_itertools.first_true(task_list, pred=lambda e: e["task_id"] == task_id)
+        if task is None:
+            return False
+        else:
+            return True
+
+    def read_annotations_from_full_annotion_dir(self, task_list: List[Task]) -> AnnotationDict:
         logger.debug(f"reading {self.annotations_dir_path}")
 
-        tasks_dict: Dict[TaskId, Dict[InputDataId, List[FullAnnotationDetail]]] = {}
+        tasks_dict: AnnotationDict = {}
         iter_parser = lazy_parse_full_annotation_zip(self.annotations_zip_path)
         for parser in iter_parser:
             full_annotation = parser.parse()
             task_id = full_annotation.task_id
+            if not self.task_exists(task_list, task_id):
+                continue
+
             input_data_id = full_annotation.input_data_id
 
             input_data_dict = tasks_dict.get(task_id)
@@ -172,12 +185,6 @@ class Database:
         # 前のディレクトリを削除する
         if self.annotations_dir_path.exists():
             shutil.rmtree(str(self.annotations_dir_path))
-
-        # ダウンロードしたzipを展開する
-        # logger.debug(f"now extracting zip: {str(annotations_zip_file)}")
-        # Path(self.annotations_dir_path).mkdir(exist_ok=True, parents=True)
-        # with zipfile.ZipFile(annotations_zip_file) as existing_zip:
-        #     existing_zip.extractall(str(self.annotations_dir_path))
 
     def read_tasks_from_json(self, task_query_param: Optional[Dict[str, Any]] = None,
                              ignored_task_id_list: Optional[List[TaskId]] = None) -> List[Task]:

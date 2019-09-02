@@ -13,7 +13,6 @@ def parse_args(parser: argparse.ArgumentParser):
     annofabcli.statistics.visualize_statistics.add_parser(subparsers)
 
 
-
 def add_parser(subparsers: argparse._SubParsersAction):
     subcommand_name = "statistics"
     subcommand_help = "統計関係のサブコマンド"

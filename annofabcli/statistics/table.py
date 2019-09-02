@@ -4,11 +4,11 @@ from typing import Any, Dict, List, Optional, Set, Tuple  # pylint: disable=unus
 
 import dateutil.parser
 import pandas as pd
-from annofabapi.models import Annotation, InputDataId, Inspection, Task, TaskHistory, TaskId
 from annofabapi.dataclass.annotation import FullAnnotationDetail
+from annofabapi.models import InputDataId, Inspection, Task, TaskHistory, TaskId
 
 import annofabcli
-from annofabcli.statistics.database import Database
+from annofabcli.statistics.database import AnnotationDict, Database
 
 logger = logging.getLogger(__name__)
 
@@ -52,8 +52,6 @@ class Table:
         self._update_annotaion_specs()
         self.project_title = self.annofab_service.api.get_project(self.project_id)[0]['title']
 
-        # self.custom_count_annotations_info = visualize_statistics.config.custom_count_annotations_info.get(self.project_id, {})
-
     def _get_task_list(self) -> List[Task]:
         """
         self.task_listを返す。Noneならば、self.task_list, self.task_id_listを設定する。
@@ -73,7 +71,7 @@ class Table:
             self.inspections_dict = self.database.read_inspections_from_json(task_id_list)
             return self.inspections_dict
 
-    def _get_annotations_dict(self) -> Dict[TaskId, Dict[InputDataId, List[FullAnnotationDetail]]]:
+    def _get_annotations_dict(self) -> AnnotationDict:
         if self.annotations_dict is not None:
             return self.annotations_dict
         else:
@@ -244,7 +242,6 @@ class Table:
                         self.inspection_phrases_dict.get(key) for key in inspection["phrases"]
                     ]
 
-                    annotation_id = inspection["annotation_id"]
                     inspection["label_name"] = None
                     if inspection["label_id"] is not None:
                         inspection["label_name"] = self.label_dict.get(inspection["label_id"])

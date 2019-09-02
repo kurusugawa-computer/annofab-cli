@@ -44,7 +44,7 @@ class VisualizeStatistics(AbstractCommandLineInterface):
     統計情報を可視化する。
     """
     def visualize_statistics(self, project_id: str, work_dir: Path, output_dir: Path, task_query: Dict[str, Any],
-                             ignored_task_id_list: List[TaskId], user_id_list: List[str], update:bool=False):
+                             ignored_task_id_list: List[TaskId], user_id_list: List[str], update: bool = False):
         """
         タスク一覧を出力する
 

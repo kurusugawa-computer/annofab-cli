@@ -1,5 +1,4 @@
 import logging
-import re
 from typing import List
 
 import pandas as pd
@@ -131,12 +130,6 @@ class Tsv:
             "inspection_count",
             "input_data_count_of_inspection",
         ]
-        inspection_username_columns = sorted([c for c in df.columns if re.match(r"inspection_username_\d{2}", c)])
-        inspection_worktime_columns = sorted([c for c in df.columns if re.match(r"inspection_worktime_hour_\d{2}", c)])
-        acceptance_username_columns = sorted([c for c in df.columns if re.match(r"acceptance_username_\d{2}", c)])
-        acceptance_worktime_columns = sorted([c for c in df.columns if re.match(r"acceptance_worktime_hour_\d{2}", c)])
-        prior_columns = (prior_columns + inspection_username_columns + inspection_worktime_columns +
-                         acceptance_username_columns + acceptance_worktime_columns)
         required_columns = self._create_required_columns(df, prior_columns, dropped_columns)
         self._write_tsv(f"{self.short_project_id}_タスク一覧.tsv", df[required_columns])
 

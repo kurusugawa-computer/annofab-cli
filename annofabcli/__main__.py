@@ -10,8 +10,8 @@ import annofabcli.inspection_comment.subcommand_inspection_comment
 import annofabcli.instruction.subcommand_instruction
 import annofabcli.project.subcommand_project
 import annofabcli.project_member.subcommand_project_member
-import annofabcli.task.subcommand_task
 import annofabcli.statistics.subcommand_statistics
+import annofabcli.task.subcommand_task
 
 logger = logging.getLogger(__name__)
 
@@ -63,4 +63,3 @@ def main(arguments: Optional[Sequence[str]] = None):
 
 if __name__ == "__main__":
     main()
-
