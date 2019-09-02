@@ -39,7 +39,7 @@ class Table:
     task_id_list: List[TaskId] = None
     task_list: List[Task] = None
     inspections_dict: Dict[TaskId, Dict[InputDataId, List[Inspection]]] = None
-    annotations_dict: Dict[TaskId, Dict[InputDataId, List[Annotation]]] = None
+    annotations_dict: Dict[TaskId, Dict[InputDataId, List[FullAnnotationDetail]]] = None
 
     def __init__(self, database: Database, task_query_param: Dict[str, Any],
                  ignored_task_id_list: Optional[List[TaskId]] = None):
