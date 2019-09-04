@@ -17,10 +17,10 @@
     "develop": {
         "annofabapi": {
             "hashes": [
-                "sha256:089b51e95065d5d57814cd56ac7b325c22e46be8fb7f7b6c0afda1eb23eb9fa8",
-                "sha256:134de5a286f2c4c030e402f61d2da09d3472b967a08a79bbe98c2c9039c75076"
+                "sha256:257ee111e7e86bd726b99a84c4e9c48dde8d004574bc6596a43bd098dc90a42c",
+                "sha256:b6517e217ea4ec1d5de96dfb6c3460ab37a7b1fea8b95bee0f0bbf588197bf16"
             ],
-            "version": "==0.14.0"
+            "version": "==0.15.3"
         },
         "annofabcli": {
             "editable": true,
@@ -123,10 +123,10 @@
         },
         "dataclasses-json": {
             "hashes": [
-                "sha256:a439f95ed7c530f7709923ef72944c0e8fd3d5c7e9e9b76b8416e1a9edd6700b",
-                "sha256:e16dec16c87d1b1a58c139aa7945f27987040be39b4262cd785050dc4eb8d4a2"
+                "sha256:065a94e07599b28830b55ac17e3a26c49ef88e209513140f2ef1a1954dd303c6",
+                "sha256:d5883036560707fb785bc705fd965a0c9b94b44d10acca8ddde9dcc40dc12d61"
             ],
-            "version": "==0.3.0"
+            "version": "==0.3.2"
         },
         "dictdiffer": {
             "hashes": [
@@ -167,11 +167,11 @@
         },
         "importlib-metadata": {
             "hashes": [
-                "sha256:23d3d873e008a513952355379d93cbcab874c58f4f034ff657c7a87422fa64e8",
-                "sha256:80d2de76188eabfbfcf27e6a37342c2827801e59c4cc14b0371c56fed43820e3"
+                "sha256:9ff1b1c5a354142de080b8a4e9803e5d0d59283c93aed808617c787d16768375",
+                "sha256:b7143592e374e50584564794fcb8aaf00a23025f9db866627f89a21491847a8d"
             ],
             "markers": "python_version < '3.8'",
-            "version": "==0.19"
+            "version": "==0.20"
         },
         "isort": {
             "hashes": [
@@ -240,10 +240,10 @@
         },
         "marshmallow": {
             "hashes": [
-                "sha256:5e0b15f33c6e227b51e1fbe29a306676686f3c3a3bf7fe0aca005144c3e74d7c",
-                "sha256:8c6a22cfc9ca33945e2707c771c44030a035be96082a18643d431280b9b8f08e"
+                "sha256:23f684b54b1955ebd5bdfbdda4062e438ef86218f14f1a356f570cdf0c016ab3",
+                "sha256:fcfc9ffd75a883da06f30f604a4e81dd0b56eb9438f4d0a8de6bbaa163ce9ec3"
             ],
-            "version": "==3.0.0rc6"
+            "version": "==3.0.1"
         },
         "marshmallow-enum": {
             "hashes": [
@@ -440,11 +440,11 @@
         },
         "pytest": {
             "hashes": [
-                "sha256:95b1f6db806e5b1b5b443efeb58984c24945508f93a866c1719e1a507a957d7c",
-                "sha256:c3d5020755f70c82eceda3feaf556af9a341334414a8eca521a18f463bcead88"
+                "sha256:95d13143cc14174ca1a01ec68e84d76ba5d9d493ac02716fd9706c949a505210",
+                "sha256:b78fe2881323bd44fd9bd76e5317173d4316577e7b1cddebae9136a4495ec865"
             ],
             "index": "pypi",
-            "version": "==5.1.1"
+            "version": "==5.1.2"
         },
         "pytest-cov": {
             "hashes": [
