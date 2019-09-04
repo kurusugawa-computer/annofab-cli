@@ -165,7 +165,7 @@ class ListAnnotationCount(AbstractCommandLineInterface):
         アノテーション一覧を出力する
         """
 
-        super().validate_project(project_id, roles=None)
+        super().validate_project(project_id, project_member_roles=None)
 
         all_annotations = []
         if len(task_id_list) > 0:

@@ -93,7 +93,7 @@ class ListTasks(AbstractCommandLineInterface):
 
         """
 
-        super().validate_project(project_id, roles=None)
+        super().validate_project(project_id, project_member_roles=None)
 
         tasks = self.get_tasks(project_id, task_query)
         tasks = self.search_with_jmespath_expression(tasks)

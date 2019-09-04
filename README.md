@@ -72,6 +72,7 @@ $ docker run -it -e ANNOFAB_USER_ID=XXXX -e ANNOFAB_PASSWORD=YYYYY annofab-cli a
 |inspection_comment| list | 検査コメントを出力する。                               |-|
 |inspection_comment| list_unprocessed | 未処置の検査コメントを出力する。                               |-|
 |instruction| upload             | HTMLファイルを作業ガイドとして登録する。                                                           |チェッカー/オーナ|
+|project| copy                 | プロジェクトをコピーする                                                                           |オーナ and 組織管理者/組織オーナ|
 |project| diff                 | プロジェクト間の差分を表示する                                                                           |チェッカー/オーナ|
 |project| download                 | タスクや検査コメント、アノテーションなどをダウンロードします。                                                                           |オーナ|
 |project_member| list                  | プロジェクトメンバ一覧を出力する                                                                |-|
@@ -381,6 +382,27 @@ $ annofabcli instruction upload --project_id prj1 --html instruction.html
 
 
 
+### project cooy
+プロジェクトをコピーして（アノテーション仕様やメンバーを引き継いで）、新しいプロジェクトを作成します。
+
+
+
+```
+# prj1 プロジェクトをコピーして、"prj2-title"というプロジェクトを作成する
+$ annofabcli project copy --project_id prj1 --dest_title "prj2-title"
+
+
+# prj1 プロジェクトをコピーして、"prj2"というプロジェクトIDのプロジェクトを作成する。
+# コピーが完了するまで待つ(処理を継続する)
+$ annofabcli project copy --project_id prj1 --dest_title "prj2-title" --dest_project_id prj2 \
+ --wait_for_completion
+
+
+# prj1 プロジェクトの入力データと、タスクをコピーして、"prj2-title"というプロジェクトを作成する
+$ annofabcli project copy --project_id prj1 --dest_title "prj2-title" --copy_inputs --copy_tasks
+
+
+```
 
 
 

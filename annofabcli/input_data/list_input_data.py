@@ -100,7 +100,7 @@ class ListInputData(AbstractCommandLineInterface):
 
         """
 
-        super().validate_project(project_id, roles=None)
+        super().validate_project(project_id, project_member_roles=None)
 
         input_data_list = self.get_input_data(project_id, input_data_query, add_details)
         input_data_list = self.search_with_jmespath_expression(input_data_list)

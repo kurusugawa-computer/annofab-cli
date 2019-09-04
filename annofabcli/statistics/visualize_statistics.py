@@ -54,7 +54,7 @@ class VisualizeStatistics(AbstractCommandLineInterface):
 
         """
 
-        super().validate_project(project_id, roles=[ProjectMemberRole.OWNER])
+        super().validate_project(project_id, project_member_roles=[ProjectMemberRole.OWNER])
 
         checkpoint_dir = work_dir / project_id
         checkpoint_dir.mkdir(exist_ok=True, parents=True)
