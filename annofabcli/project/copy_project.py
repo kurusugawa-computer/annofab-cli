@@ -1,16 +1,14 @@
 import argparse
+import copy
 import logging
-from typing import Any, Callable, Dict, List, Optional, Tuple, Union  # pylint: disable=unused-import
 import uuid
-import annofabapi
-from annofabapi.models import OrganizationMember, ProjectMember, ProjectMemberRole, OrganizationMemberRole
+from typing import Any, Callable, Dict, List, Optional, Tuple, Union  # pylint: disable=unused-import
+
+from annofabapi.models import OrganizationMemberRole, ProjectMemberRole
 
 import annofabcli
-import copy
 from annofabcli import AnnofabApiFacade
-from annofabcli.common.cli import AbstractCommandLineInterface, build_annofabapi_resource_and_login
 from annofabcli.common.cli import AbstractCommandLineInterface, ArgumentParser, build_annofabapi_resource_and_login
-
 
 logger = logging.getLogger(__name__)
 
@@ -19,53 +17,71 @@ class CopyProject(AbstractCommandLineInterface):
     """
     プロジェクトをコピーする
     """
-    @staticmethod
-    def find_member(members: List[Dict[str, Any]], account_id: str) -> Optional[Dict[str, Any]]:
-        for m in members:
-            if m["account_id"] == account_id:
-                return m
-
-        return None
-
     def copy_project(self, src_project_id: str, dest_project_id: str, dest_title: str,
-                     dest_overview: Optional[str] = None, copy_options: Optional[Dict[str, bool]] = None, wait_for_completion:bool = False):
+                     dest_overview: Optional[str] = None, copy_options: Optional[Dict[str, bool]] = None,
+                     wait_for_completion: bool = False):
         """
         プロジェクトメンバを、別のプロジェクトにコピーする。
 
         Args:
             src_project_id: コピー元のproject_id
-            dest_project_id: コピー先のproject_id
-            delete_dest: Trueならばコピー先にしか存在しないプロジェクトメンバを削除する。
-
+            dest_project_id: 新しいプロジェクトのproject_id
+            dest_title: 新しいプロジェクトのタイトル
+            dest_overview: 新しいプロジェクトの概要
+            copy_options: 各項目についてコピーするかどうかのオプション
+            wait_for_completion: プロジェクトのコピーが完了するまで待つかかどうか
         """
 
-        self.validate_project(src_project_id, project_member_roles=[ProjectMemberRole.OWNER], organization_member_roles=[OrganizationMemberRole.ADMINISTRATOR, OrganizationMemberRole.OWNER])
+        self.validate_project(
+            src_project_id, project_member_roles=[ProjectMemberRole.OWNER],
+            organization_member_roles=[OrganizationMemberRole.ADMINISTRATOR, OrganizationMemberRole.OWNER])
 
         src_project_title = self.facade.get_project_title(src_project_id)
+
+        if copy_options is not None:
+            copy_target = [key.replace("copy_", "") for key in copy_options.keys() if copy_options[key]]
+            logger.info(f"コピー対象: {str(copy_target)}")
 
         confirm_message = f"{src_project_title} ({src_project_id} を、{dest_title} ({dest_project_id}) にコピーしますか？"
         if not self.confirm_processing(confirm_message):
             return
 
+        request_body: Dict[str, Any] = {}
         if copy_options is not None:
-            query_params: Dict[str, Any] = copy.deepcopy(copy_options)
-        else:
-            query_params: Dict[str, Any]  = {}
+            request_body = copy.deepcopy(copy_options)
 
-        query_params.update({
+        request_body.update({
             "dest_project_id": dest_project_id,
             "dest_title": dest_title,
             "dest_overview": dest_overview
         })
 
-        self.service.api.initiate_project_copy(src_project_id, query_params=query_params)
+        self.service.api.initiate_project_copy(src_project_id, request_body=request_body)
         logger.info(f"プロジェクトのコピーを実施しています。")
 
+        if wait_for_completion:
+            result = self.service.wrapper.wait_for_completion(src_project_id, job_type="copy-project",
+                                                              job_access_interval=60, max_job_access=15)
+            if result:
+                logger.info(f"プロジェクトのコピーが完了しました。")
+            else:
+                logger.info(f"プロジェクトのコピーは実行中 または 失敗しました。")
 
     def main(self):
         args = self.args
-        dest_project_id = args.dest_project_id if args.dest_project_id is not None else uuid.uuid4()
-        self.copy_project(args.src_project_id, args.dest_project_id, delete_dest=args.delete_dest)
+        dest_project_id = args.dest_project_id if args.dest_project_id is not None else str(uuid.uuid4())
+
+        copy_option_kyes = [
+            "copy_inputs", "copy_tasks", "copy_annotations", "copy_webhooks", "copy_supplementaly_data",
+            "copy_instructions"
+        ]
+        copy_options: Dict[str, bool] = {}
+        for key in copy_option_kyes:
+            copy_options[key] = getattr(args, key)
+
+        self.copy_project(args.project_id, dest_project_id=dest_project_id, dest_title=args.dest_title,
+                          dest_overview=args.dest_overview, copy_options=copy_options,
+                          wait_for_completion=args.wait_for_completion)
 
 
 def main(args):
@@ -79,9 +95,7 @@ def parse_args(parser: argparse.ArgumentParser):
 
     argument_parser.add_project_id(help_message='コピー元のプロジェクトのproject_idを指定してください。')
 
-
-    parser.add_argument('--dest_project_id', type=str,
-                        help='新しいプロジェクトのproject_idを指定してください。省略した場合は UUIDv4 フォーマットになります。')
+    parser.add_argument('--dest_project_id', type=str, help='新しいプロジェクトのproject_idを指定してください。省略した場合は UUIDv4 フォーマットになります。')
     parser.add_argument('--dest_title', type=str, required=True, help="新しいプロジェクトのタイトルを指定してください。")
     parser.add_argument('--dest_overview', type=str, help="新しいプロジェクトの概要を指定してください。")
 
@@ -92,7 +106,8 @@ def parse_args(parser: argparse.ArgumentParser):
     parser.add_argument('--copy_supplementaly_data', action='store_true', help="「補助情報」をコピーするかどうかを指定します。")
     parser.add_argument('--copy_instructions', action='store_true', help="「作業ガイド」をコピーするかどうかを指定します。")
 
-    parser.add_argument('--wait_for_completion', action='store_true', help="プロジェクトのコピーが完了するまで待ちます。")
+    parser.add_argument('--wait_for_completion', action='store_true', help=("プロジェクトのコピーが完了するまで待ちます。"
+                                                                            "1分ごとにプロジェクトのコピーが完了したかを確認し、最大15分間待ちます。"))
 
     parser.set_defaults(subcommand_func=main)
 

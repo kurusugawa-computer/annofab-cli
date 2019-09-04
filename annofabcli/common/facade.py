@@ -9,7 +9,7 @@ from typing import Any, Callable, Dict, List, NewType, Optional, Tuple  # pylint
 import annofabapi
 import annofabapi.utils
 import more_itertools
-from annofabapi.models import OrganizationMember, ProjectId, ProjectMemberRole, OrganizationMemberRole
+from annofabapi.models import OrganizationMember, OrganizationMemberRole, ProjectId, ProjectMemberRole
 
 logger = logging.getLogger(__name__)
 
@@ -209,7 +209,8 @@ class AnnofabApiFacade:
         my_role = ProjectMemberRole(my_member["member_role"])
         return my_role in roles
 
-    def contains_any_organization_member_role(self, organization_name: str, roles: List[OrganizationMemberRole]) -> bool:
+    def contains_any_organization_member_role(self, organization_name: str,
+                                              roles: List[OrganizationMemberRole]) -> bool:
         """
         自分自身の組織メンバとしてのロールが、指定されたロールのいずれかに合致するかどうか
         Args:

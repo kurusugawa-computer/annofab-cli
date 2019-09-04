@@ -14,11 +14,11 @@ import jmespath
 import pandas
 import requests
 from annofabapi.exceptions import AnnofabApiException
-from annofabapi.models import ProjectMemberRole, OrganizationMemberRole
+from annofabapi.models import OrganizationMemberRole, ProjectMemberRole
 
 import annofabcli
 from annofabcli.common.enums import FormatArgument
-from annofabcli.common.exceptions import AuthorizationError, ProjectAuthorizationError, OrganizationAuthorizationError
+from annofabcli.common.exceptions import OrganizationAuthorizationError, ProjectAuthorizationError
 from annofabcli.common.facade import AnnofabApiFacade
 from annofabcli.common.typing import InputDataSize
 
@@ -362,7 +362,8 @@ class AbstractCommandLineInterface(abc.ABC):
 
         logger.info(f"args: {args}")
 
-    def validate_project(self, project_id, project_member_roles: Optional[List[ProjectMemberRole]] = None, organization_member_roles: Optional[List[OrganizationMemberRole]] = None):
+    def validate_project(self, project_id, project_member_roles: Optional[List[ProjectMemberRole]] = None,
+                         organization_member_roles: Optional[List[OrganizationMemberRole]] = None):
         """
         プロジェクト or 組織に対して、必要な権限が付与されているかを確認する。
         Args:
@@ -382,7 +383,7 @@ class AbstractCommandLineInterface(abc.ABC):
                 raise ProjectAuthorizationError(project_title, project_member_roles)
 
         if organization_member_roles is not None:
-            organization_name= self.facade.get_organization_name_from_project_id(project_id)
+            organization_name = self.facade.get_organization_name_from_project_id(project_id)
             if not self.facade.contains_any_organization_member_role(organization_name, organization_member_roles):
                 raise OrganizationAuthorizationError(organization_name, organization_member_roles)
 

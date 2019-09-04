@@ -2,6 +2,7 @@ import argparse
 
 import annofabcli
 import annofabcli.common.cli
+import annofabcli.project.copy_project
 import annofabcli.project.diff_projects
 import annofabcli.project.download
 
@@ -11,6 +12,7 @@ def parse_args(parser: argparse.ArgumentParser):
     subparsers = parser.add_subparsers(dest='subcommand_name')
 
     # サブコマンドの定義
+    annofabcli.project.copy_project.add_parser(subparsers)
     annofabcli.project.diff_projects.add_parser(subparsers)
     annofabcli.project.download.add_parser(subparsers)
 
