@@ -204,7 +204,7 @@ def write_annotation_images_from_path(annotation_path: Path, image_size: InputDa
             logger.debug(f"{parser.json_file_path} の画像化をスキップします。")
             continue
 
-        output_image_file = output_dir_path / f"{parser.json_file_path}.{output_image_extension}"
+        output_image_file = output_dir_path / f"{Path(parser.json_file_path).stem}.{output_image_extension}"
         write_annotation_image(parser, image_size=image_size, label_color_dict=label_color_dict,
                                background_color=background_color, output_image_file=output_image_file)
         logger.debug(f"画像ファイル '{str(output_image_file)}' を生成しました。")
