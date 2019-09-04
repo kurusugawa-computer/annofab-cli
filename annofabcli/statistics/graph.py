@@ -210,8 +210,8 @@ class Graph:
                  title="アノテーション数と中間検査作業時間の累積グラフ", x_axis_label="アノテーション数", y_axis_label="中間検査作業時間[hour]"),
             dict(x="cumulative_annotation_count", y="cumulative_acceptance_worktime_hour",
                  title="アノテーション数と受入作業時間の累積グラフ", x_axis_label="アノテーション数", y_axis_label="受入作業時間[hour]"),
-            dict(x="cumulative_annotation_count", y="cumulative_inspection_count",
-                 title="アノテーション数と検査コメント数の累積グラフ", x_axis_label="アノテーション数", y_axis_label="検査コメント数"),
+            dict(x="cumulative_annotation_count", y="cumulative_inspection_count", title="アノテーション数と検査コメント数の累積グラフ",
+                 x_axis_label="アノテーション数", y_axis_label="検査コメント数"),
         ]
 
         figs = []
