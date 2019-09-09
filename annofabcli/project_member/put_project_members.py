@@ -67,7 +67,7 @@ class PutProjectMembers(AbstractCommandLineInterface):
         プロジェクトメンバを一括で登録する。
 
         Args:
-            project_id: プロジェクトメンバの登録先のプロジェクトぉっｇ
+            project_id: プロジェクトメンバの登録先のプロジェクトのプロジェクトID
             members: 登録するプロジェクトメンバのList
             delete: Trueならば、mebersにないメンバを、対象プロジェクトから削除する。
 
