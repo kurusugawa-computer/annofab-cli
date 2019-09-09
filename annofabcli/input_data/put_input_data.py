@@ -2,7 +2,7 @@ import argparse
 import logging
 import uuid
 from dataclasses import dataclass
-from distutils.util import strtobool # pylint: disable=import-error,no-name-in-module
+from distutils.util import strtobool  # pylint: disable=import-error,no-name-in-module
 from pathlib import Path
 from typing import Any, Callable, Dict, List, Optional, Tuple, Union  # pylint: disable=unused-import
 
@@ -111,9 +111,11 @@ class PutInputData(AbstractCommandLineInterface):
     @staticmethod
     def get_input_data_list_from_csv(csv_path: Path) -> List[CsvInputData]:
         def create_input_data(e):
-            input_data_id = e.input_data_id if e.input_data is not None else uuid.uuid4()
-            sign_required = strtobool(e.sign_required)
-            return CsvInputData(input_data_name=e.input_data_name, input_data_path=e.input_data_name,
+            input_data_id = e.input_data_id if not pandas.isna(e.input_data_id) else str(uuid.uuid4())
+            print(e.sign_required)
+            print(type(e.sign_required))
+            sign_required = strtobool(str(e.sign_required)) if not pandas.isna(e.sign_required) else None
+            return CsvInputData(input_data_name=e.input_data_name, input_data_path=e.input_data_path,
                                 input_data_id=input_data_id, sign_required=sign_required)
 
         df = pandas.read_csv(str(csv_path), sep=',', header=None,
@@ -154,8 +156,8 @@ def parse_args(parser: argparse.ArgumentParser):
 
 def add_parser(subparsers: argparse._SubParsersAction):
     subcommand_name = "put"
-    subcommand_help = "プロジェクトメンバを登録する。"
-    description = ("プロジェクトメンバを登録する。")
+    subcommand_help = "入力データを登録します。"
+    description = ("CSVに記載された入力データを登録します。")
     epilog = "オーナロールを持つユーザで実行してください。"
 
     parser = annofabcli.common.cli.add_parser(subparsers, subcommand_name, subcommand_help, description, epilog=epilog)
