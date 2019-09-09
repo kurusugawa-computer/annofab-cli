@@ -44,7 +44,7 @@ class PutInputData(AbstractCommandLineInterface):
         if last_updated_datetime is not None:
             request_body.update({'last_updated_datetime': last_updated_datetime})
 
-        self.service.api.put_input_data(project_id, request_body=request_body)
+        self.service.api.put_input_data(project_id, csv_input_data.input_data_id, request_body=request_body)
 
     def confirm_put_input_data(self, csv_input_data: CsvInputData, alread_exists: bool = False) -> bool:
 
@@ -112,8 +112,6 @@ class PutInputData(AbstractCommandLineInterface):
     def get_input_data_list_from_csv(csv_path: Path) -> List[CsvInputData]:
         def create_input_data(e):
             input_data_id = e.input_data_id if not pandas.isna(e.input_data_id) else str(uuid.uuid4())
-            print(e.sign_required)
-            print(type(e.sign_required))
             sign_required = strtobool(str(e.sign_required)) if not pandas.isna(e.sign_required) else None
             return CsvInputData(input_data_name=e.input_data_name, input_data_path=e.input_data_path,
                                 input_data_id=input_data_id, sign_required=sign_required)
