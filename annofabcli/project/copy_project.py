@@ -4,7 +4,7 @@ import logging
 import uuid
 from typing import Any, Callable, Dict, List, Optional, Tuple, Union  # pylint: disable=unused-import
 
-from annofabapi.models import OrganizationMemberRole, ProjectMemberRole
+from annofabapi.models import JobType, OrganizationMemberRole, ProjectMemberRole
 
 import annofabcli
 from annofabcli import AnnofabApiFacade
@@ -60,7 +60,7 @@ class CopyProject(AbstractCommandLineInterface):
         logger.info(f"プロジェクトのコピーを実施しています。")
 
         if wait_for_completion:
-            result = self.service.wrapper.wait_for_completion(src_project_id, job_type="copy-project",
+            result = self.service.wrapper.wait_for_completion(src_project_id, job_type=JobType.COPY_PROJECT,
                                                               job_access_interval=60, max_job_access=15)
             if result:
                 logger.info(f"プロジェクトのコピーが完了しました。")
