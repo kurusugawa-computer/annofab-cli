@@ -69,6 +69,7 @@ $ docker run -it -e ANNOFAB_USER_ID=XXXX -e ANNOFAB_PASSWORD=YYYYY annofab-cli a
 |annotation_specs| list_label | アノテーション仕様のラベル情報を出力する                              |チェッカー/オーナ|
 |annotation_specs| list_label_color             | アノテーション仕様から、label_nameとRGBを対応付けたJSONを出力する。                                      |チェッカー/オーナ|
 |input_data|list             | 入力データ一覧を出力する。                                                            |-|
+|input_data|put             | CSVに記載された入力データを登録します                                                            |オーナ|
 |inspection_comment| list | 検査コメントを出力する。                               |-|
 |inspection_comment| list_unprocessed | 未処置の検査コメントを出力する。                               |-|
 |instruction| upload             | HTMLファイルを作業ガイドとして登録する。                                                           |チェッカー/オーナ|
@@ -310,6 +311,37 @@ $ annofabcli input_data list --project_id prj1 --input_data_query '{"input_data_
 
 ```
 
+
+
+### input_data put
+CSVに記載された入力データを登録します
+
+CSVは以下のフォーマットに従います。
+
+* ヘッダ行なし
+* カンマ区切り
+* 1列目: input_data_name. 必須
+* 2列目: input_data_path. 必須
+* 3列目: input_data_id. 省略可能。省略した場合UUIDv4になる。
+* 4列目: sign_required. 省略可能. `true` or `false`
+
+CSVのサンプルです（`input_data.csv`）。
+
+```
+data1,s3://example.com/data1,id1,
+data2,s3://example.com/data2,id2,true
+data3,s3://example.com/data3,id3,false
+data4,https://example.com/data4,,
+```
+
+
+```
+# input_data.csvに記載されている入力データを登録する。すでに入力データが存在する場合はスキップする。
+$ annofabcli input_data put --project_id prj1 --csv input_data.csv
+
+# input_data.csvに記載されている入力データを登録する。すでに入力データが存在する場合は上書きする。
+$ annofabcli input_data put --project_id prj1 --csv input_data.csv --overwrite
+```
 
 
 ### inspection_comment list

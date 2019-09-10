@@ -153,7 +153,7 @@ def parse_args(parser: argparse.ArgumentParser):
 
 def add_parser(subparsers: argparse._SubParsersAction):
     subcommand_name = "put"
-    subcommand_help = "入力データを登録します。"
+    subcommand_help = "CSVに記載された入力データを登録します。"
     description = ("CSVに記載された入力データを登録します。")
     epilog = "オーナロールを持つユーザで実行してください。"
 
