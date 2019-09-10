@@ -1,0 +1,4 @@
+data1,s3://example.com/data1,id1,
+data2,s3://example.com/data2,id2,true
+data3,s3://example.com/data3,id3,false
+data4,s3://example.com/data4

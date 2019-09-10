@@ -29,6 +29,17 @@ data_path = Path('./tests/data')
 #     #main(['complete_tasks', '--project_id', project_id, '--task_id', task_id, '--yes' ])
 
 
+class TestInputData:
+    command_name = "input_data"
+
+    def test_put_input_data(self):
+        csv_file = str(data_path / "input_data2.csv")
+        # スキップするバージョン
+        main([self.command_name, 'put', '--project_id', project_id, '--csv', csv_file, '--yes'])
+        # 上書きするバージョン
+        # main([self.command_name, 'put', '--project_id', project_id, '--csv', csv_file, '--overwrite', '--yes'])
+
+
 def get_organization_name(project_id: str) -> str:
     organization, _ = service.api.get_organization_of_project(project_id)
     return organization["organization_name"]
