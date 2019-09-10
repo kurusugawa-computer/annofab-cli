@@ -196,7 +196,8 @@ http://jmespath.org/
 
 ```
 # 受入完了のタスクのtask_id一覧を、acceptance_complete_task_id.txtに出力する。
-$ annofabcli task list --project_id prj1  --task_query '{"phase": "complete","phase":"acceptance"}' --format task_id_list --output acceptance_complete_task_id.txt
+$ annofabcli task list --project_id prj1  --task_query '{"phase": "complete","phase":"acceptance"}' \
+ --format task_id_list --output acceptance_complete_task_id.txt
 
 # 受入完了タスクの中で、 "car"ラベルの"occluded"チェックボックスがONのアノテーションの個数を出力する。
 $ annofabcli annotation list_count --project_id prj1 --task_id file://task.txt --output annotation_count.csv \
@@ -207,8 +208,10 @@ $ annofabcli annotation list_count --project_id prj1 --task_id file://task.txt -
 # task_id.txtに記載されたタスクに対して、受入完了状態を取り消す。
 $ annofabcli task cancel_acceptance --project_id prj1 --task_id file://task_id.txt
 
-# task_id.txtに記載されたタスクを差し戻す。検査コメントは「carラベルのoccluded属性を見直してください」。差し戻したタスクには、最後のannotation phaseを担当したユーザを割り当てる（画面と同じ動き）。
-$ annofabcli task reject --project_id prj1 --task_id file://tasks.txt --comment "carラベルのoccluded属性を見直してください"
+# task_id.txtに記載されたタスクを差し戻す。検査コメントは「carラベルのoccluded属性を見直してください」。
+# 差し戻したタスクには、最後のannotation phaseを担当したユーザを割り当てる（画面と同じ動き）。
+$ annofabcli task reject --project_id prj1 --task_id file://tasks.txt \
+  --comment "carラベルのoccluded属性を見直してください"
 
 ```
 
@@ -246,16 +249,20 @@ task_idまたはinput_data_idで集約したアノテーションの個数をCSV
 
 ```
 # car ラベルのアノテーション個数を出力する(task_idで集約)
-$ annofabcli annotation list_count -p prj1 --annotation_query '{"label_name_en": "car"}'
+$ annofabcli annotation list_count -p prj1 \
+ --annotation_query '{"label_name_en": "car"}'
 
 # car ラベルのアノテーション個数を出力する(input_data_idで集約)
-$ annofabcli annotation list_count -p prj1 --annotation_query '{"label_name_en": "car"}' --gropu_by input_data_id
+$ annofabcli annotation list_count -p prj1 \
+ --annotation_query '{"label_name_en": "car"}' --gropu_by input_data_id
 
 # task.txtに記載されたtask_idの一覧から、car ラベルのアノテーション個数を出力する
-$ annofabcli annotation list_count -p prj1 --annotation_query '{"label_name_en": "car"}'  --task_id file://task.txt
+$ annofabcli annotation list_count -p prj1 \
+ --annotation_query '{"label_name_en": "car"}'  --task_id file://task.txt
 
 # carラベルの"occluded"チェックボックスがONのアノテーションの個数を出力する
-$ annofabcli annotation list_count -p prj1 --annotation_query '{"label_name_en": "car", "attributes":[{"additional_data_definition_name_en": "occluded", "flag": true}]}'
+$ annofabcli annotation list_count -p prj1 \
+ --annotation_query '{"label_name_en": "car", "attributes":[{"additional_data_definition_name_en": "occluded", "flag": true}]}'
 
 ```
 
@@ -334,6 +341,14 @@ data3,s3://example.com/data3,id3,false
 data4,https://example.com/data4,,
 ```
 
+`input_data list`コマンドを使えば、プロジェクトに既に登録されている入力データからCSVを作成できます。
+
+```
+$ annofabcli input_data list --project_id prj1 --input_data_query '{"input_data_name": "sample"}'  \
+ --format csv --output input_data.csv \
+ --csv_format '{"columns": ["input_data_name","input_data_path", "input_data_id", "sign_required"], "header":false}' 
+```
+
 
 ```
 # input_data.csvに記載されている入力データを登録する。すでに入力データが存在する場合はスキップする。
@@ -341,6 +356,7 @@ $ annofabcli input_data put --project_id prj1 --csv input_data.csv
 
 # input_data.csvに記載されている入力データを登録する。すでに入力データが存在する場合は上書きする。
 $ annofabcli input_data put --project_id prj1 --csv input_data.csv --overwrite
+
 ```
 
 
@@ -352,7 +368,8 @@ $ annofabcli input_data put --project_id prj1 --csv input_data.csv --overwrite
 $ annofabcli inspection_comment list --project_id prj1 --task_id task1 task2
 
 # タブ区切りの"out.tsv"を出力する
-$ annofabcli inspection_comment list --project_id prj1 --task_id task1 task2 --format csv --csv_format '{"sep":"\t"}'  --output out.tsv
+$ annofabcli inspection_comment list --project_id prj1 --task_id task1 task2 \
+ --format csv --csv_format '{"sep":"\t"}'  --output out.tsv
 
 # JSONで出力する
 $ annofabcli inspection_comment list --project_id prj1 --task_id file://task.txt --format json
@@ -368,7 +385,8 @@ $ annofabcli inspection_comment list --project_id prj1 --task_id file://task.txt
 $ annofabcli inspection_comment list_unprocessed --project_id prj1 --task_id file://task.txt
 
 # 未処置で、user1が"hoge"とコメントした検査コメント一覧を出力する
-$ annofabcli inspection_comment list_unprocessed  --project_id prj1 --task_id file://task.txt --inspection_comment "hoge" --commenter_user_id user1 --format pretty_json --output inspection.json
+$ annofabcli inspection_comment list_unprocessed  --project_id prj1 --task_id file://task.txt \
+ --inspection_comment "hoge" --commenter_user_id user1 --format pretty_json --output inspection.json
 ```
 
 
@@ -603,7 +621,8 @@ $ annofabcli staistics visualize --project_id prj1 --not_update
 $ annofabcli task list --project_id prj1 --task_query '{"user_id": "usr1","phase":"acceptance"}' 
 
 # 休憩中で、過去の担当者が"usr1"であるタスクの一覧を出力する。task.jsonファイルにJSON形式で出力する。
-$ annofabcli task list --project_id prj1 --task_query '{"previous_user_id": "usr1","status":"break"}' --format json --out task.json
+$ annofabcli task list --project_id prj1 \
+ --task_query '{"previous_user_id": "usr1","status":"break"}' --format json --out task.json
 
 # 差し戻されたタスクのtask_idを出力する
 $ annofabcli task list --project_id prj1 --task_query '{"rejected_only": true}' --format task_id_list
@@ -644,10 +663,12 @@ $ annofabcli task change_operator --project_id prj1 --task_id file://task.txt --
 
 ```
 # 未処置の検査コメントは"対応完了"状態にして、prj1プロジェクトのタスクを受け入れ完了にする。
-$ annofabcli complete_tasks --project_id prj1  --inspection_list inspection.json --inspection_status error_corrected
+$ annofabcli complete_tasks --project_id prj1  --inspection_list inspection.json \
+ --inspection_status error_corrected
 
 # 未処置の検査コメントは"対応不要"状態にして、prj1プロジェクトのタスクを受け入れ完了にする。
-$ annofabcli complete_tasks --project_id prj1  --inspection_list inspection.json --inspection_status no_correction_required
+$ annofabcli complete_tasks --project_id prj1  --inspection_list inspection.json \
+ --inspection_status no_correction_required
 ```
 
 inspection.jsonは、未処置の検査コメント一覧です。`inspection_comment list_unprocessed`コマンドで出力できます。
@@ -664,10 +685,12 @@ inspection.jsonは、未処置の検査コメント一覧です。`inspection_co
 $ annofabcli task reject --project_id prj1 --task_id file://tasks.txt --comment "hoge"
 
 # 差し戻したタスクに、担当者は割り当てない
-$ annofabcli task reject --project_id prj1 --task_id file://tasks.txt --comment "hoge" --not_assign
+$ annofabcli task reject --project_id prj1 --task_id file://tasks.txt \
+ --comment "hoge" --not_assign
 
 # 差し戻したタスクに、ユーザuser1を割り当てる
-$ annofabcli task reject --project_id prj1 --task_id file://tasks.txt --comment "hoge" --assigned_annotator_user_id user1
+$ annofabcli task reject --project_id prj1 --task_id file://tasks.txt \
+ --comment "hoge" --assigned_annotator_user_id user1
 ```
 
 
