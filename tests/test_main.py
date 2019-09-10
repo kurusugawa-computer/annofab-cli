@@ -28,6 +28,7 @@ data_path = Path('./tests/data')
 # def test_complete_tasks():
 #     #main(['complete_tasks', '--project_id', project_id, '--task_id', task_id, '--yes' ])
 
+
 class TestInputData:
     command_name = "input_data"
 

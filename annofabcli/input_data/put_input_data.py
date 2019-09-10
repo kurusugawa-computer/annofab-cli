@@ -53,6 +53,11 @@ class PutInputData(AbstractCommandLineInterface):
             message_for_confirm += f"input_data_id={csv_input_data.input_data_id} を上書きします。"
         return self.confirm_processing(message_for_confirm)
 
+    @annofabcli.utils.allow_404_error
+    def get_input_data(self, project_id: str, input_data_id: str) -> Dict[str, Any]:
+        input_data, _ = self.service.api.get_input_data(project_id, input_data_id)
+        return input_data
+
     def put_input_data_list(self, project_id: str, input_data_list: List[CsvInputData], overwrite: bool = False):
         """
         入力データを一括で登録する。
@@ -73,21 +78,15 @@ class PutInputData(AbstractCommandLineInterface):
         for csv_input_data in input_data_list:
 
             last_updated_datetime = None
-            try:
-                # loggerをOFFにできる？
-                input_data_id = csv_input_data.input_data_id
-                input_data, _ = self.service.api.get_input_data(project_id, csv_input_data.input_data_id)
+            input_data_id = csv_input_data.input_data_id
+            input_data = self.get_input_data(project_id, input_data_id)
+            if input_data is not None:
                 if overwrite:
                     logger.debug(f"input_data_id={input_data_id} はすでに存在します。")
                     last_updated_datetime = input_data['updated_datetime']
                 else:
                     logger.debug(f"input_data_id={input_data_id} がすでに存在するのでスキップします。")
                     continue
-
-            except requests.exceptions.HTTPError as e:
-                # Not Found Errorは想定通りなので処理を続ける
-                if e.response.status_code != requests.codes.not_found:
-                    raise e
 
             if not self.confirm_put_input_data(csv_input_data, alread_exists=(last_updated_datetime is not None)):
                 continue
