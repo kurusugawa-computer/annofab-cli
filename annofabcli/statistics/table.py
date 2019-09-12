@@ -5,7 +5,7 @@ from typing import Any, Dict, List, Optional, Set, Tuple  # pylint: disable=unus
 import dateutil.parser
 import pandas as pd
 from annofabapi.dataclass.annotation import FullAnnotationDetail
-from annofabapi.models import InputDataId, Inspection, Task, TaskHistory, TaskId
+from annofabapi.models import InputDataId, Inspection, Task, TaskHistory, TaskId, TaskPhase
 
 import annofabcli
 from annofabcli.statistics.database import AnnotationDict, Database
@@ -244,6 +244,72 @@ class Table:
         df = pd.DataFrame(all_inspection_list)
         return df
 
+    @staticmethod
+    def get_rejections_by_phase(task_histories: List[TaskHistory], phase: TaskPhase) -> int:
+        """
+        あるphaseでの差し戻し回数を算出
+
+        Args:
+            task_histories: タスク履歴
+            phase: どのフェーズで差し戻されたか
+
+        Returns:
+            差し戻し回数
+
+        """
+
+        rejections_by_phase = 0
+        for i, history in enumerate(task_histories):
+            if history['phase'] != phase.value or history['ended_datetime'] is None:
+                continue
+
+            if i + 1 < len(task_histories) and task_histories[i + 1]['phase'] == TaskPhase.ANNOTATION.value:
+                rejections_by_phase += 1
+
+        return rejections_by_phase
+
+    def set_task_histories(self, task: Task, task_histories: List[TaskHistory]):
+        """
+        タスク履歴関係の情報を設定する
+        """
+        annotation_histories = [e for e in task_histories if e["phase"] == TaskPhase.ANNOTATION.value]
+        inspection_histories = [e for e in task_histories if e["phase"] == TaskPhase.INSPECTION.value]
+        acceptance_histories = [e for e in task_histories if e["phase"] == TaskPhase.ACCEPTANCE.value]
+
+        if len(annotation_histories) > 0:
+            first_annotation_history = annotation_histories[0]
+            first_annotation_account_id = first_annotation_history["account_id"]
+            task["first_annotation_account_id"] = first_annotation_account_id
+            task["first_annotation_user_id"] = self._get_user_id(first_annotation_account_id)
+            task["first_annotation_username"] = self._get_username(first_annotation_account_id)
+            task["first_annotation_started_datetime"] = first_annotation_history["started_datetime"]
+            task["first_annotation_worktime_hour"] = annofabcli.utils.isoduration_to_hour(
+                first_annotation_history["accumulated_labor_time_milliseconds"])
+        else:
+            task["first_annotation_account_id"] = None
+            task["first_annotation_user_id"] = None
+            task["first_annotation_username"] = None
+            task["first_annotation_started_datetime"] = None
+            task["first_annotation_worktime_hour"] = 0
+
+        task["annotation_worktime_hour"] = sum([
+            annofabcli.utils.isoduration_to_hour(e["accumulated_labor_time_milliseconds"]) for e in annotation_histories
+        ])
+        task["inspection_worktime_hour"] = sum([
+            annofabcli.utils.isoduration_to_hour(e["accumulated_labor_time_milliseconds"]) for e in inspection_histories
+        ])
+        task["acceptance_worktime_hour"] = sum([
+            annofabcli.utils.isoduration_to_hour(e["accumulated_labor_time_milliseconds"]) for e in acceptance_histories
+        ])
+
+        task["sum_worktime_hour"] = sum(
+            [annofabcli.utils.isoduration_to_hour(e["accumulated_labor_time_milliseconds"]) for e in task_histories])
+
+        task['number_of_rejections_by_inspection'] = self.get_rejections_by_phase(task_histories, TaskPhase.INSPECTION)
+        task['number_of_rejections_by_acceptance'] = self.get_rejections_by_phase(task_histories, TaskPhase.ACCEPTANCE)
+
+        return task
+
     def create_task_df(self) -> pd.DataFrame:
         """
         タスク一覧からdataframeを作成する。
@@ -251,68 +317,6 @@ class Table:
             first_annotation_user_id, first_annotation_started_datetime,
             annotation_worktime_hour, inspection_worktime_hour, acceptance_worktime_hour, sum_worktime_hour
         """
-        def get_rejections_by_phase(phase, arg_task_histories) -> int:
-            """
-            phaseごとの差し戻し回数を算出
-            """
-
-            rejections_by_phase = 0
-            for i, history in enumerate(arg_task_histories):
-                if history['phase'] != phase or history['ended_datetime'] is None:
-                    continue
-
-                if i + 1 < len(arg_task_histories) and arg_task_histories[i + 1]['phase'] == 'annotation':
-                    rejections_by_phase += 1
-
-            return rejections_by_phase
-
-        def set_task_histories(arg_task, arg_task_histories):
-            """
-            タスク履歴関係の情報を設定する
-            """
-            annotation_histories = [e for e in arg_task_histories if e["phase"] == "annotation"]
-            inspection_histories = [e for e in arg_task_histories if e["phase"] == "inspection"]
-            acceptance_histories = [e for e in arg_task_histories if e["phase"] == "acceptance"]
-
-            if len(annotation_histories) > 0:
-                first_annotation_history = annotation_histories[0]
-                first_annotation_account_id = first_annotation_history["account_id"]
-                arg_task["first_annotation_account_id"] = first_annotation_account_id
-                arg_task["first_annotation_user_id"] = self._get_user_id(first_annotation_account_id)
-                arg_task["first_annotation_username"] = self._get_username(first_annotation_account_id)
-                arg_task["first_annotation_started_datetime"] = first_annotation_history["started_datetime"]
-                arg_task["first_annotation_worktime_hour"] = annofabcli.utils.isoduration_to_hour(
-                    first_annotation_history["accumulated_labor_time_milliseconds"])
-            else:
-                arg_task["first_annotation_account_id"] = None
-                arg_task["first_annotation_user_id"] = None
-                arg_task["first_annotation_username"] = None
-                arg_task["first_annotation_started_datetime"] = None
-                arg_task["first_annotation_worktime_hour"] = 0
-
-            arg_task["annotation_worktime_hour"] = sum([
-                annofabcli.utils.isoduration_to_hour(e["accumulated_labor_time_milliseconds"])
-                for e in annotation_histories
-            ])
-            arg_task["inspection_worktime_hour"] = sum([
-                annofabcli.utils.isoduration_to_hour(e["accumulated_labor_time_milliseconds"])
-                for e in inspection_histories
-            ])
-            arg_task["acceptance_worktime_hour"] = sum([
-                annofabcli.utils.isoduration_to_hour(e["accumulated_labor_time_milliseconds"])
-                for e in acceptance_histories
-            ])
-
-            arg_task["sum_worktime_hour"] = sum([
-                annofabcli.utils.isoduration_to_hour(e["accumulated_labor_time_milliseconds"])
-                for e in arg_task_histories
-            ])
-
-            arg_task['number_of_rejections_by_inspection'] = get_rejections_by_phase('inspection', arg_task_histories)
-            arg_task['number_of_rejections_by_acceptance'] = get_rejections_by_phase('acceptance', arg_task_histories)
-
-            return arg_task
-
         def set_annotation_info(arg_task):
             input_data_dict = annotations_dict[arg_task["task_id"]]
             total_annotation_count = 0
@@ -359,7 +363,7 @@ class Table:
             task["updated_date"] = str(dateutil.parser.parse(
                 task["updated_datetime"]).date()) if task["updated_datetime"] is not None else None
 
-            set_task_histories(task, task_histories)
+            self.set_task_histories(task, task_histories)
             set_annotation_info(task)
             set_inspection_info(task)
 
