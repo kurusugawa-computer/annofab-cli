@@ -17,29 +17,22 @@ class Table:
     """
     Databaseから取得した情報を元にPandas DataFrameを生成するクラス
     チェックポイントファイルがあること前提
+
+    Attributes:
+        label_dict: label_idとその名前の辞書
+        inspection_phrases_dict: 定型指摘IDとそのコメント
+        project_members_dict: account_idとプロジェクトメンバ情報
+
     """
-
-    #############################################
-    # Field
-    #############################################
-
-    label_dict: Dict[str, str] = None
-    """label_idとその名前の辞書"""
-
-    inspection_phrases_dict: Dict[str, str] = None
-    """定型指摘IDとそのコメント"""
-
-    project_members_dict: Dict[str, Any] = None
-    """account_idとプロジェクトメンバ情報"""
 
     #############################################
     # Private
     #############################################
 
-    task_id_list: List[TaskId] = None
-    task_list: List[Task] = None
-    inspections_dict: Dict[TaskId, Dict[InputDataId, List[Inspection]]] = None
-    annotations_dict: Dict[TaskId, Dict[InputDataId, List[FullAnnotationDetail]]] = None
+    _task_id_list: Optional[List[TaskId]] = None
+    _task_list: Optional[List[Task]] = None
+    _inspections_dict: Optional[Dict[TaskId, Dict[InputDataId, List[Inspection]]]] = None
+    _annotations_dict: Optional[Dict[TaskId, Dict[InputDataId, List[FullAnnotationDetail]]]] = None
 
     def __init__(self, database: Database, task_query_param: Dict[str, Any],
                  ignored_task_id_list: Optional[List[TaskId]] = None):
@@ -56,28 +49,28 @@ class Table:
         """
         self.task_listを返す。Noneならば、self.task_list, self.task_id_listを設定する。
         """
-        if self.task_list is not None:
-            return self.task_list
+        if self._task_list is not None:
+            return self._task_list
         else:
             task_list = self.database.read_tasks_from_json(self.task_query_param, self.ignored_task_id_list)
-            self.task_list = task_list
-            return self.task_list
+            self._task_list = task_list
+            return self._task_list
 
     def _get_inspections_dict(self) -> Dict[TaskId, Dict[InputDataId, List[Inspection]]]:
-        if self.inspections_dict is not None:
-            return self.inspections_dict
+        if self._inspections_dict is not None:
+            return self._inspections_dict
         else:
-            task_id_list = [t["task_id"] for t in self.task_list]
-            self.inspections_dict = self.database.read_inspections_from_json(task_id_list)
-            return self.inspections_dict
+            task_id_list = [t["task_id"] for t in self._get_task_list()]
+            self._inspections_dict = self.database.read_inspections_from_json(task_id_list)
+            return self._inspections_dict
 
     def _get_annotations_dict(self) -> AnnotationDict:
-        if self.annotations_dict is not None:
-            return self.annotations_dict
+        if self._annotations_dict is not None:
+            return self._annotations_dict
         else:
             task_list = self._get_task_list()
-            self.annotations_dict = self.database.read_annotations_from_full_annotion_dir(task_list)
-            return self.annotations_dict
+            self._annotations_dict = self.database.read_annotations_from_full_annotion_dir(task_list)
+            return self._annotations_dict
 
     @staticmethod
     def _inspection_condition(inspection_arg, exclude_reply: bool, only_error_corrected: bool):
@@ -154,7 +147,7 @@ class Table:
 
         return new_list
 
-    def get_project_members_dict(self):
+    def get_project_members_dict(self) -> Dict[str, Any]:
         project_members_dict = {}
 
         project_members = self.annofab_service.wrapper.get_all_project_members(self.project_id)
@@ -163,7 +156,7 @@ class Table:
         return project_members_dict
 
     @staticmethod
-    def get_labels_dict(labels):
+    def get_labels_dict(labels) -> Dict[str, str]:
         """
         ラベル情報を設定する
         Returns:
@@ -182,7 +175,7 @@ class Table:
         return label_dict
 
     @staticmethod
-    def get_inspection_phrases_dict(inspection_phrases):
+    def get_inspection_phrases_dict(inspection_phrases) -> Dict[str, str]:
         """
         定型指摘情報を取得
         Returns:
