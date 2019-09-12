@@ -254,8 +254,6 @@ class Database:
         account_statistics = self.annofab_service.api.get_account_statistics(self.project_id)[0]
         self.__write_checkpoint(account_statistics, "account_statistics.pickel")
 
-        return
-
     @staticmethod
     def get_not_updated_task_ids(old_tasks, new_tasks) -> Set[str]:
         """
@@ -302,7 +300,7 @@ class Database:
 
         for task_index, task in enumerate(tasks):
             if task_index % 10 == 0:
-                logger.debug("タスク履歴一覧取得中 %d / %d 件目" % (task_index, len(tasks)))
+                logger.debug(f"タスク履歴一覧取得中 {task_index} / {len(tasks)} 件目")
 
             task_id = task["task_id"]
             task_histories = self.annofab_service.api.get_task_histories(self.project_id, task_id)[0]

@@ -218,7 +218,7 @@ class Table:
                 continue
 
             input_data_dict = inspections_dict[task_id]
-            for input_data_id, inspection_list in input_data_dict.items():
+            for inspection_list in input_data_dict.values():
 
                 # 検査コメントを絞り込む
                 filtered_inspection_list = [
@@ -329,7 +329,7 @@ class Table:
 
             input_data_dict = inspections_dict.get(arg_task["task_id"])
             if input_data_dict is not None:
-                for input_data_id, inspection_list in input_data_dict.items():
+                for inspection_list in input_data_dict.values():
                     # 検査コメントを絞り込む
                     filtered_inspection_list = [e for e in inspection_list if self._inspection_condition(e, True, True)]
                     inspection_count += len(filtered_inspection_list)
@@ -426,7 +426,7 @@ class Table:
             })
             member_dict[account_id] = new_member
 
-        for index, row_task in task_df.iterrows():
+        for _, row_task in task_df.iterrows():
             task_id = row_task["task_id"]
 
             task_histories = task_histories_dict[task_id]

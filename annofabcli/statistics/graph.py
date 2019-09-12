@@ -1,5 +1,5 @@
 import logging
-from typing import List
+from typing import List, Optional
 
 import bokeh
 import bokeh.layouts
@@ -157,7 +157,8 @@ class Graph:
         layout2 = hv.Layout(histograms2).options(shared_axes=False)
         renderer.save(layout2, f"{self.outdir}/{self.short_project_id}_ラベルごとのアノテーション数のヒストグラム")
 
-    def write_アノテーションあたり作業時間(self, task_df: pd.DataFrame = None, first_annotation_user_id_list: List[str] = None):
+    def write_アノテーションあたり作業時間(self, task_df: pd.DataFrame = None,
+                             first_annotation_user_id_list: Optional[List[str]] = None):
         """
 
         Args:
@@ -189,9 +190,9 @@ class Graph:
 
         max_user_length = len(self.my_palette)
         if first_annotation_user_id_list is None or len(first_annotation_user_id_list) == 0:
-            first_annotation_user_id_list = task_df["first_annotation_user_id"].dropna().unique().tolist(
-            )[0:max_user_length]
-            first_annotation_user_id_list.sort()
+            tmp_list: List[str] = task_df["first_annotation_user_id"].dropna().unique().tolist()[0:max_user_length]
+            tmp_list.sort()
+            first_annotation_user_id_list = tmp_list
 
         if len(first_annotation_user_id_list) > max_user_length:
             logger.debug(f"表示対象のuser_idの数が多いため、先頭から{max_user_length}個のみグラフ化します")
@@ -223,7 +224,7 @@ class Graph:
         for user_index, user_id in enumerate(first_annotation_user_id_list):
             filtered_df = df[df["first_annotation_user_id"] == user_id]
             if filtered_df.empty:
-                logger.debug("dataframe is empty. user_id = " + user_id)
+                logger.debug(f"dataframe is empty. user_id = {user_id}")
                 continue
 
             # 列が多すぎるとbokehのグラフが表示されないので絞り込む
