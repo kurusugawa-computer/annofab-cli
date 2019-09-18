@@ -1,4 +1,3 @@
-# coding: utf-8
 """
 アノテーション仕様を出力する
 """
@@ -36,26 +35,35 @@ class PrintAnnotationSpecsLabel(AbstractCommandLineInterface):
                                                        output=output)
 
     @staticmethod
+    def get_name_list(messages: List[Dict[str, Any]]):
+        """
+        日本語名、英語名のリスト（サイズ2）を取得する。日本語名が先頭に格納されている。
+        """
+        ja_name = [e["message"] for e in messages if e["lang"] == "ja-JP"][0]
+        en_name = [e["message"] for e in messages if e["lang"] == "en-US"][0]
+        return [ja_name, en_name]
+
+    @staticmethod
     def _print_text_format_labels(labels):
         for label in labels:
             print('\t'.join([
                 label['label_id'],
                 label['annotation_type'],
-            ] + [m['message'] for m in label['label_name']['messages']]))
+            ] + PrintAnnotationSpecsLabel.get_name_list(label['label_name']['messages'])))
             for additional_data_definition in label['additional_data_definitions']:
                 print('\t'.join([
                     '',
                     additional_data_definition['additional_data_definition_id'],
                     additional_data_definition['type'],
-                ] + [m['message'] for m in additional_data_definition['name']['messages']]))
-                if additional_data_definition['type'] == 'choice':
+                ] + PrintAnnotationSpecsLabel.get_name_list(additional_data_definition['name']['messages'])))
+                if additional_data_definition['type'] in ['choice', 'select']:
                     for choice in additional_data_definition['choices']:
                         print('\t'.join([
                             '',
                             '',
                             choice['choice_id'],
                             '',
-                        ] + [m['message'] for m in choice['name']['messages']]))
+                        ] + PrintAnnotationSpecsLabel.get_name_list(choice['name']['messages'])))
 
     def main(self):
         args = self.args
@@ -68,7 +76,7 @@ def parse_args(parser: argparse.ArgumentParser):
     parser.add_argument(
         '-f', '--format', type=str, choices=['text', FormatArgument.PRETTY_JSON.value, FormatArgument.JSON.value],
         default='text', help=f'出力フォーマット '
-        'text: 人が見やすい内容, '
+        'text: 人が見やすい形式, '
         '{FormatArgument.PRETTY_JSON.value}: インデントされたJSON, '
         '{FormatArgument.JSON.value}: フラットなJSON')
 

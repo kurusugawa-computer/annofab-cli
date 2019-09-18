@@ -9,7 +9,7 @@ from typing import Any, Callable, Dict, List, NewType, Optional, Tuple  # pylint
 import annofabapi
 import annofabapi.utils
 import more_itertools
-from annofabapi.models import OrganizationMember, ProjectId, ProjectMemberRole
+from annofabapi.models import OrganizationMember, OrganizationMemberRole, ProjectId, ProjectMemberRole
 
 logger = logging.getLogger(__name__)
 
@@ -186,11 +186,15 @@ class AnnofabApiFacade:
         organization, _ = self.service.api.get_organization_of_project(project_id)
         return organization["organization_name"]
 
+    def get_organization_members_from_project_id(self, project_id: str) -> List[OrganizationMember]:
+        organization_name = self.get_organization_name_from_project_id(project_id)
+        return self.service.wrapper.get_all_organization_members(organization_name)
+
     def my_role_is_owner(self, project_id: str) -> bool:
         my_member, _ = self.service.api.get_my_member_in_project(project_id)
         return my_member["member_role"] == "owner"
 
-    def contains_anys_role(self, project_id: str, roles: List[ProjectMemberRole]) -> bool:
+    def contains_any_project_member_role(self, project_id: str, roles: List[ProjectMemberRole]) -> bool:
         """
         自分自身のプロジェクトメンバとしてのロールが、指定されたロールのいずれかに合致するかどうか
         Args:
@@ -203,6 +207,23 @@ class AnnofabApiFacade:
         """
         my_member, _ = self.service.api.get_my_member_in_project(project_id)
         my_role = ProjectMemberRole(my_member["member_role"])
+        return my_role in roles
+
+    def contains_any_organization_member_role(self, organization_name: str,
+                                              roles: List[OrganizationMemberRole]) -> bool:
+        """
+        自分自身の組織メンバとしてのロールが、指定されたロールのいずれかに合致するかどうか
+        Args:
+            organization_name: 組織名
+            roles: ロール一覧
+
+        Returns:
+            Trueなら、自分自身のロールが、指定されたロールのいずれかに合致する。
+
+        """
+        my_organizations = self.service.wrapper.get_all_my_organizations()
+        organization = more_itertools.first_true(my_organizations, pred=lambda e: e["name"] == organization_name)
+        my_role = OrganizationMemberRole(organization["my_role"])
         return my_role in roles
 
     def _download_annotation_archive_with_waiting(self, project_id: str, dest_path: str,
@@ -218,6 +239,10 @@ class AnnofabApiFacade:
         job_access_count = 0
         while True:
             job = get_latest_job()
+            if job_access_count == 0 and job["job_status"] != "progress":
+                logger.debug(f"進行中のジョブはありませんでした。")
+                return True
+
             job_access_count += 1
 
             if job["job_status"] == "succeeded":
@@ -283,14 +308,15 @@ class AnnofabApiFacade:
     # operateTaskのfacade
     ##################
 
-    def change_operator_of_task(self, project_id: str, task_id: str, account_id: str) -> Dict[str, Any]:
+    def change_operator_of_task(self, project_id: str, task_id: str,
+                                account_id: Optional[str] = None) -> Dict[str, Any]:
         """
         タスクの担当者を変更する
         Args:
             self:
             project_id:
             task_id:
-            account_id:
+            account_id: 新しい担当者のuser_id. Noneの場合未割り当てになる。
 
         Returns:
             変更後のtask情報

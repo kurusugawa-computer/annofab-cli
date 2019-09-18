@@ -8,7 +8,6 @@ from pathlib import Path
 
 import annofabapi
 
-import annofabcli
 from annofabcli.__main__ import main
 
 # プロジェクトトップに移動する
@@ -30,19 +29,53 @@ data_path = Path('./tests/data')
 #     #main(['complete_tasks', '--project_id', project_id, '--task_id', task_id, '--yes' ])
 
 
-def test_task():
-    main([
-        'task', 'list', '--project_id', project_id, '--task_query',
-        f'{{"user_id": "{user_id}", "phase":"acceptance", "status": "complete"}}', '--format', 'csv'
-    ])
+class TestInputData:
+    command_name = "input_data"
 
-    main(['task', 'cancel_acceptance', '--project_id', project_id, '--task_id', task_id, '--yes'])
+    def test_put_input_data(self):
+        csv_file = str(data_path / "input_data2.csv")
+        # スキップするバージョン
+        main([self.command_name, 'put', '--project_id', project_id, '--csv', csv_file, '--yes'])
+        # 上書きするバージョン
+        # main([self.command_name, 'put', '--project_id', project_id, '--csv', csv_file, '--overwrite', '--yes'])
 
-    inspection_comment = datetime.datetime.now().isoformat()
-    main([
-        'task', 'reject', '--project_id', project_id, '--task_id', task_id, '--comment', inspection_comment,
-        '--assign_last_annotator', '--yes'
-    ])
+
+def get_organization_name(project_id: str) -> str:
+    organization, _ = service.api.get_organization_of_project(project_id)
+    return organization["organization_name"]
+
+
+class TestTask:
+    command_name = "task"
+
+    def test_list(self):
+        main([
+            self.command_name, 'list', '--project_id', project_id, '--task_query',
+            f'{{"user_id": "{user_id}", "phase":"acceptance", "status": "complete"}}', '--format', 'csv'
+        ])
+
+    def test_cancel_acceptance(self):
+        main([self.command_name, 'cancel_acceptance', '--project_id', project_id, '--task_id', task_id, '--yes'])
+
+    def test_reject_task(self):
+        inspection_comment = datetime.datetime.now().isoformat()
+        main([
+            self.command_name, 'reject', '--project_id', project_id, '--task_id', task_id, '--comment',
+            inspection_comment, '--yes'
+        ])
+
+    def test_change_operator(self):
+        # user指定
+        main([
+            self.command_name, 'change_operator', '--project_id', project_id, '--task_id', task_id, '--user_id',
+            user_id, '--yes'
+        ])
+
+        # 未割り当て
+        main([
+            self.command_name, 'change_operator', '--project_id', project_id, '--task_id', task_id, '--not_assign',
+            '--yes'
+        ])
 
 
 def test_project():
@@ -74,8 +107,26 @@ def test_project_member():
     main(['project_member', 'invite', '--user_id', user_id, '--role', 'owner', '--project_id', project_id])
 
     main(['project_member', 'list', '--project_id', project_id])
+    organization_name = get_organization_name(project_id)
+    main(['project_member', 'list', '--organization', organization_name])
 
     main(['project_member', 'copy', project_id, project_id, '--yes'])
+
+    csv_file = str(data_path / "project_members.csv")
+    main(['project_member', 'put', '--project_id', project_id, '--csv', csv_file, '--yes'])
+
+
+def test_filesystem():
+    zip_path = data_path / "simple-annotation.zip"
+    output_image_dir = out_path / "annotation-image"
+    label_color_file = data_path / "label_color.json"
+
+    main([
+        'filesystem', 'write_annotation_image', '--annotation',
+        str(zip_path), '--output_dir',
+        str(output_image_dir), '--image_size', '64x64', '--label_color', f"file://{str(label_color_file)}",
+        '--image_extension', 'jpg'
+    ])
 
 
 def test_input_data():

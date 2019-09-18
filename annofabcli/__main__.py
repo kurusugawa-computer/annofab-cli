@@ -10,8 +10,8 @@ import annofabcli.inspection_comment.subcommand_inspection_comment
 import annofabcli.instruction.subcommand_instruction
 import annofabcli.project.subcommand_project
 import annofabcli.project_member.subcommand_project_member
+import annofabcli.statistics.subcommand_statistics
 import annofabcli.task.subcommand_task
-import annofabcli.write_annotation_image
 
 logger = logging.getLogger(__name__)
 
@@ -33,16 +33,16 @@ def main(arguments: Optional[Sequence[str]] = None):
     subparsers = parser.add_subparsers(dest='command_name')
 
     annofabcli.annotation.subcommand_annotation.add_parser(subparsers)
-    annofabcli.instruction.subcommand_instruction.add_parser(subparsers)
-    annofabcli.inspection_comment.subcommand_inspection_comment.add_parser(subparsers)
+    annofabcli.annotation_specs.subcommand_annotation_specs.add_parser(subparsers)
     annofabcli.input_data.subcommand_input_data.add_parser(subparsers)
-    annofabcli.task.subcommand_task.add_parser(subparsers)
+    annofabcli.inspection_comment.subcommand_inspection_comment.add_parser(subparsers)
+    annofabcli.instruction.subcommand_instruction.add_parser(subparsers)
     annofabcli.project.subcommand_project.add_parser(subparsers)
     annofabcli.project_member.subcommand_project_member.add_parser(subparsers)
-    annofabcli.annotation_specs.subcommand_annotation_specs.add_parser(subparsers)
-    annofabcli.filesystem.subcommand_filesystem.add_parser(subparsers)
+    annofabcli.task.subcommand_task.add_parser(subparsers)
+    annofabcli.statistics.subcommand_statistics.add_parser(subparsers)
 
-    annofabcli.write_annotation_image.add_parser(subparsers)
+    annofabcli.filesystem.subcommand_filesystem.add_parser(subparsers)
 
     if arguments is None:
         args = parser.parse_args()

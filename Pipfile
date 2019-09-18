@@ -14,10 +14,9 @@ pylint = "*"
 twine = "*"
 autoflake = "*"
 flake8 = "*"
-docutils = "==0.15.0"
+docutils = "*"
 
 [packages]
-d = {editable = true,version = "*"}
 
 [pipenv]
 # For install marshmallow==3.0.0rc6

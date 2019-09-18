@@ -14,11 +14,11 @@ import jmespath
 import pandas
 import requests
 from annofabapi.exceptions import AnnofabApiException
-from annofabapi.models import ProjectMemberRole  # pylint: disable=unused-import
+from annofabapi.models import OrganizationMemberRole, ProjectMemberRole
 
 import annofabcli
 from annofabcli.common.enums import FormatArgument
-from annofabcli.common.exceptions import AuthorizationError
+from annofabcli.common.exceptions import OrganizationAuthorizationError, ProjectAuthorizationError
 from annofabcli.common.facade import AnnofabApiFacade
 from annofabcli.common.typing import InputDataSize
 
@@ -362,12 +362,14 @@ class AbstractCommandLineInterface(abc.ABC):
 
         logger.info(f"args: {args}")
 
-    def validate_project(self, project_id, roles: Optional[List[ProjectMemberRole]] = None):
+    def validate_project(self, project_id, project_member_roles: Optional[List[ProjectMemberRole]] = None,
+                         organization_member_roles: Optional[List[OrganizationMemberRole]] = None):
         """
-        プロジェクトに対する権限が付与されているかを確認する。
+        プロジェクト or 組織に対して、必要な権限が付与されているかを確認する。
         Args:
             project_id:　
-            roles: Roleの一覧。
+            project_member_roles: プロジェクトメンバロールの一覧
+            organization_member_roles: 組織メンバロールの一覧
 
         Raises:
              AuthorizationError: 自分自身のRoleがいずれかのRoleにも合致しなければ、AuthorizationErrorが発生する。
@@ -376,9 +378,14 @@ class AbstractCommandLineInterface(abc.ABC):
         project_title = self.facade.get_project_title(project_id)
         logger.info(f"project_title = {project_title}, project_id = {project_id}")
 
-        if roles is not None:
-            if not self.facade.contains_anys_role(project_id, roles):
-                raise AuthorizationError(project_title, roles)
+        if project_member_roles is not None:
+            if not self.facade.contains_any_project_member_role(project_id, project_member_roles):
+                raise ProjectAuthorizationError(project_title, project_member_roles)
+
+        if organization_member_roles is not None:
+            organization_name = self.facade.get_organization_name_from_project_id(project_id)
+            if not self.facade.contains_any_organization_member_role(organization_name, organization_member_roles):
+                raise OrganizationAuthorizationError(organization_name, organization_member_roles)
 
     def confirm_processing(self, confirm_message: str) -> bool:
         """

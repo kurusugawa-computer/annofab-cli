@@ -2,8 +2,7 @@ import argparse
 
 import annofabcli
 import annofabcli.common.cli
-import annofabcli.input_data.list_input_data
-import annofabcli.input_data.put_input_data
+import annofabcli.statistics.visualize_statistics
 
 
 def parse_args(parser: argparse.ArgumentParser):
@@ -11,14 +10,13 @@ def parse_args(parser: argparse.ArgumentParser):
     subparsers = parser.add_subparsers(dest='subcommand_name')
 
     # サブコマンドの定義
-    annofabcli.input_data.list_input_data.add_parser(subparsers)
-    annofabcli.input_data.put_input_data.add_parser(subparsers)
+    annofabcli.statistics.visualize_statistics.add_parser(subparsers)
 
 
 def add_parser(subparsers: argparse._SubParsersAction):
-    subcommand_name = "input_data"
-    subcommand_help = "入力データ関係のサブコマンド"
-    description = "入力データ関係のサブコマンド"
+    subcommand_name = "statistics"
+    subcommand_help = "統計関係のサブコマンド"
+    description = "統計関係のサブコマンド"
 
     parser = annofabcli.common.cli.add_parser(subparsers, subcommand_name, subcommand_help, description)
     parse_args(parser)

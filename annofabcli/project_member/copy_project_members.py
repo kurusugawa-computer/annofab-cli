@@ -36,8 +36,8 @@ class CopyProjectMembers(AbstractCommandLineInterface):
 
         """
 
-        super().validate_project(src_project_id, roles=None)
-        super().validate_project(dest_project_id, roles=[ProjectMemberRole.OWNER])
+        super().validate_project(src_project_id, project_member_roles=None)
+        super().validate_project(dest_project_id, project_member_roles=[ProjectMemberRole.OWNER])
 
     def get_organization_members_from_project_id(self, project_id: str) -> List[OrganizationMember]:
         organization_name = self.facade.get_organization_name_from_project_id(project_id)
@@ -55,16 +55,10 @@ class CopyProjectMembers(AbstractCommandLineInterface):
         """
         プロジェクトメンバを、別のプロジェクトにコピーする。
 
-        Note:
-            誤って実行しないようにすること
-
         Args:
             src_project_id: コピー元のproject_id
             dest_project_id: コピー先のproject_id
             delete_dest: Trueならばコピー先にしか存在しないプロジェクトメンバを削除する。
-
-        Returns:
-            `putProjectMember` APIのContentのList
 
         """
 
