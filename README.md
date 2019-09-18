@@ -286,7 +286,7 @@ $ annofabcli annotation list_count --project_id prj1 \
 アノテーション仕様のラベル情報を出力します。
 
 ```
-# prj1のアノテーション仕様のラベル情報を、人間が見やすい形式で出力する
+# prj1のアノテーション仕様のラベル情報を、人間が見やすい形式（`--format text`）で出力する
 $ annofabcli annotation_specs list_label --project_id prj1
 
 # prj1のアノテーション仕様のラベル情報を、インデントされたJSONで出力する。
@@ -294,6 +294,44 @@ $ annofabcli annotation_specs list_label --project_id prj1 --format pretty_json
 
 ```
 
+#### `--format text`の出力結果 
+`--format text`の出力結果は、以下のフォーマットで出力されます。
+
+```
+label_id    label_type    label_name_ja    label_name_en
+    attribute_id    attribute_type    attribute_name_ja    attribute_name_ja
+        choice_id    choice_name_ja    choice_name_en
+        ...
+    ...
+...
+```
+
+サンプルプロジェクトでコマンドを実行した結果は、以下の通りです。
+
+```
+15ba7932-24b9-4cf3-95bd-9bf6deede4fa	bounding_box	ネコ	Cat
+	e6864d96-78fa-45f3-a786-6c8c900c92ae	flag	隠れ	occluded
+	51e8c91f-5de1-450b-a0f3-94fec582f5ce	link	目のリンク	link-eye
+	aff2855e-2e3d-47a2-8c27-c7652e4dfb2f	integer	体重	weight
+	7e6a577a-3410-4c8a-9624-2904bb2e6666	comment	名前	name
+	a63a0513-a96e-4c7c-8754-88a24fef9ca9	text	備考	memo
+	649abf45-1ed7-459a-8282-a58228e9a302	tracking	object id	object id
+c754f724-5f8c-48eb-81ec-ea77e55efee7	polyline	足	leg
+f50aa88d-36c7-43f5-8728-247a49b4f4d8	point	目	eye
+108ce1f7-217b-43e9-a407-8d0ac6aad87e	segmentation	犬	dog
+2ffb4c74-106b-44ac-81ce-3c3df77518e0	segmentation_v2	人間	human
+ded52dcb-bcd6-4e77-9626-61e546f635d0	polygon	鳥	bird
+5ac0d7d5-6738-4c4b-a69a-cd583ff458e1	classification	気候	climatic
+	896d7eeb-9c60-4fbf-b7c4-8f4209261049	choice	天気	weather
+		c9615782-b872-4641-9be4-0fb4f905d966		晴	sunny
+		553018a5-e594-4536-bc05-876fa6b48ed5		雨	rainy
+	60caffa5-6300-4819-9a99-c43ce49008c2	select	気温	temparature
+		89b3577d-a245-4b85-82ef-6569ecbf8ad7		10	10
+		bdcd4d5b-cecc-4ec9-9038-d9284cd4f475		20	20
+		9f3a0355-2cc8-412a-9129-3b62fa7b6ead		30	30
+		2726336c-96d3-485b-9f96-7d4bcc97083b		40	40
+
+```
 
 
 ### annotation_specs list_label_color
@@ -302,6 +340,8 @@ $ annofabcli annotation_specs list_label --project_id prj1 --format pretty_json
 ```
 $ annofabcli annotation_specs list_label_color --project_id prj1 
 ```
+
+以下のJSONのような出力結果になります。
 
 ```json:出力結果
 {
@@ -331,6 +371,13 @@ $ annofabcli input_data list --project_id prj1 --input_data_query '{"input_data_
 $ annofabcli input_data list --project_id prj1 --input_data_query '{"input_data_name": "sample"}' --add_details
 
 ```
+
+#### 出力結果（CSV）
+
+
+| etag                             | input_data_id                        | input_data_name                   | input_data_path                                                                                                                                                                 | original_input_data_path                                                                                                                                                        | original_resolution | project_id                           | resized_resolution | sign_required | task_id_list   | updated_datetime              | url                                                                                                                                                                        |
+|----------------------------------|--------------------------------------|-----------------------------------|---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------|---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------|---------------------|--------------------------------------|--------------------|---------------|----------------|-------------------------------|----------------------------------------------------------------------------------------------------------------------------------------------------------------------------|
+| a43717273502b67a1989c9b25e252cde | 3c8d8f15-14f0-467a-a8fe-562cbbccf08a | val.zip/val/9a70bdec-1504e338.jpg | s3://example.com/example | s3://example.com/example |                     | 58a2a621-7d4b-41e7-927b-cdc570c1114a |                    | False         | ['sample_247'] | 2019-04-19T16:36:17.846+09:00 | https://annofab.com/projects/example/input_data/example |
 
 
 
