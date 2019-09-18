@@ -1,5 +1,5 @@
 # 概要
-annofabapiを使ったCLI(Command Line Interface)ツールです。
+AnnoFabのCLI(Command Line Interface)ツールです。
 「タスクの一括差し戻し」や、「プロジェクト間の差分表示」など、AnnoFabの画面で実施するには時間がかかる操作を、コマンドとして提供しています。
 
 # 注意
@@ -53,7 +53,7 @@ $ ./docker-build.sh
 $ docker run -it annofab-cli annofabcli --help
 
 # AnnoFabの認証情報を標準入力から指定する
-$ docker run -it annofab-cli annofabcli diff_projects prj1 prj2
+$ docker run -it annofab-cli annofabcli project diff prj1 prj2
 Enter AnnoFab User ID: XXXXXX
 Enter AnnoFab Password: 
 
@@ -66,28 +66,28 @@ $ docker run -it -e ANNOFAB_USER_ID=XXXX -e ANNOFAB_PASSWORD=YYYYY annofab-cli a
 |コマンド| サブコマンド                  | 内容                                                                                                     |必要なロール|
 |----|-------------------------------|----------------------------------------------------------------------------------------------------------|------------|
 |annotation| list_count | task_idまたはinput_data_idで集約したアノテーションの個数を出力します                              |-|
-|annotation_specs| list_label | アノテーション仕様のラベル情報を出力する                              |チェッカー/オーナ|
-|annotation_specs| list_label_color             | アノテーション仕様から、label_nameとRGBを対応付けたJSONを出力する。                                      |チェッカー/オーナ|
-|input_data|list             | 入力データ一覧を出力する。                                                            |-|
-|input_data|put             | CSVに記載された入力データを登録します                                                            |オーナ|
-|inspection_comment| list | 検査コメントを出力する。                               |-|
-|inspection_comment| list_unprocessed | 未処置の検査コメントを出力する。                               |-|
-|instruction| upload             | HTMLファイルを作業ガイドとして登録する。                                                           |チェッカー/オーナ|
-|project| copy                 | プロジェクトをコピーする                                                                           |オーナ and 組織管理者/組織オーナ|
-|project| diff                 | プロジェクト間の差分を表示する                                                                           |チェッカー/オーナ|
+|annotation_specs| list_label | アノテーション仕様のラベル情報を出力します。                              |チェッカー/オーナ|
+|annotation_specs| list_label_color             | アノテーション仕様から、label_nameとRGBを対応付けたJSONを出力します。                                      |チェッカー/オーナ|
+|filesystem| write_annotation_image        | アノテーションzip、またはそれを展開したディレクトリから、アノテーションの画像（Semantic Segmentation用）を生成します。 |-|
+|input_data|list             | 入力データ一覧を出力します。                                                            |-|
+|input_data|put             | CSVに記載された入力データを登録します。                                                            |オーナ|
+|inspection_comment| list | 検査コメントを出力します。                               |-|
+|inspection_comment| list_unprocessed | 未処置の検査コメントを出力します。                               |-|
+|instruction| upload             | HTMLファイルを作業ガイドとして登録します。                                                           |チェッカー/オーナ|
+|project| copy                 | プロジェクトをコピーします。                                                                           |オーナ and 組織管理者/組織オーナ|
+|project| diff                 | プロジェクト間の差分を表示します。                                                                           |チェッカー/オーナ|
 |project| download                 | タスクや検査コメント、アノテーションなどをダウンロードします。                                                                           |オーナ|
-|project_member| list                  | プロジェクトメンバ一覧を出力する                                                                |-|
-|project_member| invite                  | 複数のプロジェクトに、ユーザを招待する。                                                                 |オーナ|
-|project_member| delete                  | 複数のプロジェクトからユーザを削除する。                                                                 |オーナ|
-|project_member| copy                  | プロジェクトメンバをコピーする。|オーナ(コピー先プロジェクトに対して)|
-|project_member| put                  | プロジェクトメンバに、CSVに記載されたユーザを登録する。|オーナ|
-|statistics| visualize             | 統計情報を可視化する。                                                            |オーナ|
-|task| cancel_acceptance             | 受け入れ完了タスクを、受け入れ取り消しする。                                                             |オーナ|
-|task| change_operator             | タスクの担当者を変更する。                                                             |チェッカー/オーナ|
-|task| complete                | 未処置の検査コメントを適切な状態に変更して、タスクを受け入れ完了にする。                                 |チェッカー/オーナ|
-|task|list             | タスク一覧を出力する。                                                            |-|
-|task| reject                  | 検査コメントを付与してタスクを差し戻す。                                                                 |チェッカー/オーナ|
-|filesystem| write_annotation_image        | アノテーションzip、またはそれを展開したディレクトリから、アノテーションの画像（Semantic Segmentation用）を生成する。 |-|
+|project_member| copy                  | プロジェクトメンバをコピーします。|オーナ(コピー先プロジェクトに対して)|
+|project_member| delete                  | 複数のプロジェクトからユーザを削除します。                                                                 |オーナ|
+|project_member| invite                  | 複数のプロジェクトに、ユーザを招待します。                                                                 |オーナ|
+|project_member| list                  | プロジェクトメンバ一覧を出力します。                                                                |-|
+|project_member| put                  | CSVに記載されたユーザを、プロジェクトメンバとして登録します。|オーナ|
+|statistics| visualize             | 統計情報を可視化します。                                                            |オーナ|
+|task| cancel_acceptance             | 受け入れ完了タスクを、受け入れ取り消し状態にします。                                                         |オーナ|
+|task| change_operator             | タスクの担当者を変更します。                                                             |チェッカー/オーナ|
+|task| complete                | 未処置の検査コメントを適切な状態に変更して、タスクを受け入れ完了状態にします。                                 |チェッカー/オーナ|
+|task|list             | タスク一覧を出力します。                                                            |-|
+|task| reject                  | 検査コメントを付与してタスクを差し戻します。                                                                 |チェッカー/オーナ|
 
 
 # Usage
@@ -100,7 +100,7 @@ $ docker run -it -e ANNOFAB_USER_ID=XXXX -e ANNOFAB_PASSWORD=YYYYY annofab-cli a
 CSVのフォーマットをJSON形式で指定します。`--format`が`csv`でないときは、このオプションは無視されます。
 先頭に`file://`を付けると、JSON形式のファイルを指定できます。
 指定した値は、[pandas.DataFrame.to_csv](https://pandas.pydata.org/pandas-docs/stable/reference/api/pandas.DataFrame.to_csv.html) の引数として渡されます。
-デフォルトはカンマ区切り、BOM付きUTF-8で出力されます。
+デフォルトはカンマ区切り、BOM付きUTF-8エンコーディングです。
 
 ```
 --csv_format '{"sep": "\t"}'
@@ -110,13 +110,13 @@ CSVのフォーマットをJSON形式で指定します。`--format`が`csv`で�
 ### `--disable_log`
 ログを無効化にします。
 
-### `f` / `--format`
-出力フォーマットを指定します。基本的に以下のフォーマットを指定できます。
+### `-f` / `--format`
+list系のコマンドで、出力フォーマットを指定します。多くのコマンドでは、以下のフォーマットが指定できます。
 * `csv` : CSV(デフォルとはカンマ区切り)
 * `json` : インデントや空白がないJSON
 * `pretty_json` : インデントされたJSON
 
-list系のコマンドで利用できます。
+
 
 ### `-h` / `--help`
 コマンドのヘルプを出力します。
@@ -155,15 +155,15 @@ disable_existing_loggers: False
 
 ### `-o` / `--output`
 出力先のファイルパスを指定します。指定しない場合は、標準出力に出力されます。
-list系のコマンドで利用できます。
+主にlist系のコマンドで利用できます。
 
 
 ### `-p` / `--project_id`
 対象のプロジェクトのproject_idを指定します。
 
 ### `-q` / `--query`
-JMESPathを指定します。出力結果の抽出や、出力内容の変更に利用できます。
-http://jmespath.org/
+[JMESPath](http://jmespath.org/) を指定します。出力結果の抽出や、出力内容の変更に利用できます。
+
 
 
 ### `-t` / `--task_id`
@@ -177,11 +177,11 @@ http://jmespath.org/
 
 
 ## デフォルトのログ設定
-* 標準エラー出力とログファイルに出力されます。
+* ログは、標準エラー出力とログファイルに出力されます。
 * カレントディレクトリの`.log`ディレクトリに、`annofabcli.log`というログファイルが生成されます。
-* 1日ごとにログロテートされます
+* `annofabcli.log`ファイルは、1日ごとにログロテート（新しいログファイルが生成）されます
 
-詳細は https://github.com/kurusugawa-computer/annofab-cli/blob/master/annofabcli/data/logging.yaml を参照してください。
+デフォルトログは https://github.com/kurusugawa-computer/annofab-cli/blob/master/annofabcli/data/logging.yaml で定義されています。
 
 
 ## よくある使い方
@@ -219,7 +219,7 @@ $ annofabcli task reject --project_id prj1 --task_id file://tasks.txt \
 
 ```
 # prj1のプロジェクトメンバをCSVで出力する
-$ annofabcli project_member list -p prj1 -f csv -o members.csv \
+$ annofabcli project_member list --project_id prj1 --format csv --output members.csv \
  --csv_format '{"columns": ["user_id","member_role"],"header":false}' 
 
 
@@ -231,7 +231,7 @@ user2,accepter
 
 
 # members.csvに記載れたメンバを prj2に登録する
-$ annofabcli project_member put -p prj2 --csv members.csv
+$ annofabcli project_member put --project_id prj2 --csv members.csv
 
 ```
 
@@ -242,30 +242,44 @@ $ annofabcli project_member put -p prj2 --csv members.csv
 
 
 ### annotation list_count
-task_idまたはinput_data_idで集約したアノテーションの個数をCSV形式で出力します。
+`task_id`または`input_data_id`で集約したアノテーションの個数を、CSV形式で出力します。
 クエリのフォーマットは、[getAnnotationList API](https://annofab.com/docs/api/#operation/getAnnotationList)のクエリパラメータの`query`キー配下と同じです。
 `label_name_en`(label_idに対応), `additional_data_definition_name_en`(additional_data_definition_idに対応) キーも指定できます。
 
 
 ```
 # car ラベルのアノテーション個数を出力する(task_idで集約)
-$ annofabcli annotation list_count -p prj1 \
+$ annofabcli annotation list_count --project_id prj1 \
  --annotation_query '{"label_name_en": "car"}'
 
 # car ラベルのアノテーション個数を出力する(input_data_idで集約)
-$ annofabcli annotation list_count -p prj1 \
+$ annofabcli annotation list_count --project_id prj1 \
  --annotation_query '{"label_name_en": "car"}' --gropu_by input_data_id
 
 # task.txtに記載されたtask_idの一覧から、car ラベルのアノテーション個数を出力する
-$ annofabcli annotation list_count -p prj1 \
+$ annofabcli annotation list_count --project_id prj1 \
  --annotation_query '{"label_name_en": "car"}'  --task_id file://task.txt
 
 # carラベルの"occluded"チェックボックスがONのアノテーションの個数を出力する
-$ annofabcli annotation list_count -p prj1 \
+$ annofabcli annotation list_count --project_id prj1 \
  --annotation_query '{"label_name_en": "car", "attributes":[{"additional_data_definition_name_en": "occluded", "flag": true}]}'
 
 ```
 
+#### task_idで集約したときの出力結果（CSV）
+
+| task_id    | annotation_count |
+|------------|------------------|
+| sample_030 | 1                |
+| sample_088 | 2                |
+
+
+#### input_data_idで集約したときの出力結果（CSV）
+
+| task_id    | input_data_id                        | annotation_count |
+|------------|--------------------------------------|------------------|
+| sample_030 | 5738d502-b0a0-4a82-9367-cceffd73cf57 | 1                |
+| sample_093 | dd82cf3a-a38c-4a04-91e7-a4f1ce9af585 | 2                |
 
 
 ### annotation_specs list_label
@@ -596,19 +610,19 @@ $ annofabcli project_member put --project_id prj1 --csv members.csv
 $ annofabcli project_member put --project_id prj1 --csv members.csv --delete
 ```
 
-### staistics visualize
+### statistics visualize
 統計情報を可視化します。
 
 ```
 # prj1の統計情報を可視化したファイルを、/tmp/outputに出力する
-$ annofabcli staistics visualize --project_id prj1 --output_dir /tmp/output
+$ annofabcli statistics visualize --project_id prj1 --output_dir /tmp/output
 
 # statusがcompleteのタスクを統計情報を可視化したファイルを、/tmp/outputに出力する
-$ annofabcli staistics visualize --project_id prj1 --output_dir /tmp/output \
+$ annofabcli statistics visualize --project_id prj1 --output_dir /tmp/output \
   --task_query '{"status": "complete"}' 
 
 # 作業ディレクトリ（`.annofab-cli`）内のファイルから、統計情報を可視化する。
-$ annofabcli staistics visualize --project_id prj1 --not_update
+$ annofabcli statistics visualize --project_id prj1 --not_update
 ```
 
 
