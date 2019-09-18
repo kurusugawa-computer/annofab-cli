@@ -382,9 +382,7 @@ $ annofabcli input_data list --project_id prj1 --input_data_query '{"input_data_
 
 
 ### input_data put
-CSVに記載された入力データを登録します
-
-CSVは以下のフォーマットに従います。
+CSVに記載された入力データを登録します。CSVは以下のフォーマットに従います。
 
 * ヘッダ行なし
 * カンマ区切り
@@ -393,21 +391,13 @@ CSVは以下のフォーマットに従います。
 * 3列目: input_data_id. 省略可能。省略した場合UUIDv4になる。
 * 4列目: sign_required. 省略可能. `true` or `false`
 
-CSVのサンプルです（`input_data.csv`）。
+CSVのサンプル（`input_data.csv`）です。
 
 ```
 data1,s3://example.com/data1,id1,
 data2,s3://example.com/data2,id2,true
 data3,s3://example.com/data3,id3,false
 data4,https://example.com/data4,,
-```
-
-`input_data list`コマンドを使えば、プロジェクトに既に登録されている入力データからCSVを作成できます。
-
-```
-$ annofabcli input_data list --project_id prj1 --input_data_query '{"input_data_name": "sample"}'  \
- --format csv --output input_data.csv \
- --csv_format '{"columns": ["input_data_name","input_data_path", "input_data_id", "sign_required"], "header":false}' 
 ```
 
 
@@ -419,6 +409,16 @@ $ annofabcli input_data put --project_id prj1 --csv input_data.csv
 $ annofabcli input_data put --project_id prj1 --csv input_data.csv --overwrite
 
 ```
+
+
+`input_data list`コマンドを使えば、プロジェクトに既に登録されている入力データからCSVを作成できます。
+
+```
+$ annofabcli input_data list --project_id prj1 --input_data_query '{"input_data_name": "sample"}'  \
+ --format csv --output input_data.csv \
+ --csv_format '{"columns": ["input_data_name","input_data_path", "input_data_id", "sign_required"], "header":false}' 
+```
+
 
 
 ### inspection_comment list
@@ -436,6 +436,12 @@ $ annofabcli inspection_comment list --project_id prj1 --task_id task1 task2 \
 $ annofabcli inspection_comment list --project_id prj1 --task_id file://task.txt --format json
  
 ```
+
+#### 出力結果（CSV）
+
+| project_id                           | task_id    | input_data_id                        | inspection_id                        | phase      | phase_stage | commenter_account_id                 | annotation_id                        | label_id                             | data                                  | parent_inspection_id | phrases | comment | status          | created_datetime              | updated_datetime              | commenter_user_id | commenter_username | phrase_names_en | phrase_names_ja | label_name_en | label_name_ja | input_data_index |
+|--------------------------------------|------------|--------------------------------------|--------------------------------------|------------|-------------|--------------------------------------|--------------------------------------|--------------------------------------|---------------------------------------|----------------------|---------|---------|-----------------|-------------------------------|-------------------------------|-------------------|--------------------|-----------------|-----------------|---------------|---------------|------------------|
+| 58a2a621-7d4b-41e7-927b-cdc570c1114a | sample_180 | bf6b4790-cdb8-4d4d-85bb-08550934ed61 | 5f096677-67e4-4e75-9eac-bbd8ac9694d9 | inspection | 1           | 00589ed0-dd63-40db-abb2-dfe5e13c8299 | 8aff181e-9df4-4c66-8fb2-10596c686d5c | 8aff181e-9df4-4c66-8fb2-10596c686d5c | {'x': 358, 'y': 48, '_type': 'Point'} |                      | []      | 枠がずれています     | error_corrected | 2019-07-26T17:41:16.626+09:00 | 2019-08-01T10:57:45.639+09:00 | user_id   | username          | []              | []              | car           | car           | 0                |
 
 
 ### inspection_comment list_unprocessed
