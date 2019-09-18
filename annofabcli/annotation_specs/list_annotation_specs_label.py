@@ -48,7 +48,7 @@ class PrintAnnotationSpecsLabel(AbstractCommandLineInterface):
                     additional_data_definition['additional_data_definition_id'],
                     additional_data_definition['type'],
                 ] + [m['message'] for m in additional_data_definition['name']['messages']]))
-                if additional_data_definition['type'] == 'choice':
+                if additional_data_definition['type'] in ['choice', 'select']:
                     for choice in additional_data_definition['choices']:
                         print('\t'.join([
                             '',
@@ -68,7 +68,7 @@ def parse_args(parser: argparse.ArgumentParser):
     parser.add_argument(
         '-f', '--format', type=str, choices=['text', FormatArgument.PRETTY_JSON.value, FormatArgument.JSON.value],
         default='text', help=f'出力フォーマット '
-        'text: 人が見やすい内容, '
+        'text: 人が見やすい形式, '
         '{FormatArgument.PRETTY_JSON.value}: インデントされたJSON, '
         '{FormatArgument.JSON.value}: フラットなJSON')
 
