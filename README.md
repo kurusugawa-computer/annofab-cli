@@ -360,6 +360,44 @@ $ annofabcli annotation_specs list_label_color --project_id prj1
 
 
 
+### filesystem write_annotation_image
+アノテーションzip、またはそれを展開したディレクトリから、アノテーションの画像（Semantic Segmentation用）を生成します。
+以下のアノテーションが画像化対象です。
+* 矩形
+* ポリゴン
+* 塗りつぶし
+* 塗りつぶしv2
+
+
+```
+# アノテーションzipをダウンロードする。
+$ annofabcli project download simple_annotation --project_id prj1 --output annotation.zip
+
+
+# label_nameとRGBを対応付けたファイルを生成する
+$ annofabcli annotation_specs list_label_color --project_id prj1 --output label_color.json
+
+
+# annotation.zip から、アノテーション画像を生成する
+$ annofabcli filesystem write_annotation_image  --annotation annotation.zip \
+ --image_size 1280x720 \
+ --label_color file://label_color.json \
+ --output_dir /tmp/output
+
+
+# annotation.zip から、アノテーション画像を生成する。ただしタスクのステータスが"完了"で、task.txtに記載れたタスクのみ画像化する。
+$ annofabcli filesystem write_annotation_image  --annotation annotation.zip \
+ --image_size 1280x720 \
+ --label_color file://label_color.json \
+ --output_dir /tmp/output \
+ --task_status_complete \
+ --task_id file://task.txt
+```
+
+#### 出力結果（塗りつぶし画像）
+
+[filesystem write_annotation_iamgeの塗りつぶし画像](readme-img/write_annotation_image-output.png)
+
 ### input_data list
 入力データ一覧を出力します。
 
@@ -525,8 +563,11 @@ $ annofabcli project copy --project_id prj1 --dest_title "prj2-title" --copy_inp
 
 
 ### project diff
-プロジェクト間の差分を表示します。差分がない場合、標準出力は空になります。
-同じアノテーションルールのプロジェクトが複数ある場合、各種情報が同一であることを確認するときに、利用します。
+プロジェクト間の差分を、以下の項目について表示します。差分がない場合、標準出力は空になります。
+* アノテーション仕様のラベル情報
+* 定型指摘
+* プロジェクトメンバ
+* プロジェクトの設定
 
 
 ```
@@ -571,8 +612,13 @@ $ annofabcli project diff  prj1 prj2 --target settings
 
 
 ### project download
-タスクや検査コメント、アノテーションなどをダウンロードします。
-
+プロジェクトに対して、タスクや検査コメント、アノテーションなどをダウンロードします。
+ダウンロード対象は以下の通りです。
+* すべてのタスクが記載されたJSON
+* すべての検査コメントが記載されたJSON
+* すべてのタスク履歴イベントが記載されたJSON
+* Simpleアノテーションzip
+* Fullアノテーションzip
 
 ```
 # タスクの全一覧が記載されたJSONファイルをダウンロードする
@@ -597,28 +643,18 @@ DEBUG    : 2019-07-16 12:18:15,710 : annofabcli.common.facade       : job_id = c
 ```
 
 
-### project_member list
-プロジェクトメンバ一覧を出力する。
+
+### project_member copy
+プロジェクトメンバを別のプロジェクトにコピーします。
 
 ```
-# ORG組織配下のすべてのプロジェクトのプロジェクトメンバ一覧を出力する
-$ annofabcli project_member list --organization ORG
+# prj1のメンバをprj2にコピーする。
+$ annofabcli project_member copy prj1 prj2
 
-# prj1, prj2のプロジェクトのプロジェクトメンバ一覧を出力する
-$ annofabcli project_member list --project_id prj1 prj2
+# prj1のメンバをprj2にコピーする。prj2にしか存在しないメンバは削除される。
+$ annofabcli project_member copy prj1 prj2 --delete_dest
 ```
 
-
-### project_member invite
-複数のプロジェクトに、ユーザを招待します。
-
-```
-# ORG組織配下のすべてのプロジェクトに、user1, user2をownerロールで招待する
-$ annofabcli project_member invite --user_id user1 user2 --role owner --organization ORG
-
-# prj1, prj2のプロジェクトに、user1をaccepterロールで招待する
-$ annofabcli project_member invite --user_id user1 --role accepter --project_id prj1 prj2
-```
 
 
 ### project_member delete
@@ -633,25 +669,45 @@ $ annofabcli project_member invite --user_id user1  --project_id prj1 prj2
 ```
 
 
-### project_member copy
-プロジェクトメンバをコピーします。
+
+### project_member invite
+複数のプロジェクトに、ユーザを招待します。
 
 ```
-# prj1のメンバをprj2にコピーする。
-$ annofabcli project_member copy prj1 prj2
+# ORG組織配下のすべてのプロジェクトに、user1, user2をownerロールで招待する
+$ annofabcli project_member invite --user_id user1 user2 --role owner --organization ORG
 
-# prj1のメンバをprj2にコピーする。prj2にしか存在しないメンバは削除される。
-$ annofabcli project_member copy prj1 prj2 --delete_dest
+# prj1, prj2のプロジェクトに、user1をaccepterロールで招待する
+$ annofabcli project_member invite --user_id user1 --role accepter --project_id prj1 prj2
 ```
+
+
+### project_member list
+プロジェクトメンバ一覧を出力します。
+
+```
+# ORG組織配下のすべてのプロジェクトのプロジェクトメンバ一覧を出力する
+$ annofabcli project_member list --organization ORG
+
+# prj1, prj2のプロジェクトのプロジェクトメンバ一覧を出力する
+$ annofabcli project_member list --project_id prj1 prj2
+```
+
+#### 出力結果（CSV）
+
+| project_id                           | account_id                           | user_id         | username  | member_status | member_role | updated_datetime              | created_datetime              | sampling_inspection_rate | sampling_acceptance_rate | project_title                |
+|--------------------------------------|--------------------------------------|-----------------|-----------|---------------|-------------|-------------------------------|-------------------------------|--------------------------|--------------------------|------------------------------|
+| 12345678-abcd-1234-abcd-1234abcd5678 | 12345678-abcd-1234-abcd-1234abcd5678 | user_id | username | active        | owner       | 2019-09-10T14:51:00.908+09:00 | 2019-04-19T16:29:41.069+09:00 |                          |                          | sample_project |
+
 
 ### project_member put
 CSVに記載されたユーザを、プロジェクトメンバとして登録します。
 
-members.csvの中身は以下の通り。
+members.csvの中身は以下の通りです。
 
 ```
-user1, worker
-user2, accepter
+user1,worker
+user2,accepter
 ```
 
 
@@ -679,26 +735,8 @@ $ annofabcli statistics visualize --project_id prj1 --not_update
 ```
 
 
-
-### task list
-タスク一覧を出力します。
-
-```
-# 受入フェーズで、"usr1"が担当しているタスクの一覧を出力する
-$ annofabcli task list --project_id prj1 --task_query '{"user_id": "usr1","phase":"acceptance"}' 
-
-# 休憩中で、過去の担当者が"usr1"であるタスクの一覧を出力する。task.jsonファイルにJSON形式で出力する。
-$ annofabcli task list --project_id prj1 \
- --task_query '{"previous_user_id": "usr1","status":"break"}' --format json --out task.json
-
-# 差し戻されたタスクのtask_idを出力する
-$ annofabcli task list --project_id prj1 --task_query '{"rejected_only": true}' --format task_id_list
-
- 
-```
-
 ### task cancel_acceptance
-受け入れ完了タスクを、受け入れ取り消しにします。
+受け入れ完了タスクに対して、受け入れ取り消しにします。
 アノテーションルールを途中で変更したときなどに、利用します。
 
 
@@ -717,7 +755,7 @@ $ annofabcli task cancel_acceptance --project_id prj1 --task_id file://task.txt 
 
 ```
 # 指定されたタスクの担当者を 'user1' に変更する。
-$ annofabcli task change_operator --project_id prj1 --task_id file://task.txt --user_id usr1
+$ annofabcli task change_operator --project_id prj1 --task_id file://task.txt --user_id uer1
 
 # 指定されたタスクの担当者を未割り当てに変更する。
 $ annofabcli task change_operator --project_id prj1 --task_id file://task.txt --not_assign
@@ -727,6 +765,7 @@ $ annofabcli task change_operator --project_id prj1 --task_id file://task.txt --
 ### task complete
 未処置の検査コメントを適切な状態に変更して、タスクを受け入れ完了にします。
 特定のタスクのみ受け入れをスキップしたいときに、利用します。
+
 
 ```
 # 未処置の検査コメントは"対応完了"状態にして、prj1プロジェクトのタスクを受け入れ完了にする。
@@ -738,17 +777,40 @@ $ annofabcli complete_tasks --project_id prj1  --inspection_list inspection.json
  --inspection_status no_correction_required
 ```
 
-inspection.jsonは、未処置の検査コメント一覧です。`inspection_comment list_unprocessed`コマンドで出力できます。
+`inspection.json`は、未処置の検査コメント一覧です。`annofabcli inspection_comment list_unprocessed --foramt json`コマンドで出力できます。
 
+
+
+### task list
+タスク一覧を出力します。
+
+```
+# 受入フェーズで、"usr1"が担当しているタスクの一覧を出力する
+$ annofabcli task list --project_id prj1 --task_query '{"user_id": "usr1","phase":"acceptance"}' 
+
+# 休憩中で、過去の担当者が"usr1"であるタスクの一覧を出力する。task.jsonファイルにJSON形式で出力する。
+$ annofabcli task list --project_id prj1 \
+ --task_query '{"previous_user_id": "usr1","status":"break"}' --format json --out task.json
+
+# 差し戻されたタスクのtask_idを出力する
+$ annofabcli task list --project_id prj1 --task_query '{"rejected_only": true}' --format task_id_list 
+```
+
+#### 出力結果
+
+| project_id                           | task_id                                | phase      | phase_stage | status      | input_data_id_list                       | account_id                           | histories_by_phase                                                                                                                                       | work_time_span | number_of_rejections | started_datetime              | updated_datetime              | sampling | user_id         | username  | worktime_hour       | number_of_rejections_by_inspection | number_of_rejections_by_acceptance |
+|--------------------------------------|----------------------------------------|------------|-------------|-------------|------------------------------------------|--------------------------------------|----------------------------------------------------------------------------------------------------------------------------------------------------------|----------------|----------------------|-------------------------------|-------------------------------|----------|-----------------|-----------|---------------------|------------------------------------|------------------------------------|
+| 12345678-abcd-1234-abcd-1234abcd5678 | 12345678-abcd-1234-abcd-1234abcd5678   | annotation | 1           | break       | ['12345678-abcd-1234-abcd-1234abcd5678'] | 12345678-abcd-1234-abcd-1234abcd5678 | [{'account_id': '12345678-abcd-1234-abcd-1234abcd5678', 'phase': 'annotation', 'phase_stage': 1, 'user_id': 'user_id1', 'username': 'username1'}] | 539662         | 0                    | 2019-05-08T13:53:21.338+09:00 | 2019-05-08T14:15:07.318+09:00 |          | user_id1 | user_name2 | 0.14990611111111113 | 0                                  | 0                                  |
 
 
 ### task reject
-検査コメントを付与して、タスクを差し戻します。検査コメントは、タスク内の先頭の画像の左上に付与します。
+検査コメントを付与して、タスクを差し戻します。検査コメントは、タスク内の先頭の画像の左上(x=0,y=0)に付与します。
 アノテーションルールを途中で変更したときなどに、利用します。
 
 
 ```
-# prj1プロジェクトに、"hoge"という検査コメントを付与して、タスクを差し戻す。最後のannotation phaseを担当したユーザを割り当てる（画面と同じ動き）
+# prj1プロジェクトに、"hoge"という検査コメントを付与して、タスクを差し戻す。
+# 最後のannotation phaseを担当したユーザを割り当てます（画面と同じ動き）
 $ annofabcli task reject --project_id prj1 --task_id file://tasks.txt --comment "hoge"
 
 # 差し戻したタスクに、担当者は割り当てない
@@ -761,42 +823,4 @@ $ annofabcli task reject --project_id prj1 --task_id file://tasks.txt \
 ```
 
 
-
-
-
-
-
-### filesystem write_annotation_image
-アノテーションzip、またはそれを展開したディレクトリから、アノテーションの画像（Semantic Segmentation用）を生成します。
-以下のアノテーションが画像化対象です。
-* 矩形
-* ポリゴン
-* 塗りつぶし
-* 塗りつぶしv2
-
-
-```
-# アノテーションzipをダウンロードする。
-$ annofabcli project download simple_annotation --project_id prj1 --output annotation.zip
-
-
-# label_nameとRGBを対応付けたファイルを生成する
-$ annofabcli annotation_specs list_label_color --project_id prj1 --output label_color.json
-
-
-# annotation.zip から、アノテーション画像を生成する
-$ annofabcli filesystem write_annotation_image  --annotation annotation.zip \
- --image_size 1280x720 \
- --label_color file://label_color.json \
- --output_dir /tmp/output
-
-
-# annotation.zip から、アノテーション画像を生成する。ただしタスクのステータスが"完了"で、task.txtに記載れたタスクのみ画像化する。
-$ annofabcli filesystem write_annotation_image  --annotation annotation.zip \
- --image_size 1280x720 \
- --label_color file://label_color.json \
- --output_dir /tmp/output \
- --task_status_complete \
- --task_id file://task.txt
-```
 
