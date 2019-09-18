@@ -396,7 +396,7 @@ $ annofabcli filesystem write_annotation_image  --annotation annotation.zip \
 
 #### 出力結果（塗りつぶし画像）
 
-[filesystem write_annotation_iamgeの塗りつぶし画像](readme-img/write_annotation_image-output.png)
+![filesystem write_annotation_iamgeの塗りつぶし画像](readme-img/write_annotation_image-output.png)
 
 ### input_data list
 入力データ一覧を出力します。
