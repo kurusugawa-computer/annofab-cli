@@ -1,5 +1,5 @@
 # 概要
-annofabapiを使ったCLI(Command Line Interface)ツールです。
+AnnoFabのCLI(Command Line Interface)ツールです。
 「タスクの一括差し戻し」や、「プロジェクト間の差分表示」など、AnnoFabの画面で実施するには時間がかかる操作を、コマンドとして提供しています。
 
 # 注意
@@ -53,7 +53,7 @@ $ ./docker-build.sh
 $ docker run -it annofab-cli annofabcli --help
 
 # AnnoFabの認証情報を標準入力から指定する
-$ docker run -it annofab-cli annofabcli diff_projects prj1 prj2
+$ docker run -it annofab-cli annofabcli project diff prj1 prj2
 Enter AnnoFab User ID: XXXXXX
 Enter AnnoFab Password: 
 
@@ -66,28 +66,28 @@ $ docker run -it -e ANNOFAB_USER_ID=XXXX -e ANNOFAB_PASSWORD=YYYYY annofab-cli a
 |コマンド| サブコマンド                  | 内容                                                                                                     |必要なロール|
 |----|-------------------------------|----------------------------------------------------------------------------------------------------------|------------|
 |annotation| list_count | task_idまたはinput_data_idで集約したアノテーションの個数を出力します                              |-|
-|annotation_specs| list_label | アノテーション仕様のラベル情報を出力する                              |チェッカー/オーナ|
-|annotation_specs| list_label_color             | アノテーション仕様から、label_nameとRGBを対応付けたJSONを出力する。                                      |チェッカー/オーナ|
-|input_data|list             | 入力データ一覧を出力する。                                                            |-|
-|input_data|put             | CSVに記載された入力データを登録します                                                            |オーナ|
-|inspection_comment| list | 検査コメントを出力する。                               |-|
-|inspection_comment| list_unprocessed | 未処置の検査コメントを出力する。                               |-|
-|instruction| upload             | HTMLファイルを作業ガイドとして登録する。                                                           |チェッカー/オーナ|
-|project| copy                 | プロジェクトをコピーする                                                                           |オーナ and 組織管理者/組織オーナ|
-|project| diff                 | プロジェクト間の差分を表示する                                                                           |チェッカー/オーナ|
+|annotation_specs| list_label | アノテーション仕様のラベル情報を出力します。                              |チェッカー/オーナ|
+|annotation_specs| list_label_color             | アノテーション仕様から、label_nameとRGBを対応付けたJSONを出力します。                                      |チェッカー/オーナ|
+|filesystem| write_annotation_image        | アノテーションzip、またはそれを展開したディレクトリから、アノテーションの画像（Semantic Segmentation用）を生成します。 |-|
+|input_data|list             | 入力データ一覧を出力します。                                                            |-|
+|input_data|put             | CSVに記載された入力データを登録します。                                                            |オーナ|
+|inspection_comment| list | 検査コメントを出力します。                               |-|
+|inspection_comment| list_unprocessed | 未処置の検査コメントを出力します。                               |-|
+|instruction| upload             | HTMLファイルを作業ガイドとして登録します。                                                           |チェッカー/オーナ|
+|project| copy                 | プロジェクトをコピーします。                                                                           |オーナ and 組織管理者/組織オーナ|
+|project| diff                 | プロジェクト間の差分を表示します。                                                                           |チェッカー/オーナ|
 |project| download                 | タスクや検査コメント、アノテーションなどをダウンロードします。                                                                           |オーナ|
-|project_member| list                  | プロジェクトメンバ一覧を出力する                                                                |-|
-|project_member| invite                  | 複数のプロジェクトに、ユーザを招待する。                                                                 |オーナ|
-|project_member| delete                  | 複数のプロジェクトからユーザを削除する。                                                                 |オーナ|
-|project_member| copy                  | プロジェクトメンバをコピーする。|オーナ(コピー先プロジェクトに対して)|
-|project_member| put                  | プロジェクトメンバに、CSVに記載されたユーザを登録する。|オーナ|
-|statistics| visualize             | 統計情報を可視化する。                                                            |オーナ|
-|task| cancel_acceptance             | 受け入れ完了タスクを、受け入れ取り消しする。                                                             |オーナ|
-|task| change_operator             | タスクの担当者を変更する。                                                             |チェッカー/オーナ|
-|task| complete                | 未処置の検査コメントを適切な状態に変更して、タスクを受け入れ完了にする。                                 |チェッカー/オーナ|
-|task|list             | タスク一覧を出力する。                                                            |-|
-|task| reject                  | 検査コメントを付与してタスクを差し戻す。                                                                 |チェッカー/オーナ|
-|filesystem| write_annotation_image        | アノテーションzip、またはそれを展開したディレクトリから、アノテーションの画像（Semantic Segmentation用）を生成する。 |-|
+|project_member| copy                  | プロジェクトメンバをコピーします。|オーナ(コピー先プロジェクトに対して)|
+|project_member| delete                  | 複数のプロジェクトからユーザを削除します。                                                                 |オーナ|
+|project_member| invite                  | 複数のプロジェクトに、ユーザを招待します。                                                                 |オーナ|
+|project_member| list                  | プロジェクトメンバ一覧を出力します。                                                                |-|
+|project_member| put                  | CSVに記載されたユーザを、プロジェクトメンバとして登録します。|オーナ|
+|statistics| visualize             | 統計情報を可視化します。                                                            |オーナ|
+|task| cancel_acceptance             | 受け入れ完了タスクを、受け入れ取り消し状態にします。                                                         |オーナ|
+|task| change_operator             | タスクの担当者を変更します。                                                             |チェッカー/オーナ|
+|task| complete                | 未処置の検査コメントを適切な状態に変更して、タスクを受け入れ完了状態にします。                                 |チェッカー/オーナ|
+|task|list             | タスク一覧を出力します。                                                            |-|
+|task| reject                  | 検査コメントを付与してタスクを差し戻します。                                                                 |チェッカー/オーナ|
 
 
 # Usage
@@ -100,7 +100,7 @@ $ docker run -it -e ANNOFAB_USER_ID=XXXX -e ANNOFAB_PASSWORD=YYYYY annofab-cli a
 CSVのフォーマットをJSON形式で指定します。`--format`が`csv`でないときは、このオプションは無視されます。
 先頭に`file://`を付けると、JSON形式のファイルを指定できます。
 指定した値は、[pandas.DataFrame.to_csv](https://pandas.pydata.org/pandas-docs/stable/reference/api/pandas.DataFrame.to_csv.html) の引数として渡されます。
-デフォルトはカンマ区切り、BOM付きUTF-8で出力されます。
+デフォルトはカンマ区切り、BOM付きUTF-8エンコーディングです。
 
 ```
 --csv_format '{"sep": "\t"}'
@@ -110,13 +110,13 @@ CSVのフォーマットをJSON形式で指定します。`--format`が`csv`で�
 ### `--disable_log`
 ログを無効化にします。
 
-### `f` / `--format`
-出力フォーマットを指定します。基本的に以下のフォーマットを指定できます。
+### `-f` / `--format`
+list系のコマンドで、出力フォーマットを指定します。多くのコマンドでは、以下のフォーマットが指定できます。
 * `csv` : CSV(デフォルとはカンマ区切り)
 * `json` : インデントや空白がないJSON
 * `pretty_json` : インデントされたJSON
 
-list系のコマンドで利用できます。
+
 
 ### `-h` / `--help`
 コマンドのヘルプを出力します。
@@ -155,15 +155,15 @@ disable_existing_loggers: False
 
 ### `-o` / `--output`
 出力先のファイルパスを指定します。指定しない場合は、標準出力に出力されます。
-list系のコマンドで利用できます。
+主にlist系のコマンドで利用できます。
 
 
 ### `-p` / `--project_id`
 対象のプロジェクトのproject_idを指定します。
 
 ### `-q` / `--query`
-JMESPathを指定します。出力結果の抽出や、出力内容の変更に利用できます。
-http://jmespath.org/
+[JMESPath](http://jmespath.org/) を指定します。出力結果の抽出や、出力内容の変更に利用できます。
+
 
 
 ### `-t` / `--task_id`
@@ -177,11 +177,11 @@ http://jmespath.org/
 
 
 ## デフォルトのログ設定
-* 標準エラー出力とログファイルに出力されます。
+* ログは、標準エラー出力とログファイルに出力されます。
 * カレントディレクトリの`.log`ディレクトリに、`annofabcli.log`というログファイルが生成されます。
-* 1日ごとにログロテートされます
+* `annofabcli.log`ファイルは、1日ごとにログロテート（新しいログファイルが生成）されます
 
-詳細は https://github.com/kurusugawa-computer/annofab-cli/blob/master/annofabcli/data/logging.yaml を参照してください。
+デフォルトログは https://github.com/kurusugawa-computer/annofab-cli/blob/master/annofabcli/data/logging.yaml で定義されています。
 
 
 ## よくある使い方
@@ -219,7 +219,7 @@ $ annofabcli task reject --project_id prj1 --task_id file://tasks.txt \
 
 ```
 # prj1のプロジェクトメンバをCSVで出力する
-$ annofabcli project_member list -p prj1 -f csv -o members.csv \
+$ annofabcli project_member list --project_id prj1 --format csv --output members.csv \
  --csv_format '{"columns": ["user_id","member_role"],"header":false}' 
 
 
@@ -231,7 +231,7 @@ user2,accepter
 
 
 # members.csvに記載れたメンバを prj2に登録する
-$ annofabcli project_member put -p prj2 --csv members.csv
+$ annofabcli project_member put --project_id prj2 --csv members.csv
 
 ```
 
@@ -242,37 +242,51 @@ $ annofabcli project_member put -p prj2 --csv members.csv
 
 
 ### annotation list_count
-task_idまたはinput_data_idで集約したアノテーションの個数をCSV形式で出力します。
+`task_id`または`input_data_id`で集約したアノテーションの個数を、CSV形式で出力します。
 クエリのフォーマットは、[getAnnotationList API](https://annofab.com/docs/api/#operation/getAnnotationList)のクエリパラメータの`query`キー配下と同じです。
 `label_name_en`(label_idに対応), `additional_data_definition_name_en`(additional_data_definition_idに対応) キーも指定できます。
 
 
 ```
 # car ラベルのアノテーション個数を出力する(task_idで集約)
-$ annofabcli annotation list_count -p prj1 \
+$ annofabcli annotation list_count --project_id prj1 \
  --annotation_query '{"label_name_en": "car"}'
 
 # car ラベルのアノテーション個数を出力する(input_data_idで集約)
-$ annofabcli annotation list_count -p prj1 \
+$ annofabcli annotation list_count --project_id prj1 \
  --annotation_query '{"label_name_en": "car"}' --gropu_by input_data_id
 
 # task.txtに記載されたtask_idの一覧から、car ラベルのアノテーション個数を出力する
-$ annofabcli annotation list_count -p prj1 \
+$ annofabcli annotation list_count --project_id prj1 \
  --annotation_query '{"label_name_en": "car"}'  --task_id file://task.txt
 
 # carラベルの"occluded"チェックボックスがONのアノテーションの個数を出力する
-$ annofabcli annotation list_count -p prj1 \
+$ annofabcli annotation list_count --project_id prj1 \
  --annotation_query '{"label_name_en": "car", "attributes":[{"additional_data_definition_name_en": "occluded", "flag": true}]}'
 
 ```
 
+#### task_idで集約したときの出力結果（CSV）
+
+| task_id    | annotation_count |
+|------------|------------------|
+| sample_030 | 1                |
+| sample_088 | 2                |
+
+
+#### input_data_idで集約したときの出力結果（CSV）
+
+| task_id    | input_data_id                        | annotation_count |
+|------------|--------------------------------------|------------------|
+| sample_030 | 5738d502-b0a0-4a82-9367-cceffd73cf57 | 1                |
+| sample_093 | dd82cf3a-a38c-4a04-91e7-a4f1ce9af585 | 2                |
 
 
 ### annotation_specs list_label
 アノテーション仕様のラベル情報を出力します。
 
 ```
-# prj1のアノテーション仕様のラベル情報を、人間が見やすい形式で出力する
+# prj1のアノテーション仕様のラベル情報を、人間が見やすい形式（`--format text`）で出力する
 $ annofabcli annotation_specs list_label --project_id prj1
 
 # prj1のアノテーション仕様のラベル情報を、インデントされたJSONで出力する。
@@ -280,6 +294,44 @@ $ annofabcli annotation_specs list_label --project_id prj1 --format pretty_json
 
 ```
 
+#### `--format text`の出力結果 
+`--format text`の出力結果は、以下のフォーマットで出力されます。
+
+```
+label_id    label_type    label_name_ja    label_name_en
+    attribute_id    attribute_type    attribute_name_ja    attribute_name_ja
+        choice_id    choice_name_ja    choice_name_en
+        ...
+    ...
+...
+```
+
+サンプルプロジェクトでコマンドを実行した結果は、以下の通りです。
+
+```
+15ba7932-24b9-4cf3-95bd-9bf6deede4fa	bounding_box	ネコ	Cat
+	e6864d96-78fa-45f3-a786-6c8c900c92ae	flag	隠れ	occluded
+	51e8c91f-5de1-450b-a0f3-94fec582f5ce	link	目のリンク	link-eye
+	aff2855e-2e3d-47a2-8c27-c7652e4dfb2f	integer	体重	weight
+	7e6a577a-3410-4c8a-9624-2904bb2e6666	comment	名前	name
+	a63a0513-a96e-4c7c-8754-88a24fef9ca9	text	備考	memo
+	649abf45-1ed7-459a-8282-a58228e9a302	tracking	object id	object id
+c754f724-5f8c-48eb-81ec-ea77e55efee7	polyline	足	leg
+f50aa88d-36c7-43f5-8728-247a49b4f4d8	point	目	eye
+108ce1f7-217b-43e9-a407-8d0ac6aad87e	segmentation	犬	dog
+2ffb4c74-106b-44ac-81ce-3c3df77518e0	segmentation_v2	人間	human
+ded52dcb-bcd6-4e77-9626-61e546f635d0	polygon	鳥	bird
+5ac0d7d5-6738-4c4b-a69a-cd583ff458e1	classification	気候	climatic
+	896d7eeb-9c60-4fbf-b7c4-8f4209261049	choice	天気	weather
+		c9615782-b872-4641-9be4-0fb4f905d966		晴	sunny
+		553018a5-e594-4536-bc05-876fa6b48ed5		雨	rainy
+	60caffa5-6300-4819-9a99-c43ce49008c2	select	気温	temparature
+		89b3577d-a245-4b85-82ef-6569ecbf8ad7		10	10
+		bdcd4d5b-cecc-4ec9-9038-d9284cd4f475		20	20
+		9f3a0355-2cc8-412a-9129-3b62fa7b6ead		30	30
+		2726336c-96d3-485b-9f96-7d4bcc97083b		40	40
+
+```
 
 
 ### annotation_specs list_label_color
@@ -288,6 +340,8 @@ $ annofabcli annotation_specs list_label --project_id prj1 --format pretty_json
 ```
 $ annofabcli annotation_specs list_label_color --project_id prj1 
 ```
+
+以下のJSONのような出力結果になります。
 
 ```json:出力結果
 {
@@ -306,6 +360,44 @@ $ annofabcli annotation_specs list_label_color --project_id prj1
 
 
 
+### filesystem write_annotation_image
+アノテーションzip、またはそれを展開したディレクトリから、アノテーションの画像（Semantic Segmentation用）を生成します。
+以下のアノテーションが画像化対象です。
+* 矩形
+* ポリゴン
+* 塗りつぶし
+* 塗りつぶしv2
+
+
+```
+# アノテーションzipをダウンロードする。
+$ annofabcli project download simple_annotation --project_id prj1 --output annotation.zip
+
+
+# label_nameとRGBを対応付けたファイルを生成する
+$ annofabcli annotation_specs list_label_color --project_id prj1 --output label_color.json
+
+
+# annotation.zip から、アノテーション画像を生成する
+$ annofabcli filesystem write_annotation_image  --annotation annotation.zip \
+ --image_size 1280x720 \
+ --label_color file://label_color.json \
+ --output_dir /tmp/output
+
+
+# annotation.zip から、アノテーション画像を生成する。ただしタスクのステータスが"完了"で、task.txtに記載れたタスクのみ画像化する。
+$ annofabcli filesystem write_annotation_image  --annotation annotation.zip \
+ --image_size 1280x720 \
+ --label_color file://label_color.json \
+ --output_dir /tmp/output \
+ --task_status_complete \
+ --task_id file://task.txt
+```
+
+#### 出力結果（塗りつぶし画像）
+
+![filesystem write_annotation_iamgeの塗りつぶし画像](readme-img/write_annotation_image-output.png)
+
 ### input_data list
 入力データ一覧を出力します。
 
@@ -318,12 +410,17 @@ $ annofabcli input_data list --project_id prj1 --input_data_query '{"input_data_
 
 ```
 
+#### 出力結果（CSV）
+
+
+| etag                             | input_data_id                        | input_data_name                   | input_data_path                                                                                                                                                                 | original_input_data_path                                                                                                                                                        | original_resolution | project_id                           | resized_resolution | sign_required | task_id_list   | updated_datetime              | url                                                                                                                                                                        |
+|----------------------------------|--------------------------------------|-----------------------------------|---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------|---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------|---------------------|--------------------------------------|--------------------|---------------|----------------|-------------------------------|----------------------------------------------------------------------------------------------------------------------------------------------------------------------------|
+| a43717273502b67a1989c9b25e252cde | 3c8d8f15-14f0-467a-a8fe-562cbbccf08a | val.zip/val/9a70bdec-1504e338.jpg | s3://example.com/example | s3://example.com/example |                     | 58a2a621-7d4b-41e7-927b-cdc570c1114a |                    | False         | ['sample_247'] | 2019-04-19T16:36:17.846+09:00 | https://annofab.com/projects/example/input_data/example |
+
 
 
 ### input_data put
-CSVに記載された入力データを登録します
-
-CSVは以下のフォーマットに従います。
+CSVに記載された入力データを登録します。CSVは以下のフォーマットに従います。
 
 * ヘッダ行なし
 * カンマ区切り
@@ -332,21 +429,13 @@ CSVは以下のフォーマットに従います。
 * 3列目: input_data_id. 省略可能。省略した場合UUIDv4になる。
 * 4列目: sign_required. 省略可能. `true` or `false`
 
-CSVのサンプルです（`input_data.csv`）。
+CSVのサンプル（`input_data.csv`）です。
 
 ```
 data1,s3://example.com/data1,id1,
 data2,s3://example.com/data2,id2,true
 data3,s3://example.com/data3,id3,false
 data4,https://example.com/data4,,
-```
-
-`input_data list`コマンドを使えば、プロジェクトに既に登録されている入力データからCSVを作成できます。
-
-```
-$ annofabcli input_data list --project_id prj1 --input_data_query '{"input_data_name": "sample"}'  \
- --format csv --output input_data.csv \
- --csv_format '{"columns": ["input_data_name","input_data_path", "input_data_id", "sign_required"], "header":false}' 
 ```
 
 
@@ -358,6 +447,16 @@ $ annofabcli input_data put --project_id prj1 --csv input_data.csv
 $ annofabcli input_data put --project_id prj1 --csv input_data.csv --overwrite
 
 ```
+
+
+`input_data list`コマンドを使えば、プロジェクトに既に登録されている入力データからCSVを作成できます。
+
+```
+$ annofabcli input_data list --project_id prj1 --input_data_query '{"input_data_name": "sample"}'  \
+ --format csv --output input_data.csv \
+ --csv_format '{"columns": ["input_data_name","input_data_path", "input_data_id", "sign_required"], "header":false}' 
+```
+
 
 
 ### inspection_comment list
@@ -375,6 +474,12 @@ $ annofabcli inspection_comment list --project_id prj1 --task_id task1 task2 \
 $ annofabcli inspection_comment list --project_id prj1 --task_id file://task.txt --format json
  
 ```
+
+#### 出力結果（CSV）
+
+| project_id                           | task_id    | input_data_id                        | inspection_id                        | phase      | phase_stage | commenter_account_id                 | annotation_id                        | label_id                             | data                                  | parent_inspection_id | phrases | comment | status          | created_datetime              | updated_datetime              | commenter_user_id | commenter_username | phrase_names_en | phrase_names_ja | label_name_en | label_name_ja | input_data_index |
+|--------------------------------------|------------|--------------------------------------|--------------------------------------|------------|-------------|--------------------------------------|--------------------------------------|--------------------------------------|---------------------------------------|----------------------|---------|---------|-----------------|-------------------------------|-------------------------------|-------------------|--------------------|-----------------|-----------------|---------------|---------------|------------------|
+| 58a2a621-7d4b-41e7-927b-cdc570c1114a | sample_180 | bf6b4790-cdb8-4d4d-85bb-08550934ed61 | 5f096677-67e4-4e75-9eac-bbd8ac9694d9 | inspection | 1           | 00589ed0-dd63-40db-abb2-dfe5e13c8299 | 8aff181e-9df4-4c66-8fb2-10596c686d5c | 8aff181e-9df4-4c66-8fb2-10596c686d5c | {'x': 358, 'y': 48, '_type': 'Point'} |                      | []      | 枠がずれています     | error_corrected | 2019-07-26T17:41:16.626+09:00 | 2019-08-01T10:57:45.639+09:00 | user_id   | username          | []              | []              | car           | car           | 0                |
 
 
 ### inspection_comment list_unprocessed
@@ -458,8 +563,11 @@ $ annofabcli project copy --project_id prj1 --dest_title "prj2-title" --copy_inp
 
 
 ### project diff
-プロジェクト間の差分を表示します。差分がない場合、標準出力は空になります。
-同じアノテーションルールのプロジェクトが複数ある場合、各種情報が同一であることを確認するときに、利用します。
+プロジェクト間の差分を、以下の項目について表示します。差分がない場合、標準出力は空になります。
+* アノテーション仕様のラベル情報
+* 定型指摘
+* プロジェクトメンバ
+* プロジェクトの設定
 
 
 ```
@@ -504,8 +612,13 @@ $ annofabcli project diff  prj1 prj2 --target settings
 
 
 ### project download
-タスクや検査コメント、アノテーションなどをダウンロードします。
-
+プロジェクトに対して、タスクや検査コメント、アノテーションなどをダウンロードします。
+ダウンロード対象は以下の通りです。
+* すべてのタスクが記載されたJSON
+* すべての検査コメントが記載されたJSON
+* すべてのタスク履歴イベントが記載されたJSON
+* Simpleアノテーションzip
+* Fullアノテーションzip
 
 ```
 # タスクの全一覧が記載されたJSONファイルをダウンロードする
@@ -530,28 +643,18 @@ DEBUG    : 2019-07-16 12:18:15,710 : annofabcli.common.facade       : job_id = c
 ```
 
 
-### project_member list
-プロジェクトメンバ一覧を出力する。
+
+### project_member copy
+プロジェクトメンバを別のプロジェクトにコピーします。
 
 ```
-# ORG組織配下のすべてのプロジェクトのプロジェクトメンバ一覧を出力する
-$ annofabcli project_member list --organization ORG
+# prj1のメンバをprj2にコピーする。
+$ annofabcli project_member copy prj1 prj2
 
-# prj1, prj2のプロジェクトのプロジェクトメンバ一覧を出力する
-$ annofabcli project_member list --project_id prj1 prj2
+# prj1のメンバをprj2にコピーする。prj2にしか存在しないメンバは削除される。
+$ annofabcli project_member copy prj1 prj2 --delete_dest
 ```
 
-
-### project_member invite
-複数のプロジェクトに、ユーザを招待します。
-
-```
-# ORG組織配下のすべてのプロジェクトに、user1, user2をownerロールで招待する
-$ annofabcli project_member invite --user_id user1 user2 --role owner --organization ORG
-
-# prj1, prj2のプロジェクトに、user1をaccepterロールで招待する
-$ annofabcli project_member invite --user_id user1 --role accepter --project_id prj1 prj2
-```
 
 
 ### project_member delete
@@ -566,25 +669,45 @@ $ annofabcli project_member invite --user_id user1  --project_id prj1 prj2
 ```
 
 
-### project_member copy
-プロジェクトメンバをコピーします。
+
+### project_member invite
+複数のプロジェクトに、ユーザを招待します。
 
 ```
-# prj1のメンバをprj2にコピーする。
-$ annofabcli project_member copy prj1 prj2
+# ORG組織配下のすべてのプロジェクトに、user1, user2をownerロールで招待する
+$ annofabcli project_member invite --user_id user1 user2 --role owner --organization ORG
 
-# prj1のメンバをprj2にコピーする。prj2にしか存在しないメンバは削除される。
-$ annofabcli project_member copy prj1 prj2 --delete_dest
+# prj1, prj2のプロジェクトに、user1をaccepterロールで招待する
+$ annofabcli project_member invite --user_id user1 --role accepter --project_id prj1 prj2
 ```
+
+
+### project_member list
+プロジェクトメンバ一覧を出力します。
+
+```
+# ORG組織配下のすべてのプロジェクトのプロジェクトメンバ一覧を出力する
+$ annofabcli project_member list --organization ORG
+
+# prj1, prj2のプロジェクトのプロジェクトメンバ一覧を出力する
+$ annofabcli project_member list --project_id prj1 prj2
+```
+
+#### 出力結果（CSV）
+
+| project_id                           | account_id                           | user_id         | username  | member_status | member_role | updated_datetime              | created_datetime              | sampling_inspection_rate | sampling_acceptance_rate | project_title                |
+|--------------------------------------|--------------------------------------|-----------------|-----------|---------------|-------------|-------------------------------|-------------------------------|--------------------------|--------------------------|------------------------------|
+| 12345678-abcd-1234-abcd-1234abcd5678 | 12345678-abcd-1234-abcd-1234abcd5678 | user_id | username | active        | owner       | 2019-09-10T14:51:00.908+09:00 | 2019-04-19T16:29:41.069+09:00 |                          |                          | sample_project |
+
 
 ### project_member put
 CSVに記載されたユーザを、プロジェクトメンバとして登録します。
 
-members.csvの中身は以下の通り。
+members.csvの中身は以下の通りです。
 
 ```
-user1, worker
-user2, accepter
+user1,worker
+user2,accepter
 ```
 
 
@@ -596,42 +719,24 @@ $ annofabcli project_member put --project_id prj1 --csv members.csv
 $ annofabcli project_member put --project_id prj1 --csv members.csv --delete
 ```
 
-### staistics visualize
+### statistics visualize
 統計情報を可視化します。
 
 ```
 # prj1の統計情報を可視化したファイルを、/tmp/outputに出力する
-$ annofabcli staistics visualize --project_id prj1 --output_dir /tmp/output
+$ annofabcli statistics visualize --project_id prj1 --output_dir /tmp/output
 
 # statusがcompleteのタスクを統計情報を可視化したファイルを、/tmp/outputに出力する
-$ annofabcli staistics visualize --project_id prj1 --output_dir /tmp/output \
+$ annofabcli statistics visualize --project_id prj1 --output_dir /tmp/output \
   --task_query '{"status": "complete"}' 
 
 # 作業ディレクトリ（`.annofab-cli`）内のファイルから、統計情報を可視化する。
-$ annofabcli staistics visualize --project_id prj1 --not_update
+$ annofabcli statistics visualize --project_id prj1 --not_update
 ```
 
-
-
-### task list
-タスク一覧を出力します。
-
-```
-# 受入フェーズで、"usr1"が担当しているタスクの一覧を出力する
-$ annofabcli task list --project_id prj1 --task_query '{"user_id": "usr1","phase":"acceptance"}' 
-
-# 休憩中で、過去の担当者が"usr1"であるタスクの一覧を出力する。task.jsonファイルにJSON形式で出力する。
-$ annofabcli task list --project_id prj1 \
- --task_query '{"previous_user_id": "usr1","status":"break"}' --format json --out task.json
-
-# 差し戻されたタスクのtask_idを出力する
-$ annofabcli task list --project_id prj1 --task_query '{"rejected_only": true}' --format task_id_list
-
- 
-```
 
 ### task cancel_acceptance
-受け入れ完了タスクを、受け入れ取り消しにします。
+受け入れ完了タスクに対して、受け入れ取り消しにします。
 アノテーションルールを途中で変更したときなどに、利用します。
 
 
@@ -650,7 +755,7 @@ $ annofabcli task cancel_acceptance --project_id prj1 --task_id file://task.txt 
 
 ```
 # 指定されたタスクの担当者を 'user1' に変更する。
-$ annofabcli task change_operator --project_id prj1 --task_id file://task.txt --user_id usr1
+$ annofabcli task change_operator --project_id prj1 --task_id file://task.txt --user_id uer1
 
 # 指定されたタスクの担当者を未割り当てに変更する。
 $ annofabcli task change_operator --project_id prj1 --task_id file://task.txt --not_assign
@@ -660,6 +765,7 @@ $ annofabcli task change_operator --project_id prj1 --task_id file://task.txt --
 ### task complete
 未処置の検査コメントを適切な状態に変更して、タスクを受け入れ完了にします。
 特定のタスクのみ受け入れをスキップしたいときに、利用します。
+
 
 ```
 # 未処置の検査コメントは"対応完了"状態にして、prj1プロジェクトのタスクを受け入れ完了にする。
@@ -671,17 +777,40 @@ $ annofabcli complete_tasks --project_id prj1  --inspection_list inspection.json
  --inspection_status no_correction_required
 ```
 
-inspection.jsonは、未処置の検査コメント一覧です。`inspection_comment list_unprocessed`コマンドで出力できます。
+`inspection.json`は、未処置の検査コメント一覧です。`annofabcli inspection_comment list_unprocessed --foramt json`コマンドで出力できます。
 
+
+
+### task list
+タスク一覧を出力します。
+
+```
+# 受入フェーズで、"usr1"が担当しているタスクの一覧を出力する
+$ annofabcli task list --project_id prj1 --task_query '{"user_id": "usr1","phase":"acceptance"}' 
+
+# 休憩中で、過去の担当者が"usr1"であるタスクの一覧を出力する。task.jsonファイルにJSON形式で出力する。
+$ annofabcli task list --project_id prj1 \
+ --task_query '{"previous_user_id": "usr1","status":"break"}' --format json --out task.json
+
+# 差し戻されたタスクのtask_idを出力する
+$ annofabcli task list --project_id prj1 --task_query '{"rejected_only": true}' --format task_id_list 
+```
+
+#### 出力結果
+
+| project_id                           | task_id                                | phase      | phase_stage | status      | input_data_id_list                       | account_id                           | histories_by_phase                                                                                                                                       | work_time_span | number_of_rejections | started_datetime              | updated_datetime              | sampling | user_id         | username  | worktime_hour       | number_of_rejections_by_inspection | number_of_rejections_by_acceptance |
+|--------------------------------------|----------------------------------------|------------|-------------|-------------|------------------------------------------|--------------------------------------|----------------------------------------------------------------------------------------------------------------------------------------------------------|----------------|----------------------|-------------------------------|-------------------------------|----------|-----------------|-----------|---------------------|------------------------------------|------------------------------------|
+| 12345678-abcd-1234-abcd-1234abcd5678 | 12345678-abcd-1234-abcd-1234abcd5678   | annotation | 1           | break       | ['12345678-abcd-1234-abcd-1234abcd5678'] | 12345678-abcd-1234-abcd-1234abcd5678 | [{'account_id': '12345678-abcd-1234-abcd-1234abcd5678', 'phase': 'annotation', 'phase_stage': 1, 'user_id': 'user_id1', 'username': 'username1'}] | 539662         | 0                    | 2019-05-08T13:53:21.338+09:00 | 2019-05-08T14:15:07.318+09:00 |          | user_id1 | user_name2 | 0.14990611111111113 | 0                                  | 0                                  |
 
 
 ### task reject
-検査コメントを付与して、タスクを差し戻します。検査コメントは、タスク内の先頭の画像の左上に付与します。
+検査コメントを付与して、タスクを差し戻します。検査コメントは、タスク内の先頭の画像の左上(x=0,y=0)に付与します。
 アノテーションルールを途中で変更したときなどに、利用します。
 
 
 ```
-# prj1プロジェクトに、"hoge"という検査コメントを付与して、タスクを差し戻す。最後のannotation phaseを担当したユーザを割り当てる（画面と同じ動き）
+# prj1プロジェクトに、"hoge"という検査コメントを付与して、タスクを差し戻す。
+# 最後のannotation phaseを担当したユーザを割り当てます（画面と同じ動き）
 $ annofabcli task reject --project_id prj1 --task_id file://tasks.txt --comment "hoge"
 
 # 差し戻したタスクに、担当者は割り当てない
@@ -694,42 +823,4 @@ $ annofabcli task reject --project_id prj1 --task_id file://tasks.txt \
 ```
 
 
-
-
-
-
-
-### filesystem write_annotation_image
-アノテーションzip、またはそれを展開したディレクトリから、アノテーションの画像（Semantic Segmentation用）を生成します。
-以下のアノテーションが画像化対象です。
-* 矩形
-* ポリゴン
-* 塗りつぶし
-* 塗りつぶしv2
-
-
-```
-# アノテーションzipをダウンロードする。
-$ annofabcli project download simple_annotation --project_id prj1 --output annotation.zip
-
-
-# label_nameとRGBを対応付けたファイルを生成する
-$ annofabcli annotation_specs list_label_color --project_id prj1 --output label_color.json
-
-
-# annotation.zip から、アノテーション画像を生成する
-$ annofabcli filesystem write_annotation_image  --annotation annotation.zip \
- --image_size 1280x720 \
- --label_color file://label_color.json \
- --output_dir /tmp/output
-
-
-# annotation.zip から、アノテーション画像を生成する。ただしタスクのステータスが"完了"で、task.txtに記載れたタスクのみ画像化する。
-$ annofabcli filesystem write_annotation_image  --annotation annotation.zip \
- --image_size 1280x720 \
- --label_color file://label_color.json \
- --output_dir /tmp/output \
- --task_status_complete \
- --task_id file://task.txt
-```
 
