@@ -77,8 +77,8 @@ def parse_args(parser: argparse.ArgumentParser):
         '-f', '--format', type=str, choices=['text', FormatArgument.PRETTY_JSON.value, FormatArgument.JSON.value],
         default='text', help=f'出力フォーマット '
         'text: 人が見やすい形式, '
-        '{FormatArgument.PRETTY_JSON.value}: インデントされたJSON, '
-        '{FormatArgument.JSON.value}: フラットなJSON')
+        f'{FormatArgument.PRETTY_JSON.value}: インデントされたJSON, '
+        f'{FormatArgument.JSON.value}: フラットなJSON')
 
     parser.set_defaults(subcommand_func=main)
 
