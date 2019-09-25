@@ -98,9 +98,17 @@ def test_annotation():
     ])
 
 
-def test_annotation_specs():
-    main(['annotation_specs', 'list_label', '--project_id', project_id])
-    main(['annotation_specs', 'list_label_color', '--project_id', project_id])
+class TestAnnotationSpecs:
+    command_name = "annotation_specs"
+
+    def test_annotation_specs_list_label(self):
+        main([self.command_name, 'list_label', '--project_id', project_id])
+
+    def test_annotation_specs_list_label_color(self):
+        main([self.command_name, 'list_label_color', '--project_id', project_id])
+
+    def test_annotation_specs_histories(self):
+        main([self.command_name, 'history', '--project_id', project_id])
 
 
 def test_project_member():
