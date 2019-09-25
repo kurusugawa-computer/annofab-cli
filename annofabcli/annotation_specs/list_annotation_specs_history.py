@@ -15,6 +15,8 @@ class AnnotationSpecsHistories(AbstractCommandLineInterface):
     アノテーション仕様の変更履歴を出力する。
     """
     def list_annotation_specs_histories(self, project_id: str) -> None:
+        super().validate_project(project_id)
+
         annotation_specs_histories, _ = self.service.api.get_annotation_specs_histories(project_id)
         self.print_according_to_format(annotation_specs_histories)
 
