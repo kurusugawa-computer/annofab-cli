@@ -103,15 +103,17 @@ class TestAnnotationSpecs:
 
     def test_annotation_specs_list_label(self):
         out_file = str(out_path / 'anotation_specs_list_label.csv')
-        main([self.command_name, 'list_label', '--project_id', project_id, '--format' , 'csv', '--output', out_file])
+        main([self.command_name, 'list_label', '--project_id', project_id, '--format', 'csv', '--output', out_file])
 
     def test_annotation_specs_list_label_color(self):
         out_file = str(out_path / 'anotation_specs_list_label_color.csv')
-        main([self.command_name, 'list_label_color', '--project_id', project_id, '--format' , 'json', '--output', out_file])
+        main([
+            self.command_name, 'list_label_color', '--project_id', project_id, '--format', 'json', '--output', out_file
+        ])
 
     def test_annotation_specs_histories(self):
         out_file = str(out_path / 'anotaton_specs_histories.csv')
-        main([self.command_name, 'history', '--project_id', project_id,  '--format' , 'csv', '--output', out_file])
+        main([self.command_name, 'history', '--project_id', project_id, '--format', 'csv', '--output', out_file])
 
 
 def test_project_member():
