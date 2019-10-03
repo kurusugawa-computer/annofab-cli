@@ -153,7 +153,7 @@ def parse_args(parser: argparse.ArgumentParser):
 
     # タスク検索クエリ
     parser.add_argument(
-        '-tq', '--task_query', type=str, required=True, help='タスクの検索クエリをJSON形式で指定します。'
+        '-tq', '--task_query', type=str, help='タスクの検索クエリをJSON形式で指定します。指定しない場合は、すべてのタスクを取得します。'
         '`file://`を先頭に付けると、JSON形式のファイルを指定できます。'
         'クエリのフォーマットは、[getTasks API](https://annofab.com/docs/api/#operation/getTasks)のクエリパラメータと同じです。'
         'さらに追加で、`user_id`, `previous_user_id` キーも指定できます。'
@@ -178,7 +178,7 @@ def parse_args(parser: argparse.ArgumentParser):
 def add_parser(subparsers: argparse._SubParsersAction):
     subcommand_name = "list"
     subcommand_help = "タスク一覧を出力します。"
-    description = ("タスク一覧を出力します。AnnoFabの制約上、10,000件までしか出力されません。")
+    description = ("タスク一覧を出力します。")
 
     parser = annofabcli.common.cli.add_parser(subparsers, subcommand_name, subcommand_help, description)
     parse_args(parser)
