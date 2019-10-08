@@ -1,9 +1,9 @@
 import argparse
 
 import annofabcli
+import annofabcli.annotation_specs.list_annotation_specs_history
 import annofabcli.annotation_specs.list_annotation_specs_label
 import annofabcli.annotation_specs.print_label_color
-import annofabcli.annotation_specs.list_annotation_specs_history
 import annofabcli.common.cli
 
 

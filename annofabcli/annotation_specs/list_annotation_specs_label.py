@@ -6,13 +6,13 @@ import argparse
 import logging
 from typing import Any, Callable, Dict, List, Optional, Tuple  # pylint: disable=unused-import
 
+import more_itertools
 from annofabapi.models import ProjectMemberRole
 
 import annofabcli
-import more_itertools
 import annofabcli.common.cli
 from annofabcli import AnnofabApiFacade
-from annofabcli.common.cli import AbstractCommandLineInterface, build_annofabapi_resource_and_login, ArgumentParser
+from annofabcli.common.cli import AbstractCommandLineInterface, ArgumentParser, build_annofabapi_resource_and_login
 from annofabcli.common.enums import FormatArgument
 
 logger = logging.getLogger(__name__)
@@ -22,7 +22,8 @@ class PrintAnnotationSpecsLabel(AbstractCommandLineInterface):
     """
     アノテーション仕様を出力する
     """
-    def print_annotation_specs_label(self, project_id: str, arg_format: str, output: Optional[str] = None, old_updated_datetime: Optional[str]=None, before:Optional[int] = None):
+    def print_annotation_specs_label(self, project_id: str, arg_format: str, output: Optional[str] = None,
+                                     old_updated_datetime: Optional[str] = None, before: Optional[int] = None):
         super().validate_project(project_id, [ProjectMemberRole.OWNER, ProjectMemberRole.ACCEPTER])
 
         annotation_specs = self.service.api.get_annotation_specs(project_id)[0]
@@ -43,11 +44,10 @@ class PrintAnnotationSpecsLabel(AbstractCommandLineInterface):
 
     def get_old_annotaion_specs_from_index(self, project_id: str, before: int):
         histories, _ = self.service.api.get_annotation_specs_histories(project_id)
-        
+
         history = more_itertools.first_true(histories, pred=lambda e: e['updated_datetime'] == old_updated_datetime)
         annotation_specs = self.service.wrapper.get_annotation_specs_from_url(project_id, history['url'])
         return annotation_specs
-
 
     def get_name_list(messages: List[Dict[str, Any]]):
         """
@@ -82,8 +82,7 @@ class PrintAnnotationSpecsLabel(AbstractCommandLineInterface):
     def main(self):
         args = self.args
         self.print_annotation_specs_label(args.project_id, arg_format=args.format, output=args.output,
-                                          old_updated_datetime=args.old_updated_datetime,
-                                          before=args.before)
+                                          old_updated_datetime=args.old_updated_datetime, before=args.before)
 
 
 def parse_args(parser: argparse.ArgumentParser):
@@ -93,18 +92,16 @@ def parse_args(parser: argparse.ArgumentParser):
 
     # 過去のアノテーション仕様を参照するためのオプション
     old_annotation_specs_group = parser.add_mutually_exclusive_group()
-    old_annotation_specs_group.add_argument('--old_updated_datetime', type=str,
-                        help=("出力したい過去のアノテーション仕様の更新日時を指定してください。 "
-                              "更新日時は`annotation_specs history`コマンドで確認できます。 "
-                              "ex) `2019-09-25T13:22:22.679+09:00`. "
-                              "指定しない場合は、最新のアノテーション仕様が出力されます。 "
-                              ))
+    old_annotation_specs_group.add_argument(
+        '--old_updated_datetime', type=str, help=("出力したい過去のアノテーション仕様の更新日時を指定してください。 "
+                                                  "更新日時は`annotation_specs history`コマンドで確認できます。 "
+                                                  "ex) `2019-09-25T13:22:22.679+09:00`. "
+                                                  "指定しない場合は、最新のアノテーション仕様が出力されます。 "))
 
-    old_annotation_specs_group.add_argument('--before', type=int,
-                        help=("出力したい過去のアノテーション仕様が、いくつか前のアノテーション仕様であるかを指定してください。  "
-                              "たとえば`1`を指定した場合、最新より1個前のアノテーション仕様を出力します。 "
-                              "指定しない場合は、最新のアノテーション仕様が出力されます。 "
-                              ))
+    old_annotation_specs_group.add_argument(
+        '--before', type=int, help=("出力したい過去のアノテーション仕様が、いくつか前のアノテーション仕様であるかを指定してください。  "
+                                    "たとえば`1`を指定した場合、最新より1個前のアノテーション仕様を出力します。 "
+                                    "指定しない場合は、最新のアノテーション仕様が出力されます。 "))
 
     parser.add_argument(
         '-f', '--format', type=str, choices=['text', FormatArgument.PRETTY_JSON.value, FormatArgument.JSON.value],

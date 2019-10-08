@@ -1,7 +1,6 @@
 import argparse
 import json
 import logging.handlers
-import os
 from pathlib import Path
 from typing import Any, Callable, Dict, List, Optional  # pylint: disable=unused-import
 
