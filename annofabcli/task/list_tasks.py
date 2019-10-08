@@ -66,7 +66,7 @@ class ListTasks(AbstractCommandLineInterface):
 
         return task_query
 
-    def get_tasks(self, project_id: str, task_query: Dict[str, Any]) -> List[Task]:
+    def get_tasks(self, project_id: str, task_query: Optional[Dict[str, Any]]=None) -> List[Task]:
         """
         タスク一覧を取得する。
 
@@ -77,8 +77,9 @@ class ListTasks(AbstractCommandLineInterface):
         Returns:
             対象の検査コメント一覧
         """
+        if task_query is not None:
+            task_query = self._modify_task_query(project_id, task_query)
 
-        task_query = self._modify_task_query(project_id, task_query)
         logger.debug(f"task_query: {task_query}")
         tasks = self.service.wrapper.get_all_tasks(project_id, query_params=task_query)
         return [self.visualize.add_properties_to_task(e) for e in tasks]
@@ -101,7 +102,7 @@ class ListTasks(AbstractCommandLineInterface):
         # logger.debug(f"task_query: {task_query}")
         return [self.visualize.add_properties_to_task(e) for e in task_list]
 
-    def print_tasks(self, project_id: str, task_query: Dict[str, Any],
+    def print_tasks(self, project_id: str, task_query: Optional[Dict[str, Any]]=None,
                     task_list_from_json: Optional[List[Task]] = None):
         """
         タスク一覧を出力する
@@ -131,8 +132,11 @@ class ListTasks(AbstractCommandLineInterface):
         args = self.args
         task_query = annofabcli.common.cli.get_json_from_args(args.task_query)
 
-        with open(args.task_json, encoding="utf-8") as f:
-            task_list = json.load(f)
+        if args.task_json is not None:
+            with open(args.task_json, encoding="utf-8") as f:
+                task_list = json.load(f)
+        else:
+            task_list = None
 
         self.print_tasks(args.project_id, task_query=task_query, task_list_from_json=task_list)
 
@@ -157,7 +161,7 @@ def parse_args(parser: argparse.ArgumentParser):
         'ただし `page`, `limit`キーは指定できません。')
 
     parser.add_argument(
-        '-ts', '--task_json', type=str,
+        '-tj', '--task_json', type=str,
         help='タスク情報が記載されたJSONファイルのパスを指定すると、JSONに記載された情報を元にタスク一覧を出力します。AnnoFabからタスク情報は取得しません。'
         'JSONには記載されていない、`user_id`や`username`などの情報も追加します。'
         'JSONファイルは`annofabcli project download task`コマンドで取得できます。')
