@@ -40,7 +40,7 @@ def str_to_datetime(d: str) -> datetime.datetime:
     return datetime.datetime.strptime(d, '%Y-%m-%d')
 
 
-def datetime_range(first_datetime: datetime.datetime, last_datetime: datetime.datetime,
+def create_datetime_range_list(first_datetime: datetime.datetime, last_datetime: datetime.datetime,
                    days: int) -> List[DatetimeRange]:
     datetime_list: List[DatetimeRange] = []
     datetime_list.append((None, first_datetime))
@@ -91,7 +91,7 @@ class ListInputData(AbstractCommandLineInterface):
         logger.debug(f"input_data_query: {input_data_query}")
         input_data_list = self.service.wrapper.get_all_input_data_list(project_id, query_params=input_data_query)
         # 詳細な情報を追加する
-        if add_details:
+        if add_details and len(input_data_list) > 0:
             logger.debug(f"入力データ一覧の件数: {len(input_data_list)}")
 
             # AWS CloudFrontのURLの上限が8,192byte
@@ -151,7 +151,7 @@ class ListInputData(AbstractCommandLineInterface):
 
         all_input_data_list = []
 
-        datetime_range_list = datetime_range(first_datetime, last_datetime, batch_query.days)
+        datetime_range_list = create_datetime_range_list(first_datetime, last_datetime, batch_query.days)
         for from_datetime, to_datetime in datetime_range_list:
             idq = copy.deepcopy(input_data_query) if input_data_query is not None else {}
 
@@ -186,13 +186,17 @@ class ListInputData(AbstractCommandLineInterface):
 
         if batch_query is None:
             input_data_list = self.get_input_data(project_id, input_data_query=input_data_query, add_details=add_details)
-            logger.debug(f"入力データ一覧の件数: {len(input_data_list)}")
+            logger.info(f"入力データ一覧の件数: {len(input_data_list)}")
             if len(input_data_list) == 10000:
                 logger.warning("入力データ一覧は10,000件で打ち切られている可能性があります。")
 
         else:
             input_data_list = self.get_input_data_with_batch(project_id, input_data_query=input_data_query, add_details=add_details,
                                                              batch_query=batch_query)
+            logger.info(f"入力データ一覧の件数: {len(input_data_list)}")
+            total_count = self.service.api.get_input_data_list(project_id, query_params=input_data_query)[0]["total_count"]
+            if len(input_data_list) != total_count:
+                logger.warning(f"実際に取得した件数:{len(input_data_list)}が、取得可能な件数:{total_count} と異なっていました。")
 
         input_data_list = self.search_with_jmespath_expression(input_data_list)
         self.print_according_to_format(input_data_list)
@@ -204,7 +208,7 @@ class ListInputData(AbstractCommandLineInterface):
         # TODO
         # batch_queryの入力チェック
         # input_data_queryにfrom, toが含まれていないこと
-        batch_query = InputDataBatchQuery.from_dict(batch_query)
+        batch_query = InputDataBatchQuery.from_dict(batch_query) if batch_query is not None else None
         self.print_input_data(args.project_id, input_data_query=input_data_query, add_details=args.add_details,
                               batch_query=batch_query)
 
