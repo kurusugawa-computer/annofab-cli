@@ -101,8 +101,8 @@ class ListTasks(AbstractCommandLineInterface):
         # logger.debug(f"task_query: {task_query}")
         return [self.visualize.add_properties_to_task(e) for e in task_list]
 
-    def print_tasks(self, project_id: str, task_query: Dict[str, Any], arg_format: str, output: Optional[str] = None,
-                    csv_format: Optional[Dict[str, Any]] = None, task_list_from_json: Optional[List[Task]] = None):
+    def print_tasks(self, project_id: str, task_query: Dict[str, Any],
+                    task_list_from_json: Optional[List[Task]] = None):
         """
         タスク一覧を出力する
 
@@ -125,19 +125,16 @@ class ListTasks(AbstractCommandLineInterface):
             logger.debug(f"タスク一覧の件数: {len(tasks)}")
 
         tasks = self.search_with_jmespath_expression(tasks)
-        annofabcli.utils.print_according_to_format(target=tasks, arg_format=FormatArgument(arg_format), output=output,
-                                                   csv_format=csv_format)
+        self.print_according_to_format(tasks)
 
     def main(self):
         args = self.args
         task_query = annofabcli.common.cli.get_json_from_args(args.task_query)
-        csv_format = annofabcli.common.cli.get_csv_format_from_args(args.csv_format)
 
-        with open(args.task_json_path, encoding="utf-8") as f:
+        with open(args.task_json, encoding="utf-8") as f:
             task_list = json.load(f)
 
-        self.print_tasks(args.project_id, task_query=task_query, arg_format=args.format, output=args.output,
-                         csv_format=csv_format, task_list_from_json=task_list)
+        self.print_tasks(args.project_id, task_query=task_query, task_list_from_json=task_list)
 
 
 def main(args):
@@ -160,9 +157,9 @@ def parse_args(parser: argparse.ArgumentParser):
         'ただし `page`, `limit`キーは指定できません。')
 
     parser.add_argument(
-        '-tsp', '--task_json_path', type=str,
+        '-ts', '--task_json', type=str,
         help='タスク情報が記載されたJSONファイルのパスを指定すると、JSONに記載された情報を元にタスク一覧を出力します。AnnoFabからタスク情報は取得しません。'
-        '出力内容には`user_id`や`username`が追加されます。'
+        'JSONには記載されていない、`user_id`や`username`などの情報も追加します。'
         'JSONファイルは`annofabcli project download task`コマンドで取得できます。')
 
     argument_parser.add_format(
