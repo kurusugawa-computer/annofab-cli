@@ -202,7 +202,6 @@ def isoduration_to_hour(duration):
     return isodate.parse_duration(duration).total_seconds() / 3600
 
 
-
 def allow_404_error(function):
     """
     Not Found Errorを無視(許容)して、処理する。
