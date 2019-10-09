@@ -41,7 +41,7 @@ def str_to_datetime(d: str) -> datetime.datetime:
 
 
 def create_datetime_range_list(first_datetime: datetime.datetime, last_datetime: datetime.datetime,
-                   days: int) -> List[DatetimeRange]:
+                               days: int) -> List[DatetimeRange]:
     datetime_list: List[DatetimeRange] = []
     datetime_list.append((None, first_datetime))
 
@@ -51,8 +51,8 @@ def create_datetime_range_list(first_datetime: datetime.datetime, last_datetime:
         datetime_list.append((from_datetime, to_datetime))
         if to_datetime >= last_datetime:
             break
-        else:
-            from_datetime = to_datetime
+
+        from_datetime = to_datetime
 
     datetime_list.append((to_datetime, None))
     return datetime_list
@@ -82,7 +82,7 @@ class ListInputData(AbstractCommandLineInterface):
                 task_id_list.append(task['task_id'])
         return task_id_list
 
-    def get_input_data(self, project_id: str, input_data_query: Optional[Dict[str, Any]]=None,
+    def get_input_data(self, project_id: str, input_data_query: Optional[Dict[str, Any]] = None,
                        add_details: bool = False) -> List[InputData]:
         """
         入力データ一覧を取得する。
@@ -132,7 +132,8 @@ class ListInputData(AbstractCommandLineInterface):
 
         return input_data_list
 
-    def get_input_data_with_batch(self, project_id: str, batch_query: InputDataBatchQuery, input_data_query: Optional[Dict[str, Any]]=None,
+    def get_input_data_with_batch(self, project_id: str, batch_query: InputDataBatchQuery,
+                                  input_data_query: Optional[Dict[str, Any]] = None,
                                   add_details: bool = False) -> List[InputData]:
         """
         バッチ単位で入力データを取得する。
@@ -170,8 +171,8 @@ class ListInputData(AbstractCommandLineInterface):
 
         return all_input_data_list
 
-    def print_input_data(self, project_id: str, input_data_query: Optional[Dict[str, Any]]=None, add_details: bool = False,
-                         batch_query: Optional[InputDataBatchQuery] = None):
+    def print_input_data(self, project_id: str, input_data_query: Optional[Dict[str, Any]] = None,
+                         add_details: bool = False, batch_query: Optional[InputDataBatchQuery] = None):
         """
         入力データ一覧を出力する
 
@@ -185,16 +186,18 @@ class ListInputData(AbstractCommandLineInterface):
         super().validate_project(project_id, project_member_roles=None)
 
         if batch_query is None:
-            input_data_list = self.get_input_data(project_id, input_data_query=input_data_query, add_details=add_details)
+            input_data_list = self.get_input_data(project_id, input_data_query=input_data_query,
+                                                  add_details=add_details)
             logger.info(f"入力データ一覧の件数: {len(input_data_list)}")
             if len(input_data_list) == 10000:
                 logger.warning("入力データ一覧は10,000件で打ち切られている可能性があります。")
 
         else:
-            input_data_list = self.get_input_data_with_batch(project_id, input_data_query=input_data_query, add_details=add_details,
-                                                             batch_query=batch_query)
+            input_data_list = self.get_input_data_with_batch(project_id, input_data_query=input_data_query,
+                                                             add_details=add_details, batch_query=batch_query)
             logger.info(f"入力データ一覧の件数: {len(input_data_list)}")
-            total_count = self.service.api.get_input_data_list(project_id, query_params=input_data_query)[0]["total_count"]
+            total_count = self.service.api.get_input_data_list(project_id,
+                                                               query_params=input_data_query)[0]["total_count"]
             if len(input_data_list) != total_count:
                 logger.warning(f"実際に取得した件数:{len(input_data_list)}が、取得可能な件数:{total_count} と異なっていました。")
 
