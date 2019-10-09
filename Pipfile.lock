@@ -17,10 +17,10 @@
     "develop": {
         "annofabapi": {
             "hashes": [
-                "sha256:62df231d0df70a8097a5ff4caf1e207cdbe2e212653a8cb304ade3c49e8e71d3",
-                "sha256:6772b3c664267a244b44fce04be98f5d5ec84bf2f86bad4398193bfc447afade"
+                "sha256:8163092f59c605cfafce2b3035fe9332f7cf58df974ea2cc05e0cd9e5d354f0e",
+                "sha256:abcacdaa0490e16512f34a3fb945b0cd64b9cf986ce20a5ebdbf2d7947a7d2b4"
             ],
-            "version": "==0.19.4"
+            "version": "==0.19.6"
         },
         "annofabcli": {
             "editable": true,
@@ -165,10 +165,10 @@
         },
         "holoviews": {
             "hashes": [
-                "sha256:7c3c68e503b7bc5d4d7a24dc5466c9511f84d13a034748b4201973689df08a95",
-                "sha256:af93fc36451fb300d35c7eef6e66fdb18623f038558d0ca1f3a4d2a857d3afd8"
+                "sha256:4f6ad184fb6136e5ee37a74b5276825fc3d5fce5033ff3c8db8831ec11ea2e75",
+                "sha256:6652c70fbd643735e3102e0204ec12525986a8a47225ec89a3c3d09020c39e79"
             ],
-            "version": "==1.12.5"
+            "version": "==1.12.6"
         },
         "idna": {
             "hashes": [
@@ -398,10 +398,10 @@
         },
         "param": {
             "hashes": [
-                "sha256:423afb361df40609c654f8c66f68e62a0276381383972ace31ac17179539fc64",
-                "sha256:b1bd740d436d7734b320db4752f9f747b8a6c0aaf172d7c6146de0f675dc76b5"
+                "sha256:0aec6d801fd618b1ac0ad424a4357091703a0e5427f347ec188ed94899428ee3",
+                "sha256:a2dcb07c6a4ff48bade69bb5d30d84a96911a7e9dcb76b6de975453f933332f8"
             ],
-            "version": "==1.9.1"
+            "version": "==1.9.2"
         },
         "pillow": {
             "hashes": [
