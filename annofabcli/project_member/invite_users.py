@@ -7,6 +7,7 @@ import logging
 from typing import Any, Callable, Dict, List, Optional, Tuple, Union  # pylint: disable=unused-import
 
 import requests
+from annofabapi.models import ProjectMemberRole
 
 import annofabcli
 import annofabcli.common.cli
@@ -83,10 +84,15 @@ def main(args):
 
 
 def parse_args(parser: argparse.ArgumentParser):
+    role_choices = [
+        ProjectMemberRole.OWNER.value, ProjectMemberRole.WORKER.value, ProjectMemberRole.ACCEPTER.value,
+        ProjectMemberRole.TRAINING_DATA_USER.value
+    ]
+
     parser.add_argument('-u', '--user_id', type=str, nargs='+', required=True,
                         help='招待するユーザのuser_idを指定してください。`file://`を先頭に付けると、一覧が記載されたファイルを指定できます。')
-    parser.add_argument('--role', type=str, required=True,
-                        choices=['owner', 'worker', 'accepter', 'training_data_user'], help='ユーザに割り当てるロール')
+
+    parser.add_argument('--role', type=str, required=True, choices=role_choices, help='ユーザに割り当てるロール')
 
     assign_group = parser.add_mutually_exclusive_group(required=True)
     assign_group.add_argument('-p', '--project_id', type=str, nargs='+',
