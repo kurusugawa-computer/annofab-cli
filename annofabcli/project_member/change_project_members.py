@@ -21,9 +21,9 @@ class MemberInfo:
     """
     プロジェクトメンバに対して変更できる情報
     """
-    member_role: ProjectMemberRole
-    sampling_inspection_rate: int
-    sampling_acceptance_rate: int
+    member_role: Optional[ProjectMemberRole] = None
+    sampling_inspection_rate: Optional[int] = None
+    sampling_acceptance_rate: Optional[int] = None
 
 
 class ChangeProjectMembers(AbstractCommandLineInterface):
@@ -31,18 +31,18 @@ class ChangeProjectMembers(AbstractCommandLineInterface):
     プロジェクトメンバのメンバ情報を更新する。
     """
     def put_project_member(self, project_id, user_id: str, member_info: MemberInfo,
-                           old_project_members: List[Dict[str, Any]]) -> Dict[str, Any]:
-        old_member = PutProjectMembers.find_member(old_project_members, user_id)
-        last_updated_datetime = old_member["updated_datetime"] if old_member is not None else None
+                           old_member: Dict[str, Any]) -> Dict[str, Any]:
+
+        def get_value(target, default):
+            return target if target is not None else default
 
         request_body = {
             "member_status": ProjectMemberStatus.ACTIVE.value,
-            "member_role": member_info.member_role.value,
-            "sampling_inspection_rate": member_info.sampling_inspection_rate,
-            "sampling_acceptance_rate": member_info.sampling_acceptance_rate,
-            "last_updated_datetime": last_updated_datetime,
+            "member_role": get_value(member_info.member_role.value, old_member["member_role"]),
+            "sampling_inspection_rate": get_value(member_info.sampling_inspection_rate, old_member["sampling_inspection_rate"]),
+            "sampling_acceptance_rate": get_value(member_info.sampling_acceptance_rate, old_member["sampling_acceptance_rate"]),
+            "last_updated_datetime": old_member["updated_datetime"],
         }
-        """"""
 
         updated_project_member = self.service.api.put_project_member(project_id, user_id, request_body=request_body)[0]
         return updated_project_member
@@ -71,7 +71,8 @@ class ChangeProjectMembers(AbstractCommandLineInterface):
                 logger.warning(f"ユーザ '{user_id}'は自分自身なので、変更できません。")
                 continue
 
-            if not PutProjectMembers.member_exists(old_project_members, user_id):
+            old_member = PutProjectMembers.find_member(old_project_members, user_id)
+            if old_member is None:
                 logger.warning(f"ユーザ '{user_id}' は、プロジェクトメンバでないため変更できませんでした。")
                 continue
 
@@ -82,7 +83,7 @@ class ChangeProjectMembers(AbstractCommandLineInterface):
             # メンバを登録
             try:
                 self.put_project_member(project_id, user_id, member_info=member_info,
-                                        old_project_members=old_project_members)
+                                        old_member=old_member)
                 logger.debug(f"user_id = {user_id} のプロジェクトメンバ情報を変更しました。")
                 count_invite_members += 1
 
@@ -105,6 +106,7 @@ class ChangeProjectMembers(AbstractCommandLineInterface):
         else:
             user_id_list = annofabcli.common.cli.get_list_from_args(args.user_id)
 
+        # TODO validation
         member_info = MemberInfo.from_dict(annofabcli.common.cli.get_json_from_args(args.member_info))
 
         self.change_project_members(args.project_id, user_id_list=user_id_list, member_info=member_info)
@@ -128,9 +130,9 @@ def parse_args(parser: argparse.ArgumentParser):
 
     parser.add_argument(
         '--member_info', type=str, required=True,
-        help="プロジェクトメンバに対して設定するメンバ情報を、JSON形式で指定します。`file://`を先頭に付けると、JSON形式のファイルを指定できます。 \n"
-        "以下のキーが指定可能です。詳細は https://annofab.com/docs/api/#operation/putProjectMember を参照ください。 \n"
-        "member_role, sampling_inspection_rate, sampling_acceptance_rate ")
+        help="プロジェクトメンバに対して設定するメンバ情報を、JSON形式で指定します。`file://`を先頭に付けると、JSON形式のファイルを指定できます。 "
+        "以下のキーが指定可能です。member_role, sampling_inspection_rate, sampling_acceptance_rate, "
+        "詳細は https://annofab.com/docs/api/#operation/putProjectMember を参照ください。 ")
 
     parser.set_defaults(subcommand_func=main)
 
