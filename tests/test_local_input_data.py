@@ -1,10 +1,10 @@
+import datetime
 import os
 import uuid
 from pathlib import Path
-import datetime
-from annofabcli.input_data.put_input_data import CsvInputData, PutInputData
-from annofabcli.input_data.list_input_data import create_datetime_range_list
 
+from annofabcli.input_data.list_input_data import create_datetime_range_list
+from annofabcli.input_data.put_input_data import CsvInputData, PutInputData
 
 # プロジェクトトップに移動する
 os.chdir(os.path.dirname(os.path.abspath(__file__)) + "/../")
@@ -36,14 +36,11 @@ def test_get_input_data_list_from_csv():
 
 
 def test_create_datetime_range_list():
-    first_datetime = datetime.datetime(2019,1,1)
+    first_datetime = datetime.datetime(2019, 1, 1)
     last_datetime = datetime.datetime(2019, 1, 4)
 
     actual = create_datetime_range_list(first_datetime=first_datetime, last_datetime=last_datetime, days=2)
-    expected = [(None, datetime.datetime(2019, 1, 1)),
-     (datetime.datetime(2019, 1, 1), datetime.datetime(2019, 1, 3)),
-     (datetime.datetime(2019, 1, 3), datetime.datetime(2019, 1, 5)),
-     (datetime.datetime(2019, 1, 7), None)]
+    expected = [(None, datetime.datetime(2019, 1, 1)), (datetime.datetime(2019, 1, 1), datetime.datetime(2019, 1, 3)),
+                (datetime.datetime(2019, 1, 3), datetime.datetime(2019, 1, 5)), (datetime.datetime(2019, 1, 7), None)]
 
     assert actual == expected
-
