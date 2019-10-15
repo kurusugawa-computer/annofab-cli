@@ -49,8 +49,21 @@ class UploadInstruction(AbstractCommandLineInterface):
 
         # 作業ガイドの更新(body element)
         html_data = pq_html('body').html()
-        self.service.api.put_instruction(project_id, request_body=html_data)
+        self.update_instruction(project_id, html_data)
         logger.info('作業ガイドを更新しました。')
+
+    def update_instruction(self, project_id: str, html_data: str):
+        histories, _ = self.service.api.get_instruction_history(project_id)
+        if len(histories) > 0:
+            last_updated_datetime = histories[0]['updated_datetime']
+        else:
+            last_updated_datetime = None
+
+        request_body = {
+            "html": html_data,
+            "last_updated_datetime": last_updated_datetime
+        }
+        self.service.api.put_instruction(project_id, request_body=request_body)
 
     def main(self):
         args = self.args

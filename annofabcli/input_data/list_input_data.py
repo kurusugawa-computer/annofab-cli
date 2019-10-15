@@ -206,11 +206,8 @@ class ListInputData(AbstractCommandLineInterface):
     def main(self):
         args = self.args
         input_data_query = annofabcli.common.cli.get_json_from_args(args.input_data_query)
-        batch_query = annofabcli.common.cli.get_json_from_args(args.batch)
-        # TODO
-        # batch_queryの入力チェック
-        # input_data_queryにfrom, toが含まれていないこと
-        batch_query = InputDataBatchQuery.from_dict(batch_query) if batch_query is not None else None
+        dict_batch_query = annofabcli.common.cli.get_json_from_args(args.batch)
+        batch_query = InputDataBatchQuery.from_dict(dict_batch_query) if dict_batch_query is not None else None
         self.print_input_data(args.project_id, input_data_query=input_data_query, add_details=args.add_details,
                               batch_query=batch_query)
 
@@ -233,7 +230,10 @@ def parse_args(parser: argparse.ArgumentParser):
         'クエリのフォーマットは、[getInputDataList API](https://annofab.com/docs/api/#operation/getInputDataList)のクエリパラメータと同じです。'
         'ただし `page`, `limit`キーは指定できません。')
 
-    parser.add_argument('--batch', type=str, help='段階的に入力データを取得するための情報をJSON形式で指定します。このオプションを使えば、10,000件以上のデータを取得できます。')
+    parser.add_argument('--batch', type=str,
+                        help='段階的に入力データを取得するための情報をJSON形式で指定します。 '
+                             '(ex) `{"first":"2019-01-01", "last":"2019-01-31", "days":7}` '
+                             'このオプションを駆使すれば、10,000件以上のデータを取得できます。')
 
     parser.add_argument('--add_details', action='store_true', help='入力データの詳細情報を表示します（`parent_task_id_list`）')
 

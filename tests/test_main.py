@@ -103,6 +103,14 @@ class TestInputData:
             '--add_details', '--output', out_file
         ])
 
+    def test_list_input_data_with_batch(self):
+        out_file = str(out_path / 'input_data.json')
+        main([
+            'input_data', 'list', '--project_id', project_id, '--input_data_query', '{"input_data_name": "abcdefg"}',
+            '--batch', '{"first":"2019-01-01", "last":"2019-01-31", "days":7}', '--add_details', '--output', out_file
+        ])
+
+
     def test_put_input_data(self):
         csv_file = str(data_path / "input_data2.csv")
         # スキップするバージョン
@@ -164,6 +172,31 @@ class TestProject:
         main(['project', 'download', 'full_annotation', '--project_id', project_id, '--output', out_file])
 
 
+
+class TestProjectMember:
+    def test_put_project_member(self):
+        csv_file = str(data_path / "project_members.csv")
+        main(['project_member', 'put', '--project_id', project_id, '--csv', csv_file, '--yes'])
+
+    def test_list_project_member(self):
+        main(['project_member', 'list', '--project_id', project_id])
+        organization_name = get_organization_name(project_id)
+        main(['project_member', 'list', '--organization', organization_name])
+
+    def test_copy_project_member(self):
+        main(['project_member', 'copy', project_id, project_id, '--yes'])
+
+    def test_invite_project_member(self):
+        main(['project_member', 'invite', '--user_id', user_id, '--role', 'owner', '--project_id', project_id])
+
+    def test_change_project_member(self):
+        main([
+            'project_member', 'change', '--all_user', '--project_id', project_id, '--member_info',
+            '{"sampling_inspection_rate": 10, "sampling_acceptance_rate": 20}',  '--yes'
+        ])
+
+
+
 class TestTask:
     command_name = "task"
 
@@ -194,28 +227,5 @@ class TestTask:
         main([
             self.command_name, 'change_operator', '--project_id', project_id, '--task_id', task_id, '--not_assign',
             '--yes'
-        ])
-
-
-class TestProjectMember:
-    def test_put_project_member(self):
-        csv_file = str(data_path / "project_members.csv")
-        main(['project_member', 'put', '--project_id', project_id, '--csv', csv_file, '--yes'])
-
-    def test_list_project_member(self):
-        main(['project_member', 'list', '--project_id', project_id])
-        organization_name = get_organization_name(project_id)
-        main(['project_member', 'list', '--organization', organization_name])
-
-    def test_copy_project_member(self):
-        main(['project_member', 'copy', project_id, project_id, '--yes'])
-
-    def test_invite_project_member(self):
-        main(['project_member', 'invite', '--user_id', user_id, '--role', 'owner', '--project_id', project_id])
-
-    def test_change_project_member(self):
-        main([
-            'project_member', 'change', '--all_user', '--project_id', project_id, '--member_info',
-            '{"sampling_inspection_rate": 10, "sampling_acceptance_rate": 20}'
         ])
 

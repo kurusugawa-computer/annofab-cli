@@ -427,7 +427,13 @@ $ annofabcli input_data list --project_id prj1 --input_data_query '{"input_data_
 # 入力データの詳細情報も出力する
 $ annofabcli input_data list --project_id prj1 --input_data_query '{"input_data_name": "sample"}' --add_details
 
+# 段階的に入力データ一覧を取得する。
+# 2019-01-01〜2019-01-31の期間は7日間ごとに入力データ一覧を取得する。それ以外は、2019-01-01以前、2019-01-31以降の入力データ一覧を取得する。
+$ annofabcli input_data list --project_id prj1 --batch \
+ '{"first":"2019-01-01", "last":"2019-01-31", "days":7}' --output input_data.csv
+
 ```
+
 
 #### 出力結果（CSV）
 
