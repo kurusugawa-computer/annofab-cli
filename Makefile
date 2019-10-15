@@ -18,7 +18,7 @@ format:
 
 lint:
 	pipenv run flake8 ${LINT_FILES}
-	pipenv run mypy ${LINT_FILES} --strict --config-file setup.cfg
+	pipenv run mypy ${LINT_FILES} --config-file setup.cfg
 	pipenv run pylint ${LINT_FILES} --rcfile setup.cfg
 
 test:
