@@ -31,8 +31,6 @@ def get_organization_name(project_id: str) -> str:
     return organization["organization_name"]
 
 
-
-
 class TestAnnotation:
     def test_annotation(self):
         main([
@@ -47,22 +45,19 @@ class TestAnnotationSpecs:
 
     def test_annotation_specs_list_label(self):
         out_file = str(out_path / 'anotation_specs_list_label.json')
-        main([self.command_name, 'list_label', '--project_id', project_id,  '--output', out_file])
+        main([self.command_name, 'list_label', '--project_id', project_id, '--output', out_file])
 
     def test_old_annotation_specs_list_label(self):
         out_file = str(out_path / 'anotation_specs_list_label.json')
-        main([
-            self.command_name, 'list_label', '--project_id', project_id, '--before', "1", '--output',
-            out_file
-        ])
+        main([self.command_name, 'list_label', '--project_id', project_id, '--before', "1", '--output', out_file])
 
     def test_annotation_specs_list_label_from_history_id(self):
         out_file = str(out_path / 'anotation_specs_list_label.json')
         histories, _ = service.api.get_annotation_specs_histories(project_id)
         history_id = histories[0]['history_id']
         main([
-            self.command_name, 'list_label', '--project_id', project_id, '--history_id', history_id,
-            '--output', out_file
+            self.command_name, 'list_label', '--project_id', project_id, '--history_id', history_id, '--output',
+            out_file
         ])
 
     def test_annotation_specs_list_label_color(self):
@@ -90,9 +85,6 @@ class TestFilesystem:
         ])
 
 
-
-
-
 class TestInputData:
     command_name = "input_data"
 
@@ -110,7 +102,6 @@ class TestInputData:
             '--batch', '{"first":"2019-01-01", "last":"2019-01-31", "days":7}', '--add_details', '--output', out_file
         ])
 
-
     def test_put_input_data(self):
         csv_file = str(data_path / "input_data2.csv")
         # スキップするバージョン
@@ -127,24 +118,31 @@ class TestInspectionComment:
     def test_list_inspection_comment_from_json(self):
         out_file = str(out_path / 'inspection_comment.csv')
         inspection_comment_json = str(data_path / "inspection-comment.json")
-        main(['inspection_comment', 'list', '--project_id', project_id, '--inspection_comment_json', inspection_comment_json, '--output', out_file])
+        main([
+            'inspection_comment', 'list', '--project_id', project_id, '--inspection_comment_json',
+            inspection_comment_json, '--output', out_file
+        ])
 
     def test_list_unprocessed_inspection_comment(self):
         out_file = str(out_path / 'inspection_comment.csv')
-        main(['inspection_comment', 'list_unprocessed', '--project_id', project_id, '--task_id', task_id, '--output', out_file])
+        main([
+            'inspection_comment', 'list_unprocessed', '--project_id', project_id, '--task_id', task_id, '--output',
+            out_file
+        ])
 
     def test_list_unprocessed_inspection_comment_from_json(self):
         out_file = str(out_path / 'inspection_comment.csv')
         inspection_comment_json = str(data_path / "inspection-comment.json")
-        main(['inspection_comment', 'list_unprocessed', '--project_id', project_id, '--inspection_comment_json', inspection_comment_json, '--output', out_file])
+        main([
+            'inspection_comment', 'list_unprocessed', '--project_id', project_id, '--inspection_comment_json',
+            inspection_comment_json, '--output', out_file
+        ])
 
 
 class TestInstruction:
     def test_upload_instruction(self):
         html_file = str(data_path / 'instruction.html')
         main(['instruction', 'upload', '--project_id', project_id, '--html', html_file])
-
-
 
 
 class TestProject:
@@ -172,7 +170,6 @@ class TestProject:
         main(['project', 'download', 'full_annotation', '--project_id', project_id, '--output', out_file])
 
 
-
 class TestProjectMember:
     def test_put_project_member(self):
         csv_file = str(data_path / "project_members.csv")
@@ -192,9 +189,8 @@ class TestProjectMember:
     def test_change_project_member(self):
         main([
             'project_member', 'change', '--all_user', '--project_id', project_id, '--member_info',
-            '{"sampling_inspection_rate": 10, "sampling_acceptance_rate": 20}',  '--yes'
+            '{"sampling_inspection_rate": 10, "sampling_acceptance_rate": 20}', '--yes'
         ])
-
 
 
 class TestTask:
@@ -204,8 +200,8 @@ class TestTask:
         out_file = str(out_path / 'task.csv')
         main([
             self.command_name, 'list', '--project_id', project_id, '--task_query',
-            f'{{"user_id": "{user_id}", "phase":"acceptance", "status": "complete"}}',
-            '--output',out_file,'--format', 'csv'
+            f'{{"user_id": "{user_id}", "phase":"acceptance", "status": "complete"}}', '--output', out_file, '--format',
+            'csv'
         ])
 
     def test_list_with_task_json(self):
@@ -213,8 +209,8 @@ class TestTask:
         task_json = str(data_path / "task.json")
 
         main([
-            self.command_name, 'list', '--project_id', project_id, '--task_json', task_json,
-            '--output',out_file,'--format', 'csv'
+            self.command_name, 'list', '--project_id', project_id, '--task_json', task_json, '--output', out_file,
+            '--format', 'csv'
         ])
 
     def test_cancel_acceptance(self):
@@ -239,4 +235,3 @@ class TestTask:
             self.command_name, 'change_operator', '--project_id', project_id, '--task_id', task_id, '--not_assign',
             '--yes'
         ])
-

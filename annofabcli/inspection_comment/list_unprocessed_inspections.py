@@ -1,8 +1,9 @@
-import sys
 import argparse
-import logging
-from typing import Any, Callable, Dict, List, Optional  # pylint: disable=unused-import
 import json
+import logging
+import sys
+from typing import Any, Callable, Dict, List, Optional  # pylint: disable=unused-import
+
 from annofabapi.models import Inspection
 
 import annofabcli
@@ -50,7 +51,8 @@ def parse_args(parser: argparse.ArgumentParser):
 
     parser.add_argument('--commenter_user_id', type=str, help='絞り込み条件となる、検査コメントを付与したユーザのuser_id。 指定しない場合は絞り込まない。')
 
-    parser.add_argument('--inspection_comment_json', type=str,
+    parser.add_argument(
+        '--inspection_comment_json', type=str,
         help='検査コメント情報が記載されたJSONファイルのパスを指定すると、JSONに記載された情報を元に検査コメント一覧を出力します。AnnoFabから検査コメント情報を取得しません。'
         'JSONには記載されていない、`commenter_username	`や`phrase_names_ja`などの情報も追加します。'
         'JSONファイルは`$ annofabcli project download inspection_comment`コマンドで取得できます。')
@@ -94,7 +96,8 @@ def main(args: argparse.Namespace):
         inspection_list = None
 
     PrintInspections(service, facade, args).print_inspections(project_id=args.project_id, task_id_list=task_id_list,
-                                                              filter_inspection=filter_inspection, inspection_list_from_json=inspection_list)
+                                                              filter_inspection=filter_inspection,
+                                                              inspection_list_from_json=inspection_list)
 
 
 def add_parser(subparsers: argparse._SubParsersAction):

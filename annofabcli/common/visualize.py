@@ -117,7 +117,7 @@ class AddProps:
         return self.get_message(label['label_name'], locale)
 
     def add_properties_to_annotation_specs_history(self, annotation_specs_history: AnnotationSpecsHistory
-                                                   ) -> AnnotationSpecsHistory:
+                                                  ) -> AnnotationSpecsHistory:
         """
         アノテーション仕様の履歴に、以下のキーを追加する.
         user_id

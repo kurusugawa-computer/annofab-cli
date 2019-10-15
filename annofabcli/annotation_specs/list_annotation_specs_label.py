@@ -92,7 +92,7 @@ class PrintAnnotationSpecsLabel(AbstractCommandLineInterface):
             if history_id is None:
                 print(f"{self.COMMON_MESSAGE} argument --before: 最新より{args.before}個前のアノテーション仕様は見つかりませんでした。",
                       file=sys.stderr)
-                return False
+                return
         else:
             # args.beforeがNoneならば、必ずargs.history_idはNoneでない
             history_id = args.history_id

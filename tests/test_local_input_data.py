@@ -40,9 +40,7 @@ def test_create_datetime_range_list():
     last_datetime = datetime.datetime(2019, 1, 4)
 
     actual = create_datetime_range_list(first_datetime=first_datetime, last_datetime=last_datetime, days=2)
-    expected = [(None, datetime.datetime(2019, 1, 1)),
-                (datetime.datetime(2019, 1, 1), datetime.datetime(2019, 1, 3)),
-                (datetime.datetime(2019, 1, 3), datetime.datetime(2019, 1, 5)),
-                (datetime.datetime(2019, 1, 5), None)]
+    expected = [(None, datetime.datetime(2019, 1, 1)), (datetime.datetime(2019, 1, 1), datetime.datetime(2019, 1, 3)),
+                (datetime.datetime(2019, 1, 3), datetime.datetime(2019, 1, 5)), (datetime.datetime(2019, 1, 5), None)]
 
     assert actual == expected

@@ -230,10 +230,10 @@ def parse_args(parser: argparse.ArgumentParser):
         'クエリのフォーマットは、[getInputDataList API](https://annofab.com/docs/api/#operation/getInputDataList)のクエリパラメータと同じです。'
         'ただし `page`, `limit`キーは指定できません。')
 
-    parser.add_argument('--batch', type=str,
-                        help='段階的に入力データを取得するための情報をJSON形式で指定します。 '
-                             '(ex) `{"first":"2019-01-01", "last":"2019-01-31", "days":7}` '
-                             'このオプションを駆使すれば、10,000件以上のデータを取得できます。')
+    parser.add_argument(
+        '--batch', type=str, help='段階的に入力データを取得するための情報をJSON形式で指定します。 '
+        '(ex) `{"first":"2019-01-01", "last":"2019-01-31", "days":7}` '
+        'このオプションを駆使すれば、10,000件以上のデータを取得できます。')
 
     parser.add_argument('--add_details', action='store_true', help='入力データの詳細情報を表示します（`parent_task_id_list`）')
 

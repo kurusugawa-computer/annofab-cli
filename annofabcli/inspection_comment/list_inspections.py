@@ -49,7 +49,7 @@ class PrintInspections(AbstractCommandLineInterface):
             情報が追加された検査コメント一覧
         """
         def filter_task_id(e):
-            if task_id_list is None or len(task_id_list)==0:
+            if task_id_list is None or len(task_id_list) == 0:
                 return True
             return e['task_id'] in task_id_list
 
@@ -79,10 +79,12 @@ class PrintInspections(AbstractCommandLineInterface):
         """
 
         if inspection_list_from_json is None:
-            inspection_list = self.get_inspections(project_id, task_id_list=task_id_list, filter_inspection=filter_inspection)
+            inspection_list = self.get_inspections(project_id, task_id_list=task_id_list,
+                                                   filter_inspection=filter_inspection)
 
         else:
-            inspection_list = self.filter_inspection_list(inspection_list_from_json, task_id_list=task_id_list, arg_filter_inspection=filter_inspection)
+            inspection_list = self.filter_inspection_list(inspection_list_from_json, task_id_list=task_id_list,
+                                                          arg_filter_inspection=filter_inspection)
 
         logger.info(f"検査コメントの件数: {len(inspection_list)}")
 
@@ -161,7 +163,6 @@ class PrintInspections(AbstractCommandLineInterface):
         else:
             inspection_list = None
 
-
         self.print_inspections(args.project_id, task_id_list, inspection_list_from_json=inspection_list)
 
 
@@ -174,7 +175,8 @@ def parse_args(parser: argparse.ArgumentParser):
         '`--inspection_comment_json`を指定しないときは、必須です。'
         '`file://`を先頭に付けると、task_idの一覧が記載されたファイルを指定できます。')
 
-    parser.add_argument('--inspection_comment_json', type=str,
+    parser.add_argument(
+        '--inspection_comment_json', type=str,
         help='検査コメント情報が記載されたJSONファイルのパスを指定すると、JSONに記載された情報を元に検査コメント一覧を出力します。AnnoFabから検査コメント情報を取得しません。'
         'JSONには記載されていない、`commenter_username	`や`phrase_names_ja`などの情報も追加します。'
         'JSONファイルは`$ annofabcli project download inspection_comment`コマンドで取得できます。')

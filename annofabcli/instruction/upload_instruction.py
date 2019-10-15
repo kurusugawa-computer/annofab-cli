@@ -59,10 +59,7 @@ class UploadInstruction(AbstractCommandLineInterface):
         else:
             last_updated_datetime = None
 
-        request_body = {
-            "html": html_data,
-            "last_updated_datetime": last_updated_datetime
-        }
+        request_body = {"html": html_data, "last_updated_datetime": last_updated_datetime}
         self.service.api.put_instruction(project_id, request_body=request_body)
 
     def main(self):
