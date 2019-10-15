@@ -88,6 +88,9 @@ class TestFilesystem:
 class TestInputData:
     command_name = "input_data"
 
+    def test_delete_input_data(self):
+        main(['input_data', 'delete', '--project_id', project_id, '--input_data_id', 'foo', '--yes'])
+
     def test_list_input_data(self):
         out_file = str(out_path / 'input_data.json')
         main([

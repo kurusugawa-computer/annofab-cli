@@ -70,6 +70,7 @@ $ docker run -it -e ANNOFAB_USER_ID=XXXX -e ANNOFAB_PASSWORD=YYYYY annofab-cli a
 |annotation_specs| list_label | アノテーション仕様のラベル情報を出力します。                              |チェッカー/オーナ|
 |annotation_specs| list_label_color             | アノテーション仕様から、label_nameとRGBを対応付けたJSONを出力します。                                      |チェッカー/オーナ|
 |filesystem| write_annotation_image        | アノテーションzip、またはそれを展開したディレクトリから、アノテーションの画像（Semantic Segmentation用）を生成します。 |-|
+|input_data|delete             | 入力データを削除します。                                                            |オーナ|
 |input_data|list             | 入力データ一覧を出力します。                                                            |-|
 |input_data|put             | CSVに記載された入力データを登録します。                                                            |オーナ|
 |inspection_comment| list | 検査コメントを出力します。                               |-|
@@ -416,6 +417,15 @@ $ annofabcli filesystem write_annotation_image  --annotation annotation.zip \
 #### 出力結果（塗りつぶし画像）
 
 ![filesystem write_annotation_iamgeの塗りつぶし画像](readme-img/write_annotation_image-output.png)
+
+
+### input_data delete
+タスクに使われていない入力データを削除します。
+
+```
+$ annofabcli input_data delete --project_id prj1 --input_data_list input1 input2
+```
+
 
 ### input_data list
 入力データ一覧を出力します。
