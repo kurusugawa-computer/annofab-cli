@@ -144,8 +144,8 @@ class PrintInspections(AbstractCommandLineInterface):
     def validate(args: argparse.Namespace):
         if args.inspection_comment_json is None and args.task_id is None:
             print(
-                "annofabcli inspection_comment list: error: argument -t/--task_id: `"
-                "--inspection_comment_json`を指定しないときは、必須です。", file=sys.stderr)
+                "annofabcli inspection_comment list: error: argument -t/--task_id: "
+                "`--inspection_comment_json`を指定しないときは、必須です。", file=sys.stderr)
             return False
         else:
             return True

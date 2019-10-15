@@ -66,7 +66,7 @@ class ListTasks(AbstractCommandLineInterface):
 
         return task_query
 
-    def get_tasks(self, project_id: str, task_query: Optional[Dict[str, Any]]=None) -> List[Task]:
+    def get_tasks(self, project_id: str, task_query: Optional[Dict[str, Any]] = None) -> List[Task]:
         """
         タスク一覧を取得する。
 
@@ -102,7 +102,7 @@ class ListTasks(AbstractCommandLineInterface):
         # logger.debug(f"task_query: {task_query}")
         return [self.visualize.add_properties_to_task(e) for e in task_list]
 
-    def print_tasks(self, project_id: str, task_query: Optional[Dict[str, Any]]=None,
+    def print_tasks(self, project_id: str, task_query: Optional[Dict[str, Any]] = None,
                     task_list_from_json: Optional[List[Task]] = None):
         """
         タスク一覧を出力する
