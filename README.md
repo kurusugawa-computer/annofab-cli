@@ -77,6 +77,7 @@ $ docker run -it -e ANNOFAB_USER_ID=XXXX -e ANNOFAB_PASSWORD=YYYYY annofab-cli a
 |project| copy                 | プロジェクトをコピーします。                                                                           |オーナ and 組織管理者/組織オーナ|
 |project| diff                 | プロジェクト間の差分を表示します。                                                                           |チェッカー/オーナ|
 |project| download                 | タスクや検査コメント、アノテーションなどをダウンロードします。                                                                           |オーナ|
+|project_member| change                  | プロジェクトメンバを変更します。|オーナ|
 |project_member| copy                  | プロジェクトメンバをコピーします。|オーナ(コピー先プロジェクトに対して)|
 |project_member| delete                  | 複数のプロジェクトからユーザを削除します。                                                                 |オーナ|
 |project_member| invite                  | 複数のプロジェクトに、ユーザを招待します。                                                                 |オーナ|
@@ -639,6 +640,25 @@ DEBUG    : 2019-07-16 12:15:14,647 : annofabcli.common.facade       : job_id = c
 DEBUG    : 2019-07-16 12:16:15,053 : annofabcli.common.facade       : job_id = c566c842-d84c-43d8-9f61-42fe5960c0fb のジョブが進行中です。60秒間待ちます。
 DEBUG    : 2019-07-16 12:17:15,457 : annofabcli.common.facade       : job_id = c566c842-d84c-43d8-9f61-42fe5960c0fb のジョブが進行中です。60秒間待ちます。
 DEBUG    : 2019-07-16 12:18:15,710 : annofabcli.common.facade       : job_id = c566c842-d84c-43d8-9f61-42fe5960c0fb のジョブが成功しました。ダウンロードを開始します。
+
+```
+
+
+
+### project_member change
+複数のプロジェクトメンバに対して、メンバ情報を変更します。ただし、自分自身は変更できません。
+
+```
+# user1, user2のロールを"worker"（アノテータ）に変更する
+$ annofabcli project_member change --project_id prj1 --user_id user1 user2 --role worker
+
+# `user_id.txt`に記載されたuser_idに対して、抜取検査率、抜取受入率を指定する
+$ annofabcli project_member change --project_id prj1 --user_id file://user_id.txt \
+ --member_info '{"sampling_inspection_rate": 10, "sampling_acceptance_rate": 20}'
+
+# すべてのユーザに対して、抜取検査率を未設定にする
+$ annofabcli project_member change --project_id prj1 --all_user \
+ --member_info '{"sampling_inspection_rate": null}'
 
 ```
 

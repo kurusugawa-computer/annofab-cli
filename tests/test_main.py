@@ -116,17 +116,27 @@ class TestAnnotationSpecs:
         main([self.command_name, 'history', '--project_id', project_id, '--format', 'csv', '--output', out_file])
 
 
-def test_project_member():
-    main(['project_member', 'invite', '--user_id', user_id, '--role', 'owner', '--project_id', project_id])
+class TestProjectMember:
+    def test_put_project_member(self):
+        csv_file = str(data_path / "project_members.csv")
+        main(['project_member', 'put', '--project_id', project_id, '--csv', csv_file, '--yes'])
 
-    main(['project_member', 'list', '--project_id', project_id])
-    organization_name = get_organization_name(project_id)
-    main(['project_member', 'list', '--organization', organization_name])
+    def test_list_project_member(self):
+        main(['project_member', 'list', '--project_id', project_id])
+        organization_name = get_organization_name(project_id)
+        main(['project_member', 'list', '--organization', organization_name])
 
-    main(['project_member', 'copy', project_id, project_id, '--yes'])
+    def test_copy_project_member(self):
+        main(['project_member', 'copy', project_id, project_id, '--yes'])
 
-    csv_file = str(data_path / "project_members.csv")
-    main(['project_member', 'put', '--project_id', project_id, '--csv', csv_file, '--yes'])
+    def test_invite_project_member(self):
+        main(['project_member', 'invite', '--user_id', user_id, '--role', 'owner', '--project_id', project_id])
+
+    def test_change_project_member(self):
+        main(['project_member', 'change', '--all_user', '--project_id', project_id, '--member_info', '{"sampling_inspection_rate": 10, "sampling_acceptance_rate": 20}'])
+
+
+
 
 
 def test_filesystem():
