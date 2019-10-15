@@ -491,7 +491,12 @@ $ annofabcli inspection_comment list --project_id prj1 --task_id task1 task2 \
 
 # JSONで出力する
 $ annofabcli inspection_comment list --project_id prj1 --task_id file://task.txt --format json
- 
+
+# 検査コメント情報が記載されたファイルを元にして、検査コメント一覧を追加します
+# `commenter_username や phrases_names_ja などの情報も追加します。
+# 検査コメント情報が記載されたファイルは、`$ annofabcli project download inspection_comment`コマンドで取得できます。
+$ annofabcli inspection_comment list --project_id prj1 --inspection_comment_json inspection_comment.json
+
 ```
 
 #### 出力結果（CSV）

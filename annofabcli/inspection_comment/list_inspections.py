@@ -79,10 +79,10 @@ class PrintInspections(AbstractCommandLineInterface):
         """
 
         if inspection_list_from_json is None:
-            inspection_list = self.get_inspections(project_id, task_id_list, filter_inspection=filter_inspection)
+            inspection_list = self.get_inspections(project_id, task_id_list=task_id_list, filter_inspection=filter_inspection)
 
         else:
-            inspection_list = self.filter_inspection_list(inspection_list_from_json, filter_inspection)
+            inspection_list = self.filter_inspection_list(inspection_list_from_json, task_id_list=task_id_list, arg_filter_inspection=filter_inspection)
 
         logger.info(f"検査コメントの件数: {len(inspection_list)}")
 
