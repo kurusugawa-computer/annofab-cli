@@ -621,6 +621,7 @@ $ annofabcli project diff  prj1 prj2 --target settings
 * Simpleアノテーションzip
 * Fullアノテーションzip
 
+
 ```
 # タスクの全一覧が記載されたJSONファイルをダウンロードする
 $ annofabcli project download task --project_id prj1 --output task.json
@@ -634,13 +635,14 @@ $ annofabcli project download task_history_event --project_id prj1 --output task
 # Simpleアノテーションのzipファイルをダウンロードする
 $ annofabcli project download simple_annotation --project_id prj1 --output simple_annotation.zip
 
-# 最新のFullアノテーションのzipファイルをダウンロードする（数分待つ）
-$ annofabcli project download full_annotation --project_id prj1 --output full_annotation.zip --latest
-DEBUG    : 2019-07-16 12:15:14,647 : annofabcli.common.facade       : job_id = c566c842-d84c-43d8-9f61-42fe5960c0fb のジョブが進行中です。60秒間待ちます。
-DEBUG    : 2019-07-16 12:16:15,053 : annofabcli.common.facade       : job_id = c566c842-d84c-43d8-9f61-42fe5960c0fb のジョブが進行中です。60秒間待ちます。
-DEBUG    : 2019-07-16 12:17:15,457 : annofabcli.common.facade       : job_id = c566c842-d84c-43d8-9f61-42fe5960c0fb のジョブが進行中です。60秒間待ちます。
-DEBUG    : 2019-07-16 12:18:15,710 : annofabcli.common.facade       : job_id = c566c842-d84c-43d8-9f61-42fe5960c0fb のジョブが成功しました。ダウンロードを開始します。
+# Fullアノテーションのzipファイルをダウンロードする
+$ annofabcli project download full_annotation --project_id prj1 --output full_annotation.zip
 
+# 最新のSimpleアノテーションのzipファイルをダウンロードする
+$ annofabcli project download simple_annotation --project_id prj1 --output simple_annotation.zip --latest
+
+# 最新のタスク全一覧が記載されたJSONファイルをダウンロードする
+$ annofabcli project download task --project_id prj1 --output task.json --latest
 ```
 
 

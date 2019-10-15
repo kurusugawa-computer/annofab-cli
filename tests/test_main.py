@@ -78,11 +78,29 @@ class TestTask:
         ])
 
 
-def test_project():
-    main(['project', 'diff', project_id, project_id])
+class TestProject:
+    def test_diff_project(self):
+        main(['project', 'diff', project_id, project_id])
 
-    out_file = str(out_path / 'tasks.json')
-    main(['project', 'download', 'task', '--project_id', project_id, '--output', out_file])
+    def test_download_project_task(self):
+        out_file = str(out_path / 'task.json')
+        main(['project', 'download', 'task', '--project_id', project_id, '--output', out_file])
+
+    def test_download_project_inspection_comment(self):
+        out_file = str(out_path / 'inspection_comment.json')
+        main(['project', 'download', 'inspection_comment', '--project_id', project_id, '--output', out_file])
+
+    def test_download_project_task_history_event(self):
+        out_file = str(out_path / 'task_history_event.json')
+        main(['project', 'download', 'task_history_event', '--project_id', project_id, '--output', out_file])
+
+    def test_download_project_simple_annotation(self):
+        out_file = str(out_path / 'simple_annotation.zip')
+        main(['project', 'download', 'simple_annotation', '--project_id', project_id, '--output', out_file])
+
+    def test_download_project_full_annotation(self):
+        out_file = str(out_path / 'full_annotation.zip')
+        main(['project', 'download', 'full_annotation', '--project_id', project_id, '--output', out_file])
 
 
 def test_inspection_comment():
