@@ -49,7 +49,7 @@ class PrintInspections(AbstractCommandLineInterface):
             情報が追加された検査コメント一覧
         """
         def filter_task_id(e):
-            if task_id_list is None:
+            if task_id_list is None or len(task_id_list)==0:
                 return True
             return e['task_id'] in task_id_list
 
