@@ -2,6 +2,7 @@ import argparse
 
 import annofabcli
 import annofabcli.common.cli
+import annofabcli.project_member.change_project_members
 import annofabcli.project_member.copy_project_members
 import annofabcli.project_member.delete_users
 import annofabcli.project_member.invite_users
@@ -14,6 +15,7 @@ def parse_args(parser: argparse.ArgumentParser):
     subparsers = parser.add_subparsers(dest='subcommand_name')
 
     # サブコマンドの定義
+    annofabcli.project_member.change_project_members.add_parser(subparsers)
     annofabcli.project_member.list_users.add_parser(subparsers)
     annofabcli.project_member.invite_users.add_parser(subparsers)
     annofabcli.project_member.delete_users.add_parser(subparsers)

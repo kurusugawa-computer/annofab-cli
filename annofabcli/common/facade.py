@@ -3,7 +3,6 @@ annofabapiのfacadeクラス
 """
 
 import logging
-import time
 from typing import Any, Callable, Dict, List, NewType, Optional, Tuple  # pylint: disable=unused-import
 
 import annofabapi
@@ -225,84 +224,6 @@ class AnnofabApiFacade:
         organization = more_itertools.first_true(my_organizations, pred=lambda e: e["name"] == organization_name)
         my_role = OrganizationMemberRole(organization["my_role"])
         return my_role in roles
-
-    def _download_annotation_archive_with_waiting(self, project_id: str, dest_path: str,
-                                                  download_func: Callable[[str, str], Any], job_access_interval: int,
-                                                  max_job_access: int) -> bool:
-        def get_latest_job():
-            job_list = self.service.api.get_project_job(project_id, query_params={"type": "gen-annotation"})[0]["list"]
-            assert len(job_list) == 1
-            return job_list[0]
-
-        self.service.api.post_annotation_archive_update(project_id)
-
-        job_access_count = 0
-        while True:
-            job = get_latest_job()
-            if job_access_count == 0 and job["job_status"] != "progress":
-                logger.debug(f"進行中のジョブはありませんでした。")
-                return True
-
-            job_access_count += 1
-
-            if job["job_status"] == "succeeded":
-                logger.debug(f"job_id = {job['job_id']} のジョブが成功しました。ダウンロードを開始します。")
-                download_func(project_id, dest_path)
-                return True
-
-            elif job["job_status"] == "failed":
-                logger.info(f"job_id = {job['job_id']} のジョブが失敗しました。")
-                return False
-
-            else:
-                # 進行中
-                if job_access_count < max_job_access:
-                    logger.debug(f"job_id = {job['job_id']} のジョブが進行中です。{job_access_interval}秒間待ちます。")
-                    time.sleep(job_access_interval)
-                else:
-                    logger.debug(f"job_id = {job['job_id']} のジョブに {job_access_interval} アクセスしましたが、完了しませんでした。終了します。")
-                    logger.info(f"job_id = {job['job_id']} のジョブが失敗しました。")
-                    return False
-
-    def download_latest_full_annotation_archive_with_waiting(self, project_id: str, dest_path: str,
-                                                             job_access_interval: int = 60,
-                                                             max_job_access: int = 10) -> bool:
-        """
-        最新のFullアノテーションをダウンロードする。アノテーション情報が最新化するまで、数分待つ。
-        Args:
-            project_id:
-            dest_path:
-            job_access_interval: ジョブにアクセスする間隔[sec]
-            max_job_access: ジョブに最大何回アクセスするか
-
-        Returns:
-            True: ダウンロード成功。False: ダウンロード失敗。
-        """
-
-        return self._download_annotation_archive_with_waiting(project_id, dest_path,
-                                                              self.service.wrapper.download_full_annotation_archive,
-                                                              job_access_interval=job_access_interval,
-                                                              max_job_access=max_job_access)
-
-    def download_latest_simple_annotation_archive_with_waiting(self, project_id: str, dest_path: str,
-                                                               job_access_interval: int = 60,
-                                                               max_job_access: int = 10) -> bool:
-        """
-        最新のSimpleアノテーションをダウンロードする。アノテーション情報が最新化するまで、数分待つ。
-        Args:
-            project_id:
-            dest_path:
-            job_access_interval: ジョブにアクセスする間隔[sec]
-            max_job_access: ジョブに最大何回アクセスするか
-
-        Returns:
-            True: ダウンロード成功。False: ダウンロード失敗。
-        """
-
-        return self._download_annotation_archive_with_waiting(project_id, dest_path,
-                                                              self.service.wrapper.download_annotation_archive,
-                                                              job_access_interval=job_access_interval,
-                                                              max_job_access=max_job_access)
 
     ##################
     # operateTaskのfacade

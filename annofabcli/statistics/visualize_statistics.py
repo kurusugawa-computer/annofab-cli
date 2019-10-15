@@ -1,9 +1,6 @@
 import argparse
 import json
-import logging
-import logging.config
 import logging.handlers
-import os
 from pathlib import Path
 from typing import Any, Callable, Dict, List, Optional  # pylint: disable=unused-import
 
@@ -21,13 +18,7 @@ from annofabcli.statistics.tsv import Tsv
 logger = logging.getLogger(__name__)
 
 
-def make_output_dir(project_id: str, output_dir: str):
-    output_project_dir = f"{output_dir}/{project_id}"
-    os.makedirs(output_project_dir, exist_ok=True)
-    return output_project_dir
-
-
-def write_project_name_file(annofab_service: annofabapi.Resource, project_id: str, output_project_dir: str):
+def write_project_name_file(annofab_service: annofabapi.Resource, project_id: str, output_project_dir: Path):
     """
     ファイル名がプロジェクト名のjsonファイルを生成する。
     """
@@ -35,7 +26,8 @@ def write_project_name_file(annofab_service: annofabapi.Resource, project_id: st
     project_title = project_info['title']
     logger.info(f"project_titile = {project_title}")
     filename = annofabcli.utils.to_filename(project_title)
-    with open(f'{output_project_dir}/{filename}.json', 'w') as f:
+    output_project_dir.mkdir(exist_ok=True, parents=True)
+    with open(str(output_project_dir / f"{filename}.json"), 'w') as f:
         json.dump(project_info, f, ensure_ascii=False, indent=2)
 
 
@@ -64,7 +56,7 @@ class VisualizeStatistics(AbstractCommandLineInterface):
             database.update_db(task_query, ignored_task_id_list)
 
         table_obj = Table(database, task_query, ignored_task_id_list)
-        write_project_name_file(self.service, project_id, str(output_dir))
+        write_project_name_file(self.service, project_id, output_dir)
         tsv_obj = Tsv(table_obj, str(output_dir))
         graph_obj = Graph(table_obj, str(output_dir))
 

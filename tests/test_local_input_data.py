@@ -1,7 +1,9 @@
+import datetime
 import os
 import uuid
 from pathlib import Path
 
+from annofabcli.input_data.list_input_data import create_datetime_range_list
 from annofabcli.input_data.put_input_data import CsvInputData, PutInputData
 
 # プロジェクトトップに移動する
@@ -31,3 +33,14 @@ def test_get_input_data_list_from_csv():
                                              input_data_id="id3", sign_required=False)
 
     assert is_uuid4(actual_members[3].input_data_id)
+
+
+def test_create_datetime_range_list():
+    first_datetime = datetime.datetime(2019, 1, 1)
+    last_datetime = datetime.datetime(2019, 1, 4)
+
+    actual = create_datetime_range_list(first_datetime=first_datetime, last_datetime=last_datetime, days=2)
+    expected = [(None, datetime.datetime(2019, 1, 1)), (datetime.datetime(2019, 1, 1), datetime.datetime(2019, 1, 3)),
+                (datetime.datetime(2019, 1, 3), datetime.datetime(2019, 1, 5)), (datetime.datetime(2019, 1, 5), None)]
+
+    assert actual == expected

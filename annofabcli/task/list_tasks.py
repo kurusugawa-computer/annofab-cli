@@ -2,6 +2,7 @@
 プロジェクトのユーザを表示する。
 """
 import argparse
+import json
 import logging
 from typing import Any, Callable, Dict, List, Optional, Tuple, Union  # pylint: disable=unused-import
 
@@ -65,7 +66,7 @@ class ListTasks(AbstractCommandLineInterface):
 
         return task_query
 
-    def get_tasks(self, project_id: str, task_query: Dict[str, Any]) -> List[Task]:
+    def get_tasks(self, project_id: str, task_query: Optional[Dict[str, Any]] = None) -> List[Task]:
         """
         タスク一覧を取得する。
 
@@ -76,42 +77,61 @@ class ListTasks(AbstractCommandLineInterface):
         Returns:
             対象の検査コメント一覧
         """
+        if task_query is not None:
+            task_query = self._modify_task_query(project_id, task_query)
 
-        task_query = self._modify_task_query(project_id, task_query)
         logger.debug(f"task_query: {task_query}")
         tasks = self.service.wrapper.get_all_tasks(project_id, query_params=task_query)
         return [self.visualize.add_properties_to_task(e) for e in tasks]
 
-    def print_tasks(self, project_id: str, task_query: Dict[str, Any], arg_format: str, output: Optional[str] = None,
-                    csv_format: Optional[Dict[str, Any]] = None):
+    def print_tasks(self, project_id: str, task_query: Optional[Dict[str, Any]] = None,
+                    task_list_from_json: Optional[List[Task]] = None):
         """
         タスク一覧を出力する
 
         Args:
             project_id: 対象のproject_id
             task_query: タスク検索クエリ
+            task_list_from_json: JSONファイルから取得したタスク一覧
 
         """
 
         super().validate_project(project_id, project_member_roles=None)
 
-        tasks = self.get_tasks(project_id, task_query)
-        tasks = self.search_with_jmespath_expression(tasks)
+        if task_list_from_json is None:
+            tasks = self.get_tasks(project_id, task_query)
+            logger.debug(f"タスク一覧の件数: {len(tasks)}")
+            if len(tasks) == 10000:
+                logger.warning("タスク一覧は10,000件で打ち切られている可能性があります。")
 
-        logger.debug(f"タスク一覧の件数: {len(tasks)}")
-        if len(tasks) == 10000:
-            logger.warning("タスク一覧は10,000件で打ち切られている可能性があります。")
+        else:
+            tasks = [self.visualize.add_properties_to_task(e) for e in task_list_from_json]
+            logger.debug(f"タスク一覧の件数: {len(tasks)}")
 
-        annofabcli.utils.print_according_to_format(target=tasks, arg_format=FormatArgument(arg_format), output=output,
-                                                   csv_format=csv_format)
+        self.print_according_to_format(tasks)
+
+    @staticmethod
+    def validate(args: argparse.Namespace):
+        if args.task_json is not None and args.task_query is not None:
+            logger.warning("annofabcli task list: warning: argument --task_query: "
+                           "`--task_json`を指定しているときは、`--task_query`オプションは無視します。")
+
+        return True
 
     def main(self):
         args = self.args
-        task_query = annofabcli.common.cli.get_json_from_args(args.task_query)
-        csv_format = annofabcli.common.cli.get_csv_format_from_args(args.csv_format)
+        if not self.validate(args):
+            return
 
-        self.print_tasks(args.project_id, task_query=task_query, arg_format=args.format, output=args.output,
-                         csv_format=csv_format)
+        task_query = annofabcli.common.cli.get_json_from_args(args.task_query)
+
+        if args.task_json is not None:
+            with open(args.task_json, encoding="utf-8") as f:
+                task_list = json.load(f)
+        else:
+            task_list = None
+
+        self.print_tasks(args.project_id, task_query=task_query, task_list_from_json=task_list)
 
 
 def main(args):
@@ -127,11 +147,18 @@ def parse_args(parser: argparse.ArgumentParser):
 
     # タスク検索クエリ
     parser.add_argument(
-        '-tq', '--task_query', type=str, required=True, help='タスクの検索クエリをJSON形式で指定します。'
+        '-tq', '--task_query', type=str, help='タスクの検索クエリをJSON形式で指定します。指定しない場合は、すべてのタスクを取得します。'
         '`file://`を先頭に付けると、JSON形式のファイルを指定できます。'
         'クエリのフォーマットは、[getTasks API](https://annofab.com/docs/api/#operation/getTasks)のクエリパラメータと同じです。'
         'さらに追加で、`user_id`, `previous_user_id` キーも指定できます。'
         'ただし `page`, `limit`キーは指定できません。')
+
+    parser.add_argument(
+        '--task_json', type=str, help='タスク情報が記載されたJSONファイルのパスを指定すると、JSONに記載された情報を元にタスク一覧を出力します。'
+        'AnnoFabからタスク情報を取得しません。 '
+        'このオプションを指定すると、`--task_query`オプションは無視します。'
+        'JSONには記載されていない、`user_id`や`username`などの情報も追加します。'
+        'JSONファイルは`$ annofabcli project download task`コマンドで取得できます。')
 
     argument_parser.add_format(
         choices=[FormatArgument.CSV, FormatArgument.JSON, FormatArgument.PRETTY_JSON, FormatArgument.TASK_ID_LIST],
@@ -146,7 +173,7 @@ def parse_args(parser: argparse.ArgumentParser):
 def add_parser(subparsers: argparse._SubParsersAction):
     subcommand_name = "list"
     subcommand_help = "タスク一覧を出力します。"
-    description = ("タスク一覧を出力します。AnnoFabの制約上、10,000件までしか出力されません。")
+    description = ("タスク一覧を出力します。")
 
     parser = annofabcli.common.cli.add_parser(subparsers, subcommand_name, subcommand_help, description)
     parse_args(parser)

@@ -66,9 +66,11 @@ $ docker run -it -e ANNOFAB_USER_ID=XXXX -e ANNOFAB_PASSWORD=YYYYY annofab-cli a
 |コマンド| サブコマンド                  | 内容                                                                                                     |必要なロール|
 |----|-------------------------------|----------------------------------------------------------------------------------------------------------|------------|
 |annotation| list_count | task_idまたはinput_data_idで集約したアノテーションの個数を出力します                              |-|
+|annotation_specs| history | アノテーション仕様の履歴一覧を出力します。                              |チェッカー/オーナ|
 |annotation_specs| list_label | アノテーション仕様のラベル情報を出力します。                              |チェッカー/オーナ|
 |annotation_specs| list_label_color             | アノテーション仕様から、label_nameとRGBを対応付けたJSONを出力します。                                      |チェッカー/オーナ|
 |filesystem| write_annotation_image        | アノテーションzip、またはそれを展開したディレクトリから、アノテーションの画像（Semantic Segmentation用）を生成します。 |-|
+|input_data|delete             | 入力データを削除します。                                                            |オーナ|
 |input_data|list             | 入力データ一覧を出力します。                                                            |-|
 |input_data|put             | CSVに記載された入力データを登録します。                                                            |オーナ|
 |inspection_comment| list | 検査コメントを出力します。                               |-|
@@ -77,6 +79,7 @@ $ docker run -it -e ANNOFAB_USER_ID=XXXX -e ANNOFAB_PASSWORD=YYYYY annofab-cli a
 |project| copy                 | プロジェクトをコピーします。                                                                           |オーナ and 組織管理者/組織オーナ|
 |project| diff                 | プロジェクト間の差分を表示します。                                                                           |チェッカー/オーナ|
 |project| download                 | タスクや検査コメント、アノテーションなどをダウンロードします。                                                                           |オーナ|
+|project_member| change                  | プロジェクトメンバを変更します。|オーナ|
 |project_member| copy                  | プロジェクトメンバをコピーします。|オーナ(コピー先プロジェクトに対して)|
 |project_member| delete                  | 複数のプロジェクトからユーザを削除します。                                                                 |オーナ|
 |project_member| invite                  | 複数のプロジェクトに、ユーザを招待します。                                                                 |オーナ|
@@ -282,6 +285,16 @@ $ annofabcli annotation list_count --project_id prj1 \
 | sample_093 | dd82cf3a-a38c-4a04-91e7-a4f1ce9af585 | 2                |
 
 
+### annotation_specs history
+アノテーション仕様の履歴一覧を出力します。
+
+```
+# prj1のアノテーション仕様の履歴一覧を出力する
+$ annofabcli annotation_specs history --project_id prj1 
+```
+
+
+
 ### annotation_specs list_label
 アノテーション仕様のラベル情報を出力します。
 
@@ -291,6 +304,13 @@ $ annofabcli annotation_specs list_label --project_id prj1
 
 # prj1のアノテーション仕様のラベル情報を、インデントされたJSONで出力する。
 $ annofabcli annotation_specs list_label --project_id prj1 --format pretty_json
+
+# 最新より１つ前の履歴である、アノテーション仕様を出力する。
+$ annofabcli annotation_specs list_label --project_id prj1 --before 1
+
+# history_idがXXXのアノテーション仕様を出力する。（history_idは、`annofabcli annotation_specs history`コマンドで取得する）
+$ annofabcli annotation_specs list_label --project_id prj1 --history_id XXX
+
 
 ```
 
@@ -398,6 +418,15 @@ $ annofabcli filesystem write_annotation_image  --annotation annotation.zip \
 
 ![filesystem write_annotation_iamgeの塗りつぶし画像](readme-img/write_annotation_image-output.png)
 
+
+### input_data delete
+タスクに使われていない入力データを削除します。
+
+```
+$ annofabcli input_data delete --project_id prj1 --input_data_list input1 input2
+```
+
+
 ### input_data list
 入力データ一覧を出力します。
 
@@ -408,7 +437,13 @@ $ annofabcli input_data list --project_id prj1 --input_data_query '{"input_data_
 # 入力データの詳細情報も出力する
 $ annofabcli input_data list --project_id prj1 --input_data_query '{"input_data_name": "sample"}' --add_details
 
+# 段階的に入力データ一覧を取得する。
+# 2019-01-01〜2019-01-31の期間は7日間ごとに入力データ一覧を取得する。それ以外は、2019-01-01以前、2019-01-31以降の入力データ一覧を取得する。
+$ annofabcli input_data list --project_id prj1 --batch \
+ '{"first":"2019-01-01", "last":"2019-01-31", "days":7}' --output input_data.csv
+
 ```
+
 
 #### 出力結果（CSV）
 
@@ -472,7 +507,11 @@ $ annofabcli inspection_comment list --project_id prj1 --task_id task1 task2 \
 
 # JSONで出力する
 $ annofabcli inspection_comment list --project_id prj1 --task_id file://task.txt --format json
- 
+
+# 検査コメント情報が記載されたファイルを元にして、検査コメント一覧を出力します
+# 検査コメント情報が記載されたファイルは、`$ annofabcli project download inspection_comment`コマンドで取得できます。
+$ annofabcli inspection_comment list --project_id prj1 --inspection_comment_json inspection_comment.json
+
 ```
 
 #### 出力結果（CSV）
@@ -492,6 +531,9 @@ $ annofabcli inspection_comment list_unprocessed --project_id prj1 --task_id fil
 # 未処置で、user1が"hoge"とコメントした検査コメント一覧を出力する
 $ annofabcli inspection_comment list_unprocessed  --project_id prj1 --task_id file://task.txt \
  --inspection_comment "hoge" --commenter_user_id user1 --format pretty_json --output inspection.json
+
+# 検査コメント情報が記載されたファイルを元にして、検査コメント一覧を追加します
+$ annofabcli inspection_comment list_unprocessed --project_id prj1 --inspection_comment_json inspection_comment.json
 ```
 
 
@@ -620,6 +662,7 @@ $ annofabcli project diff  prj1 prj2 --target settings
 * Simpleアノテーションzip
 * Fullアノテーションzip
 
+
 ```
 # タスクの全一覧が記載されたJSONファイルをダウンロードする
 $ annofabcli project download task --project_id prj1 --output task.json
@@ -633,12 +676,32 @@ $ annofabcli project download task_history_event --project_id prj1 --output task
 # Simpleアノテーションのzipファイルをダウンロードする
 $ annofabcli project download simple_annotation --project_id prj1 --output simple_annotation.zip
 
-# 最新のFullアノテーションのzipファイルをダウンロードする（数分待つ）
-$ annofabcli project download full_annotation --project_id prj1 --output full_annotation.zip --latest
-DEBUG    : 2019-07-16 12:15:14,647 : annofabcli.common.facade       : job_id = c566c842-d84c-43d8-9f61-42fe5960c0fb のジョブが進行中です。60秒間待ちます。
-DEBUG    : 2019-07-16 12:16:15,053 : annofabcli.common.facade       : job_id = c566c842-d84c-43d8-9f61-42fe5960c0fb のジョブが進行中です。60秒間待ちます。
-DEBUG    : 2019-07-16 12:17:15,457 : annofabcli.common.facade       : job_id = c566c842-d84c-43d8-9f61-42fe5960c0fb のジョブが進行中です。60秒間待ちます。
-DEBUG    : 2019-07-16 12:18:15,710 : annofabcli.common.facade       : job_id = c566c842-d84c-43d8-9f61-42fe5960c0fb のジョブが成功しました。ダウンロードを開始します。
+# Fullアノテーションのzipファイルをダウンロードする
+$ annofabcli project download full_annotation --project_id prj1 --output full_annotation.zip
+
+# 最新のSimpleアノテーションのzipファイルをダウンロードする
+$ annofabcli project download simple_annotation --project_id prj1 --output simple_annotation.zip --latest
+
+# 最新のタスク全一覧が記載されたJSONファイルをダウンロードする
+$ annofabcli project download task --project_id prj1 --output task.json --latest
+```
+
+
+
+### project_member change
+複数のプロジェクトメンバに対して、メンバ情報を変更します。ただし、自分自身は変更できません。
+
+```
+# user1, user2のロールを"worker"（アノテータ）に変更する
+$ annofabcli project_member change --project_id prj1 --user_id user1 user2 --role worker
+
+# `user_id.txt`に記載されたuser_idに対して、抜取検査率、抜取受入率を指定する
+$ annofabcli project_member change --project_id prj1 --user_id file://user_id.txt \
+ --member_info '{"sampling_inspection_rate": 10, "sampling_acceptance_rate": 20}'
+
+# すべてのユーザに対して、抜取検査率を未設定にする
+$ annofabcli project_member change --project_id prj1 --all_user \
+ --member_info '{"sampling_inspection_rate": null}'
 
 ```
 
@@ -794,6 +857,12 @@ $ annofabcli task list --project_id prj1 \
 
 # 差し戻されたタスクのtask_idを出力する
 $ annofabcli task list --project_id prj1 --task_query '{"rejected_only": true}' --format task_id_list 
+
+# タスク情報が記載されたファイルを元にして、タスク一覧を出力します
+# タスク情報が記載されたファイルは、`$ annofabcli project download task`コマンドで取得できます。
+$ annofabcli task list --project_id prj1 --task_json task.json
+
+
 ```
 
 #### 出力結果

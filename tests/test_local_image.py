@@ -23,7 +23,7 @@ def test_write_image():
     output_image_file = out_dir / "annotation.png"
 
     with zipfile.ZipFile(zip_path) as zip_file:
-        parser = SimpleAnnotationZipParser(zip_file, "sample_1/.__tests__data__lenna.png.json")
+        parser = SimpleAnnotationZipParser(zip_file, "sample_1/c6e1c2ec-6c7c-41c6-9639-4244c2ed2839.json")
 
         write_annotation_image(parser=parser, image_size=(64, 64), label_color_dict=label_color_dict,
                                output_image_file=output_image_file, background_color=(64, 64, 64))

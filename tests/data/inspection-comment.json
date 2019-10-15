@@ -1,0 +1,68 @@
+[
+  {
+    "project_id": "58a2a621-7d4b-41e7-927b-cdc570c1114a",
+    "task_id": "sample_386",
+    "input_data_id": "ebc9163d-f97e-4deb-9dea-83154cb2bc04",
+    "inspection_id": "800a87fd-3031-48df-b579-eabdb8ba97d4",
+    "phase": "inspection",
+    "phase_stage": 2,
+    "commenter_account_id": "00589ed0-dd63-40db-abb2-dfe5e13c8299",
+    "annotation_id": "8aff181e-9df4-4c66-8fb2-10596c686d5c",
+    "label_id": "8aff181e-9df4-4c66-8fb2-10596c686d5c",
+    "data": {
+      "x": 415,
+      "y": 421,
+      "_type": "Point"
+    },
+    "parent_inspection_id": null,
+    "phrases": [],
+    "comment": "test",
+    "status": "annotator_action_required",
+    "created_datetime": "2019-10-15T20:48:24.44+09:00",
+    "updated_datetime": "2019-10-15T20:48:27.491+09:00"
+  },
+  {
+    "project_id": "58a2a621-7d4b-41e7-927b-cdc570c1114a",
+    "task_id": "sample_359",
+    "input_data_id": "f94b1248-eeed-43f8-882f-aaf3b43e83ea",
+    "inspection_id": "85654648-2a5e-4deb-9781-f526300fea61",
+    "phase": "annotation",
+    "phase_stage": 1,
+    "commenter_account_id": "00589ed0-dd63-40db-abb2-dfe5e13c8299",
+    "annotation_id": null,
+    "label_id": null,
+    "data": {
+      "x": 0,
+      "y": 0,
+      "_type": "Point"
+    },
+    "parent_inspection_id": "c7195598-e6dd-4a39-be28-47d08b3b6c23",
+    "phrases": [],
+    "comment": "対応しました",
+    "status": "no_correction_required",
+    "created_datetime": "2019-10-15T20:57:28.256+09:00",
+    "updated_datetime": "2019-10-15T20:57:31.722+09:00"
+  },
+  {
+    "project_id": "58a2a621-7d4b-41e7-927b-cdc570c1114a",
+    "task_id": "sample_359",
+    "input_data_id": "f94b1248-eeed-43f8-882f-aaf3b43e83ea",
+    "inspection_id": "c7195598-e6dd-4a39-be28-47d08b3b6c23",
+    "phase": "inspection",
+    "phase_stage": 1,
+    "commenter_account_id": "00589ed0-dd63-40db-abb2-dfe5e13c8299",
+    "annotation_id": null,
+    "label_id": null,
+    "data": {
+      "x": 0,
+      "y": 0,
+      "_type": "Point"
+    },
+    "parent_inspection_id": null,
+    "phrases": [],
+    "comment": "totoro",
+    "status": "error_corrected",
+    "created_datetime": "2019-07-26T17:51:59.043+09:00",
+    "updated_datetime": "2019-10-15T20:57:44.46+09:00"
+  }
+]

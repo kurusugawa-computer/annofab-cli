@@ -2,6 +2,7 @@ import argparse
 
 import annofabcli
 import annofabcli.common.cli
+import annofabcli.input_data.delete_input_data
 import annofabcli.input_data.list_input_data
 import annofabcli.input_data.put_input_data
 
@@ -11,6 +12,7 @@ def parse_args(parser: argparse.ArgumentParser):
     subparsers = parser.add_subparsers(dest='subcommand_name')
 
     # サブコマンドの定義
+    annofabcli.input_data.delete_input_data.add_parser(subparsers)
     annofabcli.input_data.list_input_data.add_parser(subparsers)
     annofabcli.input_data.put_input_data.add_parser(subparsers)
 

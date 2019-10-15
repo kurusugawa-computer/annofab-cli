@@ -455,5 +455,7 @@ class AbstractCommandLineInterface(abc.ABC):
         annofabcli.utils.print_csv(df, output=self.output, to_csv_kwargs=self.csv_format)
 
     def print_according_to_format(self, target: Any):
+        target = self.search_with_jmespath_expression(target)
+
         annofabcli.utils.print_according_to_format(target, arg_format=FormatArgument(self.str_format),
                                                    output=self.output, csv_format=self.csv_format)
