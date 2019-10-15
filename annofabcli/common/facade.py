@@ -3,7 +3,6 @@ annofabapiのfacadeクラス
 """
 
 import logging
-import time
 from typing import Any, Callable, Dict, List, NewType, Optional, Tuple  # pylint: disable=unused-import
 
 import annofabapi
@@ -225,7 +224,6 @@ class AnnofabApiFacade:
         organization = more_itertools.first_true(my_organizations, pred=lambda e: e["name"] == organization_name)
         my_role = OrganizationMemberRole(organization["my_role"])
         return my_role in roles
-
 
     ##################
     # operateTaskのfacade

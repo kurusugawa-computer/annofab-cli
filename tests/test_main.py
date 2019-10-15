@@ -123,6 +123,22 @@ class TestAnnotationSpecs:
         out_file = str(out_path / 'anotation_specs_list_label.csv')
         main([self.command_name, 'list_label', '--project_id', project_id, '--format', 'csv', '--output', out_file])
 
+    def test_old_annotation_specs_list_label(self):
+        out_file = str(out_path / 'anotation_specs_list_label.csv')
+        main([
+            self.command_name, 'list_label', '--project_id', project_id, '--before', 1, '--format', 'csv', '--output',
+            out_file
+        ])
+
+    def test_annotation_specs_list_label_from_history_id(self):
+        out_file = str(out_path / 'anotation_specs_list_label.csv')
+        histories, _ = service.api.get_annotation_specs_histories(project_id)
+        history_id = histories[0]['history_id']
+        main([
+            self.command_name, 'list_label', '--project_id', project_id, '--history_id', history_id, '--format', 'csv',
+            '--output', out_file
+        ])
+
     def test_annotation_specs_list_label_color(self):
         out_file = str(out_path / 'anotation_specs_list_label_color.csv')
         main([
@@ -151,10 +167,10 @@ class TestProjectMember:
         main(['project_member', 'invite', '--user_id', user_id, '--role', 'owner', '--project_id', project_id])
 
     def test_change_project_member(self):
-        main(['project_member', 'change', '--all_user', '--project_id', project_id, '--member_info', '{"sampling_inspection_rate": 10, "sampling_acceptance_rate": 20}'])
-
-
-
+        main([
+            'project_member', 'change', '--all_user', '--project_id', project_id, '--member_info',
+            '{"sampling_inspection_rate": 10, "sampling_acceptance_rate": 20}'
+        ])
 
 
 def test_filesystem():

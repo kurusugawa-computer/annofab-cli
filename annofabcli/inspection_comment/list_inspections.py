@@ -84,7 +84,6 @@ class PrintInspections(AbstractCommandLineInterface):
         else:
             inspection_list = self.filter_inspection_list(inspection_list_from_json, filter_inspection)
 
-        inspection_list = self.search_with_jmespath_expression(inspection_list)
         logger.info(f"検査コメントの件数: {len(inspection_list)}")
 
         self.print_according_to_format(inspection_list)

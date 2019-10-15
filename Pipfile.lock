@@ -17,10 +17,10 @@
     "develop": {
         "annofabapi": {
             "hashes": [
-                "sha256:8163092f59c605cfafce2b3035fe9332f7cf58df974ea2cc05e0cd9e5d354f0e",
-                "sha256:abcacdaa0490e16512f34a3fb945b0cd64b9cf986ce20a5ebdbf2d7947a7d2b4"
+                "sha256:9724d9161f9d70c6e2d2a36262db410c66317af198abad286e236bb7f1e4d15f",
+                "sha256:b079853ce9ee173d71ba3661ffbcb68ebe36af7ac68f4f8471eedf9bedde36e3"
             ],
-            "version": "==0.19.6"
+            "version": "==0.20.0"
         },
         "annofabcli": {
             "editable": true,
@@ -42,10 +42,10 @@
         },
         "attrs": {
             "hashes": [
-                "sha256:ec20e7a4825331c1b5ebf261d111e16fa9612c1f7a5e1f884f12bd53a664dfd2",
-                "sha256:f913492e1663d3c36f502e5e9ba6cd13cf19d7fab50aa13239e420fef95e1396"
+                "sha256:08a96c641c3a74e44eb59afb61a24f2cb9f4d7188748e76ba4bb5edfa3cb7d1c",
+                "sha256:f7b7ce16570fe9965acd6d30101a28f62fb4a7f9e926b3bbc9b61f8b04247e72"
             ],
-            "version": "==19.2.0"
+            "version": "==19.3.0"
         },
         "autoflake": {
             "hashes": [
@@ -56,10 +56,10 @@
         },
         "backoff": {
             "hashes": [
-                "sha256:c7187f15339e775aec926dc6e5e42f8a3ad7d3c2b9a6ecae7b535000f70cd838",
-                "sha256:d340bb6f36d025c04214b8925112d8456970e5f28dda46e4f1133bf5c622cb0a"
+                "sha256:3f1ed23d36c65ec16c143e432b12c19aaf12ed791317b91ab50dd14ac6255a3c",
+                "sha256:53531e45432b18795f808c28dd9c5a4b32fe44aa713780ea892f07c3e6b36c11"
             ],
-            "version": "==1.8.0"
+            "version": "==1.8.1"
         },
         "bleach": {
             "hashes": [
@@ -645,11 +645,11 @@
         },
         "typing-inspect": {
             "hashes": [
-                "sha256:a7cb36c4a47d034766a67ea6467b39bd995cd00db8d4db1aa40001bf2d674a9b",
-                "sha256:cf41eb276cc8955a45e03c15cd1efa6c181a8775a38ff0bfda99d28af97bcda3",
-                "sha256:e319dfa0c9a646614c9b6abab3bdd5f860a98609998d420f33e41a6e01cbbddb"
+                "sha256:75c97b7854426a129f3184c68588db29091ff58e6908ed520add1d52fc44df6e",
+                "sha256:811b44f92e780b90cfe7bac94249a4fae87cfaa9b40312765489255045231d9c",
+                "sha256:c6ed1cd34860857c53c146a6704a96da12e1661087828ce350f34addc6e5eee3"
             ],
-            "version": "==0.4.0"
+            "version": "==0.5.0"
         },
         "urllib3": {
             "hashes": [

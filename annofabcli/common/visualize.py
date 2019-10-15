@@ -7,7 +7,8 @@ from typing import Any, Callable, Dict, List, Optional, Tuple  # pylint: disable
 
 import annofabapi
 import more_itertools
-from annofabapi.models import InputData, Inspection, OrganizationMember, Task, TaskHistoryShort, TaskPhase
+from annofabapi.models import (AnnotationSpecsHistory, InputData, Inspection, OrganizationMember, Task,
+                               TaskHistoryShort, TaskPhase)
 
 
 class MessageLocale(enum.Enum):
@@ -45,6 +46,21 @@ class AddProps:
     @staticmethod
     def add_properties_of_project(target: Dict[str, Any], project_title: str) -> Dict[str, Any]:
         target['project_title'] = project_title
+        return target
+
+    def _add_user_info(self, target: Any):
+        user_id = None
+        username = None
+
+        account_id = target["account_id"]
+        if account_id is not None:
+            member = self.get_organization_member_from_account_id(account_id)
+            if member is not None:
+                user_id = member['user_id']
+                username = member['username']
+
+        target['user_id'] = user_id
+        target['username'] = username
         return target
 
     def get_organization_member_from_account_id(self, account_id: str) -> Optional[OrganizationMember]:
@@ -99,6 +115,21 @@ class AddProps:
             return None
 
         return self.get_message(label['label_name'], locale)
+
+    def add_properties_to_annotation_specs_history(self, annotation_specs_history: AnnotationSpecsHistory
+                                                   ) -> AnnotationSpecsHistory:
+        """
+        アノテーション仕様の履歴に、以下のキーを追加する.
+        user_id
+        username
+
+        Args:
+            annotation_specs_history:
+
+        Returns:
+            annotation_specs_history
+        """
+        return self._add_user_info(annotation_specs_history)
 
     def add_properties_to_inspection(self, inspection: Inspection,
                                      detail: Optional[Dict[str, Any]] = None) -> Inspection:
@@ -161,25 +192,11 @@ class AddProps:
             Task情報
 
         """
-        def add_user_info(target: Any):
-            user_id = None
-            username = None
 
-            account_id = target["account_id"]
-            if account_id is not None:
-                member = self.get_organization_member_from_account_id(account_id)
-                if member is not None:
-                    user_id = member['user_id']
-                    username = member['username']
-
-            target['user_id'] = user_id
-            target['username'] = username
-            return target
-
-        add_user_info(task)
+        self._add_user_info(task)
         task['worktime_hour'] = self.millisecond_to_hour(task['work_time_span'])
 
-        histories = [add_user_info(e) for e in task['histories_by_phase']]
+        histories = [self._add_user_info(e) for e in task['histories_by_phase']]
         task['histories_by_phase'] = histories
 
         task['number_of_rejections_by_inspection'] = self.get_number_of_rejections_by_phase(

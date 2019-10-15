@@ -66,6 +66,7 @@ $ docker run -it -e ANNOFAB_USER_ID=XXXX -e ANNOFAB_PASSWORD=YYYYY annofab-cli a
 |コマンド| サブコマンド                  | 内容                                                                                                     |必要なロール|
 |----|-------------------------------|----------------------------------------------------------------------------------------------------------|------------|
 |annotation| list_count | task_idまたはinput_data_idで集約したアノテーションの個数を出力します                              |-|
+|annotation_specs| history | アノテーション仕様の履歴一覧を出力します。                              |チェッカー/オーナ|
 |annotation_specs| list_label | アノテーション仕様のラベル情報を出力します。                              |チェッカー/オーナ|
 |annotation_specs| list_label_color             | アノテーション仕様から、label_nameとRGBを対応付けたJSONを出力します。                                      |チェッカー/オーナ|
 |filesystem| write_annotation_image        | アノテーションzip、またはそれを展開したディレクトリから、アノテーションの画像（Semantic Segmentation用）を生成します。 |-|
@@ -283,6 +284,16 @@ $ annofabcli annotation list_count --project_id prj1 \
 | sample_093 | dd82cf3a-a38c-4a04-91e7-a4f1ce9af585 | 2                |
 
 
+### annotation_specs history
+アノテーション仕様の履歴一覧を出力します。
+
+```
+# prj1のアノテーション仕様の履歴一覧を出力する
+$ annofabcli annotation_specs history --project_id prj1 
+```
+
+
+
 ### annotation_specs list_label
 アノテーション仕様のラベル情報を出力します。
 
@@ -292,6 +303,13 @@ $ annofabcli annotation_specs list_label --project_id prj1
 
 # prj1のアノテーション仕様のラベル情報を、インデントされたJSONで出力する。
 $ annofabcli annotation_specs list_label --project_id prj1 --format pretty_json
+
+# 最新より１つ前の履歴である、アノテーション仕様を出力する。
+$ annofabcli annotation_specs list_label --project_id prj1 --before 1
+
+# history_idがXXXのアノテーション仕様を出力する。（history_idは、`annofabcli annotation_specs history`コマンドで取得する）
+$ annofabcli annotation_specs list_label --project_id prj1 --history_id XXX
+
 
 ```
 

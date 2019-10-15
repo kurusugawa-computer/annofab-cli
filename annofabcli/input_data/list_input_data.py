@@ -201,7 +201,6 @@ class ListInputData(AbstractCommandLineInterface):
             if len(input_data_list) != total_count:
                 logger.warning(f"実際に取得した件数:{len(input_data_list)}が、取得可能な件数:{total_count} と異なっていました。")
 
-        input_data_list = self.search_with_jmespath_expression(input_data_list)
         self.print_according_to_format(input_data_list)
 
     def main(self):

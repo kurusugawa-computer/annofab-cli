@@ -2,10 +2,13 @@ import argparse
 import logging
 from typing import Any, Callable, Dict, List, Optional, Tuple, Union  # pylint: disable=unused-import
 
+import annofabapi
+
 import annofabcli
 from annofabcli import AnnofabApiFacade
 from annofabcli.common.cli import AbstractCommandLineInterface, ArgumentParser, build_annofabapi_resource_and_login
 from annofabcli.common.enums import FormatArgument
+from annofabcli.common.visualize import AddProps
 
 logger = logging.getLogger(__name__)
 
@@ -14,10 +17,18 @@ class AnnotationSpecsHistories(AbstractCommandLineInterface):
     """
     アノテーション仕様の変更履歴を出力する。
     """
+    def __init__(self, service: annofabapi.Resource, facade: AnnofabApiFacade, args: argparse.Namespace):
+        super().__init__(service, facade, args)
+        self.visualize = AddProps(self.service, args.project_id)
+
+    def get_annotation_specs_histories(self, project_id: str) -> List[Dict[str, Any]]:
+        annotation_specs_histories, _ = self.service.api.get_annotation_specs_histories(project_id)
+        return [self.visualize.add_properties_to_annotation_specs_history(e) for e in annotation_specs_histories]
+
     def list_annotation_specs_histories(self, project_id: str) -> None:
         super().validate_project(project_id)
 
-        annotation_specs_histories, _ = self.service.api.get_annotation_specs_histories(project_id)
+        annotation_specs_histories = self.get_annotation_specs_histories(project_id)
         self.print_according_to_format(annotation_specs_histories)
 
     def main(self):

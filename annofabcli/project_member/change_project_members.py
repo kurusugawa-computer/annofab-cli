@@ -94,7 +94,8 @@ class ChangeProjectMembers(AbstractCommandLineInterface):
             # メンバを登録
             try:
                 self.put_project_member(project_id, user_id, member_info=member_info, old_member=old_member)
-                logger.debug(f"user_id = {user_id} のプロジェクトメンバ情報を変更しました。member_role={member_role}, member_info={member_info}")
+                logger.debug(
+                    f"user_id = {user_id} のプロジェクトメンバ情報を変更しました。member_role={member_role}, member_info={member_info}")
                 count_invite_members += 1
 
             except requests.exceptions.HTTPError as e:

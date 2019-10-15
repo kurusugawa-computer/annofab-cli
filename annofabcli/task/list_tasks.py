@@ -125,7 +125,6 @@ class ListTasks(AbstractCommandLineInterface):
             tasks = self.filter_task_list(task_list_from_json, project_id, task_query)
             logger.debug(f"タスク一覧の件数: {len(tasks)}")
 
-        tasks = self.search_with_jmespath_expression(tasks)
         self.print_according_to_format(tasks)
 
     def main(self):

@@ -95,7 +95,6 @@ class ListUser(AbstractCommandLineInterface):
 
     def main(self):
         args = self.args
-        csv_format = annofabcli.common.cli.get_csv_format_from_args(args.csv_format)
 
         project_members = []
         if args.organization is not None:
@@ -109,9 +108,7 @@ class ListUser(AbstractCommandLineInterface):
                 project_id_list, include_inactive=args.include_inactive,
                 include_outside_organization=args.include_outside_organization)
 
-        project_members = self.search_with_jmespath_expression(project_members)
-        annofabcli.utils.print_according_to_format(target=project_members, arg_format=FormatArgument(args.format),
-                                                   output=args.output, csv_format=csv_format)
+        self.print_according_to_format(project_members)
 
 
 def main(args):

@@ -1,15 +1,15 @@
 import argparse
 import logging
-from enum import Enum
 import sys
+from enum import Enum
 from typing import Any, Dict, List, Optional  # pylint: disable=unused-import
+
+from annofabapi.models import JobType
 
 import annofabcli
 import annofabcli.common.cli
 from annofabcli import AnnofabApiFacade
 from annofabcli.common.cli import AbstractCommandLineInterface, build_annofabapi_resource_and_login
-from annofabcli.common.exceptions import AnnofabCliException
-from annofabapi.models import JobType
 
 logger = logging.getLogger(__name__)
 
@@ -23,7 +23,6 @@ class DownloadTarget(Enum):
 
 
 class Download(AbstractCommandLineInterface):
-
     def download(self, target: DownloadTarget, project_id: str, output: str, latest: bool = False):
         MAX_JOB_ACCESS = 30
         JOB_ACCESS_INTERVAL = 60
@@ -31,7 +30,8 @@ class Download(AbstractCommandLineInterface):
         if target == DownloadTarget.TASK:
             if latest:
                 self.service.api.post_project_tasks_update(project_id)
-                result = self.service.wrapper.wait_for_completion(project_id, job_type=JobType.GEN_TASKS_LIST, job_access_interval=60, max_job_access=30)
+                result = self.service.wrapper.wait_for_completion(project_id, job_type=JobType.GEN_TASKS_LIST,
+                                                                  job_access_interval=60, max_job_access=30)
                 if result:
                     logger.info(f"タスクファイルの更新が完了しました。")
                 else:
@@ -49,7 +49,8 @@ class Download(AbstractCommandLineInterface):
         elif target in [DownloadTarget.SIMPLE_ANNOTATION, DownloadTarget.FULL_ANNOTATION, DownloadTarget.TASK]:
             if latest:
                 self.service.api.post_annotation_archive_update(project_id)
-                result = self.service.wrapper.wait_for_completion(project_id, job_type=JobType.GEN_ANNOTATION, job_access_interval=60, max_job_access=30)
+                result = self.service.wrapper.wait_for_completion(project_id, job_type=JobType.GEN_ANNOTATION,
+                                                                  job_access_interval=60, max_job_access=30)
                 if result:
                     logger.info(f"アノテーションの更新が完了しました。")
                 else:
@@ -68,13 +69,16 @@ class Download(AbstractCommandLineInterface):
     def validate(args: argparse.Namespace):
         COMMON_MESSAGE = "annofabcli project download: error:"
         download_target = DownloadTarget(args.target)
-        if args.latest and download_target not in [DownloadTarget.TASK, DownloadTarget.SIMPLE_ANNOTATION, DownloadTarget.FULL_ANNOTATION]:
-            print(f"{COMMON_MESSAGE} argument --latest: ダウンロード対象が`task`, `simple_annotation`, `full_annotation`のときのみ利用できます。", file=sys.stderr)
+        if args.latest and download_target not in [
+                DownloadTarget.TASK, DownloadTarget.SIMPLE_ANNOTATION, DownloadTarget.FULL_ANNOTATION
+        ]:
+            print(
+                f"{COMMON_MESSAGE} argument --latest: "
+                f"ダウンロード対象が`task`, `simple_annotation`, `full_annotation`のときのみ利用できます。", file=sys.stderr)
             return False
 
         else:
             return True
-
 
     def main(self):
         args = self.args
@@ -100,9 +104,8 @@ def parse_args(parser: argparse.ArgumentParser):
     parser.add_argument('-o', '--output', type=str, required=True, help='ダウンロード先を指定します。')
 
     parser.add_argument(
-        '--latest', action='store_true',
-        help='ダウンロード対象を最新化してから、ダウンロードします。アノテーションの最新化は5分以上かかる場合があります。'
-             'ダウンロード対象が`task`, `simple_annotation`, `full_annotation`のときのみ、このオプションを利用できます。')
+        '--latest', action='store_true', help='ダウンロード対象を最新化してから、ダウンロードします。アノテーションの最新化は5分以上かかる場合があります。'
+        'ダウンロード対象が`task`, `simple_annotation`, `full_annotation`のときのみ、このオプションを利用できます。')
 
     parser.set_defaults(subcommand_func=main)
 
@@ -110,7 +113,7 @@ def parse_args(parser: argparse.ArgumentParser):
 def add_parser(subparsers: argparse._SubParsersAction):
     subcommand_name = "download"
     subcommand_help = "タスクや検査コメント、アノテーションなどをダウンロードします。"
-    description = ("タスクや検査コメント、アノテーションなどをダウンロードします。" 
+    description = ("タスクや検査コメント、アノテーションなどをダウンロードします。"
                    "タスク、検査コメント、タスク履歴イベントは毎日AM 02:00 JSTに更新されます。"
                    "アノテーションは毎日AM 03:00 JSTに更新されます。")
     epilog = "オーナロールを持つユーザで実行してください。"
