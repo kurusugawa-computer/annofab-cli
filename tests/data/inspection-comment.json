@@ -1,0 +1,46 @@
+[
+    {
+        "project_id": "58a2a621-7d4b-41e7-927b-cdc570c1114a",
+        "task_id": "sample_423",
+        "input_data_id": "c2a3223b-90db-4416-8c7c-55bf140af1cd",
+        "inspection_id": "07424cb1-8630-4872-b856-3ab1ea1e47d0",
+        "phase": "annotation",
+        "phase_stage": 1,
+        "commenter_account_id": "00589ed0-dd63-40db-abb2-dfe5e13c8299",
+        "annotation_id": null,
+        "label_id": null,
+        "data": {
+            "x": 0,
+            "y": 0,
+            "_type": "Point"
+        },
+        "parent_inspection_id": "101063ed-66f6-4fe1-a8e1-b996197c55d9",
+        "phrases": [],
+        "comment": "対応しました",
+        "status": "no_correction_required",
+        "created_datetime": "2019-08-28T20:17:44.388+09:00",
+        "updated_datetime": "2019-08-28T20:17:55.173+09:00"
+    },
+    {
+        "project_id": "58a2a621-7d4b-41e7-927b-cdc570c1114a",
+        "task_id": "sample_423",
+        "input_data_id": "c2a3223b-90db-4416-8c7c-55bf140af1cd",
+        "inspection_id": "101063ed-66f6-4fe1-a8e1-b996197c55d9",
+        "phase": "inspection",
+        "phase_stage": 1,
+        "commenter_account_id": "00589ed0-dd63-40db-abb2-dfe5e13c8299",
+        "annotation_id": null,
+        "label_id": null,
+        "data": {
+            "x": 0,
+            "y": 0,
+            "_type": "Point"
+        },
+        "parent_inspection_id": null,
+        "phrases": [],
+        "comment": "枠がズレています。",
+        "status": "annotator_action_required",
+        "created_datetime": "2019-08-28T20:17:22.184+09:00",
+        "updated_datetime": "2019-08-28T20:17:22.793+09:00"
+    }
+]

@@ -159,8 +159,7 @@ def parse_args(parser: argparse.ArgumentParser):
         'さらに追加で、`user_id`, `previous_user_id` キーも指定できます。'
         'ただし `page`, `limit`キーは指定できません。')
 
-    parser.add_argument(
-        '-tj', '--task_json', type=str,
+    parser.add_argument('--task_json', type=str,
         help='タスク情報が記載されたJSONファイルのパスを指定すると、JSONに記載された情報を元にタスク一覧を出力します。AnnoFabからタスク情報は取得しません。'
         'JSONには記載されていない、`user_id`や`username`などの情報も追加します。'
         'JSONファイルは`annofabcli project download task`コマンドで取得できます。')

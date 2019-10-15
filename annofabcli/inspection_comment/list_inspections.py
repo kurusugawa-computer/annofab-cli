@@ -155,8 +155,12 @@ class PrintInspections(AbstractCommandLineInterface):
             return
 
         task_id_list = annofabcli.common.cli.get_list_from_args(args.task_id)
-        with open(args.inspection_comment_json, encoding="utf-8") as f:
-            inspection_list = json.load(f)
+        if args.inspection_comment_json is not None:
+            with open(args.inspection_comment_json, encoding="utf-8") as f:
+                inspection_list = json.load(f)
+        else:
+            inspection_list = None
+
 
         self.print_inspections(args.project_id, task_id_list, inspection_list_from_json=inspection_list)
 
@@ -167,12 +171,11 @@ def parse_args(parser: argparse.ArgumentParser):
     argument_parser.add_project_id()
     argument_parser.add_task_id(
         required=False, help_message='対象のタスクのtask_idを指定します。　'
-        '`--inspection_comment_json`が指定されているときは、必須です。'
+        '`--inspection_comment_json`を指定しないときは、必須です。'
         '`file://`を先頭に付けると、task_idの一覧が記載されたファイルを指定できます。')
 
-    parser.add_argument(
-        '-icj', '--inspection_comment_json', type=str,
-        help='検査コメント情報が記載されたJSONファイルのパスを指定すると、JSONに記載された情報を元に検査コメント一覧を出力します。AnnoFabから検査コメント情報は取得しません。'
+    parser.add_argument('--inspection_comment_json', type=str,
+        help='検査コメント情報が記載されたJSONファイルのパスを指定すると、JSONに記載された情報を元に検査コメント一覧を出力します。AnnoFabから検査コメント情報を取得しません。'
         'JSONには記載されていない、`commenter_username	`や`phrase_names_ja`などの情報も追加します。'
         'JSONファイルは`$ annofabcli project download inspection_comment`コマンドで取得できます。')
 
