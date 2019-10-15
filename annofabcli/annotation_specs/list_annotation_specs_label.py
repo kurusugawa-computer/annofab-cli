@@ -33,7 +33,7 @@ class PrintAnnotationSpecsLabel(AbstractCommandLineInterface):
         labels = annotation_specs['labels']
 
         if arg_format == 'text':
-            self._print_text_format_labels(labels)
+            self._print_text_format_labels(labels, output=output)
 
         elif arg_format in [FormatArgument.JSON.value, FormatArgument.PRETTY_JSON.value]:
             annofabcli.utils.print_according_to_format(target=labels, arg_format=FormatArgument(arg_format),
@@ -49,26 +49,29 @@ class PrintAnnotationSpecsLabel(AbstractCommandLineInterface):
         return [ja_name, en_name]
 
     @staticmethod
-    def _print_text_format_labels(labels):
+    def _print_text_format_labels(labels, output: Optional[str] = None):
+        output_lines = []
         for label in labels:
-            print('\t'.join([
+            output_lines.append('\t'.join([
                 label['label_id'],
                 label['annotation_type'],
             ] + PrintAnnotationSpecsLabel._get_name_list(label['label_name']['messages'])))
             for additional_data_definition in label['additional_data_definitions']:
-                print('\t'.join([
+                output_lines.append('\t'.join([
                     '',
                     additional_data_definition['additional_data_definition_id'],
                     additional_data_definition['type'],
                 ] + PrintAnnotationSpecsLabel._get_name_list(additional_data_definition['name']['messages'])))
                 if additional_data_definition['type'] in ['choice', 'select']:
                     for choice in additional_data_definition['choices']:
-                        print('\t'.join([
+                        output_lines.append('\t'.join([
                             '',
                             '',
                             choice['choice_id'],
                             '',
                         ] + PrintAnnotationSpecsLabel._get_name_list(choice['name']['messages'])))
+
+        annofabcli.utils.output_string("\n".join(output_lines), output)
 
     def get_history_id_from_before_index(self, project_id: str, before: int):
         histories, _ = self.service.api.get_annotation_specs_histories(project_id)
