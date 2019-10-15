@@ -201,9 +201,20 @@ class TestTask:
     command_name = "task"
 
     def test_list(self):
+        out_file = str(out_path / 'task.csv')
         main([
             self.command_name, 'list', '--project_id', project_id, '--task_query',
-            f'{{"user_id": "{user_id}", "phase":"acceptance", "status": "complete"}}', '--format', 'csv'
+            f'{{"user_id": "{user_id}", "phase":"acceptance", "status": "complete"}}',
+            '--output',out_file,'--format', 'csv'
+        ])
+
+    def test_list_with_task_json(self):
+        out_file = str(out_path / 'task.csv')
+        task_json = str(data_path / "task.json")
+
+        main([
+            self.command_name, 'list', '--project_id', project_id, '--task_json', task_json,
+            '--output',out_file,'--format', 'csv'
         ])
 
     def test_cancel_acceptance(self):

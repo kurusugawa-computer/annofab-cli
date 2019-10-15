@@ -1,0 +1,25 @@
+[
+  {
+    "project_id": "58a2a621-7d4b-41e7-927b-cdc570c1114a",
+    "task_id": "0d97e5e0-a737-47ae-8b8c-f09194a2a9fd",
+    "phase": "annotation",
+    "phase_stage": 1,
+    "status": "break",
+    "input_data_id_list": [
+      "7115b8fb-6850-4b66-9f34-211312b2b9c5"
+    ],
+    "account_id": "00589ed0-dd63-40db-abb2-dfe5e13c8299",
+    "histories_by_phase": [
+      {
+        "account_id": "00589ed0-dd63-40db-abb2-dfe5e13c8299",
+        "phase": "annotation",
+        "phase_stage": 1
+      }
+    ],
+    "work_time_span": 539662,
+    "number_of_rejections": 0,
+    "started_datetime": "2019-05-08T13:53:21.338+09:00",
+    "updated_datetime": "2019-05-08T14:15:07.318+09:00",
+    "sampling": null
+  }
+]

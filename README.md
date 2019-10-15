@@ -499,7 +499,6 @@ $ annofabcli inspection_comment list --project_id prj1 --task_id task1 task2 \
 $ annofabcli inspection_comment list --project_id prj1 --task_id file://task.txt --format json
 
 # 検査コメント情報が記載されたファイルを元にして、検査コメント一覧を出力します
-# `commenter_username や phrases_names_ja などの情報も追加します。
 # 検査コメント情報が記載されたファイルは、`$ annofabcli project download inspection_comment`コマンドで取得できます。
 $ annofabcli inspection_comment list --project_id prj1 --inspection_comment_json inspection_comment.json
 
@@ -848,6 +847,12 @@ $ annofabcli task list --project_id prj1 \
 
 # 差し戻されたタスクのtask_idを出力する
 $ annofabcli task list --project_id prj1 --task_query '{"rejected_only": true}' --format task_id_list 
+
+# タスク情報が記載されたファイルを元にして、タスク一覧を出力します
+# タスク情報が記載されたファイルは、`$ annofabcli project download task`コマンドで取得できます。
+$ annofabcli task list --project_id prj1 --task_json task.json
+
+
 ```
 
 #### 出力結果
