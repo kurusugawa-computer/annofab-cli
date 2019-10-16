@@ -28,10 +28,10 @@ class ListJob(AbstractCommandLineInterface):
         else:
             query_params = {}
 
-        query_params["job_type"] = job_type.value
+        query_params["type"] = job_type.value
 
         logger.debug(f"query_params: {query_params}")
-        job_list = self.service.wrapper.get_all_project_job(project_id, query_params=query_params)
+        job_list = self.service.api.get_project_job(project_id, query_params=query_params)[0]["list"]
         return job_list
 
     def print_job_list(self, project_id: str, job_type: JobType, job_query: Optional[Dict[str, Any]] = None):
@@ -75,7 +75,7 @@ def parse_args(parser: argparse.ArgumentParser):
     parser.add_argument(
         '--job_query', type=str, help='ジョブの検索クエリをJSON形式で指定します。指定しない場合は、最新のジョブを1個取得します。 '
         '`file://`を先頭に付けると、JSON形式のファイルを指定できます。'
-        '`limit`, `exclusive_start_created_datetime` キーを指定できます。')
+        '`limit` キーを指定できます。')
 
     argument_parser.add_format(choices=[FormatArgument.CSV, FormatArgument.JSON, FormatArgument.PRETTY_JSON],
                                default=FormatArgument.CSV)
