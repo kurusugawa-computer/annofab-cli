@@ -72,7 +72,7 @@ $ docker run -it -e ANNOFAB_USER_ID=XXXX -e ANNOFAB_PASSWORD=YYYYY annofab-cli a
 |filesystem| write_annotation_image        | アノテーションzip、またはそれを展開したディレクトリから、アノテーションの画像（Semantic Segmentation用）を生成します。 |-|
 |input_data|delete             | 入力データを削除します。                                                            |オーナ|
 |input_data|list             | 入力データ一覧を出力します。                                                            |-|
-|input_data|put             | CSVに記載された入力データを登録します。                                                            |オーナ|
+|input_data|put             | 入力データを登録します。                                                            |オーナ|
 |inspection_comment| list | 検査コメントを出力します。                               |-|
 |inspection_comment| list_unprocessed | 未処置の検査コメントを出力します。                               |-|
 |instruction| upload             | HTMLファイルを作業ガイドとして登録します。                                                           |チェッカー/オーナ|
@@ -455,12 +455,14 @@ $ annofabcli input_data list --project_id prj1 --batch \
 
 
 ### input_data put
-CSVに記載された入力データを登録します。CSVは以下のフォーマットに従います。
+CSVに記載された入力データ情報やzipファイルを、入力データとして登録します。
+
+#### CSVに記載された入力データ情報を、入力データとして登録
 
 * ヘッダ行なし
 * カンマ区切り
 * 1列目: input_data_name. 必須
-* 2列目: input_data_path. 必須
+* 2列目: input_data_path. 必須. 先頭が`file://`の場合、ローカルのファイルを入力データとしてアップロードします。
 * 3列目: input_data_id. 省略可能。省略した場合UUIDv4になる。
 * 4列目: sign_required. 省略可能. `true` or `false`
 
@@ -471,6 +473,8 @@ data1,s3://example.com/data1,id1,
 data2,s3://example.com/data2,id2,true
 data3,s3://example.com/data3,id3,false
 data4,https://example.com/data4,,
+data5,file://sample.jpg,,
+data6,file:///tmp/sample.jpg,,
 ```
 
 
@@ -484,6 +488,7 @@ $ annofabcli input_data put --project_id prj1 --csv input_data.csv --overwrite
 ```
 
 
+
 `input_data list`コマンドを使えば、プロジェクトに既に登録されている入力データからCSVを作成できます。
 
 ```
@@ -491,6 +496,23 @@ $ annofabcli input_data list --project_id prj1 --input_data_query '{"input_data_
  --format csv --output input_data.csv \
  --csv_format '{"columns": ["input_data_name","input_data_path", "input_data_id", "sign_required"], "header":false}' 
 ```
+
+
+#### zipファイルを入力データとして登録
+
+
+```
+# 画像や動画が格納されたinput_data.zipを、入力データとして登録する
+$ annofabcli input_data put --project_id prj1 --zip input_data.zip
+
+# zipファイルを入力データとして登録し、入力データの登録が完了するまで待つ。
+$ annofabcli input_data put --project_id prj1 --zip input_data.zip --wait
+
+# zipファイルを入力データとして登録する。そのときinput_data_nameを`foo.zip`にする。
+$ annofabcli input_data put --project_id prj1 --zip input_data.zip --input_data_name_for_zip foo.zip
+
+```
+
 
 
 
