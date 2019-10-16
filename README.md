@@ -426,7 +426,11 @@ $ annofabcli filesystem write_annotation_image  --annotation annotation.zip \
 タスクに使われていない入力データを削除します。
 
 ```
-$ annofabcli input_data delete --project_id prj1 --input_data_list input1 input2
+# 入力データ input1, input2 を削除する
+$ annofabcli input_data delete --project_id prj1 --input_data_id input1 input2
+
+# `input_data_id.txt` ファイルに記載されている入力データを削除する
+$ annofabcli input_data delete --project_id prj1 --input_data_id file://input_data_id.txt
 ```
 
 
