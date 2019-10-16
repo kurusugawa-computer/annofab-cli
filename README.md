@@ -81,6 +81,7 @@ $ docker run -it -e ANNOFAB_USER_ID=XXXX -e ANNOFAB_PASSWORD=YYYYY annofab-cli a
 |project| copy                 | プロジェクトをコピーします。                                                                           |オーナ and 組織管理者/組織オーナ|
 |project| diff                 | プロジェクト間の差分を表示します。                                                                           |チェッカー/オーナ|
 |project| download                 | タスクや検査コメント、アノテーションなどをダウンロードします。                                                                           |オーナ|
+|project| list                 | プロジェクト一覧を出力します。                                                                          |-|
 |project_member| change                  | プロジェクトメンバを変更します。|オーナ|
 |project_member| copy                  | プロジェクトメンバをコピーします。|オーナ(コピー先プロジェクトに対して)|
 |project_member| delete                  | 複数のプロジェクトからユーザを削除します。                                                                 |オーナ|
@@ -734,6 +735,16 @@ $ annofabcli project download simple_annotation --project_id prj1 --output simpl
 # 最新のタスク全一覧が記載されたJSONファイルをダウンロードする
 $ annofabcli project download task --project_id prj1 --output task.json --latest
 ```
+
+
+### project list
+プロジェクト一覧を出力します。
+
+```
+# org1配下のプロジェクトで、
+$ annofabcli project list --organization org1 --project_query '{"status": "active", "user_id": "user1}'
+```
+
 
 
 
