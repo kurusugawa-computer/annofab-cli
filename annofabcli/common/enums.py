@@ -32,3 +32,6 @@ class FormatArgument(Enum):
 
     #: user_idの一覧
     USER_ID_LIST = 'user_id_list'
+
+    #: project_idの一覧
+    PROJECT_ID_LIST = 'project_id_list'

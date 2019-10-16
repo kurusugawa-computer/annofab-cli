@@ -195,6 +195,14 @@ class TestProject:
         out_file = str(out_path / 'full_annotation.zip')
         main(['project', 'download', 'full_annotation', '--project_id', project_id, '--output', out_file])
 
+    def test_list_project(self):
+        organization_name = get_organization_name(project_id)
+        out_file = str(out_path / 'project.csv')
+        main([
+            'project', 'list', '--organization', organization_name, '--project_query', '{"status": "active"}',
+            '--format', 'csv', '--output', out_file
+        ])
+
 
 class TestProjectMember:
     def test_put_project_member(self):

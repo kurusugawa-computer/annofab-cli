@@ -40,7 +40,7 @@ def main(args):
 def parse_args(parser: argparse.ArgumentParser):
     argument_parser = ArgumentParser(parser)
 
-    parser.add_argument('-org', '--organization', type=str, help='対象の組織名を指定してください。')
+    parser.add_argument('-org', '--organization', required=True, type=str, help='対象の組織名を指定してください。')
 
     argument_parser.add_format(
         choices=[FormatArgument.CSV, FormatArgument.JSON, FormatArgument.PRETTY_JSON, FormatArgument.USER_ID_LIST],

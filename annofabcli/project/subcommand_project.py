@@ -5,6 +5,7 @@ import annofabcli.common.cli
 import annofabcli.project.copy_project
 import annofabcli.project.diff_projects
 import annofabcli.project.download
+import annofabcli.project.list_project
 
 
 def parse_args(parser: argparse.ArgumentParser):
@@ -15,6 +16,7 @@ def parse_args(parser: argparse.ArgumentParser):
     annofabcli.project.copy_project.add_parser(subparsers)
     annofabcli.project.diff_projects.add_parser(subparsers)
     annofabcli.project.download.add_parser(subparsers)
+    annofabcli.project.list_project.add_parser(subparsers)
 
 
 def add_parser(subparsers: argparse._SubParsersAction):
