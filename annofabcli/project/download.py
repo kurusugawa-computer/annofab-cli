@@ -1,6 +1,5 @@
 import argparse
 import logging
-import sys
 from enum import Enum
 from typing import Any, Dict, List, Optional  # pylint: disable=unused-import
 
@@ -67,18 +66,14 @@ class Download(AbstractCommandLineInterface):
 
     @staticmethod
     def validate(args: argparse.Namespace):
-        COMMON_MESSAGE = "annofabcli project download: error:"
         download_target = DownloadTarget(args.target)
-        if args.latest and download_target not in [
-                DownloadTarget.TASK, DownloadTarget.SIMPLE_ANNOTATION, DownloadTarget.FULL_ANNOTATION
-        ]:
-            print(
-                f"{COMMON_MESSAGE} argument --latest: "
-                f"ダウンロード対象が`task`, `simple_annotation`, `full_annotation`のときのみ利用できます。", file=sys.stderr)
-            return False
+        if args.latest:
+            if download_target not in [
+                    DownloadTarget.TASK, DownloadTarget.SIMPLE_ANNOTATION, DownloadTarget.FULL_ANNOTATION
+            ]:
+                logger.warning(f"ダウンロード対象が`task`, `simple_annotation`, `full_annotation`以外のときは、`--latest`オプションは無視されます。")
 
-        else:
-            return True
+        return True
 
     def main(self):
         args = self.args
@@ -105,7 +100,7 @@ def parse_args(parser: argparse.ArgumentParser):
 
     parser.add_argument(
         '--latest', action='store_true', help='ダウンロード対象を最新化してから、ダウンロードします。アノテーションの最新化は5分以上かかる場合があります。'
-        'ダウンロード対象が`task`, `simple_annotation`, `full_annotation`のときのみ、このオプションを利用できます。')
+        'ダウンロード対象が`task`, `simple_annotation`, `full_annotation`のときのみ、このオプションは有効です。')
 
     parser.set_defaults(subcommand_func=main)
 

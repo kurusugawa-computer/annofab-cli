@@ -14,8 +14,7 @@ from annofabapi.parser import SimpleAnnotationParser
 import annofabcli
 import annofabcli.common.cli
 from annofabcli.common.cli import ArgumentParser
-from annofabcli.common.image import IsParserFunc, write_annotation_image, write_annotation_images_from_path
-from annofabcli.common.typing import RGB, InputDataSize
+from annofabcli.common.image import IsParserFunc, write_annotation_images_from_path
 
 logger = logging.getLogger(__name__)
 
