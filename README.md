@@ -790,9 +790,17 @@ CSVに記載されたユーザを、プロジェクトメンバとして登録�
 
 members.csvの中身は以下の通りです。
 
+* ヘッダ行なし
+* カンマ区切り
+* 1列目: user_id. 必須
+* 2列目: member_role. 必須.  `owner`, `worker`, `accepter`, `training_data_user` のいずれか。
+* 3列目: sampling_inspection_rate. 省略可能。
+* 4列目: sampling_acceptance_rate. 省略可能。
+
+
 ```
 user1,worker
-user2,accepter
+user2,accepter,80,40
 ```
 
 
