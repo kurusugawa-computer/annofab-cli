@@ -1,4 +1,4 @@
 user1,owner
-user2,accepter
-user3,worker
-user4,training_data_user
+user2,accepter,10,20
+user3,worker,,20
+user4,training_data_user,10

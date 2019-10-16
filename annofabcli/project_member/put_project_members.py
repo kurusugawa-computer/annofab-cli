@@ -25,6 +25,8 @@ class Member:
     """
     user_id: str
     member_role: ProjectMemberRole
+    sampling_inspection_rate: Optional[int]
+    sampling_acceptance_rate: Optional[int]
 
 
 class PutProjectMembers(AbstractCommandLineInterface):
@@ -46,6 +48,8 @@ class PutProjectMembers(AbstractCommandLineInterface):
         request_body = {
             "member_status": ProjectMemberStatus.ACTIVE.value,
             "member_role": member.member_role.value,
+            "sampling_inspection_rate": member.sampling_inspection_rate,
+            "sampling_acceptance_rate": member.sampling_acceptance_rate,
             "last_updated_datetime": last_updated_datetime,
         }
         updated_project_member = self.service.api.put_project_member(project_id, member.user_id,
@@ -141,9 +145,13 @@ class PutProjectMembers(AbstractCommandLineInterface):
     @staticmethod
     def get_members_from_csv(csv_path: Path) -> List[Member]:
         def create_member(e):
-            return Member(user_id=e.user_id, member_role=ProjectMemberRole(e.member_role))
+            return Member(user_id=e.user_id, member_role=ProjectMemberRole(e.member_role),
+                          sampling_inspection_rate=e.sampling_inspection_rate,
+                          sampling_acceptance_rate=e.sampling_acceptance_rate)
 
-        df = pandas.read_csv(str(csv_path), sep=',', header=None, names=('user_id', 'member_role'))
+        df = pandas.read_csv(str(csv_path), sep=',', header=None,
+                             names=('user_id', 'member_role', 'sampling_inspection_rate',
+                                    'sampling_acceptance_rate')).replace({pandas.np.nan: None})
         members = [create_member(e) for e in df.itertuples()]
         return members
 
@@ -167,9 +175,12 @@ def parse_args(parser: argparse.ArgumentParser):
     parser.add_argument(
         '--csv', type=str, required=True,
         help=('プロジェクトメンバが記載されたCVファイルのパスを指定してください。'
-              'CSVのフォーマットは、「1列目:user_id, 2列目:member_role, ヘッダ行なし, カンマ区切り」です。'
+              'CSVのフォーマットは、「1列目:user_id(required), 2列目:member_role(required), '
+              '3列目:sampling_inspection_rate, 4列目:sampling_acceptance_rate, ヘッダ行なし, カンマ区切り」です。'
               'member_roleは `owner`, `worker`, `accepter`, `training_data_user` のいずれかです。'
+              'sampling_inspection_rate, sampling_acceptance_rate を省略した場合は未設定になります。'
               'ただし自分自身は登録しません。'))
+
     parser.add_argument('--delete', action='store_true', help='CSVファイルに記載されていないプロジェクトメンバを削除します。ただし自分自身は削除しません。')
 
     parser.set_defaults(subcommand_func=main)
