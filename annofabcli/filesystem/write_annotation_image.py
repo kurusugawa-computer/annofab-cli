@@ -24,33 +24,6 @@ zipfile.is_zipfile("ab")
 
 class WriteAnnotationImage:
     @staticmethod
-    def write_annotation_images(iter_lazy_parser: Iterator[SimpleAnnotationParser],
-                                default_input_data_size: InputDataSize, label_color_dict: Dict[str, RGB],
-                                output_dir: Path, output_image_extension: str, task_status_complete: bool = False,
-                                task_id_list: Optional[List[str]] = None, background_color: Optional[str] = None):
-
-        for parser in iter_lazy_parser:
-            logger.debug(f"{parser.json_file_path} を読み込みます。")
-            simple_annotation = parser.parse()
-
-            if task_status_complete:
-                if simple_annotation.task_status != TaskStatus.COMPLETE:
-                    logger.debug(f"task_statusがcompleteでない( {simple_annotation.task_status.value})ため、"
-                                 f"{simple_annotation.task_id, simple_annotation.input_data_name} はスキップする。")
-                    continue
-
-            if task_id_list is not None and len(task_id_list) > 0:
-                if simple_annotation.task_id not in task_id_list:
-                    logger.debug(f"タスク {simple_annotation.task_id} はスキップする")
-                    continue
-
-            output_image_file = output_dir / f"{parser.json_file_path}.{output_image_extension}"
-            write_annotation_image(parser, image_size=default_input_data_size, label_color_dict=label_color_dict,
-                                   background_color=background_color, output_image_file=output_image_file)
-
-            logger.debug(f"{str(output_image_file)} の生成完了.")
-
-    @staticmethod
     def create_is_target_parser_func(task_status_complete: bool = False,
                                      task_id_list: Optional[List[str]] = None) -> IsParserFunc:
         def is_target_parser(parser: SimpleAnnotationParser) -> bool:
