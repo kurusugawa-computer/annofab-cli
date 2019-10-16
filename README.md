@@ -76,6 +76,8 @@ $ docker run -it -e ANNOFAB_USER_ID=XXXX -e ANNOFAB_PASSWORD=YYYYY annofab-cli a
 |inspection_comment| list | 検査コメントを出力します。                               |-|
 |inspection_comment| list_unprocessed | 未処置の検査コメントを出力します。                               |-|
 |instruction| upload             | HTMLファイルを作業ガイドとして登録します。                                                           |チェッカー/オーナ|
+|job|list             | ジョブ一覧を出力します。                                                            |-|
+|organization_member|list             | 組織メンバ一覧を出力します。                                                            |-|
 |project| copy                 | プロジェクトをコピーします。                                                                           |オーナ and 組織管理者/組織オーナ|
 |project| diff                 | プロジェクト間の差分を表示します。                                                                           |チェッカー/オーナ|
 |project| download                 | タスクや検査コメント、アノテーションなどをダウンロードします。                                                                           |オーナ|
@@ -598,6 +600,31 @@ $ annofabcli instruction upload --project_id prj1 --html instruction.html
         }
         ```
     3. Chrome開発ツールのElementタブで、html要素をコピー(Copy outerHTML)して、HTMLファイルを上書きする
+
+
+
+### job list
+ジョブ一覧を出力します。
+
+```
+# アノテーション更新のジョブ一覧を取得します（最新のジョブ1個のみ）
+$ annofabcli job list --project_id prj1 --job_type gen-annotation
+
+# タスク作成のジョブ一覧を取得します（最大200個）
+$ annofabcli job list --project_id prj1 --job_type gen-tasks --job_query '{"limit": 200}'
+
+```
+
+
+
+### organization_member list
+組織メンバ一覧を出力します。
+
+```
+# 組織org1の組織メンバ一覧を出力します。
+$ annofabcli organization_member list --organization org1
+
+```
 
 
 
