@@ -614,7 +614,7 @@ $ annofabcli project copy --project_id prj1 --dest_title "prj2-title"
 # prj1 プロジェクトをコピーして、"prj2"というプロジェクトIDのプロジェクトを作成する。
 # コピーが完了するまで待つ(処理を継続する)
 $ annofabcli project copy --project_id prj1 --dest_title "prj2-title" --dest_project_id prj2 \
- --wait_for_completion
+ --wait
 
 
 # prj1 プロジェクトの入力データと、タスクをコピーして、"prj2-title"というプロジェクトを作成する
