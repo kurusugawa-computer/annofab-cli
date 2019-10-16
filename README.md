@@ -434,7 +434,7 @@ $ annofabcli input_data delete --project_id prj1 --input_data_list input1 input2
 # input_data_nameが"sample"の入力データ一覧を出力する
 $ annofabcli input_data list --project_id prj1 --input_data_query '{"input_data_name": "sample"}' 
 
-# 入力データの詳細情報も出力する
+# 入力データの詳細情報（参照されているタスクのtask_id `parent_task_id_list`）も出力する
 $ annofabcli input_data list --project_id prj1 --input_data_query '{"input_data_name": "sample"}' --add_details
 
 # 段階的に入力データ一覧を取得する。
