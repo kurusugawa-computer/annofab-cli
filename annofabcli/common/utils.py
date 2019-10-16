@@ -192,6 +192,25 @@ def to_filename(s: str):
     return re.sub(r'[\\|/|:|?|.|"|<|>|\|]', '__', s)
 
 
+def is_file_scheme(str_value: str) -> bool:
+    """
+    file schemaかどうか
+
+    """
+    return str_value.startswith('file://')
+
+
+def get_file_scheme_path(str_value: str) -> Optional[str]:
+    """
+    file schemaのパスを取得する。file schemeでない場合は、Noneを返す
+
+    """
+    if is_file_scheme(str_value):
+        return str_value[len('file://'):]
+    else:
+        return None
+
+
 def isoduration_to_hour(duration):
     """
     ISO 8601 duration を 時間に変換する

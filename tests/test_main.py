@@ -107,10 +107,11 @@ class TestInputData:
 
     def test_put_input_data(self):
         csv_file = str(data_path / "input_data2.csv")
-        # スキップするバージョン
-        main([self.command_name, 'put', '--project_id', project_id, '--csv', csv_file, '--yes'])
-        # 上書きするバージョン
-        # main([self.command_name, 'put', '--project_id', project_id, '--csv', csv_file, '--overwrite', '--yes'])
+        main([self.command_name, 'put', '--project_id', project_id, '--csv', csv_file, '--overwrite', '--yes'])
+
+    # def test_put_input_data_with_zip(self):
+    #     pass
+    #     # ジョブ登録されてテストに失敗するため、実施しない
 
 
 class TestInspectionComment:
