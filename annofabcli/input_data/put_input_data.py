@@ -16,6 +16,7 @@ from dataclasses_json import dataclass_json
 import annofabcli
 from annofabcli import AnnofabApiFacade
 from annofabcli.common.cli import AbstractCommandLineInterface, ArgumentParser, build_annofabapi_resource_and_login
+from annofabcli.common.utils import get_file_scheme_path, is_file_scheme
 
 logger = logging.getLogger(__name__)
 
@@ -38,15 +39,26 @@ class PutInputData(AbstractCommandLineInterface):
     """
     def put_input_data(self, project_id: str, csv_input_data: CsvInputData,
                        last_updated_datetime: Optional[str] = None):
-        request_body = {
-            'input_data_name': csv_input_data.input_data_name,
-            'input_data_path': csv_input_data.input_data_path,
-            'sign_required': csv_input_data.sign_required,
-        }
-        if last_updated_datetime is not None:
-            request_body.update({'last_updated_datetime': last_updated_datetime})
+        if is_file_scheme(csv_input_data.input_data_path):
+            request_body = {
+                'input_data_name': csv_input_data.input_data_name,
+                'sign_required': csv_input_data.sign_required,
+            }
+            file_path = get_file_scheme_path(csv_input_data.input_data_path)
+            logger.debug(f"'{file_path}'を入力データとして登録します。")
+            self.service.wrapper.put_input_data_from_file(project_id, input_data_id=csv_input_data.input_data_id,
+                                                          file_path=file_path, request_body=request_body)
 
-        self.service.api.put_input_data(project_id, csv_input_data.input_data_id, request_body=request_body)
+        else:
+            request_body = {
+                'input_data_name': csv_input_data.input_data_name,
+                'input_data_path': csv_input_data.input_data_path,
+                'sign_required': csv_input_data.sign_required,
+            }
+            if last_updated_datetime is not None:
+                request_body.update({'last_updated_datetime': last_updated_datetime})
+
+            self.service.api.put_input_data(project_id, csv_input_data.input_data_id, request_body=request_body)
 
     def confirm_put_input_data(self, csv_input_data: CsvInputData, alread_exists: bool = False) -> bool:
 
@@ -80,13 +92,22 @@ class PutInputData(AbstractCommandLineInterface):
 
             last_updated_datetime = None
             input_data_id = csv_input_data.input_data_id
+            input_data_path = csv_input_data.input_data_path
             input_data = self.get_input_data(project_id, input_data_id)
+
             if input_data is not None:
                 if overwrite:
                     logger.debug(f"input_data_id={input_data_id} はすでに存在します。")
                     last_updated_datetime = input_data['updated_datetime']
                 else:
                     logger.debug(f"input_data_id={input_data_id} がすでに存在するのでスキップします。")
+                    continue
+
+            file_path = get_file_scheme_path(input_data_path)
+            logger.debug(f"csv_input_data={csv_input_data}")
+            if file_path is not None:
+                if not Path(file_path).exists():
+                    logger.warning(f"{input_data_path} は存在しません。")
                     continue
 
             if not self.confirm_put_input_data(csv_input_data, alread_exists=(last_updated_datetime is not None)):
@@ -112,7 +133,7 @@ class PutInputData(AbstractCommandLineInterface):
     def get_input_data_list_from_csv(csv_path: Path) -> List[CsvInputData]:
         def create_input_data(e):
             input_data_id = e.input_data_id if not pandas.isna(e.input_data_id) else str(uuid.uuid4())
-            sign_required = strtobool(str(e.sign_required)) if not pandas.isna(e.sign_required) else None
+            sign_required = bool(strtobool(str(e.sign_required))) if not pandas.isna(e.sign_required) else None
             return CsvInputData(input_data_name=e.input_data_name, input_data_path=e.input_data_path,
                                 input_data_id=input_data_id, sign_required=sign_required)
 
@@ -224,6 +245,7 @@ def parse_args(parser: argparse.ArgumentParser):
         help=('入力データが記載されたCVファイルのパスを指定してください。'
               'CSVのフォーマットは、「1列目:input_data_name(required), 2列目:input_data_path(required), 3列目:input_data_id, '
               '4列目:sign_required(bool), ヘッダ行なし, カンマ区切り」です。'
+              'input_data_pathの先頭が`file://`の場合、ローカルのファイルを入力データとして登録します。 '
               'input_data_idが空の場合はUUIDv4になります。'
               '各項目の詳細は `putInputData` API を参照してください。'))
 

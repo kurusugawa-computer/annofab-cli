@@ -103,8 +103,8 @@ def get_list_from_args(str_list: Optional[List[str]] = None) -> List[str]:
         return str_list
 
     str_value = str_list[0]
-    if str_value.startswith('file://'):
-        path = str_value[len('file://'):]
+    path = annofabcli.utils.get_file_scheme_path(str_value)
+    if path is not None:
         return annofabcli.utils.read_lines_except_blank_line(path)
     else:
         return str_list
@@ -133,8 +133,8 @@ def get_json_from_args(target: Optional[str] = None) -> Any:
     if target is None:
         return None
 
-    if target.startswith('file://'):
-        path = target[len('file://'):]
+    path = annofabcli.utils.get_file_scheme_path(target)
+    if path is not None:
         with open(path, encoding="utf-8") as f:
             return json.load(f)
     else:
