@@ -121,13 +121,15 @@ class PutInputData(AbstractCommandLineInterface):
         input_data_list = [create_input_data(e) for e in df.itertuples()]
         return input_data_list
 
-    def put_input_data_from_zip_file(self, project_id: str, zip_file: Path, wait: bool) -> None:
+    def put_input_data_from_zip_file(self, project_id: str, zip_file: Path,
+                                     input_data_name_for_zip: Optional[str] = None, wait: bool = False) -> None:
         """
         zipファイルを入力データとして登録する
 
         Args:
             project_id: 入力データの登録先プロジェクトのプロジェクトID
             zip_file: 入力データとして登録するzipファイルのパス
+            input_data_name_for_zip: zipファイルのinput_data_name
             wait: 入力データの登録が完了するまで待つかどうか
 
         """
@@ -135,8 +137,15 @@ class PutInputData(AbstractCommandLineInterface):
         project_title = self.facade.get_project_title(project_id)
         logger.info(f"{project_title} に、{str(zip_file)} を登録します。")
 
+        request_body = {}
+        if input_data_name_for_zip is not None:
+            request_body["input_data_name"] = input_data_name_for_zip
+
         self.service.wrapper.put_input_data_from_file(project_id, input_data_id=str(uuid.uuid4()),
-                                                      file_path=str(zip_file), content_type="application/zip")
+                                                      file_path=str(zip_file), content_type="application/zip",
+                                                      request_body=request_body)
+        logger.info(f"入力データの登録中です（サーバ側の処理）。")
+
         if wait:
             MAX_JOB_ACCESS = 60
             JOB_ACCESS_INTERVAL = 60
@@ -173,6 +182,9 @@ class PutInputData(AbstractCommandLineInterface):
             if args.wait:
                 logger.warning(f"`--csv`オプションを指定しているとき、`--wait`オプションは無視されます。")
 
+            if args.input_data_name_for_zip:
+                logger.warning(f"`--csv`オプションを指定しているとき、`--input_data_name_for_zip`オプションは無視されます。")
+
         return True
 
     def main(self):
@@ -188,7 +200,8 @@ class PutInputData(AbstractCommandLineInterface):
             self.put_input_data_list(project_id, input_data_list=input_data_list, overwrite=args.overwrite)
 
         elif args.zip is not None:
-            self.put_input_data_from_zip_file(project_id, zip_file=Path(args.zip), wait=args.wait)
+            self.put_input_data_from_zip_file(project_id, zip_file=Path(args.zip),
+                                              input_data_name_for_zip=args.input_data_name_for_zip, wait=args.wait)
 
         else:
             print(f"引数が不正です。", file=sys.stderr)
@@ -219,6 +232,11 @@ def parse_args(parser: argparse.ArgumentParser):
     parser.add_argument('--overwrite', action='store_true',
                         help='指定した場合、input_data_idがすでに存在していたら上書きします。指定しなければ、スキップします。'
                         '`--csv`を指定したときのみ有効なオプションです。')
+
+    parser.add_argument(
+        '--input_data_name_for_zip', type=str,
+        help='入力データとして登録するzipファイルのinput_data_nameを指定してください。省略した場合、`--zip`のパスになります。'
+        '`--zip`を指定したときのみ有効なオプションです。')
 
     parser.add_argument('--wait', action='store_true', help=("入力データの登録が完了するまで待ちます。最大60分間待ちます。"
                                                              "`--zip`を指定したときのみ有効なオプションです。"))
