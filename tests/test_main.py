@@ -150,6 +150,10 @@ class TestInstruction:
 
 
 class TestProject:
+    # def test_copy_project(self):
+    #     # ジョブ登録されると、後続のテストが実行できなくなるので、存在しないプロジェクトIDを渡す
+    #     main(['project', 'copy', '--project_id', 'not_exists_project_id', '--dest_title', 'copy-project'])
+
     def test_diff_project(self):
         main(['project', 'diff', project_id, project_id])
 

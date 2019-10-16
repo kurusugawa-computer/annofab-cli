@@ -80,8 +80,7 @@ class CopyProject(AbstractCommandLineInterface):
             copy_options[key] = getattr(args, key)
 
         self.copy_project(args.project_id, dest_project_id=dest_project_id, dest_title=args.dest_title,
-                          dest_overview=args.dest_overview, copy_options=copy_options,
-                          wait_for_completion=args.wait_for_completion)
+                          dest_overview=args.dest_overview, copy_options=copy_options, wait_for_completion=args.wait)
 
 
 def main(args):
@@ -106,8 +105,8 @@ def parse_args(parser: argparse.ArgumentParser):
     parser.add_argument('--copy_supplementaly_data', action='store_true', help="「補助情報」をコピーするかどうかを指定します。")
     parser.add_argument('--copy_instructions', action='store_true', help="「作業ガイド」をコピーするかどうかを指定します。")
 
-    parser.add_argument('--wait_for_completion', action='store_true', help=("プロジェクトのコピーが完了するまで待ちます。"
-                                                                            "1分ごとにプロジェクトのコピーが完了したかを確認し、最大15分間待ちます。"))
+    parser.add_argument('--wait', action='store_true', help=("プロジェクトのコピーが完了するまで待ちます。"
+                                                             "1分ごとにプロジェクトのコピーが完了したかを確認し、最大15分間待ちます。"))
 
     parser.set_defaults(subcommand_func=main)
 

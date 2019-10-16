@@ -112,7 +112,7 @@ class ComleteTasks(AbstractCommandLineInterface):
             return arg_inspection["inspection_id"] in target_inspection_id_list
 
         self.service.wrapper.update_status_of_inspections(project_id, task_id, input_data_id, filter_inspection,
-                                                          inspection_status)
+                                                          inspection_status.value)
         logger.debug(f"{task_id}, {input_data_id}, {len(inspection_list)}件 検査コメントの状態を変更")
 
     def complete_acceptance_task(self, project_id: str, task: Task, inspection_status: InspectionStatus,
@@ -129,32 +129,8 @@ class ComleteTasks(AbstractCommandLineInterface):
                                               inspection_status=inspection_status)
 
         # タスクの状態を検査する
-        if self.validate_task(project_id, task_id):
-            self.facade.complete_task(project_id, task_id, account_id)
-            logger.info(f"{task_id}: タスクを受入完了にした")
-        else:
-            logger.warning(f"{task_id}, タスク検査で警告/エラーがあったので、タスクを受入完了できなかった")
-            self.facade.change_to_break_phase(project_id, task_id, account_id)
-
-    def validate_task(self, project_id: str, task_id: str) -> bool:
-        # Validation
-        validation, _ = self.service.api.get_task_validation(project_id, task_id)
-        validation_inputs = validation["inputs"]
-        is_valid = True
-        for validation in validation_inputs:
-            input_data_id = validation["input_data_id"]
-            inspection_summary = validation["inspection_summary"]
-            if inspection_summary in ["unprocessed", "new_unprocessed_inspection"]:
-                logger.warning(f"{task_id}, {input_data_id}, {inspection_summary}, 未処置の検査コメントがある。")
-                is_valid = False
-
-            annotation_summaries = validation["annotation_summaries"]
-            if len(annotation_summaries) > 0:
-                logger.warning(
-                    f"{task_id}, {input_data_id}, {inspection_summary}, アノテーションにエラーがある。{annotation_summaries}")
-                is_valid = False
-
-        return is_valid
+        self.facade.complete_task(project_id, task_id, account_id)
+        logger.info(f"{task_id}: タスクを受入完了にした")
 
     def main(self):
         args = self.args
@@ -173,8 +149,8 @@ def parse_args(parser: argparse.ArgumentParser):
 
     parser.add_argument(
         '--inspection_list', type=str, required=True,
-        help=('未処置の検査コメントの一覧を指定します。指定された検査コメントの状態が変更されます。'
-              '検査コメントの一覧は `inspection_comment list_unprocessed` コマンドで出力できます。'
+        help=('未処置の検査コメントの一覧をJSON形式で指定します。指定された検査コメントの状態が変更されます。'
+              '検査コメントの一覧は `annofabcli inspection_comment list_unprocessed` コマンドで出力できます。'
               '`file://`を先頭に付けると、JSON形式のファイルを指定できます。'
               '実際に参照する値は `task_id`, `input_data_id`, `inspection_id` です。'))
 
