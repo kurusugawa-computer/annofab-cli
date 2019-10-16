@@ -151,7 +151,20 @@ class TestInstruction:
 
 class TestJob:
     def test_list_job(self):
-        main(['job', 'list', '--project_id', project_id, '--job_type', "gen-annotation"])
+        out_file = str(out_path / 'job.csv')
+        main([
+            'job', 'list', '--project_id', project_id, '--job_type', "gen-annotation", '--format', 'csv', '--output',
+            out_file
+        ])
+
+
+class TestOrganizationMember:
+    def test_list_organization_member(self):
+        out_file = str(out_path / 'organization_member.csv')
+        main([
+            'organization_member', 'list', '--organization',
+            get_organization_name(project_id), '--format', 'csv', '--output', out_file
+        ])
 
 
 class TestProject:
