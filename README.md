@@ -223,7 +223,7 @@ $ annofabcli task reject --project_id prj1 --task_id file://tasks.txt \
 ```
 # prj1のプロジェクトメンバをCSVで出力する
 $ annofabcli project_member list --project_id prj1 --format csv --output members.csv \
- --csv_format '{"columns": ["user_id","member_role"],"header":false}' 
+ --csv_format '{"columns": ["user_id","member_role","sampling_inspection_rate","sampling_acceptance_rate"],"header":false}' 
 
 
 # members.csvの中身を確認
