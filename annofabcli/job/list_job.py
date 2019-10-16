@@ -36,7 +36,7 @@ class ListJob(AbstractCommandLineInterface):
 
     def print_job_list(self, project_id: str, job_type: JobType, job_query: Optional[Dict[str, Any]] = None):
         """
-        ジョブ一覧一覧を出力する
+        ジョブ一覧を出力する
 
         Args:
             project_id: 対象のproject_id
