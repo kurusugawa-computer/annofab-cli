@@ -132,7 +132,6 @@ class ComleteTasks(AbstractCommandLineInterface):
         self.facade.complete_task(project_id, task_id, account_id)
         logger.info(f"{task_id}: タスクを受入完了にした")
 
-
     def main(self):
         args = self.args
 
