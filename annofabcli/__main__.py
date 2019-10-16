@@ -8,6 +8,7 @@ import annofabcli.filesystem.subcommand_filesystem
 import annofabcli.input_data.subcommand_input_data
 import annofabcli.inspection_comment.subcommand_inspection_comment
 import annofabcli.instruction.subcommand_instruction
+import annofabcli.job.subcommand_job
 import annofabcli.project.subcommand_project
 import annofabcli.project_member.subcommand_project_member
 import annofabcli.statistics.subcommand_statistics
@@ -37,6 +38,7 @@ def main(arguments: Optional[Sequence[str]] = None):
     annofabcli.input_data.subcommand_input_data.add_parser(subparsers)
     annofabcli.inspection_comment.subcommand_inspection_comment.add_parser(subparsers)
     annofabcli.instruction.subcommand_instruction.add_parser(subparsers)
+    annofabcli.job.subcommand_job.add_parser(subparsers)
     annofabcli.project.subcommand_project.add_parser(subparsers)
     annofabcli.project_member.subcommand_project_member.add_parser(subparsers)
     annofabcli.task.subcommand_task.add_parser(subparsers)

@@ -149,6 +149,11 @@ class TestInstruction:
         main(['instruction', 'upload', '--project_id', project_id, '--html', html_file])
 
 
+class TestJob:
+    def test_list_job(self):
+        main(['job', 'list', '--project_id', project_id, '--job_type', "gen-annotation"])
+
+
 class TestProject:
     # def test_copy_project(self):
     #     # ジョブ登録されると、後続のテストが実行できなくなるので、存在しないプロジェクトIDを渡す
