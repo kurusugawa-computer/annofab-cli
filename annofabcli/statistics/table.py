@@ -8,7 +8,7 @@ from annofabapi.dataclass.annotation import SimpleAnnotationDetail
 from annofabapi.models import InputDataId, Inspection, Task, TaskHistory, TaskId, TaskPhase
 
 import annofabcli
-from annofabcli.statistics.database import AnnotationDict, Database
+from annofabcli.statistics.database import Database
 
 logger = logging.getLogger(__name__)
 
@@ -63,14 +63,6 @@ class Table:
             task_id_list = [t["task_id"] for t in self._get_task_list()]
             self._inspections_dict = self.database.read_inspections_from_json(task_id_list)
             return self._inspections_dict
-
-    def _get_annotations_dict(self) -> AnnotationDict:
-        if self._annotations_dict is not None:
-            return self._annotations_dict
-        else:
-            task_list = self._get_task_list()
-            self._annotations_dict = self.database.read_annotations_from_simple_annotion_dir(task_list)
-            return self._annotations_dict
 
     @staticmethod
     def _inspection_condition(inspection_arg, exclude_reply: bool, only_error_corrected: bool):
@@ -319,9 +311,11 @@ class Table:
         """
         def set_annotation_info(arg_task):
             total_annotation_count = 0
+
             input_data_id_list = arg_task["input_data_id_list"]
-            for input_data_id in input_data_id_list:
-                annotation_list = self.database.read_annotations(arg_task['task_id'], input_data_id)
+            input_data_dict = self.database.read_annotations(arg_task['task_id'], input_data_id_list)
+
+            for annotation_list in input_data_dict.values():
                 total_annotation_count += len(annotation_list)
 
             arg_task["annotation_count"] = total_annotation_count
@@ -344,6 +338,7 @@ class Table:
             arg_task["inspection_count"] = inspection_count
             arg_task["input_data_count_of_inspection"] = input_data_count_of_inspection
 
+        logger.info(f"execute `create_task_df` function")
         tasks = self._get_task_list()
         task_histories_dict = self.database.read_task_histories_from_checkpoint()
         inspections_dict = self._get_inspections_dict()
@@ -390,11 +385,11 @@ class Table:
             new_task["input_data_count"] = len(task["input_data_id_list"])
 
             input_data_id_list = task["input_data_id_list"]
+            input_data_dict = self.database.read_annotations(task_id, input_data_id_list)
 
             for label_name in self.label_dict.values():
                 annotation_count = 0
-                for input_data_id in input_data_id_list:
-                    annotation_list = self.database.read_annotations(task_id, input_data_id)
+                for annotation_list in input_data_dict.values():
                     annotation_count += len([e for e in annotation_list if e.label == label_name])
 
                 new_task[label_name] = annotation_count

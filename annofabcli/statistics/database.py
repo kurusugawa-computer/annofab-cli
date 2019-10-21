@@ -21,7 +21,7 @@ from annofabcli.common.exceptions import AnnofabCliException
 logger = logging.getLogger(__name__)
 
 InputDataDict = Dict[InputDataId, List[SimpleAnnotationDetail]]
-AnnotationDict = Dict[TaskId, InputDataDict]
+
 
 
 class Database:
@@ -110,36 +110,17 @@ class Database:
         else:
             return True
 
-    def read_annotations_from_simple_annotion_dir(self, task_list: List[Task]) -> AnnotationDict:
-        logger.debug(f"reading {self.annotations_zip_path}")
-
-        tasks_dict: AnnotationDict = {}
-        iter_parser = lazy_parse_simple_annotation_zip(self.annotations_zip_path)
-        for parser in iter_parser:
-            simple_annotation = parser.parse()
-            task_id = simple_annotation.task_id
-            if not self.task_exists(task_list, task_id):
-                continue
-
-            input_data_id = simple_annotation.input_data_id
-
-            input_data_dict = tasks_dict.get(task_id)
-            if input_data_dict is None:
-                input_data_dict = {}
-
-            input_data_dict[input_data_id] = simple_annotation.details
-            tasks_dict[task_id] = input_data_dict
-
-        return tasks_dict
-
-    def read_annotations(self, task_id: str, input_data_id: str) -> List[SimpleAnnotationDetail]:
-        json_path = f"{task_id}/{input_data_id}.json"
-        logger.debug(f"reading {json_path} in {self.annotations_zip_path}")
+    def read_annotations(self, task_id: str, input_data_id_list: List[str]) -> InputDataDict:
+        input_data_dict: Dict[InputDataId, List[SimpleAnnotationDetail]] = {}
 
         with zipfile.ZipFile(self.annotations_zip_path, 'r') as zip_file:
-            parser = SimpleAnnotationZipParser(zip_file, json_path)
-            simple_annotation = parser.parse()
-            return simple_annotation.details
+            for input_data_id in input_data_id_list:
+                json_path = f"{task_id}/{input_data_id}.json"
+                parser = SimpleAnnotationZipParser(zip_file, json_path)
+                simple_annotation = parser.parse()
+                input_data_dict[input_data_id] = simple_annotation.details
+
+        return input_data_dict
 
     def read_inspections_from_json(self,
                                    task_id_list: List[TaskId]) -> Dict[TaskId, Dict[InputDataId, List[Inspection]]]:
