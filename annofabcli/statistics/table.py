@@ -69,7 +69,7 @@ class Table:
             return self._annotations_dict
         else:
             task_list = self._get_task_list()
-            self._annotations_dict = self.database.read_annotations_from_full_annotion_dir(task_list)
+            self._annotations_dict = self.database.read_annotations_from_simple_annotion_dir(task_list)
             return self._annotations_dict
 
     @staticmethod

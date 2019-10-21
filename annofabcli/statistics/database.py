@@ -4,19 +4,21 @@ import logging
 import os
 import pickle
 import shutil
+import dateutil
 from pathlib import Path
 from typing import Any, Dict, List, Optional, Set
 
 import annofabapi
 import annofabapi.utils
 import more_itertools
-from annofabapi.dataclass.annotation import FullAnnotationDetail
-from annofabapi.models import Annotation, InputDataId, Inspection, Task, TaskHistory, TaskId
-from annofabapi.parser import lazy_parse_full_annotation_zip
+from annofabapi.dataclass.annotation import SimpleAnnotationDetail
+from annofabapi.models import InputDataId, Inspection, Task, TaskHistory, TaskId, JobStatus
+from annofabapi.parser import lazy_parse_simple_annotation_zip
+from annofabcli.common.exceptions import AnnofabCliException
 
 logger = logging.getLogger(__name__)
 
-AnnotationDict = Dict[TaskId, Dict[InputDataId, List[FullAnnotationDetail]]]
+AnnotationDict = Dict[TaskId, Dict[InputDataId, List[SimpleAnnotationDetail]]]
 
 
 class Database:
@@ -50,8 +52,7 @@ class Database:
         # ダウンロードした一括情報
         self.tasks_json_path = Path(f"{self.checkpoint_dir}/tasks.json")
         self.inspection_json_path = Path(f"{self.checkpoint_dir}/inspections.json")
-        self.annotations_dir_path = Path(f"{self.checkpoint_dir}/full-annotations")
-        self.annotations_zip_path = Path(f"{self.checkpoint_dir}/full-annotations.zip")
+        self.annotations_zip_path = Path(f"{self.checkpoint_dir}/simple-annotations.zip")
 
     def __write_checkpoint(self, obj, pickle_file_name):
         """
@@ -99,14 +100,6 @@ class Database:
         return result if result is not None else []
 
     @staticmethod
-    def _read_annotations_from_json(input_data_json: Path) -> List[Annotation]:
-        with open(str(input_data_json)) as f:
-            full_annotation = json.load(f)
-
-        annotation_list = full_annotation["detail"]
-        return annotation_list
-
-    @staticmethod
     def task_exists(task_list: List[Task], task_id) -> bool:
         task = more_itertools.first_true(task_list, pred=lambda e: e["task_id"] == task_id)
         if task is None:
@@ -114,24 +107,24 @@ class Database:
         else:
             return True
 
-    def read_annotations_from_full_annotion_dir(self, task_list: List[Task]) -> AnnotationDict:
-        logger.debug(f"reading {self.annotations_dir_path}")
+    def read_annotations_from_simple_annotion_dir(self, task_list: List[Task]) -> AnnotationDict:
+        logger.debug(f"reading {self.annotations_zip_path}")
 
         tasks_dict: AnnotationDict = {}
-        iter_parser = lazy_parse_full_annotation_zip(self.annotations_zip_path)
+        iter_parser = lazy_parse_simple_annotation_zip(self.annotations_zip_path)
         for parser in iter_parser:
-            full_annotation = parser.parse()
-            task_id = full_annotation.task_id
+            simple_annotation = parser.parse()
+            task_id = simple_annotation.task_id
             if not self.task_exists(task_list, task_id):
                 continue
 
-            input_data_id = full_annotation.input_data_id
+            input_data_id = simple_annotation.input_data_id
 
             input_data_dict = tasks_dict.get(task_id)
             if input_data_dict is None:
                 input_data_dict = {}
 
-            input_data_dict[input_data_id] = full_annotation.detail
+            input_data_dict[input_data_id] = simple_annotation.detail
             tasks_dict[task_id] = input_data_dict
 
         return tasks_dict
@@ -163,13 +156,30 @@ class Database:
 
         return tasks_dict
 
-    def _download_full_annotation(self, dest_path: str):
-        _, response = self.annofab_service.api.get_archive_full_with_pro_id(self.project_id)
+    def _download_simple_annotation(self, dest_path: str):
+        _, response = self.annofab_service.api.get_archive_dow_with_pro_id(self.project_id)
         url = response.headers['Location']
         annofabapi.utils.download(url, dest_path)
 
+    def log_for_annotation_zip(self, project_id: str) -> None:
+        project = self.annofab_service.api.get_project(project_id)
+        last_tasks_updated_datetime = project['summary']['last_tasks_updated_datetime']
+        logger.debug(f"タスクの最終更新日時={last_tasks_updated_datetime}")
+
+        job = self.annofab_service.api.get_project_job(project_id, query_params={"type": "gen-annotation", "limit":1})[0][0]
+        logger.debug(f"アノテーションzipの最終更新日時={job['updated_datetime']}, job_status={job['job_status']}")
+
+        if job['job_status'] == JobStatus.FAILED:
+            raise AnnofabCliException("アノテーションzipの更新に失敗しています。")
+
+        if dateutil.parser.parse(last_tasks_updated_datetime) > dateutil.parser.parse(job['updated_datetime']):
+            logger.warning(f"タスクの最新更新日時よりアノテーションzipの最終更新日時の方が古いです。")
+
+
     def _download_db_file(self):
         """DBになりうるファイルをダウンロードする"""
+
+        self.log_for_annotation_zip(self.project_id)
 
         logger.debug(f"downloading {str(self.tasks_json_path)}")
         self.annofab_service.wrapper.download_project_tasks_url(self.project_id, str(self.tasks_json_path))
@@ -177,14 +187,11 @@ class Database:
         logger.debug(f"downloading {str(self.inspection_json_path)}")
         self.annofab_service.wrapper.download_project_inspections_url(self.project_id, str(self.inspection_json_path))
 
-        annotations_zip_file = f"{self.checkpoint_dir}/full-annotations.zip"
+        annotations_zip_file = f"{self.checkpoint_dir}/simple-annotations.zip"
         logger.debug(f"downloading {str(annotations_zip_file)}")
-        self._download_full_annotation(annotations_zip_file)
+        self.annofab_service.wrapper.download_annotation_archive(self.project_id, annotations_zip_file, v2=True)
         # task historiesは未完成なので、使わない
 
-        # 前のディレクトリを削除する
-        if self.annotations_dir_path.exists():
-            shutil.rmtree(str(self.annotations_dir_path))
 
     def read_tasks_from_json(self, task_query_param: Optional[Dict[str, Any]] = None,
                              ignored_task_id_list: Optional[List[TaskId]] = None) -> List[Task]:
