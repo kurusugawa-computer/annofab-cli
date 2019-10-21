@@ -30,7 +30,7 @@ class Download(AbstractCommandLineInterface):
             if latest:
                 self.service.api.post_project_tasks_update(project_id)
                 result = self.service.wrapper.wait_for_completion(project_id, job_type=JobType.GEN_TASKS_LIST,
-                                                                  job_access_interval=60, max_job_access=30)
+                                                                  job_access_interval=JOB_ACCESS_INTERVAL, max_job_access=MAX_JOB_ACCESS)
                 if result:
                     logger.info(f"タスクファイルの更新が完了しました。")
                 else:
