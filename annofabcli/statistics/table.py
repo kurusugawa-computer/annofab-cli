@@ -318,9 +318,10 @@ class Table:
             annotation_worktime_hour, inspection_worktime_hour, acceptance_worktime_hour, sum_worktime_hour
         """
         def set_annotation_info(arg_task):
-            input_data_dict = annotations_dict[arg_task["task_id"]]
             total_annotation_count = 0
-            for annotation_list in input_data_dict.values():
+            input_data_id_list = arg_task["input_data_id_list"]
+            for input_data_id in input_data_id_list:
+                annotation_list = self.database.read_annotations(arg_task['task_id'], input_data_id)
                 total_annotation_count += len(annotation_list)
 
             arg_task["annotation_count"] = total_annotation_count
@@ -346,7 +347,6 @@ class Table:
         tasks = self._get_task_list()
         task_histories_dict = self.database.read_task_histories_from_checkpoint()
         inspections_dict = self._get_inspections_dict()
-        annotations_dict = self._get_annotations_dict()
 
         for task in tasks:
             task_id = task["task_id"]
@@ -378,7 +378,6 @@ class Table:
         """
 
         tasks = self._get_task_list()
-        annotations_dict = self._get_annotations_dict()
 
         task_list = []
         for task in tasks:
@@ -390,10 +389,12 @@ class Table:
 
             new_task["input_data_count"] = len(task["input_data_id_list"])
 
-            input_data_dict = annotations_dict[task_id]
+            input_data_id_list = task["input_data_id_list"]
+
             for label_name in self.label_dict.values():
                 annotation_count = 0
-                for annotation_list in input_data_dict.values():
+                for input_data_id in input_data_id_list:
+                    annotation_list = self.database.read_annotations(task_id, input_data_id)
                     annotation_count += len([e for e in annotation_list if e.label == label_name])
 
                 new_task[label_name] = annotation_count

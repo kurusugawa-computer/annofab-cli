@@ -16,6 +16,7 @@ logger = logging.getLogger(__name__)
 
 hv.extension('bokeh')
 
+
 class Graph:
     """
     グラフを出力するクラス

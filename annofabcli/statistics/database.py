@@ -4,6 +4,7 @@ import logging
 import os
 import pickle
 import shutil
+import zipfile
 from pathlib import Path
 from typing import Any, Dict, List, Optional, Set
 
@@ -13,13 +14,14 @@ import dateutil
 import more_itertools
 from annofabapi.dataclass.annotation import SimpleAnnotationDetail
 from annofabapi.models import InputDataId, Inspection, JobStatus, Task, TaskHistory, TaskId
-from annofabapi.parser import lazy_parse_simple_annotation_zip
+from annofabapi.parser import SimpleAnnotationZipParser, lazy_parse_simple_annotation_zip
 
 from annofabcli.common.exceptions import AnnofabCliException
 
 logger = logging.getLogger(__name__)
 
-AnnotationDict = Dict[TaskId, Dict[InputDataId, List[SimpleAnnotationDetail]]]
+InputDataDict = Dict[InputDataId, List[SimpleAnnotationDetail]]
+AnnotationDict = Dict[TaskId, InputDataDict]
 
 
 class Database:
@@ -129,6 +131,15 @@ class Database:
             tasks_dict[task_id] = input_data_dict
 
         return tasks_dict
+
+    def read_annotations(self, task_id: str, input_data_id: str) -> List[SimpleAnnotationDetail]:
+        json_path = f"{task_id}/{input_data_id}.json"
+        logger.debug(f"reading {json_path} in {self.annotations_zip_path}")
+
+        with zipfile.ZipFile(self.annotations_zip_path, 'r') as zip_file:
+            parser = SimpleAnnotationZipParser(zip_file, json_path)
+            simple_annotation = parser.parse()
+            return simple_annotation.details
 
     def read_inspections_from_json(self,
                                    task_id_list: List[TaskId]) -> Dict[TaskId, Dict[InputDataId, List[Inspection]]]:
