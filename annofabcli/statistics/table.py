@@ -4,7 +4,7 @@ from typing import Any, Dict, List, Optional, Set, Tuple  # pylint: disable=unus
 
 import dateutil.parser
 import pandas as pd
-from annofabapi.dataclass.annotation import FullAnnotationDetail
+from annofabapi.dataclass.annotation import SimpleAnnotationDetail
 from annofabapi.models import InputDataId, Inspection, Task, TaskHistory, TaskId, TaskPhase
 
 import annofabcli
@@ -32,7 +32,7 @@ class Table:
     _task_id_list: Optional[List[TaskId]] = None
     _task_list: Optional[List[Task]] = None
     _inspections_dict: Optional[Dict[TaskId, Dict[InputDataId, List[Inspection]]]] = None
-    _annotations_dict: Optional[Dict[TaskId, Dict[InputDataId, List[FullAnnotationDetail]]]] = None
+    _annotations_dict: Optional[Dict[TaskId, Dict[InputDataId, List[SimpleAnnotationDetail]]]] = None
 
     def __init__(self, database: Database, task_query_param: Dict[str, Any],
                  ignored_task_id_list: Optional[List[TaskId]] = None):
@@ -391,10 +391,10 @@ class Table:
             new_task["input_data_count"] = len(task["input_data_id_list"])
 
             input_data_dict = annotations_dict[task_id]
-            for label_id, label_name in self.label_dict.items():
+            for label_name in self.label_dict.values():
                 annotation_count = 0
                 for annotation_list in input_data_dict.values():
-                    annotation_count += len([e for e in annotation_list if e.label_id == label_id])
+                    annotation_count += len([e for e in annotation_list if e.label == label_name])
 
                 new_task[label_name] = annotation_count
 

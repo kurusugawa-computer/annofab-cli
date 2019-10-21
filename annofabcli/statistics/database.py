@@ -125,7 +125,7 @@ class Database:
             if input_data_dict is None:
                 input_data_dict = {}
 
-            input_data_dict[input_data_id] = simple_annotation.detail
+            input_data_dict[input_data_id] = simple_annotation.details
             tasks_dict[task_id] = input_data_dict
 
         return tasks_dict
