@@ -4,16 +4,17 @@ import logging
 import os
 import pickle
 import shutil
-import dateutil
 from pathlib import Path
 from typing import Any, Dict, List, Optional, Set
 
 import annofabapi
 import annofabapi.utils
+import dateutil
 import more_itertools
 from annofabapi.dataclass.annotation import SimpleAnnotationDetail
-from annofabapi.models import InputDataId, Inspection, Task, TaskHistory, TaskId, JobStatus
+from annofabapi.models import InputDataId, Inspection, JobStatus, Task, TaskHistory, TaskId
 from annofabapi.parser import lazy_parse_simple_annotation_zip
+
 from annofabcli.common.exceptions import AnnofabCliException
 
 logger = logging.getLogger(__name__)
@@ -162,11 +163,14 @@ class Database:
         annofabapi.utils.download(url, dest_path)
 
     def log_for_annotation_zip(self, project_id: str) -> None:
-        project = self.annofab_service.api.get_project(project_id)
+        project, _ = self.annofab_service.api.get_project(project_id)
         last_tasks_updated_datetime = project['summary']['last_tasks_updated_datetime']
         logger.debug(f"タスクの最終更新日時={last_tasks_updated_datetime}")
 
-        job = self.annofab_service.api.get_project_job(project_id, query_params={"type": "gen-annotation", "limit":1})[0][0]
+        job = self.annofab_service.api.get_project_job(project_id, query_params={
+            "type": "gen-annotation",
+            "limit": 1
+        })[0]["list"][0]
         logger.debug(f"アノテーションzipの最終更新日時={job['updated_datetime']}, job_status={job['job_status']}")
 
         if job['job_status'] == JobStatus.FAILED:
@@ -174,7 +178,6 @@ class Database:
 
         if dateutil.parser.parse(last_tasks_updated_datetime) > dateutil.parser.parse(job['updated_datetime']):
             logger.warning(f"タスクの最新更新日時よりアノテーションzipの最終更新日時の方が古いです。")
-
 
     def _download_db_file(self):
         """DBになりうるファイルをダウンロードする"""
@@ -191,7 +194,6 @@ class Database:
         logger.debug(f"downloading {str(annotations_zip_file)}")
         self.annofab_service.wrapper.download_annotation_archive(self.project_id, annotations_zip_file, v2=True)
         # task historiesは未完成なので、使わない
-
 
     def read_tasks_from_json(self, task_query_param: Optional[Dict[str, Any]] = None,
                              ignored_task_id_list: Optional[List[TaskId]] = None) -> List[Task]:

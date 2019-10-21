@@ -93,7 +93,7 @@ def parse_args(parser: argparse.ArgumentParser):
     argument_parser = ArgumentParser(parser)
 
     argument_parser.add_project_id()
-    parser.add_argument('--output_dir', type=str, required=True, help='出力ディレクトリのパス')
+    parser.add_argument('-o', '--output_dir', type=str, required=True, help='出力ディレクトリのパス')
 
     parser.add_argument(
         '-u', '--user_id', nargs='+', help=("メンバごとの統計グラフに表示するユーザのuser_idを指定してください。"
@@ -101,7 +101,7 @@ def parse_args(parser: argparse.ArgumentParser):
                                             "file://`を先頭に付けると、一覧が記載されたファイルを指定できます。"))
 
     parser.add_argument(
-        '-tq', '--task_query', type=str, help='タスクの検索クエリをJSON形式で指定します。'
+        '-tq', '--task_query', type=str, help='タスクの検索クエリをJSON形式で指定します。指定しない場合はすべてのタスクを取得します。'
         '`file://`を先頭に付けると、JSON形式のファイルを指定できます。'
         'クエリのキーは、phase, statusのみです。[getTasks API](https://annofab.com/docs/api/#operation/getTasks) 参照')
 
