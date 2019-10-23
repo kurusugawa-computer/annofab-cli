@@ -16,8 +16,6 @@ from annofabapi.dataclass.annotation import SimpleAnnotationDetail
 from annofabapi.models import InputDataId, Inspection, JobStatus, JobType, Task, TaskHistory, TaskId
 from annofabapi.parser import SimpleAnnotationZipParser
 
-from annofabcli.common.exceptions import AnnofabCliException
-
 logger = logging.getLogger(__name__)
 
 InputDataDict = Dict[InputDataId, Dict[str, Any]]
@@ -245,7 +243,6 @@ class Database:
 
         """
 
-
         logger.debug(f"downloading {str(self.tasks_json_path)}")
         self.annofab_service.wrapper.download_project_tasks_url(self.project_id, str(self.tasks_json_path))
 
@@ -302,7 +299,6 @@ class Database:
             ignored_task_ids: 可視化対象外のtask_idのList
             should_update_annotation_zip: アノテーションzipを更新するかどうか
         """
-
 
         # 残すべきファイル
         self.filename_timestamp = "{0:%Y%m%d-%H%M%S}".format(datetime.datetime.now())
