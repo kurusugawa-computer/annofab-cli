@@ -36,7 +36,7 @@ class VisualizeStatistics(AbstractCommandLineInterface):
     統計情報を可視化する。
     """
     def visualize_statistics(self, project_id: str, work_dir: Path, output_dir: Path, task_query: Dict[str, Any],
-                             ignored_task_id_list: List[TaskId], user_id_list: List[str], update: bool = False):
+                             ignored_task_id_list: List[TaskId], user_id_list: List[str], update: bool = False, should_update_annotation_zip:bool=False):
         """
         タスク一覧を出力する
 
@@ -53,7 +53,7 @@ class VisualizeStatistics(AbstractCommandLineInterface):
 
         database = Database(self.service, project_id, str(checkpoint_dir))
         if update:
-            database.update_db(task_query, ignored_task_id_list)
+            database.update_db(task_query, ignored_task_id_list, should_update_annotation_zip=should_update_annotation_zip)
 
         table_obj = Table(database, task_query, ignored_task_id_list)
         write_project_name_file(self.service, project_id, output_dir)
@@ -86,7 +86,7 @@ class VisualizeStatistics(AbstractCommandLineInterface):
 
         self.visualize_statistics(args.project_id, output_dir=Path(args.output_dir), work_dir=Path(args.work_dir),
                                   task_query=task_query, ignored_task_id_list=ignored_task_id_list,
-                                  user_id_list=user_id_list, update=not args.not_update)
+                                  user_id_list=user_id_list, update=not args.not_update, should_update_annotation_zip=args.update_annotation)
 
 
 def main(args):
