@@ -8,11 +8,9 @@ from annofabapi.dataclass.annotation import SimpleAnnotationDetail
 from annofabapi.models import InputDataId, Inspection, Task, TaskHistory, TaskId, TaskPhase
 
 import annofabcli
-from annofabcli.statistics.database import Database, AnnotationDict
+from annofabcli.statistics.database import AnnotationDict, Database
 
 logger = logging.getLogger(__name__)
-
-
 
 
 class Table:
@@ -79,10 +77,10 @@ class Table:
         annotation_summary["total_count"] = len(annotation_list)
 
         # labelごとのアノテーション数を算出
-        for label_id, label_name in self.label_dict.items():
+        for label_name in self.label_dict.values():
             annotation_count = 0
             key = f"label_{label_name}"
-            annotation_count += len([e for e in annotation_list if e["label_id"] == label_id])
+            annotation_count += len([e for e in annotation_list if e.label == label_name])
             annotation_summary[key] = annotation_count
 
         return annotation_summary
@@ -336,10 +334,10 @@ class Table:
             total_annotation_count = 0
 
             input_data_id_list = arg_task["input_data_id_list"]
-            input_data_dict = annotations_dict["task_id"]
+            input_data_dict = annotations_dict[arg_task["task_id"]]
 
             for input_data_id in input_data_id_list:
-                total_annotation_count += len(input_data_dict[input_data_id]["total_count"])
+                total_annotation_count += input_data_dict[input_data_id]["total_count"]
 
             arg_task["annotation_count"] = total_annotation_count
 
