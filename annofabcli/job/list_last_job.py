@@ -17,16 +17,21 @@ class ListLastJob(AbstractCommandLineInterface):
     """
     ジョブ一覧を表示する。
     """
-    def get_last_job(self, project_id: str, job_type: JobType) -> JobInfo:
+    def get_last_job(self, project_id: str, job_type: JobType) -> Optional[JobInfo]:
         """
-        最新のジョブを取得する。
+        最新のジョブを取得する。ジョブが存在しない場合はNoneを返す。
+
         """
         query_params = {"type": job_type.value}
         content, _ = self.service.api.get_project_job(project_id, query_params)
         job_list = content["list"]
-        return job_list[-1]
+        if len(job_list) == 0:
+            logger.info(f"project_id={project_id}にjob_type={job_type.value}のジョブは存在しませんでした。")
+            return None
+        else:
+            return job_list[-1]
 
-    def add_properties_to_job(self, job: JobInfo, add_details: bool = False,
+    def add_properties_to_job(self, job: JobInfo, project_id: str, add_details: bool = False,
                               project: Optional[Project] = None) -> JobInfo:
         """
         ジョブ情報にプロパティを追加する。
@@ -39,11 +44,10 @@ class ListLastJob(AbstractCommandLineInterface):
         Returns:
 
         """
-        project_id = job["project_id"]
-        job["project_title"] = project["title"]
+        if project is None:
+            project, _ = self.service.api.get_project(project_id)
 
-        if project is not None:
-            project = self.service.api.get_project(project_id)
+        job["project_title"] = project["title"]
 
         if add_details:
             job["task_last_updated_datetime"] = project["summary"]["last_tasks_updated_datetime"]
@@ -54,7 +58,7 @@ class ListLastJob(AbstractCommandLineInterface):
         return job
 
     @annofabcli.utils.allow_404_error
-    def get_project(self, project_id: str) -> Dict[str, Any]:
+    def get_project(self, project_id: str) -> Project:
         project, _ = self.service.api.get_project(project_id)
         return project
 
@@ -64,12 +68,17 @@ class ListLastJob(AbstractCommandLineInterface):
 
         for project_id in project_id_list:
             project = self.get_project(project_id)
+
             if project is None:
                 logger.warning(f"project_id='{project_id}' のプロジェクトは存在しませんでした。")
                 continue
 
             job = self.get_last_job(project_id, job_type)
-            job = self.add_properties_to_job(job, add_details=add_details, project=project)
+            if job is None:
+                job = {"project_id": project_id, "project_title": project["title"]}
+            else:
+                job = self.add_properties_to_job(job, project_id=project_id, add_details=add_details, project=project)
+
             job_list.append(job)
 
         return job_list
@@ -88,7 +97,18 @@ class ListLastJob(AbstractCommandLineInterface):
         self.print_according_to_format(job_list)
 
     def get_project_id_list(self, organization_name: str) -> List[str]:
-        project_list = self.service.wrapper.get_all_projects_of_organization(organization_name)
+        """
+        進行中で自分自身が所属する project_id を取得する
+
+        Args:
+            organization_name:
+
+        Returns:
+
+        """
+        my_account, _ = self.service.api.get_my_account()
+        query_params = {"status": "active", "account_id": my_account["account_id"]}
+        project_list = self.service.wrapper.get_all_projects_of_organization(organization_name, query_params=query_params)
         return [e["project_id"] for e in project_list]
 
     def main(self):
