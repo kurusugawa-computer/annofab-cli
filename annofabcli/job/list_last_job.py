@@ -108,7 +108,8 @@ class ListLastJob(AbstractCommandLineInterface):
         """
         my_account, _ = self.service.api.get_my_account()
         query_params = {"status": "active", "account_id": my_account["account_id"]}
-        project_list = self.service.wrapper.get_all_projects_of_organization(organization_name, query_params=query_params)
+        project_list = self.service.wrapper.get_all_projects_of_organization(organization_name,
+                                                                             query_params=query_params)
         return [e["project_id"] for e in project_list]
 
     def main(self):
