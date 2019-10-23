@@ -157,6 +157,13 @@ class TestJob:
             out_file
         ])
 
+    def test_list_last_job(self):
+        out_file = str(out_path / 'job.csv')
+        main([
+            'job', 'list_last', '--project_id', project_id, '--job_type', "gen-annotation", '--format', 'csv', '--output',
+            out_file
+        ])
+
 
 class TestOrganizationMember:
     def test_list_organization_member(self):
