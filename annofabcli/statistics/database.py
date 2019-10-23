@@ -37,9 +37,6 @@ class Database:
     # pickleファイルのprfixに付けるタイムスタンプ
     filename_timestamp: str
 
-    zip_file: Optional[zipfile.ZipFile] = None
-    """Simpleアノテーションzipのファイルオブジェク"""
-
     #############################################
     # Private
     #############################################
@@ -380,6 +377,3 @@ class Database:
 
         return tasks_dict
 
-    def close_zip_file(self):
-        if self.zip_file is not None:
-            self.zip_file.close()
