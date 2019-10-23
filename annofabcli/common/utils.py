@@ -226,7 +226,7 @@ def isoduration_to_hour(duration):
 
 def allow_404_error(function):
     """
-    Not Found Errorを無視(許容)して、処理する。
+    Not Found Error(404)を無視(許容)して、処理する。Not Foundのとき戻りはNoneになる。
     リソースの存在確認などに利用する。
     try-exceptを行う。また404 Errorが発生したときのエラーログを無効化する
     """
