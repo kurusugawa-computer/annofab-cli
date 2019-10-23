@@ -173,7 +173,7 @@ class Table:
         """
         ラベル情報を設定する
         Returns:
-            key: label_id, value: label_name(ja)
+            key: label_id, value: label_name(en)
 
         """
         label_dict = {}
@@ -181,7 +181,7 @@ class Table:
         for e in labels:
             label_id = e["label_id"]
             messages_list = e["label_name"]["messages"]
-            label_name = [m["message"] for m in messages_list if m["lang"] == "ja-JP"][0]
+            label_name = [m["message"] for m in messages_list if m["lang"] == "en-US"][0]
 
             label_dict[label_id] = label_name
 
