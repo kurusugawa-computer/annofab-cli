@@ -334,14 +334,14 @@ class Database:
         Returns:
 
         """
-        from dateutil.parser import parse
         updated_task_ids = set()
         for new_task in new_tasks:
             filterd_list = [e for e in old_tasks if e["task_id"] == new_task["task_id"]]
             if len(filterd_list) == 0:
                 continue
             old_task = filterd_list[0]
-            if parse(old_task["updated_datetime"]) == parse(new_task["updated_datetime"]):
+            if dateutil.parser.parse(old_task["updated_datetime"]) == dateutil.parser.parse(
+                    new_task["updated_datetime"]):
                 updated_task_ids.add(new_task["task_id"])
 
         return updated_task_ids
@@ -376,4 +376,3 @@ class Database:
             tasks_dict.update({task_id: task_histories})
 
         return tasks_dict
-

@@ -78,8 +78,6 @@ class VisualizeStatistics(AbstractCommandLineInterface):
         graph_obj.write_プロジェクト全体のヒストグラム(task_df)
         graph_obj.write_アノテーションあたり作業時間(task_df=task_df, first_annotation_user_id_list=user_id_list)
 
-        table_obj.database.close_zip_file()
-
     def main(self):
         args = self.args
         task_query = annofabcli.common.cli.get_json_from_args(args.task_query)
