@@ -70,7 +70,7 @@ def parse_args(parser: argparse.ArgumentParser):
     job_choices = [e.value for e in JobType]
     argument_parser.add_project_id()
 
-    parser.add_argument('--job_type', type=str, choices=job_choices, help='ジョブタイプを指定します。')
+    parser.add_argument('--job_type', type=str, choices=job_choices, required=True, help='ジョブタイプを指定します。')
 
     # クエリがうまく動かないので、コメントアウトする
     # parser.add_argument(

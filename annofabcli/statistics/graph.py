@@ -14,6 +14,8 @@ from annofabcli.statistics.table import Table
 
 logger = logging.getLogger(__name__)
 
+hv.extension('bokeh')
+
 
 class Graph:
     """

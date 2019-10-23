@@ -4,7 +4,7 @@ from typing import Any, Dict, List, Optional, Set, Tuple  # pylint: disable=unus
 
 import dateutil.parser
 import pandas as pd
-from annofabapi.dataclass.annotation import FullAnnotationDetail
+from annofabapi.dataclass.annotation import SimpleAnnotationDetail
 from annofabapi.models import InputDataId, Inspection, Task, TaskHistory, TaskId, TaskPhase
 
 import annofabcli
@@ -32,7 +32,7 @@ class Table:
     _task_id_list: Optional[List[TaskId]] = None
     _task_list: Optional[List[Task]] = None
     _inspections_dict: Optional[Dict[TaskId, Dict[InputDataId, List[Inspection]]]] = None
-    _annotations_dict: Optional[Dict[TaskId, Dict[InputDataId, List[FullAnnotationDetail]]]] = None
+    _annotations_dict: Optional[Dict[TaskId, Dict[InputDataId, Dict[str, Any]]]] = None
 
     def __init__(self, database: Database, task_query_param: Dict[str, Any],
                  ignored_task_id_list: Optional[List[TaskId]] = None):
@@ -69,8 +69,21 @@ class Table:
             return self._annotations_dict
         else:
             task_list = self._get_task_list()
-            self._annotations_dict = self.database.read_annotations_from_full_annotion_dir(task_list)
+            self._annotations_dict = self.database.read_annotation_summary(task_list, self._create_annotation_summary)
             return self._annotations_dict
+
+    def _create_annotation_summary(self, annotation_list: List[SimpleAnnotationDetail]) -> Dict[str, Any]:
+        annotation_summary = {}
+        annotation_summary["total_count"] = len(annotation_list)
+
+        # labelごとのアノテーション数を算出
+        for label_name in self.label_dict.values():
+            annotation_count = 0
+            key = f"label_{label_name}"
+            annotation_count += len([e for e in annotation_list if e.label == label_name])
+            annotation_summary[key] = annotation_count
+
+        return annotation_summary
 
     @staticmethod
     def _inspection_condition(inspection_arg, exclude_reply: bool, only_error_corrected: bool):
@@ -127,27 +140,9 @@ class Table:
         self.label_dict = self.get_labels_dict(annotaion_specs["labels"])
 
         logger.debug("annofab_service.wrapper.get_all_project_members()")
-        self.project_members_dict = self.get_project_members_dict()
+        self.project_members_dict = self._get_project_members_dict()
 
-    @staticmethod
-    def _get_acceptance_count_and_histories(task_histories: List[TaskHistory]) -> List[Tuple[int, TaskHistory]]:
-        """
-        受入で差し戻しごとにグループ分けする。
-        """
-
-        new_list: List[Tuple[int, TaskHistory]] = []
-        rejections_by_phase = 0
-        for i, history in enumerate(task_histories):
-            if history['phase'] == 'annotation':
-                if i - 1 >= 0 and task_histories[i - 1]['phase'] == 'acceptance':
-                    rejections_by_phase += 1
-
-            elm = rejections_by_phase, history
-            new_list.append(elm)
-
-        return new_list
-
-    def get_project_members_dict(self) -> Dict[str, Any]:
+    def _get_project_members_dict(self) -> Dict[str, Any]:
         project_members_dict = {}
 
         project_members = self.annofab_service.wrapper.get_all_project_members(self.project_id)
@@ -160,7 +155,7 @@ class Table:
         """
         ラベル情報を設定する
         Returns:
-            key: label_id, value: label_name(ja)
+            key: label_id, value: label_name(en)
 
         """
         label_dict = {}
@@ -168,7 +163,7 @@ class Table:
         for e in labels:
             label_id = e["label_id"]
             messages_list = e["label_name"]["messages"]
-            label_name = [m["message"] for m in messages_list if m["lang"] == "ja-JP"][0]
+            label_name = [m["message"] for m in messages_list if m["lang"] == "en-US"][0]
 
             label_dict[label_id] = label_name
 
@@ -318,10 +313,13 @@ class Table:
             annotation_worktime_hour, inspection_worktime_hour, acceptance_worktime_hour, sum_worktime_hour
         """
         def set_annotation_info(arg_task):
-            input_data_dict = annotations_dict[arg_task["task_id"]]
             total_annotation_count = 0
-            for annotation_list in input_data_dict.values():
-                total_annotation_count += len(annotation_list)
+
+            input_data_id_list = arg_task["input_data_id_list"]
+            input_data_dict = annotations_dict[arg_task["task_id"]]
+
+            for input_data_id in input_data_id_list:
+                total_annotation_count += input_data_dict[input_data_id]["total_count"]
 
             arg_task["annotation_count"] = total_annotation_count
 
@@ -343,6 +341,7 @@ class Table:
             arg_task["inspection_count"] = inspection_count
             arg_task["input_data_count_of_inspection"] = input_data_count_of_inspection
 
+        logger.info(f"execute `create_task_df` function")
         tasks = self._get_task_list()
         task_histories_dict = self.database.read_task_histories_from_checkpoint()
         inspections_dict = self._get_inspections_dict()
@@ -383,18 +382,19 @@ class Table:
         task_list = []
         for task in tasks:
             task_id = task["task_id"]
-
+            input_data_dict = annotations_dict[task_id]
             new_task = {}
             for key in ["task_id", "phase", "status"]:
                 new_task[key] = task[key]
 
             new_task["input_data_count"] = len(task["input_data_id_list"])
+            input_data_id_list = task["input_data_id_list"]
 
-            input_data_dict = annotations_dict[task_id]
-            for label_id, label_name in self.label_dict.items():
+            for label_name in self.label_dict.values():
                 annotation_count = 0
-                for annotation_list in input_data_dict.values():
-                    annotation_count += len([e for e in annotation_list if e.label_id == label_id])
+                for input_data_id in input_data_id_list:
+                    annotation_summary = input_data_dict[input_data_id]
+                    annotation_count += annotation_summary[f"label_{label_name}"]
 
                 new_task[label_name] = annotation_count
 
