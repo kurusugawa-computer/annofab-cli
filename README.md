@@ -635,7 +635,7 @@ $ annofabcli job list_last --organization org1 --job_type gen-tasks-list
 
 # アノテーションの最終更新日時を、タスクの最終更新日時と比較して出力します。
 $ annofabcli job list_last --project_id prj1 --job_type gen-annotation --add_details \
- --csv_format '{"columns": ["project_id","project_title","status","updated_datetime", "task_last_updated_datetime"]}' 
+ --csv_format '{"columns": ["project_id","project_title","job_status","updated_datetime", "task_last_updated_datetime"]}' 
 
 ```
 
