@@ -140,27 +140,9 @@ class Table:
         self.label_dict = self.get_labels_dict(annotaion_specs["labels"])
 
         logger.debug("annofab_service.wrapper.get_all_project_members()")
-        self.project_members_dict = self.get_project_members_dict()
+        self.project_members_dict = self._get_project_members_dict()
 
-    @staticmethod
-    def _get_acceptance_count_and_histories(task_histories: List[TaskHistory]) -> List[Tuple[int, TaskHistory]]:
-        """
-        受入で差し戻しごとにグループ分けする。
-        """
-
-        new_list: List[Tuple[int, TaskHistory]] = []
-        rejections_by_phase = 0
-        for i, history in enumerate(task_histories):
-            if history['phase'] == 'annotation':
-                if i - 1 >= 0 and task_histories[i - 1]['phase'] == 'acceptance':
-                    rejections_by_phase += 1
-
-            elm = rejections_by_phase, history
-            new_list.append(elm)
-
-        return new_list
-
-    def get_project_members_dict(self) -> Dict[str, Any]:
+    def _get_project_members_dict(self) -> Dict[str, Any]:
         project_members_dict = {}
 
         project_members = self.annofab_service.wrapper.get_all_project_members(self.project_id)
