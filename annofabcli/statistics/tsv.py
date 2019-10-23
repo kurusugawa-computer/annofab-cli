@@ -1,4 +1,5 @@
 import logging
+from pathlib import Path
 from typing import List
 
 import pandas as pd
@@ -31,9 +32,10 @@ class Tsv:
         Returns:
 
         """
-        filepath = f"{self.outdir}/{filename}"
-        logger.debug(f"{filepath} 書き込み")
-        df.to_csv(filepath, sep=",", encoding="utf_8_sig")
+        output_path = Path(f"{self.outdir}/{filename}")
+        output_path.parent.mkdir(exist_ok=True, parents=True)
+        logger.debug(f"{str(output_path)} 書き込み")
+        df.to_csv(str(output_path), sep=",", encoding="utf_8_sig")
 
     @staticmethod
     def _create_required_columns(df, prior_columns, dropped_columns):
