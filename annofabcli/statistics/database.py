@@ -37,6 +37,9 @@ class Database:
     # pickleファイルのprfixに付けるタイムスタンプ
     filename_timestamp: str
 
+    zip_file: Optional[zipfile.ZipFile] = None
+    """Simpleアノテーションzipのファイルオブジェク"""
+
     #############################################
     # Private
     #############################################
@@ -111,14 +114,17 @@ class Database:
             return True
 
     def read_annotations(self, task_id: str, input_data_id_list: List[str]) -> InputDataDict:
-        input_data_dict: Dict[InputDataId, List[SimpleAnnotationDetail]] = {}
+        logger.debug(f"アノテーションzipの読み込み: task_id={task_id}")
+        input_data_dict: InputDataDict = {}
 
-        with zipfile.ZipFile(self.annotations_zip_path, 'r') as zip_file:
-            for input_data_id in input_data_id_list:
-                json_path = f"{task_id}/{input_data_id}.json"
-                parser = SimpleAnnotationZipParser(zip_file, json_path)
-                simple_annotation = parser.parse()
-                input_data_dict[input_data_id] = simple_annotation.details
+        if self.zip_file is None:
+            self.zip_file = zipfile.ZipFile(self.annotations_zip_path, 'r')
+
+        for input_data_id in input_data_id_list:
+            json_path = f"{task_id}/{input_data_id}.json"
+            parser = SimpleAnnotationZipParser(self.zip_file, json_path)
+            simple_annotation = parser.parse()
+            input_data_dict[input_data_id] = simple_annotation.details
 
         return input_data_dict
 
@@ -308,3 +314,7 @@ class Database:
             tasks_dict.update({task_id: task_histories})
 
         return tasks_dict
+
+    def close_zip_file(self):
+        if self.zip_file is not None:
+            self.zip_file.close()
