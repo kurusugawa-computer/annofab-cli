@@ -33,7 +33,7 @@ class Tsv:
 
         """
         output_path = Path(f"{self.outdir}/{filename}")
-        output_path.mkdir(exist_ok=True, parents=True)
+        output_path.parent.mkdir(exist_ok=True, parents=True)
         logger.debug(f"{str(output_path)} 書き込み")
         df.to_csv(str(output_path), sep=",", encoding="utf_8_sig")
 
