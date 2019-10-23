@@ -21,9 +21,9 @@ class Tsv:
     # Private
     #############################################
 
-    def _write_tsv(self, filename: str, df):
+    def _write_csv(self, filename: str, df):
         """
-        TSVでBOM UTF-8で書きこむ(Excelで開けるようにするため）
+        カンマ区切りでBOM UTF-8で書きこむ(Excelで開けるようにするため）
         Args:
             filename: ファイル名
             df: DataFrame
@@ -80,10 +80,10 @@ class Tsv:
             "updated_datetime",
         ]
         required_columns = self._create_required_columns(df, prior_columns, dropped_columns)
-        self._write_tsv(f"{self.short_project_id}_検査コメント一覧_返信_修正不要を除く.csv", df[required_columns])
+        self._write_csv(f"{self.short_project_id}_検査コメント一覧_返信_修正不要を除く.csv", df[required_columns])
 
         df_all = self.table.create_inspection_df(only_error_corrected=False)
-        self._write_tsv(f"{self.short_project_id}_検査コメント一覧_返信を除く_修正不要を含む.csv", df_all[required_columns])
+        self._write_csv(f"{self.short_project_id}_検査コメント一覧_返信を除く_修正不要を含む.csv", df_all[required_columns])
 
     def write_task_list(self, arg_df: pd.DataFrame = None, dropped_columns: List[str] = None):
         """
@@ -131,7 +131,7 @@ class Tsv:
             "input_data_count_of_inspection",
         ]
         required_columns = self._create_required_columns(df, prior_columns, dropped_columns)
-        self._write_tsv(f"{self.short_project_id}_タスク一覧.csv", df[required_columns])
+        self._write_csv(f"{self.short_project_id}_タスク一覧.csv", df[required_columns])
 
     def write_member_list(self, arg_df: pd.DataFrame = None, dropped_columns: List[str] = None):
         """
@@ -166,7 +166,7 @@ class Tsv:
             "inspection_count_of_first_annotation",
         ]
         required_columns = self._create_required_columns(df, prior_columns, dropped_columns)
-        self._write_tsv(f"{self.short_project_id}_メンバ一覧.csv", df[required_columns])
+        self._write_csv(f"{self.short_project_id}_メンバ一覧.csv", df[required_columns])
 
     def write_ラベルごとのアノテーション数(self, arg_df: pd.DataFrame = None):
         """
@@ -184,7 +184,7 @@ class Tsv:
             "phase",
         ]
         required_columns = self._create_required_columns(df, prior_columns, dropped_columns=None)
-        self._write_tsv(f"{self.short_project_id}_ラベルごとのアノテーション数.csv", df[required_columns])
+        self._write_csv(f"{self.short_project_id}_ラベルごとのアノテーション数.csv", df[required_columns])
 
     def write_ユーザ別日毎の作業時間(self):
         """
@@ -204,4 +204,4 @@ class Tsv:
             "worktime_hour",
         ]
         required_columns = self._create_required_columns(df, prior_columns, dropped_columns=None)
-        self._write_tsv(f"{self.short_project_id}_ユーザ別日毎の作業時間.csv", df[required_columns])
+        self._write_csv(f"{self.short_project_id}_ユーザ別日毎の作業時間.csv", df[required_columns])
