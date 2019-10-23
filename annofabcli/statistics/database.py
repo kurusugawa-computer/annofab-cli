@@ -130,6 +130,8 @@ class Database:
     #     return input_data_dict
 
     def read_annotation_summary(self, task_list: List[Task], annotation_summary_func: AnnotationSummaryFunc) -> AnnotationDict:
+        logger.info(f"reading {str(self.annotations_zip_path)}")
+
         # logger.debug(f"アノテーションzipの読み込み: task_id={task_id}")
 
         def read_annotation_summary(task_id: str, input_data_id_: str) -> Dict[str, Any]:
