@@ -77,6 +77,7 @@ $ docker run -it -e ANNOFAB_USER_ID=XXXX -e ANNOFAB_PASSWORD=YYYYY annofab-cli a
 |inspection_comment| list_unprocessed | 未処置の検査コメントを出力します。                               |-|
 |instruction| upload             | HTMLファイルを作業ガイドとして登録します。                                                           |チェッカー/オーナ|
 |job|list             | ジョブ一覧を出力します。                                                            |-|
+|job|list_last             | 複数のプロジェクトに対して、最新のジョブを出力します。                                                            |-|
 |organization_member|list             | 組織メンバ一覧を出力します。                                                            |-|
 |project| copy                 | プロジェクトをコピーします。                                                                           |オーナ and 組織管理者/組織オーナ|
 |project| diff                 | プロジェクト間の差分を表示します。                                                                           |チェッカー/オーナ|
@@ -622,6 +623,25 @@ $ annofabcli job list --project_id prj1 --job_type gen-tasks --job_query '{"limi
 
 
 
+### job list_last
+複数のプロジェクトに対して、最新のジョブを出力します。
+
+```
+# prj1, prj2に対して、「アノテーション更新」のジョブを出力します。
+$ annofabcli job list_last --project_id prj1 prj2 --job_type gen-annotation
+
+# 組織 org1配下のプロジェクト（進行中で、自分自身が所属している）に対して、「タスク全件ファイル更新」のジョブを出力します。
+$ annofabcli job list_last --organization org1 --job_type gen-tasks-list
+
+# アノテーションの最終更新日時を、タスクの最終更新日時と比較して出力します。
+$ annofabcli job list_last --project_id prj1 --job_type gen-annotation --add_details \
+ --csv_format '{"columns": ["project_id","project_title","status","updated_datetime", "task_last_updated_datetime"]}' 
+
+```
+
+
+
+
 ### organization_member list
 組織メンバ一覧を出力します。
 
@@ -865,8 +885,13 @@ $ annofabcli statistics visualize --project_id prj1 --output_dir /tmp/output
 $ annofabcli statistics visualize --project_id prj1 --output_dir /tmp/output \
   --task_query '{"status": "complete"}' 
 
-# 作業ディレクトリ（`.annofab-cli`）内のファイルから、統計情報を可視化する。
+# アノテーションzipを更新してから、アノテーションzipをダウンロードします。
+$ annofabcli statistics visualize --project_id prj1 --output_dir /tmp/output --update_annotation
+
+
+# WebAPIを実行せずに、作業ディレクトリ（`.annofab-cli`）内のファイルを参照して、統計情報を可視化する。
 $ annofabcli statistics visualize --project_id prj1 --not_update
+
 ```
 
 
