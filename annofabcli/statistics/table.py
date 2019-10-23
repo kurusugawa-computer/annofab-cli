@@ -8,9 +8,11 @@ from annofabapi.dataclass.annotation import SimpleAnnotationDetail
 from annofabapi.models import InputDataId, Inspection, Task, TaskHistory, TaskId, TaskPhase
 
 import annofabcli
-from annofabcli.statistics.database import Database
+from annofabcli.statistics.database import Database, AnnotationDict
 
 logger = logging.getLogger(__name__)
+
+
 
 
 class Table:
@@ -32,7 +34,7 @@ class Table:
     _task_id_list: Optional[List[TaskId]] = None
     _task_list: Optional[List[Task]] = None
     _inspections_dict: Optional[Dict[TaskId, Dict[InputDataId, List[Inspection]]]] = None
-    _annotations_dict: Optional[Dict[TaskId, Dict[InputDataId, List[SimpleAnnotationDetail]]]] = None
+    _annotations_dict: Optional[Dict[TaskId, Dict[InputDataId, Dict[str, Any]] = None
 
     def __init__(self, database: Database, task_query_param: Dict[str, Any],
                  ignored_task_id_list: Optional[List[TaskId]] = None):
@@ -63,6 +65,27 @@ class Table:
             task_id_list = [t["task_id"] for t in self._get_task_list()]
             self._inspections_dict = self.database.read_inspections_from_json(task_id_list)
             return self._inspections_dict
+
+    def _get_annotations_dict(self) -> AnnotationDict:
+        if self._annotations_dict is not None:
+            return self._annotations_dict
+        else:
+            task_list = self._get_task_list()
+            self._annotations_dict = self.database.read_annotation_summary(task_list, self._create_annotation_summary)
+            return self._annotations_dict
+
+    def _create_annotation_summary(self, annotation_list: List[SimpleAnnotationDetail]) -> Dict[str, Any]:
+        annotation_summary = {}
+        annotation_summary["total_count"] = len(annotation_list)
+
+        # labelごとのアノテーション数を算出
+        for label_id, label_name in self.label_dict.items():
+            annotation_count = 0
+            key = f"label_{label_name}"
+            annotation_count += len([e for e in annotation_list if e["label_id"] == label_id])
+            annotation_summary[key] = annotation_count
+
+        return annotation_summary
 
     @staticmethod
     def _inspection_condition(inspection_arg, exclude_reply: bool, only_error_corrected: bool):
@@ -313,10 +336,10 @@ class Table:
             total_annotation_count = 0
 
             input_data_id_list = arg_task["input_data_id_list"]
-            input_data_dict = self.database.read_annotations(arg_task['task_id'], input_data_id_list)
+            input_data_dict = annotations_dict["task_id"]
 
-            for annotation_list in input_data_dict.values():
-                total_annotation_count += len(annotation_list)
+            for input_data_id in input_data_id_list:
+                total_annotation_count += len(input_data_dict[input_data_id]["total_count"])
 
             arg_task["annotation_count"] = total_annotation_count
 
@@ -342,6 +365,7 @@ class Table:
         tasks = self._get_task_list()
         task_histories_dict = self.database.read_task_histories_from_checkpoint()
         inspections_dict = self._get_inspections_dict()
+        annotations_dict = self._get_annotations_dict()
 
         for task in tasks:
             task_id = task["task_id"]
@@ -373,24 +397,24 @@ class Table:
         """
 
         tasks = self._get_task_list()
+        annotations_dict = self._get_annotations_dict()
 
         task_list = []
         for task in tasks:
             task_id = task["task_id"]
-
+            input_data_dict = annotations_dict[task_id]
             new_task = {}
             for key in ["task_id", "phase", "status"]:
                 new_task[key] = task[key]
 
             new_task["input_data_count"] = len(task["input_data_id_list"])
-
             input_data_id_list = task["input_data_id_list"]
-            input_data_dict = self.database.read_annotations(task_id, input_data_id_list)
 
             for label_name in self.label_dict.values():
                 annotation_count = 0
-                for annotation_list in input_data_dict.values():
-                    annotation_count += len([e for e in annotation_list if e.label == label_name])
+                for input_data_id in input_data_id_list:
+                    annotation_summary = input_data_dict[input_data_id]
+                    annotation_count += annotation_summary[f"label_{label_name}"]
 
                 new_task[label_name] = annotation_count
 

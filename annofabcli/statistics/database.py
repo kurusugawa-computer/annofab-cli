@@ -6,7 +6,7 @@ import pickle
 import shutil
 import zipfile
 from pathlib import Path
-from typing import Any, Dict, List, Optional, Set
+from typing import Any, Dict, List, Optional, Set, Callable
 
 import annofabapi
 import annofabapi.utils
@@ -20,9 +20,10 @@ from annofabcli.common.exceptions import AnnofabCliException
 
 logger = logging.getLogger(__name__)
 
-InputDataDict = Dict[InputDataId, List[SimpleAnnotationDetail]]
-
-
+InputDataDict = Dict[InputDataId, Dict[str, Any]]
+AnnotationDict = Dict[TaskId, InputDataDict]
+AnnotationSummaryFunc = Callable[[List[SimpleAnnotationDetail]], Dict[str, Any]]
+"""アノテーションの概要を算出する関数"""
 
 class Database:
     """
@@ -113,20 +114,46 @@ class Database:
         else:
             return True
 
-    def read_annotations(self, task_id: str, input_data_id_list: List[str]) -> InputDataDict:
-        logger.debug(f"アノテーションzipの読み込み: task_id={task_id}")
-        input_data_dict: InputDataDict = {}
+    # def read_annotations(self, task_id: str, input_data_id_list: List[str]) -> InputDataDict:
+    #     # logger.debug(f"アノテーションzipの読み込み: task_id={task_id}")
+    #     input_data_dict: InputDataDict = {}
+    #
+    #     if self.zip_file is None:
+    #         self.zip_file = zipfile.ZipFile(self.annotations_zip_path, 'r')
+    #
+    #     for input_data_id in input_data_id_list:
+    #         json_path = f"{task_id}/{input_data_id}.json"
+    #         parser = SimpleAnnotationZipParser(self.zip_file, json_path)
+    #         simple_annotation = parser.parse()
+    #         input_data_dict[input_data_id] = simple_annotation.details
+    #
+    #     return input_data_dict
 
-        if self.zip_file is None:
-            self.zip_file = zipfile.ZipFile(self.annotations_zip_path, 'r')
+    def read_annotation_summary(self, task_list: List[Task], annotation_summary_func: AnnotationSummaryFunc) -> AnnotationDict:
+        # logger.debug(f"アノテーションzipの読み込み: task_id={task_id}")
 
-        for input_data_id in input_data_id_list:
-            json_path = f"{task_id}/{input_data_id}.json"
-            parser = SimpleAnnotationZipParser(self.zip_file, json_path)
+        def read_annotation_summary(task_id: str, input_data_id_: str) -> Dict[str, Any]:
+            # logger.debug(f"アノテーションzipの読み込み: task_id={task_id}")
+
+            json_path = f"{task_id}/{input_data_id_}.json"
+            parser = SimpleAnnotationZipParser(zip_file, json_path)
             simple_annotation = parser.parse()
-            input_data_dict[input_data_id] = simple_annotation.details
+            return annotation_summary_func(simple_annotation.details)
 
-        return input_data_dict
+        with zipfile.ZipFile(self.annotations_zip_path, 'r') as zip_file:
+            annotation_dict: AnnotationDict = {}
+
+            for task in task_list:
+                task_id = task["task_id"]
+                input_data_id_list = task["input_data_id_list"]
+
+                input_data_dict: InputDataDict = {}
+                for input_data_id in input_data_id_list:
+                    input_data_dict[input_data_id] = read_annotation_summary(task_id, input_data_id)
+
+                annotation_dict[task_id] = input_data_dict
+            return annotation_dict
+
 
     def read_inspections_from_json(self,
                                    task_id_list: List[TaskId]) -> Dict[TaskId, Dict[InputDataId, List[Inspection]]]:
