@@ -116,9 +116,12 @@ def parse_args(parser: argparse.ArgumentParser):
                                               "指定しない場合は、すべてのタスクが可視化対象です。"
                                               "file://`を先頭に付けると、一覧が記載されたファイルを指定できます。"))
 
-    parser.add_argument('--not_update', action="store_true",
-                        help='作業ディレクトリ内のファイルを参照して、統計情報を出力します。'
-                             'AnnoFab Web APIへのアクセスを最小限にします。')
+    parser.add_argument('--not_update', action="store_true", help='作業ディレクトリ内のファイルを参照して、統計情報を出力します。'
+                        'AnnoFab Web APIへのアクセスを最小限にします。')
+
+    parser.add_argument(
+        '--update_annotation', action="store_true", help='アノテーションzipを更新してから、アノテーションzipをダウンロードします。'
+        'ただし、アノテーションzipの最終更新日時がタスクの最終更新日時より新しい場合は、アノテーションzipを更新しません。')
 
     parser.add_argument('--work_dir', type=str, default=".annofab-cli",
                         help="作業ディレクトリのパス。指定しない場合カレントの'.annofab-cli'ディレクトリに保存する")
