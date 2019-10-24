@@ -67,7 +67,6 @@ class DeleteTask(AbstractCommandLineInterface):
             return False
 
         self.service.api.delete_task(project_id, task_id)
-        logger.info(f"タスク'{task_id}'を削除しました。")
         return True
 
     def delete_task_list(self, project_id: str, task_id_list: List[str]):
@@ -80,11 +79,12 @@ class DeleteTask(AbstractCommandLineInterface):
         logger.info(f"プロジェクト'{project_title}'から 、{len(task_id_list)} 件のタスクを削除します。")
 
         count_delete_task = 0
-        for task_id in task_id_list:
+        for task_index, task_id in enumerate(task_id_list):
             try:
                 result = self.delete_task(project_id, task_id)
                 if result:
                     count_delete_task += 1
+                    logger.info(f"{task_index+1} / {len(task_id_list)} 件目: タスク'{task_id}'を削除しました。")
 
             except requests.exceptions.HTTPError as e:
                 logger.warning(e)
