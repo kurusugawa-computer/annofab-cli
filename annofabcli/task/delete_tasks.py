@@ -47,11 +47,12 @@ class DeleteTask(AbstractCommandLineInterface):
 
         """
         task = self.get_task(project_id, task_id)
-        logger.debug(f"task_id={task['task_id']}, status={task['status']}, "
-                     f"phase={task['phase']}, updated_datetime={task['updated_datetime']}")
         if task is None:
             logger.info(f"task_id={task_id} のタスクは存在しません。")
             return False
+
+        logger.debug(f"task_id={task['task_id']}, status={task['status']}, "
+                     f"phase={task['phase']}, updated_datetime={task['updated_datetime']}")
 
         task_status = TaskStatus(task["status"])
         if task_status in [TaskStatus.WORKING, TaskStatus.COMPLETE]:

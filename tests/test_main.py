@@ -257,6 +257,9 @@ class TestTask:
     def test_cancel_acceptance(self):
         main([self.command_name, 'cancel_acceptance', '--project_id', project_id, '--task_id', task_id, '--yes'])
 
+    def test_delete_task(self):
+        main([self.command_name, 'delete', '--project_id', project_id, '--task_id', "not-exists-task", '--yes'])
+
     def test_reject_task(self):
         inspection_comment = datetime.datetime.now().isoformat()
         main([
