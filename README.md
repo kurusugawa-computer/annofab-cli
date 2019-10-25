@@ -93,6 +93,7 @@ $ docker run -it -e ANNOFAB_USER_ID=XXXX -e ANNOFAB_PASSWORD=YYYYY annofab-cli a
 |task| cancel_acceptance             | 受け入れ完了タスクを、受け入れ取り消し状態にします。                                                         |オーナ|
 |task| change_operator             | タスクの担当者を変更します。                                                             |チェッカー/オーナ|
 |task| complete                | 未処置の検査コメントを適切な状態に変更して、タスクを受け入れ完了状態にします。                                 |チェッカー/オーナ|
+|task| delete                | タスクを削除します。                                 |オーナ|
 |task|list             | タスク一覧を出力します。                                                            |-|
 |task| reject                  | 検査コメントを付与してタスクを差し戻します。                                                                 |チェッカー/オーナ|
 
@@ -939,6 +940,15 @@ $ annofabcli complete_tasks --project_id prj1  --inspection_list inspection.json
 
 `inspection.json`は、未処置の検査コメント一覧です。`annofabcli inspection_comment list_unprocessed --foramt json`コマンドで出力できます。
 
+
+### task delete
+タスクを削除します。ただしアノテーションが付与されているタスク、作業中/完了状態のタスクは削除できません。
+
+```
+# task_id.txtに記載されたtask_idのタスクを削除します。
+$ annofabcli task delete --project_id prj1 --task_id file://task_id.txt
+
+```
 
 
 ### task list
