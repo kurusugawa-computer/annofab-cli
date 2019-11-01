@@ -579,7 +579,7 @@ class Table:
         for elm in worktime_statistics:
             worktime_info = {"date": elm.date}
             for account_info in elm.accounts:
-                stat_list = getattr(account_info.by_inputs, aggregation_by.value)
+                stat_list = getattr(account_info, aggregation_by.value)
                 stat_item: Optional[WorktimeStatisticsItem] = first_true(stat_list, pred=lambda e: e.phase == phase)
                 if stat_item is not None:
                     worktime_info[account_info.account_id] = isoduration_to_hour(stat_item.average)
