@@ -564,5 +564,5 @@ class Table:
 
         df = pd.DataFrame(worktime_info_list)
         # acount_idをusernameに変更する
-        columns = {col:self._get_username(col) for col in df.columns if col != "date"}
+        columns = {col: self._get_username(col) for col in df.columns if col != "date"}
         return df.rename(columns=columns).fillna(0)
