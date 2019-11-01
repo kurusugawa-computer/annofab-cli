@@ -1,16 +1,32 @@
 import copy
 import logging
+from enum import Enum
 from typing import Any, Dict, List, Optional, Set, Tuple  # pylint: disable=unused-import
 
 import dateutil.parser
 import pandas as pd
 from annofabapi.dataclass.annotation import SimpleAnnotationDetail
+from annofabapi.dataclass.statistics import (ProjectAccountStatistics, ProjectAccountStatisticsHistory,
+                                             WorktimeStatistics, WorktimeStatisticsItem)
 from annofabapi.models import InputDataId, Inspection, Task, TaskHistory, TaskId, TaskPhase
+from more_itertools import first_true
 
 import annofabcli
+from annofabcli.common.utils import isoduration_to_hour
 from annofabcli.statistics.database import AnnotationDict, Database
 
 logger = logging.getLogger(__name__)
+
+
+class AggregationBy(Enum):
+    BY_INPUTS = "by_inputs"
+    BY_TASKS = "by_tasks"
+
+
+class AccountStatisticsValue(Enum):
+    TASKS_COMPLETED = "tasks_completed"
+    TASKS_REJECTED = "tasks_rejected"
+    WORKTIME = "worktime"
 
 
 class Table:
@@ -33,6 +49,8 @@ class Table:
     _task_list: Optional[List[Task]] = None
     _inspections_dict: Optional[Dict[TaskId, Dict[InputDataId, List[Inspection]]]] = None
     _annotations_dict: Optional[Dict[TaskId, Dict[InputDataId, Dict[str, Any]]]] = None
+    _worktime_statistics: Optional[List[WorktimeStatistics]] = None
+    _account_statistics: Optional[List[ProjectAccountStatistics]] = None
 
     def __init__(self, database: Database, task_query_param: Dict[str, Any],
                  ignored_task_id_list: Optional[List[TaskId]] = None):
@@ -44,6 +62,30 @@ class Table:
         self.project_id = self.database.project_id
         self._update_annotaion_specs()
         self.project_title = self.annofab_service.api.get_project(self.project_id)[0]['title']
+
+    def _get_worktime_statistics(self) -> List[WorktimeStatistics]:
+        """
+        タスク作業時間集計を取得
+        """
+        if self._worktime_statistics is not None:
+            return self._worktime_statistics
+        else:
+            worktime_statistics = self.annofab_service.wrapper.get_worktime_statistics(self.project_id)
+            worktime_statistics = [WorktimeStatistics.from_dict(e) for e in worktime_statistics]
+            self._worktime_statistics = worktime_statistics
+            return worktime_statistics
+
+    def _get_account_statistics(self) -> List[ProjectAccountStatistics]:
+        """
+        ユーザー別タスク集計を取得
+        """
+        if self._account_statistics is not None:
+            return self._account_statistics
+        else:
+            account_statistics, = self.annofab_service.api.get_account_statistics(self.project_id)
+            account_statistics = [ProjectAccountStatisticsHistory.from_dict(e) for e in account_statistics]
+            self._account_statistics = account_statistics
+            return account_statistics
 
     def _get_task_list(self) -> List[Task]:
         """
@@ -517,3 +559,74 @@ class Table:
         df["cumulative_annotation_count"] = groupby_obj["annotation_count"].cumsum()
 
         return df
+
+    def create_worktime_per_image_df(self, aggregation_by: AggregationBy, phase: TaskPhase) -> pd.DataFrame:
+        """
+        画像１枚あたり/タスク１個あたりの作業時間を算出する。
+        行方向に日付, 列方向にメンバを並べる
+
+        Args:
+            aggregation_by: 集計単位（画像1枚あたり or タスク１個あたり）
+            phase: 対象のフェーズ
+
+        Returns:
+            DataFrame
+        """
+
+        worktime_statistics = self._get_worktime_statistics()
+
+        worktime_info_list = []
+        for elm in worktime_statistics:
+            worktime_info = {"date": elm.date}
+            for account_info in elm.accounts:
+                stat_list = getattr(account_info, aggregation_by.value)
+                stat_item: Optional[WorktimeStatisticsItem] = first_true(stat_list, pred=lambda e: e.phase == phase)
+                if stat_item is not None:
+                    worktime_info[account_info.account_id] = isoduration_to_hour(stat_item.average)
+                else:
+                    worktime_info[account_info.account_id] = 0
+
+            worktime_info_list.append(worktime_info)
+
+        df = pd.DataFrame(worktime_info_list)
+        # acount_idをusernameに変更する
+        columns = {col: self._get_username(col) for col in df.columns if col != "date"}  # pylint: disable=not-an-iterable # noqa: E501
+        return df.rename(columns=columns).fillna(0)
+
+    def create_account_statistics_df2(self, account_statistics_value: AccountStatisticsValue) -> pd.DataFrame:
+        """
+        メンバ別のタスク集計情報を取得する
+        行方向に日付, 列方向にメンバを並べる
+
+        Args:
+            account_statistics_value: 集計する値
+
+        Returns:
+            DataFrame
+        """
+        def get_value_from_history(his: ProjectAccountStatisticsHistory) -> Any:
+            value = getattr(his, account_statistics_value.value)
+            if account_statistics_value == AccountStatisticsValue.WORKTIME:
+                return isoduration_to_hour(value)
+            else:
+                return value
+
+        account_statistics = self._get_account_statistics()
+        dict_date_account_info: Dict[str, Dict[str, Any]] = {}
+        for account_info in account_statistics:
+            account_id = account_info.account_id
+            for history in account_info.histories:
+                date = history.date
+                dict_account_info = dict_date_account_info.get(date, default={})
+                dict_account_info[account_id] = get_value_from_history(history)
+                dict_date_account_info[date] = dict_account_info
+
+        account_info_list = []
+        for date, account_info in sorted(dict_date_account_info.items()):
+            account_info["date"] = date
+            account_info_list.append(account_info)
+
+        df = pd.DataFrame(account_info_list)
+        # acount_idをusernameに変更する
+        columns = {col: self._get_username(col) for col in df.columns if col != "date"}  # pylint: disable=not-an-iterable # noqa: E501
+        return df.rename(columns=columns).fillna(0)

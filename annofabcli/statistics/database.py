@@ -179,6 +179,19 @@ class Database:
             logger.info(f"アノテーションの更新に失敗しました or {MAX_WAIT_MINUTU} 分待っても、更新が完了しませんでした。")
             return
 
+    def wait_for_completion_updated_task_json(self, project_id):
+        MAX_JOB_ACCESS = 120
+        JOB_ACCESS_INTERVAL = 60
+        MAX_WAIT_MINUTU = MAX_JOB_ACCESS * JOB_ACCESS_INTERVAL / 60
+        result = self.annofab_service.wrapper.wait_for_completion(project_id, job_type=JobType.GEN_TASKS_LIST,
+                                                                  job_access_interval=JOB_ACCESS_INTERVAL,
+                                                                  max_job_access=MAX_JOB_ACCESS)
+        if result:
+            logger.info(f"タスク全件ファイルの更新が完了しました。")
+        else:
+            logger.info(f"タスク全件ファイルの更新に失敗しました or {MAX_WAIT_MINUTU} 分待っても、更新が完了しませんでした。")
+            return
+
     def update_annotation_zip(self, project_id: str, should_update_annotation_zip: bool = False):
         """
         必要に応じて、アノテーションの更新を実施 and アノテーションの更新を待つ。
@@ -199,47 +212,97 @@ class Database:
         annotation_specs_updated_datetime = annotation_specs_history[-1]["updated_datetime"]
         logger.debug(f"アノテーション仕様の最終更新日時={annotation_specs_updated_datetime}")
 
-        job = self.annofab_service.api.get_project_job(project_id, query_params={
-            "type": "gen-annotation",
-            "limit": 1
-        })[0]["list"][0]
-        logger.debug(f"アノテーションzipの最終更新日時={job['updated_datetime']}, job_status={job['job_status']}")
+        job_list = self.annofab_service.api.get_project_job(
+            project_id, query_params={
+                "type": JobType.GEN_ANNOTATION.value,
+                "limit": 1
+            })[0]["list"]
+        if len(job_list) == 0:
+            job = job_list[0]
+            logger.debug(f"アノテーションzipの最終更新日時={job['updated_datetime']}, job_status={job['job_status']}")
 
         if should_update_annotation_zip:
-            job_status = JobStatus(job['job_status'])
-            if job_status == JobStatus.PROGRESS:
-                logger.info(f"アノテーション更新が完了するまで待ちます。")
-                self.wait_for_completion_updated_annotation(project_id)
-
-            elif job_status == JobStatus.SUCCEEDED:
-                if dateutil.parser.parse(job['updated_datetime']) < dateutil.parser.parse(last_tasks_updated_datetime):
-                    logger.info(f"タスクの最新更新日時よりアノテーションzipの最終更新日時の方が古いので、アノテーションzipを更新します。")
-                    self.annofab_service.api.post_annotation_archive_update(project_id)
-                    self.wait_for_completion_updated_annotation(project_id)
-
-                elif dateutil.parser.parse(
-                        job['updated_datetime']) < dateutil.parser.parse(annotation_specs_updated_datetime):
-                    logger.info(f"アノテーション仕様の更新日時よりアノテーションzipの最終更新日時の方が古いので、アノテーションzipを更新します。")
-                    self.annofab_service.api.post_annotation_archive_update(project_id)
-                    self.wait_for_completion_updated_annotation(project_id)
-
-                else:
-                    logger.info(f"アノテーションzipを更新する必要がないので、更新しません。")
-
-            elif job_status == JobStatus.FAILED:
-                logger.info("アノテーションzipの更新に失敗しているので、アノテーションzipを更新します。")
+            if len(job_list) == 0:
                 self.annofab_service.api.post_annotation_archive_update(project_id)
                 self.wait_for_completion_updated_annotation(project_id)
+            else:
+                job = job_list[0]
+                job_status = JobStatus(job['job_status'])
+                if job_status == JobStatus.PROGRESS:
+                    logger.info(f"アノテーション更新が完了するまで待ちます。")
+                    self.wait_for_completion_updated_annotation(project_id)
 
-    def _download_db_file(self, should_update_annotation_zip: bool = False):
+                elif job_status == JobStatus.SUCCEEDED:
+                    if dateutil.parser.parse(
+                            job['updated_datetime']) < dateutil.parser.parse(last_tasks_updated_datetime):
+                        logger.info(f"タスクの最新更新日時よりアノテーションzipの最終更新日時の方が古いので、アノテーションzipを更新します。")
+                        self.annofab_service.api.post_annotation_archive_update(project_id)
+                        self.wait_for_completion_updated_annotation(project_id)
+
+                    elif dateutil.parser.parse(
+                            job['updated_datetime']) < dateutil.parser.parse(annotation_specs_updated_datetime):
+                        logger.info(f"アノテーション仕様の更新日時よりアノテーションzipの最終更新日時の方が古いので、アノテーションzipを更新します。")
+                        self.annofab_service.api.post_annotation_archive_update(project_id)
+                        self.wait_for_completion_updated_annotation(project_id)
+
+                    else:
+                        logger.info(f"アノテーションzipを更新する必要がないので、更新しません。")
+
+                elif job_status == JobStatus.FAILED:
+                    logger.info("アノテーションzipの更新に失敗しているので、アノテーションzipを更新します。")
+                    self.annofab_service.api.post_annotation_archive_update(project_id)
+                    self.wait_for_completion_updated_annotation(project_id)
+
+    def update_task_json(self, project_id: str, should_update_task_json: bool = False):
+        """
+        必要に応じて、タスク全件ファイルを更新して、更新が完了するまで待つ
+
+        Args:
+            project_id:
+            should_update_task_json:
+        """
+
+        job_list = self.annofab_service.api.get_project_job(
+            project_id, query_params={
+                "type": JobType.GEN_TASKS_LIST.value,
+                "limit": 1
+            })[0]["list"]
+
+        if len(job_list) == 0:
+            if should_update_task_json:
+                self.annofab_service.api.post_project_tasks_update(project_id)
+                self.wait_for_completion_updated_task_json(project_id)
+
+        else:
+            job = job_list[0]
+            logger.debug(f"タスク全件ファイルの最終更新日時={job['updated_datetime']}, job_status={job['job_status']}")
+
+            if should_update_task_json:
+                job_status = JobStatus(job['job_status'])
+                if job_status == JobStatus.PROGRESS:
+                    logger.info(f"タスク全件ファイルの更新が完了するまで待ちます。")
+                    self.wait_for_completion_updated_task_json(project_id)
+
+                elif job_status == JobStatus.SUCCEEDED:
+                    self.annofab_service.api.post_project_tasks_update(project_id)
+                    self.wait_for_completion_updated_task_json(project_id)
+
+                elif job_status == JobStatus.FAILED:
+                    logger.info("タスク全件ファイルの更新に失敗しているので、タスク全件ファイルを更新します。")
+                    self.annofab_service.api.post_project_tasks_update(project_id)
+                    self.wait_for_completion_updated_task_json(project_id)
+
+    def _download_db_file(self, should_update_annotation_zip: bool = False, should_update_task_json: bool = False):
         """
         DBになりうるファイルをダウンロードする
 
         Args:
-            update_annotation: Trunならアノテーションzipを更新する。ただしタスクの最終更新日時が、今のアノテーションzipの最終更新日時より
+            should_update_annotation_zip: Trunならアノテーションzipを更新する。ただしタスクの最終更新日時が、今のアノテーションzipの最終更新日時より
+            should_update_task_json: タスク全件ファイルを更新するかどうか
 
         """
 
+        self.update_task_json(self.project_id, should_update_task_json)
         logger.debug(f"downloading {str(self.tasks_json_path)}")
         self.annofab_service.wrapper.download_project_tasks_url(self.project_id, str(self.tasks_json_path))
 
@@ -287,7 +350,7 @@ class Database:
         return [task for task in all_tasks if filter_task(task)]
 
     def update_db(self, task_query_param: Dict[str, Any], ignored_task_ids: Optional[List[str]] = None,
-                  should_update_annotation_zip: bool = False):
+                  should_update_annotation_zip: bool = False, should_update_task_json: bool = False) -> None:
         """
         Annofabから情報を取得し、DB（pickelファイル）を更新する。
         TODO タスク履歴一括ファイルに必要な情報が含まれたら、修正する
@@ -295,13 +358,15 @@ class Database:
             task_query_param: タスク取得のクエリパラメタ. デフォルトは受け入れ完了タスク
             ignored_task_ids: 可視化対象外のtask_idのList
             should_update_annotation_zip: アノテーションzipを更新するかどうか
+            should_update_task_json: タスク全件ファイルを更新するかどうか
         """
 
         # 残すべきファイル
         self.filename_timestamp = "{0:%Y%m%d-%H%M%S}".format(datetime.datetime.now())
 
         # DB用のJSONファイルをダウンロードする
-        self._download_db_file(should_update_annotation_zip)
+        self._download_db_file(should_update_annotation_zip=should_update_annotation_zip,
+                               should_update_task_json=should_update_task_json)
 
         logger.info(f"DB更新: task_query_param = {task_query_param}")
         tasks = self.read_tasks_from_json(task_query_param)
