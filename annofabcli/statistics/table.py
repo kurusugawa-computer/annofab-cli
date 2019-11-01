@@ -36,7 +36,6 @@ class Table:
     _task_list: Optional[List[Task]] = None
     _inspections_dict: Optional[Dict[TaskId, Dict[InputDataId, List[Inspection]]]] = None
     _annotations_dict: Optional[Dict[TaskId, Dict[InputDataId, Dict[str, Any]]]] = None
-
     _worktime_statistics: Optional[List[WorktimeStatistics]] = None
 
     def __init__(self, database: Database, task_query_param: Dict[str, Any],
@@ -57,9 +56,9 @@ class Table:
         if self._worktime_statistics is not None:
             return self._worktime_statistics
         else:
-            worktime_statisitcs = self.annofab_service.wrapper.get_worktime_statistics(self.project_id)
-            self._worktime_statisitcs = worktime_statisitcs
-            return worktime_statisitcs
+            worktime_statistics = self.annofab_service.wrapper.get_worktime_statistics(self.project_id)
+            self._worktime_statistics = worktime_statistics
+            return worktime_statistics
 
     def _get_task_list(self) -> List[Task]:
         """
@@ -564,13 +563,6 @@ class Table:
             worktime_info_list.append(worktime_info)
 
         df = pd.DataFrame(worktime_info_list)
-        columns = df.columns
-        for column_name in columns:
-            if column_name == "date":
-                continue
-
-            username = self._get_username(column_name)
-            df = df.rename(columns={column_name: username})
-
-        df = df.fillna(0)
-        return df
+        # acount_idをusernameに変更する
+        columns = {col:self._get_username(col) for col in df.columns if col != "date"}
+        return df.rename(columns=columns).fillna(0)
