@@ -5,11 +5,12 @@ from typing import Any, Dict, List, Optional, Set, Tuple  # pylint: disable=unus
 import dateutil.parser
 import pandas as pd
 from annofabapi.dataclass.annotation import SimpleAnnotationDetail
+from annofabapi.dataclass.statistics import WorktimeStatistics, WorktimeStatisticsItem
 from annofabapi.models import InputDataId, Inspection, Task, TaskHistory, TaskId, TaskPhase
-
+from more_itertools import first_true
 import annofabcli
 from annofabcli.statistics.database import AnnotationDict, Database
-
+from annofabcli.common.utils import isoduration_to_hour
 logger = logging.getLogger(__name__)
 
 
@@ -34,6 +35,8 @@ class Table:
     _inspections_dict: Optional[Dict[TaskId, Dict[InputDataId, List[Inspection]]]] = None
     _annotations_dict: Optional[Dict[TaskId, Dict[InputDataId, Dict[str, Any]]]] = None
 
+    _worktime_statistics: Optional[List[WorktimeStatistics]] = None
+
     def __init__(self, database: Database, task_query_param: Dict[str, Any],
                  ignored_task_id_list: Optional[List[TaskId]] = None):
         self.annofab_service = database.annofab_service
@@ -44,6 +47,16 @@ class Table:
         self.project_id = self.database.project_id
         self._update_annotaion_specs()
         self.project_title = self.annofab_service.api.get_project(self.project_id)[0]['title']
+
+    def _get_worktime_statistics(self) -> List[WorktimeStatistics]:
+        """
+        タスク作業時間集計を取得
+        """
+        if self._worktime_statistics is not None:
+            return self._worktime_statistics
+        else:
+            worktime_statisitcs, _ = self.annofab_service.api.get_worktime_statistics(self.project_id)
+            return worktime_statisitcs
 
     def _get_task_list(self) -> List[Task]:
         """
@@ -515,5 +528,43 @@ class Table:
         # タスク完了数、差し戻し数
         df["cumulative_inspection_count"] = groupby_obj["inspection_count"].cumsum()
         df["cumulative_annotation_count"] = groupby_obj["annotation_count"].cumsum()
+
+        return df
+
+
+    def create_worktime_per_image_df(self, phase: TaskPhase) -> pd.DataFrame:
+        """
+        画像１枚あたりの作業時間を算出する。
+        行方向に日付, 列方向にメンバを並べる
+
+        Args:
+            phase: 対象のフェーズ
+
+        Returns:
+            DataFrame
+        """
+
+        # 教師付の開始時刻でソートして、indexを更新する
+        worktime_statistics = self._get_worktime_statistics()
+
+        worktime_info_list = []
+        for elm in worktime_statistics:
+            worktime_info = {"date": elm.date}
+            for account_info in elm.accounts:
+                stat_item: Optional[WorktimeStatisticsItem] = first_true(account_info.by_inputs, pred=lambda e: TaskPhase(e["phase"]) == phase)
+                if stat_item is not None:
+                    worktime_info[account_info.account_id] = isoduration_to_hour(stat_item.average)
+                else:
+                    worktime_info[account_info.account_id] = 0
+
+            worktime_info_list.append(worktime_info)
+
+        df = pd.DataFrame(worktime_info_list)
+        for column_name in df.columns:
+            if column_name == "date":
+                continue
+
+            username = self._get_username(column_name)
+            df.rename(columns={column_name: username})
 
         return df

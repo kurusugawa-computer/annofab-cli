@@ -5,6 +5,7 @@ from typing import List
 import pandas as pd
 
 from annofabcli.statistics.table import Table
+from annofabapi.models import TaskPhase
 
 logger = logging.getLogger(__name__)
 
@@ -207,3 +208,14 @@ class Tsv:
         ]
         required_columns = self._create_required_columns(df, prior_columns, dropped_columns=None)
         self._write_csv(f"{self.short_project_id}_ユーザ別日毎の作業時間.csv", df[required_columns])
+
+    def write_メンバー別画像1枚当たりの作業時間平均(self):
+        def write_dataframe(df, phase:TaskPhase):
+            df = self.table.create_worktime_per_image_df(phase)
+            if len(df) == 0:
+                logger.info(f"メンバー別画像1枚当たりの作業時間平均-{phase.value} 一覧が0件のため、出力しない")
+                return
+            self._write_csv(f"画像1枚当たり作業時間/{self.short_project_id}_画像1枚当たり作業時間_{phase.value}.csv", df)
+
+        for phase in TaskPhase:
+            write_dataframe(phase)
