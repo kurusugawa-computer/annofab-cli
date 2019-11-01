@@ -590,7 +590,7 @@ class Table:
 
         df = pd.DataFrame(worktime_info_list)
         # acount_idをusernameに変更する
-        columns = {col: self._get_username(col) for col in df.columns if col != "date"}
+        columns = {col: self._get_username(col) for col in df.columns if col != "date"}  # pylint: disable=not-an-iterable # noqa: E501
         return df.rename(columns=columns).fillna(0)
 
     def create_account_statistics_df2(self, account_statistics_value: AccountStatisticsValue) -> pd.DataFrame:
@@ -628,5 +628,5 @@ class Table:
 
         df = pd.DataFrame(account_info_list)
         # acount_idをusernameに変更する
-        columns = {col: self._get_username(col) for col in df.columns if col != "date"}
+        columns = {col: self._get_username(col) for col in df.columns if col != "date"}  # pylint: disable=not-an-iterable # noqa: E501
         return df.rename(columns=columns).fillna(0)

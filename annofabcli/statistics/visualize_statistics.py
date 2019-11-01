@@ -74,7 +74,7 @@ class VisualizeStatistics(AbstractCommandLineInterface):
         tsv_obj.write_member_list(arg_df=member_df)
         tsv_obj.write_ラベルごとのアノテーション数(arg_df=annotation_df)
         tsv_obj.write_ユーザ別日毎の作業時間()
-        tsv_obj.write_メンバー別画像1枚当たりの作業時間平均()
+        tsv_obj.write_メンバー別作業時間平均()
 
         graph_obj.wirte_ラベルごとのアノテーション数(annotation_df)
         graph_obj.write_プロジェクト全体のヒストグラム(task_df)
