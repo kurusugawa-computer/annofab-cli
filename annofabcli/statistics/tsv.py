@@ -210,7 +210,7 @@ class Tsv:
         self._write_csv(f"{self.short_project_id}_ユーザ別日毎の作業時間.csv", df[required_columns])
 
     def write_メンバー別画像1枚当たりの作業時間平均(self):
-        def write_dataframe(df, phase:TaskPhase):
+        def write_dataframe(phase:TaskPhase):
             df = self.table.create_worktime_per_image_df(phase)
             if len(df) == 0:
                 logger.info(f"メンバー別画像1枚当たりの作業時間平均-{phase.value} 一覧が0件のため、出力しない")

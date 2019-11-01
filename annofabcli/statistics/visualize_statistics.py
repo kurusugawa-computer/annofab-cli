@@ -63,10 +63,10 @@ class VisualizeStatistics(AbstractCommandLineInterface):
         graph_obj = Graph(table_obj, str(output_dir))
 
         # TSV出力
-        task_df = table_obj.create_task_df()
-        inspection_df = table_obj.create_inspection_df()
-        member_df = table_obj.create_member_df(task_df)
-        annotation_df = table_obj.create_task_for_annotation_df()
+        # task_df = table_obj.create_task_df()
+        # inspection_df = table_obj.create_inspection_df()
+        # member_df = table_obj.create_member_df(task_df)
+        # annotation_df = table_obj.create_task_for_annotation_df()
 
         # tsv_obj.write_task_list(arg_df=task_df, dropped_columns=["histories_by_phase", "input_data_id_list"])
         # tsv_obj.write_inspection_list(arg_df=inspection_df, dropped_columns=["data"])

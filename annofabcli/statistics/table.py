@@ -55,7 +55,8 @@ class Table:
         if self._worktime_statistics is not None:
             return self._worktime_statistics
         else:
-            worktime_statisitcs, _ = self.annofab_service.api.get_worktime_statistics(self.project_id)
+            worktime_statisitcs = self.annofab_service.wrapper.get_worktime_statistics(self.project_id)
+            self._worktime_statisitcs = worktime_statisitcs
             return worktime_statisitcs
 
     def _get_task_list(self) -> List[Task]:
@@ -548,10 +549,11 @@ class Table:
         worktime_statistics = self._get_worktime_statistics()
 
         worktime_info_list = []
-        for elm in worktime_statistics:
+        for dict_elm in worktime_statistics:
+            elm = WorktimeStatistics.from_dict(dict_elm)
             worktime_info = {"date": elm.date}
             for account_info in elm.accounts:
-                stat_item: Optional[WorktimeStatisticsItem] = first_true(account_info.by_inputs, pred=lambda e: TaskPhase(e["phase"]) == phase)
+                stat_item: Optional[WorktimeStatisticsItem] = first_true(account_info.by_inputs, pred=lambda e: e.phase == phase)
                 if stat_item is not None:
                     worktime_info[account_info.account_id] = isoduration_to_hour(stat_item.average)
                 else:
@@ -560,11 +562,13 @@ class Table:
             worktime_info_list.append(worktime_info)
 
         df = pd.DataFrame(worktime_info_list)
-        for column_name in df.columns:
+        columns = df.columns
+        for column_name in columns:
             if column_name == "date":
                 continue
 
             username = self._get_username(column_name)
-            df.rename(columns={column_name: username})
+            df = df.rename(columns={column_name: username})
 
+        df = df.fillna(0)
         return df
