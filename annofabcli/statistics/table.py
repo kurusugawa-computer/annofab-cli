@@ -8,9 +8,11 @@ from annofabapi.dataclass.annotation import SimpleAnnotationDetail
 from annofabapi.dataclass.statistics import WorktimeStatistics, WorktimeStatisticsItem
 from annofabapi.models import InputDataId, Inspection, Task, TaskHistory, TaskId, TaskPhase
 from more_itertools import first_true
+
 import annofabcli
-from annofabcli.statistics.database import AnnotationDict, Database
 from annofabcli.common.utils import isoduration_to_hour
+from annofabcli.statistics.database import AnnotationDict, Database
+
 logger = logging.getLogger(__name__)
 
 
@@ -532,7 +534,6 @@ class Table:
 
         return df
 
-
     def create_worktime_per_image_df(self, phase: TaskPhase) -> pd.DataFrame:
         """
         画像１枚あたりの作業時間を算出する。
@@ -553,7 +554,8 @@ class Table:
             elm = WorktimeStatistics.from_dict(dict_elm)
             worktime_info = {"date": elm.date}
             for account_info in elm.accounts:
-                stat_item: Optional[WorktimeStatisticsItem] = first_true(account_info.by_inputs, pred=lambda e: e.phase == phase)
+                stat_item: Optional[WorktimeStatisticsItem] = first_true(account_info.by_inputs,
+                                                                         pred=lambda e: e.phase == phase)
                 if stat_item is not None:
                     worktime_info[account_info.account_id] = isoduration_to_hour(stat_item.average)
                 else:

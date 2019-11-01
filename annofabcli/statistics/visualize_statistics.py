@@ -37,7 +37,7 @@ class VisualizeStatistics(AbstractCommandLineInterface):
     """
     def visualize_statistics(self, project_id: str, work_dir: Path, output_dir: Path, task_query: Dict[str, Any],
                              ignored_task_id_list: List[TaskId], user_id_list: List[str], update: bool = False,
-                             should_update_annotation_zip: bool = False):
+                             should_update_annotation_zip: bool = False, should_update_task_json: bool = False):
         """
         タスク一覧を出力する
 
@@ -55,7 +55,8 @@ class VisualizeStatistics(AbstractCommandLineInterface):
         database = Database(self.service, project_id, str(checkpoint_dir))
         if update:
             database.update_db(task_query, ignored_task_id_list,
-                               should_update_annotation_zip=should_update_annotation_zip)
+                               should_update_annotation_zip=should_update_annotation_zip,
+                               should_update_task_json=should_update_task_json)
 
         table_obj = Table(database, task_query, ignored_task_id_list)
         write_project_name_file(self.service, project_id, output_dir)
@@ -63,22 +64,21 @@ class VisualizeStatistics(AbstractCommandLineInterface):
         graph_obj = Graph(table_obj, str(output_dir))
 
         # TSV出力
-        # task_df = table_obj.create_task_df()
-        # inspection_df = table_obj.create_inspection_df()
-        # member_df = table_obj.create_member_df(task_df)
-        # annotation_df = table_obj.create_task_for_annotation_df()
+        task_df = table_obj.create_task_df()
+        inspection_df = table_obj.create_inspection_df()
+        member_df = table_obj.create_member_df(task_df)
+        annotation_df = table_obj.create_task_for_annotation_df()
 
-        # tsv_obj.write_task_list(arg_df=task_df, dropped_columns=["histories_by_phase", "input_data_id_list"])
-        # tsv_obj.write_inspection_list(arg_df=inspection_df, dropped_columns=["data"])
-        # tsv_obj.write_member_list(arg_df=member_df)
-        # tsv_obj.write_ラベルごとのアノテーション数(arg_df=annotation_df)
-        # tsv_obj.write_ユーザ別日毎の作業時間()
-
+        tsv_obj.write_task_list(arg_df=task_df, dropped_columns=["histories_by_phase", "input_data_id_list"])
+        tsv_obj.write_inspection_list(arg_df=inspection_df, dropped_columns=["data"])
+        tsv_obj.write_member_list(arg_df=member_df)
+        tsv_obj.write_ラベルごとのアノテーション数(arg_df=annotation_df)
+        tsv_obj.write_ユーザ別日毎の作業時間()
         tsv_obj.write_メンバー別画像1枚当たりの作業時間平均()
 
-        # graph_obj.wirte_ラベルごとのアノテーション数(annotation_df)
-        # graph_obj.write_プロジェクト全体のヒストグラム(task_df)
-        # graph_obj.write_アノテーションあたり作業時間(task_df=task_df, first_annotation_user_id_list=user_id_list)
+        graph_obj.wirte_ラベルごとのアノテーション数(annotation_df)
+        graph_obj.write_プロジェクト全体のヒストグラム(task_df)
+        graph_obj.write_アノテーションあたり作業時間(task_df=task_df, first_annotation_user_id_list=user_id_list)
 
     def main(self):
         args = self.args
@@ -89,7 +89,8 @@ class VisualizeStatistics(AbstractCommandLineInterface):
         self.visualize_statistics(args.project_id, output_dir=Path(args.output_dir), work_dir=Path(args.work_dir),
                                   task_query=task_query, ignored_task_id_list=ignored_task_id_list,
                                   user_id_list=user_id_list, update=not args.not_update,
-                                  should_update_annotation_zip=args.update_annotation)
+                                  should_update_annotation_zip=args.update_annotation,
+                                  should_update_task_json=args.update_task_json)
 
 
 def main(args):
@@ -125,6 +126,8 @@ def parse_args(parser: argparse.ArgumentParser):
     parser.add_argument(
         '--update_annotation', action="store_true", help='アノテーションzipを更新してから、アノテーションzipをダウンロードします。'
         'ただし、アノテーションzipの最終更新日時がタスクの最終更新日時より新しい場合は、アノテーションzipを更新しません。')
+
+    parser.add_argument('--update_task_json', action="store_true", help='タスク全件ファイルJSONを更新してから、タスク全件ファイルJSONをダウンロードします。')
 
     parser.add_argument('--work_dir', type=str, default=".annofab-cli",
                         help="作業ディレクトリのパス。指定しない場合カレントの'.annofab-cli'ディレクトリに保存する")

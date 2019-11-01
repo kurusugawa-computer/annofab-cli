@@ -3,9 +3,9 @@ from pathlib import Path
 from typing import List
 
 import pandas as pd
+from annofabapi.models import TaskPhase
 
 from annofabcli.statistics.table import Table
-from annofabapi.models import TaskPhase
 
 logger = logging.getLogger(__name__)
 
@@ -36,7 +36,7 @@ class Tsv:
         output_path = Path(f"{self.outdir}/{filename}")
         output_path.parent.mkdir(exist_ok=True, parents=True)
         logger.debug(f"{str(output_path)} 書き込み")
-        df.to_csv(str(output_path), sep=",", encoding="utf_8_sig")
+        df.to_csv(str(output_path), sep=",", encoding="utf_8_sig", index=False)
 
     @staticmethod
     def _create_required_columns(df, prior_columns, dropped_columns):
@@ -210,7 +210,7 @@ class Tsv:
         self._write_csv(f"{self.short_project_id}_ユーザ別日毎の作業時間.csv", df[required_columns])
 
     def write_メンバー別画像1枚当たりの作業時間平均(self):
-        def write_dataframe(phase:TaskPhase):
+        def write_dataframe(phase: TaskPhase):
             df = self.table.create_worktime_per_image_df(phase)
             if len(df) == 0:
                 logger.info(f"メンバー別画像1枚当たりの作業時間平均-{phase.value} 一覧が0件のため、出力しない")
