@@ -545,7 +545,8 @@ class Table:
         # 教師付の開始時刻でソートして、indexを更新する
         df = task_df.sort_values(["first_annotation_account_id",
                                   "first_annotation_started_datetime"]).reset_index(drop=True)
-
+        # タスクの累計数を取得するために設定する
+        df["task_count"] = 1
         # 教師付の作業者でgroupby
         groupby_obj = df.groupby("first_annotation_account_id")
 
@@ -557,7 +558,11 @@ class Table:
         # タスク完了数、差し戻し数
         df["cumulative_inspection_count"] = groupby_obj["inspection_count"].cumsum()
         df["cumulative_annotation_count"] = groupby_obj["annotation_count"].cumsum()
+        df["cumulative_input_data_count"] = groupby_obj["input_data_count"].cumsum()
+        df["cumulative_task_count"] = groupby_obj["task_count"].cumsum()
 
+        # 元に戻す
+        df = df.drop(["task_count"], axis=1)
         return df
 
     def create_worktime_per_image_df(self, aggregation_by: AggregationBy, phase: TaskPhase) -> pd.DataFrame:
