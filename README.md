@@ -204,7 +204,7 @@ disable_existing_loggers: False
 
 ```
 # 受入完了のタスクのtask_id一覧を、acceptance_complete_task_id.txtに出力する。
-$ annofabcli task list --project_id prj1  --task_query '{"phase": "complete","phase":"acceptance"}' \
+$ annofabcli task list --project_id prj1  --task_query '{"status": "complete","phase":"acceptance"}' \
  --format task_id_list --output acceptance_complete_task_id.txt
 
 # 受入完了タスクの中で、 "car"ラベルの"occluded"チェックボックスがONのアノテーションの個数を出力する。
