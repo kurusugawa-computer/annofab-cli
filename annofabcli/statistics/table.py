@@ -555,11 +555,14 @@ class Table:
         df["cumulative_acceptance_worktime_hour"] = groupby_obj["acceptance_worktime_hour"].cumsum()
         df["cumulative_inspection_worktime_hour"] = groupby_obj["inspection_worktime_hour"].cumsum()
 
-        # タスク完了数、差し戻し数
+        # タスク完了数、差し戻し数など
         df["cumulative_inspection_count"] = groupby_obj["inspection_count"].cumsum()
         df["cumulative_annotation_count"] = groupby_obj["annotation_count"].cumsum()
         df["cumulative_input_data_count"] = groupby_obj["input_data_count"].cumsum()
         df["cumulative_task_count"] = groupby_obj["task_count"].cumsum()
+        df["cumulative_number_of_rejections"] = groupby_obj["number_of_rejections"].cumsum()
+        df["cumulative_number_of_rejections_by_inspection"] = groupby_obj["number_of_rejections_by_inspection"].cumsum()
+        df["cumulative_number_of_rejections_by_acceptance"] = groupby_obj["number_of_rejections_by_acceptance"].cumsum()
 
         # 元に戻す
         df = df.drop(["task_count"], axis=1)
