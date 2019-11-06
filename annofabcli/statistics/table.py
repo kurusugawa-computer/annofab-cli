@@ -14,6 +14,7 @@ from more_itertools import first_true
 import annofabcli
 from annofabcli.common.utils import isoduration_to_hour
 from annofabcli.statistics.database import AnnotationDict, Database
+from annofabcli.common.facade import AnnofabApiFacade
 
 logger = logging.getLogger(__name__)
 
@@ -55,6 +56,7 @@ class Table:
     def __init__(self, database: Database, task_query_param: Dict[str, Any],
                  ignored_task_id_list: Optional[List[TaskId]] = None):
         self.annofab_service = database.annofab_service
+        self.annofab_facade = AnnofabApiFacade(database.annofab_service)
         self.database = database
         self.task_query_param = task_query_param
         self.ignored_task_id_list = ignored_task_id_list
@@ -157,8 +159,9 @@ class Table:
         if account_id is None:
             return None
 
-        if account_id in self.project_members_dict:
-            return self.project_members_dict[account_id]["user_id"]
+        member = self.annofab_facade.get_organization_member_from_account_id(self.project_id, account_id)
+        if member is not None:
+            return member["user_id"]
         else:
             return account_id
 
@@ -170,8 +173,9 @@ class Table:
         if account_id is None:
             return None
 
-        if account_id in self.project_members_dict:
-            return self.project_members_dict[account_id]["username"]
+        member = self.annofab_facade.get_organization_member_from_account_id(self.project_id, account_id)
+        if member is not None:
+            return member["username"]
         else:
             return account_id
 
