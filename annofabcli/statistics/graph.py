@@ -259,7 +259,7 @@ class Graph:
         logger.debug(f"グラフに表示するuser_id = {first_annotation_user_id_list}")
 
         # 累計値を計算
-        df = self.table.create_cumulative_df(task_df)
+        df = self.table.create_cumulative_df_by_first_annotator(task_df)
 
         # 横軸が累計のアノテーション数
         fig_info_list_annotation_count = [
@@ -405,7 +405,7 @@ class Graph:
         logger.debug(f"グラフに表示するuser_id = {first_inspection_user_id_list}")
 
         # 累計値を計算
-        df = self.table.create_cumulative_df(task_df)
+        df = self.table.create_cumulative_df_by_first_inspector(task_df)
 
         # 横軸が累計のアノテーション数
         fig_info_list_annotation_count = [
