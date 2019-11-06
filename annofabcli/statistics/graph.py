@@ -1,5 +1,5 @@
 import logging
-from typing import List, Optional
+from typing import Any, Dict, List, Optional  # pylint: disable=unused-import
 
 import bokeh
 import bokeh.layouts
@@ -37,7 +37,7 @@ class Graph:
         self.short_project_id = table.project_id[0:8]
 
     @staticmethod
-    def _create_hover_tool(tool_tip_items: List[str] = None):
+    def _create_hover_tool(tool_tip_items: List[str] = None) -> HoverTool:
         """
         HoverTool用のオブジェクトを生成する。
         Returns:
@@ -70,12 +70,12 @@ class Graph:
 
         """
 
-        fig.line(x=x, y=y, source=source, legend=username, line_color=color, line_width=1, muted_alpha=0.2,
+        fig.line(x=x, y=y, source=source, legend_label=username, line_color=color, line_width=1, muted_alpha=0.2,
                  muted_color=color)
-        fig.circle(x=x, y=y, source=source, legend=username, muted_alpha=0.0, muted_color=color, color=color)
+        fig.circle(x=x, y=y, source=source, legend_label=username, muted_alpha=0.0, muted_color=color, color=color)
 
     @staticmethod
-    def _set_legend(fig: bokeh.plotting.Figure, hover_tool):
+    def _set_legend(fig: bokeh.plotting.Figure, hover_tool: HoverTool):
         """
         凡例の設定。
         Args:
@@ -170,6 +170,56 @@ class Graph:
         Returns:
 
         """
+        def write_cumulative_graph(fig_info_list: List[Dict[str, str]], html_title: str):
+            """
+            累計グラフを出力する。
+
+            Args:
+                fig_info_list:
+                html_title:
+
+            Returns:
+
+            """
+            figs: List[bokeh.plotting.Figure] = []
+            for fig_info in fig_info_list:
+                figs.append(
+                    figure(plot_width=1200, plot_height=600, title=fig_info["title"],
+                           x_axis_label=fig_info["x_axis_label"], y_axis_label=fig_info["y_axis_label"]))
+
+            for user_index, user_id in enumerate(first_annotation_user_id_list):  # type: ignore
+                filtered_df = df[df["first_annotation_user_id"] == user_id]
+                if filtered_df.empty:
+                    logger.debug(f"dataframe is empty. user_id = {user_id}")
+                    continue
+
+                # 列が多すぎるとbokehのグラフが表示されないので絞り込む
+                columns = tooltip_item + [
+                    "cumulative_annotation_count",
+                    "cumulative_input_data_count",
+                    "cumulative_task_count",
+                    "cumulative_annotation_worktime_hour",
+                    "cumulative_inspection_worktime_hour",
+                    "cumulative_acceptance_worktime_hour",
+                    "cumulative_inspection_count",
+                ]
+
+                filtered_df = filtered_df[columns]
+                source = ColumnDataSource(data=filtered_df)
+                color = self.my_palette[user_index]
+                username = filtered_df.iloc[0]["first_annotation_username"]
+
+                for fig, fig_info in zip(figs, fig_info_list):
+                    self._plot_line_and_circle(fig, x=fig_info["x"], y=fig_info["y"], source=source, username=username,
+                                               color=color)
+
+            hover_tool = self._create_hover_tool(tooltip_item)
+            for fig in figs:
+                self._set_legend(fig, hover_tool)
+
+            bokeh.plotting.reset_output()
+            bokeh.plotting.output_file(f"{self.outdir}/{self.short_project_id}_{html_title}.html", title=html_title)
+            bokeh.plotting.save(bokeh.layouts.column(figs))
 
         tooltip_item = [
             "task_id",
@@ -182,6 +232,7 @@ class Graph:
             "inspection_worktime_hour",
             "acceptance_worktime_hour",
             "annotation_count",
+            "input_data_count",
             "inspection_count",
         ]
 
@@ -205,8 +256,8 @@ class Graph:
         # 累計値を計算
         df = self.table.create_cumulative_df(task_df)
 
-        # グラフの情報
-        fig_info_list = [
+        # 横軸が累計のアノテーション数
+        fig_info_list_annotation_count = [
             dict(x="cumulative_annotation_count", y="cumulative_annotation_worktime_hour",
                  title="アノテーション数と教師付作業時間の累積グラフ", x_axis_label="アノテーション数", y_axis_label="教師付作業時間[hour]"),
             dict(x="cumulative_annotation_count", y="cumulative_inspection_worktime_hour",
@@ -216,42 +267,29 @@ class Graph:
             dict(x="cumulative_annotation_count", y="cumulative_inspection_count", title="アノテーション数と検査コメント数の累積グラフ",
                  x_axis_label="アノテーション数", y_axis_label="検査コメント数"),
         ]
+        write_cumulative_graph(fig_info_list_annotation_count, html_title="アノテーション単位の累計グラフ")
 
-        figs = []
-        for fig_info in fig_info_list:
-            figs.append(
-                figure(plot_width=1200, plot_height=600, title=fig_info["title"], x_axis_label=fig_info["x_axis_label"],
-                       y_axis_label=fig_info["y_axis_label"]))
+        # 横軸が累計の入力データ数
+        fig_info_list_input_data_count = [
+            dict(x="cumulative_input_data_count", y="cumulative_annotation_worktime_hour", title="入力データ数と教師付作業時間の累積グラフ",
+                 x_axis_label="入力データ数", y_axis_label="教師付作業時間[hour]"),
+            dict(x="cumulative_input_data_count", y="cumulative_inspection_worktime_hour",
+                 title="入力データ数と中間検査作業時間の累積グラフ", x_axis_label="入力データ数", y_axis_label="中間検査作業時間[hour]"),
+            dict(x="cumulative_input_data_count", y="cumulative_acceptance_worktime_hour", title="入力データ数と受入作業時間の累積グラフ",
+                 x_axis_label="入力データ数", y_axis_label="受入作業時間[hour]"),
+            dict(x="cumulative_input_data_count", y="cumulative_inspection_count", title="アノテーション数と検査コメント数の累積グラフ",
+                 x_axis_label="入力データ数", y_axis_label="検査コメント数"),
+        ]
+        write_cumulative_graph(fig_info_list_input_data_count, html_title="入力データ単位の累計グラフ")
 
-        for user_index, user_id in enumerate(first_annotation_user_id_list):
-            filtered_df = df[df["first_annotation_user_id"] == user_id]
-            if filtered_df.empty:
-                logger.debug(f"dataframe is empty. user_id = {user_id}")
-                continue
-
-            # 列が多すぎるとbokehのグラフが表示されないので絞り込む
-            columns = tooltip_item + [
-                "cumulative_annotation_count",
-                "cumulative_annotation_worktime_hour",
-                "cumulative_inspection_worktime_hour",
-                "cumulative_acceptance_worktime_hour",
-                "cumulative_inspection_count",
-            ]
-
-            filtered_df = filtered_df[columns]
-            source = ColumnDataSource(data=filtered_df)
-            color = self.my_palette[user_index]
-            username = filtered_df.iloc[0]["first_annotation_username"]
-
-            for fig, fig_info in zip(figs, fig_info_list):
-                self._plot_line_and_circle(fig, x=fig_info["x"], y=fig_info["y"], source=source, username=username,
-                                           color=color)
-
-        hover_tool = self._create_hover_tool(tooltip_item)
-        for fig in figs:
-            self._set_legend(fig, hover_tool)
-
-        bokeh.plotting.reset_output()
-        bokeh.plotting.output_file(f"{self.outdir}/{self.short_project_id}_アノテーション単位の累計グラフ.html",
-                                   title="アノテーション単位の累計グラフ")
-        bokeh.plotting.save(bokeh.layouts.column(figs))
+        fig_info_list_task_count = [
+            dict(x="cumulative_task_count", y="cumulative_annotation_worktime_hour", title="アノテーション数と教師付作業時間の累積グラフ",
+                 x_axis_label="アノテーション数", y_axis_label="教師付作業時間[hour]"),
+            dict(x="cumulative_task_count", y="cumulative_inspection_worktime_hour", title="アノテーション数と中間検査作業時間の累積グラフ",
+                 x_axis_label="アノテーション数", y_axis_label="中間検査作業時間[hour]"),
+            dict(x="cumulative_task_count", y="cumulative_acceptance_worktime_hour", title="アノテーション数と受入作業時間の累積グラフ",
+                 x_axis_label="アノテーション数", y_axis_label="受入作業時間[hour]"),
+            dict(x="cumulative_task_count", y="cumulative_inspection_count", title="アノテーション数と検査コメント数の累積グラフ",
+                 x_axis_label="アノテーション数", y_axis_label="検査コメント数"),
+        ]
+        write_cumulative_graph(fig_info_list_task_count, html_title="タスク単位の累計グラフ")

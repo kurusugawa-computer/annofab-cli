@@ -35,7 +35,7 @@ setup(
                       'pyquery',
                       'pandas',
                       'isodate',
-                      'bokeh >=1.2.0',
+                      'bokeh >=1.4.0',
                       'holoviews'],
     python_requires='>=3.6',
     classifiers=[

@@ -39,24 +39,25 @@ class PutInputData(AbstractCommandLineInterface):
     """
     def put_input_data(self, project_id: str, csv_input_data: CsvInputData,
                        last_updated_datetime: Optional[str] = None):
+
+        request_body: Dict[str, Any] = {'last_updated_datetime': last_updated_datetime}
+
         if is_file_scheme(csv_input_data.input_data_path):
-            request_body = {
+            request_body.update({
                 'input_data_name': csv_input_data.input_data_name,
                 'sign_required': csv_input_data.sign_required,
-            }
+            })
             file_path = get_file_scheme_path(csv_input_data.input_data_path)
             logger.debug(f"'{file_path}'を入力データとして登録します。")
             self.service.wrapper.put_input_data_from_file(project_id, input_data_id=csv_input_data.input_data_id,
                                                           file_path=file_path, request_body=request_body)
 
         else:
-            request_body = {
+            request_body.update({
                 'input_data_name': csv_input_data.input_data_name,
                 'input_data_path': csv_input_data.input_data_path,
                 'sign_required': csv_input_data.sign_required,
-            }
-            if last_updated_datetime is not None:
-                request_body.update({'last_updated_datetime': last_updated_datetime})
+            })
 
             self.service.api.put_input_data(project_id, csv_input_data.input_data_id, request_body=request_body)
 
@@ -115,7 +116,7 @@ class PutInputData(AbstractCommandLineInterface):
 
             # 入力データを登録
             try:
-                self.put_input_data(project_id, csv_input_data, last_updated_datetime)
+                self.put_input_data(project_id, csv_input_data, last_updated_datetime=last_updated_datetime)
                 logger.debug(f"入力データを登録しました。"
                              f"input_data_id={csv_input_data.input_data_id}, "
                              f"input_data_name={csv_input_data.input_data_name}")
