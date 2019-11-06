@@ -309,29 +309,48 @@ class Table:
 
         return rejections_by_phase
 
+    def _set_task_history(self, task:Task, task_history: Optional[TaskHistory], column_prefix: str) -> Task:
+        if task_history is None:
+            task.update({
+                f"{column_prefix}_account_id": None,
+                f"{column_prefix}_user_id": None,
+                f"{column_prefix}_username": None,
+                f"{column_prefix}_started_datetime": None,
+                f"{column_prefix}_worktime_hour": 0
+            })
+        else:
+            account_id = task_history["account_id"]
+            task.update({
+                f"{column_prefix}_account_id": account_id,
+                f"{column_prefix}_user_id": self._get_user_id(account_id),
+                f"{column_prefix}_username": self._get_username(account_id),
+                f"{column_prefix}_started_datetime": task_history["started_datetime"],
+                f"{column_prefix}_worktime_hour": isoduration_to_hour(task_history["accumulated_labor_time_milliseconds"])
+            })
+
+        return task
+
+
     def set_task_histories(self, task: Task, task_histories: List[TaskHistory]):
         """
         タスク履歴関係の情報を設定する
         """
+
         annotation_histories = [e for e in task_histories if e["phase"] == TaskPhase.ANNOTATION.value]
         inspection_histories = [e for e in task_histories if e["phase"] == TaskPhase.INSPECTION.value]
         acceptance_histories = [e for e in task_histories if e["phase"] == TaskPhase.ACCEPTANCE.value]
 
-        if len(annotation_histories) > 0:
-            first_annotation_history = annotation_histories[0]
-            first_annotation_account_id = first_annotation_history["account_id"]
-            task["first_annotation_account_id"] = first_annotation_account_id
-            task["first_annotation_user_id"] = self._get_user_id(first_annotation_account_id)
-            task["first_annotation_username"] = self._get_username(first_annotation_account_id)
-            task["first_annotation_started_datetime"] = first_annotation_history["started_datetime"]
-            task["first_annotation_worktime_hour"] = annofabcli.utils.isoduration_to_hour(
-                first_annotation_history["accumulated_labor_time_milliseconds"])
-        else:
-            task["first_annotation_account_id"] = None
-            task["first_annotation_user_id"] = None
-            task["first_annotation_username"] = None
-            task["first_annotation_started_datetime"] = None
-            task["first_annotation_worktime_hour"] = 0
+        # 最初の教師付情報を設定する
+        first_annotation_history = annotation_histories[0] if len(annotation_histories) > 0 else None
+        self._set_task_history(task, first_annotation_history, column_prefix="first_annotation")
+
+        # 最初の検査情報を設定する
+        first_inspection_history = inspection_histories[0] if len(inspection_histories) > 0 else None
+        self._set_task_history(task, first_inspection_history, column_prefix="first_inspection")
+
+        # 最初の受入情報を設定する
+        first_acceptance_history = acceptance_histories[0] if len(acceptance_histories) > 0 else None
+        self._set_task_history(task, first_acceptance_history, column_prefix="first_acceptance")
 
         task["annotation_worktime_hour"] = sum([
             annofabcli.utils.isoduration_to_hour(e["accumulated_labor_time_milliseconds"]) for e in annotation_histories

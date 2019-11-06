@@ -55,7 +55,7 @@ class Graph:
         return hover_tool
 
     @staticmethod
-    def _plot_line_and_circle(fig, x, y, source, username, color):
+    def _plot_line_and_circle(fig, x, y, source: ColumnDataSource, username: str, color):
         """
         線を引いて、プロットした部分に丸を付ける。
         Args:
@@ -231,6 +231,7 @@ class Graph:
             "first_annotation_user_id",
             "first_annotation_username",
             "first_annotation_started_datetime",
+            "updated_datetime",
             "annotation_worktime_hour",
             "inspection_worktime_hour",
             "acceptance_worktime_hour",
