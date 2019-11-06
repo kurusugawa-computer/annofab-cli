@@ -112,7 +112,7 @@ class Database:
 
     def read_annotation_summary(self, task_list: List[Task],
                                 annotation_summary_func: AnnotationSummaryFunc) -> AnnotationDict:
-        logger.info(f"reading {str(self.annotations_zip_path)}")
+        logger.debug(f"reading {str(self.annotations_zip_path)}")
 
         def read_annotation_summary(task_id: str, input_data_id_: str) -> Dict[str, Any]:
             json_path = f"{task_id}/{input_data_id_}.json"
@@ -347,7 +347,9 @@ class Database:
         with open(str(self.tasks_json_path)) as f:
             all_tasks = json.load(f)
 
-        return [task for task in all_tasks if filter_task(task)]
+        filtered_task_list = [task for task in all_tasks if filter_task(task)]
+        logger.debug(f"集計対象のタスク数 = {len(filtered_task_list)}")
+        return filtered_task_list
 
     def update_db(self, task_query_param: Dict[str, Any], ignored_task_ids: Optional[List[str]] = None,
                   should_update_annotation_zip: bool = False, should_update_task_json: bool = False) -> None:

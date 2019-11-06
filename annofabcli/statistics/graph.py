@@ -166,7 +166,7 @@ class Graph:
 
         Args:
             task_df:
-            first_annotation_user_id_list: 最初のアノテーションを担当したuser_idのList. Noneの場合はtask_dfから20個取得する
+            first_annotation_user_id_list: 最初のアノテーションを担当したuser_idのList. Noneの場合はtask_dfから決まる。
 
         Returns:
 
@@ -264,11 +264,11 @@ class Graph:
         # 横軸が累計のアノテーション数
         fig_info_list_annotation_count = [
             dict(x="cumulative_annotation_count", y="cumulative_annotation_worktime_hour",
-                 title="アノテーション数と教師付作業時間の累積グラフ", x_axis_label="アノテーション数", y_axis_label="教師付作業時間[hour]"),
+                 title="アノテーション数と教師付時間の累積グラフ", x_axis_label="アノテーション数", y_axis_label="教師付時間[hour]"),
             dict(x="cumulative_annotation_count", y="cumulative_inspection_worktime_hour",
-                 title="アノテーション数と中間検査作業時間の累積グラフ", x_axis_label="アノテーション数", y_axis_label="中間検査作業時間[hour]"),
+                 title="アノテーション数と検査時間の累積グラフ", x_axis_label="アノテーション数", y_axis_label="検査時間[hour]"),
             dict(x="cumulative_annotation_count", y="cumulative_acceptance_worktime_hour",
-                 title="アノテーション数と受入作業時間の累積グラフ", x_axis_label="アノテーション数", y_axis_label="受入作業時間[hour]"),
+                 title="アノテーション数と受入時間の累積グラフ", x_axis_label="アノテーション数", y_axis_label="受入時間[hour]"),
             dict(x="cumulative_annotation_count", y="cumulative_inspection_count", title="アノテーション数と検査コメント数の累積グラフ",
                  x_axis_label="アノテーション数", y_axis_label="検査コメント数"),
         ]
@@ -276,12 +276,12 @@ class Graph:
 
         # 横軸が累計の入力データ数
         fig_info_list_input_data_count = [
-            dict(x="cumulative_input_data_count", y="cumulative_annotation_worktime_hour", title="入力データ数と教師付作業時間の累積グラフ",
-                 x_axis_label="入力データ数", y_axis_label="教師付作業時間[hour]"),
+            dict(x="cumulative_input_data_count", y="cumulative_annotation_worktime_hour", title="入力データ数と教師付時間の累積グラフ",
+                 x_axis_label="入力データ数", y_axis_label="教師付時間[hour]"),
             dict(x="cumulative_input_data_count", y="cumulative_inspection_worktime_hour",
-                 title="入力データ数と中間検査作業時間の累積グラフ", x_axis_label="入力データ数", y_axis_label="中間検査作業時間[hour]"),
-            dict(x="cumulative_input_data_count", y="cumulative_acceptance_worktime_hour", title="入力データ数と受入作業時間の累積グラフ",
-                 x_axis_label="入力データ数", y_axis_label="受入作業時間[hour]"),
+                 title="入力データ数と検査時間の累積グラフ", x_axis_label="入力データ数", y_axis_label="検査時間[hour]"),
+            dict(x="cumulative_input_data_count", y="cumulative_acceptance_worktime_hour", title="入力データ数と受入時間の累積グラフ",
+                 x_axis_label="入力データ数", y_axis_label="受入時間[hour]"),
             dict(x="cumulative_input_data_count", y="cumulative_inspection_count", title="アノテーション数と検査コメント数の累積グラフ",
                  x_axis_label="入力データ数", y_axis_label="検査コメント数"),
         ]
@@ -289,12 +289,12 @@ class Graph:
 
         # 横軸が累計のタスク数
         fig_info_list_task_count = [
-            dict(x="cumulative_task_count", y="cumulative_annotation_worktime_hour", title="タスク数と教師付作業時間の累積グラフ",
-                 x_axis_label="タスク数", y_axis_label="教師付作業時間[hour]"),
-            dict(x="cumulative_task_count", y="cumulative_inspection_worktime_hour", title="タスク数と中間検査作業時間の累積グラフ",
-                 x_axis_label="タスク数", y_axis_label="中間検査作業時間[hour]"),
-            dict(x="cumulative_task_count", y="cumulative_acceptance_worktime_hour", title="タスク数と受入作業時間の累積グラフ",
-                 x_axis_label="タスク数", y_axis_label="受入作業時間[hour]"),
+            dict(x="cumulative_task_count", y="cumulative_annotation_worktime_hour", title="タスク数と教師付時間の累積グラフ",
+                 x_axis_label="タスク数", y_axis_label="教師付時間[hour]"),
+            dict(x="cumulative_task_count", y="cumulative_inspection_worktime_hour", title="タスク数と検査時間の累積グラフ",
+                 x_axis_label="タスク数", y_axis_label="検査時間[hour]"),
+            dict(x="cumulative_task_count", y="cumulative_acceptance_worktime_hour", title="タスク数と受入時間の累積グラフ",
+                 x_axis_label="タスク数", y_axis_label="受入時間[hour]"),
             dict(x="cumulative_task_count", y="cumulative_inspection_count", title="タスク数と検査コメント数の累積グラフ",
                  x_axis_label="タスク数", y_axis_label="検査コメント数"),
             dict(x="cumulative_task_count", y="cumulative_number_of_rejections", title="タスク数と差押し戻し回数の累積グラフ",
@@ -306,3 +306,133 @@ class Graph:
                  x_axis_label="タスク数", y_axis_label="差し戻し回数(受入フェーズ)"),
         ]
         write_cumulative_graph(fig_info_list_task_count, html_title="タスク単位の累計グラフ")
+
+    def write_cumulative_line_graph_for_inspector(self, task_df: Optional[pd.DataFrame] = None,
+                                                  first_inspection_user_id_list: Optional[List[str]] = None):
+        """
+        検査作業者用の累積折れ線グラフを出力する。
+
+        Args:
+            task_df:
+            first_inspection_user_id_list: 最初の検査フェーズを担当したuser_idのList. Noneの場合はtask_dfから決まる。
+
+        Returns:
+
+        """
+        def write_cumulative_graph(fig_info_list: List[Dict[str, str]], html_title: str):
+            """
+            累計グラフを出力する。
+
+            Args:
+                fig_info_list:
+                html_title:
+
+            Returns:
+
+            """
+            figs: List[bokeh.plotting.Figure] = []
+            for fig_info in fig_info_list:
+                figs.append(
+                    figure(plot_width=1200, plot_height=600, title=fig_info["title"],
+                           x_axis_label=fig_info["x_axis_label"], y_axis_label=fig_info["y_axis_label"]))
+
+            for user_index, user_id in enumerate(first_inspection_user_id_list):  # type: ignore
+                filtered_df = df[df["first_inspection_user_id"] == user_id]
+                if filtered_df.empty:
+                    logger.debug(f"dataframe is empty. user_id = {user_id}")
+                    continue
+
+                # 列が多すぎるとbokehのグラフが表示されないので絞り込む
+                columns = tooltip_item + [
+                    "cumulative_annotation_count",
+                    "cumulative_input_data_count",
+                    "cumulative_task_count",
+                    "cumulative_first_inspection_worktime_hour",
+                    "cumulative_inspection_worktime_hour",
+                    "cumulative_acceptance_worktime_hour",
+                    "cumulative_inspection_count",
+                ]
+
+                filtered_df = filtered_df[columns]
+                source = ColumnDataSource(data=filtered_df)
+                color = self.my_palette[user_index]
+                username = filtered_df.iloc[0]["first_inspection_username"]
+
+                for fig, fig_info in zip(figs, fig_info_list):
+                    self._plot_line_and_circle(fig, x=fig_info["x"], y=fig_info["y"], source=source, username=username,
+                                               color=color)
+
+            hover_tool = self._create_hover_tool(tooltip_item)
+            for fig in figs:
+                self._set_legend(fig, hover_tool)
+
+            bokeh.plotting.reset_output()
+            bokeh.plotting.output_file(f"{self.outdir}/{self.short_project_id}_{html_title}.html", title=html_title)
+            bokeh.plotting.save(bokeh.layouts.column(figs))
+
+        tooltip_item = [
+            "task_id",
+            "phase",
+            "status",
+            "first_annotation_username",
+            "first_annotation_started_datetime",
+            "first_inspection_username",
+            "first_inspection_started_datetime",
+            "updated_datetime",
+            "annotation_worktime_hour",
+            "inspection_worktime_hour",
+            "acceptance_worktime_hour",
+            "annotation_count",
+            "input_data_count",
+            "inspection_count",
+        ]
+
+        task_df = self.table.create_task_df() if task_df is None else task_df
+        if len(task_df) == 0:
+            logger.info("タスク一覧が0件のため出力しない")
+            return
+
+        max_user_length = len(self.my_palette)
+        if first_inspection_user_id_list is None or len(first_inspection_user_id_list) == 0:
+            tmp_list: List[str] = task_df["first_inspection_user_id"].dropna().unique().tolist()[0:max_user_length]
+            tmp_list.sort()
+            first_inspection_user_id_list = tmp_list
+
+        if len(first_inspection_user_id_list) > max_user_length:
+            logger.debug(f"表示対象のuser_idの数が多いため、先頭から{max_user_length}個のみグラフ化します")
+            first_inspection_user_id_list = first_inspection_user_id_list[0:max_user_length]
+
+        logger.debug(f"グラフに表示するuser_id = {first_inspection_user_id_list}")
+
+        # 累計値を計算
+        df = self.table.create_cumulative_df(task_df)
+
+        # 横軸が累計のアノテーション数
+        fig_info_list_annotation_count = [
+            dict(x="cumulative_annotation_count", y="cumulative_first_inspection_worktime_hour",
+                 title="アノテーション数と1回目検査時間の累積グラフ", x_axis_label="アノテーション数", y_axis_label="1回目の検査時間[hour]"),
+
+            dict(x="cumulative_annotation_count", y="cumulative_inspection_worktime_hour",
+                 title="アノテーション数と検査時間の累積グラフ", x_axis_label="アノテーション数", y_axis_label="検査時間[hour]"),
+
+            dict(x="cumulative_inspection_count", y="cumulative_first_inspection_worktime_hour",
+                 title="検査コメント数と1回目検査時間の累積グラフ", x_axis_label="検査コメント数", y_axis_label="1回目の検査時間[hour]"),
+
+            dict(x="cumulative_inspection_count", y="cumulative_inspection_worktime_hour",
+                 title="検査コメント数と検査時間の累積グラフ", x_axis_label="検査コメント数", y_axis_label="検査時間[hour]"),
+
+        ]
+        write_cumulative_graph(fig_info_list_annotation_count, html_title="検査者用_アノテーション単位の累計グラフ")
+
+        # 横軸が累計の入力データ数
+        fig_info_list_input_data_count = [
+            dict(x="cumulative_input_data_count", y="cumulative_first_inspection_worktime_hour",
+                 title="アノテーション数と1回目検査時間の累積グラフ",
+                 x_axis_label="入力データ数", y_axis_label="1回目の検査時間[hour]"),
+
+            dict(x="cumulative_input_data_count", y="cumulative_inspection_worktime_hour",
+                 title="入力データ数と検査時間の累積グラフ", x_axis_label="入力データ数", y_axis_label="検査時間[hour]"),
+
+        ]
+        write_cumulative_graph(fig_info_list_input_data_count, html_title="検査者用_入力データ単位の累計グラフ")
+
