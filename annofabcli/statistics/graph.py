@@ -187,7 +187,7 @@ class Graph:
                     figure(plot_width=1200, plot_height=600, title=fig_info["title"],
                            x_axis_label=fig_info["x_axis_label"], y_axis_label=fig_info["y_axis_label"]))
 
-            for user_index, user_id in enumerate(first_annotation_user_id_list):
+            for user_index, user_id in enumerate(first_annotation_user_id_list):  # type: ignore
                 filtered_df = df[df["first_annotation_user_id"] == user_id]
                 if filtered_df.empty:
                     logger.debug(f"dataframe is empty. user_id = {user_id}")
@@ -220,7 +220,6 @@ class Graph:
             bokeh.plotting.reset_output()
             bokeh.plotting.output_file(f"{self.outdir}/{self.short_project_id}_{html_title}.html", title=html_title)
             bokeh.plotting.save(bokeh.layouts.column(figs))
-
 
         tooltip_item = [
             "task_id",
@@ -284,14 +283,13 @@ class Graph:
         write_cumulative_graph(fig_info_list_input_data_count, html_title="入力データ単位の累計グラフ")
 
         fig_info_list_task_count = [
-            dict(x="cumulative_task_count", y="cumulative_annotation_worktime_hour",
-                 title="アノテーション数と教師付作業時間の累積グラフ", x_axis_label="アノテーション数", y_axis_label="教師付作業時間[hour]"),
-            dict(x="cumulative_task_count", y="cumulative_inspection_worktime_hour",
-                 title="アノテーション数と中間検査作業時間の累積グラフ", x_axis_label="アノテーション数", y_axis_label="中間検査作業時間[hour]"),
-            dict(x="cumulative_task_count", y="cumulative_acceptance_worktime_hour",
-                 title="アノテーション数と受入作業時間の累積グラフ", x_axis_label="アノテーション数", y_axis_label="受入作業時間[hour]"),
+            dict(x="cumulative_task_count", y="cumulative_annotation_worktime_hour", title="アノテーション数と教師付作業時間の累積グラフ",
+                 x_axis_label="アノテーション数", y_axis_label="教師付作業時間[hour]"),
+            dict(x="cumulative_task_count", y="cumulative_inspection_worktime_hour", title="アノテーション数と中間検査作業時間の累積グラフ",
+                 x_axis_label="アノテーション数", y_axis_label="中間検査作業時間[hour]"),
+            dict(x="cumulative_task_count", y="cumulative_acceptance_worktime_hour", title="アノテーション数と受入作業時間の累積グラフ",
+                 x_axis_label="アノテーション数", y_axis_label="受入作業時間[hour]"),
             dict(x="cumulative_task_count", y="cumulative_inspection_count", title="アノテーション数と検査コメント数の累積グラフ",
                  x_axis_label="アノテーション数", y_axis_label="検査コメント数"),
         ]
         write_cumulative_graph(fig_info_list_task_count, html_title="タスク単位の累計グラフ")
-

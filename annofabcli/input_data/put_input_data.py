@@ -40,7 +40,7 @@ class PutInputData(AbstractCommandLineInterface):
     def put_input_data(self, project_id: str, csv_input_data: CsvInputData,
                        last_updated_datetime: Optional[str] = None):
 
-        request_body = {'last_updated_datetime': last_updated_datetime}
+        request_body: Dict[str, Any] = {'last_updated_datetime': last_updated_datetime}
 
         if is_file_scheme(csv_input_data.input_data_path):
             request_body.update({
