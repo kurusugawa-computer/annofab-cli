@@ -8,7 +8,7 @@ import pandas as pd
 from annofabapi.dataclass.annotation import SimpleAnnotationDetail
 from annofabapi.dataclass.statistics import (ProjectAccountStatistics, ProjectAccountStatisticsHistory,
                                              WorktimeStatistics, WorktimeStatisticsItem)
-from annofabapi.models import InputDataId, Inspection, Task, TaskHistory, TaskId, TaskPhase
+from annofabapi.models import InputDataId, Inspection, Task, TaskHistory, TaskId, TaskPhase, InspectionStatus
 from more_itertools import first_true
 
 import annofabcli
@@ -147,7 +147,7 @@ class Table:
 
         only_error_corrected_flag = True
         if only_error_corrected:
-            only_error_corrected_flag = inspection_arg["status"] == "error_corrected"
+            only_error_corrected_flag = (inspection_arg["status"] == InspectionStatus.ERROR_CORRECTED.value)
 
         return exclude_reply_flag and only_error_corrected_flag
 
@@ -577,6 +577,9 @@ class Table:
         df["cumulative_annotation_worktime_hour"] = groupby_obj["annotation_worktime_hour"].cumsum()
         df["cumulative_acceptance_worktime_hour"] = groupby_obj["acceptance_worktime_hour"].cumsum()
         df["cumulative_inspection_worktime_hour"] = groupby_obj["inspection_worktime_hour"].cumsum()
+        df["cumulative_first_annotation_worktime_hour"] = groupby_obj["first_annotation_worktime_hour"].cumsum()
+        df["cumulative_first_acceptance_worktime_hour"] = groupby_obj["first_acceptance_worktime_hour"].cumsum()
+        df["cumulative_first_inspection_worktime_hour"] = groupby_obj["first_inspection_worktime_hour"].cumsum()
 
         # タスク完了数、差し戻し数など
         df["cumulative_inspection_count"] = groupby_obj["inspection_count"].cumsum()
