@@ -159,9 +159,10 @@ class Graph:
         layout2 = hv.Layout(histograms2).options(shared_axes=False)
         renderer.save(layout2, f"{self.outdir}/{self.short_project_id}_ラベルごとのアノテーション数のヒストグラム")
 
-    def write_アノテーションあたり作業時間(self, task_df: pd.DataFrame = None,
-                             first_annotation_user_id_list: Optional[List[str]] = None):
+    def write_cumulative_line_graph_for_annotator(self, task_df: Optional[pd.DataFrame] = None,
+                                                  first_annotation_user_id_list: Optional[List[str]] = None):
         """
+        教師付作業者用の累積折れ線グラフを出力する。
 
         Args:
             task_df:

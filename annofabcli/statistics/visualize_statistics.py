@@ -78,7 +78,7 @@ class VisualizeStatistics(AbstractCommandLineInterface):
 
         graph_obj.wirte_ラベルごとのアノテーション数(annotation_df)
         graph_obj.write_プロジェクト全体のヒストグラム(task_df)
-        graph_obj.write_アノテーションあたり作業時間(task_df=task_df, first_annotation_user_id_list=user_id_list)
+        graph_obj.write_cumulative_line_graph_for_annotator(task_df=task_df, first_annotation_user_id_list=user_id_list)
 
     def main(self):
         args = self.args
