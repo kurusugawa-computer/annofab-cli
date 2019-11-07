@@ -398,7 +398,7 @@ class Table:
             if input_data_dict is not None:
                 for inspection_list in input_data_dict.values():
                     # 検査コメントを絞り込む
-                    filtered_inspection_list = [e for e in inspection_list if self._inspection_condition(e, True, True)]
+                    filtered_inspection_list = [e for e in inspection_list if self._inspection_condition(e, exclude_reply=True, only_error_corrected=True)]
                     inspection_count += len(filtered_inspection_list)
                     if len(filtered_inspection_list) > 0:
                         input_data_count_of_inspection += 1
