@@ -8,10 +8,11 @@ import pandas as pd
 from annofabapi.dataclass.annotation import SimpleAnnotationDetail
 from annofabapi.dataclass.statistics import (ProjectAccountStatistics, ProjectAccountStatisticsHistory,
                                              WorktimeStatistics, WorktimeStatisticsItem)
-from annofabapi.models import InputDataId, Inspection, Task, TaskHistory, TaskId, TaskPhase
+from annofabapi.models import InputDataId, Inspection, InspectionStatus, Task, TaskHistory, TaskId, TaskPhase
 from more_itertools import first_true
 
 import annofabcli
+from annofabcli.common.facade import AnnofabApiFacade
 from annofabcli.common.utils import isoduration_to_hour
 from annofabcli.statistics.database import AnnotationDict, Database
 
@@ -55,6 +56,7 @@ class Table:
     def __init__(self, database: Database, task_query_param: Dict[str, Any],
                  ignored_task_id_list: Optional[List[TaskId]] = None):
         self.annofab_service = database.annofab_service
+        self.annofab_facade = AnnofabApiFacade(database.annofab_service)
         self.database = database
         self.task_query_param = task_query_param
         self.ignored_task_id_list = ignored_task_id_list
@@ -145,7 +147,7 @@ class Table:
 
         only_error_corrected_flag = True
         if only_error_corrected:
-            only_error_corrected_flag = inspection_arg["status"] == "error_corrected"
+            only_error_corrected_flag = (inspection_arg["status"] == InspectionStatus.ERROR_CORRECTED.value)
 
         return exclude_reply_flag and only_error_corrected_flag
 
@@ -157,8 +159,9 @@ class Table:
         if account_id is None:
             return None
 
-        if account_id in self.project_members_dict:
-            return self.project_members_dict[account_id]["user_id"]
+        member = self.annofab_facade.get_organization_member_from_account_id(self.project_id, account_id)
+        if member is not None:
+            return member["user_id"]
         else:
             return account_id
 
@@ -170,8 +173,9 @@ class Table:
         if account_id is None:
             return None
 
-        if account_id in self.project_members_dict:
-            return self.project_members_dict[account_id]["username"]
+        member = self.annofab_facade.get_organization_member_from_account_id(self.project_id, account_id)
+        if member is not None:
+            return member["username"]
         else:
             return account_id
 
@@ -305,29 +309,48 @@ class Table:
 
         return rejections_by_phase
 
+    def _set_task_history(self, task: Task, task_history: Optional[TaskHistory], column_prefix: str) -> Task:
+        if task_history is None:
+            task.update({
+                f"{column_prefix}_account_id": None,
+                f"{column_prefix}_user_id": None,
+                f"{column_prefix}_username": None,
+                f"{column_prefix}_started_datetime": None,
+                f"{column_prefix}_worktime_hour": 0
+            })
+        else:
+            account_id = task_history["account_id"]
+            task.update({
+                f"{column_prefix}_account_id": account_id,
+                f"{column_prefix}_user_id": self._get_user_id(account_id),
+                f"{column_prefix}_username": self._get_username(account_id),
+                f"{column_prefix}_started_datetime": task_history["started_datetime"],
+                f"{column_prefix}_worktime_hour": isoduration_to_hour(
+                    task_history["accumulated_labor_time_milliseconds"])
+            })
+
+        return task
+
     def set_task_histories(self, task: Task, task_histories: List[TaskHistory]):
         """
         タスク履歴関係の情報を設定する
         """
+
         annotation_histories = [e for e in task_histories if e["phase"] == TaskPhase.ANNOTATION.value]
         inspection_histories = [e for e in task_histories if e["phase"] == TaskPhase.INSPECTION.value]
         acceptance_histories = [e for e in task_histories if e["phase"] == TaskPhase.ACCEPTANCE.value]
 
-        if len(annotation_histories) > 0:
-            first_annotation_history = annotation_histories[0]
-            first_annotation_account_id = first_annotation_history["account_id"]
-            task["first_annotation_account_id"] = first_annotation_account_id
-            task["first_annotation_user_id"] = self._get_user_id(first_annotation_account_id)
-            task["first_annotation_username"] = self._get_username(first_annotation_account_id)
-            task["first_annotation_started_datetime"] = first_annotation_history["started_datetime"]
-            task["first_annotation_worktime_hour"] = annofabcli.utils.isoduration_to_hour(
-                first_annotation_history["accumulated_labor_time_milliseconds"])
-        else:
-            task["first_annotation_account_id"] = None
-            task["first_annotation_user_id"] = None
-            task["first_annotation_username"] = None
-            task["first_annotation_started_datetime"] = None
-            task["first_annotation_worktime_hour"] = 0
+        # 最初の教師付情報を設定する
+        first_annotation_history = annotation_histories[0] if len(annotation_histories) > 0 else None
+        self._set_task_history(task, first_annotation_history, column_prefix="first_annotation")
+
+        # 最初の検査情報を設定する
+        first_inspection_history = inspection_histories[0] if len(inspection_histories) > 0 else None
+        self._set_task_history(task, first_inspection_history, column_prefix="first_inspection")
+
+        # 最初の受入情報を設定する
+        first_acceptance_history = acceptance_histories[0] if len(acceptance_histories) > 0 else None
+        self._set_task_history(task, first_acceptance_history, column_prefix="first_acceptance")
 
         task["annotation_worktime_hour"] = sum([
             annofabcli.utils.isoduration_to_hour(e["accumulated_labor_time_milliseconds"]) for e in annotation_histories
@@ -375,7 +398,10 @@ class Table:
             if input_data_dict is not None:
                 for inspection_list in input_data_dict.values():
                     # 検査コメントを絞り込む
-                    filtered_inspection_list = [e for e in inspection_list if self._inspection_condition(e, True, True)]
+                    filtered_inspection_list = [
+                        e for e in inspection_list
+                        if self._inspection_condition(e, exclude_reply=True, only_error_corrected=True)
+                    ]
                     inspection_count += len(filtered_inspection_list)
                     if len(filtered_inspection_list) > 0:
                         input_data_count_of_inspection += 1
@@ -536,7 +562,7 @@ class Table:
         return df
 
     @staticmethod
-    def create_cumulative_df(task_df: pd.DataFrame) -> pd.DataFrame:
+    def create_cumulative_df_by_first_annotator(task_df: pd.DataFrame) -> pd.DataFrame:
         """
         最初のアノテーション作業の開始時刻の順にソートして、累計値を算出する
         Args:
@@ -554,12 +580,50 @@ class Table:
         df["cumulative_annotation_worktime_hour"] = groupby_obj["annotation_worktime_hour"].cumsum()
         df["cumulative_acceptance_worktime_hour"] = groupby_obj["acceptance_worktime_hour"].cumsum()
         df["cumulative_inspection_worktime_hour"] = groupby_obj["inspection_worktime_hour"].cumsum()
+        df["cumulative_first_annotation_worktime_hour"] = groupby_obj["first_annotation_worktime_hour"].cumsum()
 
-        # タスク完了数、差し戻し数
+        # タスク完了数、差し戻し数など
         df["cumulative_inspection_count"] = groupby_obj["inspection_count"].cumsum()
         df["cumulative_annotation_count"] = groupby_obj["annotation_count"].cumsum()
         df["cumulative_input_data_count"] = groupby_obj["input_data_count"].cumsum()
         df["cumulative_task_count"] = groupby_obj["task_count"].cumsum()
+        df["cumulative_number_of_rejections"] = groupby_obj["number_of_rejections"].cumsum()
+        df["cumulative_number_of_rejections_by_inspection"] = groupby_obj["number_of_rejections_by_inspection"].cumsum()
+        df["cumulative_number_of_rejections_by_acceptance"] = groupby_obj["number_of_rejections_by_acceptance"].cumsum()
+
+        # 元に戻す
+        df = df.drop(["task_count"], axis=1)
+        return df
+
+    @staticmethod
+    def create_cumulative_df_by_first_inspector(task_df: pd.DataFrame) -> pd.DataFrame:
+        """
+        最初の検査作業の開始時刻の順にソートして、累計値を算出する
+        Args:
+            task_df: タスク一覧のDataFrame. 列が追加される
+        """
+
+        df = task_df.sort_values(["first_inspection_account_id",
+                                  "first_inspection_started_datetime"]).reset_index(drop=True)
+        # タスクの累計数を取得するために設定する
+        df["task_count"] = 1
+        # 教師付の作業者でgroupby
+        groupby_obj = df.groupby("first_inspection_account_id")
+
+        # 作業時間の累積値
+        df["cumulative_annotation_worktime_hour"] = groupby_obj["annotation_worktime_hour"].cumsum()
+        df["cumulative_acceptance_worktime_hour"] = groupby_obj["acceptance_worktime_hour"].cumsum()
+        df["cumulative_inspection_worktime_hour"] = groupby_obj["inspection_worktime_hour"].cumsum()
+        df["cumulative_first_inspection_worktime_hour"] = groupby_obj["first_inspection_worktime_hour"].cumsum()
+
+        # タスク完了数、差し戻し数など
+        df["cumulative_inspection_count"] = groupby_obj["inspection_count"].cumsum()
+        df["cumulative_annotation_count"] = groupby_obj["annotation_count"].cumsum()
+        df["cumulative_input_data_count"] = groupby_obj["input_data_count"].cumsum()
+        df["cumulative_task_count"] = groupby_obj["task_count"].cumsum()
+        df["cumulative_number_of_rejections"] = groupby_obj["number_of_rejections"].cumsum()
+        df["cumulative_number_of_rejections_by_inspection"] = groupby_obj["number_of_rejections_by_inspection"].cumsum()
+        df["cumulative_number_of_rejections_by_acceptance"] = groupby_obj["number_of_rejections_by_acceptance"].cumsum()
 
         # 元に戻す
         df = df.drop(["task_count"], axis=1)
