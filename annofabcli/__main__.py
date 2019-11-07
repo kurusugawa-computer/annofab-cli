@@ -14,6 +14,7 @@ import annofabcli.project.subcommand_project
 import annofabcli.project_member.subcommand_project_member
 import annofabcli.statistics.subcommand_statistics
 import annofabcli.task.subcommand_task
+import annofabcli.future.subcommand_future
 
 logger = logging.getLogger(__name__)
 
@@ -47,6 +48,7 @@ def main(arguments: Optional[Sequence[str]] = None):
     annofabcli.statistics.subcommand_statistics.add_parser(subparsers)
 
     annofabcli.filesystem.subcommand_filesystem.add_parser(subparsers)
+    annofabcli.future.subcommand_future.add_parser(subparsers)
 
     if arguments is None:
         args = parser.parse_args()

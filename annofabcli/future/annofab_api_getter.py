@@ -1,12 +1,13 @@
 import datetime
 from datetime import date
-
+import logging
 from annofabcli.common.utils import isoduration_to_minute
 
 ###################
 ###生のAPIを叩くやつ
 ###################
 
+logger = logging.getLogger(__name__)
 
 class AnnofabGetter:
     def __init__(self, service, project_id: str, organization_id: str):
@@ -97,11 +98,18 @@ def get_account_statistics_target_period(annofab_getter: AnnofabGetter, start: d
 
 def get_work_time_list(annofab_getter: AnnofabGetter, start_date: date = None, end_date: date = None):
     account_statistics_list = get_account_statistics_target_period(annofab_getter, start=start_date, end=end_date)
-    for account_statistics in account_statistics_list:
+    logger.debug(f"len(account_statistics_list) = {len(account_statistics_list)}")
+
+    for account_index, account_statistics in enumerate(account_statistics_list):
+        logger.debug(f"{account_index} 件目: account_id = {account_statistics['account_id']}")
         total_worktime = 0.0
         total_annowork_time = 0.0
         total_annowork_plans_time = 0.0
-        for history in account_statistics["histories"]:
+
+        histories = account_statistics["histories"]
+        logger.debug(f"len(histories) = {len(histories)}")
+        for history_index, history in enumerate(histories):
+            logger.debug(f"{history_index} 件目: date = {history['date']}")
             history_date = datetime.datetime.strptime(history["date"], '%Y-%m-%d').date()
             annowork_results_minute_list = get_annowork_results_minute(annofab_getter,
                                                                        account_id=account_statistics["account_id"],

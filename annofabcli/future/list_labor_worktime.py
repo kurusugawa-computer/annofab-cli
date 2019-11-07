@@ -40,11 +40,10 @@ class ListLaborWorktime(AbstractCommandLineInterface):
 
         print_time_list = work_time_list_to_print_time_list(annofab_getter.get_project_members(), work_time_list,
                                                             date_list)
-
         output_lines: List[str] = []
         output_lines.append(f"Start: , {start_date},  End: , {end_date}")
         output_lines.extend(
-            [",".join(e) for e in print_time_list]
+            [",".join([str(cell) for cell in row ]) for row in print_time_list]
         )
         annofabcli.utils.output_string("\n".join(output_lines), args.output)
 
@@ -58,7 +57,6 @@ def main(args):
 def parse_args(parser: argparse.ArgumentParser):
     argument_parser = ArgumentParser(parser)
 
-    parser = ArgumentParser(allow_abbrev=False)
     argument_parser.add_project_id()
 
     parser.add_argument("--start_date", type=str, required=True, help="集計開始日(%%Y-%%m-%%d)")
