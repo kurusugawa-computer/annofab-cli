@@ -1,6 +1,7 @@
 import datetime
-from datetime import date
 import logging
+from datetime import date
+
 from annofabcli.common.utils import isoduration_to_minute
 
 ###################
@@ -8,6 +9,7 @@ from annofabcli.common.utils import isoduration_to_minute
 ###################
 
 logger = logging.getLogger(__name__)
+
 
 class AnnofabGetter:
     def __init__(self, service, project_id: str, organization_id: str):

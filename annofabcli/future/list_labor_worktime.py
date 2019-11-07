@@ -1,15 +1,14 @@
 import argparse
 import datetime
 import logging
-from argparse import ArgumentParser
 from typing import Any, Callable, Dict, List, Optional  # pylint: disable=unused-import
 
 import annofabcli
 import annofabcli.common.cli
 from annofabcli import AnnofabApiFacade
-from annofabcli.common.cli import AbstractCommandLineInterface, ArgumentParser, build_annofabapi_resource_and_login
+from annofabcli.common.cli import AbstractCommandLineInterface, build_annofabapi_resource_and_login, ArgumentParser
 from annofabcli.future.annofab_api_getter import AnnofabGetter, get_work_time_list
-from annofabcli.future.utils import date_range, print_time_list_csv, work_time_list_to_print_time_list
+from annofabcli.future.utils import date_range, work_time_list_to_print_time_list
 
 logger = logging.getLogger(__name__)
 
@@ -42,9 +41,7 @@ class ListLaborWorktime(AbstractCommandLineInterface):
                                                             date_list)
         output_lines: List[str] = []
         output_lines.append(f"Start: , {start_date},  End: , {end_date}")
-        output_lines.extend(
-            [",".join([str(cell) for cell in row ]) for row in print_time_list]
-        )
+        output_lines.extend([",".join([str(cell) for cell in row]) for row in print_time_list])
         annofabcli.utils.output_string("\n".join(output_lines), args.output)
 
 

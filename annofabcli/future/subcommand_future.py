@@ -4,6 +4,7 @@ import annofabcli
 import annofabcli.common.cli
 import annofabcli.future.list_labor_worktime
 
+
 def parse_args(parser: argparse.ArgumentParser):
 
     subparsers = parser.add_subparsers(dest='subcommand_name')
