@@ -8,13 +8,13 @@ import pandas as pd
 from annofabapi.dataclass.annotation import SimpleAnnotationDetail
 from annofabapi.dataclass.statistics import (ProjectAccountStatistics, ProjectAccountStatisticsHistory,
                                              WorktimeStatistics, WorktimeStatisticsItem)
-from annofabapi.models import InputDataId, Inspection, Task, TaskHistory, TaskId, TaskPhase, InspectionStatus
+from annofabapi.models import InputDataId, Inspection, InspectionStatus, Task, TaskHistory, TaskId, TaskPhase
 from more_itertools import first_true
 
 import annofabcli
+from annofabcli.common.facade import AnnofabApiFacade
 from annofabcli.common.utils import isoduration_to_hour
 from annofabcli.statistics.database import AnnotationDict, Database
-from annofabcli.common.facade import AnnofabApiFacade
 
 logger = logging.getLogger(__name__)
 
@@ -309,7 +309,7 @@ class Table:
 
         return rejections_by_phase
 
-    def _set_task_history(self, task:Task, task_history: Optional[TaskHistory], column_prefix: str) -> Task:
+    def _set_task_history(self, task: Task, task_history: Optional[TaskHistory], column_prefix: str) -> Task:
         if task_history is None:
             task.update({
                 f"{column_prefix}_account_id": None,
@@ -325,11 +325,11 @@ class Table:
                 f"{column_prefix}_user_id": self._get_user_id(account_id),
                 f"{column_prefix}_username": self._get_username(account_id),
                 f"{column_prefix}_started_datetime": task_history["started_datetime"],
-                f"{column_prefix}_worktime_hour": isoduration_to_hour(task_history["accumulated_labor_time_milliseconds"])
+                f"{column_prefix}_worktime_hour": isoduration_to_hour(
+                    task_history["accumulated_labor_time_milliseconds"])
             })
 
         return task
-
 
     def set_task_histories(self, task: Task, task_histories: List[TaskHistory]):
         """
@@ -398,7 +398,10 @@ class Table:
             if input_data_dict is not None:
                 for inspection_list in input_data_dict.values():
                     # 検査コメントを絞り込む
-                    filtered_inspection_list = [e for e in inspection_list if self._inspection_condition(e, exclude_reply=True, only_error_corrected=True)]
+                    filtered_inspection_list = [
+                        e for e in inspection_list
+                        if self._inspection_condition(e, exclude_reply=True, only_error_corrected=True)
+                    ]
                     inspection_count += len(filtered_inspection_list)
                     if len(filtered_inspection_list) > 0:
                         input_data_count_of_inspection += 1
@@ -625,7 +628,6 @@ class Table:
         # 元に戻す
         df = df.drop(["task_count"], axis=1)
         return df
-
 
     def create_worktime_per_image_df(self, aggregation_by: AggregationBy, phase: TaskPhase) -> pd.DataFrame:
         """

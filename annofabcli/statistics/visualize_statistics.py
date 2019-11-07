@@ -110,15 +110,16 @@ class VisualizeStatistics(AbstractCommandLineInterface):
             logger.warning(e)
 
         try:
-            graph_obj.write_cumulative_line_graph_for_annotator(task_df=task_df, first_annotation_user_id_list=user_id_list)
+            graph_obj.write_cumulative_line_graph_for_annotator(task_df=task_df,
+                                                                first_annotation_user_id_list=user_id_list)
         except Exception as e:
             logger.warning(e)
 
         try:
-            graph_obj.write_cumulative_line_graph_for_inspector(task_df=task_df, first_inspection_user_id_list=user_id_list)
+            graph_obj.write_cumulative_line_graph_for_inspector(task_df=task_df,
+                                                                first_inspection_user_id_list=user_id_list)
         except Exception as e:
             logger.warning(e)
-
 
     def main(self):
         args = self.args
