@@ -71,55 +71,25 @@ class VisualizeStatistics(AbstractCommandLineInterface):
 
         try:
             tsv_obj.write_task_list(arg_df=task_df, dropped_columns=["histories_by_phase", "input_data_id_list"])
-        except Exception as e:
-            logger.warning(e)
-
-        try:
             tsv_obj.write_inspection_list(arg_df=inspection_df, dropped_columns=["data"])
-        except Exception as e:
-            logger.warning(e)
-
-        try:
             tsv_obj.write_member_list(arg_df=member_df)
-        except Exception as e:
-            logger.warning(e)
-
-        try:
             tsv_obj.write_ラベルごとのアノテーション数(arg_df=annotation_df)
-        except Exception as e:
-            logger.warning(e)
-
-        try:
+            tsv_obj.write_メンバー別作業時間平均()
             tsv_obj.write_ユーザ別日毎の作業時間()
         except Exception as e:
             logger.warning(e)
-
-        try:
-            tsv_obj.write_メンバー別作業時間平均()
-        except Exception as e:
-            logger.warning(e)
+            logger.exception(e)
 
         try:
             graph_obj.wirte_ラベルごとのアノテーション数(annotation_df)
-        except Exception as e:
-            logger.warning(e)
-
-        try:
             graph_obj.write_プロジェクト全体のヒストグラム(task_df)
-        except Exception as e:
-            logger.warning(e)
-
-        try:
             graph_obj.write_cumulative_line_graph_for_annotator(task_df=task_df,
                                                                 first_annotation_user_id_list=user_id_list)
-        except Exception as e:
-            logger.warning(e)
-
-        try:
             graph_obj.write_cumulative_line_graph_for_inspector(task_df=task_df,
                                                                 first_inspection_user_id_list=user_id_list)
         except Exception as e:
             logger.warning(e)
+            logger.exception(e)
 
     def main(self):
         args = self.args
