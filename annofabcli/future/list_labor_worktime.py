@@ -8,7 +8,7 @@ import annofabcli.common.cli
 from annofabcli import AnnofabApiFacade
 from annofabcli.common.cli import AbstractCommandLineInterface, build_annofabapi_resource_and_login, ArgumentParser
 from annofabcli.future.annofab_api_getter import AnnofabGetter, get_work_time_list
-from annofabcli.future.utils import date_range, work_time_list_to_print_time_list
+from annofabcli.future.utils import date_range, work_time_list_to_print_time_list,work_time_lists_to_print_time_list
 
 logger = logging.getLogger(__name__)
 
@@ -24,25 +24,46 @@ class ListLaborWorktime(AbstractCommandLineInterface):
     def main(self) -> None:
         args = self.args
 
-        project_id = args.project_id
-        organization_id = self.get_organization_id_from_project_id(project_id)
-
-        annofab_getter = AnnofabGetter(organization_id=organization_id, project_id=project_id, service=self.service)
+        project_ids = annofabcli.common.cli.get_list_from_args(args.project_ids)
         start_date = datetime.datetime.strptime(args.start_date, '%Y-%m-%d').date()
         end_date = datetime.datetime.strptime(args.end_date, '%Y-%m-%d').date()
 
-        work_time_list = get_work_time_list(annofab_getter, start_date, end_date)
+        if len(project_ids) == 1:
+            organization_id = self.get_organization_id_from_project_id(project_ids[0])
 
-        date_list = []
-        for date_order in date_range(start_date, end_date):
-            date_list.append(date_order)
+            annofab_getter = AnnofabGetter(organization_id=organization_id, project_id=project_ids[0], service=self.service)
+            work_time_list = get_work_time_list(annofab_getter, start_date, end_date)
 
-        print_time_list = work_time_list_to_print_time_list(annofab_getter.get_project_members(), work_time_list,
-                                                            date_list)
+            date_list = []
+            for date_order in date_range(start_date, end_date):
+                date_list.append(date_order)
+
+            print_time_list = work_time_list_to_print_time_list(annofab_getter.get_project_members(), work_time_list,
+                                                                date_list)
+        else:
+            # project_idが複数の場合は合計を出力
+            work_time_lists = []
+            date_list = []
+            for date_order in date_range(start_date, end_date):
+                date_list.append(date_order)
+
+            for project_id in project_ids:
+                organization_id = self.get_organization_id_from_project_id(project_id)
+
+                annofab_getter = AnnofabGetter(organization_id=organization_id, project_id=project_id,
+                                               service=self.service)
+
+                work_time_list = get_work_time_list(annofab_getter, start_date, end_date)
+                work_time_lists.append(work_time_list)
+
+            print_time_list = work_time_lists_to_print_time_list(annofab_getter.get_project_members(),
+                                                                work_time_lists,
+                                                                date_list)
         output_lines: List[str] = []
         output_lines.append(f"Start: , {start_date},  End: , {end_date}")
         output_lines.extend([",".join([str(cell) for cell in row]) for row in print_time_list])
         annofabcli.utils.output_string("\n".join(output_lines), args.output)
+
 
 
 def main(args):
@@ -54,8 +75,7 @@ def main(args):
 def parse_args(parser: argparse.ArgumentParser):
     argument_parser = ArgumentParser(parser)
 
-    argument_parser.add_project_id()
-
+    parser.add_argument('-p', '--project_ids', type=str, required=True, nargs='+', help="対象のタスクのproject_idを指定します。' '`file://`を先頭に付けると、project_idの一覧が記載されたファイルを指定できます。")
     parser.add_argument("--start_date", type=str, required=True, help="集計開始日(%%Y-%%m-%%d)")
     parser.add_argument("--end_date", type=str, required=True, help="集計終了日(%%Y-%%m-%%d)")
 
