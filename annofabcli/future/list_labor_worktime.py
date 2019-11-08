@@ -75,7 +75,7 @@ def main(args):
 def parse_args(parser: argparse.ArgumentParser):
     argument_parser = ArgumentParser(parser)
 
-    parser.add_argument('-p', '--project_ids', type=str, required=True, nargs='+', help="対象のタスクのproject_idを指定します。' '`file://`を先頭に付けると、project_idの一覧が記載されたファイルを指定できます。")
+    parser.add_argument('--project_ids', type=str, required=True, nargs='+', help="対象のタスクのproject_idを指定します。' '`file://`を先頭に付けると、project_idの一覧が記載されたファイルを指定できます。")
     parser.add_argument("--start_date", type=str, required=True, help="集計開始日(%%Y-%%m-%%d)")
     parser.add_argument("--end_date", type=str, required=True, help="集計終了日(%%Y-%%m-%%d)")
 
