@@ -24,7 +24,7 @@ class ListLaborWorktime(AbstractCommandLineInterface):
     def main(self) -> None:
         args = self.args
 
-        project_ids = annofabcli.common.cli.get_list_from_args(args.project_ids)
+        project_ids = list(set(annofabcli.common.cli.get_list_from_args(args.project_ids)))
         start_date = datetime.datetime.strptime(args.start_date, '%Y-%m-%d').date()
         end_date = datetime.datetime.strptime(args.end_date, '%Y-%m-%d').date()
         if len(project_ids) == 1:
@@ -43,7 +43,7 @@ class ListLaborWorktime(AbstractCommandLineInterface):
             # project_idが複数の場合は合計を出力
             work_time_lists = []
             date_list = []
-            project_members = {}
+            project_members = []
             for date_order in date_range(start_date, end_date):
                 date_list.append(date_order)
 
@@ -55,7 +55,9 @@ class ListLaborWorktime(AbstractCommandLineInterface):
 
                 work_time_list = get_work_time_list(annofab_getter, start_date, end_date)
                 work_time_lists.append(work_time_list)
-                project_members.update(annofab_getter.get_project_members())
+                add_project_members = annofab_getter.get_project_members()
+                project_members.extend(add_project_members["list"])
+
 
             print_time_list = work_time_lists_to_print_time_list(project_members,
                                                                 work_time_lists,

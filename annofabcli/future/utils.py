@@ -2,7 +2,7 @@ from datetime import date, datetime, timedelta
 from typing import Optional
 
 
-def account_id_to_user_id(project_members: dict, account_id: str) -> str:
+def account_id_to_user_id(project_members: list, account_id: str) -> str:
     """
 
     :param project_members:
@@ -11,8 +11,8 @@ def account_id_to_user_id(project_members: dict, account_id: str) -> str:
     """
 
     # member_task_aggregateにuser_idを追加する
-    def _to_user_id(project_members: dict, account_id: str) -> Optional[str]:
-        for member_details in project_members["list"]:
+    def _to_user_id(project_members: list, account_id: str) -> Optional[str]:
+        for member_details in project_members:
             if member_details["account_id"] == account_id:
                 return member_details["user_id"]
         return
@@ -27,7 +27,7 @@ def date_range(start_date: date, end_date: date):
     return (start_date + timedelta(i) for i in range(diff))
 
 
-def work_time_list_to_print_time_list(project_members: dict, work_time_list: list, date_list: list):
+def work_time_list_to_print_time_list(project_members: list, work_time_list: list, date_list: list):
     print_time_list = []
     new_header_name_list = []
     new_header_item_list = []
@@ -76,7 +76,7 @@ def work_time_list_to_print_time_list(project_members: dict, work_time_list: lis
 
     return print_time_list
 
-def work_time_lists_to_print_time_list(project_members: dict, work_time_lists: list, date_list: list):
+def work_time_lists_to_print_time_list(project_members: list, work_time_lists: list, date_list: list):
     print_time_list = []
     new_header_name_list = []
     new_header_item_list = []
@@ -85,7 +85,7 @@ def work_time_lists_to_print_time_list(project_members: dict, work_time_lists: l
     new_header_item_list.append("date / time")
     new_footer_item_list.append("total_time")
     account_id_list = []
-
+    withoutkci_total_annowork_time = 0.0
 
     for work_time_list in work_time_lists:
         for work_time in work_time_list:
@@ -108,6 +108,8 @@ def work_time_lists_to_print_time_list(project_members: dict, work_time_lists: l
         for work_time_list in work_time_lists:
             for work_time in work_time_list:
                 if work_time["account_id"] == account_id:
+                    if not "entry" in account_id_to_user_id(project_members, work_time["account_id"]):
+                        withoutkci_total_annowork_time += float(work_time["total_time"]["annowork_time"])
                     footer_annowork_plans_time += float(work_time["total_time"]["annowork_plans_time"])
                     footer_annowork_time += float(work_time["total_time"]["annowork_time"])
                     footer_worktime += float(work_time["total_time"]["worktime"])
@@ -116,6 +118,8 @@ def work_time_lists_to_print_time_list(project_members: dict, work_time_lists: l
         new_footer_item_list.append(footer_worktime)
         new_footer_item_list.append(
             footer_annowork_time - footer_worktime)
+
+    print("withoutkci_total_annowork_time:",withoutkci_total_annowork_time)
 
 
     print_time_list.append(new_header_name_list)
