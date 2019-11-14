@@ -217,7 +217,7 @@ class Database:
                 "type": JobType.GEN_ANNOTATION.value,
                 "limit": 1
             })[0]["list"]
-        if len(job_list) == 0:
+        if len(job_list) > 0:
             job = job_list[0]
             logger.debug(f"アノテーションzipの最終更新日時={job['updated_datetime']}, job_status={job['job_status']}")
 
