@@ -263,6 +263,15 @@ class ArgumentParser:
 
         self.parser.add_argument('-t', '--task_id', type=str, required=required, nargs='+', help=help_message)
 
+    def add_input_data_id(self, required: bool = True, help_message: Optional[str] = None):
+        """
+        '--input_data_id` 引数を追加
+        """
+        if help_message is None:
+            help_message = ('対象の入力データのinput_data_idを指定します。' '`file://`を先頭に付けると、input_data_idの一覧が記載されたファイルを指定できます。')
+
+        self.parser.add_argument('-i', '--input_data_id', type=str, required=required, nargs='+', help=help_message)
+
     def add_format(self, choices: List[FormatArgument], default: FormatArgument, help_message: Optional[str] = None):
         """
         '--format` 引数を追加

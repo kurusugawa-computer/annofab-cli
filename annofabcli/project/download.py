@@ -23,9 +23,9 @@ class DownloadTarget(Enum):
 
 class Download(AbstractCommandLineInterface):
     def download(self, target: DownloadTarget, project_id: str, output: str, latest: bool = False):
-        MAX_JOB_ACCESS = 30
+        MAX_JOB_ACCESS = 120
         JOB_ACCESS_INTERVAL = 60
-        MAX_WAIT_MINUTU = MAX_JOB_ACCESS * JOB_ACCESS_INTERVAL / 60
+        MAX_WAIT_MINUTUE = MAX_JOB_ACCESS * JOB_ACCESS_INTERVAL / 60
         if target == DownloadTarget.TASK:
             if latest:
                 self.service.api.post_project_tasks_update(project_id)
@@ -35,7 +35,7 @@ class Download(AbstractCommandLineInterface):
                 if result:
                     logger.info(f"タスクファイルの更新が完了しました。")
                 else:
-                    logger.info(f"タスクファイルの更新に失敗しました or {MAX_WAIT_MINUTU} 分待っても、更新が完了しませんでした。")
+                    logger.info(f"タスクファイルの更新に失敗しました or {MAX_WAIT_MINUTUE} 分待っても、更新が完了しませんでした。")
                     return
 
             self.service.wrapper.download_project_tasks_url(project_id, output)
@@ -54,7 +54,7 @@ class Download(AbstractCommandLineInterface):
                 if result:
                     logger.info(f"アノテーションの更新が完了しました。")
                 else:
-                    logger.info(f"アノテーションの更新に失敗しました or {MAX_WAIT_MINUTU} 分待っても、更新が完了しませんでした。")
+                    logger.info(f"アノテーションの更新に失敗しました or {MAX_WAIT_MINUTUE} 分待っても、更新が完了しませんでした。")
                     return
 
             if target == DownloadTarget.SIMPLE_ANNOTATION:

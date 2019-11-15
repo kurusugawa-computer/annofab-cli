@@ -26,6 +26,26 @@ class ListTasks(AbstractCommandLineInterface):
         super().__init__(service, facade, args)
         self.visualize = AddProps(self.service, args.project_id)
 
+    @annofabcli.utils.allow_404_error
+    def get_task(self, project_id: str, task_id: str) -> Task:
+        task, _ = self.service.api.get_task(project_id, task_id)
+        return task
+
+    def get_task_list_from_task_id(self, project_id: str, task_id_list: List[str]) -> List[Task]:
+        task_list = []
+        logger.debug(f"{len(task_id_list)}件のタスクを取得します。")
+        for index, task_id in enumerate(task_id_list):
+            if (index + 1) % 100 == 0:
+                logger.debug(f"{index+1} 件のタスクを取得します。")
+
+            task = self.get_task(project_id, task_id)
+            if task is not None:
+                task_list.append(task)
+            else:
+                logger.warning(f"タスク '{task_id}' は見つかりませんでした。")
+
+        return task_list
+
     def _modify_task_query(self, project_id: str, task_query: Dict[str, Any]) -> Dict[str, Any]:
         """
         タスク検索クエリを修正する。
@@ -84,13 +104,14 @@ class ListTasks(AbstractCommandLineInterface):
         tasks = self.service.wrapper.get_all_tasks(project_id, query_params=task_query)
         return [self.visualize.add_properties_to_task(e) for e in tasks]
 
-    def print_tasks(self, project_id: str, task_query: Optional[Dict[str, Any]] = None,
-                    task_list_from_json: Optional[List[Task]] = None):
+    def print_tasks(self, project_id: str, task_id_list: Optional[List[str]] = None,
+                    task_query: Optional[Dict[str, Any]] = None, task_list_from_json: Optional[List[Task]] = None):
         """
         タスク一覧を出力する
 
         Args:
             project_id: 対象のproject_id
+            task_id_list: 対象のタスクのtask_id
             task_query: タスク検索クエリ
             task_list_from_json: JSONファイルから取得したタスク一覧
 
@@ -99,16 +120,20 @@ class ListTasks(AbstractCommandLineInterface):
         super().validate_project(project_id, project_member_roles=None)
 
         if task_list_from_json is None:
-            tasks = self.get_tasks(project_id, task_query)
-            logger.debug(f"タスク一覧の件数: {len(tasks)}")
-            if len(tasks) == 10000:
-                logger.warning("タスク一覧は10,000件で打ち切られている可能性があります。")
+            # WebAPIを実行してタスク情報を取得する
+            if task_id_list is not None:
+                task_list = self.get_task_list_from_task_id(project_id, task_id_list)
+            else:
+                task_list = self.get_tasks(project_id, task_query)
+                logger.debug(f"タスク一覧の件数: {len(task_list)}")
+                if len(task_list) == 10000:
+                    logger.warning("タスク一覧は10,000件で打ち切られている可能性があります。")
 
         else:
-            tasks = [self.visualize.add_properties_to_task(e) for e in task_list_from_json]
-            logger.debug(f"タスク一覧の件数: {len(tasks)}")
+            task_list = [self.visualize.add_properties_to_task(e) for e in task_list_from_json]
+            logger.debug(f"タスク一覧の件数: {len(task_list)}")
 
-        self.print_according_to_format(tasks)
+        self.print_according_to_format(task_list)
 
     @staticmethod
     def validate(args: argparse.Namespace):
@@ -116,12 +141,20 @@ class ListTasks(AbstractCommandLineInterface):
             logger.warning("annofabcli task list: warning: argument --task_query: "
                            "`--task_json`を指定しているときは、`--task_query`オプションは無視します。")
 
+        if args.task_json is not None and args.task_id is not None:
+            logger.warning("annofabcli task list: warning: argument --task_id: "
+                           "`--task_json`を指定しているときは、`--task_id`オプションは無視します。")
+
         return True
 
     def main(self):
         args = self.args
         if not self.validate(args):
             return
+
+        task_id_list = annofabcli.common.cli.get_list_from_args(args.task_id)
+        if len(task_id_list) == 0:
+            task_id_list = None
 
         task_query = annofabcli.common.cli.get_json_from_args(args.task_query)
 
@@ -131,7 +164,8 @@ class ListTasks(AbstractCommandLineInterface):
         else:
             task_list = None
 
-        self.print_tasks(args.project_id, task_query=task_query, task_list_from_json=task_list)
+        self.print_tasks(args.project_id, task_id_list=task_id_list, task_query=task_query,
+                         task_list_from_json=task_list)
 
 
 def main(args):
@@ -145,18 +179,24 @@ def parse_args(parser: argparse.ArgumentParser):
 
     argument_parser.add_project_id()
 
+    query_group = parser.add_mutually_exclusive_group()
+
     # タスク検索クエリ
-    parser.add_argument(
+    query_group.add_argument(
         '-tq', '--task_query', type=str, help='タスクの検索クエリをJSON形式で指定します。指定しない場合は、すべてのタスクを取得します。'
         '`file://`を先頭に付けると、JSON形式のファイルを指定できます。'
         'クエリのフォーマットは、[getTasks API](https://annofab.com/docs/api/#operation/getTasks)のクエリパラメータと同じです。'
         'さらに追加で、`user_id`, `previous_user_id` キーも指定できます。'
         'ただし `page`, `limit`キーは指定できません。')
 
+    query_group.add_argument(
+        '-t', '--task_id', type=str, nargs='+', help='対象のタスクのtask_idを指定します。`--task_query`引数とは同時に指定できません。'
+        '`file://`を先頭に付けると、task_idの一覧が記載されたファイルを指定できます。')
+
     parser.add_argument(
         '--task_json', type=str, help='タスク情報が記載されたJSONファイルのパスを指定すると、JSONに記載された情報を元にタスク一覧を出力します。'
         'AnnoFabからタスク情報を取得しません。 '
-        'このオプションを指定すると、`--task_query`オプションは無視します。'
+        'このオプションを指定すると、`--task_query`, `--task_id`オプションは無視します。'
         'JSONには記載されていない、`user_id`や`username`などの情報も追加します。'
         'JSONファイルは`$ annofabcli project download task`コマンドで取得できます。')
 
