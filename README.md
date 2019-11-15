@@ -90,6 +90,7 @@ $ docker run -it -e ANNOFAB_USER_ID=XXXX -e ANNOFAB_PASSWORD=YYYYY annofab-cli a
 |project_member| list                  | プロジェクトメンバ一覧を出力します。                                                                |-|
 |project_member| put                  | CSVに記載されたユーザを、プロジェクトメンバとして登録します。|オーナ|
 |statistics| visualize             | 統計情報を可視化します。                                                            |オーナ|
+|supplementary| list             | 補助情報を出力します。                                                           |オーナ|
 |task| cancel_acceptance             | 受け入れ完了タスクを、受け入れ取り消し状態にします。                                                         |オーナ|
 |task| change_operator             | タスクの担当者を変更します。                                                             |チェッカー/オーナ|
 |task| complete                | 未処置の検査コメントを適切な状態に変更して、タスクを受け入れ完了状態にします。                                 |チェッカー/オーナ|
@@ -442,6 +443,9 @@ $ annofabcli input_data delete --project_id prj1 --input_data_id file://input_da
 ```
 # input_data_nameが"sample"の入力データ一覧を出力する
 $ annofabcli input_data list --project_id prj1 --input_data_query '{"input_data_name": "sample"}' 
+
+# input_data_idが"id1", "id2"の入力データを取得する
+$ annofabcli input_data list --project_id prj1 --input_data_id id1 id2
 
 # 入力データの詳細情報（参照されているタスクのtask_id `parent_task_id_list`）も出力する
 $ annofabcli input_data list --project_id prj1 --input_data_query '{"input_data_name": "sample"}' --add_details
@@ -895,6 +899,14 @@ $ annofabcli statistics visualize --project_id prj1 --not_update
 
 ```
 
+### supplementary list
+補助情報一覧を出力します。
+
+```
+# input_data_idが"id1", "id2"に紐づく補助情報一覧を出力します。
+$ annofabcli supplementary list --project_id prj1 --input_data_id id1 id2
+```
+
 
 ### task cancel_acceptance
 受け入れ完了タスクに対して、受け入れ取り消しにします。
@@ -957,6 +969,9 @@ $ annofabcli task delete --project_id prj1 --task_id file://task_id.txt
 ```
 # 受入フェーズで、"usr1"が担当しているタスクの一覧を出力する
 $ annofabcli task list --project_id prj1 --task_query '{"user_id": "usr1","phase":"acceptance"}' 
+
+# task_id"id1", "id2"のタスクを取得する
+$ annofabcli task list --project_id prj1 --task_id id1 id2
 
 # 休憩中で、過去の担当者が"usr1"であるタスクの一覧を出力する。task.jsonファイルにJSON形式で出力する。
 $ annofabcli task list --project_id prj1 \
