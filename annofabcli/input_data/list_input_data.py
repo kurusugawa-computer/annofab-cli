@@ -251,10 +251,11 @@ class ListInputData(AbstractCommandLineInterface):
 
     def main(self):
         args = self.args
+        input_data_id_list = annofabcli.common.cli.get_list_from_args(args.input_data_id)
         input_data_query = annofabcli.common.cli.get_json_from_args(args.input_data_query)
         dict_batch_query = annofabcli.common.cli.get_json_from_args(args.batch)
         batch_query = InputDataBatchQuery.from_dict(dict_batch_query) if dict_batch_query is not None else None
-        self.print_input_data(args.project_id, input_data_query=input_data_query, add_details=args.add_details,
+        self.print_input_data(args.project_id, input_data_id_list=input_data_id_list, input_data_query=input_data_query, add_details=args.add_details,
                               batch_query=batch_query)
 
 
