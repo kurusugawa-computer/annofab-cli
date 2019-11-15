@@ -190,7 +190,7 @@ def parse_args(parser: argparse.ArgumentParser):
         'ただし `page`, `limit`キーは指定できません。')
 
     query_group.add_argument(
-        '-t', '--task_id', type=str, help='対象のタスクのtask_idを指定します。`--task_query`引数とは同時に指定できません。'
+        '-t', '--task_id', type=str, nargs='+', help='対象のタスクのtask_idを指定します。`--task_query`引数とは同時に指定できません。'
         '`file://`を先頭に付けると、task_idの一覧が記載されたファイルを指定できます。')
 
     parser.add_argument(
