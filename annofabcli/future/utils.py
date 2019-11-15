@@ -1,25 +1,4 @@
-from datetime import date, datetime, timedelta
-from typing import Optional
-
-
-def account_id_to_user_id(project_members: list, account_id: str) -> str:
-    """
-
-    :param project_members:
-    :param member_task_aggregate:
-    :return:
-    """
-
-    # member_task_aggregateにuser_idを追加する
-    def _to_user_id(project_members: list, account_id: str) -> Optional[str]:
-        for member_details in project_members:
-            if member_details["account_id"] == account_id:
-                return member_details["user_id"]
-        return
-
-    user_id = _to_user_id(project_members, account_id)
-
-    return user_id if user_id != None else account_id
+from datetime import date, timedelta
 
 
 def date_range(start_date: date, end_date: date):
@@ -27,7 +6,7 @@ def date_range(start_date: date, end_date: date):
     return (start_date + timedelta(i) for i in range(diff))
 
 
-def work_time_list_to_print_time_list(project_members: list, work_time_list: list, date_list: list):
+def print_time_list_from_work_time_list(username_list: list, work_time_lists: list, date_list: list):
     print_time_list = []
     new_header_name_list = []
     new_header_item_list = []
@@ -35,19 +14,19 @@ def work_time_list_to_print_time_list(project_members: list, work_time_list: lis
     new_header_name_list.append("")
     new_header_item_list.append("date / time")
     new_footer_item_list.append("total_time")
-    for work_time in work_time_list:
-        new_header_name_list.append(account_id_to_user_id(project_members, work_time["account_id"]))
+    username_footer_list = {}
+
+    for username in username_list:
+        new_header_name_list.append(username)
         new_header_name_list.append("")
         new_header_name_list.append("")
         new_header_name_list.append("")
-        new_header_item_list.append("annowork_plans")
-        new_header_item_list.append("annowork")
-        new_header_item_list.append("annofab")
-        new_header_item_list.append("difference")
-        new_footer_item_list.append(work_time["total_time"]["annowork_plans_time"])
-        new_footer_item_list.append(work_time["total_time"]["annowork_time"])
-        new_footer_item_list.append(work_time["total_time"]["worktime"])
-        new_footer_item_list.append(work_time["total_time"]["annowork_time"] - work_time["total_time"]["worktime"])
+        new_header_name_list.append("")
+        new_header_item_list.append("aw_plans")
+        new_header_item_list.append("aw_results")
+        new_header_item_list.append("af_time")
+        new_header_item_list.append("diff")
+        new_header_item_list.append("diff_per")
 
     print_time_list.append(new_header_name_list)
     print_time_list.append(new_header_item_list)
@@ -55,100 +34,44 @@ def work_time_list_to_print_time_list(project_members: list, work_time_list: lis
     for date in date_list:
         new_line = []
         new_line.append(date.strftime("%Y-%m-%d"))
-        for work_time in work_time_list:
-            flag = False
-            for history in work_time["histories"]:
-                if date == datetime.strptime(history["date"], '%Y-%m-%d').date():
-                    flag = True
-                    new_line.append(history["annowork_plans_time"])
-                    new_line.append(history["annowork_time"])
-                    new_line.append(history["worktime"])
-                    new_line.append(round(history["annowork_time"] - history["worktime"], 2))
-                    break
-            if flag == False:
-                new_line.append("0.0")
-                new_line.append("0.0")
-                new_line.append("0.0")
-                new_line.append("0.0")
-
-        print_time_list.append(new_line)
-    print_time_list.append(new_footer_item_list)
-
-    return print_time_list
-
-def work_time_lists_to_print_time_list(project_members: list, work_time_lists: list, date_list: list):
-    print_time_list = []
-    new_header_name_list = []
-    new_header_item_list = []
-    new_footer_item_list = []
-    new_header_name_list.append("")
-    new_header_item_list.append("date / time")
-    new_footer_item_list.append("total_time")
-    account_id_list = []
-    withoutkci_total_annowork_time = 0.0
-
-    for work_time_list in work_time_lists:
-        for work_time in work_time_list:
-            if not account_id_to_user_id(project_members, work_time["account_id"]) in new_header_name_list:
-                account_id_list.append(work_time["account_id"])
-                new_header_name_list.append(account_id_to_user_id(project_members, work_time["account_id"]))
-                new_header_name_list.append("")
-                new_header_name_list.append("")
-                new_header_name_list.append("")
-                new_header_item_list.append("annowork_plans")
-                new_header_item_list.append("annowork")
-                new_header_item_list.append("annofab")
-                new_header_item_list.append("difference")
-
-
-    for account_id in account_id_list:
-        footer_annowork_plans_time = 0.0
-        footer_annowork_time = 0.0
-        footer_worktime = 0.0
-        for work_time_list in work_time_lists:
-            for work_time in work_time_list:
-                if work_time["account_id"] == account_id:
-                    if not "entry" in account_id_to_user_id(project_members, work_time["account_id"]):
-                        withoutkci_total_annowork_time += float(work_time["total_time"]["annowork_time"])
-                    footer_annowork_plans_time += float(work_time["total_time"]["annowork_plans_time"])
-                    footer_annowork_time += float(work_time["total_time"]["annowork_time"])
-                    footer_worktime += float(work_time["total_time"]["worktime"])
-        new_footer_item_list.append(footer_annowork_plans_time)
-        new_footer_item_list.append(footer_annowork_time)
-        new_footer_item_list.append(footer_worktime)
-        new_footer_item_list.append(
-            footer_annowork_time - footer_worktime)
-
-    print("withoutkci_total_annowork_time:",withoutkci_total_annowork_time)
-
-
-    print_time_list.append(new_header_name_list)
-    print_time_list.append(new_header_item_list)
-
-    for date in date_list:
-        new_line = []
-        new_line.append(date.strftime("%Y-%m-%d"))
-        for account_id in account_id_list:
-            annowork_plans_time = 0.0
-            annowork_time = 0.0
-            worktime = 0.0
-            diff_time = 0.0
+        for username in username_list:
+            aw_plans = 0.0
+            aw_results = 0.0
+            af_time = 0.0
 
             for work_time_list in work_time_lists:
                 for work_time in work_time_list:
-                    if account_id == work_time["account_id"]:
-                        for history in work_time["histories"]:
-                            if date == datetime.strptime(history["date"], '%Y-%m-%d').date():
-                                annowork_plans_time += history["annowork_plans_time"]
-                                annowork_time += history["annowork_time"]
-                                worktime += history["worktime"]
-                                diff_time = round(annowork_time - worktime, 2)
+                    if username == work_time["username"] and date.strftime("%Y-%m-%d") == work_time["date"]:
+                        aw_plans += work_time["aw_plans"]
+                        aw_results += work_time["aw_results"]
+                        af_time += work_time["af_time"]
 
-            new_line.append(annowork_plans_time)
-            new_line.append(annowork_time)
-            new_line.append(worktime)
-            new_line.append(diff_time)
+            new_line.append(round(aw_plans, 2))
+            new_line.append(round(aw_results, 2))
+            new_line.append(round(af_time, 2))
+            diff = round(aw_results - af_time, 2)
+            diff_per = round(diff / aw_results, 2) if aw_results != 0.0 else 0.0
+            new_line.append(diff)
+            new_line.append(diff_per)
+            if not username in username_footer_list.keys():
+                username_footer_list[username] = [aw_plans, aw_results, af_time]
+            else:
+                username_footer_list[username][0] += aw_plans
+                username_footer_list[username][1] += aw_results
+                username_footer_list[username][2] += af_time
+
         print_time_list.append(new_line)
+
+    for username in username_list:
+        new_footer_item_list.append(round(username_footer_list[username][0], 2))
+        new_footer_item_list.append(round(username_footer_list[username][1], 2))
+        new_footer_item_list.append(round(username_footer_list[username][2], 2))
+        total_diff = round(username_footer_list[username][1] - username_footer_list[username][2], 2)
+        total_diff_per = round(total_diff / username_footer_list[username][1], 2) if (
+                username_footer_list[username][1] != 0.0) else 0.0
+        new_footer_item_list.append(total_diff)
+        new_footer_item_list.append(total_diff_per)
+
     print_time_list.append(new_footer_item_list)
 
     return print_time_list
