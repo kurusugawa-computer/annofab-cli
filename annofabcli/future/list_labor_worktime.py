@@ -1,20 +1,19 @@
+import argparse
 import datetime
 import logging
-
-import annofabcli.common.cli
-
-logger = logging.getLogger(__name__)
-
-import argparse
 from typing import Any, Dict, List  # pylint: disable=unused-import
+
 import annofabapi
 from annofabapi.models import ProjectMemberRole
-from annofabcli.statistics.table import Table
 
 import annofabcli
+import annofabcli.common.cli
 from annofabcli import AnnofabApiFacade
 from annofabcli.common.cli import AbstractCommandLineInterface, ArgumentParser, build_annofabapi_resource_and_login
 from annofabcli.future.utils import date_range, print_time_list_from_work_time_list
+from annofabcli.statistics.table import Table
+
+logger = logging.getLogger(__name__)
 
 
 class Database():
@@ -53,11 +52,11 @@ class FutureTable(Table):
                 aw_plans = 0.0
                 aw_results = 0.0
             else:
-                if l["values"]["working_time_by_user"]["plans"] == None:
+                if l["values"]["working_time_by_user"]["plans"] is None:
                     aw_plans = 0.0
                 else:
                     aw_plans = int(l["values"]["working_time_by_user"]["plans"]) / 60000
-                if l["values"]["working_time_by_user"]["results"] == None:
+                if l["values"]["working_time_by_user"]["results"] is None:
                     aw_results = 0.0
                 else:
                     aw_results = int(l["values"]["working_time_by_user"]["results"]) / 60000
@@ -78,11 +77,6 @@ class FutureTable(Table):
         メンバごと、日ごとの作業時間
         """
         account_statistics = self.database.get_account_statistics()
-        # account_statistics[0]
-        # account_id毎の情報のlist
-        # {'account_id': 'entry_matsumoto_aya',
-        # 'histories': [{'date': '2019-11-08', 'tasks_completed': 1, 'tasks_rejected': 0, 'worktime': 'PT31.1S', 'worktime_hour': 0.008638888888888889,
-        # 'account_id': 'entry_matsumoto_aya', 'user_id': 'entry_matsumoto_aya', 'username': '松本綾', 'member_role': 'owner'}]}
         all_histories = []
         for account_info in account_statistics:
 
@@ -155,11 +149,12 @@ class ListLaborWorktime(AbstractCommandLineInterface):
         afaw_time_list = []
         project_members_list = []
         for i, project_id in enumerate(args.project_id):
-            logger.debug(f"{i+1} 件目: project_id = {project_id}")
+            logger.debug(f"{i + 1} 件目: project_id = {project_id}")
             afaw_time_df, project_members = self.list_labor_worktime(project_id)
             afaw_time_list.append(afaw_time_df)
             project_members_list.extend(project_members)
-        print_time_list = print_time_list_from_work_time_list(project_members_list, afaw_time_list, date_list)
+        print_time_list = print_time_list_from_work_time_list(list(set(project_members_list)), afaw_time_list,
+                                                              date_list)
 
         output_lines: List[str] = []
         output_lines.append(f"Start: , {start_date},  End: , {end_date}")

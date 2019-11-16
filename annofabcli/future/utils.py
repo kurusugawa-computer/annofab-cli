@@ -27,13 +27,17 @@ def print_time_list_from_work_time_list(username_list: list, work_time_lists: li
         new_header_item_list.append("af_time")
         new_header_item_list.append("diff")
         new_header_item_list.append("diff_per")
+        username_footer_list[username] = {}
+        username_footer_list[username]["aw_plans"] = 0.0
+        username_footer_list[username]["aw_results"] = 0.0
+        username_footer_list[username]["af_time"] = 0.0
 
     print_time_list.append(new_header_name_list)
     print_time_list.append(new_header_item_list)
 
-    for date in date_list:
+    for day in date_list:
         new_line = []
-        new_line.append(date.strftime("%Y-%m-%d"))
+        new_line.append(day.strftime("%Y-%m-%d"))
         for username in username_list:
             aw_plans = 0.0
             aw_results = 0.0
@@ -41,7 +45,7 @@ def print_time_list_from_work_time_list(username_list: list, work_time_lists: li
 
             for work_time_list in work_time_lists:
                 for work_time in work_time_list:
-                    if username == work_time["username"] and date.strftime("%Y-%m-%d") == work_time["date"]:
+                    if username == work_time["username"] and day.strftime("%Y-%m-%d") == work_time["date"]:
                         aw_plans += work_time["aw_plans"]
                         aw_results += work_time["aw_results"]
                         af_time += work_time["af_time"]
@@ -53,22 +57,19 @@ def print_time_list_from_work_time_list(username_list: list, work_time_lists: li
             diff_per = round(diff / aw_results, 2) if aw_results != 0.0 else 0.0
             new_line.append(diff)
             new_line.append(diff_per)
-            if not username in username_footer_list.keys():
-                username_footer_list[username] = [aw_plans, aw_results, af_time]
-            else:
-                username_footer_list[username][0] += aw_plans
-                username_footer_list[username][1] += aw_results
-                username_footer_list[username][2] += af_time
+            username_footer_list[username]["aw_plans"] += aw_plans
+            username_footer_list[username]["aw_results"] += aw_results
+            username_footer_list[username]["af_time"] += af_time
 
         print_time_list.append(new_line)
 
     for username in username_list:
-        new_footer_item_list.append(round(username_footer_list[username][0], 2))
-        new_footer_item_list.append(round(username_footer_list[username][1], 2))
-        new_footer_item_list.append(round(username_footer_list[username][2], 2))
-        total_diff = round(username_footer_list[username][1] - username_footer_list[username][2], 2)
-        total_diff_per = round(total_diff / username_footer_list[username][1], 2) if (
-                username_footer_list[username][1] != 0.0) else 0.0
+        new_footer_item_list.append(round(username_footer_list[username]["aw_plans"], 2))
+        new_footer_item_list.append(round(username_footer_list[username]["aw_results"], 2))
+        new_footer_item_list.append(round(username_footer_list[username]["af_time"], 2))
+        total_diff = round(username_footer_list[username]["aw_results"] - username_footer_list[username]["af_time"], 2)
+        total_diff_per = round(total_diff / username_footer_list[username]["aw_results"], 2) \
+            if (username_footer_list[username]["aw_results"] != 0.0) else 0.0
         new_footer_item_list.append(total_diff)
         new_footer_item_list.append(total_diff_per)
 
