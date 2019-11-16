@@ -1,7 +1,7 @@
 import argparse
 import datetime
 import logging
-from typing import Any, Dict, List  # pylint: disable=unused-import
+from typing import Any, Dict, List, Tuple  # pylint: disable=unused-import
 
 import annofabapi
 from annofabapi.models import ProjectMemberRole
@@ -17,15 +17,16 @@ logger = logging.getLogger(__name__)
 
 
 class Database():
-
     def __init__(self, annofab_service: annofabapi.Resource, project_id: str, organization_id: str):
         self.annofab_service = annofab_service
         self.project_id = project_id
         self.organization_id = organization_id
 
     def get_labor_control(self) -> List[Dict[str, Any]]:
-        labor_control_df = self.annofab_service.api.get_labor_control(
-            {"organization_id": self.organization_id, "project_id": self.project_id})[0]
+        labor_control_df = self.annofab_service.api.get_labor_control({
+            "organization_id": self.organization_id,
+            "project_id": self.project_id
+        })[0]
         return labor_control_df
 
     def get_account_statistics(self) -> List[Dict[str, Any]]:
@@ -38,7 +39,6 @@ class Database():
 
 
 class FutureTable(Table):
-
     def __init__(self, database: Database, task_query_param=None):
         super().__init__(database, task_query_param)
         self.database = database
@@ -94,7 +94,7 @@ class FutureTable(Table):
             all_histories.extend(histories)
         return all_histories
 
-    def create_afaw_time_df(self) -> (list, list):
+    def create_afaw_time_df(self) -> Tuple[List[Any], List[Any]]:
 
         account_statistics_df = self.create_account_statistics_df()
         labor_control_df = self.create_labor_control_df()
@@ -124,7 +124,6 @@ class ListLaborWorktime(AbstractCommandLineInterface):
     """
     労務管理画面の作業時間を出力する
     """
-
     def list_labor_worktime(self, project_id: str):
         """
         """
@@ -171,17 +170,19 @@ def main(args):
 def parse_args(parser: argparse.ArgumentParser):
     argument_parser = ArgumentParser(parser)
 
-    argument_parser.add_output()
-    parser.add_argument('--project_id', type=str, required=True, nargs='+',
-                        help="対象のタスクのproject_idを指定します。' '`file://`を先頭に付けると、project_idの一覧が記載されたファイルを指定できます。")
+    parser.add_argument('-p', '--project_id', type=str, required=True, nargs='+',
+                        help="集計対象のプロジェクトのproject_idを指定します。複数指定した場合は合計値を出力します。"
+                             "`file://`を先頭に付けると、project_idの一覧が記載されたファイルを指定できます。")
     parser.add_argument("--start_date", type=str, required=True, help="集計開始日(%%Y-%%m-%%d)")
     parser.add_argument("--end_date", type=str, required=True, help="集計終了日(%%Y-%%m-%%d)")
+
+    argument_parser.add_output(required=True)
 
     parser.set_defaults(subcommand_func=main)
 
 
 def add_parser(subparsers: argparse._SubParsersAction):
-    subcommand_name = "list_labor_worktime_WIP"
+    subcommand_name = "list_labor_worktime"
     subcommand_help = "労務管理画面の作業時間を出力します。"
     description = ("作業者ごとに、「作業者が入力した実績時間」と「AnnoFabが集計した作業時間」の差分を出力します。")
 
