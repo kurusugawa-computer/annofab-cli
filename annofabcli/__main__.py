@@ -9,13 +9,13 @@ import annofabcli.input_data.subcommand_input_data
 import annofabcli.inspection_comment.subcommand_inspection_comment
 import annofabcli.instruction.subcommand_instruction
 import annofabcli.job.subcommand_job
+import annofabcli.labor.subcommand_labor
 import annofabcli.organization_member.subcommand_organization_member
 import annofabcli.project.subcommand_project
 import annofabcli.project_member.subcommand_project_member
 import annofabcli.statistics.subcommand_statistics
 import annofabcli.supplementary.subcommand_supplementary
 import annofabcli.task.subcommand_task
-import annofabcli.labor.subcommand_labor
 
 logger = logging.getLogger(__name__)
 
