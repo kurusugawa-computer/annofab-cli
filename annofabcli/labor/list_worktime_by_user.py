@@ -260,15 +260,26 @@ class ListWorktimeByUser(AbstractCommandLineInterface):
 
         return True
 
+    def get_user_id_list_from_project_id_list(self, project_id_list: List[str]) -> List[str]:
+        member_list = []
+        for project_id in project_id_list:
+            member_list.extend(self.service.wrapper.get_all_project_members(project_id))
+        user_id_list = [e["user_id"] for e in member_list]
+        return list(set(user_id_list))
+
     def main(self):
         args = self.args
 
         if not self.validate(args):
             return
 
-        user_id_list = get_list_from_args(args.user_id)
-        project_id_list = get_list_from_args(args.project_id)
-        organization_name_list = get_list_from_args(args.organization)
+        user_id_list = get_list_from_args(args.user_id) if args.user_id is not None else None
+        project_id_list = get_list_from_args(args.project_id) if args.project_id is not None else None
+        organization_name_list = get_list_from_args(args.organization) if args.organization is not None else None
+
+        if user_id_list is None and project_id_list is not None:
+            user_id_list = self.get_user_id_list_from_project_id_list(project_id_list)
+
         output_dir = Path(args.output_dir)
         output_dir.mkdir(exist_ok=True, parents=True)
 
@@ -292,8 +303,9 @@ def parse_args(parser: argparse.ArgumentParser):
                               help='集計対象のプロジェクトを指定してください。`file://`を先頭に付けると、project_idの一覧が記載されたファイルを指定できます。')
 
     parser.add_argument(
-        '-u', '--user_id', type=str, nargs='+',
-        help='集計対象のユーザのuser_idを指定してください。`--organization`を指定した場合は必須です。`file://`を先頭に付けると、user_idの一覧が記載されたファイルを指定できます。')
+        '-u', '--user_id', type=str, nargs='+', help=
+        '集計対象のユーザのuser_idを指定してください。`--organization`を指定した場合は必須です。指定しない場合は、プロジェクトメンバが指定されます。`file://`を先頭に付けると、user_idの一覧が記載されたファイルを指定できます。'
+    )
 
     parser.add_argument("--start_date", type=str, required=True, help="集計期間の開始日(%%Y-%%m-%%d)")
     parser.add_argument("--end_date", type=str, required=True, help="集計期間の終了日(%%Y-%%m-%%d)")
