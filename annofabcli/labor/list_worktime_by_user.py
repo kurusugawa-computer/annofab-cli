@@ -169,13 +169,17 @@ class ListWorktimeByUser(AbstractCommandLineInterface):
 
     @staticmethod
     def write_sum_worktime_list(sum_worktime_df: pandas.DataFrame, output_dir: Path):
-        sum_worktime_df.to_csv(str(output_dir / "ユーザごとの作業時間.csv"), encoding="utf_8_sig", index=False)
+        sum_worktime_df.round(3).to_csv(str(output_dir / "ユーザごとの作業時間.csv"), encoding="utf_8_sig", index=False)
 
     @staticmethod
     def write_worktime_list(worktime_df: pandas.DataFrame, output_dir: Path):
-        worktime_df = worktime_df.rename(columns={"worktime_plan_hour": "作業予定時間", "worktime_result_hour": "作業実績時間"})
-        columns = ListWorktimeByUser.create_required_columns(
-            worktime_df, ["date", "organization_name", "project_title", "username", "作業予定時間", "作業実績時間"])
+        worktime_df = worktime_df.rename(columns={
+            "worktime_plan_hour": "作業予定時間",
+            "worktime_result_hour": "作業実績時間"
+        }).round(3)
+        columns = [
+            "date", "organization_name", "project_title", "project_id", "username", "user_id", "作業予定時間", "作業実績時間"
+        ]
         worktime_df[columns].to_csv(str(output_dir / "作業時間の詳細一覧.csv"), encoding="utf_8_sig", index=False)
 
     def get_organization_member_list(self, organization_name_list: Optional[List[str]],
