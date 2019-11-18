@@ -261,7 +261,7 @@ class ListWorktimeByUser(AbstractCommandLineInterface):
         return True
 
     def get_user_id_list_from_project_id_list(self, project_id_list: List[str]) -> List[str]:
-        member_list = []
+        member_list: List[Dict[str, Any]] = []
         for project_id in project_id_list:
             member_list.extend(self.service.wrapper.get_all_project_members(project_id))
         user_id_list = [e["user_id"] for e in member_list]
@@ -303,8 +303,10 @@ def parse_args(parser: argparse.ArgumentParser):
                               help='集計対象のプロジェクトを指定してください。`file://`を先頭に付けると、project_idの一覧が記載されたファイルを指定できます。')
 
     parser.add_argument(
-        '-u', '--user_id', type=str, nargs='+', help=
-        '集計対象のユーザのuser_idを指定してください。`--organization`を指定した場合は必須です。指定しない場合は、プロジェクトメンバが指定されます。`file://`を先頭に付けると、user_idの一覧が記載されたファイルを指定できます。'
+        '-u', '--user_id', type=str, nargs='+',
+        help='集計対象のユーザのuser_idを指定してください。`--organization`を指定した場合は必須です。'
+             '指定しない場合は、プロジェクトメンバが指定されます。'
+             '`file://`を先頭に付けると、user_idの一覧が記載されたファイルを指定できます。'
     )
 
     parser.add_argument("--start_date", type=str, required=True, help="集計期間の開始日(%%Y-%%m-%%d)")
