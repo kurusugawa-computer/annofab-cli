@@ -89,14 +89,14 @@ def create_parent_parser() -> argparse.ArgumentParser:
     return parent_parser
 
 
-def get_list_from_args(str_list: Optional[List[str]] = None) -> List[str]:
+def get_list_from_args(str_list: Optional[List[str]] = None) -> Optional[List[str]]:
     """
     文字列のListのサイズが1で、プレフィックスが`file://`ならば、ファイルパスとしてファイルを読み込み、行をListとして返す。
-    そうでなければ、引数の値をそのままかえす。
-    ただしNoneの場合は空Listを変えす
+    そうでなければ、引数の値をそのまま返す。
+    ただしNoneの場合はNoneを返す。
     """
     if str_list is None or len(str_list) == 0:
-        return []
+        return None
 
     if len(str_list) > 1:
         return str_list

@@ -1,5 +1,6 @@
 import argparse
 import logging
+import sys
 from dataclasses import dataclass
 from pathlib import Path
 from typing import Any, Callable, Dict, List, Optional, Tuple, Union  # pylint: disable=unused-import
@@ -87,11 +88,49 @@ class ListWorktimeByUser(AbstractCommandLineInterface):
         else:
             return value / 3600 / 1000
 
-    def get_labor_list(self, organization_name: str, start_date: str, end_date: str) -> List[LaborWorktime]:
+    def _get_labor_worktime(self, labor: Dict[str, Any], member: OrganizationMember, project_title: str,
+                            organization_name: str) -> LaborWorktime:
+        new_labor = LaborWorktime(
+            date=labor["date"],
+            organization_id=labor["organization_id"],
+            organization_name=organization_name,
+            project_id=labor["project_id"],
+            project_title=project_title,
+            account_id=labor["account_id"],
+            user_id=member["user_id"] if member is not None else "",
+            username=member["username"] if member is not None else "",
+            worktime_plan_hour=self.get_worktime_hour(labor["values"]["working_time_by_user"], "plans"),
+            worktime_result_hour=self.get_worktime_hour(labor["values"]["working_time_by_user"], "results"),
+        )
+        return new_labor
+
+    def get_labor_list_from_project_id(self, project_id: str, member_list: List[OrganizationMember], start_date: str,
+                                       end_date: str) -> List[LaborWorktime]:
+        labor_list, _ = self.service.api.get_labor_control({
+            "project_id": project_id,
+            "from": start_date,
+            "to": end_date
+        })
+        project_title = self.service.api.get_project(project_id)[0]["title"]
+
+        logger.info(f"'{project_title}'プロジェクト('{project_id}')の労務管理情報の件数: {len(labor_list)}")
+
         new_labor_list = []
+        for labor in labor_list:
+            member = self.get_member_from_account_id(member_list, labor["account_id"])
+
+            organization, _ = self.service.api.get_organization_of_project(project_id)
+            organization_name = organization["organization_name"]
+            new_labor = self._get_labor_worktime(labor, member=member, project_title=project_title,
+                                                 organization_name=organization_name)
+            new_labor_list.append(new_labor)
+
+        return new_labor_list
+
+    def get_labor_list_from_organization_name(self, organization_name: str, member_list: List[OrganizationMember],
+                                              start_date: str, end_date: str) -> List[LaborWorktime]:
         organization, _ = self.service.api.get_organization(organization_name)
         organization_id = organization["organization_id"]
-        organization_member_list = self.service.wrapper.get_all_organization_members(organization_name)
         project_list = self.service.wrapper.get_all_projects_of_organization(organization_name)
 
         labor_list, _ = self.service.api.get_labor_control({
@@ -100,8 +139,9 @@ class ListWorktimeByUser(AbstractCommandLineInterface):
             "to": end_date
         })
         logger.info(f"'{organization_name}'組織の労務管理情報の件数: {len(labor_list)}")
+        new_labor_list = []
         for labor in labor_list:
-            member = self.get_member_from_account_id(organization_member_list, labor["account_id"])
+            member = self.get_member_from_account_id(member_list, labor["account_id"])
             new_labor = LaborWorktime(
                 date=labor["date"],
                 organization_id=labor["organization_id"],
@@ -145,16 +185,44 @@ class ListWorktimeByUser(AbstractCommandLineInterface):
             worktime_df, ["date", "organization_name", "project_title", "username", "作業予定時間", "作業実績時間"])
         worktime_df[columns].to_csv(str(output_dir / "作業時間の詳細一覧.csv"), encoding="utf_8_sig", index=False)
 
-    def print_labor_worktime_list(self, organization_name_list: List[str], user_id_list: List[str], start_date: str,
+    def get_organization_member_list(self, organization_name_list: Optional[List[str]],
+                                     project_id_list: Optional[List[str]]) -> List[OrganizationMember]:
+        member_list: List[OrganizationMember] = []
+
+        if project_id_list is not None:
+            tmp_organization_name_list = []
+            for project_id in project_id_list:
+                organization, _ = self.service.api.get_organization_of_project(project_id)
+                tmp_organization_name_list.append(organization["organization_name"])
+
+            organization_name_list = list(set(tmp_organization_name_list))
+
+        if organization_name_list is not None:
+            for organization_name in organization_name_list:
+                member_list.extend(self.service.wrapper.get_all_organization_members(organization_name))
+
+        return member_list
+
+    def print_labor_worktime_list(self, organization_name_list: Optional[List[str]],
+                                  project_id_list: Optional[List[str]], user_id_list: List[str], start_date: str,
                                   end_date: str, output_dir: Path) -> None:
         """
         作業時間の一覧を出力する
         """
         labor_list = []
-        member_list: List[OrganizationMember] = []
-        for organization_name in organization_name_list:
-            labor_list.extend(self.get_labor_list(organization_name, start_date=start_date, end_date=end_date))
-            member_list.extend(self.service.wrapper.get_all_organization_members(organization_name))
+        member_list = self.get_organization_member_list(organization_name_list, project_id_list)
+
+        if project_id_list is not None:
+            for project_id in project_id_list:
+                labor_list.extend(
+                    self.get_labor_list_from_project_id(project_id, member_list=member_list, start_date=start_date,
+                                                        end_date=end_date))
+
+        elif organization_name_list is not None:
+            for organization_name in organization_name_list:
+                labor_list.extend(
+                    self.get_labor_list_from_organization_name(organization_name, member_list=member_list,
+                                                               start_date=start_date, end_date=end_date))
 
         reform_dict = {
             ("date", ""): [
@@ -184,15 +252,29 @@ class ListWorktimeByUser(AbstractCommandLineInterface):
         worktime_df = pandas.DataFrame([e.to_dict() for e in labor_list])  # type: ignore
         self.write_worktime_list(worktime_df, output_dir)
 
+    @staticmethod
+    def validate(args: argparse.Namespace) -> bool:
+        if args.organization is not None and args.user_id is None:
+            print("ERROR: argument --user_id: " "`--organization`を指定しているときは、`--user_id`オプションは必須です。", file=sys.stderr)
+            return False
+
+        return True
+
     def main(self):
         args = self.args
+
+        if not self.validate(args):
+            return
+
         user_id_list = get_list_from_args(args.user_id)
+        project_id_list = get_list_from_args(args.project_id)
         organization_name_list = get_list_from_args(args.organization)
         output_dir = Path(args.output_dir)
         output_dir.mkdir(exist_ok=True, parents=True)
 
-        self.print_labor_worktime_list(organization_name_list=organization_name_list, user_id_list=user_id_list,
-                                       start_date=args.start_date, end_date=args.end_date, output_dir=output_dir)
+        self.print_labor_worktime_list(organization_name_list=organization_name_list, project_id_list=project_id_list,
+                                       user_id_list=user_id_list, start_date=args.start_date, end_date=args.end_date,
+                                       output_dir=output_dir)
 
 
 def main(args):
@@ -202,12 +284,16 @@ def main(args):
 
 
 def parse_args(parser: argparse.ArgumentParser):
+    target_group = parser.add_mutually_exclusive_group(required=True)
+    target_group.add_argument('-org', '--organization', type=str, nargs='+',
+                              help='集計対象の組織名を指定してください。`file://`を先頭に付けると、組織名の一覧が記載されたファイルを指定できます。')
 
-    parser.add_argument('-org', '--organization', type=str, nargs='+', required=True,
-                        help='集計対象の組織名を指定してください。`file://`を先頭に付けると、組織名の一覧が記載されたファイルを指定できます。')
+    target_group.add_argument('-p', '--project_id', type=str, nargs='+',
+                              help='集計対象のプロジェクトを指定してください。`file://`を先頭に付けると、project_idの一覧が記載されたファイルを指定できます。')
 
-    parser.add_argument('-u', '--user_id', type=str, nargs='+', required=True,
-                        help='集計対象のユーザのuser_idを指定してください。`file://`を先頭に付けると、user_idの一覧が記載されたファイルを指定できます。')
+    parser.add_argument(
+        '-u', '--user_id', type=str, nargs='+',
+        help='集計対象のユーザのuser_idを指定してください。`--organization`を指定した場合は必須です。`file://`を先頭に付けると、user_idの一覧が記載されたファイルを指定できます。')
 
     parser.add_argument("--start_date", type=str, required=True, help="集計期間の開始日(%%Y-%%m-%%d)")
     parser.add_argument("--end_date", type=str, required=True, help="集計期間の終了日(%%Y-%%m-%%d)")
@@ -219,8 +305,8 @@ def parse_args(parser: argparse.ArgumentParser):
 
 def add_parser(subparsers: argparse._SubParsersAction):
     subcommand_name = "list_worktime_by_user"
-    subcommand_help = "ユーザごとに作業時間を出力します。"
-    description = ("ユーザごとに作業時間を出力します。")
+    subcommand_help = "ユーザごとに作業予定時間、作業実績時間を出力します。"
+    description = ("ユーザごとに作業予定時間、作業実績時間を出力します。")
 
     parser = annofabcli.common.cli.add_parser(subparsers, subcommand_name, subcommand_help, description)
     parse_args(parser)
