@@ -1,3 +1,7 @@
+# flake8: noqa
+#  type: ignore
+# pylint: skip-file
+
 import argparse
 import datetime
 import logging
@@ -170,9 +174,10 @@ def main(args):
 def parse_args(parser: argparse.ArgumentParser):
     argument_parser = ArgumentParser(parser)
 
-    parser.add_argument('-p', '--project_id', type=str, required=True, nargs='+',
-                        help="集計対象のプロジェクトのproject_idを指定します。複数指定した場合は合計値を出力します。"
-                             "`file://`を先頭に付けると、project_idの一覧が記載されたファイルを指定できます。")
+    parser.add_argument(
+        '-p', '--project_id', type=str, required=True, nargs='+',
+        help="集計対象のプロジェクトのproject_idを指定します。複数指定した場合は合計値を出力します。"
+        "`file://`を先頭に付けると、project_idの一覧が記載されたファイルを指定できます。")
     parser.add_argument("--start_date", type=str, required=True, help="集計開始日(%%Y-%%m-%%d)")
     parser.add_argument("--end_date", type=str, required=True, help="集計終了日(%%Y-%%m-%%d)")
 
