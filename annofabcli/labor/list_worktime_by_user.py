@@ -204,10 +204,10 @@ def main(args):
 def parse_args(parser: argparse.ArgumentParser):
 
     parser.add_argument('-org', '--organization', type=str, nargs='+', required=True,
-                        help='集計対象の組織名を指定してください。`file://`を先頭に付けると、一覧が記載されたファイルを指定できます。')
+                        help='集計対象の組織名を指定してください。`file://`を先頭に付けると、組織名の一覧が記載されたファイルを指定できます。')
 
     parser.add_argument('-u', '--user_id', type=str, nargs='+', required=True,
-                        help='集計対象のユーザのuser_idを指定してください。`file://`を先頭に付けると、一覧が記載されたファイルを指定できます。')
+                        help='集計対象のユーザのuser_idを指定してください。`file://`を先頭に付けると、user_idの一覧が記載されたファイルを指定できます。')
 
     parser.add_argument("--start_date", type=str, required=True, help="集計期間の開始日(%%Y-%%m-%%d)")
     parser.add_argument("--end_date", type=str, required=True, help="集計期間の終了日(%%Y-%%m-%%d)")
