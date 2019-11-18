@@ -106,8 +106,12 @@ class ListWorktimeByUser(AbstractCommandLineInterface):
 
     def get_labor_list_from_project_id(self, project_id: str, member_list: List[OrganizationMember], start_date: str,
                                        end_date: str) -> List[LaborWorktime]:
+        organization, _ = self.service.api.get_organization_of_project(project_id)
+        organization_name = organization["organization_name"]
+
         labor_list, _ = self.service.api.get_labor_control({
             "project_id": project_id,
+            "organization_id": organization["organization_id"],
             "from": start_date,
             "to": end_date
         })
@@ -119,8 +123,6 @@ class ListWorktimeByUser(AbstractCommandLineInterface):
         for labor in labor_list:
             member = self.get_member_from_account_id(member_list, labor["account_id"])
 
-            organization, _ = self.service.api.get_organization_of_project(project_id)
-            organization_name = organization["organization_name"]
             new_labor = self._get_labor_worktime(labor, member=member, project_title=project_title,
                                                  organization_name=organization_name)
             new_labor_list.append(new_labor)
@@ -142,18 +144,9 @@ class ListWorktimeByUser(AbstractCommandLineInterface):
         new_labor_list = []
         for labor in labor_list:
             member = self.get_member_from_account_id(member_list, labor["account_id"])
-            new_labor = LaborWorktime(
-                date=labor["date"],
-                organization_id=labor["organization_id"],
-                organization_name=organization_name,
-                project_id=labor["project_id"],
-                project_title=self.get_project_title(project_list, labor["project_id"]),
-                account_id=labor["account_id"],
-                user_id=member["user_id"] if member is not None else "",
-                username=member["username"] if member is not None else "",
-                worktime_plan_hour=self.get_worktime_hour(labor["values"]["working_time_by_user"], "plans"),
-                worktime_result_hour=self.get_worktime_hour(labor["values"]["working_time_by_user"], "results"),
-            )
+            project_title = self.get_project_title(project_list, labor["project_id"])
+            new_labor = self._get_labor_worktime(labor, member=member, project_title=project_title,
+                                                 organization_name=organization_name)
             new_labor_list.append(new_labor)
 
         return new_labor_list
@@ -224,6 +217,9 @@ class ListWorktimeByUser(AbstractCommandLineInterface):
                     self.get_labor_list_from_organization_name(organization_name, member_list=member_list,
                                                                start_date=start_date, end_date=end_date))
 
+        # 集計対象ユーザで絞り込む
+        labor_list = [e for e in labor_list if e.user_id in user_id_list]
+
         reform_dict = {
             ("date", ""): [
                 e.strftime(ListWorktimeByUser.DATE_FORMAT) for e in pandas.date_range(start=start_date, end=end_date)
@@ -250,7 +246,10 @@ class ListWorktimeByUser(AbstractCommandLineInterface):
         self.write_sum_worktime_list(sum_worktime_df, output_dir)
 
         worktime_df = pandas.DataFrame([e.to_dict() for e in labor_list])  # type: ignore
-        self.write_worktime_list(worktime_df, output_dir)
+        if len(worktime_df) > 0:
+            self.write_worktime_list(worktime_df, output_dir)
+        else:
+            logger.warning(f"労務管理情報が0件のため、作業時間の詳細一覧.csv は出力しません。")
 
     @staticmethod
     def validate(args: argparse.Namespace) -> bool:
@@ -303,11 +302,9 @@ def parse_args(parser: argparse.ArgumentParser):
                               help='集計対象のプロジェクトを指定してください。`file://`を先頭に付けると、project_idの一覧が記載されたファイルを指定できます。')
 
     parser.add_argument(
-        '-u', '--user_id', type=str, nargs='+',
-        help='集計対象のユーザのuser_idを指定してください。`--organization`を指定した場合は必須です。'
-             '指定しない場合は、プロジェクトメンバが指定されます。'
-             '`file://`を先頭に付けると、user_idの一覧が記載されたファイルを指定できます。'
-    )
+        '-u', '--user_id', type=str, nargs='+', help='集計対象のユーザのuser_idを指定してください。`--organization`を指定した場合は必須です。'
+        '指定しない場合は、プロジェクトメンバが指定されます。'
+        '`file://`を先頭に付けると、user_idの一覧が記載されたファイルを指定できます。')
 
     parser.add_argument("--start_date", type=str, required=True, help="集計期間の開始日(%%Y-%%m-%%d)")
     parser.add_argument("--end_date", type=str, required=True, help="集計期間の終了日(%%Y-%%m-%%d)")
