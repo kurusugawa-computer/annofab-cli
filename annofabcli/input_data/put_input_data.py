@@ -15,7 +15,9 @@ from dataclasses_json import dataclass_json
 
 import annofabcli
 from annofabcli import AnnofabApiFacade
-from annofabcli.common.cli import AbstractCommandLineInterface, ArgumentParser, build_annofabapi_resource_and_login
+from annofabcli.common.cli import (AbstractCommandLineInterface, ArgumentParser, build_annofabapi_resource_and_login,
+                                   get_json_from_args)
+from annofabcli.common.dataclasses import WaitOptions
 from annofabcli.common.utils import get_file_scheme_path, is_file_scheme
 
 logger = logging.getLogger(__name__)
@@ -143,7 +145,7 @@ class PutInputData(AbstractCommandLineInterface):
         input_data_list = [create_input_data(e) for e in df.itertuples()]
         return input_data_list
 
-    def put_input_data_from_zip_file(self, project_id: str, zip_file: Path,
+    def put_input_data_from_zip_file(self, project_id: str, zip_file: Path, wait_options: WaitOptions,
                                      input_data_name_for_zip: Optional[str] = None, wait: bool = False) -> None:
         """
         zipファイルを入力データとして登録する
@@ -169,17 +171,16 @@ class PutInputData(AbstractCommandLineInterface):
         logger.info(f"入力データの登録中です（サーバ側の処理）。")
 
         if wait:
-            MAX_JOB_ACCESS = 60
-            JOB_ACCESS_INTERVAL = 60
-            MAX_WAIT_MINUTU = MAX_JOB_ACCESS * JOB_ACCESS_INTERVAL / 60
+            MAX_WAIT_MINUTUE = wait_options.max_tries * wait_options.interval / 60
+            logger.info(f"最大{MAX_WAIT_MINUTUE}分間、コピーが完了するまで待ちます。")
 
             result = self.service.wrapper.wait_for_completion(project_id, job_type=JobType.GEN_INPUTS,
-                                                              job_access_interval=JOB_ACCESS_INTERVAL,
-                                                              max_job_access=MAX_JOB_ACCESS)
+                                                              job_access_interval=wait_options.interval,
+                                                              max_job_access=wait_options.max_tries)
             if result:
                 logger.info(f"入力データの登録が完了しました。")
             else:
-                logger.warning(f"入力データの登録に失敗しました。または、{MAX_WAIT_MINUTU}分間待っても、入力データの登録が完了しませんでした。")
+                logger.warning(f"入力データの登録に失敗しました。または、{MAX_WAIT_MINUTUE}分間待っても、入力データの登録が完了しませんでした。")
 
     @staticmethod
     def validate(args: argparse.Namespace) -> bool:
@@ -209,6 +210,14 @@ class PutInputData(AbstractCommandLineInterface):
 
         return True
 
+    @staticmethod
+    def get_wait_options_from_args(args: argparse.Namespace) -> WaitOptions:
+        if args.wait_options is not None:
+            wait_options = WaitOptions.from_dict(get_json_from_args(args.wait_options))  # type: ignore
+        else:
+            wait_options = WaitOptions(interval=60, max_tries=360)
+        return wait_options
+
     def main(self):
         args = self.args
         if not self.validate(args):
@@ -222,8 +231,10 @@ class PutInputData(AbstractCommandLineInterface):
             self.put_input_data_list(project_id, input_data_list=input_data_list, overwrite=args.overwrite)
 
         elif args.zip is not None:
+            wait_options = self.get_wait_options_from_args(args)
             self.put_input_data_from_zip_file(project_id, zip_file=Path(args.zip),
-                                              input_data_name_for_zip=args.input_data_name_for_zip, wait=args.wait)
+                                              input_data_name_for_zip=args.input_data_name_for_zip, wait=args.wait,
+                                              wait_options=wait_options)
 
         else:
             print(f"引数が不正です。", file=sys.stderr)
@@ -261,8 +272,14 @@ def parse_args(parser: argparse.ArgumentParser):
         help='入力データとして登録するzipファイルのinput_data_nameを指定してください。省略した場合、`--zip`のパスになります。'
         '`--zip`を指定したときのみ有効なオプションです。')
 
-    parser.add_argument('--wait', action='store_true', help=("入力データの登録が完了するまで待ちます。最大60分間待ちます。"
-                                                             "`--zip`を指定したときのみ有効なオプションです。"))
+    parser.add_argument('--wait', action='store_true', help=("入力データの登録が完了するまで待ちます。" "`--zip`を指定したときのみ有効なオプションです。"))
+
+    parser.add_argument(
+        '--wait_options', type=str, help='入力データの登録が完了するまで待つ際のオプションをJSON形式で指定してください。'
+        '`file://`を先頭に付けるとjsonファイルを指定できます。'
+        'デフォルとは`{"interval":60, "max_tries":360}` です。'
+        '`interval`:完了したかを問い合わせる間隔[秒], '
+        '`max_tires`:完了したかの問い合わせを最大何回行うか。')
 
     parser.set_defaults(subcommand_func=main)
 

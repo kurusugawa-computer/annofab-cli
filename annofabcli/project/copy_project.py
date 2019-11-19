@@ -8,7 +8,9 @@ from annofabapi.models import JobType, OrganizationMemberRole, ProjectMemberRole
 
 import annofabcli
 from annofabcli import AnnofabApiFacade
-from annofabcli.common.cli import AbstractCommandLineInterface, ArgumentParser, build_annofabapi_resource_and_login
+from annofabcli.common.cli import (AbstractCommandLineInterface, ArgumentParser, build_annofabapi_resource_and_login,
+                                   get_json_from_args)
+from annofabcli.common.dataclasses import WaitOptions
 
 logger = logging.getLogger(__name__)
 
@@ -17,7 +19,7 @@ class CopyProject(AbstractCommandLineInterface):
     """
     プロジェクトをコピーする
     """
-    def copy_project(self, src_project_id: str, dest_project_id: str, dest_title: str,
+    def copy_project(self, src_project_id: str, dest_project_id: str, dest_title: str, wait_options: WaitOptions,
                      dest_overview: Optional[str] = None, copy_options: Optional[Dict[str, bool]] = None,
                      wait_for_completion: bool = False):
         """
@@ -27,6 +29,7 @@ class CopyProject(AbstractCommandLineInterface):
             src_project_id: コピー元のproject_id
             dest_project_id: 新しいプロジェクトのproject_id
             dest_title: 新しいプロジェクトのタイトル
+            wait_options: 待つときのオプション
             dest_overview: 新しいプロジェクトの概要
             copy_options: 各項目についてコピーするかどうかのオプション
             wait_for_completion: プロジェクトのコピーが完了するまで待つかかどうか
@@ -60,12 +63,24 @@ class CopyProject(AbstractCommandLineInterface):
         logger.info(f"プロジェクトのコピーを実施しています。")
 
         if wait_for_completion:
+            MAX_WAIT_MINUTUE = wait_options.max_tries * wait_options.interval / 60
+            logger.info(f"最大{MAX_WAIT_MINUTUE}分間、コピーが完了するまで待ちます。")
+
             result = self.service.wrapper.wait_for_completion(src_project_id, job_type=JobType.COPY_PROJECT,
-                                                              job_access_interval=60, max_job_access=15)
+                                                              job_access_interval=wait_options.interval,
+                                                              max_job_access=wait_options.max_tries)
             if result:
                 logger.info(f"プロジェクトのコピーが完了しました。")
             else:
                 logger.info(f"プロジェクトのコピーは実行中 または 失敗しました。")
+
+    @staticmethod
+    def get_wait_options_from_args(args: argparse.Namespace) -> WaitOptions:
+        if args.wait_options is not None:
+            wait_options = WaitOptions.from_dict(get_json_from_args(args.wait_options))  # type: ignore
+        else:
+            wait_options = WaitOptions(interval=60, max_tries=360)
+        return wait_options
 
     def main(self):
         args = self.args
@@ -79,8 +94,11 @@ class CopyProject(AbstractCommandLineInterface):
         for key in copy_option_kyes:
             copy_options[key] = getattr(args, key)
 
+        wait_options = self.get_wait_options_from_args(args)
+
         self.copy_project(args.project_id, dest_project_id=dest_project_id, dest_title=args.dest_title,
-                          dest_overview=args.dest_overview, copy_options=copy_options, wait_for_completion=args.wait)
+                          dest_overview=args.dest_overview, copy_options=copy_options, wait_for_completion=args.wait,
+                          wait_options=wait_options)
 
 
 def main(args):
@@ -105,8 +123,14 @@ def parse_args(parser: argparse.ArgumentParser):
     parser.add_argument('--copy_supplementaly_data', action='store_true', help="「補助情報」をコピーするかどうかを指定します。")
     parser.add_argument('--copy_instructions', action='store_true', help="「作業ガイド」をコピーするかどうかを指定します。")
 
-    parser.add_argument('--wait', action='store_true', help=("プロジェクトのコピーが完了するまで待ちます。"
-                                                             "1分ごとにプロジェクトのコピーが完了したかを確認し、最大15分間待ちます。"))
+    parser.add_argument('--wait', action='store_true', help="プロジェクトのコピーが完了するまで待ちます。")
+
+    parser.add_argument(
+        '--wait_options', type=str, help='プロジェクトのコピーが完了するまで待つ際のオプションをJSON形式で指定してください。'
+        '`file://`を先頭に付けるとjsonファイルを指定できます。'
+        'デフォルとは`{"interval":60, "max_tries":360}` です。'
+        '`interval`:完了したかを問い合わせる間隔[秒], '
+        '`max_tires`:完了したかの問い合わせを最大何回行うか。')
 
     parser.set_defaults(subcommand_func=main)
 
