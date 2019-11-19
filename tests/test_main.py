@@ -106,9 +106,13 @@ class TestInputData:
         csv_file = str(data_path / "input_data2.csv")
         main([self.command_name, 'put', '--project_id', project_id, '--csv', csv_file, '--overwrite', '--yes'])
 
-    # def test_put_input_data_with_zip(self):
-    #     pass
-    #     # ジョブ登録されてテストに失敗するため、実施しない
+    def test_put_input_data_with_zip(self):
+        # 注意：ジョブ登録される
+        zip_file = str(data_path / "lenna.zip")
+        main([
+            self.command_name, 'put', '--project_id', project_id, '--zip', zip_file, '--wait', '--yes',
+            '--wait_options', '{"interval":1, "max_tries":1}'
+        ])
 
 
 class TestInspectionComment:
