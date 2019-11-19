@@ -92,7 +92,7 @@ def create_parent_parser() -> argparse.ArgumentParser:
 def get_list_from_args(str_list: Optional[List[str]] = None) -> List[str]:
     """
     文字列のListのサイズが1で、プレフィックスが`file://`ならば、ファイルパスとしてファイルを読み込み、行をListとして返す。
-    そうでなければ、引数の値をそのままかえす。
+    そうでなければ、引数の値をそのまま返す。
     ただしNoneの場合は空Listを変えす
     """
     if str_list is None or len(str_list) == 0:

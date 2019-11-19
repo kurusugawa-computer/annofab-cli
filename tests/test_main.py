@@ -25,10 +25,7 @@ user_id = service.api.login_user_id
 out_path = Path('./tests/out')
 data_path = Path('./tests/data')
 
-
-def get_organization_name(project_id: str) -> str:
-    organization, _ = service.api.get_organization_of_project(project_id)
-    return organization["organization_name"]
+organization_name = service.api.get_organization_of_project(project_id)[0]["organization_name"]
 
 
 class TestAnnotation:
@@ -165,12 +162,29 @@ class TestJob:
         ])
 
 
+class TestLabor:
+    def test_list_worktime_by_user_with_project_id(self):
+        output_dir = str(out_path / 'labor')
+        main([
+            'labor', 'list_worktime_by_user', '--project_id', project_id, '--user_id', service.api.login_user_id,
+            '--start_date', '2019-09-01', '--end_date', '2019-09-01', '--output_dir',
+            str(output_dir)
+        ])
+
+    def test_list_worktime_by_user_with_organization_name(self):
+        output_dir = str(out_path / 'labor')
+        main([
+            'labor', 'list_worktime_by_user', '--organization', organization_name, '--user_id',
+            service.api.login_user_id, '--start_date', '2019-09-01', '--end_date', '2019-09-01', '--output_dir',
+            str(output_dir)
+        ])
+
+
 class TestOrganizationMember:
     def test_list_organization_member(self):
         out_file = str(out_path / 'organization_member.csv')
         main([
-            'organization_member', 'list', '--organization',
-            get_organization_name(project_id), '--format', 'csv', '--output', out_file
+            'organization_member', 'list', '--organization', organization_name, '--format', 'csv', '--output', out_file
         ])
 
 
@@ -203,7 +217,6 @@ class TestProject:
         main(['project', 'download', 'full_annotation', '--project_id', project_id, '--output', out_file])
 
     def test_list_project(self):
-        organization_name = get_organization_name(project_id)
         out_file = str(out_path / 'project.csv')
         main([
             'project', 'list', '--organization', organization_name, '--project_query', '{"status": "active"}',
@@ -218,7 +231,6 @@ class TestProjectMember:
 
     def test_list_project_member(self):
         main(['project_member', 'list', '--project_id', project_id])
-        organization_name = get_organization_name(project_id)
         main(['project_member', 'list', '--organization', organization_name])
 
     def test_copy_project_member(self):
