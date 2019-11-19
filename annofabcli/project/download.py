@@ -47,7 +47,8 @@ class Download(AbstractCommandLineInterface):
 
     def download(self, target: DownloadTarget, project_id: str, output: str, latest: bool, wait_options: WaitOptions):
         MAX_WAIT_MINUTUE = wait_options.max_tries * wait_options.interval / 60
-        logger.info(f"最大{MAX_WAIT_MINUTUE}分間、ダウンロード対象が最新化するまで待ちます。")
+        if latest:
+            logger.info(f"最大{MAX_WAIT_MINUTUE}分間、ダウンロード対象が最新化するまで待ちます。")
 
         if target == DownloadTarget.TASK:
             job_type = JobType.GEN_TASKS_LIST
