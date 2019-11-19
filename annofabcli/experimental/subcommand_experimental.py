@@ -14,7 +14,7 @@ def parse_args(parser: argparse.ArgumentParser):
 
 
 def add_parser(subparsers: argparse._SubParsersAction):
-    subcommand_name = "future"
+    subcommand_name = "experimental"
     subcommand_help = "アルファ版のサブコマンド"
     description = "アルファ版のサブコマンド。予告なしに削除されたり、コマンドライン引数が変わったりします。"
 

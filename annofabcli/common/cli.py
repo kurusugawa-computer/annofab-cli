@@ -295,7 +295,7 @@ class ArgumentParser:
 
         self.parser.add_argument('--csv_format', type=str, help=help_message)
 
-    def add_output(self, required: bool = True, help_message: Optional[str] = None):
+    def add_output(self, required: bool = False, help_message: Optional[str] = None):
         """
         '--output` 引数を追加
         """
