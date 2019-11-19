@@ -777,6 +777,10 @@ $ annofabcli project download simple_annotation --project_id prj1 --output simpl
 
 # 最新のタスク全一覧が記載されたJSONファイルをダウンロードする
 $ annofabcli project download task --project_id prj1 --output task.json --latest
+
+# アノテーションの最新化を最大60分(60秒間隔で最大60回アクセス)待つ
+$ annofabcli project download simple_annotation --project_id prj1  58a2a621-7d4b-41e7-927b-cdc570c1114a --output simple_annotation.zip --latest \
+ --wait_options '{"interval":60, "max_tries":60}' 
 ```
 
 
