@@ -1,8 +1,8 @@
 # flake8: noqa
 #  type: ignore
 # pylint: skip-file
-
 from datetime import date, timedelta
+from typing import Any, Callable, Dict, List, Optional, Tuple, Union  # pylint: disable=unused-import
 
 
 def date_range(start_date: date, end_date: date):
@@ -18,7 +18,7 @@ def print_time_list_from_work_time_list(username_list: list, work_time_lists: li
     new_header_name_list.append("")
     new_header_item_list.append("date / time")
     new_footer_item_list.append("total_time")
-    username_footer_list = {}
+    username_footer_list: Dict[str, Any] = {}
 
     for username in username_list:
         new_header_name_list.append(username)

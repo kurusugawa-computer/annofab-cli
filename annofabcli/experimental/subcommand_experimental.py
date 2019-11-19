@@ -2,7 +2,7 @@ import argparse
 
 import annofabcli
 import annofabcli.common.cli
-import annofabcli.future.list_labor_worktime
+import annofabcli.experimental.list_labor_worktime
 
 
 def parse_args(parser: argparse.ArgumentParser):
@@ -10,7 +10,7 @@ def parse_args(parser: argparse.ArgumentParser):
     subparsers = parser.add_subparsers(dest='subcommand_name')
 
     # サブコマンドの定義
-    annofabcli.future.list_labor_worktime.add_parser(subparsers)
+    annofabcli.experimental.list_labor_worktime.add_parser(subparsers)  # type: ignore
 
 
 def add_parser(subparsers: argparse._SubParsersAction):
