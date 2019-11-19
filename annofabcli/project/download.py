@@ -1,14 +1,16 @@
 import argparse
 import logging
+from dataclasses import dataclass
 from enum import Enum
 from typing import Any, Dict, List, Optional  # pylint: disable=unused-import
 
-from annofabapi.models import JobType
+from annofabapi.models import JobStatus, JobType
+from dataclasses_json import dataclass_json
 
 import annofabcli
 import annofabcli.common.cli
 from annofabcli import AnnofabApiFacade
-from annofabcli.common.cli import AbstractCommandLineInterface, build_annofabapi_resource_and_login
+from annofabcli.common.cli import AbstractCommandLineInterface, build_annofabapi_resource_and_login, get_json_from_args
 
 logger = logging.getLogger(__name__)
 
@@ -21,17 +23,43 @@ class DownloadTarget(Enum):
     FULL_ANNOTATION = "full_annotation"
 
 
+@dataclass_json
+@dataclass(frozen=True)
+class WaitOptions:
+    """
+    最新化ジョブが完了するまで待つときのオプション
+    """
+    interval: int = 60
+    """ジョブにアクセスする間隔[秒]"""
+
+    max_tries: int = 360
+    """最大ジョブに何回アクセスするか"""
+
+
 class Download(AbstractCommandLineInterface):
-    def download(self, target: DownloadTarget, project_id: str, output: str, latest: bool = False):
-        MAX_JOB_ACCESS = 120
-        JOB_ACCESS_INTERVAL = 60
-        MAX_WAIT_MINUTUE = MAX_JOB_ACCESS * JOB_ACCESS_INTERVAL / 60
+    def is_job_progress(self, project_id: str, job_type: JobType):
+        job_list = self.service.api.get_project_job(project_id, query_params={"type": job_type.value})[0]["list"]
+        if job_list > 0:
+            if job_list[0]["job_status"] == JobStatus.PROGRESS:
+                return True
+
+        return False
+
+    def download(self, target: DownloadTarget, project_id: str, output: str, latest: bool, wait_options: WaitOptions):
+        MAX_WAIT_MINUTUE = wait_options.max_tries * wait_options.interval / 60
+        logger.info(f"最大{MAX_WAIT_MINUTUE}分間、ダウンロード対象が最新化するまで待ちます。")
+
         if target == DownloadTarget.TASK:
+            job_type = JobType.GEN_TASKS_LIST
             if latest:
-                self.service.api.post_project_tasks_update(project_id)
-                result = self.service.wrapper.wait_for_completion(project_id, job_type=JobType.GEN_TASKS_LIST,
-                                                                  job_access_interval=JOB_ACCESS_INTERVAL,
-                                                                  max_job_access=MAX_JOB_ACCESS)
+                if self.is_job_progress(project_id, job_type=job_type):
+                    logger.debug(f"ダウンロード対象が最新化ジョブが既に進行中です。")
+                else:
+                    self.service.api.post_project_tasks_update(project_id)
+
+                result = self.service.wrapper.wait_for_completion(project_id, job_type=job_type,
+                                                                  job_access_interval=wait_options.interval,
+                                                                  max_job_access=wait_options.max_tries)
                 if result:
                     logger.info(f"タスクファイルの更新が完了しました。")
                 else:
@@ -48,9 +76,15 @@ class Download(AbstractCommandLineInterface):
 
         elif target in [DownloadTarget.SIMPLE_ANNOTATION, DownloadTarget.FULL_ANNOTATION, DownloadTarget.TASK]:
             if latest:
-                self.service.api.post_annotation_archive_update(project_id)
-                result = self.service.wrapper.wait_for_completion(project_id, job_type=JobType.GEN_ANNOTATION,
-                                                                  job_access_interval=60, max_job_access=30)
+                job_type = JobType.GEN_ANNOTATION
+                if self.is_job_progress(project_id, job_type=job_type):
+                    logger.debug(f"ダウンロード対象が最新化ジョブが既に進行中です。")
+                else:
+                    self.service.api.post_annotation_archive_update(project_id)
+
+                result = self.service.wrapper.wait_for_completion(project_id, job_type=job_type,
+                                                                  job_access_interval=wait_options.interval,
+                                                                  max_job_access=wait_options.max_tries)
                 if result:
                     logger.info(f"アノテーションの更新が完了しました。")
                 else:
@@ -81,7 +115,13 @@ class Download(AbstractCommandLineInterface):
         if not self.validate(args):
             return
 
-        self.download(DownloadTarget(args.target), args.project_id, args.output, latest=args.latest)
+        if args.wait_options is not None:
+            wait_options = WaitOptions.from_dict(get_json_from_args(args.wait_options))
+        else:
+            wait_options = WaitOptions()
+
+        self.download(DownloadTarget(args.target), args.project_id, output=args.output, latest=args.latest,
+                      wait_options=wait_options)
 
 
 def main(args: argparse.Namespace):
@@ -102,6 +142,13 @@ def parse_args(parser: argparse.ArgumentParser):
     parser.add_argument(
         '--latest', action='store_true', help='ダウンロード対象を最新化してから、ダウンロードします。アノテーションの最新化は5分以上かかる場合があります。'
         'ダウンロード対象が`task`, `simple_annotation`, `full_annotation`のときのみ、このオプションは有効です。')
+
+    parser.add_argument(
+        '--wait_options', type=str, help='ダウンロード対象の最新化を待つときのオプションをJSON形式で指定してください。'
+        '`file://`を先頭に付けるとjsonファイルを指定できます。'
+        'デフォルとは`{"interval":60, "max_tries":360}` です。'
+        '`interval`:最新化が完了したかを問い合わせる間隔[秒], '
+        '`max_tires`:最新化が完了したかの問い合わせを最大何回行うか。')
 
     parser.set_defaults(subcommand_func=main)
 
