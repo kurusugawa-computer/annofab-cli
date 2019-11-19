@@ -39,8 +39,8 @@ class WaitOptions:
 class Download(AbstractCommandLineInterface):
     def is_job_progress(self, project_id: str, job_type: JobType):
         job_list = self.service.api.get_project_job(project_id, query_params={"type": job_type.value})[0]["list"]
-        if job_list > 0:
-            if job_list[0]["job_status"] == JobStatus.PROGRESS:
+        if len(job_list) > 0:
+            if job_list[0]["job_status"] == JobStatus.PROGRESS.value:
                 return True
 
         return False
