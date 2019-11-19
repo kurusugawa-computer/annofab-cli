@@ -1,16 +1,15 @@
 import argparse
 import logging
-from dataclasses import dataclass
 from enum import Enum
 from typing import Any, Dict, List, Optional  # pylint: disable=unused-import
 
 from annofabapi.models import JobStatus, JobType
-from dataclasses_json import dataclass_json
 
 import annofabcli
 import annofabcli.common.cli
 from annofabcli import AnnofabApiFacade
 from annofabcli.common.cli import AbstractCommandLineInterface, build_annofabapi_resource_and_login, get_json_from_args
+from annofabcli.common.dataclasses import WaitOptions
 
 logger = logging.getLogger(__name__)
 
@@ -21,19 +20,6 @@ class DownloadTarget(Enum):
     TASK_HISTORY_EVENT = "task_history_event"
     SIMPLE_ANNOTATION = "simple_annotation"
     FULL_ANNOTATION = "full_annotation"
-
-
-@dataclass_json
-@dataclass(frozen=True)
-class WaitOptions:
-    """
-    最新化ジョブが完了するまで待つときのオプション
-    """
-    interval: int = 60
-    """ジョブにアクセスする間隔[秒]"""
-
-    max_tries: int = 360
-    """最大ジョブに何回アクセスするか"""
 
 
 class Download(AbstractCommandLineInterface):
@@ -111,16 +97,20 @@ class Download(AbstractCommandLineInterface):
 
         return True
 
+    @staticmethod
+    def get_wait_options_from_args(args: argparse.Namespace) -> WaitOptions:
+        if args.wait_options is not None:
+            wait_options = WaitOptions.from_dict(get_json_from_args(args.wait_options))  # type: ignore
+        else:
+            wait_options = WaitOptions(interval=60, max_tries=360)
+        return wait_options
+
     def main(self):
         args = self.args
         if not self.validate(args):
             return
 
-        if args.wait_options is not None:
-            wait_options = WaitOptions.from_dict(get_json_from_args(args.wait_options))
-        else:
-            wait_options = WaitOptions()
-
+        wait_options = self.get_wait_options_from_args(args)
         self.download(DownloadTarget(args.target), args.project_id, output=args.output, latest=args.latest,
                       wait_options=wait_options)
 
