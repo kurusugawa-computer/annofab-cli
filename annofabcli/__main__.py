@@ -4,6 +4,7 @@ from typing import Optional, Sequence  # pylint: disable=unused-import
 
 import annofabcli.annotation.subcommand_annotation
 import annofabcli.annotation_specs.subcommand_annotation_specs
+import annofabcli.experimental.subcommand_experimental
 import annofabcli.filesystem.subcommand_filesystem
 import annofabcli.input_data.subcommand_input_data
 import annofabcli.inspection_comment.subcommand_inspection_comment
@@ -51,6 +52,7 @@ def main(arguments: Optional[Sequence[str]] = None):
     annofabcli.supplementary.subcommand_supplementary.add_parser(subparsers)
 
     annofabcli.filesystem.subcommand_filesystem.add_parser(subparsers)
+    annofabcli.experimental.subcommand_experimental.add_parser(subparsers)
 
     if arguments is None:
         args = parser.parse_args()

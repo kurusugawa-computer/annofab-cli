@@ -295,14 +295,14 @@ class ArgumentParser:
 
         self.parser.add_argument('--csv_format', type=str, help=help_message)
 
-    def add_output(self, help_message: Optional[str] = None):
+    def add_output(self, required: bool = False, help_message: Optional[str] = None):
         """
-        '--csv_format` 引数を追加
+        '--output` 引数を追加
         """
         if help_message is None:
             help_message = '出力先のファイルパスを指定します。指定しない場合は、標準出力に出力されます。'
 
-        self.parser.add_argument('-o', '--output', type=str, help=help_message)
+        self.parser.add_argument('-o', '--output', type=str, required=required, help=help_message)
 
     def add_query(self, help_message: Optional[str] = None):
         """
