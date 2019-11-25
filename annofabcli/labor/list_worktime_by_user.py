@@ -1,8 +1,8 @@
 import argparse
-import logging
-import sys
 import calendar
 import datetime
+import logging
+import sys
 from dataclasses import dataclass
 from pathlib import Path
 from typing import Any, Callable, Dict, List, Optional, Tuple, Union  # pylint: disable=unused-import
@@ -296,10 +296,12 @@ class ListWorktimeByUser(AbstractCommandLineInterface):
             print("ERROR: argument --user_id: " "`--organization`を指定しているときは、`--user_id`オプションは必須です。", file=sys.stderr)
             return False
 
-        if (not (args.start_date is not None and args.end_date is not None)
-                and not (args.start_month is not None and args.end_month is not None)):
-            print("ERROR: argument --user_id: " "`--start_date/--end_date` または "
-                  "`--start_month/--end_month` の組合わせで指定してください。", file=sys.stderr)
+        if (not (args.start_date is not None and args.end_date is not None) and not (
+                args.start_month is not None and args.end_month is not None)):
+            print(
+                "ERROR: argument --user_id: "
+                "`--start_date/--end_date` または "
+                "`--start_month/--end_month` の組合わせで指定してください。", file=sys.stderr)
             return False
 
         return True
@@ -325,7 +327,7 @@ class ListWorktimeByUser(AbstractCommandLineInterface):
         """
         dt_first_date = datetime.datetime.strptime(str_month, ListWorktimeByUser.MONTH_FORMAT)
         _, days = calendar.monthrange(dt_first_date.year, dt_first_date.month)
-        dt_last_date = dt_first_date + datetime.timedelta(days=(days-1))
+        dt_last_date = dt_first_date + datetime.timedelta(days=(days - 1))
         return (dt_first_date.strftime(ListWorktimeByUser.DATE_FORMAT),
                 dt_last_date.strftime(ListWorktimeByUser.DATE_FORMAT))
 
@@ -343,7 +345,7 @@ class ListWorktimeByUser(AbstractCommandLineInterface):
 
         """
         first_date, _ = ListWorktimeByUser.get_first_and_last_date(start_month)
-        end_date, _ = ListWorktimeByUser.get_first_and_last_date(end_month)
+        _, end_date = ListWorktimeByUser.get_first_and_last_date(end_month)
         return first_date, end_date
 
     @staticmethod
@@ -374,8 +376,9 @@ class ListWorktimeByUser(AbstractCommandLineInterface):
         output_dir.mkdir(exist_ok=True, parents=True)
 
         self.print_labor_worktime_list(organization_name_list=organization_name_list, project_id_list=project_id_list,
-                                       user_id_list=user_id_list, start_date=start_date, end_date=end_date,
-                                       output_dir=output_dir)
+                                       start_date=start_date, end_date=end_date,
+                                       output_dir=output_dir,
+                                       user_id_list=user_id_list)  # type: ignore
 
 
 def main(args):
@@ -402,7 +405,7 @@ def parse_args(parser: argparse.ArgumentParser):
     start_period_group.add_argument("--start_month", type=str, help="集計期間の開始月(%%Y-%%m)")
 
     end_period_group = parser.add_mutually_exclusive_group(required=True)
-    end_period_group.add_argument("--end_date", type=str,  help="集計期間の終了日(%%Y-%%m-%%d)")
+    end_period_group.add_argument("--end_date", type=str, help="集計期間の終了日(%%Y-%%m-%%d)")
     end_period_group.add_argument("--end_month", type=str, help="集計期間の終了月(%%Y-%%m)")
 
     parser.add_argument('-o', '--output_dir', type=str, required=True, help='出力先のディレクトリのパス')
