@@ -296,8 +296,8 @@ class ListWorktimeByUser(AbstractCommandLineInterface):
             print("ERROR: argument --user_id: " "`--organization`を指定しているときは、`--user_id`オプションは必須です。", file=sys.stderr)
             return False
 
-        if (not (args.start_date is not None and args.end_date is not None) and not (
-                args.start_month is not None and args.end_month is not None)):
+        if (not (args.start_date is not None and args.end_date is not None)
+                and not (args.start_month is not None and args.end_month is not None)):
             print(
                 "ERROR: argument --user_id: "
                 "`--start_date/--end_date` または "
@@ -353,7 +353,7 @@ class ListWorktimeByUser(AbstractCommandLineInterface):
         if args.start_date is not None and args.end_date is not None:
             return (args.start_date, args.end_date)
         elif args.start_month is not None and args.end_month is not None:
-            return ListWorktimeByUser.get_start_and_end_date_from_month(args.start_date, args.end_date)
+            return ListWorktimeByUser.get_start_and_end_date_from_month(args.start_month, args.end_month)
         else:
             raise RuntimeError("開始日付と終了日付が取得できませんでした。")
 
@@ -376,8 +376,7 @@ class ListWorktimeByUser(AbstractCommandLineInterface):
         output_dir.mkdir(exist_ok=True, parents=True)
 
         self.print_labor_worktime_list(organization_name_list=organization_name_list, project_id_list=project_id_list,
-                                       start_date=start_date, end_date=end_date,
-                                       output_dir=output_dir,
+                                       start_date=start_date, end_date=end_date, output_dir=output_dir,
                                        user_id_list=user_id_list)  # type: ignore
 
 
@@ -401,12 +400,12 @@ def parse_args(parser: argparse.ArgumentParser):
         '`file://`を先頭に付けると、user_idの一覧が記載されたファイルを指定できます。')
 
     start_period_group = parser.add_mutually_exclusive_group(required=True)
-    start_period_group.add_argument("--start_date", type=str, help="集計期間の開始日(%%Y-%%m-%%d)")
-    start_period_group.add_argument("--start_month", type=str, help="集計期間の開始月(%%Y-%%m)")
+    start_period_group.add_argument("--start_date", type=str, help="集計期間の開始日(YYYY-MM-DD)")
+    start_period_group.add_argument("--start_month", type=str, help="集計期間の開始月(YYYY-MM-DD)")
 
     end_period_group = parser.add_mutually_exclusive_group(required=True)
-    end_period_group.add_argument("--end_date", type=str, help="集計期間の終了日(%%Y-%%m-%%d)")
-    end_period_group.add_argument("--end_month", type=str, help="集計期間の終了月(%%Y-%%m)")
+    end_period_group.add_argument("--end_date", type=str, help="集計期間の終了日(YYYY-MM)")
+    end_period_group.add_argument("--end_month", type=str, help="集計期間の終了月(YYYY-MM)")
 
     parser.add_argument('-o', '--output_dir', type=str, required=True, help='出力先のディレクトリのパス')
 
