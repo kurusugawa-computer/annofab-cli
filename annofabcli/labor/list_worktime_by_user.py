@@ -1,4 +1,6 @@
 import argparse
+import calendar
+import datetime
 import logging
 import sys
 from dataclasses import dataclass
@@ -53,6 +55,7 @@ class ListWorktimeByUser(AbstractCommandLineInterface):
     """
 
     DATE_FORMAT = "%Y-%m-%d"
+    MONTH_FORMAT = "%Y-%m"
 
     @staticmethod
     def create_required_columns(df, prior_columns):
@@ -293,6 +296,15 @@ class ListWorktimeByUser(AbstractCommandLineInterface):
             print("ERROR: argument --user_id: " "`--organization`を指定しているときは、`--user_id`オプションは必須です。", file=sys.stderr)
             return False
 
+        date_period_is_valid = args.start_date is not None and args.end_date is not None
+        month_period_is_valdi = args.start_month is not None and args.end_month is not None
+        if not date_period_is_valid and not month_period_is_valdi:
+            print(
+                "ERROR: argument --user_id: "
+                "`--start_date/--end_date` または "
+                "`--start_month/--end_month` の組合わせで指定してください。", file=sys.stderr)
+            return False
+
         return True
 
     def get_user_id_list_from_project_id_list(self, project_id_list: List[str]) -> List[str]:
@@ -302,7 +314,51 @@ class ListWorktimeByUser(AbstractCommandLineInterface):
         user_id_list = [e["user_id"] for e in member_list]
         return list(set(user_id_list))
 
-    def main(self):
+    @staticmethod
+    def get_first_and_last_date(str_month: str) -> Tuple[str, str]:
+        """
+        年月（"YYYY-MM"）から、月初と月末の日付を返す。
+
+        Args:
+            str_month: 年月（"YYYY-MM"）
+
+        Returns:
+            月初と月末の日付が格納されたタプル
+
+        """
+        dt_first_date = datetime.datetime.strptime(str_month, ListWorktimeByUser.MONTH_FORMAT)
+        _, days = calendar.monthrange(dt_first_date.year, dt_first_date.month)
+        dt_last_date = dt_first_date + datetime.timedelta(days=(days - 1))
+        return (dt_first_date.strftime(ListWorktimeByUser.DATE_FORMAT),
+                dt_last_date.strftime(ListWorktimeByUser.DATE_FORMAT))
+
+    @staticmethod
+    def get_start_and_end_date_from_month(start_month: str, end_month: str) -> Tuple[str, str]:
+        """
+        開始月、終了月から、開始日付、終了日付を取得する。
+
+        Args:
+            start_month:
+            end_month:
+
+        Returns:
+
+
+        """
+        first_date, _ = ListWorktimeByUser.get_first_and_last_date(start_month)
+        _, end_date = ListWorktimeByUser.get_first_and_last_date(end_month)
+        return first_date, end_date
+
+    @staticmethod
+    def get_start_and_end_date_from_args(args: argparse.Namespace) -> Tuple[str, str]:
+        if args.start_date is not None and args.end_date is not None:
+            return (args.start_date, args.end_date)
+        elif args.start_month is not None and args.end_month is not None:
+            return ListWorktimeByUser.get_start_and_end_date_from_month(args.start_month, args.end_month)
+        else:
+            raise RuntimeError("開始日付と終了日付が取得できませんでした。")
+
+    def main(self) -> None:
         args = self.args
 
         if not self.validate(args):
@@ -315,12 +371,14 @@ class ListWorktimeByUser(AbstractCommandLineInterface):
         if user_id_list is None and project_id_list is not None:
             user_id_list = self.get_user_id_list_from_project_id_list(project_id_list)
 
+        start_date, end_date = self.get_start_and_end_date_from_args(args)
+
         output_dir = Path(args.output_dir)
         output_dir.mkdir(exist_ok=True, parents=True)
 
         self.print_labor_worktime_list(organization_name_list=organization_name_list, project_id_list=project_id_list,
-                                       user_id_list=user_id_list, start_date=args.start_date, end_date=args.end_date,
-                                       output_dir=output_dir)
+                                       start_date=start_date, end_date=end_date, output_dir=output_dir,
+                                       user_id_list=user_id_list)  # type: ignore
 
 
 def main(args):
@@ -342,8 +400,13 @@ def parse_args(parser: argparse.ArgumentParser):
         '指定しない場合は、プロジェクトメンバが指定されます。'
         '`file://`を先頭に付けると、user_idの一覧が記載されたファイルを指定できます。')
 
-    parser.add_argument("--start_date", type=str, required=True, help="集計期間の開始日(%%Y-%%m-%%d)")
-    parser.add_argument("--end_date", type=str, required=True, help="集計期間の終了日(%%Y-%%m-%%d)")
+    start_period_group = parser.add_mutually_exclusive_group(required=True)
+    start_period_group.add_argument("--start_date", type=str, help="集計期間の開始日(YYYY-MM-DD)")
+    start_period_group.add_argument("--start_month", type=str, help="集計期間の開始月(YYYY-MM-DD)")
+
+    end_period_group = parser.add_mutually_exclusive_group(required=True)
+    end_period_group.add_argument("--end_date", type=str, help="集計期間の終了日(YYYY-MM)")
+    end_period_group.add_argument("--end_month", type=str, help="集計期間の終了月(YYYY-MM)")
 
     parser.add_argument('-o', '--output_dir', type=str, required=True, help='出力先のディレクトリのパス')
 
