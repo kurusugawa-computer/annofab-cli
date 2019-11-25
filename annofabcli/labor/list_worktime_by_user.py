@@ -172,6 +172,36 @@ class ListWorktimeByUser(AbstractCommandLineInterface):
         sum_worktime_df.round(3).to_csv(str(output_dir / "ユーザごとの作業時間.csv"), encoding="utf_8_sig", index=False)
 
     @staticmethod
+    def write_sum_plan_worktime_list(sum_worktime_df: pandas.DataFrame, output_dir: Path) -> None:
+        """
+        出勤予定かどうかを判断するため、作業予定時間が"0"のときは"☓",　そうでないときは"○"で出力する
+        Args:
+            sum_worktime_df:
+            output_dir:
+
+        """
+        def create_mark(value) -> str:
+            if value == 0:
+                return "×"
+            else:
+                return "○"
+
+        def is_plan_column(c) -> bool:
+            c1, c2 = c
+            if c1 in ["date", "dayofweek"]:
+                return False
+            return c2 == "作業予定"
+
+        username_list = [e[0] for e in sum_worktime_df.columns if is_plan_column(e)]
+
+        for username in username_list:
+            # SettingWithCopyWarning を避けるため、暫定的に値をコピーする
+            sum_worktime_df[(username, "作業予定_記号")] = sum_worktime_df[(username, "作業予定")].map(create_mark)
+
+        output_columns = [("date", ""), ("dayofweek", "")] + [(e, "作業予定_記号") for e in username_list]
+        sum_worktime_df[output_columns].to_csv(str(output_dir / "ユーザごとの作業予定_記号.csv"), encoding="utf_8_sig", index=False)
+
+    @staticmethod
     def write_worktime_list(worktime_df: pandas.DataFrame, output_dir: Path):
         worktime_df = worktime_df.rename(columns={
             "worktime_plan_hour": "作業予定時間",
@@ -248,6 +278,8 @@ class ListWorktimeByUser(AbstractCommandLineInterface):
 
         sum_worktime_df = pandas.DataFrame(reform_dict)
         self.write_sum_worktime_list(sum_worktime_df, output_dir)
+
+        self.write_sum_plan_worktime_list(sum_worktime_df, output_dir)
 
         worktime_df = pandas.DataFrame([e.to_dict() for e in labor_list])  # type: ignore
         if len(worktime_df) > 0:
