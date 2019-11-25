@@ -296,8 +296,9 @@ class ListWorktimeByUser(AbstractCommandLineInterface):
             print("ERROR: argument --user_id: " "`--organization`を指定しているときは、`--user_id`オプションは必須です。", file=sys.stderr)
             return False
 
-        if (not (args.start_date is not None and args.end_date is not None)
-                and not (args.start_month is not None and args.end_month is not None)):
+        date_period_is_valid = args.start_date is not None and args.end_date is not None
+        month_period_is_valdi = args.start_month is not None and args.end_month is not None
+        if not date_period_is_valid and not month_period_is_valdi:
             print(
                 "ERROR: argument --user_id: "
                 "`--start_date/--end_date` または "
