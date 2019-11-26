@@ -7,7 +7,7 @@ import pandas as pd
 from annofabapi.dataclass.annotation import SimpleAnnotationDetail
 from annofabapi.dataclass.statistics import (ProjectAccountStatistics, ProjectAccountStatisticsHistory,
                                              WorktimeStatistics, WorktimeStatisticsItem)
-from annofabapi.models import InputDataId, Inspection, InspectionStatus, Task, TaskHistory, TaskId, TaskPhase
+from annofabapi.models import InputDataId, Inspection, InspectionStatus, Task, TaskHistory, TaskId, TaskPhase, TaskStatus
 from more_itertools import first_true
 
 import annofabcli
@@ -367,6 +367,13 @@ class Table:
         task['number_of_rejections_by_inspection'] = self.get_rejections_by_phase(task_histories, TaskPhase.INSPECTION)
         task['number_of_rejections_by_acceptance'] = self.get_rejections_by_phase(task_histories, TaskPhase.ACCEPTANCE)
 
+        # 受入完了日時を設定
+        if task["phase"] == TaskPhase.ACCEPTANCE.value and task["status"] == TaskStatus.COMPLETE.value:
+            assert len(acceptance_histories) > 0, f"len(acceptance_histories) is 0"
+            task["task_completed_datetime"] = acceptance_histories[-1]["ended_datetime"]
+        else:
+            task["task_completed_datetime"] = None
+
         return task
 
     def create_task_df(self) -> pd.DataFrame:
@@ -376,6 +383,10 @@ class Table:
             first_annotation_user_id, first_annotation_started_datetime,
             annotation_worktime_hour, inspection_worktime_hour, acceptance_worktime_hour, sum_worktime_hour
         """
+        def diff_days(ended_column: str, started_column:str) -> pd.Series:
+            return (pd.to_datetime(df[ended_column]) - pd.to_datetime(
+                df[started_column])).dt.dt.total_seconds() / 3600 / 24
+
         def set_annotation_info(arg_task):
             total_annotation_count = 0
 
@@ -429,6 +440,13 @@ class Table:
             set_inspection_info(task)
 
         df = pd.DataFrame(tasks)
+
+        df["diff_days_to_first_inspection_started"] = diff_days("first_inspection_started_datetime",
+                                                        "first_annotation_started_datetime")
+        df["diff_days_to_first_acceptance_started"] = diff_days("first_acceptance_started_datetime", "first_annotation_started_datetime")
+
+        df["diff_days_to_task_completed"] = diff_days("task_completed_datetime",
+                                                        "first_annotation_started_datetime")
 
         return df
 

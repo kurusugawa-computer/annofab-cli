@@ -93,8 +93,9 @@ class Graph:
         """
         以下の情報をヒストグラムで出力する。
         作業時間関係、検査コメント数関係、アノテーション数
+
         Args:
-            arg_df: タスク一覧のDataFrame. Noneならば新たに生成する
+            df: タスク一覧のDataFrame. Noneならば新たに生成する
 
         """
 
