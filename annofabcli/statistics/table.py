@@ -3,17 +3,18 @@ import logging
 from enum import Enum
 from typing import Any, Dict, List, Optional, Set, Tuple  # pylint: disable=unused-import
 
-import dateutil.parser
+import dateutil
 import pandas as pd
 from annofabapi.dataclass.annotation import SimpleAnnotationDetail
 from annofabapi.dataclass.statistics import (ProjectAccountStatistics, ProjectAccountStatisticsHistory,
                                              WorktimeStatistics, WorktimeStatisticsItem)
-from annofabapi.models import InputDataId, Inspection, InspectionStatus, Task, TaskHistory, TaskId, TaskPhase
+from annofabapi.models import (InputDataId, Inspection, InspectionStatus, Task, TaskHistory, TaskId, TaskPhase,
+                               TaskStatus)
 from more_itertools import first_true
 
 import annofabcli
 from annofabcli.common.facade import AnnofabApiFacade
-from annofabcli.common.utils import isoduration_to_hour
+from annofabcli.common.utils import datetime_to_date, isoduration_to_hour
 from annofabcli.statistics.database import AnnotationDict, Database
 
 logger = logging.getLogger(__name__)
@@ -335,6 +336,12 @@ class Table:
         """
         タスク履歴関係の情報を設定する
         """
+        def diff_days(ended_key: str, started_key: str) -> Optional[float]:
+            if task[ended_key] is not None and task[started_key] is not None:
+                delta = dateutil.parser.parse(task[ended_key]) - dateutil.parser.parse(task[started_key])
+                return delta.total_seconds() / 3600 / 24
+            else:
+                return None
 
         annotation_histories = [e for e in task_histories if e["phase"] == TaskPhase.ANNOTATION.value]
         inspection_histories = [e for e in task_histories if e["phase"] == TaskPhase.INSPECTION.value]
@@ -367,6 +374,20 @@ class Table:
 
         task['number_of_rejections_by_inspection'] = self.get_rejections_by_phase(task_histories, TaskPhase.INSPECTION)
         task['number_of_rejections_by_acceptance'] = self.get_rejections_by_phase(task_histories, TaskPhase.ACCEPTANCE)
+
+        # 受入完了日時を設定
+        if task["phase"] == TaskPhase.ACCEPTANCE.value and task["status"] == TaskStatus.COMPLETE.value:
+            assert len(acceptance_histories) > 0, f"len(acceptance_histories) is 0"
+            task["task_completed_datetime"] = acceptance_histories[-1]["ended_datetime"]
+        else:
+            task["task_completed_datetime"] = None
+
+        task["diff_days_to_first_inspection_started"] = diff_days("first_inspection_started_datetime",
+                                                                  "first_annotation_started_datetime")
+        task["diff_days_to_first_acceptance_started"] = diff_days("first_acceptance_started_datetime",
+                                                                  "first_annotation_started_datetime")
+
+        task["diff_days_to_task_completed"] = diff_days("task_completed_datetime", "first_annotation_started_datetime")
 
         return task
 
@@ -425,11 +446,6 @@ class Table:
 
             task["input_data_count"] = len(task["input_data_id_list"])
 
-            task["started_date"] = str(dateutil.parser.parse(
-                task["started_datetime"]).date()) if task["started_datetime"] is not None else None
-            task["updated_date"] = str(dateutil.parser.parse(
-                task["updated_datetime"]).date()) if task["updated_datetime"] is not None else None
-
             self.set_task_histories(task, task_histories)
             set_annotation_info(task)
             set_inspection_info(task)
@@ -464,20 +480,65 @@ class Table:
                     annotation_summary = input_data_dict[input_data_id]
                     annotation_count += annotation_summary[f"label_{label_name}"]
 
-                new_task[label_name] = annotation_count
+                new_task[f"label_{label_name}"] = annotation_count
 
             task_list.append(new_task)
 
         df = pd.DataFrame(task_list)
         return df
 
-    def create_member_df(self, task_df: pd.DataFrame = None) -> pd.DataFrame:
+    @staticmethod
+    def create_dataframe_by_date(task_df: pd.DataFrame) -> pd.DataFrame:
+        """
+        日毎、ユーザごとの情報を出力する。
+
+        Args:
+            task_df:
+
+        Returns:
+
+        """
+        new_df = task_df
+        new_df["first_annotation_started_date"] = new_df["first_annotation_started_datetime"].map(
+            lambda e: datetime_to_date(e) if e is not None else None)
+        new_df["task_count"] = 1  # 集計用
+
+        # first_annotation_user_id と first_annotation_usernameの両方を指定している理由：
+        # first_annotation_username を取得するため
+        group_obj = new_df.groupby(
+            ["first_annotation_started_date", "first_annotation_user_id", "first_annotation_username"], as_index=False)
+        sum_df = group_obj[[
+            "first_annotation_worktime_hour", "annotation_worktime_hour", "inspection_worktime_hour",
+            "acceptance_worktime_hour", "sum_worktime_hour", "task_count", "input_data_count", "annotation_count",
+            "inspection_count"
+        ]].sum()
+
+        sum_df["first_annotation_worktime_minute/annotation_count"] = sum_df[
+            "first_annotation_worktime_hour"] * 60 / sum_df["annotation_count"]
+        sum_df["annotation_worktime_minute/annotation_count"] = sum_df["annotation_worktime_hour"] * 60 / sum_df[
+            "annotation_count"]
+        sum_df["inspection_worktime_minute/annotation_count"] = sum_df["inspection_worktime_hour"] * 60 / sum_df[
+            "annotation_count"]
+        sum_df["acceptance_worktime_minute/annotation_count"] = sum_df["acceptance_worktime_hour"] * 60 / sum_df[
+            "annotation_count"]
+        sum_df["inspection_count/annotation_count"] = sum_df["inspection_count"] / sum_df["annotation_count"]
+
+        sum_df["first_annotation_worktime_minute/input_data_count"] = sum_df[
+            "first_annotation_worktime_hour"] * 60 / sum_df["input_data_count"]
+        sum_df["annotation_worktime_minute/input_data_count"] = sum_df["annotation_worktime_hour"] * 60 / sum_df[
+            "input_data_count"]
+        sum_df["inspection_worktime_minute/input_data_count"] = sum_df["inspection_worktime_hour"] * 60 / sum_df[
+            "input_data_count"]
+        sum_df["acceptance_worktime_minute/input_data_count"] = sum_df["acceptance_worktime_hour"] * 60 / sum_df[
+            "input_data_count"]
+        sum_df["inspection_count/input_data_count"] = sum_df["inspection_count"] / sum_df["annotation_count"]
+
+        return sum_df
+
+    def create_member_df(self, task_df: pd.DataFrame) -> pd.DataFrame:
         """
         プロジェクトメンバ一覧の情報
         """
-
-        if task_df is None:
-            task_df = self.create_task_df()
 
         task_histories_dict = self.database.read_task_histories_from_checkpoint()
 
