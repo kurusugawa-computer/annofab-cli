@@ -273,19 +273,47 @@ class Graph:
             lambda e: dateutil.parser.parse(e).date())
 
         fig_info_list_annotation_count = [
-            dict(x="date_first_annotation_started_date", y="first_annotation_worktime_hour/annotation_count",
-                 title="アノテーションあたり教師付時間(1回目)の折れ線グラフ", x_axis_label="1回目の教師付開始日", y_axis_label="アノテーションあたり教師付時間(1回目)"),
-            dict(x="date_first_annotation_started_date", y="annotation_worktime_hour/annotation_count",
-                 title="アノテーションあたり教師付時間(1回目)の折れ線グラフ", x_axis_label="1回目の教師付開始日", y_axis_label="アノテーションあたり教師付時間"),
-            dict(x="date_first_annotation_started_date", y="inspection_worktime_hour/annotation_count",
-                 title="アノテーションあたり検査時間の折れ線グラフ", x_axis_label="1回目の教師付開始日", y_axis_label="アノテーションあたり検査時間"),
-            dict(x="date_first_annotation_started_date", y="acceptance_worktime_hour/annotation_count",
-                 title="アノテーションあたり受入時間の折れ線グラフ", x_axis_label="1回目の教師付開始日", y_axis_label="アノテーションあたり受入時間"),
+            dict(x="date_first_annotation_started_date", y="first_annotation_worktime_minute/annotation_count",
+                 title="アノテーションあたり教師付時間(1回目)の折れ線グラフ", x_axis_label="1回目の教師付開始日",
+                 y_axis_label="アノテーションあたり教師付時間(1回目)[min]"),
+            dict(x="date_first_annotation_started_date", y="annotation_worktime_minute/annotation_count",
+                 title="アノテーションあたり教師付時間の折れ線グラフ", x_axis_label="1回目の教師付開始日", y_axis_label="アノテーションあたり教師付時間[min]"),
+            dict(x="date_first_annotation_started_date", y="inspection_worktime_minute/annotation_count",
+                 title="アノテーションあたり検査時間の折れ線グラフ", x_axis_label="1回目の教師付開始日", y_axis_label="アノテーションあたり検査時間[min]"),
+            dict(x="date_first_annotation_started_date", y="acceptance_worktime_minute/annotation_count",
+                 title="アノテーションあたり受入時間の折れ線グラフ", x_axis_label="1回目の教師付開始日", y_axis_label="アノテーションあたり受入時間[min]"),
             dict(x="date_first_annotation_started_date", y="inspection_count/annotation_count",
                  title="アノテーションあたり検査コメント数の折れ線グラフ", x_axis_label="1回目の教師付開始日", y_axis_label="アノテーションあたり検査コメント数"),
         ]
-
         write_cumulative_graph(fig_info_list_annotation_count, html_title="アノテーション単位の日毎の折れ線グラフ")
+
+        fig_info_list_input_data_count = [
+            dict(x="date_first_annotation_started_date", y="first_annotation_worktime_minute/input_data_count",
+                 title="画像あたり教師付時間(1回目)の折れ線グラフ", x_axis_label="1回目の教師付開始日", y_axis_label="画像あたり教師付時間(1回目)[min]"),
+            dict(x="date_first_annotation_started_date", y="annotation_worktime_minute/input_data_count",
+                 title="画像あたり教師付時間の折れ線グラフ", x_axis_label="1回目の教師付開始日", y_axis_label="画像あたり教師付時間[min]"),
+            dict(x="date_first_annotation_started_date", y="inspection_worktime_minute/input_data_count",
+                 title="画像あたり検査時間の折れ線グラフ", x_axis_label="1回目の教師付開始日", y_axis_label="画像あたり検査時間[min]"),
+            dict(x="date_first_annotation_started_date", y="acceptance_worktime_minute/input_data_count",
+                 title="画像あたり受入時間の折れ線グラフ", x_axis_label="1回目の教師付開始日", y_axis_label="画像あたり受入時間[min]"),
+            dict(x="date_first_annotation_started_date", y="inspection_count/input_data_count",
+                 title="画像あたり検査コメント数の折れ線グラフ", x_axis_label="1回目の教師付開始日", y_axis_label="画像あたり検査コメント数"),
+        ]
+        write_cumulative_graph(fig_info_list_input_data_count, html_title="画像単位の日毎の折れ線グラフ")
+
+        fig_info_list_value = [
+            dict(x="date_first_annotation_started_date", y="annotation_count", title="作業したアノテーション数の折れ線グラフ",
+                 x_axis_label="1回目の教師付開始日", y_axis_label="アノテーション数"),
+            dict(x="date_first_annotation_started_date", y="input_data_count", title="作業した画像数の折れ線グラフ",
+                 x_axis_label="1回目の教師付開始日", y_axis_label="画像数"),
+            dict(x="date_first_annotation_started_date", y="task_count", title="作業したタスク数の折れ線グラフ",
+                 x_axis_label="1回目の教師付開始日", y_axis_label="タスク数"),
+            dict(x="date_first_annotation_started_date", y="first_annotation_worktime_hour", title="教師付時間(1回目)の折れ線グラフ",
+                 x_axis_label="1回目の教師付開始日", y_axis_label="教師付時間(1回目)[hour]"),
+            dict(x="date_first_annotation_started_date", y="annotation_worktime_hour", title="教師付時間の折れ線グラフ",
+                 x_axis_label="1回目の教師付開始日", y_axis_label="教師付時間[hour]"),
+        ]
+        write_cumulative_graph(fig_info_list_value, html_title="日毎の折れ線グラフ")
 
     def write_cumulative_line_graph_for_annotator(self, df: pd.DataFrame,
                                                   first_annotation_user_id_list: Optional[List[str]] = None):

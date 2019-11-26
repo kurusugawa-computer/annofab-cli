@@ -398,10 +398,6 @@ class Table:
             first_annotation_user_id, first_annotation_started_datetime,
             annotation_worktime_hour, inspection_worktime_hour, acceptance_worktime_hour, sum_worktime_hour
         """
-        def diff_days(ended_column: str, started_column: str) -> pd.Series:
-            return (pd.to_datetime(df[ended_column]) -
-                    pd.to_datetime(df[started_column])).dt.total_seconds() / 3600 / 24
-
         def set_annotation_info(arg_task):
             total_annotation_count = 0
 
@@ -491,7 +487,8 @@ class Table:
         df = pd.DataFrame(task_list)
         return df
 
-    def create_dataframe_by_date(self, task_df: pd.DataFrame) -> pd.DataFrame:
+    @staticmethod
+    def create_dataframe_by_date(task_df: pd.DataFrame) -> pd.DataFrame:
         """
         日毎、ユーザごとの情報を出力する。
 
@@ -516,15 +513,25 @@ class Table:
             "inspection_count"
         ]].sum()
 
-        sum_df["first_annotation_worktime_hour/annotation_count"] = sum_df["first_annotation_worktime_hour"] / sum_df[
+        sum_df["first_annotation_worktime_minute/annotation_count"] = sum_df[
+            "first_annotation_worktime_hour"] * 60 / sum_df["annotation_count"]
+        sum_df["annotation_worktime_minute/annotation_count"] = sum_df["annotation_worktime_hour"] * 60 / sum_df[
             "annotation_count"]
-        sum_df["annotation_worktime_hour/annotation_count"] = sum_df["annotation_worktime_hour"] / sum_df[
+        sum_df["inspection_worktime_minute/annotation_count"] = sum_df["inspection_worktime_hour"] * 60 / sum_df[
             "annotation_count"]
-        sum_df["inspection_worktime_hour/annotation_count"] = sum_df["inspection_worktime_hour"] / sum_df[
-            "annotation_count"]
-        sum_df["acceptance_worktime_hour/annotation_count"] = sum_df["acceptance_worktime_hour"] / sum_df[
+        sum_df["acceptance_worktime_minute/annotation_count"] = sum_df["acceptance_worktime_hour"] * 60 / sum_df[
             "annotation_count"]
         sum_df["inspection_count/annotation_count"] = sum_df["inspection_count"] / sum_df["annotation_count"]
+
+        sum_df["first_annotation_worktime_minute/input_data_count"] = sum_df[
+            "first_annotation_worktime_hour"] * 60 / sum_df["input_data_count"]
+        sum_df["annotation_worktime_minute/input_data_count"] = sum_df["annotation_worktime_hour"] * 60 / sum_df[
+            "input_data_count"]
+        sum_df["inspection_worktime_minute/input_data_count"] = sum_df["inspection_worktime_hour"] * 60 / sum_df[
+            "input_data_count"]
+        sum_df["acceptance_worktime_minute/input_data_count"] = sum_df["acceptance_worktime_hour"] * 60 / sum_df[
+            "input_data_count"]
+        sum_df["inspection_count/input_data_count"] = sum_df["inspection_count"] / sum_df["annotation_count"]
 
         return sum_df
 

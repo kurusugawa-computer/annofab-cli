@@ -12,7 +12,7 @@ from annofabcli import AnnofabApiFacade
 from annofabcli.common.cli import AbstractCommandLineInterface, ArgumentParser, build_annofabapi_resource_and_login
 from annofabcli.statistics.database import Database
 from annofabcli.statistics.graph import Graph
-from annofabcli.statistics.table import Table, AggregationBy
+from annofabcli.statistics.table import AggregationBy, Table
 from annofabcli.statistics.tsv import Tsv
 
 logger = logging.getLogger(__name__)
