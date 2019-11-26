@@ -189,6 +189,22 @@ class Tsv:
         required_columns = self._create_required_columns(df, prior_columns, dropped_columns=None)
         self._write_csv(f"{self.short_project_id}_ラベルごとのアノテーション数.csv", df[required_columns])
 
+    def write_教師付作業者別日毎の情報(self, df:pd.DataFrame):
+        """
+        ユーザごと、日毎の作業時間一覧をTSVで出力する. タスク一覧とは無関係。
+        """
+        if len(df) == 0:
+            logger.info("データが0件のため、教師付作業者別日毎の情報は出力しない。")
+            return
+
+        prior_columns = [
+            "user_id",
+            "username",
+            "date",
+        ]
+        required_columns = self._create_required_columns(df, prior_columns, dropped_columns=None)
+        self._write_csv(f"{self.short_project_id}_教師付作業者別日毎の情報.csv", df[required_columns])
+
     def write_ユーザ別日毎の作業時間(self):
         """
         ユーザごと、日毎の作業時間一覧をTSVで出力する. タスク一覧とは無関係。

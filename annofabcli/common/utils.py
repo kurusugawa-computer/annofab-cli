@@ -8,6 +8,7 @@ from pathlib import Path
 from typing import Any, Dict, List, Optional, Set, TypeVar  # pylint: disable=unused-import
 
 import isodate
+import dateutil
 import pandas
 import requests
 import yaml
@@ -234,6 +235,19 @@ def isoduration_to_minute(duration) -> float:
         変換後の分
     """
     return isodate.parse_duration(duration).total_seconds() / 60
+
+
+def datetime_to_date(str_datetime: str) -> str:
+    """
+    ISO8601形式の日時を日付に変換する
+
+    Args:
+        str_datetime: ISO8601の拡張形式（YYYY-MM-DDThh:mm:ss+09:00）
+
+    Returns:
+        日時(YYYY-MM-DD)
+    """
+    return str(dateutil.parser.parse(str_datetime).date())
 
 
 def allow_404_error(function):

@@ -68,6 +68,7 @@ class VisualizeStatistics(AbstractCommandLineInterface):
         inspection_df = table_obj.create_inspection_df()
         member_df = table_obj.create_member_df(task_df)
         annotation_df = table_obj.create_task_for_annotation_df()
+        by_date_df = table_obj.create_dataframe_by_date(task_df)
 
         try:
             tsv_obj.write_task_list(arg_df=task_df, dropped_columns=["histories_by_phase", "input_data_id_list"])
@@ -76,6 +77,8 @@ class VisualizeStatistics(AbstractCommandLineInterface):
             tsv_obj.write_ラベルごとのアノテーション数(arg_df=annotation_df)
             tsv_obj.write_メンバー別作業時間平均()
             tsv_obj.write_ユーザ別日毎の作業時間()
+            tsv_obj.write_教師付作業者別日毎の情報(by_date_df)
+
         except Exception as e:  # pylint: disable=broad-except
             logger.warning(e)
             logger.exception(e)
@@ -87,6 +90,8 @@ class VisualizeStatistics(AbstractCommandLineInterface):
                                                                 first_annotation_user_id_list=user_id_list)
             graph_obj.write_cumulative_line_graph_for_inspector(task_df=task_df,
                                                                 first_inspection_user_id_list=user_id_list)
+            graph_obj.write_productivity_line_graph_for_annotator(df=by_date_df, first_annotation_user_id_list=user_id_list)
+
         except Exception as e:  # pylint: disable=broad-except
             logger.warning(e)
             logger.exception(e)

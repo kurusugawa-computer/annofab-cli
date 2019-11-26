@@ -13,7 +13,7 @@ from more_itertools import first_true
 
 import annofabcli
 from annofabcli.common.facade import AnnofabApiFacade
-from annofabcli.common.utils import isoduration_to_hour
+from annofabcli.common.utils import isoduration_to_hour, datetime_to_date
 from annofabcli.statistics.database import AnnotationDict, Database
 
 logger = logging.getLogger(__name__)
@@ -425,11 +425,6 @@ class Table:
 
             task["input_data_count"] = len(task["input_data_id_list"])
 
-            task["started_date"] = str(dateutil.parser.parse(
-                task["started_datetime"]).date()) if task["started_datetime"] is not None else None
-            task["updated_date"] = str(dateutil.parser.parse(
-                task["updated_datetime"]).date()) if task["updated_datetime"] is not None else None
-
             self.set_task_histories(task, task_histories)
             set_annotation_info(task)
             set_inspection_info(task)
@@ -470,6 +465,45 @@ class Table:
 
         df = pd.DataFrame(task_list)
         return df
+
+    def create_dataframe_by_date(self, task_df: pd.DataFrame = None) -> pd.DataFrame:
+        """
+        日毎、ユーザごとの情報を出力する。
+
+        Args:
+            task_df:
+
+        Returns:
+
+        """
+        new_df = task_df
+        new_df["first_annotation_started_date"] = new_df["first_annotation_started_datetime"].map(
+            lambda e: datetime_to_date(e) if e is not None else None)
+        new_df["task_count"] = 1  # 集計用
+
+        # first_annotation_user_id と first_annotation_usernameの両方を指定している理由：
+        # first_annotation_username を取得するため
+        group_obj = new_df.groupby(["first_annotation_started_date",
+                                    "first_annotation_user_id",
+                                    "first_annotation_username"], as_index=False)
+        sum_df = group_obj[["first_annotation_worktime_hour",
+                            "annotation_worktime_hour",
+                            "inspection_worktime_hour",
+                            "acceptance_worktime_hour",
+                            "sum_worktime_hour",
+                            "task_count",
+                            "input_data_count",
+                            "annotation_count",
+                            "inspection_count"]].sum()
+
+        sum_df["first_annotation_worktime_hour/annotation_count"] = sum_df["first_annotation_worktime_hour"] / sum_df["annotation_count"]
+        sum_df["annotation_worktime_hour/annotation_count"] = sum_df["annotation_worktime_hour"] / sum_df["annotation_count"]
+        sum_df["inspection_worktime_hour/annotation_count"] = sum_df["inspection_worktime_hour"] / sum_df[
+            "annotation_count"]
+        sum_df["acceptance_worktime_hour/annotation_count"] = sum_df["acceptance_worktime_hour"] / sum_df[
+            "annotation_count"]
+
+        return sum_df
 
     def create_member_df(self, task_df: pd.DataFrame = None) -> pd.DataFrame:
         """
