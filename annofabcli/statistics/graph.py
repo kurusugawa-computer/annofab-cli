@@ -116,18 +116,20 @@ class Graph:
             ("input_data_count_of_inspection", "指摘を受けた画像枚数"),
             ("input_data_count", "画像枚数"),
             # 経過時間
-            # ("diff_days_to_first_inspection_started", "最初の検査を着手するまでの日数"),
-            # ("diff_days_to_first_acceptance_started", "最初の受入を着手するまでの日数"),
-            # ("diff_days_to_task_completed", "受入完了状態になるまでの日数"),
+            ("diff_days_to_first_inspection_started", "最初の検査を着手するまでの日数"),
+            ("diff_days_to_first_acceptance_started", "最初の受入を着手するまでの日数"),
+            ("diff_days_to_task_completed", "受入完了状態になるまでの日数"),
         ]
 
         histograms1 = []
         for col, y_axis_name in columns:
-            mean = round(df[col].mean(), 2)
-            std = round(df[col].std(), 2)
-            title = f"{y_axis_name}(mean = {mean}, std = {std})"
+            filtered_df = df[df[col].notnull()]
 
-            data = df[col].values
+            mean = round(filtered_df[col].mean(), 2)
+            std = round(filtered_df[col].std(), 2)
+            title = f"{y_axis_name}: μ={mean}, α={std}, N={len(filtered_df)}"
+
+            data = filtered_df[col].values
             bins = 20
 
             frequencies, edges = np.histogram(data, bins)
