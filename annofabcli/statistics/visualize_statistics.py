@@ -74,7 +74,7 @@ class VisualizeStatistics(AbstractCommandLineInterface):
         try:
             tsv_obj.write_task_list(arg_df=task_df, dropped_columns=["histories_by_phase", "input_data_id_list"])
             tsv_obj.write_inspection_list(arg_df=inspection_df, dropped_columns=["data"])
-            tsv_obj.write_member_list(arg_df=member_df)
+            tsv_obj.write_member_list(member_df)
             tsv_obj.write_ラベルごとのアノテーション数(arg_df=annotation_df)
             tsv_obj.write_メンバー別作業時間平均()
             tsv_obj.write_ユーザ別日毎の作業時間()

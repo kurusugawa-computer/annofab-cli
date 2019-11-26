@@ -1,9 +1,10 @@
 import logging
 from typing import Any, Dict, List, Optional  # pylint: disable=unused-import
-import dateutil
+
 import bokeh
 import bokeh.layouts
 import bokeh.palettes
+import dateutil
 import holoviews as hv
 import numpy as np
 import pandas as pd
@@ -105,15 +106,22 @@ class Graph:
 
         renderer = hv.renderer('bokeh')
 
-        columns = [("annotation_count", "アノテーション数", "アノテーション数"), ("sum_worktime_hour", "総作業時間[hour]", "総作業時間"),
-                   ("annotation_worktime_hour", "教師付作業時間[hour]", "教師付作業時間"),
-                   ("inspection_worktime_hour", "中間検査作業時間[hour]", "中間検査作業時間"),
-                   ("acceptance_worktime_hour", "受入作業時間[hour]", "受入作業時間"),
-                   ("inspection_count", "検査コメント数", "検査コメント数別タスク数"),
-                   ("input_data_count_of_inspection", "指摘を受けた画像枚数", "指摘を受けた画像枚数"), ("input_data_count", "画像枚数", "画像枚数")]
+        columns = [("annotation_count", "アノテーション数"),
+                   ("sum_worktime_hour", "総作業時間[hour]"),
+                   ("annotation_worktime_hour", "教師付時間[hour]"),
+                   ("inspection_worktime_hour", "検査時間[hour]"),
+                   ("acceptance_worktime_hour", "受入時間[hour]"),
+                   ("inspection_count", "検査コメント数"),
+                   ("input_data_count_of_inspection", "指摘を受けた画像枚数"),
+                   ("input_data_count", "画像枚数"),
+                   # 経過時間
+                   ("diff_days_to_first_inspection_started", "最初の検査を着手するまでの日数"),
+                   ("diff_days_to_first_acceptance_started", "最初の受入を着手するまでの日数"),
+                   ("diff_days_to_task_completed", "受入完了状態になるまでの日数"),
+                   ]
 
         histograms1 = []
-        for col, col_name, title_name in columns:
+        for col, y_axis_name, title_name in columns:
             mean = round(df[col].mean(), 2)
             std = round(df[col].std(), 2)
             title = f"{title_name}(mean = {mean}, std = {std})"
@@ -122,14 +130,14 @@ class Graph:
             bins = 20
 
             frequencies, edges = np.histogram(data, bins)
-            hist = hv.Histogram((edges, frequencies), kdims=col_name, vdims="タスク数", label=title).options(width=500)
+            hist = hv.Histogram((edges, frequencies), kdims=y_axis_name, vdims="タスク数", label=title).options(width=500)
             histograms1.append(hist)
 
         # 軸範囲が同期しないようにする
         layout1 = hv.Layout(histograms1).options(shared_axes=False)
         renderer.save(layout1, f"{self.outdir}/{self.short_project_id}_プロジェクト全体のヒストグラム")
 
-    def wirte_ラベルごとのアノテーション数(self, df: pd.DataFrame ):
+    def wirte_ラベルごとのアノテーション数(self, df: pd.DataFrame):
         """
         アノテーションラベルごとの個数を出力
         """
@@ -258,7 +266,8 @@ class Graph:
                                                                  first_annotation_user_id_list)
         logger.debug(f"グラフに表示するuser_id = {first_annotation_user_id_list}")
 
-        df["date_first_annotation_started_date"] = df["first_annotation_started_date"].map(lambda e: dateutil.parser.parse(e).date())
+        df["date_first_annotation_started_date"] = df["first_annotation_started_date"].map(
+            lambda e: dateutil.parser.parse(e).date())
 
         fig_info_list_annotation_count = [
             dict(x="date_first_annotation_started_date", y="first_annotation_worktime_hour/annotation_count",
@@ -275,7 +284,7 @@ class Graph:
 
         write_cumulative_graph(fig_info_list_annotation_count, html_title="アノテーション単位の日毎の折れ線グラフ")
 
-    def write_cumulative_line_graph_for_annotator(self, df:pd.DataFrame,
+    def write_cumulative_line_graph_for_annotator(self, df: pd.DataFrame,
                                                   first_annotation_user_id_list: Optional[List[str]] = None):
         """
         教師付作業者用の累積折れ線グラフを出力する。

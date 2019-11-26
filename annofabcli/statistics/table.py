@@ -1,5 +1,6 @@
 import copy
 import logging
+import dateutil
 from enum import Enum
 from typing import Any, Dict, List, Optional, Set, Tuple  # pylint: disable=unused-import
 
@@ -7,7 +8,8 @@ import pandas as pd
 from annofabapi.dataclass.annotation import SimpleAnnotationDetail
 from annofabapi.dataclass.statistics import (ProjectAccountStatistics, ProjectAccountStatisticsHistory,
                                              WorktimeStatistics, WorktimeStatisticsItem)
-from annofabapi.models import InputDataId, Inspection, InspectionStatus, Task, TaskHistory, TaskId, TaskPhase, TaskStatus
+from annofabapi.models import (InputDataId, Inspection, InspectionStatus, Task, TaskHistory, TaskId, TaskPhase,
+                               TaskStatus)
 from more_itertools import first_true
 
 import annofabcli
@@ -335,6 +337,13 @@ class Table:
         タスク履歴関係の情報を設定する
         """
 
+        def diff_days(ended_key: str, started_key: str) -> Optional[float]:
+            if task[ended_key] is not None and task[started_key] is not None:
+                delta = dateutil.parser.parse(task[ended_key]) - dateutil.parser.parse(task[started_key])
+                return delta.total_seconds() / 3600 / 24
+            else:
+                return None
+
         annotation_histories = [e for e in task_histories if e["phase"] == TaskPhase.ANNOTATION.value]
         inspection_histories = [e for e in task_histories if e["phase"] == TaskPhase.INSPECTION.value]
         acceptance_histories = [e for e in task_histories if e["phase"] == TaskPhase.ACCEPTANCE.value]
@@ -374,6 +383,13 @@ class Table:
         else:
             task["task_completed_datetime"] = None
 
+        task["diff_days_to_first_inspection_started"] = diff_days("first_inspection_started_datetime",
+                                                                "first_annotation_started_datetime")
+        task["diff_days_to_first_acceptance_started"] = diff_days("first_acceptance_started_datetime",
+                                                                "first_annotation_started_datetime")
+
+        task["diff_days_to_task_completed"] = diff_days("task_completed_datetime", "first_annotation_started_datetime")
+
         return task
 
     def create_task_df(self) -> pd.DataFrame:
@@ -383,9 +399,9 @@ class Table:
             first_annotation_user_id, first_annotation_started_datetime,
             annotation_worktime_hour, inspection_worktime_hour, acceptance_worktime_hour, sum_worktime_hour
         """
-        def diff_days(ended_column: str, started_column:str) -> pd.Series:
-            return (pd.to_datetime(df[ended_column]) - pd.to_datetime(
-                df[started_column])).dt.dt.total_seconds() / 3600 / 24
+        def diff_days(ended_column: str, started_column: str) -> pd.Series:
+            return (pd.to_datetime(df[ended_column]) -
+                    pd.to_datetime(df[started_column])).dt.total_seconds() / 3600 / 24
 
         def set_annotation_info(arg_task):
             total_annotation_count = 0
@@ -440,13 +456,6 @@ class Table:
             set_inspection_info(task)
 
         df = pd.DataFrame(tasks)
-
-        df["diff_days_to_first_inspection_started"] = diff_days("first_inspection_started_datetime",
-                                                        "first_annotation_started_datetime")
-        df["diff_days_to_first_acceptance_started"] = diff_days("first_acceptance_started_datetime", "first_annotation_started_datetime")
-
-        df["diff_days_to_task_completed"] = diff_days("task_completed_datetime",
-                                                        "first_annotation_started_datetime")
 
         return df
 
@@ -516,8 +525,7 @@ class Table:
             "annotation_count"]
         sum_df["acceptance_worktime_hour/annotation_count"] = sum_df["acceptance_worktime_hour"] / sum_df[
             "annotation_count"]
-        sum_df["inspection_count/annotation_count"] = sum_df["inspection_count"] / sum_df[
-            "annotation_count"]
+        sum_df["inspection_count/annotation_count"] = sum_df["inspection_count"] / sum_df["annotation_count"]
 
         return sum_df
 
