@@ -401,6 +401,10 @@ class Graph:
             logger.debug(f"表示対象のuser_idの数が多いため、先頭から{max_user_length}個のみグラフ化します")
             first_inspection_user_id_list = first_inspection_user_id_list[0:max_user_length]
 
+        if len(first_inspection_user_id_list) == 0:
+            logger.info(f"検査フェーズを担当してユーザがいないため、検査者用のグラフは出力しません。")
+            return
+
         logger.debug(f"グラフに表示するuser_id = {first_inspection_user_id_list}")
 
         # 累計値を計算
