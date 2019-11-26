@@ -106,25 +106,26 @@ class Graph:
 
         renderer = hv.renderer('bokeh')
 
-        columns = [("annotation_count", "アノテーション数"),
-                   ("sum_worktime_hour", "総作業時間[hour]"),
-                   ("annotation_worktime_hour", "教師付時間[hour]"),
-                   ("inspection_worktime_hour", "検査時間[hour]"),
-                   ("acceptance_worktime_hour", "受入時間[hour]"),
-                   ("inspection_count", "検査コメント数"),
-                   ("input_data_count_of_inspection", "指摘を受けた画像枚数"),
-                   ("input_data_count", "画像枚数"),
-                   # 経過時間
-                   ("diff_days_to_first_inspection_started", "最初の検査を着手するまでの日数"),
-                   ("diff_days_to_first_acceptance_started", "最初の受入を着手するまでの日数"),
-                   ("diff_days_to_task_completed", "受入完了状態になるまでの日数"),
-                   ]
+        columns = [
+            ("annotation_count", "アノテーション数"),
+            ("sum_worktime_hour", "総作業時間[hour]"),
+            ("annotation_worktime_hour", "教師付時間[hour]"),
+            ("inspection_worktime_hour", "検査時間[hour]"),
+            ("acceptance_worktime_hour", "受入時間[hour]"),
+            ("inspection_count", "検査コメント数"),
+            ("input_data_count_of_inspection", "指摘を受けた画像枚数"),
+            ("input_data_count", "画像枚数"),
+            # 経過時間
+            # ("diff_days_to_first_inspection_started", "最初の検査を着手するまでの日数"),
+            # ("diff_days_to_first_acceptance_started", "最初の受入を着手するまでの日数"),
+            # ("diff_days_to_task_completed", "受入完了状態になるまでの日数"),
+        ]
 
         histograms1 = []
-        for col, y_axis_name, title_name in columns:
+        for col, y_axis_name in columns:
             mean = round(df[col].mean(), 2)
             std = round(df[col].std(), 2)
-            title = f"{title_name}(mean = {mean}, std = {std})"
+            title = f"{y_axis_name}(mean = {mean}, std = {std})"
 
             data = df[col].values
             bins = 20
