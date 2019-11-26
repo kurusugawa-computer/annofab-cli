@@ -498,6 +498,8 @@ class Table:
             "annotation_count"]
         sum_df["acceptance_worktime_hour/annotation_count"] = sum_df["acceptance_worktime_hour"] / sum_df[
             "annotation_count"]
+        sum_df["inspection_count/annotation_count"] = sum_df["inspection_count"] / sum_df[
+            "annotation_count"]
 
         return sum_df
 

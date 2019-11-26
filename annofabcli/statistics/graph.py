@@ -1,6 +1,6 @@
 import logging
 from typing import Any, Dict, List, Optional  # pylint: disable=unused-import
-
+import dateutil
 import bokeh
 import bokeh.layouts
 import bokeh.palettes
@@ -238,7 +238,7 @@ class Graph:
         tooltip_item = [
             "first_annotation_user_id",
             "first_annotation_username",
-            "first_annotation_started_datetime",
+            "first_annotation_started_date",
             "first_annotation_worktime_hour",
             "annotation_worktime_hour",
             "inspection_worktime_hour",
@@ -257,15 +257,19 @@ class Graph:
                                                                  first_annotation_user_id_list)
         logger.debug(f"グラフに表示するuser_id = {first_annotation_user_id_list}")
 
+        df["date_first_annotation_started_date"] = df["first_annotation_started_date"].map(lambda e: dateutil.parser.parse(e).date())
+
         fig_info_list_annotation_count = [
-            dict(x="first_annotation_started_date", y="first_annotation_worktime_hour/annotation_count",
+            dict(x="date_first_annotation_started_date", y="first_annotation_worktime_hour/annotation_count",
                  title="アノテーションあたり教師付時間(1回目)の折れ線グラフ", x_axis_label="1回目の教師付開始日", y_axis_label="アノテーションあたり教師付時間(1回目)"),
-            dict(x="first_annotation_started_date", y="annotation_worktime_hour/annotation_count",
+            dict(x="date_first_annotation_started_date", y="annotation_worktime_hour/annotation_count",
                  title="アノテーションあたり教師付時間(1回目)の折れ線グラフ", x_axis_label="1回目の教師付開始日", y_axis_label="アノテーションあたり教師付時間"),
-            dict(x="first_annotation_started_date", y="inspection_worktime_hour/annotation_count",
+            dict(x="date_first_annotation_started_date", y="inspection_worktime_hour/annotation_count",
                  title="アノテーションあたり検査時間の折れ線グラフ", x_axis_label="1回目の教師付開始日", y_axis_label="アノテーションあたり検査時間"),
-            dict(x="first_annotation_started_date", y="acceptance_worktime_hour/annotation_count",
+            dict(x="date_first_annotation_started_date", y="acceptance_worktime_hour/annotation_count",
                  title="アノテーションあたり受入時間の折れ線グラフ", x_axis_label="1回目の教師付開始日", y_axis_label="アノテーションあたり受入時間"),
+            dict(x="date_first_annotation_started_date", y="inspection_count/annotation_count",
+                 title="アノテーションあたり検査コメント数の折れ線グラフ", x_axis_label="1回目の教師付開始日", y_axis_label="アノテーションあたり検査コメント数"),
         ]
 
         write_cumulative_graph(fig_info_list_annotation_count, html_title="アノテーション単位の日毎の折れ線グラフ")
