@@ -134,7 +134,7 @@ class Tsv:
         required_columns = self._create_required_columns(df, prior_columns, dropped_columns)
         self._write_csv(f"{self.short_project_id}_タスク一覧.csv", df[required_columns])
 
-    def write_member_list(self, arg_df: pd.DataFrame = None, dropped_columns: List[str] = None):
+    def write_member_list(self, df: pd.DataFrame, dropped_columns: List[str] = None):
         """
         プロジェクトメンバ一覧をTSVで出力する
         Args:
@@ -144,7 +144,6 @@ class Tsv:
         Returns:
 
         """
-        df = self.table.create_member_df() if arg_df is None else arg_df
         if len(df) == 0:
             logger.info("プロジェクトメンバ一覧が0件のため出力しない")
             return

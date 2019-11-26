@@ -465,7 +465,7 @@ class Table:
         df = pd.DataFrame(task_list)
         return df
 
-    def create_dataframe_by_date(self, task_df: pd.DataFrame = None) -> pd.DataFrame:
+    def create_dataframe_by_date(self, task_df: pd.DataFrame) -> pd.DataFrame:
         """
         日毎、ユーザごとの情報を出力する。
 
@@ -501,13 +501,10 @@ class Table:
 
         return sum_df
 
-    def create_member_df(self, task_df: pd.DataFrame = None) -> pd.DataFrame:
+    def create_member_df(self, task_df: pd.DataFrame) -> pd.DataFrame:
         """
         プロジェクトメンバ一覧の情報
         """
-
-        if task_df is None:
-            task_df = self.create_task_df()
 
         task_histories_dict = self.database.read_task_histories_from_checkpoint()
 

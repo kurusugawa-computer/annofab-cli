@@ -61,14 +61,15 @@ class VisualizeStatistics(AbstractCommandLineInterface):
         table_obj = Table(database, task_query, ignored_task_id_list)
         write_project_name_file(self.service, project_id, output_dir)
         tsv_obj = Tsv(table_obj, str(output_dir))
-        graph_obj = Graph(table_obj, str(output_dir))
+        graph_obj = Graph(str(output_dir), project_id)
 
-        # TSV出力
         task_df = table_obj.create_task_df()
         inspection_df = table_obj.create_inspection_df()
         member_df = table_obj.create_member_df(task_df)
         annotation_df = table_obj.create_task_for_annotation_df()
         by_date_df = table_obj.create_dataframe_by_date(task_df)
+        task_cumulative_df_by_annotator = table_obj.create_cumulative_df_by_first_annotator(task_df)
+        task_cumulative_df_by_inspector = table_obj.create_cumulative_df_by_first_inspector(task_df)
 
         try:
             tsv_obj.write_task_list(arg_df=task_df, dropped_columns=["histories_by_phase", "input_data_id_list"])
@@ -86,9 +87,9 @@ class VisualizeStatistics(AbstractCommandLineInterface):
         try:
             graph_obj.wirte_ラベルごとのアノテーション数(annotation_df)
             graph_obj.write_プロジェクト全体のヒストグラム(task_df)
-            graph_obj.write_cumulative_line_graph_for_annotator(task_df=task_df,
+            graph_obj.write_cumulative_line_graph_for_annotator(df=task_cumulative_df_by_annotator,
                                                                 first_annotation_user_id_list=user_id_list)
-            graph_obj.write_cumulative_line_graph_for_inspector(task_df=task_df,
+            graph_obj.write_cumulative_line_graph_for_inspector(df=task_cumulative_df_by_inspector,
                                                                 first_inspection_user_id_list=user_id_list)
             graph_obj.write_productivity_line_graph_for_annotator(df=by_date_df,
                                                                   first_annotation_user_id_list=user_id_list)

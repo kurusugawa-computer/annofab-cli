@@ -10,8 +10,6 @@ import pandas as pd
 from bokeh.models import HoverTool
 from bokeh.plotting import ColumnDataSource, figure
 
-from annofabcli.statistics.table import Table
-
 logger = logging.getLogger(__name__)
 
 hv.extension('bokeh')
@@ -31,10 +29,9 @@ class Graph:
     # Private
     #############################################
 
-    def __init__(self, table: Table, outdir: str):
-        self.table = table
+    def __init__(self, outdir: str, project_id: str):
         self.outdir = outdir
-        self.short_project_id = table.project_id[0:8]
+        self.short_project_id = project_id[0:8]
 
     @staticmethod
     def _create_hover_tool(tool_tip_items: List[str] = None) -> HoverTool:
@@ -92,7 +89,7 @@ class Graph:
             legend = fig.legend[0]
             fig.add_layout(legend, "left")
 
-    def write_プロジェクト全体のヒストグラム(self, arg_df: pd.DataFrame = None):
+    def write_プロジェクト全体のヒストグラム(self, df: pd.DataFrame):
         """
         以下の情報をヒストグラムで出力する。
         作業時間関係、検査コメント数関係、アノテーション数
@@ -101,7 +98,6 @@ class Graph:
 
         """
 
-        df = self.table.create_task_df() if arg_df is None else arg_df
         if len(df) == 0:
             logger.info("タスク一覧が0件のため出力しない")
             return
@@ -132,7 +128,7 @@ class Graph:
         layout1 = hv.Layout(histograms1).options(shared_axes=False)
         renderer.save(layout1, f"{self.outdir}/{self.short_project_id}_プロジェクト全体のヒストグラム")
 
-    def wirte_ラベルごとのアノテーション数(self, df: pd.DataFrame = None):
+    def wirte_ラベルごとのアノテーション数(self, df: pd.DataFrame ):
         """
         アノテーションラベルごとの個数を出力
         """
@@ -214,7 +210,8 @@ class Graph:
             for fig_info in fig_info_list:
                 figs.append(
                     figure(plot_width=1200, plot_height=600, title=fig_info["title"],
-                           x_axis_label=fig_info["x_axis_label"], x_axis_type="datetime", y_axis_label=fig_info["y_axis_label"]))
+                           x_axis_label=fig_info["x_axis_label"], x_axis_type="datetime",
+                           y_axis_label=fig_info["y_axis_label"]))
 
             for user_index, user_id in enumerate(first_annotation_user_id_list):  # type: ignore
                 filtered_df = df[df["first_annotation_user_id"] == user_id]
@@ -273,13 +270,13 @@ class Graph:
 
         write_cumulative_graph(fig_info_list_annotation_count, html_title="アノテーション単位の日毎の折れ線グラフ")
 
-    def write_cumulative_line_graph_for_annotator(self, task_df: Optional[pd.DataFrame] = None,
+    def write_cumulative_line_graph_for_annotator(self, df:pd.DataFrame,
                                                   first_annotation_user_id_list: Optional[List[str]] = None):
         """
         教師付作業者用の累積折れ線グラフを出力する。
 
         Args:
-            task_df:
+            df:
             first_annotation_user_id_list: 最初のアノテーションを担当したuser_idのList. Noneの場合はtask_dfから決まる。
 
         Returns:
@@ -355,17 +352,13 @@ class Graph:
             "inspection_count",
         ]
 
-        task_df = self.table.create_task_df() if task_df is None else task_df
-        if len(task_df) == 0:
+        if len(df) == 0:
             logger.info("タスク一覧が0件のため出力しない")
             return
 
-        first_annotation_user_id_list = self.create_user_id_list(task_df, "first_annotation_user_id",
+        first_annotation_user_id_list = self.create_user_id_list(df, "first_annotation_user_id",
                                                                  first_annotation_user_id_list)
         logger.debug(f"グラフに表示するuser_id = {first_annotation_user_id_list}")
-
-        # 累計値を計算
-        df = self.table.create_cumulative_df_by_first_annotator(task_df)
 
         # 横軸が累計のアノテーション数
         fig_info_list_annotation_count = [
@@ -412,13 +405,13 @@ class Graph:
         ]
         write_cumulative_graph(fig_info_list_task_count, html_title="タスク単位の累計グラフ")
 
-    def write_cumulative_line_graph_for_inspector(self, task_df: Optional[pd.DataFrame] = None,
+    def write_cumulative_line_graph_for_inspector(self, df: pd.DataFrame,
                                                   first_inspection_user_id_list: Optional[List[str]] = None):
         """
         検査作業者用の累積折れ線グラフを出力する。
 
         Args:
-            task_df:
+            df:
             first_inspection_user_id_list: 最初の検査フェーズを担当したuser_idのList. Noneの場合はtask_dfから決まる。
 
         Returns:
@@ -492,12 +485,11 @@ class Graph:
             "inspection_count",
         ]
 
-        task_df = self.table.create_task_df() if task_df is None else task_df
-        if len(task_df) == 0:
+        if len(df) == 0:
             logger.info("タスク一覧が0件のため出力しない")
             return
 
-        first_inspection_user_id_list = self.create_user_id_list(task_df, "first_inspection_user_id",
+        first_inspection_user_id_list = self.create_user_id_list(df, "first_inspection_user_id",
                                                                  first_inspection_user_id_list)
 
         if len(first_inspection_user_id_list) == 0:
@@ -505,9 +497,6 @@ class Graph:
             return
 
         logger.debug(f"グラフに表示するuser_id = {first_inspection_user_id_list}")
-
-        # 累計値を計算
-        df = self.table.create_cumulative_df_by_first_inspector(task_df)
 
         # 横軸が累計のアノテーション数
         fig_info_list_annotation_count = [
