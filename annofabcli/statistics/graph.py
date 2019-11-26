@@ -159,7 +159,8 @@ class Graph:
         layout2 = hv.Layout(histograms2).options(shared_axes=False)
         renderer.save(layout2, f"{self.outdir}/{self.short_project_id}_ラベルごとのアノテーション数のヒストグラム")
 
-    def create_user_id_list(self, df: pd.DataFrame, user_id_column: str, arg_first_annotation_user_id_list: Optional[List[str]] = None) -> List[str]:
+    def create_user_id_list(self, df: pd.DataFrame, user_id_column: str,
+                            arg_user_id_list: Optional[List[str]] = None) -> List[str]:
         """
         グラフに表示するユーザのuser_idを生成する。
 
@@ -173,19 +174,20 @@ class Graph:
 
         """
         max_user_length = len(self.my_palette)
-        if arg_first_annotation_user_id_list is None or len(arg_first_annotation_user_id_list) == 0:
+        if arg_user_id_list is None or len(arg_user_id_list) == 0:
             tmp_list: List[str] = df[user_id_column].dropna().unique().tolist()[0:max_user_length]
             tmp_list.sort()
-            first_annotation_user_id_list = tmp_list
+            user_id_list = tmp_list
+        else:
+            user_id_list = arg_user_id_list
 
-        if len(arg_first_annotation_user_id_list) > max_user_length:
+        if len(user_id_list) > max_user_length:
             logger.debug(f"表示対象のuser_idの数が多いため、先頭から{max_user_length}個のみグラフ化します")
 
-        first_annotation_user_id_list = arg_first_annotation_user_id_list[0:max_user_length]
-        return first_annotation_user_id_list
+        return user_id_list[0:max_user_length]
 
-
-    def write_productivity_line_graph_for_annotator(self, df: pd.DataFrame, first_annotation_user_id_list: Optional[List[str]] = None):
+    def write_productivity_line_graph_for_annotator(self, df: pd.DataFrame,
+                                                    first_annotation_user_id_list: Optional[List[str]] = None):
         """
         生産性を教師付作業者ごとにプロットする。
 
@@ -196,7 +198,6 @@ class Graph:
         Returns:
 
         """
-
         def write_cumulative_graph(fig_info_list: List[Dict[str, str]], html_title: str):
             """
             累計グラフを出力する。
@@ -236,7 +237,6 @@ class Graph:
             bokeh.plotting.output_file(f"{self.outdir}/{self.short_project_id}_{html_title}.html", title=html_title)
             bokeh.plotting.save(bokeh.layouts.column(figs))
 
-
         tooltip_item = [
             "first_annotation_user_id",
             "first_annotation_username",
@@ -255,29 +255,22 @@ class Graph:
             logger.info("データが0件のため出力しない")
             return
 
-        first_annotation_user_id_list = self.create_user_id_list(df, "first_annotation_user_id", first_annotation_user_id_list)
+        first_annotation_user_id_list = self.create_user_id_list(df, "first_annotation_user_id",
+                                                                 first_annotation_user_id_list)
         logger.debug(f"グラフに表示するuser_id = {first_annotation_user_id_list}")
 
-
         fig_info_list_annotation_count = [
-            dict(x="first_annotation_started_date", y="first_annotation_worktime_hour/annotation_count", title="アノテーションあたり教師付時間(1回目)の折れ線グラフ",
-                 x_axis_label="1回目の教師付開始日", y_axis_label="アノテーションあたり教師付時間(1回目)"),
-
+            dict(x="first_annotation_started_date", y="first_annotation_worktime_hour/annotation_count",
+                 title="アノテーションあたり教師付時間(1回目)の折れ線グラフ", x_axis_label="1回目の教師付開始日", y_axis_label="アノテーションあたり教師付時間(1回目)"),
             dict(x="first_annotation_started_date", y="annotation_worktime_hour/annotation_count",
-                 title="アノテーションあたり教師付時間(1回目)の折れ線グラフ",
-                 x_axis_label="1回目の教師付開始日", y_axis_label="アノテーションあたり教師付時間"),
-
+                 title="アノテーションあたり教師付時間(1回目)の折れ線グラフ", x_axis_label="1回目の教師付開始日", y_axis_label="アノテーションあたり教師付時間"),
             dict(x="first_annotation_started_date", y="inspection_worktime_hour/annotation_count",
-                 title="アノテーションあたり検査時間の折れ線グラフ",
-                 x_axis_label="1回目の教師付開始日", y_axis_label="アノテーションあたり検査時間"),
-
+                 title="アノテーションあたり検査時間の折れ線グラフ", x_axis_label="1回目の教師付開始日", y_axis_label="アノテーションあたり検査時間"),
             dict(x="first_annotation_started_date", y="acceptance_worktime_hour/annotation_count",
-                 title="アノテーションあたり受入時間の折れ線グラフ",
-                 x_axis_label="1回目の教師付開始日", y_axis_label="アノテーションあたり受入時間"),
+                 title="アノテーションあたり受入時間の折れ線グラフ", x_axis_label="1回目の教師付開始日", y_axis_label="アノテーションあたり受入時間"),
         ]
 
         write_cumulative_graph(fig_info_list_annotation_count, html_title="アノテーション単位の日毎の折れ線グラフ")
-
 
     def write_cumulative_line_graph_for_annotator(self, task_df: Optional[pd.DataFrame] = None,
                                                   first_annotation_user_id_list: Optional[List[str]] = None):
@@ -366,7 +359,8 @@ class Graph:
             logger.info("タスク一覧が0件のため出力しない")
             return
 
-        first_annotation_user_id_list = self.create_user_id_list(task_df, "first_annotation_user_id", first_annotation_user_id_list)
+        first_annotation_user_id_list = self.create_user_id_list(task_df, "first_annotation_user_id",
+                                                                 first_annotation_user_id_list)
         logger.debug(f"グラフに表示するuser_id = {first_annotation_user_id_list}")
 
         # 累計値を計算
@@ -502,7 +496,8 @@ class Graph:
             logger.info("タスク一覧が0件のため出力しない")
             return
 
-        first_inspection_user_id_list = self.create_user_id_list(task_df, "first_inspection_user_id", first_inspection_user_id_list)
+        first_inspection_user_id_list = self.create_user_id_list(task_df, "first_inspection_user_id",
+                                                                 first_inspection_user_id_list)
 
         if len(first_inspection_user_id_list) == 0:
             logger.info(f"検査フェーズを担当してユーザがいないため、検査者用のグラフは出力しません。")

@@ -114,8 +114,6 @@ class Tsv:
             "number_of_rejections_by_acceptance",
             "started_datetime",
             "updated_datetime",
-            "started_date",
-            "updated_date",
             "sampling",
 
             # 最初のアノテーション作業に関すること
@@ -189,7 +187,7 @@ class Tsv:
         required_columns = self._create_required_columns(df, prior_columns, dropped_columns=None)
         self._write_csv(f"{self.short_project_id}_ラベルごとのアノテーション数.csv", df[required_columns])
 
-    def write_教師付作業者別日毎の情報(self, df:pd.DataFrame):
+    def write_教師付作業者別日毎の情報(self, df: pd.DataFrame):
         """
         ユーザごと、日毎の作業時間一覧をTSVで出力する. タスク一覧とは無関係。
         """
@@ -198,9 +196,9 @@ class Tsv:
             return
 
         prior_columns = [
-            "user_id",
-            "username",
-            "date",
+            "first_annotation_started_date",
+            "first_annotation_username",
+            "first_annotation_started_date",
         ]
         required_columns = self._create_required_columns(df, prior_columns, dropped_columns=None)
         self._write_csv(f"{self.short_project_id}_教師付作業者別日毎の情報.csv", df[required_columns])

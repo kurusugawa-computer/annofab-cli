@@ -3,7 +3,6 @@ import logging
 from enum import Enum
 from typing import Any, Dict, List, Optional, Set, Tuple  # pylint: disable=unused-import
 
-import dateutil.parser
 import pandas as pd
 from annofabapi.dataclass.annotation import SimpleAnnotationDetail
 from annofabapi.dataclass.statistics import (ProjectAccountStatistics, ProjectAccountStatisticsHistory,
@@ -13,7 +12,7 @@ from more_itertools import first_true
 
 import annofabcli
 from annofabcli.common.facade import AnnofabApiFacade
-from annofabcli.common.utils import isoduration_to_hour, datetime_to_date
+from annofabcli.common.utils import datetime_to_date, isoduration_to_hour
 from annofabcli.statistics.database import AnnotationDict, Database
 
 logger = logging.getLogger(__name__)
@@ -483,21 +482,18 @@ class Table:
 
         # first_annotation_user_id と first_annotation_usernameの両方を指定している理由：
         # first_annotation_username を取得するため
-        group_obj = new_df.groupby(["first_annotation_started_date",
-                                    "first_annotation_user_id",
-                                    "first_annotation_username"], as_index=False)
-        sum_df = group_obj[["first_annotation_worktime_hour",
-                            "annotation_worktime_hour",
-                            "inspection_worktime_hour",
-                            "acceptance_worktime_hour",
-                            "sum_worktime_hour",
-                            "task_count",
-                            "input_data_count",
-                            "annotation_count",
-                            "inspection_count"]].sum()
+        group_obj = new_df.groupby(
+            ["first_annotation_started_date", "first_annotation_user_id", "first_annotation_username"], as_index=False)
+        sum_df = group_obj[[
+            "first_annotation_worktime_hour", "annotation_worktime_hour", "inspection_worktime_hour",
+            "acceptance_worktime_hour", "sum_worktime_hour", "task_count", "input_data_count", "annotation_count",
+            "inspection_count"
+        ]].sum()
 
-        sum_df["first_annotation_worktime_hour/annotation_count"] = sum_df["first_annotation_worktime_hour"] / sum_df["annotation_count"]
-        sum_df["annotation_worktime_hour/annotation_count"] = sum_df["annotation_worktime_hour"] / sum_df["annotation_count"]
+        sum_df["first_annotation_worktime_hour/annotation_count"] = sum_df["first_annotation_worktime_hour"] / sum_df[
+            "annotation_count"]
+        sum_df["annotation_worktime_hour/annotation_count"] = sum_df["annotation_worktime_hour"] / sum_df[
+            "annotation_count"]
         sum_df["inspection_worktime_hour/annotation_count"] = sum_df["inspection_worktime_hour"] / sum_df[
             "annotation_count"]
         sum_df["acceptance_worktime_hour/annotation_count"] = sum_df["acceptance_worktime_hour"] / sum_df[

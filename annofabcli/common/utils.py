@@ -7,8 +7,8 @@ import sys
 from pathlib import Path
 from typing import Any, Dict, List, Optional, Set, TypeVar  # pylint: disable=unused-import
 
+import dateutil.parser
 import isodate
-import dateutil
 import pandas
 import requests
 import yaml

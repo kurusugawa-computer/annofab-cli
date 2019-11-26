@@ -90,7 +90,8 @@ class VisualizeStatistics(AbstractCommandLineInterface):
                                                                 first_annotation_user_id_list=user_id_list)
             graph_obj.write_cumulative_line_graph_for_inspector(task_df=task_df,
                                                                 first_inspection_user_id_list=user_id_list)
-            graph_obj.write_productivity_line_graph_for_annotator(df=by_date_df, first_annotation_user_id_list=user_id_list)
+            graph_obj.write_productivity_line_graph_for_annotator(df=by_date_df,
+                                                                  first_annotation_user_id_list=user_id_list)
 
         except Exception as e:  # pylint: disable=broad-except
             logger.warning(e)
