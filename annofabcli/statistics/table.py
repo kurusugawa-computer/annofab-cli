@@ -458,7 +458,7 @@ class Table:
                     annotation_summary = input_data_dict[input_data_id]
                     annotation_count += annotation_summary[f"label_{label_name}"]
 
-                new_task[label_name] = annotation_count
+                new_task[f"label_{label_name}"] = annotation_count
 
             task_list.append(new_task)
 

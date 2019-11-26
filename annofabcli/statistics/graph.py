@@ -132,11 +132,10 @@ class Graph:
         layout1 = hv.Layout(histograms1).options(shared_axes=False)
         renderer.save(layout1, f"{self.outdir}/{self.short_project_id}_プロジェクト全体のヒストグラム")
 
-    def wirte_ラベルごとのアノテーション数(self, arg_df: pd.DataFrame = None):
+    def wirte_ラベルごとのアノテーション数(self, df: pd.DataFrame = None):
         """
         アノテーションラベルごとの個数を出力
         """
-        df = self.table.create_task_for_annotation_df() if arg_df is None else arg_df
         if len(df) == 0:
             logger.info("タスク一覧が0件のため出力しない")
             return
@@ -144,13 +143,16 @@ class Graph:
         renderer = hv.renderer('bokeh')
 
         histograms2 = []
-        for label_name in self.table.label_dict.values():
-            mean = round(df[label_name].mean(), 2)
-            std = round(df[label_name].std(), 2)
+        label_columns = [e for e in df.columns if e.startswith("label_")]
+
+        for column in label_columns:
+            label_name = column[len("label_"):]
+            mean = round(df[column].mean(), 2)
+            std = round(df[column].std(), 2)
             title = f"{label_name}(mean = {mean}, std = {std})"
             axis_name = f"アノテーション数_{label_name}"
 
-            data = df[label_name].values
+            data = df[column].values
             frequencies, edges = np.histogram(data, 20)
             hist = hv.Histogram((edges, frequencies), kdims=axis_name, vdims="タスク数", label=title).options(width=400)
             histograms2.append(hist)
@@ -200,7 +202,6 @@ class Graph:
         """
         def write_cumulative_graph(fig_info_list: List[Dict[str, str]], html_title: str):
             """
-            累計グラフを出力する。
 
             Args:
                 fig_info_list:
@@ -213,7 +214,7 @@ class Graph:
             for fig_info in fig_info_list:
                 figs.append(
                     figure(plot_width=1200, plot_height=600, title=fig_info["title"],
-                           x_axis_label=fig_info["x_axis_label"], y_axis_label=fig_info["y_axis_label"]))
+                           x_axis_label=fig_info["x_axis_label"], x_axis_type="datetime", y_axis_label=fig_info["y_axis_label"]))
 
             for user_index, user_id in enumerate(first_annotation_user_id_list):  # type: ignore
                 filtered_df = df[df["first_annotation_user_id"] == user_id]
