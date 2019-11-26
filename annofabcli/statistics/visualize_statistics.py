@@ -5,7 +5,7 @@ from pathlib import Path
 from typing import Any, Callable, Dict, List, Optional  # pylint: disable=unused-import
 
 import annofabapi
-from annofabapi.models import ProjectMemberRole, TaskId
+from annofabapi.models import ProjectMemberRole, TaskId, TaskPhase
 
 import annofabcli
 from annofabcli import AnnofabApiFacade
@@ -13,7 +13,7 @@ from annofabcli.common.cli import AbstractCommandLineInterface, ArgumentParser, 
 from annofabcli.statistics.database import Database
 from annofabcli.statistics.graph import Graph
 from annofabcli.statistics.table import Table
-from annofabcli.statistics.tsv import Tsv
+from annofabcli.statistics.tsv import AggregationBy, Tsv
 
 logger = logging.getLogger(__name__)
 
@@ -60,11 +60,13 @@ class VisualizeStatistics(AbstractCommandLineInterface):
 
         table_obj = Table(database, task_query, ignored_task_id_list)
         write_project_name_file(self.service, project_id, output_dir)
-        tsv_obj = Tsv(table_obj, str(output_dir))
+        tsv_obj = Tsv(str(output_dir), project_id)
         graph_obj = Graph(str(output_dir), project_id)
 
         task_df = table_obj.create_task_df()
         inspection_df = table_obj.create_inspection_df()
+        inspection_df_all = table_obj.create_inspection_df(only_error_corrected=False)
+
         member_df = table_obj.create_member_df(task_df)
         annotation_df = table_obj.create_task_for_annotation_df()
         by_date_df = table_obj.create_dataframe_by_date(task_df)
@@ -72,13 +74,21 @@ class VisualizeStatistics(AbstractCommandLineInterface):
         task_cumulative_df_by_inspector = table_obj.create_cumulative_df_by_first_inspector(task_df)
 
         try:
-            tsv_obj.write_task_list(arg_df=task_df, dropped_columns=["histories_by_phase", "input_data_id_list"])
-            tsv_obj.write_inspection_list(arg_df=inspection_df, dropped_columns=["data"])
+            tsv_obj.write_task_list(task_df, dropped_columns=["histories_by_phase", "input_data_id_list"])
+            tsv_obj.write_inspection_list(df=inspection_df, dropped_columns=["data"], only_error_corrected=True)
+            tsv_obj.write_inspection_list(df=inspection_df_all, dropped_columns=["data"], only_error_corrected=False)
+
             tsv_obj.write_member_list(member_df)
-            tsv_obj.write_ラベルごとのアノテーション数(arg_df=annotation_df)
-            tsv_obj.write_メンバー別作業時間平均()
-            tsv_obj.write_ユーザ別日毎の作業時間()
+            tsv_obj.write_ラベルごとのアノテーション数(annotation_df)
+
             tsv_obj.write_教師付作業者別日毎の情報(by_date_df)
+            tsv_obj.write_ユーザ別日毎の作業時間(table_obj.create_account_statistics_df())
+
+            for phase in TaskPhase:
+                df_by_inputs = table_obj.create_worktime_per_image_df(AggregationBy.BY_INPUTS, phase)
+                tsv_obj.write_メンバー別作業時間平均_画像1枚あたり(df_by_inputs, phase)
+                df_by_tasks = table_obj.create_worktime_per_image_df(AggregationBy.BY_TASKS, phase)
+                tsv_obj.write_メンバー別作業時間平均_タスク1個あたり(df_by_tasks, phase)
 
         except Exception as e:  # pylint: disable=broad-except
             logger.warning(e)

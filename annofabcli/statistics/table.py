@@ -1,9 +1,9 @@
 import copy
 import logging
-import dateutil
 from enum import Enum
 from typing import Any, Dict, List, Optional, Set, Tuple  # pylint: disable=unused-import
 
+import dateutil
 import pandas as pd
 from annofabapi.dataclass.annotation import SimpleAnnotationDetail
 from annofabapi.dataclass.statistics import (ProjectAccountStatistics, ProjectAccountStatisticsHistory,
@@ -336,7 +336,6 @@ class Table:
         """
         タスク履歴関係の情報を設定する
         """
-
         def diff_days(ended_key: str, started_key: str) -> Optional[float]:
             if task[ended_key] is not None and task[started_key] is not None:
                 delta = dateutil.parser.parse(task[ended_key]) - dateutil.parser.parse(task[started_key])
@@ -384,9 +383,9 @@ class Table:
             task["task_completed_datetime"] = None
 
         task["diff_days_to_first_inspection_started"] = diff_days("first_inspection_started_datetime",
-                                                                "first_annotation_started_datetime")
+                                                                  "first_annotation_started_datetime")
         task["diff_days_to_first_acceptance_started"] = diff_days("first_acceptance_started_datetime",
-                                                                "first_annotation_started_datetime")
+                                                                  "first_annotation_started_datetime")
 
         task["diff_days_to_task_completed"] = diff_days("task_completed_datetime", "first_annotation_started_datetime")
 

@@ -1,11 +1,9 @@
 import logging
 from pathlib import Path
-from typing import List
+from typing import List, Optional
 
 import pandas as pd
 from annofabapi.models import TaskPhase
-
-from annofabcli.statistics.table import AggregationBy, Table
 
 logger = logging.getLogger(__name__)
 
@@ -48,22 +46,21 @@ class Tsv:
                     all_columns.remove(key)
         return all_columns
 
-    def __init__(self, table: Table, outdir: str):
-        self.table = table
+    def __init__(self, outdir: str, project_id: str):
         self.outdir = outdir
-        self.short_project_id = table.project_id[0:8]
+        self.short_project_id = project_id[0:8]
 
-    def write_inspection_list(self, arg_df: pd.DataFrame = None, dropped_columns: List[str] = None):
+    def write_inspection_list(self, df: pd.DataFrame, dropped_columns: Optional[List[str]] = None,
+                              only_error_corrected: bool = True):
         """
         検査コメント一覧をTSVで出力する
         Args:
-            arg_df
+            df
             dropped_columns:
 
         Returns:
 
         """
-        df = self.table.create_inspection_df() if arg_df is None else arg_df
         if len(df) == 0:
             logger.info("検査コメント一覧が0件のため出力しない")
             return
@@ -82,13 +79,16 @@ class Tsv:
             "created_datetime",
             "updated_datetime",
         ]
+
+        if only_error_corrected:
+            suffix = "返信_修正不要を除く"
+        else:
+            suffix = "返信を除く_修正不要を含む"
+
         required_columns = self._create_required_columns(df, prior_columns, dropped_columns)
-        self._write_csv(f"{self.short_project_id}_検査コメント一覧_返信_修正不要を除く.csv", df[required_columns])
+        self._write_csv(f"{self.short_project_id}_{suffix}.csv", df[required_columns])
 
-        df_all = self.table.create_inspection_df(only_error_corrected=False)
-        self._write_csv(f"{self.short_project_id}_検査コメント一覧_返信を除く_修正不要を含む.csv", df_all[required_columns])
-
-    def write_task_list(self, arg_df: pd.DataFrame = None, dropped_columns: List[str] = None):
+    def write_task_list(self, df: pd.DataFrame, dropped_columns: List[str] = None):
         """
         タスク一覧をTSVで出力する
         Args:
@@ -98,7 +98,6 @@ class Tsv:
         Returns:
 
         """
-        df = self.table.create_task_df() if arg_df is None else arg_df
         if len(df) == 0:
             logger.info("タスク一覧が0件のため出力しない")
             return
@@ -168,11 +167,10 @@ class Tsv:
         required_columns = self._create_required_columns(df, prior_columns, dropped_columns)
         self._write_csv(f"{self.short_project_id}_メンバ一覧.csv", df[required_columns])
 
-    def write_ラベルごとのアノテーション数(self, arg_df: pd.DataFrame = None):
+    def write_ラベルごとのアノテーション数(self, df: pd.DataFrame):
         """
         アノテーションラベルごとの個数を出力
         """
-        df = self.table.create_task_for_annotation_df() if arg_df is None else arg_df
         if len(df) == 0:
             logger.info("アノテーションラベルごとの一覧が0件のため出力しない")
             return
@@ -202,11 +200,10 @@ class Tsv:
         required_columns = self._create_required_columns(df, prior_columns, dropped_columns=None)
         self._write_csv(f"{self.short_project_id}_教師付作業者別日毎の情報.csv", df[required_columns])
 
-    def write_ユーザ別日毎の作業時間(self):
+    def write_ユーザ別日毎の作業時間(self, df: pd.DataFrame):
         """
         ユーザごと、日毎の作業時間一覧をTSVで出力する. タスク一覧とは無関係。
         """
-        df = self.table.create_account_statistics_df()
         if len(df) == 0:
             logger.info("ユーザ別日毎の作業時間一覧が0件のため出力しない")
             return
@@ -222,21 +219,14 @@ class Tsv:
         required_columns = self._create_required_columns(df, prior_columns, dropped_columns=None)
         self._write_csv(f"{self.short_project_id}_ユーザ別日毎の作業時間.csv", df[required_columns])
 
-    def write_メンバー別作業時間平均(self):
-        def write_dataframe_by_inputs(phase: TaskPhase):
-            df = self.table.create_worktime_per_image_df(AggregationBy.BY_INPUTS, phase)
-            if len(df) == 0:
-                logger.info(f"メンバー別画像1枚当たりの作業時間平均-{phase.value} 一覧が0件のため、出力しない")
-                return
-            self._write_csv(f"画像1枚当たり作業時間/{self.short_project_id}_画像1枚当たり作業時間_{phase.value}.csv", df)
+    def write_メンバー別作業時間平均_画像1枚あたり(self, df: pd.DataFrame, phase: TaskPhase):
+        if len(df) == 0:
+            logger.info(f"メンバー別画像1枚当たりの作業時間平均-{phase.value} 一覧が0件のため、出力しない")
+            return
+        self._write_csv(f"画像1枚当たり作業時間/{self.short_project_id}_画像1枚当たり作業時間_{phase.value}.csv", df)
 
-        def write_dataframe_by_task(phase: TaskPhase):
-            df = self.table.create_worktime_per_image_df(AggregationBy.BY_INPUTS, phase)
-            if len(df) == 0:
-                logger.info(f"メンバー別タスク1個当たりの作業時間平均-{phase.value} 一覧が0件のため、出力しない")
-                return
-            self._write_csv(f"タスク1個当たり作業時間/{self.short_project_id}_タスク1個当たり作業時間_{phase.value}.csv", df)
-
-        for phase in TaskPhase:
-            write_dataframe_by_inputs(phase)
-            write_dataframe_by_task(phase)
+    def write_メンバー別作業時間平均_タスク1個あたり(self, df: pd.DataFrame, phase: TaskPhase):
+        if len(df) == 0:
+            logger.info(f"メンバ別タスク1個当たりの作業時間平均-{phase.value} 一覧が0件のため、出力しない")
+            return
+        self._write_csv(f"タスク1個当たり作業時間/{self.short_project_id}_タスク1個当たり作業時間_{phase.value}.csv", df)
