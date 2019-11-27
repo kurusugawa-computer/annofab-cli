@@ -145,7 +145,6 @@ def parse_args(parser: argparse.ArgumentParser):
     argument_parser = ArgumentParser(parser)
 
     argument_parser.add_project_id()
-    argument_parser.add_task_id()
 
     parser.add_argument(
         '--inspection_list', type=str, required=True,

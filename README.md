@@ -968,7 +968,7 @@ $ annofabcli complete_tasks --project_id prj1  --inspection_list inspection.json
  --inspection_status no_correction_required
 ```
 
-`inspection.json`は、未処置の検査コメント一覧です。`annofabcli inspection_comment list_unprocessed --foramt json`コマンドで出力できます。
+`inspection.json`は、未処置の検査コメント一覧です。`annofabcli inspection_comment list_unprocessed --format json`コマンドで出力できます。
 
 
 ### task delete
