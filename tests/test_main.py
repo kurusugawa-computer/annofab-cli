@@ -300,3 +300,9 @@ class TestTask:
             self.command_name, 'change_operator', '--project_id', project_id, '--task_id', task_id, '--not_assign',
             '--yes'
         ])
+
+    # def test_complete_task(self):
+    #     main([
+    #         self.command_name, 'complete', '--project_id', project_id, '--inspection_list', '--inspection_status', 'no_correction_required', '--yes'
+    #     ])
+    #
