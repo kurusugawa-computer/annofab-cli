@@ -18,9 +18,12 @@ class ListProject(AbstractCommandLineInterface):
     プロジェクト一覧を表示する。
     """
     @staticmethod
-    def get_account_id_from_user_id(organization_member_list: List[OrganizationMember], user_id: str) -> str:
+    def get_account_id_from_user_id(organization_member_list: List[OrganizationMember], user_id: str) -> Optional[str]:
         member = first_true(organization_member_list, pred=lambda e: e["user_id"] == user_id)
-        return member["account_id"]
+        if member is not None:
+            return member["account_id"]
+        else:
+            return None
 
     def _modify_project_query(self, organization_name: str, project_query: Dict[str, Any]) -> Dict[str, Any]:
         """

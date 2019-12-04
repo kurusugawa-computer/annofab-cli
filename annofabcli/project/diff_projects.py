@@ -199,6 +199,8 @@ class DiffProjecs(AbstractCommandLineInterface):
 
             label1 = more_itertools.first_true(labels1, pred=functools.partial(get_label_func, label_name))
             label2 = more_itertools.first_true(labels2, pred=functools.partial(get_label_func, label_name))
+            assert label1 is not None
+            assert label2 is not None
 
             diff_result = list(dictdiffer.diff(create_ignored_label(label1), create_ignored_label(label2)))
             if len(diff_result) > 0:
