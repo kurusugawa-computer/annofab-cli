@@ -218,12 +218,17 @@ class AnnofabApiFacade:
 
         Returns:
             Trueなら、自分自身のロールが、指定されたロールのいずれかに合致する。
+            Falseなら、ロールに合致しない or 組織に所属していない
 
         """
         my_organizations = self.service.wrapper.get_all_my_organizations()
         organization = more_itertools.first_true(my_organizations, pred=lambda e: e["name"] == organization_name)
-        my_role = OrganizationMemberRole(organization["my_role"])
-        return my_role in roles
+
+        if organization is not None:
+            my_role = OrganizationMemberRole(organization["my_role"])
+            return my_role in roles
+        else:
+            return False
 
     ##################
     # operateTaskのfacade

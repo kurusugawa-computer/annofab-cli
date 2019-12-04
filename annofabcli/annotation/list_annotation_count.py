@@ -49,7 +49,7 @@ class ListAnnotationCount(AbstractCommandLineInterface):
 
     @staticmethod
     def _find_additional_data_with_name(additional_data_definitions: List[AdditionalDataDefinition],
-                                        name: str) -> AdditionalDataDefinition:
+                                        name: str) -> Optional[AdditionalDataDefinition]:
 
         additional_data_definition = more_itertools.first_true(
             additional_data_definitions,
@@ -58,7 +58,7 @@ class ListAnnotationCount(AbstractCommandLineInterface):
 
     @staticmethod
     def _find_additional_data_with_id(additional_data_definitions: List[AdditionalDataDefinition],
-                                      definition_id: str) -> AdditionalDataDefinition:
+                                      definition_id: str) -> Optional[AdditionalDataDefinition]:
 
         additional_data_definition = more_itertools.first_true(
             additional_data_definitions, pred=lambda e: e['additional_data_definition_id'] == definition_id)

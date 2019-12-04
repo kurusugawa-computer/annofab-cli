@@ -72,7 +72,7 @@ class ListInputData(AbstractCommandLineInterface):
         self.average_input_data_id_length = args.averate_input_data_id_length
 
     @staticmethod
-    def _find_task_id_list(task_list: List[Task], input_data_id: str) -> List[TaskId]:
+    def _find_task_id_list(task_list: List[Task], input_data_id: str) -> List[str]:
         """
         タスク一覧から、該当のinput_data_idを持つtask_id_listを返す。
         """

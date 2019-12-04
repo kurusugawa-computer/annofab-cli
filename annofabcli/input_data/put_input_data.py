@@ -44,12 +44,12 @@ class PutInputData(AbstractCommandLineInterface):
 
         request_body: Dict[str, Any] = {'last_updated_datetime': last_updated_datetime}
 
-        if is_file_scheme(csv_input_data.input_data_path):
+        file_path = get_file_scheme_path(csv_input_data.input_data_path)
+        if file_path is not None:
             request_body.update({
                 'input_data_name': csv_input_data.input_data_name,
                 'sign_required': csv_input_data.sign_required,
             })
-            file_path = get_file_scheme_path(csv_input_data.input_data_path)
             logger.debug(f"'{file_path}'を入力データとして登録します。")
             self.service.wrapper.put_input_data_from_file(project_id, input_data_id=csv_input_data.input_data_id,
                                                           file_path=file_path, request_body=request_body)
