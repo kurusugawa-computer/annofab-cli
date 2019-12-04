@@ -147,7 +147,7 @@ class AnnofabApiFacade:
 
         Args:
             project_id:
-            accoaunt_id:
+            account_id:
 
         Returns:
             user_id. 見つからなければNone

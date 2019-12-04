@@ -414,7 +414,7 @@ class Database:
         return updated_task_ids
 
     def get_task_histories_dict(self, all_tasks: List[Task],
-                                ignored_task_ids: Set[str] = None) -> Dict[TaskId, List[TaskHistory]]:
+                                ignored_task_ids: Optional[Set[str]] = None) -> Dict[TaskId, List[TaskHistory]]:
         """
         Annofabからタスク履歴情報を取得する。
         Args:

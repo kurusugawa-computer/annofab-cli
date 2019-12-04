@@ -61,7 +61,7 @@ def fill_annotation(draw: PIL.ImageDraw.Draw, annotation: SimpleAnnotationDetail
 
     color = label_color_dict.get(annotation.label)
     if color is None:
-        logger.warning(f"label_name = {annotation['label']} のcolorが指定されていません。")
+        logger.warning(f"label_name = {annotation.label} のcolorが指定されていません。")
         color = (255, 255, 255)
 
     data_type = data["_type"]

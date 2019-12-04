@@ -55,12 +55,17 @@ class ChangeOperator(AbstractCommandLineInterface):
             str_progress = annofabcli.utils.progress_msg(task_index + 1, len(task_id_list))
 
             dict_task, _ = self.service.api.get_task(project_id, task_id)
-            task: Task = Task.from_dict(dict_task)
+            task: Task = Task.from_dict(dict_task)  # type: ignore
+
+            if task.account_id is not None:
+                user_id = self.facade.get_user_id_from_account_id(project_id, task.account_id)
+            else:
+                user_id = None
 
             logger.debug(f"{str_progress} : task_id = {task.task_id}, "
                          f"status = {task.status.value}, "
                          f"phase = {task.phase.value}, "
-                         f"user_id = {self.facade.get_user_id_from_account_id(project_id, task.account_id)}")
+                         f"user_id = {user_id}")
 
             if task.status in [TaskStatus.COMPLETE, TaskStatus.WORKING]:
                 logger.warning(
