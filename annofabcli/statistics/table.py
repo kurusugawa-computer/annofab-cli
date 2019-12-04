@@ -74,7 +74,7 @@ class Table:
             return self._worktime_statistics
         else:
             worktime_statistics = self.annofab_service.wrapper.get_worktime_statistics(self.project_id)
-            worktime_statistics = [WorktimeStatistics.from_dict(e) for e in worktime_statistics]
+            worktime_statistics = [WorktimeStatistics.from_dict(e) for e in worktime_statistics]  # type: ignore
             self._worktime_statistics = worktime_statistics
             return worktime_statistics
 
@@ -86,7 +86,7 @@ class Table:
             return self._account_statistics
         else:
             account_statistics, = self.annofab_service.api.get_account_statistics(self.project_id)
-            account_statistics = [ProjectAccountStatisticsHistory.from_dict(e) for e in account_statistics]
+            account_statistics = [ProjectAccountStatisticsHistory.from_dict(e) for e in account_statistics] # type: ignore
             self._account_statistics = account_statistics
             return account_statistics
 
