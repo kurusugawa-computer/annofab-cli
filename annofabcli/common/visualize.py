@@ -116,8 +116,8 @@ class AddProps:
 
         return self.get_message(label['label_name'], locale)
 
-    def add_properties_to_annotation_specs_history(self, annotation_specs_history: AnnotationSpecsHistory
-                                                  ) -> AnnotationSpecsHistory:
+    def add_properties_to_annotation_specs_history(
+            self, annotation_specs_history: AnnotationSpecsHistory) -> AnnotationSpecsHistory:
         """
         アノテーション仕様の履歴に、以下のキーを追加する.
         user_id
@@ -131,8 +131,8 @@ class AddProps:
         """
         return self._add_user_info(annotation_specs_history)
 
-    def add_properties_to_inspection(self, inspection: Inspection,
-                                     detail: Optional[Dict[str, Any]] = None) -> Inspection:
+    def add_properties_to_inspection(self, inspection: Inspection, detail: Optional[Dict[str,
+                                                                                         Any]] = None) -> Inspection:
         """
         検査コメントに、以下のキーを追加する.
         commenter_user_id

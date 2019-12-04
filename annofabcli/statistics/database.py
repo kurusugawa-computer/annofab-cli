@@ -13,13 +13,13 @@ import annofabapi.utils
 import dateutil
 import more_itertools
 from annofabapi.dataclass.annotation import SimpleAnnotationDetail
-from annofabapi.models import InputDataId, Inspection, JobStatus, JobType, Task, TaskHistory, TaskId
+from annofabapi.models import InputDataId, Inspection, JobStatus, JobType, Task, TaskHistory
 from annofabapi.parser import SimpleAnnotationZipParser
 
 logger = logging.getLogger(__name__)
 
 InputDataDict = Dict[InputDataId, Dict[str, Any]]
-AnnotationDict = Dict[TaskId, InputDataDict]
+AnnotationDict = Dict[str, InputDataDict]
 AnnotationSummaryFunc = Callable[[List[SimpleAnnotationDetail]], Dict[str, Any]]
 """アノテーションの概要を算出する関数"""
 
@@ -94,7 +94,7 @@ class Database:
         result = self.__read_checkpoint("tasks.pickel")
         return result if result is not None else []
 
-    def read_task_histories_from_checkpoint(self) -> Dict[TaskId, List[TaskHistory]]:
+    def read_task_histories_from_checkpoint(self) -> Dict[str, List[TaskHistory]]:
         result = self.__read_checkpoint("task_histories.pickel")
         return result if result is not None else {}
 
@@ -140,13 +140,13 @@ class Database:
             return annotation_dict
 
     def read_inspections_from_json(self,
-                                   task_id_list: List[TaskId]) -> Dict[TaskId, Dict[InputDataId, List[Inspection]]]:
+                                   task_id_list: List[str]) -> Dict[str, Dict[InputDataId, List[Inspection]]]:
         logger.debug(f"reading {self.inspection_json_path}")
 
         with open(str(self.inspection_json_path)) as f:
             all_inspections = json.load(f)
 
-        tasks_dict: Dict[TaskId, Dict[InputDataId, List[Inspection]]] = {}
+        tasks_dict: Dict[str, Dict[InputDataId, List[Inspection]]] = {}
 
         for inspection in all_inspections:
             task_id = inspection["task_id"]
@@ -317,7 +317,7 @@ class Database:
         # task historiesは未完成なので、使わない
 
     def read_tasks_from_json(self, task_query_param: Optional[Dict[str, Any]] = None,
-                             ignored_task_id_list: Optional[List[TaskId]] = None) -> List[Task]:
+                             ignored_task_id_list: Optional[List[str]] = None) -> List[Task]:
         """
         tass.jsonからqueryに合致するタスクを調べる
         Args:
@@ -414,7 +414,7 @@ class Database:
         return updated_task_ids
 
     def get_task_histories_dict(self, all_tasks: List[Task],
-                                ignored_task_ids: Optional[Set[str]] = None) -> Dict[TaskId, List[TaskHistory]]:
+                                ignored_task_ids: Optional[Set[str]] = None) -> Dict[str, List[TaskHistory]]:
         """
         Annofabからタスク履歴情報を取得する。
         Args:

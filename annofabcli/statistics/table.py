@@ -8,7 +8,7 @@ import pandas as pd
 from annofabapi.dataclass.annotation import SimpleAnnotationDetail
 from annofabapi.dataclass.statistics import (ProjectAccountStatistics, ProjectAccountStatisticsHistory,
                                              WorktimeStatistics, WorktimeStatisticsItem)
-from annofabapi.models import (InputDataId, Inspection, InspectionStatus, Task, TaskHistory, TaskId, TaskPhase,
+from annofabapi.models import (InputDataId, Inspection, InspectionStatus, Task, TaskHistory, TaskPhase,
                                TaskStatus)
 from more_itertools import first_true
 
@@ -47,15 +47,15 @@ class Table:
     # Private
     #############################################
 
-    _task_id_list: Optional[List[TaskId]] = None
+    _task_id_list: Optional[List[str]] = None
     _task_list: Optional[List[Task]] = None
-    _inspections_dict: Optional[Dict[TaskId, Dict[InputDataId, List[Inspection]]]] = None
-    _annotations_dict: Optional[Dict[TaskId, Dict[InputDataId, Dict[str, Any]]]] = None
+    _inspections_dict: Optional[Dict[str, Dict[InputDataId, List[Inspection]]]] = None
+    _annotations_dict: Optional[Dict[str, Dict[InputDataId, Dict[str, Any]]]] = None
     _worktime_statistics: Optional[List[WorktimeStatistics]] = None
     _account_statistics: Optional[List[ProjectAccountStatistics]] = None
 
     def __init__(self, database: Database, task_query_param: Dict[str, Any],
-                 ignored_task_id_list: Optional[List[TaskId]] = None):
+                 ignored_task_id_list: Optional[List[str]] = None):
         self.annofab_service = database.annofab_service
         self.annofab_facade = AnnofabApiFacade(database.annofab_service)
         self.database = database
@@ -86,7 +86,8 @@ class Table:
             return self._account_statistics
         else:
             account_statistics, = self.annofab_service.api.get_account_statistics(self.project_id)
-            account_statistics = [ProjectAccountStatisticsHistory.from_dict(e) for e in account_statistics] # type: ignore
+            account_statistics = [ProjectAccountStatisticsHistory.from_dict(e)  # type: ignore
+                                  for e in account_statistics]
             self._account_statistics = account_statistics
             return account_statistics
 
@@ -101,7 +102,7 @@ class Table:
             self._task_list = task_list
             return self._task_list
 
-    def _get_inspections_dict(self) -> Dict[TaskId, Dict[InputDataId, List[Inspection]]]:
+    def _get_inspections_dict(self) -> Dict[str, Dict[InputDataId, List[Inspection]]]:
         if self._inspections_dict is not None:
             return self._inspections_dict
         else:

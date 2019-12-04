@@ -18,7 +18,7 @@ from annofabcli import AnnofabApiFacade
 from annofabcli.common.cli import (AbstractCommandLineInterface, ArgumentParser, build_annofabapi_resource_and_login,
                                    get_json_from_args)
 from annofabcli.common.dataclasses import WaitOptions
-from annofabcli.common.utils import get_file_scheme_path, is_file_scheme
+from annofabcli.common.utils import get_file_scheme_path
 
 logger = logging.getLogger(__name__)
 

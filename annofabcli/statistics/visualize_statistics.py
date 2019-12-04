@@ -5,7 +5,7 @@ from pathlib import Path
 from typing import Any, Callable, Dict, List, Optional  # pylint: disable=unused-import
 
 import annofabapi
-from annofabapi.models import ProjectMemberRole, TaskId, TaskPhase
+from annofabapi.models import ProjectMemberRole, TaskPhase
 
 import annofabcli
 from annofabcli import AnnofabApiFacade
