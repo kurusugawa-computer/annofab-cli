@@ -138,7 +138,7 @@ class Graph:
 
         # 軸範囲が同期しないようにする
         layout1 = hv.Layout(histograms1).options(shared_axes=False)
-        renderer.save(layout1, f"{self.outdir}/{self.short_project_id}_プロジェクト全体のヒストグラム")
+        renderer.save(layout1, f"{self.outdir}/{self.short_project_id}-ヒストグラム-プロジェクト全体")
 
     def wirte_ラベルごとのアノテーション数(self, df: pd.DataFrame):
         """
@@ -167,7 +167,7 @@ class Graph:
 
         # 軸範囲が同期しないようにする
         layout2 = hv.Layout(histograms2).options(shared_axes=False)
-        renderer.save(layout2, f"{self.outdir}/{self.short_project_id}_ラベルごとのアノテーション数のヒストグラム")
+        renderer.save(layout2, f"{self.outdir}/html/{self.short_project_id}-ヒストグラム-ラベルごとのアノテーション数")
 
     def create_user_id_list(self, df: pd.DataFrame, user_id_column: str,
                             arg_user_id_list: Optional[List[str]] = None) -> List[str]:
@@ -185,14 +185,14 @@ class Graph:
         """
         max_user_length = len(self.my_palette)
         if arg_user_id_list is None or len(arg_user_id_list) == 0:
-            tmp_list: List[str] = df[user_id_column].dropna().unique().tolist()[0:max_user_length]
+            tmp_list: List[str] = df[user_id_column].dropna().unique().tolist()
             tmp_list.sort()
             user_id_list = tmp_list
         else:
             user_id_list = arg_user_id_list
 
         if len(user_id_list) > max_user_length:
-            logger.debug(f"表示対象のuser_idの数が多いため、先頭から{max_user_length}個のみグラフ化します")
+            logger.info(f"表示対象のuser_idの数が多いため、先頭から{max_user_length}個のみグラフ化します")
 
         return user_id_list[0:max_user_length]
 
@@ -244,7 +244,7 @@ class Graph:
                 self._set_legend(fig, hover_tool)
 
             bokeh.plotting.reset_output()
-            bokeh.plotting.output_file(f"{self.outdir}/{self.short_project_id}_{html_title}.html", title=html_title)
+            bokeh.plotting.output_file(f"{self.outdir}/html/{self.short_project_id}-{html_title}.html", title=html_title)
             bokeh.plotting.save(bokeh.layouts.column(figs))
 
         tooltip_item = [
@@ -285,7 +285,7 @@ class Graph:
             dict(x="date_first_annotation_started_date", y="inspection_count/annotation_count",
                  title="アノテーションあたり検査コメント数の折れ線グラフ", x_axis_label="1回目の教師付開始日", y_axis_label="アノテーションあたり検査コメント数"),
         ]
-        write_cumulative_graph(fig_info_list_annotation_count, html_title="アノテーション単位の日毎の折れ線グラフ")
+        write_cumulative_graph(fig_info_list_annotation_count, html_title="折れ線-横軸_教師付開始日-縦軸_アノテーションあたりの指標-教師付者用")
 
         fig_info_list_input_data_count = [
             dict(x="date_first_annotation_started_date", y="first_annotation_worktime_minute/input_data_count",
@@ -299,7 +299,7 @@ class Graph:
             dict(x="date_first_annotation_started_date", y="inspection_count/input_data_count",
                  title="画像あたり検査コメント数の折れ線グラフ", x_axis_label="1回目の教師付開始日", y_axis_label="画像あたり検査コメント数"),
         ]
-        write_cumulative_graph(fig_info_list_input_data_count, html_title="画像単位の日毎の折れ線グラフ")
+        write_cumulative_graph(fig_info_list_input_data_count, html_title="折れ線-横軸_教師付開始日-縦軸_画像あたりの指標-教師付者用")
 
         fig_info_list_value = [
             dict(x="date_first_annotation_started_date", y="annotation_count", title="作業したアノテーション数の折れ線グラフ",
@@ -313,7 +313,7 @@ class Graph:
             dict(x="date_first_annotation_started_date", y="annotation_worktime_hour", title="教師付時間の折れ線グラフ",
                  x_axis_label="1回目の教師付開始日", y_axis_label="教師付時間[hour]"),
         ]
-        write_cumulative_graph(fig_info_list_value, html_title="日毎の折れ線グラフ")
+        write_cumulative_graph(fig_info_list_value, html_title="折れ線-横軸_教師付開始日-縦軸_指標-教師付者用")
 
     def write_cumulative_line_graph_for_annotator(self, df: pd.DataFrame,
                                                   first_annotation_user_id_list: Optional[List[str]] = None):
@@ -378,7 +378,7 @@ class Graph:
                 self._set_legend(fig, hover_tool)
 
             bokeh.plotting.reset_output()
-            bokeh.plotting.output_file(f"{self.outdir}/{self.short_project_id}_{html_title}.html", title=html_title)
+            bokeh.plotting.output_file(f"{self.outdir}/html/{self.short_project_id}-{html_title}.html", title=html_title)
             bokeh.plotting.save(bokeh.layouts.column(figs))
 
         tooltip_item = [
@@ -416,7 +416,7 @@ class Graph:
             dict(x="cumulative_annotation_count", y="cumulative_inspection_count", title="アノテーション数と検査コメント数の累積グラフ",
                  x_axis_label="アノテーション数", y_axis_label="検査コメント数"),
         ]
-        write_cumulative_graph(fig_info_list_annotation_count, html_title="アノテーション単位の累計グラフ")
+        write_cumulative_graph(fig_info_list_annotation_count, html_title="累計折れ線-横軸_アノテーション数-教師付者用")
 
         # 横軸が累計の入力データ数
         fig_info_list_input_data_count = [
@@ -429,7 +429,7 @@ class Graph:
             dict(x="cumulative_input_data_count", y="cumulative_inspection_count", title="アノテーション数と検査コメント数の累積グラフ",
                  x_axis_label="入力データ数", y_axis_label="検査コメント数"),
         ]
-        write_cumulative_graph(fig_info_list_input_data_count, html_title="入力データ単位の累計グラフ")
+        write_cumulative_graph(fig_info_list_input_data_count, html_title="累計折れ線-横軸_入力データ数-教師付者用")
 
         # 横軸が累計のタスク数
         fig_info_list_task_count = [
@@ -448,7 +448,7 @@ class Graph:
             dict(x="cumulative_task_count", y="cumulative_number_of_rejections_by_acceptance",
                  title="タスク数と差押し戻し回数(受入フェーズ)の累積グラフ", x_axis_label="タスク数", y_axis_label="差し戻し回数(受入フェーズ)"),
         ]
-        write_cumulative_graph(fig_info_list_task_count, html_title="タスク単位の累計グラフ")
+        write_cumulative_graph(fig_info_list_task_count, html_title="累計折れ線-横軸_タスク数-教師付者用")
 
     def write_cumulative_line_graph_for_inspector(self, df: pd.DataFrame,
                                                   first_inspection_user_id_list: Optional[List[str]] = None):
@@ -510,7 +510,7 @@ class Graph:
                 self._set_legend(fig, hover_tool)
 
             bokeh.plotting.reset_output()
-            bokeh.plotting.output_file(f"{self.outdir}/{self.short_project_id}_{html_title}.html", title=html_title)
+            bokeh.plotting.output_file(f"{self.outdir}/html/{self.short_project_id}-{html_title}.html", title=html_title)
             bokeh.plotting.save(bokeh.layouts.column(figs))
 
         tooltip_item = [
@@ -554,7 +554,7 @@ class Graph:
             dict(x="cumulative_inspection_count", y="cumulative_inspection_worktime_hour", title="検査コメント数と検査時間の累積グラフ",
                  x_axis_label="検査コメント数", y_axis_label="検査時間[hour]"),
         ]
-        write_cumulative_graph(fig_info_list_annotation_count, html_title="検査者用_アノテーション単位の累計グラフ")
+        write_cumulative_graph(fig_info_list_annotation_count, html_title="累計折れ線-横軸_アノテーション数-検査者用")
 
         # 横軸が累計の入力データ数
         fig_info_list_input_data_count = [
@@ -563,4 +563,4 @@ class Graph:
             dict(x="cumulative_input_data_count", y="cumulative_inspection_worktime_hour", title="入力データ数と検査時間の累積グラフ",
                  x_axis_label="入力データ数", y_axis_label="検査時間[hour]"),
         ]
-        write_cumulative_graph(fig_info_list_input_data_count, html_title="検査者用_入力データ単位の累計グラフ")
+        write_cumulative_graph(fig_info_list_input_data_count, html_title="累計折れ線-横軸_入力データ数-検査者用")

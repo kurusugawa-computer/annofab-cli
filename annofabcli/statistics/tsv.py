@@ -195,7 +195,15 @@ class Tsv:
         prior_columns = [
             "first_annotation_started_date",
             "first_annotation_username",
-            "first_annotation_started_date",
+            "first_annotation_user_id",
+            "task_count",
+            "input_data_count",
+            "annotation_count",
+            "first_annotation_worktime_hour",
+            "annotation_worktime_hour",
+            "inspection_worktime_hour",
+            "acceptance_worktime_hour",
+            "inspection_count",
         ]
         required_columns = self._create_required_columns(df, prior_columns, dropped_columns=None)
         self._write_csv(f"{self.short_project_id}_教師付作業者別日毎の情報.csv", df[required_columns])
