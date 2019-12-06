@@ -143,7 +143,7 @@ class Graph:
 
         # 軸範囲が同期しないようにする
         layout1 = hv.Layout(histograms1).options(shared_axes=False)
-        renderer.save(layout1, f"{self.outdir}/{self.short_project_id}-ヒストグラム-プロジェクト全体")
+        renderer.save(layout1, f"{self.outdir}/html/{self.short_project_id}-ヒストグラム-プロジェクト全体")
 
     def wirte_ラベルごとのアノテーション数(self, df: pd.DataFrame):
         """

@@ -105,7 +105,7 @@ class VisualizeStatistics(AbstractCommandLineInterface):
                                                                 first_inspection_user_id_list=user_id_list)
 
             graph_obj.write_cumulative_line_graph_for_acceptor(df=task_cumulative_df_by_acceptor,
-                                                               first_acception_user_id_list=user_id_list)
+                                                               first_acceptance_user_id_list=user_id_list)
 
             graph_obj.write_productivity_line_graph_for_annotator(df=by_date_df,
                                                                   first_annotation_user_id_list=user_id_list)
