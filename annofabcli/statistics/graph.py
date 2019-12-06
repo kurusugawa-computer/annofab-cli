@@ -8,6 +8,7 @@ import dateutil
 import holoviews as hv
 import numpy as np
 import pandas as pd
+from pathlib import Path
 from bokeh.models import HoverTool
 from bokeh.plotting import ColumnDataSource, figure
 
@@ -33,6 +34,7 @@ class Graph:
     def __init__(self, outdir: str, project_id: str):
         self.outdir = outdir
         self.short_project_id = project_id[0:8]
+        Path(f"{outdir}/html").mkdir(exist_ok=True, parents=True)
 
     @staticmethod
     def _create_hover_tool(tool_tip_items: List[str] = None) -> HoverTool:
@@ -119,6 +121,9 @@ class Graph:
             ("diff_days_to_first_inspection_started", "最初の検査を着手するまでの日数"),
             ("diff_days_to_first_acceptance_started", "最初の受入を着手するまでの日数"),
             ("diff_days_to_task_completed", "受入完了状態になるまでの日数"),
+            # 差し戻し回数
+            ("number_of_rejections_by_inspection", "検査フェーズに対する差し戻し回数"),
+            ("number_of_rejections_by_acceptance", "受入フェーズに対する差し戻し回数"),
         ]
 
         histograms1 = []
@@ -244,7 +249,8 @@ class Graph:
                 self._set_legend(fig, hover_tool)
 
             bokeh.plotting.reset_output()
-            bokeh.plotting.output_file(f"{self.outdir}/html/{self.short_project_id}-{html_title}.html", title=html_title)
+            bokeh.plotting.output_file(f"{self.outdir}/html/{self.short_project_id}-{html_title}.html",
+                                       title=html_title)
             bokeh.plotting.save(bokeh.layouts.column(figs))
 
         tooltip_item = [
@@ -378,7 +384,8 @@ class Graph:
                 self._set_legend(fig, hover_tool)
 
             bokeh.plotting.reset_output()
-            bokeh.plotting.output_file(f"{self.outdir}/html/{self.short_project_id}-{html_title}.html", title=html_title)
+            bokeh.plotting.output_file(f"{self.outdir}/html/{self.short_project_id}-{html_title}.html",
+                                       title=html_title)
             bokeh.plotting.save(bokeh.layouts.column(figs))
 
         tooltip_item = [
@@ -510,7 +517,8 @@ class Graph:
                 self._set_legend(fig, hover_tool)
 
             bokeh.plotting.reset_output()
-            bokeh.plotting.output_file(f"{self.outdir}/html/{self.short_project_id}-{html_title}.html", title=html_title)
+            bokeh.plotting.output_file(f"{self.outdir}/html/{self.short_project_id}-{html_title}.html",
+                                       title=html_title)
             bokeh.plotting.save(bokeh.layouts.column(figs))
 
         tooltip_item = [
@@ -565,16 +573,14 @@ class Graph:
         ]
         write_cumulative_graph(fig_info_list_input_data_count, html_title="累計折れ線-横軸_入力データ数-検査者用")
 
-
-
     def write_cumulative_line_graph_for_acceptor(self, df: pd.DataFrame,
-                                                  first_acception_user_id_list: Optional[List[str]] = None):
+                                                 first_acception_user_id_list: Optional[List[str]] = None):
         """
         受入者用の累積折れ線グラフを出力する。
 
         Args:
             df:
-            first_inspection_user_id_list: 最初の検査フェーズを担当したuser_idのList. Noneの場合はtask_dfから決まる。
+            first_acception_user_id_list: 最初の検査フェーズを担当したuser_idのList. Noneの場合はtask_dfから決まる。
 
         Returns:
 
@@ -596,7 +602,7 @@ class Graph:
                     figure(plot_width=1200, plot_height=600, title=fig_info["title"],
                            x_axis_label=fig_info["x_axis_label"], y_axis_label=fig_info["y_axis_label"]))
 
-            for user_index, user_id in enumerate(first_inspection_user_id_list):  # type: ignore
+            for user_index, user_id in enumerate(first_acception_user_id_list):  # type: ignore
                 filtered_df = df[df["first_inspection_user_id"] == user_id]
                 if filtered_df.empty:
                     logger.debug(f"dataframe is empty. user_id = {user_id}")
@@ -607,8 +613,7 @@ class Graph:
                     "cumulative_annotation_count",
                     "cumulative_input_data_count",
                     "cumulative_task_count",
-                    "cumulative_first_inspection_worktime_hour",
-                    "cumulative_inspection_worktime_hour",
+                    "cumulative_first_acceptance_worktime_hour",
                     "cumulative_acceptance_worktime_hour",
                     "cumulative_inspection_count",
                 ]
@@ -627,7 +632,8 @@ class Graph:
                 self._set_legend(fig, hover_tool)
 
             bokeh.plotting.reset_output()
-            bokeh.plotting.output_file(f"{self.outdir}/html/{self.short_project_id}-{html_title}.html", title=html_title)
+            bokeh.plotting.output_file(f"{self.outdir}/html/{self.short_project_id}-{html_title}.html",
+                                       title=html_title)
             bokeh.plotting.save(bokeh.layouts.column(figs))
 
         tooltip_item = [
@@ -652,7 +658,7 @@ class Graph:
             return
 
         first_acception_user_id_list = self.create_user_id_list(df, "first_acception_user_id",
-                                                                 first_acception_user_id_list)
+                                                                first_acception_user_id_list)
 
         if len(first_acception_user_id_list) == 0:
             logger.info(f"受入フェーズを担当してユーザがいないため、受入者用のグラフは出力しません。")
@@ -677,7 +683,7 @@ class Graph:
         fig_info_list_input_data_count = [
             dict(x="cumulative_input_data_count", y="cumulative_first_acceptance_worktime_hour",
                  title="アノテーション数と1回目受入時間の累積グラフ", x_axis_label="入力データ数", y_axis_label="1回目の受入時間[hour]"),
-            dict(x="cumulative_input_data_count", y="cumulative_inspection_worktime_hour", title="入力データ数と受入時間の累積グラフ",
+            dict(x="cumulative_input_data_count", y="cumulative_acceptance_worktime_hour", title="入力データ数と受入時間の累積グラフ",
                  x_axis_label="入力データ数", y_axis_label="受入時間[hour]"),
         ]
         write_cumulative_graph(fig_info_list_input_data_count, html_title="累計折れ線-横軸_入力データ数-受入者用")

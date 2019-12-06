@@ -139,8 +139,7 @@ class Database:
                 annotation_dict[task_id] = input_data_dict
             return annotation_dict
 
-    def read_inspections_from_json(self,
-                                   task_id_list: List[str]) -> Dict[str, Dict[InputDataId, List[Inspection]]]:
+    def read_inspections_from_json(self, task_id_list: List[str]) -> Dict[str, Dict[InputDataId, List[Inspection]]]:
         logger.debug(f"reading {self.inspection_json_path}")
 
         with open(str(self.inspection_json_path)) as f:

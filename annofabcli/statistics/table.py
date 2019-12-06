@@ -8,8 +8,7 @@ import pandas as pd
 from annofabapi.dataclass.annotation import SimpleAnnotationDetail
 from annofabapi.dataclass.statistics import (ProjectAccountStatistics, ProjectAccountStatisticsHistory,
                                              WorktimeStatistics, WorktimeStatisticsItem)
-from annofabapi.models import (InputDataId, Inspection, InspectionStatus, Task, TaskHistory, TaskPhase,
-                               TaskStatus)
+from annofabapi.models import InputDataId, Inspection, InspectionStatus, Task, TaskHistory, TaskPhase, TaskStatus
 from more_itertools import first_true
 
 import annofabcli
@@ -86,8 +85,10 @@ class Table:
             return self._account_statistics
         else:
             account_statistics, = self.annofab_service.api.get_account_statistics(self.project_id)
-            account_statistics = [ProjectAccountStatisticsHistory.from_dict(e)  # type: ignore
-                                  for e in account_statistics]
+            account_statistics = [
+                ProjectAccountStatisticsHistory.from_dict(e)  # type: ignore
+                for e in account_statistics
+            ]
             self._account_statistics = account_statistics
             return account_statistics
 
@@ -706,9 +707,7 @@ class Table:
         groupby_obj = df.groupby("first_acceptance_account_id")
 
         # 作業時間の累積値
-        df["cumulative_annotation_worktime_hour"] = groupby_obj["annotation_worktime_hour"].cumsum()
         df["cumulative_acceptance_worktime_hour"] = groupby_obj["acceptance_worktime_hour"].cumsum()
-        df["cumulative_inspection_worktime_hour"] = groupby_obj["inspection_worktime_hour"].cumsum()
         df["cumulative_first_inspection_worktime_hour"] = groupby_obj["first_inspection_worktime_hour"].cumsum()
 
         # タスク完了数、差し戻し数など
