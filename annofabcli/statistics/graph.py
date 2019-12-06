@@ -574,13 +574,13 @@ class Graph:
         write_cumulative_graph(fig_info_list_input_data_count, html_title="累計折れ線-横軸_入力データ数-検査者用")
 
     def write_cumulative_line_graph_for_acceptor(self, df: pd.DataFrame,
-                                                 first_acception_user_id_list: Optional[List[str]] = None):
+                                                 first_acceptance_user_id_list: Optional[List[str]] = None):
         """
         受入者用の累積折れ線グラフを出力する。
 
         Args:
             df:
-            first_acception_user_id_list: 最初の検査フェーズを担当したuser_idのList. Noneの場合はtask_dfから決まる。
+            first_acceptance_user_id_list: 最初の検査フェーズを担当したuser_idのList. Noneの場合はtask_dfから決まる。
 
         Returns:
 
@@ -602,7 +602,7 @@ class Graph:
                     figure(plot_width=1200, plot_height=600, title=fig_info["title"],
                            x_axis_label=fig_info["x_axis_label"], y_axis_label=fig_info["y_axis_label"]))
 
-            for user_index, user_id in enumerate(first_acception_user_id_list):  # type: ignore
+            for user_index, user_id in enumerate(first_acceptance_user_id_list):  # type: ignore
                 filtered_df = df[df["first_inspection_user_id"] == user_id]
                 if filtered_df.empty:
                     logger.debug(f"dataframe is empty. user_id = {user_id}")
@@ -657,14 +657,14 @@ class Graph:
             logger.info("タスク一覧が0件のため出力しない")
             return
 
-        first_acception_user_id_list = self.create_user_id_list(df, "first_acception_user_id",
-                                                                first_acception_user_id_list)
+        first_acceptance_user_id_list = self.create_user_id_list(df, "first_acceptance_user_id",
+                                                                first_acceptance_user_id_list)
 
-        if len(first_acception_user_id_list) == 0:
+        if len(first_acceptance_user_id_list) == 0:
             logger.info(f"受入フェーズを担当してユーザがいないため、受入者用のグラフは出力しません。")
             return
 
-        logger.debug(f"グラフに表示するuser_id = {first_acception_user_id_list}")
+        logger.debug(f"グラフに表示するuser_id = {first_acceptance_user_id_list}")
 
         # 横軸が累計のアノテーション数
         fig_info_list_annotation_count = [
