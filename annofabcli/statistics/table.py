@@ -708,7 +708,7 @@ class Table:
 
         # 作業時間の累積値
         df["cumulative_acceptance_worktime_hour"] = groupby_obj["acceptance_worktime_hour"].cumsum()
-        df["cumulative_first_inspection_worktime_hour"] = groupby_obj["first_inspection_worktime_hour"].cumsum()
+        df["cumulative_first_acceptance_worktime_hour"] = groupby_obj["first_acceptance_worktime_hour"].cumsum()
 
         # タスク完了数、差し戻し数など
         df["cumulative_inspection_count"] = groupby_obj["inspection_count"].cumsum()
@@ -740,7 +740,7 @@ class Table:
 
         worktime_info_list = []
         for elm in worktime_statistics:
-            worktime_info = {"date": elm.date}
+            worktime_info: Dict[str, Any] = {"date": elm.date}
             for account_info in elm.accounts:
                 stat_list = getattr(account_info, aggregation_by.value)
                 stat_item: Optional[WorktimeStatisticsItem] = first_true(stat_list, pred=lambda e: e.phase == phase)
