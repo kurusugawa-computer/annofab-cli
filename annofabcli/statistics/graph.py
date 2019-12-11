@@ -1,4 +1,5 @@
 import logging
+from pathlib import Path
 from typing import Any, Dict, List, Optional  # pylint: disable=unused-import
 
 import bokeh
@@ -8,7 +9,6 @@ import dateutil
 import holoviews as hv
 import numpy as np
 import pandas as pd
-from pathlib import Path
 from bokeh.models import HoverTool
 from bokeh.plotting import ColumnDataSource, figure
 
@@ -603,7 +603,7 @@ class Graph:
                            x_axis_label=fig_info["x_axis_label"], y_axis_label=fig_info["y_axis_label"]))
 
             for user_index, user_id in enumerate(first_acceptance_user_id_list):  # type: ignore
-                filtered_df = df[df["first_inspection_user_id"] == user_id]
+                filtered_df = df[df["first_acceptance_user_id"] == user_id]
                 if filtered_df.empty:
                     logger.debug(f"dataframe is empty. user_id = {user_id}")
                     continue
@@ -621,7 +621,7 @@ class Graph:
                 filtered_df = filtered_df[columns]
                 source = ColumnDataSource(data=filtered_df)
                 color = self.my_palette[user_index]
-                username = filtered_df.iloc[0]["first_inspection_username"]
+                username = filtered_df.iloc[0]["first_acceptance_username"]
 
                 for fig, fig_info in zip(figs, fig_info_list):
                     self._plot_line_and_circle(fig, x=fig_info["x"], y=fig_info["y"], source=source, username=username,
@@ -644,6 +644,8 @@ class Graph:
             "first_annotation_started_datetime",
             "first_inspection_username",
             "first_inspection_started_datetime",
+            "first_acceptance_username",
+            "first_acceptance_started_datetime",
             "updated_datetime",
             "annotation_worktime_hour",
             "inspection_worktime_hour",
@@ -658,7 +660,7 @@ class Graph:
             return
 
         first_acceptance_user_id_list = self.create_user_id_list(df, "first_acceptance_user_id",
-                                                                first_acceptance_user_id_list)
+                                                                 first_acceptance_user_id_list)
 
         if len(first_acceptance_user_id_list) == 0:
             logger.info(f"受入フェーズを担当してユーザがいないため、受入者用のグラフは出力しません。")
