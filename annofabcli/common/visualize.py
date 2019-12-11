@@ -30,18 +30,21 @@ class AddProps:
         self.organization_name = self._get_organization_name_from_project_id(project_id)
 
         annotation_specs, _ = self.service.api.get_annotation_specs(project_id)
-        self.specs_labels = annotation_specs['labels']
-        self.specs_inspection_phrases = annotation_specs['inspection_phrases']
+        self.specs_labels: List[Dict[str, Any]] = annotation_specs['labels']
+        self.specs_inspection_phrases: List[Dict[str, Any]] = annotation_specs['inspection_phrases']
 
     @staticmethod
     def millisecond_to_hour(millisecond: int):
         return millisecond / 1000 / 3600
 
     @staticmethod
-    def get_message(i18n_messages: Dict[str, Any], locale: MessageLocale) -> str:
+    def get_message(i18n_messages: Dict[str, Any], locale: MessageLocale) -> Optional[str]:
         messages: List[Dict[str, Any]] = i18n_messages['messages']
         dict_message = more_itertools.first_true(messages, pred=lambda e: e["lang"] == locale.value)
-        return dict_message['message']
+        if dict_message is not None:
+            return dict_message['message']
+        else:
+            return None
 
     @staticmethod
     def add_properties_of_project(target: Dict[str, Any], project_title: str) -> Dict[str, Any]:
@@ -103,14 +106,15 @@ class AddProps:
         return organization["organization_name"]
 
     def get_phrase_name(self, phrase_id, locale: MessageLocale) -> Optional[str]:
-        phrase = more_itertools.first_true(self.specs_inspection_phrases, lambda e: e['id'] == phrase_id)
+        phrase: Optional[Dict[str, Any]] = more_itertools.first_true(self.specs_inspection_phrases,
+                                                                     pred=lambda e: e['id'] == phrase_id)
         if phrase is None:
             return None
 
         return self.get_message(phrase['text'], locale)
 
     def get_label_name(self, label_id: str, locale: MessageLocale) -> Optional[str]:
-        label = more_itertools.first_true(self.specs_labels, lambda e: e['label_id'] == label_id)
+        label = more_itertools.first_true(self.specs_labels, pred=lambda e: e['label_id'] == label_id)
         if label is None:
             return None
 

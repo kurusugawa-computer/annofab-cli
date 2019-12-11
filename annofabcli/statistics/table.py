@@ -72,8 +72,10 @@ class Table:
         if self._worktime_statistics is not None:
             return self._worktime_statistics
         else:
-            worktime_statistics = self.annofab_service.wrapper.get_worktime_statistics(self.project_id)
-            worktime_statistics = [WorktimeStatistics.from_dict(e) for e in worktime_statistics]  # type: ignore
+            tmp_worktime_statistics = self.annofab_service.wrapper.get_worktime_statistics(self.project_id)
+            worktime_statistics: List[WorktimeStatistics] = [
+                WorktimeStatistics.from_dict(e) for e in tmp_worktime_statistics  # type: ignore
+            ]
             self._worktime_statistics = worktime_statistics
             return worktime_statistics
 
@@ -84,10 +86,10 @@ class Table:
         if self._account_statistics is not None:
             return self._account_statistics
         else:
-            account_statistics, = self.annofab_service.api.get_account_statistics(self.project_id)
+            content: List[Any] = self.annofab_service.api.get_account_statistics(self.project_id)[0]
             account_statistics = [
                 ProjectAccountStatisticsHistory.from_dict(e)  # type: ignore
-                for e in account_statistics
+                for e in content
             ]
             self._account_statistics = account_statistics
             return account_statistics
@@ -752,44 +754,6 @@ class Table:
             worktime_info_list.append(worktime_info)
 
         df = pd.DataFrame(worktime_info_list)
-        # acount_idをusernameに変更する
-        columns = {col: self._get_username(col) for col in df.columns if col != "date"}  # pylint: disable=not-an-iterable # noqa: E501
-        return df.rename(columns=columns).fillna(0)
-
-    def create_account_statistics_df2(self, account_statistics_value: AccountStatisticsValue) -> pd.DataFrame:
-        """
-        メンバ別のタスク集計情報を取得する
-        行方向に日付, 列方向にメンバを並べる
-
-        Args:
-            account_statistics_value: 集計する値
-
-        Returns:
-            DataFrame
-        """
-        def get_value_from_history(his: ProjectAccountStatisticsHistory) -> Any:
-            value = getattr(his, account_statistics_value.value)
-            if account_statistics_value == AccountStatisticsValue.WORKTIME:
-                return isoduration_to_hour(value)
-            else:
-                return value
-
-        account_statistics = self._get_account_statistics()
-        dict_date_account_info: Dict[str, Dict[str, Any]] = {}
-        for account_info in account_statistics:
-            account_id = account_info.account_id
-            for history in account_info.histories:
-                date = history.date
-                dict_account_info = dict_date_account_info.get(date, default={})
-                dict_account_info[account_id] = get_value_from_history(history)
-                dict_date_account_info[date] = dict_account_info
-
-        account_info_list = []
-        for date, account_info in sorted(dict_date_account_info.items()):
-            account_info["date"] = date
-            account_info_list.append(account_info)
-
-        df = pd.DataFrame(account_info_list)
         # acount_idをusernameに変更する
         columns = {col: self._get_username(col) for col in df.columns if col != "date"}  # pylint: disable=not-an-iterable # noqa: E501
         return df.rename(columns=columns).fillna(0)

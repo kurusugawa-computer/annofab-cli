@@ -17,10 +17,10 @@
     "develop": {
         "annofabapi": {
             "hashes": [
-                "sha256:1c69cdde1ebd1d281f14e0be2986e3ba9f9819929fc2415bd7fc85bffedb5184",
-                "sha256:3bb62ea4f7f481f221bd7cc68365b8ec4c3ea33164aeaac67a84025ac0f33914"
+                "sha256:b70f0b34a1e1da01a0c063a284d309c92f0edf1b3c347c982168162977db7dd7",
+                "sha256:c6e00140716fcc850185442938a6b973ba25240ddb99d0cac95f5a1f66d5a658"
             ],
-            "version": "==0.23.0"
+            "version": "==0.23.1"
         },
         "annofabcli": {
             "editable": true,
@@ -241,11 +241,11 @@
         },
         "importlib-metadata": {
             "hashes": [
-                "sha256:3a8b2dfd0a2c6a3636e7c016a7e54ae04b997d30e69d5eacdca7a6c2221a1402",
-                "sha256:41e688146d000891f32b1669e8573c57e39e5060e7f5f647aa617cd9a9568278"
+                "sha256:073a852570f92da5f744a3472af1b61e28e9f78ccf0c9117658dc32b15de7b45",
+                "sha256:d95141fbfa7ef2ec65cfd945e2af7e5a6ddbd7c8d9a25e66ff3be8e3daf9f60f"
             ],
             "markers": "python_version < '3.8'",
-            "version": "==1.2.0"
+            "version": "==1.3.0"
         },
         "isodate": {
             "hashes": [
@@ -713,10 +713,10 @@
         },
         "tqdm": {
             "hashes": [
-                "sha256:895796ea8df435b6f502bf122f2b2034a3d48e6d8ff52175606ac1051b0e3e12",
-                "sha256:e405d16c98fcf30725d0c9d493ed07302a18846b5452de5253030ccd18996f87"
+                "sha256:7543892c59720e36e4212180274d8f58dde36803bc1f6370fd09afa20b8f5892",
+                "sha256:f0ab01cf3ae5673d18f918700c0165e5fad0f26b5ebe4b34f62ead92686b5340"
             ],
-            "version": "==4.40.1"
+            "version": "==4.40.2"
         },
         "twine": {
             "hashes": [
