@@ -35,7 +35,8 @@ class PutProjectMembers(AbstractCommandLineInterface):
     """
     @staticmethod
     def find_member(members: List[Dict[str, Any]], user_id: str) -> Optional[Dict[str, Any]]:
-        return more_itertools.first_true(members, default=None, pred=lambda e: e['user_id'] == user_id)
+        member = more_itertools.first_true(members, default=None, pred=lambda e: e['user_id'] == user_id)
+        return member
 
     @staticmethod
     def member_exists(members: List[Dict[str, Any]], user_id) -> bool:

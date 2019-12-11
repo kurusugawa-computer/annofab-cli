@@ -81,12 +81,12 @@ class Tsv:
         ]
 
         if only_error_corrected:
-            suffix = "返信_修正不要を除く"
+            suffix = "返信を除く_修正不要を除く"
         else:
             suffix = "返信を除く_修正不要を含む"
 
         required_columns = self._create_required_columns(df, prior_columns, dropped_columns)
-        self._write_csv(f"{self.short_project_id}_{suffix}.csv", df[required_columns])
+        self._write_csv(f"{self.short_project_id}-検査コメントlist-{suffix}.csv", df[required_columns])
 
     def write_task_list(self, df: pd.DataFrame, dropped_columns: List[str] = None):
         """
@@ -131,7 +131,7 @@ class Tsv:
             "input_data_count_of_inspection",
         ]
         required_columns = self._create_required_columns(df, prior_columns, dropped_columns)
-        self._write_csv(f"{self.short_project_id}_タスク一覧.csv", df[required_columns])
+        self._write_csv(f"{self.short_project_id}-タスクlist.csv", df[required_columns])
 
     def write_member_list(self, df: pd.DataFrame, dropped_columns: List[str] = None):
         """
@@ -165,7 +165,7 @@ class Tsv:
             "inspection_count_of_first_annotation",
         ]
         required_columns = self._create_required_columns(df, prior_columns, dropped_columns)
-        self._write_csv(f"{self.short_project_id}_メンバ一覧.csv", df[required_columns])
+        self._write_csv(f"{self.short_project_id}-メンバ一覧list.csv", df[required_columns])
 
     def write_ラベルごとのアノテーション数(self, df: pd.DataFrame):
         """
@@ -182,7 +182,7 @@ class Tsv:
             "phase",
         ]
         required_columns = self._create_required_columns(df, prior_columns, dropped_columns=None)
-        self._write_csv(f"{self.short_project_id}_ラベルごとのアノテーション数.csv", df[required_columns])
+        self._write_csv(f"{self.short_project_id}-タスクlist-ラベルごとのアノテーション数.csv", df[required_columns])
 
     def write_教師付作業者別日毎の情報(self, df: pd.DataFrame):
         """
@@ -195,10 +195,18 @@ class Tsv:
         prior_columns = [
             "first_annotation_started_date",
             "first_annotation_username",
-            "first_annotation_started_date",
+            "first_annotation_user_id",
+            "task_count",
+            "input_data_count",
+            "annotation_count",
+            "first_annotation_worktime_hour",
+            "annotation_worktime_hour",
+            "inspection_worktime_hour",
+            "acceptance_worktime_hour",
+            "inspection_count",
         ]
         required_columns = self._create_required_columns(df, prior_columns, dropped_columns=None)
-        self._write_csv(f"{self.short_project_id}_教師付作業者別日毎の情報.csv", df[required_columns])
+        self._write_csv(f"{self.short_project_id}_教師付者_教師付開始日list.csv", df[required_columns])
 
     def write_ユーザ別日毎の作業時間(self, df: pd.DataFrame):
         """
@@ -217,7 +225,7 @@ class Tsv:
             "worktime_hour",
         ]
         required_columns = self._create_required_columns(df, prior_columns, dropped_columns=None)
-        self._write_csv(f"{self.short_project_id}_ユーザ別日毎の作業時間.csv", df[required_columns])
+        self._write_csv(f"{self.short_project_id}-ユーザ_日付list-作業時間.csv", df[required_columns])
 
     def write_メンバー別作業時間平均_画像1枚あたり(self, df: pd.DataFrame, phase: TaskPhase):
         if len(df) == 0:

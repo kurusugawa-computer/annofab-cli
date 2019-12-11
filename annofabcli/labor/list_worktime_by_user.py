@@ -91,7 +91,7 @@ class ListWorktimeByUser(AbstractCommandLineInterface):
         else:
             return value / 3600 / 1000
 
-    def _get_labor_worktime(self, labor: Dict[str, Any], member: OrganizationMember, project_title: str,
+    def _get_labor_worktime(self, labor: Dict[str, Any], member: Optional[OrganizationMember], project_title: str,
                             organization_name: str) -> LaborWorktime:
         new_labor = LaborWorktime(
             date=labor["date"],
