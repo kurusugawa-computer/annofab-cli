@@ -77,6 +77,7 @@ class VisualizeStatistics(AbstractCommandLineInterface):
 
         try:
             tsv_obj.write_task_list(task_df, dropped_columns=["histories_by_phase", "input_data_id_list"])
+            tsv_obj.write_task_history_list(task_history_df)
             tsv_obj.write_inspection_list(df=inspection_df, dropped_columns=["data"], only_error_corrected=True)
             tsv_obj.write_inspection_list(df=inspection_df_all, dropped_columns=["data"], only_error_corrected=False)
 

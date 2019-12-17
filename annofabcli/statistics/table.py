@@ -405,19 +405,17 @@ class Table:
         task_histories_dict = self.database.read_task_histories_from_checkpoint()
 
         all_task_history_list = []
-        for task_id, task_history_list in task_histories_dict.items():
+        for _, task_history_list in task_histories_dict.items():
             for history in task_history_list:
                 account_id = history["account_id"]
                 history["user_id"] = self._get_user_id(account_id)
                 history["username"] = self._get_username(account_id)
-                history["worktime_hour"] = annofabcli.utils.isoduration_to_hour(history["accumulated_labor_time_milliseconds"])
+                history["worktime_hour"] = annofabcli.utils.isoduration_to_hour(
+                    history["accumulated_labor_time_milliseconds"])
                 all_task_history_list.append(history)
 
         df = pd.DataFrame(all_task_history_list)
         return df
-
-
-
 
     def create_task_df(self) -> pd.DataFrame:
         """

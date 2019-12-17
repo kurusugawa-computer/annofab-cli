@@ -153,8 +153,7 @@ class Tsv:
             "task_id",
             "task_history_id",
             "phase",
-            "phase_stage"
-            "status",
+            "phase_stage",
             "started_datetime",
             "ended_datetime",
             "user_id",
@@ -162,10 +161,9 @@ class Tsv:
             "worktime_hour",
         ]
 
-        df.sort_values(["task_id", "started_datetime"])
+        df = df.sort_values(["task_id", "started_datetime"])
         required_columns = self._create_required_columns(df, prior_columns, dropped_columns)
         self._write_csv(f"{self.short_project_id}-タスク履歴list.csv", df[required_columns])
-
 
     def write_member_list(self, df: pd.DataFrame, dropped_columns: List[str] = None):
         """
