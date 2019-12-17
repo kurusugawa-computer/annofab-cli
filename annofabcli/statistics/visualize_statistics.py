@@ -64,6 +64,7 @@ class VisualizeStatistics(AbstractCommandLineInterface):
         graph_obj = Graph(str(output_dir), project_id)
 
         task_df = table_obj.create_task_df()
+        task_history_df = table_obj.create_task_history_df()
         inspection_df = table_obj.create_inspection_df()
         inspection_df_all = table_obj.create_inspection_df(only_error_corrected=False)
 
