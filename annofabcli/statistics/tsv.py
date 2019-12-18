@@ -133,6 +133,38 @@ class Tsv:
         required_columns = self._create_required_columns(df, prior_columns, dropped_columns)
         self._write_csv(f"{self.short_project_id}-タスクlist.csv", df[required_columns])
 
+    def write_task_history_list(self, df: pd.DataFrame, dropped_columns: List[str] = None) -> None:
+        """
+        タスク履歴一覧をCSVで出力する
+
+        Args:
+            arg_df:
+            dropped_columns:
+
+        Returns:
+
+        """
+        if len(df) == 0:
+            logger.info("タスク履歴一覧が0件のため出力しない")
+            return
+
+        prior_columns = [
+            "project_id",
+            "task_id",
+            "task_history_id",
+            "phase",
+            "phase_stage",
+            "started_datetime",
+            "ended_datetime",
+            "user_id",
+            "username",
+            "worktime_hour",
+        ]
+
+        df = df.sort_values(["task_id", "started_datetime"])
+        required_columns = self._create_required_columns(df, prior_columns, dropped_columns)
+        self._write_csv(f"{self.short_project_id}-タスク履歴list.csv", df[required_columns])
+
     def write_member_list(self, df: pd.DataFrame, dropped_columns: List[str] = None):
         """
         プロジェクトメンバ一覧をTSVで出力する
