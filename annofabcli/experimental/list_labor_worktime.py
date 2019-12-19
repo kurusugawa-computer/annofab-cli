@@ -77,7 +77,8 @@ class FutureTable(Table):
                     "af_time": 0.0
                 })
             else:
-                user_id_bool_list = [user_id_search in self._get_user_id(l["account_id"]).upper() for user_id_search in self.user_id_search_list]
+                user_id_bool_list = [user_id_search in self._get_user_id(l["account_id"]).upper() for user_id_search in
+                                     self.user_id_search_list]
                 if True in user_id_bool_list:
                     labor_control_list.append({
                         "account_id": l["account_id"],
@@ -112,7 +113,8 @@ class FutureTable(Table):
 
                 all_histories.extend(histories)
             else:
-                user_id_bool_list = [user_id_search in self._get_user_id(account_id).upper().upper() for user_id_search in self.user_id_search_list]
+                user_id_bool_list = [user_id_search in self._get_user_id(account_id).upper().upper() for user_id_search
+                                     in self.user_id_search_list]
                 if True in user_id_bool_list:
                     for history in histories:
                         history['af_time'] = annofabcli.utils.isoduration_to_minute(history['worktime'])
@@ -199,6 +201,7 @@ class ListLaborWorktime(AbstractCommandLineInterface):
         output_lines.append("total_diff: ," + str(print_total_time["total_diff"]))
         output_lines.append("total_diff_per: ," + str(print_total_time["total_diff_per"]))
         annofabcli.utils.output_string("\n".join(output_lines), args.output)
+
 
 def main(args):
     service = build_annofabapi_resource_and_login()
