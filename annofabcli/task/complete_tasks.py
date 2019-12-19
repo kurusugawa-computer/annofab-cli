@@ -57,6 +57,8 @@ class ComleteTasks(AbstractCommandLineInterface):
 
         inspection_json = self.inspection_list_to_dict(inspection_list)
 
+        project_title = self.facade.get_project_title(project_id)
+        logger.info(f"{project_title} のタスク{len(inspection_json)} 件を、受入完了状態にします。")
         for task_id, input_data_dict in inspection_json.items():
             try:
                 task, _ = self.service.api.get_task(project_id, task_id)
@@ -69,6 +71,9 @@ class ComleteTasks(AbstractCommandLineInterface):
             except requests.HTTPError as e:
                 logger.warning(e)
                 logger.warning(f"{task_id} のタスクを取得できませんでした。")
+                continue
+
+            if not self.confirm_processing(f"タスク'{task_id}'の検査コメントを'{inspection_status.value}'状態にして、" f"受入完了状態にしますか？"):
                 continue
 
             # 担当者変更
@@ -112,7 +117,7 @@ class ComleteTasks(AbstractCommandLineInterface):
             return arg_inspection["inspection_id"] in target_inspection_id_list
 
         self.service.wrapper.update_status_of_inspections(project_id, task_id, input_data_id, filter_inspection,
-                                                          inspection_status.value)
+                                                          inspection_status)
         logger.debug(f"{task_id}, {input_data_id}, {len(inspection_list)}件 検査コメントの状態を変更")
 
     def complete_acceptance_task(self, project_id: str, task: Task, inspection_status: InspectionStatus,

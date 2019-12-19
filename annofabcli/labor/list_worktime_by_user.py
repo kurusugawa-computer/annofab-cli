@@ -84,14 +84,17 @@ class ListWorktimeByUser(AbstractCommandLineInterface):
             return ""
 
     @staticmethod
-    def get_worktime_hour(working_time_by_user: Dict[str, Any], key: str) -> float:
+    def get_worktime_hour(working_time_by_user: Optional[Dict[str, Any]], key: str) -> float:
+        if working_time_by_user is None:
+            return 0
+
         value = working_time_by_user.get(key)
         if value is None:
             return 0
         else:
             return value / 3600 / 1000
 
-    def _get_labor_worktime(self, labor: Dict[str, Any], member: OrganizationMember, project_title: str,
+    def _get_labor_worktime(self, labor: Dict[str, Any], member: Optional[OrganizationMember], project_title: str,
                             organization_name: str) -> LaborWorktime:
         new_labor = LaborWorktime(
             date=labor["date"],

@@ -151,8 +151,8 @@ class DiffProjecs(AbstractCommandLineInterface):
 
         return flag, diff_message
 
-    def diff_labels_of_annotation_specs(self, labels1: List[Dict[str, Any]],
-                                        labels2: List[Dict[str, Any]]) -> DiffResult:
+    def diff_labels_of_annotation_specs(self, labels1: List[Dict[str, Any]], labels2: List[Dict[str,
+                                                                                                Any]]) -> DiffResult:
         """
         アノテーションラベル情報の差分を表示する。ラベル名(英語)を基準に差分を表示する。
         以下の項目は無視して比較する。
@@ -199,6 +199,8 @@ class DiffProjecs(AbstractCommandLineInterface):
 
             label1 = more_itertools.first_true(labels1, pred=functools.partial(get_label_func, label_name))
             label2 = more_itertools.first_true(labels2, pred=functools.partial(get_label_func, label_name))
+            assert label1 is not None
+            assert label2 is not None
 
             diff_result = list(dictdiffer.diff(create_ignored_label(label1), create_ignored_label(label2)))
             if len(diff_result) > 0:

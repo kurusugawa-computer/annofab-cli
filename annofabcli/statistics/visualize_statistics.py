@@ -5,7 +5,7 @@ from pathlib import Path
 from typing import Any, Callable, Dict, List, Optional  # pylint: disable=unused-import
 
 import annofabapi
-from annofabapi.models import ProjectMemberRole, TaskId, TaskPhase
+from annofabapi.models import ProjectMemberRole, TaskPhase
 
 import annofabcli
 from annofabcli import AnnofabApiFacade
@@ -36,7 +36,7 @@ class VisualizeStatistics(AbstractCommandLineInterface):
     統計情報を可視化する。
     """
     def visualize_statistics(self, project_id: str, work_dir: Path, output_dir: Path, task_query: Dict[str, Any],
-                             ignored_task_id_list: List[TaskId], user_id_list: List[str], update: bool = False,
+                             ignored_task_id_list: List[str], user_id_list: List[str], update: bool = False,
                              should_update_annotation_zip: bool = False, should_update_task_json: bool = False):
         """
         タスク一覧を出力する
@@ -64,6 +64,7 @@ class VisualizeStatistics(AbstractCommandLineInterface):
         graph_obj = Graph(str(output_dir), project_id)
 
         task_df = table_obj.create_task_df()
+        task_history_df = table_obj.create_task_history_df()
         inspection_df = table_obj.create_inspection_df()
         inspection_df_all = table_obj.create_inspection_df(only_error_corrected=False)
 
@@ -72,9 +73,11 @@ class VisualizeStatistics(AbstractCommandLineInterface):
         by_date_df = table_obj.create_dataframe_by_date(task_df)
         task_cumulative_df_by_annotator = table_obj.create_cumulative_df_by_first_annotator(task_df)
         task_cumulative_df_by_inspector = table_obj.create_cumulative_df_by_first_inspector(task_df)
+        task_cumulative_df_by_acceptor = table_obj.create_cumulative_df_by_first_acceptor(task_df)
 
         try:
             tsv_obj.write_task_list(task_df, dropped_columns=["histories_by_phase", "input_data_id_list"])
+            tsv_obj.write_task_history_list(task_history_df)
             tsv_obj.write_inspection_list(df=inspection_df, dropped_columns=["data"], only_error_corrected=True)
             tsv_obj.write_inspection_list(df=inspection_df_all, dropped_columns=["data"], only_error_corrected=False)
 
@@ -99,8 +102,13 @@ class VisualizeStatistics(AbstractCommandLineInterface):
             graph_obj.write_プロジェクト全体のヒストグラム(task_df)
             graph_obj.write_cumulative_line_graph_for_annotator(df=task_cumulative_df_by_annotator,
                                                                 first_annotation_user_id_list=user_id_list)
+
             graph_obj.write_cumulative_line_graph_for_inspector(df=task_cumulative_df_by_inspector,
                                                                 first_inspection_user_id_list=user_id_list)
+
+            graph_obj.write_cumulative_line_graph_for_acceptor(df=task_cumulative_df_by_acceptor,
+                                                               first_acceptance_user_id_list=user_id_list)
+
             graph_obj.write_productivity_line_graph_for_annotator(df=by_date_df,
                                                                   first_annotation_user_id_list=user_id_list)
 

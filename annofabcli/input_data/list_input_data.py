@@ -7,7 +7,7 @@ from dataclasses import dataclass
 from typing import Any, Callable, Dict, List, Optional, Tuple, Union  # pylint: disable=unused-import
 
 import annofabapi
-from annofabapi.models import InputData, Task, TaskId
+from annofabapi.models import InputData, Task
 from annofabapi.utils import to_iso8601_extension
 from dataclasses_json import dataclass_json
 
@@ -72,7 +72,7 @@ class ListInputData(AbstractCommandLineInterface):
         self.average_input_data_id_length = args.averate_input_data_id_length
 
     @staticmethod
-    def _find_task_id_list(task_list: List[Task], input_data_id: str) -> List[TaskId]:
+    def _find_task_id_list(task_list: List[Task], input_data_id: str) -> List[str]:
         """
         タスク一覧から、該当のinput_data_idを持つtask_id_listを返す。
         """
@@ -157,8 +157,8 @@ class ListInputData(AbstractCommandLineInterface):
         return input_data_list
 
     def get_input_data_list(self, project_id: str, input_data_id_list: Optional[List[str]] = None,
-                            input_data_query: Optional[Dict[str, Any]] = None,
-                            add_details: bool = False) -> List[InputData]:
+                            input_data_query: Optional[Dict[str,
+                                                            Any]] = None, add_details: bool = False) -> List[InputData]:
         """
         入力データ一覧を取得する。
         """

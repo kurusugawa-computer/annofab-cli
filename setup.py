@@ -25,7 +25,7 @@ setup(
     maintainer='yuji38kwmt',
     license='MIT', keywords='annofab api cli',
     url='https://github.com/kurusugawa-computer/annofab-cli',
-    install_requires=['annofabapi>=0.21.3',
+    install_requires=['annofabapi>=0.23.1',
                       'requests',
                       'pillow',
                       'pyyaml',

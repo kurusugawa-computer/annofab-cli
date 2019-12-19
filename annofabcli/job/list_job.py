@@ -17,8 +17,8 @@ class ListJob(AbstractCommandLineInterface):
     """
     ジョブ一覧を表示する。
     """
-    def get_job_list(self, project_id: str, job_type: JobType,
-                     job_query: Optional[Dict[str, Any]] = None) -> List[JobInfo]:
+    def get_job_list(self, project_id: str, job_type: JobType, job_query: Optional[Dict[str,
+                                                                                        Any]] = None) -> List[JobInfo]:
         """
         ジョブ一覧を取得する。
         """

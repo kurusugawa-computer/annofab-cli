@@ -960,11 +960,11 @@ $ annofabcli task change_operator --project_id prj1 --task_id file://task.txt --
 
 ```
 # 未処置の検査コメントは"対応完了"状態にして、prj1プロジェクトのタスクを受け入れ完了にする。
-$ annofabcli complete_tasks --project_id prj1  --inspection_list inspection.json \
+$ annofabcli complete_tasks --project_id prj1  --inspection_list file://inspection.json \
  --inspection_status error_corrected
 
 # 未処置の検査コメントは"対応不要"状態にして、prj1プロジェクトのタスクを受け入れ完了にする。
-$ annofabcli complete_tasks --project_id prj1  --inspection_list inspection.json \
+$ annofabcli complete_tasks --project_id prj1  --inspection_list file://inspection.json \
  --inspection_status no_correction_required
 ```
 
