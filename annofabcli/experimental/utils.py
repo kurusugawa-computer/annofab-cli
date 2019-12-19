@@ -2,7 +2,7 @@
 #  type: ignore
 # pylint: skip-file
 from datetime import date, timedelta
-from typing import Any, Callable, Dict, List, Optional, Tuple, Union  # pylint: disable=unused-import
+from typing import Any, Dict  # pylint: disable=unused-import
 
 
 def date_range(start_date: date, end_date: date):
@@ -19,6 +19,9 @@ def print_time_list_from_work_time_list(username_list: list, work_time_lists: li
     new_header_item_list.append("date / time")
     new_footer_item_list.append("total_time")
     username_footer_list: Dict[str, Any] = {}
+    total_aw_plans = 0.0
+    total_aw_results = 0.0
+    total_af_time = 0.0
 
     for username in username_list:
         new_header_name_list.append(username)
@@ -69,8 +72,11 @@ def print_time_list_from_work_time_list(username_list: list, work_time_lists: li
 
     for username in username_list:
         new_footer_item_list.append(round(username_footer_list[username]["aw_plans"], 2))
+        total_aw_plans += username_footer_list[username]["aw_plans"]
         new_footer_item_list.append(round(username_footer_list[username]["aw_results"], 2))
+        total_aw_results += username_footer_list[username]["aw_results"]
         new_footer_item_list.append(round(username_footer_list[username]["af_time"], 2))
+        total_af_time += username_footer_list[username]["af_time"]
         total_diff = round(username_footer_list[username]["aw_results"] - username_footer_list[username]["af_time"], 2)
         total_diff_per = round(total_diff / username_footer_list[username]["aw_results"], 2) \
             if (username_footer_list[username]["aw_results"] != 0.0) else 0.0
@@ -79,7 +85,12 @@ def print_time_list_from_work_time_list(username_list: list, work_time_lists: li
 
     print_time_list.append(new_footer_item_list)
 
-    return print_time_list
+    return print_time_list, {"total_aw_results": round(total_aw_results, 2),
+                             "total_aw_plans": round(total_aw_plans, 2),
+                             "total_af_time": round(total_af_time, 2),
+                             "total_diff": round(total_aw_results - total_af_time, 2),
+                             "total_diff_per": (round((total_aw_results - total_af_time) / total_aw_results, 2) if (
+                                         total_aw_results != 0.00) else 0.00)}
 
 
 def print_time_list_csv(print_time_list: list) -> None:
