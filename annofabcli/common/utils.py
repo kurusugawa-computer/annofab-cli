@@ -115,7 +115,7 @@ def output_string(target: str, output: Optional[str] = None):
         print(target)
     else:
         Path(output).parent.mkdir(parents=True, exist_ok=True)
-        with open(output, mode='w', encoding='utf-8') as f:
+        with open(output, mode='w', encoding='utf_8_sig') as f:
             f.write(target)
 
 
