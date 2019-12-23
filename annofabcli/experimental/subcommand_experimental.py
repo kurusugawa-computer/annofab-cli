@@ -2,15 +2,15 @@ import argparse
 
 import annofabcli
 import annofabcli.common.cli
-import annofabcli.experimental.list_labor_worktime
+from annofabcli.experimental import list_labor_worktime, found_break_error
 
 
 def parse_args(parser: argparse.ArgumentParser):
-
     subparsers = parser.add_subparsers(dest='subcommand_name')
 
     # サブコマンドの定義
-    annofabcli.experimental.list_labor_worktime.add_parser(subparsers)  # type: ignore
+    list_labor_worktime.add_parser(subparsers)  # type: ignore
+    found_break_error.add_parser(subparsers)  # type: ignore
 
 
 def add_parser(subparsers: argparse._SubParsersAction):
