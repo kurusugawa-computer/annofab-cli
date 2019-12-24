@@ -149,8 +149,7 @@ class Graph:
             (edges, frequencies),
             kdims=histogram_name.x_axis_label,
             vdims=histogram_name.y_axis_label,
-            label=title,
-        ).options(width=500)
+        ).options(width=500, title=title, fontsize={"title": 10})
         return hist
 
     def write_プロジェクト全体のヒストグラム(self, df: pd.DataFrame):
@@ -271,7 +270,7 @@ class Graph:
             ))
 
         # 軸範囲が同期しないようにする
-        layout = hv.Layout(histograms).options(shared_axes=False)
+        layout = hv.Layout(histograms).options(shared_axes=False).cols(3)
         renderer.save(layout, f"{self.outdir}/html/{self.short_project_id}-ヒストグラム-プロジェクト全体")
 
     def wirte_ラベルごとのアノテーション数(self, df: pd.DataFrame):
