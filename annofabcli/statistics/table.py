@@ -53,8 +53,12 @@ class Table:
     _worktime_statistics: Optional[List[WorktimeStatistics]] = None
     _account_statistics: Optional[List[ProjectAccountStatistics]] = None
 
-    def __init__(self, database: Database, task_query_param: Dict[str, Any],
-                 ignored_task_id_list: Optional[List[str]] = None):
+    def __init__(
+        self,
+        database: Database,
+        task_query_param: Dict[str, Any],
+        ignored_task_id_list: Optional[List[str]] = None,
+    ):
         self.annofab_service = database.annofab_service
         self.annofab_facade = AnnofabApiFacade(database.annofab_service)
         self.database = database
@@ -63,7 +67,7 @@ class Table:
 
         self.project_id = self.database.project_id
         self._update_annotaion_specs()
-        self.project_title = self.annofab_service.api.get_project(self.project_id)[0]['title']
+        self.project_title = self.annofab_service.api.get_project(self.project_id)[0]["title"]
 
     def _get_worktime_statistics(self) -> List[WorktimeStatistics]:
         """
@@ -306,10 +310,10 @@ class Table:
 
         rejections_by_phase = 0
         for i, history in enumerate(task_histories):
-            if history['phase'] != phase.value or history['ended_datetime'] is None:
+            if history["phase"] != phase.value or history["ended_datetime"] is None:
                 continue
 
-            if i + 1 < len(task_histories) and task_histories[i + 1]['phase'] == TaskPhase.ANNOTATION.value:
+            if (i + 1 < len(task_histories) and task_histories[i + 1]["phase"] == TaskPhase.ANNOTATION.value):
                 rejections_by_phase += 1
 
         return rejections_by_phase
@@ -321,7 +325,7 @@ class Table:
                 f"{column_prefix}_user_id": None,
                 f"{column_prefix}_username": None,
                 f"{column_prefix}_started_datetime": None,
-                f"{column_prefix}_worktime_hour": 0
+                f"{column_prefix}_worktime_hour": 0,
             })
         else:
             account_id = task_history["account_id"]
@@ -331,7 +335,7 @@ class Table:
                 f"{column_prefix}_username": self._get_username(account_id),
                 f"{column_prefix}_started_datetime": task_history["started_datetime"],
                 f"{column_prefix}_worktime_hour": isoduration_to_hour(
-                    task_history["accumulated_labor_time_milliseconds"])
+                    task_history["accumulated_labor_time_milliseconds"]),
             })
 
         return task
@@ -347,20 +351,28 @@ class Table:
             else:
                 return None
 
+        def acceptance_is_skipped(arg_task_histories: List[TaskHistory]) -> bool:
+            skipped_histories = [
+                e for e in arg_task_histories
+                if (e["phase"] == TaskPhase.ACCEPTANCE.value and e["account_id"] is None
+                    and annofabcli.utils.isoduration_to_hour(e["accumulated_labor_time_milliseconds"]) == 0)
+            ]
+            return len(skipped_histories) > 0
+
         annotation_histories = [e for e in task_histories if e["phase"] == TaskPhase.ANNOTATION.value]
         inspection_histories = [e for e in task_histories if e["phase"] == TaskPhase.INSPECTION.value]
         acceptance_histories = [e for e in task_histories if e["phase"] == TaskPhase.ACCEPTANCE.value]
 
         # 最初の教師付情報を設定する
-        first_annotation_history = annotation_histories[0] if len(annotation_histories) > 0 else None
+        first_annotation_history = (annotation_histories[0] if len(annotation_histories) > 0 else None)
         self._set_task_history(task, first_annotation_history, column_prefix="first_annotation")
 
         # 最初の検査情報を設定する
-        first_inspection_history = inspection_histories[0] if len(inspection_histories) > 0 else None
+        first_inspection_history = (inspection_histories[0] if len(inspection_histories) > 0 else None)
         self._set_task_history(task, first_inspection_history, column_prefix="first_inspection")
 
         # 最初の受入情報を設定する
-        first_acceptance_history = acceptance_histories[0] if len(acceptance_histories) > 0 else None
+        first_acceptance_history = (acceptance_histories[0] if len(acceptance_histories) > 0 else None)
         self._set_task_history(task, first_acceptance_history, column_prefix="first_acceptance")
 
         task["annotation_worktime_hour"] = sum([
@@ -376,11 +388,11 @@ class Table:
         task["sum_worktime_hour"] = sum(
             [annofabcli.utils.isoduration_to_hour(e["accumulated_labor_time_milliseconds"]) for e in task_histories])
 
-        task['number_of_rejections_by_inspection'] = self.get_rejections_by_phase(task_histories, TaskPhase.INSPECTION)
-        task['number_of_rejections_by_acceptance'] = self.get_rejections_by_phase(task_histories, TaskPhase.ACCEPTANCE)
+        task["number_of_rejections_by_inspection"] = self.get_rejections_by_phase(task_histories, TaskPhase.INSPECTION)
+        task["number_of_rejections_by_acceptance"] = self.get_rejections_by_phase(task_histories, TaskPhase.ACCEPTANCE)
 
         # 受入完了日時を設定
-        if task["phase"] == TaskPhase.ACCEPTANCE.value and task["status"] == TaskStatus.COMPLETE.value:
+        if (task["phase"] == TaskPhase.ACCEPTANCE.value and task["status"] == TaskStatus.COMPLETE.value):
             assert len(acceptance_histories) > 0, f"len(acceptance_histories) is 0"
             task["task_completed_datetime"] = acceptance_histories[-1]["ended_datetime"]
         else:
@@ -392,6 +404,9 @@ class Table:
                                                                   "first_annotation_started_datetime")
 
         task["diff_days_to_task_completed"] = diff_days("task_completed_datetime", "first_annotation_started_datetime")
+
+        # 自動受入されたか否か
+        task["acceptance_is_skipped"] = acceptance_is_skipped(task_histories)
 
         return task
 
@@ -532,32 +547,44 @@ class Table:
         # first_annotation_user_id と first_annotation_usernameの両方を指定している理由：
         # first_annotation_username を取得するため
         group_obj = new_df.groupby(
-            ["first_annotation_started_date", "first_annotation_user_id", "first_annotation_username"], as_index=False)
+            [
+                "first_annotation_started_date",
+                "first_annotation_user_id",
+                "first_annotation_username",
+            ],
+            as_index=False,
+        )
         sum_df = group_obj[[
-            "first_annotation_worktime_hour", "annotation_worktime_hour", "inspection_worktime_hour",
-            "acceptance_worktime_hour", "sum_worktime_hour", "task_count", "input_data_count", "annotation_count",
-            "inspection_count"
+            "first_annotation_worktime_hour",
+            "annotation_worktime_hour",
+            "inspection_worktime_hour",
+            "acceptance_worktime_hour",
+            "sum_worktime_hour",
+            "task_count",
+            "input_data_count",
+            "annotation_count",
+            "inspection_count",
         ]].sum()
 
-        sum_df["first_annotation_worktime_minute/annotation_count"] = sum_df[
-            "first_annotation_worktime_hour"] * 60 / sum_df["annotation_count"]
-        sum_df["annotation_worktime_minute/annotation_count"] = sum_df["annotation_worktime_hour"] * 60 / sum_df[
-            "annotation_count"]
-        sum_df["inspection_worktime_minute/annotation_count"] = sum_df["inspection_worktime_hour"] * 60 / sum_df[
-            "annotation_count"]
-        sum_df["acceptance_worktime_minute/annotation_count"] = sum_df["acceptance_worktime_hour"] * 60 / sum_df[
-            "annotation_count"]
-        sum_df["inspection_count/annotation_count"] = sum_df["inspection_count"] / sum_df["annotation_count"]
+        sum_df["first_annotation_worktime_minute/annotation_count"] = (sum_df["first_annotation_worktime_hour"] * 60 /
+                                                                       sum_df["annotation_count"])
+        sum_df["annotation_worktime_minute/annotation_count"] = (sum_df["annotation_worktime_hour"] * 60 /
+                                                                 sum_df["annotation_count"])
+        sum_df["inspection_worktime_minute/annotation_count"] = (sum_df["inspection_worktime_hour"] * 60 /
+                                                                 sum_df["annotation_count"])
+        sum_df["acceptance_worktime_minute/annotation_count"] = (sum_df["acceptance_worktime_hour"] * 60 /
+                                                                 sum_df["annotation_count"])
+        sum_df["inspection_count/annotation_count"] = (sum_df["inspection_count"] / sum_df["annotation_count"])
 
-        sum_df["first_annotation_worktime_minute/input_data_count"] = sum_df[
-            "first_annotation_worktime_hour"] * 60 / sum_df["input_data_count"]
-        sum_df["annotation_worktime_minute/input_data_count"] = sum_df["annotation_worktime_hour"] * 60 / sum_df[
-            "input_data_count"]
-        sum_df["inspection_worktime_minute/input_data_count"] = sum_df["inspection_worktime_hour"] * 60 / sum_df[
-            "input_data_count"]
-        sum_df["acceptance_worktime_minute/input_data_count"] = sum_df["acceptance_worktime_hour"] * 60 / sum_df[
-            "input_data_count"]
-        sum_df["inspection_count/input_data_count"] = sum_df["inspection_count"] / sum_df["annotation_count"]
+        sum_df["first_annotation_worktime_minute/input_data_count"] = (sum_df["first_annotation_worktime_hour"] * 60 /
+                                                                       sum_df["input_data_count"])
+        sum_df["annotation_worktime_minute/input_data_count"] = (sum_df["annotation_worktime_hour"] * 60 /
+                                                                 sum_df["input_data_count"])
+        sum_df["inspection_worktime_minute/input_data_count"] = (sum_df["inspection_worktime_hour"] * 60 /
+                                                                 sum_df["input_data_count"])
+        sum_df["acceptance_worktime_minute/input_data_count"] = (sum_df["acceptance_worktime_hour"] * 60 /
+                                                                 sum_df["input_data_count"])
+        sum_df["inspection_count/input_data_count"] = (sum_df["inspection_count"] / sum_df["annotation_count"])
 
         return sum_df
 
@@ -577,7 +604,6 @@ class Table:
                 "input_data_count_of_first_annotation": 0,
                 "annotation_count_of_first_annotation": 0,
                 "inspection_count_of_first_annotation": 0,
-
                 # 関わった作業時間
                 "annotation_worktime_hour": 0,
                 "inspection_worktime_hour": 0,
@@ -629,19 +655,19 @@ class Table:
         all_histories = []
         for account_info in account_statistics:
 
-            account_id = account_info['account_id']
-            histories = account_info['histories']
+            account_id = account_info["account_id"]
+            histories = account_info["histories"]
 
             member_info = self.project_members_dict.get(account_id)
 
             for history in histories:
-                history['worktime_hour'] = annofabcli.utils.isoduration_to_hour(history['worktime'])
-                history['account_id'] = account_id
-                history['user_id'] = self._get_user_id(account_id)
-                history['username'] = self._get_username(account_id)
+                history["worktime_hour"] = annofabcli.utils.isoduration_to_hour(history["worktime"])
+                history["account_id"] = account_id
+                history["user_id"] = self._get_user_id(account_id)
+                history["username"] = self._get_username(account_id)
 
                 if member_info is not None:
-                    history['member_role'] = member_info['member_role']
+                    history["member_role"] = member_info["member_role"]
 
             all_histories.extend(histories)
 
