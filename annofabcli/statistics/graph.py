@@ -152,13 +152,13 @@ class Graph:
         ).options(width=500, title=title, fontsize={"title": 10})
         return hist
 
-    def write_プロジェクト全体のヒストグラム(self, df: pd.DataFrame):
+
+    def write_histogram_for_worktime(self, df: pd.DataFrame):
         """
-        以下の情報をヒストグラムで出力する。
-        作業時間関係、検査コメント数関係、アノテーション数
+        作業時間に関する情報をヒストグラムとして表示する。
 
         Args:
-            df: タスク一覧のDataFrame. Noneならば新たに生成する
+            df: タスク一覧のDataFrame
 
         """
         if len(df) == 0:
@@ -168,9 +168,6 @@ class Graph:
         renderer = hv.renderer("bokeh")
 
         histogram_name_list = [
-            HistogramName(column="annotation_count", x_axis_label="アノテーション数", title="アノテーション数"),
-            HistogramName(column="input_data_count", x_axis_label="画像枚数", title="画像枚数"),
-            HistogramName(column="sum_worktime_hour", x_axis_label="総作業時間[hour]", title="総作業時間"),
             HistogramName(
                 column="annotation_worktime_hour",
                 x_axis_label="教師付時間[hour]",
@@ -216,13 +213,57 @@ class Graph:
                 x_axis_label="1回目の受入者の作業時間[hour]",
                 title="1回目の受入者の作業時間",
             ),
+            HistogramName(column="sum_worktime_hour", x_axis_label="総作業時間[hour]", title="総作業時間"),
+        ]
+
+        histograms = []
+        for histogram_name in histogram_name_list:
+            filtered_df = df[df[histogram_name.column].notnull()]
+            hist = self._create_histogram(filtered_df, histogram_name=histogram_name)
+            histograms.append(hist)
+
+        # 自動受入したタスクを除外して、受入時間をグラフ化する
+        filtered_df = df[df["acceptance_worktime_hour"].notnull()]
+        histograms.append(
+            self._create_histogram(
+                filtered_df[~ filtered_df["acceptance_is_skipped"]],
+                histogram_name=HistogramName(
+                    column="acceptance_worktime_hour",
+                    x_axis_label="受入時間[hour]",
+                    title="受入時間(自動受入されたタスクを除外)",
+                ),
+            ))
+
+        # 軸範囲が同期しないようにする
+        layout = hv.Layout(histograms).options(shared_axes=False).cols(3)
+        renderer.save(layout, f"{self.outdir}/html/{self.short_project_id}-ヒストグラム-作業時間")
+
+
+    def write_histogram_for_other(self, df: pd.DataFrame):
+        """
+        アノテーション数や、検査コメント数など、作業時間以外の情報をヒストグラムで表示する。
+
+        Args:
+            df: タスク一覧のDataFrame
+
+        """
+        if len(df) == 0:
+            logger.info("タスク一覧が0件のため出力しない")
+            return
+
+        renderer = hv.renderer("bokeh")
+
+        histogram_name_list = [
+            HistogramName(column="annotation_count", x_axis_label="アノテーション数", title="アノテーション数"),
+            HistogramName(column="input_data_count", x_axis_label="画像枚数", title="画像枚数"),
             HistogramName(column="inspection_count", x_axis_label="検査コメント数", title="検査コメント数"),
             HistogramName(
                 column="input_data_count_of_inspection",
                 x_axis_label="指摘を受けた画像枚数",
                 title="指摘を受けた画像枚数",
             ),
-            # 経過時間
+
+            # 経過日数
             HistogramName(
                 column="diff_days_to_first_inspection_started",
                 x_axis_label="最初の検査を着手するまでの日数",
@@ -257,21 +298,9 @@ class Graph:
             hist = self._create_histogram(filtered_df, histogram_name=histogram_name)
             histograms.append(hist)
 
-        # 自動受入したタスクを除外して、受入時間をグラフ化する
-        filtered_df = df[df["acceptance_worktime_hour"].notnull()]
-        histograms.append(
-            self._create_histogram(
-                filtered_df[~ filtered_df["acceptance_is_skipped"]],
-                histogram_name=HistogramName(
-                    column="acceptance_worktime_hour",
-                    x_axis_label="受入時間[hour]",
-                    title="受入時間(自動受入タスクを除外)",
-                ),
-            ))
-
         # 軸範囲が同期しないようにする
         layout = hv.Layout(histograms).options(shared_axes=False).cols(3)
-        renderer.save(layout, f"{self.outdir}/html/{self.short_project_id}-ヒストグラム-プロジェクト全体")
+        renderer.save(layout, f"{self.outdir}/html/{self.short_project_id}-ヒストグラム")
 
     def wirte_ラベルごとのアノテーション数(self, df: pd.DataFrame):
         """
