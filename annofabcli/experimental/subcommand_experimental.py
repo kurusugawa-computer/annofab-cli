@@ -2,7 +2,7 @@ import argparse
 
 import annofabcli
 import annofabcli.common.cli
-from annofabcli.experimental import list_labor_worktime, found_break_error
+from annofabcli.experimental import list_labor_worktime, find_break_error
 
 
 def parse_args(parser: argparse.ArgumentParser):
@@ -10,7 +10,7 @@ def parse_args(parser: argparse.ArgumentParser):
 
     # サブコマンドの定義
     list_labor_worktime.add_parser(subparsers)  # type: ignore
-    found_break_error.add_parser(subparsers)  # type: ignore
+    find_break_error.add_parser(subparsers)  # type: ignore
 
 
 def add_parser(subparsers: argparse._SubParsersAction):

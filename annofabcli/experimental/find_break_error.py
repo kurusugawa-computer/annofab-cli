@@ -29,7 +29,7 @@ TASK_STATUS = {
 }
 
 
-class FoundBreakError(AbstractCommandLineInterface):
+class FindBreakError(AbstractCommandLineInterface):
 
     def __init__(self, service: annofabapi.Resource, facade: AnnofabApiFacade, args: argparse.Namespace):
         super().__init__(service, facade, args)
@@ -155,7 +155,7 @@ class FoundBreakError(AbstractCommandLineInterface):
 def main(args):
     service = build_annofabapi_resource_and_login()
     facade = AnnofabApiFacade(service)
-    FoundBreakError(service, facade, args).main()
+    FindBreakError(service, facade, args).main()
 
 
 def parse_args(parser: argparse.ArgumentParser):
