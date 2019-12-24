@@ -200,6 +200,21 @@ class Graph:
                 x_axis_label="1回目の受入時間[hour]",
                 title="1回目の受入時間",
             ),
+            HistogramName(
+                column="first_annotator_worktime_hour",
+                x_axis_label="1回目の教師付者の作業時間[hour]",
+                title="1回目の教師付者の作業時間",
+            ),
+            HistogramName(
+                column="first_inspector_worktime_hour",
+                x_axis_label="1回目の検査者の作業時間[hour]",
+                title="1回目の検査者の作業時間",
+            ),
+            HistogramName(
+                column="first_acceptor_worktime_hour",
+                x_axis_label="1回目の受入者の作業時間[hour]",
+                title="1回目の受入者の作業時間",
+            ),
             HistogramName(column="inspection_count", x_axis_label="検査コメント数", title="検査コメント数"),
             HistogramName(
                 column="input_data_count_of_inspection",

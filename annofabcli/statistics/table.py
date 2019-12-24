@@ -6,8 +6,6 @@ from typing import (
     Dict,
     List,
     Optional,
-    Set,
-    Tuple,
 )
 
 import dateutil
@@ -433,6 +431,8 @@ class Table:
             ]
         )
 
+        # 最初の教師者が担当した履歴の合計作業時間を取得する。
+        # 担当者変更がなければ、"annotation_worktime_hour"と"first_annotation_worktime_hour"は同じ値
         task["first_annotator_worktime_hour"] = (
             sum([e for e in annotation_histories if e["account_id"] == first_annotation_history["account_id"]])
             if first_annotation_history is not None
