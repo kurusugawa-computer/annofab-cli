@@ -118,15 +118,29 @@ class Tsv:
             "started_datetime",
             "updated_datetime",
             "sampling",
-            # 最初のアノテーション作業に関すること
+            # 1回目の教師付フェーズ
             "first_annotation_user_id",
             "first_annotation_worktime_hour",
             "first_annotation_started_datetime",
+            # 1回目の検査フェーズ
+            "first_inspection_user_id",
+            "first_inspection_worktime_hour",
+            "first_inspection_started_datetime",
+            # 1回目の受入フェーズ
+            "first_acceptance_user_id",
+            "first_acceptance_worktime_hour",
+            "first_acceptance_started_datetime",
             # 作業時間に関する内容
             "sum_worktime_hour",
             "annotation_worktime_hour",
             "inspection_worktime_hour",
             "acceptance_worktime_hour",
+            "first_annotation_worktime_hour",
+            "first_inspection_worktime_hour",
+            "first_acceptance_worktime_hour",
+            "first_annotator_worktime_hour",
+            "first_inspector_worktime_hour",
+            "first_acceptor_worktime_hour",
             # 個数
             "input_data_count",
             "annotation_count",
