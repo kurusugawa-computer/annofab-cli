@@ -245,11 +245,11 @@ class Graph:
         filtered_df = df[df["acceptance_worktime_hour"].notnull()]
         histograms.append(
             self._create_histogram(
-                filtered_df[not filtered_df["acceptance_is_skipped"]],
+                filtered_df[~ filtered_df["acceptance_is_skipped"]],
                 histogram_name=HistogramName(
                     column="acceptance_worktime_hour",
                     x_axis_label="受入時間[hour]",
-                    title="受入時間（自動受入されたタスクを除外）",
+                    title="受入時間(自動受入タスクを除外)",
                 ),
             ))
 
