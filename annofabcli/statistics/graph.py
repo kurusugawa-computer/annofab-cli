@@ -149,7 +149,7 @@ class Graph:
             (edges, frequencies),
             kdims=histogram_name.x_axis_label,
             vdims=histogram_name.y_axis_label,
-        ).options(width=500, title=title, fontsize={"title": 10})
+        ).options(width=500, title=title, fontsize={"title": 9})
         return hist
 
 
