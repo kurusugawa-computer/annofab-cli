@@ -372,6 +372,26 @@ class Table:
 
         return task
 
+    def _get_first_operator_worktime(self, task_histories: List[TaskHistory], account_id: str) -> float:
+        """
+        対象ユーザが担当したフェーズの合計作業時間を取得する。
+
+        Args:
+            task_histories:
+            account_id: 対象】ユーザのaccount_id
+
+        Returns:
+            作業時間
+
+        """
+        return sum(
+            [
+                isoduration_to_hour(e["accumulated_labor_time_milliseconds"])
+                for e in task_histories
+                if e["account_id"] == account_id
+            ]
+        )
+
     def set_task_histories(self, task: Task, task_histories: List[TaskHistory]):
         """
         タスク履歴関係の情報を設定する
@@ -434,17 +454,18 @@ class Table:
         # 最初の教師者が担当した履歴の合計作業時間を取得する。
         # 担当者変更がなければ、"annotation_worktime_hour"と"first_annotation_worktime_hour"は同じ値
         task["first_annotator_worktime_hour"] = (
-            sum([e for e in annotation_histories if e["account_id"] == first_annotation_history["account_id"]])
+            self._get_first_operator_worktime(annotation_histories, first_annotation_history["account_id"])
             if first_annotation_history is not None
             else 0
         )
+
         task["first_inspector_worktime_hour"] = (
-            sum([e for e in inspection_histories if e["account_id"] == first_inspection_history["account_id"]])
+            self._get_first_operator_worktime(inspection_histories, first_inspection_history["account_id"])
             if first_inspection_history is not None
             else 0
         )
         task["first_acceptor_worktime_hour"] = (
-            sum([e for e in acceptance_histories if e["account_id"] == first_acceptance_history["account_id"]])
+            self._get_first_operator_worktime(acceptance_histories, first_acceptance_history["account_id"])
             if first_acceptance_history is not None
             else 0
         )
