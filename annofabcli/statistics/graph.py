@@ -1,3 +1,4 @@
+# pylint: disable=too-many-lines
 import logging
 from dataclasses import dataclass
 from pathlib import Path
@@ -125,7 +126,8 @@ class Graph:
             legend = fig.legend[0]
             fig.add_layout(legend, "left")
 
-    def _create_histogram(self, df: pd.DataFrame, histogram_name: HistogramName, bins: int = 20) -> hv.Histogram:
+    @staticmethod
+    def _create_histogram(df: pd.DataFrame, histogram_name: HistogramName, bins: int = 20) -> hv.Histogram:
         """
         ヒストグラムを生成する。
         Args:

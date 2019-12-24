@@ -372,7 +372,8 @@ class Table:
 
         return task
 
-    def _get_first_operator_worktime(self, task_histories: List[TaskHistory], account_id: str) -> float:
+    @staticmethod
+    def _get_first_operator_worktime(task_histories: List[TaskHistory], account_id: str) -> float:
         """
         対象ユーザが担当したフェーズの合計作業時間を取得する。
 
