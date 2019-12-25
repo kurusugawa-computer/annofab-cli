@@ -1,16 +1,13 @@
-# flake8: noqa
-#  type: ignore
-# pylint: skip-file
 import argparse
 import datetime
 import json
 import logging
-import tempfile
 from typing import Any, Dict, List, Optional, Tuple  # pylint: disable=unused-import
 
 import annofabapi
 import dateutil.parser
 import requests
+
 import annofabcli
 import annofabcli.common.cli
 from annofabcli import AnnofabApiFacade
@@ -19,16 +16,8 @@ from annofabcli.common.utils import read_lines_except_blank_line
 
 logger = logging.getLogger(__name__)
 
-TASK_STATUS = {
-    "not_started": "未着手",
-    "working": "作業中",  # 誰かが実際にエディタ上で作業している状態。
-    "on_hold": "保留,",  # 作業ルールの確認などで作業できない状態。
-    "break": "休憩中",
-    "complete": "完了",  # 次のフェーズへ進む
-    "rejected": "差戻し",  # 修正のため、annotationフェーズへ戻る。
-    "cancelled": "提出取消し"  # 修正のため、前フェーズへ戻る。
-}
-def download_content(url: str)->Any:
+
+def download_content(url: str) -> Any:
     """
     HTTP GETで取得した内容を保存せずそのまま返す
 
@@ -38,6 +27,21 @@ def download_content(url: str)->Any:
     response = requests.get(url)
     annofabapi.utils.raise_for_status(response)
     return response.content
+
+
+def get_err_history_events(task_list: List[str], task_history_events: List[Dict[str, Any]]) \
+        -> Dict[str, List[Dict[str, Any]]]:
+    """
+    しきい値以上のタスクリストのtask_idが含まれるhistory_eventsを返す
+    """
+    err_history_events_dict: Dict[str, List[Dict[str, Any]]] = {}
+    for task_history_event in task_history_events:
+        if task_history_event["task_id"] in task_list:
+            if task_history_event["task_id"] in err_history_events_dict:
+                err_history_events_dict[task_history_event["task_id"]].append(task_history_event)
+            else:
+                err_history_events_dict[task_history_event["task_id"]] = [task_history_event]
+    return err_history_events_dict
 
 
 class FindBreakError(AbstractCommandLineInterface):
@@ -67,26 +71,30 @@ class FindBreakError(AbstractCommandLineInterface):
         tasks = self.service.wrapper.get_all_tasks(project_id, query_params=task_query)
         return tasks
 
-    def _project_task_history_events(self, project_id: str, import_file_path: Optional[str] = None):
+    def _project_task_history_events(self, project_id: str, import_file_path: Optional[str] = None) \
+            -> List[Dict[str, Any]]:
         """
         タスク履歴イベント全件ファイルを取得する。
-        import_fileがNone:history_events_urlを取得してパスから読み込む
-        import_fileがNoneではない:import_fileで指定されたパスへ一旦保存し、読み込む
+        import_fileがNone:history_events_urlパスから直接読み込む
+        import_fileがNoneではない:import_fileで指定されたファイルから読み込む
         """
+        project_task_history_events: List[Dict[str, Any]] = []
         if import_file_path is None:
-            content, _ = self.service.wrapper.api.get_project_task_history_events_url(project_id=project_id)
-            url = content["url"]
             try:
+                content, _ = self.service.wrapper.api.get_project_task_history_events_url(project_id=project_id)
+                url = content["url"]
                 history_events = download_content(url)
                 project_task_history_events = json.loads(history_events)
-            except:
+            except NameError:
                 logger.warning(f"history_events_urlを読み込めませんでした。")
+            except requests.exceptions.HTTPError:
+                logger.warning(f"history_eventsをurlから読み込めませんでした。")
         else:
             try:
                 history_events = read_lines_except_blank_line(import_file_path)
                 project_task_history_events = json.loads(history_events[0])
-            except:
-                logger.warning(f"ファイル '{import_file_path}' は読み込めませんでした。")
+            except FileNotFoundError:
+                logger.warning(f"ファイル '{import_file_path}' は存在しません。")
 
         return project_task_history_events
 
@@ -96,26 +104,12 @@ class FindBreakError(AbstractCommandLineInterface):
         """
         return [task["task_id"] for task in tasks if task["work_time_span"] > (self.args.task_time_threshold * 60000)]
 
-    def get_err_history_events(self, task_list: List[str], task_history_events: List[Dict[str, Any]]) -> Dict[
-        str, List[Dict[str, Any]]]:
-        """
-        しきい値以上のタスクリストのtask_idが含まれるhistory_eventsを返す
-        """
-        err_history_events_dict = {}
-        for task_history_event in task_history_events:
-            if task_history_event["task_id"] in task_list:
-                if task_history_event["task_id"] in err_history_events_dict:
-                    err_history_events_dict[task_history_event["task_id"]].append(task_history_event)
-                else:
-                    err_history_events_dict[task_history_event["task_id"]] = [task_history_event]
-        return err_history_events_dict
-
     def get_err_events(self, err_history_events: Dict[str, List[Dict[str, Any]]]):
         """
         しきい値以上の作業時間になっている開始と終了のhistory_eventsのペアを返す
         """
         err_events_list = []
-        for k, v in err_history_events.items():
+        for v in err_history_events.values():
             v.sort(key=lambda x: x["created_datetime"])
             for i, history_events in enumerate(v):
                 if history_events["status"] == "working":
@@ -148,7 +142,8 @@ class FindBreakError(AbstractCommandLineInterface):
             end_time = dateutil.parser.parse(end_data["created_datetime"]).strftime('%Y/%m/%d %H:%M:%S')
             working_time = _timedelta_to_HM(dateutil.parser.parse(end_data["created_datetime"]) - dateutil.parser.parse(
                 start_data["created_datetime"]))
-            output_lines.append(",".join([task_id, phase, username, start_time, end_time, working_time]))
+            output_lines.append(
+                ",".join([task_id, phase, "" if username is None else username, start_time, end_time, working_time]))
         annofabcli.utils.output_string("\n".join(output_lines), output)
 
     def main(self):
@@ -177,7 +172,7 @@ def parse_args(parser: argparse.ArgumentParser):
     parser.add_argument('--task_history_time_threshold', type=int, default=300,
                         help="1履歴何分以上を検知対象とするか。指定しない場合は300分(5時間)")
     parser.add_argument('--import_file_path', type=str, default=None,
-                        help="importするタスク履歴イベント全件ファイル")
+                        help="importするタスク履歴イベント全件ファイル,指定しない場合はタスク履歴イベント全件を新規取得する")
 
     argument_parser.add_output()
     argument_parser.add_project_id()
