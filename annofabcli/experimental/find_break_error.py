@@ -133,19 +133,35 @@ class FindBreakError(AbstractCommandLineInterface):
             sec = td.total_seconds()
             return str(round(sec // 3600)) + "時間" + str(round(sec % 3600 // 60)) + "分"
 
-        dict_list = []
-        for start_data, end_data in err_events_list:
-            task_id = start_data["task_id"]
-            phase = str(start_data["phase"])
+        data_list = []
+        for i, data in enumerate(err_events_list):
+            start_data, end_data = data
             username = self._get_username(start_data["account_id"])
-            start_time = start_data["created_datetime"]
-            end_time = end_data["created_datetime"]
-            working_time = _timedelta_to_HM(dateutil.parser.parse(end_data["created_datetime"]) - dateutil.parser.parse(
-                start_data["created_datetime"]))
-            dict_list.append({"task_id": task_id, "phase": phase, "username": "" if username is None else username,
-                              "start_time": start_time, "end_time": end_time, "working_time": working_time})
+            start_data["user_name"] = "" if username is None else username
+            end_data["user_name"] = "" if username is None else username
+            start_time = dateutil.parser.parse(start_data["created_datetime"])
+            end_time = dateutil.parser.parse(end_data["created_datetime"])
+            start_data["datetime"] = start_time.isoformat()
+            end_data["datetime"] = end_time.isoformat()
+            start_data["working_time"] = ""
+            end_data["working_time"] = \
+                _timedelta_to_HM(end_time - start_time)
 
-        annofabcli.utils.print_csv(pd.DataFrame(dict_list), output=output)
+            df = pd.DataFrame([start_data, end_data])
+            df["no"] = i + 1
+
+            del df["project_id"]
+            del df["phase_stage"]
+            del df["account_id"]
+            del df["created_datetime"]
+            data_list.append(df)
+
+        pd_data = pd.concat(data_list)
+        pd_data.set_index(["no", "task_id"])
+
+        annofabcli.utils.print_csv(
+            pd_data[["no", "task_id", "user_name", "phase", "status", "datetime", "task_history_id", "working_time"]],
+            output=output)
 
     def main(self):
         args = self.args
