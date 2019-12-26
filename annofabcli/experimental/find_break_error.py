@@ -6,6 +6,7 @@ from typing import Any, Dict, List, Optional, Tuple  # pylint: disable=unused-im
 
 import annofabapi
 import dateutil.parser
+import pandas as pd
 import requests
 
 import annofabcli
@@ -64,7 +65,7 @@ class FindBreakError(AbstractCommandLineInterface):
         else:
             return account_id
 
-    def _get_all_tasks(self, project_id: str, task_query: str = None) -> List[Dict[str, Any]]:
+    def _get_all_tasks(self, project_id: str, task_query: Optional[Dict[str, Any]] = None) -> List[Dict[str, Any]]:
         """
         task一覧を取得する
         """
@@ -130,21 +131,21 @@ class FindBreakError(AbstractCommandLineInterface):
 
         def _timedelta_to_HM(td: datetime.timedelta):
             sec = td.total_seconds()
-            return str(sec // 3600) + "時間" + str(sec % 3600 // 60) + "分"
+            return str(round(sec // 3600)) + "時間" + str(round(sec % 3600 // 60)) + "分"
 
-        output_lines: List[str] = []
-        output_lines.append(f"task_id,フェーズ,担当者,開始日時,完了日時,実作業時間")
+        dict_list = []
         for start_data, end_data in err_events_list:
             task_id = start_data["task_id"]
             phase = str(start_data["phase"])
             username = self._get_username(start_data["account_id"])
-            start_time = dateutil.parser.parse(start_data["created_datetime"]).strftime('%Y/%m/%d %H:%M:%S')
-            end_time = dateutil.parser.parse(end_data["created_datetime"]).strftime('%Y/%m/%d %H:%M:%S')
+            start_time = start_data["created_datetime"]
+            end_time = end_data["created_datetime"]
             working_time = _timedelta_to_HM(dateutil.parser.parse(end_data["created_datetime"]) - dateutil.parser.parse(
                 start_data["created_datetime"]))
-            output_lines.append(
-                ",".join([task_id, phase, "" if username is None else username, start_time, end_time, working_time]))
-        annofabcli.utils.output_string("\n".join(output_lines), output)
+            dict_list.append({"task_id": task_id, "phase": phase, "username": "" if username is None else username,
+                              "start_time": start_time, "end_time": end_time, "working_time": working_time})
+
+        annofabcli.utils.print_csv(pd.DataFrame(dict_list), output=output)
 
     def main(self):
         args = self.args
@@ -152,8 +153,8 @@ class FindBreakError(AbstractCommandLineInterface):
         task_history_events = self._project_task_history_events(project_id=args.project_id,
                                                                 import_file_path=args.import_file_path)
         err_task_list = self.found_err_task(tasks)
-        err_history_events = self.get_err_history_events(task_list=err_task_list,
-                                                         task_history_events=task_history_events)
+        err_history_events = get_err_history_events(task_list=err_task_list,
+                                                    task_history_events=task_history_events)
         err_events = self.get_err_events(err_history_events=err_history_events)
         self.output_err_events(err_events_list=err_events, output=self.output)
 
