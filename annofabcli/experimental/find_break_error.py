@@ -161,7 +161,8 @@ class FindBreakError(AbstractCommandLineInterface):
 
         annofabcli.utils.print_csv(
             pd_data[["no", "task_id", "user_name", "phase", "status", "datetime", "task_history_id", "working_time"]],
-            output=output)
+            output=output,
+            to_csv_kwargs={"index": False})
 
     def main(self):
         args = self.args
