@@ -46,8 +46,13 @@ def build_annofabapi_resource_and_login() -> annofabapi.Resource:
         raise e
 
 
-def add_parser(subparsers: argparse._SubParsersAction, subcommand_name: str, subcommand_help: str, description: str,
-               epilog: Optional[str] = None) -> argparse.ArgumentParser:
+def add_parser(
+    subparsers: argparse._SubParsersAction,
+    subcommand_name: str,
+    subcommand_help: str,
+    description: str,
+    epilog: Optional[str] = None,
+) -> argparse.ArgumentParser:
     """
     サブコマンド用にparserを追加する
 
@@ -62,8 +67,9 @@ def add_parser(subparsers: argparse._SubParsersAction, subcommand_name: str, sub
         サブコマンドのparser
 
     """
-    parser = subparsers.add_parser(subcommand_name, parents=[create_parent_parser()], description=description,
-                                   help=subcommand_help, epilog=epilog)
+    parser = subparsers.add_parser(
+        subcommand_name, parents=[create_parent_parser()], description=description, help=subcommand_help, epilog=epilog
+    )
     parser.set_defaults(command_help=parser.print_help)
     return parser
 
@@ -75,17 +81,21 @@ def create_parent_parser() -> argparse.ArgumentParser:
     parent_parser = argparse.ArgumentParser(add_help=False)
     group = parent_parser.add_argument_group("global optional arguments")
 
-    group.add_argument('--yes', action="store_true", help="処理中に現れる問い合わせに対して、常に'yes'と回答します。")
-
-    group.add_argument('--logdir', type=str, default=".log",
-                       help="ログファイルを保存するディレクトリを指定します。指定しない場合は`.log`ディレクトリ'にログファイルが保存されます。")
-
-    group.add_argument('--disable_log', action="store_true", help="ログを無効にします。")
+    group.add_argument("--yes", action="store_true", help="処理中に現れる問い合わせに対して、常に'yes'と回答します。")
 
     group.add_argument(
-        "--logging_yaml", type=str, help="ロギグングの設定ファイル(YAML)を指定します。指定した場合、`--logdir`オプションは無視されます。"
+        "--logdir", type=str, default=".log", help="ログファイルを保存するディレクトリを指定します。指定しない場合は`.log`ディレクトリ'にログファイルが保存されます。"
+    )
+
+    group.add_argument("--disable_log", action="store_true", help="ログを無効にします。")
+
+    group.add_argument(
+        "--logging_yaml",
+        type=str,
+        help="ロギグングの設定ファイル(YAML)を指定します。指定した場合、`--logdir`オプションは無視されます。"
         "指定しない場合、デフォルトのロギングが設定されます。"
-        "設定ファイルの書き方は https://docs.python.org/ja/3/howto/logging.html 参照してください。")
+        "設定ファイルの書き方は https://docs.python.org/ja/3/howto/logging.html 参照してください。",
+    )
     return parent_parser
 
 
@@ -209,10 +219,10 @@ def prompt_yesno(msg: str) -> bool:
     """
     while True:
         choice = input(f"{msg} [y/N] : ")
-        if choice == 'y':
+        if choice == "y":
             return True
 
-        elif choice == 'N':
+        elif choice == "N":
             return False
 
 
@@ -228,13 +238,13 @@ def prompt_yesnoall(msg: str) -> Tuple[bool, bool]:
     """
     while True:
         choice = input(f"{msg} [y/N/ALL] : ")
-        if choice == 'y':
+        if choice == "y":
             return True, False
 
-        elif choice == 'N':
+        elif choice == "N":
             return False, False
 
-        elif choice == 'ALL':
+        elif choice == "ALL":
             return True, True
 
 
@@ -242,6 +252,7 @@ class ArgumentParser:
     """
     共通のコマンドライン引数を追加するためのクラス
     """
+
     def __init__(self, parser: argparse.ArgumentParser):
         self.parser = parser
 
@@ -250,37 +261,38 @@ class ArgumentParser:
         '--project_id` 引数を追加
         """
         if help_message is None:
-            help_message = '対象のプロジェクトのproject_idを指定します。'
+            help_message = "対象のプロジェクトのproject_idを指定します。"
 
-        self.parser.add_argument('-p', '--project_id', type=str, required=True, help=help_message)
+        self.parser.add_argument("-p", "--project_id", type=str, required=True, help=help_message)
 
     def add_task_id(self, required: bool = True, help_message: Optional[str] = None):
         """
         '--task_id` 引数を追加
         """
         if help_message is None:
-            help_message = ('対象のタスクのtask_idを指定します。' '`file://`を先頭に付けると、task_idの一覧が記載されたファイルを指定できます。')
+            help_message = "対象のタスクのtask_idを指定します。" "`file://`を先頭に付けると、task_idの一覧が記載されたファイルを指定できます。"
 
-        self.parser.add_argument('-t', '--task_id', type=str, required=required, nargs='+', help=help_message)
+        self.parser.add_argument("-t", "--task_id", type=str, required=required, nargs="+", help=help_message)
 
     def add_input_data_id(self, required: bool = True, help_message: Optional[str] = None):
         """
         '--input_data_id` 引数を追加
         """
         if help_message is None:
-            help_message = ('対象の入力データのinput_data_idを指定します。' '`file://`を先頭に付けると、input_data_idの一覧が記載されたファイルを指定できます。')
+            help_message = "対象の入力データのinput_data_idを指定します。" "`file://`を先頭に付けると、input_data_idの一覧が記載されたファイルを指定できます。"
 
-        self.parser.add_argument('-i', '--input_data_id', type=str, required=required, nargs='+', help=help_message)
+        self.parser.add_argument("-i", "--input_data_id", type=str, required=required, nargs="+", help=help_message)
 
     def add_format(self, choices: List[FormatArgument], default: FormatArgument, help_message: Optional[str] = None):
         """
         '--format` 引数を追加
         """
         if help_message is None:
-            help_message = (f'出力フォーマットを指定します。指定しない場合は、{default.value} フォーマットになります。')
+            help_message = f"出力フォーマットを指定します。指定しない場合は、{default.value} フォーマットになります。"
 
-        self.parser.add_argument('-f', '--format', type=str, choices=[e.value for e in choices], default=default.value,
-                                 help=help_message)
+        self.parser.add_argument(
+            "-f", "--format", type=str, choices=[e.value for e in choices], default=default.value, help=help_message
+        )
 
     def add_csv_format(self, help_message: Optional[str] = None):
         """
@@ -288,30 +300,30 @@ class ArgumentParser:
         """
         if help_message is None:
             help_message = (
-                'CSVのフォーマットをJSON形式で指定します。`--format`が`csv`でないときは、このオプションは無視されます。'
-                '`file://`を先頭に付けると、JSON形式のファイルを指定できます。'
-                '指定した値は、[pandas.DataFrame.to_csv](https://pandas.pydata.org/pandas-docs/stable/reference/api/pandas.DataFrame.to_csv.html) の引数として渡されます。'  # noqa: E501
+                "CSVのフォーマットをJSON形式で指定します。`--format`が`csv`でないときは、このオプションは無視されます。"
+                "`file://`を先頭に付けると、JSON形式のファイルを指定できます。"
+                "指定した値は、[pandas.DataFrame.to_csv](https://pandas.pydata.org/pandas-docs/stable/reference/api/pandas.DataFrame.to_csv.html) の引数として渡されます。"  # noqa: E501
             )
 
-        self.parser.add_argument('--csv_format', type=str, help=help_message)
+        self.parser.add_argument("--csv_format", type=str, help=help_message)
 
     def add_output(self, required: bool = False, help_message: Optional[str] = None):
         """
         '--output` 引数を追加
         """
         if help_message is None:
-            help_message = '出力先のファイルパスを指定します。指定しない場合は、標準出力に出力されます。'
+            help_message = "出力先のファイルパスを指定します。指定しない場合は、標準出力に出力されます。"
 
-        self.parser.add_argument('-o', '--output', type=str, required=required, help=help_message)
+        self.parser.add_argument("-o", "--output", type=str, required=required, help=help_message)
 
     def add_query(self, help_message: Optional[str] = None):
         """
         '--query` 引数を追加
         """
         if help_message is None:
-            help_message = 'JMESPath形式で指定します。出力結果の抽出や、出力内容の変更に利用できます。'
+            help_message = "JMESPath形式で指定します。出力結果の抽出や、出力内容の変更に利用できます。"
 
-        self.parser.add_argument('-q', '--query', type=str, help=help_message)
+        self.parser.add_argument("-q", "--query", type=str, help=help_message)
 
 
 class AbstractCommandLineInterface(abc.ABC):
@@ -356,22 +368,26 @@ class AbstractCommandLineInterface(abc.ABC):
             load_logging_config_from_args(args)
 
         self.all_yes = args.yes
-        if hasattr(args, 'query'):
+        if hasattr(args, "query"):
             self.query = args.query
 
-        if hasattr(args, 'csv_format'):
+        if hasattr(args, "csv_format"):
             self.csv_format = annofabcli.common.cli.get_csv_format_from_args(args.csv_format)
 
-        if hasattr(args, 'output'):
+        if hasattr(args, "output"):
             self.output = args.output
 
-        if hasattr(args, 'format'):
+        if hasattr(args, "format"):
             self.str_format = args.format
 
         logger.info(f"args: {args}")
 
-    def validate_project(self, project_id, project_member_roles: Optional[List[ProjectMemberRole]] = None,
-                         organization_member_roles: Optional[List[OrganizationMemberRole]] = None):
+    def validate_project(
+        self,
+        project_id,
+        project_member_roles: Optional[List[ProjectMemberRole]] = None,
+        organization_member_roles: Optional[List[OrganizationMemberRole]] = None,
+    ):
         """
         プロジェクト or 組織に対して、必要な権限が付与されているかを確認する。
         Args:
@@ -465,5 +481,6 @@ class AbstractCommandLineInterface(abc.ABC):
     def print_according_to_format(self, target: Any):
         target = self.search_with_jmespath_expression(target)
 
-        annofabcli.utils.print_according_to_format(target, arg_format=FormatArgument(self.str_format),
-                                                   output=self.output, csv_format=self.csv_format)
+        annofabcli.utils.print_according_to_format(
+            target, arg_format=FormatArgument(self.str_format), output=self.output, csv_format=self.csv_format
+        )

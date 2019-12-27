@@ -35,8 +35,8 @@ class RegisterAnnotation:
 
     # AnnofabAPI をカスタマイズ
     def get_annotations_for_editor(self, project_id: str, task_id: str, input_data_id: str):
-        url_path = f'/projects/{project_id}/tasks/{task_id}/inputs/{input_data_id}/annotation'
-        http_method = 'GET'
+        url_path = f"/projects/{project_id}/tasks/{task_id}/inputs/{input_data_id}/annotation"
+        http_method = "GET"
         keyword_params: Dict[str, Any] = {}
         return self.service.api._request_wrapper(http_method, url_path, **keyword_params)
 
@@ -56,8 +56,10 @@ class RegisterAnnotation:
             color = (255, 255, 255, 255)
             data_type = data["_type"]
             if data_type == "BoundingBox":
-                xy = [(data["left_top"]["x"], data["left_top"]["y"]),
-                      (data["right_bottom"]["x"], data["right_bottom"]["y"])]
+                xy = [
+                    (data["left_top"]["x"], data["left_top"]["y"]),
+                    (data["right_bottom"]["x"], data["right_bottom"]["y"]),
+                ]
                 draw.rectangle(xy, fill=color)
 
             elif data_type == "Points":
@@ -72,8 +74,15 @@ class RegisterAnnotation:
 
         return draw
 
-    def update_annotation_with_image(self, project_id: str, task_id: str, input_data_id: str,
-                                     image_file_list: List[Any], account_id: str, filter_details: FilterDetailsFunc):
+    def update_annotation_with_image(
+        self,
+        project_id: str,
+        task_id: str,
+        input_data_id: str,
+        image_file_list: List[Any],
+        account_id: str,
+        filter_details: FilterDetailsFunc,
+    ):
         """
         塗りつぶしアノテーションを登録する。他のアノテーションが変更されないようにする。
         アノテーションを登録できる状態であること
@@ -127,13 +136,19 @@ class RegisterAnnotation:
             "task_id": task_id,
             "input_data_id": input_data_id,
             "details": details,
-            "updated_datetime": old_annotations["updated_datetime"]
+            "updated_datetime": old_annotations["updated_datetime"],
         }
 
         return self.service.api.put_annotation(project_id, task_id, input_data_id, request_body=request_body)[0]
 
-    def write_segmentation_image(self, input_data: Dict[str, Any], label: str, label_id: str, tmp_image_path: Path,
-                                 input_data_size: InputDataSize):
+    def write_segmentation_image(
+        self,
+        input_data: Dict[str, Any],
+        label: str,
+        label_id: str,
+        tmp_image_path: Path,
+        input_data_size: InputDataSize,
+    ):
 
         image = PIL.Image.new(mode="RGBA", size=input_data_size, color=(0, 0, 0, 0))
         draw = PIL.ImageDraw.Draw(image)
@@ -141,8 +156,10 @@ class RegisterAnnotation:
         # labelで絞り込み
         annotation_list = [e for e in input_data["detail"] if e["label_id"] == label_id]
         if len(annotation_list) == 0:
-            logger.info(f"{input_data['task_id']}, {input_data['input_data_id']} に "
-                        f"label:{label}, label_id:{label_id} のアノテーションがない")
+            logger.info(
+                f"{input_data['task_id']}, {input_data['input_data_id']} に "
+                f"label:{label}, label_id:{label_id} のアノテーションがない"
+            )
             return False
 
         # アノテーションを描画する
@@ -153,8 +170,13 @@ class RegisterAnnotation:
         logger.info(f"{str(tmp_image_path)} の生成完了")
         return True
 
-    def write_segmentation_image_for_labels(self, labels: List[Dict[str, str]], input_data: Dict[str, Any],
-                                            default_input_data_size: InputDataSize, tmp_image_dir: Path):
+    def write_segmentation_image_for_labels(
+        self,
+        labels: List[Dict[str, str]],
+        input_data: Dict[str, Any],
+        default_input_data_size: InputDataSize,
+        tmp_image_dir: Path,
+    ):
         """
         ラベルごとに、セマンティック画像ファイルを出力する。
         Args:
@@ -174,18 +196,29 @@ class RegisterAnnotation:
 
             tmp_image_path = tmp_image_dir / f"{label}.png"
 
-            result = self.write_segmentation_image(input_data=input_data, label=label, label_id=label_id,
-                                                   tmp_image_path=tmp_image_path,
-                                                   input_data_size=default_input_data_size)
+            result = self.write_segmentation_image(
+                input_data=input_data,
+                label=label,
+                label_id=label_id,
+                tmp_image_path=tmp_image_path,
+                input_data_size=default_input_data_size,
+            )
 
             if result:
                 image_file_list.append({"path": str(tmp_image_path), "label_id": label_id})
 
         return image_file_list
 
-    def register_raster_annotation_from_polygon(self, annotation_dir: str, default_input_data_size: InputDataSize,
-                                                tmp_dir: str, labels: List[Dict[str, str]], project_id: str,
-                                                task_id_list: List[str], filter_details: FilterDetailsFunc):
+    def register_raster_annotation_from_polygon(
+        self,
+        annotation_dir: str,
+        default_input_data_size: InputDataSize,
+        tmp_dir: str,
+        labels: List[Dict[str, str]],
+        project_id: str,
+        task_id_list: List[str],
+        filter_details: FilterDetailsFunc,
+    ):
         annotation_dir_path = Path(annotation_dir)
         tmp_dir_path = Path(tmp_dir)
 
@@ -207,8 +240,9 @@ class RegisterAnnotation:
 
                 tmp_image_dir = tmp_dir_path / task_dir.name / input_data_json_path.stem
                 try:
-                    image_file_list = self.write_segmentation_image_for_labels(labels, input_data,
-                                                                               default_input_data_size, tmp_image_dir)
+                    image_file_list = self.write_segmentation_image_for_labels(
+                        labels, input_data, default_input_data_size, tmp_image_dir
+                    )
 
                 except Exception as e:
                     logger.exception(e)
@@ -233,8 +267,14 @@ class RegisterAnnotation:
 
                 try:
                     # アノテーションの登録
-                    self.update_annotation_with_image(project_id, task_id, input_data_id, account_id=account_id,
-                                                      image_file_list=image_file_list, filter_details=filter_details)
+                    self.update_annotation_with_image(
+                        project_id,
+                        task_id,
+                        input_data_id,
+                        account_id=account_id,
+                        image_file_list=image_file_list,
+                        filter_details=filter_details,
+                    )
 
                     self.facade.change_to_break_phase(project_id, task_id, account_id)
 
@@ -274,38 +314,40 @@ class RegisterAnnotation:
                 # vehicle
                 "030bc859-4933-4bec-baa0-18fc80fb1eea",
                 # motorcycle
-                "4bc53fa5-bb2e-44a5-adb2-04c76d87bfde"
+                "4bc53fa5-bb2e-44a5-adb2-04c76d87bfde",
             ]
             label_id = annotation["label_id"]
             # 除外するlabel_idにマッチしたらFalse
             return label_id not in exclude_label_ids
 
-        labels = [{
-            "label": "vehicle",
-            "label_id": "030bc859-4933-4bec-baa0-18fc80fb1eea"
-        }, {
-            "label": "motorcycle",
-            "label_id": "4bc53fa5-bb2e-44a5-adb2-04c76d87bfde"
-        }]
+        labels = [
+            {"label": "vehicle", "label_id": "030bc859-4933-4bec-baa0-18fc80fb1eea"},
+            {"label": "motorcycle", "label_id": "4bc53fa5-bb2e-44a5-adb2-04c76d87bfde"},
+        ]
 
         task_id_list = annofabcli.utils.read_lines_except_blank_line(args.task_id_file)
 
-        self.register_raster_annotation_from_polygon(annotation_dir=args.annotation_dir,
-                                                     default_input_data_size=default_input_data_size,
-                                                     tmp_dir=args.tmp_dir, labels=labels, project_id=args.project_id,
-                                                     filter_details=filter_details, task_id_list=task_id_list)
+        self.register_raster_annotation_from_polygon(
+            annotation_dir=args.annotation_dir,
+            default_input_data_size=default_input_data_size,
+            tmp_dir=args.tmp_dir,
+            labels=labels,
+            project_id=args.project_id,
+            filter_details=filter_details,
+            task_id_list=task_id_list,
+        )
 
 
 def parse_args(parser: argparse.ArgumentParser):
-    parser.add_argument('--annotation_dir', type=str, required=True, help='アノテーションFull zipを展開したディレクトリのパス')
+    parser.add_argument("--annotation_dir", type=str, required=True, help="アノテーションFull zipを展開したディレクトリのパス")
 
-    parser.add_argument('--input_data_size', type=str, required=True, help='入力データ画像のサイズ。{width}x{height}。ex. 1280x720')
+    parser.add_argument("--input_data_size", type=str, required=True, help="入力データ画像のサイズ。{width}x{height}。ex. 1280x720")
 
-    parser.add_argument('--tmp_dir', type=str, required=True, help='temporaryディレクトリのパス')
+    parser.add_argument("--tmp_dir", type=str, required=True, help="temporaryディレクトリのパス")
 
-    parser.add_argument('--project_id', type=str, required=True, help='塗りつぶしv2アノテーションを登録するプロジェクトのproject_id')
+    parser.add_argument("--project_id", type=str, required=True, help="塗りつぶしv2アノテーションを登録するプロジェクトのproject_id")
 
-    parser.add_argument('--task_id_file', type=str, required=True, help='task_idの一覧が記載されたファイル')
+    parser.add_argument("--task_id_file", type=str, required=True, help="task_idの一覧が記載されたファイル")
 
 
 def main(args):
@@ -316,8 +358,9 @@ def main(args):
 
 if __name__ == "__main__":
     global_parser = argparse.ArgumentParser(
-        description="deprecated: 矩形/ポリゴンアノテーションを、塗りつぶしv2アノテーションとして登録する。"
-        "注意：対象プロジェクトに合わせてスクリプトを修正すること。そのままでは実行できに。", parents=[annofabcli.common.cli.create_parent_parser()])
+        description="deprecated: 矩形/ポリゴンアノテーションを、塗りつぶしv2アノテーションとして登録する。" "注意：対象プロジェクトに合わせてスクリプトを修正すること。そのままでは実行できに。",
+        parents=[annofabcli.common.cli.create_parent_parser()],
+    )
 
     parse_args(global_parser)
 

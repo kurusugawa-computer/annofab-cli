@@ -66,10 +66,7 @@ class Graph:
 
         detail_tooltips = [(e, "@{%s}" % e) for e in tool_tip_items]
 
-        hover_tool = HoverTool(tooltips=[
-            ("index", "$index"),
-            ("(x,y)", "($x, $y)"),
-        ] + detail_tooltips)
+        hover_tool = HoverTool(tooltips=[("index", "$index"), ("(x,y)", "($x, $y)"),] + detail_tooltips)
         return hover_tool
 
     @staticmethod
@@ -99,13 +96,7 @@ class Graph:
             muted_color=color,
         )
         fig.circle(
-            x=x,
-            y=y,
-            source=source,
-            legend_label=username,
-            muted_alpha=0.0,
-            muted_color=color,
-            color=color,
+            x=x, y=y, source=source, legend_label=username, muted_alpha=0.0, muted_color=color, color=color,
         )
 
     @staticmethod
@@ -145,10 +136,11 @@ class Graph:
         data = df[histogram_name.column].values
 
         frequencies, edges = np.histogram(data, bins)
-        hist = hv.Histogram((edges, frequencies), kdims=histogram_name.x_axis_label,
-                            vdims=histogram_name.y_axis_label).options(width=500, title=title, fontsize={
-                                "title": 9
-                            }).opts(hv.opts(tools=["hover"]))
+        hist = (
+            hv.Histogram((edges, frequencies), kdims=histogram_name.x_axis_label, vdims=histogram_name.y_axis_label)
+            .options(width=500, title=title, fontsize={"title": 9})
+            .opts(hv.opts(tools=["hover"]))
+        )
         return hist
 
     def write_histogram_for_worktime(self, df: pd.DataFrame):
@@ -166,51 +158,21 @@ class Graph:
         renderer = hv.renderer("bokeh")
 
         histogram_name_list = [
+            HistogramName(column="annotation_worktime_hour", x_axis_label="教師付時間[hour]", title="教師付時間",),
+            HistogramName(column="inspection_worktime_hour", x_axis_label="検査時間[hour]", title="検査時間",),
+            HistogramName(column="acceptance_worktime_hour", x_axis_label="受入時間[hour]", title="受入時間",),
             HistogramName(
-                column="annotation_worktime_hour",
-                x_axis_label="教師付時間[hour]",
-                title="教師付時間",
+                column="first_annotator_worktime_hour", x_axis_label="1回目の教師付者の作業時間[hour]", title="1回目の教師付者の作業時間",
             ),
             HistogramName(
-                column="inspection_worktime_hour",
-                x_axis_label="検査時間[hour]",
-                title="検査時間",
+                column="first_inspector_worktime_hour", x_axis_label="1回目の検査者の作業時間[hour]", title="1回目の検査者の作業時間",
             ),
             HistogramName(
-                column="acceptance_worktime_hour",
-                x_axis_label="受入時間[hour]",
-                title="受入時間",
+                column="first_acceptor_worktime_hour", x_axis_label="1回目の受入者の作業時間[hour]", title="1回目の受入者の作業時間",
             ),
-            HistogramName(
-                column="first_annotator_worktime_hour",
-                x_axis_label="1回目の教師付者の作業時間[hour]",
-                title="1回目の教師付者の作業時間",
-            ),
-            HistogramName(
-                column="first_inspector_worktime_hour",
-                x_axis_label="1回目の検査者の作業時間[hour]",
-                title="1回目の検査者の作業時間",
-            ),
-            HistogramName(
-                column="first_acceptor_worktime_hour",
-                x_axis_label="1回目の受入者の作業時間[hour]",
-                title="1回目の受入者の作業時間",
-            ),
-            HistogramName(
-                column="first_annotation_worktime_hour",
-                x_axis_label="1回目の教師付時間[hour]",
-                title="1回目の教師付時間",
-            ),
-            HistogramName(
-                column="first_inspection_worktime_hour",
-                x_axis_label="1回目の検査時間[hour]",
-                title="1回目の検査時間",
-            ),
-            HistogramName(
-                column="first_acceptance_worktime_hour",
-                x_axis_label="1回目の受入時間[hour]",
-                title="1回目の受入時間",
-            ),
+            HistogramName(column="first_annotation_worktime_hour", x_axis_label="1回目の教師付時間[hour]", title="1回目の教師付時間",),
+            HistogramName(column="first_inspection_worktime_hour", x_axis_label="1回目の検査時間[hour]", title="1回目の検査時間",),
+            HistogramName(column="first_acceptance_worktime_hour", x_axis_label="1回目の受入時間[hour]", title="1回目の受入時間",),
             HistogramName(column="sum_worktime_hour", x_axis_label="総作業時間[hour]", title="総作業時間"),
         ]
 
@@ -226,11 +188,10 @@ class Graph:
             self._create_histogram(
                 filtered_df[~filtered_df["acceptance_is_skipped"]],
                 histogram_name=HistogramName(
-                    column="acceptance_worktime_hour",
-                    x_axis_label="受入時間[hour]",
-                    title="受入時間(自動受入されたタスクを除外)",
+                    column="acceptance_worktime_hour", x_axis_label="受入時間[hour]", title="受入時間(自動受入されたタスクを除外)",
                 ),
-            ))
+            )
+        )
 
         # 軸範囲が同期しないようにする
         layout = hv.Layout(histograms).options(shared_axes=False).cols(3)
@@ -254,38 +215,21 @@ class Graph:
             HistogramName(column="annotation_count", x_axis_label="アノテーション数", title="アノテーション数"),
             HistogramName(column="input_data_count", x_axis_label="画像枚数", title="画像枚数"),
             HistogramName(column="inspection_count", x_axis_label="検査コメント数", title="検査コメント数"),
-            HistogramName(
-                column="input_data_count_of_inspection",
-                x_axis_label="指摘を受けた画像枚数",
-                title="指摘を受けた画像枚数",
-            ),
-
+            HistogramName(column="input_data_count_of_inspection", x_axis_label="指摘を受けた画像枚数", title="指摘を受けた画像枚数",),
             # 経過日数
             HistogramName(
-                column="diff_days_to_first_inspection_started",
-                x_axis_label="最初の検査を着手するまでの日数",
-                title="最初の検査を着手するまでの日数",
+                column="diff_days_to_first_inspection_started", x_axis_label="最初の検査を着手するまでの日数", title="最初の検査を着手するまでの日数",
             ),
             HistogramName(
-                column="diff_days_to_first_acceptance_started",
-                x_axis_label="最初の受入を着手するまでの日数",
-                title="最初の受入を着手するまでの日数",
+                column="diff_days_to_first_acceptance_started", x_axis_label="最初の受入を着手するまでの日数", title="最初の受入を着手するまでの日数",
             ),
-            HistogramName(
-                column="diff_days_to_task_completed",
-                x_axis_label="受入完了状態になるまでの日数",
-                title="受入完了状態になるまでの日数",
-            ),
+            HistogramName(column="diff_days_to_task_completed", x_axis_label="受入完了状態になるまでの日数", title="受入完了状態になるまでの日数",),
             # 差し戻し回数
             HistogramName(
-                column="number_of_rejections_by_inspection",
-                x_axis_label="検査フェーズでの差し戻し回数",
-                title="検査フェーズでの差し戻し回数",
+                column="number_of_rejections_by_inspection", x_axis_label="検査フェーズでの差し戻し回数", title="検査フェーズでの差し戻し回数",
             ),
             HistogramName(
-                column="number_of_rejections_by_acceptance",
-                x_axis_label="受入フェーズでの差し戻し回数",
-                title="受入フェーズでの差し戻し回数",
+                column="number_of_rejections_by_acceptance", x_axis_label="受入フェーズでの差し戻し回数", title="受入フェーズでの差し戻し回数",
             ),
         ]
 
@@ -313,9 +257,10 @@ class Graph:
         label_columns = [e for e in df.columns if e.startswith("label_")]
 
         for column in label_columns:
-            label_name = column[len("label_"):]
-            histogram_name = HistogramName(column=column, x_axis_label=f"'{label_name}'のアノテーション数",
-                                           title=f"{label_name}")
+            label_name = column[len("label_") :]
+            histogram_name = HistogramName(
+                column=column, x_axis_label=f"'{label_name}'のアノテーション数", title=f"{label_name}"
+            )
             hist = self._create_histogram(df, histogram_name=histogram_name)
 
             histograms.append(hist)
@@ -325,10 +270,7 @@ class Graph:
         renderer.save(layout, f"{self.outdir}/html/{self.short_project_id}-ヒストグラム-ラベルごとのアノテーション数")
 
     def create_user_id_list(
-            self,
-            df: pd.DataFrame,
-            user_id_column: str,
-            arg_user_id_list: Optional[List[str]] = None,
+        self, df: pd.DataFrame, user_id_column: str, arg_user_id_list: Optional[List[str]] = None,
     ) -> List[str]:
         """
         グラフに表示するユーザのuser_idを生成する。
@@ -356,9 +298,7 @@ class Graph:
         return user_id_list[0:max_user_length]
 
     def write_productivity_line_graph_for_annotator(
-        self,
-        df: pd.DataFrame,
-        first_annotation_user_id_list: Optional[List[str]] = None,
+        self, df: pd.DataFrame, first_annotation_user_id_list: Optional[List[str]] = None,
     ):
         """
         生産性を教師付作業者ごとにプロットする。
@@ -370,6 +310,7 @@ class Graph:
         Returns:
 
         """
+
         def write_cumulative_graph(fig_info_list: List[Dict[str, str]], html_title: str):
             """
 
@@ -390,7 +331,8 @@ class Graph:
                         x_axis_label=fig_info["x_axis_label"],
                         x_axis_type="datetime",
                         y_axis_label=fig_info["y_axis_label"],
-                    ))
+                    )
+                )
 
             for user_index, user_id in enumerate(first_annotation_user_id_list):  # type: ignore
                 filtered_df = df[df["first_annotation_user_id"] == user_id]
@@ -404,12 +346,7 @@ class Graph:
 
                 for fig, fig_info in zip(figs, fig_info_list):
                     self._plot_line_and_circle(
-                        fig,
-                        x=fig_info["x"],
-                        y=fig_info["y"],
-                        source=source,
-                        username=username,
-                        color=color,
+                        fig, x=fig_info["x"], y=fig_info["y"], source=source, username=username, color=color,
                     )
 
             hover_tool = self._create_hover_tool(tooltip_item)
@@ -418,8 +355,7 @@ class Graph:
 
             bokeh.plotting.reset_output()
             bokeh.plotting.output_file(
-                f"{self.outdir}/html/{self.short_project_id}-{html_title}.html",
-                title=html_title,
+                f"{self.outdir}/html/{self.short_project_id}-{html_title}.html", title=html_title,
             )
             bokeh.plotting.save(bokeh.layouts.column(figs))
 
@@ -441,12 +377,14 @@ class Graph:
             logger.info("データが0件のため出力しない")
             return
 
-        first_annotation_user_id_list = self.create_user_id_list(df, "first_annotation_user_id",
-                                                                 first_annotation_user_id_list)
+        first_annotation_user_id_list = self.create_user_id_list(
+            df, "first_annotation_user_id", first_annotation_user_id_list
+        )
         logger.debug(f"グラフに表示するuser_id = {first_annotation_user_id_list}")
 
         df["date_first_annotation_started_date"] = df["first_annotation_started_date"].map(
-            lambda e: dateutil.parser.parse(e).date())
+            lambda e: dateutil.parser.parse(e).date()
+        )
 
         fig_info_list_annotation_count = [
             dict(
@@ -486,8 +424,7 @@ class Graph:
             ),
         ]
         write_cumulative_graph(
-            fig_info_list_annotation_count,
-            html_title="折れ線-横軸_教師付開始日-縦軸_アノテーションあたりの指標-教師付者用",
+            fig_info_list_annotation_count, html_title="折れ線-横軸_教師付開始日-縦軸_アノテーションあたりの指標-教師付者用",
         )
 
         fig_info_list_input_data_count = [
@@ -569,9 +506,7 @@ class Graph:
         write_cumulative_graph(fig_info_list_value, html_title="折れ線-横軸_教師付開始日-縦軸_指標-教師付者用")
 
     def write_cumulative_line_graph_for_annotator(
-        self,
-        df: pd.DataFrame,
-        first_annotation_user_id_list: Optional[List[str]] = None,
+        self, df: pd.DataFrame, first_annotation_user_id_list: Optional[List[str]] = None,
     ):
         """
         教師付作業者用の累積折れ線グラフを出力する。
@@ -583,6 +518,7 @@ class Graph:
         Returns:
 
         """
+
         def write_cumulative_graph(fig_info_list: List[Dict[str, str]], html_title: str):
             """
             累計グラフを出力する。
@@ -603,7 +539,8 @@ class Graph:
                         title=fig_info["title"],
                         x_axis_label=fig_info["x_axis_label"],
                         y_axis_label=fig_info["y_axis_label"],
-                    ))
+                    )
+                )
 
             for user_index, user_id in enumerate(first_annotation_user_id_list):  # type: ignore
                 filtered_df = df[df["first_annotation_user_id"] == user_id]
@@ -632,12 +569,7 @@ class Graph:
 
                 for fig, fig_info in zip(figs, fig_info_list):
                     self._plot_line_and_circle(
-                        fig,
-                        x=fig_info["x"],
-                        y=fig_info["y"],
-                        source=source,
-                        username=username,
-                        color=color,
+                        fig, x=fig_info["x"], y=fig_info["y"], source=source, username=username, color=color,
                     )
 
             hover_tool = self._create_hover_tool(tooltip_item)
@@ -646,8 +578,7 @@ class Graph:
 
             bokeh.plotting.reset_output()
             bokeh.plotting.output_file(
-                f"{self.outdir}/html/{self.short_project_id}-{html_title}.html",
-                title=html_title,
+                f"{self.outdir}/html/{self.short_project_id}-{html_title}.html", title=html_title,
             )
             bokeh.plotting.save(bokeh.layouts.column(figs))
 
@@ -671,8 +602,9 @@ class Graph:
             logger.info("タスク一覧が0件のため出力しない")
             return
 
-        first_annotation_user_id_list = self.create_user_id_list(df, "first_annotation_user_id",
-                                                                 first_annotation_user_id_list)
+        first_annotation_user_id_list = self.create_user_id_list(
+            df, "first_annotation_user_id", first_annotation_user_id_list
+        )
         logger.debug(f"グラフに表示するuser_id = {first_annotation_user_id_list}")
 
         # 横軸が累計のアノテーション数
@@ -796,9 +728,7 @@ class Graph:
         write_cumulative_graph(fig_info_list_task_count, html_title="累計折れ線-横軸_タスク数-教師付者用")
 
     def write_cumulative_line_graph_for_inspector(
-        self,
-        df: pd.DataFrame,
-        first_inspection_user_id_list: Optional[List[str]] = None,
+        self, df: pd.DataFrame, first_inspection_user_id_list: Optional[List[str]] = None,
     ):
         """
         検査作業者用の累積折れ線グラフを出力する。
@@ -810,6 +740,7 @@ class Graph:
         Returns:
 
         """
+
         def write_cumulative_graph(fig_info_list: List[Dict[str, str]], html_title: str):
             """
             累計グラフを出力する。
@@ -830,7 +761,8 @@ class Graph:
                         title=fig_info["title"],
                         x_axis_label=fig_info["x_axis_label"],
                         y_axis_label=fig_info["y_axis_label"],
-                    ))
+                    )
+                )
 
             for user_index, user_id in enumerate(first_inspection_user_id_list):  # type: ignore
                 filtered_df = df[df["first_inspection_user_id"] == user_id]
@@ -856,12 +788,7 @@ class Graph:
 
                 for fig, fig_info in zip(figs, fig_info_list):
                     self._plot_line_and_circle(
-                        fig,
-                        x=fig_info["x"],
-                        y=fig_info["y"],
-                        source=source,
-                        username=username,
-                        color=color,
+                        fig, x=fig_info["x"], y=fig_info["y"], source=source, username=username, color=color,
                     )
 
             hover_tool = self._create_hover_tool(tooltip_item)
@@ -870,8 +797,7 @@ class Graph:
 
             bokeh.plotting.reset_output()
             bokeh.plotting.output_file(
-                f"{self.outdir}/html/{self.short_project_id}-{html_title}.html",
-                title=html_title,
+                f"{self.outdir}/html/{self.short_project_id}-{html_title}.html", title=html_title,
             )
             bokeh.plotting.save(bokeh.layouts.column(figs))
 
@@ -896,8 +822,9 @@ class Graph:
             logger.info("タスク一覧が0件のため出力しない")
             return
 
-        first_inspection_user_id_list = self.create_user_id_list(df, "first_inspection_user_id",
-                                                                 first_inspection_user_id_list)
+        first_inspection_user_id_list = self.create_user_id_list(
+            df, "first_inspection_user_id", first_inspection_user_id_list
+        )
 
         if len(first_inspection_user_id_list) == 0:
             logger.info(f"検査フェーズを担当してユーザがいないため、検査者用のグラフは出力しません。")
@@ -958,9 +885,7 @@ class Graph:
         write_cumulative_graph(fig_info_list_input_data_count, html_title="累計折れ線-横軸_入力データ数-検査者用")
 
     def write_cumulative_line_graph_for_acceptor(
-        self,
-        df: pd.DataFrame,
-        first_acceptance_user_id_list: Optional[List[str]] = None,
+        self, df: pd.DataFrame, first_acceptance_user_id_list: Optional[List[str]] = None,
     ):
         """
         受入者用の累積折れ線グラフを出力する。
@@ -972,6 +897,7 @@ class Graph:
         Returns:
 
         """
+
         def write_cumulative_graph(fig_info_list: List[Dict[str, str]], html_title: str):
             """
             累計グラフを出力する。
@@ -992,7 +918,8 @@ class Graph:
                         title=fig_info["title"],
                         x_axis_label=fig_info["x_axis_label"],
                         y_axis_label=fig_info["y_axis_label"],
-                    ))
+                    )
+                )
 
             for user_index, user_id in enumerate(first_acceptance_user_id_list):  # type: ignore
                 filtered_df = df[df["first_acceptance_user_id"] == user_id]
@@ -1017,12 +944,7 @@ class Graph:
 
                 for fig, fig_info in zip(figs, fig_info_list):
                     self._plot_line_and_circle(
-                        fig,
-                        x=fig_info["x"],
-                        y=fig_info["y"],
-                        source=source,
-                        username=username,
-                        color=color,
+                        fig, x=fig_info["x"], y=fig_info["y"], source=source, username=username, color=color,
                     )
 
             hover_tool = self._create_hover_tool(tooltip_item)
@@ -1031,8 +953,7 @@ class Graph:
 
             bokeh.plotting.reset_output()
             bokeh.plotting.output_file(
-                f"{self.outdir}/html/{self.short_project_id}-{html_title}.html",
-                title=html_title,
+                f"{self.outdir}/html/{self.short_project_id}-{html_title}.html", title=html_title,
             )
             bokeh.plotting.save(bokeh.layouts.column(figs))
 
@@ -1059,8 +980,9 @@ class Graph:
             logger.info("タスク一覧が0件のため出力しない")
             return
 
-        first_acceptance_user_id_list = self.create_user_id_list(df, "first_acceptance_user_id",
-                                                                 first_acceptance_user_id_list)
+        first_acceptance_user_id_list = self.create_user_id_list(
+            df, "first_acceptance_user_id", first_acceptance_user_id_list
+        )
 
         if len(first_acceptance_user_id_list) == 0:
             logger.info(f"受入フェーズを担当してユーザがいないため、受入者用のグラフは出力しません。")

@@ -32,10 +32,10 @@ def main(arguments: Optional[Sequence[str]] = None):
     """
 
     parser = argparse.ArgumentParser(description="annofabapiを使ったCLIツール")
-    parser.add_argument('--version', action='version', version=f'annofabcli {annofabcli.__version__}')
+    parser.add_argument("--version", action="version", version=f"annofabcli {annofabcli.__version__}")
     parser.set_defaults(command_help=parser.print_help)
 
-    subparsers = parser.add_subparsers(dest='command_name')
+    subparsers = parser.add_subparsers(dest="command_name")
 
     annofabcli.annotation.subcommand_annotation.add_parser(subparsers)
     annofabcli.annotation_specs.subcommand_annotation_specs.add_parser(subparsers)
@@ -59,7 +59,7 @@ def main(arguments: Optional[Sequence[str]] = None):
     else:
         args = parser.parse_args(arguments)
 
-    if hasattr(args, 'subcommand_func'):
+    if hasattr(args, "subcommand_func"):
         try:
             args.subcommand_func(args)
         except Exception as e:

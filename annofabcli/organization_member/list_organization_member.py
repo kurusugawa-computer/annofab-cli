@@ -14,6 +14,7 @@ class ListOrganizationMember(AbstractCommandLineInterface):
     """
     組織メンバ一覧を表示する。
     """
+
     def print_organization_member_list(self, organization_name: str):
         """
         組織メンバ一覧を出力する
@@ -40,11 +41,12 @@ def main(args):
 def parse_args(parser: argparse.ArgumentParser):
     argument_parser = ArgumentParser(parser)
 
-    parser.add_argument('-org', '--organization', required=True, type=str, help='対象の組織名を指定してください。')
+    parser.add_argument("-org", "--organization", required=True, type=str, help="対象の組織名を指定してください。")
 
     argument_parser.add_format(
         choices=[FormatArgument.CSV, FormatArgument.JSON, FormatArgument.PRETTY_JSON, FormatArgument.USER_ID_LIST],
-        default=FormatArgument.CSV)
+        default=FormatArgument.CSV,
+    )
     argument_parser.add_output()
     argument_parser.add_csv_format()
     argument_parser.add_query()
@@ -54,7 +56,7 @@ def parse_args(parser: argparse.ArgumentParser):
 def add_parser(subparsers: argparse._SubParsersAction):
     subcommand_name = "list"
     subcommand_help = "組織メンバ一覧を出力します。"
-    description = ("組織メンバ一覧を出力します。")
+    description = "組織メンバ一覧を出力します。"
 
     parser = annofabcli.common.cli.add_parser(subparsers, subcommand_name, subcommand_help, description)
     parse_args(parser)

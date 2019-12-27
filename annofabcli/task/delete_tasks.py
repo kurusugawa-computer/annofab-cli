@@ -16,13 +16,14 @@ class DeleteTask(AbstractCommandLineInterface):
     """
     アノテーションが付与されていないタスクを削除する
     """
+
     @annofabcli.utils.allow_404_error
     def get_task(self, project_id: str, task_id: str) -> Dict[str, Any]:
         task, _ = self.service.api.get_task(project_id, task_id)
         return task
 
     def confirm_delete_task(self, task_id: str) -> bool:
-        message_for_confirm = (f"タスク'{task_id}' を削除しますか？")
+        message_for_confirm = f"タスク'{task_id}' を削除しますか？"
         return self.confirm_processing(message_for_confirm)
 
     def get_annotation_list(self, project_id: str, task_id: str) -> List[Dict[str, Any]]:
@@ -51,8 +52,10 @@ class DeleteTask(AbstractCommandLineInterface):
             logger.info(f"task_id={task_id} のタスクは存在しません。")
             return False
 
-        logger.debug(f"task_id={task['task_id']}, status={task['status']}, "
-                     f"phase={task['phase']}, updated_datetime={task['updated_datetime']}")
+        logger.debug(
+            f"task_id={task['task_id']}, status={task['status']}, "
+            f"phase={task['phase']}, updated_datetime={task['updated_datetime']}"
+        )
 
         task_status = TaskStatus(task["status"])
         if task_status in [TaskStatus.WORKING, TaskStatus.COMPLETE]:
@@ -117,7 +120,7 @@ def parse_args(parser: argparse.ArgumentParser):
 def add_parser(subparsers: argparse._SubParsersAction):
     subcommand_name = "delete"
     subcommand_help = "タスクを削除します。"
-    description = ("タスクを削除します。ただしアノテーションが付与されているタスク、作業中/完了状態のタスクは削除できません。")
+    description = "タスクを削除します。ただしアノテーションが付与されているタスク、作業中/完了状態のタスクは削除できません。"
     epilog = "オーナロールを持つユーザで実行してください。"
 
     parser = annofabcli.common.cli.add_parser(subparsers, subcommand_name, subcommand_help, description, epilog=epilog)

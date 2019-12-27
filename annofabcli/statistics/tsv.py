@@ -51,10 +51,7 @@ class Tsv:
         self.short_project_id = project_id[0:8]
 
     def write_inspection_list(
-        self,
-        df: pd.DataFrame,
-        dropped_columns: Optional[List[str]] = None,
-        only_error_corrected: bool = True,
+        self, df: pd.DataFrame, dropped_columns: Optional[List[str]] = None, only_error_corrected: bool = True,
     ):
         """
         検査コメント一覧をTSVで出力する

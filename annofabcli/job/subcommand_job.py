@@ -8,7 +8,7 @@ import annofabcli.job.list_last_job
 
 def parse_args(parser: argparse.ArgumentParser):
 
-    subparsers = parser.add_subparsers(dest='subcommand_name')
+    subparsers = parser.add_subparsers(dest="subcommand_name")
 
     # サブコマンドの定義
     annofabcli.job.list_job.add_parser(subparsers)

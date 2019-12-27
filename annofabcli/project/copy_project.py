@@ -8,8 +8,12 @@ from annofabapi.models import JobType, OrganizationMemberRole, ProjectMemberRole
 
 import annofabcli
 from annofabcli import AnnofabApiFacade
-from annofabcli.common.cli import (AbstractCommandLineInterface, ArgumentParser, build_annofabapi_resource_and_login,
-                                   get_json_from_args)
+from annofabcli.common.cli import (
+    AbstractCommandLineInterface,
+    ArgumentParser,
+    build_annofabapi_resource_and_login,
+    get_json_from_args,
+)
 from annofabcli.common.dataclasses import WaitOptions
 
 logger = logging.getLogger(__name__)
@@ -19,9 +23,17 @@ class CopyProject(AbstractCommandLineInterface):
     """
     プロジェクトをコピーする
     """
-    def copy_project(self, src_project_id: str, dest_project_id: str, dest_title: str, wait_options: WaitOptions,
-                     dest_overview: Optional[str] = None, copy_options: Optional[Dict[str, bool]] = None,
-                     wait_for_completion: bool = False):
+
+    def copy_project(
+        self,
+        src_project_id: str,
+        dest_project_id: str,
+        dest_title: str,
+        wait_options: WaitOptions,
+        dest_overview: Optional[str] = None,
+        copy_options: Optional[Dict[str, bool]] = None,
+        wait_for_completion: bool = False,
+    ):
         """
         プロジェクトメンバを、別のプロジェクトにコピーする。
 
@@ -36,8 +48,10 @@ class CopyProject(AbstractCommandLineInterface):
         """
 
         self.validate_project(
-            src_project_id, project_member_roles=[ProjectMemberRole.OWNER],
-            organization_member_roles=[OrganizationMemberRole.ADMINISTRATOR, OrganizationMemberRole.OWNER])
+            src_project_id,
+            project_member_roles=[ProjectMemberRole.OWNER],
+            organization_member_roles=[OrganizationMemberRole.ADMINISTRATOR, OrganizationMemberRole.OWNER],
+        )
 
         src_project_title = self.facade.get_project_title(src_project_id)
 
@@ -53,11 +67,9 @@ class CopyProject(AbstractCommandLineInterface):
         if copy_options is not None:
             request_body = copy.deepcopy(copy_options)
 
-        request_body.update({
-            "dest_project_id": dest_project_id,
-            "dest_title": dest_title,
-            "dest_overview": dest_overview
-        })
+        request_body.update(
+            {"dest_project_id": dest_project_id, "dest_title": dest_title, "dest_overview": dest_overview}
+        )
 
         self.service.api.initiate_project_copy(src_project_id, request_body=request_body)
         logger.info(f"プロジェクトのコピーを実施しています。")
@@ -66,9 +78,12 @@ class CopyProject(AbstractCommandLineInterface):
             MAX_WAIT_MINUTUE = wait_options.max_tries * wait_options.interval / 60
             logger.info(f"最大{MAX_WAIT_MINUTUE}分間、コピーが完了するまで待ちます。")
 
-            result = self.service.wrapper.wait_for_completion(src_project_id, job_type=JobType.COPY_PROJECT,
-                                                              job_access_interval=wait_options.interval,
-                                                              max_job_access=wait_options.max_tries)
+            result = self.service.wrapper.wait_for_completion(
+                src_project_id,
+                job_type=JobType.COPY_PROJECT,
+                job_access_interval=wait_options.interval,
+                max_job_access=wait_options.max_tries,
+            )
             if result:
                 logger.info(f"プロジェクトのコピーが完了しました。")
             else:
@@ -87,8 +102,12 @@ class CopyProject(AbstractCommandLineInterface):
         dest_project_id = args.dest_project_id if args.dest_project_id is not None else str(uuid.uuid4())
 
         copy_option_kyes = [
-            "copy_inputs", "copy_tasks", "copy_annotations", "copy_webhooks", "copy_supplementaly_data",
-            "copy_instructions"
+            "copy_inputs",
+            "copy_tasks",
+            "copy_annotations",
+            "copy_webhooks",
+            "copy_supplementaly_data",
+            "copy_instructions",
         ]
         copy_options: Dict[str, bool] = {}
         for key in copy_option_kyes:
@@ -96,9 +115,15 @@ class CopyProject(AbstractCommandLineInterface):
 
         wait_options = self.get_wait_options_from_args(args)
 
-        self.copy_project(args.project_id, dest_project_id=dest_project_id, dest_title=args.dest_title,
-                          dest_overview=args.dest_overview, copy_options=copy_options, wait_for_completion=args.wait,
-                          wait_options=wait_options)
+        self.copy_project(
+            args.project_id,
+            dest_project_id=dest_project_id,
+            dest_title=args.dest_title,
+            dest_overview=args.dest_overview,
+            copy_options=copy_options,
+            wait_for_completion=args.wait,
+            wait_options=wait_options,
+        )
 
 
 def main(args):
@@ -110,27 +135,30 @@ def main(args):
 def parse_args(parser: argparse.ArgumentParser):
     argument_parser = ArgumentParser(parser)
 
-    argument_parser.add_project_id(help_message='コピー元のプロジェクトのproject_idを指定してください。')
+    argument_parser.add_project_id(help_message="コピー元のプロジェクトのproject_idを指定してください。")
 
-    parser.add_argument('--dest_project_id', type=str, help='新しいプロジェクトのproject_idを指定してください。省略した場合は UUIDv4 フォーマットになります。')
-    parser.add_argument('--dest_title', type=str, required=True, help="新しいプロジェクトのタイトルを指定してください。")
-    parser.add_argument('--dest_overview', type=str, help="新しいプロジェクトの概要を指定してください。")
+    parser.add_argument("--dest_project_id", type=str, help="新しいプロジェクトのproject_idを指定してください。省略した場合は UUIDv4 フォーマットになります。")
+    parser.add_argument("--dest_title", type=str, required=True, help="新しいプロジェクトのタイトルを指定してください。")
+    parser.add_argument("--dest_overview", type=str, help="新しいプロジェクトの概要を指定してください。")
 
-    parser.add_argument('--copy_inputs', action='store_true', help="「入力データ」をコピーするかどうかを指定します。")
-    parser.add_argument('--copy_tasks', action='store_true', help="「タスク」をコピーするかどうかを指定します。")
-    parser.add_argument('--copy_annotations', action='store_true', help="「アノテーション」をコピーするかどうかを指定します。")
-    parser.add_argument('--copy_webhooks', action='store_true', help="「Webhook」をコピーするかどうかを指定します。")
-    parser.add_argument('--copy_supplementaly_data', action='store_true', help="「補助情報」をコピーするかどうかを指定します。")
-    parser.add_argument('--copy_instructions', action='store_true', help="「作業ガイド」をコピーするかどうかを指定します。")
+    parser.add_argument("--copy_inputs", action="store_true", help="「入力データ」をコピーするかどうかを指定します。")
+    parser.add_argument("--copy_tasks", action="store_true", help="「タスク」をコピーするかどうかを指定します。")
+    parser.add_argument("--copy_annotations", action="store_true", help="「アノテーション」をコピーするかどうかを指定します。")
+    parser.add_argument("--copy_webhooks", action="store_true", help="「Webhook」をコピーするかどうかを指定します。")
+    parser.add_argument("--copy_supplementaly_data", action="store_true", help="「補助情報」をコピーするかどうかを指定します。")
+    parser.add_argument("--copy_instructions", action="store_true", help="「作業ガイド」をコピーするかどうかを指定します。")
 
-    parser.add_argument('--wait', action='store_true', help="プロジェクトのコピーが完了するまで待ちます。")
+    parser.add_argument("--wait", action="store_true", help="プロジェクトのコピーが完了するまで待ちます。")
 
     parser.add_argument(
-        '--wait_options', type=str, help='プロジェクトのコピーが完了するまで待つ際のオプションをJSON形式で指定してください。'
-        '`file://`を先頭に付けるとjsonファイルを指定できます。'
+        "--wait_options",
+        type=str,
+        help="プロジェクトのコピーが完了するまで待つ際のオプションをJSON形式で指定してください。"
+        "`file://`を先頭に付けるとjsonファイルを指定できます。"
         'デフォルとは`{"interval":60, "max_tries":360}` です。'
-        '`interval`:完了したかを問い合わせる間隔[秒], '
-        '`max_tires`:完了したかの問い合わせを最大何回行うか。')
+        "`interval`:完了したかを問い合わせる間隔[秒], "
+        "`max_tires`:完了したかの問い合わせを最大何回行うか。",
+    )
 
     parser.set_defaults(subcommand_func=main)
 
@@ -138,7 +166,7 @@ def parse_args(parser: argparse.ArgumentParser):
 def add_parser(subparsers: argparse._SubParsersAction):
     subcommand_name = "copy"
     subcommand_help = "プロジェクトをコピーします。"
-    description = ("プロジェクトをコピーして（アノテーション仕様やメンバーを引き継いで）、新しいプロジェクトを作成します。")
+    description = "プロジェクトをコピーして（アノテーション仕様やメンバーを引き継いで）、新しいプロジェクトを作成します。"
     epilog = "コピー元のプロジェクトに対してオーナロール、組織に対して組織管理者、組織オーナを持つユーザで実行してください。"
 
     parser = annofabcli.common.cli.add_parser(subparsers, subcommand_name, subcommand_help, description, epilog=epilog)

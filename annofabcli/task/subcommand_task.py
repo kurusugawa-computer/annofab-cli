@@ -12,7 +12,7 @@ import annofabcli.task.reject_tasks
 
 def parse_args(parser: argparse.ArgumentParser):
 
-    subparsers = parser.add_subparsers(dest='subcommand_name')
+    subparsers = parser.add_subparsers(dest="subcommand_name")
 
     # サブコマンドの定義
     annofabcli.task.cancel_acceptance.add_parser(subparsers)

@@ -11,8 +11,12 @@ from annofabapi.models import ProjectMemberRole
 import annofabcli
 import annofabcli.common.cli
 from annofabcli import AnnofabApiFacade
-from annofabcli.common.cli import (AbstractCommandLineInterface, ArgumentParser, FormatArgument,
-                                   build_annofabapi_resource_and_login)
+from annofabcli.common.cli import (
+    AbstractCommandLineInterface,
+    ArgumentParser,
+    FormatArgument,
+    build_annofabapi_resource_and_login,
+)
 
 logger = logging.getLogger(__name__)
 
@@ -21,6 +25,7 @@ class PrintLabelColor(AbstractCommandLineInterface):
     """
     アノテーションラベルの色(RGB)を出力する
     """
+
     @staticmethod
     def get_rgb(label: Dict[str, Any]) -> Tuple[int, int, int]:
         color = label["color"]
@@ -51,8 +56,9 @@ def parse_args(parser: argparse.ArgumentParser):
 
     argument_parser.add_project_id()
 
-    argument_parser.add_format(choices=[FormatArgument.JSON, FormatArgument.PRETTY_JSON],
-                               default=FormatArgument.PRETTY_JSON)
+    argument_parser.add_format(
+        choices=[FormatArgument.JSON, FormatArgument.PRETTY_JSON], default=FormatArgument.PRETTY_JSON
+    )
 
     argument_parser.add_output()
 
@@ -68,11 +74,13 @@ def main(args):
 def add_parser(subparsers: argparse._SubParsersAction):
     subcommand_name = "list_label_color"
 
-    subcommand_help = ("label_name(英名)とRGBの関係をJSONで出力します。")
+    subcommand_help = "label_name(英名)とRGBの関係をJSONで出力します。"
 
-    description = ("label_name(英名)とRGBの関係をJSONで出力します。"
-                   "出力された内容は、`write_annotation_image`ツールに利用します。"
-                   "出力内容は`Dict[LabelName, [R,G,B]]`です。")
+    description = (
+        "label_name(英名)とRGBの関係をJSONで出力します。"
+        "出力された内容は、`write_annotation_image`ツールに利用します。"
+        "出力内容は`Dict[LabelName, [R,G,B]]`です。"
+    )
 
     epilog = "チェッカーまたはオーナロールを持つユーザで実行してください。"
 

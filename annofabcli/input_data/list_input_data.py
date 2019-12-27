@@ -28,6 +28,7 @@ class InputDataBatchQuery:
     """
     入力データをバッチ単位（段階的に）に取得する。
     """
+
     first: str
     last: str
     days: int
@@ -37,11 +38,12 @@ def str_to_datetime(d: str) -> datetime.datetime:
     """
     文字列 `YYYY-MM-DDD` をdatetime.datetimeに変換する。
     """
-    return datetime.datetime.strptime(d, '%Y-%m-%d')
+    return datetime.datetime.strptime(d, "%Y-%m-%d")
 
 
-def create_datetime_range_list(first_datetime: datetime.datetime, last_datetime: datetime.datetime,
-                               days: int) -> List[DatetimeRange]:
+def create_datetime_range_list(
+    first_datetime: datetime.datetime, last_datetime: datetime.datetime, days: int
+) -> List[DatetimeRange]:
     datetime_list: List[DatetimeRange] = []
     datetime_list.append((None, first_datetime))
 
@@ -78,8 +80,8 @@ class ListInputData(AbstractCommandLineInterface):
         """
         task_id_list = []
         for task in task_list:
-            if input_data_id in task['input_data_id_list']:
-                task_id_list.append(task['task_id'])
+            if input_data_id in task["input_data_id_list"]:
+                task_id_list.append(task["task_id"])
         return task_id_list
 
     @annofabcli.utils.allow_404_error
@@ -125,15 +127,17 @@ class ListInputData(AbstractCommandLineInterface):
         chunk_size = MAX_URL_QUERY_LENGTH // average_input_data_id_length
         initial_index = 0
         while True:
-            sub_input_data_list = input_data_list[initial_index:initial_index + chunk_size]
-            sub_input_data_id_list = [e['input_data_id'] for e in sub_input_data_list]
+            sub_input_data_list = input_data_list[initial_index : initial_index + chunk_size]
+            sub_input_data_id_list = [e["input_data_id"] for e in sub_input_data_list]
             str_input_data_id_list = ",".join(sub_input_data_id_list)
             encoded_input_data_id_list = urllib.parse.quote(str_input_data_id_list)
             if len(encoded_input_data_id_list) > MAX_URL_QUERY_LENGTH:
-                differential_length = (len(encoded_input_data_id_list) - MAX_URL_QUERY_LENGTH)
+                differential_length = len(encoded_input_data_id_list) - MAX_URL_QUERY_LENGTH
                 decreasing_size = (differential_length // average_input_data_id_length) + 1
-                logger.debug(f"chunk_sizeを {chunk_size} から、{chunk_size - decreasing_size} に減らした. "
-                             f"len(encoded_input_data_id_list) = {len(encoded_input_data_id_list)}")
+                logger.debug(
+                    f"chunk_sizeを {chunk_size} から、{chunk_size - decreasing_size} に減らした. "
+                    f"len(encoded_input_data_id_list) = {len(encoded_input_data_id_list)}"
+                )
                 chunk_size = chunk_size - decreasing_size
                 if chunk_size <= 0:
                     chunk_size = 1
@@ -141,13 +145,14 @@ class ListInputData(AbstractCommandLineInterface):
                 continue
 
             logger.debug(f"input_data_list[{initial_index}:{initial_index+chunk_size}] を使用しているタスクを取得する。")
-            task_list = self.service.wrapper.get_all_tasks(project_id,
-                                                           query_params={'input_data_ids': str_input_data_id_list})
+            task_list = self.service.wrapper.get_all_tasks(
+                project_id, query_params={"input_data_ids": str_input_data_id_list}
+            )
 
             for input_data in sub_input_data_list:
                 # input_data_idで絞り込んでいるが、大文字小文字を区別しない。
                 # したがって、確認のため `_find_task_id_list`を実行する
-                task_id_list = self._find_task_id_list(task_list, input_data['input_data_id'])
+                task_id_list = self._find_task_id_list(task_list, input_data["input_data_id"])
                 self.visualize.add_properties_to_input_data(input_data, task_id_list)
 
             initial_index = initial_index + chunk_size
@@ -156,9 +161,13 @@ class ListInputData(AbstractCommandLineInterface):
 
         return input_data_list
 
-    def get_input_data_list(self, project_id: str, input_data_id_list: Optional[List[str]] = None,
-                            input_data_query: Optional[Dict[str,
-                                                            Any]] = None, add_details: bool = False) -> List[InputData]:
+    def get_input_data_list(
+        self,
+        project_id: str,
+        input_data_id_list: Optional[List[str]] = None,
+        input_data_query: Optional[Dict[str, Any]] = None,
+        add_details: bool = False,
+    ) -> List[InputData]:
         """
         入力データ一覧を取得する。
         """
@@ -176,9 +185,13 @@ class ListInputData(AbstractCommandLineInterface):
 
         return input_data_list
 
-    def get_input_data_with_batch(self, project_id: str, batch_query: InputDataBatchQuery,
-                                  input_data_query: Optional[Dict[str, Any]] = None,
-                                  add_details: bool = False) -> List[InputData]:
+    def get_input_data_with_batch(
+        self,
+        project_id: str,
+        batch_query: InputDataBatchQuery,
+        input_data_query: Optional[Dict[str, Any]] = None,
+        add_details: bool = False,
+    ) -> List[InputData]:
         """
         バッチ単位で入力データを取得する。
 
@@ -215,9 +228,14 @@ class ListInputData(AbstractCommandLineInterface):
 
         return all_input_data_list
 
-    def print_input_data(self, project_id: str, input_data_query: Optional[Dict[str, Any]] = None,
-                         input_data_id_list: Optional[List[str]] = None, add_details: bool = False,
-                         batch_query: Optional[InputDataBatchQuery] = None):
+    def print_input_data(
+        self,
+        project_id: str,
+        input_data_query: Optional[Dict[str, Any]] = None,
+        input_data_id_list: Optional[List[str]] = None,
+        add_details: bool = False,
+        batch_query: Optional[InputDataBatchQuery] = None,
+    ):
         """
         入力データ一覧を出力する
 
@@ -232,18 +250,24 @@ class ListInputData(AbstractCommandLineInterface):
         super().validate_project(project_id, project_member_roles=None)
 
         if batch_query is None:
-            input_data_list = self.get_input_data_list(project_id, input_data_query=input_data_query,
-                                                       input_data_id_list=input_data_id_list, add_details=add_details)
+            input_data_list = self.get_input_data_list(
+                project_id,
+                input_data_query=input_data_query,
+                input_data_id_list=input_data_id_list,
+                add_details=add_details,
+            )
             logger.info(f"入力データ一覧の件数: {len(input_data_list)}")
             if len(input_data_list) == 10000:
                 logger.warning("入力データ一覧は10,000件で打ち切られている可能性があります。")
 
         else:
-            input_data_list = self.get_input_data_with_batch(project_id, input_data_query=input_data_query,
-                                                             add_details=add_details, batch_query=batch_query)
+            input_data_list = self.get_input_data_with_batch(
+                project_id, input_data_query=input_data_query, add_details=add_details, batch_query=batch_query
+            )
             logger.info(f"入力データ一覧の件数: {len(input_data_list)}")
-            total_count = self.service.api.get_input_data_list(project_id,
-                                                               query_params=input_data_query)[0]["total_count"]
+            total_count = self.service.api.get_input_data_list(project_id, query_params=input_data_query)[0][
+                "total_count"
+            ]
             if len(input_data_list) != total_count:
                 logger.warning(f"実際に取得した件数:{len(input_data_list)}が、取得可能な件数:{total_count} と異なっていました。")
 
@@ -258,8 +282,13 @@ class ListInputData(AbstractCommandLineInterface):
         input_data_query = annofabcli.common.cli.get_json_from_args(args.input_data_query)
         dict_batch_query = annofabcli.common.cli.get_json_from_args(args.batch)
         batch_query = InputDataBatchQuery.from_dict(dict_batch_query) if dict_batch_query is not None else None
-        self.print_input_data(args.project_id, input_data_id_list=input_data_id_list, input_data_query=input_data_query,
-                              add_details=args.add_details, batch_query=batch_query)
+        self.print_input_data(
+            args.project_id,
+            input_data_id_list=input_data_id_list,
+            input_data_query=input_data_query,
+            add_details=args.add_details,
+            batch_query=batch_query,
+        )
 
 
 def main(args):
@@ -276,31 +305,50 @@ def parse_args(parser: argparse.ArgumentParser):
     query_group = parser.add_mutually_exclusive_group()
 
     query_group.add_argument(
-        '-iq', '--input_data_query', type=str, help='入力データの検索クエリをJSON形式で指定します。'
-        '`file://`を先頭に付けると、JSON形式のファイルを指定できます。'
-        'クエリのフォーマットは、[getInputDataList API](https://annofab.com/docs/api/#operation/getInputDataList)のクエリパラメータと同じです。'
-        'ただし `page`, `limit`キーは指定できません。')
+        "-iq",
+        "--input_data_query",
+        type=str,
+        help="入力データの検索クエリをJSON形式で指定します。"
+        "`file://`を先頭に付けると、JSON形式のファイルを指定できます。"
+        "クエリのフォーマットは、[getInputDataList API](https://annofab.com/docs/api/#operation/getInputDataList)のクエリパラメータと同じです。"
+        "ただし `page`, `limit`キーは指定できません。",
+    )
 
     query_group.add_argument(
-        '-i', '--input_data_id', type=str, nargs='+', help='対象のinput_data_idを指定します。`--input_data_query`引数とは同時に指定できません。'
-        '`file://`を先頭に付けると、input_data_idの一覧が記載されたファイルを指定できます。')
+        "-i",
+        "--input_data_id",
+        type=str,
+        nargs="+",
+        help="対象のinput_data_idを指定します。`--input_data_query`引数とは同時に指定できません。"
+        "`file://`を先頭に付けると、input_data_idの一覧が記載されたファイルを指定できます。",
+    )
 
     parser.add_argument(
-        '--batch', type=str, help='段階的に入力データを取得するための情報をJSON形式で指定します。 '
+        "--batch",
+        type=str,
+        help="段階的に入力データを取得するための情報をJSON形式で指定します。 "
         '(ex) `{"first":"2019-01-01", "last":"2019-01-31", "days":7}` '
-        'このオプションを駆使すれば、10,000件以上のデータを取得できます。')
+        "このオプションを駆使すれば、10,000件以上のデータを取得できます。",
+    )
 
-    parser.add_argument('--add_details', action='store_true', help='入力データの詳細情報を表示します（`parent_task_id_list`）')
+    parser.add_argument("--add_details", action="store_true", help="入力データの詳細情報を表示します（`parent_task_id_list`）")
 
     parser.add_argument(
-        '--averate_input_data_id_length', type=int, default=36, help=('入力データIDの平均長さを指定します。`add_details`がTrueのときのみ有効です。'
-                                                                      'デフォルトはUUIDv4の長さです。'
-                                                                      'この値を元にして、タスク一括取得APIの実行回数を決めます。'))
+        "--averate_input_data_id_length",
+        type=int,
+        default=36,
+        help=("入力データIDの平均長さを指定します。`add_details`がTrueのときのみ有効です。" "デフォルトはUUIDv4の長さです。" "この値を元にして、タスク一括取得APIの実行回数を決めます。"),
+    )
 
     argument_parser.add_format(
         choices=[
-            FormatArgument.CSV, FormatArgument.JSON, FormatArgument.PRETTY_JSON, FormatArgument.INPUT_DATA_ID_LIST
-        ], default=FormatArgument.CSV)
+            FormatArgument.CSV,
+            FormatArgument.JSON,
+            FormatArgument.PRETTY_JSON,
+            FormatArgument.INPUT_DATA_ID_LIST,
+        ],
+        default=FormatArgument.CSV,
+    )
     argument_parser.add_output()
     argument_parser.add_csv_format()
 
@@ -311,7 +359,7 @@ def parse_args(parser: argparse.ArgumentParser):
 def add_parser(subparsers: argparse._SubParsersAction):
     subcommand_name = "list"
     subcommand_help = "入力データ一覧を出力します。"
-    description = ("入力データ一覧を出力します。AnnoFabの制約上、10,000件までしか出力されません。")
+    description = "入力データ一覧を出力します。AnnoFabの制約上、10,000件までしか出力されません。"
 
     parser = annofabcli.common.cli.add_parser(subparsers, subcommand_name, subcommand_help, description)
     parse_args(parser)

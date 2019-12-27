@@ -35,6 +35,7 @@ class VisualizeStatistics(AbstractCommandLineInterface):
     """
     統計情報を可視化する。
     """
+
     def visualize_statistics(
         self,
         project_id: str,
@@ -92,9 +93,7 @@ class VisualizeStatistics(AbstractCommandLineInterface):
             tsv_obj.write_task_history_list(task_history_df)
             tsv_obj.write_inspection_list(df=inspection_df, dropped_columns=["data"], only_error_corrected=True)
             tsv_obj.write_inspection_list(
-                df=inspection_df_all,
-                dropped_columns=["data"],
-                only_error_corrected=False,
+                df=inspection_df_all, dropped_columns=["data"], only_error_corrected=False,
             )
 
             tsv_obj.write_member_list(member_df)
@@ -118,22 +117,20 @@ class VisualizeStatistics(AbstractCommandLineInterface):
             graph_obj.write_histogram_for_worktime(task_df)
             graph_obj.write_histogram_for_other(task_df)
             graph_obj.write_cumulative_line_graph_for_annotator(
-                df=task_cumulative_df_by_annotator,
-                first_annotation_user_id_list=user_id_list,
+                df=task_cumulative_df_by_annotator, first_annotation_user_id_list=user_id_list,
             )
 
             graph_obj.write_cumulative_line_graph_for_inspector(
-                df=task_cumulative_df_by_inspector,
-                first_inspection_user_id_list=user_id_list,
+                df=task_cumulative_df_by_inspector, first_inspection_user_id_list=user_id_list,
             )
 
             graph_obj.write_cumulative_line_graph_for_acceptor(
-                df=task_cumulative_df_by_acceptor,
-                first_acceptance_user_id_list=user_id_list,
+                df=task_cumulative_df_by_acceptor, first_acceptance_user_id_list=user_id_list,
             )
 
-            graph_obj.write_productivity_line_graph_for_annotator(df=by_date_df,
-                                                                  first_annotation_user_id_list=user_id_list)
+            graph_obj.write_productivity_line_graph_for_annotator(
+                df=by_date_df, first_annotation_user_id_list=user_id_list
+            )
 
         except Exception as e:  # pylint: disable=broad-except
             logger.warning(e)
@@ -174,9 +171,11 @@ def parse_args(parser: argparse.ArgumentParser):
         "-u",
         "--user_id",
         nargs="+",
-        help=("メンバごとの統計グラフに表示するユーザのuser_idを指定してください。"
-              "指定しない場合は、辞書順に並べた上位20人が表示されます。"
-              "file://`を先頭に付けると、一覧が記載されたファイルを指定できます。"),
+        help=(
+            "メンバごとの統計グラフに表示するユーザのuser_idを指定してください。"
+            "指定しない場合は、辞書順に並べた上位20人が表示されます。"
+            "file://`を先頭に付けると、一覧が記載されたファイルを指定できます。"
+        ),
     )
 
     parser.add_argument(
@@ -191,36 +190,25 @@ def parse_args(parser: argparse.ArgumentParser):
     parser.add_argument(
         "--ignored_task_id",
         nargs="+",
-        help=("可視化対象外のタスクのtask_id。"
-              "指定しない場合は、すべてのタスクが可視化対象です。"
-              "file://`を先頭に付けると、一覧が記載されたファイルを指定できます。"),
+        help=("可視化対象外のタスクのtask_id。" "指定しない場合は、すべてのタスクが可視化対象です。" "file://`を先頭に付けると、一覧が記載されたファイルを指定できます。"),
     )
 
     parser.add_argument(
-        "--not_update",
-        action="store_true",
-        help="作業ディレクトリ内のファイルを参照して、統計情報を出力します。"
-        "AnnoFab Web APIへのアクセスを最小限にします。",
+        "--not_update", action="store_true", help="作業ディレクトリ内のファイルを参照して、統計情報を出力します。" "AnnoFab Web APIへのアクセスを最小限にします。",
     )
 
     parser.add_argument(
         "--update_annotation",
         action="store_true",
-        help="アノテーションzipを更新してから、アノテーションzipをダウンロードします。"
-        "ただし、アノテーションzipの最終更新日時がタスクの最終更新日時より新しい場合は、アノテーションzipを更新しません。",
+        help="アノテーションzipを更新してから、アノテーションzipをダウンロードします。" "ただし、アノテーションzipの最終更新日時がタスクの最終更新日時より新しい場合は、アノテーションzipを更新しません。",
     )
 
     parser.add_argument(
-        "--update_task_json",
-        action="store_true",
-        help="タスク全件ファイルJSONを更新してから、タスク全件ファイルJSONをダウンロードします。",
+        "--update_task_json", action="store_true", help="タスク全件ファイルJSONを更新してから、タスク全件ファイルJSONをダウンロードします。",
     )
 
     parser.add_argument(
-        "--work_dir",
-        type=str,
-        default=".annofab-cli",
-        help="作業ディレクトリのパス。指定しない場合カレントの'.annofab-cli'ディレクトリに保存する",
+        "--work_dir", type=str, default=".annofab-cli", help="作業ディレクトリのパス。指定しない場合カレントの'.annofab-cli'ディレクトリに保存する",
     )
 
     parser.set_defaults(subcommand_func=main)

@@ -9,7 +9,7 @@ import annofabcli.common.cli
 
 def parse_args(parser: argparse.ArgumentParser):
 
-    subparsers = parser.add_subparsers(dest='subcommand_name')
+    subparsers = parser.add_subparsers(dest="subcommand_name")
 
     # サブコマンドの定義
     annofabcli.annotation_specs.list_annotation_specs_history.add_parser(subparsers)

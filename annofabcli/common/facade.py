@@ -68,7 +68,7 @@ class AnnofabApiFacade:
 
         """
         project, _ = self.service.api.get_project(project_id)
-        return project['title']
+        return project["title"]
 
     def get_my_account_id(self) -> str:
         """
@@ -78,10 +78,11 @@ class AnnofabApiFacade:
 
         """
         account, _ = self.service.api.get_my_account()
-        return account['account_id']
+        return account["account_id"]
 
-    def _get_organization_member_with_predicate(self, project_id: str,
-                                                predicate: Callable[[Any], bool]) -> Optional[OrganizationMember]:
+    def _get_organization_member_with_predicate(
+        self, project_id: str, predicate: Callable[[Any], bool]
+    ) -> Optional[OrganizationMember]:
         """
         account_idから組織メンバを取得する。
         インスタンス変数に組織メンバがあれば、WebAPIは実行しない。
@@ -93,6 +94,7 @@ class AnnofabApiFacade:
         Returns:
             組織メンバ。見つからない場合はNone
         """
+
         def update_organization_members():
             organization_name = self.get_organization_name_from_project_id(project_id)
             members = self.service.wrapper.get_all_organization_members(organization_name)
@@ -157,7 +159,7 @@ class AnnofabApiFacade:
         if member is None:
             return None
         else:
-            return member.get('user_id')
+            return member.get("user_id")
 
     def get_account_id_from_user_id(self, project_id: str, user_id: str) -> Optional[str]:
         """
@@ -176,7 +178,7 @@ class AnnofabApiFacade:
         if member is None:
             return None
         else:
-            return member.get('account_id')
+            return member.get("account_id")
 
     def get_organization_name_from_project_id(self, project_id: str) -> str:
         """
@@ -208,8 +210,9 @@ class AnnofabApiFacade:
         my_role = ProjectMemberRole(my_member["member_role"])
         return my_role in roles
 
-    def contains_any_organization_member_role(self, organization_name: str,
-                                              roles: List[OrganizationMemberRole]) -> bool:
+    def contains_any_organization_member_role(
+        self, organization_name: str, roles: List[OrganizationMemberRole]
+    ) -> bool:
         """
         自分自身の組織メンバとしてのロールが、指定されたロールのいずれかに合致するかどうか
         Args:
@@ -234,8 +237,9 @@ class AnnofabApiFacade:
     # operateTaskのfacade
     ##################
 
-    def change_operator_of_task(self, project_id: str, task_id: str,
-                                account_id: Optional[str] = None) -> Dict[str, Any]:
+    def change_operator_of_task(
+        self, project_id: str, task_id: str, account_id: Optional[str] = None
+    ) -> Dict[str, Any]:
         """
         タスクの担当者を変更する
         Args:
@@ -294,8 +298,9 @@ class AnnofabApiFacade:
         }
         return self.service.api.operate_task(project_id, task_id, request_body=req)[0]
 
-    def reject_task(self, project_id: str, task_id: str, account_id: str,
-                    annotator_account_id: Optional[str] = None) -> Dict[str, Any]:
+    def reject_task(
+        self, project_id: str, task_id: str, account_id: str, annotator_account_id: Optional[str] = None
+    ) -> Dict[str, Any]:
         """
         タスクを差し戻し、annotator_account_id　に担当を割り当てる。
         Args:
@@ -326,8 +331,9 @@ class AnnofabApiFacade:
         updated_task, _ = self.service.api.operate_task(project_id, task["task_id"], request_body=req_change_operator)
         return updated_task
 
-    def reject_task_assign_last_annotator(self, project_id: str, task_id: str,
-                                          account_id: str) -> Tuple[Dict[str, Any], str]:
+    def reject_task_assign_last_annotator(
+        self, project_id: str, task_id: str, account_id: str
+    ) -> Tuple[Dict[str, Any], str]:
         """
         タスクを差し戻したあとに、最後のannotation phase担当者に割り当てる。
 

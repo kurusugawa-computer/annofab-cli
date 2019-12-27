@@ -44,9 +44,12 @@ class Download(AbstractCommandLineInterface):
                 else:
                     self.service.api.post_project_tasks_update(project_id)
 
-                result = self.service.wrapper.wait_for_completion(project_id, job_type=job_type,
-                                                                  job_access_interval=wait_options.interval,
-                                                                  max_job_access=wait_options.max_tries)
+                result = self.service.wrapper.wait_for_completion(
+                    project_id,
+                    job_type=job_type,
+                    job_access_interval=wait_options.interval,
+                    max_job_access=wait_options.max_tries,
+                )
                 if result:
                     logger.info(f"タスクファイルの更新が完了しました。")
                 else:
@@ -69,9 +72,12 @@ class Download(AbstractCommandLineInterface):
                 else:
                     self.service.api.post_annotation_archive_update(project_id)
 
-                result = self.service.wrapper.wait_for_completion(project_id, job_type=job_type,
-                                                                  job_access_interval=wait_options.interval,
-                                                                  max_job_access=wait_options.max_tries)
+                result = self.service.wrapper.wait_for_completion(
+                    project_id,
+                    job_type=job_type,
+                    job_access_interval=wait_options.interval,
+                    max_job_access=wait_options.max_tries,
+                )
                 if result:
                     logger.info(f"アノテーションの更新が完了しました。")
                 else:
@@ -91,7 +97,9 @@ class Download(AbstractCommandLineInterface):
         download_target = DownloadTarget(args.target)
         if args.latest:
             if download_target not in [
-                    DownloadTarget.TASK, DownloadTarget.SIMPLE_ANNOTATION, DownloadTarget.FULL_ANNOTATION
+                DownloadTarget.TASK,
+                DownloadTarget.SIMPLE_ANNOTATION,
+                DownloadTarget.FULL_ANNOTATION,
             ]:
                 logger.warning(f"ダウンロード対象が`task`, `simple_annotation`, `full_annotation`以外のときは、`--latest`オプションは無視されます。")
 
@@ -111,8 +119,13 @@ class Download(AbstractCommandLineInterface):
             return
 
         wait_options = self.get_wait_options_from_args(args)
-        self.download(DownloadTarget(args.target), args.project_id, output=args.output, latest=args.latest,
-                      wait_options=wait_options)
+        self.download(
+            DownloadTarget(args.target),
+            args.project_id,
+            output=args.output,
+            latest=args.latest,
+            wait_options=wait_options,
+        )
 
 
 def main(args: argparse.Namespace):
@@ -124,22 +137,28 @@ def main(args: argparse.Namespace):
 def parse_args(parser: argparse.ArgumentParser):
     target_choices = [e.value for e in DownloadTarget]
 
-    parser.add_argument('target', type=str, choices=target_choices, help='ダウンロード対象の項目を指定します。')
+    parser.add_argument("target", type=str, choices=target_choices, help="ダウンロード対象の項目を指定します。")
 
-    parser.add_argument('-p', '--project_id', type=str, required=True, help='対象のプロジェクトのproject_idを指定します。')
+    parser.add_argument("-p", "--project_id", type=str, required=True, help="対象のプロジェクトのproject_idを指定します。")
 
-    parser.add_argument('-o', '--output', type=str, required=True, help='ダウンロード先を指定します。')
-
-    parser.add_argument(
-        '--latest', action='store_true', help='ダウンロード対象を最新化してから、ダウンロードします。アノテーションの最新化は5分以上かかる場合があります。'
-        'ダウンロード対象が`task`, `simple_annotation`, `full_annotation`のときのみ、このオプションは有効です。')
+    parser.add_argument("-o", "--output", type=str, required=True, help="ダウンロード先を指定します。")
 
     parser.add_argument(
-        '--wait_options', type=str, help='ダウンロード対象の最新化を待つときのオプションをJSON形式で指定してください。'
-        '`file://`を先頭に付けるとjsonファイルを指定できます。'
+        "--latest",
+        action="store_true",
+        help="ダウンロード対象を最新化してから、ダウンロードします。アノテーションの最新化は5分以上かかる場合があります。"
+        "ダウンロード対象が`task`, `simple_annotation`, `full_annotation`のときのみ、このオプションは有効です。",
+    )
+
+    parser.add_argument(
+        "--wait_options",
+        type=str,
+        help="ダウンロード対象の最新化を待つときのオプションをJSON形式で指定してください。"
+        "`file://`を先頭に付けるとjsonファイルを指定できます。"
         'デフォルとは`{"interval":60, "max_tries":360}` です。'
-        '`interval`:最新化が完了したかを問い合わせる間隔[秒], '
-        '`max_tires`:最新化が完了したかの問い合わせを最大何回行うか。')
+        "`interval`:最新化が完了したかを問い合わせる間隔[秒], "
+        "`max_tires`:最新化が完了したかの問い合わせを最大何回行うか。",
+    )
 
     parser.set_defaults(subcommand_func=main)
 
@@ -147,9 +166,9 @@ def parse_args(parser: argparse.ArgumentParser):
 def add_parser(subparsers: argparse._SubParsersAction):
     subcommand_name = "download"
     subcommand_help = "タスクや検査コメント、アノテーションなどをダウンロードします。"
-    description = ("タスクや検査コメント、アノテーションなどをダウンロードします。"
-                   "タスク、検査コメント、タスク履歴イベントは毎日AM 02:00 JSTに更新されます。"
-                   "アノテーションは毎日AM 03:00 JSTに更新されます。")
+    description = (
+        "タスクや検査コメント、アノテーションなどをダウンロードします。" "タスク、検査コメント、タスク履歴イベントは毎日AM 02:00 JSTに更新されます。" "アノテーションは毎日AM 03:00 JSTに更新されます。"
+    )
     epilog = "オーナロールを持つユーザで実行してください。"
 
     parser = annofabcli.common.cli.add_parser(subparsers, subcommand_name, subcommand_help, description, epilog=epilog)

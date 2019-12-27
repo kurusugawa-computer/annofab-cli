@@ -10,8 +10,8 @@ from annofabcli.common.image import write_annotation_image, write_annotation_ima
 # プロジェクトトップに移動する
 os.chdir(os.path.dirname(os.path.abspath(__file__)) + "/../")
 
-test_dir = Path('./tests/data')
-out_dir = Path('./tests/out')
+test_dir = Path("./tests/data")
+out_dir = Path("./tests/out")
 
 with (test_dir / "label_color.json").open(encoding="utf-8") as f:
     label_color_json = json.load(f)
@@ -25,8 +25,13 @@ def test_write_image():
     with zipfile.ZipFile(zip_path) as zip_file:
         parser = SimpleAnnotationZipParser(zip_file, "sample_1/c6e1c2ec-6c7c-41c6-9639-4244c2ed2839.json")
 
-        write_annotation_image(parser=parser, image_size=(64, 64), label_color_dict=label_color_dict,
-                               output_image_file=output_image_file, background_color=(64, 64, 64))
+        write_annotation_image(
+            parser=parser,
+            image_size=(64, 64),
+            label_color_dict=label_color_dict,
+            output_image_file=output_image_file,
+            background_color=(64, 64, 64),
+        )
 
 
 def test_write_image_wihtout_outer_file():
@@ -34,8 +39,13 @@ def test_write_image_wihtout_outer_file():
 
     # 外部ファイルが見つからない状態で画像を生成する。
     parser = SimpleAnnotationDirParser(test_dir / "simple-annotation.json")
-    write_annotation_image(parser=parser, image_size=(64, 64), label_color_dict=label_color_dict,
-                           output_image_file=output_image_file, background_color=(64, 64, 64))
+    write_annotation_image(
+        parser=parser,
+        image_size=(64, 64),
+        label_color_dict=label_color_dict,
+        output_image_file=output_image_file,
+        background_color=(64, 64, 64),
+    )
 
 
 def test_write_annotation_images_from_path():
@@ -45,6 +55,11 @@ def test_write_annotation_images_from_path():
     def is_target_parser_func(parser: SimpleAnnotationParser) -> bool:
         return parser.task_id == "sample_1"
 
-    write_annotation_images_from_path(annotation_path=zip_path, image_size=(64, 64), label_color_dict=label_color_dict,
-                                      output_dir_path=output_image_dir, background_color=(64, 64, 64),
-                                      is_target_parser_func=is_target_parser_func)
+    write_annotation_images_from_path(
+        annotation_path=zip_path,
+        image_size=(64, 64),
+        label_color_dict=label_color_dict,
+        output_dir_path=output_image_dir,
+        background_color=(64, 64, 64),
+        is_target_parser_func=is_target_parser_func,
+    )
