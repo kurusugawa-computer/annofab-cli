@@ -131,7 +131,11 @@ def print_csv(df: pandas.DataFrame, output: Optional[str] = None, to_csv_kwargs:
         Path(output).parent.mkdir(parents=True, exist_ok=True)
 
     path_or_buf = sys.stdout if output is None else output
-    df.to_csv(path_or_buf, **to_csv_kwargs)
+
+    if to_csv_kwargs is None:
+        df.to_csv(path_or_buf)
+    else:
+        df.to_csv(path_or_buf, **to_csv_kwargs)
 
 
 def print_id_list(id_list: List[Any], output: Optional[str]):
