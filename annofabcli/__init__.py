@@ -1,3 +1,4 @@
+# flake8: noqa: F401
 from annofabcli.common import enums
 from annofabcli.common import typing
 from annofabcli.common import exceptions
