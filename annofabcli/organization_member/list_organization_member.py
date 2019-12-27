@@ -1,6 +1,5 @@
 import argparse
 import logging
-from typing import Any, Callable, Dict, List, Optional, Tuple, Union  # pylint: disable=unused-import
 
 import annofabcli
 from annofabcli import AnnofabApiFacade

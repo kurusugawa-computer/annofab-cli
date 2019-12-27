@@ -2,7 +2,7 @@ import argparse
 import copy
 import logging
 import uuid
-from typing import Any, Callable, Dict, List, Optional, Tuple, Union  # pylint: disable=unused-import
+from typing import Any, Dict, Optional
 
 from annofabapi.models import JobType, OrganizationMemberRole, ProjectMemberRole
 

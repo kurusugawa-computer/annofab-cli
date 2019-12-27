@@ -3,7 +3,6 @@ import logging.handlers
 import time
 import uuid
 from pathlib import Path
-from typing import Any, Callable, Dict, List, Optional, Tuple, Union  # pylint: disable=unused-import
 
 import pyquery
 

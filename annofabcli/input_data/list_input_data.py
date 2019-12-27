@@ -4,7 +4,7 @@ import datetime
 import logging
 import urllib.parse
 from dataclasses import dataclass
-from typing import Any, Callable, Dict, List, Optional, Tuple, Union  # pylint: disable=unused-import
+from typing import Any, Dict, List, Optional, Tuple
 
 import annofabapi
 from annofabapi.models import InputData, Task

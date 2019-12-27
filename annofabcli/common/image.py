@@ -5,7 +5,7 @@
 import logging
 import zipfile
 from pathlib import Path
-from typing import Any, Callable, Dict, Iterator, List, Optional, Tuple  # pylint: disable=unused-import
+from typing import Any, Callable, Dict, Optional
 
 import PIL
 import PIL.Image

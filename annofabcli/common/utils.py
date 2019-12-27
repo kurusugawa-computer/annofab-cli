@@ -5,7 +5,7 @@ import pkgutil
 import re
 import sys
 from pathlib import Path
-from typing import Any, Dict, List, Optional, Set, TypeVar  # pylint: disable=unused-import
+from typing import Any, Dict, List, Optional, Set, TypeVar
 
 import dateutil.parser
 import isodate

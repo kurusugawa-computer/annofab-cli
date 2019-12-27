@@ -4,7 +4,7 @@ annofabapi.exceptions
 This module contains the set of annofabapi exceptions.
 """
 
-from typing import List, Optional  # pylint: disable=unused-import
+from typing import List
 
 from annofabapi.models import OrganizationMemberRole, ProjectMemberRole
 

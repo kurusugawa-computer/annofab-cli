@@ -4,7 +4,7 @@
 import argparse
 import datetime
 import logging
-from typing import Any, Dict, List, Tuple  # pylint: disable=unused-import
+from typing import Any, Dict, List, Tuple
 
 import annofabapi
 from annofabapi.models import ProjectMemberRole

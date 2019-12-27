@@ -2,7 +2,7 @@
 #  type: ignore
 # pylint: skip-file
 from datetime import date, timedelta
-from typing import Any, Dict  # pylint: disable=unused-import
+from typing import Any, Dict
 
 
 def date_range(start_date: date, end_date: date):

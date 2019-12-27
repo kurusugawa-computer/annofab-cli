@@ -3,7 +3,7 @@ annofabapiのfacadeクラス
 """
 
 import logging
-from typing import Any, Callable, Dict, List, NewType, Optional, Tuple  # pylint: disable=unused-import
+from typing import Any, Callable, Dict, List, Optional, Tuple
 
 import annofabapi
 import annofabapi.utils

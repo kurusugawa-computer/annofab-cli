@@ -6,7 +6,7 @@ import argparse
 import logging
 import zipfile
 from pathlib import Path
-from typing import Any, Callable, Dict, Iterator, List, Optional, Tuple  # pylint: disable=unused-import
+from typing import List, Optional
 
 from annofabapi.models import TaskStatus
 from annofabapi.parser import SimpleAnnotationParser

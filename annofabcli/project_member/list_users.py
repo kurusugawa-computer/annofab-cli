@@ -3,7 +3,7 @@
 """
 import argparse
 import logging
-from typing import Any, Callable, Dict, List, Optional, Tuple, Union  # pylint: disable=unused-import
+from typing import Any, Dict, List
 
 import more_itertools
 import requests

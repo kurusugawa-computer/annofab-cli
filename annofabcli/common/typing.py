@@ -1,4 +1,4 @@
-from typing import Any, Callable, Dict, List, Optional, Tuple, Union  # pylint: disable=unused-import
+from typing import List, Tuple
 
 # 型タイプ
 RGB = Tuple[int, int, int]

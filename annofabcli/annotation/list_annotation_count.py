@@ -4,7 +4,7 @@
 import argparse
 import logging
 from enum import Enum
-from typing import Any, Callable, Dict, List, Optional, Tuple, Union  # pylint: disable=unused-import
+from typing import Any, Dict, List, Optional
 
 import annofabapi
 import more_itertools

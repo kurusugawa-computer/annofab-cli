@@ -2,7 +2,7 @@ import argparse
 import json
 import logging.handlers
 from pathlib import Path
-from typing import Any, Callable, Dict, List, Optional  # pylint: disable=unused-import
+from typing import Any, Dict, List
 
 import annofabapi
 from annofabapi.models import ProjectMemberRole, TaskPhase

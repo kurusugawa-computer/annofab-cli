@@ -6,7 +6,7 @@ import zipfile
 from dataclasses import dataclass
 from distutils.util import strtobool  # pylint: disable=import-error,no-name-in-module
 from pathlib import Path
-from typing import Any, Callable, Dict, List, Optional, Tuple, Union  # pylint: disable=unused-import
+from typing import Any, Dict, List, Optional
 
 import pandas
 import requests

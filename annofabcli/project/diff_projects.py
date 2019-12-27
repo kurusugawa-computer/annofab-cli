@@ -8,7 +8,7 @@ import functools
 import logging
 import pprint
 from enum import Enum
-from typing import Any, Dict, List, Tuple  # pylint: disable=unused-import
+from typing import Any, Dict, List, Tuple
 
 import annofabapi
 import dictdiffer

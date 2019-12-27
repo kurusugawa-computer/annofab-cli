@@ -1,6 +1,6 @@
 import argparse
 import logging
-from typing import Optional, Sequence  # pylint: disable=unused-import
+from typing import Optional, Sequence
 
 import annofabcli.annotation.subcommand_annotation
 import annofabcli.annotation_specs.subcommand_annotation_specs

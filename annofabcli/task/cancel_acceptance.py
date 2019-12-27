@@ -4,7 +4,7 @@
 
 import argparse
 import logging
-from typing import List, Optional  # pylint: disable=unused-import
+from typing import List, Optional
 
 import requests
 from annofabapi.models import ProjectMemberRole

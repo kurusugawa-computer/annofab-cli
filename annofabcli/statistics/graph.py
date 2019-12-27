@@ -2,7 +2,7 @@
 import logging
 from dataclasses import dataclass
 from pathlib import Path
-from typing import Any, Dict, List, Optional  # pylint: disable=unused-import
+from typing import Dict, List, Optional
 
 import bokeh
 import bokeh.layouts

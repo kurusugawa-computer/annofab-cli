@@ -2,7 +2,7 @@ import argparse
 import json
 import logging
 import sys
-from typing import Any, Callable, Dict, List, Optional  # pylint: disable=unused-import
+from typing import Callable
 
 from annofabapi.models import Inspection
 

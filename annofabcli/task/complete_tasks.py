@@ -1,7 +1,7 @@
 import argparse
 import logging
 import time
-from typing import Any, Callable, Dict, List, Optional  # pylint: disable=unused-import
+from typing import Dict, List
 
 import requests
 from annofabapi.models import InputDataId, Inspection, InspectionStatus, ProjectMemberRole, Task, TaskId, TaskPhase

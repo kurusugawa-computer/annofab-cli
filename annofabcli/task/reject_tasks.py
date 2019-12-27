@@ -6,7 +6,7 @@ import argparse
 import logging
 import time
 import uuid
-from typing import Any, Dict, List, Optional  # pylint: disable=unused-import
+from typing import Any, Dict, List, Optional
 
 import annofabapi
 import annofabapi.utils

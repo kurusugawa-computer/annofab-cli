@@ -1,6 +1,6 @@
 import argparse
 import logging
-from typing import Any, Callable, Dict, List, Optional, Tuple, Union  # pylint: disable=unused-import
+from typing import List
 
 from annofabapi.models import SupplementaryData
 

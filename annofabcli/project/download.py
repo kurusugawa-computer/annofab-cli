@@ -1,7 +1,6 @@
 import argparse
 import logging
 from enum import Enum
-from typing import Any, Dict, List, Optional  # pylint: disable=unused-import
 
 from annofabapi.models import JobStatus, JobType
 

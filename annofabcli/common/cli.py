@@ -7,7 +7,7 @@ import argparse
 import getpass
 import json
 import logging
-from typing import Any, Dict, List, Optional, Tuple  # pylint: disable=unused-import
+from typing import Any, Dict, List, Optional, Tuple
 
 import annofabapi
 import jmespath

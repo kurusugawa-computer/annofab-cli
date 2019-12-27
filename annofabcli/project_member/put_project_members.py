@@ -2,7 +2,7 @@ import argparse
 import logging
 from dataclasses import dataclass
 from pathlib import Path
-from typing import Any, Callable, Dict, List, Optional, Tuple, Union  # pylint: disable=unused-import
+from typing import Any, Dict, List, Optional
 
 import more_itertools
 import pandas
