@@ -145,14 +145,11 @@ class Graph:
         data = df[histogram_name.column].values
 
         frequencies, edges = np.histogram(data, bins)
-        hist = hv.Histogram(
-            (edges, frequencies),
-            kdims=histogram_name.x_axis_label,
-            vdims=histogram_name.y_axis_label,
-            tools=["hover"]
-        ).options(width=500, title=title, fontsize={"title": 9})
+        hist = hv.Histogram((edges, frequencies), kdims=histogram_name.x_axis_label,
+                            vdims=histogram_name.y_axis_label).options(width=500, title=title, fontsize={
+                                "title": 9
+                            }).opts(hv.opts(tools=["hover"]))
         return hist
-
 
     def write_histogram_for_worktime(self, df: pd.DataFrame):
         """
@@ -227,7 +224,7 @@ class Graph:
         filtered_df = df[df["acceptance_worktime_hour"].notnull()]
         histograms.append(
             self._create_histogram(
-                filtered_df[~ filtered_df["acceptance_is_skipped"]],
+                filtered_df[~filtered_df["acceptance_is_skipped"]],
                 histogram_name=HistogramName(
                     column="acceptance_worktime_hour",
                     x_axis_label="受入時間[hour]",
@@ -238,7 +235,6 @@ class Graph:
         # 軸範囲が同期しないようにする
         layout = hv.Layout(histograms).options(shared_axes=False).cols(3)
         renderer.save(layout, f"{self.outdir}/html/{self.short_project_id}-ヒストグラム-作業時間")
-
 
     def write_histogram_for_other(self, df: pd.DataFrame):
         """
@@ -318,13 +314,14 @@ class Graph:
 
         for column in label_columns:
             label_name = column[len("label_"):]
-            histogram_name= HistogramName(column=column, x_axis_label=f"'{label_name}'のアノテーション数", title=f"{label_name}")
+            histogram_name = HistogramName(column=column, x_axis_label=f"'{label_name}'のアノテーション数",
+                                           title=f"{label_name}")
             hist = self._create_histogram(df, histogram_name=histogram_name)
 
             histograms.append(hist)
 
         # 軸範囲が同期しないようにする
-        layout = hv.Layout(histograms).options(shared_axes=False)
+        layout = hv.Layout(histograms).options(shared_axes=False).cols(3)
         renderer.save(layout, f"{self.outdir}/html/{self.short_project_id}-ヒストグラム-ラベルごとのアノテーション数")
 
     def create_user_id_list(
