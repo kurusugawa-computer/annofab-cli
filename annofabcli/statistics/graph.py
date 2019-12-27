@@ -302,9 +302,9 @@ class Graph:
         layout = hv.Layout(histograms).options(shared_axes=False).cols(3)
         renderer.save(layout, f"{self.outdir}/html/{self.short_project_id}-ヒストグラム")
 
-    def wirte_ラベルごとのアノテーション数(self, df: pd.DataFrame):
+    def write_histogram_for_annotation_count_by_label(self, df: pd.DataFrame) -> None:
         """
-        アノテーションラベルごとの個数を出力
+        アノテーションラベルごとのアノテーション数をヒストグラムで出力する。
         """
         if len(df) == 0:
             logger.info("タスク一覧が0件のため出力しない")
@@ -312,24 +312,19 @@ class Graph:
 
         renderer = hv.renderer("bokeh")
 
-        histograms2 = []
+        histograms = []
         label_columns = [e for e in df.columns if e.startswith("label_")]
 
         for column in label_columns:
             label_name = column[len("label_"):]
-            mean = round(df[column].mean(), 2)
-            std = round(df[column].std(), 2)
-            title = f"{label_name}(mean = {mean}, std = {std})"
-            axis_name = f"アノテーション数_{label_name}"
+            histogram_name= HistogramName(column=column, x_axis_label=f"'{label_name}'のアノテーション数", title=f"{label_name}")
+            hist = self._create_histogram(df, histogram_name=histogram_name)
 
-            data = df[column].values
-            frequencies, edges = np.histogram(data, 20)
-            hist = hv.Histogram((edges, frequencies), kdims=axis_name, vdims="タスク数", label=title).options(width=400)
-            histograms2.append(hist)
+            histograms.append(hist)
 
         # 軸範囲が同期しないようにする
-        layout2 = hv.Layout(histograms2).options(shared_axes=False)
-        renderer.save(layout2, f"{self.outdir}/html/{self.short_project_id}-ヒストグラム-ラベルごとのアノテーション数")
+        layout = hv.Layout(histograms).options(shared_axes=False)
+        renderer.save(layout, f"{self.outdir}/html/{self.short_project_id}-ヒストグラム-ラベルごとのアノテーション数")
 
     def create_user_id_list(
             self,
