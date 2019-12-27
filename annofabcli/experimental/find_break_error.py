@@ -2,6 +2,8 @@ import argparse
 import datetime
 import json
 import logging
+import sys
+from pathlib import Path
 from typing import Any, Dict, List, Optional, Tuple  # pylint: disable=unused-import
 
 import annofabapi
@@ -81,21 +83,14 @@ class FindBreakError(AbstractCommandLineInterface):
         """
         project_task_history_events: List[Dict[str, Any]] = []
         if import_file_path is None:
-            try:
-                content, _ = self.service.wrapper.api.get_project_task_history_events_url(project_id=project_id)
-                url = content["url"]
-                history_events = download_content(url)
-                project_task_history_events = json.loads(history_events)
-            except NameError:
-                logger.warning(f"history_events_urlを読み込めませんでした。")
-            except requests.exceptions.HTTPError:
-                logger.warning(f"history_eventsをurlから読み込めませんでした。")
+            content, _ = self.service.wrapper.api.get_project_task_history_events_url(project_id=project_id)
+            url = content["url"]
+            history_events = download_content(url)
+            project_task_history_events = json.loads(history_events)
+
         else:
-            try:
-                history_events = read_lines_except_blank_line(import_file_path)
-                project_task_history_events = json.loads(history_events[0])
-            except FileNotFoundError:
-                logger.warning(f"ファイル '{import_file_path}' は存在しません。")
+            history_events = read_lines_except_blank_line(import_file_path)
+            project_task_history_events = json.loads(history_events[0])
 
         return project_task_history_events
 
@@ -164,8 +159,22 @@ class FindBreakError(AbstractCommandLineInterface):
             output=output,
             to_csv_kwargs={"index": False})
 
+    @staticmethod
+    def validate(args: argparse.Namespace) -> bool:
+        COMMON_MESSAGE = "annofabcli experimental find_break_error: error:"
+        if args.import_file_path is not None:
+            if not Path(args.import_file_path).is_file():
+                print(f"{COMMON_MESSAGE} argument --import_file_path: ファイルパスが存在しません。 '{args.import_file_path}'",
+                      file=sys.stderr)
+                return False
+
+        return True
+
     def main(self):
         args = self.args
+        if not self.validate(args):
+            return
+
         tasks = self._get_all_tasks(project_id=args.project_id)
         task_history_events = self._project_task_history_events(project_id=args.project_id,
                                                                 import_file_path=args.import_file_path)
@@ -189,7 +198,7 @@ def parse_args(parser: argparse.ArgumentParser):
                         help="1タスク何分以上を検知対象とするか。指定しない場合は600分(10時間)")
     parser.add_argument('--task_history_time_threshold', type=int, default=300,
                         help="1履歴何分以上を検知対象とするか。指定しない場合は300分(5時間)")
-    parser.add_argument('--import_file_path', type=str, default=None,
+    parser.add_argument('--import_file_path', type=str,
                         help="importするタスク履歴イベント全件ファイル,指定しない場合はタスク履歴イベント全件を新規取得する")
 
     argument_parser.add_output()
