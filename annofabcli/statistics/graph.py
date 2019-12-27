@@ -66,7 +66,7 @@ class Graph:
 
         detail_tooltips = [(e, "@{%s}" % e) for e in tool_tip_items]
 
-        hover_tool = HoverTool(tooltips=[("index", "$index"), ("(x,y)", "($x, $y)"),] + detail_tooltips)
+        hover_tool = HoverTool(tooltips=[("index", "$index"), ("(x,y)", "($x, $y)")] + detail_tooltips)
         return hover_tool
 
     @staticmethod

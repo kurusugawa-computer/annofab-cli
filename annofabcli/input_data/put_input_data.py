@@ -54,7 +54,7 @@ class PutInputData(AbstractCommandLineInterface):
         file_path = get_file_scheme_path(csv_input_data.input_data_path)
         if file_path is not None:
             request_body.update(
-                {"input_data_name": csv_input_data.input_data_name, "sign_required": csv_input_data.sign_required,}
+                {"input_data_name": csv_input_data.input_data_name, "sign_required": csv_input_data.sign_required}
             )
             logger.debug(f"'{file_path}'を入力データとして登録します。")
             self.service.wrapper.put_input_data_from_file(

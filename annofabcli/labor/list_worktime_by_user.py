@@ -331,7 +331,7 @@ class ListWorktimeByUser(AbstractCommandLineInterface):
     @staticmethod
     def validate(args: argparse.Namespace) -> bool:
         if args.organization is not None and args.user_id is None:
-            print("ERROR: argument --user_id: " "`--organization`を指定しているときは、`--user_id`オプションは必須です。", file=sys.stderr)
+            print("ERROR: argument --user_id: `--organization`を指定しているときは、`--user_id`オプションは必須です。", file=sys.stderr)
             return False
 
         date_period_is_valid = args.start_date is not None and args.end_date is not None
@@ -348,6 +348,15 @@ class ListWorktimeByUser(AbstractCommandLineInterface):
         return True
 
     def get_user_id_list_from_project_id_list(self, project_id_list: List[str]) -> List[str]:
+        """
+        プロジェクトメンバ一覧からuser_id_listを取得する。
+        Args:
+            project_id_list:
+
+        Returns:
+            user_id_list
+
+        """
         member_list: List[Dict[str, Any]] = []
         for project_id in project_id_list:
             member_list.extend(self.service.wrapper.get_all_project_members(project_id))
@@ -406,12 +415,15 @@ class ListWorktimeByUser(AbstractCommandLineInterface):
         if not self.validate(args):
             return
 
-        user_id_list = get_list_from_args(args.user_id) if args.user_id is not None else None
+        arg_user_id_list = get_list_from_args(args.user_id) if args.user_id is not None else None
         project_id_list = get_list_from_args(args.project_id) if args.project_id is not None else None
         organization_name_list = get_list_from_args(args.organization) if args.organization is not None else None
 
-        if user_id_list is None and project_id_list is not None:
+        if arg_user_id_list is None:
+            assert project_id_list is not None, "arg_user_id_list is Noneのときは、`project_id_list is not None`であることを期待します。"
             user_id_list = self.get_user_id_list_from_project_id_list(project_id_list)
+        else:
+            user_id_list = arg_user_id_list
 
         start_date, end_date = self.get_start_and_end_date_from_args(args)
 

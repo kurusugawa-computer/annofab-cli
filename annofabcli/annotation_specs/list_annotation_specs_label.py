@@ -56,7 +56,7 @@ class PrintAnnotationSpecsLabel(AbstractCommandLineInterface):
         for label in labels:
             output_lines.append(
                 "\t".join(
-                    [label["label_id"], label["annotation_type"],]
+                    [label["label_id"], label["annotation_type"]]
                     + PrintAnnotationSpecsLabel._get_name_list(label["label_name"]["messages"])
                 )
             )
@@ -75,7 +75,7 @@ class PrintAnnotationSpecsLabel(AbstractCommandLineInterface):
                     for choice in additional_data_definition["choices"]:
                         output_lines.append(
                             "\t".join(
-                                ["", "", choice["choice_id"], "",]
+                                ["", "", choice["choice_id"], ""]
                                 + PrintAnnotationSpecsLabel._get_name_list(choice["name"]["messages"])
                             )
                         )
