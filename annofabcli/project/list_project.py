@@ -1,6 +1,6 @@
 import argparse
 import logging
-from typing import Any, Callable, Dict, List, Optional, Tuple, Union  # pylint: disable=unused-import
+from typing import Any, Dict, List, Optional
 
 from annofabapi.models import OrganizationMember, Project
 from more_itertools import first_true
@@ -17,6 +17,7 @@ class ListProject(AbstractCommandLineInterface):
     """
     プロジェクト一覧を表示する。
     """
+
     @staticmethod
     def get_account_id_from_user_id(organization_member_list: List[OrganizationMember], user_id: str) -> Optional[str]:
         member = first_true(organization_member_list, pred=lambda e: e["user_id"] == user_id)
@@ -40,29 +41,30 @@ class ListProject(AbstractCommandLineInterface):
             修正したタスク検索クエリ
 
         """
+
         def remove_key(arg_key: str):
             if arg_key in project_query:
                 logger.info(f"project_query から、`{arg_key}`　キーを削除しました。")
                 project_query.pop(arg_key)
 
-        remove_key('page')
-        remove_key('limit')
+        remove_key("page")
+        remove_key("limit")
 
         organization_member_list = self.service.wrapper.get_all_organization_members(organization_name)
 
-        if 'user_id' in project_query:
-            user_id = project_query['user_id']
+        if "user_id" in project_query:
+            user_id = project_query["user_id"]
             account_id = self.get_account_id_from_user_id(organization_member_list, user_id)
             if account_id is not None:
-                project_query['account_id'] = account_id
+                project_query["account_id"] = account_id
             else:
                 logger.warning(f"project_query に含まれている user_id: {user_id} のユーザが見つかりませんでした。")
 
-        if 'except_user_id' in project_query:
-            except_user_id = project_query['except_user_id']
+        if "except_user_id" in project_query:
+            except_user_id = project_query["except_user_id"]
             except_account_id = self.get_account_id_from_user_id(organization_member_list, except_user_id)
             if except_account_id is not None:
-                project_query['except_account_id'] = except_account_id
+                project_query["except_account_id"] = except_account_id
             else:
                 logger.warning(f"project_query に含まれている except_user_id: {except_user_id} のユーザが見つかりませんでした。")
 
@@ -77,8 +79,9 @@ class ListProject(AbstractCommandLineInterface):
             project_query = self._modify_project_query(organization_name, project_query)
 
         logger.debug(f"project_query: {project_query}")
-        project_list = self.service.wrapper.get_all_projects_of_organization(organization_name,
-                                                                             query_params=project_query)
+        project_list = self.service.wrapper.get_all_projects_of_organization(
+            organization_name, query_params=project_query
+        )
         return project_list
 
     def print_project_list(self, organization_name: str, project_query: Optional[Dict[str, Any]] = None) -> None:
@@ -110,20 +113,24 @@ def main(args):
 def parse_args(parser: argparse.ArgumentParser):
     argument_parser = ArgumentParser(parser)
 
-    parser.add_argument('-org', '--organization', type=str, required=True, help='対象の組織名を指定してください。')
+    parser.add_argument("-org", "--organization", type=str, required=True, help="対象の組織名を指定してください。")
 
     parser.add_argument(
-        '--project_query', type=str, help='タスクの検索クエリをJSON形式で指定します。'
-        '指定しない場合は、組織配下のすべてのプロジェクトを取得します。'
-        '`file://`を先頭に付けると、JSON形式のファイルを指定できます。'
-        'クエリのフォーマットは、[getProjectsOfOrganization API]'
-        '(https://annofab.com/docs/api/#operation/getProjectsOfOrganization)のクエリパラメータと同じです。'
-        'さらに追加で、`user_id`, `except_user_id` キーも指定できます。'
-        'ただし `page`, `limit`キーは指定できません。')
+        "--project_query",
+        type=str,
+        help="タスクの検索クエリをJSON形式で指定します。"
+        "指定しない場合は、組織配下のすべてのプロジェクトを取得します。"
+        "`file://`を先頭に付けると、JSON形式のファイルを指定できます。"
+        "クエリのフォーマットは、[getProjectsOfOrganization API]"
+        "(https://annofab.com/docs/api/#operation/getProjectsOfOrganization)のクエリパラメータと同じです。"
+        "さらに追加で、`user_id`, `except_user_id` キーも指定できます。"
+        "ただし `page`, `limit`キーは指定できません。",
+    )
 
     argument_parser.add_format(
         choices=[FormatArgument.CSV, FormatArgument.JSON, FormatArgument.PRETTY_JSON, FormatArgument.PROJECT_ID_LIST],
-        default=FormatArgument.CSV)
+        default=FormatArgument.CSV,
+    )
     argument_parser.add_output()
     argument_parser.add_csv_format()
 
@@ -134,7 +141,7 @@ def parse_args(parser: argparse.ArgumentParser):
 def add_parser(subparsers: argparse._SubParsersAction):
     subcommand_name = "list"
     subcommand_help = "プロジェクト一覧を出力します。"
-    description = ("プロジェクト一覧を出力します。")
+    description = "プロジェクト一覧を出力します。"
 
     parser = annofabcli.common.cli.add_parser(subparsers, subcommand_name, subcommand_help, description)
     parse_args(parser)

@@ -2,8 +2,8 @@ from pathlib import Path
 
 from annofabcli.statistics.graph import Graph
 
-out_path = Path('./tests/out')
-data_path = Path('./tests/data')
+out_path = Path("./tests/out")
+data_path = Path("./tests/data")
 
 project_id = "12345678-abcd-1234-abcd-1234abcd5678"
 graph_obj = Graph(str(out_path), project_id)

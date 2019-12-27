@@ -4,7 +4,7 @@
 import argparse
 import datetime
 import logging
-from typing import Any, Dict, List, Tuple  # pylint: disable=unused-import
+from typing import Any, Dict, List, Tuple
 
 import annofabapi
 from annofabapi.models import ProjectMemberRole
@@ -19,17 +19,16 @@ from annofabcli.statistics.table import Table
 logger = logging.getLogger(__name__)
 
 
-class Database():
+class Database:
     def __init__(self, annofab_service: annofabapi.Resource, project_id: str, organization_id: str):
         self.annofab_service = annofab_service
         self.project_id = project_id
         self.organization_id = organization_id
 
     def get_labor_control(self) -> List[Dict[str, Any]]:
-        labor_control_df = self.annofab_service.api.get_labor_control({
-            "organization_id": self.organization_id,
-            "project_id": self.project_id
-        })[0]
+        labor_control_df = self.annofab_service.api.get_labor_control(
+            {"organization_id": self.organization_id, "project_id": self.project_id}
+        )[0]
         return labor_control_df
 
     def get_account_statistics(self) -> List[Dict[str, Any]]:
@@ -68,26 +67,32 @@ class FutureTable(Table):
             if l["account_id"] == None:
                 continue
             if self.user_id_search_list == None:
-                labor_control_list.append({
-                    "account_id": l["account_id"],
-                    "date": l["date"],
-                    "aw_plans": aw_plans,
-                    "aw_results": aw_results,
-                    "username": self._get_username(l["account_id"]),
-                    "af_time": 0.0
-                })
-            else:
-                user_id_bool_list = [user_id_search in self._get_user_id(l["account_id"]).upper() for user_id_search in
-                                     self.user_id_search_list]
-                if True in user_id_bool_list:
-                    labor_control_list.append({
+                labor_control_list.append(
+                    {
                         "account_id": l["account_id"],
                         "date": l["date"],
                         "aw_plans": aw_plans,
                         "aw_results": aw_results,
                         "username": self._get_username(l["account_id"]),
-                        "af_time": 0.0
-                    })
+                        "af_time": 0.0,
+                    }
+                )
+            else:
+                user_id_bool_list = [
+                    user_id_search in self._get_user_id(l["account_id"]).upper()
+                    for user_id_search in self.user_id_search_list
+                ]
+                if True in user_id_bool_list:
+                    labor_control_list.append(
+                        {
+                            "account_id": l["account_id"],
+                            "date": l["date"],
+                            "aw_plans": aw_plans,
+                            "aw_results": aw_results,
+                            "username": self._get_username(l["account_id"]),
+                            "af_time": 0.0,
+                        }
+                    )
 
         return labor_control_list
 
@@ -99,27 +104,29 @@ class FutureTable(Table):
         all_histories = []
         for account_info in account_statistics:
 
-            account_id = account_info['account_id']
-            histories = account_info['histories']
+            account_id = account_info["account_id"]
+            histories = account_info["histories"]
             if account_id == None:
                 continue
             elif self.user_id_search_list == None:
                 for history in histories:
-                    history['af_time'] = annofabcli.utils.isoduration_to_minute(history['worktime'])
-                    history['account_id'] = account_id
-                    history['username'] = self._get_username(account_id)
+                    history["af_time"] = annofabcli.utils.isoduration_to_minute(history["worktime"])
+                    history["account_id"] = account_id
+                    history["username"] = self._get_username(account_id)
                     history["aw_plans"] = 0.0
                     history["aw_results"] = 0.0
 
                 all_histories.extend(histories)
             else:
-                user_id_bool_list = [user_id_search in self._get_user_id(account_id).upper().upper() for user_id_search
-                                     in self.user_id_search_list]
+                user_id_bool_list = [
+                    user_id_search in self._get_user_id(account_id).upper().upper()
+                    for user_id_search in self.user_id_search_list
+                ]
                 if True in user_id_bool_list:
                     for history in histories:
-                        history['af_time'] = annofabcli.utils.isoduration_to_minute(history['worktime'])
-                        history['account_id'] = account_id
-                        history['username'] = self._get_username(account_id)
+                        history["af_time"] = annofabcli.utils.isoduration_to_minute(history["worktime"])
+                        history["account_id"] = account_id
+                        history["username"] = self._get_username(account_id)
                         history["aw_plans"] = 0.0
                         history["aw_results"] = 0.0
 
@@ -135,8 +142,10 @@ class FutureTable(Table):
 
         for labor_control in labor_control_df:
             for account_statistics in account_statistics_df:
-                if account_statistics["account_id"] == labor_control["account_id"] and account_statistics["date"] == \
-                        labor_control["date"]:
+                if (
+                    account_statistics["account_id"] == labor_control["account_id"]
+                    and account_statistics["date"] == labor_control["date"]
+                ):
                     labor_control["af_time"] = account_statistics["af_time"]
                     labor_control["username"] = account_statistics["username"]
                     if not account_statistics["username"] in username_list:
@@ -175,8 +184,8 @@ class ListLaborWorktime(AbstractCommandLineInterface):
 
     def main(self):
         args = self.args
-        start_date = datetime.datetime.strptime(args.start_date, '%Y-%m-%d').date()
-        end_date = datetime.datetime.strptime(args.end_date, '%Y-%m-%d').date()
+        start_date = datetime.datetime.strptime(args.start_date, "%Y-%m-%d").date()
+        end_date = datetime.datetime.strptime(args.end_date, "%Y-%m-%d").date()
         date_list = date_range(start_date, end_date)
         user_id_list = args.user_id
 
@@ -187,9 +196,9 @@ class ListLaborWorktime(AbstractCommandLineInterface):
             afaw_time_df, project_members = self.list_labor_worktime(project_id, user_id_list)
             afaw_time_list.append(afaw_time_df)
             project_members_list.extend(project_members)
-        print_time_list, print_total_time = print_time_list_from_work_time_list(list(set(project_members_list)),
-                                                                                afaw_time_list,
-                                                                                date_list)
+        print_time_list, print_total_time = print_time_list_from_work_time_list(
+            list(set(project_members_list)), afaw_time_list, date_list
+        )
 
         output_lines: List[str] = []
         output_lines.append(f"Start: , {start_date},  End: , {end_date}")
@@ -212,11 +221,21 @@ def main(args):
 def parse_args(parser: argparse.ArgumentParser):
     argument_parser = ArgumentParser(parser)
     parser.add_argument(
-        '-p', '--project_id', type=str, required=True, nargs='+',
-        help="集計対象のプロジェクトのproject_idを指定します。複数指定した場合は合計値を出力します。")
+        "-p",
+        "--project_id",
+        type=str,
+        required=True,
+        nargs="+",
+        help="集計対象のプロジェクトのproject_idを指定します。複数指定した場合は合計値を出力します。",
+    )
     parser.add_argument(
-        '-u', '--user_id', type=str, nargs='+', default=None, help='集計対象のユーザのuser_idに部分一致するものを集計します。'
-                                                                   '指定しない場合は、プロジェクトメンバが指定されます。')
+        "-u",
+        "--user_id",
+        type=str,
+        nargs="+",
+        default=None,
+        help="集計対象のユーザのuser_idに部分一致するものを集計します。" "指定しない場合は、プロジェクトメンバが指定されます。",
+    )
     parser.add_argument("--start_date", type=str, required=True, help="集計開始日(%%Y-%%m-%%d)")
     parser.add_argument("--end_date", type=str, required=True, help="集計終了日(%%Y-%%m-%%d)")
 
@@ -228,7 +247,7 @@ def parse_args(parser: argparse.ArgumentParser):
 def add_parser(subparsers: argparse._SubParsersAction):
     subcommand_name = "list_labor_worktime"
     subcommand_help = "労務管理画面の作業時間を出力します。"
-    description = ("作業者ごとに、「作業者が入力した実績時間」と「AnnoFabが集計した作業時間」の差分を出力します。")
+    description = "作業者ごとに、「作業者が入力した実績時間」と「AnnoFabが集計した作業時間」の差分を出力します。"
 
     parser = annofabcli.common.cli.add_parser(subparsers, subcommand_name, subcommand_help, description)
     parse_args(parser)

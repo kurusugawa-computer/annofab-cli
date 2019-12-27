@@ -50,8 +50,9 @@ class Tsv:
         self.outdir = outdir
         self.short_project_id = project_id[0:8]
 
-    def write_inspection_list(self, df: pd.DataFrame, dropped_columns: Optional[List[str]] = None,
-                              only_error_corrected: bool = True):
+    def write_inspection_list(
+        self, df: pd.DataFrame, dropped_columns: Optional[List[str]] = None, only_error_corrected: bool = True,
+    ):
         """
         検査コメント一覧をTSVで出力する
         Args:
@@ -114,16 +115,29 @@ class Tsv:
             "started_datetime",
             "updated_datetime",
             "sampling",
-
-            # 最初のアノテーション作業に関すること
+            # 1回目の教師付フェーズ
             "first_annotation_user_id",
             "first_annotation_worktime_hour",
             "first_annotation_started_datetime",
+            # 1回目の検査フェーズ
+            "first_inspection_user_id",
+            "first_inspection_worktime_hour",
+            "first_inspection_started_datetime",
+            # 1回目の受入フェーズ
+            "first_acceptance_user_id",
+            "first_acceptance_worktime_hour",
+            "first_acceptance_started_datetime",
             # 作業時間に関する内容
             "sum_worktime_hour",
             "annotation_worktime_hour",
             "inspection_worktime_hour",
             "acceptance_worktime_hour",
+            "first_annotation_worktime_hour",
+            "first_inspection_worktime_hour",
+            "first_acceptance_worktime_hour",
+            "first_annotator_worktime_hour",
+            "first_inspector_worktime_hour",
+            "first_acceptor_worktime_hour",
             # 個数
             "input_data_count",
             "annotation_count",
@@ -184,12 +198,10 @@ class Tsv:
             "username",
             "member_role",
             "member_status",
-
             # 関わった作業時間
             "annotation_worktime_hour",
             "inspection_worktime_hour",
             "acceptance_worktime_hour",
-
             # 初回のアノテーションに関わった個数（タスクの教師付担当者は変更されない前提）
             "task_count_of_first_annotation",
             "input_data_count_of_first_annotation",
@@ -197,7 +209,7 @@ class Tsv:
             "inspection_count_of_first_annotation",
         ]
         required_columns = self._create_required_columns(df, prior_columns, dropped_columns)
-        self._write_csv(f"{self.short_project_id}-メンバ一覧list.csv", df[required_columns])
+        self._write_csv(f"{self.short_project_id}-メンバlist.csv", df[required_columns])
 
     def write_ラベルごとのアノテーション数(self, df: pd.DataFrame):
         """

@@ -6,7 +6,7 @@ import argparse
 import json
 import logging
 import sys
-from typing import Any, Callable, Dict, List, Optional  # pylint: disable=unused-import
+from typing import Callable, List, Optional
 
 import annofabapi
 import requests
@@ -28,15 +28,16 @@ class PrintInspections(AbstractCommandLineInterface):
     """
     検査コメント一覧を出力する。
     """
+
     def __init__(self, service: annofabapi.Resource, facade: AnnofabApiFacade, args: argparse.Namespace):
         super().__init__(service, facade, args)
         self.visualize = AddProps(self.service, args.project_id)
 
     def filter_inspection_list(
-            self,
-            inspection_list: List[Inspection],
-            task_id_list: Optional[List[str]] = None,
-            arg_filter_inspection: Optional[FilterInspectionFunc] = None,
+        self,
+        inspection_list: List[Inspection],
+        task_id_list: Optional[List[str]] = None,
+        arg_filter_inspection: Optional[FilterInspectionFunc] = None,
     ) -> List[Inspection]:
         """
         引数の検査コメント一覧に`commenter_username`など、ユーザが知りたい情報を追加する。
@@ -48,10 +49,11 @@ class PrintInspections(AbstractCommandLineInterface):
         Returns:
             情報が追加された検査コメント一覧
         """
+
         def filter_task_id(e):
             if task_id_list is None or len(task_id_list) == 0:
                 return True
-            return e['task_id'] in task_id_list
+            return e["task_id"] in task_id_list
 
         def filter_inspection(e):
             if arg_filter_inspection is None:
@@ -61,9 +63,13 @@ class PrintInspections(AbstractCommandLineInterface):
         inspection_list = [e for e in inspection_list if filter_inspection(e) and filter_task_id(e)]
         return [self.visualize.add_properties_to_inspection(e) for e in inspection_list]
 
-    def print_inspections(self, project_id: str, task_id_list: List[str],
-                          filter_inspection: Optional[FilterInspectionFunc] = None,
-                          inspection_list_from_json: Optional[List[Inspection]] = None):
+    def print_inspections(
+        self,
+        project_id: str,
+        task_id_list: List[str],
+        filter_inspection: Optional[FilterInspectionFunc] = None,
+        inspection_list_from_json: Optional[List[Inspection]] = None,
+    ):
         """
         検査コメントを出力する
 
@@ -79,12 +85,14 @@ class PrintInspections(AbstractCommandLineInterface):
         """
 
         if inspection_list_from_json is None:
-            inspection_list = self.get_inspections(project_id, task_id_list=task_id_list,
-                                                   filter_inspection=filter_inspection)
+            inspection_list = self.get_inspections(
+                project_id, task_id_list=task_id_list, filter_inspection=filter_inspection
+            )
 
         else:
-            inspection_list = self.filter_inspection_list(inspection_list_from_json, task_id_list=task_id_list,
-                                                          arg_filter_inspection=filter_inspection)
+            inspection_list = self.filter_inspection_list(
+                inspection_list_from_json, task_id_list=task_id_list, arg_filter_inspection=filter_inspection
+            )
 
         logger.info(f"検査コメントの件数: {len(inspection_list)}")
 
@@ -107,8 +115,9 @@ class PrintInspections(AbstractCommandLineInterface):
         inspectins, _ = self.service.api.get_inspections(project_id, task_id, input_data_id)
         return [self.visualize.add_properties_to_inspection(e, detail) for e in inspectins]
 
-    def get_inspections(self, project_id: str, task_id_list: List[str],
-                        filter_inspection: Optional[FilterInspectionFunc] = None) -> List[Inspection]:
+    def get_inspections(
+        self, project_id: str, task_id_list: List[str], filter_inspection: Optional[FilterInspectionFunc] = None
+    ) -> List[Inspection]:
         """検査コメント一覧を取得する。
 
         Args:
@@ -127,8 +136,9 @@ class PrintInspections(AbstractCommandLineInterface):
                 logger.info(f"タスク '{task_id}' に紐づく検査コメントを取得します。input_dataの個数 = {len(input_data_id_list)}")
                 for input_data_index, input_data_id in enumerate(input_data_id_list):
 
-                    inspections = self.get_inspections_by_input_data(project_id, task_id, input_data_id,
-                                                                     input_data_index)
+                    inspections = self.get_inspections_by_input_data(
+                        project_id, task_id, input_data_id, input_data_index
+                    )
 
                     if filter_inspection is not None:
                         inspections = [e for e in inspections if filter_inspection(e)]
@@ -146,7 +156,9 @@ class PrintInspections(AbstractCommandLineInterface):
         if args.inspection_comment_json is None and args.task_id is None:
             print(
                 "annofabcli inspection_comment list: error: argument -t/--task_id: "
-                "`--inspection_comment_json`を指定しないときは、必須です。", file=sys.stderr)
+                "`--inspection_comment_json`を指定しないときは、必須です。",
+                file=sys.stderr,
+            )
             return False
         else:
             return True
@@ -171,20 +183,29 @@ def parse_args(parser: argparse.ArgumentParser):
 
     argument_parser.add_project_id()
     argument_parser.add_task_id(
-        required=False, help_message='対象のタスクのtask_idを指定します。　'
-        '`--inspection_comment_json`を指定しないときは、必須です。'
-        '`file://`を先頭に付けると、task_idの一覧が記載されたファイルを指定できます。')
+        required=False,
+        help_message="対象のタスクのtask_idを指定します。　"
+        "`--inspection_comment_json`を指定しないときは、必須です。"
+        "`file://`を先頭に付けると、task_idの一覧が記載されたファイルを指定できます。",
+    )
 
     parser.add_argument(
-        '--inspection_comment_json', type=str,
-        help='検査コメント情報が記載されたJSONファイルのパスを指定すると、JSONに記載された情報を元に検査コメント一覧を出力します。AnnoFabから検査コメント情報を取得しません。'
-        'JSONには記載されていない、`commenter_username	`や`phrase_names_ja`などの情報も追加します。'
-        'JSONファイルは`$ annofabcli project download inspection_comment`コマンドで取得できます。')
+        "--inspection_comment_json",
+        type=str,
+        help="検査コメント情報が記載されたJSONファイルのパスを指定すると、JSONに記載された情報を元に検査コメント一覧を出力します。AnnoFabから検査コメント情報を取得しません。"
+        "JSONには記載されていない、`commenter_username	`や`phrase_names_ja`などの情報も追加します。"
+        "JSONファイルは`$ annofabcli project download inspection_comment`コマンドで取得できます。",
+    )
 
     argument_parser.add_format(
         choices=[
-            FormatArgument.CSV, FormatArgument.JSON, FormatArgument.PRETTY_JSON, FormatArgument.INSPECTION_ID_LIST
-        ], default=FormatArgument.CSV)
+            FormatArgument.CSV,
+            FormatArgument.JSON,
+            FormatArgument.PRETTY_JSON,
+            FormatArgument.INSPECTION_ID_LIST,
+        ],
+        default=FormatArgument.CSV,
+    )
     argument_parser.add_output()
     argument_parser.add_csv_format()
     argument_parser.add_query()

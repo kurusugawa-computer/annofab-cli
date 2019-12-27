@@ -1,6 +1,6 @@
 import argparse
 import logging
-from typing import Any, Callable, Dict, List, Optional, Tuple, Union  # pylint: disable=unused-import
+from typing import Any, Dict, List
 
 import requests
 from annofabapi.models import ProjectMemberRole
@@ -16,14 +16,16 @@ class DeleteInputData(AbstractCommandLineInterface):
     """
     タスクに使われていない入力データを削除する。
     """
+
     @annofabcli.utils.allow_404_error
     def get_input_data(self, project_id: str, input_data_id: str) -> Dict[str, Any]:
         input_data, _ = self.service.api.get_input_data(project_id, input_data_id)
         return input_data
 
     def confirm_delete_input_data(self, input_data_id: str, input_data_name: str) -> bool:
-        message_for_confirm = (f"入力データ(input_data_id='{input_data_id}', "
-                               f"input_data_name='{input_data_name}') を削除しますか？")
+        message_for_confirm = (
+            f"入力データ(input_data_id='{input_data_id}', " f"input_data_name='{input_data_name}') を削除しますか？"
+        )
         return self.confirm_processing(message_for_confirm)
 
     def delete_input_data(self, project_id: str, input_data_id: str):
@@ -33,12 +35,14 @@ class DeleteInputData(AbstractCommandLineInterface):
             return False
 
         task_list = self.service.wrapper.get_all_tasks(project_id, query_params={"input_data_ids": input_data_id})
-        input_data_name = input_data['input_data_name']
+        input_data_name = input_data["input_data_name"]
         if len(task_list) > 0:
             task_id_list = [e["task_id"] for e in task_list]
-            logger.info(f"入力データ(input_data_id='{input_data_id}', "
-                        f"input_data_name='{input_data_name}')はタスクに使われているので、削除しません。"
-                        f"task_id_list='{task_id_list}'")
+            logger.info(
+                f"入力データ(input_data_id='{input_data_id}', "
+                f"input_data_name='{input_data_name}')はタスクに使われているので、削除しません。"
+                f"task_id_list='{task_id_list}'"
+            )
             return False
 
         if not self.confirm_delete_input_data(input_data_id, input_data_name):
@@ -87,9 +91,14 @@ def parse_args(parser: argparse.ArgumentParser):
     argument_parser = ArgumentParser(parser)
 
     argument_parser.add_project_id()
-    parser.add_argument('-i', '--input_data_id', type=str, required=True, nargs='+',
-                        help='削除対象の入力データのinput_data_idを指定します。'
-                        '`file://`を先頭に付けると、input_data_idの一覧が記載されたファイルを指定できます。')
+    parser.add_argument(
+        "-i",
+        "--input_data_id",
+        type=str,
+        required=True,
+        nargs="+",
+        help="削除対象の入力データのinput_data_idを指定します。" "`file://`を先頭に付けると、input_data_idの一覧が記載されたファイルを指定できます。",
+    )
 
     parser.set_defaults(subcommand_func=main)
 
@@ -97,7 +106,7 @@ def parse_args(parser: argparse.ArgumentParser):
 def add_parser(subparsers: argparse._SubParsersAction):
     subcommand_name = "delete"
     subcommand_help = "入力データを削除します。"
-    description = ("入力データを削除します。ただし、タスクに使われている入力データは削除できません。")
+    description = "入力データを削除します。ただし、タスクに使われている入力データは削除できません。"
     epilog = "オーナロールを持つユーザで実行してください。"
 
     parser = annofabcli.common.cli.add_parser(subparsers, subcommand_name, subcommand_help, description, epilog=epilog)

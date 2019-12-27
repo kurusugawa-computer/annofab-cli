@@ -1,6 +1,6 @@
 import argparse
 import logging
-from typing import Any, Callable, Dict, List, Optional, Tuple, Union  # pylint: disable=unused-import
+from typing import Any, Dict, List
 
 import annofabapi
 
@@ -17,6 +17,7 @@ class AnnotationSpecsHistories(AbstractCommandLineInterface):
     """
     アノテーション仕様の変更履歴を出力する。
     """
+
     def __init__(self, service: annofabapi.Resource, facade: AnnofabApiFacade, args: argparse.Namespace):
         super().__init__(service, facade, args)
         self.visualize = AddProps(self.service, args.project_id)
@@ -47,8 +48,9 @@ def parse_args(parser: argparse.ArgumentParser):
 
     argument_parser.add_project_id()
 
-    argument_parser.add_format(choices=[FormatArgument.CSV, FormatArgument.JSON, FormatArgument.PRETTY_JSON],
-                               default=FormatArgument.CSV)
+    argument_parser.add_format(
+        choices=[FormatArgument.CSV, FormatArgument.JSON, FormatArgument.PRETTY_JSON], default=FormatArgument.CSV
+    )
     argument_parser.add_output()
     argument_parser.add_csv_format()
     argument_parser.add_query()
@@ -59,7 +61,7 @@ def parse_args(parser: argparse.ArgumentParser):
 def add_parser(subparsers: argparse._SubParsersAction):
     subcommand_name = "history"
     subcommand_help = "アノテーション仕様の変更履歴を表示する。"
-    description = ("アノテーション仕様の変更履歴を表示する。")
+    description = "アノテーション仕様の変更履歴を表示する。"
 
     parser = annofabcli.common.cli.add_parser(subparsers, subcommand_name, subcommand_help, description)
     parse_args(parser)

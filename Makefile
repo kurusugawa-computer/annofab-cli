@@ -13,8 +13,9 @@ init:
 
 format:
 	pipenv run autoflake  --in-place --remove-all-unused-imports  --ignore-init-module-imports --recursive ${FORMAT_FILES}
+	pipenv run black ${FORMAT_FILES}
 	pipenv run isort --verbose --recursive ${FORMAT_FILES}
-	pipenv run yapf --verbose --in-place --recursive ${FORMAT_FILES}
+
 
 lint:
 	pipenv run mypy ${LINT_FILES} --config-file setup.cfg

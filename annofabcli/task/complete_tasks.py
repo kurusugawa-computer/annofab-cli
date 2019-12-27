@@ -1,7 +1,7 @@
 import argparse
 import logging
 import time
-from typing import Any, Callable, Dict, List, Optional  # pylint: disable=unused-import
+from typing import Dict, List
 
 import requests
 from annofabapi.models import InputDataId, Inspection, InspectionStatus, ProjectMemberRole, Task, TaskId, TaskPhase
@@ -20,6 +20,7 @@ class ComleteTasks(AbstractCommandLineInterface):
     """
     タスクを受け入れ完了にする
     """
+
     @staticmethod
     def inspection_list_to_dict(all_inspection_list: List[Inspection]) -> InspectionJson:
         """
@@ -28,10 +29,10 @@ class ComleteTasks(AbstractCommandLineInterface):
         """
         task_dict: InspectionJson = {}
         for inspection in all_inspection_list:
-            task_id = inspection['task_id']
+            task_id = inspection["task_id"]
             input_data_dict: Dict[InputDataId, List[Inspection]] = task_dict.get(task_id, {})
 
-            input_data_id = inspection['input_data_id']
+            input_data_id = inspection["input_data_id"]
             inspection_list = input_data_dict.get(input_data_id, [])
             inspection_list.append(inspection)
             input_data_dict[input_data_id] = inspection_list
@@ -40,8 +41,9 @@ class ComleteTasks(AbstractCommandLineInterface):
 
         return task_dict
 
-    def complete_tasks_with_changing_inspection_status(self, project_id: str, inspection_status: InspectionStatus,
-                                                       inspection_list: List[Inspection]):
+    def complete_tasks_with_changing_inspection_status(
+        self, project_id: str, inspection_status: InspectionStatus, inspection_list: List[Inspection]
+    ):
         """
         検査コメントのstatusを変更（対応完了 or 対応不要）にした上で、タスクを受け入れ完了状態にする
         Args:
@@ -91,8 +93,9 @@ class ComleteTasks(AbstractCommandLineInterface):
 
             # 検査コメントを付与して、タスクを受け入れ完了にする
             try:
-                self.complete_acceptance_task(project_id, task, inspection_status, input_data_dict=input_data_dict,
-                                              account_id=account_id)
+                self.complete_acceptance_task(
+                    project_id, task, inspection_status, input_data_dict=input_data_dict, account_id=account_id
+                )
             except requests.HTTPError as e:
                 logger.warning(e)
                 logger.warning(f"{task_id} の受入完了に失敗")
@@ -100,8 +103,14 @@ class ComleteTasks(AbstractCommandLineInterface):
                 self.facade.change_to_break_phase(project_id, task_id, account_id)
                 continue
 
-    def update_status_of_inspections(self, project_id: str, task_id: str, input_data_id: str,
-                                     inspection_list: List[Inspection], inspection_status: InspectionStatus):
+    def update_status_of_inspections(
+        self,
+        project_id: str,
+        task_id: str,
+        input_data_id: str,
+        inspection_list: List[Inspection],
+        inspection_status: InspectionStatus,
+    ):
 
         if inspection_list is None or len(inspection_list) == 0:
             logger.warning(f"変更対象の検査コメントはなかった。task_id = {task_id}, input_data_id = {input_data_id}")
@@ -116,12 +125,19 @@ class ComleteTasks(AbstractCommandLineInterface):
 
             return arg_inspection["inspection_id"] in target_inspection_id_list
 
-        self.service.wrapper.update_status_of_inspections(project_id, task_id, input_data_id, filter_inspection,
-                                                          inspection_status)
+        self.service.wrapper.update_status_of_inspections(
+            project_id, task_id, input_data_id, filter_inspection, inspection_status
+        )
         logger.debug(f"{task_id}, {input_data_id}, {len(inspection_list)}件 検査コメントの状態を変更")
 
-    def complete_acceptance_task(self, project_id: str, task: Task, inspection_status: InspectionStatus,
-                                 input_data_dict: Dict[InputDataId, List[Inspection]], account_id: str):
+    def complete_acceptance_task(
+        self,
+        project_id: str,
+        task: Task,
+        inspection_status: InspectionStatus,
+        input_data_dict: Dict[InputDataId, List[Inspection]],
+        account_id: str,
+    ):
         """
         検査コメントのstatusを変更（対応完了 or 対応不要）にした上で、タスクを受け入れ完了状態にする
         """
@@ -130,8 +146,9 @@ class ComleteTasks(AbstractCommandLineInterface):
 
         # 検査コメントの状態を変更する
         for input_data_id, inspection_list in input_data_dict.items():
-            self.update_status_of_inspections(project_id, task_id, input_data_id, inspection_list=inspection_list,
-                                              inspection_status=inspection_status)
+            self.update_status_of_inspections(
+                project_id, task_id, input_data_id, inspection_list=inspection_list, inspection_status=inspection_status
+            )
 
         # タスクの状態を検査する
         self.facade.complete_task(project_id, task_id, account_id)
@@ -142,8 +159,9 @@ class ComleteTasks(AbstractCommandLineInterface):
 
         inspection_list = annofabcli.common.cli.get_json_from_args(args.inspection_list)
         inspection_status = InspectionStatus(args.inspection_status)
-        self.complete_tasks_with_changing_inspection_status(args.project_id, inspection_status=inspection_status,
-                                                            inspection_list=inspection_list)
+        self.complete_tasks_with_changing_inspection_status(
+            args.project_id, inspection_status=inspection_status, inspection_list=inspection_list
+        )
 
 
 def parse_args(parser: argparse.ArgumentParser):
@@ -152,18 +170,28 @@ def parse_args(parser: argparse.ArgumentParser):
     argument_parser.add_project_id()
 
     parser.add_argument(
-        '--inspection_list', type=str, required=True,
-        help=('未処置の検査コメントの一覧をJSON形式で指定します。指定された検査コメントの状態が変更されます。'
-              '検査コメントの一覧は `annofabcli inspection_comment list_unprocessed` コマンドで出力できます。'
-              '`file://`を先頭に付けると、JSON形式のファイルを指定できます。'
-              '実際に参照する値は `task_id`, `input_data_id`, `inspection_id` です。'))
+        "--inspection_list",
+        type=str,
+        required=True,
+        help=(
+            "未処置の検査コメントの一覧をJSON形式で指定します。指定された検査コメントの状態が変更されます。"
+            "検査コメントの一覧は `annofabcli inspection_comment list_unprocessed` コマンドで出力できます。"
+            "`file://`を先頭に付けると、JSON形式のファイルを指定できます。"
+            "実際に参照する値は `task_id`, `input_data_id`, `inspection_id` です。"
+        ),
+    )
 
     parser.add_argument(
-        '--inspection_status', type=str, required=True,
+        "--inspection_status",
+        type=str,
+        required=True,
         choices=[InspectionStatus.ERROR_CORRECTED.value, InspectionStatus.NO_CORRECTION_REQUIRED.value],
-        help=('未処置の検査コメントをどの状態に変更するかを指定します。'
-              f'{InspectionStatus.ERROR_CORRECTED.value}: 対応完了,'
-              f'{InspectionStatus.NO_CORRECTION_REQUIRED.value}: 対応不要'))
+        help=(
+            "未処置の検査コメントをどの状態に変更するかを指定します。"
+            f"{InspectionStatus.ERROR_CORRECTED.value}: 対応完了,"
+            f"{InspectionStatus.NO_CORRECTION_REQUIRED.value}: 対応不要"
+        ),
+    )
 
     parser.set_defaults(subcommand_func=main)
 
@@ -177,7 +205,7 @@ def main(args):
 def add_parser(subparsers: argparse._SubParsersAction):
     subcommand_name = "complete"
     subcommand_help = "未処置の検査コメントを適切な状態に変更して、タスクを受け入れ完了にする。"
-    description = ("未処置の検査コメントを適切な状態に変更して、タスクを受け入れ完了にする。" "オーナ権限を持つユーザで実行すること。")
+    description = "未処置の検査コメントを適切な状態に変更して、タスクを受け入れ完了にする。" "オーナ権限を持つユーザで実行すること。"
     epilog = "チェッカーまたはオーナロールを持つユーザで実行してください。"
 
     parser = annofabcli.common.cli.add_parser(subparsers, subcommand_name, subcommand_help, description, epilog=epilog)

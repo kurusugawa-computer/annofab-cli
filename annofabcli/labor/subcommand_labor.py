@@ -7,7 +7,7 @@ import annofabcli.labor.list_worktime_by_user
 
 def parse_args(parser: argparse.ArgumentParser):
 
-    subparsers = parser.add_subparsers(dest='subcommand_name')
+    subparsers = parser.add_subparsers(dest="subcommand_name")
 
     # サブコマンドの定義
     annofabcli.labor.list_worktime_by_user.add_parser(subparsers)

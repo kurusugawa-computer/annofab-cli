@@ -15,6 +15,7 @@ twine = "*"
 autoflake = "*"
 flake8 = "*"
 docutils = "*"
+black = "*"
 
 [packages]
 

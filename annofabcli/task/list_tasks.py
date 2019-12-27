@@ -4,7 +4,7 @@
 import argparse
 import json
 import logging
-from typing import Any, Callable, Dict, List, Optional, Tuple, Union  # pylint: disable=unused-import
+from typing import Any, Dict, List, Optional
 
 import annofabapi
 from annofabapi.models import Task
@@ -22,6 +22,7 @@ class ListTasks(AbstractCommandLineInterface):
     """
     タスクの一覧を表示する
     """
+
     def __init__(self, service: annofabapi.Resource, facade: AnnofabApiFacade, args: argparse.Namespace):
         super().__init__(service, facade, args)
         self.visualize = AddProps(self.service, args.project_id)
@@ -60,27 +61,28 @@ class ListTasks(AbstractCommandLineInterface):
             修正したタスク検索クエリ
 
         """
+
         def remove_key(arg_key: str):
             if arg_key in task_query:
                 logger.info(f"タスク検索クエリから、`{arg_key}`　キーを削除しました。")
                 task_query.pop(arg_key)
 
-        remove_key('page')
-        remove_key('limit')
+        remove_key("page")
+        remove_key("limit")
 
-        if 'user_id' in task_query:
-            user_id = task_query['user_id']
+        if "user_id" in task_query:
+            user_id = task_query["user_id"]
             account_id = self.facade.get_account_id_from_user_id(project_id, user_id)
             if account_id is not None:
-                task_query['account_id'] = account_id
+                task_query["account_id"] = account_id
             else:
                 logger.warning(f"タスク検索クエリに含まれている user_id: {user_id} のユーザが見つかりませんでした。")
 
-        if 'previous_user_id' in task_query:
-            previous_user_id = task_query['previous_user_id']
+        if "previous_user_id" in task_query:
+            previous_user_id = task_query["previous_user_id"]
             previous_account_id = self.facade.get_account_id_from_user_id(project_id, previous_user_id)
             if previous_account_id is not None:
-                task_query['previous_account_id'] = previous_account_id
+                task_query["previous_account_id"] = previous_account_id
             else:
                 logger.warning(f"タスク検索クエリに含まれている previous_user_id: {previous_user_id} のユーザが見つかりませんでした。")
 
@@ -104,8 +106,13 @@ class ListTasks(AbstractCommandLineInterface):
         tasks = self.service.wrapper.get_all_tasks(project_id, query_params=task_query)
         return [self.visualize.add_properties_to_task(e) for e in tasks]
 
-    def print_tasks(self, project_id: str, task_id_list: Optional[List[str]] = None,
-                    task_query: Optional[Dict[str, Any]] = None, task_list_from_json: Optional[List[Task]] = None):
+    def print_tasks(
+        self,
+        project_id: str,
+        task_id_list: Optional[List[str]] = None,
+        task_query: Optional[Dict[str, Any]] = None,
+        task_list_from_json: Optional[List[Task]] = None,
+    ):
         """
         タスク一覧を出力する
 
@@ -138,12 +145,15 @@ class ListTasks(AbstractCommandLineInterface):
     @staticmethod
     def validate(args: argparse.Namespace):
         if args.task_json is not None and args.task_query is not None:
-            logger.warning("annofabcli task list: warning: argument --task_query: "
-                           "`--task_json`を指定しているときは、`--task_query`オプションは無視します。")
+            logger.warning(
+                "annofabcli task list: warning: argument --task_query: "
+                "`--task_json`を指定しているときは、`--task_query`オプションは無視します。"
+            )
 
         if args.task_json is not None and args.task_id is not None:
-            logger.warning("annofabcli task list: warning: argument --task_id: "
-                           "`--task_json`を指定しているときは、`--task_id`オプションは無視します。")
+            logger.warning(
+                "annofabcli task list: warning: argument --task_id: " "`--task_json`を指定しているときは、`--task_id`オプションは無視します。"
+            )
 
         return True
 
@@ -164,8 +174,9 @@ class ListTasks(AbstractCommandLineInterface):
         else:
             task_list = None
 
-        self.print_tasks(args.project_id, task_id_list=task_id_list, task_query=task_query,
-                         task_list_from_json=task_list)
+        self.print_tasks(
+            args.project_id, task_id_list=task_id_list, task_query=task_query, task_list_from_json=task_list
+        )
 
 
 def main(args):
@@ -183,26 +194,38 @@ def parse_args(parser: argparse.ArgumentParser):
 
     # タスク検索クエリ
     query_group.add_argument(
-        '-tq', '--task_query', type=str, help='タスクの検索クエリをJSON形式で指定します。指定しない場合は、すべてのタスクを取得します。'
-        '`file://`を先頭に付けると、JSON形式のファイルを指定できます。'
-        'クエリのフォーマットは、[getTasks API](https://annofab.com/docs/api/#operation/getTasks)のクエリパラメータと同じです。'
-        'さらに追加で、`user_id`, `previous_user_id` キーも指定できます。'
-        'ただし `page`, `limit`キーは指定できません。')
+        "-tq",
+        "--task_query",
+        type=str,
+        help="タスクの検索クエリをJSON形式で指定します。指定しない場合は、すべてのタスクを取得します。"
+        "`file://`を先頭に付けると、JSON形式のファイルを指定できます。"
+        "クエリのフォーマットは、[getTasks API](https://annofab.com/docs/api/#operation/getTasks)のクエリパラメータと同じです。"
+        "さらに追加で、`user_id`, `previous_user_id` キーも指定できます。"
+        "ただし `page`, `limit`キーは指定できません。",
+    )
 
     query_group.add_argument(
-        '-t', '--task_id', type=str, nargs='+', help='対象のタスクのtask_idを指定します。`--task_query`引数とは同時に指定できません。'
-        '`file://`を先頭に付けると、task_idの一覧が記載されたファイルを指定できます。')
+        "-t",
+        "--task_id",
+        type=str,
+        nargs="+",
+        help="対象のタスクのtask_idを指定します。`--task_query`引数とは同時に指定できません。" "`file://`を先頭に付けると、task_idの一覧が記載されたファイルを指定できます。",
+    )
 
     parser.add_argument(
-        '--task_json', type=str, help='タスク情報が記載されたJSONファイルのパスを指定すると、JSONに記載された情報を元にタスク一覧を出力します。'
-        'AnnoFabからタスク情報を取得しません。 '
-        'このオプションを指定すると、`--task_query`, `--task_id`オプションは無視します。'
-        'JSONには記載されていない、`user_id`や`username`などの情報も追加します。'
-        'JSONファイルは`$ annofabcli project download task`コマンドで取得できます。')
+        "--task_json",
+        type=str,
+        help="タスク情報が記載されたJSONファイルのパスを指定すると、JSONに記載された情報を元にタスク一覧を出力します。"
+        "AnnoFabからタスク情報を取得しません。 "
+        "このオプションを指定すると、`--task_query`, `--task_id`オプションは無視します。"
+        "JSONには記載されていない、`user_id`や`username`などの情報も追加します。"
+        "JSONファイルは`$ annofabcli project download task`コマンドで取得できます。",
+    )
 
     argument_parser.add_format(
         choices=[FormatArgument.CSV, FormatArgument.JSON, FormatArgument.PRETTY_JSON, FormatArgument.TASK_ID_LIST],
-        default=FormatArgument.CSV)
+        default=FormatArgument.CSV,
+    )
     argument_parser.add_output()
     argument_parser.add_csv_format()
 
@@ -213,7 +236,7 @@ def parse_args(parser: argparse.ArgumentParser):
 def add_parser(subparsers: argparse._SubParsersAction):
     subcommand_name = "list"
     subcommand_help = "タスク一覧を出力します。"
-    description = ("タスク一覧を出力します。")
+    description = "タスク一覧を出力します。"
 
     parser = annofabcli.common.cli.add_parser(subparsers, subcommand_name, subcommand_help, description)
     parse_args(parser)

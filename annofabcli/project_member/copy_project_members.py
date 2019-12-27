@@ -1,6 +1,6 @@
 import argparse
 import logging
-from typing import Any, Callable, Dict, List, Optional, Tuple, Union  # pylint: disable=unused-import
+from typing import Any, Dict, List, Optional
 
 import annofabapi
 from annofabapi.models import OrganizationMember, ProjectMember, ProjectMemberRole
@@ -16,6 +16,7 @@ class CopyProjectMembers(AbstractCommandLineInterface):
     """
     プロジェクトメンバをコピーする
     """
+
     def __init__(self, service: annofabapi.Resource, facade: AnnofabApiFacade, args: argparse.Namespace):
         super().__init__(service, facade, args)
 
@@ -81,8 +82,10 @@ class CopyProjectMembers(AbstractCommandLineInterface):
             account_id = member["account_id"]
             if self.find_member(dest_organization_members, account_id) is None:
                 # コピー先の組織メンバでないので、コピーしない
-                logger.debug(f"コピーしないメンバ: {member['user_id']} , {member['username']} : "
-                             f"(コピー先の所属組織 {dest_organization_name} の組織メンバでないため)")
+                logger.debug(
+                    f"コピーしないメンバ: {member['user_id']} , {member['username']} : "
+                    f"(コピー先の所属組織 {dest_organization_name} の組織メンバでないため)"
+                )
                 continue
 
             added_members.append(member)
@@ -100,7 +103,7 @@ class CopyProjectMembers(AbstractCommandLineInterface):
             deleted_dest_members = [e for e in dest_project_members if e["account_id"] not in src_account_ids]
 
             def to_inactive(arg_member):
-                arg_member['member_status'] = 'inactive'
+                arg_member["member_status"] = "inactive"
                 return arg_member
 
             deleted_dest_members = list(map(to_inactive, deleted_dest_members))
@@ -110,9 +113,11 @@ class CopyProjectMembers(AbstractCommandLineInterface):
             updated_members = updated_members + deleted_dest_members
 
         if len(added_members) > 0:
-            if self.confirm_processing(f"{self.src_project_title} プロジェクトのメンバを、"
-                                       f"{self.dest_project_title} にコピーしますか？"
-                                       f"追加対象: {len(added_members)} 件, 削除対象: {len(deleted_dest_members)} 件"):
+            if self.confirm_processing(
+                f"{self.src_project_title} プロジェクトのメンバを、"
+                f"{self.dest_project_title} にコピーしますか？"
+                f"追加対象: {len(added_members)} 件, 削除対象: {len(deleted_dest_members)} 件"
+            ):
                 self.service.wrapper.put_project_members(dest_project_id, updated_members)
         else:
             logger.info(f"{self.dest_project_title}のプロジェクトメンバに追加/更新はありません。")
@@ -129,10 +134,10 @@ def main(args):
 
 
 def parse_args(parser: argparse.ArgumentParser):
-    parser.add_argument('src_project_id', type=str, help='コピー元のプロジェクトのproject_id')
-    parser.add_argument('dest_project_id', type=str, help='コピー先のプロジェクトのproject_id')
+    parser.add_argument("src_project_id", type=str, help="コピー元のプロジェクトのproject_id")
+    parser.add_argument("dest_project_id", type=str, help="コピー先のプロジェクトのproject_id")
 
-    parser.add_argument('--delete_dest', action='store_true', help='コピー先のプロジェクトにしか存在しないプロジェクトメンバを削除します。')
+    parser.add_argument("--delete_dest", action="store_true", help="コピー先のプロジェクトにしか存在しないプロジェクトメンバを削除します。")
 
     parser.set_defaults(subcommand_func=main)
 
@@ -140,7 +145,7 @@ def parse_args(parser: argparse.ArgumentParser):
 def add_parser(subparsers: argparse._SubParsersAction):
     subcommand_name = "copy"
     subcommand_help = "プロジェクトメンバをコピーする。"
-    description = ("プロジェクトメンバをコピーする。")
+    description = "プロジェクトメンバをコピーする。"
     epilog = "コピー先のプロジェクトに対して、オーナロールを持つユーザで実行してください。"
 
     parser = annofabcli.common.cli.add_parser(subparsers, subcommand_name, subcommand_help, description, epilog=epilog)

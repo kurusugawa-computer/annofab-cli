@@ -4,7 +4,7 @@
 
 import argparse
 import logging
-from typing import List, Optional  # pylint: disable=unused-import
+from typing import List, Optional
 
 import requests
 from annofabapi.models import ProjectMemberRole
@@ -30,8 +30,11 @@ class CancelAcceptance(AbstractCommandLineInterface):
 
         super().validate_project(project_id, [ProjectMemberRole.OWNER])
 
-        acceptor_account_id = self.facade.get_account_id_from_user_id(
-            project_id, acceptor_user_id) if acceptor_user_id is not None else None
+        acceptor_account_id = (
+            self.facade.get_account_id_from_user_id(project_id, acceptor_user_id)
+            if acceptor_user_id is not None
+            else None
+        )
 
         logger.info(f"受け入れを取り消すタスク数: {len(task_id_list)}")
 
@@ -79,12 +82,18 @@ def main(args: argparse.Namespace):
 
 def parse_args(parser: argparse.ArgumentParser):
 
-    parser.add_argument('-p', '--project_id', type=str, required=True, help='対象のプロジェクトのproject_idを指定します。')
+    parser.add_argument("-p", "--project_id", type=str, required=True, help="対象のプロジェクトのproject_idを指定します。")
 
-    parser.add_argument('-t', '--task_id', type=str, required=True, nargs='+',
-                        help='対象のタスクのtask_idを指定します。`file://`を先頭に付けると、task_idの一覧が記載されたファイルを指定できます。')
+    parser.add_argument(
+        "-t",
+        "--task_id",
+        type=str,
+        required=True,
+        nargs="+",
+        help="対象のタスクのtask_idを指定します。`file://`を先頭に付けると、task_idの一覧が記載されたファイルを指定できます。",
+    )
 
-    parser.add_argument('-u', '--user_id', type=str, help='再度受入を担当させたいユーザのuser_idを指定します。指定しない場合、タスクの担当者は未割り当てになります。')
+    parser.add_argument("-u", "--user_id", type=str, help="再度受入を担当させたいユーザのuser_idを指定します。指定しない場合、タスクの担当者は未割り当てになります。")
 
     parser.set_defaults(subcommand_func=main)
 

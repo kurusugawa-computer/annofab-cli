@@ -1,7 +1,7 @@
 import argparse
 import copy
 import logging
-from typing import Any, Callable, Dict, List, Optional, Tuple, Union  # pylint: disable=unused-import
+from typing import Any, Dict, List, Optional
 
 from annofabapi.models import JobInfo, JobType
 
@@ -17,8 +17,10 @@ class ListJob(AbstractCommandLineInterface):
     """
     ジョブ一覧を表示する。
     """
-    def get_job_list(self, project_id: str, job_type: JobType, job_query: Optional[Dict[str,
-                                                                                        Any]] = None) -> List[JobInfo]:
+
+    def get_job_list(
+        self, project_id: str, job_type: JobType, job_query: Optional[Dict[str, Any]] = None
+    ) -> List[JobInfo]:
         """
         ジョブ一覧を取得する。
         """
@@ -70,7 +72,7 @@ def parse_args(parser: argparse.ArgumentParser):
     job_choices = [e.value for e in JobType]
     argument_parser.add_project_id()
 
-    parser.add_argument('--job_type', type=str, choices=job_choices, required=True, help='ジョブタイプを指定します。')
+    parser.add_argument("--job_type", type=str, choices=job_choices, required=True, help="ジョブタイプを指定します。")
 
     # クエリがうまく動かないので、コメントアウトする
     # parser.add_argument(
@@ -78,8 +80,9 @@ def parse_args(parser: argparse.ArgumentParser):
     #     '`file://`を先頭に付けると、JSON形式のファイルを指定できます。'
     #     '`limit` キーを指定できます。')
 
-    argument_parser.add_format(choices=[FormatArgument.CSV, FormatArgument.JSON, FormatArgument.PRETTY_JSON],
-                               default=FormatArgument.CSV)
+    argument_parser.add_format(
+        choices=[FormatArgument.CSV, FormatArgument.JSON, FormatArgument.PRETTY_JSON], default=FormatArgument.CSV
+    )
     argument_parser.add_output()
     argument_parser.add_csv_format()
 
@@ -90,7 +93,7 @@ def parse_args(parser: argparse.ArgumentParser):
 def add_parser(subparsers: argparse._SubParsersAction):
     subcommand_name = "list"
     subcommand_help = "ジョブ一覧を出力します。"
-    description = ("ジョブ一覧を出力します。")
+    description = "ジョブ一覧を出力します。"
 
     parser = annofabcli.common.cli.add_parser(subparsers, subcommand_name, subcommand_help, description)
     parse_args(parser)

@@ -6,7 +6,7 @@ from annofabcli.experimental import list_labor_worktime, find_break_error
 
 
 def parse_args(parser: argparse.ArgumentParser):
-    subparsers = parser.add_subparsers(dest='subcommand_name')
+    subparsers = parser.add_subparsers(dest="subcommand_name")
 
     # サブコマンドの定義
     list_labor_worktime.add_parser(subparsers)  # type: ignore

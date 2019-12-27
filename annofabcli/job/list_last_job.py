@@ -1,7 +1,7 @@
 import argparse
 import logging
 import sys
-from typing import Any, Callable, Dict, List, Optional, Tuple, Union  # pylint: disable=unused-import
+from typing import Any, Dict, List, Optional
 
 from annofabapi.models import JobInfo, JobType, Project
 
@@ -17,6 +17,7 @@ class ListLastJob(AbstractCommandLineInterface):
     """
     ジョブ一覧を表示する。
     """
+
     def get_last_job(self, project_id: str, job_type: JobType) -> Optional[JobInfo]:
         """
         最新のジョブを取得する。ジョブが存在しない場合はNoneを返す。
@@ -60,8 +61,9 @@ class ListLastJob(AbstractCommandLineInterface):
         project, _ = self.service.api.get_project(project_id)
         return project
 
-    def get_last_job_list(self, project_id_list: List[str], job_type: JobType,
-                          add_details: bool = False) -> List[JobInfo]:
+    def get_last_job_list(
+        self, project_id_list: List[str], job_type: JobType, add_details: bool = False
+    ) -> List[JobInfo]:
         job_list = []
         for project_id in project_id_list:
             project = self.get_project(project_id)
@@ -104,8 +106,9 @@ class ListLastJob(AbstractCommandLineInterface):
         """
         my_account, _ = self.service.api.get_my_account()
         query_params = {"status": "active", "account_id": my_account["account_id"]}
-        project_list = self.service.wrapper.get_all_projects_of_organization(organization_name,
-                                                                             query_params=query_params)
+        project_list = self.service.wrapper.get_all_projects_of_organization(
+            organization_name, query_params=query_params
+        )
         return [e["project_id"] for e in project_list]
 
     def main(self):
@@ -135,20 +138,28 @@ def parse_args(parser: argparse.ArgumentParser):
     argument_parser = ArgumentParser(parser)
 
     job_choices = [e.value for e in JobType]
-    parser.add_argument('--job_type', type=str, choices=job_choices, required=True, help='ジョブタイプを指定します。')
+    parser.add_argument("--job_type", type=str, choices=job_choices, required=True, help="ジョブタイプを指定します。")
 
     list_group = parser.add_mutually_exclusive_group(required=True)
-    list_group.add_argument('-p', '--project_id', type=str, nargs='+',
-                            help='対象のプロジェクトのproject_idを指定してください。`file://`を先頭に付けると、一覧が記載されたファイルを指定できます。')
+    list_group.add_argument(
+        "-p",
+        "--project_id",
+        type=str,
+        nargs="+",
+        help="対象のプロジェクトのproject_idを指定してください。`file://`を先頭に付けると、一覧が記載されたファイルを指定できます。",
+    )
 
-    list_group.add_argument('-org', '--organization', type=str, help='組織配下のすべてのプロジェクトのジョブを出力したい場合は、組織名を指定してください。')
+    list_group.add_argument("-org", "--organization", type=str, help="組織配下のすべてのプロジェクトのジョブを出力したい場合は、組織名を指定してください。")
 
     parser.add_argument(
-        '--add_details', action='store_true', help='プロジェクトに関する詳細情報を表示します'
-        '（`task_last_updated_datetime, annotation_specs_last_updated_datetime`）')
+        "--add_details",
+        action="store_true",
+        help="プロジェクトに関する詳細情報を表示します" "（`task_last_updated_datetime, annotation_specs_last_updated_datetime`）",
+    )
 
-    argument_parser.add_format(choices=[FormatArgument.CSV, FormatArgument.JSON, FormatArgument.PRETTY_JSON],
-                               default=FormatArgument.CSV)
+    argument_parser.add_format(
+        choices=[FormatArgument.CSV, FormatArgument.JSON, FormatArgument.PRETTY_JSON], default=FormatArgument.CSV
+    )
     argument_parser.add_output()
     argument_parser.add_csv_format()
 
@@ -159,7 +170,7 @@ def parse_args(parser: argparse.ArgumentParser):
 def add_parser(subparsers: argparse._SubParsersAction):
     subcommand_name = "list_last"
     subcommand_help = "複数のプロジェクトに対して、最新のジョブを出力します。"
-    description = ("複数のプロジェクトに対して、最新のジョブを出力します。")
+    description = "複数のプロジェクトに対して、最新のジョブを出力します。"
 
     parser = annofabcli.common.cli.add_parser(subparsers, subcommand_name, subcommand_help, description)
     parse_args(parser)

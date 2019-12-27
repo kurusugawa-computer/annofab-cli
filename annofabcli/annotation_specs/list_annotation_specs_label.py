@@ -5,7 +5,7 @@
 import argparse
 import logging
 import sys
-from typing import Any, Callable, Dict, List, Optional, Tuple  # pylint: disable=unused-import
+from typing import Any, Dict, List, Optional
 
 from annofabapi.models import ProjectMemberRole
 
@@ -25,19 +25,21 @@ class PrintAnnotationSpecsLabel(AbstractCommandLineInterface):
 
     COMMON_MESSAGE = "annofabcli annotation_specs list_label: error:"
 
-    def print_annotation_specs_label(self, project_id: str, arg_format: str, output: Optional[str] = None,
-                                     history_id: Optional[str] = None):
+    def print_annotation_specs_label(
+        self, project_id: str, arg_format: str, output: Optional[str] = None, history_id: Optional[str] = None
+    ):
         super().validate_project(project_id, [ProjectMemberRole.OWNER, ProjectMemberRole.ACCEPTER])
 
         annotation_specs = self.service.api.get_annotation_specs(project_id, query_params={"history_id": history_id})[0]
-        labels = annotation_specs['labels']
+        labels = annotation_specs["labels"]
 
-        if arg_format == 'text':
+        if arg_format == "text":
             self._print_text_format_labels(labels, output=output)
 
         elif arg_format in [FormatArgument.JSON.value, FormatArgument.PRETTY_JSON.value]:
-            annofabcli.utils.print_according_to_format(target=labels, arg_format=FormatArgument(arg_format),
-                                                       output=output)
+            annofabcli.utils.print_according_to_format(
+                target=labels, arg_format=FormatArgument(arg_format), output=output
+            )
 
     @staticmethod
     def _get_name_list(messages: List[Dict[str, Any]]):
@@ -52,24 +54,31 @@ class PrintAnnotationSpecsLabel(AbstractCommandLineInterface):
     def _print_text_format_labels(labels, output: Optional[str] = None):
         output_lines = []
         for label in labels:
-            output_lines.append('\t'.join([
-                label['label_id'],
-                label['annotation_type'],
-            ] + PrintAnnotationSpecsLabel._get_name_list(label['label_name']['messages'])))
-            for additional_data_definition in label['additional_data_definitions']:
-                output_lines.append('\t'.join([
-                    '',
-                    additional_data_definition['additional_data_definition_id'],
-                    additional_data_definition['type'],
-                ] + PrintAnnotationSpecsLabel._get_name_list(additional_data_definition['name']['messages'])))
-                if additional_data_definition['type'] in ['choice', 'select']:
-                    for choice in additional_data_definition['choices']:
-                        output_lines.append('\t'.join([
-                            '',
-                            '',
-                            choice['choice_id'],
-                            '',
-                        ] + PrintAnnotationSpecsLabel._get_name_list(choice['name']['messages'])))
+            output_lines.append(
+                "\t".join(
+                    [label["label_id"], label["annotation_type"]]
+                    + PrintAnnotationSpecsLabel._get_name_list(label["label_name"]["messages"])
+                )
+            )
+            for additional_data_definition in label["additional_data_definitions"]:
+                output_lines.append(
+                    "\t".join(
+                        [
+                            "",
+                            additional_data_definition["additional_data_definition_id"],
+                            additional_data_definition["type"],
+                        ]
+                        + PrintAnnotationSpecsLabel._get_name_list(additional_data_definition["name"]["messages"])
+                    )
+                )
+                if additional_data_definition["type"] in ["choice", "select"]:
+                    for choice in additional_data_definition["choices"]:
+                        output_lines.append(
+                            "\t".join(
+                                ["", "", choice["choice_id"], ""]
+                                + PrintAnnotationSpecsLabel._get_name_list(choice["name"]["messages"])
+                            )
+                        )
 
         annofabcli.utils.output_string("\n".join(output_lines), output)
 
@@ -79,9 +88,11 @@ class PrintAnnotationSpecsLabel(AbstractCommandLineInterface):
             logger.warning(f"アノテーション仕様の履歴は{len(histories)}個のため、最新より{before}個前のアノテーション仕様は見つかりませんでした。")
             return None
         history = histories[-(before + 1)]
-        logger.info(f"{history['updated_datetime']}のアノテーション仕様を出力します。"
-                    f"history_id={history['history_id']}, comment={history['comment']}")
-        return histories[-before + 1]['history_id']
+        logger.info(
+            f"{history['updated_datetime']}のアノテーション仕様を出力します。"
+            f"history_id={history['history_id']}, comment={history['comment']}"
+        )
+        return histories[-before + 1]["history_id"]
 
     def main(self):
 
@@ -90,15 +101,18 @@ class PrintAnnotationSpecsLabel(AbstractCommandLineInterface):
         if args.before is not None:
             history_id = self.get_history_id_from_before_index(args.project_id, args.before)
             if history_id is None:
-                print(f"{self.COMMON_MESSAGE} argument --before: 最新より{args.before}個前のアノテーション仕様は見つかりませんでした。",
-                      file=sys.stderr)
+                print(
+                    f"{self.COMMON_MESSAGE} argument --before: 最新より{args.before}個前のアノテーション仕様は見つかりませんでした。",
+                    file=sys.stderr,
+                )
                 return
         else:
             # args.beforeがNoneならば、必ずargs.history_idはNoneでない
             history_id = args.history_id
 
-        self.print_annotation_specs_label(args.project_id, arg_format=args.format, output=args.output,
-                                          history_id=history_id)
+        self.print_annotation_specs_label(
+            args.project_id, arg_format=args.format, output=args.output, history_id=history_id
+        )
 
 
 def parse_args(parser: argparse.ArgumentParser):
@@ -109,21 +123,36 @@ def parse_args(parser: argparse.ArgumentParser):
     # 過去のアノテーション仕様を参照するためのオプション
     old_annotation_specs_group = parser.add_mutually_exclusive_group()
     old_annotation_specs_group.add_argument(
-        '--history_id', type=str, help=("出力したい過去のアノテーション仕様のhistory_idを指定してください。 "
-                                        "history_idは`annotation_specs history`コマンドで確認できます。 "
-                                        "指定しない場合は、最新のアノテーション仕様が出力されます。 "))
+        "--history_id",
+        type=str,
+        help=(
+            "出力したい過去のアノテーション仕様のhistory_idを指定してください。 "
+            "history_idは`annotation_specs history`コマンドで確認できます。 "
+            "指定しない場合は、最新のアノテーション仕様が出力されます。 "
+        ),
+    )
 
     old_annotation_specs_group.add_argument(
-        '--before', type=int, help=("出力したい過去のアノテーション仕様が、最新よりいくつ前のアノテーション仕様であるかを指定してください。  "
-                                    "たとえば`1`を指定した場合、最新より1個前のアノテーション仕様を出力します。 "
-                                    "指定しない場合は、最新のアノテーション仕様が出力されます。 "))
+        "--before",
+        type=int,
+        help=(
+            "出力したい過去のアノテーション仕様が、最新よりいくつ前のアノテーション仕様であるかを指定してください。  "
+            "たとえば`1`を指定した場合、最新より1個前のアノテーション仕様を出力します。 "
+            "指定しない場合は、最新のアノテーション仕様が出力されます。 "
+        ),
+    )
 
     parser.add_argument(
-        '-f', '--format', type=str, choices=['text', FormatArgument.PRETTY_JSON.value, FormatArgument.JSON.value],
-        default='text', help=f'出力フォーマット '
-        'text: 人が見やすい形式, '
-        f'{FormatArgument.PRETTY_JSON.value}: インデントされたJSON, '
-        f'{FormatArgument.JSON.value}: フラットなJSON')
+        "-f",
+        "--format",
+        type=str,
+        choices=["text", FormatArgument.PRETTY_JSON.value, FormatArgument.JSON.value],
+        default="text",
+        help=f"出力フォーマット "
+        "text: 人が見やすい形式, "
+        f"{FormatArgument.PRETTY_JSON.value}: インデントされたJSON, "
+        f"{FormatArgument.JSON.value}: フラットなJSON",
+    )
 
     argument_parser.add_output()
 
@@ -137,13 +166,13 @@ def main(args):
 
 
 def add_parser(subparsers: argparse._SubParsersAction):
-    subcommand_name = 'list_label'
+    subcommand_name = "list_label"
 
-    subcommand_help = ('アノテーション仕様のラベル情報を出力する')
+    subcommand_help = "アノテーション仕様のラベル情報を出力する"
 
-    description = ('アノテーション仕様のラベル情報を出力する')
+    description = "アノテーション仕様のラベル情報を出力する"
 
-    epilog = 'チェッカーまたはオーナロールを持つユーザで実行してください。'
+    epilog = "チェッカーまたはオーナロールを持つユーザで実行してください。"
 
     parser = annofabcli.common.cli.add_parser(subparsers, subcommand_name, subcommand_help, description, epilog=epilog)
     parse_args(parser)

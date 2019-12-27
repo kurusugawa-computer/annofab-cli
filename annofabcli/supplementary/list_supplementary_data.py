@@ -1,6 +1,6 @@
 import argparse
 import logging
-from typing import Any, Callable, Dict, List, Optional, Tuple, Union  # pylint: disable=unused-import
+from typing import List
 
 from annofabapi.models import SupplementaryData
 
@@ -16,13 +16,15 @@ class ListSupplementaryData(AbstractCommandLineInterface):
     """
     補助情報一覧を表示する。
     """
+
     @annofabcli.utils.allow_404_error
     def get_supplementary_data_list(self, project_id: str, input_data_id: str) -> SupplementaryData:
         supplementary_data_list, _ = self.service.api.get_supplementary_data_list(project_id, input_data_id)
         return supplementary_data_list
 
-    def get_all_supplementary_data_list(self, project_id: str,
-                                        input_data_id_list: List[str]) -> List[SupplementaryData]:
+    def get_all_supplementary_data_list(
+        self, project_id: str, input_data_id_list: List[str]
+    ) -> List[SupplementaryData]:
         """
         補助情報一覧を取得する。
         """
@@ -68,8 +70,9 @@ def parse_args(parser: argparse.ArgumentParser):
     argument_parser.add_project_id()
     argument_parser.add_input_data_id()
 
-    argument_parser.add_format(choices=[FormatArgument.CSV, FormatArgument.JSON, FormatArgument.PRETTY_JSON],
-                               default=FormatArgument.CSV)
+    argument_parser.add_format(
+        choices=[FormatArgument.CSV, FormatArgument.JSON, FormatArgument.PRETTY_JSON], default=FormatArgument.CSV
+    )
     argument_parser.add_output()
     argument_parser.add_csv_format()
 
@@ -80,7 +83,7 @@ def parse_args(parser: argparse.ArgumentParser):
 def add_parser(subparsers: argparse._SubParsersAction):
     subcommand_name = "list"
     subcommand_help = "補助情報一覧を出力します。"
-    description = ("補助情報一覧を出力します。")
+    description = "補助情報一覧を出力します。"
 
     parser = annofabcli.common.cli.add_parser(subparsers, subcommand_name, subcommand_help, description)
     parse_args(parser)
