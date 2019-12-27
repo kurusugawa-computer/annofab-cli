@@ -114,7 +114,7 @@ class VisualizeStatistics(AbstractCommandLineInterface):
             logger.exception(e)
 
         try:
-            graph_obj.wirte_ラベルごとのアノテーション数(annotation_df)
+            graph_obj.write_histogram_for_annotation_count_by_label(annotation_df)
             graph_obj.write_histogram_for_worktime(task_df)
             graph_obj.write_histogram_for_other(task_df)
             graph_obj.write_cumulative_line_graph_for_annotator(

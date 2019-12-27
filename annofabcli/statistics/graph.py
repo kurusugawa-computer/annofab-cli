@@ -138,8 +138,8 @@ class Graph:
         Returns:
             ヒストグラムオブジェクト
         """
-        mean = round(df[histogram_name.column].mean(), 2)
-        std = round(df[histogram_name.column].std(), 2)
+        mean = round(df[histogram_name.column].mean(), 3)
+        std = round(df[histogram_name.column].std(), 3)
         title = f"{histogram_name.title}: μ={mean}, α={std}, N={len(df)}"
 
         data = df[histogram_name.column].values
@@ -149,6 +149,7 @@ class Graph:
             (edges, frequencies),
             kdims=histogram_name.x_axis_label,
             vdims=histogram_name.y_axis_label,
+            tools=["hover"]
         ).options(width=500, title=title, fontsize={"title": 9})
         return hist
 
@@ -184,21 +185,6 @@ class Graph:
                 title="受入時間",
             ),
             HistogramName(
-                column="first_annotation_worktime_hour",
-                x_axis_label="1回目の教師付時間[hour]",
-                title="1回目の教師付時間",
-            ),
-            HistogramName(
-                column="first_inspection_worktime_hour",
-                x_axis_label="1回目の検査時間[hour]",
-                title="1回目の検査時間",
-            ),
-            HistogramName(
-                column="first_acceptance_worktime_hour",
-                x_axis_label="1回目の受入時間[hour]",
-                title="1回目の受入時間",
-            ),
-            HistogramName(
                 column="first_annotator_worktime_hour",
                 x_axis_label="1回目の教師付者の作業時間[hour]",
                 title="1回目の教師付者の作業時間",
@@ -212,6 +198,21 @@ class Graph:
                 column="first_acceptor_worktime_hour",
                 x_axis_label="1回目の受入者の作業時間[hour]",
                 title="1回目の受入者の作業時間",
+            ),
+            HistogramName(
+                column="first_annotation_worktime_hour",
+                x_axis_label="1回目の教師付時間[hour]",
+                title="1回目の教師付時間",
+            ),
+            HistogramName(
+                column="first_inspection_worktime_hour",
+                x_axis_label="1回目の検査時間[hour]",
+                title="1回目の検査時間",
+            ),
+            HistogramName(
+                column="first_acceptance_worktime_hour",
+                x_axis_label="1回目の受入時間[hour]",
+                title="1回目の受入時間",
             ),
             HistogramName(column="sum_worktime_hour", x_axis_label="総作業時間[hour]", title="総作業時間"),
         ]
