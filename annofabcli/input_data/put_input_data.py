@@ -203,7 +203,7 @@ class PutInputData(AbstractCommandLineInterface):
 
         if wait:
             MAX_WAIT_MINUTUE = wait_options.max_tries * wait_options.interval / 60
-            logger.info(f"最大{MAX_WAIT_MINUTUE}分間、コピーが完了するまで待ちます。")
+            logger.info(f"最大{MAX_WAIT_MINUTUE}分間、処理が終了するまで待ちます。")
 
             result = self.service.wrapper.wait_for_completion(
                 project_id,
