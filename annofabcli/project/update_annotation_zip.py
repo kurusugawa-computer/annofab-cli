@@ -100,9 +100,19 @@ class Download(AbstractCommandLineInterface):
         self._wait_for_completion_updated_annotation(project_id, wait_options)
 
 
-    def
-    def hoge(self, project_id: str, force:bool=False):
+    def hoge(self, project_id: str, wait:bool=False, force:bool=False):
+        # validate
+        if not force:
+            should_update = self.should_update_annotation_zip(project_id)
+        else:
+            should_update = True
 
+        if should_update:
+            self.update_annotation_zip_for_project(project_id)
+            if wait:
+                self._wait_for_completion_updated_annotation(project_id, wait_options)
+        else:
+            logger.info("アノテーションzipを更新する必要はいです。")
 
     def update_annotation_zip(
         self, project_id_list: List[str], wait: bool = False, wait_options: Optional[WaitOptions]=None, parallelism: Optional[int]=None
@@ -120,65 +130,6 @@ class Download(AbstractCommandLineInterface):
         with multiprocessing.Pool(processes) as pool:
             pool.map(f, [1, 2, 3])
 
-        MAX_WAIT_MINUTUE = wait_options.max_tries * wait_options.interval / 60
-        if latest:
-            logger.info(f"最大{MAX_WAIT_MINUTUE}分間、ダウンロード対象が最新化するまで待ちます。")
-
-        if target == DownloadTarget.TASK:
-            job_type = JobType.GEN_TASKS_LIST
-            if latest:
-                if self.is_job_progress(project_id, job_type=job_type):
-                    logger.debug(f"ダウンロード対象が最新化ジョブが既に進行中です。")
-                else:
-                    self.service.api.post_project_tasks_update(project_id)
-
-                result = self.service.wrapper.wait_for_completion(
-                    project_id,
-                    job_type=job_type,
-                    job_access_interval=wait_options.interval,
-                    max_job_access=wait_options.max_tries,
-                )
-                if result:
-                    logger.info(f"タスクファイルの更新が完了しました。")
-                else:
-                    logger.info(f"タスクファイルの更新に失敗しました or {MAX_WAIT_MINUTUE} 分待っても、更新が完了しませんでした。")
-                    return
-
-            self.service.wrapper.download_project_tasks_url(project_id, output)
-
-        elif target == DownloadTarget.INSPECTION_COMMENT:
-            self.service.wrapper.download_project_inspections_url(project_id, output)
-
-        elif target == DownloadTarget.TASK_HISTORY_EVENT:
-            self.service.wrapper.download_project_task_history_events_url(project_id, output)
-
-        elif target in [DownloadTarget.SIMPLE_ANNOTATION, DownloadTarget.FULL_ANNOTATION, DownloadTarget.TASK]:
-            if latest:
-                job_type = JobType.GEN_ANNOTATION
-                if self.is_job_progress(project_id, job_type=job_type):
-                    logger.debug(f"ダウンロード対象が最新化ジョブが既に進行中です。")
-                else:
-                    self.service.api.post_annotation_archive_update(project_id)
-
-                result = self.service.wrapper.wait_for_completion(
-                    project_id,
-                    job_type=job_type,
-                    job_access_interval=wait_options.interval,
-                    max_job_access=wait_options.max_tries,
-                )
-                if result:
-                    logger.info(f"アノテーションの更新が完了しました。")
-                else:
-                    logger.info(f"アノテーションの更新に失敗しました or {MAX_WAIT_MINUTUE} 分待っても、更新が完了しませんでした。")
-                    return
-
-            if target == DownloadTarget.SIMPLE_ANNOTATION:
-                self.service.wrapper.download_annotation_archive(project_id, output, v2=True)
-
-            elif target == DownloadTarget.FULL_ANNOTATION:
-                self.service.wrapper.download_full_annotation_archive(project_id, output)
-
-        logger.info(f"ダウンロードが完了しました。output={output}")
 
     @staticmethod
     def validate(args: argparse.Namespace):
