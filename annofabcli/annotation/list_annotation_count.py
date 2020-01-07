@@ -9,7 +9,7 @@ from typing import Any, Dict, List, Optional
 import annofabapi
 import more_itertools
 import pandas
-from annofabapi.models import AdditionalDataDefinition, SingleAnnotation
+from annofabapi.models import AdditionalDataDefinitionV1, SingleAnnotation
 
 import annofabcli
 from annofabcli import AnnofabApiFacade
@@ -35,7 +35,7 @@ class ListAnnotationCount(AbstractCommandLineInterface):
 
     @staticmethod
     def _modify_attribute_of_query(
-        attribute_query: Dict[str, Any], additional_data_definition: AdditionalDataDefinition
+        attribute_query: Dict[str, Any], additional_data_definition: AdditionalDataDefinitionV1
     ) -> Dict[str, Any]:
         if "choice_name_en" in attribute_query:
             choice_info = more_itertools.first_true(
@@ -52,8 +52,8 @@ class ListAnnotationCount(AbstractCommandLineInterface):
 
     @staticmethod
     def _find_additional_data_with_name(
-        additional_data_definitions: List[AdditionalDataDefinition], name: str
-    ) -> Optional[AdditionalDataDefinition]:
+        additional_data_definitions: List[AdditionalDataDefinitionV1], name: str
+    ) -> Optional[AdditionalDataDefinitionV1]:
 
         additional_data_definition = more_itertools.first_true(
             additional_data_definitions,
@@ -63,8 +63,8 @@ class ListAnnotationCount(AbstractCommandLineInterface):
 
     @staticmethod
     def _find_additional_data_with_id(
-        additional_data_definitions: List[AdditionalDataDefinition], definition_id: str
-    ) -> Optional[AdditionalDataDefinition]:
+        additional_data_definitions: List[AdditionalDataDefinitionV1], definition_id: str
+    ) -> Optional[AdditionalDataDefinitionV1]:
 
         additional_data_definition = more_itertools.first_true(
             additional_data_definitions, pred=lambda e: e["additional_data_definition_id"] == definition_id
@@ -72,7 +72,7 @@ class ListAnnotationCount(AbstractCommandLineInterface):
         return additional_data_definition
 
     def _modify_attributes_of_query(
-        self, attributes_of_query: List[Dict[str, Any]], definitions: List[AdditionalDataDefinition]
+        self, attributes_of_query: List[Dict[str, Any]], definitions: List[AdditionalDataDefinitionV1]
     ) -> List[Dict[str, Any]]:
         for attribute_query in attributes_of_query:
             definition_name = attribute_query.get("additional_data_definition_name_en")
