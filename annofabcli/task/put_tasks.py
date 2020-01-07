@@ -73,10 +73,6 @@ class PutTask(AbstractCommandLineInterface):
                 logger.warning(f"タスクの登録に失敗しました。または、{MAX_WAIT_MINUTUE}分間待っても、タスクの登録が完了しませんでした。")
 
     @staticmethod
-    def validate(args: argparse.Namespace) -> bool:
-        return True
-
-    @staticmethod
     def get_wait_options_from_args(args: argparse.Namespace) -> WaitOptions:
         if args.wait_options is not None:
             wait_options = WaitOptions.from_dict(get_json_from_args(args.wait_options))  # type: ignore
@@ -86,9 +82,6 @@ class PutTask(AbstractCommandLineInterface):
 
     def main(self):
         args = self.args
-        if not self.validate(args):
-            return
-
         project_id = args.project_id
         super().validate_project(project_id, [ProjectMemberRole.OWNER])
 
