@@ -97,6 +97,7 @@ $ docker run -it -e ANNOFAB_USER_ID=XXXX -e ANNOFAB_PASSWORD=YYYYY annofab-cli a
 |task| complete                | 未処置の検査コメントを適切な状態に変更して、タスクを受け入れ完了状態にします。                                 |チェッカー/オーナ|
 |task| delete                | タスクを削除します。                                 |オーナ|
 |task|list             | タスク一覧を出力します。                                                            |-|
+|task| put                | タスクを登録します。                                 |オーナ|
 |task| reject                  | 検査コメントを付与してタスクを差し戻します。                                                                 |チェッカー/オーナ|
 
 
@@ -1010,6 +1011,37 @@ $ annofabcli task list --project_id prj1 --task_json task.json
 | project_id                           | task_id                                | phase      | phase_stage | status      | input_data_id_list                       | account_id                           | histories_by_phase                                                                                                                                       | work_time_span | number_of_rejections | started_datetime              | updated_datetime              | sampling | user_id         | username  | worktime_hour       | number_of_rejections_by_inspection | number_of_rejections_by_acceptance |
 |--------------------------------------|----------------------------------------|------------|-------------|-------------|------------------------------------------|--------------------------------------|----------------------------------------------------------------------------------------------------------------------------------------------------------|----------------|----------------------|-------------------------------|-------------------------------|----------|-----------------|-----------|---------------------|------------------------------------|------------------------------------|
 | 12345678-abcd-1234-abcd-1234abcd5678 | 12345678-abcd-1234-abcd-1234abcd5678   | annotation | 1           | break       | ['12345678-abcd-1234-abcd-1234abcd5678'] | 12345678-abcd-1234-abcd-1234abcd5678 | [{'account_id': '12345678-abcd-1234-abcd-1234abcd5678', 'phase': 'annotation', 'phase_stage': 1, 'user_id': 'user_id1', 'username': 'username1'}] | 539662         | 0                    | 2019-05-08T13:53:21.338+09:00 | 2019-05-08T14:15:07.318+09:00 |          | user_id1 | user_name2 | 0.14990611111111113 | 0                                  | 0                                  |
+
+
+
+
+
+### task put
+CSVに記載された情報を元に、タスクを登録します。
+CSVのフォーマットは以下の通りです。
+
+```
+1列目: task_id
+2列目: 空欄（どんな値でもよい）
+3列目: input_data_id
+```
+
+CSVのサンプル（`task.csv`）です。
+
+```
+task_1,,ca0cb2f9-fec5-49b4-98df-dc34490f9785
+task_1,,5ac1987e-ca7c-42a0-9c19-b5b23a41836b
+task_2,,4f2ae4d0-7a38-4f9a-be6f-170ba76aba73
+task_2,,45ac5852-f20c-4938-9ee9-cc0274401df7
+```
+
+```
+# prj1に、タスク登録処理を投入する。
+$ annofabcli task put --project_id prj1 --csv task.csv
+
+# prj1に、タスク登録処理を投入する。タスク登録が完了するまで待つ.
+$ annofabcli task put --project_id prj1 --csv task.csv --wait
+```
 
 
 ### task reject

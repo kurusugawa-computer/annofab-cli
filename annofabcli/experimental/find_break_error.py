@@ -32,8 +32,9 @@ def download_content(url: str) -> Any:
     return response.content
 
 
-def get_err_history_events(task_list: List[str], task_history_events: List[Dict[str, Any]]) \
-        -> Dict[str, List[Dict[str, Any]]]:
+def get_err_history_events(
+    task_list: List[str], task_history_events: List[Dict[str, Any]]
+) -> Dict[str, List[Dict[str, Any]]]:
     """
     しきい値以上のタスクリストのtask_idが含まれるhistory_eventsを返す
     """
@@ -48,7 +49,6 @@ def get_err_history_events(task_list: List[str], task_history_events: List[Dict[
 
 
 class FindBreakError(AbstractCommandLineInterface):
-
     def __init__(self, service: annofabapi.Resource, facade: AnnofabApiFacade, args: argparse.Namespace):
         super().__init__(service, facade, args)
         self.project_id = args.project_id
@@ -74,8 +74,9 @@ class FindBreakError(AbstractCommandLineInterface):
         tasks = self.service.wrapper.get_all_tasks(project_id, query_params=task_query)
         return tasks
 
-    def _project_task_history_events(self, project_id: str, import_file_path: Optional[str] = None) \
-            -> List[Dict[str, Any]]:
+    def _project_task_history_events(
+        self, project_id: str, import_file_path: Optional[str] = None
+    ) -> List[Dict[str, Any]]:
         """
         タスク履歴イベント全件ファイルを取得する。
         import_fileがNone:history_events_urlパスから直接読み込む
@@ -111,7 +112,8 @@ class FindBreakError(AbstractCommandLineInterface):
                 if history_events["status"] == "working":
                     if v[i + 1]["status"] in ["on_hold", "break", "complete"]:
                         working_time = dateutil.parser.parse(v[i + 1]["created_datetime"]) - dateutil.parser.parse(
-                            history_events["created_datetime"])
+                            history_events["created_datetime"]
+                        )
                         if working_time > datetime.timedelta(minutes=self.args.task_history_time_threshold):
                             err_events_list.append((history_events, v[i + 1]))
         return err_events_list
@@ -139,8 +141,7 @@ class FindBreakError(AbstractCommandLineInterface):
             start_data["datetime"] = start_time.isoformat()
             end_data["datetime"] = end_time.isoformat()
             start_data["working_time"] = ""
-            end_data["working_time"] = \
-                _timedelta_to_HM(end_time - start_time)
+            end_data["working_time"] = _timedelta_to_HM(end_time - start_time)
 
             df = pd.DataFrame([start_data, end_data])
             df["no"] = i + 1
@@ -157,15 +158,18 @@ class FindBreakError(AbstractCommandLineInterface):
         annofabcli.utils.print_csv(
             pd_data[["no", "task_id", "user_name", "phase", "status", "datetime", "task_history_id", "working_time"]],
             output=output,
-            to_csv_kwargs={"index": False})
+            to_csv_kwargs={"index": False},
+        )
 
     @staticmethod
     def validate(args: argparse.Namespace) -> bool:
         COMMON_MESSAGE = "annofabcli experimental find_break_error: error:"
         if args.import_file_path is not None:
             if not Path(args.import_file_path).is_file():
-                print(f"{COMMON_MESSAGE} argument --import_file_path: ファイルパスが存在しません。 '{args.import_file_path}'",
-                      file=sys.stderr)
+                print(
+                    f"{COMMON_MESSAGE} argument --import_file_path: ファイルパスが存在しません。 '{args.import_file_path}'",
+                    file=sys.stderr,
+                )
                 return False
 
         return True
@@ -176,11 +180,11 @@ class FindBreakError(AbstractCommandLineInterface):
             return
 
         tasks = self._get_all_tasks(project_id=args.project_id)
-        task_history_events = self._project_task_history_events(project_id=args.project_id,
-                                                                import_file_path=args.import_file_path)
+        task_history_events = self._project_task_history_events(
+            project_id=args.project_id, import_file_path=args.import_file_path
+        )
         err_task_list = self.found_err_task(tasks)
-        err_history_events = get_err_history_events(task_list=err_task_list,
-                                                    task_history_events=task_history_events)
+        err_history_events = get_err_history_events(task_list=err_task_list, task_history_events=task_history_events)
         err_events = self.get_err_events(err_history_events=err_history_events)
         self.output_err_events(err_events_list=err_events, output=self.output)
 
@@ -194,12 +198,11 @@ def main(args):
 def parse_args(parser: argparse.ArgumentParser):
     argument_parser = ArgumentParser(parser)
 
-    parser.add_argument('--task_time_threshold', type=int, default=600,
-                        help="1タスク何分以上を検知対象とするか。指定しない場合は600分(10時間)")
-    parser.add_argument('--task_history_time_threshold', type=int, default=300,
-                        help="1履歴何分以上を検知対象とするか。指定しない場合は300分(5時間)")
-    parser.add_argument('--import_file_path', type=str,
-                        help="importするタスク履歴イベント全件ファイル,指定しない場合はタスク履歴イベント全件を新規取得する")
+    parser.add_argument("--task_time_threshold", type=int, default=600, help="1タスク何分以上を検知対象とするか。指定しない場合は600分(10時間)")
+    parser.add_argument(
+        "--task_history_time_threshold", type=int, default=300, help="1履歴何分以上を検知対象とするか。指定しない場合は300分(5時間)"
+    )
+    parser.add_argument("--import_file_path", type=str, help="importするタスク履歴イベント全件ファイル,指定しない場合はタスク履歴イベント全件を新規取得する")
 
     argument_parser.add_output()
     argument_parser.add_project_id()
@@ -210,7 +213,7 @@ def parse_args(parser: argparse.ArgumentParser):
 def add_parser(subparsers: argparse._SubParsersAction):
     subcommand_name = "found_break_error"
     subcommand_help = "不当に長い作業時間の作業履歴を出力します"
-    description = ("自動休憩が作動せず不当に長い作業時間になっている履歴を出力します。")
+    description = "自動休憩が作動せず不当に長い作業時間になっている履歴を出力します。"
 
     parser = annofabcli.common.cli.add_parser(subparsers, subcommand_name, subcommand_help, description)
     parse_args(parser)
