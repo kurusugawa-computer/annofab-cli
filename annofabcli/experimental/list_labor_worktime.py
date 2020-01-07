@@ -1,20 +1,17 @@
-# flake8: noqa
-#  type: ignore
-# pylint: skip-file
 import argparse
 import datetime
 import logging
-from typing import Any, Dict, List, Tuple
+from typing import Any, Dict, List, Optional  # pylint: disable=unused-import
 
 import annofabapi
+import pandas as pd
 from annofabapi.models import ProjectMemberRole
 
 import annofabcli
 import annofabcli.common.cli
 from annofabcli import AnnofabApiFacade
 from annofabcli.common.cli import AbstractCommandLineInterface, ArgumentParser, build_annofabapi_resource_and_login
-from annofabcli.experimental.utils import date_range, print_time_list_from_work_time_list
-from annofabcli.statistics.table import Table
+from annofabcli.experimental.utils import print_time_list_from_work_time_list, add_id_csv
 
 logger = logging.getLogger(__name__)
 
@@ -40,59 +37,28 @@ class Database:
         return project_members["list"]
 
 
-class FutureTable(Table):
-    def __init__(self, database: Database, task_query_param=None, user_id_list: List[str] = None):
-        super().__init__(database, task_query_param)
+class Table():
+    def __init__(self, database: Database, facade: AnnofabApiFacade):
         self.database = database
-        self.user_id_search_list = [user_id.upper() for user_id in user_id_list]
+        self.project_id = database.project_id
+        self.facade = facade
 
     def create_labor_control_df(self):
 
         labor_control = self.database.get_labor_control()
         labor_control_list = []
         for l in labor_control:
-            if l["values"] is None or l["values"]["working_time_by_user"] is None:
-                aw_plans = 0.0
-                aw_results = 0.0
-            else:
-                if l["values"]["working_time_by_user"]["plans"] is None:
-                    aw_plans = 0.0
-                else:
-                    aw_plans = int(l["values"]["working_time_by_user"]["plans"]) / 60000
-                if l["values"]["working_time_by_user"]["results"] is None:
-                    aw_results = 0.0
-                else:
-                    aw_results = int(l["values"]["working_time_by_user"]["results"]) / 60000
 
-            if l["account_id"] == None:
-                continue
-            if self.user_id_search_list == None:
-                labor_control_list.append(
-                    {
-                        "account_id": l["account_id"],
-                        "date": l["date"],
-                        "aw_plans": aw_plans,
-                        "aw_results": aw_results,
-                        "username": self._get_username(l["account_id"]),
-                        "af_time": 0.0,
-                    }
-                )
-            else:
-                user_id_bool_list = [
-                    user_id_search in self._get_user_id(l["account_id"]).upper()
-                    for user_id_search in self.user_id_search_list
-                ]
-                if True in user_id_bool_list:
-                    labor_control_list.append(
-                        {
-                            "account_id": l["account_id"],
-                            "date": l["date"],
-                            "aw_plans": aw_plans,
-                            "aw_results": aw_results,
-                            "username": self._get_username(l["account_id"]),
-                            "af_time": 0.0,
-                        }
-                    )
+            if l["account_id"] is not None:
+                new_history = {"user_name": self._get_username(l["account_id"]),
+                               "user_id": self._get_user_id(l["account_id"]),
+                               "project_id": self.project_id,
+                               "date": l['date'],
+                               "aw_plans": None if l["values"]["working_time_by_user"]["plans"] is None else int(
+                                   l["values"]["working_time_by_user"]["plans"]) / 60000,
+                               "aw_results": None if l["values"]["working_time_by_user"]["results"] is None else int(
+                                   l["values"]["working_time_by_user"]["results"]) / 60000}
+                labor_control_list.append(new_history)
 
         return labor_control_list
 
@@ -103,55 +69,53 @@ class FutureTable(Table):
         account_statistics = self.database.get_account_statistics()
         all_histories = []
         for account_info in account_statistics:
-
-            account_id = account_info["account_id"]
-            histories = account_info["histories"]
-            if account_id == None:
-                continue
-            elif self.user_id_search_list == None:
+            account_id = account_info['account_id']
+            histories = account_info['histories']
+            if account_id is not None:
                 for history in histories:
-                    history["af_time"] = annofabcli.utils.isoduration_to_minute(history["worktime"])
-                    history["account_id"] = account_id
-                    history["username"] = self._get_username(account_id)
-                    history["aw_plans"] = 0.0
-                    history["aw_results"] = 0.0
-
-                all_histories.extend(histories)
-            else:
-                user_id_bool_list = [
-                    user_id_search in self._get_user_id(account_id).upper().upper()
-                    for user_id_search in self.user_id_search_list
-                ]
-                if True in user_id_bool_list:
-                    for history in histories:
-                        history["af_time"] = annofabcli.utils.isoduration_to_minute(history["worktime"])
-                        history["account_id"] = account_id
-                        history["username"] = self._get_username(account_id)
-                        history["aw_plans"] = 0.0
-                        history["aw_results"] = 0.0
-
-                    all_histories.extend(histories)
+                    new_history = {"user_name": self._get_username(account_id),
+                                   "user_id": self._get_user_id(account_id),
+                                   "project_id": self.project_id,
+                                   "date": history['date'],
+                                   "af_time": annofabcli.utils.isoduration_to_minute(history['worktime'])}
+                    all_histories.append(new_history)
 
         return all_histories
 
-    def create_afaw_time_df(self) -> Tuple[List[Any], List[Any]]:
+    def create_afaw_time_df(self) -> pd.DataFrame:
 
-        account_statistics_df = self.create_account_statistics_df()
-        labor_control_df = self.create_labor_control_df()
-        username_list = []
+        account_statistics_df = pd.DataFrame(self.create_account_statistics_df())
+        labor_control_df = pd.DataFrame(self.create_labor_control_df())
+        df = pd.merge(account_statistics_df, labor_control_df, on=["user_name", "user_id", "project_id", "date"])
+        return df
 
-        for labor_control in labor_control_df:
-            for account_statistics in account_statistics_df:
-                if (
-                    account_statistics["account_id"] == labor_control["account_id"]
-                    and account_statistics["date"] == labor_control["date"]
-                ):
-                    labor_control["af_time"] = account_statistics["af_time"]
-                    labor_control["username"] = account_statistics["username"]
-                    if not account_statistics["username"] in username_list:
-                        username_list.append(account_statistics["username"])
+    def _get_user_id(self, account_id: Optional[str]) -> Optional[str]:
+        """
+        プロジェクトメンバのuser_idを取得する。プロジェクトメンバでなければ、account_idを返す。
+        account_idがNoneならばNoneを返す。
+        """
+        if account_id is None:
+            return None
 
-        return labor_control_df, username_list
+        member = self.facade.get_organization_member_from_account_id(self.project_id, account_id)
+        if member is not None:
+            return member["user_id"]
+        else:
+            return account_id
+
+    def _get_username(self, account_id: Optional[str]) -> Optional[str]:
+        """
+        プロジェクトメンバのusernameを取得する。プロジェクトメンバでなければ、account_idを返す。
+        account_idがNoneならばNoneを返す。
+        """
+        if account_id is None:
+            return None
+
+        member = self.facade.get_organization_member_from_account_id(self.project_id, account_id)
+        if member is not None:
+            return member["username"]
+        else:
+            return account_id
 
 
 def get_organization_id_from_project_id(annofab_service: annofabapi.Resource, project_id: str) -> str:
@@ -167,7 +131,7 @@ class ListLaborWorktime(AbstractCommandLineInterface):
     労務管理画面の作業時間を出力する
     """
 
-    def list_labor_worktime(self, project_id: str, user_id_list: List[str]):
+    def list_labor_worktime(self, project_id: str):
         """
         """
 
@@ -177,39 +141,27 @@ class ListLaborWorktime(AbstractCommandLineInterface):
         organization_id = get_organization_id_from_project_id(self.service, project_id)
         database = Database(self.service, project_id, organization_id)
         # Annofabから取得した情報に関するデータベースを取得するクラス
-        table_obj = FutureTable(database=database, user_id_list=user_id_list)
+        table_obj = Table(database=database, facade=self.facade)
         # Databaseから取得した情報を元にPandas DataFrameを生成するクラス
         #     チェックポイントファイルがあること前提
         return table_obj.create_afaw_time_df()
 
     def main(self):
         args = self.args
-        start_date = datetime.datetime.strptime(args.start_date, "%Y-%m-%d").date()
-        end_date = datetime.datetime.strptime(args.end_date, "%Y-%m-%d").date()
-        date_list = date_range(start_date, end_date)
+        start_date = datetime.datetime.strptime(args.start_date, '%Y-%m-%d').date()
+        end_date = datetime.datetime.strptime(args.end_date, '%Y-%m-%d').date()
         user_id_list = args.user_id
 
-        afaw_time_list = []
-        project_members_list = []
+        total_df = pd.DataFrame([])
         for i, project_id in enumerate(args.project_id):
             logger.debug(f"{i + 1} 件目: project_id = {project_id}")
-            afaw_time_df, project_members = self.list_labor_worktime(project_id, user_id_list)
-            afaw_time_list.append(afaw_time_df)
-            project_members_list.extend(project_members)
-        print_time_list, print_total_time = print_time_list_from_work_time_list(
-            list(set(project_members_list)), afaw_time_list, date_list
-        )
+            afaw_time_df = self.list_labor_worktime(project_id)
+            del afaw_time_df["project_id"]
+            total_df = pd.concat([total_df, afaw_time_df])
+        df = print_time_list_from_work_time_list(user_id_list, total_df, start_date, end_date)
 
-        output_lines: List[str] = []
-        output_lines.append(f"Start: , {start_date},  End: , {end_date}")
-        output_lines.append("project_title: ," + ",".join([self.facade.get_project_title(p) for p in args.project_id]))
-        output_lines.extend([",".join([str(cell) for cell in row]) for row in print_time_list])
-        output_lines.append("total_aw_plans: ," + str(print_total_time["total_aw_plans"]))
-        output_lines.append("total_aw_results: ," + str(print_total_time["total_aw_results"]))
-        output_lines.append("total_af_time: ," + str(print_total_time["total_af_time"]))
-        output_lines.append("total_diff: ," + str(print_total_time["total_diff"]))
-        output_lines.append("total_diff_per: ," + str(print_total_time["total_diff_per"]))
-        annofabcli.utils.output_string("\n".join(output_lines), args.output)
+        df.to_csv(args.output, date_format='%Y-%m-%d')
+        add_id_csv(args.output, args.project_id)
 
 
 def main(args):
