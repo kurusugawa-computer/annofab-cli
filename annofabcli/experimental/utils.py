@@ -1,107 +1,79 @@
-# flake8: noqa
-#  type: ignore
-# pylint: skip-file
-from datetime import date, timedelta
-from typing import Any, Dict
+import csv
+from datetime import date
+from typing import List
+
+import numpy as np
+import pandas as pd
 
 
-def date_range(start_date: date, end_date: date):
-    diff = (end_date - start_date).days + 1
-    return (start_date + timedelta(i) for i in range(diff))
+def print_time_list_from_work_time_list(user_id_list: List[str], df: pd.DataFrame, start_date: date,
+                                        end_date: date) -> pd.DataFrame:
+    # 複数のproject_id分を合計
+    total_df = pd.DataFrame(df.groupby(["user_name", "user_id", "date"], as_index=False).sum())
 
+    # user_id を絞り込み
+    contains_df = total_df[total_df['user_id'].str.contains('|'.join(user_id_list), case=False)].copy()
 
-def print_time_list_from_work_time_list(username_list: list, work_time_lists: list, date_list: list):
-    print_time_list = []
-    new_header_name_list = []
-    new_header_item_list = []
-    new_footer_item_list = []
-    new_header_name_list.append("")
-    new_header_item_list.append("date / time")
-    new_footer_item_list.append("total_time")
-    username_footer_list: Dict[str, Any] = {}
-    total_aw_plans = 0.0
-    total_aw_results = 0.0
-    total_af_time = 0.0
+    # 不要になったuser_id を削除
+    del contains_df["user_id"]
 
-    for username in username_list:
-        new_header_name_list.append(username)
-        new_header_name_list.append("")
-        new_header_name_list.append("")
-        new_header_name_list.append("")
-        new_header_name_list.append("")
-        new_header_item_list.append("aw_plans")
-        new_header_item_list.append("aw_results")
-        new_header_item_list.append("af_time")
-        new_header_item_list.append("diff")
-        new_header_item_list.append("diff_per")
-        username_footer_list[username] = {}
-        username_footer_list[username]["aw_plans"] = 0.0
-        username_footer_list[username]["aw_results"] = 0.0
-        username_footer_list[username]["af_time"] = 0.0
+    # 日付で絞り込み
+    contains_df['date'] = pd.to_datetime(contains_df['date']).dt.date
+    total_df = contains_df[(contains_df["date"] >= start_date) & (contains_df["date"] <= end_date)].copy()
 
-    print_time_list.append(new_header_name_list)
-    print_time_list.append(new_header_item_list)
+    # 合計を計算する
+    sum_by_date = total_df[["date", "aw_plans", "aw_results", "af_time"]].groupby(["date"], as_index=False).sum()
+    sum_by_name = total_df[["user_name", "aw_plans", "aw_results", "af_time"]].groupby(["user_name"],
+                                                                                       as_index=False).sum()
+    sum_all = total_df[["aw_plans", "aw_results", "af_time"]].sum().to_frame().transpose()
 
-    for day in date_list:
-        new_line = []
-        new_line.append(day.strftime("%Y-%m-%d"))
-        for username in username_list:
-            aw_plans = 0.0
-            aw_results = 0.0
-            af_time = 0.0
+    # 比率を追加する
+    sum_by_date["result_per"] = sum_by_date["aw_results"] / sum_by_date["aw_plans"]
+    sum_by_date["awaf_per"] = sum_by_date["aw_results"] / sum_by_date["af_time"]
 
-            for work_time_list in work_time_lists:
-                for work_time in work_time_list:
-                    if username == work_time["username"] and day.strftime("%Y-%m-%d") == work_time["date"]:
-                        aw_plans += work_time["aw_plans"]
-                        aw_results += work_time["aw_results"]
-                        af_time += work_time["af_time"]
+    sum_by_name["result_per"] = sum_by_name["aw_results"] / sum_by_name["aw_plans"]
+    sum_by_name["awaf_per"] = sum_by_name["aw_results"] / sum_by_name["af_time"]
 
-            new_line.append(round(aw_plans, 2))
-            new_line.append(round(aw_results, 2))
-            new_line.append(round(af_time, 2))
-            diff = round(aw_results - af_time, 2)
-            diff_per = round(diff / aw_results, 2) if aw_results != 0.0 else 0.0
-            new_line.append(diff)
-            new_line.append(diff_per)
-            username_footer_list[username]["aw_plans"] += aw_plans
-            username_footer_list[username]["aw_results"] += aw_results
-            username_footer_list[username]["af_time"] += af_time
+    sum_all["result_per"] = sum_all["aw_results"] / sum_all["aw_plans"]
+    sum_all["awaf_per"] = sum_all["aw_results"] / sum_all["af_time"]
 
-        print_time_list.append(new_line)
+    total_df["result_per"] = total_df["aw_results"] / total_df["aw_plans"]
+    total_df["awaf_per"] = total_df["aw_results"] / total_df["af_time"]
 
-    for username in username_list:
-        new_footer_item_list.append(round(username_footer_list[username]["aw_plans"], 2))
-        total_aw_plans += username_footer_list[username]["aw_plans"]
-        new_footer_item_list.append(round(username_footer_list[username]["aw_results"], 2))
-        total_aw_results += username_footer_list[username]["aw_results"]
-        new_footer_item_list.append(round(username_footer_list[username]["af_time"], 2))
-        total_af_time += username_footer_list[username]["af_time"]
-        total_diff = round(username_footer_list[username]["aw_results"] - username_footer_list[username]["af_time"], 2)
-        total_diff_per = (
-            round(total_diff / username_footer_list[username]["aw_results"], 2)
-            if (username_footer_list[username]["aw_results"] != 0.0)
-            else 0.0
-        )
-        new_footer_item_list.append(total_diff)
-        new_footer_item_list.append(total_diff_per)
+    # 結果を合体する
+    result = pd.concat(
+        [
+            total_df.replace({np.inf: "--", np.nan: "--"}),
+            sum_by_date.replace({np.inf: "--", np.nan: "--"}),
+            sum_by_name.replace({np.inf: "--", np.nan: "--"}),
+            sum_all.replace({np.inf: "--", np.nan: "--"})
+        ],
+        sort=False,
+    ).sort_values(
+        ["date", "user_name"],
+    ).loc[:, ["date", "user_name", "aw_plans", "aw_results", "af_time", "result_per", "awaf_per"]]
+    # indexをつける
+    result = result.set_index(["date", "user_name"])
+    # 整形
+    result = result.stack(0).unstack(1, fill_value="✕").unstack(1, fill_value="✕")
+    result[result.loc[:, pd.IndexSlice[:, ['result_per', 'awaf_per']]] == "✕"] = "--"
 
-    print_time_list.append(new_footer_item_list)
+    result.index = result.index.date
 
-    return (
-        print_time_list,
-        {
-            "total_aw_results": round(total_aw_results, 2),
-            "total_aw_plans": round(total_aw_plans, 2),
-            "total_af_time": round(total_af_time, 2),
-            "total_diff": round(total_aw_results - total_af_time, 2),
-            "total_diff_per": (
-                round((total_aw_results - total_af_time) / total_aw_results, 2) if (total_aw_results != 0.00) else 0.00
-            ),
-        },
-    )
+    # NaT と NaN を 書き換える
+    result = result.rename(columns={np.nan: "総合計"}, index={pd.NaT: "合計"})
+
+    return result
 
 
 def print_time_list_csv(print_time_list: list) -> None:
     for time_list in print_time_list:
         print(*time_list, sep=",")
+
+
+def add_id_csv(csv_path: str, id_list: List[str]):
+    id_list[0:0] = ["project_id"]
+    with open(csv_path, 'a') as f:
+        writer = csv.writer(f, delimiter=',')
+        writer.writerow([])
+        writer.writerow(id_list)
