@@ -4,7 +4,7 @@ import json
 import logging
 import sys
 from pathlib import Path
-from typing import Any, Dict, List, Optional, Tuple  # pylint: disable=unused-import
+from typing import Any, Dict, List, Optional  # pylint: disable=unused-import
 
 import annofabapi
 import dateutil.parser
@@ -33,7 +33,7 @@ def download_content(url: str) -> Any:
 
 
 def get_err_history_events(
-    task_list: List[str], task_history_events: List[Dict[str, Any]]
+        task_list: List[str], task_history_events: List[Dict[str, Any]]
 ) -> Dict[str, List[Dict[str, Any]]]:
     """
     しきい値以上のタスクリストのtask_idが含まれるhistory_eventsを返す
@@ -53,7 +53,7 @@ class FindBreakError(AbstractCommandLineInterface):
         super().__init__(service, facade, args)
         self.project_id = args.project_id
 
-    def _get_username(self, account_id: Optional[str]) -> Optional[str]:
+    def _get_username(self, project_id: str, account_id: str) -> Optional[str]:
         """
         プロジェクトメンバのusernameを取得する。プロジェクトメンバでなければ、account_idを返す。
         account_idがNoneならばNoneを返す。
@@ -75,7 +75,7 @@ class FindBreakError(AbstractCommandLineInterface):
         return tasks
 
     def _project_task_history_events(
-        self, project_id: str, import_file_path: Optional[str] = None
+            self, project_id: str, import_file_path: Optional[str] = None
     ) -> List[Dict[str, Any]]:
         """
         タスク履歴イベント全件ファイルを取得する。
@@ -101,7 +101,8 @@ class FindBreakError(AbstractCommandLineInterface):
         """
         return [task["task_id"] for task in tasks if task["work_time_span"] > (self.args.task_time_threshold * 60000)]
 
-    def get_err_events(self, err_history_events: Dict[str, List[Dict[str, Any]]]):
+    def get_err_events(self, err_history_events: Dict[str, List[Dict[str, Any]]]) -> List[List[Dict[str, Any]]]:
+
         """
         しきい値以上の作業時間になっている開始と終了のhistory_eventsのペアを返す
         """
@@ -110,66 +111,31 @@ class FindBreakError(AbstractCommandLineInterface):
             v.sort(key=lambda x: x["created_datetime"])
             for i, history_events in enumerate(v):
                 if history_events["status"] == "working":
-                    if v[i + 1]["status"] in ["on_hold", "break", "complete"]:
-                        working_time = dateutil.parser.parse(v[i + 1]["created_datetime"]) - dateutil.parser.parse(
-                            history_events["created_datetime"]
-                        )
+                    next_history_events = v[i + 1]
+                    if next_history_events["status"] in ["on_hold", "break", "complete"]:
+                        working_time = dateutil.parser.parse(
+                            next_history_events["created_datetime"]) - dateutil.parser.parse(
+                            history_events["created_datetime"])
                         if working_time > datetime.timedelta(minutes=self.args.task_history_time_threshold):
-                            err_events_list.append((history_events, v[i + 1]))
+                            history_events["user_name"] = self._get_username(history_events["project_id"],
+                                                                             history_events["account_id"])
+                            next_history_events["user_name"] = self._get_username(history_events["project_id"],
+                                                                                  history_events["account_id"])
+                            history_events["project_title"] = self.facade.get_project_title(
+                                history_events["project_id"])
+                            next_history_events["project_title"] = self.facade.get_project_title(
+                                history_events["project_id"])
+                            err_events_list.append([history_events, next_history_events])
         return err_events_list
-
-    def output_err_events(self, err_events_list: List[Tuple[Dict[str, Any], Dict[str, Any]]], output: str = None):
-        """
-        開始と終了のhistory_eventsのペアから出力する
-        :param err_events_list:
-        :param output:
-        :return:
-        """
-
-        def _timedelta_to_HM(td: datetime.timedelta):
-            sec = td.total_seconds()
-            return str(round(sec // 3600)) + "時間" + str(round(sec % 3600 // 60)) + "分"
-
-        data_list = []
-        for i, data in enumerate(err_events_list):
-            start_data, end_data = data
-            username = self._get_username(start_data["account_id"])
-            start_data["user_name"] = "" if username is None else username
-            end_data["user_name"] = "" if username is None else username
-            start_time = dateutil.parser.parse(start_data["created_datetime"])
-            end_time = dateutil.parser.parse(end_data["created_datetime"])
-            start_data["datetime"] = start_time.isoformat()
-            end_data["datetime"] = end_time.isoformat()
-            start_data["working_time"] = ""
-            end_data["working_time"] = _timedelta_to_HM(end_time - start_time)
-
-            df = pd.DataFrame([start_data, end_data])
-            df["no"] = i + 1
-
-            del df["project_id"]
-            del df["phase_stage"]
-            del df["account_id"]
-            del df["created_datetime"]
-            data_list.append(df)
-
-        pd_data = pd.concat(data_list)
-        pd_data.set_index(["no", "task_id"])
-
-        annofabcli.utils.print_csv(
-            pd_data[["no", "task_id", "user_name", "phase", "status", "datetime", "task_history_id", "working_time"]],
-            output=output,
-            to_csv_kwargs={"index": False},
-        )
 
     @staticmethod
     def validate(args: argparse.Namespace) -> bool:
         COMMON_MESSAGE = "annofabcli experimental find_break_error: error:"
         if args.import_file_path is not None:
             if not Path(args.import_file_path).is_file():
-                print(
-                    f"{COMMON_MESSAGE} argument --import_file_path: ファイルパスが存在しません。 '{args.import_file_path}'",
-                    file=sys.stderr,
-                )
+                print(f"{COMMON_MESSAGE} argument --import_file_path: ファイルパスが存在しません\
+                '{args.import_file_path}'",
+                      file=sys.stderr)
                 return False
 
         return True
@@ -187,6 +153,47 @@ class FindBreakError(AbstractCommandLineInterface):
         err_history_events = get_err_history_events(task_list=err_task_list, task_history_events=task_history_events)
         err_events = self.get_err_events(err_history_events=err_history_events)
         self.output_err_events(err_events_list=err_events, output=self.output)
+
+
+def output_err_events(err_events_list: List[List[Dict[str, Any]]], output: str = None):
+    """
+    開始と終了のhistory_eventsのペアから出力する
+    :param err_events_list:
+    :param output:
+    :return:
+    """
+
+    def _timedelta_to_HM(td: datetime.timedelta):
+        sec = td.total_seconds()
+        return str(round(sec // 3600)) + "時間" + str(round(sec % 3600 // 60)) + "分"
+
+    data_list = []
+    for i, data in enumerate(err_events_list):
+        start_data, end_data = data
+        start_time = dateutil.parser.parse(start_data["created_datetime"])
+        end_time = dateutil.parser.parse(end_data["created_datetime"])
+        start_data["datetime"] = start_time.isoformat()
+        end_data["datetime"] = end_time.isoformat()
+        start_data["working_time"] = ""
+        end_data["working_time"] = \
+            _timedelta_to_HM(end_time - start_time)
+
+        df = pd.DataFrame([start_data, end_data])
+        df["no"] = i + 1
+
+        del df["phase_stage"]
+        del df["account_id"]
+        del df["created_datetime"]
+        data_list.append(df)
+
+    pd_data = pd.concat(data_list) if len(data_list) > 1 else data_list[0]
+
+    annofabcli.utils.print_csv(
+        pd_data[["no", "project_title", "project_id", "task_id", "user_name", "phase", "status", "datetime",
+                 "task_history_id",
+                 "working_time"]],
+        output=output,
+        to_csv_kwargs={"index": False})
 
 
 def main(args):
