@@ -8,6 +8,7 @@ import annofabcli.task.complete_tasks
 import annofabcli.task.delete_tasks
 import annofabcli.task.list_tasks
 import annofabcli.task.reject_tasks
+import annofabcli.task.put_tasks
 
 
 def parse_args(parser: argparse.ArgumentParser):
@@ -20,6 +21,7 @@ def parse_args(parser: argparse.ArgumentParser):
     annofabcli.task.complete_tasks.add_parser(subparsers)
     annofabcli.task.delete_tasks.add_parser(subparsers)
     annofabcli.task.list_tasks.add_parser(subparsers)
+    annofabcli.task.put_tasks.add_parser(subparsers)
     annofabcli.task.reject_tasks.add_parser(subparsers)
 
 

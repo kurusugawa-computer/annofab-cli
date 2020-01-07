@@ -45,11 +45,10 @@ class PutTask(AbstractCommandLineInterface):
         CSVファイルからタスクを登録する。
 
         Args:
-            project_id: 入力データの登録先プロジェクトのプロジェクトID
-            zip_file: 入力データとして登録するzipファイルのパス
-            input_data_name_for_zip: zipファイルのinput_data_name
+            project_id:
+            csv_file: 入力データとして登録するzipファイルのパス
+            wait_options: タスク登録の完了を待つ処理
             wait: 入力データの登録が完了するまで待つかどうか
-
         """
 
         project_title = self.facade.get_project_title(project_id)
@@ -60,11 +59,11 @@ class PutTask(AbstractCommandLineInterface):
 
         if wait:
             MAX_WAIT_MINUTUE = wait_options.max_tries * wait_options.interval / 60
-            logger.info(f"最大{MAX_WAIT_MINUTUE}分間、処理が終了するまで待ちます。")
+            logger.info(f"最大{MAX_WAIT_MINUTUE}分間、タスク登録処理が終了するまで待ちます。")
 
             result = self.service.wrapper.wait_for_completion(
                 project_id,
-                job_type=JobType.GEN_INPUTS,
+                job_type=JobType.GEN_TASKS,
                 job_access_interval=wait_options.interval,
                 max_job_access=wait_options.max_tries,
             )
