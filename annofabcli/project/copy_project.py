@@ -13,8 +13,11 @@ from annofabcli.common.cli import (
     ArgumentParser,
     build_annofabapi_resource_and_login,
     get_json_from_args,
+    get_wait_options_from_args,
 )
 from annofabcli.common.dataclasses import WaitOptions
+
+DEFAULT_WAIT_OPTIONS = WaitOptions(interval=60, max_tries=360)
 
 logger = logging.getLogger(__name__)
 
@@ -89,14 +92,6 @@ class CopyProject(AbstractCommandLineInterface):
             else:
                 logger.info(f"プロジェクトのコピーは実行中 または 失敗しました。")
 
-    @staticmethod
-    def get_wait_options_from_args(args: argparse.Namespace) -> WaitOptions:
-        if args.wait_options is not None:
-            wait_options = WaitOptions.from_dict(get_json_from_args(args.wait_options))  # type: ignore
-        else:
-            wait_options = WaitOptions(interval=60, max_tries=360)
-        return wait_options
-
     def main(self):
         args = self.args
         dest_project_id = args.dest_project_id if args.dest_project_id is not None else str(uuid.uuid4())
@@ -113,7 +108,7 @@ class CopyProject(AbstractCommandLineInterface):
         for key in copy_option_kyes:
             copy_options[key] = getattr(args, key)
 
-        wait_options = self.get_wait_options_from_args(args)
+        wait_options = get_wait_options_from_args(get_json_from_args(args.wait_options), DEFAULT_WAIT_OPTIONS)
 
         self.copy_project(
             args.project_id,

@@ -21,7 +21,7 @@ from annofabcli.common.dataclasses import WaitOptions
 
 logger = logging.getLogger(__name__)
 
-DEFAULT_WAIT_OPTIONS = WaitOptions(interval=300, max_tries=120)
+DEFAULT_WAIT_OPTIONS = WaitOptions(interval=300, max_tries=72)
 
 
 class SubUpdateAnnotationZip:
@@ -215,7 +215,7 @@ def parse_args(parser: argparse.ArgumentParser):
         type=str,
         help="アノテーションzipの最新化が完了するまで待つ際のオプションを、JSON形式で指定してください。"
         "`file://`を先頭に付けるとjsonファイルを指定できます。"
-        'デフォルとは`{"interval":300, "max_tries":120}` です。'
+        'デフォルとは`{"interval":300, "max_tries":72}` です。'
         "`interval`:完了したかを問い合わせる間隔[秒], "
         "`max_tires`:完了したかの問い合わせを最大何回行うか。",
     )

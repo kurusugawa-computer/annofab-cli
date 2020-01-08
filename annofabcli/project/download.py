@@ -7,10 +7,17 @@ from annofabapi.models import JobStatus, JobType
 import annofabcli
 import annofabcli.common.cli
 from annofabcli import AnnofabApiFacade
-from annofabcli.common.cli import AbstractCommandLineInterface, build_annofabapi_resource_and_login, get_json_from_args
+from annofabcli.common.cli import (
+    AbstractCommandLineInterface,
+    build_annofabapi_resource_and_login,
+    get_json_from_args,
+    get_wait_options_from_args,
+)
 from annofabcli.common.dataclasses import WaitOptions
 
 logger = logging.getLogger(__name__)
+
+DEFAULT_WAIT_OPTIONS = WaitOptions(interval=60, max_tries=360)
 
 
 class DownloadTarget(Enum):
@@ -104,20 +111,12 @@ class Download(AbstractCommandLineInterface):
 
         return True
 
-    @staticmethod
-    def get_wait_options_from_args(args: argparse.Namespace) -> WaitOptions:
-        if args.wait_options is not None:
-            wait_options = WaitOptions.from_dict(get_json_from_args(args.wait_options))  # type: ignore
-        else:
-            wait_options = WaitOptions(interval=60, max_tries=360)
-        return wait_options
-
     def main(self):
         args = self.args
         if not self.validate(args):
             return
 
-        wait_options = self.get_wait_options_from_args(args)
+        wait_options = get_wait_options_from_args(get_json_from_args(args.wait_options), DEFAULT_WAIT_OPTIONS)
         self.download(
             DownloadTarget(args.target),
             args.project_id,
