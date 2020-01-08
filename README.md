@@ -811,7 +811,7 @@ $ annofabcli project update_anotation_zip --project_id prj1 prj2 --force
 # prj1, prj2のアノテーションzipを更新して、すべてのプロジェクトの更新が完了するまで待ちます
 $ annofabcli project update_anotation_zip --project_id prj1 prj2 --wait
 
-# prj1, prj2のアノテーションzipを更新して、すべてのプロジェクトの更新が完了するまで待ちます
+# アノテーションzipの更新が完了するまで待つ処理を並列で実行します。
 $ annofabcli project update_anotation_zip --project_id prj1 prj2 --wait --parallelism 4
 ```
 
