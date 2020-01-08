@@ -135,7 +135,17 @@ def main(args: argparse.Namespace):
 def parse_args(parser: argparse.ArgumentParser):
     target_choices = [e.value for e in DownloadTarget]
 
-    parser.add_argument("target", type=str, choices=target_choices, help="ダウンロード対象の項目を指定します。")
+    parser.add_argument(
+        "target",
+        type=str,
+        choices=target_choices,
+        help="ダウンロード対象の項目を指定します。"
+        "simple_annotation: シンプルアノテーションzip, "
+        "full_annotation: フルアノテーションzip, "
+        "task: タスクjson, "
+        "inspection_comment: 検査コメントjson, "
+        "task_history_event: タスク履歴イベントjson, ",
+    )
 
     parser.add_argument("-p", "--project_id", type=str, required=True, help="対象のプロジェクトのproject_idを指定します。")
 
