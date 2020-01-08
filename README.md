@@ -790,8 +790,11 @@ $ annofabcli project download simple_annotation --project_id prj1  58a2a621-7d4b
 プロジェクト一覧を出力します。
 
 ```
-# org1配下のプロジェクトで、
+# org1配下のプロジェクトで、user1が所属する進行中のプロジェクト一覧を出力する。
 $ annofabcli project list --organization org1 --project_query '{"status": "active", "user_id": "user1}'
+
+# prj1, prj2のプロジェクト一覧を出力する
+$ annofabcli project list --project_id prj1 prj2
 ```
 
 
