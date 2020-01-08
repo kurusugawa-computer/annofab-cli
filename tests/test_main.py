@@ -360,7 +360,7 @@ class TestProject:
         main(["project", "download", "full_annotation", "--project_id", project_id, "--output", out_file])
 
     def test_list_project(self):
-        out_file = str(out_path / "project.csv")
+        out_file = str(out_path / "project-list-from-organization.csv")
         main(
             [
                 "project",
@@ -374,6 +374,11 @@ class TestProject:
                 "--output",
                 out_file,
             ]
+        )
+
+        out_file = str(out_path / "project-list-from-project-id.csv")
+        main(
+            ["project", "list", "--project_id", project_id, "--format", "csv", "--output", out_file,]
         )
 
     def test_update_annotation_zip(self):
