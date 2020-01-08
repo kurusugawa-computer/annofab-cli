@@ -20,7 +20,8 @@ logger = logging.getLogger(__name__)
 class SubUpdateAnnotationZip:
     """
     `AbstractCommandLineInterface`を継承したクラスだと、`multiprocessing.Pool`を実行したときに
-    `AttributeError: Can't pickle local object 'ArgumentParser.__init__.<locals>.identity'`というエラーが発生したので、`ArgumentParser`を除いたクラスを作成した。
+    `AttributeError: Can't pickle local object 'ArgumentParser.__init__.<locals>.identity'`というエラーが発生したので、
+    `ArgumentParser`を除いたクラスを作成した。
     """
 
     def __init__(self, service: annofabapi.Resource, facade: AnnofabApiFacade):
