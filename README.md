@@ -84,6 +84,7 @@ $ docker run -it -e ANNOFAB_USER_ID=XXXX -e ANNOFAB_PASSWORD=YYYYY annofab-cli a
 |project| diff                 | プロジェクト間の差分を表示します。                                                                           |チェッカー/オーナ|
 |project| download                 | タスクや検査コメント、アノテーションなどをダウンロードします。                                                                           |オーナ|
 |project| list                 | プロジェクト一覧を出力します。                                                                          |-|
+|project| update_annotation_zip                 | アノテーションzipを更新します。                                                                         |オーナ/アノテーションユーザ|
 |project_member| change                  | プロジェクトメンバを変更します。|オーナ|
 |project_member| copy                  | プロジェクトメンバをコピーします。|オーナ(コピー先プロジェクトに対して)|
 |project_member| delete                  | 複数のプロジェクトからユーザを削除します。                                                                 |オーナ|
@@ -793,6 +794,23 @@ $ annofabcli project download simple_annotation --project_id prj1  58a2a621-7d4b
 $ annofabcli project list --organization org1 --project_query '{"status": "active", "user_id": "user1}'
 ```
 
+
+### project update_annotation_zip
+アノテーションzipを更新します。
+
+```
+# prj1, prj2のアノテーションzipを更新します。更新する必要がなければ更新しません。
+$ annofabcli project update_anotation_zip --project_id prj1 prj2
+
+# prj1, prj2のアノテーションzipを更新します。更新する必要がなくても常に更新します。
+$ annofabcli project update_anotation_zip --project_id prj1 prj2 --force
+
+# prj1, prj2のアノテーションzipを更新して、すべてのプロジェクトの更新が完了するまで待ちます
+$ annofabcli project update_anotation_zip --project_id prj1 prj2 --wait
+
+# prj1, prj2のアノテーションzipを更新して、すべてのプロジェクトの更新が完了するまで待ちます
+$ annofabcli project update_anotation_zip --project_id prj1 prj2 --wait --parallelism 4
+```
 
 
 

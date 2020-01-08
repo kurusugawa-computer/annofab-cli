@@ -1,11 +1,8 @@
 import argparse
 import logging
-from dataclasses import dataclass
 from pathlib import Path
-from typing import Optional
 
 from annofabapi.models import JobType, ProjectMemberRole
-from dataclasses_json import dataclass_json
 
 import annofabcli
 from annofabcli import AnnofabApiFacade
@@ -18,19 +15,6 @@ from annofabcli.common.cli import (
 from annofabcli.common.dataclasses import WaitOptions
 
 logger = logging.getLogger(__name__)
-
-
-@dataclass_json
-@dataclass
-class CsvInputData:
-    """
-    CSVに記載されている入力データ
-    """
-
-    input_data_name: str
-    input_data_path: str
-    input_data_id: str
-    sign_required: Optional[bool]
 
 
 class PutTask(AbstractCommandLineInterface):
@@ -46,9 +30,9 @@ class PutTask(AbstractCommandLineInterface):
 
         Args:
             project_id:
-            csv_file: 入力データとして登録するzipファイルのパス
+            csv_file: タスク登録に関する情報が記載されたCSV
             wait_options: タスク登録の完了を待つ処理
-            wait: 入力データの登録が完了するまで待つかどうか
+            wait: タスク登録が完了するまで待つかどうか
         """
 
         project_title = self.facade.get_project_title(project_id)
@@ -113,7 +97,7 @@ def parse_args(parser: argparse.ArgumentParser):
         ),
     )
 
-    parser.add_argument("--wait", action="store_true", help=("入力データの登録が完了するまで待ちます。"))
+    parser.add_argument("--wait", action="store_true", help=("タスク登録が完了するまで待ちます。"))
 
     parser.add_argument(
         "--wait_options",

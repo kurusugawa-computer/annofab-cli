@@ -376,6 +376,9 @@ class TestProject:
             ]
         )
 
+    def test_update_annotation_zip(self):
+        main(["project", "update_annotation_zip", "--project_id", project_id])
+
 
 class TestProjectMember:
     def test_put_project_member(self):
@@ -471,6 +474,12 @@ class TestTask:
                 inspection_comment,
                 "--yes",
             ]
+        )
+
+    def test_put_task(self):
+        csv_file = str(data_path / "put_task.csv")
+        main(
+            [self.command_name, "put", "--project_id", project_id, "--csv", csv_file,]
         )
 
     def test_change_operator(self):
