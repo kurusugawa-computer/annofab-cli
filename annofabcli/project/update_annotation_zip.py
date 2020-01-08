@@ -11,10 +11,17 @@ from annofabapi.models import JobStatus, JobType, ProjectMemberRole
 import annofabcli
 import annofabcli.common.cli
 from annofabcli import AnnofabApiFacade
-from annofabcli.common.cli import AbstractCommandLineInterface, build_annofabapi_resource_and_login, get_json_from_args
+from annofabcli.common.cli import (
+    AbstractCommandLineInterface,
+    build_annofabapi_resource_and_login,
+    get_json_from_args,
+    get_wait_options_from_args,
+)
 from annofabcli.common.dataclasses import WaitOptions
 
 logger = logging.getLogger(__name__)
+
+DEFAULT_WAIT_OPTIONS = WaitOptions(interval=300, max_tries=120)
 
 
 class SubUpdateAnnotationZip:
@@ -85,7 +92,7 @@ class SubUpdateAnnotationZip:
         アノテーションzipの更新が完了するまで待ちます。
         """
         if wait_options is None:
-            wait_options = WaitOptions(interval=300, max_tries=120)
+            wait_options = DEFAULT_WAIT_OPTIONS
 
         MAX_WAIT_MINUTU = wait_options.max_tries * wait_options.interval / 60
         result = self.service.wrapper.wait_for_completion(
@@ -119,6 +126,12 @@ class SubUpdateAnnotationZip:
         """
         1つのプロジェクトに対して、アノテーションzipを更新して、必要なら更新が完了するまで待ちます。
         """
+        project = self.service.wrapper.get_project_or_none(project_id)
+        if project is None:
+            logger.warning(f"project_id={project_id}: プロジェクトにアクセスできません。")
+            return
+
+        logger.debug(f"project_id={project_id}: project_title='{project['title']}'")
         if not self.facade.contains_any_project_member_role(
             project_id, [ProjectMemberRole.OWNER, ProjectMemberRole.TRAINING_DATA_USER]
         ):
@@ -164,19 +177,12 @@ class UpdateAnnotationZip(AbstractCommandLineInterface):
         with multiprocessing.Pool(processes) as pool:
             pool.map(partial_func, project_id_list)
 
-    @staticmethod
-    def get_wait_options_from_args(args: argparse.Namespace) -> Optional[WaitOptions]:
-        if args.wait_options is not None:
-            return WaitOptions.from_dict(get_json_from_args(args.wait_options))  # type: ignore
-        else:
-            return None
-
     def main(self):
         args = self.args
 
         project_id_list = annofabcli.common.cli.get_list_from_args(args.project_id)
 
-        wait_options = self.get_wait_options_from_args(args)
+        wait_options = get_wait_options_from_args(get_json_from_args(args.wait_options), DEFAULT_WAIT_OPTIONS)
         self.update_annotation_zip(
             project_id_list=project_id_list, force=args.force, wait=args.wait, wait_options=wait_options,
         )
