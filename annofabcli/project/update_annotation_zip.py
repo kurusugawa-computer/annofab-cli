@@ -1,29 +1,40 @@
 import argparse
 import logging
-from enum import Enum
-from typing import List, Optional
-from annofabapi.models import JobStatus, JobType, ProjectMemberRole
 import multiprocessing
+from functools import partial
+from typing import List, Optional
+
+import annofabapi
+import dateutil
+from annofabapi.models import JobStatus, JobType, ProjectMemberRole
+
 import annofabcli
 import annofabcli.common.cli
-from functools import partial
 from annofabcli import AnnofabApiFacade
-from annofabcli.common.cli import AbstractCommandLineInterface, build_annofabapi_resource_and_login, get_json_from_args, ArgumentParser
+from annofabcli.common.cli import AbstractCommandLineInterface, build_annofabapi_resource_and_login, get_json_from_args
 from annofabcli.common.dataclasses import WaitOptions
-import dateutil
 
 logger = logging.getLogger(__name__)
 
-class Download(AbstractCommandLineInterface):
+
+class SubUpdateAnnotationZip:
+    """
+    `AbstractCommandLineInterface`を継承したクラスだと、`multiprocessing.Pool`を実行したときに
+    `AttributeError: Can't pickle local object 'ArgumentParser.__init__.<locals>.identity'`というエラーが発生したので、`ArgumentParser`を除いたクラスを作成した。
+    """
+
+    def __init__(self, service: annofabapi.Resource, facade: AnnofabApiFacade):
+        self.service = service
+        self.facade = facade
 
     def _should_update_annotation_zip(self, project_id: str):
         project, _ = self.service.api.get_project(project_id)
         last_tasks_updated_datetime = project["summary"]["last_tasks_updated_datetime"]
-        logger.debug(f"タスクの最終更新日時={last_tasks_updated_datetime}")
+        logger.debug(f"project_id={project_id}: タスクの最終更新日時={last_tasks_updated_datetime}")
 
         annotation_specs_history = self.service.api.get_annotation_specs_histories(project_id)[0]
         annotation_specs_updated_datetime = annotation_specs_history[-1]["updated_datetime"]
-        logger.debug(f"アノテーション仕様の最終更新日時={annotation_specs_updated_datetime}")
+        logger.debug(f"project_id={project_id}: アノテーション仕様の最終更新日時={annotation_specs_updated_datetime}")
 
         job_list = self.service.api.get_project_job(
             project_id, query_params={"type": JobType.GEN_ANNOTATION.value, "limit": 1}
@@ -33,12 +44,13 @@ class Download(AbstractCommandLineInterface):
             return True
 
         job = job_list[0]
-        logger.debug(f"project_id={project_id}: 最後にアノテーションzipを更新しときの情報: 最終更新日時={job['updated_datetime']}, job_status={job['job_status']}")
+        logger.debug(
+            f"project_id={project_id}: 最後にアノテーションzipを更新しときの情報: "
+            f"最終更新日時={job['updated_datetime']}, job_status={job['job_status']}"
+        )
         job_status = JobStatus(job["job_status"])
         if job_status == JobStatus.SUCCEEDED:
-            if dateutil.parser.parse(job["updated_datetime"]) < dateutil.parser.parse(
-                last_tasks_updated_datetime
-            ):
+            if dateutil.parser.parse(job["updated_datetime"]) < dateutil.parser.parse(last_tasks_updated_datetime):
                 return True
 
             elif dateutil.parser.parse(job["updated_datetime"]) < dateutil.parser.parse(
@@ -46,12 +58,15 @@ class Download(AbstractCommandLineInterface):
             ):
                 return True
             else:
-                logger.debug(f"project_id={project_id}: タスクの最終更新日時 or アノテーション仕様の最終更新日時が、アノテーションzipの最終講師日時より新しいため、アノテーションzipを更新する必要はありません。")
+                logger.debug(
+                    f"project_id={project_id}: タスクの最終更新日時 or アノテーション仕様の最終更新日時が、"
+                    f"アノテーションzipの最終講師日時より新しいため、アノテーションzipを更新する必要はありません。"
+                )
                 return False
         else:
             return True
 
-    def _wait_for_completion_updated_annotation(self, project_id: str, wait_options: Optional[WaitOptions]=None):
+    def _wait_for_completion_updated_annotation(self, project_id: str, wait_options: Optional[WaitOptions] = None):
         if wait_options is None:
             wait_options = WaitOptions(interval=300, max_tries=120)
 
@@ -68,26 +83,25 @@ class Download(AbstractCommandLineInterface):
             logger.info(f"project_id={project_id}: アノテーションzipの更新に失敗、または{MAX_WAIT_MINUTU}分待ってもアノテーションzipの更新が終了しませんでした。")
         return result
 
-    def _update_annotation_zip_for_project(
-        self, project_id: str
-    ) -> None:
+    def _update_annotation_zip_for_project(self, project_id: str) -> None:
         job_list = self.service.api.get_project_job(
             project_id, query_params={"type": JobType.GEN_ANNOTATION.value, "limit": 1}
         )[0]["list"]
         if len(job_list) > 0:
             job = job_list[0]
             if job["job_status"] == JobStatus.PROGRESS.value:
-                logger.info(
-                    f"project_id={project_id}: アノテーションzipの更新処理が既に実行されています。")
+                logger.info(f"project_id={project_id}: アノテーションzipの更新処理が既に実行されています。")
                 return
 
         self.service.api.post_annotation_archive_update(project_id)
-        logger.info(
-            f"project_id={project_id}: アノテーションzipの更新処理が開始されました。")
+        logger.info(f"project_id={project_id}: アノテーションzipの更新処理が開始されました。")
 
-
-    def execute_for_project(self, project_id: str, force:bool=False, wait:bool=False, wait_options:Optional[WaitOptions]=None) -> None:
-        if not self.facade.contains_any_project_member_role(project_id, [ProjectMemberRole.OWNER, ProjectMemberRole.TRAINING_DATA_USER]):
+    def execute_for_project(
+        self, project_id: str, force: bool = False, wait: bool = False, wait_options: Optional[WaitOptions] = None
+    ) -> None:
+        if not self.facade.contains_any_project_member_role(
+            project_id, [ProjectMemberRole.OWNER, ProjectMemberRole.TRAINING_DATA_USER]
+        ):
             logger.warning(f"project_id={project_id}: オーナロールまたはアノテーションユーザロールでないため、アノテーションzipを更新できません。")
             return
 
@@ -101,11 +115,17 @@ class Download(AbstractCommandLineInterface):
             if wait:
                 self._wait_for_completion_updated_annotation(project_id, wait_options)
         else:
-            logger.info("アノテーションzipを更新する必要がないので、何も処理しません。")
+            logger.info(f"project_id={project_id}: アノテーションzipを更新する必要がないので、何も処理しません。")
 
 
+class UpdateAnnotationZip(AbstractCommandLineInterface):
     def update_annotation_zip(
-        self, project_id_list: List[str], force: bool = False, wait: bool = False, wait_options: Optional[WaitOptions]=None, parallelism: Optional[int]=None
+        self,
+        project_id_list: List[str],
+        force: bool = False,
+        wait: bool = False,
+        wait_options: Optional[WaitOptions] = None,
+        parallelism: Optional[int] = None,
     ) -> None:
         """
         複数プロジェクトに対して、アノテーションzipを更新する。
@@ -117,11 +137,12 @@ class Download(AbstractCommandLineInterface):
             wait_options: アノテーションzipの更新が完了するまで待つときのオプション
             parallelism: 並列度
         """
+        obj = SubUpdateAnnotationZip(service=self.service, facade=self.facade)
         processes = parallelism if parallelism is not None else len(project_id_list)
         # project_idごとに並列で処理します
+        partial_func = partial(obj.execute_for_project, force=force, wait=wait, wait_options=wait_options)
         with multiprocessing.Pool(processes) as pool:
-            pool.map(partial(self.execute_for_project, force=force, wait=wait, wait_options=wait_options), project_id_list)
-
+            pool.map(partial_func, project_id_list)
 
     @staticmethod
     def get_wait_options_from_args(args: argparse.Namespace) -> Optional[WaitOptions]:
@@ -137,29 +158,29 @@ class Download(AbstractCommandLineInterface):
 
         wait_options = self.get_wait_options_from_args(args)
         self.update_annotation_zip(
-            project_id_list=project_id_list,
-            force=args.force,
-            wait=args.wait,
-            wait_options=wait_options,
+            project_id_list=project_id_list, force=args.force, wait=args.wait, wait_options=wait_options,
         )
 
 
 def main(args: argparse.Namespace):
     service = build_annofabapi_resource_and_login()
     facade = AnnofabApiFacade(service)
-    Download(service, facade, args).main()
+    UpdateAnnotationZip(service, facade, args).main()
 
 
 def parse_args(parser: argparse.ArgumentParser):
-    argument_parser = ArgumentParser(parser)
+    parser.add_argument(
+        "-p",
+        "--project_id",
+        type=str,
+        nargs="+",
+        required=True,
+        help="対象のプロジェクトのproject_idを指定します。`file://`を先頭に付けると、project_idの一覧が記載されたファイルを指定できます。",
+    )
 
-    argument_parser.add_project_id()
-
-    parser.add_argument("-p", "--project_id", type=str, nargs="+",
-                        help="対象のプロジェクトのproject_idを指定します。"
-                             "`file://`を先頭に付けると、project_idの一覧が記載されたファイルを指定できます。")
-
-    parser.add_argument("--force", action="store_true", help="アノテーションzipを常に更新します。指定しない場合は、アノテーションzipを更新する必要がなければ更新しません。")
+    parser.add_argument(
+        "--force", action="store_true", help="アノテーションzipを常に更新します。指定しない場合は、アノテーションzipを更新する必要がなければ更新しません。"
+    )
 
     parser.add_argument("--wait", action="store_true", help="アノテーションzipの更新が完了するまで待ちます。")
 
@@ -173,6 +194,7 @@ def parse_args(parser: argparse.ArgumentParser):
         "`max_tires`:完了したかの問い合わせを最大何回行うか。",
     )
 
+    parser.add_argument("--parallelism", type=int, help="並列度。指定しない場合は、project_idの個数が並列度になります。")
     parser.set_defaults(subcommand_func=main)
 
 

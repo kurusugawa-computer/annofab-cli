@@ -1,11 +1,8 @@
 import argparse
 import logging
-from dataclasses import dataclass
 from pathlib import Path
-from typing import Optional
 
 from annofabapi.models import JobType, ProjectMemberRole
-from dataclasses_json import dataclass_json
 
 import annofabcli
 from annofabcli import AnnofabApiFacade
