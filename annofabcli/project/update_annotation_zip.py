@@ -28,10 +28,23 @@ class SubUpdateAnnotationZip:
         self.service = service
         self.facade = facade
 
-    def _should_update_annotation_zip(self, project_id: str):
+    def _should_update_annotation_zip(self, project_id: str) -> bool:
+        """
+        アノテーションzipを更新する必要があるかどうか
+
+        Args:
+            project_id:
+
+        Returns:
+            True:アノテーションzipを更新する必要がある。
+
+        """
         project, _ = self.service.api.get_project(project_id)
         last_tasks_updated_datetime = project["summary"]["last_tasks_updated_datetime"]
         logger.debug(f"project_id={project_id}: タスクの最終更新日時={last_tasks_updated_datetime}")
+        if last_tasks_updated_datetime is None:
+            logger.debug(f"project_id={project_id}: タスクがまだ作成されていないので、アノテーションzipを更新する必要はありません。")
+            return False
 
         annotation_specs_history = self.service.api.get_annotation_specs_histories(project_id)[0]
         annotation_specs_updated_datetime = annotation_specs_history[-1]["updated_datetime"]
@@ -68,6 +81,9 @@ class SubUpdateAnnotationZip:
             return True
 
     def _wait_for_completion_updated_annotation(self, project_id: str, wait_options: Optional[WaitOptions] = None):
+        """
+        アノテーションzipの更新が完了するまで待ちます。
+        """
         if wait_options is None:
             wait_options = WaitOptions(interval=300, max_tries=120)
 
@@ -100,6 +116,9 @@ class SubUpdateAnnotationZip:
     def execute_for_project(
         self, project_id: str, force: bool = False, wait: bool = False, wait_options: Optional[WaitOptions] = None
     ) -> None:
+        """
+        1つのプロジェクトに対して、アノテーションzipを更新して、必要なら更新が完了するまで待ちます。
+        """
         if not self.facade.contains_any_project_member_role(
             project_id, [ProjectMemberRole.OWNER, ProjectMemberRole.TRAINING_DATA_USER]
         ):
