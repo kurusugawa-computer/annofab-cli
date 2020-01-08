@@ -11,7 +11,7 @@ import annofabcli
 import annofabcli.common.cli
 from annofabcli import AnnofabApiFacade
 from annofabcli.common.cli import AbstractCommandLineInterface, ArgumentParser, build_annofabapi_resource_and_login
-from annofabcli.experimental.utils import print_time_list_from_work_time_list, add_id_csv
+from annofabcli.experimental.utils import add_id_csv, print_time_list_from_work_time_list
 
 logger = logging.getLogger(__name__)
 
@@ -37,7 +37,7 @@ class Database:
         return project_members["list"]
 
 
-class Table():
+class Table:
     def __init__(self, database: Database, facade: AnnofabApiFacade):
         self.database = database
         self.project_id = database.project_id
@@ -50,14 +50,18 @@ class Table():
         for l in labor_control:
 
             if l["account_id"] is not None:
-                new_history = {"user_name": self._get_username(l["account_id"]),
-                               "user_id": self._get_user_id(l["account_id"]),
-                               "project_id": self.project_id,
-                               "date": l['date'],
-                               "aw_plans": None if l["values"]["working_time_by_user"]["plans"] is None else int(
-                                   l["values"]["working_time_by_user"]["plans"]) / 60000,
-                               "aw_results": None if l["values"]["working_time_by_user"]["results"] is None else int(
-                                   l["values"]["working_time_by_user"]["results"]) / 60000}
+                new_history = {
+                    "user_name": self._get_username(l["account_id"]),
+                    "user_id": self._get_user_id(l["account_id"]),
+                    "project_id": self.project_id,
+                    "date": l["date"],
+                    "aw_plans": None
+                    if l["values"]["working_time_by_user"]["plans"] is None
+                    else int(l["values"]["working_time_by_user"]["plans"]) / 60000,
+                    "aw_results": None
+                    if l["values"]["working_time_by_user"]["results"] is None
+                    else int(l["values"]["working_time_by_user"]["results"]) / 60000,
+                }
                 labor_control_list.append(new_history)
 
         return labor_control_list
@@ -69,15 +73,17 @@ class Table():
         account_statistics = self.database.get_account_statistics()
         all_histories = []
         for account_info in account_statistics:
-            account_id = account_info['account_id']
-            histories = account_info['histories']
+            account_id = account_info["account_id"]
+            histories = account_info["histories"]
             if account_id is not None:
                 for history in histories:
-                    new_history = {"user_name": self._get_username(account_id),
-                                   "user_id": self._get_user_id(account_id),
-                                   "project_id": self.project_id,
-                                   "date": history['date'],
-                                   "af_time": annofabcli.utils.isoduration_to_minute(history['worktime'])}
+                    new_history = {
+                        "user_name": self._get_username(account_id),
+                        "user_id": self._get_user_id(account_id),
+                        "project_id": self.project_id,
+                        "date": history["date"],
+                        "af_time": annofabcli.utils.isoduration_to_minute(history["worktime"]),
+                    }
                     all_histories.append(new_history)
 
         return all_histories
@@ -148,8 +154,8 @@ class ListLaborWorktime(AbstractCommandLineInterface):
 
     def main(self):
         args = self.args
-        start_date = datetime.datetime.strptime(args.start_date, '%Y-%m-%d').date()
-        end_date = datetime.datetime.strptime(args.end_date, '%Y-%m-%d').date()
+        start_date = datetime.datetime.strptime(args.start_date, "%Y-%m-%d").date()
+        end_date = datetime.datetime.strptime(args.end_date, "%Y-%m-%d").date()
         user_id_list = args.user_id
 
         total_df = pd.DataFrame([])
@@ -160,7 +166,7 @@ class ListLaborWorktime(AbstractCommandLineInterface):
             total_df = pd.concat([total_df, afaw_time_df])
         df = print_time_list_from_work_time_list(user_id_list, total_df, start_date, end_date)
 
-        df.to_csv(args.output, date_format='%Y-%m-%d')
+        df.to_csv(args.output, date_format="%Y-%m-%d")
         add_id_csv(args.output, args.project_id)
 
 
