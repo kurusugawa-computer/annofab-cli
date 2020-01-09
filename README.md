@@ -790,8 +790,11 @@ $ annofabcli project download simple_annotation --project_id prj1  58a2a621-7d4b
 プロジェクト一覧を出力します。
 
 ```
-# org1配下のプロジェクトで、
+# org1配下のプロジェクトで、user1が所属する進行中のプロジェクト一覧を出力する。
 $ annofabcli project list --organization org1 --project_query '{"status": "active", "user_id": "user1}'
+
+# prj1, prj2のプロジェクト一覧を出力する
+$ annofabcli project list --project_id prj1 prj2
 ```
 
 
@@ -808,7 +811,7 @@ $ annofabcli project update_anotation_zip --project_id prj1 prj2 --force
 # prj1, prj2のアノテーションzipを更新して、すべてのプロジェクトの更新が完了するまで待ちます
 $ annofabcli project update_anotation_zip --project_id prj1 prj2 --wait
 
-# prj1, prj2のアノテーションzipを更新して、すべてのプロジェクトの更新が完了するまで待ちます
+# アノテーションzipの更新が完了するまで待つ処理を並列で実行します。
 $ annofabcli project update_anotation_zip --project_id prj1 prj2 --wait --parallelism 4
 ```
 

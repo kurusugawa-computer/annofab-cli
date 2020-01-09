@@ -20,11 +20,14 @@ from annofabcli.common.cli import (
     ArgumentParser,
     build_annofabapi_resource_and_login,
     get_json_from_args,
+    get_wait_options_from_args,
 )
 from annofabcli.common.dataclasses import WaitOptions
 from annofabcli.common.utils import get_file_scheme_path
 
 logger = logging.getLogger(__name__)
+
+DEFAULT_WAIT_OPTIONS = WaitOptions(interval=60, max_tries=360)
 
 
 @dataclass_json
@@ -244,14 +247,6 @@ class PutInputData(AbstractCommandLineInterface):
 
         return True
 
-    @staticmethod
-    def get_wait_options_from_args(args: argparse.Namespace) -> WaitOptions:
-        if args.wait_options is not None:
-            wait_options = WaitOptions.from_dict(get_json_from_args(args.wait_options))  # type: ignore
-        else:
-            wait_options = WaitOptions(interval=60, max_tries=360)
-        return wait_options
-
     def main(self):
         args = self.args
         if not self.validate(args):
@@ -265,7 +260,7 @@ class PutInputData(AbstractCommandLineInterface):
             self.put_input_data_list(project_id, input_data_list=input_data_list, overwrite=args.overwrite)
 
         elif args.zip is not None:
-            wait_options = self.get_wait_options_from_args(args)
+            wait_options = get_wait_options_from_args(get_json_from_args(args.wait_options), DEFAULT_WAIT_OPTIONS)
             self.put_input_data_from_zip_file(
                 project_id,
                 zip_file=Path(args.zip),

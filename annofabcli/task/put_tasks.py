@@ -11,10 +11,13 @@ from annofabcli.common.cli import (
     ArgumentParser,
     build_annofabapi_resource_and_login,
     get_json_from_args,
+    get_wait_options_from_args,
 )
 from annofabcli.common.dataclasses import WaitOptions
 
 logger = logging.getLogger(__name__)
+
+DEFAULT_WAIT_OPTIONS = WaitOptions(interval=60, max_tries=360)
 
 
 class PutTask(AbstractCommandLineInterface):
@@ -56,20 +59,12 @@ class PutTask(AbstractCommandLineInterface):
             else:
                 logger.warning(f"タスクの登録に失敗しました。または、{MAX_WAIT_MINUTUE}分間待っても、タスクの登録が完了しませんでした。")
 
-    @staticmethod
-    def get_wait_options_from_args(args: argparse.Namespace) -> WaitOptions:
-        if args.wait_options is not None:
-            wait_options = WaitOptions.from_dict(get_json_from_args(args.wait_options))  # type: ignore
-        else:
-            wait_options = WaitOptions(interval=60, max_tries=360)
-        return wait_options
-
     def main(self):
         args = self.args
         project_id = args.project_id
         super().validate_project(project_id, [ProjectMemberRole.OWNER])
 
-        wait_options = self.get_wait_options_from_args(args)
+        wait_options = get_wait_options_from_args(get_json_from_args(args.wait_options), DEFAULT_WAIT_OPTIONS)
         self.put_input_data_from_csv_file(
             project_id, csv_file=Path(args.csv), wait=args.wait, wait_options=wait_options,
         )
