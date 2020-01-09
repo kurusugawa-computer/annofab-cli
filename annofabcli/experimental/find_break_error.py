@@ -32,18 +32,16 @@ def download_content(url: str) -> Any:
     return response.content
 
 
-def get_err_history_events(task_list: List[str], task_history_events: List[Dict[str, Any]]) \
-        -> Dict[str, List[Dict[str, Any]]]:
+def get_err_history_events(task_history_events: List[Dict[str, Any]]) -> Dict[str, List[Dict[str, Any]]]:
     """
     しきい値以上のタスクリストのtask_idが含まれるhistory_eventsを返す
     """
     err_history_events_dict: Dict[str, List[Dict[str, Any]]] = {}
     for task_history_event in task_history_events:
-        if task_history_event["task_id"] in task_list:
-            if task_history_event["task_id"] in err_history_events_dict:
-                err_history_events_dict[task_history_event["task_id"]].append(task_history_event)
-            else:
-                err_history_events_dict[task_history_event["task_id"]] = [task_history_event]
+        if task_history_event["task_id"] in err_history_events_dict:
+            err_history_events_dict[task_history_event["task_id"]].append(task_history_event)
+        else:
+            err_history_events_dict[task_history_event["task_id"]] = [task_history_event]
     return err_history_events_dict
 
 
@@ -91,12 +89,6 @@ class FindBreakError(AbstractCommandLineInterface):
 
         return project_task_history_events
 
-    def found_err_task(self, tasks: List[Dict[str, Any]]) -> List[str]:
-        """
-        タスクリストから作業時間合計がしきい値以上のタスクだけを返す
-        """
-        return [task["task_id"] for task in tasks if task["work_time_span"] > (self.args.task_time_threshold * 60000)]
-
     def get_err_events(self, err_history_events: Dict[str, List[Dict[str, Any]]]) -> List[List[Dict[str, Any]]]:
         """
         しきい値以上の作業時間になっている開始と終了のhistory_eventsのペアを返す
@@ -142,12 +134,9 @@ class FindBreakError(AbstractCommandLineInterface):
 
         err_events = []
         for project_id in args.project_id:
-            tasks = self._get_all_tasks(project_id=project_id)
             task_history_events = self._project_task_history_events(project_id=project_id,
                                                                     import_file_path=args.import_file_path)
-            err_task_list = self.found_err_task(tasks)
-            err_history_events = get_err_history_events(task_list=err_task_list,
-                                                        task_history_events=task_history_events)
+            err_history_events = get_err_history_events(task_history_events=task_history_events)
             err_events.extend(self.get_err_events(err_history_events=err_history_events))
 
         output_err_events(err_events_list=err_events, output=self.output)
@@ -203,8 +192,6 @@ def main(args):
 def parse_args(parser: argparse.ArgumentParser):
     argument_parser = ArgumentParser(parser)
 
-    parser.add_argument('--task_time_threshold', type=int, default=600,
-                        help="1タスク何分以上を検知対象とするか。指定しない場合は600分(10時間)")
     parser.add_argument('--task_history_time_threshold', type=int, default=300,
                         help="1履歴何分以上を検知対象とするか。指定しない場合は300分(5時間)")
     parser.add_argument('--import_file_path', type=str,
