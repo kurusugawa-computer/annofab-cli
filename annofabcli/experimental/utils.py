@@ -1,26 +1,16 @@
 import csv
-from datetime import date
 from typing import List
 
 import numpy as np
 import pandas as pd
 
 
-def print_time_list_from_work_time_list(
-    user_id_list: List[str], df: pd.DataFrame, start_date: date, end_date: date
-) -> pd.DataFrame:
+def print_time_list_from_work_time_list(df: pd.DataFrame) -> pd.DataFrame:
     # 複数のproject_id分を合計
     total_df = pd.DataFrame(df.groupby(["user_name", "user_id", "date"], as_index=False).sum())
 
-    # user_id を絞り込み
-    contains_df = total_df[total_df["user_id"].str.contains("|".join(user_id_list), case=False)].copy()
-
     # 不要になったuser_id を削除
-    del contains_df["user_id"]
-
-    # 日付で絞り込み
-    contains_df["date"] = pd.to_datetime(contains_df["date"]).dt.date
-    total_df = contains_df[(contains_df["date"] >= start_date) & (contains_df["date"] <= end_date)].copy()
+    del total_df["user_id"]
 
     # 合計を計算する
     sum_by_date = total_df[["date", "aw_plans", "aw_results", "af_time"]].groupby(["date"], as_index=False).sum()
@@ -46,10 +36,10 @@ def print_time_list_from_work_time_list(
     result = (
         pd.concat(
             [
-                total_df.replace({np.inf: "--", np.nan: "--"}),
-                sum_by_date.replace({np.inf: "--", np.nan: "--"}),
-                sum_by_name.replace({np.inf: "--", np.nan: "--"}),
-                sum_all.replace({np.inf: "--", np.nan: "--"}),
+                total_df.round(2).replace({np.inf: "--", np.nan: "--"}),
+                sum_by_date.round(2).replace({np.inf: "--", np.nan: "--"}),
+                sum_by_name.round(2).replace({np.inf: "--", np.nan: "--"}),
+                sum_all.round(2).replace({np.inf: "--", np.nan: "--"}),
             ],
             sort=False,
         )
