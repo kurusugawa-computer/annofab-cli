@@ -186,7 +186,7 @@ class ListLaborWorktime(AbstractCommandLineInterface):
         user_id_list = args.user_id
 
         total_df = pd.DataFrame([])
-        for i, project_id in enumerate(args.project_id):
+        for i, project_id in enumerate(list(set(args.project_id))):
             logger.debug(f"{i + 1} 件目: project_id = {project_id}")
             afaw_time_df = self.list_labor_worktime(project_id)
             total_df = pd.concat([total_df, afaw_time_df], sort=True)
