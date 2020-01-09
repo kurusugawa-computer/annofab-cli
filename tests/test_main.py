@@ -360,7 +360,7 @@ class TestProject:
         main(["project", "download", "full_annotation", "--project_id", project_id, "--output", out_file])
 
     def test_list_project(self):
-        out_file = str(out_path / "project.csv")
+        out_file = str(out_path / "project-list-from-organization.csv")
         main(
             [
                 "project",
@@ -375,6 +375,14 @@ class TestProject:
                 out_file,
             ]
         )
+
+        out_file = str(out_path / "project-list-from-project-id.csv")
+        main(
+            ["project", "list", "--project_id", project_id, "--format", "csv", "--output", out_file,]
+        )
+
+    def test_update_annotation_zip(self):
+        main(["project", "update_annotation_zip", "--project_id", project_id])
 
 
 class TestProjectMember:
@@ -471,6 +479,12 @@ class TestTask:
                 inspection_comment,
                 "--yes",
             ]
+        )
+
+    def test_put_task(self):
+        csv_file = str(data_path / "put_task.csv")
+        main(
+            [self.command_name, "put", "--project_id", project_id, "--csv", csv_file,]
         )
 
     def test_change_operator(self):

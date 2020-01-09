@@ -70,9 +70,11 @@ class ListProject(AbstractCommandLineInterface):
 
         return project_query
 
-    def get_project_list(self, organization_name: str, project_query: Optional[Dict[str, Any]] = None) -> List[Project]:
+    def get_project_list_from_organization(
+        self, organization_name: str, project_query: Optional[Dict[str, Any]] = None
+    ) -> List[Project]:
         """
-        プロジェクト一覧を取得する。
+        組織名からプロジェクト一覧を取得する。
         """
 
         if project_query is not None:
@@ -84,24 +86,33 @@ class ListProject(AbstractCommandLineInterface):
         )
         return project_list
 
-    def print_project_list(self, organization_name: str, project_query: Optional[Dict[str, Any]] = None) -> None:
+    def get_project_list_from_project_id(self, project_id_list: List[str]) -> List[Project]:
         """
-        プロジェクト一覧を出力する
-
-        Args:
-            organization_name: 組織名
-            project_query: プロジェクトの検索クエリ
-
+        project_idからプロジェクト一覧を取得する。
         """
+        project_list = []
+        for project_id in project_id_list:
+            project = self.service.wrapper.get_project_or_none(project_id)
+            if project is None:
+                logger.warning(f"project_id='{project_id}'のプロジェクトにアクセスできませんでした。")
+                continue
+            project_list.append(project)
 
-        project_list = self.get_project_list(organization_name, project_query=project_query)
-        logger.info(f"プロジェクト一覧の件数: {len(project_list)}")
-        self.print_according_to_format(project_list)
+        return project_list
 
     def main(self):
         args = self.args
         project_query = annofabcli.common.cli.get_json_from_args(args.project_query)
-        self.print_project_list(args.organization, project_query=project_query)
+        organization_name = args.organization
+        if organization_name is not None:
+            project_list = self.get_project_list_from_organization(organization_name, project_query)
+        else:
+            assert args.project_id is not None
+            project_id_list = annofabcli.common.cli.get_list_from_args(args.project_id)
+            project_list = self.get_project_list_from_project_id(project_id_list)
+
+        logger.info(f"プロジェクト一覧の件数: {len(project_list)}")
+        self.print_according_to_format(project_list)
 
 
 def main(args):
@@ -113,12 +124,22 @@ def main(args):
 def parse_args(parser: argparse.ArgumentParser):
     argument_parser = ArgumentParser(parser)
 
-    parser.add_argument("-org", "--organization", type=str, required=True, help="対象の組織名を指定してください。")
+    query_group = parser.add_mutually_exclusive_group(required=True)
+
+    query_group.add_argument(
+        "-p",
+        "--project_id",
+        type=str,
+        nargs="+",
+        help="対象プロジェクトのproject_idを指定します。`file://`を先頭に付けると、project_idの一覧が記載されたファイルを指定できます。",
+    )
+
+    query_group.add_argument("-org", "--organization", type=str, help="対象の組織名を指定してください。")
 
     parser.add_argument(
         "--project_query",
         type=str,
-        help="タスクの検索クエリをJSON形式で指定します。"
+        help="プロジェクトの検索クエリをJSON形式で指定します。'--organization'を指定したときのみ有効なオプションです。"
         "指定しない場合は、組織配下のすべてのプロジェクトを取得します。"
         "`file://`を先頭に付けると、JSON形式のファイルを指定できます。"
         "クエリのフォーマットは、[getProjectsOfOrganization API]"
