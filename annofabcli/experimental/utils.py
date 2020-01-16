@@ -67,7 +67,7 @@ def print_time_list_csv(print_time_list: list) -> None:
 
 def add_id_csv(csv_path: str, id_list: List[str]):
     id_list[0:0] = ["project_id"]
-    with open(csv_path, "a") as f:
+    with open(csv_path, mode="a", encoding="utf_8_sig") as f:
         writer = csv.writer(f, delimiter=",")
         writer.writerow([])
         writer.writerow(id_list)
