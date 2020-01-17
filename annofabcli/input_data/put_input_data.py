@@ -54,6 +54,7 @@ class SubPutInputData:
     Args:
         service:
         facade:
+        all_yes:
     """
 
     def __init__(self, service: annofabapi.Resource, facade: AnnofabApiFacade, all_yes: bool = False):
@@ -72,7 +73,7 @@ class SubPutInputData:
             request_body.update(
                 {"input_data_name": csv_input_data.input_data_name, "sign_required": csv_input_data.sign_required}
             )
-            logger.debug(f"'{file_path}'を入力データとして登録します。")
+            logger.debug(f"'{file_path}'を入力データとして登録します。input_data_name={csv_input_data.input_data_name}")
             self.service.wrapper.put_input_data_from_file(
                 project_id, input_data_id=csv_input_data.input_data_id, file_path=file_path, request_body=request_body
             )
@@ -118,7 +119,6 @@ class SubPutInputData:
         return self.confirm_processing(message_for_confirm)
 
     def put_input_data_main(self, project_id: str, csv_input_data: CsvInputData, overwrite: bool = False) -> bool:
-        logger.debug(f"{project_id}, {csv_input_data}, {overwrite}")
         last_updated_datetime = None
         input_data_id = csv_input_data.input_data_id
         input_data_path = csv_input_data.input_data_path
@@ -289,7 +289,10 @@ class PutInputData(AbstractCommandLineInterface):
                 return False
 
             if args.overwrite:
-                logger.warning(f"`--zip`オプションを指定しているとき、`--overwrite`オプションは無視されます。")
+                logger.warning(f"'--zip'オプションを指定しているとき、'--overwrite'オプションは無視されます。")
+
+            if args.parallelism is not None:
+                logger.warning(f"'--zip'オプションを指定しているとき、'--parallelism'オプションは無視されます。")
 
         if args.csv is not None:
             if not Path(args.csv).exists():
@@ -297,10 +300,17 @@ class PutInputData(AbstractCommandLineInterface):
                 return False
 
             if args.wait:
-                logger.warning(f"`--csv`オプションを指定しているとき、`--wait`オプションは無視されます。")
+                logger.warning(f"'--csv'オプションを指定しているとき、'--wait'オプションは無視されます。")
 
             if args.input_data_name_for_zip:
-                logger.warning(f"`--csv`オプションを指定しているとき、`--input_data_name_for_zip`オプションは無視されます。")
+                logger.warning(f"'--csv'オプションを指定しているとき、'--input_data_name_for_zip'オプションは無視されます。")
+
+            if args.parallelism is not None and not args.yes:
+                print(
+                    f"{COMMON_MESSAGE} argument --parallelism: '--parallelism'を指定するときは、必ず'--yes'を指定してください。",
+                    file=sys.stderr,
+                )
+                return False
 
         return True
 
@@ -383,7 +393,9 @@ def parse_args(parser: argparse.ArgumentParser):
         "`max_tires`:完了したかの問い合わせを最大何回行うか。",
     )
 
-    parser.add_argument("--parallelism", type=int, help="並列度。指定しない場合は、project_idの個数が並列度になります。")
+    parser.add_argument(
+        "--parallelism", type=int, help="並列度。指定しない場合は、逐次的に処理します。" "'--csv'を指定したときのみ有効なオプションです。また、必ず'--yes'を指定してください。"
+    )
 
     parser.set_defaults(subcommand_func=main)
 
