@@ -501,8 +501,9 @@ $ annofabcli input_data put --project_id prj1 --csv input_data.csv
 # input_data.csvに記載されている入力データを登録する。すでに入力データが存在する場合は上書きする。
 $ annofabcli input_data put --project_id prj1 --csv input_data.csv --overwrite
 
+# input_data.csvに記載されている入力データを、並列処理で登録する（`--yes`オプションが必要）。
+$ annofabcli input_data put --project_id prj1 --csv input_data.csv --parallelism 2 --yes
 ```
-
 
 
 `input_data list`コマンドを使えば、プロジェクトに既に登録されている入力データからCSVを作成できます。
