@@ -200,9 +200,9 @@ class ListLaborWorktime(AbstractCommandLineInterface):
         df = print_time_list_from_work_time_list(total_df)
 
         if args.output is None:
-            df.to_csv(sys.stdout, date_format="%Y-%m-%d")
+            df.to_csv(sys.stdout, date_format="%Y-%m-%d", encoding="utf_8_sig")
         else:
-            df.to_csv(args.output, date_format="%Y-%m-%d")
+            df.to_csv(args.output, date_format="%Y-%m-%d", encoding="utf_8_sig")
             add_id_csv(args.output, self._get_project_title_list(args.project_id))
 
 
