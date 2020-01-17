@@ -7,9 +7,12 @@ from dataclasses import dataclass
 from distutils.util import strtobool  # pylint: disable=import-error,no-name-in-module
 from pathlib import Path
 from typing import Any, Dict, List, Optional
+from multiprocessing import Pool
+from functools import partial
 
 import pandas
 import requests
+import annofabapi
 from annofabapi.models import JobType, ProjectMemberRole
 from dataclasses_json import dataclass_json
 
@@ -43,12 +46,15 @@ class CsvInputData:
     sign_required: Optional[bool]
 
 
+def unwrap_self_put_input_data_main(arg, **kwarg):
+    return PutInputData.put_input_data_main(*arg, **kwarg)
+
 class PutInputData(AbstractCommandLineInterface):
     """
     入力データをCSVで登録する。
     """
 
-    def put_input_data(
+    def put_input_data_sub(
         self, project_id: str, csv_input_data: CsvInputData, last_updated_datetime: Optional[str] = None
     ):
 
@@ -75,19 +81,58 @@ class PutInputData(AbstractCommandLineInterface):
 
             self.service.api.put_input_data(project_id, csv_input_data.input_data_id, request_body=request_body)
 
-    def confirm_put_input_data(self, csv_input_data: CsvInputData, alread_exists: bool = False) -> bool:
+    def confirm_put_input_data(self, csv_input_data: CsvInputData, already_exists: bool = False) -> bool:
 
         message_for_confirm = f"input_data_name='{csv_input_data.input_data_name}' の入力データを登録しますか？"
-        if alread_exists:
+        if already_exists:
             message_for_confirm += f"input_data_id={csv_input_data.input_data_id} を上書きします。"
         return self.confirm_processing(message_for_confirm)
 
-    @annofabcli.utils.allow_404_error
-    def get_input_data(self, project_id: str, input_data_id: str) -> Dict[str, Any]:
-        input_data, _ = self.service.api.get_input_data(project_id, input_data_id)
-        return input_data
+    def put_input_data_main(self, project_id: str, csv_input_data: CsvInputData, overwrite: bool = False) -> bool:
+        last_updated_datetime = None
+        input_data_id = csv_input_data.input_data_id
+        input_data_path = csv_input_data.input_data_path
+        input_data = self.service.wrapper.get_input_data_or_none(project_id, input_data_id)
 
-    def put_input_data_list(self, project_id: str, input_data_list: List[CsvInputData], overwrite: bool = False):
+        if input_data is not None:
+            if overwrite:
+                logger.debug(f"input_data_id={input_data_id} はすでに存在します。")
+                last_updated_datetime = input_data["updated_datetime"]
+            else:
+                logger.debug(f"input_data_id={input_data_id} がすでに存在するのでスキップします。")
+                return False
+
+        file_path = get_file_scheme_path(input_data_path)
+        logger.debug(f"csv_input_data={csv_input_data}")
+        if file_path is not None:
+            if not Path(file_path).exists():
+                logger.warning(f"{input_data_path} は存在しません。")
+                return False
+
+        if not self.confirm_put_input_data(csv_input_data, already_exists=(last_updated_datetime is not None)):
+            return False
+
+        # 入力データを登録
+        try:
+            self.put_input_data_sub(project_id, csv_input_data, last_updated_datetime=last_updated_datetime)
+            logger.debug(
+                f"入力データを登録しました。"
+                f"input_data_id={csv_input_data.input_data_id}, "
+                f"input_data_name={csv_input_data.input_data_name}"
+            )
+            return True
+
+        except requests.exceptions.HTTPError as e:
+            logger.warning(e)
+            logger.warning(
+                f"入力データの登録に失敗しました。"
+                f"input_data_id={csv_input_data.input_data_id}, "
+                f"input_data_name={csv_input_data.input_data_name}"
+            )
+            return False
+
+
+    def put_input_data_list(self, project_id: str, input_data_list: List[CsvInputData], overwrite: bool = False, parallelism:Optional[int]=None) -> None:
         """
         入力データを一括で登録する。
 
@@ -95,6 +140,7 @@ class PutInputData(AbstractCommandLineInterface):
             project_id: 入力データの登録先プロジェクトのプロジェクトID
             input_data_list: 入力データList
             overwrite: Trueならば、input_data_idがすでに存在していたら上書きします。Falseならばスキップします。
+            parallelism: 並列度
 
         """
 
@@ -103,48 +149,20 @@ class PutInputData(AbstractCommandLineInterface):
 
         count_put_input_data = 0
 
-        for csv_input_data in input_data_list:
+        # obj = SubUpdateAnnotationZip(service=self.service, facade=self.facade)
+        # processes = parallelism if parallelism is not None else len(project_id_list)
+        # # project_idごとに並列で処理します
+        if parallelism is not None:
+            partial_func = partial(unwrap_self_put_input_data_main, project_id=project_id, overwrite=overwrite)
+            with Pool(parallelism) as pool:
+                result_bool_list = pool.map(partial_func, zip([self]*len(input_data_list), input_data_list))
+                count_put_input_data = len([e for e in result_bool_list if e])
 
-            last_updated_datetime = None
-            input_data_id = csv_input_data.input_data_id
-            input_data_path = csv_input_data.input_data_path
-            input_data = self.get_input_data(project_id, input_data_id)
-
-            if input_data is not None:
-                if overwrite:
-                    logger.debug(f"input_data_id={input_data_id} はすでに存在します。")
-                    last_updated_datetime = input_data["updated_datetime"]
-                else:
-                    logger.debug(f"input_data_id={input_data_id} がすでに存在するのでスキップします。")
-                    continue
-
-            file_path = get_file_scheme_path(input_data_path)
-            logger.debug(f"csv_input_data={csv_input_data}")
-            if file_path is not None:
-                if not Path(file_path).exists():
-                    logger.warning(f"{input_data_path} は存在しません。")
-                    continue
-
-            if not self.confirm_put_input_data(csv_input_data, alread_exists=(last_updated_datetime is not None)):
-                continue
-
-            # 入力データを登録
-            try:
-                self.put_input_data(project_id, csv_input_data, last_updated_datetime=last_updated_datetime)
-                logger.debug(
-                    f"入力データを登録しました。"
-                    f"input_data_id={csv_input_data.input_data_id}, "
-                    f"input_data_name={csv_input_data.input_data_name}"
-                )
-                count_put_input_data += 1
-
-            except requests.exceptions.HTTPError as e:
-                logger.warning(e)
-                logger.warning(
-                    f"入力データの登録に失敗しました。"
-                    f"input_data_id={csv_input_data.input_data_id}, "
-                    f"input_data_name={csv_input_data.input_data_name}"
-                )
+        else:
+            for csv_input_data in input_data_list:
+                result = self.put_input_data_main(project_id, csv_input_data=csv_input_data, overwrite=overwrite)
+                if result:
+                    count_put_input_data += 1
 
         logger.info(f"{project_title} に、{count_put_input_data} / {len(input_data_list)} 件の入力データを登録しました。")
 
@@ -257,7 +275,7 @@ class PutInputData(AbstractCommandLineInterface):
 
         if args.csv is not None:
             input_data_list = self.get_input_data_list_from_csv(Path(args.csv))
-            self.put_input_data_list(project_id, input_data_list=input_data_list, overwrite=args.overwrite)
+            self.put_input_data_list(project_id, input_data_list=input_data_list, overwrite=args.overwrite, parallelism=args.parallelism)
 
         elif args.zip is not None:
             wait_options = get_wait_options_from_args(get_json_from_args(args.wait_options), DEFAULT_WAIT_OPTIONS)
@@ -317,12 +335,14 @@ def parse_args(parser: argparse.ArgumentParser):
     parser.add_argument(
         "--wait_options",
         type=str,
-        help="入力データの登録が完了するまで待つ際のオプションをJSON形式で指定してください。"
+        help="入力データの登録が完了するまで待つ際のオプションをJSON形式で指定してください。`--wait`を指定したときのみ有効なオプションです。"
         "`file://`を先頭に付けるとjsonファイルを指定できます。"
         'デフォルとは`{"interval":60, "max_tries":360}` です。'
         "`interval`:完了したかを問い合わせる間隔[秒], "
         "`max_tires`:完了したかの問い合わせを最大何回行うか。",
     )
+
+    parser.add_argument("--parallelism", type=int, help="並列度。指定しない場合は、project_idの個数が並列度になります。")
 
     parser.set_defaults(subcommand_func=main)
 
