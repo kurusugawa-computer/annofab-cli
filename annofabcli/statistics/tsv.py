@@ -13,6 +13,10 @@ class Tsv:
     TSVを出力するクラス
     """
 
+    def __init__(self, outdir: str, project_id: str):
+        self.outdir = outdir
+        self.short_project_id = project_id[0:8]
+
     #############################################
     # Field
     #############################################
@@ -21,7 +25,7 @@ class Tsv:
     # Private
     #############################################
 
-    def _write_csv(self, filename: str, df):
+    def _write_csv(self, filename: str, df: pd.DataFrame) -> None:
         """
         カンマ区切りでBOM UTF-8で書きこむ(Excelで開けるようにするため）
         Args:
@@ -37,7 +41,9 @@ class Tsv:
         df.to_csv(str(output_path), sep=",", encoding="utf_8_sig", index=False)
 
     @staticmethod
-    def _create_required_columns(df, prior_columns, dropped_columns):
+    def _create_required_columns(
+        df: pd.DataFrame, prior_columns: List[str], dropped_columns: Optional[List[str]] = None
+    ) -> List[str]:
         remained_columns = list(df.columns.difference(prior_columns))
         all_columns = prior_columns + remained_columns
         if dropped_columns is not None:
@@ -46,18 +52,15 @@ class Tsv:
                     all_columns.remove(key)
         return all_columns
 
-    def __init__(self, outdir: str, project_id: str):
-        self.outdir = outdir
-        self.short_project_id = project_id[0:8]
-
     def write_inspection_list(
         self, df: pd.DataFrame, dropped_columns: Optional[List[str]] = None, only_error_corrected: bool = True,
-    ):
+    ) -> None:
         """
         検査コメント一覧をTSVで出力する
         Args:
             df
             dropped_columns:
+            only_error_corrected:
 
         Returns:
 
@@ -89,7 +92,7 @@ class Tsv:
         required_columns = self._create_required_columns(df, prior_columns, dropped_columns)
         self._write_csv(f"{self.short_project_id}-検査コメントlist-{suffix}.csv", df[required_columns])
 
-    def write_task_list(self, df: pd.DataFrame, dropped_columns: List[str] = None):
+    def write_task_list(self, df: pd.DataFrame, dropped_columns: Optional[List[str]] = None) -> None:
         """
         タスク一覧をTSVで出力する
         Args:
@@ -147,7 +150,7 @@ class Tsv:
         required_columns = self._create_required_columns(df, prior_columns, dropped_columns)
         self._write_csv(f"{self.short_project_id}-タスクlist.csv", df[required_columns])
 
-    def write_task_history_list(self, df: pd.DataFrame, dropped_columns: List[str] = None) -> None:
+    def write_task_history_list(self, df: pd.DataFrame, dropped_columns: Optional[List[str]] = None) -> None:
         """
         タスク履歴一覧をCSVで出力する
 
@@ -179,7 +182,7 @@ class Tsv:
         required_columns = self._create_required_columns(df, prior_columns, dropped_columns)
         self._write_csv(f"{self.short_project_id}-タスク履歴list.csv", df[required_columns])
 
-    def write_member_list(self, df: pd.DataFrame, dropped_columns: List[str] = None):
+    def write_member_list(self, df: pd.DataFrame, dropped_columns: Optional[List[str]] = None):
         """
         プロジェクトメンバ一覧をTSVで出力する
         Args:

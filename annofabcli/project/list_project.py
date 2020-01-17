@@ -137,6 +137,7 @@ def parse_args(parser: argparse.ArgumentParser):
     query_group.add_argument("-org", "--organization", type=str, help="対象の組織名を指定してください。")
 
     parser.add_argument(
+        "-pq",
         "--project_query",
         type=str,
         help="プロジェクトの検索クエリをJSON形式で指定します。'--organization'を指定したときのみ有効なオプションです。"
