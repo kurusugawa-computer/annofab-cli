@@ -158,7 +158,20 @@ class TestInputData:
 
     def test_put_input_data(self):
         csv_file = str(data_path / "input_data2.csv")
-        main([self.command_name, "put", "--project_id", project_id, "--csv", csv_file, "--overwrite", "--yes"])
+        main(
+            [
+                self.command_name,
+                "put",
+                "--project_id",
+                project_id,
+                "--csv",
+                csv_file,
+                "--overwrite",
+                "--yes",
+                "--parallelism",
+                "2",
+            ]
+        )
 
     def test_put_input_data_with_zip(self):
         # 注意：ジョブ登録される
