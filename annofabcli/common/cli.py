@@ -2,6 +2,7 @@
 Command Line Interfaceの共通部分
 """
 
+import os
 import abc
 import argparse
 import dataclasses
@@ -16,7 +17,7 @@ import pandas
 import requests
 from annofabapi.exceptions import AnnofabApiException
 from annofabapi.models import OrganizationMemberRole, ProjectMemberRole
-
+from annofabapi.api import DEFAULT_ENDPOINT_URL
 import annofabcli
 from annofabcli.common.dataclasses import WaitOptions
 from annofabcli.common.enums import FormatArgument
@@ -27,16 +28,19 @@ from annofabcli.common.typing import InputDataSize
 logger = logging.getLogger(__name__)
 
 
-def build_annofabapi_resource_and_login() -> annofabapi.Resource:
+def build_annofabapi_resource_and_login(args: argparse.Namespace) -> annofabapi.Resource:
     """
-    annofabapi.Resourceインスタンスを生成する。
+    annofabapi.Resourceインスタンスを生成したあと、ログインする。
+
+    Args:
+        args: コマンドライン引数の情報
 
     Returns:
         annofabapi.Resourceインスタンス
 
     """
 
-    service = build_annofabapi_resource()
+    service = build_annofabapi_resource(args)
 
     try:
         service.api.login()
@@ -84,6 +88,8 @@ def create_parent_parser() -> argparse.ArgumentParser:
     group = parent_parser.add_argument_group("global optional arguments")
 
     group.add_argument("--yes", action="store_true", help="処理中に現れる問い合わせに対して、常に'yes'と回答します。")
+
+    group.add_argument("--endpoint_url", type=str, help=f"AnnoFab WebAPIのエンドポイントを指定します。指定しない場合は'{DEFAULT_ENDPOINT_URL}'です。")
 
     group.add_argument(
         "--logdir", type=str, default=".log", help="ログファイルを保存するディレクトリを指定します。指定しない場合は`.log`ディレクトリ'にログファイルが保存されます。"
@@ -194,9 +200,35 @@ def load_logging_config_from_args(args: argparse.Namespace):
     annofabcli.utils.load_logging_config(log_dir, logging_yaml_file)
 
 
-def build_annofabapi_resource() -> annofabapi.Resource:
+def get_endpoint_url(args: argparse.Namespace) -> str:
     """
-    annofabapi.Resourceインスタナスを生成する。
+    AnnoFab WebAPIのエンドポイントURLを、以下の優先順位で取得する。
+
+    1. コマンドライン引数 ``--endpoint_url``
+    2. 環境変数 ``ANNOFAB_ENDPOINT_URL``
+
+    取得できない場合は、デフォルトの ``https://annofab.com`` を返す。
+
+    Args:
+        args: コマンドライン引数情報
+
+    Returns:
+        AnnoFab WebAPIのエンドポイントURL
+
+    """
+    endpoint_url = args.endpoint_url
+    if endpoint_url is not None:
+        return endpoint_url
+
+    endpoint_url = os.environ.get("ANNOFAB_ENDPOINT_URL")
+    if endpoint_url is not None:
+        return endpoint_url
+
+    return DEFAULT_ENDPOINT_URL
+
+def build_annofabapi_resource(args: argparse.Namespace) -> annofabapi.Resource:
+    """
+    annofabapi.Resourceインスタンスを生成する。
     以下の順にAnnoFabの認証情報を読み込む。
     1. `.netrc`ファイル
     2. 環境変数`ANNOFAB_USER_ID` , `ANNOFAB_PASSWORD`
@@ -207,14 +239,15 @@ def build_annofabapi_resource() -> annofabapi.Resource:
         annofabapi.Resourceインスタンス
 
     """
+    endpoint_url = get_endpoint_url(args)
 
     try:
-        return annofabapi.build_from_netrc()
+        return annofabapi.build_from_netrc(endpoint_url)
     except AnnofabApiException:
         logger.info("`.netrc`ファイルにはAnnoFab認証情報が存在しなかった")
 
     try:
-        return annofabapi.build_from_env()
+        return annofabapi.build_from_env(endpoint_url)
     except AnnofabApiException:
         logger.info("`環境変数`ANNOFAB_USER_ID` or  `ANNOFAB_PASSWORD`が空だった")
 
@@ -227,7 +260,7 @@ def build_annofabapi_resource() -> annofabapi.Resource:
     while login_password == "":
         login_password = getpass.getpass("Enter AnnoFab Password: ")
 
-    return annofabapi.build(login_user_id, login_password)
+    return annofabapi.build(login_user_id, login_password, endpoint_url=endpoint_url)
 
 
 def prompt_yesno(msg: str) -> bool:
