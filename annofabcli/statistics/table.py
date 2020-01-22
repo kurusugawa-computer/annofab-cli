@@ -12,8 +12,8 @@ from annofabapi.dataclass.statistics import (
     WorktimeStatistics,
     WorktimeStatisticsItem,
 )
-from annofabapi.utils import get_task_history_index_skipped_inspection, get_task_history_index_skipped_acceptance
 from annofabapi.models import InputDataId, Inspection, InspectionStatus, Task, TaskHistory, TaskPhase, TaskStatus
+from annofabapi.utils import get_task_history_index_skipped_acceptance, get_task_history_index_skipped_inspection
 from more_itertools import first_true
 
 import annofabcli
@@ -392,7 +392,6 @@ class Table:
                 return delta.total_seconds() / 3600 / 24
             else:
                 return None
-
 
         annotation_histories = [e for e in task_histories if e["phase"] == TaskPhase.ANNOTATION.value]
         inspection_histories = [e for e in task_histories if e["phase"] == TaskPhase.INSPECTION.value]
