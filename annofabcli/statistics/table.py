@@ -141,6 +141,21 @@ class Table:
         return annotation_summary
 
     @staticmethod
+    def operator_is_changed_by_phase(task_history_list: List[TaskHistory], phase: TaskPhase) -> bool:
+        """
+        フェーズ内の作業者が途中で変わったかどうか
+
+        Args:
+            task_history_list: タスク履歴List
+            phase: フェーズ
+
+        Returns:
+            Trueならばフェーズ内の作業者が途中で変わった
+        """
+        tmp_list = [e for e in task_history_list if TaskPhase(e["phase"]) == phase and e["account_id"] is not None]
+        return len(set(tmp_list)) >= 2
+
+    @staticmethod
     def _inspection_condition(inspection_arg, exclude_reply: bool, only_error_corrected: bool):
         """
         対象の検査コメントかどうかの判定
@@ -473,6 +488,9 @@ class Table:
         # 抜取検査/抜取受入で、検査/受入がスキップされたか否か
         task["acceptance_is_skipped"] = len(get_task_history_index_skipped_acceptance(task_histories)) > 0
         task["inspection_is_skipped"] = len(get_task_history_index_skipped_inspection(task_histories)) > 0
+        task["annotator_is_changed"] = self.operator_is_changed_by_phase(task_histories, TaskPhase.ANNOTATION)
+        task["inspector_is_changed"] = self.operator_is_changed_by_phase(task_histories, TaskPhase.INSPECTION)
+        task["acceptor_is_changed"] = self.operator_is_changed_by_phase(task_histories, TaskPhase.ACCEPTANCE)
 
         return task
 
