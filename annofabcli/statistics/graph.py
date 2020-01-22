@@ -390,7 +390,7 @@ class Graph:
         first_annotation_user_id_list = self.create_user_id_list(
             df, "first_annotation_user_id", first_annotation_user_id_list
         )
-        logger.debug(f"グラフに表示するuser_id = {first_annotation_user_id_list}")
+        logger.debug(f"教師付者用の折れ線グラフに表示する、教師付者のuser_id = {first_annotation_user_id_list}")
 
         df["date_first_annotation_started_date"] = df["first_annotation_started_date"].map(
             lambda e: dateutil.parser.parse(e).date()
@@ -616,7 +616,7 @@ class Graph:
         first_annotation_user_id_list = self.create_user_id_list(
             df, "first_annotation_user_id", first_annotation_user_id_list
         )
-        logger.debug(f"グラフに表示するuser_id = {first_annotation_user_id_list}")
+        logger.debug(f"教師付者用の累計折れ線グラフに表示する、教師付者のuser_id = {first_annotation_user_id_list}")
 
         # 横軸が累計のアノテーション数
         fig_info_list_annotation_count = [
@@ -842,7 +842,7 @@ class Graph:
             logger.info(f"検査フェーズを担当してユーザがいないため、検査者用のグラフは出力しません。")
             return
 
-        logger.debug(f"グラフに表示するuser_id = {first_inspection_user_id_list}")
+        logger.debug(f"検査者用の累計折れ線グラフに表示する、検査者のuser_id = {first_inspection_user_id_list}")
 
         # 横軸が累計のアノテーション数
         fig_info_list_annotation_count = [
@@ -1001,7 +1001,7 @@ class Graph:
             logger.info(f"受入フェーズを担当してユーザがいないため、受入者用のグラフは出力しません。")
             return
 
-        logger.debug(f"グラフに表示するuser_id = {first_acceptance_user_id_list}")
+        logger.debug(f"受入者用の累計折れ線グラフに表示する、受入者のuser_id = {first_acceptance_user_id_list}")
 
         # 横軸が累計のアノテーション数
         fig_info_list_annotation_count = [
