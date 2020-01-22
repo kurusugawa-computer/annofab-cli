@@ -12,6 +12,7 @@ from annofabapi.dataclass.statistics import (
     WorktimeStatistics,
     WorktimeStatisticsItem,
 )
+from annofabapi.utils import get_task_history_index_skipped_inspection, get_task_history_index_skipped_acceptance
 from annofabapi.models import InputDataId, Inspection, InspectionStatus, Task, TaskHistory, TaskPhase, TaskStatus
 from more_itertools import first_true
 
@@ -392,17 +393,6 @@ class Table:
             else:
                 return None
 
-        def acceptance_is_skipped(arg_task_histories: List[TaskHistory]) -> bool:
-            skipped_histories = [
-                e
-                for e in arg_task_histories
-                if (
-                    e["phase"] == TaskPhase.ACCEPTANCE.value
-                    and e["account_id"] is None
-                    and annofabcli.utils.isoduration_to_hour(e["accumulated_labor_time_milliseconds"]) == 0
-                )
-            ]
-            return len(skipped_histories) > 0
 
         annotation_histories = [e for e in task_histories if e["phase"] == TaskPhase.ANNOTATION.value]
         inspection_histories = [e for e in task_histories if e["phase"] == TaskPhase.INSPECTION.value]
@@ -481,8 +471,9 @@ class Table:
 
         task["diff_days_to_task_completed"] = diff_days("task_completed_datetime", "first_annotation_started_datetime")
 
-        # 自動受入されたか否か
-        task["acceptance_is_skipped"] = acceptance_is_skipped(task_histories)
+        # 抜取検査/抜取受入で、検査/受入がスキップされたか否か
+        task["acceptance_is_skipped"] = len(get_task_history_index_skipped_acceptance(task_histories)) > 0
+        task["inspection_is_skipped"] = len(get_task_history_index_skipped_inspection(task_histories)) > 0
 
         return task
 
