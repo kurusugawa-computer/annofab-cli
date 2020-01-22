@@ -2,7 +2,7 @@ import argparse
 import json
 import logging.handlers
 from pathlib import Path
-from typing import Any, Dict, List, Callable
+from typing import Any, Callable, Dict, List
 
 import annofabapi
 from annofabapi.models import ProjectMemberRole, TaskPhase
@@ -35,6 +35,7 @@ def catch_exception(function: Callable[..., Any]) -> Callable[..., Any]:
     """
     Exceptionをキャッチしてログにstacktraceを出力する。
     """
+
     def wrapped(*args, **kwargs):
         try:
             return function(*args, **kwargs)
@@ -78,7 +79,6 @@ class VisualizeStatistics(AbstractCommandLineInterface):
             df_by_tasks = table_obj.create_worktime_per_image_df(AggregationBy.BY_TASKS, phase)
             tsv_obj.write_メンバー別作業時間平均_タスク1個あたり(df_by_tasks, phase)
 
-
         super().validate_project(project_id, project_member_roles=[ProjectMemberRole.OWNER])
 
         checkpoint_dir = work_dir / project_id
@@ -110,11 +110,12 @@ class VisualizeStatistics(AbstractCommandLineInterface):
         task_cumulative_df_by_inspector = table_obj.create_cumulative_df_by_first_inspector(task_df)
         task_cumulative_df_by_acceptor = table_obj.create_cumulative_df_by_first_acceptor(task_df)
 
-
         # CSVを出力
         catch_exception(tsv_obj.write_task_list)(task_df, dropped_columns=["histories_by_phase", "input_data_id_list"])
         catch_exception(tsv_obj.write_task_history_list)(task_history_df)
-        catch_exception(tsv_obj.write_inspection_list)(df=inspection_df, dropped_columns=["data"], only_error_corrected=True)
+        catch_exception(tsv_obj.write_inspection_list)(
+            df=inspection_df, dropped_columns=["data"], only_error_corrected=True
+        )
         catch_exception(tsv_obj.write_inspection_list)(
             df=inspection_df_all, dropped_columns=["data"], only_error_corrected=False,
         )
@@ -147,7 +148,6 @@ class VisualizeStatistics(AbstractCommandLineInterface):
         catch_exception(graph_obj.write_productivity_line_graph_for_annotator)(
             df=by_date_df, first_annotation_user_id_list=user_id_list
         )
-
 
     def main(self):
         args = self.args

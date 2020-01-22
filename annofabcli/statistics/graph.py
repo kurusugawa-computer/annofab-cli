@@ -157,8 +157,8 @@ class Graph:
 
         renderer = hv.renderer("bokeh")
 
-        output_file = f"{self.outdir}/html/{self.short_project_id}-ヒストグラム-作業時間.html"
-        logger.debug(f"{output_file} を出力します。")
+        output_file = f"{self.outdir}/html/{self.short_project_id}-ヒストグラム-作業時間"
+        logger.debug(f"{output_file}.html を出力します。")
 
         histogram_name_list = [
             HistogramName(column="annotation_worktime_hour", x_axis_label="教師付時間[hour]", title="教師付時間",),
@@ -214,8 +214,8 @@ class Graph:
 
         renderer = hv.renderer("bokeh")
 
-        output_file = f"{self.outdir}/html/{self.short_project_id}-ヒストグラム.html"
-        logger.debug(f"{output_file} を出力します。")
+        output_file = f"{self.outdir}/html/{self.short_project_id}-ヒストグラム"
+        logger.debug(f"{output_file}.html を出力します。")
 
         histogram_name_list = [
             HistogramName(column="annotation_count", x_axis_label="アノテーション数", title="アノテーション数"),
@@ -259,8 +259,8 @@ class Graph:
 
         renderer = hv.renderer("bokeh")
 
-        output_file = f"{self.outdir}/html/{self.short_project_id}-ヒストグラム-ラベルごとのアノテーション数.html"
-        logger.debug(f"{output_file} を出力します。")
+        output_file = f"{self.outdir}/html/{self.short_project_id}-ヒストグラム-ラベルごとのアノテーション数"
+        logger.debug(f"{output_file}.html を出力します。")
 
         histograms = []
         label_columns = [e for e in df.columns if e.startswith("label_")]
