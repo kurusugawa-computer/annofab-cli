@@ -428,6 +428,23 @@ class TestProjectMember:
         )
 
 
+class TestStatistics:
+    def test_visualize(self):
+        output_dir = str(out_path / "statistics")
+        main(
+            [
+                "statistics",
+                "visualize",
+                "--project_id",
+                project_id,
+                "--task_query",
+                '{"status": "complete"}',
+                "--output_dir",
+                output_dir,
+            ]
+        )
+
+
 class TestSupplementary:
     def test_list_project_member(self):
         main(["supplementary", "list", "--project_id", project_id, "--input_data_id", "foo"])

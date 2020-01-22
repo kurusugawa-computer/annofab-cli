@@ -13,6 +13,7 @@ from annofabapi.dataclass.statistics import (
     WorktimeStatisticsItem,
 )
 from annofabapi.models import InputDataId, Inspection, InspectionStatus, Task, TaskHistory, TaskPhase, TaskStatus
+from annofabapi.utils import get_task_history_index_skipped_acceptance, get_task_history_index_skipped_inspection
 from more_itertools import first_true
 
 import annofabcli
@@ -138,6 +139,23 @@ class Table:
             annotation_summary[key] = annotation_count
 
         return annotation_summary
+
+    @staticmethod
+    def operator_is_changed_by_phase(task_history_list: List[TaskHistory], phase: TaskPhase) -> bool:
+        """
+        フェーズ内の作業者が途中で変わったかどうか
+
+        Args:
+            task_history_list: タスク履歴List
+            phase: フェーズ
+
+        Returns:
+            Trueならばフェーズ内の作業者が途中で変わった
+        """
+        account_id_list = [
+            e["account_id"] for e in task_history_list if TaskPhase(e["phase"]) == phase and e["account_id"] is not None
+        ]
+        return len(set(account_id_list)) >= 2
 
     @staticmethod
     def _inspection_condition(inspection_arg, exclude_reply: bool, only_error_corrected: bool):
@@ -392,18 +410,6 @@ class Table:
             else:
                 return None
 
-        def acceptance_is_skipped(arg_task_histories: List[TaskHistory]) -> bool:
-            skipped_histories = [
-                e
-                for e in arg_task_histories
-                if (
-                    e["phase"] == TaskPhase.ACCEPTANCE.value
-                    and e["account_id"] is None
-                    and annofabcli.utils.isoduration_to_hour(e["accumulated_labor_time_milliseconds"]) == 0
-                )
-            ]
-            return len(skipped_histories) > 0
-
         annotation_histories = [e for e in task_histories if e["phase"] == TaskPhase.ANNOTATION.value]
         inspection_histories = [e for e in task_histories if e["phase"] == TaskPhase.INSPECTION.value]
         acceptance_histories = [e for e in task_histories if e["phase"] == TaskPhase.ACCEPTANCE.value]
@@ -481,8 +487,12 @@ class Table:
 
         task["diff_days_to_task_completed"] = diff_days("task_completed_datetime", "first_annotation_started_datetime")
 
-        # 自動受入されたか否か
-        task["acceptance_is_skipped"] = acceptance_is_skipped(task_histories)
+        # 抜取検査/抜取受入で、検査/受入がスキップされたか否か
+        task["acceptance_is_skipped"] = len(get_task_history_index_skipped_acceptance(task_histories)) > 0
+        task["inspection_is_skipped"] = len(get_task_history_index_skipped_inspection(task_histories)) > 0
+        task["annotator_is_changed"] = self.operator_is_changed_by_phase(task_histories, TaskPhase.ANNOTATION)
+        task["inspector_is_changed"] = self.operator_is_changed_by_phase(task_histories, TaskPhase.INSPECTION)
+        task["acceptor_is_changed"] = self.operator_is_changed_by_phase(task_histories, TaskPhase.ACCEPTANCE)
 
         return task
 
