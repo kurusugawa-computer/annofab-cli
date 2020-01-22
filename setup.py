@@ -55,6 +55,6 @@ setup(
         "Operating System :: OS Independent",
     ],
     packages=find_packages(exclude=["tests"]),
-    package_data={"annofabcli": ["data/logging.yaml"]},
+    package_data={"annofabcli": ["data/logging.yaml", "py.typed"]},
     entry_points={"console_scripts": ["annofabcli=annofabcli.__main__:main"],},
 )
