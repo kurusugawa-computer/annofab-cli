@@ -157,6 +157,9 @@ class Graph:
 
         renderer = hv.renderer("bokeh")
 
+        output_file = f"{self.outdir}/html/{self.short_project_id}-ヒストグラム-作業時間.html"
+        logger.debug(f"{output_file} を出力します。")
+
         histogram_name_list = [
             HistogramName(column="annotation_worktime_hour", x_axis_label="教師付時間[hour]", title="教師付時間",),
             HistogramName(column="inspection_worktime_hour", x_axis_label="検査時間[hour]", title="検査時間",),
@@ -195,7 +198,7 @@ class Graph:
 
         # 軸範囲が同期しないようにする
         layout = hv.Layout(histograms).options(shared_axes=False).cols(3)
-        renderer.save(layout, f"{self.outdir}/html/{self.short_project_id}-ヒストグラム-作業時間")
+        renderer.save(layout, output_file)
 
     def write_histogram_for_other(self, df: pd.DataFrame):
         """
@@ -210,6 +213,9 @@ class Graph:
             return
 
         renderer = hv.renderer("bokeh")
+
+        output_file = f"{self.outdir}/html/{self.short_project_id}-ヒストグラム.html"
+        logger.debug(f"{output_file} を出力します。")
 
         histogram_name_list = [
             HistogramName(column="annotation_count", x_axis_label="アノテーション数", title="アノテーション数"),
@@ -241,7 +247,7 @@ class Graph:
 
         # 軸範囲が同期しないようにする
         layout = hv.Layout(histograms).options(shared_axes=False).cols(3)
-        renderer.save(layout, f"{self.outdir}/html/{self.short_project_id}-ヒストグラム")
+        renderer.save(layout, output_file)
 
     def write_histogram_for_annotation_count_by_label(self, df: pd.DataFrame) -> None:
         """
@@ -252,6 +258,9 @@ class Graph:
             return
 
         renderer = hv.renderer("bokeh")
+
+        output_file = f"{self.outdir}/html/{self.short_project_id}-ヒストグラム-ラベルごとのアノテーション数.html"
+        logger.debug(f"{output_file} を出力します。")
 
         histograms = []
         label_columns = [e for e in df.columns if e.startswith("label_")]
@@ -267,7 +276,7 @@ class Graph:
 
         # 軸範囲が同期しないようにする
         layout = hv.Layout(histograms).options(shared_axes=False).cols(3)
-        renderer.save(layout, f"{self.outdir}/html/{self.short_project_id}-ヒストグラム-ラベルごとのアノテーション数")
+        renderer.save(layout, output_file)
 
     def create_user_id_list(
         self, df: pd.DataFrame, user_id_column: str, arg_user_id_list: Optional[List[str]] = None,
@@ -321,6 +330,9 @@ class Graph:
             Returns:
 
             """
+            output_file = f"{self.outdir}/html/{self.short_project_id}-{html_title}.html"
+            logger.debug(f"{output_file} を出力します。")
+
             figs: List[bokeh.plotting.Figure] = []
             for fig_info in fig_info_list:
                 figs.append(
@@ -354,9 +366,7 @@ class Graph:
                 self._set_legend(fig, hover_tool)
 
             bokeh.plotting.reset_output()
-            bokeh.plotting.output_file(
-                f"{self.outdir}/html/{self.short_project_id}-{html_title}.html", title=html_title,
-            )
+            bokeh.plotting.output_file(output_file, title=html_title)
             bokeh.plotting.save(bokeh.layouts.column(figs))
 
         tooltip_item = [
@@ -530,6 +540,9 @@ class Graph:
             Returns:
 
             """
+            output_file = f"{self.outdir}/html/{self.short_project_id}-{html_title}.html"
+            logger.debug(f"{output_file} を出力します。")
+
             figs: List[bokeh.plotting.Figure] = []
             for fig_info in fig_info_list:
                 figs.append(
@@ -577,9 +590,7 @@ class Graph:
                 self._set_legend(fig, hover_tool)
 
             bokeh.plotting.reset_output()
-            bokeh.plotting.output_file(
-                f"{self.outdir}/html/{self.short_project_id}-{html_title}.html", title=html_title,
-            )
+            bokeh.plotting.output_file(output_file, title=html_title)
             bokeh.plotting.save(bokeh.layouts.column(figs))
 
         tooltip_item = [
@@ -752,6 +763,9 @@ class Graph:
             Returns:
 
             """
+            output_file = f"{self.outdir}/html/{self.short_project_id}-{html_title}.html"
+            logger.debug(f"{output_file} を出力します。")
+
             figs: List[bokeh.plotting.Figure] = []
             for fig_info in fig_info_list:
                 figs.append(
@@ -796,9 +810,7 @@ class Graph:
                 self._set_legend(fig, hover_tool)
 
             bokeh.plotting.reset_output()
-            bokeh.plotting.output_file(
-                f"{self.outdir}/html/{self.short_project_id}-{html_title}.html", title=html_title,
-            )
+            bokeh.plotting.output_file(output_file, title=html_title)
             bokeh.plotting.save(bokeh.layouts.column(figs))
 
         tooltip_item = [
@@ -909,6 +921,9 @@ class Graph:
             Returns:
 
             """
+            output_file = f"{self.outdir}/html/{self.short_project_id}-{html_title}.html"
+            logger.debug(f"{output_file} を出力します。")
+
             figs: List[bokeh.plotting.Figure] = []
             for fig_info in fig_info_list:
                 figs.append(
@@ -952,9 +967,7 @@ class Graph:
                 self._set_legend(fig, hover_tool)
 
             bokeh.plotting.reset_output()
-            bokeh.plotting.output_file(
-                f"{self.outdir}/html/{self.short_project_id}-{html_title}.html", title=html_title,
-            )
+            bokeh.plotting.output_file(output_file, title=html_title)
             bokeh.plotting.save(bokeh.layouts.column(figs))
 
         tooltip_item = [
