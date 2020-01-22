@@ -146,6 +146,12 @@ class Tsv:
             "annotation_count",
             "inspection_count",
             "input_data_count_of_inspection",
+            # タスクの状態
+            "annotator_is_changed",
+            "inspector_is_changed",
+            "acceptor_is_changed",
+            "inspection_is_skipped",
+            "acceptance_is_skipped",
         ]
         required_columns = self._create_required_columns(df, prior_columns, dropped_columns)
         self._write_csv(f"{self.short_project_id}-タスクlist.csv", df[required_columns])
@@ -181,6 +187,30 @@ class Tsv:
         df = df.sort_values(["task_id", "started_datetime"])
         required_columns = self._create_required_columns(df, prior_columns, dropped_columns)
         self._write_csv(f"{self.short_project_id}-タスク履歴list.csv", df[required_columns])
+
+    def write_task_count(self, df: pd.DataFrame) -> None:
+        """
+        タスク数の集計結果をCSVで出力する。
+
+        Args:
+            df: タスクListのDataFrame
+
+        """
+        columns = [
+            "task_count",
+            "annotator_is_changed",
+            "inspector_is_changed",
+            "acceptor_is_changed",
+            "inspection_is_skipped",
+            "acceptance_is_skipped",
+        ]
+
+        sum_series = df[columns].sum()
+        sum_df = pd.DataFrame()
+        sum_df["column"] = sum_series.index
+        sum_df["count_if_true"] = sum_series.values
+
+        self._write_csv(f"{self.short_project_id}-タスク数の集計.csv", sum_df)
 
     def write_member_list(self, df: pd.DataFrame, dropped_columns: Optional[List[str]] = None):
         """

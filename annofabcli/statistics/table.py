@@ -152,8 +152,10 @@ class Table:
         Returns:
             Trueならばフェーズ内の作業者が途中で変わった
         """
-        tmp_list = [e for e in task_history_list if TaskPhase(e["phase"]) == phase and e["account_id"] is not None]
-        return len(set(tmp_list)) >= 2
+        account_id_list = [
+            e["account_id"] for e in task_history_list if TaskPhase(e["phase"]) == phase and e["account_id"] is not None
+        ]
+        return len(set(account_id_list)) >= 2
 
     @staticmethod
     def _inspection_condition(inspection_arg, exclude_reply: bool, only_error_corrected: bool):
