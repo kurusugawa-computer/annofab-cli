@@ -55,9 +55,10 @@ def build_annofabapi_resource_and_login(args: argparse.Namespace) -> annofabapi.
 
 def add_parser(
     subparsers: argparse._SubParsersAction,
-    subcommand_name: str,
-    subcommand_help: str,
+    command_name: str,
+    command_help: str,
     description: str,
+    is_subcommand: bool = True,
     epilog: Optional[str] = None,
 ) -> argparse.ArgumentParser:
     """
@@ -65,17 +66,19 @@ def add_parser(
 
     Args:
         subparsers:
-        subcommand_name:
-        subcommand_help:
-        description:
-        epilog:
+        command_name:
+        command_help: 1階層上のコマンドヘルプに表示される コマンドの説明（簡易的な説明）
+        description: ヘルプ出力に表示される説明（詳細な説明）
+        is_subcommand: サブコマンドかどうか. `annofabcli project`はコマンド、`annofabcli project list`はサブコマンドとみなす。
+        epilog: ヘルプ出力後に表示される内容。デフォルトはNoneです。
 
     Returns:
         サブコマンドのparser
 
     """
+    parents = [create_parent_parser()] if is_subcommand else []
     parser = subparsers.add_parser(
-        subcommand_name, parents=[create_parent_parser()], description=description, help=subcommand_help, epilog=epilog
+        command_name, parents=parents, description=description, help=command_help, epilog=epilog
     )
     parser.set_defaults(command_help=parser.print_help)
     return parser
@@ -89,6 +92,15 @@ def create_parent_parser() -> argparse.ArgumentParser:
     group = parent_parser.add_argument_group("global optional arguments")
 
     group.add_argument("--yes", action="store_true", help="処理中に現れる問い合わせに対して、常に'yes'と回答します。")
+
+    EXAMPLE_CREDENTAILS = '{"user_id": "test_user", "password": "test_password"}'
+    group.add_argument(
+        "--credentials",
+        type=str,
+        help=f"AnnoFabにログインするユーザの認証情報をJSON形式で指定します。"
+        f"(ex) `{EXAMPLE_CREDENTAILS}` ."
+        f"`file://`を先頭に付けると、JSON形式のファイルを指定できます。",
+    )
 
     group.add_argument(
         "--endpoint_url", type=str, help=f"AnnoFab WebAPIのエンドポイントを指定します。指定しない場合は'{DEFAULT_ENDPOINT_URL}'です。"
@@ -253,15 +265,24 @@ def build_annofabapi_resource(args: argparse.Namespace) -> annofabapi.Resource:
     """
     endpoint_url = get_endpoint_url(args)
 
+    # コマンドライン引数から認証情報を取得する
+    dict_credentials = annofabcli.common.cli.get_json_from_args(args.credentials)
+    if dict_credentials is not None:
+        return annofabapi.build(
+            dict_credentials.get("user_id"), dict_credentials.get("password"), endpoint_url=endpoint_url
+        )
+
+    # '.netrc'ファイルから認証情報を取得する
     try:
         return annofabapi.build_from_netrc(endpoint_url)
     except AnnofabApiException:
-        logger.info("`.netrc`ファイルにはAnnoFab認証情報が存在しなかった")
+        logger.debug("`.netrc`ファイルにはAnnoFab認証情報が存在しなかった")
 
+    # 環境変数から認証情報を取得する
     try:
         return annofabapi.build_from_env(endpoint_url)
     except AnnofabApiException:
-        logger.info("`環境変数`ANNOFAB_USER_ID` or  `ANNOFAB_PASSWORD`が空だった")
+        logger.debug("`環境変数`ANNOFAB_USER_ID` or  `ANNOFAB_PASSWORD`が空だった")
 
     # 標準入力から入力させる
     login_user_id = ""
