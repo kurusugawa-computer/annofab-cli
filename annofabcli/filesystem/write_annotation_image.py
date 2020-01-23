@@ -48,7 +48,6 @@ class WriteAnnotationImage:
         return is_target_parser
 
     def main(self, args):
-        annofabcli.common.cli.load_logging_config_from_args(args)
         logger.info(f"args: {args}")
 
         image_size = annofabcli.common.cli.get_input_data_size(args.image_size)

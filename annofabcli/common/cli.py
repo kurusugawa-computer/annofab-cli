@@ -2,22 +2,23 @@
 Command Line Interfaceの共通部分
 """
 
-import os
 import abc
 import argparse
 import dataclasses
 import getpass
 import json
 import logging
+import os
 from typing import Any, Dict, List, Optional, Tuple
 
 import annofabapi
 import jmespath
 import pandas
 import requests
+from annofabapi.api import DEFAULT_ENDPOINT_URL
 from annofabapi.exceptions import AnnofabApiException
 from annofabapi.models import OrganizationMemberRole, ProjectMemberRole
-from annofabapi.api import DEFAULT_ENDPOINT_URL
+
 import annofabcli
 from annofabcli.common.dataclasses import WaitOptions
 from annofabcli.common.enums import FormatArgument
@@ -89,7 +90,9 @@ def create_parent_parser() -> argparse.ArgumentParser:
 
     group.add_argument("--yes", action="store_true", help="処理中に現れる問い合わせに対して、常に'yes'と回答します。")
 
-    group.add_argument("--endpoint_url", type=str, help=f"AnnoFab WebAPIのエンドポイントを指定します。指定しない場合は'{DEFAULT_ENDPOINT_URL}'です。")
+    group.add_argument(
+        "--endpoint_url", type=str, help=f"AnnoFab WebAPIのエンドポイントを指定します。指定しない場合は'{DEFAULT_ENDPOINT_URL}'です。"
+    )
 
     group.add_argument(
         "--logdir", type=str, default=".log", help="ログファイルを保存するディレクトリを指定します。指定しない場合は`.log`ディレクトリ'にログファイルが保存されます。"
@@ -188,16 +191,24 @@ def get_wait_options_from_args(
         return default_wait_options
 
 
-def load_logging_config_from_args(args: argparse.Namespace):
+def load_logging_config_from_args(args: argparse.Namespace) -> None:
     """
-    args情報から、logging設定ファイルを読み込む
+    args情報から、logging設定ファイルを読み込む.
+    以下のコマンドライン引数からlogging設定ファイルを読み込む。
+    ``--disable_log`` が指定されている場合は、loggerを設定しない。
+
+    * --logdir
+    * --disable_log
+    * --logging_yaml
+
     Args:
         args: Command引数情報
     """
-    log_dir = args.logdir
-    logging_yaml_file = args.logging_yaml if hasattr(args, "logging_yaml") else None
 
-    annofabcli.utils.load_logging_config(log_dir, logging_yaml_file)
+    if args.disable_log:
+        return
+
+    annofabcli.utils.load_logging_config(args.logdir, args.logging_yaml)
 
 
 def get_endpoint_url(args: argparse.Namespace) -> str:
@@ -225,6 +236,7 @@ def get_endpoint_url(args: argparse.Namespace) -> str:
         return endpoint_url
 
     return DEFAULT_ENDPOINT_URL
+
 
 def build_annofabapi_resource(args: argparse.Namespace) -> annofabapi.Resource:
     """
@@ -420,9 +432,6 @@ class AbstractCommandLineInterface(abc.ABC):
         Args:
             args: コマンドライン引数
         """
-        if not args.disable_log:
-            load_logging_config_from_args(args)
-
         self.all_yes = args.yes
         if hasattr(args, "query"):
             self.query = args.query

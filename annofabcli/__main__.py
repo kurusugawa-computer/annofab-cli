@@ -61,6 +61,7 @@ def main(arguments: Optional[Sequence[str]] = None):
 
     if hasattr(args, "subcommand_func"):
         try:
+            annofabcli.cli.load_logging_config_from_args(args)
             args.subcommand_func(args)
         except Exception as e:
             logger.exception(e)
