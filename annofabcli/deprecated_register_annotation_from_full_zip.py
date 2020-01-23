@@ -351,7 +351,7 @@ def parse_args(parser: argparse.ArgumentParser):
 
 
 def main(args):
-    service = build_annofabapi_resource_and_login()
+    service = build_annofabapi_resource_and_login(args)
     facade = AnnofabApiFacade(service)
     RegisterAnnotation(service, facade).main(args)
 

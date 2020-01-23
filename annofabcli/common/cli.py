@@ -93,14 +93,14 @@ def create_parent_parser() -> argparse.ArgumentParser:
 
     group.add_argument("--yes", action="store_true", help="処理中に現れる問い合わせに対して、常に'yes'と回答します。")
 
-    EXAMPLE_CREDENTAILS = '{"user_id": "test_user", "password": "test_password"}'
-    group.add_argument(
-        "--credentials",
-        type=str,
-        help=f"AnnoFabにログインするユーザの認証情報をJSON形式で指定します。"
-        f"(ex) `{EXAMPLE_CREDENTAILS}` ."
-        f"`file://`を先頭に付けると、JSON形式のファイルを指定できます。",
-    )
+    # EXAMPLE_CREDENTAILS = '{"user_id": "test_user", "password": "test_password"}'
+    # group.add_argument(
+    #     "--credentials",
+    #     type=str,
+    #     help=f"AnnoFabにログインするユーザの認証情報をJSON形式で指定します。"
+    #     f"(ex) `{EXAMPLE_CREDENTAILS}` ."
+    #     f"`file://`を先頭に付けると、JSON形式のファイルを指定できます。",
+    # )
 
     group.add_argument(
         "--endpoint_url", type=str, help=f"AnnoFab WebAPIのエンドポイントを指定します。指定しない場合は'{DEFAULT_ENDPOINT_URL}'です。"
@@ -265,12 +265,12 @@ def build_annofabapi_resource(args: argparse.Namespace) -> annofabapi.Resource:
     """
     endpoint_url = get_endpoint_url(args)
 
-    # コマンドライン引数から認証情報を取得する
-    dict_credentials = annofabcli.common.cli.get_json_from_args(args.credentials)
-    if dict_credentials is not None:
-        return annofabapi.build(
-            dict_credentials.get("user_id"), dict_credentials.get("password"), endpoint_url=endpoint_url
-        )
+    # # コマンドライン引数から認証情報を取得する
+    # dict_credentials = annofabcli.common.cli.get_json_from_args(args.credentials)
+    # if dict_credentials is not None:
+    #     return annofabapi.build(
+    #         dict_credentials.get("user_id"), dict_credentials.get("password"), endpoint_url=endpoint_url
+    #     )
 
     # '.netrc'ファイルから認証情報を取得する
     try:

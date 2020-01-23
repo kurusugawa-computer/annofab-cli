@@ -120,7 +120,7 @@ class ListUser(AbstractCommandLineInterface):
 
 
 def main(args):
-    service = build_annofabapi_resource_and_login()
+    service = build_annofabapi_resource_and_login(args)
     facade = AnnofabApiFacade(service)
     ListUser(service, facade, args).main()
 

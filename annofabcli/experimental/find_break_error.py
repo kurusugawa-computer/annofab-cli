@@ -215,7 +215,7 @@ def output_err_events(err_events_list: List[List[Dict[str, Any]]], output: str =
 
 
 def main(args):
-    service = build_annofabapi_resource_and_login()
+    service = build_annofabapi_resource_and_login(args)
     facade = AnnofabApiFacade(service)
     FindBreakError(service, facade, args).main()
 

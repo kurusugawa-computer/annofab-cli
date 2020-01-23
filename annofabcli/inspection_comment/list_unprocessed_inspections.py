@@ -90,7 +90,7 @@ def validate(args: argparse.Namespace):
 
 
 def main(args: argparse.Namespace):
-    service = build_annofabapi_resource_and_login()
+    service = build_annofabapi_resource_and_login(args)
     facade = AnnofabApiFacade(service)
 
     if not validate(args):

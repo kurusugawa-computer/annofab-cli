@@ -180,7 +180,7 @@ class ListTasks(AbstractCommandLineInterface):
 
 
 def main(args):
-    service = build_annofabapi_resource_and_login()
+    service = build_annofabapi_resource_and_login(args)
     facade = AnnofabApiFacade(service)
     ListTasks(service, facade, args).main()
 
