@@ -9,8 +9,8 @@ from annofabcli.project_member.put_project_members import Member, PutProjectMemb
 # プロジェクトトップに移動する
 os.chdir(os.path.dirname(os.path.abspath(__file__)) + "/../")
 
-test_dir = Path('./tests/data')
-out_dir = Path('./tests/out')
+test_dir = Path("./tests/data")
+out_dir = Path("./tests/out")
 
 
 class TestPutProjectMembers:
@@ -21,19 +21,24 @@ class TestPutProjectMembers:
             Member("user1", ProjectMemberRole.OWNER, sampling_inspection_rate=None, sampling_acceptance_rate=None),
             Member("user2", ProjectMemberRole.ACCEPTER, sampling_inspection_rate=10, sampling_acceptance_rate=20),
             Member("user3", ProjectMemberRole.WORKER, sampling_inspection_rate=None, sampling_acceptance_rate=20),
-            Member("user4", ProjectMemberRole.TRAINING_DATA_USER, sampling_inspection_rate=10,
-                   sampling_acceptance_rate=None),
+            Member(
+                "user4",
+                ProjectMemberRole.TRAINING_DATA_USER,
+                sampling_inspection_rate=10,
+                sampling_acceptance_rate=None,
+            ),
         ]
         assert actual_members == expected_members
 
 
 class TestChangeProjectMembers:
     def test_validate_member_info(self):
-        assert ChangeProjectMembers.validate_member_info({
-            "sampling_inspection_rate": 10,
-            "sampling_acceptance_rate": 20,
-            "foo": "bar"
-        }) == True
+        assert (
+            ChangeProjectMembers.validate_member_info(
+                {"sampling_inspection_rate": 10, "sampling_acceptance_rate": 20, "foo": "bar"}
+            )
+            == True
+        )
 
         assert ChangeProjectMembers.validate_member_info({"sampling_inspection_rate": 10}) == True
 

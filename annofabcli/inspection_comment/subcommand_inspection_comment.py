@@ -8,7 +8,7 @@ import annofabcli.inspection_comment.list_unprocessed_inspections
 
 def parse_args(parser: argparse.ArgumentParser):
 
-    subparsers = parser.add_subparsers(dest='subcommand_name')
+    subparsers = parser.add_subparsers(dest="subcommand_name")
 
     # サブコマンドの定義
     annofabcli.inspection_comment.list_inspections.add_parser(subparsers)
@@ -20,5 +20,7 @@ def add_parser(subparsers: argparse._SubParsersAction):
     subcommand_help = "検査コメント関係のサブコマンド"
     description = "検査コメント関係のサブコマンド"
 
-    parser = annofabcli.common.cli.add_parser(subparsers, subcommand_name, subcommand_help, description)
+    parser = annofabcli.common.cli.add_parser(
+        subparsers, subcommand_name, subcommand_help, description, is_subcommand=False
+    )
     parse_args(parser)

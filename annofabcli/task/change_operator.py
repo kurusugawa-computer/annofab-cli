@@ -4,7 +4,7 @@
 
 import argparse
 import logging
-from typing import Any, Dict, List, Optional  # pylint: disable=unused-import
+from typing import List, Optional
 
 import requests
 from annofabapi.dataclass.task import Task
@@ -55,16 +55,24 @@ class ChangeOperator(AbstractCommandLineInterface):
             str_progress = annofabcli.utils.progress_msg(task_index + 1, len(task_id_list))
 
             dict_task, _ = self.service.api.get_task(project_id, task_id)
-            task: Task = Task.from_dict(dict_task)
+            task: Task = Task.from_dict(dict_task)  # type: ignore
 
-            logger.debug(f"{str_progress} : task_id = {task.task_id}, "
-                         f"status = {task.status.value}, "
-                         f"phase = {task.phase.value}, "
-                         f"user_id = {self.facade.get_user_id_from_account_id(project_id, task.account_id)}")
+            if task.account_id is not None:
+                user_id = self.facade.get_user_id_from_account_id(project_id, task.account_id)
+            else:
+                user_id = None
+
+            logger.debug(
+                f"{str_progress} : task_id = {task.task_id}, "
+                f"status = {task.status.value}, "
+                f"phase = {task.phase.value}, "
+                f"user_id = {user_id}"
+            )
 
             if task.status in [TaskStatus.COMPLETE, TaskStatus.WORKING]:
                 logger.warning(
-                    f"{str_progress} : task_id = {task_id} : タスクのstatusがworking or complete なので、担当者を変更できません。")
+                    f"{str_progress} : task_id = {task_id} : タスクのstatusがworking or complete なので、担当者を変更できません。"
+                )
                 continue
 
             if not self.confirm_change_operator(task, user_id):
@@ -99,7 +107,7 @@ class ChangeOperator(AbstractCommandLineInterface):
 
 
 def main(args: argparse.Namespace):
-    service = build_annofabapi_resource_and_login()
+    service = build_annofabapi_resource_and_login(args)
     facade = AnnofabApiFacade(service)
     ChangeOperator(service, facade, args).main()
 
@@ -112,9 +120,9 @@ def parse_args(parser: argparse.ArgumentParser):
 
     assign_group = parser.add_mutually_exclusive_group(required=True)
 
-    assign_group.add_argument('-u', '--user_id', type=str, help='タスクを新しく担当するユーザのuser_idを指定してください。')
+    assign_group.add_argument("-u", "--user_id", type=str, help="タスクを新しく担当するユーザのuser_idを指定してください。")
 
-    assign_group.add_argument('--not_assign', action="store_true", help='指定した場合、タスクの担当者は未割り当てになります。')
+    assign_group.add_argument("--not_assign", action="store_true", help="指定した場合、タスクの担当者は未割り当てになります。")
 
     parser.set_defaults(subcommand_func=main)
 
@@ -122,7 +130,7 @@ def parse_args(parser: argparse.ArgumentParser):
 def add_parser(subparsers: argparse._SubParsersAction):
     subcommand_name = "change_operator"
     subcommand_help = "タスクの担当者を変更します。"
-    description = ("タスクの担当者を変更します。ただし、作業中のタスクに対しては変更しません。")
+    description = "タスクの担当者を変更します。ただし、作業中のタスクに対しては変更しません。"
     epilog = "チェッカーまたはオーナロールを持つユーザで実行してください。"
 
     parser = annofabcli.common.cli.add_parser(subparsers, subcommand_name, subcommand_help, description, epilog=epilog)

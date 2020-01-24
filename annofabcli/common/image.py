@@ -5,7 +5,7 @@
 import logging
 import zipfile
 from pathlib import Path
-from typing import Any, Callable, Dict, Iterator, List, Optional, Tuple  # pylint: disable=unused-import
+from typing import Any, Callable, Dict, Optional
 
 import PIL
 import PIL.Image
@@ -39,8 +39,12 @@ def get_data_uri_of_outer_file(annotation: SimpleAnnotationDetail) -> Optional[s
     return data.get("data_uri")
 
 
-def fill_annotation(draw: PIL.ImageDraw.Draw, annotation: SimpleAnnotationDetail, label_color_dict: Dict[str, RGB],
-                    outer_image: Optional[Any] = None) -> PIL.ImageDraw.Draw:
+def fill_annotation(
+    draw: PIL.ImageDraw.Draw,
+    annotation: SimpleAnnotationDetail,
+    label_color_dict: Dict[str, RGB],
+    outer_image: Optional[Any] = None,
+) -> PIL.ImageDraw.Draw:
     """
     1個のアノテーションを、塗りつぶしで描画する。（矩形、ポリゴン、塗りつぶし、塗りつぶしv2）
 
@@ -61,7 +65,7 @@ def fill_annotation(draw: PIL.ImageDraw.Draw, annotation: SimpleAnnotationDetail
 
     color = label_color_dict.get(annotation.label)
     if color is None:
-        logger.warning(f"label_name = {annotation['label']} のcolorが指定されていません。")
+        logger.warning(f"label_name = {annotation.label} のcolorが指定されていません。")
         color = (255, 255, 255)
 
     data_type = data["_type"]
@@ -79,14 +83,16 @@ def fill_annotation(draw: PIL.ImageDraw.Draw, annotation: SimpleAnnotationDetail
         if outer_image is not None:
             draw.bitmap([0, 0], outer_image, fill=color)
         else:
-            logger.warning(f"アノテーション種類が`{data_type}`ですが、`outer_image`がNoneです。 "
-                           f"annotation_id={annotation.annotation_id}")
+            logger.warning(
+                f"アノテーション種類が`{data_type}`ですが、`outer_image`がNoneです。 " f"annotation_id={annotation.annotation_id}"
+            )
 
     return draw
 
 
-def fill_annotation_list(draw: PIL.ImageDraw.Draw, parser: SimpleAnnotationParser,
-                         label_color_dict: Dict[str, RGB]) -> PIL.ImageDraw.Draw:
+def fill_annotation_list(
+    draw: PIL.ImageDraw.Draw, parser: SimpleAnnotationParser, label_color_dict: Dict[str, RGB]
+) -> PIL.ImageDraw.Draw:
     """
     1個の入力データに属するアノテーションlistを描画する
 
@@ -108,8 +114,9 @@ def fill_annotation_list(draw: PIL.ImageDraw.Draw, parser: SimpleAnnotationParse
                 with parser.open_outer_file(data_uri_outer_image) as f:
                     outer_image = PIL.Image.open(f)
                     # アノテーション情報を描画する
-                    fill_annotation(draw=draw, annotation=annotation, label_color_dict=label_color_dict,
-                                    outer_image=outer_image)
+                    fill_annotation(
+                        draw=draw, annotation=annotation, label_color_dict=label_color_dict, outer_image=outer_image
+                    )
 
             except AnnotationOuterFileNotFoundError as e:
                 logger.warning(str(e))
@@ -121,8 +128,13 @@ def fill_annotation_list(draw: PIL.ImageDraw.Draw, parser: SimpleAnnotationParse
     return draw
 
 
-def write_annotation_image(parser: SimpleAnnotationParser, image_size: InputDataSize, label_color_dict: Dict[str, RGB],
-                           output_image_file: Path, background_color: Optional[Any] = None):
+def write_annotation_image(
+    parser: SimpleAnnotationParser,
+    image_size: InputDataSize,
+    label_color_dict: Dict[str, RGB],
+    output_image_file: Path,
+    background_color: Optional[Any] = None,
+):
     """
     JSONファイルに記載されているアノテーション情報を、画像化する。
     JSONファイルは、AnnoFabからダウンロードしたアノテーションzipに含まれるファイルを想定している。
@@ -160,10 +172,15 @@ def write_annotation_image(parser: SimpleAnnotationParser, image_size: InputData
     image.save(output_image_file)
 
 
-def write_annotation_images_from_path(annotation_path: Path, image_size: InputDataSize,
-                                      label_color_dict: Dict[str, RGB], output_dir_path: Path,
-                                      output_image_extension: str = "png", background_color: Optional[Any] = None,
-                                      is_target_parser_func: Optional[IsParserFunc] = None) -> bool:
+def write_annotation_images_from_path(
+    annotation_path: Path,
+    image_size: InputDataSize,
+    label_color_dict: Dict[str, RGB],
+    output_dir_path: Path,
+    output_image_extension: str = "png",
+    background_color: Optional[Any] = None,
+    is_target_parser_func: Optional[IsParserFunc] = None,
+) -> bool:
     """
     AnnoFabからダウンロードしたアノテーションzipファイル、またはそのzipを展開したディレクトリから、アノテーション情報を画像化します。
 
@@ -205,8 +222,13 @@ def write_annotation_images_from_path(annotation_path: Path, image_size: InputDa
             continue
 
         output_image_file = output_dir_path / f"{Path(parser.json_file_path).stem}.{output_image_extension}"
-        write_annotation_image(parser, image_size=image_size, label_color_dict=label_color_dict,
-                               background_color=background_color, output_image_file=output_image_file)
+        write_annotation_image(
+            parser,
+            image_size=image_size,
+            label_color_dict=label_color_dict,
+            background_color=background_color,
+            output_image_file=output_image_file,
+        )
         logger.debug(f"画像ファイル '{str(output_image_file)}' を生成しました。")
         count_created_image += 1
 

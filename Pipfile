@@ -8,13 +8,13 @@ annofabcli = {editable = true,path = "."} # For reading setup.py
 pytest = "*"
 pytest-cov = "*"
 isort = "*"
-yapf = "*"
 mypy = "*"
 pylint = "*"
 twine = "*"
 autoflake = "*"
 flake8 = "*"
 docutils = "*"
+black = "*"
 
 [packages]
 

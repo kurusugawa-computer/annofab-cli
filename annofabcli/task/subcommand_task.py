@@ -5,19 +5,23 @@ import annofabcli.common.cli
 import annofabcli.task.cancel_acceptance
 import annofabcli.task.change_operator
 import annofabcli.task.complete_tasks
+import annofabcli.task.delete_tasks
 import annofabcli.task.list_tasks
+import annofabcli.task.put_tasks
 import annofabcli.task.reject_tasks
 
 
 def parse_args(parser: argparse.ArgumentParser):
 
-    subparsers = parser.add_subparsers(dest='subcommand_name')
+    subparsers = parser.add_subparsers(dest="subcommand_name")
 
     # サブコマンドの定義
     annofabcli.task.cancel_acceptance.add_parser(subparsers)
     annofabcli.task.change_operator.add_parser(subparsers)
     annofabcli.task.complete_tasks.add_parser(subparsers)
+    annofabcli.task.delete_tasks.add_parser(subparsers)
     annofabcli.task.list_tasks.add_parser(subparsers)
+    annofabcli.task.put_tasks.add_parser(subparsers)
     annofabcli.task.reject_tasks.add_parser(subparsers)
 
 
@@ -26,5 +30,7 @@ def add_parser(subparsers: argparse._SubParsersAction):
     subcommand_help = "タスク関係のサブコマンド"
     description = "タスク関係のサブコマンド"
 
-    parser = annofabcli.common.cli.add_parser(subparsers, subcommand_name, subcommand_help, description)
+    parser = annofabcli.common.cli.add_parser(
+        subparsers, subcommand_name, subcommand_help, description, is_subcommand=False
+    )
     parse_args(parser)

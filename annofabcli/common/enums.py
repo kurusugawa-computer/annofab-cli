@@ -13,25 +13,25 @@ class FormatArgument(Enum):
     """
 
     #: CSV形式
-    CSV = 'csv'
+    CSV = "csv"
 
     #: JSON形式
-    JSON = 'json'
+    JSON = "json"
 
     #: インデントされたJSON形式
-    PRETTY_JSON = 'pretty_json'
+    PRETTY_JSON = "pretty_json"
 
     #: input_data_idの一覧
-    INPUT_DATA_ID_LIST = 'input_data_id_list'
+    INPUT_DATA_ID_LIST = "input_data_id_list"
 
     #: task_idの一覧
-    TASK_ID_LIST = 'task_id_list'
+    TASK_ID_LIST = "task_id_list"
 
     #: inspection_idの一覧
-    INSPECTION_ID_LIST = 'inspection_id_list'
+    INSPECTION_ID_LIST = "inspection_id_list"
 
     #: user_idの一覧
-    USER_ID_LIST = 'user_id_list'
+    USER_ID_LIST = "user_id_list"
 
     #: project_idの一覧
-    PROJECT_ID_LIST = 'project_id_list'
+    PROJECT_ID_LIST = "project_id_list"

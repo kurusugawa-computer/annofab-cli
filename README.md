@@ -78,11 +78,13 @@ $ docker run -it -e ANNOFAB_USER_ID=XXXX -e ANNOFAB_PASSWORD=YYYYY annofab-cli a
 |instruction| upload             | HTMLファイルを作業ガイドとして登録します。                                                           |チェッカー/オーナ|
 |job|list             | ジョブ一覧を出力します。                                                            |-|
 |job|list_last             | 複数のプロジェクトに対して、最新のジョブを出力します。                                                            |-|
+|labor|list_worktime_by_user | ユーザごとに作業予定時間、作業実績時間を出力します。                                                          ||
 |organization_member|list             | 組織メンバ一覧を出力します。                                                            |-|
 |project| copy                 | プロジェクトをコピーします。                                                                           |オーナ and 組織管理者/組織オーナ|
 |project| diff                 | プロジェクト間の差分を表示します。                                                                           |チェッカー/オーナ|
 |project| download                 | タスクや検査コメント、アノテーションなどをダウンロードします。                                                                           |オーナ|
 |project| list                 | プロジェクト一覧を出力します。                                                                          |-|
+|project| update_annotation_zip                 | アノテーションzipを更新します。                                                                         |オーナ/アノテーションユーザ|
 |project_member| change                  | プロジェクトメンバを変更します。|オーナ|
 |project_member| copy                  | プロジェクトメンバをコピーします。|オーナ(コピー先プロジェクトに対して)|
 |project_member| delete                  | 複数のプロジェクトからユーザを削除します。                                                                 |オーナ|
@@ -90,10 +92,13 @@ $ docker run -it -e ANNOFAB_USER_ID=XXXX -e ANNOFAB_PASSWORD=YYYYY annofab-cli a
 |project_member| list                  | プロジェクトメンバ一覧を出力します。                                                                |-|
 |project_member| put                  | CSVに記載されたユーザを、プロジェクトメンバとして登録します。|オーナ|
 |statistics| visualize             | 統計情報を可視化します。                                                            |オーナ|
+|supplementary| list             | 補助情報を出力します。                                                           |オーナ|
 |task| cancel_acceptance             | 受け入れ完了タスクを、受け入れ取り消し状態にします。                                                         |オーナ|
 |task| change_operator             | タスクの担当者を変更します。                                                             |チェッカー/オーナ|
 |task| complete                | 未処置の検査コメントを適切な状態に変更して、タスクを受け入れ完了状態にします。                                 |チェッカー/オーナ|
+|task| delete                | タスクを削除します。                                 |オーナ|
 |task|list             | タスク一覧を出力します。                                                            |-|
+|task| put                | タスクを登録します。                                 |オーナ|
 |task| reject                  | 検査コメントを付与してタスクを差し戻します。                                                                 |チェッカー/オーナ|
 
 
@@ -203,7 +208,7 @@ disable_existing_loggers: False
 
 ```
 # 受入完了のタスクのtask_id一覧を、acceptance_complete_task_id.txtに出力する。
-$ annofabcli task list --project_id prj1  --task_query '{"phase": "complete","phase":"acceptance"}' \
+$ annofabcli task list --project_id prj1  --task_query '{"status": "complete","phase":"acceptance"}' \
  --format task_id_list --output acceptance_complete_task_id.txt
 
 # 受入完了タスクの中で、 "car"ラベルの"occluded"チェックボックスがONのアノテーションの個数を出力する。
@@ -442,6 +447,9 @@ $ annofabcli input_data delete --project_id prj1 --input_data_id file://input_da
 # input_data_nameが"sample"の入力データ一覧を出力する
 $ annofabcli input_data list --project_id prj1 --input_data_query '{"input_data_name": "sample"}' 
 
+# input_data_idが"id1", "id2"の入力データを取得する
+$ annofabcli input_data list --project_id prj1 --input_data_id id1 id2
+
 # 入力データの詳細情報（参照されているタスクのtask_id `parent_task_id_list`）も出力する
 $ annofabcli input_data list --project_id prj1 --input_data_query '{"input_data_name": "sample"}' --add_details
 
@@ -493,8 +501,9 @@ $ annofabcli input_data put --project_id prj1 --csv input_data.csv
 # input_data.csvに記載されている入力データを登録する。すでに入力データが存在する場合は上書きする。
 $ annofabcli input_data put --project_id prj1 --csv input_data.csv --overwrite
 
+# input_data.csvに記載されている入力データを、並列処理で登録する（`--yes`オプションが必要）。
+$ annofabcli input_data put --project_id prj1 --csv input_data.csv --parallelism 2 --yes
 ```
-
 
 
 `input_data list`コマンドを使えば、プロジェクトに既に登録されている入力データからCSVを作成できます。
@@ -640,6 +649,19 @@ $ annofabcli job list_last --project_id prj1 --job_type gen-annotation --add_det
 ```
 
 
+### labor list_worktime_by_user
+
+ユーザごとに作業予定時間、作業実績時間を出力します。
+
+```
+# 組織org1, org2に対して、user1, user2の作業時間を集計します。
+$ annofabcli labor list_worktime_by_user --organization org1 org2 --user_id user1 user2 \
+ --start_date 2019-10-01 --end_date 2019-10-31 --output_dir /tmp/output
+
+# プロジェクトprj1, prj2に対して作業時間を集計します。集計対象のユーザはプロジェクトに所属するメンバです。
+$ annofabcli labor list_worktime_by_user --project_id prj1 prj2 --user_id user1 user2 \
+ --start_date 2019-10-01 --end_date 2019-10-31 --output_dir /tmp/output
+```
 
 
 ### organization_member list
@@ -758,6 +780,10 @@ $ annofabcli project download simple_annotation --project_id prj1 --output simpl
 
 # 最新のタスク全一覧が記載されたJSONファイルをダウンロードする
 $ annofabcli project download task --project_id prj1 --output task.json --latest
+
+# アノテーションの最新化を最大60分(60秒間隔で最大60回アクセス)待つ
+$ annofabcli project download simple_annotation --project_id prj1  58a2a621-7d4b-41e7-927b-cdc570c1114a --output simple_annotation.zip --latest \
+ --wait_options '{"interval":60, "max_tries":60}' 
 ```
 
 
@@ -765,10 +791,30 @@ $ annofabcli project download task --project_id prj1 --output task.json --latest
 プロジェクト一覧を出力します。
 
 ```
-# org1配下のプロジェクトで、
+# org1配下のプロジェクトで、user1が所属する進行中のプロジェクト一覧を出力する。
 $ annofabcli project list --organization org1 --project_query '{"status": "active", "user_id": "user1}'
+
+# prj1, prj2のプロジェクト一覧を出力する
+$ annofabcli project list --project_id prj1 prj2
 ```
 
+
+### project update_annotation_zip
+アノテーションzipを更新します。
+
+```
+# prj1, prj2のアノテーションzipを更新します。更新する必要がなければ更新しません。
+$ annofabcli project update_anotation_zip --project_id prj1 prj2
+
+# prj1, prj2のアノテーションzipを更新します。更新する必要がなくても常に更新します。
+$ annofabcli project update_anotation_zip --project_id prj1 prj2 --force
+
+# prj1, prj2のアノテーションzipを更新して、すべてのプロジェクトの更新が完了するまで待ちます
+$ annofabcli project update_anotation_zip --project_id prj1 prj2 --wait
+
+# アノテーションzipの更新が完了するまで待つ処理を並列で実行します。
+$ annofabcli project update_anotation_zip --project_id prj1 prj2 --wait --parallelism 4
+```
 
 
 
@@ -894,6 +940,14 @@ $ annofabcli statistics visualize --project_id prj1 --not_update
 
 ```
 
+### supplementary list
+補助情報一覧を出力します。
+
+```
+# input_data_idが"id1", "id2"に紐づく補助情報一覧を出力します。
+$ annofabcli supplementary list --project_id prj1 --input_data_id id1 id2
+```
+
 
 ### task cancel_acceptance
 受け入れ完了タスクに対して、受け入れ取り消しにします。
@@ -929,16 +983,25 @@ $ annofabcli task change_operator --project_id prj1 --task_id file://task.txt --
 
 ```
 # 未処置の検査コメントは"対応完了"状態にして、prj1プロジェクトのタスクを受け入れ完了にする。
-$ annofabcli complete_tasks --project_id prj1  --inspection_list inspection.json \
+$ annofabcli complete_tasks --project_id prj1  --inspection_list file://inspection.json \
  --inspection_status error_corrected
 
 # 未処置の検査コメントは"対応不要"状態にして、prj1プロジェクトのタスクを受け入れ完了にする。
-$ annofabcli complete_tasks --project_id prj1  --inspection_list inspection.json \
+$ annofabcli complete_tasks --project_id prj1  --inspection_list file://inspection.json \
  --inspection_status no_correction_required
 ```
 
-`inspection.json`は、未処置の検査コメント一覧です。`annofabcli inspection_comment list_unprocessed --foramt json`コマンドで出力できます。
+`inspection.json`は、未処置の検査コメント一覧です。`annofabcli inspection_comment list_unprocessed --format json`コマンドで出力できます。
 
+
+### task delete
+タスクを削除します。ただしアノテーションが付与されているタスク、作業中/完了状態のタスクは削除できません。
+
+```
+# task_id.txtに記載されたtask_idのタスクを削除します。
+$ annofabcli task delete --project_id prj1 --task_id file://task_id.txt
+
+```
 
 
 ### task list
@@ -947,6 +1010,9 @@ $ annofabcli complete_tasks --project_id prj1  --inspection_list inspection.json
 ```
 # 受入フェーズで、"usr1"が担当しているタスクの一覧を出力する
 $ annofabcli task list --project_id prj1 --task_query '{"user_id": "usr1","phase":"acceptance"}' 
+
+# task_id"id1", "id2"のタスクを取得する
+$ annofabcli task list --project_id prj1 --task_id id1 id2
 
 # 休憩中で、過去の担当者が"usr1"であるタスクの一覧を出力する。task.jsonファイルにJSON形式で出力する。
 $ annofabcli task list --project_id prj1 \
@@ -967,6 +1033,37 @@ $ annofabcli task list --project_id prj1 --task_json task.json
 | project_id                           | task_id                                | phase      | phase_stage | status      | input_data_id_list                       | account_id                           | histories_by_phase                                                                                                                                       | work_time_span | number_of_rejections | started_datetime              | updated_datetime              | sampling | user_id         | username  | worktime_hour       | number_of_rejections_by_inspection | number_of_rejections_by_acceptance |
 |--------------------------------------|----------------------------------------|------------|-------------|-------------|------------------------------------------|--------------------------------------|----------------------------------------------------------------------------------------------------------------------------------------------------------|----------------|----------------------|-------------------------------|-------------------------------|----------|-----------------|-----------|---------------------|------------------------------------|------------------------------------|
 | 12345678-abcd-1234-abcd-1234abcd5678 | 12345678-abcd-1234-abcd-1234abcd5678   | annotation | 1           | break       | ['12345678-abcd-1234-abcd-1234abcd5678'] | 12345678-abcd-1234-abcd-1234abcd5678 | [{'account_id': '12345678-abcd-1234-abcd-1234abcd5678', 'phase': 'annotation', 'phase_stage': 1, 'user_id': 'user_id1', 'username': 'username1'}] | 539662         | 0                    | 2019-05-08T13:53:21.338+09:00 | 2019-05-08T14:15:07.318+09:00 |          | user_id1 | user_name2 | 0.14990611111111113 | 0                                  | 0                                  |
+
+
+
+
+
+### task put
+CSVに記載された情報を元に、タスクを登録します。
+CSVのフォーマットは以下の通りです。
+
+```
+1列目: task_id
+2列目: 空欄（どんな値でもよい）
+3列目: input_data_id
+```
+
+CSVのサンプル（`task.csv`）です。
+
+```
+task_1,,ca0cb2f9-fec5-49b4-98df-dc34490f9785
+task_1,,5ac1987e-ca7c-42a0-9c19-b5b23a41836b
+task_2,,4f2ae4d0-7a38-4f9a-be6f-170ba76aba73
+task_2,,45ac5852-f20c-4938-9ee9-cc0274401df7
+```
+
+```
+# prj1に、タスク登録処理を投入する。
+$ annofabcli task put --project_id prj1 --csv task.csv
+
+# prj1に、タスク登録処理を投入する。タスク登録が完了するまで待つ.
+$ annofabcli task put --project_id prj1 --csv task.csv --wait
+```
 
 
 ### task reject
