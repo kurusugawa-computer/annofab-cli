@@ -38,9 +38,19 @@ Enter AnnoFab User ID: XXXXXX
 Enter AnnoFab Password: 
 ```
 
-AnnoFabの認証情報は、以下の順に読み込まれます。
+AnnoFabの認証情報の優先順位は以下の通りです。
 1. `.netrc`ファイル
 2. 環境変数
+
+## AnnoFab WebAPIのエンドポイントの設定（開発者用）
+AnnoFab WebAPIのエンドポイントを指定できます。デフォルトは https://annofab.com です。
+* コマンドライン引数`--endpoint_url`
+* 環境変数 `ANNOFAB_ENDPOINT_URL`
+
+設定したエンドポイントURLの優先順位は以下の通りです。
+1. コマンドライン引数
+2. 環境変数
+
 
 ## Dockerを利用する場合
 
@@ -105,29 +115,14 @@ $ docker run -it -e ANNOFAB_USER_ID=XXXX -e ANNOFAB_PASSWORD=YYYYY annofab-cli a
 # Usage
 
 
-## 共通のオプション引数
-
-
-### `--csv_format`
-CSVのフォーマットをJSON形式で指定します。`--format`が`csv`でないときは、このオプションは無視されます。
-先頭に`file://`を付けると、JSON形式のファイルを指定できます。
-指定した値は、[pandas.DataFrame.to_csv](https://pandas.pydata.org/pandas-docs/stable/reference/api/pandas.DataFrame.to_csv.html) の引数として渡されます。
-デフォルトはカンマ区切り、BOM付きUTF-8エンコーディングです。
-
-```
---csv_format '{"sep": "\t"}'
-```
-
+## すべてのコマンドで共通のオプション引数
 
 ### `--disable_log`
 ログを無効化にします。
 
-### `-f` / `--format`
-list系のコマンドで、出力フォーマットを指定します。多くのコマンドでは、以下のフォーマットが指定できます。
-* `csv` : CSV(デフォルとはカンマ区切り)
-* `json` : インデントや空白がないJSON
-* `pretty_json` : インデントされたJSON
 
+### `--endpoint_url
+AnnoFab WebAPIのエンドポイントURLを指定します。デフォルトは https://annofab.com です。
 
 
 ### `-h` / `--help`
@@ -144,6 +139,7 @@ $ annofabcli project diff -h
 
 ### `--logdir`
 ログファイルを保存するディレクトリを指定します。指定しない場合、`.log`ディレクトリにログファイルを出力します。
+
 
 ### `--logging_yaml`
 以下のような、ロギグングの設定ファイル(YAML)を指定します。指定した場合、`--logdir`オプションは無視されます。指定しない場合、デフォルトのロギング設定ファイルが読み込まれます。
@@ -164,6 +160,33 @@ root:
 disable_existing_loggers: False
 ```
 
+### `--yes`
+処理中に現れる問い合わせに対して、常に'yes'と回答します。
+
+
+## ほとんどのコマンドで共通のオプション引数
+
+
+### `--csv_format`
+CSVのフォーマットをJSON形式で指定します。`--format`が`csv`でないときは、このオプションは無視されます。
+先頭に`file://`を付けると、JSON形式のファイルを指定できます。
+指定した値は、[pandas.DataFrame.to_csv](https://pandas.pydata.org/pandas-docs/stable/reference/api/pandas.DataFrame.to_csv.html) の引数として渡されます。
+デフォルトはカンマ区切り、BOM付きUTF-8エンコーディングです。
+
+```
+--csv_format '{"sep": "\t"}'
+```
+
+
+### `-f` / `--format`
+list系のコマンドで、出力フォーマットを指定します。多くのコマンドでは、以下のフォーマットが指定できます。
+* `csv` : CSV(デフォルとはカンマ区切り)
+* `json` : インデントや空白がないJSON
+* `pretty_json` : インデントされたJSON
+
+
+
+
 
 ### `-o` / `--output`
 出力先のファイルパスを指定します。指定しない場合は、標準出力に出力されます。
@@ -177,15 +200,11 @@ disable_existing_loggers: False
 [JMESPath](http://jmespath.org/) を指定します。出力結果の抽出や、出力内容の変更に利用できます。
 
 
-
 ### `-t` / `--task_id`
 対象のタスクのtask_idを指定します。`file://`を先頭に付けると、task_idの一覧が記載されたファイルを指定できます。
 
 * 相対パスで指定： `--task_id file://task.txt`
 * 絶対パスで指定： `--task_id file:///tmp/task.txt`
-
-### `--yes`
-処理中に現れる問い合わせに対して、常に'yes'と回答します。
 
 
 ## デフォルトのログ設定
