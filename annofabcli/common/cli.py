@@ -264,6 +264,8 @@ def build_annofabapi_resource(args: argparse.Namespace) -> annofabapi.Resource:
 
     """
     endpoint_url = get_endpoint_url(args)
+    if endpoint_url != DEFAULT_ENDPOINT_URL:
+        logger.info(f"AnnoFab WebAPIのエンドポイントURL: {endpoint_url}")
 
     # # コマンドライン引数から認証情報を取得する
     # dict_credentials = annofabcli.common.cli.get_json_from_args(args.credentials)
