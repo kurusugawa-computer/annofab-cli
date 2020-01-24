@@ -170,7 +170,7 @@ class VisualizeStatistics(AbstractCommandLineInterface):
 
 
 def main(args):
-    service = build_annofabapi_resource_and_login()
+    service = build_annofabapi_resource_and_login(args)
     facade = AnnofabApiFacade(service)
     VisualizeStatistics(service, facade, args).main()
 
@@ -234,5 +234,5 @@ def add_parser(subparsers: argparse._SubParsersAction):
     description = "統計情報を可視化したファイルを出力します。毎日 03:00JST頃に更新されます。"
     epilog = "チェッカーまたはオーナロールを持つユーザで実行してください。"
 
-    parser = annofabcli.common.cli.add_parser(subparsers, subcommand_name, subcommand_help, description, epilog)
+    parser = annofabcli.common.cli.add_parser(subparsers, subcommand_name, subcommand_help, description, epilog=epilog)
     parse_args(parser)

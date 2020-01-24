@@ -47,9 +47,9 @@ def main(arguments: Optional[Sequence[str]] = None):
     annofabcli.organization_member.subcommand_organization_member.add_parser(subparsers)
     annofabcli.project.subcommand_project.add_parser(subparsers)
     annofabcli.project_member.subcommand_project_member.add_parser(subparsers)
-    annofabcli.task.subcommand_task.add_parser(subparsers)
     annofabcli.statistics.subcommand_statistics.add_parser(subparsers)
     annofabcli.supplementary.subcommand_supplementary.add_parser(subparsers)
+    annofabcli.task.subcommand_task.add_parser(subparsers)
 
     annofabcli.filesystem.subcommand_filesystem.add_parser(subparsers)
     annofabcli.experimental.subcommand_experimental.add_parser(subparsers)
@@ -61,6 +61,7 @@ def main(arguments: Optional[Sequence[str]] = None):
 
     if hasattr(args, "subcommand_func"):
         try:
+            annofabcli.cli.load_logging_config_from_args(args)
             args.subcommand_func(args)
         except Exception as e:
             logger.exception(e)

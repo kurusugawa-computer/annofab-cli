@@ -8,12 +8,14 @@ import dataclasses
 import getpass
 import json
 import logging
+import os
 from typing import Any, Dict, List, Optional, Tuple
 
 import annofabapi
 import jmespath
 import pandas
 import requests
+from annofabapi.api import DEFAULT_ENDPOINT_URL
 from annofabapi.exceptions import AnnofabApiException
 from annofabapi.models import OrganizationMemberRole, ProjectMemberRole
 
@@ -27,16 +29,19 @@ from annofabcli.common.typing import InputDataSize
 logger = logging.getLogger(__name__)
 
 
-def build_annofabapi_resource_and_login() -> annofabapi.Resource:
+def build_annofabapi_resource_and_login(args: argparse.Namespace) -> annofabapi.Resource:
     """
-    annofabapi.Resourceインスタンスを生成する。
+    annofabapi.Resourceインスタンスを生成したあと、ログインする。
+
+    Args:
+        args: コマンドライン引数の情報
 
     Returns:
         annofabapi.Resourceインスタンス
 
     """
 
-    service = build_annofabapi_resource()
+    service = build_annofabapi_resource(args)
 
     try:
         service.api.login()
@@ -50,9 +55,10 @@ def build_annofabapi_resource_and_login() -> annofabapi.Resource:
 
 def add_parser(
     subparsers: argparse._SubParsersAction,
-    subcommand_name: str,
-    subcommand_help: str,
+    command_name: str,
+    command_help: str,
     description: str,
+    is_subcommand: bool = True,
     epilog: Optional[str] = None,
 ) -> argparse.ArgumentParser:
     """
@@ -60,17 +66,19 @@ def add_parser(
 
     Args:
         subparsers:
-        subcommand_name:
-        subcommand_help:
-        description:
-        epilog:
+        command_name:
+        command_help: 1階層上のコマンドヘルプに表示される コマンドの説明（簡易的な説明）
+        description: ヘルプ出力に表示される説明（詳細な説明）
+        is_subcommand: サブコマンドかどうか. `annofabcli project`はコマンド、`annofabcli project list`はサブコマンドとみなす。
+        epilog: ヘルプ出力後に表示される内容。デフォルトはNoneです。
 
     Returns:
         サブコマンドのparser
 
     """
+    parents = [create_parent_parser()] if is_subcommand else []
     parser = subparsers.add_parser(
-        subcommand_name, parents=[create_parent_parser()], description=description, help=subcommand_help, epilog=epilog
+        command_name, parents=parents, description=description, help=command_help, epilog=epilog
     )
     parser.set_defaults(command_help=parser.print_help)
     return parser
@@ -84,6 +92,19 @@ def create_parent_parser() -> argparse.ArgumentParser:
     group = parent_parser.add_argument_group("global optional arguments")
 
     group.add_argument("--yes", action="store_true", help="処理中に現れる問い合わせに対して、常に'yes'と回答します。")
+
+    # EXAMPLE_CREDENTAILS = '{"user_id": "test_user", "password": "test_password"}'
+    # group.add_argument(
+    #     "--credentials",
+    #     type=str,
+    #     help=f"AnnoFabにログインするユーザの認証情報をJSON形式で指定します。"
+    #     f"(ex) `{EXAMPLE_CREDENTAILS}` ."
+    #     f"`file://`を先頭に付けると、JSON形式のファイルを指定できます。",
+    # )
+
+    group.add_argument(
+        "--endpoint_url", type=str, help=f"AnnoFab WebAPIのエンドポイントを指定します。指定しない場合は'{DEFAULT_ENDPOINT_URL}'です。"
+    )
 
     group.add_argument(
         "--logdir", type=str, default=".log", help="ログファイルを保存するディレクトリを指定します。指定しない場合は`.log`ディレクトリ'にログファイルが保存されます。"
@@ -182,21 +203,56 @@ def get_wait_options_from_args(
         return default_wait_options
 
 
-def load_logging_config_from_args(args: argparse.Namespace):
+def load_logging_config_from_args(args: argparse.Namespace) -> None:
     """
-    args情報から、logging設定ファイルを読み込む
+    args情報から、logging設定ファイルを読み込む.
+    以下のコマンドライン引数からlogging設定ファイルを読み込む。
+    ``--disable_log`` が指定されている場合は、loggerを設定しない。
+
+    * --logdir
+    * --disable_log
+    * --logging_yaml
+
     Args:
         args: Command引数情報
     """
-    log_dir = args.logdir
-    logging_yaml_file = args.logging_yaml if hasattr(args, "logging_yaml") else None
 
-    annofabcli.utils.load_logging_config(log_dir, logging_yaml_file)
+    if args.disable_log:
+        return
+
+    annofabcli.utils.load_logging_config(args.logdir, args.logging_yaml)
 
 
-def build_annofabapi_resource() -> annofabapi.Resource:
+def get_endpoint_url(args: argparse.Namespace) -> str:
     """
-    annofabapi.Resourceインスタナスを生成する。
+    AnnoFab WebAPIのエンドポイントURLを、以下の優先順位で取得する。
+
+    1. コマンドライン引数 ``--endpoint_url``
+    2. 環境変数 ``ANNOFAB_ENDPOINT_URL``
+
+    取得できない場合は、デフォルトの ``https://annofab.com`` を返す。
+
+    Args:
+        args: コマンドライン引数情報
+
+    Returns:
+        AnnoFab WebAPIのエンドポイントURL
+
+    """
+    endpoint_url = args.endpoint_url
+    if endpoint_url is not None:
+        return endpoint_url
+
+    endpoint_url = os.environ.get("ANNOFAB_ENDPOINT_URL")
+    if endpoint_url is not None:
+        return endpoint_url
+
+    return DEFAULT_ENDPOINT_URL
+
+
+def build_annofabapi_resource(args: argparse.Namespace) -> annofabapi.Resource:
+    """
+    annofabapi.Resourceインスタンスを生成する。
     以下の順にAnnoFabの認証情報を読み込む。
     1. `.netrc`ファイル
     2. 環境変数`ANNOFAB_USER_ID` , `ANNOFAB_PASSWORD`
@@ -207,16 +263,28 @@ def build_annofabapi_resource() -> annofabapi.Resource:
         annofabapi.Resourceインスタンス
 
     """
+    endpoint_url = get_endpoint_url(args)
+    if endpoint_url != DEFAULT_ENDPOINT_URL:
+        logger.info(f"AnnoFab WebAPIのエンドポイントURL: {endpoint_url}")
 
-    try:
-        return annofabapi.build_from_netrc()
-    except AnnofabApiException:
-        logger.info("`.netrc`ファイルにはAnnoFab認証情報が存在しなかった")
+    # # コマンドライン引数から認証情報を取得する
+    # dict_credentials = annofabcli.common.cli.get_json_from_args(args.credentials)
+    # if dict_credentials is not None:
+    #     return annofabapi.build(
+    #         dict_credentials.get("user_id"), dict_credentials.get("password"), endpoint_url=endpoint_url
+    #     )
 
+    # '.netrc'ファイルから認証情報を取得する
     try:
-        return annofabapi.build_from_env()
+        return annofabapi.build_from_netrc(endpoint_url)
     except AnnofabApiException:
-        logger.info("`環境変数`ANNOFAB_USER_ID` or  `ANNOFAB_PASSWORD`が空だった")
+        logger.debug("`.netrc`ファイルにはAnnoFab認証情報が存在しなかった")
+
+    # 環境変数から認証情報を取得する
+    try:
+        return annofabapi.build_from_env(endpoint_url)
+    except AnnofabApiException:
+        logger.debug("`環境変数`ANNOFAB_USER_ID` or  `ANNOFAB_PASSWORD`が空だった")
 
     # 標準入力から入力させる
     login_user_id = ""
@@ -227,7 +295,7 @@ def build_annofabapi_resource() -> annofabapi.Resource:
     while login_password == "":
         login_password = getpass.getpass("Enter AnnoFab Password: ")
 
-    return annofabapi.build(login_user_id, login_password)
+    return annofabapi.build(login_user_id, login_password, endpoint_url=endpoint_url)
 
 
 def prompt_yesno(msg: str) -> bool:
@@ -387,9 +455,6 @@ class AbstractCommandLineInterface(abc.ABC):
         Args:
             args: コマンドライン引数
         """
-        if not args.disable_log:
-            load_logging_config_from_args(args)
-
         self.all_yes = args.yes
         if hasattr(args, "query"):
             self.query = args.query

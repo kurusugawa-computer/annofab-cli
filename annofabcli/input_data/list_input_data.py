@@ -292,7 +292,7 @@ class ListInputData(AbstractCommandLineInterface):
 
 
 def main(args):
-    service = build_annofabapi_resource_and_login()
+    service = build_annofabapi_resource_and_login(args)
     facade = AnnofabApiFacade(service)
     ListInputData(service, facade, args).main()
 
@@ -328,7 +328,8 @@ def parse_args(parser: argparse.ArgumentParser):
         type=str,
         help="段階的に入力データを取得するための情報をJSON形式で指定します。 "
         '(ex) `{"first":"2019-01-01", "last":"2019-01-31", "days":7}` '
-        "このオプションを駆使すれば、10,000件以上のデータを取得できます。",
+        "このオプションを駆使すれば、10,000件以上のデータを取得できます。"
+        "`file://`を先頭に付けると、JSON形式のファイルを指定できます。",
     )
 
     parser.add_argument("--add_details", action="store_true", help="入力データの詳細情報を表示します（`parent_task_id_list`）")

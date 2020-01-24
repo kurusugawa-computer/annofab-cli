@@ -45,7 +45,6 @@ def load_logging_config(log_dir: str, logging_yaml_file: Optional[str] = None):
 
     Args:
         log_dir: ログの出力先
-        log_filename: ログのファイル名
         logging_yaml_file: ログ設定ファイル。指定しない場合、`data/logging.yaml`を読み込む. 指定した場合、log_dir, log_filenameは無視する。
 
     """
