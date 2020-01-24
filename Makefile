@@ -4,7 +4,7 @@ endif
 ifndef LINT_FILES
 	export LINT_FILES:=annofabcli
 endif
-.PHONY: docs lint test format test publish_test publish
+.PHONY: docs lint test format publish_test publish
 
 
 init:
