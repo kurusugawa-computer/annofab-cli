@@ -47,6 +47,10 @@ class TestAnnotation:
 class TestAnnotationSpecs:
     command_name = "annotation_specs"
 
+    def test_annotation_specs_histories(self):
+        out_file = str(out_path / "anotaton_specs_histories.csv")
+        main([self.command_name, "history", "--project_id", project_id, "--output", out_file])
+
     def test_annotation_specs_list_label(self):
         out_file = str(out_path / "anotation_specs_list_label.json")
         main([self.command_name, "list_label", "--project_id", project_id, "--output", out_file])
@@ -86,10 +90,6 @@ class TestAnnotationSpecs:
                 out_file,
             ]
         )
-
-    def test_annotation_specs_histories(self):
-        out_file = str(out_path / "anotaton_specs_histories.csv")
-        main([self.command_name, "history", "--project_id", project_id, "--output", out_file])
 
 
 class TestFilesystem:
@@ -453,6 +453,42 @@ class TestSupplementary:
 class TestTask:
     command_name = "task"
 
+    def test_cancel_acceptance(self):
+        main([self.command_name, "cancel_acceptance", "--project_id", project_id, "--task_id", task_id, "--yes"])
+
+    def test_change_operator(self):
+        # user指定
+        main(
+            [
+                self.command_name,
+                "change_operator",
+                "--project_id",
+                project_id,
+                "--task_id",
+                task_id,
+                "--user_id",
+                user_id,
+                "--yes",
+            ]
+        )
+
+        # 未割り当て
+        main(
+            [
+                self.command_name,
+                "change_operator",
+                "--project_id",
+                project_id,
+                "--task_id",
+                task_id,
+                "--not_assign",
+                "--yes",
+            ]
+        )
+
+    def test_delete_task(self):
+        main([self.command_name, "delete", "--project_id", project_id, "--task_id", "not-exists-task", "--yes"])
+
     def test_list(self):
         out_file = str(out_path / "task.csv")
         main(
@@ -489,12 +525,6 @@ class TestTask:
             ]
         )
 
-    def test_cancel_acceptance(self):
-        main([self.command_name, "cancel_acceptance", "--project_id", project_id, "--task_id", task_id, "--yes"])
-
-    def test_delete_task(self):
-        main([self.command_name, "delete", "--project_id", project_id, "--task_id", "not-exists-task", "--yes"])
-
     def test_reject_task(self):
         inspection_comment = datetime.datetime.now().isoformat()
         main(
@@ -515,36 +545,6 @@ class TestTask:
         csv_file = str(data_path / "put_task.csv")
         main(
             [self.command_name, "put", "--project_id", project_id, "--csv", csv_file,]
-        )
-
-    def test_change_operator(self):
-        # user指定
-        main(
-            [
-                self.command_name,
-                "change_operator",
-                "--project_id",
-                project_id,
-                "--task_id",
-                task_id,
-                "--user_id",
-                user_id,
-                "--yes",
-            ]
-        )
-
-        # 未割り当て
-        main(
-            [
-                self.command_name,
-                "change_operator",
-                "--project_id",
-                project_id,
-                "--task_id",
-                task_id,
-                "--not_assign",
-                "--yes",
-            ]
         )
 
     # def test_complete_task(self):
