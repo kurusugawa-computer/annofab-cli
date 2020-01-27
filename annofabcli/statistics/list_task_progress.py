@@ -6,12 +6,12 @@ import argparse
 import logging
 from typing import Any, Dict, List
 
+import pandas
+
 import annofabcli
 import annofabcli.common.cli
 from annofabcli import AnnofabApiFacade
 from annofabcli.common.cli import AbstractCommandLineInterface, ArgumentParser, build_annofabapi_resource_and_login
-from annofabcli.common.enums import FormatArgument
-from annofabcli.common.utils import print_according_to_format
 
 logger = logging.getLogger(__name__)
 
@@ -32,15 +32,13 @@ class TaskProgress(AbstractCommandLineInterface):
             タスクの進捗状況に対応するdict配列
 
         """
-        task_statistics = self.get_task_statistics(project_id)
+        task_statistics, _ = self.service.api.get_task_statistics(project_id)
         row_list: List[Dict[str, Any]] = []
         for stat_by_date in task_statistics:
             date = stat_by_date["date"]
             task_stat_list = stat_by_date["tasks"]
             for task_stat in task_stat_list:
                 task_stat["date"] = date
-                # タスクの進捗状況に不要な情報なので、削除する
-                task_stat.pop("work_timespan", None)
             row_list.extend(task_stat_list)
         return row_list
 
@@ -48,10 +46,11 @@ class TaskProgress(AbstractCommandLineInterface):
         super().validate_project(project_id, project_member_roles=None)
 
         task_stat_list = self.get_task_statistics(project_id)
+        df = pandas.DataFrame(task_stat_list)
+        # 出力対象の列を指定する
+        target_df = df[["date", "phase", "status", "count"]]
 
-        print_according_to_format(
-            task_stat_list, arg_format=FormatArgument.CSV, output=self.output, csv_format=self.csv_format
-        )
+        annofabcli.utils.print_csv(target_df, output=self.output, to_csv_kwargs=self.csv_format)
 
     def main(self):
         args = self.args
