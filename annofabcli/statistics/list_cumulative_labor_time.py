@@ -79,6 +79,6 @@ def main(args):
 def add_parser(subparsers: argparse._SubParsersAction):
     subcommand_name = "list_cumulative_labor_time"
     subcommand_help = "タスクフェーズ別の累積作業時間を出力する。"
-    description = "タスクフェーズ別の累積作業時間をCSVで出力する。"
+    description = "タスクフェーズ別の累積作業時間をCSV形式で出力する。"
     parser = annofabcli.common.cli.add_parser(subparsers, subcommand_name, subcommand_help, description=description)
     parse_args(parser)

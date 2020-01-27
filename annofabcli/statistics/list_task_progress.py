@@ -78,6 +78,6 @@ def main(args):
 def add_parser(subparsers: argparse._SubParsersAction):
     subcommand_name = "list_task_progress"
     subcommand_help = "タスク進捗情報を出力する"
-    description = "タスク進捗状況をCVVで出力する。"
+    description = "タスク進捗状況をCSV形式で出力する。"
     parser = annofabcli.common.cli.add_parser(subparsers, subcommand_name, subcommand_help, description=description)
     parse_args(parser)

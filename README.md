@@ -101,6 +101,8 @@ $ docker run -it -e ANNOFAB_USER_ID=XXXX -e ANNOFAB_PASSWORD=YYYYY annofab-cli a
 |project_member| invite                  | 複数のプロジェクトに、ユーザを招待します。                                                                 |オーナ|
 |project_member| list                  | プロジェクトメンバ一覧を出力します。                                                                |-|
 |project_member| put                  | CSVに記載されたユーザを、プロジェクトメンバとして登録します。|オーナ|
+|statistics| list_cumulative_labor_time             |       タスク進捗状況を出力します。                                                    |-|
+|statistics| list_task_progress             | タスクフェーズ別の累積作業時間を出力します。                                                            |-|
 |statistics| visualize             | 統計情報を可視化します。                                                            |オーナ|
 |supplementary| list             | 補助情報を出力します。                                                           |オーナ|
 |task| cancel_acceptance             | 受け入れ完了タスクを、受け入れ取り消し状態にします。                                                         |オーナ|
@@ -938,6 +940,22 @@ $ annofabcli project_member put --project_id prj1 --csv members.csv
 # CSVに記載れたユーザを、prj1プロジェクトのメンバとして登録します。csvに記載されていないユーザは削除します。
 $ annofabcli project_member put --project_id prj1 --csv members.csv --delete
 ```
+
+### statistics list_cumulative_labor_time
+タスクフェーズ別の累積作業時間をCSV形式で出力します。
+
+```
+$ annofabcli statistics list_cumulative_labor_time --project_id prj1 --output stat.csv
+```
+
+### statistics list_task_progress
+タスク進捗状況をCSV形式で出力します。
+
+```
+$ annofabcli statistics list_task_progress --project_id prj1 --output stat.csv
+```
+
+
 
 ### statistics visualize
 統計情報を可視化します。
