@@ -444,6 +444,18 @@ class TestStatistics:
             ]
         )
 
+    def test_list_task_progress(self):
+        out_file = str(out_path / "task-progress.csv")
+        main(
+            ["statistics", "list_task_progress", "--project_id", project_id, "--output", out_file,]
+        )
+
+    def test_list_cumulative_labor_time(self):
+        out_file = str(out_path / "cumulative-labor-time.csv")
+        main(
+            ["statistics", "list_cumulative_labor_time", "--project_id", project_id, "--output", out_file,]
+        )
+
 
 class TestSupplementary:
     def test_list_project_member(self):
