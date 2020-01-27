@@ -294,3 +294,21 @@ def allow_404_error(function):
             logging.getLogger("backoff").setLevel(level=backoff_logger_level)
 
     return wrapped
+
+
+def get_cache_dir() -> Path:
+    """
+    環境変数から、annofabcliのキャシュディレクトリを取得する。
+    キャッシュホームディレクトリは環境変数 ``XDG_CACHE_HOME`` から取得する。デフォルトは ``$HOME/.cache``である。
+
+    Returns:
+        annofabcliのキャッシュディレクトリ
+
+    """
+    cache_home_dir = os.environ.get("XDG_CACHE_HOME")
+    if cache_home_dir is None:
+        cache_home_dir_path = Path.home() / ".cache"
+    else:
+        cache_home_dir_path = Path(cache_home_dir)
+
+    return cache_home_dir_path / "annofabcli"
