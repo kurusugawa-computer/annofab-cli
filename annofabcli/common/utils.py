@@ -102,13 +102,13 @@ def progress_msg(index: int, size: int):
     return str_format.format(index, size)
 
 
-def output_string(target: str, output: Optional[str] = None):
+def output_string(target: str, output: Optional[str] = None) -> None:
     """
-    ファイルパスが指定されていればファイルに、指定しなければ標準出力に出力する。
+    文字列を出力する。
 
     Args:
-        target:
-        output:
+        target: 出力対象の文字列
+        output: 出力先。Noneなら標準出力に出力する。
     """
     if output is None:
         print(target)
@@ -116,9 +116,19 @@ def output_string(target: str, output: Optional[str] = None):
         Path(output).parent.mkdir(parents=True, exist_ok=True)
         with open(output, mode="w", encoding="utf_8_sig") as f:
             f.write(target)
+            logger.info(f"{output} に出力しました。")
 
 
-def print_json(target: Any, is_pretty: bool = False, output: Optional[str] = None):
+def print_json(target: Any, is_pretty: bool = False, output: Optional[str] = None) -> None:
+    """
+    JSONを出力する。
+
+    Args:
+        target: 出力対象のJSON
+        is_pretty: 人が見やすいJSONを出力するか
+        output: 出力先。Noneなら標準出力に出力する。
+
+    """
     if is_pretty:
         output_string(json.dumps(target, indent=2, ensure_ascii=False), output)
     else:
@@ -135,6 +145,9 @@ def print_csv(df: pandas.DataFrame, output: Optional[str] = None, to_csv_kwargs:
         df.to_csv(path_or_buf)
     else:
         df.to_csv(path_or_buf, **to_csv_kwargs)
+
+    if output is not None:
+        logger.info(f"{output} に出力しました。")
 
 
 def print_id_list(id_list: List[Any], output: Optional[str]):
