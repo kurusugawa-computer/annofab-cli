@@ -185,6 +185,17 @@ class Graph:
             hist = self._create_histogram(filtered_df, histogram_name=histogram_name)
             histograms.append(hist)
 
+        # 自動検査したタスクを除外して、検査時間をグラフ化する
+        filtered_df = df[df["inspection_worktime_hour"].notnull()]
+        histograms.append(
+            self._create_histogram(
+                filtered_df[~filtered_df["inspection_is_skipped"]],
+                histogram_name=HistogramName(
+                    column="inspection_worktime_hour", x_axis_label="検査時間[hour]", title="検査時間(自動検査されたタスクを除外)",
+                ),
+            )
+        )
+
         # 自動受入したタスクを除外して、受入時間をグラフ化する
         filtered_df = df[df["acceptance_worktime_hour"].notnull()]
         histograms.append(
