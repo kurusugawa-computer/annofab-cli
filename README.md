@@ -972,7 +972,7 @@ $ annofabcli statistics visualize --project_id prj1 --output_dir /tmp/output \
 $ annofabcli statistics visualize --project_id prj1 --output_dir /tmp/output --update_annotation
 
 
-# WebAPIを実行せずに、作業ディレクトリ（`.annofab-cli`）内のファイルを参照して、統計情報を可視化する。
+# WebAPIを実行せずに、作業ディレクトリ（デフォルトは`$XDG_CACHE_HOME/annofabcli`）内のファイルを参照して、統計情報を可視化する。
 $ annofabcli statistics visualize --project_id prj1 --not_update
 
 ```
