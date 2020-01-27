@@ -156,10 +156,15 @@ class VisualizeStatistics(AbstractCommandLineInterface):
         ignored_task_id_list = annofabcli.common.cli.get_list_from_args(args.ignored_task_id)
         user_id_list = annofabcli.common.cli.get_list_from_args(args.user_id)
 
+        if args.work_dir is not None:
+            work_dir = args.work_dir
+        else:
+            work_dir = annofabcli.utils.get_cache_dir()
+
         self.visualize_statistics(
             args.project_id,
             output_dir=Path(args.output_dir),
-            work_dir=Path(args.work_dir),
+            work_dir=Path(work_dir),
             task_query=task_query,
             ignored_task_id_list=ignored_task_id_list,
             user_id_list=user_id_list,
@@ -222,7 +227,7 @@ def parse_args(parser: argparse.ArgumentParser):
     )
 
     parser.add_argument(
-        "--work_dir", type=str, default=".annofab-cli", help="作業ディレクトリのパス。指定しない場合カレントの'.annofab-cli'ディレクトリに保存する",
+        "--work_dir", type=str, help="作業ディレクトリのパス。指定しない場合はannofabcliのキャッシュディレクトリ（'$HOME/.cache/annofabcli'）に保存します。",
     )
 
     parser.set_defaults(subcommand_func=main)
