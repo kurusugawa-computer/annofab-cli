@@ -1,4 +1,3 @@
-# pylint: disable=too-many-lines
 import logging
 from dataclasses import dataclass
 from pathlib import Path
@@ -143,35 +142,125 @@ class Graph:
         )
         return hist
 
-    def write_histogram_for_worktime_by_user(self, df: pd.DataFrame) -> None:
+    def write_histogram_for_annotation_worktime_by_user(self, df: pd.DataFrame) -> None:
+        """
+        教師付者ごとに教師付時間のヒストグラムを出力する。
+
+        Args:
+            df: タスク一覧のDataFrame
+
+        """
         if len(df) == 0:
             logger.info("タスク一覧が0件のため出力しません。")
             return
 
-        renderer = hv.renderer("bokeh")
-
-        output_file = f"{self.outdir}/html/{self.short_project_id}-ヒストグラム-教師付者ごとの教師付時間"
-        logger.debug(f"{output_file}.html を出力します。")
-
-        histograms = []
+        output_file_worktime = f"{self.outdir}/html/{self.short_project_id}-ヒストグラム-1回目の教師付者ごと-教師付時間"
+        logger.debug(f"{output_file_worktime}.html を出力します。")
+        output_file_first_worktime = f"{self.outdir}/html/{self.short_project_id}-ヒストグラム-1回目の教師付者ごと-1回目の教師付時間"
+        logger.debug(f"{output_file_first_worktime}.html を出力します。")
 
         first_annotation_user_id_list = df["first_annotation_user_id"].dropna().unique().tolist()
         if len(first_annotation_user_id_list) == 0:
             logger.info("教師付したタスクが1つもないので、出力しません。")
             return
 
+        histograms_worktime = []
+        histograms_first_worktime = []
         for user_id in first_annotation_user_id_list:
+
+            def create_histogram(column: str, x_axis_label: str) -> hv.Histogram:
+                histogram_name = HistogramName(column=column, x_axis_label=x_axis_label, title=f"{username}({user_id})")
+                hist = self._create_histogram(filtered_df, histogram_name=histogram_name)
+                return hist
+
             filtered_df = df[df["first_annotation_user_id"] == user_id]
             username = filtered_df.iloc[0]["first_annotation_username"]
 
-            histogram_name = HistogramName(
-                column="annotation_worktime_hour", x_axis_label=f"教師付時間[hour]", title=f"{username}({user_id})"
-            )
-            hist = self._create_histogram(filtered_df, histogram_name=histogram_name)
-            histograms.append(hist)
+            histograms_worktime.append(create_histogram("annotation_worktime_hour", "教師付時間[hour]"))
+            histograms_first_worktime.append(create_histogram("first_annotation_worktime_hour", "1回目の教師付時間[hour]"))
 
-        layout = hv.Layout(histograms).options(shared_axes=False).cols(3)
-        renderer.save(layout, output_file)
+        hv.renderer("bokeh").save(hv.Layout(histograms_worktime).options().cols(3), output_file_worktime)
+        hv.renderer("bokeh").save(hv.Layout(histograms_first_worktime).options().cols(3), output_file_first_worktime)
+
+    def write_histogram_for_inspection_worktime_by_user(self, df: pd.DataFrame) -> None:
+        """
+        検査者ごとに検査時間のヒストグラムを出力する。
+
+        Args:
+            df: タスク一覧のDataFrame
+
+        """
+        if len(df) == 0:
+            logger.info("タスク一覧が0件のため出力しません。")
+            return
+
+        output_file_worktime = f"{self.outdir}/html/{self.short_project_id}-ヒストグラム-1回目の検査者ごと-検査時間"
+        logger.debug(f"{output_file_worktime}.html を出力します。")
+        output_file_first_worktime = f"{self.outdir}/html/{self.short_project_id}-ヒストグラム-1回目の検査者ごと-1回目の検査時間"
+        logger.debug(f"{output_file_first_worktime}.html を出力します。")
+
+        first_inspection_user_id_list = df["first_inspection_user_id"].dropna().unique().tolist()
+        if len(first_inspection_user_id_list) == 0:
+            logger.info("検査したタスクが1つもないので、出力しません。")
+            return
+
+        histograms_worktime = []
+        histograms_first_worktime = []
+        for user_id in first_inspection_user_id_list:
+
+            def create_histogram(column: str, x_axis_label: str) -> hv.Histogram:
+                histogram_name = HistogramName(column=column, x_axis_label=x_axis_label, title=f"{username}({user_id})")
+                hist = self._create_histogram(filtered_df, histogram_name=histogram_name)
+                return hist
+
+            filtered_df = df[df["first_inspection_user_id"] == user_id]
+            username = filtered_df.iloc[0]["first_inspection_username"]
+
+            histograms_worktime.append(create_histogram("inspection_worktime_hour", "検査時間[hour]"))
+            histograms_first_worktime.append(create_histogram("first_inspection_worktime_hour", "1回目の検査時間[hour]"))
+
+        hv.renderer("bokeh").save(hv.Layout(histograms_worktime).options().cols(3), output_file_worktime)
+        hv.renderer("bokeh").save(hv.Layout(histograms_first_worktime).options().cols(3), output_file_first_worktime)
+
+    def write_histogram_for_acceptance_worktime_by_user(self, df: pd.DataFrame) -> None:
+        """
+        受入者ごとに受入時間のヒストグラムを出力する。
+
+        Args:
+            df: タスク一覧のDataFrame
+
+        """
+        if len(df) == 0:
+            logger.info("タスク一覧が0件のため出力しません。")
+            return
+
+        output_file_worktime = f"{self.outdir}/html/{self.short_project_id}-ヒストグラム-1回目の受入者ごと-受入時間"
+        logger.debug(f"{output_file_worktime}.html を出力します。")
+        output_file_first_worktime = f"{self.outdir}/html/{self.short_project_id}-ヒストグラム-1回目の受入者ごと-1回目の受入時間"
+        logger.debug(f"{output_file_first_worktime}.html を出力します。")
+
+        first_acceptance_user_id_list = df["first_acceptance_user_id"].dropna().unique().tolist()
+        if len(first_acceptance_user_id_list) == 0:
+            logger.info("受入したタスクが1つもないので、出力しません。")
+            return
+
+        histograms_worktime = []
+        histograms_first_worktime = []
+        for user_id in first_acceptance_user_id_list:
+
+            def create_histogram(column: str, x_axis_label: str) -> hv.Histogram:
+                histogram_name = HistogramName(column=column, x_axis_label=x_axis_label, title=f"{username}({user_id})")
+                hist = self._create_histogram(filtered_df, histogram_name=histogram_name)
+                return hist
+
+            filtered_df = df[df["first_acceptance_user_id"] == user_id]
+            username = filtered_df.iloc[0]["first_acceptance_username"]
+
+            histograms_worktime.append(create_histogram("acceptance_worktime_hour", "受入時間[hour]"))
+            histograms_first_worktime.append(create_histogram("first_acceptance_worktime_hour", "1回目の受入時間[hour]"))
+
+        hv.renderer("bokeh").save(hv.Layout(histograms_worktime).options().cols(3), output_file_worktime)
+        hv.renderer("bokeh").save(hv.Layout(histograms_first_worktime).options().cols(3), output_file_first_worktime)
 
     def write_histogram_for_worktime(self, df: pd.DataFrame):
         """
