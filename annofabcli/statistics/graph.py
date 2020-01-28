@@ -143,6 +143,36 @@ class Graph:
         )
         return hist
 
+    def write_histogram_for_worktime_by_user(self, df: pd.DataFrame) -> None:
+        if len(df) == 0:
+            logger.info("タスク一覧が0件のため出力しません。")
+            return
+
+        renderer = hv.renderer("bokeh")
+
+        output_file = f"{self.outdir}/html/{self.short_project_id}-ヒストグラム-教師付者ごとの教師付時間"
+        logger.debug(f"{output_file}.html を出力します。")
+
+        histograms = []
+
+        first_annotation_user_id_list = df["first_annotation_user_id"].dropna().unique().tolist()
+        if len(first_annotation_user_id_list) == 0:
+            logger.info("教師付したタスクが1つもないので、出力しません。")
+            return
+
+        for user_id in first_annotation_user_id_list:
+            filtered_df = df[df["first_annotation_user_id"] == user_id]
+            username = filtered_df.iloc[0]["first_annotation_username"]
+
+            histogram_name = HistogramName(
+                column="annotation_worktime_hour", x_axis_label=f"教師付時間[hour]", title=f"{username}({user_id})"
+            )
+            hist = self._create_histogram(filtered_df, histogram_name=histogram_name)
+            histograms.append(hist)
+
+        layout = hv.Layout(histograms).options(shared_axes=False).cols(3)
+        renderer.save(layout, output_file)
+
     def write_histogram_for_worktime(self, df: pd.DataFrame):
         """
         作業時間に関する情報をヒストグラムとして表示する。

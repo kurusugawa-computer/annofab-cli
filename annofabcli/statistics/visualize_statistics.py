@@ -135,7 +135,9 @@ class VisualizeStatistics(AbstractCommandLineInterface):
         # グラフ(HTML)出力
         catch_exception(graph_obj.write_histogram_for_annotation_count_by_label)(annotation_df)
         catch_exception(graph_obj.write_histogram_for_worktime)(task_df)
+        catch_exception(graph_obj.write_histogram_for_worktime_by_user)(task_df)
         catch_exception(graph_obj.write_histogram_for_other)(task_df)
+
         catch_exception(graph_obj.write_cumulative_line_graph_for_annotator)(
             df=task_cumulative_df_by_annotator, first_annotation_user_id_list=user_id_list,
         )
