@@ -44,6 +44,9 @@ class Graph:
     #############################################
     my_palette = bokeh.palettes.Category20[20]
 
+    HISTOGRAM_OPTS_FOR_WORKTIME_BY_USER = hv.opts.Histogram(width=500), hv.opts.Layout(shared_axes=True)
+    """ユーザごとの作業時間をヒストグラムにする際のオプション"""
+
     #############################################
     # Private
     #############################################
@@ -136,8 +139,10 @@ class Graph:
 
         frequencies, edges = np.histogram(data, bins)
         hist = (
-            hv.Histogram((edges, frequencies), kdims=histogram_name.x_axis_label, vdims=histogram_name.y_axis_label)
-            .options(width=500, title=title, fontsize={"title": 9})
+            hv.Histogram(
+                (edges, frequencies), kdims=histogram_name.x_axis_label, vdims=histogram_name.y_axis_label, label=title
+            )
+            .options(width=500, title=title, fontsize={"title": 9, "labels": 9})
             .opts(hv.opts(tools=["hover"]))
         )
         return hist
@@ -179,8 +184,13 @@ class Graph:
             histograms_worktime.append(create_histogram("annotation_worktime_hour", "教師付時間[hour]"))
             histograms_first_worktime.append(create_histogram("first_annotation_worktime_hour", "1回目の教師付時間[hour]"))
 
-        hv.renderer("bokeh").save(hv.Layout(histograms_worktime).options().cols(3), output_file_worktime)
-        hv.renderer("bokeh").save(hv.Layout(histograms_first_worktime).options().cols(3), output_file_first_worktime)
+        layout_worktime = hv.Layout(histograms_worktime).cols(3).opts(self.HISTOGRAM_OPTS_FOR_WORKTIME_BY_USER)
+        hv.renderer("bokeh").save(layout_worktime, output_file_worktime)
+
+        layout_first_worktime = (
+            hv.Layout(histograms_first_worktime).cols(3).opts(self.HISTOGRAM_OPTS_FOR_WORKTIME_BY_USER)
+        )
+        hv.renderer("bokeh").save(layout_first_worktime, output_file_first_worktime)
 
     def write_histogram_for_inspection_worktime_by_user(self, df: pd.DataFrame) -> None:
         """
@@ -219,8 +229,13 @@ class Graph:
             histograms_worktime.append(create_histogram("inspection_worktime_hour", "検査時間[hour]"))
             histograms_first_worktime.append(create_histogram("first_inspection_worktime_hour", "1回目の検査時間[hour]"))
 
-        hv.renderer("bokeh").save(hv.Layout(histograms_worktime).options().cols(3), output_file_worktime)
-        hv.renderer("bokeh").save(hv.Layout(histograms_first_worktime).options().cols(3), output_file_first_worktime)
+        layout_worktime = hv.Layout(histograms_worktime).cols(3).opts(self.HISTOGRAM_OPTS_FOR_WORKTIME_BY_USER)
+        hv.renderer("bokeh").save(layout_worktime, output_file_worktime)
+
+        layout_first_worktime = (
+            hv.Layout(histograms_first_worktime).cols(3).opts(self.HISTOGRAM_OPTS_FOR_WORKTIME_BY_USER)
+        )
+        hv.renderer("bokeh").save(layout_first_worktime, output_file_first_worktime)
 
     def write_histogram_for_acceptance_worktime_by_user(self, df: pd.DataFrame) -> None:
         """
@@ -259,8 +274,13 @@ class Graph:
             histograms_worktime.append(create_histogram("acceptance_worktime_hour", "受入時間[hour]"))
             histograms_first_worktime.append(create_histogram("first_acceptance_worktime_hour", "1回目の受入時間[hour]"))
 
-        hv.renderer("bokeh").save(hv.Layout(histograms_worktime).options().cols(3), output_file_worktime)
-        hv.renderer("bokeh").save(hv.Layout(histograms_first_worktime).options().cols(3), output_file_first_worktime)
+        layout_worktime = hv.Layout(histograms_worktime).cols(3).opts(self.HISTOGRAM_OPTS_FOR_WORKTIME_BY_USER)
+        hv.renderer("bokeh").save(layout_worktime, output_file_worktime)
+
+        layout_first_worktime = (
+            hv.Layout(histograms_first_worktime).cols(3).opts(self.HISTOGRAM_OPTS_FOR_WORKTIME_BY_USER)
+        )
+        hv.renderer("bokeh").save(layout_first_worktime, output_file_first_worktime)
 
     def write_histogram_for_worktime(self, df: pd.DataFrame):
         """
