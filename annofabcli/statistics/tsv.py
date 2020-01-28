@@ -188,6 +188,51 @@ class Tsv:
         required_columns = self._create_required_columns(df, prior_columns, dropped_columns)
         self._write_csv(f"{self.short_project_id}-タスク履歴list.csv", df[required_columns])
 
+    def write_worktime_statistics(self, df: pd.DataFrame) -> None:
+        """
+        作業時間に関する集計結果をCSVで出力する。
+
+        Args:
+            df: タスクListのDataFrame
+
+        """
+        columns = [
+            "sum_worktime_hour",
+
+            "annotation_worktime_hour",
+            "inspection_worktime_hour",
+            "acceptance_worktime_hour",
+
+            "first_annotator_worktime_hour",
+            "first_inspector_worktime_hour",
+            "first_acceptor_worktime_hour",
+
+            "first_annotation_worktime_hour",
+            "first_inspection_worktime_hour",
+            "first_acceptance_worktime_hour",
+        ]
+        stat_df = df[columns].describe().T
+        sum_df = stat_df[columns].sum()
+
+        stat_df["sum"] = sum_df.values
+        stat_df["column"] = stat_df.index
+
+        stat_df = stat_df[[
+            "column",
+            "mean",
+            "std",
+            "min",
+            "25%",
+            "50%",
+            "75%",
+            "max",
+            "count",
+            "sum",
+        ]]
+
+        self._write_csv(f"{self.short_project_id}-作業時間の集計.csv", stat_df)
+
+
     def write_task_count(self, df: pd.DataFrame) -> None:
         """
         タスク数の集計結果をCSVで出力する。

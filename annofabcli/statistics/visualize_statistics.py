@@ -113,6 +113,8 @@ class VisualizeStatistics(AbstractCommandLineInterface):
         # CSVを出力
         catch_exception(tsv_obj.write_task_list)(task_df, dropped_columns=["histories_by_phase", "input_data_id_list"])
         catch_exception(tsv_obj.write_task_count)(task_df)
+        catch_exception(tsv_obj.write_worktime_statistics)(task_df)
+
         catch_exception(tsv_obj.write_task_history_list)(task_history_df)
         catch_exception(tsv_obj.write_inspection_list)(
             df=inspection_df, dropped_columns=["data"], only_error_corrected=True
