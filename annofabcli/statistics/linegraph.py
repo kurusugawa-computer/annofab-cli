@@ -989,7 +989,6 @@ class LineGraph:
 
         logger.debug(f"{output_file} を出力します。")
 
-        source = ColumnDataSource(data=df)
         fig = figure(
             plot_width=1200,
             plot_height=600,
@@ -1005,13 +1004,28 @@ class LineGraph:
             dict(x="cumulative_annotation_count", y="cumulative_acceptance_worktime_hour", legend_label="acceptance"),
         ]
 
+        # 列が多すぎるとbokehのグラフが表示されないので絞り込む
+        columns = tooltip_item + [
+            "cumulative_sum_worktime_hour",
+            "cumulative_annotation_count",
+            "cumulative_input_data_count",
+            "cumulative_task_count",
+            "cumulative_annotation_worktime_hour",
+            "cumulative_inspection_worktime_hour",
+            "cumulative_acceptance_worktime_hour",
+            "cumulative_inspection_count",
+            "cumulative_number_of_rejections",
+            "cumulative_number_of_rejections_by_inspection",
+            "cumulative_number_of_rejections_by_acceptance",
+        ]
+        source = ColumnDataSource(data=df[columns])
+
         for index, fig_info in enumerate(fig_info_list):
             color = self.my_palette[index]
 
             self._plot_line_and_circle(
                 fig, x=fig_info["x"], y=fig_info["y"], source=source, username=fig_info["legend_label"], color=color,
             )
-
         hover_tool = self._create_hover_tool(tooltip_item)
         figs = [fig]
         for fig in figs:
