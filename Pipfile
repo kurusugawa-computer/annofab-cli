@@ -19,5 +19,5 @@ black = "*"
 [packages]
 
 [pipenv]
-# For install marshmallow==3.0.0rc6
+# For install black
 allow_prereleases = true

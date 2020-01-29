@@ -188,6 +188,57 @@ class Tsv:
         required_columns = self._create_required_columns(df, prior_columns, dropped_columns)
         self._write_csv(f"{self.short_project_id}-タスク履歴list.csv", df[required_columns])
 
+    def write_worktime_statistics(self, df: pd.DataFrame) -> None:
+        """
+        作業時間に関する集計結果をCSVで出力する。
+
+        Args:
+            df: タスクListのDataFrame
+
+        """
+        columns = [
+            "sum_worktime_hour",
+            "annotation_worktime_hour",
+            "inspection_worktime_hour",
+            "acceptance_worktime_hour",
+            "first_annotator_worktime_hour",
+            "first_inspector_worktime_hour",
+            "first_acceptor_worktime_hour",
+            "first_annotation_worktime_hour",
+            "first_inspection_worktime_hour",
+            "first_acceptance_worktime_hour",
+        ]
+        stat_df = df[columns].describe().T
+        stat_df["sum"] = df[columns].sum().values
+        stat_df["column"] = stat_df.index
+
+        # 自動検査されたタスクを除外
+        ignored_auto_inspection_df = df[~df["inspection_is_skipped"]]
+        columns_inspection = [
+            "inspection_worktime_hour",
+            "first_inspector_worktime_hour",
+            "first_inspection_worktime_hour",
+        ]
+        stat_inspection_df = ignored_auto_inspection_df[columns_inspection].describe().T
+        stat_inspection_df["sum"] = df[columns_inspection].sum().values
+        stat_inspection_df["column"] = stat_inspection_df.index + "_ignored_auto_inspection"
+
+        # 自動受入されたタスクを除外
+        ignore_auto_acceptance_df = df[~df["acceptance_is_skipped"]]
+        columns_acceptance = [
+            "acceptance_worktime_hour",
+            "first_acceptor_worktime_hour",
+            "first_acceptance_worktime_hour",
+        ]
+        stat_acceptance_df = ignore_auto_acceptance_df[columns_acceptance].describe().T
+        stat_acceptance_df["sum"] = df[columns_acceptance].sum().values
+        stat_acceptance_df["column"] = stat_acceptance_df.index + "_ignored_auto_acceptance"
+
+        target_df = pd.concat([stat_df, stat_inspection_df, stat_acceptance_df])
+        target_df = target_df[["column", "mean", "std", "min", "25%", "50%", "75%", "max", "count", "sum"]]
+
+        self._write_csv(f"{self.short_project_id}-作業時間の集計.csv", target_df)
+
     def write_task_count(self, df: pd.DataFrame) -> None:
         """
         タスク数の集計結果をCSVで出力する。
