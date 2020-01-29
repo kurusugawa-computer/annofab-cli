@@ -11,10 +11,10 @@ import annofabcli
 from annofabcli import AnnofabApiFacade
 from annofabcli.common.cli import AbstractCommandLineInterface, ArgumentParser, build_annofabapi_resource_and_login
 from annofabcli.statistics.database import Database
-from annofabcli.statistics.graph import Graph
+from annofabcli.statistics.linegraph import LineGraph
+from annofabcli.statistics.histogram import Histogram
 from annofabcli.statistics.table import AggregationBy, Table
 from annofabcli.statistics.tsv import Tsv
-from annofabcli.statistics.histogram import Histogram
 
 logger = logging.getLogger(__name__)
 
@@ -145,7 +145,7 @@ class VisualizeStatistics(AbstractCommandLineInterface):
         catch_exception(histogram_obj.write_histogram_for_other)(task_df)
 
         # 折れ線グラフを出力
-        graph_obj = Graph(str(output_dir), project_id)
+        graph_obj = LineGraph(str(output_dir), project_id)
         catch_exception(graph_obj.write_cumulative_line_graph_for_annotator)(
             df=task_cumulative_df_by_annotator, first_annotation_user_id_list=user_id_list,
         )

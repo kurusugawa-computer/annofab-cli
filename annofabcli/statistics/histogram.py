@@ -2,17 +2,10 @@
 import logging
 from dataclasses import dataclass
 from pathlib import Path
-from typing import Dict, List, Optional
 
-import bokeh
-import bokeh.layouts
-import bokeh.palettes
-import dateutil
 import holoviews as hv
 import numpy as np
 import pandas as pd
-from bokeh.models import HoverTool
-from bokeh.plotting import ColumnDataSource, figure
 
 logger = logging.getLogger(__name__)
 
@@ -40,12 +33,10 @@ class Histogram:
     ヒストグラムを出力するクラス
     """
 
-
     def __init__(self, outdir: str, project_id: str):
         self.outdir = outdir
         self.short_project_id = project_id[0:8]
         Path(f"{outdir}/histogram").mkdir(exist_ok=True, parents=True)
-
 
     @staticmethod
     def _create_histogram(df: pd.DataFrame, histogram_name: HistogramName, bins: int = 20) -> hv.Histogram:
