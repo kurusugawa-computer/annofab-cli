@@ -772,6 +772,22 @@ class Table:
         return df
 
     @staticmethod
+    def create_cumulative_df_by_user(account_statistics_df: pd.DataFrame) -> pd.DataFrame:
+        """
+        アカウントごとの作業時間に対して、累積作業時間を追加する。
+        Args:
+            account_statistics_df: アカウントごとの作業時間用DataFrame
+
+        Returns:
+
+        """
+        # 教師付の開始時刻でソートして、indexを更新する
+        df = account_statistics_df.sort_values(["account_id", "date"]).reset_index(drop=True)
+        groupby_obj = df.groupby("account_id")
+        df["cumulative_worktime_hour"] = groupby_obj["worktime_hour"].cumsum()
+        return df
+
+    @staticmethod
     def create_cumulative_df_by_first_annotator(task_df: pd.DataFrame) -> pd.DataFrame:
         """
         最初のアノテーション作業の開始時刻の順にソートして、累計値を算出する

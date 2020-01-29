@@ -110,6 +110,9 @@ class VisualizeStatistics(AbstractCommandLineInterface):
         task_cumulative_df_by_inspector = table_obj.create_cumulative_df_by_first_inspector(task_df)
         task_cumulative_df_by_acceptor = table_obj.create_cumulative_df_by_first_acceptor(task_df)
 
+        account_statistics_df = table_obj.create_account_statistics_df()
+        cumulative_account_statistics_df = table_obj.create_cumulative_df_by_user(account_statistics_df)
+
         # CSVを出力
         catch_exception(tsv_obj.write_task_list)(task_df, dropped_columns=["histories_by_phase", "input_data_id_list"])
         catch_exception(tsv_obj.write_task_count)(task_df)
@@ -127,17 +130,20 @@ class VisualizeStatistics(AbstractCommandLineInterface):
         catch_exception(tsv_obj.write_ラベルごとのアノテーション数)(annotation_df)
 
         catch_exception(tsv_obj.write_教師付作業者別日毎の情報)(by_date_df)
-        catch_exception(tsv_obj.write_ユーザ別日毎の作業時間)(table_obj.create_account_statistics_df())
+        catch_exception(tsv_obj.write_ユーザ別日毎の作業時間)(account_statistics_df)
 
         for phase in TaskPhase:
             catch_exception(write_メンバー別作業時間平均_画像1枚あたり)(phase)
 
-        # グラフ(HTML)出力
+        # ヒストグラムを出力
         catch_exception(graph_obj.write_histogram_for_annotation_count_by_label)(annotation_df)
         catch_exception(graph_obj.write_histogram_for_worktime)(task_df)
-        catch_exception(graph_obj.write_histogram_for_worktime_by_user)(task_df)
+        catch_exception(graph_obj.write_histogram_for_annotation_worktime_by_user)(task_df)
+        catch_exception(graph_obj.write_histogram_for_inspection_worktime_by_user)(task_df)
+        catch_exception(graph_obj.write_histogram_for_acceptance_worktime_by_user)(task_df)
         catch_exception(graph_obj.write_histogram_for_other)(task_df)
 
+        # 折れ線グラフを出力
         catch_exception(graph_obj.write_cumulative_line_graph_for_annotator)(
             df=task_cumulative_df_by_annotator, first_annotation_user_id_list=user_id_list,
         )
@@ -152,6 +158,10 @@ class VisualizeStatistics(AbstractCommandLineInterface):
 
         catch_exception(graph_obj.write_productivity_line_graph_for_annotator)(
             df=by_date_df, first_annotation_user_id_list=user_id_list
+        )
+
+        catch_exception(graph_obj.write_cumulative_line_graph_by_date)(
+            df=cumulative_account_statistics_df, user_id_list=user_id_list
         )
 
     def main(self):

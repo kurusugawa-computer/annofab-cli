@@ -1213,3 +1213,84 @@ class Graph:
             ),
         ]
         write_cumulative_graph(fig_info_list_input_data_count, html_title="累計折れ線-横軸_入力データ数-受入者用")
+
+    def write_cumulative_line_graph_by_date(self, df: pd.DataFrame, user_id_list: Optional[List[str]] = None) -> None:
+        """
+        ユーザごとの作業時間を、日単位でプロットする。
+
+        Args:
+            user_id_list: プロットするユーザのuser_id
+
+
+        """
+        tooltip_item = [
+            "user_id",
+            "username",
+            "date",
+            "worktime_hour",
+        ]
+
+        if len(df) == 0:
+            logger.info("データが0件のため出力ません。")
+            return
+
+        html_title = "累積折れ線-横軸_日-縦軸_作業時間"
+        output_file = f"{self.outdir}/html/{self.short_project_id}-{html_title}.html"
+
+        user_id_list = self.create_user_id_list(df, "user_id", user_id_list)
+        if len(user_id_list) == 0:
+            logger.info(f"作業しているユーザがいないため、{html_title} グラフは出力しません。")
+            return
+
+        logger.debug(f"{html_title} グラフに表示するユーザのuser_id = {user_id_list}")
+
+        # 日付変換
+        df["date_date"] = df["date"].map(lambda e: dateutil.parser.parse(e).date())
+
+        fig_info_list = [
+            dict(
+                x="date_date",
+                y="cumulative_worktime_hour",
+                title="累積作業時間",
+                x_axis_label="日",
+                y_axis_label="作業時間[hour]",
+            )
+        ]
+
+        logger.debug(f"{output_file} を出力します。")
+
+        figs: List[bokeh.plotting.Figure] = []
+        for fig_info in fig_info_list:
+            figs.append(
+                figure(
+                    plot_width=1200,
+                    plot_height=600,
+                    title=fig_info["title"],
+                    x_axis_label=fig_info["x_axis_label"],
+                    x_axis_type="datetime",
+                    y_axis_label=fig_info["y_axis_label"],
+                )
+            )
+
+        for user_index, user_id in enumerate(user_id_list):  # type: ignore
+            filtered_df = df[df["user_id"] == user_id]
+            if filtered_df.empty:
+                logger.debug(f"dataframe is empty. user_id = {user_id}")
+                continue
+
+            source = ColumnDataSource(data=filtered_df)
+            color = self.my_palette[user_index]
+            username = filtered_df.iloc[0]["first_annotation_username"]
+
+            for fig, fig_info in zip(figs, fig_info_list):
+                self._plot_line_and_circle(
+                    fig, x=fig_info["x"], y=fig_info["y"], source=source, username=username, color=color,
+                )
+
+        hover_tool = self._create_hover_tool(tooltip_item)
+        for fig in figs:
+            self._set_legend(fig, hover_tool)
+
+        bokeh.plotting.reset_output()
+        bokeh.plotting.output_file(output_file, title=html_title)
+        bokeh.plotting.save(bokeh.layouts.column(figs))

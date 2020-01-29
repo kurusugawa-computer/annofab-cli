@@ -1,7 +1,3 @@
-"""
-アノテーション仕様を出力する
-"""
-
 import argparse
 import logging
 from typing import Any, Dict, List
