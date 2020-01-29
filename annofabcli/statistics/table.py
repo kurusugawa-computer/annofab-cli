@@ -788,9 +788,41 @@ class Table:
         return df
 
     @staticmethod
+    def create_cumulative_df_overall(task_df: pd.DataFrame) -> pd.DataFrame:
+        """
+        1回目の教師付開始日でソートして、累積値を算出する。
+
+        Args:
+            task_df: タスク一覧のDataFrame. 列が追加される
+        """
+        # 教師付の開始時刻でソートして、indexを更新する
+        df = task_df.sort_values(["first_annotation_started_datetime"]).reset_index(drop=True)
+        # タスクの累計数を取得するために設定する
+        df["task_count"] = 1
+
+        # 作業時間の累積値
+        df["cumulative_annotation_worktime_hour"] = df["annotation_worktime_hour"].cumsum()
+        df["cumulative_inspection_worktime_hour"] = df["inspection_worktime_hour"].cumsum()
+        df["cumulative_acceptance_worktime_hour"] = df["acceptance_worktime_hour"].cumsum()
+        df["cumulative_sum_worktime_hour"] = df["sum_worktime_hour"].cumsum()
+
+        # タスク完了数、差し戻し数など
+        df["cumulative_inspection_count"] = df["inspection_count"].cumsum()
+        df["cumulative_annotation_count"] = df["annotation_count"].cumsum()
+        df["cumulative_input_data_count"] = df["input_data_count"].cumsum()
+        df["cumulative_task_count"] = df["task_count"].cumsum()
+        df["cumulative_number_of_rejections"] = df["number_of_rejections"].cumsum()
+        df["cumulative_number_of_rejections_by_inspection"] = df["number_of_rejections_by_inspection"].cumsum()
+        df["cumulative_number_of_rejections_by_acceptance"] = df["number_of_rejections_by_acceptance"].cumsum()
+
+        # 元に戻す
+        df = df.drop(["task_count"], axis=1)
+        return df
+
+    @staticmethod
     def create_cumulative_df_by_first_annotator(task_df: pd.DataFrame) -> pd.DataFrame:
         """
-        最初のアノテーション作業の開始時刻の順にソートして、累計値を算出する
+        最初のアノテーション作業の開始時刻の順にソートして、教師付者に関する累計値を算出する
         Args:
             task_df: タスク一覧のDataFrame. 列が追加される
         """

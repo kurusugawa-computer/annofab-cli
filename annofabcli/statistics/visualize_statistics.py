@@ -146,6 +146,10 @@ class VisualizeStatistics(AbstractCommandLineInterface):
 
         # 折れ線グラフを出力
         graph_obj = LineGraph(str(output_dir), project_id)
+        task_cumulative_df_overall = table_obj.create_cumulative_df_overall(task_df)
+
+        catch_exception(graph_obj.write_cumulative_line_graph_overall)(task_cumulative_df_overall)
+
         catch_exception(graph_obj.write_cumulative_line_graph_for_annotator)(
             df=task_cumulative_df_by_annotator, first_annotation_user_id_list=user_id_list,
         )
