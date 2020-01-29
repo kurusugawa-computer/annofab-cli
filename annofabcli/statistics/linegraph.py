@@ -33,8 +33,9 @@ class LineGraph:
 
     def __init__(self, outdir: str, project_id: str):
         self.outdir = outdir
+        self.line_graph_outdir = f"{outdir}/line-graph"
         self.short_project_id = project_id[0:8]
-        Path(f"{outdir}/html").mkdir(exist_ok=True, parents=True)
+        Path(self.line_graph_outdir).mkdir(exist_ok=True, parents=True)
 
     @staticmethod
     def _create_hover_tool(tool_tip_items: List[str] = None) -> HoverTool:
@@ -151,7 +152,7 @@ class LineGraph:
             Returns:
 
             """
-            output_file = f"{self.outdir}/html/{self.short_project_id}-{html_title}.html"
+            output_file = f"{self.line_graph_outdir}/{self.short_project_id}-{html_title}.html"
             logger.debug(f"{output_file} を出力します。")
 
             figs: List[bokeh.plotting.Figure] = []
@@ -361,7 +362,7 @@ class LineGraph:
             Returns:
 
             """
-            output_file = f"{self.outdir}/html/{self.short_project_id}-{html_title}.html"
+            output_file = f"{self.line_graph_outdir}/{self.short_project_id}-{html_title}.html"
             logger.debug(f"{output_file} を出力します。")
 
             figs: List[bokeh.plotting.Figure] = []
@@ -584,7 +585,7 @@ class LineGraph:
             Returns:
 
             """
-            output_file = f"{self.outdir}/html/{self.short_project_id}-{html_title}.html"
+            output_file = f"{self.line_graph_outdir}/{self.short_project_id}-{html_title}.html"
             logger.debug(f"{output_file} を出力します。")
 
             figs: List[bokeh.plotting.Figure] = []
@@ -742,7 +743,7 @@ class LineGraph:
             Returns:
 
             """
-            output_file = f"{self.outdir}/html/{self.short_project_id}-{html_title}.html"
+            output_file = f"{self.line_graph_outdir}/{self.short_project_id}-{html_title}.html"
             logger.debug(f"{output_file} を出力します。")
 
             figs: List[bokeh.plotting.Figure] = []
@@ -897,7 +898,7 @@ class LineGraph:
             return
 
         html_title = "累積折れ線-横軸_日-縦軸_作業時間"
-        output_file = f"{self.outdir}/html/{self.short_project_id}-{html_title}.html"
+        output_file = f"{self.line_graph_outdir}/{self.short_project_id}-{html_title}.html"
 
         user_id_list = self.create_user_id_list(df, "user_id", user_id_list)
         if len(user_id_list) == 0:

@@ -11,8 +11,8 @@ import annofabcli
 from annofabcli import AnnofabApiFacade
 from annofabcli.common.cli import AbstractCommandLineInterface, ArgumentParser, build_annofabapi_resource_and_login
 from annofabcli.statistics.database import Database
-from annofabcli.statistics.linegraph import LineGraph
 from annofabcli.statistics.histogram import Histogram
+from annofabcli.statistics.linegraph import LineGraph
 from annofabcli.statistics.table import AggregationBy, Table
 from annofabcli.statistics.tsv import Tsv
 
