@@ -1,6 +1,6 @@
 from pathlib import Path
 
-from annofabcli.statistics.graph import LineGraph
+from annofabcli.statistics.linegraph import LineGraph
 
 out_path = Path("./tests/out")
 data_path = Path("./tests/data")
