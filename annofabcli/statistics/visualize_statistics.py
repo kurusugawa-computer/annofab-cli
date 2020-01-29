@@ -14,6 +14,7 @@ from annofabcli.statistics.database import Database
 from annofabcli.statistics.graph import Graph
 from annofabcli.statistics.table import AggregationBy, Table
 from annofabcli.statistics.tsv import Tsv
+from annofabcli.statistics.histogram import Histogram
 
 logger = logging.getLogger(__name__)
 
@@ -96,7 +97,6 @@ class VisualizeStatistics(AbstractCommandLineInterface):
         table_obj = Table(database, task_query, ignored_task_id_list)
         write_project_name_file(self.service, project_id, output_dir)
         tsv_obj = Tsv(str(output_dir), project_id)
-        graph_obj = Graph(str(output_dir), project_id)
 
         task_df = table_obj.create_task_df()
         task_history_df = table_obj.create_task_history_df()
@@ -136,14 +136,16 @@ class VisualizeStatistics(AbstractCommandLineInterface):
             catch_exception(write_メンバー別作業時間平均_画像1枚あたり)(phase)
 
         # ヒストグラムを出力
-        catch_exception(graph_obj.write_histogram_for_annotation_count_by_label)(annotation_df)
-        catch_exception(graph_obj.write_histogram_for_worktime)(task_df)
-        catch_exception(graph_obj.write_histogram_for_annotation_worktime_by_user)(task_df)
-        catch_exception(graph_obj.write_histogram_for_inspection_worktime_by_user)(task_df)
-        catch_exception(graph_obj.write_histogram_for_acceptance_worktime_by_user)(task_df)
-        catch_exception(graph_obj.write_histogram_for_other)(task_df)
+        histogram_obj = Histogram(str(output_dir), project_id)
+        catch_exception(histogram_obj.write_histogram_for_annotation_count_by_label)(annotation_df)
+        catch_exception(histogram_obj.write_histogram_for_worktime)(task_df)
+        catch_exception(histogram_obj.write_histogram_for_annotation_worktime_by_user)(task_df)
+        catch_exception(histogram_obj.write_histogram_for_inspection_worktime_by_user)(task_df)
+        catch_exception(histogram_obj.write_histogram_for_acceptance_worktime_by_user)(task_df)
+        catch_exception(histogram_obj.write_histogram_for_other)(task_df)
 
         # 折れ線グラフを出力
+        graph_obj = Graph(str(output_dir), project_id)
         catch_exception(graph_obj.write_cumulative_line_graph_for_annotator)(
             df=task_cumulative_df_by_annotator, first_annotation_user_id_list=user_id_list,
         )
