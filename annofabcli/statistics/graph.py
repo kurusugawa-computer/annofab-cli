@@ -1,3 +1,4 @@
+# pylint: disable=too-many-lines
 import logging
 from dataclasses import dataclass
 from pathlib import Path
@@ -144,6 +145,26 @@ class Graph:
         )
         return hist
 
+    def _create_histogram_by_user(
+        self, df: pd.DataFrame, column: str, x_axis_label: str, username: str, user_id: str
+    ) -> hv.Histogram:
+        """
+        ユーザごとにヒストグラムを作成する。
+
+        Args:
+            df:
+            column:
+            x_axis_label:
+            username:
+            user_id:
+
+        Returns:
+
+        """
+        histogram_name = HistogramName(column=column, x_axis_label=x_axis_label, title=f"{username}({user_id})")
+        hist = self._create_histogram(df, histogram_name=histogram_name)
+        return hist
+
     def write_histogram_for_annotation_worktime_by_user(self, df: pd.DataFrame) -> None:
         """
         教師付者ごとに教師付時間のヒストグラムを出力する。
@@ -152,6 +173,7 @@ class Graph:
             df: タスク一覧のDataFrame
 
         """
+
         if len(df) == 0:
             logger.info("タスク一覧が0件のため出力しません。")
             return
@@ -170,16 +192,18 @@ class Graph:
         histograms_first_worktime = []
         for user_id in first_annotation_user_id_list:
 
-            def create_histogram(column: str, x_axis_label: str) -> hv.Histogram:
-                histogram_name = HistogramName(column=column, x_axis_label=x_axis_label, title=f"{username}({user_id})")
-                hist = self._create_histogram(filtered_df, histogram_name=histogram_name)
-                return hist
-
             filtered_df = df[df["first_annotation_user_id"] == user_id]
             username = filtered_df.iloc[0]["first_annotation_username"]
-
-            histograms_worktime.append(create_histogram("annotation_worktime_hour", "教師付時間[hour]"))
-            histograms_first_worktime.append(create_histogram("first_annotation_worktime_hour", "1回目の教師付時間[hour]"))
+            histograms_worktime.append(
+                self._create_histogram_by_user(
+                    filtered_df, "annotation_worktime_hour", "教師付時間[hour]", user_id=user_id, username=username
+                )
+            )
+            histograms_first_worktime.append(
+                self._create_histogram_by_user(
+                    filtered_df, "first_annotation_worktime_hour", "1回目の教師付時間[hour]", user_id=user_id, username=username
+                )
+            )
 
         layout_worktime = (
             hv.Layout(histograms_worktime).cols(3).opts(hv.opts.Histogram(width=500), hv.opts.Layout(shared_axes=True))
@@ -218,17 +242,19 @@ class Graph:
         histograms_worktime = []
         histograms_first_worktime = []
         for user_id in first_inspection_user_id_list:
-
-            def create_histogram(column: str, x_axis_label: str) -> hv.Histogram:
-                histogram_name = HistogramName(column=column, x_axis_label=x_axis_label, title=f"{username}({user_id})")
-                hist = self._create_histogram(filtered_df, histogram_name=histogram_name)
-                return hist
-
             filtered_df = df[df["first_inspection_user_id"] == user_id]
             username = filtered_df.iloc[0]["first_inspection_username"]
 
-            histograms_worktime.append(create_histogram("inspection_worktime_hour", "検査時間[hour]"))
-            histograms_first_worktime.append(create_histogram("first_inspection_worktime_hour", "1回目の検査時間[hour]"))
+            histograms_worktime.append(
+                self._create_histogram_by_user(
+                    filtered_df, "inspection_worktime_hour", "検査時間[hour]", user_id=user_id, username=username
+                )
+            )
+            histograms_first_worktime.append(
+                self._create_histogram_by_user(
+                    filtered_df, "first_inspection_worktime_hour", "1回目の検査時間[hour]", user_id=user_id, username=username
+                )
+            )
 
         layout_worktime = (
             hv.Layout(histograms_worktime).cols(3).opts(hv.opts.Histogram(width=500), hv.opts.Layout(shared_axes=True))
@@ -267,17 +293,18 @@ class Graph:
         histograms_worktime = []
         histograms_first_worktime = []
         for user_id in first_acceptance_user_id_list:
-
-            def create_histogram(column: str, x_axis_label: str) -> hv.Histogram:
-                histogram_name = HistogramName(column=column, x_axis_label=x_axis_label, title=f"{username}({user_id})")
-                hist = self._create_histogram(filtered_df, histogram_name=histogram_name)
-                return hist
-
             filtered_df = df[df["first_acceptance_user_id"] == user_id]
             username = filtered_df.iloc[0]["first_acceptance_username"]
-
-            histograms_worktime.append(create_histogram("acceptance_worktime_hour", "受入時間[hour]"))
-            histograms_first_worktime.append(create_histogram("first_acceptance_worktime_hour", "1回目の受入時間[hour]"))
+            histograms_worktime.append(
+                self._create_histogram_by_user(
+                    filtered_df, "acceptance_worktime_hour", "受入時間[hour]", user_id=user_id, username=username
+                )
+            )
+            histograms_first_worktime.append(
+                self._create_histogram_by_user(
+                    filtered_df, "first_acceptance_worktime_hour", "1回目の受入時間[hour]", user_id=user_id, username=username
+                )
+            )
 
         layout_worktime = (
             hv.Layout(histograms_worktime).cols(3).opts(hv.opts.Histogram(width=500), hv.opts.Layout(shared_axes=True))
@@ -1280,7 +1307,7 @@ class Graph:
 
             source = ColumnDataSource(data=filtered_df)
             color = self.my_palette[user_index]
-            username = filtered_df.iloc[0]["first_annotation_username"]
+            username = filtered_df.iloc[0]["username"]
 
             for fig, fig_info in zip(figs, fig_info_list):
                 self._plot_line_and_circle(
