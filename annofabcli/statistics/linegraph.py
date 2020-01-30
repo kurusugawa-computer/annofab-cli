@@ -38,7 +38,7 @@ class LineGraph:
         Path(self.line_graph_outdir).mkdir(exist_ok=True, parents=True)
 
     @staticmethod
-    def _create_hover_tool(tool_tip_items: List[str] = None) -> HoverTool:
+    def _create_hover_tool(tool_tip_items: Optional[List[str]] = None) -> HoverTool:
         """
         HoverTool用のオブジェクトを生成する。
         Returns:
@@ -83,15 +83,13 @@ class LineGraph:
         )
 
     @staticmethod
-    def _set_legend(fig: bokeh.plotting.Figure, hover_tool: HoverTool):
+    def _set_legend(fig: bokeh.plotting.Figure, hover_tool: HoverTool) -> None:
         """
         凡例の設定。
+
         Args:
             fig:
             hover_tool:
-
-        Returns:
-
         """
         fig.add_tools(hover_tool)
         fig.legend.location = "top_left"
