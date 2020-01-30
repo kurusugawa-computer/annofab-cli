@@ -51,6 +51,8 @@ def catch_exception(function: Callable[..., Any]) -> Callable[..., Any]:
 class WriteCsvGraph:
     task_df: Optional[pd.DataFrame] = None
     annotation_df: Optional[pd.DataFrame] = None
+    account_statistics_df: Optional[pd.DataFrame] = None
+    df_by_date_user: Optional[pd.DataFrame] = None
 
     def __init__(self, table_obj: Table, output_dir: Path, project_id: str):
         self.table_obj = table_obj
@@ -66,7 +68,7 @@ class WriteCsvGraph:
     def _get_annotation_df(self):
         if self.annotation_df is None:
             self.annotation_df = self.table_obj.create_task_for_annotation_df()
-        return self.task_df
+        return self.annotation_df
 
     def _get_account_statistics_df(self):
         if self.account_statistics_df is None:
@@ -264,7 +266,7 @@ class VisualizeStatistics(AbstractCommandLineInterface):
         write_obj.write_histogram_for_annotation()
 
         # 折れ線グラフ
-        write_obj.write_linegraph_for_by_user()
+        write_obj.write_linegraph_for_by_user(user_id_list)
         write_obj.write_linegraph_for_task_overall()
 
         write_obj.write_csv_for_task()
