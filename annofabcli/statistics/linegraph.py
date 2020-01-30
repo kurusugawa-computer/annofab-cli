@@ -7,14 +7,12 @@ import bokeh
 import bokeh.layouts
 import bokeh.palettes
 import dateutil
-import holoviews as hv
 import pandas as pd
+from bokeh.core.properties import Color
 from bokeh.models import HoverTool
 from bokeh.plotting import ColumnDataSource, figure
 
 logger = logging.getLogger(__name__)
-
-hv.extension("bokeh")
 
 
 class LineGraph:
@@ -38,7 +36,7 @@ class LineGraph:
         Path(self.line_graph_outdir).mkdir(exist_ok=True, parents=True)
 
     @staticmethod
-    def _create_hover_tool(tool_tip_items: List[str] = None) -> HoverTool:
+    def _create_hover_tool(tool_tip_items: Optional[List[str]] = None) -> HoverTool:
         """
         HoverTool用のオブジェクトを生成する。
         Returns:
@@ -53,45 +51,55 @@ class LineGraph:
         return hover_tool
 
     @staticmethod
-    def _plot_line_and_circle(fig, x, y, source: ColumnDataSource, username: str, color):
+    def _plot_line_and_circle(
+        fig: bokeh.plotting.Figure,
+        source: ColumnDataSource,
+        x_column_name: str,
+        y_column_name: str,
+        legend_label: str,
+        color: Color,
+    ) -> None:
         """
         線を引いて、プロットした部分に丸を付ける。
+
         Args:
             fig:
-            x:
-            y:
             source:
-            username:
-            color:
-
-        Returns:
+            x_column_name: sourceに対応するX軸の列名
+            y_column_name: sourceに対応するY軸の列名
+            legend_label:
+            color: 線と点の色
 
         """
 
         fig.line(
-            x=x,
-            y=y,
+            x=x_column_name,
+            y=y_column_name,
             source=source,
-            legend_label=username,
+            legend_label=legend_label,
             line_color=color,
             line_width=1,
             muted_alpha=0.2,
             muted_color=color,
         )
         fig.circle(
-            x=x, y=y, source=source, legend_label=username, muted_alpha=0.0, muted_color=color, color=color,
+            x=x_column_name,
+            y=y_column_name,
+            source=source,
+            legend_label=legend_label,
+            muted_alpha=0.0,
+            muted_color=color,
+            color=color,
         )
 
     @staticmethod
-    def _set_legend(fig: bokeh.plotting.Figure, hover_tool: HoverTool):
+    def _set_legend(fig: bokeh.plotting.Figure, hover_tool: HoverTool) -> None:
         """
         凡例の設定。
+
         Args:
             fig:
             hover_tool:
-
-        Returns:
-
         """
         fig.add_tools(hover_tool)
         fig.legend.location = "top_left"
@@ -180,7 +188,12 @@ class LineGraph:
 
                 for fig, fig_info in zip(figs, fig_info_list):
                     self._plot_line_and_circle(
-                        fig, x=fig_info["x"], y=fig_info["y"], source=source, username=username, color=color,
+                        fig,
+                        x_column_name=fig_info["x"],
+                        y_column_name=fig_info["y"],
+                        source=source,
+                        legend_label=username,
+                        color=color,
                     )
 
             hover_tool = self._create_hover_tool(tooltip_item)
@@ -383,28 +396,18 @@ class LineGraph:
                     logger.debug(f"dataframe is empty. user_id = {user_id}")
                     continue
 
-                # 列が多すぎるとbokehのグラフが表示されないので絞り込む
-                columns = tooltip_item + [
-                    "cumulative_annotation_count",
-                    "cumulative_input_data_count",
-                    "cumulative_task_count",
-                    "cumulative_annotation_worktime_hour",
-                    "cumulative_inspection_worktime_hour",
-                    "cumulative_acceptance_worktime_hour",
-                    "cumulative_inspection_count",
-                    "cumulative_number_of_rejections",
-                    "cumulative_number_of_rejections_by_inspection",
-                    "cumulative_number_of_rejections_by_acceptance",
-                ]
-
-                filtered_df = filtered_df[columns]
                 source = ColumnDataSource(data=filtered_df)
                 color = self.my_palette[user_index]
                 username = filtered_df.iloc[0]["first_annotation_username"]
 
                 for fig, fig_info in zip(figs, fig_info_list):
                     self._plot_line_and_circle(
-                        fig, x=fig_info["x"], y=fig_info["y"], source=source, username=username, color=color,
+                        fig,
+                        x_column_name=fig_info["x"],
+                        y_column_name=fig_info["y"],
+                        source=source,
+                        legend_label=username,
+                        color=color,
                     )
 
             hover_tool = self._create_hover_tool(tooltip_item)
@@ -606,25 +609,18 @@ class LineGraph:
                     logger.debug(f"dataframe is empty. user_id = {user_id}")
                     continue
 
-                # 列が多すぎるとbokehのグラフが表示されないので絞り込む
-                columns = tooltip_item + [
-                    "cumulative_annotation_count",
-                    "cumulative_input_data_count",
-                    "cumulative_task_count",
-                    "cumulative_first_inspection_worktime_hour",
-                    "cumulative_inspection_worktime_hour",
-                    "cumulative_acceptance_worktime_hour",
-                    "cumulative_inspection_count",
-                ]
-
-                filtered_df = filtered_df[columns]
                 source = ColumnDataSource(data=filtered_df)
                 color = self.my_palette[user_index]
                 username = filtered_df.iloc[0]["first_inspection_username"]
 
                 for fig, fig_info in zip(figs, fig_info_list):
                     self._plot_line_and_circle(
-                        fig, x=fig_info["x"], y=fig_info["y"], source=source, username=username, color=color,
+                        fig,
+                        x_column_name=fig_info["x"],
+                        y_column_name=fig_info["y"],
+                        source=source,
+                        legend_label=username,
+                        color=color,
                     )
 
             hover_tool = self._create_hover_tool(tooltip_item)
@@ -764,24 +760,18 @@ class LineGraph:
                     logger.debug(f"dataframe is empty. user_id = {user_id}")
                     continue
 
-                # 列が多すぎるとbokehのグラフが表示されないので絞り込む
-                columns = tooltip_item + [
-                    "cumulative_annotation_count",
-                    "cumulative_input_data_count",
-                    "cumulative_task_count",
-                    "cumulative_first_acceptance_worktime_hour",
-                    "cumulative_acceptance_worktime_hour",
-                    "cumulative_inspection_count",
-                ]
-
-                filtered_df = filtered_df[columns]
                 source = ColumnDataSource(data=filtered_df)
                 color = self.my_palette[user_index]
                 username = filtered_df.iloc[0]["first_acceptance_username"]
 
                 for fig, fig_info in zip(figs, fig_info_list):
                     self._plot_line_and_circle(
-                        fig, x=fig_info["x"], y=fig_info["y"], source=source, username=username, color=color,
+                        fig,
+                        x_column_name=fig_info["x"],
+                        y_column_name=fig_info["y"],
+                        source=source,
+                        legend_label=username,
+                        color=color,
                     )
 
             hover_tool = self._create_hover_tool(tooltip_item)
@@ -947,10 +937,83 @@ class LineGraph:
 
             for fig, fig_info in zip(figs, fig_info_list):
                 self._plot_line_and_circle(
-                    fig, x=fig_info["x"], y=fig_info["y"], source=source, username=username, color=color,
+                    fig,
+                    x_column_name=fig_info["x"],
+                    y_column_name=fig_info["y"],
+                    source=source,
+                    legend_label=username,
+                    color=color,
                 )
 
         hover_tool = self._create_hover_tool(tooltip_item)
+        for fig in figs:
+            self._set_legend(fig, hover_tool)
+
+        bokeh.plotting.reset_output()
+        bokeh.plotting.output_file(output_file, title=html_title)
+        bokeh.plotting.save(bokeh.layouts.column(figs))
+
+    def write_cumulative_line_graph_overall(self, df: pd.DataFrame) -> None:
+        """
+        プロジェクト全体に対して、累積作業時間の折れ線グラフを出力する。
+
+        Args:
+            df: タスク一覧のDataFrame
+        """
+
+        tooltip_item = [
+            "task_id",
+            "phase",
+            "status",
+            "first_annotation_started_datetime",
+            "updated_datetime",
+            "annotation_worktime_hour",
+            "inspection_worktime_hour",
+            "acceptance_worktime_hour",
+            "sum_worktime_hour",
+            "annotation_count",
+            "input_data_count",
+            "inspection_count",
+        ]
+        if len(df) == 0:
+            logger.info("データが0件のため出力ません。")
+            return
+
+        html_title = "累積折れ線-横軸_アノテーション数-縦軸_作業時間-全体"
+        output_file = f"{self.line_graph_outdir}/{self.short_project_id}-{html_title}.html"
+
+        logger.debug(f"{output_file} を出力します。")
+
+        fig = figure(
+            plot_width=1200,
+            plot_height=600,
+            title="アノテーション数と作業時間の累積グラフ",
+            x_axis_label="アノテーション数",
+            y_axis_label="作業時間[hour]",
+        )
+
+        fig_info_list = [
+            dict(x="cumulative_annotation_count", y="cumulative_sum_worktime_hour", legend_label="sum"),
+            dict(x="cumulative_annotation_count", y="cumulative_annotation_worktime_hour", legend_label="annotation"),
+            dict(x="cumulative_annotation_count", y="cumulative_inspection_worktime_hour", legend_label="inspection"),
+            dict(x="cumulative_annotation_count", y="cumulative_acceptance_worktime_hour", legend_label="acceptance"),
+        ]
+
+        source = ColumnDataSource(data=df)
+
+        for index, fig_info in enumerate(fig_info_list):
+            color = self.my_palette[index]
+
+            self._plot_line_and_circle(
+                fig,
+                x_column_name=fig_info["x"],
+                y_column_name=fig_info["y"],
+                source=source,
+                legend_label=fig_info["legend_label"],
+                color=color,
+            )
+        hover_tool = self._create_hover_tool(tooltip_item)
+        figs = [fig]
         for fig in figs:
             self._set_legend(fig, hover_tool)
 

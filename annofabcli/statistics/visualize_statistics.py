@@ -2,9 +2,10 @@ import argparse
 import json
 import logging.handlers
 from pathlib import Path
-from typing import Any, Callable, Dict, List
+from typing import Any, Callable, Dict, List, Optional
 
 import annofabapi
+import pandas as pd
 from annofabapi.models import ProjectMemberRole, TaskPhase
 
 import annofabcli
@@ -47,6 +48,174 @@ def catch_exception(function: Callable[..., Any]) -> Callable[..., Any]:
     return wrapped
 
 
+class WriteCsvGraph:
+    task_df: Optional[pd.DataFrame] = None
+    annotation_df: Optional[pd.DataFrame] = None
+    account_statistics_df: Optional[pd.DataFrame] = None
+    df_by_date_user: Optional[pd.DataFrame] = None
+
+    def __init__(self, table_obj: Table, output_dir: Path, project_id: str):
+        self.table_obj = table_obj
+        self.tsv_obj = Tsv(str(output_dir), project_id)
+        self.histogram_obj = Histogram(str(output_dir), project_id)
+        self.graph_obj = LineGraph(str(output_dir), project_id)
+
+    def _get_task_df(self):
+        if self.task_df is None:
+            self.task_df = self.table_obj.create_task_df()
+        return self.task_df
+
+    def _get_annotation_df(self):
+        if self.annotation_df is None:
+            self.annotation_df = self.table_obj.create_task_for_annotation_df()
+        return self.annotation_df
+
+    def _get_account_statistics_df(self):
+        if self.account_statistics_df is None:
+            self.account_statistics_df = self.table_obj.create_account_statistics_df()
+        return self.account_statistics_df
+
+    def _get_df_by_date_user(self):
+        if self.df_by_date_user is None:
+            task_df = self._get_task_df()
+            self.df_by_date_user = self.table_obj.create_dataframe_by_date_user(task_df)
+        return self.df_by_date_user
+
+    def write_histogram_for_task(self) -> None:
+        """
+        タスクに関するヒストグラムを出力する。
+
+        """
+        task_df = self._get_task_df()
+        catch_exception(self.histogram_obj.write_histogram_for_worktime)(task_df)
+        catch_exception(self.histogram_obj.write_histogram_for_annotation_worktime_by_user)(task_df)
+        catch_exception(self.histogram_obj.write_histogram_for_inspection_worktime_by_user)(task_df)
+        catch_exception(self.histogram_obj.write_histogram_for_acceptance_worktime_by_user)(task_df)
+        catch_exception(self.histogram_obj.write_histogram_for_other)(task_df)
+
+    def write_histogram_for_annotation(self) -> None:
+        """
+        アノテーションに関するヒストグラムを出力する。
+        """
+        annotation_df = self._get_annotation_df()
+        catch_exception(self.histogram_obj.write_histogram_for_annotation_count_by_label)(annotation_df)
+
+    def write_linegraph_for_task_overall(self) -> None:
+        """
+        タスク関係の折れ線グラフを出力する。
+
+        Args:
+            user_id_list: 折れ線グラフに表示するユーザ
+
+        Returns:
+
+        """
+        task_df = self._get_task_df()
+
+        task_cumulative_df_overall = self.table_obj.create_cumulative_df_overall(task_df)
+        catch_exception(self.graph_obj.write_cumulative_line_graph_overall)(task_cumulative_df_overall)
+
+    def write_linegraph_for_by_user(self, user_id_list: Optional[List[str]] = None) -> None:
+        """
+        折れ線グラフをユーザごとにプロットする。
+
+        Args:
+            user_id_list: 折れ線グラフに表示するユーザ
+
+        Returns:
+
+        """
+        task_df = self._get_task_df()
+
+        task_cumulative_df_by_annotator = self.table_obj.create_cumulative_df_by_first_annotator(task_df)
+        catch_exception(self.graph_obj.write_cumulative_line_graph_for_annotator)(
+            df=task_cumulative_df_by_annotator, first_annotation_user_id_list=user_id_list,
+        )
+
+        task_cumulative_df_by_inspector = self.table_obj.create_cumulative_df_by_first_inspector(task_df)
+        catch_exception(self.graph_obj.write_cumulative_line_graph_for_inspector)(
+            df=task_cumulative_df_by_inspector, first_inspection_user_id_list=user_id_list,
+        )
+
+        task_cumulative_df_by_acceptor = self.table_obj.create_cumulative_df_by_first_acceptor(task_df)
+        catch_exception(self.graph_obj.write_cumulative_line_graph_for_acceptor)(
+            df=task_cumulative_df_by_acceptor, first_acceptance_user_id_list=user_id_list,
+        )
+
+        df_by_date_user = self._get_df_by_date_user()
+        catch_exception(self.graph_obj.write_productivity_line_graph_for_annotator)(
+            df=df_by_date_user, first_annotation_user_id_list=user_id_list
+        )
+
+        account_statistics_df = self._get_account_statistics_df()
+        cumulative_account_statistics_df = self.table_obj.create_cumulative_df_by_user(account_statistics_df)
+        catch_exception(self.graph_obj.write_cumulative_line_graph_by_date)(
+            df=cumulative_account_statistics_df, user_id_list=user_id_list
+        )
+
+    def write_csv_for_task(self) -> None:
+        """
+        タスク関係のCSVを出力する。
+        """
+        task_df = self._get_task_df()
+        catch_exception(self.tsv_obj.write_task_list)(task_df, dropped_columns=["input_data_id_list"])
+        catch_exception(self.tsv_obj.write_task_count)(task_df)
+        catch_exception(self.tsv_obj.write_worktime_statistics)(task_df)
+
+        member_df = self.table_obj.create_member_df(task_df)
+        catch_exception(self.tsv_obj.write_member_list)(member_df)
+
+    def _write_メンバー別作業時間平均_画像1枚あたり_by_phase(self, phase: TaskPhase):
+        df_by_inputs = self.table_obj.create_worktime_per_image_df(AggregationBy.BY_INPUTS, phase)
+        self.tsv_obj.write_メンバー別作業時間平均_画像1枚あたり(df_by_inputs, phase)
+
+        df_by_tasks = self.table_obj.create_worktime_per_image_df(AggregationBy.BY_TASKS, phase)
+        self.tsv_obj.write_メンバー別作業時間平均_タスク1個あたり(df_by_tasks, phase)
+
+    def write_メンバー別作業時間平均_画像1枚あたり_by_phase(self):
+        for phase in TaskPhase:
+            catch_exception(self._write_メンバー別作業時間平均_画像1枚あたり_by_phase)(phase)
+
+    def write_csv_for_inspection(self) -> None:
+        """
+        検査コメント関係の情報をCSVに出力する。
+        """
+        inspection_df = self.table_obj.create_inspection_df()
+        inspection_df_all = self.table_obj.create_inspection_df(only_error_corrected=False)
+
+        catch_exception(self.tsv_obj.write_inspection_list)(
+            df=inspection_df, dropped_columns=["data"], only_error_corrected=True
+        )
+        catch_exception(self.tsv_obj.write_inspection_list)(
+            df=inspection_df_all, dropped_columns=["data"], only_error_corrected=False,
+        )
+
+    def write_csv_for_task_history(self) -> None:
+        """
+        タスク履歴関係の情報をCSVに出力する。
+        """
+        task_history_df = self.table_obj.create_task_history_df()
+        catch_exception(self.tsv_obj.write_task_history_list)(task_history_df)
+
+    def write_csv_for_annotation(self) -> None:
+        """
+        アノテーション関係の情報をCSVに出力する。
+        """
+        annotation_df = self.table_obj.create_task_for_annotation_df()
+        catch_exception(self.tsv_obj.write_ラベルごとのアノテーション数)(annotation_df)
+
+    def write_csv_for_date_user(self) -> None:
+        """
+        ユーザごと、日ごとの情報をCSVに出力する。
+        """
+        df_by_date_user = self._get_df_by_date_user()
+        catch_exception(self.tsv_obj.write_教師付作業者別日毎の情報)(df_by_date_user)
+
+    def write_csv_for_account_statistics(self) -> None:
+        account_statistics_df = self._get_account_statistics_df()
+        catch_exception(self.tsv_obj.write_ユーザ別日毎の作業時間)(account_statistics_df)
+
+
 class VisualizeStatistics(AbstractCommandLineInterface):
     """
     統計情報を可視化する。
@@ -73,13 +242,6 @@ class VisualizeStatistics(AbstractCommandLineInterface):
 
         """
 
-        def write_メンバー別作業時間平均_画像1枚あたり(phase: TaskPhase):
-            df_by_inputs = table_obj.create_worktime_per_image_df(AggregationBy.BY_INPUTS, phase)
-            tsv_obj.write_メンバー別作業時間平均_画像1枚あたり(df_by_inputs, phase)
-
-            df_by_tasks = table_obj.create_worktime_per_image_df(AggregationBy.BY_TASKS, phase)
-            tsv_obj.write_メンバー別作業時間平均_タスク1個あたり(df_by_tasks, phase)
-
         super().validate_project(project_id, project_member_roles=[ProjectMemberRole.OWNER])
 
         checkpoint_dir = work_dir / project_id
@@ -96,75 +258,23 @@ class VisualizeStatistics(AbstractCommandLineInterface):
 
         table_obj = Table(database, task_query, ignored_task_id_list)
         write_project_name_file(self.service, project_id, output_dir)
-        tsv_obj = Tsv(str(output_dir), project_id)
 
-        task_df = table_obj.create_task_df()
-        task_history_df = table_obj.create_task_history_df()
-        inspection_df = table_obj.create_inspection_df()
-        inspection_df_all = table_obj.create_inspection_df(only_error_corrected=False)
+        write_obj = WriteCsvGraph(table_obj, output_dir, project_id)
 
-        member_df = table_obj.create_member_df(task_df)
-        annotation_df = table_obj.create_task_for_annotation_df()
-        by_date_df = table_obj.create_dataframe_by_date(task_df)
-        task_cumulative_df_by_annotator = table_obj.create_cumulative_df_by_first_annotator(task_df)
-        task_cumulative_df_by_inspector = table_obj.create_cumulative_df_by_first_inspector(task_df)
-        task_cumulative_df_by_acceptor = table_obj.create_cumulative_df_by_first_acceptor(task_df)
+        # ヒストグラム
+        write_obj.write_histogram_for_task()
+        write_obj.write_histogram_for_annotation()
 
-        account_statistics_df = table_obj.create_account_statistics_df()
-        cumulative_account_statistics_df = table_obj.create_cumulative_df_by_user(account_statistics_df)
+        # 折れ線グラフ
+        write_obj.write_linegraph_for_by_user(user_id_list)
+        write_obj.write_linegraph_for_task_overall()
 
-        # CSVを出力
-        catch_exception(tsv_obj.write_task_list)(task_df, dropped_columns=["histories_by_phase", "input_data_id_list"])
-        catch_exception(tsv_obj.write_task_count)(task_df)
-        catch_exception(tsv_obj.write_worktime_statistics)(task_df)
-
-        catch_exception(tsv_obj.write_task_history_list)(task_history_df)
-        catch_exception(tsv_obj.write_inspection_list)(
-            df=inspection_df, dropped_columns=["data"], only_error_corrected=True
-        )
-        catch_exception(tsv_obj.write_inspection_list)(
-            df=inspection_df_all, dropped_columns=["data"], only_error_corrected=False,
-        )
-
-        catch_exception(tsv_obj.write_member_list)(member_df)
-        catch_exception(tsv_obj.write_ラベルごとのアノテーション数)(annotation_df)
-
-        catch_exception(tsv_obj.write_教師付作業者別日毎の情報)(by_date_df)
-        catch_exception(tsv_obj.write_ユーザ別日毎の作業時間)(account_statistics_df)
-
-        for phase in TaskPhase:
-            catch_exception(write_メンバー別作業時間平均_画像1枚あたり)(phase)
-
-        # ヒストグラムを出力
-        histogram_obj = Histogram(str(output_dir), project_id)
-        catch_exception(histogram_obj.write_histogram_for_annotation_count_by_label)(annotation_df)
-        catch_exception(histogram_obj.write_histogram_for_worktime)(task_df)
-        catch_exception(histogram_obj.write_histogram_for_annotation_worktime_by_user)(task_df)
-        catch_exception(histogram_obj.write_histogram_for_inspection_worktime_by_user)(task_df)
-        catch_exception(histogram_obj.write_histogram_for_acceptance_worktime_by_user)(task_df)
-        catch_exception(histogram_obj.write_histogram_for_other)(task_df)
-
-        # 折れ線グラフを出力
-        graph_obj = LineGraph(str(output_dir), project_id)
-        catch_exception(graph_obj.write_cumulative_line_graph_for_annotator)(
-            df=task_cumulative_df_by_annotator, first_annotation_user_id_list=user_id_list,
-        )
-
-        catch_exception(graph_obj.write_cumulative_line_graph_for_inspector)(
-            df=task_cumulative_df_by_inspector, first_inspection_user_id_list=user_id_list,
-        )
-
-        catch_exception(graph_obj.write_cumulative_line_graph_for_acceptor)(
-            df=task_cumulative_df_by_acceptor, first_acceptance_user_id_list=user_id_list,
-        )
-
-        catch_exception(graph_obj.write_productivity_line_graph_for_annotator)(
-            df=by_date_df, first_annotation_user_id_list=user_id_list
-        )
-
-        catch_exception(graph_obj.write_cumulative_line_graph_by_date)(
-            df=cumulative_account_statistics_df, user_id_list=user_id_list
-        )
+        write_obj.write_csv_for_task()
+        write_obj.write_csv_for_task_history()
+        write_obj.write_csv_for_annotation()
+        write_obj.write_csv_for_account_statistics()
+        write_obj.write_csv_for_date_user()
+        write_obj.write_csv_for_inspection()
 
     def main(self):
         args = self.args
