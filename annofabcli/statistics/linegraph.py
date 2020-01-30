@@ -979,7 +979,7 @@ class LineGraph:
             logger.info("データが0件のため出力ません。")
             return
 
-        html_title = "累積折れ線-縦軸_作業時間-全体"
+        html_title = "累積折れ線-横軸_アノテーション数-縦軸_作業時間-全体"
         output_file = f"{self.line_graph_outdir}/{self.short_project_id}-{html_title}.html"
 
         logger.debug(f"{output_file} を出力します。")

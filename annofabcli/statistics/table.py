@@ -620,7 +620,7 @@ class Table:
         return df
 
     @staticmethod
-    def create_dataframe_by_date(task_df: pd.DataFrame) -> pd.DataFrame:
+    def create_dataframe_by_date_user(task_df: pd.DataFrame) -> pd.DataFrame:
         """
         日毎、ユーザごとの情報を出力する。
 
@@ -746,7 +746,7 @@ class Table:
 
     def create_account_statistics_df(self):
         """
-        メンバごと、日ごとの作業時間
+        メンバごと、日ごとの作業時間を、統計情報APIから取得する。
         """
 
         account_statistics = self.database.read_account_statistics_from_checkpoint()
