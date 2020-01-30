@@ -581,7 +581,9 @@ class Table:
             set_inspection_info(task)
 
         df = pd.DataFrame(tasks)
-
+        # dictが含まれたDataFrameをbokehでグラフ化するとErrorが発生するので、dictを含む列を削除する
+        # https://github.com/bokeh/bokeh/issues/9620
+        df = df.drop(["histories_by_phase"], axis=1)
         return df
 
     def create_task_for_annotation_df(self):

@@ -381,21 +381,6 @@ class LineGraph:
                     logger.debug(f"dataframe is empty. user_id = {user_id}")
                     continue
 
-                # 列が多すぎるとbokehのグラフが表示されないので絞り込む
-                columns = tooltip_item + [
-                    "cumulative_annotation_count",
-                    "cumulative_input_data_count",
-                    "cumulative_task_count",
-                    "cumulative_annotation_worktime_hour",
-                    "cumulative_inspection_worktime_hour",
-                    "cumulative_acceptance_worktime_hour",
-                    "cumulative_inspection_count",
-                    "cumulative_number_of_rejections",
-                    "cumulative_number_of_rejections_by_inspection",
-                    "cumulative_number_of_rejections_by_acceptance",
-                ]
-
-                filtered_df = filtered_df[columns]
                 source = ColumnDataSource(data=filtered_df)
                 color = self.my_palette[user_index]
                 username = filtered_df.iloc[0]["first_annotation_username"]
@@ -604,18 +589,6 @@ class LineGraph:
                     logger.debug(f"dataframe is empty. user_id = {user_id}")
                     continue
 
-                # 列が多すぎるとbokehのグラフが表示されないので絞り込む
-                columns = tooltip_item + [
-                    "cumulative_annotation_count",
-                    "cumulative_input_data_count",
-                    "cumulative_task_count",
-                    "cumulative_first_inspection_worktime_hour",
-                    "cumulative_inspection_worktime_hour",
-                    "cumulative_acceptance_worktime_hour",
-                    "cumulative_inspection_count",
-                ]
-
-                filtered_df = filtered_df[columns]
                 source = ColumnDataSource(data=filtered_df)
                 color = self.my_palette[user_index]
                 username = filtered_df.iloc[0]["first_inspection_username"]
@@ -762,17 +735,6 @@ class LineGraph:
                     logger.debug(f"dataframe is empty. user_id = {user_id}")
                     continue
 
-                # 列が多すぎるとbokehのグラフが表示されないので絞り込む
-                columns = tooltip_item + [
-                    "cumulative_annotation_count",
-                    "cumulative_input_data_count",
-                    "cumulative_task_count",
-                    "cumulative_first_acceptance_worktime_hour",
-                    "cumulative_acceptance_worktime_hour",
-                    "cumulative_inspection_count",
-                ]
-
-                filtered_df = filtered_df[columns]
                 source = ColumnDataSource(data=filtered_df)
                 color = self.my_palette[user_index]
                 username = filtered_df.iloc[0]["first_acceptance_username"]
@@ -1002,21 +964,7 @@ class LineGraph:
             dict(x="cumulative_annotation_count", y="cumulative_acceptance_worktime_hour", legend_label="acceptance"),
         ]
 
-        # 列が多すぎるとbokehのグラフが表示されないので絞り込む
-        columns = tooltip_item + [
-            "cumulative_sum_worktime_hour",
-            "cumulative_annotation_count",
-            "cumulative_input_data_count",
-            "cumulative_task_count",
-            "cumulative_annotation_worktime_hour",
-            "cumulative_inspection_worktime_hour",
-            "cumulative_acceptance_worktime_hour",
-            "cumulative_inspection_count",
-            "cumulative_number_of_rejections",
-            "cumulative_number_of_rejections_by_inspection",
-            "cumulative_number_of_rejections_by_acceptance",
-        ]
-        source = ColumnDataSource(data=df[columns])
+        source = ColumnDataSource(data=df)
 
         for index, fig_info in enumerate(fig_info_list):
             color = self.my_palette[index]
