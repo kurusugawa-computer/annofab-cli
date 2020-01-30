@@ -113,8 +113,9 @@ class VisualizeStatistics(AbstractCommandLineInterface):
         account_statistics_df = table_obj.create_account_statistics_df()
         cumulative_account_statistics_df = table_obj.create_cumulative_df_by_user(account_statistics_df)
 
-        # CSVを出力
-        catch_exception(tsv_obj.write_task_list)(task_df, dropped_columns=["histories_by_phase", "input_data_id_list"])
+        # # CSVを出力
+        # catch_exception(tsv_obj.write_task_list)(task_df, dropped_columns=["input_data_id_list"])
+        catch_exception(tsv_obj.write_task_list)(task_df)
         catch_exception(tsv_obj.write_task_count)(task_df)
         catch_exception(tsv_obj.write_worktime_statistics)(task_df)
 
@@ -147,7 +148,6 @@ class VisualizeStatistics(AbstractCommandLineInterface):
         # 折れ線グラフを出力
         graph_obj = LineGraph(str(output_dir), project_id)
         task_cumulative_df_overall = table_obj.create_cumulative_df_overall(task_df)
-
         catch_exception(graph_obj.write_cumulative_line_graph_overall)(task_cumulative_df_overall)
 
         catch_exception(graph_obj.write_cumulative_line_graph_for_annotator)(

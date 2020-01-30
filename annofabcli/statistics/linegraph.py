@@ -7,14 +7,12 @@ import bokeh
 import bokeh.layouts
 import bokeh.palettes
 import dateutil
-import holoviews as hv
 import pandas as pd
+from bokeh.core.properties import Color
 from bokeh.models import HoverTool
 from bokeh.plotting import ColumnDataSource, figure
 
 logger = logging.getLogger(__name__)
-
-hv.extension("bokeh")
 
 
 class LineGraph:
@@ -53,33 +51,45 @@ class LineGraph:
         return hover_tool
 
     @staticmethod
-    def _plot_line_and_circle(fig: bokeh.plotting.Figure, x, y, source: ColumnDataSource, username: str, color):
+    def _plot_line_and_circle(
+        fig: bokeh.plotting.Figure,
+        source: ColumnDataSource,
+        x_column_name: str,
+        y_column_name: str,
+        legend_label: str,
+        color: Color,
+    ) -> None:
         """
         線を引いて、プロットした部分に丸を付ける。
+
         Args:
             fig:
-            x:
-            y:
             source:
-            username:
-            color:
-
-        Returns:
+            x_column_name: sourceに対応するX軸の列名
+            y_column_name: sourceに対応するY軸の列名
+            legend_label:
+            color: 線と点の色
 
         """
 
         fig.line(
-            x=x,
-            y=y,
+            x=x_column_name,
+            y=y_column_name,
             source=source,
-            legend_label=username,
+            legend_label=legend_label,
             line_color=color,
             line_width=1,
             muted_alpha=0.2,
             muted_color=color,
         )
         fig.circle(
-            x=x, y=y, source=source, legend_label=username, muted_alpha=0.0, muted_color=color, color=color,
+            x=x_column_name,
+            y=y_column_name,
+            source=source,
+            legend_label=legend_label,
+            muted_alpha=0.0,
+            muted_color=color,
+            color=color,
         )
 
     @staticmethod
@@ -178,7 +188,12 @@ class LineGraph:
 
                 for fig, fig_info in zip(figs, fig_info_list):
                     self._plot_line_and_circle(
-                        fig, x=fig_info["x"], y=fig_info["y"], source=source, username=username, color=color,
+                        fig,
+                        x_column_name=fig_info["x"],
+                        y_column_name=fig_info["y"],
+                        source=source,
+                        legend_label=username,
+                        color=color,
                     )
 
             hover_tool = self._create_hover_tool(tooltip_item)
@@ -387,7 +402,12 @@ class LineGraph:
 
                 for fig, fig_info in zip(figs, fig_info_list):
                     self._plot_line_and_circle(
-                        fig, x=fig_info["x"], y=fig_info["y"], source=source, username=username, color=color,
+                        fig,
+                        x_column_name=fig_info["x"],
+                        y_column_name=fig_info["y"],
+                        source=source,
+                        legend_label=username,
+                        color=color,
                     )
 
             hover_tool = self._create_hover_tool(tooltip_item)
@@ -595,7 +615,12 @@ class LineGraph:
 
                 for fig, fig_info in zip(figs, fig_info_list):
                     self._plot_line_and_circle(
-                        fig, x=fig_info["x"], y=fig_info["y"], source=source, username=username, color=color,
+                        fig,
+                        x_column_name=fig_info["x"],
+                        y_column_name=fig_info["y"],
+                        source=source,
+                        legend_label=username,
+                        color=color,
                     )
 
             hover_tool = self._create_hover_tool(tooltip_item)
@@ -741,7 +766,12 @@ class LineGraph:
 
                 for fig, fig_info in zip(figs, fig_info_list):
                     self._plot_line_and_circle(
-                        fig, x=fig_info["x"], y=fig_info["y"], source=source, username=username, color=color,
+                        fig,
+                        x_column_name=fig_info["x"],
+                        y_column_name=fig_info["y"],
+                        source=source,
+                        legend_label=username,
+                        color=color,
                     )
 
             hover_tool = self._create_hover_tool(tooltip_item)
@@ -907,7 +937,12 @@ class LineGraph:
 
             for fig, fig_info in zip(figs, fig_info_list):
                 self._plot_line_and_circle(
-                    fig, x=fig_info["x"], y=fig_info["y"], source=source, username=username, color=color,
+                    fig,
+                    x_column_name=fig_info["x"],
+                    y_column_name=fig_info["y"],
+                    source=source,
+                    legend_label=username,
+                    color=color,
                 )
 
         hover_tool = self._create_hover_tool(tooltip_item)
@@ -970,7 +1005,12 @@ class LineGraph:
             color = self.my_palette[index]
 
             self._plot_line_and_circle(
-                fig, x=fig_info["x"], y=fig_info["y"], source=source, username=fig_info["legend_label"], color=color,
+                fig,
+                x_column_name=fig_info["x"],
+                y_column_name=fig_info["y"],
+                source=source,
+                legend_label=fig_info["legend_label"],
+                color=color,
             )
         hover_tool = self._create_hover_tool(tooltip_item)
         figs = [fig]
