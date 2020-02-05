@@ -23,7 +23,7 @@ lint:
 	pipenv run pylint ${LINT_FILES} --rcfile setup.cfg
 
 test:
-	pipenv run pytest tests -v --cov=annofabcli --cov-report=html
+	pipenv run pytest -n auto  --cov=annofabcli --cov-report=html tests
 
 publish_test:
 	rm -fr dist/
