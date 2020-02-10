@@ -22,6 +22,7 @@ DEFAULT_WAIT_OPTIONS = WaitOptions(interval=60, max_tries=360)
 
 class DownloadTarget(Enum):
     TASK = "task"
+    INPUT_DATA = "input_data"
     INSPECTION_COMMENT = "inspection_comment"
     TASK_HISTORY_EVENT = "task_history_event"
     SIMPLE_ANNOTATION = "simple_annotation"
@@ -63,6 +64,9 @@ class Download(AbstractCommandLineInterface):
                     return
 
             self.service.wrapper.download_project_tasks_url(project_id, output)
+
+        elif target == DownloadTarget.INPUT_DATA:
+            self.service.wrapper.download_project_inputs_url(project_id, output)
 
         elif target == DownloadTarget.INSPECTION_COMMENT:
             self.service.wrapper.download_project_inspections_url(project_id, output)
@@ -143,6 +147,7 @@ def parse_args(parser: argparse.ArgumentParser):
         "simple_annotation: シンプルアノテーションzip, "
         "full_annotation: フルアノテーションzip, "
         "task: タスクjson, "
+        "input_data: 入力データjson, "
         "inspection_comment: 検査コメントjson, "
         "task_history_event: タスク履歴イベントjson, ",
     )
