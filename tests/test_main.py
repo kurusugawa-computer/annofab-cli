@@ -1,6 +1,3 @@
-"""
-
-"""
 import configparser
 import datetime
 import os
@@ -371,10 +368,6 @@ class TestProject:
     def test_download_project_simple_annotation(self):
         out_file = str(out_path / "simple_annotation.zip")
         main(["project", "download", "simple_annotation", "--project_id", project_id, "--output", out_file])
-
-    def test_download_project_full_annotation(self):
-        out_file = str(out_path / "full_annotation.zip")
-        main(["project", "download", "full_annotation", "--project_id", project_id, "--output", out_file])
 
     def test_list_project(self):
         out_file = str(out_path / "project-list-from-organization.csv")
