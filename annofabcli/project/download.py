@@ -113,6 +113,9 @@ class Download(AbstractCommandLineInterface):
             ]:
                 logger.warning(f"ダウンロード対象が`task`, `simple_annotation`, `full_annotation`以外のときは、`--latest`オプションは無視されます。")
 
+        if download_target == DownloadTarget.FULL_ANNOTATION:
+            logger.warning(f"ダウンロード対象`full_annotation`は非推奨です。いずれ廃止されます。")
+
         return True
 
     def main(self):
@@ -145,7 +148,7 @@ def parse_args(parser: argparse.ArgumentParser):
         choices=target_choices,
         help="ダウンロード対象の項目を指定します。"
         "simple_annotation: シンプルアノテーションzip, "
-        "full_annotation: フルアノテーションzip, "
+        "full_annotation: フルアノテーションzip(非推奨), "
         "task: タスクjson, "
         "input_data: 入力データjson, "
         "inspection_comment: 検査コメントjson, "

@@ -356,6 +356,10 @@ class TestProject:
         out_file = str(out_path / "task.json")
         main(["project", "download", "task", "--project_id", project_id, "--output", out_file])
 
+    def test_download_project_input_data(self):
+        out_file = str(out_path / "input_data.json")
+        main(["project", "download", "input_data", "--project_id", project_id, "--output", out_file])
+
     def test_download_project_inspection_comment(self):
         out_file = str(out_path / "inspection_comment.json")
         main(["project", "download", "inspection_comment", "--project_id", project_id, "--output", out_file])
