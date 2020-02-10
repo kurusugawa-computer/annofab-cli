@@ -195,7 +195,7 @@ def write_annotation_images_from_path(
             (ex) "rgb(173, 216, 230)", "#add8e6", "lightgray", (173,216,230)
             フォーマットは`ImageColor Module <https://hhsprings.bitbucket.io/docs/programming/examples/python/PIL/ImageColor.html>`_  # noqa: E501
             '指定しない場合は、黒（rgb(0,0,0)）になります。'))
-        is_target_parser_func: 画像化するparserかどうかを判定する関数。戻り値がTrueなら、画像化します。指定しない場合は、すべてのparserに対して画像化します。
+        is_target_parser_func: 画像化する条件を関数で指定できます。None場合は、すべてを画像化します。関数の引数は`SimpleAnnotationParser`で、戻り値がbooleanです。戻り値がTrueならば画像化対象です。
 
     Returns:
         True: アノテーション情報の画像化に成功した。False: アノテーション情報の画像化に失敗した。

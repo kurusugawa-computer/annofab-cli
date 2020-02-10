@@ -774,6 +774,7 @@ $ annofabcli project diff  prj1 prj2 --target settings
 プロジェクトに対して、タスクや検査コメント、アノテーションなどをダウンロードします。
 ダウンロード対象は以下の通りです。
 * すべてのタスクが記載されたJSON
+* すべての入力データが記載されたJSON
 * すべての検査コメントが記載されたJSON
 * すべてのタスク履歴イベントが記載されたJSON
 * Simpleアノテーションzip
@@ -783,6 +784,9 @@ $ annofabcli project diff  prj1 prj2 --target settings
 ```
 # タスクの全一覧が記載されたJSONファイルをダウンロードする
 $ annofabcli project download task --project_id prj1 --output task.json
+
+# 入力データのすべてが記載されたJSONファイルをダウンロードする
+$ annofabcli project download input_data --project_id prj1 --output input_data.json
 
 # 検査コメントの全一覧が記載されたJSONファイルをダウンロードする
 $ annofabcli project  download inspection_comment --project_id prj1 --output inspection_comment.json
