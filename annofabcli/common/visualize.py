@@ -143,7 +143,10 @@ class AddProps:
 
         if label_id is not None:
             label = more_itertools.first_true(self.specs_labels, pred=lambda e: e["label_id"] == label_id)
-            return _get_additional_data_name(label["additional_data_definitions"])
+            if label is None:
+                return None
+            else:
+                return _get_additional_data_name(label["additional_data_definitions"])
         else:
             for label in self.specs_labels:
                 additional_data_name = _get_additional_data_name(label["additional_data_definitions"])

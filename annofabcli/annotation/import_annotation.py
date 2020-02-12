@@ -142,44 +142,52 @@ class ImportAnnotation(AbstractCommandLineInterface):
         # TODO 塗りつぶしファイルの登録
         return dest_obj
 
-    def parser_to_request_body(self, project_id: str, parser: SimpleAnnotationParser) -> Dict[str, Any]:
+    def parser_to_request_body(
+        self, project_id: str, parser: SimpleAnnotationParser, old_annotation: Optional[Dict[str, Any]] = None
+    ) -> Dict[str, Any]:
         simple_annotation = parser.parse()
         request_details: List[Dict[str, Any]] = []
         for d in simple_annotation.details:
             request_detail = self._to_annotation_detail(d)
             if request_detail is not None:
                 # Enumをシリアライズするため、一度JSONにしてからDictに変換する
-                request_details.append(json.loads(request_detail.to_json()))
+                request_details.append(json.loads(request_detail.to_json())) # type: ignore
+
+        updated_datetime = old_annotation["updated_datetime"] if old_annotation is not None else None
 
         request_body = {
             "project_id": project_id,
             "task_id": parser.task_id,
             "input_data_id": parser.input_data_id,
             "details": request_details,
+            "updated_datetime": updated_datetime,
         }
 
         return request_body
 
-    def put_annotation_for_input_data(self, project_id: str, parser: SimpleAnnotationParser):
-        request_body = self.parser_to_request_body(project_id, parser)
-        task_id = parser.task_id
-        input_data_id = parser.input_data_id
-        logger.debug(f"task_id={task_id}, input_data_id={input_data_id} に対してアノテーションを登録します。")
-        self.service.api.put_annotation(project_id, task_id, input_data_id, request_body=request_body)
-
-    def put_annotation_for_task(self, project_id: str, task_parser: SimpleAnnotationParserGroupByTask):
+    def put_annotation_for_task(
+        self, project_id: str, task_parser: SimpleAnnotationParserGroupByTask, overwrite: bool = False
+    ):
         for parser in task_parser.parser_list:
+            task_id = parser.task_id
             input_data_id = parser.input_data_id
             input_data = self.service.wrapper.get_input_data_or_none(project_id, input_data_id)
             if input_data is None:
                 logger.warning(f"input_data_id = '{input_data_id}' は存在しません。")
                 continue
 
-            self.put_annotation_for_input_data(project_id, parser)
+            old_annotation, _ = self.service.api.get_editor_annotation(project_id, task_id, input_data_id)
+            if old_annotation is not None and not overwrite:
+                logger.info(f"task_id={task_id}, input_data_id={input_data_id} : すでにアノテーションが存在するため、アノテーションの登録をスキップします。")
+                return
 
-    def execute_task(self, project_id: str, task_parser: SimpleAnnotationParserGroupByTask):
+            logger.info(f"task_id={task_id}, input_data_id={input_data_id} : アノテーションを登録します。")
+            request_body = self.parser_to_request_body(project_id, parser, old_annotation=old_annotation)
+            self.service.api.put_annotation(project_id, task_id, input_data_id, request_body=request_body)
+
+    def execute_task(self, project_id: str, task_parser: SimpleAnnotationParserGroupByTask, overwrite: bool = False):
         task_id = task_parser.task_id
-        logger.info(f"task_id={task_id} に対して処理する")
+        logger.info(f"task_id={task_id} に対して処理します。")
 
         task = self.service.wrapper.get_task_or_none(project_id, task_id)
         if task is None:
@@ -190,7 +198,7 @@ class ImportAnnotation(AbstractCommandLineInterface):
             # タスクを作業中にする
             pass
 
-        self.put_annotation_for_task(project_id, task_parser)
+        self.put_annotation_for_task(project_id, task_parser, overwrite=overwrite)
 
     @staticmethod
     def validate(args: argparse.Namespace) -> bool:
@@ -222,12 +230,12 @@ class ImportAnnotation(AbstractCommandLineInterface):
         if annotation_path.is_file():
             # Simpleアノテーションzipの読み込み
             for task_parser in lazy_parse_simple_annotation_zip_by_task(annotation_path):
-                self.execute_task(project_id, task_parser)
+                self.execute_task(project_id, task_parser, overwrite=args.overwrite)
 
         else:
             # Simpleアノテーションzipを展開したディレクトリの読み込み
             for task_parser in lazy_parse_simple_annotation_dir_by_task(annotation_path):
-                self.execute_task(project_id, task_parser)
+                self.execute_task(project_id, task_parser, overwrite=args.overwrite)
 
 
 def main(args):
@@ -242,6 +250,10 @@ def parse_args(parser: argparse.ArgumentParser):
     argument_parser.add_project_id()
 
     parser.add_argument("--annotation", type=str, required=True, help="Simpleアノテーションのzipファイル or ディレクトリ")
+
+    parser.add_argument(
+        "--overwrite", action="store_true", help="指定した場合、すでに存在するアノテーションを上書きします（入力データ単位）。指定しなければ、アノテーションの登録をスキップします。"
+    )
 
     parser.set_defaults(subcommand_func=main)
 
