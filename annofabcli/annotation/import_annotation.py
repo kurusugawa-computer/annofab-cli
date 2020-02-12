@@ -3,7 +3,6 @@ import sys
 import argparse
 import logging
 import uuid
-from enum import Enum
 from typing import Any, Dict, List, Optional
 
 import zipfile
@@ -13,16 +12,13 @@ from annofabapi.dataclass.annotation import SimpleAnnotationDetail, AnnotationDe
 
 
 import annofabapi
-import more_itertools
-import pandas
-from annofabapi.models import AdditionalDataDefinitionV1, SingleAnnotation, Task, LabelV1, AnnotationDataHoldingType,AdditionalDataDefinitionV1, AdditionalDataDefinitionType
+from annofabapi.models import AdditionalDataDefinitionType, AdditionalDataDefinitionV1, AdditionalDataDefinitionV1, AnnotationDataHoldingType, LabelV1, Task
 
 import annofabcli
 from annofabcli import AnnofabApiFacade
 from annofabcli.common.cli import AbstractCommandLineInterface, ArgumentParser, build_annofabapi_resource_and_login
 from annofabcli.common.visualize import AddProps, MessageLocale
 
-import json
 
 logger = logging.getLogger(__name__)
 
@@ -103,20 +99,12 @@ class ImportAnnotation(AbstractCommandLineInterface):
         return additional_data_list
 
     def _to_annotation_detail(self, obj: SimpleAnnotationDetail) -> Optional[AnnotationDetail]:
-        """
-        annotation_idは新しい値にする。
-
-        Args:
-            obj:
-
-        Returns:
-
-        """
         label_info = self.get_label_info_from_label_name(obj.label)
         additional_data_list: List[AdditionalData] = self._to_additional_data_list(obj.attributes, label_info)
         dest_obj = AnnotationDetail(
             label_id=label_info["label_id"],
             annotation_id=str(uuid.uuid4()),
+            account_id=self.service.api.login_user_id,
             data_holding_type=self._get_data_holding_type_from_data(obj["data"]),
             data=obj["data"],
             additional_data_list=additional_data_list
@@ -125,19 +113,43 @@ class ImportAnnotation(AbstractCommandLineInterface):
         return dest_obj
 
 
-    def parser_to_request_body(self, parser: SimpleAnnotationParser) -> Dict[str, Any]:
+    def parser_to_request_body(self, project_id: str, parser: SimpleAnnotationParser) -> Dict[str, Any]:
+        simple_annotation = parser.parse()
+        request_details: List[AnnotationDetail] = []
+        for d in simple_annotation.details:
+            request_detail = self._to_annotation_detail(d)
+            if request_detail is not None:
+                request_details.append(request_detail)
+
+        request_body = {
+            "project_id": project_id,
+            "task_id": parser.task_id,
+            "input_data_id": parser.input_data_id,
+            "details": request_details
+        }
+
+        return request_body
+
 
 
     def put_annotation_for_input_data(self, project_id: str, parser: SimpleAnnotationParser):
-
+        request_body = self.parser_to_request_body(project_id, parser)
+        task_id=parser.task_id
+        input_data_id=parser.input_data_id
+        logger.debug(f"task_id={task_id}, input_data_id={input_data_id} に対してアノテーションを登録します。")
+        self.service.api.put_annotation(project_id, task_id, input_data_id, request_body=request_body)
 
 
     def put_annotation_for_task(self, project_id: str, task_parser: SimpleAnnotationParserGroupByTask):
         for parser in task_parser.parser_list:
+            self.put_annotation_for_input_data(project_id, parser)
+
+
 
 
     def execute_task(self, project_id: str, task_parser: SimpleAnnotationParserGroupByTask):
         task_id = task_parser.task_id
+        logger.info(f"task_id={task_id} に対して処理する")
 
         task = self.service.wrapper.get_task_or_none(project_id, task_id)
         if task is None:
@@ -148,32 +160,46 @@ class ImportAnnotation(AbstractCommandLineInterface):
             # タスクを作業中にする
             pass
 
+        self.put_annotation_for_task(project_id, task_parser)
+
+
+    @staticmethod
+    def validate(args: argparse.Namespace) -> bool:
+        COMMON_MESSAGE = "annofabcli annotation import: error:"
+        annotation_path = Path(args.annotation)
+        if not annotation_path.exists():
+            print(
+                f"{COMMON_MESSAGE} argument --annotation: ZIPファイルまたはディレクトリが存在しません。'{str(annotation_path)}'", file=sys.stderr,
+            )
+            return False
+
+        elif annotation_path.is_file() and not zipfile.is_zipfile(str(annotation_path)):
+            print(
+                f"{COMMON_MESSAGE} argument --annotation: ZIPファイルまたはディレクトリを指定してください。", file=sys.stderr)
+            return False
+
+        return True
+
+
+
     def main(self):
         args = self.args
         if not self.validate(args):
             return
 
         project_id = args.project_id
-        import_path = Path(getattr(args, "import"))
+        annotation_path = Path(args.annotation)
 
-        if import_path.is_file() and zipfile.is_zipfile(str(import_path)):
+        if annotation_path.is_file():
             # Simpleアノテーションzipの読み込み
-            for parser in lazy_parse_simple_annotation_zip_by_task(import_path):
-                simple_annotation = parser.parse()
-                print(simple_annotation)
-
-        elif import_path.is_dir():
-            # Simpleアノテーションzipを展開したディレクトリの読み込み
-            iter_parser = lazy_parse_simple_annotation_dir(import_path)
-            for parser in iter_parser:
-                simple_annotation = parser.parse()
-                print(simple_annotation)
+            for task_parser in lazy_parse_simple_annotation_zip_by_task(annotation_path):
+                self.execute_task(project_id, task_parser)
 
         else:
-            print(
-                "インポート対象のパスが正しくありません",
-                file=sys.stderr,
-            )
+            # Simpleアノテーションzipを展開したディレクトリの読み込み
+            for task_parser in lazy_parse_simple_annotation_dir_by_task(annotation_path):
+                self.execute_task(project_id, task_parser)
+
 
 def main(args):
     service = build_annofabapi_resource_and_login(args)
@@ -187,7 +213,7 @@ def parse_args(parser: argparse.ArgumentParser):
     argument_parser.add_project_id()
 
     parser.add_argument(
-        "--import",
+        "--annotation",
         type=str,
         required=True,
         help="Simpleアノテーションのzipファイル or ディレクトリ"
