@@ -171,15 +171,24 @@ class ImportAnnotation(AbstractCommandLineInterface):
         for parser in task_parser.parser_list:
             task_id = parser.task_id
             input_data_id = parser.input_data_id
+
+            if len(parser.parse().details) == 0:
+                logger.debug(
+                    f"task_id={task_id}, input_data_id={input_data_id} : インポート元にアノテーションデータがないため、アノテーションの登録をスキップします。"
+                )
+                continue
+
             input_data = self.service.wrapper.get_input_data_or_none(project_id, input_data_id)
             if input_data is None:
-                logger.warning(f"input_data_id = '{input_data_id}' は存在しません。")
+                logger.warning(f"task_id= '{task_id}, input_data_id = '{input_data_id}' は存在しません。")
                 continue
 
             old_annotation, _ = self.service.api.get_editor_annotation(project_id, task_id, input_data_id)
-            if old_annotation is not None and not overwrite:
-                logger.info(f"task_id={task_id}, input_data_id={input_data_id} : すでにアノテーションが存在するため、アノテーションの登録をスキップします。")
-                return
+            if len(old_annotation["details"]) > 0 and not overwrite:
+                logger.debug(
+                    f"task_id={task_id}, input_data_id={input_data_id} : インポート先のタスクに既にアノテーションが存在するため、アノテーションの登録をスキップします。"
+                )
+                continue
 
             logger.info(f"task_id={task_id}, input_data_id={input_data_id} : アノテーションを登録します。")
             request_body = self.parser_to_request_body(project_id, parser, old_annotation=old_annotation)
@@ -187,6 +196,9 @@ class ImportAnnotation(AbstractCommandLineInterface):
 
     def execute_task(self, project_id: str, task_parser: SimpleAnnotationParserGroupByTask, overwrite: bool = False):
         task_id = task_parser.task_id
+        if not self.confirm_processing(f"task_id={task_id} のアノテーションをインポートしますか？"):
+            return
+
         logger.info(f"task_id={task_id} に対して処理します。")
 
         task = self.service.wrapper.get_task_or_none(project_id, task_id)
