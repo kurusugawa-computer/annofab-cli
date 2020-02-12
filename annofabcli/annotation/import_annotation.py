@@ -186,7 +186,8 @@ class ImportAnnotation(AbstractCommandLineInterface):
             old_annotation, _ = self.service.api.get_editor_annotation(project_id, task_id, input_data_id)
             if len(old_annotation["details"]) > 0 and not overwrite:
                 logger.debug(
-                    f"task_id={task_id}, input_data_id={input_data_id} : インポート先のタスクに既にアノテーションが存在するため、アノテーションの登録をスキップします。"
+                    f"task_id={task_id}, input_data_id={input_data_id} : "
+                    f"インポート先のタスクに既にアノテーションが存在するため、アノテーションの登録をスキップします。"
                 )
                 continue
 
