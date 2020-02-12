@@ -1,24 +1,31 @@
-
-import sys
 import argparse
 import logging
+import sys
 import uuid
-from typing import Any, Dict, List, Optional
-
 import zipfile
 from pathlib import Path
-from annofabapi.parser import lazy_parse_simple_annotation_dir_by_task, lazy_parse_simple_annotation_zip_by_task, SimpleAnnotationParserGroupByTask, SimpleAnnotationParser
-from annofabapi.dataclass.annotation import SimpleAnnotationDetail, AnnotationDetail, FullAnnotationData, AdditionalData
-
+from typing import Any, Dict, List, Optional
 
 import annofabapi
-from annofabapi.models import AdditionalDataDefinitionType, AdditionalDataDefinitionV1, AdditionalDataDefinitionV1, AnnotationDataHoldingType, LabelV1, Task
+from annofabapi.dataclass.annotation import AdditionalData, AnnotationDetail, FullAnnotationData, SimpleAnnotationDetail
+from annofabapi.models import (
+    AdditionalDataDefinitionType,
+    AdditionalDataDefinitionV1,
+    AnnotationDataHoldingType,
+    LabelV1,
+    Task,
+)
+from annofabapi.parser import (
+    SimpleAnnotationParser,
+    SimpleAnnotationParserGroupByTask,
+    lazy_parse_simple_annotation_dir_by_task,
+    lazy_parse_simple_annotation_zip_by_task,
+)
 
 import annofabcli
 from annofabcli import AnnofabApiFacade
 from annofabcli.common.cli import AbstractCommandLineInterface, ArgumentParser, build_annofabapi_resource_and_login
 from annofabcli.common.visualize import AddProps, MessageLocale
-
 
 logger = logging.getLogger(__name__)
 
@@ -31,7 +38,6 @@ class ImportAnnotation(AbstractCommandLineInterface):
     def __init__(self, service: annofabapi.Resource, facade: AnnofabApiFacade, args: argparse.Namespace):
         super().__init__(service, facade, args)
         self.visualize = AddProps(self.service, args.project_id)
-
 
     @staticmethod
     def can_execute_put_annotation_directly(task: Task) -> bool:
@@ -54,16 +60,20 @@ class ImportAnnotation(AbstractCommandLineInterface):
             if label_name_en is not None and label_name_en == label_name:
                 return label
 
+        logger.warning(f"アノテーション仕様に label_name={label_name} のラベルが存在しません。")
         return None
 
-    def _get_additional_data_from_attribute_name(self, attribute_name: str,  label_info: LabelV1) -> Optional[AdditionalDataDefinitionV1]:
+    def _get_additional_data_from_attribute_name(
+        self, attribute_name: str, label_info: LabelV1
+    ) -> Optional[AdditionalDataDefinitionV1]:
         for additional_data in label_info["additional_data_definitions"]:
-            additional_data_name_en = self.visualize.get_additional_data_name(additional_data["additional_data_definition_id"], MessageLocale.EN, label_id=label_info["label_id"])
+            additional_data_name_en = self.visualize.get_additional_data_name(
+                additional_data["additional_data_definition_id"], MessageLocale.EN, label_id=label_info["label_id"]
+            )
             if additional_data_name_en is not None and additional_data_name_en == attribute_name:
                 return additional_data
 
         return None
-
 
     @staticmethod
     def _get_data_holding_type_from_data(data: FullAnnotationData) -> AnnotationDataHoldingType:
@@ -80,13 +90,24 @@ class ImportAnnotation(AbstractCommandLineInterface):
                 logger.warning(f"attribute_name={key} が存在しません。")
                 continue
 
-            additional_data = AdditionalData(additional_data_definition_id=specs_additional_data["additional_data_definition_id"])
+            additional_data = AdditionalData(
+                additional_data_definition_id=specs_additional_data["additional_data_definition_id"],
+                flag=None,
+                integer=None,
+                choice=None,
+                comment=None,
+            )
             additional_data_type = AdditionalDataDefinitionType(specs_additional_data["type"])
             if additional_data_type == AdditionalDataDefinitionType.FLAG:
                 additional_data.flag = value
             elif additional_data_type == AdditionalDataDefinitionType.INTEGER:
                 additional_data.integer = value
-            elif additional_data_type in [AdditionalDataDefinitionType.TEXT, AdditionalDataDefinitionType.COMMENT, AdditionalDataDefinitionType.TRACKING, AdditionalDataDefinitionType.LINK]:
+            elif additional_data_type in [
+                AdditionalDataDefinitionType.TEXT,
+                AdditionalDataDefinitionType.COMMENT,
+                AdditionalDataDefinitionType.TRACKING,
+                AdditionalDataDefinitionType.LINK,
+            ]:
                 additional_data.comment = value
             elif additional_data_type in [AdditionalDataDefinitionType.CHOICE, AdditionalDataDefinitionType.SELECT]:
                 additional_data.choice = value
@@ -100,6 +121,9 @@ class ImportAnnotation(AbstractCommandLineInterface):
 
     def _to_annotation_detail(self, obj: SimpleAnnotationDetail) -> Optional[AnnotationDetail]:
         label_info = self.get_label_info_from_label_name(obj.label)
+        if label_info is None:
+            return None
+
         additional_data_list: List[AdditionalData] = self._to_additional_data_list(obj.attributes, label_info)
         dest_obj = AnnotationDetail(
             label_id=label_info["label_id"],
@@ -107,11 +131,14 @@ class ImportAnnotation(AbstractCommandLineInterface):
             account_id=self.service.api.login_user_id,
             data_holding_type=self._get_data_holding_type_from_data(obj["data"]),
             data=obj["data"],
-            additional_data_list=additional_data_list
+            additional_data_list=additional_data_list,
+            is_protected=False,
+            path=None,
+            etag=None,
+            url=None,
         )
         # TODO 塗りつぶしファイルの登録
         return dest_obj
-
 
     def parser_to_request_body(self, project_id: str, parser: SimpleAnnotationParser) -> Dict[str, Any]:
         simple_annotation = parser.parse()
@@ -125,27 +152,21 @@ class ImportAnnotation(AbstractCommandLineInterface):
             "project_id": project_id,
             "task_id": parser.task_id,
             "input_data_id": parser.input_data_id,
-            "details": request_details
+            "details": request_details,
         }
 
         return request_body
 
-
-
     def put_annotation_for_input_data(self, project_id: str, parser: SimpleAnnotationParser):
         request_body = self.parser_to_request_body(project_id, parser)
-        task_id=parser.task_id
-        input_data_id=parser.input_data_id
+        task_id = parser.task_id
+        input_data_id = parser.input_data_id
         logger.debug(f"task_id={task_id}, input_data_id={input_data_id} に対してアノテーションを登録します。")
         self.service.api.put_annotation(project_id, task_id, input_data_id, request_body=request_body)
-
 
     def put_annotation_for_task(self, project_id: str, task_parser: SimpleAnnotationParserGroupByTask):
         for parser in task_parser.parser_list:
             self.put_annotation_for_input_data(project_id, parser)
-
-
-
 
     def execute_task(self, project_id: str, task_parser: SimpleAnnotationParserGroupByTask):
         task_id = task_parser.task_id
@@ -162,25 +183,22 @@ class ImportAnnotation(AbstractCommandLineInterface):
 
         self.put_annotation_for_task(project_id, task_parser)
 
-
     @staticmethod
     def validate(args: argparse.Namespace) -> bool:
         COMMON_MESSAGE = "annofabcli annotation import: error:"
         annotation_path = Path(args.annotation)
         if not annotation_path.exists():
             print(
-                f"{COMMON_MESSAGE} argument --annotation: ZIPファイルまたはディレクトリが存在しません。'{str(annotation_path)}'", file=sys.stderr,
+                f"{COMMON_MESSAGE} argument --annotation: ZIPファイルまたはディレクトリが存在しません。'{str(annotation_path)}'",
+                file=sys.stderr,
             )
             return False
 
         elif annotation_path.is_file() and not zipfile.is_zipfile(str(annotation_path)):
-            print(
-                f"{COMMON_MESSAGE} argument --annotation: ZIPファイルまたはディレクトリを指定してください。", file=sys.stderr)
+            print(f"{COMMON_MESSAGE} argument --annotation: ZIPファイルまたはディレクトリを指定してください。", file=sys.stderr)
             return False
 
         return True
-
-
 
     def main(self):
         args = self.args
@@ -212,12 +230,7 @@ def parse_args(parser: argparse.ArgumentParser):
 
     argument_parser.add_project_id()
 
-    parser.add_argument(
-        "--annotation",
-        type=str,
-        required=True,
-        help="Simpleアノテーションのzipファイル or ディレクトリ"
-    )
+    parser.add_argument("--annotation", type=str, required=True, help="Simpleアノテーションのzipファイル or ディレクトリ")
 
     parser.set_defaults(subcommand_func=main)
 

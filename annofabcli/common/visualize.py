@@ -129,9 +129,14 @@ class AddProps:
 
         return self.get_message(label["label_name"], locale)
 
-    def get_additional_data_name(self, additional_data_definition_id: str, locale: MessageLocale,  label_id: Optional[str] = None) -> Optional[str]:
+    def get_additional_data_name(
+        self, additional_data_definition_id: str, locale: MessageLocale, label_id: Optional[str] = None
+    ) -> Optional[str]:
         def _get_additional_data_name(arg_additional_data_definitions: List[Dict[str, Any]]) -> Optional[str]:
-            additional_data = more_itertools.first_true(arg_additional_data_definitions, pred=lambda e: e["additional_data_definition_id"] == additional_data_definition_id)
+            additional_data = more_itertools.first_true(
+                arg_additional_data_definitions,
+                pred=lambda e: e["additional_data_definition_id"] == additional_data_definition_id,
+            )
             if additional_data is None:
                 return None
             return self.get_message(additional_data["name"], locale)
