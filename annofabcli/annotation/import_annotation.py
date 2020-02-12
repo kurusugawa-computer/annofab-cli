@@ -1,4 +1,5 @@
 import argparse
+import json
 import logging
 import sys
 import uuid
@@ -13,6 +14,7 @@ from annofabapi.models import (
     AdditionalDataDefinitionV1,
     AnnotationDataHoldingType,
     LabelV1,
+    ProjectMemberRole,
     Task,
 )
 from annofabapi.parser import (
@@ -129,8 +131,8 @@ class ImportAnnotation(AbstractCommandLineInterface):
             label_id=label_info["label_id"],
             annotation_id=str(uuid.uuid4()),
             account_id=self.service.api.login_user_id,
-            data_holding_type=self._get_data_holding_type_from_data(obj["data"]),
-            data=obj["data"],
+            data_holding_type=self._get_data_holding_type_from_data(obj.data),
+            data=obj.data,
             additional_data_list=additional_data_list,
             is_protected=False,
             path=None,
@@ -142,11 +144,12 @@ class ImportAnnotation(AbstractCommandLineInterface):
 
     def parser_to_request_body(self, project_id: str, parser: SimpleAnnotationParser) -> Dict[str, Any]:
         simple_annotation = parser.parse()
-        request_details: List[AnnotationDetail] = []
+        request_details: List[Dict[str, Any]] = []
         for d in simple_annotation.details:
             request_detail = self._to_annotation_detail(d)
             if request_detail is not None:
-                request_details.append(request_detail)
+                # Enumをシリアライズするため、一度JSONにしてからDictに変換する
+                request_details.append(json.loads(request_detail.to_json()))
 
         request_body = {
             "project_id": project_id,
@@ -166,6 +169,12 @@ class ImportAnnotation(AbstractCommandLineInterface):
 
     def put_annotation_for_task(self, project_id: str, task_parser: SimpleAnnotationParserGroupByTask):
         for parser in task_parser.parser_list:
+            input_data_id = parser.input_data_id
+            input_data = self.service.wrapper.get_input_data_or_none(project_id, input_data_id)
+            if input_data is None:
+                logger.warning(f"input_data_id = '{input_data_id}' は存在しません。")
+                continue
+
             self.put_annotation_for_input_data(project_id, parser)
 
     def execute_task(self, project_id: str, task_parser: SimpleAnnotationParserGroupByTask):
@@ -207,6 +216,8 @@ class ImportAnnotation(AbstractCommandLineInterface):
 
         project_id = args.project_id
         annotation_path = Path(args.annotation)
+
+        super().validate_project(project_id, [ProjectMemberRole.OWNER])
 
         if annotation_path.is_file():
             # Simpleアノテーションzipの読み込み
