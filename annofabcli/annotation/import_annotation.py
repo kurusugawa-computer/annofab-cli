@@ -151,7 +151,7 @@ class ImportAnnotation(AbstractCommandLineInterface):
             request_detail = self._to_annotation_detail(d)
             if request_detail is not None:
                 # Enumをシリアライズするため、一度JSONにしてからDictに変換する
-                request_details.append(json.loads(request_detail.to_json())) # type: ignore
+                request_details.append(json.loads(request_detail.to_json()))  # type: ignore
 
         updated_datetime = old_annotation["updated_datetime"] if old_annotation is not None else None
 
