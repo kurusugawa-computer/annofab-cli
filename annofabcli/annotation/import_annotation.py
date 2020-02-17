@@ -19,7 +19,7 @@ from annofabapi.models import (
 )
 from annofabapi.parser import (
     SimpleAnnotationParser,
-    SimpleAnnotationParserGroupByTask,
+    SimpleAnnotationParserByTask,
     lazy_parse_simple_annotation_dir_by_task,
     lazy_parse_simple_annotation_zip_by_task,
 )
@@ -166,9 +166,9 @@ class ImportAnnotation(AbstractCommandLineInterface):
         return request_body
 
     def put_annotation_for_task(
-        self, project_id: str, task_parser: SimpleAnnotationParserGroupByTask, overwrite: bool = False
+        self, project_id: str, task_parser: SimpleAnnotationParserByTask, overwrite: bool = False
     ):
-        for parser in task_parser.parser_list:
+        for parser in task_parser.lazy_parse():
             task_id = parser.task_id
             input_data_id = parser.input_data_id
 
@@ -195,7 +195,7 @@ class ImportAnnotation(AbstractCommandLineInterface):
             request_body = self.parser_to_request_body(project_id, parser, old_annotation=old_annotation)
             self.service.api.put_annotation(project_id, task_id, input_data_id, request_body=request_body)
 
-    def execute_task(self, project_id: str, task_parser: SimpleAnnotationParserGroupByTask, overwrite: bool = False):
+    def execute_task(self, project_id: str, task_parser: SimpleAnnotationParserByTask, overwrite: bool = False):
         task_id = task_parser.task_id
         if not self.confirm_processing(f"task_id={task_id} のアノテーションをインポートしますか？"):
             return
@@ -240,15 +240,23 @@ class ImportAnnotation(AbstractCommandLineInterface):
 
         super().validate_project(project_id, [ProjectMemberRole.OWNER])
 
+        task_id_list = annofabcli.common.cli.get_list_from_args(args.task_id)
+
+        # Simpleアノテーションの読み込み
         if annotation_path.is_file():
-            # Simpleアノテーションzipの読み込み
-            for task_parser in lazy_parse_simple_annotation_zip_by_task(annotation_path):
+            iter_task_parser = lazy_parse_simple_annotation_zip_by_task(annotation_path)
+        else:
+            iter_task_parser = lazy_parse_simple_annotation_dir_by_task(annotation_path)
+
+        for task_parser in iter_task_parser:
+            if len(task_id_list) > 0:
+                # コマンドライン引数で --task_idが指定された場合は、対象のタスクのみインポートする
+                if task_parser.task_id in task_id_list:
+                    self.execute_task(project_id, task_parser, overwrite=args.overwrite)
+            else:
+                # コマンドライン引数で --task_idが指定されていない場合はすべてをインポートする
                 self.execute_task(project_id, task_parser, overwrite=args.overwrite)
 
-        else:
-            # Simpleアノテーションzipを展開したディレクトリの読み込み
-            for task_parser in lazy_parse_simple_annotation_dir_by_task(annotation_path):
-                self.execute_task(project_id, task_parser, overwrite=args.overwrite)
 
 
 def main(args):
@@ -263,6 +271,8 @@ def parse_args(parser: argparse.ArgumentParser):
     argument_parser.add_project_id()
 
     parser.add_argument("--annotation", type=str, required=True, help="Simpleアノテーションのzipファイル or ディレクトリ")
+
+    argument_parser.add_task_id(required=False)
 
     parser.add_argument(
         "--overwrite", action="store_true", help="指定した場合、すでに存在するアノテーションを上書きします（入力データ単位）。指定しなければ、アノテーションの登録をスキップします。"
