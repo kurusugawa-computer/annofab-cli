@@ -4,6 +4,7 @@ import os
 from pathlib import Path
 
 import annofabapi
+import pytest
 
 from annofabcli.__main__ import main
 
@@ -170,6 +171,7 @@ class TestInputData:
             ]
         )
 
+    @pytest.mark.submitting_job
     def test_put_input_data_with_zip(self):
         # 注意：ジョブ登録される
         zip_file = str(data_path / "lenna.zip")
@@ -556,6 +558,7 @@ class TestTask:
             ]
         )
 
+    @pytest.mark.submitting_job
     def test_put_task(self):
         csv_file = str(data_path / "put_task.csv")
         main(
