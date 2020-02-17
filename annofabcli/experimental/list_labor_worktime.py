@@ -2,7 +2,7 @@ import argparse
 import datetime
 import logging
 import sys
-from datetime import date
+
 from typing import Any, Dict, List, Optional  # pylint: disable=unused-import
 
 import annofabapi
@@ -20,14 +20,28 @@ logger = logging.getLogger(__name__)
 
 
 class Database:
-    def __init__(self, annofab_service: annofabapi.Resource, project_id: str, organization_id: str):
+    def __init__(
+        self,
+        annofab_service: annofabapi.Resource,
+        project_id: str,
+        organization_id: str,
+        start_date: str,
+        end_date: str,
+    ):
         self.annofab_service = annofab_service
         self.project_id = project_id
         self.organization_id = organization_id
+        self.start_date = start_date
+        self.end_date = end_date
 
     def get_labor_control(self) -> List[Dict[str, Any]]:
         labor_control_df = self.annofab_service.api.get_labor_control(
-            {"organization_id": self.organization_id, "project_id": self.project_id}
+            {
+                "organization_id": self.organization_id,
+                "project_id": self.project_id,
+                "from": self.start_date,
+                "to": self.end_date,
+            }
         )[0]
         return labor_control_df
 
@@ -57,10 +71,10 @@ class Table:
                     "user_name": self._get_username(l["account_id"]),
                     "user_id": self._get_user_id(l["account_id"]),
                     "date": l["date"],
-                    "aw_plans": np.nan
+                    "worktime_planned": np.nan
                     if l["values"]["working_time_by_user"]["plans"] is None
                     else int(l["values"]["working_time_by_user"]["plans"]) / 60000,
-                    "aw_results": np.nan
+                    "worktime_actural": np.nan
                     if l["values"]["working_time_by_user"]["results"] is None
                     else int(l["values"]["working_time_by_user"]["results"]) / 60000,
                 }
@@ -83,7 +97,7 @@ class Table:
                         "user_name": self._get_username(account_id),
                         "user_id": self._get_user_id(account_id),
                         "date": history["date"],
-                        "af_time": annofabcli.utils.isoduration_to_minute(history["worktime"]),
+                        "worktime_monitored": annofabcli.utils.isoduration_to_minute(history["worktime"]),
                     }
                     all_histories.append(new_history)
 
@@ -95,14 +109,16 @@ class Table:
         if len(account_statistics_df) == 0 and len(labor_control_df) == 0:
             df = pd.DataFrame([])
         elif len(account_statistics_df) == 0:
-            labor_control_df["af_time"] = np.nan
+
+            labor_control_df["worktime_monitored"] = np.nan
             df = labor_control_df
         elif len(labor_control_df) == 0:
-            account_statistics_df["aw_plans"] = np.nan
-            account_statistics_df["aw_results"] = np.nan
+            account_statistics_df["worktime_planned"] = np.nan
+            account_statistics_df["worktime_actural"] = np.nan
             df = account_statistics_df
         else:
-            df = pd.merge(account_statistics_df, labor_control_df, on=["user_name", "user_id", "date"])
+            df = pd.merge(account_statistics_df, labor_control_df, on=["user_name", "user_id", "date"], how="outer")
+
         return df
 
     def _get_user_id(self, account_id: Optional[str]) -> Optional[str]:
@@ -142,7 +158,11 @@ def get_organization_id_from_project_id(annofab_service: annofabapi.Resource, pr
     return organization["organization_id"]
 
 
-def refine_df(df: pd.DataFrame, start_date: date, end_date: date, user_id_list: List[str]) -> pd.DataFrame:
+
+def refine_df(
+    df: pd.DataFrame, start_date: datetime.date, end_date: datetime.date, user_id_list: List[str]
+) -> pd.DataFrame:
+
     # 日付で絞り込み
     df["date"] = pd.to_datetime(df["date"]).dt.date
     refine_day_df = df[(df["date"] >= start_date) & (df["date"] <= end_date)].copy()
@@ -164,7 +184,9 @@ class ListLaborWorktime(AbstractCommandLineInterface):
     def _get_project_title_list(self, project_id_list: List[str]) -> List[str]:
         return [self.facade.get_project_title(project_id) for project_id in project_id_list]
 
-    def list_labor_worktime(self, project_id: str):
+
+    def list_labor_worktime(self, project_id: str, start_date: str, end_date: str):
+
         """
         """
 
@@ -172,7 +194,7 @@ class ListLaborWorktime(AbstractCommandLineInterface):
         # プロジェクト or 組織に対して、必要な権限が付与されているかを確認
 
         organization_id = get_organization_id_from_project_id(self.service, project_id)
-        database = Database(self.service, project_id, organization_id)
+        database = Database(self.service, project_id, organization_id, start_date, end_date=end_date)
         # Annofabから取得した情報に関するデータベースを取得するクラス
         table_obj = Table(database=database, facade=self.facade)
         # Databaseから取得した情報を元にPandas DataFrameを生成するクラス
@@ -188,7 +210,10 @@ class ListLaborWorktime(AbstractCommandLineInterface):
         total_df = pd.DataFrame([])
         for i, project_id in enumerate(list(set(args.project_id))):
             logger.debug(f"{i + 1} 件目: project_id = {project_id}")
-            afaw_time_df = self.list_labor_worktime(project_id)
+
+            afaw_time_df = self.list_labor_worktime(
+                project_id, start_date.strftime("%Y-%m-%d"), end_date.strftime("%Y-%m-%d")
+            )
             total_df = pd.concat([total_df, afaw_time_df], sort=True)
         if len(total_df) == 0:
             logger.warning(f"対象プロジェクトの労務管理情報・作業情報が0件のため、出力しません。")
@@ -197,12 +222,14 @@ class ListLaborWorktime(AbstractCommandLineInterface):
         if len(total_df) == 0:
             logger.warning(f"対象期間の労務管理情報・作業情報が0件のため、出力しません。")
             return
-        df = print_time_list_from_work_time_list(total_df)
+
+        df = print_time_list_from_work_time_list(user_id_list, total_df, start_date, end_date)
 
         if args.output is None:
-            df.to_csv(sys.stdout, date_format="%Y-%m-%d", encoding="utf_8_sig")
+            df.to_csv(sys.stdout, date_format="%Y-%m-%d", encoding="utf_8_sig", line_terminator="\r\n")
         else:
-            df.to_csv(args.output, date_format="%Y-%m-%d", encoding="utf_8_sig")
+            df.to_csv(args.output, date_format="%Y-%m-%d", encoding="utf_8_sig", line_terminator="\r\n")
+
             add_id_csv(args.output, self._get_project_title_list(args.project_id))
 
 
