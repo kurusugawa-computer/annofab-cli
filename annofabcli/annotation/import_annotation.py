@@ -8,6 +8,7 @@ from pathlib import Path
 from typing import Any, Dict, List, Optional
 
 import annofabapi
+import requests
 from annofabapi.dataclass.annotation import AdditionalData, AnnotationDetail, FullAnnotationData, SimpleAnnotationDetail
 from annofabapi.models import (
     AdditionalDataDefinitionType,
@@ -16,6 +17,7 @@ from annofabapi.models import (
     LabelV1,
     ProjectMemberRole,
     Task,
+    TaskStatus,
 )
 from annofabapi.parser import (
     SimpleAnnotationParser,
@@ -226,7 +228,27 @@ class ImportAnnotation(AbstractCommandLineInterface):
         self.service.api.put_annotation(project_id, task_id, input_data_id, request_body=request_body)
         return True
 
-    def execute_task(self, project_id: str, task_parser: SimpleAnnotationParserByTask, overwrite: bool = False) -> int:
+    def put_annotation_for_task(
+        self, project_id: str, task_parser: SimpleAnnotationParserByTask, overwrite: bool
+    ) -> int:
+
+        logger.info(f"タスク'{task_parser.task_id}'に対してアノテーションを登録します。")
+
+        success_count = 0
+        for parser in task_parser.lazy_parse():
+            try:
+                if self.put_annotation_for_input_data(project_id, parser, overwrite=overwrite):
+                    success_count += 1
+            except Exception as e:  # pylint: disable=broad-except
+                logger.warning(
+                    f"task_id={parser.task_id}, input_data_id={parser.input_data_id} のアノテーションインポートに失敗しました。: {e}"
+                )
+                logger.exception(e)
+
+        logger.info(f"タスク'{task_parser.task_id}'の入力データ {success_count} 個に対してアノテーションをインポートしました。")
+        return success_count
+
+    def execute_task(self, project_id: str, task_parser: SimpleAnnotationParserByTask, overwrite: bool = False) -> bool:
         """
         1個のタスクに対してアノテーションを登録する。
 
@@ -236,37 +258,53 @@ class ImportAnnotation(AbstractCommandLineInterface):
             overwrite:
 
         Returns:
-            何個の入力データに対してアノテーションをインポートしたか
+            1個以上の入力データのアノテーションを変更したか
 
         """
         task_id = task_parser.task_id
         if not self.confirm_processing(f"task_id={task_id} のアノテーションをインポートしますか？"):
-            return 0
+            return False
 
         logger.info(f"task_id={task_id} に対して処理します。")
 
         task = self.service.wrapper.get_task_or_none(project_id, task_id)
         if task is None:
             logger.warning(f"task_id = '{task_id}' は存在しません。")
-            return 0
+            return False
 
-        if not self.can_execute_put_annotation_directly(task):
-            # タスクを作業中にする
-            pass
-
-        success_count = 0
-        for parser in task_parser.lazy_parse():
+        if self.can_execute_put_annotation_directly(task):
+            account_id = self.service.api.login_user_id
             try:
-                if self.put_annotation_for_input_data(project_id, parser, overwrite=overwrite):
-                    success_count += 1
-            except Exception as e:
-                logger.warning(
-                    f"task_id={parser.task_id}, input_data_id={parser.input_data_id} のアノテーションインポートに失敗しました。: {e}"
-                )
-                logger.exception(e)
+                if task["status"] == TaskStatus.WORKING.value:
+                    logger.info(f"タスク'{task_id}'は作業中のため、インポートをスキップします。")
+                    return False
 
-        logger.info(f"タスク'{task_id}'の入力データ {success_count} 個に対してアノテーションをインポートしました。")
-        return success_count
+                else:
+                    logger.debug(f"タスク'{task_id}'の担当者を '{account_id}' に変更して、作業中にします。")
+                    self.facade.change_operator_of_task(project_id, task_id, account_id)
+                    self.facade.change_to_working_phase(project_id, task_id, account_id)
+
+            except requests.exceptions.HTTPError as e:
+                logger.warning(e)
+                logger.warning(f"タスク'{task_id}'の担当者の変更、または作業中フェーズへの移行に失敗しました。")
+                logger.exception(e)
+                return False
+
+            try:
+                result_count = self.put_annotation_for_task(project_id, task_parser, overwrite)
+                return result_count > 0
+
+            except Exception as e:  # pylint: disable=broad-except
+                logger.warning(e)
+                logger.info(f"タスク'{task_parser.task_id}'へのアノテーション登録に失敗しました。")
+                return False
+
+            finally:
+                self.facade.change_to_break_phase(project_id, task_id, account_id)
+
+        else:
+            result_count = self.put_annotation_for_task(project_id, task_parser, overwrite)
+            return result_count > 0
 
     @staticmethod
     def validate(args: argparse.Namespace) -> bool:
@@ -308,11 +346,11 @@ class ImportAnnotation(AbstractCommandLineInterface):
             if len(task_id_list) > 0:
                 # コマンドライン引数で --task_idが指定された場合は、対象のタスクのみインポートする
                 if task_parser.task_id in task_id_list:
-                    if self.execute_task(project_id, task_parser, overwrite=args.overwrite) > 0:
+                    if self.execute_task(project_id, task_parser, overwrite=args.overwrite):
                         success_count += 1
             else:
                 # コマンドライン引数で --task_idが指定されていない場合はすべてをインポートする
-                if self.execute_task(project_id, task_parser, overwrite=args.overwrite) > 0:
+                if self.execute_task(project_id, task_parser, overwrite=args.overwrite):
                     success_count += 1
 
         logger.info(f"{success_count} 個のタスクに対してアノテーションをインポートしました。")
