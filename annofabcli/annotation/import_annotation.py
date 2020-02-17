@@ -195,7 +195,7 @@ class ImportAnnotation(AbstractCommandLineInterface):
             request_body = self.parser_to_request_body(project_id, parser, old_annotation=old_annotation)
             self.service.api.put_annotation(project_id, task_id, input_data_id, request_body=request_body)
 
-    def execute_task(self, project_id: str, task_parser: SimpleAnnotationParserByTask, overwrite: bool = False):
+    def execute_task(self, project_id: str, task_parser: SimpleAnnotationParserByTask, overwrite: bool = False) -> None:
         task_id = task_parser.task_id
         if not self.confirm_processing(f"task_id={task_id} のアノテーションをインポートしますか？"):
             return
@@ -205,7 +205,7 @@ class ImportAnnotation(AbstractCommandLineInterface):
         task = self.service.wrapper.get_task_or_none(project_id, task_id)
         if task is None:
             logger.warning(f"task_id = '{task_id}' は存在しません。")
-            return False
+            return
 
         if not self.can_execute_put_annotation_directly(task):
             # タスクを作業中にする
