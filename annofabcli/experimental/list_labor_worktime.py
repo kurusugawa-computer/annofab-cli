@@ -223,12 +223,12 @@ class ListLaborWorktime(AbstractCommandLineInterface):
             logger.warning(f"対象期間の労務管理情報・作業情報が0件のため、出力しません。")
             return
 
-        df = print_time_list_from_work_time_list(user_id_list, total_df, start_date, end_date)
+        df = print_time_list_from_work_time_list(total_df)
 
         if args.output is None:
-            df.to_csv(sys.stdout, date_format="%Y-%m-%d", encoding="utf_8_sig", line_terminator="\r\n")
+            df.to_csv(sys.stdout, date_format="%Y-%m-%d", encoding="utf_8_sig", line_terminator="\r\n",float_format='%.2f')
         else:
-            df.to_csv(args.output, date_format="%Y-%m-%d", encoding="utf_8_sig", line_terminator="\r\n")
+            df.to_csv(args.output, date_format="%Y-%m-%d", encoding="utf_8_sig", line_terminator="\r\n",float_format='%.2f')
 
             add_id_csv(args.output, self._get_project_title_list(args.project_id))
 
