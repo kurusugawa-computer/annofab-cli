@@ -84,6 +84,13 @@ class ImportAnnotation(AbstractCommandLineInterface):
         else:
             return AnnotationDataHoldingType.INNER
 
+    @staticmethod
+    def _create_annotation_id(data: FullAnnotationData, label_id: str) -> str:
+        if data["_type"] == "Classification":
+            return label_id
+        else:
+            return str(uuid.uuid4())
+
     def _to_additional_data_list(self, attributes: Dict[str, Any], label_info: LabelV1) -> List[AdditionalData]:
         additional_data_list: List[AdditionalData] = []
         for key, value in attributes.items():
@@ -121,7 +128,20 @@ class ImportAnnotation(AbstractCommandLineInterface):
 
         return additional_data_list
 
-    def _to_annotation_detail(self, detail: SimpleAnnotationDetail) -> Optional[AnnotationDetail]:
+    def _to_annotation_detail_for_request(
+        self, project_id: str, parser: SimpleAnnotationParser, detail: SimpleAnnotationDetail
+    ) -> Optional[AnnotationDetail]:
+        """
+        Request Bodyに渡すDataClassに変換する。塗りつぶし画像があれば、それをS3にアップロードする。
+
+        Args:
+            project_id:
+            parser:
+            detail:
+
+        Returns:
+
+        """
         label_info = self.get_label_info_from_label_name(detail.label)
         if label_info is None:
             return None
@@ -131,29 +151,25 @@ class ImportAnnotation(AbstractCommandLineInterface):
 
         dest_obj = AnnotationDetail(
             label_id=label_info["label_id"],
-            annotation_id=str(uuid.uuid4()),
+            annotation_id=self._create_annotation_id(detail.data, label_info["label_id"]),
             account_id=self.service.api.login_user_id,
             data_holding_type=data_holding_type,
             data=detail.data,
             additional_data_list=additional_data_list,
             is_protected=False,
+            etag=None,
+            url=None,
+            path=None,
         )
 
         if data_holding_type == AnnotationDataHoldingType.OUTER:
-            dest_obj["path"] = detail.data["data_uri"]
-
-        return dest_obj
-
-    def _upload_segmentation_images_if_necessary(self, project_id: str, parser: SimpleAnnotationParser) -> None:
-        simple_annotation = parser.parse()
-        for detail in simple_annotation.details:
-            data_holding_type = self._get_data_holding_type_from_data(detail.data)
-            if data_holding_type != AnnotationDataHoldingType.OUTER:
-                continue
-
             data_uri = detail.data["data_uri"]
             with parser.open_outer_file(data_uri) as f:
-                self.service.wrapper._upload_file_to_s3(project_id, f, content_type="image/png")
+                s3_path = self.service.wrapper._upload_file_to_s3(project_id, f, content_type="image/png")
+                dest_obj.path = s3_path
+                logger.debug(f"{parser.task_id}/{parser.input_data_id}/{data_uri} をS3にアップロードしました。")
+
+        return dest_obj
 
     def parser_to_request_body(
         self, project_id: str, parser: SimpleAnnotationParser, old_annotation: Optional[Dict[str, Any]] = None
@@ -161,7 +177,7 @@ class ImportAnnotation(AbstractCommandLineInterface):
         simple_annotation = parser.parse()
         request_details: List[Dict[str, Any]] = []
         for detail in simple_annotation.details:
-            request_detail = self._to_annotation_detail(detail)
+            request_detail = self._to_annotation_detail_for_request(project_id, parser, detail)
 
             if request_detail is not None:
                 # Enumをシリアライズするため、一度JSONにしてからDictに変換する
@@ -179,7 +195,9 @@ class ImportAnnotation(AbstractCommandLineInterface):
 
         return request_body
 
-    def put_annotation_for_input_data(self, project_id: str, parser: SimpleAnnotationParser, overwrite: bool = False):
+    def put_annotation_for_input_data(
+        self, project_id: str, parser: SimpleAnnotationParser, overwrite: bool = False
+    ) -> bool:
         task_id = parser.task_id
         input_data_id = parser.input_data_id
 
@@ -187,12 +205,12 @@ class ImportAnnotation(AbstractCommandLineInterface):
             logger.debug(
                 f"task_id={task_id}, input_data_id={input_data_id} : インポート元にアノテーションデータがないため、アノテーションの登録をスキップします。"
             )
-            return
+            return False
 
         input_data = self.service.wrapper.get_input_data_or_none(project_id, input_data_id)
         if input_data is None:
             logger.warning(f"task_id= '{task_id}, input_data_id = '{input_data_id}' は存在しません。")
-            return
+            return False
 
         old_annotation, _ = self.service.api.get_editor_annotation(project_id, task_id, input_data_id)
         if len(old_annotation["details"]) > 0 and not overwrite:
@@ -200,37 +218,55 @@ class ImportAnnotation(AbstractCommandLineInterface):
                 f"task_id={task_id}, input_data_id={input_data_id} : "
                 f"インポート先のタスクに既にアノテーションが存在するため、アノテーションの登録をスキップします。"
             )
-            return
+            return False
 
         logger.info(f"task_id={task_id}, input_data_id={input_data_id} : アノテーションを登録します。")
         request_body = self.parser_to_request_body(project_id, parser, old_annotation=old_annotation)
 
-        self._upload_segmentation_images_if_necessary(project_id, parser)
         self.service.api.put_annotation(project_id, task_id, input_data_id, request_body=request_body)
+        return True
 
-    def execute_task(self, project_id: str, task_parser: SimpleAnnotationParserByTask, overwrite: bool = False) -> None:
+    def execute_task(self, project_id: str, task_parser: SimpleAnnotationParserByTask, overwrite: bool = False) -> int:
+        """
+        1個のタスクに対してアノテーションを登録する。
+
+        Args:
+            project_id:
+            task_parser:
+            overwrite:
+
+        Returns:
+            何個の入力データに対してアノテーションをインポートしたか
+
+        """
         task_id = task_parser.task_id
         if not self.confirm_processing(f"task_id={task_id} のアノテーションをインポートしますか？"):
-            return
+            return 0
 
         logger.info(f"task_id={task_id} に対して処理します。")
 
         task = self.service.wrapper.get_task_or_none(project_id, task_id)
         if task is None:
             logger.warning(f"task_id = '{task_id}' は存在しません。")
-            return
+            return 0
 
         if not self.can_execute_put_annotation_directly(task):
             # タスクを作業中にする
             pass
 
+        success_count = 0
         for parser in task_parser.lazy_parse():
             try:
-                self.put_annotation_for_input_data(project_id, parser, overwrite=overwrite)
+                if self.put_annotation_for_input_data(project_id, parser, overwrite=overwrite):
+                    success_count += 1
             except Exception as e:
                 logger.warning(
                     f"task_id={parser.task_id}, input_data_id={parser.input_data_id} のアノテーションインポートに失敗しました。: {e}"
                 )
+                logger.exception(e)
+
+        logger.info(f"タスク'{task_id}'の入力データ {success_count} 個に対してアノテーションをインポートしました。")
+        return success_count
 
     @staticmethod
     def validate(args: argparse.Namespace) -> bool:
@@ -267,14 +303,19 @@ class ImportAnnotation(AbstractCommandLineInterface):
         else:
             iter_task_parser = lazy_parse_simple_annotation_dir_by_task(annotation_path)
 
+        success_count = 0
         for task_parser in iter_task_parser:
             if len(task_id_list) > 0:
                 # コマンドライン引数で --task_idが指定された場合は、対象のタスクのみインポートする
                 if task_parser.task_id in task_id_list:
-                    self.execute_task(project_id, task_parser, overwrite=args.overwrite)
+                    if self.execute_task(project_id, task_parser, overwrite=args.overwrite) > 0:
+                        success_count += 1
             else:
                 # コマンドライン引数で --task_idが指定されていない場合はすべてをインポートする
-                self.execute_task(project_id, task_parser, overwrite=args.overwrite)
+                if self.execute_task(project_id, task_parser, overwrite=args.overwrite) > 0:
+                    success_count += 1
+
+        logger.info(f"{success_count} 個のタスクに対してアノテーションをインポートしました。")
 
 
 def main(args):
