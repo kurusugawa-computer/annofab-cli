@@ -121,34 +121,48 @@ class ImportAnnotation(AbstractCommandLineInterface):
 
         return additional_data_list
 
-    def _to_annotation_detail(self, obj: SimpleAnnotationDetail) -> Optional[AnnotationDetail]:
-        label_info = self.get_label_info_from_label_name(obj.label)
+    def _to_annotation_detail(self, detail: SimpleAnnotationDetail) -> Optional[AnnotationDetail]:
+        label_info = self.get_label_info_from_label_name(detail.label)
         if label_info is None:
             return None
 
-        additional_data_list: List[AdditionalData] = self._to_additional_data_list(obj.attributes, label_info)
+        additional_data_list: List[AdditionalData] = self._to_additional_data_list(detail.attributes, label_info)
+        data_holding_type = self._get_data_holding_type_from_data(detail.data)
+
         dest_obj = AnnotationDetail(
             label_id=label_info["label_id"],
             annotation_id=str(uuid.uuid4()),
             account_id=self.service.api.login_user_id,
-            data_holding_type=self._get_data_holding_type_from_data(obj.data),
-            data=obj.data,
+            data_holding_type=data_holding_type,
+            data=detail.data,
             additional_data_list=additional_data_list,
             is_protected=False,
-            path=None,
-            etag=None,
-            url=None,
         )
-        # TODO 塗りつぶしファイルの登録
+
+        if data_holding_type == AnnotationDataHoldingType.OUTER:
+            dest_obj["path"] = detail.data["data_uri"]
+
         return dest_obj
+
+    def _upload_segmentation_images_if_necessary(self, project_id: str, parser: SimpleAnnotationParser) -> None:
+        simple_annotation = parser.parse()
+        for detail in simple_annotation.details:
+            data_holding_type = self._get_data_holding_type_from_data(detail.data)
+            if data_holding_type != AnnotationDataHoldingType.OUTER:
+                continue
+
+            data_uri = detail.data["data_uri"]
+            with parser.open_outer_file(data_uri) as f:
+                self.service.wrapper._upload_file_to_s3(project_id, f, content_type="image/png")
 
     def parser_to_request_body(
         self, project_id: str, parser: SimpleAnnotationParser, old_annotation: Optional[Dict[str, Any]] = None
     ) -> Dict[str, Any]:
         simple_annotation = parser.parse()
         request_details: List[Dict[str, Any]] = []
-        for d in simple_annotation.details:
-            request_detail = self._to_annotation_detail(d)
+        for detail in simple_annotation.details:
+            request_detail = self._to_annotation_detail(detail)
+
             if request_detail is not None:
                 # Enumをシリアライズするため、一度JSONにしてからDictに変換する
                 request_details.append(json.loads(request_detail.to_json()))  # type: ignore
@@ -165,35 +179,34 @@ class ImportAnnotation(AbstractCommandLineInterface):
 
         return request_body
 
-    def put_annotation_for_task(
-        self, project_id: str, task_parser: SimpleAnnotationParserByTask, overwrite: bool = False
-    ):
-        for parser in task_parser.lazy_parse():
-            task_id = parser.task_id
-            input_data_id = parser.input_data_id
+    def put_annotation_for_input_data(self, project_id: str, parser: SimpleAnnotationParser, overwrite: bool = False):
+        task_id = parser.task_id
+        input_data_id = parser.input_data_id
 
-            if len(parser.parse().details) == 0:
-                logger.debug(
-                    f"task_id={task_id}, input_data_id={input_data_id} : インポート元にアノテーションデータがないため、アノテーションの登録をスキップします。"
-                )
-                continue
+        if len(parser.parse().details) == 0:
+            logger.debug(
+                f"task_id={task_id}, input_data_id={input_data_id} : インポート元にアノテーションデータがないため、アノテーションの登録をスキップします。"
+            )
+            return
 
-            input_data = self.service.wrapper.get_input_data_or_none(project_id, input_data_id)
-            if input_data is None:
-                logger.warning(f"task_id= '{task_id}, input_data_id = '{input_data_id}' は存在しません。")
-                continue
+        input_data = self.service.wrapper.get_input_data_or_none(project_id, input_data_id)
+        if input_data is None:
+            logger.warning(f"task_id= '{task_id}, input_data_id = '{input_data_id}' は存在しません。")
+            return
 
-            old_annotation, _ = self.service.api.get_editor_annotation(project_id, task_id, input_data_id)
-            if len(old_annotation["details"]) > 0 and not overwrite:
-                logger.debug(
-                    f"task_id={task_id}, input_data_id={input_data_id} : "
-                    f"インポート先のタスクに既にアノテーションが存在するため、アノテーションの登録をスキップします。"
-                )
-                continue
+        old_annotation, _ = self.service.api.get_editor_annotation(project_id, task_id, input_data_id)
+        if len(old_annotation["details"]) > 0 and not overwrite:
+            logger.debug(
+                f"task_id={task_id}, input_data_id={input_data_id} : "
+                f"インポート先のタスクに既にアノテーションが存在するため、アノテーションの登録をスキップします。"
+            )
+            return
 
-            logger.info(f"task_id={task_id}, input_data_id={input_data_id} : アノテーションを登録します。")
-            request_body = self.parser_to_request_body(project_id, parser, old_annotation=old_annotation)
-            self.service.api.put_annotation(project_id, task_id, input_data_id, request_body=request_body)
+        logger.info(f"task_id={task_id}, input_data_id={input_data_id} : アノテーションを登録します。")
+        request_body = self.parser_to_request_body(project_id, parser, old_annotation=old_annotation)
+
+        self._upload_segmentation_images_if_necessary(project_id, parser)
+        self.service.api.put_annotation(project_id, task_id, input_data_id, request_body=request_body)
 
     def execute_task(self, project_id: str, task_parser: SimpleAnnotationParserByTask, overwrite: bool = False) -> None:
         task_id = task_parser.task_id
@@ -211,7 +224,13 @@ class ImportAnnotation(AbstractCommandLineInterface):
             # タスクを作業中にする
             pass
 
-        self.put_annotation_for_task(project_id, task_parser, overwrite=overwrite)
+        for parser in task_parser.lazy_parse():
+            try:
+                self.put_annotation_for_input_data(project_id, parser, overwrite=overwrite)
+            except Exception as e:
+                logger.warning(
+                    f"task_id={parser.task_id}, input_data_id={parser.input_data_id} のアノテーションインポートに失敗しました。: {e}"
+                )
 
     @staticmethod
     def validate(args: argparse.Namespace) -> bool:
