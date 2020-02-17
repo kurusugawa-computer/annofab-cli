@@ -258,7 +258,6 @@ class ImportAnnotation(AbstractCommandLineInterface):
                 self.execute_task(project_id, task_parser, overwrite=args.overwrite)
 
 
-
 def main(args):
     service = build_annofabapi_resource_and_login(args)
     facade = AnnofabApiFacade(service)
