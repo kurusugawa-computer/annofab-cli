@@ -275,6 +275,7 @@ class VisualizeStatistics(AbstractCommandLineInterface):
         write_obj.write_csv_for_account_statistics()
         write_obj.write_csv_for_date_user()
         write_obj.write_csv_for_inspection()
+        write_obj.write_メンバー別作業時間平均_画像1枚あたり_by_phase()
 
     def main(self):
         args = self.args
