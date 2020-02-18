@@ -25,7 +25,7 @@ class PutTask(AbstractCommandLineInterface):
     CSVからタスクを登録する。
     """
 
-    def put_input_data_from_csv_file(
+    def put_task_from_csv_file(
         self, project_id: str, csv_file: Path, wait_options: WaitOptions, wait: bool = False,
     ) -> None:
         """
@@ -65,7 +65,7 @@ class PutTask(AbstractCommandLineInterface):
         super().validate_project(project_id, [ProjectMemberRole.OWNER])
 
         wait_options = get_wait_options_from_args(get_json_from_args(args.wait_options), DEFAULT_WAIT_OPTIONS)
-        self.put_input_data_from_csv_file(
+        self.put_task_from_csv_file(
             project_id, csv_file=Path(args.csv), wait=args.wait, wait_options=wait_options,
         )
 
