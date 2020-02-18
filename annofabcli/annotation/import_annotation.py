@@ -282,7 +282,6 @@ class ImportAnnotation(AbstractCommandLineInterface):
                 logger.warning(
                     f"task_id={parser.task_id}, input_data_id={parser.input_data_id} のアノテーションインポートに失敗しました。: {e}"
                 )
-                logger.exception(e)
 
         logger.info(f"タスク'{task_parser.task_id}'の入力データ {success_count} 個に対してアノテーションをインポートしました。")
         return success_count
@@ -375,7 +374,6 @@ class ImportAnnotation(AbstractCommandLineInterface):
 
             except Exception as e:  # pylint: disable=broad-except
                 logger.warning(f"task_id={task_parser.task_id} のアノテーションインポートに失敗しました。: {e}")
-                logger.exception(e)
 
         logger.info(f"{success_count} 個のタスクに対してアノテーションをインポートしました。")
 
