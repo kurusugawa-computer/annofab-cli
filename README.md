@@ -273,8 +273,8 @@ $ annofabcli project_member put --project_id prj2 --csv members.csv
 ## コマンド一覧
 
 ### annotation import
-アノテーションはプロジェクトにインポートします。
-アノテーションのフォーマットは、Simpleアノテーション(v2)と同じフォルダ構成のzipまたはディレクトリです。
+アノテーションをプロジェクトにインポートします。
+アノテーションのフォーマットは、Simpleアノテーション(v2)と同じフォルダ構成のzipファイルまたはディレクトリです。
 JSONフォーマットのサンプルをは以下の通りです。SimpleアノテーションのJSONフォーマットに対応しています。
 
 
