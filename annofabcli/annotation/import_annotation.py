@@ -9,7 +9,6 @@ from pathlib import Path
 from typing import Any, Dict, List, Optional, Union
 
 import annofabapi
-import requests
 from annofabapi.dataclass.annotation import AdditionalData, AnnotationDetail, FullAnnotationData
 from annofabapi.models import (
     AdditionalDataDefinitionType,
@@ -319,28 +318,12 @@ class ImportAnnotation(AbstractCommandLineInterface):
         login_user_id = self.service.api.login_user_id
         account_id_of_login_user = self.facade.get_my_account_id()
 
-        if self.can_execute_put_annotation_directly(task, account_id_of_login_user):
-            result_count = self.put_annotation_for_task(project_id, task_parser, overwrite)
-            return result_count > 0
+        if not self.can_execute_put_annotation_directly(task, account_id_of_login_user):
+            logger.debug(f"タスク'{task_id}'の担当者を '{login_user_id}' に変更します。")
+            self.facade.change_operator_of_task(project_id, task_id, account_id_of_login_user)
 
-        else:
-            try:
-                logger.debug(f"タスク'{task_id}'の担当者を '{login_user_id}' に変更します。")
-                self.facade.change_operator_of_task(project_id, task_id, account_id_of_login_user)
-
-            except requests.exceptions.HTTPError as e:
-                logger.warning(f"タスク'{task_id}'の担当者変更に失敗しました。")
-                logger.warning(e)
-                return False
-
-            try:
-                result_count = self.put_annotation_for_task(project_id, task_parser, overwrite)
-                return result_count > 0
-
-            except Exception as e:  # pylint: disable=broad-except
-                logger.info(f"タスク'{task_parser.task_id}'へのアノテーション登録に失敗しました。")
-                logger.warning(e)
-                return False
+        result_count = self.put_annotation_for_task(project_id, task_parser, overwrite)
+        return result_count > 0
 
     @staticmethod
     def validate(args: argparse.Namespace) -> bool:
@@ -379,15 +362,20 @@ class ImportAnnotation(AbstractCommandLineInterface):
 
         success_count = 0
         for task_parser in iter_task_parser:
-            if len(task_id_list) > 0:
-                # コマンドライン引数で --task_idが指定された場合は、対象のタスクのみインポートする
-                if task_parser.task_id in task_id_list:
+            try:
+                if len(task_id_list) > 0:
+                    # コマンドライン引数で --task_idが指定された場合は、対象のタスクのみインポートする
+                    if task_parser.task_id in task_id_list:
+                        if self.execute_task(project_id, task_parser, overwrite=args.overwrite):
+                            success_count += 1
+                else:
+                    # コマンドライン引数で --task_idが指定されていない場合はすべてをインポートする
                     if self.execute_task(project_id, task_parser, overwrite=args.overwrite):
                         success_count += 1
-            else:
-                # コマンドライン引数で --task_idが指定されていない場合はすべてをインポートする
-                if self.execute_task(project_id, task_parser, overwrite=args.overwrite):
-                    success_count += 1
+
+            except Exception as e:  # pylint: disable=broad-except
+                logger.warning(f"task_id={task_parser.task_id} のアノテーションインポートに失敗しました。: {e}")
+                logger.exception(e)
 
         logger.info(f"{success_count} 個のタスクに対してアノテーションをインポートしました。")
 
