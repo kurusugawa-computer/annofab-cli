@@ -391,12 +391,19 @@ def parse_args(parser: argparse.ArgumentParser):
 
     argument_parser.add_project_id()
 
-    parser.add_argument("--annotation", type=str, required=True, help="Simpleアノテーションのzipファイル or ディレクトリ")
+    parser.add_argument(
+        "--annotation",
+        type=str,
+        required=True,
+        help="Simpleアノテーションと同じフォルダ構成のzipファイル or ディレクトリのパスを指定してください。" "タスクの状態が作業中/完了の場合はインポートしません。",
+    )
 
     argument_parser.add_task_id(required=False)
 
     parser.add_argument(
-        "--overwrite", action="store_true", help="指定した場合、すでに存在するアノテーションを上書きします（入力データ単位）。指定しなければ、アノテーションの登録をスキップします。"
+        "--overwrite",
+        action="store_true",
+        help="指定した場合、すでに存在するアノテーションを上書きします（入力データ単位）。" "指定しなければ、アノテーションのインポートをスキップします。",
     )
 
     parser.set_defaults(subcommand_func=main)
@@ -406,6 +413,7 @@ def add_parser(subparsers: argparse._SubParsersAction):
     subcommand_name = "import"
     subcommand_help = "アノテーションをインポートします。"
     description = "アノテーションをインポートします。"
+    epilog = "チェッカーまたはオーナロールを持つユーザで実行してください。"
 
-    parser = annofabcli.common.cli.add_parser(subparsers, subcommand_name, subcommand_help, description)
+    parser = annofabcli.common.cli.add_parser(subparsers, subcommand_name, subcommand_help, description, epilog=epilog)
     parse_args(parser)
