@@ -57,7 +57,7 @@ class ImportAnnotation(AbstractCommandLineInterface):
             Trueならば、タスクの状態を変更せずに`put_annotation` APIを実行できる。
         """
         # ログインユーザはプロジェクトオーナであること前提
-        return len(task["histories_by_phase"]) == 0 or task["account_d"] == account_id_of_login_user
+        return len(task["histories_by_phase"]) == 0 or task["account_id"] == account_id_of_login_user
 
     def get_label_info_from_label_name(self, label_name: str) -> Optional[LabelV1]:
         for label in self.visualize.specs_labels:
@@ -273,8 +273,8 @@ class ImportAnnotation(AbstractCommandLineInterface):
             logger.warning(f"task_id = '{task_id}' は存在しません。")
             return False
 
-        if task["status"] == TaskStatus.WORKING.value:
-            logger.info(f"タスク'{task_id}'は作業中のため、インポートをスキップします。")
+        if task["status"] in [TaskStatus.WORKING.value, TaskStatus.COMPLETE.value]:
+            logger.info(f"タスク'{task_id}'は作業中または受入完了状態のため、インポートをスキップします。 status={task['status']}")
             return False
 
         login_user_id = self.service.api.login_user_id
@@ -287,7 +287,7 @@ class ImportAnnotation(AbstractCommandLineInterface):
         else:
             try:
                 logger.debug(f"タスク'{task_id}'の担当者を '{login_user_id}' に変更します。")
-                self.facade.change_operator_of_task(project_id, task_id, login_user_id)
+                self.facade.change_operator_of_task(project_id, task_id, account_id_of_login_user)
 
             except requests.exceptions.HTTPError as e:
                 logger.warning(f"タスク'{task_id}'の担当者変更に失敗しました。")
