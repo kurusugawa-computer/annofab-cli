@@ -44,19 +44,20 @@ class ImportAnnotation(AbstractCommandLineInterface):
         self.visualize = AddProps(self.service, args.project_id)
 
     @staticmethod
-    def can_execute_put_annotation_directly(task: Task) -> bool:
+    def can_execute_put_annotation_directly(task: Task, account_id_of_login_user: str) -> bool:
         """
         `put_annotation` APIを、タスクの状態を変更せずに直接実行できるかどうか。
         過去に担当者が割り当たっている場合は、直接実行できない。
 
         Args:
-            project_id:
-            task_id:
+            task: 対象タスク
+            account_id_of_login_user: ログインしているユーザのアカウントID
 
         Returns:
             Trueならば、タスクの状態を変更せずに`put_annotation` APIを実行できる。
         """
-        return len(task["histories_by_phase"]) != 0
+        # ログインユーザはプロジェクトオーナであること前提
+        return len(task["histories_by_phase"]) == 0 or task["account_d"] == account_id_of_login_user
 
     def get_label_info_from_label_name(self, label_name: str) -> Optional[LabelV1]:
         for label in self.visualize.specs_labels:
@@ -272,22 +273,25 @@ class ImportAnnotation(AbstractCommandLineInterface):
             logger.warning(f"task_id = '{task_id}' は存在しません。")
             return False
 
-        if self.can_execute_put_annotation_directly(task):
-            account_id = self.service.api.login_user_id
-            try:
-                if task["status"] == TaskStatus.WORKING.value:
-                    logger.info(f"タスク'{task_id}'は作業中のため、インポートをスキップします。")
-                    return False
+        if task["status"] == TaskStatus.WORKING.value:
+            logger.info(f"タスク'{task_id}'は作業中のため、インポートをスキップします。")
+            return False
 
-                else:
-                    logger.debug(f"タスク'{task_id}'の担当者を '{account_id}' に変更して、作業中にします。")
-                    self.facade.change_operator_of_task(project_id, task_id, account_id)
-                    self.facade.change_to_working_phase(project_id, task_id, account_id)
+        login_user_id = self.service.api.login_user_id
+        account_id_of_login_user = self.facade.get_my_account_id()
+
+        if self.can_execute_put_annotation_directly(task, account_id_of_login_user):
+            result_count = self.put_annotation_for_task(project_id, task_parser, overwrite)
+            return result_count > 0
+
+        else:
+            try:
+                logger.debug(f"タスク'{task_id}'の担当者を '{login_user_id}' に変更します。")
+                self.facade.change_operator_of_task(project_id, task_id, login_user_id)
 
             except requests.exceptions.HTTPError as e:
+                logger.warning(f"タスク'{task_id}'の担当者変更に失敗しました。")
                 logger.warning(e)
-                logger.warning(f"タスク'{task_id}'の担当者の変更、または作業中フェーズへの移行に失敗しました。")
-                logger.exception(e)
                 return False
 
             try:
@@ -295,16 +299,9 @@ class ImportAnnotation(AbstractCommandLineInterface):
                 return result_count > 0
 
             except Exception as e:  # pylint: disable=broad-except
-                logger.warning(e)
                 logger.info(f"タスク'{task_parser.task_id}'へのアノテーション登録に失敗しました。")
+                logger.warning(e)
                 return False
-
-            finally:
-                self.facade.change_to_break_phase(project_id, task_id, account_id)
-
-        else:
-            result_count = self.put_annotation_for_task(project_id, task_parser, overwrite)
-            return result_count > 0
 
     @staticmethod
     def validate(args: argparse.Namespace) -> bool:
