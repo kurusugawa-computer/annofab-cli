@@ -238,7 +238,9 @@ class ImportAnnotation(AbstractCommandLineInterface):
         task_id = parser.task_id
         input_data_id = parser.input_data_id
 
-        simple_annotation: ImportedSimpleAnnotation = ImportedSimpleAnnotation.from_dict(parser.load_json())  # type: ignore
+        simple_annotation: ImportedSimpleAnnotation = ImportedSimpleAnnotation.from_dict(  # type: ignore
+            parser.load_json()
+        )
         if len(simple_annotation.details) == 0:
             logger.debug(
                 f"task_id={task_id}, input_data_id={input_data_id} : インポート元にアノテーションデータがないため、アノテーションの登録をスキップします。"
