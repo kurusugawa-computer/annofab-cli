@@ -4,12 +4,13 @@ import logging
 import sys
 import uuid
 import zipfile
+from dataclasses import dataclass
 from pathlib import Path
-from typing import Any, Dict, List, Optional
+from typing import Any, Dict, List, Optional, Union
 
 import annofabapi
 import requests
-from annofabapi.dataclass.annotation import AdditionalData, AnnotationDetail, FullAnnotationData, SimpleAnnotationDetail
+from annofabapi.dataclass.annotation import AdditionalData, AnnotationDetail, FullAnnotationData
 from annofabapi.models import (
     AdditionalDataDefinitionType,
     AdditionalDataDefinitionV1,
@@ -25,6 +26,7 @@ from annofabapi.parser import (
     lazy_parse_simple_annotation_dir_by_task,
     lazy_parse_simple_annotation_zip_by_task,
 )
+from dataclasses_json import dataclass_json
 
 import annofabcli
 from annofabcli import AnnofabApiFacade
@@ -32,6 +34,34 @@ from annofabcli.common.cli import AbstractCommandLineInterface, ArgumentParser, 
 from annofabcli.common.visualize import AddProps, MessageLocale
 
 logger = logging.getLogger(__name__)
+
+
+@dataclass_json
+@dataclass
+class ImportedSimpleAnnotationDetail:
+    """
+    ``annofabapi.dataclass.annotation.SimpleAnnotationDetail`` に対応するインポート用のDataClass。
+    """
+
+    label: str
+    """アノテーション仕様のラベル名(英語)"""
+
+    data: Dict[str, Any]
+    """"""
+
+    attributes: Dict[str, Union[str, bool, int]]
+    """属性情報。キーは属性の名前、値は属性の値。 """
+
+
+@dataclass_json
+@dataclass
+class ImportedSimpleAnnotation:
+    """
+    ``annofabapi.dataclass.annotation.SimpleAnnotation`` に対応するインポート用のDataClass。
+    """
+
+    details: List[ImportedSimpleAnnotationDetail]
+    """矩形、ポリゴン、全体アノテーションなど個々のアノテーションの配列。"""
 
 
 class ImportAnnotation(AbstractCommandLineInterface):
@@ -132,7 +162,7 @@ class ImportAnnotation(AbstractCommandLineInterface):
         return additional_data_list
 
     def _to_annotation_detail_for_request(
-        self, project_id: str, parser: SimpleAnnotationParser, detail: SimpleAnnotationDetail
+        self, project_id: str, parser: SimpleAnnotationParser, detail: ImportedSimpleAnnotationDetail
     ) -> Optional[AnnotationDetail]:
         """
         Request Bodyに渡すDataClassに変換する。塗りつぶし画像があれば、それをS3にアップロードする。
@@ -175,11 +205,14 @@ class ImportAnnotation(AbstractCommandLineInterface):
         return dest_obj
 
     def parser_to_request_body(
-        self, project_id: str, parser: SimpleAnnotationParser, old_annotation: Optional[Dict[str, Any]] = None
+        self,
+        project_id: str,
+        parser: SimpleAnnotationParser,
+        details: List[ImportedSimpleAnnotationDetail],
+        old_annotation: Optional[Dict[str, Any]] = None,
     ) -> Dict[str, Any]:
-        simple_annotation = parser.parse()
         request_details: List[Dict[str, Any]] = []
-        for detail in simple_annotation.details:
+        for detail in details:
             request_detail = self._to_annotation_detail_for_request(project_id, parser, detail)
 
             if request_detail is not None:
@@ -201,10 +234,12 @@ class ImportAnnotation(AbstractCommandLineInterface):
     def put_annotation_for_input_data(
         self, project_id: str, parser: SimpleAnnotationParser, overwrite: bool = False
     ) -> bool:
+
         task_id = parser.task_id
         input_data_id = parser.input_data_id
 
-        if len(parser.parse().details) == 0:
+        simple_annotation: ImportedSimpleAnnotation = ImportedSimpleAnnotation.from_dict(parser.load_json())  # type: ignore
+        if len(simple_annotation.details) == 0:
             logger.debug(
                 f"task_id={task_id}, input_data_id={input_data_id} : インポート元にアノテーションデータがないため、アノテーションの登録をスキップします。"
             )
@@ -224,7 +259,9 @@ class ImportAnnotation(AbstractCommandLineInterface):
             return False
 
         logger.info(f"task_id={task_id}, input_data_id={input_data_id} : アノテーションを登録します。")
-        request_body = self.parser_to_request_body(project_id, parser, old_annotation=old_annotation)
+        request_body = self.parser_to_request_body(
+            project_id, parser, simple_annotation.details, old_annotation=old_annotation
+        )
 
         self.service.api.put_annotation(project_id, task_id, input_data_id, request_body=request_body)
         return True
