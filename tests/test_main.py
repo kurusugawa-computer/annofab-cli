@@ -41,6 +41,22 @@ class TestAnnotation:
             ]
         )
 
+    def test_import_annotation(self):
+        main(
+            [
+                "annotation",
+                "import",
+                "--project_id",
+                project_id,
+                "--annotation",
+                str(data_path / "imported-annotation.zip"),
+                "--task_id",
+                task_id,
+                "--overwrite",
+                "--yes",
+            ]
+        )
+
 
 class TestAnnotationSpecs:
     command_name = "annotation_specs"
