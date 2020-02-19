@@ -451,7 +451,7 @@ class Database:
         tasks_dict = {}
 
         for task_index, task in enumerate(tasks):
-            if task_index % 10 == 0:
+            if task_index % 100 == 0:
                 logger.debug(f"タスク履歴一覧取得中 {task_index} / {len(tasks)} 件目")
 
             task_id = task["task_id"]
