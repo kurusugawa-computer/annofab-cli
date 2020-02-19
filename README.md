@@ -76,6 +76,7 @@ $ docker run -it -e ANNOFAB_USER_ID=XXXX -e ANNOFAB_PASSWORD=YYYYY annofab-cli a
 |コマンド| サブコマンド                  | 内容                                                                                                     |必要なロール|
 |----|-------------------------------|----------------------------------------------------------------------------------------------------------|------------|
 |annotation| list_count | task_idまたはinput_data_idで集約したアノテーションの個数を出力します                              |-|
+|annotation| import | アノテーションをインポートします。                             |オーナ|
 |annotation_specs| history | アノテーション仕様の履歴一覧を出力します。                              |チェッカー/オーナ|
 |annotation_specs| list_label | アノテーション仕様のラベル情報を出力します。                              |チェッカー/オーナ|
 |annotation_specs| list_label_color             | アノテーション仕様から、label_nameとRGBを対応付けたJSONを出力します。                                      |チェッカー/オーナ|
@@ -271,8 +272,63 @@ $ annofabcli project_member put --project_id prj2 --csv members.csv
 
 ## コマンド一覧
 
+### annotation import
+アノテーションをプロジェクトにインポートします。
+アノテーションのフォーマットは、Simpleアノテーション(v2)と同じフォルダ構成のzipファイルまたはディレクトリです。
+JSONフォーマットのサンプルをは以下の通りです。SimpleアノテーションのJSONフォーマットに対応しています。
 
 
+```json
+{
+    "details": [
+        {
+            "label": "car",
+            "data": {
+                "left_top": {
+                    "x": 878,
+                    "y": 566
+                },
+                "right_bottom": {
+                    "x": 1065,
+                    "y": 701
+                },
+                "_type": "BoundingBox"
+            },
+            "attributes": {}
+        },
+        {
+            "label": "road",
+            "data": {
+                "data_uri": "b803193f-827f-4755-8228-e2c67d0786d9",
+                "_type": "SegmentationV2"
+            },
+            "attributes": {}
+        },
+        {
+            "label": "weather",
+            "data": {
+                "_type": "Classification"
+            },
+            "attributes": {
+                "sunny": true,
+            }
+        }
+    ],
+}
+```
+
+アノテーションをインポートするには、事前に入力データ、タスク、アノテーション仕様を作成する必要があります。
+
+タスクの状態が作業中/完了の場合はインポートしません。
+
+
+```
+# prj1にアノテーションをインポートします。すでにアノテーションが登録されてる場合はスキップします。
+$ annofabcli annotation import --project_id prj1 --annotation simple-annotation.zip 
+
+# prj1にアノテーションをインポートします。すでに存在するアノテーションを上書きます。
+$ annofabcli annotation import --project_id prj1 --annotation simple-annotation.zip --overwrite
+```
 
 ### annotation list_count
 `task_id`または`input_data_id`で集約したアノテーションの個数を、CSV形式で出力します。
