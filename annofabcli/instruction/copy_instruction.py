@@ -27,7 +27,9 @@ class CopyInstruction(AbstractCommandLineInterface):
              AuthorizationError: 自分自身のRoleがいずれかのRoleにも合致しなければ、AuthorizationErrorが発生する。
         """
         super().validate_project(src_project_id, project_member_roles=None)
-        super().validate_project(dest_project_id, project_member_roles=[ProjectMemberRole.OWNER])
+        super().validate_project(
+            dest_project_id, project_member_roles=[ProjectMemberRole.ACCEPTER, ProjectMemberRole.OWNER]
+        )
 
     @staticmethod
     def get_instruction_image_id_from_url(url: str):
@@ -56,6 +58,7 @@ class CopyInstruction(AbstractCommandLineInterface):
             pq_img:
 
         Returns:
+            コピー先の作業ガイドのURL。コピーできなかった場合はNoneを返す。
 
         """
 
@@ -81,7 +84,7 @@ class CopyInstruction(AbstractCommandLineInterface):
         )
         return dest_instruction_image_url
 
-    def put_instruction(self, project_id: str, instruction_html: str):
+    def put_instruction(self, project_id: str, instruction_html: str) -> None:
         old_instruction = self.service.wrapper.get_latest_instruction(project_id)
         request_body = {
             "html": instruction_html,
@@ -89,7 +92,7 @@ class CopyInstruction(AbstractCommandLineInterface):
         }
         self.service.api.put_instruction(project_id, request_body=request_body)
 
-    def register_instruction(self, src_project_id: str, dest_project_id: str, instruction_html: str):
+    def register_instruction(self, src_project_id: str, dest_project_id: str, instruction_html: str) -> None:
         """
         作業ガイド用HTMLを、作業ガイドとして登録する。
         作業ガイドHTMLに記載されている画像はダウンロードする。
@@ -114,7 +117,7 @@ class CopyInstruction(AbstractCommandLineInterface):
 
         self.put_instruction(dest_project_id, str(pq_html))
 
-    def copy_instruction(self, src_project_id: str, dest_project_id: str):
+    def copy_instruction(self, src_project_id: str, dest_project_id: str) -> None:
         self.validate_projects(src_project_id, dest_project_id)
         src_project_title = self.facade.get_project_title(src_project_id)
         dest_project_title = self.facade.get_project_title(dest_project_id)
@@ -129,7 +132,7 @@ class CopyInstruction(AbstractCommandLineInterface):
 
         self.register_instruction(src_project_id, dest_project_id, instruction_html=src_instruction["html"])
 
-    def main(self):
+    def main(self) -> None:
         args = self.args
 
         self.copy_instruction(src_project_id=args.src_project_id, dest_project_id=args.dest_project_id)
@@ -144,11 +147,6 @@ def main(args):
 def parse_args(parser: argparse.ArgumentParser):
     parser.add_argument("src_project_id", type=str, help="コピー元のプロジェクトのproject_id")
     parser.add_argument("dest_project_id", type=str, help="コピー先のプロジェクトのproject_id")
-
-    # parser.add_argument(
-    #     "--temp_dir", type=str, required=True, help="temporaryディレクトリのパス。コピー元からダウンロードした作業ガイド画像を一時的に保存する。"
-    # )
-
     parser.set_defaults(subcommand_func=main)
 
 

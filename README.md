@@ -86,6 +86,7 @@ $ docker run -it -e ANNOFAB_USER_ID=XXXX -e ANNOFAB_PASSWORD=YYYYY annofab-cli a
 |input_data|put             | 入力データを登録します。                                                            |オーナ|
 |inspection_comment| list | 検査コメントを出力します。                               |-|
 |inspection_comment| list_unprocessed | 未処置の検査コメントを出力します。                               |-|
+|instruction| copy             | 作業ガイドをコピーします。                                                         |チェッカー/オーナ|
 |instruction| upload             | HTMLファイルを作業ガイドとして登録します。                                                           |チェッカー/オーナ|
 |job|list             | ジョブ一覧を出力します。                                                            |-|
 |job|list_last             | 複数のプロジェクトに対して、最新のジョブを出力します。                                                            |-|
@@ -275,6 +276,24 @@ $ annofabcli project_member put --project_id prj2 --csv members.csv
 ### annotation import
 アノテーションをプロジェクトにインポートします。
 アノテーションのフォーマットは、Simpleアノテーション(v2)と同じフォルダ構成のzipファイルまたはディレクトリです。
+
+```
+
+ルートディレクトリ/
+├── docker-build.sh
+├── fuga
+├── {task_id}/
+│   ├── {input_data_id}.json
+│   ├── {input_data_id}/
+│   ├── annofabcli___main___py.html
+│   ├── annofabcli___version___py.html
+│   ├── annofabcli_annotation___init___py.html
+│   ├── annofabcli_annotation_import_annotation_py.html
+│   ├── annofabcli_annotation_list_annotation_count_py.html
+│   ├── annofabcli_annotation_specs___init
+
+```
+
 JSONフォーマットのサンプルをは以下の通りです。SimpleアノテーションのJSONフォーマットに対応しています。
 
 
@@ -650,6 +669,16 @@ $ annofabcli inspection_comment list_unprocessed  --project_id prj1 --task_id fi
 
 # 検査コメント情報が記載されたファイルを元にして、検査コメント一覧を追加します
 $ annofabcli inspection_comment list_unprocessed --project_id prj1 --inspection_comment_json inspection_comment.json
+```
+
+
+### instruction copy
+作業ガイドを別のプロジェクトにコピーします。
+
+
+```
+# prj1の作業ガイドをprj2にコピーする
+$ annofabcli instruction copy prj1 prj2
 ```
 
 
