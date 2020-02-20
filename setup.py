@@ -29,7 +29,7 @@ setup(
     keywords="annofab api cli",
     url="https://github.com/kurusugawa-computer/annofab-cli",
     install_requires=[
-        "annofabapi>=0.27.9",
+        "annofabapi>=0.27.10",
         "requests",
         "pillow",
         "pyyaml",
