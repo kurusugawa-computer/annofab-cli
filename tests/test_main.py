@@ -265,6 +265,11 @@ class TestInstruction:
         html_file = str(data_path / "instruction.html")
         main(["instruction", "upload", "--project_id", project_id, "--html", html_file])
 
+    def test_copy_instruction(self):
+        src_project_id = project_id
+        dest_project_id = project_id
+        main(["instruction", "copy", src_project_id, dest_project_id, "--yes"])
+
 
 class TestJob:
     def test_list_job(self):
