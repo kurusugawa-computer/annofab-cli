@@ -1,7 +1,6 @@
 import argparse
 import logging.handlers
 import mimetypes
-from pathlib import Path
 from typing import Optional
 
 from annofabapi.models import ProjectMemberRole
@@ -9,7 +8,7 @@ from pyquery import PyQuery
 
 import annofabcli
 from annofabcli import AnnofabApiFacade
-from annofabcli.common.cli import AbstractCommandLineInterface, ArgumentParser, build_annofabapi_resource_and_login
+from annofabcli.common.cli import AbstractCommandLineInterface, build_annofabapi_resource_and_login
 
 logger = logging.getLogger(__name__)
 
@@ -72,8 +71,8 @@ class CopyInstruction(AbstractCommandLineInterface):
 
         response_image = self.service.api._request_get_with_cookie(src_project_id, src_instruction_image_url)
 
-        dest_instruction_image_url = self.service.wrapper.upload_file_object_as_instruction_image(
-            dest_project_id, instruction_image_id, fp=response_image.content, content_type=content_type
+        dest_instruction_image_url = self.service.wrapper.upload_data_as_instruction_image(
+            dest_project_id, instruction_image_id, data=response_image.content, content_type=content_type
         )
         return dest_instruction_image_url
 
@@ -110,7 +109,7 @@ class CopyInstruction(AbstractCommandLineInterface):
 
         self.put_instruction(dest_project_id, str(pq_html))
 
-    def copy_instruction(self, src_project_id: str, dest_project_id: str, temp_dir: Path):
+    def copy_instruction(self, src_project_id: str, dest_project_id: str):
         self.validate_projects(src_project_id, dest_project_id)
         src_project_title = self.facade.get_project_title(src_project_id)
         dest_project_title = self.facade.get_project_title(dest_project_id)
@@ -128,7 +127,7 @@ class CopyInstruction(AbstractCommandLineInterface):
     def main(self):
         args = self.args
 
-        self.copy_instruction(args.project_id, Path(args.html))
+        self.copy_instruction(src_project_id=args.src_project_id, dest_project_id=args.dest_project_id)
 
 
 def main(args):
@@ -141,18 +140,9 @@ def parse_args(parser: argparse.ArgumentParser):
     parser.add_argument("src_project_id", type=str, help="コピー元のプロジェクトのproject_id")
     parser.add_argument("dest_project_id", type=str, help="コピー先のプロジェクトのproject_id")
 
-    parser.add_argument(
-        "--temp_dir", type=str, required=True, help="temporaryディレクトリのパス。コピー元からダウンロードした作業ガイド画像を一時的に保存する。"
-    )
-
-    parser.set_defaults(subcommand_func=main)
-
-    argument_parser = ArgumentParser(parser)
-
-    argument_parser.add_project_id()
-
-    # TODO body要素内のみ？
-    parser.add_argument("--html", type=str, required=True, help="作業ガイドとして登録するHTMLファイルのパスを指定します。")
+    # parser.add_argument(
+    #     "--temp_dir", type=str, required=True, help="temporaryディレクトリのパス。コピー元からダウンロードした作業ガイド画像を一時的に保存する。"
+    # )
 
     parser.set_defaults(subcommand_func=main)
 
