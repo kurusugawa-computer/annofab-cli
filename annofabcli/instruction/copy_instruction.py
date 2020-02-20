@@ -1,8 +1,9 @@
 import argparse
-import logging.handlers
+import logging
 import mimetypes
 from typing import Optional
 
+import requests
 from annofabapi.models import ProjectMemberRole
 from pyquery import PyQuery
 
@@ -69,7 +70,11 @@ class CopyInstruction(AbstractCommandLineInterface):
         # alt属性値にファイル名が設定されている
         content_type = self._get_mime_type_from_filename(pq_img.attr["alt"])
 
-        response_image = self.service.api._request_get_with_cookie(src_project_id, src_instruction_image_url)
+        try:
+            response_image = self.service.api._request_get_with_cookie(src_project_id, src_instruction_image_url)
+        except requests.exceptions.RequestException as e:
+            logger.warning(f"コピー元の作業ガイド画像の取得に失敗しました。: {e}")
+            return None
 
         dest_instruction_image_url = self.service.wrapper.upload_data_as_instruction_image(
             dest_project_id, instruction_image_id, data=response_image.content, content_type=content_type
@@ -105,7 +110,7 @@ class CopyInstruction(AbstractCommandLineInterface):
 
             dest_instruction_image_url = self.upload_instruction_image(src_project_id, dest_project_id, pq_img)
             if dest_instruction_image_url is not None:
-                pq_img.attr["src"] = dest_instruction_image_url
+                pq_img.attr["src"] = dest_instruction_image_url  # pylint: disable=unsupported-assignment-operation
 
         self.put_instruction(dest_project_id, str(pq_html))
 
