@@ -4,6 +4,7 @@ from enum import Enum
 from typing import Any, Dict, List, Optional
 
 import dateutil
+import more_itertools
 import pandas as pd
 from annofabapi.dataclass.annotation import SimpleAnnotationDetail
 from annofabapi.dataclass.statistics import (
@@ -398,6 +399,36 @@ class Table:
             ]
         )
 
+    @staticmethod
+    def _acceptance_is_skipped(task_histories: List[TaskHistory]) -> bool:
+        task_history_index_list = get_task_history_index_skipped_acceptance(task_histories)
+        if len(task_history_index_list) == 0:
+            return False
+
+        # スキップされた履歴より後に受入フェーズがなければ、受入がスキップされたタスクとみなす
+        last_task_history_index = task_history_index_list[-1]
+        return (
+            more_itertools.first_true(
+                task_histories[last_task_history_index + 1 :], pred=lambda e: e["phase"] == TaskPhase.ACCEPTANCE.value
+            )
+            is None
+        )
+
+    @staticmethod
+    def _inspection_is_skipped(task_histories: List[TaskHistory]) -> bool:
+        task_history_index_list = get_task_history_index_skipped_inspection(task_histories)
+        if len(task_history_index_list) == 0:
+            return False
+
+        # スキップされた履歴より後に検査フェーズがなければ、検査がスキップされたタスクとみなす
+        last_task_history_index = task_history_index_list[-1]
+        return (
+            more_itertools.first_true(
+                task_histories[last_task_history_index + 1 :], pred=lambda e: e["phase"] == TaskPhase.INSPECTION.value
+            )
+            is None
+        )
+
     def set_task_histories(self, task: Task, task_histories: List[TaskHistory]):
         """
         タスク履歴関係の情報を設定する
@@ -488,8 +519,8 @@ class Table:
         task["diff_days_to_task_completed"] = diff_days("task_completed_datetime", "first_annotation_started_datetime")
 
         # 抜取検査/抜取受入で、検査/受入がスキップされたか否か
-        task["acceptance_is_skipped"] = len(get_task_history_index_skipped_acceptance(task_histories)) > 0
-        task["inspection_is_skipped"] = len(get_task_history_index_skipped_inspection(task_histories)) > 0
+        task["acceptance_is_skipped"] = self._acceptance_is_skipped(task_histories)
+        task["inspection_is_skipped"] = self._inspection_is_skipped(task_histories)
         task["annotator_is_changed"] = self.operator_is_changed_by_phase(task_histories, TaskPhase.ANNOTATION)
         task["inspector_is_changed"] = self.operator_is_changed_by_phase(task_histories, TaskPhase.INSPECTION)
         task["acceptor_is_changed"] = self.operator_is_changed_by_phase(task_histories, TaskPhase.ACCEPTANCE)
