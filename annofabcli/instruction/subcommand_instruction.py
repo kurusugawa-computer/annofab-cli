@@ -2,6 +2,7 @@ import argparse
 
 import annofabcli
 import annofabcli.common.cli
+import annofabcli.instruction.copy_instruction
 import annofabcli.instruction.upload_instruction
 
 
@@ -10,6 +11,7 @@ def parse_args(parser: argparse.ArgumentParser):
     subparsers = parser.add_subparsers(dest="subcommand_name")
 
     # サブコマンドの定義
+    annofabcli.instruction.copy_instruction.add_parser(subparsers)
     annofabcli.instruction.upload_instruction.add_parser(subparsers)
 
 

@@ -197,7 +197,7 @@ class ImportAnnotation(AbstractCommandLineInterface):
         if data_holding_type == AnnotationDataHoldingType.OUTER:
             data_uri = detail.data["data_uri"]
             with parser.open_outer_file(data_uri) as f:
-                s3_path = self.service.wrapper._upload_file_to_s3(project_id, f, content_type="image/png")
+                s3_path = self.service.wrapper.upload_data_to_s3(project_id, f, content_type="image/png")
                 dest_obj.path = s3_path
                 logger.debug(f"{parser.task_id}/{parser.input_data_id}/{data_uri} をS3にアップロードしました。")
 
