@@ -116,7 +116,7 @@ class ListWorktimeByUser(AbstractCommandLineInterface):
         return new_labor
 
     def get_labor_list_from_project_id(
-        self, project_id: str, member_list: List[OrganizationMember], start_date: str, end_date: str
+        self, project_id: str, member_list: List[OrganizationMember], start_date: Optional[str], end_date: Optional[str]
     ) -> List[LaborWorktime]:
         organization, _ = self.service.api.get_organization_of_project(project_id)
         organization_name = organization["organization_name"]
@@ -145,7 +145,11 @@ class ListWorktimeByUser(AbstractCommandLineInterface):
         return new_labor_list
 
     def get_labor_list_from_organization_name(
-        self, organization_name: str, member_list: List[OrganizationMember], start_date: str, end_date: str
+        self,
+        organization_name: str,
+        member_list: List[OrganizationMember],
+        start_date: Optional[str],
+        end_date: Optional[str],
     ) -> List[LaborWorktime]:
         organization, _ = self.service.api.get_organization(organization_name)
         organization_id = organization["organization_id"]
@@ -258,20 +262,16 @@ class ListWorktimeByUser(AbstractCommandLineInterface):
 
         return member_list
 
-    def print_labor_worktime_list(
-        self,
-        organization_name_list: Optional[List[str]],
+    def get_labor_list(self,
+                       member_list: List[OrganizationMember],
+                       organization_name_list: Optional[List[str]],
         project_id_list: Optional[List[str]],
-        user_id_list: List[str],
+        user_id_list: Optional[List[str]],
         start_date: Optional[str],
         end_date: Optional[str],
-        output_dir: Path,
-    ) -> None:
-        """
-        作業時間の一覧を出力する
-        """
-        labor_list = []
-        member_list = self.get_organization_member_list(organization_name_list, project_id_list)
+                       ) -> List[LaborWorktime]:
+
+        labor_list: List[LaborWorktime] = []
 
         if project_id_list is not None:
             for project_id in project_id_list:
@@ -289,8 +289,45 @@ class ListWorktimeByUser(AbstractCommandLineInterface):
                     )
                 )
 
+        else:
+            raise RuntimeError(f"organization_name_list or project_id_list を指定してください。")
+
         # 集計対象ユーザで絞り込む
-        labor_list = [e for e in labor_list if e.user_id in user_id_list]
+        if user_id_list is not None:
+            return [e for e in labor_list if e.user_id in user_id_list]
+        else:
+            return labor_list
+
+    def print_labor_worktime_list(
+        self,
+        organization_name_list: Optional[List[str]],
+        project_id_list: Optional[List[str]],
+        user_id_list: List[str],
+        start_date: Optional[str],
+        end_date: Optional[str],
+        output_dir: Path,
+    ) -> None:
+        """
+        作業時間の一覧を出力する
+        """
+        member_list = self.get_organization_member_list(organization_name_list, project_id_list)
+
+        labor_list = self.get_labor_list(member_list=member_list, organization_name_list=organization_name_list,
+                                         project_id_list=project_id_list,
+                                         user_id_list=user_id_list,
+                                         start_date=start_date,
+                                         end_date=end_date)
+
+        if len(labor_list) == 0:
+            logger.warning(f"労務管理情報が0件のため、作業時間の詳細一覧.csv は出力しません。")
+            return
+
+        if start_date is None or end_date is None:
+            sorted_labor_list = sorted(labor_list, key=lambda e: e.date)
+            if start_date is None:
+                start_date = sorted_labor_list[0].date
+            if end_date is None:
+                end_date = sorted_labor_list[-1].date
 
         reform_dict = {
             ("date", ""): [
@@ -323,10 +360,7 @@ class ListWorktimeByUser(AbstractCommandLineInterface):
         self.write_sum_plan_worktime_list(sum_worktime_df, output_dir)
 
         worktime_df = pandas.DataFrame([e.to_dict() for e in labor_list])  # type: ignore
-        if len(worktime_df) > 0:
-            self.write_worktime_list(worktime_df, output_dir)
-        else:
-            logger.warning(f"労務管理情報が0件のため、作業時間の詳細一覧.csv は出力しません。")
+        self.write_worktime_list(worktime_df, output_dir)
 
     @staticmethod
     def validate(args: argparse.Namespace) -> bool:
