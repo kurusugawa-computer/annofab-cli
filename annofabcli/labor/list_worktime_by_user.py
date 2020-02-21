@@ -262,14 +262,15 @@ class ListWorktimeByUser(AbstractCommandLineInterface):
 
         return member_list
 
-    def get_labor_list(self,
-                       member_list: List[OrganizationMember],
-                       organization_name_list: Optional[List[str]],
+    def get_labor_list(
+        self,
+        member_list: List[OrganizationMember],
+        organization_name_list: Optional[List[str]],
         project_id_list: Optional[List[str]],
         user_id_list: Optional[List[str]],
         start_date: Optional[str],
         end_date: Optional[str],
-                       ) -> List[LaborWorktime]:
+    ) -> List[LaborWorktime]:
 
         labor_list: List[LaborWorktime] = []
 
@@ -302,7 +303,7 @@ class ListWorktimeByUser(AbstractCommandLineInterface):
         self,
         organization_name_list: Optional[List[str]],
         project_id_list: Optional[List[str]],
-        user_id_list: List[str],
+        user_id_list: Optional[List[str]],
         start_date: Optional[str],
         end_date: Optional[str],
         output_dir: Path,
@@ -312,11 +313,14 @@ class ListWorktimeByUser(AbstractCommandLineInterface):
         """
         member_list = self.get_organization_member_list(organization_name_list, project_id_list)
 
-        labor_list = self.get_labor_list(member_list=member_list, organization_name_list=organization_name_list,
-                                         project_id_list=project_id_list,
-                                         user_id_list=user_id_list,
-                                         start_date=start_date,
-                                         end_date=end_date)
+        labor_list = self.get_labor_list(
+            member_list=member_list,
+            organization_name_list=organization_name_list,
+            project_id_list=project_id_list,
+            user_id_list=user_id_list,
+            start_date=start_date,
+            end_date=end_date,
+        )
 
         if len(labor_list) == 0:
             logger.warning(f"労務管理情報が0件のため、作業時間の詳細一覧.csv は出力しません。")
@@ -335,6 +339,9 @@ class ListWorktimeByUser(AbstractCommandLineInterface):
             ],
             ("dayofweek", ""): [e.strftime("%a") for e in pandas.date_range(start=start_date, end=end_date)],
         }
+
+        if user_id_list is None:
+            user_id_list = [e.user_id for e in labor_list]
 
         for user_id in user_id_list:
             sum_worktime_list = self.get_sum_worktime_list(
@@ -469,12 +476,6 @@ class ListWorktimeByUser(AbstractCommandLineInterface):
         project_id_list = get_list_from_args(args.project_id) if args.project_id is not None else None
         organization_name_list = get_list_from_args(args.organization) if args.organization is not None else None
 
-        if arg_user_id_list is None:
-            assert project_id_list is not None, "arg_user_id_list is Noneのときは、`project_id_list is not None`であることを期待します。"
-            user_id_list = self.get_user_id_list_from_project_id_list(project_id_list)
-        else:
-            user_id_list = arg_user_id_list
-
         start_date, end_date = self.get_start_and_end_date_from_args(args)
 
         output_dir = Path(args.output_dir)
@@ -486,7 +487,7 @@ class ListWorktimeByUser(AbstractCommandLineInterface):
             start_date=start_date,
             end_date=end_date,
             output_dir=output_dir,
-            user_id_list=user_id_list,
+            user_id_list=arg_user_id_list,
         )  # type: ignore
 
 
