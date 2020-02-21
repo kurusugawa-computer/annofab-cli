@@ -274,6 +274,7 @@ class ListWorktimeByUser(AbstractCommandLineInterface):
 
         labor_list: List[LaborWorktime] = []
 
+        logger.info(f"労務管理情報を取得します。")
         if project_id_list is not None:
             for project_id in project_id_list:
                 labor_list.extend(
@@ -298,6 +299,49 @@ class ListWorktimeByUser(AbstractCommandLineInterface):
             return [e for e in labor_list if e.user_id in user_id_list]
         else:
             return labor_list
+
+    def write_labor_list(
+        self,
+        labor_list: List[LaborWorktime],
+        member_list: List[OrganizationMember],
+        user_id_list: List[str],
+        start_date: str,
+        end_date: str,
+        output_dir: Path,
+    ):
+
+        reform_dict = {
+            ("date", ""): [
+                e.strftime(ListWorktimeByUser.DATE_FORMAT) for e in pandas.date_range(start=start_date, end=end_date)
+            ],
+            ("dayofweek", ""): [e.strftime("%a") for e in pandas.date_range(start=start_date, end=end_date)],
+        }
+
+        for user_id in user_id_list:
+            sum_worktime_list = self.get_sum_worktime_list(
+                labor_list, user_id=user_id, start_date=start_date, end_date=end_date
+            )
+            member = self.get_member_from_user_id(member_list, user_id)
+            if member is not None:
+                username = member["username"]
+            else:
+                logger.warning(f"user_idが'{user_id}'のユーザは存在しません。")
+                username = user_id
+
+            reform_dict.update(
+                {
+                    (username, "作業予定"): [e.worktime_plan_hour for e in sum_worktime_list],
+                    (username, "作業実績"): [e.worktime_result_hour for e in sum_worktime_list],
+                }
+            )
+
+        sum_worktime_df = pandas.DataFrame(reform_dict)
+        self.write_sum_worktime_list(sum_worktime_df, output_dir)
+
+        self.write_sum_plan_worktime_list(sum_worktime_df, output_dir)
+
+        worktime_df = pandas.DataFrame([e.to_dict() for e in labor_list])  # type: ignore
+        self.write_worktime_list(worktime_df, output_dir)
 
     def print_labor_worktime_list(
         self,
@@ -333,41 +377,19 @@ class ListWorktimeByUser(AbstractCommandLineInterface):
             if end_date is None:
                 end_date = sorted_labor_list[-1].date
 
-        reform_dict = {
-            ("date", ""): [
-                e.strftime(ListWorktimeByUser.DATE_FORMAT) for e in pandas.date_range(start=start_date, end=end_date)
-            ],
-            ("dayofweek", ""): [e.strftime("%a") for e in pandas.date_range(start=start_date, end=end_date)],
-        }
+        logger.info(f"集計期間: start_date={start_date}, end_date={end_date}")
 
         if user_id_list is None:
-            user_id_list = [e.user_id for e in labor_list]
+            user_id_list = sorted(list({e.user_id for e in labor_list}))
+        logger.info(f"集計対象ユーザの数: {len(user_id_list)}")
 
-        for user_id in user_id_list:
-            sum_worktime_list = self.get_sum_worktime_list(
-                labor_list, user_id=user_id, start_date=start_date, end_date=end_date
-            )
-            member = self.get_member_from_user_id(member_list, user_id)
-            if member is not None:
-                username = member["username"]
-            else:
-                logger.warning(f"user_idが'{user_id}'のユーザは存在しません。")
-                username = user_id
+        if project_id_list is None:
+            project_id_list = sorted(list({e.project_id_list for e in labor_list}))
+        logger.info(f"集計対象プロジェクトの数: {len(project_id_list)}")
 
-            reform_dict.update(
-                {
-                    (username, "作業予定"): [e.worktime_plan_hour for e in sum_worktime_list],
-                    (username, "作業実績"): [e.worktime_result_hour for e in sum_worktime_list],
-                }
-            )
-
-        sum_worktime_df = pandas.DataFrame(reform_dict)
-        self.write_sum_worktime_list(sum_worktime_df, output_dir)
-
-        self.write_sum_plan_worktime_list(sum_worktime_df, output_dir)
-
-        worktime_df = pandas.DataFrame([e.to_dict() for e in labor_list])  # type: ignore
-        self.write_worktime_list(worktime_df, output_dir)
+        self.write_labor_list(
+            labor_list=labor_list, user_id_list=user_id_list, start_date=start_date, end_date=end_date
+        )
 
     @staticmethod
     def validate(args: argparse.Namespace) -> bool:
