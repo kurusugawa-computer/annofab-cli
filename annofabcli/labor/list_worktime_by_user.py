@@ -4,7 +4,7 @@ import datetime
 import logging
 from dataclasses import dataclass
 from pathlib import Path
-from typing import Any, Dict, List, Optional, Tuple
+from typing import Any, Dict, List, Optional, Tuple, Callable
 
 import more_itertools
 import pandas
@@ -16,6 +16,20 @@ from annofabcli import AnnofabApiFacade
 from annofabcli.common.cli import AbstractCommandLineInterface, build_annofabapi_resource_and_login, get_list_from_args
 
 logger = logging.getLogger(__name__)
+
+def catch_exception(function: Callable[..., Any]) -> Callable[..., Any]:
+    """
+    Exceptionをキャッチしてログにstacktraceを出力する。
+    """
+
+    def wrapped(*args, **kwargs):
+        try:
+            return function(*args, **kwargs)
+        except Exception as e:  # pylint: disable=broad-except
+            logger.warning(e)
+            logger.exception(e)
+
+    return wrapped
 
 
 @dataclass_json
@@ -335,12 +349,12 @@ class ListWorktimeByUser(AbstractCommandLineInterface):
             )
 
         sum_worktime_df = pandas.DataFrame(reform_dict)
-        self.write_sum_worktime_list(sum_worktime_df, output_dir)
+        catch_exception(self.write_sum_worktime_list)(sum_worktime_df, output_dir)
 
-        self.write_sum_plan_worktime_list(sum_worktime_df, output_dir)
+        catch_exception(self.write_sum_plan_worktime_list)(sum_worktime_df, output_dir)
 
         worktime_df = pandas.DataFrame([e.to_dict() for e in labor_list])  # type: ignore
-        self.write_worktime_list(worktime_df, output_dir)
+        catch_exception(self.write_worktime_list)(worktime_df, output_dir)
 
     def print_labor_worktime_list(
         self,
