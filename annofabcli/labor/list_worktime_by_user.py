@@ -263,8 +263,8 @@ class ListWorktimeByUser(AbstractCommandLineInterface):
         organization_name_list: Optional[List[str]],
         project_id_list: Optional[List[str]],
         user_id_list: List[str],
-        start_date: str,
-        end_date: str,
+        start_date: Optional[str],
+        end_date: Optional[str],
         output_dir: Path,
     ) -> None:
         """
@@ -330,20 +330,36 @@ class ListWorktimeByUser(AbstractCommandLineInterface):
 
     @staticmethod
     def validate(args: argparse.Namespace) -> bool:
-        if args.organization is not None and args.user_id is None:
-            print("ERROR: argument --user_id: `--organization`を指定しているときは、`--user_id`オプションは必須です。", file=sys.stderr)
-            return False
-
-        date_period_is_valid = args.start_date is not None and args.end_date is not None
-        month_period_is_valdi = args.start_month is not None and args.end_month is not None
-        if not date_period_is_valid and not month_period_is_valdi:
-            print(
-                "ERROR: argument --user_id: "
-                "`--start_date/--end_date` または "
-                "`--start_month/--end_month` の組合わせで指定してください。",
-                file=sys.stderr,
+        def is_period_specified():
+            return not (
+                args.start_date is None
+                and args.end_date is None
+                and args.start_month is None
+                and args.end_month is None
             )
-            return False
+
+        if args.organization is not None:
+            if args.user_id is None:
+                print("ERROR: argument --user_id: `--organization`を指定しているときは、`--user_id`オプションは必須です。", file=sys.stderr)
+                return False
+
+            if not is_period_specified():
+                print(
+                    "ERROR: argument : `--organization`を指定しているときは、"
+                    "計期間（`--start_date/--end_date` or `--start_month/--end_month`）を指定してください。",
+                    file=sys.stderr,
+                )
+                return False
+
+        if is_period_specified():
+            date_period_is_valid = args.start_date is not None and args.end_date is not None
+            month_period_is_valid = args.start_month is not None and args.end_month is not None
+            if not date_period_is_valid and not month_period_is_valid:
+                print(
+                    "ERROR: argument : " "`--start_date/--end_date` または " "`--start_month/--end_month` の組合わせで指定してください。",
+                    file=sys.stderr,
+                )
+                return False
 
         return True
 
@@ -401,13 +417,13 @@ class ListWorktimeByUser(AbstractCommandLineInterface):
         return first_date, end_date
 
     @staticmethod
-    def get_start_and_end_date_from_args(args: argparse.Namespace) -> Tuple[str, str]:
+    def get_start_and_end_date_from_args(args: argparse.Namespace) -> Tuple[Optional[str], Optional[str]]:
         if args.start_date is not None and args.end_date is not None:
             return (args.start_date, args.end_date)
         elif args.start_month is not None and args.end_month is not None:
             return ListWorktimeByUser.get_start_and_end_date_from_month(args.start_month, args.end_month)
         else:
-            raise RuntimeError("開始日付と終了日付が取得できませんでした。")
+            return (None, None)
 
     def main(self) -> None:
         args = self.args
@@ -474,11 +490,11 @@ def parse_args(parser: argparse.ArgumentParser):
         "`file://`を先頭に付けると、user_idの一覧が記載されたファイルを指定できます。",
     )
 
-    start_period_group = parser.add_mutually_exclusive_group(required=True)
+    start_period_group = parser.add_mutually_exclusive_group()
     start_period_group.add_argument("--start_date", type=str, help="集計期間の開始日(YYYY-MM-DD)")
     start_period_group.add_argument("--start_month", type=str, help="集計期間の開始月(YYYY-MM-DD)")
 
-    end_period_group = parser.add_mutually_exclusive_group(required=True)
+    end_period_group = parser.add_mutually_exclusive_group()
     end_period_group.add_argument("--end_date", type=str, help="集計期間の終了日(YYYY-MM)")
     end_period_group.add_argument("--end_month", type=str, help="集計期間の終了月(YYYY-MM)")
 
