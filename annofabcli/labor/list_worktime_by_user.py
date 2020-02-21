@@ -4,7 +4,7 @@ import datetime
 import logging
 from dataclasses import dataclass
 from pathlib import Path
-from typing import Any, Dict, List, Optional, Tuple, Callable
+from typing import Any, Callable, Dict, List, Optional, Tuple
 
 import more_itertools
 import pandas
@@ -16,6 +16,7 @@ from annofabcli import AnnofabApiFacade
 from annofabcli.common.cli import AbstractCommandLineInterface, build_annofabapi_resource_and_login, get_list_from_args
 
 logger = logging.getLogger(__name__)
+
 
 def catch_exception(function: Callable[..., Any]) -> Callable[..., Any]:
     """
@@ -406,43 +407,11 @@ class ListWorktimeByUser(AbstractCommandLineInterface):
             user_id_list=user_id_list,
             start_date=start_date,
             end_date=end_date,
-            output_dir=output_dir
+            output_dir=output_dir,
         )
 
     @staticmethod
     def validate(args: argparse.Namespace) -> bool:
-        def is_period_specified():
-            return not (
-                args.start_date is None
-                and args.end_date is None
-                and args.start_month is None
-                and args.end_month is None
-            )
-
-        # もしかして不要
-        # if args.organization is not None:
-        #     if args.user_id is None:
-        #         print("ERROR: argument --user_id: `--organization`を指定しているときは、`--user_id`オプションは必須です。", file=sys.stderr)
-        #         return False
-        #
-        #     if not is_period_specified():
-        #         print(
-        #             "ERROR: argument : `--organization`を指定しているときは、"
-        #             "計期間（`--start_date/--end_date` or `--start_month/--end_month`）を指定してください。",
-        #             file=sys.stderr,
-        #         )
-        #         return False
-        #
-        # if is_period_specified():
-        #     date_period_is_valid = args.start_date is not None and args.end_date is not None
-        #     month_period_is_valid = args.start_month is not None and args.end_month is not None
-        #     if not date_period_is_valid and not month_period_is_valid:
-        #         print(
-        #             "ERROR: argument : " "`--start_date/--end_date` または " "`--start_month/--end_month` の組合わせで指定してください。",
-        #             file=sys.stderr,
-        #         )
-        #         return False
-
         return True
 
     def get_user_id_list_from_project_id_list(self, project_id_list: List[str]) -> List[str]:
@@ -500,12 +469,21 @@ class ListWorktimeByUser(AbstractCommandLineInterface):
 
     @staticmethod
     def get_start_and_end_date_from_args(args: argparse.Namespace) -> Tuple[Optional[str], Optional[str]]:
-        if args.start_date is not None and args.end_date is not None:
-            return (args.start_date, args.end_date)
-        elif args.start_month is not None and args.end_month is not None:
-            return ListWorktimeByUser.get_start_and_end_date_from_month(args.start_month, args.end_month)
+        if args.start_date is not None:
+            start_date = args.start_date
+        elif args.start_month is not None:
+            start_date, _ = ListWorktimeByUser.get_first_and_last_date(args.start_month)
         else:
-            return (None, None)
+            start_date = None
+
+        if args.end_date is not None:
+            end_date = args.end_date
+        elif args.end_month is not None:
+            _, end_date = ListWorktimeByUser.get_first_and_last_date(args.end_month)
+        else:
+            end_date = None
+
+        return (start_date, end_date)
 
     def main(self) -> None:
         args = self.args
