@@ -1,10 +1,12 @@
 import datetime
 import json
 import logging
+import multiprocessing
 import os
 import pickle
 import shutil
 import zipfile
+from functools import partial
 from pathlib import Path
 from typing import Any, Callable, Dict, List, Optional, Set
 
@@ -22,6 +24,11 @@ InputDataDict = Dict[InputDataId, Dict[str, Any]]
 AnnotationDict = Dict[str, InputDataDict]
 AnnotationSummaryFunc = Callable[[List[SimpleAnnotationDetail]], Dict[str, Any]]
 """アノテーションの概要を算出する関数"""
+
+
+def _get_task_histories_dict(api: annofabapi.AnnofabApi, project_id: str, task_id: str) -> Dict[str, List[TaskHistory]]:
+    task_histories, _ = api.get_task_histories(project_id, task_id)
+    return {task_id: task_histories}
 
 
 class Database:
@@ -441,7 +448,6 @@ class Database:
             タスク履歴情報
 
         """
-
         if ignored_task_ids is None:
             ignored_task_ids = set()
 
@@ -450,12 +456,15 @@ class Database:
 
         tasks_dict = {}
 
-        for task_index, task in enumerate(tasks):
-            if task_index % 100 == 0:
-                logger.debug(f"タスク履歴一覧取得中 {task_index} / {len(tasks)} 件目")
-
-            task_id = task["task_id"]
-            task_histories = self.annofab_service.api.get_task_histories(self.project_id, task_id)[0]
-            tasks_dict.update({task_id: task_histories})
+        task_id_list: List[str] = [e["task_id"] for e in tasks]
+        partial_func = partial(_get_task_histories_dict, self.annofab_service.api, self.project_id)
+        partial_func(task_id_list[0])
+        with multiprocessing.Pool() as pool:
+            task_index = 0
+            for obj in pool.imap_unordered(partial_func, task_id_list):
+                if task_index % 100 == 0:
+                    logger.debug(f"タスク履歴一覧取得中 {task_index} / {len(tasks)} 件目")
+                tasks_dict.update(obj)
+                task_index += 1
 
         return tasks_dict
