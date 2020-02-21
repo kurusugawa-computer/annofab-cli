@@ -2,7 +2,6 @@ import argparse
 import calendar
 import datetime
 import logging
-import sys
 from dataclasses import dataclass
 from pathlib import Path
 from typing import Any, Dict, List, Optional, Tuple
@@ -384,11 +383,16 @@ class ListWorktimeByUser(AbstractCommandLineInterface):
         logger.info(f"集計対象ユーザの数: {len(user_id_list)}")
 
         if project_id_list is None:
-            project_id_list = sorted(list({e.project_id_list for e in labor_list}))
+            project_id_list = sorted(list({e.project_id for e in labor_list}))
         logger.info(f"集計対象プロジェクトの数: {len(project_id_list)}")
 
         self.write_labor_list(
-            labor_list=labor_list, user_id_list=user_id_list, start_date=start_date, end_date=end_date
+            labor_list=labor_list,
+            member_list=member_list,
+            user_id_list=user_id_list,
+            start_date=start_date,
+            end_date=end_date,
+            output_dir=output_dir
         )
 
     @staticmethod
@@ -401,28 +405,29 @@ class ListWorktimeByUser(AbstractCommandLineInterface):
                 and args.end_month is None
             )
 
-        if args.organization is not None:
-            if args.user_id is None:
-                print("ERROR: argument --user_id: `--organization`を指定しているときは、`--user_id`オプションは必須です。", file=sys.stderr)
-                return False
-
-            if not is_period_specified():
-                print(
-                    "ERROR: argument : `--organization`を指定しているときは、"
-                    "計期間（`--start_date/--end_date` or `--start_month/--end_month`）を指定してください。",
-                    file=sys.stderr,
-                )
-                return False
-
-        if is_period_specified():
-            date_period_is_valid = args.start_date is not None and args.end_date is not None
-            month_period_is_valid = args.start_month is not None and args.end_month is not None
-            if not date_period_is_valid and not month_period_is_valid:
-                print(
-                    "ERROR: argument : " "`--start_date/--end_date` または " "`--start_month/--end_month` の組合わせで指定してください。",
-                    file=sys.stderr,
-                )
-                return False
+        # もしかして不要
+        # if args.organization is not None:
+        #     if args.user_id is None:
+        #         print("ERROR: argument --user_id: `--organization`を指定しているときは、`--user_id`オプションは必須です。", file=sys.stderr)
+        #         return False
+        #
+        #     if not is_period_specified():
+        #         print(
+        #             "ERROR: argument : `--organization`を指定しているときは、"
+        #             "計期間（`--start_date/--end_date` or `--start_month/--end_month`）を指定してください。",
+        #             file=sys.stderr,
+        #         )
+        #         return False
+        #
+        # if is_period_specified():
+        #     date_period_is_valid = args.start_date is not None and args.end_date is not None
+        #     month_period_is_valid = args.start_month is not None and args.end_month is not None
+        #     if not date_period_is_valid and not month_period_is_valid:
+        #         print(
+        #             "ERROR: argument : " "`--start_date/--end_date` または " "`--start_month/--end_month` の組合わせで指定してください。",
+        #             file=sys.stderr,
+        #         )
+        #         return False
 
         return True
 
