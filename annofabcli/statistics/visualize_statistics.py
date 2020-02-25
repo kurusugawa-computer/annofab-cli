@@ -53,6 +53,7 @@ class WriteCsvGraph:
     annotation_df: Optional[pd.DataFrame] = None
     account_statistics_df: Optional[pd.DataFrame] = None
     df_by_date_user: Optional[pd.DataFrame] = None
+    task_history_df: Optional[pd.DataFrame] = None
 
     def __init__(self, table_obj: Table, output_dir: Path, project_id: str):
         self.table_obj = table_obj
@@ -64,6 +65,11 @@ class WriteCsvGraph:
         if self.task_df is None:
             self.task_df = self.table_obj.create_task_df()
         return self.task_df
+
+    def _get_task_history_df(self):
+        if self.task_history_df is None:
+            self.task_history_df = self.table_obj.create_task_history_df()
+        return self.task_history_df
 
     def _get_annotation_df(self):
         if self.annotation_df is None:
@@ -194,7 +200,7 @@ class WriteCsvGraph:
         """
         タスク履歴関係の情報をCSVに出力する。
         """
-        task_history_df = self.table_obj.create_task_history_df()
+        task_history_df = self._get_task_history_df()
         catch_exception(self.tsv_obj.write_task_history_list)(task_history_df)
 
     def write_csv_for_annotation(self) -> None:

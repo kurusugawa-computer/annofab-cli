@@ -988,3 +988,31 @@ class Table:
             col: self._get_username(col) for col in df.columns if col != "date"  # pylint: disable=not-an-iterable
         }
         return df.rename(columns=columns).fillna(0)
+
+    # def _get_hoge(self, task_id: str, task_histories: List[TaskHistory]):
+    #     df = pd.DataFrame(task_histories)
+    #     df.groupby(["phase", "phase_stage", "user_id"])
+    #     return df.groupby(["task_id", "input_data_id"], as_index=False).sum()
+
+    @staticmethod
+    def create_annotation_count_ratio_df(task_history_df: pd.DataFrame, task_df: pd.DataFrame) -> pd.DataFrame:
+        """
+        task_id, phase, (phase_index), user_idの作業時間比から、アノテーション数などの生産量を求める
+
+        Args:
+
+        Returns:
+
+        """
+        annotation_count_dict = {row["task_id"]: row["annotation_count"] for _, row in task_df.iterrows()}
+
+        def get_annotation_count(row) -> float:
+            task_id = row.name[0]
+            annotation_count = annotation_count_dict[task_id]
+            return row["worktime_ratio_by_task"] * annotation_count
+
+
+        group_obj = task_history_df.groupby(["task_id", "phase", "phase_stage", "user_id"]).agg({"worktime_hour": "sum"})
+        group_obj["worktime_ratio_by_task"] = group_obj.groupby(level=["task_id", "phase", "phase_stage"]).apply(lambda e: e / float(e.sum()))
+        group_obj["annotation_count"] = group_obj.apply(get_annotation_count, axis="columns")
+        return group_obj.reset_index()
