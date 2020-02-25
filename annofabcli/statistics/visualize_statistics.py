@@ -207,7 +207,7 @@ class WriteCsvGraph:
         """
         アノテーション関係の情報をCSVに出力する。
         """
-        annotation_df = self.table_obj.create_task_for_annotation_df()
+        annotation_df = self._get_annotation_df()
         catch_exception(self.tsv_obj.write_ラベルごとのアノテーション数)(annotation_df)
 
     def write_csv_for_date_user(self) -> None:
@@ -220,6 +220,13 @@ class WriteCsvGraph:
     def write_csv_for_account_statistics(self) -> None:
         account_statistics_df = self._get_account_statistics_df()
         catch_exception(self.tsv_obj.write_ユーザ別日毎の作業時間)(account_statistics_df)
+
+    def write_test(self) -> None:
+        task_df = self._get_task_df()
+        task_history_df = self._get_task_history_df()
+
+        annotation_count_ratio_df = self.table_obj.create_annotation_count_ratio_df(task_history_df, task_df)
+        catch_exception(self.tsv_obj._write_csv)("アノテーション数の比率.csv", annotation_count_ratio_df)
 
 
 class VisualizeStatistics(AbstractCommandLineInterface):
@@ -266,6 +273,9 @@ class VisualizeStatistics(AbstractCommandLineInterface):
         write_project_name_file(self.service, project_id, output_dir)
 
         write_obj = WriteCsvGraph(table_obj, output_dir, project_id)
+
+        # テスト用のファイルを出力
+        write_obj.write_test()
 
         # ヒストグラム
         write_obj.write_histogram_for_task()
