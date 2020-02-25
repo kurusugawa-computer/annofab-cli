@@ -1,0 +1,13 @@
+project_id,task_id,phase,phase_stage,user_id,username,worktime_hour
+12345678-abcd-1234-abcd-1234abcd5678,task1,annotation,1,alice,Alice,1.5
+12345678-abcd-1234-abcd-1234abcd5678,task1,inspection,1,bob,Bob,0.5
+12345678-abcd-1234-abcd-1234abcd5678,task1,annotation,1,alice,Alice,0.5
+12345678-abcd-1234-abcd-1234abcd5678,task1,inspection,1,carol,Carol,0.5
+12345678-abcd-1234-abcd-1234abcd5678,task1,inspection,2,dave,Dave,0.2
+12345678-abcd-1234-abcd-1234abcd5678,task1,acceptance,1,eve,Eve,0.1
+12345678-abcd-1234-abcd-1234abcd5678,task2,annotation,1,alice,Alice,1.5
+12345678-abcd-1234-abcd-1234abcd5678,task2,inspection,1,bob,Bob,0.5
+12345678-abcd-1234-abcd-1234abcd5678,task2,annotation,1,alice,Alice,0.5
+12345678-abcd-1234-abcd-1234abcd5678,task2,inspection,1,carol,Carol,0.5
+12345678-abcd-1234-abcd-1234abcd5678,task2,inspection,2,dave,Dave,0.2
+12345678-abcd-1234-abcd-1234abcd5678,task2,acceptance,1,eve,Eve,0.1
