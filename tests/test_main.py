@@ -4,6 +4,7 @@ import os
 from pathlib import Path
 
 import annofabapi
+import pytest
 
 from annofabcli.__main__ import main
 
@@ -37,6 +38,22 @@ class TestAnnotation:
                 '{"label_name_en": "car"}',
                 "--output",
                 str(out_path / "annotation_count.csv"),
+            ]
+        )
+
+    def test_import_annotation(self):
+        main(
+            [
+                "annotation",
+                "import",
+                "--project_id",
+                project_id,
+                "--annotation",
+                str(data_path / "imported-annotation.zip"),
+                "--task_id",
+                task_id,
+                "--overwrite",
+                "--yes",
             ]
         )
 
@@ -170,6 +187,7 @@ class TestInputData:
             ]
         )
 
+    @pytest.mark.submitting_job
     def test_put_input_data_with_zip(self):
         # 注意：ジョブ登録される
         zip_file = str(data_path / "lenna.zip")
@@ -246,6 +264,11 @@ class TestInstruction:
     def test_upload_instruction(self):
         html_file = str(data_path / "instruction.html")
         main(["instruction", "upload", "--project_id", project_id, "--html", html_file])
+
+    def test_copy_instruction(self):
+        src_project_id = project_id
+        dest_project_id = project_id
+        main(["instruction", "copy", src_project_id, dest_project_id, "--yes"])
 
 
 class TestJob:
@@ -556,6 +579,7 @@ class TestTask:
             ]
         )
 
+    @pytest.mark.submitting_job
     def test_put_task(self):
         csv_file = str(data_path / "put_task.csv")
         main(

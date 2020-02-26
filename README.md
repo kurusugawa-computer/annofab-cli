@@ -76,6 +76,7 @@ $ docker run -it -e ANNOFAB_USER_ID=XXXX -e ANNOFAB_PASSWORD=YYYYY annofab-cli a
 |コマンド| サブコマンド                  | 内容                                                                                                     |必要なロール|
 |----|-------------------------------|----------------------------------------------------------------------------------------------------------|------------|
 |annotation| list_count | task_idまたはinput_data_idで集約したアノテーションの個数を出力します                              |-|
+|annotation| import | アノテーションをインポートします。                             |オーナ|
 |annotation_specs| history | アノテーション仕様の履歴一覧を出力します。                              |チェッカー/オーナ|
 |annotation_specs| list_label | アノテーション仕様のラベル情報を出力します。                              |チェッカー/オーナ|
 |annotation_specs| list_label_color             | アノテーション仕様から、label_nameとRGBを対応付けたJSONを出力します。                                      |チェッカー/オーナ|
@@ -85,6 +86,7 @@ $ docker run -it -e ANNOFAB_USER_ID=XXXX -e ANNOFAB_PASSWORD=YYYYY annofab-cli a
 |input_data|put             | 入力データを登録します。                                                            |オーナ|
 |inspection_comment| list | 検査コメントを出力します。                               |-|
 |inspection_comment| list_unprocessed | 未処置の検査コメントを出力します。                               |-|
+|instruction| copy             | 作業ガイドをコピーします。                                                         |チェッカー/オーナ|
 |instruction| upload             | HTMLファイルを作業ガイドとして登録します。                                                           |チェッカー/オーナ|
 |job|list             | ジョブ一覧を出力します。                                                            |-|
 |job|list_last             | 複数のプロジェクトに対して、最新のジョブを出力します。                                                            |-|
@@ -271,8 +273,81 @@ $ annofabcli project_member put --project_id prj2 --csv members.csv
 
 ## コマンド一覧
 
+### annotation import
+アノテーションをプロジェクトにインポートします。
+アノテーションのフォーマットは、Simpleアノテーション(v2)と同じフォルダ構成のzipファイルまたはディレクトリです。
+
+```
+
+ルートディレクトリ/
+├── docker-build.sh
+├── fuga
+├── {task_id}/
+│   ├── {input_data_id}.json
+│   ├── {input_data_id}/
+│   ├── annofabcli___main___py.html
+│   ├── annofabcli___version___py.html
+│   ├── annofabcli_annotation___init___py.html
+│   ├── annofabcli_annotation_import_annotation_py.html
+│   ├── annofabcli_annotation_list_annotation_count_py.html
+│   ├── annofabcli_annotation_specs___init
+
+```
+
+JSONフォーマットのサンプルをは以下の通りです。SimpleアノテーションのJSONフォーマットに対応しています。
 
 
+```json
+{
+    "details": [
+        {
+            "label": "car",
+            "data": {
+                "left_top": {
+                    "x": 878,
+                    "y": 566
+                },
+                "right_bottom": {
+                    "x": 1065,
+                    "y": 701
+                },
+                "_type": "BoundingBox"
+            },
+            "attributes": {}
+        },
+        {
+            "label": "road",
+            "data": {
+                "data_uri": "b803193f-827f-4755-8228-e2c67d0786d9",
+                "_type": "SegmentationV2"
+            },
+            "attributes": {}
+        },
+        {
+            "label": "weather",
+            "data": {
+                "_type": "Classification"
+            },
+            "attributes": {
+                "sunny": true,
+            }
+        }
+    ],
+}
+```
+
+アノテーションをインポートするには、事前に入力データ、タスク、アノテーション仕様を作成する必要があります。
+
+タスクの状態が作業中/完了の場合はインポートしません。
+
+
+```
+# prj1にアノテーションをインポートします。すでにアノテーションが登録されてる場合はスキップします。
+$ annofabcli annotation import --project_id prj1 --annotation simple-annotation.zip 
+
+# prj1にアノテーションをインポートします。すでに存在するアノテーションを上書きます。
+$ annofabcli annotation import --project_id prj1 --annotation simple-annotation.zip --overwrite
+```
 
 ### annotation list_count
 `task_id`または`input_data_id`で集約したアノテーションの個数を、CSV形式で出力します。
@@ -594,6 +669,16 @@ $ annofabcli inspection_comment list_unprocessed  --project_id prj1 --task_id fi
 
 # 検査コメント情報が記載されたファイルを元にして、検査コメント一覧を追加します
 $ annofabcli inspection_comment list_unprocessed --project_id prj1 --inspection_comment_json inspection_comment.json
+```
+
+
+### instruction copy
+作業ガイドを別のプロジェクトにコピーします。
+
+
+```
+# prj1の作業ガイドをprj2にコピーする
+$ annofabcli instruction copy prj1 prj2
 ```
 
 
