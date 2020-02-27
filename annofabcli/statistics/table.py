@@ -989,11 +989,6 @@ class Table:
         }
         return df.rename(columns=columns).fillna(0)
 
-    # def _get_hoge(self, task_id: str, task_histories: List[TaskHistory]):
-    #     df = pd.DataFrame(task_histories)
-    #     df.groupby(["phase", "phase_stage", "user_id"])
-    #     return df.groupby(["task_id", "input_data_id"], as_index=False).sum()
-
     @staticmethod
     def create_annotation_count_ratio_df(task_history_df: pd.DataFrame, task_df: pd.DataFrame) -> pd.DataFrame:
         """
