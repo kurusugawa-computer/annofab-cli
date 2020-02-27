@@ -66,6 +66,25 @@ class Download(AbstractCommandLineInterface):
             self.service.wrapper.download_project_tasks_url(project_id, output)
 
         elif target == DownloadTarget.INPUT_DATA:
+            job_type = JobType.GEN_INPUTS_LIST
+            if latest:
+                if self.is_job_progress(project_id, job_type=job_type):
+                    logger.debug(f"ダウンロード対象が最新化ジョブが既に進行中です。")
+                else:
+                    self.service.api.post_project_inputs_update(project_id)
+
+                result = self.service.wrapper.wait_for_completion(
+                    project_id,
+                    job_type=job_type,
+                    job_access_interval=wait_options.interval,
+                    max_job_access=wait_options.max_tries,
+                )
+                if result:
+                    logger.info(f"入力データ全件ファイルの更新が完了しました。")
+                else:
+                    logger.info(f"入力データ全件ファイルの更新に失敗しました or {MAX_WAIT_MINUTUE} 分待っても、更新が完了しませんでした。")
+                    return
+
             self.service.wrapper.download_project_inputs_url(project_id, output)
 
         elif target == DownloadTarget.INSPECTION_COMMENT:
@@ -108,10 +127,13 @@ class Download(AbstractCommandLineInterface):
         if args.latest:
             if download_target not in [
                 DownloadTarget.TASK,
+                DownloadTarget.INPUT_DATA,
                 DownloadTarget.SIMPLE_ANNOTATION,
                 DownloadTarget.FULL_ANNOTATION,
             ]:
-                logger.warning(f"ダウンロード対象が`task`, `simple_annotation`, `full_annotation`以外のときは、`--latest`オプションは無視されます。")
+                logger.warning(
+                    f"ダウンロード対象が'task', 'input_data', 'simple_annotation', 'full_annotation'以外では`--latest`オプションは無視されます。"
+                )
 
         if download_target == DownloadTarget.FULL_ANNOTATION:
             logger.warning(f"ダウンロード対象`full_annotation`は非推奨です。いずれ廃止されます。")
@@ -163,7 +185,7 @@ def parse_args(parser: argparse.ArgumentParser):
         "--latest",
         action="store_true",
         help="ダウンロード対象を最新化してから、ダウンロードします。アノテーションの最新化は5分以上かかる場合があります。"
-        "ダウンロード対象が`task`, `simple_annotation`, `full_annotation`のときのみ、このオプションは有効です。",
+        "ダウンロード対象が'task', 'input_data', 'simple_annotation', 'full_annotation'のときのみ、このオプションは有効です。",
     )
 
     parser.add_argument(
