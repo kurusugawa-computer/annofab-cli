@@ -165,8 +165,9 @@ class WriteCsvGraph:
         """
         task_df = self._get_task_df()
         catch_exception(self.tsv_obj.write_task_list)(task_df, dropped_columns=["input_data_id_list"])
-        catch_exception(self.tsv_obj.write_task_count)(task_df)
-        catch_exception(self.tsv_obj.write_worktime_statistics)(task_df)
+        catch_exception(self.tsv_obj.write_task_count_summary)(task_df)
+        catch_exception(self.tsv_obj.write_worktime_summary)(task_df)
+        catch_exception(self.tsv_obj.write_count_summary)(task_df)
 
         member_df = self.table_obj.create_member_df(task_df)
         catch_exception(self.tsv_obj.write_member_list)(member_df)
