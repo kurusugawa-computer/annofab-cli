@@ -999,7 +999,10 @@ class Table:
         Returns:
 
         """
-        annotation_count_dict = {row["task_id"]: {"annotation_count":row["annotation_count"], "input_data_count": row["input_data_count"]} for _, row in task_df.iterrows()}
+        annotation_count_dict = {
+            row["task_id"]: {"annotation_count": row["annotation_count"], "input_data_count": row["input_data_count"]}
+            for _, row in task_df.iterrows()
+        }
 
         def get_annotation_count(row) -> float:
             task_id = row.name[0]
@@ -1011,9 +1014,12 @@ class Table:
             annotation_count = annotation_count_dict[task_id]["input_data_count"]
             return row["worktime_ratio_by_task"] * annotation_count
 
-
-        group_obj = task_history_df.groupby(["task_id", "phase", "phase_stage", "user_id"]).agg({"worktime_hour": "sum"})
-        group_obj["worktime_ratio_by_task"] = group_obj.groupby(level=["task_id", "phase", "phase_stage"]).apply(lambda e: e / float(e.sum()))
+        group_obj = task_history_df.groupby(["task_id", "phase", "phase_stage", "user_id"]).agg(
+            {"worktime_hour": "sum"}
+        )
+        group_obj["worktime_ratio_by_task"] = group_obj.groupby(level=["task_id", "phase", "phase_stage"]).apply(
+            lambda e: e / float(e.sum())
+        )
         group_obj["annotation_count"] = group_obj.apply(get_annotation_count, axis="columns")
         group_obj["input_data_count"] = group_obj.apply(get_input_data_count, axis="columns")
 
