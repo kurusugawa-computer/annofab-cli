@@ -1,3 +1,4 @@
+# pylint: disable=too-many-lines
 import copy
 import logging
 from enum import Enum
