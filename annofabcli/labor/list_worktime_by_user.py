@@ -484,9 +484,6 @@ class ListWorktimeByUser(AbstractCommandLineInterface):
     def main(self) -> None:
         args = self.args
 
-        if not self.validate(args):
-            return
-
         arg_user_id_list = get_list_from_args(args.user_id) if args.user_id is not None else None
         project_id_list = get_list_from_args(args.project_id) if args.project_id is not None else None
         organization_name_list = get_list_from_args(args.organization) if args.organization is not None else None
