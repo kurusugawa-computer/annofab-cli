@@ -410,10 +410,6 @@ class ListWorktimeByUser(AbstractCommandLineInterface):
             output_dir=output_dir,
         )
 
-    @staticmethod
-    def validate(args: argparse.Namespace) -> bool:
-        return True
-
     def get_user_id_list_from_project_id_list(self, project_id_list: List[str]) -> List[str]:
         """
         プロジェクトメンバ一覧からuser_id_listを取得する。

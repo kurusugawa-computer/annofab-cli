@@ -193,7 +193,7 @@ class ImportAnnotation(AbstractCommandLineInterface):
             url=None,
             path=None,
             created_datetime=None,
-            updated_datetime=None
+            updated_datetime=None,
         )
 
         if data_holding_type == AnnotationDataHoldingType.OUTER:
