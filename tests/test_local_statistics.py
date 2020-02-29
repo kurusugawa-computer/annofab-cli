@@ -29,6 +29,4 @@ class TestTable:
             {"task_id": ["task1", "task2"], "annotation_count": [100, 200], "input_data_count": [2, 4]}
         )
         df = Table.create_annotation_count_ratio_df(task_history_df, task_df)
-        df.to_csv("/home/vagrant/Downloads/output-df2.csv")
-        print(df.columns)
-        print(df.iloc[0:100])
+        df.to_csv(out_path / "annotation_count_ratio.csv")
