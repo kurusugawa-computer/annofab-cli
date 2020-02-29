@@ -2,8 +2,8 @@ from pathlib import Path
 
 import pandas
 
-from annofabcli.statistics.table import Table
 from annofabcli.statistics.csv import Csv
+from annofabcli.statistics.table import Table
 
 out_path = Path("./tests/out")
 data_path = Path("./tests/data")
