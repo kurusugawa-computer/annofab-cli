@@ -3,13 +3,13 @@ from pathlib import Path
 import pandas
 
 from annofabcli.statistics.table import Table
-from annofabcli.statistics.tsv import Tsv
+from annofabcli.statistics.csv import Csv
 
 out_path = Path("./tests/out")
 data_path = Path("./tests/data")
 
 project_id = "12345678-abcd-1234-abcd-1234abcd5678"
-tsv_obj = Tsv(str(out_path), project_id)
+tsv_obj = Csv(str(out_path), project_id)
 
 # class TestGraph:
 #     def test_write_productivity_line_graph_for_annotator(self):

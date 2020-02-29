@@ -8,9 +8,9 @@ from annofabapi.models import TaskPhase
 logger = logging.getLogger(__name__)
 
 
-class Tsv:
+class Csv:
     """
-    TSVを出力するクラス
+    CSVを出力するクラス
     """
 
     def __init__(self, outdir: str, project_id: str):

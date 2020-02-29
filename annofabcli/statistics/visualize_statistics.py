@@ -15,7 +15,7 @@ from annofabcli.statistics.database import Database
 from annofabcli.statistics.histogram import Histogram
 from annofabcli.statistics.linegraph import LineGraph
 from annofabcli.statistics.table import AggregationBy, Table
-from annofabcli.statistics.tsv import Tsv
+from annofabcli.statistics.csv import Csv
 
 logger = logging.getLogger(__name__)
 
@@ -57,7 +57,7 @@ class WriteCsvGraph:
 
     def __init__(self, table_obj: Table, output_dir: Path, project_id: str):
         self.table_obj = table_obj
-        self.tsv_obj = Tsv(str(output_dir), project_id)
+        self.csv_obj = Csv(str(output_dir), project_id)
         self.histogram_obj = Histogram(str(output_dir), project_id)
         self.graph_obj = LineGraph(str(output_dir), project_id)
 
@@ -164,20 +164,20 @@ class WriteCsvGraph:
         タスク関係のCSVを出力する。
         """
         task_df = self._get_task_df()
-        catch_exception(self.tsv_obj.write_task_list)(task_df, dropped_columns=["input_data_id_list"])
-        catch_exception(self.tsv_obj.write_task_count_summary)(task_df)
-        catch_exception(self.tsv_obj.write_worktime_summary)(task_df)
-        catch_exception(self.tsv_obj.write_count_summary)(task_df)
+        catch_exception(self.csv_obj.write_task_list)(task_df, dropped_columns=["input_data_id_list"])
+        catch_exception(self.csv_obj.write_task_count_summary)(task_df)
+        catch_exception(self.csv_obj.write_worktime_summary)(task_df)
+        catch_exception(self.csv_obj.write_count_summary)(task_df)
 
         member_df = self.table_obj.create_member_df(task_df)
-        catch_exception(self.tsv_obj.write_member_list)(member_df)
+        catch_exception(self.csv_obj.write_member_list)(member_df)
 
     def _write_メンバー別作業時間平均_画像1枚あたり_by_phase(self, phase: TaskPhase):
         df_by_inputs = self.table_obj.create_worktime_per_image_df(AggregationBy.BY_INPUTS, phase)
-        self.tsv_obj.write_メンバー別作業時間平均_画像1枚あたり(df_by_inputs, phase)
+        self.csv_obj.write_メンバー別作業時間平均_画像1枚あたり(df_by_inputs, phase)
 
         df_by_tasks = self.table_obj.create_worktime_per_image_df(AggregationBy.BY_TASKS, phase)
-        self.tsv_obj.write_メンバー別作業時間平均_タスク1個あたり(df_by_tasks, phase)
+        self.csv_obj.write_メンバー別作業時間平均_タスク1個あたり(df_by_tasks, phase)
 
     def write_メンバー別作業時間平均_画像1枚あたり_by_phase(self):
         for phase in TaskPhase:
@@ -190,10 +190,10 @@ class WriteCsvGraph:
         inspection_df = self.table_obj.create_inspection_df()
         inspection_df_all = self.table_obj.create_inspection_df(only_error_corrected=False)
 
-        catch_exception(self.tsv_obj.write_inspection_list)(
+        catch_exception(self.csv_obj.write_inspection_list)(
             df=inspection_df, dropped_columns=["data"], only_error_corrected=True
         )
-        catch_exception(self.tsv_obj.write_inspection_list)(
+        catch_exception(self.csv_obj.write_inspection_list)(
             df=inspection_df_all, dropped_columns=["data"], only_error_corrected=False,
         )
 
@@ -202,32 +202,32 @@ class WriteCsvGraph:
         タスク履歴関係の情報をCSVに出力する。
         """
         task_history_df = self._get_task_history_df()
-        catch_exception(self.tsv_obj.write_task_history_list)(task_history_df)
+        catch_exception(self.csv_obj.write_task_history_list)(task_history_df)
 
     def write_csv_for_annotation(self) -> None:
         """
         アノテーション関係の情報をCSVに出力する。
         """
         annotation_df = self._get_annotation_df()
-        catch_exception(self.tsv_obj.write_ラベルごとのアノテーション数)(annotation_df)
+        catch_exception(self.csv_obj.write_ラベルごとのアノテーション数)(annotation_df)
 
     def write_csv_for_date_user(self) -> None:
         """
         ユーザごと、日ごとの情報をCSVに出力する。
         """
         df_by_date_user = self._get_df_by_date_user()
-        catch_exception(self.tsv_obj.write_教師付作業者別日毎の情報)(df_by_date_user)
+        catch_exception(self.csv_obj.write_教師付作業者別日毎の情報)(df_by_date_user)
 
     def write_csv_for_account_statistics(self) -> None:
         account_statistics_df = self._get_account_statistics_df()
-        catch_exception(self.tsv_obj.write_ユーザ別日毎の作業時間)(account_statistics_df)
+        catch_exception(self.csv_obj.write_ユーザ別日毎の作業時間)(account_statistics_df)
 
     def write_test(self) -> None:
         task_df = self._get_task_df()
         task_history_df = self._get_task_history_df()
 
         annotation_count_ratio_df = self.table_obj.create_annotation_count_ratio_df(task_history_df, task_df)
-        catch_exception(self.tsv_obj._write_csv)("アノテーション数の比率.csv", annotation_count_ratio_df)
+        catch_exception(self.csv_obj._write_csv)("アノテーション数の比率.csv", annotation_count_ratio_df)
 
 
 class VisualizeStatistics(AbstractCommandLineInterface):
