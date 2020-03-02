@@ -407,10 +407,12 @@ class Table:
             return False
 
         # スキップされた履歴より後に受入フェーズがなければ、受入がスキップされたタスクとみなす
+        # ただし、スキップされた履歴より後で、「アノテーション一覧で修正された」受入フェーズがある場合（account_id is None）は、スキップされた受入とみなす。
         last_task_history_index = task_history_index_list[-1]
         return (
             more_itertools.first_true(
-                task_histories[last_task_history_index + 1 :], pred=lambda e: e["phase"] == TaskPhase.ACCEPTANCE.value
+                task_histories[last_task_history_index + 1 :],
+                pred=lambda e: e["phase"] == TaskPhase.ACCEPTANCE.value and e["account_id"] is not None,
             )
             is None
         )
