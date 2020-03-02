@@ -2,10 +2,9 @@ import argparse
 import calendar
 import datetime
 import logging
-import sys
 from dataclasses import dataclass
 from pathlib import Path
-from typing import Any, Dict, List, Optional, Tuple
+from typing import Any, Callable, Dict, List, Optional, Tuple
 
 import more_itertools
 import pandas
@@ -17,6 +16,21 @@ from annofabcli import AnnofabApiFacade
 from annofabcli.common.cli import AbstractCommandLineInterface, build_annofabapi_resource_and_login, get_list_from_args
 
 logger = logging.getLogger(__name__)
+
+
+def catch_exception(function: Callable[..., Any]) -> Callable[..., Any]:
+    """
+    Exceptionをキャッチしてログにstacktraceを出力する。
+    """
+
+    def wrapped(*args, **kwargs):
+        try:
+            return function(*args, **kwargs)
+        except Exception as e:  # pylint: disable=broad-except
+            logger.warning(e)
+            logger.exception(e)
+
+    return wrapped
 
 
 @dataclass_json
@@ -116,7 +130,7 @@ class ListWorktimeByUser(AbstractCommandLineInterface):
         return new_labor
 
     def get_labor_list_from_project_id(
-        self, project_id: str, member_list: List[OrganizationMember], start_date: str, end_date: str
+        self, project_id: str, member_list: List[OrganizationMember], start_date: Optional[str], end_date: Optional[str]
     ) -> List[LaborWorktime]:
         organization, _ = self.service.api.get_organization_of_project(project_id)
         organization_name = organization["organization_name"]
@@ -145,7 +159,11 @@ class ListWorktimeByUser(AbstractCommandLineInterface):
         return new_labor_list
 
     def get_labor_list_from_organization_name(
-        self, organization_name: str, member_list: List[OrganizationMember], start_date: str, end_date: str
+        self,
+        organization_name: str,
+        member_list: List[OrganizationMember],
+        start_date: Optional[str],
+        end_date: Optional[str],
     ) -> List[LaborWorktime]:
         organization, _ = self.service.api.get_organization(organization_name)
         organization_id = organization["organization_id"]
@@ -258,21 +276,19 @@ class ListWorktimeByUser(AbstractCommandLineInterface):
 
         return member_list
 
-    def print_labor_worktime_list(
+    def get_labor_list(
         self,
+        member_list: List[OrganizationMember],
         organization_name_list: Optional[List[str]],
         project_id_list: Optional[List[str]],
-        user_id_list: List[str],
-        start_date: str,
-        end_date: str,
-        output_dir: Path,
-    ) -> None:
-        """
-        作業時間の一覧を出力する
-        """
-        labor_list = []
-        member_list = self.get_organization_member_list(organization_name_list, project_id_list)
+        user_id_list: Optional[List[str]],
+        start_date: Optional[str],
+        end_date: Optional[str],
+    ) -> List[LaborWorktime]:
 
+        labor_list: List[LaborWorktime] = []
+
+        logger.info(f"労務管理情報を取得します。")
         if project_id_list is not None:
             for project_id in project_id_list:
                 labor_list.extend(
@@ -289,8 +305,24 @@ class ListWorktimeByUser(AbstractCommandLineInterface):
                     )
                 )
 
+        else:
+            raise RuntimeError(f"organization_name_list or project_id_list を指定してください。")
+
         # 集計対象ユーザで絞り込む
-        labor_list = [e for e in labor_list if e.user_id in user_id_list]
+        if user_id_list is not None:
+            return [e for e in labor_list if e.user_id in user_id_list]
+        else:
+            return labor_list
+
+    def write_labor_list(
+        self,
+        labor_list: List[LaborWorktime],
+        member_list: List[OrganizationMember],
+        user_id_list: List[str],
+        start_date: str,
+        end_date: str,
+        output_dir: Path,
+    ):
 
         reform_dict = {
             ("date", ""): [
@@ -318,34 +350,65 @@ class ListWorktimeByUser(AbstractCommandLineInterface):
             )
 
         sum_worktime_df = pandas.DataFrame(reform_dict)
-        self.write_sum_worktime_list(sum_worktime_df, output_dir)
+        catch_exception(self.write_sum_worktime_list)(sum_worktime_df, output_dir)
 
-        self.write_sum_plan_worktime_list(sum_worktime_df, output_dir)
+        catch_exception(self.write_sum_plan_worktime_list)(sum_worktime_df, output_dir)
 
         worktime_df = pandas.DataFrame([e.to_dict() for e in labor_list])  # type: ignore
-        if len(worktime_df) > 0:
-            self.write_worktime_list(worktime_df, output_dir)
-        else:
+        catch_exception(self.write_worktime_list)(worktime_df, output_dir)
+
+    def print_labor_worktime_list(
+        self,
+        organization_name_list: Optional[List[str]],
+        project_id_list: Optional[List[str]],
+        user_id_list: Optional[List[str]],
+        start_date: Optional[str],
+        end_date: Optional[str],
+        output_dir: Path,
+    ) -> None:
+        """
+        作業時間の一覧を出力する
+        """
+        member_list = self.get_organization_member_list(organization_name_list, project_id_list)
+
+        labor_list = self.get_labor_list(
+            member_list=member_list,
+            organization_name_list=organization_name_list,
+            project_id_list=project_id_list,
+            user_id_list=user_id_list,
+            start_date=start_date,
+            end_date=end_date,
+        )
+
+        if len(labor_list) == 0:
             logger.warning(f"労務管理情報が0件のため、作業時間の詳細一覧.csv は出力しません。")
+            return
 
-    @staticmethod
-    def validate(args: argparse.Namespace) -> bool:
-        if args.organization is not None and args.user_id is None:
-            print("ERROR: argument --user_id: `--organization`を指定しているときは、`--user_id`オプションは必須です。", file=sys.stderr)
-            return False
+        if start_date is None or end_date is None:
+            sorted_labor_list = sorted(labor_list, key=lambda e: e.date)
+            if start_date is None:
+                start_date = sorted_labor_list[0].date
+            if end_date is None:
+                end_date = sorted_labor_list[-1].date
 
-        date_period_is_valid = args.start_date is not None and args.end_date is not None
-        month_period_is_valdi = args.start_month is not None and args.end_month is not None
-        if not date_period_is_valid and not month_period_is_valdi:
-            print(
-                "ERROR: argument --user_id: "
-                "`--start_date/--end_date` または "
-                "`--start_month/--end_month` の組合わせで指定してください。",
-                file=sys.stderr,
-            )
-            return False
+        logger.info(f"集計期間: start_date={start_date}, end_date={end_date}")
 
-        return True
+        if user_id_list is None:
+            user_id_list = sorted(list({e.user_id for e in labor_list}))
+        logger.info(f"集計対象ユーザの数: {len(user_id_list)}")
+
+        if project_id_list is None:
+            project_id_list = sorted(list({e.project_id for e in labor_list}))
+        logger.info(f"集計対象プロジェクトの数: {len(project_id_list)}")
+
+        self.write_labor_list(
+            labor_list=labor_list,
+            member_list=member_list,
+            user_id_list=user_id_list,
+            start_date=start_date,
+            end_date=end_date,
+            output_dir=output_dir,
+        )
 
     def get_user_id_list_from_project_id_list(self, project_id_list: List[str]) -> List[str]:
         """
@@ -401,29 +464,29 @@ class ListWorktimeByUser(AbstractCommandLineInterface):
         return first_date, end_date
 
     @staticmethod
-    def get_start_and_end_date_from_args(args: argparse.Namespace) -> Tuple[str, str]:
-        if args.start_date is not None and args.end_date is not None:
-            return (args.start_date, args.end_date)
-        elif args.start_month is not None and args.end_month is not None:
-            return ListWorktimeByUser.get_start_and_end_date_from_month(args.start_month, args.end_month)
+    def get_start_and_end_date_from_args(args: argparse.Namespace) -> Tuple[Optional[str], Optional[str]]:
+        if args.start_date is not None:
+            start_date = args.start_date
+        elif args.start_month is not None:
+            start_date, _ = ListWorktimeByUser.get_first_and_last_date(args.start_month)
         else:
-            raise RuntimeError("開始日付と終了日付が取得できませんでした。")
+            start_date = None
+
+        if args.end_date is not None:
+            end_date = args.end_date
+        elif args.end_month is not None:
+            _, end_date = ListWorktimeByUser.get_first_and_last_date(args.end_month)
+        else:
+            end_date = None
+
+        return (start_date, end_date)
 
     def main(self) -> None:
         args = self.args
 
-        if not self.validate(args):
-            return
-
         arg_user_id_list = get_list_from_args(args.user_id) if args.user_id is not None else None
         project_id_list = get_list_from_args(args.project_id) if args.project_id is not None else None
         organization_name_list = get_list_from_args(args.organization) if args.organization is not None else None
-
-        if arg_user_id_list is None:
-            assert project_id_list is not None, "arg_user_id_list is Noneのときは、`project_id_list is not None`であることを期待します。"
-            user_id_list = self.get_user_id_list_from_project_id_list(project_id_list)
-        else:
-            user_id_list = arg_user_id_list
 
         start_date, end_date = self.get_start_and_end_date_from_args(args)
 
@@ -436,7 +499,7 @@ class ListWorktimeByUser(AbstractCommandLineInterface):
             start_date=start_date,
             end_date=end_date,
             output_dir=output_dir,
-            user_id_list=user_id_list,
+            user_id_list=arg_user_id_list,
         )  # type: ignore
 
 
@@ -474,11 +537,11 @@ def parse_args(parser: argparse.ArgumentParser):
         "`file://`を先頭に付けると、user_idの一覧が記載されたファイルを指定できます。",
     )
 
-    start_period_group = parser.add_mutually_exclusive_group(required=True)
+    start_period_group = parser.add_mutually_exclusive_group()
     start_period_group.add_argument("--start_date", type=str, help="集計期間の開始日(YYYY-MM-DD)")
     start_period_group.add_argument("--start_month", type=str, help="集計期間の開始月(YYYY-MM-DD)")
 
-    end_period_group = parser.add_mutually_exclusive_group(required=True)
+    end_period_group = parser.add_mutually_exclusive_group()
     end_period_group.add_argument("--end_date", type=str, help="集計期間の終了日(YYYY-MM)")
     end_period_group.add_argument("--end_month", type=str, help="集計期間の終了月(YYYY-MM)")
 
