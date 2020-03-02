@@ -122,8 +122,8 @@ class ListWorktimeByUser(AbstractCommandLineInterface):
             project_id=labor["project_id"],
             project_title=project_title,
             account_id=labor["account_id"],
-            user_id=member["user_id"] if member is not None else "",
-            username=member["username"] if member is not None else "",
+            user_id=member["user_id"] if member is not None else labor["account_id"],
+            username=member["username"] if member is not None else labor["account_id"],
             worktime_plan_hour=self.get_worktime_hour(labor["values"]["working_time_by_user"], "plans"),
             worktime_result_hour=self.get_worktime_hour(labor["values"]["working_time_by_user"], "results"),
         )
@@ -149,8 +149,11 @@ class ListWorktimeByUser(AbstractCommandLineInterface):
 
         new_labor_list = []
         for labor in labor_list:
-            member = self.get_member_from_account_id(member_list, labor["account_id"])
+            # 個人に紐付かないデータの場合
+            if labor["account_id"] is None:
+                continue
 
+            member = self.get_member_from_account_id(member_list, labor["account_id"])
             new_labor = self._get_labor_worktime(
                 labor, member=member, project_title=project_title, organization_name=organization_name
             )
@@ -394,7 +397,9 @@ class ListWorktimeByUser(AbstractCommandLineInterface):
         logger.info(f"集計期間: start_date={start_date}, end_date={end_date}")
 
         if user_id_list is None:
-            user_id_list = sorted(list({e.user_id for e in labor_list}))
+            tmp_user_id_list = list({e.user_id for e in labor_list})
+            logger.debug(tmp_user_id_list)
+            user_id_list = sorted(tmp_user_id_list)
         logger.info(f"集計対象ユーザの数: {len(user_id_list)}")
 
         if project_id_list is None:
