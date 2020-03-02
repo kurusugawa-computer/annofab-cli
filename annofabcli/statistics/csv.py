@@ -8,9 +8,9 @@ from annofabapi.models import TaskPhase
 logger = logging.getLogger(__name__)
 
 
-class Tsv:
+class Csv:
     """
-    TSVを出力するクラス
+    CSVを出力するクラス
     """
 
     def __init__(self, outdir: str, project_id: str):
@@ -185,7 +185,7 @@ class Tsv:
         required_columns = self._create_required_columns(df, prior_columns, dropped_columns)
         self._write_csv(f"{self.short_project_id}-タスク履歴list.csv", df[required_columns])
 
-    def write_worktime_statistics(self, df: pd.DataFrame) -> None:
+    def write_worktime_summary(self, df: pd.DataFrame) -> None:
         """
         作業時間に関する集計結果をCSVで出力する。
 
@@ -234,9 +234,31 @@ class Tsv:
         target_df = pd.concat([stat_df, stat_inspection_df, stat_acceptance_df])
         target_df = target_df[["column", "mean", "std", "min", "25%", "50%", "75%", "max", "count", "sum"]]
 
-        self._write_csv(f"{self.short_project_id}-作業時間の集計.csv", target_df)
+        self._write_csv(f"集計結果csv/{self.short_project_id}-集計-作業時間.csv", target_df)
 
-    def write_task_count(self, df: pd.DataFrame) -> None:
+    def write_count_summary(self, df: pd.DataFrame) -> None:
+        """
+        個数に関する集計結果をCSVで出力する。
+
+        Args:
+            df: タスクListのDataFrame
+
+        """
+        columns = [
+            "task_count",
+            "input_data_count",
+            "annotation_count",
+            "inspection_count",
+        ]
+        stat_df = df[columns].describe().T
+        stat_df["sum"] = df[columns].sum().values
+        stat_df["column"] = stat_df.index
+
+        target_df = stat_df[["column", "mean", "std", "min", "25%", "50%", "75%", "max", "count", "sum"]]
+
+        self._write_csv(f"集計結果csv/{self.short_project_id}-集計-個数.csv", target_df)
+
+    def write_task_count_summary(self, df: pd.DataFrame) -> None:
         """
         タスク数の集計結果をCSVで出力する。
 
@@ -258,7 +280,7 @@ class Tsv:
         sum_df["column"] = sum_series.index
         sum_df["count_if_true"] = sum_series.values
 
-        self._write_csv(f"{self.short_project_id}-タスク数の集計.csv", sum_df)
+        self._write_csv(f"集計結果csv/{self.short_project_id}-集計-タスク数.csv", sum_df)
 
     def write_member_list(self, df: pd.DataFrame, dropped_columns: Optional[List[str]] = None):
         """

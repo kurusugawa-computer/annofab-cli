@@ -454,6 +454,13 @@ class LineGraph:
             ),
             dict(
                 x="cumulative_annotation_count",
+                y="cumulative_first_annotation_worktime_hour",
+                title="アノテーション数と1回目の教師付時間の累積グラフ",
+                x_axis_label="アノテーション数",
+                y_axis_label="1回目の教師付時間[hour]",
+            ),
+            dict(
+                x="cumulative_annotation_count",
                 y="cumulative_inspection_worktime_hour",
                 title="アノテーション数と検査時間の累積グラフ",
                 x_axis_label="アノテーション数",
