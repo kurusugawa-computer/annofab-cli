@@ -454,14 +454,16 @@ class Database:
         tasks = [e for e in all_tasks if e["task_id"] not in ignored_task_ids]
         logger.info(f"タスク履歴取得対象のタスク数 = {len(tasks)}")
 
-        tasks_dict = {}
+        tasks_dict: Dict[str, List[TaskHistory]] = {}
+        if len(tasks) == 0:
+            return tasks_dict
 
         task_id_list: List[str] = [e["task_id"] for e in tasks]
         partial_func = partial(_get_task_histories_dict, self.annofab_service.api, self.project_id)
         partial_func(task_id_list[0])
         with multiprocessing.Pool() as pool:
             task_index = 0
-            for obj in pool.imap_unordered(partial_func, task_id_list):
+            for obj in pool.map(partial_func, task_id_list):
                 if task_index % 100 == 0:
                     logger.debug(f"タスク履歴一覧取得中 {task_index} / {len(tasks)} 件目")
                 tasks_dict.update(obj)

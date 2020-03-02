@@ -222,12 +222,12 @@ class WriteCsvGraph:
         account_statistics_df = self._get_account_statistics_df()
         catch_exception(self.csv_obj.write_ユーザ別日毎の作業時間)(account_statistics_df)
 
-    def write_test(self) -> None:
+    def write_worktime_ratio(self) -> None:
         task_df = self._get_task_df()
         task_history_df = self._get_task_history_df()
 
         annotation_count_ratio_df = self.table_obj.create_annotation_count_ratio_df(task_history_df, task_df)
-        catch_exception(self.csv_obj._write_csv)("アノテーション数の比率.csv", annotation_count_ratio_df)
+        catch_exception(self.csv_obj._write_csv)("タスク、フェーズ、他当者ごとの作業時間の比率.csv", annotation_count_ratio_df)
 
 
 class VisualizeStatistics(AbstractCommandLineInterface):
@@ -276,7 +276,7 @@ class VisualizeStatistics(AbstractCommandLineInterface):
         write_obj = WriteCsvGraph(table_obj, output_dir, project_id)
 
         # テスト用のファイルを出力
-        write_obj.write_test()
+        write_obj.write_worktime_ratio()
 
         # ヒストグラム
         write_obj.write_histogram_for_task()

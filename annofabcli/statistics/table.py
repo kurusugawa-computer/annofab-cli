@@ -536,9 +536,14 @@ class Table:
 
         """
         task_histories_dict = self.database.read_task_histories_from_checkpoint()
+        task_list = self._get_task_list()
+        task_id_list = [e["task_id"] for e in task_list]
 
         all_task_history_list = []
-        for _, task_history_list in task_histories_dict.items():
+        for task_id, task_history_list in task_histories_dict.items():
+            if task_id not in task_id_list:
+                continue
+
             for history in task_history_list:
                 account_id = history["account_id"]
                 history["user_id"] = self._get_user_id(account_id)
