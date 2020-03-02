@@ -2,7 +2,6 @@ import argparse
 import datetime
 import logging
 import sys
-
 from typing import Any, Dict, List, Optional  # pylint: disable=unused-import
 
 import annofabapi
@@ -158,7 +157,6 @@ def get_organization_id_from_project_id(annofab_service: annofabapi.Resource, pr
     return organization["organization_id"]
 
 
-
 def refine_df(
     df: pd.DataFrame, start_date: datetime.date, end_date: datetime.date, user_id_list: List[str]
 ) -> pd.DataFrame:
@@ -183,7 +181,6 @@ class ListLaborWorktime(AbstractCommandLineInterface):
 
     def _get_project_title_list(self, project_id_list: List[str]) -> List[str]:
         return [self.facade.get_project_title(project_id) for project_id in project_id_list]
-
 
     def list_labor_worktime(self, project_id: str, start_date: str, end_date: str):
 
@@ -226,9 +223,13 @@ class ListLaborWorktime(AbstractCommandLineInterface):
         df = print_time_list_from_work_time_list(total_df)
 
         if args.output is None:
-            df.to_csv(sys.stdout, date_format="%Y-%m-%d", encoding="utf_8_sig", line_terminator="\r\n",float_format='%.2f')
+            df.to_csv(
+                sys.stdout, date_format="%Y-%m-%d", encoding="utf_8_sig", line_terminator="\r\n", float_format="%.2f"
+            )
         else:
-            df.to_csv(args.output, date_format="%Y-%m-%d", encoding="utf_8_sig", line_terminator="\r\n",float_format='%.2f')
+            df.to_csv(
+                args.output, date_format="%Y-%m-%d", encoding="utf_8_sig", line_terminator="\r\n", float_format="%.2f"
+            )
 
             add_id_csv(args.output, self._get_project_title_list(args.project_id))
 
