@@ -44,6 +44,10 @@ class TaskProgress(AbstractCommandLineInterface):
         super().validate_project(project_id, project_member_roles=None)
 
         phase_stat_list = self.get_task_phase_statistics(project_id)
+        if len(phase_stat_list) == 0:
+            logger.info("タスクフェーズ別の累積作業時間情報がないため出力しません。")
+            return
+
         df = pandas.DataFrame(phase_stat_list)
         # 出力対象の列を指定する
         target_df = df[["date", "phase", "worktime_hour"]]
