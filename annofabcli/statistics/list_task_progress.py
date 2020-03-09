@@ -42,6 +42,10 @@ class TaskProgress(AbstractCommandLineInterface):
         super().validate_project(project_id, project_member_roles=None)
 
         task_stat_list = self.get_task_statistics(project_id)
+        if len(task_stat_list) == 0:
+            logger.info(f"タスクの進捗状況の情報がないため、出力しません。")
+            return
+
         df = pandas.DataFrame(task_stat_list)
         # 出力対象の列を指定する
         target_df = df[["date", "phase", "status", "count"]]
