@@ -278,20 +278,11 @@ $ annofabcli project_member put --project_id prj2 --csv members.csv
 アノテーションのフォーマットは、Simpleアノテーション(v2)と同じフォルダ構成のzipファイルまたはディレクトリです。
 
 ```
-
 ルートディレクトリ/
-├── docker-build.sh
-├── fuga
 ├── {task_id}/
 │   ├── {input_data_id}.json
 │   ├── {input_data_id}/
-│   ├── annofabcli___main___py.html
-│   ├── annofabcli___version___py.html
-│   ├── annofabcli_annotation___init___py.html
-│   ├── annofabcli_annotation_import_annotation_py.html
-│   ├── annofabcli_annotation_list_annotation_count_py.html
-│   ├── annofabcli_annotation_specs___init
-
+│          ├── {annotation_id}............ 塗りつぶしPNG画像
 ```
 
 JSONフォーマットのサンプルをは以下の通りです。SimpleアノテーションのJSONフォーマットに対応しています。
@@ -334,6 +325,31 @@ JSONフォーマットのサンプルをは以下の通りです。Simpleアノ�
         }
     ],
 }
+```
+
+以下のように`annotation_id`が指定されている場合、`annotation_id`もインポートされます。
+
+
+```json
+{
+    "details": [
+        {
+            "label": "car",
+            "annotation_id": "12345678-abcd-1234-abcd-1234abcd5678",
+            "data": {
+                "left_top": {
+                    "x": 878,
+                    "y": 566
+                },
+                "right_bottom": {
+                    "x": 1065,
+                    "y": 701
+                },
+                "_type": "BoundingBox"
+            },
+            "attributes": {}
+        },
+
 ```
 
 アノテーションをインポートするには、事前に入力データ、タスク、アノテーション仕様を作成する必要があります。
