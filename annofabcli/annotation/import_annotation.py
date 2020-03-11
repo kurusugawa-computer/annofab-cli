@@ -155,10 +155,10 @@ class ImportAnnotation(AbstractCommandLineInterface):
             ]:
                 additional_data.comment = value
             elif additional_data_type in [AdditionalDataDefinitionType.CHOICE, AdditionalDataDefinitionType.SELECT]:
-                choice_id = first_true(
-                    specs_additional_data["choices"], pred=lambda e,f=value: self.facade.get_choice_name_en(e) == f
+                choice_info = first_true(
+                    specs_additional_data["choices"], pred=lambda e, f=value: self.facade.get_choice_name_en(e) == f
                 )
-                additional_data.choice = choice_id
+                additional_data.choice = choice_info["choice_id"] if choice_info is not None else None
             else:
                 logger.warning(f"additional_data_type={additional_data_type}が不正です。")
                 continue
