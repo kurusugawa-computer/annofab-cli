@@ -25,7 +25,7 @@ class AnnofabApiFacade:
         self.service = service
 
     @staticmethod
-    def get_account_id_last_annotation_phase(task_histories: List[Dict[str, Any]]):
+    def get_account_id_last_annotation_phase(task_histories: List[Dict[str, Any]]) -> Optional[str]:
         """
         タスク履歴の最後のannotation phaseを担当したaccount_idを取得する. なければNoneを返す
         Args:
@@ -43,19 +43,19 @@ class AnnofabApiFacade:
             return None
 
     @staticmethod
-    def get_label_name_en(label: Dict[str, Any]):
+    def get_label_name_en(label: Dict[str, Any]) -> str:
         """label情報から英語名を取得する"""
         label_name_messages = label["label_name"]["messages"]
         return [e["message"] for e in label_name_messages if e["lang"] == "en-US"][0]
 
     @staticmethod
-    def get_additional_data_definition_name_en(additional_data_definition: Dict[str, Any]):
+    def get_additional_data_definition_name_en(additional_data_definition: Dict[str, Any]) -> str:
         """additional_data_definitionから英語名を取得する"""
         messages = additional_data_definition["name"]["messages"]
         return [e["message"] for e in messages if e["lang"] == "en-US"][0]
 
     @staticmethod
-    def get_choice_name_en(choice: Dict[str, Any]):
+    def get_choice_name_en(choice: Dict[str, Any]) -> str:
         """choiceから英語名を取得する"""
         messages = choice["name"]["messages"]
         return [e["message"] for e in messages if e["lang"] == "en-US"][0]
@@ -333,7 +333,7 @@ class AnnofabApiFacade:
 
     def reject_task_assign_last_annotator(
         self, project_id: str, task_id: str, account_id: str
-    ) -> Tuple[Dict[str, Any], str]:
+    ) -> Tuple[Dict[str, Any], Optional[str]]:
         """
         タスクを差し戻したあとに、最後のannotation phase担当者に割り当てる。
 

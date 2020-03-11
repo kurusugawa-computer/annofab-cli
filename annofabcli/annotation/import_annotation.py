@@ -26,6 +26,7 @@ from annofabapi.parser import (
     lazy_parse_simple_annotation_zip_by_task,
 )
 from dataclasses_json import dataclass_json
+from more_itertools import first_true
 
 import annofabcli
 from annofabcli import AnnofabApiFacade
@@ -44,6 +45,9 @@ class ImportedSimpleAnnotationDetail:
 
     label: str
     """アノテーション仕様のラベル名(英語)"""
+
+    annotation_id: Optional[str]
+    """アノテーションID"""
 
     data: Dict[str, Any]
     """"""
@@ -109,6 +113,13 @@ class ImportAnnotation(AbstractCommandLineInterface):
 
         return None
 
+    def _get_choice_id_from_name(self, name: str, choices: List[Dict[str, Any]]) -> Optional[str]:
+        choice_info = first_true(choices, pred=lambda e: self.facade.get_choice_name_en(e) == name)
+        if choice_info is not None:
+            return choice_info["choice_id"]
+        else:
+            return None
+
     @staticmethod
     def _get_data_holding_type_from_data(data: FullAnnotationData) -> AnnotationDataHoldingType:
         if data["_type"] in ["Segmentation", "SegmentationV2"]:
@@ -151,7 +162,7 @@ class ImportAnnotation(AbstractCommandLineInterface):
             ]:
                 additional_data.comment = value
             elif additional_data_type in [AdditionalDataDefinitionType.CHOICE, AdditionalDataDefinitionType.SELECT]:
-                additional_data.choice = value
+                additional_data.choice = self._get_choice_id_from_name(value, specs_additional_data["choices"])
             else:
                 logger.warning(f"additional_data_type={additional_data_type}が不正です。")
                 continue
@@ -183,7 +194,7 @@ class ImportAnnotation(AbstractCommandLineInterface):
 
         dest_obj = AnnotationDetail(
             label_id=label_info["label_id"],
-            annotation_id=self._create_annotation_id(detail.data, label_info["label_id"]),
+            annotation_id=detail.annotation_id if detail.annotation_id is not None else str(uuid.uuid4()),
             account_id=self.service.api.login_user_id,
             data_holding_type=data_holding_type,
             data=detail.data,
