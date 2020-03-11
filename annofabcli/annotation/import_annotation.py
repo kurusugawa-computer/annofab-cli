@@ -26,6 +26,7 @@ from annofabapi.parser import (
     lazy_parse_simple_annotation_zip_by_task,
 )
 from dataclasses_json import dataclass_json
+from more_itertools import first_true
 
 import annofabcli
 from annofabcli import AnnofabApiFacade
@@ -44,6 +45,9 @@ class ImportedSimpleAnnotationDetail:
 
     label: str
     """アノテーション仕様のラベル名(英語)"""
+
+    annotation_id: Optional[str]
+    """アノテーションID"""
 
     data: Dict[str, Any]
     """"""
@@ -151,7 +155,10 @@ class ImportAnnotation(AbstractCommandLineInterface):
             ]:
                 additional_data.comment = value
             elif additional_data_type in [AdditionalDataDefinitionType.CHOICE, AdditionalDataDefinitionType.SELECT]:
-                additional_data.choice = value
+                choice_id = first_true(
+                    specs_additional_data["choices"], pred=lambda e,f=value: self.facade.get_choice_name_en(e) == f
+                )
+                additional_data.choice = choice_id
             else:
                 logger.warning(f"additional_data_type={additional_data_type}が不正です。")
                 continue
@@ -183,7 +190,7 @@ class ImportAnnotation(AbstractCommandLineInterface):
 
         dest_obj = AnnotationDetail(
             label_id=label_info["label_id"],
-            annotation_id=self._create_annotation_id(detail.data, label_info["label_id"]),
+            annotation_id=detail.annotation_id if detail.annotation_id is not None else str(uuid.uuid4()),
             account_id=self.service.api.login_user_id,
             data_holding_type=data_holding_type,
             data=detail.data,
