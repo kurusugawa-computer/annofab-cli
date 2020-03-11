@@ -39,7 +39,7 @@ setup(
         "pyquery",
         "pandas>=1.0.1",
         "isodate",
-        "bokeh >=1.4.0",
+        "bokeh>=1.4,<2.0", # holoviewsが2.0.0に対応されるまでバージョンを固定化する
         "holoviews>=1.12.7",
     ],
     python_requires=">=3.6",
