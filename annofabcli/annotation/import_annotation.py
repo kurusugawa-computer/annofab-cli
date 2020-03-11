@@ -113,6 +113,13 @@ class ImportAnnotation(AbstractCommandLineInterface):
 
         return None
 
+    def _get_choice_id_from_name(self, name: str, choices: List[Dict[str, Any]]) -> Optional[str]:
+        choice_info = first_true(choices, pred=lambda e: self.facade.get_choice_name_en(e) == name)
+        if choice_info is not None:
+            return choice_info["choice_id"]
+        else:
+            return None
+
     @staticmethod
     def _get_data_holding_type_from_data(data: FullAnnotationData) -> AnnotationDataHoldingType:
         if data["_type"] in ["Segmentation", "SegmentationV2"]:
@@ -155,10 +162,7 @@ class ImportAnnotation(AbstractCommandLineInterface):
             ]:
                 additional_data.comment = value
             elif additional_data_type in [AdditionalDataDefinitionType.CHOICE, AdditionalDataDefinitionType.SELECT]:
-                choice_info = first_true(
-                    specs_additional_data["choices"], pred=lambda e, f=value: self.facade.get_choice_name_en(e) == f
-                )
-                additional_data.choice = choice_info["choice_id"] if choice_info is not None else None
+                additional_data.choice = self._get_choice_id_from_name(value, specs_additional_data["choices"])
             else:
                 logger.warning(f"additional_data_type={additional_data_type}が不正です。")
                 continue
