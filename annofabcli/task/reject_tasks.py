@@ -160,10 +160,11 @@ class RejectTasks(AbstractCommandLineInterface):
                     _, last_annotator_account_id = self.facade.reject_task_assign_last_annotator(
                         project_id, task_id, commenter_account_id
                     )
-                    last_annotator_user_id = self.facade.get_user_id_from_account_id(
-                        project_id, last_annotator_account_id
-                    )
-                    str_annotator_user = f"タスクの担当者: {last_annotator_user_id}"
+                    if last_annotator_account_id is not None:
+                        last_annotator_user_id = self.facade.get_user_id_from_account_id(
+                            project_id, last_annotator_account_id
+                        )
+                        str_annotator_user = f"タスクの担当者: {last_annotator_user_id}"
 
                 else:
                     # 指定したユーザに担当を割り当てる
