@@ -32,17 +32,28 @@ def download_content(url: str) -> Any:
     return response.content
 
 
-def get_err_history_events(task_history_events: List[Dict[str, Any]]) -> Dict[str, List[Dict[str, Any]]]:
-
+def get_err_history_events(task_history_events: List[Dict[str, Any]], task_id_list: List[str]) -> Dict[
+    str, List[Dict[str, Any]]]:
     """
     しきい値以上のタスクリストのtask_idが含まれるhistory_eventsを返す
     """
     err_history_events_dict: Dict[str, List[Dict[str, Any]]] = {}
+    from IPython.core.debugger import Pdb
+    Pdb().set_trace()
+
     for task_history_event in task_history_events:
-        if task_history_event["task_id"] in err_history_events_dict:
-            err_history_events_dict[task_history_event["task_id"]].append(task_history_event)
+        if task_id_list:
+            if task_history_event["task_id"] in task_id_list:
+                if task_history_event["task_id"] in err_history_events_dict:
+                    err_history_events_dict[task_history_event["task_id"]].append(task_history_event)
+                else:
+                    err_history_events_dict[task_history_event["task_id"]] = [task_history_event]
         else:
-            err_history_events_dict[task_history_event["task_id"]] = [task_history_event]
+            if task_history_event["task_id"] in err_history_events_dict:
+                err_history_events_dict[task_history_event["task_id"]].append(task_history_event)
+            else:
+                err_history_events_dict[task_history_event["task_id"]] = [task_history_event]
+
     return err_history_events_dict
 
 
@@ -90,21 +101,42 @@ class FindBreakError(AbstractCommandLineInterface):
 
         return project_task_history_events
 
-    def get_err_events(self, err_history_events: Dict[str, List[Dict[str, Any]]]) -> List[List[Dict[str, Any]]]:
+    def get_err_events(self, err_history_events: Dict[str, List[Dict[str, Any]]], time_list: List[str]) -> List[
+        List[Dict[str, Any]]]:
         """
         しきい値以上の作業時間になっている開始と終了のhistory_eventsのペアを返す
         """
+
+        def check_applicable_time(from_time: datetime.datetime, to_time: datetime.datetime,
+                                  date_time_list: List[datetime.datetime]):
+            if date_time_list:
+                for date_time in date_time_list:
+                    if from_time == dateutil.parser.parse(
+                        date_time.strftime('%Y-%m-%d %H:%M:%S')) or to_time == dateutil.parser.parse(
+                        date_time.strftime('%Y-%m-%d %H:%M:%S')):
+                        return True
+            else:
+                return True
+            return False
+
         err_events_list = []
+        date_time_list = [dateutil.parser.parse(time) for time in time_list]
         for v in err_history_events.values():
             v.sort(key=lambda x: x["created_datetime"])
             for i, history_events in enumerate(v):
                 if history_events["status"] == "working":
                     next_history_events = v[i + 1]
                     if next_history_events["status"] in ["on_hold", "break", "complete"]:
-                        working_time = dateutil.parser.parse(
+                        next_time = dateutil.parser.parse(
                             next_history_events["created_datetime"]
-                        ) - dateutil.parser.parse(history_events["created_datetime"])
-                        if working_time > datetime.timedelta(minutes=self.args.task_history_time_threshold):
+                        )
+                        this_time = dateutil.parser.parse(history_events["created_datetime"])
+                        working_time = next_time - this_time
+
+                        if working_time > datetime.timedelta(
+                            minutes=self.args.task_history_time_threshold) and check_applicable_time(this_time,
+                                                                                                     next_time,
+                                                                                                     date_time_list):
                             history_events["user_name"] = self._get_username(
                                 history_events["project_id"], history_events["account_id"]
                             )
@@ -131,6 +163,13 @@ class FindBreakError(AbstractCommandLineInterface):
                     file=sys.stderr,
                 )
                 return False
+        if len(args.project_id) > 1 and args.task_id:
+            print(
+                f"{COMMON_MESSAGE} argument --project_id: task_idを指定した場合はproject_idは複数指定できません\
+                            '{args.project_id}'",
+                file=sys.stderr,
+            )
+            return False
 
         return True
 
@@ -140,18 +179,30 @@ class FindBreakError(AbstractCommandLineInterface):
             return
 
         err_events = []
+
+        task_history_events = self._project_task_history_events(
+            project_id="b6652824-6dd6-4019-875a-77ea131a65d1", import_file_path=args.import_file_path
+        )
+        err_history_events = get_err_history_events(task_history_events=task_history_events,
+                                                    task_id_list=["task_11921"])
+        from IPython.core.debugger import Pdb
+        Pdb().set_trace()
+        err_events.extend(
+            self.get_err_events(err_history_events=err_history_events, time_list=args.time if args.time else []))
+
         for project_id in args.project_id:
             task_history_events = self._project_task_history_events(
                 project_id=project_id, import_file_path=args.import_file_path
             )
-            err_history_events = get_err_history_events(task_history_events=task_history_events)
+            err_history_events = get_err_history_events(task_history_events=task_history_events,
+                                                        task_id_list=args.task_id if args.task_id else [])
+            err_events.extend(
+                self.get_err_events(err_history_events=err_history_events, time_list=args.time if args.time else []))
 
-            err_events.extend(self.get_err_events(err_history_events=err_history_events))
-
-        output_err_events(err_events_list=err_events, output=self.output)
+        output_err_events(err_events_list=err_events, output=self.output, add=args.add)
 
 
-def output_err_events(err_events_list: List[List[Dict[str, Any]]], output: str = None):
+def output_err_events(err_events_list: List[List[Dict[str, Any]]], output: str = None, add: bool = False):
     """
     開始と終了のhistory_eventsのペアから出力する
     :param err_events_list:
@@ -181,7 +232,19 @@ def output_err_events(err_events_list: List[List[Dict[str, Any]]], output: str =
         del df["created_datetime"]
         data_list.append(df)
 
-    pd_data = pd.concat(data_list) if len(data_list) > 1 else data_list[0]
+    if not data_list:
+        logger.warning("historyが見つからなかった為、出力しません。")
+        return
+    elif len(data_list) == 1:
+        pd_data = data_list[0]
+    else:
+        pd_data = pd.concat(data_list)
+
+    if add:
+        to_csv_kwargs = {"index": False, "mode": 'a', "header": False, "encoding": "utf_8_sig",
+                         "line_terminator": "\r\n"}
+    else:
+        to_csv_kwargs = {"index": False, "encoding": "utf_8_sig", "line_terminator": "\r\n"}
 
     annofabcli.utils.print_csv(
         pd_data[
@@ -199,7 +262,7 @@ def output_err_events(err_events_list: List[List[Dict[str, Any]]], output: str =
             ]
         ],
         output=output,
-        to_csv_kwargs={"index": False},
+        to_csv_kwargs=to_csv_kwargs,
     )
 
 
@@ -219,8 +282,16 @@ def parse_args(parser: argparse.ArgumentParser):
 
     argument_parser.add_output()
     parser.add_argument(
-        "-p", "--project_id", type=str, required=True, nargs="+", help="対象のプロジェクトのproject_idを指定します。複数指定可",
+        "-p", "--project_id", type=str, required=True, nargs="+",
+        help="対象のプロジェクトのproject_idを指定します。複数指定可、但しtask_idを指定した場合は1つしか指定できません。",
     )
+    parser.add_argument(
+        "-t", "--task_id", type=str, nargs="+", help="対象のプロジェクトのtask_idを指定します。複数指定可、但しtimeを指定した場合は1つしか指定できません。",
+    )
+    parser.add_argument(
+        "--time", type=str, nargs="+", help="検索対象の時間を指定します。(%Y/%m/%d :59:03)",
+    )
+    parser.add_argument("--add", action='store_true', help="出力する際に追記で書き込む")
 
     parser.set_defaults(subcommand_func=main)
 

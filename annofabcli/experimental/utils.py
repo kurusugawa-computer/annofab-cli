@@ -1,27 +1,37 @@
 import csv
-from typing import List
+from typing import List,Tuple
 
 import numpy as np
 import pandas as pd
 
+def timeunit_conversion(df: pd.DataFrame, time_unit: bool = False) -> pd.DataFrame:
+    if time_unit == "h":
+        df["worktime_actural"] = df["worktime_actural"] / 60
+        df["worktime_monitored"] = df["worktime_monitored"] / 60
+        df["worktime_planned"] = df["worktime_planned"] / 60
+    elif time_unit == "s":
+        df["worktime_actural"] = df["worktime_actural"] * 60
+        df["worktime_monitored"] = df["worktime_monitored"] * 60
+        df["worktime_planned"] = df["worktime_planned"] * 60
 
-def print_time_list_from_work_time_list(df: pd.DataFrame) -> pd.DataFrame:
+    return df
+
+def calc_df_total(df: pd.DataFrame) -> Tuple[pd.DataFrame, pd.DataFrame, pd.DataFrame, pd.DataFrame]:
     # 複数のproject_id分を合計
     total_df = pd.DataFrame(df.groupby(["user_name", "user_id", "date"], as_index=False).sum())
-
     # 不要になったuser_id を削除
     del total_df["user_id"]
 
     # 合計を計算する
     sum_by_date = (
         total_df[["date", "worktime_planned", "worktime_actural", "worktime_monitored"]]
-        .groupby(["date"], as_index=False)
-        .sum()
+            .groupby(["date"], as_index=False)
+            .sum()
     )
     sum_by_name = (
         total_df[["user_name", "worktime_planned", "worktime_actural", "worktime_monitored"]]
-        .groupby(["user_name"], as_index=False)
-        .sum()
+            .groupby(["user_name"], as_index=False)
+            .sum()
     )
     sum_all = total_df[["worktime_planned", "worktime_actural", "worktime_monitored"]].sum().to_frame().transpose()
 
@@ -37,7 +47,12 @@ def print_time_list_from_work_time_list(df: pd.DataFrame) -> pd.DataFrame:
 
     total_df["activity_rate"] = total_df["worktime_actural"] / total_df["worktime_planned"]
     total_df["monitor_rate"] = total_df["worktime_monitored"] / total_df["worktime_actural"]
+    return total_df, sum_by_date, sum_by_name, sum_all
 
+
+def print_time_list_from_work_time_list(df: pd.DataFrame, time_unit: bool = False) -> pd.DataFrame:
+    # 複数のproject_id分を合計
+    total_df, sum_by_date, sum_by_name, sum_all = calc_df_total(df=df)
     # 結果を合体する
     result = (
         pd.concat(
@@ -49,18 +64,18 @@ def print_time_list_from_work_time_list(df: pd.DataFrame) -> pd.DataFrame:
             ],
             sort=False,
         )
-        .sort_values(["date", "user_name"],)
-        .loc[
-            :,
-            [
-                "date",
-                "user_name",
-                "worktime_planned",
-                "worktime_actural",
-                "worktime_monitored",
-                "activity_rate",
-                "monitor_rate",
-            ],
+            .sort_values(["date", "user_name"], )
+            .loc[
+        :,
+        [
+            "date",
+            "user_name",
+            "worktime_planned",
+            "worktime_actural",
+            "worktime_monitored",
+            "activity_rate",
+            "monitor_rate",
+        ],
         ]
     )
     # indexをつける
@@ -77,6 +92,23 @@ def print_time_list_from_work_time_list(df: pd.DataFrame) -> pd.DataFrame:
     return result
 
 
+def print_byname_total_list(df: pd.DataFrame, time_unit: bool = False) -> pd.DataFrame:
+    # 複数のproject_id分を合計
+    _, _, sum_by_name, _ = calc_df_total(df=df)
+
+    # 結果を合体する
+    result = sum_by_name.round(2).replace({np.inf: "--", np.nan: "--"})
+    return result
+
+def print_total(df: pd.DataFrame, time_unit: bool = False) -> pd.DataFrame:
+    # 複数のproject_id分を合計
+    _, _, _, sum_all = calc_df_total(df=df)
+
+    # 結果を合体する
+    result = sum_all.round(2).replace({np.inf: "--", np.nan: "--"})
+    return result
+
+
 def print_time_list_csv(print_time_list: list) -> None:
     for time_list in print_time_list:
         print(*time_list, sep=",")
@@ -89,3 +121,5 @@ def add_id_csv(csv_path: str, id_list: List[str]):
         writer = csv.writer(f, delimiter=",")
         writer.writerow([])
         writer.writerow(id_list)
+
+
