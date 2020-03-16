@@ -140,7 +140,10 @@ class ListTasks(AbstractCommandLineInterface):
             task_list = [self.visualize.add_properties_to_task(e) for e in task_list_from_json]
             logger.debug(f"タスク一覧の件数: {len(task_list)}")
 
-        self.print_according_to_format(task_list)
+        if len(task_list) > 0:
+            self.print_according_to_format(task_list)
+        else:
+            logger.info(f"タスク一覧の件数が0件のため、出力しません。")
 
     @staticmethod
     def validate(args: argparse.Namespace):

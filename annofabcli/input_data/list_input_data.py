@@ -271,7 +271,10 @@ class ListInputData(AbstractCommandLineInterface):
             if len(input_data_list) != total_count:
                 logger.warning(f"実際に取得した件数:{len(input_data_list)}が、取得可能な件数:{total_count} と異なっていました。")
 
-        self.print_according_to_format(input_data_list)
+        if len(input_data_list) > 0:
+            self.print_according_to_format(input_data_list)
+        else:
+            logger.info(f"入力データの件数が0件のため、出力しません。")
 
     def main(self):
         args = self.args
