@@ -227,9 +227,7 @@ class ComleteTasks(AbstractCommandLineInterface):
         args = self.args
         task_id_list = annofabcli.common.cli.get_list_from_args(args.task_id)
         inspection_list = annofabcli.common.cli.get_json_from_args(args.inspection_list)
-        inspection_status = (
-            InspectionStatus(args.inspection_status) if args.inspection_status is not None else None
-        )
+        inspection_status = InspectionStatus(args.inspection_status) if args.inspection_status is not None else None
         self.complete_tasks_with_changing_inspection_status(
             args.project_id,
             task_id_list=task_id_list,
