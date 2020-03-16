@@ -5,7 +5,7 @@ from typing import Dict, List, Optional
 
 import requests
 from annofabapi.dataclass.task import Task
-from annofabapi.models import InputDataId, Inspection, InspectionStatus, ProjectMemberRole, TaskId, TaskPhase
+from annofabapi.models import Inspection, InspectionStatus, ProjectMemberRole, TaskPhase
 
 import annofabcli
 import annofabcli.common.cli
@@ -14,7 +14,10 @@ from annofabcli.common.cli import AbstractCommandLineInterface, ArgumentParser, 
 
 logger = logging.getLogger(__name__)
 
-InspectionJson = Dict[TaskId, Dict[InputDataId, List[Inspection]]]
+InspectionJson = Dict[str, Dict[str, List[Inspection]]]
+"""
+Dict[task_id, Dict[input_data_id, List[Inspection]]] の検査コメント情報
+"""
 
 
 class ComleteTasks(AbstractCommandLineInterface):
@@ -23,12 +26,12 @@ class ComleteTasks(AbstractCommandLineInterface):
     """
 
     @staticmethod
-    def inspection_list_to_input_data_dict(inspection_list: List[Inspection]) -> Dict[InputDataId, List[Inspection]]:
+    def inspection_list_to_input_data_dict(inspection_list: List[Inspection]) -> Dict[str, List[Inspection]]:
         """
         検査コメントのListを、Dict[InputDataId, List[Inspection]]] の形式に変換する。
 
         """
-        input_data_dict: Dict[InputDataId, List[Inspection]] = {}
+        input_data_dict: Dict[str, List[Inspection]] = {}
         for inspection in inspection_list:
             input_data_id = inspection["input_data_id"]
             inspection_list = input_data_dict.get(input_data_id, [])
@@ -45,7 +48,7 @@ class ComleteTasks(AbstractCommandLineInterface):
         task_dict: InspectionJson = {}
         for inspection in all_inspection_list:
             task_id = inspection["task_id"]
-            input_data_dict: Dict[InputDataId, List[Inspection]] = task_dict.get(task_id, {})
+            input_data_dict: Dict[str, List[Inspection]] = task_dict.get(task_id, {})
 
             input_data_id = inspection["input_data_id"]
             inspection_list = input_data_dict.get(input_data_id, [])
@@ -88,14 +91,14 @@ class ComleteTasks(AbstractCommandLineInterface):
         project_id: str,
         task: Task,
         inspection_status: InspectionStatus,
-        input_data_dict: Dict[InputDataId, List[Inspection]],
+        input_data_dict: Dict[str, List[Inspection]],
         account_id: str,
     ):
         """
         検査コメントのstatusを変更（対応完了 or 対応不要）にした上で、タスクを受け入れ完了状態にする
         """
 
-        task_id = task["task_id"]
+        task_id = task.task_id
 
         # 検査コメントの状態を変更する
         for input_data_id, inspection_list in input_data_dict.items():
@@ -133,6 +136,7 @@ class ComleteTasks(AbstractCommandLineInterface):
 
         if change_inspection_status is None:
             logger.info(f"{task.task_id}: 未処置の検査コメントがあるためスキップします。")
+            return
 
         if target_inspections_dict is None:
             input_data_dict = self.inspection_list_to_input_data_dict(unprocessed_inspection_list)
@@ -178,7 +182,7 @@ class ComleteTasks(AbstractCommandLineInterface):
                 logger.warning(f"{task_id} のタスクを取得できませんでした。")
                 continue
 
-            task = Task.from_dict(dict_task)
+            task = Task.from_dict(dict_task)  # type: ignore
             logger.info(f"タスク情報 task_id: {task_id}, phase: {task.phase.value}, status: {task.status.value}")
 
             unprocessed_inspection_list = self.get_unprocessed_inspection_list_by_task_id(project_id, task)
