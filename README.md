@@ -112,7 +112,7 @@ $ docker run -it -e ANNOFAB_USER_ID=XXXX -e ANNOFAB_PASSWORD=YYYYY annofab-cli a
 |task| complete                | 未処置の検査コメントを適切な状態に変更して、タスクを受け入れ完了状態にします。                                 |チェッカー/オーナ|
 |task| delete                | タスクを削除します。                                 |オーナ|
 |task|list             | タスク一覧を出力します。                                                            |-|
-|task| put                | タスクを登録します。                                 |オーナ|
+|task| put                | タスクを作成します。                                 |オーナ|
 |task| reject                  | 検査コメントを付与してタスクを差し戻します。                                                                 |チェッカー/オーナ|
 
 
@@ -1186,6 +1186,9 @@ $ annofabcli task list --project_id prj1 --task_json task.json
 
 
 ### task put
+タスクを作成します。
+
+### CSVファイルに記載された情報を元にタスクを作成する場合
 CSVに記載された情報を元に、タスクを登録します。
 CSVのフォーマットは以下の通りです。
 
@@ -1210,6 +1213,20 @@ $ annofabcli task put --project_id prj1 --csv task.csv
 
 # prj1に、タスク登録処理を投入する。タスク登録が完了するまで待つ.
 $ annofabcli task put --project_id prj1 --csv task.csv --wait
+```
+
+#### 1つのタスクに割り当てる入力データの個数を指定してタスクを作成する場合
+1つのタスクに割り当てる入力データの個数などの情報を、`--by_count`引数に指定します。
+フォーマットは [initiateTasksGeneration](https://annofab.com/docs/api/#operation/initiateTasksGeneration) APIのリクエストボディ `task_generate_rule` を参照してください。
+
+```
+# 「タスクIDのプレフィックスを"sample"、1タスクの入力データ数を10個」でタスクを作成する。
+$ annofabcli task  put --project_id prj1 --by_count '{"task_id_prefix":"sample","input_data_count":10}' 
+
+# 「タスクIDのプレフィックスを"sample"、1タスクの入力データ数を10個、入力データ名を降順、
+# 既にタスクに使われている入力データも利用」でタスクを作成し、タスク作成が完了するまで待つ
+$ annofabcli task  put --project_id prj1 --by_count '{"task_id_prefix":"sample","input_data_count":10, \
+ "input_data_order":"random", "allow_duplicate_input_data":true}' --wait
 ```
 
 
