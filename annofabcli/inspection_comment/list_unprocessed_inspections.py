@@ -16,9 +16,13 @@ logger = logging.getLogger(__name__)
 
 
 def create_filter_func(
-    commenter_user_id: Optional[str], inspection_comment: Optional[str]
+    commenter_user_id: Optional[str],
+    inspection_comment: Optional[str],
+    phase: Optional[str],
+    phase_stage: Optional[int],
 ) -> Callable[[Inspection], bool]:
-    def filter_inspection(arg_inspection: Inspection) -> bool:
+    def filter_inspection(arg_inspection: Inspection) -> bool:  # pylint: disable=too-many-return-statements
+
         # 未処置コメントのみ、変更する
         if arg_inspection["status"] != "annotator_action_required":
             return False
@@ -33,6 +37,14 @@ def create_filter_func(
 
         if inspection_comment is not None:
             if arg_inspection["comment"] != inspection_comment:
+                return False
+
+        if phase is not None:
+            if arg_inspection["phase"] != phase:
+                return False
+
+        if phase_stage is not None:
+            if arg_inspection["phase_stage"] != phase_stage:
                 return False
 
         return True
@@ -51,9 +63,13 @@ def parse_args(parser: argparse.ArgumentParser):
         "`file://`を先頭に付けると、task_idの一覧が記載されたファイルを指定できます。",
     )
 
-    parser.add_argument("--inspection_comment", type=str, help="絞り込み条件となる、検査コメントの中身。指定しない場合は絞り込まない。")
+    parser.add_argument("--inspection_comment", type=str, help="「検査コメントの中身」で絞り込みます。指定しない場合は絞り込みません。")
 
-    parser.add_argument("--commenter_user_id", type=str, help="絞り込み条件となる、検査コメントを付与したユーザのuser_id。 指定しない場合は絞り込まない。")
+    parser.add_argument("--commenter_user_id", type=str, help="「検査コメントを付与したユーザのuser_id」で絞り込みます。指定しない場合は絞り込みません。")
+
+    parser.add_argument("--phase", type=str, help="「検査コメントを付与したときのタスクフェーズ」で絞り込みます。指定しない場合は絞り込みません。")
+
+    parser.add_argument("--phase_stage", type=int, help="「検査コメントを付与したときのタスクフェーズのステージ番号」で絞り込みます。指定しない場合は絞り込みません。")
 
     parser.add_argument(
         "--inspection_comment_json",
@@ -100,7 +116,9 @@ def main(args: argparse.Namespace):
 
     task_id_list = annofabcli.common.cli.get_list_from_args(args.task_id)
 
-    filter_inspection = create_filter_func(args.commenter_user_id, args.inspection_comment)
+    filter_inspection = create_filter_func(
+        args.commenter_user_id, args.inspection_comment, phase=args.phase, phase_stage=args.phase_stage
+    )
 
     if args.inspection_comment_json is not None:
         with open(args.inspection_comment_json, encoding="utf-8") as f:

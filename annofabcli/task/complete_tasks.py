@@ -131,7 +131,7 @@ class ComleteTasks(AbstractCommandLineInterface):
     ):
         if task.phase == TaskPhase.ANNOTATION or len(unprocessed_inspection_list) == 0:
             self.facade.complete_task(project_id, task.task_id, account_id)
-            logger.info(f"{task.task_id}: {task.phase} フェーズを完了状態にしました。")
+            logger.info(f"{task.task_id}: {task.phase.value} フェーズを完了状態にしました。")
             return
 
         if change_inspection_status is None:
@@ -142,6 +142,9 @@ class ComleteTasks(AbstractCommandLineInterface):
             input_data_dict = self.inspection_list_to_input_data_dict(unprocessed_inspection_list)
         else:
             input_data_dict = target_inspections_dict[task.task_id]
+
+        # 担当者変更してから数秒待たないと、検査コメントの付与に失敗する(「検査コメントの作成日時が不正です」と言われる）
+        time.sleep(3)
 
         self.complete_acceptance_task(
             project_id,
@@ -205,9 +208,6 @@ class ComleteTasks(AbstractCommandLineInterface):
                 logger.warning(f"{task_id}: 担当者の変更に失敗しました。")
                 continue
 
-            # 担当者変更してから数秒待たないと、検査コメントの付与に失敗する(「検査コメントの作成日時が不正です」と言われる）
-            time.sleep(3)
-
             try:
                 self.complete_task(
                     project_id=project_id,
@@ -217,7 +217,7 @@ class ComleteTasks(AbstractCommandLineInterface):
                     task=task,
                     unprocessed_inspection_list=unprocessed_inspection_list,
                 )
-            except requests.HTTPError as e:
+            except Exception as e:
                 logger.warning(e)
                 logger.warning(f"{task_id}: {task.phase} フェーズを完了状態にするのに失敗しました。")
                 self.facade.change_to_break_phase(project_id, task_id, account_id)
@@ -227,7 +227,9 @@ class ComleteTasks(AbstractCommandLineInterface):
         args = self.args
         task_id_list = annofabcli.common.cli.get_list_from_args(args.task_id)
         inspection_list = annofabcli.common.cli.get_json_from_args(args.inspection_list)
-        inspection_status = InspectionStatus(args.change_inspection_status)
+        inspection_status = (
+            InspectionStatus(args.inspection_status) if args.inspection_status is not None else None
+        )
         self.complete_tasks_with_changing_inspection_status(
             args.project_id,
             task_id_list=task_id_list,
@@ -243,7 +245,7 @@ def parse_args(parser: argparse.ArgumentParser):
     argument_parser.add_task_id(required=True)
 
     parser.add_argument(
-        "--change_inspection_status",
+        "--inspection_status",
         type=str,
         choices=[InspectionStatus.ERROR_CORRECTED.value, InspectionStatus.NO_CORRECTION_REQUIRED.value],
         help=(
@@ -276,7 +278,7 @@ def main(args):
 def add_parser(subparsers: argparse._SubParsersAction):
     subcommand_name = "complete"
     subcommand_help = "タスクの今のフェーズを完了状態（教師付の提出、検査/受入の合格）にします。"
-    description = "タスクの今のフェーズを完了状態（教師付の提出、検査/受入の合格）にします。" "未処置の検査コメントがある場合、適切な状態に変更できます。" "オーナ権限を持つユーザで実行すること。"
+    description = "タスクの今のフェーズを完了状態（教師付の提出、検査/受入の合格）にします。" "未処置の検査コメントがある場合、検査コメントを適切な状態に変更できます。" "オーナ権限を持つユーザで実行すること。"
     epilog = "チェッカーまたはオーナロールを持つユーザで実行してください。"
 
     parser = annofabcli.common.cli.add_parser(subparsers, subcommand_name, subcommand_help, description, epilog=epilog)

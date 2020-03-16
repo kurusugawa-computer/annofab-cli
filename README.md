@@ -1119,21 +1119,26 @@ $ annofabcli task change_operator --project_id prj1 --task_id file://task.txt --
 
 
 ### task complete
-未処置の検査コメントを適切な状態に変更して、タスクを受け入れ完了にします。
-特定のタスクのみ受け入れをスキップしたいときに、利用します。
+タスクの今のフェーズを完了状態（教師付の提出、検査/受入の合格）にします。未処置の検査コメントがある場合、検査コメントを適切な状態に変更できます
 
 
 ```
-# 未処置の検査コメントは"対応完了"状態にして、prj1プロジェクトのタスクを受け入れ完了にする。
-$ annofabcli complete_tasks --project_id prj1  --inspection_list file://inspection.json \
- --inspection_status error_corrected
+# task1 が教師付ならば提出、検査/受入フェーズならば合格にする
+$ annofabcli task complete --project_id prj1 --task_id task1
 
-# 未処置の検査コメントは"対応不要"状態にして、prj1プロジェクトのタスクを受け入れ完了にする。
-$ annofabcli complete_tasks --project_id prj1  --inspection_list file://inspection.json \
- --inspection_status no_correction_required
+# task1の未処置の検査コメントを"対応完了"状態にして、検査/受入フェーズを完了状態にする
+$ annofabcli complete_tasks --project_id prj1 --task_id task1  --inspection_status error_corrected 
+
+# inspectio.jsonに記載された検査コメントを"対応不要"状態にして、検査/受入フェーズを完了状態にする
+$ annofabcli complete_tasks --project_id prj1 --task_id task1  --inspection_status no_correction_required \
+ --inspection_list file://inspection.json 
 ```
 
-`inspection.json`は、未処置の検査コメント一覧です。`annofabcli inspection_comment list_unprocessed --format json`コマンドで出力できます。
+`inspection.json`は、未処置の検査コメント一覧です。[inspection_comment list_unprocessed ](#inspection_comment-list_unprocessed) コマンドで出力できます。
+
+```
+$ annofabcli inspection_comment list_unprocessed --project_id prj1 --task_id file://task.txt --format json --output inspection.json
+```
 
 
 ### task delete
