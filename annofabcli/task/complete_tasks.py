@@ -79,24 +79,33 @@ class ComleteTasks(AbstractCommandLineInterface):
         super().validate_project(project_id, [ProjectMemberRole.OWNER, ProjectMemberRole.ACCEPTER])
 
         account_id = self.facade.get_my_account_id()
-
-        inspection_json = self.inspection_list_to_dict(target_inspection_list)
-
+        inspections_dict = self.inspection_list_to_dict(target_inspection_list) if target_inspection_list is not None else None
         project_title = self.facade.get_project_title(project_id)
-        logger.info(f"{project_title} のタスク{len(inspection_json)} 件に対して、今のフェーズを完了状態にします。")
-        # for task_id, input_data_dict in inspection_json.items():
+        logger.info(f"{project_title} のタスク {len(task_id_list)} 件に対して、今のフェーズを完了状態にします。")
+
         for task_id in task_id_list:
             dict_task = self.service.wrapper.get_task_or_none(project_id, task_id)
             if dict_task is None:
                 logger.warning(f"{task_id} のタスクを取得できませんでした。")
                 continue
+
             task = Task.from_dict(dict_task)
-            logger.info(f"タスク情報 task_id: {task_id}, phase: {task.phase}, status: {task.status}")
+            logger.info(f"タスク情報 task_id: {task_id}, phase: {task.phase.value}, status: {task.status.value}")
 
             unprocessed_inspection_list = self.get_unprocessed_inspection_list_by_task_id(project_id, task)
+            if len(unprocessed_inspection_list) ==0:
+                if not self.confirm_processing(f"タスク'{task_id}'の {task.phase.value} フェーズを、完了状態にしますか？"):
+                    continue
+            else:
+                if change_inspection_status is None:
+                    logger.debug(f"{task_id}: 未処置の検査コメントがあるためスキップします。")
+                    continue
+                else:
+                    logger.
 
-            if not self.confirm_processing(f"タスク'{task_id}'の検査コメントを'{inspection_status.value}'状態にして、" f"受入完了状態にしますか？"):
-                continue
+
+
+
 
             # 担当者変更
             try:
@@ -202,7 +211,7 @@ class ComleteTasks(AbstractCommandLineInterface):
         inspection_list = annofabcli.common.cli.get_json_from_args(args.inspection_list)
         inspection_status = InspectionStatus(args.change_inspection_status)
         self.complete_tasks_with_changing_inspection_status(
-            args.project_id, task_id_list=task_id_list, inspection_status=inspection_status, inspection_list=inspection_list
+            args.project_id, task_id_list=task_id_list, change_inspection_status=inspection_status, target_inspection_list=inspection_list
         )
 
 
