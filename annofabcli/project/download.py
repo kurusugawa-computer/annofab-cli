@@ -66,6 +66,9 @@ class Download(AbstractCommandLineInterface):
             logger.info(f"ダウンロードの対象の最新化に失敗したか、または {MAX_WAIT_MINUTUE} 分待っても最新化処理が完了しませんでした。")
 
     def download(self, target: DownloadTarget, project_id: str, output: str, latest: bool, wait_options: WaitOptions):
+        project_title = self.facade.get_project_title(project_id)
+        logger.info(f"{project_title} の {target.value} をダウンロードします。")
+
         if target == DownloadTarget.TASK:
             if latest:
                 self.update_file_and_wait(

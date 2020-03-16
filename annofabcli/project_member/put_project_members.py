@@ -6,6 +6,7 @@ from typing import Any, Dict, List, Optional
 
 import more_itertools
 import pandas
+import numpy
 import requests
 from annofabapi.models import ProjectMemberRole, ProjectMemberStatus
 from dataclasses_json import dataclass_json
@@ -166,7 +167,7 @@ class PutProjectMembers(AbstractCommandLineInterface):
             sep=",",
             header=None,
             names=("user_id", "member_role", "sampling_inspection_rate", "sampling_acceptance_rate"),
-        ).replace({pandas.np.nan: None})
+        ).replace({numpy.nan: None})
         members = [create_member(e) for e in df.itertuples()]
         return members
 

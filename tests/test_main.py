@@ -586,8 +586,8 @@ class TestTask:
             [self.command_name, "put", "--project_id", project_id, "--csv", csv_file,]
         )
 
-    # def test_complete_task(self):
-    #     main([
-    #         self.command_name, 'complete', '--project_id', project_id, '--inspection_list', '--inspection_status', 'no_correction_required', '--yes'
-    #     ])
-    #
+    def test_complete_task(self):
+        main([
+            self.command_name, "complete", "--project_id", project_id, "--task_id", task_id, "--yes"
+        ])
+

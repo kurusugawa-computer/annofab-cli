@@ -112,7 +112,7 @@ $ docker run -it -e ANNOFAB_USER_ID=XXXX -e ANNOFAB_PASSWORD=YYYYY annofab-cli a
 |task| complete                | 未処置の検査コメントを適切な状態に変更して、タスクを受け入れ完了状態にします。                                 |チェッカー/オーナ|
 |task| delete                | タスクを削除します。                                 |オーナ|
 |task|list             | タスク一覧を出力します。                                                            |-|
-|task| put                | タスクを登録します。                                 |オーナ|
+|task| put                | タスクを作成します。                                 |オーナ|
 |task| reject                  | 検査コメントを付与してタスクを差し戻します。                                                                 |チェッカー/オーナ|
 
 
@@ -1119,21 +1119,26 @@ $ annofabcli task change_operator --project_id prj1 --task_id file://task.txt --
 
 
 ### task complete
-未処置の検査コメントを適切な状態に変更して、タスクを受け入れ完了にします。
-特定のタスクのみ受け入れをスキップしたいときに、利用します。
+タスクの今のフェーズを完了状態（教師付の提出、検査/受入の合格）にします。未処置の検査コメントがある場合、検査コメントを適切な状態に変更できます
 
 
 ```
-# 未処置の検査コメントは"対応完了"状態にして、prj1プロジェクトのタスクを受け入れ完了にする。
-$ annofabcli complete_tasks --project_id prj1  --inspection_list file://inspection.json \
- --inspection_status error_corrected
+# task1 が教師付ならば提出、検査/受入フェーズならば合格にする
+$ annofabcli task complete --project_id prj1 --task_id task1
 
-# 未処置の検査コメントは"対応不要"状態にして、prj1プロジェクトのタスクを受け入れ完了にする。
-$ annofabcli complete_tasks --project_id prj1  --inspection_list file://inspection.json \
- --inspection_status no_correction_required
+# task1の未処置の検査コメントを"対応完了"状態にして、検査/受入フェーズを完了状態にする
+$ annofabcli complete_tasks --project_id prj1 --task_id task1  --inspection_status error_corrected 
+
+# inspectio.jsonに記載された検査コメントを"対応不要"状態にして、検査/受入フェーズを完了状態にする
+$ annofabcli complete_tasks --project_id prj1 --task_id task1  --inspection_status no_correction_required \
+ --inspection_list file://inspection.json 
 ```
 
-`inspection.json`は、未処置の検査コメント一覧です。`annofabcli inspection_comment list_unprocessed --format json`コマンドで出力できます。
+`inspection.json`は、未処置の検査コメント一覧です。[inspection_comment list_unprocessed ](#inspection_comment-list_unprocessed) コマンドで出力できます。
+
+```
+$ annofabcli inspection_comment list_unprocessed --project_id prj1 --task_id file://task.txt --format json --output inspection.json
+```
 
 
 ### task delete
@@ -1181,6 +1186,9 @@ $ annofabcli task list --project_id prj1 --task_json task.json
 
 
 ### task put
+タスクを作成します。
+
+### CSVファイルに記載された情報を元にタスクを作成する場合
 CSVに記載された情報を元に、タスクを登録します。
 CSVのフォーマットは以下の通りです。
 
@@ -1205,6 +1213,20 @@ $ annofabcli task put --project_id prj1 --csv task.csv
 
 # prj1に、タスク登録処理を投入する。タスク登録が完了するまで待つ.
 $ annofabcli task put --project_id prj1 --csv task.csv --wait
+```
+
+#### 1つのタスクに割り当てる入力データの個数を指定してタスクを作成する場合
+1つのタスクに割り当てる入力データの個数などの情報を、`--by_count`引数に指定します。
+フォーマットは [initiateTasksGeneration](https://annofab.com/docs/api/#operation/initiateTasksGeneration) APIのリクエストボディ `task_generate_rule` を参照してください。
+
+```
+# 「タスクIDのプレフィックスを"sample"、1タスクの入力データ数を10個」でタスクを作成する。
+$ annofabcli task  put --project_id prj1 --by_count '{"task_id_prefix":"sample","input_data_count":10}' 
+
+# 「タスクIDのプレフィックスを"sample"、1タスクの入力データ数を10個、入力データ名を降順、
+# 既にタスクに使われている入力データも利用」でタスクを作成し、タスク作成が完了するまで待つ
+$ annofabcli task  put --project_id prj1 --by_count '{"task_id_prefix":"sample","input_data_count":10, \
+ "input_data_order":"random", "allow_duplicate_input_data":true}' --wait
 ```
 
 
