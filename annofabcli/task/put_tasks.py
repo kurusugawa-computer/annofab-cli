@@ -123,7 +123,8 @@ def parse_args(parser: argparse.ArgumentParser):
         "--by_count",
         type=str,
         help=f"1つのタスクに割り当てる入力データの個数などの情報を、JSON形式で指定してください。"
-        "JSONフォーマットは https://annofab.com/docs/api/#operation/initiateTasksGeneration APIのリクエストボディ 'task_generate_rule'と同じです。"
+        "JSONフォーマットは https://annofab.com/docs/api/#operation/initiateTasksGeneration"
+        " APIのリクエストボディ 'task_generate_rule'と同じです。"
         f"デフォルトは'{PutTask.DFAULT_BY_COUNT}'です。"
         "'file://'を先頭に付けるとjsonファイルを指定できます。",
     )
