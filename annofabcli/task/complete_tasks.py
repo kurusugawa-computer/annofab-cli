@@ -23,6 +23,20 @@ class ComleteTasks(AbstractCommandLineInterface):
     """
 
     @staticmethod
+    def inspection_list_to_input_data_dict(inspection_list: List[Inspection]) ->  Dict[InputDataId, List[Inspection]]:
+        """
+        検査コメントのListを、Dict[InputDataId, List[Inspection]]] の形式に変換する。
+
+        """
+        input_data_dict: Dict[InputDataId, List[Inspection]] = {}
+        for inspection in inspection_list:
+            input_data_id = inspection["input_data_id"]
+            inspection_list = input_data_dict.get(input_data_id, [])
+            inspection_list.append(inspection)
+            input_data_dict[input_data_id] = inspection_list
+        return input_data_dict
+
+    @staticmethod
     def inspection_list_to_dict(all_inspection_list: List[Inspection]) -> InspectionJson:
         """
         検査コメントのListを、Dict[TaskId, Dict[InputDataId, List[Inspection]]] の形式に変換する。
@@ -66,7 +80,7 @@ class ComleteTasks(AbstractCommandLineInterface):
 
         account_id = self.facade.get_my_account_id()
 
-        inspection_json = self.inspection_list_to_dict(inspection_list)
+        inspection_json = self.inspection_list_to_dict(target_inspection_list)
 
         project_title = self.facade.get_project_title(project_id)
         logger.info(f"{project_title} のタスク{len(inspection_json)} 件に対して、今のフェーズを完了状態にします。")
@@ -78,6 +92,8 @@ class ComleteTasks(AbstractCommandLineInterface):
                 continue
             task = Task.from_dict(dict_task)
             logger.info(f"タスク情報 task_id: {task_id}, phase: {task.phase}, status: {task.status}")
+
+            unprocessed_inspection_list = self.get_unprocessed_inspection_list_by_task_id(project_id, task)
 
             if not self.confirm_processing(f"タスク'{task_id}'の検査コメントを'{inspection_status.value}'状態にして、" f"受入完了状態にしますか？"):
                 continue
@@ -99,7 +115,7 @@ class ComleteTasks(AbstractCommandLineInterface):
                 self.facade.complete_task(project_id, task_id, account_id)
                 logger.info(f"{task_id}: 教師付フェーズを完了状態にしました。")
             else:
-                unprocessed_inspection_list = self.get_unprocessed_inspection_list_by_task_id(project_id, task)
+
                 if len(unprocessed_inspection_list) == 0:
                     self.facade.complete_task(project_id, task_id, account_id)
                     logger.info(f"{task_id}: 検査/受入フェーズを完了状態にしました。")
@@ -110,21 +126,24 @@ class ComleteTasks(AbstractCommandLineInterface):
                         continue
                     else:
                         if target_inspection_list is None:
+                            input_data_dict = self.inspection_list_to_input_data_dict(unprocessed_inspection_list)
+                        else:
+                            input_data_dict = target_inspection_list[task_id]
+
+                        # 検査コメントを付与して、タスクを受け入れ完了にする
+                        try:
+                            self.complete_acceptance_task(
+                                project_id, task, inspection_status=change_inspection_status, input_data_dict=input_data_dict,
+                                account_id=account_id
+                            )
+                        except requests.HTTPError as e:
+                            logger.warning(e)
+                            logger.warning(f"{task_id} の検査/受入フェーズを完了状態にするのに失敗しました。")
+
+                            self.facade.change_to_break_phase(project_id, task_id, account_id)
+                            continue
 
 
-
-
-            # 検査コメントを付与して、タスクを受け入れ完了にする
-            try:
-                self.complete_acceptance_task(
-                    project_id, task, inspection_status, input_data_dict=input_data_dict, account_id=account_id
-                )
-            except requests.HTTPError as e:
-                logger.warning(e)
-                logger.warning(f"{task_id} の受入完了に失敗")
-
-                self.facade.change_to_break_phase(project_id, task_id, account_id)
-                continue
 
     def update_status_of_inspections(
         self,
@@ -175,7 +194,7 @@ class ComleteTasks(AbstractCommandLineInterface):
 
         # タスクの状態を検査する
         self.facade.complete_task(project_id, task_id, account_id)
-        logger.info(f"{task_id}: タスクを受入完了にした")
+        logger.info(f"{task_id}: 検査/受入フェーズを完了状態にしました。")
 
     def main(self):
         args = self.args
