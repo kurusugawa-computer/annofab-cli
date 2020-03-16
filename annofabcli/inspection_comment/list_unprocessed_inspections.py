@@ -2,7 +2,7 @@ import argparse
 import json
 import logging
 import sys
-from typing import Callable
+from typing import Callable, Optional
 
 from annofabapi.models import Inspection
 
@@ -15,7 +15,7 @@ from annofabcli.inspection_comment.list_inspections import PrintInspections
 logger = logging.getLogger(__name__)
 
 
-def create_filter_func(commenter_user_id: str, inspection_comment: str) -> Callable[[Inspection], bool]:
+def create_filter_func(commenter_user_id: Optional[str], inspection_comment: Optional[str]) -> Callable[[Inspection], bool]:
     def filter_inspection(arg_inspection: Inspection) -> bool:
         # 未処置コメントのみ、変更する
         if arg_inspection["status"] != "annotator_action_required":
