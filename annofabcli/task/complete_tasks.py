@@ -217,7 +217,7 @@ class ComleteTasks(AbstractCommandLineInterface):
                     task=task,
                     unprocessed_inspection_list=unprocessed_inspection_list,
                 )
-            except Exception as e:
+            except Exception as e: # pylint: disable=broad-except
                 logger.warning(e)
                 logger.warning(f"{task_id}: {task.phase} フェーズを完了状態にするのに失敗しました。")
                 self.facade.change_to_break_phase(project_id, task_id, account_id)

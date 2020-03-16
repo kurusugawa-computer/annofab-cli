@@ -36,7 +36,7 @@ class PutTask(AbstractCommandLineInterface):
             "task_generate_rule": task_generate_rule,
             "project_last_updated_datetime": project_last_updated_datetime,
         }
-        content, _ = self.service.api.initiate_tasks_generation(project_id, request_body=request_body)
+        self.service.api.initiate_tasks_generation(project_id, request_body=request_body)
 
     def put_task_from_csv_file(self, project_id: str, csv_file: Path) -> None:
         """
