@@ -3,10 +3,7 @@ import logging
 from typing import List
 
 from annofabapi.dataclass.task import Task
-from annofabapi.models import (
-    ProjectMemberRole,
-    TaskStatus,
-)
+from annofabapi.models import ProjectMemberRole, TaskStatus
 
 import annofabcli
 from annofabcli import AnnofabApiFacade
@@ -41,14 +38,20 @@ class DeleteAnnotation(AbstractCommandLineInterface):
             return len(old_details)
 
         updated_datetime = old_annotation["updated_datetime"] if old_annotation is not None else None
-        request_body = {"details": [], "updated_datetime": updated_datetime}
+        request_body = {
+            "project_id": project_id,
+            "task_id": task_id,
+            "input_data_id": input_data_id,
+            "details": [],
+            "updated_datetime": updated_datetime,
+        }
         self.service.api.put_annotation(project_id, task_id, input_data_id, request_body=request_body)
         logger.debug(f"task_id={task_id}, input_data_id={input_data_id}: アノテーションを削除しました。")
         return len(old_details)
 
     def delete_annotation_for_task(self, project_id: str, task_id: str, my_account_id: str) -> bool:
         """
-        入力データに対してアノテーションを削除する
+        タスクに対してアノテーションを削除する
 
         Args:
             project_id:
@@ -65,7 +68,9 @@ class DeleteAnnotation(AbstractCommandLineInterface):
             return False
 
         task: Task = Task.from_dict(dict_task)  # type: ignore
-        logger.info(task)
+        logger.info(
+            f"task_id={task.task_id}, phase={task.phase.value}, status={task.status.value}, updated_datetime={task.updated_datetime}"
+        )
         if task.status in [TaskStatus.WORKING, TaskStatus.COMPLETE]:
             logger.warning(f"タスクが作業中/完了状態のため、スキップします。")
             return False
