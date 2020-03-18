@@ -69,6 +69,7 @@ class DumpAnnotation(AbstractCommandLineInterface):
         logger.debug(f"task_id = '{task_id}' のアノテーション情報をファイルに保存します。")
         input_data_id_list = task["input_data_id_list"]
         task_dir = output_dir / task_id
+        task_dir.mkdir(exist_ok=True, parents=True)
         for input_data_id in input_data_id_list:
             self.dump_annotation_for_input_data(project_id, task_id, input_data_id, task_dir=task_dir)
 
@@ -79,6 +80,8 @@ class DumpAnnotation(AbstractCommandLineInterface):
 
         project_title = self.facade.get_project_title(project_id)
         logger.info(f"プロジェクト'{project_title}'に対して、タスク{len(task_id_list)} 件のアノテーションをファイルに保存します。")
+
+        output_dir.mkdir(exist_ok=True, parents=True)
 
         for task_id in task_id_list:
             self.dump_annotation_for_task(project_id, task_id, output_dir=output_dir)

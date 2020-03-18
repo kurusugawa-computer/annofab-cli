@@ -1,6 +1,7 @@
 import argparse
 
 import annofabcli
+import annofabcli.annotation.dump_annotation
 import annofabcli.annotation.delete_annotation
 import annofabcli.annotation.import_annotation
 import annofabcli.annotation.list_annotation_count
@@ -13,6 +14,7 @@ def parse_args(parser: argparse.ArgumentParser):
 
     # サブコマンドの定義
     annofabcli.annotation.delete_annotation.add_parser(subparsers)
+    annofabcli.annotation.dump_annotation.add_parser(subparsers)
     annofabcli.annotation.import_annotation.add_parser(subparsers)
     annofabcli.annotation.list_annotation_count.add_parser(subparsers)
 
