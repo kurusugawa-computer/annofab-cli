@@ -72,11 +72,11 @@ class DeleteAnnotation(AbstractCommandLineInterface):
             f"task_id={task.task_id}, phase={task.phase.value}, status={task.status.value}, updated_datetime={task.updated_datetime}"
         )
         if task.status in [TaskStatus.WORKING, TaskStatus.COMPLETE]:
-            logger.warning(f"タスクが作業中/完了状態のため、スキップします。")
+            logger.warning(f"task_id={task_id}: タスクが作業中/完了状態のため、スキップします。")
             return False
 
         if task.account_id != my_account_id:
-            logger.warning(f"タスクの担当者が自分自身でないため、スキップします。")
+            logger.warning(f"task_id={task_id}: タスクの担当者が自分自身でないため、スキップします。")
             return False
 
         if not self.confirm_processing(f"task_id={task_id} のアノテーションを削除しますか？"):
