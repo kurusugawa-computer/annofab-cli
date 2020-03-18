@@ -46,7 +46,10 @@ class RestoreAnnotation(AbstractCommandLineInterface):
 
         """
         if detail.data_holding_type == AnnotationDataHoldingType.OUTER:
+            detail.etag = None
+            detail.url = None
             data_uri = detail.path
+
             if data_uri is not None:
                 with parser.open_outer_file(data_uri) as f:
                     s3_path = self.service.wrapper.upload_data_to_s3(project_id, f, content_type="image/png")
@@ -94,9 +97,7 @@ class RestoreAnnotation(AbstractCommandLineInterface):
         self.service.api.put_annotation(project_id, task_id, input_data_id, request_body=request_body)
         return True
 
-    def put_annotation_for_task(
-        self, project_id: str, task_parser: SimpleAnnotationParserByTask, overwrite: bool
-    ) -> int:
+    def put_annotation_for_task(self, project_id: str, task_parser: SimpleAnnotationParserByTask) -> int:
 
         logger.info(f"タスク'{task_parser.task_id}' のアノテーションをリストアします。")
 
@@ -107,22 +108,19 @@ class RestoreAnnotation(AbstractCommandLineInterface):
                     success_count += 1
             except Exception as e:  # pylint: disable=broad-except
                 logger.warning(
-                    f"task_id={parser.task_id}, input_data_id={parser.input_data_id} のアノテーションインポートに失敗しました。: {e}"
+                    f"task_id={parser.task_id}, input_data_id={parser.input_data_id} のアノテーションのリストアに失敗しました。: {e}"
                 )
 
-        logger.info(f"タスク'{task_parser.task_id}'の入力データ {success_count} 個に対してアノテーションをインポートしました。")
+        logger.info(f"タスク'{task_parser.task_id}'の入力データ {success_count} 個に対してアノテーションをリストアしました。")
         return success_count
 
-    def execute_task(
-        self, project_id: str, task_parser: SimpleAnnotationParserByTask, my_account_id: str, overwrite: bool = False
-    ) -> bool:
+    def execute_task(self, project_id: str, task_parser: SimpleAnnotationParserByTask, my_account_id: str) -> bool:
         """
         1個のタスクに対してアノテーションを登録する。
 
         Args:
             project_id:
             task_parser:
-            overwrite:
 
         Returns:
             1個以上の入力データのアノテーションを変更したか
@@ -147,7 +145,7 @@ class RestoreAnnotation(AbstractCommandLineInterface):
             logger.debug(f"タスク'{task_id}'は、過去に誰かに割り当てられたタスクで、現在の担当者が自分自身でないため アノテーションのリストアをスキップします。")
             return False
 
-        result_count = self.put_annotation_for_task(project_id, task_parser, overwrite)
+        result_count = self.put_annotation_for_task(project_id, task_parser)
         return result_count > 0
 
     def main(self):
