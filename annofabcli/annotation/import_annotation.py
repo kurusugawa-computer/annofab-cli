@@ -69,7 +69,7 @@ class ImportedSimpleAnnotation:
 
 class ImportAnnotation(AbstractCommandLineInterface):
     """
-    タスクの一覧を表示する
+    アノテーションをインポートする
     """
 
     def __init__(self, service: annofabapi.Resource, facade: AnnofabApiFacade, args: argparse.Namespace):
