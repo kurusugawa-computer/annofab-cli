@@ -1,37 +1,16 @@
 import argparse
-import json
 import logging
-import sys
-import uuid
-import zipfile
-from dataclasses import dataclass
-from pathlib import Path
-from typing import Any, Dict, List, Optional, Union
+from typing import List
 
-import annofabapi
-from annofabapi.dataclass.annotation import AdditionalData, AnnotationDetail, FullAnnotationData
 from annofabapi.dataclass.task import Task
 from annofabapi.models import (
-    AdditionalDataDefinitionType,
-    AdditionalDataDefinitionV1,
-    AnnotationDataHoldingType,
-    LabelV1,
     ProjectMemberRole,
     TaskStatus,
 )
-from annofabapi.parser import (
-    SimpleAnnotationParser,
-    SimpleAnnotationParserByTask,
-    lazy_parse_simple_annotation_dir_by_task,
-    lazy_parse_simple_annotation_zip_by_task,
-)
-from dataclasses_json import dataclass_json
-from more_itertools import first_true
 
 import annofabcli
 from annofabcli import AnnofabApiFacade
 from annofabcli.common.cli import AbstractCommandLineInterface, ArgumentParser, build_annofabapi_resource_and_login
-from annofabcli.common.visualize import AddProps, MessageLocale
 
 logger = logging.getLogger(__name__)
 
@@ -62,15 +41,10 @@ class DeleteAnnotation(AbstractCommandLineInterface):
             return len(old_details)
 
         updated_datetime = old_annotation["updated_datetime"] if old_annotation is not None else None
-        request_body = {
-            "details": [],
-            "updated_datetime": updated_datetime
-        }
+        request_body = {"details": [], "updated_datetime": updated_datetime}
         self.service.api.put_annotation(project_id, task_id, input_data_id, request_body=request_body)
         logger.debug(f"task_id={task_id}, input_data_id={input_data_id}: アノテーションを削除しました。")
         return len(old_details)
-
-
 
     def delete_annotation_for_task(self, project_id: str, task_id: str, my_account_id: str) -> bool:
         """
@@ -122,9 +96,6 @@ class DeleteAnnotation(AbstractCommandLineInterface):
 
     def main(self):
         args = self.args
-        if not self.validate(args):
-            return
-
         project_id = args.project_id
         task_id_list = annofabcli.common.cli.get_list_from_args(args.task_id)
 
@@ -142,7 +113,6 @@ def parse_args(parser: argparse.ArgumentParser):
 
     argument_parser.add_project_id()
     argument_parser.add_task_id()
-
 
     parser.set_defaults(subcommand_func=main)
 
