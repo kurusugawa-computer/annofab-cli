@@ -4,7 +4,6 @@ import logging
 from pathlib import Path
 from typing import Any, Dict, List
 
-import annofabapi
 from annofabapi.dataclass.annotation import Annotation, AnnotationDetail
 from annofabapi.models import AnnotationDataHoldingType, ProjectMemberRole, TaskStatus
 from annofabapi.parser import (
@@ -17,7 +16,6 @@ from annofabapi.utils import can_put_annotation
 import annofabcli
 from annofabcli import AnnofabApiFacade
 from annofabcli.common.cli import AbstractCommandLineInterface, ArgumentParser, build_annofabapi_resource_and_login
-from annofabcli.common.visualize import AddProps
 
 logger = logging.getLogger(__name__)
 
@@ -26,10 +24,6 @@ class RestoreAnnotation(AbstractCommandLineInterface):
     """
     アノテーションをリストアする。
     """
-
-    def __init__(self, service: annofabapi.Resource, facade: AnnofabApiFacade, args: argparse.Namespace):
-        super().__init__(service, facade, args)
-        self.visualize = AddProps(self.service, args.project_id)
 
     def _to_annotation_detail_for_request(
         self, project_id: str, parser: SimpleAnnotationParser, detail: AnnotationDetail
@@ -121,6 +115,7 @@ class RestoreAnnotation(AbstractCommandLineInterface):
         Args:
             project_id:
             task_parser:
+            my_account_id: 自分自身のaccount_id
 
         Returns:
             1個以上の入力データのアノテーションを変更したか
@@ -142,7 +137,7 @@ class RestoreAnnotation(AbstractCommandLineInterface):
             return False
 
         if not can_put_annotation(task, my_account_id):
-            logger.debug(f"タスク'{task_id}'は、過去に誰かに割り当てられたタスクで、現在の担当者が自分自身でないため アノテーションのリストアをスキップします。")
+            logger.debug(f"タスク'{task_id}'は、過去に誰かに割り当てられたタスクで、現在の担当者が自分自身でないため、アノテーションのリストアをスキップします。")
             return False
 
         result_count = self.put_annotation_for_task(project_id, task_parser)
