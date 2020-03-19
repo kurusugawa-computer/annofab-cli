@@ -1,7 +1,7 @@
 import argparse
 import logging
 from pathlib import Path
-from typing import List
+from typing import List, Optional
 
 import annofabapi
 from annofabapi.dataclass.task import Task
@@ -42,7 +42,6 @@ class DeleteAnnotation(AbstractCommandLineInterface):
         old_details = old_annotation["details"]
         logger.debug(f"task_id={task_id}, input_data_id={input_data_id}: アノテーション数={len(old_details)}")
         if len(old_details) == 0:
-            logger.debug(f"task_id={task_id}, input_data_id={input_data_id}: アノテーションがなかったため、スキップします。")
             return len(old_details)
 
         updated_datetime = old_annotation["updated_datetime"] if old_annotation is not None else None
@@ -57,7 +56,9 @@ class DeleteAnnotation(AbstractCommandLineInterface):
         logger.debug(f"task_id={task_id}, input_data_id={input_data_id}: アノテーションを削除しました。")
         return len(old_details)
 
-    def delete_annotation_for_task(self, project_id: str, task_id: str, my_account_id: str) -> bool:
+    def delete_annotation_for_task(
+        self, project_id: str, task_id: str, my_account_id: str, backup_dir: Optional[Path] = None
+    ) -> bool:
         """
         タスクに対してアノテーションを削除する
 
@@ -65,6 +66,7 @@ class DeleteAnnotation(AbstractCommandLineInterface):
             project_id:
             task_id:
             my_account_id: 自分自身のaccount_id
+            backup_dir: 削除対象のアノテーションをバックアップとして保存するディレクトリ。指定しない場合は、バックアップを取得しない。
 
         Returns:
             アノテーション削除を実施したかどうか。スキップしたらFalse
@@ -85,15 +87,14 @@ class DeleteAnnotation(AbstractCommandLineInterface):
             return False
 
         if not can_put_annotation(dict_task, my_account_id):
-            logger.debug(f"タスク'{task_id}'は、過去に誰かに割り当てられたタスクで、現在の担当者が自分自身でないため、アノテーションのリストアをスキップします。")
-            return False
-
-        if task.account_id != my_account_id:
-            logger.warning(f"task_id={task_id}: タスクの担当者が自分自身でないため、スキップします。")
+            logger.debug(f"タスク'{task_id}'は、過去に誰かに割り当てられたタスクで、現在の担当者が自分自身でないため、アノテーションの削除をスキップします。")
             return False
 
         if not self.confirm_processing(f"task_id={task_id} のアノテーションを削除しますか？"):
             return False
+
+        if backup_dir is not None:
+            self.dump_annotation_obj.dump_annotation_for_task(project_id, task_id, output_dir=backup_dir)
 
         deleted_annotation_count = 0
         for input_data_id in task.input_data_id_list:
@@ -112,8 +113,7 @@ class DeleteAnnotation(AbstractCommandLineInterface):
         backup_dir.mkdir(exist_ok=True, parents=True)
 
         for task_id in task_id_list:
-            self.dump_annotation_obj.dump_annotation_for_task(project_id, task_id, output_dir=backup_dir)
-            self.delete_annotation_for_task(project_id, task_id, my_account_id=my_account_id)
+            self.delete_annotation_for_task(project_id, task_id, my_account_id=my_account_id, backup_dir=backup_dir)
 
     def main(self):
         args = self.args
@@ -139,7 +139,7 @@ def parse_args(parser: argparse.ArgumentParser):
         "--backup",
         type=str,
         required=True,
-        description="アノテーションのバックアップを保存するディレクトリを指定してください。アノテーションの復元は'annotation restore'コマンドで実現できます。",
+        help="アノテーションのバックアップを保存するディレクトリを指定してください。アノテーションの復元は'annotation restore'コマンドで実現できます。",
     )
     parser.set_defaults(subcommand_func=main)
 

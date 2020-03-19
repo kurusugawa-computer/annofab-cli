@@ -66,10 +66,10 @@ class DumpAnnotation(AbstractCommandLineInterface):
             logger.warning(f"task_id = '{task_id}' のタスクは存在しません。スキップします。")
             return False
 
-        logger.debug(f"task_id = '{task_id}' のアノテーション情報をファイルに保存します。")
         input_data_id_list = task["input_data_id_list"]
         task_dir = output_dir / task_id
         task_dir.mkdir(exist_ok=True, parents=True)
+        logger.debug(f"task_id = '{task_id}' のアノテーション情報を '{task_dir}' ディレクトリに保存します。")
         for input_data_id in input_data_id_list:
             self.dump_annotation_for_input_data(project_id, task_id, input_data_id, task_dir=task_dir)
 
