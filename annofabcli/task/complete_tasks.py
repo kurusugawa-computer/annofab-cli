@@ -111,13 +111,11 @@ class ComleteTasks(AbstractCommandLineInterface):
         """
         task_id = task.task_id
 
-        if changed_operator:
+        if changed_operator and sum([len(e) for e in input_data_dict.values()]) > 0:
             # 担当者変更してから数秒待たないと、検査コメントの付与に失敗する(「検査コメントの作成日時が不正です」と言われる）
             time.sleep(3)
 
         # 検査コメントの状態を変更する
-        # TODO
-        # sum([len(e) for e in d.values()])
         for input_data_id, inspection_list in input_data_dict.items():
             self.update_status_of_inspections(
                 project_id, task_id, input_data_id, inspection_list=inspection_list, inspection_status=inspection_status
@@ -127,12 +125,20 @@ class ComleteTasks(AbstractCommandLineInterface):
         self.facade.complete_task(project_id, task_id, account_id)
         logger.info(f"{task_id}: 検査/受入フェーズを完了状態にしました。")
 
-    def get_unprocessed_inspection_list_by_task_id(self, project_id: str, task: Task) -> List[Inspection]:
+    def get_unprocessed_inspection_list_by_task_id(
+        self, project_id: str, task: Task, target_phase: TaskPhase, target_phase_stage: int
+    ) -> List[Inspection]:
         all_inspection_list = []
         for input_data_id in task.input_data_id_list:
             inspectins, _ = self.service.api.get_inspections(project_id, task.task_id, input_data_id)
             all_inspection_list.extend(
-                [e for e in inspectins if e["status"] == InspectionStatus.ANNOTATOR_ACTION_REQUIRED.value]
+                [
+                    e
+                    for e in inspectins
+                    if e["status"] == InspectionStatus.ANNOTATOR_ACTION_REQUIRED.value
+                    and e["phase"] == target_phase.value
+                    and e["phase_stage"] == target_phase_stage
+                ]
             )
 
         return all_inspection_list
@@ -216,7 +222,9 @@ class ComleteTasks(AbstractCommandLineInterface):
                 logger.warning(f"{task_id} は既に完了状態であるため、スキップします。")
                 continue
 
-            unprocessed_inspection_list = self.get_unprocessed_inspection_list_by_task_id(project_id, task)
+            unprocessed_inspection_list = self.get_unprocessed_inspection_list_by_task_id(
+                project_id, task, target_phase, target_phase_stage
+            )
             if len(unprocessed_inspection_list) > 0:
                 logger.debug(f"未処置の検査コメントが {len(unprocessed_inspection_list)} 件あります。")
                 if change_inspection_status is None:
