@@ -1,3 +1,4 @@
+import requests
 import argparse
 import logging
 from pathlib import Path
@@ -98,7 +99,11 @@ class DeleteAnnotation(AbstractCommandLineInterface):
 
         deleted_annotation_count = 0
         for input_data_id in task.input_data_id_list:
-            deleted_annotation_count += self.delete_annotation_for_input_data(project_id, task_id, input_data_id)
+            try:
+                deleted_annotation_count += self.delete_annotation_for_input_data(project_id, task_id, input_data_id)
+            except requests.HTTPError as e:
+                logger.warning(e)
+                logger.warning(f"task_id={task_id}, input_data_id={input_data_id}: アノテーションの削除に失敗しました。")
 
         logger.info(f"task_id={task_id}: アノテーション {deleted_annotation_count} 個を削除しました。")
         return True
@@ -112,7 +117,8 @@ class DeleteAnnotation(AbstractCommandLineInterface):
         my_account_id = self.facade.get_my_account_id()
         backup_dir.mkdir(exist_ok=True, parents=True)
 
-        for task_id in task_id_list:
+        for task_index, task_id in enumerate(task_id_list):
+            logger.info(f"{task_index+1} / {len(task_id_list)} 件目: タスク '{task_id}' を削除します。")
             self.delete_annotation_for_task(project_id, task_id, my_account_id=my_account_id, backup_dir=backup_dir)
 
     def main(self):
