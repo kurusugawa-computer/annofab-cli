@@ -1,8 +1,10 @@
 import argparse
 import logging
 import time
-from typing import Dict, List, Optional
+import uuid
+from typing import Any, Dict, List, Optional
 
+import annofabapi.utils
 import requests
 from annofabapi.dataclass.task import Task
 from annofabapi.models import Inspection, InspectionStatus, ProjectMemberRole, TaskPhase, TaskStatus
@@ -58,6 +60,44 @@ class ComleteTasks(AbstractCommandLineInterface):
             task_dict[task_id] = input_data_dict
 
         return task_dict
+
+    def reply_inspection_comment(
+        self,
+        project_id: str,
+        task: Task,
+        input_data_id: str,
+        unprocessed_inspection_list: List[Inspection],
+        reply_comment: str,
+        commenter_account_id: str,
+    ):
+        """
+        未回答の検査コメントに対して、返信を付与する。
+        """
+
+        def to_req_inspection(i: Inspection, t: Task) -> Dict[str, Any]:
+            return {
+                "data": {
+                    "project_id": project_id,
+                    "comment": reply_comment,
+                    "task_id": task.task_id,
+                    "input_data_id": input_data_id,
+                    "inspection_id": str(uuid.uuid4()),
+                    "phase": task.phase,
+                    "phase_stage": task.phase_stage,
+                    "commenter_account_id": commenter_account_id,
+                    "data": i["data"],
+                    "parent_inspection_id": i["inspection_id"],
+                    "status": InspectionStatus.NO_CORRECTION_REQUIRED.value,
+                    "created_datetime": annofabapi.utils.str_now(),
+                },
+                "_type": "Put",
+            }
+
+        request_body = [to_req_inspection(e, task) for e in unprocessed_inspection_list]
+        logger.debug(request_body)
+        return self.service.api.batch_update_inspections(
+            project_id, task.task_id, input_data_id, request_body=request_body
+        )[0]
 
     def update_status_of_inspections(
         self,
@@ -146,16 +186,38 @@ class ComleteTasks(AbstractCommandLineInterface):
     def complete_task(
         self,
         project_id: str,
-        account_id: str,
+        my_account_id: str,
         change_inspection_status: Optional[InspectionStatus],
         target_inspections_dict: Optional[InspectionJson],
         task: Task,
         unprocessed_inspection_list: List[Inspection],
         changed_operator: bool = False,
     ):
+        logger.debug("complete_task method")
+        logger.debug(f"{len(unprocessed_inspection_list)} 件 未処置コメント")
         if task.phase == TaskPhase.ANNOTATION or len(unprocessed_inspection_list) == 0:
-            self.facade.complete_task(project_id, task.task_id, account_id)
+            self.facade.complete_task(project_id, task.task_id, my_account_id)
             logger.info(f"{task.task_id}: {task.phase.value} フェーズを完了状態にしました。")
+            return
+
+        # if task.phase == TaskPhase.ANNOTATION and len(unprocessed_inspection_list) > 0:
+        if task.phase == TaskPhase.ANNOTATION and len(unprocessed_inspection_list) > 0:
+            # 返信する
+            # TODO 二重で返信しないようにする
+            # TODO 返信コメントをコマンドライン引数から取得できるようにする
+            # 検査コメントの状態を変更する
+            logger.debug("自動返信")
+            for input_data_id in task.input_data_id_list:
+                self.reply_inspection_comment(
+                    project_id,
+                    task,
+                    input_data_id=input_data_id,
+                    unprocessed_inspection_list=unprocessed_inspection_list,
+                    reply_comment="対応しました（自動投稿）",
+                    commenter_account_id=my_account_id,
+                )
+
+            self.facade.complete_task(project_id, task.task_id, my_account_id)
             return
 
         if change_inspection_status is None:
@@ -172,7 +234,7 @@ class ComleteTasks(AbstractCommandLineInterface):
             task,
             inspection_status=change_inspection_status,
             input_data_dict=input_data_dict,
-            account_id=account_id,
+            account_id=my_account_id,
             changed_operator=changed_operator,
         )
 
@@ -252,7 +314,7 @@ class ComleteTasks(AbstractCommandLineInterface):
             try:
                 self.complete_task(
                     project_id=project_id,
-                    account_id=my_account_id,
+                    my_account_id=my_account_id,
                     change_inspection_status=change_inspection_status,
                     target_inspections_dict=target_inspections_dict,
                     task=task,
