@@ -29,7 +29,7 @@ setup(
     keywords="annofab api cli",
     url="https://github.com/kurusugawa-computer/annofab-cli",
     install_requires=[
-        "annofabapi>=0.29.2",
+        "annofabapi>=0.29.5",
         "requests",
         "pillow",
         "pyyaml",
@@ -37,7 +37,7 @@ setup(
         "more-itertools",
         "jmespath",
         "pyquery",
-        "pandas>=1.0.1",
+        "pandas>=1.0.3",
         "isodate",
         "bokeh>=1.4,<2.0", # holoviewsが2.0.0に対応されるまでバージョンを固定化する
         "holoviews>=1.12.7",

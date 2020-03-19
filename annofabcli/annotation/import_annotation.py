@@ -16,7 +16,6 @@ from annofabapi.models import (
     AnnotationDataHoldingType,
     LabelV1,
     ProjectMemberRole,
-    Task,
     TaskStatus,
 )
 from annofabapi.parser import (
@@ -25,6 +24,7 @@ from annofabapi.parser import (
     lazy_parse_simple_annotation_dir_by_task,
     lazy_parse_simple_annotation_zip_by_task,
 )
+from annofabapi.utils import can_put_annotation
 from dataclasses_json import dataclass_json
 from more_itertools import first_true
 
@@ -69,28 +69,12 @@ class ImportedSimpleAnnotation:
 
 class ImportAnnotation(AbstractCommandLineInterface):
     """
-    タスクの一覧を表示する
+    アノテーションをインポートする
     """
 
     def __init__(self, service: annofabapi.Resource, facade: AnnofabApiFacade, args: argparse.Namespace):
         super().__init__(service, facade, args)
         self.visualize = AddProps(self.service, args.project_id)
-
-    @staticmethod
-    def can_execute_put_annotation_directly(task: Task, account_id_of_login_user: str) -> bool:
-        """
-        `put_annotation` APIを、タスクの状態を変更せずに直接実行できるかどうか。
-        過去に担当者が割り当たっている場合は、直接実行できない。
-
-        Args:
-            task: 対象タスク
-            account_id_of_login_user: ログインしているユーザのアカウントID
-
-        Returns:
-            Trueならば、タスクの状態を変更せずに`put_annotation` APIを実行できる。
-        """
-        # ログインユーザはプロジェクトオーナであること前提
-        return len(task["histories_by_phase"]) == 0 or task["account_id"] == account_id_of_login_user
 
     def get_label_info_from_label_name(self, label_name: str) -> Optional[LabelV1]:
         for label in self.visualize.specs_labels:
@@ -299,13 +283,16 @@ class ImportAnnotation(AbstractCommandLineInterface):
         logger.info(f"タスク'{task_parser.task_id}'の入力データ {success_count} 個に対してアノテーションをインポートしました。")
         return success_count
 
-    def execute_task(self, project_id: str, task_parser: SimpleAnnotationParserByTask, overwrite: bool = False) -> bool:
+    def execute_task(
+        self, project_id: str, task_parser: SimpleAnnotationParserByTask, my_account_id: str, overwrite: bool = False
+    ) -> bool:
         """
         1個のタスクに対してアノテーションを登録する。
 
         Args:
             project_id:
             task_parser:
+            my_account_id: 自分自身のアカウントID
             overwrite:
 
         Returns:
@@ -327,12 +314,9 @@ class ImportAnnotation(AbstractCommandLineInterface):
             logger.info(f"タスク'{task_id}'は作業中または受入完了状態のため、インポートをスキップします。 status={task['status']}")
             return False
 
-        login_user_id = self.service.api.login_user_id
-        account_id_of_login_user = self.facade.get_my_account_id()
-
-        if not self.can_execute_put_annotation_directly(task, account_id_of_login_user):
-            logger.debug(f"タスク'{task_id}'の担当者を '{login_user_id}' に変更します。")
-            self.facade.change_operator_of_task(project_id, task_id, account_id_of_login_user)
+        if not can_put_annotation(task, my_account_id):
+            logger.debug(f"タスク'{task_id}'は、過去に誰かに割り当てられたタスクで、現在の担当者が自分自身でないため、アノテーションのインポートをスキップします。")
+            return False
 
         result_count = self.put_annotation_for_task(project_id, task_parser, overwrite)
         return result_count > 0
@@ -365,6 +349,7 @@ class ImportAnnotation(AbstractCommandLineInterface):
         super().validate_project(project_id, [ProjectMemberRole.OWNER])
 
         task_id_list = annofabcli.common.cli.get_list_from_args(args.task_id)
+        my_account_id = self.facade.get_my_account_id()
 
         # Simpleアノテーションの読み込み
         if annotation_path.is_file():
@@ -378,11 +363,15 @@ class ImportAnnotation(AbstractCommandLineInterface):
                 if len(task_id_list) > 0:
                     # コマンドライン引数で --task_idが指定された場合は、対象のタスクのみインポートする
                     if task_parser.task_id in task_id_list:
-                        if self.execute_task(project_id, task_parser, overwrite=args.overwrite):
+                        if self.execute_task(
+                            project_id, task_parser, overwrite=args.overwrite, my_account_id=my_account_id
+                        ):
                             success_count += 1
                 else:
                     # コマンドライン引数で --task_idが指定されていない場合はすべてをインポートする
-                    if self.execute_task(project_id, task_parser, overwrite=args.overwrite):
+                    if self.execute_task(
+                        project_id, task_parser, overwrite=args.overwrite, my_account_id=my_account_id
+                    ):
                         success_count += 1
 
             except Exception as e:  # pylint: disable=broad-except
@@ -423,7 +412,11 @@ def parse_args(parser: argparse.ArgumentParser):
 def add_parser(subparsers: argparse._SubParsersAction):
     subcommand_name = "import"
     subcommand_help = "アノテーションをインポートします。"
-    description = "アノテーションをインポートします。"
+    description = (
+        "アノテーションをインポートします。"
+        "アノテーションのフォーマットは、Simpleアノテーション(v2)と同じフォルダ構成のzipファイルまたはディレクトリです。"
+        "ただし、作業中/完了状態のタスク、または「過去に割り当てられていて現在の担当者が自分自身でない」タスクはリストアできません。"
+    )
     epilog = "チェッカーまたはオーナロールを持つユーザで実行してください。"
 
     parser = annofabcli.common.cli.add_parser(subparsers, subcommand_name, subcommand_help, description, epilog=epilog)

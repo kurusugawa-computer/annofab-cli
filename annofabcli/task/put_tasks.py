@@ -1,5 +1,6 @@
 import argparse
 import copy
+import json
 import logging
 from pathlib import Path
 from typing import Any, Dict
@@ -27,7 +28,7 @@ class PutTask(AbstractCommandLineInterface):
     CSVからタスクを登録する。
     """
 
-    DFAULT_BY_COUNT = {"allow_duplicate_input_data": False, "input_data_order": "name_asc"}
+    DEFAULT_BY_COUNT = {"allow_duplicate_input_data": False, "input_data_order": "name_asc"}
 
     def put_task_by_count(self, project_id: str, task_generate_rule: Dict[str, Any]):
         project_last_updated_datetime = self.service.api.get_project(project_id)[0]["updated_datetime"]
@@ -85,7 +86,7 @@ class PutTask(AbstractCommandLineInterface):
             csv_file = Path(args.csv)
             self.put_task_from_csv_file(project_id, csv_file)
         elif args.by_count is not None:
-            by_count = copy.deepcopy(PutTask.DFAULT_BY_COUNT)
+            by_count = copy.deepcopy(PutTask.DEFAULT_BY_COUNT)
             by_count.update(get_json_from_args(args.by_count))
             self.put_task_by_count(project_id, by_count)
         else:
@@ -125,7 +126,7 @@ def parse_args(parser: argparse.ArgumentParser):
         help=f"1つのタスクに割り当てる入力データの個数などの情報を、JSON形式で指定してください。"
         "JSONフォーマットは https://annofab.com/docs/api/#operation/initiateTasksGeneration"
         " APIのリクエストボディ 'task_generate_rule'と同じです。"
-        f"デフォルトは'{PutTask.DFAULT_BY_COUNT}'です。"
+        f"デフォルトは'{json.dumps(PutTask.DEFAULT_BY_COUNT)}'です。"
         "'file://'を先頭に付けるとjsonファイルを指定できます。",
     )
 

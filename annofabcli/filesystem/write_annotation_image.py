@@ -96,7 +96,7 @@ def parse_args(parser: argparse.ArgumentParser):
         "`file://`を先頭に付けると、JSON形式のファイルを指定できます。",
     )
 
-    parser.add_argument("--output_dir", type=str, required=True, help="出力ディレクトリのパス")
+    parser.add_argument("-o", "--output_dir", type=str, required=True, help="出力ディレクトリのパス")
 
     parser.add_argument("--image_extension", type=str, default="png", help="出力画像の拡張子")
 

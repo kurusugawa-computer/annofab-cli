@@ -5,8 +5,8 @@ from pathlib import Path
 from typing import Any, Dict, List, Optional
 
 import more_itertools
-import pandas
 import numpy
+import pandas
 import requests
 from annofabapi.models import ProjectMemberRole, ProjectMemberStatus
 from dataclasses_json import dataclass_json
