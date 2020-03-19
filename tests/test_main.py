@@ -41,6 +41,32 @@ class TestAnnotation:
             ]
         )
 
+    def test_dump_annotation(self):
+        output_dir = str(out_path / "dump-annotation")
+        main(
+            ["annotation", "dump", "--project_id", project_id, "--task_id", task_id, "--output", output_dir, "--yes",]
+        )
+
+    def test_delete_and_restore_annotation(self):
+        backup_dir = str(out_path / "backup-annotation")
+        main(
+            ["annotation", "delete", "--project_id", project_id, "--task_id", task_id, "--backup", backup_dir, "--yes",]
+        )
+
+        main(
+            [
+                "annotation",
+                "restore",
+                "--project_id",
+                project_id,
+                "--task_id",
+                task_id,
+                "--annotation",
+                backup_dir,
+                "--yes",
+            ]
+        )
+
     def test_import_annotation(self):
         main(
             [
