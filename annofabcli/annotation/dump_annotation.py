@@ -116,7 +116,7 @@ def parse_args(parser: argparse.ArgumentParser):
 def add_parser(subparsers: argparse._SubParsersAction):
     subcommand_name = "dump"
     subcommand_help = "アノテーション情報をファイルに保存します。"
-    description = "指定したタスク配下のアノテーション情報をファイルに保存します。アノテーションをバックアップしたいときなどに利用できます。"
+    description = "指定したタスク配下のアノテーション情報をディレクトリに保存します。アノテーションをバックアップしたいときなどに利用できます。"
 
     parser = annofabcli.common.cli.add_parser(subparsers, subcommand_name, subcommand_help, description)
     parse_args(parser)

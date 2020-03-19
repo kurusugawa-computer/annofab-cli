@@ -75,8 +75,11 @@ $ docker run -it -e ANNOFAB_USER_ID=XXXX -e ANNOFAB_PASSWORD=YYYYY annofab-cli a
 
 |コマンド| サブコマンド                  | 内容                                                                                                     |必要なロール|
 |----|-------------------------------|----------------------------------------------------------------------------------------------------------|------------|
+|annotation| delete | アノテーションを削除します。                              |オーナ|
+|annotation| dump | アノテーション情報をファイルに保存します。                             |-|
 |annotation| list_count | task_idまたはinput_data_idで集約したアノテーションの個数を出力します                              |-|
 |annotation| import | アノテーションをインポートします。                             |オーナ|
+|annotation| restore |'annotation dump'コマンドで保存したファイルから、アノテーション情報をリストアします。                            |オーナ|
 |annotation_specs| history | アノテーション仕様の履歴一覧を出力します。                              |チェッカー/オーナ|
 |annotation_specs| list_label | アノテーション仕様のラベル情報を出力します。                              |チェッカー/オーナ|
 |annotation_specs| list_label_color             | アノテーション仕様から、label_nameとRGBを対応付けたJSONを出力します。                                      |チェッカー/オーナ|
@@ -273,6 +276,41 @@ $ annofabcli project_member put --project_id prj2 --csv members.csv
 
 ## コマンド一覧
 
+### annotation delete
+タスク配下のアノテーションを削除します。ただし、作業中/完了状態のタスク、または「過去に割り当てられていて現在の担当者が自分自身でない」タスクのアノテーションは削除できません。
+
+間違えてアノテーションを削除してしまっときに復元できるようにするため、`--backup`でバックアップ用のディレクトリを指定する必要があります。バックアップ用ディレクトリには、 [annotation dump](#annotation-dump) コマンドの出力結果と同等のアノテーション情報が保存されます。
+アノテーションの復元には [annotation restore](#annotation-restore) コマンドを使用してください。
+
+
+```
+# task.txtに記載されたタスクのアノテーションを削除します。削除する前のアノテーション情報は、`backup`ディレクトリに保存します。
+$ annofabcli annotation delete --project_id prj1 --task_id file://task.txt --backup backup
+```
+
+### annotation dump
+指定したタスク配下のアノテーション情報をディレクトリに保存します。アノテーションをバックアップしたいときなどに利用できます。
+アノテーションの復元には [annotation restore](#annotation-restore) コマンドを使用してください。
+
+
+```
+# task.txtに記載されたタスクのアノテーションを、`output`ディレクトリに保存します。
+$ annofabcli annotation dump --project_id prj1 --task_id file://task.txt --output
+```
+
+バックアップディレクトリは、以下のディレクトリ構成です（Simpleアノテーション(v2)と同じディレクトリ構成）。
+`{input_data_id}.json`のフォーマットは、[getEditorAnnotation](https://annofab.com/docs/api/#operation/getEditorAnnotation) APIのレスポンスと同じです。
+
+```
+ルートディレクトリ/
+├── {task_id}/
+│   ├── {input_data_id}.json
+│   ├── {input_data_id}/
+│          ├── {annotation_id}............ 塗りつぶしPNG画像
+```
+
+
+
 ### annotation import
 アノテーションをプロジェクトにインポートします。
 アノテーションのフォーマットは、Simpleアノテーション(v2)と同じフォルダ構成のzipファイルまたはディレクトリです。
@@ -285,7 +323,7 @@ $ annofabcli project_member put --project_id prj2 --csv members.csv
 │          ├── {annotation_id}............ 塗りつぶしPNG画像
 ```
 
-JSONフォーマットのサンプルをは以下の通りです。SimpleアノテーションのJSONフォーマットに対応しています。
+JSONフォーマットのサンプルをは以下の通りです。SimpleアノテーションのJSONフォーマットに対応しています。詳しくは https://annofab.com/docs/api/#section/Simple-Annotation-ZIP を参照してください。
 
 
 ```json
@@ -404,6 +442,20 @@ $ annofabcli annotation list_count --project_id prj1 \
 |------------|--------------------------------------|------------------|
 | sample_030 | 5738d502-b0a0-4a82-9367-cceffd73cf57 | 1                |
 | sample_093 | dd82cf3a-a38c-4a04-91e7-a4f1ce9af585 | 2                |
+
+
+### annotation restore
+[annotation dump](#annotation-dump) コマンドの出力結果から、アノテーション情報をリストアします。ただし、作業中/完了状態のタスク、または「過去に割り当てられていて現在の担当者が自分自身でない」タスクはリストアできません。
+
+
+```
+# `backup`ディレクトリに保存したアノテーション情報を、`prj1`プロジェクトにリストアする。
+$annofabcli annotation restore --project_id prj1 --task_id file://task.txt --annotation backup-dir
+
+# `backup`ディレクトリに保存したアノテーション情報の内、`task.txt`に記載されたタスクのアノテーション情報を、`prj1`プロジェクトにリストアする。
+$ annofabcli annotation restore --project_id prj1 --task_id file://task.txt --annotation backup-dir
+```
+
 
 
 ### annotation_specs history
