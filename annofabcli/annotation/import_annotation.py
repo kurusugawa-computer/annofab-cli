@@ -16,7 +16,6 @@ from annofabapi.models import (
     AnnotationDataHoldingType,
     LabelV1,
     ProjectMemberRole,
-    Task,
     TaskStatus,
 )
 from annofabapi.parser import (
@@ -284,13 +283,16 @@ class ImportAnnotation(AbstractCommandLineInterface):
         logger.info(f"タスク'{task_parser.task_id}'の入力データ {success_count} 個に対してアノテーションをインポートしました。")
         return success_count
 
-    def execute_task(self, project_id: str, task_parser: SimpleAnnotationParserByTask, overwrite: bool = False) -> bool:
+    def execute_task(
+        self, project_id: str, task_parser: SimpleAnnotationParserByTask, my_account_id: str, overwrite: bool = False
+    ) -> bool:
         """
         1個のタスクに対してアノテーションを登録する。
 
         Args:
             project_id:
             task_parser:
+            my_account_id: 自分自身のアカウントID
             overwrite:
 
         Returns:
@@ -312,10 +314,7 @@ class ImportAnnotation(AbstractCommandLineInterface):
             logger.info(f"タスク'{task_id}'は作業中または受入完了状態のため、インポートをスキップします。 status={task['status']}")
             return False
 
-        login_user_id = self.service.api.login_user_id
-        account_id_of_login_user = self.facade.get_my_account_id()
-
-        if not can_put_annotation(task, account_id_of_login_user):
+        if not can_put_annotation(task, my_account_id):
             logger.debug(f"タスク'{task_id}'は、過去に誰かに割り当てられたタスクで、現在の担当者が自分自身でないため、アノテーションのインポートをスキップします。")
             return False
 
@@ -350,6 +349,7 @@ class ImportAnnotation(AbstractCommandLineInterface):
         super().validate_project(project_id, [ProjectMemberRole.OWNER])
 
         task_id_list = annofabcli.common.cli.get_list_from_args(args.task_id)
+        my_account_id = self.facade.get_my_account_id()
 
         # Simpleアノテーションの読み込み
         if annotation_path.is_file():
@@ -363,11 +363,15 @@ class ImportAnnotation(AbstractCommandLineInterface):
                 if len(task_id_list) > 0:
                     # コマンドライン引数で --task_idが指定された場合は、対象のタスクのみインポートする
                     if task_parser.task_id in task_id_list:
-                        if self.execute_task(project_id, task_parser, overwrite=args.overwrite):
+                        if self.execute_task(
+                            project_id, task_parser, overwrite=args.overwrite, my_account_id=my_account_id
+                        ):
                             success_count += 1
                 else:
                     # コマンドライン引数で --task_idが指定されていない場合はすべてをインポートする
-                    if self.execute_task(project_id, task_parser, overwrite=args.overwrite):
+                    if self.execute_task(
+                        project_id, task_parser, overwrite=args.overwrite, my_account_id=my_account_id
+                    ):
                         success_count += 1
 
             except Exception as e:  # pylint: disable=broad-except
