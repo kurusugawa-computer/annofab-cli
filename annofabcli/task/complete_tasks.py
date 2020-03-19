@@ -116,6 +116,8 @@ class ComleteTasks(AbstractCommandLineInterface):
             time.sleep(3)
 
         # 検査コメントの状態を変更する
+        # TODO
+        # sum([len(e) for e in d.values()])
         for input_data_id, inspection_list in input_data_dict.items():
             self.update_status_of_inspections(
                 project_id, task_id, input_data_id, inspection_list=inspection_list, inspection_status=inspection_status
@@ -195,6 +197,7 @@ class ComleteTasks(AbstractCommandLineInterface):
         project_title = self.facade.get_project_title(project_id)
         logger.info(f"{project_title} のタスク {len(task_id_list)} 件に対して、今のフェーズを完了状態にします。")
 
+        completed_task_count = 0
         for task_index, task_id in enumerate(task_id_list):
             dict_task = self.service.wrapper.get_task_or_none(project_id, task_id)
             if dict_task is None:
@@ -214,10 +217,11 @@ class ComleteTasks(AbstractCommandLineInterface):
                 continue
 
             unprocessed_inspection_list = self.get_unprocessed_inspection_list_by_task_id(project_id, task)
-            logger.debug(f"未処置の検査コメントが {len(unprocessed_inspection_list)} 件あります。")
-            if len(unprocessed_inspection_list) > 0 and change_inspection_status is None:
-                logger.debug(f"{task_id}: 未処置の検査コメントがあるためスキップします。")
-                continue
+            if len(unprocessed_inspection_list) > 0:
+                logger.debug(f"未処置の検査コメントが {len(unprocessed_inspection_list)} 件あります。")
+                if change_inspection_status is None:
+                    logger.debug(f"{task_id}: 未処置の検査コメントがあるためスキップします。")
+                    continue
 
             if not self.confirm_processing(f"タスク'{task_id}'の {task.phase.value} フェーズを、完了状態にしますか？"):
                 continue
@@ -247,11 +251,14 @@ class ComleteTasks(AbstractCommandLineInterface):
                     unprocessed_inspection_list=unprocessed_inspection_list,
                     changed_operator=changed_operator,
                 )
+                completed_task_count += 1
             except Exception as e:  # pylint: disable=broad-except
                 logger.warning(e)
                 logger.warning(f"{task_id}: {task.phase} フェーズを完了状態にするのに失敗しました。")
                 self.facade.change_to_break_phase(project_id, task_id, my_account_id)
                 continue
+
+        logger.info(f"{completed_task_count} / {len(task_id_list)} 件のタスクに対して、今のフェーズを完了状態にしました。")
 
     def main(self):
         args = self.args
