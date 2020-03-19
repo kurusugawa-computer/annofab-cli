@@ -93,12 +93,27 @@ class ComleteTasks(AbstractCommandLineInterface):
         inspection_status: InspectionStatus,
         input_data_dict: Dict[str, List[Inspection]],
         account_id: str,
+        changed_operator: bool = False,
     ):
         """
         検査コメントのstatusを変更（対応完了 or 対応不要）にした上で、タスクを受け入れ完了状態にする
-        """
 
+        Args:
+            project_id:
+            task:
+            inspection_status:
+            input_data_dict:
+            account_id:
+            changed_operator: 担当者を変更したかどうか。APIの都合で、担当者を変えた場合はsleepした方がよいため。
+
+        Returns:
+
+        """
         task_id = task.task_id
+
+        if changed_operator:
+            # 担当者変更してから数秒待たないと、検査コメントの付与に失敗する(「検査コメントの作成日時が不正です」と言われる）
+            time.sleep(3)
 
         # 検査コメントの状態を変更する
         for input_data_id, inspection_list in input_data_dict.items():
@@ -128,6 +143,7 @@ class ComleteTasks(AbstractCommandLineInterface):
         target_inspections_dict: Optional[InspectionJson],
         task: Task,
         unprocessed_inspection_list: List[Inspection],
+        changed_operator: bool = False,
     ):
         if task.phase == TaskPhase.ANNOTATION or len(unprocessed_inspection_list) == 0:
             self.facade.complete_task(project_id, task.task_id, account_id)
@@ -143,15 +159,13 @@ class ComleteTasks(AbstractCommandLineInterface):
         else:
             input_data_dict = target_inspections_dict[task.task_id]
 
-        # 担当者変更してから数秒待たないと、検査コメントの付与に失敗する(「検査コメントの作成日時が不正です」と言われる）
-        time.sleep(3)
-
         self.complete_acceptance_task(
             project_id,
             task,
             inspection_status=change_inspection_status,
             input_data_dict=input_data_dict,
             account_id=account_id,
+            changed_operator=changed_operator,
         )
 
     def complete_task_list(
@@ -209,9 +223,11 @@ class ComleteTasks(AbstractCommandLineInterface):
                 continue
 
             # 担当者変更
+            changed_operator = False
             try:
                 if task.account_id != my_account_id:
                     self.facade.change_operator_of_task(project_id, task_id, my_account_id)
+                    changed_operator = True
                     logger.debug(f"{task_id}: 担当者を変更しました。")
 
                 self.facade.change_to_working_phase(project_id, task_id, my_account_id)
@@ -229,6 +245,7 @@ class ComleteTasks(AbstractCommandLineInterface):
                     target_inspections_dict=target_inspections_dict,
                     task=task,
                     unprocessed_inspection_list=unprocessed_inspection_list,
+                    changed_operator=changed_operator,
                 )
             except Exception as e:  # pylint: disable=broad-except
                 logger.warning(e)
@@ -244,6 +261,8 @@ class ComleteTasks(AbstractCommandLineInterface):
         self.complete_task_list(
             args.project_id,
             task_id_list=task_id_list,
+            target_phase=TaskPhase(args.phase),
+            target_phase_stage=args.phase_stage,
             change_inspection_status=inspection_status,
             target_inspection_list=inspection_list,
         )
