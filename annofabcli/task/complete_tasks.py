@@ -5,7 +5,7 @@ from typing import Dict, List, Optional
 
 import requests
 from annofabapi.dataclass.task import Task
-from annofabapi.models import Inspection, InspectionStatus, ProjectMemberRole, TaskPhase
+from annofabapi.models import Inspection, InspectionStatus, ProjectMemberRole, TaskPhase, TaskStatus
 
 import annofabcli
 import annofabcli.common.cli
@@ -154,10 +154,12 @@ class ComleteTasks(AbstractCommandLineInterface):
             account_id=account_id,
         )
 
-    def complete_tasks_with_changing_inspection_status(
+    def complete_task_list(
         self,
         project_id: str,
         task_id_list: List[str],
+        target_phase: TaskPhase,
+        target_phase_stage: int,
         change_inspection_status: Optional[InspectionStatus] = None,
         target_inspection_list: Optional[List[Inspection]] = None,
     ):
@@ -172,21 +174,30 @@ class ComleteTasks(AbstractCommandLineInterface):
 
         super().validate_project(project_id, [ProjectMemberRole.OWNER, ProjectMemberRole.ACCEPTER])
 
-        account_id = self.facade.get_my_account_id()
+        my_account_id = self.facade.get_my_account_id()
         target_inspections_dict = (
             self.inspection_list_to_dict(target_inspection_list) if target_inspection_list is not None else None
         )
         project_title = self.facade.get_project_title(project_id)
         logger.info(f"{project_title} のタスク {len(task_id_list)} 件に対して、今のフェーズを完了状態にします。")
 
-        for task_id in task_id_list:
+        for task_index, task_id in enumerate(task_id_list):
             dict_task = self.service.wrapper.get_task_or_none(project_id, task_id)
             if dict_task is None:
                 logger.warning(f"{task_id} のタスクを取得できませんでした。")
                 continue
 
-            task = Task.from_dict(dict_task)  # type: ignore
-            logger.info(f"タスク情報 task_id: {task_id}, phase: {task.phase.value}, status: {task.status.value}")
+            task: Task = Task.from_dict(dict_task)  # type: ignore
+            logger.info(
+                f"{task_index+1} 件目: タスク情報 task_id={task_id}, phase={task.phase.value}, phase_stage={task.phase_stage}, status={task.status.value}"
+            )
+            if not (task.phase == target_phase and task.phase_stage == target_phase_stage):
+                logger.warning(f"{task_id} は操作対象のフェーズ、フェーズステージではないため、スキップします。")
+                continue
+
+            if task.status == TaskStatus.COMPLETE:
+                logger.warning(f"{task_id} は既に完了状態であるため、スキップします。")
+                continue
 
             unprocessed_inspection_list = self.get_unprocessed_inspection_list_by_task_id(project_id, task)
             logger.debug(f"未処置の検査コメントが {len(unprocessed_inspection_list)} 件あります。")
@@ -199,9 +210,11 @@ class ComleteTasks(AbstractCommandLineInterface):
 
             # 担当者変更
             try:
-                self.facade.change_operator_of_task(project_id, task_id, account_id)
-                self.facade.change_to_working_phase(project_id, task_id, account_id)
-                logger.debug(f"{task_id}: 担当者を変更しました。")
+                if task.account_id != my_account_id:
+                    self.facade.change_operator_of_task(project_id, task_id, my_account_id)
+                    logger.debug(f"{task_id}: 担当者を変更しました。")
+
+                self.facade.change_to_working_phase(project_id, task_id, my_account_id)
 
             except requests.HTTPError as e:
                 logger.warning(e)
@@ -211,7 +224,7 @@ class ComleteTasks(AbstractCommandLineInterface):
             try:
                 self.complete_task(
                     project_id=project_id,
-                    account_id=account_id,
+                    account_id=my_account_id,
                     change_inspection_status=change_inspection_status,
                     target_inspections_dict=target_inspections_dict,
                     task=task,
@@ -220,7 +233,7 @@ class ComleteTasks(AbstractCommandLineInterface):
             except Exception as e:  # pylint: disable=broad-except
                 logger.warning(e)
                 logger.warning(f"{task_id}: {task.phase} フェーズを完了状態にするのに失敗しました。")
-                self.facade.change_to_break_phase(project_id, task_id, account_id)
+                self.facade.change_to_break_phase(project_id, task_id, my_account_id)
                 continue
 
     def main(self):
@@ -228,7 +241,7 @@ class ComleteTasks(AbstractCommandLineInterface):
         task_id_list = annofabcli.common.cli.get_list_from_args(args.task_id)
         inspection_list = annofabcli.common.cli.get_json_from_args(args.inspection_list)
         inspection_status = InspectionStatus(args.inspection_status) if args.inspection_status is not None else None
-        self.complete_tasks_with_changing_inspection_status(
+        self.complete_task_list(
             args.project_id,
             task_id_list=task_id_list,
             change_inspection_status=inspection_status,
@@ -243,11 +256,22 @@ def parse_args(parser: argparse.ArgumentParser):
     argument_parser.add_task_id(required=True)
 
     parser.add_argument(
+        "--phase",
+        type=str,
+        choices=[TaskPhase.ANNOTATION.value, TaskPhase.INSPECTION.value, TaskPhase.ACCEPTANCE.value],
+        help=("操作対象のタスクのフェーズを指定してください。"),
+    )
+
+    parser.add_argument(
+        "--phase_stage", type=int, default=1, help=("操作対象のタスクのフェーズのステージ番号を指定してください。デフォルトは'1'です。"),
+    )
+
+    parser.add_argument(
         "--inspection_status",
         type=str,
         choices=[InspectionStatus.ERROR_CORRECTED.value, InspectionStatus.NO_CORRECTION_REQUIRED.value],
         help=(
-            "未処置の検査コメントをどの状態に変更するかを指定します。指定しない場合、未処置の検査コメントが含まれるタスクはスキップします。"
+            "操作対象のフェーズ未処置の検査コメントをどの状態に変更するかを指定します。指定しない場合、未処置の検査コメントが含まれるタスクはスキップします。"
             f"{InspectionStatus.ERROR_CORRECTED.value}: 対応完了,"
             f"{InspectionStatus.NO_CORRECTION_REQUIRED.value}: 対応不要"
         ),
@@ -276,7 +300,7 @@ def main(args):
 def add_parser(subparsers: argparse._SubParsersAction):
     subcommand_name = "complete"
     subcommand_help = "タスクの今のフェーズを完了状態（教師付の提出、検査/受入の合格）にします。"
-    description = "タスクの今のフェーズを完了状態（教師付の提出、検査/受入の合格）にします。" "未処置の検査コメントがある場合、検査コメントを適切な状態に変更できます。" "オーナ権限を持つユーザで実行すること。"
+    description = "タスクの今のフェーズを完了状態（教師付の提出、検査/受入の合格）にします。" "未処置の検査コメントがある場合、検査コメントを適切な状態に変更できます。"
     epilog = "チェッカーまたはオーナロールを持つユーザで実行してください。"
 
     parser = annofabcli.common.cli.add_parser(subparsers, subcommand_name, subcommand_help, description, epilog=epilog)

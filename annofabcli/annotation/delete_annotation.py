@@ -1,10 +1,10 @@
-import requests
 import argparse
 import logging
 from pathlib import Path
 from typing import List, Optional
 
 import annofabapi
+import requests
 from annofabapi.dataclass.task import Task
 from annofabapi.models import ProjectMemberRole, TaskStatus
 from annofabapi.utils import can_put_annotation

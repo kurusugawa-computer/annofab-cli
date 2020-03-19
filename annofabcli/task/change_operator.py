@@ -82,7 +82,9 @@ class ChangeOperator(AbstractCommandLineInterface):
                 # 担当者を変更する
                 self.facade.change_operator_of_task(project_id, task_id, account_id)
                 success_count += 1
-                logger.debug(f"{str_progress} : task_id = {task_id}, phase={dict_task['phase']}, {new_user_id}に担当者を変更しました。")
+                logger.debug(
+                    f"{str_progress} : task_id = {task_id}, phase={dict_task['phase']}, {new_user_id}に担当者を変更しました。"
+                )
 
             except requests.exceptions.HTTPError as e:
                 logger.warning(e)
