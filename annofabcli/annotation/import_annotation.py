@@ -25,6 +25,7 @@ from annofabapi.parser import (
     lazy_parse_simple_annotation_dir_by_task,
     lazy_parse_simple_annotation_zip_by_task,
 )
+from annofabapi.utils import can_put_annotation
 from dataclasses_json import dataclass_json
 from more_itertools import first_true
 
@@ -75,22 +76,6 @@ class ImportAnnotation(AbstractCommandLineInterface):
     def __init__(self, service: annofabapi.Resource, facade: AnnofabApiFacade, args: argparse.Namespace):
         super().__init__(service, facade, args)
         self.visualize = AddProps(self.service, args.project_id)
-
-    @staticmethod
-    def can_execute_put_annotation_directly(task: Task, account_id_of_login_user: str) -> bool:
-        """
-        `put_annotation` APIを、タスクの状態を変更せずに直接実行できるかどうか。
-        過去に担当者が割り当たっている場合は、直接実行できない。
-
-        Args:
-            task: 対象タスク
-            account_id_of_login_user: ログインしているユーザのアカウントID
-
-        Returns:
-            Trueならば、タスクの状態を変更せずに`put_annotation` APIを実行できる。
-        """
-        # ログインユーザはプロジェクトオーナであること前提
-        return len(task["histories_by_phase"]) == 0 or task["account_id"] == account_id_of_login_user
 
     def get_label_info_from_label_name(self, label_name: str) -> Optional[LabelV1]:
         for label in self.visualize.specs_labels:
@@ -330,9 +315,9 @@ class ImportAnnotation(AbstractCommandLineInterface):
         login_user_id = self.service.api.login_user_id
         account_id_of_login_user = self.facade.get_my_account_id()
 
-        if not self.can_execute_put_annotation_directly(task, account_id_of_login_user):
-            logger.debug(f"タスク'{task_id}'の担当者を '{login_user_id}' に変更します。")
-            self.facade.change_operator_of_task(project_id, task_id, account_id_of_login_user)
+        if not can_put_annotation(task, account_id_of_login_user):
+            logger.debug(f"タスク'{task_id}'は、過去に誰かに割り当てられたタスクで、現在の担当者が自分自身でないため、アノテーションのインポートをスキップします。")
+            return False
 
         result_count = self.put_annotation_for_task(project_id, task_parser, overwrite)
         return result_count > 0
@@ -423,7 +408,11 @@ def parse_args(parser: argparse.ArgumentParser):
 def add_parser(subparsers: argparse._SubParsersAction):
     subcommand_name = "import"
     subcommand_help = "アノテーションをインポートします。"
-    description = "アノテーションをインポートします。" "アノテーションのフォーマットは、Simpleアノテーション(v2)と同じフォルダ構成のzipファイルまたはディレクトリです。"
+    description = (
+        "アノテーションをインポートします。"
+        "アノテーションのフォーマットは、Simpleアノテーション(v2)と同じフォルダ構成のzipファイルまたはディレクトリです。"
+        "ただし、作業中/完了状態のタスク、または「過去に割り当てられていて現在の担当者が自分自身でない」タスクはリストアできません。"
+    )
     epilog = "チェッカーまたはオーナロールを持つユーザで実行してください。"
 
     parser = annofabcli.common.cli.add_parser(subparsers, subcommand_name, subcommand_help, description, epilog=epilog)
