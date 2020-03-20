@@ -126,45 +126,6 @@ class ComleteTasks(AbstractCommandLineInterface):
         )
         logger.debug(f"{task_id}, {input_data_id}, {len(inspection_list)}件 検査コメントの状態を変更")
 
-    def complete_acceptance_task(
-        self,
-        project_id: str,
-        task: Task,
-        inspection_status: InspectionStatus,
-        input_data_dict: Dict[str, List[Inspection]],
-        account_id: str,
-        changed_operator: bool = False,
-    ):
-        """
-        検査コメントのstatusを変更（対応完了 or 対応不要）にした上で、タスクを受け入れ完了状態にする
-
-        Args:
-            project_id:
-            task:
-            inspection_status:
-            input_data_dict:
-            account_id:
-            changed_operator: 担当者を変更したかどうか。APIの都合で、担当者を変えた場合はsleepした方がよいため。
-
-        Returns:
-
-        """
-        task_id = task.task_id
-
-        if changed_operator and sum([len(e) for e in input_data_dict.values()]) > 0:
-            # 担当者変更してから数秒待たないと、検査コメントの付与に失敗する(「検査コメントの作成日時が不正です」と言われる）
-            time.sleep(3)
-
-        # 検査コメントの状態を変更する
-        for input_data_id, inspection_list in input_data_dict.items():
-            self.update_status_of_inspections(
-                project_id, task_id, input_data_id, inspection_list=inspection_list, inspection_status=inspection_status
-            )
-
-        # タスクの状態を検査する
-        self.facade.complete_task(project_id, task_id, account_id)
-        logger.info(f"{task_id}: 検査/受入フェーズを完了状態にしました。")
-
     def get_unprocessed_inspection_list(self, task: Task, input_data_id) -> List[Inspection]:
         """
         未処置の検査コメントリストを取得する。
@@ -241,6 +202,9 @@ class ComleteTasks(AbstractCommandLineInterface):
             Returns:
 
             """
+            if task.started_datetime is None:
+                raise RuntimeError(f"{task.task_id} の 'started_datetime'がNoneです。")
+
             return (
                 first_true(
                     inspection_list,
@@ -305,7 +269,8 @@ class ComleteTasks(AbstractCommandLineInterface):
 
                 logger.debug(f"{task.task_id}: 未回答の検査コメント {unanswered_comment_count_for_task} 件に対して、返信コメントを付与します。")
                 for input_data_id, unanswered_comment_list in unanswered_comment_list_dict.items():
-                    # 返信する
+                    if len(unanswered_comment_list) == 0:
+                        continue
                     self.reply_inspection_comment(
                         task,
                         input_data_id=input_data_id,
@@ -345,6 +310,9 @@ class ComleteTasks(AbstractCommandLineInterface):
 
             logger.debug(f"{task.task_id}: 未処置の検査コメントを、{inspection_status.value} 状態にします。")
             for input_data_id, unprocessed_inspection_list in unprocessed_inspection_list_dict.items():
+                if len(unprocessed_inspection_list) == 0:
+                    continue
+
                 self.update_status_of_inspections(
                     task.project_id,
                     task.task_id,
