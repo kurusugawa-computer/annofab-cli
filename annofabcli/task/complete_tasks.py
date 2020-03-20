@@ -1,15 +1,16 @@
 import argparse
 import logging
-import dateutil
 import time
 import uuid
 from typing import Any, Dict, List, Optional
 
 import annofabapi.utils
+import dateutil
 import requests
 from annofabapi.dataclass.task import Task
 from annofabapi.models import Inspection, InspectionStatus, ProjectMemberRole, TaskPhase, TaskStatus
 from more_itertools import first_true
+
 import annofabcli
 import annofabcli.common.cli
 from annofabcli import AnnofabApiFacade
@@ -183,7 +184,7 @@ class ComleteTasks(AbstractCommandLineInterface):
 
         return all_inspection_list
 
-    def change_to_working_status(self, task: Task, my_account_id: str):
+    def change_to_working_status(self, task: Task, my_account_id: str) -> bool:
         # 担当者変更
         changed_operator = False
         try:
@@ -193,11 +194,11 @@ class ComleteTasks(AbstractCommandLineInterface):
                 logger.debug(f"{task.task_id}: 担当者を自分自身に変更しました。")
 
             self.facade.change_to_working_status(task.project_id, task.task_id, my_account_id)
+            return changed_operator
 
         except requests.HTTPError as e:
             logger.warning(e)
             logger.warning(f"{task.task_id}: 担当者の変更、または作業中状態への変更に失敗しました。")
-
 
     def get_unanswered_comment_list(self, task: Task, input_data_id: str) -> List[Inspection]:
         """
@@ -206,6 +207,7 @@ class ComleteTasks(AbstractCommandLineInterface):
         Returns:
 
         """
+
         def exists_answered_comment(parent_inspection_comment_id: str) -> bool:
             """
             回答済の返信コメントがあるかどうか
@@ -216,18 +218,22 @@ class ComleteTasks(AbstractCommandLineInterface):
             Returns:
 
             """
-            return first_true(inspection_list,
-                              pred=lambda e: e["parent_inspection_comment_id"] == parent_inspection_comment_id
-                                             and dateutil.parser.parse(e["created_datetime"]) > dateutil.parser.parse(
-                                  task.started_datetime)) is not None
+            return (
+                first_true(
+                    inspection_list,
+                    pred=lambda e: e["parent_inspection_comment_id"] == parent_inspection_comment_id
+                    and dateutil.parser.parse(e["created_datetime"]) > dateutil.parser.parse(task.started_datetime),
+                )
+                is not None
+            )
 
         inspection_list, _ = self.service.api.get_inspections(task.project_id, task.task_id, input_data_id)
         # 未処置の検査コメント
         unprocessed_inspection_list = [
-                e
-                for e in inspection_list
-                if e["parent_inspection_comment_id"] is None
-                and e["status"] == InspectionStatus.ANNOTATOR_ACTION_REQUIRED.value
+            e
+            for e in inspection_list
+            if e["parent_inspection_comment_id"] is None
+            and e["status"] == InspectionStatus.ANNOTATOR_ACTION_REQUIRED.value
         ]
 
         unanswered_comment_list = [
@@ -235,16 +241,8 @@ class ComleteTasks(AbstractCommandLineInterface):
         ]
         return unanswered_comment_list
 
-
-
-
     def complete_task_for_annotation_phase(
-        self,
-        project_id: str,
-        task: Task,
-        my_account_id: str,
-        reply_comment: Optional[str] = None,
-        changed_operator: bool = False,
+        self, task: Task, my_account_id: str, reply_comment: Optional[str] = None,
     ):
         """
         annotation phaseのタスクを完了状態にする。
@@ -260,13 +258,52 @@ class ComleteTasks(AbstractCommandLineInterface):
 
         """
 
-        exists_unanswered_comment = False
+        # exists_unanswered_comment = False
+        # not_sleep_yet = False
+        # for input_data_id in task.input_data_id_list:
+        #     unanswered_comment_list = self.get_unanswered_comment_list(task, input_data_id)
+        #     if len(unanswered_comment_list) > 0:
+        #         exists_unanswered_comment = True
+        #         logger.info(f"{task.task_id}: input_data_id={input_data_id}: 未回答の検査コメントが {len(unanswered_comment_list)} 件ありました。")
+        #         if reply_comment is not None:
+        #             if changed_operator and not_sleep_yet:
+        #                 time.sleep(2)
+        #                 not_sleep_yet = True
+        #
+        #             # 返信する
+        #             self.reply_inspection_comment(
+        #                 task,
+        #                 input_data_id=input_data_id,
+        #                 unanswered_comment_list=unanswered_comment_list,
+        #                 reply_comment=reply_comment,
+        #                 commenter_account_id=my_account_id,
+        #             )
+
+        unanswered_comment_list_dict: Dict[str, List[Inspection]] = {}
         for input_data_id in task.input_data_id_list:
             unanswered_comment_list = self.get_unanswered_comment_list(task, input_data_id)
-            if len(unanswered_comment_list) > 0:
-                exists_unanswered_comment = True
-                logger.info(f"{task.task_id}: input_data_id={input_data_id}: 未回答の検査コメントが {len(unanswered_comment_list)} 件ありました。")
-                if reply_comment is not None:
+            unanswered_comment_list_dict[input_data_id] = unanswered_comment_list
+
+        unanswered_comment_count_for_task = sum([len(e) for e in unanswered_comment_list_dict.values()])
+        if unanswered_comment_count_for_task == 0:
+            # 担当者変更
+            self.change_to_working_status(task, my_account_id)
+            self.facade.complete_task(task.project_id, task.task_id, my_account_id)
+            logger.info(f"{task.task_id}: {task.phase.value} フェーズを完了状態にしました。")
+            return
+        else:
+            logger.debug(f"{task.task_id}: 未回答の検査コメントが {unanswered_comment_count_for_task} 件あります。")
+            if reply_comment is None:
+                logger.warning(f"{task.task_id}: 未回答の検査コメントがある({unanswered_comment_count_for_task} 件)ため、スキップします。")
+                return
+            else:
+                # 担当者変更
+                changed_operator = self.change_to_working_status(task, my_account_id)
+                if changed_operator:
+                    time.sleep(2)
+
+                logger.debug(f"{task.task_id}: 未回答の検査コメント {unanswered_comment_count_for_task} 件に対して、返信コメントを付与します。")
+                for input_data_id, unanswered_comment_list in unanswered_comment_list_dict.items():
                     # 返信する
                     self.reply_inspection_comment(
                         task,
@@ -276,11 +313,35 @@ class ComleteTasks(AbstractCommandLineInterface):
                         commenter_account_id=my_account_id,
                     )
 
-        if reply_comment is not None or not exists_unanswered_comment:
-            self.facade.complete_task(project_id, task.task_id, my_account_id)
-            logger.info(f"{task.task_id}: {task.phase.value} フェーズを完了状態にしました。")
-        else:
-            logger.warning(f"{task.task_id}: 未回答の検査コメントがあるため、スキップします。")
+                self.facade.complete_task(task.project_id, task.task_id, my_account_id)
+                logger.info(f"{task.task_id}: {task.phase.value} フェーズを完了状態にしました。")
+
+        # if reply_comment is None:
+        #
+        #
+        #     if len(unanswered_comment_list) > 0:
+        #         exists_unanswered_comment = True
+        #         logger.info(
+        #             f"{task.task_id}: input_data_id={input_data_id}: 未回答の検査コメントが {len(unanswered_comment_list)} 件ありました。")
+        #         if reply_comment is not None:
+        #             if changed_operator and not_sleep_yet:
+        #                 time.sleep(2)
+        #                 not_sleep_yet = True
+        #
+        #             # 返信する
+        #             self.reply_inspection_comment(
+        #                 task,
+        #                 input_data_id=input_data_id,
+        #                 unanswered_comment_list=unanswered_comment_list,
+        #                 reply_comment=reply_comment,
+        #                 commenter_account_id=my_account_id,
+        #             )
+        #
+        # if reply_comment is not None or not exists_unanswered_comment:
+        #     self.facade.complete_task(project_id, task.task_id, my_account_id)
+        #     logger.info(f"{task.task_id}: {task.phase.value} フェーズを完了状態にしました。")
+        # else:
+        #     logger.warning(f"{task.task_id}: 未回答の検査コメントがあるため、スキップします。")
 
         # if task.phase == TaskPhase.ANNOTATION or len(unprocessed_inspection_list) == 0:
         #     self.facade.complete_task(project_id, task.task_id, my_account_id)
@@ -375,6 +436,7 @@ class ComleteTasks(AbstractCommandLineInterface):
         task_id_list: List[str],
         target_phase: TaskPhase,
         target_phase_stage: int,
+        reply_comment: Optional[str],
         change_inspection_status: Optional[InspectionStatus] = None,
     ):
         """
@@ -411,49 +473,51 @@ class ComleteTasks(AbstractCommandLineInterface):
                 logger.warning(f"{task_id} は既に完了状態であるため、スキップします。")
                 continue
 
-            unprocessed_inspection_list = self.get_unprocessed_inspection_list_by_task_id(
-                project_id, task, target_phase, target_phase_stage
-            )
-            if len(unprocessed_inspection_list) > 0:
-                logger.debug(f"未処置の検査コメントが {len(unprocessed_inspection_list)} 件あります。")
-                if change_inspection_status is None:
-                    logger.debug(f"{task_id}: 未処置の検査コメントがあるためスキップします。")
-                    continue
+            if task.phase == TaskPhase.ANNOTATION:
+                self.complete_task_for_annotation_phase(task, my_account_id=my_account_id, reply_comment=reply_comment)
 
-            if not self.confirm_processing(f"タスク'{task_id}'の {task.phase.value} フェーズを、完了状態にしますか？"):
-                continue
-
-            # 担当者変更
-            changed_operator = False
-            try:
-                if task.account_id != my_account_id:
-                    self.facade.change_operator_of_task(project_id, task_id, my_account_id)
-                    changed_operator = True
-                    logger.debug(f"{task_id}: 担当者を変更しました。")
-
-                self.facade.change_to_working_status(project_id, task_id, my_account_id)
-
-            except requests.HTTPError as e:
-                logger.warning(e)
-                logger.warning(f"{task_id}: 担当者の変更に失敗しました。")
-                continue
-
-            try:
-                self.complete_task(
-                    project_id=project_id,
-                    my_account_id=my_account_id,
-                    change_inspection_status=change_inspection_status,
-                    target_inspections_dict=target_inspections_dict,
-                    task=task,
-                    unprocessed_inspection_list=unprocessed_inspection_list,
-                    changed_operator=changed_operator,
-                )
-                completed_task_count += 1
-            except Exception as e:  # pylint: disable=broad-except
-                logger.warning(e)
-                logger.warning(f"{task_id}: {task.phase} フェーズを完了状態にするのに失敗しました。")
-                self.facade.change_to_break_phase(project_id, task_id, my_account_id)
-                continue
+            # unprocessed_inspection_list = self.get_unprocessed_inspection_list_by_task_id(
+            #     project_id, task, target_phase, target_phase_stage
+            # )
+            # if len(unprocessed_inspection_list) > 0:
+            #     logger.debug(f"未処置の検査コメントが {len(unprocessed_inspection_list)} 件あります。")
+            #     if change_inspection_status is None:
+            #         logger.debug(f"{task_id}: 未処置の検査コメントがあるためスキップします。")
+            #         continue
+            #
+            # if not self.confirm_processing(f"タスク'{task_id}'の {task.phase.value} フェーズを、完了状態にしますか？"):
+            #     continue
+            #
+            # # 担当者変更
+            # changed_operator = False
+            # try:
+            #     if task.account_id != my_account_id:
+            #         self.facade.change_operator_of_task(project_id, task_id, my_account_id)
+            #         changed_operator = True
+            #         logger.debug(f"{task_id}: 担当者を変更しました。")
+            #
+            #     self.facade.change_to_working_status(project_id, task_id, my_account_id)
+            #
+            # except requests.HTTPError as e:
+            #     logger.warning(e)
+            #     logger.warning(f"{task_id}: 担当者の変更に失敗しました。")
+            #     continue
+            #
+            # try:
+            #     self.complete_task(
+            #         project_id=project_id,
+            #         my_account_id=my_account_id,
+            #         change_inspection_status=change_inspection_status,
+            #         task=task,
+            #         unprocessed_inspection_list=unprocessed_inspection_list,
+            #         changed_operator=changed_operator,
+            #     )
+            #     completed_task_count += 1
+            # except Exception as e:  # pylint: disable=broad-except
+            #     logger.warning(e)
+            #     logger.warning(f"{task_id}: {task.phase} フェーズを完了状態にするのに失敗しました。")
+            #     self.facade.change_to_break_phase(project_id, task_id, my_account_id)
+            #     continue
 
         logger.info(f"{completed_task_count} / {len(task_id_list)} 件のタスクに対して、今のフェーズを完了状態にしました。")
 
@@ -467,6 +531,7 @@ class ComleteTasks(AbstractCommandLineInterface):
             target_phase=TaskPhase(args.phase),
             target_phase_stage=args.phase_stage,
             change_inspection_status=inspection_status,
+            reply_comment=args.reply_comment,
         )
 
 
