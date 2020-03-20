@@ -64,10 +64,9 @@ class ComleteTasks(AbstractCommandLineInterface):
 
     def reply_inspection_comment(
         self,
-        project_id: str,
         task: Task,
         input_data_id: str,
-        unprocessed_inspection_list: List[Inspection],
+        unanswered_comment_list: List[Inspection],
         reply_comment: str,
         commenter_account_id: str,
     ):
@@ -75,10 +74,10 @@ class ComleteTasks(AbstractCommandLineInterface):
         未回答の検査コメントに対して、返信を付与する。
         """
 
-        def to_req_inspection(i: Inspection, t: Task) -> Dict[str, Any]:
+        def to_req_inspection(i: Inspection) -> Dict[str, Any]:
             return {
                 "data": {
-                    "project_id": project_id,
+                    "project_id": task.project_id,
                     "comment": reply_comment,
                     "task_id": task.task_id,
                     "input_data_id": input_data_id,
@@ -94,10 +93,10 @@ class ComleteTasks(AbstractCommandLineInterface):
                 "_type": "Put",
             }
 
-        request_body = [to_req_inspection(e, task) for e in unprocessed_inspection_list]
+        request_body = [to_req_inspection(e) for e in unanswered_comment_list]
         logger.debug(request_body)
         return self.service.api.batch_update_inspections(
-            project_id, task.task_id, input_data_id, request_body=request_body
+            task.project_id, task.task_id, input_data_id, request_body=request_body
         )[0]
 
     def update_status_of_inspections(
@@ -261,59 +260,61 @@ class ComleteTasks(AbstractCommandLineInterface):
 
         """
 
-        if reply_comment is not None:
-            for input_data_id in task.input_data_id_list:
-                unanswered_comment_list = self.get_unanswered_comment_list(task, input_data_id)
-                if len(unanswered_comment_list) > 0:
-                    logger.info(f"{task.task_id}: input_data_id={input_data_id}: 未回答の検査コメントが {len(unanswered_comment_list)} 件ありました。")
+        exists_unanswered_comment = False
+        for input_data_id in task.input_data_id_list:
+            unanswered_comment_list = self.get_unanswered_comment_list(task, input_data_id)
+            if len(unanswered_comment_list) > 0:
+                exists_unanswered_comment = True
+                logger.info(f"{task.task_id}: input_data_id={input_data_id}: 未回答の検査コメントが {len(unanswered_comment_list)} 件ありました。")
+                if reply_comment is not None:
                     # 返信する
+                    self.reply_inspection_comment(
+                        task,
+                        input_data_id=input_data_id,
+                        unanswered_comment_list=unanswered_comment_list,
+                        reply_comment=reply_comment,
+                        commenter_account_id=my_account_id,
+                    )
 
-
-        self.facade.complete_task(project_id, task.task_id, my_account_id)
-        logger.info(f"{task.task_id}: {task.phase.value} フェーズを完了状態にしました。")
-
-        if task.phase == TaskPhase.ANNOTATION or len(unprocessed_inspection_list) == 0:
+        if reply_comment is not None or not exists_unanswered_comment:
             self.facade.complete_task(project_id, task.task_id, my_account_id)
             logger.info(f"{task.task_id}: {task.phase.value} フェーズを完了状態にしました。")
-            return
-
-        # if task.phase == TaskPhase.ANNOTATION and len(unprocessed_inspection_list) > 0:
-        if task.phase == TaskPhase.ANNOTATION and len(unprocessed_inspection_list) > 0:
-            # 返信する
-            # TODO 二重で返信しないようにする
-            # TODO 返信コメントをコマンドライン引数から取得できるようにする
-            # 検査コメントの状態を変更する
-            logger.debug("自動返信")
-            for input_data_id in task.input_data_id_list:
-                self.reply_inspection_comment(
-                    project_id,
-                    task,
-                    input_data_id=input_data_id,
-                    unprocessed_inspection_list=unprocessed_inspection_list,
-                    reply_comment="対応しました（自動投稿）",
-                    commenter_account_id=my_account_id,
-                )
-
-            self.facade.complete_task(project_id, task.task_id, my_account_id)
-            return
-
-        if change_inspection_status is None:
-            logger.info(f"{task.task_id}: 未処置の検査コメントがあるためスキップします。")
-            return
-
-        if target_inspections_dict is None:
-            input_data_dict = self.inspection_list_to_input_data_dict(unprocessed_inspection_list)
         else:
-            input_data_dict = target_inspections_dict[task.task_id]
+            logger.warning(f"{task.task_id}: 未回答の検査コメントがあるため、スキップします。")
 
-        self.complete_acceptance_task(
-            project_id,
-            task,
-            inspection_status=change_inspection_status,
-            input_data_dict=input_data_dict,
-            account_id=my_account_id,
-            changed_operator=changed_operator,
-        )
+        # if task.phase == TaskPhase.ANNOTATION or len(unprocessed_inspection_list) == 0:
+        #     self.facade.complete_task(project_id, task.task_id, my_account_id)
+        #     logger.info(f"{task.task_id}: {task.phase.value} フェーズを完了状態にしました。")
+        #     return
+        #
+        # # if task.phase == TaskPhase.ANNOTATION and len(unprocessed_inspection_list) > 0:
+        # if task.phase == TaskPhase.ANNOTATION and len(unprocessed_inspection_list) > 0:
+        #     # 返信する
+        #     # TODO 二重で返信しないようにする
+        #     # TODO 返信コメントをコマンドライン引数から取得できるようにする
+        #     # 検査コメントの状態を変更する
+        #     for input_data_id in task.input_data_id_list:
+        #
+        #     self.facade.complete_task(project_id, task.task_id, my_account_id)
+        #     return
+        #
+        # if change_inspection_status is None:
+        #     logger.info(f"{task.task_id}: 未処置の検査コメントがあるためスキップします。")
+        #     return
+        #
+        # if target_inspections_dict is None:
+        #     input_data_dict = self.inspection_list_to_input_data_dict(unprocessed_inspection_list)
+        # else:
+        #     input_data_dict = target_inspections_dict[task.task_id]
+        #
+        # self.complete_acceptance_task(
+        #     project_id,
+        #     task,
+        #     inspection_status=change_inspection_status,
+        #     input_data_dict=input_data_dict,
+        #     account_id=my_account_id,
+        #     changed_operator=changed_operator,
+        # )
 
     def complete_task(
         self,
