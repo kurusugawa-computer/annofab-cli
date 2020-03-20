@@ -261,7 +261,7 @@ class AnnofabApiFacade:
         }
         return self.service.api.operate_task(project_id, task_id, request_body=req)[0]
 
-    def change_to_working_phase(self, project_id: str, task_id: str, account_id: str) -> Dict[str, Any]:
+    def change_to_working_status(self, project_id: str, task_id: str, account_id: str) -> Dict[str, Any]:
         """
         タスクを作業中に変更する
         Args:

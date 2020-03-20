@@ -1,5 +1,6 @@
 import argparse
 import logging
+import dateutil
 import time
 import uuid
 from typing import Any, Dict, List, Optional
@@ -8,7 +9,7 @@ import annofabapi.utils
 import requests
 from annofabapi.dataclass.task import Task
 from annofabapi.models import Inspection, InspectionStatus, ProjectMemberRole, TaskPhase, TaskStatus
-
+from more_itertools import first_true
 import annofabcli
 import annofabcli.common.cli
 from annofabcli import AnnofabApiFacade
@@ -183,17 +184,146 @@ class ComleteTasks(AbstractCommandLineInterface):
 
         return all_inspection_list
 
+    def change_to_working_status(self, task: Task, my_account_id: str):
+        # 担当者変更
+        changed_operator = False
+        try:
+            if task.account_id != my_account_id:
+                self.facade.change_operator_of_task(task.project_id, task.task_id, my_account_id)
+                changed_operator = True
+                logger.debug(f"{task.task_id}: 担当者を自分自身に変更しました。")
+
+            self.facade.change_to_working_status(task.project_id, task.task_id, my_account_id)
+
+        except requests.HTTPError as e:
+            logger.warning(e)
+            logger.warning(f"{task.task_id}: 担当者の変更、または作業中状態への変更に失敗しました。")
+
+
+    def get_unanswered_comment_list(self, task: Task, input_data_id: str) -> List[Inspection]:
+        """
+        未回答の検査コメントのリストを取得する。
+
+        Returns:
+
+        """
+        def exists_answered_comment(parent_inspection_comment_id: str) -> bool:
+            """
+            回答済の返信コメントがあるかどうか
+
+            Args:
+                parent_inspection_comment_id:
+
+            Returns:
+
+            """
+            return first_true(inspection_list,
+                              pred=lambda e: e["parent_inspection_comment_id"] == parent_inspection_comment_id
+                                             and dateutil.parser.parse(e["created_datetime"]) > dateutil.parser.parse(
+                                  task.started_datetime)) is not None
+
+        inspection_list, _ = self.service.api.get_inspections(task.project_id, task.task_id, input_data_id)
+        # 未処置の検査コメント
+        unprocessed_inspection_list = [
+                e
+                for e in inspection_list
+                if e["parent_inspection_comment_id"] is None
+                and e["status"] == InspectionStatus.ANNOTATOR_ACTION_REQUIRED.value
+        ]
+
+        unanswered_comment_list = [
+            e for e in unprocessed_inspection_list if not exists_answered_comment(e["parent_inspection_comment_id"])
+        ]
+        return unanswered_comment_list
+
+
+
+
+    def complete_task_for_annotation_phase(
+        self,
+        project_id: str,
+        task: Task,
+        my_account_id: str,
+        reply_comment: Optional[str] = None,
+        changed_operator: bool = False,
+    ):
+        """
+        annotation phaseのタスクを完了状態にする。
+
+        Args:
+            project_id:
+            task: 操作対象のタスク。annotation phase状態であること前提。
+            reply_comment:
+            my_account_id:
+            changed_operator:
+
+        Returns:
+
+        """
+
+        if reply_comment is not None:
+            for input_data_id in task.input_data_id_list:
+                unanswered_comment_list = self.get_unanswered_comment_list(task, input_data_id)
+                if len(unanswered_comment_list) > 0:
+                    logger.info(f"{task.task_id}: input_data_id={input_data_id}: 未回答の検査コメントが {len(unanswered_comment_list)} 件ありました。")
+                    # 返信する
+
+
+        self.facade.complete_task(project_id, task.task_id, my_account_id)
+        logger.info(f"{task.task_id}: {task.phase.value} フェーズを完了状態にしました。")
+
+        if task.phase == TaskPhase.ANNOTATION or len(unprocessed_inspection_list) == 0:
+            self.facade.complete_task(project_id, task.task_id, my_account_id)
+            logger.info(f"{task.task_id}: {task.phase.value} フェーズを完了状態にしました。")
+            return
+
+        # if task.phase == TaskPhase.ANNOTATION and len(unprocessed_inspection_list) > 0:
+        if task.phase == TaskPhase.ANNOTATION and len(unprocessed_inspection_list) > 0:
+            # 返信する
+            # TODO 二重で返信しないようにする
+            # TODO 返信コメントをコマンドライン引数から取得できるようにする
+            # 検査コメントの状態を変更する
+            logger.debug("自動返信")
+            for input_data_id in task.input_data_id_list:
+                self.reply_inspection_comment(
+                    project_id,
+                    task,
+                    input_data_id=input_data_id,
+                    unprocessed_inspection_list=unprocessed_inspection_list,
+                    reply_comment="対応しました（自動投稿）",
+                    commenter_account_id=my_account_id,
+                )
+
+            self.facade.complete_task(project_id, task.task_id, my_account_id)
+            return
+
+        if change_inspection_status is None:
+            logger.info(f"{task.task_id}: 未処置の検査コメントがあるためスキップします。")
+            return
+
+        if target_inspections_dict is None:
+            input_data_dict = self.inspection_list_to_input_data_dict(unprocessed_inspection_list)
+        else:
+            input_data_dict = target_inspections_dict[task.task_id]
+
+        self.complete_acceptance_task(
+            project_id,
+            task,
+            inspection_status=change_inspection_status,
+            input_data_dict=input_data_dict,
+            account_id=my_account_id,
+            changed_operator=changed_operator,
+        )
+
     def complete_task(
         self,
         project_id: str,
         my_account_id: str,
         change_inspection_status: Optional[InspectionStatus],
-        target_inspections_dict: Optional[InspectionJson],
         task: Task,
         unprocessed_inspection_list: List[Inspection],
         changed_operator: bool = False,
     ):
-        logger.debug("complete_task method")
         logger.debug(f"{len(unprocessed_inspection_list)} 件 未処置コメント")
         if task.phase == TaskPhase.ANNOTATION or len(unprocessed_inspection_list) == 0:
             self.facade.complete_task(project_id, task.task_id, my_account_id)
@@ -245,7 +375,6 @@ class ComleteTasks(AbstractCommandLineInterface):
         target_phase: TaskPhase,
         target_phase_stage: int,
         change_inspection_status: Optional[InspectionStatus] = None,
-        target_inspection_list: Optional[List[Inspection]] = None,
     ):
         """
         検査コメントのstatusを変更（対応完了 or 対応不要）にした上で、タスクを受け入れ完了状態にする
@@ -259,9 +388,6 @@ class ComleteTasks(AbstractCommandLineInterface):
         super().validate_project(project_id, [ProjectMemberRole.OWNER, ProjectMemberRole.ACCEPTER])
 
         my_account_id = self.facade.get_my_account_id()
-        target_inspections_dict = (
-            self.inspection_list_to_dict(target_inspection_list) if target_inspection_list is not None else None
-        )
         project_title = self.facade.get_project_title(project_id)
         logger.info(f"{project_title} のタスク {len(task_id_list)} 件に対して、今のフェーズを完了状態にします。")
 
@@ -304,7 +430,7 @@ class ComleteTasks(AbstractCommandLineInterface):
                     changed_operator = True
                     logger.debug(f"{task_id}: 担当者を変更しました。")
 
-                self.facade.change_to_working_phase(project_id, task_id, my_account_id)
+                self.facade.change_to_working_status(project_id, task_id, my_account_id)
 
             except requests.HTTPError as e:
                 logger.warning(e)
@@ -333,7 +459,6 @@ class ComleteTasks(AbstractCommandLineInterface):
     def main(self):
         args = self.args
         task_id_list = annofabcli.common.cli.get_list_from_args(args.task_id)
-        inspection_list = annofabcli.common.cli.get_json_from_args(args.inspection_list)
         inspection_status = InspectionStatus(args.inspection_status) if args.inspection_status is not None else None
         self.complete_task_list(
             args.project_id,
@@ -341,7 +466,6 @@ class ComleteTasks(AbstractCommandLineInterface):
             target_phase=TaskPhase(args.phase),
             target_phase_stage=args.phase_stage,
             change_inspection_status=inspection_status,
-            target_inspection_list=inspection_list,
         )
 
 
@@ -363,24 +487,25 @@ def parse_args(parser: argparse.ArgumentParser):
     )
 
     parser.add_argument(
-        "--inspection_status",
+        "--reply_comment",
         type=str,
-        choices=[InspectionStatus.ERROR_CORRECTED.value, InspectionStatus.NO_CORRECTION_REQUIRED.value],
         help=(
-            "操作対象のフェーズ未処置の検査コメントをどの状態に変更するかを指定します。指定しない場合、未処置の検査コメントが含まれるタスクはスキップします。"
-            f"{InspectionStatus.ERROR_CORRECTED.value}: 対応完了,"
-            f"{InspectionStatus.NO_CORRECTION_REQUIRED.value}: 対応不要"
+            f"未回答の検査コメントに対する返信コメントを指定してください。"
+            f"'--phase'に'{TaskPhase.ANNOTATION.value}' を指定したときのみ有効なオプションです。"
+            f"指定しない場合は、未回答の検査コメントを含むタスクをスキップします。"
         ),
     )
 
     parser.add_argument(
-        "--inspection_list",
+        "--inspection_status",
         type=str,
+        choices=[InspectionStatus.ERROR_CORRECTED.value, InspectionStatus.NO_CORRECTION_REQUIRED.value],
         help=(
-            "未処置の検査コメントの一覧をJSON形式で指定します。指定された検査コメントの状態が変更されます。"
-            "検査コメントの一覧は `annofabcli inspection_comment list_unprocessed` コマンドで出力できます。"
-            "`file://`を先頭に付けると、JSON形式のファイルを指定できます。"
-            "実際に参照する値は `task_id`, `input_data_id`, `inspection_id` です。"
+            "操作対象のフェーズ未処置の検査コメントをどの状態に変更するかを指定します。"
+            f"'--phase'に'{TaskPhase.INSPECTION.value}'または'{TaskPhase.ACCEPTANCE.value}' を指定したときのみ有効なオプションです。"
+            "指定しない場合、未処置の検査コメントが含まれるタスクはスキップします。"
+            f"{InspectionStatus.ERROR_CORRECTED.value}: 対応完了,"
+            f"{InspectionStatus.NO_CORRECTION_REQUIRED.value}: 対応不要"
         ),
     )
 

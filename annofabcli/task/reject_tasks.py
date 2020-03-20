@@ -133,7 +133,7 @@ class RejectTasks(AbstractCommandLineInterface):
                     f"{str_progress} : task_id = {task_id}, phase={task['phase']}, {commenter_user_id}に担当者変更 完了"
                 )
 
-                self.facade.change_to_working_phase(project_id, task_id, commenter_account_id)
+                self.facade.change_to_working_status(project_id, task_id, commenter_account_id)
                 logger.debug(f"{str_progress} : task_id = {task_id}, phase={task['phase']}, working statusに変更 完了")
 
             except requests.exceptions.HTTPError as e:
