@@ -203,7 +203,8 @@ class ComleteTasks(AbstractCommandLineInterface):
 
             """
             if task.started_datetime is None:
-                raise RuntimeError(f"{task.task_id} の 'started_datetime'がNoneです。")
+                # タスク未着手状態なので、回答済のコメントはない
+                return False
             task_started_datetime = task.started_datetime
             answered_comment = first_true(
                 inspection_list,
