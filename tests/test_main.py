@@ -613,4 +613,18 @@ class TestTask:
         )
 
     def test_complete_task(self):
-        main([self.command_name, "complete", "--project_id", project_id, "--task_id", task_id, "--yes"])
+        main(
+            [
+                self.command_name,
+                "complete",
+                "--project_id",
+                project_id,
+                "--task_id",
+                task_id,
+                "--phase",
+                "annotation",
+                "--reply_comment",
+                "対応しました（自動投稿",
+                "--yes",
+            ]
+        )

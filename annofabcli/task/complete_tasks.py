@@ -205,15 +205,13 @@ class ComleteTasks(AbstractCommandLineInterface):
             if task.started_datetime is None:
                 raise RuntimeError(f"{task.task_id} の 'started_datetime'がNoneです。")
             task_started_datetime = task.started_datetime
-
-            return (
-                first_true(
-                    inspection_list,
-                    pred=lambda e: e["parent_inspection_id"] == parent_inspection_id
-                    and dateutil.parser.parse(e["created_datetime"]) > dateutil.parser.parse(task_started_datetime),
-                )
-                is not None
+            answered_comment = first_true(
+                inspection_list,
+                pred=lambda e: e["parent_inspection_id"] == parent_inspection_id
+                and dateutil.parser.parse(e["created_datetime"]) > dateutil.parser.parse(task_started_datetime),
             )
+            logger.debug(f"answered_comment={answered_comment}")
+            return answered_comment is not None
 
         inspection_list, _ = self.service.api.get_inspections(task.project_id, task.task_id, input_data_id)
         # 未処置の検査コメント
@@ -224,7 +222,7 @@ class ComleteTasks(AbstractCommandLineInterface):
         ]
 
         unanswered_comment_list = [
-            e for e in unprocessed_inspection_list if not exists_answered_comment(e["parent_inspection_id"])
+            e for e in unprocessed_inspection_list if not exists_answered_comment(e["inspection_id"])
         ]
         return unanswered_comment_list
 
