@@ -209,7 +209,7 @@ class ComleteTasks(AbstractCommandLineInterface):
             answered_comment = first_true(
                 inspection_list,
                 pred=lambda e: e["parent_inspection_id"] == parent_inspection_id
-                and dateutil.parser.parse(e["created_datetime"]) > dateutil.parser.parse(task_started_datetime),
+                and dateutil.parser.parse(e["created_datetime"]) >= dateutil.parser.parse(task_started_datetime),
             )
             return answered_comment is not None
 
