@@ -211,7 +211,6 @@ class ComleteTasks(AbstractCommandLineInterface):
                 pred=lambda e: e["parent_inspection_id"] == parent_inspection_id
                 and dateutil.parser.parse(e["created_datetime"]) > dateutil.parser.parse(task_started_datetime),
             )
-            logger.debug(f"answered_comment={answered_comment}")
             return answered_comment is not None
 
         inspection_list, _ = self.service.api.get_inspections(task.project_id, task.task_id, input_data_id)
