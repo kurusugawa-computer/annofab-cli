@@ -204,12 +204,13 @@ class ComleteTasks(AbstractCommandLineInterface):
             """
             if task.started_datetime is None:
                 raise RuntimeError(f"{task.task_id} の 'started_datetime'がNoneです。")
+            task_started_datetime = task.started_datetime
 
             return (
                 first_true(
                     inspection_list,
                     pred=lambda e: e["parent_inspection_id"] == parent_inspection_id
-                    and dateutil.parser.parse(e["created_datetime"]) > dateutil.parser.parse(task.started_datetime),
+                    and dateutil.parser.parse(e["created_datetime"]) > dateutil.parser.parse(task_started_datetime),
                 )
                 is not None
             )
@@ -337,11 +338,13 @@ class ComleteTasks(AbstractCommandLineInterface):
         検査コメントのstatusを変更（対応完了 or 対応不要）にした上で、タスクを受け入れ完了状態にする
         Args:
             project_id: 対象のproject_id
+            task_id_list:
+            target_phase: 操作対象のタスクフェーズ
+            target_phase_stage: 操作対象のタスクのフェーズステージ
             inspection_status: 変更後の検査コメントの状態
-            inspection_json: 変更対象の検査コメントのJSON情報
-
+            reply_comment: 未回答の検査コメントに対する指摘
+            inspection_status: 未処置の検査コメントの状態
         """
-
         super().validate_project(project_id, [ProjectMemberRole.OWNER, ProjectMemberRole.ACCEPTER])
 
         my_account_id = self.facade.get_my_account_id()
@@ -357,7 +360,8 @@ class ComleteTasks(AbstractCommandLineInterface):
 
             task: Task = Task.from_dict(dict_task)  # type: ignore
             logger.info(
-                f"{task_index+1} 件目: タスク情報 task_id={task_id}, phase={task.phase.value}, phase_stage={task.phase_stage}, status={task.status.value}"
+                f"{task_index+1} 件目: タスク情報 task_id={task_id}, "
+                f"phase={task.phase.value}, phase_stage={task.phase_stage}, status={task.status.value}"
             )
             if not (task.phase == target_phase and task.phase_stage == target_phase_stage):
                 logger.warning(f"{task_id} は操作対象のフェーズ、フェーズステージではないため、スキップします。")
@@ -378,19 +382,37 @@ class ComleteTasks(AbstractCommandLineInterface):
                     )
 
                 completed_task_count += 1
-            except Exception as e:
+            except Exception as e:  # pylint: disable=broad-except
                 logger.warning(e)
                 logger.warning(f"{task_id}: {task.phase} フェーズを完了状態にするのに失敗しました。")
                 logger.exception(e)
-                new_task: Task = Task.from_dict(self.service.wrapper.get_task_or_none(project_id, task_id))
+                new_task: Task = Task.from_dict(  # type: ignore
+                    self.service.wrapper.get_task_or_none(project_id, task_id)
+                )
                 if new_task.status == TaskStatus.WORKING and new_task.account_id == my_account_id:
                     self.facade.change_to_break_phase(project_id, task_id, my_account_id)
                 continue
 
         logger.info(f"{completed_task_count} / {len(task_id_list)} 件のタスクに対して、今のフェーズを完了状態にしました。")
 
+    @staticmethod
+    def validate(args: argparse.Namespace) -> bool:
+        if args.phase == TaskPhase.ANNOTATION.value:
+            if args.inspection_status is not None:
+                logger.warning(f"'--phase'に'{TaskPhase.ANNOTATION.value}'を指定しているとき、'--inspection_status'の値は無視されます。")
+        elif args.phase in [TaskPhase.INSPECTION.value, TaskPhase.ACCEPTANCE.value]:
+            if args.reply_comment is not None:
+                logger.warning(
+                    f"'--phase'に'{TaskPhase.INSPECTION.value}'または'{TaskPhase.ACCEPTANCE.value}'を指定しているとき、'--reply_comment'の値は無視されます。"
+                )
+        return True
+
     def main(self):
         args = self.args
+
+        if not self.validate(args):
+            return
+
         task_id_list = annofabcli.common.cli.get_list_from_args(args.task_id)
         inspection_status = InspectionStatus(args.inspection_status) if args.inspection_status is not None else None
         self.complete_task_list(
@@ -455,7 +477,11 @@ def main(args):
 def add_parser(subparsers: argparse._SubParsersAction):
     subcommand_name = "complete"
     subcommand_help = "タスクの今のフェーズを完了状態（教師付の提出、検査/受入の合格）にします。"
-    description = "タスクの今のフェーズを完了状態（教師付の提出、検査/受入の合格）にします。" "未処置の検査コメントがある場合、検査コメントを適切な状態に変更できます。"
+    description = (
+        "タスクの今のフェーズを完了状態（教師付の提出、検査/受入の合格）にします。"
+        "教師付フェーズを完了にする場合は、未回答の検査コメントに対して返信することができます（返信しないと提出できないため）。"
+        "検査/受入フェーズを完了する場合は、未処置の検査コメントを対応完了/対応不要状態に変更できます。"
+    )
     epilog = "チェッカーまたはオーナロールを持つユーザで実行してください。"
 
     parser = annofabcli.common.cli.add_parser(subparsers, subcommand_name, subcommand_help, description, epilog=epilog)
