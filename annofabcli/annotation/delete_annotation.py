@@ -144,7 +144,7 @@ def parse_args(parser: argparse.ArgumentParser):
     parser.add_argument(
         "--backup",
         type=str,
-        required=True,
+        required=False,
         help="アノテーションのバックアップを保存するディレクトリを指定してください。アノテーションの復元は'annotation restore'コマンドで実現できます。",
     )
     parser.set_defaults(subcommand_func=main)

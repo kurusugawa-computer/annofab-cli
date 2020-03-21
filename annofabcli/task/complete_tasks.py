@@ -399,11 +399,12 @@ class ComleteTasks(AbstractCommandLineInterface):
     def validate(args: argparse.Namespace) -> bool:
         if args.phase == TaskPhase.ANNOTATION.value:
             if args.inspection_status is not None:
-                logger.warning(f"'--phase'に'{TaskPhase.ANNOTATION.value}'を指定しているとき、'--inspection_status'の値は無視されます。")
+                logger.warning(f"'--phase'に'{TaskPhase.ANNOTATION.value}'を指定しているとき、" f"'--inspection_status'の値は無視されます。")
         elif args.phase in [TaskPhase.INSPECTION.value, TaskPhase.ACCEPTANCE.value]:
             if args.reply_comment is not None:
                 logger.warning(
-                    f"'--phase'に'{TaskPhase.INSPECTION.value}'または'{TaskPhase.ACCEPTANCE.value}'を指定しているとき、'--reply_comment'の値は無視されます。"
+                    f"'--phase'に'{TaskPhase.INSPECTION.value}'または'{TaskPhase.ACCEPTANCE.value}'を指定しているとき、"
+                    f"'--reply_comment'の値は無視されます。"
                 )
         return True
 
@@ -476,11 +477,13 @@ def main(args):
 
 def add_parser(subparsers: argparse._SubParsersAction):
     subcommand_name = "complete"
-    subcommand_help = "タスクの今のフェーズを完了状態（教師付の提出、検査/受入の合格）にします。"
+    subcommand_help = "タスクを完了状態にして次のフェーズに進めます。（教師付の提出、検査/受入の合格）"
     description = (
-        "タスクの今のフェーズを完了状態（教師付の提出、検査/受入の合格）にします。"
-        "教師付フェーズを完了にする場合は、未回答の検査コメントに対して返信することができます（返信しないと提出できないため）。"
-        "検査/受入フェーズを完了する場合は、未処置の検査コメントを対応完了/対応不要状態に変更できます。"
+        "タスクを完了状態にして次のフェーズに進めます。（教師付の提出、検査/受入の合格） "
+        "教師付フェーズを完了にする場合は、未回答の検査コメントに対して返信することができます"
+        "（未回答の検査コメントに対して返信しないと、タスクを提出できないため）。"
+        "検査/受入フェーズを完了する場合は、未処置の検査コメントを対応完了/対応不要状態に変更できます"
+        "（未処置の検査コメントが残っている状態では、タスクを合格にできないため）。"
     )
     epilog = "チェッカーまたはオーナロールを持つユーザで実行してください。"
 
