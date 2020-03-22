@@ -11,7 +11,7 @@ from typing import Any, Dict, List, Optional
 import annofabapi
 import annofabapi.utils
 import requests
-from annofabapi.models import ProjectMemberRole, TaskPhase, InputDataType
+from annofabapi.models import InputDataType, ProjectMemberRole, TaskPhase
 
 import annofabcli
 import annofabcli.common.cli
@@ -23,7 +23,12 @@ logger = logging.getLogger(__name__)
 
 class RejectTasks(AbstractCommandLineInterface):
     def add_inspection_comment(
-        self, project_id: str, project_input_data_type: InputDataType, task: Dict[str, Any], inspection_comment: str, commenter_account_id: str
+        self,
+        project_id: str,
+        project_input_data_type: InputDataType,
+        task: Dict[str, Any],
+        inspection_comment: str,
+        commenter_account_id: str,
     ):
         """
         検査コメントを付与する。
@@ -43,7 +48,7 @@ class RejectTasks(AbstractCommandLineInterface):
         """
         first_input_data_id = task["input_data_id_list"][0]
         if project_input_data_type == InputDataType.MOVIE:
-            inspection_data = {"start":0, "end": 0, "_type":"Time"}
+            inspection_data = {"start": 0, "end": 0, "_type": "Time"}
         else:
             inspection_data = {"x": 0, "y": 0, "_type": "Point"}
 
@@ -163,7 +168,9 @@ class RejectTasks(AbstractCommandLineInterface):
 
             try:
                 # 検査コメントを付与する
-                self.add_inspection_comment(project_id, project_input_data_type, task, inspection_comment, commenter_account_id)
+                self.add_inspection_comment(
+                    project_id, project_input_data_type, task, inspection_comment, commenter_account_id
+                )
                 logger.debug(f"{str_progress} : task_id = {task_id}, 検査コメントの付与 完了")
 
             except requests.exceptions.HTTPError as e:
