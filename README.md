@@ -112,7 +112,7 @@ $ docker run -it -e ANNOFAB_USER_ID=XXXX -e ANNOFAB_PASSWORD=YYYYY annofab-cli a
 |supplementary| list             | 補助情報を出力します。                                                           |オーナ|
 |task| cancel_acceptance             | 受け入れ完了タスクを、受け入れ取り消し状態にします。                                                         |オーナ|
 |task| change_operator             | タスクの担当者を変更します。                                                             |チェッカー/オーナ|
-|task| complete                | 未処置の検査コメントを適切な状態に変更して、タスクを受け入れ完了状態にします。                                 |チェッカー/オーナ|
+|task| complete                | タスクを完了状態にして次のフェーズに進めます（教師付の提出、検査/受入の合格）。                                  |チェッカー/オーナ|
 |task| delete                | タスクを削除します。                                 |オーナ|
 |task|list             | タスク一覧を出力します。                                                            |-|
 |task| put                | タスクを作成します。                                 |オーナ|
@@ -224,7 +224,7 @@ list系のコマンドで、出力フォーマットを指定します。多く�
 
 ## よくある使い方
 
-### 受入完了のタスクを差し戻す
+### 受入完了状態のタスクを差し戻す
 "car"ラベルの"occluded"属性のアノテーションルールに間違いがあったため、以下の条件を満たすタスクを一括で差し戻します。
 * "car"ラベルの"occluded"チェックボックスがONのアノテーションが、タスクに1つ以上存在する。
 
@@ -279,7 +279,7 @@ $ annofabcli project_member put --project_id prj2 --csv members.csv
 ### annotation delete
 タスク配下のアノテーションを削除します。ただし、作業中/完了状態のタスク、または「過去に割り当てられていて現在の担当者が自分自身でない」タスクのアノテーションは削除できません。
 
-間違えてアノテーションを削除してしまっときに復元できるようにするため、`--backup`でバックアップ用のディレクトリを指定する必要があります。バックアップ用ディレクトリには、 [annotation dump](#annotation-dump) コマンドの出力結果と同等のアノテーション情報が保存されます。
+間違えてアノテーションを削除してしまっときに復元できるようにするため、`--backup`でバックアップ用のディレクトリを指定することを推奨します。バックアップ用ディレクトリには、 [annotation dump](#annotation-dump) コマンドの出力結果と同等のアノテーション情報が保存されます。
 アノテーションの復元には [annotation restore](#annotation-restore) コマンドを使用してください。
 
 
@@ -1171,30 +1171,31 @@ $ annofabcli task change_operator --project_id prj1 --task_id file://task.txt --
 
 
 ### task complete
-タスクの今のフェーズを完了状態（教師付の提出、検査/受入の合格）にします。未処置の検査コメントがある場合、検査コメントを適切な状態に変更できます
+タスクを完了状態にして次のフェーズに進めます。（教師付の提出、検査/受入の合格） 。
+教師付フェーズを完了にする場合は、未回答の検査コメントに対して返信することができます（未回答の検査コメントに対して返信しないと、タスクを提出できないため）。
+検査/受入フェーズを完了する場合は、未処置の検査コメントを対応完了/対応不要状態に変更できます（未処置の検査コメントが残っている状態では、タスクを合格にできないため）。
 
 
 ```
-# task1 が教師付ならば提出、検査/受入フェーズならば合格にする
-$ annofabcli task complete --project_id prj1 --task_id task1
+# 教師付フェーズのタスクを提出して、次のフェーズに進めます。未回答の検査コメントがある場合は、スキップします。
+$ annofabcli task complete --project_id prj1 --task_id file://task.txt --phase annotation
 
-# task1の未処置の検査コメントを"対応完了"状態にして、検査/受入フェーズを完了状態にする
-$ annofabcli complete_tasks --project_id prj1 --task_id task1  --inspection_status error_corrected 
+# 教師付フェーズのタスクを提出して、次のフェーズに進めます。未回答の検査コメントには「対応しました」と返信します。
+$ annofabcli task complete --project_id prj1 --task_id file://task.txt --phase annotation --reply_comment "対応しました"
 
-# inspectio.jsonに記載された検査コメントを"対応不要"状態にして、検査/受入フェーズを完了状態にする
-$ annofabcli complete_tasks --project_id prj1 --task_id task1  --inspection_status no_correction_required \
- --inspection_list file://inspection.json 
+# 検査フェーズでステージ2のタスクを合格にして、次のフェーズに進めます。未処置の検査コメントがある場合は次に進めます
+$ annofabcli complete_tasks --project_id prj1 --task_id file://task.txt --phase inspection --phase_stage 2
+
+# 検査フェーズでステージ2のタスクを合格にして、次のフェーズに進めます。未処置の検査コメントは「対応不要」状態にします。
+$ annofabcli complete_tasks --project_id prj1 --task_id file://task.txt --phase inspection --phase_stage 2 \
+ --inspection_status no_correction_required 
 ```
 
-`inspection.json`は、未処置の検査コメント一覧です。[inspection_comment list_unprocessed ](#inspection_comment-list_unprocessed) コマンドで出力できます。
-
-```
-$ annofabcli inspection_comment list_unprocessed --project_id prj1 --task_id file://task.txt --format json --output inspection.json
-```
 
 
 ### task delete
 タスクを削除します。ただしアノテーションが付与されているタスク、作業中/完了状態のタスクは削除できません。
+アノテーションの削除には [annotation delete](#annotation-delete) コマンドを利用できます。
 
 ```
 # task_id.txtに記載されたtask_idのタスクを削除します。
@@ -1283,7 +1284,7 @@ $ annofabcli task  put --project_id prj1 --by_count '{"task_id_prefix":"sample",
 
 
 ### task reject
-検査コメントを付与して、タスクを差し戻します。検査コメントは、タスク内の先頭の画像の左上(x=0,y=0)に付与します。
+検査コメントを付与して、タスクを差し戻します。検査コメントは、画像プロジェクトならばタスク内の先頭の画像の左上(`x=0,y=0`)に、動画プロジェクトなら動画の先頭（`start=0, end=0`)に付与します。
 アノテーションルールを途中で変更したときなどに、利用します。
 
 

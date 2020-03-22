@@ -259,7 +259,7 @@ class RegisterAnnotation:
                         logger.info(f"{task_id} {input_data_id} 自分自身に割り合っていて、作業中のため、担当者を変更しない")
                     else:
                         self.facade.change_operator_of_task(project_id, task_id, account_id)
-                        self.facade.change_to_working_phase(project_id, task_id, account_id)
+                        self.facade.change_to_working_status(project_id, task_id, account_id)
                 except Exception as e:
                     logger.warning(e)
                     logger.warning(f"{task_id}, {input_data_id} の担当者変更 or 作業中に変更に失敗")

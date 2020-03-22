@@ -11,7 +11,7 @@ from typing import Any, Dict, List, Optional
 import annofabapi
 import annofabapi.utils
 import requests
-from annofabapi.models import ProjectMemberRole, TaskPhase
+from annofabapi.models import InputDataType, ProjectMemberRole, TaskPhase
 
 import annofabcli
 import annofabcli.common.cli
@@ -23,12 +23,21 @@ logger = logging.getLogger(__name__)
 
 class RejectTasks(AbstractCommandLineInterface):
     def add_inspection_comment(
-        self, project_id: str, task: Dict[str, Any], inspection_comment: str, commenter_account_id: str
+        self,
+        project_id: str,
+        project_input_data_type: InputDataType,
+        task: Dict[str, Any],
+        inspection_comment: str,
+        commenter_account_id: str,
     ):
         """
-        先頭画像の左上に検査コメントを付与する
+        検査コメントを付与する。
+        画像プロジェクトなら先頭画像の左上に付与する。
+        動画プロジェクトなら最初の区間に付与する。
+
         Args:
             project_id:
+            project_input_data_type: プロジェクトの入力データの種類
             task:
             inspection_comment:
             commenter_account_id:
@@ -38,6 +47,11 @@ class RejectTasks(AbstractCommandLineInterface):
 
         """
         first_input_data_id = task["input_data_id_list"][0]
+        if project_input_data_type == InputDataType.MOVIE:
+            inspection_data = {"start": 0, "end": 0, "_type": "Time"}
+        else:
+            inspection_data = {"x": 0, "y": 0, "_type": "Point"}
+
         req_inspection = [
             {
                 "data": {
@@ -48,7 +62,7 @@ class RejectTasks(AbstractCommandLineInterface):
                     "inspection_id": str(uuid.uuid4()),
                     "phase": task["phase"],
                     "commenter_account_id": commenter_account_id,
-                    "data": {"x": 0, "y": 0, "_type": "Point"},
+                    "data": inspection_data,
                     "status": "annotator_action_required",
                     "created_datetime": annofabapi.utils.str_now(),
                 },
@@ -73,6 +87,24 @@ class RejectTasks(AbstractCommandLineInterface):
 
         return self.confirm_processing_task(task_id, confirm_message)
 
+    def change_to_working_status(self, project_id: str, task: Dict[str, Any], my_account_id: str) -> bool:
+        # 担当者変更
+        changed_operator = False
+        task_id = task["task_id"]
+        try:
+            if task["account_id"] != my_account_id:
+                self.facade.change_operator_of_task(project_id, task_id, my_account_id)
+                changed_operator = True
+                logger.debug(f"{task_id}: 担当者を自分自身に変更しました。")
+
+            self.facade.change_to_working_status(project_id, task_id, my_account_id)
+            return changed_operator
+
+        except requests.HTTPError as e:
+            logger.warning(e)
+            logger.warning(f"{task_id}: 担当者の変更、または作業中状態への変更に失敗しました。")
+            raise
+
     def reject_tasks_with_adding_comment(
         self,
         project_id: str,
@@ -95,6 +127,9 @@ class RejectTasks(AbstractCommandLineInterface):
         """
 
         super().validate_project(project_id, [ProjectMemberRole.OWNER, ProjectMemberRole.ACCEPTER])
+        my_account_id = self.facade.get_my_account_id()
+        project, _ = self.service.api.get_project(project_id)
+        project_input_data_type = InputDataType(project["input_data_type"])
 
         commenter_account_id = self.facade.get_account_id_from_user_id(project_id, commenter_user_id)
         if commenter_account_id is None:
@@ -126,26 +161,16 @@ class RejectTasks(AbstractCommandLineInterface):
             if not self.confirm_reject_task(task_id, assign_last_annotator, assigned_annotator_user_id):
                 continue
 
-            try:
-                # 担当者を変更して、作業中にする
-                self.facade.change_operator_of_task(project_id, task_id, commenter_account_id)
-                logger.debug(
-                    f"{str_progress} : task_id = {task_id}, phase={task['phase']}, {commenter_user_id}に担当者変更 完了"
-                )
+            changed_operator = self.change_to_working_status(project_id, task, my_account_id)
+            # スリープする理由：担当者を変更したときは、少し待たないと検査コメントが登録できないため
+            if changed_operator:
+                time.sleep(2)
 
-                self.facade.change_to_working_phase(project_id, task_id, commenter_account_id)
-                logger.debug(f"{str_progress} : task_id = {task_id}, phase={task['phase']}, working statusに変更 完了")
-
-            except requests.exceptions.HTTPError as e:
-                logger.warning(e)
-                logger.warning(f"{str_progress} : task_id = {task_id}, phase={task['phase']} の担当者変更 or 作業phaseへの変更に失敗")
-                continue
-
-            # 少し待たないと検査コメントが登録できない場合があるため
-            time.sleep(3)
             try:
                 # 検査コメントを付与する
-                self.add_inspection_comment(project_id, task, inspection_comment, commenter_account_id)
+                self.add_inspection_comment(
+                    project_id, project_input_data_type, task, inspection_comment, commenter_account_id
+                )
                 logger.debug(f"{str_progress} : task_id = {task_id}, 検査コメントの付与 完了")
 
             except requests.exceptions.HTTPError as e:
@@ -155,6 +180,7 @@ class RejectTasks(AbstractCommandLineInterface):
 
             try:
                 # タスクを差し戻す
+                str_annotator_user = ""
                 if assign_last_annotator:
                     # 最後のannotation phaseに担当を割り当てる
                     _, last_annotator_account_id = self.facade.reject_task_assign_last_annotator(
