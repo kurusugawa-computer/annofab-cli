@@ -1195,6 +1195,7 @@ $ annofabcli complete_tasks --project_id prj1 --task_id file://task.txt --phase 
 
 ### task delete
 タスクを削除します。ただしアノテーションが付与されているタスク、作業中/完了状態のタスクは削除できません。
+アノテーションの削除には [annotation delete](#annotation-delete) コマンドを利用できます。
 
 ```
 # task_id.txtに記載されたtask_idのタスクを削除します。
