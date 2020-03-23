@@ -187,18 +187,10 @@ class ListAnnotationCount(AbstractCommandLineInterface):
         attribute_columns: List[Tuple[str, str, str]],
         output_dir: Path,
     ):
-        def to_dict(c: AnnotationCounterByTask) -> Dict[Tuple[str, str, str], Any]:
-            d = {
-                ("task_id", "", ""): c.task_id,
-                ("task_status", "", ""): c.task_status.value,
-                ("task_phase", "", ""): c.task_phase.value,
-                ("task_phase_stage", "", ""): c.task_phase_stage,
-            }
-            data = []
-            d.update({key: count for key, count in c.attirbutes_count.items()})
-            return d
+
 
         def to_list(c: AnnotationCounterByTask) -> List[Any]:
+            print(c.attirbutes_count)
             l = [
                 c.task_id,
                 c.task_status.value,
@@ -208,9 +200,11 @@ class ListAnnotationCount(AbstractCommandLineInterface):
             l.extend([v for v in c.attirbutes_count.values()])
             return l
 
+
         columns = [("task_id","",""),("task_status","",""),("task_phase","",""),("task_phase_stage","","")]
         columns.extend([k for k in attribute_columns])
         df = pandas.DataFrame([to_list(e) for e in task_counter_list], columns=columns)
+
         output_file = str(output_dir / "attirbutes_count.csv")
         annofabcli.utils.print_csv(df, output=output_file, to_csv_kwargs=self.CSV_FORMAT)
 
@@ -221,8 +215,9 @@ class ListAnnotationCount(AbstractCommandLineInterface):
 
         task_counter_list = []
         iter_task_parser = self.lazy_parse_simple_annotation_by_task(annotation_path)
+        target_attributes = {("climatic", "weather")}
         for task_parser in iter_task_parser:
-            task_counter = self.execute_task(task_parser)
+            task_counter = self.execute_task(task_parser, target_attributes=target_attributes)
             task_counter_list.append(task_counter)
 
         self.print_labels_count(task_counter_list, output_dir)
