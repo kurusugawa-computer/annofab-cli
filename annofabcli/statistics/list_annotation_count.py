@@ -38,8 +38,8 @@ class AnnotationCounterByTask:
     task_status: TaskStatus
     task_phase: TaskPhase
     task_phase_stage: int
-    labels_count: collections.Counter[str]
-    attirbutes_count: collections.Counter[Tuple[str, str, str]]
+    labels_count: Counter[str]
+    attirbutes_count: Counter[Tuple[str, str, str]]
 
 
 @dataclass_json
@@ -174,33 +174,48 @@ class ListAnnotationCount(AbstractCommandLineInterface):
                 "task_phase": c.task_phase.value,
                 "task_phase_stage": c.task_phase_stage,
             }
-            d.update({f"label_{label}": count for label, count in c.labels_count})
+            d.update({f"label_{label}": count for label, count in c.labels_count.items()})
             return d
 
         df = pandas.DataFrame([to_dict(e) for e in task_counter_list])
         output_file = str(output_dir / "labels_count.csv")
         annofabcli.utils.print_csv(df, output=output_file, to_csv_kwargs=self.CSV_FORMAT)
 
-    def print_attirbutes_count(self, task_counter_list: List[AnnotationCounterByTask], output_dir: Path):
-        def to_dict(c: AnnotationCounterByTask) -> Dict[str, Any]:
+    def print_attirbutes_count(
+        self,
+        task_counter_list: List[AnnotationCounterByTask],
+        attribute_columns: List[Tuple[str, str, str]],
+        output_dir: Path,
+    ):
+        def to_dict(c: AnnotationCounterByTask) -> Dict[Tuple[str, str, str], Any]:
             d = {
                 ("task_id", "", ""): c.task_id,
                 ("task_status", "", ""): c.task_status.value,
                 ("task_phase", "", ""): c.task_phase.value,
                 ("task_phase_stage", "", ""): c.task_phase_stage,
             }
-            d.update({key: count for key, count in c.attirbutes_count})
+            data = []
+            d.update({key: count for key, count in c.attirbutes_count.items()})
             return d
 
-        df = pandas.DataFrame([to_dict(e) for e in task_counter_list])
+        def to_list(c: AnnotationCounterByTask) -> List[Any]:
+            l = [
+                c.task_id,
+                c.task_status.value,
+                c.task_phase.value,
+                c.task_phase_stage,
+            ]
+            l.extend([v for v in c.attirbutes_count.values()])
+            return l
+
+        columns = [("task_id","",""),("task_status","",""),("task_phase","",""),("task_phase_stage","","")]
+        columns.extend([k for k in attribute_columns])
+        df = pandas.DataFrame([to_list(e) for e in task_counter_list], columns=columns)
         output_file = str(output_dir / "attirbutes_count.csv")
         annofabcli.utils.print_csv(df, output=output_file, to_csv_kwargs=self.CSV_FORMAT)
 
     def list_annotation_count_by_task(self, project_id: str, annotation_path: Path, output_dir: Path) -> None:
         super().validate_project(project_id, project_member_roles=None)
-
-        count_created_image = 0
-        iter_lazy_parser = self.lazy_parse_simple_annotation(annotation_path)
 
         # Simpleアノテーションの読み込み
 
@@ -211,13 +226,18 @@ class ListAnnotationCount(AbstractCommandLineInterface):
             task_counter_list.append(task_counter)
 
         self.print_labels_count(task_counter_list, output_dir)
-        self.print_attirbutes_count(task_counter_list, output_dir)
+
+        self.print_attirbutes_count(
+            task_counter_list, output_dir=output_dir, attribute_columns=[e for e in task_counter_list[0].attirbutes_count]
+        )
 
     def main(self):
         args = self.args
 
         project_id = args.project_id
-        self.list_annotation_count_by_task(project_id)
+        self.list_annotation_count_by_task(
+            project_id, annotation_path=Path(args.annotation), output_dir=Path(args.output_dir)
+        )
 
 
 def parse_args(parser: argparse.ArgumentParser):
