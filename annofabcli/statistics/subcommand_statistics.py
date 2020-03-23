@@ -2,6 +2,7 @@ import argparse
 
 import annofabcli
 import annofabcli.common.cli
+import annofabcli.statistics.list_annotation_count
 import annofabcli.statistics.list_cumulative_labor_time
 import annofabcli.statistics.list_labor_time_per_user
 import annofabcli.statistics.list_task_progress
@@ -13,6 +14,7 @@ def parse_args(parser: argparse.ArgumentParser):
     subparsers = parser.add_subparsers(dest="subcommand_name")
 
     # サブコマンドの定義
+    annofabcli.statistics.list_annotation_count.add_parser(subparsers)
     annofabcli.statistics.list_cumulative_labor_time.add_parser(subparsers)
     annofabcli.statistics.list_labor_time_per_user.add_parser(subparsers)
     annofabcli.statistics.list_task_progress.add_parser(subparsers)
