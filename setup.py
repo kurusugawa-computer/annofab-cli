@@ -39,8 +39,8 @@ setup(
         "pyquery",
         "pandas>=1.0.3",
         "isodate",
-        "bokeh>=1.4,<2.0", # holoviewsが2.0.0に対応されるまでバージョンを固定化する
-        "holoviews>=1.12.7",
+        "bokeh>=2.0.0",
+        "holoviews>=1.13.0",
     ],
     python_requires=">=3.6",
     classifiers=[
