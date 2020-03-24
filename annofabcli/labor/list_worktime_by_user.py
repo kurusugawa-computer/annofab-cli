@@ -333,10 +333,10 @@ class ListWorktimeByUser(AbstractCommandLineInterface):
     def get_availability_list(
         self, labor_availability_list: List[LaborAvailability], start_date: str, end_date: str,
     ) -> List[Optional[float]]:
-        availability_list = []
+        availability_list: List[Optional[float]] = []
         for date in pandas.date_range(start=start_date, end=end_date):
             str_date = date.strftime(ListWorktimeByUser.DATE_FORMAT)
-            labor = more_itertools.first_true(labor_availability_list, pred=lambda e, f=str_date: e.date == f)
+            labor = more_itertools.first_true(labor_availability_list, pred=lambda e: e.date == str_date)
             if labor is not None:
                 availability_list.append(labor.availability_hour)
             else:
@@ -479,12 +479,11 @@ class ListWorktimeByUser(AbstractCommandLineInterface):
             project_id_list = sorted(list({e.project_id for e in labor_list}))
         logger.info(f"集計対象プロジェクトの数: {len(project_id_list)}")
 
+        labor_availability_list_dict = None
         if add_availability:
-            labor_availability_list = self.get_labor_availability_list(
+            labor_availability_list_dict = self.get_labor_availability_list_dict(
                 user_id_list=user_id_list, start_date=start_date, end_date=end_date, member_list=member_list,
             )
-        else:
-            labor_availability_list = None
 
         self.write_labor_list(
             labor_list=labor_list,
@@ -493,7 +492,7 @@ class ListWorktimeByUser(AbstractCommandLineInterface):
             start_date=start_date,
             end_date=end_date,
             output_dir=output_dir,
-            labor_availability_list=labor_availability_list,
+            labor_availability_list_dict=labor_availability_list_dict,
         )
 
     def get_user_id_list_from_project_id_list(self, project_id_list: List[str]) -> List[str]:
