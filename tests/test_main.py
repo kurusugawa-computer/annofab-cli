@@ -508,7 +508,7 @@ class TestStatistics:
             ["statistics", "list_annotation_count", "--project_id", project_id, "--output_dir", output_dir, "--group_by", "task_id"]
         )
         main(
-            ["statistics", "list_annotation_count", "--project_id", project_id, "--output_dir", output_dir, "--group_by", "input_data_i"]
+            ["statistics", "list_annotation_count", "--project_id", project_id, "--output_dir", output_dir, "--group_by", "input_data_id"]
         )
 
 
