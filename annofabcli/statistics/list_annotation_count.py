@@ -339,7 +339,7 @@ class ListAnnotationCount(AbstractCommandLineInterface):
         target_label_columns, target_attributes_columns = self.get_target_columns(project_id)
 
         target_attributes = {(e[0], e[1]) for e in target_attributes_columns}
-        logger.debug(f"アノテーションzip/ディレクトリを読み込み中")
+        logger.info(f"アノテーションzip/ディレクトリを読み込み中")
         for task_index, task_parser in enumerate(iter_task_parser):
             task_index += 1
             if task_index % 1000 == 0:
@@ -360,7 +360,7 @@ class ListAnnotationCount(AbstractCommandLineInterface):
         target_label_columns, target_attributes_columns = self.get_target_columns(project_id)
 
         target_attributes = {(e[0], e[1]) for e in target_attributes_columns}
-        logger.debug(f"アノテーションzip/ディレクトリを読み込み中")
+        logger.info(f"アノテーションzip/ディレクトリを読み込み中")
         for index, parser in enumerate(iter_parser):
             if index % 1000 == 0:
                 logger.debug(f"{index}  件目を読み込み中")
@@ -383,14 +383,22 @@ class ListAnnotationCount(AbstractCommandLineInterface):
         project_id = args.project_id
         super().validate_project(project_id, project_member_roles=None)
 
+        if args.annotation is not None:
+            annotation_path = Path(args.annotation_dir)
+        else:
+            cache_dir = annofabcli.utils.get_cache_dir()
+            annotation_path = cache_dir / "annotation.zip"
+            logger.info(f"Simpleアノテーションzipをダウンロード中: {annotation_path}")
+            self.service.wrapper.download_annotation_archive(project_id, str(annotation_path), v2=True)
+
         group_by = GroupBy(args.group_by)
         if group_by == GroupBy.TASK_ID:
             self.list_annotation_count_by_task(
-                project_id, annotation_path=Path(args.annotation), output_dir=Path(args.output_dir)
+                project_id, annotation_path=annotation_path, output_dir=Path(args.output_dir)
             )
         elif group_by == GroupBy.INPUT_DATA_ID:
             self.list_annotation_count_by_input_data(
-                project_id, annotation_path=Path(args.annotation), output_dir=Path(args.output_dir)
+                project_id, annotation_path=annotation_path, output_dir=Path(args.output_dir)
             )
 
 
@@ -398,7 +406,9 @@ def parse_args(parser: argparse.ArgumentParser):
     argument_parser = ArgumentParser(parser)
 
     argument_parser.add_project_id()
-    parser.add_argument("--annotation", type=str, required=True, help="アノテーションzip、またはzipを展開したディレクトリ")
+    parser.add_argument(
+        "--annotation", type=str, help="Simpleアノテーションzip、またはzipを展開したディレクトリを指定します。" "指定しない場合はAnnoFabからダウンロードします。"
+    )
     parser.add_argument("-o", "--output_dir", type=str, required=True, help="出力ディレクトリのパス")
 
     parser.add_argument(
@@ -420,7 +430,7 @@ def main(args):
 
 def add_parser(subparsers: argparse._SubParsersAction):
     subcommand_name = "list_annotation_count"
-    subcommand_help = "アノテーション数の情報を出力する。"
-    description = "アノテーション数の情報を出力する。"
+    subcommand_help = "各ラベル、各属性値のアノテーション数を出力します。"
+    description = "各ラベル、各属性値のアノテーション数を、タスクごと/入力データごとに出力します。"
     parser = annofabcli.common.cli.add_parser(subparsers, subcommand_name, subcommand_help, description=description)
     parse_args(parser)
