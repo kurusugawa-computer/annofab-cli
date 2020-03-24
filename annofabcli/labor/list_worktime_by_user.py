@@ -421,7 +421,7 @@ class ListWorktimeByUser(AbstractCommandLineInterface):
             if labor_availability_list_dict is not None:
                 labor_availability_list = labor_availability_list_dict[user_id]
                 reform_dict.update(
-                    {(username, "予定稼働"): self.get_availability_list(labor_availability_list, start_date, end_date),}
+                    {(username, "予定稼働"): self.get_availability_list(labor_availability_list, start_date, end_date)}
                 )
 
         sum_worktime_df = pandas.DataFrame(reform_dict)
@@ -430,7 +430,10 @@ class ListWorktimeByUser(AbstractCommandLineInterface):
         catch_exception(self.write_sum_plan_worktime_list)(sum_worktime_df, output_dir)
 
         worktime_df = pandas.DataFrame([e.to_dict() for e in labor_list])  # type: ignore
-        catch_exception(self.write_worktime_list)(worktime_df, output_dir)
+        if len(worktime_df) > 0:
+            catch_exception(self.write_worktime_list)(worktime_df, output_dir)
+        else:
+            logger.info("出力対象のデータが0件のため、'作業時間の詳細一覧.csv'を出力しません。")
 
     def print_labor_worktime_list(
         self,
@@ -457,8 +460,10 @@ class ListWorktimeByUser(AbstractCommandLineInterface):
         )
 
         if len(labor_list) == 0:
-            logger.warning(f"労務管理情報が0件のため、作業時間の詳細一覧.csv は出力しません。")
-            return
+            logger.info(f"予定/実績に関する労務管理情報が0件です。")
+            if start_date is None or end_date is None or user_id_list is None:
+                logger.info(f"後続の処理を続けることができないので終了します。")
+                return
 
         if start_date is None or end_date is None:
             sorted_labor_list = sorted(labor_list, key=lambda e: e.date)
@@ -574,7 +579,6 @@ class ListWorktimeByUser(AbstractCommandLineInterface):
         organization_name_list = get_list_from_args(args.organization) if args.organization is not None else None
 
         start_date, end_date = self.get_start_and_end_date_from_args(args)
-
         output_dir = Path(args.output_dir)
         output_dir.mkdir(exist_ok=True, parents=True)
 
@@ -585,7 +589,7 @@ class ListWorktimeByUser(AbstractCommandLineInterface):
             end_date=end_date,
             output_dir=output_dir,
             user_id_list=arg_user_id_list,
-            availability=args.availability,
+            add_availability=args.availability,
         )  # type: ignore
 
 
