@@ -505,10 +505,28 @@ class TestStatistics:
     def test_list_annotation_count(self):
         output_dir = str(out_path / "statistics-list-annotation-count")
         main(
-            ["statistics", "list_annotation_count", "--project_id", project_id, "--output_dir", output_dir, "--group_by", "task_id"]
+            [
+                "statistics",
+                "list_annotation_count",
+                "--project_id",
+                project_id,
+                "--output_dir",
+                output_dir,
+                "--group_by",
+                "task_id",
+            ]
         )
         main(
-            ["statistics", "list_annotation_count", "--project_id", project_id, "--output_dir", output_dir, "--group_by", "input_data_id"]
+            [
+                "statistics",
+                "list_annotation_count",
+                "--project_id",
+                project_id,
+                "--output_dir",
+                output_dir,
+                "--group_by",
+                "input_data_id",
+            ]
         )
 
 
