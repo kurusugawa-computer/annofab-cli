@@ -28,6 +28,16 @@ from annofabcli.common.visualize import AddProps, MessageLocale
 
 logger = logging.getLogger(__name__)
 
+AttributesColumn = Tuple[str, str, str]
+"""
+属性値ごとの個数を表したCSVの列の型
+Tuple[Label, Attribute, Choice]
+"""
+
+LabelColumnList = List[str]
+
+AttributesColumnList = List[AttributesColumn]
+
 
 class GroupBy(Enum):
     TASK_ID = "task_id"
@@ -46,7 +56,7 @@ class AnnotationCounterByTask:
     task_phase: TaskPhase
     task_phase_stage: int
     labels_count: Counter[str]
-    attirbutes_count: Counter[Tuple[str, str, str]]
+    attirbutes_count: Counter[AttributesColumn]
 
 
 @dataclass_json
@@ -64,7 +74,7 @@ class AnnotationCounterByInputData:
     input_data_id: str
     input_data_name: str
     labels_count: Counter[str]
-    attirbutes_count: Counter[Tuple[str, str, str]]
+    attirbutes_count: Counter[AttributesColumn]
 
 
 class ListAnnotationCount(AbstractCommandLineInterface):
@@ -98,8 +108,9 @@ class ListAnnotationCount(AbstractCommandLineInterface):
         else:
             raise RuntimeError(f"'--annotation'で指定した'{annotation_path}'は、zipファイルまたはディレクトリではありませんでした。")
 
+    @staticmethod
     def count_for_input_data(
-        self, simple_annotation: SimpleAnnotation, target_attributes: Optional[Set[Tuple[str, str]]] = None
+        simple_annotation: SimpleAnnotation, target_attributes: Optional[Set[Tuple[str, str]]] = None
     ) -> AnnotationCounterByInputData:
         """
         1個の入力データに対してアノテーション数をカウントする
@@ -134,8 +145,9 @@ class ListAnnotationCount(AbstractCommandLineInterface):
             attirbutes_count=attirbutes_count,
         )
 
+    @staticmethod
     def count_for_task(
-        self, task_parser: SimpleAnnotationParserByTask, target_attributes: Optional[Set[Tuple[str, str]]] = None
+        task_parser: SimpleAnnotationParserByTask, target_attributes: Optional[Set[Tuple[str, str]]] = None
     ) -> AnnotationCounterByTask:
         """
         1個のタスクに対してアノテーション数をカウントする
@@ -148,7 +160,7 @@ class ListAnnotationCount(AbstractCommandLineInterface):
         last_simple_annotation = None
         for parser in task_parser.lazy_parse():
             simple_annotation = parser.parse()
-            input_data = self.count_for_input_data(simple_annotation, target_attributes)
+            input_data = ListAnnotationCount.count_for_input_data(simple_annotation, target_attributes)
             labels_count += input_data.labels_count
             attirbutes_count += input_data.attirbutes_count
             last_simple_annotation = simple_annotation
@@ -165,7 +177,9 @@ class ListAnnotationCount(AbstractCommandLineInterface):
             attirbutes_count=attirbutes_count,
         )
 
-    def print_labels_count_for_task(self, task_counter_list: List[AnnotationCounterByTask], output_dir: Path):
+    def print_labels_count_for_task(
+        self, task_counter_list: List[AnnotationCounterByTask], label_columns: List[str], output_dir: Path
+    ):
         def to_dict(c: AnnotationCounterByTask) -> Dict[str, Any]:
             d = {
                 "task_id": c.task_id,
@@ -173,10 +187,13 @@ class ListAnnotationCount(AbstractCommandLineInterface):
                 "task_phase": c.task_phase.value,
                 "task_phase_stage": c.task_phase_stage,
             }
-            d.update({f"label_{label}": count for label, count in c.labels_count.items()})
+            d.update({f"label_{label}": c.labels_count[label] for label in label_columns})
             return d
 
-        df = pandas.DataFrame([to_dict(e) for e in task_counter_list])
+        columns = ["task_id", "task_status", "task_phase", "task_phase_stage"]
+        columns.extend([f"label_{e}" for e in label_columns])
+
+        df = pandas.DataFrame([to_dict(e) for e in task_counter_list], columns=columns)
         output_file = str(output_dir / "labels_count.csv")
         annofabcli.utils.print_csv(df, output=output_file, to_csv_kwargs=self.CSV_FORMAT)
 
@@ -186,7 +203,7 @@ class ListAnnotationCount(AbstractCommandLineInterface):
         attribute_columns: List[Tuple[str, str, str]],
         output_dir: Path,
     ):
-        def to_cell(c: AnnotationCounterByTask) -> Dict[Tuple[str, str, str], Any]:
+        def to_cell(c: AnnotationCounterByTask) -> Dict[AttributesColumn, Any]:
             cell = {
                 ("", "", "task_id"): c.task_id,
                 ("", "", "task_status"): c.task_status.value,
@@ -206,7 +223,7 @@ class ListAnnotationCount(AbstractCommandLineInterface):
         annofabcli.utils.print_csv(df, output=output_file, to_csv_kwargs=self.CSV_FORMAT)
 
     def print_labels_count_for_input_data(
-        self, input_data_counter_list: List[AnnotationCounterByInputData], output_dir: Path
+        self, input_data_counter_list: List[AnnotationCounterByInputData], label_columns: List[str], output_dir: Path
     ):
         def to_dict(c: AnnotationCounterByInputData) -> Dict[str, Any]:
             d = {
@@ -217,8 +234,11 @@ class ListAnnotationCount(AbstractCommandLineInterface):
                 "task_phase": c.task_phase.value,
                 "task_phase_stage": c.task_phase_stage,
             }
-            d.update({f"label_{label}": count for label, count in c.labels_count.items()})
+            d.update({f"label_{label}": c.labels_count[label] for label in label_columns})
             return d
+
+        columns = ["input_data_id", "input_data_name", "task_id", "task_status", "task_phase", "task_phase_stage"]
+        columns.extend([f"label_{e}" for e in label_columns])
 
         df = pandas.DataFrame([to_dict(e) for e in input_data_counter_list])
         output_file = str(output_dir / "labels_count.csv")
@@ -230,7 +250,7 @@ class ListAnnotationCount(AbstractCommandLineInterface):
         attribute_columns: List[Tuple[str, str, str]],
         output_dir: Path,
     ):
-        def to_cell(c: AnnotationCounterByInputData) -> Dict[Tuple[str, str, str], Any]:
+        def to_cell(c: AnnotationCounterByInputData) -> Dict[AttributesColumn, Any]:
             cell = {
                 ("", "", "input_data_id"): c.input_data_id,
                 ("", "", "input_data_name"): c.input_data_name,
@@ -260,15 +280,13 @@ class ListAnnotationCount(AbstractCommandLineInterface):
         output_file = str(output_dir / "attirbutes_count.csv")
         annofabcli.utils.print_csv(df, output=output_file, to_csv_kwargs=self.CSV_FORMAT)
 
-    def get_target_attributes_columns(self, project_id: str) -> List[Tuple[str, str, str]]:
+    @staticmethod
+    def get_target_attributes_columns(annotation_specs_labels: List[Dict[str, Any]]) -> List[AttributesColumn]:
         """
         出力対象の属性情報を取得する（label, attribute, choice)
-
         """
-        annotation_specs, _ = self.service.api.get_annotation_specs(project_id)
-        annotation_specs_labels = annotation_specs["labels"]
 
-        target_attributes_columns: List[Tuple[str, str, str]] = []
+        target_attributes_columns: List[AttributesColumn] = []
         for label in annotation_specs_labels:
             label_name_en = AddProps.get_message(label["label_name"], MessageLocale.EN)
             label_name_en = label_name_en if label_name_en is not None else ""
@@ -295,17 +313,42 @@ class ListAnnotationCount(AbstractCommandLineInterface):
 
         return target_attributes_columns
 
+    @staticmethod
+    def get_target_label_columns(annotation_specs_labels: List[Dict[str, Any]]) -> List[str]:
+        """
+        出力対象の属性情報を取得する（label, attribute, choice)
+        """
+
+        def to_label_name(label: Dict[str, Any]) -> str:
+            label_name_en = AddProps.get_message(label["label_name"], MessageLocale.EN)
+            label_name_en = label_name_en if label_name_en is not None else ""
+            return label_name_en
+
+        return [to_label_name(label) for label in annotation_specs_labels]
+
+    def get_target_columns(self, project_id: str) -> Tuple[LabelColumnList, AttributesColumnList]:
+        annotation_specs, _ = self.service.api.get_annotation_specs(project_id)
+        annotation_specs_labels = annotation_specs["labels"]
+        label_columns = self.get_target_label_columns(annotation_specs_labels)
+        attributes_columns = self.get_target_attributes_columns(annotation_specs_labels)
+        return (label_columns, attributes_columns)
+
     def list_annotation_count_by_task(self, project_id: str, annotation_path: Path, output_dir: Path) -> None:
         task_counter_list = []
         iter_task_parser = self.lazy_parse_simple_annotation_by_task(annotation_path)
-        target_attributes_columns = self.get_target_attributes_columns(project_id)
+        target_label_columns, target_attributes_columns = self.get_target_columns(project_id)
 
         target_attributes = {(e[0], e[1]) for e in target_attributes_columns}
-        for task_parser in iter_task_parser:
+        logger.debug(f"アノテーションzip/ディレクトリを読み込み中")
+        for task_index, task_parser in enumerate(iter_task_parser):
+            task_index += 1
+            if task_index % 1000 == 0:
+                logger.debug(f"{task_index}  件目を読み込み中")
+
             task_counter = self.count_for_task(task_parser, target_attributes=target_attributes)
             task_counter_list.append(task_counter)
 
-        self.print_labels_count_for_task(task_counter_list, output_dir)
+        self.print_labels_count_for_task(task_counter_list, label_columns=target_label_columns, output_dir=output_dir)
 
         self.print_attirbutes_count_for_task(
             task_counter_list, output_dir=output_dir, attribute_columns=target_attributes_columns,
@@ -314,15 +357,21 @@ class ListAnnotationCount(AbstractCommandLineInterface):
     def list_annotation_count_by_input_data(self, project_id: str, annotation_path: Path, output_dir: Path) -> None:
         input_data_counter_list = []
         iter_parser = self.lazy_parse_simple_annotation_by_input_data(annotation_path)
-        target_attributes_columns = self.get_target_attributes_columns(project_id)
+        target_label_columns, target_attributes_columns = self.get_target_columns(project_id)
 
         target_attributes = {(e[0], e[1]) for e in target_attributes_columns}
-        for parser in iter_parser:
+        logger.debug(f"アノテーションzip/ディレクトリを読み込み中")
+        for index, parser in enumerate(iter_parser):
+            if index % 1000 == 0:
+                logger.debug(f"{index}  件目を読み込み中")
+
             simple_annotation = parser.parse()
             input_data_counter = self.count_for_input_data(simple_annotation, target_attributes=target_attributes)
             input_data_counter_list.append(input_data_counter)
 
-        self.print_labels_count_for_input_data(input_data_counter_list, output_dir)
+        self.print_labels_count_for_input_data(
+            input_data_counter_list, label_columns=target_label_columns, output_dir=output_dir
+        )
 
         self.print_attirbutes_count_for_input_data(
             input_data_counter_list, output_dir=output_dir, attribute_columns=target_attributes_columns,
