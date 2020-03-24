@@ -113,7 +113,7 @@ class ListAnnotationCount(AbstractCommandLineInterface):
             label = detail.label
             for attribute, value in detail.attributes.items():
                 if target_attributes is not None and (label, attribute) in target_attributes:
-                    attributes_list.append((label, attribute, value))
+                    attributes_list.append((label, attribute, str(value)))
 
         attirbutes_count = collections.Counter(attributes_list)
 
@@ -180,63 +180,76 @@ class ListAnnotationCount(AbstractCommandLineInterface):
         attribute_columns: List[Tuple[str, str, str]],
         output_dir: Path,
     ):
-        def to_row(c: AnnotationCounterByTask) -> List[Any]:
-            row = [
-                c.task_id,
-                c.task_status.value,
-                c.task_phase.value,
-                c.task_phase_stage,
-            ]
-            row.extend([v for v in c.attirbutes_count.values()])
-            return row
+        def to_cell(c: AnnotationCounterByTask) -> Dict[Tuple[str,str,str], Any]:
+            cell = {
+                ("", "", "task_id"): c.task_id,
+                ("", "", "task_status"): c.task_status.value,
+                ("", "", "task_phase"): c.task_phase.value,
+                ("", "", "task_phase_stage"): c.task_phase_stage,
+            }
+            for col in attribute_columns:
+                cell.update({col: c.attirbutes_count[col]})
+
+            return cell
 
         columns = [("", "", "task_id"), ("", "", "task_status"), ("", "", "task_phase"), ("", "", "task_phase_stage")]
-        columns.extend([k for k in attribute_columns])
-        df = pandas.DataFrame([to_row(e) for e in task_counter_list], columns=pandas.MultiIndex.from_tuples(columns))
+        columns.extend(attribute_columns)
+        df = pandas.DataFrame([to_cell(e) for e in task_counter_list], columns=pandas.MultiIndex.from_tuples(columns))
 
         output_file = str(output_dir / "attirbutes_count.csv")
         annofabcli.utils.print_csv(df, output=output_file, to_csv_kwargs=self.CSV_FORMAT)
 
-    def get_target_attributes_list(self, project_id: str) -> List[Tuple[str, str]]:
+    def get_target_attributes_columns(self, project_id: str) -> List[Tuple[str, str, str]]:
+        """
+        出力対象の属性情報を取得する（label, attribute, choice)
+
+        """
         annotation_specs, _ = self.service.api.get_annotation_specs(project_id)
         annotation_specs_labels = annotation_specs["labels"]
 
-        target_attributes: List[Tuple[str, str]] = []
+        target_attributes_columns: List[Tuple[str, str, str]] = []
         for label in annotation_specs_labels:
             label_name_en = AddProps.get_message(label["label_name"], MessageLocale.EN)
-            if label_name_en is None:
-                label_name_en = ""
+            label_name_en = label_name_en if label_name_en is not None else ""
 
             for attribute in label["additional_data_definitions"]:
                 attribute_name_en = AddProps.get_message(attribute["name"], MessageLocale.EN)
-                if attribute_name_en is None:
-                    attribute_name_en = ""
+                attribute_name_en = attribute_name_en if attribute_name_en is not None else ""
 
                 if AdditionalDataDefinitionType(attribute["type"]) in [
                     AdditionalDataDefinitionType.CHOICE,
                     AdditionalDataDefinitionType.SELECT,
-                    AdditionalDataDefinitionType.FLAG,
                 ]:
-                    target_attributes.append((label_name_en, attribute_name_en))
+                    for choice in attribute["choices"]:
+                        choice_name_en = AddProps.get_message(choice["name"], MessageLocale.EN)
+                        choice_name_en = choice_name_en if choice_name_en is not None else ""
+                        target_attributes_columns.append((label_name_en, attribute_name_en, choice_name_en))
 
-        return target_attributes
+                elif AdditionalDataDefinitionType(attribute["type"]) == AdditionalDataDefinitionType.FLAG:
+                    target_attributes_columns.append((label_name_en, attribute_name_en, "True"))
+                    target_attributes_columns.append((label_name_en, attribute_name_en, "False"))
+
+                else:
+                    continue
+
+        return target_attributes_columns
 
     def list_annotation_count_by_task(self, project_id: str, annotation_path: Path, output_dir: Path) -> None:
         super().validate_project(project_id, project_member_roles=None)
 
         task_counter_list = []
         iter_task_parser = self.lazy_parse_simple_annotation_by_task(annotation_path)
-        target_attributes_list = self.get_target_attributes_list(project_id)
+        target_attributes_columns = self.get_target_attributes_columns(project_id)
+
+        target_attributes = {(e[0], e[1]) for e in target_attributes_columns}
         for task_parser in iter_task_parser:
-            task_counter = self.count_for_task(task_parser, target_attributes=set(target_attributes_list))
+            task_counter = self.count_for_task(task_parser, target_attributes=target_attributes)
             task_counter_list.append(task_counter)
 
         self.print_labels_count(task_counter_list, output_dir)
 
         self.print_attirbutes_count(
-            task_counter_list,
-            output_dir=output_dir,
-            attribute_columns=[e for e in task_counter_list[0].attirbutes_count],
+            task_counter_list, output_dir=output_dir, attribute_columns=target_attributes_columns,
         )
 
     def main(self):
