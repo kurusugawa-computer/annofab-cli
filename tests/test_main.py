@@ -502,10 +502,13 @@ class TestStatistics:
             ["statistics", "list_cumulative_labor_time", "--project_id", project_id, "--output", out_file,]
         )
 
-    def test_list_cumulative_labor_time(self):
-        out_file = str(out_path / "list_labor_time_per_user.csv")
+    def test_list_annotation_count(self):
+        output_dir = str(out_path / "statistics-list-annotation-count")
         main(
-            ["statistics", "list_labor_time_per_user", "--project_id", project_id, "--output", out_file,]
+            ["statistics", "list_annotation_count", "--project_id", project_id, "--output_dir", output_dir, "--group_by", "task_id"]
+        )
+        main(
+            ["statistics", "list_annotation_count", "--project_id", project_id, "--output_dir", output_dir, "--group_by", "input_data_i"]
         )
 
 
