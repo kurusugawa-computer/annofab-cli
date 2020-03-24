@@ -8,7 +8,7 @@ from typing import Any, Counter, Dict, Iterator, List, Optional, Set, Tuple
 
 import pandas
 from annofabapi.dataclass.annotation import SimpleAnnotation
-from annofabapi.models import TaskPhase, TaskStatus
+from annofabapi.models import AdditionalDataDefinitionType, TaskPhase, TaskStatus
 from annofabapi.parser import (
     SimpleAnnotationParser,
     SimpleAnnotationParserByTask,
@@ -23,6 +23,7 @@ import annofabcli
 import annofabcli.common.cli
 from annofabcli import AnnofabApiFacade
 from annofabcli.common.cli import AbstractCommandLineInterface, ArgumentParser, build_annofabapi_resource_and_login
+from annofabcli.common.visualize import AddProps, MessageLocale
 
 logger = logging.getLogger(__name__)
 
@@ -67,27 +68,6 @@ class ListAnnotationCount(AbstractCommandLineInterface):
 
     CSV_FORMAT = {"encoding": "utf_8_sig", "index": False}
 
-    def get_task_statistics(self, project_id: str) -> List[Dict[str, Any]]:
-        """
-        タスクの進捗状況をCSVに出力するための dict 配列を作成する。
-
-        Args:
-            project_id:
-
-        Returns:
-            タスクの進捗状況に対応するdict配列
-
-        """
-        task_statistics, _ = self.service.api.get_task_statistics(project_id)
-        row_list: List[Dict[str, Any]] = []
-        for stat_by_date in task_statistics:
-            date = stat_by_date["date"]
-            task_stat_list = stat_by_date["tasks"]
-            for task_stat in task_stat_list:
-                task_stat["date"] = date
-            row_list.extend(task_stat_list)
-        return row_list
-
     @staticmethod
     def lazy_parse_simple_annotation(annotation_path: Path) -> Iterator[SimpleAnnotationParser]:
         if not annotation_path.exists():
@@ -112,9 +92,19 @@ class ListAnnotationCount(AbstractCommandLineInterface):
         else:
             raise RuntimeError(f"'--annotation'で指定した'{annotation_path}'は、zipファイルまたはディレクトリではありませんでした。")
 
-    def execute_for_input_data(
+    def count_for_input_data(
         self, simple_annotation: SimpleAnnotation, target_attributes: Optional[Set[Tuple[str, str]]] = None
     ) -> AnnotationCounterByInputData:
+        """
+        1個の入力データに対してアノテーション数をカウントする
+
+        Args:
+            simple_annotation: JSONファイルの内容
+            target_attributes:
+
+        Returns:
+
+        """
 
         labels_count = collections.Counter([e.label for e in simple_annotation.details])
 
@@ -138,11 +128,11 @@ class ListAnnotationCount(AbstractCommandLineInterface):
             attirbutes_count=attirbutes_count,
         )
 
-    def execute_task(
+    def count_for_task(
         self, task_parser: SimpleAnnotationParserByTask, target_attributes: Optional[Set[Tuple[str, str]]] = None
     ) -> AnnotationCounterByTask:
         """
-        1個のタスクに対してアノテーションを登録する。
+        1個のタスクに対してアノテーション数をカウントする
 
         """
 
@@ -152,10 +142,13 @@ class ListAnnotationCount(AbstractCommandLineInterface):
         last_simple_annotation = None
         for parser in task_parser.lazy_parse():
             simple_annotation = parser.parse()
-            input_data = self.execute_for_input_data(simple_annotation, target_attributes)
+            input_data = self.count_for_input_data(simple_annotation, target_attributes)
             labels_count += input_data.labels_count
             attirbutes_count += input_data.attirbutes_count
             last_simple_annotation = simple_annotation
+
+        if last_simple_annotation is None:
+            raise RuntimeError(f"{task_parser.task_id} ディレクトリにはjsonファイルが１つも含まれていません。")
 
         return AnnotationCounterByTask(
             task_id=last_simple_annotation.task_id,
@@ -187,34 +180,55 @@ class ListAnnotationCount(AbstractCommandLineInterface):
         attribute_columns: List[Tuple[str, str, str]],
         output_dir: Path,
     ):
-        def to_list(c: AnnotationCounterByTask) -> List[Any]:
-            print(c.attirbutes_count)
-            l = [
+        def to_row(c: AnnotationCounterByTask) -> List[Any]:
+            row = [
                 c.task_id,
                 c.task_status.value,
                 c.task_phase.value,
                 c.task_phase_stage,
             ]
-            l.extend([v for v in c.attirbutes_count.values()])
-            return l
+            row.extend([v for v in c.attirbutes_count.values()])
+            return row
 
         columns = [("", "", "task_id"), ("", "", "task_status"), ("", "", "task_phase"), ("", "", "task_phase_stage")]
         columns.extend([k for k in attribute_columns])
-        df = pandas.DataFrame([to_list(e) for e in task_counter_list], columns=pandas.MultiIndex.from_tuples(columns))
+        df = pandas.DataFrame([to_row(e) for e in task_counter_list], columns=pandas.MultiIndex.from_tuples(columns))
 
         output_file = str(output_dir / "attirbutes_count.csv")
         annofabcli.utils.print_csv(df, output=output_file, to_csv_kwargs=self.CSV_FORMAT)
 
+    def get_target_attributes_list(self, project_id: str) -> List[Tuple[str, str]]:
+        annotation_specs, _ = self.service.api.get_annotation_specs(project_id)
+        annotation_specs_labels = annotation_specs["labels"]
+
+        target_attributes: List[Tuple[str, str]] = []
+        for label in annotation_specs_labels:
+            label_name_en = AddProps.get_message(label["label_name"], MessageLocale.EN)
+            if label_name_en is None:
+                label_name_en = ""
+
+            for attribute in label["additional_data_definitions"]:
+                attribute_name_en = AddProps.get_message(attribute["name"], MessageLocale.EN)
+                if attribute_name_en is None:
+                    attribute_name_en = ""
+
+                if AdditionalDataDefinitionType(attribute["type"]) in [
+                    AdditionalDataDefinitionType.CHOICE,
+                    AdditionalDataDefinitionType.SELECT,
+                    AdditionalDataDefinitionType.FLAG,
+                ]:
+                    target_attributes.append((label_name_en, attribute_name_en))
+
+        return target_attributes
+
     def list_annotation_count_by_task(self, project_id: str, annotation_path: Path, output_dir: Path) -> None:
         super().validate_project(project_id, project_member_roles=None)
 
-        # Simpleアノテーションの読み込み
-
         task_counter_list = []
         iter_task_parser = self.lazy_parse_simple_annotation_by_task(annotation_path)
-        target_attributes = {("climatic", "weather")}
+        target_attributes_list = self.get_target_attributes_list(project_id)
         for task_parser in iter_task_parser:
-            task_counter = self.execute_task(task_parser, target_attributes=target_attributes)
+            task_counter = self.count_for_task(task_parser, target_attributes=set(target_attributes_list))
             task_counter_list.append(task_counter)
 
         self.print_labels_count(task_counter_list, output_dir)

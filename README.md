@@ -426,6 +426,9 @@ $ annofabcli annotation list_count --project_id prj1 \
 $ annofabcli annotation list_count --project_id prj1 \
  --annotation_query '{"label_name_en": "car", "attributes":[{"additional_data_definition_name_en": "occluded", "flag": true}]}'
 
+# carラベルの"type"ラジオボタン/セレクトボックスが"bus"であるアノテーションの個数を出力する
+$ annofabcli annotation list_count --project_id prj1 \
+ --annotation_query '{"label_name_en": "car", "attributes":[{"additional_data_definition_name_en": "occluded", "choice_name_en": "bus"}]}'
 ```
 
 #### task_idで集約したときの出力結果（CSV）
