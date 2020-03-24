@@ -168,13 +168,21 @@ class ListWorktimeByUser(AbstractCommandLineInterface):
         """
         labor_availability_dict = {}
         for user_id in user_id_list:
+            member = self.get_member_from_user_id(member_list, user_id)
+            if member is None:
+                continue
+
             # 予定稼働時間を取得するには、特殊な組織IDを渡す
             labor_list, _ = self.service.api.get_labor_control(
-                {"organization_id": "___plannedWorktime___", "from": start_date, "to": end_date, "user_id": user_id}
+                {
+                    "organization_id": "___plannedWorktime___",
+                    "from": start_date,
+                    "to": end_date,
+                    "account_id": member["account_id"],
+                }
             )
             new_labor_list = []
             for labor in labor_list:
-                member = self.get_member_from_account_id(member_list, labor["account_id"])
                 new_labor = self._get_labor_availability(labor, member=member)
                 new_labor_list.append(new_labor)
             labor_availability_dict[user_id] = new_labor_list
