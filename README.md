@@ -106,6 +106,7 @@ $ docker run -it -e ANNOFAB_USER_ID=XXXX -e ANNOFAB_PASSWORD=YYYYY annofab-cli a
 |project_member| invite                  | 複数のプロジェクトに、ユーザを招待します。                                                                 |オーナ|
 |project_member| list                  | プロジェクトメンバ一覧を出力します。                                                                |-|
 |project_member| put                  | CSVに記載されたユーザを、プロジェクトメンバとして登録します。|オーナ|
+|statistics| list_annotation_count             | 各ラベル、各属性値のアノテーション数を、タスクごと/入力データごとに出力します。                                                   |-|
 |statistics| list_cumulative_labor_time             |       タスク進捗状況を出力します。                                                    |-|
 |statistics| list_task_progress             | タスクフェーズ別の累積作業時間を出力します。                                                            |-|
 |statistics| visualize             | 統計情報を可視化します。                                                            |オーナ|
@@ -426,6 +427,9 @@ $ annofabcli annotation list_count --project_id prj1 \
 $ annofabcli annotation list_count --project_id prj1 \
  --annotation_query '{"label_name_en": "car", "attributes":[{"additional_data_definition_name_en": "occluded", "flag": true}]}'
 
+# carラベルの"type"ラジオボタン/セレクトボックスが"bus"であるアノテーションの個数を出力する
+$ annofabcli annotation list_count --project_id prj1 \
+ --annotation_query '{"label_name_en": "car", "attributes":[{"additional_data_definition_name_en": "occluded", "choice_name_en": "bus"}]}'
 ```
 
 #### task_idで集約したときの出力結果（CSV）
@@ -1097,6 +1101,25 @@ $ annofabcli project_member put --project_id prj1 --csv members.csv
 # CSVに記載れたユーザを、prj1プロジェクトのメンバとして登録します。csvに記載されていないユーザは削除します。
 $ annofabcli project_member put --project_id prj1 --csv members.csv --delete
 ```
+
+### statistics list_annotation_count
+各ラベル、各属性値のアノテーション数を、タスクごと/入力データごとに出力します。
+`--annotation`にはAnnoFabからダウンロードしたSimpleアノテーションzipのパスを渡します。指定しない場合はAnnoFabからダウンロードします。
+出力結果には以下のファイルが含まれています。
+* `labels_count.csv`：各ラベルのアノテーション数
+* `attirbutes_count.csv`：各属性値のアノテーション数（ただし属性の種類がチェックボックス、ラジオボタン、セレクトボックスの属性のみが対象）
+
+
+```
+# タスクごとにアノテーション数を、output ディレクトリに出力
+$ annofabcli statistics list_annotation_count --project_id prj1 --output_dir output --annotation annotataion.zip
+
+# 入力データごとにアノテーション数を、output ディレクトリに出力。アノテーション情報はAnnoFabからダウンロードする
+$ annofabcli statistics list_annotation_count --project_id prj1 --output_dir output --group_by input_data_id
+
+```
+
+
 
 ### statistics list_cumulative_labor_time
 タスクフェーズ別の累積作業時間をCSV形式で出力します。
