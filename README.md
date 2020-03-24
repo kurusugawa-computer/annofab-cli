@@ -839,6 +839,12 @@ $ annofabcli labor list_worktime_by_user --organization org1 org2 --user_id user
 # プロジェクトprj1, prj2に対して作業時間を集計します。集計対象のユーザはプロジェクトに所属するメンバです。
 $ annofabcli labor list_worktime_by_user --project_id prj1 prj2 --user_id user1 user2 \
  --start_date 2019-10-01 --end_date 2019-10-31 --output_dir /tmp/output
+
+
+# user.txtに記載されているユーザの予定稼働時間も一緒に出力します。
+$ annofabcli labor list_worktime_by_user --project_id prj1 prj2 --user_id file://user.txt \
+ --start_month 2019-10 --end_month 2019-11 --availability --output_dir /tmp/output
+
 ```
 
 

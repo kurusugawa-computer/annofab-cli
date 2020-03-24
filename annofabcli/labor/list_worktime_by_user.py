@@ -54,6 +54,20 @@ class LaborWorktime:
 
 @dataclass_json
 @dataclass(frozen=True)
+class LaborAvailability:
+    """
+    労務管理情報
+    """
+
+    date: str
+    account_id: str
+    user_id: str
+    username: str
+    availability_hour: float
+
+
+@dataclass_json
+@dataclass(frozen=True)
 class SumLaborWorktime:
     """
     出力用の作業時間情報
@@ -128,6 +142,43 @@ class ListWorktimeByUser(AbstractCommandLineInterface):
             worktime_result_hour=self.get_worktime_hour(labor["values"]["working_time_by_user"], "results"),
         )
         return new_labor
+
+    def _get_labor_availability(self, labor: Dict[str, Any], member: Optional[OrganizationMember]) -> LaborAvailability:
+        new_labor = LaborAvailability(
+            date=labor["date"],
+            account_id=labor["account_id"],
+            user_id=member["user_id"] if member is not None else labor["account_id"],
+            username=member["username"] if member is not None else labor["account_id"],
+            availability_hour=self.get_worktime_hour(labor["values"]["working_time_by_user"], "plans"),
+        )
+        return new_labor
+
+    def get_labor_availability_list_dict(
+        self, user_id_list: List[str], start_date: str, end_date: str, member_list: List[OrganizationMember],
+    ) -> Dict[str, List[LaborAvailability]]:
+        """
+        予定稼働時間を取得する
+        Args:
+            member_list:
+            start_date:
+            end_date:
+
+        Returns:
+
+        """
+        labor_availability_dict = {}
+        for user_id in user_id_list:
+            # 予定稼働時間を取得するには、特殊な組織IDを渡す
+            labor_list, _ = self.service.api.get_labor_control(
+                {"organization_id": "___plannedWorktime___", "from": start_date, "to": end_date, "user_id": user_id}
+            )
+            new_labor_list = []
+            for labor in labor_list:
+                member = self.get_member_from_account_id(member_list, labor["account_id"])
+                new_labor = self._get_labor_availability(labor, member=member)
+                new_labor_list.append(new_labor)
+            labor_availability_dict[user_id] = new_labor_list
+        return labor_availability_dict
 
     def get_labor_list_from_project_id(
         self, project_id: str, member_list: List[OrganizationMember], start_date: Optional[str], end_date: Optional[str]
@@ -279,6 +330,24 @@ class ListWorktimeByUser(AbstractCommandLineInterface):
 
         return member_list
 
+    @staticmethod
+    def get_availability_list(
+        labor_availability_list: List[LaborAvailability], start_date: str, end_date: str,
+    ) -> List[Optional[float]]:
+        def get_availability_hour(str_date: str) -> Optional[float]:
+            labor = more_itertools.first_true(labor_availability_list, pred=lambda e: e.date == str_date)
+            if labor is not None:
+                return labor.availability_hour
+            else:
+                return None
+
+        availability_list: List[Optional[float]] = []
+        for date in pandas.date_range(start=start_date, end=end_date):
+            str_date = date.strftime(ListWorktimeByUser.DATE_FORMAT)
+            availability_list.append(get_availability_hour(str_date))
+
+        return availability_list
+
     def get_labor_list(
         self,
         member_list: List[OrganizationMember],
@@ -325,6 +394,7 @@ class ListWorktimeByUser(AbstractCommandLineInterface):
         start_date: str,
         end_date: str,
         output_dir: Path,
+        labor_availability_list_dict: Optional[Dict[str, List[LaborAvailability]]] = None,
     ):
 
         reform_dict = {
@@ -352,13 +422,22 @@ class ListWorktimeByUser(AbstractCommandLineInterface):
                 }
             )
 
+            if labor_availability_list_dict is not None:
+                labor_availability_list = labor_availability_list_dict[user_id]
+                reform_dict.update(
+                    {(username, "予定稼働"): self.get_availability_list(labor_availability_list, start_date, end_date)}
+                )
+
         sum_worktime_df = pandas.DataFrame(reform_dict)
         catch_exception(self.write_sum_worktime_list)(sum_worktime_df, output_dir)
 
         catch_exception(self.write_sum_plan_worktime_list)(sum_worktime_df, output_dir)
 
         worktime_df = pandas.DataFrame([e.to_dict() for e in labor_list])  # type: ignore
-        catch_exception(self.write_worktime_list)(worktime_df, output_dir)
+        if len(worktime_df) > 0:
+            catch_exception(self.write_worktime_list)(worktime_df, output_dir)
+        else:
+            logger.info("出力対象のデータが0件のため、'作業時間の詳細一覧.csv'を出力しません。")
 
     def print_labor_worktime_list(
         self,
@@ -368,6 +447,7 @@ class ListWorktimeByUser(AbstractCommandLineInterface):
         start_date: Optional[str],
         end_date: Optional[str],
         output_dir: Path,
+        add_availability: bool = False,
     ) -> None:
         """
         作業時間の一覧を出力する
@@ -384,8 +464,10 @@ class ListWorktimeByUser(AbstractCommandLineInterface):
         )
 
         if len(labor_list) == 0:
-            logger.warning(f"労務管理情報が0件のため、作業時間の詳細一覧.csv は出力しません。")
-            return
+            logger.info(f"予定/実績に関する労務管理情報が0件です。")
+            if start_date is None or end_date is None or user_id_list is None:
+                logger.info(f"後続の処理を続けることができないので終了します。")
+                return
 
         if start_date is None or end_date is None:
             sorted_labor_list = sorted(labor_list, key=lambda e: e.date)
@@ -406,6 +488,12 @@ class ListWorktimeByUser(AbstractCommandLineInterface):
             project_id_list = sorted(list({e.project_id for e in labor_list}))
         logger.info(f"集計対象プロジェクトの数: {len(project_id_list)}")
 
+        labor_availability_list_dict = None
+        if add_availability:
+            labor_availability_list_dict = self.get_labor_availability_list_dict(
+                user_id_list=user_id_list, start_date=start_date, end_date=end_date, member_list=member_list,
+            )
+
         self.write_labor_list(
             labor_list=labor_list,
             member_list=member_list,
@@ -413,6 +501,7 @@ class ListWorktimeByUser(AbstractCommandLineInterface):
             start_date=start_date,
             end_date=end_date,
             output_dir=output_dir,
+            labor_availability_list_dict=labor_availability_list_dict,
         )
 
     def get_user_id_list_from_project_id_list(self, project_id_list: List[str]) -> List[str]:
@@ -494,7 +583,6 @@ class ListWorktimeByUser(AbstractCommandLineInterface):
         organization_name_list = get_list_from_args(args.organization) if args.organization is not None else None
 
         start_date, end_date = self.get_start_and_end_date_from_args(args)
-
         output_dir = Path(args.output_dir)
         output_dir.mkdir(exist_ok=True, parents=True)
 
@@ -505,6 +593,7 @@ class ListWorktimeByUser(AbstractCommandLineInterface):
             end_date=end_date,
             output_dir=output_dir,
             user_id_list=arg_user_id_list,
+            add_availability=args.availability,
         )  # type: ignore
 
 
@@ -541,6 +630,8 @@ def parse_args(parser: argparse.ArgumentParser):
         "指定しない場合は、プロジェクトメンバが指定されます。"
         "`file://`を先頭に付けると、user_idの一覧が記載されたファイルを指定できます。",
     )
+
+    parser.add_argument("--availability", action="store_true", help="指定した場合、'ユーザごとの作業時間.csv'に予定稼働時間も出力します。")
 
     start_period_group = parser.add_mutually_exclusive_group()
     start_period_group.add_argument("--start_date", type=str, help="集計期間の開始日(YYYY-MM-DD)")
