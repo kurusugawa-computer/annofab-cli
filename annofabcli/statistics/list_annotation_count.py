@@ -187,8 +187,6 @@ class ListAnnotationCount(AbstractCommandLineInterface):
         attribute_columns: List[Tuple[str, str, str]],
         output_dir: Path,
     ):
-
-
         def to_list(c: AnnotationCounterByTask) -> List[Any]:
             print(c.attirbutes_count)
             l = [
@@ -200,10 +198,9 @@ class ListAnnotationCount(AbstractCommandLineInterface):
             l.extend([v for v in c.attirbutes_count.values()])
             return l
 
-
-        columns = [("task_id","",""),("task_status","",""),("task_phase","",""),("task_phase_stage","","")]
+        columns = [("", "", "task_id"), ("", "", "task_status"), ("", "", "task_phase"), ("", "", "task_phase_stage")]
         columns.extend([k for k in attribute_columns])
-        df = pandas.DataFrame([to_list(e) for e in task_counter_list], columns=columns)
+        df = pandas.DataFrame([to_list(e) for e in task_counter_list], columns=pandas.MultiIndex.from_tuples(columns))
 
         output_file = str(output_dir / "attirbutes_count.csv")
         annofabcli.utils.print_csv(df, output=output_file, to_csv_kwargs=self.CSV_FORMAT)
@@ -223,7 +220,9 @@ class ListAnnotationCount(AbstractCommandLineInterface):
         self.print_labels_count(task_counter_list, output_dir)
 
         self.print_attirbutes_count(
-            task_counter_list, output_dir=output_dir, attribute_columns=[e for e in task_counter_list[0].attirbutes_count]
+            task_counter_list,
+            output_dir=output_dir,
+            attribute_columns=[e for e in task_counter_list[0].attirbutes_count],
         )
 
     def main(self):
