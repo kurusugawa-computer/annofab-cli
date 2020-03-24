@@ -3,6 +3,7 @@ import collections
 import logging
 import zipfile
 from dataclasses import dataclass
+from enum import Enum
 from pathlib import Path
 from typing import Any, Counter, Dict, Iterator, List, Optional, Set, Tuple
 
@@ -26,6 +27,11 @@ from annofabcli.common.cli import AbstractCommandLineInterface, ArgumentParser, 
 from annofabcli.common.visualize import AddProps, MessageLocale
 
 logger = logging.getLogger(__name__)
+
+
+class GroupBy(Enum):
+    TASK_ID = "task_id"
+    INPUT_DATA_ID = "input_data_id"
 
 
 @dataclass_json
@@ -69,7 +75,7 @@ class ListAnnotationCount(AbstractCommandLineInterface):
     CSV_FORMAT = {"encoding": "utf_8_sig", "index": False}
 
     @staticmethod
-    def lazy_parse_simple_annotation(annotation_path: Path) -> Iterator[SimpleAnnotationParser]:
+    def lazy_parse_simple_annotation_by_input_data(annotation_path: Path) -> Iterator[SimpleAnnotationParser]:
         if not annotation_path.exists():
             raise RuntimeError("'--annotation'で指定したディレクトリまたはファイルが存在しません。")
 
@@ -159,7 +165,7 @@ class ListAnnotationCount(AbstractCommandLineInterface):
             attirbutes_count=attirbutes_count,
         )
 
-    def print_labels_count(self, task_counter_list: List[AnnotationCounterByTask], output_dir: Path):
+    def print_labels_count_for_task(self, task_counter_list: List[AnnotationCounterByTask], output_dir: Path):
         def to_dict(c: AnnotationCounterByTask) -> Dict[str, Any]:
             d = {
                 "task_id": c.task_id,
@@ -174,13 +180,13 @@ class ListAnnotationCount(AbstractCommandLineInterface):
         output_file = str(output_dir / "labels_count.csv")
         annofabcli.utils.print_csv(df, output=output_file, to_csv_kwargs=self.CSV_FORMAT)
 
-    def print_attirbutes_count(
+    def print_attirbutes_count_for_task(
         self,
         task_counter_list: List[AnnotationCounterByTask],
         attribute_columns: List[Tuple[str, str, str]],
         output_dir: Path,
     ):
-        def to_cell(c: AnnotationCounterByTask) -> Dict[Tuple[str,str,str], Any]:
+        def to_cell(c: AnnotationCounterByTask) -> Dict[Tuple[str, str, str], Any]:
             cell = {
                 ("", "", "task_id"): c.task_id,
                 ("", "", "task_status"): c.task_status.value,
@@ -195,6 +201,61 @@ class ListAnnotationCount(AbstractCommandLineInterface):
         columns = [("", "", "task_id"), ("", "", "task_status"), ("", "", "task_phase"), ("", "", "task_phase_stage")]
         columns.extend(attribute_columns)
         df = pandas.DataFrame([to_cell(e) for e in task_counter_list], columns=pandas.MultiIndex.from_tuples(columns))
+
+        output_file = str(output_dir / "attirbutes_count.csv")
+        annofabcli.utils.print_csv(df, output=output_file, to_csv_kwargs=self.CSV_FORMAT)
+
+    def print_labels_count_for_input_data(
+        self, input_data_counter_list: List[AnnotationCounterByInputData], output_dir: Path
+    ):
+        def to_dict(c: AnnotationCounterByInputData) -> Dict[str, Any]:
+            d = {
+                "input_data_id": c.input_data_id,
+                "input_data_name": c.input_data_name,
+                "task_id": c.task_id,
+                "task_status": c.task_status.value,
+                "task_phase": c.task_phase.value,
+                "task_phase_stage": c.task_phase_stage,
+            }
+            d.update({f"label_{label}": count for label, count in c.labels_count.items()})
+            return d
+
+        df = pandas.DataFrame([to_dict(e) for e in input_data_counter_list])
+        output_file = str(output_dir / "labels_count.csv")
+        annofabcli.utils.print_csv(df, output=output_file, to_csv_kwargs=self.CSV_FORMAT)
+
+    def print_attirbutes_count_for_input_data(
+        self,
+        input_data_counter_list: List[AnnotationCounterByInputData],
+        attribute_columns: List[Tuple[str, str, str]],
+        output_dir: Path,
+    ):
+        def to_cell(c: AnnotationCounterByInputData) -> Dict[Tuple[str, str, str], Any]:
+            cell = {
+                ("", "", "input_data_id"): c.input_data_id,
+                ("", "", "input_data_name"): c.input_data_name,
+                ("", "", "task_id"): c.task_id,
+                ("", "", "task_status"): c.task_status.value,
+                ("", "", "task_phase"): c.task_phase.value,
+                ("", "", "task_phase_stage"): c.task_phase_stage,
+            }
+            for col in attribute_columns:
+                cell.update({col: c.attirbutes_count[col]})
+
+            return cell
+
+        columns = [
+            ("", "", "input_data_id"),
+            ("", "", "input_data_name"),
+            ("", "", "task_id"),
+            ("", "", "task_status"),
+            ("", "", "task_phase"),
+            ("", "", "task_phase_stage"),
+        ]
+        columns.extend(attribute_columns)
+        df = pandas.DataFrame(
+            [to_cell(e) for e in input_data_counter_list], columns=pandas.MultiIndex.from_tuples(columns)
+        )
 
         output_file = str(output_dir / "attirbutes_count.csv")
         annofabcli.utils.print_csv(df, output=output_file, to_csv_kwargs=self.CSV_FORMAT)
@@ -235,8 +296,6 @@ class ListAnnotationCount(AbstractCommandLineInterface):
         return target_attributes_columns
 
     def list_annotation_count_by_task(self, project_id: str, annotation_path: Path, output_dir: Path) -> None:
-        super().validate_project(project_id, project_member_roles=None)
-
         task_counter_list = []
         iter_task_parser = self.lazy_parse_simple_annotation_by_task(annotation_path)
         target_attributes_columns = self.get_target_attributes_columns(project_id)
@@ -246,19 +305,44 @@ class ListAnnotationCount(AbstractCommandLineInterface):
             task_counter = self.count_for_task(task_parser, target_attributes=target_attributes)
             task_counter_list.append(task_counter)
 
-        self.print_labels_count(task_counter_list, output_dir)
+        self.print_labels_count_for_task(task_counter_list, output_dir)
 
-        self.print_attirbutes_count(
+        self.print_attirbutes_count_for_task(
             task_counter_list, output_dir=output_dir, attribute_columns=target_attributes_columns,
+        )
+
+    def list_annotation_count_by_input_data(self, project_id: str, annotation_path: Path, output_dir: Path) -> None:
+        input_data_counter_list = []
+        iter_parser = self.lazy_parse_simple_annotation_by_input_data(annotation_path)
+        target_attributes_columns = self.get_target_attributes_columns(project_id)
+
+        target_attributes = {(e[0], e[1]) for e in target_attributes_columns}
+        for parser in iter_parser:
+            simple_annotation = parser.parse()
+            input_data_counter = self.count_for_input_data(simple_annotation, target_attributes=target_attributes)
+            input_data_counter_list.append(input_data_counter)
+
+        self.print_labels_count_for_input_data(input_data_counter_list, output_dir)
+
+        self.print_attirbutes_count_for_input_data(
+            input_data_counter_list, output_dir=output_dir, attribute_columns=target_attributes_columns,
         )
 
     def main(self):
         args = self.args
 
         project_id = args.project_id
-        self.list_annotation_count_by_task(
-            project_id, annotation_path=Path(args.annotation), output_dir=Path(args.output_dir)
-        )
+        super().validate_project(project_id, project_member_roles=None)
+
+        group_by = GroupBy(args.group_by)
+        if group_by == GroupBy.TASK_ID:
+            self.list_annotation_count_by_task(
+                project_id, annotation_path=Path(args.annotation), output_dir=Path(args.output_dir)
+            )
+        elif group_by == GroupBy.INPUT_DATA_ID:
+            self.list_annotation_count_by_input_data(
+                project_id, annotation_path=Path(args.annotation), output_dir=Path(args.output_dir)
+            )
 
 
 def parse_args(parser: argparse.ArgumentParser):
@@ -267,6 +351,14 @@ def parse_args(parser: argparse.ArgumentParser):
     argument_parser.add_project_id()
     parser.add_argument("--annotation", type=str, required=True, help="アノテーションzip、またはzipを展開したディレクトリ")
     parser.add_argument("-o", "--output_dir", type=str, required=True, help="出力ディレクトリのパス")
+
+    parser.add_argument(
+        "--group_by",
+        type=str,
+        choices=[GroupBy.TASK_ID.value, GroupBy.INPUT_DATA_ID.value],
+        default=GroupBy.TASK_ID.value,
+        help="アノテーションの個数をどの単位で集約するかを指定してます。デフォルトは'task_id'です。",
+    )
 
     parser.set_defaults(subcommand_func=main)
 
