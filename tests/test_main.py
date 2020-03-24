@@ -348,6 +348,7 @@ class TestLabor:
                 "2019-09-01",
                 "--end_date",
                 "2019-09-01",
+                "--availability",
                 "--output_dir",
                 str(output_dir),
             ]

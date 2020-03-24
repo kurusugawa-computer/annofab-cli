@@ -330,17 +330,21 @@ class ListWorktimeByUser(AbstractCommandLineInterface):
 
         return member_list
 
+    @staticmethod
     def get_availability_list(
-        self, labor_availability_list: List[LaborAvailability], start_date: str, end_date: str,
+        labor_availability_list: List[LaborAvailability], start_date: str, end_date: str,
     ) -> List[Optional[float]]:
+        def get_availability_hour(str_date: str) -> Optional[float]:
+            labor = more_itertools.first_true(labor_availability_list, pred=lambda e: e.date == str_date)
+            if labor is not None:
+                return labor.availability_hour
+            else:
+                return None
+
         availability_list: List[Optional[float]] = []
         for date in pandas.date_range(start=start_date, end=end_date):
             str_date = date.strftime(ListWorktimeByUser.DATE_FORMAT)
-            labor = more_itertools.first_true(labor_availability_list, pred=lambda e: e.date == str_date)
-            if labor is not None:
-                availability_list.append(labor.availability_hour)
-            else:
-                availability_list.append(None)
+            availability_list.append(get_availability_hour(str_date))
 
         return availability_list
 
