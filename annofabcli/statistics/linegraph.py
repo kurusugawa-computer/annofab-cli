@@ -707,7 +707,7 @@ class LineGraph:
             dict(
                 x="cumulative_input_data_count",
                 y="cumulative_first_inspection_worktime_hour",
-                title="アノテーション数と1回目検査時間の累積グラフ",
+                title="入力データ数と1回目検査時間の累積グラフ",
                 x_axis_label="入力データ数",
                 y_axis_label="1回目の検査時間[hour]",
             ),
