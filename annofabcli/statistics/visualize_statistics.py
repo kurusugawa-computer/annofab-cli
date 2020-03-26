@@ -223,12 +223,20 @@ class WriteCsvGraph:
         catch_exception(self.csv_obj.write_ユーザ別日毎の作業時間)(account_statistics_df)
 
     def write_worktime_ratio(self) -> None:
+        """
+        タスクごとの作業時間の比率を出力
+
+        """
         task_df = self._get_task_df()
         task_history_df = self._get_task_history_df()
 
         annotation_count_ratio_df = self.table_obj.create_annotation_count_ratio_df(task_history_df, task_df)
         catch_exception(self.csv_obj._write_csv)("タスク、フェーズ、他当者ごとの作業時間の比率.csv", annotation_count_ratio_df)
 
+    def write_productivity_csv(self) -> None:
+        task_history_df = self._get_task_history_df()
+        df = self.table_obj.create_productivity_from_aw_time(task_history_df)
+        df.to_csv("test.csv")
 
 class VisualizeStatistics(AbstractCommandLineInterface):
     """
@@ -275,24 +283,25 @@ class VisualizeStatistics(AbstractCommandLineInterface):
 
         write_obj = WriteCsvGraph(table_obj, output_dir, project_id)
 
-        # テスト用のファイルを出力
-        write_obj.write_worktime_ratio()
+        write_obj.write_productivity_csv()
 
-        # ヒストグラム
-        write_obj.write_histogram_for_task()
-        write_obj.write_histogram_for_annotation()
-
-        # 折れ線グラフ
-        write_obj.write_linegraph_for_by_user(user_id_list)
-        write_obj.write_linegraph_for_task_overall()
-
-        write_obj.write_csv_for_task()
-        write_obj.write_csv_for_task_history()
-        write_obj.write_csv_for_annotation()
-        write_obj.write_csv_for_account_statistics()
-        write_obj.write_csv_for_date_user()
-        write_obj.write_csv_for_inspection()
-        write_obj.write_メンバー別作業時間平均_画像1枚あたり_by_phase()
+        # write_obj.write_worktime_ratio()
+        #
+        # # ヒストグラム
+        # write_obj.write_histogram_for_task()
+        # write_obj.write_histogram_for_annotation()
+        #
+        # # 折れ線グラフ
+        # write_obj.write_linegraph_for_by_user(user_id_list)
+        # write_obj.write_linegraph_for_task_overall()
+        #
+        # write_obj.write_csv_for_task()
+        # write_obj.write_csv_for_task_history()
+        # write_obj.write_csv_for_annotation()
+        # write_obj.write_csv_for_account_statistics()
+        # write_obj.write_csv_for_date_user()
+        # write_obj.write_csv_for_inspection()
+        # write_obj.write_メンバー別作業時間平均_画像1枚あたり_by_phase()
 
     def main(self):
         args = self.args

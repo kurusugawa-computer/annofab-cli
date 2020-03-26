@@ -1,6 +1,7 @@
 # pylint: disable=too-many-lines
 import copy
 import logging
+import numpy
 from enum import Enum
 from typing import Any, Dict, List, Optional
 
@@ -59,6 +60,7 @@ class Table:
     _annotations_dict: Optional[Dict[str, Dict[InputDataId, Dict[str, Any]]]] = None
     _worktime_statistics: Optional[List[WorktimeStatistics]] = None
     _account_statistics: Optional[List[ProjectAccountStatistics]] = None
+    _labor_list: Optional[List[Dict[str, Any]]] = None
 
     def __init__(
         self, database: Database, task_query_param: Dict[str, Any], ignored_task_id_list: Optional[List[str]] = None,
@@ -128,6 +130,15 @@ class Table:
             task_list = self._get_task_list()
             self._annotations_dict = self.database.read_annotation_summary(task_list, self._create_annotation_summary)
             return self._annotations_dict
+
+    def _get_labor_list(self) -> List[Dict[str,Any]]:
+        if self._labor_list is not None:
+            return self._labor_list
+        else:
+            labor_list = self.database.read_labor_list_from_checkpoint()
+            self._labor_list = labor_list
+            return self._labor_list
+
 
     def _create_annotation_summary(self, annotation_list: List[SimpleAnnotationDetail]) -> Dict[str, Any]:
         annotation_summary = {}
@@ -1035,3 +1046,24 @@ class Table:
         group_obj["input_data_count"] = group_obj.apply(get_input_data_count, axis="columns")
 
         return group_obj.reset_index()
+
+    def create_productivity_from_aw_time(self, task_history_df: pd.DataFrame) -> pd.DataFrame:
+        """
+        AnnoWorkの実績時間から、作業者ごとに生産性を算出する。
+
+        Returns:
+
+        """
+
+
+        df_agg_task_history = task_history_df.pivot_table(values="worktime_hour", columns="phase",
+                                         index=["account_id", "user_id", "username"], aggfunc=numpy.sum)
+        labor_list = self._get_labor_list()
+        df_labor = pd.DataFrame(labor_list)
+        df_agg_labor = df_labor.pivot_table(values="worktime_result_hour", index=["account_id"], aggfunc=numpy.sum)
+
+        task_history_df.to_csv("task-history.csv", index=False)
+        df_labor.to_csv("labor.csv", index=False)
+        df = pd.merge(df_agg_task_history, df_agg_labor[["account_id","worktime_result_hour"]], on="account_id", how="left")
+        return df
+
