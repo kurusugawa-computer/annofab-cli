@@ -543,7 +543,8 @@ class Table:
 
         all_task_history_list = []
         for task_id, task_history_list in task_histories_dict.items():
-            if task_id not in task_id_list:
+            task = more_itertools.first_true(task_list, pred=lambda e: e["task_id"] == task_id)
+            if task is None:
                 continue
 
             for history in task_history_list:
@@ -553,6 +554,8 @@ class Table:
                 history["worktime_hour"] = annofabcli.utils.isoduration_to_hour(
                     history["accumulated_labor_time_milliseconds"]
                 )
+                # task statusがあると分析しやすいので追加する
+                history["task_status"] = task["status"]
                 all_task_history_list.append(history)
 
         df = pd.DataFrame(all_task_history_list)
