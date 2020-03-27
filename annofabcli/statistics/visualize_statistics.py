@@ -235,7 +235,7 @@ class WriteCsvGraph:
         df_labor = self._get_labor_df()
         catch_exception(self.csv_obj.write_labor_list)(df_labor)
 
-        df = self.table_obj.create_productivity_from_aw_time(task_history_df, df_labor, df_by_date_user)
+        df = self.table_obj.create_productivity_from_aw_time(task_history_df, df_labor)
         df.to_csv("test.csv")
 
 class VisualizeStatistics(AbstractCommandLineInterface):
