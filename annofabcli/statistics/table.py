@@ -550,7 +550,6 @@ class Table:
         """
         task_histories_dict = self.database.read_task_histories_from_checkpoint()
         task_list = self._get_task_list()
-        task_id_list = [e["task_id"] for e in task_list]
 
         all_task_history_list = []
         for task_id, task_history_list in task_histories_dict.items():
@@ -1047,7 +1046,7 @@ class Table:
 
         return group_obj.reset_index()
 
-    def create_productivity_from_aw_time(self, task_history_df: pd.DataFrame) -> pd.DataFrame:
+    def create_productivity_from_aw_time(self, df_task_history: pd.DataFrame, df_labor: pd.DataFrame) -> pd.DataFrame:
         """
         AnnoWorkの実績時間から、作業者ごとに生産性を算出する。
 
@@ -1055,15 +1054,27 @@ class Table:
 
         """
 
-
-        df_agg_task_history = task_history_df.pivot_table(values="worktime_hour", columns="phase",
+        df_agg_task_history = df_task_history.pivot_table(values="worktime_hour", columns="phase",
                                          index=["account_id", "user_id", "username"], aggfunc=numpy.sum)
         labor_list = self._get_labor_list()
         df_labor = pd.DataFrame(labor_list)
         df_agg_labor = df_labor.pivot_table(values="worktime_result_hour", index=["account_id"], aggfunc=numpy.sum)
 
-        task_history_df.to_csv("task-history.csv", index=False)
-        df_labor.to_csv("labor.csv", index=False)
         df = pd.merge(df_agg_task_history, df_agg_labor[["account_id","worktime_result_hour"]], on="account_id", how="left")
         return df
+
+
+    def create_labor_df(self) -> pd.DataFrame:
+        """
+        労務管理 DataFrameを生成する。情報を出力する。
+
+        """
+        def add_user_info(d: Dict[str,Any]) -> Dict[str,Any]:
+            account_id = d["account_id"]
+            d["user_id"] = self._get_user_id(account_id)
+            d["username"] = self._get_username(account_id)
+            return d
+
+        labor_list = self._get_labor_list()
+        return pd.DataFrame([add_user_info(e) for e in labor_list])
 

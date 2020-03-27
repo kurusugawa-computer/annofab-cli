@@ -54,6 +54,7 @@ class WriteCsvGraph:
     account_statistics_df: Optional[pd.DataFrame] = None
     df_by_date_user: Optional[pd.DataFrame] = None
     task_history_df: Optional[pd.DataFrame] = None
+    labor_df: Optional[pd.DataFrame] = None
 
     def __init__(self, table_obj: Table, output_dir: Path, project_id: str):
         self.table_obj = table_obj
@@ -86,6 +87,11 @@ class WriteCsvGraph:
             task_df = self._get_task_df()
             self.df_by_date_user = self.table_obj.create_dataframe_by_date_user(task_df)
         return self.df_by_date_user
+
+    def _get_labor_df(self):
+        if self.labor_df is None:
+            self.labor_df = self.table_obj.create_labor_df()
+        return self.labor_df
 
     def write_histogram_for_task(self) -> None:
         """
@@ -197,26 +203,12 @@ class WriteCsvGraph:
             df=inspection_df_all, dropped_columns=["data"], only_error_corrected=False,
         )
 
-    def write_csv_for_task_history(self) -> None:
-        """
-        タスク履歴関係の情報をCSVに出力する。
-        """
-        task_history_df = self._get_task_history_df()
-        catch_exception(self.csv_obj.write_task_history_list)(task_history_df)
-
     def write_csv_for_annotation(self) -> None:
         """
         アノテーション関係の情報をCSVに出力する。
         """
         annotation_df = self._get_annotation_df()
         catch_exception(self.csv_obj.write_ラベルごとのアノテーション数)(annotation_df)
-
-    def write_csv_for_date_user(self) -> None:
-        """
-        ユーザごと、日ごとの情報をCSVに出力する。
-        """
-        df_by_date_user = self._get_df_by_date_user()
-        catch_exception(self.csv_obj.write_教師付作業者別日毎の情報)(df_by_date_user)
 
     def write_csv_for_account_statistics(self) -> None:
         account_statistics_df = self._get_account_statistics_df()
@@ -235,7 +227,15 @@ class WriteCsvGraph:
 
     def write_productivity_csv(self) -> None:
         task_history_df = self._get_task_history_df()
-        df = self.table_obj.create_productivity_from_aw_time(task_history_df)
+        catch_exception(self.csv_obj.write_task_history_list)(task_history_df)
+
+        df_by_date_user = self._get_df_by_date_user()
+        catch_exception(self.csv_obj.write_教師付作業者別日毎の情報)(df_by_date_user)
+
+        df_labor = self._get_labor_df()
+        catch_exception(self.csv_obj.write_labor_list)(df_labor)
+
+        df = self.table_obj.create_productivity_from_aw_time(task_history_df, df_labor, df_by_date_user)
         df.to_csv("test.csv")
 
 class VisualizeStatistics(AbstractCommandLineInterface):

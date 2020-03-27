@@ -185,6 +185,34 @@ class Csv:
         required_columns = self._create_required_columns(df, prior_columns, dropped_columns)
         self._write_csv(f"{self.short_project_id}-タスク履歴list.csv", df[required_columns])
 
+    def write_labor_list(self, df: pd.DataFrame, dropped_columns: Optional[List[str]] = None) -> None:
+        """
+        労務管理一覧をCSVで出力する
+
+        Args:
+            df:
+            dropped_columns:
+
+        Returns:
+
+        """
+        if len(df) == 0:
+            logger.info("労務管理情報の一覧が0件のため出力しない")
+            return
+
+        prior_columns = [
+            "date",
+            "account_id",
+            "user_id",
+            "username",
+            "worktime_plan_hour",
+            "worktime_result_hour",
+        ]
+
+        df = df.sort_values(["date", "user_id"])
+        required_columns = self._create_required_columns(df, prior_columns, dropped_columns)
+        self._write_csv(f"{self.short_project_id}-労務管理list.csv", df[required_columns])
+
     def write_worktime_summary(self, df: pd.DataFrame) -> None:
         """
         作業時間に関する集計結果をCSVで出力する。
