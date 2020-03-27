@@ -1047,7 +1047,7 @@ class Table:
         return group_obj.reset_index()
 
     @staticmethod
-    def create_productivity_from_aw_time(df_task_history: pd.DataFrame, df_labor: pd.DataFrame) -> pd.DataFrame:
+    def create_productivity_from_aw_time(df_task_history: pd.DataFrame, df_labor: pd.DataFrame, df_worktime_ratio:pd.DataFrame) -> pd.DataFrame:
         """
         AnnoWorkの実績時間から、作業者ごとに生産性を算出する。
 
@@ -1069,7 +1069,7 @@ class Table:
                 ("annofab_worktime_hour", "annotation"),
                 ("annofab_worktime_hour", "inspection"),
                 ("annofab_worktime_hour", "acceptance"),
-                ("", "annowork_worktime_hour"),
+                ("annowork_worktime_hour","sum"),
             ]
         )
         df[("annofab_worktime_hour", "sum")] = df[("annofab_worktime_hour", "annotation")]  + df[("annofab_worktime_hour", "inspection")] + df[("annofab_worktime_hour", "acceptance")]
@@ -1086,7 +1086,9 @@ class Table:
         df[("prediction_annowork_worktime_hour", "inspection")] = df[("annowork_worktime_hour", "sum")] * df[("annofab_worktime_ratio", "inspection")]
         df[("prediction_annowork_worktime_hour", "acceptance")] = df[("annowork_worktime_hour", "sum")] * df[("annofab_worktime_ratio", "acceptance")]
 
-
+        df_agg_production = df_worktime_ratio.pivot_table(values=["worktime_ratio_by_task", "input_data_count", "annotation_count"], columns="phase",
+                                    index="user_id", aggfunc=numpy.sum).reset_index()
+        # merge
         return df
 
 

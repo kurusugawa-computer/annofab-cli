@@ -214,26 +214,25 @@ class WriteCsvGraph:
         account_statistics_df = self._get_account_statistics_df()
         catch_exception(self.csv_obj.write_ユーザ別日毎の作業時間)(account_statistics_df)
 
-    def write_worktime_ratio(self) -> None:
+    def write_csv_for_date_user(self) -> None:
+        """	
+        ユーザごと、日ごとの情報をCSVに出力する。	
         """
-        タスクごとの作業時間の比率を出力
-
-        """
-        task_df = self._get_task_df()
-        task_history_df = self._get_task_history_df()
-
-        annotation_count_ratio_df = self.table_obj.create_annotation_count_ratio_df(task_history_df, task_df)
-        catch_exception(self.csv_obj._write_csv)("タスク、フェーズ、他当者ごとの作業時間の比率.csv", annotation_count_ratio_df)
+        df_by_date_user = self._get_df_by_date_user()
+        catch_exception(self.csv_obj.write_教師付作業者別日毎の情報)(df_by_date_user)
 
     def write_productivity_csv(self) -> None:
         task_history_df = self._get_task_history_df()
         catch_exception(self.csv_obj.write_task_history_list)(task_history_df)
 
-        df_by_date_user = self._get_df_by_date_user()
-        catch_exception(self.csv_obj.write_教師付作業者別日毎の情報)(df_by_date_user)
-
         df_labor = self._get_labor_df()
         catch_exception(self.csv_obj.write_labor_list)(df_labor)
+
+        task_df = self._get_task_df()
+        task_history_df = self._get_task_history_df()
+
+        annotation_count_ratio_df = self.table_obj.create_annotation_count_ratio_df(task_history_df, task_df)
+        catch_exception(self.csv_obj._write_csv)("タスク内の作業時間の比率.csv", annotation_count_ratio_df)
 
         df = self.table_obj.create_productivity_from_aw_time(task_history_df, df_labor)
         df.to_csv("test.csv")

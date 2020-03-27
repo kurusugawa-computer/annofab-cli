@@ -36,7 +36,8 @@ class TestTable:
     def test_create_productivity_from_aw_time(self):
         df_task_history = pandas.read_csv("/home/vagrant/Downloads/hoge/21292667-タスク履歴list.csv")
         df_labor = pandas.read_csv("/home/vagrant/Downloads/hoge/21292667-労務管理list.csv")
-        df = Table.create_productivity_from_aw_time(df_task_history, df_labor)
+        df_worktime_ratio = pandas.read_csv("/home/vagrant/Downloads/hoge/タスク内の作業時間の比率.csv")
+        df = Table.create_productivity_from_aw_time(df_task_history, df_labor, df_worktime_ratio)
         print(df)
         print(df.columns)
 
