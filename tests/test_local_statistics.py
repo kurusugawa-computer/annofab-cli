@@ -30,3 +30,15 @@ class TestTable:
         )
         df = Table.create_annotation_count_ratio_df(task_history_df, task_df)
         df.to_csv(out_path / "annotation_count_ratio.csv")
+
+
+
+    def test_create_productivity_from_aw_time(self):
+        df_task_history = pandas.read_csv("/home/vagrant/Downloads/hoge/21292667-タスク履歴list.csv")
+        df_labor = pandas.read_csv("/home/vagrant/Downloads/hoge/21292667-労務管理list.csv")
+        df = Table.create_productivity_from_aw_time(df_task_history, df_labor)
+        print(df)
+        print(df.columns)
+
+        df.to_csv("hogehoge.csv")
+        # df.to_csv(out_path / "annotation_count_ratio.csv")

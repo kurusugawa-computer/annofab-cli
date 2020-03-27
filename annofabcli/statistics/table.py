@@ -1046,7 +1046,8 @@ class Table:
 
         return group_obj.reset_index()
 
-    def create_productivity_from_aw_time(self, df_task_history: pd.DataFrame, df_labor: pd.DataFrame) -> pd.DataFrame:
+    @staticmethod
+    def create_productivity_from_aw_time(df_task_history: pd.DataFrame, df_labor: pd.DataFrame) -> pd.DataFrame:
         """
         AnnoWorkの実績時間から、作業者ごとに生産性を算出する。
 
@@ -1055,12 +1056,37 @@ class Table:
         """
 
         df_agg_task_history = df_task_history.pivot_table(values="worktime_hour", columns="phase",
-                                         index=["account_id", "user_id", "username"], aggfunc=numpy.sum)
-        labor_list = self._get_labor_list()
-        df_labor = pd.DataFrame(labor_list)
-        df_agg_labor = df_labor.pivot_table(values="worktime_result_hour", index=["account_id"], aggfunc=numpy.sum)
+                                         index=["user_id", "username"], aggfunc=numpy.sum).reset_index()
+        df_agg_labor = df_labor.pivot_table(values="worktime_result_hour", index=["user_id"], aggfunc=numpy.sum).reset_index()
 
-        df = pd.merge(df_agg_task_history, df_agg_labor[["account_id","worktime_result_hour"]], on="account_id", how="left")
+        df = pd.merge(df_agg_task_history, df_agg_labor[["user_id","worktime_result_hour"]], on="user_id", how="left")
+
+        df = df[["user_id", "username", "annotation", "inspection", "acceptance", "worktime_result_hour"]]
+        df.columns = pd.MultiIndex.from_tuples(
+            [
+                ("","user_id"),
+                ("", "username"),
+                ("annofab_worktime_hour", "annotation"),
+                ("annofab_worktime_hour", "inspection"),
+                ("annofab_worktime_hour", "acceptance"),
+                ("", "annowork_worktime_hour"),
+            ]
+        )
+        df[("annofab_worktime_hour", "sum")] = df[("annofab_worktime_hour", "annotation")]  + df[("annofab_worktime_hour", "inspection")] + df[("annofab_worktime_hour", "acceptance")]
+
+        # AnnoFab時間の比率
+        df[("annofab_worktime_ratio", "annotation")] = df[("annofab_worktime_hour", "annotation")] / df[("annofab_worktime_hour", "sum")]
+        df[("annofab_worktime_ratio", "inspection")] = df[("annofab_worktime_hour", "inspection")] / df[
+            ("annofab_worktime_hour", "sum")]
+        df[("annofab_worktime_ratio", "acceptance")] = df[("annofab_worktime_hour", "acceptance")] / df[
+            ("annofab_worktime_hour", "sum")]
+
+        # AnnoFab時間の比率から、Annowork時間を予測する
+        df[("prediction_annowork_worktime_hour", "annotation")] = df[("annowork_worktime_hour", "sum")] * df[("annofab_worktime_ratio", "annotation")]
+        df[("prediction_annowork_worktime_hour", "inspection")] = df[("annowork_worktime_hour", "sum")] * df[("annofab_worktime_ratio", "inspection")]
+        df[("prediction_annowork_worktime_hour", "acceptance")] = df[("annowork_worktime_hour", "sum")] * df[("annofab_worktime_ratio", "acceptance")]
+
+
         return df
 
 
