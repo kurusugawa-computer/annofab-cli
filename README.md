@@ -1213,10 +1213,10 @@ $ annofabcli task complete --project_id prj1 --task_id file://task.txt --phase a
 $ annofabcli task complete --project_id prj1 --task_id file://task.txt --phase annotation --reply_comment "対応しました"
 
 # 検査フェーズでステージ2のタスクを合格にして、次のフェーズに進めます。未処置の検査コメントがある場合は次に進めます
-$ annofabcli complete_tasks --project_id prj1 --task_id file://task.txt --phase inspection --phase_stage 2
+$ annofabcli task complete --project_id prj1 --task_id file://task.txt --phase inspection --phase_stage 2
 
-# 検査フェーズでステージ2のタスクを合格にして、次のフェーズに進めます。未処置の検査コメントは「対応不要」状態にします。
-$ annofabcli complete_tasks --project_id prj1 --task_id file://task.txt --phase inspection --phase_stage 2 \
+# 受入フェーズのタスクを合格にして、次のフェーズに進めます。未処置の検査コメントは「対応不要」状態にします。
+$ annofabcli  task complete --project_id prj1 --task_id file://task.txt --phase acceptance \
  --inspection_status no_correction_required 
 ```
 
