@@ -13,6 +13,7 @@ import requests
 
 import annofabcli
 import annofabcli.common.cli
+from annofabcli.project.update_annotation_zip import SubUpdateAnnotationZip
 from annofabcli import AnnofabApiFacade
 from annofabcli.common.cli import AbstractCommandLineInterface, ArgumentParser, build_annofabapi_resource_and_login
 from annofabcli.common.utils import read_lines_except_blank_line
@@ -81,7 +82,7 @@ class FindBreakError(AbstractCommandLineInterface):
 
     def _project_task_history_events(
         self, project_id: str, import_file_path: Optional[str] = None
-    ) -> List[Dict[str, Any]]:
+    ) -> Optional[List[Dict[str, Any]]]:
         """
         タスク履歴イベント全件ファイルを取得する。
         import_fileがNone:history_events_urlパスから直接読み込む
@@ -94,9 +95,8 @@ class FindBreakError(AbstractCommandLineInterface):
             try:
                 history_events = download_content(url)
             except:
-                # TODO:これどうにかしたい
-                self.service.wrapper.api.post_project_tasks_update(project_id=project_id)
-                history_events = download_content(url)
+                # TODO:全件JSONは今のところ30日で消える仕様の回避
+                return None
             project_task_history_events = json.loads(history_events)
 
         else:
@@ -197,6 +197,9 @@ class FindBreakError(AbstractCommandLineInterface):
             task_history_events = self._project_task_history_events(
                 project_id=project_id, import_file_path=args.import_file_path
             )
+            if not task_history_events:
+                # 全件ファイルの更新に失敗したらスルー
+                continue
             # task_id 絞り込み
             err_history_events = get_err_history_events(
                 task_history_events=task_history_events, task_id_list=args.task_id if args.task_id else []
