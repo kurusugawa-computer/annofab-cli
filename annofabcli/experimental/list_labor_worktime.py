@@ -278,9 +278,9 @@ class ListLaborWorktime(AbstractCommandLineInterface):
 
         # 出力先別に出力
         if args.output:
-            _output(args.output, df, False if args.byname_total else True)
+            _output(args.output, df, True if args.format == "details" else False)
         else:
-            _output(sys.stdout, df, True)
+            _output(sys.stdout, df, True if args.format == "details" else False)
 
 
 def main(args):

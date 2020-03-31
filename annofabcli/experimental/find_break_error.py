@@ -39,9 +39,6 @@ def get_err_history_events(
     対象のtask_idが含まれるhistory_eventsを返す
     """
     err_history_events_dict: Dict[str, List[Dict[str, Any]]] = {}
-    from IPython.core.debugger import Pdb
-
-    Pdb().set_trace()
 
     for task_history_event in task_history_events:
         if task_id_list:
@@ -94,7 +91,12 @@ class FindBreakError(AbstractCommandLineInterface):
         if import_file_path is None:
             content, _ = self.service.wrapper.api.get_project_task_history_events_url(project_id=project_id)
             url = content["url"]
-            history_events = download_content(url)
+            try:
+                history_events = download_content(url)
+            except:
+                # TODO:これどうにかしたい
+                self.service.wrapper.api.post_project_tasks_update(project_id=project_id)
+                history_events = download_content(url)
             project_task_history_events = json.loads(history_events)
 
         else:
@@ -114,14 +116,13 @@ class FindBreakError(AbstractCommandLineInterface):
             from_time: datetime.datetime, to_time: datetime.datetime, date_time_list: List[datetime.datetime]
         ):
             # timeが検索対象と合致しているかを探す
+            from_time = dateutil.parser.parse(from_time.strftime("%Y-%m-%d %H:%M:%S"))
+            to_time = dateutil.parser.parse(to_time.strftime("%Y-%m-%d %H:%M:%S"))
+
             if date_time_list:
                 for date_time in date_time_list:
-                    from IPython.core.debugger import Pdb
-
-                    Pdb().set_trace()
-                    if from_time - dateutil.parser.parse(
-                        date_time.strftime("%Y-%m-%d %H:%M:%S")
-                    ) or to_time - dateutil.parser.parse(date_time.strftime("%Y-%m-%d %H:%M:%S")):
+                    date_time = dateutil.parser.parse(date_time.strftime("%Y-%m-%d %H:%M:%S"))
+                    if from_time == date_time or from_time == date_time:
                         return True
             else:
                 return True
@@ -133,12 +134,13 @@ class FindBreakError(AbstractCommandLineInterface):
             v.sort(key=lambda x: x["created_datetime"])
             for i, history_events in enumerate(v):
                 if history_events["status"] == "working":
+                    if len(v) == i + 1:
+                        continue
                     next_history_events = v[i + 1]
                     if next_history_events["status"] in ["on_hold", "break", "complete"]:
                         next_time = dateutil.parser.parse(next_history_events["created_datetime"])
                         this_time = dateutil.parser.parse(history_events["created_datetime"])
                         working_time = next_time - this_time
-
                         if working_time > datetime.timedelta(
                             minutes=self.args.task_history_time_threshold
                         ) and check_applicable_time(this_time, next_time, date_time_list):
@@ -175,7 +177,7 @@ class FindBreakError(AbstractCommandLineInterface):
                 file=sys.stderr,
             )
             return False
-        if len(args.task_id) > 1 and args.time:
+        if args.task_id and len(args.task_id) > 1 and args.time:
             print(
                 f"{COMMON_MESSAGE} argument --project_id: timeを指定した場合はtask_idは複数指定できません\
                             '{args.project_id}'",
