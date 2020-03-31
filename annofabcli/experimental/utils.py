@@ -1,8 +1,9 @@
 import csv
-from typing import List,Tuple
+from typing import List, Tuple
 
 import numpy as np
 import pandas as pd
+
 
 def timeunit_conversion(df: pd.DataFrame, time_unit: bool = False) -> pd.DataFrame:
     if time_unit == "h":
@@ -16,6 +17,7 @@ def timeunit_conversion(df: pd.DataFrame, time_unit: bool = False) -> pd.DataFra
 
     return df
 
+
 def calc_df_total(df: pd.DataFrame) -> Tuple[pd.DataFrame, pd.DataFrame, pd.DataFrame, pd.DataFrame]:
     # 複数のproject_id分を合計
     total_df = pd.DataFrame(df.groupby(["user_name", "user_id", "date"], as_index=False).sum())
@@ -25,13 +27,13 @@ def calc_df_total(df: pd.DataFrame) -> Tuple[pd.DataFrame, pd.DataFrame, pd.Data
     # 合計を計算する
     sum_by_date = (
         total_df[["date", "worktime_planned", "worktime_actural", "worktime_monitored"]]
-            .groupby(["date"], as_index=False)
-            .sum()
+        .groupby(["date"], as_index=False)
+        .sum()
     )
     sum_by_name = (
         total_df[["user_name", "worktime_planned", "worktime_actural", "worktime_monitored"]]
-            .groupby(["user_name"], as_index=False)
-            .sum()
+        .groupby(["user_name"], as_index=False)
+        .sum()
     )
     sum_all = total_df[["worktime_planned", "worktime_actural", "worktime_monitored"]].sum().to_frame().transpose()
 
@@ -64,18 +66,18 @@ def print_time_list_from_work_time_list(df: pd.DataFrame, time_unit: bool = Fals
             ],
             sort=False,
         )
-            .sort_values(["date", "user_name"], )
-            .loc[
-        :,
-        [
-            "date",
-            "user_name",
-            "worktime_planned",
-            "worktime_actural",
-            "worktime_monitored",
-            "activity_rate",
-            "monitor_rate",
-        ],
+        .sort_values(["date", "user_name"],)
+        .loc[
+            :,
+            [
+                "date",
+                "user_name",
+                "worktime_planned",
+                "worktime_actural",
+                "worktime_monitored",
+                "activity_rate",
+                "monitor_rate",
+            ],
         ]
     )
     # indexをつける
@@ -100,6 +102,7 @@ def print_byname_total_list(df: pd.DataFrame, time_unit: bool = False) -> pd.Dat
     result = sum_by_name.round(2).replace({np.inf: "--", np.nan: "--"})
     return result
 
+
 def print_total(df: pd.DataFrame, time_unit: bool = False) -> pd.DataFrame:
     # 複数のproject_id分を合計
     _, _, _, sum_all = calc_df_total(df=df)
@@ -121,5 +124,3 @@ def add_id_csv(csv_path: str, id_list: List[str]):
         writer = csv.writer(f, delimiter=",")
         writer.writerow([])
         writer.writerow(id_list)
-
-

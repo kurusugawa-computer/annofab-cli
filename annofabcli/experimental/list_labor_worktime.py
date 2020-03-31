@@ -12,10 +12,17 @@ from annofabapi.models import ProjectMemberRole
 import annofabcli
 import annofabcli.common.cli
 from annofabcli import AnnofabApiFacade
-from annofabcli.common.cli import ArgumentParser, build_annofabapi_resource_and_login,AbstractCommandLineInterface
-from annofabcli.experimental.utils import add_id_csv, print_time_list_from_work_time_list, print_byname_total_list,print_total,timeunit_conversion
+from annofabcli.common.cli import AbstractCommandLineInterface, ArgumentParser, build_annofabapi_resource_and_login
+from annofabcli.experimental.utils import (
+    add_id_csv,
+    print_byname_total_list,
+    print_time_list_from_work_time_list,
+    print_total,
+    timeunit_conversion,
+)
 
 logger = logging.getLogger(__name__)
+
 
 class Database:
     def __init__(
@@ -171,9 +178,6 @@ def refine_df(
     return refine_user_df
 
 
-
-
-
 class ListLaborWorktime(AbstractCommandLineInterface):
     """
     労務管理画面の作業時間を出力する
@@ -201,17 +205,17 @@ class ListLaborWorktime(AbstractCommandLineInterface):
     @staticmethod
     def validate(args: argparse.Namespace) -> bool:
         COMMON_MESSAGE = "annofabcli experimental list_labor_worktime: error:"
-        if not args.time_unit in ["h","m","s"]:
+        if not args.time_unit in ["h", "m", "s"]:
             print(
-                    f"{COMMON_MESSAGE} argument --time_unit: (h/m/s)以外は指定できません\
+                f"{COMMON_MESSAGE} argument --time_unit: (h/m/s)以外は指定できません\
                     '{args.time_unit}'",
-                    file=sys.stderr,
-                )
+                file=sys.stderr,
+            )
             return False
 
-        if not args.format in ["total","by_name_total","details"]:
+        if not args.format in ["total", "by_name_total", "details"]:
             print(
-                f"{COMMON_MESSAGE} argument --project_id: (total/by_name_total/details)以外は指定できません\
+                f"{COMMON_MESSAGE} argument --format: (total/by_name_total/details)以外は指定できません\
                                 '{args.format}'",
                 file=sys.stderr,
             )
@@ -261,15 +265,16 @@ class ListLaborWorktime(AbstractCommandLineInterface):
             df = print_time_list_from_work_time_list(total_df)
 
         def _output(output: str, df: pd.DataFrame, index: bool):
-            df.to_csv(output,
-                      date_format="%Y-%m-%d",
-                      encoding="utf_8_sig",
-                      line_terminator="\r\n",
-                      float_format="%.2f",
-                      index=index)
+            df.to_csv(
+                output,
+                date_format="%Y-%m-%d",
+                encoding="utf_8_sig",
+                line_terminator="\r\n",
+                float_format="%.2f",
+                index=index,
+            )
             if args.add_project_id:
-                add_id_csv(output,
-                           self._get_project_title_list(args.project_id))
+                add_id_csv(output, self._get_project_title_list(args.project_id))
 
         # 出力先別に出力
         if args.output:
@@ -305,11 +310,16 @@ def parse_args(parser: argparse.ArgumentParser):
     parser.add_argument("--start_date", type=str, required=True, help="集計開始日(%%Y-%%m-%%d)")
     parser.add_argument("--end_date", type=str, required=True, help="集計終了日(%%Y-%%m-%%d)")
     parser.add_argument("--time_unit", type=str, default="m", help="出力の時間単位(h/m/s)")
-    parser.add_argument("--format", type=str, default="details", help="出力する際のフォーマット(total/by_name_total/details)"
-                                                                      "total:期間中の合計値だけを出力する"
-                                                                      "by_name_total:人毎の集計の合計値を出力する"
-                                                                      "details:日毎・人毎の詳細な値を出力する")
-    parser.add_argument("--add_project_id", action='store_true', help="出力する際にprojectidを出力する")
+    parser.add_argument(
+        "--format",
+        type=str,
+        default="details",
+        help="出力する際のフォーマット(total/by_name_total/details)"
+        "total:期間中の合計値だけを出力する"
+        "by_name_total:人毎の集計の合計値を出力する"
+        "details:日毎・人毎の詳細な値を出力する",
+    )
+    parser.add_argument("--add_project_id", action="store_true", help="出力する際にprojectidを出力する")
     argument_parser.add_output(required=False)
 
     parser.set_defaults(subcommand_func=main)
