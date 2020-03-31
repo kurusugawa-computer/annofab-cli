@@ -123,7 +123,7 @@ class FindBreakError(AbstractCommandLineInterface):
             if date_time_list:
                 for date_time in date_time_list:
                     date_time = dateutil.parser.parse(date_time.strftime("%Y-%m-%d %H:%M:%S"))
-                    if from_time == date_time or from_time == date_time:
+                    if from_time == date_time or to_time == date_time:
                         return True
             else:
                 return True
