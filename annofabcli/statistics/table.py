@@ -220,6 +220,19 @@ class Table:
         else:
             return account_id
 
+    def _get_biography(self, account_id: Optional[str]) -> Optional[str]:
+        """
+        ユーザのbiographyを取得する。存在しないメンバであればNoneを返す。
+        """
+        if account_id is None:
+            return None
+
+        member = self.annofab_facade.get_organization_member_from_account_id(self.project_id, account_id)
+        if member is not None:
+            return member["biography"]
+        else:
+            return None
+
     def _update_annotaion_specs(self):
         logger.debug("annofab_service.api.get_annotation_specs()")
         annotaion_specs = self.annofab_service.api.get_annotation_specs(self.project_id)[0]
@@ -559,8 +572,10 @@ class Table:
 
             for history in task_history_list:
                 account_id = history["account_id"]
+                member = self.annofab_facade.get_organization_member_from_account_id(self.project_id, account_id)
                 history["user_id"] = self._get_user_id(account_id)
                 history["username"] = self._get_username(account_id)
+                history["biography"] = self._get_biography(account_id)
                 history["worktime_hour"] = annofabcli.utils.isoduration_to_hour(
                     history["accumulated_labor_time_milliseconds"]
                 )
@@ -1056,16 +1071,17 @@ class Table:
         """
 
         df_agg_task_history = df_task_history.pivot_table(values="worktime_hour", columns="phase",
-                                         index=["user_id", "username"], aggfunc=numpy.sum).reset_index()
+                                         index=["user_id", "username", "biography"], aggfunc=numpy.sum).reset_index()
         df_agg_labor = df_labor.pivot_table(values="worktime_result_hour", index=["user_id"], aggfunc=numpy.sum).reset_index()
 
         df = pd.merge(df_agg_task_history, df_agg_labor[["user_id","worktime_result_hour"]], on="user_id", how="left")
 
-        df = df[["user_id", "username", "annotation", "inspection", "acceptance", "worktime_result_hour"]]
+        df = df[["user_id", "username", "biography", "annotation", "inspection", "acceptance", "worktime_result_hour"]]
         df.columns = pd.MultiIndex.from_tuples(
             [
                 ("","user_id"),
                 ("", "username"),
+                ("", "biography"),
                 ("annofab_worktime_hour", "annotation"),
                 ("annofab_worktime_hour", "inspection"),
                 ("annofab_worktime_hour", "acceptance"),
@@ -1074,21 +1090,31 @@ class Table:
         )
         df[("annofab_worktime_hour", "sum")] = df[("annofab_worktime_hour", "annotation")]  + df[("annofab_worktime_hour", "inspection")] + df[("annofab_worktime_hour", "acceptance")]
 
-        # AnnoFab時間の比率
-        df[("annofab_worktime_ratio", "annotation")] = df[("annofab_worktime_hour", "annotation")] / df[("annofab_worktime_hour", "sum")]
-        df[("annofab_worktime_ratio", "inspection")] = df[("annofab_worktime_hour", "inspection")] / df[
-            ("annofab_worktime_hour", "sum")]
-        df[("annofab_worktime_ratio", "acceptance")] = df[("annofab_worktime_hour", "acceptance")] / df[
-            ("annofab_worktime_hour", "sum")]
-
-        # AnnoFab時間の比率から、Annowork時間を予測する
-        df[("prediction_annowork_worktime_hour", "annotation")] = df[("annowork_worktime_hour", "sum")] * df[("annofab_worktime_ratio", "annotation")]
-        df[("prediction_annowork_worktime_hour", "inspection")] = df[("annowork_worktime_hour", "sum")] * df[("annofab_worktime_ratio", "inspection")]
-        df[("prediction_annowork_worktime_hour", "acceptance")] = df[("annowork_worktime_hour", "sum")] * df[("annofab_worktime_ratio", "acceptance")]
-
+        phase_list = [TaskPhase.ANNOTATION.value, TaskPhase.INSPECTION.value, TaskPhase.ACCEPTANCE.value]
         df_agg_production = df_worktime_ratio.pivot_table(values=["worktime_ratio_by_task", "input_data_count", "annotation_count"], columns="phase",
-                                    index="user_id", aggfunc=numpy.sum).reset_index()
-        # merge
+                                    index="user_id", aggfunc=numpy.sum)
+
+        df.index = df[("","user_id")]
+        df.index.name = "user_id"
+        df_agg_production.rename(columns={"worktime_ratio_by_task": "task_count"}, inplace=True)
+        df = df.join(df_agg_production)
+
+        for phase in phase_list:
+            # AnnoFab時間の比率
+            df[("annofab_worktime_ratio", phase)] = df[("annofab_worktime_hour", phase)] / df[("annofab_worktime_hour", "sum")]
+            # AnnoFab時間の比率から、Annowork時間を予測する
+            df[("prediction_annowork_worktime_hour", phase)] = df[("annowork_worktime_hour", "sum")] * df[("annofab_worktime_ratio", phase)]
+
+            # 生産性を算出
+            df[("annofab_worktime/input_data_count", phase)] = df[("annofab_worktime_hour", phase)] / df[("input_data_count", phase)]
+            df[("annowork_worktime/input_data_count", phase)] = df[("prediction_annowork_worktime_hour", phase)] / df[
+                ("input_data_count", phase)]
+
+            df[("annofab_worktime/annotation_count", phase)] = df[("annofab_worktime_hour", phase)] / df[
+                ("annotation_count", phase)]
+            df[("annowork_worktime/annotation_count", phase)] = df[("prediction_annowork_worktime_hour", phase)] / df[
+                ("annotation_count", phase)]
+
         return df
 
 
@@ -1101,6 +1127,7 @@ class Table:
             account_id = d["account_id"]
             d["user_id"] = self._get_user_id(account_id)
             d["username"] = self._get_username(account_id)
+            d["biography"] = self._get_biography(account_id)
             return d
 
         labor_list = self._get_labor_list()
