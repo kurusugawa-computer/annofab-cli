@@ -234,8 +234,9 @@ class WriteCsvGraph:
         annotation_count_ratio_df = self.table_obj.create_annotation_count_ratio_df(task_history_df, task_df)
         catch_exception(self.csv_obj._write_csv)("タスク内の作業時間の比率.csv", annotation_count_ratio_df)
 
-        df = self.table_obj.create_productivity_from_aw_time(task_history_df, df_labor)
-        df.to_csv("test.csv")
+        productivity_df = self.table_obj.create_productivity_from_aw_time(df_task_history=task_history_df, df_labor=df_labor, df_worktime_ratio=annotation_count_ratio_df)
+        self.csv_obj.write_productivity_from_aw_time(productivity_df)
+
 
 class VisualizeStatistics(AbstractCommandLineInterface):
     """

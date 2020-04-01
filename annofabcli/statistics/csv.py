@@ -413,3 +413,39 @@ class Csv:
             logger.info(f"メンバ別タスク1個当たりの作業時間平均-{phase.value} 一覧が0件のため、出力しない")
             return
         self._write_csv(f"タスク1個当たり作業時間/{self.short_project_id}_タスク1個当たり作業時間_{phase.value}.csv", df)
+
+    def write_productivity_from_aw_time(self, df: pd.DataFrame, dropped_columns: Optional[List[str]] = None):
+        """
+        メンバごとの生産性を出力する。
+
+        Args:
+            df:
+            dropped_columns:
+
+        Returns:
+
+        """
+        if len(df) == 0:
+            logger.info("プロジェクトメンバ一覧が0件のため出力しない")
+            return
+
+        phase_list = [TaskPhase.ANNOTATION.value, TaskPhase.INSPECTION.value, TaskPhase.ACCEPTANCE.value]
+
+        user_columns = [
+            ("","user_id"),
+            ("", "username"),
+            ("", "biography")]
+
+        annofab_worktime_columns = [("annofab_worktime_hour",phase) for phase in phase_list] + [("annofab_worktime_hour","sum")] +  [("annofab_worktime_ratio",phase) for phase in phase_list]
+        annowork_worktime_columns = [
+            ("annowork_worktime_hour", "sum")] +  [("prediction_annowork_worktime_hour", phase) for phase in phase_list]
+
+        productivity_columns = ([("annofab_worktime/input_data_count",phase) for phase in phase_list]
+        + [("annowork_worktime/input_data_count",phase) for phase in phase_list]
+        + [("annofab_worktime/annotation_count", phase) for phase in phase_list]
+        + [("annofab_worktime/annotation_count", phase) for phase in phase_list])
+
+        prior_columns = user_columns + annofab_worktime_columns + annowork_worktime_columns + productivity_columns
+        required_columns = self._create_required_columns(df, prior_columns, dropped_columns)
+        self._write_csv(f"{self.short_project_id}-メンバごとの生産性.csv", df[required_columns])
+

@@ -419,7 +419,6 @@ class Database:
         labor_list = self._get_labor_list(self.project_id)
         self.__write_checkpoint(labor_list, "labor_list.pickel")
 
-
     @staticmethod
     def _get_worktime_hour(working_time_by_user: Optional[Dict[str, Any]], key: str) -> float:
         if working_time_by_user is None:
@@ -431,10 +430,8 @@ class Database:
         else:
             return value / 3600 / 1000
 
-    def _get_labor_list(
-            self, project_id: str
-    ) -> List[Dict[str, Any]]:
-        def to_new_labor(e: Dict[str, Any])-> Dict[str,Any]:
+    def _get_labor_list(self, project_id: str) -> List[Dict[str, Any]]:
+        def to_new_labor(e: Dict[str, Any]) -> Dict[str, Any]:
             return dict(
                 date=e["date"],
                 account_id=e["account_id"],
@@ -442,14 +439,9 @@ class Database:
                 worktime_result_hour=self._get_worktime_hour(e["values"]["working_time_by_user"], "results"),
             )
 
-        labor_list: List[Dict[str, Any]] = self.annofab_service.api.get_labor_control(
-            {
-                "project_id": project_id,
-            }
-        )[0]
+        labor_list: List[Dict[str, Any]] = self.annofab_service.api.get_labor_control({"project_id": project_id,})[0]
 
         return [to_new_labor(e) for e in labor_list if e["account_id"] is not None]
-
 
     @staticmethod
     def get_not_updated_task_ids(old_tasks, new_tasks) -> Set[str]:
