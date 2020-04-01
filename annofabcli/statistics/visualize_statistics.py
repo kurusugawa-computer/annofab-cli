@@ -237,7 +237,7 @@ class WriteCsvGraph:
         productivity_df = self.table_obj.create_productivity_from_aw_time(
             df_task_history=task_history_df, df_labor=df_labor, df_worktime_ratio=annotation_count_ratio_df
         )
-        self.csv_obj.write_productivity_from_aw_time(productivity_df)
+        catch_exception(self.csv_obj.write_productivity_from_aw_time)(productivity_df)
 
 
 class VisualizeStatistics(AbstractCommandLineInterface):
@@ -285,15 +285,15 @@ class VisualizeStatistics(AbstractCommandLineInterface):
 
         write_obj = WriteCsvGraph(table_obj, output_dir, project_id)
 
-        # ヒストグラム
-        write_obj.write_histogram_for_task()
-        write_obj.write_histogram_for_annotation()
-
-        # 折れ線グラフ
-        write_obj.write_linegraph_for_by_user(user_id_list)
-        write_obj.write_linegraph_for_task_overall()
-
-        write_obj.write_csv_for_task()
+        # # ヒストグラム
+        # write_obj.write_histogram_for_task()
+        # write_obj.write_histogram_for_annotation()
+        #
+        # # 折れ線グラフ
+        # write_obj.write_linegraph_for_by_user(user_id_list)
+        # write_obj.write_linegraph_for_task_overall()
+        #
+        # write_obj.write_csv_for_task()
         write_obj.write_productivity_csv()
         write_obj.write_csv_for_annotation()
         write_obj.write_csv_for_account_statistics()

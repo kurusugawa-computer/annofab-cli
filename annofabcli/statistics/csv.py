@@ -429,7 +429,8 @@ class Csv:
             logger.info("プロジェクトメンバ一覧が0件のため出力しない")
             return
 
-        phase_list = [TaskPhase.ANNOTATION.value, TaskPhase.INSPECTION.value, TaskPhase.ACCEPTANCE.value]
+        # TODO
+        phase_list = [TaskPhase.ANNOTATION.value, TaskPhase.ACCEPTANCE.value]
 
         user_columns = [("", "user_id"), ("", "username"), ("", "biography")]
 
