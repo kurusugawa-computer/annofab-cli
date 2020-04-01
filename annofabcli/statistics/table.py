@@ -1097,11 +1097,8 @@ class Table:
             [("", "user_id"), ("", "username"), ("", "biography"), ("annowork_worktime_hour", "sum"),]
             + [("annofab_worktime_hour", phase) for phase in phase_list]
         )
-        df[("annofab_worktime_hour", "sum")] = (
-            df[("annofab_worktime_hour", "annotation")]
-            + df[("annofab_worktime_hour", "inspection")]
-            + df[("annofab_worktime_hour", "acceptance")]
-        )
+        for phase in phase_list:
+            df[("annofab_worktime_hour", "sum")] += df[("annofab_worktime_hour", phase)]
 
         phase_list = [TaskPhase.ANNOTATION.value, TaskPhase.INSPECTION.value, TaskPhase.ACCEPTANCE.value]
         df_agg_production = df_worktime_ratio.pivot_table(
