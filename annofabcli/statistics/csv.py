@@ -439,6 +439,8 @@ class Csv:
             + [("annofab_worktime_hour", "sum")]
             + [("annofab_worktime_ratio", phase) for phase in phase_list]
         )
+        production_columns = [("task_count", phase) for phase in phase_list] + [("input_data_count", phase) for phase in phase_list] + [("annotation_count", phase) for phase in phase_list]
+
         annowork_worktime_columns = [("annowork_worktime_hour", "sum")] + [
             ("prediction_annowork_worktime_hour", phase) for phase in phase_list
         ]
@@ -450,6 +452,6 @@ class Csv:
             + [("annofab_worktime/annotation_count", phase) for phase in phase_list]
         )
 
-        prior_columns = user_columns + annofab_worktime_columns + annowork_worktime_columns + productivity_columns
+        prior_columns = user_columns + annofab_worktime_columns + production_columns + annowork_worktime_columns + productivity_columns
         required_columns = self._create_required_columns(df, prior_columns, dropped_columns)
         self._write_csv(f"{self.short_project_id}-メンバごとの生産性.csv", df[required_columns])

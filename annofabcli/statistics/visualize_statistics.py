@@ -285,16 +285,17 @@ class VisualizeStatistics(AbstractCommandLineInterface):
 
         write_obj = WriteCsvGraph(table_obj, output_dir, project_id)
 
-        # # ヒストグラム
-        # write_obj.write_histogram_for_task()
-        # write_obj.write_histogram_for_annotation()
-        #
-        # # 折れ線グラフ
-        # write_obj.write_linegraph_for_by_user(user_id_list)
-        # write_obj.write_linegraph_for_task_overall()
-        #
-        # write_obj.write_csv_for_task()
+        # ヒストグラム
+        write_obj.write_histogram_for_task()
+        write_obj.write_histogram_for_annotation()
+
+        # 折れ線グラフ
+        write_obj.write_linegraph_for_by_user(user_id_list)
+        write_obj.write_linegraph_for_task_overall()
+
+        # CSV
         write_obj.write_productivity_csv()
+        write_obj.write_csv_for_task()
         write_obj.write_csv_for_annotation()
         write_obj.write_csv_for_account_statistics()
         write_obj.write_csv_for_date_user()
