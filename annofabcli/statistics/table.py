@@ -1081,21 +1081,18 @@ class Table:
 
         """
         df_agg_task_history = df_task_history.pivot_table(
-            values="worktime_hour", columns="phase", index=["user_id", "username", "biography"], aggfunc=numpy.sum
-        ).reset_index()
+            values="worktime_hour", columns="phase", index="user_id", aggfunc=numpy.sum
+        )
 
-        df_agg_labor = df_labor.pivot_table(
-            values="worktime_result_hour", index=["user_id"], aggfunc=numpy.sum
-        ).reset_index()
+        df_agg_labor = df_labor.pivot_table(values="worktime_result_hour", index="user_id", aggfunc=numpy.sum)
 
-        df = pd.merge(df_agg_task_history, df_agg_labor[["user_id", "worktime_result_hour"]], on="user_id", how="left")
+        df = df_agg_task_history.join(df_agg_labor)
 
         phase_list = Table._get_phase_list(list(df.columns))
 
-        df = df[["user_id", "username", "biography", "worktime_result_hour"] + phase_list]
+        df = df[["worktime_result_hour"] + phase_list]
         df.columns = pd.MultiIndex.from_tuples(
-            [("", "user_id"), ("", "username"), ("", "biography"), ("annowork_worktime_hour", "sum"),]
-            + [("annofab_worktime_hour", phase) for phase in phase_list]
+            [("annowork_worktime_hour", "sum")] + [("annofab_worktime_hour", phase) for phase in phase_list]
         )
 
         df[("annofab_worktime_hour", "sum")] = df[("annofab_worktime_hour", phase_list[0])]
@@ -1109,8 +1106,6 @@ class Table:
             aggfunc=numpy.sum,
         )
 
-        df.index = df[("", "user_id")]
-        df.index.name = "user_id"
         df_agg_production.rename(columns={"worktime_ratio_by_task": "task_count"}, inplace=True)
         df = df.join(df_agg_production)
 
@@ -1138,6 +1133,12 @@ class Table:
             df[("annowork_worktime/annotation_count", phase)] = (
                 df[("prediction_annowork_worktime_hour", phase)] / df[("annotation_count", phase)]
             )
+
+        # ユーザ情報を取得
+        df_user = df_task_history.groupby("user_id").first()[["username", "biography"]]
+        df_user.columns = pd.MultiIndex.from_tuples([("username", ""), ("biography", "")])
+        df = df.join(df_user)
+        df[("user_id", "")] = df.index
 
         return df
 
