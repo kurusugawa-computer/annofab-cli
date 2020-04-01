@@ -571,7 +571,6 @@ class Table:
 
             for history in task_history_list:
                 account_id = history["account_id"]
-                member = self.annofab_facade.get_organization_member_from_account_id(self.project_id, account_id)
                 history["user_id"] = self._get_user_id(account_id)
                 history["username"] = self._get_username(account_id)
                 history["biography"] = self._get_biography(account_id)
@@ -1061,6 +1060,17 @@ class Table:
         return group_obj.reset_index()
 
     @staticmethod
+    def _get_phase_list(columns: List[str]) -> List[str]:
+        phase_list = [TaskPhase.ANNOTATION.value, TaskPhase.INSPECTION.value, TaskPhase.ACCEPTANCE.value]
+        if TaskPhase.INSPECTION.value not in columns:
+            phase_list.remove(TaskPhase.INSPECTION.value)
+
+        if TaskPhase.ACCEPTANCE.value not in columns:
+            phase_list.remove(TaskPhase.ACCEPTANCE.value)
+
+        return phase_list
+
+    @staticmethod
     def create_productivity_from_aw_time(
         df_task_history: pd.DataFrame, df_labor: pd.DataFrame, df_worktime_ratio: pd.DataFrame
     ) -> pd.DataFrame:
@@ -1070,27 +1080,22 @@ class Table:
         Returns:
 
         """
-
         df_agg_task_history = df_task_history.pivot_table(
             values="worktime_hour", columns="phase", index=["user_id", "username", "biography"], aggfunc=numpy.sum
         ).reset_index()
+
         df_agg_labor = df_labor.pivot_table(
             values="worktime_result_hour", index=["user_id"], aggfunc=numpy.sum
         ).reset_index()
 
         df = pd.merge(df_agg_task_history, df_agg_labor[["user_id", "worktime_result_hour"]], on="user_id", how="left")
 
-        df = df[["user_id", "username", "biography", "annotation", "inspection", "acceptance", "worktime_result_hour"]]
+        phase_list = Table._get_phase_list(list(df.columns))
+
+        df = df[["user_id", "username", "biography", "worktime_result_hour"] + phase_list]
         df.columns = pd.MultiIndex.from_tuples(
-            [
-                ("", "user_id"),
-                ("", "username"),
-                ("", "biography"),
-                ("annofab_worktime_hour", "annotation"),
-                ("annofab_worktime_hour", "inspection"),
-                ("annofab_worktime_hour", "acceptance"),
-                ("annowork_worktime_hour", "sum"),
-            ]
+            [("", "user_id"), ("", "username"), ("", "biography"), ("annowork_worktime_hour", "sum"),]
+            + [("annofab_worktime_hour", phase) for phase in phase_list]
         )
         df[("annofab_worktime_hour", "sum")] = (
             df[("annofab_worktime_hour", "annotation")]

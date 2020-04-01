@@ -234,7 +234,9 @@ class WriteCsvGraph:
         annotation_count_ratio_df = self.table_obj.create_annotation_count_ratio_df(task_history_df, task_df)
         catch_exception(self.csv_obj._write_csv)("タスク内の作業時間の比率.csv", annotation_count_ratio_df)
 
-        productivity_df = self.table_obj.create_productivity_from_aw_time(df_task_history=task_history_df, df_labor=df_labor, df_worktime_ratio=annotation_count_ratio_df)
+        productivity_df = self.table_obj.create_productivity_from_aw_time(
+            df_task_history=task_history_df, df_labor=df_labor, df_worktime_ratio=annotation_count_ratio_df
+        )
         self.csv_obj.write_productivity_from_aw_time(productivity_df)
 
 
@@ -283,25 +285,21 @@ class VisualizeStatistics(AbstractCommandLineInterface):
 
         write_obj = WriteCsvGraph(table_obj, output_dir, project_id)
 
-        write_obj.write_productivity_csv()
+        # ヒストグラム
+        write_obj.write_histogram_for_task()
+        write_obj.write_histogram_for_annotation()
 
-        # write_obj.write_worktime_ratio()
-        #
-        # # ヒストグラム
-        # write_obj.write_histogram_for_task()
-        # write_obj.write_histogram_for_annotation()
-        #
-        # # 折れ線グラフ
-        # write_obj.write_linegraph_for_by_user(user_id_list)
-        # write_obj.write_linegraph_for_task_overall()
-        #
-        # write_obj.write_csv_for_task()
-        # write_obj.write_csv_for_task_history()
-        # write_obj.write_csv_for_annotation()
-        # write_obj.write_csv_for_account_statistics()
-        # write_obj.write_csv_for_date_user()
-        # write_obj.write_csv_for_inspection()
-        # write_obj.write_メンバー別作業時間平均_画像1枚あたり_by_phase()
+        # 折れ線グラフ
+        write_obj.write_linegraph_for_by_user(user_id_list)
+        write_obj.write_linegraph_for_task_overall()
+
+        write_obj.write_csv_for_task()
+        write_obj.write_productivity_csv()
+        write_obj.write_csv_for_annotation()
+        write_obj.write_csv_for_account_statistics()
+        write_obj.write_csv_for_date_user()
+        write_obj.write_csv_for_inspection()
+        write_obj.write_メンバー別作業時間平均_画像1枚あたり_by_phase()
 
     def main(self):
         args = self.args
@@ -356,7 +354,7 @@ def parse_args(parser: argparse.ArgumentParser):
         type=str,
         help="タスクの検索クエリをJSON形式で指定します。指定しない場合はすべてのタスクを取得します。"
         "`file://`を先頭に付けると、JSON形式のファイルを指定できます。"
-        "クエリのキーは、phase, statusのみです。[getTasks API](https://annofab.com/docs/api/#operation/getTasks) 参照",
+        "クエリのキーは、phase, status, task_id のみです。[getTasks API](https://annofab.com/docs/api/#operation/getTasks) 参照",
     )
 
     parser.add_argument(

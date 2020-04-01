@@ -1,6 +1,6 @@
 import logging
 from pathlib import Path
-from typing import List, Optional
+from typing import Any, List, Optional
 
 import pandas as pd
 from annofabapi.models import TaskPhase
@@ -42,7 +42,7 @@ class Csv:
 
     @staticmethod
     def _create_required_columns(
-        df: pd.DataFrame, prior_columns: List[str], dropped_columns: Optional[List[str]] = None
+        df: pd.DataFrame, prior_columns: List[Any], dropped_columns: Optional[List[Any]] = None
     ) -> List[str]:
         remained_columns = list(df.columns.difference(prior_columns))
         all_columns = prior_columns + remained_columns
@@ -431,21 +431,24 @@ class Csv:
 
         phase_list = [TaskPhase.ANNOTATION.value, TaskPhase.INSPECTION.value, TaskPhase.ACCEPTANCE.value]
 
-        user_columns = [
-            ("","user_id"),
-            ("", "username"),
-            ("", "biography")]
+        user_columns = [("", "user_id"), ("", "username"), ("", "biography")]
 
-        annofab_worktime_columns = [("annofab_worktime_hour",phase) for phase in phase_list] + [("annofab_worktime_hour","sum")] +  [("annofab_worktime_ratio",phase) for phase in phase_list]
-        annowork_worktime_columns = [
-            ("annowork_worktime_hour", "sum")] +  [("prediction_annowork_worktime_hour", phase) for phase in phase_list]
+        annofab_worktime_columns = (
+            [("annofab_worktime_hour", phase) for phase in phase_list]
+            + [("annofab_worktime_hour", "sum")]
+            + [("annofab_worktime_ratio", phase) for phase in phase_list]
+        )
+        annowork_worktime_columns = [("annowork_worktime_hour", "sum")] + [
+            ("prediction_annowork_worktime_hour", phase) for phase in phase_list
+        ]
 
-        productivity_columns = ([("annofab_worktime/input_data_count",phase) for phase in phase_list]
-        + [("annowork_worktime/input_data_count",phase) for phase in phase_list]
-        + [("annofab_worktime/annotation_count", phase) for phase in phase_list]
-        + [("annofab_worktime/annotation_count", phase) for phase in phase_list])
+        productivity_columns = (
+            [("annofab_worktime/input_data_count", phase) for phase in phase_list]
+            + [("annowork_worktime/input_data_count", phase) for phase in phase_list]
+            + [("annofab_worktime/annotation_count", phase) for phase in phase_list]
+            + [("annofab_worktime/annotation_count", phase) for phase in phase_list]
+        )
 
         prior_columns = user_columns + annofab_worktime_columns + annowork_worktime_columns + productivity_columns
         required_columns = self._create_required_columns(df, prior_columns, dropped_columns)
         self._write_csv(f"{self.short_project_id}-メンバごとの生産性.csv", df[required_columns])
-

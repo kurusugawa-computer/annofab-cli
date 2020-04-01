@@ -346,7 +346,7 @@ class Database:
 
         """
 
-        def filter_task(arg_task):
+        def filter_task(arg_task: Dict[str, Any]):
             """AND条件で絞り込む"""
 
             flag = True
@@ -356,6 +356,9 @@ class Database:
 
                 if "status" in task_query_param:
                     flag = flag and arg_task["status"] == task_query_param["status"]
+
+                if "task_id" in task_query_param:
+                    flag = flag and str(task_query_param["task_id"]).lower() in str(arg_task["task_id"]).lower()
 
             if ignored_task_id_list is not None:
                 flag = flag and arg_task["task_id"] not in ignored_task_id_list
@@ -405,7 +408,6 @@ class Database:
 
         old_tasks = self.read_tasks_from_checkpoint()
         not_updated_task_ids = self.get_not_updated_task_ids(old_tasks, tasks)
-        logger.debug(f"更新されていないtask_id = {not_updated_task_ids}")
         logger.info(f"更新されていないタスク数 = {len(not_updated_task_ids)}")
 
         self.__update_task_histories(tasks, not_updated_task_ids)
