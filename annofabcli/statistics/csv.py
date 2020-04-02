@@ -463,7 +463,7 @@ class Csv:
             [("annofab_worktime/input_data_count", phase) for phase in phase_list]
             + [("annowork_worktime/input_data_count", phase) for phase in phase_list]
             + [("annofab_worktime/annotation_count", phase) for phase in phase_list]
-            + [("annofab_worktime/annotation_count", phase) for phase in phase_list]
+            + [("annowork_worktime/annotation_count", phase) for phase in phase_list]
         )
 
         prior_columns = (

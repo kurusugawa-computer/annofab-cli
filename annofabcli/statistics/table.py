@@ -1082,7 +1082,7 @@ class Table:
         """
         df_agg_task_history = df_task_history.pivot_table(
             values="worktime_hour", columns="phase", index="user_id", aggfunc=numpy.sum
-        )
+        ).fillna(0)
 
         df_agg_labor = df_labor.pivot_table(values="worktime_result_hour", index="user_id", aggfunc=numpy.sum)
 
@@ -1104,7 +1104,7 @@ class Table:
             columns="phase",
             index="user_id",
             aggfunc=numpy.sum,
-        )
+        ).fillna(0)
 
         df_agg_production.rename(columns={"worktime_ratio_by_task": "task_count"}, inplace=True)
         df = df.join(df_agg_production)

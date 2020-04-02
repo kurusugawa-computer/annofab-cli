@@ -441,7 +441,7 @@ class Database:
                 worktime_result_hour=self._get_worktime_hour(e["values"]["working_time_by_user"], "results"),
             )
 
-        labor_list: List[Dict[str, Any]] = self.annofab_service.api.get_labor_control({"project_id": project_id,})[0]
+        labor_list: List[Dict[str, Any]] = self.annofab_service.api.get_labor_control({"project_id": project_id})[0]
 
         return [to_new_labor(e) for e in labor_list if e["account_id"] is not None]
 
