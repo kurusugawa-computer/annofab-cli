@@ -460,7 +460,7 @@ class Database:
         self.__write_checkpoint(account_statistics, "account_statistics.pickel")
 
         # 労務管理情報の出力
-        labor_list = self._get_labor_list(self.project_id)
+        labor_list = self._get_labor_list(self.project_id, start_date=start_date, end_date=end_date)
         self.__write_checkpoint(labor_list, "labor_list.pickel")
 
     @staticmethod
@@ -474,7 +474,9 @@ class Database:
         else:
             return value / 3600 / 1000
 
-    def _get_labor_list(self, project_id: str) -> List[Dict[str, Any]]:
+    def _get_labor_list(
+        self, project_id: str, start_date: Optional[str] = None, end_date: Optional[str] = None
+    ) -> List[Dict[str, Any]]:
         def to_new_labor(e: Dict[str, Any]) -> Dict[str, Any]:
             return dict(
                 date=e["date"],
@@ -483,7 +485,9 @@ class Database:
                 worktime_result_hour=self._get_worktime_hour(e["values"]["working_time_by_user"], "results"),
             )
 
-        labor_list: List[Dict[str, Any]] = self.annofab_service.api.get_labor_control({"project_id": project_id})[0]
+        labor_list: List[Dict[str, Any]] = self.annofab_service.api.get_labor_control(
+            {"project_id": project_id, "from": start_date, "to": end_date}
+        )[0]
 
         return [to_new_labor(e) for e in labor_list if e["account_id"] is not None]
 

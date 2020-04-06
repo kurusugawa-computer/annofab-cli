@@ -215,8 +215,8 @@ class WriteCsvGraph:
         catch_exception(self.csv_obj.write_ユーザ別日毎の作業時間)(account_statistics_df)
 
     def write_csv_for_date_user(self) -> None:
-        """	
-        ユーザごと、日ごとの情報をCSVに出力する。	
+        """
+        ユーザごと、日ごとの情報をCSVに出力する.
         """
         df_by_date_user = self._get_df_by_date_user()
         catch_exception(self.csv_obj.write_教師付作業者別日毎の情報)(df_by_date_user)
@@ -256,6 +256,8 @@ class VisualizeStatistics(AbstractCommandLineInterface):
         update: bool = False,
         should_update_annotation_zip: bool = False,
         should_update_task_json: bool = False,
+        start_date: Optional[str] = None,
+        end_date: Optional[str] = None,
     ):
         """
         タスク一覧を出力する
@@ -278,6 +280,8 @@ class VisualizeStatistics(AbstractCommandLineInterface):
                 ignored_task_id_list,
                 should_update_annotation_zip=should_update_annotation_zip,
                 should_update_task_json=should_update_task_json,
+                start_date=start_date,
+                end_date=end_date,
             )
 
         table_obj = Table(database, task_query, ignored_task_id_list)
@@ -323,6 +327,8 @@ class VisualizeStatistics(AbstractCommandLineInterface):
             update=not args.not_update,
             should_update_annotation_zip=args.update_annotation,
             should_update_task_json=args.update_task_json,
+            start_date=args.start_date,
+            end_date=args.end_date,
         )
 
 
