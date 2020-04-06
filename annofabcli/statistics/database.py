@@ -5,6 +5,7 @@ import multiprocessing
 import os
 import pickle
 import shutil
+import dateutil
 import zipfile
 from functools import partial
 from pathlib import Path
@@ -333,11 +334,17 @@ class Database:
         self.annofab_service.wrapper.download_annotation_archive(self.project_id, annotations_zip_file, v2=True)
         # task historiesは未完成なので、使わない
 
+    @staticmethod
+    def _to_datetime_with_tz(str_date: str) -> datetime.datetime:
+        dt = dateutil.parser.parse(str_date)
+        dt = dt.replace(tzinfo=dateutil.tz.tzlocal())
+        return dt
+
     def read_tasks_from_json(
         self,
         task_query_param: Optional[Dict[str, Any]] = None,
         ignored_task_id_list: Optional[List[str]] = None,
-            start_date: Optional[str] = None,
+        start_date: Optional[str] = None,
         end_date: Optional[str] = None,
     ) -> List[Task]:
         """
@@ -353,8 +360,8 @@ class Database:
             タスク一覧
 
         """
-        dt_end_date = dateutil.parser.parse(end_date) if end_date is not None else None
-        dt_start_date = dateutil.parser.parse(start_date) if start_date is not None else None
+        dt_end_date = self._to_datetime_with_tz(end_date) if end_date is not None else None
+        dt_start_date = self._to_datetime_with_tz(start_date) if start_date is not None else None
 
         def filter_task(arg_task: Dict[str, Any]):
             """AND条件で絞り込む"""
@@ -405,7 +412,7 @@ class Database:
             タスク一覧
 
         """
-        dt_start_date = dateutil.parser.parse(start_date)
+        dt_start_date = Database._to_datetime_with_tz(start_date)
 
         def pred(task_id: str):
             task_histories = dict_task_histories[task_id]
@@ -444,7 +451,9 @@ class Database:
         )
 
         logger.info(f"DB更新: task_query_param = {task_query_param}")
-        tasks = self.read_tasks_from_json(task_query_param, start_date=start_date, end_date=end_date, ignored_task_id_list=ignored_task_ids)
+        tasks = self.read_tasks_from_json(
+            task_query_param, start_date=start_date, end_date=end_date, ignored_task_id_list=ignored_task_ids
+        )
 
         old_tasks = self.read_tasks_from_checkpoint()
         not_updated_task_ids = self.get_not_updated_task_ids(old_tasks, tasks)

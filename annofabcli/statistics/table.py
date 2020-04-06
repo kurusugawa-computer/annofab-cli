@@ -111,7 +111,7 @@ class Table:
         if self._task_list is not None:
             return self._task_list
         else:
-            task_list = self.database.read_tasks_from_json(self.task_query_param, self.ignored_task_id_list)
+            task_list = self.database.read_tasks_from_checkpoint()
             self._task_list = task_list
             return self._task_list
 
@@ -553,6 +553,10 @@ class Table:
 
         return task
 
+    @staticmethod
+    def _get_task_from_task_id(task_list: List[Task], task_id: str) -> Optional[Task]:
+        return more_itertools.first_true(task_list, pred=lambda e: e["task_id"] == task_id)
+
     def create_task_history_df(self) -> pd.DataFrame:
         """
         タスク履歴の一覧のDataFrameを出力する。
@@ -565,7 +569,7 @@ class Table:
 
         all_task_history_list = []
         for task_id, task_history_list in task_histories_dict.items():
-            task = more_itertools.first_true(task_list, pred=lambda e,f=task_id: e["task_id"] == f)
+            task = self._get_task_from_task_id(task_list, task_id)
             if task is None:
                 continue
 
