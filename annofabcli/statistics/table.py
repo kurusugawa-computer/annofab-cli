@@ -829,6 +829,7 @@ class Table:
                 history["account_id"] = account_id
                 history["user_id"] = self._get_user_id(account_id)
                 history["username"] = self._get_username(account_id)
+                history["biography"] = self._get_biography(account_id)
 
                 if member_info is not None:
                     history["member_role"] = member_info["member_role"]

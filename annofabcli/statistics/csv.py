@@ -395,6 +395,7 @@ class Csv:
         prior_columns = [
             "user_id",
             "username",
+            "biography",
             "date",
             "tasks_completed",
             "tasks_rejected",
