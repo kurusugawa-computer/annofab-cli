@@ -337,14 +337,16 @@ class Database:
         self,
         task_query_param: Optional[Dict[str, Any]] = None,
         ignored_task_id_list: Optional[List[str]] = None,
+            start_date: Optional[str] = None,
         end_date: Optional[str] = None,
     ) -> List[Task]:
         """
-        tass.jsonからqueryに合致するタスクを調べる
+        task.jsonからqueryに合致するタスクを調べる
 
         Args:
             task_query_param: taskを調べるquery. `phase`と`status`のみ有効
             ignored_task_id_list: 無視するtask_idのList
+            start_date: 指定した日付（'YYYY-MM-DD'）より前に更新されているタスクは集計しないようにする。（不要なタスク履歴を参照しないようにする工夫）
             end_date: 指定した日付（'YYYY-MM-DD'）以前に更新されたタスクを集計する。
 
         Returns:
@@ -352,6 +354,7 @@ class Database:
 
         """
         dt_end_date = dateutil.parser.parse(end_date) if end_date is not None else None
+        dt_start_date = dateutil.parser.parse(start_date) if start_date is not None else None
 
         def filter_task(arg_task: Dict[str, Any]):
             """AND条件で絞り込む"""
@@ -366,6 +369,9 @@ class Database:
 
                 if "task_id" in task_query_param:
                     flag = flag and str(task_query_param["task_id"]).lower() in str(arg_task["task_id"]).lower()
+
+            if dt_start_date is not None:
+                flag = flag and dateutil.parser.parse(arg_task["updated_datetime"]) >= dt_start_date
 
             if dt_end_date is not None:
                 flag = flag and dateutil.parser.parse(arg_task["updated_datetime"]) <= dt_end_date
@@ -438,7 +444,7 @@ class Database:
         )
 
         logger.info(f"DB更新: task_query_param = {task_query_param}")
-        tasks = self.read_tasks_from_json(task_query_param, end_date=end_date, ignored_task_id_list=ignored_task_ids)
+        tasks = self.read_tasks_from_json(task_query_param, start_date=start_date, end_date=end_date, ignored_task_id_list=ignored_task_ids)
 
         old_tasks = self.read_tasks_from_checkpoint()
         not_updated_task_ids = self.get_not_updated_task_ids(old_tasks, tasks)
