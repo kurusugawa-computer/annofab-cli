@@ -565,7 +565,7 @@ class Table:
 
         all_task_history_list = []
         for task_id, task_history_list in task_histories_dict.items():
-            task = more_itertools.first_true(task_list, pred=lambda e: e["task_id"] == task_id)
+            task = more_itertools.first_true(task_list, pred=lambda e,f=task_id: e["task_id"] == f)
             if task is None:
                 continue
 
