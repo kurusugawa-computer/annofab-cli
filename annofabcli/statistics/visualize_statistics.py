@@ -358,6 +358,9 @@ def parse_args(parser: argparse.ArgumentParser):
         "クエリのキーは、phase, status, task_id のみです。[getTasks API](https://annofab.com/docs/api/#operation/getTasks) 参照",
     )
 
+    parser.add_argument("--start_date", type=str, help="指定した日付（'YYYY-MM-DD'）以降に教師付を開始したタスクを集計する。")
+    parser.add_argument("--end_date", type=str, help="指定した日付（'YYYY-MM-DD'）以前に更新されたタスクを集計する。")
+
     parser.add_argument(
         "--ignored_task_id",
         nargs="+",
