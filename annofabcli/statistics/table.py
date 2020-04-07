@@ -1092,7 +1092,7 @@ class Table:
         return phase_list
 
     @staticmethod
-    def create_productivity_from_aw_time(
+    def create_productivity_per_user_from_aw_time(
         df_task_history: pd.DataFrame, df_labor: pd.DataFrame, df_worktime_ratio: pd.DataFrame
     ) -> pd.DataFrame:
         """

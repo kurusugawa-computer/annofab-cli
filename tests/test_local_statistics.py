@@ -34,15 +34,12 @@ class TestTable:
             }
         )
         df = Table.create_annotation_count_ratio_df(task_history_df, task_df)
-        df.to_csv(out_path / "annotation_count_ratio.csv")
+        df.to_csv(out_path / "annotation-count-ratio.csv")
 
-    def test_create_productivity_from_aw_time(self):
-        df_task_history = pandas.read_csv("/home/vagrant/Downloads/hoge/21292667-タスク履歴list.csv")
-        df_labor = pandas.read_csv("/home/vagrant/Downloads/hoge/21292667-労務管理list.csv")
-        df_worktime_ratio = pandas.read_csv("/home/vagrant/Downloads/hoge/タスク内の作業時間の比率.csv")
-        df = Table.create_productivity_from_aw_time(df_task_history, df_labor, df_worktime_ratio)
-        print(df)
-        print(df.columns)
+    def test_create_productivity_per_user_from_aw_time(self):
+        df_task_history = pandas.read_csv(str(data_path / "statistics/task-history-df.csv"))
+        df_labor = pandas.read_csv(str(data_path / "statistics/labor-df.csv"))
+        df_worktime_ratio = pandas.read_csv(str(data_path / "statistics/annotation-count-ratio-df.csv"))
+        df = Table.create_productivity_per_user_from_aw_time(df_task_history, df_labor, df_worktime_ratio)
 
-        df.to_csv("hogehoge.csv")
-        # df.to_csv(out_path / "annotation_count_ratio.csv")
+        df.to_csv(out_path / "productivity-per-user.csv")
