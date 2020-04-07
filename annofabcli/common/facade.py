@@ -302,7 +302,8 @@ class AnnofabApiFacade:
         self, project_id: str, task_id: str, account_id: str, annotator_account_id: Optional[str] = None
     ) -> Dict[str, Any]:
         """
-        タスクを差し戻し、annotator_account_id　に担当を割り当てる。
+        タスクを強制的に差し戻し、annotator_account_id　に担当を割り当てる。
+
         Args:
             task_id:
             account_id: 差し戻すときのユーザのaccount_id
@@ -320,6 +321,7 @@ class AnnofabApiFacade:
             "status": "rejected",
             "account_id": account_id,
             "last_updated_datetime": task["updated_datetime"],
+            "force": True,
         }
         rejected_task, _ = self.service.api.operate_task(project_id, task_id, request_body=req_reject)
 
