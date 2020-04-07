@@ -482,4 +482,4 @@ class Csv:
             + inspection_comment_columns
         )
         required_columns = self._create_required_columns(df, prior_columns, dropped_columns)
-        self._write_csv(f"{self.short_project_id}-メンバごとの生産性.csv", df[required_columns])
+        self._write_csv(f"{self.short_project_id}-メンバごとの生産性と品質.csv", df[required_columns])
