@@ -1039,9 +1039,18 @@ class Table:
 
         """
         annotation_count_dict = {
-            row["task_id"]: {"annotation_count": row["annotation_count"], "input_data_count": row["input_data_count"]}
+            row["task_id"]: {
+                "annotation_count": row["annotation_count"],
+                "input_data_count": row["input_data_count"],
+                "inspection_comment_count": row["inspection_count"],
+            }
             for _, row in task_df.iterrows()
         }
+
+        def get_inspection_comment_count(row) -> float:
+            task_id = row.name[0]
+            inspection_comment_count = annotation_count_dict[task_id]["inspection_comment_count"]
+            return row["worktime_ratio_by_task"] * inspection_comment_count
 
         def get_annotation_count(row) -> float:
             task_id = row.name[0]
@@ -1061,8 +1070,15 @@ class Table:
         )
         group_obj["annotation_count"] = group_obj.apply(get_annotation_count, axis="columns")
         group_obj["input_data_count"] = group_obj.apply(get_input_data_count, axis="columns")
+        group_obj["pointed_out_inspection_comment_count"] = group_obj.apply(
+            get_inspection_comment_count, axis="columns"
+        )
 
-        return group_obj.reset_index()
+        new_df = group_obj.reset_index()
+        new_df["pointed_out_inspection_comment_count"] = new_df["pointed_out_inspection_comment_count"] * new_df[
+            "phase"
+        ].apply(lambda e: 1 if e == TaskPhase.ANNOTATION.value else 0)
+        return new_df
 
     @staticmethod
     def _get_phase_list(columns: List[str]) -> List[str]:
@@ -1089,9 +1105,12 @@ class Table:
             values="worktime_hour", columns="phase", index="user_id", aggfunc=numpy.sum
         ).fillna(0)
 
-        df_agg_labor = df_labor.pivot_table(values="worktime_result_hour", index="user_id", aggfunc=numpy.sum)
-
-        df = df_agg_task_history.join(df_agg_labor)
+        if len(df_labor) > 0:
+            df_agg_labor = df_labor.pivot_table(values="worktime_result_hour", index="user_id", aggfunc=numpy.sum)
+            df = df_agg_task_history.join(df_agg_labor)
+        else:
+            df = df_agg_task_history
+            df["worktime_result_hour"] = 0
 
         phase_list = Table._get_phase_list(list(df.columns))
 
@@ -1105,7 +1124,12 @@ class Table:
             df[("annofab_worktime_hour", "sum")] += df[("annofab_worktime_hour", phase)]
 
         df_agg_production = df_worktime_ratio.pivot_table(
-            values=["worktime_ratio_by_task", "input_data_count", "annotation_count"],
+            values=[
+                "worktime_ratio_by_task",
+                "input_data_count",
+                "annotation_count",
+                "pointed_out_inspection_comment_count",
+            ],
             columns="phase",
             index="user_id",
             aggfunc=numpy.sum,
@@ -1138,6 +1162,19 @@ class Table:
             df[("annowork_worktime/annotation_count", phase)] = (
                 df[("prediction_annowork_worktime_hour", phase)] / df[("annotation_count", phase)]
             )
+
+        phase = TaskPhase.ANNOTATION.value
+        df[("pointed_out_inspection_comment_count/annotation_count", phase)] = (
+            df[("pointed_out_inspection_comment_count", phase)] / df[("annotation_count", phase)]
+        )
+        df[("pointed_out_inspection_comment_count/input_data_count", phase)] = (
+            df[("pointed_out_inspection_comment_count", phase)] / df[("input_data_count", phase)]
+        )
+
+        # 不要な列を削除する
+        tmp_phase_list = copy.deepcopy(phase_list)
+        tmp_phase_list.remove(TaskPhase.ANNOTATION.value)
+        df = df.drop([("pointed_out_inspection_comment_count", phase) for phase in tmp_phase_list], axis=1)
 
         # ユーザ情報を取得
         df_user = df_task_history.groupby("user_id").first()[["username", "biography"]]

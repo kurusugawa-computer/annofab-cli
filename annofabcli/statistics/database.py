@@ -5,7 +5,6 @@ import multiprocessing
 import os
 import pickle
 import shutil
-import dateutil
 import zipfile
 from functools import partial
 from pathlib import Path

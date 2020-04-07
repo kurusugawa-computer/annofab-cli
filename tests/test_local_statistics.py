@@ -26,7 +26,12 @@ class TestTable:
         task_history_df = pandas.read_csv(str(data_path / "statistics/task-history-df.csv"))
         # task_df = pandas.read_csv(str(data_path / "statistics/タスクlist.csv"))
         task_df = pandas.DataFrame(
-            {"task_id": ["task1", "task2"], "annotation_count": [100, 200], "input_data_count": [2, 4]}
+            {
+                "task_id": ["task1", "task2"],
+                "annotation_count": [100, 200],
+                "input_data_count": [2, 4],
+                "inspection_count": [5, 6],
+            }
         )
         df = Table.create_annotation_count_ratio_df(task_history_df, task_df)
         df.to_csv(out_path / "annotation_count_ratio.csv")

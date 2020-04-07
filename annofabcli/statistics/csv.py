@@ -467,12 +467,19 @@ class Csv:
             + [("annowork_worktime/annotation_count", phase) for phase in phase_list]
         )
 
+        inspection_comment_columns = [
+            ("pointed_out_inspection_comment_count", TaskPhase.ANNOTATION.value),
+            ("pointed_out_inspection_comment_count/input_data_count", TaskPhase.ANNOTATION.value),
+            ("pointed_out_inspection_comment_count/annotation_count", TaskPhase.ANNOTATION.value),
+        ]
+
         prior_columns = (
             user_columns
             + annofab_worktime_columns
             + production_columns
             + annowork_worktime_columns
             + productivity_columns
+            + inspection_comment_columns
         )
         required_columns = self._create_required_columns(df, prior_columns, dropped_columns)
         self._write_csv(f"{self.short_project_id}-メンバごとの生産性.csv", df[required_columns])
