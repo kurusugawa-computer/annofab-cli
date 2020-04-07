@@ -1119,9 +1119,9 @@ class Table:
             [("annowork_worktime_hour", "sum")] + [("annofab_worktime_hour", phase) for phase in phase_list]
         )
 
-        df[("annofab_worktime_hour", "sum")] = df[("annofab_worktime_hour", phase_list[0])]
-        for phase in phase_list[1:]:
-            df[("annofab_worktime_hour", "sum")] += df[("annofab_worktime_hour", phase)]
+        df[("annofab_worktime_hour", "sum")] = df[[("annofab_worktime_hour", phase) for phase in phase_list]].sum(
+            axis=1
+        )
 
         df_agg_production = df_worktime_ratio.pivot_table(
             values=[
