@@ -1,7 +1,3 @@
-"""
-検査コメントを付与してタスクを差し戻します。
-"""
-
 import argparse
 import logging
 import time
@@ -11,7 +7,7 @@ from typing import Any, Dict, List, Optional
 import annofabapi
 import annofabapi.utils
 import requests
-from annofabapi.models import InputDataType, ProjectMemberRole, TaskPhase
+from annofabapi.models import InputDataType, ProjectMemberRole, TaskPhase, TaskStatus
 
 import annofabcli
 import annofabcli.common.cli
@@ -109,13 +105,14 @@ class RejectTasks(AbstractCommandLineInterface):
         self,
         project_id: str,
         task_id_list: List[str],
-        inspection_comment: str,
         commenter_user_id: str,
+        inspection_comment: Optional[str] = None,
         assign_last_annotator: bool = True,
         assigned_annotator_user_id: Optional[str] = None,
     ):
         """
-        検査コメントを付与して、タスクを差し戻す
+        タスクを強制的に差し戻す
+
         Args:
             project_id:
             task_id_list:
@@ -126,7 +123,7 @@ class RejectTasks(AbstractCommandLineInterface):
 
         """
 
-        super().validate_project(project_id, [ProjectMemberRole.OWNER, ProjectMemberRole.ACCEPTER])
+        super().validate_project(project_id, [ProjectMemberRole.OWNER])
         my_account_id = self.facade.get_my_account_id()
         project, _ = self.service.api.get_project(project_id)
         project_input_data_type = InputDataType(project["input_data_type"])
@@ -158,25 +155,31 @@ class RejectTasks(AbstractCommandLineInterface):
                 logger.warning(f"{str_progress} : task_id = {task_id} はannofation phaseのため、差し戻しできません。")
                 continue
 
+            if task["status"] in [TaskStatus.COMPLETE.value, TaskStatus.WORKING.value]:
+                logger.warning(f"{str_progress} : task_id = {task_id} : タスクのstatusがworking or complete なので、差し戻しできません。")
+                continue
+
             if not self.confirm_reject_task(task_id, assign_last_annotator, assigned_annotator_user_id):
                 continue
 
             changed_operator = self.change_to_working_status(project_id, task, my_account_id)
-            # スリープする理由：担当者を変更したときは、少し待たないと検査コメントが登録できないため
-            if changed_operator:
-                time.sleep(2)
 
-            try:
-                # 検査コメントを付与する
-                self.add_inspection_comment(
-                    project_id, project_input_data_type, task, inspection_comment, commenter_account_id
-                )
-                logger.debug(f"{str_progress} : task_id = {task_id}, 検査コメントの付与 完了")
+            if inspection_comment is not None:
+                # スリープする理由：担当者を変更したときは、少し待たないと検査コメントが登録できないため
+                if changed_operator:
+                    time.sleep(2)
 
-            except requests.exceptions.HTTPError as e:
-                logger.warning(e)
-                logger.warning(f"{str_progress} : task_id = {task_id} 検査コメントの付与に失敗")
-                continue
+                try:
+                    # 検査コメントを付与する
+                    self.add_inspection_comment(
+                        project_id, project_input_data_type, task, inspection_comment, commenter_account_id
+                    )
+                    logger.debug(f"{str_progress} : task_id = {task_id}, 検査コメントの付与 完了")
+
+                except requests.exceptions.HTTPError as e:
+                    logger.warning(e)
+                    logger.warning(f"{str_progress} : task_id = {task_id} 検査コメントの付与に失敗")
+                    continue
 
             try:
                 # タスクを差し戻す
@@ -221,8 +224,8 @@ class RejectTasks(AbstractCommandLineInterface):
         self.reject_tasks_with_adding_comment(
             args.project_id,
             task_id_list,
-            args.comment,
             commenter_user_id=user_id,
+            inspection_comment=args.comment,
             assign_last_annotator=assign_last_annotator,
             assigned_annotator_user_id=args.assigned_annotator_user_id,
         )
@@ -240,7 +243,12 @@ def parse_args(parser: argparse.ArgumentParser):
     argument_parser.add_project_id()
     argument_parser.add_task_id()
 
-    parser.add_argument("-c", "--comment", type=str, required=True, help="差し戻すときに付与する検査コメントを指定します。")
+    parser.add_argument(
+        "-c",
+        "--comment",
+        type=str,
+        help="差し戻すときに付与する検査コメントを指定します。" "画像プロジェクトならばタスク内の先頭の画像の左上(x=0,y=0)に、動画プロジェクトなら動画の先頭（start=0, end=0)に付与します。",
+    )
 
     # 差し戻したタスクの担当者の割当に関して
     assign_group = parser.add_mutually_exclusive_group()
@@ -260,9 +268,13 @@ def parse_args(parser: argparse.ArgumentParser):
 
 def add_parser(subparsers: argparse._SubParsersAction):
     subcommand_name = "reject"
-    subcommand_help = "検査コメントを付与してタスクを差し戻します。"
-    description = "検査コメントを付与してタスクを差し戻します。" "検査コメントは、タスク内の先頭の画像の左上(x=0,y=0)に付与します。" "アノテーションルールを途中で変更したときなどに、利用します。"
-    epilog = "チェッカーまたはオーナロールを持つユーザで実行してください。"
+    subcommand_help = "タスクを強制的に差し戻します。"
+    description = (
+        "タスクを強制的に差し戻します。差し戻す際、検査コメントを付与することもできます。"
+        "作業中/受入完了状態のタスクに対しては変更できません。"
+        "この差戻しは差戻しとして扱われず、抜取検査・抜取受入のスキップ判定に影響を及ぼしません。"
+    )
+    epilog = "オーナロールを持つユーザで実行してください。"
 
     parser = annofabcli.common.cli.add_parser(subparsers, subcommand_name, subcommand_help, description, epilog=epilog)
     parse_args(parser)
