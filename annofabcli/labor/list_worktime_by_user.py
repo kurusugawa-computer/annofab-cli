@@ -48,6 +48,7 @@ class LaborWorktime:
     account_id: str
     user_id: str
     username: str
+    biography: Optional[str]
     worktime_plan_hour: float
     worktime_result_hour: float
 
@@ -138,6 +139,7 @@ class ListWorktimeByUser(AbstractCommandLineInterface):
             account_id=labor["account_id"],
             user_id=member["user_id"] if member is not None else labor["account_id"],
             username=member["username"] if member is not None else labor["account_id"],
+            biography=member["biography"] if member is not None else None,
             worktime_plan_hour=self.get_worktime_hour(labor["values"]["working_time_by_user"], "plans"),
             worktime_result_hour=self.get_worktime_hour(labor["values"]["working_time_by_user"], "results"),
         )
@@ -313,6 +315,7 @@ class ListWorktimeByUser(AbstractCommandLineInterface):
             "project_title",
             "project_id",
             "username",
+            "biography",
             "user_id",
             "作業予定時間",
             "作業実績時間",

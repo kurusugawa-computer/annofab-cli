@@ -384,7 +384,7 @@ class ListAnnotationCount(AbstractCommandLineInterface):
         super().validate_project(project_id, project_member_roles=None)
 
         if args.annotation is not None:
-            annotation_path = Path(args.annotation_dir)
+            annotation_path = Path(args.annotation)
         else:
             cache_dir = annofabcli.utils.get_cache_dir()
             annotation_path = cache_dir / "annotation.zip"
