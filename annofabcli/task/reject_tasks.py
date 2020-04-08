@@ -101,6 +101,25 @@ class RejectTasks(AbstractCommandLineInterface):
             logger.warning(f"{task_id}: 担当者の変更、または作業中状態への変更に失敗しました。")
             raise
 
+    def can_reject_task(
+        self, task: Dict[str, Any], assign_last_annotator: bool, assigned_annotator_user_id: Optional[str]
+    ):
+        task_id = task["task_id"]
+        if task["phase"] == TaskPhase.ANNOTATION.value:
+            logger.warning(f"task_id = {task_id}: annofation phaseのため、差し戻しできません。")
+            return False
+
+        if task["status"] in [TaskStatus.COMPLETE.value, TaskStatus.WORKING.value]:
+            logger.warning(f"task_id = {task_id} : タスクのstatusがworking or complete なので、差し戻しできません。")
+            return False
+
+        if not self.confirm_reject_task(
+            task_id, assign_last_annotator=assign_last_annotator, assigned_annotator_user_id=assigned_annotator_user_id
+        ):
+            return False
+
+        return True
+
     def reject_tasks_with_adding_comment(
         self,
         project_id: str,
@@ -150,21 +169,15 @@ class RejectTasks(AbstractCommandLineInterface):
             logger.debug(
                 f"{str_progress} : task_id = {task_id} の現状: status = {task['status']}, phase = {task['phase']}"
             )
-
-            if task["phase"] == TaskPhase.ANNOTATION.value:
-                logger.warning(f"{str_progress} : task_id = {task_id} はannofation phaseのため、差し戻しできません。")
+            if not self.can_reject_task(
+                task=task,
+                assign_last_annotator=assign_last_annotator,
+                assigned_annotator_user_id=assigned_annotator_user_id,
+            ):
                 continue
-
-            if task["status"] in [TaskStatus.COMPLETE.value, TaskStatus.WORKING.value]:
-                logger.warning(f"{str_progress} : task_id = {task_id} : タスクのstatusがworking or complete なので、差し戻しできません。")
-                continue
-
-            if not self.confirm_reject_task(task_id, assign_last_annotator, assigned_annotator_user_id):
-                continue
-
-            changed_operator = self.change_to_working_status(project_id, task, my_account_id)
 
             if inspection_comment is not None:
+                changed_operator = self.change_to_working_status(project_id, task, my_account_id)
                 # スリープする理由：担当者を変更したときは、少し待たないと検査コメントが登録できないため
                 if changed_operator:
                     time.sleep(2)
