@@ -120,14 +120,17 @@ class Csv:
             "sampling",
             # 1回目の教師付フェーズ
             "first_annotation_user_id",
+            "first_annotation_username",
             "first_annotation_worktime_hour",
             "first_annotation_started_datetime",
             # 1回目の検査フェーズ
             "first_inspection_user_id",
+            "first_inspection_username",
             "first_inspection_worktime_hour",
             "first_inspection_started_datetime",
             # 1回目の受入フェーズ
             "first_acceptance_user_id",
+            "first_acceptance_username",
             "first_acceptance_worktime_hour",
             "first_acceptance_started_datetime",
             # 作業時間に関する内容
