@@ -179,21 +179,15 @@ class RejectTasks(AbstractCommandLineInterface):
                 except requests.exceptions.HTTPError as e:
                     logger.warning(e)
                     logger.warning(f"{str_progress} : task_id = {task_id} 検査コメントの付与に失敗")
+                    self.facade.change_to_break_phase(project_id, task_id, my_account_id)
                     continue
 
             try:
                 # タスクを差し戻す
-                str_annotator_user = ""
                 if assign_last_annotator:
                     # 最後のannotation phaseに担当を割り当てる
-                    _, last_annotator_account_id = self.facade.reject_task_assign_last_annotator(
-                        project_id, task_id, commenter_account_id
-                    )
-                    if last_annotator_account_id is not None:
-                        last_annotator_user_id = self.facade.get_user_id_from_account_id(
-                            project_id, last_annotator_account_id
-                        )
-                        str_annotator_user = f"タスクの担当者: {last_annotator_user_id}"
+                    self.facade.reject_task_assign_last_annotator(project_id, task_id, commenter_account_id)
+                    logger.info(f"{str_progress} : task_id = {task_id} のタスクを差し戻しました。タスクの担当者は直前の教師付フェーズの担当者。")
 
                 else:
                     # 指定したユーザに担当を割り当てる
@@ -204,13 +198,17 @@ class RejectTasks(AbstractCommandLineInterface):
                         annotator_account_id=assigned_annotator_account_id,
                     )
                     str_annotator_user = f"タスクの担当者: {assigned_annotator_user_id}"
+                    logger.info(f"{str_progress} : task_id = {task_id} の差し戻し完了. {str_annotator_user}")
 
-                logger.info(f"{str_progress} : task_id = {task_id} の差し戻し完了. {str_annotator_user}")
                 success_count += 1
 
             except requests.exceptions.HTTPError as e:
                 logger.warning(e)
                 logger.warning(f"{str_progress} : task_id = {task_id} タスクの差し戻しに失敗")
+
+                new_task = self.service.wrapper.get_task_or_none(project_id, task_id)
+                if new_task["status"] == TaskStatus.WORKING.value and new_task["account_id"] == my_account_id:
+                    self.facade.change_to_break_phase(project_id, task_id, my_account_id)
                 continue
 
         logger.info(f"{success_count} / {len(task_id_list)} 件 タスクの差し戻しに成功した")

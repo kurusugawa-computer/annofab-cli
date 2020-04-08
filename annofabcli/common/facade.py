@@ -333,9 +333,7 @@ class AnnofabApiFacade:
         updated_task, _ = self.service.api.operate_task(project_id, task["task_id"], request_body=req_change_operator)
         return updated_task
 
-    def reject_task_assign_last_annotator(
-        self, project_id: str, task_id: str, account_id: str
-    ) -> Tuple[Dict[str, Any], Optional[str]]:
+    def reject_task_assign_last_annotator(self, project_id: str, task_id: str, account_id: str) -> Dict[str, Any]:
         """
         タスクを差し戻したあとに、最後のannotation phase担当者に割り当てる。
 
@@ -344,15 +342,20 @@ class AnnofabApiFacade:
             account_id: 差し戻すときのユーザのaccount_id
 
         Returns:
-            Tuple[変更後のtask情報, 差し戻したタスクの担当者のaccount_id]
+            変更後のtask情報
 
         """
 
-        # タスクを差し戻す
         task, _ = self.service.api.get_task(project_id, task_id)
-        last_annotator_account_id = self.get_account_id_last_annotation_phase(task["histories_by_phase"])
-        updated_task = self.reject_task(project_id, task_id, account_id, last_annotator_account_id)
-        return updated_task, last_annotator_account_id
+        req_reject = {
+            "status": "rejected",
+            "account_id": account_id,
+            "last_updated_datetime": task["updated_datetime"],
+            "force": True,
+        }
+        rejected_task, _ = self.service.api.operate_task(project_id, task_id, request_body=req_reject)
+        # 強制的に差し戻すと、タスクの担当者は直前の教師付け(annotation)フェーズの担当者を割り当てられるので、`operate_task`を実行しない。
+        return rejected_task
 
     def complete_task(self, project_id: str, task_id: str, account_id: str) -> Dict[str, Any]:
         """
