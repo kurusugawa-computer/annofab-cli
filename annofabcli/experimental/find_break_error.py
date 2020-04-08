@@ -199,7 +199,7 @@ def output_err_events(err_events_list: List[List[Dict[str, Any]]], output: str =
             ]
         ],
         output=output,
-        to_csv_kwargs={"index": False},
+        to_csv_kwargs={"index": False, "encoding": "utf_8_sig"},
     )
 
 
