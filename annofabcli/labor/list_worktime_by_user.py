@@ -15,7 +15,7 @@ from more_itertools import first_true
 import annofabcli
 from annofabcli import AnnofabApiFacade
 from annofabcli.common.cli import AbstractCommandLineInterface, build_annofabapi_resource_and_login, get_list_from_args
-from annofabcli.common.utils import isoduration_to_minute
+from annofabcli.common.utils import isoduration_to_hour
 
 logger = logging.getLogger(__name__)
 
@@ -119,7 +119,7 @@ class ListWorktimeByUser(AbstractCommandLineInterface):
         hist = first_true(histories, pred=lambda e: e["date"] == date)
         if hist is None:
             return None
-        return isoduration_to_minute(hist["worktime"])
+        return isoduration_to_hour(hist["worktime"])
 
     @staticmethod
     def create_required_columns(df, prior_columns):
@@ -360,7 +360,7 @@ class ListWorktimeByUser(AbstractCommandLineInterface):
     @staticmethod
     def write_worktime_list(worktime_df: pandas.DataFrame, output_dir: Path):
         worktime_df = worktime_df.rename(
-            columns={"worktime_plan_hour": "作業予定時間", "worktime_result_hour": "作業実績時間"}
+            columns={"worktime_plan_hour": "作業予定時間", "worktime_result_hour": "作業実績時間", "worktime_monitored_hour":"計測時間"}
         ).round(3)
         columns = [
             "date",
@@ -372,6 +372,7 @@ class ListWorktimeByUser(AbstractCommandLineInterface):
             "user_id",
             "作業予定時間",
             "作業実績時間",
+            "計測時間"
         ]
         worktime_df[columns].to_csv(str(output_dir / "作業時間の詳細一覧.csv"), encoding="utf_8_sig", index=False)
 
