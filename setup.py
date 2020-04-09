@@ -29,7 +29,7 @@ setup(
     keywords="annofab api cli",
     url="https://github.com/kurusugawa-computer/annofab-cli",
     install_requires=[
-        "annofabapi>=0.29.5",
+        "annofabapi>=0.30.0",
         "requests",
         "pillow",
         "pyyaml",
@@ -39,8 +39,8 @@ setup(
         "pyquery",
         "pandas>=1.0.3",
         "isodate",
-        "bokeh>=2.0.0",
-        "holoviews>=1.13.0",
+        "bokeh>=2.0.1",
+        "holoviews>=1.13.2",
     ],
     python_requires=">=3.6",
     classifiers=[

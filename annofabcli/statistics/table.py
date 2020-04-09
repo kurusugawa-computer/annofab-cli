@@ -6,6 +6,7 @@ from typing import Any, Dict, List, Optional
 
 import dateutil
 import more_itertools
+import numpy
 import pandas as pd
 from annofabapi.dataclass.annotation import SimpleAnnotationDetail
 from annofabapi.dataclass.statistics import (
@@ -59,6 +60,7 @@ class Table:
     _annotations_dict: Optional[Dict[str, Dict[InputDataId, Dict[str, Any]]]] = None
     _worktime_statistics: Optional[List[WorktimeStatistics]] = None
     _account_statistics: Optional[List[ProjectAccountStatistics]] = None
+    _labor_list: Optional[List[Dict[str, Any]]] = None
 
     def __init__(
         self, database: Database, task_query_param: Dict[str, Any], ignored_task_id_list: Optional[List[str]] = None,
@@ -109,7 +111,7 @@ class Table:
         if self._task_list is not None:
             return self._task_list
         else:
-            task_list = self.database.read_tasks_from_json(self.task_query_param, self.ignored_task_id_list)
+            task_list = self.database.read_tasks_from_checkpoint()
             self._task_list = task_list
             return self._task_list
 
@@ -128,6 +130,14 @@ class Table:
             task_list = self._get_task_list()
             self._annotations_dict = self.database.read_annotation_summary(task_list, self._create_annotation_summary)
             return self._annotations_dict
+
+    def _get_labor_list(self) -> List[Dict[str, Any]]:
+        if self._labor_list is not None:
+            return self._labor_list
+        else:
+            labor_list = self.database.read_labor_list_from_checkpoint()
+            self._labor_list = labor_list
+            return self._labor_list
 
     def _create_annotation_summary(self, annotation_list: List[SimpleAnnotationDetail]) -> Dict[str, Any]:
         annotation_summary = {}
@@ -208,6 +218,19 @@ class Table:
             return member["username"]
         else:
             return account_id
+
+    def _get_biography(self, account_id: Optional[str]) -> Optional[str]:
+        """
+        ユーザのbiographyを取得する。存在しないメンバであればNoneを返す。
+        """
+        if account_id is None:
+            return None
+
+        member = self.annofab_facade.get_organization_member_from_account_id(self.project_id, account_id)
+        if member is not None:
+            return member["biography"]
+        else:
+            return None
 
     def _update_annotaion_specs(self):
         logger.debug("annofab_service.api.get_annotation_specs()")
@@ -530,6 +553,10 @@ class Table:
 
         return task
 
+    @staticmethod
+    def _get_task_from_task_id(task_list: List[Task], task_id: str) -> Optional[Task]:
+        return more_itertools.first_true(task_list, pred=lambda e: e["task_id"] == task_id)
+
     def create_task_history_df(self) -> pd.DataFrame:
         """
         タスク履歴の一覧のDataFrameを出力する。
@@ -539,20 +566,23 @@ class Table:
         """
         task_histories_dict = self.database.read_task_histories_from_checkpoint()
         task_list = self._get_task_list()
-        task_id_list = [e["task_id"] for e in task_list]
 
         all_task_history_list = []
         for task_id, task_history_list in task_histories_dict.items():
-            if task_id not in task_id_list:
+            task = self._get_task_from_task_id(task_list, task_id)
+            if task is None:
                 continue
 
             for history in task_history_list:
                 account_id = history["account_id"]
                 history["user_id"] = self._get_user_id(account_id)
                 history["username"] = self._get_username(account_id)
+                history["biography"] = self._get_biography(account_id)
                 history["worktime_hour"] = annofabcli.utils.isoduration_to_hour(
                     history["accumulated_labor_time_milliseconds"]
                 )
+                # task statusがあると分析しやすいので追加する
+                history["task_status"] = task["status"]
                 all_task_history_list.append(history)
 
         df = pd.DataFrame(all_task_history_list)
@@ -803,6 +833,7 @@ class Table:
                 history["account_id"] = account_id
                 history["user_id"] = self._get_user_id(account_id)
                 history["username"] = self._get_username(account_id)
+                history["biography"] = self._get_biography(account_id)
 
                 if member_info is not None:
                     history["member_role"] = member_info["member_role"]
@@ -1008,9 +1039,18 @@ class Table:
 
         """
         annotation_count_dict = {
-            row["task_id"]: {"annotation_count": row["annotation_count"], "input_data_count": row["input_data_count"]}
+            row["task_id"]: {
+                "annotation_count": row["annotation_count"],
+                "input_data_count": row["input_data_count"],
+                "inspection_comment_count": row["inspection_count"],
+            }
             for _, row in task_df.iterrows()
         }
+
+        def get_inspection_comment_count(row) -> float:
+            task_id = row.name[0]
+            inspection_comment_count = annotation_count_dict[task_id]["inspection_comment_count"]
+            return row["worktime_ratio_by_task"] * inspection_comment_count
 
         def get_annotation_count(row) -> float:
             task_id = row.name[0]
@@ -1030,5 +1070,132 @@ class Table:
         )
         group_obj["annotation_count"] = group_obj.apply(get_annotation_count, axis="columns")
         group_obj["input_data_count"] = group_obj.apply(get_input_data_count, axis="columns")
+        group_obj["pointed_out_inspection_comment_count"] = group_obj.apply(
+            get_inspection_comment_count, axis="columns"
+        )
 
-        return group_obj.reset_index()
+        new_df = group_obj.reset_index()
+        new_df["pointed_out_inspection_comment_count"] = new_df["pointed_out_inspection_comment_count"] * new_df[
+            "phase"
+        ].apply(lambda e: 1 if e == TaskPhase.ANNOTATION.value else 0)
+        return new_df
+
+    @staticmethod
+    def _get_phase_list(columns: List[str]) -> List[str]:
+        phase_list = [TaskPhase.ANNOTATION.value, TaskPhase.INSPECTION.value, TaskPhase.ACCEPTANCE.value]
+        if TaskPhase.INSPECTION.value not in columns:
+            phase_list.remove(TaskPhase.INSPECTION.value)
+
+        if TaskPhase.ACCEPTANCE.value not in columns:
+            phase_list.remove(TaskPhase.ACCEPTANCE.value)
+
+        return phase_list
+
+    @staticmethod
+    def create_productivity_per_user_from_aw_time(
+        df_task_history: pd.DataFrame, df_labor: pd.DataFrame, df_worktime_ratio: pd.DataFrame
+    ) -> pd.DataFrame:
+        """
+        AnnoWorkの実績時間から、作業者ごとに生産性を算出する。
+
+        Returns:
+
+        """
+        df_agg_task_history = df_task_history.pivot_table(
+            values="worktime_hour", columns="phase", index="user_id", aggfunc=numpy.sum
+        ).fillna(0)
+
+        if len(df_labor) > 0:
+            df_agg_labor = df_labor.pivot_table(values="worktime_result_hour", index="user_id", aggfunc=numpy.sum)
+            df = df_agg_task_history.join(df_agg_labor)
+        else:
+            df = df_agg_task_history
+            df["worktime_result_hour"] = 0
+
+        phase_list = Table._get_phase_list(list(df.columns))
+
+        df = df[["worktime_result_hour"] + phase_list]
+        df.columns = pd.MultiIndex.from_tuples(
+            [("annowork_worktime_hour", "sum")] + [("annofab_worktime_hour", phase) for phase in phase_list]
+        )
+
+        df[("annofab_worktime_hour", "sum")] = df[[("annofab_worktime_hour", phase) for phase in phase_list]].sum(
+            axis=1
+        )
+
+        df_agg_production = df_worktime_ratio.pivot_table(
+            values=[
+                "worktime_ratio_by_task",
+                "input_data_count",
+                "annotation_count",
+                "pointed_out_inspection_comment_count",
+            ],
+            columns="phase",
+            index="user_id",
+            aggfunc=numpy.sum,
+        ).fillna(0)
+
+        df_agg_production.rename(columns={"worktime_ratio_by_task": "task_count"}, inplace=True)
+        df = df.join(df_agg_production)
+
+        for phase in phase_list:
+            # AnnoFab時間の比率
+            df[("annofab_worktime_ratio", phase)] = (
+                df[("annofab_worktime_hour", phase)] / df[("annofab_worktime_hour", "sum")]
+            )
+            # AnnoFab時間の比率から、Annowork時間を予測する
+            df[("prediction_annowork_worktime_hour", phase)] = (
+                df[("annowork_worktime_hour", "sum")] * df[("annofab_worktime_ratio", phase)]
+            )
+
+            # 生産性を算出
+            df[("annofab_worktime/input_data_count", phase)] = (
+                df[("annofab_worktime_hour", phase)] / df[("input_data_count", phase)]
+            )
+            df[("annowork_worktime/input_data_count", phase)] = (
+                df[("prediction_annowork_worktime_hour", phase)] / df[("input_data_count", phase)]
+            )
+
+            df[("annofab_worktime/annotation_count", phase)] = (
+                df[("annofab_worktime_hour", phase)] / df[("annotation_count", phase)]
+            )
+            df[("annowork_worktime/annotation_count", phase)] = (
+                df[("prediction_annowork_worktime_hour", phase)] / df[("annotation_count", phase)]
+            )
+
+        phase = TaskPhase.ANNOTATION.value
+        df[("pointed_out_inspection_comment_count/annotation_count", phase)] = (
+            df[("pointed_out_inspection_comment_count", phase)] / df[("annotation_count", phase)]
+        )
+        df[("pointed_out_inspection_comment_count/input_data_count", phase)] = (
+            df[("pointed_out_inspection_comment_count", phase)] / df[("input_data_count", phase)]
+        )
+
+        # 不要な列を削除する
+        tmp_phase_list = copy.deepcopy(phase_list)
+        tmp_phase_list.remove(TaskPhase.ANNOTATION.value)
+        df = df.drop([("pointed_out_inspection_comment_count", phase) for phase in tmp_phase_list], axis=1)
+
+        # ユーザ情報を取得
+        df_user = df_task_history.groupby("user_id").first()[["username", "biography"]]
+        df_user.columns = pd.MultiIndex.from_tuples([("username", ""), ("biography", "")])
+        df = df.join(df_user)
+        df[("user_id", "")] = df.index
+
+        return df
+
+    def create_labor_df(self) -> pd.DataFrame:
+        """
+        労務管理 DataFrameを生成する。情報を出力する。
+
+        """
+
+        def add_user_info(d: Dict[str, Any]) -> Dict[str, Any]:
+            account_id = d["account_id"]
+            d["user_id"] = self._get_user_id(account_id)
+            d["username"] = self._get_username(account_id)
+            d["biography"] = self._get_biography(account_id)
+            return d
+
+        labor_list = self._get_labor_list()
+        return pd.DataFrame([add_user_info(e) for e in labor_list])

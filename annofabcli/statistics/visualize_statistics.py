@@ -54,6 +54,7 @@ class WriteCsvGraph:
     account_statistics_df: Optional[pd.DataFrame] = None
     df_by_date_user: Optional[pd.DataFrame] = None
     task_history_df: Optional[pd.DataFrame] = None
+    labor_df: Optional[pd.DataFrame] = None
 
     def __init__(self, table_obj: Table, output_dir: Path, project_id: str):
         self.table_obj = table_obj
@@ -86,6 +87,11 @@ class WriteCsvGraph:
             task_df = self._get_task_df()
             self.df_by_date_user = self.table_obj.create_dataframe_by_date_user(task_df)
         return self.df_by_date_user
+
+    def _get_labor_df(self):
+        if self.labor_df is None:
+            self.labor_df = self.table_obj.create_labor_df()
+        return self.labor_df
 
     def write_histogram_for_task(self) -> None:
         """
@@ -197,13 +203,6 @@ class WriteCsvGraph:
             df=inspection_df_all, dropped_columns=["data"], only_error_corrected=False,
         )
 
-    def write_csv_for_task_history(self) -> None:
-        """
-        タスク履歴関係の情報をCSVに出力する。
-        """
-        task_history_df = self._get_task_history_df()
-        catch_exception(self.csv_obj.write_task_history_list)(task_history_df)
-
     def write_csv_for_annotation(self) -> None:
         """
         アノテーション関係の情報をCSVに出力する。
@@ -211,23 +210,34 @@ class WriteCsvGraph:
         annotation_df = self._get_annotation_df()
         catch_exception(self.csv_obj.write_ラベルごとのアノテーション数)(annotation_df)
 
-    def write_csv_for_date_user(self) -> None:
-        """
-        ユーザごと、日ごとの情報をCSVに出力する。
-        """
-        df_by_date_user = self._get_df_by_date_user()
-        catch_exception(self.csv_obj.write_教師付作業者別日毎の情報)(df_by_date_user)
-
     def write_csv_for_account_statistics(self) -> None:
         account_statistics_df = self._get_account_statistics_df()
         catch_exception(self.csv_obj.write_ユーザ別日毎の作業時間)(account_statistics_df)
 
-    def write_worktime_ratio(self) -> None:
+    def write_csv_for_date_user(self) -> None:
+        """
+        ユーザごと、日ごとの情報をCSVに出力する.
+        """
+        df_by_date_user = self._get_df_by_date_user()
+        catch_exception(self.csv_obj.write_教師付作業者別日毎の情報)(df_by_date_user)
+
+    def write_productivity_csv(self) -> None:
+        task_history_df = self._get_task_history_df()
+        catch_exception(self.csv_obj.write_task_history_list)(task_history_df)
+
+        df_labor = self._get_labor_df()
+        catch_exception(self.csv_obj.write_labor_list)(df_labor)
+
         task_df = self._get_task_df()
         task_history_df = self._get_task_history_df()
 
         annotation_count_ratio_df = self.table_obj.create_annotation_count_ratio_df(task_history_df, task_df)
-        catch_exception(self.csv_obj._write_csv)("タスク、フェーズ、他当者ごとの作業時間の比率.csv", annotation_count_ratio_df)
+        catch_exception(self.csv_obj._write_csv)("タスク内の作業時間の比率.csv", annotation_count_ratio_df)
+
+        productivity_df = self.table_obj.create_productivity_per_user_from_aw_time(
+            df_task_history=task_history_df, df_labor=df_labor, df_worktime_ratio=annotation_count_ratio_df
+        )
+        catch_exception(self.csv_obj.write_productivity_from_aw_time)(productivity_df)
 
 
 class VisualizeStatistics(AbstractCommandLineInterface):
@@ -246,6 +256,8 @@ class VisualizeStatistics(AbstractCommandLineInterface):
         update: bool = False,
         should_update_annotation_zip: bool = False,
         should_update_task_json: bool = False,
+        start_date: Optional[str] = None,
+        end_date: Optional[str] = None,
     ):
         """
         タスク一覧を出力する
@@ -268,15 +280,14 @@ class VisualizeStatistics(AbstractCommandLineInterface):
                 ignored_task_id_list,
                 should_update_annotation_zip=should_update_annotation_zip,
                 should_update_task_json=should_update_task_json,
+                start_date=start_date,
+                end_date=end_date,
             )
 
         table_obj = Table(database, task_query, ignored_task_id_list)
         write_project_name_file(self.service, project_id, output_dir)
 
         write_obj = WriteCsvGraph(table_obj, output_dir, project_id)
-
-        # テスト用のファイルを出力
-        write_obj.write_worktime_ratio()
 
         # ヒストグラム
         write_obj.write_histogram_for_task()
@@ -286,8 +297,9 @@ class VisualizeStatistics(AbstractCommandLineInterface):
         write_obj.write_linegraph_for_by_user(user_id_list)
         write_obj.write_linegraph_for_task_overall()
 
+        # CSV
+        write_obj.write_productivity_csv()
         write_obj.write_csv_for_task()
-        write_obj.write_csv_for_task_history()
         write_obj.write_csv_for_annotation()
         write_obj.write_csv_for_account_statistics()
         write_obj.write_csv_for_date_user()
@@ -315,6 +327,8 @@ class VisualizeStatistics(AbstractCommandLineInterface):
             update=not args.not_update,
             should_update_annotation_zip=args.update_annotation,
             should_update_task_json=args.update_task_json,
+            start_date=args.start_date,
+            end_date=args.end_date,
         )
 
 
@@ -347,8 +361,11 @@ def parse_args(parser: argparse.ArgumentParser):
         type=str,
         help="タスクの検索クエリをJSON形式で指定します。指定しない場合はすべてのタスクを取得します。"
         "`file://`を先頭に付けると、JSON形式のファイルを指定できます。"
-        "クエリのキーは、phase, statusのみです。[getTasks API](https://annofab.com/docs/api/#operation/getTasks) 参照",
+        "クエリのキーは、phase, status, task_id のみです。[getTasks API](https://annofab.com/docs/api/#operation/getTasks) 参照",
     )
+
+    parser.add_argument("--start_date", type=str, help="指定した日付（'YYYY-MM-DD'）以降に教師付を開始したタスクを集計する。")
+    parser.add_argument("--end_date", type=str, help="指定した日付（'YYYY-MM-DD'）以前に更新されたタスクを集計する。")
 
     parser.add_argument(
         "--ignored_task_id",

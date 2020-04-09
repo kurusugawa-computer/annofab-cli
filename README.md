@@ -117,7 +117,7 @@ $ docker run -it -e ANNOFAB_USER_ID=XXXX -e ANNOFAB_PASSWORD=YYYYY annofab-cli a
 |task| delete                | タスクを削除します。                                 |オーナ|
 |task|list             | タスク一覧を出力します。                                                            |-|
 |task| put                | タスクを作成します。                                 |オーナ|
-|task| reject                  | 検査コメントを付与してタスクを差し戻します。                                                                 |チェッカー/オーナ|
+|task| reject                  | タスクを強制的に差し戻します。                                                                 |オーナ|
 
 
 # Usage
@@ -1213,10 +1213,10 @@ $ annofabcli task complete --project_id prj1 --task_id file://task.txt --phase a
 $ annofabcli task complete --project_id prj1 --task_id file://task.txt --phase annotation --reply_comment "対応しました"
 
 # 検査フェーズでステージ2のタスクを合格にして、次のフェーズに進めます。未処置の検査コメントがある場合は次に進めます
-$ annofabcli complete_tasks --project_id prj1 --task_id file://task.txt --phase inspection --phase_stage 2
+$ annofabcli task complete --project_id prj1 --task_id file://task.txt --phase inspection --phase_stage 2
 
-# 検査フェーズでステージ2のタスクを合格にして、次のフェーズに進めます。未処置の検査コメントは「対応不要」状態にします。
-$ annofabcli complete_tasks --project_id prj1 --task_id file://task.txt --phase inspection --phase_stage 2 \
+# 受入フェーズのタスクを合格にして、次のフェーズに進めます。未処置の検査コメントは「対応不要」状態にします。
+$ annofabcli  task complete --project_id prj1 --task_id file://task.txt --phase acceptance \
  --inspection_status no_correction_required 
 ```
 
@@ -1313,16 +1313,16 @@ $ annofabcli task  put --project_id prj1 --by_count '{"task_id_prefix":"sample",
 
 
 ### task reject
-検査コメントを付与して、タスクを差し戻します。検査コメントは、画像プロジェクトならばタスク内の先頭の画像の左上(`x=0,y=0`)に、動画プロジェクトなら動画の先頭（`start=0, end=0`)に付与します。
-アノテーションルールを途中で変更したときなどに、利用します。
+タスクを強制的に差し戻します。差し戻す際に検査コメントを付与することもできます。検査コメントは、画像プロジェクトならばタスク内の先頭の画像の左上(`x=0,y=0`)に、動画プロジェクトなら動画の先頭（`start=0, end=0`)に付与します。
+この差戻しは差戻しとして扱われず、抜取検査・抜取受入のスキップ判定に影響を及ぼしません。
 
 
 ```
-# prj1プロジェクトに、"hoge"という検査コメントを付与して、タスクを差し戻す。
+# tasks.txtに記載れたタスクを強制的に差し戻す
 # 最後のannotation phaseを担当したユーザを割り当てます（画面と同じ動き）
-$ annofabcli task reject --project_id prj1 --task_id file://tasks.txt --comment "hoge"
+$ annofabcli task reject --project_id prj1 --task_id file://tasks.txt 
 
-# 差し戻したタスクに、担当者は割り当てない
+# 「hoge」という検査コメントを付与して、タスクを差し戻す。その際、担当者は割り当てない
 $ annofabcli task reject --project_id prj1 --task_id file://tasks.txt \
  --comment "hoge" --not_assign
 
