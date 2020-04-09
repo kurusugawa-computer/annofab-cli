@@ -5,7 +5,7 @@ import numpy as np
 import pandas as pd
 
 
-def timeunit_conversion(df: pd.DataFrame, time_unit: bool = False) -> pd.DataFrame:
+def timeunit_conversion(df: pd.DataFrame, time_unit: str = "h") -> pd.DataFrame:
     if time_unit == "h":
         df["worktime_actural"] = df["worktime_actural"] / 60
         df["worktime_monitored"] = df["worktime_monitored"] / 60

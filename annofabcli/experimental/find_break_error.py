@@ -193,6 +193,7 @@ class FindBreakError(AbstractCommandLineInterface):
         if not self.validate(args):
             return
 
+
         err_events = []
         for project_id in args.project_id:
             task_history_events = self._project_task_history_events(
