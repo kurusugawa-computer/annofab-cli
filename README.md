@@ -296,7 +296,7 @@ $ annofabcli annotation delete --project_id prj1 --task_id file://task.txt --bac
 
 ```
 # task.txtに記載されたタスクのアノテーションを、`output`ディレクトリに保存します。
-$ annofabcli annotation dump --project_id prj1 --task_id file://task.txt --output
+$ annofabcli annotation dump --project_id prj1 --task_id file://task.txt --output backup-dir
 ```
 
 バックアップディレクトリは、以下のディレクトリ構成です（Simpleアノテーション(v2)と同じディレクトリ構成）。
@@ -359,10 +359,10 @@ JSONフォーマットのサンプルをは以下の通りです。Simpleアノ�
                 "_type": "Classification"
             },
             "attributes": {
-                "sunny": true,
+                "sunny": true
             }
         }
-    ],
+    ]
 }
 ```
 
