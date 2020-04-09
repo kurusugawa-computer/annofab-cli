@@ -208,7 +208,8 @@ class Csv:
             "account_id",
             "user_id",
             "username",
-            "biography" "worktime_plan_hour",
+            "biography",
+            "worktime_plan_hour",
             "worktime_result_hour",
         ]
 
