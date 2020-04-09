@@ -418,7 +418,10 @@ class Database:
             if len(task_histories) == 0:
                 return False
 
-            return dateutil.parser.parse(task_histories[0]["started_datetime"]) >= dt_start_date
+            first_started_datetime = task_histories[0]["started_datetime"]
+            if first_started_datetime is None:
+                return False
+            return dateutil.parser.parse(first_started_datetime) >= dt_start_date
 
         return [task for task in task_list if pred(task["task_id"])]
 

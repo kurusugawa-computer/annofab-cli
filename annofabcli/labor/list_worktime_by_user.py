@@ -360,7 +360,11 @@ class ListWorktimeByUser(AbstractCommandLineInterface):
     @staticmethod
     def write_worktime_list(worktime_df: pandas.DataFrame, output_dir: Path):
         worktime_df = worktime_df.rename(
-            columns={"worktime_plan_hour": "作業予定時間", "worktime_result_hour": "作業実績時間", "worktime_monitored_hour":"計測時間"}
+            columns={
+                "worktime_plan_hour": "作業予定時間",
+                "worktime_result_hour": "作業実績時間",
+                "worktime_monitored_hour": "計測時間",
+            }
         ).round(3)
         columns = [
             "date",
@@ -372,7 +376,7 @@ class ListWorktimeByUser(AbstractCommandLineInterface):
             "user_id",
             "作業予定時間",
             "作業実績時間",
-            "計測時間"
+            "計測時間",
         ]
         worktime_df[columns].to_csv(str(output_dir / "作業時間の詳細一覧.csv"), encoding="utf_8_sig", index=False)
 
