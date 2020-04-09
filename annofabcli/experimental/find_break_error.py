@@ -13,7 +13,6 @@ import requests
 
 import annofabcli
 import annofabcli.common.cli
-from annofabcli.project.update_annotation_zip import SubUpdateAnnotationZip
 from annofabcli import AnnofabApiFacade
 from annofabcli.common.cli import AbstractCommandLineInterface, ArgumentParser, build_annofabapi_resource_and_login
 from annofabcli.common.utils import read_lines_except_blank_line
@@ -192,7 +191,6 @@ class FindBreakError(AbstractCommandLineInterface):
         args = self.args
         if not self.validate(args):
             return
-
 
         err_events = []
         for project_id in args.project_id:

@@ -254,7 +254,7 @@ class ListLaborWorktime(AbstractCommandLineInterface):
             return
 
         # 時間単位変換
-        total_df = timeunit_conversion(df=total_df,time_unit=args.time_unit)
+        total_df = timeunit_conversion(df=total_df, time_unit=args.time_unit)
 
         # フォーマット別に出力dfを作成
         if args.format == "by_name_total":
