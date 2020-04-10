@@ -549,7 +549,6 @@ class ListWorktimeByUser(AbstractCommandLineInterface):
 
         if user_id_list is None:
             tmp_user_id_list = list({e.user_id for e in labor_list})
-            logger.debug(tmp_user_id_list)
             user_id_list = sorted(tmp_user_id_list)
         logger.info(f"集計対象ユーザの数: {len(user_id_list)}")
 
