@@ -2,6 +2,7 @@ import argparse
 import datetime
 import logging
 import sys
+from enum import Enum
 from typing import Any, Dict, List, Optional  # pylint: disable=unused-import
 
 import annofabapi
@@ -19,6 +20,9 @@ from annofabcli.experimental.utils import (
     print_time_list_from_work_time_list,
     print_total,
     timeunit_conversion,
+print_column_list,
+TimeUnitTarget,
+FormatTarget
 )
 
 logger = logging.getLogger(__name__)
@@ -75,6 +79,7 @@ class Table:
                 new_history = {
                     "user_name": self._get_username(l["account_id"]),
                     "user_id": self._get_user_id(l["account_id"]),
+                    "user_biography": self._get_user_biography(l["account_id"]),
                     "date": l["date"],
                     "worktime_planned": np.nan
                     if l["values"]["working_time_by_user"]["plans"] is None
@@ -101,6 +106,7 @@ class Table:
                     new_history = {
                         "user_name": self._get_username(account_id),
                         "user_id": self._get_user_id(account_id),
+                        "user_biography": self._get_user_biography(account_id),
                         "date": history["date"],
                         "worktime_monitored": annofabcli.utils.isoduration_to_minute(history["worktime"]),
                     }
@@ -122,7 +128,7 @@ class Table:
             account_statistics_df["worktime_actural"] = np.nan
             df = account_statistics_df
         else:
-            df = pd.merge(account_statistics_df, labor_control_df, on=["user_name", "user_id", "date"], how="outer")
+            df = pd.merge(account_statistics_df, labor_control_df, on=["user_name", "user_id", "date","user_biography"], how="outer")
 
         return df
 
@@ -151,6 +157,20 @@ class Table:
         member = self.facade.get_organization_member_from_account_id(self.project_id, account_id)
         if member is not None:
             return member["username"]
+        else:
+            return account_id
+
+    def _get_user_biography(self, account_id: Optional[str]) -> Optional[str]:
+        """
+        プロジェクトメンバのbiographyを取得する。プロジェクトメンバでなければ、account_idを返す。
+        account_idがNoneならばNoneを返す。
+        """
+        if account_id is None:
+            return None
+
+        member = self.facade.get_organization_member_from_account_id(self.project_id, account_id)
+        if member is not None:
+            return member["biography"]
         else:
             return account_id
 
@@ -202,32 +222,11 @@ class ListLaborWorktime(AbstractCommandLineInterface):
         #     チェックポイントファイルがあること前提
         return table_obj.create_afaw_time_df()
 
-    @staticmethod
-    def validate(args: argparse.Namespace) -> bool:
-        COMMON_MESSAGE = "annofabcli experimental list_labor_worktime: error:"
-        if not args.time_unit in ["h", "m", "s"]:
-            print(
-                f"{COMMON_MESSAGE} argument --time_unit: (h/m/s)以外は指定できません\
-                    '{args.time_unit}'",
-                file=sys.stderr,
-            )
-            return False
-
-        if not args.format in ["total", "by_name_total", "details"]:
-            print(
-                f"{COMMON_MESSAGE} argument --format: (total/by_name_total/details)以外は指定できません\
-                                '{args.format}'",
-                file=sys.stderr,
-            )
-            return False
-
-        return True
 
     def main(self):
         args = self.args
-        # validattion
-        if not self.validate(args):
-            return
+        format = FormatTarget(args.format)
+        time_unit = TimeUnitTarget(args.time_unit)
 
         start_date = datetime.datetime.strptime(args.start_date, "%Y-%m-%d").date()
         end_date = datetime.datetime.strptime(args.end_date, "%Y-%m-%d").date()
@@ -254,13 +253,15 @@ class ListLaborWorktime(AbstractCommandLineInterface):
             return
 
         # 時間単位変換
-        total_df = timeunit_conversion(df=total_df, time_unit=args.time_unit)
+        total_df = timeunit_conversion(df=total_df, time_unit=time_unit)
 
         # フォーマット別に出力dfを作成
-        if args.format == "by_name_total":
+        if format == FormatTarget.BY_NAME_TOTAL:
             df = print_byname_total_list(total_df)
-        elif args.format == "total":
+        elif format == FormatTarget.TOTAL:
             df = print_total(total_df)
+        elif format == FormatTarget.COLUMN_LIST:
+            df = print_column_list(total_df)
         else:
             df = print_time_list_from_work_time_list(total_df)
 
@@ -273,15 +274,15 @@ class ListLaborWorktime(AbstractCommandLineInterface):
                 float_format="%.2f",
                 index=index,
             )
-            if args.add_project_id:
+            if output != sys.stdout and args.add_project_id:
                 add_id_csv(output, self._get_project_title_list(args.project_id))
 
         # 出力先別に出力
         if args.output:
-            _output(args.output, df, True if args.format == "details" else False)
+            out_format = args.output
         else:
-            _output(sys.stdout, df, True if args.format == "details" else False)
-
+            out_format = sys.stdout
+        _output(out_format, df, True if format == FormatTarget.DETAILS else False)
 
 def main(args):
     service = build_annofabapi_resource_and_login(args)
@@ -291,6 +292,8 @@ def main(args):
 
 def parse_args(parser: argparse.ArgumentParser):
     argument_parser = ArgumentParser(parser)
+    time_unit_choices = [e.value for e in TimeUnitTarget]
+    format_choices = [e.value for e in FormatTarget]
     parser.add_argument(
         "-p",
         "--project_id",
@@ -309,14 +312,17 @@ def parse_args(parser: argparse.ArgumentParser):
     )
     parser.add_argument("--start_date", type=str, required=True, help="集計開始日(%%Y-%%m-%%d)")
     parser.add_argument("--end_date", type=str, required=True, help="集計終了日(%%Y-%%m-%%d)")
-    parser.add_argument("--time_unit", type=str, default="m", help="出力の時間単位(h/m/s)")
+
+    parser.add_argument("--time_unit", type=str, default="h", choices=time_unit_choices, help="出力の時間単位(h/m/s)")
     parser.add_argument(
         "--format",
         type=str,
+        choices=format_choices,
         default="details",
-        help="出力する際のフォーマット(total/by_name_total/details)"
+        help="出力する際のフォーマット(total/by_name_total/column_list/details)"
         "total:期間中の合計値だけを出力する"
         "by_name_total:人毎の集計の合計値を出力する"
+        "column_list:列固定で詳細な値を出力する"
         "details:日毎・人毎の詳細な値を出力する",
     )
     parser.add_argument("--add_project_id", action="store_true", help="出力する際にprojectidを出力する")
