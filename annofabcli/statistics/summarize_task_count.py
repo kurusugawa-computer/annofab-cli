@@ -1,13 +1,14 @@
 import argparse
-import logging
-from typing import Any, Dict, List
 import json
-import pandas
-
+import logging
 from enum import Enum
-from typing import Optional
 from pathlib import Path
-from annofabapi.models import ProjectMemberRole, Task, TaskPhase, TaskHistoryShort, TaskStatus
+from typing import Any, Dict, List, Optional
+
+import pandas
+from annofabapi.models import ProjectMemberRole, Task, TaskPhase, TaskStatus
+from annofabapi.utils import get_number_of_rejections
+
 import annofabcli
 import annofabcli.common.cli
 from annofabcli import AnnofabApiFacade
@@ -20,6 +21,7 @@ class SimpleTaskStatus(Enum):
     """
     TaskStatusの作業中、休憩中、保留を簡易化したもの
     """
+
     NOT_STARTED = "not_started"
     WORKING_BREAK_HOLD = "working_break_hold"
     COMPLETE = "complete"
@@ -36,38 +38,10 @@ class SimpleTaskStatus(Enum):
             raise ValueError(f"'{status}'は対象外です。")
 
 
-
-
-def get_number_of_rejections(task_histories: List[TaskHistoryShort], phase: TaskPhase, phase_stage: int = 1) -> int:
-    """
-    タスク履歴から、指定されたタスクフェーズでの差し戻し回数を取得する。
-
-    Args:
-        task_histories: タスク履歴
-        phase: どのフェーズで差し戻されたか(TaskPhase.INSPECTIONかTaskPhase.ACCEPTANCE)
-        phase_stage: どのフェーズステージで差し戻されたか。デフォルトは1。
-
-    Returns:
-        差し戻し回数
-    """
-    if phase not in [TaskPhase.INSPECTION, TaskPhase.ACCEPTANCE]:
-        raise ValueError("引数'phase'には、'TaskPhase.INSPECTION'か'TaskPhase.ACCEPTANCE'を指定してください。")
-
-    rejections_by_phase = 0
-    for i, history in enumerate(task_histories):
-        if not (history["phase"] == phase.value and history["phase_stage"] == phase_stage and history["worked"]):
-            continue
-
-        if i + 1 < len(task_histories) and task_histories[i + 1]["phase"] == TaskPhase.ANNOTATION.value:
-            rejections_by_phase += 1
-
-    return rejections_by_phase
-
 class SummarizeTaskCount(AbstractCommandLineInterface):
     """
     タスク数を集計する。
     """
-
 
     def get_task_statistics(self, project_id: str) -> List[Dict[str, Any]]:
         """
@@ -90,8 +64,8 @@ class SummarizeTaskCount(AbstractCommandLineInterface):
             row_list.extend(task_stat_list)
         return row_list
 
-    def get_number_of_inspections_for_project(self, project_id:str) -> int:
-        project,_ = self.service.api.get_project(project_id)
+    def get_number_of_inspections_for_project(self, project_id: str) -> int:
+        project, _ = self.service.api.get_project(project_id)
         return project["configuration"]["number_of_inspections"]
 
     @staticmethod
@@ -105,43 +79,49 @@ class SummarizeTaskCount(AbstractCommandLineInterface):
             return number_of_rejections_by_acceptance + 1
 
         elif current_phase == TaskPhase.ANNOTATION:
-            number_of_rejections_by_inspection = sum([get_number_of_rejections(histories_by_phase, phase=current_phase, phase_stage=phase_stage) for phase_stage in range(1, number_of_inspections+1)])
+            number_of_rejections_by_inspection = sum(
+                [
+                    get_number_of_rejections(histories_by_phase, phase=current_phase, phase_stage=phase_stage)
+                    for phase_stage in range(1, number_of_inspections + 1)
+                ]
+            )
             return number_of_rejections_by_inspection + number_of_rejections_by_acceptance + 1
 
         elif current_phase == TaskPhase.INSPECTION:
-            number_of_rejections_by_inspection = sum([get_number_of_rejections(histories_by_phase, phase=current_phase, phase_stage=phase_stage) for phase_stage in range(current_phase_stage, number_of_inspections+1)])
+            number_of_rejections_by_inspection = sum(
+                [
+                    get_number_of_rejections(histories_by_phase, phase=current_phase, phase_stage=phase_stage)
+                    for phase_stage in range(current_phase_stage, number_of_inspections + 1)
+                ]
+            )
             return number_of_rejections_by_inspection + number_of_rejections_by_acceptance + 1
 
         else:
             raise RuntimeError(f"フェーズ'{current_phase}'は不正な値です。")
 
-
-    def create_task_count_summary2(self, task_list: List[Task]) -> pandas.DataFrame:
-        pass
-
     def create_task_count_summary(self, task_list: List[Task], number_of_inspections: int) -> pandas.DataFrame:
         for task in task_list:
             step_for_current_phase = self.get_step_for_current_phase(task, number_of_inspections)
             task["step"] = step_for_current_phase
-            task["status"] = self.get_task_simple_status
+            task["simple_status"] = SimpleTaskStatus.from_task_status(TaskStatus(task["status"]))
+
         df = pandas.DataFrame(task_list)
+        summary_df = df.pivot_table(
+            values="task_id", index=["step", "phase", "simple_status"], aggfunc="count"
+        ).reset_index()
+        summary_df.rename({"tasK_id": "task_count"}, inplace=True)
+        return summary_df
 
-
-
-        return df
-
-
-    def summarize_task_count(self, project_id: Optional[str], task_json_path: Optional[Path], output: str) -> None:
-        super().validate_project(project_id, project_member_roles= [ProjectMemberRole.OWNER])
+    def summarize_task_count(self, project_id: str, task_json_path: Optional[Path], output: str) -> None:
+        super().validate_project(project_id, project_member_roles=[ProjectMemberRole.OWNER])
 
         task_list = self.get_task_list(project_id, task_json_path)
         if len(task_list) == 0:
             logger.info(f"タスクが0件のため、出力しません。")
             return
 
-        df = pandas.DataFrame(task_list)
-
-        task_count_df = self.create_task_count_summary(df)
+        number_of_inspections = self.get_number_of_inspections_for_project(project_id)
+        task_count_df = self.create_task_count_summary(task_list, number_of_inspections=number_of_inspections)
         annofabcli.utils.print_csv(task_count_df, output=self.output, to_csv_kwargs=self.csv_format)
 
     def get_task_list(self, project_id: str, task_json_path: Optional[Path]) -> List[Task]:
@@ -164,14 +144,14 @@ class SummarizeTaskCount(AbstractCommandLineInterface):
 def parse_args(parser: argparse.ArgumentParser):
     argument_parser = ArgumentParser(parser)
 
+    argument_parser.add_project_id()
     parser.add_argument(
         "--task_json",
         type=str,
         help="タスク情報が記載されたJSONファイルのパスを指定してください。JSONファイルは`$ annofabcli project download task`コマンドで取得できます。"
-             "指定しない場合は、ダウンロードします。"
+        "指定しない場合は、AnnoFabからタスク全件ファイルをダウンロードします。",
     )
 
-    argument_parser.add_project_id()
     argument_parser.add_csv_format()
     argument_parser.add_output()
 

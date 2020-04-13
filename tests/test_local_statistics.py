@@ -1,10 +1,10 @@
 from pathlib import Path
 
 import pandas
-
 from annofabapi.models import TaskStatus
-from annofabcli.statistics.summarize_task_count import SimpleTaskStatus
+
 from annofabcli.statistics.csv import Csv
+from annofabcli.statistics.summarize_task_count import SimpleTaskStatus
 from annofabcli.statistics.table import Table
 
 out_path = Path("./tests/out")
@@ -46,6 +46,7 @@ class TestTable:
 
         df.to_csv(out_path / "productivity-per-user.csv")
 
+
 class TestSummarizeTaskCount:
     def test_SimpleTaskStatus_from_task_status(self):
         assert SimpleTaskStatus.from_task_status(TaskStatus.ON_HOLD) == SimpleTaskStatus.WORKING_BREAK_HOLD
@@ -53,4 +54,3 @@ class TestSummarizeTaskCount:
         assert SimpleTaskStatus.from_task_status(TaskStatus.WORKING) == SimpleTaskStatus.WORKING_BREAK_HOLD
         assert SimpleTaskStatus.from_task_status(TaskStatus.NOT_STARTED) == SimpleTaskStatus.NOT_STARTED
         assert SimpleTaskStatus.from_task_status(TaskStatus.COMPLETE) == SimpleTaskStatus.COMPLETE
-
