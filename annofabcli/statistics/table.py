@@ -628,6 +628,8 @@ class Table:
             task["username"] = self._get_username(account_id)
 
             task["input_data_count"] = len(task["input_data_id_list"])
+            # number_of_rejections は非推奨な情報なので、削除する
+            task.pop("number_of_rejections", None)
 
             self.set_task_histories(task, task_histories)
             set_annotation_info(task)

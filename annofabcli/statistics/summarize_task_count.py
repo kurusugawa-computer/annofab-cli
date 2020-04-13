@@ -1,6 +1,7 @@
 import argparse
 import json
 import logging
+import sys
 from enum import Enum
 from pathlib import Path
 from typing import Any, Dict, List, Optional
@@ -74,7 +75,7 @@ class SummarizeTaskCount(AbstractCommandLineInterface):
         current_phase_stage = task["phase_stage"]
         histories_by_phase = task["histories_by_phase"]
 
-        number_of_rejections_by_acceptance = get_number_of_rejections(histories_by_phase, phase=current_phase)
+        number_of_rejections_by_acceptance = get_number_of_rejections(histories_by_phase, phase=TaskPhase.ACCEPTANCE)
         if current_phase == TaskPhase.ACCEPTANCE:
             return number_of_rejections_by_acceptance + 1
 
@@ -101,18 +102,38 @@ class SummarizeTaskCount(AbstractCommandLineInterface):
 
     def create_task_count_summary(self, task_list: List[Task], number_of_inspections: int) -> pandas.DataFrame:
         for task in task_list:
-            step_for_current_phase = self.get_step_for_current_phase(task, number_of_inspections)
+            status = TaskStatus(task["status"])
+            if status == TaskStatus.COMPLETE:
+                step_for_current_phase = sys.maxsize
+            else:
+                step_for_current_phase = self.get_step_for_current_phase(task, number_of_inspections)
             task["step"] = step_for_current_phase
-            task["simple_status"] = SimpleTaskStatus.from_task_status(TaskStatus(task["status"]))
+            task["simple_status"] = SimpleTaskStatus.from_task_status(status).value
 
         df = pandas.DataFrame(task_list)
+        df["phase"] = pandas.Categorical(
+            df["phase"], categories=[TaskPhase.ANNOTATION.value, TaskPhase.INSPECTION.value, TaskPhase.ACCEPTANCE.value]
+        )
+        df["simple_status"] = pandas.Categorical(
+            df["simple_status"],
+            categories=[
+                SimpleTaskStatus.NOT_STARTED.value,
+                SimpleTaskStatus.WORKING_BREAK_HOLD.value,
+                SimpleTaskStatus.COMPLETE.value,
+            ],
+        )
+
         summary_df = df.pivot_table(
-            values="task_id", index=["step", "phase", "simple_status"], aggfunc="count"
+            values="task_id", index=["step", "phase", "phase_stage", "simple_status"], aggfunc="count"
         ).reset_index()
-        summary_df.rename({"tasK_id": "task_count"}, inplace=True)
+        summary_df.rename(columns={"task_id": "task_count"}, inplace=True)
+
+        summary_df.sort_values(["step", "phase", "phase_stage"])
+        summary_df.loc[summary_df["step"] == sys.maxsize, "step"] = pandas.NA
+        summary_df = summary_df.astype({"task_count": "Int64", "step": "Int64", "phase_stage": "Int64"})
         return summary_df
 
-    def summarize_task_count(self, project_id: str, task_json_path: Optional[Path], output: str) -> None:
+    def summarize_task_count(self, project_id: str, task_json_path: Optional[Path], output: Optional[str]) -> None:
         super().validate_project(project_id, project_member_roles=[ProjectMemberRole.OWNER])
 
         task_list = self.get_task_list(project_id, task_json_path)
@@ -122,12 +143,12 @@ class SummarizeTaskCount(AbstractCommandLineInterface):
 
         number_of_inspections = self.get_number_of_inspections_for_project(project_id)
         task_count_df = self.create_task_count_summary(task_list, number_of_inspections=number_of_inspections)
-        annofabcli.utils.print_csv(task_count_df, output=self.output, to_csv_kwargs=self.csv_format)
+        annofabcli.utils.print_csv(task_count_df, output=output, to_csv_kwargs=self.csv_format)
 
     def get_task_list(self, project_id: str, task_json_path: Optional[Path]) -> List[Task]:
         if task_json_path is None:
             cache_dir = annofabcli.utils.get_cache_dir()
-            task_json_path = cache_dir / "task-${project_id}.json"
+            task_json_path = cache_dir / f"task-{project_id}.json"
             logger.debug(f"タスク全件ファイルをダウンロード中: {task_json_path}")
             self.service.wrapper.download_project_tasks_url(project_id, str(task_json_path))
 
@@ -138,7 +159,8 @@ class SummarizeTaskCount(AbstractCommandLineInterface):
     def main(self):
         args = self.args
         project_id = args.project_id
-        self.summarize_task_count(project_id, Path(args.task_json), args.output)
+        task_json_path = Path(args.task_json) if args.task_json is not None else None
+        self.summarize_task_count(project_id, task_json_path=task_json_path, output=args.output)
 
 
 def parse_args(parser: argparse.ArgumentParser):
