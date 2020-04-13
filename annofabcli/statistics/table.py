@@ -16,7 +16,11 @@ from annofabapi.dataclass.statistics import (
     WorktimeStatisticsItem,
 )
 from annofabapi.models import InputDataId, Inspection, InspectionStatus, Task, TaskHistory, TaskPhase, TaskStatus
-from annofabapi.utils import get_task_history_index_skipped_acceptance, get_task_history_index_skipped_inspection
+from annofabapi.utils import (
+    get_number_of_rejections,
+    get_task_history_index_skipped_acceptance,
+    get_task_history_index_skipped_inspection,
+)
 from more_itertools import first_true
 
 import annofabcli
@@ -338,30 +342,6 @@ class Table:
         df = pd.DataFrame(all_inspection_list)
         return df
 
-    @staticmethod
-    def get_rejections_by_phase(task_histories: List[TaskHistory], phase: TaskPhase) -> int:
-        """
-        あるphaseでの差し戻し回数を算出
-
-        Args:
-            task_histories: タスク履歴
-            phase: どのフェーズで差し戻されたか
-
-        Returns:
-            差し戻し回数
-
-        """
-
-        rejections_by_phase = 0
-        for i, history in enumerate(task_histories):
-            if history["phase"] != phase.value or history["ended_datetime"] is None:
-                continue
-
-            if i + 1 < len(task_histories) and task_histories[i + 1]["phase"] == TaskPhase.ANNOTATION.value:
-                rejections_by_phase += 1
-
-        return rejections_by_phase
-
     def _set_first_phase_from_task_history(
         self, task: Task, task_history: Optional[TaskHistory], column_prefix: str
     ) -> Task:
@@ -525,8 +505,12 @@ class Table:
             [annofabcli.utils.isoduration_to_hour(e["accumulated_labor_time_milliseconds"]) for e in task_histories]
         )
 
-        task["number_of_rejections_by_inspection"] = self.get_rejections_by_phase(task_histories, TaskPhase.INSPECTION)
-        task["number_of_rejections_by_acceptance"] = self.get_rejections_by_phase(task_histories, TaskPhase.ACCEPTANCE)
+        task["number_of_rejections_by_inspection"] = get_number_of_rejections(
+            task["histories_by_phase"], TaskPhase.INSPECTION
+        )
+        task["number_of_rejections_by_acceptance"] = get_number_of_rejections(
+            task["histories_by_phase"], TaskPhase.ACCEPTANCE
+        )
 
         # 受入完了日時を設定
         if task["phase"] == TaskPhase.ACCEPTANCE.value and task["status"] == TaskStatus.COMPLETE.value:

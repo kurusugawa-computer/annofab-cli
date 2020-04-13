@@ -13,9 +13,9 @@ from annofabapi.models import (
     Inspection,
     OrganizationMember,
     Task,
-    TaskHistoryShort,
     TaskPhase,
 )
+from annofabapi.utils import get_number_of_rejections
 
 
 class MessageLocale(enum.Enum):
@@ -241,12 +241,8 @@ class AddProps:
         histories = [self._add_user_info(e) for e in task["histories_by_phase"]]
         task["histories_by_phase"] = histories
 
-        task["number_of_rejections_by_inspection"] = self.get_number_of_rejections_by_phase(
-            TaskPhase.INSPECTION, histories
-        )
-        task["number_of_rejections_by_acceptance"] = self.get_number_of_rejections_by_phase(
-            TaskPhase.ACCEPTANCE, histories
-        )
+        task["number_of_rejections_by_inspection"] = get_number_of_rejections(histories, TaskPhase.INSPECTION)
+        task["number_of_rejections_by_acceptance"] = get_number_of_rejections(histories, TaskPhase.ACCEPTANCE)
 
         return task
 
@@ -267,27 +263,3 @@ class AddProps:
         """
         input_data["parent_task_id_list"] = task_id_list
         return input_data
-
-    @staticmethod
-    def get_number_of_rejections_by_phase(phase: TaskPhase, task_histories: List[TaskHistoryShort]) -> int:
-        """
-        phaseごとの差し戻し回数を算出する
-
-        Args:
-            phase:
-            task_histories:
-
-        Returns:
-            差し戻し回数
-
-        """
-
-        rejections_by_phase = 0
-        for i, history in enumerate(task_histories):
-            if history["phase"] != phase.value:
-                continue
-
-            if i + 1 < len(task_histories) and task_histories[i + 1]["phase"] == TaskPhase.ANNOTATION.value:
-                rejections_by_phase += 1
-
-        return rejections_by_phase
