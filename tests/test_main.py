@@ -530,6 +530,12 @@ class TestStatistics:
             ]
         )
 
+    def test_summarize_task_count(self):
+        out_file = str(out_path / "summariz-task-count.csv")
+        main(
+            ["statistics", "summarize_task_count", "--project_id", project_id, "--output", out_file,]
+        )
+
 
 class TestSupplementary:
     def test_list_project_member(self):
