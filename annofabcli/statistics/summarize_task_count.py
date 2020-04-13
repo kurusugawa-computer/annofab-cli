@@ -188,7 +188,8 @@ def main(args):
 
 def add_parser(subparsers: argparse._SubParsersAction):
     subcommand_name = "summarize_task_count"
-    subcommand_help = "タスクのフェーズ、ステータス、差し戻し回数ごとにタスク数を出力します。"
-    description = "タスクのフェーズ、ステータス、差し戻し回数ごとにタスク数を、CSV形式で出力します。"
-    parser = annofabcli.common.cli.add_parser(subparsers, subcommand_name, subcommand_help, description=description)
+    subcommand_help = "タスクのフェーズ、ステータス、ステップごとにタスク数を出力します。"
+    description = "タスクのフェーズ、ステータス、ステップごとにタスク数を、CSV形式で出力します。"
+    epilog = "オーナロールを持つユーザで実行してください。"
+    parser = annofabcli.common.cli.add_parser(subparsers, subcommand_name, subcommand_help, description=description, epilog=epilog)
     parse_args(parser)

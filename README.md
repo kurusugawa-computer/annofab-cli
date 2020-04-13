@@ -109,6 +109,7 @@ $ docker run -it -e ANNOFAB_USER_ID=XXXX -e ANNOFAB_PASSWORD=YYYYY annofab-cli a
 |statistics| list_annotation_count             | 各ラベル、各属性値のアノテーション数を、タスクごと/入力データごとに出力します。                                                   |-|
 |statistics| list_cumulative_labor_time             |       タスク進捗状況を出力します。                                                    |-|
 |statistics| list_task_progress             | タスクフェーズ別の累積作業時間を出力します。                                                            |-|
+|statistics|summarize_task_count|タスクのフェーズ、ステータス、ステップごとにタスク数を出力します。|オーナ|
 |statistics| visualize             | 統計情報を可視化します。                                                            |オーナ|
 |supplementary| list             | 補助情報を出力します。                                                           |オーナ|
 |task| cancel_acceptance             | 受け入れ完了タスクを、受け入れ取り消し状態にします。                                                         |オーナ|
@@ -1141,6 +1142,43 @@ $ annofabcli statistics list_cumulative_labor_time --project_id prj1 --output st
 $ annofabcli statistics list_task_progress --project_id prj1 --output stat.csv
 ```
 
+### statistics summarize_task_count
+タスクのフェーズ、ステータス、ステップごとにタスク数を、CSV形式で出力します。
+「1回目の教師付」と「2回目の教師付」を区別して集計されます。
+
+
+```
+# prj1のタスク数を出力します。ダウンロードしたタスク全件ファイルを元にして出力します（AM02:00頃更新）。
+$ annofabcli statistics summarize_task_count --project_id prj1 --output task-count.csv
+
+# `annofabcli project download task`でダウンロードした`task.json`を元にして、タスク数を出力します。
+$ annofabcli statistics summarize_task_count --project_id prj1 --task_json task.json --output task-count.csv
+
+```
+
+以下のようなCSVが出力されます。
+
+```csv
+step,phase,phase_stage,simple_status,task_count
+1,annotation,1,not_started,3761
+1,annotation,1,working_break_hold,30
+1,acceptance,1,not_started,1861
+1,acceptance,1,working_break_hold,20
+2,annotation,1,not_started,225
+2,annotation,1,working_break_hold,3
+2,acceptance,1,not_started,187
+5,acceptance,1,not_started,1
+,acceptance,1,complete,3000
+```
+
+
+* step：何回目のフェーズか
+* simple_status：タスクステータスを簡略化したもの
+    * not_started：未着手
+    * working_break_hold：作業中か休憩中か保留中
+    * complete：完了
+
+「一度も作業されていない教師付未着手」のタスク数は、先頭行（step=1, phase=annotation, simple_status=not_started）のtask_countから分かります。
 
 
 ### statistics visualize
