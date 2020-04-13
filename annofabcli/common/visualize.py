@@ -7,14 +7,7 @@ from typing import Any, Dict, List, Optional
 
 import annofabapi
 import more_itertools
-from annofabapi.models import (
-    AnnotationSpecsHistory,
-    InputData,
-    Inspection,
-    OrganizationMember,
-    Task,
-    TaskPhase,
-)
+from annofabapi.models import AnnotationSpecsHistory, InputData, Inspection, OrganizationMember, Task, TaskPhase
 from annofabapi.utils import get_number_of_rejections
 
 
@@ -244,6 +237,8 @@ class AddProps:
         task["number_of_rejections_by_inspection"] = get_number_of_rejections(histories, TaskPhase.INSPECTION)
         task["number_of_rejections_by_acceptance"] = get_number_of_rejections(histories, TaskPhase.ACCEPTANCE)
 
+        # number_of_rejectionsは非推奨なプロパティで、number_of_rejections_by_inspection/number_of_rejections_by_acceptanceと矛盾する場合があるので、削除する
+        task.pop("number_of_rejections", None)
         return task
 
     @staticmethod
