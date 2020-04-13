@@ -537,7 +537,6 @@ class TestStatistics:
         )
 
 
-
 class TestSupplementary:
     def test_list_project_member(self):
         main(["supplementary", "list", "--project_id", project_id, "--input_data_id", "foo"])
