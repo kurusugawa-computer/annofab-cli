@@ -93,7 +93,7 @@ class FindBreakError(AbstractCommandLineInterface):
             url = content["url"]
             try:
                 history_events = download_content(url)
-            except:
+            except requests.HTTPError:
                 # TODO:全件JSONは今のところ30日で消える仕様の回避
                 logger.warning(f"プロジェクトの停止から30日以上が経過しているため検索対象外になります project_id:{project_id}")
                 return None
