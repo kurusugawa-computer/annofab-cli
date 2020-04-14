@@ -39,8 +39,8 @@ class Scatter:
         """
 
         def exclude_phase_name(name: str) -> str:
-            l = name.split("_")
-            return "_".join(l[0 : len(l) - 1])
+            tmp = name.split("_")
+            return "_".join(tmp[0 : len(tmp) - 1])
 
         detail_tooltips = [(exclude_phase_name(e), "@{%s}" % e) for e in tool_tip_items]
         hover_tool = HoverTool(tooltips=detail_tooltips)
