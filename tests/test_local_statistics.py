@@ -71,7 +71,7 @@ class TestScatter:
         cls.scatter_obj = Scatter(outdir=str(out_path / "statistics"), project_id=project_id)
 
     def test_write_scatter_for_productivity(self):
-        productivity_per_user = pandas.read_csv("/vagrant_data/tmp/triad-13-メンバごとの生産性と品質.csv", header=[0, 1])
+        productivity_per_user = pandas.read_csv(str(data_path / "statistics/productivity-per-user.csv"), header=[0, 1])
         productivity_per_user.rename(
             columns={"Unnamed: 0_level_1": "", "Unnamed: 1_level_1": "", "Unnamed: 2_level_1": ""},
             level=1,
