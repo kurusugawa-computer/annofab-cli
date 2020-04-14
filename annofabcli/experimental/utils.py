@@ -1,14 +1,16 @@
 import csv
-from typing import List, Tuple
 from enum import Enum
+from typing import List, Tuple
 
 import numpy as np
 import pandas as pd
+
 
 class TimeUnitTarget(Enum):
     H = "h"
     M = "m"
     S = "s"
+
 
 class FormatTarget(Enum):
     TOTAL = "total"
@@ -29,9 +31,10 @@ def timeunit_conversion(df: pd.DataFrame, time_unit: TimeUnitTarget = TimeUnitTa
 
     return df
 
+
 def calc_df_total(df: pd.DataFrame) -> Tuple[pd.DataFrame, pd.DataFrame, pd.DataFrame, pd.DataFrame]:
     # 複数のproject_id分を合計
-    total_df = pd.DataFrame(df.groupby(["user_name", "user_id", "date","user_biography"], as_index=False).sum())
+    total_df = pd.DataFrame(df.groupby(["user_name", "user_id", "date", "user_biography"], as_index=False).sum())
 
     # 合計を計算する
     sum_by_date = (
@@ -123,6 +126,7 @@ def print_total(df: pd.DataFrame) -> pd.DataFrame:
     # 結果を合体する
     result = sum_all.round(2).replace({np.inf: "--", np.nan: "--"})
     return result
+
 
 def print_column_list(df: pd.DataFrame) -> pd.DataFrame:
     total_df, _, _, _ = calc_df_total(df=df)
