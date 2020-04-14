@@ -6,6 +6,7 @@ from annofabapi.models import TaskStatus
 from annofabcli.statistics.csv import Csv
 from annofabcli.statistics.summarize_task_count import SimpleTaskStatus
 from annofabcli.statistics.table import Table
+from annofabcli.statistics.scatter import Scatter
 
 out_path = Path("./tests/out")
 data_path = Path("./tests/data")
@@ -54,3 +55,16 @@ class TestSummarizeTaskCount:
         assert SimpleTaskStatus.from_task_status(TaskStatus.WORKING) == SimpleTaskStatus.WORKING_BREAK_HOLD
         assert SimpleTaskStatus.from_task_status(TaskStatus.NOT_STARTED) == SimpleTaskStatus.NOT_STARTED
         assert SimpleTaskStatus.from_task_status(TaskStatus.COMPLETE) == SimpleTaskStatus.COMPLETE
+
+class TestScatter:
+    scatter_obj = None
+
+    @classmethod
+    def setup_class(cls):
+        cls.scatter_obj = Scatter(outdir=str(out_path/"statistics"), project_id=project_id)
+
+    def test_write_scatter_for_productivity(self):
+        productivity_per_user = pandas.read_csv("/vagrant_data/tmp/triad-13-メンバごとの生産性と品質.csv", header=[0,1])
+        self.scatter_obj.write_scatter_for_productivity(productivity_per_user)
+
+
