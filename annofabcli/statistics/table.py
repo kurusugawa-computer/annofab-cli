@@ -511,6 +511,10 @@ class Table:
         task["number_of_rejections_by_acceptance"] = get_number_of_rejections(
             task["histories_by_phase"], TaskPhase.ACCEPTANCE
         )
+        # APIで取得した 'number_of_rejections' は非推奨で、number_of_rejections_by_inspection/acceptanceと矛盾する場合があるので、書き換える
+        task["number_of_rejections"] = (
+            task["number_of_rejections_by_inspection"] + task["number_of_rejections_by_acceptance"]
+        )
 
         # 受入完了日時を設定
         if task["phase"] == TaskPhase.ACCEPTANCE.value and task["status"] == TaskStatus.COMPLETE.value:
@@ -626,10 +630,7 @@ class Table:
             account_id = task["account_id"]
             task["user_id"] = self._get_user_id(account_id)
             task["username"] = self._get_username(account_id)
-
             task["input_data_count"] = len(task["input_data_id_list"])
-            # number_of_rejections は非推奨な情報なので、削除する
-            task.pop("number_of_rejections", None)
 
             self.set_task_histories(task, task_histories)
             set_annotation_info(task)
