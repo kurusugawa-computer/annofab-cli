@@ -233,7 +233,7 @@ class ListLaborWorktime(AbstractCommandLineInterface):
 
     def main(self):
         args = self.args
-        format = FormatTarget(args.format)
+        format_target = FormatTarget(args.format)
         time_unit = TimeUnitTarget(args.time_unit)
 
         start_date = datetime.datetime.strptime(args.start_date, "%Y-%m-%d").date()
@@ -265,11 +265,11 @@ class ListLaborWorktime(AbstractCommandLineInterface):
         total_df = timeunit_conversion(df=total_df, time_unit=time_unit)
 
         # フォーマット別に出力dfを作成
-        if format == FormatTarget.BY_NAME_TOTAL:
+        if format_target == FormatTarget.BY_NAME_TOTAL:
             df = print_byname_total_list(total_df)
-        elif format == FormatTarget.TOTAL:
+        elif format_target == FormatTarget.TOTAL:
             df = print_total(total_df)
-        elif format == FormatTarget.COLUMN_LIST:
+        elif format_target == FormatTarget.COLUMN_LIST:
             df = print_column_list(total_df)
         else:
             df = print_time_list_from_work_time_list(total_df)
@@ -284,14 +284,14 @@ class ListLaborWorktime(AbstractCommandLineInterface):
                 index=index,
             )
             if output != sys.stdout and args.add_project_id:
-                add_id_csv(output, self._get_project_title_list(args.project_id))
+                add_id_csv(output, self._get_project_title_list(project_id_list))
 
         # 出力先別に出力
         if args.output:
             out_format = args.output
         else:
             out_format = sys.stdout
-        _output(out_format, df, True if format == FormatTarget.DETAILS else False)
+        _output(out_format, df, index=(format_target == FormatTarget.DETAILS))
 
 
 def main(args):

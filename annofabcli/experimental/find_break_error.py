@@ -4,7 +4,7 @@ import json
 import logging
 import sys
 from pathlib import Path
-from typing import Any, Dict, List, Optional  # pylint: disable=unused-import
+from typing import Any, Dict, List, Optional
 
 import annofabapi
 import dateutil.parser
@@ -14,7 +14,12 @@ import requests
 import annofabcli
 import annofabcli.common.cli
 from annofabcli import AnnofabApiFacade
-from annofabcli.common.cli import AbstractCommandLineInterface, ArgumentParser, build_annofabapi_resource_and_login
+from annofabcli.common.cli import (
+    AbstractCommandLineInterface,
+    ArgumentParser,
+    build_annofabapi_resource_and_login,
+    get_list_from_args,
+)
 from annofabcli.common.utils import read_lines_except_blank_line
 
 logger = logging.getLogger(__name__)
@@ -59,7 +64,8 @@ def get_err_history_events(
 class FindBreakError(AbstractCommandLineInterface):
     def __init__(self, service: annofabapi.Resource, facade: AnnofabApiFacade, args: argparse.Namespace):
         super().__init__(service, facade, args)
-        self.project_id_list = list(set(args.project_id))
+        project_id_list = get_list_from_args(args.project_id)
+        self.project_id_list = list(set(project_id_list))
 
     def _get_username(self, project_id: str, account_id: str) -> Optional[str]:
         """
@@ -122,7 +128,7 @@ class FindBreakError(AbstractCommandLineInterface):
             if date_time_list:
                 for date_time in date_time_list:
                     date_time = dateutil.parser.parse(date_time.strftime("%Y-%m-%d %H:%M:%S"))
-                    if from_time == date_time or to_time == date_time:
+                    if date_time in [from_time, to_time]:
                         return True
             else:
                 return True
@@ -170,7 +176,8 @@ class FindBreakError(AbstractCommandLineInterface):
                     file=sys.stderr,
                 )
                 return False
-        if len(args.project_id) > 1 and args.task_id:
+        project_id_list = get_list_from_args(args.project_id)
+        if len(project_id_list) > 1 and args.task_id:
             print(
                 f"{COMMON_MESSAGE} argument --project_id: task_idを指定した場合はproject_idは複数指定できません\
                             '{args.project_id}'",
@@ -179,7 +186,7 @@ class FindBreakError(AbstractCommandLineInterface):
             return False
         if args.task_id and len(args.task_id) > 1 and args.time:
             print(
-                f"{COMMON_MESSAGE} argument --project_id: timeを指定した場合はtask_idは複数指定できません\
+                f"{COMMON_MESSAGE} argument --task_id: timeを指定した場合はtask_idは複数指定できません\
                             '{args.project_id}'",
                 file=sys.stderr,
             )
@@ -302,13 +309,14 @@ def parse_args(parser: argparse.ArgumentParser):
         type=str,
         required=True,
         nargs="+",
-        help="対象のプロジェクトのproject_idを指定します。複数指定可、但しtask_idを指定した場合は1つしか指定できません。",
+        help="対象のプロジェクトのproject_idを指定します。複数指定可、但しtask_idを指定した場合は1つしか指定できません。"
+        "`file://`を先頭に付けると、project_idの一覧が記載されたファイルを指定できます。",
     )
     parser.add_argument(
         "-t", "--task_id", type=str, nargs="+", help="対象のプロジェクトのtask_idを指定します。複数指定可、但しtimeを指定した場合は1つしか指定できません。",
     )
     parser.add_argument(
-        "--time", type=str, nargs="+", help="検索対象の時間を指定します。(%Y/%m/%d %H:%i:%s)",
+        "--time", type=str, nargs="+", help="検索対象の時間を指定します。(%%Y/%%m/%%d %%H:%%i:%%s)",
     )
     parser.add_argument("--add", action="store_true", help="出力する際に追記で書き込む")
 
