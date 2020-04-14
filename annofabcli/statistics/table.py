@@ -1068,14 +1068,13 @@ class Table:
             get_inspection_comment_count, axis="columns"
         )
         group_obj["rejected_count"] = group_obj.apply(get_rejected_count, axis="columns")
-
         new_df = group_obj.reset_index()
         new_df["pointed_out_inspection_comment_count"] = new_df["pointed_out_inspection_comment_count"] * new_df[
             "phase"
         ].apply(lambda e: 1 if e == TaskPhase.ANNOTATION.value else 0)
-        new_df["rejected_count"] = new_df["rejected_count"] * new_df[
-            "phase"
-        ].apply(lambda e: 1 if e == TaskPhase.ANNOTATION.value else 0)
+        new_df["rejected_count"] = new_df["rejected_count"] * new_df["phase"].apply(
+            lambda e: 1 if e == TaskPhase.ANNOTATION.value else 0
+        )
         return new_df
 
     @staticmethod
@@ -1127,6 +1126,7 @@ class Table:
                 "input_data_count",
                 "annotation_count",
                 "pointed_out_inspection_comment_count",
+                "rejected_count",
             ],
             columns="phase",
             index="user_id",

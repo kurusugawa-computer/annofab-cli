@@ -310,27 +310,25 @@ class VisualizeStatistics(AbstractCommandLineInterface):
         write_project_name_file(self.service, project_id, output_dir)
 
         write_obj = WriteCsvGraph(table_obj, output_dir, project_id)
-        print("testetsetststts")
         # ヒストグラム
-        # write_obj.write_histogram_for_task()
-        # write_obj.write_histogram_for_annotation()
-        #
-        # # 折れ線グラフ
-        # write_obj.write_linegraph_for_by_user(user_id_list)
-        # write_obj.write_linegraph_for_task_overall()
+        write_obj.write_histogram_for_task()
+        write_obj.write_histogram_for_annotation()
+
+        # 折れ線グラフ
+        write_obj.write_linegraph_for_by_user(user_id_list)
+        write_obj.write_linegraph_for_task_overall()
 
         # 散布図
-        logger.debug("yuji38wkme")
         write_obj.write_scatter_per_user()
 
         # # CSV
-        # write_obj.write_productivity_csv()
-        # write_obj.write_csv_for_task()
-        # write_obj.write_csv_for_annotation()
-        # write_obj.write_csv_for_account_statistics()
-        # write_obj.write_csv_for_date_user()
-        # write_obj.write_csv_for_inspection()
-        # write_obj.write_メンバー別作業時間平均_画像1枚あたり_by_phase()
+        write_obj.write_productivity_csv()
+        write_obj.write_csv_for_task()
+        write_obj.write_csv_for_annotation()
+        write_obj.write_csv_for_account_statistics()
+        write_obj.write_csv_for_date_user()
+        write_obj.write_csv_for_inspection()
+        write_obj.write_メンバー別作業時間平均_画像1枚あたり_by_phase()
 
     def main(self):
         args = self.args

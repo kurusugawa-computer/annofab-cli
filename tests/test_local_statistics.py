@@ -53,6 +53,7 @@ class TestTable:
         df = Table.create_annotation_count_ratio_df(task_df=df_task, task_history_df=df_task_history)
         df.to_csv(out_path / "annotation-count-ratio-df.csv")
 
+
 class TestSummarizeTaskCount:
     def test_SimpleTaskStatus_from_task_status(self):
         assert SimpleTaskStatus.from_task_status(TaskStatus.ON_HOLD) == SimpleTaskStatus.WORKING_BREAK_HOLD

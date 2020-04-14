@@ -37,7 +37,12 @@ class Scatter:
         """
         HoverTool用のオブジェクトを生成する。
         """
-        detail_tooltips = [(e, "@{%s}" % e) for e in tool_tip_items]
+
+        def exclude_phase_name(name: str) -> str:
+            l = name.split("_")
+            return "_".join(l[0 : len(l) - 1])
+
+        detail_tooltips = [(exclude_phase_name(e), "@{%s}" % e) for e in tool_tip_items]
         hover_tool = HoverTool(tooltips=detail_tooltips)
         return hover_tool
 
@@ -180,8 +185,10 @@ class Scatter:
                 f"task_count_{phase}",
                 f"input_data_count_{phase}",
                 f"annotation_count_{phase}",
-                f"rejected_count_{phase}" f"pointed_out_inspection_comment_count_{phase}",
-                f"rejected_count/task_count_{phase}" f"pointed_out_inspection_comment_count/annotation_count_{phase}",
+                f"rejected_count_{phase}",
+                f"pointed_out_inspection_comment_count_{phase}",
+                f"rejected_count/task_count_{phase}",
+                f"pointed_out_inspection_comment_count/annotation_count_{phase}",
             ]
 
             hover_tool = self._create_hover_tool(tooltip_item)
