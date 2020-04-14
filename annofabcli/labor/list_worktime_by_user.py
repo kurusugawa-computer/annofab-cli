@@ -10,10 +10,12 @@ import more_itertools
 import pandas
 from annofabapi.models import OrganizationMember, Project
 from dataclasses_json import dataclass_json
+from more_itertools import first_true
 
 import annofabcli
 from annofabcli import AnnofabApiFacade
 from annofabcli.common.cli import AbstractCommandLineInterface, build_annofabapi_resource_and_login, get_list_from_args
+from annofabcli.common.utils import isoduration_to_hour
 
 logger = logging.getLogger(__name__)
 
@@ -50,7 +52,11 @@ class LaborWorktime:
     username: str
     biography: Optional[str]
     worktime_plan_hour: float
+    """労務管理画面の予定作業時間"""
     worktime_result_hour: float
+    """労務管理画面の実績作業時間"""
+    worktime_monitored_hour: Optional[float]
+    """AnnoFabの作業時間"""
 
 
 @dataclass_json
@@ -87,6 +93,33 @@ class ListWorktimeByUser(AbstractCommandLineInterface):
 
     DATE_FORMAT = "%Y-%m-%d"
     MONTH_FORMAT = "%Y-%m"
+
+    _dict_account_statistics: Dict[str, List[Dict[str, Any]]] = {}
+    """project_idごとの統計情報dict"""
+
+    def _get_worktime_monitored_hour_from_project_id(
+        self, project_id: str, account_id: str, date: str
+    ) -> Optional[float]:
+        account_statistics = self._dict_account_statistics.get(project_id)
+        if account_statistics is None:
+            account_statistics, _ = self.service.api.get_account_statistics(project_id)
+            self._dict_account_statistics[project_id] = account_statistics
+
+        return self._get_worktime_monitored_hour(account_statistics, account_id=account_id, date=date)
+
+    @staticmethod
+    def _get_worktime_monitored_hour(account_statistics, account_id: str, date: str) -> Optional[float]:
+        """
+        AnnoFabの作業時間を取得する。
+        """
+        stat = first_true(account_statistics, pred=lambda e: e["account_id"] == account_id)
+        if stat is None:
+            return None
+        histories = stat["histories"]
+        hist = first_true(histories, pred=lambda e: e["date"] == date)
+        if hist is None:
+            return None
+        return isoduration_to_hour(hist["worktime"])
 
     @staticmethod
     def create_required_columns(df, prior_columns):
@@ -128,7 +161,12 @@ class ListWorktimeByUser(AbstractCommandLineInterface):
             return value / 3600 / 1000
 
     def _get_labor_worktime(
-        self, labor: Dict[str, Any], member: Optional[OrganizationMember], project_title: str, organization_name: str
+        self,
+        labor: Dict[str, Any],
+        member: Optional[OrganizationMember],
+        project_title: str,
+        organization_name: str,
+        worktime_monitored_hour: Optional[float],
     ) -> LaborWorktime:
         new_labor = LaborWorktime(
             date=labor["date"],
@@ -142,6 +180,7 @@ class ListWorktimeByUser(AbstractCommandLineInterface):
             biography=member["biography"] if member is not None else None,
             worktime_plan_hour=self.get_worktime_hour(labor["values"]["working_time_by_user"], "plans"),
             worktime_result_hour=self.get_worktime_hour(labor["values"]["working_time_by_user"], "results"),
+            worktime_monitored_hour=worktime_monitored_hour,
         )
         return new_labor
 
@@ -215,8 +254,15 @@ class ListWorktimeByUser(AbstractCommandLineInterface):
                 continue
 
             member = self.get_member_from_account_id(member_list, labor["account_id"])
+            worktime_monitored_hour = self._get_worktime_monitored_hour_from_project_id(
+                project_id=project_id, account_id=labor["account_id"], date=labor["date"]
+            )
             new_labor = self._get_labor_worktime(
-                labor, member=member, project_title=project_title, organization_name=organization_name
+                labor,
+                member=member,
+                project_title=project_title,
+                organization_name=organization_name,
+                worktime_monitored_hour=worktime_monitored_hour,
             )
             new_labor_list.append(new_labor)
 
@@ -241,8 +287,15 @@ class ListWorktimeByUser(AbstractCommandLineInterface):
         for labor in labor_list:
             member = self.get_member_from_account_id(member_list, labor["account_id"])
             project_title = self.get_project_title(project_list, labor["project_id"])
+            worktime_monitored_hour = self._get_worktime_monitored_hour_from_project_id(
+                project_id=labor["project_id"], account_id=labor["account_id"], date=labor["date"]
+            )
             new_labor = self._get_labor_worktime(
-                labor, member=member, project_title=project_title, organization_name=organization_name
+                labor,
+                member=member,
+                project_title=project_title,
+                organization_name=organization_name,
+                worktime_monitored_hour=worktime_monitored_hour,
             )
             new_labor_list.append(new_labor)
 
@@ -307,7 +360,11 @@ class ListWorktimeByUser(AbstractCommandLineInterface):
     @staticmethod
     def write_worktime_list(worktime_df: pandas.DataFrame, output_dir: Path):
         worktime_df = worktime_df.rename(
-            columns={"worktime_plan_hour": "作業予定時間", "worktime_result_hour": "作業実績時間"}
+            columns={
+                "worktime_plan_hour": "作業予定時間",
+                "worktime_result_hour": "作業実績時間",
+                "worktime_monitored_hour": "計測時間",
+            }
         ).round(3)
         columns = [
             "date",
@@ -319,6 +376,7 @@ class ListWorktimeByUser(AbstractCommandLineInterface):
             "user_id",
             "作業予定時間",
             "作業実績時間",
+            "計測時間",
         ]
         worktime_df[columns].to_csv(str(output_dir / "作業時間の詳細一覧.csv"), encoding="utf_8_sig", index=False)
 
@@ -491,7 +549,6 @@ class ListWorktimeByUser(AbstractCommandLineInterface):
 
         if user_id_list is None:
             tmp_user_id_list = list({e.user_id for e in labor_list})
-            logger.debug(tmp_user_id_list)
             user_id_list = sorted(tmp_user_id_list)
         logger.info(f"集計対象ユーザの数: {len(user_id_list)}")
 

@@ -15,8 +15,8 @@ twine = "*"
 autoflake = "*"
 flake8 = "*"
 docutils = "*"
-
 # blackは正式版がリリースされるまで、pipenvでは実行しない
 # black = "*"
 
 [packages]
+annofabcli = "*"
