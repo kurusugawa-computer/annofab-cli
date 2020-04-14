@@ -2,7 +2,6 @@ import argparse
 import datetime
 import logging
 import sys
-from enum import Enum
 from typing import Any, Dict, List, Optional  # pylint: disable=unused-import
 
 import annofabapi
@@ -13,16 +12,21 @@ from annofabapi.models import ProjectMemberRole
 import annofabcli
 import annofabcli.common.cli
 from annofabcli import AnnofabApiFacade
-from annofabcli.common.cli import AbstractCommandLineInterface, ArgumentParser, build_annofabapi_resource_and_login
+from annofabcli.common.cli import (
+    AbstractCommandLineInterface,
+    ArgumentParser,
+    build_annofabapi_resource_and_login,
+    get_list_from_args,
+)
 from annofabcli.experimental.utils import (
+    FormatTarget,
+    TimeUnitTarget,
     add_id_csv,
     print_byname_total_list,
+    print_column_list,
     print_time_list_from_work_time_list,
     print_total,
     timeunit_conversion,
-print_column_list,
-TimeUnitTarget,
-FormatTarget
 )
 
 logger = logging.getLogger(__name__)
@@ -128,7 +132,12 @@ class Table:
             account_statistics_df["worktime_actural"] = np.nan
             df = account_statistics_df
         else:
-            df = pd.merge(account_statistics_df, labor_control_df, on=["user_name", "user_id", "date","user_biography"], how="outer")
+            df = pd.merge(
+                account_statistics_df,
+                labor_control_df,
+                on=["user_name", "user_id", "date", "user_biography"],
+                how="outer",
+            )
 
         return df
 
@@ -184,7 +193,7 @@ def get_organization_id_from_project_id(annofab_service: annofabapi.Resource, pr
 
 
 def refine_df(
-    df: pd.DataFrame, start_date: datetime.date, end_date: datetime.date, user_id_list: List[str]
+    df: pd.DataFrame, start_date: datetime.date, end_date: datetime.date, user_id_list: Optional[List[str]]
 ) -> pd.DataFrame:
     # 日付で絞り込み
     df["date"] = pd.to_datetime(df["date"]).dt.date
@@ -222,7 +231,6 @@ class ListLaborWorktime(AbstractCommandLineInterface):
         #     チェックポイントファイルがあること前提
         return table_obj.create_afaw_time_df()
 
-
     def main(self):
         args = self.args
         format = FormatTarget(args.format)
@@ -230,12 +238,13 @@ class ListLaborWorktime(AbstractCommandLineInterface):
 
         start_date = datetime.datetime.strptime(args.start_date, "%Y-%m-%d").date()
         end_date = datetime.datetime.strptime(args.end_date, "%Y-%m-%d").date()
-        user_id_list = args.user_id
+        user_id_list = get_list_from_args(args.user_id) if args.user_id is not None else None
 
         total_df = pd.DataFrame([])
 
         # プロジェクトごとにデータを取得
-        for i, project_id in enumerate(list(set(args.project_id))):
+        project_id_list = get_list_from_args(args.project_id)
+        for i, project_id in enumerate(list(set(project_id_list))):
             logger.debug(f"{i + 1} 件目: project_id = {project_id}")
 
             afaw_time_df = self.list_labor_worktime(
@@ -284,6 +293,7 @@ class ListLaborWorktime(AbstractCommandLineInterface):
             out_format = sys.stdout
         _output(out_format, df, True if format == FormatTarget.DETAILS else False)
 
+
 def main(args):
     service = build_annofabapi_resource_and_login(args)
     facade = AnnofabApiFacade(service)
@@ -300,7 +310,7 @@ def parse_args(parser: argparse.ArgumentParser):
         type=str,
         required=True,
         nargs="+",
-        help="集計対象のプロジェクトのproject_idを指定します。複数指定した場合は合計値を出力します。",
+        help="集計対象のプロジェクトのproject_idを指定します。複数指定した場合は合計値を出力します。`file://`を先頭に付けると、project_idの一覧が記載されたファイルを指定できます。",
     )
     parser.add_argument(
         "-u",
@@ -308,7 +318,8 @@ def parse_args(parser: argparse.ArgumentParser):
         type=str,
         nargs="+",
         default=None,
-        help="集計対象のユーザのuser_idに部分一致するものを集計します。" "指定しない場合は、プロジェクトメンバが指定されます。",
+        help="集計対象のユーザのuser_idに部分一致するものを集計します。"
+        "指定しない場合は、プロジェクトメンバが指定されます。`file://`を先頭に付けると、user_idの一覧が記載されたファイルを指定できます。",
     )
     parser.add_argument("--start_date", type=str, required=True, help="集計開始日(%%Y-%%m-%%d)")
     parser.add_argument("--end_date", type=str, required=True, help="集計終了日(%%Y-%%m-%%d)")
