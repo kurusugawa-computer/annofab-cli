@@ -47,6 +47,11 @@ class TestTable:
 
         df.to_csv(out_path / "productivity-per-user.csv")
 
+    def test_create_annotation_count_ratio_df(self):
+        df_task_history = pandas.read_csv(str(data_path / "statistics/task-history-df.csv"))
+        df_task = pandas.read_csv(str(data_path / "statistics/task.csv"))
+        df = Table.create_annotation_count_ratio_df(task_df=df_task, task_history_df=df_task_history)
+        df.to_csv(out_path / "annotation-count-ratio-df.csv")
 
 class TestSummarizeTaskCount:
     def test_SimpleTaskStatus_from_task_status(self):

@@ -1073,6 +1073,9 @@ class Table:
         new_df["pointed_out_inspection_comment_count"] = new_df["pointed_out_inspection_comment_count"] * new_df[
             "phase"
         ].apply(lambda e: 1 if e == TaskPhase.ANNOTATION.value else 0)
+        new_df["rejected_count"] = new_df["rejected_count"] * new_df[
+            "phase"
+        ].apply(lambda e: 1 if e == TaskPhase.ANNOTATION.value else 0)
         return new_df
 
     @staticmethod
@@ -1109,7 +1112,7 @@ class Table:
 
         phase_list = Table._get_phase_list(list(df.columns))
 
-        df = df[["worktime_result_hour"] + phase_list]
+        df = df[["worktime_result_hour"] + phase_list].copy()
         df.columns = pd.MultiIndex.from_tuples(
             [("annowork_worktime_hour", "sum")] + [("annofab_worktime_hour", phase) for phase in phase_list]
         )
