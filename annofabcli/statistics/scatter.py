@@ -89,11 +89,11 @@ class Scatter:
                 plot_width=600,
                 plot_height=600,
                 title=title,
-                x_axis_label="annofab_worktime[hour]",
-                y_axis_label="annofab_worktime/annotation_count[hour/annotation]",
+                x_axis_label="累計作業時間[hour]",
+                y_axis_label="アノテーションあたり作業時間[hour/annotation]",
             )
 
-        html_title = "アノテーションあたり作業時間と累計作業時間の関係"
+        html_title = "散布図-アノテーションあたり作業時間と累計作業時間の関係"
         output_file = f"{self.scatter_outdir}/{self.short_project_id}-{html_title}.html"
         logger.debug(f"{output_file} を出力します。")
 
@@ -116,10 +116,72 @@ class Scatter:
                 f"task_count_{phase}",
                 f"input_data_count_{phase}",
                 f"annotation_count_{phase}",
-                f"annofab_worktime_hour_{phase}",
                 f"prediction_annowork_worktime_hour_{phase}",
                 f"annofab_worktime/input_data_count_{phase}",
                 f"annofab_worktime/annotation_count_{phase}",
+            ]
+
+            hover_tool = self._create_hover_tool(tooltip_item)
+            fig.add_tools(hover_tool)
+
+        bokeh.plotting.reset_output()
+        bokeh.plotting.output_file(output_file, title=html_title)
+        bokeh.plotting.save(bokeh.layouts.column(figure_list))
+
+    def write_scatter_for_quality(self, df: pandas.DataFrame):
+        """
+        メンバごとに品質を散布図でプロットする
+
+        Args:
+            df:
+        Returns:
+
+        """
+
+        def create_figure(title: str, x_axis_label: str, y_axis_label: str) -> bokeh.plotting.Figure:
+            return figure(
+                plot_width=600, plot_height=600, title=title, x_axis_label=x_axis_label, y_axis_label=y_axis_label,
+            )
+
+        html_title = "散布図-教師付者の品質と累計作業時間の関係"
+        output_file = f"{self.scatter_outdir}/{self.short_project_id}-{html_title}.html"
+        logger.debug(f"{output_file} を出力します。")
+
+        source = ColumnDataSource(data=df)
+
+        figure_list = [
+            create_figure(title=f"タスクあたり差し戻し回数と累計作業時間の関係", x_axis_label="累計作業時間[hour]", y_axis_label="タスクあたり差し戻し回数"),
+            create_figure(
+                title=f"アノテーションあたり検査コメント数と累計作業時間の関係", x_axis_label="累計作業時間[hour]", y_axis_label="アノテーションあたり検査コメント数"
+            ),
+        ]
+
+        phase = "annotation"
+
+        self._plot_circle_text(
+            fig=figure_list[0],
+            source=source,
+            x_column_name=f"annofab_worktime_hour_{phase}",
+            y_column_name=f"rejected_count/task_count_{phase}",
+        )
+
+        self._plot_circle_text(
+            fig=figure_list[1],
+            source=source,
+            x_column_name=f"annofab_worktime_hour_{phase}",
+            y_column_name=f"pointed_out_inspection_comment_count/annotation_count_{phase}",
+        )
+
+        for fig in figure_list:
+            tooltip_item = [
+                "username_",
+                "biography_",
+                f"annofab_worktime_hour_{phase}",
+                f"task_count_{phase}",
+                f"input_data_count_{phase}",
+                f"annotation_count_{phase}",
+                f"rejected_count_{phase}" f"pointed_out_inspection_comment_count_{phase}",
+                f"rejected_count/task_count_{phase}" f"pointed_out_inspection_comment_count/annotation_count_{phase}",
             ]
 
             hover_tool = self._create_hover_tool(tooltip_item)
