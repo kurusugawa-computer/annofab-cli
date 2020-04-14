@@ -12,8 +12,22 @@ from annofabapi.models import ProjectMemberRole
 import annofabcli
 import annofabcli.common.cli
 from annofabcli import AnnofabApiFacade
-from annofabcli.common.cli import AbstractCommandLineInterface, ArgumentParser, build_annofabapi_resource_and_login
-from annofabcli.experimental.utils import add_id_csv, print_time_list_from_work_time_list
+from annofabcli.common.cli import (
+    AbstractCommandLineInterface,
+    ArgumentParser,
+    build_annofabapi_resource_and_login,
+    get_list_from_args,
+)
+from annofabcli.experimental.utils import (
+    FormatTarget,
+    TimeUnitTarget,
+    add_id_csv,
+    print_byname_total_list,
+    print_column_list,
+    print_time_list_from_work_time_list,
+    print_total,
+    timeunit_conversion,
+)
 
 logger = logging.getLogger(__name__)
 
@@ -69,6 +83,7 @@ class Table:
                 new_history = {
                     "user_name": self._get_username(l["account_id"]),
                     "user_id": self._get_user_id(l["account_id"]),
+                    "user_biography": self._get_user_biography(l["account_id"]),
                     "date": l["date"],
                     "worktime_planned": np.nan
                     if l["values"]["working_time_by_user"]["plans"] is None
@@ -95,6 +110,7 @@ class Table:
                     new_history = {
                         "user_name": self._get_username(account_id),
                         "user_id": self._get_user_id(account_id),
+                        "user_biography": self._get_user_biography(account_id),
                         "date": history["date"],
                         "worktime_monitored": annofabcli.utils.isoduration_to_minute(history["worktime"]),
                     }
@@ -116,7 +132,12 @@ class Table:
             account_statistics_df["worktime_actural"] = np.nan
             df = account_statistics_df
         else:
-            df = pd.merge(account_statistics_df, labor_control_df, on=["user_name", "user_id", "date"], how="outer")
+            df = pd.merge(
+                account_statistics_df,
+                labor_control_df,
+                on=["user_name", "user_id", "date", "user_biography"],
+                how="outer",
+            )
 
         return df
 
@@ -148,6 +169,20 @@ class Table:
         else:
             return account_id
 
+    def _get_user_biography(self, account_id: Optional[str]) -> Optional[str]:
+        """
+        プロジェクトメンバのbiographyを取得する。プロジェクトメンバでなければ、account_idを返す。
+        account_idがNoneならばNoneを返す。
+        """
+        if account_id is None:
+            return None
+
+        member = self.facade.get_organization_member_from_account_id(self.project_id, account_id)
+        if member is not None:
+            return member["biography"]
+        else:
+            return account_id
+
 
 def get_organization_id_from_project_id(annofab_service: annofabapi.Resource, project_id: str) -> str:
     """
@@ -158,9 +193,8 @@ def get_organization_id_from_project_id(annofab_service: annofabapi.Resource, pr
 
 
 def refine_df(
-    df: pd.DataFrame, start_date: datetime.date, end_date: datetime.date, user_id_list: List[str]
+    df: pd.DataFrame, start_date: datetime.date, end_date: datetime.date, user_id_list: Optional[List[str]]
 ) -> pd.DataFrame:
-
     # 日付で絞り込み
     df["date"] = pd.to_datetime(df["date"]).dt.date
     refine_day_df = df[(df["date"] >= start_date) & (df["date"] <= end_date)].copy()
@@ -170,7 +204,6 @@ def refine_df(
         if user_id_list is None
         else refine_day_df[refine_day_df["user_id"].str.contains("|".join(user_id_list), case=False)].copy()
     )
-
     return refine_user_df
 
 
@@ -200,18 +233,26 @@ class ListLaborWorktime(AbstractCommandLineInterface):
 
     def main(self):
         args = self.args
+        format_target = FormatTarget(args.format)
+        time_unit = TimeUnitTarget(args.time_unit)
+
         start_date = datetime.datetime.strptime(args.start_date, "%Y-%m-%d").date()
         end_date = datetime.datetime.strptime(args.end_date, "%Y-%m-%d").date()
-        user_id_list = args.user_id
+        user_id_list = get_list_from_args(args.user_id) if args.user_id is not None else None
 
         total_df = pd.DataFrame([])
-        for i, project_id in enumerate(list(set(args.project_id))):
+
+        # プロジェクトごとにデータを取得
+        project_id_list = get_list_from_args(args.project_id)
+        for i, project_id in enumerate(list(set(project_id_list))):
             logger.debug(f"{i + 1} 件目: project_id = {project_id}")
 
             afaw_time_df = self.list_labor_worktime(
                 project_id, start_date.strftime("%Y-%m-%d"), end_date.strftime("%Y-%m-%d")
             )
             total_df = pd.concat([total_df, afaw_time_df], sort=True)
+
+        # データが無い場合にはwarning
         if len(total_df) == 0:
             logger.warning(f"対象プロジェクトの労務管理情報・作業情報が0件のため、出力しません。")
             return
@@ -220,18 +261,37 @@ class ListLaborWorktime(AbstractCommandLineInterface):
             logger.warning(f"対象期間の労務管理情報・作業情報が0件のため、出力しません。")
             return
 
-        df = print_time_list_from_work_time_list(total_df)
+        # 時間単位変換
+        total_df = timeunit_conversion(df=total_df, time_unit=time_unit)
 
-        if args.output is None:
-            df.to_csv(
-                sys.stdout, date_format="%Y-%m-%d", encoding="utf_8_sig", line_terminator="\r\n", float_format="%.2f"
-            )
+        # フォーマット別に出力dfを作成
+        if format_target == FormatTarget.BY_NAME_TOTAL:
+            df = print_byname_total_list(total_df)
+        elif format_target == FormatTarget.TOTAL:
+            df = print_total(total_df)
+        elif format_target == FormatTarget.COLUMN_LIST:
+            df = print_column_list(total_df)
         else:
-            df.to_csv(
-                args.output, date_format="%Y-%m-%d", encoding="utf_8_sig", line_terminator="\r\n", float_format="%.2f"
-            )
+            df = print_time_list_from_work_time_list(total_df)
 
-            add_id_csv(args.output, self._get_project_title_list(args.project_id))
+        def _output(output: str, df: pd.DataFrame, index: bool):
+            df.to_csv(
+                output,
+                date_format="%Y-%m-%d",
+                encoding="utf_8_sig",
+                line_terminator="\r\n",
+                float_format="%.2f",
+                index=index,
+            )
+            if output != sys.stdout and args.add_project_id:
+                add_id_csv(output, self._get_project_title_list(project_id_list))
+
+        # 出力先別に出力
+        if args.output:
+            out_format = args.output
+        else:
+            out_format = sys.stdout
+        _output(out_format, df, index=(format_target == FormatTarget.DETAILS))
 
 
 def main(args):
@@ -242,13 +302,15 @@ def main(args):
 
 def parse_args(parser: argparse.ArgumentParser):
     argument_parser = ArgumentParser(parser)
+    time_unit_choices = [e.value for e in TimeUnitTarget]
+    format_choices = [e.value for e in FormatTarget]
     parser.add_argument(
         "-p",
         "--project_id",
         type=str,
         required=True,
         nargs="+",
-        help="集計対象のプロジェクトのproject_idを指定します。複数指定した場合は合計値を出力します。",
+        help="集計対象のプロジェクトのproject_idを指定します。複数指定した場合は合計値を出力します。`file://`を先頭に付けると、project_idの一覧が記載されたファイルを指定できます。",
     )
     parser.add_argument(
         "-u",
@@ -256,11 +318,25 @@ def parse_args(parser: argparse.ArgumentParser):
         type=str,
         nargs="+",
         default=None,
-        help="集計対象のユーザのuser_idに部分一致するものを集計します。" "指定しない場合は、プロジェクトメンバが指定されます。",
+        help="集計対象のユーザのuser_idに部分一致するものを集計します。"
+        "指定しない場合は、プロジェクトメンバが指定されます。`file://`を先頭に付けると、user_idの一覧が記載されたファイルを指定できます。",
     )
     parser.add_argument("--start_date", type=str, required=True, help="集計開始日(%%Y-%%m-%%d)")
     parser.add_argument("--end_date", type=str, required=True, help="集計終了日(%%Y-%%m-%%d)")
 
+    parser.add_argument("--time_unit", type=str, default="h", choices=time_unit_choices, help="出力の時間単位(h/m/s)")
+    parser.add_argument(
+        "--format",
+        type=str,
+        choices=format_choices,
+        default="details",
+        help="出力する際のフォーマット(total/by_name_total/column_list/details)"
+        "total:期間中の合計値だけを出力する"
+        "by_name_total:人毎の集計の合計値を出力する"
+        "column_list:列固定で詳細な値を出力する"
+        "details:日毎・人毎の詳細な値を出力する",
+    )
+    parser.add_argument("--add_project_id", action="store_true", help="出力する際にprojectidを出力する")
     argument_parser.add_output(required=False)
 
     parser.set_defaults(subcommand_func=main)
