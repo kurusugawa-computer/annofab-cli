@@ -34,7 +34,7 @@ class TestTable:
                 "annotation_count": [100, 200],
                 "input_data_count": [2, 4],
                 "inspection_count": [5, 6],
-                "number_of_rejections": [1,2],
+                "number_of_rejections": [1, 2],
             }
         )
         df = Table.create_annotation_count_ratio_df(task_history_df, task_df)

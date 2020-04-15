@@ -8,11 +8,11 @@ from typing import Any, Callable, Dict, List, Optional, Tuple
 
 import more_itertools
 import pandas
+import requests
 from annofabapi.models import OrganizationMember, Project
 from dataclasses_json import dataclass_json
 from more_itertools import first_true
 
-import requests
 import annofabcli
 from annofabcli import AnnofabApiFacade
 from annofabcli.common.cli import AbstractCommandLineInterface, build_annofabapi_resource_and_login, get_list_from_args
@@ -117,7 +117,9 @@ class ListWorktimeByUser(AbstractCommandLineInterface):
         return self._get_worktime_monitored_hour(account_statistics, account_id=account_id, date=date)
 
     @staticmethod
-    def _get_worktime_monitored_hour(account_statistics: List[Dict[str, Any]], account_id: str, date: str) -> Optional[float]:
+    def _get_worktime_monitored_hour(
+        account_statistics: List[Dict[str, Any]], account_id: str, date: str
+    ) -> Optional[float]:
         """
         AnnoFabの作業時間を取得する。
         """
@@ -239,7 +241,12 @@ class ListWorktimeByUser(AbstractCommandLineInterface):
         return labor_availability_dict
 
     def get_labor_list_from_project_id(
-        self, project_id: str, member_list: List[OrganizationMember], start_date: Optional[str], end_date: Optional[str]
+        self,
+        project_id: str,
+        member_list: List[OrganizationMember],
+        start_date: Optional[str],
+        end_date: Optional[str],
+        add_monitored_worktime: bool = False,
     ) -> List[LaborWorktime]:
         organization, _ = self.service.api.get_organization_of_project(project_id)
         organization_name = organization["organization_name"]
@@ -263,9 +270,13 @@ class ListWorktimeByUser(AbstractCommandLineInterface):
                 continue
 
             member = self.get_member_from_account_id(member_list, labor["account_id"])
-            worktime_monitored_hour = self._get_worktime_monitored_hour_from_project_id(
-                project_id=project_id, account_id=labor["account_id"], date=labor["date"]
-            )
+            if add_monitored_worktime:
+                worktime_monitored_hour = self._get_worktime_monitored_hour_from_project_id(
+                    project_id=project_id, account_id=labor["account_id"], date=labor["date"]
+                )
+            else:
+                worktime_monitored_hour = None
+
             new_labor = self._get_labor_worktime(
                 labor,
                 member=member,
@@ -283,6 +294,7 @@ class ListWorktimeByUser(AbstractCommandLineInterface):
         member_list: List[OrganizationMember],
         start_date: Optional[str],
         end_date: Optional[str],
+        add_monitored_worktime: bool = False,
     ) -> List[LaborWorktime]:
         organization, _ = self.service.api.get_organization(organization_name)
         organization_id = organization["organization_id"]
@@ -296,9 +308,13 @@ class ListWorktimeByUser(AbstractCommandLineInterface):
         for labor in labor_list:
             member = self.get_member_from_account_id(member_list, labor["account_id"])
             project_title = self.get_project_title(project_list, labor["project_id"])
-            worktime_monitored_hour = self._get_worktime_monitored_hour_from_project_id(
-                project_id=labor["project_id"], account_id=labor["account_id"], date=labor["date"]
-            )
+            if add_monitored_worktime:
+                worktime_monitored_hour = self._get_worktime_monitored_hour_from_project_id(
+                    project_id=labor["project_id"], account_id=labor["account_id"], date=labor["date"]
+                )
+            else:
+                worktime_monitored_hour = None
+
             new_labor = self._get_labor_worktime(
                 labor,
                 member=member,
@@ -367,7 +383,7 @@ class ListWorktimeByUser(AbstractCommandLineInterface):
         sum_worktime_df[output_columns].to_csv(str(output_dir / "ユーザごとの作業予定_記号.csv"), encoding="utf_8_sig", index=False)
 
     @staticmethod
-    def write_worktime_list(worktime_df: pandas.DataFrame, output_dir: Path):
+    def write_worktime_list(worktime_df: pandas.DataFrame, output_dir: Path, add_monitored_worktime: bool = False):
         worktime_df = worktime_df.rename(
             columns={
                 "worktime_plan_hour": "作業予定時間",
@@ -387,6 +403,9 @@ class ListWorktimeByUser(AbstractCommandLineInterface):
             "作業実績時間",
             "計測時間",
         ]
+        if add_monitored_worktime:
+            columns.remove("計測時間")
+
         worktime_df[columns].to_csv(str(output_dir / "作業時間の詳細一覧.csv"), encoding="utf_8_sig", index=False)
 
     def get_organization_member_list(
@@ -434,6 +453,7 @@ class ListWorktimeByUser(AbstractCommandLineInterface):
         user_id_list: Optional[List[str]],
         start_date: Optional[str],
         end_date: Optional[str],
+        add_monitored_worktime: bool = False,
     ) -> List[LaborWorktime]:
 
         labor_list: List[LaborWorktime] = []
@@ -443,7 +463,11 @@ class ListWorktimeByUser(AbstractCommandLineInterface):
             for project_id in project_id_list:
                 labor_list.extend(
                     self.get_labor_list_from_project_id(
-                        project_id, member_list=member_list, start_date=start_date, end_date=end_date
+                        project_id,
+                        member_list=member_list,
+                        start_date=start_date,
+                        end_date=end_date,
+                        add_monitored_worktime=add_monitored_worktime,
                     )
                 )
 
@@ -451,7 +475,11 @@ class ListWorktimeByUser(AbstractCommandLineInterface):
             for organization_name in organization_name_list:
                 labor_list.extend(
                     self.get_labor_list_from_organization_name(
-                        organization_name, member_list=member_list, start_date=start_date, end_date=end_date
+                        organization_name,
+                        member_list=member_list,
+                        start_date=start_date,
+                        end_date=end_date,
+                        add_monitored_worktime=add_monitored_worktime,
                     )
                 )
 
@@ -473,6 +501,7 @@ class ListWorktimeByUser(AbstractCommandLineInterface):
         end_date: str,
         output_dir: Path,
         labor_availability_list_dict: Optional[Dict[str, List[LaborAvailability]]] = None,
+        add_monitored_worktime: bool = False,
     ):
 
         reform_dict = {
@@ -513,7 +542,7 @@ class ListWorktimeByUser(AbstractCommandLineInterface):
 
         worktime_df = pandas.DataFrame([e.to_dict() for e in labor_list])  # type: ignore
         if len(worktime_df) > 0:
-            catch_exception(self.write_worktime_list)(worktime_df, output_dir)
+            catch_exception(self.write_worktime_list)(worktime_df, output_dir, add_monitored_worktime)
         else:
             logger.info("出力対象のデータが0件のため、'作業時間の詳細一覧.csv'を出力しません。")
 
@@ -526,6 +555,7 @@ class ListWorktimeByUser(AbstractCommandLineInterface):
         end_date: Optional[str],
         output_dir: Path,
         add_availability: bool = False,
+        add_monitored_worktime: bool = False,
     ) -> None:
         """
         作業時間の一覧を出力する
@@ -539,6 +569,7 @@ class ListWorktimeByUser(AbstractCommandLineInterface):
             user_id_list=user_id_list,
             start_date=start_date,
             end_date=end_date,
+            add_monitored_worktime=add_monitored_worktime,
         )
 
         if len(labor_list) == 0:
@@ -579,6 +610,7 @@ class ListWorktimeByUser(AbstractCommandLineInterface):
             end_date=end_date,
             output_dir=output_dir,
             labor_availability_list_dict=labor_availability_list_dict,
+            add_monitored_worktime=add_monitored_worktime,
         )
 
     def get_user_id_list_from_project_id_list(self, project_id_list: List[str]) -> List[str]:
@@ -671,6 +703,7 @@ class ListWorktimeByUser(AbstractCommandLineInterface):
             output_dir=output_dir,
             user_id_list=arg_user_id_list,
             add_availability=args.availability,
+            add_monitored_worktime=args.add_monitored_worktime,
         )  # type: ignore
 
 
