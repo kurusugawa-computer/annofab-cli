@@ -12,6 +12,7 @@ from annofabapi.models import OrganizationMember, Project
 from dataclasses_json import dataclass_json
 from more_itertools import first_true
 
+import requests
 import annofabcli
 from annofabcli import AnnofabApiFacade
 from annofabcli.common.cli import AbstractCommandLineInterface, build_annofabapi_resource_and_login, get_list_from_args
@@ -102,13 +103,21 @@ class ListWorktimeByUser(AbstractCommandLineInterface):
     ) -> Optional[float]:
         account_statistics = self._dict_account_statistics.get(project_id)
         if account_statistics is None:
-            account_statistics, _ = self.service.api.get_account_statistics(project_id)
+            try:
+                account_statistics, _ = self.service.api.get_account_statistics(project_id)
+            except requests.HTTPError as e:
+                if e.response.status_code == requests.codes.not_found:
+                    logger.warning(e)
+                    logger.warning("プロジェクトにアクセスできないため、アカウント統計情報を取得できませんでした。")
+                    account_statistics = []
+                else:
+                    raise e
             self._dict_account_statistics[project_id] = account_statistics
 
         return self._get_worktime_monitored_hour(account_statistics, account_id=account_id, date=date)
 
     @staticmethod
-    def _get_worktime_monitored_hour(account_statistics, account_id: str, date: str) -> Optional[float]:
+    def _get_worktime_monitored_hour(account_statistics: List[Dict[str, Any]], account_id: str, date: str) -> Optional[float]:
         """
         AnnoFabの作業時間を取得する。
         """
