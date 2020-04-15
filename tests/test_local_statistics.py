@@ -4,6 +4,7 @@ import pandas
 from annofabapi.models import TaskStatus
 
 from annofabcli.statistics.csv import Csv
+from annofabcli.statistics.scatter import Scatter
 from annofabcli.statistics.summarize_task_count import SimpleTaskStatus
 from annofabcli.statistics.table import Table
 
@@ -33,6 +34,7 @@ class TestTable:
                 "annotation_count": [100, 200],
                 "input_data_count": [2, 4],
                 "inspection_count": [5, 6],
+                "number_of_rejections": [1,2],
             }
         )
         df = Table.create_annotation_count_ratio_df(task_history_df, task_df)
@@ -46,6 +48,12 @@ class TestTable:
 
         df.to_csv(out_path / "productivity-per-user.csv")
 
+    def test_create_annotation_count_ratio_df(self):
+        df_task_history = pandas.read_csv(str(data_path / "statistics/task-history-df.csv"))
+        df_task = pandas.read_csv(str(data_path / "statistics/task.csv"))
+        df = Table.create_annotation_count_ratio_df(task_df=df_task, task_history_df=df_task_history)
+        df.to_csv(out_path / "annotation-count-ratio-df.csv")
+
 
 class TestSummarizeTaskCount:
     def test_SimpleTaskStatus_from_task_status(self):
@@ -54,3 +62,26 @@ class TestSummarizeTaskCount:
         assert SimpleTaskStatus.from_task_status(TaskStatus.WORKING) == SimpleTaskStatus.WORKING_BREAK_HOLD
         assert SimpleTaskStatus.from_task_status(TaskStatus.NOT_STARTED) == SimpleTaskStatus.NOT_STARTED
         assert SimpleTaskStatus.from_task_status(TaskStatus.COMPLETE) == SimpleTaskStatus.COMPLETE
+
+
+class TestScatter:
+    scatter_obj = None
+
+    import logging
+
+    logging_formatter = "%(levelname)-8s : %(asctime)s : %(filename)s : %(name)s : %(funcName)s : %(message)s"
+    logging.basicConfig(format=logging_formatter)
+    logging.getLogger("bokeh").setLevel(level=logging.DEBUG)
+
+    @classmethod
+    def setup_class(cls):
+        cls.scatter_obj = Scatter(outdir=str(out_path / "statistics"), project_id=project_id)
+
+    def test_write_scatter_for_productivity(self):
+        productivity_per_user = pandas.read_csv(str(data_path / "statistics/productivity-per-user.csv"), header=[0, 1])
+        productivity_per_user.rename(
+            columns={"Unnamed: 0_level_1": "", "Unnamed: 1_level_1": "", "Unnamed: 2_level_1": ""},
+            level=1,
+            inplace=True,
+        )
+        self.scatter_obj.write_scatter_for_productivity(productivity_per_user)

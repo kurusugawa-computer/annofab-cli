@@ -639,8 +639,7 @@ class Table:
         df = pd.DataFrame(tasks)
         # dictが含まれたDataFrameをbokehでグラフ化するとErrorが発生するので、dictを含む列を削除する
         # https://github.com/bokeh/bokeh/issues/9620
-        # また不要な列も削除する
-        df = df.drop(["histories_by_phase", "project_id"], axis=1)
+        df = df.drop(["histories_by_phase"], axis=1)
         return df
 
     def create_task_for_annotation_df(self):
@@ -1031,6 +1030,7 @@ class Table:
                 "annotation_count": row["annotation_count"],
                 "input_data_count": row["input_data_count"],
                 "inspection_comment_count": row["inspection_count"],
+                "rejected_count": row["number_of_rejections"],
             }
             for _, row in task_df.iterrows()
         }
@@ -1039,6 +1039,11 @@ class Table:
             task_id = row.name[0]
             inspection_comment_count = annotation_count_dict[task_id]["inspection_comment_count"]
             return row["worktime_ratio_by_task"] * inspection_comment_count
+
+        def get_rejected_count(row) -> float:
+            task_id = row.name[0]
+            rejected_count = annotation_count_dict[task_id]["rejected_count"]
+            return row["worktime_ratio_by_task"] * rejected_count
 
         def get_annotation_count(row) -> float:
             task_id = row.name[0]
@@ -1061,11 +1066,14 @@ class Table:
         group_obj["pointed_out_inspection_comment_count"] = group_obj.apply(
             get_inspection_comment_count, axis="columns"
         )
-
+        group_obj["rejected_count"] = group_obj.apply(get_rejected_count, axis="columns")
         new_df = group_obj.reset_index()
         new_df["pointed_out_inspection_comment_count"] = new_df["pointed_out_inspection_comment_count"] * new_df[
             "phase"
         ].apply(lambda e: 1 if e == TaskPhase.ANNOTATION.value else 0)
+        new_df["rejected_count"] = new_df["rejected_count"] * new_df["phase"].apply(
+            lambda e: 1 if e == TaskPhase.ANNOTATION.value else 0
+        )
         return new_df
 
     @staticmethod
@@ -1102,7 +1110,7 @@ class Table:
 
         phase_list = Table._get_phase_list(list(df.columns))
 
-        df = df[["worktime_result_hour"] + phase_list]
+        df = df[["worktime_result_hour"] + phase_list].copy()
         df.columns = pd.MultiIndex.from_tuples(
             [("annowork_worktime_hour", "sum")] + [("annofab_worktime_hour", phase) for phase in phase_list]
         )
@@ -1117,6 +1125,7 @@ class Table:
                 "input_data_count",
                 "annotation_count",
                 "pointed_out_inspection_comment_count",
+                "rejected_count",
             ],
             columns="phase",
             index="user_id",
@@ -1158,11 +1167,16 @@ class Table:
         df[("pointed_out_inspection_comment_count/input_data_count", phase)] = (
             df[("pointed_out_inspection_comment_count", phase)] / df[("input_data_count", phase)]
         )
+        df[("rejected_count/task_count", phase)] = df[("rejected_count", phase)] / df[("task_count", phase)]
 
         # 不要な列を削除する
         tmp_phase_list = copy.deepcopy(phase_list)
         tmp_phase_list.remove(TaskPhase.ANNOTATION.value)
-        df = df.drop([("pointed_out_inspection_comment_count", phase) for phase in tmp_phase_list], axis=1)
+
+        dropped_column = [("pointed_out_inspection_comment_count", phase) for phase in tmp_phase_list] + [
+            ("rejected_count", phase) for phase in tmp_phase_list
+        ]
+        df = df.drop(dropped_column, axis=1)
 
         # ユーザ情報を取得
         df_user = df_task_history.groupby("user_id").first()[["username", "biography"]]

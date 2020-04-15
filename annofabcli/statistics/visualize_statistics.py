@@ -15,6 +15,7 @@ from annofabcli.statistics.csv import Csv
 from annofabcli.statistics.database import Database
 from annofabcli.statistics.histogram import Histogram
 from annofabcli.statistics.linegraph import LineGraph
+from annofabcli.statistics.scatter import Scatter
 from annofabcli.statistics.table import AggregationBy, Table
 
 logger = logging.getLogger(__name__)
@@ -55,12 +56,14 @@ class WriteCsvGraph:
     df_by_date_user: Optional[pd.DataFrame] = None
     task_history_df: Optional[pd.DataFrame] = None
     labor_df: Optional[pd.DataFrame] = None
+    productivity_df: Optional[pd.DataFrame] = None
 
     def __init__(self, table_obj: Table, output_dir: Path, project_id: str):
         self.table_obj = table_obj
         self.csv_obj = Csv(str(output_dir), project_id)
         self.histogram_obj = Histogram(str(output_dir), project_id)
         self.graph_obj = LineGraph(str(output_dir), project_id)
+        self.scatter_obj = Scatter(str(output_dir), project_id)
 
     def _get_task_df(self):
         if self.task_df is None:
@@ -93,6 +96,19 @@ class WriteCsvGraph:
             self.labor_df = self.table_obj.create_labor_df()
         return self.labor_df
 
+    def _get_productivity_df(self):
+        if self.productivity_df is None:
+            task_history_df = self._get_task_history_df()
+            task_df = self._get_task_df()
+            annotation_count_ratio_df = self.table_obj.create_annotation_count_ratio_df(task_history_df, task_df)
+            productivity_df = self.table_obj.create_productivity_per_user_from_aw_time(
+                df_task_history=task_history_df,
+                df_labor=self._get_labor_df(),
+                df_worktime_ratio=annotation_count_ratio_df,
+            )
+            self.productivity_df = productivity_df
+        return self.productivity_df
+
     def write_histogram_for_task(self) -> None:
         """
         タスクに関するヒストグラムを出力する。
@@ -111,6 +127,14 @@ class WriteCsvGraph:
         """
         annotation_df = self._get_annotation_df()
         catch_exception(self.histogram_obj.write_histogram_for_annotation_count_by_label)(annotation_df)
+
+    def write_scatter_per_user(self) -> None:
+        """
+        ユーザごとにプロットした散布図を出力する。
+        """
+        productivity_df = self._get_productivity_df()
+        catch_exception(self.scatter_obj.write_scatter_for_productivity)(productivity_df)
+        catch_exception(self.scatter_obj.write_scatter_for_quality)(productivity_df)
 
     def write_linegraph_for_task_overall(self) -> None:
         """
@@ -234,9 +258,7 @@ class WriteCsvGraph:
         annotation_count_ratio_df = self.table_obj.create_annotation_count_ratio_df(task_history_df, task_df)
         catch_exception(self.csv_obj._write_csv)("タスク内の作業時間の比率.csv", annotation_count_ratio_df)
 
-        productivity_df = self.table_obj.create_productivity_per_user_from_aw_time(
-            df_task_history=task_history_df, df_labor=df_labor, df_worktime_ratio=annotation_count_ratio_df
-        )
+        productivity_df = self._get_productivity_df()
         catch_exception(self.csv_obj.write_productivity_from_aw_time)(productivity_df)
 
 
@@ -288,7 +310,6 @@ class VisualizeStatistics(AbstractCommandLineInterface):
         write_project_name_file(self.service, project_id, output_dir)
 
         write_obj = WriteCsvGraph(table_obj, output_dir, project_id)
-
         # ヒストグラム
         write_obj.write_histogram_for_task()
         write_obj.write_histogram_for_annotation()
@@ -297,7 +318,10 @@ class VisualizeStatistics(AbstractCommandLineInterface):
         write_obj.write_linegraph_for_by_user(user_id_list)
         write_obj.write_linegraph_for_task_overall()
 
-        # CSV
+        # 散布図
+        write_obj.write_scatter_per_user()
+
+        # # CSV
         write_obj.write_productivity_csv()
         write_obj.write_csv_for_task()
         write_obj.write_csv_for_annotation()
