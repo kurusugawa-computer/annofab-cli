@@ -639,8 +639,7 @@ class Table:
         df = pd.DataFrame(tasks)
         # dictが含まれたDataFrameをbokehでグラフ化するとErrorが発生するので、dictを含む列を削除する
         # https://github.com/bokeh/bokeh/issues/9620
-        # また不要な列も削除する
-        df = df.drop(["histories_by_phase", "project_id"], axis=1)
+        df = df.drop(["histories_by_phase"], axis=1)
         return df
 
     def create_task_for_annotation_df(self):
