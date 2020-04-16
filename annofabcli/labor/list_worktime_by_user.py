@@ -742,6 +742,9 @@ def parse_args(parser: argparse.ArgumentParser):
     )
 
     parser.add_argument("--availability", action="store_true", help="指定した場合、'ユーザごとの作業時間.csv'に予定稼働時間も出力します。")
+    parser.add_argument(
+        "--add_monitored_worktime", action="store_true", help="指定した場合、'作業時間の詳細一覧.csv'にAnnoFab計測時間も出力します。"
+    )
 
     start_period_group = parser.add_mutually_exclusive_group()
     start_period_group.add_argument("--start_date", type=str, help="集計期間の開始日(YYYY-MM-DD)")
