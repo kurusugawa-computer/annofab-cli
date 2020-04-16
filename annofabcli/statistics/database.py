@@ -14,6 +14,7 @@ import annofabapi
 import annofabapi.utils
 import dateutil
 import more_itertools
+import requests
 from annofabapi.dataclass.annotation import SimpleAnnotationDetail
 from annofabapi.models import InputDataId, Inspection, JobStatus, JobType, Task, TaskHistory
 from annofabapi.parser import SimpleAnnotationZipParser
@@ -324,7 +325,17 @@ class Database:
         self.annofab_service.wrapper.download_project_tasks_url(self.project_id, str(self.tasks_json_path))
 
         logger.debug(f"downloading {str(self.inspection_json_path)}")
-        self.annofab_service.wrapper.download_project_inspections_url(self.project_id, str(self.inspection_json_path))
+        try:
+            # 検査コメント全件ファイルだけ updateする手段がないため、検査コメント全件ファイルのダウンロードだけ特別処理
+            self.annofab_service.wrapper.download_project_inspections_url(
+                self.project_id, str(self.inspection_json_path)
+            )
+        except requests.HTTPError as e:
+            if e.response.status_code == requests.codes.not_found:
+                logger.warning(f"検査コメント全件ファイルがありません。")
+                self.inspection_json_path.write_text("{}", encoding="utf-8")
+            else:
+                raise e
 
         annotations_zip_file = f"{self.checkpoint_dir}/simple-annotations.zip"
 
