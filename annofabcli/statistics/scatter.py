@@ -185,7 +185,7 @@ class Scatter:
         logger.debug(f"{output_file} を出力します。")
 
         phase_list = self._get_phase_list(df)
-        figure_list = [create_figure(f"アノテーションあたり作業時間と累計作業時間の関係（{phase}）") for phase in phase_list]
+        figure_list = [create_figure(f"{self.dict_phase_name[phase]}のアノテーションあたり作業時間と累計作業時間の関係(計測時間)") for phase in phase_list]
 
         df["biography"] = df["biography"].fillna("")
         for biography_index, biography in enumerate(df["biography"].unique()):
@@ -242,12 +242,13 @@ class Scatter:
                 y_axis_label="アノテーションあたり作業時間[hour/annotation]",
             )
 
-        html_title = "散布図-アノテーションあたり作業時間(実績時間)と累計作業時間(実績時間)の関係"
+        html_title = "散布図-アノテーションあたり作業時間と累計作業時間の関係-実績時間"
         output_file = f"{self.scatter_outdir}/{self.short_project_id}-{html_title}.html"
         logger.debug(f"{output_file} を出力します。")
 
         phase_list = self._get_phase_list(df)
-        figure_list = [create_figure(f"アノテーションあたり作業時間と累計作業時間の関係（{phase}）") for phase in phase_list]
+        figure_list = [create_figure(f"{self.dict_phase_name[phase]}のアノテーションあたり作業時間と累計作業時間の関係(実績時間)") for phase in phase_list]
+
 
         df["biography"] = df["biography"].fillna("")
         for biography_index, biography in enumerate(df["biography"].unique()):
@@ -300,14 +301,14 @@ class Scatter:
                 plot_width=800, plot_height=600, title=title, x_axis_label=x_axis_label, y_axis_label=y_axis_label,
             )
 
-        html_title = "散布図-教師付者の品質と累計作業時間の関係"
+        html_title = "散布図-教師付者の品質と作業量の関係"
         output_file = f"{self.scatter_outdir}/{self.short_project_id}-{html_title}.html"
         logger.debug(f"{output_file} を出力します。")
 
         figure_list = [
-            create_figure(title=f"タスクあたり差し戻し回数と累計作業時間の関係", x_axis_label="累計作業時間[hour]", y_axis_label="タスクあたり差し戻し回数"),
+            create_figure(title=f"タスクあたり差し戻し回数とタスク数の関係", x_axis_label="タスク数", y_axis_label="タスクあたり差し戻し回数"),
             create_figure(
-                title=f"アノテーションあたり検査コメント数と累計作業時間の関係", x_axis_label="累計作業時間[hour]", y_axis_label="アノテーションあたり検査コメント数"
+                title=f"アノテーションあたり検査コメント数とアノテーション数の関係", x_axis_label="アノテーション数", y_axis_label="アノテーションあたり検査コメント数"
             ),
         ]
 
@@ -321,7 +322,7 @@ class Scatter:
             self._scatter(
                 fig=figure_list[0],
                 source=source,
-                x_column_name=f"annofab_worktime_hour_{phase}",
+                x_column_name=f"task_count_{phase}",
                 y_column_name=f"rejected_count/task_count_{phase}",
                 legend_label=biography,
                 color=self.my_palette[biography_index],
@@ -330,7 +331,7 @@ class Scatter:
             self._scatter(
                 fig=figure_list[1],
                 source=source,
-                x_column_name=f"annofab_worktime_hour_{phase}",
+                x_column_name=f"annotation_count_{phase}",
                 y_column_name=f"pointed_out_inspection_comment_count/annotation_count_{phase}",
                 legend_label=biography,
                 color=self.my_palette[biography_index],

@@ -1116,10 +1116,10 @@ class Table:
 
         df = df[["worktime_result_hour"] + phase_list].copy()
         df.columns = pd.MultiIndex.from_tuples(
-            [("annowork_worktime_hour", "sum")] + [("annofab_worktime_hour", phase) for phase in phase_list]
+            [("actual_worktime_hour", "sum")] + [("monitored_worktime_hour", phase) for phase in phase_list]
         )
 
-        df[("annofab_worktime_hour", "sum")] = df[[("annofab_worktime_hour", phase) for phase in phase_list]].sum(
+        df[("monitored_worktime_hour", "sum")] = df[[("monitored_worktime_hour", phase) for phase in phase_list]].sum(
             axis=1
         )
 
@@ -1141,27 +1141,27 @@ class Table:
 
         for phase in phase_list:
             # AnnoFab時間の比率
-            df[("annofab_worktime_ratio", phase)] = (
-                df[("annofab_worktime_hour", phase)] / df[("annofab_worktime_hour", "sum")]
+            df[("monitored_worktime_ratio", phase)] = (
+                df[("monitored_worktime_hour", phase)] / df[("monitored_worktime_hour", "sum")]
             )
             # AnnoFab時間の比率から、Annowork時間を予測する
-            df[("prediction_annowork_worktime_hour", phase)] = (
-                df[("annowork_worktime_hour", "sum")] * df[("annofab_worktime_ratio", phase)]
+            df[("prediction_actual_worktime_hour", phase)] = (
+                df[("actual_worktime_hour", "sum")] * df[("monitored_worktime_ratio", phase)]
             )
 
             # 生産性を算出
-            df[("annofab_worktime/input_data_count", phase)] = (
-                df[("annofab_worktime_hour", phase)] / df[("input_data_count", phase)]
+            df[("monitored_worktime/input_data_count", phase)] = (
+                df[("monitored_worktime_hour", phase)] / df[("input_data_count", phase)]
             )
-            df[("annowork_worktime/input_data_count", phase)] = (
-                df[("prediction_annowork_worktime_hour", phase)] / df[("input_data_count", phase)]
+            df[("actual_worktime/input_data_count", phase)] = (
+                df[("prediction_actual_worktime_hour", phase)] / df[("input_data_count", phase)]
             )
 
-            df[("annofab_worktime/annotation_count", phase)] = (
-                df[("annofab_worktime_hour", phase)] / df[("annotation_count", phase)]
+            df[("monitored_worktime/annotation_count", phase)] = (
+                df[("monitored_worktime_hour", phase)] / df[("annotation_count", phase)]
             )
-            df[("annowork_worktime/annotation_count", phase)] = (
-                df[("prediction_annowork_worktime_hour", phase)] / df[("annotation_count", phase)]
+            df[("actual_worktime/annotation_count", phase)] = (
+                df[("prediction_actual_worktime_hour", phase)] / df[("annotation_count", phase)]
             )
 
         phase = TaskPhase.ANNOTATION.value

@@ -435,9 +435,9 @@ class Csv:
         def get_phase_list() -> List[str]:
             columns = list(df.columns)
             phase_list = [TaskPhase.ANNOTATION.value, TaskPhase.INSPECTION.value, TaskPhase.ACCEPTANCE.value]
-            if ("annofab_worktime_hour", TaskPhase.INSPECTION.value) not in columns:
+            if ("monitored_worktime_hour", TaskPhase.INSPECTION.value) not in columns:
                 phase_list.remove(TaskPhase.INSPECTION.value)
-            if ("annofab_worktime_hour", TaskPhase.ACCEPTANCE.value) not in columns:
+            if ("monitored_worktime_hour", TaskPhase.ACCEPTANCE.value) not in columns:
                 phase_list.remove(TaskPhase.ACCEPTANCE.value)
             return phase_list
 
@@ -449,10 +449,10 @@ class Csv:
 
         user_columns = [("user_id", ""), ("username", ""), ("biography", "")]
 
-        annofab_worktime_columns = (
-            [("annofab_worktime_hour", phase) for phase in phase_list]
-            + [("annofab_worktime_hour", "sum")]
-            + [("annofab_worktime_ratio", phase) for phase in phase_list]
+        monitored_worktime_columns = (
+            [("monitored_worktime_hour", phase) for phase in phase_list]
+            + [("monitored_worktime_hour", "sum")]
+            + [("monitored_worktime_ratio", phase) for phase in phase_list]
         )
         production_columns = (
             [("task_count", phase) for phase in phase_list]
@@ -460,15 +460,15 @@ class Csv:
             + [("annotation_count", phase) for phase in phase_list]
         )
 
-        annowork_worktime_columns = [("annowork_worktime_hour", "sum")] + [
-            ("prediction_annowork_worktime_hour", phase) for phase in phase_list
+        actual_worktime_columns = [("actual_worktime_hour", "sum")] + [
+            ("prediction_actual_worktime_hour", phase) for phase in phase_list
         ]
 
         productivity_columns = (
-            [("annofab_worktime/input_data_count", phase) for phase in phase_list]
-            + [("annowork_worktime/input_data_count", phase) for phase in phase_list]
-            + [("annofab_worktime/annotation_count", phase) for phase in phase_list]
-            + [("annowork_worktime/annotation_count", phase) for phase in phase_list]
+            [("monitored_worktime/input_data_count", phase) for phase in phase_list]
+            + [("actual_worktime/input_data_count", phase) for phase in phase_list]
+            + [("monitored_worktime/annotation_count", phase) for phase in phase_list]
+            + [("actual_worktime/annotation_count", phase) for phase in phase_list]
         )
 
         inspection_comment_columns = [
@@ -479,9 +479,9 @@ class Csv:
 
         prior_columns = (
             user_columns
-            + annofab_worktime_columns
+            + monitored_worktime_columns
             + production_columns
-            + annowork_worktime_columns
+            + actual_worktime_columns
             + productivity_columns
             + inspection_comment_columns
         )
