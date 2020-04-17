@@ -67,12 +67,6 @@ class TestSummarizeTaskCount:
 class TestScatter:
     scatter_obj = None
 
-    import logging
-
-    logging_formatter = "%(levelname)-8s : %(asctime)s : %(filename)s : %(name)s : %(funcName)s : %(message)s"
-    logging.basicConfig(format=logging_formatter)
-    logging.getLogger("bokeh").setLevel(level=logging.DEBUG)
-
     @classmethod
     def setup_class(cls):
         cls.scatter_obj = Scatter(outdir=str(out_path / "statistics"), project_id=project_id)
@@ -85,3 +79,12 @@ class TestScatter:
             inplace=True,
         )
         self.scatter_obj.write_scatter_for_productivity(productivity_per_user)
+
+    def test_write_scatter_for_quality(self):
+        productivity_per_user = pandas.read_csv(str(data_path / "statistics/productivity-per-user.csv"), header=[0, 1])
+        productivity_per_user.rename(
+            columns={"Unnamed: 0_level_1": "", "Unnamed: 1_level_1": "", "Unnamed: 2_level_1": ""},
+            level=1,
+            inplace=True,
+        )
+        self.scatter_obj.write_scatter_for_quality(productivity_per_user)
