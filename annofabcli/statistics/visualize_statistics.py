@@ -133,7 +133,8 @@ class WriteCsvGraph:
         ユーザごとにプロットした散布図を出力する。
         """
         productivity_df = self._get_productivity_df()
-        catch_exception(self.scatter_obj.write_scatter_for_productivity)(productivity_df)
+        catch_exception(self.scatter_obj.write_scatter_for_productivity_by_monitored_worktime)(productivity_df)
+        catch_exception(self.scatter_obj.write_scatter_for_productivity_by_actual_worktime)(productivity_df)
         catch_exception(self.scatter_obj.write_scatter_for_quality)(productivity_df)
 
     def write_linegraph_for_task_overall(self) -> None:
