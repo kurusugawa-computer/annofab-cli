@@ -71,20 +71,23 @@ class TestScatter:
     def setup_class(cls):
         cls.scatter_obj = Scatter(outdir=str(out_path / "statistics"), project_id=project_id)
 
-    def test_write_scatter_for_productivity(self):
+    def read_productivity_per_user(self):
         productivity_per_user = pandas.read_csv(str(data_path / "statistics/productivity-per-user.csv"), header=[0, 1])
         productivity_per_user.rename(
             columns={"Unnamed: 0_level_1": "", "Unnamed: 1_level_1": "", "Unnamed: 2_level_1": ""},
             level=1,
             inplace=True,
         )
-        self.scatter_obj.write_scatter_for_productivity(productivity_per_user)
+        return productivity_per_user
+
+    def test_write_scatter_for_productivity_by_monitored_worktime(self):
+        productivity_per_user = self.read_productivity_per_user()
+        self.scatter_obj.write_scatter_for_productivity_by_monitored_worktime(productivity_per_user)
+
+    def test_write_scatter_for_productivity_by_actual_worktime(self):
+        productivity_per_user = self.read_productivity_per_user()
+        self.scatter_obj.write_scatter_for_productivity_by_actual_worktime(productivity_per_user)
 
     def test_write_scatter_for_quality(self):
-        productivity_per_user = pandas.read_csv(str(data_path / "statistics/productivity-per-user.csv"), header=[0, 1])
-        productivity_per_user.rename(
-            columns={"Unnamed: 0_level_1": "", "Unnamed: 1_level_1": "", "Unnamed: 2_level_1": ""},
-            level=1,
-            inplace=True,
-        )
+        productivity_per_user = self.read_productivity_per_user()
         self.scatter_obj.write_scatter_for_quality(productivity_per_user)

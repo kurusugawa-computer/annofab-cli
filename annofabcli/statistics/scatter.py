@@ -153,9 +153,9 @@ class Scatter:
     def _get_phase_list(df: pandas.DataFrame) -> List[str]:
         columns = list(df.columns)
         phase_list = [TaskPhase.ANNOTATION.value, TaskPhase.INSPECTION.value, TaskPhase.ACCEPTANCE.value]
-        if ("annofab_worktime_hour", TaskPhase.INSPECTION.value) not in columns:
+        if ("monitored_worktime_hour", TaskPhase.INSPECTION.value) not in columns:
             phase_list.remove(TaskPhase.INSPECTION.value)
-        if ("annofab_worktime_hour", TaskPhase.ACCEPTANCE.value) not in columns:
+        if ("monitored_worktime_hour", TaskPhase.ACCEPTANCE.value) not in columns:
             phase_list.remove(TaskPhase.ACCEPTANCE.value)
         return phase_list
 
@@ -185,7 +185,9 @@ class Scatter:
         logger.debug(f"{output_file} を出力します。")
 
         phase_list = self._get_phase_list(df)
-        figure_list = [create_figure(f"{self.dict_phase_name[phase]}のアノテーションあたり作業時間と累計作業時間の関係(計測時間)") for phase in phase_list]
+        figure_list = [
+            create_figure(f"{self.dict_phase_name[phase]}のアノテーションあたり作業時間と累計作業時間の関係(計測時間)") for phase in phase_list
+        ]
 
         df["biography"] = df["biography"].fillna("")
         for biography_index, biography in enumerate(df["biography"].unique()):
@@ -197,8 +199,8 @@ class Scatter:
                 self._scatter(
                     fig=fig,
                     source=source,
-                    x_column_name=f"annofab_worktime_hour_{phase}",
-                    y_column_name=f"annofab_worktime/annotation_count_{phase}",
+                    x_column_name=f"monitored_worktime_hour_{phase}",
+                    y_column_name=f"monitored_worktime/annotation_count_{phase}",
                     legend_label=biography,
                     color=self.my_palette[biography_index],
                 )
@@ -207,13 +209,13 @@ class Scatter:
             tooltip_item = [
                 "username_",
                 "biography_",
-                f"annofab_worktime_hour_{phase}",
+                f"monitored_worktime_hour_{phase}",
                 f"task_count_{phase}",
                 f"input_data_count_{phase}",
                 f"annotation_count_{phase}",
-                f"prediction_annowork_worktime_hour_{phase}",
-                f"annofab_worktime/input_data_count_{phase}",
-                f"annofab_worktime/annotation_count_{phase}",
+                f"prediction_actual_worktime_hour_{phase}",
+                f"monitored_worktime/input_data_count_{phase}",
+                f"monitored_worktime/annotation_count_{phase}",
             ]
             hover_tool = self._create_hover_tool(tooltip_item)
             fig.add_tools(hover_tool)
@@ -247,8 +249,9 @@ class Scatter:
         logger.debug(f"{output_file} を出力します。")
 
         phase_list = self._get_phase_list(df)
-        figure_list = [create_figure(f"{self.dict_phase_name[phase]}のアノテーションあたり作業時間と累計作業時間の関係(実績時間)") for phase in phase_list]
-
+        figure_list = [
+            create_figure(f"{self.dict_phase_name[phase]}のアノテーションあたり作業時間と累計作業時間の関係(実績時間)") for phase in phase_list
+        ]
 
         df["biography"] = df["biography"].fillna("")
         for biography_index, biography in enumerate(df["biography"].unique()):
@@ -260,8 +263,8 @@ class Scatter:
                 self._scatter(
                     fig=fig,
                     source=source,
-                    x_column_name=f"annofab_worktime_hour_{phase}",
-                    y_column_name=f"annofab_worktime/annotation_count_{phase}",
+                    x_column_name=f"prediction_actual_worktime_hour_{phase}",
+                    y_column_name=f"actual_worktime/annotation_count_{phase}",
                     legend_label=biography,
                     color=self.my_palette[biography_index],
                 )
@@ -270,13 +273,13 @@ class Scatter:
             tooltip_item = [
                 "username_",
                 "biography_",
-                f"annofab_worktime_hour_{phase}",
+                f"prediction_actual_worktime_hour_{phase}",
                 f"task_count_{phase}",
                 f"input_data_count_{phase}",
                 f"annotation_count_{phase}",
-                f"prediction_annowork_worktime_hour_{phase}",
-                f"annofab_worktime/input_data_count_{phase}",
-                f"annofab_worktime/annotation_count_{phase}",
+                f"monitored_worktime_hour_{phase}",
+                f"prediction_actual_worktime/input_data_count_{phase}",
+                f"prediction_actual_worktime/annotation_count_{phase}",
             ]
             hover_tool = self._create_hover_tool(tooltip_item)
             fig.add_tools(hover_tool)
@@ -341,7 +344,7 @@ class Scatter:
             tooltip_item = [
                 "username_",
                 "biography_",
-                f"annofab_worktime_hour_{phase}",
+                f"monitored_worktime_hour_{phase}",
                 f"task_count_{phase}",
                 f"input_data_count_{phase}",
                 f"annotation_count_{phase}",
