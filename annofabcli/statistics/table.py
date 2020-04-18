@@ -882,6 +882,8 @@ class Table:
         df["cumulative_number_of_rejections_by_inspection"] = df["number_of_rejections_by_inspection"].cumsum()
         df["cumulative_number_of_rejections_by_acceptance"] = df["number_of_rejections_by_acceptance"].cumsum()
 
+        # 元に戻す
+        df = df.drop(["task_count"], axis=1)
         return df
 
     @staticmethod
@@ -915,6 +917,8 @@ class Table:
         df["cumulative_number_of_rejections_by_inspection"] = groupby_obj["number_of_rejections_by_inspection"].cumsum()
         df["cumulative_number_of_rejections_by_acceptance"] = groupby_obj["number_of_rejections_by_acceptance"].cumsum()
 
+        # 元に戻す
+        df = df.drop(["task_count"], axis=1)
         return df
 
     @staticmethod
@@ -948,6 +952,8 @@ class Table:
         df["cumulative_number_of_rejections_by_inspection"] = groupby_obj["number_of_rejections_by_inspection"].cumsum()
         df["cumulative_number_of_rejections_by_acceptance"] = groupby_obj["number_of_rejections_by_acceptance"].cumsum()
 
+        # 元に戻す
+        df = df.drop(["task_count"], axis=1)
         return df
 
     @staticmethod
@@ -978,6 +984,8 @@ class Table:
         df["cumulative_number_of_rejections_by_inspection"] = groupby_obj["number_of_rejections_by_inspection"].cumsum()
         df["cumulative_number_of_rejections_by_acceptance"] = groupby_obj["number_of_rejections_by_acceptance"].cumsum()
 
+        # 元に戻す
+        df = df.drop(["task_count"], axis=1)
         return df
 
     def create_worktime_per_image_df(self, aggregation_by: AggregationBy, phase: TaskPhase) -> pd.DataFrame:
