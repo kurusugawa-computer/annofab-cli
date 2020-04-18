@@ -524,6 +524,7 @@ class Csv:
             + velocity_columns
             + ["working_user_count"]
         )
+        # TODO lastweek
 
         required_columns = self._create_required_columns(df, prior_columns, dropped_columns)
         self._write_csv(f"{self.short_project_id}-日毎の生産量と生産性.csv", df[required_columns])
