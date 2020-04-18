@@ -277,7 +277,6 @@ class Csv:
 
         """
         columns = [
-            "task_count",
             "input_data_count",
             "annotation_count",
             "inspection_count",
