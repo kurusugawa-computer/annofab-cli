@@ -512,9 +512,10 @@ class Csv:
         ]
 
         velocity_columns = [
-            f"{numerator}/{denominator}"
+            f"{numerator}/{denominator}{suffix}"
             for numerator in ["actual_worktime_hour", "monitored_worktime_hour"]
             for denominator in ["task_count", "input_data_count", "annotation_count"]
+            for suffix in ["", "__lastweek"]
         ]
 
         prior_columns = (
@@ -524,7 +525,6 @@ class Csv:
             + velocity_columns
             + ["working_user_count"]
         )
-        # TODO lastweek
 
         required_columns = self._create_required_columns(df, prior_columns, dropped_columns)
         self._write_csv(f"{self.short_project_id}-日毎の生産量と生産性.csv", df[required_columns])
