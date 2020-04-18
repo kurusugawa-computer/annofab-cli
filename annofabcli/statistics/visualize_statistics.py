@@ -203,6 +203,15 @@ class WriteCsvGraph:
         member_df = self.table_obj.create_member_df(task_df)
         catch_exception(self.csv_obj.write_member_list)(member_df)
 
+    def write_whole_productivity_csv_per_date(self) -> None:
+        """
+        日毎の生産性を出力する
+        """
+        task_df = self._get_task_df()
+        labor_df = self._get_labor_df()
+        whole_productivity_df = self.table_obj.create_whole_productivity_per_date(task_df, labor_df)
+        catch_exception(self.csv_obj.write_whole_productivity_per_date)(whole_productivity_df)
+
     def _write_メンバー別作業時間平均_画像1枚あたり_by_phase(self, phase: TaskPhase):
         df_by_inputs = self.table_obj.create_worktime_per_image_df(AggregationBy.BY_INPUTS, phase)
         self.csv_obj.write_メンバー別作業時間平均_画像1枚あたり(df_by_inputs, phase)
@@ -322,7 +331,8 @@ class VisualizeStatistics(AbstractCommandLineInterface):
         # 散布図
         write_obj.write_scatter_per_user()
 
-        # # CSV
+        # CSV
+        write_obj.write_whole_productivity_csv_per_date()
         write_obj.write_productivity_csv()
         write_obj.write_csv_for_task()
         write_obj.write_csv_for_annotation()

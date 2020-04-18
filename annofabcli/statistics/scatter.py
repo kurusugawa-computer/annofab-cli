@@ -131,9 +131,7 @@ class Scatter:
             color: 線と点の色
 
         """
-        print(f"legend_label={legend_label}")
         if legend_label == "":
-            print("legend_label is none")
             legend_label = "none"
 
         fig.circle(
@@ -191,8 +189,6 @@ class Scatter:
 
         df["biography"] = df["biography"].fillna("")
         for biography_index, biography in enumerate(df["biography"].unique()):
-            print(f"biography={biography}")
-
             filtered_df = df[df["biography"] == biography]
             source = ColumnDataSource(data=filtered_df)
             for fig, phase in zip(figure_list, phase_list):
@@ -255,8 +251,6 @@ class Scatter:
 
         df["biography"] = df["biography"].fillna("")
         for biography_index, biography in enumerate(df["biography"].unique()):
-            print(f"biography={biography}")
-
             filtered_df = df[df["biography"] == biography]
             source = ColumnDataSource(data=filtered_df)
             for fig, phase in zip(figure_list, phase_list):

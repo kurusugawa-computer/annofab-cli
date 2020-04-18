@@ -277,7 +277,6 @@ class Csv:
 
         """
         columns = [
-            "task_count",
             "input_data_count",
             "annotation_count",
             "inspection_count",
@@ -299,7 +298,6 @@ class Csv:
 
         """
         columns = [
-            "task_count",
             "annotator_is_changed",
             "inspector_is_changed",
             "acceptor_is_changed",
@@ -311,7 +309,7 @@ class Csv:
         sum_df = pd.DataFrame()
         sum_df["column"] = sum_series.index
         sum_df["count_if_true"] = sum_series.values
-
+        sum_df = sum_df.append({"column": "task_count", "count_if_true": len(df)}, ignore_index=True)
         self._write_csv(f"集計結果csv/{self.short_project_id}-集計-タスク数.csv", sum_df)
 
     def write_member_list(self, df: pd.DataFrame, dropped_columns: Optional[List[str]] = None):
@@ -487,3 +485,44 @@ class Csv:
         )
         required_columns = self._create_required_columns(df, prior_columns, dropped_columns)
         self._write_csv(f"{self.short_project_id}-メンバごとの生産性と品質.csv", df[required_columns])
+
+    def write_whole_productivity_per_date(self, df: pd.DataFrame, dropped_columns: Optional[List[str]] = None) -> None:
+        """
+        日毎の全体の生産量、生産性を出力する。
+
+        Args:
+            df:
+            dropped_columns:
+
+
+        """
+        production_columns = [
+            "task_count",
+            "input_data_count",
+            "annotation_count",
+        ]
+        worktime_columns = [
+            "actual_worktime_hour",
+            "monitored_worktime_hour",
+            "monitored_annotation_worktime_hour",
+            "monitored_inspection_worktime_hour",
+            "monitored_acceptance_worktime_hour",
+        ]
+
+        velocity_columns = [
+            f"{numerator}/{denominator}{suffix}"
+            for numerator in ["actual_worktime_hour", "monitored_worktime_hour"]
+            for denominator in ["task_count", "input_data_count", "annotation_count"]
+            for suffix in ["", "__lastweek"]
+        ]
+
+        prior_columns = (
+            ["date", "cumsum_task_count", "cumsum_input_data_count", "cumsum_actual_worktime_hour"]
+            + production_columns
+            + worktime_columns
+            + velocity_columns
+            + ["working_user_count"]
+        )
+
+        required_columns = self._create_required_columns(df, prior_columns, dropped_columns)
+        self._write_csv(f"{self.short_project_id}-日毎の生産量と生産性.csv", df[required_columns])

@@ -7,7 +7,7 @@ from typing import Any, Dict, List, Optional
 import dateutil
 import more_itertools
 import numpy
-import pandas as pd
+import pandas
 from annofabapi.dataclass.annotation import SimpleAnnotationDetail
 from annofabapi.dataclass.statistics import (
     ProjectAccountStatistics,
@@ -29,6 +29,10 @@ from annofabcli.common.utils import datetime_to_date, isoduration_to_hour
 from annofabcli.statistics.database import AnnotationDict, Database
 
 logger = logging.getLogger(__name__)
+
+
+def _get_date_list(start_date: str, end_date: str) -> List[str]:
+    return [e.strftime("%Y-%m-%d") for e in pandas.date_range(start=start_date, end=end_date)]
 
 
 class AggregationBy(Enum):
@@ -339,7 +343,7 @@ class Table:
 
                 all_inspection_list.extend(filtered_inspection_list)
 
-        df = pd.DataFrame(all_inspection_list)
+        df = pandas.DataFrame(all_inspection_list)
         return df
 
     def _set_first_phase_from_task_history(
@@ -545,7 +549,7 @@ class Table:
     def _get_task_from_task_id(task_list: List[Task], task_id: str) -> Optional[Task]:
         return more_itertools.first_true(task_list, pred=lambda e: e["task_id"] == task_id)
 
-    def create_task_history_df(self) -> pd.DataFrame:
+    def create_task_history_df(self) -> pandas.DataFrame:
         """
         タスク履歴の一覧のDataFrameを出力する。
 
@@ -573,10 +577,10 @@ class Table:
                 history["task_status"] = task["status"]
                 all_task_history_list.append(history)
 
-        df = pd.DataFrame(all_task_history_list)
+        df = pandas.DataFrame(all_task_history_list)
         return df
 
-    def create_task_df(self) -> pd.DataFrame:
+    def create_task_df(self) -> pandas.DataFrame:
         """
         タスク一覧からdataframeを作成する。
         新たに追加した列は、user_id, annotation_count, inspection_count,
@@ -636,7 +640,7 @@ class Table:
             set_annotation_info(task)
             set_inspection_info(task)
 
-        df = pd.DataFrame(tasks)
+        df = pandas.DataFrame(tasks)
         if len(df) > 0:
             # dictが含まれたDataFrameをbokehでグラフ化するとErrorが発生するので、dictを含む列を削除する
             # https://github.com/bokeh/bokeh/issues/9620
@@ -676,11 +680,11 @@ class Table:
 
             task_list.append(new_task)
 
-        df = pd.DataFrame(task_list)
+        df = pandas.DataFrame(task_list)
         return df
 
     @staticmethod
-    def create_dataframe_by_date_user(task_df: pd.DataFrame) -> pd.DataFrame:
+    def create_dataframe_by_date_user(task_df: pandas.DataFrame) -> pandas.DataFrame:
         """
         日毎、ユーザごとの情報を出力する。
 
@@ -745,7 +749,7 @@ class Table:
 
         return sum_df
 
-    def create_member_df(self, task_df: pd.DataFrame) -> pd.DataFrame:
+    def create_member_df(self, task_df: pandas.DataFrame) -> pandas.DataFrame:
         """
         プロジェクトメンバ一覧の情報
         """
@@ -801,7 +805,7 @@ class Table:
         for account_id, member in member_dict.items():
             member_list.append(member)
 
-        df = pd.DataFrame(member_list)
+        df = pandas.DataFrame(member_list)
         return df
 
     def create_account_statistics_df(self):
@@ -831,11 +835,11 @@ class Table:
 
             all_histories.extend(histories)
 
-        df = pd.DataFrame(all_histories)
+        df = pandas.DataFrame(all_histories)
         return df
 
     @staticmethod
-    def create_cumulative_df_by_user(account_statistics_df: pd.DataFrame) -> pd.DataFrame:
+    def create_cumulative_df_by_user(account_statistics_df: pandas.DataFrame) -> pandas.DataFrame:
         """
         アカウントごとの作業時間に対して、累積作業時間を追加する。
         Args:
@@ -851,7 +855,7 @@ class Table:
         return df
 
     @staticmethod
-    def create_cumulative_df_overall(task_df: pd.DataFrame) -> pd.DataFrame:
+    def create_cumulative_df_overall(task_df: pandas.DataFrame) -> pandas.DataFrame:
         """
         1回目の教師付開始日でソートして、累積値を算出する。
 
@@ -883,7 +887,7 @@ class Table:
         return df
 
     @staticmethod
-    def create_cumulative_df_by_first_annotator(task_df: pd.DataFrame) -> pd.DataFrame:
+    def create_cumulative_df_by_first_annotator(task_df: pandas.DataFrame) -> pandas.DataFrame:
         """
         最初のアノテーション作業の開始時刻の順にソートして、教師付者に関する累計値を算出する
         Args:
@@ -918,7 +922,7 @@ class Table:
         return df
 
     @staticmethod
-    def create_cumulative_df_by_first_inspector(task_df: pd.DataFrame) -> pd.DataFrame:
+    def create_cumulative_df_by_first_inspector(task_df: pandas.DataFrame) -> pandas.DataFrame:
         """
         最初の検査作業の開始時刻の順にソートして、累計値を算出する
         Args:
@@ -953,7 +957,7 @@ class Table:
         return df
 
     @staticmethod
-    def create_cumulative_df_by_first_acceptor(task_df: pd.DataFrame) -> pd.DataFrame:
+    def create_cumulative_df_by_first_acceptor(task_df: pandas.DataFrame) -> pandas.DataFrame:
         """
         最初の受入作業の開始時刻の順にソートして、累計値を算出する
         Args:
@@ -984,7 +988,7 @@ class Table:
         df = df.drop(["task_count"], axis=1)
         return df
 
-    def create_worktime_per_image_df(self, aggregation_by: AggregationBy, phase: TaskPhase) -> pd.DataFrame:
+    def create_worktime_per_image_df(self, aggregation_by: AggregationBy, phase: TaskPhase) -> pandas.DataFrame:
         """
         画像１枚あたり/タスク１個あたりの作業時間を算出する。
         行方向に日付, 列方向にメンバを並べる
@@ -1012,7 +1016,7 @@ class Table:
 
             worktime_info_list.append(worktime_info)
 
-        df = pd.DataFrame(worktime_info_list)
+        df = pandas.DataFrame(worktime_info_list)
         # acount_idをusernameに変更する
         columns = {
             col: self._get_username(col) for col in df.columns if col != "date"  # pylint: disable=not-an-iterable
@@ -1020,7 +1024,9 @@ class Table:
         return df.rename(columns=columns).fillna(0)
 
     @staticmethod
-    def create_annotation_count_ratio_df(task_history_df: pd.DataFrame, task_df: pd.DataFrame) -> pd.DataFrame:
+    def create_annotation_count_ratio_df(
+        task_history_df: pandas.DataFrame, task_df: pandas.DataFrame
+    ) -> pandas.DataFrame:
         """
         task_id, phase, (phase_index), user_idの作業時間比から、アノテーション数などの生産量を求める
 
@@ -1093,8 +1099,8 @@ class Table:
 
     @staticmethod
     def create_productivity_per_user_from_aw_time(
-        df_task_history: pd.DataFrame, df_labor: pd.DataFrame, df_worktime_ratio: pd.DataFrame
-    ) -> pd.DataFrame:
+        df_task_history: pandas.DataFrame, df_labor: pandas.DataFrame, df_worktime_ratio: pandas.DataFrame
+    ) -> pandas.DataFrame:
         """
         AnnoWorkの実績時間から、作業者ごとに生産性を算出する。
 
@@ -1115,7 +1121,7 @@ class Table:
         phase_list = Table._get_phase_list(list(df.columns))
 
         df = df[["worktime_result_hour"] + phase_list].copy()
-        df.columns = pd.MultiIndex.from_tuples(
+        df.columns = pandas.MultiIndex.from_tuples(
             [("actual_worktime_hour", "sum")] + [("monitored_worktime_hour", phase) for phase in phase_list]
         )
 
@@ -1184,13 +1190,13 @@ class Table:
 
         # ユーザ情報を取得
         df_user = df_task_history.groupby("user_id").first()[["username", "biography"]]
-        df_user.columns = pd.MultiIndex.from_tuples([("username", ""), ("biography", "")])
+        df_user.columns = pandas.MultiIndex.from_tuples([("username", ""), ("biography", "")])
         df = df.join(df_user)
         df[("user_id", "")] = df.index
 
         return df
 
-    def create_labor_df(self) -> pd.DataFrame:
+    def create_labor_df(self) -> pandas.DataFrame:
         """
         労務管理 DataFrameを生成する。情報を出力する。
 
@@ -1204,4 +1210,123 @@ class Table:
             return d
 
         labor_list = self._get_labor_list()
-        return pd.DataFrame([add_user_info(e) for e in labor_list])
+        return pandas.DataFrame([add_user_info(e) for e in labor_list])
+
+    @staticmethod
+    def _create_date_df(date_index1: pandas.Index, date_index2: pandas.Index) -> pandas.DataFrame:
+        # 日付の一覧を生成
+        if len(date_index1) > 0 and len(date_index2) > 0:
+            start_date = min(date_index1[0], date_index2[0])
+            end_date = max(date_index1[-1], date_index2[-1])
+        elif len(date_index1) > 0 and len(date_index2) == 0:
+            start_date = date_index1[0]
+            end_date = date_index1[-1]
+        elif len(date_index1) == 0 and len(date_index2) > 0:
+            start_date = date_index2[0]
+            end_date = date_index2[-1]
+        else:
+            return pandas.DataFrame()
+
+        return pandas.DataFrame(index=_get_date_list(start_date, end_date))
+
+    @staticmethod
+    def _create_dataframe_per_date(df_task: pandas.DataFrame, df_labor: pandas.DataFrame) -> pandas.DataFrame:
+        df_sub_task = df_task[
+            [
+                "task_id",
+                "task_completed_datetime",
+                "input_data_count",
+                "annotation_count",
+                "sum_worktime_hour",
+                "annotation_worktime_hour",
+                "inspection_worktime_hour",
+                "acceptance_worktime_hour",
+            ]
+        ].copy()
+        df_sub_task["task_completed_date"] = df_sub_task["task_completed_datetime"].map(
+            lambda e: datetime_to_date(e) if not pandas.isna(e) else None
+        )
+
+        df_agg_sub_task = df_sub_task.pivot_table(
+            values=[
+                "input_data_count",
+                "annotation_count",
+                "sum_worktime_hour",
+                "annotation_worktime_hour",
+                "inspection_worktime_hour",
+                "acceptance_worktime_hour",
+            ],
+            index="task_completed_date",
+            aggfunc=numpy.sum,
+        ).fillna(0)
+        df_agg_sub_task["task_count"] = df_sub_task.pivot_table(
+            values=["task_id"], index="task_completed_date", aggfunc="count"
+        ).fillna(0)
+
+        if len(df_labor) > 0:
+            df_agg_labor = df_labor.pivot_table(
+                values=["worktime_result_hour"], index="date", aggfunc=numpy.sum
+            ).fillna(0)
+            df_agg_labor["working_user_count"] = df_labor.pivot_table(
+                values=["user_id"], index="date", aggfunc="count"
+            ).fillna(0)
+        else:
+            df_agg_labor = pandas.DataFrame(columns=["worktime_result_hour", "working_user_count"])
+
+        # 日付の一覧を生成
+        df_date_base = Table._create_date_df(df_agg_sub_task.index, df_agg_labor.index)
+        df_date = df_date_base.join(df_agg_sub_task).join(df_agg_labor).fillna(0)
+
+        df_date.rename(
+            columns={
+                "sum_worktime_hour": "monitored_worktime_hour",
+                "annotation_worktime_hour": "monitored_annotation_worktime_hour",
+                "inspection_worktime_hour": "monitored_inspection_worktime_hour",
+                "acceptance_worktime_hour": "monitored_acceptance_worktime_hour",
+                "worktime_result_hour": "actual_worktime_hour",
+                "user_id": "working_user_count",
+            },
+            inplace=True,
+        )
+        df_date["date"] = df_date.index
+        return df_date
+
+    @staticmethod
+    def create_whole_productivity_per_date(df_task: pandas.DataFrame, df_labor: pandas.DataFrame) -> pandas.DataFrame:
+        """
+        日毎の全体の生産量、生産性を算出する。
+        """
+
+        def add_cumsum_column(df: pandas.DataFrame, column: str):
+            """累積情報の列を追加"""
+            df[f"cumsum_{column}"] = df[column].cumsum()
+
+        def add_velocity_column(df: pandas.DataFrame, numerator_column: str, denominator_column: str):
+            """速度情報の列を追加"""
+            MOVING_WINDOW_SIZE = 7
+            df[f"{numerator_column}/{denominator_column}"] = df[numerator_column] / df[denominator_column]
+            df_date[f"{numerator_column}/{denominator_column}__lastweek"] = (
+                df_date[numerator_column].rolling(MOVING_WINDOW_SIZE).sum()
+                / df_date[denominator_column].rolling(MOVING_WINDOW_SIZE).sum()
+            )
+
+        df_date = Table._create_dataframe_per_date(df_task, df_labor)
+
+        # 累計情報を追加
+        add_cumsum_column(df_date, column="task_count")
+        add_cumsum_column(df_date, column="input_data_count")
+        add_cumsum_column(df_date, column="actual_worktime_hour")
+
+        # annofab 計測時間から算出したvelocityを追加
+        add_velocity_column(df_date, numerator_column="monitored_worktime_hour", denominator_column="task_count")
+        add_velocity_column(df_date, numerator_column="monitored_worktime_hour", denominator_column="input_data_count")
+        add_velocity_column(df_date, numerator_column="monitored_worktime_hour", denominator_column="annotation_count")
+
+        # 実績作業時間から算出したvelocityを追加
+        add_velocity_column(df_date, numerator_column="actual_worktime_hour", denominator_column="task_count")
+        add_velocity_column(df_date, numerator_column="actual_worktime_hour", denominator_column="input_data_count")
+        add_velocity_column(df_date, numerator_column="actual_worktime_hour", denominator_column="annotation_count")
+
+        # CSVには"INF"という文字を出力したくないので、"INF"をNaNに置換する
+        df_date.replace([numpy.inf, -numpy.inf], numpy.nan, inplace=True)
+        return df_date
