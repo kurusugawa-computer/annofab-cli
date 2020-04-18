@@ -1244,6 +1244,7 @@ class Table:
         ).fillna(0)
 
         df_agg_labor = df_labor.pivot_table(values=["worktime_result_hour"], index="date", aggfunc=numpy.sum).fillna(0)
+        df_count_user = df_labor.pivot_table(values=["user_id"], index="date", aggfunc="count").fillna(0)
 
         start_date = min(df_agg_sub_task.index[0], df_agg_labor.index[0])
         end_date = max(df_agg_sub_task.index[-1], df_agg_labor.index[-1])
@@ -1251,7 +1252,7 @@ class Table:
         # 日付の一覧を生成
         df_date_base = pd.DataFrame(index=_get_date_list(start_date, end_date))
 
-        df_date = df_date_base.join(df_agg_sub_task).join(df_agg_labor).fillna(0)
+        df_date = df_date_base.join(df_agg_sub_task).join(df_agg_labor).join(df_count_user).fillna(0)
 
         df_date.rename(
             columns={
@@ -1260,66 +1261,47 @@ class Table:
                 "inspection_worktime_hour": "monitored_inspection_worktime_hour",
                 "acceptance_worktime_hour": "monitored_acceptance_worktime_hour",
                 "worktime_result_hour": "actual_worktime_hour",
+                "user_id": "working_user_count",
             },
             inplace=True,
         )
-
+        df_date["date"] = df_date.index
         return df_date
 
     @staticmethod
     def create_whole_productivity_per_date(df_task: pd.DataFrame, df_labor: pd.DataFrame) -> pd.DataFrame:
         """
-        AnnoWorkの実績時間から、作業者ごとに生産性を算出する。
-
-        Returns:
-
+        日毎の全体の生産量、生産性を算出する。
         """
+
+        def add_cumsum_column(df: pd.DataFrame, column: str):
+            """累積情報の列を追加"""
+            df[f"cumsum_{column}"] = df[column].cumsum()
+
+        def add_velocity_column(df: pd.DataFrame, numerator_column: str, denominator_column: str):
+            """速度情報の列を追加"""
+            MOVING_WINDOW_SIZE = 7
+            df[f"{numerator_column}/{denominator_column}"] = df[numerator_column] / df[denominator_column]
+            df_date[f"{numerator_column}/{denominator_column}__lastweek"] = (
+                df_date[numerator_column].rolling(MOVING_WINDOW_SIZE).sum()
+                / df_date[denominator_column].rolling(MOVING_WINDOW_SIZE).sum()
+            )
 
         df_date = Table._create_dataframe_per_date(df_task, df_labor)
 
-        # 累計情報
-        df_date["cumsum_task_count"] = df_date["task_count"].cumsum()
-        df_date["cumsum_input_data_count"] = df_date["input_data_count"].cumsum()
-        df_date["cumsum_monitored_worktime_hour"] = df_date["monitored_worktime_hour"].cumsum()
-        df_date["cumsum_actual_worktime_hour"] = df_date["actual_worktime_hour"].cumsum()
+        # 累計情報を追加
+        add_cumsum_column(df_date, column="task_count")
+        add_cumsum_column(df_date, column="input_data_count")
+        add_cumsum_column(df_date, column="actual_worktime_hour")
 
-        df_date["monitored_worktime/task_count"] = df_date["monitored_worktime_hour"] / df_date["task_count"]
-        df_date["monitored_worktime/input_data_count"] = (
-            df_date["monitored_worktime_hour"] / df_date["input_data_count"]
-        )
-        df_date["monitored_worktime/annotation_count"] = (
-            df_date["monitored_worktime_hour"] / df_date["annotation_count"]
-        )
+        # annofab 計測時間から算出したvelocityを追加
+        add_velocity_column(df_date, numerator_column="monitored_worktime_hour", denominator_column="task_count")
+        add_velocity_column(df_date, numerator_column="monitored_worktime_hour", denominator_column="input_data_count")
+        add_velocity_column(df_date, numerator_column="monitored_worktime_hour", denominator_column="annotation_count")
 
-        df_date["actual_worktime/task_count"] = df_date["actual_worktime_hour"] / df_date["task_count"]
-        df_date["actual_worktime/input_data_count"] = df_date["actual_worktime_hour"] / df_date["input_data_count"]
-        df_date["actual_worktime/annotation_count"] = df_date["actual_worktime_hour"] / df_date["annotation_count"]
-
-        MOVING_WINDOW_SIZE = 7
-        df_date["monitored_worktime/task_count__lastweek"] = (
-            df_date["monitored_worktime_hour"].rolling(MOVING_WINDOW_SIZE).sum()
-            / df_date["task_count"].rolling(MOVING_WINDOW_SIZE).sum()
-        )
-        df_date["monitored_worktime/input_data_count__lastweek"] = (
-            df_date["monitored_worktime_hour"].rolling(MOVING_WINDOW_SIZE).sum()
-            / df_date["input_data_count"].rolling(MOVING_WINDOW_SIZE).sum()
-        )
-        df_date["monitored_worktime/annotation_count__lastweek"] = (
-            df_date["monitored_worktime_hour"].rolling(MOVING_WINDOW_SIZE).sum()
-            / df_date["annotation_count"].rolling(MOVING_WINDOW_SIZE).sum()
-        )
-
-        df_date["actual_worktime/task_count__lastweek"] = (
-            df_date["actual_worktime_hour"].rolling(MOVING_WINDOW_SIZE).sum()
-            / df_date["task_count"].rolling(MOVING_WINDOW_SIZE).sum()
-        )
-        df_date["actual_worktime/input_data_count__lastweek"] = (
-            df_date["actual_worktime_hour"].rolling(MOVING_WINDOW_SIZE).sum()
-            / df_date["input_data_count"].rolling(MOVING_WINDOW_SIZE).sum()
-        )
-        df_date["actual_worktime/annotation_count__lastweek"] = (
-            df_date["actual_worktime_hour"].rolling(MOVING_WINDOW_SIZE).sum()
-            / df_date["annotation_count"].rolling(MOVING_WINDOW_SIZE).sum()
-        )
+        # 実績作業時間から算出したvelocityを追加
+        add_velocity_column(df_date, numerator_column="actual_worktime_hour", denominator_column="task_count")
+        add_velocity_column(df_date, numerator_column="actual_worktime_hour", denominator_column="input_data_count")
+        add_velocity_column(df_date, numerator_column="actual_worktime_hour", denominator_column="annotation_count")
 
         return df_date

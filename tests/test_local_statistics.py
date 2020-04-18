@@ -12,7 +12,7 @@ out_path = Path("./tests/out")
 data_path = Path("./tests/data")
 
 project_id = "12345678-abcd-1234-abcd-1234abcd5678"
-tsv_obj = Csv(str(out_path), project_id)
+csv_obj = Csv(str(out_path), project_id)
 
 # class TestGraph:
 #     def test_write_productivity_line_graph_for_annotator(self):
@@ -58,8 +58,7 @@ class TestTable:
         df_task = pandas.read_csv(str(data_path / "statistics/task.csv"))
         df_labor = pandas.read_csv(str(data_path / "statistics/labor-df.csv"))
         df = Table.create_whole_productivity_per_date(df_task=df_task, df_labor=df_labor)
-        print(df)
-        df.to_csv("/home/vagrant/Downloads/all.csv")
+        csv_obj.write_whole_productivity_per_date(df)
 
 
 class TestSummarizeTaskCount:

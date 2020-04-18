@@ -487,3 +487,43 @@ class Csv:
         )
         required_columns = self._create_required_columns(df, prior_columns, dropped_columns)
         self._write_csv(f"{self.short_project_id}-メンバごとの生産性と品質.csv", df[required_columns])
+
+    def write_whole_productivity_per_date(self, df: pd.DataFrame, dropped_columns: Optional[List[str]] = None) -> None:
+        """
+        日毎の全体の生産量、生産性を出力する。
+
+        Args:
+            df:
+            dropped_columns:
+
+
+        """
+        production_columns = [
+            "task_count",
+            "input_data_count",
+            "annotation_count",
+        ]
+        worktime_columns = [
+            "actual_worktime_hour",
+            "monitored_worktime_hour",
+            "monitored_annotation_worktime_hour",
+            "monitored_inspection_worktime_hour",
+            "monitored_acceptance_worktime_hour",
+        ]
+
+        velocity_columns = [
+            f"{numerator}/{denominator}"
+            for numerator in ["actual_worktime_hour", "monitored_worktime_hour"]
+            for denominator in ["task_count", "input_data_count", "annotation_count"]
+        ]
+
+        prior_columns = (
+            ["date", "cumsum_task_count", "cumsum_input_data_count", "cumsum_actual_worktime_hour",]
+            + production_columns
+            + worktime_columns
+            + velocity_columns
+            + ["working_user_count"]
+        )
+
+        required_columns = self._create_required_columns(df, prior_columns, dropped_columns)
+        self._write_csv(f"{self.short_project_id}-日毎の生産量と生産性.csv", df[required_columns])
