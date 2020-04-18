@@ -1269,15 +1269,11 @@ class Table:
                 values=["user_id"], index="date", aggfunc="count"
             ).fillna(0)
         else:
-            df_agg_labor = pd.DataFrame()
+            df_agg_labor = pd.DataFrame(columns=["worktime_result_hour", "working_user_count"])
 
         # 日付の一覧を生成
         df_date_base = Table._create_date_df(df_agg_sub_task.index, df_agg_labor.index)
         df_date = df_date_base.join(df_agg_sub_task).join(df_agg_labor).fillna(0)
-        if len(df_labor) == 0:
-            # 労務管理情報がないた場合は、労務管理情報関係の列を追加する
-            df_date["worktime_result_hour"] = 0
-            df_date["working_user_count"] = 0
 
         df_date.rename(
             columns={
