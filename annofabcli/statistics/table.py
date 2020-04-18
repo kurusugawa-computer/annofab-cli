@@ -31,6 +31,10 @@ from annofabcli.statistics.database import AnnotationDict, Database
 logger = logging.getLogger(__name__)
 
 
+def _get_date_list(start_date: str, end_date: str) -> List[str]:
+    return [e.strftime("%Y-%m-%d") for e in pd.date_range(start=start_date, end=end_date)]
+
+
 class AggregationBy(Enum):
     BY_INPUTS = "by_inputs"
     BY_TASKS = "by_tasks"
@@ -1205,3 +1209,117 @@ class Table:
 
         labor_list = self._get_labor_list()
         return pd.DataFrame([add_user_info(e) for e in labor_list])
+
+    @staticmethod
+    def _create_dataframe_per_date(df_task: pd.DataFrame, df_labor: pd.DataFrame) -> pd.DataFrame:
+        df_sub_task = df_task[
+            [
+                "task_id",
+                "task_completed_datetime",
+                "task_count",
+                "input_data_count",
+                "annotation_count",
+                "sum_worktime_hour",
+                "annotation_worktime_hour",
+                "inspection_worktime_hour",
+                "acceptance_worktime_hour",
+            ]
+        ].copy()
+        df_sub_task["task_completed_date"] = df_sub_task["task_completed_datetime"].map(
+            lambda e: datetime_to_date(e) if not pd.isna(e) else None
+        )
+
+        df_agg_sub_task = df_sub_task.pivot_table(
+            values=[
+                "task_count",
+                "input_data_count",
+                "annotation_count",
+                "sum_worktime_hour",
+                "annotation_worktime_hour",
+                "inspection_worktime_hour",
+                "acceptance_worktime_hour",
+            ],
+            index="task_completed_date",
+            aggfunc=numpy.sum,
+        ).fillna(0)
+
+        df_agg_labor = df_labor.pivot_table(values=["worktime_result_hour"], index="date", aggfunc=numpy.sum).fillna(0)
+
+        start_date = min(df_agg_sub_task.index[0], df_agg_labor.index[0])
+        end_date = max(df_agg_sub_task.index[-1], df_agg_labor.index[-1])
+
+        # 日付の一覧を生成
+        df_date_base = pd.DataFrame(index=_get_date_list(start_date, end_date))
+
+        df_date = df_date_base.join(df_agg_sub_task).join(df_agg_labor).fillna(0)
+
+        df_date.rename(
+            columns={
+                "sum_worktime_hour": "monitored_worktime_hour",
+                "annotation_worktime_hour": "monitored_annotation_worktime_hour",
+                "inspection_worktime_hour": "monitored_inspection_worktime_hour",
+                "acceptance_worktime_hour": "monitored_acceptance_worktime_hour",
+                "worktime_result_hour": "actual_worktime_hour",
+            },
+            inplace=True,
+        )
+
+        return df_date
+
+    @staticmethod
+    def create_whole_productivity_per_date(df_task: pd.DataFrame, df_labor: pd.DataFrame) -> pd.DataFrame:
+        """
+        AnnoWorkの実績時間から、作業者ごとに生産性を算出する。
+
+        Returns:
+
+        """
+
+        df_date = Table._create_dataframe_per_date(df_task, df_labor)
+
+        # 累計情報
+        df_date["cumsum_task_count"] = df_date["task_count"].cumsum()
+        df_date["cumsum_input_data_count"] = df_date["input_data_count"].cumsum()
+        df_date["cumsum_monitored_worktime_hour"] = df_date["monitored_worktime_hour"].cumsum()
+        df_date["cumsum_actual_worktime_hour"] = df_date["actual_worktime_hour"].cumsum()
+
+        df_date["monitored_worktime/task_count"] = df_date["monitored_worktime_hour"] / df_date["task_count"]
+        df_date["monitored_worktime/input_data_count"] = (
+            df_date["monitored_worktime_hour"] / df_date["input_data_count"]
+        )
+        df_date["monitored_worktime/annotation_count"] = (
+            df_date["monitored_worktime_hour"] / df_date["annotation_count"]
+        )
+
+        df_date["actual_worktime/task_count"] = df_date["actual_worktime_hour"] / df_date["task_count"]
+        df_date["actual_worktime/input_data_count"] = df_date["actual_worktime_hour"] / df_date["input_data_count"]
+        df_date["actual_worktime/annotation_count"] = df_date["actual_worktime_hour"] / df_date["annotation_count"]
+
+        MOVING_WINDOW_SIZE = 7
+        df_date["monitored_worktime/task_count__lastweek"] = (
+            df_date["monitored_worktime_hour"].rolling(MOVING_WINDOW_SIZE).sum()
+            / df_date["task_count"].rolling(MOVING_WINDOW_SIZE).sum()
+        )
+        df_date["monitored_worktime/input_data_count__lastweek"] = (
+            df_date["monitored_worktime_hour"].rolling(MOVING_WINDOW_SIZE).sum()
+            / df_date["input_data_count"].rolling(MOVING_WINDOW_SIZE).sum()
+        )
+        df_date["monitored_worktime/annotation_count__lastweek"] = (
+            df_date["monitored_worktime_hour"].rolling(MOVING_WINDOW_SIZE).sum()
+            / df_date["annotation_count"].rolling(MOVING_WINDOW_SIZE).sum()
+        )
+
+        df_date["actual_worktime/task_count__lastweek"] = (
+            df_date["actual_worktime_hour"].rolling(MOVING_WINDOW_SIZE).sum()
+            / df_date["task_count"].rolling(MOVING_WINDOW_SIZE).sum()
+        )
+        df_date["actual_worktime/input_data_count__lastweek"] = (
+            df_date["actual_worktime_hour"].rolling(MOVING_WINDOW_SIZE).sum()
+            / df_date["input_data_count"].rolling(MOVING_WINDOW_SIZE).sum()
+        )
+        df_date["actual_worktime/annotation_count__lastweek"] = (
+            df_date["actual_worktime_hour"].rolling(MOVING_WINDOW_SIZE).sum()
+            / df_date["annotation_count"].rolling(MOVING_WINDOW_SIZE).sum()
+        )
+
+        return df_date

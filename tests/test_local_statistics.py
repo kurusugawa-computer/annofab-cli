@@ -54,6 +54,13 @@ class TestTable:
         df = Table.create_annotation_count_ratio_df(task_df=df_task, task_history_df=df_task_history)
         df.to_csv(out_path / "annotation-count-ratio-df.csv")
 
+    def test_create_whole_productivity_per_date(self):
+        df_task = pandas.read_csv(str(data_path / "statistics/task.csv"))
+        df_labor = pandas.read_csv(str(data_path / "statistics/labor-df.csv"))
+        df = Table.create_whole_productivity_per_date(df_task=df_task, df_labor=df_labor)
+        print(df)
+        df.to_csv("/home/vagrant/Downloads/all.csv")
+
 
 class TestSummarizeTaskCount:
     def test_SimpleTaskStatus_from_task_status(self):
