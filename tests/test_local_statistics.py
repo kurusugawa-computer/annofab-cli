@@ -60,6 +60,11 @@ class TestTable:
         df = Table.create_whole_productivity_per_date(df_task=df_task, df_labor=df_labor)
         csv_obj.write_whole_productivity_per_date(df)
 
+    def test_create_whole_productivity_per_date__labor_is_empty(self):
+        df_task = pandas.read_csv(str(data_path / "statistics/task.csv"))
+        df = Table.create_whole_productivity_per_date(df_task=df_task, df_labor=pandas.DataFrame())
+        csv_obj.write_whole_productivity_per_date(df)
+
 
 class TestSummarizeTaskCount:
     def test_SimpleTaskStatus_from_task_status(self):

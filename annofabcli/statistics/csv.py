@@ -518,7 +518,7 @@ class Csv:
         ]
 
         prior_columns = (
-            ["date", "cumsum_task_count", "cumsum_input_data_count", "cumsum_actual_worktime_hour",]
+            ["date", "cumsum_task_count", "cumsum_input_data_count", "cumsum_actual_worktime_hour"]
             + production_columns
             + worktime_columns
             + velocity_columns

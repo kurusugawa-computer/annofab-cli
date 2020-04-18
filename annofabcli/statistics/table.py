@@ -1211,12 +1211,28 @@ class Table:
         return pd.DataFrame([add_user_info(e) for e in labor_list])
 
     @staticmethod
+    def _create_date_df(date_index1: pd.Index, date_index2: pd.Index) -> pd.DataFrame:
+        # 日付の一覧を生成
+        if len(date_index1) > 0 and len(date_index2) > 0:
+            start_date = min(date_index1[0], date_index2[0])
+            end_date = max(date_index1[-1], date_index2[-1])
+        elif len(date_index1) > 0 and len(date_index2) == 0:
+            start_date = date_index1[0]
+            end_date = date_index1[-1]
+        elif len(date_index1) == 0 and len(date_index2) > 0:
+            start_date = date_index2[0]
+            end_date = date_index2[-1]
+        else:
+            return pd.DataFrame()
+
+        return pd.DataFrame(index=_get_date_list(start_date, end_date))
+
+    @staticmethod
     def _create_dataframe_per_date(df_task: pd.DataFrame, df_labor: pd.DataFrame) -> pd.DataFrame:
         df_sub_task = df_task[
             [
                 "task_id",
                 "task_completed_datetime",
-                "task_count",
                 "input_data_count",
                 "annotation_count",
                 "sum_worktime_hour",
@@ -1231,7 +1247,6 @@ class Table:
 
         df_agg_sub_task = df_sub_task.pivot_table(
             values=[
-                "task_count",
                 "input_data_count",
                 "annotation_count",
                 "sum_worktime_hour",
@@ -1242,17 +1257,27 @@ class Table:
             index="task_completed_date",
             aggfunc=numpy.sum,
         ).fillna(0)
+        df_agg_sub_task["task_count"] = df_sub_task.pivot_table(
+            values=["task_id"], index="task_completed_date", aggfunc="count"
+        ).fillna(0)
 
-        df_agg_labor = df_labor.pivot_table(values=["worktime_result_hour"], index="date", aggfunc=numpy.sum).fillna(0)
-        df_count_user = df_labor.pivot_table(values=["user_id"], index="date", aggfunc="count").fillna(0)
-
-        start_date = min(df_agg_sub_task.index[0], df_agg_labor.index[0])
-        end_date = max(df_agg_sub_task.index[-1], df_agg_labor.index[-1])
+        if len(df_labor) > 0:
+            df_agg_labor = df_labor.pivot_table(
+                values=["worktime_result_hour"], index="date", aggfunc=numpy.sum
+            ).fillna(0)
+            df_agg_labor["working_user_count"] = df_labor.pivot_table(
+                values=["user_id"], index="date", aggfunc="count"
+            ).fillna(0)
+        else:
+            df_agg_labor = pd.DataFrame()
 
         # 日付の一覧を生成
-        df_date_base = pd.DataFrame(index=_get_date_list(start_date, end_date))
-
-        df_date = df_date_base.join(df_agg_sub_task).join(df_agg_labor).join(df_count_user).fillna(0)
+        df_date_base = Table._create_date_df(df_agg_sub_task.index, df_agg_labor.index)
+        df_date = df_date_base.join(df_agg_sub_task).join(df_agg_labor).fillna(0)
+        if len(df_labor) == 0:
+            # 労務管理情報がないた場合は、労務管理情報関係の列を追加する
+            df_date["worktime_result_hour"] = 0
+            df_date["working_user_count"] = 0
 
         df_date.rename(
             columns={
