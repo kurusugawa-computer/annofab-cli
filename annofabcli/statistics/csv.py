@@ -298,7 +298,6 @@ class Csv:
 
         """
         columns = [
-            "task_count",
             "annotator_is_changed",
             "inspector_is_changed",
             "acceptor_is_changed",
@@ -310,7 +309,7 @@ class Csv:
         sum_df = pd.DataFrame()
         sum_df["column"] = sum_series.index
         sum_df["count_if_true"] = sum_series.values
-        sum_df = sum_df.append({"column": "task_count", "count_if_true":len(df)})
+        sum_df = sum_df.append({"column": "task_count", "count_if_true": len(df)})
         self._write_csv(f"集計結果csv/{self.short_project_id}-集計-タスク数.csv", sum_df)
 
     def write_member_list(self, df: pd.DataFrame, dropped_columns: Optional[List[str]] = None):
