@@ -7,7 +7,7 @@ import bokeh
 import bokeh.layouts
 import bokeh.palettes
 import dateutil
-import pandas as pd
+import pandas
 from bokeh.core.properties import Color
 from bokeh.models import HoverTool
 from bokeh.plotting import ColumnDataSource, figure
@@ -109,7 +109,7 @@ class LineGraph:
             fig.add_layout(legend, "left")
 
     def create_user_id_list(
-        self, df: pd.DataFrame, user_id_column: str, arg_user_id_list: Optional[List[str]] = None,
+        self, df: pandas.DataFrame, user_id_column: str, arg_user_id_list: Optional[List[str]] = None,
     ) -> List[str]:
         """
         グラフに表示するユーザのuser_idを生成する。
@@ -137,7 +137,7 @@ class LineGraph:
         return user_id_list[0:max_user_length]
 
     def write_productivity_line_graph_for_annotator(
-        self, df: pd.DataFrame, first_annotation_user_id_list: Optional[List[str]] = None,
+        self, df: pandas.DataFrame, first_annotation_user_id_list: Optional[List[str]] = None,
     ):
         """
         生産性を教師付作業者ごとにプロットする。
@@ -351,7 +351,7 @@ class LineGraph:
         write_cumulative_graph(fig_info_list_value, html_title="折れ線-横軸_教師付開始日-縦軸_指標-教師付者用")
 
     def write_cumulative_line_graph_for_annotator(
-        self, df: pd.DataFrame, first_annotation_user_id_list: Optional[List[str]] = None,
+        self, df: pandas.DataFrame, first_annotation_user_id_list: Optional[List[str]] = None,
     ):
         """
         教師付作業者用の累積折れ線グラフを出力する。
@@ -571,7 +571,7 @@ class LineGraph:
         write_cumulative_graph(fig_info_list_task_count, html_title="累積折れ線-横軸_タスク数-教師付者用")
 
     def write_cumulative_line_graph_for_inspector(
-        self, df: pd.DataFrame, first_inspection_user_id_list: Optional[List[str]] = None,
+        self, df: pandas.DataFrame, first_inspection_user_id_list: Optional[List[str]] = None,
     ):
         """
         検査作業者用の累積折れ線グラフを出力する。
@@ -722,7 +722,7 @@ class LineGraph:
         write_cumulative_graph(fig_info_list_input_data_count, html_title="累積折れ線-横軸_入力データ数-検査者用")
 
     def write_cumulative_line_graph_for_acceptor(
-        self, df: pd.DataFrame, first_acceptance_user_id_list: Optional[List[str]] = None,
+        self, df: pandas.DataFrame, first_acceptance_user_id_list: Optional[List[str]] = None,
     ):
         """
         受入者用の累積折れ線グラフを出力する。
@@ -874,7 +874,9 @@ class LineGraph:
         ]
         write_cumulative_graph(fig_info_list_input_data_count, html_title="累積折れ線-横軸_入力データ数-受入者用")
 
-    def write_cumulative_line_graph_by_date(self, df: pd.DataFrame, user_id_list: Optional[List[str]] = None) -> None:
+    def write_cumulative_line_graph_by_date(
+        self, df: pandas.DataFrame, user_id_list: Optional[List[str]] = None
+    ) -> None:
         """
         ユーザごとの作業時間を、日単位でプロットする。
 
@@ -960,7 +962,7 @@ class LineGraph:
         bokeh.plotting.output_file(output_file, title=html_title)
         bokeh.plotting.save(bokeh.layouts.column(figs))
 
-    def write_cumulative_line_graph_overall(self, df: pd.DataFrame) -> None:
+    def write_cumulative_line_graph_overall(self, df: pandas.DataFrame) -> None:
         """
         プロジェクト全体に対して、累積作業時間の折れ線グラフを出力する。
 

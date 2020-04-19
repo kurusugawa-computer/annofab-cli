@@ -5,7 +5,7 @@ from pathlib import Path
 
 import holoviews as hv
 import numpy as np
-import pandas as pd
+import pandas
 
 logger = logging.getLogger(__name__)
 
@@ -40,7 +40,7 @@ class Histogram:
         Path(self.histogram_outdir).mkdir(exist_ok=True, parents=True)
 
     @staticmethod
-    def _create_histogram(df: pd.DataFrame, histogram_name: HistogramName, bins: int = 20) -> hv.Histogram:
+    def _create_histogram(df: pandas.DataFrame, histogram_name: HistogramName, bins: int = 20) -> hv.Histogram:
         """
         ヒストグラムを生成する。
         Args:
@@ -68,7 +68,7 @@ class Histogram:
         return hist
 
     def _create_histogram_by_user(
-        self, df: pd.DataFrame, column: str, x_axis_label: str, username: str, user_id: str
+        self, df: pandas.DataFrame, column: str, x_axis_label: str, username: str, user_id: str
     ) -> hv.Histogram:
         """
         ユーザごとにヒストグラムを作成する。
@@ -87,7 +87,7 @@ class Histogram:
         hist = self._create_histogram(df, histogram_name=histogram_name)
         return hist
 
-    def write_histogram_for_annotation_worktime_by_user(self, df: pd.DataFrame) -> None:
+    def write_histogram_for_annotation_worktime_by_user(self, df: pandas.DataFrame) -> None:
         """
         教師付者ごとに教師付時間のヒストグラムを出力する。
 
@@ -139,7 +139,7 @@ class Histogram:
         )
         hv.renderer("bokeh").save(layout_first_worktime, output_file_first_worktime)
 
-    def write_histogram_for_inspection_worktime_by_user(self, df: pd.DataFrame) -> None:
+    def write_histogram_for_inspection_worktime_by_user(self, df: pandas.DataFrame) -> None:
         """
         検査者ごとに検査時間のヒストグラムを出力する。
 
@@ -190,7 +190,7 @@ class Histogram:
         )
         hv.renderer("bokeh").save(layout_first_worktime, output_file_first_worktime)
 
-    def write_histogram_for_acceptance_worktime_by_user(self, df: pd.DataFrame) -> None:
+    def write_histogram_for_acceptance_worktime_by_user(self, df: pandas.DataFrame) -> None:
         """
         受入者ごとに受入時間のヒストグラムを出力する。
 
@@ -240,7 +240,7 @@ class Histogram:
         )
         hv.renderer("bokeh").save(layout_first_worktime, output_file_first_worktime)
 
-    def write_histogram_for_worktime(self, df: pd.DataFrame):
+    def write_histogram_for_worktime(self, df: pandas.DataFrame):
         """
         作業時間に関する情報をヒストグラムとして表示する。
 
@@ -308,7 +308,7 @@ class Histogram:
         layout = hv.Layout(histograms).options(shared_axes=False).cols(3)
         renderer.save(layout, output_file)
 
-    def write_histogram_for_other(self, df: pd.DataFrame):
+    def write_histogram_for_other(self, df: pandas.DataFrame):
         """
         アノテーション数や、検査コメント数など、作業時間以外の情報をヒストグラムで表示する。
 
@@ -357,7 +357,7 @@ class Histogram:
         layout = hv.Layout(histograms).options(shared_axes=False).cols(3)
         renderer.save(layout, output_file)
 
-    def write_histogram_for_annotation_count_by_label(self, df: pd.DataFrame) -> None:
+    def write_histogram_for_annotation_count_by_label(self, df: pandas.DataFrame) -> None:
         """
         アノテーションラベルごとのアノテーション数をヒストグラムで出力する。
         """

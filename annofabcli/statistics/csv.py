@@ -2,7 +2,7 @@ import logging
 from pathlib import Path
 from typing import Any, List, Optional
 
-import pandas as pd
+import pandas
 from annofabapi.models import TaskPhase
 
 logger = logging.getLogger(__name__)
@@ -25,7 +25,7 @@ class Csv:
     # Private
     #############################################
 
-    def _write_csv(self, filename: str, df: pd.DataFrame) -> None:
+    def _write_csv(self, filename: str, df: pandas.DataFrame) -> None:
         """
         カンマ区切りでBOM UTF-8で書きこむ(Excelで開けるようにするため）
         Args:
@@ -42,7 +42,7 @@ class Csv:
 
     @staticmethod
     def _create_required_columns(
-        df: pd.DataFrame, prior_columns: List[Any], dropped_columns: Optional[List[Any]] = None
+        df: pandas.DataFrame, prior_columns: List[Any], dropped_columns: Optional[List[Any]] = None
     ) -> List[str]:
         remained_columns = list(df.columns.difference(prior_columns))
         all_columns = prior_columns + remained_columns
@@ -53,7 +53,7 @@ class Csv:
         return all_columns
 
     def write_inspection_list(
-        self, df: pd.DataFrame, dropped_columns: Optional[List[str]] = None, only_error_corrected: bool = True,
+        self, df: pandas.DataFrame, dropped_columns: Optional[List[str]] = None, only_error_corrected: bool = True,
     ) -> None:
         """
         検査コメント一覧をTSVで出力する
@@ -92,7 +92,7 @@ class Csv:
         required_columns = self._create_required_columns(df, prior_columns, dropped_columns)
         self._write_csv(f"{self.short_project_id}-検査コメントlist-{suffix}.csv", df[required_columns])
 
-    def write_task_list(self, df: pd.DataFrame, dropped_columns: Optional[List[str]] = None) -> None:
+    def write_task_list(self, df: pandas.DataFrame, dropped_columns: Optional[List[str]] = None) -> None:
         """
         タスク一覧をTSVで出力する
         Args:
@@ -156,7 +156,7 @@ class Csv:
         required_columns = self._create_required_columns(df, prior_columns, dropped_columns)
         self._write_csv(f"{self.short_project_id}-タスクlist.csv", df[required_columns])
 
-    def write_task_history_list(self, df: pd.DataFrame, dropped_columns: Optional[List[str]] = None) -> None:
+    def write_task_history_list(self, df: pandas.DataFrame, dropped_columns: Optional[List[str]] = None) -> None:
         """
         タスク履歴一覧をCSVで出力する
 
@@ -188,7 +188,7 @@ class Csv:
         required_columns = self._create_required_columns(df, prior_columns, dropped_columns)
         self._write_csv(f"{self.short_project_id}-タスク履歴list.csv", df[required_columns])
 
-    def write_labor_list(self, df: pd.DataFrame, dropped_columns: Optional[List[str]] = None) -> None:
+    def write_labor_list(self, df: pandas.DataFrame, dropped_columns: Optional[List[str]] = None) -> None:
         """
         労務管理一覧をCSVで出力する
 
@@ -217,7 +217,7 @@ class Csv:
         required_columns = self._create_required_columns(df, prior_columns, dropped_columns)
         self._write_csv(f"{self.short_project_id}-労務管理list.csv", df[required_columns])
 
-    def write_worktime_summary(self, df: pd.DataFrame) -> None:
+    def write_worktime_summary(self, df: pandas.DataFrame) -> None:
         """
         作業時間に関する集計結果をCSVで出力する。
 
@@ -263,12 +263,12 @@ class Csv:
         stat_acceptance_df["sum"] = df[columns_acceptance].sum().values
         stat_acceptance_df["column"] = stat_acceptance_df.index + "_ignored_auto_acceptance"
 
-        target_df = pd.concat([stat_df, stat_inspection_df, stat_acceptance_df])
+        target_df = pandas.concat([stat_df, stat_inspection_df, stat_acceptance_df])
         target_df = target_df[["column", "mean", "std", "min", "25%", "50%", "75%", "max", "count", "sum"]]
 
         self._write_csv(f"集計結果csv/{self.short_project_id}-集計-作業時間.csv", target_df)
 
-    def write_count_summary(self, df: pd.DataFrame) -> None:
+    def write_count_summary(self, df: pandas.DataFrame) -> None:
         """
         個数に関する集計結果をCSVで出力する。
 
@@ -289,7 +289,7 @@ class Csv:
 
         self._write_csv(f"集計結果csv/{self.short_project_id}-集計-個数.csv", target_df)
 
-    def write_task_count_summary(self, df: pd.DataFrame) -> None:
+    def write_task_count_summary(self, df: pandas.DataFrame) -> None:
         """
         タスク数の集計結果をCSVで出力する。
 
@@ -306,13 +306,13 @@ class Csv:
         ]
 
         sum_series = df[columns].sum()
-        sum_df = pd.DataFrame()
+        sum_df = pandas.DataFrame()
         sum_df["column"] = sum_series.index
         sum_df["count_if_true"] = sum_series.values
         sum_df = sum_df.append({"column": "task_count", "count_if_true": len(df)}, ignore_index=True)
         self._write_csv(f"集計結果csv/{self.short_project_id}-集計-タスク数.csv", sum_df)
 
-    def write_member_list(self, df: pd.DataFrame, dropped_columns: Optional[List[str]] = None):
+    def write_member_list(self, df: pandas.DataFrame, dropped_columns: Optional[List[str]] = None):
         """
         プロジェクトメンバ一覧をTSVで出力する
         Args:
@@ -345,7 +345,7 @@ class Csv:
         required_columns = self._create_required_columns(df, prior_columns, dropped_columns)
         self._write_csv(f"{self.short_project_id}-メンバlist.csv", df[required_columns])
 
-    def write_ラベルごとのアノテーション数(self, df: pd.DataFrame):
+    def write_ラベルごとのアノテーション数(self, df: pandas.DataFrame):
         """
         アノテーションラベルごとの個数を出力
         """
@@ -362,7 +362,7 @@ class Csv:
         required_columns = self._create_required_columns(df, prior_columns, dropped_columns=None)
         self._write_csv(f"{self.short_project_id}-タスクlist-ラベルごとのアノテーション数.csv", df[required_columns])
 
-    def write_教師付作業者別日毎の情報(self, df: pd.DataFrame):
+    def write_教師付作業者別日毎の情報(self, df: pandas.DataFrame):
         """
         ユーザごと、日毎の作業時間一覧をTSVで出力する. タスク一覧とは無関係。
         """
@@ -386,7 +386,7 @@ class Csv:
         required_columns = self._create_required_columns(df, prior_columns, dropped_columns=None)
         self._write_csv(f"{self.short_project_id}_教師付者_教師付開始日list.csv", df[required_columns])
 
-    def write_ユーザ別日毎の作業時間(self, df: pd.DataFrame):
+    def write_ユーザ別日毎の作業時間(self, df: pandas.DataFrame):
         """
         ユーザごと、日毎の作業時間一覧をTSVで出力する. タスク一覧とは無関係。
         """
@@ -406,19 +406,19 @@ class Csv:
         required_columns = self._create_required_columns(df, prior_columns, dropped_columns=None)
         self._write_csv(f"{self.short_project_id}-ユーザ_日付list-作業時間.csv", df[required_columns])
 
-    def write_メンバー別作業時間平均_画像1枚あたり(self, df: pd.DataFrame, phase: TaskPhase):
+    def write_メンバー別作業時間平均_画像1枚あたり(self, df: pandas.DataFrame, phase: TaskPhase):
         if len(df) == 0:
             logger.info(f"メンバー別画像1枚当たりの作業時間平均-{phase.value} 一覧が0件のため、出力しない")
             return
         self._write_csv(f"画像1枚当たり作業時間/{self.short_project_id}_画像1枚当たり作業時間_{phase.value}.csv", df)
 
-    def write_メンバー別作業時間平均_タスク1個あたり(self, df: pd.DataFrame, phase: TaskPhase):
+    def write_メンバー別作業時間平均_タスク1個あたり(self, df: pandas.DataFrame, phase: TaskPhase):
         if len(df) == 0:
             logger.info(f"メンバ別タスク1個当たりの作業時間平均-{phase.value} 一覧が0件のため、出力しない")
             return
         self._write_csv(f"タスク1個当たり作業時間/{self.short_project_id}_タスク1個当たり作業時間_{phase.value}.csv", df)
 
-    def write_productivity_from_aw_time(self, df: pd.DataFrame, dropped_columns: Optional[List[str]] = None):
+    def write_productivity_from_aw_time(self, df: pandas.DataFrame, dropped_columns: Optional[List[str]] = None):
         """
         メンバごとの生産性を出力する。
 
@@ -486,7 +486,9 @@ class Csv:
         required_columns = self._create_required_columns(df, prior_columns, dropped_columns)
         self._write_csv(f"{self.short_project_id}-メンバごとの生産性と品質.csv", df[required_columns])
 
-    def write_whole_productivity_per_date(self, df: pd.DataFrame, dropped_columns: Optional[List[str]] = None) -> None:
+    def write_whole_productivity_per_date(
+        self, df: pandas.DataFrame, dropped_columns: Optional[List[str]] = None
+    ) -> None:
         """
         日毎の全体の生産量、生産性を出力する。
 
