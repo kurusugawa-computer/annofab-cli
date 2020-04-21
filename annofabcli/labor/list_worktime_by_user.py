@@ -403,7 +403,7 @@ class ListWorktimeByUser(AbstractCommandLineInterface):
             "作業実績時間",
             "計測時間",
         ]
-        if add_monitored_worktime:
+        if not add_monitored_worktime:
             columns.remove("計測時間")
 
         worktime_df[columns].to_csv(str(output_dir / "作業時間の詳細一覧.csv"), encoding="utf_8_sig", index=False)
