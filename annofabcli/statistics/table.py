@@ -1267,9 +1267,11 @@ class Table:
             df_agg_labor = df_labor.pivot_table(
                 values=["worktime_result_hour"], index="date", aggfunc=numpy.sum
             ).fillna(0)
-            df_agg_labor["working_user_count"] = df_labor[df_labor["worktime_result_hour"]>0].pivot_table(
-                values=["user_id"], index="date", aggfunc="count"
-            ).fillna(0)
+            df_agg_labor["working_user_count"] = (
+                df_labor[df_labor["worktime_result_hour"] > 0]
+                .pivot_table(values=["user_id"], index="date", aggfunc="count")
+                .fillna(0)
+            )
         else:
             df_agg_labor = pandas.DataFrame(columns=["worktime_result_hour", "working_user_count"])
 
