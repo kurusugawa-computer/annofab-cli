@@ -445,7 +445,7 @@ class Csv:
 
         phase_list = get_phase_list()
 
-        user_columns = [("user_id", ""), ("username", ""), ("biography", "")]
+        user_columns = [("user_id", ""), ("username", ""), ("biography", ""), ("last_working_date", "")]
 
         monitored_worktime_columns = (
             [("monitored_worktime_hour", phase) for phase in phase_list]

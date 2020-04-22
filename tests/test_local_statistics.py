@@ -85,7 +85,7 @@ class TestScatter:
     def read_productivity_per_user(self):
         productivity_per_user = pandas.read_csv(str(data_path / "statistics/productivity-per-user.csv"), header=[0, 1])
         productivity_per_user.rename(
-            columns={"Unnamed: 0_level_1": "", "Unnamed: 1_level_1": "", "Unnamed: 2_level_1": ""},
+            columns={"Unnamed: 0_level_1": "", "Unnamed: 1_level_1": "", "Unnamed: 2_level_1": "", "Unnamed: 3_level_1": ""},
             level=1,
             inplace=True,
         )
