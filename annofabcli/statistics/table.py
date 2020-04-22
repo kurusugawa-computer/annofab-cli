@@ -1122,9 +1122,10 @@ class Table:
 
         phase_list = Table._get_phase_list(list(df.columns))
 
-        df = df[["worktime_result_hour","last_working_date"] + phase_list].copy()
+        df = df[["worktime_result_hour", "last_working_date"] + phase_list].copy()
         df.columns = pandas.MultiIndex.from_tuples(
-            [("actual_worktime_hour", "sum"), ("last_working_date", "")] + [("monitored_worktime_hour", phase) for phase in phase_list]
+            [("actual_worktime_hour", "sum"), ("last_working_date", "")]
+            + [("monitored_worktime_hour", phase) for phase in phase_list]
         )
 
         df[("monitored_worktime_hour", "sum")] = df[[("monitored_worktime_hour", phase) for phase in phase_list]].sum(

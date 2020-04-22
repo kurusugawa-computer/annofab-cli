@@ -268,7 +268,7 @@ class Scatter:
             tooltip_item = [
                 "username_",
                 "biography_",
-                "last_working_date_"
+                "last_working_date_",
                 f"prediction_actual_worktime_hour_{phase}",
                 f"task_count_{phase}",
                 f"input_data_count_{phase}",
@@ -340,6 +340,7 @@ class Scatter:
             tooltip_item = [
                 "username_",
                 "biography_",
+                "last_working_date_",
                 f"monitored_worktime_hour_{phase}",
                 f"task_count_{phase}",
                 f"input_data_count_{phase}",
