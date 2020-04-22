@@ -7,6 +7,7 @@ from pathlib import Path
 from typing import Any, Callable, Dict, List, Optional, Tuple
 
 import more_itertools
+import numpy
 import pandas
 import requests
 from annofabapi.models import OrganizationMember, Project
@@ -19,6 +20,12 @@ from annofabcli.common.cli import AbstractCommandLineInterface, build_annofabapi
 from annofabcli.common.utils import isoduration_to_hour
 
 logger = logging.getLogger(__name__)
+
+
+def _create_required_columns(df: pandas.DataFrame, prior_columns: List[Any]) -> List[str]:
+    remained_columns = list(df.columns.difference(prior_columns))
+    all_columns = prior_columns + remained_columns
+    return all_columns
 
 
 def catch_exception(function: Callable[..., Any]) -> Callable[..., Any]:
@@ -511,6 +518,7 @@ class ListWorktimeByUser(AbstractCommandLineInterface):
             ("dayofweek", ""): [e.strftime("%a") for e in pandas.date_range(start=start_date, end=end_date)],
         }
 
+        username_list = []
         for user_id in user_id_list:
             sum_worktime_list = self.get_sum_worktime_list(
                 labor_list, user_id=user_id, start_date=start_date, end_date=end_date
@@ -522,6 +530,7 @@ class ListWorktimeByUser(AbstractCommandLineInterface):
                 logger.warning(f"user_idが'{user_id}'のユーザは存在しません。")
                 username = user_id
 
+            username_list.append(username)
             reform_dict.update(
                 {
                     (username, "作業予定"): [e.worktime_plan_hour for e in sum_worktime_list],
@@ -535,7 +544,17 @@ class ListWorktimeByUser(AbstractCommandLineInterface):
                     {(username, "予定稼働"): self.get_availability_list(labor_availability_list, start_date, end_date)}
                 )
 
-        sum_worktime_df = pandas.DataFrame(reform_dict)
+        for key in ["作業予定", "作業実績", "予定稼働"]:
+            data = numpy.array([reform_dict[(username, key)] for username in username_list], dtype=float)
+            data = numpy.nan_to_num(data)
+            logger.debug(data)
+            reform_dict[("合計", key)] = list(numpy.sum(data, axis=0))
+
+        columns = [("date", ""), ("dayofweek", ""), ("合計", "作業予定"), ("合計", "作業実績"), ("合計", "予定稼働")] + [
+            (username, key) for username in username_list for key in ["作業予定", "作業実績", "予定稼働"]
+        ]
+
+        sum_worktime_df = pandas.DataFrame(reform_dict, columns=columns)
         catch_exception(self.write_sum_worktime_list)(sum_worktime_df, output_dir)
 
         catch_exception(self.write_sum_plan_worktime_list)(sum_worktime_df, output_dir)
