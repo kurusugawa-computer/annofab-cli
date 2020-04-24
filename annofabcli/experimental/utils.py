@@ -141,10 +141,13 @@ def print_column_list(df: pd.DataFrame) -> pd.DataFrame:
 
 def print_for_each_column_list(df: pd.DataFrame) -> pd.DataFrame:
     total_df = pd.DataFrame(
-        df.groupby(["user_name", "user_id", "date", "user_biography", "project_id"], as_index=False).sum()
+        df.groupby(
+            ["user_name", "user_id", "date", "user_biography", "project_id", "project_title"], as_index=False
+        ).sum()
     )
     # 結果を合体する
     result = total_df.round(2).replace({np.inf: "--", np.nan: "--"})
+
     return result
 
 
