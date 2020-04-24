@@ -24,6 +24,7 @@ from annofabcli.experimental.utils import (
     add_id_csv,
     print_byname_total_list,
     print_column_list,
+    print_for_each_column_list,
     print_time_list_from_work_time_list,
     print_total,
     timeunit_conversion,
@@ -88,7 +89,7 @@ class Table:
                     "worktime_planned": np.nan
                     if l["values"]["working_time_by_user"]["plans"] is None
                     else int(l["values"]["working_time_by_user"]["plans"]) / 60000,
-                    "worktime_actural": np.nan
+                    "worktime_actual": np.nan
                     if l["values"]["working_time_by_user"]["results"] is None
                     else int(l["values"]["working_time_by_user"]["results"]) / 60000,
                 }
@@ -129,7 +130,7 @@ class Table:
             df = labor_control_df
         elif len(labor_control_df) == 0:
             account_statistics_df["worktime_planned"] = np.nan
-            account_statistics_df["worktime_actural"] = np.nan
+            account_statistics_df["worktime_actual"] = np.nan
             df = account_statistics_df
         else:
             df = pd.merge(
@@ -138,7 +139,8 @@ class Table:
                 on=["user_name", "user_id", "date", "user_biography"],
                 how="outer",
             )
-
+        df["project_id"] = self.project_id
+        df["project_title"] = self.facade.get_project_title(self.project_id)
         return df
 
     def _get_user_id(self, account_id: Optional[str]) -> Optional[str]:
@@ -233,6 +235,8 @@ class ListLaborWorktime(AbstractCommandLineInterface):
 
     def main(self):
         args = self.args
+        if not self.validate(args):
+            return
         format_target = FormatTarget(args.format)
         time_unit = TimeUnitTarget(args.time_unit)
 
@@ -269,6 +273,8 @@ class ListLaborWorktime(AbstractCommandLineInterface):
             df = print_byname_total_list(total_df)
         elif format_target == FormatTarget.TOTAL:
             df = print_total(total_df)
+        elif format_target == FormatTarget.COLUMN_LIST and args.for_each:
+            df = print_for_each_column_list(total_df)
         elif format_target == FormatTarget.COLUMN_LIST:
             df = print_column_list(total_df)
         else:
@@ -292,6 +298,19 @@ class ListLaborWorktime(AbstractCommandLineInterface):
         else:
             out_format = sys.stdout
         _output(out_format, df, index=(format_target == FormatTarget.DETAILS))
+
+    @staticmethod
+    def validate(args: argparse.Namespace) -> bool:
+        COMMON_MESSAGE = "annofabcli experimental find_break_error: error:"
+        if args.for_each and not args.format == "column_list":
+            print(
+                f"{COMMON_MESSAGE} argument --format: for_eachが指定された場合はformat:column_list以外は選択できません\
+                                            '{args.format}'",
+                file=sys.stderr,
+            )
+            return False
+
+        return True
 
 
 def main(args):
@@ -321,8 +340,8 @@ def parse_args(parser: argparse.ArgumentParser):
         help="集計対象のユーザのuser_idに部分一致するものを集計します。"
         "指定しない場合は、プロジェクトメンバが指定されます。`file://`を先頭に付けると、user_idの一覧が記載されたファイルを指定できます。",
     )
-    parser.add_argument("--start_date", type=str, required=True, help="集計開始日(%%Y-%%m-%%d)")
-    parser.add_argument("--end_date", type=str, required=True, help="集計終了日(%%Y-%%m-%%d)")
+    parser.add_argument("--start_date", type=str, required=True, help="集計開始日(YYYY-mm-dd)")
+    parser.add_argument("--end_date", type=str, required=True, help="集計終了日(YYYY-mm-dd)")
 
     parser.add_argument("--time_unit", type=str, default="h", choices=time_unit_choices, help="出力の時間単位(h/m/s)")
     parser.add_argument(
@@ -337,6 +356,7 @@ def parse_args(parser: argparse.ArgumentParser):
         "details:日毎・人毎の詳細な値を出力する",
     )
     parser.add_argument("--add_project_id", action="store_true", help="出力する際にprojectidを出力する")
+    parser.add_argument("--for_each", action="store_true", help="プロジェクト毎の値を出力します。format:column_listの場合のみ有効")
     argument_parser.add_output(required=False)
 
     parser.set_defaults(subcommand_func=main)
