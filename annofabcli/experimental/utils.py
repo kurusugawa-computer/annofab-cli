@@ -21,11 +21,11 @@ class FormatTarget(Enum):
 
 def timeunit_conversion(df: pd.DataFrame, time_unit: TimeUnitTarget = TimeUnitTarget.H) -> pd.DataFrame:
     if time_unit == TimeUnitTarget.H:
-        df["worktime_actural"] = df["worktime_actural"] / 60
+        df["worktime_actual"] = df["worktime_actual"] / 60
         df["worktime_monitored"] = df["worktime_monitored"] / 60
         df["worktime_planned"] = df["worktime_planned"] / 60
     elif time_unit == TimeUnitTarget.S:
-        df["worktime_actural"] = df["worktime_actural"] * 60
+        df["worktime_actual"] = df["worktime_actual"] * 60
         df["worktime_monitored"] = df["worktime_monitored"] * 60
         df["worktime_planned"] = df["worktime_planned"] * 60
 
@@ -34,33 +34,36 @@ def timeunit_conversion(df: pd.DataFrame, time_unit: TimeUnitTarget = TimeUnitTa
 
 def calc_df_total(df: pd.DataFrame) -> Tuple[pd.DataFrame, pd.DataFrame, pd.DataFrame, pd.DataFrame]:
     # 複数のproject_id分を合計
+    del df["project_id"]
+    del df["project_title"]
+    df["user_biography"] = df["user_biography"].fillna("")
     total_df = pd.DataFrame(df.groupby(["user_name", "user_id", "date", "user_biography"], as_index=False).sum())
 
     # 合計を計算する
     sum_by_date = (
-        total_df[["date", "worktime_planned", "worktime_actural", "worktime_monitored"]]
+        total_df[["date", "worktime_planned", "worktime_actual", "worktime_monitored"]]
         .groupby(["date"], as_index=False)
         .sum()
     )
     sum_by_name = (
-        total_df[["user_name", "worktime_planned", "worktime_actural", "worktime_monitored"]]
+        total_df[["user_name", "worktime_planned", "worktime_actual", "worktime_monitored"]]
         .groupby(["user_name"], as_index=False)
         .sum()
     )
-    sum_all = total_df[["worktime_planned", "worktime_actural", "worktime_monitored"]].sum().to_frame().transpose()
+    sum_all = total_df[["worktime_planned", "worktime_actual", "worktime_monitored"]].sum().to_frame().transpose()
 
     # 比率を追加する
-    sum_by_date["activity_rate"] = sum_by_date["worktime_actural"] / sum_by_date["worktime_planned"]
-    sum_by_date["monitor_rate"] = sum_by_date["worktime_monitored"] / sum_by_date["worktime_actural"]
+    sum_by_date["activity_rate"] = sum_by_date["worktime_actual"] / sum_by_date["worktime_planned"]
+    sum_by_date["monitor_rate"] = sum_by_date["worktime_monitored"] / sum_by_date["worktime_actual"]
 
-    sum_by_name["activity_rate"] = sum_by_name["worktime_actural"] / sum_by_name["worktime_planned"]
-    sum_by_name["monitor_rate"] = sum_by_name["worktime_monitored"] / sum_by_name["worktime_actural"]
+    sum_by_name["activity_rate"] = sum_by_name["worktime_actual"] / sum_by_name["worktime_planned"]
+    sum_by_name["monitor_rate"] = sum_by_name["worktime_monitored"] / sum_by_name["worktime_actual"]
 
-    sum_all["activity_rate"] = sum_all["worktime_actural"] / sum_all["worktime_planned"]
-    sum_all["monitor_rate"] = sum_all["worktime_monitored"] / sum_all["worktime_actural"]
+    sum_all["activity_rate"] = sum_all["worktime_actual"] / sum_all["worktime_planned"]
+    sum_all["monitor_rate"] = sum_all["worktime_monitored"] / sum_all["worktime_actual"]
 
-    total_df["activity_rate"] = total_df["worktime_actural"] / total_df["worktime_planned"]
-    total_df["monitor_rate"] = total_df["worktime_monitored"] / total_df["worktime_actural"]
+    total_df["activity_rate"] = total_df["worktime_actual"] / total_df["worktime_planned"]
+    total_df["monitor_rate"] = total_df["worktime_monitored"] / total_df["worktime_actual"]
 
     return total_df, sum_by_date, sum_by_name, sum_all
 
@@ -89,7 +92,7 @@ def print_time_list_from_work_time_list(df: pd.DataFrame) -> pd.DataFrame:
                 "date",
                 "user_name",
                 "worktime_planned",
-                "worktime_actural",
+                "worktime_actual",
                 "worktime_monitored",
                 "activity_rate",
                 "monitor_rate",
@@ -131,6 +134,15 @@ def print_total(df: pd.DataFrame) -> pd.DataFrame:
 def print_column_list(df: pd.DataFrame) -> pd.DataFrame:
     total_df, _, _, _ = calc_df_total(df=df)
 
+    # 結果を合体する
+    result = total_df.round(2).replace({np.inf: "--", np.nan: "--"})
+    return result
+
+
+def print_for_each_column_list(df: pd.DataFrame) -> pd.DataFrame:
+    total_df = pd.DataFrame(
+        df.groupby(["user_name", "user_id", "date", "user_biography", "project_id"], as_index=False).sum()
+    )
     # 結果を合体する
     result = total_df.round(2).replace({np.inf: "--", np.nan: "--"})
     return result
