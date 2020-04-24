@@ -39,7 +39,7 @@ setup(
         "pyquery",
         "pandas>=1.0.3",
         "isodate",
-        "bokeh>=2.0.1",
+        "bokeh>=2.0.2",
         "holoviews>=1.13.2",
     ],
     python_requires=">=3.6",
