@@ -5,6 +5,7 @@ from annofabapi.models import TaskStatus
 
 from annofabcli.statistics.csv import Csv
 from annofabcli.statistics.scatter import Scatter
+from annofabcli.statistics.linegraph import LineGraph
 from annofabcli.statistics.summarize_task_count import SimpleTaskStatus
 from annofabcli.statistics.table import Table
 
@@ -107,3 +108,17 @@ class TestScatter:
     def test_write_scatter_for_quality(self):
         productivity_per_user = self.read_productivity_per_user()
         self.scatter_obj.write_scatter_for_quality(productivity_per_user)
+
+
+class TestLineGraph:
+    line_graph_obj = None
+
+    @classmethod
+    def setup_class(cls):
+        cls.line_graph_obj = LineGraph(outdir=str(out_path / "statistics"), project_id=project_id)
+
+    def test_write_cumulative_line_graph_for_annotator(self):
+        df = pandas.read_csv(str(data_path / "statistics/task.csv"))
+        cumulative_df = Table.create_cumulative_df_by_first_annotator(df)
+        self.line_graph_obj.write_cumulative_line_graph_for_annotator(cumulative_df)
+
