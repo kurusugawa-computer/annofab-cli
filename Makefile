@@ -9,11 +9,15 @@ endif
 
 init:
 	pip install pipenv --upgrade
+    # blackをpipenvでなくpipでインストールする理由：
+	# 2020/04時点でblackはベータ版で、pipenvでblackを利用するにはPipfileに`allow_prereleases=true`を記載する必要がある。
+	# しかし、そうするとblack以外のプレリリース版（ベータ版）もインストールされてしまう。これは避けたいので、blackはpipでインストールする
+	pip install black --upgrade
 	pipenv install --dev
 
 format:
 	pipenv run autoflake  --in-place --remove-all-unused-imports  --ignore-init-module-imports --recursive ${FORMAT_FILES}
-# balckは正式版がリリースされるまでは、pipenv上で実行しない。事前にpipでblackをインストールすること。
+    # balckは正式版がリリースされるまでは、pipenv上で実行しない。事前にpipでblackをインストールすること。
 	black ${FORMAT_FILES}
 	pipenv run isort --verbose --recursive ${FORMAT_FILES}
 

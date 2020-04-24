@@ -274,8 +274,8 @@ class Scatter:
                 f"input_data_count_{phase}",
                 f"annotation_count_{phase}",
                 f"monitored_worktime_hour_{phase}",
-                f"prediction_actual_worktime/input_data_count_{phase}",
-                f"prediction_actual_worktime/annotation_count_{phase}",
+                f"actual_worktime/input_data_count_{phase}",
+                f"actual_worktime/annotation_count_{phase}",
             ]
             hover_tool = self._create_hover_tool(tooltip_item)
             fig.add_tools(hover_tool)
