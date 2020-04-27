@@ -4,8 +4,8 @@ import pandas
 from annofabapi.models import TaskStatus
 
 from annofabcli.statistics.csv import Csv
-from annofabcli.statistics.scatter import Scatter
 from annofabcli.statistics.linegraph import LineGraph
+from annofabcli.statistics.scatter import Scatter
 from annofabcli.statistics.summarize_task_count import SimpleTaskStatus
 from annofabcli.statistics.table import Table
 
@@ -39,7 +39,7 @@ class TestTable:
             }
         )
         df = Table.create_annotation_count_ratio_df(task_history_df, task_df)
-        df.to_csv(out_path / "annotation-count-ratio.csv")
+        df.to_csv(out_path / "statistics/annotation-count-ratio.csv")
 
     def test_create_productivity_per_user_from_aw_time(self):
         df_task_history = pandas.read_csv(str(data_path / "statistics/task-history-df.csv"))
@@ -47,13 +47,13 @@ class TestTable:
         df_worktime_ratio = pandas.read_csv(str(data_path / "statistics/annotation-count-ratio-df.csv"))
         df = Table.create_productivity_per_user_from_aw_time(df_task_history, df_labor, df_worktime_ratio)
 
-        df.to_csv(out_path / "productivity-per-user.csv")
+        df.to_csv(out_path / "statistics/productivity-per-user.csv")
 
     def test_create_annotation_count_ratio_df(self):
         df_task_history = pandas.read_csv(str(data_path / "statistics/task-history-df.csv"))
         df_task = pandas.read_csv(str(data_path / "statistics/task.csv"))
         df = Table.create_annotation_count_ratio_df(task_df=df_task, task_history_df=df_task_history)
-        df.to_csv(out_path / "annotation-count-ratio-df.csv")
+        df.to_csv(out_path / "statistics/annotation-count-ratio-df.csv")
 
     def test_create_whole_productivity_per_date(self):
         df_task = pandas.read_csv(str(data_path / "statistics/task.csv"))
@@ -84,7 +84,7 @@ class TestScatter:
         cls.scatter_obj = Scatter(outdir=str(out_path / "statistics"), project_id=project_id)
 
     def read_productivity_per_user(self):
-        productivity_per_user = pandas.read_csv(str(data_path / "statistics/productivity-per-user.csv"), header=[0, 1])
+        productivity_per_user = pandas.read_csv("/vagrant_data/tmp/triad-13-メンバごとの生産性と品質.csv", header=[0, 1])
         productivity_per_user.rename(
             columns={
                 "Unnamed: 0_level_1": "",
@@ -131,4 +131,3 @@ class TestLineGraph:
         df = pandas.read_csv(str(data_path / "statistics/task.csv"))
         cumulative_df = Table.create_cumulative_df_by_first_acceptor(df)
         self.line_graph_obj.write_cumulative_line_graph_for_acceptor(cumulative_df)
-

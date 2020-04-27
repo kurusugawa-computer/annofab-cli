@@ -550,9 +550,11 @@ class ListWorktimeByUser(AbstractCommandLineInterface):
             data = numpy.nan_to_num(data)
             reform_dict[("合計", key)] = list(numpy.sum(data, axis=0))
 
-        columns = [("date", ""), ("dayofweek", "")] + [("合計",key) for key in key_list] + [
-            (username, key) for username in username_list for key in key_list
-        ]
+        columns = (
+            [("date", ""), ("dayofweek", "")]
+            + [("合計", key) for key in key_list]
+            + [(username, key) for username in username_list for key in key_list]
+        )
 
         sum_worktime_df = pandas.DataFrame(reform_dict, columns=columns)
         catch_exception(self.write_sum_worktime_list)(sum_worktime_df, output_dir)
