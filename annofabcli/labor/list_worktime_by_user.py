@@ -544,14 +544,14 @@ class ListWorktimeByUser(AbstractCommandLineInterface):
                     {(username, "予定稼働"): self.get_availability_list(labor_availability_list, start_date, end_date)}
                 )
 
-        for key in ["作業予定", "作業実績", "予定稼働"]:
+        key_list = ["作業予定", "作業実績", "予定稼働"] if labor_availability_list_dict else ["作業予定", "作業実績"]
+        for key in key_list:
             data = numpy.array([reform_dict[(username, key)] for username in username_list], dtype=float)
             data = numpy.nan_to_num(data)
-            logger.debug(data)
             reform_dict[("合計", key)] = list(numpy.sum(data, axis=0))
 
-        columns = [("date", ""), ("dayofweek", ""), ("合計", "作業予定"), ("合計", "作業実績"), ("合計", "予定稼働")] + [
-            (username, key) for username in username_list for key in ["作業予定", "作業実績", "予定稼働"]
+        columns = [("date", ""), ("dayofweek", "")] + [("合計",key) for key in key_list] + [
+            (username, key) for username in username_list for key in key_list
         ]
 
         sum_worktime_df = pandas.DataFrame(reform_dict, columns=columns)
