@@ -417,7 +417,7 @@ def main(args):
 def add_parser(subparsers: argparse._SubParsersAction):
     subcommand_name = "diff"
     subcommand_help = "プロジェクト間の差分を表示する。"
-    description = "プロジェクト間の差分を表示する。" "ただし、AnnoFabで生成されるIDや、変化する日時などは比較しない。"
+    description = "プロジェクト間の差分を表示する。" + "ただし、AnnoFabで生成されるIDや、変化する日時などは比較しない。"
     epilog = "オーナ、チェッカーロールのいずれかを持つユーザで実行してください。"
 
     parser = annofabcli.common.cli.add_parser(subparsers, subcommand_name, subcommand_help, description, epilog=epilog)
