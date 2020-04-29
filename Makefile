@@ -11,7 +11,7 @@ init:
 	pip install pipenv --upgrade
     # blackをpipenvでなくpipでインストールする理由：
 	# 2020/04時点でblackはベータ版で、pipenvでblackを利用するにはPipfileに`allow_prereleases=true`を記載する必要がある。
-	# しかし、そうするとblack以外のプレリリース版（ベータ版）もインストールされてしまう。これは避けたいので、blackはpipでインストールする
+	# Pipfileに`allow_prereleases=true`を設定すると、black以外のプレリリース版（ベータ版）もインストールされてしまうが、これは避けたいのでblackはpipでインストールする
 	pip install black --upgrade
 	pipenv install --dev
 
