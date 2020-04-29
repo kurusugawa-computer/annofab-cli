@@ -11,6 +11,7 @@ from annofabcli.statistics.table import Table
 
 out_path = Path("./tests/out")
 data_path = Path("./tests/data")
+(out_path / "statistics").mkdir(exist_ok=True, parents=True)
 
 project_id = "12345678-abcd-1234-abcd-1234abcd5678"
 csv_obj = Csv(str(out_path), project_id)
