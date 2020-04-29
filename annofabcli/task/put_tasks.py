@@ -90,7 +90,7 @@ class PutTask(AbstractCommandLineInterface):
             by_count.update(get_json_from_args(args.by_count))
             self.put_task_by_count(project_id, by_count)
         else:
-            assert "--csv or --by_count が指定されていません。"
+            raise RuntimeError("--csv or --by_count が指定されていません。")
 
         wait_options = get_wait_options_from_args(get_json_from_args(args.wait_options), DEFAULT_WAIT_OPTIONS)
         self.wait_for_completion(

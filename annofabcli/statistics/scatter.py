@@ -41,49 +41,6 @@ class Scatter:
         self.short_project_id = project_id[0:8]
         Path(self.scatter_outdir).mkdir(exist_ok=True, parents=True)
 
-    #
-    # @staticmethod
-    # def _plot_line_and_circle(
-    #     fig: bokeh.plotting.Figure,
-    #     source: ColumnDataSource,
-    #     x_column_name: str,
-    #     y_column_name: str,
-    #     legend_label: str,
-    #     color: Color,
-    # ) -> None:
-    #     """
-    #     線を引いて、プロットした部分に丸を付ける。
-    #
-    #     Args:
-    #         fig:
-    #         source:
-    #         x_column_name: sourceに対応するX軸の列名
-    #         y_column_name: sourceに対応するY軸の列名
-    #         legend_label:
-    #         color: 線と点の色
-    #
-    #     """
-    #
-    #     fig.line(
-    #         x=x_column_name,
-    #         y=y_column_name,
-    #         source=source,
-    #         legend_label=legend_label,
-    #         line_color=color,
-    #         line_width=1,
-    #         muted_alpha=0.2,
-    #         muted_color=color,
-    #     )
-    #     fig.circle(
-    #         x=x_column_name,
-    #         y=y_column_name,
-    #         source=source,
-    #         legend_label=legend_label,
-    #         muted_alpha=0.0,
-    #         muted_color=color,
-    #         color=color,
-    #     )
-
     @staticmethod
     def _set_legend(fig: bokeh.plotting.Figure) -> None:
         """
@@ -189,14 +146,18 @@ class Scatter:
 
         df["biography"] = df["biography"].fillna("")
         for biography_index, biography in enumerate(df["biography"].unique()):
-            filtered_df = df[df["biography"] == biography]
-            source = ColumnDataSource(data=filtered_df)
+            x_column = "monitored_worktime_hour"
+            y_column = "monitored_worktime/annotation_count"
             for fig, phase in zip(figure_list, phase_list):
+                filtered_df = df[
+                    (df["biography"] == biography) & df[(x_column, phase)].notna() & df[(y_column, phase)].notna()
+                ]
+                source = ColumnDataSource(data=filtered_df)
                 self._scatter(
                     fig=fig,
                     source=source,
-                    x_column_name=f"monitored_worktime_hour_{phase}",
-                    y_column_name=f"monitored_worktime/annotation_count_{phase}",
+                    x_column_name=f"{x_column}_{phase}",
+                    y_column_name=f"{y_column}_{phase}",
                     legend_label=biography,
                     color=self.my_palette[biography_index],
                 )
@@ -205,6 +166,7 @@ class Scatter:
             tooltip_item = [
                 "username_",
                 "biography_",
+                "last_working_date_",
                 f"monitored_worktime_hour_{phase}",
                 f"task_count_{phase}",
                 f"input_data_count_{phase}",
@@ -251,14 +213,18 @@ class Scatter:
 
         df["biography"] = df["biography"].fillna("")
         for biography_index, biography in enumerate(df["biography"].unique()):
-            filtered_df = df[df["biography"] == biography]
-            source = ColumnDataSource(data=filtered_df)
+            x_column = "prediction_actual_worktime_hour"
+            y_column = "actual_worktime/annotation_count"
             for fig, phase in zip(figure_list, phase_list):
+                filtered_df = df[
+                    (df["biography"] == biography) & df[(x_column, phase)].notna() & df[(y_column, phase)].notna()
+                ]
+                source = ColumnDataSource(data=filtered_df)
                 self._scatter(
                     fig=fig,
                     source=source,
-                    x_column_name=f"prediction_actual_worktime_hour_{phase}",
-                    y_column_name=f"actual_worktime/annotation_count_{phase}",
+                    x_column_name=f"{x_column}_{phase}",
+                    y_column_name=f"{y_column}_{phase}",
                     legend_label=biography,
                     color=self.my_palette[biography_index],
                 )
@@ -267,13 +233,14 @@ class Scatter:
             tooltip_item = [
                 "username_",
                 "biography_",
+                "last_working_date_",
                 f"prediction_actual_worktime_hour_{phase}",
                 f"task_count_{phase}",
                 f"input_data_count_{phase}",
                 f"annotation_count_{phase}",
                 f"monitored_worktime_hour_{phase}",
-                f"prediction_actual_worktime/input_data_count_{phase}",
-                f"prediction_actual_worktime/annotation_count_{phase}",
+                f"actual_worktime/input_data_count_{phase}",
+                f"actual_worktime/annotation_count_{phase}",
             ]
             hover_tool = self._create_hover_tool(tooltip_item)
             fig.add_tools(hover_tool)
@@ -308,36 +275,37 @@ class Scatter:
                 title=f"アノテーションあたり検査コメント数とアノテーション数の関係", x_axis_label="アノテーション数", y_axis_label="アノテーションあたり検査コメント数"
             ),
         ]
+        column_pair_list = [
+            ("task_count", "rejected_count/task_count"),
+            ("annotation_count", "pointed_out_inspection_comment_count/annotation_count"),
+        ]
 
         phase = "annotation"
 
         df["biography"] = df["biography"].fillna("")
         for biography_index, biography in enumerate(df["biography"].unique()):
-            filtered_df = df[df["biography"] == biography]
-            source = ColumnDataSource(data=filtered_df)
+            for column_pair, fig in zip(column_pair_list, figure_list):
+                x_column = column_pair[0]
+                y_column = column_pair[1]
+                filtered_df = df[
+                    (df["biography"] == biography) & df[(x_column, phase)].notna() & df[(y_column, phase)].notna()
+                ]
 
-            self._scatter(
-                fig=figure_list[0],
-                source=source,
-                x_column_name=f"task_count_{phase}",
-                y_column_name=f"rejected_count/task_count_{phase}",
-                legend_label=biography,
-                color=self.my_palette[biography_index],
-            )
-
-            self._scatter(
-                fig=figure_list[1],
-                source=source,
-                x_column_name=f"annotation_count_{phase}",
-                y_column_name=f"pointed_out_inspection_comment_count/annotation_count_{phase}",
-                legend_label=biography,
-                color=self.my_palette[biography_index],
-            )
+                source = ColumnDataSource(data=filtered_df)
+                self._scatter(
+                    fig=fig,
+                    source=source,
+                    x_column_name=f"{x_column}_{phase}",
+                    y_column_name=f"{y_column}_{phase}",
+                    legend_label=biography,
+                    color=self.my_palette[biography_index],
+                )
 
         for fig in figure_list:
             tooltip_item = [
                 "username_",
                 "biography_",
+                "last_working_date_",
                 f"monitored_worktime_hour_{phase}",
                 f"task_count_{phase}",
                 f"input_data_count_{phase}",

@@ -5,7 +5,7 @@ from pathlib import Path
 from typing import Any, Callable, Dict, List, Optional
 
 import annofabapi
-import pandas as pd
+import pandas
 from annofabapi.models import ProjectMemberRole, TaskPhase
 
 import annofabcli
@@ -50,13 +50,13 @@ def catch_exception(function: Callable[..., Any]) -> Callable[..., Any]:
 
 
 class WriteCsvGraph:
-    task_df: Optional[pd.DataFrame] = None
-    annotation_df: Optional[pd.DataFrame] = None
-    account_statistics_df: Optional[pd.DataFrame] = None
-    df_by_date_user: Optional[pd.DataFrame] = None
-    task_history_df: Optional[pd.DataFrame] = None
-    labor_df: Optional[pd.DataFrame] = None
-    productivity_df: Optional[pd.DataFrame] = None
+    task_df: Optional[pandas.DataFrame] = None
+    annotation_df: Optional[pandas.DataFrame] = None
+    account_statistics_df: Optional[pandas.DataFrame] = None
+    df_by_date_user: Optional[pandas.DataFrame] = None
+    task_history_df: Optional[pandas.DataFrame] = None
+    labor_df: Optional[pandas.DataFrame] = None
+    productivity_df: Optional[pandas.DataFrame] = None
 
     def __init__(self, table_obj: Table, output_dir: Path, project_id: str):
         self.table_obj = table_obj

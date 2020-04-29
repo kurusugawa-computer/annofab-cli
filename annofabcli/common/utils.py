@@ -184,6 +184,10 @@ def print_according_to_format(
         task_id_list = [e["task_id"] for e in target]
         print_id_list(task_id_list, output)
 
+    elif arg_format == FormatArgument.PROJECT_ID_LIST:
+        project_id_list = [e["project_id"] for e in target]
+        print_id_list(project_id_list, output)
+
     elif arg_format == FormatArgument.INPUT_DATA_ID_LIST:
         input_data_id_list = [e["input_data_id"] for e in target]
         print_id_list(input_data_id_list, output)

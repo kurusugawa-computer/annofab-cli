@@ -2,6 +2,7 @@ import argparse
 import datetime
 import logging
 import sys
+from pathlib import Path
 from typing import Any, Dict, List, Optional  # pylint: disable=unused-import
 
 import annofabapi
@@ -248,6 +249,7 @@ class ListLaborWorktime(AbstractCommandLineInterface):
 
         # プロジェクトごとにデータを取得
         project_id_list = get_list_from_args(args.project_id)
+        logger.info(f"{len(project_id_list)} 件のプロジェクトを取得します。")
         for i, project_id in enumerate(list(set(project_id_list))):
             logger.debug(f"{i + 1} 件目: project_id = {project_id}")
 
@@ -281,6 +283,7 @@ class ListLaborWorktime(AbstractCommandLineInterface):
             df = print_time_list_from_work_time_list(total_df)
 
         def _output(output: str, df: pd.DataFrame, index: bool):
+            Path(output).parent.mkdir(exist_ok=True, parents=True)
             df.to_csv(
                 output,
                 date_format="%Y-%m-%d",

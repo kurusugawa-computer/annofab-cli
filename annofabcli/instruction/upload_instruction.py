@@ -89,7 +89,7 @@ def add_parser(subparsers: argparse._SubParsersAction):
     subcommand_name = "upload"
     subcommand_help = "HTMLファイルを作業ガイドとして登録します。"
     description = (
-        "HTMLファイルを作業ガイドとして登録します。" "img要素のsrc属性がローカルの画像を参照している場合（http, https, dataスキーマが付与されていない）、" "画像もアップロードします。"
+        "HTMLファイルを作業ガイドとして登録します。" + "img要素のsrc属性がローカルの画像を参照している場合（http, https, dataスキーマが付与されていない）、" "画像もアップロードします。"
     )
     epilog = "チェッカーまたはオーナロールを持つユーザで実行してください。"
     parser = annofabcli.common.cli.add_parser(subparsers, subcommand_name, subcommand_help, description, epilog=epilog)
