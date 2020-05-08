@@ -3,13 +3,7 @@ import logging
 
 import annofabcli
 from annofabcli import AnnofabApiFacade
-from annofabcli.common.cli import (
-    AbstractCommandLineInterface,
-    ArgumentParser,
-    build_annofabapi_resource_and_login,
-    get_json_from_args,
-    get_wait_options_from_args,
-)
+from annofabcli.common.cli import AbstractCommandLineInterface, ArgumentParser, build_annofabapi_resource_and_login
 from annofabcli.common.utils import _read_multiheader_csv
 from annofabcli.statistics.scatter import Scatter
 
@@ -44,6 +38,7 @@ def parse_args(parser: argparse.ArgumentParser):
     parser.add_argument(
         "--csv",
         type=str,
+        required=True,
         help=("CSVファイルのパスを指定してください。" "CSVは、'statistics visualize'コマンドの出力結果である'メンバごとの生産性と品質.csv'と同じフォーマットです。"),
     )
     parser.add_argument("-o", "--output_dir", type=str, required=True, help="出力ディレクトリのパス")
