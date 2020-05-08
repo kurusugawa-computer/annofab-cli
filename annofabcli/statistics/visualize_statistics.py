@@ -63,7 +63,7 @@ class WriteCsvGraph:
         self.csv_obj = Csv(str(output_dir), project_id)
         self.histogram_obj = Histogram(str(output_dir / "histogram"), project_id)
         self.graph_obj = LineGraph(str(output_dir / "line-graph"), project_id)
-        self.scatter_obj = Scatter(str(output_dir/"scatter"), project_id)
+        self.scatter_obj = Scatter(str(output_dir / "scatter"), project_id)
 
     def _get_task_df(self):
         if self.task_df is None:

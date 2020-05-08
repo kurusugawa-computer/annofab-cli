@@ -5,7 +5,7 @@ import pkgutil
 import re
 import sys
 from pathlib import Path
-from typing import Any, Dict, List, Optional, Set, TypeVar
+from typing import Any, Callable, Dict, List, Optional, Set, TypeVar
 
 import dateutil.parser
 import isodate
@@ -316,3 +316,41 @@ def get_cache_dir() -> Path:
         cache_home_dir_path = Path(cache_home_dir)
 
     return cache_home_dir_path / "annofabcli"
+
+
+def _read_multiheader_csv(csv_file: str, header_row_count: int = 2) -> pandas.DataFrame:
+    """
+    複数ヘッダ行のCSVを読み込む。その際、"Unnnamed"の列名は空文字に変更する。
+
+    Args:
+        csv_file:
+        header_row_count: ヘッダの行数。2以上を指定する。
+
+    Returns:
+        pandas.DataFrame
+
+    """
+    df = pandas.read_csv(csv_file, header=list(range(header_row_count)))
+    for level in range(1, header_row_count):
+        columns = df.columns.levels[level]
+        rename_columns = {c: "" for c in columns if re.fullmatch(r"Unnamed: *", c) is not None}
+
+        df.rename(
+            columns=rename_columns, level=level, inplace=True,
+        )
+    return df
+
+
+def _catch_exception(function: Callable[..., Any]) -> Callable[..., Any]:
+    """
+    Exceptionをキャッチしてログにstacktraceを出力する。
+    """
+
+    def wrapped(*args, **kwargs):
+        try:
+            return function(*args, **kwargs)
+        except Exception as e:  # pylint: disable=broad-except
+            logger.warning(e)
+            logger.exception(e)
+
+    return wrapped
