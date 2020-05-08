@@ -30,8 +30,7 @@ class LineGraph:
     #############################################
 
     def __init__(self, outdir: str, project_id: str):
-        self.outdir = outdir
-        self.line_graph_outdir = f"{outdir}/line-graph"
+        self.line_graph_outdir = outdir
         self.short_project_id = project_id[0:8]
         Path(self.line_graph_outdir).mkdir(exist_ok=True, parents=True)
 

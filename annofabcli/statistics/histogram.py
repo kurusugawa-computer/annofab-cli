@@ -34,8 +34,7 @@ class Histogram:
     """
 
     def __init__(self, outdir: str, project_id: str):
-        self.outdir = outdir
-        self.histogram_outdir = f"{outdir}/histogram"
+        self.histogram_outdir = outdir
         self.short_project_id = project_id[0:8]
         Path(self.histogram_outdir).mkdir(exist_ok=True, parents=True)
 

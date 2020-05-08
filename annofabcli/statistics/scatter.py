@@ -36,8 +36,7 @@ class Scatter:
     #############################################
 
     def __init__(self, outdir: str, project_id: str):
-        self.outdir = outdir
-        self.scatter_outdir = f"{outdir}/scatter"
+        self.scatter_outdir = outdir
         self.short_project_id = project_id[0:8]
         Path(self.scatter_outdir).mkdir(exist_ok=True, parents=True)
 
