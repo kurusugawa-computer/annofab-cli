@@ -10,14 +10,12 @@ from annofabcli.statistics.scatter import Scatter
 logger = logging.getLogger(__name__)
 
 
-class PutTask(AbstractCommandLineInterface):
-    """
-    CSVからタスクを登録する。
-    """
-
+class WriteScatterPerUser(AbstractCommandLineInterface):
     def main(self):
         args = self.args
         project_id = args.project_id
+        scatter_obj = Scatter(outdir=args.output_dir, project_id=project_id)
+
         df = _read_multiheader_csv(args.csv)
         scatter_obj = Scatter(outdir=args.output_dir, project_id=project_id)
         scatter_obj.write_scatter_for_productivity_by_monitored_worktime(df)
@@ -28,7 +26,7 @@ class PutTask(AbstractCommandLineInterface):
 def main(args):
     service = build_annofabapi_resource_and_login(args)
     facade = AnnofabApiFacade(service)
-    PutTask(service, facade, args).main()
+    WriteScatterPerUser(service, facade, args).main()
 
 
 def parse_args(parser: argparse.ArgumentParser):

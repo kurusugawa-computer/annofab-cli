@@ -80,17 +80,17 @@ def set_default_logger(log_dir: str = ".log", log_filename: str = "annofabcli.lo
     logging.config.dictConfig(logging_config)
 
 
-def duplicated_set(l: List[T]) -> Set[T]:
+def duplicated_set(target_list: List[T]) -> Set[T]:
     """
     重複しているsetを返す
     Args:
-        l: 確認するList
+        target_list: 確認するList
 
     Returns:
         重複しているset
 
     """
-    return {x for x in set(l) if l.count(x) > 1}
+    return {x for x in set(target_list) if target_list.count(x) > 1}
 
 
 def progress_msg(index: int, size: int):

@@ -41,7 +41,7 @@ class PrintLabelColor(AbstractCommandLineInterface):
         annotation_specs = self.service.api.get_annotation_specs(project_id)[0]
         labels = annotation_specs["labels"]
 
-        label_color_dict = {self.facade.get_label_name_en(l): self.get_rgb(l) for l in labels}
+        label_color_dict = {self.facade.get_label_name_en(label): self.get_rgb(label) for label in labels}
 
         self.print_according_to_format(label_color_dict)
 
