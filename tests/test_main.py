@@ -415,6 +415,10 @@ class TestProject:
         out_file = str(out_path / "task_history_event.json")
         main(["project", "download", "task_history_event", "--project_id", project_id, "--output", out_file])
 
+    def test_download_project_task_history(self):
+        out_file = str(out_path / "task_history.json")
+        main(["project", "download", "task_history", "--project_id", project_id, "--output", out_file])
+
     def test_download_project_simple_annotation(self):
         out_file = str(out_path / "simple_annotation.zip")
         main(["project", "download", "simple_annotation", "--project_id", project_id, "--output", out_file])
@@ -652,7 +656,7 @@ class TestTask:
                 "--phase",
                 "annotation",
                 "--reply_comment",
-                "対応しました（自動投稿",
+                "対応しました（自動投稿）",
                 "--yes",
             ]
         )
