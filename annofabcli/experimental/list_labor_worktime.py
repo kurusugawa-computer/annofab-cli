@@ -79,20 +79,19 @@ class Table:
 
         labor_control = self.database.get_labor_control()
         labor_control_list = []
-        for l in labor_control:
-
-            if l["account_id"] is not None:
+        for labor in labor_control:
+            if labor["account_id"] is not None:
                 new_history = {
-                    "user_name": self._get_username(l["account_id"]),
-                    "user_id": self._get_user_id(l["account_id"]),
-                    "user_biography": self._get_user_biography(l["account_id"]),
-                    "date": l["date"],
+                    "user_name": self._get_username(labor["account_id"]),
+                    "user_id": self._get_user_id(labor["account_id"]),
+                    "user_biography": self._get_user_biography(labor["account_id"]),
+                    "date": labor["date"],
                     "worktime_planned": np.nan
-                    if l["values"]["working_time_by_user"]["plans"] is None
-                    else int(l["values"]["working_time_by_user"]["plans"]) / 60000,
+                    if labor["values"]["working_time_by_user"]["plans"] is None
+                    else int(labor["values"]["working_time_by_user"]["plans"]) / 60000,
                     "worktime_actual": np.nan
-                    if l["values"]["working_time_by_user"]["results"] is None
-                    else int(l["values"]["working_time_by_user"]["results"]) / 60000,
+                    if labor["values"]["working_time_by_user"]["results"] is None
+                    else int(labor["values"]["working_time_by_user"]["results"]) / 60000,
                 }
                 labor_control_list.append(new_history)
 

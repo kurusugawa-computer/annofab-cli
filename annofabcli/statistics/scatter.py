@@ -11,6 +11,8 @@ from bokeh.core.properties import Color
 from bokeh.models import HoverTool
 from bokeh.plotting import ColumnDataSource, figure
 
+from annofabcli.common.utils import _catch_exception
+
 logger = logging.getLogger(__name__)
 
 
@@ -36,8 +38,7 @@ class Scatter:
     #############################################
 
     def __init__(self, outdir: str, project_id: str):
-        self.outdir = outdir
-        self.scatter_outdir = f"{outdir}/scatter"
+        self.scatter_outdir = outdir
         self.short_project_id = project_id[0:8]
         Path(self.scatter_outdir).mkdir(exist_ok=True, parents=True)
 
@@ -114,6 +115,7 @@ class Scatter:
             phase_list.remove(TaskPhase.ACCEPTANCE.value)
         return phase_list
 
+    @_catch_exception
     def write_scatter_for_productivity_by_monitored_worktime(self, df: pandas.DataFrame):
         """
         AnnoFab計測時間を元に算出した生産性を、メンバごとにプロットする
@@ -183,6 +185,7 @@ class Scatter:
         bokeh.plotting.output_file(output_file, title=html_title)
         bokeh.plotting.save(bokeh.layouts.column(figure_list))
 
+    @_catch_exception
     def write_scatter_for_productivity_by_actual_worktime(self, df: pandas.DataFrame):
         """
         実績作業時間を元に算出した生産性を、メンバごとにプロットする
@@ -250,6 +253,7 @@ class Scatter:
         bokeh.plotting.output_file(output_file, title=html_title)
         bokeh.plotting.save(bokeh.layouts.column(figure_list))
 
+    @_catch_exception
     def write_scatter_for_quality(self, df: pandas.DataFrame):
         """
         メンバごとに品質を散布図でプロットする

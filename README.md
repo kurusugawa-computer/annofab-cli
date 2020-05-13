@@ -1,3 +1,9 @@
+[![Build Status](https://travis-ci.com/kurusugawa-computer/annofab-cli.svg?branch=master)](https://travis-ci.com/kurusugawa-computer/annofab-api-python-client)
+[![PyPI version](https://badge.fury.io/py/annofabcli.svg)](https://badge.fury.io/py/annofabcli)
+[![Python Versions](https://img.shields.io/pypi/pyversions/annofabcli.svg)](https://pypi.org/project/annofabcli/)
+
+
+
 # 概要
 AnnoFabのCLI(Command Line Interface)ツールです。
 「タスクの一括差し戻し」や、「プロジェクト間の差分表示」など、AnnoFabの画面で実施するには時間がかかる操作を、コマンドとして提供しています。
@@ -941,8 +947,9 @@ $ annofabcli project diff  prj1 prj2 --target settings
 * すべての入力データが記載されたJSON
 * すべての検査コメントが記載されたJSON
 * すべてのタスク履歴イベントが記載されたJSON
+* すべてのタスク履歴イベントが記載されたJSON（非推奨）
 * Simpleアノテーションzip
-* Fullアノテーションzip
+* Fullアノテーションzip（非推奨）
 
 
 ```
@@ -956,13 +963,10 @@ $ annofabcli project download input_data --project_id prj1 --output input_data.j
 $ annofabcli project  download inspection_comment --project_id prj1 --output inspection_comment.json
 
 # タスク履歴イベントの全一覧が記載されたJSONファイルをダウンロードする
-$ annofabcli project download task_history_event --project_id prj1 --output task_history_event.json
+$ annofabcli project download task_history --project_id prj1 --output task_history.json
 
 # Simpleアノテーションのzipファイルをダウンロードする
 $ annofabcli project download simple_annotation --project_id prj1 --output simple_annotation.zip
-
-# Fullアノテーションのzipファイルをダウンロードする
-$ annofabcli project download full_annotation --project_id prj1 --output full_annotation.zip
 
 # 最新のSimpleアノテーションのzipファイルをダウンロードする
 $ annofabcli project download simple_annotation --project_id prj1 --output simple_annotation.zip --latest
