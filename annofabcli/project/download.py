@@ -25,6 +25,7 @@ class DownloadTarget(Enum):
     TASK = "task"
     INPUT_DATA = "input_data"
     INSPECTION_COMMENT = "inspection_comment"
+    TASK_HISTORY = "task_history"
     TASK_HISTORY_EVENT = "task_history_event"
     SIMPLE_ANNOTATION = "simple_annotation"
     FULL_ANNOTATION = "full_annotation"
@@ -87,6 +88,9 @@ class Download(AbstractCommandLineInterface):
 
         elif target == DownloadTarget.INSPECTION_COMMENT:
             self.service.wrapper.download_project_inspections_url(project_id, output)
+
+        elif target == DownloadTarget.TASK_HISTORY:
+            self.service.wrapper.download_project_task_histories_url(project_id, output)
 
         elif target == DownloadTarget.TASK_HISTORY_EVENT:
             self.service.wrapper.download_project_task_history_events_url(project_id, output)
@@ -158,7 +162,8 @@ def parse_args(parser: argparse.ArgumentParser):
         "task: タスクjson, "
         "input_data: 入力データjson, "
         "inspection_comment: 検査コメントjson, "
-        "task_history_event: タスク履歴イベントjson, ",
+        "task_history: タスク履歴json, "
+        "task_history_event: タスク履歴イベントjson",
     )
 
     parser.add_argument("-p", "--project_id", type=str, required=True, help="対象のプロジェクトのproject_idを指定します。")
