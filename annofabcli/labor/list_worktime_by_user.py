@@ -416,7 +416,7 @@ class ListWorktimeByUser(AbstractCommandLineInterface):
         if not add_monitored_worktime:
             columns.remove("計測時間")
 
-        worktime_df[columns].to_csv(str(output_dir / "作業時間の詳細一覧.csv"), encoding="utf_8_sig", index=False)
+        worktime_df[columns].round(3).to_csv(str(output_dir / "作業時間の詳細一覧.csv"), encoding="utf_8_sig", index=False)
 
     @staticmethod
     @catch_exception
@@ -439,7 +439,7 @@ class ListWorktimeByUser(AbstractCommandLineInterface):
         if not add_availabaility:
             columns.remove("予定稼働時間")
 
-        df[columns].to_csv(str(output_dir / "日ごとの作業時間の一覧.csv"), encoding="utf_8_sig", index=False)
+        df[columns].round(3).to_csv(str(output_dir / "日ごとの作業時間の一覧.csv"), encoding="utf_8_sig", index=False)
 
     @staticmethod
     @catch_exception
@@ -461,7 +461,7 @@ class ListWorktimeByUser(AbstractCommandLineInterface):
         if not add_availabaility:
             columns.remove("予定稼働時間")
 
-        df[columns].to_csv(str(output_dir / "summary.csv"), encoding="utf_8_sig", index=False)
+        df[columns].round(3).to_csv(str(output_dir / "summary.csv"), encoding="utf_8_sig", index=False)
 
     def get_organization_member_list(
         self, organization_name_list: Optional[List[str]], project_id_list: Optional[List[str]]
