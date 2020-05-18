@@ -91,6 +91,18 @@ def parse_args(parser: argparse.ArgumentParser):
         "JSONファイルは`$ annofabcli project download task`コマンドで取得できます。",
     )
 
+    parser.add_argument("--latest", action="store_true", help=("タスク登録が完了するまで待ちます。"))
+
+    parser.add_argument(
+        "--wait_options",
+        type=str,
+        help="タスクの登録が完了するまで待つ際のオプションを、JSON形式で指定してください。"
+        "`file://`を先頭に付けるとjsonファイルを指定できます。"
+        'デフォルは`{"interval":60, "max_tries":360}` です。'
+        "`interval`:完了したかを問い合わせる間隔[秒], "
+        "`max_tires`:完了したかの問い合わせを最大何回行うか。",
+    )
+
     argument_parser.add_output()
     argument_parser.add_csv_format()
 
