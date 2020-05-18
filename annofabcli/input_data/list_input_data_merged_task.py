@@ -10,7 +10,7 @@ from typing import Any, Dict, List
 import annofabapi
 import pandas
 import requests
-from annofabapi.models import JobType
+from annofabapi.models import JobType, ProjectMemberRole
 
 import annofabcli
 from annofabcli import AnnofabApiFacade
@@ -154,6 +154,7 @@ class ListInputDataMergedTask(AbstractCommandLineInterface):
 
         project_id = args.project_id
         if project_id is not None:
+            super().validate_project(project_id, [ProjectMemberRole.OWNER])
             wait_options = get_wait_options_from_args(get_json_from_args(args.wait_options), DEFAULT_WAIT_OPTIONS)
             cache_dir = annofabcli.utils.get_cache_dir()
             self.download_latest_files(project_id, cache_dir, args.latest, wait_options)
