@@ -415,6 +415,32 @@ class ListWorktimeByUser(AbstractCommandLineInterface):
 
         worktime_df[columns].to_csv(str(output_dir / "作業時間の詳細一覧.csv"), encoding="utf_8_sig", index=False)
 
+    @staticmethod
+    def write_sum_availability(
+        labor_availability_list_dict: Dict[str, List[LaborAvailability]],
+        member_list: List[OrganizationMember],
+        output_dir: Path,
+    ) -> None:
+        """
+        予定稼働時間の合計を出力する。
+        """
+        user_info_list: List[Dict[str, Any]] = []
+        for user_id, availability_list in labor_availability_list_dict.items():
+            member = ListWorktimeByUser.get_member_from_user_id(member_list, user_id)
+            if member is None:
+                continue
+            sum_availability = sum([e.availability_hour for e in availability_list])
+            user_info_list.append(
+                {
+                    "user_id": member["user_id"],
+                    "username": member["username"],
+                    "biography": member["biography"],
+                    "availability_hour": sum_availability,
+                }
+            )
+        df = pandas.DataFrame(user_info_list)
+        df.to_csv(str(output_dir / "予定稼働時間の合計.csv"), encoding="utf_8_sig", index=False)
+
     def get_organization_member_list(
         self, organization_name_list: Optional[List[str]], project_id_list: Optional[List[str]]
     ) -> List[OrganizationMember]:
@@ -567,6 +593,14 @@ class ListWorktimeByUser(AbstractCommandLineInterface):
         else:
             logger.info("出力対象のデータが0件のため、'作業時間の詳細一覧.csv'を出力しません。")
 
+        if labor_availability_list_dict is not None:
+            # 予定稼働時間の合計値を出力する
+            self.write_sum_availability(
+                labor_availability_list_dict=labor_availability_list_dict,
+                member_list=member_list,
+                output_dir=output_dir,
+            )
+
     def print_labor_worktime_list(
         self,
         organization_name_list: Optional[List[str]],
@@ -617,7 +651,7 @@ class ListWorktimeByUser(AbstractCommandLineInterface):
             project_id_list = sorted(list({e.project_id for e in labor_list}))
         logger.info(f"集計対象プロジェクトの数: {len(project_id_list)}")
 
-        labor_availability_list_dict = None
+        labor_availability_list_dict: Optional[Dict[str, List[LaborAvailability]]] = None
         if add_availability:
             labor_availability_list_dict = self.get_labor_availability_list_dict(
                 user_id_list=user_id_list, start_date=start_date, end_date=end_date, member_list=member_list,
