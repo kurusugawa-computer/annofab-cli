@@ -421,9 +421,12 @@ class ListWorktimeByUser(AbstractCommandLineInterface):
     @staticmethod
     @catch_exception
     def write_worktime_per_user_date(worktime_df_per_date_user: pandas.DataFrame, output_dir: Path):
-        df = worktime_df_per_date_user.rename(
-            columns={"worktime_plan_hour": "作業予定時間", "worktime_result_hour": "作業実績時間", "availability_hour": "予定稼働時間"}
-        )
+        add_availabaility = "availability_hour" in worktime_df_per_date_user.columns
+        target_renamed_columns = {"worktime_plan_hour": "作業予定時間", "worktime_result_hour": "作業実績時間"}
+        if add_availabaility:
+            target_renamed_columns.update({"availability_hour": "予定稼働時間"})
+
+        df = worktime_df_per_date_user.rename(columns=target_renamed_columns)
         columns = [
             "date",
             "user_id",
@@ -433,14 +436,20 @@ class ListWorktimeByUser(AbstractCommandLineInterface):
             "作業予定時間",
             "作業実績時間",
         ]
+        if not add_availabaility:
+            columns.remove("予定稼働時間")
+
         df[columns].to_csv(str(output_dir / "日ごとの作業時間の一覧.csv"), encoding="utf_8_sig", index=False)
 
     @staticmethod
     @catch_exception
     def write_worktime_per_user(worktime_df_per_user: pandas.DataFrame, output_dir: Path):
-        df = worktime_df_per_user.rename(
-            columns={"worktime_plan_hour": "作業予定時間", "worktime_result_hour": "作業実績時間", "availability_hour": "予定稼働時間"}
-        )
+        add_availabaility = "availability_hour" in worktime_df_per_user.columns
+        target_renamed_columns = {"worktime_plan_hour": "作業予定時間", "worktime_result_hour": "作業実績時間"}
+        if add_availabaility:
+            target_renamed_columns.update({"availability_hour": "予定稼働時間"})
+
+        df = worktime_df_per_user.rename(columns=target_renamed_columns)
         columns = [
             "user_id",
             "username",
@@ -449,6 +458,9 @@ class ListWorktimeByUser(AbstractCommandLineInterface):
             "作業予定時間",
             "作業実績時間",
         ]
+        if not add_availabaility:
+            columns.remove("予定稼働時間")
+
         df[columns].to_csv(str(output_dir / "summary.csv"), encoding="utf_8_sig", index=False)
 
     def get_organization_member_list(
@@ -624,13 +636,7 @@ class ListWorktimeByUser(AbstractCommandLineInterface):
 
     @staticmethod
     def create_worktime_df_per_user(worktime_df_per_date_user: pandas.DataFrame) -> pandas.DataFrame:
-        target_value_columns = ["worktime_plan_hour", "worktime_result_hour"]
-        if "availability_hour" in worktime_df_per_date_user.columns:
-            target_value_columns.append("availability_hour")
-
-        value_df = worktime_df_per_date_user.pivot_table(
-            values=target_value_columns, index=["user_id"], aggfunc=numpy.sum
-        ).fillna(0)
+        value_df = worktime_df_per_date_user.pivot_table(index=["user_id"], aggfunc=numpy.sum).fillna(0)
 
         user_df = worktime_df_per_date_user.groupby("user_id").first()[["username", "biography"]]
         df = user_df.join(value_df).reset_index()
@@ -662,16 +668,17 @@ class ListWorktimeByUser(AbstractCommandLineInterface):
         worktime_df = pandas.DataFrame([e.to_dict() for e in labor_list])  # type: ignore
         if len(worktime_df) > 0:
             self.write_worktime_list(worktime_df, output_dir, add_monitored_worktime)
+
+            worktime_df_per_date_user = self.create_worktime_df_per_date_user(
+                worktime_df=worktime_df, labor_availability_list_dict=labor_availability_list_dict
+            )
+            self.write_worktime_per_user_date(worktime_df_per_date_user, output_dir)
+
+            worktime_df_per_user = self.create_worktime_df_per_user(worktime_df_per_date_user)
+            self.write_worktime_per_user(worktime_df_per_user, output_dir)
+
         else:
-            logger.info("出力対象のデータが0件のため、'作業時間の詳細一覧.csv'を出力しません。")
-
-        worktime_df_per_date_user = self.create_worktime_df_per_date_user(
-            worktime_df=worktime_df, labor_availability_list_dict=labor_availability_list_dict
-        )
-        self.write_worktime_per_user_date(worktime_df_per_date_user, output_dir)
-
-        worktime_df_per_user = self.create_worktime_df_per_user(worktime_df_per_date_user)
-        self.write_worktime_per_user(worktime_df_per_user, output_dir)
+            logger.info("出力対象のデータが0件のため、'作業時間一覧.csv', '日ごとの作業時間の一覧.csv', 'summary.csv' を出力しません。")
 
     def print_labor_worktime_list(
         self,

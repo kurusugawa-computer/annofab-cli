@@ -49,14 +49,8 @@ class ListInputDataMergedTask(AbstractCommandLineInterface):
             df_merged, arg_format=FormatArgument(FormatArgument.CSV), output=self.output, csv_format=self.csv_format
         )
 
-    @staticmethod
-    def validate(args: argparse.Namespace):
-        return True
-
     def main(self):
         args = self.args
-        if not self.validate(args):
-            return
 
         with open(args.task_json, encoding="utf-8") as f:
             task_list = json.load(f)
