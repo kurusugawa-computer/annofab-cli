@@ -23,7 +23,6 @@ from annofabcli.common.cli import (
 )
 from annofabcli.common.dataclasses import WaitOptions
 from annofabcli.common.enums import FormatArgument
-from annofabcli.common.visualize import AddProps
 
 logger = logging.getLogger(__name__)
 
