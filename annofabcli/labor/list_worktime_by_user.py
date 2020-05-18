@@ -622,11 +622,9 @@ class ListWorktimeByUser(AbstractCommandLineInterface):
                 all_availability_list.extend(availability_list)
             availability_df = pandas.DataFrame([e.to_dict() for e in all_availability_list])  # type: ignore
             availability_df.set_index(["date", "user_id"], inplace=True)
-            print(availability_df)
             value_df = value_df.join(
                 availability_df[["availability_hour"]], how="outer", on=["date", "user_id"]
             ).fillna(0)
-            print(value_df)
 
         user_df = worktime_df.groupby("user_id").first()[["username", "biography"]]
 
@@ -836,7 +834,7 @@ class ListWorktimeByUser(AbstractCommandLineInterface):
             end_date=end_date,
             output_dir=output_dir,
             user_id_list=arg_user_id_list,
-            add_availability=args.availability,
+            add_availability=args.add_availability,
             add_monitored_worktime=args.add_monitored_worktime,
         )  # type: ignore
 
@@ -875,7 +873,7 @@ def parse_args(parser: argparse.ArgumentParser):
         "`file://`を先頭に付けると、user_idの一覧が記載されたファイルを指定できます。",
     )
 
-    parser.add_argument("--availability", action="store_true", help="指定した場合、'ユーザごとの作業時間.csv'に予定稼働時間も出力します。")
+    parser.add_argument("--add_availability", action="store_true", help="指定した場合、'ユーザごとの作業時間.csv'に予定稼働時間も出力します。")
     parser.add_argument(
         "--add_monitored_worktime", action="store_true", help="指定した場合、'作業時間の詳細一覧.csv'にAnnoFab計測時間も出力します。"
     )
