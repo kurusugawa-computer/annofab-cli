@@ -1,9 +1,13 @@
-from annofabcli.labor.list_worktime_by_user import ListWorktimeByUser, LaborAvailability
-import pandas
 from pathlib import Path
+
+import pandas
+
+from annofabcli.labor.list_worktime_by_user import LaborAvailability, ListWorktimeByUser
+
 out_path = Path("./tests/out/labor")
 data_path = Path("./tests/data/labor")
 (out_path / "labor").mkdir(exist_ok=True, parents=True)
+
 
 class TestListWorktimeByUser:
     def test_get_first_and_last_date(self):
@@ -26,21 +30,32 @@ class TestListWorktimeByUser:
         assert start_date == "2019-12-01"
         assert end_date == "2020-01-31"
 
-
     def test_create_worktime_df_per_date_user(self):
         worktime_df = pandas.read_csv(data_path / "detail-worktime.csv")
         df = ListWorktimeByUser.create_worktime_df_per_date_user(worktime_df)
         df.to_csv(out_path / "worktime-per-date-user.csv")
 
         labor_availability_list_dict = {
-            "alice" : [LaborAvailability(date="2020-04-01", account_id="", user_id="alice", username="Alice", availability_hour=3),
-                       LaborAvailability(date="2020-04-02", account_id="", user_id="alice", username="Alice", availability_hour=2)],
-            "bob": [LaborAvailability(date="2020-04-01", account_id="", user_id="bob", username="Bob",
-                                        availability_hour=3.5),
-                      LaborAvailability(date="2020-04-02", account_id="", user_id="bob", username="Bob",
-                                        availability_hour=2.5)]
+            "alice": [
+                LaborAvailability(
+                    date="2020-04-01", account_id="", user_id="alice", username="Alice", availability_hour=3
+                ),
+                LaborAvailability(
+                    date="2020-04-02", account_id="", user_id="alice", username="Alice", availability_hour=2
+                ),
+            ],
+            "bob": [
+                LaborAvailability(
+                    date="2020-04-01", account_id="", user_id="bob", username="Bob", availability_hour=3.5
+                ),
+                LaborAvailability(
+                    date="2020-04-02", account_id="", user_id="bob", username="Bob", availability_hour=2.5
+                ),
+            ],
         }
-        df2 = ListWorktimeByUser.create_worktime_df_per_date_user(worktime_df, labor_availability_list_dict=labor_availability_list_dict)
+        df2 = ListWorktimeByUser.create_worktime_df_per_date_user(
+            worktime_df, labor_availability_list_dict=labor_availability_list_dict
+        )
         df2.to_csv(out_path / "worktime-per-date-user2.csv")
 
     def test_create_worktime_df_per_user(self):
