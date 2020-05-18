@@ -1,0 +1,19 @@
+[
+    {
+        "input_data_id": "7115b8fb-6850-4b66-9f34-211312b2b9c5",
+        "project_id": "58a2a621-7d4b-41e7-927b-cdc570c1114a",
+        "organization_id": "12345678-abcd-1234-abcd-1234abcd5678",
+        "input_data_set_id": "12345678-abcd-1234-abcd-1234abcd5678",
+        "input_data_name": "test.mp4",
+        "input_data_path": "https://s3.ap-northeast-1.amazonaws.com/annotationfactory.production.annotation/test.mp4",
+        "url": null,
+        "etag": null,
+        "updated_datetime": "2020-04-21T00:04:47.345+09:00",
+        "resized_resolution": null,
+        "original_input_data_path": null,
+        "original_resolution": null,
+        "input_duration": 16.5,
+        "sign_required": false,
+        "metadata": {}
+    }
+]

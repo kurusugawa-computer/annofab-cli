@@ -1,0 +1,5 @@
+date,user_id,username,biography,worktime_plan_hour,worktime_result_hour,availability_hour
+2020-04-01,alice,Alice,U.K,3,3.6,3
+2020-04-01,bob,Bob,U.S,3,3.6,3.5
+2020-04-02,alice,Alice,U.K,1,1.2,2
+2020-04-02,bob,Bob,U.S,0,0,2.5

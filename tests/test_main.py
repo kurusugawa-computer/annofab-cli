@@ -196,6 +196,38 @@ class TestInputData:
             ]
         )
 
+    @pytest.mark.submitting_job
+    def test_list_input_data_merged_task_with_downloading(self):
+        out_file = str(out_path / "input_data.csv")
+        main(
+            [
+                "input_data",
+                "list_merged_task",
+                "--project_id",
+                project_id,
+                "--latest",
+                "--wait_options",
+                '{"interval":1, "max_tries":1}',
+                "--output",
+                out_file,
+            ]
+        )
+
+    def test_list_input_data_merged_task_with_json(self):
+        out_file = str(out_path / "input_data.csv")
+        main(
+            [
+                "input_data",
+                "list_merged_task",
+                "--task_json",
+                str(data_path / "task.json"),
+                "--input_data_json",
+                str(data_path / "input_data.json"),
+                "--output",
+                out_file,
+            ]
+        )
+
     def test_put_input_data(self):
         csv_file = str(data_path / "input_data2.csv")
         main(
@@ -348,7 +380,7 @@ class TestLabor:
                 "2019-09-01",
                 "--end_date",
                 "2019-09-01",
-                "--availability",
+                "--add_availability",
                 "--output_dir",
                 str(output_dir),
             ]

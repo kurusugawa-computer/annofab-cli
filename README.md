@@ -92,6 +92,7 @@ $ docker run -it -e ANNOFAB_USER_ID=XXXX -e ANNOFAB_PASSWORD=YYYYY annofab-cli a
 |filesystem| write_annotation_image        | アノテーションzip、またはそれを展開したディレクトリから、アノテーションの画像（Semantic Segmentation用）を生成します。 |-|
 |input_data|delete             | 入力データを削除します。                                                            |オーナ|
 |input_data|list             | 入力データ一覧を出力します。                                                            |-|
+|input_data| list_merged_task | タスク一覧と結合した入力データ一覧のCSVを出力します。                                                            |オーナ|
 |input_data|put             | 入力データを登録します。                                                            |オーナ|
 |inspection_comment| list | 検査コメントを出力します。                               |-|
 |inspection_comment| list_unprocessed | 未処置の検査コメントを出力します。                               |-|
@@ -643,6 +644,23 @@ $ annofabcli input_data list --project_id prj1 --batch \
 |----------------------------------|--------------------------------------|-----------------------------------|---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------|---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------|---------------------|--------------------------------------|--------------------|---------------|----------------|-------------------------------|----------------------------------------------------------------------------------------------------------------------------------------------------------------------------|
 | a43717273502b67a1989c9b25e252cde | 3c8d8f15-14f0-467a-a8fe-562cbbccf08a | val.zip/val/9a70bdec-1504e338.jpg | s3://example.com/example | s3://example.com/example |                     | 58a2a621-7d4b-41e7-927b-cdc570c1114a |                    | False         | ['sample_247'] | 2019-04-19T16:36:17.846+09:00 | https://annofab.com/projects/example/input_data/example |
 
+
+
+
+### input_data list_merged_task
+タスク一覧と結合した入力データ一覧のCSVを出力します。
+動画プロジェクトで、各タスクの動画時間を調べる際などに利用できます。
+
+```
+# prj1の入力データ全件ファイル、タスク全件ファイルをダウンロードして、マージしたCSVを出力する
+$ annofabcli input_data list_merged_task --project_id prj1 --output input_data.csv
+
+# prj1の入力データ全件ファイル、タスク全件ファイルの最新版をダウンロードして、マージしたCSVを出力する
+$ annofabcli input_data list_merged_task --project_id prj1 --output input_data.csv --latest
+
+# 入力データ全件ファイル、タスク全件ファイルのJSONから、マージしたCSVを出力する
+$ annofabcli input_data list_merged_task --input_data_json input_data.json --task_json task.json --output input_data.csv
+```
 
 
 ### input_data put
