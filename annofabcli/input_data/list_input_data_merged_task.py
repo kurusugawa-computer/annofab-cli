@@ -81,7 +81,6 @@ class DownloadingLatestFile:
 class ListInputDataMergedTask(AbstractCommandLineInterface):
     def __init__(self, service: annofabapi.Resource, facade: AnnofabApiFacade, args: argparse.Namespace):
         super().__init__(service, facade, args)
-        self.visualize = AddProps(self.service, args.project_id)
 
     @staticmethod
     def millisecond_to_hour(millisecond: int):
@@ -122,7 +121,7 @@ class ListInputDataMergedTask(AbstractCommandLineInterface):
             )
             return False
 
-        if (args.input_data_json is None and args.task_json is not None) and (
+        if (args.input_data_json is None and args.task_json is not None) or (
             args.input_data_json is not None and args.task_json is None
         ):
             print(
@@ -150,6 +149,8 @@ class ListInputDataMergedTask(AbstractCommandLineInterface):
 
     def main(self):
         args = self.args
+        if not self.validate(args):
+            return
 
         project_id = args.project_id
         if project_id is not None:
