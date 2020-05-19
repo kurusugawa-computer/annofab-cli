@@ -868,7 +868,7 @@ $ annofabcli labor list_worktime_by_user --project_id prj1 prj2 --user_id user1 
 
 # user.txtに記載されているユーザの予定稼働時間も一緒に出力します。
 $ annofabcli labor list_worktime_by_user --project_id prj1 prj2 --user_id file://user.txt \
- --start_month 2019-10 --end_month 2019-11 --availability --output_dir /tmp/output
+ --start_month 2019-10 --end_month 2019-11 --add_availability --output_dir /tmp/output
 
 ```
 

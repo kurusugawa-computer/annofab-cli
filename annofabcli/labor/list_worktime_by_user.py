@@ -445,9 +445,14 @@ class ListWorktimeByUser(AbstractCommandLineInterface):
     @catch_exception
     def write_worktime_per_user(worktime_df_per_user: pandas.DataFrame, output_dir: Path):
         add_availabaility = "availability_hour" in worktime_df_per_user.columns
-        target_renamed_columns = {"worktime_plan_hour": "作業予定時間", "worktime_result_hour": "作業実績時間"}
+        target_renamed_columns = {
+            "worktime_plan_hour": "作業予定時間",
+            "worktime_result_hour": "作業実績時間",
+            "result_working_days": "実績稼働日数",
+        }
         if add_availabaility:
             target_renamed_columns.update({"availability_hour": "予定稼働時間"})
+            target_renamed_columns.update({"availability_days": "予定稼働日数"})
 
         df = worktime_df_per_user.rename(columns=target_renamed_columns)
         columns = [
@@ -457,9 +462,12 @@ class ListWorktimeByUser(AbstractCommandLineInterface):
             "予定稼働時間",
             "作業予定時間",
             "作業実績時間",
+            "予定稼働日数",
+            "実績稼働日数",
         ]
         if not add_availabaility:
             columns.remove("予定稼働時間")
+            columns.remove("予定稼働日数")
 
         df[columns].round(3).to_csv(str(output_dir / "summary.csv"), encoding="utf_8_sig", index=False)
 
@@ -635,6 +643,24 @@ class ListWorktimeByUser(AbstractCommandLineInterface):
     @staticmethod
     def create_worktime_df_per_user(worktime_df_per_date_user: pandas.DataFrame) -> pandas.DataFrame:
         value_df = worktime_df_per_date_user.pivot_table(index=["user_id"], aggfunc=numpy.sum).fillna(0)
+        value_df["result_working_days"] = (
+            worktime_df_per_date_user[worktime_df_per_date_user["worktime_result_hour"] > 0]
+            .pivot_table(index=["user_id"], values="worktime_result_hour", aggfunc="count")
+            .fillna(0)
+        )
+        value_df["plan_working_days"] = (
+            worktime_df_per_date_user[worktime_df_per_date_user["worktime_plan_hour"] > 0]
+            .pivot_table(index=["user_id"], values="worktime_plan_hour", aggfunc="count")
+            .fillna(0)
+        )
+
+        if "availability_hour" in worktime_df_per_date_user.columns:
+            value_df["availability_days"] = (
+                worktime_df_per_date_user[worktime_df_per_date_user["availability_hour"] > 0]
+                .pivot_table(index=["user_id"], values="availability_hour", aggfunc="count")
+                .fillna(0)
+            )
+        value_df.fillna(0, inplace=True)
 
         user_df = worktime_df_per_date_user.groupby("user_id").first()[["username", "biography"]]
         df = user_df.join(value_df).reset_index()
