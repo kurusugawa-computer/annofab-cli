@@ -60,6 +60,6 @@ class TestListWorktimeByUser:
 
     def test_create_worktime_df_per_user(self):
         worktime_df_per_date_user = pandas.read_csv(data_path / "worktime-per-date-user.csv")
-        df = ListWorktimeByUser.create_worktime_df_per_user(worktime_df_per_date_user)
-        print(df)
+        user_df = pandas.read_csv(data_path / "user.csv")
+        df = ListWorktimeByUser.create_worktime_df_per_user(worktime_df_per_date_user, user_df)
         df.to_csv(out_path / "worktime-per-user.csv")
