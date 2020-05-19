@@ -641,27 +641,43 @@ class ListWorktimeByUser(AbstractCommandLineInterface):
         return df
 
     @staticmethod
+    def set_day_count_to_dataframe(
+        worktime_df_per_date_user: pandas.DataFrame, value_df: pandas.DataFrame, worktime_column: str, days_column: str
+    ):
+        df_filter = worktime_df_per_date_user[worktime_df_per_date_user[worktime_column] > 0]
+        if len(df_filter) > 0:
+            value_df[days_column] = df_filter.pivot_table(
+                index=["user_id"], values="worktime_result_hour", aggfunc="count"
+            ).fillna(0)
+        else:
+            value_df[days_column] = 0
+
+    @staticmethod
     def create_worktime_df_per_user(
         worktime_df_per_date_user: pandas.DataFrame, user_df: pandas.DataFrame, add_availability: bool = False
     ) -> pandas.DataFrame:
         if len(worktime_df_per_date_user) > 0:
             value_df = worktime_df_per_date_user.pivot_table(index=["user_id"], aggfunc=numpy.sum).fillna(0)
-            value_df["result_working_days"] = (
-                worktime_df_per_date_user[worktime_df_per_date_user["worktime_result_hour"] > 0]
-                .pivot_table(index=["user_id"], values="worktime_result_hour", aggfunc="count")
-                .fillna(0)
+
+            ListWorktimeByUser.set_day_count_to_dataframe(
+                worktime_df_per_date_user,
+                value_df,
+                worktime_column="worktime_result_hour",
+                days_column="result_working_days",
             )
-            value_df["plan_working_days"] = (
-                worktime_df_per_date_user[worktime_df_per_date_user["worktime_plan_hour"] > 0]
-                .pivot_table(index=["user_id"], values="worktime_plan_hour", aggfunc="count")
-                .fillna(0)
+            ListWorktimeByUser.set_day_count_to_dataframe(
+                worktime_df_per_date_user,
+                value_df,
+                worktime_column="worktime_plan_hour",
+                days_column="plan_working_days",
             )
 
             if add_availability:
-                value_df["availability_days"] = (
-                    worktime_df_per_date_user[worktime_df_per_date_user["availability_hour"] > 0]
-                    .pivot_table(index=["user_id"], values="availability_hour", aggfunc="count")
-                    .fillna(0)
+                ListWorktimeByUser.set_day_count_to_dataframe(
+                    worktime_df_per_date_user,
+                    value_df,
+                    worktime_column="availability_hour",
+                    days_column="availability_days",
                 )
             value_df.fillna(0, inplace=True)
 
