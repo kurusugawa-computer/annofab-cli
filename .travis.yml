@@ -8,8 +8,8 @@ install:
   - pip install . flake8 mypy pylint pytest
 script:
    - flake8 annofabcli
-   - mypy annofabcli --config-file setup.cfg
-   - pylint annofabcli --rcfile setup.cfg
+   - mypy annofabcli
+   - pylint annofabcli
    - pytest tests/test_local*.py
 branches:
   only:

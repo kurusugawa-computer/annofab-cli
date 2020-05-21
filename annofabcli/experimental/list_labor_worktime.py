@@ -235,8 +235,6 @@ class ListLaborWorktime(AbstractCommandLineInterface):
 
     def main(self):
         args = self.args
-        if not self.validate(args):
-            return
         format_target = FormatTarget(args.format)
         time_unit = TimeUnitTarget(args.time_unit)
 
@@ -274,7 +272,7 @@ class ListLaborWorktime(AbstractCommandLineInterface):
             df = print_byname_total_list(total_df)
         elif format_target == FormatTarget.TOTAL:
             df = print_total(total_df)
-        elif format_target == FormatTarget.COLUMN_LIST and args.for_each:
+        elif format_target == FormatTarget.COLUMN_LIST_PER_PROJECT:
             df = print_for_each_column_list(total_df)
         elif format_target == FormatTarget.COLUMN_LIST:
             df = print_column_list(total_df)
@@ -300,19 +298,6 @@ class ListLaborWorktime(AbstractCommandLineInterface):
         else:
             out_format = sys.stdout
         _output(out_format, df, index=(format_target == FormatTarget.DETAILS))
-
-    @staticmethod
-    def validate(args: argparse.Namespace) -> bool:
-        COMMON_MESSAGE = "annofabcli experimental find_break_error: error:"
-        if args.for_each and not args.format == "column_list":
-            print(
-                f"{COMMON_MESSAGE} argument --format: for_eachが指定された場合はformat:column_list以外は選択できません\
-                                            '{args.format}'",
-                file=sys.stderr,
-            )
-            return False
-
-        return True
 
 
 def main(args):
@@ -351,14 +336,14 @@ def parse_args(parser: argparse.ArgumentParser):
         type=str,
         choices=format_choices,
         default="details",
-        help="出力する際のフォーマット(total/by_name_total/column_list/details)"
-        "total:期間中の合計値だけを出力する"
-        "by_name_total:人毎の集計の合計値を出力する"
-        "column_list:列固定で詳細な値を出力する"
-        "details:日毎・人毎の詳細な値を出力する",
+        help="出力する際のフォーマットです。デフォルトは'details'です。"
+        "details:日毎・人毎の詳細な値を出力する, "
+        "total:期間中の合計値だけを出力する, "
+        "by_name_total:人毎の集計の合計値を出力する, "
+        "column_list:列固定で詳細な値を出力する, "
+        "column_list_per_project:列固定で詳細な値をプロジェクトごとに出力する, ",
     )
     parser.add_argument("--add_project_id", action="store_true", help="出力する際にprojectidを出力する")
-    parser.add_argument("--for_each", action="store_true", help="プロジェクト毎の値を出力します。format:column_listの場合のみ有効")
     argument_parser.add_output(required=False)
 
     parser.set_defaults(subcommand_func=main)

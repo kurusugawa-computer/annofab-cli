@@ -432,7 +432,7 @@ class AbstractCommandLineInterface(abc.ABC):
     service: annofabapi.Resource
 
     #: AnnofabApiFacadeインスタンス
-    facade: annofabcli.AnnofabApiFacade
+    facade: AnnofabApiFacade
 
     #: Trueならば、処理中に現れる問い合わせに対して、常に'yes'と回答したものとして処理する。
     all_yes: bool = False

@@ -13,10 +13,11 @@ class TimeUnitTarget(Enum):
 
 
 class FormatTarget(Enum):
+    DETAILS = "details"
     TOTAL = "total"
     BY_NAME_TOTAL = "by_name_total"
-    DETAILS = "details"
     COLUMN_LIST = "column_list"
+    COLUMN_LIST_PER_PROJECT = "column_list_per_project"
 
 
 def timeunit_conversion(df: pd.DataFrame, time_unit: TimeUnitTarget = TimeUnitTarget.H) -> pd.DataFrame:
