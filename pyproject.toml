@@ -55,7 +55,7 @@ mypy = "*"
 pylint = "*"
 
 [tool.poetry.scripts]
-convpandas = "annofabcli.__main__:cli"
+annofabcli = "annofabcli.__main__:cli"
 
 [build-system]
 requires = ["poetry>=0.12"]
