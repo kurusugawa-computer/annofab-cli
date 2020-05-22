@@ -1,4 +1,3 @@
-import requests
 import argparse
 import json
 import logging
@@ -8,7 +7,8 @@ from pathlib import Path
 from typing import Any, Dict, List, Optional
 
 import pandas
-from annofabapi.models import ProjectMemberRole, Task, TaskPhase, TaskStatus, JobType
+import requests
+from annofabapi.models import JobType, ProjectMemberRole, Task, TaskPhase, TaskStatus
 from annofabapi.utils import get_number_of_rejections
 
 import annofabcli
@@ -21,7 +21,6 @@ from annofabcli.common.cli import (
     get_json_from_args,
     get_wait_options_from_args,
 )
-
 from annofabcli.common.dataclasses import WaitOptions
 
 logger = logging.getLogger(__name__)
