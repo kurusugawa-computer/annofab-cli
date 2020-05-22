@@ -14,13 +14,20 @@ from annofabapi.utils import get_number_of_rejections
 import annofabcli
 import annofabcli.common.cli
 from annofabcli import AnnofabApiFacade
-from annofabcli.common.cli import AbstractCommandLineInterface, ArgumentParser, build_annofabapi_resource_and_login, get_json_from_args,get_wait_options_from_args
+from annofabcli.common.cli import (
+    AbstractCommandLineInterface,
+    ArgumentParser,
+    build_annofabapi_resource_and_login,
+    get_json_from_args,
+    get_wait_options_from_args,
+)
 
 from annofabcli.common.dataclasses import WaitOptions
 
 logger = logging.getLogger(__name__)
 
 DEFAULT_WAIT_OPTIONS = WaitOptions(interval=60, max_tries=360)
+
 
 class SimpleTaskStatus(Enum):
     """
@@ -153,10 +160,16 @@ class SummarizeTaskCount(AbstractCommandLineInterface):
             # ジョブが既に実行中ならエラーを無視する
             if e.response.status_code != requests.codes.conflict:
                 raise e
-        self.service.wrapper.wait_for_completion(project_id, JobType.GEN_TASKS_LIST, job_access_interval=wait_options.interval,
-            max_job_access=wait_options.max_tries)
+        self.service.wrapper.wait_for_completion(
+            project_id,
+            JobType.GEN_TASKS_LIST,
+            job_access_interval=wait_options.interval,
+            max_job_access=wait_options.max_tries,
+        )
 
-    def summarize_task_count(self, project_id: str, task_json_path: Optional[Path], is_latest: bool, wait_options: WaitOptions) -> None:
+    def summarize_task_count(
+        self, project_id: str, task_json_path: Optional[Path], is_latest: bool, wait_options: WaitOptions
+    ) -> None:
         super().validate_project(project_id, project_member_roles=[ProjectMemberRole.OWNER])
 
         task_list = self.get_task_list(project_id, task_json_path, is_latest=is_latest, wait_options=wait_options)
@@ -164,14 +177,13 @@ class SummarizeTaskCount(AbstractCommandLineInterface):
             logger.info(f"タスクが0件のため、出力しません。")
             return
 
-
         number_of_inspections = self.get_number_of_inspections_for_project(project_id)
         task_count_df = self.create_task_count_summary(task_list, number_of_inspections=number_of_inspections)
         annofabcli.utils.print_csv(task_count_df, output=self.output, to_csv_kwargs=self.csv_format)
 
-
-
-    def get_task_list(self, project_id: str, task_json_path: Optional[Path], is_latest: bool, wait_options: WaitOptions) -> List[Task]:
+    def get_task_list(
+        self, project_id: str, task_json_path: Optional[Path], is_latest: bool, wait_options: WaitOptions
+    ) -> List[Task]:
         if task_json_path is None:
             if is_latest:
                 self.update_task_json_and_wait(project_id, wait_options)
@@ -199,7 +211,9 @@ class SummarizeTaskCount(AbstractCommandLineInterface):
         project_id = args.project_id
         wait_options = get_wait_options_from_args(get_json_from_args(args.wait_options), DEFAULT_WAIT_OPTIONS)
         task_json_path = Path(args.task_json) if args.task_json is not None else None
-        self.summarize_task_count(project_id, task_json_path=task_json_path, is_latest=args.latest, wait_options=wait_options)
+        self.summarize_task_count(
+            project_id, task_json_path=task_json_path, is_latest=args.latest, wait_options=wait_options
+        )
 
 
 def parse_args(parser: argparse.ArgumentParser):
@@ -214,9 +228,7 @@ def parse_args(parser: argparse.ArgumentParser):
     )
 
     parser.add_argument(
-        "--latest",
-        action="store_true",
-        help="最新のタスク一覧ファイルを参照します。このオプションを指定すると、タスク一覧ファイルを更新するのに数分待ちます。"
+        "--latest", action="store_true", help="最新のタスク一覧ファイルを参照します。このオプションを指定すると、タスク一覧ファイルを更新するのに数分待ちます。"
     )
 
     parser.add_argument(
@@ -228,7 +240,6 @@ def parse_args(parser: argparse.ArgumentParser):
         "`interval`:完了したかを問い合わせる間隔[秒], "
         "`max_tires`:完了したかの問い合わせを最大何回行うか。",
     )
-
 
     argument_parser.add_csv_format()
     argument_parser.add_output()
