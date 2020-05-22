@@ -157,8 +157,11 @@ class SummarizeTaskCount(AbstractCommandLineInterface):
             self.service.api.post_project_tasks_update(project_id)
         except requests.HTTPError as e:
             # ジョブが既に実行中ならエラーを無視する
-            if e.response.status_code != requests.codes.conflict:
+            if e.response.status_code == requests.codes.conflict:
+                logger.info(f"タスク一覧ファイルの更新処理が既に実行されています。")
+            else:
                 raise e
+
         self.service.wrapper.wait_for_completion(
             project_id,
             JobType.GEN_TASKS_LIST,
@@ -189,13 +192,13 @@ class SummarizeTaskCount(AbstractCommandLineInterface):
 
             cache_dir = annofabcli.utils.get_cache_dir()
             task_json_path = cache_dir / f"task-{project_id}.json"
-            logger.debug(f"タスク全件ファイルをダウンロード中: {task_json_path}")
+            logger.debug(f"タスク一覧ファイルをダウンロード中: {task_json_path}")
             try:
                 self.service.wrapper.download_project_tasks_url(project_id, str(task_json_path))
             except requests.HTTPError as e:
                 if e.response.status_code == requests.codes.not_found:
-                    # 停止中プロジェクトのため、タスク全件ファイルがない可能性があるので、タスク全件ファイルの更新処理を実行する
-                    logger.info(f"タスク一覧ファイルが存在しなかったので、タスク全件ファイルの生成処理を実行します。")
+                    # 停止中プロジェクトのため、タスク一覧ファイルがない可能性があるので、タスク一覧ファイルの更新処理を実行する
+                    logger.info(f"タスク一覧ファイルが存在しなかったので、タスク一覧ファイルの生成処理を実行します。")
                     self.update_task_json_and_wait(project_id, wait_options)
                     self.service.wrapper.download_project_tasks_url(project_id, str(task_json_path))
                 else:
