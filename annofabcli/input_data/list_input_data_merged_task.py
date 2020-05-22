@@ -44,6 +44,7 @@ class DownloadingLatestFile:
         try:
             self.service.api.post_project_inputs_update(project_id)
         except requests.HTTPError as e:
+            # ジョブが既に実行中ならエラーを無視する
             if e.response.status_code != requests.codes.conflict:
                 raise e
 

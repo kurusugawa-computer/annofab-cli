@@ -7,15 +7,25 @@ from pathlib import Path
 from typing import Any, Dict, List, Optional
 
 import pandas
-from annofabapi.models import ProjectMemberRole, Task, TaskPhase, TaskStatus
+import requests
+from annofabapi.models import JobType, ProjectMemberRole, Task, TaskPhase, TaskStatus
 from annofabapi.utils import get_number_of_rejections
 
 import annofabcli
 import annofabcli.common.cli
 from annofabcli import AnnofabApiFacade
-from annofabcli.common.cli import AbstractCommandLineInterface, ArgumentParser, build_annofabapi_resource_and_login
+from annofabcli.common.cli import (
+    AbstractCommandLineInterface,
+    ArgumentParser,
+    build_annofabapi_resource_and_login,
+    get_json_from_args,
+    get_wait_options_from_args,
+)
+from annofabcli.common.dataclasses import WaitOptions
 
 logger = logging.getLogger(__name__)
+
+DEFAULT_WAIT_OPTIONS = WaitOptions(interval=60, max_tries=360)
 
 
 class SimpleTaskStatus(Enum):
@@ -101,6 +111,15 @@ class SummarizeTaskCount(AbstractCommandLineInterface):
             raise RuntimeError(f"フェーズ'{current_phase}'は不正な値です。")
 
     def create_task_count_summary(self, task_list: List[Task], number_of_inspections: int) -> pandas.DataFrame:
+        """
+
+        Args:
+            task_list:
+            number_of_inspections: プロジェクト設定から取得した検査フェーズの回数
+
+        Returns:
+
+        """
         for task in task_list:
             status = TaskStatus(task["status"])
             if status == TaskStatus.COMPLETE:
@@ -133,24 +152,57 @@ class SummarizeTaskCount(AbstractCommandLineInterface):
         summary_df = summary_df.astype({"task_count": "Int64", "step": "Int64", "phase_stage": "Int64"})
         return summary_df
 
-    def summarize_task_count(self, project_id: str, task_json_path: Optional[Path], output: Optional[str]) -> None:
+    def update_task_json_and_wait(self, project_id: str, wait_options: WaitOptions) -> None:
+        try:
+            self.service.api.post_project_tasks_update(project_id)
+        except requests.HTTPError as e:
+            # ジョブが既に実行中ならエラーを無視する
+            if e.response.status_code == requests.codes.conflict:
+                logger.info(f"タスク一覧ファイルの更新処理が既に実行されています。")
+            else:
+                raise e
+
+        self.service.wrapper.wait_for_completion(
+            project_id,
+            JobType.GEN_TASKS_LIST,
+            job_access_interval=wait_options.interval,
+            max_job_access=wait_options.max_tries,
+        )
+
+    def summarize_task_count(
+        self, project_id: str, task_json_path: Optional[Path], is_latest: bool, wait_options: WaitOptions
+    ) -> None:
         super().validate_project(project_id, project_member_roles=[ProjectMemberRole.OWNER])
 
-        task_list = self.get_task_list(project_id, task_json_path)
+        task_list = self.get_task_list(project_id, task_json_path, is_latest=is_latest, wait_options=wait_options)
         if len(task_list) == 0:
             logger.info(f"タスクが0件のため、出力しません。")
             return
 
         number_of_inspections = self.get_number_of_inspections_for_project(project_id)
         task_count_df = self.create_task_count_summary(task_list, number_of_inspections=number_of_inspections)
-        annofabcli.utils.print_csv(task_count_df, output=output, to_csv_kwargs=self.csv_format)
+        annofabcli.utils.print_csv(task_count_df, output=self.output, to_csv_kwargs=self.csv_format)
 
-    def get_task_list(self, project_id: str, task_json_path: Optional[Path]) -> List[Task]:
+    def get_task_list(
+        self, project_id: str, task_json_path: Optional[Path], is_latest: bool, wait_options: WaitOptions
+    ) -> List[Task]:
         if task_json_path is None:
+            if is_latest:
+                self.update_task_json_and_wait(project_id, wait_options)
+
             cache_dir = annofabcli.utils.get_cache_dir()
             task_json_path = cache_dir / f"task-{project_id}.json"
-            logger.debug(f"タスク全件ファイルをダウンロード中: {task_json_path}")
-            self.service.wrapper.download_project_tasks_url(project_id, str(task_json_path))
+            logger.debug(f"タスク一覧ファイルをダウンロード中: {task_json_path}")
+            try:
+                self.service.wrapper.download_project_tasks_url(project_id, str(task_json_path))
+            except requests.HTTPError as e:
+                if e.response.status_code == requests.codes.not_found:
+                    # 停止中プロジェクトのため、タスク一覧ファイルがない可能性があるので、タスク一覧ファイルの更新処理を実行する
+                    logger.info(f"タスク一覧ファイルが存在しなかったので、タスク一覧ファイルの生成処理を実行します。")
+                    self.update_task_json_and_wait(project_id, wait_options)
+                    self.service.wrapper.download_project_tasks_url(project_id, str(task_json_path))
+                else:
+                    raise e
 
         with task_json_path.open(encoding="utf-8") as f:
             task_list = json.load(f)
@@ -159,8 +211,11 @@ class SummarizeTaskCount(AbstractCommandLineInterface):
     def main(self):
         args = self.args
         project_id = args.project_id
+        wait_options = get_wait_options_from_args(get_json_from_args(args.wait_options), DEFAULT_WAIT_OPTIONS)
         task_json_path = Path(args.task_json) if args.task_json is not None else None
-        self.summarize_task_count(project_id, task_json_path=task_json_path, output=args.output)
+        self.summarize_task_count(
+            project_id, task_json_path=task_json_path, is_latest=args.latest, wait_options=wait_options
+        )
 
 
 def parse_args(parser: argparse.ArgumentParser):
@@ -172,6 +227,20 @@ def parse_args(parser: argparse.ArgumentParser):
         type=str,
         help="タスク情報が記載されたJSONファイルのパスを指定してください。JSONファイルは`$ annofabcli project download task`コマンドで取得できます。"
         "指定しない場合は、AnnoFabからタスク全件ファイルをダウンロードします。",
+    )
+
+    parser.add_argument(
+        "--latest", action="store_true", help="最新のタスク一覧ファイルを参照します。このオプションを指定すると、タスク一覧ファイルを更新するのに数分待ちます。"
+    )
+
+    parser.add_argument(
+        "--wait_options",
+        type=str,
+        help="タスク一覧ファイルの更新が完了するまで待つ際のオプションを、JSON形式で指定してください。"
+        "`file://`を先頭に付けるとjsonファイルを指定できます。"
+        'デフォルは`{"interval":60, "max_tries":360}` です。'
+        "`interval`:完了したかを問い合わせる間隔[秒], "
+        "`max_tires`:完了したかの問い合わせを最大何回行うか。",
     )
 
     argument_parser.add_csv_format()
