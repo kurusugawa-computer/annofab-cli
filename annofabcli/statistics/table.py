@@ -120,7 +120,7 @@ class Table:
         if self._task_list is not None:
             return self._task_list
         else:
-            task_list = self.database.read_tasks_from_checkpoint()
+            task_list = self.database.read_tasks_from_json()
             self._task_list = task_list
             return self._task_list
 
