@@ -11,7 +11,7 @@ import annofabapi
 import pandas
 import requests
 from annofabapi.models import JobType, ProjectMemberRole
-from annofabcli.common.download import DownloadingFile
+
 import annofabcli
 from annofabcli import AnnofabApiFacade
 from annofabcli.common.cli import (
@@ -22,6 +22,7 @@ from annofabcli.common.cli import (
     get_wait_options_from_args,
 )
 from annofabcli.common.dataclasses import WaitOptions
+from annofabcli.common.download import DownloadingFile
 from annofabcli.common.enums import FormatArgument
 
 logger = logging.getLogger(__name__)
@@ -147,31 +148,17 @@ class ListInputDataMergedTask(AbstractCommandLineInterface):
         loop = asyncio.get_event_loop()
         downloading_obj = DownloadingFile(self.service)
         gather = asyncio.gather(
-            downloading_obj.download_input_data_json_with_async(project_id, dest_path=str(output_dir / "input_data.json"), is_latest=is_latest, wait_options=wait_options),
-            downloading_obj.download_task_json_with_async(project_id, dest_path=str(output_dir / "task.json"), is_latest=is_latest, wait_options=wait_options),
+            downloading_obj.download_input_data_json_with_async(
+                project_id,
+                dest_path=str(output_dir / "input_data.json"),
+                is_latest=is_latest,
+                wait_options=wait_options,
+            ),
+            downloading_obj.download_task_json_with_async(
+                project_id, dest_path=str(output_dir / "task.json"), is_latest=is_latest, wait_options=wait_options
+            ),
         )
-        result = loop.run_until_complete(gather)
-        for r in result:
-            print(r)
-
-
-        #
-        #
-        # if is_latest:
-        #     self.update_json_files_and_wait(project_id, wait_options=wait_options)
-        #
-        # try:
-        #     self.service.wrapper.download_project_inputs_url(project_id, str(output_dir / "input_data.json"))
-        #     self.service.wrapper.download_project_tasks_url(project_id, str(output_dir / "task.json"))
-        # except requests.HTTPError as e:
-        #     if e.response.status_code == requests.codes.not_found:
-        #         # 補足：停止中プロジェクトだと、タスク一覧ファイル or 入力データ一覧ファイルが存在しないケースがある
-        #         logger.info(f"タスク一覧ファイル or 入力データ一覧ファイルが存在しなかったので、タスク一覧ファイル、入力データ一覧ファイルの生成処理を実行します。")
-        #         self.update_json_files_and_wait(project_id, wait_options=wait_options)
-        #         self.service.wrapper.download_project_inputs_url(project_id, str(output_dir / "input_data.json"))
-        #         self.service.wrapper.download_project_tasks_url(project_id, str(output_dir / "task.json"))
-        #     else:
-        #         raise e
+        loop.run_until_complete(gather)
 
     def main(self):
         args = self.args

@@ -25,15 +25,13 @@ class AuthenticationError(AnnofabCliException):
         super().__init__(msg)
 
 
-
 class UpdatedFileForDownloadingError(AnnofabCliException):
     """
     ダウンロード対象ファイルの更新処理のエラー
     """
 
-    def __init__(self, msg: Optional[str]=None):
+    def __init__(self, msg: Optional[str] = None):
         super().__init__(msg)
-
 
 
 class AuthorizationError(AnnofabCliException):

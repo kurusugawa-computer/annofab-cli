@@ -19,7 +19,6 @@ import requests
 from annofabapi.dataclass.annotation import SimpleAnnotationDetail
 from annofabapi.models import InputDataId, Inspection, JobStatus, JobType, Task, TaskHistory
 from annofabapi.parser import SimpleAnnotationZipParser
-from annofabcli.common.dataclasses import WaitOptions
 
 logger = logging.getLogger(__name__)
 
@@ -44,7 +43,6 @@ class Query:
     ignored_task_id_list: Optional[List[str]] = None
     start_date: Optional[str] = None
     end_date: Optional[str] = None
-
 
 
 class Database:
@@ -446,6 +444,7 @@ class Database:
 
         """
         dt_start_date = Database._to_datetime_with_tz(start_date)
+
         def pred(task_id: str):
             task_histories = dict_task_histories[task_id]
             if len(task_histories) == 0:
