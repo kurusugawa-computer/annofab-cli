@@ -148,7 +148,6 @@ class WriteCsvGraph:
 
         """
         task_df = self._get_task_df()
-
         task_cumulative_df_overall = self.table_obj.create_cumulative_df_overall(task_df)
         catch_exception(self.graph_obj.write_cumulative_line_graph_overall)(task_cumulative_df_overall)
 

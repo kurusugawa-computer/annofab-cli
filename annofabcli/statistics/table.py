@@ -460,6 +460,14 @@ class Table:
             else:
                 return None
 
+        if len(task_histories) > 0:
+            # タスク情報とタスク履歴情報の整合性がとれているかを確認する
+            delta = dateutil.parser.parse(task["updated_datetime"]) - dateutil.parser.parse(task_histories[-1]["ended_datetime"])
+            if abs(delta.total_seconds()) > 1:
+                logger.warning(f"task_id={task['task_id']}のタスク情報とタスク履歴情報の整合性が取れていない可能性があります。"
+                               f"task.updated_datetime={task['updated_datetime']},"
+                               f"task_histories[-1].ended_datetime={task_histories[-1]['ended_datetime']}")
+
         annotation_histories = [e for e in task_histories if e["phase"] == TaskPhase.ANNOTATION.value]
         inspection_histories = [e for e in task_histories if e["phase"] == TaskPhase.INSPECTION.value]
         acceptance_histories = [e for e in task_histories if e["phase"] == TaskPhase.ACCEPTANCE.value]
@@ -872,6 +880,10 @@ class Table:
             task_df: タスク一覧のDataFrame. 列が追加される
         """
         # 教師付の開始時刻でソートして、indexを更新する
+        if len(task_df) == 0:
+            logger.warning(f"タスク一覧が0件です。")
+            return pandas.DataFrame()
+
         df = task_df.sort_values(["first_annotation_started_datetime"]).reset_index(drop=True)
         # タスクの累計数を取得するために設定する
         df["task_count"] = 1

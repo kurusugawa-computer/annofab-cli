@@ -79,7 +79,7 @@ class Database:
         # ダウンロードした一括情報
         self.tasks_json_path = Path(f"{self.checkpoint_dir}/tasks.json")
         self.inspection_json_path = Path(f"{self.checkpoint_dir}/inspections.json")
-        self.task_histories_json_path = Path(f"{self.checkpoint_dir}/task_histories_json_path.json")
+        self.task_histories_json_path = Path(f"{self.checkpoint_dir}/task_histories.json")
         self.annotations_zip_path = Path(f"{self.checkpoint_dir}/simple-annotations.zip")
 
     def __write_checkpoint(self, obj, pickle_file_name):
@@ -444,7 +444,6 @@ class Database:
 
         """
         dt_start_date = Database._to_datetime_with_tz(start_date)
-
         def pred(task_id: str):
             task_histories = dict_task_histories[task_id]
             if len(task_histories) == 0:
@@ -457,7 +456,7 @@ class Database:
 
         return [task for task in task_list if pred(task["task_id"])]
 
-    def update_db(self, should_update_annotation_zip: bool = False, should_update_task_json: bool = False,) -> None:
+    def update_db(self, should_update_annotation_zip: bool = False, should_update_task_json: bool = False) -> None:
         """
         Annofabから情報を取得し、DB（pickelファイル）を更新する。
 
