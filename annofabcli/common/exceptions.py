@@ -4,7 +4,7 @@ annofabapi.exceptions
 This module contains the set of annofabapi exceptions.
 """
 
-from typing import List
+from typing import List, Optional
 
 from annofabapi.models import OrganizationMemberRole, ProjectMemberRole
 
@@ -23,6 +23,17 @@ class AuthenticationError(AnnofabCliException):
     def __init__(self, loing_user_id: str):
         msg = f"AnnoFabにログインできませんでした。User ID: {loing_user_id}"
         super().__init__(msg)
+
+
+
+class UpdatedFileForDownloadingError(AnnofabCliException):
+    """
+    ダウンロード対象ファイルの更新処理のエラー
+    """
+
+    def __init__(self, msg: Optional[str]=None):
+        super().__init__(msg)
+
 
 
 class AuthorizationError(AnnofabCliException):

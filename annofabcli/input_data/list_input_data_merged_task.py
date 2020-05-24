@@ -147,12 +147,13 @@ class ListInputDataMergedTask(AbstractCommandLineInterface):
         loop = asyncio.get_event_loop()
         downloading_obj = DownloadingFile(self.service)
         gather = asyncio.gather(
-            downloading_obj.download_task_json_with_async(project_id, dest_path=str(output_dir / "input_data.json"), is_latest=is_latest, wait_options=wait_options),
+            downloading_obj.download_input_data_json_with_async(project_id, dest_path=str(output_dir / "input_data.json"), is_latest=is_latest, wait_options=wait_options),
             downloading_obj.download_task_json_with_async(project_id, dest_path=str(output_dir / "task.json"), is_latest=is_latest, wait_options=wait_options),
         )
         result = loop.run_until_complete(gather)
-        if len([e for e in result if not e]) > 0:
-            raise RuntimeError("タスク一覧ファイル、入力データ一覧ファイルのダウンロードに失敗しました。")
+        for r in result:
+            print(r)
+
 
         #
         #
