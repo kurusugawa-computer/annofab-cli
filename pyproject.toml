@@ -37,7 +37,6 @@ annofabapi = ">=0.33.1"
 pandas = "^1.0.3"
 bokeh = "^2.0.2"
 holoviews= "^1.13.2"
-argcomplete = "*"
 
 [tool.poetry.dev-dependencies]
 # test library
