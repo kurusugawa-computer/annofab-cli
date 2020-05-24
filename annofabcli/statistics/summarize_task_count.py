@@ -197,7 +197,7 @@ class SummarizeTaskCount(AbstractCommandLineInterface):
                 self.service.wrapper.download_project_tasks_url(project_id, str(task_json_path))
             except requests.HTTPError as e:
                 if e.response.status_code == requests.codes.not_found:
-                    # 停止中プロジェクトのため、タスク一覧ファイルがない可能性があるので、タスク一覧ファイルの更新処理を実行する
+                    # 補足：停止中プロジェクトだと、タスク一覧ファイル or 入力データ一覧ファイルが存在しないケースがある
                     logger.info(f"タスク一覧ファイルが存在しなかったので、タスク一覧ファイルの生成処理を実行します。")
                     self.update_task_json_and_wait(project_id, wait_options)
                     self.service.wrapper.download_project_tasks_url(project_id, str(task_json_path))

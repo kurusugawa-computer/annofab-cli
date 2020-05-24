@@ -1,4 +1,5 @@
 import argparse
+import argcomplete
 import logging
 from typing import Optional, Sequence
 
@@ -31,7 +32,7 @@ def main(arguments: Optional[Sequence[str]] = None):
 
     """
 
-    parser = argparse.ArgumentParser(description="annofabapiを使ったCLIツール")
+    parser = argparse.ArgumentParser(description="Command Line Interface for AnnoFab")
     parser.add_argument("--version", action="version", version=f"annofabcli {annofabcli.__version__}")
     parser.set_defaults(command_help=parser.print_help)
 
@@ -55,8 +56,10 @@ def main(arguments: Optional[Sequence[str]] = None):
     annofabcli.experimental.subcommand_experimental.add_parser(subparsers)
 
     if arguments is None:
+        argcomplete.autocomplete(parser)
         args = parser.parse_args()
     else:
+        argcomplete.autocomplete(parser)
         args = parser.parse_args(arguments)
 
     if hasattr(args, "subcommand_func"):

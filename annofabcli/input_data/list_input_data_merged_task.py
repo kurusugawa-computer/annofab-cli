@@ -131,21 +131,34 @@ class ListInputDataMergedTask(AbstractCommandLineInterface):
 
         return True
 
-    def download_latest_files(self, project_id: str, output_dir: Path, is_latest: bool, wait_options: WaitOptions):
+    def update_json_files_and_wait(self, project_id: str, wait_options: WaitOptions):
+        downloading_obj = DownloadingLatestFile(self.service)
+        loop = asyncio.get_event_loop()
+
+        gather = asyncio.gather(
+            downloading_obj.wait_until_updated_input_data(project_id, wait_options),
+            downloading_obj.wait_until_updated_task(project_id, wait_options),
+        )
+        result = loop.run_until_complete(gather)
+        if len([e for e in result if not e]) > 0:
+            raise RuntimeError("タスク一覧ファイル、入力データ一覧ファイルの更新に失敗しました。")
+
+    def download_json_files(self, project_id: str, output_dir: Path, is_latest: bool, wait_options: WaitOptions):
         if is_latest:
-            downloading_obj = DownloadingLatestFile(self.service)
-            loop = asyncio.get_event_loop()
+            self.update_json_files_and_wait(project_id, wait_options=wait_options)
 
-            gather = asyncio.gather(
-                downloading_obj.wait_until_updated_input_data(project_id, wait_options),
-                downloading_obj.wait_until_updated_task(project_id, wait_options),
-            )
-            result = loop.run_until_complete(gather)
-            if len([e for e in result if not e]) > 0:
-                raise RuntimeError("タスク全件ファイル、入力データ全件ファイルの更新に失敗しました。")
-
-        self.service.wrapper.download_project_inputs_url(project_id, str(output_dir / "input_data.json"))
-        self.service.wrapper.download_project_tasks_url(project_id, str(output_dir / "task.json"))
+        try:
+            self.service.wrapper.download_project_inputs_url(project_id, str(output_dir / "input_data.json"))
+            self.service.wrapper.download_project_tasks_url(project_id, str(output_dir / "task.json"))
+        except requests.HTTPError as e:
+            if e.response.status_code == requests.codes.not_found:
+                # 補足：停止中プロジェクトだと、タスク一覧ファイル or 入力データ一覧ファイルが存在しないケースがある
+                logger.info(f"タスク一覧ファイル or 入力データ一覧ファイルが存在しなかったので、タスク一覧ファイル、入力データ一覧ファイルの生成処理を実行します。")
+                self.update_json_files_and_wait(project_id, wait_options=wait_options)
+                self.service.wrapper.download_project_inputs_url(project_id, str(output_dir / "input_data.json"))
+                self.service.wrapper.download_project_tasks_url(project_id, str(output_dir / "task.json"))
+            else:
+                raise e
 
     def main(self):
         args = self.args
@@ -157,7 +170,7 @@ class ListInputDataMergedTask(AbstractCommandLineInterface):
             super().validate_project(project_id, [ProjectMemberRole.OWNER])
             wait_options = get_wait_options_from_args(get_json_from_args(args.wait_options), DEFAULT_WAIT_OPTIONS)
             cache_dir = annofabcli.utils.get_cache_dir()
-            self.download_latest_files(project_id, cache_dir, args.latest, wait_options)
+            self.download_json_files(project_id, cache_dir, args.latest, wait_options)
             task_json_path = cache_dir / "task.json"
             input_data_json_path = cache_dir / "input_data.json"
         else:

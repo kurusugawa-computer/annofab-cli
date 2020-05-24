@@ -1,6 +1,6 @@
 [tool.poetry]
 name = "annofabcli"
-version = "1.29.7"
+version = "1.29.8"
 description = "Utility Command Line Interface for AnnoFab"
 authors = ["yuji38kwmt <yuji38kwmt@gmail.com>"]
 maintainers = ["yuji38kwmt <yuji38kwmt@gmail.com>"]
@@ -37,6 +37,7 @@ annofabapi = ">=0.33.1"
 pandas = "^1.0.3"
 bokeh = "^2.0.2"
 holoviews= "^1.13.2"
+argcomplete = "*"
 
 [tool.poetry.dev-dependencies]
 # test library
@@ -57,10 +58,6 @@ pylint = "*"
 [tool.poetry.scripts]
 annofabcli = "annofabcli.__main__:main"
 
-[build-system]
-requires = ["poetry>=0.12"]
-build-backend = "poetry.masonry.api"
-
 [tool.isort]
 line_length = 120
 # blackの設定に合わせる
@@ -70,6 +67,10 @@ include_trailing_comma = true
 force_grid_wrap = 0
 use_parentheses = true
 
-
 [tool.black]
 line-length = 120
+
+[build-system]
+requires = ["poetry>=0.12"]
+build-backend = "poetry.masonry.api"
+
