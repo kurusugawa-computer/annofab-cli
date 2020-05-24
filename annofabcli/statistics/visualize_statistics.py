@@ -12,7 +12,7 @@ import annofabcli
 from annofabcli import AnnofabApiFacade
 from annofabcli.common.cli import AbstractCommandLineInterface, ArgumentParser, build_annofabapi_resource_and_login
 from annofabcli.statistics.csv import Csv
-from annofabcli.statistics.database import Database
+from annofabcli.statistics.database import Database, Query
 from annofabcli.statistics.histogram import Histogram
 from annofabcli.statistics.linegraph import LineGraph
 from annofabcli.statistics.scatter import Scatter
@@ -308,15 +308,21 @@ class VisualizeStatistics(AbstractCommandLineInterface):
         checkpoint_dir = work_dir / project_id
         checkpoint_dir.mkdir(exist_ok=True, parents=True)
 
-        database = Database(self.service, project_id, str(checkpoint_dir))
-        if update:
-            database.update_db(
-                task_query,
-                ignored_task_id_list,
-                should_update_annotation_zip=should_update_annotation_zip,
-                should_update_task_json=should_update_task_json,
+        database = Database(
+            self.service,
+            project_id,
+            str(checkpoint_dir),
+            query=Query(
+                task_query_param=task_query,
+                ignored_task_id_list=ignored_task_id_list,
                 start_date=start_date,
                 end_date=end_date,
+            ),
+        )
+        if update:
+            database.update_db(
+                should_update_annotation_zip=should_update_annotation_zip,
+                should_update_task_json=should_update_task_json,
             )
 
         table_obj = Table(database, task_query, ignored_task_id_list)

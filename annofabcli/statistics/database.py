@@ -103,26 +103,6 @@ class Database:
         with open(file_path, "rb") as file:
             return pickle.load(file)
 
-    def __update_task_histories(self, tasks: List[Task], not_updated_task_ids: Set[str]):
-        pickel_file_name = "task_histories.pickel"
-        # 過去のtask_history情報に存在しないtask_id AND 更新されていないタスクのtask_idを取得する
-        old_task_histories_dict = self.read_task_histories_from_checkpoint()
-        ignored_task_ids = set(old_task_histories_dict.keys()) & not_updated_task_ids
-
-        # APIで情報を取得
-        new_task_histories_dict = self.get_task_histories_dict(tasks, ignored_task_ids)
-        old_task_histories_dict.update(new_task_histories_dict)
-
-        self.__write_checkpoint(old_task_histories_dict, pickel_file_name)
-
-    def read_tasks_from_checkpoint(self) -> List[Task]:
-        result = self.__read_checkpoint("tasks.pickel")
-        return result if result is not None else []
-
-    def read_task_histories_from_checkpoint(self) -> Dict[str, List[TaskHistory]]:
-        result = self.__read_checkpoint("task_histories.pickel")
-        return result if result is not None else {}
-
     def read_account_statistics_from_checkpoint(self) -> List[Dict[str, Any]]:
         result = self.__read_checkpoint("account_statistics.pickel")
         return result if result is not None else []
