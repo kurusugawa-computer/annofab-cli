@@ -63,6 +63,7 @@ class Database:
         # ダウンロードした一括情報
         self.tasks_json_path = Path(f"{self.checkpoint_dir}/tasks.json")
         self.inspection_json_path = Path(f"{self.checkpoint_dir}/inspections.json")
+        self.task_histories_json_path = Path(f"{self.checkpoint_dir}/task_histories_json_path.json")
         self.annotations_zip_path = Path(f"{self.checkpoint_dir}/simple-annotations.zip")
 
     def __write_checkpoint(self, obj, pickle_file_name):
@@ -177,6 +178,18 @@ class Database:
             tasks_dict[task_id] = input_data_dict
 
         return tasks_dict
+
+    def read_task_histories_from_json(self, task_id_list: List[str]) -> Dict[str, List[TaskHistory]]:
+        logger.debug(f"reading {self.task_histories_json_path}")
+
+        with open(str(self.task_histories_json_path)) as f:
+            task_histories_dict = json.load(f)
+
+        for task_id in task_id_list:
+            if task_id not in task_histories_dict.keys():
+                del task_histories_dict[task_id]
+
+        return task_histories_dict
 
     def wait_for_completion_updated_annotation(self, project_id):
         MAX_JOB_ACCESS = 120
@@ -342,7 +355,11 @@ class Database:
         self.update_annotation_zip(self.project_id, should_update_annotation_zip)
         logger.debug(f"downloading {str(annotations_zip_file)}")
         self.annofab_service.wrapper.download_annotation_archive(self.project_id, annotations_zip_file, v2=True)
-        # task historiesは未完成なので、使わない
+
+        logger.debug(f"downloading {str(self.task_histories_json_path)}")
+        self.annofab_service.wrapper.download_project_task_histories_url(
+            self.project_id, str(self.task_histories_json_path)
+        )
 
     @staticmethod
     def _to_datetime_with_tz(str_date: str) -> datetime.datetime:
@@ -568,7 +585,6 @@ class Database:
 
         task_id_list: List[str] = [e["task_id"] for e in tasks]
         partial_func = partial(_get_task_histories_dict, self.annofab_service.api, self.project_id)
-        partial_func(task_id_list[0])
         with multiprocessing.Pool() as pool:
             task_index = 0
             for obj in pool.map(partial_func, task_id_list):

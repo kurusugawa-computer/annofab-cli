@@ -65,6 +65,7 @@ class Table:
     _task_id_list: Optional[List[str]] = None
     _task_list: Optional[List[Task]] = None
     _inspections_dict: Optional[Dict[str, Dict[InputDataId, List[Inspection]]]] = None
+    _task_histories_dict: Optional[Dict[str, List[TaskHistory]]] = None
     _annotations_dict: Optional[Dict[str, Dict[InputDataId, Dict[str, Any]]]] = None
     _worktime_statistics: Optional[List[WorktimeStatistics]] = None
     _account_statistics: Optional[List[ProjectAccountStatistics]] = None
@@ -130,6 +131,14 @@ class Table:
             task_id_list = [t["task_id"] for t in self._get_task_list()]
             self._inspections_dict = self.database.read_inspections_from_json(task_id_list)
             return self._inspections_dict
+
+    def _get_task_histories_dict(self) -> Dict[str, List[TaskHistory]]:
+        if self._task_histories_dict is not None:
+            return self._task_histories_dict
+        else:
+            task_id_list = [t["task_id"] for t in self._get_task_list()]
+            self._task_histories_dict = self.database.read_task_histories_from_json(task_id_list)
+            return self._task_histories_dict
 
     def _get_annotations_dict(self) -> AnnotationDict:
         if self._annotations_dict is not None:
@@ -556,7 +565,7 @@ class Table:
         Returns:
 
         """
-        task_histories_dict = self.database.read_task_histories_from_checkpoint()
+        task_histories_dict = self._get_task_histories_dict()
         task_list = self._get_task_list()
 
         all_task_history_list = []
@@ -623,7 +632,7 @@ class Table:
 
         logger.info(f"execute `create_task_df` function")
         tasks = self._get_task_list()
-        task_histories_dict = self.database.read_task_histories_from_checkpoint()
+        task_histories_dict = self._get_task_histories_dict()
         inspections_dict = self._get_inspections_dict()
         annotations_dict = self._get_annotations_dict()
 
@@ -754,7 +763,7 @@ class Table:
         プロジェクトメンバ一覧の情報
         """
 
-        task_histories_dict = self.database.read_task_histories_from_checkpoint()
+        task_histories_dict = self._get_task_histories_dict()
 
         member_dict = {}
         for account_id, member in self.project_members_dict.items():

@@ -163,6 +163,9 @@ class WriteCsvGraph:
 
         """
         task_df = self._get_task_df()
+        if len(task_df) == 0:
+            logger.warning(f"タスク一覧が0件のため、折れ線グラフを出力しません。")
+            return
 
         task_cumulative_df_by_annotator = self.table_obj.create_cumulative_df_by_first_annotator(task_df)
         catch_exception(self.graph_obj.write_cumulative_line_graph_for_annotator)(
