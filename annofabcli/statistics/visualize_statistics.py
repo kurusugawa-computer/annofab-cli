@@ -288,8 +288,7 @@ class VisualizeStatistics(AbstractCommandLineInterface):
         ignored_task_id_list: List[str],
         user_id_list: List[str],
         update: bool = False,
-        should_update_annotation_zip: bool = False,
-        should_update_task_json: bool = False,
+        download_latest: bool = False,
         start_date: Optional[str] = None,
         end_date: Optional[str] = None,
     ):
@@ -319,10 +318,7 @@ class VisualizeStatistics(AbstractCommandLineInterface):
             ),
         )
         if update:
-            database.update_db(
-                should_update_annotation_zip=should_update_annotation_zip,
-                should_update_task_json=should_update_task_json,
-            )
+            database.update_db(download_latest)
 
         table_obj = Table(database, task_query, ignored_task_id_list)
         write_project_name_file(self.service, project_id, output_dir)
@@ -368,8 +364,7 @@ class VisualizeStatistics(AbstractCommandLineInterface):
             ignored_task_id_list=ignored_task_id_list,
             user_id_list=user_id_list,
             update=not args.not_update,
-            should_update_annotation_zip=args.update_annotation,
-            should_update_task_json=args.update_task_json,
+            download_latest=args.download_latest,
             start_date=args.start_date,
             end_date=args.end_date,
         )
@@ -421,13 +416,9 @@ def parse_args(parser: argparse.ArgumentParser):
     )
 
     parser.add_argument(
-        "--update_annotation",
+        "--download_latest",
         action="store_true",
-        help="アノテーションzipを更新してから、アノテーションzipをダウンロードします。" "ただし、アノテーションzipの最終更新日時がタスクの最終更新日時より新しい場合は、アノテーションzipを更新しません。",
-    )
-
-    parser.add_argument(
-        "--update_task_json", action="store_true", help="タスク全件ファイルJSONを更新してから、タスク全件ファイルJSONをダウンロードします。",
+        help="統計情報の元になるファイル（アノテーションzipなど）の最新版をダウンロードします。ファイルを最新版にするのに5分以上待つ必要があります。",
     )
 
     parser.add_argument(

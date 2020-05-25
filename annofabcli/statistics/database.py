@@ -329,20 +329,16 @@ class Database:
         with self.task_histories_json_path.open(mode="w") as f:
             json.dump(task_histories_dict, f)
 
-    def _download_db_file(
-        self, should_update_annotation_zip: bool = False, should_update_task_json: bool = False,
-    ):
+    def _download_db_file(self, is_latest: bool):
         """
         DBになりうるファイルをダウンロードする
 
         Args:
-            should_update_annotation_zip: Trunならアノテーションzipを更新する。ただしタスクの最終更新日時が、今のアノテーションzipの最終更新日時より
-            should_update_task_json: タスク全件ファイルを更新するかどうか
-
+            is_latest: Trunなら最新のファイルをダウンロードする
         """
 
         downloading_obj = DownloadingFile(self.annofab_service)
-        is_latest = False
+
         wait_options = WaitOptions(interval=60, max_tries=360)
 
         TASK_JSON_INDEX = 0
@@ -473,22 +469,19 @@ class Database:
 
         return [task for task in task_list if pred(task["task_id"])]
 
-    def update_db(self, should_update_annotation_zip: bool = False, should_update_task_json: bool = False) -> None:
+    def update_db(self, is_latest: bool) -> None:
         """
-        Annofabから情報を取得し、DB（pickelファイル）を更新する。
+        Annofabから情報を取得し、DB（pickel, jsonファイル）を更新する。
 
         Args:
-            should_update_annotation_zip: アノテーションzipを更新するかどうか
-            should_update_task_json: タスク全件ファイルを更新するかどうか
+            is_latest: 最新のファイル（アノテーションzipや全件ファイルjsonなど）をダウンロードする
         """
 
         # 残すべきファイル
         self.filename_timestamp = "{0:%Y%m%d-%H%M%S}".format(datetime.datetime.now())
 
         # DB用のJSONファイルをダウンロードする
-        self._download_db_file(
-            should_update_annotation_zip=should_update_annotation_zip, should_update_task_json=should_update_task_json,
-        )
+        self._download_db_file(is_latest)
 
         # 統計情報の出力
         account_statistics = self.annofab_service.api.get_account_statistics(self.project_id)[0]
