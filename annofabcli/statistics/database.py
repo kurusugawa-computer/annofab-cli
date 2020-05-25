@@ -1,3 +1,4 @@
+import asyncio
 import datetime
 import json
 import logging
@@ -15,10 +16,13 @@ import annofabapi
 import annofabapi.utils
 import dateutil
 import more_itertools
-import requests
 from annofabapi.dataclass.annotation import SimpleAnnotationDetail
 from annofabapi.models import InputDataId, Inspection, JobStatus, JobType, Task, TaskHistory
 from annofabapi.parser import SimpleAnnotationZipParser
+
+from annofabcli.common.dataclasses import WaitOptions
+from annofabcli.common.download import DownloadingFile
+from annofabcli.common.exceptions import DownloadingFileNotFoundError
 
 logger = logging.getLogger(__name__)
 
@@ -78,6 +82,7 @@ class Database:
 
         # ダウンロードした一括情報
         self.tasks_json_path = Path(f"{self.checkpoint_dir}/tasks.json")
+        self.input_data_json_path = Path(f"{self.checkpoint_dir}/input_data.json")
         self.inspection_json_path = Path(f"{self.checkpoint_dir}/inspections.json")
         self.task_histories_json_path = Path(f"{self.checkpoint_dir}/task_histories.json")
         self.annotations_zip_path = Path(f"{self.checkpoint_dir}/simple-annotations.zip")
@@ -336,40 +341,51 @@ class Database:
 
         """
 
-        self.update_task_json(self.project_id, should_update_task_json)
-        logger.debug(f"downloading {str(self.tasks_json_path)}")
-        self.annofab_service.wrapper.download_project_tasks_url(self.project_id, str(self.tasks_json_path))
+        downloading_obj = DownloadingFile(self.annofab_service)
+        is_latest = False
+        wait_options = WaitOptions(interval=60, max_tries=360)
 
-        logger.debug(f"downloading {str(self.inspection_json_path)}")
-        try:
-            # 検査コメント全件ファイルだけ updateする手段がないため、検査コメント全件ファイルのダウンロードだけ特別処理
-            self.annofab_service.wrapper.download_project_inspections_url(
-                self.project_id, str(self.inspection_json_path)
-            )
-        except requests.HTTPError as e:
-            if e.response.status_code == requests.codes.not_found:
-                logger.warning(f"検査コメント全件ファイルがありません。")
-                self.inspection_json_path.write_text("{}", encoding="utf-8")
-            else:
-                raise e
+        TASK_JSON_INDEX = 0
+        INPUT_DATA_JSON_INDEX = 1
+        ANNOTATION_ZIP_INDEX = 2
+        TASK_HISTORY_JSON_INDEX = 3
+        INSPECTION_JSON_INDEX = 4
 
-        annotations_zip_file = f"{self.checkpoint_dir}/simple-annotations.zip"
+        loop = asyncio.get_event_loop()
+        coroutines: List[Any] = [None] * 5
+        coroutines[TASK_JSON_INDEX] = downloading_obj.download_task_json_with_async(
+            self.project_id, dest_path=str(self.tasks_json_path), is_latest=is_latest, wait_options=wait_options
+        )
+        coroutines[INPUT_DATA_JSON_INDEX] = downloading_obj.download_input_data_json_with_async(
+            self.project_id, dest_path=str(self.input_data_json_path), is_latest=is_latest, wait_options=wait_options,
+        )
+        coroutines[ANNOTATION_ZIP_INDEX] = downloading_obj.download_annotation_zip_with_async(
+            self.project_id, dest_path=str(self.annotations_zip_path), is_latest=is_latest, wait_options=wait_options,
+        )
+        coroutines[TASK_HISTORY_JSON_INDEX] = downloading_obj.download_task_history_json_with_async(
+            self.project_id, dest_path=str(self.task_histories_json_path)
+        )
+        coroutines[INSPECTION_JSON_INDEX] = downloading_obj.download_inspection_json_with_async(
+            self.project_id, dest_path=str(self.inspection_json_path)
+        )
+        gather = asyncio.gather(*coroutines, return_exceptions=True)
+        results = loop.run_until_complete(gather)
 
-        self.update_annotation_zip(self.project_id, should_update_annotation_zip)
-        logger.debug(f"downloading {str(annotations_zip_file)}")
-        self.annofab_service.wrapper.download_annotation_archive(self.project_id, annotations_zip_file, v2=True)
+        if isinstance(results[INSPECTION_JSON_INDEX], DownloadingFileNotFoundError):
+            # 空のJSONファイルを作り、検査コメント0件として処理する
+            self.inspection_json_path.write_text("{}", encoding="utf-8")
+        elif isinstance(results[INSPECTION_JSON_INDEX], Exception):
+            raise results[INSPECTION_JSON_INDEX]
 
-        logger.debug(f"downloading {str(self.task_histories_json_path)}")
-        try:
-            self.annofab_service.wrapper.download_project_task_histories_url(
-                self.project_id, str(self.task_histories_json_path)
-            )
-        except requests.HTTPError as e:
-            if e.response.status_code == requests.codes.not_found:
-                logger.warning(f"タスク履歴全件ファイルが存在しなかったので、タスク履歴取得APIでタスク履歴を取得します。")
-                self._write_task_histories_json()
-            else:
-                raise e
+        if isinstance(results[TASK_HISTORY_JSON_INDEX], DownloadingFileNotFoundError):
+            # タスク履歴APIを一つずつ実行して、JSONファイルを生成する
+            self._write_task_histories_json()
+        elif isinstance(results[TASK_HISTORY_JSON_INDEX], Exception):
+            raise results[TASK_HISTORY_JSON_INDEX]
+
+        for result in [results[TASK_JSON_INDEX], results[INPUT_DATA_JSON_INDEX], results[ANNOTATION_ZIP_INDEX]]:
+            if isinstance(result, Exception):
+                raise result
 
     @staticmethod
     def _to_datetime_with_tz(str_date: str) -> datetime.datetime:

@@ -3,14 +3,12 @@ import asyncio
 import json
 import logging
 import sys
-from functools import partial
 from pathlib import Path
 from typing import Any, Dict, List
 
 import annofabapi
 import pandas
-import requests
-from annofabapi.models import JobType, ProjectMemberRole
+from annofabapi.models import ProjectMemberRole
 
 import annofabcli
 from annofabcli import AnnofabApiFacade
@@ -28,6 +26,7 @@ from annofabcli.common.enums import FormatArgument
 logger = logging.getLogger(__name__)
 
 DEFAULT_WAIT_OPTIONS = WaitOptions(interval=60, max_tries=360)
+
 
 class ListInputDataMergedTask(AbstractCommandLineInterface):
     def __init__(self, service: annofabapi.Resource, facade: AnnofabApiFacade, args: argparse.Namespace):

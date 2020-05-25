@@ -34,6 +34,15 @@ class UpdatedFileForDownloadingError(AnnofabCliException):
         super().__init__(msg)
 
 
+class DownloadingFileNotFoundError(AnnofabCliException):
+    """
+    ダウンロード対象のファイルが存在しないときのエラー
+    """
+
+    def __init__(self, msg: Optional[str] = None):
+        super().__init__(msg)
+
+
 class AuthorizationError(AnnofabCliException):
     pass
 

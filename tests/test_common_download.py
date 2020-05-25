@@ -43,5 +43,7 @@ def test_download_all_file_with_async():
             project_id, dest_path=str(out_path / "task_history.json")
         ),
         downloading_obj.download_inspection_json_with_async(project_id, dest_path=str(out_path / "inspecction.json")),
+        return_exceptions=True,
     )
-    loop.run_until_complete(gather)
+    result = loop.run_until_complete(gather)
+    print(result)

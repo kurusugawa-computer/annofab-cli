@@ -7,7 +7,7 @@ import requests
 from annofabapi.models import JobType
 
 from annofabcli.common.dataclasses import WaitOptions
-from annofabcli.common.exceptions import UpdatedFileForDownloadingError
+from annofabcli.common.exceptions import DownloadingFileNotFoundError, UpdatedFileForDownloadingError
 
 logger = logging.getLogger(__name__)
 
@@ -146,21 +146,16 @@ class DownloadingFile:
 
         self._wait_for_completion(project_id, job_type=JobType.GEN_TASKS_LIST, wait_options=wait_options)
 
-    async def download_task_history_json_with_async(self, project_id: str, dest_path: str) -> bool:
+    async def download_task_history_json_with_async(self, project_id: str, dest_path: str):
         """
         非同期でタスク履歴全件ファイルをダウンロードする。
 
-        Args:
-            project_id:
-            dest_path:
-
-        Returns:
-            Trueならばダウンロード成功。Falseの場合ダウンロードファイルが存在しない。
-
+        Raises:
+            DownloadingFileNotFoundError:
         """
         return self.download_task_history_json(project_id, dest_path=dest_path)
 
-    def download_task_history_json(self, project_id: str, dest_path: str) -> bool:
+    def download_task_history_json(self, project_id: str, dest_path: str):
         """
         タスク履歴全件ファイルをダウンロードする。
 
@@ -168,54 +163,43 @@ class DownloadingFile:
             project_id:
             dest_path:
 
-        Returns:
-            Trueならばダウンロード成功。Falseの場合ダウンロードファイルが存在しない。
-
+        Raises:
+            DownloadingFileNotFoundError:
         """
         try:
             logger.debug(f"タスク履歴全件ファイルをダウンロードします。path={dest_path}")
             self.service.wrapper.download_project_task_histories_url(project_id, dest_path)
-            return True
         except requests.HTTPError as e:
             if e.response.status_code == requests.codes.not_found:
                 logger.info(f"タスク履歴全件ファイルが存在しません。")
-                return False
+                raise DownloadingFileNotFoundError("タスク履歴全件ファイルが存在しません。")
             else:
                 raise e
 
-    async def download_inspection_json_with_async(self, project_id: str, dest_path: str) -> bool:
+    async def download_inspection_json_with_async(self, project_id: str, dest_path: str):
         """
         非同期で検査コメント全件ファイルをダウンロードする。
 
-        Args:
-            project_id:
-            dest_path:
-
-        Returns:
-            Trueならばダウンロード成功。Falseの場合ダウンロードファイルが存在しない。
-
+        Raises:
+            DownloadingFileNotFoundError:
         """
+
         return self.download_inspection_json(project_id, dest_path=dest_path)
 
-    def download_inspection_json(self, project_id: str, dest_path: str) -> bool:
+    def download_inspection_json(self, project_id: str, dest_path: str):
         """
         検査コメント全件ファイルをダウンロードする。
 
-        Args:
-            project_id:
-            dest_path:
 
-        Returns:
-            Trueならばダウンロード成功。Falseの場合ダウンロードファイルが存在しない。
-
+        Raises:
+            DownloadingFileNotFoundError:
         """
         try:
             logger.debug(f"検査コメント全件ファイルをダウンロードします。path={dest_path}")
             self.service.wrapper.download_project_inspections_url(project_id, dest_path)
-            return True
         except requests.HTTPError as e:
             if e.response.status_code == requests.codes.not_found:
                 logger.info(f"検査コメント全件ファイルが存在しません。")
-                return False
+                raise DownloadingFileNotFoundError("タスク履歴全件ファイルが存在しません。")
             else:
                 raise e
