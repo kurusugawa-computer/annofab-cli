@@ -27,57 +27,7 @@ from annofabcli.common.enums import FormatArgument
 
 logger = logging.getLogger(__name__)
 
-
 DEFAULT_WAIT_OPTIONS = WaitOptions(interval=60, max_tries=360)
-
-
-class DownloadingLatestFile:
-    """
-    `AbstractCommandLineInterface`を継承したクラスだと、`multiprocessing.Pool`を実行したときに
-    `AttributeError: Can't pickle local object 'ArgumentParser.__init__.<locals>.identity'`というエラーが発生したので、
-    `ArgumentParser`を除いたクラスを作成した。
-    """
-
-    def __init__(self, service: annofabapi.Resource):
-        self.service = service
-
-    async def wait_until_updated_input_data(self, project_id: str, wait_options: WaitOptions):
-        try:
-            self.service.api.post_project_inputs_update(project_id)
-        except requests.HTTPError as e:
-            # ジョブが既に実行中ならエラーを無視する
-            if e.response.status_code != requests.codes.conflict:
-                raise e
-
-        loop = asyncio.get_event_loop()
-        partial_func = partial(
-            self.service.wrapper.wait_for_completion,
-            project_id,
-            JobType.GEN_INPUTS_LIST,
-            wait_options.interval,
-            wait_options.max_tries,
-        )
-        result = await loop.run_in_executor(None, partial_func)
-        return result
-
-    async def wait_until_updated_task(self, project_id: str, wait_options: WaitOptions):
-        try:
-            self.service.api.post_project_tasks_update(project_id)
-        except requests.HTTPError as e:
-            if e.response.status_code != requests.codes.conflict:
-                raise e
-
-        loop = asyncio.get_event_loop()
-        partial_func = partial(
-            self.service.wrapper.wait_for_completion,
-            project_id,
-            JobType.GEN_TASKS_LIST,
-            wait_options.interval,
-            wait_options.max_tries,
-        )
-        result = await loop.run_in_executor(None, partial_func)
-        return result
-
 
 class ListInputDataMergedTask(AbstractCommandLineInterface):
     def __init__(self, service: annofabapi.Resource, facade: AnnofabApiFacade, args: argparse.Namespace):
@@ -131,18 +81,6 @@ class ListInputDataMergedTask(AbstractCommandLineInterface):
             return False
 
         return True
-
-    def update_json_files_and_wait(self, project_id: str, wait_options: WaitOptions):
-        downloading_obj = DownloadingLatestFile(self.service)
-        loop = asyncio.get_event_loop()
-
-        gather = asyncio.gather(
-            downloading_obj.wait_until_updated_input_data(project_id, wait_options),
-            downloading_obj.wait_until_updated_task(project_id, wait_options),
-        )
-        result = loop.run_until_complete(gather)
-        if len([e for e in result if not e]) > 0:
-            raise RuntimeError("タスク一覧ファイル、入力データ一覧ファイルの更新に失敗しました。")
 
     def download_json_files(self, project_id: str, output_dir: Path, is_latest: bool, wait_options: WaitOptions):
         loop = asyncio.get_event_loop()
