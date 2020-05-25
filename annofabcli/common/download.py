@@ -44,6 +44,7 @@ class DownloadingFile:
         return result
 
     def download_annotation_zip(self, project_id: str, dest_path: str, is_latest: bool, wait_options: WaitOptions):
+        logger.debug(f"アノテーションzipをダウンロードします。path={dest_path}")
         if is_latest:
             self.wait_until_updated_annotation_zip(project_id, wait_options)
             self.service.wrapper.download_annotation_archive(project_id, dest_path)
@@ -80,6 +81,7 @@ class DownloadingFile:
         return result
 
     def download_input_data_json(self, project_id: str, dest_path: str, is_latest: bool, wait_options: WaitOptions):
+        logger.debug(f"入力データ全件ファイルをダウンロードします。path={dest_path}")
         if is_latest:
             self.wait_until_updated_input_data_json(project_id, wait_options)
             self.service.wrapper.download_project_inputs_url(project_id, dest_path)
@@ -116,6 +118,7 @@ class DownloadingFile:
         return result
 
     def download_task_json(self, project_id: str, dest_path: str, is_latest: bool, wait_options: WaitOptions):
+        logger.debug(f"タスク全件ファイルをダウンロードします。path={dest_path}")
         if is_latest:
             self.wait_until_updated_task_json(project_id, wait_options)
             self.service.wrapper.download_project_tasks_url(project_id, dest_path)
@@ -170,6 +173,7 @@ class DownloadingFile:
 
         """
         try:
+            logger.debug(f"タスク履歴全件ファイルをダウンロードします。path={dest_path}")
             self.service.wrapper.download_project_task_histories_url(project_id, dest_path)
             return True
         except requests.HTTPError as e:
@@ -206,6 +210,7 @@ class DownloadingFile:
 
         """
         try:
+            logger.debug(f"検査コメント全件ファイルをダウンロードします。path={dest_path}")
             self.service.wrapper.download_project_inspections_url(project_id, dest_path)
             return True
         except requests.HTTPError as e:
