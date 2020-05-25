@@ -611,13 +611,11 @@ class Table:
 
         def set_annotation_info(arg_task):
             total_annotation_count = 0
-
             input_data_id_list = arg_task["input_data_id_list"]
-            input_data_dict = annotations_dict[arg_task["task_id"]]
-
-            for input_data_id in input_data_id_list:
-                total_annotation_count += input_data_dict[input_data_id]["total_count"]
-
+            input_data_dict = annotations_dict.get(arg_task["task_id"], None)
+            if input_data_dict is not None:
+                for input_data_id in input_data_id_list:
+                    total_annotation_count += input_data_dict[input_data_id]["total_count"]
             arg_task["annotation_count"] = total_annotation_count
 
         def set_inspection_info(arg_task):
@@ -683,7 +681,6 @@ class Table:
         task_list = []
         for task in tasks:
             task_id = task["task_id"]
-            input_data_dict = annotations_dict[task_id]
             new_task = {}
             for key in ["task_id", "phase", "status"]:
                 new_task[key] = task[key]
@@ -691,13 +688,18 @@ class Table:
             new_task["input_data_count"] = len(task["input_data_id_list"])
             input_data_id_list = task["input_data_id_list"]
 
-            for label_name in self.label_dict.values():
-                annotation_count = 0
-                for input_data_id in input_data_id_list:
-                    annotation_summary = input_data_dict[input_data_id]
-                    annotation_count += annotation_summary[f"label_{label_name}"]
+            input_data_dict = annotations_dict.get(task_id, None)
+            if input_data_dict is not None:
+                for label_name in self.label_dict.values():
+                    annotation_count = 0
+                    for input_data_id in input_data_id_list:
+                        annotation_summary = input_data_dict[input_data_id]
+                        annotation_count += annotation_summary[f"label_{label_name}"]
 
-                new_task[f"label_{label_name}"] = annotation_count
+                    new_task[f"label_{label_name}"] = annotation_count
+            else:
+                for label_name in self.label_dict.values():
+                    new_task[f"label_{label_name}"] = 0
 
             task_list.append(new_task)
 

@@ -11,6 +11,12 @@ from annofabcli.common.exceptions import DownloadingFileNotFoundError, UpdatedFi
 
 logger = logging.getLogger(__name__)
 
+DOWNLOADING_FILETYPE_DICT = {
+    JobType.GEN_TASKS_LIST: "タスク全件ファイル",
+    JobType.GEN_INPUTS_LIST: "入力データ全件ファイル",
+    JobType.GEN_ANNOTATION: "アノテーションzip",
+}
+
 
 class DownloadingFile:
     """
@@ -25,7 +31,8 @@ class DownloadingFile:
 
     def _wait_for_completion(self, project_id: str, job_type: JobType, wait_options: WaitOptions):
         max_wait_minutues = self.get_max_wait_minutes(wait_options)
-        logger.info(f"ダウンロード対象の更新処理が完了するまで、最大{max_wait_minutues}分間待ちます。")
+        filetype = DOWNLOADING_FILETYPE_DICT[job_type]
+        logger.info(f"{filetype}の更新処理が完了するまで、最大{max_wait_minutues}分間待ちます。")
         result = self.service.wrapper.wait_for_completion(
             project_id,
             job_type=job_type,
@@ -33,7 +40,7 @@ class DownloadingFile:
             max_job_access=wait_options.max_tries,
         )
         if not result:
-            raise UpdatedFileForDownloadingError(f"ダウンロードの対象の更新処理が{max_wait_minutues}分以内に完了しない、または更新処理に失敗しました。")
+            raise UpdatedFileForDownloadingError(f"{filetype}の更新処理が{max_wait_minutues}分以内に完了しない、または更新処理に失敗しました。")
 
     async def download_annotation_zip_with_async(
         self, project_id: str, dest_path: str, is_latest: bool, wait_options: WaitOptions
@@ -47,16 +54,16 @@ class DownloadingFile:
         logger.debug(f"アノテーションzipをダウンロードします。path={dest_path}")
         if is_latest:
             self.wait_until_updated_annotation_zip(project_id, wait_options)
-            self.service.wrapper.download_annotation_archive(project_id, dest_path)
+            self.service.wrapper.download_annotation_archive(project_id, dest_path, v2=True)
 
         else:
             try:
-                self.service.wrapper.download_annotation_archive(project_id, dest_path)
+                self.service.wrapper.download_annotation_archive(project_id, dest_path, v2=True)
             except requests.HTTPError as e:
                 if e.response.status_code == requests.codes.not_found:
                     logger.info(f"アノテーションzipが存在しなかったので、アノテーションzipファイルの更新処理を実行します。")
                     self.wait_until_updated_annotation_zip(project_id, wait_options)
-                    self.service.wrapper.download_annotation_archive(project_id, dest_path)
+                    self.service.wrapper.download_annotation_archive(project_id, dest_path, v2=True)
                 else:
                     raise e
 

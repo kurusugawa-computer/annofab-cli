@@ -15,6 +15,7 @@ from typing import Any, Callable, Dict, List, Optional, Set
 import annofabapi
 import annofabapi.utils
 import dateutil
+import dateutil.parser
 import more_itertools
 from annofabapi.dataclass.annotation import SimpleAnnotationDetail
 from annofabapi.models import InputDataId, Inspection, JobStatus, JobType, Task, TaskHistory
@@ -147,11 +148,16 @@ class Database:
                 task_id = task["task_id"]
                 input_data_id_list = task["input_data_id_list"]
 
-                input_data_dict: InputDataDict = {}
-                for input_data_id in input_data_id_list:
-                    input_data_dict[input_data_id] = read_annotation_summary(task_id, input_data_id)
+                try:
+                    input_data_dict: InputDataDict = {}
+                    for input_data_id in input_data_id_list:
+                        input_data_dict[input_data_id] = read_annotation_summary(task_id, input_data_id)
+                    annotation_dict[task_id] = input_data_dict
+                except Exception as e:
+                    logger.warning(f"task_id='{task_id}'のJSONファイル読み込みで失敗しました。")
+                    logger.warning(e)
+                    continue
 
-                annotation_dict[task_id] = input_data_dict
             return annotation_dict
 
     def read_inspections_from_json(self, task_id_list: List[str]) -> Dict[str, Dict[InputDataId, List[Inspection]]]:
@@ -329,6 +335,24 @@ class Database:
         with self.task_histories_json_path.open(mode="w") as f:
             json.dump(task_histories_dict, f)
 
+    def _log_annotation_zip_info(self):
+        project, _ = self.annofab_service.api.get_project(self.project_id)
+        last_tasks_updated_datetime = project["summary"]["last_tasks_updated_datetime"]
+        logger.debug(f"タスクの最終更新日時={last_tasks_updated_datetime}")
+
+        annotation_specs_history = self.annofab_service.api.get_annotation_specs_histories(self.project_id)[0]
+        annotation_specs_updated_datetime = annotation_specs_history[-1]["updated_datetime"]
+        logger.debug(f"アノテーション仕様の最終更新日時={annotation_specs_updated_datetime}")
+
+        job_list = self.annofab_service.api.get_project_job(
+            self.project_id, query_params={"type": JobType.GEN_ANNOTATION.value, "limit": 1}
+        )[0]["list"]
+        if len(job_list) == 0:
+            logger.debug(f"アノテーションzipの最終更新日時は不明です。")
+        else:
+            job = job_list[0]
+            logger.debug(f"アノテーションzipの最終更新日時={job['updated_datetime']}, job_status={job['job_status']}")
+
     def _download_db_file(self, is_latest: bool):
         """
         DBになりうるファイルをダウンロードする
@@ -482,6 +506,7 @@ class Database:
 
         # DB用のJSONファイルをダウンロードする
         self._download_db_file(is_latest)
+        self._log_annotation_zip_info()
 
         # 統計情報の出力
         account_statistics = self.annofab_service.api.get_account_statistics(self.project_id)[0]
