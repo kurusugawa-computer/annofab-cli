@@ -453,9 +453,10 @@ class Database:
                 if "task_id" in query.task_query_param:
                     flag = flag and str(query.task_query_param["task_id"]).lower() in str(arg_task["task_id"]).lower()
 
+            # 終了日で絞り込む
             # 開始日の絞り込み条件はタスク履歴を見る
             if dt_end_date is not None:
-                flag = flag and dateutil.parser.parse(arg_task["updated_datetime"]) <= dt_end_date
+                flag = flag and (dateutil.parser.parse(arg_task["updated_datetime"]) <= dt_end_date)
 
             if query.ignored_task_id_list is not None:
                 flag = flag and arg_task["task_id"] not in query.ignored_task_id_list
@@ -497,8 +498,8 @@ class Database:
         dt_start_date = Database._to_datetime_with_tz(start_date)
 
         def pred(task_id: str):
-            task_histories = dict_task_histories[task_id]
-            if len(task_histories) == 0:
+            task_histories = dict_task_histories.get(task_id)
+            if task_histories is None or len(task_histories) == 0:
                 return False
 
             first_started_datetime = task_histories[0]["started_datetime"]

@@ -264,12 +264,9 @@ class Table:
             return None
 
     def _update_annotaion_specs(self):
-        logger.debug("annofab_service.api.get_annotation_specs()")
         annotaion_specs = self.annofab_service.api.get_annotation_specs(self.project_id)[0]
         self.inspection_phrases_dict = self.get_inspection_phrases_dict(annotaion_specs["inspection_phrases"])
         self.label_dict = self.get_labels_dict(annotaion_specs["labels"])
-
-        logger.debug("annofab_service.wrapper.get_all_project_members()")
         self.project_members_dict = self._get_project_members_dict()
 
     def _get_project_members_dict(self) -> Dict[str, Any]:
