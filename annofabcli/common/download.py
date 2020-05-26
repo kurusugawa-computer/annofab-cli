@@ -180,8 +180,7 @@ class DownloadingFile:
             if e.response.status_code == requests.codes.not_found:
                 logger.info(f"タスク履歴全件ファイルが存在しません。")
                 raise DownloadingFileNotFoundError("タスク履歴全件ファイルが存在しません。")
-            else:
-                raise e
+            raise e
 
     async def download_inspection_json_with_async(self, project_id: str, dest_path: str):
         """
@@ -208,5 +207,4 @@ class DownloadingFile:
             if e.response.status_code == requests.codes.not_found:
                 logger.info(f"検査コメント全件ファイルが存在しません。")
                 raise DownloadingFileNotFoundError("タスク履歴全件ファイルが存在しません。")
-            else:
-                raise e
+            raise e

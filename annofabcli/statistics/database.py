@@ -152,7 +152,7 @@ class Database:
                     for input_data_id in input_data_id_list:
                         input_data_dict[input_data_id] = read_annotation_summary_per_input_data(task_id, input_data_id)
                     annotation_dict[task_id] = input_data_dict
-                except Exception as e:
+                except Exception as e:  # pylint: disable=broad-except
                     logger.warning(f"task_id='{task_id}'のJSONファイル読み込みで失敗しました。")
                     logger.warning(e)
                     continue
@@ -185,21 +185,19 @@ class Database:
 
         return tasks_dict
 
-    def read_input_data_from_json(self, task_list: List[Task]) -> Dict[str, Dict[InputDataId, InputData]]:
+    def read_input_data_from_json(self, task_list: List[Task]) -> Dict[str, List[InputData]]:
         path = self.input_data_json_path
         logger.debug(f"reading {path}")
         with open(str(path)) as f:
             all_input_data_list = json.load(f)
 
         all_input_data_dict = {e["input_data_id"]: e for e in all_input_data_list}
-        tasks_dict: Dict[str, Dict[InputDataId, InputData]] = {}
+        tasks_dict: Dict[str, List[InputData]] = {}
 
         for task in task_list:
             task_id = task["task_id"]
             input_data_id_list = task["input_data_id_list"]
-            tasks_dict[task_id] = {
-                input_data_id: all_input_data_dict[input_data_id] for input_data_id in input_data_id_list
-            }
+            tasks_dict[task_id] = [all_input_data_dict[input_data_id] for input_data_id in input_data_id_list]
 
         return tasks_dict
 

@@ -73,7 +73,7 @@ class Table:
     _task_id_list: Optional[List[str]] = None
     _task_list: Optional[List[Task]] = None
     _inspections_dict: Optional[Dict[str, Dict[InputDataId, List[Inspection]]]] = None
-    _input_data_dict: Optional[Dict[str, Dict[InputDataId, InputData]]] = None
+    _input_data_dict: Optional[Dict[str, List[InputData]]] = None
     _task_histories_dict: Optional[Dict[str, List[TaskHistory]]] = None
     _annotations_dict: Optional[Dict[str, Dict[InputDataId, Dict[str, Any]]]] = None
     _worktime_statistics: Optional[List[WorktimeStatistics]] = None
@@ -140,7 +140,7 @@ class Table:
             self._inspections_dict = self.database.read_inspections_from_json(task_id_list)
             return self._inspections_dict
 
-    def _get_input_data_dict(self) -> Dict[str, Dict[InputDataId, InputData]]:
+    def _get_input_data_dict(self) -> Dict[str, List[InputData]]:
         if self._input_data_dict is not None:
             return self._input_data_dict
         else:
@@ -624,6 +624,12 @@ class Table:
             annotation_worktime_hour, inspection_worktime_hour, acceptance_worktime_hour, sum_worktime_hour
         """
 
+        def set_input_data_info(arg_task):
+            input_data_list = input_data_dict.get(arg_task["task_id"])
+            arg_task["input_duration_seconds"] = sum(
+                [e["input_duration"] for e in input_data_list if e["input_duration"] is not None]
+            )
+
         def set_annotation_info(arg_task):
             total_annotation_count = 0
             input_data_id_list = arg_task["input_data_id_list"]
@@ -655,11 +661,11 @@ class Table:
             arg_task["inspection_count"] = inspection_count
             arg_task["input_data_count_of_inspection"] = input_data_count_of_inspection
 
-        logger.info(f"execute `create_task_df` function")
         tasks = self._get_task_list()
         task_histories_dict = self._get_task_histories_dict()
         inspections_dict = self._get_inspections_dict()
         annotations_dict = self._get_annotations_dict()
+        input_data_dict = self._get_input_data_dict()
 
         for task in tasks:
             task_id = task["task_id"]
@@ -673,6 +679,7 @@ class Table:
             self.set_task_histories(task, task_histories)
             set_annotation_info(task)
             set_inspection_info(task)
+            set_input_data_info(task)
 
         df = pandas.DataFrame(tasks)
         if len(df) > 0:
