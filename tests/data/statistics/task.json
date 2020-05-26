@@ -1,0 +1,100 @@
+[
+    {
+        "project_id": "1186bb00-16e6-4d20-8e24-310322911850",
+        "task_id": "sample_0",
+        "phase": "acceptance",
+        "phase_stage": 1,
+        "status": "not_started",
+        "input_data_id_list": [
+            "0733d1e1-ef85-455e-aec0-ff05c499b711",
+            "a3281975-e632-47a7-a71f-08013fad5604"
+        ],
+        "account_id": "00589ed0-dd63-40db-abb2-dfe5e13c8299",
+        "histories_by_phase": [
+            {
+                "account_id": "00589ed0-dd63-40db-abb2-dfe5e13c8299",
+                "phase": "annotation",
+                "phase_stage": 1,
+                "worked": true
+            },
+            {
+                "account_id": "00589ed0-dd63-40db-abb2-dfe5e13c8299",
+                "phase": "acceptance",
+                "phase_stage": 1,
+                "worked": true
+            },
+            {
+                "account_id": "00589ed0-dd63-40db-abb2-dfe5e13c8299",
+                "phase": "acceptance",
+                "phase_stage": 1,
+                "worked": false
+            }
+        ],
+        "work_time_span": 1086674,
+        "number_of_rejections": 0,
+        "started_datetime": null,
+        "updated_datetime": "2020-03-19T12:36:26.616+09:00",
+        "sampling": null
+    },
+    {
+        "project_id": "1186bb00-16e6-4d20-8e24-310322911850",
+        "task_id": "sample_1",
+        "phase": "acceptance",
+        "phase_stage": 1,
+        "status": "complete",
+        "input_data_id_list": [
+            "c6e1c2ec-6c7c-41c6-9639-4244c2ed2839",
+            "c86205d1-bdd4-4110-ae46-194e661d622b"
+        ],
+        "account_id": "00589ed0-dd63-40db-abb2-dfe5e13c8299",
+        "histories_by_phase": [
+            {
+                "account_id": "00589ed0-dd63-40db-abb2-dfe5e13c8299",
+                "phase": "annotation",
+                "phase_stage": 1,
+                "worked": true
+            },
+            {
+                "account_id": "00589ed0-dd63-40db-abb2-dfe5e13c8299",
+                "phase": "inspection",
+                "phase_stage": 1,
+                "worked": true
+            },
+            {
+                "account_id": "00589ed0-dd63-40db-abb2-dfe5e13c8299",
+                "phase": "annotation",
+                "phase_stage": 1,
+                "worked": true
+            },
+            {
+                "account_id": "00589ed0-dd63-40db-abb2-dfe5e13c8299",
+                "phase": "inspection",
+                "phase_stage": 1,
+                "worked": true
+            },
+            {
+                "account_id": "00589ed0-dd63-40db-abb2-dfe5e13c8299",
+                "phase": "inspection",
+                "phase_stage": 2,
+                "worked": true
+            },
+            {
+                "account_id": "00589ed0-dd63-40db-abb2-dfe5e13c8299",
+                "phase": "acceptance",
+                "phase_stage": 1,
+                "worked": true
+            },
+            {
+                "account_id": "00589ed0-dd63-40db-abb2-dfe5e13c8299",
+                "phase": "acceptance",
+                "phase_stage": 1,
+                "worked": true
+            }
+        ],
+        "work_time_span": 3599806,
+        "number_of_rejections": 1,
+        "started_datetime": "2019-08-22T13:17:15.208+09:00",
+        "updated_datetime": "2019-08-22T14:14:16.783+09:00",
+        "sampling": null
+    }
+]

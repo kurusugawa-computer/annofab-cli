@@ -1,3 +1,4 @@
+import asyncio
 import datetime
 import json
 import logging
@@ -6,6 +7,7 @@ import os
 import pickle
 import shutil
 import zipfile
+from dataclasses import dataclass
 from functools import partial
 from pathlib import Path
 from typing import Any, Callable, Dict, List, Optional, Set
@@ -13,23 +15,38 @@ from typing import Any, Callable, Dict, List, Optional, Set
 import annofabapi
 import annofabapi.utils
 import dateutil
+import dateutil.parser
 import more_itertools
-import requests
-from annofabapi.dataclass.annotation import SimpleAnnotationDetail
-from annofabapi.models import InputDataId, Inspection, JobStatus, JobType, Task, TaskHistory
+from annofabapi.models import InputData, InputDataId, Inspection, JobStatus, JobType, Task, TaskHistory
 from annofabapi.parser import SimpleAnnotationZipParser
+
+from annofabcli.common.dataclasses import WaitOptions
+from annofabcli.common.download import DownloadingFile
+from annofabcli.common.exceptions import DownloadingFileNotFoundError
 
 logger = logging.getLogger(__name__)
 
 InputDataDict = Dict[InputDataId, Dict[str, Any]]
 AnnotationDict = Dict[str, InputDataDict]
-AnnotationSummaryFunc = Callable[[List[SimpleAnnotationDetail]], Dict[str, Any]]
+AnnotationSummaryFunc = Callable[[List[Dict[str, Any]]], Dict[str, Any]]
 """アノテーションの概要を算出する関数"""
 
 
 def _get_task_histories_dict(api: annofabapi.AnnofabApi, project_id: str, task_id: str) -> Dict[str, List[TaskHistory]]:
     task_histories, _ = api.get_task_histories(project_id, task_id)
     return {task_id: task_histories}
+
+
+@dataclass(frozen=True)
+class Query:
+    """
+    絞り込み条件
+    """
+
+    task_query_param: Optional[Dict[str, Any]] = None
+    ignored_task_id_list: Optional[List[str]] = None
+    start_date: Optional[str] = None
+    end_date: Optional[str] = None
 
 
 class Database:
@@ -49,7 +66,9 @@ class Database:
     # Private
     #############################################
 
-    def __init__(self, annofab_service: annofabapi.Resource, project_id: str, chekpoint_dir: str):
+    def __init__(
+        self, annofab_service: annofabapi.Resource, project_id: str, chekpoint_dir: str, query: Optional[Query] = None
+    ):
         """
         環境変数'ANNOFAB_USER_ID', 'ANNOFAB_PASSWORD'から情報を読み込み、AnnofabApiインスタンスを生成する。
         Args:
@@ -59,10 +78,13 @@ class Database:
         self.annofab_service = annofab_service
         self.project_id = project_id
         self.checkpoint_dir = chekpoint_dir
+        self.query = query if query is not None else Query()
 
         # ダウンロードした一括情報
         self.tasks_json_path = Path(f"{self.checkpoint_dir}/tasks.json")
+        self.input_data_json_path = Path(f"{self.checkpoint_dir}/input_data.json")
         self.inspection_json_path = Path(f"{self.checkpoint_dir}/inspections.json")
+        self.task_histories_json_path = Path(f"{self.checkpoint_dir}/task_histories.json")
         self.annotations_zip_path = Path(f"{self.checkpoint_dir}/simple-annotations.zip")
 
     def __write_checkpoint(self, obj, pickle_file_name):
@@ -86,26 +108,6 @@ class Database:
         with open(file_path, "rb") as file:
             return pickle.load(file)
 
-    def __update_task_histories(self, tasks: List[Task], not_updated_task_ids: Set[str]):
-        pickel_file_name = "task_histories.pickel"
-        # 過去のtask_history情報に存在しないtask_id AND 更新されていないタスクのtask_idを取得する
-        old_task_histories_dict = self.read_task_histories_from_checkpoint()
-        ignored_task_ids = set(old_task_histories_dict.keys()) & not_updated_task_ids
-
-        # APIで情報を取得
-        new_task_histories_dict = self.get_task_histories_dict(tasks, ignored_task_ids)
-        old_task_histories_dict.update(new_task_histories_dict)
-
-        self.__write_checkpoint(old_task_histories_dict, pickel_file_name)
-
-    def read_tasks_from_checkpoint(self) -> List[Task]:
-        result = self.__read_checkpoint("tasks.pickel")
-        return result if result is not None else []
-
-    def read_task_histories_from_checkpoint(self) -> Dict[str, List[TaskHistory]]:
-        result = self.__read_checkpoint("task_histories.pickel")
-        return result if result is not None else {}
-
     def read_account_statistics_from_checkpoint(self) -> List[Dict[str, Any]]:
         result = self.__read_checkpoint("account_statistics.pickel")
         return result if result is not None else []
@@ -127,11 +129,11 @@ class Database:
     ) -> AnnotationDict:
         logger.debug(f"reading {str(self.annotations_zip_path)}")
 
-        def read_annotation_summary(task_id: str, input_data_id_: str) -> Dict[str, Any]:
+        def read_annotation_summary_per_input_data(task_id: str, input_data_id_: str) -> Dict[str, Any]:
             json_path = f"{task_id}/{input_data_id_}.json"
             parser = SimpleAnnotationZipParser(zip_file, json_path)
-            simple_annotation = parser.parse()
-            return annotation_summary_func(simple_annotation.details)
+            simple_annotation: Dict[str, Any] = parser.load_json()
+            return annotation_summary_func(simple_annotation["details"])
 
         with zipfile.ZipFile(self.annotations_zip_path, "r") as zip_file:
             annotation_dict: AnnotationDict = {}
@@ -145,11 +147,16 @@ class Database:
                 task_id = task["task_id"]
                 input_data_id_list = task["input_data_id_list"]
 
-                input_data_dict: InputDataDict = {}
-                for input_data_id in input_data_id_list:
-                    input_data_dict[input_data_id] = read_annotation_summary(task_id, input_data_id)
+                try:
+                    input_data_dict: InputDataDict = {}
+                    for input_data_id in input_data_id_list:
+                        input_data_dict[input_data_id] = read_annotation_summary_per_input_data(task_id, input_data_id)
+                    annotation_dict[task_id] = input_data_dict
+                except Exception as e:  # pylint: disable=broad-except
+                    logger.warning(f"task_id='{task_id}'のJSONファイル読み込みで失敗しました。")
+                    logger.warning(e)
+                    continue
 
-                annotation_dict[task_id] = input_data_dict
             return annotation_dict
 
     def read_inspections_from_json(self, task_id_list: List[str]) -> Dict[str, Dict[InputDataId, List[Inspection]]]:
@@ -177,6 +184,35 @@ class Database:
             tasks_dict[task_id] = input_data_dict
 
         return tasks_dict
+
+    def read_input_data_from_json(self, task_list: List[Task]) -> Dict[str, List[InputData]]:
+        path = self.input_data_json_path
+        logger.debug(f"reading {path}")
+        with open(str(path)) as f:
+            all_input_data_list = json.load(f)
+
+        all_input_data_dict = {e["input_data_id"]: e for e in all_input_data_list}
+        tasks_dict: Dict[str, List[InputData]] = {}
+
+        for task in task_list:
+            task_id = task["task_id"]
+            input_data_id_list = task["input_data_id_list"]
+            tasks_dict[task_id] = [all_input_data_dict[input_data_id] for input_data_id in input_data_id_list]
+
+        return tasks_dict
+
+    def read_task_histories_from_json(self, task_id_list: Optional[List[str]] = None) -> Dict[str, List[TaskHistory]]:
+        logger.debug(f"reading {self.task_histories_json_path}")
+
+        with open(str(self.task_histories_json_path)) as f:
+            task_histories_dict = json.load(f)
+
+        if task_id_list is not None:
+            removed_task_id_set = set(task_histories_dict.keys()) - set(task_id_list)
+            for task_id in removed_task_id_set:
+                del task_histories_dict[task_id]
+
+        return task_histories_dict
 
     def wait_for_completion_updated_annotation(self, project_id):
         MAX_JOB_ACCESS = 120
@@ -308,41 +344,83 @@ class Database:
                     self.annofab_service.api.post_project_tasks_update(project_id)
                     self.wait_for_completion_updated_task_json(project_id)
 
-    def _download_db_file(
-        self, should_update_annotation_zip: bool = False, should_update_task_json: bool = False,
-    ):
+    def _write_task_histories_json(self):
+        task_list = self.read_tasks_from_json()
+        task_histories_dict = self.get_task_histories_dict(task_list)
+        with self.task_histories_json_path.open(mode="w") as f:
+            json.dump(task_histories_dict, f)
+
+    def _log_annotation_zip_info(self):
+        project, _ = self.annofab_service.api.get_project(self.project_id)
+        last_tasks_updated_datetime = project["summary"]["last_tasks_updated_datetime"]
+        logger.debug(f"タスクの最終更新日時={last_tasks_updated_datetime}")
+
+        annotation_specs_history = self.annofab_service.api.get_annotation_specs_histories(self.project_id)[0]
+        annotation_specs_updated_datetime = annotation_specs_history[-1]["updated_datetime"]
+        logger.debug(f"アノテーション仕様の最終更新日時={annotation_specs_updated_datetime}")
+
+        job_list = self.annofab_service.api.get_project_job(
+            self.project_id, query_params={"type": JobType.GEN_ANNOTATION.value, "limit": 1}
+        )[0]["list"]
+        if len(job_list) == 0:
+            logger.debug(f"アノテーションzipの最終更新日時は不明です。")
+        else:
+            job = job_list[0]
+            logger.debug(f"アノテーションzipの最終更新日時={job['updated_datetime']}, job_status={job['job_status']}")
+
+    def _download_db_file(self, is_latest: bool):
         """
         DBになりうるファイルをダウンロードする
 
         Args:
-            should_update_annotation_zip: Trunならアノテーションzipを更新する。ただしタスクの最終更新日時が、今のアノテーションzipの最終更新日時より
-            should_update_task_json: タスク全件ファイルを更新するかどうか
-
+            is_latest: Trunなら最新のファイルをダウンロードする
         """
 
-        self.update_task_json(self.project_id, should_update_task_json)
-        logger.debug(f"downloading {str(self.tasks_json_path)}")
-        self.annofab_service.wrapper.download_project_tasks_url(self.project_id, str(self.tasks_json_path))
+        downloading_obj = DownloadingFile(self.annofab_service)
 
-        logger.debug(f"downloading {str(self.inspection_json_path)}")
-        try:
-            # 検査コメント全件ファイルだけ updateする手段がないため、検査コメント全件ファイルのダウンロードだけ特別処理
-            self.annofab_service.wrapper.download_project_inspections_url(
-                self.project_id, str(self.inspection_json_path)
-            )
-        except requests.HTTPError as e:
-            if e.response.status_code == requests.codes.not_found:
-                logger.warning(f"検査コメント全件ファイルがありません。")
-                self.inspection_json_path.write_text("{}", encoding="utf-8")
-            else:
-                raise e
+        wait_options = WaitOptions(interval=60, max_tries=360)
 
-        annotations_zip_file = f"{self.checkpoint_dir}/simple-annotations.zip"
+        TASK_JSON_INDEX = 0
+        INPUT_DATA_JSON_INDEX = 1
+        ANNOTATION_ZIP_INDEX = 2
+        TASK_HISTORY_JSON_INDEX = 3
+        INSPECTION_JSON_INDEX = 4
 
-        self.update_annotation_zip(self.project_id, should_update_annotation_zip)
-        logger.debug(f"downloading {str(annotations_zip_file)}")
-        self.annofab_service.wrapper.download_annotation_archive(self.project_id, annotations_zip_file, v2=True)
-        # task historiesは未完成なので、使わない
+        loop = asyncio.get_event_loop()
+        coroutines: List[Any] = [None] * 5
+        coroutines[TASK_JSON_INDEX] = downloading_obj.download_task_json_with_async(
+            self.project_id, dest_path=str(self.tasks_json_path), is_latest=is_latest, wait_options=wait_options
+        )
+        coroutines[INPUT_DATA_JSON_INDEX] = downloading_obj.download_input_data_json_with_async(
+            self.project_id, dest_path=str(self.input_data_json_path), is_latest=is_latest, wait_options=wait_options,
+        )
+        coroutines[ANNOTATION_ZIP_INDEX] = downloading_obj.download_annotation_zip_with_async(
+            self.project_id, dest_path=str(self.annotations_zip_path), is_latest=is_latest, wait_options=wait_options,
+        )
+        coroutines[TASK_HISTORY_JSON_INDEX] = downloading_obj.download_task_history_json_with_async(
+            self.project_id, dest_path=str(self.task_histories_json_path)
+        )
+        coroutines[INSPECTION_JSON_INDEX] = downloading_obj.download_inspection_json_with_async(
+            self.project_id, dest_path=str(self.inspection_json_path)
+        )
+        gather = asyncio.gather(*coroutines, return_exceptions=True)
+        results = loop.run_until_complete(gather)
+
+        if isinstance(results[INSPECTION_JSON_INDEX], DownloadingFileNotFoundError):
+            # 空のJSONファイルを作り、検査コメント0件として処理する
+            self.inspection_json_path.write_text("{}", encoding="utf-8")
+        elif isinstance(results[INSPECTION_JSON_INDEX], Exception):
+            raise results[INSPECTION_JSON_INDEX]
+
+        if isinstance(results[TASK_HISTORY_JSON_INDEX], DownloadingFileNotFoundError):
+            # タスク履歴APIを一つずつ実行して、JSONファイルを生成する
+            self._write_task_histories_json()
+        elif isinstance(results[TASK_HISTORY_JSON_INDEX], Exception):
+            raise results[TASK_HISTORY_JSON_INDEX]
+
+        for result in [results[TASK_JSON_INDEX], results[INPUT_DATA_JSON_INDEX], results[ANNOTATION_ZIP_INDEX]]:
+            if isinstance(result, Exception):
+                raise result
 
     @staticmethod
     def _to_datetime_with_tz(str_date: str) -> datetime.datetime:
@@ -350,51 +428,38 @@ class Database:
         dt = dt.replace(tzinfo=dateutil.tz.tzlocal())
         return dt
 
-    def read_tasks_from_json(
-        self,
-        task_query_param: Optional[Dict[str, Any]] = None,
-        ignored_task_id_list: Optional[List[str]] = None,
-        start_date: Optional[str] = None,
-        end_date: Optional[str] = None,
-    ) -> List[Task]:
+    def read_tasks_from_json(self,) -> List[Task]:
         """
         task.jsonからqueryに合致するタスクを調べる
-
-        Args:
-            task_query_param: taskを調べるquery. `phase`と`status`のみ有効
-            ignored_task_id_list: 無視するtask_idのList
-            start_date: 指定した日付（'YYYY-MM-DD'）より前に更新されているタスクは集計しないようにする。（不要なタスク履歴を参照しないようにする工夫）
-            end_date: 指定した日付（'YYYY-MM-DD'）以前に更新されたタスクを集計する。
 
         Returns:
             タスク一覧
 
         """
-        dt_end_date = self._to_datetime_with_tz(end_date) if end_date is not None else None
-        dt_start_date = self._to_datetime_with_tz(start_date) if start_date is not None else None
+        query = self.query
+        dt_end_date = self._to_datetime_with_tz(query.end_date) if query.end_date is not None else None
 
         def filter_task(arg_task: Dict[str, Any]):
             """AND条件で絞り込む"""
 
             flag = True
-            if task_query_param is not None:
-                if "phase" in task_query_param:
-                    flag = flag and arg_task["phase"] == task_query_param["phase"]
+            if query.task_query_param is not None:
+                if "phase" in query.task_query_param:
+                    flag = flag and arg_task["phase"] == query.task_query_param["phase"]
 
-                if "status" in task_query_param:
-                    flag = flag and arg_task["status"] == task_query_param["status"]
+                if "status" in query.task_query_param:
+                    flag = flag and arg_task["status"] == query.task_query_param["status"]
 
-                if "task_id" in task_query_param:
-                    flag = flag and str(task_query_param["task_id"]).lower() in str(arg_task["task_id"]).lower()
+                if "task_id" in query.task_query_param:
+                    flag = flag and str(query.task_query_param["task_id"]).lower() in str(arg_task["task_id"]).lower()
 
-            if dt_start_date is not None:
-                flag = flag and dateutil.parser.parse(arg_task["updated_datetime"]) >= dt_start_date
-
+            # 終了日で絞り込む
+            # 開始日の絞り込み条件はタスク履歴を見る
             if dt_end_date is not None:
-                flag = flag and dateutil.parser.parse(arg_task["updated_datetime"]) <= dt_end_date
+                flag = flag and (dateutil.parser.parse(arg_task["updated_datetime"]) <= dt_end_date)
 
-            if ignored_task_id_list is not None:
-                flag = flag and arg_task["task_id"] not in ignored_task_id_list
+            if query.ignored_task_id_list is not None:
+                flag = flag and arg_task["task_id"] not in query.ignored_task_id_list
 
             return flag
 
@@ -403,6 +468,14 @@ class Database:
             all_tasks = json.load(f)
 
         filtered_task_list = [task for task in all_tasks if filter_task(task)]
+
+        if self.query.start_date is not None:
+            # start_dateは教師付開始日でみるため、タスク履歴を参照する必要あり
+            dict_task_histories = self.read_task_histories_from_json()
+            filtered_task_list = self._filter_task_with_task_history(
+                filtered_task_list, dict_task_histories=dict_task_histories, start_date=self.query.start_date
+            )
+
         logger.debug(f"集計対象のタスク数 = {len(filtered_task_list)}")
         return filtered_task_list
 
@@ -425,8 +498,8 @@ class Database:
         dt_start_date = Database._to_datetime_with_tz(start_date)
 
         def pred(task_id: str):
-            task_histories = dict_task_histories[task_id]
-            if len(task_histories) == 0:
+            task_histories = dict_task_histories.get(task_id)
+            if task_histories is None or len(task_histories) == 0:
                 return False
 
             first_started_datetime = task_histories[0]["started_datetime"]
@@ -436,59 +509,27 @@ class Database:
 
         return [task for task in task_list if pred(task["task_id"])]
 
-    def update_db(
-        self,
-        task_query_param: Dict[str, Any],
-        ignored_task_ids: Optional[List[str]] = None,
-        should_update_annotation_zip: bool = False,
-        should_update_task_json: bool = False,
-        start_date: Optional[str] = None,
-        end_date: Optional[str] = None,
-    ) -> None:
+    def update_db(self, is_latest: bool) -> None:
         """
-        Annofabから情報を取得し、DB（pickelファイル）を更新する。
-        TODO タスク履歴一括ファイルに必要な情報が含まれたら、修正する
+        Annofabから情報を取得し、DB（pickel, jsonファイル）を更新する。
+
         Args:
-            task_query_param: タスク取得のクエリパラメタ. デフォルトは受け入れ完了タスク
-            ignored_task_ids: 可視化対象外のtask_idのList
-            should_update_annotation_zip: アノテーションzipを更新するかどうか
-            should_update_task_json: タスク全件ファイルを更新するかどうか
+            is_latest: 最新のファイル（アノテーションzipや全件ファイルjsonなど）をダウンロードする
         """
 
         # 残すべきファイル
         self.filename_timestamp = "{0:%Y%m%d-%H%M%S}".format(datetime.datetime.now())
 
         # DB用のJSONファイルをダウンロードする
-        self._download_db_file(
-            should_update_annotation_zip=should_update_annotation_zip, should_update_task_json=should_update_task_json,
-        )
-
-        logger.info(f"DB更新: task_query_param = {task_query_param}")
-        tasks = self.read_tasks_from_json(
-            task_query_param, start_date=start_date, end_date=end_date, ignored_task_id_list=ignored_task_ids
-        )
-
-        old_tasks = self.read_tasks_from_checkpoint()
-        not_updated_task_ids = self.get_not_updated_task_ids(old_tasks, tasks)
-        logger.info(f"更新されていないタスク数 = {len(not_updated_task_ids)}")
-
-        self.__update_task_histories(tasks, not_updated_task_ids)
-
-        if start_date is not None:
-            # start_dateは教師付開始日でみるため、タスク履歴を参照する必要あり
-            dict_task_histories = self.read_task_histories_from_checkpoint()
-            tasks = self._filter_task_with_task_history(
-                tasks, dict_task_histories=dict_task_histories, start_date=start_date
-            )
-
-        self.__write_checkpoint(tasks, "tasks.pickel")
+        self._download_db_file(is_latest)
+        self._log_annotation_zip_info()
 
         # 統計情報の出力
         account_statistics = self.annofab_service.api.get_account_statistics(self.project_id)[0]
         self.__write_checkpoint(account_statistics, "account_statistics.pickel")
 
         # 労務管理情報の出力
-        labor_list = self._get_labor_list(self.project_id, start_date=start_date, end_date=end_date)
+        labor_list = self._get_labor_list(self.project_id)
         self.__write_checkpoint(labor_list, "labor_list.pickel")
 
     @staticmethod
@@ -502,9 +543,7 @@ class Database:
         else:
             return value / 3600 / 1000
 
-    def _get_labor_list(
-        self, project_id: str, start_date: Optional[str] = None, end_date: Optional[str] = None
-    ) -> List[Dict[str, Any]]:
+    def _get_labor_list(self, project_id: str) -> List[Dict[str, Any]]:
         def to_new_labor(e: Dict[str, Any]) -> Dict[str, Any]:
             return dict(
                 date=e["date"],
@@ -514,7 +553,7 @@ class Database:
             )
 
         labor_list: List[Dict[str, Any]] = self.annofab_service.api.get_labor_control(
-            {"project_id": project_id, "from": start_date, "to": end_date}
+            {"project_id": project_id, "from": self.query.start_date, "to": self.query.end_date}
         )[0]
 
         return [to_new_labor(e) for e in labor_list if e["account_id"] is not None]
@@ -543,9 +582,7 @@ class Database:
 
         return updated_task_ids
 
-    def get_task_histories_dict(
-        self, all_tasks: List[Task], ignored_task_ids: Optional[Set[str]] = None
-    ) -> Dict[str, List[TaskHistory]]:
+    def get_task_histories_dict(self, all_tasks: List[Task]) -> Dict[str, List[TaskHistory]]:
         """
         Annofabからタスク履歴情報を取得する。
         Args:
@@ -556,8 +593,10 @@ class Database:
             タスク履歴情報
 
         """
-        if ignored_task_ids is None:
+        if self.query.ignored_task_id_list is None:
             ignored_task_ids = set()
+        else:
+            ignored_task_ids = set(self.query.ignored_task_id_list)
 
         tasks = [e for e in all_tasks if e["task_id"] not in ignored_task_ids]
         logger.info(f"タスク履歴取得対象のタスク数 = {len(tasks)}")
@@ -568,7 +607,6 @@ class Database:
 
         task_id_list: List[str] = [e["task_id"] for e in tasks]
         partial_func = partial(_get_task_histories_dict, self.annofab_service.api, self.project_id)
-        partial_func(task_id_list[0])
         with multiprocessing.Pool() as pool:
             task_index = 0
             for obj in pool.map(partial_func, task_id_list):

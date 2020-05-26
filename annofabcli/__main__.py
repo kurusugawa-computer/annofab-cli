@@ -31,7 +31,7 @@ def main(arguments: Optional[Sequence[str]] = None):
 
     """
 
-    parser = argparse.ArgumentParser(description="annofabapiを使ったCLIツール")
+    parser = argparse.ArgumentParser(description="Command Line Interface for AnnoFab")
     parser.add_argument("--version", action="version", version=f"annofabcli {annofabcli.__version__}")
     parser.set_defaults(command_help=parser.print_help)
 

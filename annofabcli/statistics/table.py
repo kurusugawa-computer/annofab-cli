@@ -8,14 +8,22 @@ import dateutil
 import more_itertools
 import numpy
 import pandas
-from annofabapi.dataclass.annotation import SimpleAnnotationDetail
 from annofabapi.dataclass.statistics import (
     ProjectAccountStatistics,
     ProjectAccountStatisticsHistory,
     WorktimeStatistics,
     WorktimeStatisticsItem,
 )
-from annofabapi.models import InputDataId, Inspection, InspectionStatus, Task, TaskHistory, TaskPhase, TaskStatus
+from annofabapi.models import (
+    InputData,
+    InputDataId,
+    Inspection,
+    InspectionStatus,
+    Task,
+    TaskHistory,
+    TaskPhase,
+    TaskStatus,
+)
 from annofabapi.utils import (
     get_number_of_rejections,
     get_task_history_index_skipped_acceptance,
@@ -65,18 +73,19 @@ class Table:
     _task_id_list: Optional[List[str]] = None
     _task_list: Optional[List[Task]] = None
     _inspections_dict: Optional[Dict[str, Dict[InputDataId, List[Inspection]]]] = None
+    _input_data_dict: Optional[Dict[str, List[InputData]]] = None
+    _task_histories_dict: Optional[Dict[str, List[TaskHistory]]] = None
     _annotations_dict: Optional[Dict[str, Dict[InputDataId, Dict[str, Any]]]] = None
     _worktime_statistics: Optional[List[WorktimeStatistics]] = None
     _account_statistics: Optional[List[ProjectAccountStatistics]] = None
     _labor_list: Optional[List[Dict[str, Any]]] = None
 
     def __init__(
-        self, database: Database, task_query_param: Dict[str, Any], ignored_task_id_list: Optional[List[str]] = None,
+        self, database: Database, ignored_task_id_list: Optional[List[str]] = None,
     ):
         self.annofab_service = database.annofab_service
         self.annofab_facade = AnnofabApiFacade(database.annofab_service)
         self.database = database
-        self.task_query_param = task_query_param
         self.ignored_task_id_list = ignored_task_id_list
 
         self.project_id = self.database.project_id
@@ -119,7 +128,7 @@ class Table:
         if self._task_list is not None:
             return self._task_list
         else:
-            task_list = self.database.read_tasks_from_checkpoint()
+            task_list = self.database.read_tasks_from_json()
             self._task_list = task_list
             return self._task_list
 
@@ -130,6 +139,21 @@ class Table:
             task_id_list = [t["task_id"] for t in self._get_task_list()]
             self._inspections_dict = self.database.read_inspections_from_json(task_id_list)
             return self._inspections_dict
+
+    def _get_input_data_dict(self) -> Dict[str, List[InputData]]:
+        if self._input_data_dict is not None:
+            return self._input_data_dict
+        else:
+            self._input_data_dict = self.database.read_input_data_from_json(self._get_task_list())
+            return self._input_data_dict
+
+    def _get_task_histories_dict(self) -> Dict[str, List[TaskHistory]]:
+        if self._task_histories_dict is not None:
+            return self._task_histories_dict
+        else:
+            task_id_list = [t["task_id"] for t in self._get_task_list()]
+            self._task_histories_dict = self.database.read_task_histories_from_json(task_id_list)
+            return self._task_histories_dict
 
     def _get_annotations_dict(self) -> AnnotationDict:
         if self._annotations_dict is not None:
@@ -147,15 +171,14 @@ class Table:
             self._labor_list = labor_list
             return self._labor_list
 
-    def _create_annotation_summary(self, annotation_list: List[SimpleAnnotationDetail]) -> Dict[str, Any]:
-        annotation_summary = {}
-        annotation_summary["total_count"] = len(annotation_list)
+    def _create_annotation_summary(self, annotation_list: List[Dict[str, Any]]) -> Dict[str, Any]:
+        annotation_summary = {"total_count": len(annotation_list)}
 
         # labelごとのアノテーション数を算出
         for label_name in self.label_dict.values():
             annotation_count = 0
             key = f"label_{label_name}"
-            annotation_count += len([e for e in annotation_list if e.label == label_name])
+            annotation_count += len([e for e in annotation_list if e["label"] == label_name])
             annotation_summary[key] = annotation_count
 
         return annotation_summary
@@ -241,12 +264,9 @@ class Table:
             return None
 
     def _update_annotaion_specs(self):
-        logger.debug("annofab_service.api.get_annotation_specs()")
         annotaion_specs = self.annofab_service.api.get_annotation_specs(self.project_id)[0]
         self.inspection_phrases_dict = self.get_inspection_phrases_dict(annotaion_specs["inspection_phrases"])
         self.label_dict = self.get_labels_dict(annotaion_specs["labels"])
-
-        logger.debug("annofab_service.wrapper.get_all_project_members()")
         self.project_members_dict = self._get_project_members_dict()
 
     def _get_project_members_dict(self) -> Dict[str, Any]:
@@ -451,6 +471,19 @@ class Table:
             else:
                 return None
 
+        # タスク更新日維持と
+        # if len(task_histories) > 0:
+        #     # タスク情報とタスク履歴情報の整合性がとれているかを確認する
+        #     delta = dateutil.parser.parse(task["updated_datetime"]) - dateutil.parser.parse(
+        #         task_histories[-1]["ended_datetime"]
+        #     )
+        #     if abs(delta.total_seconds()) > 1:
+        #         logger.warning(
+        #             f"task_id={task['task_id']}のタスク情報とタスク履歴情報の整合性が取れていない可能性があります。"
+        #             f"task.updated_datetime={task['updated_datetime']},"
+        #             f"task_histories[-1].ended_datetime={task_histories[-1]['ended_datetime']}"
+        #         )
+        #
         annotation_histories = [e for e in task_histories if e["phase"] == TaskPhase.ANNOTATION.value]
         inspection_histories = [e for e in task_histories if e["phase"] == TaskPhase.INSPECTION.value]
         acceptance_histories = [e for e in task_histories if e["phase"] == TaskPhase.ACCEPTANCE.value]
@@ -522,8 +555,11 @@ class Table:
 
         # 受入完了日時を設定
         if task["phase"] == TaskPhase.ACCEPTANCE.value and task["status"] == TaskStatus.COMPLETE.value:
-            assert len(acceptance_histories) > 0, f"len(acceptance_histories) is 0"
-            task["task_completed_datetime"] = acceptance_histories[-1]["ended_datetime"]
+            if len(acceptance_histories) > 0:
+                task["task_completed_datetime"] = acceptance_histories[-1]["ended_datetime"]
+            else:
+                logger.warning(f"task_id={task['task_id']}のタスク履歴が間違っている可能性があります。")
+                task["task_completed_datetime"] = None
         else:
             task["task_completed_datetime"] = None
 
@@ -556,7 +592,7 @@ class Table:
         Returns:
 
         """
-        task_histories_dict = self.database.read_task_histories_from_checkpoint()
+        task_histories_dict = self._get_task_histories_dict()
         task_list = self._get_task_list()
 
         all_task_history_list = []
@@ -578,7 +614,11 @@ class Table:
                 all_task_history_list.append(history)
 
         df = pandas.DataFrame(all_task_history_list)
-        return df
+        if len(df) == 0:
+            logger.warning("タスク履歴の件数が0件です。")
+            return pandas.DataFrame()
+        else:
+            return df
 
     def create_task_df(self) -> pandas.DataFrame:
         """
@@ -588,15 +628,22 @@ class Table:
             annotation_worktime_hour, inspection_worktime_hour, acceptance_worktime_hour, sum_worktime_hour
         """
 
+        def set_input_data_info(arg_task):
+            input_data_list = input_data_dict.get(arg_task["task_id"])
+            input_duration_list = [e["input_duration"] for e in input_data_list]
+            if None in input_duration_list:
+                # 動画プロジェクトや動画時間が設定されていない場合
+                arg_task["input_duration_seconds"] = None
+            else:
+                arg_task["input_duration_seconds"] = sum(input_duration_list)
+
         def set_annotation_info(arg_task):
             total_annotation_count = 0
-
             input_data_id_list = arg_task["input_data_id_list"]
-            input_data_dict = annotations_dict[arg_task["task_id"]]
-
-            for input_data_id in input_data_id_list:
-                total_annotation_count += input_data_dict[input_data_id]["total_count"]
-
+            input_data_dict = annotations_dict.get(arg_task["task_id"], None)
+            if input_data_dict is not None:
+                for input_data_id in input_data_id_list:
+                    total_annotation_count += input_data_dict[input_data_id]["total_count"]
             arg_task["annotation_count"] = total_annotation_count
 
         def set_inspection_info(arg_task):
@@ -621,15 +668,15 @@ class Table:
             arg_task["inspection_count"] = inspection_count
             arg_task["input_data_count_of_inspection"] = input_data_count_of_inspection
 
-        logger.info(f"execute `create_task_df` function")
         tasks = self._get_task_list()
-        task_histories_dict = self.database.read_task_histories_from_checkpoint()
+        task_histories_dict = self._get_task_histories_dict()
         inspections_dict = self._get_inspections_dict()
         annotations_dict = self._get_annotations_dict()
+        input_data_dict = self._get_input_data_dict()
 
         for task in tasks:
             task_id = task["task_id"]
-            task_histories = task_histories_dict[task_id]
+            task_histories = task_histories_dict.get(task_id, [])
 
             account_id = task["account_id"]
             task["user_id"] = self._get_user_id(account_id)
@@ -639,16 +686,17 @@ class Table:
             self.set_task_histories(task, task_histories)
             set_annotation_info(task)
             set_inspection_info(task)
+            set_input_data_info(task)
 
         df = pandas.DataFrame(tasks)
         if len(df) > 0:
             # dictが含まれたDataFrameをbokehでグラフ化するとErrorが発生するので、dictを含む列を削除する
             # https://github.com/bokeh/bokeh/issues/9620
             df = df.drop(["histories_by_phase"], axis=1)
+            return df
         else:
             logger.warning(f"タスク一覧が0件です。")
-
-        return df
+            return pandas.DataFrame()
 
     def create_task_for_annotation_df(self):
         """
@@ -662,7 +710,6 @@ class Table:
         task_list = []
         for task in tasks:
             task_id = task["task_id"]
-            input_data_dict = annotations_dict[task_id]
             new_task = {}
             for key in ["task_id", "phase", "status"]:
                 new_task[key] = task[key]
@@ -670,13 +717,18 @@ class Table:
             new_task["input_data_count"] = len(task["input_data_id_list"])
             input_data_id_list = task["input_data_id_list"]
 
-            for label_name in self.label_dict.values():
-                annotation_count = 0
-                for input_data_id in input_data_id_list:
-                    annotation_summary = input_data_dict[input_data_id]
-                    annotation_count += annotation_summary[f"label_{label_name}"]
+            input_data_dict = annotations_dict.get(task_id, None)
+            if input_data_dict is not None:
+                for label_name in self.label_dict.values():
+                    annotation_count = 0
+                    for input_data_id in input_data_id_list:
+                        annotation_summary = input_data_dict[input_data_id]
+                        annotation_count += annotation_summary[f"label_{label_name}"]
 
-                new_task[f"label_{label_name}"] = annotation_count
+                    new_task[f"label_{label_name}"] = annotation_count
+            else:
+                for label_name in self.label_dict.values():
+                    new_task[f"label_{label_name}"] = 0
 
             task_list.append(new_task)
 
@@ -754,7 +806,7 @@ class Table:
         プロジェクトメンバ一覧の情報
         """
 
-        task_histories_dict = self.database.read_task_histories_from_checkpoint()
+        task_histories_dict = self._get_task_histories_dict()
 
         member_dict = {}
         for account_id, member in self.project_members_dict.items():
@@ -777,7 +829,7 @@ class Table:
         for _, row_task in task_df.iterrows():
             task_id = row_task["task_id"]
 
-            task_histories = task_histories_dict[task_id]
+            task_histories = task_histories_dict.get(task_id, [])
 
             # 初回のアノテーションに関わった個数
             if row_task["first_annotation_account_id"] is not None:
@@ -863,6 +915,10 @@ class Table:
             task_df: タスク一覧のDataFrame. 列が追加される
         """
         # 教師付の開始時刻でソートして、indexを更新する
+        if len(task_df) == 0:
+            logger.warning(f"タスク一覧が0件です。")
+            return pandas.DataFrame()
+
         df = task_df.sort_values(["first_annotation_started_datetime"]).reset_index(drop=True)
         # タスクの累計数を取得するために設定する
         df["task_count"] = 1
@@ -1064,6 +1120,10 @@ class Table:
             task_id = row.name[0]
             annotation_count = annotation_count_dict[task_id]["input_data_count"]
             return row["worktime_ratio_by_task"] * annotation_count
+
+        if len(task_df) == 0:
+            logger.warning("タスク一覧が0件です。")
+            return pandas.DataFrame()
 
         group_obj = task_history_df.groupby(["task_id", "phase", "phase_stage", "user_id"]).agg(
             {"worktime_hour": "sum"}

@@ -592,7 +592,7 @@ class ListWorktimeByUser(AbstractCommandLineInterface):
             )
 
             if labor_availability_list_dict is not None:
-                labor_availability_list = labor_availability_list_dict[user_id]
+                labor_availability_list = labor_availability_list_dict.get(user_id, [])
                 reform_dict.update(
                     {
                         (username, "予定稼働"): ListWorktimeByUser.get_availability_list(
