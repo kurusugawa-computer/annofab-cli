@@ -1,3 +1,4 @@
+from annofabcli.common.download import DownloadingFile
 import argparse
 import json
 import logging
@@ -54,26 +55,6 @@ class SummarizeTaskCount(AbstractCommandLineInterface):
     タスク数を集計する。
     """
 
-    def get_task_statistics(self, project_id: str) -> List[Dict[str, Any]]:
-        """
-        タスクの進捗状況をCSVに出力するための dict 配列を作成する。
-
-        Args:
-            project_id:
-
-        Returns:
-            タスクの進捗状況に対応するdict配列
-
-        """
-        task_statistics, _ = self.service.api.get_task_statistics(project_id)
-        row_list: List[Dict[str, Any]] = []
-        for stat_by_date in task_statistics:
-            date = stat_by_date["date"]
-            task_stat_list = stat_by_date["tasks"]
-            for task_stat in task_stat_list:
-                task_stat["date"] = date
-            row_list.extend(task_stat_list)
-        return row_list
 
     def get_number_of_inspections_for_project(self, project_id: str) -> int:
         project, _ = self.service.api.get_project(project_id)
@@ -152,22 +133,6 @@ class SummarizeTaskCount(AbstractCommandLineInterface):
         summary_df = summary_df.astype({"task_count": "Int64", "step": "Int64", "phase_stage": "Int64"})
         return summary_df
 
-    def update_task_json_and_wait(self, project_id: str, wait_options: WaitOptions) -> None:
-        try:
-            self.service.api.post_project_tasks_update(project_id)
-        except requests.HTTPError as e:
-            # ジョブが既に実行中ならエラーを無視する
-            if e.response.status_code == requests.codes.conflict:
-                logger.info(f"タスク一覧ファイルの更新処理が既に実行されています。")
-            else:
-                raise e
-
-        self.service.wrapper.wait_for_completion(
-            project_id,
-            JobType.GEN_TASKS_LIST,
-            job_access_interval=wait_options.interval,
-            max_job_access=wait_options.max_tries,
-        )
 
     def summarize_task_count(
         self, project_id: str, task_json_path: Optional[Path], is_latest: bool, wait_options: WaitOptions
@@ -187,22 +152,16 @@ class SummarizeTaskCount(AbstractCommandLineInterface):
         self, project_id: str, task_json_path: Optional[Path], is_latest: bool, wait_options: WaitOptions
     ) -> List[Task]:
         if task_json_path is None:
-            if is_latest:
-                self.update_task_json_and_wait(project_id, wait_options)
-
             cache_dir = annofabcli.utils.get_cache_dir()
             task_json_path = cache_dir / f"task-{project_id}.json"
-            logger.debug(f"タスク一覧ファイルをダウンロード中: {task_json_path}")
-            try:
-                self.service.wrapper.download_project_tasks_url(project_id, str(task_json_path))
-            except requests.HTTPError as e:
-                if e.response.status_code == requests.codes.not_found:
-                    # 補足：停止中プロジェクトだと、タスク一覧ファイル or 入力データ一覧ファイルが存在しないケースがある
-                    logger.info(f"タスク一覧ファイルが存在しなかったので、タスク一覧ファイルの生成処理を実行します。")
-                    self.update_task_json_and_wait(project_id, wait_options)
-                    self.service.wrapper.download_project_tasks_url(project_id, str(task_json_path))
-                else:
-                    raise e
+
+            downloading_obj = DownloadingFile(self.service)
+            downloading_obj.download_task_json(
+                    project_id,
+                    dest_path=str(task_json_path),
+                    is_latest=is_latest,
+                    wait_options=wait_options,
+                )
 
         with task_json_path.open(encoding="utf-8") as f:
             task_list = json.load(f)

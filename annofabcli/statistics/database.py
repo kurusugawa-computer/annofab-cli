@@ -208,9 +208,9 @@ class Database:
             task_histories_dict = json.load(f)
 
         if task_id_list is not None:
-            for task_id in task_id_list:
-                if task_id not in task_histories_dict.keys():
-                    del task_histories_dict[task_id]
+            removed_task_id_set = set(task_histories_dict.keys()) - set(task_id_list)
+            for task_id in removed_task_id_set:
+                del task_histories_dict[task_id]
 
         return task_histories_dict
 
