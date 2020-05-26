@@ -14,7 +14,16 @@ from annofabapi.dataclass.statistics import (
     WorktimeStatistics,
     WorktimeStatisticsItem,
 )
-from annofabapi.models import InputDataId, Inspection, InspectionStatus, Task, TaskHistory, TaskPhase, TaskStatus
+from annofabapi.models import (
+    InputData,
+    InputDataId,
+    Inspection,
+    InspectionStatus,
+    Task,
+    TaskHistory,
+    TaskPhase,
+    TaskStatus,
+)
 from annofabapi.utils import (
     get_number_of_rejections,
     get_task_history_index_skipped_acceptance,
@@ -64,6 +73,7 @@ class Table:
     _task_id_list: Optional[List[str]] = None
     _task_list: Optional[List[Task]] = None
     _inspections_dict: Optional[Dict[str, Dict[InputDataId, List[Inspection]]]] = None
+    _input_data_dict: Optional[Dict[str, Dict[InputDataId, InputData]]] = None
     _task_histories_dict: Optional[Dict[str, List[TaskHistory]]] = None
     _annotations_dict: Optional[Dict[str, Dict[InputDataId, Dict[str, Any]]]] = None
     _worktime_statistics: Optional[List[WorktimeStatistics]] = None
@@ -129,6 +139,13 @@ class Table:
             task_id_list = [t["task_id"] for t in self._get_task_list()]
             self._inspections_dict = self.database.read_inspections_from_json(task_id_list)
             return self._inspections_dict
+
+    def _get_input_data_dict(self) -> Dict[str, Dict[InputDataId, InputData]]:
+        if self._input_data_dict is not None:
+            return self._input_data_dict
+        else:
+            self._input_data_dict = self.database.read_input_data_from_json(self._get_task_list())
+            return self._input_data_dict
 
     def _get_task_histories_dict(self) -> Dict[str, List[TaskHistory]]:
         if self._task_histories_dict is not None:

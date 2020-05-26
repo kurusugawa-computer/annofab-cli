@@ -1,0 +1,19 @@
+[
+    {
+        "input_data_id": "2186d46a-aa5f-4f9f-a69f-25500a78f647",
+        "project_id": "12345678-abcd-1234-abcd-1234abcd5678",
+        "organization_id": "12345678-abcd-1234-abcd-1234abcd5678",
+        "input_data_set_id": "cae4062d-8ee1-46ae-b6bc-d8eef3a3b0a6",
+        "input_data_name": "foo.mp4",
+        "input_data_path": "s3://af-production-input/organizations/12345678-abcd-1234-abcd-1234abcd5678/input_data_set/cae4062d-8ee1-46ae-b6bc-d8eef3a3b0a6/input_data/2186d46a-aa5f-4f9f-a69f-25500a78f647/e401170a-1fcd-4401-83f4-9c2deb12a9af",
+        "url": null,
+        "etag": null,
+        "updated_datetime": "2019-09-28T19:41:22.337+09:00",
+        "resized_resolution": null,
+        "original_input_data_path": "s3://af-production-input/organizations/12345678-abcd-1234-abcd-1234abcd5678/input_data_set/cae4062d-8ee1-46ae-b6bc-d8eef3a3b0a6/input_data/2186d46a-aa5f-4f9f-a69f-25500a78f647/e401170a-1fcd-4401-83f4-9c2deb12a9af",
+        "original_resolution": null,
+        "input_duration": 12.3,
+        "sign_required": false,
+        "metadata": {}
+    }
+]

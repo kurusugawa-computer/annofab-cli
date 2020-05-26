@@ -17,7 +17,7 @@ import annofabapi.utils
 import dateutil
 import dateutil.parser
 import more_itertools
-from annofabapi.models import InputDataId, Inspection, JobStatus, JobType, Task, TaskHistory
+from annofabapi.models import InputData, InputDataId, Inspection, JobStatus, JobType, Task, TaskHistory
 from annofabapi.parser import SimpleAnnotationZipParser
 
 from annofabcli.common.dataclasses import WaitOptions
@@ -182,6 +182,24 @@ class Database:
 
             input_data_dict[input_data_id] = inspection_list
             tasks_dict[task_id] = input_data_dict
+
+        return tasks_dict
+
+    def read_input_data_from_json(self, task_list: List[Task]) -> Dict[str, Dict[InputDataId, InputData]]:
+        path = self.input_data_json_path
+        logger.debug(f"reading {path}")
+        with open(str(path)) as f:
+            all_input_data_list = json.load(f)
+
+        all_input_data_dict = {e["input_data_id"]: e for e in all_input_data_list}
+        tasks_dict: Dict[str, Dict[InputDataId, InputData]] = {}
+
+        for task in task_list:
+            task_id = task["task_id"]
+            input_data_id_list = task["input_data_id_list"]
+            tasks_dict[task_id] = {
+                input_data_id: all_input_data_dict[input_data_id] for input_data_id in input_data_id_list
+            }
 
         return tasks_dict
 

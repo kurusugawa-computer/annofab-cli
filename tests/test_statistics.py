@@ -34,3 +34,8 @@ class TestDatabase:
         result = database_obj.read_annotation_summary(task_list, table_obj._create_annotation_summary)
         assert "sample_0" in result
         assert "sample_1" in result
+
+    def test_read_input_data_from_json(self):
+        task_list = [{"task_id": "sample_0", "input_data_id_list": ["2186d46a-aa5f-4f9f-a69f-25500a78f647"]}]
+        result = database_obj.read_input_data_from_json(task_list)
+        assert "sample_0" in result

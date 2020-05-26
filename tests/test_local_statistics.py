@@ -14,16 +14,8 @@ data_path = Path("./tests/data")
 (out_path / "statistics").mkdir(exist_ok=True, parents=True)
 
 project_id = "12345678-abcd-1234-abcd-1234abcd5678"
-csv_obj = Csv(str(out_path), project_id)
 
-# class TestGraph:
-#     def test_write_productivity_line_graph_for_annotator(self):
-#         df = pandas.read_csv(str(data_path / "statistics/教師付作業者別-日別-情報.csv"))
-#         graph_obj.write_productivity_line_graph_for_annotator(df)
-#
-#     def test_write_プロジェクト全体のヒストグラム(self):
-#         df = pandas.read_csv(str(data_path / "statistics/task.csv"))
-#         graph_obj.write_プロジェクト全体のヒストグラム(df)
+csv_obj = Csv(str(out_path), project_id)
 
 
 class TestTable:
