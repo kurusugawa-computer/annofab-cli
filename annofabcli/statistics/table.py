@@ -555,8 +555,11 @@ class Table:
 
         # 受入完了日時を設定
         if task["phase"] == TaskPhase.ACCEPTANCE.value and task["status"] == TaskStatus.COMPLETE.value:
-            assert len(acceptance_histories) > 0, f"len(acceptance_histories) is 0"
-            task["task_completed_datetime"] = acceptance_histories[-1]["ended_datetime"]
+            if len(acceptance_histories) > 0:
+                task["task_completed_datetime"] = acceptance_histories[-1]["ended_datetime"]
+            else:
+                logger.warning(f"task_id={task['task_id']}のタスク履歴が間違っている可能性があります。")
+                task["task_completed_datetime"] = None
         else:
             task["task_completed_datetime"] = None
 
@@ -673,7 +676,7 @@ class Table:
 
         for task in tasks:
             task_id = task["task_id"]
-            task_histories = task_histories_dict[task_id]
+            task_histories = task_histories_dict.get(task_id, [])
 
             account_id = task["account_id"]
             task["user_id"] = self._get_user_id(account_id)
@@ -826,7 +829,7 @@ class Table:
         for _, row_task in task_df.iterrows():
             task_id = row_task["task_id"]
 
-            task_histories = task_histories_dict[task_id]
+            task_histories = task_histories_dict.get(task_id, [])
 
             # 初回のアノテーションに関わった個数
             if row_task["first_annotation_account_id"] is not None:

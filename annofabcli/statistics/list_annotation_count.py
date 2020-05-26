@@ -400,7 +400,7 @@ class ListAnnotationCount(AbstractCommandLineInterface):
             annotation_path = cache_dir / "annotation.zip"
             wait_options = get_wait_options_from_args(get_json_from_args(args.wait_options), DEFAULT_WAIT_OPTIONS)
             downloading_obj = DownloadingFile(self.service)
-            downloading_obj.download_task_json(
+            downloading_obj.download_annotation_zip(
                 project_id, dest_path=str(annotation_path), is_latest=args.latest, wait_options=wait_options,
             )
 
