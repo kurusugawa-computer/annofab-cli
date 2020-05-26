@@ -320,7 +320,7 @@ class VisualizeStatistics(AbstractCommandLineInterface):
         if update:
             database.update_db(download_latest)
 
-        table_obj = Table(database, task_query, ignored_task_id_list)
+        table_obj = Table(database, ignored_task_id_list)
         write_project_name_file(self.service, project_id, output_dir)
 
         write_obj = WriteCsvGraph(table_obj, output_dir, project_id)

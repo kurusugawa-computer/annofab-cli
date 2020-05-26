@@ -8,7 +8,6 @@ import dateutil
 import more_itertools
 import numpy
 import pandas
-from annofabapi.dataclass.annotation import SimpleAnnotationDetail
 from annofabapi.dataclass.statistics import (
     ProjectAccountStatistics,
     ProjectAccountStatisticsHistory,
@@ -72,12 +71,11 @@ class Table:
     _labor_list: Optional[List[Dict[str, Any]]] = None
 
     def __init__(
-        self, database: Database, task_query_param: Dict[str, Any], ignored_task_id_list: Optional[List[str]] = None,
+        self, database: Database, ignored_task_id_list: Optional[List[str]] = None,
     ):
         self.annofab_service = database.annofab_service
         self.annofab_facade = AnnofabApiFacade(database.annofab_service)
         self.database = database
-        self.task_query_param = task_query_param
         self.ignored_task_id_list = ignored_task_id_list
 
         self.project_id = self.database.project_id
@@ -156,15 +154,14 @@ class Table:
             self._labor_list = labor_list
             return self._labor_list
 
-    def _create_annotation_summary(self, annotation_list: List[SimpleAnnotationDetail]) -> Dict[str, Any]:
-        annotation_summary = {}
-        annotation_summary["total_count"] = len(annotation_list)
+    def _create_annotation_summary(self, annotation_list: List[Dict[str, Any]]) -> Dict[str, Any]:
+        annotation_summary = {"total_count": len(annotation_list)}
 
         # labelごとのアノテーション数を算出
         for label_name in self.label_dict.values():
             annotation_count = 0
             key = f"label_{label_name}"
-            annotation_count += len([e for e in annotation_list if e.label == label_name])
+            annotation_count += len([e for e in annotation_list if e["label"] == label_name])
             annotation_summary[key] = annotation_count
 
         return annotation_summary
@@ -460,18 +457,19 @@ class Table:
             else:
                 return None
 
-        if len(task_histories) > 0:
-            # タスク情報とタスク履歴情報の整合性がとれているかを確認する
-            delta = dateutil.parser.parse(task["updated_datetime"]) - dateutil.parser.parse(
-                task_histories[-1]["ended_datetime"]
-            )
-            if abs(delta.total_seconds()) > 1:
-                logger.warning(
-                    f"task_id={task['task_id']}のタスク情報とタスク履歴情報の整合性が取れていない可能性があります。"
-                    f"task.updated_datetime={task['updated_datetime']},"
-                    f"task_histories[-1].ended_datetime={task_histories[-1]['ended_datetime']}"
-                )
-
+        # タスク更新日維持と
+        # if len(task_histories) > 0:
+        #     # タスク情報とタスク履歴情報の整合性がとれているかを確認する
+        #     delta = dateutil.parser.parse(task["updated_datetime"]) - dateutil.parser.parse(
+        #         task_histories[-1]["ended_datetime"]
+        #     )
+        #     if abs(delta.total_seconds()) > 1:
+        #         logger.warning(
+        #             f"task_id={task['task_id']}のタスク情報とタスク履歴情報の整合性が取れていない可能性があります。"
+        #             f"task.updated_datetime={task['updated_datetime']},"
+        #             f"task_histories[-1].ended_datetime={task_histories[-1]['ended_datetime']}"
+        #         )
+        #
         annotation_histories = [e for e in task_histories if e["phase"] == TaskPhase.ANNOTATION.value]
         inspection_histories = [e for e in task_histories if e["phase"] == TaskPhase.INSPECTION.value]
         acceptance_histories = [e for e in task_histories if e["phase"] == TaskPhase.ACCEPTANCE.value]
