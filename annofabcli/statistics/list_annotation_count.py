@@ -397,7 +397,7 @@ class ListAnnotationCount(AbstractCommandLineInterface):
             annotation_path = Path(args.annotation)
         else:
             cache_dir = annofabcli.utils.get_cache_dir()
-            annotation_path = cache_dir / "annotation.zip"
+            annotation_path = cache_dir / f"annotation-{project_id}.zip"
             wait_options = get_wait_options_from_args(get_json_from_args(args.wait_options), DEFAULT_WAIT_OPTIONS)
             downloading_obj = DownloadingFile(self.service)
             downloading_obj.download_annotation_zip(
