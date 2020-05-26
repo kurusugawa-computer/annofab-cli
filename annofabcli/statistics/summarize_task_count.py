@@ -1,15 +1,13 @@
-from annofabcli.common.download import DownloadingFile
 import argparse
 import json
 import logging
 import sys
 from enum import Enum
 from pathlib import Path
-from typing import Any, Dict, List, Optional
+from typing import List, Optional
 
 import pandas
-import requests
-from annofabapi.models import JobType, ProjectMemberRole, Task, TaskPhase, TaskStatus
+from annofabapi.models import ProjectMemberRole, Task, TaskPhase, TaskStatus
 from annofabapi.utils import get_number_of_rejections
 
 import annofabcli
@@ -23,6 +21,7 @@ from annofabcli.common.cli import (
     get_wait_options_from_args,
 )
 from annofabcli.common.dataclasses import WaitOptions
+from annofabcli.common.download import DownloadingFile
 
 logger = logging.getLogger(__name__)
 
@@ -54,7 +53,6 @@ class SummarizeTaskCount(AbstractCommandLineInterface):
     """
     タスク数を集計する。
     """
-
 
     def get_number_of_inspections_for_project(self, project_id: str) -> int:
         project, _ = self.service.api.get_project(project_id)
@@ -133,7 +131,6 @@ class SummarizeTaskCount(AbstractCommandLineInterface):
         summary_df = summary_df.astype({"task_count": "Int64", "step": "Int64", "phase_stage": "Int64"})
         return summary_df
 
-
     def summarize_task_count(
         self, project_id: str, task_json_path: Optional[Path], is_latest: bool, wait_options: WaitOptions
     ) -> None:
@@ -157,11 +154,8 @@ class SummarizeTaskCount(AbstractCommandLineInterface):
 
             downloading_obj = DownloadingFile(self.service)
             downloading_obj.download_task_json(
-                    project_id,
-                    dest_path=str(task_json_path),
-                    is_latest=is_latest,
-                    wait_options=wait_options,
-                )
+                project_id, dest_path=str(task_json_path), is_latest=is_latest, wait_options=wait_options,
+            )
 
         with task_json_path.open(encoding="utf-8") as f:
             task_list = json.load(f)

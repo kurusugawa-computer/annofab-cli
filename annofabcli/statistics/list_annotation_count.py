@@ -23,8 +23,18 @@ from dataclasses_json import dataclass_json
 import annofabcli
 import annofabcli.common.cli
 from annofabcli import AnnofabApiFacade
-from annofabcli.common.cli import AbstractCommandLineInterface, ArgumentParser, build_annofabapi_resource_and_login
+from annofabcli.common.cli import (
+    AbstractCommandLineInterface,
+    ArgumentParser,
+    build_annofabapi_resource_and_login,
+    get_json_from_args,
+    get_wait_options_from_args,
+)
+from annofabcli.common.dataclasses import WaitOptions
+from annofabcli.common.download import DownloadingFile
 from annofabcli.common.visualize import AddProps, MessageLocale
+
+DEFAULT_WAIT_OPTIONS = WaitOptions(interval=60, max_tries=360)
 
 logger = logging.getLogger(__name__)
 
@@ -388,8 +398,11 @@ class ListAnnotationCount(AbstractCommandLineInterface):
         else:
             cache_dir = annofabcli.utils.get_cache_dir()
             annotation_path = cache_dir / "annotation.zip"
-            logger.info(f"Simpleアノテーションzipをダウンロード中: {annotation_path}")
-            self.service.wrapper.download_annotation_archive(project_id, str(annotation_path), v2=True)
+            wait_options = get_wait_options_from_args(get_json_from_args(args.wait_options), DEFAULT_WAIT_OPTIONS)
+            downloading_obj = DownloadingFile(self.service)
+            downloading_obj.download_task_json(
+                project_id, dest_path=str(annotation_path), is_latest=args.latest, wait_options=wait_options,
+            )
 
         group_by = GroupBy(args.group_by)
         if group_by == GroupBy.TASK_ID:
@@ -407,7 +420,7 @@ def parse_args(parser: argparse.ArgumentParser):
 
     argument_parser.add_project_id()
     parser.add_argument(
-        "--annotation", type=str, help="Simpleアノテーションzip、またはzipを展開したディレクトリを指定します。" "指定しない場合はAnnoFabからダウンロードします。"
+        "--annotation", type=str, help="アノテーションzip、またはzipを展開したディレクトリを指定します。" "指定しない場合はAnnoFabからダウンロードします。"
     )
     parser.add_argument("-o", "--output_dir", type=str, required=True, help="出力ディレクトリのパス")
 
@@ -417,6 +430,22 @@ def parse_args(parser: argparse.ArgumentParser):
         choices=[GroupBy.TASK_ID.value, GroupBy.INPUT_DATA_ID.value],
         default=GroupBy.TASK_ID.value,
         help="アノテーションの個数をどの単位で集約するかを指定してます。デフォルトは'task_id'です。",
+    )
+
+    parser.add_argument(
+        "--latest",
+        action="store_true",
+        help="'--annotation'を指定しないとき、最新のアノテーションzipを参照します。このオプションを指定すると、アノテーションzipを更新するのに数分待ちます。",
+    )
+
+    parser.add_argument(
+        "--wait_options",
+        type=str,
+        help="アノテーションzipの更新が完了するまで待つ際のオプションを、JSON形式で指定してください。"
+        "`file://`を先頭に付けるとjsonファイルを指定できます。"
+        'デフォルは`{"interval":60, "max_tries":360}` です。'
+        "`interval`:完了したかを問い合わせる間隔[秒], "
+        "`max_tires`:完了したかの問い合わせを最大何回行うか。",
     )
 
     parser.set_defaults(subcommand_func=main)
