@@ -611,7 +611,11 @@ class Table:
                 all_task_history_list.append(history)
 
         df = pandas.DataFrame(all_task_history_list)
-        return df
+        if len(df) == 0:
+            logger.warning("タスク履歴の件数が0件です。")
+            return pandas.DataFrame()
+        else:
+            return df
 
     def create_task_df(self) -> pandas.DataFrame:
         """
@@ -623,9 +627,12 @@ class Table:
 
         def set_input_data_info(arg_task):
             input_data_list = input_data_dict.get(arg_task["task_id"])
-            arg_task["input_duration_seconds"] = sum(
-                [e["input_duration"] for e in input_data_list if e["input_duration"] is not None]
-            )
+            input_duration_list = [e["input_duration"] for e in input_data_list]
+            if None in input_duration_list:
+                # 動画プロジェクトや動画時間が設定されていない場合
+                arg_task["input_duration_seconds"] = None
+            else:
+                arg_task["input_duration_seconds"] = sum(input_duration_list)
 
         def set_annotation_info(arg_task):
             total_annotation_count = 0
@@ -683,10 +690,10 @@ class Table:
             # dictが含まれたDataFrameをbokehでグラフ化するとErrorが発生するので、dictを含む列を削除する
             # https://github.com/bokeh/bokeh/issues/9620
             df = df.drop(["histories_by_phase"], axis=1)
+            return df
         else:
             logger.warning(f"タスク一覧が0件です。")
-
-        return df
+            return pandas.DataFrame()
 
     def create_task_for_annotation_df(self):
         """
@@ -1110,6 +1117,10 @@ class Table:
             task_id = row.name[0]
             annotation_count = annotation_count_dict[task_id]["input_data_count"]
             return row["worktime_ratio_by_task"] * annotation_count
+
+        if len(task_df) == 0:
+            logger.warning("タスク一覧が0件です。")
+            return pandas.DataFrame()
 
         group_obj = task_history_df.groupby(["task_id", "phase", "phase_stage", "user_id"]).agg(
             {"worktime_hour": "sum"}

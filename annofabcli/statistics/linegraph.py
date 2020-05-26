@@ -1021,10 +1021,8 @@ class LineGraph:
                 color=color,
             )
         hover_tool = self._create_hover_tool(tooltip_item)
-        figs = [fig]
-        for fig in figs:
-            self._set_legend(fig, hover_tool)
+        self._set_legend(fig, hover_tool)
 
         bokeh.plotting.reset_output()
         bokeh.plotting.output_file(output_file, title=html_title)
-        bokeh.plotting.save(bokeh.layouts.column(figs))
+        bokeh.plotting.save(bokeh.layouts.column([fig]))

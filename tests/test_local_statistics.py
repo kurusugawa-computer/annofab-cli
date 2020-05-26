@@ -123,3 +123,9 @@ class TestLineGraph:
         df = pandas.read_csv(str(data_path / "statistics/task.csv"))
         cumulative_df = Table.create_cumulative_df_by_first_acceptor(df)
         self.line_graph_obj.write_cumulative_line_graph_for_acceptor(cumulative_df)
+
+    def test_write_cumulative_line_graph_overall(self):
+        # df_task = pandas.read_csv(str(data_path / "statistics/task.csv"))
+        df_task = pandas.read_csv("/home/vagrant/Downloads/hoge1/triad-13-タスクlist.csv")
+        df_cumulative = Table.create_cumulative_df_overall(df_task)
+        self.line_graph_obj.write_cumulative_line_graph_overall(df_cumulative)
