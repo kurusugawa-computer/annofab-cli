@@ -132,22 +132,55 @@ def print_total(df: pd.DataFrame) -> pd.DataFrame:
     return result
 
 
-def print_column_list(df: pd.DataFrame) -> pd.DataFrame:
+def create_column_list(df: pd.DataFrame) -> pd.DataFrame:
     total_df, _, _, _ = calc_df_total(df=df)
 
     # 結果を合体する
-    result = total_df.round(2).replace({np.inf: "--", np.nan: "--"})
+    result = (
+        total_df[
+            [
+                "date",
+                "user_id",
+                "user_name",
+                "user_biography",
+                "worktime_planned",
+                "worktime_actual",
+                "worktime_monitored",
+                "activity_rate",
+                "monitor_rate",
+            ]
+        ]
+        .round(2)
+        .replace({np.inf: "--", np.nan: "--"})
+    )
     return result
 
 
-def print_for_each_column_list(df: pd.DataFrame) -> pd.DataFrame:
-    total_df = pd.DataFrame(
-        df.groupby(
-            ["user_name", "user_id", "date", "user_biography", "project_id", "project_title"], as_index=False
-        ).sum()
+def create_column_list_per_project(df: pd.DataFrame) -> pd.DataFrame:
+    df["user_biography"] = df["user_biography"].fillna("")
+    df["activity_rate"] = df["worktime_actual"] / df["worktime_planned"]
+    df["monitor_rate"] = df["worktime_monitored"] / df["worktime_actual"]
+    print(df["user_biography"])
+    # 出力対象の列を指定する
+    result = (
+        df[
+            [
+                "date",
+                "project_id",
+                "project_title",
+                "user_id",
+                "user_name",
+                "user_biography",
+                "worktime_planned",
+                "worktime_actual",
+                "worktime_monitored",
+                "activity_rate",
+                "monitor_rate",
+            ]
+        ]
+        .round(2)
+        .replace({np.inf: "--", np.nan: "--"})
     )
-    # 結果を合体する
-    result = total_df.round(2).replace({np.inf: "--", np.nan: "--"})
 
     return result
 
