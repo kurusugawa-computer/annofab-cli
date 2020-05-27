@@ -12,7 +12,7 @@ import annofabcli
 from annofabcli import AnnofabApiFacade
 from annofabcli.common.cli import AbstractCommandLineInterface, ArgumentParser, build_annofabapi_resource_and_login
 from annofabcli.statistics.csv import Csv
-from annofabcli.statistics.database import Database
+from annofabcli.statistics.database import Database, Query
 from annofabcli.statistics.histogram import Histogram
 from annofabcli.statistics.linegraph import LineGraph
 from annofabcli.statistics.scatter import Scatter
@@ -148,8 +148,7 @@ class WriteCsvGraph:
 
         """
         task_df = self._get_task_df()
-
-        task_cumulative_df_overall = self.table_obj.create_cumulative_df_overall(task_df)
+        task_cumulative_df_overall = Table.create_cumulative_df_overall(task_df)
         catch_exception(self.graph_obj.write_cumulative_line_graph_overall)(task_cumulative_df_overall)
 
     def write_linegraph_for_by_user(self, user_id_list: Optional[List[str]] = None) -> None:
@@ -163,6 +162,9 @@ class WriteCsvGraph:
 
         """
         task_df = self._get_task_df()
+        if len(task_df) == 0:
+            logger.warning(f"タスク一覧が0件のため、折れ線グラフを出力しません。")
+            return
 
         task_cumulative_df_by_annotator = self.table_obj.create_cumulative_df_by_first_annotator(task_df)
         catch_exception(self.graph_obj.write_cumulative_line_graph_for_annotator)(
@@ -256,17 +258,12 @@ class WriteCsvGraph:
         catch_exception(self.csv_obj.write_教師付作業者別日毎の情報)(df_by_date_user)
 
     def write_productivity_csv(self) -> None:
+
         task_history_df = self._get_task_history_df()
         catch_exception(self.csv_obj.write_task_history_list)(task_history_df)
 
         df_labor = self._get_labor_df()
         catch_exception(self.csv_obj.write_labor_list)(df_labor)
-
-        task_df = self._get_task_df()
-        task_history_df = self._get_task_history_df()
-
-        annotation_count_ratio_df = self.table_obj.create_annotation_count_ratio_df(task_history_df, task_df)
-        catch_exception(self.csv_obj._write_csv)("タスク内の作業時間の比率.csv", annotation_count_ratio_df)
 
         productivity_df = self._get_productivity_df()
         catch_exception(self.csv_obj.write_productivity_from_aw_time)(productivity_df)
@@ -286,8 +283,7 @@ class VisualizeStatistics(AbstractCommandLineInterface):
         ignored_task_id_list: List[str],
         user_id_list: List[str],
         update: bool = False,
-        should_update_annotation_zip: bool = False,
-        should_update_task_json: bool = False,
+        download_latest: bool = False,
         start_date: Optional[str] = None,
         end_date: Optional[str] = None,
     ):
@@ -305,21 +301,29 @@ class VisualizeStatistics(AbstractCommandLineInterface):
         checkpoint_dir = work_dir / project_id
         checkpoint_dir.mkdir(exist_ok=True, parents=True)
 
-        database = Database(self.service, project_id, str(checkpoint_dir))
-        if update:
-            database.update_db(
-                task_query,
-                ignored_task_id_list,
-                should_update_annotation_zip=should_update_annotation_zip,
-                should_update_task_json=should_update_task_json,
+        database = Database(
+            self.service,
+            project_id,
+            str(checkpoint_dir),
+            query=Query(
+                task_query_param=task_query,
+                ignored_task_id_list=ignored_task_id_list,
                 start_date=start_date,
                 end_date=end_date,
-            )
+            ),
+        )
+        if update:
+            database.update_db(download_latest)
 
-        table_obj = Table(database, task_query, ignored_task_id_list)
+        table_obj = Table(database, ignored_task_id_list)
         write_project_name_file(self.service, project_id, output_dir)
 
         write_obj = WriteCsvGraph(table_obj, output_dir, project_id)
+        if len(write_obj._get_task_df()) == 0:
+            logger.warning(f"タスク一覧が0件なのでファイルを出力しません。終了します。")
+            return
+        write_obj.write_csv_for_task()
+
         # ヒストグラム
         write_obj.write_histogram_for_task()
         write_obj.write_histogram_for_annotation()
@@ -334,7 +338,7 @@ class VisualizeStatistics(AbstractCommandLineInterface):
         # CSV
         write_obj.write_whole_productivity_csv_per_date()
         write_obj.write_productivity_csv()
-        write_obj.write_csv_for_task()
+
         write_obj.write_csv_for_annotation()
         write_obj.write_csv_for_account_statistics()
         write_obj.write_csv_for_date_user()
@@ -360,8 +364,7 @@ class VisualizeStatistics(AbstractCommandLineInterface):
             ignored_task_id_list=ignored_task_id_list,
             user_id_list=user_id_list,
             update=not args.not_update,
-            should_update_annotation_zip=args.update_annotation,
-            should_update_task_json=args.update_task_json,
+            download_latest=args.download_latest,
             start_date=args.start_date,
             end_date=args.end_date,
         )
@@ -413,13 +416,9 @@ def parse_args(parser: argparse.ArgumentParser):
     )
 
     parser.add_argument(
-        "--update_annotation",
+        "--download_latest",
         action="store_true",
-        help="アノテーションzipを更新してから、アノテーションzipをダウンロードします。" "ただし、アノテーションzipの最終更新日時がタスクの最終更新日時より新しい場合は、アノテーションzipを更新しません。",
-    )
-
-    parser.add_argument(
-        "--update_task_json", action="store_true", help="タスク全件ファイルJSONを更新してから、タスク全件ファイルJSONをダウンロードします。",
+        help="統計情報の元になるファイル（アノテーションzipなど）の最新版をダウンロードします。ファイルを最新版にするのに5分以上待つ必要があります。",
     )
 
     parser.add_argument(

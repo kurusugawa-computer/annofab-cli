@@ -110,13 +110,16 @@ class Csv:
             "project_id",
             "task_id",
             "phase",
+            "phase_stage",
             "status",
             "user_id",
+            "username",
             "number_of_rejections",
             "number_of_rejections_by_inspection",
             "number_of_rejections_by_acceptance",
             "started_datetime",
             "updated_datetime",
+            "task_completed_datetime",
             "sampling",
             # 1回目の教師付フェーズ
             "first_annotation_user_id",
@@ -143,6 +146,7 @@ class Csv:
             "first_acceptor_worktime_hour",
             # 個数
             "input_data_count",
+            "input_duration_seconds",
             "annotation_count",
             "inspection_count",
             "input_data_count_of_inspection",
@@ -153,6 +157,21 @@ class Csv:
             "inspection_is_skipped",
             "acceptance_is_skipped",
         ]
+
+        if dropped_columns is None:
+            dropped_columns = []
+        dropped_columns.extend(
+            [
+                "first_acceptance_account_id",
+                "first_annotation_account_id",
+                "first_annotation_started_date",
+                "first_inspection_account_id",
+                "task_count",
+                "account_id",
+                "work_time_span",
+            ]
+        )
+
         required_columns = self._create_required_columns(df, prior_columns, dropped_columns)
         self._write_csv(f"{self.short_project_id}-タスクlist.csv", df[required_columns])
 

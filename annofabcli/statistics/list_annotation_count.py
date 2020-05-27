@@ -8,7 +8,6 @@ from pathlib import Path
 from typing import Any, Counter, Dict, Iterator, List, Optional, Set, Tuple
 
 import pandas
-from annofabapi.dataclass.annotation import SimpleAnnotation
 from annofabapi.models import AdditionalDataDefinitionType, TaskPhase, TaskStatus
 from annofabapi.parser import (
     SimpleAnnotationParser,
@@ -23,8 +22,18 @@ from dataclasses_json import dataclass_json
 import annofabcli
 import annofabcli.common.cli
 from annofabcli import AnnofabApiFacade
-from annofabcli.common.cli import AbstractCommandLineInterface, ArgumentParser, build_annofabapi_resource_and_login
+from annofabcli.common.cli import (
+    AbstractCommandLineInterface,
+    ArgumentParser,
+    build_annofabapi_resource_and_login,
+    get_json_from_args,
+    get_wait_options_from_args,
+)
+from annofabcli.common.dataclasses import WaitOptions
+from annofabcli.common.download import DownloadingFile
 from annofabcli.common.visualize import AddProps, MessageLocale
+
+DEFAULT_WAIT_OPTIONS = WaitOptions(interval=60, max_tries=360)
 
 logger = logging.getLogger(__name__)
 
@@ -110,7 +119,7 @@ class ListAnnotationCount(AbstractCommandLineInterface):
 
     @staticmethod
     def count_for_input_data(
-        simple_annotation: SimpleAnnotation, target_attributes: Optional[Set[Tuple[str, str]]] = None
+        simple_annotation: Dict[str, Any], target_attributes: Optional[Set[Tuple[str, str]]] = None
     ) -> AnnotationCounterByInputData:
         """
         1個の入力データに対してアノテーション数をカウントする
@@ -122,25 +131,25 @@ class ListAnnotationCount(AbstractCommandLineInterface):
         Returns:
 
         """
-
-        labels_count = collections.Counter([e.label for e in simple_annotation.details])
+        details = simple_annotation["details"]
+        labels_count = collections.Counter([e["label"] for e in details])
 
         attributes_list: List[Tuple[str, str, str]] = []
-        for detail in simple_annotation.details:
-            label = detail.label
-            for attribute, value in detail.attributes.items():
+        for detail in details:
+            label = detail["label"]
+            for attribute, value in detail["attributes"].items():
                 if target_attributes is not None and (label, attribute) in target_attributes:
                     attributes_list.append((label, attribute, str(value)))
 
         attirbutes_count = collections.Counter(attributes_list)
 
         return AnnotationCounterByInputData(
-            task_id=simple_annotation.task_id,
-            task_phase=simple_annotation.task_phase,
-            task_phase_stage=simple_annotation.task_phase_stage,
-            task_status=simple_annotation.task_status,
-            input_data_id=simple_annotation.input_data_id,
-            input_data_name=simple_annotation.input_data_name,
+            task_id=simple_annotation["task_id"],
+            task_phase=TaskPhase(simple_annotation["task_phase"]),
+            task_phase_stage=simple_annotation["task_phase_stage"],
+            task_status=TaskStatus(simple_annotation["task_status"]),
+            input_data_id=simple_annotation["input_data_id"],
+            input_data_name=simple_annotation["input_data_name"],
             labels_count=labels_count,
             attirbutes_count=attirbutes_count,
         )
@@ -159,20 +168,21 @@ class ListAnnotationCount(AbstractCommandLineInterface):
 
         last_simple_annotation = None
         for parser in task_parser.lazy_parse():
-            simple_annotation = parser.parse()
-            input_data = ListAnnotationCount.count_for_input_data(simple_annotation, target_attributes)
+            # parse()メソッドは遅いので、使わない
+            simple_annotation_dict = parser.load_json()
+            input_data = ListAnnotationCount.count_for_input_data(simple_annotation_dict, target_attributes)
             labels_count += input_data.labels_count
             attirbutes_count += input_data.attirbutes_count
-            last_simple_annotation = simple_annotation
+            last_simple_annotation = simple_annotation_dict
 
         if last_simple_annotation is None:
             raise RuntimeError(f"{task_parser.task_id} ディレクトリにはjsonファイルが１つも含まれていません。")
 
         return AnnotationCounterByTask(
-            task_id=last_simple_annotation.task_id,
-            task_status=last_simple_annotation.task_status,
-            task_phase=last_simple_annotation.task_phase,
-            task_phase_stage=last_simple_annotation.task_phase_stage,
+            task_id=last_simple_annotation["task_id"],
+            task_status=TaskStatus(last_simple_annotation["task_status"]),
+            task_phase=TaskPhase(last_simple_annotation["task_phase"]),
+            task_phase_stage=last_simple_annotation["task_phase_stage"],
             labels_count=labels_count,
             attirbutes_count=attirbutes_count,
         )
@@ -365,8 +375,8 @@ class ListAnnotationCount(AbstractCommandLineInterface):
             if index % 1000 == 0:
                 logger.debug(f"{index}  件目を読み込み中")
 
-            simple_annotation = parser.parse()
-            input_data_counter = self.count_for_input_data(simple_annotation, target_attributes=target_attributes)
+            simple_annotation_dict = parser.load_json()
+            input_data_counter = self.count_for_input_data(simple_annotation_dict, target_attributes=target_attributes)
             input_data_counter_list.append(input_data_counter)
 
         self.print_labels_count_for_input_data(
@@ -387,9 +397,12 @@ class ListAnnotationCount(AbstractCommandLineInterface):
             annotation_path = Path(args.annotation)
         else:
             cache_dir = annofabcli.utils.get_cache_dir()
-            annotation_path = cache_dir / "annotation.zip"
-            logger.info(f"Simpleアノテーションzipをダウンロード中: {annotation_path}")
-            self.service.wrapper.download_annotation_archive(project_id, str(annotation_path), v2=True)
+            annotation_path = cache_dir / f"annotation-{project_id}.zip"
+            wait_options = get_wait_options_from_args(get_json_from_args(args.wait_options), DEFAULT_WAIT_OPTIONS)
+            downloading_obj = DownloadingFile(self.service)
+            downloading_obj.download_annotation_zip(
+                project_id, dest_path=str(annotation_path), is_latest=args.latest, wait_options=wait_options,
+            )
 
         group_by = GroupBy(args.group_by)
         if group_by == GroupBy.TASK_ID:
@@ -407,7 +420,7 @@ def parse_args(parser: argparse.ArgumentParser):
 
     argument_parser.add_project_id()
     parser.add_argument(
-        "--annotation", type=str, help="Simpleアノテーションzip、またはzipを展開したディレクトリを指定します。" "指定しない場合はAnnoFabからダウンロードします。"
+        "--annotation", type=str, help="アノテーションzip、またはzipを展開したディレクトリを指定します。" "指定しない場合はAnnoFabからダウンロードします。"
     )
     parser.add_argument("-o", "--output_dir", type=str, required=True, help="出力ディレクトリのパス")
 
@@ -417,6 +430,22 @@ def parse_args(parser: argparse.ArgumentParser):
         choices=[GroupBy.TASK_ID.value, GroupBy.INPUT_DATA_ID.value],
         default=GroupBy.TASK_ID.value,
         help="アノテーションの個数をどの単位で集約するかを指定してます。デフォルトは'task_id'です。",
+    )
+
+    parser.add_argument(
+        "--latest",
+        action="store_true",
+        help="'--annotation'を指定しないとき、最新のアノテーションzipを参照します。このオプションを指定すると、アノテーションzipを更新するのに数分待ちます。",
+    )
+
+    parser.add_argument(
+        "--wait_options",
+        type=str,
+        help="アノテーションzipの更新が完了するまで待つ際のオプションを、JSON形式で指定してください。"
+        "`file://`を先頭に付けるとjsonファイルを指定できます。"
+        'デフォルは`{"interval":60, "max_tries":360}` です。'
+        "`interval`:完了したかを問い合わせる間隔[秒], "
+        "`max_tires`:完了したかの問い合わせを最大何回行うか。",
     )
 
     parser.set_defaults(subcommand_func=main)
