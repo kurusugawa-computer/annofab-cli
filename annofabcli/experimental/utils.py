@@ -160,7 +160,6 @@ def create_column_list_per_project(df: pd.DataFrame) -> pd.DataFrame:
     df["user_biography"] = df["user_biography"].fillna("")
     df["activity_rate"] = df["worktime_actual"] / df["worktime_planned"]
     df["monitor_rate"] = df["worktime_monitored"] / df["worktime_actual"]
-    print(df["user_biography"])
     # 出力対象の列を指定する
     result = (
         df[
