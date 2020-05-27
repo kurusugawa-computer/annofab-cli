@@ -10,8 +10,8 @@ from typing import Any, Dict, List, Optional
 import annofabapi
 import dateutil.parser
 import pandas as pd
+import pytz
 import requests
-import  pytz
 
 import annofabcli
 import annofabcli.common.cli
@@ -27,8 +27,6 @@ from annofabcli.common.utils import read_lines_except_blank_line
 logger = logging.getLogger(__name__)
 
 
-###utils
-
 def download_content(url: str) -> Any:
     """
     HTTP GETで取得した内容を保存せずそのまま返す
@@ -42,9 +40,9 @@ def download_content(url: str) -> Any:
 
 
 def get_tsv(csv_path: str):
-    with Path(csv_path).open("r", ) as f:
+    with Path(csv_path).open("r",) as f:
         reader = csv.reader(f, delimiter="\t")
-        return [row for row in reader]
+        return reader
 
 
 def get_err_task_history_list(tsv_path: str) -> List[Dict[str, Any]]:
@@ -112,75 +110,81 @@ class FindBreakError(AbstractCommandLineInterface):
         しきい値以上の作業時間になっている開始と終了のhistory_eventsのペアを返す
         """
 
-        def check_applicable_time(
-            task_history: Dict[str, Any], err_task_history_list: List[Dict[str, Any]]
-        ):
+        def check_applicable_time(task_history: Dict[str, Any], err_task_history_list: List[Dict[str, Any]]):
             # project_id,task_id,timeが検索対象と合致しているかを探す
             for err_task_history in err_task_history_list:
-                if task_history["project_id"] == err_task_history["project_id"] and task_history["task_id"] == \
-                    err_task_history["task_id"]:
+                if (
+                    task_history["project_id"] == err_task_history["project_id"]
+                    and task_history["task_id"] == err_task_history["task_id"]
+                ):
                     err_task_history_started_datetime = dateutil.parser.parse(
-                        err_task_history["started_datetime"]).strftime("%Y-%m-%d %H:%M:%S")
+                        err_task_history["started_datetime"]
+                    ).strftime("%Y-%m-%d %H:%M:%S")
                     if err_task_history["ended_datetime"]:
                         err_task_history_ended_datetime = dateutil.parser.parse(
-                            err_task_history["ended_datetime"]).strftime("%Y-%m-%d %H:%M:%S")
+                            err_task_history["ended_datetime"]
+                        ).strftime("%Y-%m-%d %H:%M:%S")
                     else:
                         err_task_history_ended_datetime = datetime.datetime.now().strftime("%Y-%m-%d %H:%M:%S")
 
-                    task_history_started_datetime = dateutil.parser.parse(
-                        task_history["started_datetime"]).strftime("%Y-%m-%d %H:%M:%S")
+                    task_history_started_datetime = dateutil.parser.parse(task_history["started_datetime"]).strftime(
+                        "%Y-%m-%d %H:%M:%S"
+                    )
                     if task_history["ended_datetime"]:
-                        task_history_ended_datetime = dateutil.parser.parse(
-                        task_history["ended_datetime"]).strftime("%Y-%m-%d %H:%M:%S")
+                        task_history_ended_datetime = dateutil.parser.parse(task_history["ended_datetime"]).strftime(
+                            "%Y-%m-%d %H:%M:%S"
+                        )
                     else:
                         task_history_ended_datetime = datetime.datetime.now().strftime("%Y-%m-%d %H:%M:%S")
 
-                    if err_task_history_started_datetime == task_history_started_datetime or err_task_history_ended_datetime == task_history_ended_datetime:
+                    if (
+                        err_task_history_started_datetime == task_history_started_datetime
+                        or err_task_history_ended_datetime == task_history_ended_datetime
+                    ):
                         task_history["modified_value"] = err_task_history["modified_value"]
-                        task_history["modified_ended_datetime"] = dateutil.parser.parse(
-                            task_history["started_datetime"]) + datetime.timedelta(
-                            minutes=int(err_task_history["modified_value"])) if not err_task_history[
-                                                                                        "modified_value"] == "" else ""
+                        task_history["modified_ended_datetime"] = (
+                            dateutil.parser.parse(task_history["started_datetime"])
+                            + datetime.timedelta(minutes=int(err_task_history["modified_value"]))
+                            if not err_task_history["modified_value"] == ""
+                            else ""
+                        )
                         return True
 
             return False
 
-        def check_period(task_history,start_date,end_date):
+        def check_period(task_history, start_date, end_date):
             if not task_history["ended_datetime"]:
                 return False
 
-            task_history_started_datetime = dateutil.parser.parse(
-                task_history["started_datetime"])
-            task_history_ended_datetime = dateutil.parser.parse(
-                task_history["ended_datetime"])
+            task_history_started_datetime = dateutil.parser.parse(task_history["started_datetime"])
+            task_history_ended_datetime = dateutil.parser.parse(task_history["ended_datetime"])
 
-            jp = pytz.timezone('Asia/Tokyo')
+            jp = pytz.timezone("Asia/Tokyo")
 
-            started_datetime = jp.localize(dateutil.parser.parse(
-                start_date))
-            ended_datetime = jp.localize(dateutil.parser.parse(
-                end_date))
+            started_datetime = jp.localize(dateutil.parser.parse(start_date))
+            ended_datetime = jp.localize(dateutil.parser.parse(end_date))
 
-            if (task_history_started_datetime >= started_datetime and task_history_started_datetime <= ended_datetime) or \
-                (task_history_ended_datetime >= started_datetime and task_history_ended_datetime <= ended_datetime) :
-                return True
-            else:
-                return False
+            return (
+                task_history_started_datetime >= started_datetime and task_history_started_datetime <= ended_datetime
+            ) or (task_history_ended_datetime >= started_datetime and task_history_ended_datetime <= ended_datetime)
 
         err_events_list = []
         for task_history_event in task_history_events.values():
             for task_history in task_history_event:
                 if check_applicable_time(task_history, err_task_history_list):
-                    task_history["user_name"] = self._get_username(task_history["project_id"],
-                                                                  task_history["account_id"])
+                    task_history["user_name"] = self._get_username(
+                        task_history["project_id"], task_history["account_id"]
+                    )
                     task_history["project_title"] = self.facade.get_project_title(task_history["project_id"])
                     err_events_list.append(task_history)
                 elif annofabcli.common.utils.isoduration_to_minute(
-                    task_history["accumulated_labor_time_milliseconds"]) >= self.args.threshold and check_period(task_history,self.args.start_date,self.args.end_date):
+                    task_history["accumulated_labor_time_milliseconds"]
+                ) >= self.args.threshold and check_period(task_history, self.args.start_date, self.args.end_date):
                     task_history["modified_ended_datetime"] = ""
                     task_history["modified_value"] = ""
-                    task_history["user_name"] = self._get_username(task_history["project_id"],
-                                                                   task_history["account_id"])
+                    task_history["user_name"] = self._get_username(
+                        task_history["project_id"], task_history["account_id"]
+                    )
                     task_history["project_title"] = self.facade.get_project_title(task_history["project_id"])
                     err_events_list.append(task_history)
                 else:
@@ -223,12 +227,14 @@ class FindBreakError(AbstractCommandLineInterface):
                 continue
             # timeとしきい値絞り込み
             err_events.extend(
-                self.get_err_events(task_history_events=task_history_events,
-                                    err_task_history_list=get_err_task_history_list(
-                                        args.err_file_path) if args.err_file_path else [])
+                self.get_err_events(
+                    task_history_events=task_history_events,
+                    err_task_history_list=get_err_task_history_list(args.err_file_path) if args.err_file_path else [],
+                )
             )
 
         output_err_events(err_events_list=err_events, output=self.output)
+
 
 def output_err_events(err_events_list: List[Dict[str, Any]], output: str = None):
     """
@@ -259,7 +265,7 @@ def output_err_events(err_events_list: List[Dict[str, Any]], output: str = None)
                 "ended_datetime",
                 "accumulated_labor_time_milliseconds",
                 "modified_ended_datetime",
-                "modified_value"
+                "modified_value",
             ]
         ],
         output=output,
@@ -276,9 +282,7 @@ def main(args):
 def parse_args(parser: argparse.ArgumentParser):
     argument_parser = ArgumentParser(parser)
 
-    parser.add_argument(
-        "--threshold", type=int, default=180, help="1履歴何分以上を検知対象とするか。指定しない場合は300分(5時間)"
-    )
+    parser.add_argument("--threshold", type=int, default=180, help="1履歴何分以上を検知対象とするか。指定しない場合は300分(5時間)")
     parser.add_argument("--start_date", type=str, required=True, help="集計開始日(YYYY-mm-dd)")
     parser.add_argument("--end_date", type=str, required=True, help="集計終了日(YYYY-mm-dd)")
     parser.add_argument("--import_file_path", type=str, help="importするタスク履歴イベント全件ファイル,指定しない場合はタスク履歴イベント全件を新規取得する")
@@ -291,8 +295,7 @@ def parse_args(parser: argparse.ArgumentParser):
         type=str,
         required=True,
         nargs="+",
-        help="対象のプロジェクトのproject_idを指定します。複数指定可"
-             "`file://`を先頭に付けると、project_idの一覧が記載されたファイルを指定できます。",
+        help="対象のプロジェクトのproject_idを指定します。複数指定可" "`file://`を先頭に付けると、project_idの一覧が記載されたファイルを指定できます。",
     )
     parser.set_defaults(subcommand_func=main)
 
