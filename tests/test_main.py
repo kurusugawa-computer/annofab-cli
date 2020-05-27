@@ -573,7 +573,16 @@ class TestStatistics:
         )
         out_file = str(out_path / "summariz-task-count2.csv")
         main(
-            ["statistics", "summarize_task_count", "--task_json", str(data_path / "task.json"), "--output", out_file,]
+            [
+                "statistics",
+                "summarize_task_count",
+                "--project_id",
+                project_id,
+                "--task_json",
+                str(data_path / "task.json"),
+                "--output",
+                out_file,
+            ]
         )
 
 
