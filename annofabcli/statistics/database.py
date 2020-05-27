@@ -437,7 +437,13 @@ class Database:
 
         """
         query = self.query
-        dt_end_date = self._to_datetime_with_tz(query.end_date) if query.end_date is not None else None
+
+        # 終了日はその日の23:59までを対象とするため、１日加算する
+        dt_end_date = (
+            self._to_datetime_with_tz(query.end_date) + datetime.timedelta(days=1)
+            if query.end_date is not None
+            else None
+        )
 
         def filter_task(arg_task: Dict[str, Any]):
             """AND条件で絞り込む"""
@@ -456,7 +462,7 @@ class Database:
             # 終了日で絞り込む
             # 開始日の絞り込み条件はタスク履歴を見る
             if dt_end_date is not None:
-                flag = flag and (dateutil.parser.parse(arg_task["updated_datetime"]) <= dt_end_date)
+                flag = flag and (dateutil.parser.parse(arg_task["updated_datetime"]) < dt_end_date)
 
             if query.ignored_task_id_list is not None:
                 flag = flag and arg_task["task_id"] not in query.ignored_task_id_list
