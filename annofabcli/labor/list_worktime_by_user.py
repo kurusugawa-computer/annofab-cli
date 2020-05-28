@@ -9,8 +9,8 @@ from typing import Any, Callable, Dict, List, Optional, Tuple
 import more_itertools
 import numpy
 import pandas
-import requests
 from annofabapi.models import OrganizationMember, Project
+from annofabapi.utils import allow_404_error
 from dataclasses_json import dataclass_json
 from more_itertools import first_true
 
@@ -105,20 +105,23 @@ class ListWorktimeByUser(AbstractCommandLineInterface):
     _dict_account_statistics: Dict[str, List[Dict[str, Any]]] = {}
     """project_idごとの統計情報dict"""
 
+    @allow_404_error
+    def _get_account_statistics(self, project_id) -> Optional[List[Any]]:
+        account_statistics, _ = self.service.api.get_account_statistics(project_id)
+        return account_statistics
+
     def _get_worktime_monitored_hour_from_project_id(
         self, project_id: str, account_id: str, date: str
     ) -> Optional[float]:
         account_statistics = self._dict_account_statistics.get(project_id)
         if account_statistics is None:
-            try:
-                account_statistics, _ = self.service.api.get_account_statistics(project_id)
-            except requests.HTTPError as e:
-                if e.response.status_code == requests.codes.not_found:
-                    logger.warning(e)
-                    logger.warning("プロジェクトにアクセスできないため、アカウント統計情報を取得できませんでした。")
-                    account_statistics = []
-                else:
-                    raise e
+            result = self._get_account_statistics(project_id)
+            if result is not None:
+                account_statistics = result
+            else:
+                logger.warning("プロジェクトにアクセスできないため、アカウント統計情報を取得できませんでした。")
+                account_statistics = []
+
             self._dict_account_statistics[project_id] = account_statistics
 
         return self._get_worktime_monitored_hour(account_statistics, account_id=account_id, date=date)
@@ -635,9 +638,7 @@ class ListWorktimeByUser(AbstractCommandLineInterface):
             ).fillna(0)
 
         user_df = worktime_df.groupby("user_id").first()[["username", "biography"]]
-
-        df = user_df.join(value_df).reset_index()
-
+        df = user_df.join(value_df, how="left").reset_index()
         return df
 
     @staticmethod
@@ -651,6 +652,13 @@ class ListWorktimeByUser(AbstractCommandLineInterface):
             ).fillna(0)
         else:
             value_df[days_column] = 0
+
+    @staticmethod
+    def get_value_columns(columns: pandas.Series) -> pandas.Series:
+        """
+        ユーザ情報以外のcolumnsを取得する
+        """
+        return columns.drop(["user_id", "username", "biography"])
 
     @staticmethod
     def create_worktime_df_per_user(
@@ -690,13 +698,15 @@ class ListWorktimeByUser(AbstractCommandLineInterface):
                 "plan_working_days",
                 "result_working_days",
             ]
-            if add_availability:
+            if not add_availability:
                 columns.remove("availability_hour")
                 columns.remove("availability_days")
             value_df = pandas.DataFrame(columns=columns)
 
         user_df.set_index("user_id", inplace=True)
-        df = user_df.join(value_df).reset_index().fillna(0)
+        df = user_df.join(value_df, how="left").reset_index()
+        value_columns = ListWorktimeByUser.get_value_columns(df.columns)
+        df[value_columns] = df[value_columns].fillna(0)
         return df
 
     def create_user_df(self, user_id_list: List[str], member_list: List[OrganizationMember]) -> pandas.DataFrame:
@@ -731,7 +741,7 @@ class ListWorktimeByUser(AbstractCommandLineInterface):
         self.write_sum_plan_worktime_list(sum_worktime_df, output_dir)
 
         worktime_df = pandas.DataFrame([e.to_dict() for e in labor_list])  # type: ignore
-        worktime_df_per_date_user = pandas.DataFrame()
+
         if len(worktime_df) > 0:
             self.write_worktime_list(worktime_df, output_dir, add_monitored_worktime)
 
@@ -741,6 +751,7 @@ class ListWorktimeByUser(AbstractCommandLineInterface):
             self.write_worktime_per_user_date(worktime_df_per_date_user, output_dir)
 
         else:
+            worktime_df_per_date_user = pandas.DataFrame()
             logger.info("出力対象のデータが0件のため、'作業時間一覧.csv', '日ごとの作業時間の一覧.csv' を出力しません。")
 
         user_df = self.create_user_df(user_id_list, member_list)
