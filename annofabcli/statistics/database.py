@@ -203,7 +203,6 @@ class Database:
 
     def read_task_histories_from_json(self, task_id_list: Optional[List[str]] = None) -> Dict[str, List[TaskHistory]]:
         logger.debug(f"reading {self.task_histories_json_path}")
-
         with open(str(self.task_histories_json_path)) as f:
             task_histories_dict = json.load(f)
 
@@ -558,8 +557,12 @@ class Database:
                 worktime_result_hour=self._get_worktime_hour(e["values"]["working_time_by_user"], "results"),
             )
 
+        # 未来のデータを取得しても意味がないので、今日の日付を指定する
+        end_date = (
+            self.query.end_date if self.query.end_date is not None else datetime.datetime.now().strftime("%Y-%m-%d")
+        )
         labor_list: List[Dict[str, Any]] = self.annofab_service.api.get_labor_control(
-            {"project_id": project_id, "from": self.query.start_date, "to": self.query.end_date}
+            {"project_id": project_id, "from": self.query.start_date, "to": end_date}
         )[0]
 
         return [to_new_labor(e) for e in labor_list if e["account_id"] is not None]
