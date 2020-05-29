@@ -522,7 +522,7 @@ class AnnofabApiFacade:
             修正したタスク検索クエリ
 
         """
-        api_query = AnnotationQuery(label_id=cli_query.label_id)
+
 
         annotation_specs, _ = self.service.api.get_annotation_specs(project_id)
         specs_labels = annotation_specs["labels"]
@@ -532,14 +532,12 @@ class AnnofabApiFacade:
             label_info = more_itertools.first_true(specs_labels, pred=lambda e: e["label_id"] == cli_query.label_id)
             if label_info is None:
                 raise ValueError(f"label_id: {cli_query.label_id} に一致するラベル情報は見つかりませんでした。")
-
         elif cli_query.label_name_en is not None:
             label_info = self.get_label_info_from_name(specs_labels, cli_query.label_name_en)
-            api_query.label_id = label_info["label_id"]
-
         else:
             raise ValueError("'label_id' または 'label_name_en'のいずれかは必ず指定してください。")
 
+        api_query = AnnotationQuery(label_id=label_info["label_id"])
         if cli_query.attributes is not None:
             api_attirbutes = []
             for cli_attirbute in cli_query.attributes:
@@ -553,14 +551,6 @@ class AnnofabApiFacade:
     def _get_attribute_from_cli(
         additional_data_definitions: List[Dict[str, Any]], cli_attirbute: AdditionalDataForCli
     ) -> AdditionalData:
-
-        api_attirbute = AdditionalData(
-            additional_data_definition_id=cli_attirbute.additional_data_definition_id,
-            flag=cli_attirbute.flag,
-            integer=cli_attirbute.integer,
-            comment=cli_attirbute.comment,
-            choice=cli_attirbute.choice,
-        )
 
         if cli_attirbute.additional_data_definition_id is not None:
             additional_data = more_itertools.first_true(
@@ -576,12 +566,19 @@ class AnnofabApiFacade:
             additional_data = AnnofabApiFacade.get_additional_data_from_name(
                 additional_data_definitions, cli_attirbute.additional_data_definition_name_en
             )
-            api_attirbute.additional_data_definition_id = additional_data["additional_data_definition_id"]
 
         else:
             raise ValueError(
                 "'additional_data_definition_id' または 'additional_data_definition_name_en'のいずれかは必ず指定してください。"
             )
+
+        api_attirbute = AdditionalData(
+            additional_data_definition_id=additional_data["additional_data_definition_id"],
+            flag=cli_attirbute.flag,
+            integer=cli_attirbute.integer,
+            comment=cli_attirbute.comment,
+            choice=cli_attirbute.choice,
+        )
 
         # 選択肢IDを確認
         choices = additional_data["choices"]
