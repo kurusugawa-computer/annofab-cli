@@ -316,12 +316,15 @@ class VisualizeStatistics(AbstractCommandLineInterface):
             database.update_db(download_latest)
 
         table_obj = Table(database, ignored_task_id_list)
-        write_project_name_file(self.service, project_id, output_dir)
-
-        write_obj = WriteCsvGraph(table_obj, output_dir, project_id)
-        if len(write_obj._get_task_df()) == 0:
+        if len(table_obj._get_task_list()) == 0:
             logger.warning(f"タスク一覧が0件なのでファイルを出力しません。終了します。")
             return
+        if len(table_obj._get_task_histories_dict().keys()) == 0:
+            logger.warning(f"タスク履歴一覧が0件なのでファイルを出力しません。終了します。")
+            return
+
+        write_project_name_file(self.service, project_id, output_dir)
+        write_obj = WriteCsvGraph(table_obj, output_dir, project_id)
         write_obj.write_csv_for_task()
 
         # ヒストグラム
