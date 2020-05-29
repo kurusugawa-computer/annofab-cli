@@ -131,7 +131,8 @@ class DeleteAnnotation(AbstractCommandLineInterface):
         logger.info(f"プロジェクト'{project_title}'に対して、タスク{len(task_id_list)} 件のアノテーションを削除します。")
 
         my_account_id = self.facade.get_my_account_id()
-        backup_dir.mkdir(exist_ok=True, parents=True)
+        if backup_dir is not None:
+            backup_dir.mkdir(exist_ok=True, parents=True)
 
         for task_index, task_id in enumerate(task_id_list):
             logger.info(f"{task_index+1} / {len(task_id_list)} 件目: タスク '{task_id}' を削除します。")
@@ -150,7 +151,7 @@ class DeleteAnnotation(AbstractCommandLineInterface):
         dict_annotation_query = get_json_from_args(args.annotation_query)
         if dict_annotation_query is not None:
             annotation_query_for_cli = AnnotationQueryForCli.from_dict(dict_annotation_query)  # type: ignore
-            annotation_query = self.facade.to_annotation_query_from_cli(annotation_query_for_cli)
+            annotation_query = self.facade.to_annotation_query_from_cli(project_id, annotation_query_for_cli)
         else:
             annotation_query = None
 
