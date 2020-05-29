@@ -1,7 +1,6 @@
 """
 annofabapiのfacadeクラス
 """
-
 import logging
 from dataclasses import asdict, dataclass
 from typing import Any, Callable, Dict, List, Optional, Tuple
@@ -11,10 +10,12 @@ import annofabapi.utils
 import more_itertools
 from annofabapi.dataclass.annotation import AdditionalData
 from annofabapi.models import OrganizationMember, OrganizationMemberRole, ProjectId, ProjectMemberRole
+from dataclasses_json import dataclass_json
 
 logger = logging.getLogger(__name__)
 
 
+@dataclass_json
 @dataclass
 class AnnotationQuery:
     """
@@ -25,6 +26,7 @@ class AnnotationQuery:
     attributes: Optional[List[AdditionalData]] = None
 
 
+@dataclass_json
 @dataclass
 class AdditionalDataForCli:
     additional_data_definition_id: Optional[str] = None
@@ -46,6 +48,7 @@ class AdditionalDataForCli:
     """選択肢の英語名"""
 
 
+@dataclass_json
 @dataclass
 class AnnotationQueryForCli:
     """
@@ -523,7 +526,6 @@ class AnnofabApiFacade:
 
         """
 
-
         annotation_specs, _ = self.service.api.get_annotation_specs(project_id)
         specs_labels = annotation_specs["labels"]
 
@@ -541,7 +543,9 @@ class AnnofabApiFacade:
         if cli_query.attributes is not None:
             api_attirbutes = []
             for cli_attirbute in cli_query.attributes:
-                api_attirbutes.append(self._get_attribute_from_cli(label_info["additional_data_definitions"], cli_attirbute))
+                api_attirbutes.append(
+                    self._get_attribute_from_cli(label_info["additional_data_definitions"], cli_attirbute)
+                )
 
             api_query.attributes = api_attirbutes
 

@@ -1,7 +1,7 @@
 import argparse
 import logging
 from pathlib import Path
-from typing import Any, Dict, List, Optional
+from typing import List, Optional
 
 import annofabapi
 import requests
@@ -12,8 +12,13 @@ from annofabapi.utils import can_put_annotation
 import annofabcli
 from annofabcli import AnnofabApiFacade
 from annofabcli.annotation.dump_annotation import DumpAnnotation
-from annofabcli.common.cli import AbstractCommandLineInterface, ArgumentParser, build_annofabapi_resource_and_login
-from annofabcli.common.facade import AnnotationQuery
+from annofabcli.common.cli import (
+    AbstractCommandLineInterface,
+    ArgumentParser,
+    build_annofabapi_resource_and_login,
+    get_json_from_args,
+)
+from annofabcli.common.facade import AnnotationQuery, AnnotationQueryForCli
 
 logger = logging.getLogger(__name__)
 
@@ -114,7 +119,11 @@ class DeleteAnnotation(AbstractCommandLineInterface):
             return True
 
     def delete_annotation_for_task_list(
-        self, project_id: str, task_id_list: List[str], annotation_query: Dict[str, Any], backup_dir: Path
+        self,
+        project_id: str,
+        task_id_list: List[str],
+        annotation_query: Optional[AnnotationQuery] = None,
+        backup_dir: Optional[Path] = None,
     ):
         super().validate_project(project_id, [ProjectMemberRole.OWNER])
 
@@ -126,14 +135,29 @@ class DeleteAnnotation(AbstractCommandLineInterface):
 
         for task_index, task_id in enumerate(task_id_list):
             logger.info(f"{task_index+1} / {len(task_id_list)} 件目: タスク '{task_id}' を削除します。")
-            self.delete_annotation_for_task(project_id, task_id, my_account_id=my_account_id, backup_dir=backup_dir)
+            self.delete_annotation_for_task(
+                project_id,
+                task_id,
+                my_account_id=my_account_id,
+                annotation_query=annotation_query,
+                backup_dir=backup_dir,
+            )
 
     def main(self):
         args = self.args
         project_id = args.project_id
         task_id_list = annofabcli.common.cli.get_list_from_args(args.task_id)
-        backup_dir = Path(args.backup)
-        self.delete_annotation_for_task_list(project_id, task_id_list, backup_dir)
+        dict_annotation_query = get_json_from_args(args.annotation_query)
+        if dict_annotation_query is not None:
+            annotation_query_for_cli = AnnotationQueryForCli.from_dict(dict_annotation_query)  # type: ignore
+            annotation_query = self.facade.to_annotation_query_from_cli(annotation_query_for_cli)
+        else:
+            annotation_query = None
+
+        backup_dir = Path(args.backup) if args.backup is not None else None
+        self.delete_annotation_for_task_list(
+            project_id, task_id_list, annotation_query=annotation_query, backup_dir=backup_dir
+        )
 
 
 def main(args):
@@ -148,12 +172,13 @@ def parse_args(parser: argparse.ArgumentParser):
     argument_parser.add_project_id()
     argument_parser.add_task_id()
 
+    example_annotation_query = '{"label_name_en": "car", "attributes":[{"additional_data_definition_name_en": "occluded", "choice_name_en": "bus"}]}'
     parser.add_argument(
         "-aq",
         "--annotation_query",
         type=str,
-        required=True,
-        help="削除対象のラベルをJSON形式で指定します。キーは`label_name_en' or 'label_id'です。" "`file://`を先頭に付けると、JSON形式のファイルを指定できます。",
+        required=False,
+        help="削除対象のラベルをJSON形式で指定します。" "`file://`を先頭に付けると、JSON形式のファイルを指定できます。" f"`{example_annotation_query}`",
     )
 
     parser.add_argument(
@@ -168,7 +193,10 @@ def parse_args(parser: argparse.ArgumentParser):
 def add_parser(subparsers: argparse._SubParsersAction):
     subcommand_name = "delete"
     subcommand_help = "アノテーションを削除します。"
-    description = "タスク配下のアノテーションを削除します。" + "ただし、作業中/完了状態のタスク、または「過去に割り当てられていて現在の担当者が自分自身でない」タスクのアノテーションは削除できません。"
+    description = (
+        "タスク配下のアノテーションを削除します。" + "ただし、作業中/完了状態のタスク、または「過去に割り当てられていて現在の担当者が自分自身でない」タスクのアノテーションは削除できません。"
+        "間違えてアノテーションを削除してしまっときに復元できるようにするため、'--backup'でバックアップ用のディレクトリを指定することを推奨します。"
+    )
     epilog = "オーナロールを持つユーザで実行してください。"
 
     parser = annofabcli.common.cli.add_parser(subparsers, subcommand_name, subcommand_help, description, epilog=epilog)
