@@ -105,7 +105,7 @@ class ListAnnotationCount(AbstractCommandLineInterface):
         self, project_id: str, annotation_query: Dict[str, Any], task_id: Optional[str] = None
     ) -> Dict[str, Any]:
         """
-        タスク検索クエリを修正する。
+        アノテーション検索クエリを修正する。
         * ``label_name_en`` から ``label_id`` に変換する。
         * ``additional_data_definition_name_en`` から ``additional_data_definition_id`` に変換する。
         * ``choice_name_en`` から ``choice`` に変換する。
