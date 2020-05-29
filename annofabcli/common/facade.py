@@ -541,7 +541,7 @@ class AnnofabApiFacade:
         if cli_query.attributes is not None:
             api_attirbutes = []
             for cli_attirbute in cli_query.attributes:
-                api_attirbutes.append(self._get_attribute_from_cli(label_info, cli_attirbute))
+                api_attirbutes.append(self._get_attribute_from_cli(label_info["additional_data_definitions"], cli_attirbute))
 
             api_query.attributes = api_attirbutes
 
