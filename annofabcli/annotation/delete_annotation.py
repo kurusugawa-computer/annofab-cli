@@ -1,20 +1,31 @@
 import argparse
 import logging
+
 from pathlib import Path
-from typing import List, Optional
+from typing import List, Optional, Dict, Any
 
 import annofabapi
 import requests
 from annofabapi.dataclass.task import Task
+from annofabapi.models import AdditionalData
 from annofabapi.models import ProjectMemberRole, TaskStatus
 from annofabapi.utils import can_put_annotation
-
+from dataclasses import dataclass, asdict
 import annofabcli
 from annofabcli import AnnofabApiFacade
 from annofabcli.annotation.dump_annotation import DumpAnnotation
 from annofabcli.common.cli import AbstractCommandLineInterface, ArgumentParser, build_annofabapi_resource_and_login
 
 logger = logging.getLogger(__name__)
+
+
+@dataclass(frozen=True)
+class AnnotationQuery:
+    """
+    `delete_annotation`メソッドにWebAPIで取得した情報と比較するときのアノテーションクエリ
+    """
+    label_id: str
+    attributes: Optional[List[AdditionalData]] = None
 
 
 class DeleteAnnotation(AbstractCommandLineInterface):
@@ -57,8 +68,9 @@ class DeleteAnnotation(AbstractCommandLineInterface):
         logger.debug(f"task_id={task_id}, input_data_id={input_data_id}: アノテーションを削除しました。")
         return len(old_details)
 
+
     def delete_annotation_for_task(
-        self, project_id: str, task_id: str, my_account_id: str, backup_dir: Optional[Path] = None
+        self, project_id: str, task_id: str, my_account_id: str, annotation_query:Dict[str, Any]=None, backup_dir: Optional[Path] = None
     ) -> bool:
         """
         タスクに対してアノテーションを削除する
@@ -108,7 +120,7 @@ class DeleteAnnotation(AbstractCommandLineInterface):
         logger.info(f"task_id={task_id}: アノテーション {deleted_annotation_count} 個を削除しました。")
         return True
 
-    def delete_annotation_for_task_list(self, project_id: str, task_id_list: List[str], backup_dir: Path):
+    def delete_annotation_for_task_list(self, project_id: str, task_id_list: List[str], annotation_query:Dict[str, Any], backup_dir: Path):
         super().validate_project(project_id, [ProjectMemberRole.OWNER])
 
         project_title = self.facade.get_project_title(project_id)
@@ -132,7 +144,7 @@ class DeleteAnnotation(AbstractCommandLineInterface):
 def main(args):
     service = build_annofabapi_resource_and_login(args)
     facade = AnnofabApiFacade(service)
-    DeleteAnnotation(service, facade, args).main()
+    DeleteAnnlotation(service, facade, args).main()
 
 
 def parse_args(parser: argparse.ArgumentParser):
@@ -140,6 +152,15 @@ def parse_args(parser: argparse.ArgumentParser):
 
     argument_parser.add_project_id()
     argument_parser.add_task_id()
+
+    parser.add_argument(
+        "-aq",
+        "--annotation_query",
+        type=str,
+        required=True,
+        help="削除対象のラベルをJSON形式で指定します。キーは`label_name_en' or 'label_id'です。"
+        "`file://`を先頭に付けると、JSON形式のファイルを指定できます。"
+    )
 
     parser.add_argument(
         "--backup",

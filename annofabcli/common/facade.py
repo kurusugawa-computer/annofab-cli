@@ -4,13 +4,22 @@ annofabapiのfacadeクラス
 
 import logging
 from typing import Any, Callable, Dict, List, Optional, Tuple
+from dataclasses import dataclass, asdict
 
 import annofabapi
 import annofabapi.utils
 import more_itertools
-from annofabapi.models import OrganizationMember, OrganizationMemberRole, ProjectId, ProjectMemberRole
+from annofabapi.models import OrganizationMember, OrganizationMemberRole, ProjectId, ProjectMemberRole, AdditionalData
 
 logger = logging.getLogger(__name__)
+
+@dataclass(frozen=True)
+class AnnotationQuery:
+    """
+    `delete_annotation`メソッドにWebAPIで取得した情報と比較するときのアノテーションクエリ
+    """
+    label_id: str
+    attributes: Optional[List[AdditionalData]] = None
 
 
 class AnnofabApiFacade:
@@ -371,3 +380,49 @@ class AnnofabApiFacade:
             "last_updated_datetime": task["updated_datetime"],
         }
         return self.service.api.operate_task(project_id, task_id, request_body=req)[0]
+
+
+    @staticmethod
+    def _to_request_body_from_annotation(annotation: Dict[str, Any]) -> Dict[str, Any]:
+        detail = annotation["detail"]
+        return {
+            "project_id": annotation["project_id"],
+            "task_id": annotation["task_id"],
+            "input_data_id": annotation["input_data_id"],
+            "updated_datetime": annotation["updated_datetime"],
+            "annotation_id": detail["annotation_id"],
+            "_type": "Delete"
+        }
+
+    def delete_annotation_for_task(
+        self, project_id: str, task_id: str, query: Optional[AnnotationQuery]=None):
+        """
+        特定のアノテーションを削除する。
+        【注意】取扱注意。すべてのアノテーションを削除してしまう恐れがあります。
+
+        Args:
+            project_id:
+            task_id:
+            query: 削除対象のアノテーションを指定するクエリ
+
+        Returns:
+            `batch_update_annotations`メソッドのレスポンス
+
+        """
+
+        dict_query = {
+            "task_id": task_id,
+            "exact_match_task_id": True
+        }
+        if query is not None:
+            dict_query.update(asdict(query))
+        query_params = {"query": dict_query}
+        annotation_list = self.service.wrapper.get_all_annotation_list(project_id, query_params=query_params)
+        logger.debug(f"task_id='{task_id}の削除対象のアノテーション数：{len(annotation_list)}")
+        assert all([e["task_id"] == task_id for e in annotation_list]), f"task_id='{task_id}' 以外のアノテーションが削除対象です！！"
+        if len(annotation_list) == 0:
+            logger.debug(f"task_id='{task_id}'には削除対象のアノテーションが存在しませんでした。")
+            return
+
+        request_body = [self._to_request_body_from_annotation(annotation) for annotation in annotation_list]
+        return self.service.api.batch_update_annotations(project_id, request_body)[0]
