@@ -1312,21 +1312,25 @@ class Table:
             lambda e: datetime_to_date(e) if not pandas.isna(e) else None
         )
 
+        # タスク完了日を軸にして集計する
+        value_columns = [
+            "input_data_count",
+            "annotation_count",
+            "sum_worktime_hour",
+            "annotation_worktime_hour",
+            "inspection_worktime_hour",
+            "acceptance_worktime_hour",
+        ]
         df_agg_sub_task = df_sub_task.pivot_table(
-            values=[
-                "input_data_count",
-                "annotation_count",
-                "sum_worktime_hour",
-                "annotation_worktime_hour",
-                "inspection_worktime_hour",
-                "acceptance_worktime_hour",
-            ],
-            index="task_completed_date",
-            aggfunc=numpy.sum,
+            values=value_columns, index="task_completed_date", aggfunc=numpy.sum,
         ).fillna(0)
-        df_agg_sub_task["task_count"] = df_sub_task.pivot_table(
-            values=["task_id"], index="task_completed_date", aggfunc="count"
-        ).fillna(0)
+        if len(df_agg_sub_task) > 0:
+            df_agg_sub_task["task_count"] = df_sub_task.pivot_table(
+                values=["task_id"], index="task_completed_date", aggfunc="count"
+            ).fillna(0)
+        else:
+            # 列だけ作る
+            df_agg_sub_task = df_agg_sub_task.assign(**{key: 0 for key in value_columns}, task_count=0)
 
         if len(df_labor) > 0:
             df_agg_labor = df_labor.pivot_table(
