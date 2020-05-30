@@ -432,9 +432,8 @@ class AnnofabApiFacade:
             "_type": "Delete",
         }
 
-    def get_label_info_from_name(
-        self, annotation_specs_labels: List[Dict[str, Any]], label_name_en: str
-    ) -> Dict[str, Any]:
+    @staticmethod
+    def get_label_info_from_name(annotation_specs_labels: List[Dict[str, Any]], label_name_en: str) -> Dict[str, Any]:
         labels = [e for e in annotation_specs_labels if AnnofabApiFacade.get_label_name_en(e) == label_name_en]
         if len(labels) > 1:
             raise ValueError(f"label_name_en: {label_name_en} に一致するラベル情報が複数見つかりました。")
@@ -566,8 +565,9 @@ class AnnofabApiFacade:
 
         return api_attirbute
 
-
-    def get_annotation_list_for_task(self, project_id: str, task_id:str,query: Optional[AnnotationQuery] = None) -> List[SingleAnnotation]:
+    def get_annotation_list_for_task(
+        self, project_id: str, task_id: str, query: Optional[AnnotationQuery] = None
+    ) -> List[SingleAnnotation]:
         """
         タスク内のアノテーション一覧を取得する。
 
