@@ -20,10 +20,12 @@ out_path = Path("./tests/out/facade")
 data_path = Path("./tests/data/facade")
 
 
-def test_delete_annotation_for_task():
+def test_get_annotation_list_for_task():
     task_id = "20190317_3"
     query = AnnotationQuery(label_id="728931a1-d0a2-442c-8e60-36c65ee7b878")
-    print(facade.delete_annotation_for_task(project_id, task_id, query=query))
+    result = facade.get_annotation_list_for_task(project_id, task_id, query=query)
+    print(len(result))
+    print(result)
 
 
 class Test_to_annotation_query_from_cli:
