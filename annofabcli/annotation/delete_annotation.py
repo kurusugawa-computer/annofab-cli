@@ -144,7 +144,7 @@ def parse_args(parser: argparse.ArgumentParser):
     argument_parser.add_task_id()
 
     example_annotation_query = (
-        '{"label_name_en": "car", "attributes":' '[{"additional_data_definition_name_en": "occluded", "flag": "true"}]}'
+        '{"label_name_en": "car", "attributes":[{"additional_data_definition_name_en": "occluded", "flag": "true"}]}'
     )
     parser.add_argument(
         "-aq",
