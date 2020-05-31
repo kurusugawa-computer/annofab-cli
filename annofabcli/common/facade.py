@@ -66,7 +66,7 @@ class AnnofabApiFacade:
     AnnofabApiのFacadeクラス。annofabapiの複雑な処理を簡単に呼び出せるようにする。
     """
 
-    #: 組織メンバ一覧のキャッシュ(
+    #: 組織メンバ一覧のキャッシュ
     _organization_members: Optional[Tuple[ProjectId, List[OrganizationMember]]] = None
 
     def __init__(self, service: annofabapi.Resource):
@@ -421,18 +421,6 @@ class AnnofabApiFacade:
         return self.service.api.operate_task(project_id, task_id, request_body=req)[0]
 
     @staticmethod
-    def _to_request_body_from_annotation(annotation: Dict[str, Any]) -> Dict[str, Any]:
-        detail = annotation["detail"]
-        return {
-            "project_id": annotation["project_id"],
-            "task_id": annotation["task_id"],
-            "input_data_id": annotation["input_data_id"],
-            "updated_datetime": annotation["updated_datetime"],
-            "annotation_id": detail["annotation_id"],
-            "_type": "Delete",
-        }
-
-    @staticmethod
     def get_label_info_from_name(annotation_specs_labels: List[Dict[str, Any]], label_name_en: str) -> Dict[str, Any]:
         labels = [e for e in annotation_specs_labels if AnnofabApiFacade.get_label_name_en(e) == label_name_en]
         if len(labels) > 1:
@@ -475,7 +463,7 @@ class AnnofabApiFacade:
 
         return filterd_choice_list[0]
 
-    def to_annotation_query_from_cli(self, project_id: str, cli_query: AnnotationQueryForCli) -> AnnotationQuery:
+    def to_annotation_query_from_cli(self, project_id: str, query: AnnotationQueryForCli) -> AnnotationQuery:
         """
         コマンドラインから指定されたアノテーション検索クエリを、WebAPIに渡す検索クエリに変換する。
         nameからIDを取得できない場合は、その時点で終了する。
@@ -498,19 +486,19 @@ class AnnofabApiFacade:
         specs_labels = annotation_specs["labels"]
 
         # label_name_en から label_idを設定
-        if cli_query.label_id is not None:
-            label_info = more_itertools.first_true(specs_labels, pred=lambda e: e["label_id"] == cli_query.label_id)
+        if query.label_id is not None:
+            label_info = more_itertools.first_true(specs_labels, pred=lambda e: e["label_id"] == query.label_id)
             if label_info is None:
-                raise ValueError(f"label_id: {cli_query.label_id} に一致するラベル情報は見つかりませんでした。")
-        elif cli_query.label_name_en is not None:
-            label_info = self.get_label_info_from_name(specs_labels, cli_query.label_name_en)
+                raise ValueError(f"label_id: {query.label_id} に一致するラベル情報は見つかりませんでした。")
+        elif query.label_name_en is not None:
+            label_info = self.get_label_info_from_name(specs_labels, query.label_name_en)
         else:
             raise ValueError("'label_id' または 'label_name_en'のいずれかは必ず指定してください。")
 
         api_query = AnnotationQuery(label_id=label_info["label_id"])
-        if cli_query.attributes is not None:
+        if query.attributes is not None:
             api_attirbutes = []
-            for cli_attirbute in cli_query.attributes:
+            for cli_attirbute in query.attributes:
                 api_attirbutes.append(
                     self._get_attribute_from_cli(label_info["additional_data_definitions"], cli_attirbute)
                 )
@@ -518,6 +506,31 @@ class AnnofabApiFacade:
             api_query.attributes = api_attirbutes
 
         return api_query
+
+    def to_attributes_from_cli(
+        self, project_id: str, label_id: str, attributes: List[AdditionalDataForCli]
+    ) -> List[AdditionalData]:
+        """
+        コマンドラインから指定された属性値Listを、WebAPIに渡す属性値Listに変換する。
+        nameからIDを取得できない場合は、その時点で終了する。
+
+        * ``additional_data_definition_name_en`` から ``additional_data_definition_id`` に変換する。
+        * ``choice_name_en`` から ``choice`` に変換する。
+        """
+        annotation_specs, _ = self.service.api.get_annotation_specs(project_id)
+        specs_labels = annotation_specs["labels"]
+
+        # label_name_en から label_idを設定
+        label_info = more_itertools.first_true(specs_labels, pred=lambda e: e["label_id"] == label_id)
+        if label_info is None:
+            raise ValueError(f"label_id: {label_id} に一致するラベル情報は見つかりませんでした。")
+
+        api_attirbutes = []
+        for cli_attirbute in attributes:
+            api_attirbutes.append(
+                self._get_attribute_from_cli(label_info["additional_data_definitions"], cli_attirbute)
+            )
+        return api_attirbutes
 
     @staticmethod
     def _get_attribute_from_cli(
@@ -602,5 +615,54 @@ class AnnofabApiFacade:
             `batch_update_annotations`メソッドのレスポンス
 
         """
-        request_body = [self._to_request_body_from_annotation(annotation) for annotation in annotation_list]
+
+        def _to_request_body_elm(annotation: Dict[str, Any]) -> Dict[str, Any]:
+            detail = annotation["detail"]
+            return {
+                "project_id": annotation["project_id"],
+                "task_id": annotation["task_id"],
+                "input_data_id": annotation["input_data_id"],
+                "updated_datetime": annotation["updated_datetime"],
+                "annotation_id": detail["annotation_id"],
+                "_type": "Delete",
+            }
+
+        request_body = [_to_request_body_elm(annotation) for annotation in annotation_list]
+        return self.service.api.batch_update_annotations(project_id, request_body)[0]
+
+    def change_annotation_attributes(
+        self, project_id: str, annotation_list: List[SingleAnnotation], attributes: List[AdditionalData]
+    ) -> Optional[List[Dict[str, Any]]]:
+        """
+        アノテーション属性値を変更する。
+
+        【注意】取扱注意
+
+        Args:
+            project_id:
+            annotation_list: 変更対象のアノテーション一覧
+            attributes: 変更後の属性値
+
+        Returns:
+            `batch_update_annotations`メソッドのレスポンス
+
+        """
+
+        def _to_request_body_elm(annotation: Dict[str, Any]) -> Dict[str, Any]:
+            detail = annotation["detail"]
+            return {
+                "data": {
+                    "project_id": annotation["project_id"],
+                    "task_id": annotation["task_id"],
+                    "input_data_id": annotation["input_data_id"],
+                    "updated_datetime": annotation["updated_datetime"],
+                    "annotation_id": detail["annotation_id"],
+                    "label_id": detail["label_id"],
+                    "additional_data_list": attributes_for_dict,
+                },
+                "_type": "Put",
+            }
+
+        attributes_for_dict: List[Dict[str, Any]] = [asdict(e) for e in attributes]
+        request_body = [_to_request_body_elm(annotation) for annotation in annotation_list]
         return self.service.api.batch_update_annotations(project_id, request_body)[0]

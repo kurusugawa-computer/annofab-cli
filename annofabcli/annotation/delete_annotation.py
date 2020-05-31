@@ -45,7 +45,7 @@ class DeleteAnnotation(AbstractCommandLineInterface):
         Args:
             project_id:
             task_id:
-            my_account_id: 自分自身のaccount_id
+            annotation_query: 削除対象のアノテーションの検索条件
             backup_dir: 削除対象のアノテーションをバックアップとして保存するディレクトリ。指定しない場合は、バックアップを取得しない。
 
         """
@@ -76,7 +76,7 @@ class DeleteAnnotation(AbstractCommandLineInterface):
             self.dump_annotation_obj.dump_annotation_for_task(project_id, task_id, output_dir=backup_dir)
 
         try:
-            self.facade.delete_annotation_list(project_id, annotation_list)
+            self.facade.delete_annotation_list(project_id, annotation_list=annotation_list)
             logger.info(f"task_id={task_id}: アノテーションを削除しました。")
         except requests.HTTPError as e:
             logger.warning(e)
@@ -144,15 +144,17 @@ def parse_args(parser: argparse.ArgumentParser):
     argument_parser.add_task_id()
 
     example_annotation_query = (
-        '{"label_name_en": "car", "attributes":'
-        '[{"additional_data_definition_name_en": "occluded", "choice_name_en": "bus"}]}'
+        '{"label_name_en": "car", "attributes":' '[{"additional_data_definition_name_en": "occluded", "flag": "true"}]}'
     )
     parser.add_argument(
         "-aq",
         "--annotation_query",
         type=str,
         required=False,
-        help="削除対象のラベルをJSON形式で指定します。" "`file://`を先頭に付けると、JSON形式のファイルを指定できます。" f"(ex): `{example_annotation_query}`",
+        help="削除対象のアノテーションを検索する条件をJSON形式で指定します。"
+        "'label_id' または 'label_name_en'のいずれかは必ず指定してください。"
+        "`file://`を先頭に付けると、JSON形式のファイルを指定できます。"
+        f"(ex): `{example_annotation_query}`",
     )
 
     parser.add_argument(
@@ -169,7 +171,7 @@ def add_parser(subparsers: argparse._SubParsersAction):
     subcommand_help = "アノテーションを削除します。"
     description = (
         "タスク配下のアノテーションを削除します。" + "ただし、作業中/完了状態のタスクのアノテーションは削除できません。"
-        "間違えてアノテーションを削除してしまっときに復元できるようにするため、'--backup'でバックアップ用のディレクトリを指定することを推奨します。"
+        "間違えてアノテーションを削除したときに復元できるようにするため、'--backup'でバックアップ用のディレクトリを指定することを推奨します。"
     )
     epilog = "オーナロールを持つユーザで実行してください。"
 

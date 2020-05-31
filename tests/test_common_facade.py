@@ -51,3 +51,20 @@ class Test_to_annotation_query_from_cli:
         ]
         query = AnnotationQueryForCli(label_name_en="whole", attributes=attributes)
         print(facade.to_annotation_query_from_cli(project_id, query))
+
+
+class Test_to_attributes_from_cli:
+    label_id = "728931a1-d0a2-442c-8e60-36c65ee7b878"
+
+    def test_exists_attribute_name_and_chioce_name(self):
+        attributes = [AdditionalDataForCli(additional_data_definition_name_en="category", choice_name_en="bike")]
+        print(facade.to_attributes_from_cli(project_id, label_id=self.label_id, attributes=attributes))
+
+    def test_exists_attribute_id_and_chioce_id(self):
+        attributes = [
+            AdditionalDataForCli(
+                additional_data_definition_id="550a8d24-f5ae-496e-9d11-20f308a93b94",
+                choice="2701e187-b2b4-43ab-9426-568c574e508a",
+            )
+        ]
+        print(facade.to_attributes_from_cli(project_id, label_id=self.label_id, attributes=attributes))
