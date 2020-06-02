@@ -196,8 +196,12 @@ class ListAnnotationCount(AbstractCommandLineInterface):
             all_annotations.extend(annotations)
 
         logger.debug(f"アノテーション一覧の件数: {len(all_annotations)}")
-        df = self.aggregate_annotations(all_annotations, group_by)
-        self.print_csv(df)
+        if len(all_annotations) > 0:
+            df = self.aggregate_annotations(all_annotations, group_by)
+            self.print_csv(df)
+        else:
+            logger.info(f"アノテーション一覧が0件のため出力しません。")
+            return
 
     def main(self):
         args = self.args
