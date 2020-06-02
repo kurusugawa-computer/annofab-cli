@@ -1,8 +1,8 @@
 import argparse
 
 import annofabcli
-import annofabcli.annotation.delete_annotation
 import annofabcli.annotation.change_annotation_attributes
+import annofabcli.annotation.delete_annotation
 import annofabcli.annotation.dump_annotation
 import annofabcli.annotation.import_annotation
 import annofabcli.annotation.list_annotation_count
