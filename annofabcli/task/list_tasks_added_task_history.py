@@ -26,7 +26,7 @@ from annofabcli.common.visualize import AddProps
 
 logger = logging.getLogger(__name__)
 
-TaskHistoryDict: Dict[str, List[TaskHistory]]
+TaskHistoryDict = Dict[str, List[TaskHistory]]
 """タスク履歴の辞書（key: task_id, value: タスク履歴一覧）"""
 
 DEFAULT_WAIT_OPTIONS = WaitOptions(interval=60, max_tries=360)
@@ -61,23 +61,35 @@ class ListTasksAddedTaskHistory(AbstractCommandLineInterface):
                     f"{column_prefix}_started_datetime": None,
                 }
             )
-        else:
-            account_id = task_history["account_id"]
-            organization_member = self.visualize.get_organization_member_from_account_id(account_id)
+            return task
+
+        account_id = task_history["account_id"]
+        task.update(
+            {f"{column_prefix}_started_datetime": task_history["started_datetime"],}
+        )
+
+        organization_member = self.visualize.get_organization_member_from_account_id(account_id)
+        if organization_member is not None:
             task.update(
                 {
                     f"{column_prefix}_user_id": organization_member["user_id"],
                     f"{column_prefix}_username": organization_member["username"],
-                    f"{column_prefix}_started_datetime": task_history["started_datetime"],
                 }
+            )
+        else:
+            task.update(
+                {f"{column_prefix}_user_id": None, f"{column_prefix}_username": None,}
             )
 
         return task
 
     def _add_task_history_info_by_phase(
-        self, task: Task, task_history_list: List[TaskHistory], phase: TaskPhase
+        self, task: Task, task_history_list: Optional[List[TaskHistory]], phase: TaskPhase
     ) -> Task:
-        task_history_by_phase = [e for e in task_history_list if e["phase"] == phase.value]
+        if task_history_list is not None:
+            task_history_by_phase = [e for e in task_history_list if e["phase"] == phase.value]
+        else:
+            task_history_by_phase = []
 
         # 最初の対象フェーズに関する情報を設定
         first_task_history = task_history_by_phase[0] if len(task_history_by_phase) > 0 else None
