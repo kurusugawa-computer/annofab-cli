@@ -1,0 +1,15 @@
+{
+  "0d97e5e0-a737-47ae-8b8c-f09194a2a9fd": [
+      {
+          "project_id": "58a2a621-7d4b-41e7-927b-cdc570c1114a",
+          "task_id": "test3_05",
+          "task_history_id": "5aeeaf98-83fe-4337-a6d1-ce5a2367ba0a",
+          "started_datetime": "2020-01-17T18:11:30.865+09:00",
+          "ended_datetime": "2020-01-17T18:11:34.52+09:00",
+          "accumulated_labor_time_milliseconds": "PT3.655S",
+          "phase": "annotation",
+          "phase_stage": 1,
+          "account_id": "00589ed0-dd63-40db-abb2-dfe5e13c8299"
+      }
+  ]
+}

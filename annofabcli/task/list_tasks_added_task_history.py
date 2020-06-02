@@ -64,9 +64,7 @@ class ListTasksAddedTaskHistory(AbstractCommandLineInterface):
             return task
 
         account_id = task_history["account_id"]
-        task.update(
-            {f"{column_prefix}_started_datetime": task_history["started_datetime"],}
-        )
+        task.update({f"{column_prefix}_started_datetime": task_history["started_datetime"]})
 
         organization_member = self.visualize.get_organization_member_from_account_id(account_id)
         if organization_member is not None:
@@ -77,9 +75,7 @@ class ListTasksAddedTaskHistory(AbstractCommandLineInterface):
                 }
             )
         else:
-            task.update(
-                {f"{column_prefix}_user_id": None, f"{column_prefix}_username": None,}
-            )
+            task.update({f"{column_prefix}_user_id": None, f"{column_prefix}_username": None})
 
         return task
 
@@ -205,7 +201,6 @@ class ListTasksAddedTaskHistory(AbstractCommandLineInterface):
         args = self.args
         if not self.validate(args):
             return
-
 
         project_id = args.project_id
         super().validate_project(project_id, [ProjectMemberRole.OWNER])
