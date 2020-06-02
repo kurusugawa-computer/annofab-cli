@@ -199,14 +199,7 @@ class TestInputData:
     def test_list_input_data_merged_task_with_downloading(self):
         out_file = str(out_path / "input_data.csv")
         main(
-            [
-                "input_data",
-                "list_merged_task",
-                "--project_id",
-                project_id,
-                "--output",
-                out_file,
-            ]
+            ["input_data", "list_merged_task", "--project_id", project_id, "--output", out_file,]
         )
 
     def test_list_input_data_merged_task_with_json(self):
@@ -679,19 +672,10 @@ class TestTask:
             ]
         )
 
-
-
     def test_list_added_task_history_with_downloading(self):
         out_file = str(out_path / "task.csv")
         main(
-            [
-                self.command_name,
-                "list_added_task_history",
-                "--project_id",
-                project_id,
-                "--output",
-                out_file,
-            ]
+            [self.command_name, "list_added_task_history", "--project_id", project_id, "--output", out_file,]
         )
 
     def test_list_input_data_merged_task_with_json(self):
@@ -708,11 +692,8 @@ class TestTask:
                 str(data_path / "task.json"),
                 "--task_history_json",
                 str(data_path / "task-history.json"),
-
             ]
         )
-
-
 
     def test_reject_task(self):
         inspection_comment = datetime.datetime.now().isoformat()
