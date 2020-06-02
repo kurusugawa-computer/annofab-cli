@@ -69,7 +69,6 @@ def create_task_count_summary_df(task_list: List[Task]) -> pandas.DataFrame:
     ]:
         add_columns_if_not_exists(df_summary, status.value)
 
-    df_summary["working_break_not_started"] = df_summary["working"] + df_summary["break"] + df_summary["not_started"]
     df_summary["sum"] = (
         df_task.pivot_table(values="task_id", index=["task_id_prefix"], aggfunc="count", fill_value=0)
         .reset_index()
@@ -81,7 +80,7 @@ def create_task_count_summary_df(task_list: List[Task]) -> pandas.DataFrame:
 
 class SummarizeTaskCountByTaskId(AbstractCommandLineInterface):
     def print_summarize_task_count(self, df: pandas.DataFrame) -> None:
-        columns = ["task_id_prefix", "complete", "on_hold", "working_break_not_started", "sum"]
+        columns = ["task_id_prefix", "complete", "on_hold", "not_started", "break", "working", "sum"]
         annofabcli.utils.print_according_to_format(
             df[columns], arg_format=FormatArgument(FormatArgument.CSV), output=self.output, csv_format=self.csv_format,
         )
@@ -149,8 +148,8 @@ def main(args):
 
 def add_parser(subparsers: argparse._SubParsersAction):
     subcommand_name = "summarize_task_count_by_task_id"
-    subcommand_help = "task_idのプレフィックスごとにタスク数を出力します。"
-    description = "task_idのプレフィックスごとにタスク数をCSV形式で出力します。"
+    subcommand_help = "task_idのプレフィックスごとのタスク数を出力します。"
+    description = "task_idのプレフィックスごとのタスク数をCSV形式で出力します。"
     epilog = "オーナロールを持つユーザで実行してください。"
     parser = annofabcli.common.cli.add_parser(
         subparsers, subcommand_name, subcommand_help, description=description, epilog=epilog
