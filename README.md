@@ -124,6 +124,7 @@ $ docker run -it -e ANNOFAB_USER_ID=XXXX -e ANNOFAB_PASSWORD=YYYYY annofab-cli a
 |task| complete                | タスクを完了状態にして次のフェーズに進めます（教師付の提出、検査/受入の合格）。                                  |チェッカー/オーナ|
 |task| delete                | タスクを削除します。                                 |オーナ|
 |task|list             | タスク一覧を出力します。                                                            |-|
+|task|list_added_task_history             | タスク履歴情報を加えたタスク一覧を出力します。|オーナ|
 |task| put                | タスクを作成します。                                 |オーナ|
 |task| reject                  | タスクを強制的に差し戻します。                                                                 |オーナ|
 
@@ -1325,6 +1326,23 @@ $ annofabcli task list --project_id prj1 --task_json task.json
 
 
 
+
+
+### task list_added_task_history
+タスク履歴情報（フェーズごとの作業時間、担当者、開始日時）を加えたタスク一覧をCSV形式で出力します。
+最初に教師付を開始した日時や担当者を調べるときなどに利用できます。
+
+
+```
+# prj1のタスク全件ファイル、タスク履歴全件ファイルをダウンロードして、タスク一覧のCSVを出力する
+$ annofabcli task list_added_task_history --project_id prj1 --output task.csv
+
+# prj1のタスク全件ファイルの最新版をダウンロードして、タスク一覧のCSVを出力する。タスク履歴全件ファイルはWebAPIの都合上最新化できません。
+$ annofabcli task list_added_task_history --project_id prj1 --output task.csv --latest
+
+# タスク全件ファイルJSON、タスク履歴全件ファイルJSONを参照して、タスク一覧のCSVを出力する
+$ annofabcli task list_added_task_history --project_id prj1 --output task.csv --task_json task.json --task_history_json task_history.json
+```
 
 
 ### task put
