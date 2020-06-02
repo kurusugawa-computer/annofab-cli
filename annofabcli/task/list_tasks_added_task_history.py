@@ -137,13 +137,13 @@ class ListTasksAddedTaskHistory(AbstractCommandLineInterface):
             "status",
             "user_id",
             "username",
-            "started_datetiem",
-            "updated_datetiem",
+            "started_datetime",
+            "updated_datetime",
             # 作業時間情報
             "worktime_hour",
-            "annotation_hour",
-            "inspection_hour",
-            "acceptance_hour",
+            "annotation_worktime_hour",
+            "inspection_worktime_hour",
+            "acceptance_worktime_hour",
             # 差し戻し回数
             "number_of_rejections_by_inspection",
             "number_of_rejections_by_acceptance",
@@ -160,6 +160,7 @@ class ListTasksAddedTaskHistory(AbstractCommandLineInterface):
     def print_task_list_added_task_history(
         self, task_list: List[Dict[str, Any]], task_history_dict: TaskHistoryDict
     ) -> None:
+        logger.debug("JSONファイル読み込み中")
         df_task = self.create_df_task(task_list=task_list, task_history_dict=task_history_dict)
 
         annofabcli.utils.print_according_to_format(
@@ -169,29 +170,27 @@ class ListTasksAddedTaskHistory(AbstractCommandLineInterface):
             csv_format=self.csv_format,
         )
 
-    def download_json_files(self, project_id: str, output_dir: Path, is_latest: bool, wait_options: WaitOptions):
+    def download_json_files(
+        self,
+        project_id: str,
+        task_json_path: Path,
+        task_history_json_path: Path,
+        is_latest: bool,
+        wait_options: WaitOptions,
+    ):
         loop = asyncio.get_event_loop()
         downloading_obj = DownloadingFile(self.service)
         gather = asyncio.gather(
             downloading_obj.download_task_json_with_async(
-                project_id, dest_path=str(output_dir / "task.json"), is_latest=is_latest, wait_options=wait_options
+                project_id, dest_path=str(task_json_path), is_latest=is_latest, wait_options=wait_options
             ),
-            downloading_obj.download_task_history_json_with_async(
-                project_id, dest_path=str(output_dir / "input_data.json"),
-            ),
+            downloading_obj.download_task_history_json_with_async(project_id, dest_path=str(task_history_json_path),),
         )
         loop.run_until_complete(gather)
 
     @staticmethod
     def validate(args: argparse.Namespace) -> bool:
         COMMON_MESSAGE = "annofabcli task list_merged_task_history: error:"
-        if args.project_id is None and (args.task_json is None or args.task_history_json is None):
-            print(
-                f"{COMMON_MESSAGE} '--project_id' か、'--task_json'/'--task_history_json'ペアのいずれかを指定する必要があります。",
-                file=sys.stderr,
-            )
-            return False
-
         if (args.task_json is None and args.task_history_json is not None) or (
             args.task_json is not None and args.task_history_json is None
         ):
@@ -207,22 +206,30 @@ class ListTasksAddedTaskHistory(AbstractCommandLineInterface):
         if not self.validate(args):
             return
 
+
         project_id = args.project_id
-        if project_id is not None:
-            super().validate_project(project_id, [ProjectMemberRole.OWNER])
+        super().validate_project(project_id, [ProjectMemberRole.OWNER])
+
+        if args.task_json is not None and args.task_history_json is not None:
+            task_json_path = args.task_json
+            task_history_json_path = args.task_history_json
+        else:
             wait_options = get_wait_options_from_args(get_json_from_args(args.wait_options), DEFAULT_WAIT_OPTIONS)
             cache_dir = annofabcli.utils.get_cache_dir()
-            self.download_json_files(project_id, cache_dir, args.latest, wait_options)
-            task_json_path = cache_dir / "task.json"
-            task_history_json = cache_dir / "task_history.json"
-        else:
-            task_json_path = args.task_json
-            task_history_json = args.task_history_json
+            task_json_path = cache_dir / f"{project_id}-task.json"
+            task_history_json_path = cache_dir / f"{project_id}-task_history.json"
+            self.download_json_files(
+                project_id,
+                task_json_path=task_json_path,
+                task_history_json_path=task_history_json_path,
+                is_latest=args.latest,
+                wait_options=wait_options,
+            )
 
         with open(task_json_path, encoding="utf-8") as f:
             task_list = json.load(f)
 
-        with open(task_history_json, encoding="utf-8") as f:
+        with open(task_history_json_path, encoding="utf-8") as f:
             task_history_dict = json.load(f)
 
         self.print_task_list_added_task_history(task_list=task_list, task_history_dict=task_history_dict)
@@ -236,35 +243,32 @@ def main(args):
 
 def parse_args(parser: argparse.ArgumentParser):
     argument_parser = ArgumentParser(parser)
-
-    parser.add_argument(
-        "-p", "--project_id", type=str, help="対象のプロジェクトのproject_idを指定してください。" "指定すると、タスク一覧ファイル、タスク履歴一覧ファイルをダウンロードします。"
-    )
+    argument_parser.add_project_id()
 
     parser.add_argument(
         "--task_json",
         type=str,
-        help="タスク情報が記載されたJSONファイルのパスを指定してください。JSONに記載された情報を元にタスク一覧を出力します。"
+        help="タスク情報が記載されたJSONファイルのパスを指定すると、JSONに記載された情報を元に出力します。指定しない場合はJSONファイルをダウンロードします。"
         "JSONファイルは`$ annofabcli project download task`コマンドで取得できます。",
     )
 
     parser.add_argument(
         "--task_history_json",
         type=str,
-        help="タスク履歴情報が記載されたJSONファイルのパスを指定してください。JSONに記載された情報を元にタスク履歴一覧を出力します。"
+        help="タスク履歴情報が記載されたJSONファイルのパスを指定すると、JSONに記載された情報を元に出力します。指定しない場合はJSONファイルをダウンロードします。"
         "JSONファイルは`$ annofabcli project download task_history`コマンドで取得できます。",
     )
 
     parser.add_argument(
         "--latest",
         action="store_true",
-        help="タスク一覧ファイルの更新が完了するまで待って、最新のファイルをダウンロードします（タスク履歴ファイルはWebAPIの都合上更新されません）。" "'--project_id'を指定したときのみ有効です。",
+        help="タスク一覧ファイルの更新が完了するまで待って、最新のファイルをダウンロードします（タスク履歴ファイルはWebAPIの都合上更新されません）。" "JSONファイルを指定しなかったときに有効です。",
     )
 
     parser.add_argument(
         "--wait_options",
         type=str,
-        help="タスク一覧ファイル、タスク履歴一覧ファイルの更新が完了するまで待つ際のオプションを、JSON形式で指定してください。"
+        help="タスク一覧ファイルの更新が完了するまで待つ際のオプションを、JSON形式で指定してください。"
         "`file://`を先頭に付けるとjsonファイルを指定できます。"
         'デフォルは`{"interval":60, "max_tries":360}` です。'
         "`interval`:完了したかを問い合わせる間隔[秒], "
@@ -279,8 +283,8 @@ def parse_args(parser: argparse.ArgumentParser):
 
 def add_parser(subparsers: argparse._SubParsersAction):
     subcommand_name = "list_added_task_history"
-    subcommand_help = "タスク履歴情報（作業時間、担当者）を加えたタスク一覧を出力します。"
-    description = "タスク履歴情報（作業時間、担当者）を加えたタスク一覧を出力します。"
+    subcommand_help = "タスク履歴情報（作業時間、担当者）を加えたタスク一覧をCSV形式で出力します。"
+    description = "タスク履歴情報（フェーズごとの作業時間、担当者、開始日時）を加えたタスク一覧を出力します。"
 
     parser = annofabcli.common.cli.add_parser(subparsers, subcommand_name, subcommand_help, description)
     parse_args(parser)
