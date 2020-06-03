@@ -49,6 +49,89 @@ class SimpleTaskStatus(Enum):
             raise ValueError(f"'{status}'は対象外です。")
 
 
+def get_step_for_current_phase(task: Task, number_of_inspections: int) -> int:
+    """
+    今のフェーズが何回目かを記載する。
+    Args:
+        task:
+        number_of_inspections: 対象プロジェクトの検査フェーズの回数
+
+    Returns:
+
+    """
+    current_phase = TaskPhase(task["phase"])
+    current_phase_stage = task["phase_stage"]
+    histories_by_phase = task["histories_by_phase"]
+
+    number_of_rejections_by_acceptance = get_number_of_rejections(histories_by_phase, phase=TaskPhase.ACCEPTANCE)
+    if current_phase == TaskPhase.ACCEPTANCE:
+        return number_of_rejections_by_acceptance + 1
+
+    elif current_phase == TaskPhase.ANNOTATION:
+        number_of_rejections_by_inspection = sum(
+            [
+                get_number_of_rejections(histories_by_phase, phase=TaskPhase.INSPECTION, phase_stage=phase_stage)
+                for phase_stage in range(1, number_of_inspections + 1)
+            ]
+        )
+        return number_of_rejections_by_inspection + number_of_rejections_by_acceptance + 1
+
+    elif current_phase == TaskPhase.INSPECTION:
+        number_of_rejections_by_inspection = sum(
+            [
+                get_number_of_rejections(histories_by_phase, phase=TaskPhase.INSPECTION, phase_stage=phase_stage)
+                for phase_stage in range(current_phase_stage, number_of_inspections + 1)
+            ]
+        )
+        return number_of_rejections_by_inspection + number_of_rejections_by_acceptance + 1
+
+    else:
+        raise RuntimeError(f"フェーズ'{current_phase}'は不正な値です。")
+
+
+def create_task_count_summary(task_list: List[Task], number_of_inspections: int) -> pandas.DataFrame:
+    """
+
+    Args:
+        task_list:
+        number_of_inspections: プロジェクト設定から取得した検査フェーズの回数
+
+    Returns:
+
+    """
+    for task in task_list:
+        status = TaskStatus(task["status"])
+        if status == TaskStatus.COMPLETE:
+            step_for_current_phase = sys.maxsize
+        else:
+            step_for_current_phase = get_step_for_current_phase(task, number_of_inspections)
+        task["step"] = step_for_current_phase
+        task["simple_status"] = SimpleTaskStatus.from_task_status(status).value
+
+    df = pandas.DataFrame(task_list)
+    df["phase"] = pandas.Categorical(
+        df["phase"], categories=[TaskPhase.ANNOTATION.value, TaskPhase.INSPECTION.value, TaskPhase.ACCEPTANCE.value]
+    )
+    df["simple_status"] = pandas.Categorical(
+        df["simple_status"],
+        categories=[
+            SimpleTaskStatus.NOT_STARTED.value,
+            SimpleTaskStatus.WORKING_BREAK_HOLD.value,
+            SimpleTaskStatus.COMPLETE.value,
+        ],
+    )
+
+    summary_df = df.pivot_table(
+        values="task_id", index=["step", "phase", "phase_stage", "simple_status"], aggfunc="count"
+    ).reset_index()
+    summary_df.rename(columns={"task_id": "task_count"}, inplace=True)
+
+    summary_df.sort_values(["step", "phase", "phase_stage"])
+    summary_df.loc[summary_df["step"] == sys.maxsize, "step"] = pandas.NA
+    summary_df = summary_df.astype({"task_count": "Int64", "step": "Int64", "phase_stage": "Int64"})
+    return summary_df
+
+
 class SummarizeTaskCount(AbstractCommandLineInterface):
     """
     タスク数を集計する。
@@ -57,79 +140,6 @@ class SummarizeTaskCount(AbstractCommandLineInterface):
     def get_number_of_inspections_for_project(self, project_id: str) -> int:
         project, _ = self.service.api.get_project(project_id)
         return project["configuration"]["number_of_inspections"]
-
-    @staticmethod
-    def get_step_for_current_phase(task: Task, number_of_inspections: int) -> int:
-        current_phase = TaskPhase(task["phase"])
-        current_phase_stage = task["phase_stage"]
-        histories_by_phase = task["histories_by_phase"]
-
-        number_of_rejections_by_acceptance = get_number_of_rejections(histories_by_phase, phase=TaskPhase.ACCEPTANCE)
-        if current_phase == TaskPhase.ACCEPTANCE:
-            return number_of_rejections_by_acceptance + 1
-
-        elif current_phase == TaskPhase.ANNOTATION:
-            number_of_rejections_by_inspection = sum(
-                [
-                    get_number_of_rejections(histories_by_phase, phase=TaskPhase.INSPECTION, phase_stage=phase_stage)
-                    for phase_stage in range(1, number_of_inspections + 1)
-                ]
-            )
-            return number_of_rejections_by_inspection + number_of_rejections_by_acceptance + 1
-
-        elif current_phase == TaskPhase.INSPECTION:
-            number_of_rejections_by_inspection = sum(
-                [
-                    get_number_of_rejections(histories_by_phase, phase=TaskPhase.INSPECTION, phase_stage=phase_stage)
-                    for phase_stage in range(current_phase_stage, number_of_inspections + 1)
-                ]
-            )
-            return number_of_rejections_by_inspection + number_of_rejections_by_acceptance + 1
-
-        else:
-            raise RuntimeError(f"フェーズ'{current_phase}'は不正な値です。")
-
-    def create_task_count_summary(self, task_list: List[Task], number_of_inspections: int) -> pandas.DataFrame:
-        """
-
-        Args:
-            task_list:
-            number_of_inspections: プロジェクト設定から取得した検査フェーズの回数
-
-        Returns:
-
-        """
-        for task in task_list:
-            status = TaskStatus(task["status"])
-            if status == TaskStatus.COMPLETE:
-                step_for_current_phase = sys.maxsize
-            else:
-                step_for_current_phase = self.get_step_for_current_phase(task, number_of_inspections)
-            task["step"] = step_for_current_phase
-            task["simple_status"] = SimpleTaskStatus.from_task_status(status).value
-
-        df = pandas.DataFrame(task_list)
-        df["phase"] = pandas.Categorical(
-            df["phase"], categories=[TaskPhase.ANNOTATION.value, TaskPhase.INSPECTION.value, TaskPhase.ACCEPTANCE.value]
-        )
-        df["simple_status"] = pandas.Categorical(
-            df["simple_status"],
-            categories=[
-                SimpleTaskStatus.NOT_STARTED.value,
-                SimpleTaskStatus.WORKING_BREAK_HOLD.value,
-                SimpleTaskStatus.COMPLETE.value,
-            ],
-        )
-
-        summary_df = df.pivot_table(
-            values="task_id", index=["step", "phase", "phase_stage", "simple_status"], aggfunc="count"
-        ).reset_index()
-        summary_df.rename(columns={"task_id": "task_count"}, inplace=True)
-
-        summary_df.sort_values(["step", "phase", "phase_stage"])
-        summary_df.loc[summary_df["step"] == sys.maxsize, "step"] = pandas.NA
-        summary_df = summary_df.astype({"task_count": "Int64", "step": "Int64", "phase_stage": "Int64"})
-        return summary_df
 
     def summarize_task_count(
         self, project_id: str, task_json_path: Optional[Path], is_latest: bool, wait_options: WaitOptions
@@ -142,7 +152,7 @@ class SummarizeTaskCount(AbstractCommandLineInterface):
             return
 
         number_of_inspections = self.get_number_of_inspections_for_project(project_id)
-        task_count_df = self.create_task_count_summary(task_list, number_of_inspections=number_of_inspections)
+        task_count_df = create_task_count_summary(task_list, number_of_inspections=number_of_inspections)
         annofabcli.utils.print_csv(task_count_df, output=self.output, to_csv_kwargs=self.csv_format)
 
     def get_task_list(
