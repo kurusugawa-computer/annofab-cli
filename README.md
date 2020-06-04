@@ -1229,6 +1229,17 @@ task_id_prefix,complete,on_hold,annotation_not_started,inspection_not_started,ac
 20200501,10,1,4,0,1,4,20
 ```
 
+各列
+* annotation_not_started: 教師付フェーズが一度も作業されていないタスク数
+* inspection_not_started: 検査フェーズが一度も作業されていないタスク数
+* acceptance_not_started: 受入フェーズが一度も作業されていないタスク数
+* other: 休憩中、作業中、
+* simple_status：タスクステータスを簡略化したもの
+    * not_started：未着手
+    * working_break_hold：作業中か休憩中か保留中
+    * complete：完了
+
+「一度も作業されていない教師付未着手」のタスク数は、先頭行（step=1, phase=annotation, simple_status=not_started）のtask_countから分かります。
 
 ### statistics visualize
 統計情報を可視化します。
@@ -1265,11 +1276,16 @@ $ annofabcli supplementary list --project_id prj1 --input_data_id id1 id2
 
 
 ```
-# prj1プロジェクトのタスクを、受け入れ取り消しにする。再度受け入れを担当させるユーザは未担当
+# prj1プロジェクトのタスクを、受け入れ取り消しにする。最後に受入を担当したユーザに割り当てる
 $ annofabcli task cancel_acceptance --project_id prj1 --task_id file://task.txt
 
-# prj1プロジェクトのタスクを、受け入れ取り消しにする。再度受け入れを担当させるユーザはuser1
-$ annofabcli task cancel_acceptance --project_id prj1 --task_id file://task.txt --user_id user1
+# prj1プロジェクトのタスクを、受け入れ取り消しにする。ユーザuser1に割り当てる。
+$ annofabcli task cancel_acceptance --project_id prj1 --task_id file://task.txt --assigned_acceptor_user_id user1
+
+# prj1プロジェクトのタスクを、受け入れ取り消しにする。担当者は未割り当て
+$ annofabcli task cancel_acceptance --project_id prj1 --task_id file://task.txt --not_assign
+
+
 ```
 
 

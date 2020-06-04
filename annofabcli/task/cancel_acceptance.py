@@ -66,7 +66,7 @@ class CancelAcceptance(AbstractCommandLineInterface):
                             acceptor_user_id = user_info["user_id"]
 
                 if not super().confirm_processing_task(
-                    task_id, f"task_id = {task_id} のタスクの受入を取り消しますか？ {acceptor_user_id} に割り当てます。"
+                    task_id, f"task_id = {task_id} のタスクの受入を取り消しますか？ user_id = '{acceptor_user_id}' に割り当てます。"
                 ):
                     continue
 
@@ -95,7 +95,7 @@ class CancelAcceptance(AbstractCommandLineInterface):
         self.cancel_acceptance(
             args.project_id,
             task_id_list,
-            acceptor_user_id=args.acceptor_user_id,
+            acceptor_user_id=args.assigned_acceptor_user_id,
             assign_last_acceptor=assign_last_acceptor,
         )
 
