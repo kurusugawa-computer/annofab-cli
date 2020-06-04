@@ -106,8 +106,8 @@ class ListTasks(AbstractCommandLineInterface):
         else:
             task_query = {}
 
-        logger.debug(f"task_query: {task_query}")
         if user_id_list is None:
+            logger.debug(f"task_query: {task_query}")
             tasks = self.service.wrapper.get_all_tasks(project_id, query_params=task_query)
             if len(tasks) == 10000:
                 logger.warning("タスク一覧は10,000件で打ち切られている可能性があります。")
@@ -117,6 +117,7 @@ class ListTasks(AbstractCommandLineInterface):
             for user_id in user_id_list:
                 task_query["user_id"] = user_id
                 task_query = self._modify_task_query(project_id, task_query)
+                logger.debug(f"task_query: {task_query}")
                 sub_tasks = self.service.wrapper.get_all_tasks(project_id, query_params=task_query)
                 if len(sub_tasks) == 10000:
                     logger.warning(f"user_id={user_id}で絞り込んだタスク一覧は10,000件で打ち切られている可能性があります。")
@@ -186,6 +187,10 @@ class ListTasks(AbstractCommandLineInterface):
         if len(task_id_list) == 0:
             task_id_list = None
 
+        user_id_list = annofabcli.common.cli.get_list_from_args(args.user_id)
+        if len(user_id_list) == 0:
+            user_id_list = None
+
         task_query = annofabcli.common.cli.get_json_from_args(args.task_query)
 
         if args.task_json is not None:
@@ -195,7 +200,11 @@ class ListTasks(AbstractCommandLineInterface):
             task_list = None
 
         self.print_tasks(
-            args.project_id, task_id_list=task_id_list, task_query=task_query, task_list_from_json=task_list
+            args.project_id,
+            task_id_list=task_id_list,
+            task_query=task_query,
+            user_id_list=user_id_list,
+            task_list_from_json=task_list,
         )
 
 
@@ -230,6 +239,14 @@ def parse_args(parser: argparse.ArgumentParser):
         type=str,
         nargs="+",
         help="対象のタスクのtask_idを指定します。`--task_query`引数とは同時に指定できません。" "`file://`を先頭に付けると、task_idの一覧が記載されたファイルを指定できます。",
+    )
+
+    query_group.add_argument(
+        "-u",
+        "--user_id",
+        type=str,
+        nargs="+",
+        help="絞り込み対象である担当者のuser_idを指定します。" "`file://`を先頭に付けると、task_idの一覧が記載されたファイルを指定できます。",
     )
 
     parser.add_argument(
