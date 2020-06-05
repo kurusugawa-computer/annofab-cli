@@ -82,9 +82,8 @@ def create_task_count_summary_df(task_list: List[Task]) -> pandas.DataFrame:
             df[column] = 0
 
     df_task = pandas.DataFrame([add_info_to_task(t) for t in task_list])
-
     df_summary = df_task.pivot_table(
-        values="task_id", index=["user_id"], columns=["status_for_summary"], aggfunc="count", fill_value=0
+        values="task_id", index=["account_id"], columns=["status_for_summary"], aggfunc="count", fill_value=0
     ).reset_index()
 
     for status in TaskStatusForSummary:
@@ -94,18 +93,18 @@ def create_task_count_summary_df(task_list: List[Task]) -> pandas.DataFrame:
 
 
 class SummarizeTaskCountByUser(AbstractCommandLineInterface):
-    def create_user_df(self, project_id: str, user_id_list: List[str]) -> pandas.DataFrame:
+    def create_user_df(self, project_id: str, account_id_list: List[str]) -> pandas.DataFrame:
         user_list = []
-        for user_id in user_id_list:
-            user = self.facade.get_organization_member_from_user_id(project_id=project_id, user_id=user_id)
+        for account_id in account_id_list:
+            user = self.facade.get_organization_member_from_account_id(project_id=project_id, account_id=account_id)
             if user is not None:
                 user_list.append(user)
-        return pandas.DataFrame(user_list, columns=["user_id", "username", "biography"])
+        return pandas.DataFrame(user_list, columns=["account_id", "user_id", "username", "biography"])
 
     def create_summary_df(self, project_id: str, task_list: List[Task]) -> pandas.DataFrame:
         df_task_count = create_task_count_summary_df(task_list)
-        df_user = self.create_user_df(project_id, df_task_count["user_id"])
-        df = df_user.join(df_task_count, how="left", on="user_id")
+        df_user = self.create_user_df(project_id, df_task_count["account_id"])
+        df = pandas.merge(df_user, df_task_count, how="left", on=["account_id"])
 
         task_count_columns = [s.value for s in TaskStatusForSummary]
         df[task_count_columns] = df[task_count_columns].fillna(0)
@@ -179,9 +178,9 @@ def main(args):
 
 
 def add_parser(subparsers: argparse._SubParsersAction):
-    subcommand_name = "summarize_task_count_by_task_id"
-    subcommand_help = "担当しているユーザごとに、タスク数を出力します。"
-    description = "担当しているユーザごとに、タスク数を出力します。"
+    subcommand_name = "summarize_task_count_by_user"
+    subcommand_help = "担当しているユーザごとのタスク数を出力します。"
+    description = "担当しているユーザごとのタスク数をCSV形式出力します。"
     epilog = "オーナロールを持つユーザで実行してください。"
     parser = annofabcli.common.cli.add_parser(
         subparsers, subcommand_name, subcommand_help, description=description, epilog=epilog

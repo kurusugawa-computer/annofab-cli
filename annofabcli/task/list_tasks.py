@@ -259,7 +259,6 @@ def parse_args(parser: argparse.ArgumentParser):
         help="絞り込み対象である担当者のuser_idを指定します。" "`file://`を先頭に付けると、task_idの一覧が記載されたファイルを指定できます。",
     )
 
-
     argument_parser.add_format(
         choices=[FormatArgument.CSV, FormatArgument.JSON, FormatArgument.PRETTY_JSON, FormatArgument.TASK_ID_LIST],
         default=FormatArgument.CSV,
