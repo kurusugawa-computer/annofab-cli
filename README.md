@@ -118,8 +118,7 @@ $ docker run -it -e ANNOFAB_USER_ID=XXXX -e ANNOFAB_PASSWORD=YYYYY annofab-cli a
 |statistics| list_task_progress             | タスクフェーズ別の累積作業時間を出力します。                                                            |-|
 |statistics|summarize_task_count|タスクのフェーズ、ステータス、ステップごとにタスク数を出力します。|オーナ|
 |statistics|summarize_task_count_by_task_id|task_idのプレフィックスごとに、タスク数を出力します。|オーナ|
-
-
+|statistics|summarize_task_count_by_user|ユーザごとに担当しているタスク数を出力します。|オーナ|
 |statistics| visualize             | 統計情報を可視化します。                                                            |オーナ|
 |supplementary| list             | 補助情報を出力します。                                                           |オーナ|
 |task| cancel_acceptance             | 受け入れ完了タスクを、受け入れ取り消し状態にします。                                                         |オーナ|
@@ -1240,6 +1239,41 @@ task_id_prefix,complete,on_hold,annotation_not_started,inspection_not_started,ac
     * complete：完了
 
 「一度も作業されていない教師付未着手」のタスク数は、先頭行（step=1, phase=annotation, simple_status=not_started）のtask_countから分かります。
+
+
+### statistics summarize_task_count_by_user
+ユーザごとに担当しているタスク数をCSV形式で出力します。
+
+
+```
+# prj1のタスク数を出力します。ダウンロードしたタスク全件ファイルを元にして出力します（AM02:00頃更新）。
+$ annofabcli statistics summarize_task_count_by_user --project_id prj1 --output task-count.csv
+
+# `annofabcli project download task`でダウンロードした`task.json`を元にして、タスク数を出力します。
+$ annofabcli statistics summarize_task_count_by_task_id --project_id prj1 --task_json task.json --output task-count.csv
+
+```
+
+以下のようなCSVが出力されます。
+
+```csv
+task_id_prefix,complete,on_hold,annotation_not_started,inspection_not_started,acceptance_not_started,other,sum
+20200401,10,0,0,0,0,0,10
+20200501,10,1,4,0,1,4,20
+```
+
+各列
+* annotation_not_started: 教師付フェーズが一度も作業されていないタスク数
+* inspection_not_started: 検査フェーズが一度も作業されていないタスク数
+* acceptance_not_started: 受入フェーズが一度も作業されていないタスク数
+* other: 休憩中、作業中、
+* simple_status：タスクステータスを簡略化したもの
+    * not_started：未着手
+    * working_break_hold：作業中か休憩中か保留中
+    * complete：完了
+
+「一度も作業されていない教師付未着手」のタスク数は、先頭行（step=1, phase=annotation, simple_status=not_started）のtask_countから分かります。
+
 
 ### statistics visualize
 統計情報を可視化します。

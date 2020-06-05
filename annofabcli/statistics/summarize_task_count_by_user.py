@@ -112,8 +112,9 @@ class SummarizeTaskCountByUser(AbstractCommandLineInterface):
 
     def print_summarize_df(self, df: pandas.DataFrame) -> None:
         columns = ["user_id", "username", "biography"] + [status.value for status in TaskStatusForSummary]
+        target_df = df[columns].sort_values("user_id")
         annofabcli.utils.print_according_to_format(
-            df[columns], arg_format=FormatArgument(FormatArgument.CSV), output=self.output, csv_format=self.csv_format,
+            target_df, arg_format=FormatArgument(FormatArgument.CSV), output=self.output, csv_format=self.csv_format,
         )
 
     def main(self):
@@ -179,8 +180,8 @@ def main(args):
 
 def add_parser(subparsers: argparse._SubParsersAction):
     subcommand_name = "summarize_task_count_by_user"
-    subcommand_help = "担当しているユーザごとのタスク数を出力します。"
-    description = "担当しているユーザごとのタスク数をCSV形式出力します。"
+    subcommand_help = "ユーザごとに、担当しているタスク数を出力します。"
+    description = "ユーザごとに、担当しているタスク数をCSV形式で出力します。"
     epilog = "オーナロールを持つユーザで実行してください。"
     parser = annofabcli.common.cli.add_parser(
         subparsers, subcommand_name, subcommand_help, description=description, epilog=epilog
