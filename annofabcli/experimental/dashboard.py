@@ -1,3 +1,4 @@
+# pylint: disable-all
 # type: ignore
 # flake8: noqa
 import argparse
