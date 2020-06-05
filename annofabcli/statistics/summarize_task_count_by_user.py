@@ -20,7 +20,6 @@ from annofabcli.common.cli import (
 from annofabcli.common.dataclasses import WaitOptions
 from annofabcli.common.download import DownloadingFile
 from annofabcli.common.enums import FormatArgument
-from annofabcli.statistics.summarize_task_count import get_step_for_current_phase
 
 logger = logging.getLogger(__name__)
 
@@ -33,69 +32,43 @@ class TaskStatusForSummary(Enum):
     TaskStatusのサマリー用（知りたい情報をstatusにしている）
     """
 
-    COMPLETE = "complete"
-    ON_HOLD = "on_hold"
     ANNOTATION_NOT_STARTED = "annotation_not_started"
-    """教師付作業されていない状態"""
+    """教師付未着手"""
     INSPECTION_NOT_STARTED = "inspection_not_started"
-    """検査作業されていない状態"""
+    """検査未着手"""
     ACCEPTANCE_NOT_STARTED = "acceptance_not_started"
-    """受入作業されていない状態"""
-    OTHER = "other"
-    """休憩中/作業中/2回目移行の各フェーズの未着手状態"""
+    """受入未着手"""
 
-    @staticmethod
-    def _get_not_started_status(task: Task) -> "TaskStatusForSummary":
-        # `number_of_inspections=1`を指定する理由：多段検査を無視して、検査フェーズが１回目かどうかを知りたいため
-        step = get_step_for_current_phase(task, number_of_inspections=1)
-        if step == 1:
-            phase = TaskPhase(task["phase"])
-            if phase == TaskPhase.ANNOTATION:
-                return TaskStatusForSummary.ANNOTATION_NOT_STARTED
-            elif phase == TaskPhase.INSPECTION:
-                return TaskStatusForSummary.INSPECTION_NOT_STARTED
-            elif phase == TaskPhase.ACCEPTANCE:
-                return TaskStatusForSummary.ACCEPTANCE_NOT_STARTED
-            else:
-                raise ValueError(f"'{phase.value}'は対象外です。")
-        else:
-            return TaskStatusForSummary.OTHER
+    WORKING = "working"
+    BREAK = "break"
+    ON_HOLD = "on_hold"
+    COMPLETE = "complete"
 
     @staticmethod
     def from_task(task: Task) -> "TaskStatusForSummary":
-        status = TaskStatus(task["status"])
-        if status == TaskStatus.COMPLETE:
-            return TaskStatusForSummary.COMPLETE
-
-        elif status == TaskStatus.ON_HOLD:
-            return TaskStatusForSummary.ON_HOLD
-
-        elif status == TaskStatus.NOT_STARTED:
-            return TaskStatusForSummary._get_not_started_status(task)
+        status = task["status"]
+        if status == TaskStatus.NOT_STARTED.value:
+            phase = task["phase"]
+            if phase == TaskPhase.ANNOTATION.value:
+                return TaskStatusForSummary.ANNOTATION_NOT_STARTED
+            elif phase == TaskPhase.INSPECTION.value:
+                return TaskStatusForSummary.INSPECTION_NOT_STARTED
+            elif phase == TaskPhase.ACCEPTANCE.value:
+                return TaskStatusForSummary.ACCEPTANCE_NOT_STARTED
+            else:
+                raise RuntimeError(f"phase={phase}が対象外です。")
         else:
-            # WORKING, BREAK
-            return TaskStatusForSummary.OTHER
+            return TaskStatusForSummary(status)
 
 
-def get_task_id_prefix(task_id: str, delimiter: str = DEFAULT_TASK_ID_DELIMITER):
-    tmp_list = task_id.split(delimiter)
-    if len(tmp_list) <= 1:
-        return "unknown"
-    else:
-        return delimiter.join(tmp_list[0 : len(tmp_list) - 1])
+def add_info_to_task(task: Task) -> Task:
+    task["status_for_summary"] = TaskStatusForSummary.from_task(task).value
+    return task
 
 
-def add_task_id_prefix_to_task_list(task_list: List[Task], delimiter: str = DEFAULT_TASK_ID_DELIMITER) -> List[Task]:
-    for task in task_list:
-        task["task_id_prefix"] = get_task_id_prefix(task["task_id"], delimiter=delimiter)
-        task["status_for_summary"] = TaskStatusForSummary.from_task(task).value
-
-    return task_list
-
-
-def create_task_count_summary_df(task_list: List[Task], delimiter: str = DEFAULT_TASK_ID_DELIMITER) -> pandas.DataFrame:
+def create_task_count_summary_df(task_list: List[Task]) -> pandas.DataFrame:
     """
-    タスク数を集計したDataFrameを生成する。
+    タスク数の集計結果が格納されたDataFrameを取得する。
 
     Args:
         task_list:
@@ -108,27 +81,38 @@ def create_task_count_summary_df(task_list: List[Task], delimiter: str = DEFAULT
         if column not in df.columns:
             df[column] = 0
 
-    df_task = pandas.DataFrame(add_task_id_prefix_to_task_list(task_list, delimiter=delimiter))
+    df_task = pandas.DataFrame([add_info_to_task(t) for t in task_list])
 
     df_summary = df_task.pivot_table(
-        values="task_id", index=["task_id_prefix"], columns=["status_for_summary"], aggfunc="count", fill_value=0
+        values="task_id", index=["user_id"], columns=["status_for_summary"], aggfunc="count", fill_value=0
     ).reset_index()
 
     for status in TaskStatusForSummary:
         add_columns_if_not_exists(df_summary, status.value)
 
-    df_summary["sum"] = (
-        df_task.pivot_table(values="task_id", index=["task_id_prefix"], aggfunc="count", fill_value=0)
-        .reset_index()
-        .fillna(0)["task_id"]
-    )
-
     return df_summary
 
 
-class SummarizeTaskCountByTaskId(AbstractCommandLineInterface):
-    def print_summarize_task_count(self, df: pandas.DataFrame) -> None:
-        columns = ["task_id_prefix"] + [status.value for status in TaskStatusForSummary] + ["sum"]
+class SummarizeTaskCountByUser(AbstractCommandLineInterface):
+    def create_user_df(self, project_id: str, user_id_list: List[str]) -> pandas.DataFrame:
+        user_list = []
+        for user_id in user_id_list:
+            user = self.facade.get_organization_member_from_user_id(project_id=project_id, user_id=user_id)
+            if user is not None:
+                user_list.append(user)
+        return pandas.DataFrame(user_list, columns=["user_id", "username", "biography"])
+
+    def create_summary_df(self, project_id: str, task_list: List[Task]) -> pandas.DataFrame:
+        df_task_count = create_task_count_summary_df(task_list)
+        df_user = self.create_user_df(project_id, df_task_count["user_id"])
+        df = df_user.join(df_task_count, how="left", on="user_id")
+
+        task_count_columns = [s.value for s in TaskStatusForSummary]
+        df[task_count_columns] = df[task_count_columns].fillna(0)
+        return df
+
+    def print_summarize_df(self, df: pandas.DataFrame) -> None:
+        columns = ["user_id", "username", "biography"] + [status.value for status in TaskStatusForSummary]
         annofabcli.utils.print_according_to_format(
             df[columns], arg_format=FormatArgument(FormatArgument.CSV), output=self.output, csv_format=self.csv_format,
         )
@@ -153,8 +137,8 @@ class SummarizeTaskCountByTaskId(AbstractCommandLineInterface):
         with open(task_json_path, encoding="utf-8") as f:
             task_list = json.load(f)
 
-        df = create_task_count_summary_df(task_list, delimiter=args.delimiter)
-        self.print_summarize_task_count(df)
+        df = self.create_summary_df(project_id, task_list)
+        self.print_summarize_df(df)
 
 
 def parse_args(parser: argparse.ArgumentParser):
@@ -165,14 +149,6 @@ def parse_args(parser: argparse.ArgumentParser):
         "--task_json",
         type=str,
         help="タスク情報が記載されたJSONファイルのパスを指定してます。JSONファイルは`$ annofabcli project download task`コマンドで取得できます。"
-        "指定しない場合は、AnnoFabからタスク全件ファイルをダウンロードします。",
-    )
-
-    parser.add_argument(
-        "--delimiter",
-        type=str,
-        default="_",
-        help="task_idのprefixと連番を分ける区切り文字です。デフォルトは`_`で、`{prefix}_{連番}`のようなtask_idを想定しています。"
         "指定しない場合は、AnnoFabからタスク全件ファイルをダウンロードします。",
     )
 
@@ -199,13 +175,13 @@ def parse_args(parser: argparse.ArgumentParser):
 def main(args):
     service = build_annofabapi_resource_and_login(args)
     facade = AnnofabApiFacade(service)
-    SummarizeTaskCountByTaskId(service, facade, args).main()
+    SummarizeTaskCountByUser(service, facade, args).main()
 
 
 def add_parser(subparsers: argparse._SubParsersAction):
     subcommand_name = "summarize_task_count_by_task_id"
-    subcommand_help = "task_idのプレフィックスごとに、タスク数を出力します。"
-    description = "task_idのプレフィックスごとに、タスク数をCSV形式で出力します。"
+    subcommand_help = "担当しているユーザごとに、タスク数を出力します。"
+    description = "担当しているユーザごとに、タスク数を出力します。"
     epilog = "オーナロールを持つユーザで実行してください。"
     parser = annofabcli.common.cli.add_parser(
         subparsers, subcommand_name, subcommand_help, description=description, epilog=epilog
