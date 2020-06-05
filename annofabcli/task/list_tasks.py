@@ -241,14 +241,6 @@ def parse_args(parser: argparse.ArgumentParser):
         help="対象のタスクのtask_idを指定します。`--task_query`引数とは同時に指定できません。" "`file://`を先頭に付けると、task_idの一覧が記載されたファイルを指定できます。",
     )
 
-    query_group.add_argument(
-        "-u",
-        "--user_id",
-        type=str,
-        nargs="+",
-        help="絞り込み対象である担当者のuser_idを指定します。" "`file://`を先頭に付けると、task_idの一覧が記載されたファイルを指定できます。",
-    )
-
     parser.add_argument(
         "--task_json",
         type=str,
@@ -258,6 +250,15 @@ def parse_args(parser: argparse.ArgumentParser):
         "JSONには記載されていない、`user_id`や`username`などの情報も追加します。"
         "JSONファイルは`$ annofabcli project download task`コマンドで取得できます。",
     )
+
+    parser.add_argument(
+        "-u",
+        "--user_id",
+        type=str,
+        nargs="+",
+        help="絞り込み対象である担当者のuser_idを指定します。" "`file://`を先頭に付けると、task_idの一覧が記載されたファイルを指定できます。",
+    )
+
 
     argument_parser.add_format(
         choices=[FormatArgument.CSV, FormatArgument.JSON, FormatArgument.PRETTY_JSON, FormatArgument.TASK_ID_LIST],
