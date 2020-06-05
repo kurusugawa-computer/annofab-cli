@@ -76,12 +76,12 @@ class CancelAcceptance(AbstractCommandLineInterface):
                     "last_updated_datetime": task["updated_datetime"],
                 }
                 self.service.api.operate_task(project_id, task_id, request_body=request_body)
-                logger.info(f"{str_progress} : task_id = {task_id} の受け入れ取り消し成功")
+                logger.info(f"{str_progress} : task_id = {task_id} の受け入れ取り消しが成功しました。 user_id = '{acceptor_user_id}' に割り当てます。")
                 success_count += 1
 
             except requests.exceptions.HTTPError as e:
                 logger.warning(e)
-                logger.warning(f"{str_progress} : task_id = {task_id} の受け入れ取り消し失敗")
+                logger.warning(f"{str_progress} : task_id = {task_id} の受け入れ取り消しに失敗しました。")
 
         logger.info(f"{success_count} / {len(task_id_list)} 件 受け入れ取り消しに成功した")
 
