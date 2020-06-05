@@ -117,6 +117,8 @@ $ docker run -it -e ANNOFAB_USER_ID=XXXX -e ANNOFAB_PASSWORD=YYYYY annofab-cli a
 |statistics| list_cumulative_labor_time             |       タスク進捗状況を出力します。                                                    |-|
 |statistics| list_task_progress             | タスクフェーズ別の累積作業時間を出力します。                                                            |-|
 |statistics|summarize_task_count|タスクのフェーズ、ステータス、ステップごとにタスク数を出力します。|オーナ|
+|statistics|summarize_task_count_by_task_id|task_idのプレフィックスごとに、タスク数を出力します。|オーナ|
+|statistics|summarize_task_count_by_user|ユーザごとに担当しているタスク数を出力します。|オーナ|
 |statistics| visualize             | 統計情報を可視化します。                                                            |オーナ|
 |supplementary| list             | 補助情報を出力します。                                                           |オーナ|
 |task| cancel_acceptance             | 受け入れ完了タスクを、受け入れ取り消し状態にします。                                                         |オーナ|
@@ -124,6 +126,7 @@ $ docker run -it -e ANNOFAB_USER_ID=XXXX -e ANNOFAB_PASSWORD=YYYYY annofab-cli a
 |task| complete                | タスクを完了状態にして次のフェーズに進めます（教師付の提出、検査/受入の合格）。                                  |チェッカー/オーナ|
 |task| delete                | タスクを削除します。                                 |オーナ|
 |task|list             | タスク一覧を出力します。                                                            |-|
+|task|list_added_task_history             | タスク履歴情報を加えたタスク一覧を出力します。|オーナ|
 |task| put                | タスクを作成します。                                 |オーナ|
 |task| reject                  | タスクを強制的に差し戻します。                                                                 |オーナ|
 
@@ -1203,6 +1206,75 @@ step,phase,phase_stage,simple_status,task_count
 「一度も作業されていない教師付未着手」のタスク数は、先頭行（step=1, phase=annotation, simple_status=not_started）のtask_countから分かります。
 
 
+### statistics summarize_task_count_by_task_id
+task_idのプレフィックスごとに、タスク数をCSV形式で出力します。
+task_idは`{prefix}_{連番}`のようなフォーマットを想定しています。
+
+
+```
+# prj1のタスク数を出力します。ダウンロードしたタスク全件ファイルを元にして出力します（AM02:00頃更新）。
+$ annofabcli statistics summarize_task_count_by_task_id --project_id prj1 --output task-count.csv
+
+# `annofabcli project download task`でダウンロードした`task.json`を元にして、タスク数を出力します。
+$ annofabcli statistics summarize_task_count_by_task_id --project_id prj1 --task_json task.json --output task-count.csv
+
+```
+
+以下のようなCSVが出力されます。
+
+```csv
+task_id_prefix,complete,on_hold,annotation_not_started,inspection_not_started,acceptance_not_started,other,sum
+20200401,10,0,0,0,0,0,10
+20200501,10,1,4,0,1,4,20
+```
+
+各列
+* annotation_not_started: 教師付フェーズが一度も作業されていないタスク数
+* inspection_not_started: 検査フェーズが一度も作業されていないタスク数
+* acceptance_not_started: 受入フェーズが一度も作業されていないタスク数
+* other: 休憩中、作業中、
+* simple_status：タスクステータスを簡略化したもの
+    * not_started：未着手
+    * working_break_hold：作業中か休憩中か保留中
+    * complete：完了
+
+「一度も作業されていない教師付未着手」のタスク数は、先頭行（step=1, phase=annotation, simple_status=not_started）のtask_countから分かります。
+
+
+### statistics summarize_task_count_by_user
+ユーザごとに担当しているタスク数をCSV形式で出力します。
+
+
+```
+# prj1のタスク数を出力します。ダウンロードしたタスク全件ファイルを元にして出力します（AM02:00頃更新）。
+$ annofabcli statistics summarize_task_count_by_user --project_id prj1 --output task-count.csv
+
+# `annofabcli project download task`でダウンロードした`task.json`を元にして、タスク数を出力します。
+$ annofabcli statistics summarize_task_count_by_task_id --project_id prj1 --task_json task.json --output task-count.csv
+
+```
+
+以下のようなCSVが出力されます。
+
+```csv
+task_id_prefix,complete,on_hold,annotation_not_started,inspection_not_started,acceptance_not_started,other,sum
+20200401,10,0,0,0,0,0,10
+20200501,10,1,4,0,1,4,20
+```
+
+各列
+* annotation_not_started: 教師付フェーズが一度も作業されていないタスク数
+* inspection_not_started: 検査フェーズが一度も作業されていないタスク数
+* acceptance_not_started: 受入フェーズが一度も作業されていないタスク数
+* other: 休憩中、作業中、
+* simple_status：タスクステータスを簡略化したもの
+    * not_started：未着手
+    * working_break_hold：作業中か休憩中か保留中
+    * complete：完了
+
+「一度も作業されていない教師付未着手」のタスク数は、先頭行（step=1, phase=annotation, simple_status=not_started）のtask_countから分かります。
+
+
 ### statistics visualize
 統計情報を可視化します。
 
@@ -1238,11 +1310,16 @@ $ annofabcli supplementary list --project_id prj1 --input_data_id id1 id2
 
 
 ```
-# prj1プロジェクトのタスクを、受け入れ取り消しにする。再度受け入れを担当させるユーザは未担当
+# prj1プロジェクトのタスクを、受け入れ取り消しにする。最後に受入を担当したユーザに割り当てる
 $ annofabcli task cancel_acceptance --project_id prj1 --task_id file://task.txt
 
-# prj1プロジェクトのタスクを、受け入れ取り消しにする。再度受け入れを担当させるユーザはuser1
-$ annofabcli task cancel_acceptance --project_id prj1 --task_id file://task.txt --user_id user1
+# prj1プロジェクトのタスクを、受け入れ取り消しにする。ユーザuser1に割り当てる。
+$ annofabcli task cancel_acceptance --project_id prj1 --task_id file://task.txt --assigned_acceptor_user_id user1
+
+# prj1プロジェクトのタスクを、受け入れ取り消しにする。担当者は未割り当て
+$ annofabcli task cancel_acceptance --project_id prj1 --task_id file://task.txt --not_assign
+
+
 ```
 
 
@@ -1325,6 +1402,23 @@ $ annofabcli task list --project_id prj1 --task_json task.json
 
 
 
+
+
+### task list_added_task_history
+タスク履歴情報（フェーズごとの作業時間、担当者、開始日時）を加えたタスク一覧をCSV形式で出力します。
+最初に教師付を開始した日時や担当者を調べるときなどに利用できます。
+
+
+```
+# prj1のタスク全件ファイル、タスク履歴全件ファイルをダウンロードして、タスク一覧のCSVを出力する
+$ annofabcli task list_added_task_history --project_id prj1 --output task.csv
+
+# prj1のタスク全件ファイルの最新版をダウンロードして、タスク一覧のCSVを出力する。タスク履歴全件ファイルはWebAPIの都合上最新化できません。
+$ annofabcli task list_added_task_history --project_id prj1 --output task.csv --latest
+
+# タスク全件ファイルJSON、タスク履歴全件ファイルJSONを参照して、タスク一覧のCSVを出力する
+$ annofabcli task list_added_task_history --project_id prj1 --output task.csv --task_json task.json --task_history_json task_history.json
+```
 
 
 ### task put

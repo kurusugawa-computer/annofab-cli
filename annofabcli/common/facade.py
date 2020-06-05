@@ -1,16 +1,64 @@
 """
 annofabapiのfacadeクラス
 """
-
 import logging
+from dataclasses import asdict, dataclass
 from typing import Any, Callable, Dict, List, Optional, Tuple
 
 import annofabapi
 import annofabapi.utils
 import more_itertools
-from annofabapi.models import OrganizationMember, OrganizationMemberRole, ProjectId, ProjectMemberRole
+from annofabapi.dataclass.annotation import AdditionalData
+from annofabapi.models import OrganizationMember, OrganizationMemberRole, ProjectId, ProjectMemberRole, SingleAnnotation
+from dataclasses_json import dataclass_json
 
 logger = logging.getLogger(__name__)
+
+
+@dataclass_json
+@dataclass
+class AnnotationQuery:
+    """
+    `get_annotation_list`メソッドに渡すアノテーション検索条件
+    """
+
+    label_id: str
+    attributes: Optional[List[AdditionalData]] = None
+
+
+@dataclass_json
+@dataclass
+class AdditionalDataForCli:
+    additional_data_definition_id: Optional[str] = None
+    """属性ID"""
+
+    additional_data_definition_name_en: Optional[str] = None
+    """属性の英語名"""
+
+    flag: Optional[bool] = None
+
+    integer: Optional[int] = None
+
+    comment: Optional[str] = None
+
+    choice: Optional[str] = None
+    """選択肢ID"""
+
+    choice_name_en: Optional[str] = None
+    """選択肢の英語名"""
+
+
+@dataclass_json
+@dataclass
+class AnnotationQueryForCli:
+    """
+    コマンドライン上で指定するアノテーション検索条件
+    """
+
+    label_name_en: Optional[str] = None
+    """ラベルの英語名"""
+    label_id: Optional[str] = None
+    attributes: Optional[List[AdditionalDataForCli]] = None
 
 
 class AnnofabApiFacade:
@@ -18,7 +66,7 @@ class AnnofabApiFacade:
     AnnofabApiのFacadeクラス。annofabapiの複雑な処理を簡単に呼び出せるようにする。
     """
 
-    #: 組織メンバ一覧のキャッシュ(
+    #: 組織メンバ一覧のキャッシュ
     _organization_members: Optional[Tuple[ProjectId, List[OrganizationMember]]] = None
 
     def __init__(self, service: annofabapi.Resource):
@@ -371,3 +419,250 @@ class AnnofabApiFacade:
             "last_updated_datetime": task["updated_datetime"],
         }
         return self.service.api.operate_task(project_id, task_id, request_body=req)[0]
+
+    @staticmethod
+    def get_label_info_from_name(annotation_specs_labels: List[Dict[str, Any]], label_name_en: str) -> Dict[str, Any]:
+        labels = [e for e in annotation_specs_labels if AnnofabApiFacade.get_label_name_en(e) == label_name_en]
+        if len(labels) > 1:
+            raise ValueError(f"label_name_en: {label_name_en} に一致するラベル情報が複数見つかりました。")
+
+        if len(labels) == 0:
+            raise ValueError(f"label_name_en: {label_name_en} に一致するラベル情報が見つかりませんでした。")
+
+        return labels[0]
+
+    @staticmethod
+    def get_additional_data_from_name(
+        additional_data_definitions: List[Dict[str, Any]], additional_data_definition_name_en: str
+    ) -> Dict[str, Any]:
+        additional_data_list = [
+            e
+            for e in additional_data_definitions
+            if AnnofabApiFacade.get_additional_data_definition_name_en(e) == additional_data_definition_name_en
+        ]
+        if len(additional_data_list) > 1:
+            raise ValueError(
+                f"additional_data_definition_name_en: {additional_data_definition_name_en} に一致する属性情報が複数見つかりました。"
+            )
+
+        if len(additional_data_list) == 0:
+            raise ValueError(
+                f"additional_data_definition_name_en: {additional_data_definition_name_en} に一致する属性情報が見つかりませんでした。"
+            )
+
+        return additional_data_list[0]
+
+    @staticmethod
+    def get_choice_info_from_name(choice_info_list: List[Dict[str, Any]], choice_name_en: str) -> Dict[str, Any]:
+        filterd_choice_list = [e for e in choice_info_list if AnnofabApiFacade.get_choice_name_en(e) == choice_name_en]
+        if len(filterd_choice_list) > 1:
+            raise ValueError(f"choice_name_en: {choice_name_en} に一致する選択肢情報が複数見つかりました。")
+
+        if len(filterd_choice_list) == 0:
+            raise ValueError(f"choice_name_en: {choice_name_en} に一致する選択肢情報が見つかりませんでした。")
+
+        return filterd_choice_list[0]
+
+    def to_annotation_query_from_cli(self, project_id: str, query: AnnotationQueryForCli) -> AnnotationQuery:
+        """
+        コマンドラインから指定されたアノテーション検索クエリを、WebAPIに渡す検索クエリに変換する。
+        nameからIDを取得できない場合は、その時点で終了する。
+
+        * ``label_name_en`` から ``label_id`` に変換する。
+        * ``additional_data_definition_name_en`` から ``additional_data_definition_id`` に変換する。
+        * ``choice_name_en`` から ``choice`` に変換する。
+
+        Args:
+            project_id:
+            annotation_query:
+            task_id: 検索対象のtask_id
+
+        Returns:
+            修正したタスク検索クエリ
+
+        """
+
+        annotation_specs, _ = self.service.api.get_annotation_specs(project_id)
+        specs_labels = annotation_specs["labels"]
+
+        # label_name_en から label_idを設定
+        if query.label_id is not None:
+            label_info = more_itertools.first_true(specs_labels, pred=lambda e: e["label_id"] == query.label_id)
+            if label_info is None:
+                raise ValueError(f"label_id: {query.label_id} に一致するラベル情報は見つかりませんでした。")
+        elif query.label_name_en is not None:
+            label_info = self.get_label_info_from_name(specs_labels, query.label_name_en)
+        else:
+            raise ValueError("'label_id' または 'label_name_en'のいずれかは必ず指定してください。")
+
+        api_query = AnnotationQuery(label_id=label_info["label_id"])
+        if query.attributes is not None:
+            api_attirbutes = []
+            for cli_attirbute in query.attributes:
+                api_attirbutes.append(
+                    self._get_attribute_from_cli(label_info["additional_data_definitions"], cli_attirbute)
+                )
+
+            api_query.attributes = api_attirbutes
+
+        return api_query
+
+    def to_attributes_from_cli(
+        self, project_id: str, label_id: str, attributes: List[AdditionalDataForCli]
+    ) -> List[AdditionalData]:
+        """
+        コマンドラインから指定された属性値Listを、WebAPIに渡す属性値Listに変換する。
+        nameからIDを取得できない場合は、その時点で終了する。
+
+        * ``additional_data_definition_name_en`` から ``additional_data_definition_id`` に変換する。
+        * ``choice_name_en`` から ``choice`` に変換する。
+        """
+        annotation_specs, _ = self.service.api.get_annotation_specs(project_id)
+        specs_labels = annotation_specs["labels"]
+
+        # label_name_en から label_idを設定
+        label_info = more_itertools.first_true(specs_labels, pred=lambda e: e["label_id"] == label_id)
+        if label_info is None:
+            raise ValueError(f"label_id: {label_id} に一致するラベル情報は見つかりませんでした。")
+
+        api_attirbutes = []
+        for cli_attirbute in attributes:
+            api_attirbutes.append(
+                self._get_attribute_from_cli(label_info["additional_data_definitions"], cli_attirbute)
+            )
+        return api_attirbutes
+
+    @staticmethod
+    def _get_attribute_from_cli(
+        additional_data_definitions: List[Dict[str, Any]], cli_attirbute: AdditionalDataForCli
+    ) -> AdditionalData:
+
+        if cli_attirbute.additional_data_definition_id is not None:
+            additional_data = more_itertools.first_true(
+                additional_data_definitions,
+                pred=lambda e: e["additional_data_definition_id"] == cli_attirbute.additional_data_definition_id,
+            )
+            if additional_data is None:
+                raise ValueError(
+                    f"additional_data_definition_id: {cli_attirbute.additional_data_definition_id} は存在しない値です。"
+                )
+
+        elif cli_attirbute.additional_data_definition_name_en is not None:
+            additional_data = AnnofabApiFacade.get_additional_data_from_name(
+                additional_data_definitions, cli_attirbute.additional_data_definition_name_en
+            )
+
+        else:
+            raise ValueError(
+                "'additional_data_definition_id' または 'additional_data_definition_name_en'のいずれかは必ず指定してください。"
+            )
+
+        api_attirbute = AdditionalData(
+            additional_data_definition_id=additional_data["additional_data_definition_id"],
+            flag=cli_attirbute.flag,
+            integer=cli_attirbute.integer,
+            comment=cli_attirbute.comment,
+            choice=cli_attirbute.choice,
+        )
+
+        # 選択肢IDを確認
+        choices = additional_data["choices"]
+        if cli_attirbute.choice is not None:
+            choice_info = more_itertools.first_true(choices, pred=lambda e: e["choice_id"] == cli_attirbute.choice)
+            if choice_info is None:
+                raise ValueError(f"choice: {cli_attirbute.choice} は存在しない値です。")
+
+        elif cli_attirbute.choice_name_en is not None:
+            choice_info = AnnofabApiFacade.get_choice_info_from_name(choices, cli_attirbute.choice_name_en)
+            api_attirbute.choice = choice_info["choice_id"]
+
+        return api_attirbute
+
+    def get_annotation_list_for_task(
+        self, project_id: str, task_id: str, query: Optional[AnnotationQuery] = None
+    ) -> List[SingleAnnotation]:
+        """
+        タスク内のアノテーション一覧を取得する。
+
+        Args:
+            project_id:
+            task_id:
+            query: アノテーションの検索条件
+
+        Returns:
+            アノテーション一覧
+        """
+        dict_query = {"task_id": task_id, "exact_match_task_id": True}
+        if query is not None:
+            dict_query.update(asdict(query))
+        query_params = {"query": dict_query}
+        annotation_list = self.service.wrapper.get_all_annotation_list(project_id, query_params=query_params)
+        assert all([e["task_id"] == task_id for e in annotation_list]), f"task_id='{task_id}' 以外のアノテーションが削除対象です！！"
+        return annotation_list
+
+    def delete_annotation_list(
+        self, project_id: str, annotation_list: List[SingleAnnotation]
+    ) -> Optional[List[Dict[str, Any]]]:
+        """
+        アノテーション一覧を削除する。
+        【注意】取扱注意
+
+        Args:
+            project_id:
+            annotation_list: アノテーション一覧
+
+        Returns:
+            `batch_update_annotations`メソッドのレスポンス
+
+        """
+
+        def _to_request_body_elm(annotation: Dict[str, Any]) -> Dict[str, Any]:
+            detail = annotation["detail"]
+            return {
+                "project_id": annotation["project_id"],
+                "task_id": annotation["task_id"],
+                "input_data_id": annotation["input_data_id"],
+                "updated_datetime": annotation["updated_datetime"],
+                "annotation_id": detail["annotation_id"],
+                "_type": "Delete",
+            }
+
+        request_body = [_to_request_body_elm(annotation) for annotation in annotation_list]
+        return self.service.api.batch_update_annotations(project_id, request_body)[0]
+
+    def change_annotation_attributes(
+        self, project_id: str, annotation_list: List[SingleAnnotation], attributes: List[AdditionalData]
+    ) -> Optional[List[Dict[str, Any]]]:
+        """
+        アノテーション属性値を変更する。
+
+        【注意】取扱注意
+
+        Args:
+            project_id:
+            annotation_list: 変更対象のアノテーション一覧
+            attributes: 変更後の属性値
+
+        Returns:
+            `batch_update_annotations`メソッドのレスポンス
+
+        """
+
+        def _to_request_body_elm(annotation: Dict[str, Any]) -> Dict[str, Any]:
+            detail = annotation["detail"]
+            return {
+                "data": {
+                    "project_id": annotation["project_id"],
+                    "task_id": annotation["task_id"],
+                    "input_data_id": annotation["input_data_id"],
+                    "updated_datetime": annotation["updated_datetime"],
+                    "annotation_id": detail["annotation_id"],
+                    "label_id": detail["label_id"],
+                    "additional_data_list": attributes_for_dict,
+                },
+                "_type": "Put",
+            }
+
+        attributes_for_dict: List[Dict[str, Any]] = [asdict(e) for e in attributes]
+        request_body = [_to_request_body_elm(annotation) for annotation in annotation_list]
+        return self.service.api.batch_update_annotations(project_id, request_body)[0]

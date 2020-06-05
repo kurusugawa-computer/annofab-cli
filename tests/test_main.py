@@ -1,5 +1,4 @@
 import configparser
-import datetime
 import os
 from pathlib import Path
 
@@ -196,21 +195,10 @@ class TestInputData:
             ]
         )
 
-    @pytest.mark.submitting_job
     def test_list_input_data_merged_task_with_downloading(self):
         out_file = str(out_path / "input_data.csv")
         main(
-            [
-                "input_data",
-                "list_merged_task",
-                "--project_id",
-                project_id,
-                "--latest",
-                "--wait_options",
-                '{"interval":1, "max_tries":1}',
-                "--output",
-                out_file,
-            ]
+            ["input_data", "list_merged_task", "--project_id", project_id, "--output", out_file,]
         )
 
     def test_list_input_data_merged_task_with_json(self):
@@ -585,6 +573,18 @@ class TestStatistics:
             ]
         )
 
+    def test_summarize_task_count_by_task_id(self):
+        out_file = str(out_path / "summarize_task_count_by_task_id.csv")
+        main(
+            ["statistics", "summarize_task_count_by_task_id", "--project_id", project_id, "--output", out_file,]
+        )
+
+    def test_summarize_task_count_by_user(self):
+        out_file = str(out_path / "summarize_task_count_by_user.csv")
+        main(
+            ["statistics", "summarize_task_count_by_user", "--project_id", project_id, "--output", out_file,]
+        )
+
 
 class TestSupplementary:
     def test_list_project_member(self):
@@ -666,21 +666,61 @@ class TestTask:
             ]
         )
 
-    def test_reject_task(self):
-        inspection_comment = datetime.datetime.now().isoformat()
+    def test_list_added_task_history(self):
+        out_file = str(out_path / "task.csv")
         main(
             [
                 self.command_name,
-                "reject",
+                "list",
                 "--project_id",
                 project_id,
-                "--task_id",
-                task_id,
-                "--comment",
-                inspection_comment,
-                "--yes",
+                "--task_query",
+                f'{{"user_id": "{user_id}", "phase":"acceptance", "status": "complete"}}',
+                "--output",
+                out_file,
+                "--format",
+                "csv",
             ]
         )
+
+    def test_list_added_task_history_with_downloading(self):
+        out_file = str(out_path / "task.csv")
+        main(
+            [self.command_name, "list_added_task_history", "--project_id", project_id, "--output", out_file,]
+        )
+
+    def test_list_input_data_merged_task_with_json(self):
+        out_file = str(out_path / "task.csv")
+        main(
+            [
+                self.command_name,
+                "list_added_task_history",
+                "--project_id",
+                project_id,
+                "--output",
+                out_file,
+                "--task_json",
+                str(data_path / "task.json"),
+                "--task_history_json",
+                str(data_path / "task-history.json"),
+            ]
+        )
+
+    # def test_reject_task(self):
+    #     inspection_comment = datetime.datetime.now().isoformat()
+    #     main(
+    #         [
+    #             self.command_name,
+    #             "reject",
+    #             "--project_id",
+    #             project_id,
+    #             "--task_id",
+    #             task_id,
+    #             "--comment",
+    #             inspection_comment,
+    #             "--yes",
+    #         ]
+    #     )
 
     @pytest.mark.submitting_job
     def test_put_task(self):
@@ -689,19 +729,19 @@ class TestTask:
             [self.command_name, "put", "--project_id", project_id, "--csv", csv_file,]
         )
 
-    def test_complete_task(self):
-        main(
-            [
-                self.command_name,
-                "complete",
-                "--project_id",
-                project_id,
-                "--task_id",
-                task_id,
-                "--phase",
-                "annotation",
-                "--reply_comment",
-                "対応しました（自動投稿）",
-                "--yes",
-            ]
-        )
+    # def test_complete_task(self):
+    #     main(
+    #         [
+    #             self.command_name,
+    #             "complete",
+    #             "--project_id",
+    #             project_id,
+    #             "--task_id",
+    #             task_id,
+    #             "--phase",
+    #             "annotation",
+    #             "--reply_comment",
+    #             "対応しました（自動投稿）",
+    #             "--yes",
+    #         ]
+    #     )

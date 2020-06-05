@@ -139,14 +139,14 @@ def parse_args(parser: argparse.ArgumentParser):
     parser.add_argument(
         "--input_data_json",
         type=str,
-        help="入力データ情報が記載されたJSONファイルのパスを指定してください。JSONに記載された情報を元にタスク一覧を出力します。"
+        help="入力データ情報が記載されたJSONファイルのパスを指定してください。JSONに記載された情報を元に出力します。"
         "JSONファイルは`$ annofabcli project download input_data`コマンドで取得できます。",
     )
 
     parser.add_argument(
         "--task_json",
         type=str,
-        help="タスク情報が記載されたJSONファイルのパスを指定してください。JSONに記載された情報を元にタスク一覧を出力します。"
+        help="タスク情報が記載されたJSONファイルのパスを指定してください。JSONに記載された情報を元に出力します。"
         "JSONファイルは`$ annofabcli project download task`コマンドで取得できます。",
     )
 
@@ -176,6 +176,7 @@ def add_parser(subparsers: argparse._SubParsersAction):
     subcommand_name = "list_merged_task"
     subcommand_help = "タスク一覧と結合した入力データ一覧のCSVを出力します。"
     description = "タスク一覧と結合した入力データ一覧のCSVを出力します。"
+    epilog = "オーナロールを持つユーザで実行してください。"
 
-    parser = annofabcli.common.cli.add_parser(subparsers, subcommand_name, subcommand_help, description)
+    parser = annofabcli.common.cli.add_parser(subparsers, subcommand_name, subcommand_help, description, epilog=epilog)
     parse_args(parser)
