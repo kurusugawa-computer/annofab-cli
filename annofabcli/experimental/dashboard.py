@@ -128,7 +128,9 @@ def create_task_count_info(task_list: List[Task], date: Optional[datetime.date] 
 
         week_ago = date - datetime.timedelta(days=7)
         task_list_for_week = get_task_list_where_updated_datetime(task_list, lower_date=week_ago, upper_date=date)
-        result[f"{str(week_ago)}:{str(date)}"] = get_task_count_info_from_task_list(task_list_for_week).to_dict()  # type: ignore
+        result[f"{str(week_ago)}:{str(date)}"] = get_task_count_info_from_task_list(
+            task_list_for_week
+        ).to_dict()  # type: ignore
 
     return result
 
