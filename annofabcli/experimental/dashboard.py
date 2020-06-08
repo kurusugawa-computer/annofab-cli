@@ -123,12 +123,12 @@ def create_task_count_info(task_list: List[Task], date: Optional[datetime.date] 
     cumulation_task_count = get_task_count_info_from_task_list(task_list)
     result = {"cumulation": cumulation_task_count.to_dict()}  # type: ignore
     if date is not None:
-        task_list = get_task_list_where_updated_datetime(task_list, lower_date=date, upper_date=date)
-        result[str(date)] = get_task_count_info_from_task_list(task_list).to_dict()  # type: ignore
+        task_list_for_day = get_task_list_where_updated_datetime(task_list, lower_date=date, upper_date=date)
+        result[str(date)] = get_task_count_info_from_task_list(task_list_for_day).to_dict()  # type: ignore
 
-        week_ago = date + datetime.timedelta(days=7)
-        task_list = get_task_list_where_updated_datetime(task_list, lower_date=week_ago, upper_date=date)
-        result[str(date)] = get_task_count_info_from_task_list(task_list).to_dict()  # type: ignore
+        week_ago = date - datetime.timedelta(days=7)
+        task_list_for_week = get_task_list_where_updated_datetime(task_list, lower_date=week_ago, upper_date=date)
+        result[f"{str(week_ago)}:{str(date)}"] = get_task_count_info_from_task_list(task_list_for_week).to_dict()  # type: ignore
 
     return result
 
@@ -159,7 +159,8 @@ class DashBoard(AbstractCommandLineInterface):
         with open(task_json_path, encoding="utf-8") as f:
             task_list = json.load(f)
 
-        dashboard_info = create_task_count_info(task_list, date=args.date)
+        dt_date = datetime.datetime.strptime(args.date, "%Y-%m-%d").date()
+        dashboard_info = create_task_count_info(task_list, date=dt_date)
         annofabcli.utils.print_according_to_format(
             dashboard_info, arg_format=FormatArgument(self.str_format), output=self.output,
         )
