@@ -44,7 +44,7 @@ class RejectTasks(AbstractCommandLineInterface):
         """
         first_input_data_id = task["input_data_id_list"][0]
         if project_input_data_type == InputDataType.MOVIE:
-            inspection_data = {"start": 0, "end": 0, "_type": "Time"}
+            inspection_data = {"start": 0, "end": 100, "_type": "Time"}
         else:
             inspection_data = {"x": 0, "y": 0, "_type": "Point"}
 
@@ -258,7 +258,7 @@ def parse_args(parser: argparse.ArgumentParser):
         "-c",
         "--comment",
         type=str,
-        help="差し戻すときに付与する検査コメントを指定します。" "画像プロジェクトならばタスク内の先頭の画像の左上(x=0,y=0)に、動画プロジェクトなら動画の先頭（start=0, end=0)に付与します。",
+        help="差し戻すときに付与する検査コメントを指定します。" "画像プロジェクトならばタスク内の先頭の画像の左上(x=0,y=0)に、動画プロジェクトなら動画の先頭（start=0, end=100)に付与します。",
     )
 
     # 差し戻したタスクの担当者の割当に関して
