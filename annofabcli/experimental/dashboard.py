@@ -159,7 +159,7 @@ class DashBoard(AbstractCommandLineInterface):
         with open(task_json_path, encoding="utf-8") as f:
             task_list = json.load(f)
 
-        dashboard_info = create_task_count_info(task_list)
+        dashboard_info = create_task_count_info(task_list, date=args.date)
         annofabcli.utils.print_according_to_format(
             dashboard_info, arg_format=FormatArgument(self.str_format), output=self.output,
         )
@@ -175,6 +175,9 @@ def parse_args(parser: argparse.ArgumentParser):
         help="タスク情報が記載されたJSONファイルのパスを指定してます。JSONファイルは`$ annofabcli project download task`コマンドで取得できます。"
         "指定しない場合は、AnnoFabからタスク全件ファイルをダウンロードします。",
     )
+
+    parser.add_argument("--date", type=str, help="`YYYY-MM-DD`形式で日付を指定すると、対象日の情報を出力します。")
+
     parser.add_argument(
         "--latest", action="store_true", help="最新のタスク一覧ファイルを参照します。このオプションを指定すると、タスク一覧ファイルを更新するのに数分待ちます。"
     )
