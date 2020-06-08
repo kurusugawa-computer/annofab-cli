@@ -1,14 +1,15 @@
-# pylint: disable-all
-# type: ignore
-# flake8: noqa
 import argparse
+import datetime
 import json
 import logging
-from enum import Enum
-from typing import List
+from dataclasses import dataclass
+from typing import Dict, List, Optional
 
+import dateutil
 import pandas
-from annofabapi.models import ProjectMemberRole, Task, TaskPhase, TaskStatus
+from annofabapi.models import ProjectMemberRole, Task
+from dataclasses_json import dataclass_json
+from dateutil.parser import parse
 
 import annofabcli
 import annofabcli.common.cli
@@ -23,88 +24,46 @@ from annofabcli.common.cli import (
 from annofabcli.common.dataclasses import WaitOptions
 from annofabcli.common.download import DownloadingFile
 from annofabcli.common.enums import FormatArgument
-from annofabcli.statistics.summarize_task_count import get_step_for_current_phase
 from annofabcli.statistics.summarize_task_count_by_task_id import TaskStatusForSummary
 
 logger = logging.getLogger(__name__)
 
 DEFAULT_WAIT_OPTIONS = WaitOptions(interval=60, max_tries=360)
-DEFAULT_TASK_ID_DELIMITER = "_"
 
 
-class TaskStatusForSummary(Enum):
+@dataclass_json
+@dataclass
+class TaskCount:
     """
-    TaskStatusのサマリー用（知りたい情報をstatusにしている）
+    フェーズごとのタスク数
     """
 
-    COMPLETE = "complete"
-    ON_HOLD = "on_hold"
-    ANNOTATION_NOT_STARTED = "annotation_not_started"
-    """教師付作業されていない状態"""
-    INSPECTION_NOT_STARTED = "inspection_not_started"
-    """検査作業されていない状態"""
-    ACCEPTANCE_NOT_STARTED = "acceptance_not_started"
-    """受入作業されていない状態"""
-    OTHER = "other"
-    """休憩中/作業中/2回目移行の各フェーズの未着手状態"""
+    complete: int = 0
+    """完了状態のタスク数"""
 
-    @staticmethod
-    def _get_not_started_status(task: Task) -> "TaskStatusForSummary":
-        # `number_of_inspections=1`を指定する理由：多段検査を無視して、検査フェーズが１回目かどうかを知りたいため
-        step = get_step_for_current_phase(task, number_of_inspections=1)
-        if step == 1:
-            phase = TaskPhase(task["phase"])
-            if phase == TaskPhase.ANNOTATION:
-                return TaskStatusForSummary.ANNOTATION_NOT_STARTED
-            elif phase == TaskPhase.INSPECTION:
-                return TaskStatusForSummary.INSPECTION_NOT_STARTED
-            elif phase == TaskPhase.ACCEPTANCE:
-                return TaskStatusForSummary.ACCEPTANCE_NOT_STARTED
-            else:
-                raise ValueError(f"'{phase.value}'は対象外です。")
-        else:
-            return TaskStatusForSummary.OTHER
+    annotation_not_started: int = 0
+    """一度も教師付作業されていないタスク数"""
 
-    @staticmethod
-    def from_task(task: Task) -> "TaskStatusForSummary":
-        status = TaskStatus(task["status"])
-        if status == TaskStatus.COMPLETE:
-            return TaskStatusForSummary.COMPLETE
+    inspection_not_started: int = 0
+    """一度も検査作業されていないタスク数"""
 
-        elif status == TaskStatus.ON_HOLD:
-            return TaskStatusForSummary.ON_HOLD
+    acceptance_not_started: int = 0
+    """一度も受入作業されていないタスク数"""
 
-        elif status == TaskStatus.NOT_STARTED:
-            return TaskStatusForSummary._get_not_started_status(task)
-        else:
-            # WORKING, BREAK
-            return TaskStatusForSummary.OTHER
+    on_hold: int = 0
+    """保留状態のタスク数"""
+
+    other: int = 0
+    """休憩中/作業中/2回目以降の各フェーズの未着手状態のタスク数"""
 
 
-def get_task_id_prefix(task_id: str, delimiter: str = DEFAULT_TASK_ID_DELIMITER):
-    tmp_list = task_id.split(delimiter)
-    if len(tmp_list) <= 1:
-        return "unknown"
-    else:
-        return delimiter.join(tmp_list[0 : len(tmp_list) - 1])
+def add_info_to_task(task: Task):
+    task["status_for_summary"] = TaskStatusForSummary.from_task(task).value
 
 
-def add_task_id_prefix_to_task_list(task_list: List[Task], delimiter: str = DEFAULT_TASK_ID_DELIMITER) -> List[Task]:
-    for task in task_list:
-        task["task_id_prefix"] = get_task_id_prefix(task["task_id"], delimiter=delimiter)
-        task["status_for_summary"] = TaskStatusForSummary.from_task(task).value
-
-    return task_list
-
-
-def get_dashboard_of_task_count(task_list: List[Task]) -> Dict[str, Any]:
-    for task in task_list:
-        task["status_for_summary"] = TaskStatusForSummary.from_task(task).value
-
-
-def create_dashboard_info(task_list: List[Task]) -> Dict[str, Any]:
+def get_task_count_info_from_task_list(task_list: List[Task]) -> TaskCount:
     """
-    タスク数を集計したDataFrameを生成する。
+    状態ごとのタスク数を取得する。
 
     Args:
         task_list:
@@ -112,34 +71,72 @@ def create_dashboard_info(task_list: List[Task]) -> Dict[str, Any]:
     Returns:
 
     """
-    # value_count:
-    def add_columns_if_not_exists(df: pandas.DataFrame, column: str):
-        if column not in df.columns:
-            df[column] = 0
+    status_list: List[str] = [e["status_for_summary"] for e in task_list]
+    tmp = pandas.Series.value_counts(status_list)
+    task_count = TaskCount.from_dict(tmp.to_dict())  # type: ignore
+    return task_count
 
-    df_task = pandas.DataFrame(add_task_id_prefix_to_task_list(task_list, delimiter=delimiter))
 
-    df_summary = df_task.pivot_table(
-        values="task_id", index=["task_id_prefix"], columns=["status_for_summary"], aggfunc="count", fill_value=0
-    ).reset_index()
+def _to_datetime_from_date(date: datetime.date) -> datetime.datetime:
+    dt = datetime.datetime.combine(date, datetime.datetime.min.time())
+    return dt.replace(tzinfo=dateutil.tz.tzlocal())
 
-    for status in TaskStatusForSummary:
-        add_columns_if_not_exists(df_summary, status.value)
 
-    df_summary["sum"] = (
-        df_task.pivot_table(values="task_id", index=["task_id_prefix"], aggfunc="count", fill_value=0)
-        .reset_index()
-        .fillna(0)["task_id"]
-    )
+def get_task_list_where_updated_datetime(
+    task_list: List[Task], lower_date: datetime.date, upper_date: datetime.date
+) -> List[Task]:
+    """
+    タスクの更新日が、対象期間内であるタスク一覧を取得する。
 
-    return df_summary
+    Args:
+        task_list:
+        lower_date:
+        upper_date:
+
+    Returns:
+
+    """
+
+    def pred(task):
+        updated_datetime = parse(task["updated_datetime"])
+        return lower_datetime <= updated_datetime < upper_datetime
+
+    lower_datetime = _to_datetime_from_date(lower_date)
+    upper_datetime = _to_datetime_from_date(upper_date + datetime.timedelta(days=1))
+    return [t for t in task_list if pred(t)]
+
+
+def create_task_count_info(task_list: List[Task], date: Optional[datetime.date] = None) -> Dict[str, TaskCount]:
+    """
+    タスク数情報を生成する。
+
+    Args:
+        task_list:
+        date: タスク数　集計対象日
+
+    Returns:
+
+    """
+    for task in task_list:
+        task["status_for_summary"] = TaskStatusForSummary.from_task(task).value
+
+    cumulation_task_count = get_task_count_info_from_task_list(task_list)
+    result = {"cumulation": cumulation_task_count.to_dict()}  # type: ignore
+    if date is not None:
+        task_list = get_task_list_where_updated_datetime(task_list, lower_date=date, upper_date=date)
+        result[str(date)] = get_task_count_info_from_task_list(task_list).to_dict()  # type: ignore
+
+        week_ago = date + datetime.timedelta(days=7)
+        task_list = get_task_list_where_updated_datetime(task_list, lower_date=week_ago, upper_date=date)
+        result[str(date)] = get_task_count_info_from_task_list(task_list).to_dict()  # type: ignore
+
+    return result
 
 
 class DashBoard(AbstractCommandLineInterface):
-    def print_summarize_task_count(self, df: pandas.DataFrame) -> None:
-        columns = ["task_id_prefix"] + [status.value for status in TaskStatusForSummary] + ["sum"]
+    def print_summarize_task_count(self, target_dict: dict) -> None:
         annofabcli.utils.print_according_to_format(
-            df[columns], arg_format=FormatArgument(FormatArgument.CSV), output=self.output, csv_format=self.csv_format,
+            target_dict, arg_format=FormatArgument.JSON, output=self.output,
         )
 
     def main(self):
@@ -162,8 +159,10 @@ class DashBoard(AbstractCommandLineInterface):
         with open(task_json_path, encoding="utf-8") as f:
             task_list = json.load(f)
 
-        dashboard_info = create_dashboard_info(task_list, delimiter=args.delimiter)
-        self.print_summarize_task_count(df)
+        dashboard_info = create_task_count_info(task_list)
+        annofabcli.utils.print_according_to_format(
+            dashboard_info, arg_format=FormatArgument(self.str_format), output=self.output,
+        )
 
 
 def parse_args(parser: argparse.ArgumentParser):
@@ -190,7 +189,7 @@ def parse_args(parser: argparse.ArgumentParser):
         "`max_tires`:完了したかの問い合わせを最大何回行うか。",
     )
 
-    argument_parser.add_csv_format()
+    argument_parser.add_format([FormatArgument.PRETTY_JSON, FormatArgument.JSON], default=FormatArgument.PRETTY_JSON)
     argument_parser.add_output()
 
     parser.set_defaults(subcommand_func=main)
