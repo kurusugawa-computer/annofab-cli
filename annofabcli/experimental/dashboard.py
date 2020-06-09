@@ -3,7 +3,7 @@ import datetime
 import json
 import logging
 from dataclasses import dataclass
-from typing import Dict, List, Optional
+from typing import Any, Dict, List
 
 import dateutil
 import pandas
@@ -82,6 +82,10 @@ def _to_datetime_from_date(date: datetime.date) -> datetime.datetime:
     return dt.replace(tzinfo=dateutil.tz.tzlocal())
 
 
+def millisecond_to_hour(millisecond: int):
+    return millisecond / 1000 / 3600
+
+
 def get_task_list_where_updated_datetime(
     task_list: List[Task], lower_date: datetime.date, upper_date: datetime.date
 ) -> List[Task]:
@@ -106,7 +110,7 @@ def get_task_list_where_updated_datetime(
     return [t for t in task_list if pred(t)]
 
 
-def create_task_count_info(task_list: List[Task], date: Optional[datetime.date] = None) -> Dict[str, TaskCount]:
+def create_task_count_info(task_list: List[Task], date: datetime.date) -> Dict[str, Any]:
     """
     タスク数情報を生成する。
 
@@ -119,18 +123,28 @@ def create_task_count_info(task_list: List[Task], date: Optional[datetime.date] 
     """
     for task in task_list:
         task["status_for_summary"] = TaskStatusForSummary.from_task(task).value
+        task["worktime_hour"] = millisecond_to_hour(task["work_time_span"])
 
     cumulation_task_count = get_task_count_info_from_task_list(task_list)
-    result = {"cumulation": cumulation_task_count.to_dict()}  # type: ignore
+    result = {
+        "cumulation": {
+            "task_count": cumulation_task_count.to_dict(),  # type: ignore
+            "monitored_worktime": sum([t["worktime_hour"] for t in task_list]),
+        }
+    }
     if date is not None:
         task_list_for_day = get_task_list_where_updated_datetime(task_list, lower_date=date, upper_date=date)
-        result[str(date)] = get_task_count_info_from_task_list(task_list_for_day).to_dict()  # type: ignore
+        result["today"] = {
+            "task_count": get_task_count_info_from_task_list(task_list_for_day).to_dict()  # type: ignore
+        }
 
         week_ago = date - datetime.timedelta(days=7)
         task_list_for_week = get_task_list_where_updated_datetime(task_list, lower_date=week_ago, upper_date=date)
-        result[f"{str(week_ago)}:{str(date)}"] = get_task_count_info_from_task_list(  # type: ignore
-            task_list_for_week
-        ).to_dict()
+        result["7days"] = {
+            "task_count": get_task_count_info_from_task_list(  # type: ignore
+                task_list_for_week
+            ).to_dict()
+        }
 
     return result
 
@@ -144,6 +158,7 @@ class DashBoard(AbstractCommandLineInterface):
     def main(self):
         args = self.args
         project_id = args.project_id
+        project_title = self.facade.get_project_title(project_id)
         super().validate_project(project_id, [ProjectMemberRole.OWNER])
 
         if args.task_json is not None:
@@ -162,7 +177,14 @@ class DashBoard(AbstractCommandLineInterface):
             task_list = json.load(f)
 
         dt_date = datetime.datetime.strptime(args.date, "%Y-%m-%d").date()
-        dashboard_info = create_task_count_info(task_list, date=dt_date)
+
+        dashboard_info = {
+            "project_id": project_id,
+            "project_title": project_title,
+            "date": args.date,
+        }
+        task_count_info = create_task_count_info(task_list, date=dt_date)
+        dashboard_info.update(task_count_info)
         annofabcli.utils.print_according_to_format(
             dashboard_info, arg_format=FormatArgument(self.str_format), output=self.output,
         )
@@ -179,7 +201,7 @@ def parse_args(parser: argparse.ArgumentParser):
         "指定しない場合は、AnnoFabからタスク全件ファイルをダウンロードします。",
     )
 
-    parser.add_argument("--date", type=str, help="`YYYY-MM-DD`形式で日付を指定すると、対象日の情報を出力します。")
+    parser.add_argument("--date", type=str, required=True, help="`YYYY-MM-DD`形式で実績の対象日を指定してください。")
 
     parser.add_argument(
         "--latest", action="store_true", help="最新のタスク一覧ファイルを参照します。このオプションを指定すると、タスク一覧ファイルを更新するのに数分待ちます。"
