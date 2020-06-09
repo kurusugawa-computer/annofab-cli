@@ -135,8 +135,8 @@ def create_task_count_info(task_list: List[Task], date: datetime.date) -> Dict[s
     if date is not None:
         task_list_for_day = get_task_list_where_updated_datetime(task_list, lower_date=date, upper_date=date)
         result["today"] = {
-            "task_count": get_task_count_info_from_task_list(task_list_for_day).to_dict()
-        }  # type: ignore
+            "task_count": get_task_count_info_from_task_list(task_list_for_day).to_dict()  # type: ignore
+        }
 
         week_ago = date - datetime.timedelta(days=7)
         task_list_for_week = get_task_list_where_updated_datetime(task_list, lower_date=week_ago, upper_date=date)
