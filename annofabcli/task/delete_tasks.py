@@ -63,8 +63,9 @@ class DeleteTask(AbstractCommandLineInterface):
             logger.info(f"タスクの状態が作業中/完了状態のため、タスクを削除できません。")
             return False
 
+        annotation_list = self.get_annotation_list(project_id, task_id)
+        logger.debug(f"task_id={task_id}: アノテーションが{len(annotation_list)}個付与されています。")
         if not force:
-            annotation_list = self.get_annotation_list(project_id, task_id)
             if len(annotation_list) > 0:
                 logger.info(f"アノテーションが付与されているため（{len(annotation_list)}個）、タスク'{task_id}'を削除できません。")
                 return False
