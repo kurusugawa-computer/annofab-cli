@@ -38,6 +38,7 @@ class ChangeAttributesOfAnnotation(AbstractCommandLineInterface):
         task_id: str,
         annotation_query: AnnotationQuery,
         attributes: List[AdditionalData],
+        force: bool = False,
         backup_dir: Optional[Path] = None,
     ) -> None:
         """
@@ -48,6 +49,7 @@ class ChangeAttributesOfAnnotation(AbstractCommandLineInterface):
             task_id:
             annotation_query: 変更対象のアノテーションの検索条件
             attributes: 変更後のアノテーション属性
+            force: タスクのステータスによらず更新する
             backup_dir: アノテーションをバックアップとして保存するディレクトリ。指定しない場合は、バックアップを取得しない。
 
         """
@@ -64,6 +66,11 @@ class ChangeAttributesOfAnnotation(AbstractCommandLineInterface):
         if task.status == TaskStatus.WORKING:
             logger.warning(f"task_id={task_id}: タスクが作業中状態のため、スキップします。")
             return
+
+        if not force:
+            if task.status == TaskStatus.COMPLETE:
+                logger.warning(f"task_id={task_id}: タスクが完了状態のため、スキップします。")
+                return
 
         annotation_list = self.facade.get_annotation_list_for_task(project_id, task_id, query=annotation_query)
         logger.info(f"task_id='{task_id}'の変更対象アノテーション数：{len(annotation_list)}")
@@ -90,6 +97,7 @@ class ChangeAttributesOfAnnotation(AbstractCommandLineInterface):
         task_id_list: List[str],
         annotation_query: AnnotationQuery,
         attributes: List[AdditionalData],
+        force: bool = False,
         backup_dir: Optional[Path] = None,
     ):
         super().validate_project(project_id, [ProjectMemberRole.OWNER])
@@ -103,7 +111,12 @@ class ChangeAttributesOfAnnotation(AbstractCommandLineInterface):
         for task_index, task_id in enumerate(task_id_list):
             logger.info(f"{task_index+1} / {len(task_id_list)} 件目: タスク '{task_id}' のアノテーションの属性を変更します。")
             self.change_attributes_for_task(
-                project_id, task_id, annotation_query=annotation_query, attributes=attributes, backup_dir=backup_dir,
+                project_id,
+                task_id,
+                annotation_query=annotation_query,
+                attributes=attributes,
+                force=force,
+                backup_dir=backup_dir,
             )
 
     def main(self):
@@ -136,7 +149,12 @@ class ChangeAttributesOfAnnotation(AbstractCommandLineInterface):
             backup_dir = Path(args.backup)
 
         self.change_annotation_attributes(
-            project_id, task_id_list, annotation_query=annotation_query, attributes=attributes, backup_dir=backup_dir
+            project_id,
+            task_id_list,
+            annotation_query=annotation_query,
+            attributes=attributes,
+            force=args.force,
+            backup_dir=backup_dir,
         )
 
 
@@ -166,13 +184,15 @@ def parse_args(parser: argparse.ArgumentParser):
         f"(ex): `{EXAMPLE_ANNOTATION_QUERY}`",
     )
 
-    EXAMPLE_ATTIRBUTES = '[{"additional_data_definition_name_en": "occluded", "flag": false}]}'
+    EXAMPLE_ATTIRBUTES = '[{"additional_data_definition_name_en": "occluded", "flag": false}]'
     parser.add_argument(
         "--attributes",
         type=str,
         required=True,
         help="変更後の属性をJSON形式で指定します。" "`file://`を先頭に付けると、JSON形式のファイルを指定できます。" f"(ex): `{EXAMPLE_ATTIRBUTES}`",
     )
+
+    parser.add_argument("--force", action="store_true", help="完了状態のタスクのアノテーション属性も変更します。")
 
     parser.add_argument(
         "--backup",

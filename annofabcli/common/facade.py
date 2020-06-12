@@ -597,7 +597,7 @@ class AnnofabApiFacade:
             dict_query.update(asdict(query))
         query_params = {"query": dict_query}
         annotation_list = self.service.wrapper.get_all_annotation_list(project_id, query_params=query_params)
-        assert all([e["task_id"] == task_id for e in annotation_list]), f"task_id='{task_id}' 以外のアノテーションが削除対象です！！"
+        assert all([e["task_id"] == task_id for e in annotation_list]), f"task_id='{task_id}' 以外のアノテーションが取得されています！！"
         return annotation_list
 
     def delete_annotation_list(

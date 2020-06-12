@@ -81,6 +81,7 @@ $ docker run -it -e ANNOFAB_USER_ID=XXXX -e ANNOFAB_PASSWORD=YYYYY annofab-cli a
 
 |コマンド| サブコマンド                  | 内容                                                                                                     |必要なロール|
 |----|-------------------------------|----------------------------------------------------------------------------------------------------------|------------|
+|annotation| change_attributes |アノテーションの属性を変更します。                              |オーナ|
 |annotation| delete | アノテーションを削除します。                              |オーナ|
 |annotation| dump | アノテーション情報をファイルに保存します。                             |-|
 |annotation| list_count | task_idまたはinput_data_idで集約したアノテーションの個数を出力します                              |-|
@@ -288,6 +289,23 @@ $ annofabcli project_member put --project_id prj2 --csv members.csv
 
 ## コマンド一覧
 
+### annotation change_attributes
+アノテーションの属性を一括で変更します。ただし、作業中状態のタスクのアノテーションの属性は変更できません。間違えてアノテーション属性を変更したときに復元できるようにするため、'--backup'でバックアップ用のディレクトリを指定することを推奨します。
+
+```
+# task.txtに記載されたタスクのアノテーションの属性をを変更する
+# carラベルのoccludedチェックボックスがTRUEのアノテーションに対して、occludedチェックボックスをOFFにする
+$ annofabcli annotation change_attributes --project_id prj1 --task_id file://task.txt \ 
+--annotation_query '{"label_name_en": "car", "attributes":[{"additional_data_definition_name_en": "occluded", "flag": true}]}' \
+--attributes '[{"additional_data_definition_name_en": "occluded", "flag": false}]' \
+--backup backup_dir
+
+
+```
+
+
+
+
 ### annotation delete
 タスク配下のアノテーションを削除します。ただし、作業中/完了状態のタスク、または「過去に割り当てられていて現在の担当者が自分自身でない」タスクのアノテーションは削除できません。
 
@@ -298,6 +316,11 @@ $ annofabcli project_member put --project_id prj2 --csv members.csv
 ```
 # task.txtに記載されたタスクのアノテーションを削除します。削除する前のアノテーション情報は、`backup`ディレクトリに保存します。
 $ annofabcli annotation delete --project_id prj1 --task_id file://task.txt --backup backup
+
+# carラベルのoccludedチェックボックスがTRUEのアノテーションを削除します
+$ annofabcli annotation delete --project_id prj1 --task_id file://task.txt \ 
+--annotation_query '{"label_name_en": "car", "attributes":[{"additional_data_definition_name_en": "occluded", "flag": true}]}' \
+--backup backup_dir
 ```
 
 ### annotation dump
