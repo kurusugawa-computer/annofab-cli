@@ -258,6 +258,7 @@ class RejectTasks(AbstractCommandLineInterface):
             inspection_comment=args.comment,
             assign_last_annotator=assign_last_annotator,
             assigned_annotator_user_id=args.assigned_annotator_user_id,
+            cancel_acceptance=args.cancel_acceptance
         )
 
 
