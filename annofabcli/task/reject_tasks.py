@@ -102,7 +102,11 @@ class RejectTasks(AbstractCommandLineInterface):
             raise
 
     def can_reject_task(
-        self, task: Dict[str, Any], assign_last_annotator: bool, assigned_annotator_user_id: Optional[str], cancel_acceptance: bool=False
+        self,
+        task: Dict[str, Any],
+        assign_last_annotator: bool,
+        assigned_annotator_user_id: Optional[str],
+        cancel_acceptance: bool = False,
     ):
         task_id = task["task_id"]
         if task["phase"] == TaskPhase.ANNOTATION.value:
@@ -114,7 +118,9 @@ class RejectTasks(AbstractCommandLineInterface):
             return False
 
         if task["status"] == TaskStatus.COMPLETE.value and not cancel_acceptance:
-            logger.warning(f"task_id = {task_id} : タスクのstatusが'完了'なので、差し戻しできません。受入完了を取消す場合は、コマンドライン引数に'--cancel_acceptance'を追加してください。")
+            logger.warning(
+                f"task_id = {task_id} : タスクのstatusが'完了'なので、差し戻しできません。受入完了を取消す場合は、コマンドライン引数に'--cancel_acceptance'を追加してください。"
+            )
             return False
 
         if not self.confirm_reject_task(
@@ -124,15 +130,14 @@ class RejectTasks(AbstractCommandLineInterface):
 
         return True
 
-    def _cancel_acceptance(self, task:Dict[str, Any], my_account_id: str) -> Dict[str, Any]:
+    def _cancel_acceptance(self, task: Dict[str, Any], my_account_id: str) -> Dict[str, Any]:
         request_body = {
             "status": "not_started",
             "account_id": my_account_id,
             "last_updated_datetime": task["updated_datetime"],
         }
-        content,_=self.service.api.operate_task(task["project_id"], task["task_id"], request_body=request_body)
+        content, _ = self.service.api.operate_task(task["project_id"], task["task_id"], request_body=request_body)
         return content
-
 
     def reject_tasks_with_adding_comment(
         self,
@@ -142,7 +147,7 @@ class RejectTasks(AbstractCommandLineInterface):
         inspection_comment: Optional[str] = None,
         assign_last_annotator: bool = True,
         assigned_annotator_user_id: Optional[str] = None,
-            cancel_acceptance: bool = False
+        cancel_acceptance: bool = False,
     ):
         """
         タスクを強制的に差し戻す
@@ -188,7 +193,7 @@ class RejectTasks(AbstractCommandLineInterface):
                 task=task,
                 assign_last_annotator=assign_last_annotator,
                 assigned_annotator_user_id=assigned_annotator_user_id,
-                cancel_acceptance=cancel_acceptance
+                cancel_acceptance=cancel_acceptance,
             ):
                 continue
 
@@ -258,7 +263,7 @@ class RejectTasks(AbstractCommandLineInterface):
             inspection_comment=args.comment,
             assign_last_annotator=assign_last_annotator,
             assigned_annotator_user_id=args.assigned_annotator_user_id,
-            cancel_acceptance=args.cancel_acceptance
+            cancel_acceptance=args.cancel_acceptance,
         )
 
 
@@ -294,9 +299,7 @@ def parse_args(parser: argparse.ArgumentParser):
         help="差し戻したタスクに割り当てるユーザのuser_idを指定します。" "指定しない場合は、最後のannotation phaseの担当者が割り当てられます。",
     )
 
-    assign_group.add_argument(
-        "--cancel_acceptance", action="store_true", help="受入完了状態を取り消して、タスクを差し戻します。"
-    )
+    assign_group.add_argument("--cancel_acceptance", action="store_true", help="受入完了状態を取り消して、タスクを差し戻します。")
 
     parser.set_defaults(subcommand_func=main)
 
