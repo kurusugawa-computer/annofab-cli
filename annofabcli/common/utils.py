@@ -318,7 +318,7 @@ def get_cache_dir() -> Path:
     return cache_home_dir_path / "annofabcli"
 
 
-def _read_multiheader_csv(csv_file: str, header_row_count: int = 2) -> pandas.DataFrame:
+def read_multiheader_csv(csv_file: str, header_row_count: int = 2) -> pandas.DataFrame:
     """
     複数ヘッダ行のCSVを読み込む。その際、"Unnnamed"の列名は空文字に変更する。
 
