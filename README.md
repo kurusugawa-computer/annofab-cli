@@ -256,12 +256,9 @@ $ annofabcli annotation list_count --project_id prj1 --task_id file://task.txt -
 
 # annotation_count.csvを表計算ソフトで開き、アノテーションの個数が1個以上のタスクのtask_id一覧を、task_id.txtに保存する。
 
-# task_id.txtに記載されたタスクに対して、受入完了状態を取り消す。
-$ annofabcli task cancel_acceptance --project_id prj1 --task_id file://task_id.txt
-
 # task_id.txtに記載されたタスクを差し戻す。検査コメントは「carラベルのoccluded属性を見直してください」。
 # 差し戻したタスクには、最後のannotation phaseを担当したユーザを割り当てる（画面と同じ動き）。
-$ annofabcli task reject --project_id prj1 --task_id file://tasks.txt \
+$ annofabcli task reject --project_id prj1 --task_id file://tasks.txt --cancel_acceptance \
   --comment "carラベルのoccluded属性を見直してください"
 
 ```
@@ -290,7 +287,7 @@ $ annofabcli project_member put --project_id prj2 --csv members.csv
 ## コマンド一覧
 
 ### annotation change_attributes
-アノテーションの属性を一括で変更します。ただし、作業中状態のタスクのアノテーションの属性は変更できません。間違えてアノテーション属性を変更したときに復元できるようにするため、'--backup'でバックアップ用のディレクトリを指定することを推奨します。
+アノテーションの属性を一括で変更します。ただし、作業中状態のタスクのアノテーションの属性は変更できません。間違えてアノテーション属性を変更したときに復元できるようにするため、`--backup`でバックアップ用のディレクトリを指定することを推奨します。
 
 ```
 # task.txtに記載されたタスクのアノテーションの属性をを変更する
@@ -1493,7 +1490,7 @@ $ annofabcli task  put --project_id prj1 --by_count '{"task_id_prefix":"sample",
 
 
 ### task reject
-タスクを強制的に差し戻します。差し戻す際に検査コメントを付与することもできます。検査コメントは、画像プロジェクトならばタスク内の先頭の画像の左上(`x=0,y=0`)に、動画プロジェクトなら動画の先頭（`start=0, end=0`)に付与します。
+タスクを強制的に差し戻します。差し戻す際に検査コメントを付与することもできます。検査コメントは、画像プロジェクトならばタスク内の先頭の画像の左上(`x=0,y=0`)に、動画プロジェクトなら動画の先頭（`start=0, end=100`)に付与します。
 この差戻しは差戻しとして扱われず、抜取検査・抜取受入のスキップ判定に影響を及ぼしません。
 
 タスクの状態・フェーズを無視して、フェーズを教師付け(annotation)に、状態を未作業(not started)に変更します。
@@ -1502,16 +1499,21 @@ $ annofabcli task  put --project_id prj1 --by_count '{"task_id_prefix":"sample",
 
 ```
 # tasks.txtに記載れたタスクを強制的に差し戻す
-# 最後のannotation phaseを担当したユーザを割り当てます（画面と同じ動き）
+# 最後のannotation phaseを担当したユーザを割り当てます（画面と同じ動き）。検査コメントは付与しません。
 $ annofabcli task reject --project_id prj1 --task_id file://tasks.txt 
 
-# 「hoge」という検査コメントを付与して、タスクを差し戻す。その際、担当者は割り当てない
+# 受入完了の場合は、受入を取り消してから差し戻します
+$ annofabcli task reject --project_id prj1 --task_id file://tasks.txt --cancel_acceptance
+
+# 「hoge」という検査コメントを付与して、タスクを差し戻します。その際、担当者は割り当てません
 $ annofabcli task reject --project_id prj1 --task_id file://tasks.txt \
  --comment "hoge" --not_assign
 
 # 差し戻したタスクに、ユーザuser1を割り当てる
 $ annofabcli task reject --project_id prj1 --task_id file://tasks.txt \
  --comment "hoge" --assigned_annotator_user_id user1
+
+
 ```
 
 
