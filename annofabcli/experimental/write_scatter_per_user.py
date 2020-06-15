@@ -4,7 +4,7 @@ import logging
 import annofabcli
 from annofabcli import AnnofabApiFacade
 from annofabcli.common.cli import AbstractCommandLineInterface, ArgumentParser, build_annofabapi_resource_and_login
-from annofabcli.common.utils import _read_multiheader_csv
+from annofabcli.common.utils import read_multiheader_csv
 from annofabcli.statistics.scatter import Scatter
 
 logger = logging.getLogger(__name__)
@@ -16,7 +16,7 @@ class WriteScatterPerUser(AbstractCommandLineInterface):
         project_id = args.project_id
         scatter_obj = Scatter(outdir=args.output_dir, project_id=project_id)
 
-        df = _read_multiheader_csv(args.csv)
+        df = read_multiheader_csv(args.csv)
         scatter_obj = Scatter(outdir=args.output_dir, project_id=project_id)
         scatter_obj.write_scatter_for_productivity_by_monitored_worktime(df)
         scatter_obj.write_scatter_for_productivity_by_actual_worktime(df)
