@@ -119,7 +119,8 @@ class RejectTasks(AbstractCommandLineInterface):
 
         if task["status"] == TaskStatus.COMPLETE.value and not cancel_acceptance:
             logger.warning(
-                f"task_id = {task_id} : タスクのstatusが'完了'なので、差し戻しできません。受入完了を取消す場合は、コマンドライン引数に'--cancel_acceptance'を追加してください。"
+                f"task_id = {task_id} : タスクのstatusが'完了'なので、差し戻しできません。"
+                f"受入完了を取消す場合は、コマンドライン引数に'--cancel_acceptance'を追加してください。"
             )
             return False
 
