@@ -1206,9 +1206,9 @@ class Table:
         """
 
         def max_last_working_date(date1, date2):
-            if numpy.isnan(date1):
+            if not isinstance(date1, str) and numpy.isnan(date1):
                 date1 = ""
-            if numpy.isnan(date2):
+            if not isinstance(date2, str) and numpy.isnan(date2):
                 date2 = ""
             max_date = max(date1, date2)
             if max_date == "":
@@ -1218,10 +1218,10 @@ class Table:
 
         def merge_row(row1: pandas.Series, row2: pandas.Series) -> pandas.Series:
             sum_row = row1 + row2
-            sum_row.loc["username"] = row1["username"]
-            sum_row["biography"] = row1["biography"]
-            sum_row["last_working_date", ""] = max_last_working_date(
-                row1["last_working_date", ""], row2["last_working_date", ""]
+            sum_row.loc["username",""] = row1.loc["username",""]
+            sum_row.loc["biography",""] = row1.loc["biography",""]
+            sum_row.loc["last_working_date", ""] = max_last_working_date(
+                row1.loc["last_working_date", ""], row2.loc["last_working_date", ""]
             )
             return sum_row
 
@@ -1239,6 +1239,7 @@ class Table:
 
         phase_list = Table._get_phase_list(list(sum_df.columns))
         Table._add_ratio_column_for_productivity_per_user(sum_df, phase_list=phase_list)
+        sum_df.reset_index(inplace=True)
         return sum_df
 
     @staticmethod

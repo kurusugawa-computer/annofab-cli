@@ -3,7 +3,7 @@ import logging
 
 import annofabcli
 from annofabcli import AnnofabApiFacade
-from annofabcli.common.cli import AbstractCommandLineInterface, ArgumentParser, build_annofabapi_resource_and_login
+from annofabcli.common.cli import AbstractCommandLineInterface, build_annofabapi_resource_and_login
 from annofabcli.common.utils import read_multiheader_csv
 from annofabcli.statistics.scatter import Scatter
 

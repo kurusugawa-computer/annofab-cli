@@ -15,7 +15,7 @@ from annofabcli.statistics.table import Table
 logger = logging.getLogger(__name__)
 
 
-class SumPerfomancePerUser(AbstractCommandLineInterface):
+class MergePerfomancePerUser(AbstractCommandLineInterface):
     def main(self):
         args = self.args
 
@@ -23,7 +23,7 @@ class SumPerfomancePerUser(AbstractCommandLineInterface):
         csv_path_list = args.csv
         for csv_path in csv_path_list:
             df = read_multiheader_csv(str(csv_path))
-            df_list.append(df.set_index("user_id"))
+            df_list.append(df)
 
         sum_df = df_list[0]
         for df in df_list[1:]:
@@ -36,13 +36,10 @@ class SumPerfomancePerUser(AbstractCommandLineInterface):
 def main(args):
     service = build_annofabapi_resource_and_login(args)
     facade = AnnofabApiFacade(service)
-    SumPerfomancePerUser(service, facade, args).main()
+    MergePerfomancePerUser(service, facade, args).main()
 
 
 def parse_args(parser: argparse.ArgumentParser):
-    argument_parser = ArgumentParser(parser)
-
-    argument_parser.add_project_id()
     parser.add_argument(
         "--csv",
         type=Path,
@@ -57,7 +54,7 @@ def parse_args(parser: argparse.ArgumentParser):
 
 
 def add_parser(subparsers: argparse._SubParsersAction):
-    subcommand_name = "sum_peformance_per_user"
+    subcommand_name = "merge_peformance_per_user"
     subcommand_help = "複数の'メンバごとの生産性と品質.csv'の値をまとめて出力します。"
     description = "複数の'メンバごとの生産性と品質.csv'の値をまとめて出力します。"
     parser = annofabcli.common.cli.add_parser(subparsers, subcommand_name, subcommand_help, description)
