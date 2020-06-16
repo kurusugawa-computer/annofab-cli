@@ -17,7 +17,7 @@ out_path.mkdir(exist_ok=True, parents=True)
 
 project_id = "12345678-abcd-1234-abcd-1234abcd5678"
 
-csv_obj = Csv(str(out_path), project_id)
+csv_obj = Csv(str(out_path), project_id[0:8])
 
 
 class TestTable:

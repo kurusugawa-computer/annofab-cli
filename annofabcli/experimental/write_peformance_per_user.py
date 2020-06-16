@@ -16,7 +16,7 @@ class WritePerfomancePerUser(AbstractCommandLineInterface):
     def main(self):
         args = self.args
         project_id = args.project_id
-        csv_obj = Csv(outdir=args.output_dir, project_id=project_id)
+        csv_obj = Csv(outdir=args.output_dir, filename_prefix=project_id[0:8])
 
         df_task = pandas.read_csv(args.task_csv)
         df_task_history = pandas.read_csv(args.task_history_csv)
