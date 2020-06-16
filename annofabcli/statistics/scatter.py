@@ -1,6 +1,6 @@
 import logging
 from pathlib import Path
-from typing import List
+from typing import List, Optional
 
 import bokeh
 import bokeh.layouts
@@ -37,9 +37,9 @@ class Scatter:
     # Private
     #############################################
 
-    def __init__(self, outdir: str, project_id: str):
+    def __init__(self, outdir: str, filename_prefix: Optional[str]=None):
         self.scatter_outdir = outdir
-        self.short_project_id = project_id[0:8]
+        self.filename_prefix = filename_prefix+"-" if filename_prefix is not None else ""
         Path(self.scatter_outdir).mkdir(exist_ok=True, parents=True)
 
     @staticmethod
@@ -138,7 +138,7 @@ class Scatter:
             )
 
         html_title = "散布図-アノテーションあたり作業時間と累計作業時間の関係-計測時間"
-        output_file = f"{self.scatter_outdir}/{self.short_project_id}-{html_title}.html"
+        output_file = f"{self.scatter_outdir}/{self.filename_prefix}{html_title}.html"
         logger.debug(f"{output_file} を出力します。")
 
         phase_list = self._get_phase_list(df)
@@ -206,7 +206,7 @@ class Scatter:
             )
 
         html_title = "散布図-アノテーションあたり作業時間と累計作業時間の関係-実績時間"
-        output_file = f"{self.scatter_outdir}/{self.short_project_id}-{html_title}.html"
+        output_file = f"{self.scatter_outdir}/{self.filename_prefix}{html_title}.html"
         logger.debug(f"{output_file} を出力します。")
 
         phase_list = self._get_phase_list(df)
@@ -270,7 +270,7 @@ class Scatter:
             )
 
         html_title = "散布図-教師付者の品質と作業量の関係"
-        output_file = f"{self.scatter_outdir}/{self.short_project_id}-{html_title}.html"
+        output_file = f"{self.scatter_outdir}/{self.filename_prefix}{html_title}.html"
         logger.debug(f"{output_file} を出力します。")
 
         figure_list = [

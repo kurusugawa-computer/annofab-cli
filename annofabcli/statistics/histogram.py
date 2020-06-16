@@ -2,7 +2,7 @@
 import logging
 from dataclasses import dataclass
 from pathlib import Path
-
+from typing import Optional
 import holoviews as hv
 import numpy as np
 import pandas
@@ -33,9 +33,9 @@ class Histogram:
     ヒストグラムを出力するクラス
     """
 
-    def __init__(self, outdir: str, project_id: str):
+    def __init__(self, outdir: str, filename_prefix: Optional[str]=None):
         self.histogram_outdir = outdir
-        self.filename_prefix = project_id[0:8]
+        self.filename_prefix = filename_prefix+"-" if filename_prefix is not None else ""
         Path(self.histogram_outdir).mkdir(exist_ok=True, parents=True)
 
     @staticmethod
