@@ -300,7 +300,7 @@ def parse_args(parser: argparse.ArgumentParser):
         help="差し戻したタスクに割り当てるユーザのuser_idを指定します。" "指定しない場合は、最後のannotation phaseの担当者が割り当てられます。",
     )
 
-    assign_group.add_argument("--cancel_acceptance", action="store_true", help="受入完了状態を取り消して、タスクを差し戻します。")
+    parser.add_argument("--cancel_acceptance", action="store_true", help="受入完了状態を取り消して、タスクを差し戻します。")
 
     parser.set_defaults(subcommand_func=main)
 
