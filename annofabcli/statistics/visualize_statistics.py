@@ -60,7 +60,7 @@ class WriteCsvGraph:
 
     def __init__(self, table_obj: Table, output_dir: Path, project_id: str):
         self.table_obj = table_obj
-        filename_prefix=project_id[0:8]
+        filename_prefix = project_id[0:8]
         self.csv_obj = Csv(str(output_dir), filename_prefix=filename_prefix)
         self.histogram_obj = Histogram(str(output_dir / "histogram"), filename_prefix)
         self.graph_obj = LineGraph(str(output_dir / "line-graph"), filename_prefix)

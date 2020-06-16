@@ -1158,9 +1158,7 @@ class Table:
         return phase_list
 
     @staticmethod
-    def _add_ratio_column_for_productivity_per_user(
-        df: pandas.DataFrame, phase_list: List[str]
-    ):
+    def _add_ratio_column_for_productivity_per_user(df: pandas.DataFrame, phase_list: List[str]):
         for phase in phase_list:
             # AnnoFab時間の比率
             df[("monitored_worktime_ratio", phase)] = (
@@ -1195,11 +1193,8 @@ class Table:
         )
         df[("rejected_count/task_count", phase)] = df[("rejected_count", phase)] / df[("task_count", phase)]
 
-
     @staticmethod
-    def merge_productivity_per_user_from_aw_time(
-        df1: pandas.DataFrame, df2: pandas.DataFrame
-    ) -> pandas.DataFrame:
+    def merge_productivity_per_user_from_aw_time(df1: pandas.DataFrame, df2: pandas.DataFrame) -> pandas.DataFrame:
         """
         ユーザごとの生産性・品質情報が格納されたDataFrameを結合する
         Args:
@@ -1225,10 +1220,10 @@ class Table:
             sum_row = row1 + row2
             sum_row.loc["username"] = row1["username"]
             sum_row["biography"] = row1["biography"]
-            sum_row["last_working_date", ""] = max_last_working_date(row1["last_working_date", ""],
-                                                                     row2["last_working_date", ""])
+            sum_row["last_working_date", ""] = max_last_working_date(
+                row1["last_working_date", ""], row2["last_working_date", ""]
+            )
             return sum_row
-
 
         user_id_set = set(df1["user_id"]) | set(df2["user_id"])
         sum_df = df1.set_index("user_id").copy()

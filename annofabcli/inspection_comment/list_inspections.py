@@ -212,7 +212,7 @@ def parse_args(parser: argparse.ArgumentParser):
     )
 
     reply_comment_group = parser.add_mutually_exclusive_group()
-    reply_comment_group.add_argument("--only_reply",  action="store_true", help="返信コメントのみを出力する。")
+    reply_comment_group.add_argument("--only_reply", action="store_true", help="返信コメントのみを出力する。")
     reply_comment_group.add_argument("--exclude_reply", action="store_true", help="返信コメントを除外して出力する。")
 
     parser.add_argument(

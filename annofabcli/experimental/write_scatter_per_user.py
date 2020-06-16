@@ -27,8 +27,6 @@ def main(args):
 
 
 def parse_args(parser: argparse.ArgumentParser):
-    argument_parser = ArgumentParser(parser)
-
     parser.add_argument(
         "--csv",
         type=str,

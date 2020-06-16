@@ -13,9 +13,9 @@ class Csv:
     CSVを出力するクラス
     """
 
-    def __init__(self, outdir: str, filename_prefix: Optional[str]=None):
+    def __init__(self, outdir: str, filename_prefix: Optional[str] = None):
         self.outdir = outdir
-        self.filename_prefix = filename_prefix+"-" if filename_prefix is not None else ""
+        self.filename_prefix = filename_prefix + "-" if filename_prefix is not None else ""
 
     #############################################
     # Field

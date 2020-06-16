@@ -37,9 +37,9 @@ class Scatter:
     # Private
     #############################################
 
-    def __init__(self, outdir: str, filename_prefix: Optional[str]=None):
+    def __init__(self, outdir: str, filename_prefix: Optional[str] = None):
         self.scatter_outdir = outdir
-        self.filename_prefix = filename_prefix+"-" if filename_prefix is not None else ""
+        self.filename_prefix = filename_prefix + "-" if filename_prefix is not None else ""
         Path(self.scatter_outdir).mkdir(exist_ok=True, parents=True)
 
     @staticmethod
