@@ -5,6 +5,8 @@ from typing import Any, List, Optional
 import pandas
 from annofabapi.models import TaskPhase
 
+from annofabcli.common.utils import print_csv
+
 logger = logging.getLogger(__name__)
 
 
@@ -12,6 +14,8 @@ class Csv:
     """
     CSVを出力するクラス
     """
+
+    CSV_FORMAT = {"encoding": "utf_8_sig", "index": False}
 
     def __init__(self, outdir: str, filename_prefix: Optional[str] = None):
         self.outdir = outdir
@@ -437,7 +441,9 @@ class Csv:
             return
         self._write_csv(f"タスク1個当たり作業時間/{self.filename_prefix}_タスク1個当たり作業時間_{phase.value}.csv", df)
 
-    def write_productivity_from_aw_time(self, df: pandas.DataFrame, dropped_columns: Optional[List[str]] = None):
+    def write_productivity_from_aw_time(
+        self, df: pandas.DataFrame, dropped_columns: Optional[List[str]] = None, output_path: Optional[Path] = None
+    ):
         """
         メンバごとの生産性を出力する。
 
@@ -503,7 +509,11 @@ class Csv:
             + inspection_comment_columns
         )
         required_columns = self._create_required_columns(df, prior_columns, dropped_columns)
-        self._write_csv(f"{self.filename_prefix}メンバごとの生産性と品質.csv", df[required_columns])
+        target_df = df[required_columns]
+        if output_path is None:
+            self._write_csv(f"{self.filename_prefix}メンバごとの生産性と品質.csv", target_df)
+        else:
+            print_csv(df, output=str(output_path), to_csv_kwargs=self.CSV_FORMAT)
 
     def write_whole_productivity_per_date(
         self, df: pandas.DataFrame, dropped_columns: Optional[List[str]] = None

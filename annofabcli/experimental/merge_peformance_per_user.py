@@ -7,7 +7,7 @@ import pandas
 
 import annofabcli
 from annofabcli import AnnofabApiFacade
-from annofabcli.common.cli import AbstractCommandLineInterface, ArgumentParser, build_annofabapi_resource_and_login
+from annofabcli.common.cli import AbstractCommandLineInterface, build_annofabapi_resource_and_login
 from annofabcli.common.utils import read_multiheader_csv
 from annofabcli.statistics.csv import Csv
 from annofabcli.statistics.table import Table
@@ -29,8 +29,9 @@ class MergePerfomancePerUser(AbstractCommandLineInterface):
         for df in df_list[1:]:
             sum_df = Table.merge_productivity_per_user_from_aw_time(sum_df, df)
 
-        csv_obj = Csv(outdir=args.output_dir)
-        csv_obj.write_productivity_from_aw_time(sum_df)
+        output_path: Path = args.output
+        csv_obj = Csv(outdir=str(output_path.parent))
+        csv_obj.write_productivity_from_aw_time(sum_df, output_path=output_path)
 
 
 def main(args):
@@ -48,7 +49,7 @@ def parse_args(parser: argparse.ArgumentParser):
         help=("CSVファイルのパスを複数指定してください。" "CSVは、'statistics visualize'コマンドの出力結果である'メンバごとの生産性と品質.csv'と同じフォーマットです。"),
     )
 
-    parser.add_argument("-o", "--output_dir", type=str, required=True, help="出力ディレクトリのパス")
+    parser.add_argument("-o", "--output", type=Path, required=True, help="出力先のファイルパスを指定します。")
 
     parser.set_defaults(subcommand_func=main)
 

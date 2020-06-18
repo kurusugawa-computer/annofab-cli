@@ -1217,9 +1217,9 @@ class Table:
                 return max_date
 
         def merge_row(row1: pandas.Series, row2: pandas.Series) -> pandas.Series:
-            sum_row = row1 + row2
-            sum_row.loc["username",""] = row1.loc["username",""]
-            sum_row.loc["biography",""] = row1.loc["biography",""]
+            sum_row = row1.fillna(0) + row2.fillna(0)
+            sum_row.loc["username", ""] = row1.loc["username", ""]
+            sum_row.loc["biography", ""] = row1.loc["biography", ""]
             sum_row.loc["last_working_date", ""] = max_last_working_date(
                 row1.loc["last_working_date", ""], row2.loc["last_working_date", ""]
             )
@@ -1237,10 +1237,9 @@ class Table:
             else:
                 sum_df.loc[user_id] = added_df.loc[user_id]
 
-        phase_list = Table._get_phase_list(list(sum_df.columns))
+        phase_list = Table._get_phase_list(list(sum_df["monitored_worktime_hour"].columns))
         Table._add_ratio_column_for_productivity_per_user(sum_df, phase_list=phase_list)
-        sum_df.reset_index(inplace=True)
-        return sum_df
+        return sum_df.reset_index().sort_values(["user_id"])
 
     @staticmethod
     def create_productivity_per_user_from_aw_time(

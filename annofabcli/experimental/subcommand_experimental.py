@@ -6,9 +6,9 @@ from annofabcli.experimental import (
     dashboard,
     find_break_error,
     list_labor_worktime,
+    merge_peformance_per_user,
     write_peformance_per_user,
     write_scatter_per_user,
-    merge_peformance_per_user
 )
 
 
