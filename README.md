@@ -767,6 +767,13 @@ $ annofabcli inspection_comment list --project_id prj1 --task_id file://task.txt
 # 検査コメント情報が記載されたファイルは、`$ annofabcli project download inspection_comment`コマンドで取得できます。
 $ annofabcli inspection_comment list --project_id prj1 --inspection_comment_json inspection_comment.json
 
+# 返信コメントを除外した検査コメント一覧を出力します
+$ annofabcli inspection_comment list --project_id prj1 --task_id task1 task2 --exclude_reply
+
+# 返信コメントのみの一覧を出力します
+$ annofabcli inspection_comment list --project_id prj1 --task_id task1 task2 --only_reply
+
+
 ```
 
 #### 出力結果（CSV）
