@@ -4,7 +4,7 @@ from pathlib import Path
 
 import annofabapi
 
-from annofabcli.common.facade import AdditionalDataForCli, AnnofabApiFacade, AnnotationQuery, AnnotationQueryForCli
+from annofabcli.common.facade import AnnofabApiFacade
 
 # プロジェクトトップに移動する
 os.chdir(os.path.dirname(os.path.abspath(__file__)) + "/../")

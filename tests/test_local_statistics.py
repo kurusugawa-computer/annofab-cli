@@ -17,7 +17,7 @@ out_path.mkdir(exist_ok=True, parents=True)
 
 project_id = "12345678-abcd-1234-abcd-1234abcd5678"
 
-csv_obj = Csv(str(out_path), project_id)
+csv_obj = Csv(str(out_path), project_id[0:8])
 
 
 class TestTable:
@@ -82,7 +82,7 @@ class TestScatter:
 
     @classmethod
     def setup_class(cls):
-        cls.scatter_obj = Scatter(outdir=str(out_path), project_id=project_id)
+        cls.scatter_obj = Scatter(outdir=str(out_path), filename_prefix=project_id[0:8])
 
     def read_productivity_per_user(self):
         productivity_per_user = pandas.read_csv(str(data_path / "productivity-per-user.csv"), header=[0, 1])
@@ -116,7 +116,7 @@ class TestLineGraph:
 
     @classmethod
     def setup_class(cls):
-        cls.line_graph_obj = LineGraph(outdir=str(out_path), project_id=project_id)
+        cls.line_graph_obj = LineGraph(outdir=str(out_path), filename_prefix=project_id[0:8])
 
     def test_write_cumulative_line_graph_for_annotator(self):
         df = pandas.read_csv(str(data_path / "task.csv"))
