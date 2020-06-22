@@ -89,12 +89,15 @@ class SubPutSupplementaryData:
             )
 
         else:
+            supplementary_data_type = csv_supplementary_data.supplementary_data_type
+            if supplementary_data_type is None:
+                supplementary_data_type = "text" if supplementary_data_type.endswith(".txt") else "image"
+
             request_body.update(
                 {
                     "supplementary_data_name": csv_supplementary_data.supplementary_data_name,
                     "supplementary_data_path": csv_supplementary_data.supplementary_data_path,
-                    # TODO: pathあたりから推定する
-                    "supplementary_data_type": csv_supplementary_data.supplementary_data_type,
+                    "supplementary_data_type": supplementary_data_type,
                     "supplementary_data_number": csv_supplementary_data.supplementary_data_number,
                 }
             )
