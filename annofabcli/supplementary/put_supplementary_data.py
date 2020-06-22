@@ -13,6 +13,7 @@ import pandas
 import requests
 from annofabapi.models import ProjectMemberRole, SupplementaryData
 from dataclasses_json import dataclass_json
+from more_itertools import first_true
 
 import annofabcli
 from annofabcli import AnnofabApiFacade
@@ -38,7 +39,7 @@ class CsvSupplementaryData:
     supplementary_data_number: int
     supplementary_data_name: str
     supplementary_data_path: str
-    supplementary_data_id: str
+    supplementary_data_id: Optional[str]
     supplementary_data_type: Optional[str]
 
 
@@ -56,7 +57,7 @@ class SubPutSupplementaryData:
         self.service = service
         self.facade = facade
         self.all_yes = all_yes
-        self.supplementary_data_cache: Dict[str, Dict[str, SupplementaryData]] = {}
+        self.supplementary_data_cache: Dict[str, List[SupplementaryData]] = {}
 
     def put_supplementary_data(
         self, project_id: str, csv_supplementary_data: CsvSupplementaryData, last_updated_datetime: Optional[str] = None
@@ -123,21 +124,32 @@ class SubPutSupplementaryData:
             message_for_confirm += f"supplementary_data_id={csv_supplementary_data.supplementary_data_id} を上書きします。"
         return self.confirm_processing(message_for_confirm)
     
-    def get_supplementary_data_or_none(self, project_id: str, input_data_id: str, supplementary_data_id: str) -> Optional[SupplementaryData]:
+    def get_supplementary_data_list_cached(self, project_id: str, input_data_id: str) -> List[SupplementaryData]:
         key = f"{project_id},{input_data_id}"
         if key not in self.supplementary_data_cache:
             supplementary_data_list, _ = self.service.api.get_supplementary_data_list(project_id, input_data_id)
-            if supplementary_data_list is None:
-                supplementary_data_list = []
-            self.supplementary_data_cache[key] = {x["supplementary_data_id"]: x for x in supplementary_data_list}
-        return self.supplementary_data_cache[key].get(supplementary_data_id)
+            self.supplementary_data_cache[key] = supplementary_data_list if supplementary_data_list is not None else []
+        return self.supplementary_data_cache[key]
+
+    def get_supplementary_data_by_id(self, project_id: str, input_data_id: str, supplementary_data_id: str) -> Optional[SupplementaryData]:
+        cached_list = self.get_supplementary_data_list_cached(project_id, input_data_id)
+        return first_true(cached_list, pred=lambda e: e["supplementary_data_id"] == supplementary_data_id)
+
+    def get_supplementary_data_by_number(self, project_id: str, input_data_id: str, supplementary_data_number: int) -> Optional[SupplementaryData]:
+        cached_list = self.get_supplementary_data_list_cached(project_id, input_data_id)
+        return first_true(cached_list, pred=lambda e: e["supplementary_data_number"] == supplementary_data_number)
 
     def put_supplementary_data_main(self, project_id: str, csv_supplementary_data: CsvSupplementaryData, overwrite: bool = False) -> bool:
         last_updated_datetime = None
         input_data_id = csv_supplementary_data.input_data_id
         supplementary_data_id = csv_supplementary_data.supplementary_data_id
         supplementary_data_path = csv_supplementary_data.supplementary_data_path
-        supplementary_data = self.get_supplementary_data_or_none(project_id, input_data_id, supplementary_data_id)
+        if supplementary_data_id is not None:
+            supplementary_data = self.get_supplementary_data_by_id(project_id, input_data_id, supplementary_data_id)
+        else:
+            supplementary_data = self.get_supplementary_data_by_number(project_id, input_data_id, csv_supplementary_data.supplementary_data_number)
+            supplementary_data_id = supplementary_data["supplementary_data_id"] if supplementary_data is not None else str(uuid.uuid4())
+            csv_supplementary_data.supplementary_data_id = supplementary_data_id
 
         if supplementary_data is not None:
             if overwrite:
@@ -225,7 +237,7 @@ class PutSupplementaryData(AbstractCommandLineInterface):
     @staticmethod
     def get_supplementary_data_list_from_csv(csv_path: Path) -> List[CsvSupplementaryData]:
         def create_supplementary_data(e):
-            supplementary_data_id = e.supplementary_data_id if not pandas.isna(e.supplementary_data_id) else str(uuid.uuid4())
+            supplementary_data_id = e.supplementary_data_id if not pandas.isna(e.supplementary_data_id) else None
             supplementary_data_type = e.type if not pandas.isna(e.supplementary_data_type) else None
             return CsvSupplementaryData(
                 input_data_id=e.input_data_id,

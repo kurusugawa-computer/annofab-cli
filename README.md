@@ -1334,6 +1334,8 @@ $ annofabcli supplementary list --project_id prj1 --input_data_id id1 id2
 ### supplementary put
 CSVに記載された補助情報を登録します。
 
+supplementary_data_id（省略時は supplementary_data_number）が一致する補助情報が既に存在する場合は、スキップまたは上書きします。
+
 * ヘッダ行なし
 * カンマ区切り
 * 1列目: input_data_id. 必須
