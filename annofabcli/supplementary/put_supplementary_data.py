@@ -209,7 +209,7 @@ class PutSupplementaryData(AbstractCommandLineInterface):
         Args:
             project_id: 補助情報の登録先プロジェクトのプロジェクトID
             supplementary_data_list: 補助情報List
-            overwrite: Trueならば、supplementary_data_idがすでに存在していたら上書きします。Falseならばスキップします。
+            overwrite: Trueならば、supplementary_data_id（省略時はsupplementary_data_number）がすでに存在していたら上書きします。Falseならばスキップします。
             parallelism: 並列度
 
         """
@@ -309,8 +309,8 @@ def parse_args(parser: argparse.ArgumentParser):
         type=str,
         help=(
             "補助情報が記載されたCVファイルのパスを指定してください。"
-            "CSVのフォーマットは、「1列目:supplementary_data_name(required), 2列目:supplementary_data_path(required), 3列目:supplementary_data_id, "
-            "4列目:sign_required(bool), ヘッダ行なし, カンマ区切り」です。"
+            "CSVのフォーマットは、「1列目:input_data_id(required), 2列目:supplementary_data_number(required), 3列目:supplementary_data_name(required), "
+            "4列目:supplementary_data_path(required), 5列目:supplementary_data_id, 6列目:supplementary_data_type, ヘッダ行なし, カンマ区切り」です。"
             "supplementary_data_pathの先頭が`file://`の場合、ローカルのファイルを補助情報として登録します。 "
             "supplementary_data_idが空の場合はUUIDv4になります。"
             "各項目の詳細は `putSupplementaryData` API を参照してください。"
@@ -320,11 +320,11 @@ def parse_args(parser: argparse.ArgumentParser):
     parser.add_argument(
         "--overwrite",
         action="store_true",
-        help="指定した場合、supplementary_data_idがすでに存在していたら上書きします。指定しなければ、スキップします。" "`--csv`を指定したときのみ有効なオプションです。",
+        help="指定した場合、supplementary_data_id（省略時はsupplementary_data_number）がすでに存在していたら上書きします。指定しなければ、スキップします。",
     )
 
     parser.add_argument(
-        "--parallelism", type=int, help="並列度。指定しない場合は、逐次的に処理します。" "'--csv'を指定したときのみ有効なオプションです。また、必ず'--yes'を指定してください。"
+        "--parallelism", type=int, help="並列度。指定しない場合は、逐次的に処理します。必ず'--yes'を指定してください。"
     )
 
     parser.set_defaults(subcommand_func=main)
