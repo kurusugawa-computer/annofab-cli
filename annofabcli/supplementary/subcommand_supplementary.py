@@ -3,6 +3,7 @@ import argparse
 import annofabcli
 import annofabcli.common.cli
 import annofabcli.supplementary.list_supplementary_data
+import annofabcli.supplementary.put_supplementary_data
 
 
 def parse_args(parser: argparse.ArgumentParser):
@@ -11,6 +12,7 @@ def parse_args(parser: argparse.ArgumentParser):
 
     # サブコマンドの定義
     annofabcli.supplementary.list_supplementary_data.add_parser(subparsers)
+    annofabcli.supplementary.put_supplementary_data.add_parser(subparsers)
 
 
 def add_parser(subparsers: argparse._SubParsersAction):
