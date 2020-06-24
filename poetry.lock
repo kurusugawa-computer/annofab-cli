@@ -262,27 +262,27 @@ description = "Stop plotting your data - annotate your data and let it visualize
 name = "holoviews"
 optional = false
 python-versions = ">=2.7"
-version = "1.13.2"
+version = "1.13.3"
 
 [package.dependencies]
 numpy = ">=1.0"
 pandas = "*"
-panel = ">=0.7.0"
+panel = ">=0.8.0"
 param = ">=1.9.3,<2.0"
 pyviz-comms = ">=0.7.3"
 
 [package.extras]
-all = ["nbsmoke (>=0.2.0)", "plotly (>=4.0)", "coveralls", "ffmpeg", "netcdf4", "phantomjs", "ipython (>=5.4.0)", "nose", "cyordereddict", "matplotlib (>=2.2)", "deepdiff", "bokeh (>=1.1.0)", "awscli", "matplotlib (>=2.2,<3.1)", "bzip2", "scipy", "dask", "mock", "cftime", "ipython (5.4.1)", "spatialpandas", "pytest-cov (2.5.1)", "notebook", "pillow", "networkx", "selenium", "flake8 (3.6.0)", "xarray (>=0.10.4)", "streamz (>=0.5.0)", "path.py", "datashader", "jsonschema (2.6.0)", "nbconvert (5.3.1)"]
+all = ["pillow", "nbconvert (5.3.1)", "datashader", "jsonschema (2.6.0)", "netcdf4", "ipython (>=5.4.0)", "awscli", "nose", "ffmpeg", "cyordereddict", "streamz (>=0.5.0)", "deepdiff", "spatialpandas", "ipython (5.4.1)", "plotly (>=4.0)", "phantomjs", "flake8 (3.6.0)", "notebook", "dask", "networkx", "matplotlib (>=2.2)", "nbsmoke (>=0.2.0)", "selenium", "bzip2", "mock", "pytest-cov (2.5.1)", "bokeh (>=1.1.0)", "xarray (>=0.10.4)", "path.py", "scipy", "matplotlib (>=2.2,<3.1)", "shapely", "coveralls", "scikit-image", "cftime"]
 basic_tests = ["nose", "mock", "flake8 (3.6.0)", "coveralls", "path.py", "matplotlib (>=2.2,<3.1)", "nbsmoke (>=0.2.0)", "pytest-cov (2.5.1)", "matplotlib (>=2.1)", "bokeh (>=1.1.0)", "pandas", "ipython (>=5.4.0)", "notebook"]
 build = ["param (>=1.7.0)", "setuptools (>=30.3.0)", "pyct (>=0.4.4)", "python (<3.8)"]
-doc = ["ipython (>=5.4.0)", "notebook", "matplotlib (>=2.2)", "bokeh (>=1.1.0)", "networkx", "pillow", "xarray (>=0.10.4)", "plotly (>=4.0)", "datashader", "selenium", "phantomjs", "ffmpeg", "streamz (>=0.5.0)", "cftime", "netcdf4", "bzip2", "dask", "scipy", "spatialpandas", "nbsite (>0.5.2)", "sphinx", "sphinx-holoviz-theme", "mpl-sample-data", "awscli", "pscript"]
-examples = ["ipython (>=5.4.0)", "notebook", "matplotlib (>=2.2)", "bokeh (>=1.1.0)", "networkx", "pillow", "xarray (>=0.10.4)", "plotly (>=4.0)", "datashader", "selenium", "phantomjs", "ffmpeg", "streamz (>=0.5.0)", "cftime", "netcdf4", "bzip2", "dask", "scipy", "spatialpandas"]
-extras = ["ipython (>=5.4.0)", "notebook", "matplotlib (>=2.2)", "bokeh (>=1.1.0)", "networkx", "pillow", "xarray (>=0.10.4)", "plotly (>=4.0)", "datashader", "selenium", "phantomjs", "ffmpeg", "streamz (>=0.5.0)", "cftime", "netcdf4", "bzip2", "dask", "scipy", "spatialpandas", "cyordereddict", "pscript (0.7.1)"]
+doc = ["ipython (>=5.4.0)", "notebook", "matplotlib (>=2.2)", "bokeh (>=1.1.0)", "networkx", "pillow", "xarray (>=0.10.4)", "plotly (>=4.0)", "streamz (>=0.5.0)", "datashader", "selenium", "phantomjs", "ffmpeg", "cftime", "netcdf4", "bzip2", "dask", "scipy", "shapely", "scikit-image", "spatialpandas", "nbsite (>0.5.2)", "sphinx", "sphinx-holoviz-theme", "mpl-sample-data (>=3.1.3)", "awscli", "pscript", "graphviz"]
+examples = ["ipython (>=5.4.0)", "notebook", "matplotlib (>=2.2)", "bokeh (>=1.1.0)", "networkx", "pillow", "xarray (>=0.10.4)", "plotly (>=4.0)", "streamz (>=0.5.0)", "datashader", "selenium", "phantomjs", "ffmpeg", "cftime", "netcdf4", "bzip2", "dask", "scipy", "shapely", "scikit-image", "spatialpandas"]
+extras = ["ipython (>=5.4.0)", "notebook", "matplotlib (>=2.2)", "bokeh (>=1.1.0)", "networkx", "pillow", "xarray (>=0.10.4)", "plotly (>=4.0)", "streamz (>=0.5.0)", "datashader", "selenium", "phantomjs", "ffmpeg", "cftime", "netcdf4", "bzip2", "dask", "scipy", "shapely", "scikit-image", "spatialpandas", "cyordereddict", "pscript (0.7.1)"]
 nbtests = ["ipython (>=5.4.0)", "notebook", "matplotlib (>=2.2)", "bokeh (>=1.1.0)", "nose", "awscli", "deepdiff", "nbconvert (5.3.1)", "jsonschema (2.6.0)", "cyordereddict", "ipython (5.4.1)"]
 notebook = ["ipython (>=5.4.0)", "notebook"]
 recommended = ["ipython (>=5.4.0)", "notebook", "matplotlib (>=2.2)", "bokeh (>=1.1.0)"]
 tests = ["nose", "mock", "flake8 (3.6.0)", "coveralls", "path.py", "matplotlib (>=2.2,<3.1)", "nbsmoke (>=0.2.0)", "pytest-cov (2.5.1)"]
-unit_tests = ["ipython (>=5.4.0)", "notebook", "matplotlib (>=2.2)", "bokeh (>=1.1.0)", "networkx", "pillow", "xarray (>=0.10.4)", "plotly (>=4.0)", "datashader", "selenium", "phantomjs", "ffmpeg", "streamz (>=0.5.0)", "cftime", "netcdf4", "bzip2", "dask", "scipy", "spatialpandas", "nose", "mock", "flake8 (3.6.0)", "coveralls", "path.py", "matplotlib (>=2.2,<3.1)", "nbsmoke (>=0.2.0)", "pytest-cov (2.5.1)"]
+unit_tests = ["ipython (>=5.4.0)", "notebook", "matplotlib (>=2.2)", "bokeh (>=1.1.0)", "networkx", "pillow", "xarray (>=0.10.4)", "plotly (>=4.0)", "streamz (>=0.5.0)", "datashader", "selenium", "phantomjs", "ffmpeg", "cftime", "netcdf4", "bzip2", "dask", "scipy", "shapely", "scikit-image", "spatialpandas", "nose", "mock", "flake8 (3.6.0)", "coveralls", "path.py", "matplotlib (>=2.2,<3.1)", "nbsmoke (>=0.2.0)", "pytest-cov (2.5.1)"]
 
 [[package]]
 category = "main"
@@ -897,7 +897,7 @@ docs = ["sphinx", "jaraco.packaging (>=3.2)", "rst.linker (>=1.9)"]
 testing = ["jaraco.itertools", "func-timeout"]
 
 [metadata]
-content-hash = "a67609557b0d13d729ef2fc88fe7cbb496f957cbb0a1f5b02d823be2da95e501"
+content-hash = "57c26688c144970183837772a3af2b27e7ed1bed2485d49b5c13cf39c09e4fa2"
 python-versions = "^3.6.1"
 
 [metadata.files]
@@ -1013,8 +1013,8 @@ flake8 = [
     {file = "flake8-3.8.3.tar.gz", hash = "sha256:f04b9fcbac03b0a3e58c0ab3a0ecc462e023a9faf046d57794184028123aa208"},
 ]
 holoviews = [
-    {file = "holoviews-1.13.2-py2.py3-none-any.whl", hash = "sha256:d88e89ec6d040952b8774b5aaf666b346ec79739dddc563d8cbb57e12e35cc84"},
-    {file = "holoviews-1.13.2.tar.gz", hash = "sha256:cf2dd426cdc08bf2ca669268ca0432634574429e5b143314ee06ad88c5382802"},
+    {file = "holoviews-1.13.3-py2.py3-none-any.whl", hash = "sha256:0f6428c55e24303c6bbdd895aed262c1a2b1441b6f6fd2b5779b2f63651feddc"},
+    {file = "holoviews-1.13.3.tar.gz", hash = "sha256:e6753651a8598f21fc2c20e8456865ecec276cfea1519182a76d957506727934"},
 ]
 idna = [
     {file = "idna-2.9-py2.py3-none-any.whl", hash = "sha256:a068a21ceac8a4d63dbfd964670474107f541babbd2250d61922f029858365fa"},
@@ -1346,6 +1346,7 @@ regex = [
     {file = "regex-2020.6.8.tar.gz", hash = "sha256:e9b64e609d37438f7d6e68c2546d2cb8062f3adb27e6336bc129b51be20773ac"},
 ]
 requests = [
+    {file = "requests-2.23.0-py2.7.egg", hash = "sha256:5d2d0ffbb515f39417009a46c14256291061ac01ba8f875b90cad137de83beb4"},
     {file = "requests-2.23.0-py2.py3-none-any.whl", hash = "sha256:43999036bfa82904b6af1d99e4882b560e5e2c68e5c4b0aa03b655f3d7d73fee"},
     {file = "requests-2.23.0.tar.gz", hash = "sha256:b3f43d496c6daba4493e7c431722aeb7dbc6288f52a6e04e7b6023b0247817e6"},
 ]
