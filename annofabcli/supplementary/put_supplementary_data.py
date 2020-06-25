@@ -6,7 +6,7 @@ from dataclasses import dataclass
 from functools import partial
 from multiprocessing import Pool
 from pathlib import Path
-from typing import Any, Dict, List, Optional
+from typing import Dict, List, Optional
 
 import annofabapi
 import pandas
@@ -43,6 +43,21 @@ class CsvSupplementaryData:
     supplementary_data_type: Optional[str]
 
 
+@dataclass
+class SupplementaryDataForPut:
+    """
+    putする補助情報
+    """
+
+    input_data_id: str
+    supplementary_data_id: str
+    supplementary_data_name: str
+    supplementary_data_path: str
+    supplementary_data_type: Optional[str]
+    supplementary_data_number: int
+    last_updated_datetime: Optional[str]
+
+
 class SubPutSupplementaryData:
     """
     1個の補助情報を登録するためのクラス。multiprocessing.Pool対応。
@@ -59,53 +74,49 @@ class SubPutSupplementaryData:
         self.all_yes = all_yes
         self.supplementary_data_cache: Dict[str, List[SupplementaryData]] = {}
 
-    def put_supplementary_data(
-        self, project_id: str, csv_supplementary_data: CsvSupplementaryData, last_updated_datetime: Optional[str] = None
-    ):
+    def put_supplementary_data(self, project_id: str, supplementary_data: SupplementaryDataForPut):
 
-        request_body: Dict[str, Any] = {"last_updated_datetime": last_updated_datetime}
-
-        file_path = get_file_scheme_path(csv_supplementary_data.supplementary_data_path)
+        file_path = get_file_scheme_path(supplementary_data.supplementary_data_path)
         if file_path is not None:
-            request_body.update(
-                {
-                    "supplementary_data_name": csv_supplementary_data.supplementary_data_name,
-                    "supplementary_data_number": csv_supplementary_data.supplementary_data_number,
-                }
-            )
-            # 未指定の場合は put_supplementary_data_from_file に推定させる
-            if csv_supplementary_data.supplementary_data_type is not None:
-                request_body.update({"supplementary_data_type": csv_supplementary_data.supplementary_data_type})
+            request_body = {
+                "supplementary_data_name": supplementary_data.supplementary_data_name,
+                "supplementary_data_number": supplementary_data.supplementary_data_number,
+                "last_updated_datetime": supplementary_data.last_updated_datetime,
+            }
+            # 省略時は put_supplementary_data_from_file に推定させたいので、Noneも入れない
+            if supplementary_data.supplementary_data_type is not None:
+                request_body.update({"supplementary_data_type": supplementary_data.supplementary_data_type})
 
             logger.debug(
-                f"'{file_path}'を補助情報として登録します。supplementary_data_name={csv_supplementary_data.supplementary_data_name}"
+                f"'{file_path}'を補助情報として登録します。supplementary_data_name={supplementary_data.supplementary_data_name}"
             )
             self.service.wrapper.put_supplementary_data_from_file(
                 project_id,
-                input_data_id=csv_supplementary_data.input_data_id,
-                supplementary_data_id=csv_supplementary_data.supplementary_data_id,
+                input_data_id=supplementary_data.input_data_id,
+                supplementary_data_id=supplementary_data.supplementary_data_id,
                 file_path=file_path,
                 request_body=request_body,
             )
 
         else:
-            supplementary_data_type = csv_supplementary_data.supplementary_data_type
+            supplementary_data_type = supplementary_data.supplementary_data_type
             if supplementary_data_type is None:
-                supplementary_data_type = "text" if csv_supplementary_data.supplementary_data_path.endswith(".txt") else "image"
+                supplementary_data_type = (
+                    "text" if supplementary_data.supplementary_data_path.endswith(".txt") else "image"
+                )
 
-            request_body.update(
-                {
-                    "supplementary_data_name": csv_supplementary_data.supplementary_data_name,
-                    "supplementary_data_path": csv_supplementary_data.supplementary_data_path,
-                    "supplementary_data_type": supplementary_data_type,
-                    "supplementary_data_number": csv_supplementary_data.supplementary_data_number,
-                }
-            )
+            request_body = {
+                "supplementary_data_name": supplementary_data.supplementary_data_name,
+                "supplementary_data_number": supplementary_data.supplementary_data_number,
+                "supplementary_data_path": supplementary_data.supplementary_data_path,
+                "supplementary_data_type": supplementary_data_type,
+                "last_updated_datetime": supplementary_data.last_updated_datetime,
+            }
 
             self.service.api.put_supplementary_data(
                 project_id,
-                csv_supplementary_data.input_data_id,
-                csv_supplementary_data.supplementary_data_id,
+                supplementary_data.input_data_id,
+                supplementary_data.supplementary_data_id,
                 request_body=request_body,
             )
 
@@ -168,23 +179,30 @@ class SubPutSupplementaryData:
         input_data_id = csv_supplementary_data.input_data_id
         supplementary_data_id = csv_supplementary_data.supplementary_data_id
         supplementary_data_path = csv_supplementary_data.supplementary_data_path
+
         if supplementary_data_id is not None:
-            supplementary_data = self.get_supplementary_data_by_id(project_id, input_data_id, supplementary_data_id)
+            old_supplementary_data_key = f"supplementary_data_id={supplementary_data_id}"
+            old_supplementary_data = self.get_supplementary_data_by_id(project_id, input_data_id, supplementary_data_id)
         else:
-            supplementary_data = self.get_supplementary_data_by_number(
-                project_id, input_data_id, csv_supplementary_data.supplementary_data_number
+            supplementary_data_number = csv_supplementary_data.supplementary_data_number
+            old_supplementary_data_key = (
+                f"input_data_id={input_data_id}, supplementary_data_number={supplementary_data_number}"
+            )
+            old_supplementary_data = self.get_supplementary_data_by_number(
+                project_id, input_data_id, supplementary_data_number
             )
             supplementary_data_id = (
-                supplementary_data["supplementary_data_id"] if supplementary_data is not None else str(uuid.uuid4())
+                old_supplementary_data["supplementary_data_id"]
+                if old_supplementary_data is not None
+                else str(uuid.uuid4())
             )
-            csv_supplementary_data.supplementary_data_id = supplementary_data_id
 
-        if supplementary_data is not None:
+        if old_supplementary_data is not None:
             if overwrite:
-                logger.debug(f"supplementary_data_id={supplementary_data_id} はすでに存在します。")
-                last_updated_datetime = supplementary_data["updated_datetime"]
+                logger.debug(f"{old_supplementary_data_key} はすでに存在します。")
+                last_updated_datetime = old_supplementary_data["updated_datetime"]
             else:
-                logger.debug(f"supplementary_data_id={supplementary_data_id} がすでに存在するのでスキップします。")
+                logger.debug(f"{old_supplementary_data_key} がすでに存在するのでスキップします。")
                 return False
 
         file_path = get_file_scheme_path(supplementary_data_path)
@@ -200,13 +218,22 @@ class SubPutSupplementaryData:
             return False
 
         # 補助情報を登録
+        supplementary_data_for_put = SupplementaryDataForPut(
+            input_data_id=csv_supplementary_data.input_data_id,
+            supplementary_data_id=supplementary_data_id,
+            supplementary_data_name=csv_supplementary_data.supplementary_data_name,
+            supplementary_data_path=csv_supplementary_data.supplementary_data_path,
+            supplementary_data_type=csv_supplementary_data.supplementary_data_type,
+            supplementary_data_number=csv_supplementary_data.supplementary_data_number,
+            last_updated_datetime=last_updated_datetime,
+        )
         try:
-            self.put_supplementary_data(project_id, csv_supplementary_data, last_updated_datetime=last_updated_datetime)
+            self.put_supplementary_data(project_id, supplementary_data_for_put)
             logger.debug(
                 f"補助情報を登録しました。"
-                f"input_data_id={csv_supplementary_data.input_data_id},"
-                f"supplementary_data_id={csv_supplementary_data.supplementary_data_id}, "
-                f"supplementary_data_name={csv_supplementary_data.supplementary_data_name}"
+                f"input_data_id={supplementary_data_for_put.input_data_id},"
+                f"supplementary_data_id={supplementary_data_for_put.supplementary_data_id}, "
+                f"supplementary_data_name={supplementary_data_for_put.supplementary_data_name}"
             )
             return True
 
@@ -214,9 +241,9 @@ class SubPutSupplementaryData:
             logger.warning(e)
             logger.warning(
                 f"補助情報の登録に失敗しました。"
-                f"input_data_id={csv_supplementary_data.input_data_id},"
-                f"supplementary_data_id={csv_supplementary_data.supplementary_data_id}, "
-                f"supplementary_data_name={csv_supplementary_data.supplementary_data_name}"
+                f"input_data_id={supplementary_data_for_put.input_data_id},"
+                f"supplementary_data_id={supplementary_data_for_put.supplementary_data_id}, "
+                f"supplementary_data_name={supplementary_data_for_put.supplementary_data_name}"
             )
             return False
 
