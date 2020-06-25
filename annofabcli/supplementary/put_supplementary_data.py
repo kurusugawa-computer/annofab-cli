@@ -270,7 +270,7 @@ class PutSupplementaryData(AbstractCommandLineInterface):
     def get_supplementary_data_list_from_csv(csv_path: Path) -> List[CsvSupplementaryData]:
         def create_supplementary_data(e):
             supplementary_data_id = e.supplementary_data_id if not pandas.isna(e.supplementary_data_id) else None
-            supplementary_data_type = e.type if not pandas.isna(e.supplementary_data_type) else None
+            supplementary_data_type = e.supplementary_data_type if not pandas.isna(e.supplementary_data_type) else None
             return CsvSupplementaryData(
                 input_data_id=e.input_data_id,
                 supplementary_data_number=e.supplementary_data_number,
