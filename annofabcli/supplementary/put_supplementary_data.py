@@ -91,7 +91,7 @@ class SubPutSupplementaryData:
         else:
             supplementary_data_type = csv_supplementary_data.supplementary_data_type
             if supplementary_data_type is None:
-                supplementary_data_type = "text" if supplementary_data_type.endswith(".txt") else "image"
+                supplementary_data_type = "text" if csv_supplementary_data.supplementary_data_path.endswith(".txt") else "image"
 
             request_body.update(
                 {
