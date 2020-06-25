@@ -378,8 +378,9 @@ def parse_args(parser: argparse.ArgumentParser):
         type=str,
         help=(
             "補助情報が記載されたCVファイルのパスを指定してください。"
-            "CSVのフォーマットは、「1列目:input_data_id(required), 2列目:supplementary_data_number(required), 3列目:supplementary_data_name(required), "
-            "4列目:supplementary_data_path(required), 5列目:supplementary_data_id, 6列目:supplementary_data_type, ヘッダ行なし, カンマ区切り」です。"
+            "CSVのフォーマットは、「1列目:input_data_id(required), 2列目:supplementary_data_number(required), "
+            "3列目:supplementary_data_name(required), 4列目:supplementary_data_path(required), 5列目:supplementary_data_id, "
+            "6列目:supplementary_data_type, ヘッダ行なし, カンマ区切り」です。"
             "supplementary_data_pathの先頭が`file://`の場合、ローカルのファイルを補助情報として登録します。 "
             "supplementary_data_idが空の場合はUUIDv4になります。"
             "各項目の詳細は `putSupplementaryData` API を参照してください。"
