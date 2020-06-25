@@ -1,5 +1,6 @@
 import argparse
 import logging
+import sys
 import time
 import uuid
 from typing import Any, Dict, List, Optional
@@ -261,6 +262,9 @@ class ComleteTasks(AbstractCommandLineInterface):
                 logger.warning(f"{task.task_id}: 未回答の検査コメントがある({unanswered_comment_count_for_task} 件)ため、スキップします。")
                 return
             else:
+                if not self.confirm_processing(f"タスク'{task.task_id}'の教師付フェーズを次のフェーズに進めます。"):
+                    return
+
                 # 担当者変更
                 changed_operator = self.change_to_working_status(task, my_account_id)
                 if changed_operator:
@@ -301,6 +305,9 @@ class ComleteTasks(AbstractCommandLineInterface):
             logger.debug(f"{task.task_id}: 未処置の検査コメントが {unprocessed_inspection_count} 件あります。")
             if inspection_status is None:
                 logger.warning(f"{task.task_id}: 未処置の検査コメントが {unprocessed_inspection_count} 件あるため、スキップします。")
+                return
+
+            if not self.confirm_processing(f"タスク'{task.task_id}'の検査/受入フェーズを次のフェーズに進めます。"):
                 return
 
             changed_operator = self.change_to_working_status(task, my_account_id)
@@ -395,10 +402,20 @@ class ComleteTasks(AbstractCommandLineInterface):
 
     @staticmethod
     def validate(args: argparse.Namespace) -> bool:
+        COMMON_MESSAGE = "annofabcli task complete: error:"
         if args.phase == TaskPhase.ANNOTATION.value:
             if args.inspection_status is not None:
                 logger.warning(f"'--phase'に'{TaskPhase.ANNOTATION.value}'を指定しているとき、" f"'--inspection_status'の値は無視されます。")
         elif args.phase in [TaskPhase.INSPECTION.value, TaskPhase.ACCEPTANCE.value]:
+            if args.inspection_status is not None:
+                print(
+                    f"{COMMON_MESSAGE} argument --inspection_status: "
+                    f"'--phase'に'{TaskPhase.INSPECTION.value}'または'{TaskPhase.ACCEPTANCE.value}'"
+                    f"を指定しているときは、'--inspection_status'を必ず指定してください。",
+                    file=sys.stderr,
+                )
+                return False
+
             if args.reply_comment is not None:
                 logger.warning(
                     f"'--phase'に'{TaskPhase.INSPECTION.value}'または'{TaskPhase.ACCEPTANCE.value}'を指定しているとき、"
