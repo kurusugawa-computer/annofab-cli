@@ -1,6 +1,5 @@
 import argparse
 import logging
-import sys
 import time
 import uuid
 from typing import Any, Dict, List, Optional
@@ -229,16 +228,14 @@ class ComleteTasks(AbstractCommandLineInterface):
 
     def complete_task_for_annotation_phase(
         self, task: Task, my_account_id: str, reply_comment: Optional[str] = None,
-    ):
+    ) -> bool:
         """
         annotation phaseのタスクを完了状態にする。
 
         Args:
             project_id:
             task: 操作対象のタスク。annotation phase状態であること前提。
-            reply_comment:
-            my_account_id:
-            changed_operator:
+            reply_comment: 未処置の検査コメントに対する返信コメント。Noneの場合、スキップする。
 
         Returns:
 
@@ -251,20 +248,22 @@ class ComleteTasks(AbstractCommandLineInterface):
 
         unanswered_comment_count_for_task = sum([len(e) for e in unanswered_comment_list_dict.values()])
         if unanswered_comment_count_for_task == 0:
+            if not self.confirm_processing(f"タスク'{task.task_id}'の教師付フェーズを次のフェーズに進めますか？"):
+                return False
+
             # 担当者変更
             self.change_to_working_status(task, my_account_id)
             self.facade.complete_task(task.project_id, task.task_id, my_account_id)
-            logger.info(f"{task.task_id}: {task.phase.value}  {task.phase_stage} フェーズを完了状態にしました。")
-            return
+            logger.info(f"{task.task_id}: 教師付フェーズを次のフェーズに進めました。")
+            return True
         else:
             logger.debug(f"{task.task_id}: 未回答の検査コメントが {unanswered_comment_count_for_task} 件あります。")
             if reply_comment is None:
-                logger.warning(f"{task.task_id}: 未回答の検査コメントがある({unanswered_comment_count_for_task} 件)ため、スキップします。")
-                return
+                logger.warning(f"{task.task_id}: 未回答の検査コメントに対する返信コメント（'--reply_comment'）が指定されていないので、スキップします。")
+                return False
+            elif not self.confirm_processing(f"タスク'{task.task_id}'の教師付フェーズを次のフェーズに進めますか？"):
+                return False
             else:
-                if not self.confirm_processing(f"タスク'{task.task_id}'の教師付フェーズを次のフェーズに進めます。"):
-                    return
-
                 # 担当者変更
                 changed_operator = self.change_to_working_status(task, my_account_id)
                 if changed_operator:
@@ -283,11 +282,12 @@ class ComleteTasks(AbstractCommandLineInterface):
                     )
 
                 self.facade.complete_task(task.project_id, task.task_id, my_account_id)
-                logger.info(f"{task.task_id}: {task.phase.value}  {task.phase_stage} フェーズを完了状態にしました。")
+                logger.info(f"{task.task_id}: 教師付フェーズをフェーズに進めました。")
+                return True
 
     def complete_task_for_inspection_acceptance_phase(
         self, task: Task, my_account_id: str, inspection_status: Optional[InspectionStatus] = None,
-    ):
+    ) -> bool:
         unprocessed_inspection_list_dict: Dict[str, List[Inspection]] = {}
         for input_data_id in task.input_data_id_list:
             unprocessed_inspection_list = self.get_unprocessed_inspection_list(task, input_data_id)
@@ -296,19 +296,21 @@ class ComleteTasks(AbstractCommandLineInterface):
         unprocessed_inspection_count = sum([len(e) for e in unprocessed_inspection_list_dict.values()])
 
         if unprocessed_inspection_count == 0:
+            if not self.confirm_processing(f"タスク'{task.task_id}'の検査/受入フェーズを次のフェーズに進めますか？"):
+                return False
+
             self.change_to_working_status(task, my_account_id)
             self.facade.complete_task(task.project_id, task.task_id, my_account_id)
-            logger.info(f"{task.task_id}: {task.phase.value} {task.phase_stage} フェーズを完了状態にしました。")
-            return
+            logger.info(f"{task.task_id}: 検査/受入フェーズを次のフェーズに進めました。")
+            return True
 
         else:
             logger.debug(f"{task.task_id}: 未処置の検査コメントが {unprocessed_inspection_count} 件あります。")
             if inspection_status is None:
-                logger.warning(f"{task.task_id}: 未処置の検査コメントが {unprocessed_inspection_count} 件あるため、スキップします。")
-                return
-
-            if not self.confirm_processing(f"タスク'{task.task_id}'の検査/受入フェーズを次のフェーズに進めます。"):
-                return
+                logger.warning(f"{task.task_id}: 未処置の検査コメントに対する対応方法（'--inspection_status'）が指定されていないので、スキップします。")
+                return False
+            elif not self.confirm_processing(f"タスク'{task.task_id}'の検査/受入フェーズを次のフェーズに進めますか？"):
+                return False
 
             changed_operator = self.change_to_working_status(task, my_account_id)
             if changed_operator:
@@ -328,7 +330,8 @@ class ComleteTasks(AbstractCommandLineInterface):
                 )
 
             self.facade.complete_task(task.project_id, task.task_id, my_account_id)
-            logger.info(f"{task.task_id}: {task.phase.value}  {task.phase_stage} フェーズを完了状態にしました。")
+            logger.info(f"{task.task_id}: 検査/受入フェーズを次のフェーズに進めました。")
+            return True
 
     def complete_task_list(
         self,
@@ -346,7 +349,6 @@ class ComleteTasks(AbstractCommandLineInterface):
             task_id_list:
             target_phase: 操作対象のタスクフェーズ
             target_phase_stage: 操作対象のタスクのフェーズステージ
-            inspection_status: 変更後の検査コメントの状態
             reply_comment: 未回答の検査コメントに対する指摘
             inspection_status: 未処置の検査コメントの状態
         """
@@ -378,15 +380,18 @@ class ComleteTasks(AbstractCommandLineInterface):
 
             try:
                 if task.phase == TaskPhase.ANNOTATION:
-                    self.complete_task_for_annotation_phase(
+                    result = self.complete_task_for_annotation_phase(
                         task, my_account_id=my_account_id, reply_comment=reply_comment
                     )
+                    if result:
+                        completed_task_count += 1
                 else:
-                    self.complete_task_for_inspection_acceptance_phase(
+                    result = self.complete_task_for_inspection_acceptance_phase(
                         task, my_account_id=my_account_id, inspection_status=inspection_status
                     )
+                    if result:
+                        completed_task_count += 1
 
-                completed_task_count += 1
             except Exception as e:  # pylint: disable=broad-except
                 logger.warning(e)
                 logger.warning(f"{task_id}: {task.phase} フェーズを完了状態にするのに失敗しました。")
@@ -402,20 +407,10 @@ class ComleteTasks(AbstractCommandLineInterface):
 
     @staticmethod
     def validate(args: argparse.Namespace) -> bool:
-        COMMON_MESSAGE = "annofabcli task complete: error:"
         if args.phase == TaskPhase.ANNOTATION.value:
             if args.inspection_status is not None:
                 logger.warning(f"'--phase'に'{TaskPhase.ANNOTATION.value}'を指定しているとき、" f"'--inspection_status'の値は無視されます。")
         elif args.phase in [TaskPhase.INSPECTION.value, TaskPhase.ACCEPTANCE.value]:
-            if args.inspection_status is not None:
-                print(
-                    f"{COMMON_MESSAGE} argument --inspection_status: "
-                    f"'--phase'に'{TaskPhase.INSPECTION.value}'または'{TaskPhase.ACCEPTANCE.value}'"
-                    f"を指定しているときは、'--inspection_status'を必ず指定してください。",
-                    file=sys.stderr,
-                )
-                return False
-
             if args.reply_comment is not None:
                 logger.warning(
                     f"'--phase'に'{TaskPhase.INSPECTION.value}'または'{TaskPhase.ACCEPTANCE.value}'を指定しているとき、"
@@ -450,6 +445,7 @@ def parse_args(parser: argparse.ArgumentParser):
     parser.add_argument(
         "--phase",
         type=str,
+        required=True,
         choices=[TaskPhase.ANNOTATION.value, TaskPhase.INSPECTION.value, TaskPhase.ACCEPTANCE.value],
         help=("操作対象のタスクのフェーズを指定してください。"),
     )
