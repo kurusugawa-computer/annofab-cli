@@ -122,6 +122,7 @@ $ docker run -it -e ANNOFAB_USER_ID=XXXX -e ANNOFAB_PASSWORD=YYYYY annofab-cli a
 |statistics|summarize_task_count_by_user|ユーザごとに担当しているタスク数を出力します。|オーナ|
 |statistics| visualize             | 統計情報を可視化します。                                                            |オーナ|
 |supplementary| list             | 補助情報を出力します。                                                           |オーナ|
+|supplementary| put              | 補助情報を登録します。                                                           |オーナ|
 |task| cancel_acceptance             | 受け入れ完了タスクを、受け入れ取り消し状態にします。                                                         |オーナ|
 |task| change_operator             | タスクの担当者を変更します。                                                             |チェッカー/オーナ|
 |task| complete                | タスクを完了状態にして次のフェーズに進めます（教師付の提出、検査/受入の合格）。                                  |チェッカー/オーナ|
@@ -1329,6 +1330,53 @@ $ annofabcli statistics visualize --project_id prj1 --not_update
 # input_data_idが"id1", "id2"に紐づく補助情報一覧を出力します。
 $ annofabcli supplementary list --project_id prj1 --input_data_id id1 id2
 ```
+
+### supplementary put
+CSVに記載された補助情報を登録します。
+
+supplementary_data_id（省略時は supplementary_data_number）が一致する補助情報が既に存在する場合は、スキップまたは上書きします。
+
+* ヘッダ行なし
+* カンマ区切り
+* 1列目: input_data_id. 必須
+* 2列目: supplementary_data_number. 必須
+* 3列目: supplementary_data_name. 必須
+* 4列目: supplementary_data_path. 必須. 先頭が`file://`の場合、ローカルのファイルを入力データとしてアップロードします。
+* 5列目: supplementary_data_id. 省略可能。省略した場合UUIDv4になる。
+* 6列目: supplementary_data_type. 省略可能. `image` or `text`
+
+CSVのサンプル（`supplementary_data.csv`）です。
+
+```
+input1,1,data1-1,s3://example.com/data1,id1,
+input1,2,data1-2,s3://example.com/data2,id2,image
+input1,3,data1-3,s3://example.com/data3,id3,text
+input2,1,data2-1,https://example.com/data4,,
+input2,2,data2-2,file://sample.jpg,,
+input2,3,data2-3,file:///tmp/sample.jpg,,
+```
+
+
+```
+# supplementary_data.csvに記載されている補助情報を登録する。すでに補助情報が存在する場合はスキップする。
+$ annofabcli supplementary put --project_id prj1 --csv supplementary_data.csv
+
+# supplementary_data.csvに記載されている補助情報を登録する。すでに補助情報が存在する場合は上書きする。
+$ annofabcli supplementary put --project_id prj1 --csv supplementary_data.csv --overwrite
+
+# supplementary_data.csvに記載されている補助情報を、並列処理で登録する（`--yes`オプションが必要）。
+$ annofabcli supplementary put --project_id prj1 --csv supplementary_data.csv --parallelism 2 --yes
+```
+
+
+`supplementary list`コマンドを使えば、プロジェクトに既に登録されている補助情報からCSVを作成できます。
+
+```
+$ annofabcli supplementary list --project_id prj1 --input_data_id id1 id2 \
+ --format csv --output supplementary_data.csv \
+ --csv_format '{"columns": ["input_data_id", "supplementary_data_number", "supplementary_data_name", "supplementary_data_path", "supplementary_data_id", "supplementary_data_type"], "header":false}' 
+```
+
 
 
 ### task cancel_acceptance
