@@ -348,17 +348,13 @@ class PutSupplementaryData(AbstractCommandLineInterface):
         project_id = args.project_id
         super().validate_project(project_id, [ProjectMemberRole.OWNER])
 
-        if args.csv is not None:
-            supplementary_data_list = self.get_supplementary_data_list_from_csv(Path(args.csv))
-            self.put_supplementary_data_list(
-                project_id,
-                supplementary_data_list=supplementary_data_list,
-                overwrite=args.overwrite,
-                parallelism=args.parallelism,
-            )
-
-        else:
-            print(f"引数が不正です。", file=sys.stderr)
+        supplementary_data_list = self.get_supplementary_data_list_from_csv(Path(args.csv))
+        self.put_supplementary_data_list(
+            project_id,
+            supplementary_data_list=supplementary_data_list,
+            overwrite=args.overwrite,
+            parallelism=args.parallelism,
+        )
 
 
 def main(args):
@@ -372,10 +368,10 @@ def parse_args(parser: argparse.ArgumentParser):
 
     argument_parser.add_project_id()
 
-    file_group = parser.add_mutually_exclusive_group(required=True)
-    file_group.add_argument(
+    parser.add_argument(
         "--csv",
         type=str,
+        required=True,
         help=(
             "補助情報が記載されたCVファイルのパスを指定してください。"
             "CSVのフォーマットは、「1列目:input_data_id(required), 2列目:supplementary_data_number(required), "
