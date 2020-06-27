@@ -33,10 +33,10 @@ more-itertools = "*"
 jmespath = "*"
 pyquery = "*"
 isodate = "*"
-annofabapi = ">=0.33.1"
-pandas = "^1.0.4"
-bokeh = "^2.1.0"
-holoviews= "^1.13.2"
+annofabapi = ">=0.34.0"
+pandas = "^1.0.5"
+bokeh = "^2.1.1"
+holoviews= "^1.13.3"
 
 [tool.poetry.dev-dependencies]
 # test library
