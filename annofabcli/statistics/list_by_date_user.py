@@ -56,7 +56,6 @@ class ListSubmittedTaskCountMain:
         df.sort_values(["date", "user_id"], inplace=True)
         columns = [
             "date",
-            "account_id",
             "user_id",
             "username",
             "biography",
@@ -212,7 +211,7 @@ class ListSubmittedTaskCountMain:
             task_history_dict=task_history_dict, start_date=start_date, end_date=end_date
         )
         labor_df = self.create_labor_df(project_id, start_date=start_date, end_date=end_date)
-        account_statistics_df = self.create_account_statistics_df(project_id,start_date=start_date, end_date=end_date)
+        account_statistics_df = self.create_account_statistics_df(project_id, start_date=start_date, end_date=end_date)
         user_df = self.create_user_df(project_id)
 
         df2 = self.to_formatted_dataframe(submitted_task_count_df, account_statistics_df, labor_df, user_df)
@@ -229,7 +228,9 @@ class ListSubmittedTaskCountArgs(AbstractCommandLineInterface):
         )
 
         main_obj = ListSubmittedTaskCountMain(service=self.service)
-        df = main_obj.create_user_statistics_by_date(project_id, args.task_history_json)
+        df = main_obj.create_user_statistics_by_date(
+            project_id, args.task_history_json, start_date=args.start_date, end_date=args.end_date
+        )
         self.print_csv(df)
 
 
