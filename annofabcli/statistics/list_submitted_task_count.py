@@ -3,33 +3,16 @@ import json
 import logging
 from collections import defaultdict
 from pathlib import Path
-from typing import Dict, List, Optional
+from typing import Any, Dict, List, Optional, Tuple
 
 import pandas
-from annofabapi.models import TaskHistory
-from annofabapi.parser import (
-    SimpleAnnotationParser,
-    SimpleAnnotationParserByTask,
-    lazy_parse_simple_annotation_dir,
-    lazy_parse_simple_annotation_dir_by_task,
-    lazy_parse_simple_annotation_zip,
-    lazy_parse_simple_annotation_zip_by_task,
-)
+from annofabapi.models import TaskHistory, TaskPhase
 
 import annofabcli
 import annofabcli.common.cli
 from annofabcli import AnnofabApiFacade
-from annofabcli.common.cli import (
-    AbstractCommandLineInterface,
-    ArgumentParser,
-    build_annofabapi_resource_and_login,
-    get_json_from_args,
-    get_wait_options_from_args,
-)
-from annofabcli.common.dataclasses import WaitOptions
+from annofabcli.common.cli import AbstractCommandLineInterface, ArgumentParser, build_annofabapi_resource_and_login
 from annofabcli.common.download import DownloadingFile
-
-DEFAULT_WAIT_OPTIONS = WaitOptions(interval=60, max_tries=360)
 
 logger = logging.getLogger(__name__)
 
@@ -38,9 +21,37 @@ def from_datetime_to_date(datetime: str) -> str:
     return datetime[0:10]
 
 
-class ListSubmittedTaskCount(AbstractCommandLineInterface):
-    CSV_FORMAT = {"encoding": "utf_8_sig", "index": False}
+def to_formatted_dataframe(df: pandas.DataFrame):
+    def get_phase_list(columns):
+        print(columns)
+        phase_list = []
+        for phase in TaskPhase:
+            str_phase = phase.value
+            if str_phase in columns:
+                phase_list.append(str_phase)
+        return phase_list
 
+    user_df = df.groupby("account_id").first()[["user_id", "username", "biography"]]
+    df2 = df.pivot_table(columns="phase", values="task_count", index=["date", "account_id"]).fillna(0)
+    df3 = df2.join(user_df, how="left").reset_index()
+    df3.rename(
+        columns={
+            "annotation": "annotation_task_count",
+            "inspection": "inspection_task_count",
+            "acceptance": "acceptance_task_count",
+        },
+        inplace=True,
+    )
+    df3.sort_values(["date", "user_id"], inplace=True)
+
+    phase_list = get_phase_list(df2.columns)
+    columns = ["date", "account_id", "user_id", "username", "biography"] + [
+        f"{phase}_task_count" for phase in phase_list
+    ]
+    return df3[columns]
+
+
+class ListSubmittedTaskCount(AbstractCommandLineInterface):
     def get_task_history_dict(
         self, project_id: str, task_history_json_path: Optional[Path]
     ) -> Dict[str, List[TaskHistory]]:
@@ -50,7 +61,7 @@ class ListSubmittedTaskCount(AbstractCommandLineInterface):
             cache_dir = annofabcli.utils.get_cache_dir()
             json_path = cache_dir / f"task-history-{project_id}.json"
             downloading_obj = DownloadingFile(self.service)
-            downloading_obj.download_task_history_json(project_id, dest_path=str(task_history_json_path))
+            downloading_obj.download_task_history_json(project_id, dest_path=str(json_path))
 
         with json_path.open(encoding="utf-8") as f:
             task_history_dict = json.load(f)
@@ -59,27 +70,30 @@ class ListSubmittedTaskCount(AbstractCommandLineInterface):
     def create_submitted_task_count_df(
         self, project_id: str, task_history_dict: Dict[str, List[TaskHistory]]
     ) -> pandas.DataFrame:
-        task__history_count_dict = defaultdict(int)
-        for task_id, task_history_list in task_history_dict.items():
+        task_history_count_dict: Dict[Tuple[str, str, str], int] = defaultdict(int)
+        for _, task_history_list in task_history_dict.items():
             for task_history in task_history_list:
                 if task_history["ended_datetime"] is not None and task_history["account_id"] is not None:
                     ended_date = from_datetime_to_date(task_history["ended_datetime"])
-                    task__history_count_dict[
-                        (task_history["account_id"], task_history["phase"], task_history["phase_stage"], ended_date)
-                    ] += 1
+                    task_history_count_dict[(task_history["account_id"], task_history["phase"], ended_date)] += 1
 
         data_list = []
-        for key, task_count in task__history_count_dict.items():
-            account_id, phaes, phase_stage, date = key
+        for key, task_count in task_history_count_dict.items():
+            account_id, phaes, date = key
             member = self.facade.get_organization_member_from_account_id(project_id, account_id)
-            data = {
-                "user_id": member["user_id"],
-                "username": member["username"],
-                "biography": member["biography"],
-                "date": date,
-                "phase": phaes,
-                "phase_stage": phase_stage,
-            }
+            data: Dict[str, Any] = {"date": date, "phase": phaes, "account_id": account_id}
+            if member is not None:
+                data.update(
+                    {
+                        "user_id": member["user_id"],
+                        "username": member["username"],
+                        "biography": member["biography"],
+                        "task_count": task_count,
+                    }
+                )
+            else:
+                data.update({"user_id": None, "username": None, "biography": None})
+
             data_list.append(data)
 
         return pandas.DataFrame(data_list)
@@ -99,8 +113,6 @@ def parse_args(parser: argparse.ArgumentParser):
     argument_parser = ArgumentParser(parser)
 
     argument_parser.add_project_id()
-    argument_parser.add_csv_format()
-    argument_parser.add_output()
 
     parser.add_argument(
         "--task_history_json",
@@ -108,6 +120,9 @@ def parse_args(parser: argparse.ArgumentParser):
         help="タスク履歴情報が記載されたJSONファイルのパスを指定してます。JSONファイルは`$ annofabcli project download task_history`コマンドで取得できます。"
         "指定しない場合は、AnnoFabからタスク履歴全件ファイルをダウンロードします。",
     )
+
+    argument_parser.add_csv_format()
+    argument_parser.add_output()
 
     parser.set_defaults(subcommand_func=main)
 

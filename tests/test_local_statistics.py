@@ -6,6 +6,7 @@ from annofabapi.models import TaskStatus
 
 from annofabcli.statistics.csv import Csv
 from annofabcli.statistics.linegraph import LineGraph
+from annofabcli.statistics.list_submitted_task_count import to_formatted_dataframe
 from annofabcli.statistics.scatter import Scatter
 from annofabcli.statistics.summarize_task_count import SimpleTaskStatus
 from annofabcli.statistics.summarize_task_count_by_task_id import create_task_count_summary_df, get_task_id_prefix
@@ -155,3 +156,42 @@ class TestSummarizeTaskCountByTaskId:
         with (data_path / "task.json").open() as f:
             task_list = json.load(f)
         df = create_task_count_summary_df(task_list, delimiter="_")
+
+
+class TestListSubmittedTaskCount:
+    def test_to_formatted_dataframe(self):
+        data_list = [
+            {
+                "date": "2020-04-01",
+                "phase": "annotation",
+                "account_id": "alice",
+                "user_id": "alice",
+                "username": "Alice",
+                "biography": "U.K.",
+                "task_count": 10,
+            },
+            {
+                "date": "2020-04-01",
+                "phase": "acceptance",
+                "account_id": "alice",
+                "user_id": "alice",
+                "username": "Alice",
+                "biography": "U.K.",
+                "task_count": 20,
+            },
+            {
+                "date": "2020-04-01",
+                "phase": "annotation",
+                "account_id": "bob",
+                "user_id": "bob",
+                "username": "Bob",
+                "biography": None,
+                "task_count": 30,
+            },
+        ]
+        df = pandas.DataFrame(data_list)
+
+        df2 = to_formatted_dataframe(df)
+        print()
+        print(df2)
+        df2.to_csv("hoge.csv")
