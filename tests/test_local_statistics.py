@@ -6,7 +6,6 @@ from annofabapi.models import TaskStatus
 
 from annofabcli.statistics.csv import Csv
 from annofabcli.statistics.linegraph import LineGraph
-from annofabcli.statistics.list_submitted_task_count import to_formatted_dataframe
 from annofabcli.statistics.scatter import Scatter
 from annofabcli.statistics.summarize_task_count import SimpleTaskStatus
 from annofabcli.statistics.summarize_task_count_by_task_id import create_task_count_summary_df, get_task_id_prefix
@@ -156,5 +155,3 @@ class TestSummarizeTaskCountByTaskId:
         with (data_path / "task.json").open() as f:
             task_list = json.load(f)
         df = create_task_count_summary_df(task_list, delimiter="_")
-
-

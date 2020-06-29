@@ -90,7 +90,19 @@ class ListSubmittedTaskCountMain:
         member_list = self.facade.get_organization_members_from_project_id(project_id)
         return pandas.DataFrame(member_list, columns=["account_id", "user_id", "username", "biography"])
 
-    def create_account_statistics_df(self, project_id: str) -> pandas.DataFrame:
+    @staticmethod
+    def _is_contained_daterange(target_date: str, start_date: Optional[str] = None, end_date: Optional[str] = None):
+        if start_date is not None:
+            if target_date < start_date:
+                return False
+        if end_date is not None:
+            if target_date > end_date:
+                return False
+        return True
+
+    def create_account_statistics_df(
+        self, project_id: str, start_date: Optional[str] = None, end_date: Optional[str] = None
+    ) -> pandas.DataFrame:
         account_statistics, _ = self.service.api.get_account_statistics(project_id)
         data_list: List[Dict[str, Any]] = []
         for stat_by_user in account_statistics:
@@ -103,22 +115,30 @@ class ListSubmittedTaskCountMain:
                     "rejected_task_count": stat["tasks_rejected"],
                     "date": stat["date"],
                 }
-                # 不要なデータは追加しないようにする
-                if data["monitored_worktime_hour"] > 0 or data["rejected_task_count"]:
-                    data_list.append(data)
+                if not self._is_contained_daterange(data["date"], start_date=start_date, end_date=end_date):
+                    continue
+
+                if data["monitored_worktime_hour"] == 0 and data["rejected_task_count"] == 0:
+                    continue
+
+                data_list.append(data)
 
         if len(data_list) > 0:
             return pandas.DataFrame(data_list)
         else:
             return pandas.DataFrame(columns=["date", "account_id", "monitored_worktime_hour", "rejected_task_count"])
 
-    def create_labor_df(self, project_id: str) -> pandas.DataFrame:
+    def create_labor_df(
+        self, project_id: str, start_date: Optional[str] = None, end_date: Optional[str] = None
+    ) -> pandas.DataFrame:
         def to_new_labor(e: Dict[str, Any]) -> Dict[str, Any]:
             return dict(
                 date=e["date"], account_id=e["account_id"], actual_worktime_hour=self._get_actual_worktime_hour(e),
             )
 
-        labor_list: List[Dict[str, Any]] = self.service.api.get_labor_control({"project_id": project_id})[0]
+        labor_list: List[Dict[str, Any]] = self.service.api.get_labor_control(
+            {"project_id": project_id, "from": start_date, "to": end_date}
+        )[0]
         new_labor_list = [
             to_new_labor(e) for e in labor_list if e["account_id"] is not None and self._get_actual_worktime_hour(e) > 0
         ]
@@ -127,7 +147,12 @@ class ListSubmittedTaskCountMain:
         else:
             return pandas.DataFrame(columns=["date", "account_id", "actual_worktime_hour"])
 
-    def create_submitted_task_count_df(self, task_history_dict: Dict[str, List[TaskHistory]]) -> pandas.DataFrame:
+    def create_submitted_task_count_df(
+        self,
+        task_history_dict: Dict[str, List[TaskHistory]],
+        start_date: Optional[str] = None,
+        end_date: Optional[str] = None,
+    ) -> pandas.DataFrame:
         def _set_zero_if_not_exists(df: pandas.DataFrame):
             for phase in TaskPhase:
                 col = f"{phase.value}_submitted_task_count"
@@ -145,6 +170,9 @@ class ListSubmittedTaskCountMain:
         for key, task_count in task_history_count_dict.items():
             account_id, phaes, date = key
             data: Dict[str, Any] = {"date": date, "phase": phaes, "account_id": account_id, "task_count": task_count}
+            if not self._is_contained_daterange(data["date"], start_date=start_date, end_date=end_date):
+                continue
+
             data_list.append(data)
 
         if len(data_list) == 0:
@@ -172,13 +200,19 @@ class ListSubmittedTaskCountMain:
         return df2
 
     def create_user_statistics_by_date(
-        self, project_id: str, task_history_json_path: Optional[Path]
+        self,
+        project_id: str,
+        task_history_json_path: Optional[Path],
+        start_date: Optional[str] = None,
+        end_date: Optional[str] = None,
     ) -> pandas.DataFrame:
         task_history_dict = self.get_task_history_dict(project_id, task_history_json_path)
 
-        submitted_task_count_df = self.create_submitted_task_count_df(task_history_dict=task_history_dict)
-        labor_df = self.create_labor_df(project_id)
-        account_statistics_df = self.create_account_statistics_df(project_id)
+        submitted_task_count_df = self.create_submitted_task_count_df(
+            task_history_dict=task_history_dict, start_date=start_date, end_date=end_date
+        )
+        labor_df = self.create_labor_df(project_id, start_date=start_date, end_date=end_date)
+        account_statistics_df = self.create_account_statistics_df(project_id,start_date=start_date, end_date=end_date)
         user_df = self.create_user_df(project_id)
 
         df2 = self.to_formatted_dataframe(submitted_task_count_df, account_statistics_df, labor_df, user_df)
@@ -196,17 +230,6 @@ class ListSubmittedTaskCountArgs(AbstractCommandLineInterface):
 
         main_obj = ListSubmittedTaskCountMain(service=self.service)
         df = main_obj.create_user_statistics_by_date(project_id, args.task_history_json)
-        #
-        #
-        # task_history_dict = self.get_task_history_dict(project_id, args.task_history_json)
-        #
-        # submitted_task_count_df = self.create_submitted_task_count_df(task_history_dict=task_history_dict)
-        # labor_df = self.get_labor_df(project_id)
-        # account_statistics_df = self.get_account_statistics(project_id)
-        # user_df = self.get_user_df(project_id)
-        #
-        # self.get_account_statistics(project_id)
-        # df2 = to_formatted_dataframe(submitted_task_count_df, account_statistics_df, labor_df, user_df)
         self.print_csv(df)
 
 
@@ -221,6 +244,9 @@ def parse_args(parser: argparse.ArgumentParser):
         help="タスク履歴情報が記載されたJSONファイルのパスを指定してます。JSONファイルは`$ annofabcli project download task_history`コマンドで取得できます。"
         "指定しない場合は、AnnoFabからタスク履歴全件ファイルをダウンロードします。",
     )
+
+    parser.add_argument("--start_date", type=str, help="集計対象の開始日(YYYY-mm-dd)")
+    parser.add_argument("--end_date", type=str, help="集計対象の終了日(YYYY-mm-dd)")
 
     argument_parser.add_csv_format()
     argument_parser.add_output()

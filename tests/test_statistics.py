@@ -7,7 +7,6 @@ import annofabapi
 
 from annofabcli.statistics.csv import Csv
 from annofabcli.statistics.database import Database
-from annofabcli.statistics.list_by_date_user import ListSubmittedTaskCountMain
 from annofabcli.statistics.table import Table
 
 out_path = Path("./tests/out")
