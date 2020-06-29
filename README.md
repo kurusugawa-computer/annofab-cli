@@ -15,7 +15,7 @@ AnnoFabのCLI(Command Line Interface)ツールです。
 
 
 ## 廃止予定
-なし
+* 2020-10-01以降：Pythonのサポートバージョンを3.6以上から、3.7以上に変更します。
 
 # Requirements
 * Python 3.6+
