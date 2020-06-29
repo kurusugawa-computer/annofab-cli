@@ -5,6 +5,7 @@ from collections import defaultdict
 from pathlib import Path
 from typing import Any, Dict, List, Optional, Tuple
 
+import annofabapi
 import pandas
 from annofabapi.models import ProjectMemberRole, TaskHistory, TaskPhase
 
@@ -18,41 +19,65 @@ from annofabcli.common.utils import isoduration_to_hour
 logger = logging.getLogger(__name__)
 
 
-def from_datetime_to_date(datetime: str) -> str:
-    return datetime[0:10]
+class ListSubmittedTaskCountMain:
+    def __init__(self, service: annofabapi.Resource):
+        self.service = service
+        self.facade = AnnofabApiFacade(service)
 
+    @staticmethod
+    def from_datetime_to_date(datetime: str) -> str:
+        return datetime[0:10]
 
-def to_formatted_dataframe(df: pandas.DataFrame):
-    def get_phase_list(columns):
-        print(columns)
-        phase_list = []
-        for phase in TaskPhase:
-            str_phase = phase.value
-            if str_phase in columns:
-                phase_list.append(str_phase)
-        return phase_list
+    @staticmethod
+    def _get_actual_worktime_hour(labor: Dict[str, Any]) -> float:
+        working_time_by_user = labor["values"]["working_time_by_user"]
+        if working_time_by_user is None:
+            return 0
 
-    user_df = df.groupby("account_id").first()[["user_id", "username", "biography"]]
-    df2 = df.pivot_table(columns="phase", values="task_count", index=["date", "account_id"]).fillna(0)
-    df3 = df2.join(user_df, how="left").reset_index()
-    df3.rename(
-        columns={
-            "annotation": "annotation_task_count",
-            "inspection": "inspection_task_count",
-            "acceptance": "acceptance_task_count",
-        },
-        inplace=True,
-    )
-    df3.sort_values(["date", "user_id"], inplace=True)
+        value = working_time_by_user.get("results")
+        if value is None:
+            return 0
+        else:
+            return value / 3600 / 1000
 
-    phase_list = get_phase_list(df2.columns)
-    columns = ["date", "account_id", "user_id", "username", "biography"] + [
-        f"{phase}_task_count" for phase in phase_list
-    ]
-    return df3[columns]
+    @staticmethod
+    def to_formatted_dataframe(
+        submitted_task_count_df: pandas.DataFrame,
+        account_statistics_df: pandas.DataFrame,
+        labor_df: pandas.DataFrame,
+        user_df: pandas.DataFrame,
+    ):
+        def get_phase_list(columns):
+            print(columns)
+            phase_list = []
+            for phase in TaskPhase:
+                str_phase = f"{phase.value}_submitted_task_count"
+                if str_phase in columns:
+                    phase_list.append(str_phase)
+            return phase_list
 
+        df = (
+            submitted_task_count_df.merge(account_statistics_df, how="outer", on=["date", "account_id"])
+            .merge(labor_df, how="outer", on=["date", "account_id"])
+            .merge(user_df, how="left", on="account_id")
+        )
+        df.sort_values(["date", "user_id"], inplace=True)
+        phase_list = get_phase_list(df.columns)
+        columns = (
+            [
+                "date",
+                "account_id",
+                "user_id",
+                "username",
+                "biography",
+                "monitored_worktime_hour",
+                "actual_worktime_hour",
+            ]
+            + [f"{phase}_task_count" for phase in phase_list]
+            + ["completed_task_count", "rejected_task_count"]
+        )
+        return df[columns]
 
-class ListSubmittedTaskCount(AbstractCommandLineInterface):
     def get_task_history_dict(
         self, project_id: str, task_history_json_path: Optional[Path]
     ) -> Dict[str, List[TaskHistory]]:
@@ -68,11 +93,11 @@ class ListSubmittedTaskCount(AbstractCommandLineInterface):
             task_history_dict = json.load(f)
             return task_history_dict
 
-    def get_user_df(self, project_id: str):
+    def create_user_df(self, project_id: str):
         member_list = self.facade.get_organization_members_from_project_id(project_id)
-        return pandas.DataFrame(member_list, columns=["account_id","user_id","username","biography"])
+        return pandas.DataFrame(member_list, columns=["account_id", "user_id", "username", "biography"])
 
-    def get_account_statistics(self, project_id: str) -> pandas.DataFrame:
+    def create_account_statistics_df(self, project_id: str) -> pandas.DataFrame:
         account_statistics, _ = self.service.api.get_account_statistics(project_id)
         data_list: List[Dict[str, Any]] = []
         for stat_by_user in account_statistics:
@@ -81,72 +106,92 @@ class ListSubmittedTaskCount(AbstractCommandLineInterface):
             for stat in histories:
                 data = {
                     "account_id": account_id,
-                    "worktime_hour": isoduration_to_hour(stat["worktime"]),
+                    "monitored_worktime_hour": isoduration_to_hour(stat["worktime"]),
                     "completed_task_count": stat["tasks_completed"],
                     "rejected_task_count": stat["tasks_rejected"],
                     "date": stat["date"],
                 }
                 data_list.append(data)
-        return pandas.DataFrame(data_list)
 
-    @staticmethod
-    def _get_actual_worktime_hour(labor: Dict[str, Any]) -> float:
-        working_time_by_user = labor["values"]["working_time_by_user"]
-        if working_time_by_user is None:
-            return 0
-
-        value = working_time_by_user.get("results")
-        if value is None:
-            return 0
+        if len(data_list) > 0:
+            return pandas.DataFrame(data_list)
         else:
-            return value / 3600 / 1000
-
-    def get_labor_df(self, project_id: str) -> pandas.DataFrame:
-        def to_new_labor(e: Dict[str, Any]) -> Dict[str, Any]:
-            return dict(
-                date=e["date"],
-                account_id=e["account_id"],
-                actual_worktime_hour=self._get_actual_worktime_hour(e),
+            return pandas.DataFrame(
+                columns=["date", "account_id", "monitored_worktime_hour", "completed_task_count", "rejected_task_count"]
             )
 
-        labor_list: List[Dict[str, Any]] = self.service.api.get_labor_control(
-            {"project_id": project_id}
-        )[0]
+    def create_labor_df(self, project_id: str) -> pandas.DataFrame:
+        def to_new_labor(e: Dict[str, Any]) -> Dict[str, Any]:
+            return dict(
+                date=e["date"], account_id=e["account_id"], actual_worktime_hour=self._get_actual_worktime_hour(e),
+            )
+
+        labor_list: List[Dict[str, Any]] = self.service.api.get_labor_control({"project_id": project_id})[0]
         new_labor_list = [to_new_labor(e) for e in labor_list if e["account_id"] is not None]
-        return pandas.DataFrame(new_labor_list)
+        if len(new_labor_list) > 0:
+            return pandas.DataFrame(new_labor_list)
+        else:
+            return pandas.DataFrame(columns=["date", "account_id", "actual_worktime_hour"])
 
+    def create_submitted_task_count_df(self, task_history_dict: Dict[str, List[TaskHistory]]) -> pandas.DataFrame:
+        def _set_zero_if_not_exists(df: pandas.DataFrame):
+            if "inspection_submitted_task_count" not in df.columns:
+                df["inspection_submitted_task_count"] = 0
+            if "acceptance_submitted_task_count" not in df.columns:
+                df["acceptance_submitted_task_count"] = 0
 
-    def create_submitted_task_count_df(
-        self, project_id: str, task_history_dict: Dict[str, List[TaskHistory]]
-    ) -> pandas.DataFrame:
         task_history_count_dict: Dict[Tuple[str, str, str], int] = defaultdict(int)
         for _, task_history_list in task_history_dict.items():
             for task_history in task_history_list:
                 if task_history["ended_datetime"] is not None and task_history["account_id"] is not None:
-                    ended_date = from_datetime_to_date(task_history["ended_datetime"])
+                    ended_date = self.from_datetime_to_date(task_history["ended_datetime"])
                     task_history_count_dict[(task_history["account_id"], task_history["phase"], ended_date)] += 1
 
         data_list = []
         for key, task_count in task_history_count_dict.items():
             account_id, phaes, date = key
-            member = self.facade.get_organization_member_from_account_id(project_id, account_id)
-            data: Dict[str, Any] = {"date": date, "phase": phaes, "account_id": account_id}
-            if member is not None:
-                data.update(
-                    {
-                        "user_id": member["user_id"],
-                        "username": member["username"],
-                        "biography": member["biography"],
-                        "task_count": task_count,
-                    }
-                )
-            else:
-                data.update({"user_id": None, "username": None, "biography": None})
-
+            data: Dict[str, Any] = {"date": date, "phase": phaes, "account_id": account_id, "task_count": task_count}
             data_list.append(data)
 
-        return pandas.DataFrame(data_list)
+        if len(data_list) == 0:
+            return pandas.DataFrame(
+                columns=[
+                    "date",
+                    "account_id",
+                    "annotation_submitted_task_count",
+                    "inspection_submitted_task_count",
+                    "acceptance_submitted_task_count",
+                ]
+            )
 
+        df = pandas.DataFrame(data_list)
+        df2 = df.pivot_table(columns="phase", values="task_count", index=["date", "account_id"]).fillna(0)
+        df2.rename(
+            columns={
+                "annotation": "annotation_submitted_task_count",
+                "inspection": "inspection_submitted_task_count",
+                "acceptance": "acceptance_submitted_task_count",
+            },
+            inplace=True,
+        )
+        _set_zero_if_not_exists(df2)
+        return df2
+
+    def create_user_statistics_by_date(
+        self, project_id: str, task_history_json_path: Optional[Path]
+    ) -> pandas.DataFrame:
+        task_history_dict = self.get_task_history_dict(project_id, task_history_json_path)
+
+        submitted_task_count_df = self.create_submitted_task_count_df(task_history_dict=task_history_dict)
+        labor_df = self.create_labor_df(project_id)
+        account_statistics_df = self.create_account_statistics_df(project_id)
+        user_df = self.create_user_df(project_id)
+
+        df2 = self.to_formatted_dataframe(submitted_task_count_df, account_statistics_df, labor_df, user_df)
+        return df2
+
+
+class ListSubmittedTaskCountArgs(AbstractCommandLineInterface):
     def main(self):
         args = self.args
 
@@ -155,10 +200,20 @@ class ListSubmittedTaskCount(AbstractCommandLineInterface):
             project_id, project_member_roles=[ProjectMemberRole.OWNER, ProjectMemberRole.TRAINING_DATA_USER]
         )
 
-        task_history_dict = self.get_task_history_dict(project_id, args.task_history_json)
-        df = self.create_submitted_task_count_df(project_id, task_history_dict=task_history_dict)
-        df2 = to_formatted_dataframe(df)
-        self.print_csv(df2)
+        main_obj = ListSubmittedTaskCountMain(service=self.service, facade=self.facade)
+        df = main_obj.create_user_statistics_by_date(project_id, args.task_history_json)
+        #
+        #
+        # task_history_dict = self.get_task_history_dict(project_id, args.task_history_json)
+        #
+        # submitted_task_count_df = self.create_submitted_task_count_df(task_history_dict=task_history_dict)
+        # labor_df = self.get_labor_df(project_id)
+        # account_statistics_df = self.get_account_statistics(project_id)
+        # user_df = self.get_user_df(project_id)
+        #
+        # self.get_account_statistics(project_id)
+        # df2 = to_formatted_dataframe(submitted_task_count_df, account_statistics_df, labor_df, user_df)
+        self.print_csv(df)
 
 
 def parse_args(parser: argparse.ArgumentParser):
@@ -182,13 +237,13 @@ def parse_args(parser: argparse.ArgumentParser):
 def main(args):
     service = build_annofabapi_resource_and_login(args)
     facade = AnnofabApiFacade(service)
-    ListSubmittedTaskCount(service, facade, args).main()
+    ListSubmittedTaskCountArgs(service, facade, args).main()
 
 
 def add_parser(subparsers: argparse._SubParsersAction):
     subcommand_name = "list_by_date_user"
     subcommand_help = "タスク数や作業時間などを、日ごとユーザごとに出力します。"
-    description = "タスク数や作業時間などの情報を、日ごとユーザごとに出力します。日ごと、ユーザごとに、提出したタスク数（教師付フェーズ）/合格にしたタスク数（検査・受入フェーズ）/ 差し戻したタスク数を出力します。"
+    description = "タスク数や作業時間などの情報を、日ごとユーザごとに出力します。"
     epilog = "オーナロールまたはアノテーションユーザロールを持つユーザで実行してください。"
     parser = annofabcli.common.cli.add_parser(
         subparsers, subcommand_name, subcommand_help, description=description, epilog=epilog
