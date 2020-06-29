@@ -47,35 +47,27 @@ class ListSubmittedTaskCountMain:
         labor_df: pandas.DataFrame,
         user_df: pandas.DataFrame,
     ):
-        def get_phase_list(columns):
-            print(columns)
-            phase_list = []
-            for phase in TaskPhase:
-                str_phase = f"{phase.value}_submitted_task_count"
-                if str_phase in columns:
-                    phase_list.append(str_phase)
-            return phase_list
-
         df = (
             submitted_task_count_df.merge(account_statistics_df, how="outer", on=["date", "account_id"])
             .merge(labor_df, how="outer", on=["date", "account_id"])
-            .merge(user_df, how="left", on="account_id")
+            .fillna(0)
+            .merge(user_df, how="inner", on="account_id")
         )
         df.sort_values(["date", "user_id"], inplace=True)
-        phase_list = get_phase_list(df.columns)
-        columns = (
-            [
-                "date",
-                "account_id",
-                "user_id",
-                "username",
-                "biography",
-                "monitored_worktime_hour",
-                "actual_worktime_hour",
-            ]
-            + [f"{phase}_task_count" for phase in phase_list]
-            + ["completed_task_count", "rejected_task_count"]
-        )
+        columns = [
+            "date",
+            "account_id",
+            "user_id",
+            "username",
+            "biography",
+            "monitored_worktime_hour",
+            "actual_worktime_hour",
+            "annotation_submitted_task_count",
+            "inspection_submitted_task_count",
+            "acceptance_submitted_task_count",
+            "rejected_task_count",
+        ]
+
         return df[columns]
 
     def get_task_history_dict(
@@ -89,6 +81,7 @@ class ListSubmittedTaskCountMain:
             downloading_obj = DownloadingFile(self.service)
             downloading_obj.download_task_history_json(project_id, dest_path=str(json_path))
 
+        logger.debug(f"タスク履歴全件ファイルを読み込み中。{json_path}")
         with json_path.open(encoding="utf-8") as f:
             task_history_dict = json.load(f)
             return task_history_dict
@@ -107,18 +100,17 @@ class ListSubmittedTaskCountMain:
                 data = {
                     "account_id": account_id,
                     "monitored_worktime_hour": isoduration_to_hour(stat["worktime"]),
-                    "completed_task_count": stat["tasks_completed"],
                     "rejected_task_count": stat["tasks_rejected"],
                     "date": stat["date"],
                 }
-                data_list.append(data)
+                # 不要なデータは追加しないようにする
+                if data["monitored_worktime_hour"] > 0 or data["rejected_task_count"]:
+                    data_list.append(data)
 
         if len(data_list) > 0:
             return pandas.DataFrame(data_list)
         else:
-            return pandas.DataFrame(
-                columns=["date", "account_id", "monitored_worktime_hour", "completed_task_count", "rejected_task_count"]
-            )
+            return pandas.DataFrame(columns=["date", "account_id", "monitored_worktime_hour", "rejected_task_count"])
 
     def create_labor_df(self, project_id: str) -> pandas.DataFrame:
         def to_new_labor(e: Dict[str, Any]) -> Dict[str, Any]:
@@ -127,7 +119,9 @@ class ListSubmittedTaskCountMain:
             )
 
         labor_list: List[Dict[str, Any]] = self.service.api.get_labor_control({"project_id": project_id})[0]
-        new_labor_list = [to_new_labor(e) for e in labor_list if e["account_id"] is not None]
+        new_labor_list = [
+            to_new_labor(e) for e in labor_list if e["account_id"] is not None and self._get_actual_worktime_hour(e) > 0
+        ]
         if len(new_labor_list) > 0:
             return pandas.DataFrame(new_labor_list)
         else:
@@ -135,10 +129,10 @@ class ListSubmittedTaskCountMain:
 
     def create_submitted_task_count_df(self, task_history_dict: Dict[str, List[TaskHistory]]) -> pandas.DataFrame:
         def _set_zero_if_not_exists(df: pandas.DataFrame):
-            if "inspection_submitted_task_count" not in df.columns:
-                df["inspection_submitted_task_count"] = 0
-            if "acceptance_submitted_task_count" not in df.columns:
-                df["acceptance_submitted_task_count"] = 0
+            for phase in TaskPhase:
+                col = f"{phase.value}_submitted_task_count"
+                if col not in df.columns:
+                    df[col] = 0
 
         task_history_count_dict: Dict[Tuple[str, str, str], int] = defaultdict(int)
         for _, task_history_list in task_history_dict.items():
@@ -200,7 +194,7 @@ class ListSubmittedTaskCountArgs(AbstractCommandLineInterface):
             project_id, project_member_roles=[ProjectMemberRole.OWNER, ProjectMemberRole.TRAINING_DATA_USER]
         )
 
-        main_obj = ListSubmittedTaskCountMain(service=self.service, facade=self.facade)
+        main_obj = ListSubmittedTaskCountMain(service=self.service)
         df = main_obj.create_user_statistics_by_date(project_id, args.task_history_json)
         #
         #

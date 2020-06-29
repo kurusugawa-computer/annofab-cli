@@ -42,21 +42,21 @@ class TestDatabase:
         assert "sample_0" in result
 
 
-class TestListSubmittedTaskCountMain:
-    main_obj = None
-
-    @classmethod
-    def setup_class(cls):
-        cls.main_obj = ListSubmittedTaskCountMain(service)
-
-    def test_create_labor_df(self):
-        df = self.main_obj.create_labor_df(project_id)
-        df.to_csv("labor_df.csv")
-
-    def test_create_account_statistics_df(self):
-        df = self.main_obj.create_account_statistics_df(project_id)
-        df.to_csv("account_statistics.csv")
-
-    def test_create_user_df(self):
-        df = self.main_obj.create_user_df(project_id)
-        df.to_csv("user.csv")
+# class TestListSubmittedTaskCountMain:
+#     main_obj = None
+#
+#     @classmethod
+#     def setup_class(cls):
+#         cls.main_obj = ListSubmittedTaskCountMain(service)
+#
+#     def test_create_labor_df(self):
+#         df = self.main_obj.create_labor_df(project_id)
+#         df.to_csv("labor_df.csv")
+#
+#     def test_create_account_statistics_df(self):
+#         df = self.main_obj.create_account_statistics_df(project_id)
+#         df.to_csv("account_statistics.csv")
+#
+#     def test_create_user_df(self):
+#         df = self.main_obj.create_user_df(project_id)
+#         df.to_csv("user.csv")
