@@ -6,7 +6,7 @@ from pathlib import Path
 from typing import Any, Dict, List, Optional, Tuple
 
 import pandas
-from annofabapi.models import TaskHistory, TaskPhase
+from annofabapi.models import ProjectMemberRole, TaskHistory, TaskPhase
 
 import annofabcli
 import annofabcli.common.cli
@@ -102,11 +102,14 @@ class ListSubmittedTaskCount(AbstractCommandLineInterface):
         args = self.args
 
         project_id = args.project_id
-        super().validate_project(project_id, project_member_roles=None)
+        super().validate_project(
+            project_id, project_member_roles=[ProjectMemberRole.OWNER, ProjectMemberRole.TRAINING_DATA_USER]
+        )
 
         task_history_dict = self.get_task_history_dict(project_id, args.task_history_json)
         df = self.create_submitted_task_count_df(project_id, task_history_dict=task_history_dict)
-        self.print_csv(df)
+        df2 = to_formatted_dataframe(df)
+        self.print_csv(df2)
 
 
 def parse_args(parser: argparse.ArgumentParser):

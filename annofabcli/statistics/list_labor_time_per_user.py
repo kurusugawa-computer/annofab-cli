@@ -40,6 +40,7 @@ class LaborTimePerUser(AbstractCommandLineInterface):
                 stat["account_id"] = account_id
                 stat["user_id"] = member["user_id"] if member is not None else None
                 stat["username"] = member["username"] if member is not None else None
+                stat["biography"] = member["biography"] if member is not None else None
                 stat["worktime_hour"] = isoduration_to_hour(stat["worktime"])
 
             row_list.extend(histories)
@@ -52,7 +53,16 @@ class LaborTimePerUser(AbstractCommandLineInterface):
         df = pandas.DataFrame(account_stat_list)
         # 出力対象の列を指定する
         target_df = df[
-            ["account_id", "user_id", "username", "date", "worktime_hour", "tasks_completed", "tasks_rejected"]
+            [
+                "date",
+                "account_id",
+                "user_id",
+                "username",
+                "biography",
+                "worktime_hour",
+                "tasks_completed",
+                "tasks_rejected",
+            ]
         ]
         annofabcli.utils.print_csv(target_df, output=self.output, to_csv_kwargs=self.csv_format)
 
