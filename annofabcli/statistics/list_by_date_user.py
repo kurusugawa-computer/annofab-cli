@@ -263,7 +263,7 @@ def main(args):
 
 def add_parser(subparsers: argparse._SubParsersAction):
     subcommand_name = "list_by_date_user"
-    subcommand_help = "タスク数や作業時間などを、日ごとユーザごとに出力します。"
+    subcommand_help = "タスク数や作業時間などの情報を、日ごとユーザごとに出力します。"
     description = "タスク数や作業時間などの情報を、日ごとユーザごとに出力します。"
     epilog = "オーナロールまたはアノテーションユーザロールを持つユーザで実行してください。"
     parser = annofabcli.common.cli.add_parser(
