@@ -13,6 +13,7 @@ import annofabcli.common.cli
 from annofabcli import AnnofabApiFacade
 from annofabcli.common.cli import AbstractCommandLineInterface, ArgumentParser, build_annofabapi_resource_and_login
 from annofabcli.common.download import DownloadingFile
+from annofabcli.common.utils import isoduration_to_hour
 
 logger = logging.getLogger(__name__)
 
@@ -66,6 +67,54 @@ class ListSubmittedTaskCount(AbstractCommandLineInterface):
         with json_path.open(encoding="utf-8") as f:
             task_history_dict = json.load(f)
             return task_history_dict
+
+    def get_user_df(self, project_id: str):
+        member_list = self.facade.get_organization_members_from_project_id(project_id)
+        return pandas.DataFrame(member_list, columns=["account_id","user_id","username","biography"])
+
+    def get_account_statistics(self, project_id: str) -> pandas.DataFrame:
+        account_statistics, _ = self.service.api.get_account_statistics(project_id)
+        data_list: List[Dict[str, Any]] = []
+        for stat_by_user in account_statistics:
+            account_id = stat_by_user["account_id"]
+            histories = stat_by_user["histories"]
+            for stat in histories:
+                data = {
+                    "account_id": account_id,
+                    "worktime_hour": isoduration_to_hour(stat["worktime"]),
+                    "completed_task_count": stat["tasks_completed"],
+                    "rejected_task_count": stat["tasks_rejected"],
+                    "date": stat["date"],
+                }
+                data_list.append(data)
+        return pandas.DataFrame(data_list)
+
+    @staticmethod
+    def _get_actual_worktime_hour(labor: Dict[str, Any]) -> float:
+        working_time_by_user = labor["values"]["working_time_by_user"]
+        if working_time_by_user is None:
+            return 0
+
+        value = working_time_by_user.get("results")
+        if value is None:
+            return 0
+        else:
+            return value / 3600 / 1000
+
+    def get_labor_df(self, project_id: str) -> pandas.DataFrame:
+        def to_new_labor(e: Dict[str, Any]) -> Dict[str, Any]:
+            return dict(
+                date=e["date"],
+                account_id=e["account_id"],
+                actual_worktime_hour=self._get_actual_worktime_hour(e),
+            )
+
+        labor_list: List[Dict[str, Any]] = self.service.api.get_labor_control(
+            {"project_id": project_id}
+        )[0]
+        new_labor_list = [to_new_labor(e) for e in labor_list if e["account_id"] is not None]
+        return pandas.DataFrame(new_labor_list)
+
 
     def create_submitted_task_count_df(
         self, project_id: str, task_history_dict: Dict[str, List[TaskHistory]]
@@ -137,9 +186,9 @@ def main(args):
 
 
 def add_parser(subparsers: argparse._SubParsersAction):
-    subcommand_name = "list_submitted_task_count"
-    subcommand_help = "提出したタスク数/合格にしたタスク数/差し戻したタスク数を出力します。"
-    description = "日ごと、ユーザごとに、提出したタスク数（教師付フェーズ）/合格にしたタスク数（検査・受入フェーズ）/ 差し戻したタスク数を出力します。"
+    subcommand_name = "list_by_date_user"
+    subcommand_help = "タスク数や作業時間などを、日ごとユーザごとに出力します。"
+    description = "タスク数や作業時間などの情報を、日ごとユーザごとに出力します。日ごと、ユーザごとに、提出したタスク数（教師付フェーズ）/合格にしたタスク数（検査・受入フェーズ）/ 差し戻したタスク数を出力します。"
     epilog = "オーナロールまたはアノテーションユーザロールを持つユーザで実行してください。"
     parser = annofabcli.common.cli.add_parser(
         subparsers, subcommand_name, subcommand_help, description=description, epilog=epilog
