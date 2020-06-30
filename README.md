@@ -15,7 +15,7 @@ AnnoFabのCLI(Command Line Interface)ツールです。
 
 
 ## 廃止予定
-なし
+* 2020-10-01以降：Pythonのサポートバージョンを3.6以上から、3.7以上に変更します。
 
 # Requirements
 * Python 3.6+
@@ -115,6 +115,7 @@ $ docker run -it -e ANNOFAB_USER_ID=XXXX -e ANNOFAB_PASSWORD=YYYYY annofab-cli a
 |project_member| list                  | プロジェクトメンバ一覧を出力します。                                                                |-|
 |project_member| put                  | CSVに記載されたユーザを、プロジェクトメンバとして登録します。|オーナ|
 |statistics| list_annotation_count             | 各ラベル、各属性値のアノテーション数を、タスクごと/入力データごとに出力します。                                                   |-|
+|statistics| list_by_date_user             | タスク数や作業時間などの情報を、日ごとユーザごとに出力します。                                                   |オーナ/アノテーションユーザ|
 |statistics| list_cumulative_labor_time             |       タスク進捗状況を出力します。                                                    |-|
 |statistics| list_task_progress             | タスクフェーズ別の累積作業時間を出力します。                                                            |-|
 |statistics|summarize_task_count|タスクのフェーズ、ステータス、ステップごとにタスク数を出力します。|オーナ|
@@ -1176,6 +1177,16 @@ $ annofabcli statistics list_annotation_count --project_id prj1 --output_dir out
 
 # 入力データごとにアノテーション数を、output ディレクトリに出力。アノテーション情報はAnnoFabからダウンロードする
 $ annofabcli statistics list_annotation_count --project_id prj1 --output_dir output --group_by input_data_id
+
+```
+
+
+### statistics list_by_date_user
+
+タスク数や作業時間などの情報を、日ごとユーザごとに出力します。
+
+```
+$ annofabcli statistics list_by_date_user --project_id prj1 --output data.csv
 
 ```
 
