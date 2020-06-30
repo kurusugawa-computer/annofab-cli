@@ -621,7 +621,7 @@ class ListWorktimeByUser(AbstractCommandLineInterface):
 
     @staticmethod
     def create_worktime_df_per_date_user(
-        worktime_df: pandas.DataFrame, labor_availability_list_dict: Optional[Dict[str, List[LaborAvailability]]] = None
+        worktime_df: pandas.DataFrame, user_df: pandas.DataFrame, labor_availability_list_dict: Optional[Dict[str, List[LaborAvailability]]] = None
     ) -> pandas.DataFrame:
         value_df = worktime_df.pivot_table(
             values=["worktime_plan_hour", "worktime_result_hour"], index=["date", "user_id"], aggfunc=numpy.sum
@@ -636,9 +636,9 @@ class ListWorktimeByUser(AbstractCommandLineInterface):
             value_df = value_df.join(
                 availability_df[["availability_hour"]], how="outer", on=["date", "user_id"]
             ).fillna(0)
+            value_df.to_csv("value_df2.csv")
 
-        user_df = worktime_df.groupby("user_id").first()[["username", "biography"]]
-        df = user_df.join(value_df, how="left").reset_index()
+        df = user_df.set_index("user_id").join(value_df, how="left").reset_index()
         return df
 
     @staticmethod
@@ -742,11 +742,13 @@ class ListWorktimeByUser(AbstractCommandLineInterface):
 
         worktime_df = pandas.DataFrame([e.to_dict() for e in labor_list])  # type: ignore
 
+        user_df = self.create_user_df(user_id_list, member_list)
+
         if len(worktime_df) > 0:
             self.write_worktime_list(worktime_df, output_dir, add_monitored_worktime)
 
             worktime_df_per_date_user = self.create_worktime_df_per_date_user(
-                worktime_df=worktime_df, labor_availability_list_dict=labor_availability_list_dict
+                worktime_df=worktime_df, user_df=user_df, labor_availability_list_dict=labor_availability_list_dict
             )
             self.write_worktime_per_user_date(worktime_df_per_date_user, output_dir)
 
@@ -754,7 +756,6 @@ class ListWorktimeByUser(AbstractCommandLineInterface):
             worktime_df_per_date_user = pandas.DataFrame()
             logger.info("出力対象のデータが0件のため、'作業時間一覧.csv', '日ごとの作業時間の一覧.csv' を出力しません。")
 
-        user_df = self.create_user_df(user_id_list, member_list)
         add_availability = labor_availability_list_dict is not None
         worktime_df_per_user = self.create_worktime_df_per_user(
             worktime_df_per_date_user=worktime_df_per_date_user, user_df=user_df, add_availability=add_availability

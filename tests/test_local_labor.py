@@ -32,7 +32,8 @@ class TestListWorktimeByUser:
 
     def test_create_worktime_df_per_date_user(self):
         worktime_df = pandas.read_csv(data_path / "detail-worktime.csv")
-        df = ListWorktimeByUser.create_worktime_df_per_date_user(worktime_df)
+        user_df = pandas.read_csv(data_path / "user.csv")
+        df = ListWorktimeByUser.create_worktime_df_per_date_user(worktime_df,user_df=user_df)
         df.to_csv(out_path / "worktime-per-date-user.csv")
 
         labor_availability_list_dict = {
@@ -54,7 +55,7 @@ class TestListWorktimeByUser:
             ],
         }
         df2 = ListWorktimeByUser.create_worktime_df_per_date_user(
-            worktime_df, labor_availability_list_dict=labor_availability_list_dict
+            worktime_df, user_df=user_df, labor_availability_list_dict=labor_availability_list_dict
         )
         df2.to_csv(out_path / "worktime-per-date-user2.csv")
 
