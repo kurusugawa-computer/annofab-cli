@@ -639,7 +639,11 @@ class ListWorktimeByUser(AbstractCommandLineInterface):
             all_availability_list = []
             for availability_list in labor_availability_list_dict.values():
                 all_availability_list.extend(availability_list)
-            availability_df = pandas.DataFrame([e.to_dict() for e in all_availability_list])  # type: ignore
+            if len(all_availability_list) > 0:
+                availability_df = pandas.DataFrame([e.to_dict() for e in all_availability_list])  # type: ignore
+            else:
+                availability_df = pandas.DataFrame(columns=["date", "user_id", "availability_hour"])
+
             value_df = (
                 value_df.merge(
                     availability_df[["date", "user_id", "availability_hour"]], how="outer", on=["date", "user_id"]
@@ -648,7 +652,7 @@ class ListWorktimeByUser(AbstractCommandLineInterface):
                 .reset_index()
             )
 
-        df = user_df.reset_index().merge(value_df, how="left", on=["user_id"]).reset_index()
+        df = value_df.merge(user_df.reset_index(), how="left", on=["user_id"]).reset_index()
         return df
 
     @staticmethod
@@ -766,9 +770,6 @@ class ListWorktimeByUser(AbstractCommandLineInterface):
             self.write_worktime_per_user_date(worktime_df_per_date_user, output_dir)
         else:
             logger.info("日ごとの作業時間情報に関するデータが見つからなかったので、 '日ごとの作業時間の一覧.csv' は出力しません。")
-
-        # worktime_df_per_date_user = pandas.DataFrame()
-        # logger.info("出力対象のデータが0件のため、'作業時間一覧.csv', '日ごとの作業時間の一覧.csv' を出力しません。")
 
         add_availability = labor_availability_list_dict is not None
         worktime_df_per_user = self.create_worktime_df_per_user(
