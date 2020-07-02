@@ -663,7 +663,7 @@ class ListWorktimeByUser(AbstractCommandLineInterface):
         if len(df_filter) > 0:
             value_df[days_column] = df_filter.pivot_table(
                 index=["user_id"], values="worktime_result_hour", aggfunc="count"
-            ).fillna(0)
+            ).fillna(0).astype(pandas.Int64Dtype())
         else:
             value_df[days_column] = 0
 
