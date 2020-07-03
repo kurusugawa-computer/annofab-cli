@@ -297,7 +297,7 @@ class VisualizeStatistics(AbstractCommandLineInterface):
 
         """
 
-        super().validate_project(project_id, project_member_roles=[ProjectMemberRole.OWNER])
+        super().validate_project(project_id, project_member_roles=[ProjectMemberRole.OWNER, ProjectMemberRole.TRAINING_DATA_USER])
 
         checkpoint_dir = work_dir / project_id
         checkpoint_dir.mkdir(exist_ok=True, parents=True)
@@ -436,7 +436,7 @@ def add_parser(subparsers: argparse._SubParsersAction):
     subcommand_name = "visualize"
     subcommand_help = "統計情報を可視化したファイルを出力します。"
     description = "統計情報を可視化したファイルを出力します。毎日 03:00JST頃に更新されます。"
-    epilog = "チェッカーまたはオーナロールを持つユーザで実行してください。"
+    epilog = "アノテーションユーザまたはオーナロールを持つユーザで実行してください。"
 
     parser = annofabcli.common.cli.add_parser(subparsers, subcommand_name, subcommand_help, description, epilog=epilog)
     parse_args(parser)
