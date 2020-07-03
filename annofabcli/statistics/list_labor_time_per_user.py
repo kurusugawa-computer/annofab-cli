@@ -1,3 +1,4 @@
+# pylint: disable=too-many-lines
 import argparse
 import logging
 from typing import Any, Dict, List

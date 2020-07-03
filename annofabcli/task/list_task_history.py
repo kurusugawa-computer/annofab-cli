@@ -32,7 +32,8 @@ class ListTaskHistoryMain:
             task_history_list = task_history_dict.get(task_id)
             if task_history_list is None:
                 logger.warning(f"task_id='{task_id}'のタスク履歴は見つかりませんでした。")
-            filtered_task_history_dict[task_id] = task_history_list
+            else:
+                filtered_task_history_dict[task_id] = task_history_list
         return filtered_task_history_dict
 
     @allow_404_error
@@ -71,7 +72,7 @@ class ListTaskHistoryMain:
             task_history_dict = self.get_task_history_dict_from_project_id(project_id, task_id_list)
 
         visualize = AddProps(self.service, project_id)
-        for task_id, task_history_list in task_history_dict.items():
+        for task_history_list in task_history_dict.values():
             for task_history in task_history_list:
                 visualize.add_properties_to_task_history(task_history)
 
