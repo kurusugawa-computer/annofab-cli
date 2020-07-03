@@ -7,8 +7,18 @@ from typing import Any, Dict, List, Optional
 
 import annofabapi
 import more_itertools
-from annofabapi.models import AnnotationSpecsHistory, InputData, Inspection, OrganizationMember, Task, TaskPhase
+from annofabapi.models import (
+    AnnotationSpecsHistory,
+    InputData,
+    Inspection,
+    OrganizationMember,
+    Task,
+    TaskHistory,
+    TaskPhase,
+)
 from annofabapi.utils import get_number_of_rejections
+
+from annofabcli.common.utils import isoduration_to_hour
 
 
 class MessageLocale(enum.Enum):
@@ -240,6 +250,26 @@ class AddProps:
         # number_of_rejectionsは非推奨なプロパティで、number_of_rejections_by_inspection/number_of_rejections_by_acceptanceと矛盾する場合があるので、削除する
         task.pop("number_of_rejections", None)
         return task
+
+    def add_properties_to_task_history(self, task_history: TaskHistory) -> TaskHistory:
+        """
+        タスク履歴情報に、以下のキーを追加する.
+
+        * user_id
+        * username
+        * worktime_hour
+
+        Args:
+            task:
+
+        Returns:
+            Task情報
+
+        """
+
+        self._add_user_info(task_history)
+        task_history["worktime_hour"] = isoduration_to_hour(task_history["accumulated_labor_time_milliseconds"])
+        return task_history
 
     @staticmethod
     def add_properties_to_input_data(input_data: InputData, task_id_list: List[str]) -> InputData:
