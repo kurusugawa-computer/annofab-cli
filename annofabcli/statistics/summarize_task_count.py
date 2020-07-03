@@ -144,7 +144,9 @@ class SummarizeTaskCount(AbstractCommandLineInterface):
     def summarize_task_count(
         self, project_id: str, task_json_path: Optional[Path], is_latest: bool, wait_options: WaitOptions
     ) -> None:
-        super().validate_project(project_id, project_member_roles=[ProjectMemberRole.OWNER])
+        super().validate_project(
+            project_id, project_member_roles=[ProjectMemberRole.OWNER, ProjectMemberRole.TRAINING_DATA_USER]
+        )
 
         task_list = self.get_task_list(project_id, task_json_path, is_latest=is_latest, wait_options=wait_options)
         if len(task_list) == 0:
@@ -222,7 +224,7 @@ def add_parser(subparsers: argparse._SubParsersAction):
     subcommand_name = "summarize_task_count"
     subcommand_help = "タスクのフェーズ、ステータス、ステップごとにタスク数を出力します。"
     description = "タスクのフェーズ、ステータス、ステップごとにタスク数を、CSV形式で出力します。"
-    epilog = "オーナロールを持つユーザで実行してください。"
+    epilog = "アノテーションユーザまたはオーナロールを持つユーザで実行してください。"
     parser = annofabcli.common.cli.add_parser(
         subparsers, subcommand_name, subcommand_help, description=description, epilog=epilog
     )
