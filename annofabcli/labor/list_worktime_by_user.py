@@ -66,6 +66,8 @@ class LaborWorktime:
     """労務管理画面の実績作業時間"""
     worktime_monitored_hour: Optional[float]
     """AnnoFabの作業時間"""
+    working_description: Optional[str]
+    """実績作業時間に対する備考"""
 
 
 @dataclass_json
@@ -182,6 +184,13 @@ class ListWorktimeByUser(AbstractCommandLineInterface):
         else:
             return value / 3600 / 1000
 
+    @staticmethod
+    def _get_working_description(working_time_by_user: Optional[Dict[str, Any]]) -> Optional[str]:
+        if working_time_by_user is None:
+            return None
+
+        return working_time_by_user.get("description")
+
     def _get_labor_worktime(
         self,
         labor: Dict[str, Any],
@@ -202,6 +211,7 @@ class ListWorktimeByUser(AbstractCommandLineInterface):
             biography=member["biography"] if member is not None else None,
             worktime_plan_hour=self.get_worktime_hour(labor["values"]["working_time_by_user"], "plans"),
             worktime_result_hour=self.get_worktime_hour(labor["values"]["working_time_by_user"], "results"),
+            working_description=self._get_working_description(labor["values"]["working_time_by_user"]),
             worktime_monitored_hour=worktime_monitored_hour,
         )
         return new_labor
@@ -403,6 +413,7 @@ class ListWorktimeByUser(AbstractCommandLineInterface):
                 "worktime_plan_hour": "作業予定時間",
                 "worktime_result_hour": "作業実績時間",
                 "worktime_monitored_hour": "計測時間",
+                "working_description": "備考",
             }
         )
         columns = [
@@ -416,6 +427,7 @@ class ListWorktimeByUser(AbstractCommandLineInterface):
             "作業予定時間",
             "作業実績時間",
             "計測時間",
+            "備考",
         ]
         if not add_monitored_worktime:
             columns.remove("計測時間")
