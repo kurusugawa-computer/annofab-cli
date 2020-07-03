@@ -10,8 +10,8 @@ import annofabcli.task.list_tasks
 import annofabcli.task.list_tasks_added_task_history
 import annofabcli.task.put_tasks
 import annofabcli.task.reject_tasks
+from annofabcli.task.list_task_history import add_parser as list_task_history_add_parser
 
-from annofabcli.task.list_task_history import parse_args as list_task_history_add_parser
 
 def parse_args(parser: argparse.ArgumentParser):
 

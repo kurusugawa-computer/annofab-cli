@@ -43,8 +43,10 @@ class ListTaskHistoryMain:
     def get_task_history_dict_from_project_id(self, project_id: str, task_id_list: List[str]) -> TaskHistoryDict:
         logger.info(f"{len(task_id_list)} 件のタスク履歴情報を取得します。")
         task_history_dict: TaskHistoryDict = {}
-        for task_id in task_id_list:
+        for task_index, task_id in enumerate(task_id_list):
             task_history_list = self.get_task_histories(project_id, task_id)
+            if (task_index + 1) % 100 == 0:
+                logger.info(f"{task_index+1} 件のタスク履歴情報を取得しました。")
             if task_history_list is not None:
                 task_history_dict[task_id] = task_history_list
             else:
@@ -152,7 +154,7 @@ def parse_args(parser: argparse.ArgumentParser):
 
     parser.add_argument(
         "--task_history_json",
-        type=str,
+        type=Path,
         help="タスク履歴情報が記載されたJSONファイルのパスを指定すると、JSONに記載された情報を元にタスク履歴一覧を出力します。"
         "JSONファイルは`$ annofabcli project download task_history`コマンドで取得できます。",
     )
@@ -167,7 +169,7 @@ def parse_args(parser: argparse.ArgumentParser):
 
 
 def add_parser(subparsers: argparse._SubParsersAction):
-    subcommand_name = "list"
+    subcommand_name = "list_task_history"
     subcommand_help = "タスク履歴の一覧を出力します。"
     description = "タスク履歴の一覧を出力します。"
 
