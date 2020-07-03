@@ -6,8 +6,6 @@ import argparse
 import logging
 from typing import Any, Dict, Tuple
 
-from annofabapi.models import ProjectMemberRole
-
 import annofabcli
 import annofabcli.common.cli
 from annofabcli import AnnofabApiFacade
@@ -79,7 +77,6 @@ def add_parser(subparsers: argparse._SubParsersAction):
         "出力された内容は、`write_annotation_image`ツールに利用します。"
         "出力内容は`Dict[LabelName, [R,G,B]]`です。"
     )
-
 
     parser = annofabcli.common.cli.add_parser(subparsers, subcommand_name, subcommand_help, description)
     parse_args(parser)

@@ -120,7 +120,7 @@ class SummarizeTaskCountByUser(AbstractCommandLineInterface):
     def main(self):
         args = self.args
         project_id = args.project_id
-        super().validate_project(project_id, [ProjectMemberRole.OWNER])
+        super().validate_project(project_id, [ProjectMemberRole.OWNER, ProjectMemberRole.TRAINING_DATA_USER])
 
         if args.task_json is not None:
             task_json_path = args.task_json
@@ -182,7 +182,7 @@ def add_parser(subparsers: argparse._SubParsersAction):
     subcommand_name = "summarize_task_count_by_user"
     subcommand_help = "ユーザごとに、担当しているタスク数を出力します。"
     description = "ユーザごとに、担当しているタスク数をCSV形式で出力します。"
-    epilog = "オーナロールを持つユーザで実行してください。"
+    epilog = "アノテーションユーザまたはオーナロールを持つユーザで実行してください。"
     parser = annofabcli.common.cli.add_parser(
         subparsers, subcommand_name, subcommand_help, description=description, epilog=epilog
     )

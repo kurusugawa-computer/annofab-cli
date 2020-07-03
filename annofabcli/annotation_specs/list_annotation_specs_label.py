@@ -7,8 +7,6 @@ import logging
 import sys
 from typing import Any, Dict, List, Optional
 
-from annofabapi.models import ProjectMemberRole
-
 import annofabcli
 import annofabcli.common.cli
 from annofabcli import AnnofabApiFacade
