@@ -130,6 +130,7 @@ $ docker run -it -e ANNOFAB_USER_ID=XXXX -e ANNOFAB_PASSWORD=YYYYY annofab-cli a
 |task| delete                | タスクを削除します。                                 |オーナ|
 |task|list             | タスク一覧を出力します。                                                            |-|
 |task|list_added_task_history             | タスク履歴情報を加えたタスク一覧を出力します。|オーナ|
+|task|list_task_history             | タスク履歴の一覧を出力します。|-|
 |task| put                | タスクを作成します。                                 |オーナ|
 |task| reject                  | タスクを強制的に差し戻します。                                                                 |オーナ|
 
@@ -1507,6 +1508,16 @@ $ annofabcli task list_added_task_history --project_id prj1 --output task.csv --
 
 # タスク全件ファイルJSON、タスク履歴全件ファイルJSONを参照して、タスク一覧のCSVを出力する
 $ annofabcli task list_added_task_history --project_id prj1 --output task.csv --task_json task.json --task_history_json task_history.json
+```
+
+### task list_task_history
+タスク履歴の一覧を出力します。
+
+
+```
+# prj1の全タスクのタスク履歴の一覧を、CSV形式で出力する
+$ annofabcli task list_task_history --project_id prj1 --output task_history.csv
+
 ```
 
 
