@@ -1,14 +1,12 @@
-"""
-検査コメントを付与してタスクを差し戻します。
-"""
-
 import argparse
 import logging
+from dataclasses import dataclass
 from typing import List, Optional
 
 import requests
 from annofabapi.dataclass.task import Task
-from annofabapi.models import ProjectMemberRole, TaskStatus
+from annofabapi.models import ProjectMemberRole, TaskPhase, TaskStatus
+from dataclasses_json import dataclass_json
 
 import annofabcli
 import annofabcli.common.cli
@@ -16,6 +14,13 @@ from annofabcli import AnnofabApiFacade
 from annofabcli.common.cli import AbstractCommandLineInterface, ArgumentParser, build_annofabapi_resource_and_login
 
 logger = logging.getLogger(__name__)
+
+
+@dataclass_json
+@dataclass(frozen=True)
+class TaskQuery:
+    phase: Optional[TaskPhase] = None
+    status: Optional[TaskStatus] = None
 
 
 class ChangeOperator(AbstractCommandLineInterface):
@@ -28,7 +33,13 @@ class ChangeOperator(AbstractCommandLineInterface):
         confirm_message = f"task_id = {task.task_id} のタスクの担当者を '{str_user_id}' にしますか？"
         return self.confirm_processing(confirm_message)
 
-    def change_operator(self, project_id: str, task_id_list: List[str], new_user_id: Optional[str] = None):
+    def change_operator(
+        self,
+        project_id: str,
+        task_id_list: List[str],
+        new_user_id: Optional[str] = None,
+        task_query: Optional[TaskQuery] = None,
+    ):
         """
         検査コメントを付与して、タスクを差し戻す
         Args:
@@ -37,6 +48,8 @@ class ChangeOperator(AbstractCommandLineInterface):
             new_user_id: 新しく担当するユーザのuser_id。Noneの場合タスクの担当者は未割り当てにする。
 
         """
+        if task_query is None:
+            task_query = TaskQuery()
 
         super().validate_project(project_id, [ProjectMemberRole.OWNER, ProjectMemberRole.ACCEPTER])
 
@@ -68,6 +81,20 @@ class ChangeOperator(AbstractCommandLineInterface):
                 f"phase = {task.phase.value}, "
                 f"user_id = {now_user_id}"
             )
+
+            if task_query.status is not None:
+                if task.status != task_query.status:
+                    logger.debug(
+                        f"{str_progress} : task_id = {task_id} : タスクのstatusが {task_query.status.value} でないので、スキップします。"
+                    )
+                    continue
+
+            if task_query.phase is not None:
+                if task.phase != task_query.phase:
+                    logger.debug(
+                        f"{str_progress} : task_id = {task_id} : タスクのphaseが {task_query.phase.value} でないので、スキップします。"
+                    )
+                    continue
 
             if task.status in [TaskStatus.COMPLETE, TaskStatus.WORKING]:
                 logger.warning(
@@ -105,7 +132,9 @@ class ChangeOperator(AbstractCommandLineInterface):
             logger.error(f"タスクの担当者の指定方法が正しくありません。")
             return
 
-        self.change_operator(args.project_id, task_id_list, user_id)
+        dict_task_query = annofabcli.common.cli.get_json_from_args(args.task_query)
+        task_query: Optional[TaskQuery] = TaskQuery.from_dict(dict_task_query) if dict_task_query is not None else None
+        self.change_operator(args.project_id, task_id_list, user_id, task_query=task_query)
 
 
 def main(args: argparse.Namespace):
@@ -125,6 +154,27 @@ def parse_args(parser: argparse.ArgumentParser):
     assign_group.add_argument("-u", "--user_id", type=str, help="タスクを新しく担当するユーザのuser_idを指定してください。")
 
     assign_group.add_argument("--not_assign", action="store_true", help="指定した場合、タスクの担当者は未割り当てになります。")
+
+    parser.add_argument(
+        "-tq",
+        "--task_query",
+        type=str,
+        help="タスクの検索クエリをJSON形式で指定します。指定しない場合はすべてのタスクを取得します。"
+        "`file://`を先頭に付けると、JSON形式のファイルを指定できます。"
+        "使用できるキーは、phase, status, user_id のみです。",
+    )
+    parser.add_argument(
+        "--status",
+        type=str,
+        choices=[TaskStatus.NOT_STARTED.value, TaskStatus.ON_HOLD.value, TaskStatus.BREAK.value],
+        help="変更対象のタスクのステータスを指定します。",
+    )
+    parser.add_argument(
+        "--phase",
+        type=str,
+        choices=[TaskPhase.ANNOTATION.value, TaskPhase.INSPECTION.value, TaskPhase.ACCEPTANCE.value],
+        help="変更対象のタスクのフェーズを指定します。",
+    )
 
     parser.set_defaults(subcommand_func=main)
 
