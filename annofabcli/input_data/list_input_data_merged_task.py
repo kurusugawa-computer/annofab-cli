@@ -215,7 +215,9 @@ def parse_args(parser: argparse.ArgumentParser):
     )
 
     parser.add_argument("-i", "--input_data_id", type=str, nargs="+", help="指定したinput_data_idに完全一致する入力データを絞り込みます。")
-    parser.add_argument("--input_data_name", type=str, nargs="+", help="指定したinput_data_nameに部分一致(大文字小文字区別しない）する入力データを絞り込みます。")
+    parser.add_argument(
+        "--input_data_name", type=str, nargs="+", help="指定したinput_data_nameに部分一致(大文字小文字区別しない）する入力データを絞り込みます。"
+    )
 
     argument_parser.add_output()
     argument_parser.add_csv_format()
