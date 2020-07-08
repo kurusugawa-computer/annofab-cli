@@ -16,6 +16,7 @@ AnnoFabのCLI(Command Line Interface)ツールです。
 
 ## 廃止予定
 * 2020-10-01以降：Pythonのサポートバージョンを3.6以上から、3.7以上に変更します。
+* 2020-09-01以降：`input_data list`コマンドの`--batch`オプションを削除します。入力データを１万件以上取得したいバイは、`project download input_data`コマンドを利用してください。
 
 # Requirements
 * Python 3.6+
@@ -653,11 +654,6 @@ $ annofabcli input_data list --project_id prj1 --input_data_id id1 id2
 
 # 入力データの詳細情報（参照されているタスクのtask_id `parent_task_id_list`）も出力する
 $ annofabcli input_data list --project_id prj1 --input_data_query '{"input_data_name": "sample"}' --add_details
-
-# 段階的に入力データ一覧を取得する。
-# 2019-01-01〜2019-01-31の期間は7日間ごとに入力データ一覧を取得する。それ以外は、2019-01-01以前、2019-01-31以降の入力データ一覧を取得する。
-$ annofabcli input_data list --project_id prj1 --batch \
- '{"first":"2019-01-01", "last":"2019-01-31", "days":7}' --output input_data.csv
 
 ```
 
