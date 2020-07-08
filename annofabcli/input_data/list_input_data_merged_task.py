@@ -88,8 +88,6 @@ class ListInputDataMergedTaskMain:
 
         df_task = pandas.DataFrame(new_task_list)
 
-        df_input_data.to_csv("hoge.csv")
-        df_task.to_csv("fuga.csv")
         df_merged = pandas.merge(df_input_data, df_task, how="left", on="input_data_id")
 
         return df_merged
