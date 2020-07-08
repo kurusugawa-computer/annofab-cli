@@ -16,7 +16,7 @@ AnnoFabのCLI(Command Line Interface)ツールです。
 
 ## 廃止予定
 * 2020-10-01以降：Pythonのサポートバージョンを3.6以上から、3.7以上に変更します。
-* 2020-09-01以降：`input_data list`コマンドの`--batch`オプションを削除します。入力データを１万件以上取得したいバイは、`project download input_data`コマンドを利用してください。
+* 2020-09-01以降：`input_data list`コマンドの`--batch`オプションを削除します。入力データを１万件以上取得したい場合は、`project download input_data`コマンドを利用してください。
 
 # Requirements
 * Python 3.6+
