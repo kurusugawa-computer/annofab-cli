@@ -161,19 +161,7 @@ def parse_args(parser: argparse.ArgumentParser):
         type=str,
         help="タスクの検索クエリをJSON形式で指定します。指定しない場合はすべてのタスクを取得します。"
         "`file://`を先頭に付けると、JSON形式のファイルを指定できます。"
-        "使用できるキーは、phase, status, user_id のみです。",
-    )
-    parser.add_argument(
-        "--status",
-        type=str,
-        choices=[TaskStatus.NOT_STARTED.value, TaskStatus.ON_HOLD.value, TaskStatus.BREAK.value],
-        help="変更対象のタスクのステータスを指定します。",
-    )
-    parser.add_argument(
-        "--phase",
-        type=str,
-        choices=[TaskPhase.ANNOTATION.value, TaskPhase.INSPECTION.value, TaskPhase.ACCEPTANCE.value],
-        help="変更対象のタスクのフェーズを指定します。",
+        "使用できるキーは、phase, status のみです。",
     )
 
     parser.set_defaults(subcommand_func=main)
