@@ -652,6 +652,7 @@ class ListWorktimeByUser(AbstractCommandLineInterface):
             all_availability_list = []
             for availability_list in labor_availability_list_dict.values():
                 all_availability_list.extend(availability_list)
+
             if len(all_availability_list) > 0:
                 availability_df = pandas.DataFrame([e.to_dict() for e in all_availability_list])  # type: ignore
             else:
@@ -665,7 +666,7 @@ class ListWorktimeByUser(AbstractCommandLineInterface):
                 .reset_index()
             )
 
-        df = value_df.merge(user_df.reset_index(), how="left", on=["user_id"]).reset_index()
+        df = user_df.reset_index().merge(value_df, how="left", on=["user_id"]).reset_index()
         return df
 
     @staticmethod
