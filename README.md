@@ -1416,6 +1416,10 @@ $ annofabcli task change_operator --project_id prj1 --task_id file://task.txt --
 
 # 指定されたタスクの担当者を未割り当てに変更する。
 $ annofabcli task change_operator --project_id prj1 --task_id file://task.txt --not_assign
+
+# 教師付フェーズが未着手のタスクのみ、担当者を変更する
+$ annofabcli task change_operator --project_id prj1 --task_id file://task.txt --not_assign --task_query '{"status:"not_started", "phase"}'
+
 ```
 
 
