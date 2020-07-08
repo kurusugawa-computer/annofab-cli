@@ -88,13 +88,13 @@ $ docker run -it -e ANNOFAB_USER_ID=XXXX -e ANNOFAB_PASSWORD=YYYYY annofab-cli a
 |annotation| list_count | task_idまたはinput_data_idで集約したアノテーションの個数を出力します                              |-|
 |annotation| import | アノテーションをインポートします。                             |オーナ|
 |annotation| restore |'annotation dump'コマンドで保存したファイルから、アノテーション情報をリストアします。                            |オーナ|
-|annotation_specs| history | アノテーション仕様の履歴一覧を出力します。                              |チェッカー/オーナ|
-|annotation_specs| list_label | アノテーション仕様のラベル情報を出力します。                              |チェッカー/オーナ|
-|annotation_specs| list_label_color             | アノテーション仕様から、label_nameとRGBを対応付けたJSONを出力します。                                      |チェッカー/オーナ|
+|annotation_specs| history | アノテーション仕様の履歴一覧を出力します。                              |-|
+|annotation_specs| list_label | アノテーション仕様のラベル情報を出力します。                              |-|
+|annotation_specs| list_label_color             | アノテーション仕様から、label_nameとRGBを対応付けたJSONを出力します。                                      |-|
 |filesystem| write_annotation_image        | アノテーションzip、またはそれを展開したディレクトリから、アノテーションの画像（Semantic Segmentation用）を生成します。 |-|
 |input_data|delete             | 入力データを削除します。                                                            |オーナ|
 |input_data|list             | 入力データ一覧を出力します。                                                            |-|
-|input_data| list_merged_task | タスク一覧と結合した入力データ一覧のCSVを出力します。                                                            |オーナ|
+|input_data| list_merged_task | タスク一覧と結合した入力データ一覧のCSVを出力します。                                                            |オーナ/アノテーションユーザ|
 |input_data|put             | 入力データを登録します。                                                            |オーナ|
 |inspection_comment| list | 検査コメントを出力します。                               |-|
 |inspection_comment| list_unprocessed | 未処置の検査コメントを出力します。                               |-|
@@ -119,18 +119,19 @@ $ docker run -it -e ANNOFAB_USER_ID=XXXX -e ANNOFAB_PASSWORD=YYYYY annofab-cli a
 |statistics| list_by_date_user             | タスク数や作業時間などの情報を、日ごとユーザごとに出力します。                                                   |オーナ/アノテーションユーザ|
 |statistics| list_cumulative_labor_time             |       タスク進捗状況を出力します。                                                    |-|
 |statistics| list_task_progress             | タスクフェーズ別の累積作業時間を出力します。                                                            |-|
-|statistics|summarize_task_count|タスクのフェーズ、ステータス、ステップごとにタスク数を出力します。|オーナ|
-|statistics|summarize_task_count_by_task_id|task_idのプレフィックスごとに、タスク数を出力します。|オーナ|
-|statistics|summarize_task_count_by_user|ユーザごとに担当しているタスク数を出力します。|オーナ|
-|statistics| visualize             | 統計情報を可視化します。                                                            |オーナ|
-|supplementary| list             | 補助情報を出力します。                                                           |オーナ|
+|statistics|summarize_task_count|タスクのフェーズ、ステータス、ステップごとにタスク数を出力します。|オーナ/アノテーションユーザ|
+|statistics|summarize_task_count_by_task_id|task_idのプレフィックスごとに、タスク数を出力します。|オーナ/アノテーションユーザ|
+|statistics|summarize_task_count_by_user|ユーザごとに担当しているタスク数を出力します。|オーナ/アノテーションユーザ|
+|statistics| visualize             | 統計情報を可視化します。                                                            |オーナ/アノテーションユーザ|
+|supplementary| list             | 補助情報を出力します。                                                           |オーナ/アノテーションユーザ|
 |supplementary| put              | 補助情報を登録します。                                                           |オーナ|
 |task| cancel_acceptance             | 受け入れ完了タスクを、受け入れ取り消し状態にします。                                                         |オーナ|
 |task| change_operator             | タスクの担当者を変更します。                                                             |チェッカー/オーナ|
 |task| complete                | タスクを完了状態にして次のフェーズに進めます（教師付の提出、検査/受入の合格）。                                  |チェッカー/オーナ|
 |task| delete                | タスクを削除します。                                 |オーナ|
 |task|list             | タスク一覧を出力します。                                                            |-|
-|task|list_added_task_history             | タスク履歴情報を加えたタスク一覧を出力します。|オーナ|
+|task|list_added_task_history             | タスク履歴情報を加えたタスク一覧を出力します。|オーナ/アノテーションユーザ|
+|task|list_task_history             | タスク履歴の一覧を出力します。|-|
 |task| put                | タスクを作成します。                                 |オーナ|
 |task| reject                  | タスクを強制的に差し戻します。                                                                 |オーナ|
 
@@ -1503,6 +1504,16 @@ $ annofabcli task list_added_task_history --project_id prj1 --output task.csv --
 
 # タスク全件ファイルJSON、タスク履歴全件ファイルJSONを参照して、タスク一覧のCSVを出力する
 $ annofabcli task list_added_task_history --project_id prj1 --output task.csv --task_json task.json --task_history_json task_history.json
+```
+
+### task list_task_history
+タスク履歴の一覧を出力します。
+
+
+```
+# prj1の全タスクのタスク履歴の一覧を、CSV形式で出力する
+$ annofabcli task list_task_history --project_id prj1 --output task_history.csv
+
 ```
 
 

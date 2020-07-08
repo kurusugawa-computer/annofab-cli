@@ -1,3 +1,4 @@
+# pylint: disable=too-many-lines
 import argparse
 import calendar
 import datetime
@@ -65,6 +66,8 @@ class LaborWorktime:
     """労務管理画面の実績作業時間"""
     worktime_monitored_hour: Optional[float]
     """AnnoFabの作業時間"""
+    working_description: Optional[str]
+    """実績作業時間に対する備考"""
 
 
 @dataclass_json
@@ -181,6 +184,13 @@ class ListWorktimeByUser(AbstractCommandLineInterface):
         else:
             return value / 3600 / 1000
 
+    @staticmethod
+    def _get_working_description(working_time_by_user: Optional[Dict[str, Any]]) -> Optional[str]:
+        if working_time_by_user is None:
+            return None
+
+        return working_time_by_user.get("description")
+
     def _get_labor_worktime(
         self,
         labor: Dict[str, Any],
@@ -201,6 +211,7 @@ class ListWorktimeByUser(AbstractCommandLineInterface):
             biography=member["biography"] if member is not None else None,
             worktime_plan_hour=self.get_worktime_hour(labor["values"]["working_time_by_user"], "plans"),
             worktime_result_hour=self.get_worktime_hour(labor["values"]["working_time_by_user"], "results"),
+            working_description=self._get_working_description(labor["values"]["working_time_by_user"]),
             worktime_monitored_hour=worktime_monitored_hour,
         )
         return new_labor
@@ -402,6 +413,7 @@ class ListWorktimeByUser(AbstractCommandLineInterface):
                 "worktime_plan_hour": "作業予定時間",
                 "worktime_result_hour": "作業実績時間",
                 "worktime_monitored_hour": "計測時間",
+                "working_description": "備考",
             }
         )
         columns = [
@@ -415,6 +427,7 @@ class ListWorktimeByUser(AbstractCommandLineInterface):
             "作業予定時間",
             "作業実績時間",
             "計測時間",
+            "備考",
         ]
         if not add_monitored_worktime:
             columns.remove("計測時間")
@@ -639,7 +652,12 @@ class ListWorktimeByUser(AbstractCommandLineInterface):
             all_availability_list = []
             for availability_list in labor_availability_list_dict.values():
                 all_availability_list.extend(availability_list)
-            availability_df = pandas.DataFrame([e.to_dict() for e in all_availability_list])  # type: ignore
+
+            if len(all_availability_list) > 0:
+                availability_df = pandas.DataFrame([e.to_dict() for e in all_availability_list])  # type: ignore
+            else:
+                availability_df = pandas.DataFrame(columns=["date", "user_id", "availability_hour"])
+
             value_df = (
                 value_df.merge(
                     availability_df[["date", "user_id", "availability_hour"]], how="outer", on=["date", "user_id"]
@@ -657,9 +675,11 @@ class ListWorktimeByUser(AbstractCommandLineInterface):
     ):
         df_filter = worktime_df_per_date_user[worktime_df_per_date_user[worktime_column] > 0]
         if len(df_filter) > 0:
-            value_df[days_column] = df_filter.pivot_table(
-                index=["user_id"], values="worktime_result_hour", aggfunc="count"
-            ).fillna(0)
+            value_df[days_column] = (
+                df_filter.pivot_table(index=["user_id"], values="worktime_result_hour", aggfunc="count")
+                .fillna(0)
+                .astype(pandas.Int64Dtype())
+            )
         else:
             value_df[days_column] = 0
 
@@ -766,9 +786,6 @@ class ListWorktimeByUser(AbstractCommandLineInterface):
             self.write_worktime_per_user_date(worktime_df_per_date_user, output_dir)
         else:
             logger.info("日ごとの作業時間情報に関するデータが見つからなかったので、 '日ごとの作業時間の一覧.csv' は出力しません。")
-
-        # worktime_df_per_date_user = pandas.DataFrame()
-        # logger.info("出力対象のデータが0件のため、'作業時間一覧.csv', '日ごとの作業時間の一覧.csv' を出力しません。")
 
         add_availability = labor_availability_list_dict is not None
         worktime_df_per_user = self.create_worktime_df_per_user(

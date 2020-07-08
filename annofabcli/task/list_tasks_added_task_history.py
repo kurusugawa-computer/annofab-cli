@@ -203,7 +203,7 @@ class ListTasksAddedTaskHistory(AbstractCommandLineInterface):
             return
 
         project_id = args.project_id
-        super().validate_project(project_id, [ProjectMemberRole.OWNER])
+        super().validate_project(project_id, [ProjectMemberRole.OWNER, ProjectMemberRole.TRAINING_DATA_USER])
 
         if args.task_json is not None and args.task_history_json is not None:
             task_json_path = args.task_json
@@ -280,6 +280,6 @@ def add_parser(subparsers: argparse._SubParsersAction):
     subcommand_name = "list_added_task_history"
     subcommand_help = "タスク履歴情報を加えたタスク一覧を出力します。"
     description = "タスク履歴情報（フェーズごとの作業時間、担当者、開始日時）を加えたタスク一覧をCSV形式で出力します。"
-    epilog = "オーナロールを持つユーザで実行してください。"
+    epilog = "アノテーションユーザ/オーナロールを持つユーザで実行してください。"
     parser = annofabcli.common.cli.add_parser(subparsers, subcommand_name, subcommand_help, description, epilog=epilog)
     parse_args(parser)

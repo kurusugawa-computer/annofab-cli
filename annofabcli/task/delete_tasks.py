@@ -98,7 +98,7 @@ class DeleteTask(AbstractCommandLineInterface):
                 logger.warning(f"task_id='{task_id}'の削除に失敗しました。")
                 continue
 
-        logger.info(f"プロジェクト'{project_title}'から 、{count_delete_task} 件のタスクを削除しました。")
+        logger.info(f"プロジェクト'{project_title}'から 、{count_delete_task} / {len(task_id_list)} 件のタスクを削除しました。")
 
     def main(self):
         args = self.args

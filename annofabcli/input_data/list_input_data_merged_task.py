@@ -140,7 +140,7 @@ class ListInputDataMergedTask(AbstractCommandLineInterface):
 
         project_id = args.project_id
         if project_id is not None:
-            super().validate_project(project_id, [ProjectMemberRole.OWNER])
+            super().validate_project(project_id, [ProjectMemberRole.OWNER, ProjectMemberRole.TRAINING_DATA_USER])
             wait_options = get_wait_options_from_args(get_json_from_args(args.wait_options), DEFAULT_WAIT_OPTIONS)
             cache_dir = annofabcli.utils.get_cache_dir()
             self.download_json_files(project_id, cache_dir, args.latest, wait_options)
@@ -227,7 +227,7 @@ def add_parser(subparsers: argparse._SubParsersAction):
     subcommand_name = "list_merged_task"
     subcommand_help = "タスク一覧と結合した入力データ一覧のCSVを出力します。"
     description = "タスク一覧と結合した入力データ一覧のCSVを出力します。"
-    epilog = "オーナロールを持つユーザで実行してください。"
+    epilog = "アノテーションユーザまたはオーナロールを持つユーザで実行してください。"
 
     parser = annofabcli.common.cli.add_parser(subparsers, subcommand_name, subcommand_help, description, epilog=epilog)
     parse_args(parser)
