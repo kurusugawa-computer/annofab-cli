@@ -1,13 +1,12 @@
 import logging
 from pathlib import Path
-from typing import List, Optional
+from typing import Any, Dict, List, Optional, Sequence, Set
 
 import bokeh
 import bokeh.layouts
 import bokeh.palettes
 import pandas
 from annofabapi.models import TaskPhase
-from bokeh.core.properties import Color
 from bokeh.models import HoverTool
 from bokeh.plotting import ColumnDataSource, figure
 
@@ -19,6 +18,12 @@ logger = logging.getLogger(__name__)
 class Scatter:
     """
     散布図を出力するクラス
+
+    Args:
+        outdir: 出力先のディレクトリ
+        filename_prefix: 出力するファイルのプレフィックス
+        palette: 散布図を出力するときのカラーパレット。デフォルトは `bokeh.palettes.Category20[20]`
+
     """
 
     my_palette = bokeh.palettes.Category20[20]
@@ -37,10 +42,12 @@ class Scatter:
     # Private
     #############################################
 
-    def __init__(self, outdir: str, filename_prefix: Optional[str] = None):
+    def __init__(self, outdir: str, filename_prefix: Optional[str] = None, palette: Optional[Sequence[str]] = None):
         self.scatter_outdir = outdir
         self.filename_prefix = filename_prefix + "-" if filename_prefix is not None else ""
         Path(self.scatter_outdir).mkdir(exist_ok=True, parents=True)
+        if palette is not None:
+            self.my_palette = palette
 
     @staticmethod
     def _set_legend(fig: bokeh.plotting.Figure) -> None:
@@ -68,6 +75,38 @@ class Scatter:
         hover_tool = HoverTool(tooltips=detail_tooltips)
         return hover_tool
 
+    def get_biography_color_map(self, biography_set: Set[str]) -> Dict[str, str]:
+        """
+        biographyが同じなら、できるだけ色が同じになるようにする。
+
+        Args:
+            biography_set:
+
+        Returns:
+            keyがbiography, valueがColor ObjectのDict
+        """
+        palette_size = len(self.my_palette)
+        biography_color_map: Dict[str, Any] = {}
+        index_map: Dict[str, int] = {}
+
+        for biography in biography_set:
+            index = hash(biography) % palette_size
+            index_set = {v for v in index_map.values()}
+
+            # 空きがなければ、paletteの最後の色を返す
+            if len(index_map) >= palette_size:
+                index_map[biography] = palette_size - 1
+                continue
+
+            while index in index_set:
+                index = (index + 1) % palette_size
+            index_map[biography] = index
+
+        for biography, index in index_map.items():
+            biography_color_map[biography] = self.my_palette[index]
+
+        return biography_color_map
+
     @staticmethod
     def _scatter(
         fig: bokeh.plotting.Figure,
@@ -75,7 +114,7 @@ class Scatter:
         x_column_name: str,
         y_column_name: str,
         legend_label: str,
-        color: Color,
+        color: Any,
     ) -> None:
         """
         丸でプロットして、ユーザ名を表示する。
@@ -147,6 +186,8 @@ class Scatter:
         ]
 
         df["biography"] = df["biography"].fillna("")
+        biography_color_map = self.get_biography_color_map(set(df["biography"]))
+
         for biography_index, biography in enumerate(df["biography"].unique()):
             x_column = "monitored_worktime_hour"
             y_column = "monitored_worktime/annotation_count"
@@ -154,6 +195,8 @@ class Scatter:
                 filtered_df = df[
                     (df["biography"] == biography) & df[(x_column, phase)].notna() & df[(y_column, phase)].notna()
                 ]
+                if len(filtered_df) == 0:
+                    continue
                 source = ColumnDataSource(data=filtered_df)
                 self._scatter(
                     fig=fig,
@@ -161,7 +204,7 @@ class Scatter:
                     x_column_name=f"{x_column}_{phase}",
                     y_column_name=f"{y_column}_{phase}",
                     legend_label=biography,
-                    color=self.my_palette[biography_index],
+                    color=biography_color_map[biography],
                 )
 
         for fig, phase in zip(figure_list, phase_list):
@@ -215,6 +258,7 @@ class Scatter:
         ]
 
         df["biography"] = df["biography"].fillna("")
+        biography_color_map = self.get_biography_color_map(set(df["biography"]))
         for biography_index, biography in enumerate(df["biography"].unique()):
             x_column = "prediction_actual_worktime_hour"
             y_column = "actual_worktime/annotation_count"
@@ -222,6 +266,8 @@ class Scatter:
                 filtered_df = df[
                     (df["biography"] == biography) & df[(x_column, phase)].notna() & df[(y_column, phase)].notna()
                 ]
+                if len(filtered_df) == 0:
+                    continue
                 source = ColumnDataSource(data=filtered_df)
                 self._scatter(
                     fig=fig,
@@ -229,7 +275,7 @@ class Scatter:
                     x_column_name=f"{x_column}_{phase}",
                     y_column_name=f"{y_column}_{phase}",
                     legend_label=biography,
-                    color=self.my_palette[biography_index],
+                    color=biography_color_map[biography],
                 )
 
         for fig, phase in zip(figure_list, phase_list):
@@ -287,6 +333,7 @@ class Scatter:
         phase = "annotation"
 
         df["biography"] = df["biography"].fillna("")
+        biography_color_map = self.get_biography_color_map(set(df["biography"]))
         for biography_index, biography in enumerate(df["biography"].unique()):
             for column_pair, fig in zip(column_pair_list, figure_list):
                 x_column = column_pair[0]
@@ -294,6 +341,8 @@ class Scatter:
                 filtered_df = df[
                     (df["biography"] == biography) & df[(x_column, phase)].notna() & df[(y_column, phase)].notna()
                 ]
+                if len(filtered_df) == 0:
+                    continue
 
                 source = ColumnDataSource(data=filtered_df)
                 self._scatter(
@@ -302,7 +351,7 @@ class Scatter:
                     x_column_name=f"{x_column}_{phase}",
                     y_column_name=f"{y_column}_{phase}",
                     legend_label=biography,
-                    color=self.my_palette[biography_index],
+                    color=biography_color_map[biography],
                 )
 
         for fig in figure_list:

@@ -3,6 +3,7 @@ from pathlib import Path
 
 import pandas
 from annofabapi.models import TaskStatus
+from bokeh.palettes import Category20
 
 from annofabcli.statistics.csv import Csv
 from annofabcli.statistics.linegraph import LineGraph
@@ -109,6 +110,16 @@ class TestScatter:
     def test_write_scatter_for_quality(self):
         productivity_per_user = self.read_productivity_per_user()
         self.scatter_obj.write_scatter_for_quality(productivity_per_user)
+
+    def test_get_biography_color_map(self):
+        scatter_obj = Scatter(outdir=str(out_path), palette=Category20[3])
+
+        result = scatter_obj.get_biography_color_map({"Alice", "Bob", "Chris"})
+        print(result)
+        result = scatter_obj.get_biography_color_map({"Alice", "Bob", "Chris", "Dave"})
+        print(result)
+        result = scatter_obj.get_biography_color_map({"Chris"})
+        print(result)
 
 
 class TestLineGraph:
