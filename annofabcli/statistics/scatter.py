@@ -1,6 +1,6 @@
 import logging
 from pathlib import Path
-from typing import Any, Dict, List, Optional, Sequence, Set
+from typing import Any, List, Optional, Sequence
 
 import bokeh
 import bokeh.layouts
@@ -74,49 +74,6 @@ class Scatter:
         detail_tooltips = [(exclude_phase_name(e), "@{%s}" % e) for e in tool_tip_items]
         hover_tool = HoverTool(tooltips=detail_tooltips)
         return hover_tool
-
-    def get_biography_color_map(self, biography_set: Set[str]) -> Dict[str, str]:
-        """
-        biographyが同じなら、できるだけ色が同じになるようにする。
-
-        Args:
-            biography_set:
-
-        Returns:
-            keyがbiography, valueがColor ObjectのDict
-        """
-        def _hash_str(value: str) -> int:
-            hash = 7
-            for c in value:
-                # 64bit integer
-                hash = (31 * hash + ord(c)) & 18446744073709551615
-            return hash
-
-
-        palette_size = len(self.my_palette)
-        biography_color_map: Dict[str, Any] = {}
-        index_map: Dict[str, int] = {}
-
-        for biography in biography_set:
-            index = _hash_str(biography) % palette_size
-            s = "a"
-            s.__hash__()
-            logger.debug(f"{biography}, index={str(index)},hash={_hash_str(biography)}")
-            index_set = {v for v in index_map.values()}
-
-            # 空きがなければ、paletteの最後の色を返す
-            if len(index_map) >= palette_size:
-                index_map[biography] = palette_size - 1
-                continue
-
-            while index in index_set:
-                index = (index + 1) % palette_size
-            index_map[biography] = index
-
-        for biography, index in index_map.items():
-            biography_color_map[biography] = self.my_palette[index]
-
-        return biography_color_map
 
     @staticmethod
     def _scatter(
@@ -197,9 +154,8 @@ class Scatter:
         ]
 
         df["biography"] = df["biography"].fillna("")
-        biography_color_map = self.get_biography_color_map(set(df["biography"]))
 
-        for biography_index, biography in enumerate(df["biography"].unique()):
+        for biography_index, biography in enumerate(set(df["biography"])):
             x_column = "monitored_worktime_hour"
             y_column = "monitored_worktime/annotation_count"
             for fig, phase in zip(figure_list, phase_list):
@@ -215,7 +171,7 @@ class Scatter:
                     x_column_name=f"{x_column}_{phase}",
                     y_column_name=f"{y_column}_{phase}",
                     legend_label=biography,
-                    color=biography_color_map[biography],
+                    color=self.my_palette[biography_index],
                 )
 
         for fig, phase in zip(figure_list, phase_list):
@@ -269,8 +225,7 @@ class Scatter:
         ]
 
         df["biography"] = df["biography"].fillna("")
-        biography_color_map = self.get_biography_color_map(set(df["biography"]))
-        for biography_index, biography in enumerate(df["biography"].unique()):
+        for biography_index, biography in enumerate(set(df["biography"])):
             x_column = "prediction_actual_worktime_hour"
             y_column = "actual_worktime/annotation_count"
             for fig, phase in zip(figure_list, phase_list):
@@ -286,7 +241,7 @@ class Scatter:
                     x_column_name=f"{x_column}_{phase}",
                     y_column_name=f"{y_column}_{phase}",
                     legend_label=biography,
-                    color=biography_color_map[biography],
+                    color=self.my_palette[biography_index],
                 )
 
         for fig, phase in zip(figure_list, phase_list):
@@ -344,8 +299,7 @@ class Scatter:
         phase = "annotation"
 
         df["biography"] = df["biography"].fillna("")
-        biography_color_map = self.get_biography_color_map(set(df["biography"]))
-        for biography_index, biography in enumerate(df["biography"].unique()):
+        for biography_index, biography in enumerate(set(df["biography"])):
             for column_pair, fig in zip(column_pair_list, figure_list):
                 x_column = column_pair[0]
                 y_column = column_pair[1]
@@ -362,7 +316,7 @@ class Scatter:
                     x_column_name=f"{x_column}_{phase}",
                     y_column_name=f"{y_column}_{phase}",
                     legend_label=biography,
-                    color=biography_color_map[biography],
+                    color=self.my_palette[biography_index],
                 )
 
         for fig in figure_list:
