@@ -85,12 +85,23 @@ class Scatter:
         Returns:
             keyがbiography, valueがColor ObjectのDict
         """
+        def _hash_str(value: str) -> int:
+            hash = 7
+            for c in value:
+                # 64bit integer
+                hash = (31 * hash + ord(c)) & 18446744073709551615
+            return hash
+
+
         palette_size = len(self.my_palette)
         biography_color_map: Dict[str, Any] = {}
         index_map: Dict[str, int] = {}
 
         for biography in biography_set:
-            index = hash(biography) % palette_size
+            index = _hash_str(biography) % palette_size
+            s = "a"
+            s.__hash__()
+            logger.debug(f"{biography}, index={str(index)},hash={_hash_str(biography)}")
             index_set = {v for v in index_map.values()}
 
             # 空きがなければ、paletteの最後の色を返す
