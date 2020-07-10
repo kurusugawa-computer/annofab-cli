@@ -4,7 +4,8 @@ import json
 import logging
 from dataclasses import dataclass
 from typing import Any, Dict, List
-
+from collections import defaultdict
+import annofabapi
 import dateutil
 import pandas
 from annofabapi.models import ProjectMemberRole, Task
@@ -57,6 +58,39 @@ class TaskCount:
     """休憩中/作業中/2回目以降の各フェーズの未着手状態のタスク数"""
 
 
+@dataclass_json
+@dataclass
+class ProgressData:
+    task_count: TaskCount
+    """タスク数情報"""
+    monitored_worktime: float
+    """AnnoFabの計測作業時間[hour]"""
+    actual_worktime: float
+    """実績作業時間[hour]"""
+
+
+@dataclass_json
+@dataclass
+class DashboardValues:
+    cumulation: ProgressData
+    """累計情報"""
+    today: ProgressData
+    """対象日当日の情報"""
+    seven_days: ProgressData
+    """対象日から直前7日間の情報"""
+
+
+
+@dataclass_json
+@dataclass
+class DashboardData:
+    project_id: str
+    project_title: str
+    date: str
+    """対象日（YYYY-MM-DD）"""
+
+    values: DashboardValues
+
 def add_info_to_task(task: Task):
     task["status_for_summary"] = TaskStatusForSummary.from_task(task).value
 
@@ -107,10 +141,11 @@ def get_task_list_where_updated_datetime(
 
     lower_datetime = _to_datetime_from_date(lower_date)
     upper_datetime = _to_datetime_from_date(upper_date + datetime.timedelta(days=1))
+    print(lower_datetime, upper_datetime)
     return [t for t in task_list if pred(t)]
 
 
-def create_task_count_info(task_list: List[Task], date: datetime.date) -> Dict[str, Any]:
+def create_task_count_info(task_list: List[Task], date: datetime.date) -> DashboardValues:
     """
     タスク数情報を生成する。
 
@@ -126,27 +161,86 @@ def create_task_count_info(task_list: List[Task], date: datetime.date) -> Dict[s
         task["worktime_hour"] = millisecond_to_hour(task["work_time_span"])
 
     cumulation_task_count = get_task_count_info_from_task_list(task_list)
-    result = {
-        "cumulation": {
-            "task_count": cumulation_task_count.to_dict(),  # type: ignore
-            "monitored_worktime": sum([t["worktime_hour"] for t in task_list]),
-        }
-    }
-    if date is not None:
-        task_list_for_day = get_task_list_where_updated_datetime(task_list, lower_date=date, upper_date=date)
-        result["today"] = {
-            "task_count": get_task_count_info_from_task_list(task_list_for_day).to_dict()  # type: ignore
-        }
+    cumulation_info = ProgressData(task_count=cumulation_task_count.to_dict(), monitored_worktime=sum([t["worktime_hour"] for t in task_list]))
+    # result = {
+    #     "cumulation": {
+    #         "task_count": cumulation_task_count.to_dict(),  # type: ignore
+    #         "monitored_worktime": sum([t["worktime_hour"] for t in task_list]),
+    #     }
+    # }
 
-        week_ago = date - datetime.timedelta(days=7)
-        task_list_for_week = get_task_list_where_updated_datetime(task_list, lower_date=week_ago, upper_date=date)
-        result["7days"] = {
-            "task_count": get_task_count_info_from_task_list(  # type: ignore
-                task_list_for_week
-            ).to_dict()
-        }
+    task_list_for_day = get_task_list_where_updated_datetime(task_list, lower_date=date, upper_date=date)
+    today_info = ProgressData(task_count=get_task_count_info_from_task_list(task_list_for_day).to_dict())  # type: ignore
 
-    return result
+    week_ago = date - datetime.timedelta(days=6)
+    task_list_for_week = get_task_list_where_updated_datetime(task_list, lower_date=week_ago, upper_date=date)
+    seven_days_info = ProgressData(task_count=get_task_count_info_from_task_list(  # type: ignore
+            task_list_for_week
+        ).to_dict())
+
+    return DashboardValues(cumulation=cumulation_info, today=today_info,seven_days=seven_days_info)
+
+class PrintDashBoardMain():
+    def __init__(self, service: annofabapi.Resource):
+        self.service = service
+        self.facade = AnnofabApiFacade(service)
+
+    @staticmethod
+    def _get_actual_worktime_hour_from_labor(labor: Dict[str, Any]) -> float:
+        working_time_by_user = labor["values"]["working_time_by_user"]
+        if working_time_by_user is None:
+            return 0
+
+        actual_worktime = working_time_by_user.get("results")
+        if actual_worktime is None:
+            return 0
+        else:
+            return actual_worktime / 3600 / 1000
+
+
+    def get_actual_worktime_dict(self, project_id: str, date:str) -> Dict[str, float]:
+        """
+        日毎のプロジェクト全体の実績作業時間を取得する。
+
+        Args:
+            project_id:
+            date: 対象期間の終了日
+
+        Returns:
+            key:date, value:実績作業時間のdict
+
+        """
+        # 予定稼働時間を取得するには、特殊な組織IDを渡す
+        logger.debug(f"実績作業時間を取得中")
+        labor_list, _ = self.service.api.get_labor_control(
+            {
+                "project_id": project_id,
+                "to": date,
+            }
+        )
+        actual_worktime_dict: Dict[str, float] = defaultdict(float)
+        for labor in labor_list:
+            date = labor["date"]
+            actual_worktime = self._get_actual_worktime_hour_from_labor(labor)
+            actual_worktime_dict[date] += actual_worktime
+
+        return actual_worktime_dict
+
+    def create_dashboard_data(self, project_id: str, date:str, task_list:List[Task]) -> DashboardData:
+        dt_date = datetime.datetime.strptime(date, "%Y-%m-%d").date()
+        project_title = self.facade.get_project_title(project_id)
+
+        dashboard_info = {
+            "project_id": project_id,
+            "project_title": project_title,
+            "date": args.date,
+        }
+        task_count_info = create_task_count_info(task_list, date=dt_date)
+        dashboard_info.update(task_count_info)
+        annofabcli.utils.print_according_to_format(
+            dashboard_info, arg_format=FormatArgument(self.str_format), output=self.output,
+        )
+
 
 
 class DashBoard(AbstractCommandLineInterface):
