@@ -2,9 +2,10 @@ import argparse
 import datetime
 import json
 import logging
+from collections import defaultdict
 from dataclasses import dataclass
 from typing import Any, Dict, List
-from collections import defaultdict
+
 import annofabapi
 import dateutil
 import pandas
@@ -80,7 +81,6 @@ class DashboardValues:
     """対象日から直前7日間の情報"""
 
 
-
 @dataclass_json
 @dataclass
 class DashboardData:
@@ -90,6 +90,7 @@ class DashboardData:
     """対象日（YYYY-MM-DD）"""
 
     values: DashboardValues
+
 
 def add_info_to_task(task: Task):
     task["status_for_summary"] = TaskStatusForSummary.from_task(task).value
@@ -145,42 +146,7 @@ def get_task_list_where_updated_datetime(
     return [t for t in task_list if pred(t)]
 
 
-def create_task_count_info(task_list: List[Task], date: datetime.date) -> DashboardValues:
-    """
-    タスク数情報を生成する。
-
-    Args:
-        task_list:
-        date: タスク数　集計対象日
-
-    Returns:
-
-    """
-    for task in task_list:
-        task["status_for_summary"] = TaskStatusForSummary.from_task(task).value
-        task["worktime_hour"] = millisecond_to_hour(task["work_time_span"])
-
-    cumulation_task_count = get_task_count_info_from_task_list(task_list)
-    cumulation_info = ProgressData(task_count=cumulation_task_count.to_dict(), monitored_worktime=sum([t["worktime_hour"] for t in task_list]))
-    # result = {
-    #     "cumulation": {
-    #         "task_count": cumulation_task_count.to_dict(),  # type: ignore
-    #         "monitored_worktime": sum([t["worktime_hour"] for t in task_list]),
-    #     }
-    # }
-
-    task_list_for_day = get_task_list_where_updated_datetime(task_list, lower_date=date, upper_date=date)
-    today_info = ProgressData(task_count=get_task_count_info_from_task_list(task_list_for_day).to_dict())  # type: ignore
-
-    week_ago = date - datetime.timedelta(days=6)
-    task_list_for_week = get_task_list_where_updated_datetime(task_list, lower_date=week_ago, upper_date=date)
-    seven_days_info = ProgressData(task_count=get_task_count_info_from_task_list(  # type: ignore
-            task_list_for_week
-        ).to_dict())
-
-    return DashboardValues(cumulation=cumulation_info, today=today_info,seven_days=seven_days_info)
-
-class PrintDashBoardMain():
+class PrintDashBoardMain:
     def __init__(self, service: annofabapi.Resource):
         self.service = service
         self.facade = AnnofabApiFacade(service)
@@ -197,8 +163,7 @@ class PrintDashBoardMain():
         else:
             return actual_worktime / 3600 / 1000
 
-
-    def get_actual_worktime_dict(self, project_id: str, date:str) -> Dict[str, float]:
+    def get_actual_worktime_dict(self, project_id: str, date: str) -> Dict[str, float]:
         """
         日毎のプロジェクト全体の実績作業時間を取得する。
 
@@ -212,12 +177,7 @@ class PrintDashBoardMain():
         """
         # 予定稼働時間を取得するには、特殊な組織IDを渡す
         logger.debug(f"実績作業時間を取得中")
-        labor_list, _ = self.service.api.get_labor_control(
-            {
-                "project_id": project_id,
-                "to": date,
-            }
-        )
+        labor_list, _ = self.service.api.get_labor_control({"project_id": project_id, "to": date,})
         actual_worktime_dict: Dict[str, float] = defaultdict(float)
         for labor in labor_list:
             date = labor["date"]
@@ -226,21 +186,73 @@ class PrintDashBoardMain():
 
         return actual_worktime_dict
 
-    def create_dashboard_data(self, project_id: str, date:str, task_list:List[Task]) -> DashboardData:
+    def _get_actual_worktime_for_7days(
+        self, actual_worktime_dict: Dict[str, float], lower_date: datetime.date, upper_date: datetime.date
+    ):
+        sum_actual_worktime = 0
+        for datetime in pandas.date_range(start=lower_date, end=upper_date):
+            date = datetime.date()
+            sum_actual_worktime += actual_worktime_dict.get(date, 0)
+        return sum_actual_worktime
+
+    def create_dashboard_values(self, project_id: str, date: str, task_list: List[Task]) -> DashboardValues:
+        """
+        タスク数情報を生成する。
+
+        Args:
+            task_list:
+            date: タスク数　集計対象日
+
+        Returns:
+
+        """
+        for task in task_list:
+            task["status_for_summary"] = TaskStatusForSummary.from_task(task).value
+            task["worktime_hour"] = millisecond_to_hour(task["work_time_span"])
+
+        actual_worktime_dict = self.get_actual_worktime_dict(project_id, date)
+
+        cumulation_task_count = get_task_count_info_from_task_list(task_list)
+        cumulation_info = ProgressData(
+            task_count=cumulation_task_count.to_dict(),
+            monitored_worktime=sum([t["worktime_hour"] for t in task_list]),
+            actual_worktime=sum(actual_worktime_dict.values()),
+        )
+
+        dt_date = datetime.datetime.strptime(date, "%Y-%m-%d").date()
+        task_list_for_day = get_task_list_where_updated_datetime(task_list, lower_date=dt_date, upper_date=dt_date)
+        today_info = ProgressData(
+            task_count=get_task_count_info_from_task_list(task_list_for_day).to_dict(),
+            actual_worktime=actual_worktime_dict.get(date, 0),
+        )  # type: ignore
+
+        week_ago = dt_date - datetime.timedelta(days=6)
+        task_list_for_week = get_task_list_where_updated_datetime(task_list, lower_date=week_ago, upper_date=dt_date)
+        seven_days_info = ProgressData(
+            task_count=get_task_count_info_from_task_list(  # type: ignore
+                task_list_for_week
+            ).to_dict(),
+            actual_worktime=self._get_actual_worktime_for_7days(
+                actual_worktime_dict, lower_date=week_ago, upper_date=dt_date
+            ),
+        )
+
+        return DashboardValues(cumulation=cumulation_info, today=today_info, seven_days=seven_days_info)
+
+    def create_dashboard_data(self, project_id: str, date: str, task_list: List[Task]) -> DashboardData:
         dt_date = datetime.datetime.strptime(date, "%Y-%m-%d").date()
         project_title = self.facade.get_project_title(project_id)
 
         dashboard_info = {
             "project_id": project_id,
             "project_title": project_title,
-            "date": args.date,
+            "date": date,
         }
         task_count_info = create_task_count_info(task_list, date=dt_date)
         dashboard_info.update(task_count_info)
         annofabcli.utils.print_according_to_format(
             dashboard_info, arg_format=FormatArgument(self.str_format), output=self.output,
         )
-
 
 
 class DashBoard(AbstractCommandLineInterface):
