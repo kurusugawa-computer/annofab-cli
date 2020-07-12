@@ -236,7 +236,7 @@ class PrintDashBoardMain:
         """
         # 予定稼働時間を取得するには、特殊な組織IDを渡す
         logger.debug(f"実績作業時間を取得中")
-        labor_list, _ = self.service.api.get_labor_control({"project_id": project_id, "to": date,})
+        labor_list, _ = self.service.api.get_labor_control({"project_id": project_id, "to": date})
         actual_worktime_dict: Dict[str, float] = defaultdict(float)
         for labor in labor_list:
             date = labor["date"]
@@ -249,8 +249,8 @@ class PrintDashBoardMain:
         self, actual_worktime_dict: Dict[str, float], lower_date: datetime.date, upper_date: datetime.date
     ):
         sum_actual_worktime = 0.0
-        for datetime in pandas.date_range(start=lower_date, end=upper_date):
-            date = datetime.date()
+        for dt in pandas.date_range(start=lower_date, end=upper_date):
+            date = dt.date()
             sum_actual_worktime += actual_worktime_dict.get(date, 0.0)
         return sum_actual_worktime
 
@@ -352,7 +352,6 @@ class DashBoard(AbstractCommandLineInterface):
     def main(self):
         args = self.args
         project_id = args.project_id
-        project_title = self.facade.get_project_title(project_id)
         super().validate_project(project_id, [ProjectMemberRole.OWNER])
 
         if args.task_json is not None:
