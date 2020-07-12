@@ -1,10 +1,11 @@
+import configparser
 import os
 from pathlib import Path
-import configparser
-import pandas
-import annofabapi
 
-from annofabcli.experimental.dashboard import TaskCount, get_task_count_info_from_task_list, PrintDashBoardMain
+import annofabapi
+import pandas
+
+from annofabcli.experimental.dashboard import PrintDashBoardMain, TaskCount, get_task_count_info_from_task_list
 from annofabcli.experimental.utils import create_column_list, create_column_list_per_project
 
 # プロジェクトトップに移動する
@@ -22,6 +23,7 @@ annofab_config = dict(inifile.items("annofab"))
 
 project_id = annofab_config["project_id"]
 service = annofabapi.build_from_netrc()
+
 
 class TestListLaborWorktime:
     def test_create_column_list_per_project(self):

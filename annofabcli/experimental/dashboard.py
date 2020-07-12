@@ -1,18 +1,18 @@
 import argparse
 import datetime
-from more_itertools import first_true
 import json
 import logging
 from collections import defaultdict
 from dataclasses import dataclass
 from typing import Any, Dict, List, Optional
-from annofabcli.common.utils import isoduration_to_hour
+
 import annofabapi
 import dateutil
 import pandas
 from annofabapi.models import ProjectMemberRole, Task
 from dataclasses_json import dataclass_json
 from dateutil.parser import parse
+from more_itertools import first_true
 
 import annofabcli
 import annofabcli.common.cli
@@ -27,34 +27,36 @@ from annofabcli.common.cli import (
 from annofabcli.common.dataclasses import WaitOptions
 from annofabcli.common.download import DownloadingFile
 from annofabcli.common.enums import FormatArgument
+from annofabcli.common.utils import isoduration_to_hour
 from annofabcli.statistics.summarize_task_count_by_task_id import TaskStatusForSummary
 
 logger = logging.getLogger(__name__)
 
 DEFAULT_WAIT_OPTIONS = WaitOptions(interval=60, max_tries=360)
 
+
 @dataclass_json
 @dataclass
 class TaskPhaseStatistics:
     date: str
-    annotation_worktime: float=0
+    annotation_worktime: float = 0
     inspection_worktime: float = 0
     acceptance_worktime: float = 0
 
     def sum_worktime(self) -> float:
         return self.annotation_worktime + self.inspection_worktime + self.acceptance_worktime
 
+
 @dataclass_json
 @dataclass
 class MonitoredWorktime:
     """AnnoFab計測時間の詳細情報"""
+
     sum: float
     """合計時間[hour]"""
     annotation: float
     inspection: float
     acceptance: float
-
-
 
 
 @dataclass_json
@@ -88,16 +90,21 @@ class TaskCount:
 class ProgressData:
     task_count: TaskCount
     """タスク数情報"""
-    monitored_worktime: float
-    """AnnoFabの計測作業時間[hour]"""
-    annotation_monitored_worktime: Optional[float]=None
-    """AnnoFabのannotation計測作業時間[hour]"""
-    inspection_monitored_worktime: Optional[float]=None
-    """AnnoFabのinspection計測作業時間[hour]"""
-    acceptance_monitored_worktime: Optional[float]=None
-    """AnnoFabのacceptance計測作業時間[hour]"""
+
     actual_worktime: float
     """実績作業時間[hour]"""
+
+    monitored_worktime: Optional[float] = None
+    """AnnoFabの計測作業時間[hour]"""
+
+    annotation_monitored_worktime: Optional[float] = None
+    """AnnoFabのannotation計測作業時間[hour]"""
+
+    inspection_monitored_worktime: Optional[float] = None
+    """AnnoFabのinspection計測作業時間[hour]"""
+
+    acceptance_monitored_worktime: Optional[float] = None
+    """AnnoFabのacceptance計測作業時間[hour]"""
 
 
 @dataclass_json
@@ -200,10 +207,8 @@ class PrintDashBoardMain:
                 phase = phase_stat["phase"]
                 worktime_hour = isoduration_to_hour(phase_stat["worktime"])
                 elm[f"{phase}_worktime"] = worktime_hour
-            row_list.append(TaskPhaseStatistics.from_dict(elm))
+            row_list.append(TaskPhaseStatistics.from_dict(elm)) # type: ignore
         return row_list
-
-
 
     @staticmethod
     def _get_actual_worktime_hour_from_labor(labor: Dict[str, Any]) -> float:
@@ -249,9 +254,13 @@ class PrintDashBoardMain:
             sum_actual_worktime += actual_worktime_dict.get(date, 0)
         return sum_actual_worktime
 
-    def get_monitored_worktime(self, task_phase_statistics: List[TaskPhaseStatistics], lower_date: datetime.date, upper_date: datetime.date) -> Optional[MonitoredWorktime]:
+    def get_monitored_worktime(
+        self, task_phase_statistics: List[TaskPhaseStatistics], lower_date: datetime.date, upper_date: datetime.date
+    ) -> Optional[MonitoredWorktime]:
         upper_stat = first_true(task_phase_statistics, pred=lambda e: e.date == str(upper_date))
-        lower_stat = first_true(task_phase_statistics, pred=lambda e: e.date == str(lower_date - datetime.timedelta(days=1)))
+        lower_stat = first_true(
+            task_phase_statistics, pred=lambda e: e.date == str(lower_date - datetime.timedelta(days=1))
+        )
         if upper_stat is None or lower_stat is None:
             logger.debug(f"{lower_date} 〜 {upper_date} 期間のmonitor_worktimeを算出できませんでした。")
             return None
@@ -262,7 +271,6 @@ class PrintDashBoardMain:
             inspection=upper_stat.inspection_worktime - lower_stat.inspection_worktime,
             acceptance=upper_stat.acceptance_worktime - lower_stat.acceptance_worktime,
         )
-
 
     def create_dashboard_values(self, project_id: str, date: str, task_list: List[Task]) -> DashboardValues:
         """
@@ -291,26 +299,39 @@ class PrintDashBoardMain:
 
         dt_date = datetime.datetime.strptime(date, "%Y-%m-%d").date()
         task_list_for_day = get_task_list_where_updated_datetime(task_list, lower_date=dt_date, upper_date=dt_date)
-        today_monitor_worktime_info = self.get_monitored_worktime(task_phase_statistics, lower_date=dt_date, upper_date=dt_date)
+        today_monitor_worktime_info = self.get_monitored_worktime(
+            task_phase_statistics, lower_date=dt_date, upper_date=dt_date
+        )
         today_info = ProgressData(
             task_count=get_task_count_info_from_task_list(task_list_for_day).to_dict(),  # type: ignore
             actual_worktime=actual_worktime_dict.get(date, 0),
-            monitored_worktime=today_monitor_worktime_info.sum
         )
+        if today_monitor_worktime_info is not None:
+            today_info.monitored_worktime = today_monitor_worktime_info.sum
+            today_info.annotation_monitored_worktime = today_monitor_worktime_info.annotation
+            today_info.inspection_monitored_worktime = today_monitor_worktime_info.inspection
+            today_info.acceptance_monitored_worktime = today_monitor_worktime_info.acceptance
+
+
 
         week_ago = dt_date - datetime.timedelta(days=6)
         task_list_for_week = get_task_list_where_updated_datetime(task_list, lower_date=week_ago, upper_date=dt_date)
-        week_monitor_worktime_info = self.get_monitored_worktime(task_phase_statistics, lower_date=week_ago,
-                                                                  upper_date=dt_date)
+        week_monitor_worktime_info = self.get_monitored_worktime(
+            task_phase_statistics, lower_date=week_ago, upper_date=dt_date
+        )
         seven_days_info = ProgressData(
-            task_count=get_task_count_info_from_task_list(  # type: ignore
+            task_count=dataclass.asdict(get_task_count_info_from_task_list(
                 task_list_for_week
-            ).to_dict(),
+            )),
             actual_worktime=self._get_actual_worktime_for_7days(
                 actual_worktime_dict, lower_date=week_ago, upper_date=dt_date
             ),
-            monitored_worktime=week_monitor_worktime_info.sum
         )
+        if week_monitor_worktime_info is not None:
+            seven_days_info.monitored_worktime = week_monitor_worktime_info.sum
+            seven_days_info.annotation_monitored_worktime = week_monitor_worktime_info.annotation
+            seven_days_info.inspection_monitored_worktime = week_monitor_worktime_info.inspection
+            seven_days_info.acceptance_monitored_worktime = week_monitor_worktime_info.acceptance
 
         return DashboardValues(cumulation=cumulation_info, today=today_info, seven_days=seven_days_info)
 
@@ -321,9 +342,10 @@ class PrintDashBoardMain:
             project_id=project_id,
             project_title=project_title,
             date=date,
-            values=self.create_dashboard_values(project_id=project_id, date=date, task_list=task_list)
+            values=self.create_dashboard_values(project_id=project_id, date=date, task_list=task_list),
         )
         return dashboard_info
+
 
 class DashBoard(AbstractCommandLineInterface):
     def print_summarize_task_count(self, target_dict: dict) -> None:
