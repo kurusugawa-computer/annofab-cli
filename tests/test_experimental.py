@@ -1,7 +1,9 @@
 import configparser
+import datetime
+import json
 import os
 from pathlib import Path
-import json
+
 import annofabapi
 import pandas
 
@@ -57,7 +59,9 @@ class TestDashboard:
             "2020-04-02": 10.5,
             "2020-04-04": 5.5,
         }
-        actual = self.main_obj.get_actual_worktime_for_period(actual_worktime_dict, lower_date="2020-04-02", upper_date="2020-04-04")
+        actual = self.main_obj.get_actual_worktime_for_period(
+            actual_worktime_dict, lower_date=datetime.date(2020,4,2), upper_date=datetime.date(2020,4,4)
+        )
         assert actual == 16.0
 
     def test_get_task_phase_statistics(self):
