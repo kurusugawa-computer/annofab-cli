@@ -207,7 +207,7 @@ class PrintDashBoardMain:
                 phase = phase_stat["phase"]
                 worktime_hour = isoduration_to_hour(phase_stat["worktime"])
                 elm[f"{phase}_worktime"] = worktime_hour
-            row_list.append(TaskPhaseStatistics.from_dict(elm)) # type: ignore
+            row_list.append(TaskPhaseStatistics.from_dict(elm))  # type: ignore
         return row_list
 
     @staticmethod
@@ -248,10 +248,10 @@ class PrintDashBoardMain:
     def _get_actual_worktime_for_7days(
         self, actual_worktime_dict: Dict[str, float], lower_date: datetime.date, upper_date: datetime.date
     ):
-        sum_actual_worktime = 0
+        sum_actual_worktime = 0.0
         for datetime in pandas.date_range(start=lower_date, end=upper_date):
             date = datetime.date()
-            sum_actual_worktime += actual_worktime_dict.get(date, 0)
+            sum_actual_worktime += actual_worktime_dict.get(date, 0.0)
         return sum_actual_worktime
 
     def get_monitored_worktime(
@@ -292,7 +292,7 @@ class PrintDashBoardMain:
 
         cumulation_task_count = get_task_count_info_from_task_list(task_list)
         cumulation_info = ProgressData(
-            task_count=cumulation_task_count.to_dict(),
+            task_count=cumulation_task_count,
             monitored_worktime=sum([t["worktime_hour"] for t in task_list]),
             actual_worktime=sum(actual_worktime_dict.values()),
         )
@@ -303,7 +303,7 @@ class PrintDashBoardMain:
             task_phase_statistics, lower_date=dt_date, upper_date=dt_date
         )
         today_info = ProgressData(
-            task_count=get_task_count_info_from_task_list(task_list_for_day).to_dict(),  # type: ignore
+            task_count=get_task_count_info_from_task_list(task_list_for_day),
             actual_worktime=actual_worktime_dict.get(date, 0),
         )
         if today_monitor_worktime_info is not None:
@@ -312,17 +312,13 @@ class PrintDashBoardMain:
             today_info.inspection_monitored_worktime = today_monitor_worktime_info.inspection
             today_info.acceptance_monitored_worktime = today_monitor_worktime_info.acceptance
 
-
-
         week_ago = dt_date - datetime.timedelta(days=6)
         task_list_for_week = get_task_list_where_updated_datetime(task_list, lower_date=week_ago, upper_date=dt_date)
         week_monitor_worktime_info = self.get_monitored_worktime(
             task_phase_statistics, lower_date=week_ago, upper_date=dt_date
         )
         seven_days_info = ProgressData(
-            task_count=dataclass.asdict(get_task_count_info_from_task_list(
-                task_list_for_week
-            )),
+            task_count=get_task_count_info_from_task_list(task_list_for_week),
             actual_worktime=self._get_actual_worktime_for_7days(
                 actual_worktime_dict, lower_date=week_ago, upper_date=dt_date
             ),
