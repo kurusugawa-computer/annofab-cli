@@ -1,7 +1,7 @@
 import configparser
 import os
 from pathlib import Path
-
+import json
 import annofabapi
 import pandas
 
@@ -51,12 +51,19 @@ class TestDashboard:
         actual = get_task_count_info_from_task_list(self.task_list)
         assert actual == TaskCount(complete=1, annotation_not_started=1)
 
-    # def test_create_task_count_info(self):
-    #     with open(test_dir / "task.json") as f:
-    #         task_list = json.load(f)
-    #     actual = self.main_obj.create_dashboard_values(project_id=project_id, date="2020-04-01", task_list=task_list)
-    #     print(actual)
+    def test_get_actual_worktime_for_period(self):
+        actual_worktime_dict = {
+            "2020-04-01": 1.0,
+            "2020-04-02": 10.5,
+            "2020-04-04": 5.5,
+        }
+        actual = self.main_obj.get_actual_worktime_for_period(actual_worktime_dict, lower_date="2020-04-02", upper_date="2020-04-04")
+        assert actual == 16.0
 
     def test_get_task_phase_statistics(self):
         actual = self.main_obj.get_task_phase_statistics(project_id)
-        print(actual)
+
+    def test_create_dashboard_values(self):
+        with open(test_dir / "task.json") as f:
+            task_list = json.load(f)
+        actual = self.main_obj.create_dashboard_data(project_id, date="2020-07-01", task_list=task_list)

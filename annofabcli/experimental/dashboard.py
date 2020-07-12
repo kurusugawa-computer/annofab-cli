@@ -179,7 +179,6 @@ def get_task_list_where_updated_datetime(
 
     lower_datetime = _to_datetime_from_date(lower_date)
     upper_datetime = _to_datetime_from_date(upper_date + datetime.timedelta(days=1))
-    print(lower_datetime, upper_datetime)
     return [t for t in task_list if pred(t)]
 
 
@@ -235,7 +234,6 @@ class PrintDashBoardMain:
 
         """
         # 予定稼働時間を取得するには、特殊な組織IDを渡す
-        logger.debug(f"実績作業時間を取得中")
         labor_list, _ = self.service.api.get_labor_control({"project_id": project_id, "to": date})
         actual_worktime_dict: Dict[str, float] = defaultdict(float)
         for labor in labor_list:
@@ -245,17 +243,19 @@ class PrintDashBoardMain:
 
         return actual_worktime_dict
 
-    def _get_actual_worktime_for_7days(
-        self, actual_worktime_dict: Dict[str, float], lower_date: datetime.date, upper_date: datetime.date
+    @staticmethod
+    def get_actual_worktime_for_period(
+        actual_worktime_dict: Dict[str, float], lower_date: datetime.date, upper_date: datetime.date
     ):
         sum_actual_worktime = 0.0
         for dt in pandas.date_range(start=lower_date, end=upper_date):
-            date = dt.date()
-            sum_actual_worktime += actual_worktime_dict.get(date, 0.0)
+            str_date = str(dt.date())
+            sum_actual_worktime += actual_worktime_dict.get(str_date, 0.0)
         return sum_actual_worktime
 
+    @staticmethod
     def get_monitored_worktime(
-        self, task_phase_statistics: List[TaskPhaseStatistics], lower_date: datetime.date, upper_date: datetime.date
+        task_phase_statistics: List[TaskPhaseStatistics], lower_date: datetime.date, upper_date: datetime.date
     ) -> Optional[MonitoredWorktime]:
         upper_stat = first_true(task_phase_statistics, pred=lambda e: e.date == str(upper_date))
         lower_stat = first_true(
@@ -319,7 +319,7 @@ class PrintDashBoardMain:
         )
         seven_days_info = ProgressData(
             task_count=get_task_count_info_from_task_list(task_list_for_week),
-            actual_worktime=self._get_actual_worktime_for_7days(
+            actual_worktime=self.get_actual_worktime_for_period(
                 actual_worktime_dict, lower_date=week_ago, upper_date=dt_date
             ),
         )
