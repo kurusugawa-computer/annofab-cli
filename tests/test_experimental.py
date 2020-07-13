@@ -60,7 +60,7 @@ class TestDashboard:
             "2020-04-04": 5.5,
         }
         actual = self.main_obj.get_actual_worktime_for_period(
-            actual_worktime_dict, lower_date=datetime.date(2020,4,2), upper_date=datetime.date(2020,4,4)
+            actual_worktime_dict, lower_date=datetime.date(2020, 4, 2), upper_date=datetime.date(2020, 4, 4)
         )
         assert actual == 16.0
 
