@@ -17,7 +17,6 @@ from annofabcli.common.cli import (
 logger = logging.getLogger(__name__)
 
 
-
 class DeleteJobMain:
     def __init__(self, service: annofabapi.Resource):
         self.service = service
@@ -39,10 +38,10 @@ class DeleteJob(AbstractCommandLineInterface):
         super().validate_project(project_id, project_member_roles=[ProjectMemberRole.OWNER])
 
         job_type = JobType(args.job_type)
-        job_id_list = get_list_from_args(args.job_id_list)
+        job_id_list = get_list_from_args(args.job_id)
 
         main_obj = DeleteJobMain(self.service)
-        main_obj.delete_job_list(args.project_id, job_tpye=job_type, job_id_list=job_id_list)
+        main_obj.delete_job_list(args.project_id, job_type=job_type, job_id_list=job_id_list)
 
 
 def main(args):
