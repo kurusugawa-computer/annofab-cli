@@ -4,6 +4,7 @@ import annofabcli
 import annofabcli.common.cli
 import annofabcli.job.list_job
 import annofabcli.job.list_last_job
+import annofabcli.job.delete_job
 
 
 def parse_args(parser: argparse.ArgumentParser):
@@ -11,6 +12,8 @@ def parse_args(parser: argparse.ArgumentParser):
     subparsers = parser.add_subparsers(dest="subcommand_name")
 
     # サブコマンドの定義
+
+    annofabcli.job.delete_job.add_parser(subparsers)
     annofabcli.job.list_job.add_parser(subparsers)
     annofabcli.job.list_last_job.add_parser(subparsers)
 

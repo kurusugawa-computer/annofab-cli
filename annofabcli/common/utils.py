@@ -331,7 +331,7 @@ def read_multiheader_csv(csv_file: str, header_row_count: int = 2) -> pandas.Dat
 
     """
     df = pandas.read_csv(csv_file, header=list(range(header_row_count)))
-    for level in range(1, header_row_count):
+    for level in range(0, header_row_count):
         columns = df.columns.levels[level]
         rename_columns = {c: "" for c in columns if re.fullmatch(r"Unnamed: .*", c) is not None}
         df.rename(

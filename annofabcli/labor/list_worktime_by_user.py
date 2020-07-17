@@ -459,14 +459,13 @@ class ListWorktimeByUser(AbstractCommandLineInterface):
 
     @staticmethod
     @catch_exception
-    def write_worktime_per_user(worktime_df_per_user: pandas.DataFrame, output_dir: Path):
-        add_availabaility = "availability_hour" in worktime_df_per_user.columns
+    def write_worktime_per_user(worktime_df_per_user: pandas.DataFrame, output_dir: Path, add_availability: bool):
         target_renamed_columns = {
             "worktime_plan_hour": "作業予定時間",
             "worktime_result_hour": "作業実績時間",
             "result_working_days": "実績稼働日数",
         }
-        if add_availabaility:
+        if add_availability:
             target_renamed_columns.update({"availability_hour": "予定稼働時間"})
             target_renamed_columns.update({"availability_days": "予定稼働日数"})
 
@@ -481,7 +480,7 @@ class ListWorktimeByUser(AbstractCommandLineInterface):
             "予定稼働日数",
             "実績稼働日数",
         ]
-        if not add_availabaility:
+        if not add_availability:
             columns.remove("予定稼働時間")
             columns.remove("予定稼働日数")
 
@@ -666,8 +665,10 @@ class ListWorktimeByUser(AbstractCommandLineInterface):
                 .reset_index()
             )
 
-        df = user_df.reset_index().merge(value_df, how="left", on=["user_id"]).reset_index()
-        return df
+        if len(value_df) > 0:
+            return user_df.reset_index().merge(value_df, how="left", on=["user_id"]).reset_index()
+        else:
+            return pandas.DataFrame()
 
     @staticmethod
     def set_day_count_to_dataframe(
@@ -696,7 +697,6 @@ class ListWorktimeByUser(AbstractCommandLineInterface):
     ) -> pandas.DataFrame:
         if len(worktime_df_per_date_user) > 0:
             value_df = worktime_df_per_date_user.pivot_table(index=["user_id"], aggfunc=numpy.sum).fillna(0)
-
             ListWorktimeByUser.set_day_count_to_dataframe(
                 worktime_df_per_date_user,
                 value_df,
@@ -734,6 +734,7 @@ class ListWorktimeByUser(AbstractCommandLineInterface):
             value_df = pandas.DataFrame(columns=columns)
 
         user_df.set_index("user_id", inplace=True)
+
         df = user_df.join(value_df, how="left").reset_index()
         value_columns = ListWorktimeByUser.get_value_columns(df.columns)
         df[value_columns] = df[value_columns].fillna(0)
@@ -791,7 +792,7 @@ class ListWorktimeByUser(AbstractCommandLineInterface):
         worktime_df_per_user = self.create_worktime_df_per_user(
             worktime_df_per_date_user=worktime_df_per_date_user, user_df=user_df, add_availability=add_availability
         )
-        self.write_worktime_per_user(worktime_df_per_user, output_dir)
+        self.write_worktime_per_user(worktime_df_per_user, output_dir, add_availability=add_availability)
 
     def print_labor_worktime_list(
         self,
