@@ -27,7 +27,7 @@ class DeleteJobMain:
             logger.debug(f"job_id={job_id} のジョブを削除します。")
             try:
                 self.service.api.delete_project_job(project_id, job_type.value, job_id)
-            except Exception as e:
+            except Exception as e:  # pylint: disable=broad-except
                 logger.warning(e)
 
 
