@@ -100,6 +100,7 @@ $ docker run -it -e ANNOFAB_USER_ID=XXXX -e ANNOFAB_PASSWORD=YYYYY annofab-cli a
 |inspection_comment| list_unprocessed | 未処置の検査コメントを出力します。                               |-|
 |instruction| copy             | 作業ガイドをコピーします。                                                         |チェッカー/オーナ|
 |instruction| upload             | HTMLファイルを作業ガイドとして登録します。                                                           |チェッカー/オーナ|
+|job|delete             | ジョブを削除します。                                                            |オーナ|
 |job|list             | ジョブ一覧を出力します。                                                            |-|
 |job|list_last             | 複数のプロジェクトに対して、最新のジョブを出力します。                                                            |-|
 |labor|list_worktime_by_user | ユーザごとに作業予定時間、作業実績時間を出力します。                                                          ||
@@ -848,6 +849,15 @@ $ annofabcli instruction upload --project_id prj1 --html instruction.html
         ```
     3. Chrome開発ツールのElementタブで、html要素をコピー(Copy outerHTML)して、HTMLファイルを上書きする
 
+
+### job delete
+ジョブを削除します。
+削除対象のjob_idは`annofabcli job list`コマンドで確認できます。
+
+```
+# アノテーション更新のジョブを削除します。
+$ annofabcli job delete --project_id prj1 --job_type gen-annotation --job_id 12345678-abcd-1234-abcd-1234abcd5678
+```
 
 
 ### job list
