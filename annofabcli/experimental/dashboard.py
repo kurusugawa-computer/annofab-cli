@@ -126,7 +126,7 @@ class DashboardData:
     project_title: str
     date: str
     """対象日（YYYY-MM-DD）"""
-    measurement_date: str
+    measurement_datetime: str
     """計測日時。（2004-04-01T12:00+09:00形式）"""
     values: DashboardValues
 
@@ -340,7 +340,7 @@ class PrintDashBoardMain:
             project_id=project_id,
             project_title=project_title,
             date=date,
-            measurement_date=str_now(),
+            measurement_datetime=str_now(),
             values=self.create_dashboard_values(project_id=project_id, date=date, task_list=task_list),
         )
         return dashboard_info
