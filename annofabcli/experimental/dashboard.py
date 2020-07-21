@@ -10,6 +10,7 @@ import annofabapi
 import dateutil
 import pandas
 from annofabapi.models import ProjectMemberRole, Task
+from annofabapi.utils import str_now
 from dataclasses_json import dataclass_json
 from dateutil.parser import parse
 from more_itertools import first_true
@@ -125,7 +126,8 @@ class DashboardData:
     project_title: str
     date: str
     """対象日（YYYY-MM-DD）"""
-
+    measurement_date: str
+    """計測日時。（2004-04-01T12:00+09:00形式）"""
     values: DashboardValues
 
 
@@ -338,6 +340,7 @@ class PrintDashBoardMain:
             project_id=project_id,
             project_title=project_title,
             date=date,
+            measurement_date=str_now(),
             values=self.create_dashboard_values(project_id=project_id, date=date, task_list=task_list),
         )
         return dashboard_info
