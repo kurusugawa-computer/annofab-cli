@@ -330,7 +330,7 @@ def read_multiheader_csv(csv_file: str, header_row_count: int = 2, **kwargs) -> 
         pandas.DataFrame
 
     """
-    kwargs["header"]=list(range(header_row_count))
+    kwargs["header"] = list(range(header_row_count))
     df = pandas.read_csv(csv_file, **kwargs)
     for level in range(0, header_row_count):
         columns = df.columns.levels[level]
