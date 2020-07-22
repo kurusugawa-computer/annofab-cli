@@ -7,7 +7,7 @@ from pathlib import Path
 import annofabapi
 import pandas
 
-from annofabcli.experimental.dashboard import PrintDashBoardMain, TaskCount, get_task_count_info_from_task_list
+from annofabcli.experimental.dashboard import PrintDashBoardMain, RemainingTaskCount, get_task_count_info_from_task_list
 from annofabcli.experimental.utils import create_column_list, create_column_list_per_project
 
 # プロジェクトトップに移動する
@@ -51,7 +51,7 @@ class TestDashboard:
 
     def test_get_task_count_info(self):
         actual = get_task_count_info_from_task_list(self.task_list)
-        assert actual == TaskCount(complete=1, annotation_not_started=1)
+        assert actual == RemainingTaskCount(complete=1, annotation_not_started=1)
 
     def test_get_actual_worktime_for_period(self):
         actual_worktime_dict = {

@@ -1,10 +1,11 @@
+import itertools
 import argparse
 import datetime
 import json
 import logging
 from collections import defaultdict
 from dataclasses import dataclass
-from typing import Any, Dict, List, Optional
+from typing import Any, Dict, List, Optional, Tuple
 
 import annofabapi
 import dateutil
@@ -62,14 +63,14 @@ class MonitoredWorktime:
 
 @dataclass_json
 @dataclass
-class TaskCount:
+class RemainingTaskCount:
     """
     フェーズごとのタスク数
     """
 
-    complete: int = 0
-    """完了状態のタスク数"""
-
+    # complete: int = 0
+    # """完了状態のタスク数"""
+    #
     annotation_not_started: int = 0
     """一度も教師付作業されていないタスク数"""
 
@@ -89,11 +90,23 @@ class TaskCount:
 @dataclass_json
 @dataclass
 class ProgressData:
-    task_count: TaskCount
-    """タスク数情報"""
+    # task_count: TaskCount
+    # """タスク数情報"""
 
     actual_worktime: float
     """実績作業時間[hour]"""
+
+    task_count: int
+    """完了したタスク数"""
+
+    input_data_count: int
+    """完了したタスク配下の入力データ数"""
+
+    velocity_per_task: float
+    """acutal_worktime/task_count"""
+
+    velocity_per_input_data: float
+    """acutal_worktime/input_data_count"""
 
     monitored_worktime: Optional[float] = None
     """AnnoFabの計測作業時間[hour]"""
@@ -110,13 +123,22 @@ class ProgressData:
 
 @dataclass_json
 @dataclass
-class DashboardValues:
+class ResultValues:
+
     cumulation: ProgressData
     """累計情報"""
     today: ProgressData
     """対象日当日の情報"""
     seven_days: ProgressData
     """対象日から直前7日間の情報"""
+
+
+@dataclass_json
+@dataclass
+class Planvalues:
+    plan_worktime: float
+    task_count: int
+
 
 
 @dataclass_json
@@ -128,14 +150,17 @@ class DashboardData:
     """対象日（YYYY-MM-DD）"""
     measurement_datetime: str
     """計測日時。（2004-04-01T12:00+09:00形式）"""
-    values: DashboardValues
 
+    remaining_task_count: RemainingTaskCount
+    result: ResultValues
+    plan: Dict[int, Planvalues]
+    task_exhaustation_date: str
 
 def add_info_to_task(task: Task):
     task["status_for_summary"] = TaskStatusForSummary.from_task(task).value
 
 
-def get_task_count_info_from_task_list(task_list: List[Task]) -> TaskCount:
+def get_remaining_task_count_info_from_task_list(task_list: List[Task]) -> RemainingTaskCount:
     """
     状態ごとのタスク数を取得する。
 
@@ -147,8 +172,23 @@ def get_task_count_info_from_task_list(task_list: List[Task]) -> TaskCount:
     """
     status_list: List[str] = [e["status_for_summary"] for e in task_list]
     tmp = pandas.Series.value_counts(status_list)
-    task_count = TaskCount.from_dict(tmp.to_dict())  # type: ignore
+    task_count = RemainingTaskCount.from_dict(tmp.to_dict())  # type: ignore
     return task_count
+
+def get_completed_task_count_and_input_data_count(task_list: List[Task]) -> Tuple[int,int]:
+    """
+    完了したタスク数と入力データ数を求める
+
+    Args:
+        task_list:
+
+    Returns:
+        Tuple[task_count, input_data_count]
+    """
+    task_list = [e for e in task_list if e["status_for_summary"]==TaskStatusForSummary.COMPLETE.value]
+    input_data_count = len(list(itertools.chain.from_iterable([e["input_data_id"] for e in task_list])))
+    task_count = len(task_list)
+    return task_count, input_data_count
 
 
 def _to_datetime_from_date(date: datetime.date) -> datetime.datetime:
@@ -189,6 +229,24 @@ class PrintDashBoardMain:
         self.service = service
         self.facade = AnnofabApiFacade(service)
 
+    def _get_plan_value(self, plan_worktime_dict:Dict[str,float], dt_today:datetime.date, days:int, velocity_per_task:float) -> Planvalues:
+        dt_from_date = dt_today + datetime.timedelta(days=1)
+        dt_end_date = dt_today + datetime.timedelta(days=days)
+
+        plan_worktime = self.get_worktime_for_period(plan_worktime_dict, lower_date=dt_from_date, upper_date=dt_end_date)
+        return Planvalues(
+            plan_worktime=plan_worktime,
+            task_count=int(plan_worktime / velocity_per_task)
+        )
+
+    def create_plan_values(self, project_id:str, velocity_per_task: float, today:str) -> Dict[float, Planvalues]:
+        plan_worktime_dict = self.get_plan_worktime_dict(project_id, today=today)
+        dt_today = datetime.datetime.strptime(today, "%Y-%m-%d").date()
+        return {
+            7: self._get_plan_value(plan_worktime_dict, dt_today=dt_today, days=7, velocity_per_task=velocity_per_task)
+            14: self._get_plan_value(plan_worktime_dict, dt_today=dt_today, days=7, velocity_per_task=velocity_per_task)
+        }
+
     def get_task_phase_statistics(self, project_id: str) -> List[TaskPhaseStatistics]:
         """
         フェーズごとの累積作業時間をCSVに出力するための dict 配列を作成する。
@@ -223,6 +281,19 @@ class PrintDashBoardMain:
         else:
             return actual_worktime / 3600 / 1000
 
+    @staticmethod
+    def _get_plan_worktime_hour_from_labor(labor: Dict[str, Any]) -> float:
+        working_time_by_user = labor["values"]["working_time_by_user"]
+        if working_time_by_user is None:
+            return 0
+
+        actual_worktime = working_time_by_user.get("plans")
+        if actual_worktime is None:
+            return 0
+        else:
+            return actual_worktime / 3600 / 1000
+
+
     def get_actual_worktime_dict(self, project_id: str, date: str) -> Dict[str, float]:
         """
         日毎のプロジェクト全体の実績作業時間を取得する。
@@ -245,15 +316,41 @@ class PrintDashBoardMain:
 
         return actual_worktime_dict
 
+    def get_plan_worktime_dict(self, project_id: str, today: str, days:int=14) -> Dict[str, float]:
+        """
+        日毎のプロジェクト全体の予定作業時間を、１４日後まで取得する。
+
+        Args:
+            project_id:
+            date: 対象期間の終了日
+
+        Returns:
+            key:date, value: 予定作業時間のdict
+
+        """
+        dt_today = datetime.datetime.strptime(today, "%Y-%m-%d").date()
+        dt_from_date = dt_today + datetime.timedelta(days=1)
+        dt_end_date = dt_today + datetime.timedelta(days=days)
+
+        # 予定稼働時間を取得するには、特殊な組織IDを渡す
+        labor_list, _ = self.service.api.get_labor_control({"project_id": project_id,"from": str(dt_from_date), "to": str(dt_end_date)})
+        plan_worktime_dict: Dict[str, float] = defaultdict(float)
+        for labor in labor_list:
+            date = labor["date"]
+            plan_worktime = self._get_plan_worktime_hour_from_labor(labor)
+            plan_worktime_dict[date] += plan_worktime
+
+        return plan_worktime_dict
+
     @staticmethod
-    def get_actual_worktime_for_period(
-        actual_worktime_dict: Dict[str, float], lower_date: datetime.date, upper_date: datetime.date
+    def get_worktime_for_period(
+        worktime_dict: Dict[str, float], lower_date: datetime.date, upper_date: datetime.date
     ):
-        sum_actual_worktime = 0.0
+        sum_worktime = 0.0
         for dt in pandas.date_range(start=lower_date, end=upper_date):
             str_date = str(dt.date())
-            sum_actual_worktime += actual_worktime_dict.get(str_date, 0.0)
-        return sum_actual_worktime
+            sum_worktime += worktime_dict.get(str_date, 0.0)
+        return sum_worktime
 
     @staticmethod
     def get_monitored_worktime(
@@ -274,9 +371,71 @@ class PrintDashBoardMain:
             acceptance=upper_stat.acceptance_worktime - lower_stat.acceptance_worktime,
         )
 
-    def create_dashboard_values(self, project_id: str, date: str, task_list: List[Task]) -> DashboardValues:
+
+    def _get_cumulation_info(self,task_list:List[Task], actual_worktime_dict: Dict[str, float]) -> ProgressData:
+        task_count,input_data_count = get_completed_task_count_and_input_data_count(task_list)
+        actual_worktime = sum(actual_worktime_dict.values())
+
+        return ProgressData(
+            task_count=task_count,
+            input_data_count=input_data_count,
+            monitored_worktime=sum([t["worktime_hour"] for t in task_list]),
+            actual_worktime=actual_worktime,
+            velocity_per_task=actual_worktime/task_count,
+            velocity_per_input_data=actual_worktime/input_data_count
+        )
+
+    def _get_today_info(self, today: str,task_list:List[Task], actual_worktime_dict: Dict[str, float], task_phase_statistics: List[TaskPhaseStatistics]) -> ProgressData:
+        dt_today = datetime.datetime.strptime(today, "%Y-%m-%d").date()
+        task_list_for_day = get_task_list_where_updated_datetime(task_list, lower_date=dt_today, upper_date=dt_today)
+        today_monitor_worktime_info = self.get_monitored_worktime(
+            task_phase_statistics, lower_date=dt_today, upper_date=dt_today
+        )
+        task_count, input_data_count = get_completed_task_count_and_input_data_count(task_list_for_day)
+        actual_worktime = actual_worktime_dict.get(today, 0)
+        today_info = ProgressData(
+            task_count=task_count,
+            input_data_count=input_data_count,
+            actual_worktime=actual_worktime,
+            velocity_per_task=actual_worktime / task_count,
+            velocity_per_input_data=actual_worktime / input_data_count
+        )
+        if today_monitor_worktime_info is not None:
+            today_info.monitored_worktime = today_monitor_worktime_info.sum
+            today_info.annotation_monitored_worktime = today_monitor_worktime_info.annotation
+            today_info.inspection_monitored_worktime = today_monitor_worktime_info.inspection
+            today_info.acceptance_monitored_worktime = today_monitor_worktime_info.acceptance
+        return today_info
+
+    def _get_seven_days_info(self, today: str, task_list:List[Task], actual_worktime_dict: Dict[str, float], task_phase_statistics: List[TaskPhaseStatistics]) -> ProgressData:
+        dt_today = datetime.datetime.strptime(today, "%Y-%m-%d").date()
+        week_ago = dt_today - datetime.timedelta(days=6)
+        task_list_for_week = get_task_list_where_updated_datetime(task_list, lower_date=week_ago, upper_date=dt_today)
+        week_monitor_worktime_info = self.get_monitored_worktime(
+            task_phase_statistics, lower_date=week_ago, upper_date=dt_today
+        )
+        task_count, input_data_count = get_completed_task_count_and_input_data_count(task_list_for_week)
+        actual_worktime = self.get_worktime_for_period(
+            actual_worktime_dict, lower_date=week_ago, upper_date=dt_today
+        )
+
+        seven_days_info = ProgressData(
+            task_count=task_count,
+            input_data_count=input_data_count,
+            actual_worktime=actual_worktime,
+            velocity_per_task=actual_worktime / task_count,
+            velocity_per_input_data=actual_worktime / input_data_count
+        )
+        if week_monitor_worktime_info is not None:
+            seven_days_info.monitored_worktime = week_monitor_worktime_info.sum
+            seven_days_info.annotation_monitored_worktime = week_monitor_worktime_info.annotation
+            seven_days_info.inspection_monitored_worktime = week_monitor_worktime_info.inspection
+            seven_days_info.acceptance_monitored_worktime = week_monitor_worktime_info.acceptance
+        return seven_days_info
+
+    def create_result_values(self, project_id: str, date: str, task_list: List[Task]) -> ResultValues:
         """
-        タスク数情報を生成する。
+        実績情報を生成する。
 
         Args:
             task_list:
@@ -292,56 +451,20 @@ class PrintDashBoardMain:
         actual_worktime_dict = self.get_actual_worktime_dict(project_id, date)
         task_phase_statistics = self.get_task_phase_statistics(project_id)
 
-        cumulation_task_count = get_task_count_info_from_task_list(task_list)
-        cumulation_info = ProgressData(
-            task_count=cumulation_task_count,
-            monitored_worktime=sum([t["worktime_hour"] for t in task_list]),
-            actual_worktime=sum(actual_worktime_dict.values()),
-        )
-
-        dt_date = datetime.datetime.strptime(date, "%Y-%m-%d").date()
-        task_list_for_day = get_task_list_where_updated_datetime(task_list, lower_date=dt_date, upper_date=dt_date)
-        today_monitor_worktime_info = self.get_monitored_worktime(
-            task_phase_statistics, lower_date=dt_date, upper_date=dt_date
-        )
-        today_info = ProgressData(
-            task_count=get_task_count_info_from_task_list(task_list_for_day),
-            actual_worktime=actual_worktime_dict.get(date, 0),
-        )
-        if today_monitor_worktime_info is not None:
-            today_info.monitored_worktime = today_monitor_worktime_info.sum
-            today_info.annotation_monitored_worktime = today_monitor_worktime_info.annotation
-            today_info.inspection_monitored_worktime = today_monitor_worktime_info.inspection
-            today_info.acceptance_monitored_worktime = today_monitor_worktime_info.acceptance
-
-        week_ago = dt_date - datetime.timedelta(days=6)
-        task_list_for_week = get_task_list_where_updated_datetime(task_list, lower_date=week_ago, upper_date=dt_date)
-        week_monitor_worktime_info = self.get_monitored_worktime(
-            task_phase_statistics, lower_date=week_ago, upper_date=dt_date
-        )
-        seven_days_info = ProgressData(
-            task_count=get_task_count_info_from_task_list(task_list_for_week),
-            actual_worktime=self.get_actual_worktime_for_period(
-                actual_worktime_dict, lower_date=week_ago, upper_date=dt_date
-            ),
-        )
-        if week_monitor_worktime_info is not None:
-            seven_days_info.monitored_worktime = week_monitor_worktime_info.sum
-            seven_days_info.annotation_monitored_worktime = week_monitor_worktime_info.annotation
-            seven_days_info.inspection_monitored_worktime = week_monitor_worktime_info.inspection
-            seven_days_info.acceptance_monitored_worktime = week_monitor_worktime_info.acceptance
-
-        return DashboardValues(cumulation=cumulation_info, today=today_info, seven_days=seven_days_info)
+        cumulation_info = self._get_cumulation_info(task_list, actual_worktime_dict)
+        today_info = self._get_today_info(today=date, task_list=task_list, actual_worktime_dict=actual_worktime_dict, task_phase_statistics=task_phase_statistics)
+        seven_days_info = self._get_seven_days_info(today=date, task_list=task_list, actual_worktime_dict=actual_worktime_dict, task_phase_statistics=task_phase_statistics)
+        return ResultValues(cumulation=cumulation_info, today=today_info, seven_days=seven_days_info)
 
     def create_dashboard_data(self, project_id: str, date: str, task_list: List[Task]) -> DashboardData:
         project_title = self.facade.get_project_title(project_id)
-
+        result = self.create_result_values(project_id=project_id, date=date, task_list=task_list)
         dashboard_info = DashboardData(
             project_id=project_id,
             project_title=project_title,
             date=date,
             measurement_datetime=str_now(),
-            values=self.create_dashboard_values(project_id=project_id, date=date, task_list=task_list),
+            result=result,
         )
         return dashboard_info
 
