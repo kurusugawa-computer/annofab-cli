@@ -374,19 +374,20 @@ def get_task_exhaustation_date(
     return None
 
 
+def create_plan_values(
+    plan_worktime_dict: Dict[str, float], velocity_per_task: Optional[float], today: str
+) -> Dict[int, Planvalues]:
+    dt_today = datetime.datetime.strptime(today, "%Y-%m-%d").date()
+    return {
+        7: _get_plan_value(plan_worktime_dict, dt_today=dt_today, days=7, velocity_per_task=velocity_per_task),
+        14: _get_plan_value(plan_worktime_dict, dt_today=dt_today, days=14, velocity_per_task=velocity_per_task),
+    }
+
+
 class PrintDashBoardMain:
     def __init__(self, service: annofabapi.Resource):
         self.service = service
         self.facade = AnnofabApiFacade(service)
-
-    def create_plan_values(
-        self, plan_worktime_dict: Dict[str, float], velocity_per_task: Optional[float], today: str
-    ) -> Dict[int, Planvalues]:
-        dt_today = datetime.datetime.strptime(today, "%Y-%m-%d").date()
-        return {
-            7: _get_plan_value(plan_worktime_dict, dt_today=dt_today, days=7, velocity_per_task=velocity_per_task),
-            14: _get_plan_value(plan_worktime_dict, dt_today=dt_today, days=14, velocity_per_task=velocity_per_task),
-        }
 
     def get_task_phase_statistics(self, project_id: str) -> List[TaskPhaseStatistics]:
         """
@@ -518,7 +519,7 @@ class PrintDashBoardMain:
             measurement_datetime=str_now(),
             remaining_task_count=remaining_task_count,
             result=result,
-            plan=self.create_plan_values(plan_worktime_dict, velocity_per_task=velocity_per_task, today=date),
+            plan=create_plan_values(plan_worktime_dict, velocity_per_task=velocity_per_task, today=date),
             task_exhaustation_date=task_exhaustation_date,
         )
         return dashboard_info

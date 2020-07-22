@@ -11,6 +11,7 @@ from annofabcli.experimental.dashboard import (
     PrintDashBoardMain,
     RemainingTaskCount,
     get_remaining_task_count_info_from_task_list,
+    get_worktime_for_period,
 )
 from annofabcli.experimental.utils import create_column_list, create_column_list_per_project
 
@@ -63,7 +64,7 @@ class TestDashboard:
             "2020-04-02": 10.5,
             "2020-04-04": 5.5,
         }
-        actual = self.main_obj.get_worktime_for_period(
+        actual = get_worktime_for_period(
             actual_worktime_dict, lower_date=datetime.date(2020, 4, 2), upper_date=datetime.date(2020, 4, 4)
         )
         assert actual == 16.0
