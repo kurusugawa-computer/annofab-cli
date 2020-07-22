@@ -129,8 +129,8 @@ class ResultValues:
     """累計情報"""
     today: ProgressData
     """対象日当日の情報"""
-    seven_days: ProgressData
-    """対象日から直前7日間の情報"""
+    week: ProgressData
+    """対象日から1週間（直前7日間）の情報"""
 
 
 @dataclass_json
@@ -500,7 +500,7 @@ class PrintDashBoardMain:
 
         remaining_task_count = get_remaining_task_count_info_from_task_list(task_list)
         plan_worktime_dict = self.get_plan_worktime_dict(project_id, today=date)
-        velocity_per_task = result.seven_days.velocity_per_task
+        velocity_per_task = result.week.velocity_per_task
 
         task_exhaustation_date = (
             get_task_exhaustation_date(
