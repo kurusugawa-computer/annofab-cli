@@ -369,7 +369,7 @@ def get_task_exhaustation_date(
         plan_worktime = plan_worktime_dict[date]
         task_count = plan_worktime / velocity_per_task
         remaining_task -= task_count
-        if remaining_task < 0:
+        if remaining_task <= 0:
             return date
     return None
 
