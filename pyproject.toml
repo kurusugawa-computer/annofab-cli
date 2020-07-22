@@ -1,6 +1,6 @@
 [tool.poetry]
 name = "annofabcli"
-version = "1.33.7"
+version = "1.33.8"
 description = "Utility Command Line Interface for AnnoFab"
 authors = ["yuji38kwmt <yuji38kwmt@gmail.com>"]
 maintainers = ["yuji38kwmt <yuji38kwmt@gmail.com>"]
