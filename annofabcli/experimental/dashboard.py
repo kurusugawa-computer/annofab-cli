@@ -364,6 +364,21 @@ def _get_plan_value(
 def get_task_exhaustation_date(
     plan_worktime_dict: Dict[str, float], annotation_not_started: int, velocity_per_task: float
 ) -> Optional[str]:
+    """
+    タスクの枯渇予定日を求める。
+    教師付されていないタスク数がすでに０ならば、Noneを返す。
+
+    Args:
+        plan_worktime_dict:
+        annotation_not_started:
+        velocity_per_task:
+
+    Returns:
+
+    """
+    if annotation_not_started <= 0:
+        return None
+
     remaining_task: float = annotation_not_started
     for date in sorted(plan_worktime_dict.keys()):
         plan_worktime = plan_worktime_dict[date]
