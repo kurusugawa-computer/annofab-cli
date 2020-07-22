@@ -281,7 +281,7 @@ def _get_today_info(
     return today_info
 
 
-def _get_seven_days_info(
+def _get_week_info(
     today: str,
     task_list: List[Task],
     actual_worktime_dict: Dict[str, float],
@@ -486,13 +486,13 @@ class PrintDashBoardMain:
             actual_worktime_dict=actual_worktime_dict,
             task_phase_statistics=task_phase_statistics,
         )
-        seven_days_info = _get_seven_days_info(
+        week_info = _get_week_info(
             today=date,
             task_list=task_list,
             actual_worktime_dict=actual_worktime_dict,
             task_phase_statistics=task_phase_statistics,
         )
-        return ResultValues(cumulation=cumulation_info, today=today_info, seven_days=seven_days_info)
+        return ResultValues(cumulation=cumulation_info, today=today_info, week=week_info)
 
     def create_dashboard_data(self, project_id: str, date: str, task_list: List[Task]) -> DashboardData:
         project_title = self.facade.get_project_title(project_id)
