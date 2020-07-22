@@ -7,7 +7,11 @@ from pathlib import Path
 import annofabapi
 import pandas
 
-from annofabcli.experimental.dashboard import PrintDashBoardMain, RemainingTaskCount, get_task_count_info_from_task_list
+from annofabcli.experimental.dashboard import (
+    PrintDashBoardMain,
+    RemainingTaskCount,
+    get_remaining_task_count_info_from_task_list,
+)
 from annofabcli.experimental.utils import create_column_list, create_column_list_per_project
 
 # プロジェクトトップに移動する
@@ -49,17 +53,17 @@ class TestDashboard:
         {"status_for_summary": "annotation_not_started", "updated_datetime": "2020-04-02T18:36:11.159+09:00"},
     ]
 
-    def test_get_task_count_info(self):
-        actual = get_task_count_info_from_task_list(self.task_list)
+    def test_get_remaining_task_count_info_from_task_list(self):
+        actual = get_remaining_task_count_info_from_task_list(self.task_list)
         assert actual == RemainingTaskCount(complete=1, annotation_not_started=1)
 
-    def test_get_actual_worktime_for_period(self):
+    def test_get_worktime_for_period(self):
         actual_worktime_dict = {
             "2020-04-01": 1.0,
             "2020-04-02": 10.5,
             "2020-04-04": 5.5,
         }
-        actual = self.main_obj.get_actual_worktime_for_period(
+        actual = self.main_obj.get_worktime_for_period(
             actual_worktime_dict, lower_date=datetime.date(2020, 4, 2), upper_date=datetime.date(2020, 4, 4)
         )
         assert actual == 16.0
@@ -71,3 +75,4 @@ class TestDashboard:
         with open(test_dir / "task.json") as f:
             task_list = json.load(f)
         actual = self.main_obj.create_dashboard_data(project_id, date="2020-07-01", task_list=task_list)
+        print(actual)
