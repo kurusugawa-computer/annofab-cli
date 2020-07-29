@@ -67,6 +67,8 @@ class ListTaskHistoryMain:
                 all_task_history_dict = json.load(f)
             if task_id_list is not None:
                 task_history_dict = self.filter_task_history_dict(all_task_history_dict, task_id_list)
+            else:
+                task_history_dict = all_task_history_dict
 
         else:
             if task_id_list is None:

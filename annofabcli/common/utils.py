@@ -318,7 +318,7 @@ def get_cache_dir() -> Path:
     return cache_home_dir_path / "annofabcli"
 
 
-def read_multiheader_csv(csv_file: str, header_row_count: int = 2) -> pandas.DataFrame:
+def read_multiheader_csv(csv_file: str, header_row_count: int = 2, **kwargs) -> pandas.DataFrame:
     """
     複数ヘッダ行のCSVを読み込む。その際、"Unnnamed"の列名は空文字に変更する。
 
@@ -330,7 +330,8 @@ def read_multiheader_csv(csv_file: str, header_row_count: int = 2) -> pandas.Dat
         pandas.DataFrame
 
     """
-    df = pandas.read_csv(csv_file, header=list(range(header_row_count)))
+    kwargs["header"] = list(range(header_row_count))
+    df = pandas.read_csv(csv_file, **kwargs)
     for level in range(0, header_row_count):
         columns = df.columns.levels[level]
         rename_columns = {c: "" for c in columns if re.fullmatch(r"Unnamed: .*", c) is not None}
