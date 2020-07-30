@@ -3,6 +3,7 @@ import logging
 from typing import Any, Dict, List, Optional
 
 import annofabapi
+import pandas
 from annofabapi.models import OrganizationMember, Project
 from more_itertools import first_true
 
@@ -12,6 +13,15 @@ from annofabcli.common.cli import AbstractCommandLineInterface, ArgumentParser, 
 from annofabcli.common.enums import FormatArgument
 
 logger = logging.getLogger(__name__)
+
+
+def create_minimal_dataframe(project_list: List[Project]):
+    """必要最小限の列であるDataFramewoを作成する"""
+    df = pandas.DataFrame(project_list)
+    df["last_tasks_updated_datetime"] = [e["summary"]["last_tasks_updated_datetime"] for e in project_list]
+    return df[
+        ["project_id", "title", "organization_name", "project_status", "input_data_type", "last_tasks_updated_datetime", "created_datetime"]
+    ]
 
 
 class ListProjectMain:
@@ -126,7 +136,12 @@ class ListProject(AbstractCommandLineInterface):
             project_list = main_obj.get_project_list_from_project_id(project_id_list)
 
         logger.info(f"プロジェクト一覧の件数: {len(project_list)}")
-        self.print_according_to_format(project_list)
+
+        if args.format == FormatArgument.MINIMAL_CSV.value:
+            df = create_minimal_dataframe(project_list)
+            self.print_csv(df)
+        else:
+            self.print_according_to_format(project_list)
 
 
 def main(args):
@@ -164,7 +179,13 @@ def parse_args(parser: argparse.ArgumentParser):
     )
 
     argument_parser.add_format(
-        choices=[FormatArgument.CSV, FormatArgument.JSON, FormatArgument.PRETTY_JSON, FormatArgument.PROJECT_ID_LIST],
+        choices=[
+            FormatArgument.CSV,
+            FormatArgument.MINIMAL_CSV,
+            FormatArgument.JSON,
+            FormatArgument.PRETTY_JSON,
+            FormatArgument.PROJECT_ID_LIST,
+        ],
         default=FormatArgument.CSV,
     )
     argument_parser.add_output()
