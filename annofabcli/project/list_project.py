@@ -2,6 +2,7 @@ import argparse
 import logging
 from typing import Any, Dict, List, Optional
 
+import annofabapi
 from annofabapi.models import OrganizationMember, Project
 from more_itertools import first_true
 
@@ -13,10 +14,10 @@ from annofabcli.common.enums import FormatArgument
 logger = logging.getLogger(__name__)
 
 
-class ListProject(AbstractCommandLineInterface):
-    """
-    プロジェクト一覧を表示する。
-    """
+class ListProjectMain:
+    def __init__(self, service: annofabapi.Resource):
+        self.service = service
+        self.facade = AnnofabApiFacade(service)
 
     @staticmethod
     def get_account_id_from_user_id(organization_member_list: List[OrganizationMember], user_id: str) -> Optional[str]:
@@ -25,6 +26,22 @@ class ListProject(AbstractCommandLineInterface):
             return member["account_id"]
         else:
             return None
+
+    def get_project_list_from_project_id(self, project_id_list: List[str]) -> List[Project]:
+        """
+        project_idからプロジェクト一覧を取得する。
+        """
+        project_list = []
+        for project_id in project_id_list:
+            project = self.service.wrapper.get_project_or_none(project_id)
+            if project is None:
+                logger.warning(f"project_id='{project_id}'のプロジェクトにアクセスできませんでした。")
+                continue
+            organization, _ = self.service.api.get_organization_of_project(project_id)
+            project["organization_name"] = organization["organization_name"]
+            project_list.append(project)
+
+        return project_list
 
     def _modify_project_query(self, organization_name: str, project_query: Dict[str, Any]) -> Dict[str, Any]:
         """
@@ -84,32 +101,29 @@ class ListProject(AbstractCommandLineInterface):
         project_list = self.service.wrapper.get_all_projects_of_organization(
             organization_name, query_params=project_query
         )
-        return project_list
 
-    def get_project_list_from_project_id(self, project_id_list: List[str]) -> List[Project]:
-        """
-        project_idからプロジェクト一覧を取得する。
-        """
-        project_list = []
-        for project_id in project_id_list:
-            project = self.service.wrapper.get_project_or_none(project_id)
-            if project is None:
-                logger.warning(f"project_id='{project_id}'のプロジェクトにアクセスできませんでした。")
-                continue
-            project_list.append(project)
+        for project in project_list:
+            project["organization_name"] = organization_name
 
         return project_list
+
+
+class ListProject(AbstractCommandLineInterface):
+    """
+    プロジェクト一覧を表示する。
+    """
 
     def main(self):
         args = self.args
         project_query = annofabcli.common.cli.get_json_from_args(args.project_query)
         organization_name = args.organization
+        main_obj = ListProjectMain(self.service)
         if organization_name is not None:
-            project_list = self.get_project_list_from_organization(organization_name, project_query)
+            project_list = main_obj.get_project_list_from_organization(organization_name, project_query)
         else:
             assert args.project_id is not None
             project_id_list = annofabcli.common.cli.get_list_from_args(args.project_id)
-            project_list = self.get_project_list_from_project_id(project_id_list)
+            project_list = main_obj.get_project_list_from_project_id(project_id_list)
 
         logger.info(f"プロジェクト一覧の件数: {len(project_list)}")
         self.print_according_to_format(project_list)
