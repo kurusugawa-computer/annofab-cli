@@ -357,7 +357,9 @@ def _get_plan_value(
     dt_end_date = dt_today + datetime.timedelta(days=days)
 
     plan_worktime = get_worktime_for_period(plan_worktime_dict, lower_date=dt_from_date, upper_date=dt_end_date)
-    task_count = int(plan_worktime / velocity_per_task) if velocity_per_task is not None else None
+    task_count = (
+        int(plan_worktime / velocity_per_task) if velocity_per_task is not None and velocity_per_task > 0 else None
+    )
     return Planvalues(plan_worktime=plan_worktime, task_count=task_count)
 
 
@@ -512,7 +514,6 @@ class PrintDashBoardMain:
     def create_dashboard_data(self, project_id: str, date: str, task_list: List[Task]) -> DashboardData:
         project_title = self.facade.get_project_title(project_id)
         result = self.create_result_values(project_id=project_id, date=date, task_list=task_list)
-
         remaining_task_count = get_remaining_task_count_info_from_task_list(task_list)
         plan_worktime_dict = self.get_plan_worktime_dict(project_id, today=date)
         velocity_per_task = result.week.velocity_per_task
