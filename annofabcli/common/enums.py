@@ -15,6 +15,9 @@ class FormatArgument(Enum):
     #: CSV形式
     CSV = "csv"
 
+    #: 必要最小限の列に絞ったCSV形式
+    MINIMAL_CSV = "minimal_csv"
+
     #: JSON形式
     JSON = "json"
 
