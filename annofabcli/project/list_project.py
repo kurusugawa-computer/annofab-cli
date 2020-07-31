@@ -20,7 +20,15 @@ def create_minimal_dataframe(project_list: List[Project]):
     df = pandas.DataFrame(project_list)
     df["last_tasks_updated_datetime"] = [e["summary"]["last_tasks_updated_datetime"] for e in project_list]
     return df[
-        ["project_id", "title", "organization_name", "project_status", "input_data_type", "last_tasks_updated_datetime", "created_datetime"]
+        [
+            "project_id",
+            "title",
+            "organization_name",
+            "project_status",
+            "input_data_type",
+            "last_tasks_updated_datetime",
+            "created_datetime",
+        ]
     ]
 
 
