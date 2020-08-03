@@ -110,7 +110,7 @@ class ListWorktimeByUser(AbstractCommandLineInterface):
 
     @allow_404_error
     def _get_account_statistics(self, project_id) -> Optional[List[Any]]:
-        account_statistics, _ = self.service.api.get_account_statistics(project_id)
+        account_statistics = self.service.wrapper.get_account_statistics(project_id)
         return account_statistics
 
     def _get_worktime_monitored_hour_from_project_id(

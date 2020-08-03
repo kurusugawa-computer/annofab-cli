@@ -530,7 +530,7 @@ class Database:
         self._log_annotation_zip_info()
 
         # 統計情報の出力
-        account_statistics = self.annofab_service.api.get_account_statistics(self.project_id)[0]
+        account_statistics = self.annofab_service.wrapper.get_account_statistics(self.project_id)
         self.__write_checkpoint(account_statistics, "account_statistics.pickel")
 
         # 労務管理情報の出力
