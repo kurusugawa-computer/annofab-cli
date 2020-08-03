@@ -34,7 +34,7 @@ jmespath = "*"
 pyquery = "*"
 isodate = "*"
 annofabapi = ">=0.38.0"
-pandas = "^1.0.5"
+pandas = "^1.1"
 bokeh = "^2.1.1"
 holoviews= "^1.13.3"
 
