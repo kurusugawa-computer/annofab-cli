@@ -102,7 +102,7 @@ class ListSubmittedTaskCountMain:
     def create_account_statistics_df(
         self, project_id: str, start_date: Optional[str] = None, end_date: Optional[str] = None
     ) -> pandas.DataFrame:
-        account_statistics, _ = self.service.api.get_account_statistics(project_id)
+        account_statistics = self.service.wrapper.get_account_statistics(project_id)
         data_list: List[Dict[str, Any]] = []
         for stat_by_user in account_statistics:
             account_id = stat_by_user["account_id"]

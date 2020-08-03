@@ -29,7 +29,7 @@ class TaskProgress(AbstractCommandLineInterface):
             フェーズごとの累積作業時間に対応するdict配列
 
         """
-        task_phase_statistics, _ = self.service.api.get_task_phase_statistics(project_id)
+        task_phase_statistics = self.service.wrapper.get_task_phase_statistics(project_id)
         row_list: List[Dict[str, Any]] = []
         for stat_by_date in task_phase_statistics:
             date = stat_by_date["date"]

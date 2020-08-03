@@ -113,7 +113,7 @@ class Table:
         if self._account_statistics is not None:
             return self._account_statistics
         else:
-            content: List[Any] = self.annofab_service.api.get_account_statistics(self.project_id)[0]
+            content: List[Any] = self.annofab_service.wrapper.get_account_statistics(self.project_id)[0]
             account_statistics = [
                 ProjectAccountStatisticsHistory.from_dict(e)  # type: ignore
                 for e in content

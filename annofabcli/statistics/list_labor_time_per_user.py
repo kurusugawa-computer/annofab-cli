@@ -29,7 +29,7 @@ class LaborTimePerUser(AbstractCommandLineInterface):
             メンバ別の作業時間をCSVに出力するための dict 配列
 
         """
-        account_statistics, _ = self.service.api.get_account_statistics(project_id)
+        account_statistics = self.service.wrapper.get_account_statistics(project_id)
         row_list: List[Dict[str, Any]] = []
         for stat_by_user in account_statistics:
             account_id = stat_by_user["account_id"]

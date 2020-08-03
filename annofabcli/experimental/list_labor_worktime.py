@@ -61,7 +61,7 @@ class Database:
         return labor_control_df
 
     def get_account_statistics(self) -> List[Dict[str, Any]]:
-        account_statistics = self.annofab_service.api.get_account_statistics(self.project_id)[0]
+        account_statistics = self.annofab_service.wrapper.get_account_statistics(self.project_id)
         return account_statistics
 
     def get_project_members(self) -> dict:
