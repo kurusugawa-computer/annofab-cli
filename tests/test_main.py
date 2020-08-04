@@ -598,7 +598,6 @@ class TestStatistics:
         )
 
 
-
 class TestSupplementary:
     def test_list_supplementary(self):
         main(["supplementary", "list", "--project_id", project_id, "--input_data_id", "foo"])
@@ -790,14 +789,40 @@ class TestTask:
     #         ]
     #     )
 
+
 class TestExperimental:
     command_name = "experimental"
 
     def test_list_labor_worktime(self):
         out_file = str(out_path / "list_labor_worktime.csv")
-        main([self.command_name, "list_labor_worktime", "--project_id", project_id, "--start_date", "2020-07-01", "--end_date", "2020-07-02", "--output", str(out_file), "--yes"])
+        main(
+            [
+                self.command_name,
+                "list_labor_worktime",
+                "--project_id",
+                project_id,
+                "--start_date",
+                "2020-07-01",
+                "--end_date",
+                "2020-07-02",
+                "--output",
+                str(out_file),
+                "--yes",
+            ]
+        )
 
     def test_dashboad(self):
         out_file = str(out_path / "dashboard.csv")
-        main([self.command_name, "dashboard", "--project_id", project_id, "--date", "2020-07-01", "--output", str(out_file), "--yes"])
-
+        main(
+            [
+                self.command_name,
+                "dashboard",
+                "--project_id",
+                project_id,
+                "--date",
+                "2020-07-01",
+                "--output",
+                str(out_file),
+                "--yes",
+            ]
+        )
