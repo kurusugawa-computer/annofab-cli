@@ -175,6 +175,7 @@ def create_column_list_per_project(df: pd.DataFrame) -> pd.DataFrame:
                 "worktime_monitored",
                 "activity_rate",
                 "monitor_rate",
+                "working_description",
             ]
         ]
         .round(2)

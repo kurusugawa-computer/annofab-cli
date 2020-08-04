@@ -92,6 +92,7 @@ class Table:
                     "worktime_actual": np.nan
                     if labor["values"]["working_time_by_user"]["results"] is None
                     else int(labor["values"]["working_time_by_user"]["results"]) / 60000,
+                    "working_description": labor["values"]["working_time_by_user"]["description"] if labor["values"]["working_time_by_user"]["results"] is not None else None
                 }
                 labor_control_list.append(new_history)
 
