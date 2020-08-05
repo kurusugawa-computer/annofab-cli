@@ -105,7 +105,7 @@ class ListAnnotationCount(AbstractCommandLineInterface):
         self, project_id: str, annotation_query: Dict[str, Any], task_id: Optional[str] = None
     ) -> Dict[str, Any]:
         """
-        タスク検索クエリを修正する。
+        アノテーション検索クエリを修正する。
         * ``label_name_en`` から ``label_id`` に変換する。
         * ``additional_data_definition_name_en`` から ``additional_data_definition_id`` に変換する。
         * ``choice_name_en`` から ``choice`` に変換する。
@@ -196,8 +196,12 @@ class ListAnnotationCount(AbstractCommandLineInterface):
             all_annotations.extend(annotations)
 
         logger.debug(f"アノテーション一覧の件数: {len(all_annotations)}")
-        df = self.aggregate_annotations(all_annotations, group_by)
-        self.print_csv(df)
+        if len(all_annotations) > 0:
+            df = self.aggregate_annotations(all_annotations, group_by)
+            self.print_csv(df)
+        else:
+            logger.info(f"アノテーション一覧が0件のため出力しません。")
+            return
 
     def main(self):
         args = self.args

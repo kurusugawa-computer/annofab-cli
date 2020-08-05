@@ -88,7 +88,9 @@ class ListTasks(AbstractCommandLineInterface):
 
         return task_query
 
-    def get_tasks(self, project_id: str, task_query: Optional[Dict[str, Any]] = None) -> List[Task]:
+    def get_tasks(
+        self, project_id: str, task_query: Optional[Dict[str, Any]] = None, user_id_list: Optional[List[str]] = None
+    ) -> List[Task]:
         """
         タスク一覧を取得する。
 
@@ -101,9 +103,26 @@ class ListTasks(AbstractCommandLineInterface):
         """
         if task_query is not None:
             task_query = self._modify_task_query(project_id, task_query)
+        else:
+            task_query = {}
 
-        logger.debug(f"task_query: {task_query}")
-        tasks = self.service.wrapper.get_all_tasks(project_id, query_params=task_query)
+        if user_id_list is None:
+            logger.debug(f"task_query: {task_query}")
+            tasks = self.service.wrapper.get_all_tasks(project_id, query_params=task_query)
+            if len(tasks) == 10000:
+                logger.warning("タスク一覧は10,000件で打ち切られている可能性があります。")
+
+        else:
+            tasks = []
+            for user_id in user_id_list:
+                task_query["user_id"] = user_id
+                task_query = self._modify_task_query(project_id, task_query)
+                logger.debug(f"task_query: {task_query}")
+                sub_tasks = self.service.wrapper.get_all_tasks(project_id, query_params=task_query)
+                if len(sub_tasks) == 10000:
+                    logger.warning(f"user_id={user_id}で絞り込んだタスク一覧は10,000件で打ち切られている可能性があります。")
+                tasks.extend(sub_tasks)
+
         return [self.visualize.add_properties_to_task(e) for e in tasks]
 
     def print_tasks(
@@ -111,6 +130,7 @@ class ListTasks(AbstractCommandLineInterface):
         project_id: str,
         task_id_list: Optional[List[str]] = None,
         task_query: Optional[Dict[str, Any]] = None,
+        user_id_list: Optional[List[str]] = None,
         task_list_from_json: Optional[List[Task]] = None,
     ):
         """
@@ -129,12 +149,10 @@ class ListTasks(AbstractCommandLineInterface):
         if task_list_from_json is None:
             # WebAPIを実行してタスク情報を取得する
             if task_id_list is not None:
-                task_list = self.get_task_list_from_task_id(project_id, task_id_list)
+                task_list = self.get_task_list_from_task_id(project_id, task_id_list=task_id_list)
             else:
-                task_list = self.get_tasks(project_id, task_query)
+                task_list = self.get_tasks(project_id, task_query=task_query, user_id_list=user_id_list)
                 logger.debug(f"タスク一覧の件数: {len(task_list)}")
-                if len(task_list) == 10000:
-                    logger.warning("タスク一覧は10,000件で打ち切られている可能性があります。")
 
         else:
             task_list = [self.visualize.add_properties_to_task(e) for e in task_list_from_json]
@@ -169,6 +187,10 @@ class ListTasks(AbstractCommandLineInterface):
         if len(task_id_list) == 0:
             task_id_list = None
 
+        user_id_list = annofabcli.common.cli.get_list_from_args(args.user_id)
+        if len(user_id_list) == 0:
+            user_id_list = None
+
         task_query = annofabcli.common.cli.get_json_from_args(args.task_query)
 
         if args.task_json is not None:
@@ -178,7 +200,11 @@ class ListTasks(AbstractCommandLineInterface):
             task_list = None
 
         self.print_tasks(
-            args.project_id, task_id_list=task_id_list, task_query=task_query, task_list_from_json=task_list
+            args.project_id,
+            task_id_list=task_id_list,
+            task_query=task_query,
+            user_id_list=user_id_list,
+            task_list_from_json=task_list,
         )
 
 
@@ -223,6 +249,14 @@ def parse_args(parser: argparse.ArgumentParser):
         "このオプションを指定すると、`--task_query`, `--task_id`オプションは無視します。"
         "JSONには記載されていない、`user_id`や`username`などの情報も追加します。"
         "JSONファイルは`$ annofabcli project download task`コマンドで取得できます。",
+    )
+
+    parser.add_argument(
+        "-u",
+        "--user_id",
+        type=str,
+        nargs="+",
+        help="絞り込み対象である担当者のuser_idを指定します。" "`file://`を先頭に付けると、task_idの一覧が記載されたファイルを指定できます。",
     )
 
     argument_parser.add_format(

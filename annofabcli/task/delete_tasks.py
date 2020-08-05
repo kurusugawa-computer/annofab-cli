@@ -31,7 +31,7 @@ class DeleteTask(AbstractCommandLineInterface):
         annotation_list = self.service.wrapper.get_all_annotation_list(project_id, query_params=query_params)
         return annotation_list
 
-    def delete_task(self, project_id: str, task_id: str):
+    def delete_task(self, project_id: str, task_id: str, force: bool = False):
         """
         タスクを削除します。
 
@@ -42,6 +42,7 @@ class DeleteTask(AbstractCommandLineInterface):
         Args:
             project_id:
             task_id:
+            force: アノテーションが付与されていても削除します。
 
         Returns:
             True: タスクを削除した。False: タスクを削除しなかった。
@@ -63,9 +64,11 @@ class DeleteTask(AbstractCommandLineInterface):
             return False
 
         annotation_list = self.get_annotation_list(project_id, task_id)
-        if len(annotation_list) > 0:
-            logger.info(f"アノテーションが付与されているため（{len(annotation_list)}個）、タスク'{task_id}'を削除できません。")
-            return False
+        logger.debug(f"task_id={task_id}: アノテーションが{len(annotation_list)}個付与されています。")
+        if not force:
+            if len(annotation_list) > 0:
+                logger.info(f"アノテーションが付与されているため（{len(annotation_list)}個）、タスク'{task_id}'を削除できません。")
+                return False
 
         if not self.confirm_delete_task(task_id):
             return False
@@ -73,7 +76,7 @@ class DeleteTask(AbstractCommandLineInterface):
         self.service.api.delete_task(project_id, task_id)
         return True
 
-    def delete_task_list(self, project_id: str, task_id_list: List[str]):
+    def delete_task_list(self, project_id: str, task_id_list: List[str], force: bool = False):
         """
         複数のタスクを削除する。
         """
@@ -85,7 +88,7 @@ class DeleteTask(AbstractCommandLineInterface):
         count_delete_task = 0
         for task_index, task_id in enumerate(task_id_list):
             try:
-                result = self.delete_task(project_id, task_id)
+                result = self.delete_task(project_id, task_id, force=force)
                 if result:
                     count_delete_task += 1
                     logger.info(f"{task_index+1} / {len(task_id_list)} 件目: タスク'{task_id}'を削除しました。")
@@ -95,12 +98,12 @@ class DeleteTask(AbstractCommandLineInterface):
                 logger.warning(f"task_id='{task_id}'の削除に失敗しました。")
                 continue
 
-        logger.info(f"プロジェクト'{project_title}'から 、{count_delete_task} 件のタスクを削除しました。")
+        logger.info(f"プロジェクト'{project_title}'から 、{count_delete_task} / {len(task_id_list)} 件のタスクを削除しました。")
 
     def main(self):
         args = self.args
         task_id_list = annofabcli.common.cli.get_list_from_args(args.task_id)
-        self.delete_task_list(args.project_id, task_id_list=task_id_list)
+        self.delete_task_list(args.project_id, task_id_list=task_id_list, force=args.force)
 
 
 def main(args):
@@ -114,13 +117,14 @@ def parse_args(parser: argparse.ArgumentParser):
 
     argument_parser.add_project_id()
     argument_parser.add_task_id()
+    parser.add_argument("--force", action="store_true", help="アノテーションが付与されているタスクも強制的に削除します。")
     parser.set_defaults(subcommand_func=main)
 
 
 def add_parser(subparsers: argparse._SubParsersAction):
     subcommand_name = "delete"
     subcommand_help = "タスクを削除します。"
-    description = "タスクを削除します。ただしアノテーションが付与されているタスク、作業中/完了状態のタスクは削除できません。"
+    description = "タスクを削除します。ただし、作業中/完了状態のタスクは削除できません。デフォルトは、アノテーションが付与されているタスクは削除できません。"
     epilog = "オーナロールを持つユーザで実行してください。"
 
     parser = annofabcli.common.cli.add_parser(subparsers, subcommand_name, subcommand_help, description, epilog=epilog)

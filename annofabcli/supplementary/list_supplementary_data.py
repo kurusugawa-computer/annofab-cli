@@ -1,6 +1,6 @@
 import argparse
 import logging
-from typing import List
+from typing import List, Optional
 
 from annofabapi.models import SupplementaryData
 
@@ -22,6 +22,16 @@ class ListSupplementaryData(AbstractCommandLineInterface):
         supplementary_data_list, _ = self.service.api.get_supplementary_data_list(project_id, input_data_id)
         return supplementary_data_list
 
+    def get_input_data_id_from_task(self, project_id: str, task_id_list: List[str]) -> List[str]:
+        all_input_data_id_list = []
+        logger.info(f"{len(task_id_list)} 件のタスクを取得します。")
+        for task_id in task_id_list:
+            task = self.service.wrapper.get_task_or_none(project_id, task_id)
+            if task is None:
+                logger.warning(f"task_id='{task_id}'のタスクが見つかりませんでした。")
+            all_input_data_id_list.extend(task["input_data_id_list"])
+        return all_input_data_id_list
+
     def get_all_supplementary_data_list(
         self, project_id: str, input_data_id_list: List[str]
     ) -> List[SupplementaryData]:
@@ -29,8 +39,7 @@ class ListSupplementaryData(AbstractCommandLineInterface):
         補助情報一覧を取得する。
         """
         all_supplementary_data_list: List[SupplementaryData] = []
-
-        logger.debug(f"{len(input_data_id_list)}件の入力データに紐づく補助情報を取得します。")
+        logger.info(f"{len(input_data_id_list)} 件の入力データに紐づく補助情報を取得します。")
         for index, input_data_id in enumerate(input_data_id_list):
             if (index + 1) % 100 == 0:
                 logger.debug(f"{index+1} 件目の入力データを取得します。")
@@ -43,20 +52,38 @@ class ListSupplementaryData(AbstractCommandLineInterface):
 
         return all_supplementary_data_list
 
-    def print_supplementary_data_list(self, project_id: str, input_data_id_list: List[str]) -> None:
+    def print_supplementary_data_list(
+        self, project_id: str, input_data_id_list: Optional[List[str]], task_id_list: Optional[List[str]]
+    ) -> None:
         """
         補助情報一覧を出力する
 
         """
+        if task_id_list is not None:
+            input_data_id_list = self.get_input_data_id_from_task(project_id, task_id_list)
+        else:
+            if input_data_id_list is None:
+                logger.warning("input_data_id_listとtask_id_listの両方がNoneです。")
+                return
 
-        supplementary_data_list = self.get_all_supplementary_data_list(project_id, input_data_id_list)
+        supplementary_data_list = self.get_all_supplementary_data_list(
+            project_id, input_data_id_list=input_data_id_list
+        )
         logger.info(f"補助情報一覧の件数: {len(supplementary_data_list)}")
         self.print_according_to_format(supplementary_data_list)
 
     def main(self):
         args = self.args
         input_data_id_list = annofabcli.common.cli.get_list_from_args(args.input_data_id)
-        self.print_supplementary_data_list(project_id=args.project_id, input_data_id_list=input_data_id_list)
+        if len(input_data_id_list) == 0:
+            input_data_id_list = None
+        task_id_list = annofabcli.common.cli.get_list_from_args(args.task_id)
+        if len(task_id_list) == 0:
+            task_id_list = None
+
+        self.print_supplementary_data_list(
+            project_id=args.project_id, input_data_id_list=input_data_id_list, task_id_list=task_id_list
+        )
 
 
 def main(args):
@@ -68,7 +95,22 @@ def main(args):
 def parse_args(parser: argparse.ArgumentParser):
     argument_parser = ArgumentParser(parser)
     argument_parser.add_project_id()
-    argument_parser.add_input_data_id()
+
+    query_group = parser.add_mutually_exclusive_group(required=True)
+    query_group.add_argument(
+        "-t",
+        "--task_id",
+        type=str,
+        nargs="+",
+        help="対象のタスクのtask_idを指定します。" + "`file://`を先頭に付けると、task_idの一覧が記載されたファイルを指定できます。",
+    )
+    query_group.add_argument(
+        "-i",
+        "--input_data_id",
+        type=str,
+        nargs="+",
+        help="対象の入力データのinput_data_idを指定します。" + "`file://`を先頭に付けると、input_data_idの一覧が記載されたファイルを指定できます。",
+    )
 
     argument_parser.add_format(
         choices=[FormatArgument.CSV, FormatArgument.JSON, FormatArgument.PRETTY_JSON], default=FormatArgument.CSV

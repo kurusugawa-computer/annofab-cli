@@ -23,9 +23,9 @@ from annofabcli.experimental.utils import (
     FormatTarget,
     TimeUnitTarget,
     add_id_csv,
+    create_column_list,
+    create_column_list_per_project,
     print_byname_total_list,
-    print_column_list,
-    print_for_each_column_list,
     print_time_list_from_work_time_list,
     print_total,
     timeunit_conversion,
@@ -61,7 +61,7 @@ class Database:
         return labor_control_df
 
     def get_account_statistics(self) -> List[Dict[str, Any]]:
-        account_statistics = self.annofab_service.api.get_account_statistics(self.project_id)[0]
+        account_statistics = self.annofab_service.wrapper.get_account_statistics(self.project_id)
         return account_statistics
 
     def get_project_members(self) -> dict:
@@ -92,6 +92,9 @@ class Table:
                     "worktime_actual": np.nan
                     if labor["values"]["working_time_by_user"]["results"] is None
                     else int(labor["values"]["working_time_by_user"]["results"]) / 60000,
+                    "working_description": labor["values"]["working_time_by_user"]["description"]
+                    if labor["values"]["working_time_by_user"]["results"] is not None
+                    else None,
                 }
                 labor_control_list.append(new_history)
 
@@ -233,6 +236,19 @@ class ListLaborWorktime(AbstractCommandLineInterface):
         #     チェックポイントファイルがあること前提
         return table_obj.create_afaw_time_df()
 
+    def _output(self, output: str, df: pd.DataFrame, index: bool, add_project_id: bool, project_id_list: List[str]):
+        Path(output).parent.mkdir(exist_ok=True, parents=True)
+        df.to_csv(
+            output,
+            date_format="%Y-%m-%d",
+            encoding="utf_8_sig",
+            line_terminator="\r\n",
+            float_format="%.2f",
+            index=index,
+        )
+        if output != sys.stdout and add_project_id:
+            add_id_csv(output, self._get_project_title_list(project_id_list))
+
     def main(self):
         args = self.args
         format_target = FormatTarget(args.format)
@@ -273,31 +289,25 @@ class ListLaborWorktime(AbstractCommandLineInterface):
         elif format_target == FormatTarget.TOTAL:
             df = print_total(total_df)
         elif format_target == FormatTarget.COLUMN_LIST_PER_PROJECT:
-            df = print_for_each_column_list(total_df)
+            df = create_column_list_per_project(total_df)
         elif format_target == FormatTarget.COLUMN_LIST:
-            df = print_column_list(total_df)
-        else:
+            df = create_column_list(total_df)
+        elif format_target == FormatTarget.DETAILS:
             df = print_time_list_from_work_time_list(total_df)
-
-        def _output(output: str, df: pd.DataFrame, index: bool):
-            Path(output).parent.mkdir(exist_ok=True, parents=True)
-            df.to_csv(
-                output,
-                date_format="%Y-%m-%d",
-                encoding="utf_8_sig",
-                line_terminator="\r\n",
-                float_format="%.2f",
-                index=index,
-            )
-            if output != sys.stdout and args.add_project_id:
-                add_id_csv(output, self._get_project_title_list(project_id_list))
-
+        else:
+            raise RuntimeError(f"format_target='{format_target}'は対象外です。")
         # 出力先別に出力
         if args.output:
             out_format = args.output
         else:
             out_format = sys.stdout
-        _output(out_format, df, index=(format_target == FormatTarget.DETAILS))
+        self._output(
+            out_format,
+            df,
+            index=(format_target == FormatTarget.DETAILS),
+            add_project_id=args.add_project_id,
+            project_id_list=project_id_list,
+        )
 
 
 def main(args):

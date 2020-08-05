@@ -22,7 +22,7 @@ annofab_config = dict(inifile.items("annofab"))
 project_id = annofab_config["project_id"]
 service = annofabapi.build_from_netrc()
 
-csv_obj = Csv(str(out_path), project_id)
+csv_obj = Csv(str(out_path), project_id[0:8])
 database_obj = Database(service, project_id, chekpoint_dir=str(data_path), query=None,)
 table_obj = Table(database_obj)
 
@@ -39,3 +39,23 @@ class TestDatabase:
         task_list = [{"task_id": "sample_0", "input_data_id_list": ["2186d46a-aa5f-4f9f-a69f-25500a78f647"]}]
         result = database_obj.read_input_data_from_json(task_list)
         assert "sample_0" in result
+
+
+# class TestListSubmittedTaskCountMain:
+#     main_obj = None
+#
+#     @classmethod
+#     def setup_class(cls):
+#         cls.main_obj = ListSubmittedTaskCountMain(service)
+#
+#     def test_create_labor_df(self):
+#         df = self.main_obj.create_labor_df(project_id)
+#         df.to_csv("labor_df.csv")
+#
+#     def test_create_account_statistics_df(self):
+#         df = self.main_obj.create_account_statistics_df(project_id)
+#         df.to_csv("account_statistics.csv")
+#
+#     def test_create_user_df(self):
+#         df = self.main_obj.create_user_df(project_id)
+#         df.to_csv("user.csv")

@@ -15,7 +15,8 @@ AnnoFabのCLI(Command Line Interface)ツールです。
 
 
 ## 廃止予定
-なし
+* 2020-10-01以降：Pythonのサポートバージョンを3.6以上から、3.7以上に変更します。
+* 2020-09-01以降：`input_data list`コマンドの`--batch`オプションを削除します。入力データを１万件以上取得したい場合は、`project download input_data`コマンドを利用してください。
 
 # Requirements
 * Python 3.6+
@@ -81,23 +82,25 @@ $ docker run -it -e ANNOFAB_USER_ID=XXXX -e ANNOFAB_PASSWORD=YYYYY annofab-cli a
 
 |コマンド| サブコマンド                  | 内容                                                                                                     |必要なロール|
 |----|-------------------------------|----------------------------------------------------------------------------------------------------------|------------|
+|annotation| change_attributes |アノテーションの属性を変更します。                              |オーナ|
 |annotation| delete | アノテーションを削除します。                              |オーナ|
 |annotation| dump | アノテーション情報をファイルに保存します。                             |-|
 |annotation| list_count | task_idまたはinput_data_idで集約したアノテーションの個数を出力します                              |-|
 |annotation| import | アノテーションをインポートします。                             |オーナ|
 |annotation| restore |'annotation dump'コマンドで保存したファイルから、アノテーション情報をリストアします。                            |オーナ|
-|annotation_specs| history | アノテーション仕様の履歴一覧を出力します。                              |チェッカー/オーナ|
-|annotation_specs| list_label | アノテーション仕様のラベル情報を出力します。                              |チェッカー/オーナ|
-|annotation_specs| list_label_color             | アノテーション仕様から、label_nameとRGBを対応付けたJSONを出力します。                                      |チェッカー/オーナ|
+|annotation_specs| history | アノテーション仕様の履歴一覧を出力します。                              |-|
+|annotation_specs| list_label | アノテーション仕様のラベル情報を出力します。                              |-|
+|annotation_specs| list_label_color             | アノテーション仕様から、label_nameとRGBを対応付けたJSONを出力します。                                      |-|
 |filesystem| write_annotation_image        | アノテーションzip、またはそれを展開したディレクトリから、アノテーションの画像（Semantic Segmentation用）を生成します。 |-|
 |input_data|delete             | 入力データを削除します。                                                            |オーナ|
 |input_data|list             | 入力データ一覧を出力します。                                                            |-|
-|input_data| list_merged_task | タスク一覧と結合した入力データ一覧のCSVを出力します。                                                            |オーナ|
+|input_data| list_merged_task | タスク一覧と結合した入力データ一覧のCSVを出力します。                                                            |オーナ/アノテーションユーザ|
 |input_data|put             | 入力データを登録します。                                                            |オーナ|
 |inspection_comment| list | 検査コメントを出力します。                               |-|
 |inspection_comment| list_unprocessed | 未処置の検査コメントを出力します。                               |-|
 |instruction| copy             | 作業ガイドをコピーします。                                                         |チェッカー/オーナ|
 |instruction| upload             | HTMLファイルを作業ガイドとして登録します。                                                           |チェッカー/オーナ|
+|job|delete             | ジョブを削除します。                                                            |オーナ|
 |job|list             | ジョブ一覧を出力します。                                                            |-|
 |job|list_last             | 複数のプロジェクトに対して、最新のジョブを出力します。                                                            |-|
 |labor|list_worktime_by_user | ユーザごとに作業予定時間、作業実績時間を出力します。                                                          ||
@@ -114,16 +117,22 @@ $ docker run -it -e ANNOFAB_USER_ID=XXXX -e ANNOFAB_PASSWORD=YYYYY annofab-cli a
 |project_member| list                  | プロジェクトメンバ一覧を出力します。                                                                |-|
 |project_member| put                  | CSVに記載されたユーザを、プロジェクトメンバとして登録します。|オーナ|
 |statistics| list_annotation_count             | 各ラベル、各属性値のアノテーション数を、タスクごと/入力データごとに出力します。                                                   |-|
+|statistics| list_by_date_user             | タスク数や作業時間などの情報を、日ごとユーザごとに出力します。                                                   |オーナ/アノテーションユーザ|
 |statistics| list_cumulative_labor_time             |       タスク進捗状況を出力します。                                                    |-|
 |statistics| list_task_progress             | タスクフェーズ別の累積作業時間を出力します。                                                            |-|
-|statistics|summarize_task_count|タスクのフェーズ、ステータス、ステップごとにタスク数を出力します。|オーナ|
-|statistics| visualize             | 統計情報を可視化します。                                                            |オーナ|
-|supplementary| list             | 補助情報を出力します。                                                           |オーナ|
+|statistics|summarize_task_count|タスクのフェーズ、ステータス、ステップごとにタスク数を出力します。|オーナ/アノテーションユーザ|
+|statistics|summarize_task_count_by_task_id|task_idのプレフィックスごとに、タスク数を出力します。|オーナ/アノテーションユーザ|
+|statistics|summarize_task_count_by_user|ユーザごとに担当しているタスク数を出力します。|オーナ/アノテーションユーザ|
+|statistics| visualize             | 統計情報を可視化します。                                                            |オーナ/アノテーションユーザ|
+|supplementary| list             | 補助情報を出力します。                                                           |オーナ/アノテーションユーザ|
+|supplementary| put              | 補助情報を登録します。                                                           |オーナ|
 |task| cancel_acceptance             | 受け入れ完了タスクを、受け入れ取り消し状態にします。                                                         |オーナ|
 |task| change_operator             | タスクの担当者を変更します。                                                             |チェッカー/オーナ|
 |task| complete                | タスクを完了状態にして次のフェーズに進めます（教師付の提出、検査/受入の合格）。                                  |チェッカー/オーナ|
 |task| delete                | タスクを削除します。                                 |オーナ|
 |task|list             | タスク一覧を出力します。                                                            |-|
+|task|list_added_task_history             | タスク履歴情報を加えたタスク一覧を出力します。|オーナ/アノテーションユーザ|
+|task|list_task_history             | タスク履歴の一覧を出力します。|-|
 |task| put                | タスクを作成します。                                 |オーナ|
 |task| reject                  | タスクを強制的に差し戻します。                                                                 |オーナ|
 
@@ -252,12 +261,9 @@ $ annofabcli annotation list_count --project_id prj1 --task_id file://task.txt -
 
 # annotation_count.csvを表計算ソフトで開き、アノテーションの個数が1個以上のタスクのtask_id一覧を、task_id.txtに保存する。
 
-# task_id.txtに記載されたタスクに対して、受入完了状態を取り消す。
-$ annofabcli task cancel_acceptance --project_id prj1 --task_id file://task_id.txt
-
 # task_id.txtに記載されたタスクを差し戻す。検査コメントは「carラベルのoccluded属性を見直してください」。
 # 差し戻したタスクには、最後のannotation phaseを担当したユーザを割り当てる（画面と同じ動き）。
-$ annofabcli task reject --project_id prj1 --task_id file://tasks.txt \
+$ annofabcli task reject --project_id prj1 --task_id file://tasks.txt --cancel_acceptance \
   --comment "carラベルのoccluded属性を見直してください"
 
 ```
@@ -285,6 +291,23 @@ $ annofabcli project_member put --project_id prj2 --csv members.csv
 
 ## コマンド一覧
 
+### annotation change_attributes
+アノテーションの属性を一括で変更します。ただし、作業中状態のタスクのアノテーションの属性は変更できません。間違えてアノテーション属性を変更したときに復元できるようにするため、`--backup`でバックアップ用のディレクトリを指定することを推奨します。
+
+```
+# task.txtに記載されたタスクのアノテーションの属性をを変更する
+# carラベルのoccludedチェックボックスがTRUEのアノテーションに対して、occludedチェックボックスをOFFにする
+$ annofabcli annotation change_attributes --project_id prj1 --task_id file://task.txt \ 
+--annotation_query '{"label_name_en": "car", "attributes":[{"additional_data_definition_name_en": "occluded", "flag": true}]}' \
+--attributes '[{"additional_data_definition_name_en": "occluded", "flag": false}]' \
+--backup backup_dir
+
+
+```
+
+
+
+
 ### annotation delete
 タスク配下のアノテーションを削除します。ただし、作業中/完了状態のタスク、または「過去に割り当てられていて現在の担当者が自分自身でない」タスクのアノテーションは削除できません。
 
@@ -295,6 +318,11 @@ $ annofabcli project_member put --project_id prj2 --csv members.csv
 ```
 # task.txtに記載されたタスクのアノテーションを削除します。削除する前のアノテーション情報は、`backup`ディレクトリに保存します。
 $ annofabcli annotation delete --project_id prj1 --task_id file://task.txt --backup backup
+
+# carラベルのoccludedチェックボックスがTRUEのアノテーションを削除します
+$ annofabcli annotation delete --project_id prj1 --task_id file://task.txt \ 
+--annotation_query '{"label_name_en": "car", "attributes":[{"additional_data_definition_name_en": "occluded", "flag": true}]}' \
+--backup backup_dir
 ```
 
 ### annotation dump
@@ -629,11 +657,6 @@ $ annofabcli input_data list --project_id prj1 --input_data_id id1 id2
 # 入力データの詳細情報（参照されているタスクのtask_id `parent_task_id_list`）も出力する
 $ annofabcli input_data list --project_id prj1 --input_data_query '{"input_data_name": "sample"}' --add_details
 
-# 段階的に入力データ一覧を取得する。
-# 2019-01-01〜2019-01-31の期間は7日間ごとに入力データ一覧を取得する。それ以外は、2019-01-01以前、2019-01-31以降の入力データ一覧を取得する。
-$ annofabcli input_data list --project_id prj1 --batch \
- '{"first":"2019-01-01", "last":"2019-01-31", "days":7}' --output input_data.csv
-
 ```
 
 
@@ -744,6 +767,13 @@ $ annofabcli inspection_comment list --project_id prj1 --task_id file://task.txt
 # 検査コメント情報が記載されたファイルは、`$ annofabcli project download inspection_comment`コマンドで取得できます。
 $ annofabcli inspection_comment list --project_id prj1 --inspection_comment_json inspection_comment.json
 
+# 返信コメントを除外した検査コメント一覧を出力します
+$ annofabcli inspection_comment list --project_id prj1 --task_id task1 task2 --exclude_reply
+
+# 返信コメントのみの一覧を出力します
+$ annofabcli inspection_comment list --project_id prj1 --task_id task1 task2 --only_reply
+
+
 ```
 
 #### 出力結果（CSV）
@@ -819,6 +849,15 @@ $ annofabcli instruction upload --project_id prj1 --html instruction.html
         ```
     3. Chrome開発ツールのElementタブで、html要素をコピー(Copy outerHTML)して、HTMLファイルを上書きする
 
+
+### job delete
+ジョブを削除します。
+削除対象のjob_idは`annofabcli job list`コマンドで確認できます。
+
+```
+# アノテーション更新のジョブを削除します。
+$ annofabcli job delete --project_id prj1 --job_type gen-annotation --job_id 12345678-abcd-1234-abcd-1234abcd5678
+```
 
 
 ### job list
@@ -1149,6 +1188,16 @@ $ annofabcli statistics list_annotation_count --project_id prj1 --output_dir out
 ```
 
 
+### statistics list_by_date_user
+
+タスク数や作業時間などの情報を、日ごとユーザごとに出力します。
+
+```
+$ annofabcli statistics list_by_date_user --project_id prj1 --output data.csv
+
+```
+
+
 
 ### statistics list_cumulative_labor_time
 タスクフェーズ別の累積作業時間をCSV形式で出力します。
@@ -1203,6 +1252,75 @@ step,phase,phase_stage,simple_status,task_count
 「一度も作業されていない教師付未着手」のタスク数は、先頭行（step=1, phase=annotation, simple_status=not_started）のtask_countから分かります。
 
 
+### statistics summarize_task_count_by_task_id
+task_idのプレフィックスごとに、タスク数をCSV形式で出力します。
+task_idは`{prefix}_{連番}`のようなフォーマットを想定しています。
+
+
+```
+# prj1のタスク数を出力します。ダウンロードしたタスク全件ファイルを元にして出力します（AM02:00頃更新）。
+$ annofabcli statistics summarize_task_count_by_task_id --project_id prj1 --output task-count.csv
+
+# `annofabcli project download task`でダウンロードした`task.json`を元にして、タスク数を出力します。
+$ annofabcli statistics summarize_task_count_by_task_id --project_id prj1 --task_json task.json --output task-count.csv
+
+```
+
+以下のようなCSVが出力されます。
+
+```csv
+task_id_prefix,complete,on_hold,annotation_not_started,inspection_not_started,acceptance_not_started,other,sum
+20200401,10,0,0,0,0,0,10
+20200501,10,1,4,0,1,4,20
+```
+
+各列
+* annotation_not_started: 教師付フェーズが一度も作業されていないタスク数
+* inspection_not_started: 検査フェーズが一度も作業されていないタスク数
+* acceptance_not_started: 受入フェーズが一度も作業されていないタスク数
+* other: 休憩中、作業中、
+* simple_status：タスクステータスを簡略化したもの
+    * not_started：未着手
+    * working_break_hold：作業中か休憩中か保留中
+    * complete：完了
+
+「一度も作業されていない教師付未着手」のタスク数は、先頭行（step=1, phase=annotation, simple_status=not_started）のtask_countから分かります。
+
+
+### statistics summarize_task_count_by_user
+ユーザごとに担当しているタスク数をCSV形式で出力します。
+
+
+```
+# prj1のタスク数を出力します。ダウンロードしたタスク全件ファイルを元にして出力します（AM02:00頃更新）。
+$ annofabcli statistics summarize_task_count_by_user --project_id prj1 --output task-count.csv
+
+# `annofabcli project download task`でダウンロードした`task.json`を元にして、タスク数を出力します。
+$ annofabcli statistics summarize_task_count_by_task_id --project_id prj1 --task_json task.json --output task-count.csv
+
+```
+
+以下のようなCSVが出力されます。
+
+```csv
+task_id_prefix,complete,on_hold,annotation_not_started,inspection_not_started,acceptance_not_started,other,sum
+20200401,10,0,0,0,0,0,10
+20200501,10,1,4,0,1,4,20
+```
+
+各列
+* annotation_not_started: 教師付フェーズが一度も作業されていないタスク数
+* inspection_not_started: 検査フェーズが一度も作業されていないタスク数
+* acceptance_not_started: 受入フェーズが一度も作業されていないタスク数
+* other: 休憩中、作業中、
+* simple_status：タスクステータスを簡略化したもの
+    * not_started：未着手
+    * working_break_hold：作業中か休憩中か保留中
+    * complete：完了
+
+「一度も作業されていない教師付未着手」のタスク数は、先頭行（step=1, phase=annotation, simple_status=not_started）のtask_countから分かります。
+
+
 ### statistics visualize
 統計情報を可視化します。
 
@@ -1231,6 +1349,53 @@ $ annofabcli statistics visualize --project_id prj1 --not_update
 $ annofabcli supplementary list --project_id prj1 --input_data_id id1 id2
 ```
 
+### supplementary put
+CSVに記載された補助情報を登録します。
+
+supplementary_data_id（省略時は supplementary_data_number）が一致する補助情報が既に存在する場合は、スキップまたは上書きします。
+
+* ヘッダ行なし
+* カンマ区切り
+* 1列目: input_data_id. 必須
+* 2列目: supplementary_data_number. 必須
+* 3列目: supplementary_data_name. 必須
+* 4列目: supplementary_data_path. 必須. 先頭が`file://`の場合、ローカルのファイルを入力データとしてアップロードします。
+* 5列目: supplementary_data_id. 省略可能。省略した場合UUIDv4になる。
+* 6列目: supplementary_data_type. 省略可能. `image` or `text`
+
+CSVのサンプル（`supplementary_data.csv`）です。
+
+```
+input1,1,data1-1,s3://example.com/data1,id1,
+input1,2,data1-2,s3://example.com/data2,id2,image
+input1,3,data1-3,s3://example.com/data3,id3,text
+input2,1,data2-1,https://example.com/data4,,
+input2,2,data2-2,file://sample.jpg,,
+input2,3,data2-3,file:///tmp/sample.jpg,,
+```
+
+
+```
+# supplementary_data.csvに記載されている補助情報を登録する。すでに補助情報が存在する場合はスキップする。
+$ annofabcli supplementary put --project_id prj1 --csv supplementary_data.csv
+
+# supplementary_data.csvに記載されている補助情報を登録する。すでに補助情報が存在する場合は上書きする。
+$ annofabcli supplementary put --project_id prj1 --csv supplementary_data.csv --overwrite
+
+# supplementary_data.csvに記載されている補助情報を、並列処理で登録する（`--yes`オプションが必要）。
+$ annofabcli supplementary put --project_id prj1 --csv supplementary_data.csv --parallelism 2 --yes
+```
+
+
+`supplementary list`コマンドを使えば、プロジェクトに既に登録されている補助情報からCSVを作成できます。
+
+```
+$ annofabcli supplementary list --project_id prj1 --input_data_id id1 id2 \
+ --format csv --output supplementary_data.csv \
+ --csv_format '{"columns": ["input_data_id", "supplementary_data_number", "supplementary_data_name", "supplementary_data_path", "supplementary_data_id", "supplementary_data_type"], "header":false}' 
+```
+
+
 
 ### task cancel_acceptance
 受け入れ完了タスクに対して、受け入れ取り消しにします。
@@ -1238,11 +1403,16 @@ $ annofabcli supplementary list --project_id prj1 --input_data_id id1 id2
 
 
 ```
-# prj1プロジェクトのタスクを、受け入れ取り消しにする。再度受け入れを担当させるユーザは未担当
+# prj1プロジェクトのタスクを、受け入れ取り消しにする。最後に受入を担当したユーザに割り当てる
 $ annofabcli task cancel_acceptance --project_id prj1 --task_id file://task.txt
 
-# prj1プロジェクトのタスクを、受け入れ取り消しにする。再度受け入れを担当させるユーザはuser1
-$ annofabcli task cancel_acceptance --project_id prj1 --task_id file://task.txt --user_id user1
+# prj1プロジェクトのタスクを、受け入れ取り消しにする。ユーザuser1に割り当てる。
+$ annofabcli task cancel_acceptance --project_id prj1 --task_id file://task.txt --assigned_acceptor_user_id user1
+
+# prj1プロジェクトのタスクを、受け入れ取り消しにする。担当者は未割り当て
+$ annofabcli task cancel_acceptance --project_id prj1 --task_id file://task.txt --not_assign
+
+
 ```
 
 
@@ -1256,6 +1426,10 @@ $ annofabcli task change_operator --project_id prj1 --task_id file://task.txt --
 
 # 指定されたタスクの担当者を未割り当てに変更する。
 $ annofabcli task change_operator --project_id prj1 --task_id file://task.txt --not_assign
+
+# 教師付フェーズが未着手のタスクのみ、担当者を変更する
+$ annofabcli task change_operator --project_id prj1 --task_id file://task.txt --not_assign --task_query '{"status:"not_started", "phase"}'
+
 ```
 
 
@@ -1283,12 +1457,15 @@ $ annofabcli  task complete --project_id prj1 --task_id file://task.txt --phase 
 
 
 ### task delete
-タスクを削除します。ただしアノテーションが付与されているタスク、作業中/完了状態のタスクは削除できません。
+タスクを削除します。ただし、作業中/完了状態のタスクは削除できません。デフォルトでは、アノテーションが付与されているタスクは削除できません。
 アノテーションの削除には [annotation delete](#annotation-delete) コマンドを利用できます。
 
 ```
 # task_id.txtに記載されたtask_idのタスクを削除します。
 $ annofabcli task delete --project_id prj1 --task_id file://task_id.txt
+
+# アノテーションが付与されているかどうかにかかわらず、タスクを削除します。
+$ annofabcli task delete --project_id prj1 --task_id file://task_id.txt --force
 
 ```
 
@@ -1325,6 +1502,33 @@ $ annofabcli task list --project_id prj1 --task_json task.json
 
 
 
+
+
+### task list_added_task_history
+タスク履歴情報（フェーズごとの作業時間、担当者、開始日時）を加えたタスク一覧をCSV形式で出力します。
+最初に教師付を開始した日時や担当者を調べるときなどに利用できます。
+
+
+```
+# prj1のタスク全件ファイル、タスク履歴全件ファイルをダウンロードして、タスク一覧のCSVを出力する
+$ annofabcli task list_added_task_history --project_id prj1 --output task.csv
+
+# prj1のタスク全件ファイルの最新版をダウンロードして、タスク一覧のCSVを出力する。タスク履歴全件ファイルはWebAPIの都合上最新化できません。
+$ annofabcli task list_added_task_history --project_id prj1 --output task.csv --latest
+
+# タスク全件ファイルJSON、タスク履歴全件ファイルJSONを参照して、タスク一覧のCSVを出力する
+$ annofabcli task list_added_task_history --project_id prj1 --output task.csv --task_json task.json --task_history_json task_history.json
+```
+
+### task list_task_history
+タスク履歴の一覧を出力します。
+
+
+```
+# prj1の全タスクのタスク履歴の一覧を、CSV形式で出力する
+$ annofabcli task list_task_history --project_id prj1 --output task_history.csv
+
+```
 
 
 ### task put
@@ -1373,7 +1577,7 @@ $ annofabcli task  put --project_id prj1 --by_count '{"task_id_prefix":"sample",
 
 
 ### task reject
-タスクを強制的に差し戻します。差し戻す際に検査コメントを付与することもできます。検査コメントは、画像プロジェクトならばタスク内の先頭の画像の左上(`x=0,y=0`)に、動画プロジェクトなら動画の先頭（`start=0, end=0`)に付与します。
+タスクを強制的に差し戻します。差し戻す際に検査コメントを付与することもできます。検査コメントは、画像プロジェクトならばタスク内の先頭の画像の左上(`x=0,y=0`)に、動画プロジェクトなら動画の先頭（`start=0, end=100`)に付与します。
 この差戻しは差戻しとして扱われず、抜取検査・抜取受入のスキップ判定に影響を及ぼしません。
 
 タスクの状態・フェーズを無視して、フェーズを教師付け(annotation)に、状態を未作業(not started)に変更します。
@@ -1382,16 +1586,21 @@ $ annofabcli task  put --project_id prj1 --by_count '{"task_id_prefix":"sample",
 
 ```
 # tasks.txtに記載れたタスクを強制的に差し戻す
-# 最後のannotation phaseを担当したユーザを割り当てます（画面と同じ動き）
+# 最後のannotation phaseを担当したユーザを割り当てます（画面と同じ動き）。検査コメントは付与しません。
 $ annofabcli task reject --project_id prj1 --task_id file://tasks.txt 
 
-# 「hoge」という検査コメントを付与して、タスクを差し戻す。その際、担当者は割り当てない
+# 受入完了の場合は、受入を取り消してから差し戻します
+$ annofabcli task reject --project_id prj1 --task_id file://tasks.txt --cancel_acceptance
+
+# 「hoge」という検査コメントを付与して、タスクを差し戻します。その際、担当者は割り当てません
 $ annofabcli task reject --project_id prj1 --task_id file://tasks.txt \
  --comment "hoge" --not_assign
 
 # 差し戻したタスクに、ユーザuser1を割り当てる
 $ annofabcli task reject --project_id prj1 --task_id file://tasks.txt \
  --comment "hoge" --assigned_annotator_user_id user1
+
+
 ```
 
 

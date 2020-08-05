@@ -7,8 +7,6 @@ import logging
 import sys
 from typing import Any, Dict, List, Optional
 
-from annofabapi.models import ProjectMemberRole
-
 import annofabcli
 import annofabcli.common.cli
 from annofabcli import AnnofabApiFacade
@@ -28,8 +26,6 @@ class PrintAnnotationSpecsLabel(AbstractCommandLineInterface):
     def print_annotation_specs_label(
         self, project_id: str, arg_format: str, output: Optional[str] = None, history_id: Optional[str] = None
     ):
-        super().validate_project(project_id, [ProjectMemberRole.OWNER, ProjectMemberRole.ACCEPTER])
-
         annotation_specs = self.service.api.get_annotation_specs(project_id, query_params={"history_id": history_id})[0]
         labels = annotation_specs["labels"]
 
@@ -172,7 +168,5 @@ def add_parser(subparsers: argparse._SubParsersAction):
 
     description = "アノテーション仕様のラベル情報を出力する"
 
-    epilog = "チェッカーまたはオーナロールを持つユーザで実行してください。"
-
-    parser = annofabcli.common.cli.add_parser(subparsers, subcommand_name, subcommand_help, description, epilog=epilog)
+    parser = annofabcli.common.cli.add_parser(subparsers, subcommand_name, subcommand_help, description)
     parse_args(parser)

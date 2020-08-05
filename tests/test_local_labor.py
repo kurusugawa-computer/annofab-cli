@@ -32,7 +32,8 @@ class TestListWorktimeByUser:
 
     def test_create_worktime_df_per_date_user(self):
         worktime_df = pandas.read_csv(data_path / "detail-worktime.csv")
-        df = ListWorktimeByUser.create_worktime_df_per_date_user(worktime_df)
+        user_df = pandas.read_csv(data_path / "user.csv")
+        df = ListWorktimeByUser.create_worktime_df_per_date_user(worktime_df, user_df=user_df)
         df.to_csv(out_path / "worktime-per-date-user.csv")
 
         labor_availability_list_dict = {
@@ -54,9 +55,25 @@ class TestListWorktimeByUser:
             ],
         }
         df2 = ListWorktimeByUser.create_worktime_df_per_date_user(
-            worktime_df, labor_availability_list_dict=labor_availability_list_dict
+            worktime_df, user_df=user_df, labor_availability_list_dict=labor_availability_list_dict
         )
         df2.to_csv(out_path / "worktime-per-date-user2.csv")
+
+        # worktime_dfが０件の時
+        df3 = ListWorktimeByUser.create_worktime_df_per_date_user(
+            worktime_df=pandas.DataFrame(columns=["date", "user_id", "worktime_plan_hour", "worktime_result_hour"]),
+            user_df=user_df,
+            labor_availability_list_dict=labor_availability_list_dict,
+        )
+        df3.to_csv(out_path / "worktime-per-date-user3.csv")
+
+        # worktime_dfとlabor_availability_list_dictの両方が０件の時
+        df4 = ListWorktimeByUser.create_worktime_df_per_date_user(
+            worktime_df=pandas.DataFrame(columns=["date", "user_id", "worktime_plan_hour", "worktime_result_hour"]),
+            user_df=user_df,
+            labor_availability_list_dict=None,
+        )
+        df4.to_csv(out_path / "worktime-per-date-user4.csv")
 
     def test_create_worktime_df_per_user(self):
         worktime_df_per_date_user = pandas.read_csv(data_path / "worktime-per-date-user.csv")

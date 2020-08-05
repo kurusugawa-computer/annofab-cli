@@ -1,5 +1,4 @@
 import configparser
-import datetime
 import os
 from pathlib import Path
 
@@ -196,21 +195,10 @@ class TestInputData:
             ]
         )
 
-    @pytest.mark.submitting_job
     def test_list_input_data_merged_task_with_downloading(self):
         out_file = str(out_path / "input_data.csv")
         main(
-            [
-                "input_data",
-                "list_merged_task",
-                "--project_id",
-                project_id,
-                "--latest",
-                "--wait_options",
-                '{"interval":1, "max_tries":1}',
-                "--output",
-                out_file,
-            ]
+            ["input_data", "list_merged_task", "--project_id", project_id, "--output", out_file,]
         )
 
     def test_list_input_data_merged_task_with_json(self):
@@ -573,13 +561,60 @@ class TestStatistics:
         )
         out_file = str(out_path / "summariz-task-count2.csv")
         main(
-            ["statistics", "summarize_task_count", "--task_json", str(data_path / "task.json"), "--output", out_file,]
+            [
+                "statistics",
+                "summarize_task_count",
+                "--project_id",
+                project_id,
+                "--task_json",
+                str(data_path / "task.json"),
+                "--output",
+                out_file,
+            ]
+        )
+
+    def test_summarize_task_count_by_task_id(self):
+        out_file = str(out_path / "summarize_task_count_by_task_id.csv")
+        main(
+            ["statistics", "summarize_task_count_by_task_id", "--project_id", project_id, "--output", out_file,]
+        )
+
+    def test_summarize_task_count_by_user(self):
+        out_file = str(out_path / "summarize_task_count_by_user.csv")
+        main(
+            ["statistics", "summarize_task_count_by_user", "--project_id", project_id, "--output", out_file,]
+        )
+
+    def test_list_by_date_user(self):
+        out_file = str(out_path / "list_by_date_user.csv")
+        main(
+            ["statistics", "list_by_date_user", "--project_id", project_id, "--output", out_file,]
+        )
+
+    def test_list_labor_time_per_user(self):
+        out_file = str(out_path / "list_labor_time_per_user.csv")
+        main(
+            ["statistics", "list_labor_time_per_user", "--project_id", project_id, "--output", out_file,]
         )
 
 
 class TestSupplementary:
-    def test_list_project_member(self):
+    def test_list_supplementary(self):
         main(["supplementary", "list", "--project_id", project_id, "--input_data_id", "foo"])
+
+    def test_put_supplementar(self):
+        main(
+            [
+                "supplementary",
+                "put",
+                "--project_id",
+                project_id,
+                "--csv",
+                str(data_path / "supplementary.csv"),
+                "--overwrite",
+                "--yes",
+            ]
+        )
 
 
 class TestTask:
@@ -657,21 +692,78 @@ class TestTask:
             ]
         )
 
-    def test_reject_task(self):
-        inspection_comment = datetime.datetime.now().isoformat()
+    def test_list_added_task_history(self):
+        out_file = str(out_path / "task.csv")
         main(
             [
                 self.command_name,
-                "reject",
+                "list",
+                "--project_id",
+                project_id,
+                "--task_query",
+                f'{{"user_id": "{user_id}", "phase":"acceptance", "status": "complete"}}',
+                "--output",
+                out_file,
+                "--format",
+                "csv",
+            ]
+        )
+
+    def test_list_added_task_history_with_downloading(self):
+        out_file = str(out_path / "task.csv")
+        main(
+            [self.command_name, "list_added_task_history", "--project_id", project_id, "--output", out_file,]
+        )
+
+    def test_list_task_history(self):
+        out_file = str(out_path / "task_history.csv")
+        main(
+            [
+                self.command_name,
+                "list_task_history",
                 "--project_id",
                 project_id,
                 "--task_id",
                 task_id,
-                "--comment",
-                inspection_comment,
-                "--yes",
+                "--format",
+                "csv",
+                "--output",
+                out_file,
             ]
         )
+
+    def test_list_input_data_merged_task_with_json(self):
+        out_file = str(out_path / "task.csv")
+        main(
+            [
+                self.command_name,
+                "list_added_task_history",
+                "--project_id",
+                project_id,
+                "--output",
+                out_file,
+                "--task_json",
+                str(data_path / "task.json"),
+                "--task_history_json",
+                str(data_path / "task-history.json"),
+            ]
+        )
+
+    # def test_reject_task(self):
+    #     inspection_comment = datetime.datetime.now().isoformat()
+    #     main(
+    #         [
+    #             self.command_name,
+    #             "reject",
+    #             "--project_id",
+    #             project_id,
+    #             "--task_id",
+    #             task_id,
+    #             "--comment",
+    #             inspection_comment,
+    #             "--yes",
+    #         ]
+    #     )
 
     @pytest.mark.submitting_job
     def test_put_task(self):
@@ -680,19 +772,57 @@ class TestTask:
             [self.command_name, "put", "--project_id", project_id, "--csv", csv_file,]
         )
 
-    def test_complete_task(self):
+    # def test_complete_task(self):
+    #     main(
+    #         [
+    #             self.command_name,
+    #             "complete",
+    #             "--project_id",
+    #             project_id,
+    #             "--task_id",
+    #             task_id,
+    #             "--phase",
+    #             "annotation",
+    #             "--reply_comment",
+    #             "対応しました（自動投稿）",
+    #             "--yes",
+    #         ]
+    #     )
+
+
+class TestExperimental:
+    command_name = "experimental"
+
+    def test_list_labor_worktime(self):
+        out_file = str(out_path / "list_labor_worktime.csv")
         main(
             [
                 self.command_name,
-                "complete",
+                "list_labor_worktime",
                 "--project_id",
                 project_id,
-                "--task_id",
-                task_id,
-                "--phase",
-                "annotation",
-                "--reply_comment",
-                "対応しました（自動投稿）",
+                "--start_date",
+                "2020-07-01",
+                "--end_date",
+                "2020-07-02",
+                "--output",
+                str(out_file),
+                "--yes",
+            ]
+        )
+
+    def test_dashboad(self):
+        out_file = str(out_path / "dashboard.csv")
+        main(
+            [
+                self.command_name,
+                "dashboard",
+                "--project_id",
+                project_id,
+                "--date",
+                "2020-07-01",
+                "--output",
+                str(out_file),
                 "--yes",
             ]
         )

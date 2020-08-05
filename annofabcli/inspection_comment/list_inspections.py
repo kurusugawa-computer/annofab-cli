@@ -24,6 +24,22 @@ logger = logging.getLogger(__name__)
 FilterInspectionFunc = Callable[[Inspection], bool]
 
 
+def create_filter_func(only_reply: bool, exclude_reply: bool,) -> Callable[[Inspection], bool]:
+    def filter_inspection(arg_inspection: Inspection) -> bool:  # pylint: disable=too-many-return-statements
+        # 返信コメントを除く
+        if only_reply:
+            if arg_inspection["parent_inspection_id"] is None:
+                return False
+
+        if exclude_reply:
+            if arg_inspection["parent_inspection_id"] is not None:
+                return False
+
+        return True
+
+    return filter_inspection
+
+
 class PrintInspections(AbstractCommandLineInterface):
     """
     検査コメント一覧を出力する。
@@ -175,7 +191,13 @@ class PrintInspections(AbstractCommandLineInterface):
         else:
             inspection_list = None
 
-        self.print_inspections(args.project_id, task_id_list, inspection_list_from_json=inspection_list)
+        filter_inspection = create_filter_func(only_reply=args.only_reply, exclude_reply=args.exclude_reply)
+        self.print_inspections(
+            args.project_id,
+            task_id_list,
+            inspection_list_from_json=inspection_list,
+            filter_inspection=filter_inspection,
+        )
 
 
 def parse_args(parser: argparse.ArgumentParser):
@@ -188,6 +210,10 @@ def parse_args(parser: argparse.ArgumentParser):
         "`--inspection_comment_json`を指定しないときは、必須です。"
         "`file://`を先頭に付けると、task_idの一覧が記載されたファイルを指定できます。",
     )
+
+    reply_comment_group = parser.add_mutually_exclusive_group()
+    reply_comment_group.add_argument("--only_reply", action="store_true", help="返信コメントのみを出力する。")
+    reply_comment_group.add_argument("--exclude_reply", action="store_true", help="返信コメントを除外して出力する。")
 
     parser.add_argument(
         "--inspection_comment_json",

@@ -203,7 +203,6 @@ class Database:
 
     def read_task_histories_from_json(self, task_id_list: Optional[List[str]] = None) -> Dict[str, List[TaskHistory]]:
         logger.debug(f"reading {self.task_histories_json_path}")
-
         with open(str(self.task_histories_json_path)) as f:
             task_histories_dict = json.load(f)
 
@@ -437,7 +436,13 @@ class Database:
 
         """
         query = self.query
-        dt_end_date = self._to_datetime_with_tz(query.end_date) if query.end_date is not None else None
+
+        # 終了日はその日の23:59までを対象とするため、１日加算する
+        dt_end_date = (
+            self._to_datetime_with_tz(query.end_date) + datetime.timedelta(days=1)
+            if query.end_date is not None
+            else None
+        )
 
         def filter_task(arg_task: Dict[str, Any]):
             """AND条件で絞り込む"""
@@ -456,7 +461,7 @@ class Database:
             # 終了日で絞り込む
             # 開始日の絞り込み条件はタスク履歴を見る
             if dt_end_date is not None:
-                flag = flag and (dateutil.parser.parse(arg_task["updated_datetime"]) <= dt_end_date)
+                flag = flag and (dateutil.parser.parse(arg_task["updated_datetime"]) < dt_end_date)
 
             if query.ignored_task_id_list is not None:
                 flag = flag and arg_task["task_id"] not in query.ignored_task_id_list
@@ -525,7 +530,7 @@ class Database:
         self._log_annotation_zip_info()
 
         # 統計情報の出力
-        account_statistics = self.annofab_service.api.get_account_statistics(self.project_id)[0]
+        account_statistics = self.annofab_service.wrapper.get_account_statistics(self.project_id)
         self.__write_checkpoint(account_statistics, "account_statistics.pickel")
 
         # 労務管理情報の出力
@@ -552,8 +557,12 @@ class Database:
                 worktime_result_hour=self._get_worktime_hour(e["values"]["working_time_by_user"], "results"),
             )
 
+        # 未来のデータを取得しても意味がないので、今日の日付を指定する
+        end_date = (
+            self.query.end_date if self.query.end_date is not None else datetime.datetime.now().strftime("%Y-%m-%d")
+        )
         labor_list: List[Dict[str, Any]] = self.annofab_service.api.get_labor_control(
-            {"project_id": project_id, "from": self.query.start_date, "to": self.query.end_date}
+            {"project_id": project_id, "from": self.query.start_date, "to": end_date}
         )[0]
 
         return [to_new_labor(e) for e in labor_list if e["account_id"] is not None]

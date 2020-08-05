@@ -60,10 +60,11 @@ class WriteCsvGraph:
 
     def __init__(self, table_obj: Table, output_dir: Path, project_id: str):
         self.table_obj = table_obj
-        self.csv_obj = Csv(str(output_dir), project_id)
-        self.histogram_obj = Histogram(str(output_dir / "histogram"), project_id)
-        self.graph_obj = LineGraph(str(output_dir / "line-graph"), project_id)
-        self.scatter_obj = Scatter(str(output_dir / "scatter"), project_id)
+        filename_prefix = project_id[0:8]
+        self.csv_obj = Csv(str(output_dir), filename_prefix=filename_prefix)
+        self.histogram_obj = Histogram(str(output_dir / "histogram"), filename_prefix)
+        self.graph_obj = LineGraph(str(output_dir / "line-graph"), filename_prefix)
+        self.scatter_obj = Scatter(str(output_dir / "scatter"), filename_prefix)
 
     def _get_task_df(self):
         if self.task_df is None:
@@ -296,7 +297,9 @@ class VisualizeStatistics(AbstractCommandLineInterface):
 
         """
 
-        super().validate_project(project_id, project_member_roles=[ProjectMemberRole.OWNER])
+        super().validate_project(
+            project_id, project_member_roles=[ProjectMemberRole.OWNER, ProjectMemberRole.TRAINING_DATA_USER]
+        )
 
         checkpoint_dir = work_dir / project_id
         checkpoint_dir.mkdir(exist_ok=True, parents=True)
@@ -316,12 +319,15 @@ class VisualizeStatistics(AbstractCommandLineInterface):
             database.update_db(download_latest)
 
         table_obj = Table(database, ignored_task_id_list)
-        write_project_name_file(self.service, project_id, output_dir)
-
-        write_obj = WriteCsvGraph(table_obj, output_dir, project_id)
-        if len(write_obj._get_task_df()) == 0:
+        if len(table_obj._get_task_list()) == 0:
             logger.warning(f"タスク一覧が0件なのでファイルを出力しません。終了します。")
             return
+        if len(table_obj._get_task_histories_dict().keys()) == 0:
+            logger.warning(f"タスク履歴一覧が0件なのでファイルを出力しません。終了します。")
+            return
+
+        write_project_name_file(self.service, project_id, output_dir)
+        write_obj = WriteCsvGraph(table_obj, output_dir, project_id)
         write_obj.write_csv_for_task()
 
         # ヒストグラム
@@ -432,7 +438,7 @@ def add_parser(subparsers: argparse._SubParsersAction):
     subcommand_name = "visualize"
     subcommand_help = "統計情報を可視化したファイルを出力します。"
     description = "統計情報を可視化したファイルを出力します。毎日 03:00JST頃に更新されます。"
-    epilog = "チェッカーまたはオーナロールを持つユーザで実行してください。"
+    epilog = "アノテーションユーザまたはオーナロールを持つユーザで実行してください。"
 
     parser = annofabcli.common.cli.add_parser(subparsers, subcommand_name, subcommand_help, description, epilog=epilog)
     parse_args(parser)
