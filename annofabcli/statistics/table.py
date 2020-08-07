@@ -1217,7 +1217,8 @@ class Table:
                 return max_date
 
         def merge_row(row1: pandas.Series, row2: pandas.Series) -> pandas.Series:
-            sum_row = row1.fillna(0) + row2.fillna(0)
+            string_column_list = ["username", "biography", "last_working_date"]
+            sum_row = row1.drop(labels=string_column_list).fillna(0) + row2.drop(labels=string_column_list).fillna(0)
             sum_row.loc["username", ""] = row1.loc["username", ""]
             sum_row.loc["biography", ""] = row1.loc["biography", ""]
             sum_row.loc["last_working_date", ""] = max_last_working_date(
