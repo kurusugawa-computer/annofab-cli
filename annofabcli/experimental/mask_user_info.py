@@ -9,6 +9,7 @@ import pandas
 import annofabcli
 from annofabcli import AnnofabApiFacade
 from annofabcli.common.cli import AbstractCommandLineInterface, build_annofabapi_resource_and_login, get_list_from_args
+from annofabcli.common.exceptions import AnnofabCliException
 from annofabcli.common.utils import read_multiheader_csv
 
 logger = logging.getLogger(__name__)
@@ -29,6 +30,15 @@ def _create_uniqued_masked_name(masked_name_set: Set[str], masked_name: str) -> 
 
 
 def create_replaced_dict(name_set: Set[str]) -> Dict[str, str]:
+    """
+    keyがマスク対象の名前で、valueがマスクしたあとの名前であるdictを返します。
+
+    Args:
+        name_set:
+
+    Returns:
+
+    """
     replaced_dict = {}
     masked_name_set: Set[str] = set()
     for name in name_set:
@@ -77,7 +87,9 @@ def create_masked_name(name: str) -> str:
     return _num2alpha(hash_value)
 
 
-def get_replaced_user_id_set(df: pandas.DataFrame, not_masked_location_set: Optional[Set[str]] = None) -> Set[str]:
+def get_replaced_user_id_set_from_biography(
+    df: pandas.DataFrame, not_masked_location_set: Optional[Set[str]] = None
+) -> Set[str]:
     if not_masked_location_set is None:
         filtered_df = df
     else:
@@ -86,7 +98,11 @@ def get_replaced_user_id_set(df: pandas.DataFrame, not_masked_location_set: Opti
     return set(filtered_df["user_id"])
 
 
-def get_replaced_username(df: pandas.DataFrame, replace_dict_by_user_id: Dict[str, str]) -> pandas.Series:
+def get_masked_username(df: pandas.DataFrame, replace_dict_by_user_id: Dict[str, str]) -> pandas.Series:
+    """
+    マスク後のusernameのSeriesを返す
+    """
+
     def _get_username(row) -> str:
         if row[("user_id", "")] in replace_dict_by_user_id:
             return replace_dict_by_user_id[row[("user_id", "")]]
@@ -94,6 +110,20 @@ def get_replaced_username(df: pandas.DataFrame, replace_dict_by_user_id: Dict[st
             return row[("username", "")]
 
     return df.apply(_get_username, axis=1)
+
+
+def get_masked_account_id(df: pandas.DataFrame, replace_dict_by_user_id: Dict[str, str]) -> pandas.Series:
+    """
+    マスク後のaccount_idのSeriesを返す
+    """
+
+    def _get_account_id(row) -> str:
+        if row[("user_id", "")] in replace_dict_by_user_id:
+            return replace_dict_by_user_id[row[("user_id", "")]]
+        else:
+            return row[("account_id", "")]
+
+    return df.apply(_get_account_id, axis=1)
 
 
 def get_replaced_biography_set(df: pandas.DataFrame, not_masked_location_set: Optional[Set[str]] = None) -> Set[str]:
@@ -116,35 +146,48 @@ def replate_user_info(
     not_masked_biography_set: Optional[Set[str]] = None,
     not_masked_user_id_set: Optional[Set[str]] = None,
 ) -> pandas.DataFrame:
-    replaced_user_id_set = get_replaced_user_id_set(df, not_masked_location_set=not_masked_biography_set)
+    if "biography" in df:
+        replaced_user_id_set = get_replaced_user_id_set_from_biography(
+            df, not_masked_location_set=not_masked_biography_set
+        )
+    else:
+        replaced_user_id_set = set()
     if not_masked_user_id_set is not None:
         replaced_user_id_set = replaced_user_id_set - not_masked_user_id_set
 
     replace_dict_by_user_id = create_replaced_dict(replaced_user_id_set)
-    new_username = get_replaced_username(df, replace_dict_by_user_id=replace_dict_by_user_id)
-    df["username"] = new_username
+    if "username" in df:
+        df["username"] = get_masked_username(df, replace_dict_by_user_id=replace_dict_by_user_id)
+    if "account_id" in df:
+        df["account_id"] = get_masked_account_id(df, replace_dict_by_user_id=replace_dict_by_user_id)
     df["user_id"] = df["user_id"].replace(replace_dict_by_user_id)
 
-    replaced_biography_set = get_replaced_biography_set(df, not_masked_location_set=not_masked_biography_set)
-    tmp_replace_dict_by_biography = create_replaced_dict(replaced_biography_set)
-    replace_dict_by_biography = {key: f"category-{value}" for key, value in tmp_replace_dict_by_biography.items()}
-    df["biography"] = df["biography"].replace(replace_dict_by_biography)
+    if "biography" in df:
+        replaced_biography_set = get_replaced_biography_set(df, not_masked_location_set=not_masked_biography_set)
+        tmp_replace_dict_by_biography = create_replaced_dict(replaced_biography_set)
+        replace_dict_by_biography = {key: f"category-{value}" for key, value in tmp_replace_dict_by_biography.items()}
+        df["biography"] = df["biography"].replace(replace_dict_by_biography)
     return df
 
 
-def mask_user_info(
+def create_masked_user_info_df(
     csv: Path,
     csv_header: int,
-    output: Path,
     not_masked_biography_set: Optional[Set[str]] = None,
     not_masked_user_id_set: Optional[Set[str]] = None,
-) -> None:
-    df = read_multiheader_csv(str(csv), header_row_count=csv_header)
+) -> pandas.DataFrame:
+    if csv_header == 1:
+        df = pandas.read_csv(str(csv))
+    else:
+        df = read_multiheader_csv(str(csv), header_row_count=csv_header)
+
+    if "user_id" not in df:
+        raise AnnofabCliException(f"`user_id`列が存在しないため、ユーザ情報をマスクできません。")
+
     new_df = replate_user_info(
         df, not_masked_biography_set=not_masked_biography_set, not_masked_user_id_set=not_masked_user_id_set
     )
-    output.parent.mkdir(exist_ok=True, parents=True)
-    new_df.to_csv(str(output), encoding="utf_8_sig", index=False)
+    return new_df
 
 
 class MaskUserInfo(AbstractCommandLineInterface):
@@ -158,13 +201,13 @@ class MaskUserInfo(AbstractCommandLineInterface):
             set(get_list_from_args(args.not_masked_user_id)) if args.not_masked_location is not None else None
         )
 
-        mask_user_info(
+        df = create_masked_user_info_df(
             csv=args.csv,
             csv_header=args.csv_headers,
-            output=args.output,
             not_masked_biography_set=not_masked_biography_set,
             not_masked_user_id_set=not_masked_user_id_set,
         )
+        self.print_csv(df)
 
 
 def main(args):
@@ -174,7 +217,7 @@ def main(args):
 
 
 def parse_args(parser: argparse.ArgumentParser):
-    parser.add_argument("--csv", type=Path, required=True, help="ユーザ情報が記載されたCSVファイル")
+    parser.add_argument("--csv", type=Path, required=True, help="ユーザ情報が記載されたCSVファイルを指定してください。CSVには`user_id`列が必要です。")
     parser.add_argument(
         "--not_masked_biography", type=str, nargs="+", help="マスクしないユーザの`biography`を指定してください。",
     )
@@ -191,6 +234,6 @@ def parse_args(parser: argparse.ArgumentParser):
 def add_parser(subparsers: argparse._SubParsersAction):
     subcommand_name = "mask_user_info"
     subcommand_help = "CSVに記載されたユーザ情報をマスクします。"
-    description = "CSVに記載されたユーザ情報をマスクします。CSVの`user_id`,`username`,`biography`,`account_id`をマスクします。"
+    description = "CSVに記載されたユーザ情報をマスクします。CSVの`user_id`,`username`,`biography`,`account_id` 列をマスクします。"
     parser = annofabcli.common.cli.add_parser(subparsers, subcommand_name, subcommand_help, description)
     parse_args(parser)
