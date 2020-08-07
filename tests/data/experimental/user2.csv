@@ -1,0 +1,5 @@
+user_id,username,biography,task_count,task_count,account_id
+,,,annotation,acceptance,
+alice,Alice,Japan,1,4,alice
+bob,Bob,Japan,2,5,bob
+chris,Chris,China,3,6,chris
