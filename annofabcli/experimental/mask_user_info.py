@@ -8,7 +8,12 @@ import pandas
 
 import annofabcli
 from annofabcli import AnnofabApiFacade
-from annofabcli.common.cli import AbstractCommandLineInterface, build_annofabapi_resource_and_login, get_list_from_args
+from annofabcli.common.cli import (
+    AbstractCommandLineInterface,
+    ArgumentParser,
+    build_annofabapi_resource_and_login,
+    get_list_from_args,
+)
 from annofabcli.common.exceptions import AnnofabCliException
 from annofabcli.common.utils import read_multiheader_csv
 
@@ -214,15 +219,15 @@ class MaskUserInfo(AbstractCommandLineInterface):
         args = self.args
 
         not_masked_biography_set = (
-            set(get_list_from_args(args.not_masked_biography)) if args.not_masked_location is not None else None
+            set(get_list_from_args(args.not_masked_biography)) if args.not_masked_biography is not None else None
         )
         not_masked_user_id_set = (
-            set(get_list_from_args(args.not_masked_user_id)) if args.not_masked_location is not None else None
+            set(get_list_from_args(args.not_masked_user_id)) if args.not_masked_user_id is not None else None
         )
 
         df = create_masked_user_info_df(
             csv=args.csv,
-            csv_header=args.csv_headers,
+            csv_header=args.csv_header,
             not_masked_biography_set=not_masked_biography_set,
             not_masked_user_id_set=not_masked_user_id_set,
         )
@@ -236,6 +241,8 @@ def main(args):
 
 
 def parse_args(parser: argparse.ArgumentParser):
+    argument_parser = ArgumentParser(parser)
+
     parser.add_argument("--csv", type=Path, required=True, help="ユーザ情報が記載されたCSVファイルを指定してください。CSVには`user_id`列が必要です。")
     parser.add_argument(
         "--not_masked_biography", type=str, nargs="+", help="マスクしないユーザの`biography`を指定してください。",
@@ -245,9 +252,9 @@ def parse_args(parser: argparse.ArgumentParser):
     )
     parser.add_argument("--csv_header", type=int, help="CSVのヘッダ行数", default=1)
 
-    parser.add_argument("-o", "--output", type=Path, required=True, help="ユーザ情報をマスクした後のCSVファイル")
+    argument_parser.add_output()
 
-    return parser.parse_args()
+    parser.set_defaults(subcommand_func=main)
 
 
 def add_parser(subparsers: argparse._SubParsersAction):
