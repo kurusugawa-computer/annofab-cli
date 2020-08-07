@@ -1,7 +1,7 @@
 import argparse
 import logging
 from pathlib import Path
-from typing import Dict, Optional, Set
+from typing import Dict, Optional, Set, Tuple, Union
 
 import numpy
 import pandas
@@ -98,16 +98,33 @@ def get_replaced_user_id_set_from_biography(
     return set(filtered_df["user_id"])
 
 
+def _get_header_row_count(df: pandas.DataFrame) -> int:
+    if isinstance(df.columns, pandas.MultiIndex):
+        return len(df.columns.levels)
+    else:
+        return 1
+
+
+def _get_tuple_column(df: pandas.DataFrame, column: str) -> Union[str, Tuple]:
+    size = _get_header_row_count(df)
+    if size >= 2:
+        return tuple([column] + [""] * (size - 1))
+    else:
+        return column
+
+
 def get_masked_username(df: pandas.DataFrame, replace_dict_by_user_id: Dict[str, str]) -> pandas.Series:
     """
     マスク後のusernameのSeriesを返す
     """
+    user_id_column = _get_tuple_column(df, "user_id")
+    username_column = _get_tuple_column(df, "username")
 
     def _get_username(row) -> str:
-        if row[("user_id", "")] in replace_dict_by_user_id:
-            return replace_dict_by_user_id[row[("user_id", "")]]
+        if row[user_id_column] in replace_dict_by_user_id:
+            return replace_dict_by_user_id[row[user_id_column]]
         else:
-            return row[("username", "")]
+            return row[username_column]
 
     return df.apply(_get_username, axis=1)
 
@@ -116,12 +133,14 @@ def get_masked_account_id(df: pandas.DataFrame, replace_dict_by_user_id: Dict[st
     """
     マスク後のaccount_idのSeriesを返す
     """
+    user_id_column = _get_tuple_column(df, "user_id")
+    account_id_column = _get_tuple_column(df, "account_id")
 
     def _get_account_id(row) -> str:
-        if row[("user_id", "")] in replace_dict_by_user_id:
-            return replace_dict_by_user_id[row[("user_id", "")]]
+        if row[user_id_column] in replace_dict_by_user_id:
+            return replace_dict_by_user_id[row[user_id_column]]
         else:
-            return row[("account_id", "")]
+            return row[account_id_column]
 
     return df.apply(_get_account_id, axis=1)
 
