@@ -1494,8 +1494,6 @@ class Table:
         def date_range():
             lower_date = min(df1["date"].min(), df2["date"].min())
             upper_date = max(df1["date"].max(), df2["date"].max())
-            print(lower_date)
-            print(upper_date)
             return pandas.date_range(start=lower_date, end=upper_date)
 
         tmp_df1 = df1.set_index("date")

@@ -15,7 +15,6 @@ logger = logging.getLogger(__name__)
 class WritePerfomancePerUser(AbstractCommandLineInterface):
     def main(self):
         args = self.args
-        project_id = args.project_id
         csv_obj = Csv(outdir=args.output_dir)
 
         df_task = pandas.read_csv(args.task_csv)

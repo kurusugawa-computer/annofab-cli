@@ -28,7 +28,6 @@ class MergePerfomancePerDate(AbstractCommandLineInterface):
         for df in df_list[1:]:
             sum_df = Table.merge_whole_productivity_per_date(sum_df, df)
 
-        print(sum_df.columns)
         output_path: Path = args.output
         csv_obj = Csv(outdir=str(output_path.parent))
         csv_obj.write_whole_productivity_per_date(sum_df, output_path=output_path)
