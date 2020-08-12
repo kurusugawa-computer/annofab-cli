@@ -60,11 +60,10 @@ class WriteCsvGraph:
 
     def __init__(self, table_obj: Table, output_dir: Path, project_id: str):
         self.table_obj = table_obj
-        filename_prefix = project_id[0:8]
-        self.csv_obj = Csv(str(output_dir), filename_prefix=filename_prefix)
-        self.histogram_obj = Histogram(str(output_dir / "histogram"), filename_prefix)
-        self.graph_obj = LineGraph(str(output_dir / "line-graph"), filename_prefix)
-        self.scatter_obj = Scatter(str(output_dir / "scatter"), filename_prefix)
+        self.csv_obj = Csv(str(output_dir))
+        self.histogram_obj = Histogram(str(output_dir / "histogram"))
+        self.graph_obj = LineGraph(str(output_dir / "line-graph"))
+        self.scatter_obj = Scatter(str(output_dir / "scatter"))
 
     def _get_task_df(self):
         if self.task_df is None:

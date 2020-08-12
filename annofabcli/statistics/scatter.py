@@ -21,7 +21,6 @@ class Scatter:
 
     Args:
         outdir: 出力先のディレクトリ
-        filename_prefix: 出力するファイルのプレフィックス
         palette: 散布図を出力するときのカラーパレット。デフォルトは `bokeh.palettes.Category20[20]`
 
     """
@@ -42,9 +41,8 @@ class Scatter:
     # Private
     #############################################
 
-    def __init__(self, outdir: str, filename_prefix: Optional[str] = None, palette: Optional[Sequence[str]] = None):
+    def __init__(self, outdir: str, palette: Optional[Sequence[str]] = None):
         self.scatter_outdir = outdir
-        self.filename_prefix = filename_prefix + "-" if filename_prefix is not None else ""
         Path(self.scatter_outdir).mkdir(exist_ok=True, parents=True)
         if palette is not None:
             self.my_palette = palette
@@ -145,7 +143,7 @@ class Scatter:
             )
 
         html_title = "散布図-アノテーションあたり作業時間と累計作業時間の関係-計測時間"
-        output_file = f"{self.scatter_outdir}/{self.filename_prefix}{html_title}.html"
+        output_file = f"{self.scatter_outdir}/{html_title}.html"
         logger.debug(f"{output_file} を出力します。")
 
         phase_list = self._get_phase_list(df)
@@ -216,7 +214,7 @@ class Scatter:
             )
 
         html_title = "散布図-アノテーションあたり作業時間と累計作業時間の関係-実績時間"
-        output_file = f"{self.scatter_outdir}/{self.filename_prefix}{html_title}.html"
+        output_file = f"{self.scatter_outdir}/{html_title}.html"
         logger.debug(f"{output_file} を出力します。")
 
         phase_list = self._get_phase_list(df)
@@ -282,7 +280,7 @@ class Scatter:
             )
 
         html_title = "散布図-教師付者の品質と作業量の関係"
-        output_file = f"{self.scatter_outdir}/{self.filename_prefix}{html_title}.html"
+        output_file = f"{self.scatter_outdir}/{html_title}.html"
         logger.debug(f"{output_file} を出力します。")
 
         figure_list = [

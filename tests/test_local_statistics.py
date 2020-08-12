@@ -89,7 +89,7 @@ class TestScatter:
 
     @classmethod
     def setup_class(cls):
-        cls.scatter_obj = Scatter(outdir=str(out_path), filename_prefix=project_id[0:8])
+        cls.scatter_obj = Scatter(outdir=str(out_path))
 
     def read_productivity_per_user(self):
         productivity_per_user = pandas.read_csv(str(data_path / "productivity-per-user.csv"), header=[0, 1])
@@ -123,7 +123,7 @@ class TestLineGraph:
 
     @classmethod
     def setup_class(cls):
-        cls.line_graph_obj = LineGraph(outdir=str(out_path), filename_prefix=project_id[0:8])
+        cls.line_graph_obj = LineGraph(outdir=str(out_path))
 
     def test_write_cumulative_line_graph_for_annotator(self):
         df = pandas.read_csv(str(data_path / "task.csv"))

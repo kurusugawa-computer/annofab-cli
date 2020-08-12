@@ -29,9 +29,8 @@ class LineGraph:
     # Private
     #############################################
 
-    def __init__(self, outdir: str, filename_prefix: Optional[str] = None):
+    def __init__(self, outdir: str):
         self.line_graph_outdir = outdir
-        self.filename_prefix = filename_prefix + "-" if filename_prefix is not None else ""
         Path(self.line_graph_outdir).mkdir(exist_ok=True, parents=True)
 
     @staticmethod
@@ -159,7 +158,7 @@ class LineGraph:
             Returns:
 
             """
-            output_file = f"{self.line_graph_outdir}/{self.filename_prefix}{html_title}.html"
+            output_file = f"{self.line_graph_outdir}/{html_title}.html"
             logger.debug(f"{output_file} を出力します。")
 
             figs: List[bokeh.plotting.Figure] = []
@@ -374,7 +373,7 @@ class LineGraph:
             Returns:
 
             """
-            output_file = f"{self.line_graph_outdir}/{self.filename_prefix}{html_title}.html"
+            output_file = f"{self.line_graph_outdir}/{html_title}.html"
             logger.debug(f"{output_file} を出力します。")
 
             figs: List[bokeh.plotting.Figure] = []
@@ -594,7 +593,7 @@ class LineGraph:
             Returns:
 
             """
-            output_file = f"{self.line_graph_outdir}/{self.filename_prefix}{html_title}.html"
+            output_file = f"{self.line_graph_outdir}/{html_title}.html"
             logger.debug(f"{output_file} を出力します。")
 
             figs: List[bokeh.plotting.Figure] = []
@@ -745,7 +744,7 @@ class LineGraph:
             Returns:
 
             """
-            output_file = f"{self.line_graph_outdir}/{self.filename_prefix}{html_title}.html"
+            output_file = f"{self.line_graph_outdir}/{html_title}.html"
             logger.debug(f"{output_file} を出力します。")
 
             figs: List[bokeh.plotting.Figure] = []
@@ -896,7 +895,7 @@ class LineGraph:
             return
 
         html_title = "累積折れ線-横軸_日-縦軸_作業時間"
-        output_file = f"{self.line_graph_outdir}/{self.filename_prefix}{html_title}.html"
+        output_file = f"{self.line_graph_outdir}/{html_title}.html"
 
         user_id_list = self.create_user_id_list(df, "user_id", user_id_list)
         if len(user_id_list) == 0:
@@ -988,7 +987,7 @@ class LineGraph:
             return
 
         html_title = "累積折れ線-横軸_アノテーション数-縦軸_作業時間-全体"
-        output_file = f"{self.line_graph_outdir}/{self.filename_prefix}{html_title}.html"
+        output_file = f"{self.line_graph_outdir}/{html_title}.html"
 
         logger.debug(f"{output_file} を出力します。")
 
