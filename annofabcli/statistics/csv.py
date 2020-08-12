@@ -516,7 +516,7 @@ class Csv:
             print_csv(df, output=str(output_path), to_csv_kwargs=self.CSV_FORMAT)
 
     def write_whole_productivity_per_date(
-        self, df: pandas.DataFrame, dropped_columns: Optional[List[str]] = None
+        self, df: pandas.DataFrame, dropped_columns: Optional[List[str]] = None, output_path: Optional[Path] = None
     ) -> None:
         """
         日毎の全体の生産量、生産性を出力する。
@@ -556,4 +556,8 @@ class Csv:
         )
 
         required_columns = self._create_required_columns(df, prior_columns, dropped_columns)
-        self._write_csv(f"{self.filename_prefix}日毎の生産量と生産性.csv", df[required_columns])
+        target_df = df[required_columns]
+        if output_path is None:
+            self._write_csv(f"{self.filename_prefix}日毎の生産量と生産性.csv", target_df)
+        else:
+            print_csv(df, output=str(output_path), to_csv_kwargs=self.CSV_FORMAT)

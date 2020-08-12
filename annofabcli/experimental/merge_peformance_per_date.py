@@ -8,7 +8,6 @@ import pandas
 import annofabcli
 from annofabcli import AnnofabApiFacade
 from annofabcli.common.cli import AbstractCommandLineInterface, build_annofabapi_resource_and_login
-from annofabcli.common.utils import read_multiheader_csv
 from annofabcli.statistics.csv import Csv
 from annofabcli.statistics.table import Table
 
@@ -22,16 +21,17 @@ class MergePerfomancePerDate(AbstractCommandLineInterface):
         df_list: List[pandas.DataFrame] = []
         csv_path_list = args.csv
         for csv_path in csv_path_list:
-            df = read_multiheader_csv(str(csv_path))
+            df = pandas.read_csv(str(csv_path))
             df_list.append(df)
 
         sum_df = df_list[0]
         for df in df_list[1:]:
-            sum_df = Table.merge_productivity_per_user_from_aw_time(sum_df, df)
+            sum_df = Table.merge_whole_productivity_per_date(sum_df, df)
 
+        print(sum_df.columns)
         output_path: Path = args.output
         csv_obj = Csv(outdir=str(output_path.parent))
-        csv_obj.write_productivity_from_aw_time(sum_df, output_path=output_path)
+        csv_obj.write_whole_productivity_per_date(sum_df, output_path=output_path)
 
 
 def main(args):
@@ -49,7 +49,7 @@ def parse_args(parser: argparse.ArgumentParser):
         help=("CSVファイルのパスを複数指定してください。" "CSVは、'statistics visualize'コマンドの出力結果である'日毎の生産量と生産性.csv'と同じフォーマットです。"),
     )
 
-    parser.add_argument("-o", "--output", type=Path, required=True, help="出力先のファイルパスを指定します。")
+    parser.add_argument("-o", "--output", required=True, type=Path, help="出力先のファイルパスを指定します。")
 
     parser.set_defaults(subcommand_func=main)
 

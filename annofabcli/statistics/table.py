@@ -1517,5 +1517,6 @@ class Table:
             row_list.append(sum_row)
 
         sum_df = pandas.DataFrame(row_list)
+        sum_df.index.name = "date"
         Table._add_ratio_cumsum_column_for_productivity_per_date(sum_df)
         return sum_df.reset_index()
