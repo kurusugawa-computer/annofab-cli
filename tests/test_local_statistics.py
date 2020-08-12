@@ -67,6 +67,13 @@ class TestTable:
         df = Table.create_whole_productivity_per_date(df_task=df_task, df_labor=pandas.DataFrame())
         csv_obj.write_whole_productivity_per_date(df)
 
+    def test_merge_whole_productivity_per_date(self):
+        df1 = pandas.read_csv(str(data_path / "productivity-per-date.csv"))
+        df2 = pandas.read_csv(str(data_path / "productivity-per-date2.csv"))
+        sum_df = Table.merge_whole_productivity_per_date(df1, df2)
+        print(sum_df)
+        sum_df.to_csv(out_path / "merge-productivity-per-date.csv")
+
 
 class TestSummarizeTaskCount:
     def test_SimpleTaskStatus_from_task_status(self):

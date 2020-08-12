@@ -1476,17 +1476,6 @@ class Table:
             マージ済のユーザごとの生産性・品質情報
         """
 
-        def max_last_working_date(date1, date2, columns: pandas.Series):
-            if not isinstance(date1, str) and numpy.isnan(date1):
-                date1 = ""
-            if not isinstance(date2, str) and numpy.isnan(date2):
-                date2 = ""
-            max_date = max(date1, date2)
-            if max_date == "":
-                return numpy.nan
-            else:
-                return max_date
-
         def merge_row(
             str_date: str, columns: pandas.Index, row1: Optional[pandas.Series], row2: Optional[pandas.Series]
         ) -> pandas.Series:
@@ -1504,7 +1493,9 @@ class Table:
 
         def date_range():
             lower_date = min(df1["date"].min(), df2["date"].min())
-            upper_date = min(df1["date"].max(), df2["date"].max())
+            upper_date = max(df1["date"].max(), df2["date"].max())
+            print(lower_date)
+            print(upper_date)
             return pandas.date_range(start=lower_date, end=upper_date)
 
         tmp_df1 = df1.set_index("date")
