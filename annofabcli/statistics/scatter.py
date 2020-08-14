@@ -1,5 +1,5 @@
-import math
 import logging
+import math
 from pathlib import Path
 from typing import Any, List, Optional, Sequence
 
@@ -111,9 +111,6 @@ class Scatter:
             muted_alpha=0.2,
         )
 
-
-
-
     @staticmethod
     def _plot_bubble(
         fig: bokeh.plotting.Figure,
@@ -136,8 +133,8 @@ class Scatter:
             color: 線と点の色
 
         """
-        def _worktime_hour_to_scatter_size(worktime_hour: float
-                                           ) -> int:
+
+        def _worktime_hour_to_scatter_size(worktime_hour: float) -> int:
             """
             作業時間からバブルの大きさに変更する。
             """
@@ -150,13 +147,20 @@ class Scatter:
             else:
                 return tmp
 
-
         if legend_label == "":
             legend_label = "none"
 
         size_list = map(_worktime_hour_to_scatter_size, source.data[size_column_name])
+
         fig.scatter(
-            x=x_column_name, y=y_column_name, source=source, legend_label=legend_label, color=color, fill_alpha=0.8, muted_alpha=0.2,size=size_list
+            x=x_column_name,
+            y=y_column_name,
+            source=source,
+            legend_label=legend_label,
+            color=color,
+            fill_alpha=0.8,
+            muted_alpha=0.2,
+            size=size_list,
         )
         fig.text(
             x=x_column_name,
@@ -179,7 +183,7 @@ class Scatter:
             phase_list.remove(TaskPhase.ACCEPTANCE.value)
         return phase_list
 
-    @_catch_exception
+    
     def write_scatter_for_productivity_by_monitored_worktime(self, df: pandas.DataFrame):
         """
         AnnoFab計測時間を元に算出した生産性を、メンバごとにプロットする
@@ -252,7 +256,7 @@ class Scatter:
         bokeh.plotting.output_file(output_file, title=html_title)
         bokeh.plotting.save(bokeh.layouts.column(figure_list))
 
-    @_catch_exception
+    
     def write_scatter_for_productivity_by_actual_worktime(self, df: pandas.DataFrame):
         """
         実績作業時間を元に算出した生産性を、メンバごとにプロットする
@@ -322,7 +326,7 @@ class Scatter:
         bokeh.plotting.output_file(output_file, title=html_title)
         bokeh.plotting.save(bokeh.layouts.column(figure_list))
 
-    @_catch_exception
+    
     def write_scatter_for_quality(self, df: pandas.DataFrame):
         """
         メンバごとに品質を散布図でプロットする
@@ -399,7 +403,7 @@ class Scatter:
         bokeh.plotting.output_file(output_file, title=html_title)
         bokeh.plotting.save(bokeh.layouts.column(figure_list))
 
-    @_catch_exception
+    
     def write_scatter_for_productivity_by_actual_worktime_and_quality(self, df: pandas.DataFrame):
         """
         実績作業時間を元に算出した生産性と品質の関係を、メンバごとにプロットする
@@ -410,7 +414,6 @@ class Scatter:
                 plot_width=800, plot_height=600, title=title, x_axis_label=x_axis_label, y_axis_label=y_axis_label,
             )
 
-
         html_title = "散布図-アノテーションあたり作業時間と品質の関係-実績時間-教師付者用"
         output_file = f"{self.scatter_outdir}/{html_title}.html"
         logger.debug(f"{output_file} を出力します。")
@@ -418,15 +421,21 @@ class Scatter:
         phase_list = self._get_phase_list(df)
 
         figure_list = [
-            create_figure(title=f"アノテーションあたり作業時間とタスクあたり差し戻し回数の関係",x_axis_label="アノテーションあたり作業時間", y_axis_label="タスクあたり差し戻し回数"),
-            create_figure(title=f"アノテーションあたり作業時間とアノテーションあたり検査コメント数の関係",x_axis_label="アノテーションあたり作業時間", y_axis_label="アノテーションあたり検査コメント数"),
+            create_figure(
+                title=f"アノテーションあたり作業時間とタスクあたり差し戻し回数の関係", x_axis_label="アノテーションあたり作業時間", y_axis_label="タスクあたり差し戻し回数"
+            ),
+            create_figure(
+                title=f"アノテーションあたり作業時間とアノテーションあたり検査コメント数の関係",
+                x_axis_label="アノテーションあたり作業時間",
+                y_axis_label="アノテーションあたり検査コメント数",
+            ),
         ]
         column_pair_list = [
             ("actual_worktime/annotation_count", "rejected_count/task_count"),
             ("actual_worktime/annotation_count", "pointed_out_inspection_comment_count/annotation_count"),
         ]
         phase = TaskPhase.ANNOTATION.value
-
+        print("hello1")
         df["biography"] = df["biography"].fillna("")
         for biography_index, biography in enumerate(set(df["biography"])):
             for fig, column_pair in zip(figure_list, column_pair_list):
@@ -437,6 +446,7 @@ class Scatter:
                 if len(filtered_df) == 0:
                     continue
                 source = ColumnDataSource(data=filtered_df)
+                print("test1")
                 self._plot_bubble(
                     fig=fig,
                     source=source,
@@ -447,6 +457,8 @@ class Scatter:
                     color=self.my_palette[biography_index],
                 )
 
+        print(figure_list)
+        print("hello2")
         for fig, phase in zip(figure_list, phase_list):
             tooltip_item = [
                 "username_",
@@ -467,8 +479,7 @@ class Scatter:
             hover_tool = self._create_hover_tool(tooltip_item)
             fig.add_tools(hover_tool)
             self._set_legend(fig)
-
+        print("hello3")
         bokeh.plotting.reset_output()
         bokeh.plotting.output_file(output_file, title=html_title)
         bokeh.plotting.save(bokeh.layouts.column(figure_list))
-

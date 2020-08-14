@@ -18,6 +18,7 @@ class WriteScatterPerUser(AbstractCommandLineInterface):
         scatter_obj.write_scatter_for_productivity_by_monitored_worktime(df)
         scatter_obj.write_scatter_for_productivity_by_actual_worktime(df)
         scatter_obj.write_scatter_for_quality(df)
+        scatter_obj.write_scatter_for_productivity_by_actual_worktime_and_quality(df)
 
 
 def main(args):

@@ -136,6 +136,7 @@ class WriteCsvGraph:
         catch_exception(self.scatter_obj.write_scatter_for_productivity_by_monitored_worktime)(productivity_df)
         catch_exception(self.scatter_obj.write_scatter_for_productivity_by_actual_worktime)(productivity_df)
         catch_exception(self.scatter_obj.write_scatter_for_quality)(productivity_df)
+        catch_exception(self.scatter_obj.write_scatter_for_productivity_by_actual_worktime_and_quality)(productivity_df)
 
     def write_linegraph_for_task_overall(self) -> None:
         """
