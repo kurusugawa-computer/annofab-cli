@@ -123,8 +123,7 @@ class LineGraph:
         """
         max_user_length = len(self.my_palette)
         if arg_user_id_list is None or len(arg_user_id_list) == 0:
-            tmp_list: List[str] = df[user_id_column].dropna().unique().tolist()
-            tmp_list.sort()
+            tmp_list: List[str] = df.sort_values(by="last_working_date",ascending=False)[user_id_column].dropna().unique().tolist()
             user_id_list = tmp_list
         else:
             user_id_list = arg_user_id_list

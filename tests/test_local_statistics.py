@@ -17,10 +17,15 @@ out_path.mkdir(exist_ok=True, parents=True)
 
 project_id = "12345678-abcd-1234-abcd-1234abcd5678"
 
-csv_obj = Csv(str(out_path), project_id[0:8])
+
 
 
 class TestTable:
+    @classmethod
+    def setup_class(cls):
+        cls.csv_obj = Csv(str(out_path), project_id[0:8])
+
+
     def test_get_task_history_df(self):
         task_history_df = pandas.read_csv(str(data_path / "task-history-df.csv"))
         task_df = pandas.DataFrame(
@@ -53,19 +58,19 @@ class TestTable:
         df_task = pandas.read_csv(str(data_path / "task.csv"))
         df_labor = pandas.read_csv(str(data_path / "labor-df.csv"))
         df = Table.create_whole_productivity_per_date(df_task=df_task, df_labor=df_labor)
-        csv_obj.write_whole_productivity_per_date(df)
+        self.csv_obj.write_whole_productivity_per_date(df)
 
     def test_create_whole_productivity_per_date2(self):
         # 完了タスクが１つもない状態で試す
         df_task = pandas.read_csv(str(data_path / "only-working-task.csv"))
         df_labor = pandas.read_csv(str(data_path / "labor-df.csv"))
         df = Table.create_whole_productivity_per_date(df_task=df_task, df_labor=df_labor)
-        csv_obj.write_whole_productivity_per_date(df)
+        self.csv_obj.write_whole_productivity_per_date(df)
 
     def test_create_whole_productivity_per_date__labor_is_empty(self):
         df_task = pandas.read_csv(str(data_path / "task.csv"))
         df = Table.create_whole_productivity_per_date(df_task=df_task, df_labor=pandas.DataFrame())
-        csv_obj.write_whole_productivity_per_date(df)
+        self.csv_obj.write_whole_productivity_per_date(df)
 
     def test_merge_whole_productivity_per_date(self):
         df1 = pandas.read_csv(str(data_path / "productivity-per-date.csv"))
@@ -117,6 +122,9 @@ class TestScatter:
         productivity_per_user = self.read_productivity_per_user()
         self.scatter_obj.write_scatter_for_quality(productivity_per_user)
 
+    def test_write_scatter_for_productivity_by_actual_worktime_and_quality(self):
+        productivity_per_user = self.read_productivity_per_user()
+        self.scatter_obj.write_scatter_for_productivity_by_actual_worktime_and_quality(productivity_per_user)
 
 class TestLineGraph:
     line_graph_obj = None

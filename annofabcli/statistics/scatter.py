@@ -1,3 +1,4 @@
+import math
 import logging
 from pathlib import Path
 from typing import Any, List, Optional, Sequence
@@ -105,6 +106,64 @@ class Scatter:
             y=y_column_name,
             source=source,
             text="username_",
+            text_font_size="7pt",
+            legend_label=legend_label,
+            muted_alpha=0.2,
+        )
+
+
+
+
+    @staticmethod
+    def _plot_bubble(
+        fig: bokeh.plotting.Figure,
+        source: ColumnDataSource,
+        x_column_name: str,
+        y_column_name: str,
+        size_column_name: str,
+        legend_label: str,
+        color: Any,
+    ) -> None:
+        """
+        バブルチャート用にプロットする。
+
+        Args:
+            fig:
+            source:
+            x_column_name: sourceに対応するX軸の列名
+            y_column_name: sourceに対応するY軸の列名
+            legend_label: 凡例に表示する名前
+            color: 線と点の色
+
+        """
+        def _worktime_hour_to_scatter_size(worktime_hour: float
+                                           ) -> int:
+            """
+            作業時間からバブルの大きさに変更する。
+            """
+            MIN_SCATTER_SIZE = 4
+            if worktime_hour <= 0:
+                return MIN_SCATTER_SIZE
+            tmp = int(math.log2(worktime_hour) * 15 - 50)
+            if tmp < MIN_SCATTER_SIZE:
+                return MIN_SCATTER_SIZE
+            else:
+                return tmp
+
+
+        if legend_label == "":
+            legend_label = "none"
+
+        size_list = map(_worktime_hour_to_scatter_size, source.data[size_column_name])
+        fig.scatter(
+            x=x_column_name, y=y_column_name, source=source, legend_label=legend_label, color=color, fill_alpha=0.8, muted_alpha=0.2,size=size_list
+        )
+        fig.text(
+            x=x_column_name,
+            y=y_column_name,
+            source=source,
+            text="username_",
+            text_align="center",
             text_font_size="7pt",
             legend_label=legend_label,
             muted_alpha=0.2,
@@ -339,3 +398,77 @@ class Scatter:
         bokeh.plotting.reset_output()
         bokeh.plotting.output_file(output_file, title=html_title)
         bokeh.plotting.save(bokeh.layouts.column(figure_list))
+
+    @_catch_exception
+    def write_scatter_for_productivity_by_actual_worktime_and_quality(self, df: pandas.DataFrame):
+        """
+        実績作業時間を元に算出した生産性と品質の関係を、メンバごとにプロットする
+        """
+
+        def create_figure(title: str, x_axis_label: str, y_axis_label: str) -> bokeh.plotting.Figure:
+            return figure(
+                plot_width=800, plot_height=600, title=title, x_axis_label=x_axis_label, y_axis_label=y_axis_label,
+            )
+
+
+        html_title = "散布図-アノテーションあたり作業時間と品質の関係-実績時間-教師付者用"
+        output_file = f"{self.scatter_outdir}/{html_title}.html"
+        logger.debug(f"{output_file} を出力します。")
+
+        phase_list = self._get_phase_list(df)
+
+        figure_list = [
+            create_figure(title=f"アノテーションあたり作業時間とタスクあたり差し戻し回数の関係",x_axis_label="アノテーションあたり作業時間", y_axis_label="タスクあたり差し戻し回数"),
+            create_figure(title=f"アノテーションあたり作業時間とアノテーションあたり検査コメント数の関係",x_axis_label="アノテーションあたり作業時間", y_axis_label="アノテーションあたり検査コメント数"),
+        ]
+        column_pair_list = [
+            ("actual_worktime/annotation_count", "rejected_count/task_count"),
+            ("actual_worktime/annotation_count", "pointed_out_inspection_comment_count/annotation_count"),
+        ]
+        phase = TaskPhase.ANNOTATION.value
+
+        df["biography"] = df["biography"].fillna("")
+        for biography_index, biography in enumerate(set(df["biography"])):
+            for fig, column_pair in zip(figure_list, column_pair_list):
+                x_column, y_column = column_pair
+                filtered_df = df[
+                    (df["biography"] == biography) & df[(x_column, phase)].notna() & df[(y_column, phase)].notna()
+                ]
+                if len(filtered_df) == 0:
+                    continue
+                source = ColumnDataSource(data=filtered_df)
+                self._plot_bubble(
+                    fig=fig,
+                    source=source,
+                    x_column_name=f"{x_column}_{phase}",
+                    y_column_name=f"{y_column}_{phase}",
+                    size_column_name=f"prediction_actual_worktime_hour_{phase}",
+                    legend_label=biography,
+                    color=self.my_palette[biography_index],
+                )
+
+        for fig, phase in zip(figure_list, phase_list):
+            tooltip_item = [
+                "username_",
+                "biography_",
+                "last_working_date_",
+                f"prediction_actual_worktime_hour_{phase}",
+                f"task_count_{phase}",
+                f"input_data_count_{phase}",
+                f"annotation_count_{phase}",
+                f"monitored_worktime_hour_{phase}",
+                f"actual_worktime/input_data_count_{phase}",
+                f"actual_worktime/annotation_count_{phase}",
+                f"rejected_count_{phase}",
+                f"pointed_out_inspection_comment_count_{phase}",
+                f"rejected_count/task_count_{phase}",
+                f"pointed_out_inspection_comment_count/annotation_count_{phase}",
+            ]
+            hover_tool = self._create_hover_tool(tooltip_item)
+            fig.add_tools(hover_tool)
+            self._set_legend(fig)
+
+        bokeh.plotting.reset_output()
+        bokeh.plotting.output_file(output_file, title=html_title)
+        bokeh.plotting.save(bokeh.layouts.column(figure_list))
+
