@@ -327,7 +327,7 @@ class VisualizeStatistics(AbstractCommandLineInterface):
             return
 
         write_project_name_file(self.service, project_id, output_dir)
-        write_obj = WriteCsvGraph(table_obj, output_dir, project_id)
+        write_obj = WriteCsvGraph(table_obj, output_dir)
         write_obj.write_csv_for_task()
 
         # ヒストグラム

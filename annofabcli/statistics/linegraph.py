@@ -107,7 +107,11 @@ class LineGraph:
             fig.add_layout(legend, "left")
 
     def create_user_id_list(
-        self, df: pandas.DataFrame, user_id_column: str, arg_user_id_list: Optional[List[str]] = None,
+        self,
+        df: pandas.DataFrame,
+        user_id_column: str,
+        datetime_column: str,
+        arg_user_id_list: Optional[List[str]] = None,
     ) -> List[str]:
         """
         グラフに表示するユーザのuser_idを生成する。
@@ -115,6 +119,7 @@ class LineGraph:
         Args:
             df:
             user_id_column: user_idが格納されている列の名前
+            datetime_column: 日時列の降順でソートする
             arg_first_annotation_user_id_list: 指定されたuser_idのList
 
         Returns:
@@ -122,13 +127,14 @@ class LineGraph:
 
         """
         max_user_length = len(self.my_palette)
+        print(df.columns)
+        tmp_user_id_list: List[str] = df.sort_values(by=datetime_column, ascending=False)[
+            user_id_column
+        ].dropna().unique().tolist()
         if arg_user_id_list is None or len(arg_user_id_list) == 0:
-            tmp_list: List[str] = df.sort_values(by="last_working_date", ascending=False)[
-                user_id_column
-            ].dropna().unique().tolist()
-            user_id_list = tmp_list
+            user_id_list = tmp_user_id_list
         else:
-            user_id_list = arg_user_id_list
+            user_id_list = [user_id for user_id in tmp_user_id_list if user_id in arg_user_id_list]
 
         if len(user_id_list) > max_user_length:
             logger.info(f"表示対象のuser_idの数が多いため、先頭から{max_user_length}個のみグラフ化します")
@@ -206,7 +212,7 @@ class LineGraph:
         tooltip_item = [
             "first_annotation_user_id",
             "first_annotation_username",
-            "first_annotation_started_date",
+            "first_annotation_started_datetime",
             "first_annotation_worktime_hour",
             "annotation_worktime_hour",
             "inspection_worktime_hour",
@@ -222,7 +228,10 @@ class LineGraph:
             return
 
         first_annotation_user_id_list = self.create_user_id_list(
-            df, "first_annotation_user_id", first_annotation_user_id_list
+            df,
+            "first_annotation_user_id",
+            datetime_column="first_annotation_started_datetime",
+            arg_user_id_list=first_annotation_user_id_list,
         )
         logger.debug(f"教師付者用の折れ線グラフに表示する、教師付者のuser_id = {first_annotation_user_id_list}")
 
@@ -438,7 +447,10 @@ class LineGraph:
             return
 
         first_annotation_user_id_list = self.create_user_id_list(
-            df, "first_annotation_user_id", first_annotation_user_id_list
+            df,
+            "first_annotation_user_id",
+            datetime_column="first_annotation_started_datetime",
+            arg_user_id_list=first_annotation_user_id_list,
         )
         logger.debug(f"教師付者用の累積折れ線グラフに表示する、教師付者のuser_id = {first_annotation_user_id_list}")
 
@@ -659,7 +671,10 @@ class LineGraph:
             return
 
         first_inspection_user_id_list = self.create_user_id_list(
-            df, "first_inspection_user_id", first_inspection_user_id_list
+            df,
+            "first_inspection_user_id",
+            datetime_column="first_inspection_started_datetime",
+            arg_user_id_list=first_inspection_user_id_list,
         )
 
         if len(first_inspection_user_id_list) == 0:
@@ -812,7 +827,10 @@ class LineGraph:
             return
 
         first_acceptance_user_id_list = self.create_user_id_list(
-            df, "first_acceptance_user_id", first_acceptance_user_id_list
+            df,
+            "first_acceptance_user_id",
+            datetime_column="first_acceptance_started_datetime",
+            arg_user_id_list=first_acceptance_user_id_list,
         )
 
         if len(first_acceptance_user_id_list) == 0:

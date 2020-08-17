@@ -409,8 +409,12 @@ class Scatter:
 
         def create_figure(title: str, x_axis_label: str, y_axis_label: str) -> bokeh.plotting.Figure:
             return figure(
-                plot_width=1200, plot_height=800, title=title, x_axis_label=x_axis_label, y_axis_label=y_axis_label,
-                tools="poly_select"
+                plot_width=1200,
+                plot_height=800,
+                title=title,
+                x_axis_label=x_axis_label,
+                y_axis_label=y_axis_label,
+                tools="poly_select",
             )
 
         html_title = "散布図-アノテーションあたり作業時間と品質の関係-実績時間-教師付者用"
