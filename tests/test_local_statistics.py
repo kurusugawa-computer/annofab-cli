@@ -151,6 +151,9 @@ class TestLineGraph:
         df_cumulative = Table.create_cumulative_df_overall(df_task)
         self.line_graph_obj.write_cumulative_line_graph_overall(df_cumulative)
 
+    def test_write_whole_productivity_line_graph(self):
+        df = pandas.read_csv(str(data_path/ "productivity-per-date.csv"))
+        self.line_graph_obj.write_whole_productivity_line_graph(df)
 
 class TestSummarizeTaskCountByTaskId:
     # task_list = [
