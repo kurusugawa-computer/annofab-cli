@@ -185,6 +185,22 @@ class Scatter:
             phase_list.remove(TaskPhase.ACCEPTANCE.value)
         return phase_list
 
+    @staticmethod
+    def _plot_average_line(fig: bokeh.plotting.Figure, value: Any, dimension: str):
+        span_average_line = bokeh.models.Span(
+            location=value, dimension=dimension, line_color="green", line_width=1, line_alpha=0.5
+        )
+        fig.add_layout(span_average_line)
+
+    @staticmethod
+    def _get_average_value(df: pandas.DataFrame, numerator_column: Any, denominator_column: Any) -> Optional[float]:
+        numerator = df[numerator_column].sum()
+        denominator = df[denominator_column].sum()
+        if denominator > 0:
+            return numerator / denominator
+        else:
+            return None
+
     def write_scatter_for_productivity_by_monitored_worktime(self, df: pandas.DataFrame):
         """
         AnnoFab計測時間を元に算出した生産性を、メンバごとにプロットする
@@ -199,8 +215,8 @@ class Scatter:
 
         def create_figure(title: str) -> bokeh.plotting.Figure:
             return figure(
-                plot_width=800,
-                plot_height=600,
+                plot_width=1200,
+                plot_height=800,
                 title=title,
                 x_axis_label="累計作業時間[hour]",
                 y_axis_label="アノテーションあたり作業時間[hour/annotation]",
@@ -236,6 +252,13 @@ class Scatter:
                     color=self.my_palette[biography_index],
                 )
 
+                average_value = self._get_average_value(
+                    df,
+                    numerator_column=("monitored_worktime_hour", phase),
+                    denominator_column=("annotation_count", phase),
+                )
+                self._plot_average_line(fig, average_value, dimension="width")
+
         for fig, phase in zip(figure_list, phase_list):
             tooltip_item = [
                 "username_",
@@ -269,8 +292,8 @@ class Scatter:
 
         def create_figure(title: str) -> bokeh.plotting.Figure:
             return figure(
-                plot_width=800,
-                plot_height=600,
+                plot_width=1200,
+                plot_height=800,
                 title=title,
                 x_axis_label="累計作業時間[hour]",
                 y_axis_label="アノテーションあたり作業時間[hour/annotation]",
@@ -305,6 +328,13 @@ class Scatter:
                     color=self.my_palette[biography_index],
                 )
 
+                average_value = self._get_average_value(
+                    df,
+                    numerator_column=("prediction_actual_worktime_hour", phase),
+                    denominator_column=("annotation_count", phase),
+                )
+                self._plot_average_line(fig, average_value, dimension="width")
+
         for fig, phase in zip(figure_list, phase_list):
             tooltip_item = [
                 "username_",
@@ -338,7 +368,7 @@ class Scatter:
 
         def create_figure(title: str, x_axis_label: str, y_axis_label: str) -> bokeh.plotting.Figure:
             return figure(
-                plot_width=800, plot_height=600, title=title, x_axis_label=x_axis_label, y_axis_label=y_axis_label,
+                plot_width=1200, plot_height=800, title=title, x_axis_label=x_axis_label, y_axis_label=y_axis_label,
             )
 
         html_title = "散布図-教師付者の品質と作業量の関係"
@@ -378,6 +408,15 @@ class Scatter:
                     legend_label=biography,
                     color=self.my_palette[biography_index],
                 )
+
+        for column_pair, fig in zip(
+            [("rejected_count", "task_count"), ("pointed_out_inspection_comment_count", "annotation_count")],
+            figure_list,
+        ):
+            average_value = self._get_average_value(
+                df, numerator_column=(column_pair[0], phase), denominator_column=(column_pair[1], phase)
+            )
+            self._plot_average_line(fig, average_value, dimension="width")
 
         for fig in figure_list:
             tooltip_item = [
@@ -455,6 +494,21 @@ class Scatter:
                     legend_label=biography,
                     color=self.my_palette[biography_index],
                 )
+
+        x_average_value = self._get_average_value(
+            df,
+            numerator_column=("prediction_actual_worktime_hour", phase),
+            denominator_column=("annotation_count", phase),
+        )
+        for column_pair, fig in zip(
+            [("rejected_count", "task_count"), ("pointed_out_inspection_comment_count", "annotation_count"),],
+            figure_list,
+        ):
+            self._plot_average_line(fig, x_average_value, dimension="height")
+            y_average_value = self._get_average_value(
+                df, numerator_column=(column_pair[0], phase), denominator_column=(column_pair[1], phase),
+            )
+            self._plot_average_line(fig, y_average_value, dimension="width")
 
         for fig in figure_list:
             tooltip_item = [
