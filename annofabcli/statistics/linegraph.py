@@ -165,6 +165,7 @@ class LineGraph:
         tmp_user_id_list: List[str] = df.sort_values(by=datetime_column, ascending=False)[
             user_id_column
         ].dropna().unique().tolist()
+
         if arg_user_id_list is None or len(arg_user_id_list) == 0:
             user_id_list = tmp_user_id_list
         else:

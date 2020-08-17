@@ -197,7 +197,7 @@ class WriteCsvGraph:
         whole_productivity_df = self._get_whole_productivity_df()
         catch_exception(self.linegraph_obj.write_whole_productivity_line_graph)(whole_productivity_df)
 
-    def write_linegraph_for_by_user(self, user_id_list: Optional[List[str]] = None) -> None:
+    def write_linegraph_by_user(self, user_id_list: Optional[List[str]] = None) -> None:
         """
         折れ線グラフをユーザごとにプロットする。
 
@@ -232,6 +232,7 @@ class WriteCsvGraph:
             df=df_by_date_user, first_annotation_user_id_list=user_id_list
         )
 
+    def write_linegraph_for_worktime_by_user(self, user_id_list: Optional[List[str]] = None) -> None:
         account_statistics_df = self._get_account_statistics_df()
         cumulative_account_statistics_df = self.table_obj.create_cumulative_df_by_user(account_statistics_df)
         catch_exception(self.linegraph_obj.write_cumulative_line_graph_by_date)(
@@ -389,7 +390,10 @@ class VisualizeStatistics(AbstractCommandLineInterface):
         write_obj.write_histogram_for_annotation()
 
         # 折れ線グラフ
-        write_obj.write_linegraph_for_by_user(user_id_list)
+        write_obj.write_linegraph_by_user(user_id_list)
+        write_obj.write_linegraph_for_worktime_by_user(user_id_list)
+        write_obj.write_whole_linegraph()
+
         # ファイルサイズが大きいため出力しない
         # write_obj.write_linegraph_for_task_overall()
 
@@ -449,11 +453,7 @@ def parse_args(parser: argparse.ArgumentParser):
         "-u",
         "--user_id",
         nargs="+",
-        help=(
-            "メンバごとの統計グラフに表示するユーザのuser_idを指定してください。"
-            "指定しない場合は、辞書順に並べた上位20人が表示されます。"
-            "file://`を先頭に付けると、一覧が記載されたファイルを指定できます。"
-        ),
+        help=("メンバごとの統計グラフに表示するユーザのuser_idを指定してください。" "指定しない場合は、上位20人が表示されます。" "file://`を先頭に付けると、一覧が記載されたファイルを指定できます。"),
     )
 
     parser.add_argument(

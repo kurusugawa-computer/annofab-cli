@@ -227,10 +227,9 @@ class Scatter:
         """
         return bokeh.models.Div(
             text="""<h4>グラフの見方</h4>
-        
-        <span style="color:red;">赤線</span>：平均値<br>
-        <span style="color:blue;">青線</span>：四分位数<br>
-        """
+            <span style="color:red;">赤線</span>：平均値<br>
+            <span style="color:blue;">青線</span>：四分位数<br>
+            """
         )
 
     def write_scatter_for_productivity_by_monitored_worktime(self, df: pandas.DataFrame):

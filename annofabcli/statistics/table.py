@@ -748,7 +748,7 @@ class Table:
         """
         new_df = task_df
         new_df["first_annotation_started_date"] = new_df["first_annotation_started_datetime"].map(
-            lambda e: datetime_to_date(e) if e is not None else None
+            lambda e: datetime_to_date(e) if e is not None and isinstance(e,str) else None
         )
         new_df["task_count"] = 1  # 集計用
 
@@ -950,13 +950,13 @@ class Table:
             task_df: タスク一覧のDataFrame. 列が追加される
         """
         # 教師付の開始時刻でソートして、indexを更新する
-        df = task_df.sort_values(["first_annotation_account_id", "first_annotation_started_datetime"]).reset_index(
+        df = task_df.sort_values(["first_annotation_user_id", "first_annotation_started_datetime"]).reset_index(
             drop=True
         )
         # タスクの累計数を取得するために設定する
         df["task_count"] = 1
         # 教師付の作業者でgroupby
-        groupby_obj = df.groupby("first_annotation_account_id")
+        groupby_obj = df.groupby("first_annotation_user_id")
 
         # 作業時間の累積値
         df["cumulative_annotation_worktime_hour"] = groupby_obj["annotation_worktime_hour"].cumsum()
@@ -985,13 +985,13 @@ class Table:
             task_df: タスク一覧のDataFrame. 列が追加される
         """
 
-        df = task_df.sort_values(["first_inspection_account_id", "first_inspection_started_datetime"]).reset_index(
+        df = task_df.sort_values(["first_inspection_user_id", "first_inspection_started_datetime"]).reset_index(
             drop=True
         )
         # タスクの累計数を取得するために設定する
         df["task_count"] = 1
         # 教師付の作業者でgroupby
-        groupby_obj = df.groupby("first_inspection_account_id")
+        groupby_obj = df.groupby("first_inspection_user_id")
 
         # 作業時間の累積値
         df["cumulative_annotation_worktime_hour"] = groupby_obj["annotation_worktime_hour"].cumsum()
@@ -1020,12 +1020,12 @@ class Table:
             task_df: タスク一覧のDataFrame. 列が追加される
         """
 
-        df = task_df.sort_values(["first_acceptance_account_id", "first_acceptance_started_datetime"]).reset_index(
+        df = task_df.sort_values(["first_acceptance_user_id", "first_acceptance_started_datetime"]).reset_index(
             drop=True
         )
         # タスクの累計数を取得するために設定する
         df["task_count"] = 1
-        groupby_obj = df.groupby("first_acceptance_account_id")
+        groupby_obj = df.groupby("first_acceptance_user_id")
 
         # 作業時間の累積値
         df["cumulative_acceptance_worktime_hour"] = groupby_obj["acceptance_worktime_hour"].cumsum()
