@@ -58,7 +58,7 @@ class WriteCsvGraph:
     labor_df: Optional[pandas.DataFrame] = None
     productivity_df: Optional[pandas.DataFrame] = None
 
-    def __init__(self, table_obj: Table, output_dir: Path, project_id: str):
+    def __init__(self, table_obj: Table, output_dir: Path):
         self.table_obj = table_obj
         self.csv_obj = Csv(str(output_dir))
         self.histogram_obj = Histogram(str(output_dir / "histogram"))
