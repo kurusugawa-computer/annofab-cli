@@ -153,14 +153,13 @@ class Scatter:
         source.data[tmp_size_field] = numpy.array(
             list(map(_worktime_hour_to_scatter_size, source.data[size_column_name]))
         )
-        print(source.data[tmp_size_field])
         fig.scatter(
             x=x_column_name,
             y=y_column_name,
             source=source,
             legend_label=legend_label,
             color=color,
-            fill_alpha=0.8,
+            fill_alpha=0.5,
             muted_alpha=0.2,
             size=tmp_size_field,
         )
@@ -170,6 +169,7 @@ class Scatter:
             source=source,
             text="username_",
             text_align="center",
+            text_baseline="middle",
             text_font_size="7pt",
             legend_label=legend_label,
             muted_alpha=0.2,
@@ -409,7 +409,8 @@ class Scatter:
 
         def create_figure(title: str, x_axis_label: str, y_axis_label: str) -> bokeh.plotting.Figure:
             return figure(
-                plot_width=800, plot_height=600, title=title, x_axis_label=x_axis_label, y_axis_label=y_axis_label,
+                plot_width=1200, plot_height=800, title=title, x_axis_label=x_axis_label, y_axis_label=y_axis_label,
+                tools="poly_select"
             )
 
         html_title = "散布図-アノテーションあたり作業時間と品質の関係-実績時間-教師付者用"
