@@ -336,7 +336,8 @@ class VisualizeStatistics(AbstractCommandLineInterface):
 
         # 折れ線グラフ
         write_obj.write_linegraph_for_by_user(user_id_list)
-        write_obj.write_linegraph_for_task_overall()
+        # ファイルサイズが大きいため出力しない
+        # write_obj.write_linegraph_for_task_overall()
 
         # 散布図
         write_obj.write_scatter_per_user()
