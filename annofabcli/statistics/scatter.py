@@ -1,7 +1,7 @@
 import logging
 import math
 from pathlib import Path
-from typing import Any, List, Optional, Sequence
+from typing import Any, List, Optional, Sequence, Tuple
 
 import bokeh
 import bokeh.layouts
@@ -186,11 +186,22 @@ class Scatter:
         return phase_list
 
     @staticmethod
-    def _plot_average_line(fig: bokeh.plotting.Figure, value: Any, dimension: str):
-        span_average_line = bokeh.models.Span(
-            location=value, dimension=dimension, line_color="green", line_width=1, line_alpha=0.5
-        )
+    def _plot_average_line(fig: bokeh.plotting.Figure, value: Optional[float], dimension: str):
+        if value is None:
+            return
+        span_average_line = bokeh.models.Span(location=value, dimension=dimension, line_color="red", line_width=0.5,)
         fig.add_layout(span_average_line)
+
+    @staticmethod
+    def _plot_quartile_line(fig: bokeh.plotting.Figure, quartile: Optional[Tuple[float, float, float]], dimension: str):
+        if quartile is None:
+            return
+
+        for value in quartile:
+            span_average_line = bokeh.models.Span(
+                location=value, dimension=dimension, line_color="blue", line_width=0.5,
+            )
+            fig.add_layout(span_average_line)
 
     @staticmethod
     def _get_average_value(df: pandas.DataFrame, numerator_column: Any, denominator_column: Any) -> Optional[float]:
@@ -200,6 +211,27 @@ class Scatter:
             return numerator / denominator
         else:
             return None
+
+    @staticmethod
+    def _get_quartile_value(df: pandas.DataFrame, column: Any) -> Optional[Tuple[float, float, float]]:
+        tmp = df[column].describe()
+        if tmp["count"] > 3:
+            return (tmp["25%"], tmp["50%"], tmp["75%"])
+        else:
+            return None
+
+    @staticmethod
+    def _create_div_element() -> bokeh.models.Div:
+        """
+        HTMLページの先頭に付与するdiv要素を生成する。
+        """
+        return bokeh.models.Div(
+            text="""<h4>グラフの見方</h4>
+        
+        <span style="color:red;">赤線</span>：平均値<br>
+        <span style="color:blue;">青線</span>：四分位数<br>
+        """
+        )
 
     def write_scatter_for_productivity_by_monitored_worktime(self, df: pandas.DataFrame):
         """
@@ -252,12 +284,14 @@ class Scatter:
                     color=self.my_palette[biography_index],
                 )
 
-                average_value = self._get_average_value(
-                    df,
-                    numerator_column=("monitored_worktime_hour", phase),
-                    denominator_column=("annotation_count", phase),
-                )
-                self._plot_average_line(fig, average_value, dimension="width")
+        for fig, phase in zip(figure_list, phase_list):
+            average_value = self._get_average_value(
+                df, numerator_column=("monitored_worktime_hour", phase), denominator_column=("annotation_count", phase),
+            )
+            self._plot_average_line(fig, average_value, dimension="width")
+
+            quartile = self._get_quartile_value(df, ("monitored_worktime/annotation_count", phase))
+            self._plot_quartile_line(fig, quartile, dimension="width")
 
         for fig, phase in zip(figure_list, phase_list):
             tooltip_item = [
@@ -276,9 +310,10 @@ class Scatter:
             fig.add_tools(hover_tool)
             self._set_legend(fig)
 
+        div_element = self._create_div_element()
         bokeh.plotting.reset_output()
         bokeh.plotting.output_file(output_file, title=html_title)
-        bokeh.plotting.save(bokeh.layouts.column(figure_list))
+        bokeh.plotting.save(bokeh.layouts.column([div_element] + figure_list))
 
     def write_scatter_for_productivity_by_actual_worktime(self, df: pandas.DataFrame):
         """
@@ -328,12 +363,16 @@ class Scatter:
                     color=self.my_palette[biography_index],
                 )
 
-                average_value = self._get_average_value(
-                    df,
-                    numerator_column=("prediction_actual_worktime_hour", phase),
-                    denominator_column=("annotation_count", phase),
-                )
-                self._plot_average_line(fig, average_value, dimension="width")
+        for fig, phase in zip(figure_list, phase_list):
+            average_value = self._get_average_value(
+                df,
+                numerator_column=("prediction_actual_worktime_hour", phase),
+                denominator_column=("annotation_count", phase),
+            )
+            self._plot_average_line(fig, average_value, dimension="width")
+
+            quartile = self._get_quartile_value(df, ("actual_worktime/annotation_count", phase))
+            self._plot_quartile_line(fig, quartile, dimension="width")
 
         for fig, phase in zip(figure_list, phase_list):
             tooltip_item = [
@@ -352,9 +391,10 @@ class Scatter:
             fig.add_tools(hover_tool)
             self._set_legend(fig)
 
+        div_element = self._create_div_element()
         bokeh.plotting.reset_output()
         bokeh.plotting.output_file(output_file, title=html_title)
-        bokeh.plotting.save(bokeh.layouts.column(figure_list))
+        bokeh.plotting.save(bokeh.layouts.column([div_element] + figure_list))
 
     def write_scatter_for_quality(self, df: pandas.DataFrame):
         """
@@ -418,6 +458,12 @@ class Scatter:
             )
             self._plot_average_line(fig, average_value, dimension="width")
 
+        for column, fig in zip(
+            ["rejected_count/task_count", "pointed_out_inspection_comment_count/annotation_count"], figure_list,
+        ):
+            quartile = self._get_quartile_value(df, (column, phase))
+            self._plot_quartile_line(fig, quartile, dimension="width")
+
         for fig in figure_list:
             tooltip_item = [
                 "username_",
@@ -448,12 +494,7 @@ class Scatter:
 
         def create_figure(title: str, x_axis_label: str, y_axis_label: str) -> bokeh.plotting.Figure:
             return figure(
-                plot_width=1200,
-                plot_height=800,
-                title=title,
-                x_axis_label=x_axis_label,
-                y_axis_label=y_axis_label,
-                tools="poly_select",
+                plot_width=1200, plot_height=800, title=title, x_axis_label=x_axis_label, y_axis_label=y_axis_label,
             )
 
         html_title = "散布図-アノテーションあたり作業時間と品質の関係-実績時間-教師付者用"
@@ -510,6 +551,14 @@ class Scatter:
             )
             self._plot_average_line(fig, y_average_value, dimension="width")
 
+        x_quartile = self._get_quartile_value(df, ("actual_worktime/annotation_count", phase))
+        for column, fig in zip(
+            ["rejected_count/task_count", "pointed_out_inspection_comment_count/annotation_count"], figure_list,
+        ):
+            self._plot_quartile_line(fig, x_quartile, dimension="height")
+            quartile = self._get_quartile_value(df, (column, phase))
+            self._plot_quartile_line(fig, quartile, dimension="width")
+
         for fig in figure_list:
             tooltip_item = [
                 "username_",
@@ -530,6 +579,9 @@ class Scatter:
             hover_tool = self._create_hover_tool(tooltip_item)
             fig.add_tools(hover_tool)
             self._set_legend(fig)
+
+        div_element = self._create_div_element()
+        div_element.text += """円の大きさ：実績作業時間（prediction_actual_worktime_hour）<br>"""
         bokeh.plotting.reset_output()
         bokeh.plotting.output_file(output_file, title=html_title)
-        bokeh.plotting.save(bokeh.layouts.column(figure_list))
+        bokeh.plotting.save(bokeh.layouts.column([div_element] + figure_list))

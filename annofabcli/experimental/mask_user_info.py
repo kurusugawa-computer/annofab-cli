@@ -250,9 +250,10 @@ def parse_args(parser: argparse.ArgumentParser):
     parser.add_argument(
         "--not_masked_user_id", type=str, nargs="+", help="マスクしないユーザの`user_id`を指定してください。",
     )
-    parser.add_argument("--csv_header", type=int, help="CSVのヘッダ行数", default=1)
+    parser.add_argument("--csv_header", type=int, help="CSVのヘッダ行数 (default:1)", default=1)
 
     argument_parser.add_output()
+    argument_parser.add_csv_format()
 
     parser.set_defaults(subcommand_func=main)
 

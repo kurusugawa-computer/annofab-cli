@@ -4,6 +4,7 @@ from pathlib import Path
 import pandas
 from annofabapi.models import TaskStatus
 
+from annofabcli.common.utils import read_multiheader_csv
 from annofabcli.statistics.csv import Csv
 from annofabcli.statistics.linegraph import LineGraph
 from annofabcli.statistics.scatter import Scatter
@@ -21,7 +22,7 @@ project_id = "12345678-abcd-1234-abcd-1234abcd5678"
 class TestTable:
     @classmethod
     def setup_class(cls):
-        cls.csv_obj = Csv(str(out_path), project_id[0:8])
+        cls.csv_obj = Csv(str(out_path))
 
     def test_get_task_history_df(self):
         task_history_df = pandas.read_csv(str(data_path / "task-history-df.csv"))
@@ -93,34 +94,20 @@ class TestScatter:
     def setup_class(cls):
         cls.scatter_obj = Scatter(outdir=str(out_path))
 
-    def read_productivity_per_user(self):
-        productivity_per_user = pandas.read_csv(str(data_path / "productivity-per-user.csv"), header=[0, 1])
-        productivity_per_user.rename(
-            columns={
-                "Unnamed: 0_level_1": "",
-                "Unnamed: 1_level_1": "",
-                "Unnamed: 2_level_1": "",
-                "Unnamed: 3_level_1": "",
-            },
-            level=1,
-            inplace=True,
-        )
-        return productivity_per_user
-
     def test_write_scatter_for_productivity_by_monitored_worktime(self):
-        productivity_per_user = self.read_productivity_per_user()
+        productivity_per_user = read_multiheader_csv(str(data_path / "productivity-per-user2.csv"))
         self.scatter_obj.write_scatter_for_productivity_by_monitored_worktime(productivity_per_user)
 
     def test_write_scatter_for_productivity_by_actual_worktime(self):
-        productivity_per_user = self.read_productivity_per_user()
+        productivity_per_user = read_multiheader_csv(str(data_path / "productivity-per-user2.csv"))
         self.scatter_obj.write_scatter_for_productivity_by_actual_worktime(productivity_per_user)
 
     def test_write_scatter_for_quality(self):
-        productivity_per_user = self.read_productivity_per_user()
+        productivity_per_user = read_multiheader_csv(str(data_path / "productivity-per-user2.csv"))
         self.scatter_obj.write_scatter_for_quality(productivity_per_user)
 
     def test_write_scatter_for_productivity_by_actual_worktime_and_quality(self):
-        productivity_per_user = self.read_productivity_per_user()
+        productivity_per_user = read_multiheader_csv(str(data_path / "productivity-per-user2.csv"))
         self.scatter_obj.write_scatter_for_productivity_by_actual_worktime_and_quality(productivity_per_user)
 
 

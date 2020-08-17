@@ -14,6 +14,7 @@ import requests
 import yaml
 
 import annofabcli
+from annofabcli.common.cli import DEFAULT_CSV_FORMAT
 from annofabcli.common.enums import FormatArgument
 from annofabcli.common.exceptions import AnnofabCliException
 
@@ -142,7 +143,7 @@ def print_csv(df: pandas.DataFrame, output: Optional[str] = None, to_csv_kwargs:
     path_or_buf = sys.stdout if output is None else output
 
     if to_csv_kwargs is None:
-        df.to_csv(path_or_buf)
+        df.to_csv(path_or_buf, **DEFAULT_CSV_FORMAT)
     else:
         df.to_csv(path_or_buf, **to_csv_kwargs)
 

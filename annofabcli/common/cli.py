@@ -28,6 +28,8 @@ from annofabcli.common.typing import InputDataSize
 
 logger = logging.getLogger(__name__)
 
+DEFAULT_CSV_FORMAT = {"encoding": "utf_8_sig", "index": False}
+
 
 def build_annofabapi_resource_and_login(args: argparse.Namespace) -> annofabapi.Resource:
     """
@@ -154,7 +156,7 @@ def get_csv_format_from_args(target: Optional[str] = None) -> Dict[str, Any]:
     Default: {"encoding": "utf_8_sig", "index": False}
 
     """
-    csv_format = {"encoding": "utf_8_sig", "index": False}
+    csv_format = DEFAULT_CSV_FORMAT.copy()
     if target is not None:
         arg_csv_format = get_json_from_args(target)
         csv_format.update(arg_csv_format)
