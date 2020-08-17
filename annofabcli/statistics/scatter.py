@@ -289,12 +289,12 @@ class Scatter:
                 df, numerator_column=("monitored_worktime_hour", phase), denominator_column=("annotation_count", phase),
             )
             self._plot_average_line(fig, average_value, dimension="width")
-
             quartile = self._get_quartile_value(df, ("monitored_worktime/annotation_count", phase))
             self._plot_quartile_line(fig, quartile, dimension="width")
 
         for fig, phase in zip(figure_list, phase_list):
             tooltip_item = [
+                "user_id_",
                 "username_",
                 "biography_",
                 "last_working_date_",
@@ -376,6 +376,7 @@ class Scatter:
 
         for fig, phase in zip(figure_list, phase_list):
             tooltip_item = [
+                "user_id_",
                 "username_",
                 "biography_",
                 "last_working_date_",
@@ -466,6 +467,7 @@ class Scatter:
 
         for fig in figure_list:
             tooltip_item = [
+                "user_id_",
                 "username_",
                 "biography_",
                 "last_working_date_",
@@ -483,9 +485,10 @@ class Scatter:
             fig.add_tools(hover_tool)
             self._set_legend(fig)
 
+        div_element = self._create_div_element()
         bokeh.plotting.reset_output()
         bokeh.plotting.output_file(output_file, title=html_title)
-        bokeh.plotting.save(bokeh.layouts.column(figure_list))
+        bokeh.plotting.save(bokeh.layouts.column([div_element] + figure_list))
 
     def write_scatter_for_productivity_by_actual_worktime_and_quality(self, df: pandas.DataFrame):
         """
@@ -561,6 +564,7 @@ class Scatter:
 
         for fig in figure_list:
             tooltip_item = [
+                "user_id_",
                 "username_",
                 "biography_",
                 "last_working_date_",

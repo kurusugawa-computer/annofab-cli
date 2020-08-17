@@ -1,12 +1,14 @@
 import argparse
 import json
 import logging.handlers
+from dataclasses import dataclass
 from pathlib import Path
 from typing import Any, Callable, Dict, List, Optional
 
 import annofabapi
 import pandas
 from annofabapi.models import ProjectMemberRole, TaskPhase
+from dataclasses_json import dataclass_json
 
 import annofabcli
 from annofabcli import AnnofabApiFacade
@@ -21,7 +23,30 @@ from annofabcli.statistics.table import AggregationBy, Table
 logger = logging.getLogger(__name__)
 
 
-def write_project_name_file(annofab_service: annofabapi.Resource, project_id: str, output_project_dir: Path):
+@dataclass_json
+@dataclass
+class CommnadLineArgs:
+    task_query: Optional[Dict[str, Any]]
+    user_id_list: Optional[List[str]]
+    start_date: Optional[str]
+    end_date: Optional[str]
+    ignored_task_id_list: Optional[List[str]]
+
+
+@dataclass_json
+@dataclass
+class ProjectSummary:
+    project_id: str
+    project_title: str
+    measurement_datetime: str
+    """計測日時。（2004-04-01T12:00+09:00形式）"""
+    args: CommnadLineArgs
+    """コマンドライン引数"""
+
+
+def write_project_name_file(
+    annofab_service: annofabapi.Resource, project_id: str, command_line_args: CommnadLineArgs, output_project_dir: Path
+):
     """
     ファイル名がプロジェクト名のjsonファイルを生成する。
     """
@@ -30,8 +55,16 @@ def write_project_name_file(annofab_service: annofabapi.Resource, project_id: st
     logger.info(f"project_titile = {project_title}")
     filename = annofabcli.utils.to_filename(project_title)
     output_project_dir.mkdir(exist_ok=True, parents=True)
+
+    prject_summary = ProjectSummary(
+        project_id=project_id,
+        project_title=project_title,
+        measurement_datetime=annofabapi.utils.str_now(),
+        args=command_line_args,
+    )
+
     with open(str(output_project_dir / f"{filename}.json"), "w") as f:
-        json.dump(project_info, f, ensure_ascii=False, indent=2)
+        json.dump(prject_summary.to_dict(), f, ensure_ascii=False, indent=2)  # type: ignore
 
 
 def catch_exception(function: Callable[..., Any]) -> Callable[..., Any]:
@@ -57,12 +90,13 @@ class WriteCsvGraph:
     task_history_df: Optional[pandas.DataFrame] = None
     labor_df: Optional[pandas.DataFrame] = None
     productivity_df: Optional[pandas.DataFrame] = None
+    whole_productivity_df: Optional[pandas.DataFrame] = None
 
     def __init__(self, table_obj: Table, output_dir: Path):
         self.table_obj = table_obj
         self.csv_obj = Csv(str(output_dir))
         self.histogram_obj = Histogram(str(output_dir / "histogram"))
-        self.graph_obj = LineGraph(str(output_dir / "line-graph"))
+        self.linegraph_obj = LineGraph(str(output_dir / "line-graph"))
         self.scatter_obj = Scatter(str(output_dir / "scatter"))
 
     def _get_task_df(self):
@@ -109,6 +143,13 @@ class WriteCsvGraph:
             self.productivity_df = productivity_df
         return self.productivity_df
 
+    def _get_whole_productivity_df(self):
+        if self.whole_productivity_df is None:
+            task_df = self._get_task_df()
+            labor_df = self._get_labor_df()
+            self.whole_productivity_df = self.table_obj.create_whole_productivity_per_date(task_df, labor_df)
+        return self.whole_productivity_df
+
     def write_histogram_for_task(self) -> None:
         """
         タスクに関するヒストグラムを出力する。
@@ -150,7 +191,11 @@ class WriteCsvGraph:
         """
         task_df = self._get_task_df()
         task_cumulative_df_overall = Table.create_cumulative_df_overall(task_df)
-        catch_exception(self.graph_obj.write_cumulative_line_graph_overall)(task_cumulative_df_overall)
+        catch_exception(self.linegraph_obj.write_cumulative_line_graph_overall)(task_cumulative_df_overall)
+
+    def write_whole_linegraph(self) -> None:
+        whole_productivity_df = self._get_whole_productivity_df()
+        catch_exception(self.linegraph_obj.write_whole_productivity_line_graph)(whole_productivity_df)
 
     def write_linegraph_for_by_user(self, user_id_list: Optional[List[str]] = None) -> None:
         """
@@ -168,28 +213,28 @@ class WriteCsvGraph:
             return
 
         task_cumulative_df_by_annotator = self.table_obj.create_cumulative_df_by_first_annotator(task_df)
-        catch_exception(self.graph_obj.write_cumulative_line_graph_for_annotator)(
+        catch_exception(self.linegraph_obj.write_cumulative_line_graph_for_annotator)(
             df=task_cumulative_df_by_annotator, first_annotation_user_id_list=user_id_list,
         )
 
         task_cumulative_df_by_inspector = self.table_obj.create_cumulative_df_by_first_inspector(task_df)
-        catch_exception(self.graph_obj.write_cumulative_line_graph_for_inspector)(
+        catch_exception(self.linegraph_obj.write_cumulative_line_graph_for_inspector)(
             df=task_cumulative_df_by_inspector, first_inspection_user_id_list=user_id_list,
         )
 
         task_cumulative_df_by_acceptor = self.table_obj.create_cumulative_df_by_first_acceptor(task_df)
-        catch_exception(self.graph_obj.write_cumulative_line_graph_for_acceptor)(
+        catch_exception(self.linegraph_obj.write_cumulative_line_graph_for_acceptor)(
             df=task_cumulative_df_by_acceptor, first_acceptance_user_id_list=user_id_list,
         )
 
         df_by_date_user = self._get_df_by_date_user()
-        catch_exception(self.graph_obj.write_productivity_line_graph_for_annotator)(
+        catch_exception(self.linegraph_obj.write_productivity_line_graph_for_annotator)(
             df=df_by_date_user, first_annotation_user_id_list=user_id_list
         )
 
         account_statistics_df = self._get_account_statistics_df()
         cumulative_account_statistics_df = self.table_obj.create_cumulative_df_by_user(account_statistics_df)
-        catch_exception(self.graph_obj.write_cumulative_line_graph_by_date)(
+        catch_exception(self.linegraph_obj.write_cumulative_line_graph_by_date)(
             df=cumulative_account_statistics_df, user_id_list=user_id_list
         )
 
@@ -210,9 +255,7 @@ class WriteCsvGraph:
         """
         日毎の生産性を出力する
         """
-        task_df = self._get_task_df()
-        labor_df = self._get_labor_df()
-        whole_productivity_df = self.table_obj.create_whole_productivity_per_date(task_df, labor_df)
+        whole_productivity_df = self._get_whole_productivity_df()
         catch_exception(self.csv_obj.write_whole_productivity_per_date)(whole_productivity_df)
 
     def _write_メンバー別作業時間平均_画像1枚あたり_by_phase(self, phase: TaskPhase):
@@ -281,8 +324,8 @@ class VisualizeStatistics(AbstractCommandLineInterface):
         work_dir: Path,
         output_dir: Path,
         task_query: Dict[str, Any],
-        ignored_task_id_list: List[str],
-        user_id_list: List[str],
+        ignored_task_id_list: Optional[List[str]],
+        user_id_list: Optional[List[str]],
         update: bool = False,
         download_latest: bool = False,
         start_date: Optional[str] = None,
@@ -326,7 +369,18 @@ class VisualizeStatistics(AbstractCommandLineInterface):
             logger.warning(f"タスク履歴一覧が0件なのでファイルを出力しません。終了します。")
             return
 
-        write_project_name_file(self.service, project_id, output_dir)
+        write_project_name_file(
+            self.service,
+            project_id=project_id,
+            command_line_args=CommnadLineArgs(
+                task_query=task_query,
+                user_id_list=user_id_list,
+                start_date=start_date,
+                end_date=end_date,
+                ignored_task_id_list=ignored_task_id_list,
+            ),
+            output_project_dir=output_dir,
+        )
         write_obj = WriteCsvGraph(table_obj, output_dir)
         write_obj.write_csv_for_task()
 
@@ -355,8 +409,10 @@ class VisualizeStatistics(AbstractCommandLineInterface):
     def main(self):
         args = self.args
         task_query = annofabcli.common.cli.get_json_from_args(args.task_query)
-        ignored_task_id_list = annofabcli.common.cli.get_list_from_args(args.ignored_task_id)
-        user_id_list = annofabcli.common.cli.get_list_from_args(args.user_id)
+        ignored_task_id_list = (
+            annofabcli.common.cli.get_list_from_args(args.ignored_task_id) if args.ignored_task_id is not None else None
+        )
+        user_id_list = annofabcli.common.cli.get_list_from_args(args.user_id) if args.user_id is not None else None
 
         if args.work_dir is not None:
             work_dir = args.work_dir
