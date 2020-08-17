@@ -501,7 +501,7 @@ class Scatter:
             denominator_column=("annotation_count", phase),
         )
         for column_pair, fig in zip(
-            [("rejected_count", "task_count"), ("pointed_out_inspection_comment_count", "annotation_count"),],
+            [("rejected_count", "task_count"), ("pointed_out_inspection_comment_count", "annotation_count")],
             figure_list,
         ):
             self._plot_average_line(fig, x_average_value, dimension="height")
