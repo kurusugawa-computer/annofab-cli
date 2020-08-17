@@ -1079,10 +1079,7 @@ class LineGraph:
         bokeh.plotting.output_file(output_file, title=html_title)
         bokeh.plotting.save(bokeh.layouts.column([fig]))
 
-
-    def write_whole_productivity_line_graph(
-        self, df: pandas.DataFrame
-    ):
+    def write_whole_productivity_line_graph(self, df: pandas.DataFrame):
         """
         全体の生産量や生産性をプロットする
 
@@ -1094,7 +1091,7 @@ class LineGraph:
 
         """
 
-        def create_figure(title:str, y_axis_label:str) -> bokeh.plotting.Figure:
+        def create_figure(title: str, y_axis_label: str) -> bokeh.plotting.Figure:
             return figure(
                 plot_width=1200,
                 plot_height=600,
@@ -1104,8 +1101,8 @@ class LineGraph:
                 y_axis_label=y_axis_label,
             )
 
-        def plot_and_moving_average(fig, y_column_name:str, legend_name:str, source):
-            x_column_name="dt_date"
+        def plot_and_moving_average(fig, y_column_name: str, legend_name: str, source):
+            x_column_name = "dt_date"
             color = self.my_palette[0]
 
             # 値をプロット
@@ -1128,15 +1125,11 @@ class LineGraph:
                 legend_label=f"{legend_name}の1週間移動平均",
             )
 
-
-
         if len(df) == 0:
             logger.info("データが0件のため出力しない")
             return
 
-        df["dt_date"] = df["date"].map(
-            lambda e: dateutil.parser.parse(e).date()
-        )
+        df["dt_date"] = df["date"].map(lambda e: dateutil.parser.parse(e).date())
 
         html_title = "折れ線-横軸_日-全体"
         output_file = f"{self.line_graph_outdir}/{html_title}.html"
@@ -1145,27 +1138,30 @@ class LineGraph:
         fig_list = [
             create_figure(title="日ごとのタスク数", y_axis_label="タスク数"),
             create_figure(title="日ごとの入力データ数", y_axis_label="入力データ数"),
-            create_figure(title="日ごとの実績作業時間", y_axis_label="実績作業時間")
+            create_figure(title="日ごとの実績作業時間", y_axis_label="実績作業時間[hour]"),
+            create_figure(title="日ごとのタスクあたり実績作業時間", y_axis_label="タスクあたり実績作業時間[task/hour]"),
+            create_figure(title="日ごとの入力データあたり実績作業時間", y_axis_label="入力データあたり実績作業時間[input_data/hour]"),
+            create_figure(title="日ごとのアノテーションあたり実績作業時間", y_axis_label="アノテーションあたり実績作業時間[annotation/hour]"),
         ]
 
         fig_info_list = [
-            dict(x="dt_date",y="task_count",legend_name="タスク数"),
+            dict(x="dt_date", y="task_count", legend_name="タスク数"),
             dict(x="dt_date", y="input_data_count", legend_name="入力データ数"),
-            dict(x="dt_date", y="actual_worktime_hour",legend_name="実績作業時間"),
+            dict(x="dt_date", y="actual_worktime_hour", legend_name="実績作業時間"),
+            dict(x="dt_date", y="actual_worktime_hour/task_count", legend_name="タスクあたり実績作業時間"),
+            dict(x="dt_date", y="actual_worktime_hour/input_data_count", legend_name="入力データあたり実績作業時間"),
+            dict(x="dt_date", y="actual_worktime_hour/annotation_count", legend_name="アノテーションあたり実績作業時間"),
         ]
 
         MOVING_WINDOW_SIZE = 7
-        for column in ["task_count","input_data_count","actual_worktime_hour"]:
+        for column in ["task_count", "input_data_count", "actual_worktime_hour"]:
             df[f"{column}__lastweek"] = df[column].rolling(MOVING_WINDOW_SIZE).mean()
 
         source = ColumnDataSource(data=df)
 
         for fig, fig_info in zip(fig_list, fig_info_list):
             plot_and_moving_average(
-                fig=fig,
-                y_column_name=fig_info["y"],
-                legend_name=fig_info["legend_name"],
-                source=source,
+                fig=fig, y_column_name=fig_info["y"], legend_name=fig_info["legend_name"], source=source,
             )
 
         tooltip_item = [
@@ -1173,9 +1169,12 @@ class LineGraph:
             "task_count",
             "input_data_count",
             "actual_worktime_hour",
-            "annotation_worktime_hour",
             "cumsum_task_count",
             "cumsum_input_data_count",
+            "cumsum_actual_worktime_hour",
+            "actual_worktime_hour/task_count",
+            "actual_worktime_hour/input_data_count",
+            "actual_worktime_hour/annotation_count",
         ]
         hover_tool = self._create_hover_tool(tooltip_item)
         for fig in fig_list:
