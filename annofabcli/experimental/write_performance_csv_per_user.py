@@ -64,7 +64,7 @@ def parse_args(parser: argparse.ArgumentParser):
 
 
 def add_parser(subparsers: argparse._SubParsersAction):
-    subcommand_name = "write_peformance_per_user"
+    subcommand_name = "write_peformance_csv_per_user"
     subcommand_help = "ユーザごとのパフォーマンス（生産性や品質）をCSVに出力します。"
     description = "ユーザごとのパフォーマンス（生産性や品質）をCSVに出力します。"
     parser = annofabcli.common.cli.add_parser(subparsers, subcommand_name, subcommand_help, description)

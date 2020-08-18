@@ -245,6 +245,12 @@ class WriteCsvGraph:
         """
         task_df = self._get_task_df()
         catch_exception(self.csv_obj.write_task_list)(task_df, dropped_columns=["input_data_id_list"])
+
+    def write_csv_for_summary(self) -> None:
+        """
+        タスク関係のCSVを出力する。
+        """
+        task_df = self._get_task_df()
         catch_exception(self.csv_obj.write_task_count_summary)(task_df)
         catch_exception(self.csv_obj.write_worktime_summary)(task_df)
         catch_exception(self.csv_obj.write_count_summary)(task_df)
@@ -398,6 +404,7 @@ class VisualizeStatistics(AbstractCommandLineInterface):
         write_obj.write_scatter_per_user()
 
         # CSV
+        write_obj.write_csv_for_summary()
         write_obj.write_whole_productivity_csv_per_date()
         write_obj.write_productivity_csv()
 

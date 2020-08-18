@@ -748,7 +748,7 @@ class Table:
         """
         new_df = task_df
         new_df["first_annotation_started_date"] = new_df["first_annotation_started_datetime"].map(
-            lambda e: datetime_to_date(e) if e is not None and isinstance(e,str) else None
+            lambda e: datetime_to_date(e) if e is not None and isinstance(e, str) else None
         )
         new_df["task_count"] = 1  # 集計用
 

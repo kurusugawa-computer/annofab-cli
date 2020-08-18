@@ -40,7 +40,7 @@ def parse_args(parser: argparse.ArgumentParser):
 
 
 def add_parser(subparsers: argparse._SubParsersAction):
-    subcommand_name = "write_scatter_per_user"
+    subcommand_name = "write_performance_scatter_per_user"
     subcommand_help = "CSVからユーザごとにプロットした散布図を出力します。"
     description = "CSVからユーザごとにプロットした散布図を出力します。"
     parser = annofabcli.common.cli.add_parser(subparsers, subcommand_name, subcommand_help, description)
