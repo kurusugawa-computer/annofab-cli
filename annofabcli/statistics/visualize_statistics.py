@@ -249,9 +249,6 @@ class WriteCsvGraph:
         catch_exception(self.csv_obj.write_worktime_summary)(task_df)
         catch_exception(self.csv_obj.write_count_summary)(task_df)
 
-        member_df = self.table_obj.create_member_df(task_df)
-        catch_exception(self.csv_obj.write_member_list)(member_df)
-
     def write_whole_productivity_csv_per_date(self) -> None:
         """
         日毎の生産性を出力する
