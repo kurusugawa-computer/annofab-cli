@@ -225,7 +225,7 @@ class ListLaborWorktime(AbstractCommandLineInterface):
         """
         """
 
-        super().validate_project(project_id, project_member_roles=[ProjectMemberRole.OWNER])
+        super().validate_project(project_id, project_member_roles=[ProjectMemberRole.OWNER, ProjectMemberRole.TRAINING_DATA_USER])
         # プロジェクト or 組織に対して、必要な権限が付与されているかを確認
 
         organization_id = get_organization_id_from_project_id(self.service, project_id)
