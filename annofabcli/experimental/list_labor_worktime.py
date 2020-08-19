@@ -4,7 +4,6 @@ import logging
 import sys
 from pathlib import Path
 from typing import Any, Dict, List, Optional  # pylint: disable=unused-import
-import pandas
 import annofabapi
 import numpy as np
 import pandas as pd
@@ -220,7 +219,7 @@ class ListLaborWorktime(AbstractCommandLineInterface):
     def _get_project_title_list(self, project_id_list: List[str]) -> List[str]:
         return [self.facade.get_project_title(project_id) for project_id in project_id_list]
 
-    def list_labor_worktime(self, project_id: str, start_date: str, end_date: str) -> pandas.DataFrame:
+    def list_labor_worktime(self, project_id: str, start_date: str, end_date: str) -> pd.DataFrame:
 
         """
         """
