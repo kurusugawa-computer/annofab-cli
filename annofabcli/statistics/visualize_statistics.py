@@ -439,7 +439,7 @@ class VisualizeStatistics(AbstractCommandLineInterface):
             download_latest=args.download_latest,
             start_date=args.start_date,
             end_date=args.end_date,
-            minimal_output=args.minimal
+            minimal_output=args.minimal,
         )
 
 

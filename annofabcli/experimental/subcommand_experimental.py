@@ -6,6 +6,7 @@ from annofabcli.experimental import (
     dashboard,
     find_break_error,
     list_labor_worktime,
+    list_out_of_range_annotation_for_movie,
     mask_user_info,
     merge_peformance_per_date,
     merge_peformance_per_user,
@@ -23,6 +24,7 @@ def parse_args(parser: argparse.ArgumentParser):
     # サブコマンドの定義
     dashboard.add_parser(subparsers)
     list_labor_worktime.add_parser(subparsers)
+    list_out_of_range_annotation_for_movie.add_parser(subparsers)
     find_break_error.add_parser(subparsers)
     mask_user_info.add_parser(subparsers)
     merge_peformance_per_date.add_parser(subparsers)

@@ -550,7 +550,7 @@ class DashBoard(AbstractCommandLineInterface):
     def main(self):
         args = self.args
         project_id = args.project_id
-        super().validate_project(project_id, [ProjectMemberRole.OWNER])
+        super().validate_project(project_id, [ProjectMemberRole.OWNER, ProjectMemberRole.TRAINING_DATA_USER])
 
         if args.task_json is not None:
             task_json_path = args.task_json
