@@ -440,7 +440,7 @@ class Csv:
             return
         self._write_csv(f"タスク1個当たり作業時間/タスク1個当たり作業時間_{phase.value}.csv", df)
 
-    def write_productivity_from_aw_time(
+    def write_productivity_per_user(
         self, df: pandas.DataFrame, dropped_columns: Optional[List[str]] = None, output_path: Optional[Path] = None
     ):
         """

@@ -27,7 +27,7 @@ class WritePerfomancePerUser(AbstractCommandLineInterface):
             df_task_history, df_labor, df_count_ratio
         )
 
-        csv_obj.write_productivity_from_aw_time(df_perfomance_per_user)
+        csv_obj.write_productivity_per_user(df_perfomance_per_user)
 
 
 def main(args):

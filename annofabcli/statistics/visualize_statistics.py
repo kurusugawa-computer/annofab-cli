@@ -305,16 +305,16 @@ class WriteCsvGraph:
         df_by_date_user = self._get_df_by_date_user()
         catch_exception(self.csv_obj.write_教師付作業者別日毎の情報)(df_by_date_user)
 
-    def write_productivity_csv(self) -> None:
+    def write_productivity_csv_per_user(self) -> None:
+        productivity_df = self._get_productivity_df()
+        catch_exception(self.csv_obj.write_productivity_per_user)(productivity_df)
 
+    def write_labor_and_task_history(self) -> None:
         task_history_df = self._get_task_history_df()
         catch_exception(self.csv_obj.write_task_history_list)(task_history_df)
 
         df_labor = self._get_labor_df()
         catch_exception(self.csv_obj.write_labor_list)(df_labor)
-
-        productivity_df = self._get_productivity_df()
-        catch_exception(self.csv_obj.write_productivity_from_aw_time)(productivity_df)
 
 
 class VisualizeStatistics(AbstractCommandLineInterface):
@@ -334,6 +334,7 @@ class VisualizeStatistics(AbstractCommandLineInterface):
         download_latest: bool = False,
         start_date: Optional[str] = None,
         end_date: Optional[str] = None,
+        minimal_output: bool = False,
     ):
         """
         タスク一覧を出力する
@@ -388,31 +389,31 @@ class VisualizeStatistics(AbstractCommandLineInterface):
         write_obj = WriteCsvGraph(table_obj, output_dir)
         write_obj.write_csv_for_task()
 
-        # ヒストグラム
-        write_obj.write_histogram_for_task()
-        write_obj.write_histogram_for_annotation()
-
-        # 折れ線グラフ
-        write_obj.write_linegraph_by_user(user_id_list)
-        write_obj.write_linegraph_for_worktime_by_user(user_id_list)
-        write_obj.write_whole_linegraph()
-
-        # ファイルサイズが大きいため出力しない
-        # write_obj.write_linegraph_for_task_overall()
+        write_obj.write_csv_for_summary()
+        write_obj.write_whole_productivity_csv_per_date()
+        write_obj.write_productivity_csv_per_user()
 
         # 散布図
         write_obj.write_scatter_per_user()
 
-        # CSV
-        write_obj.write_csv_for_summary()
-        write_obj.write_whole_productivity_csv_per_date()
-        write_obj.write_productivity_csv()
+        # ヒストグラム
+        write_obj.write_histogram_for_task()
 
-        write_obj.write_csv_for_annotation()
-        write_obj.write_csv_for_account_statistics()
-        write_obj.write_csv_for_date_user()
-        write_obj.write_csv_for_inspection()
-        write_obj.write_メンバー別作業時間平均_画像1枚あたり_by_phase()
+        # 折れ線グラフ
+        write_obj.write_linegraph_by_user(user_id_list)
+        write_obj.write_whole_linegraph()
+
+        if not minimal_output:
+            write_obj.write_histogram_for_annotation()
+            write_obj.write_linegraph_for_worktime_by_user(user_id_list)
+
+            # CSV
+            write_obj.write_labor_and_task_history()
+            write_obj.write_csv_for_annotation()
+            write_obj.write_csv_for_account_statistics()
+            write_obj.write_csv_for_date_user()
+            write_obj.write_csv_for_inspection()
+            write_obj.write_メンバー別作業時間平均_画像1枚あたり_by_phase()
 
     def main(self):
         args = self.args
@@ -490,6 +491,10 @@ def parse_args(parser: argparse.ArgumentParser):
 
     parser.add_argument(
         "--work_dir", type=str, help="作業ディレクトリのパス。指定しない場合はannofabcliのキャッシュディレクトリ（'$HOME/.cache/annofabcli'）に保存します。",
+    )
+
+    parser.add_argument(
+        "--minimal", action="store_true", help="必要最小限のファイルを出力します。",
     )
 
     parser.set_defaults(subcommand_func=main)

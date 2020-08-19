@@ -31,7 +31,7 @@ class MergePerfomancePerUser(AbstractCommandLineInterface):
 
         output_path: Path = args.output
         csv_obj = Csv(outdir=str(output_path.parent))
-        csv_obj.write_productivity_from_aw_time(sum_df, output_path=output_path)
+        csv_obj.write_productivity_per_user(sum_df, output_path=output_path)
 
 
 def main(args):
