@@ -106,6 +106,22 @@ class ListOutOfRangeAnnotationForMovieMain:
         df_merged = pandas.merge(df_task, df_input_data, how="left", on="input_data_id")
         return df_merged
 
+    @staticmethod
+    def filter_task_list(task_list: List[Dict[str, Any]], task_id_list: List[str]) -> List[Dict[str, Any]]:
+        def _exists(task_id) -> bool:
+            if task_id in task_id_set:
+                task_id_set.remove(task_id)
+                return True
+            else:
+                return False
+
+        task_id_set = set(task_id_list)
+        task_list = [e for e in task_list if _exists(e["task_id"])]
+        if len(task_id_set) > 0:
+            tmp = "\n".join(task_id_set)
+            logger.warning(f"以下のタスクは存在しません。\n{tmp}")
+        return task_list
+
     def list_out_of_range_annotation_for_movie(
         self, project_id: str, task_id_list: Optional[List[str]], parse_annotation_zip: bool = False
     ) -> pandas.DataFrame:
@@ -130,14 +146,13 @@ class ListOutOfRangeAnnotationForMovieMain:
         loop = asyncio.get_event_loop()
         loop.run_until_complete(gather)
 
-        downloading_obj.download_input_data_json(project_id, dest_path=str(input_data_json_path))
         with input_data_json_path.open() as f:
             input_data_list = json.load(f)
 
         with task_json_path.open() as f:
             task_list = json.load(f)
             if task_id_list is not None:
-                task_list = [e for e in task_list if e["task_id"] in task_id_list]
+                task_list = self.filter_task_list(task_list, task_id_list)
 
         df = self.create_dataframe(
             project_id, task_list=task_list, input_data_list=input_data_list, annotation_zip=annotation_zip_path
