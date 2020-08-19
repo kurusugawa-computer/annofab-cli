@@ -2,7 +2,6 @@
 import logging
 from dataclasses import dataclass
 from pathlib import Path
-from typing import Optional
 
 import holoviews as hv
 import numpy as np
@@ -34,9 +33,8 @@ class Histogram:
     ヒストグラムを出力するクラス
     """
 
-    def __init__(self, outdir: str, filename_prefix: Optional[str] = None):
+    def __init__(self, outdir: str):
         self.histogram_outdir = outdir
-        self.filename_prefix = filename_prefix + "-" if filename_prefix is not None else ""
         Path(self.histogram_outdir).mkdir(exist_ok=True, parents=True)
 
     @staticmethod
@@ -100,9 +98,9 @@ class Histogram:
             logger.info("タスク一覧が0件のため出力しません。")
             return
 
-        output_file_worktime = f"{self.histogram_outdir}/{self.filename_prefix}ヒストグラム-1回目の教師付者ごと-教師付時間"
+        output_file_worktime = f"{self.histogram_outdir}/ヒストグラム-1回目の教師付者ごと-教師付時間"
         logger.debug(f"{output_file_worktime}.html を出力します。")
-        output_file_first_worktime = f"{self.histogram_outdir}/{self.filename_prefix}ヒストグラム-1回目の教師付者ごと-1回目の教師付時間"
+        output_file_first_worktime = f"{self.histogram_outdir}/ヒストグラム-1回目の教師付者ごと-1回目の教師付時間"
         logger.debug(f"{output_file_first_worktime}.html を出力します。")
 
         first_annotation_user_id_list = df["first_annotation_user_id"].dropna().unique().tolist()
@@ -151,9 +149,9 @@ class Histogram:
             logger.info("タスク一覧が0件のため出力しません。")
             return
 
-        output_file_worktime = f"{self.histogram_outdir}/{self.filename_prefix}ヒストグラム-1回目の検査者ごと-検査時間"
+        output_file_worktime = f"{self.histogram_outdir}/ヒストグラム-1回目の検査者ごと-検査時間"
         logger.debug(f"{output_file_worktime}.html を出力します。")
-        output_file_first_worktime = f"{self.histogram_outdir}/{self.filename_prefix}ヒストグラム-1回目の検査者ごと-1回目の検査時間"
+        output_file_first_worktime = f"{self.histogram_outdir}/ヒストグラム-1回目の検査者ごと-1回目の検査時間"
         logger.debug(f"{output_file_first_worktime}.html を出力します。")
 
         first_inspection_user_id_list = df["first_inspection_user_id"].dropna().unique().tolist()
@@ -202,9 +200,9 @@ class Histogram:
             logger.info("タスク一覧が0件のため出力しません。")
             return
 
-        output_file_worktime = f"{self.histogram_outdir}/{self.filename_prefix}ヒストグラム-1回目の受入者ごと-受入時間"
+        output_file_worktime = f"{self.histogram_outdir}/ヒストグラム-1回目の受入者ごと-受入時間"
         logger.debug(f"{output_file_worktime}.html を出力します。")
-        output_file_first_worktime = f"{self.histogram_outdir}/{self.filename_prefix}ヒストグラム-1回目の受入者ごと-1回目の受入時間"
+        output_file_first_worktime = f"{self.histogram_outdir}/ヒストグラム-1回目の受入者ごと-1回目の受入時間"
         logger.debug(f"{output_file_first_worktime}.html を出力します。")
 
         first_acceptance_user_id_list = df["first_acceptance_user_id"].dropna().unique().tolist()
@@ -254,7 +252,7 @@ class Histogram:
 
         renderer = hv.renderer("bokeh")
 
-        output_file = f"{self.histogram_outdir}/{self.filename_prefix}ヒストグラム-作業時間"
+        output_file = f"{self.histogram_outdir}/ヒストグラム-作業時間"
         logger.debug(f"{output_file}.html を出力します。")
 
         histogram_name_list = [
@@ -322,7 +320,7 @@ class Histogram:
 
         renderer = hv.renderer("bokeh")
 
-        output_file = f"{self.histogram_outdir}/{self.filename_prefix}ヒストグラム"
+        output_file = f"{self.histogram_outdir}/ヒストグラム"
         logger.debug(f"{output_file}.html を出力します。")
 
         histogram_name_list = [
@@ -367,7 +365,7 @@ class Histogram:
 
         renderer = hv.renderer("bokeh")
 
-        output_file = f"{self.histogram_outdir}/{self.filename_prefix}ヒストグラム-ラベルごとのアノテーション数"
+        output_file = f"{self.histogram_outdir}/ヒストグラム-ラベルごとのアノテーション数"
         logger.debug(f"{output_file}.html を出力します。")
 
         histograms = []

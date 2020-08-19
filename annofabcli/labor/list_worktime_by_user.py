@@ -122,7 +122,7 @@ class ListWorktimeByUser(AbstractCommandLineInterface):
             if result is not None:
                 account_statistics = result
             else:
-                logger.warning("プロジェクトにアクセスできないため、アカウント統計情報を取得できませんでした。")
+                logger.warning(f"project_id={project_id}: プロジェクトにアクセスできないため、アカウント統計情報を取得できませんでした。")
                 account_statistics = []
 
             self._dict_account_statistics[project_id] = account_statistics

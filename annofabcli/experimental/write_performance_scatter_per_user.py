@@ -18,6 +18,7 @@ class WriteScatterPerUser(AbstractCommandLineInterface):
         scatter_obj.write_scatter_for_productivity_by_monitored_worktime(df)
         scatter_obj.write_scatter_for_productivity_by_actual_worktime(df)
         scatter_obj.write_scatter_for_quality(df)
+        scatter_obj.write_scatter_for_productivity_by_actual_worktime_and_quality(df)
 
 
 def main(args):
@@ -39,7 +40,7 @@ def parse_args(parser: argparse.ArgumentParser):
 
 
 def add_parser(subparsers: argparse._SubParsersAction):
-    subcommand_name = "write_scatter_per_user"
+    subcommand_name = "write_performance_scatter_per_user"
     subcommand_help = "CSVからユーザごとにプロットした散布図を出力します。"
     description = "CSVからユーザごとにプロットした散布図を出力します。"
     parser = annofabcli.common.cli.add_parser(subparsers, subcommand_name, subcommand_help, description)

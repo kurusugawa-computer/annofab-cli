@@ -29,9 +29,8 @@ class LineGraph:
     # Private
     #############################################
 
-    def __init__(self, outdir: str, filename_prefix: Optional[str] = None):
+    def __init__(self, outdir: str):
         self.line_graph_outdir = outdir
-        self.filename_prefix = filename_prefix + "-" if filename_prefix is not None else ""
         Path(self.line_graph_outdir).mkdir(exist_ok=True, parents=True)
 
     @staticmethod
@@ -92,6 +91,41 @@ class LineGraph:
         )
 
     @staticmethod
+    def _plot_moving_average(
+        fig: bokeh.plotting.Figure,
+        source: ColumnDataSource,
+        x_column_name: str,
+        y_column_name: str,
+        legend_label: str,
+        color: Color,
+    ) -> None:
+        """
+        移動平均用にプロットする
+
+        Args:
+            fig:
+            source:
+            x_column_name: sourceに対応するX軸の列名
+            y_column_name: sourceに対応するY軸の列名
+            legend_label:
+            color: 線と点の色
+
+        """
+
+        fig.line(
+            x=x_column_name,
+            y=y_column_name,
+            source=source,
+            legend_label=legend_label,
+            line_color=color,
+            line_width=1,
+            line_dash="dashed",
+            line_alpha=0.6,
+            muted_alpha=0.2,
+            muted_color=color,
+        )
+
+    @staticmethod
     def _set_legend(fig: bokeh.plotting.Figure, hover_tool: HoverTool) -> None:
         """
         凡例の設定。
@@ -108,7 +142,11 @@ class LineGraph:
             fig.add_layout(legend, "left")
 
     def create_user_id_list(
-        self, df: pandas.DataFrame, user_id_column: str, arg_user_id_list: Optional[List[str]] = None,
+        self,
+        df: pandas.DataFrame,
+        user_id_column: str,
+        datetime_column: str,
+        arg_user_id_list: Optional[List[str]] = None,
     ) -> List[str]:
         """
         グラフに表示するユーザのuser_idを生成する。
@@ -116,6 +154,7 @@ class LineGraph:
         Args:
             df:
             user_id_column: user_idが格納されている列の名前
+            datetime_column: 日時列の降順でソートする
             arg_first_annotation_user_id_list: 指定されたuser_idのList
 
         Returns:
@@ -123,12 +162,14 @@ class LineGraph:
 
         """
         max_user_length = len(self.my_palette)
+        tmp_user_id_list: List[str] = df.sort_values(by=datetime_column, ascending=False)[
+            user_id_column
+        ].dropna().unique().tolist()
+
         if arg_user_id_list is None or len(arg_user_id_list) == 0:
-            tmp_list: List[str] = df[user_id_column].dropna().unique().tolist()
-            tmp_list.sort()
-            user_id_list = tmp_list
+            user_id_list = tmp_user_id_list
         else:
-            user_id_list = arg_user_id_list
+            user_id_list = [user_id for user_id in tmp_user_id_list if user_id in arg_user_id_list]
 
         if len(user_id_list) > max_user_length:
             logger.info(f"表示対象のuser_idの数が多いため、先頭から{max_user_length}個のみグラフ化します")
@@ -159,7 +200,7 @@ class LineGraph:
             Returns:
 
             """
-            output_file = f"{self.line_graph_outdir}/{self.filename_prefix}{html_title}.html"
+            output_file = f"{self.line_graph_outdir}/{html_title}.html"
             logger.debug(f"{output_file} を出力します。")
 
             figs: List[bokeh.plotting.Figure] = []
@@ -206,7 +247,7 @@ class LineGraph:
         tooltip_item = [
             "first_annotation_user_id",
             "first_annotation_username",
-            "first_annotation_started_date",
+            "first_annotation_started_datetime",
             "first_annotation_worktime_hour",
             "annotation_worktime_hour",
             "inspection_worktime_hour",
@@ -222,7 +263,10 @@ class LineGraph:
             return
 
         first_annotation_user_id_list = self.create_user_id_list(
-            df, "first_annotation_user_id", first_annotation_user_id_list
+            df,
+            "first_annotation_user_id",
+            datetime_column="first_annotation_started_date",
+            arg_user_id_list=first_annotation_user_id_list,
         )
         logger.debug(f"教師付者用の折れ線グラフに表示する、教師付者のuser_id = {first_annotation_user_id_list}")
 
@@ -374,7 +418,7 @@ class LineGraph:
             Returns:
 
             """
-            output_file = f"{self.line_graph_outdir}/{self.filename_prefix}{html_title}.html"
+            output_file = f"{self.line_graph_outdir}/{html_title}.html"
             logger.debug(f"{output_file} を出力します。")
 
             figs: List[bokeh.plotting.Figure] = []
@@ -438,7 +482,10 @@ class LineGraph:
             return
 
         first_annotation_user_id_list = self.create_user_id_list(
-            df, "first_annotation_user_id", first_annotation_user_id_list
+            df,
+            "first_annotation_user_id",
+            datetime_column="first_annotation_started_datetime",
+            arg_user_id_list=first_annotation_user_id_list,
         )
         logger.debug(f"教師付者用の累積折れ線グラフに表示する、教師付者のuser_id = {first_annotation_user_id_list}")
 
@@ -594,7 +641,7 @@ class LineGraph:
             Returns:
 
             """
-            output_file = f"{self.line_graph_outdir}/{self.filename_prefix}{html_title}.html"
+            output_file = f"{self.line_graph_outdir}/{html_title}.html"
             logger.debug(f"{output_file} を出力します。")
 
             figs: List[bokeh.plotting.Figure] = []
@@ -659,7 +706,10 @@ class LineGraph:
             return
 
         first_inspection_user_id_list = self.create_user_id_list(
-            df, "first_inspection_user_id", first_inspection_user_id_list
+            df,
+            "first_inspection_user_id",
+            datetime_column="first_inspection_started_datetime",
+            arg_user_id_list=first_inspection_user_id_list,
         )
 
         if len(first_inspection_user_id_list) == 0:
@@ -745,7 +795,7 @@ class LineGraph:
             Returns:
 
             """
-            output_file = f"{self.line_graph_outdir}/{self.filename_prefix}{html_title}.html"
+            output_file = f"{self.line_graph_outdir}/{html_title}.html"
             logger.debug(f"{output_file} を出力します。")
 
             figs: List[bokeh.plotting.Figure] = []
@@ -812,7 +862,10 @@ class LineGraph:
             return
 
         first_acceptance_user_id_list = self.create_user_id_list(
-            df, "first_acceptance_user_id", first_acceptance_user_id_list
+            df,
+            "first_acceptance_user_id",
+            datetime_column="first_acceptance_started_datetime",
+            arg_user_id_list=first_acceptance_user_id_list,
         )
 
         if len(first_acceptance_user_id_list) == 0:
@@ -896,9 +949,9 @@ class LineGraph:
             return
 
         html_title = "累積折れ線-横軸_日-縦軸_作業時間"
-        output_file = f"{self.line_graph_outdir}/{self.filename_prefix}{html_title}.html"
+        output_file = f"{self.line_graph_outdir}/{html_title}.html"
 
-        user_id_list = self.create_user_id_list(df, "user_id", user_id_list)
+        user_id_list = self.create_user_id_list(df, "user_id", datetime_column="date", arg_user_id_list=user_id_list)
         if len(user_id_list) == 0:
             logger.info(f"作業しているユーザがいないため、{html_title} グラフは出力しません。")
             return
@@ -988,7 +1041,7 @@ class LineGraph:
             return
 
         html_title = "累積折れ線-横軸_アノテーション数-縦軸_作業時間-全体"
-        output_file = f"{self.line_graph_outdir}/{self.filename_prefix}{html_title}.html"
+        output_file = f"{self.line_graph_outdir}/{html_title}.html"
 
         logger.debug(f"{output_file} を出力します。")
 
@@ -1026,3 +1079,108 @@ class LineGraph:
         bokeh.plotting.reset_output()
         bokeh.plotting.output_file(output_file, title=html_title)
         bokeh.plotting.save(bokeh.layouts.column([fig]))
+
+    def write_whole_productivity_line_graph(self, df: pandas.DataFrame):
+        """
+        全体の生産量や生産性をプロットする
+
+
+        Args:
+            df:
+
+        Returns:
+
+        """
+
+        def create_figure(title: str, y_axis_label: str) -> bokeh.plotting.Figure:
+            return figure(
+                plot_width=1200,
+                plot_height=600,
+                title=title,
+                x_axis_label="日",
+                x_axis_type="datetime",
+                y_axis_label=y_axis_label,
+            )
+
+        def plot_and_moving_average(fig, y_column_name: str, legend_name: str, source):
+            x_column_name = "dt_date"
+            color = self.my_palette[0]
+
+            # 値をプロット
+            self._plot_line_and_circle(
+                fig,
+                x_column_name=x_column_name,
+                y_column_name=y_column_name,
+                source=source,
+                color=color,
+                legend_label=legend_name,
+            )
+
+            # 移動平均をプロット
+            self._plot_moving_average(
+                fig,
+                x_column_name=x_column_name,
+                y_column_name=f"{y_column_name}__lastweek",
+                source=source,
+                color=color,
+                legend_label=f"{legend_name}の1週間移動平均",
+            )
+
+        if len(df) == 0:
+            logger.info("データが0件のため出力しない")
+            return
+
+        df["dt_date"] = df["date"].map(lambda e: dateutil.parser.parse(e).date())
+
+        html_title = "折れ線-横軸_日-全体"
+        output_file = f"{self.line_graph_outdir}/{html_title}.html"
+        logger.debug(f"{output_file} を出力します。")
+
+        fig_list = [
+            create_figure(title="日ごとのタスク数", y_axis_label="タスク数"),
+            create_figure(title="日ごとの入力データ数", y_axis_label="入力データ数"),
+            create_figure(title="日ごとの実績作業時間", y_axis_label="実績作業時間[hour]"),
+            create_figure(title="日ごとのタスクあたり実績作業時間", y_axis_label="タスクあたり実績作業時間[task/hour]"),
+            create_figure(title="日ごとの入力データあたり実績作業時間", y_axis_label="入力データあたり実績作業時間[input_data/hour]"),
+            create_figure(title="日ごとのアノテーションあたり実績作業時間", y_axis_label="アノテーションあたり実績作業時間[annotation/hour]"),
+        ]
+
+        fig_info_list = [
+            dict(x="dt_date", y="task_count", legend_name="タスク数"),
+            dict(x="dt_date", y="input_data_count", legend_name="入力データ数"),
+            dict(x="dt_date", y="actual_worktime_hour", legend_name="実績作業時間"),
+            dict(x="dt_date", y="actual_worktime_hour/task_count", legend_name="タスクあたり実績作業時間"),
+            dict(x="dt_date", y="actual_worktime_hour/input_data_count", legend_name="入力データあたり実績作業時間"),
+            dict(x="dt_date", y="actual_worktime_hour/annotation_count", legend_name="アノテーションあたり実績作業時間"),
+        ]
+
+        MOVING_WINDOW_SIZE = 7
+        for column in ["task_count", "input_data_count", "actual_worktime_hour"]:
+            df[f"{column}__lastweek"] = df[column].rolling(MOVING_WINDOW_SIZE).mean()
+
+        source = ColumnDataSource(data=df)
+
+        for fig, fig_info in zip(fig_list, fig_info_list):
+            plot_and_moving_average(
+                fig=fig, y_column_name=fig_info["y"], legend_name=fig_info["legend_name"], source=source,
+            )
+
+        tooltip_item = [
+            "date",
+            "task_count",
+            "input_data_count",
+            "actual_worktime_hour",
+            "cumsum_task_count",
+            "cumsum_input_data_count",
+            "cumsum_actual_worktime_hour",
+            "actual_worktime_hour/task_count",
+            "actual_worktime_hour/input_data_count",
+            "actual_worktime_hour/annotation_count",
+        ]
+        hover_tool = self._create_hover_tool(tooltip_item)
+        for fig in fig_list:
+            self._set_legend(fig, hover_tool)
+
+        bokeh.plotting.reset_output()
+        bokeh.plotting.output_file(output_file, title=html_title)
+        bokeh.plotting.save(bokeh.layouts.column(fig_list))

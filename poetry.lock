@@ -4,7 +4,7 @@ description = "Python Clinet Library of AnnoFab WebAPI (https://annofab.com/docs
 name = "annofabapi"
 optional = false
 python-versions = ">=3.6,<4.0"
-version = "0.38.0"
+version = "0.38.3"
 
 [package.dependencies]
 backoff = "*"
@@ -900,12 +900,13 @@ testing = ["jaraco.itertools", "func-timeout"]
 
 [metadata]
 content-hash = "0009d2ff2e7252d22c1799a334301d5286c02f826c7ae6c9d53132c035c5e2a9"
+lock-version = "1.0"
 python-versions = "^3.6.1"
 
 [metadata.files]
 annofabapi = [
-    {file = "annofabapi-0.38.0-py3-none-any.whl", hash = "sha256:a436959615ee726c3e281c6cc03d9e288bb45b3bb87d554e689fd048a3b9d7df"},
-    {file = "annofabapi-0.38.0.tar.gz", hash = "sha256:98c014195c4d73f0453f22ffae83998ba00b289075e5020248e9f25eeb36fe37"},
+    {file = "annofabapi-0.38.3-py3-none-any.whl", hash = "sha256:41f30e3d1c3b4f5f7b2fd7c8c96c93773e9fc6f3a765fb4e25e260c9f5a3b281"},
+    {file = "annofabapi-0.38.3.tar.gz", hash = "sha256:5575e936c8dd2243e84af2192e336658e49045cf37a019d072d5ac60cbb865fc"},
 ]
 apipkg = [
     {file = "apipkg-1.5-py2.py3-none-any.whl", hash = "sha256:58587dd4dc3daefad0487f6d9ae32b4542b185e1c36db6993290e7c41ca2b47c"},

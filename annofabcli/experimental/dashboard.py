@@ -378,7 +378,7 @@ def get_task_exhaustation_date(
     Returns:
 
     """
-    if annotation_not_started <= 0:
+    if annotation_not_started <= 0 or velocity_per_task <= 0:
         return None
 
     remaining_task: float = annotation_not_started

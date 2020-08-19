@@ -15,8 +15,7 @@ logger = logging.getLogger(__name__)
 class WritePerfomancePerUser(AbstractCommandLineInterface):
     def main(self):
         args = self.args
-        project_id = args.project_id
-        csv_obj = Csv(outdir=args.output_dir, filename_prefix=project_id[0:8])
+        csv_obj = Csv(outdir=args.output_dir)
 
         df_task = pandas.read_csv(args.task_csv)
         df_task_history = pandas.read_csv(args.task_history_csv)
@@ -28,7 +27,7 @@ class WritePerfomancePerUser(AbstractCommandLineInterface):
             df_task_history, df_labor, df_count_ratio
         )
 
-        csv_obj.write_productivity_from_aw_time(df_perfomance_per_user)
+        csv_obj.write_productivity_per_user(df_perfomance_per_user)
 
 
 def main(args):
@@ -65,7 +64,7 @@ def parse_args(parser: argparse.ArgumentParser):
 
 
 def add_parser(subparsers: argparse._SubParsersAction):
-    subcommand_name = "write_peformance_per_user"
+    subcommand_name = "write_peformance_csv_per_user"
     subcommand_help = "ユーザごとのパフォーマンス（生産性や品質）をCSVに出力します。"
     description = "ユーザごとのパフォーマンス（生産性や品質）をCSVに出力します。"
     parser = annofabcli.common.cli.add_parser(subparsers, subcommand_name, subcommand_help, description)
