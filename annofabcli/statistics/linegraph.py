@@ -1184,3 +1184,78 @@ class LineGraph:
         bokeh.plotting.reset_output()
         bokeh.plotting.output_file(output_file, title=html_title)
         bokeh.plotting.save(bokeh.layouts.column(fig_list))
+
+    def write_whole_cumulative_line_graph(self, df: pandas.DataFrame):
+        """
+        全体の生産量や作業時間の累積折れ線グラフを出力する
+        """
+
+        def create_figure(title: str, y_axis_label: str) -> bokeh.plotting.Figure:
+            return figure(
+                plot_width=1200,
+                plot_height=600,
+                title=title,
+                x_axis_label="日",
+                x_axis_type="datetime",
+                y_axis_label=y_axis_label,
+            )
+
+        if len(df) == 0:
+            logger.info("データが0件のため出力しない")
+            return
+
+        df["dt_date"] = df["date"].map(lambda e: dateutil.parser.parse(e).date())
+        df["cumsum_monitored_worktime_hour"] = df["monitored_worktime_hour"].cumsum()
+
+        html_title = "累積折れ線-横軸_日-全体"
+        output_file = f"{self.line_graph_outdir}/{html_title}.html"
+        logger.debug(f"{output_file} を出力します。")
+
+        fig_list = [
+            create_figure(title="日ごとの累積タスク数", y_axis_label="タスク数"),
+            create_figure(title="日ごとの累積入力データ数", y_axis_label="入力データ数"),
+            create_figure(title="日ごとの累積作業時間", y_axis_label="作業時間[hour]"),
+        ]
+
+        fig_info_list = [
+            {"x": "dt_date", "y_info": [{"column":"cumsum_task_count", "legend":"タスク数"}]},
+            {"x":"dt_date", "y_info": [{"column":"cumsum_input_data_count", "legend":"入力データ数"}]},
+            {"x":"dt_date", "y_info": [{"column":"cumsum_actual_worktime_hour", "legend":"実績作業時間"}, {"column":"cumsum_monitored_worktime_hour", "legend":"計測作業時間"}]}
+        ]
+
+        source = ColumnDataSource(data=df)
+
+        for fig, fig_info in zip(fig_list, fig_info_list):
+            x_column_name = "dt_date"
+            for index, y_info in enumerate(fig_info["y_info"]):
+                color = self.my_palette[index]
+
+                # 値をプロット
+                self._plot_line_and_circle(
+                    fig,
+                    x_column_name=x_column_name,
+                    y_column_name=y_info["column"],
+                    source=source,
+                    color=color,
+                    legend_label=y_info["legend"],
+                )
+
+
+        tooltip_item = [
+            "date",
+            "task_count",
+            "input_data_count",
+            "actual_worktime_hour",
+            "monitored_worktime_hour",
+            "cumsum_task_count",
+            "cumsum_input_data_count",
+            "cumsum_actual_worktime_hour",
+            "cumsum_monitored_worktime_hour",
+        ]
+        hover_tool = self._create_hover_tool(tooltip_item)
+        for fig in fig_list:
+            self._set_legend(fig, hover_tool)
+
+        bokeh.plotting.reset_output()
+        bokeh.plotting.output_file(output_file, title=html_title)
+        bokeh.plotting.save(bokeh.layouts.column(fig_list))
