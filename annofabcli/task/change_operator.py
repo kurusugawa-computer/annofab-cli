@@ -1,6 +1,7 @@
 import argparse
 import logging
 import multiprocessing
+import sys
 from dataclasses import dataclass
 from functools import partial
 from typing import List, Optional, Tuple
@@ -68,11 +69,15 @@ class ChangeOperatorMain:
         self,
         project_id: str,
         task_id: str,
-        task_index: int,
-        task_query: TaskQuery,
         new_account_id: Optional[str] = None,
+        task_query: Optional[TaskQuery] = None,
+        task_index: Optional[int] = None,
     ) -> bool:
-        logging_prefix = f"{task_index} 件目"
+
+        logging_prefix = f"{task_index+1} 件目" if task_index is not None else ""
+        if task_query is None:
+            task_query = TaskQuery()
+
         dict_task, _ = self.service.api.get_task(project_id, task_id)
         task: Task = Task.from_dict(dict_task)  # type: ignore
 
@@ -160,7 +165,7 @@ class ChangeOperatorMain:
                 logger.info(f" {len(task_id_list)}のタスクの担当者を、{new_user_id}に変更します。")
         else:
             new_account_id = None
-            logger.info(f" {len(task_id_list)}のタスクの担当者を未割り当てに変更します。")
+            logger.info(f" {len(task_id_list)} 件のタスクの担当者を未割り当てに変更します。")
 
         success_count = 0
 
@@ -188,8 +193,23 @@ class ChangeOperatorMain:
 
 
 class ChangeOperator(AbstractCommandLineInterface):
+    @staticmethod
+    def validate(args: argparse.Namespace) -> bool:
+        COMMON_MESSAGE = "annofabcli task change_operator: error:"
+
+        if args.parallelism is not None and not args.yes:
+            print(
+                f"{COMMON_MESSAGE} argument --parallelism: '--parallelism'を指定するときは、必ず'--yes'を指定してください。",
+                file=sys.stderr,
+            )
+            return False
+
+        return True
+
     def main(self):
         args = self.args
+        if not self.validate(args):
+            return
 
         task_id_list = annofabcli.common.cli.get_list_from_args(args.task_id)
         if args.user_id is not None:
@@ -207,7 +227,13 @@ class ChangeOperator(AbstractCommandLineInterface):
         super().validate_project(project_id, [ProjectMemberRole.OWNER, ProjectMemberRole.ACCEPTER])
 
         main_obj = ChangeOperatorMain(self.service, all_yes=self.all_yes)
-        main_obj.change_operator(project_id, task_id_list=task_id_list, new_user_id=user_id, task_query=task_query, parallelism=args.parallelism)
+        main_obj.change_operator(
+            project_id,
+            task_id_list=task_id_list,
+            new_user_id=user_id,
+            task_query=task_query,
+            parallelism=args.parallelism,
+        )
 
 
 def main(args: argparse.Namespace):
@@ -237,7 +263,9 @@ def parse_args(parser: argparse.ArgumentParser):
         "使用できるキーは、phase, status のみです。",
     )
 
-    parser.add_argument("--parallelism", type=int, help="並列度。指定する場合は必ず'--yes'を指定してください。指定しない場合は、逐次的に処理します。")
+    parser.add_argument(
+        "--parallelism", type=int, help="使用するプロセス数（並列度）を指定してください。指定する場合は必ず'--yes'を指定してください。指定しない場合は、逐次的に処理します。"
+    )
 
     parser.set_defaults(subcommand_func=main)
 
