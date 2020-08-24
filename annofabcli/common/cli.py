@@ -80,7 +80,12 @@ def add_parser(
     """
     parents = [create_parent_parser()] if is_subcommand else []
     parser = subparsers.add_parser(
-        command_name, parents=parents, description=description, help=command_help, epilog=epilog
+        command_name,
+        parents=parents,
+        description=description,
+        help=command_help,
+        epilog=epilog,
+        formatter_class=argparse.ArgumentDefaultsHelpFormatter,
     )
     parser.set_defaults(command_help=parser.print_help)
     return parser
@@ -423,6 +428,31 @@ class ArgumentParser:
             help_message = "JMESPath形式で指定します。出力結果の抽出や、出力内容の変更に利用できます。"
 
         self.parser.add_argument("-q", "--query", type=str, help=help_message)
+
+
+class AbstracCommandCinfirmInterface(abc.ABC):
+    """
+    コマンドライン上でpromptを表示するときのインターフェイズ
+    """
+
+    def __init__(self, all_yes: bool = False):
+        self.all_yes = all_yes
+
+    def confirm_processing(self, confirm_message: str) -> bool:
+        """
+        `all_yes`属性を見て、処理するかどうかユーザに問い合わせる。
+        "ALL"が入力されたら、`all_yes`属性をTrueにする
+
+        Returns:
+            True: Yes, False: No
+
+        """
+        if self.all_yes:
+            return True
+        yes, all_yes = prompt_yesnoall(confirm_message)
+        if all_yes:
+            self.all_yes = True
+        return yes
 
 
 class AbstractCommandLineInterface(abc.ABC):

@@ -37,5 +37,7 @@ class TestChangeOperator:
         print(actual)
 
     def test_change_operator(self):
-        actual = self.main_obj.change_operator(project_id=project_id, task_id_list=[task_id], new_user_id=service.api.login_user_id)
+        actual = self.main_obj.change_operator(
+            project_id=project_id, task_id_list=[task_id], new_user_id=service.api.login_user_id
+        )
         print(actual)
