@@ -18,6 +18,7 @@ class WriteWholeLingraph(AbstractCommandLineInterface):
         df = pandas.read_csv(str(args.csv))
         linegraph_obj = LineGraph(outdir=str(args.output_dir))
         linegraph_obj.write_whole_productivity_line_graph(df)
+        linegraph_obj.write_whole_cumulative_line_graph(df)
 
 
 def main(args):

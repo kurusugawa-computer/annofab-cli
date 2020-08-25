@@ -1,8 +1,12 @@
 import argparse
 import logging
+import multiprocessing
+import sys
 from dataclasses import dataclass
-from typing import List, Optional
+from functools import partial
+from typing import List, Optional, Tuple
 
+import annofabapi
 import requests
 from annofabapi.dataclass.task import Task
 from annofabapi.models import ProjectMemberRole, TaskPhase, TaskStatus
@@ -11,7 +15,12 @@ from dataclasses_json import dataclass_json
 import annofabcli
 import annofabcli.common.cli
 from annofabcli import AnnofabApiFacade
-from annofabcli.common.cli import AbstractCommandLineInterface, ArgumentParser, build_annofabapi_resource_and_login
+from annofabcli.common.cli import (
+    AbstractCommandLineInterface,
+    ArgumentParser,
+    build_annofabapi_resource_and_login,
+    prompt_yesnoall,
+)
 
 logger = logging.getLogger(__name__)
 
@@ -23,15 +32,110 @@ class TaskQuery:
     status: Optional[TaskStatus] = None
 
 
-class ChangeOperator(AbstractCommandLineInterface):
-    def confirm_change_operator(self, task: Task, user_id: Optional[str] = None) -> bool:
-        if user_id is None:
-            str_user_id = "未割り当て"
-        else:
-            str_user_id = user_id
+class ChangeOperatorMain:
+    def __init__(self, service: annofabapi.Resource, all_yes: bool):
+        self.service = service
+        self.facade = AnnofabApiFacade(service)
+        self.all_yes = all_yes
 
-        confirm_message = f"task_id = {task.task_id} のタスクの担当者を '{str_user_id}' にしますか？"
+    def confirm_processing(self, confirm_message: str) -> bool:
+        """
+        `all_yes`属性を見て、処理するかどうかユーザに問い合わせる。
+        "ALL"が入力されたら、`all_yes`属性をTrueにする
+
+        Args:
+            task_id: 処理するtask_id
+            confirm_message: 確認メッセージ
+
+        Returns:
+            True: Yes, False: No
+
+        """
+        if self.all_yes:
+            return True
+
+        yes, all_yes = prompt_yesnoall(confirm_message)
+
+        if all_yes:
+            self.all_yes = True
+
+        return yes
+
+    def confirm_change_operator(self, task: Task) -> bool:
+        confirm_message = f"task_id = {task.task_id} のタスクの担当者を変更しますか？"
         return self.confirm_processing(confirm_message)
+
+    def change_operator_for_task(
+        self,
+        project_id: str,
+        task_id: str,
+        new_account_id: Optional[str] = None,
+        task_query: Optional[TaskQuery] = None,
+        task_index: Optional[int] = None,
+    ) -> bool:
+
+        logging_prefix = f"{task_index+1} 件目" if task_index is not None else ""
+        if task_query is None:
+            task_query = TaskQuery()
+
+        dict_task, _ = self.service.api.get_task(project_id, task_id)
+        task: Task = Task.from_dict(dict_task)  # type: ignore
+
+        if task.account_id is not None:
+            now_user_id = self.facade.get_user_id_from_account_id(project_id, task.account_id)
+        else:
+            now_user_id = None
+
+        logger.debug(
+            f"{logging_prefix} : task_id = {task.task_id}, "
+            f"status = {task.status.value}, "
+            f"phase = {task.phase.value}, "
+            f"user_id = {now_user_id}"
+        )
+
+        if task_query.status is not None:
+            if task.status != task_query.status:
+                logger.debug(
+                    f"{logging_prefix} : task_id = {task_id} : タスクのstatusが {task_query.status.value} でないので、スキップします。"
+                )
+                return False
+
+        if task_query.phase is not None:
+            if task.phase != task_query.phase:
+                logger.debug(
+                    f"{logging_prefix} : task_id = {task_id} : タスクのphaseが {task_query.phase.value} でないので、スキップします。"
+                )
+                return False
+
+        if task.status in [TaskStatus.COMPLETE, TaskStatus.WORKING]:
+            logger.warning(f"{logging_prefix} : task_id = {task_id} : タスクのstatusがworking or complete なので、担当者を変更できません。")
+            return False
+
+        if not self.confirm_change_operator(task):
+            return False
+
+        try:
+            # 担当者を変更する
+            self.facade.change_operator_of_task(project_id, task_id, new_account_id)
+            logger.debug(f"{logging_prefix} : task_id = {task_id}, phase={dict_task['phase']} のタスクの担当者を変更しました。")
+            return True
+
+        except requests.exceptions.HTTPError as e:
+            logger.warning(e)
+            logger.warning(f"{logging_prefix} : task_id = {task_id} の担当者を変更するのに失敗しました。")
+            return False
+
+    def change_operator_for_task_wrapper(
+        self, tpl: Tuple[int, str], project_id: str, task_query: TaskQuery, new_account_id: Optional[str] = None,
+    ) -> bool:
+        task_index, task_id = tpl
+        return self.change_operator_for_task(
+            project_id=project_id,
+            task_id=task_id,
+            task_index=task_index,
+            task_query=task_query,
+            new_account_id=new_account_id,
+        )
 
     def change_operator(
         self,
@@ -39,6 +143,7 @@ class ChangeOperator(AbstractCommandLineInterface):
         task_id_list: List[str],
         new_user_id: Optional[str] = None,
         task_query: Optional[TaskQuery] = None,
+        parallelism: Optional[int] = None,
     ):
         """
         検査コメントを付与して、タスクを差し戻す
@@ -51,77 +156,60 @@ class ChangeOperator(AbstractCommandLineInterface):
         if task_query is None:
             task_query = TaskQuery()
 
-        super().validate_project(project_id, [ProjectMemberRole.OWNER, ProjectMemberRole.ACCEPTER])
-
         if new_user_id is not None:
-            account_id = self.facade.get_account_id_from_user_id(project_id, new_user_id)
-            if account_id is None:
+            new_account_id = self.facade.get_account_id_from_user_id(project_id, new_user_id)
+            if new_account_id is None:
                 logger.error(f"ユーザ '{new_user_id}' のaccount_idが見つかりませんでした。終了します。")
                 return
+            else:
+                logger.info(f" {len(task_id_list)}のタスクの担当者を、{new_user_id}に変更します。")
         else:
-            account_id = None
+            new_account_id = None
+            logger.info(f" {len(task_id_list)} 件のタスクの担当者を未割り当てに変更します。")
 
-        logger.info(f"タスクの担当者を変更する件数: {len(task_id_list)}")
         success_count = 0
 
-        for task_index, task_id in enumerate(task_id_list):
-            str_progress = annofabcli.utils.progress_msg(task_index + 1, len(task_id_list))
-
-            dict_task, _ = self.service.api.get_task(project_id, task_id)
-            task: Task = Task.from_dict(dict_task)  # type: ignore
-
-            if task.account_id is not None:
-                now_user_id = self.facade.get_user_id_from_account_id(project_id, task.account_id)
-            else:
-                now_user_id = None
-
-            logger.debug(
-                f"{str_progress} : task_id = {task.task_id}, "
-                f"status = {task.status.value}, "
-                f"phase = {task.phase.value}, "
-                f"user_id = {now_user_id}"
+        if parallelism is not None:
+            partial_func = partial(
+                self.change_operator_for_task_wrapper,
+                project_id=project_id,
+                task_query=task_query,
+                new_account_id=new_account_id,
             )
+            with multiprocessing.Pool(parallelism) as pool:
+                result_bool_list = pool.map(partial_func, enumerate(task_id_list))
+                success_count = len([e for e in result_bool_list if e])
 
-            if task_query.status is not None:
-                if task.status != task_query.status:
-                    logger.debug(
-                        f"{str_progress} : task_id = {task_id} : タスクのstatusが {task_query.status.value} でないので、スキップします。"
-                    )
-                    continue
-
-            if task_query.phase is not None:
-                if task.phase != task_query.phase:
-                    logger.debug(
-                        f"{str_progress} : task_id = {task_id} : タスクのphaseが {task_query.phase.value} でないので、スキップします。"
-                    )
-                    continue
-
-            if task.status in [TaskStatus.COMPLETE, TaskStatus.WORKING]:
-                logger.warning(
-                    f"{str_progress} : task_id = {task_id} : タスクのstatusがworking or complete なので、担当者を変更できません。"
+        else:
+            # 逐次処理
+            for task_index, task_id in enumerate(task_id_list):
+                result = self.change_operator_for_task(
+                    project_id, task_id, task_index=task_index, task_query=task_query, new_account_id=new_account_id
                 )
-                continue
-
-            if not self.confirm_change_operator(task, new_user_id):
-                continue
-
-            try:
-                # 担当者を変更する
-                self.facade.change_operator_of_task(project_id, task_id, account_id)
-                success_count += 1
-                logger.debug(
-                    f"{str_progress} : task_id = {task_id}, phase={dict_task['phase']}, {new_user_id}に担当者を変更しました。"
-                )
-
-            except requests.exceptions.HTTPError as e:
-                logger.warning(e)
-                logger.warning(f"{str_progress} : task_id = {task_id} の担当者を変更するのに失敗しました。")
-                continue
+                if result:
+                    success_count += 1
 
         logger.info(f"{success_count} / {len(task_id_list)} 件 タスクの担当者を変更しました。")
 
+
+class ChangeOperator(AbstractCommandLineInterface):
+    @staticmethod
+    def validate(args: argparse.Namespace) -> bool:
+        COMMON_MESSAGE = "annofabcli task change_operator: error:"
+
+        if args.parallelism is not None and not args.yes:
+            print(
+                f"{COMMON_MESSAGE} argument --parallelism: '--parallelism'を指定するときは、必ず'--yes'を指定してください。",
+                file=sys.stderr,
+            )
+            return False
+
+        return True
+
     def main(self):
         args = self.args
+        if not self.validate(args):
+            return
 
         task_id_list = annofabcli.common.cli.get_list_from_args(args.task_id)
         if args.user_id is not None:
@@ -134,7 +222,18 @@ class ChangeOperator(AbstractCommandLineInterface):
 
         dict_task_query = annofabcli.common.cli.get_json_from_args(args.task_query)
         task_query: Optional[TaskQuery] = TaskQuery.from_dict(dict_task_query) if dict_task_query is not None else None
-        self.change_operator(args.project_id, task_id_list, user_id, task_query=task_query)
+
+        project_id = args.project_id
+        super().validate_project(project_id, [ProjectMemberRole.OWNER, ProjectMemberRole.ACCEPTER])
+
+        main_obj = ChangeOperatorMain(self.service, all_yes=self.all_yes)
+        main_obj.change_operator(
+            project_id,
+            task_id_list=task_id_list,
+            new_user_id=user_id,
+            task_query=task_query,
+            parallelism=args.parallelism,
+        )
 
 
 def main(args: argparse.Namespace):
@@ -162,6 +261,10 @@ def parse_args(parser: argparse.ArgumentParser):
         help="タスクの検索クエリをJSON形式で指定します。指定しない場合はすべてのタスクを取得します。"
         "`file://`を先頭に付けると、JSON形式のファイルを指定できます。"
         "使用できるキーは、phase, status のみです。",
+    )
+
+    parser.add_argument(
+        "--parallelism", type=int, help="使用するプロセス数（並列度）を指定してください。指定する場合は必ず'--yes'を指定してください。指定しない場合は、逐次的に処理します。"
     )
 
     parser.set_defaults(subcommand_func=main)

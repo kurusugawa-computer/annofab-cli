@@ -196,6 +196,7 @@ class WriteCsvGraph:
     def write_whole_linegraph(self) -> None:
         whole_productivity_df = self._get_whole_productivity_df()
         catch_exception(self.linegraph_obj.write_whole_productivity_line_graph)(whole_productivity_df)
+        catch_exception(self.linegraph_obj.write_whole_cumulative_line_graph)(whole_productivity_df)
 
     def write_linegraph_by_user(self, user_id_list: Optional[List[str]] = None) -> None:
         """
