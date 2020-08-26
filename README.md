@@ -147,7 +147,7 @@ $ docker run -it -e ANNOFAB_USER_ID=XXXX -e ANNOFAB_PASSWORD=YYYYY annofab-cli a
 ログを無効化にします。
 
 
-### `--endpoint_url
+### `--endpoint_url`
 AnnoFab WebAPIのエンドポイントURLを指定します。デフォルトは https://annofab.com です。
 
 
