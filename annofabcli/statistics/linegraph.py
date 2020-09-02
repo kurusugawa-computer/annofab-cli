@@ -1291,10 +1291,10 @@ class LineGraph:
 
         def create_task_figure():
             y_range_name = "worktime_axis"
-            fig_task = create_figure(title="日ごとの累積タスク数と累積作業時間", y_axis_label="タスク数")
-            fig_task.add_layout(LinearAxis(y_range_name=y_range_name, axis_label="作業時間[hour]",), "right")
+            fig = create_figure(title="日ごとの累積タスク数と累積作業時間", y_axis_label="タスク数")
+            fig.add_layout(LinearAxis(y_range_name=y_range_name, axis_label="作業時間[hour]",), "right")
             y_overlimit = 0.05
-            fig_task.extra_y_ranges = {
+            fig.extra_y_ranges = {
                 y_range_name: DataRange1d(end=df["cumsum_actual_worktime_hour"].max() * (1 + y_overlimit))
             }
 
@@ -1316,16 +1316,17 @@ class LineGraph:
                 source=source,
                 color=self.my_small_palette[1],
                 legend_label="実績作業時間",
+                y_range_name=y_range_name,
             )
 
-            return fig_task
+            return fig
 
         def create_input_data_figure():
             y_range_name = "worktime_axis"
-            fig_task = create_figure(title="日ごとの累積入力データ数と累積作業時間", y_axis_label="入力データ数")
-            fig_task.add_layout(LinearAxis(y_range_name=y_range_name, axis_label="作業時間[hour]",), "right")
+            fig = create_figure(title="日ごとの累積入力データ数と累積作業時間", y_axis_label="入力データ数")
+            fig.add_layout(LinearAxis(y_range_name=y_range_name, axis_label="作業時間[hour]",), "right")
             y_overlimit = 0.05
-            fig_task.extra_y_ranges = {
+            fig.extra_y_ranges = {
                 y_range_name: DataRange1d(end=df["cumsum_actual_worktime_hour"].max() * (1 + y_overlimit))
             }
 
@@ -1347,9 +1348,10 @@ class LineGraph:
                 source=source,
                 color=self.my_small_palette[1],
                 legend_label="実績作業時間",
+                y_range_name=y_range_name,
             )
 
-            return fig_task
+            return fig
 
         if len(df) == 0:
             logger.info("データが0件のため出力しない")
@@ -1363,8 +1365,6 @@ class LineGraph:
         logger.debug(f"{output_file} を出力します。")
 
         fig_list = [
-            create_figure(title="日ごとの累積タスク数", y_axis_label="タスク数"),
-            create_figure(title="日ごとの累積入力データ数", y_axis_label="入力データ数"),
             create_figure(title="日ごとの累積作業時間", y_axis_label="作業時間[hour]"),
         ]
 
