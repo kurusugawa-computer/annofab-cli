@@ -1289,6 +1289,68 @@ class LineGraph:
                 y_axis_label=y_axis_label,
             )
 
+        def create_task_figure():
+            y_range_name = "worktime_axis"
+            fig_task = create_figure(title="日ごとの累積タスク数と累積作業時間", y_axis_label="タスク数")
+            fig_task.add_layout(LinearAxis(y_range_name=y_range_name, axis_label="作業時間[hour]",), "right")
+            y_overlimit = 0.05
+            fig_task.extra_y_ranges = {
+                y_range_name: DataRange1d(end=df["cumsum_actual_worktime_hour"].max() * (1 + y_overlimit))
+            }
+
+            # 値をプロット
+            self._plot_line_and_circle(
+                fig,
+                x_column_name=x_column_name,
+                y_column_name="cumsum_task_count",
+                source=source,
+                color=self.my_small_palette[0],
+                legend_label="タスク数",
+            )
+
+            # 値をプロット
+            self._plot_line_and_circle(
+                fig,
+                x_column_name=x_column_name,
+                y_column_name="cumsum_actual_worktime_hour",
+                source=source,
+                color=self.my_small_palette[1],
+                legend_label="実績作業時間",
+            )
+
+            return fig_task
+
+        def create_input_data_figure():
+            y_range_name = "worktime_axis"
+            fig_task = create_figure(title="日ごとの累積入力データ数と累積作業時間", y_axis_label="入力データ数")
+            fig_task.add_layout(LinearAxis(y_range_name=y_range_name, axis_label="作業時間[hour]",), "right")
+            y_overlimit = 0.05
+            fig_task.extra_y_ranges = {
+                y_range_name: DataRange1d(end=df["cumsum_actual_worktime_hour"].max() * (1 + y_overlimit))
+            }
+
+            # 値をプロット
+            self._plot_line_and_circle(
+                fig,
+                x_column_name=x_column_name,
+                y_column_name="cumsum_input_data_count",
+                source=source,
+                color=self.my_small_palette[0],
+                legend_label="入力データ数",
+            )
+
+            # 値をプロット
+            self._plot_line_and_circle(
+                fig,
+                x_column_name=x_column_name,
+                y_column_name="cumsum_actual_worktime_hour",
+                source=source,
+                color=self.my_small_palette[1],
+                legend_label="実績作業時間",
+            )
+
+            return fig_task
+
         if len(df) == 0:
             logger.info("データが0件のため出力しない")
             return
@@ -1307,8 +1369,6 @@ class LineGraph:
         ]
 
         fig_info_list = [
-            {"x": "dt_date", "y_info_list": [{"column": "cumsum_task_count", "legend": "タスク数"}]},
-            {"x": "dt_date", "y_info_list": [{"column": "cumsum_input_data_count", "legend": "入力データ数"}]},
             {
                 "x": "dt_date",
                 "y_info_list": [
@@ -1348,6 +1408,10 @@ class LineGraph:
             "cumsum_monitored_worktime_hour",
         ]
         hover_tool = self._create_hover_tool(tooltip_item)
+
+        fig_list.insert(0, create_task_figure())
+        fig_list.insert(1, create_input_data_figure())
+
         for fig in fig_list:
             self._set_legend(fig, hover_tool)
 
