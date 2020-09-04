@@ -22,7 +22,7 @@ annofab_config = dict(inifile.items("annofab"))
 project_id = annofab_config["project_id"]
 service = annofabapi.build_from_netrc()
 
-csv_obj = Csv(str(out_path), project_id[0:8])
+csv_obj = Csv(str(out_path))
 database_obj = Database(service, project_id, chekpoint_dir=str(data_path), query=None,)
 table_obj = Table(database_obj)
 
