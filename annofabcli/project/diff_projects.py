@@ -332,15 +332,16 @@ class DiffProjecs(AbstractCommandLineInterface):
     def validate_projects(self, project_id1: str, project_id2: str):
         """
         適切なRoleが付与されているかを確認する。
+
         Args:
-            project_id1:　
-            project_id2:　
+            project_id1:
+            project_id2:
+
+        Returns:
 
         Raises:
-             AuthorizationError: 自分自身のRoleがいずれかのRoleにも合致しなければ、AuthorizationErrorが発生する。
-
+            AuthorizationError: 自分自身のRoleがいずれかのRoleにも合致しなければ、AuthorizationErrorが発生する。
         """
-
         roles = [ProjectMemberRole.OWNER, ProjectMemberRole.ACCEPTER, ProjectMemberRole.TRAINING_DATA_USER]
         super().validate_project(project_id1, roles)
         super().validate_project(project_id2, roles)

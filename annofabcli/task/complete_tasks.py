@@ -227,7 +227,10 @@ class ComleteTasks(AbstractCommandLineInterface):
         return unanswered_comment_list
 
     def complete_task_for_annotation_phase(
-        self, task: Task, my_account_id: str, reply_comment: Optional[str] = None,
+        self,
+        task: Task,
+        my_account_id: str,
+        reply_comment: Optional[str] = None,
     ) -> bool:
         """
         annotation phaseのタスクを完了状態にする。
@@ -286,7 +289,10 @@ class ComleteTasks(AbstractCommandLineInterface):
                 return True
 
     def complete_task_for_inspection_acceptance_phase(
-        self, task: Task, my_account_id: str, inspection_status: Optional[InspectionStatus] = None,
+        self,
+        task: Task,
+        my_account_id: str,
+        inspection_status: Optional[InspectionStatus] = None,
     ) -> bool:
         unprocessed_inspection_list_dict: Dict[str, List[Inspection]] = {}
         for input_data_id in task.input_data_id_list:
@@ -451,7 +457,10 @@ def parse_args(parser: argparse.ArgumentParser):
     )
 
     parser.add_argument(
-        "--phase_stage", type=int, default=1, help=("操作対象のタスクのフェーズのステージ番号を指定してください。デフォルトは'1'です。"),
+        "--phase_stage",
+        type=int,
+        default=1,
+        help=("操作対象のタスクのフェーズのステージ番号を指定してください。デフォルトは'1'です。"),
     )
 
     parser.add_argument(

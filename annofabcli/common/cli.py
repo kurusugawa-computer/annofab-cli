@@ -516,8 +516,9 @@ class AbstractCommandLineInterface(abc.ABC):
     ):
         """
         プロジェクト or 組織に対して、必要な権限が付与されているかを確認する。
+
         Args:
-            project_id:　
+            project_id:
             project_member_roles: プロジェクトメンバロールの一覧. Noneの場合はチェックしない。
             organization_member_roles: 組織メンバロールの一覧。Noneの場合はチェックしない。
 

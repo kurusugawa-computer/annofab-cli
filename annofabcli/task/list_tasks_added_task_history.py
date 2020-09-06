@@ -180,7 +180,10 @@ class ListTasksAddedTaskHistory(AbstractCommandLineInterface):
             downloading_obj.download_task_json_with_async(
                 project_id, dest_path=str(task_json_path), is_latest=is_latest, wait_options=wait_options
             ),
-            downloading_obj.download_task_history_json_with_async(project_id, dest_path=str(task_history_json_path),),
+            downloading_obj.download_task_history_json_with_async(
+                project_id,
+                dest_path=str(task_history_json_path),
+            ),
         )
         loop.run_until_complete(gather)
 
@@ -191,7 +194,8 @@ class ListTasksAddedTaskHistory(AbstractCommandLineInterface):
             args.task_json is not None and args.task_history_json is None
         ):
             print(
-                f"{COMMON_MESSAGE} '--task_json'と'--task_history_json'の両方を指定する必要があります。", file=sys.stderr,
+                f"{COMMON_MESSAGE} '--task_json'と'--task_history_json'の両方を指定する必要があります。",
+                file=sys.stderr,
             )
             return False
 

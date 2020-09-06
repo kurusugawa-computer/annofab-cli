@@ -56,7 +56,10 @@ class Csv:
         return all_columns
 
     def write_inspection_list(
-        self, df: pandas.DataFrame, dropped_columns: Optional[List[str]] = None, only_error_corrected: bool = True,
+        self,
+        df: pandas.DataFrame,
+        dropped_columns: Optional[List[str]] = None,
+        only_error_corrected: bool = True,
     ) -> None:
         """
         検査コメント一覧をTSVで出力する

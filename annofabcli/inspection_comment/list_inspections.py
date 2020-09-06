@@ -24,7 +24,10 @@ logger = logging.getLogger(__name__)
 FilterInspectionFunc = Callable[[Inspection], bool]
 
 
-def create_filter_func(only_reply: bool, exclude_reply: bool,) -> Callable[[Inspection], bool]:
+def create_filter_func(
+    only_reply: bool,
+    exclude_reply: bool,
+) -> Callable[[Inspection], bool]:
     def filter_inspection(arg_inspection: Inspection) -> bool:  # pylint: disable=too-many-return-statements
         # 返信コメントを除く
         if only_reply:

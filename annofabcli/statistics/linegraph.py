@@ -168,9 +168,9 @@ class LineGraph:
 
         """
         max_user_length = len(self.my_palette)
-        tmp_user_id_list: List[str] = df.sort_values(by=datetime_column, ascending=False)[
-            user_id_column
-        ].dropna().unique().tolist()
+        tmp_user_id_list: List[str] = (
+            df.sort_values(by=datetime_column, ascending=False)[user_id_column].dropna().unique().tolist()
+        )
 
         if arg_user_id_list is None or len(arg_user_id_list) == 0:
             user_id_list = tmp_user_id_list
@@ -183,7 +183,9 @@ class LineGraph:
         return user_id_list[0:max_user_length]
 
     def write_productivity_line_graph_for_annotator(
-        self, df: pandas.DataFrame, first_annotation_user_id_list: Optional[List[str]] = None,
+        self,
+        df: pandas.DataFrame,
+        first_annotation_user_id_list: Optional[List[str]] = None,
     ):
         """
         生産性を教師付作業者ごとにプロットする。
@@ -318,7 +320,8 @@ class LineGraph:
             ),
         ]
         write_cumulative_graph(
-            fig_info_list_annotation_count, html_title="折れ線-横軸_教師付開始日-縦軸_アノテーションあたりの指標-教師付者用",
+            fig_info_list_annotation_count,
+            html_title="折れ線-横軸_教師付開始日-縦軸_アノテーションあたりの指標-教師付者用",
         )
 
         fig_info_list_input_data_count = [
@@ -400,7 +403,9 @@ class LineGraph:
         write_cumulative_graph(fig_info_list_value, html_title="折れ線-横軸_教師付開始日-縦軸_指標-教師付者用")
 
     def write_cumulative_line_graph_for_annotator(
-        self, df: pandas.DataFrame, first_annotation_user_id_list: Optional[List[str]] = None,
+        self,
+        df: pandas.DataFrame,
+        first_annotation_user_id_list: Optional[List[str]] = None,
     ):
         """
         教師付作業者用の累積折れ線グラフを出力する。
@@ -623,7 +628,9 @@ class LineGraph:
         write_cumulative_graph(fig_info_list_task_count, html_title="累積折れ線-横軸_タスク数-教師付者用")
 
     def write_cumulative_line_graph_for_inspector(
-        self, df: pandas.DataFrame, first_inspection_user_id_list: Optional[List[str]] = None,
+        self,
+        df: pandas.DataFrame,
+        first_inspection_user_id_list: Optional[List[str]] = None,
     ):
         """
         検査作業者用の累積折れ線グラフを出力する。
@@ -777,7 +784,9 @@ class LineGraph:
         write_cumulative_graph(fig_info_list_input_data_count, html_title="累積折れ線-横軸_入力データ数-検査者用")
 
     def write_cumulative_line_graph_for_acceptor(
-        self, df: pandas.DataFrame, first_acceptance_user_id_list: Optional[List[str]] = None,
+        self,
+        df: pandas.DataFrame,
+        first_acceptance_user_id_list: Optional[List[str]] = None,
     ):
         """
         受入者用の累積折れ線グラフを出力する。
@@ -1136,7 +1145,13 @@ class LineGraph:
         def create_task_figure():
             y_range_name = "worktime_axis"
             fig_task = create_figure(title="日ごとのタスク数と作業時間", y_axis_label="タスク数")
-            fig_task.add_layout(LinearAxis(y_range_name=y_range_name, axis_label="作業時間[hour]",), "right")
+            fig_task.add_layout(
+                LinearAxis(
+                    y_range_name=y_range_name,
+                    axis_label="作業時間[hour]",
+                ),
+                "right",
+            )
             y_overlimit = 0.05
             fig_task.extra_y_ranges = {
                 y_range_name: DataRange1d(end=df["actual_worktime_hour"].max() * (1 + y_overlimit))
@@ -1161,7 +1176,13 @@ class LineGraph:
         def create_input_data_figure():
             y_range_name = "worktime_axis"
             fig_input_data = create_figure(title="日ごとの入力データ数と作業時間", y_axis_label="入力データ数")
-            fig_input_data.add_layout(LinearAxis(y_range_name=y_range_name, axis_label="作業時間[hour]",), "right")
+            fig_input_data.add_layout(
+                LinearAxis(
+                    y_range_name=y_range_name,
+                    axis_label="作業時間[hour]",
+                ),
+                "right",
+            )
             y_overlimit = 0.05
             fig_input_data.extra_y_ranges = {
                 y_range_name: DataRange1d(end=df["actual_worktime_hour"].max() * (1 + y_overlimit))
@@ -1292,7 +1313,13 @@ class LineGraph:
         def create_task_figure():
             y_range_name = "worktime_axis"
             fig = create_figure(title="日ごとの累積タスク数と累積作業時間", y_axis_label="タスク数")
-            fig.add_layout(LinearAxis(y_range_name=y_range_name, axis_label="作業時間[hour]",), "right")
+            fig.add_layout(
+                LinearAxis(
+                    y_range_name=y_range_name,
+                    axis_label="作業時間[hour]",
+                ),
+                "right",
+            )
             y_overlimit = 0.05
             fig.extra_y_ranges = {
                 y_range_name: DataRange1d(end=df["cumsum_actual_worktime_hour"].max() * (1 + y_overlimit))
@@ -1324,7 +1351,13 @@ class LineGraph:
         def create_input_data_figure():
             y_range_name = "worktime_axis"
             fig = create_figure(title="日ごとの累積入力データ数と累積作業時間", y_axis_label="入力データ数")
-            fig.add_layout(LinearAxis(y_range_name=y_range_name, axis_label="作業時間[hour]",), "right")
+            fig.add_layout(
+                LinearAxis(
+                    y_range_name=y_range_name,
+                    axis_label="作業時間[hour]",
+                ),
+                "right",
+            )
             y_overlimit = 0.05
             fig.extra_y_ranges = {
                 y_range_name: DataRange1d(end=df["cumsum_actual_worktime_hour"].max() * (1 + y_overlimit))

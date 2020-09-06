@@ -51,7 +51,12 @@ class PutTask(AbstractCommandLineInterface):
         logger.info(f"{project_title} に対して、{str(csv_file)} からタスクを登録します。")
         self.service.wrapper.initiate_tasks_generation_by_csv(project_id, csvfile_path=str(csv_file))
 
-    def wait_for_completion(self, project_id: str, wait_options: WaitOptions, wait: bool = False,) -> None:
+    def wait_for_completion(
+        self,
+        project_id: str,
+        wait_options: WaitOptions,
+        wait: bool = False,
+    ) -> None:
         """
         CSVファイルからタスクを登録する。
 
@@ -94,7 +99,9 @@ class PutTask(AbstractCommandLineInterface):
 
         wait_options = get_wait_options_from_args(get_json_from_args(args.wait_options), DEFAULT_WAIT_OPTIONS)
         self.wait_for_completion(
-            project_id, wait=args.wait, wait_options=wait_options,
+            project_id,
+            wait=args.wait,
+            wait_options=wait_options,
         )
 
 

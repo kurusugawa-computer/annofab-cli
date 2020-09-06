@@ -245,10 +245,16 @@ def parse_args(parser: argparse.ArgumentParser):
 
     parser.add_argument("--csv", type=Path, required=True, help="ユーザ情報が記載されたCSVファイルを指定してください。CSVには`user_id`列が必要です。")
     parser.add_argument(
-        "--not_masked_biography", type=str, nargs="+", help="マスクしないユーザの`biography`を指定してください。",
+        "--not_masked_biography",
+        type=str,
+        nargs="+",
+        help="マスクしないユーザの`biography`を指定してください。",
     )
     parser.add_argument(
-        "--not_masked_user_id", type=str, nargs="+", help="マスクしないユーザの`user_id`を指定してください。",
+        "--not_masked_user_id",
+        type=str,
+        nargs="+",
+        help="マスクしないユーザの`user_id`を指定してください。",
     )
     parser.add_argument("--csv_header", type=int, help="CSVのヘッダ行数", default=1)
 

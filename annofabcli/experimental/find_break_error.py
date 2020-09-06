@@ -313,10 +313,17 @@ def parse_args(parser: argparse.ArgumentParser):
         "`file://`を先頭に付けると、project_idの一覧が記載されたファイルを指定できます。",
     )
     parser.add_argument(
-        "-t", "--task_id", type=str, nargs="+", help="対象のプロジェクトのtask_idを指定します。複数指定可、但しtimeを指定した場合は1つしか指定できません。",
+        "-t",
+        "--task_id",
+        type=str,
+        nargs="+",
+        help="対象のプロジェクトのtask_idを指定します。複数指定可、但しtimeを指定した場合は1つしか指定できません。",
     )
     parser.add_argument(
-        "--time", type=str, nargs="+", help="検索対象の時間を指定します。(%%Y/%%m/%%d %%H:%%i:%%s)",
+        "--time",
+        type=str,
+        nargs="+",
+        help="検索対象の時間を指定します。(%%Y/%%m/%%d %%H:%%i:%%s)",
     )
     parser.add_argument("--add", action="store_true", help="出力する際に追記で書き込む")
 

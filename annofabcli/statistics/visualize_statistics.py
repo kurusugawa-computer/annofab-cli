@@ -215,17 +215,20 @@ class WriteCsvGraph:
 
         task_cumulative_df_by_annotator = self.table_obj.create_cumulative_df_by_first_annotator(task_df)
         catch_exception(self.linegraph_obj.write_cumulative_line_graph_for_annotator)(
-            df=task_cumulative_df_by_annotator, first_annotation_user_id_list=user_id_list,
+            df=task_cumulative_df_by_annotator,
+            first_annotation_user_id_list=user_id_list,
         )
 
         task_cumulative_df_by_inspector = self.table_obj.create_cumulative_df_by_first_inspector(task_df)
         catch_exception(self.linegraph_obj.write_cumulative_line_graph_for_inspector)(
-            df=task_cumulative_df_by_inspector, first_inspection_user_id_list=user_id_list,
+            df=task_cumulative_df_by_inspector,
+            first_inspection_user_id_list=user_id_list,
         )
 
         task_cumulative_df_by_acceptor = self.table_obj.create_cumulative_df_by_first_acceptor(task_df)
         catch_exception(self.linegraph_obj.write_cumulative_line_graph_for_acceptor)(
-            df=task_cumulative_df_by_acceptor, first_acceptance_user_id_list=user_id_list,
+            df=task_cumulative_df_by_acceptor,
+            first_acceptance_user_id_list=user_id_list,
         )
 
         df_by_date_user = self._get_df_by_date_user()
@@ -285,7 +288,9 @@ class WriteCsvGraph:
             df=inspection_df, dropped_columns=["data"], only_error_corrected=True
         )
         catch_exception(self.csv_obj.write_inspection_list)(
-            df=inspection_df_all, dropped_columns=["data"], only_error_corrected=False,
+            df=inspection_df_all,
+            dropped_columns=["data"],
+            only_error_corrected=False,
         )
 
     def write_csv_for_annotation(self) -> None:
@@ -482,7 +487,9 @@ def parse_args(parser: argparse.ArgumentParser):
     )
 
     parser.add_argument(
-        "--not_update", action="store_true", help="作業ディレクトリ内のファイルを参照して、統計情報を出力します。" "AnnoFab Web APIへのアクセスを最小限にします。",
+        "--not_update",
+        action="store_true",
+        help="作業ディレクトリ内のファイルを参照して、統計情報を出力します。" "AnnoFab Web APIへのアクセスを最小限にします。",
     )
 
     parser.add_argument(
@@ -492,11 +499,15 @@ def parse_args(parser: argparse.ArgumentParser):
     )
 
     parser.add_argument(
-        "--work_dir", type=str, help="作業ディレクトリのパス。指定しない場合はannofabcliのキャッシュディレクトリ（'$HOME/.cache/annofabcli'）に保存します。",
+        "--work_dir",
+        type=str,
+        help="作業ディレクトリのパス。指定しない場合はannofabcliのキャッシュディレクトリ（'$HOME/.cache/annofabcli'）に保存します。",
     )
 
     parser.add_argument(
-        "--minimal", action="store_true", help="必要最小限のファイルを出力します。",
+        "--minimal",
+        action="store_true",
+        help="必要最小限のファイルを出力します。",
     )
 
     parser.set_defaults(subcommand_func=main)

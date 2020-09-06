@@ -111,7 +111,8 @@ class ListInputDataMergedTask(AbstractCommandLineInterface):
             args.input_data_json is not None and args.task_json is None
         ):
             print(
-                f"{COMMON_MESSAGE} '--task_json'と'--input_data_json'の両方を指定する必要があります。", file=sys.stderr,
+                f"{COMMON_MESSAGE} '--task_json'と'--input_data_json'の両方を指定する必要があります。",
+                file=sys.stderr,
             )
             return False
 

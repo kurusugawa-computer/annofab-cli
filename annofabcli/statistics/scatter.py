@@ -189,7 +189,12 @@ class Scatter:
     def _plot_average_line(fig: bokeh.plotting.Figure, value: Optional[float], dimension: str):
         if value is None:
             return
-        span_average_line = bokeh.models.Span(location=value, dimension=dimension, line_color="red", line_width=0.5,)
+        span_average_line = bokeh.models.Span(
+            location=value,
+            dimension=dimension,
+            line_color="red",
+            line_width=0.5,
+        )
         fig.add_layout(span_average_line)
 
     @staticmethod
@@ -199,7 +204,10 @@ class Scatter:
 
         for value in quartile:
             span_average_line = bokeh.models.Span(
-                location=value, dimension=dimension, line_color="blue", line_width=0.5,
+                location=value,
+                dimension=dimension,
+                line_color="blue",
+                line_width=0.5,
             )
             fig.add_layout(span_average_line)
 
@@ -285,7 +293,9 @@ class Scatter:
 
         for fig, phase in zip(figure_list, phase_list):
             average_value = self._get_average_value(
-                df, numerator_column=("monitored_worktime_hour", phase), denominator_column=("annotation_count", phase),
+                df,
+                numerator_column=("monitored_worktime_hour", phase),
+                denominator_column=("annotation_count", phase),
             )
             self._plot_average_line(fig, average_value, dimension="width")
             quartile = self._get_quartile_value(df, ("monitored_worktime/annotation_count", phase))
@@ -408,7 +418,11 @@ class Scatter:
 
         def create_figure(title: str, x_axis_label: str, y_axis_label: str) -> bokeh.plotting.Figure:
             return figure(
-                plot_width=1200, plot_height=800, title=title, x_axis_label=x_axis_label, y_axis_label=y_axis_label,
+                plot_width=1200,
+                plot_height=800,
+                title=title,
+                x_axis_label=x_axis_label,
+                y_axis_label=y_axis_label,
             )
 
         html_title = "散布図-教師付者の品質と作業量の関係"
@@ -459,7 +473,8 @@ class Scatter:
             self._plot_average_line(fig, average_value, dimension="width")
 
         for column, fig in zip(
-            ["rejected_count/task_count", "pointed_out_inspection_comment_count/annotation_count"], figure_list,
+            ["rejected_count/task_count", "pointed_out_inspection_comment_count/annotation_count"],
+            figure_list,
         ):
             quartile = self._get_quartile_value(df, (column, phase))
             self._plot_quartile_line(fig, quartile, dimension="width")
@@ -496,7 +511,11 @@ class Scatter:
 
         def create_figure(title: str, x_axis_label: str, y_axis_label: str) -> bokeh.plotting.Figure:
             return figure(
-                plot_width=1200, plot_height=800, title=title, x_axis_label=x_axis_label, y_axis_label=y_axis_label,
+                plot_width=1200,
+                plot_height=800,
+                title=title,
+                x_axis_label=x_axis_label,
+                y_axis_label=y_axis_label,
             )
 
         html_title = "散布図-アノテーションあたり作業時間と品質の関係-実績時間-教師付者用"
@@ -549,13 +568,16 @@ class Scatter:
         ):
             self._plot_average_line(fig, x_average_value, dimension="height")
             y_average_value = self._get_average_value(
-                df, numerator_column=(column_pair[0], phase), denominator_column=(column_pair[1], phase),
+                df,
+                numerator_column=(column_pair[0], phase),
+                denominator_column=(column_pair[1], phase),
             )
             self._plot_average_line(fig, y_average_value, dimension="width")
 
         x_quartile = self._get_quartile_value(df, ("actual_worktime/annotation_count", phase))
         for column, fig in zip(
-            ["rejected_count/task_count", "pointed_out_inspection_comment_count/annotation_count"], figure_list,
+            ["rejected_count/task_count", "pointed_out_inspection_comment_count/annotation_count"],
+            figure_list,
         ):
             self._plot_quartile_line(fig, x_quartile, dimension="height")
             quartile = self._get_quartile_value(df, (column, phase))

@@ -33,17 +33,20 @@ def write_linegraph_by_user(csv: Path, output_dir: Path, user_id_list: Optional[
 
     task_cumulative_df_by_annotator = Table.create_cumulative_df_by_first_annotator(task_df)
     linegraph_obj.write_cumulative_line_graph_for_annotator(
-        df=task_cumulative_df_by_annotator, first_annotation_user_id_list=user_id_list,
+        df=task_cumulative_df_by_annotator,
+        first_annotation_user_id_list=user_id_list,
     )
 
     task_cumulative_df_by_inspector = Table.create_cumulative_df_by_first_inspector(task_df)
     linegraph_obj.write_cumulative_line_graph_for_inspector(
-        df=task_cumulative_df_by_inspector, first_inspection_user_id_list=user_id_list,
+        df=task_cumulative_df_by_inspector,
+        first_inspection_user_id_list=user_id_list,
     )
 
     task_cumulative_df_by_acceptor = Table.create_cumulative_df_by_first_acceptor(task_df)
     linegraph_obj.write_cumulative_line_graph_for_acceptor(
-        df=task_cumulative_df_by_acceptor, first_acceptance_user_id_list=user_id_list,
+        df=task_cumulative_df_by_acceptor,
+        first_acceptance_user_id_list=user_id_list,
     )
 
     df_by_date_user = Table.create_dataframe_by_date_user(task_df)

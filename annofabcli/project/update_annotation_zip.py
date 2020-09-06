@@ -184,7 +184,10 @@ class UpdateAnnotationZip(AbstractCommandLineInterface):
 
         wait_options = get_wait_options_from_args(get_json_from_args(args.wait_options), DEFAULT_WAIT_OPTIONS)
         self.update_annotation_zip(
-            project_id_list=project_id_list, force=args.force, wait=args.wait, wait_options=wait_options,
+            project_id_list=project_id_list,
+            force=args.force,
+            wait=args.wait,
+            wait_options=wait_options,
         )
 
 

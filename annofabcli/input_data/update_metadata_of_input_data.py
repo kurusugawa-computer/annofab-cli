@@ -63,7 +63,11 @@ class UpdateMetadataMain(AbstracCommandCinfirmInterface):
         success_count = 0
 
         if parallelism is not None:
-            partial_func = partial(self.set_metadata_to_input_data, project_id=project_id, metadata=metadata,)
+            partial_func = partial(
+                self.set_metadata_to_input_data,
+                project_id=project_id,
+                metadata=metadata,
+            )
             with multiprocessing.Pool(parallelism) as pool:
                 result_bool_list = pool.map(partial_func, enumerate(input_data_id_list))
                 success_count = len([e for e in result_bool_list if e])

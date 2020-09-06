@@ -222,8 +222,7 @@ class ListLaborWorktime(AbstractCommandLineInterface):
 
     def list_labor_worktime(self, project_id: str, start_date: str, end_date: str) -> pd.DataFrame:
 
-        """
-        """
+        """"""
 
         super().validate_project(
             project_id, project_member_roles=[ProjectMemberRole.OWNER, ProjectMemberRole.TRAINING_DATA_USER]

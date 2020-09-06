@@ -166,7 +166,10 @@ class SummarizeTaskCount(AbstractCommandLineInterface):
 
             downloading_obj = DownloadingFile(self.service)
             downloading_obj.download_task_json(
-                project_id, dest_path=str(task_json_path), is_latest=is_latest, wait_options=wait_options,
+                project_id,
+                dest_path=str(task_json_path),
+                is_latest=is_latest,
+                wait_options=wait_options,
             )
 
         with task_json_path.open(encoding="utf-8") as f:
