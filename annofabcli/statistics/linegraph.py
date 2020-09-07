@@ -1,5 +1,6 @@
 # pylint: disable=too-many-lines
 import logging
+from enum import Enum
 from pathlib import Path
 from typing import Dict, List, Optional
 
@@ -13,6 +14,12 @@ from bokeh.models import DataRange1d, HoverTool, LinearAxis
 from bokeh.plotting import ColumnDataSource, figure
 
 logger = logging.getLogger(__name__)
+
+
+class OutputTarget(Enum):
+    ANNOTATION = "annotation"
+    INPUT_DATA = "input_data"
+    TASK = "task"
 
 
 class LineGraph:
@@ -405,6 +412,7 @@ class LineGraph:
     def write_cumulative_line_graph_for_annotator(
         self,
         df: pandas.DataFrame,
+        output_target_list: Optional[List[OutputTarget]] = None,
         first_annotation_user_id_list: Optional[List[str]] = None,
     ):
         """
@@ -412,6 +420,7 @@ class LineGraph:
 
         Args:
             df:
+            output_target_list: すべて出力する
             first_annotation_user_id_list: 最初のアノテーションを担当したuser_idのList. Noneの場合はtask_dfから決まる。
 
         Returns:
@@ -500,136 +509,140 @@ class LineGraph:
         )
         logger.debug(f"教師付者用の累積折れ線グラフに表示する、教師付者のuser_id = {first_annotation_user_id_list}")
 
-        # 横軸が累計のアノテーション数
-        fig_info_list_annotation_count = [
-            dict(
-                x="cumulative_annotation_count",
-                y="cumulative_annotation_worktime_hour",
-                title="アノテーション数と教師付時間の累積グラフ",
-                x_axis_label="アノテーション数",
-                y_axis_label="教師付時間[hour]",
-            ),
-            dict(
-                x="cumulative_annotation_count",
-                y="cumulative_first_annotation_worktime_hour",
-                title="アノテーション数と1回目の教師付時間の累積グラフ",
-                x_axis_label="アノテーション数",
-                y_axis_label="1回目の教師付時間[hour]",
-            ),
-            dict(
-                x="cumulative_annotation_count",
-                y="cumulative_inspection_worktime_hour",
-                title="アノテーション数と検査時間の累積グラフ",
-                x_axis_label="アノテーション数",
-                y_axis_label="検査時間[hour]",
-            ),
-            dict(
-                x="cumulative_annotation_count",
-                y="cumulative_acceptance_worktime_hour",
-                title="アノテーション数と受入時間の累積グラフ",
-                x_axis_label="アノテーション数",
-                y_axis_label="受入時間[hour]",
-            ),
-            dict(
-                x="cumulative_annotation_count",
-                y="cumulative_inspection_count",
-                title="アノテーション数と検査コメント数の累積グラフ",
-                x_axis_label="アノテーション数",
-                y_axis_label="検査コメント数",
-            ),
-        ]
-        write_cumulative_graph(fig_info_list_annotation_count, html_title="累積折れ線-横軸_アノテーション数-教師付者用")
+        if output_target_list is None or OutputTarget.ANNOTATION in output_target_list:
+            # 横軸が累計のアノテーション数
+            fig_info_list_annotation_count = [
+                dict(
+                    x="cumulative_annotation_count",
+                    y="cumulative_annotation_worktime_hour",
+                    title="アノテーション数と教師付時間の累積グラフ",
+                    x_axis_label="アノテーション数",
+                    y_axis_label="教師付時間[hour]",
+                ),
+                dict(
+                    x="cumulative_annotation_count",
+                    y="cumulative_first_annotation_worktime_hour",
+                    title="アノテーション数と1回目の教師付時間の累積グラフ",
+                    x_axis_label="アノテーション数",
+                    y_axis_label="1回目の教師付時間[hour]",
+                ),
+                dict(
+                    x="cumulative_annotation_count",
+                    y="cumulative_inspection_worktime_hour",
+                    title="アノテーション数と検査時間の累積グラフ",
+                    x_axis_label="アノテーション数",
+                    y_axis_label="検査時間[hour]",
+                ),
+                dict(
+                    x="cumulative_annotation_count",
+                    y="cumulative_acceptance_worktime_hour",
+                    title="アノテーション数と受入時間の累積グラフ",
+                    x_axis_label="アノテーション数",
+                    y_axis_label="受入時間[hour]",
+                ),
+                dict(
+                    x="cumulative_annotation_count",
+                    y="cumulative_inspection_count",
+                    title="アノテーション数と検査コメント数の累積グラフ",
+                    x_axis_label="アノテーション数",
+                    y_axis_label="検査コメント数",
+                ),
+            ]
+            write_cumulative_graph(fig_info_list_annotation_count, html_title="累積折れ線-横軸_アノテーション数-教師付者用")
 
-        # 横軸が累計の入力データ数
-        fig_info_list_input_data_count = [
-            dict(
-                x="cumulative_input_data_count",
-                y="cumulative_annotation_worktime_hour",
-                title="入力データ数と教師付時間の累積グラフ",
-                x_axis_label="入力データ数",
-                y_axis_label="教師付時間[hour]",
-            ),
-            dict(
-                x="cumulative_input_data_count",
-                y="cumulative_inspection_worktime_hour",
-                title="入力データ数と検査時間の累積グラフ",
-                x_axis_label="入力データ数",
-                y_axis_label="検査時間[hour]",
-            ),
-            dict(
-                x="cumulative_input_data_count",
-                y="cumulative_acceptance_worktime_hour",
-                title="入力データ数と受入時間の累積グラフ",
-                x_axis_label="入力データ数",
-                y_axis_label="受入時間[hour]",
-            ),
-            dict(
-                x="cumulative_input_data_count",
-                y="cumulative_inspection_count",
-                title="アノテーション数と検査コメント数の累積グラフ",
-                x_axis_label="入力データ数",
-                y_axis_label="検査コメント数",
-            ),
-        ]
-        write_cumulative_graph(fig_info_list_input_data_count, html_title="累積折れ線-横軸_入力データ数-教師付者用")
+        if output_target_list is None or OutputTarget.INPUT_DATA in output_target_list:
+            # 横軸が累計の入力データ数
+            fig_info_list_input_data_count = [
+                dict(
+                    x="cumulative_input_data_count",
+                    y="cumulative_annotation_worktime_hour",
+                    title="入力データ数と教師付時間の累積グラフ",
+                    x_axis_label="入力データ数",
+                    y_axis_label="教師付時間[hour]",
+                ),
+                dict(
+                    x="cumulative_input_data_count",
+                    y="cumulative_inspection_worktime_hour",
+                    title="入力データ数と検査時間の累積グラフ",
+                    x_axis_label="入力データ数",
+                    y_axis_label="検査時間[hour]",
+                ),
+                dict(
+                    x="cumulative_input_data_count",
+                    y="cumulative_acceptance_worktime_hour",
+                    title="入力データ数と受入時間の累積グラフ",
+                    x_axis_label="入力データ数",
+                    y_axis_label="受入時間[hour]",
+                ),
+                dict(
+                    x="cumulative_input_data_count",
+                    y="cumulative_inspection_count",
+                    title="アノテーション数と検査コメント数の累積グラフ",
+                    x_axis_label="入力データ数",
+                    y_axis_label="検査コメント数",
+                ),
+            ]
+            write_cumulative_graph(fig_info_list_input_data_count, html_title="累積折れ線-横軸_入力データ数-教師付者用")
 
-        # 横軸が累計のタスク数
-        fig_info_list_task_count = [
-            dict(
-                x="cumulative_task_count",
-                y="cumulative_annotation_worktime_hour",
-                title="タスク数と教師付時間の累積グラフ",
-                x_axis_label="タスク数",
-                y_axis_label="教師付時間[hour]",
-            ),
-            dict(
-                x="cumulative_task_count",
-                y="cumulative_inspection_worktime_hour",
-                title="タスク数と検査時間の累積グラフ",
-                x_axis_label="タスク数",
-                y_axis_label="検査時間[hour]",
-            ),
-            dict(
-                x="cumulative_task_count",
-                y="cumulative_acceptance_worktime_hour",
-                title="タスク数と受入時間の累積グラフ",
-                x_axis_label="タスク数",
-                y_axis_label="受入時間[hour]",
-            ),
-            dict(
-                x="cumulative_task_count",
-                y="cumulative_inspection_count",
-                title="タスク数と検査コメント数の累積グラフ",
-                x_axis_label="タスク数",
-                y_axis_label="検査コメント数",
-            ),
-            dict(
-                x="cumulative_task_count",
-                y="cumulative_number_of_rejections",
-                title="タスク数と差し戻し回数の累積グラフ",
-                x_axis_label="タスク数",
-                y_axis_label="差し戻し回数",
-            ),
-            dict(
-                x="cumulative_task_count",
-                y="cumulative_number_of_rejections_by_inspection",
-                title="タスク数と差し戻し回数(検査フェーズ)の累積グラフ",
-                x_axis_label="タスク数",
-                y_axis_label="差し戻し回数(検査フェーズ)",
-            ),
-            dict(
-                x="cumulative_task_count",
-                y="cumulative_number_of_rejections_by_acceptance",
-                title="タスク数と差し戻し回数(受入フェーズ)の累積グラフ",
-                x_axis_label="タスク数",
-                y_axis_label="差し戻し回数(受入フェーズ)",
-            ),
-        ]
-        write_cumulative_graph(fig_info_list_task_count, html_title="累積折れ線-横軸_タスク数-教師付者用")
+        if output_target_list is None or OutputTarget.TASK in output_target_list:
+            # 横軸が累計のタスク数
+            fig_info_list_task_count = [
+                dict(
+                    x="cumulative_task_count",
+                    y="cumulative_annotation_worktime_hour",
+                    title="タスク数と教師付時間の累積グラフ",
+                    x_axis_label="タスク数",
+                    y_axis_label="教師付時間[hour]",
+                ),
+                dict(
+                    x="cumulative_task_count",
+                    y="cumulative_inspection_worktime_hour",
+                    title="タスク数と検査時間の累積グラフ",
+                    x_axis_label="タスク数",
+                    y_axis_label="検査時間[hour]",
+                ),
+                dict(
+                    x="cumulative_task_count",
+                    y="cumulative_acceptance_worktime_hour",
+                    title="タスク数と受入時間の累積グラフ",
+                    x_axis_label="タスク数",
+                    y_axis_label="受入時間[hour]",
+                ),
+                dict(
+                    x="cumulative_task_count",
+                    y="cumulative_inspection_count",
+                    title="タスク数と検査コメント数の累積グラフ",
+                    x_axis_label="タスク数",
+                    y_axis_label="検査コメント数",
+                ),
+                dict(
+                    x="cumulative_task_count",
+                    y="cumulative_number_of_rejections",
+                    title="タスク数と差し戻し回数の累積グラフ",
+                    x_axis_label="タスク数",
+                    y_axis_label="差し戻し回数",
+                ),
+                dict(
+                    x="cumulative_task_count",
+                    y="cumulative_number_of_rejections_by_inspection",
+                    title="タスク数と差し戻し回数(検査フェーズ)の累積グラフ",
+                    x_axis_label="タスク数",
+                    y_axis_label="差し戻し回数(検査フェーズ)",
+                ),
+                dict(
+                    x="cumulative_task_count",
+                    y="cumulative_number_of_rejections_by_acceptance",
+                    title="タスク数と差し戻し回数(受入フェーズ)の累積グラフ",
+                    x_axis_label="タスク数",
+                    y_axis_label="差し戻し回数(受入フェーズ)",
+                ),
+            ]
+            write_cumulative_graph(fig_info_list_task_count, html_title="累積折れ線-横軸_タスク数-教師付者用")
 
     def write_cumulative_line_graph_for_inspector(
         self,
         df: pandas.DataFrame,
+        output_target_list: Optional[List[OutputTarget]] = None,
         first_inspection_user_id_list: Optional[List[str]] = None,
     ):
         """
@@ -731,61 +744,64 @@ class LineGraph:
 
         logger.debug(f"検査者用の累積折れ線グラフに表示する、検査者のuser_id = {first_inspection_user_id_list}")
 
-        # 横軸が累計のアノテーション数
-        fig_info_list_annotation_count = [
-            dict(
-                x="cumulative_annotation_count",
-                y="cumulative_first_inspection_worktime_hour",
-                title="アノテーション数と1回目検査時間の累積グラフ",
-                x_axis_label="アノテーション数",
-                y_axis_label="1回目の検査時間[hour]",
-            ),
-            dict(
-                x="cumulative_annotation_count",
-                y="cumulative_inspection_worktime_hour",
-                title="アノテーション数と検査時間の累積グラフ",
-                x_axis_label="アノテーション数",
-                y_axis_label="検査時間[hour]",
-            ),
-            dict(
-                x="cumulative_inspection_count",
-                y="cumulative_first_inspection_worktime_hour",
-                title="検査コメント数と1回目検査時間の累積グラフ",
-                x_axis_label="検査コメント数",
-                y_axis_label="1回目の検査時間[hour]",
-            ),
-            dict(
-                x="cumulative_inspection_count",
-                y="cumulative_inspection_worktime_hour",
-                title="検査コメント数と検査時間の累積グラフ",
-                x_axis_label="検査コメント数",
-                y_axis_label="検査時間[hour]",
-            ),
-        ]
-        write_cumulative_graph(fig_info_list_annotation_count, html_title="累積折れ線-横軸_アノテーション数-検査者用")
+        if output_target_list is None or OutputTarget.ANNOTATION in output_target_list:
+            # 横軸が累計のアノテーション数
+            fig_info_list_annotation_count = [
+                dict(
+                    x="cumulative_annotation_count",
+                    y="cumulative_first_inspection_worktime_hour",
+                    title="アノテーション数と1回目検査時間の累積グラフ",
+                    x_axis_label="アノテーション数",
+                    y_axis_label="1回目の検査時間[hour]",
+                ),
+                dict(
+                    x="cumulative_annotation_count",
+                    y="cumulative_inspection_worktime_hour",
+                    title="アノテーション数と検査時間の累積グラフ",
+                    x_axis_label="アノテーション数",
+                    y_axis_label="検査時間[hour]",
+                ),
+                dict(
+                    x="cumulative_inspection_count",
+                    y="cumulative_first_inspection_worktime_hour",
+                    title="検査コメント数と1回目検査時間の累積グラフ",
+                    x_axis_label="検査コメント数",
+                    y_axis_label="1回目の検査時間[hour]",
+                ),
+                dict(
+                    x="cumulative_inspection_count",
+                    y="cumulative_inspection_worktime_hour",
+                    title="検査コメント数と検査時間の累積グラフ",
+                    x_axis_label="検査コメント数",
+                    y_axis_label="検査時間[hour]",
+                ),
+            ]
+            write_cumulative_graph(fig_info_list_annotation_count, html_title="累積折れ線-横軸_アノテーション数-検査者用")
 
-        # 横軸が累計の入力データ数
-        fig_info_list_input_data_count = [
-            dict(
-                x="cumulative_input_data_count",
-                y="cumulative_first_inspection_worktime_hour",
-                title="入力データ数と1回目検査時間の累積グラフ",
-                x_axis_label="入力データ数",
-                y_axis_label="1回目の検査時間[hour]",
-            ),
-            dict(
-                x="cumulative_input_data_count",
-                y="cumulative_inspection_worktime_hour",
-                title="入力データ数と検査時間の累積グラフ",
-                x_axis_label="入力データ数",
-                y_axis_label="検査時間[hour]",
-            ),
-        ]
-        write_cumulative_graph(fig_info_list_input_data_count, html_title="累積折れ線-横軸_入力データ数-検査者用")
+        if output_target_list is None or OutputTarget.INPUT_DATA in output_target_list:
+            # 横軸が累計の入力データ数
+            fig_info_list_input_data_count = [
+                dict(
+                    x="cumulative_input_data_count",
+                    y="cumulative_first_inspection_worktime_hour",
+                    title="入力データ数と1回目検査時間の累積グラフ",
+                    x_axis_label="入力データ数",
+                    y_axis_label="1回目の検査時間[hour]",
+                ),
+                dict(
+                    x="cumulative_input_data_count",
+                    y="cumulative_inspection_worktime_hour",
+                    title="入力データ数と検査時間の累積グラフ",
+                    x_axis_label="入力データ数",
+                    y_axis_label="検査時間[hour]",
+                ),
+            ]
+            write_cumulative_graph(fig_info_list_input_data_count, html_title="累積折れ線-横軸_入力データ数-検査者用")
 
     def write_cumulative_line_graph_for_acceptor(
         self,
         df: pandas.DataFrame,
+        output_target_list: Optional[List[OutputTarget]] = None,
         first_acceptance_user_id_list: Optional[List[str]] = None,
     ):
         """
@@ -889,57 +905,59 @@ class LineGraph:
 
         logger.debug(f"受入者用の累積折れ線グラフに表示する、受入者のuser_id = {first_acceptance_user_id_list}")
 
-        # 横軸が累計のアノテーション数
-        fig_info_list_annotation_count = [
-            dict(
-                x="cumulative_annotation_count",
-                y="cumulative_first_acceptance_worktime_hour",
-                title="アノテーション数と1回目受入時間の累積グラフ",
-                x_axis_label="アノテーション数",
-                y_axis_label="1回目の受入時間[hour]",
-            ),
-            dict(
-                x="cumulative_annotation_count",
-                y="cumulative_acceptance_worktime_hour",
-                title="アノテーション数と受入時間の累積グラフ",
-                x_axis_label="アノテーション数",
-                y_axis_label="受入時間[hour]",
-            ),
-            dict(
-                x="cumulative_inspection_count",
-                y="cumulative_first_acceptance_worktime_hour",
-                title="検査コメント数と1回目受入時間の累積グラフ",
-                x_axis_label="検査コメント数",
-                y_axis_label="1回目の受入時間[hour]",
-            ),
-            dict(
-                x="cumulative_inspection_count",
-                y="cumulative_acceptance_worktime_hour",
-                title="検査コメント数と受入時間の累積グラフ",
-                x_axis_label="検査コメント数",
-                y_axis_label="受入時間[hour]",
-            ),
-        ]
-        write_cumulative_graph(fig_info_list_annotation_count, html_title="累積折れ線-横軸_アノテーション数-受入者用")
+        if output_target_list is None or OutputTarget.ANNOTATION in output_target_list:
+            # 横軸が累計のアノテーション数
+            fig_info_list_annotation_count = [
+                dict(
+                    x="cumulative_annotation_count",
+                    y="cumulative_first_acceptance_worktime_hour",
+                    title="アノテーション数と1回目受入時間の累積グラフ",
+                    x_axis_label="アノテーション数",
+                    y_axis_label="1回目の受入時間[hour]",
+                ),
+                dict(
+                    x="cumulative_annotation_count",
+                    y="cumulative_acceptance_worktime_hour",
+                    title="アノテーション数と受入時間の累積グラフ",
+                    x_axis_label="アノテーション数",
+                    y_axis_label="受入時間[hour]",
+                ),
+                dict(
+                    x="cumulative_inspection_count",
+                    y="cumulative_first_acceptance_worktime_hour",
+                    title="検査コメント数と1回目受入時間の累積グラフ",
+                    x_axis_label="検査コメント数",
+                    y_axis_label="1回目の受入時間[hour]",
+                ),
+                dict(
+                    x="cumulative_inspection_count",
+                    y="cumulative_acceptance_worktime_hour",
+                    title="検査コメント数と受入時間の累積グラフ",
+                    x_axis_label="検査コメント数",
+                    y_axis_label="受入時間[hour]",
+                ),
+            ]
+            write_cumulative_graph(fig_info_list_annotation_count, html_title="累積折れ線-横軸_アノテーション数-受入者用")
 
-        # 横軸が累計の入力データ数
-        fig_info_list_input_data_count = [
-            dict(
-                x="cumulative_input_data_count",
-                y="cumulative_first_acceptance_worktime_hour",
-                title="入力データ数と1回目受入時間の累積グラフ",
-                x_axis_label="入力データ数",
-                y_axis_label="1回目の受入時間[hour]",
-            ),
-            dict(
-                x="cumulative_input_data_count",
-                y="cumulative_acceptance_worktime_hour",
-                title="入力データ数と受入時間の累積グラフ",
-                x_axis_label="入力データ数",
-                y_axis_label="受入時間[hour]",
-            ),
-        ]
-        write_cumulative_graph(fig_info_list_input_data_count, html_title="累積折れ線-横軸_入力データ数-受入者用")
+        if output_target_list is None or OutputTarget.INPUT_DATA in output_target_list:
+            # 横軸が累計の入力データ数
+            fig_info_list_input_data_count = [
+                dict(
+                    x="cumulative_input_data_count",
+                    y="cumulative_first_acceptance_worktime_hour",
+                    title="入力データ数と1回目受入時間の累積グラフ",
+                    x_axis_label="入力データ数",
+                    y_axis_label="1回目の受入時間[hour]",
+                ),
+                dict(
+                    x="cumulative_input_data_count",
+                    y="cumulative_acceptance_worktime_hour",
+                    title="入力データ数と受入時間の累積グラフ",
+                    x_axis_label="入力データ数",
+                    y_axis_label="受入時間[hour]",
+                ),
+            ]
+            write_cumulative_graph(fig_info_list_input_data_count, html_title="累積折れ線-横軸_入力データ数-受入者用")
 
     def write_cumulative_line_graph_by_date(
         self, df: pandas.DataFrame, user_id_list: Optional[List[str]] = None
