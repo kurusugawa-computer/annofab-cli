@@ -14,7 +14,7 @@ from annofabcli.statistics.table import Table
 logger = logging.getLogger(__name__)
 
 
-def write_linegraph_by_user(
+def write_linegraph_per_user(
     csv: Path, output_dir: Path, user_id_list: Optional[List[str]] = None, minimal_output: bool = False
 ) -> None:
     """
@@ -69,7 +69,7 @@ class WriteLingraphPerUser(AbstractCommandLineInterface):
     def main(self):
         args = self.args
         user_id_list = annofabcli.common.cli.get_list_from_args(args.user_id) if args.user_id is not None else None
-        write_linegraph_by_user(
+        write_linegraph_per_user(
             csv=args.csv, output_dir=args.output_dir, user_id_list=user_id_list, minimal_output=args.minimal
         )
 

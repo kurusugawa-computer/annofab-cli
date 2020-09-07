@@ -13,7 +13,7 @@ from annofabcli.statistics.histogram import Histogram
 logger = logging.getLogger(__name__)
 
 
-def write_task_histogram(csv: Path, output_dir: Path, minimal: bool = False) -> None:
+def write_task_histogram(csv: Path, output_dir: Path, minimal_output: bool = False) -> None:
     """
     ヒストグラムを出力する
     """
@@ -26,7 +26,7 @@ def write_task_histogram(csv: Path, output_dir: Path, minimal: bool = False) -> 
     _catch_exception(histogram_obj.write_histogram_for_worktime)(task_df)
     _catch_exception(histogram_obj.write_histogram_for_other)(task_df)
 
-    if not minimal:
+    if not minimal_output:
         _catch_exception(histogram_obj.write_histogram_for_annotation_worktime_by_user)(task_df)
         _catch_exception(histogram_obj.write_histogram_for_inspection_worktime_by_user)(task_df)
         _catch_exception(histogram_obj.write_histogram_for_acceptance_worktime_by_user)(task_df)
@@ -35,7 +35,7 @@ def write_task_histogram(csv: Path, output_dir: Path, minimal: bool = False) -> 
 class WriteTaskHistogram(AbstractCommandLineInterface):
     def main(self):
         args = self.args
-        write_task_histogram(csv=args.csv, output_dir=args.output_dir, minimal=args.minimal)
+        write_task_histogram(csv=args.csv, output_dir=args.output_dir, minimal_output=args.minimal)
 
 
 def main(args):
