@@ -1,4 +1,3 @@
-import json
 import argparse
 import logging
 from pathlib import Path
@@ -58,10 +57,8 @@ def merge_visualization(
         csv_obj.write_count_summary(df_task)
 
     def write_info_json() -> None:
-        info = {
-            "target_dir_list": [str(e) for e in project_dir_list]
-        }
-        print_json(info, is_pretty=True, output=str(output_dir/"info.json"))
+        info = {"target_dir_list": [str(e) for e in project_dir_list]}
+        print_json(info, is_pretty=True, output=str(output_dir / "info.json"))
 
     # CSV生成
     execute_merge_peformance_per_user()
