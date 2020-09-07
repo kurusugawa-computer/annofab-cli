@@ -81,7 +81,9 @@ class Table:
     _labor_list: Optional[List[Dict[str, Any]]] = None
 
     def __init__(
-        self, database: Database, ignored_task_id_list: Optional[List[str]] = None,
+        self,
+        database: Database,
+        ignored_task_id_list: Optional[List[str]] = None,
     ):
         self.annofab_service = database.annofab_service
         self.annofab_facade = AnnofabApiFacade(database.annofab_service)
@@ -114,10 +116,7 @@ class Table:
             return self._account_statistics
         else:
             content: List[Any] = self.annofab_service.wrapper.get_account_statistics(self.project_id)[0]
-            account_statistics = [
-                ProjectAccountStatisticsHistory.from_dict(e)  # type: ignore
-                for e in content
-            ]
+            account_statistics = [ProjectAccountStatisticsHistory.from_dict(e) for e in content]  # type: ignore
             self._account_statistics = account_statistics
             return account_statistics
 
@@ -755,7 +754,8 @@ class Table:
         # first_annotation_user_id と first_annotation_usernameの両方を指定している理由：
         # first_annotation_username を取得するため
         group_obj = new_df.groupby(
-            ["first_annotation_started_date", "first_annotation_user_id", "first_annotation_username"], as_index=False,
+            ["first_annotation_started_date", "first_annotation_user_id", "first_annotation_username"],
+            as_index=False,
         )
         sum_df = group_obj[
             [
@@ -1258,9 +1258,13 @@ class Table:
 
         if len(df_labor) > 0:
             df_agg_labor = df_labor.pivot_table(values="worktime_result_hour", index="user_id", aggfunc=numpy.sum)
-            df_agg_labor["last_working_date"] = df_labor[df_labor["worktime_result_hour"] > 0].pivot_table(
+            df_tmp = df_labor[df_labor["worktime_result_hour"] > 0].pivot_table(
                 values="date", index="user_id", aggfunc=numpy.max
             )
+            if len(df_tmp) > 0:
+                df_agg_labor["last_working_date"] = df_tmp
+            else:
+                df_agg_labor["last_working_date"] = numpy.nan
             df = df_agg_task_history.join(df_agg_labor)
         else:
             df = df_agg_task_history
@@ -1376,7 +1380,9 @@ class Table:
             "acceptance_worktime_hour",
         ]
         df_agg_sub_task = df_sub_task.pivot_table(
-            values=value_columns, index="task_completed_date", aggfunc=numpy.sum,
+            values=value_columns,
+            index="task_completed_date",
+            aggfunc=numpy.sum,
         ).fillna(0)
         if len(df_agg_sub_task) > 0:
             df_agg_sub_task["task_count"] = df_sub_task.pivot_table(
@@ -1390,11 +1396,16 @@ class Table:
             df_agg_labor = df_labor.pivot_table(
                 values=["worktime_result_hour"], index="date", aggfunc=numpy.sum
             ).fillna(0)
-            df_agg_labor["working_user_count"] = (
+            df_tmp = (
                 df_labor[df_labor["worktime_result_hour"] > 0]
                 .pivot_table(values=["user_id"], index="date", aggfunc="count")
                 .fillna(0)
             )
+
+            if len(df_tmp) > 0:
+                df_agg_labor["working_user_count"] = df_tmp
+            else:
+                df_agg_labor["working_user_count"] = 0
         else:
             df_agg_labor = pandas.DataFrame(columns=["worktime_result_hour", "working_user_count"])
 

@@ -132,14 +132,20 @@ class ListOutOfRangeAnnotationForMovieMain:
         task_json_path = cache_dir / f"task-{project_id}.json"
         awaitable_list = [
             downloading_obj.download_task_json_with_async(project_id, dest_path=str(task_json_path)),
-            downloading_obj.download_input_data_json_with_async(project_id, dest_path=str(input_data_json_path),),
+            downloading_obj.download_input_data_json_with_async(
+                project_id,
+                dest_path=str(input_data_json_path),
+            ),
         ]
 
         annotation_zip_path = None
         if parse_annotation_zip:
             annotation_zip_path = cache_dir / f"annotation-{project_id}.zip"
             awaitable_list.append(
-                downloading_obj.download_annotation_zip_with_async(project_id, dest_path=str(annotation_zip_path),)
+                downloading_obj.download_annotation_zip_with_async(
+                    project_id,
+                    dest_path=str(annotation_zip_path),
+                )
             )
 
         gather = asyncio.gather(*awaitable_list)

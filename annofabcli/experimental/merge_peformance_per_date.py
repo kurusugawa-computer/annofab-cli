@@ -14,23 +14,24 @@ from annofabcli.statistics.table import Table
 logger = logging.getLogger(__name__)
 
 
+def merge_peformance_per_date(csv_path_list: List[Path], output_path: Path) -> None:
+    df_list: List[pandas.DataFrame] = []
+    for csv_path in csv_path_list:
+        df = pandas.read_csv(str(csv_path))
+        df_list.append(df)
+
+    sum_df = df_list[0]
+    for df in df_list[1:]:
+        sum_df = Table.merge_whole_productivity_per_date(sum_df, df)
+
+    csv_obj = Csv(outdir=str(output_path.parent))
+    csv_obj.write_whole_productivity_per_date(sum_df, output_path=output_path)
+
+
 class MergePerfomancePerDate(AbstractCommandLineInterface):
     def main(self):
         args = self.args
-
-        df_list: List[pandas.DataFrame] = []
-        csv_path_list = args.csv
-        for csv_path in csv_path_list:
-            df = pandas.read_csv(str(csv_path))
-            df_list.append(df)
-
-        sum_df = df_list[0]
-        for df in df_list[1:]:
-            sum_df = Table.merge_whole_productivity_per_date(sum_df, df)
-
-        output_path: Path = args.output
-        csv_obj = Csv(outdir=str(output_path.parent))
-        csv_obj.write_whole_productivity_per_date(sum_df, output_path=output_path)
+        merge_peformance_per_date(csv_path_list=args.csv, output_path=args.output)
 
 
 def main(args):

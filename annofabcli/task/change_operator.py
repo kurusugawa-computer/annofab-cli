@@ -126,7 +126,11 @@ class ChangeOperatorMain:
             return False
 
     def change_operator_for_task_wrapper(
-        self, tpl: Tuple[int, str], project_id: str, task_query: TaskQuery, new_account_id: Optional[str] = None,
+        self,
+        tpl: Tuple[int, str],
+        project_id: str,
+        task_query: TaskQuery,
+        new_account_id: Optional[str] = None,
     ) -> bool:
         task_index, task_id = tpl
         return self.change_operator_for_task(

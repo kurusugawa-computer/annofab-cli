@@ -1,5 +1,6 @@
 import argparse
 import logging
+from pathlib import Path
 
 import annofabcli
 from annofabcli import AnnofabApiFacade
@@ -10,15 +11,19 @@ from annofabcli.statistics.scatter import Scatter
 logger = logging.getLogger(__name__)
 
 
+def write_performance_scatter_per_user(csv: Path, output_dir: Path) -> None:
+    df = read_multiheader_csv(str(csv))
+    scatter_obj = Scatter(str(output_dir))
+    scatter_obj.write_scatter_for_productivity_by_monitored_worktime(df)
+    scatter_obj.write_scatter_for_productivity_by_actual_worktime(df)
+    scatter_obj.write_scatter_for_quality(df)
+    scatter_obj.write_scatter_for_productivity_by_actual_worktime_and_quality(df)
+
+
 class WriteScatterPerUser(AbstractCommandLineInterface):
     def main(self):
         args = self.args
-        df = read_multiheader_csv(args.csv)
-        scatter_obj = Scatter(outdir=args.output_dir)
-        scatter_obj.write_scatter_for_productivity_by_monitored_worktime(df)
-        scatter_obj.write_scatter_for_productivity_by_actual_worktime(df)
-        scatter_obj.write_scatter_for_quality(df)
-        scatter_obj.write_scatter_for_productivity_by_actual_worktime_and_quality(df)
+        write_performance_scatter_per_user(csv=args.csv, output_dir=args.output_dir)
 
 
 def main(args):
@@ -30,11 +35,11 @@ def main(args):
 def parse_args(parser: argparse.ArgumentParser):
     parser.add_argument(
         "--csv",
-        type=str,
+        type=Path,
         required=True,
         help=("CSVファイルのパスを指定してください。" "CSVは、'statistics visualize'コマンドの出力結果である'メンバごとの生産性と品質.csv'と同じフォーマットです。"),
     )
-    parser.add_argument("-o", "--output_dir", type=str, required=True, help="出力ディレクトリのパス")
+    parser.add_argument("-o", "--output_dir", type=Path, required=True, help="出力ディレクトリのパス")
 
     parser.set_defaults(subcommand_func=main)
 

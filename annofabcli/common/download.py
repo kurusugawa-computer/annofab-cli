@@ -22,8 +22,7 @@ DEFAULT_WAIT_OPTIONS = WaitOptions(interval=60, max_tries=360)
 
 
 class DownloadingFile:
-    """
-    """
+    """"""
 
     def __init__(self, service: annofabapi.Resource):
         self.service = service

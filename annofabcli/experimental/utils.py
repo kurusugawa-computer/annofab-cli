@@ -86,7 +86,9 @@ def print_time_list_from_work_time_list(df: pd.DataFrame) -> pd.DataFrame:
             ],
             sort=False,
         )
-        .sort_values(["date", "user_name"],)
+        .sort_values(
+            ["date", "user_name"],
+        )
         .loc[
             :,
             [

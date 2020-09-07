@@ -10,6 +10,7 @@ from annofabcli.experimental import (
     mask_user_info,
     merge_peformance_per_date,
     merge_peformance_per_user,
+    merge_visualization_dir,
     write_linegraph_per_user,
     write_performance_csv_per_user,
     write_performance_scatter_per_user,
@@ -29,6 +30,7 @@ def parse_args(parser: argparse.ArgumentParser):
     mask_user_info.add_parser(subparsers)
     merge_peformance_per_date.add_parser(subparsers)
     merge_peformance_per_user.add_parser(subparsers)
+    merge_visualization_dir.add_parser(subparsers)
     write_linegraph_per_user.add_parser(subparsers)
     write_performance_csv_per_user.add_parser(subparsers)
     write_performance_scatter_per_user.add_parser(subparsers)

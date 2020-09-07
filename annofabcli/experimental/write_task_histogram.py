@@ -13,7 +13,7 @@ from annofabcli.statistics.histogram import Histogram
 logger = logging.getLogger(__name__)
 
 
-def write_task_histogram(csv: Path, output_dir: Path) -> None:
+def write_task_histogram(csv: Path, output_dir: Path, minimal_output: bool = False) -> None:
     """
     ヒストグラムを出力する
     """
@@ -24,16 +24,18 @@ def write_task_histogram(csv: Path, output_dir: Path) -> None:
 
     histogram_obj = Histogram(outdir=str(output_dir))
     _catch_exception(histogram_obj.write_histogram_for_worktime)(task_df)
-    _catch_exception(histogram_obj.write_histogram_for_annotation_worktime_by_user)(task_df)
-    _catch_exception(histogram_obj.write_histogram_for_inspection_worktime_by_user)(task_df)
-    _catch_exception(histogram_obj.write_histogram_for_acceptance_worktime_by_user)(task_df)
     _catch_exception(histogram_obj.write_histogram_for_other)(task_df)
+
+    if not minimal_output:
+        _catch_exception(histogram_obj.write_histogram_for_annotation_worktime_by_user)(task_df)
+        _catch_exception(histogram_obj.write_histogram_for_inspection_worktime_by_user)(task_df)
+        _catch_exception(histogram_obj.write_histogram_for_acceptance_worktime_by_user)(task_df)
 
 
 class WriteTaskHistogram(AbstractCommandLineInterface):
     def main(self):
         args = self.args
-        write_task_histogram(csv=args.csv, output_dir=args.output_dir)
+        write_task_histogram(csv=args.csv, output_dir=args.output_dir, minimal_output=args.minimal)
 
 
 def main(args):
@@ -50,6 +52,12 @@ def parse_args(parser: argparse.ArgumentParser):
         help=("CSVファイルのパスを指定してください。" "CSVは、'statistics visualize'コマンドの出力結果である'タスクlist.csv'と同じフォーマットです。"),
     )
     parser.add_argument("-o", "--output_dir", type=Path, required=True, help="出力ディレクトリのパス")
+
+    parser.add_argument(
+        "--minimal",
+        action="store_true",
+        help="必要最小限のファイルを出力します。",
+    )
 
     parser.set_defaults(subcommand_func=main)
 

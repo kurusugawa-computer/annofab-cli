@@ -132,7 +132,9 @@ class ListSubmittedTaskCountMain:
     ) -> pandas.DataFrame:
         def to_new_labor(e: Dict[str, Any]) -> Dict[str, Any]:
             return dict(
-                date=e["date"], account_id=e["account_id"], actual_worktime_hour=self._get_actual_worktime_hour(e),
+                date=e["date"],
+                account_id=e["account_id"],
+                actual_worktime_hour=self._get_actual_worktime_hour(e),
             )
 
         labor_list: List[Dict[str, Any]] = self.service.api.get_labor_control(

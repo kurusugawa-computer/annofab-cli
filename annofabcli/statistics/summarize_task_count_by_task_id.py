@@ -130,7 +130,10 @@ class SummarizeTaskCountByTaskId(AbstractCommandLineInterface):
     def print_summarize_task_count(self, df: pandas.DataFrame) -> None:
         columns = ["task_id_prefix"] + [status.value for status in TaskStatusForSummary] + ["sum"]
         annofabcli.utils.print_according_to_format(
-            df[columns], arg_format=FormatArgument(FormatArgument.CSV), output=self.output, csv_format=self.csv_format,
+            df[columns],
+            arg_format=FormatArgument(FormatArgument.CSV),
+            output=self.output,
+            csv_format=self.csv_format,
         )
 
     def main(self):

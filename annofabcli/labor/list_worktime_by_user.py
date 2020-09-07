@@ -227,7 +227,11 @@ class ListWorktimeByUser(AbstractCommandLineInterface):
         return new_labor
 
     def get_labor_availability_list_dict(
-        self, user_id_list: List[str], start_date: str, end_date: str, member_list: List[OrganizationMember],
+        self,
+        user_id_list: List[str],
+        start_date: str,
+        end_date: str,
+        member_list: List[OrganizationMember],
     ) -> Dict[str, List[LaborAvailability]]:
         """
         予定稼働時間を取得する
@@ -507,7 +511,9 @@ class ListWorktimeByUser(AbstractCommandLineInterface):
 
     @staticmethod
     def get_availability_list(
-        labor_availability_list: List[LaborAvailability], start_date: str, end_date: str,
+        labor_availability_list: List[LaborAvailability],
+        start_date: str,
+        end_date: str,
     ) -> List[Optional[float]]:
         def get_availability_hour(str_date: str) -> Optional[float]:
             labor = more_itertools.first_true(labor_availability_list, pred=lambda e: e.date == str_date)
@@ -847,7 +853,10 @@ class ListWorktimeByUser(AbstractCommandLineInterface):
         labor_availability_list_dict: Optional[Dict[str, List[LaborAvailability]]] = None
         if add_availability:
             labor_availability_list_dict = self.get_labor_availability_list_dict(
-                user_id_list=user_id_list, start_date=start_date, end_date=end_date, member_list=member_list,
+                user_id_list=user_id_list,
+                start_date=start_date,
+                end_date=end_date,
+                member_list=member_list,
             )
 
         self.write_labor_list(

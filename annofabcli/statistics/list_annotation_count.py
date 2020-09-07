@@ -56,9 +56,7 @@ class GroupBy(Enum):
 @dataclass_json
 @dataclass(frozen=True)
 class AnnotationCounterByTask:
-    """
-
-    """
+    """"""
 
     task_id: str
     task_status: TaskStatus
@@ -71,9 +69,7 @@ class AnnotationCounterByTask:
 @dataclass_json
 @dataclass(frozen=True)
 class AnnotationCounterByInputData:
-    """
-
-    """
+    """"""
 
     task_id: str
     task_status: TaskStatus
@@ -361,7 +357,9 @@ class ListAnnotationCount(AbstractCommandLineInterface):
         self.print_labels_count_for_task(task_counter_list, label_columns=target_label_columns, output_dir=output_dir)
 
         self.print_attirbutes_count_for_task(
-            task_counter_list, output_dir=output_dir, attribute_columns=target_attributes_columns,
+            task_counter_list,
+            output_dir=output_dir,
+            attribute_columns=target_attributes_columns,
         )
 
     def list_annotation_count_by_input_data(self, project_id: str, annotation_path: Path, output_dir: Path) -> None:
@@ -384,7 +382,9 @@ class ListAnnotationCount(AbstractCommandLineInterface):
         )
 
         self.print_attirbutes_count_for_input_data(
-            input_data_counter_list, output_dir=output_dir, attribute_columns=target_attributes_columns,
+            input_data_counter_list,
+            output_dir=output_dir,
+            attribute_columns=target_attributes_columns,
         )
 
     def main(self):
@@ -401,7 +401,10 @@ class ListAnnotationCount(AbstractCommandLineInterface):
             wait_options = get_wait_options_from_args(get_json_from_args(args.wait_options), DEFAULT_WAIT_OPTIONS)
             downloading_obj = DownloadingFile(self.service)
             downloading_obj.download_annotation_zip(
-                project_id, dest_path=str(annotation_path), is_latest=args.latest, wait_options=wait_options,
+                project_id,
+                dest_path=str(annotation_path),
+                is_latest=args.latest,
+                wait_options=wait_options,
             )
 
         group_by = GroupBy(args.group_by)

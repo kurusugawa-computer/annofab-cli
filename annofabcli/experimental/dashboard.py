@@ -351,7 +351,10 @@ def _get_cumulation_info(task_list: List[Task], actual_worktime_dict: Dict[str, 
 
 
 def _get_plan_value(
-    plan_worktime_dict: Dict[str, float], dt_today: datetime.date, days: int, velocity_per_task: Optional[float],
+    plan_worktime_dict: Dict[str, float],
+    dt_today: datetime.date,
+    days: int,
+    velocity_per_task: Optional[float],
 ) -> Planvalues:
     dt_from_date = dt_today + datetime.timedelta(days=1)
     dt_end_date = dt_today + datetime.timedelta(days=days)
@@ -544,7 +547,9 @@ class PrintDashBoardMain:
 class DashBoard(AbstractCommandLineInterface):
     def print_summarize_task_count(self, target_dict: dict) -> None:
         annofabcli.utils.print_according_to_format(
-            target_dict, arg_format=FormatArgument.JSON, output=self.output,
+            target_dict,
+            arg_format=FormatArgument.JSON,
+            output=self.output,
         )
 
     def main(self):
@@ -571,7 +576,9 @@ class DashBoard(AbstractCommandLineInterface):
 
         dashboard_date = main_obj.create_dashboard_data(project_id, date=args.date, task_list=task_list)
         annofabcli.utils.print_according_to_format(
-            dashboard_date.to_dict(), arg_format=FormatArgument(self.str_format), output=self.output,
+            dashboard_date.to_dict(),
+            arg_format=FormatArgument(self.str_format),
+            output=self.output,
         )
 
 

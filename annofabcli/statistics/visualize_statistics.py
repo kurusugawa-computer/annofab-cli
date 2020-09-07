@@ -16,7 +16,7 @@ from annofabcli.common.cli import AbstractCommandLineInterface, ArgumentParser, 
 from annofabcli.statistics.csv import Csv
 from annofabcli.statistics.database import Database, Query
 from annofabcli.statistics.histogram import Histogram
-from annofabcli.statistics.linegraph import LineGraph
+from annofabcli.statistics.linegraph import LineGraph, OutputTarget
 from annofabcli.statistics.scatter import Scatter
 from annofabcli.statistics.table import AggregationBy, Table
 
@@ -92,12 +92,13 @@ class WriteCsvGraph:
     productivity_df: Optional[pandas.DataFrame] = None
     whole_productivity_df: Optional[pandas.DataFrame] = None
 
-    def __init__(self, table_obj: Table, output_dir: Path):
+    def __init__(self, table_obj: Table, output_dir: Path, minimal_output: bool = False):
         self.table_obj = table_obj
         self.csv_obj = Csv(str(output_dir))
         self.histogram_obj = Histogram(str(output_dir / "histogram"))
         self.linegraph_obj = LineGraph(str(output_dir / "line-graph"))
         self.scatter_obj = Scatter(str(output_dir / "scatter"))
+        self.minimal_output = minimal_output
 
     def _get_task_df(self):
         if self.task_df is None:
@@ -157,10 +158,12 @@ class WriteCsvGraph:
         """
         task_df = self._get_task_df()
         catch_exception(self.histogram_obj.write_histogram_for_worktime)(task_df)
-        catch_exception(self.histogram_obj.write_histogram_for_annotation_worktime_by_user)(task_df)
-        catch_exception(self.histogram_obj.write_histogram_for_inspection_worktime_by_user)(task_df)
-        catch_exception(self.histogram_obj.write_histogram_for_acceptance_worktime_by_user)(task_df)
         catch_exception(self.histogram_obj.write_histogram_for_other)(task_df)
+
+        if not self.minimal_output:
+            catch_exception(self.histogram_obj.write_histogram_for_annotation_worktime_by_user)(task_df)
+            catch_exception(self.histogram_obj.write_histogram_for_inspection_worktime_by_user)(task_df)
+            catch_exception(self.histogram_obj.write_histogram_for_acceptance_worktime_by_user)(task_df)
 
     def write_histogram_for_annotation(self) -> None:
         """
@@ -213,25 +216,36 @@ class WriteCsvGraph:
             logger.warning(f"タスク一覧が0件のため、折れ線グラフを出力しません。")
             return
 
+        output_target_list: Optional[List[OutputTarget]] = None
+        if self.minimal_output:
+            output_target_list = [OutputTarget.ANNOTATION]
+
         task_cumulative_df_by_annotator = self.table_obj.create_cumulative_df_by_first_annotator(task_df)
         catch_exception(self.linegraph_obj.write_cumulative_line_graph_for_annotator)(
-            df=task_cumulative_df_by_annotator, first_annotation_user_id_list=user_id_list,
+            df=task_cumulative_df_by_annotator,
+            output_target_list=output_target_list,
+            first_annotation_user_id_list=user_id_list,
         )
 
         task_cumulative_df_by_inspector = self.table_obj.create_cumulative_df_by_first_inspector(task_df)
         catch_exception(self.linegraph_obj.write_cumulative_line_graph_for_inspector)(
-            df=task_cumulative_df_by_inspector, first_inspection_user_id_list=user_id_list,
+            df=task_cumulative_df_by_inspector,
+            output_target_list=output_target_list,
+            first_inspection_user_id_list=user_id_list,
         )
 
         task_cumulative_df_by_acceptor = self.table_obj.create_cumulative_df_by_first_acceptor(task_df)
         catch_exception(self.linegraph_obj.write_cumulative_line_graph_for_acceptor)(
-            df=task_cumulative_df_by_acceptor, first_acceptance_user_id_list=user_id_list,
+            df=task_cumulative_df_by_acceptor,
+            output_target_list=output_target_list,
+            first_acceptance_user_id_list=user_id_list,
         )
 
-        df_by_date_user = self._get_df_by_date_user()
-        catch_exception(self.linegraph_obj.write_productivity_line_graph_for_annotator)(
-            df=df_by_date_user, first_annotation_user_id_list=user_id_list
-        )
+        if not self.minimal_output:
+            df_by_date_user = self._get_df_by_date_user()
+            catch_exception(self.linegraph_obj.write_productivity_line_graph_for_annotator)(
+                df=df_by_date_user, first_annotation_user_id_list=user_id_list
+            )
 
     def write_linegraph_for_worktime_by_user(self, user_id_list: Optional[List[str]] = None) -> None:
         account_statistics_df = self._get_account_statistics_df()
@@ -285,7 +299,9 @@ class WriteCsvGraph:
             df=inspection_df, dropped_columns=["data"], only_error_corrected=True
         )
         catch_exception(self.csv_obj.write_inspection_list)(
-            df=inspection_df_all, dropped_columns=["data"], only_error_corrected=False,
+            df=inspection_df_all,
+            dropped_columns=["data"],
+            only_error_corrected=False,
         )
 
     def write_csv_for_annotation(self) -> None:
@@ -387,7 +403,7 @@ class VisualizeStatistics(AbstractCommandLineInterface):
             ),
             output_project_dir=output_dir,
         )
-        write_obj = WriteCsvGraph(table_obj, output_dir)
+        write_obj = WriteCsvGraph(table_obj, output_dir, minimal_output)
         write_obj.write_csv_for_task()
 
         write_obj.write_csv_for_summary()
@@ -482,7 +498,9 @@ def parse_args(parser: argparse.ArgumentParser):
     )
 
     parser.add_argument(
-        "--not_update", action="store_true", help="作業ディレクトリ内のファイルを参照して、統計情報を出力します。" "AnnoFab Web APIへのアクセスを最小限にします。",
+        "--not_update",
+        action="store_true",
+        help="作業ディレクトリ内のファイルを参照して、統計情報を出力します。" "AnnoFab Web APIへのアクセスを最小限にします。",
     )
 
     parser.add_argument(
@@ -492,11 +510,15 @@ def parse_args(parser: argparse.ArgumentParser):
     )
 
     parser.add_argument(
-        "--work_dir", type=str, help="作業ディレクトリのパス。指定しない場合はannofabcliのキャッシュディレクトリ（'$HOME/.cache/annofabcli'）に保存します。",
+        "--work_dir",
+        type=str,
+        help="作業ディレクトリのパス。指定しない場合はannofabcliのキャッシュディレクトリ（'$HOME/.cache/annofabcli'）に保存します。",
     )
 
     parser.add_argument(
-        "--minimal", action="store_true", help="必要最小限のファイルを出力します。",
+        "--minimal",
+        action="store_true",
+        help="必要最小限のファイルを出力します。",
     )
 
     parser.set_defaults(subcommand_func=main)
