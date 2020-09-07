@@ -547,8 +547,8 @@ class TestStatistics:
                 "--task_query",
                 '{"status": "complete"}',
                 "--output_dir",
-                "--minimal",
                 output_dir,
+                "--minimal",
             ]
         )
 
