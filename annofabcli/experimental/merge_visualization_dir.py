@@ -1,19 +1,21 @@
+import json
 import argparse
 import logging
 from pathlib import Path
 from typing import List, Optional
 
 import pandas
-from annofabcli.statistics.csv import Csv
+
 import annofabcli
 from annofabcli.common.cli import get_list_from_args
-from annofabcli.common.utils import print_csv
+from annofabcli.common.utils import print_csv, print_json
 from annofabcli.experimental.merge_peformance_per_date import merge_peformance_per_date
 from annofabcli.experimental.merge_peformance_per_user import merge_peformance_per_user
 from annofabcli.experimental.write_linegraph_per_user import write_linegraph_per_user
 from annofabcli.experimental.write_performance_scatter_per_user import write_performance_scatter_per_user
 from annofabcli.experimental.write_task_histogram import write_task_histogram
 from annofabcli.experimental.write_whole_linegraph import write_whole_linegraph
+from annofabcli.statistics.csv import Csv
 
 logger = logging.getLogger(__name__)
 
@@ -46,7 +48,7 @@ def merge_visualization(
         df = pandas.concat(list_df, axis=0)
         return df
 
-    def write_csv_for_summary(df_task:pandas.DataFrame) -> None:
+    def write_csv_for_summary(df_task: pandas.DataFrame) -> None:
         """
         タスク関係のCSVを出力する。
         """
@@ -55,6 +57,11 @@ def merge_visualization(
         csv_obj.write_worktime_summary(df_task)
         csv_obj.write_count_summary(df_task)
 
+    def write_info_json() -> None:
+        info = {
+            "target_dir_list": [str(e) for e in project_dir_list]
+        }
+        print_json(info, is_pretty=True, output=str(output_dir/"info.json"))
 
     # CSV生成
     execute_merge_peformance_per_user()
@@ -67,11 +74,17 @@ def merge_visualization(
     write_performance_scatter_per_user(csv=output_dir / FILENAME_PEFORMANCE_PER_USER, output_dir=output_dir / "scatter")
     write_whole_linegraph(csv=output_dir / FILENAME_PEFORMANCE_PER_DATE, output_dir=output_dir / "line-graph")
     write_linegraph_per_user(
-        csv=output_dir / FILENAME_TASK_LIST, output_dir=output_dir / "line-graph", minimal_output=minimal_output, user_id_list=user_id_list
+        csv=output_dir / FILENAME_TASK_LIST,
+        output_dir=output_dir / "line-graph",
+        minimal_output=minimal_output,
+        user_id_list=user_id_list,
     )
     write_task_histogram(
         csv=output_dir / FILENAME_TASK_LIST, output_dir=output_dir / "histogram", minimal_output=minimal_output
     )
+
+    # info.jsonを出力
+    write_info_json()
 
 
 def main(args):
