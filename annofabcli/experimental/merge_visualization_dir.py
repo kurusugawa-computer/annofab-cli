@@ -7,7 +7,13 @@ from pathlib import Path
 from typing import List
 
 import pandas
-from annofabslack.common.utils import set_default_logger
+import annofabcli
+
+from annofabcli.experimental.merge_peformance_per_date import merge_peformance_per_date
+from annofabcli.experimental.merge_peformance_per_user import merge_peformance_per_user
+from annofabcli.experimental.write_linegraph_per_user import write_linegraph_by_user
+from annofabcli.experimental.write_performance_scatter_per_user import write_performance_scatter_per_user
+
 
 from annofabcli.common.utils import print_csv
 
@@ -133,12 +139,14 @@ def merge_visualization(
     # 移動前のディレクトリに戻る
     os.chdir(now_dir)
 
-
-def parse_args():
-    parser = ArgumentParser(
-        description="`annofabcli statistics visualize`コマンドの結果をマージします。",
-        formatter_class=argparse.ArgumentDefaultsHelpFormatter,
+def main(args):
+    merge_visualization(
+        project_dir_list=args.dir,
+        output_dir=args.output_dir,
     )
+
+
+def parse_args(parser: argparse.ArgumentParser):
     parser.add_argument("--dir", type=Path, nargs="+", required=True, help="マージ対象ディレクトリ")
     parser.add_argument("-o", "--output_dir", type=Path, required=True, help="出力先ディレクトリ。配下にプロジェクト名のディレクトリが出力される。")
     parser.add_argument(
@@ -147,19 +155,12 @@ def parse_args():
         help="必要最小限のファイルを出力します。",
     )
 
-    return parser.parse_args()
+    parser.set_defaults(subcommand_func=main)
 
 
-def main() -> None:
-    set_default_logger()
-
-    args = parse_args()
-
-    merge_visualization(
-        project_dir_list=args.dir,
-        output_dir=args.output_dir,
-    )
-
-
-if __name__ == "__main__":
-    main()
+def add_parser(subparsers: argparse._SubParsersAction):
+    subcommand_name = "merge_visualization_dir"
+    subcommand_help = "`annofabcli statistics visualize`コマンドの出力結果をマージする。"
+    description = "`annofabcli statistics visualize`コマンドの出力結果をマージする。"
+    parser = annofabcli.common.cli.add_parser(subparsers, subcommand_name, subcommand_help, description)
+    parse_args(parser)
