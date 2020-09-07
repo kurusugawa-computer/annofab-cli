@@ -12,13 +12,17 @@ from annofabcli.statistics.linegraph import LineGraph
 logger = logging.getLogger(__name__)
 
 
+def write_whole_linegraph(csv: Path, output_dir: Path) -> None:
+    df = pandas.read_csv(str(csv))
+    linegraph_obj = LineGraph(outdir=str(output_dir))
+    linegraph_obj.write_whole_productivity_line_graph(df)
+    linegraph_obj.write_whole_cumulative_line_graph(df)
+
+
 class WriteWholeLingraph(AbstractCommandLineInterface):
     def main(self):
         args = self.args
-        df = pandas.read_csv(str(args.csv))
-        linegraph_obj = LineGraph(outdir=str(args.output_dir))
-        linegraph_obj.write_whole_productivity_line_graph(df)
-        linegraph_obj.write_whole_cumulative_line_graph(df)
+        write_whole_linegraph(csv=args.csv, output_dir=args.output_dir)
 
 
 def main(args):
