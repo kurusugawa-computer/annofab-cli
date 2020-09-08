@@ -190,9 +190,9 @@ class RejectTasksMain(AbstracCommandCinfirmInterface):
         task, _ = self.service.api.get_task(project_id, task_id)
 
         logger.debug(
-            f"{logging_prefix} : task_id = {task.task_id}, "
-            f"status = {task.status.value}, "
-            f"phase = {task.phase.value}, "
+            f"{logging_prefix} : task_id = {task['task_id']}, "
+            f"status = {task['status']}, "
+            f"phase = {task['phase']}, "
         )
 
         if not self._can_reject_task(
