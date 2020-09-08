@@ -213,7 +213,7 @@ class RejectTasksMain(AbstracCommandCinfirmInterface):
                 self.add_inspection_comment(project_id, project_input_data_type, changed_task, inspection_comment)
                 logger.debug(f"{logging_prefix} : task_id = {task_id}, 検査コメントの付与 完了")
 
-            except requests.exceptions.HTTPError as e:
+            except requests.exceptions.HTTPError:
                 logger.warning(f"{logging_prefix} : task_id = {task_id} 検査コメントの付与に失敗", exc_info=True)
                 self.facade.change_to_break_phase(project_id, task_id)
                 return False
