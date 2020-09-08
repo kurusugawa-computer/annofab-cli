@@ -1,3 +1,4 @@
+import copy
 import json
 import logging.config
 import os
@@ -142,10 +143,12 @@ def print_csv(df: pandas.DataFrame, output: Optional[str] = None, to_csv_kwargs:
 
     path_or_buf = sys.stdout if output is None else output
 
+    kwargs = copy.deepcopy(DEFAULT_CSV_FORMAT)
     if to_csv_kwargs is None:
-        df.to_csv(path_or_buf, **DEFAULT_CSV_FORMAT)
+        df.to_csv(path_or_buf, **kwargs)
     else:
-        df.to_csv(path_or_buf, **to_csv_kwargs)
+        kwargs.update(to_csv_kwargs)
+        df.to_csv(path_or_buf, **kwargs)
 
     if output is not None:
         logger.info(f"{output} に出力しました。")
