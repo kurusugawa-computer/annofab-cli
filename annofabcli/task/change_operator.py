@@ -83,8 +83,9 @@ class ChangeOperatorMain:
 
         if task.account_id is not None:
             now_user_id = self.facade.get_user_id_from_account_id(project_id, task.account_id)
-        else:
             now_user_id = None
+        else:
+            pass
 
         logger.debug(
             f"{logging_prefix} : task_id = {task.task_id}, "

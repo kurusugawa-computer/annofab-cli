@@ -331,7 +331,7 @@ class AnnofabApiFacade:
         }
         return self.service.api.operate_task(project_id, task_id, request_body=req)[0]
 
-    def change_to_break_phase(self, project_id: str, task_id: str, account_id: str) -> Dict[str, Any]:
+    def change_to_break_phase(self, project_id: str, task_id: str) -> Dict[str, Any]:
         """
         タスクを休憩中に変更する
         Returns:
@@ -341,7 +341,7 @@ class AnnofabApiFacade:
 
         req = {
             "status": "break",
-            "account_id": account_id,
+            "account_id": self.service.api.account_id,
             "last_updated_datetime": task["updated_datetime"],
         }
         return self.service.api.operate_task(project_id, task_id, request_body=req)[0]
@@ -381,7 +381,7 @@ class AnnofabApiFacade:
         updated_task, _ = self.service.api.operate_task(project_id, task["task_id"], request_body=req_change_operator)
         return updated_task
 
-    def reject_task_assign_last_annotator(self, project_id: str, task_id: str, account_id: str) -> Dict[str, Any]:
+    def reject_task_assign_last_annotator(self, project_id: str, task_id: str) -> Dict[str, Any]:
         """
         タスクを差し戻したあとに、最後のannotation phase担当者に割り当てる。
 
@@ -397,7 +397,7 @@ class AnnofabApiFacade:
         task, _ = self.service.api.get_task(project_id, task_id)
         req_reject = {
             "status": "rejected",
-            "account_id": account_id,
+            "account_id": self.service.api.account_id,
             "last_updated_datetime": task["updated_datetime"],
             "force": True,
         }

@@ -12,19 +12,23 @@ from annofabapi.models import InputDataType, ProjectMemberRole, TaskPhase, TaskS
 import annofabcli
 import annofabcli.common.cli
 from annofabcli import AnnofabApiFacade
-from annofabcli.common.cli import AbstractCommandLineInterface, ArgumentParser, build_annofabapi_resource_and_login
+from annofabcli.common.cli import AbstractCommandLineInterface, ArgumentParser, build_annofabapi_resource_and_login, AbstracCommandCinfirmInterface
 
 logger = logging.getLogger(__name__)
 
 
-class RejectTasks(AbstractCommandLineInterface):
+class RejectTasksMain(AbstracCommandCinfirmInterface):
+    def __init__(self, service: annofabapi.Resource, all_yes: bool = False):
+        self.service = service
+        self.facade = AnnofabApiFacade(service)
+        AbstracCommandCinfirmInterface.__init__(self, all_yes)
+
     def add_inspection_comment(
         self,
         project_id: str,
         project_input_data_type: InputDataType,
         task: Dict[str, Any],
         inspection_comment: str,
-        commenter_account_id: str,
     ):
         """
         検査コメントを付与する。
@@ -36,7 +40,6 @@ class RejectTasks(AbstractCommandLineInterface):
             project_input_data_type: プロジェクトの入力データの種類
             task:
             inspection_comment:
-            commenter_account_id:
 
         Returns:
             更新した検査コメントの一覧
@@ -57,7 +60,7 @@ class RejectTasks(AbstractCommandLineInterface):
                     "input_data_id": first_input_data_id,
                     "inspection_id": str(uuid.uuid4()),
                     "phase": task["phase"],
-                    "commenter_account_id": commenter_account_id,
+                    "commenter_account_id": self.service.api.account_id,
                     "data": inspection_data,
                     "status": "annotator_action_required",
                     "created_datetime": task["updated_datetime"],
@@ -81,7 +84,7 @@ class RejectTasks(AbstractCommandLineInterface):
         else:
             confirm_message += f"担当者は割り当てません。"
 
-        return self.confirm_processing_task(task_id, confirm_message)
+        return self.confirm_processing(confirm_message)
 
     def change_to_working_status(self, project_id: str, task: Dict[str, Any]) -> Dict[str,Any]:
         """
@@ -109,7 +112,7 @@ class RejectTasks(AbstractCommandLineInterface):
             logger.warning(f"{task_id}: 担当者の変更、または作業中状態への変更に失敗しました。")
             raise
 
-    def can_reject_task(
+    def _can_reject_task(
         self,
         task: Dict[str, Any],
         assign_last_annotator: bool,
@@ -139,20 +142,181 @@ class RejectTasks(AbstractCommandLineInterface):
 
         return True
 
-    def _cancel_acceptance(self, task: Dict[str, Any], my_account_id: str) -> Dict[str, Any]:
+    def _cancel_acceptance(self, task: Dict[str, Any]) -> Dict[str, Any]:
         request_body = {
             "status": "not_started",
-            "account_id": my_account_id,
+            "account_id": self.service.api.account_id,
             "last_updated_datetime": task["updated_datetime"],
         }
         content, _ = self.service.api.operate_task(task["project_id"], task["task_id"], request_body=request_body)
         return content
 
+
+    def reject_task_with_adding_comment(
+        self,
+        project_id: str,
+        task_id: str,
+        inspection_comment: Optional[str] = None,
+        assign_last_annotator: bool = True,
+        assigned_annotator_user_id: Optional[str] = None,
+        cancel_acceptance: bool = False,
+        task_index: Optional[int] = None,
+    ):
+        """
+        タスクを強制的に差し戻す
+
+        Args:
+            project_id:
+            task_id_list:
+            inspection_comment: 検査コメントの中身
+            assign_last_annotator: Trueなら差し戻したタスクに対して、最後のannotation phaseを担当者を割り当てる
+            assigned_annotator_user_id: 差し戻したタスクに割り当てるユーザのuser_id. assign_last_annotatorがTrueの場合、この引数は無視される。
+
+        """
+        logging_prefix = f"{task_index+1} 件目" if task_index is not None else ""
+
+        project, _ = self.service.api.get_project(project_id)
+        project_input_data_type = InputDataType(project["input_data_type"])
+
+        assigned_annotator_account_id = (
+            self.facade.get_account_id_from_user_id(project_id, assigned_annotator_user_id)
+            if assigned_annotator_user_id is not None
+            else None
+        )
+
+        task, _ = self.service.api.get_task(project_id, task_id)
+
+        logger.debug(
+            f"{logging_prefix} : task_id = {task.task_id}, "
+            f"status = {task.status.value}, "
+            f"phase = {task.phase.value}, "
+        )
+
+        if not self._can_reject_task(
+            task=task,
+            assign_last_annotator=assign_last_annotator,
+            assigned_annotator_user_id=assigned_annotator_user_id,
+            cancel_acceptance=cancel_acceptance,
+        ):
+            return False
+
+        if task["status"] == TaskStatus.COMPLETE.value and cancel_acceptance:
+            self._cancel_acceptance(task)
+
+        if inspection_comment is not None:
+            changed_task = self.change_to_working_status(project_id, task)
+            try:
+                # 検査コメントを付与する
+                self.add_inspection_comment(
+                    project_id, project_input_data_type, changed_task, inspection_comment
+                )
+                logger.debug(f"{logging_prefix} : task_id = {task_id}, 検査コメントの付与 完了")
+
+            except requests.exceptions.HTTPError as e:
+                logger.warning(f"{logging_prefix} : task_id = {task_id} 検査コメントの付与に失敗", exc_info=True)
+                self.facade.change_to_break_phase(project_id, task_id)
+                return False
+
+        try:
+            # タスクを差し戻す
+            if assign_last_annotator:
+                # 最後のannotation phaseに担当を割り当てる
+                self.facade.reject_task_assign_last_annotator(project_id, task_id)
+                logger.info(f"{logging_prefix} : task_id = {task_id} のタスクを差し戻しました。タスクの担当者は直前の教師付フェーズの担当者。")
+                return True
+
+            else:
+                # 指定したユーザに担当を割り当てる
+                self.facade.reject_task(
+                    project_id,
+                    task_id,
+                    account_id=self.service.api.account_id,
+                    annotator_account_id=assigned_annotator_account_id,
+                )
+                str_annotator_user = f"タスクの担当者: {assigned_annotator_user_id}"
+                logger.info(f"{logging_prefix} : task_id = {task_id} の差し戻し完了. {str_annotator_user}")
+                return True
+
+
+        except requests.exceptions.HTTPError as e:
+            logger.warning(e)
+            logger.warning(f"{logging_prefix} : task_id = {task_id} タスクの差し戻しに失敗")
+
+            new_task = self.service.wrapper.get_task_or_none(project_id, task_id)
+            if new_task["status"] == TaskStatus.WORKING.value and new_task["account_id"] == self.service.api.account_id:
+                self.facade.change_to_break_phase(project_id, task_id)
+            return False
+
+
+    def change_operator_for_task(
+        self,
+        project_id: str,
+        task_id: str,
+        new_account_id: Optional[str] = None,
+        task_query: Optional[TaskQuery] = None,
+        task_index: Optional[int] = None,
+    ) -> bool:
+
+        logging_prefix = f"{task_index+1} 件目" if task_index is not None else ""
+        if task_query is None:
+            task_query = TaskQuery()
+
+        dict_task, _ = self.service.api.get_task(project_id, task_id)
+        task: Task = Task.from_dict(dict_task)  # type: ignore
+
+        if task.account_id is not None:
+            now_user_id = self.facade.get_user_id_from_account_id(project_id, task.account_id)
+            now_user_id = None
+        else:
+            pass
+
+        logger.debug(
+            f"{logging_prefix} : task_id = {task.task_id}, "
+            f"status = {task.status.value}, "
+            f"phase = {task.phase.value}, "
+            f"user_id = {now_user_id}"
+        )
+
+        if task_query.status is not None:
+            if task.status != task_query.status:
+                logger.debug(
+                    f"{logging_prefix} : task_id = {task_id} : タスクのstatusが {task_query.status.value} でないので、スキップします。"
+                )
+                return False
+
+        if task_query.phase is not None:
+            if task.phase != task_query.phase:
+                logger.debug(
+                    f"{logging_prefix} : task_id = {task_id} : タスクのphaseが {task_query.phase.value} でないので、スキップします。"
+                )
+                return False
+
+        if task.status in [TaskStatus.COMPLETE, TaskStatus.WORKING]:
+            logger.warning(f"{logging_prefix} : task_id = {task_id} : タスクのstatusがworking or complete なので、担当者を変更できません。")
+            return False
+
+        if not self.confirm_change_operator(task):
+            return False
+
+        try:
+            # 担当者を変更する
+            self.facade.change_operator_of_task(project_id, task_id, new_account_id)
+            logger.debug(f"{logging_prefix} : task_id = {task_id}, phase={dict_task['phase']} のタスクの担当者を変更しました。")
+            return True
+
+        except requests.exceptions.HTTPError as e:
+            logger.warning(e)
+            logger.warning(f"{logging_prefix} : task_id = {task_id} の担当者を変更するのに失敗しました。")
+            return False
+
+
+
+class RejectTasks(AbstractCommandLineInterface):
+
     def reject_tasks_with_adding_comment(
         self,
         project_id: str,
         task_id_list: List[str],
-        commenter_user_id: str,
         inspection_comment: Optional[str] = None,
         assign_last_annotator: bool = True,
         assigned_annotator_user_id: Optional[str] = None,
@@ -175,11 +339,6 @@ class RejectTasks(AbstractCommandLineInterface):
         my_account_id = self.facade.get_my_account_id()
         project, _ = self.service.api.get_project(project_id)
         project_input_data_type = InputDataType(project["input_data_type"])
-
-        commenter_account_id = self.facade.get_account_id_from_user_id(project_id, commenter_user_id)
-        if commenter_account_id is None:
-            logger.error(f"検査コメントを付与するユーザ( {commenter_user_id} の account_idが見つかりませんでした。終了します。")
-            return
 
         assigned_annotator_account_id = (
             self.facade.get_account_id_from_user_id(project_id, assigned_annotator_user_id)
