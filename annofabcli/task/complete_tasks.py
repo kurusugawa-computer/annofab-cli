@@ -406,7 +406,7 @@ class ComleteTasks(AbstractCommandLineInterface):
                     self.service.wrapper.get_task_or_none(project_id, task_id)
                 )
                 if new_task.status == TaskStatus.WORKING and new_task.account_id == my_account_id:
-                    self.facade.change_to_break_phase(project_id, task_id, my_account_id)
+                    self.facade.change_to_break_phase(project_id, task_id)
                 continue
 
         logger.info(f"{completed_task_count} / {len(task_id_list)} 件のタスクに対して、今のフェーズを完了状態にしました。")
