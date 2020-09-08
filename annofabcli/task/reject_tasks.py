@@ -2,7 +2,7 @@ import argparse
 import logging
 import time
 import uuid
-from typing import Any, Dict, List, Optional
+from typing import Any, Dict, List, Optional, Tuple
 
 import annofabapi
 import annofabapi.utils
@@ -60,7 +60,7 @@ class RejectTasks(AbstractCommandLineInterface):
                     "commenter_account_id": commenter_account_id,
                     "data": inspection_data,
                     "status": "annotator_action_required",
-                    "created_datetime": annofabapi.utils.str_now(),
+                    "created_datetime": task["updated_datetime"],
                 },
                 "_type": "Put",
             }
@@ -83,18 +83,26 @@ class RejectTasks(AbstractCommandLineInterface):
 
         return self.confirm_processing_task(task_id, confirm_message)
 
-    def change_to_working_status(self, project_id: str, task: Dict[str, Any], my_account_id: str) -> bool:
-        # 担当者変更
-        changed_operator = False
+    def change_to_working_status(self, project_id: str, task: Dict[str, Any]) -> Dict[str,Any]:
+        """
+        作業中状態に遷移する。必要ならば担当者を自分自身に変更する。
+
+        Args:
+            project_id:
+            task:
+
+        Returns:
+            作業中状態遷移後のタスク
+        """
+
         task_id = task["task_id"]
         try:
-            if task["account_id"] != my_account_id:
-                self.facade.change_operator_of_task(project_id, task_id, my_account_id)
-                changed_operator = True
+            if task["account_id"] != self.service.api.account_id:
+                self.facade.change_operator_of_task(project_id, task_id, self.service.api.account_id)
                 logger.debug(f"{task_id}: 担当者を自分自身に変更しました。")
 
-            self.facade.change_to_working_status(project_id, task_id, my_account_id)
-            return changed_operator
+            changed_task = self.facade.change_to_working_status(project_id, task_id, self.service.api.account_id)
+            return changed_task
 
         except requests.HTTPError as e:
             logger.warning(e)
@@ -202,15 +210,12 @@ class RejectTasks(AbstractCommandLineInterface):
                 self._cancel_acceptance(task=task, my_account_id=my_account_id)
 
             if inspection_comment is not None:
-                changed_operator = self.change_to_working_status(project_id, task, my_account_id)
+                changed_task = self.change_to_working_status(project_id, task)
                 # スリープする理由：担当者を変更したときは、少し待たないと検査コメントが登録できないため
-                if changed_operator:
-                    time.sleep(2)
-
                 try:
                     # 検査コメントを付与する
                     self.add_inspection_comment(
-                        project_id, project_input_data_type, task, inspection_comment, commenter_account_id
+                        project_id, project_input_data_type, changed_task, inspection_comment, commenter_account_id
                     )
                     logger.debug(f"{str_progress} : task_id = {task_id}, 検査コメントの付与 完了")
 
