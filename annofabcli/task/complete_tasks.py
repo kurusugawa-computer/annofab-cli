@@ -4,7 +4,7 @@ import multiprocessing
 import sys
 import uuid
 from functools import partial
-from typing import Any, Dict, List, Optional
+from typing import Any, Dict, List, Optional, Tuple
 
 import annofabapi.utils
 import dateutil
@@ -195,7 +195,7 @@ class CompleteTasksMain(AbstracCommandCinfirmInterface):
                 self.facade.change_operator_of_task(task.project_id, task.task_id, my_account_id)
                 logger.debug(f"{task.task_id}: 担当者を自分自身に変更しました。")
 
-            dict_task, _ = self.facade.change_to_working_status(task.project_id, task.task_id, my_account_id)
+            dict_task = self.facade.change_to_working_status(project_id=task.project_id,task_id=task.task_id, account_id=my_account_id)
             return Task.from_dict(dict_task)  # type: ignore
 
         except requests.HTTPError as e:
@@ -383,12 +383,33 @@ class CompleteTasksMain(AbstracCommandCinfirmInterface):
             else:
                 return self.complete_task_for_inspection_acceptance_phase(task, inspection_status=inspection_status)
 
-        except Exception:  # pylint: disable=broad-except
-            logger.warning(f"{task_id}: {task.phase} フェーズを完了状態にするのに失敗しました。", exc_info=True)
+        except Exception as e:  # pylint: disable=broad-except
+            logger.warning(f"{task_id}: {task.phase} フェーズを完了状態にするのに失敗しました。")
+            logger.warning(e)
             new_task: Task = Task.from_dict(self.service.wrapper.get_task_or_none(project_id, task_id))  # type: ignore
             if new_task.status == TaskStatus.WORKING and new_task.account_id == self.service.api.account_id:
                 self.facade.change_to_break_phase(project_id, task_id)
             return False
+
+    def complete_task_for_task_wrapper(
+        self,
+        tpl: Tuple[int, str],
+        project_id: str,
+        target_phase: TaskPhase,
+        target_phase_stage: int,
+        reply_comment: Optional[str] = None,
+        inspection_status: Optional[InspectionStatus] = None,
+    ) -> bool:
+        task_index, task_id = tpl
+        return self.complete_task(
+            project_id=project_id,
+            task_id=task_id,
+            task_index=task_index,
+            target_phase=target_phase,
+            target_phase_stage=target_phase_stage,
+            reply_comment=reply_comment,
+            inspection_status=inspection_status
+        )
 
     def complete_task_list(
         self,
@@ -418,7 +439,7 @@ class CompleteTasksMain(AbstracCommandCinfirmInterface):
 
         if parallelism is not None:
             partial_func = partial(
-                self.complete_task,
+                self.complete_task_for_task_wrapper,
                 project_id=project_id,
                 target_phase=target_phase,
                 target_phase_stage=target_phase_stage,
@@ -465,7 +486,8 @@ class ComleteTasks(AbstractCommandLineInterface):
                     f"'--phase'に'{TaskPhase.INSPECTION.value}'または'{TaskPhase.ACCEPTANCE.value}'を指定しているとき、"
                     f"'--reply_comment'の値は無視されます。"
                 )
-        elif args.parallelism is not None and not args.yes:
+
+        if args.parallelism is not None and not args.yes:
             print(
                 f"{COMMON_MESSAGE} argument --parallelism: '--parallelism'を指定するときは、必ず'--yes'を指定してください。",
                 file=sys.stderr,

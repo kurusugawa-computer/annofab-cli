@@ -323,7 +323,6 @@ class AnnofabApiFacade:
 
         """
         task, _ = self.service.api.get_task(project_id, task_id)
-
         req = {
             "status": "working",
             "account_id": account_id,
