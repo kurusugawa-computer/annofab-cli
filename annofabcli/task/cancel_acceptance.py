@@ -1,29 +1,100 @@
-"""
-受け入れ完了タスクを、受け入れ取り消しする。
-"""
-
+import sys
 import argparse
 import logging
-from typing import List, Optional
+import multiprocessing
+from functools import partial
+from typing import List, Optional, Tuple
 
+import annofabapi
 import requests
 from annofabapi.models import ProjectMemberRole
 
 import annofabcli
 import annofabcli.common.cli
 from annofabcli import AnnofabApiFacade
-from annofabcli.common.cli import AbstractCommandLineInterface, build_annofabapi_resource_and_login
+from annofabcli.common.cli import (
+    AbstracCommandCinfirmInterface,
+    AbstractCommandLineInterface,
+    build_annofabapi_resource_and_login,
+)
 
 logger = logging.getLogger(__name__)
 
 
-class CancelAcceptance(AbstractCommandLineInterface):
-    def cancel_acceptance(
+class CancelAcceptanceMain(AbstracCommandCinfirmInterface):
+    def __init__(self, service: annofabapi.Resource, all_yes: bool = False):
+        self.service = service
+        self.facade = AnnofabApiFacade(service)
+        AbstracCommandCinfirmInterface.__init__(self, all_yes)
+
+    def cancel_acceptance_for_task(
+        self,
+        project_id: str,
+        task_id: str,
+        acceptor_user_id: Optional[str] = None,
+        assign_last_acceptor: bool = True,
+        task_index: Optional[int] = None,
+    ) -> bool:
+        logging_prefix = f"{task_index + 1} 件目" if task_index is not None else ""
+
+        try:
+            task, _ = self.service.api.get_task(project_id, task_id)
+            if task["status"] != "complete":
+                logger.warning(f"{logging_prefix}: task_id = {task_id} は受入完了でありません。status = {task['status']}, phase={task['phase']}")
+                return False
+
+            acceptor_account_id = None
+            if assign_last_acceptor:
+                acceptor_account_id = task["account_id"]
+                if acceptor_account_id is not None:
+                    user_info = self.facade.get_organization_member_from_account_id(project_id, acceptor_account_id)
+                    if user_info is not None:
+                        acceptor_user_id = user_info["user_id"]
+
+            if not self.confirm_processing(
+                f"{logging_prefix}: task_id = {task_id} のタスクの受入を取り消しますか？ user_id = '{acceptor_user_id}' に割り当てます。"
+            ):
+                return False
+
+            request_body = {
+                "status": "not_started",
+                "account_id": acceptor_account_id,
+                "last_updated_datetime": task["updated_datetime"],
+            }
+            self.service.api.operate_task(project_id, task_id, request_body=request_body)
+            logger.info(
+                f"{logging_prefix} : task_id = {task_id} の受け入れ取り消しが成功しました。 user_id = '{acceptor_user_id}' に割り当てます。"
+            )
+            return True
+
+        except requests.exceptions.HTTPError as e:
+            logger.warning(f"{logging_prefix} : task_id = {task_id} の受け入れ取り消しに失敗しました。")
+            logger.warning(e)
+            return False
+
+    def cancel_acceptance_for_wrapper(
+        self,
+        tpl: Tuple[int, str],
+        project_id: str,
+        acceptor_user_id: Optional[str] = None,
+        assign_last_acceptor: bool = True,
+    ) -> bool:
+        task_index, task_id = tpl
+        return self.cancel_acceptance_for_task(
+            project_id=project_id,
+            task_id=task_id,
+            acceptor_user_id=acceptor_user_id,
+            assign_last_acceptor=assign_last_acceptor,
+            task_index=task_index,
+        )
+
+    def cancel_acceptance_for_task_list(
         self,
         project_id: str,
         task_id_list: List[str],
         acceptor_user_id: Optional[str] = None,
         assign_last_acceptor: bool = True,
+        parallelism: Optional[int] = None,
     ):
         """
         タスクを受け入れ取り消しする
@@ -34,71 +105,68 @@ class CancelAcceptance(AbstractCommandLineInterface):
             acceptor_user_id: 再度受入を担当させたいユーザのuser_id. Noneならば、未割り当てにする
             assign_last_acceptor: trueなら最後の受入担当者に割り当てる
         """
-
-        super().validate_project(project_id, [ProjectMemberRole.OWNER])
-
-        if not assign_last_acceptor:
-            acceptor_account_id = (
-                self.facade.get_account_id_from_user_id(project_id, acceptor_user_id)
-                if acceptor_user_id is not None
-                else None
-            )
-        else:
-            acceptor_account_id = None
-
         logger.info(f"受け入れを取り消すタスク数: {len(task_id_list)}")
 
         success_count = 0
-        for task_index, task_id in enumerate(task_id_list):
-            str_progress = annofabcli.utils.progress_msg(task_index + 1, len(task_id_list))
+        if parallelism is not None:
+            partial_func = partial(
+                self.cancel_acceptance_for_wrapper,
+                project_id=project_id,
+                acceptor_user_id=acceptor_user_id,
+                assign_last_acceptor=assign_last_acceptor,
+            )
+            with multiprocessing.Pool(parallelism) as pool:
+                result_bool_list = pool.map(partial_func, enumerate(task_id_list))
+                success_count = len([e for e in result_bool_list if e])
 
-            try:
-                task, _ = self.service.api.get_task(project_id, task_id)
-                if task["status"] != "complete":
-                    logger.warning(f"task_id = {task_id} は受入完了でありません。status = {task['status']}, phase={task['phase']}")
-                    continue
-
-                if assign_last_acceptor:
-                    acceptor_account_id = task["account_id"]
-                    if acceptor_account_id is not None:
-                        user_info = self.facade.get_organization_member_from_account_id(project_id, acceptor_account_id)
-                        if user_info is not None:
-                            acceptor_user_id = user_info["user_id"]
-
-                if not super().confirm_processing_task(
-                    task_id, f"task_id = {task_id} のタスクの受入を取り消しますか？ user_id = '{acceptor_user_id}' に割り当てます。"
-                ):
-                    continue
-
-                request_body = {
-                    "status": "not_started",
-                    "account_id": acceptor_account_id,
-                    "last_updated_datetime": task["updated_datetime"],
-                }
-                self.service.api.operate_task(project_id, task_id, request_body=request_body)
-                logger.info(
-                    f"{str_progress} : task_id = {task_id} の受け入れ取り消しが成功しました。 user_id = '{acceptor_user_id}' に割り当てます。"
+        else:
+            # 逐次処理
+            success_count = 0
+            for task_index, task_id in enumerate(task_id_list):
+                result = self.cancel_acceptance_for_task(
+                    project_id,
+                    task_id,
+                    task_index=task_index,
+                    acceptor_user_id=acceptor_user_id,
+                    assign_last_acceptor=assign_last_acceptor,
                 )
-                success_count += 1
+                if result:
+                    success_count += 1
 
-            except requests.exceptions.HTTPError as e:
-                logger.warning(e)
-                logger.warning(f"{str_progress} : task_id = {task_id} の受け入れ取り消しに失敗しました。")
+        logger.info(f"{success_count} / {len(task_id_list)} 件 受け入れ取り消しに成功しました。")
 
-        logger.info(f"{success_count} / {len(task_id_list)} 件 受け入れ取り消しに成功した")
+
+class CancelAcceptance(AbstractCommandLineInterface):
+    @staticmethod
+    def validate(args: argparse.Namespace) -> bool:
+        COMMON_MESSAGE = "annofabcli task cancel_acceptance: error:"
+
+        if args.parallelism is not None and not args.yes:
+            print(
+                f"{COMMON_MESSAGE} argument --parallelism: '--parallelism'を指定するときは、必ず'--yes'を指定してください。",
+                file=sys.stderr,
+            )
+            return False
+
+        return True
 
     def main(self):
         args = self.args
+        if not self.validate(args):
+            return
 
         task_id_list = annofabcli.common.cli.get_list_from_args(args.task_id)
 
         assign_last_acceptor = not args.not_assign and args.assigned_acceptor_user_id is None
 
-        self.cancel_acceptance(
+        super().validate_project(args.project_id, [ProjectMemberRole.OWNER])
+        main_obj = CancelAcceptanceMain(self.service, all_yes=args.yes)
+        main_obj.cancel_acceptance_for_task_list(
             args.project_id,
             task_id_list,
             acceptor_user_id=args.assigned_acceptor_user_id,
             assign_last_acceptor=assign_last_acceptor,
+            parallelism=args.parallelism
         )
 
 
@@ -132,6 +200,9 @@ def parse_args(parser: argparse.ArgumentParser):
         "--assigned_acceptor_user_id",
         type=str,
         help="受入を取り消した後に割り当てる受入作業者のuser_idを指定します。" "指定しない場合は、最後の受入phaseの担当者が割り当てます。",
+    )
+    parser.add_argument(
+        "--parallelism", type=int, help="使用するプロセス数（並列度）を指定してください。指定する場合は必ず'--yes'を指定してください。指定しない場合は、逐次的に処理します。"
     )
 
     parser.set_defaults(subcommand_func=main)
