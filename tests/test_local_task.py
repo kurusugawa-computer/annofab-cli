@@ -1,4 +1,4 @@
-from annofabcli.task.complete_tasks import ComleteTasks
+from annofabcli.task.complete_tasks import CompleteTasksMain
 
 
 def test_inspection_list_to_dict():
@@ -20,4 +20,4 @@ def test_inspection_list_to_dict():
         },
     }
 
-    assert ComleteTasks.inspection_list_to_dict(inspection_list) == expected
+    assert CompleteTasksMain.inspection_list_to_dict(inspection_list) == expected
