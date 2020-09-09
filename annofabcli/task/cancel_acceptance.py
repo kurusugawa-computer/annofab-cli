@@ -1,7 +1,7 @@
-import sys
 import argparse
 import logging
 import multiprocessing
+import sys
 from functools import partial
 from typing import List, Optional, Tuple
 
@@ -40,7 +40,10 @@ class CancelAcceptanceMain(AbstracCommandCinfirmInterface):
         try:
             task, _ = self.service.api.get_task(project_id, task_id)
             if task["status"] != "complete":
-                logger.warning(f"{logging_prefix}: task_id = {task_id} は受入完了でありません。status = {task['status']}, phase={task['phase']}")
+                logger.warning(
+                    f"{logging_prefix}: task_id = {task_id} は受入完了でありません。"
+                    f"status = {task['status']}, phase={task['phase']}"
+                )
                 return False
 
             acceptor_account_id = None
@@ -166,7 +169,7 @@ class CancelAcceptance(AbstractCommandLineInterface):
             task_id_list,
             acceptor_user_id=args.assigned_acceptor_user_id,
             assign_last_acceptor=assign_last_acceptor,
-            parallelism=args.parallelism
+            parallelism=args.parallelism,
         )
 
 
