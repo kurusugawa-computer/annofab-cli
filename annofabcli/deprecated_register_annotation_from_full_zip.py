@@ -276,7 +276,7 @@ class RegisterAnnotation:
                         filter_details=filter_details,
                     )
 
-                    self.facade.change_to_break_phase(project_id, task_id, account_id)
+                    self.facade.change_to_break_phase(project_id, task_id)
 
                     logger.info(f"{task_id}, {input_data_id} アノテーションの登録完了")
 

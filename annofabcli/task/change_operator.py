@@ -81,10 +81,9 @@ class ChangeOperatorMain:
         dict_task, _ = self.service.api.get_task(project_id, task_id)
         task: Task = Task.from_dict(dict_task)  # type: ignore
 
+        now_user_id = None
         if task.account_id is not None:
             now_user_id = self.facade.get_user_id_from_account_id(project_id, task.account_id)
-        else:
-            now_user_id = None
 
         logger.debug(
             f"{logging_prefix} : task_id = {task.task_id}, "
@@ -121,8 +120,8 @@ class ChangeOperatorMain:
             return True
 
         except requests.exceptions.HTTPError as e:
-            logger.warning(e)
             logger.warning(f"{logging_prefix} : task_id = {task_id} の担当者を変更するのに失敗しました。")
+            logger.warning(e)
             return False
 
     def change_operator_for_task_wrapper(
