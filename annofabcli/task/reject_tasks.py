@@ -4,7 +4,7 @@ import multiprocessing
 import sys
 import uuid
 from functools import partial
-from typing import Any, Dict, List, Optional
+from typing import Any, Dict, List, Optional, Tuple
 
 import annofabapi
 import annofabapi.utils
@@ -247,6 +247,28 @@ class RejectTasksMain(AbstracCommandCinfirmInterface):
             if new_task["status"] == TaskStatus.WORKING.value and new_task["account_id"] == self.service.api.account_id:
                 self.facade.change_to_break_phase(project_id, task_id)
             return False
+
+    def reject_task_for_task_wrapper(
+        self,
+        tpl: Tuple[int, str],
+        project_id: str,
+        project_input_data_type: InputDataType,
+        inspection_comment: Optional[str] = None,
+        assign_last_annotator: bool = True,
+        assigned_annotator_user_id: Optional[str] = None,
+        cancel_acceptance: bool = False,
+    ) -> bool:
+        task_index, task_id = tpl
+        return self.reject_task_with_adding_comment(
+            project_id=project_id,
+            task_id=task_id,
+            task_index=task_index,
+            project_input_data_type=project_input_data_type,
+            inspection_comment=inspection_comment,
+            assign_last_annotator=assign_last_annotator,
+            assigned_annotator_user_id=assigned_annotator_user_id,
+            cancel_acceptance=cancel_acceptance,
+        )
 
     def reject_task_list(
         self,

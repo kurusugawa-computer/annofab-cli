@@ -195,7 +195,9 @@ class CompleteTasksMain(AbstracCommandCinfirmInterface):
                 self.facade.change_operator_of_task(task.project_id, task.task_id, my_account_id)
                 logger.debug(f"{task.task_id}: 担当者を自分自身に変更しました。")
 
-            dict_task = self.facade.change_to_working_status(project_id=task.project_id,task_id=task.task_id, account_id=my_account_id)
+            dict_task = self.facade.change_to_working_status(
+                project_id=task.project_id, task_id=task.task_id, account_id=my_account_id
+            )
             return Task.from_dict(dict_task)  # type: ignore
 
         except requests.HTTPError as e:
@@ -408,7 +410,7 @@ class CompleteTasksMain(AbstracCommandCinfirmInterface):
             target_phase=target_phase,
             target_phase_stage=target_phase_stage,
             reply_comment=reply_comment,
-            inspection_status=inspection_status
+            inspection_status=inspection_status,
         )
 
     def complete_task_list(
