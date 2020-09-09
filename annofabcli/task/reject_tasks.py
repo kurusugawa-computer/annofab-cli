@@ -1,6 +1,7 @@
 import argparse
 import logging
 import multiprocessing
+import sys
 import uuid
 from functools import partial
 from typing import Any, Dict, List, Optional
@@ -8,7 +9,7 @@ from typing import Any, Dict, List, Optional
 import annofabapi
 import annofabapi.utils
 import requests
-from annofabapi.models import InputDataType, TaskPhase, TaskStatus
+from annofabapi.models import InputDataType, ProjectMemberRole, TaskPhase, TaskStatus
 
 import annofabcli
 import annofabcli.common.cli
@@ -298,11 +299,29 @@ class RejectTasksMain(AbstracCommandCinfirmInterface):
 
 
 class RejectTasks(AbstractCommandLineInterface):
+    @staticmethod
+    def validate(args: argparse.Namespace) -> bool:
+        COMMON_MESSAGE = "annofabcli task reject: error:"
+
+        if args.parallelism is not None and not args.yes:
+            print(
+                f"{COMMON_MESSAGE} argument --parallelism: '--parallelism'を指定するときは、必ず'--yes'を指定してください。",
+                file=sys.stderr,
+            )
+            return False
+
+        return True
+
     def main(self):
         args = self.args
+        if not self.validate(args):
+            return
 
         task_id_list = annofabcli.common.cli.get_list_from_args(args.task_id)
         assign_last_annotator = not args.not_assign and args.assigned_annotator_user_id is None
+
+        super().validate_project(args.project_id, [ProjectMemberRole.OWNER])
+
         main_obj = RejectTasksMain(self.service, all_yes=self.all_yes)
         main_obj.reject_task_list(
             args.project_id,

@@ -405,7 +405,7 @@ class AnnofabApiFacade:
         # 強制的に差し戻すと、タスクの担当者は直前の教師付け(annotation)フェーズの担当者を割り当てられるので、`operate_task`を実行しない。
         return rejected_task
 
-    def complete_task(self, project_id: str, task_id: str, account_id: str) -> Dict[str, Any]:
+    def complete_task(self, project_id: str, task_id: str) -> Dict[str, Any]:
         """
         タスクを完了状態にする。
         注意：サーバ側ではタスクの検査は実施されない。
@@ -415,7 +415,7 @@ class AnnofabApiFacade:
 
         req = {
             "status": "complete",
-            "account_id": account_id,
+            "account_id": self.service.api.account_id,
             "last_updated_datetime": task["updated_datetime"],
         }
         return self.service.api.operate_task(project_id, task_id, request_body=req)[0]
