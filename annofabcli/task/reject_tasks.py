@@ -288,7 +288,7 @@ class RejectTasksMain(AbstracCommandCinfirmInterface):
 
         if parallelism is not None:
             partial_func = partial(
-                self.reject_task_with_adding_comment,
+                self.reject_task_for_task_wrapper,
                 project_id=project_id,
                 project_input_data_type=project_input_data_type,
                 inspection_comment=inspection_comment,
