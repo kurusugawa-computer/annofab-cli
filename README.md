@@ -186,6 +186,10 @@ root:
 disable_existing_loggers: False
 ```
 
+
+### `--parallelism`
+並列数を指定します。指定しない場合は、逐次的に処理します。
+
 ### `--yes`
 処理中に現れる問い合わせに対して、常に'yes'と回答します。
 
@@ -1609,7 +1613,6 @@ $ annofabcli task reject --project_id prj1 --task_id file://tasks.txt \
 # 差し戻したタスクに、ユーザuser1を割り当てる
 $ annofabcli task reject --project_id prj1 --task_id file://tasks.txt \
  --comment "hoge" --assigned_annotator_user_id user1
-
 
 ```
 
