@@ -56,9 +56,7 @@ class RestoreAnnotation(AbstractCommandLineInterface):
 
     def parser_to_request_body(self, project_id: str, parser: SimpleAnnotationParser) -> Dict[str, Any]:
 
-        annotation: Annotation = Annotation.from_dict(  # type: ignore
-            parser.load_json()
-        )
+        annotation: Annotation = Annotation.from_dict(parser.load_json())  # type: ignore
         request_details: List[Dict[str, Any]] = []
         for detail in annotation.details:
             request_detail = self._to_annotation_detail_for_request(project_id, parser, detail)
@@ -188,7 +186,10 @@ def parse_args(parser: argparse.ArgumentParser):
     argument_parser.add_project_id()
 
     parser.add_argument(
-        "--annotation", type=str, required=True, help="'annotation dump'コマンドの保存先ディレクトリのパスを指定してください。",
+        "--annotation",
+        type=str,
+        required=True,
+        help="'annotation dump'コマンドの保存先ディレクトリのパスを指定してください。",
     )
 
     argument_parser.add_task_id(required=False)

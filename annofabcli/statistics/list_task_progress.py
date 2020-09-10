@@ -28,7 +28,7 @@ class TaskProgress(AbstractCommandLineInterface):
             タスクの進捗状況に対応するdict配列
 
         """
-        task_statistics, _ = self.service.api.get_task_statistics(project_id)
+        task_statistics = self.service.wrapper.get_task_statistics(project_id)
         row_list: List[Dict[str, Any]] = []
         for stat_by_date in task_statistics:
             date = stat_by_date["date"]

@@ -1,3 +1,4 @@
+import copy
 import json
 import logging.config
 import os
@@ -14,6 +15,7 @@ import requests
 import yaml
 
 import annofabcli
+from annofabcli.common.cli import DEFAULT_CSV_FORMAT
 from annofabcli.common.enums import FormatArgument
 from annofabcli.common.exceptions import AnnofabCliException
 
@@ -141,10 +143,12 @@ def print_csv(df: pandas.DataFrame, output: Optional[str] = None, to_csv_kwargs:
 
     path_or_buf = sys.stdout if output is None else output
 
+    kwargs = copy.deepcopy(DEFAULT_CSV_FORMAT)
     if to_csv_kwargs is None:
-        df.to_csv(path_or_buf)
+        df.to_csv(path_or_buf, **kwargs)
     else:
-        df.to_csv(path_or_buf, **to_csv_kwargs)
+        kwargs.update(to_csv_kwargs)
+        df.to_csv(path_or_buf, **kwargs)
 
     if output is not None:
         logger.info(f"{output} に出力しました。")
@@ -318,7 +322,7 @@ def get_cache_dir() -> Path:
     return cache_home_dir_path / "annofabcli"
 
 
-def read_multiheader_csv(csv_file: str, header_row_count: int = 2) -> pandas.DataFrame:
+def read_multiheader_csv(csv_file: str, header_row_count: int = 2, **kwargs) -> pandas.DataFrame:
     """
     複数ヘッダ行のCSVを読み込む。その際、"Unnnamed"の列名は空文字に変更する。
 
@@ -330,12 +334,15 @@ def read_multiheader_csv(csv_file: str, header_row_count: int = 2) -> pandas.Dat
         pandas.DataFrame
 
     """
-    df = pandas.read_csv(csv_file, header=list(range(header_row_count)))
-    for level in range(1, header_row_count):
+    kwargs["header"] = list(range(header_row_count))
+    df = pandas.read_csv(csv_file, **kwargs)
+    for level in range(0, header_row_count):
         columns = df.columns.levels[level]
         rename_columns = {c: "" for c in columns if re.fullmatch(r"Unnamed: .*", c) is not None}
         df.rename(
-            columns=rename_columns, level=level, inplace=True,
+            columns=rename_columns,
+            level=level,
+            inplace=True,
         )
     return df
 

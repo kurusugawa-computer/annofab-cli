@@ -323,7 +323,6 @@ class AnnofabApiFacade:
 
         """
         task, _ = self.service.api.get_task(project_id, task_id)
-
         req = {
             "status": "working",
             "account_id": account_id,
@@ -331,7 +330,7 @@ class AnnofabApiFacade:
         }
         return self.service.api.operate_task(project_id, task_id, request_body=req)[0]
 
-    def change_to_break_phase(self, project_id: str, task_id: str, account_id: str) -> Dict[str, Any]:
+    def change_to_break_phase(self, project_id: str, task_id: str) -> Dict[str, Any]:
         """
         タスクを休憩中に変更する
         Returns:
@@ -341,7 +340,7 @@ class AnnofabApiFacade:
 
         req = {
             "status": "break",
-            "account_id": account_id,
+            "account_id": self.service.api.account_id,
             "last_updated_datetime": task["updated_datetime"],
         }
         return self.service.api.operate_task(project_id, task_id, request_body=req)[0]
@@ -381,7 +380,7 @@ class AnnofabApiFacade:
         updated_task, _ = self.service.api.operate_task(project_id, task["task_id"], request_body=req_change_operator)
         return updated_task
 
-    def reject_task_assign_last_annotator(self, project_id: str, task_id: str, account_id: str) -> Dict[str, Any]:
+    def reject_task_assign_last_annotator(self, project_id: str, task_id: str) -> Dict[str, Any]:
         """
         タスクを差し戻したあとに、最後のannotation phase担当者に割り当てる。
 
@@ -397,7 +396,7 @@ class AnnofabApiFacade:
         task, _ = self.service.api.get_task(project_id, task_id)
         req_reject = {
             "status": "rejected",
-            "account_id": account_id,
+            "account_id": self.service.api.account_id,
             "last_updated_datetime": task["updated_datetime"],
             "force": True,
         }
@@ -405,7 +404,7 @@ class AnnofabApiFacade:
         # 強制的に差し戻すと、タスクの担当者は直前の教師付け(annotation)フェーズの担当者を割り当てられるので、`operate_task`を実行しない。
         return rejected_task
 
-    def complete_task(self, project_id: str, task_id: str, account_id: str) -> Dict[str, Any]:
+    def complete_task(self, project_id: str, task_id: str) -> Dict[str, Any]:
         """
         タスクを完了状態にする。
         注意：サーバ側ではタスクの検査は実施されない。
@@ -415,7 +414,7 @@ class AnnofabApiFacade:
 
         req = {
             "status": "complete",
-            "account_id": account_id,
+            "account_id": self.service.api.account_id,
             "last_updated_datetime": task["updated_datetime"],
         }
         return self.service.api.operate_task(project_id, task_id, request_body=req)[0]

@@ -6,9 +6,16 @@ from annofabcli.experimental import (
     dashboard,
     find_break_error,
     list_labor_worktime,
+    list_out_of_range_annotation_for_movie,
+    mask_user_info,
+    merge_peformance_per_date,
     merge_peformance_per_user,
-    write_peformance_per_user,
-    write_scatter_per_user,
+    merge_visualization_dir,
+    write_linegraph_per_user,
+    write_performance_csv_per_user,
+    write_performance_scatter_per_user,
+    write_task_histogram,
+    write_whole_linegraph,
 )
 
 
@@ -18,10 +25,17 @@ def parse_args(parser: argparse.ArgumentParser):
     # サブコマンドの定義
     dashboard.add_parser(subparsers)
     list_labor_worktime.add_parser(subparsers)
+    list_out_of_range_annotation_for_movie.add_parser(subparsers)
     find_break_error.add_parser(subparsers)
+    mask_user_info.add_parser(subparsers)
+    merge_peformance_per_date.add_parser(subparsers)
     merge_peformance_per_user.add_parser(subparsers)
-    write_peformance_per_user.add_parser(subparsers)
-    write_scatter_per_user.add_parser(subparsers)
+    merge_visualization_dir.add_parser(subparsers)
+    write_linegraph_per_user.add_parser(subparsers)
+    write_performance_csv_per_user.add_parser(subparsers)
+    write_performance_scatter_per_user.add_parser(subparsers)
+    write_task_histogram.add_parser(subparsers)
+    write_whole_linegraph.add_parser(subparsers)
 
 
 def add_parser(subparsers: argparse._SubParsersAction):

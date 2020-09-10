@@ -81,7 +81,9 @@ class Table:
     _labor_list: Optional[List[Dict[str, Any]]] = None
 
     def __init__(
-        self, database: Database, ignored_task_id_list: Optional[List[str]] = None,
+        self,
+        database: Database,
+        ignored_task_id_list: Optional[List[str]] = None,
     ):
         self.annofab_service = database.annofab_service
         self.annofab_facade = AnnofabApiFacade(database.annofab_service)
@@ -113,11 +115,8 @@ class Table:
         if self._account_statistics is not None:
             return self._account_statistics
         else:
-            content: List[Any] = self.annofab_service.api.get_account_statistics(self.project_id)[0]
-            account_statistics = [
-                ProjectAccountStatisticsHistory.from_dict(e)  # type: ignore
-                for e in content
-            ]
+            content: List[Any] = self.annofab_service.wrapper.get_account_statistics(self.project_id)[0]
+            account_statistics = [ProjectAccountStatisticsHistory.from_dict(e) for e in content]  # type: ignore
             self._account_statistics = account_statistics
             return account_statistics
 
@@ -748,14 +747,15 @@ class Table:
         """
         new_df = task_df
         new_df["first_annotation_started_date"] = new_df["first_annotation_started_datetime"].map(
-            lambda e: datetime_to_date(e) if e is not None else None
+            lambda e: datetime_to_date(e) if e is not None and isinstance(e, str) else None
         )
         new_df["task_count"] = 1  # 集計用
 
         # first_annotation_user_id と first_annotation_usernameの両方を指定している理由：
         # first_annotation_username を取得するため
         group_obj = new_df.groupby(
-            ["first_annotation_started_date", "first_annotation_user_id", "first_annotation_username"], as_index=False,
+            ["first_annotation_started_date", "first_annotation_user_id", "first_annotation_username"],
+            as_index=False,
         )
         sum_df = group_obj[
             [
@@ -950,13 +950,13 @@ class Table:
             task_df: タスク一覧のDataFrame. 列が追加される
         """
         # 教師付の開始時刻でソートして、indexを更新する
-        df = task_df.sort_values(["first_annotation_account_id", "first_annotation_started_datetime"]).reset_index(
+        df = task_df.sort_values(["first_annotation_user_id", "first_annotation_started_datetime"]).reset_index(
             drop=True
         )
         # タスクの累計数を取得するために設定する
         df["task_count"] = 1
         # 教師付の作業者でgroupby
-        groupby_obj = df.groupby("first_annotation_account_id")
+        groupby_obj = df.groupby("first_annotation_user_id")
 
         # 作業時間の累積値
         df["cumulative_annotation_worktime_hour"] = groupby_obj["annotation_worktime_hour"].cumsum()
@@ -985,13 +985,13 @@ class Table:
             task_df: タスク一覧のDataFrame. 列が追加される
         """
 
-        df = task_df.sort_values(["first_inspection_account_id", "first_inspection_started_datetime"]).reset_index(
+        df = task_df.sort_values(["first_inspection_user_id", "first_inspection_started_datetime"]).reset_index(
             drop=True
         )
         # タスクの累計数を取得するために設定する
         df["task_count"] = 1
         # 教師付の作業者でgroupby
-        groupby_obj = df.groupby("first_inspection_account_id")
+        groupby_obj = df.groupby("first_inspection_user_id")
 
         # 作業時間の累積値
         df["cumulative_annotation_worktime_hour"] = groupby_obj["annotation_worktime_hour"].cumsum()
@@ -1020,12 +1020,12 @@ class Table:
             task_df: タスク一覧のDataFrame. 列が追加される
         """
 
-        df = task_df.sort_values(["first_acceptance_account_id", "first_acceptance_started_datetime"]).reset_index(
+        df = task_df.sort_values(["first_acceptance_user_id", "first_acceptance_started_datetime"]).reset_index(
             drop=True
         )
         # タスクの累計数を取得するために設定する
         df["task_count"] = 1
-        groupby_obj = df.groupby("first_acceptance_account_id")
+        groupby_obj = df.groupby("first_acceptance_user_id")
 
         # 作業時間の累積値
         df["cumulative_acceptance_worktime_hour"] = groupby_obj["acceptance_worktime_hour"].cumsum()
@@ -1217,7 +1217,10 @@ class Table:
                 return max_date
 
         def merge_row(row1: pandas.Series, row2: pandas.Series) -> pandas.Series:
-            sum_row = row1.fillna(0) + row2.fillna(0)
+            string_column_list = ["username", "biography", "last_working_date"]
+            sum_row = row1.drop(labels=string_column_list, level=0).fillna(0) + row2.drop(
+                labels=string_column_list, level=0
+            ).fillna(0)
             sum_row.loc["username", ""] = row1.loc["username", ""]
             sum_row.loc["biography", ""] = row1.loc["biography", ""]
             sum_row.loc["last_working_date", ""] = max_last_working_date(
@@ -1257,9 +1260,13 @@ class Table:
 
         if len(df_labor) > 0:
             df_agg_labor = df_labor.pivot_table(values="worktime_result_hour", index="user_id", aggfunc=numpy.sum)
-            df_agg_labor["last_working_date"] = df_labor[df_labor["worktime_result_hour"] > 0].pivot_table(
+            df_tmp = df_labor[df_labor["worktime_result_hour"] > 0].pivot_table(
                 values="date", index="user_id", aggfunc=numpy.max
             )
+            if len(df_tmp) > 0:
+                df_agg_labor["last_working_date"] = df_tmp
+            else:
+                df_agg_labor["last_working_date"] = numpy.nan
             df = df_agg_task_history.join(df_agg_labor)
         else:
             df = df_agg_task_history
@@ -1375,7 +1382,9 @@ class Table:
             "acceptance_worktime_hour",
         ]
         df_agg_sub_task = df_sub_task.pivot_table(
-            values=value_columns, index="task_completed_date", aggfunc=numpy.sum,
+            values=value_columns,
+            index="task_completed_date",
+            aggfunc=numpy.sum,
         ).fillna(0)
         if len(df_agg_sub_task) > 0:
             df_agg_sub_task["task_count"] = df_sub_task.pivot_table(
@@ -1389,11 +1398,16 @@ class Table:
             df_agg_labor = df_labor.pivot_table(
                 values=["worktime_result_hour"], index="date", aggfunc=numpy.sum
             ).fillna(0)
-            df_agg_labor["working_user_count"] = (
+            df_tmp = (
                 df_labor[df_labor["worktime_result_hour"] > 0]
                 .pivot_table(values=["user_id"], index="date", aggfunc="count")
                 .fillna(0)
             )
+
+            if len(df_tmp) > 0:
+                df_agg_labor["working_user_count"] = df_tmp
+            else:
+                df_agg_labor["working_user_count"] = 0
         else:
             df_agg_labor = pandas.DataFrame(columns=["worktime_result_hour", "working_user_count"])
 
@@ -1420,6 +1434,15 @@ class Table:
         """
         日毎の全体の生産量、生産性を算出する。
         """
+        df_date = Table._create_dataframe_per_date(df_task, df_labor)
+        Table._add_ratio_cumsum_column_for_productivity_per_date(df_date)
+        return df_date
+
+    @staticmethod
+    def _add_ratio_cumsum_column_for_productivity_per_date(df: pandas.DataFrame) -> pandas.DataFrame:
+        """
+        日毎の全体の生産量から、累計情報、生産性の列を追加する。
+        """
 
         def add_cumsum_column(df: pandas.DataFrame, column: str):
             """累積情報の列を追加"""
@@ -1435,23 +1458,77 @@ class Table:
                 / df_date[denominator_column].rolling(MOVING_WINDOW_SIZE, min_periods=MIN_WINDOW_SIZE).sum()
             )
 
-        df_date = Table._create_dataframe_per_date(df_task, df_labor)
-
         # 累計情報を追加
-        add_cumsum_column(df_date, column="task_count")
-        add_cumsum_column(df_date, column="input_data_count")
-        add_cumsum_column(df_date, column="actual_worktime_hour")
+        add_cumsum_column(df, column="task_count")
+        add_cumsum_column(df, column="input_data_count")
+        add_cumsum_column(df, column="actual_worktime_hour")
 
         # annofab 計測時間から算出したvelocityを追加
-        add_velocity_column(df_date, numerator_column="monitored_worktime_hour", denominator_column="task_count")
-        add_velocity_column(df_date, numerator_column="monitored_worktime_hour", denominator_column="input_data_count")
-        add_velocity_column(df_date, numerator_column="monitored_worktime_hour", denominator_column="annotation_count")
+        add_velocity_column(df, numerator_column="monitored_worktime_hour", denominator_column="task_count")
+        add_velocity_column(df, numerator_column="monitored_worktime_hour", denominator_column="input_data_count")
+        add_velocity_column(df, numerator_column="monitored_worktime_hour", denominator_column="annotation_count")
 
         # 実績作業時間から算出したvelocityを追加
-        add_velocity_column(df_date, numerator_column="actual_worktime_hour", denominator_column="task_count")
-        add_velocity_column(df_date, numerator_column="actual_worktime_hour", denominator_column="input_data_count")
-        add_velocity_column(df_date, numerator_column="actual_worktime_hour", denominator_column="annotation_count")
+        add_velocity_column(df, numerator_column="actual_worktime_hour", denominator_column="task_count")
+        add_velocity_column(df, numerator_column="actual_worktime_hour", denominator_column="input_data_count")
+        add_velocity_column(df, numerator_column="actual_worktime_hour", denominator_column="annotation_count")
 
         # CSVには"INF"という文字を出力したくないので、"INF"をNaNに置換する
-        df_date.replace([numpy.inf, -numpy.inf], numpy.nan, inplace=True)
-        return df_date
+        df.replace([numpy.inf, -numpy.inf], numpy.nan, inplace=True)
+        return df
+
+    @staticmethod
+    def merge_whole_productivity_per_date(df1: pandas.DataFrame, df2: pandas.DataFrame) -> pandas.DataFrame:
+        """
+        日毎の全体の生産量、生産性が格納されたDataFrameを結合する。
+
+        Args:
+            df1:
+            df2:
+
+        Returns:
+            マージ済のユーザごとの生産性・品質情報
+        """
+
+        def merge_row(
+            str_date: str, columns: pandas.Index, row1: Optional[pandas.Series], row2: Optional[pandas.Series]
+        ) -> pandas.Series:
+            if row1 is not None and row2 is not None:
+                sum_row = row1.fillna(0) + row2.fillna(0)
+            elif row1 is not None and row2 is None:
+                sum_row = row1.fillna(0)
+            elif row1 is None and row2 is not None:
+                sum_row = row2.fillna(0)
+            else:
+                sum_row = pandas.Series(index=columns)
+
+            sum_row.name = str_date
+            return sum_row
+
+        def date_range():
+            lower_date = min(df1["date"].min(), df2["date"].min())
+            upper_date = max(df1["date"].max(), df2["date"].max())
+            return pandas.date_range(start=lower_date, end=upper_date)
+
+        tmp_df1 = df1.set_index("date")
+        tmp_df2 = df2.set_index("date")
+
+        row_list: List[pandas.Series] = []
+        for dt in date_range():
+            str_date = str(dt.date())
+            if str_date in tmp_df1.index:
+                row1 = tmp_df1.loc[str_date]
+            else:
+                row1 = None
+            if str_date in tmp_df2.index:
+                row2 = tmp_df2.loc[str_date]
+            else:
+                row2 = None
+
+            sum_row = merge_row(str_date=str_date, columns=tmp_df1.columns, row1=row1, row2=row2)
+            row_list.append(sum_row)
+
+        sum_df = pandas.DataFrame(row_list)
+        sum_df.index.name = "date"
+        Table._add_ratio_cumsum_column_for_productivity_per_date(sum_df)
+        return sum_df.reset_index()

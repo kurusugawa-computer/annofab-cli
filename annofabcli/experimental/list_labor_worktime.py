@@ -61,7 +61,7 @@ class Database:
         return labor_control_df
 
     def get_account_statistics(self) -> List[Dict[str, Any]]:
-        account_statistics = self.annofab_service.api.get_account_statistics(self.project_id)[0]
+        account_statistics = self.annofab_service.wrapper.get_account_statistics(self.project_id)
         return account_statistics
 
     def get_project_members(self) -> dict:
@@ -92,6 +92,9 @@ class Table:
                     "worktime_actual": np.nan
                     if labor["values"]["working_time_by_user"]["results"] is None
                     else int(labor["values"]["working_time_by_user"]["results"]) / 60000,
+                    "working_description": labor["values"]["working_time_by_user"]["description"]
+                    if labor["values"]["working_time_by_user"]["results"] is not None
+                    else None,
                 }
                 labor_control_list.append(new_history)
 
@@ -217,12 +220,13 @@ class ListLaborWorktime(AbstractCommandLineInterface):
     def _get_project_title_list(self, project_id_list: List[str]) -> List[str]:
         return [self.facade.get_project_title(project_id) for project_id in project_id_list]
 
-    def list_labor_worktime(self, project_id: str, start_date: str, end_date: str):
+    def list_labor_worktime(self, project_id: str, start_date: str, end_date: str) -> pd.DataFrame:
 
-        """
-        """
+        """"""
 
-        super().validate_project(project_id, project_member_roles=[ProjectMemberRole.OWNER])
+        super().validate_project(
+            project_id, project_member_roles=[ProjectMemberRole.OWNER, ProjectMemberRole.TRAINING_DATA_USER]
+        )
         # プロジェクト or 組織に対して、必要な権限が付与されているかを確認
 
         organization_id = get_organization_id_from_project_id(self.service, project_id)
@@ -262,11 +266,13 @@ class ListLaborWorktime(AbstractCommandLineInterface):
         logger.info(f"{len(project_id_list)} 件のプロジェクトを取得します。")
         for i, project_id in enumerate(list(set(project_id_list))):
             logger.debug(f"{i + 1} 件目: project_id = {project_id}")
-
-            afaw_time_df = self.list_labor_worktime(
-                project_id, start_date.strftime("%Y-%m-%d"), end_date.strftime("%Y-%m-%d")
-            )
-            total_df = pd.concat([total_df, afaw_time_df], sort=True)
+            try:
+                afaw_time_df = self.list_labor_worktime(
+                    project_id, start_date.strftime("%Y-%m-%d"), end_date.strftime("%Y-%m-%d")
+                )
+                total_df = pd.concat([total_df, afaw_time_df], sort=True)
+            except Exception:  # pylint: disable=broad-except
+                logger.error(f"プロジェクトにアクセスできませんでした（project_id={project_id} ）。")
 
         # データが無い場合にはwarning
         if len(total_df) == 0:

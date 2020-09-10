@@ -16,6 +16,7 @@ AnnoFabのCLI(Command Line Interface)ツールです。
 
 ## 廃止予定
 * 2020-10-01以降：Pythonのサポートバージョンを3.6以上から、3.7以上に変更します。
+* 2020-09-01以降：`input_data list`コマンドの`--batch`オプションを削除します。入力データを１万件以上取得したい場合は、`project download input_data`コマンドを利用してください。
 
 # Requirements
 * Python 3.6+
@@ -95,10 +96,12 @@ $ docker run -it -e ANNOFAB_USER_ID=XXXX -e ANNOFAB_PASSWORD=YYYYY annofab-cli a
 |input_data|list             | 入力データ一覧を出力します。                                                            |-|
 |input_data| list_merged_task | タスク一覧と結合した入力データ一覧のCSVを出力します。                                                            |オーナ/アノテーションユーザ|
 |input_data|put             | 入力データを登録します。                                                            |オーナ|
+|input_data|update_metadata             | 入力データのメタデータを更新します。                                                            |オーナ|
 |inspection_comment| list | 検査コメントを出力します。                               |-|
 |inspection_comment| list_unprocessed | 未処置の検査コメントを出力します。                               |-|
 |instruction| copy             | 作業ガイドをコピーします。                                                         |チェッカー/オーナ|
 |instruction| upload             | HTMLファイルを作業ガイドとして登録します。                                                           |チェッカー/オーナ|
+|job|delete             | ジョブを削除します。                                                            |オーナ|
 |job|list             | ジョブ一覧を出力します。                                                            |-|
 |job|list_last             | 複数のプロジェクトに対して、最新のジョブを出力します。                                                            |-|
 |labor|list_worktime_by_user | ユーザごとに作業予定時間、作業実績時間を出力します。                                                          ||
@@ -144,7 +147,7 @@ $ docker run -it -e ANNOFAB_USER_ID=XXXX -e ANNOFAB_PASSWORD=YYYYY annofab-cli a
 ログを無効化にします。
 
 
-### `--endpoint_url
+### `--endpoint_url`
 AnnoFab WebAPIのエンドポイントURLを指定します。デフォルトは https://annofab.com です。
 
 
@@ -182,6 +185,10 @@ root:
 # デフォルトのロガーを無効化しないようにする https://docs.djangoproject.com/ja/2.1/topics/logging/#configuring-logging
 disable_existing_loggers: False
 ```
+
+
+### `--parallelism`
+並列数を指定します。指定しない場合は、逐次的に処理します。
 
 ### `--yes`
 処理中に現れる問い合わせに対して、常に'yes'と回答します。
@@ -655,11 +662,6 @@ $ annofabcli input_data list --project_id prj1 --input_data_id id1 id2
 # 入力データの詳細情報（参照されているタスクのtask_id `parent_task_id_list`）も出力する
 $ annofabcli input_data list --project_id prj1 --input_data_query '{"input_data_name": "sample"}' --add_details
 
-# 段階的に入力データ一覧を取得する。
-# 2019-01-01〜2019-01-31の期間は7日間ごとに入力データ一覧を取得する。それ以外は、2019-01-01以前、2019-01-31以降の入力データ一覧を取得する。
-$ annofabcli input_data list --project_id prj1 --batch \
- '{"first":"2019-01-01", "last":"2019-01-31", "days":7}' --output input_data.csv
-
 ```
 
 
@@ -750,6 +752,15 @@ $ annofabcli input_data put --project_id prj1 --zip input_data.zip --input_data_
 ```
 
 
+
+### input_data update_metadata
+入力データのメタデータを更新します。
+
+```
+# `input_data.txt`に記載されている入力データIDに対して、入力データのメタデータを '{"foo":"bar"}' に変更します。
+$ annofabcli input_data update_metadata --project_id prj1 --input_data_id --file://input_data.txt --metadata '{"foo":"bar"}'
+
+```
 
 
 ### inspection_comment list
@@ -852,6 +863,15 @@ $ annofabcli instruction upload --project_id prj1 --html instruction.html
         ```
     3. Chrome開発ツールのElementタブで、html要素をコピー(Copy outerHTML)して、HTMLファイルを上書きする
 
+
+### job delete
+ジョブを削除します。
+削除対象のjob_idは`annofabcli job list`コマンドで確認できます。
+
+```
+# アノテーション更新のジョブを削除します。
+$ annofabcli job delete --project_id prj1 --job_type gen-annotation --job_id 12345678-abcd-1234-abcd-1234abcd5678
+```
 
 
 ### job list
@@ -1420,6 +1440,10 @@ $ annofabcli task change_operator --project_id prj1 --task_id file://task.txt --
 
 # 指定されたタスクの担当者を未割り当てに変更する。
 $ annofabcli task change_operator --project_id prj1 --task_id file://task.txt --not_assign
+
+# 教師付フェーズが未着手のタスクのみ、担当者を変更する
+$ annofabcli task change_operator --project_id prj1 --task_id file://task.txt --not_assign --task_query '{"status:"not_started", "phase"}'
+
 ```
 
 
@@ -1589,7 +1613,6 @@ $ annofabcli task reject --project_id prj1 --task_id file://tasks.txt \
 # 差し戻したタスクに、ユーザuser1を割り当てる
 $ annofabcli task reject --project_id prj1 --task_id file://tasks.txt \
  --comment "hoge" --assigned_annotator_user_id user1
-
 
 ```
 

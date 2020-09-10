@@ -14,7 +14,7 @@ init:
 format:
 	poetry run autoflake  --in-place --remove-all-unused-imports  --ignore-init-module-imports --recursive ${FORMAT_FILES}
 	poetry run black ${FORMAT_FILES}
-	poetry run isort --verbose --recursive ${FORMAT_FILES}
+	poetry run isort --verbose ${FORMAT_FILES}
 
 
 lint:

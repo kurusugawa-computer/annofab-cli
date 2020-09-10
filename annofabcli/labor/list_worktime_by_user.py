@@ -110,7 +110,7 @@ class ListWorktimeByUser(AbstractCommandLineInterface):
 
     @allow_404_error
     def _get_account_statistics(self, project_id) -> Optional[List[Any]]:
-        account_statistics, _ = self.service.api.get_account_statistics(project_id)
+        account_statistics = self.service.wrapper.get_account_statistics(project_id)
         return account_statistics
 
     def _get_worktime_monitored_hour_from_project_id(
@@ -122,7 +122,7 @@ class ListWorktimeByUser(AbstractCommandLineInterface):
             if result is not None:
                 account_statistics = result
             else:
-                logger.warning("プロジェクトにアクセスできないため、アカウント統計情報を取得できませんでした。")
+                logger.warning(f"project_id={project_id}: プロジェクトにアクセスできないため、アカウント統計情報を取得できませんでした。")
                 account_statistics = []
 
             self._dict_account_statistics[project_id] = account_statistics
@@ -227,7 +227,11 @@ class ListWorktimeByUser(AbstractCommandLineInterface):
         return new_labor
 
     def get_labor_availability_list_dict(
-        self, user_id_list: List[str], start_date: str, end_date: str, member_list: List[OrganizationMember],
+        self,
+        user_id_list: List[str],
+        start_date: str,
+        end_date: str,
+        member_list: List[OrganizationMember],
     ) -> Dict[str, List[LaborAvailability]]:
         """
         予定稼働時間を取得する
@@ -459,14 +463,13 @@ class ListWorktimeByUser(AbstractCommandLineInterface):
 
     @staticmethod
     @catch_exception
-    def write_worktime_per_user(worktime_df_per_user: pandas.DataFrame, output_dir: Path):
-        add_availabaility = "availability_hour" in worktime_df_per_user.columns
+    def write_worktime_per_user(worktime_df_per_user: pandas.DataFrame, output_dir: Path, add_availability: bool):
         target_renamed_columns = {
             "worktime_plan_hour": "作業予定時間",
             "worktime_result_hour": "作業実績時間",
             "result_working_days": "実績稼働日数",
         }
-        if add_availabaility:
+        if add_availability:
             target_renamed_columns.update({"availability_hour": "予定稼働時間"})
             target_renamed_columns.update({"availability_days": "予定稼働日数"})
 
@@ -481,7 +484,7 @@ class ListWorktimeByUser(AbstractCommandLineInterface):
             "予定稼働日数",
             "実績稼働日数",
         ]
-        if not add_availabaility:
+        if not add_availability:
             columns.remove("予定稼働時間")
             columns.remove("予定稼働日数")
 
@@ -508,7 +511,9 @@ class ListWorktimeByUser(AbstractCommandLineInterface):
 
     @staticmethod
     def get_availability_list(
-        labor_availability_list: List[LaborAvailability], start_date: str, end_date: str,
+        labor_availability_list: List[LaborAvailability],
+        start_date: str,
+        end_date: str,
     ) -> List[Optional[float]]:
         def get_availability_hour(str_date: str) -> Optional[float]:
             labor = more_itertools.first_true(labor_availability_list, pred=lambda e: e.date == str_date)
@@ -652,6 +657,7 @@ class ListWorktimeByUser(AbstractCommandLineInterface):
             all_availability_list = []
             for availability_list in labor_availability_list_dict.values():
                 all_availability_list.extend(availability_list)
+
             if len(all_availability_list) > 0:
                 availability_df = pandas.DataFrame([e.to_dict() for e in all_availability_list])  # type: ignore
             else:
@@ -665,8 +671,10 @@ class ListWorktimeByUser(AbstractCommandLineInterface):
                 .reset_index()
             )
 
-        df = value_df.merge(user_df.reset_index(), how="left", on=["user_id"]).reset_index()
-        return df
+        if len(value_df) > 0:
+            return user_df.reset_index().merge(value_df, how="left", on=["user_id"]).reset_index()
+        else:
+            return pandas.DataFrame()
 
     @staticmethod
     def set_day_count_to_dataframe(
@@ -695,7 +703,6 @@ class ListWorktimeByUser(AbstractCommandLineInterface):
     ) -> pandas.DataFrame:
         if len(worktime_df_per_date_user) > 0:
             value_df = worktime_df_per_date_user.pivot_table(index=["user_id"], aggfunc=numpy.sum).fillna(0)
-
             ListWorktimeByUser.set_day_count_to_dataframe(
                 worktime_df_per_date_user,
                 value_df,
@@ -733,6 +740,7 @@ class ListWorktimeByUser(AbstractCommandLineInterface):
             value_df = pandas.DataFrame(columns=columns)
 
         user_df.set_index("user_id", inplace=True)
+
         df = user_df.join(value_df, how="left").reset_index()
         value_columns = ListWorktimeByUser.get_value_columns(df.columns)
         df[value_columns] = df[value_columns].fillna(0)
@@ -790,7 +798,7 @@ class ListWorktimeByUser(AbstractCommandLineInterface):
         worktime_df_per_user = self.create_worktime_df_per_user(
             worktime_df_per_date_user=worktime_df_per_date_user, user_df=user_df, add_availability=add_availability
         )
-        self.write_worktime_per_user(worktime_df_per_user, output_dir)
+        self.write_worktime_per_user(worktime_df_per_user, output_dir, add_availability=add_availability)
 
     def print_labor_worktime_list(
         self,
@@ -845,7 +853,10 @@ class ListWorktimeByUser(AbstractCommandLineInterface):
         labor_availability_list_dict: Optional[Dict[str, List[LaborAvailability]]] = None
         if add_availability:
             labor_availability_list_dict = self.get_labor_availability_list_dict(
-                user_id_list=user_id_list, start_date=start_date, end_date=end_date, member_list=member_list,
+                user_id_list=user_id_list,
+                start_date=start_date,
+                end_date=end_date,
+                member_list=member_list,
             )
 
         self.write_labor_list(

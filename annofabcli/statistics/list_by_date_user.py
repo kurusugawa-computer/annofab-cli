@@ -102,7 +102,7 @@ class ListSubmittedTaskCountMain:
     def create_account_statistics_df(
         self, project_id: str, start_date: Optional[str] = None, end_date: Optional[str] = None
     ) -> pandas.DataFrame:
-        account_statistics, _ = self.service.api.get_account_statistics(project_id)
+        account_statistics = self.service.wrapper.get_account_statistics(project_id)
         data_list: List[Dict[str, Any]] = []
         for stat_by_user in account_statistics:
             account_id = stat_by_user["account_id"]
@@ -132,7 +132,9 @@ class ListSubmittedTaskCountMain:
     ) -> pandas.DataFrame:
         def to_new_labor(e: Dict[str, Any]) -> Dict[str, Any]:
             return dict(
-                date=e["date"], account_id=e["account_id"], actual_worktime_hour=self._get_actual_worktime_hour(e),
+                date=e["date"],
+                account_id=e["account_id"],
+                actual_worktime_hour=self._get_actual_worktime_hour(e),
             )
 
         labor_list: List[Dict[str, Any]] = self.service.api.get_labor_control(

@@ -15,23 +15,24 @@ from annofabcli.statistics.table import Table
 logger = logging.getLogger(__name__)
 
 
+def merge_peformance_per_user(csv_path_list: List[Path], output_path: Path):
+    df_list: List[pandas.DataFrame] = []
+    for csv_path in csv_path_list:
+        df = read_multiheader_csv(str(csv_path))
+        df_list.append(df)
+
+    sum_df = df_list[0]
+    for df in df_list[1:]:
+        sum_df = Table.merge_productivity_per_user_from_aw_time(sum_df, df)
+
+    csv_obj = Csv(outdir=str(output_path.parent))
+    csv_obj.write_productivity_per_user(sum_df, output_path=output_path)
+
+
 class MergePerfomancePerUser(AbstractCommandLineInterface):
     def main(self):
         args = self.args
-
-        df_list: List[pandas.DataFrame] = []
-        csv_path_list = args.csv
-        for csv_path in csv_path_list:
-            df = read_multiheader_csv(str(csv_path))
-            df_list.append(df)
-
-        sum_df = df_list[0]
-        for df in df_list[1:]:
-            sum_df = Table.merge_productivity_per_user_from_aw_time(sum_df, df)
-
-        output_path: Path = args.output
-        csv_obj = Csv(outdir=str(output_path.parent))
-        csv_obj.write_productivity_from_aw_time(sum_df, output_path=output_path)
+        merge_peformance_per_user(csv_path_list=args.csv, output_path=args.output)
 
 
 def main(args):
