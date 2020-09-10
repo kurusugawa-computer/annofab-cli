@@ -179,7 +179,7 @@ class ImportAnnotation(AbstractCommandLineInterface):
         dest_obj = AnnotationDetail(
             label_id=label_info["label_id"],
             annotation_id=detail.annotation_id if detail.annotation_id is not None else str(uuid.uuid4()),
-            account_id=self.service.api.login_user_id,
+            account_id=self.service.api.account_id,
             data_holding_type=data_holding_type,
             data=detail.data,
             additional_data_list=additional_data_list,

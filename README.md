@@ -96,6 +96,7 @@ $ docker run -it -e ANNOFAB_USER_ID=XXXX -e ANNOFAB_PASSWORD=YYYYY annofab-cli a
 |input_data|list             | 入力データ一覧を出力します。                                                            |-|
 |input_data| list_merged_task | タスク一覧と結合した入力データ一覧のCSVを出力します。                                                            |オーナ/アノテーションユーザ|
 |input_data|put             | 入力データを登録します。                                                            |オーナ|
+|input_data|update_metadata             | 入力データのメタデータを更新します。                                                            |オーナ|
 |inspection_comment| list | 検査コメントを出力します。                               |-|
 |inspection_comment| list_unprocessed | 未処置の検査コメントを出力します。                               |-|
 |instruction| copy             | 作業ガイドをコピーします。                                                         |チェッカー/オーナ|
@@ -146,7 +147,7 @@ $ docker run -it -e ANNOFAB_USER_ID=XXXX -e ANNOFAB_PASSWORD=YYYYY annofab-cli a
 ログを無効化にします。
 
 
-### `--endpoint_url
+### `--endpoint_url`
 AnnoFab WebAPIのエンドポイントURLを指定します。デフォルトは https://annofab.com です。
 
 
@@ -184,6 +185,10 @@ root:
 # デフォルトのロガーを無効化しないようにする https://docs.djangoproject.com/ja/2.1/topics/logging/#configuring-logging
 disable_existing_loggers: False
 ```
+
+
+### `--parallelism`
+並列数を指定します。指定しない場合は、逐次的に処理します。
 
 ### `--yes`
 処理中に現れる問い合わせに対して、常に'yes'と回答します。
@@ -747,6 +752,15 @@ $ annofabcli input_data put --project_id prj1 --zip input_data.zip --input_data_
 ```
 
 
+
+### input_data update_metadata
+入力データのメタデータを更新します。
+
+```
+# `input_data.txt`に記載されている入力データIDに対して、入力データのメタデータを '{"foo":"bar"}' に変更します。
+$ annofabcli input_data update_metadata --project_id prj1 --input_data_id --file://input_data.txt --metadata '{"foo":"bar"}'
+
+```
 
 
 ### inspection_comment list
@@ -1599,7 +1613,6 @@ $ annofabcli task reject --project_id prj1 --task_id file://tasks.txt \
 # 差し戻したタスクに、ユーザuser1を割り当てる
 $ annofabcli task reject --project_id prj1 --task_id file://tasks.txt \
  --comment "hoge" --assigned_annotator_user_id user1
-
 
 ```
 

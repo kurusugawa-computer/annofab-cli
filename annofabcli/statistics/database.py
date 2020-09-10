@@ -391,10 +391,16 @@ class Database:
             self.project_id, dest_path=str(self.tasks_json_path), is_latest=is_latest, wait_options=wait_options
         )
         coroutines[INPUT_DATA_JSON_INDEX] = downloading_obj.download_input_data_json_with_async(
-            self.project_id, dest_path=str(self.input_data_json_path), is_latest=is_latest, wait_options=wait_options,
+            self.project_id,
+            dest_path=str(self.input_data_json_path),
+            is_latest=is_latest,
+            wait_options=wait_options,
         )
         coroutines[ANNOTATION_ZIP_INDEX] = downloading_obj.download_annotation_zip_with_async(
-            self.project_id, dest_path=str(self.annotations_zip_path), is_latest=is_latest, wait_options=wait_options,
+            self.project_id,
+            dest_path=str(self.annotations_zip_path),
+            is_latest=is_latest,
+            wait_options=wait_options,
         )
         coroutines[TASK_HISTORY_JSON_INDEX] = downloading_obj.download_task_history_json_with_async(
             self.project_id, dest_path=str(self.task_histories_json_path)
@@ -427,7 +433,9 @@ class Database:
         dt = dt.replace(tzinfo=dateutil.tz.tzlocal())
         return dt
 
-    def read_tasks_from_json(self,) -> List[Task]:
+    def read_tasks_from_json(
+        self,
+    ) -> List[Task]:
         """
         task.jsonからqueryに合致するタスクを調べる
 

@@ -41,7 +41,7 @@ class ListTasks(AbstractCommandLineInterface):
 
             task = self.get_task(project_id, task_id)
             if task is not None:
-                task_list.append(task)
+                task_list.append(self.visualize.add_properties_to_task(task))
             else:
                 logger.warning(f"タスク '{task_id}' は見つかりませんでした。")
 

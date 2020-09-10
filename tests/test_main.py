@@ -43,13 +43,33 @@ class TestAnnotation:
     def test_dump_annotation(self):
         output_dir = str(out_path / "dump-annotation")
         main(
-            ["annotation", "dump", "--project_id", project_id, "--task_id", task_id, "--output", output_dir, "--yes",]
+            [
+                "annotation",
+                "dump",
+                "--project_id",
+                project_id,
+                "--task_id",
+                task_id,
+                "--output",
+                output_dir,
+                "--yes",
+            ]
         )
 
     def test_delete_and_restore_annotation(self):
         backup_dir = str(out_path / "backup-annotation")
         main(
-            ["annotation", "delete", "--project_id", project_id, "--task_id", task_id, "--backup", backup_dir, "--yes",]
+            [
+                "annotation",
+                "delete",
+                "--project_id",
+                project_id,
+                "--task_id",
+                task_id,
+                "--backup",
+                backup_dir,
+                "--yes",
+            ]
         )
 
         main(
@@ -198,7 +218,14 @@ class TestInputData:
     def test_list_input_data_merged_task_with_downloading(self):
         out_file = str(out_path / "input_data.csv")
         main(
-            ["input_data", "list_merged_task", "--project_id", project_id, "--output", out_file,]
+            [
+                "input_data",
+                "list_merged_task",
+                "--project_id",
+                project_id,
+                "--output",
+                out_file,
+            ]
         )
 
     def test_list_input_data_merged_task_with_json(self):
@@ -462,7 +489,16 @@ class TestProject:
 
         out_file = str(out_path / "project-list-from-project-id.csv")
         main(
-            ["project", "list", "--project_id", project_id, "--format", "csv", "--output", out_file,]
+            [
+                "project",
+                "list",
+                "--project_id",
+                project_id,
+                "--format",
+                "csv",
+                "--output",
+                out_file,
+            ]
         )
 
     def test_update_annotation_zip(self):
@@ -512,19 +548,34 @@ class TestStatistics:
                 '{"status": "complete"}',
                 "--output_dir",
                 output_dir,
+                "--minimal",
             ]
         )
 
     def test_list_task_progress(self):
         out_file = str(out_path / "task-progress.csv")
         main(
-            ["statistics", "list_task_progress", "--project_id", project_id, "--output", out_file,]
+            [
+                "statistics",
+                "list_task_progress",
+                "--project_id",
+                project_id,
+                "--output",
+                out_file,
+            ]
         )
 
     def test_list_cumulative_labor_time(self):
         out_file = str(out_path / "cumulative-labor-time.csv")
         main(
-            ["statistics", "list_cumulative_labor_time", "--project_id", project_id, "--output", out_file,]
+            [
+                "statistics",
+                "list_cumulative_labor_time",
+                "--project_id",
+                project_id,
+                "--output",
+                out_file,
+            ]
         )
 
     def test_list_annotation_count(self):
@@ -557,7 +608,14 @@ class TestStatistics:
     def test_summarize_task_count(self):
         out_file = str(out_path / "summariz-task-count.csv")
         main(
-            ["statistics", "summarize_task_count", "--project_id", project_id, "--output", out_file,]
+            [
+                "statistics",
+                "summarize_task_count",
+                "--project_id",
+                project_id,
+                "--output",
+                out_file,
+            ]
         )
         out_file = str(out_path / "summariz-task-count2.csv")
         main(
@@ -576,25 +634,53 @@ class TestStatistics:
     def test_summarize_task_count_by_task_id(self):
         out_file = str(out_path / "summarize_task_count_by_task_id.csv")
         main(
-            ["statistics", "summarize_task_count_by_task_id", "--project_id", project_id, "--output", out_file,]
+            [
+                "statistics",
+                "summarize_task_count_by_task_id",
+                "--project_id",
+                project_id,
+                "--output",
+                out_file,
+            ]
         )
 
     def test_summarize_task_count_by_user(self):
         out_file = str(out_path / "summarize_task_count_by_user.csv")
         main(
-            ["statistics", "summarize_task_count_by_user", "--project_id", project_id, "--output", out_file,]
+            [
+                "statistics",
+                "summarize_task_count_by_user",
+                "--project_id",
+                project_id,
+                "--output",
+                out_file,
+            ]
         )
 
     def test_list_by_date_user(self):
         out_file = str(out_path / "list_by_date_user.csv")
         main(
-            ["statistics", "list_by_date_user", "--project_id", project_id, "--output", out_file,]
+            [
+                "statistics",
+                "list_by_date_user",
+                "--project_id",
+                project_id,
+                "--output",
+                out_file,
+            ]
         )
 
     def test_list_labor_time_per_user(self):
         out_file = str(out_path / "list_labor_time_per_user.csv")
         main(
-            ["statistics", "list_labor_time_per_user", "--project_id", project_id, "--output", out_file,]
+            [
+                "statistics",
+                "list_labor_time_per_user",
+                "--project_id",
+                project_id,
+                "--output",
+                out_file,
+            ]
         )
 
 
@@ -712,7 +798,14 @@ class TestTask:
     def test_list_added_task_history_with_downloading(self):
         out_file = str(out_path / "task.csv")
         main(
-            [self.command_name, "list_added_task_history", "--project_id", project_id, "--output", out_file,]
+            [
+                self.command_name,
+                "list_added_task_history",
+                "--project_id",
+                project_id,
+                "--output",
+                out_file,
+            ]
         )
 
     def test_list_task_history(self):
@@ -769,7 +862,14 @@ class TestTask:
     def test_put_task(self):
         csv_file = str(data_path / "put_task.csv")
         main(
-            [self.command_name, "put", "--project_id", project_id, "--csv", csv_file,]
+            [
+                self.command_name,
+                "put",
+                "--project_id",
+                project_id,
+                "--csv",
+                csv_file,
+            ]
         )
 
     # def test_complete_task(self):

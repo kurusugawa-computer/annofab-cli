@@ -351,7 +351,10 @@ def _get_cumulation_info(task_list: List[Task], actual_worktime_dict: Dict[str, 
 
 
 def _get_plan_value(
-    plan_worktime_dict: Dict[str, float], dt_today: datetime.date, days: int, velocity_per_task: Optional[float],
+    plan_worktime_dict: Dict[str, float],
+    dt_today: datetime.date,
+    days: int,
+    velocity_per_task: Optional[float],
 ) -> Planvalues:
     dt_from_date = dt_today + datetime.timedelta(days=1)
     dt_end_date = dt_today + datetime.timedelta(days=days)
@@ -378,7 +381,7 @@ def get_task_exhaustation_date(
     Returns:
 
     """
-    if annotation_not_started <= 0:
+    if annotation_not_started <= 0 or velocity_per_task <= 0:
         return None
 
     remaining_task: float = annotation_not_started
@@ -544,13 +547,15 @@ class PrintDashBoardMain:
 class DashBoard(AbstractCommandLineInterface):
     def print_summarize_task_count(self, target_dict: dict) -> None:
         annofabcli.utils.print_according_to_format(
-            target_dict, arg_format=FormatArgument.JSON, output=self.output,
+            target_dict,
+            arg_format=FormatArgument.JSON,
+            output=self.output,
         )
 
     def main(self):
         args = self.args
         project_id = args.project_id
-        super().validate_project(project_id, [ProjectMemberRole.OWNER])
+        super().validate_project(project_id, [ProjectMemberRole.OWNER, ProjectMemberRole.TRAINING_DATA_USER])
 
         if args.task_json is not None:
             task_json_path = args.task_json
@@ -571,7 +576,9 @@ class DashBoard(AbstractCommandLineInterface):
 
         dashboard_date = main_obj.create_dashboard_data(project_id, date=args.date, task_list=task_list)
         annofabcli.utils.print_according_to_format(
-            dashboard_date.to_dict(), arg_format=FormatArgument(self.str_format), output=self.output,
+            dashboard_date.to_dict(),
+            arg_format=FormatArgument(self.str_format),
+            output=self.output,
         )
 
 

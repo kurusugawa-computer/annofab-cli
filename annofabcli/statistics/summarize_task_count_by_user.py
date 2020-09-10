@@ -114,7 +114,10 @@ class SummarizeTaskCountByUser(AbstractCommandLineInterface):
         columns = ["user_id", "username", "biography"] + [status.value for status in TaskStatusForSummary]
         target_df = df[columns].sort_values("user_id")
         annofabcli.utils.print_according_to_format(
-            target_df, arg_format=FormatArgument(FormatArgument.CSV), output=self.output, csv_format=self.csv_format,
+            target_df,
+            arg_format=FormatArgument(FormatArgument.CSV),
+            output=self.output,
+            csv_format=self.csv_format,
         )
 
     def main(self):
