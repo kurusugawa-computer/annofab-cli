@@ -1451,11 +1451,11 @@ class Table:
         def add_velocity_column(df: pandas.DataFrame, numerator_column: str, denominator_column: str):
             """速度情報の列を追加"""
             MOVING_WINDOW_SIZE = 7
-            MIN_WINDOW_SIZE=2
+            MIN_WINDOW_SIZE = 2
             df[f"{numerator_column}/{denominator_column}"] = df[numerator_column] / df[denominator_column]
-            df_date[f"{numerator_column}/{denominator_column}__lastweek"] = (
-                df_date[numerator_column].rolling(MOVING_WINDOW_SIZE, min_periods=MIN_WINDOW_SIZE).sum()
-                / df_date[denominator_column].rolling(MOVING_WINDOW_SIZE, min_periods=MIN_WINDOW_SIZE).sum()
+            df[f"{numerator_column}/{denominator_column}__lastweek"] = (
+                df[numerator_column].rolling(MOVING_WINDOW_SIZE, min_periods=MIN_WINDOW_SIZE).sum()
+                / df[denominator_column].rolling(MOVING_WINDOW_SIZE, min_periods=MIN_WINDOW_SIZE).sum()
             )
 
         # 累計情報を追加
