@@ -237,8 +237,9 @@ class ListLaborWorktime(AbstractCommandLineInterface):
         #     チェックポイントファイルがあること前提
         return table_obj.create_afaw_time_df()
 
-    def _output(self, output: str, df: pd.DataFrame, index: bool, add_project_id: bool, project_id_list: List[str]):
-        Path(output).parent.mkdir(exist_ok=True, parents=True)
+    def _output(self, output: Any, df: pd.DataFrame, index: bool, add_project_id: bool, project_id_list: List[str]):
+        if isinstance(output, str):
+            Path(output).parent.mkdir(exist_ok=True, parents=True)
         df.to_csv(
             output,
             date_format="%Y-%m-%d",

@@ -24,9 +24,9 @@ def parse_args(parser: argparse.ArgumentParser):
 
     # サブコマンドの定義
     dashboard.add_parser(subparsers)
+    find_break_error.add_parser(subparsers)
     list_labor_worktime.add_parser(subparsers)
     list_out_of_range_annotation_for_movie.add_parser(subparsers)
-    find_break_error.add_parser(subparsers)
     mask_user_info.add_parser(subparsers)
     merge_peformance_per_date.add_parser(subparsers)
     merge_peformance_per_user.add_parser(subparsers)
