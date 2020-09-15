@@ -1277,7 +1277,7 @@ class LineGraph:
         source = ColumnDataSource(data=df)
 
         for fig, fig_info in zip(fig_list, fig_info_list):
-            y_info_list: List[Dict[str, str]] = fig_info["y_info_list"]  #type: ignore
+            y_info_list: List[Dict[str, str]] = fig_info["y_info_list"]  # type: ignore
             for index, y_info in enumerate(y_info_list):
                 color = self.my_small_palette[index]
 

@@ -8,12 +8,7 @@ import dateutil
 import more_itertools
 import numpy
 import pandas
-from annofabapi.dataclass.statistics import (
-    ProjectAccountStatistics,
-    ProjectAccountStatisticsHistory,
-    WorktimeStatistics,
-    WorktimeStatisticsItem,
-)
+from annofabapi.dataclass.statistics import ProjectAccountStatisticsHistory, WorktimeStatistics, WorktimeStatisticsItem
 from annofabapi.models import (
     InputData,
     InputDataId,
