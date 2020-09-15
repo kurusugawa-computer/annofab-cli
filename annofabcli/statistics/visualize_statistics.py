@@ -8,7 +8,7 @@ from typing import Any, Callable, Dict, List, Optional
 import annofabapi
 import pandas
 from annofabapi.models import ProjectMemberRole, TaskPhase
-from dataclasses_json import dataclass_json
+from dataclasses_json import DataClassJsonMixin
 
 import annofabcli
 from annofabcli import AnnofabApiFacade
@@ -23,9 +23,8 @@ from annofabcli.statistics.table import AggregationBy, Table
 logger = logging.getLogger(__name__)
 
 
-@dataclass_json
 @dataclass
-class CommnadLineArgs:
+class CommnadLineArgs(DataClassJsonMixin):
     task_query: Optional[Dict[str, Any]]
     user_id_list: Optional[List[str]]
     start_date: Optional[str]
@@ -33,9 +32,8 @@ class CommnadLineArgs:
     ignored_task_id_list: Optional[List[str]]
 
 
-@dataclass_json
 @dataclass
-class ProjectSummary:
+class ProjectSummary(DataClassJsonMixin):
     project_id: str
     project_title: str
     measurement_datetime: str
@@ -64,7 +62,7 @@ def write_project_name_file(
     )
 
     with open(str(output_project_dir / f"{filename}.json"), "w") as f:
-        json.dump(prject_summary.to_dict(), f, ensure_ascii=False, indent=2)  # type: ignore
+        json.dump(prject_summary.to_dict(), f, ensure_ascii=False, indent=2)
 
 
 def catch_exception(function: Callable[..., Any]) -> Callable[..., Any]:

@@ -58,7 +58,7 @@ class ChangeAttributesOfAnnotation(AbstractCommandLineInterface):
             logger.warning(f"task_id = '{task_id}' は存在しません。")
             return
 
-        task: Task = Task.from_dict(dict_task)  # type: ignore
+        task: Task = Task.from_dict(dict_task)
         logger.info(
             f"task_id={task.task_id}, phase={task.phase.value}, status={task.status.value}, "
             f"updated_datetime={task.updated_datetime}"
@@ -125,7 +125,7 @@ class ChangeAttributesOfAnnotation(AbstractCommandLineInterface):
         task_id_list = annofabcli.common.cli.get_list_from_args(args.task_id)
 
         dict_annotation_query = get_json_from_args(args.annotation_query)
-        annotation_query_for_cli = AnnotationQueryForCli.from_dict(dict_annotation_query)  # type: ignore
+        annotation_query_for_cli = AnnotationQueryForCli.from_dict(dict_annotation_query)
         try:
             annotation_query = self.facade.to_annotation_query_from_cli(project_id, annotation_query_for_cli)
         except ValueError as e:

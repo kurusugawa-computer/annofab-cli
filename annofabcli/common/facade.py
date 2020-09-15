@@ -6,18 +6,17 @@ from dataclasses import asdict, dataclass
 from typing import Any, Callable, Dict, List, Optional, Tuple
 
 import annofabapi
+from dataclasses_json import DataClassJsonMixin
 import annofabapi.utils
 import more_itertools
 from annofabapi.dataclass.annotation import AdditionalData
 from annofabapi.models import OrganizationMember, OrganizationMemberRole, ProjectId, ProjectMemberRole, SingleAnnotation
-from dataclasses_json import dataclass_json
 
 logger = logging.getLogger(__name__)
 
 
-@dataclass_json
 @dataclass
-class AnnotationQuery:
+class AnnotationQuery(DataClassJsonMixin):
     """
     `get_annotation_list`メソッドに渡すアノテーション検索条件
     """
@@ -26,9 +25,8 @@ class AnnotationQuery:
     attributes: Optional[List[AdditionalData]] = None
 
 
-@dataclass_json
 @dataclass
-class AdditionalDataForCli:
+class AdditionalDataForCli(DataClassJsonMixin):
     additional_data_definition_id: Optional[str] = None
     """属性ID"""
 
@@ -48,9 +46,8 @@ class AdditionalDataForCli:
     """選択肢の英語名"""
 
 
-@dataclass_json
 @dataclass
-class AnnotationQueryForCli:
+class AnnotationQueryForCli(DataClassJsonMixin):
     """
     コマンドライン上で指定するアノテーション検索条件
     """

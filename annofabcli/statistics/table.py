@@ -103,7 +103,7 @@ class Table:
         else:
             tmp_worktime_statistics = self.annofab_service.wrapper.get_worktime_statistics(self.project_id)
             worktime_statistics: List[WorktimeStatistics] = [
-                WorktimeStatistics.from_dict(e) for e in tmp_worktime_statistics  # type: ignore
+                WorktimeStatistics.from_dict(e) for e in tmp_worktime_statistics
             ]
             self._worktime_statistics = worktime_statistics
             return worktime_statistics
@@ -116,7 +116,7 @@ class Table:
             return self._account_statistics
         else:
             content: List[Any] = self.annofab_service.wrapper.get_account_statistics(self.project_id)[0]
-            account_statistics = [ProjectAccountStatisticsHistory.from_dict(e) for e in content]  # type: ignore
+            account_statistics = [ProjectAccountStatisticsHistory.from_dict(e) for e in content]
             self._account_statistics = account_statistics
             return account_statistics
 

@@ -231,7 +231,7 @@ class LineGraph:
                     )
                 )
 
-            for user_index, user_id in enumerate(first_annotation_user_id_list):  # type: ignore
+            for user_index, user_id in enumerate(first_annotation_user_id_list):
                 filtered_df = df[df["first_annotation_user_id"] == user_id]
                 if filtered_df.empty:
                     logger.debug(f"dataframe is empty. user_id = {user_id}")
@@ -453,7 +453,7 @@ class LineGraph:
                     )
                 )
 
-            for user_index, user_id in enumerate(first_annotation_user_id_list):  # type: ignore
+            for user_index, user_id in enumerate(first_annotation_user_id_list):
                 filtered_df = df[df["first_annotation_user_id"] == user_id]
                 if filtered_df.empty:
                     logger.debug(f"dataframe is empty. user_id = {user_id}")
@@ -682,7 +682,7 @@ class LineGraph:
                     )
                 )
 
-            for user_index, user_id in enumerate(first_inspection_user_id_list):  # type: ignore
+            for user_index, user_id in enumerate(first_inspection_user_id_list):
                 filtered_df = df[df["first_inspection_user_id"] == user_id]
                 if filtered_df.empty:
                     logger.debug(f"dataframe is empty. user_id = {user_id}")
@@ -841,7 +841,7 @@ class LineGraph:
                     )
                 )
 
-            for user_index, user_id in enumerate(first_acceptance_user_id_list):  # type: ignore
+            for user_index, user_id in enumerate(first_acceptance_user_id_list):
                 filtered_df = df[df["first_acceptance_user_id"] == user_id]
                 if filtered_df.empty:
                     logger.debug(f"dataframe is empty. user_id = {user_id}")
@@ -1019,7 +1019,7 @@ class LineGraph:
                 )
             )
 
-        for user_index, user_id in enumerate(user_id_list):  # type: ignore
+        for user_index, user_id in enumerate(user_id_list):
             filtered_df = df[df["user_id"] == user_id]
             if filtered_df.empty:
                 logger.debug(f"dataframe is empty. user_id = {user_id}")
@@ -1277,7 +1277,7 @@ class LineGraph:
         source = ColumnDataSource(data=df)
 
         for fig, fig_info in zip(fig_list, fig_info_list):
-            y_info_list: List[Dict[str, str]] = fig_info["y_info_list"]  # type: ignore
+            y_info_list: List[Dict[str, str]] = fig_info["y_info_list"]
             for index, y_info in enumerate(y_info_list):
                 color = self.my_small_palette[index]
 
@@ -1433,7 +1433,7 @@ class LineGraph:
 
         for fig, fig_info in zip(fig_list, fig_info_list):
             x_column_name = "dt_date"
-            y_info_list: List[Dict[str, str]] = fig_info["y_info_list"]  # type: ignore
+            y_info_list: List[Dict[str, str]] = fig_info["y_info_list"]
             for index, y_info in enumerate(y_info_list):
                 color = self.my_small_palette[index]
 

@@ -12,7 +12,7 @@ import numpy
 import pandas
 from annofabapi.models import OrganizationMember, Project
 from annofabapi.utils import allow_404_error
-from dataclasses_json import dataclass_json
+from dataclasses_json import DataClassJsonMixin
 from more_itertools import first_true
 
 import annofabcli
@@ -44,9 +44,8 @@ def catch_exception(function: Callable[..., Any]) -> Callable[..., Any]:
     return wrapped
 
 
-@dataclass_json
 @dataclass(frozen=True)
-class LaborWorktime:
+class LaborWorktime(DataClassJsonMixin):
     """
     労務管理情報
     """
@@ -70,9 +69,8 @@ class LaborWorktime:
     """実績作業時間に対する備考"""
 
 
-@dataclass_json
 @dataclass(frozen=True)
-class LaborAvailability:
+class LaborAvailability(DataClassJsonMixin):
     """
     労務管理情報
     """
@@ -84,9 +82,8 @@ class LaborAvailability:
     availability_hour: float
 
 
-@dataclass_json
 @dataclass(frozen=True)
-class SumLaborWorktime:
+class SumLaborWorktime(DataClassJsonMixin):
     """
     出力用の作業時間情報
     """
@@ -659,7 +656,7 @@ class ListWorktimeByUser(AbstractCommandLineInterface):
                 all_availability_list.extend(availability_list)
 
             if len(all_availability_list) > 0:
-                availability_df = pandas.DataFrame([e.to_dict() for e in all_availability_list])  # type: ignore
+                availability_df = pandas.DataFrame([e.to_dict() for e in all_availability_list])
             else:
                 availability_df = pandas.DataFrame(columns=["date", "user_id", "availability_hour"])
 
@@ -778,7 +775,7 @@ class ListWorktimeByUser(AbstractCommandLineInterface):
         self.write_sum_plan_worktime_list(sum_worktime_df, output_dir)
 
         if len(labor_list) > 0:
-            worktime_df = pandas.DataFrame([e.to_dict() for e in labor_list])  # type: ignore
+            worktime_df = pandas.DataFrame([e.to_dict() for e in labor_list])
             self.write_worktime_list(worktime_df, output_dir, add_monitored_worktime)
         else:
             worktime_df = pandas.DataFrame(columns=["date", "user_id", "worktime_plan_hour", "worktime_result_hour"])
@@ -961,7 +958,7 @@ class ListWorktimeByUser(AbstractCommandLineInterface):
             user_id_list=arg_user_id_list,
             add_availability=args.add_availability,
             add_monitored_worktime=args.add_monitored_worktime,
-        )  # type: ignore
+        )
 
 
 def main(args):

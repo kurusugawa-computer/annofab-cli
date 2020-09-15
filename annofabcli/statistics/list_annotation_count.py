@@ -17,7 +17,7 @@ from annofabapi.parser import (
     lazy_parse_simple_annotation_zip,
     lazy_parse_simple_annotation_zip_by_task,
 )
-from dataclasses_json import dataclass_json
+from dataclasses_json import DataClassJsonMixin
 
 import annofabcli
 import annofabcli.common.cli
@@ -53,9 +53,8 @@ class GroupBy(Enum):
     INPUT_DATA_ID = "input_data_id"
 
 
-@dataclass_json
 @dataclass(frozen=True)
-class AnnotationCounterByTask:
+class AnnotationCounterByTask(DataClassJsonMixin):
     """"""
 
     task_id: str
@@ -66,9 +65,8 @@ class AnnotationCounterByTask:
     attirbutes_count: Counter[AttributesColumn]
 
 
-@dataclass_json
 @dataclass(frozen=True)
-class AnnotationCounterByInputData:
+class AnnotationCounterByInputData(DataClassJsonMixin):
     """"""
 
     task_id: str

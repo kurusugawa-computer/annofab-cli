@@ -211,7 +211,7 @@ def get_wait_options_from_args(
     """
     if dict_wait_options is not None:
         dataclasses.asdict(default_wait_options)
-        return WaitOptions.from_dict({**dataclasses.asdict(default_wait_options), **dict_wait_options})  # type: ignore
+        return WaitOptions.from_dict({**dataclasses.asdict(default_wait_options), **dict_wait_options})
     else:
         return default_wait_options
 

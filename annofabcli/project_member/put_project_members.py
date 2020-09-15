@@ -9,7 +9,7 @@ import numpy
 import pandas
 import requests
 from annofabapi.models import ProjectMemberRole, ProjectMemberStatus
-from dataclasses_json import dataclass_json
+from dataclasses_json import DataClassJsonMixin
 
 import annofabcli
 from annofabcli import AnnofabApiFacade
@@ -18,9 +18,8 @@ from annofabcli.common.cli import AbstractCommandLineInterface, ArgumentParser, 
 logger = logging.getLogger(__name__)
 
 
-@dataclass_json
 @dataclass
-class Member:
+class Member(DataClassJsonMixin):
     """
     登録するプロジェクトメンバ
     """

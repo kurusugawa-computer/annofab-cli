@@ -12,7 +12,7 @@ import dateutil
 import pandas
 from annofabapi.models import ProjectMemberRole, Task
 from annofabapi.utils import str_now
-from dataclasses_json import dataclass_json
+from dataclasses_json import DataClassJsonMixin
 from dateutil.parser import parse
 from more_itertools import first_true
 
@@ -37,9 +37,8 @@ logger = logging.getLogger(__name__)
 DEFAULT_WAIT_OPTIONS = WaitOptions(interval=60, max_tries=360)
 
 
-@dataclass_json
 @dataclass
-class TaskPhaseStatistics:
+class TaskPhaseStatistics(DataClassJsonMixin):
     date: str
     annotation_worktime: float = 0
     inspection_worktime: float = 0
@@ -49,9 +48,8 @@ class TaskPhaseStatistics:
         return self.annotation_worktime + self.inspection_worktime + self.acceptance_worktime
 
 
-@dataclass_json
 @dataclass
-class MonitoredWorktime:
+class MonitoredWorktime(DataClassJsonMixin):
     """AnnoFab計測時間の詳細情報"""
 
     sum: float
@@ -61,9 +59,8 @@ class MonitoredWorktime:
     acceptance: float
 
 
-@dataclass_json
 @dataclass
-class RemainingTaskCount:
+class RemainingTaskCount(DataClassJsonMixin):
     """
     フェーズごとのタスク数
     """
@@ -87,9 +84,8 @@ class RemainingTaskCount:
     """休憩中/作業中/2回目以降の各フェーズの未着手状態のタスク数"""
 
 
-@dataclass_json
 @dataclass
-class ProgressData:
+class ProgressData(DataClassJsonMixin):
     # task_count: TaskCount
     # """タスク数情報"""
 
@@ -121,9 +117,8 @@ class ProgressData:
     """AnnoFabのacceptance計測作業時間[hour]"""
 
 
-@dataclass_json
 @dataclass
-class ResultValues:
+class ResultValues(DataClassJsonMixin):
 
     cumulation: ProgressData
     """累計情報"""
@@ -133,18 +128,16 @@ class ResultValues:
     """対象日から1週間（直前7日間）の情報"""
 
 
-@dataclass_json
 @dataclass
-class Planvalues:
+class Planvalues(DataClassJsonMixin):
     plan_worktime: float
     """予定作業時間"""
     task_count: Optional[int]
     """予定の完了タスク数"""
 
 
-@dataclass_json
 @dataclass
-class DashboardData:
+class DashboardData(DataClassJsonMixin):
     project_id: str
     project_title: str
     date: str
@@ -176,7 +169,7 @@ def get_remaining_task_count_info_from_task_list(task_list: List[Task]) -> Remai
     """
     status_list: List[str] = [e["status_for_summary"] for e in task_list]
     tmp = pandas.Series.value_counts(status_list)
-    task_count = RemainingTaskCount.from_dict(tmp.to_dict())  # type: ignore
+    task_count = RemainingTaskCount.from_dict(tmp.to_dict())
     return task_count
 
 
@@ -428,7 +421,7 @@ class PrintDashBoardMain:
                 phase = phase_stat["phase"]
                 worktime_hour = isoduration_to_hour(phase_stat["worktime"])
                 elm[f"{phase}_worktime"] = worktime_hour
-            row_list.append(TaskPhaseStatistics.from_dict(elm))  # type: ignore
+            row_list.append(TaskPhaseStatistics.from_dict(elm))
         return row_list
 
     def get_actual_worktime_dict(self, project_id: str, date: str) -> Dict[str, float]:

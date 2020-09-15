@@ -56,14 +56,14 @@ class RestoreAnnotation(AbstractCommandLineInterface):
 
     def parser_to_request_body(self, project_id: str, parser: SimpleAnnotationParser) -> Dict[str, Any]:
 
-        annotation: Annotation = Annotation.from_dict(parser.load_json())  # type: ignore
+        annotation: Annotation = Annotation.from_dict(parser.load_json())
         request_details: List[Dict[str, Any]] = []
         for detail in annotation.details:
             request_detail = self._to_annotation_detail_for_request(project_id, parser, detail)
 
             if request_detail is not None:
                 # Enumをシリアライズするため、一度JSONにしてからDictに変換する
-                request_details.append(json.loads(request_detail.to_json()))  # type: ignore
+                request_details.append(json.loads(request_detail.to_json()))
 
         request_body = {
             "project_id": project_id,
