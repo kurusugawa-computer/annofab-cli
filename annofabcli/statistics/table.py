@@ -77,7 +77,7 @@ class Table:
     _task_histories_dict: Optional[Dict[str, List[TaskHistory]]] = None
     _annotations_dict: Optional[Dict[str, Dict[InputDataId, Dict[str, Any]]]] = None
     _worktime_statistics: Optional[List[WorktimeStatistics]] = None
-    _account_statistics: Optional[List[ProjectAccountStatistics]] = None
+    _account_statistics: Optional[List[ProjectAccountStatisticsHistory]] = None
     _labor_list: Optional[List[Dict[str, Any]]] = None
 
     def __init__(
@@ -108,7 +108,7 @@ class Table:
             self._worktime_statistics = worktime_statistics
             return worktime_statistics
 
-    def _get_account_statistics(self) -> List[ProjectAccountStatistics]:
+    def _get_account_statistics(self) -> List[ProjectAccountStatisticsHistory]:
         """
         ユーザー別タスク集計を取得
         """

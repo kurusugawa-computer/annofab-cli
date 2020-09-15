@@ -6,11 +6,11 @@ from dataclasses import asdict, dataclass
 from typing import Any, Callable, Dict, List, Optional, Tuple
 
 import annofabapi
-from dataclasses_json import DataClassJsonMixin
 import annofabapi.utils
 import more_itertools
 from annofabapi.dataclass.annotation import AdditionalData
 from annofabapi.models import OrganizationMember, OrganizationMemberRole, ProjectId, ProjectMemberRole, SingleAnnotation
+from dataclasses_json import DataClassJsonMixin
 
 logger = logging.getLogger(__name__)
 
