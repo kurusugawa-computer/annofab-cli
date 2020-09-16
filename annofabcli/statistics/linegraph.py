@@ -1234,9 +1234,9 @@ class LineGraph:
 
         fig_list = [
             create_figure(title="日ごとの作業時間", y_axis_label="作業時間[hour]"),
-            create_figure(title="日ごとのタスクあたり作業時間", y_axis_label="タスクあたり作業時間[task/hour]"),
-            create_figure(title="日ごとの入力データあたり作業時間", y_axis_label="入力データあたり作業時間[input_data/hour]"),
-            create_figure(title="日ごとのアノテーションあたり作業時間", y_axis_label="アノテーションあたり作業時間[annotation/hour]"),
+            create_figure(title="日ごとのタスクあたり作業時間", y_axis_label="タスクあたり作業時間[hour/task]"),
+            create_figure(title="日ごとの入力データあたり作業時間", y_axis_label="入力データあたり作業時間[hour/input_data]"),
+            create_figure(title="日ごとのアノテーションあたり作業時間", y_axis_label="アノテーションあたり作業時間[hour/annotation]"),
         ]
 
         fig_info_list = [
