@@ -4,7 +4,7 @@ description = "Python Clinet Library of AnnoFab WebAPI (https://annofab.com/docs
 name = "annofabapi"
 optional = false
 python-versions = ">=3.6,<4.0"
-version = "0.38.8"
+version = "0.38.9"
 
 [package.dependencies]
 backoff = "*"
@@ -911,8 +911,8 @@ python-versions = "^3.6.1"
 
 [metadata.files]
 annofabapi = [
-    {file = "annofabapi-0.38.8-py3-none-any.whl", hash = "sha256:13f0b6c33c919d180ee8be021864f38e18d1e090d4bd5aa596fa2e146f86042b"},
-    {file = "annofabapi-0.38.8.tar.gz", hash = "sha256:c5e6ce77f7784476fdda76956372098852421094c3bc61f23992dda9fb6f9a42"},
+    {file = "annofabapi-0.38.9-py3-none-any.whl", hash = "sha256:6a1a2586947d0ac01bdb6b892e285add323311a7dfed0b85ba6bbbd95a7e46b9"},
+    {file = "annofabapi-0.38.9.tar.gz", hash = "sha256:145b970afb3e07e1c6aea2f97b83863a7a03eafdcf36f3c0e92c22d49804f3ea"},
 ]
 apipkg = [
     {file = "apipkg-1.5-py2.py3-none-any.whl", hash = "sha256:58587dd4dc3daefad0487f6d9ae32b4542b185e1c36db6993290e7c41ca2b47c"},
@@ -942,7 +942,6 @@ backoff = [
     {file = "backoff-1.10.0.tar.gz", hash = "sha256:b8fba021fac74055ac05eb7c7bfce4723aedde6cd0a504e5326bcb0bdd6d19a4"},
 ]
 black = [
-    {file = "black-20.8b1-py3-none-any.whl", hash = "sha256:70b62ef1527c950db59062cda342ea224d772abdf6adc58b86a45421bab20a6b"},
     {file = "black-20.8b1.tar.gz", hash = "sha256:1c02557aa099101b9d21496f8a914e9ed2222ef70336404eeeac8edba836fbea"},
 ]
 bokeh = [
