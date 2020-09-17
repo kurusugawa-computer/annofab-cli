@@ -9,7 +9,7 @@ from typing import Any, Dict, List, Optional, Tuple
 import annofabapi
 from annofabapi.models import InputData, Task
 from annofabapi.utils import to_iso8601_extension
-from dataclasses_json import dataclass_json
+from dataclasses_json import DataClassJsonMixin
 
 import annofabcli
 from annofabcli import AnnofabApiFacade
@@ -22,9 +22,8 @@ logger = logging.getLogger(__name__)
 DatetimeRange = Tuple[Optional[datetime.datetime], Optional[datetime.datetime]]
 
 
-@dataclass_json
 @dataclass(frozen=True)
-class InputDataBatchQuery:
+class InputDataBatchQuery(DataClassJsonMixin):
     """
     入力データをバッチ単位（段階的に）に取得する。
     """

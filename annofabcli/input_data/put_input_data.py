@@ -14,7 +14,7 @@ import annofabapi
 import pandas
 import requests
 from annofabapi.models import JobType, ProjectMemberRole
-from dataclasses_json import dataclass_json
+from dataclasses_json import DataClassJsonMixin
 
 import annofabcli
 from annofabcli import AnnofabApiFacade
@@ -34,9 +34,8 @@ logger = logging.getLogger(__name__)
 DEFAULT_WAIT_OPTIONS = WaitOptions(interval=60, max_tries=360)
 
 
-@dataclass_json
 @dataclass
-class CsvInputData:
+class CsvInputData(DataClassJsonMixin):
     """
     CSVに記載されている入力データ
     """

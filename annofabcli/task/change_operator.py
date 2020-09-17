@@ -10,7 +10,7 @@ import annofabapi
 import requests
 from annofabapi.dataclass.task import Task
 from annofabapi.models import ProjectMemberRole, TaskPhase, TaskStatus
-from dataclasses_json import dataclass_json
+from dataclasses_json import DataClassJsonMixin
 
 import annofabcli
 import annofabcli.common.cli
@@ -25,9 +25,8 @@ from annofabcli.common.cli import (
 logger = logging.getLogger(__name__)
 
 
-@dataclass_json
 @dataclass(frozen=True)
-class TaskQuery:
+class TaskQuery(DataClassJsonMixin):
     phase: Optional[TaskPhase] = None
     status: Optional[TaskStatus] = None
 
@@ -79,7 +78,7 @@ class ChangeOperatorMain:
             task_query = TaskQuery()
 
         dict_task, _ = self.service.api.get_task(project_id, task_id)
-        task: Task = Task.from_dict(dict_task)  # type: ignore
+        task: Task = Task.from_dict(dict_task)
 
         now_user_id = None
         if task.account_id is not None:

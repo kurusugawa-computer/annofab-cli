@@ -25,7 +25,7 @@ from annofabapi.parser import (
     lazy_parse_simple_annotation_zip_by_task,
 )
 from annofabapi.utils import can_put_annotation
-from dataclasses_json import dataclass_json
+from dataclasses_json import DataClassJsonMixin
 from more_itertools import first_true
 
 import annofabcli
@@ -36,9 +36,8 @@ from annofabcli.common.visualize import AddProps, MessageLocale
 logger = logging.getLogger(__name__)
 
 
-@dataclass_json
 @dataclass
-class ImportedSimpleAnnotationDetail:
+class ImportedSimpleAnnotationDetail(DataClassJsonMixin):
     """
     ``annofabapi.dataclass.annotation.SimpleAnnotationDetail`` に対応するインポート用のDataClass。
     """
@@ -56,9 +55,8 @@ class ImportedSimpleAnnotationDetail:
     """属性情報。キーは属性の名前、値は属性の値。 """
 
 
-@dataclass_json
 @dataclass
-class ImportedSimpleAnnotation:
+class ImportedSimpleAnnotation(DataClassJsonMixin):
     """
     ``annofabapi.dataclass.annotation.SimpleAnnotation`` に対応するインポート用のDataClass。
     """
@@ -213,7 +211,7 @@ class ImportAnnotation(AbstractCommandLineInterface):
 
             if request_detail is not None:
                 # Enumをシリアライズするため、一度JSONにしてからDictに変換する
-                request_details.append(json.loads(request_detail.to_json()))  # type: ignore
+                request_details.append(json.loads(request_detail.to_json()))
 
         updated_datetime = old_annotation["updated_datetime"] if old_annotation is not None else None
 
@@ -234,9 +232,7 @@ class ImportAnnotation(AbstractCommandLineInterface):
         task_id = parser.task_id
         input_data_id = parser.input_data_id
 
-        simple_annotation: ImportedSimpleAnnotation = ImportedSimpleAnnotation.from_dict(  # type: ignore
-            parser.load_json()
-        )
+        simple_annotation: ImportedSimpleAnnotation = ImportedSimpleAnnotation.from_dict(parser.load_json())
         if len(simple_annotation.details) == 0:
             logger.debug(
                 f"task_id={task_id}, input_data_id={input_data_id} : インポート元にアノテーションデータがないため、アノテーションの登録をスキップします。"

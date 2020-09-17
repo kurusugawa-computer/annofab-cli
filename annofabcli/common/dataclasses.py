@@ -1,12 +1,11 @@
 from dataclasses import dataclass
 from typing import Any, Dict
 
-from dataclasses_json import dataclass_json
+from dataclasses_json import DataClassJsonMixin
 
 
-@dataclass_json
 @dataclass(frozen=True)
-class WaitOptions:
+class WaitOptions(DataClassJsonMixin):
     """
     最新化ジョブが完了するまで待つときのオプション
     """
@@ -18,9 +17,8 @@ class WaitOptions:
     """最大ジョブに何回アクセスするか"""
 
 
-@dataclass_json
 @dataclass
-class SimpleAnnotationDetail4Import:
+class SimpleAnnotationDetail4Import(DataClassJsonMixin):
     """
     アノテーションインポート用の　``SimpleAnnotationDetail`` クラス。
     """

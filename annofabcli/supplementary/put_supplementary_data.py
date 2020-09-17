@@ -12,7 +12,7 @@ import annofabapi
 import pandas
 import requests
 from annofabapi.models import ProjectMemberRole, SupplementaryData
-from dataclasses_json import dataclass_json
+from dataclasses_json import DataClassJsonMixin
 from more_itertools import first_true
 
 import annofabcli
@@ -28,9 +28,8 @@ from annofabcli.common.utils import get_file_scheme_path
 logger = logging.getLogger(__name__)
 
 
-@dataclass_json
 @dataclass
-class CsvSupplementaryData:
+class CsvSupplementaryData(DataClassJsonMixin):
     """
     CSVに記載されている補助情報
     """

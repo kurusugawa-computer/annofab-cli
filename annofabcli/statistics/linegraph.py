@@ -231,7 +231,7 @@ class LineGraph:
                     )
                 )
 
-            for user_index, user_id in enumerate(first_annotation_user_id_list):  # type: ignore
+            for user_index, user_id in enumerate(user_id_list):
                 filtered_df = df[df["first_annotation_user_id"] == user_id]
                 if filtered_df.empty:
                     logger.debug(f"dataframe is empty. user_id = {user_id}")
@@ -277,13 +277,13 @@ class LineGraph:
             logger.info("データが0件のため出力しない")
             return
 
-        first_annotation_user_id_list = self.create_user_id_list(
+        user_id_list = self.create_user_id_list(
             df,
             "first_annotation_user_id",
             datetime_column="first_annotation_started_date",
             arg_user_id_list=first_annotation_user_id_list,
         )
-        logger.debug(f"教師付者用の折れ線グラフに表示する、教師付者のuser_id = {first_annotation_user_id_list}")
+        logger.debug(f"教師付者用の折れ線グラフに表示する、教師付者のuser_id = {user_id_list}")
 
         df["date_first_annotation_started_date"] = df["first_annotation_started_date"].map(
             lambda e: dateutil.parser.parse(e).date()
@@ -453,7 +453,7 @@ class LineGraph:
                     )
                 )
 
-            for user_index, user_id in enumerate(first_annotation_user_id_list):  # type: ignore
+            for user_index, user_id in enumerate(user_id_list):
                 filtered_df = df[df["first_annotation_user_id"] == user_id]
                 if filtered_df.empty:
                     logger.debug(f"dataframe is empty. user_id = {user_id}")
@@ -501,13 +501,13 @@ class LineGraph:
             logger.info("タスク一覧が0件のため出力しない")
             return
 
-        first_annotation_user_id_list = self.create_user_id_list(
+        user_id_list = self.create_user_id_list(
             df,
             "first_annotation_user_id",
             datetime_column="first_annotation_started_datetime",
             arg_user_id_list=first_annotation_user_id_list,
         )
-        logger.debug(f"教師付者用の累積折れ線グラフに表示する、教師付者のuser_id = {first_annotation_user_id_list}")
+        logger.debug(f"教師付者用の累積折れ線グラフに表示する、教師付者のuser_id = {user_id_list}")
 
         if output_target_list is None or OutputTarget.ANNOTATION in output_target_list:
             # 横軸が累計のアノテーション数
@@ -682,7 +682,7 @@ class LineGraph:
                     )
                 )
 
-            for user_index, user_id in enumerate(first_inspection_user_id_list):  # type: ignore
+            for user_index, user_id in enumerate(user_id_list):
                 filtered_df = df[df["first_inspection_user_id"] == user_id]
                 if filtered_df.empty:
                     logger.debug(f"dataframe is empty. user_id = {user_id}")
@@ -731,18 +731,18 @@ class LineGraph:
             logger.info("タスク一覧が0件のため出力しない")
             return
 
-        first_inspection_user_id_list = self.create_user_id_list(
+        user_id_list = self.create_user_id_list(
             df,
             "first_inspection_user_id",
             datetime_column="first_inspection_started_datetime",
             arg_user_id_list=first_inspection_user_id_list,
         )
 
-        if len(first_inspection_user_id_list) == 0:
+        if len(user_id_list) == 0:
             logger.info(f"検査フェーズを担当してユーザがいないため、検査者用のグラフは出力しません。")
             return
 
-        logger.debug(f"検査者用の累積折れ線グラフに表示する、検査者のuser_id = {first_inspection_user_id_list}")
+        logger.debug(f"検査者用の累積折れ線グラフに表示する、検査者のuser_id = {user_id_list}")
 
         if output_target_list is None or OutputTarget.ANNOTATION in output_target_list:
             # 横軸が累計のアノテーション数
@@ -841,7 +841,7 @@ class LineGraph:
                     )
                 )
 
-            for user_index, user_id in enumerate(first_acceptance_user_id_list):  # type: ignore
+            for user_index, user_id in enumerate(user_id_list):
                 filtered_df = df[df["first_acceptance_user_id"] == user_id]
                 if filtered_df.empty:
                     logger.debug(f"dataframe is empty. user_id = {user_id}")
@@ -892,18 +892,18 @@ class LineGraph:
             logger.info("タスク一覧が0件のため出力しない")
             return
 
-        first_acceptance_user_id_list = self.create_user_id_list(
+        user_id_list = self.create_user_id_list(
             df,
             "first_acceptance_user_id",
             datetime_column="first_acceptance_started_datetime",
             arg_user_id_list=first_acceptance_user_id_list,
         )
 
-        if len(first_acceptance_user_id_list) == 0:
+        if len(user_id_list) == 0:
             logger.info(f"受入フェーズを担当してユーザがいないため、受入者用のグラフは出力しません。")
             return
 
-        logger.debug(f"受入者用の累積折れ線グラフに表示する、受入者のuser_id = {first_acceptance_user_id_list}")
+        logger.debug(f"受入者用の累積折れ線グラフに表示する、受入者のuser_id = {user_id_list}")
 
         if output_target_list is None or OutputTarget.ANNOTATION in output_target_list:
             # 横軸が累計のアノテーション数
@@ -1019,7 +1019,7 @@ class LineGraph:
                 )
             )
 
-        for user_index, user_id in enumerate(user_id_list):  # type: ignore
+        for user_index, user_id in enumerate(user_id_list):
             filtered_df = df[df["user_id"] == user_id]
             if filtered_df.empty:
                 logger.debug(f"dataframe is empty. user_id = {user_id}")
@@ -1234,9 +1234,9 @@ class LineGraph:
 
         fig_list = [
             create_figure(title="日ごとの作業時間", y_axis_label="作業時間[hour]"),
-            create_figure(title="日ごとのタスクあたり作業時間", y_axis_label="タスクあたり作業時間[task/hour]"),
-            create_figure(title="日ごとの入力データあたり作業時間", y_axis_label="入力データあたり作業時間[input_data/hour]"),
-            create_figure(title="日ごとのアノテーションあたり作業時間", y_axis_label="アノテーションあたり作業時間[annotation/hour]"),
+            create_figure(title="日ごとのタスクあたり作業時間", y_axis_label="タスクあたり作業時間[hour/task]"),
+            create_figure(title="日ごとの入力データあたり作業時間", y_axis_label="入力データあたり作業時間[hour/input_data]"),
+            create_figure(title="日ごとのアノテーションあたり作業時間", y_axis_label="アノテーションあたり作業時間[hour/annotation]"),
         ]
 
         fig_info_list = [

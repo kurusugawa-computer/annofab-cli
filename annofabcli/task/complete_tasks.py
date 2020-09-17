@@ -198,7 +198,7 @@ class CompleteTasksMain(AbstracCommandCinfirmInterface):
             dict_task = self.facade.change_to_working_status(
                 project_id=task.project_id, task_id=task.task_id, account_id=my_account_id
             )
-            return Task.from_dict(dict_task)  # type: ignore
+            return Task.from_dict(dict_task)
 
         except requests.HTTPError as e:
             logger.warning(f"{task.task_id}: 担当者の変更、または作業中状態への変更に失敗しました。")
@@ -366,7 +366,7 @@ class CompleteTasksMain(AbstracCommandCinfirmInterface):
             logger.warning(f"{task_id} のタスクを取得できませんでした。")
             return False
 
-        task: Task = Task.from_dict(dict_task)  # type: ignore
+        task: Task = Task.from_dict(dict_task)
         logger.info(
             f"{logging_prefix} : タスク情報 task_id={task_id}, "
             f"phase={task.phase.value}, phase_stage={task.phase_stage}, status={task.status.value}"
@@ -388,7 +388,7 @@ class CompleteTasksMain(AbstracCommandCinfirmInterface):
         except Exception as e:  # pylint: disable=broad-except
             logger.warning(f"{task_id}: {task.phase} フェーズを完了状態にするのに失敗しました。")
             logger.warning(e)
-            new_task: Task = Task.from_dict(self.service.wrapper.get_task_or_none(project_id, task_id))  # type: ignore
+            new_task: Task = Task.from_dict(self.service.wrapper.get_task_or_none(project_id, task_id))
             if new_task.status == TaskStatus.WORKING and new_task.account_id == self.service.api.account_id:
                 self.facade.change_to_break_phase(project_id, task_id)
             return False

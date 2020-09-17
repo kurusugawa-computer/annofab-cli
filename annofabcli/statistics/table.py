@@ -8,12 +8,7 @@ import dateutil
 import more_itertools
 import numpy
 import pandas
-from annofabapi.dataclass.statistics import (
-    ProjectAccountStatistics,
-    ProjectAccountStatisticsHistory,
-    WorktimeStatistics,
-    WorktimeStatisticsItem,
-)
+from annofabapi.dataclass.statistics import ProjectAccountStatisticsHistory, WorktimeStatistics, WorktimeStatisticsItem
 from annofabapi.models import (
     InputData,
     InputDataId,
@@ -77,7 +72,7 @@ class Table:
     _task_histories_dict: Optional[Dict[str, List[TaskHistory]]] = None
     _annotations_dict: Optional[Dict[str, Dict[InputDataId, Dict[str, Any]]]] = None
     _worktime_statistics: Optional[List[WorktimeStatistics]] = None
-    _account_statistics: Optional[List[ProjectAccountStatistics]] = None
+    _account_statistics: Optional[List[ProjectAccountStatisticsHistory]] = None
     _labor_list: Optional[List[Dict[str, Any]]] = None
 
     def __init__(
@@ -103,12 +98,12 @@ class Table:
         else:
             tmp_worktime_statistics = self.annofab_service.wrapper.get_worktime_statistics(self.project_id)
             worktime_statistics: List[WorktimeStatistics] = [
-                WorktimeStatistics.from_dict(e) for e in tmp_worktime_statistics  # type: ignore
+                WorktimeStatistics.from_dict(e) for e in tmp_worktime_statistics
             ]
             self._worktime_statistics = worktime_statistics
             return worktime_statistics
 
-    def _get_account_statistics(self) -> List[ProjectAccountStatistics]:
+    def _get_account_statistics(self) -> List[ProjectAccountStatisticsHistory]:
         """
         ユーザー別タスク集計を取得
         """
@@ -116,7 +111,7 @@ class Table:
             return self._account_statistics
         else:
             content: List[Any] = self.annofab_service.wrapper.get_account_statistics(self.project_id)[0]
-            account_statistics = [ProjectAccountStatisticsHistory.from_dict(e) for e in content]  # type: ignore
+            account_statistics = [ProjectAccountStatisticsHistory.from_dict(e) for e in content]
             self._account_statistics = account_statistics
             return account_statistics
 
