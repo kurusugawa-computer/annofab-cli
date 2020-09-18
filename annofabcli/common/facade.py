@@ -82,7 +82,7 @@ class TaskQuery(DataClassJsonMixin):
     """Trueなら未割り当てのタスクで絞り込む"""
 
 
-def match_task_with_task_query(task: Task, task_query: TaskQuery) -> bool:
+def match_task_with_task_query(task: Task, task_query: Optional[TaskQuery]) -> bool:
     """
     タスク情報が、タスククエリ条件に合致するかどうか。
     taskにはuser_idを保持していてないので、user_idでは比較しない。
@@ -94,6 +94,9 @@ def match_task_with_task_query(task: Task, task_query: TaskQuery) -> bool:
     Returns:
         trueならタスククエリ条件に合致する。
     """
+    if task_query is None:
+        return False
+
     if task_query.status is not None and task.status != task_query.status:
         return False
 
@@ -716,3 +719,8 @@ class AnnofabApiFacade:
         attributes_for_dict: List[Dict[str, Any]] = [asdict(e) for e in attributes]
         request_body = [_to_request_body_elm(annotation) for annotation in annotation_list]
         return self.service.api.batch_update_annotations(project_id, request_body)[0]
+
+    def set_account_id_of_task_query(self, project_id: str, task_query: TaskQuery) -> TaskQuery:
+        if task_query.user_id is not None:
+            task_query.account_id = self.get_account_id_from_user_id(project_id, task_query.user_id)
+        return task_query

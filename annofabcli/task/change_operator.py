@@ -67,9 +67,6 @@ class ChangeOperatorMain:
     ) -> bool:
 
         logging_prefix = f"{task_index+1} 件目" if task_index is not None else ""
-        if task_query is None:
-            task_query = TaskQuery()
-
         dict_task, _ = self.service.api.get_task(project_id, task_id)
         task: Task = Task.from_dict(dict_task)
 
@@ -111,7 +108,7 @@ class ChangeOperatorMain:
         self,
         tpl: Tuple[int, str],
         project_id: str,
-        task_query: TaskQuery,
+        task_query: Optional[TaskQuery]=None,
         new_account_id: Optional[str] = None,
     ) -> bool:
         task_index, task_id = tpl
@@ -144,9 +141,8 @@ class ChangeOperatorMain:
             new_user_id: 新しく担当するユーザのuser_id。Noneの場合タスクの担当者は未割り当てにする。
 
         """
-        if task_query is None:
-            task_query = TaskQuery()
-        task_query = self.set_account_id_of_task_query(task_query, project_id)
+        if task_query is not None:
+            task_query = self.set_account_id_of_task_query(task_query, project_id)
 
         if new_user_id is not None:
             new_account_id = self.facade.get_account_id_from_user_id(project_id, new_user_id)
@@ -246,14 +242,7 @@ def parse_args(parser: argparse.ArgumentParser):
 
     assign_group.add_argument("--not_assign", action="store_true", help="指定した場合、タスクの担当者は未割り当てになります。")
 
-    parser.add_argument(
-        "-tq",
-        "--task_query",
-        type=str,
-        help="対象タスクの検索クエリをJSON形式で指定します。指定しない場合はすべてのタスクを取得します。"
-        "`file://`を先頭に付けると、JSON形式のファイルを指定できます。"
-        "使用できるキーは、phase, phase_stage, status, user_id, account_id, no_user (bool値)  のみです。",
-    )
+    argument_parser.add_task_query()
 
     parser.add_argument(
         "--parallelism", type=int, help="使用するプロセス数（並列度）を指定してください。指定する場合は必ず'--yes'を指定してください。指定しない場合は、逐次的に処理します。"

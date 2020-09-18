@@ -7,6 +7,7 @@ from typing import List, Optional, Tuple
 
 import annofabapi
 import requests
+from annofabapi.dataclass.task import Task
 from annofabapi.models import ProjectMemberRole
 
 import annofabcli
@@ -15,8 +16,10 @@ from annofabcli import AnnofabApiFacade
 from annofabcli.common.cli import (
     AbstracCommandCinfirmInterface,
     AbstractCommandLineInterface,
+    ArgumentParser,
     build_annofabapi_resource_and_login,
 )
+from annofabcli.common.facade import TaskQuery, match_task_with_task_query
 
 logger = logging.getLogger(__name__)
 
@@ -27,18 +30,25 @@ class CancelAcceptanceMain(AbstracCommandCinfirmInterface):
         self.facade = AnnofabApiFacade(service)
         AbstracCommandCinfirmInterface.__init__(self, all_yes)
 
+    def set_account_id_of_task_query(self, task_query: TaskQuery, project_id: str) -> TaskQuery:
+        if task_query.user_id is not None:
+            task_query.account_id = self.facade.get_account_id_from_user_id(project_id, task_query.user_id)
+        return task_query
+
     def cancel_acceptance_for_task(
         self,
         project_id: str,
         task_id: str,
         acceptor_user_id: Optional[str] = None,
         assign_last_acceptor: bool = True,
+        task_query: Optional[TaskQuery] = None,
         task_index: Optional[int] = None,
     ) -> bool:
         logging_prefix = f"{task_index + 1} 件目" if task_index is not None else ""
 
         try:
             task, _ = self.service.api.get_task(project_id, task_id)
+
             if task["status"] != "complete":
                 logger.warning(
                     f"{logging_prefix}: task_id = {task_id} は受入完了でありません。"
@@ -53,6 +63,10 @@ class CancelAcceptanceMain(AbstracCommandCinfirmInterface):
                     user_info = self.facade.get_organization_member_from_account_id(project_id, acceptor_account_id)
                     if user_info is not None:
                         acceptor_user_id = user_info["user_id"]
+
+            if not match_task_with_task_query(Task.from_dict(task), task_query):
+                logger.debug(f"{logging_prefix} : task_id = {task_id} : TaskQueryの条件にマッチしないため、スキップします。")
+                return False
 
             if not self.confirm_processing(
                 f"{logging_prefix}: task_id = {task_id} のタスクの受入を取り消しますか？ user_id = '{acceptor_user_id}' に割り当てます。"
@@ -81,6 +95,7 @@ class CancelAcceptanceMain(AbstracCommandCinfirmInterface):
         project_id: str,
         acceptor_user_id: Optional[str] = None,
         assign_last_acceptor: bool = True,
+        task_query: Optional[TaskQuery] = None,
     ) -> bool:
         task_index, task_id = tpl
         return self.cancel_acceptance_for_task(
@@ -88,6 +103,7 @@ class CancelAcceptanceMain(AbstracCommandCinfirmInterface):
             task_id=task_id,
             acceptor_user_id=acceptor_user_id,
             assign_last_acceptor=assign_last_acceptor,
+            task_query=task_query,
             task_index=task_index,
         )
 
@@ -97,6 +113,7 @@ class CancelAcceptanceMain(AbstracCommandCinfirmInterface):
         task_id_list: List[str],
         acceptor_user_id: Optional[str] = None,
         assign_last_acceptor: bool = True,
+        task_query: Optional[TaskQuery] = None,
         parallelism: Optional[int] = None,
     ):
         """
@@ -109,6 +126,10 @@ class CancelAcceptanceMain(AbstracCommandCinfirmInterface):
             assign_last_acceptor: trueなら最後の受入担当者に割り当てる
         """
         logger.info(f"受け入れを取り消すタスク数: {len(task_id_list)}")
+
+        if task_query is None:
+            task_query = TaskQuery()
+        task_query = self.set_account_id_of_task_query(task_query, project_id)
 
         success_count = 0
         if parallelism is not None:
@@ -162,6 +183,9 @@ class CancelAcceptance(AbstractCommandLineInterface):
 
         assign_last_acceptor = not args.not_assign and args.assigned_acceptor_user_id is None
 
+        dict_task_query = annofabcli.common.cli.get_json_from_args(args.task_query)
+        task_query: Optional[TaskQuery] = TaskQuery.from_dict(dict_task_query) if dict_task_query is not None else None
+
         super().validate_project(args.project_id, [ProjectMemberRole.OWNER])
         main_obj = CancelAcceptanceMain(self.service, all_yes=args.yes)
         main_obj.cancel_acceptance_for_task_list(
@@ -169,6 +193,7 @@ class CancelAcceptance(AbstractCommandLineInterface):
             task_id_list,
             acceptor_user_id=args.assigned_acceptor_user_id,
             assign_last_acceptor=assign_last_acceptor,
+            task_query=task_query,
             parallelism=args.parallelism,
         )
 
@@ -180,6 +205,7 @@ def main(args: argparse.Namespace):
 
 
 def parse_args(parser: argparse.ArgumentParser):
+    argument_parser = ArgumentParser(parser)
 
     parser.add_argument("-p", "--project_id", type=str, required=True, help="対象のプロジェクトのproject_idを指定します。")
 
@@ -204,6 +230,9 @@ def parse_args(parser: argparse.ArgumentParser):
         type=str,
         help="受入を取り消した後に割り当てる受入作業者のuser_idを指定します。" "指定しない場合は、最後の受入phaseの担当者が割り当てます。",
     )
+
+    argument_parser.add_task_query()
+
     parser.add_argument(
         "--parallelism", type=int, help="使用するプロセス数（並列度）を指定してください。指定する場合は必ず'--yes'を指定してください。指定しない場合は、逐次的に処理します。"
     )

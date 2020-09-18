@@ -10,6 +10,8 @@ import annofabapi
 import annofabapi.utils
 import requests
 from annofabapi.models import InputDataType, ProjectMemberRole, TaskPhase, TaskStatus
+from annofabcli.common.facade import TaskQuery, match_task_with_task_query
+from annofabapi.dataclass.task import Task
 
 import annofabcli
 import annofabcli.common.cli
@@ -20,6 +22,9 @@ from annofabcli.common.cli import (
     ArgumentParser,
     build_annofabapi_resource_and_login,
 )
+
+from annofabcli.common.facade import TaskQuery, match_task_with_task_query
+
 
 logger = logging.getLogger(__name__)
 
@@ -125,6 +130,7 @@ class RejectTasksMain(AbstracCommandCinfirmInterface):
         assign_last_annotator: bool,
         assigned_annotator_user_id: Optional[str],
         cancel_acceptance: bool = False,
+        task_query: Optional[TaskQuery] = None,
     ):
         task_id = task["task_id"]
         if task["phase"] == TaskPhase.ANNOTATION.value:
@@ -140,6 +146,10 @@ class RejectTasksMain(AbstracCommandCinfirmInterface):
                 f"task_id = {task_id} : タスクのstatusが'完了'なので、差し戻しできません。"
                 f"受入完了を取消す場合は、コマンドライン引数に'--cancel_acceptance'を追加してください。"
             )
+            return False
+
+        if match_task_with_task_query(Task.from_dict(task), task_query):
+            logger.debug(f"task_id = {task_id} : TaskQueryの条件にマッチしないため、スキップします。")
             return False
 
         if not self.confirm_reject_task(
@@ -167,6 +177,7 @@ class RejectTasksMain(AbstracCommandCinfirmInterface):
         assign_last_annotator: bool = True,
         assigned_annotator_user_id: Optional[str] = None,
         cancel_acceptance: bool = False,
+        task_query: Optional[TaskQuery] = None,
         task_index: Optional[int] = None,
     ) -> bool:
         """
@@ -201,6 +212,7 @@ class RejectTasksMain(AbstracCommandCinfirmInterface):
             assign_last_annotator=assign_last_annotator,
             assigned_annotator_user_id=assigned_annotator_user_id,
             cancel_acceptance=cancel_acceptance,
+            task_query=task_query
         ):
             return False
 
@@ -257,6 +269,7 @@ class RejectTasksMain(AbstracCommandCinfirmInterface):
         assign_last_annotator: bool = True,
         assigned_annotator_user_id: Optional[str] = None,
         cancel_acceptance: bool = False,
+        task_query: Optional[TaskQuery] = None,
     ) -> bool:
         task_index, task_id = tpl
         return self.reject_task_with_adding_comment(
@@ -268,6 +281,7 @@ class RejectTasksMain(AbstracCommandCinfirmInterface):
             assign_last_annotator=assign_last_annotator,
             assigned_annotator_user_id=assigned_annotator_user_id,
             cancel_acceptance=cancel_acceptance,
+            task_query=task_query,
         )
 
     def reject_task_list(
@@ -278,8 +292,12 @@ class RejectTasksMain(AbstracCommandCinfirmInterface):
         assign_last_annotator: bool = True,
         assigned_annotator_user_id: Optional[str] = None,
         cancel_acceptance: bool = False,
+        task_query: Optional[TaskQuery] = None,
         parallelism: Optional[int] = None,
     ) -> None:
+        if task_query is not None:
+            task_query = self.set_account_id_of_task_query(task_query, project_id)
+
 
         project, _ = self.service.api.get_project(project_id)
         project_input_data_type = InputDataType(project["input_data_type"])
@@ -344,6 +362,9 @@ class RejectTasks(AbstractCommandLineInterface):
 
         super().validate_project(args.project_id, [ProjectMemberRole.OWNER])
 
+        dict_task_query = annofabcli.common.cli.get_json_from_args(args.task_query)
+        task_query: Optional[TaskQuery] = TaskQuery.from_dict(dict_task_query) if dict_task_query is not None else None
+
         main_obj = RejectTasksMain(self.service, all_yes=self.all_yes)
         main_obj.reject_task_list(
             args.project_id,
@@ -352,6 +373,7 @@ class RejectTasks(AbstractCommandLineInterface):
             assign_last_annotator=assign_last_annotator,
             assigned_annotator_user_id=args.assigned_annotator_user_id,
             cancel_acceptance=args.cancel_acceptance,
+            task_query=task_query,
             parallelism=args.parallelism,
         )
 
@@ -389,6 +411,8 @@ def parse_args(parser: argparse.ArgumentParser):
     )
 
     parser.add_argument("--cancel_acceptance", action="store_true", help="受入完了状態を取り消して、タスクを差し戻します。")
+
+    argument_parser.add_task_query()
 
     parser.add_argument(
         "--parallelism", type=int, help="使用するプロセス数（並列度）を指定してください。指定する場合は必ず'--yes'を指定してください。指定しない場合は、逐次的に処理します。"
