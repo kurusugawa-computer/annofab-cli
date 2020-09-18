@@ -82,7 +82,9 @@ class TaskQuery(DataClassJsonMixin):
     """Trueなら未割り当てのタスクで絞り込む"""
 
 
-def match_task_with_task_query(task: Task, task_query: Optional[TaskQuery]) -> bool:
+def match_task_with_task_query(
+    task: Task, task_query: Optional[TaskQuery]
+) -> bool:  # pylint: disable=too-many-return-statements
     """
     タスク情報が、タスククエリ条件に合致するかどうか。
     taskにはuser_idを保持していてないので、user_idでは比較しない。
