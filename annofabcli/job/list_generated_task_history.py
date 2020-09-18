@@ -28,7 +28,7 @@ class ListTaskCreationHistoryMain:
                 "generated_task_count": job_detail["generated_task_count"],
                 "created_datetime": job["created_datetime"],
                 "updated_datetime": job["updated_datetime"],
-                "task_generated_rule": job_detail["request"]["task_generated_rule"],
+                "task_generated_rule": job_detail["request"]["task_generate_rule"],
             }
 
         query_params = {"type": "gen-tasks"}
@@ -39,7 +39,7 @@ class ListTaskCreationHistoryMain:
 class ListTaskCreationHistory(AbstractCommandLineInterface):
     def main(self):
         args = self.args
-        main_obj = ListTaskCreationHistoryMain(args.project_id)
+        main_obj = ListTaskCreationHistoryMain(self.service)
         data_list = main_obj.get_data_list(args.project_id)
         df = pandas.DataFrame(data_list)
         self.print_according_to_format(df)
