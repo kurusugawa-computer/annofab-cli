@@ -293,7 +293,7 @@ class RejectTasksMain(AbstracCommandCinfirmInterface):
         parallelism: Optional[int] = None,
     ) -> None:
         if task_query is not None:
-            task_query = self.facade.set_account_id_of_task_query(project_id,task_query)
+            task_query = self.facade.set_account_id_of_task_query(project_id, task_query)
 
         project, _ = self.service.api.get_project(project_id)
         project_input_data_type = InputDataType(project["input_data_type"])

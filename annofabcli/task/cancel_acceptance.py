@@ -123,7 +123,7 @@ class CancelAcceptanceMain(AbstracCommandCinfirmInterface):
         logger.info(f"受け入れを取り消すタスク数: {len(task_id_list)}")
 
         if task_query is not None:
-            task_query = self.facade.set_account_id_of_task_query(project_id, task_query )
+            task_query = self.facade.set_account_id_of_task_query(project_id, task_query)
 
         success_count = 0
         if parallelism is not None:
