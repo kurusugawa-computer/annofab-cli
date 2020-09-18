@@ -30,11 +30,6 @@ class CancelAcceptanceMain(AbstracCommandCinfirmInterface):
         self.facade = AnnofabApiFacade(service)
         AbstracCommandCinfirmInterface.__init__(self, all_yes)
 
-    def set_account_id_of_task_query(self, task_query: TaskQuery, project_id: str) -> TaskQuery:
-        if task_query.user_id is not None:
-            task_query.account_id = self.facade.get_account_id_from_user_id(project_id, task_query.user_id)
-        return task_query
-
     def cancel_acceptance_for_task(
         self,
         project_id: str,
@@ -117,7 +112,7 @@ class CancelAcceptanceMain(AbstracCommandCinfirmInterface):
         parallelism: Optional[int] = None,
     ):
         """
-        タスクを受け入れ取り消しする
+        タスクを受入取り消しする
 
         Args:
             project_id:
@@ -127,9 +122,8 @@ class CancelAcceptanceMain(AbstracCommandCinfirmInterface):
         """
         logger.info(f"受け入れを取り消すタスク数: {len(task_id_list)}")
 
-        if task_query is None:
-            task_query = TaskQuery()
-        task_query = self.set_account_id_of_task_query(task_query, project_id)
+        if task_query is not None:
+            task_query = self.facade.set_account_id_of_task_query(project_id, task_query )
 
         success_count = 0
         if parallelism is not None:
@@ -138,6 +132,7 @@ class CancelAcceptanceMain(AbstracCommandCinfirmInterface):
                 project_id=project_id,
                 acceptor_user_id=acceptor_user_id,
                 assign_last_acceptor=assign_last_acceptor,
+                task_query=task_query,
             )
             with multiprocessing.Pool(parallelism) as pool:
                 result_bool_list = pool.map(partial_func, enumerate(task_id_list))
@@ -153,6 +148,7 @@ class CancelAcceptanceMain(AbstracCommandCinfirmInterface):
                     task_index=task_index,
                     acceptor_user_id=acceptor_user_id,
                     assign_last_acceptor=assign_last_acceptor,
+                    task_query=task_query,
                 )
                 if result:
                     success_count += 1

@@ -108,7 +108,7 @@ class ChangeOperatorMain:
         self,
         tpl: Tuple[int, str],
         project_id: str,
-        task_query: Optional[TaskQuery]=None,
+        task_query: Optional[TaskQuery] = None,
         new_account_id: Optional[str] = None,
     ) -> bool:
         task_index, task_id = tpl
@@ -119,11 +119,6 @@ class ChangeOperatorMain:
             task_query=task_query,
             new_account_id=new_account_id,
         )
-
-    def set_account_id_of_task_query(self, task_query: TaskQuery, project_id: str) -> TaskQuery:
-        if task_query.user_id is not None:
-            task_query.account_id = self.facade.get_account_id_from_user_id(project_id, task_query.user_id)
-        return task_query
 
     def change_operator(
         self,
@@ -142,7 +137,7 @@ class ChangeOperatorMain:
 
         """
         if task_query is not None:
-            task_query = self.set_account_id_of_task_query(task_query, project_id)
+            task_query = self.facade.set_account_id_of_task_query(project_id, task_query)
 
         if new_user_id is not None:
             new_account_id = self.facade.get_account_id_from_user_id(project_id, new_user_id)

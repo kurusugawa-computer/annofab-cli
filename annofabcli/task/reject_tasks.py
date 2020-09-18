@@ -9,9 +9,8 @@ from typing import Any, Dict, List, Optional, Tuple
 import annofabapi
 import annofabapi.utils
 import requests
-from annofabapi.models import InputDataType, ProjectMemberRole, TaskPhase, TaskStatus
-from annofabcli.common.facade import TaskQuery, match_task_with_task_query
 from annofabapi.dataclass.task import Task
+from annofabapi.models import InputDataType, ProjectMemberRole, TaskPhase, TaskStatus
 
 import annofabcli
 import annofabcli.common.cli
@@ -22,9 +21,7 @@ from annofabcli.common.cli import (
     ArgumentParser,
     build_annofabapi_resource_and_login,
 )
-
 from annofabcli.common.facade import TaskQuery, match_task_with_task_query
-
 
 logger = logging.getLogger(__name__)
 
@@ -212,7 +209,7 @@ class RejectTasksMain(AbstracCommandCinfirmInterface):
             assign_last_annotator=assign_last_annotator,
             assigned_annotator_user_id=assigned_annotator_user_id,
             cancel_acceptance=cancel_acceptance,
-            task_query=task_query
+            task_query=task_query,
         ):
             return False
 
@@ -296,8 +293,7 @@ class RejectTasksMain(AbstracCommandCinfirmInterface):
         parallelism: Optional[int] = None,
     ) -> None:
         if task_query is not None:
-            task_query = self.set_account_id_of_task_query(task_query, project_id)
-
+            task_query = self.facade.set_account_id_of_task_query(project_id,task_query)
 
         project, _ = self.service.api.get_project(project_id)
         project_input_data_type = InputDataType(project["input_data_type"])
@@ -313,6 +309,7 @@ class RejectTasksMain(AbstracCommandCinfirmInterface):
                 assign_last_annotator=assign_last_annotator,
                 assigned_annotator_user_id=assigned_annotator_user_id,
                 cancel_acceptance=cancel_acceptance,
+                task_query=task_query,
             )
             with multiprocessing.Pool(parallelism) as pool:
                 result_bool_list = pool.map(partial_func, enumerate(task_id_list))
@@ -331,6 +328,7 @@ class RejectTasksMain(AbstracCommandCinfirmInterface):
                     assign_last_annotator=assign_last_annotator,
                     assigned_annotator_user_id=assigned_annotator_user_id,
                     cancel_acceptance=cancel_acceptance,
+                    task_query=task_query,
                 )
                 if result:
                     success_count += 1
