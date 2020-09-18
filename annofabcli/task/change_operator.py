@@ -29,6 +29,10 @@ logger = logging.getLogger(__name__)
 class TaskQuery(DataClassJsonMixin):
     phase: Optional[TaskPhase] = None
     status: Optional[TaskStatus] = None
+    phase_stage: Optional[int] = None
+    user_id: Optional[str] = None
+    account_id: Optional[str] = None
+    no_user: bool = False
 
 
 class ChangeOperatorMain:
@@ -91,22 +95,40 @@ class ChangeOperatorMain:
             f"user_id = {now_user_id}"
         )
 
-        if task_query.status is not None:
-            if task.status != task_query.status:
-                logger.debug(
-                    f"{logging_prefix} : task_id = {task_id} : タスクのstatusが {task_query.status.value} でないので、スキップします。"
-                )
-                return False
-
-        if task_query.phase is not None:
-            if task.phase != task_query.phase:
-                logger.debug(
-                    f"{logging_prefix} : task_id = {task_id} : タスクのphaseが {task_query.phase.value} でないので、スキップします。"
-                )
-                return False
-
+        is_skip = False
         if task.status in [TaskStatus.COMPLETE, TaskStatus.WORKING]:
             logger.warning(f"{logging_prefix} : task_id = {task_id} : タスクのstatusがworking or complete なので、担当者を変更できません。")
+            is_skip = True
+
+        if task_query.status is not None and task.status != task_query.status:
+            logger.debug(
+                f"{logging_prefix} : task_id = {task_id} : タスクのstatusが {task_query.status.value} でないので、スキップします。"
+            )
+            is_skip = True
+
+        if task_query.phase is not None and task.phase != task_query.phase:
+            logger.debug(f"{logging_prefix} : task_id = {task_id} : タスクのphaseが {task_query.phase.value} でないので、スキップします。")
+            is_skip = True
+
+        if task_query.phase_stage is not None and task.phase_stage != task_query.phase_stage:
+            logger.debug(f"{logging_prefix} : task_id = {task_id} : タスクのphaseが {task_query.phase_stage} でないので、スキップします。")
+            is_skip = True
+
+        if task_query.no_user and task.account_id is not None:
+            logger.debug(f"{logging_prefix} : task_id = {task_id} : タスクに担当が割り当てられているので、スキップします。")
+            is_skip = True
+
+        if task_query.account_id is not None and task.account_id != task_query.account_id:
+            logger.debug(
+                f"{logging_prefix} : task_id = {task_id} : タスクのaccount_idが {task_query.account_id} でないので、スキップします。"
+            )
+            is_skip = True
+
+        if task_query.user_id is not None and now_user_id != task_query.user_id:
+            logger.debug(f"{logging_prefix} : task_id = {task_id} : タスクのuser_idが {task_query.user_id} でないので、スキップします。")
+            is_skip = True
+
+        if is_skip:
             return False
 
         if not self.confirm_change_operator(task):
@@ -262,7 +284,7 @@ def parse_args(parser: argparse.ArgumentParser):
         type=str,
         help="タスクの検索クエリをJSON形式で指定します。指定しない場合はすべてのタスクを取得します。"
         "`file://`を先頭に付けると、JSON形式のファイルを指定できます。"
-        "使用できるキーは、phase, status のみです。",
+        "使用できるキーは、phase, phase_stage, status, user_id, account_id, no_user (bool値)  のみです。",
     )
 
     parser.add_argument(
