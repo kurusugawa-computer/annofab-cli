@@ -91,13 +91,13 @@ def match_task_with_task_query(
 
     Args:
         task:
-        task_query:
+        task_query: タスククエリ検索条件。Noneの場合trueを返す。
 
     Returns:
         trueならタスククエリ条件に合致する。
     """
     if task_query is None:
-        return False
+        return True
 
     if task_query.status is not None and task.status != task_query.status:
         return False
@@ -723,6 +723,16 @@ class AnnofabApiFacade:
         return self.service.api.batch_update_annotations(project_id, request_body)[0]
 
     def set_account_id_of_task_query(self, project_id: str, task_query: TaskQuery) -> TaskQuery:
+        """
+        タスククエリ条件のuser_idの値をaccount_idに設定する。
+
+        Args:
+            project_id:
+            task_query:
+
+        Returns:
+
+        """
         if task_query.user_id is not None:
             task_query.account_id = self.get_account_id_from_user_id(project_id, task_query.user_id)
         return task_query
