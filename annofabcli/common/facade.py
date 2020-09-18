@@ -9,7 +9,16 @@ import annofabapi
 import annofabapi.utils
 import more_itertools
 from annofabapi.dataclass.annotation import AdditionalData
-from annofabapi.models import OrganizationMember, OrganizationMemberRole, ProjectId, ProjectMemberRole, SingleAnnotation
+from annofabapi.dataclass.task import Task
+from annofabapi.models import (
+    OrganizationMember,
+    OrganizationMemberRole,
+    ProjectId,
+    ProjectMemberRole,
+    SingleAnnotation,
+    TaskPhase,
+    TaskStatus,
+)
 from dataclasses_json import DataClassJsonMixin
 
 logger = logging.getLogger(__name__)
@@ -56,6 +65,51 @@ class AnnotationQueryForCli(DataClassJsonMixin):
     """ラベルの英語名"""
     label_id: Optional[str] = None
     attributes: Optional[List[AdditionalDataForCli]] = None
+
+
+@dataclass
+class TaskQuery(DataClassJsonMixin):
+    """
+    コマンドライン上で指定するタスクの検索条件
+    """
+
+    phase: Optional[TaskPhase] = None
+    status: Optional[TaskStatus] = None
+    phase_stage: Optional[int] = None
+    user_id: Optional[str] = None
+    account_id: Optional[str] = None
+    no_user: bool = False
+    """Trueなら未割り当てのタスクで絞り込む"""
+
+
+def match_task_with_task_query(task: Task, task_query: TaskQuery) -> bool:
+    """
+    タスク情報が、タスククエリ条件に合致するかどうか。
+    taskにはuser_idを保持していてないので、user_idでは比較しない。
+
+    Args:
+        task:
+        task_query:
+
+    Returns:
+        trueならタスククエリ条件に合致する。
+    """
+    if task_query.status is not None and task.status != task_query.status:
+        return False
+
+    if task_query.phase is not None and task.phase != task_query.phase:
+        return False
+
+    if task_query.phase_stage is not None and task.phase_stage != task_query.phase_stage:
+        return False
+
+    if task_query.no_user and task.account_id is not None:
+        return False
+
+    if task_query.account_id is not None and task.account_id != task_query.account_id:
+        return False
+
+    return True
 
 
 class AnnofabApiFacade:

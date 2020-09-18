@@ -2,15 +2,13 @@ import argparse
 import logging
 import multiprocessing
 import sys
-from dataclasses import dataclass
 from functools import partial
 from typing import List, Optional, Tuple
 
 import annofabapi
 import requests
 from annofabapi.dataclass.task import Task
-from annofabapi.models import ProjectMemberRole, TaskPhase, TaskStatus
-from dataclasses_json import DataClassJsonMixin
+from annofabapi.models import ProjectMemberRole, TaskStatus
 
 import annofabcli
 import annofabcli.common.cli
@@ -21,18 +19,9 @@ from annofabcli.common.cli import (
     build_annofabapi_resource_and_login,
     prompt_yesnoall,
 )
+from annofabcli.common.facade import TaskQuery, match_task_with_task_query
 
 logger = logging.getLogger(__name__)
-
-
-@dataclass(frozen=True)
-class TaskQuery(DataClassJsonMixin):
-    phase: Optional[TaskPhase] = None
-    status: Optional[TaskStatus] = None
-    phase_stage: Optional[int] = None
-    user_id: Optional[str] = None
-    account_id: Optional[str] = None
-    no_user: bool = False
 
 
 class ChangeOperatorMain:
@@ -92,43 +81,16 @@ class ChangeOperatorMain:
             f"{logging_prefix} : task_id = {task.task_id}, "
             f"status = {task.status.value}, "
             f"phase = {task.phase.value}, "
+            f"phase_stage = {task.phase_stage}, "
             f"user_id = {now_user_id}"
         )
 
-        is_skip = False
         if task.status in [TaskStatus.COMPLETE, TaskStatus.WORKING]:
             logger.warning(f"{logging_prefix} : task_id = {task_id} : タスクのstatusがworking or complete なので、担当者を変更できません。")
-            is_skip = True
+            return False
 
-        if task_query.status is not None and task.status != task_query.status:
-            logger.debug(
-                f"{logging_prefix} : task_id = {task_id} : タスクのstatusが {task_query.status.value} でないので、スキップします。"
-            )
-            is_skip = True
-
-        if task_query.phase is not None and task.phase != task_query.phase:
-            logger.debug(f"{logging_prefix} : task_id = {task_id} : タスクのphaseが {task_query.phase.value} でないので、スキップします。")
-            is_skip = True
-
-        if task_query.phase_stage is not None and task.phase_stage != task_query.phase_stage:
-            logger.debug(f"{logging_prefix} : task_id = {task_id} : タスクのphaseが {task_query.phase_stage} でないので、スキップします。")
-            is_skip = True
-
-        if task_query.no_user and task.account_id is not None:
-            logger.debug(f"{logging_prefix} : task_id = {task_id} : タスクに担当が割り当てられているので、スキップします。")
-            is_skip = True
-
-        if task_query.account_id is not None and task.account_id != task_query.account_id:
-            logger.debug(
-                f"{logging_prefix} : task_id = {task_id} : タスクのaccount_idが {task_query.account_id} でないので、スキップします。"
-            )
-            is_skip = True
-
-        if task_query.user_id is not None and now_user_id != task_query.user_id:
-            logger.debug(f"{logging_prefix} : task_id = {task_id} : タスクのuser_idが {task_query.user_id} でないので、スキップします。")
-            is_skip = True
-
-        if is_skip:
+        if not match_task_with_task_query(task, task_query):
+            logger.debug(f"{logging_prefix} : task_id = {task_id} : TaskQueryの条件にマッチしないため、スキップします。")
             return False
 
         if not self.confirm_change_operator(task):
@@ -161,6 +123,11 @@ class ChangeOperatorMain:
             new_account_id=new_account_id,
         )
 
+    def set_account_id_of_task_query(self, task_query: TaskQuery, project_id: str) -> TaskQuery:
+        if task_query.user_id is not None:
+            task_query.account_id = self.facade.get_account_id_from_user_id(project_id, task_query.user_id)
+        return task_query
+
     def change_operator(
         self,
         project_id: str,
@@ -179,6 +146,7 @@ class ChangeOperatorMain:
         """
         if task_query is None:
             task_query = TaskQuery()
+        task_query = self.set_account_id_of_task_query(task_query, project_id)
 
         if new_user_id is not None:
             new_account_id = self.facade.get_account_id_from_user_id(project_id, new_user_id)
@@ -282,7 +250,7 @@ def parse_args(parser: argparse.ArgumentParser):
         "-tq",
         "--task_query",
         type=str,
-        help="タスクの検索クエリをJSON形式で指定します。指定しない場合はすべてのタスクを取得します。"
+        help="対象タスクの検索クエリをJSON形式で指定します。指定しない場合はすべてのタスクを取得します。"
         "`file://`を先頭に付けると、JSON形式のファイルを指定できます。"
         "使用できるキーは、phase, phase_stage, status, user_id, account_id, no_user (bool値)  のみです。",
     )
