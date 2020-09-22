@@ -293,9 +293,13 @@ class ListWorktimeByUser(AbstractCommandLineInterface):
 
             member = self.get_member_from_account_id(member_list, labor["account_id"])
             if add_monitored_worktime:
-                worktime_monitored_hour = self._get_worktime_monitored_hour_from_project_id(
-                    project_id=project_id, account_id=labor["account_id"], date=labor["date"]
-                )
+                try:
+                    worktime_monitored_hour = self._get_worktime_monitored_hour_from_project_id(
+                        project_id=project_id, account_id=labor["account_id"], date=labor["date"]
+                    )
+                except Exception:  # pylint: disable=broad-except
+                    logger.warning(f"project_id={project_id}: 計測作業時間を取得できませんでした。", exc_info=True)
+                    worktime_monitored_hour = None
             else:
                 worktime_monitored_hour = None
 
@@ -331,9 +335,13 @@ class ListWorktimeByUser(AbstractCommandLineInterface):
             member = self.get_member_from_account_id(member_list, labor["account_id"])
             project_title = self.get_project_title(project_list, labor["project_id"])
             if add_monitored_worktime:
-                worktime_monitored_hour = self._get_worktime_monitored_hour_from_project_id(
-                    project_id=labor["project_id"], account_id=labor["account_id"], date=labor["date"]
-                )
+                try:
+                    worktime_monitored_hour = self._get_worktime_monitored_hour_from_project_id(
+                        project_id=labor["project_id"], account_id=labor["account_id"], date=labor["date"]
+                    )
+                except Exception:  # pylint: disable=broad-except
+                    logger.warning(f"project_id={labor['project_id']}: 計測作業時間を取得できませんでした。", exc_info=True)
+                    worktime_monitored_hour = None
             else:
                 worktime_monitored_hour = None
 
