@@ -230,6 +230,25 @@ class AnnofabApiFacade:
         """
         return self._get_organization_member_with_predicate(project_id, lambda e: e["account_id"] == account_id)
 
+    def _get_project_member_with_predicate(
+        self, project_id: str, predicate: Callable[[Any], bool]
+    ) -> Optional[ProjectMember]:
+        """
+        project_memberを取得する
+
+        Args:
+            project_id:
+            predicate: 組織メンバの検索条件
+
+        Returns:
+            プロジェクトメンバ
+        """
+        project_member_list = self._project_members_dict.get(project_id)
+        if project_member_list is None:
+            project_member_list = self.service.wrapper.get_all_project_members(project_id, query_params={"include_inactive_member":True})
+            self._project_members_dict[project_id] = project_member_list
+        return more_itertools.first_true(project_member_list, pred=predicate)
+
     def get_project_member_from_account_id(self, project_id: str, account_id: str) -> Optional[ProjectMember]:
         """
         account_idからプロジェクトメンバを取得する。
@@ -241,11 +260,20 @@ class AnnofabApiFacade:
         Returns:
             プロジェクトメンバ。見つからない場合はNone
         """
-        project_member_list = self._project_members_dict.get(project_id)
-        if project_member_list is None:
-            project_member_list = self.service.wrapper.get_all_project_members(project_id, query_params={"include_inactive_member":True})
-            self._project_members_dict[project_id] = project_member_list
-        return more_itertools.first_true(project_member_list, pred=lambda e: e["account_id"] == account_id)
+        return self._get_project_member_with_predicate(project_id, predicate=lambda e: e["account_id"] == account_id)
+
+    def get_project_member_from_user_id(self, project_id: str, user_id: str) -> Optional[ProjectMember]:
+        """
+        user_idからプロジェクトメンバを取得する。
+
+        Args:
+            project_id:
+            accoaunt_id:
+
+        Returns:
+            プロジェクトメンバ。見つからない場合はNone
+        """
+        return self._get_project_member_with_predicate(project_id, predicate=lambda e: e["user_id"] == user_id)
 
     def get_organization_member_from_user_id(self, project_id: str, user_id: str) -> Optional[OrganizationMember]:
         """
@@ -274,7 +302,7 @@ class AnnofabApiFacade:
             user_id. 見つからなければNone
 
         """
-        member = self.get_organization_member_from_account_id(project_id, account_id)
+        member = self.get_project_member_from_account_id(project_id, account_id)
         if member is None:
             return None
         else:
@@ -293,7 +321,7 @@ class AnnofabApiFacade:
             account_id. 見つからなければNone
 
         """
-        member = self.get_organization_member_from_user_id(project_id, user_id)
+        member = self.get_project_member_from_user_id(project_id, user_id)
         if member is None:
             return None
         else:

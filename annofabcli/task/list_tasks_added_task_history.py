@@ -66,7 +66,7 @@ class ListTasksAddedTaskHistory(AbstractCommandLineInterface):
         account_id = task_history["account_id"]
         task.update({f"{column_prefix}_started_datetime": task_history["started_datetime"]})
 
-        organization_member = self.visualize.get_organization_member_from_account_id(account_id)
+        organization_member = self.visualize.get_project_member_from_account_id(account_id)
         if organization_member is not None:
             task.update(
                 {

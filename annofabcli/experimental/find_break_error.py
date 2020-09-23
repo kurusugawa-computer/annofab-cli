@@ -72,7 +72,7 @@ class FindBreakError(AbstractCommandLineInterface):
         プロジェクトメンバのusernameを取得する。プロジェクトメンバでなければ、account_idを返す。
         account_idがNoneならばNoneを返す。
         """
-        member = self.facade.get_organization_member_from_account_id(project_id, account_id)
+        member = self.facade.get_project_member_from_account_id(project_id, account_id)
         if member is not None:
             return member["username"]
         else:

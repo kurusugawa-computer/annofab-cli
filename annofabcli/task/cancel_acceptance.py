@@ -55,7 +55,7 @@ class CancelAcceptanceMain(AbstracCommandCinfirmInterface):
             if assign_last_acceptor:
                 acceptor_account_id = task["account_id"]
                 if acceptor_account_id is not None:
-                    user_info = self.facade.get_organization_member_from_account_id(project_id, acceptor_account_id)
+                    user_info = self.facade.get_project_member_from_account_id(project_id, acceptor_account_id)
                     if user_info is not None:
                         acceptor_user_id = user_info["user_id"]
 

@@ -33,7 +33,7 @@ class LaborTimePerUser(AbstractCommandLineInterface):
         row_list: List[Dict[str, Any]] = []
         for stat_by_user in account_statistics:
             account_id = stat_by_user["account_id"]
-            member = self.facade.get_organization_member_from_account_id(project_id, account_id)
+            member = self.facade.get_project_member_from_account_id(project_id, account_id)
 
             histories = stat_by_user["histories"]
             for stat in histories:
