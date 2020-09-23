@@ -121,7 +121,9 @@ class AnnofabApiFacade:
 
     #: 組織メンバ一覧のキャッシュ
     _organization_members: Optional[Tuple[ProjectId, List[OrganizationMember]]] = None
-    _project_members_dict: Dict[ProjectId, List[ProjectMember]] = {}
+
+    _project_members_dict: Dict[str, List[ProjectMember]] = {}
+    """プロジェクトメンバ一覧の情報。key:project_id, value:プロジェクトメンバ一覧"""
 
     def __init__(self, service: annofabapi.Resource):
         self.service = service

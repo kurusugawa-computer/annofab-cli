@@ -10,7 +10,7 @@ from typing import Any, Callable, Dict, List, Optional, Tuple
 import more_itertools
 import numpy
 import pandas
-from annofabapi.models import OrganizationMember, Project
+from annofabapi.models import OrganizationMember, Project, ProjectMember
 from annofabapi.utils import allow_404_error
 from dataclasses_json import DataClassJsonMixin
 from more_itertools import first_true
@@ -19,6 +19,8 @@ import annofabcli
 from annofabcli import AnnofabApiFacade
 from annofabcli.common.cli import AbstractCommandLineInterface, build_annofabapi_resource_and_login, get_list_from_args
 from annofabcli.common.utils import isoduration_to_hour
+import annofabapi
+
 
 logger = logging.getLogger(__name__)
 
@@ -94,10 +96,10 @@ class SumLaborWorktime(DataClassJsonMixin):
     worktime_result_hour: float
 
 
-class ListWorktimeByUser(AbstractCommandLineInterface):
-    """
-    作業時間をユーザごとに出力する。
-    """
+class ListWorktimeByUserMain:
+    def __init__(self, service: annofabapi.Resource):
+        self.service = service
+        self.facade = AnnofabApiFacade(service)
 
     DATE_FORMAT = "%Y-%m-%d"
     MONTH_FORMAT = "%Y-%m"
@@ -155,8 +157,7 @@ class ListWorktimeByUser(AbstractCommandLineInterface):
         member = more_itertools.first_true(organization_member_list, pred=lambda e: e["user_id"] == user_id)
         return member
 
-    @staticmethod
-    def get_member_from_account_id(
+    def get_member_from_account_id(self,
         organization_member_list: List[OrganizationMember], account_id: str
     ) -> Optional[OrganizationMember]:
         member = more_itertools.first_true(organization_member_list, pred=lambda e: e["account_id"] == account_id)
@@ -191,7 +192,7 @@ class ListWorktimeByUser(AbstractCommandLineInterface):
     def _get_labor_worktime(
         self,
         labor: Dict[str, Any],
-        member: Optional[OrganizationMember],
+        member: Optional[ProjectMember],
         project_title: str,
         organization_name: str,
         worktime_monitored_hour: Optional[float],
@@ -265,7 +266,6 @@ class ListWorktimeByUser(AbstractCommandLineInterface):
     def get_labor_list_from_project_id(
         self,
         project_id: str,
-        member_list: List[OrganizationMember],
         start_date: Optional[str],
         end_date: Optional[str],
         add_monitored_worktime: bool = False,
@@ -291,7 +291,7 @@ class ListWorktimeByUser(AbstractCommandLineInterface):
             if labor["account_id"] is None:
                 continue
 
-            member = self.get_member_from_account_id(member_list, labor["account_id"])
+            member = self.facade.get_project_member_from_account_id(labor["project_id"], labor["account_id"])
             if add_monitored_worktime:
                 try:
                     worktime_monitored_hour = self._get_worktime_monitored_hour_from_project_id(
@@ -317,7 +317,6 @@ class ListWorktimeByUser(AbstractCommandLineInterface):
     def get_labor_list_from_organization_name(
         self,
         organization_name: str,
-        member_list: List[OrganizationMember],
         start_date: Optional[str],
         end_date: Optional[str],
         add_monitored_worktime: bool = False,
@@ -332,7 +331,7 @@ class ListWorktimeByUser(AbstractCommandLineInterface):
         logger.info(f"'{organization_name}'組織の労務管理情報の件数: {len(labor_list)}")
         new_labor_list = []
         for labor in labor_list:
-            member = self.get_member_from_account_id(member_list, labor["account_id"])
+            member = self.facade.get_project_member_from_account_id(labor["project_id"], labor["account_id"])
             project_title = self.get_project_title(project_list, labor["project_id"])
             if add_monitored_worktime:
                 try:
@@ -362,7 +361,7 @@ class ListWorktimeByUser(AbstractCommandLineInterface):
     ) -> List[SumLaborWorktime]:
         sum_labor_list = []
         for date in pandas.date_range(start=start_date, end=end_date):
-            str_date = date.strftime(ListWorktimeByUser.DATE_FORMAT)
+            str_date = date.strftime(ListWorktimeByUserMain.DATE_FORMAT)
             filtered_list = [e for e in labor_list if e.user_id == user_id and e.date == str_date]
             worktime_plan_hour = sum([e.worktime_plan_hour for e in filtered_list])
             worktime_result_hour = sum([e.worktime_result_hour for e in filtered_list])
@@ -529,14 +528,13 @@ class ListWorktimeByUser(AbstractCommandLineInterface):
 
         availability_list: List[Optional[float]] = []
         for date in pandas.date_range(start=start_date, end=end_date):
-            str_date = date.strftime(ListWorktimeByUser.DATE_FORMAT)
+            str_date = date.strftime(ListWorktimeByUserMain.DATE_FORMAT)
             availability_list.append(get_availability_hour(str_date))
 
         return availability_list
 
     def get_labor_list(
         self,
-        member_list: List[OrganizationMember],
         organization_name_list: Optional[List[str]],
         project_id_list: Optional[List[str]],
         user_id_list: Optional[List[str]],
@@ -553,7 +551,6 @@ class ListWorktimeByUser(AbstractCommandLineInterface):
                 labor_list.extend(
                     self.get_labor_list_from_project_id(
                         project_id,
-                        member_list=member_list,
                         start_date=start_date,
                         end_date=end_date,
                         add_monitored_worktime=add_monitored_worktime,
@@ -565,7 +562,6 @@ class ListWorktimeByUser(AbstractCommandLineInterface):
                 labor_list.extend(
                     self.get_labor_list_from_organization_name(
                         organization_name,
-                        member_list=member_list,
                         start_date=start_date,
                         end_date=end_date,
                         add_monitored_worktime=add_monitored_worktime,
@@ -592,17 +588,17 @@ class ListWorktimeByUser(AbstractCommandLineInterface):
     ):
         reform_dict = {
             ("date", ""): [
-                e.strftime(ListWorktimeByUser.DATE_FORMAT) for e in pandas.date_range(start=start_date, end=end_date)
+                e.strftime(ListWorktimeByUserMain.DATE_FORMAT) for e in pandas.date_range(start=start_date, end=end_date)
             ],
             ("dayofweek", ""): [e.strftime("%a") for e in pandas.date_range(start=start_date, end=end_date)],
         }
 
         username_list = []
         for user_id in user_id_list:
-            sum_worktime_list = ListWorktimeByUser.get_sum_worktime_list(
+            sum_worktime_list = ListWorktimeByUserMain.get_sum_worktime_list(
                 labor_list, user_id=user_id, start_date=start_date, end_date=end_date
             )
-            member = ListWorktimeByUser.get_member_from_user_id(member_list, user_id)
+            member = ListWorktimeByUserMain.get_member_from_user_id(member_list, user_id)
             if member is not None:
                 username = member["username"]
             else:
@@ -621,7 +617,7 @@ class ListWorktimeByUser(AbstractCommandLineInterface):
                 labor_availability_list = labor_availability_list_dict.get(user_id, [])
                 reform_dict.update(
                     {
-                        (username, "予定稼働"): ListWorktimeByUser.get_availability_list(
+                        (username, "予定稼働"): ListWorktimeByUserMain.get_availability_list(
                             labor_availability_list, start_date, end_date
                         )
                     }
@@ -708,13 +704,13 @@ class ListWorktimeByUser(AbstractCommandLineInterface):
     ) -> pandas.DataFrame:
         if len(worktime_df_per_date_user) > 0:
             value_df = worktime_df_per_date_user.pivot_table(index=["user_id"], aggfunc=numpy.sum).fillna(0)
-            ListWorktimeByUser.set_day_count_to_dataframe(
+            ListWorktimeByUserMain.set_day_count_to_dataframe(
                 worktime_df_per_date_user,
                 value_df,
                 worktime_column="worktime_result_hour",
                 days_column="result_working_days",
             )
-            ListWorktimeByUser.set_day_count_to_dataframe(
+            ListWorktimeByUserMain.set_day_count_to_dataframe(
                 worktime_df_per_date_user,
                 value_df,
                 worktime_column="worktime_plan_hour",
@@ -722,7 +718,7 @@ class ListWorktimeByUser(AbstractCommandLineInterface):
             )
 
             if add_availability:
-                ListWorktimeByUser.set_day_count_to_dataframe(
+                ListWorktimeByUserMain.set_day_count_to_dataframe(
                     worktime_df_per_date_user,
                     value_df,
                     worktime_column="availability_hour",
@@ -747,7 +743,7 @@ class ListWorktimeByUser(AbstractCommandLineInterface):
         user_df.set_index("user_id", inplace=True)
 
         df = user_df.join(value_df, how="left").reset_index()
-        value_columns = ListWorktimeByUser.get_value_columns(df.columns)
+        value_columns = ListWorktimeByUserMain.get_value_columns(df.columns)
         df[value_columns] = df[value_columns].fillna(0)
         return df
 
@@ -822,7 +818,6 @@ class ListWorktimeByUser(AbstractCommandLineInterface):
         member_list = self.get_organization_member_list(organization_name_list, project_id_list)
 
         labor_list = self.get_labor_list(
-            member_list=member_list,
             organization_name_list=organization_name_list,
             project_id_list=project_id_list,
             user_id_list=user_id_list,
@@ -903,12 +898,12 @@ class ListWorktimeByUser(AbstractCommandLineInterface):
             月初と月末の日付が格納されたタプル
 
         """
-        dt_first_date = datetime.datetime.strptime(str_month, ListWorktimeByUser.MONTH_FORMAT)
+        dt_first_date = datetime.datetime.strptime(str_month, ListWorktimeByUserMain.MONTH_FORMAT)
         _, days = calendar.monthrange(dt_first_date.year, dt_first_date.month)
         dt_last_date = dt_first_date + datetime.timedelta(days=(days - 1))
         return (
-            dt_first_date.strftime(ListWorktimeByUser.DATE_FORMAT),
-            dt_last_date.strftime(ListWorktimeByUser.DATE_FORMAT),
+            dt_first_date.strftime(ListWorktimeByUserMain.DATE_FORMAT),
+            dt_last_date.strftime(ListWorktimeByUserMain.DATE_FORMAT),
         )
 
     @staticmethod
@@ -924,27 +919,35 @@ class ListWorktimeByUser(AbstractCommandLineInterface):
 
 
         """
-        first_date, _ = ListWorktimeByUser.get_first_and_last_date(start_month)
-        _, end_date = ListWorktimeByUser.get_first_and_last_date(end_month)
+        first_date, _ = ListWorktimeByUserMain.get_first_and_last_date(start_month)
+        _, end_date = ListWorktimeByUserMain.get_first_and_last_date(end_month)
         return first_date, end_date
+
+
+
+class ListWorktimeByUser(AbstractCommandLineInterface):
+    """
+    作業時間をユーザごとに出力する。
+    """
 
     @staticmethod
     def get_start_and_end_date_from_args(args: argparse.Namespace) -> Tuple[Optional[str], Optional[str]]:
         if args.start_date is not None:
             start_date = args.start_date
         elif args.start_month is not None:
-            start_date, _ = ListWorktimeByUser.get_first_and_last_date(args.start_month)
+            start_date, _ = ListWorktimeByUserMain.get_first_and_last_date(args.start_month)
         else:
             start_date = None
 
         if args.end_date is not None:
             end_date = args.end_date
         elif args.end_month is not None:
-            _, end_date = ListWorktimeByUser.get_first_and_last_date(args.end_month)
+            _, end_date = ListWorktimeByUserMain.get_first_and_last_date(args.end_month)
         else:
             end_date = None
 
         return (start_date, end_date)
+
 
     def main(self) -> None:
         args = self.args
@@ -957,7 +960,8 @@ class ListWorktimeByUser(AbstractCommandLineInterface):
         output_dir = Path(args.output_dir)
         output_dir.mkdir(exist_ok=True, parents=True)
 
-        self.print_labor_worktime_list(
+        mian_obj = ListWorktimeByUserMain(self.service)
+        mian_obj.print_labor_worktime_list(
             organization_name_list=organization_name_list,
             project_id_list=project_id_list,
             start_date=start_date,
