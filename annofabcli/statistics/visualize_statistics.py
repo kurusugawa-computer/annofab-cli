@@ -118,10 +118,10 @@ class WriteCsvGraph:
             self.account_statistics_df = self.table_obj.create_account_statistics_df()
         return self.account_statistics_df
 
-    def _get_df_by_date_user(self):
+    def _get_df_by_date_user_for_annotation(self):
         if self.df_by_date_user is None:
             task_df = self._get_task_df()
-            self.df_by_date_user = self.table_obj.create_dataframe_by_date_user(task_df)
+            self.df_by_date_user = self.table_obj.create_dataframe_by_date_user_for_annotation(task_df)
         return self.df_by_date_user
 
     def _get_labor_df(self):
@@ -240,9 +240,12 @@ class WriteCsvGraph:
         )
 
         if not self.minimal_output:
-            df_by_date_user = self._get_df_by_date_user()
+            df_by_date_user = self._get_df_by_date_user_for_annotation()
             catch_exception(self.linegraph_obj.write_productivity_line_graph_for_annotator)(
                 df=df_by_date_user, first_annotation_user_id_list=user_id_list
+            )
+            catch_exception(self.linegraph_obj.write_productivity_line_graph_for_acceptor)(
+                df=df_by_date_user, first_acceptance_user_id_list=user_id_list
             )
 
     def write_linegraph_for_worktime_by_user(self, user_id_list: Optional[List[str]] = None) -> None:
