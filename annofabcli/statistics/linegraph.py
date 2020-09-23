@@ -521,7 +521,7 @@ class LineGraph:
                 title="アノテーションあたり受入時間の折れ線グラフ",
                 x_axis_label="1回目の受入開始日",
                 y_axis_label="アノテーションあたり受入時間[min]",
-            )
+            ),
         ]
         write_graph(
             fig_info_list_acceptance_count,
