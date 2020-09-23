@@ -1,10 +1,6 @@
-"""
-annofabapiのfacadeクラス
-"""
 import logging
 from dataclasses import asdict, dataclass
 from typing import Any, Callable, Dict, List, Optional, Tuple
-
 import annofabapi
 import annofabapi.utils
 import more_itertools
@@ -12,6 +8,7 @@ from annofabapi.dataclass.annotation import AdditionalData
 from annofabapi.dataclass.task import Task
 from annofabapi.models import (
     OrganizationMember,
+    ProjectMember,
     OrganizationMemberRole,
     ProjectId,
     ProjectMemberRole,
@@ -124,6 +121,7 @@ class AnnofabApiFacade:
 
     #: 組織メンバ一覧のキャッシュ
     _organization_members: Optional[Tuple[ProjectId, List[OrganizationMember]]] = None
+    _project_members_dict: Dict[ProjectId, List[ProjectMember]] = {}
 
     def __init__(self, service: annofabapi.Resource):
         self.service = service
@@ -231,6 +229,23 @@ class AnnofabApiFacade:
             組織メンバ。見つからない場合はNone
         """
         return self._get_organization_member_with_predicate(project_id, lambda e: e["account_id"] == account_id)
+
+    def get_project_member_from_account_id(self, project_id: str, account_id: str) -> Optional[ProjectMember]:
+        """
+        account_idからプロジェクトメンバを取得する。
+
+        Args:
+            project_id:
+            accoaunt_id:
+
+        Returns:
+            プロジェクトメンバ。見つからない場合はNone
+        """
+        project_member_list = self._project_members_dict.get(project_id)
+        if project_member_list is None:
+            project_member_list = self.service.wrapper.get_all_project_members(project_id, query_params={"include_inactive_member":True})
+            self._project_members_dict[project_id] = project_member_list
+        return more_itertools.first_true(project_member_list, pred=lambda e: e["account_id"] == account_id)
 
     def get_organization_member_from_user_id(self, project_id: str, user_id: str) -> Optional[OrganizationMember]:
         """

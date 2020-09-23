@@ -224,7 +224,7 @@ class Table:
         if account_id is None:
             return None
 
-        member = self.annofab_facade.get_organization_member_from_account_id(self.project_id, account_id)
+        member = self.annofab_facade.get_project_member_from_account_id(self.project_id, account_id)
         if member is not None:
             return member["user_id"]
         else:
@@ -238,7 +238,7 @@ class Table:
         if account_id is None:
             return None
 
-        member = self.annofab_facade.get_organization_member_from_account_id(self.project_id, account_id)
+        member = self.annofab_facade.get_project_member_from_account_id(self.project_id, account_id)
         if member is not None:
             return member["username"]
         else:
@@ -251,7 +251,7 @@ class Table:
         if account_id is None:
             return None
 
-        member = self.annofab_facade.get_organization_member_from_account_id(self.project_id, account_id)
+        member = self.annofab_facade.get_project_member_from_account_id(self.project_id, account_id)
         if member is not None:
             return member["biography"]
         else:
