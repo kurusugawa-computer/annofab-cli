@@ -452,14 +452,14 @@ class LineGraph:
                 )
 
             for user_index, user_id in enumerate(user_id_list):
-                filtered_df = df[df["first_annotation_user_id"] == user_id]
+                filtered_df = df[df["first_acceptance_user_id"] == user_id]
                 if filtered_df.empty:
                     logger.debug(f"dataframe is empty. user_id = {user_id}")
                     continue
 
                 source = ColumnDataSource(data=filtered_df)
                 color = self.my_palette[user_index]
-                username = filtered_df.iloc[0]["first_annotation_username"]
+                username = filtered_df.iloc[0]["first_acceptance_username"]
 
                 for fig, fig_info in zip(figs, fig_info_list):
                     self._plot_line_and_circle(
@@ -498,7 +498,7 @@ class LineGraph:
         user_id_list = self.create_user_id_list(
             df,
             "first_acceptance_user_id",
-            datetime_column="first_acceptance_started_datetime",
+            datetime_column="first_acceptance_started_date",
             arg_user_id_list=first_acceptance_user_id_list,
         )
         logger.debug(f"受入者用の折れ線グラフに表示する、受入者のuser_id = {user_id_list}")
