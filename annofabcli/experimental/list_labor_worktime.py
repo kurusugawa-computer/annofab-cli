@@ -346,7 +346,7 @@ def parse_args(parser: argparse.ArgumentParser):
 
     parser.add_argument("--time_unit", type=str, default="h", choices=time_unit_choices, help="出力の時間単位(h/m/s)")
     parser.add_argument(
-        "--format",
+        "-f", "--format",
         type=str,
         choices=format_choices,
         default="details",
