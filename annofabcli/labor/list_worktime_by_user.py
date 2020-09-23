@@ -47,6 +47,13 @@ def catch_exception(function: Callable[..., Any]) -> Callable[..., Any]:
 
 
 @dataclass(frozen=True)
+class User(DataClassJsonMixin):
+    account_id: str
+    user_id: str
+    username: str
+    biography: Optional[str]
+
+@dataclass(frozen=True)
 class LaborWorktime(DataClassJsonMixin):
     """
     労務管理情報
@@ -513,6 +520,55 @@ class ListWorktimeByUserMain:
 
         return member_list
 
+    def get_user_list(
+        self, labor_list: List[LaborWorktime],
+            organization_name_list: Optional[List[str]],
+        project_id_list: Optional[List[str]],
+        user_id_list: Optional[List[str]],
+    ) -> List[User]:
+        df = pandas.DataFrame(labor_list, columns=["account_id","user_id","username","biography"]).drop_duplicates().set_index("user_id")
+
+        user_list: List[User] = []
+
+        for user_id, row in df.iterrows():
+            user = User(user_id=str(user_id), account_id=row["account_id"], username=row["username"],
+                        biography=row["biography"])
+            user_list.append(user)
+
+        if user_id_list is None:
+            return user_list
+
+
+        if organization_name_list is not None:
+            for user_id in user_id_list:
+                if user_id in df.index:
+                    continue
+
+                for organization_name in organization_name_list:
+                    organization_member = self.service.wrapper.get_organization_member_or_none(organization_name, user_id)
+                    if organization_member is not None:
+                        user = User(user_id=organization_member["user_id"], account_id=organization_member["account_id"], username=organization_member["username"],
+                                    biography=organization_member["biography"])
+                        user_list.append(user)
+                        break
+                logger.warning(f"user_id={user_id} のユーザは見つかりませんでした。")
+
+        if project_id_list is not None:
+            for user_id in user_id_list:
+                if user_id in df.index:
+                    continue
+
+                for project_id in project_id_list:
+                    project_member = self.service.wrapper.get_project_member_or_none(project_id, user_id)
+                    if project_member is not None:
+                        user = User(user_id=project_member["user_id"], account_id=project_member["account_id"], username=project_member["username"],
+                                    biography=project_member["biography"])
+                        user_list.append(user)
+                        break
+                logger.warning(f"user_id={user_id} のユーザは見つかりませんでした。")
+
+        return user_list
+
     @staticmethod
     def get_availability_list(
         labor_availability_list: List[LaborAvailability],
@@ -801,7 +857,7 @@ class ListWorktimeByUserMain:
         )
         self.write_worktime_per_user(worktime_df_per_user, output_dir, add_availability=add_availability)
 
-    def print_labor_worktime_list(
+    def main(
         self,
         organization_name_list: Optional[List[str]],
         project_id_list: Optional[List[str]],
@@ -961,7 +1017,7 @@ class ListWorktimeByUser(AbstractCommandLineInterface):
         output_dir.mkdir(exist_ok=True, parents=True)
 
         mian_obj = ListWorktimeByUserMain(self.service)
-        mian_obj.print_labor_worktime_list(
+        mian_obj.main(
             organization_name_list=organization_name_list,
             project_id_list=project_id_list,
             start_date=start_date,
