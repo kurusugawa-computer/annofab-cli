@@ -824,7 +824,7 @@ class Table:
                 "first_inspection_worktime_hour",
                 "annotation_worktime_hour",
                 "inspection_worktime_hour",
-                "inspection_worktime_hour",
+                "acceptance_worktime_hour",
                 "sum_worktime_hour",
                 "task_count",
                 "input_data_count",

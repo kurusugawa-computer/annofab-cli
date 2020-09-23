@@ -86,7 +86,7 @@ class LineGraph:
             legend_label=legend_label,
             line_color=color,
             line_width=1,
-            muted_alpha=0.2,
+            muted_alpha=0,
             muted_color=color,
             **kwargs,
         )
@@ -133,7 +133,7 @@ class LineGraph:
             line_width=1,
             line_dash="dashed",
             line_alpha=0.6,
-            muted_alpha=0.2,
+            muted_alpha=0,
             muted_color=color,
             **kwargs,
         )
