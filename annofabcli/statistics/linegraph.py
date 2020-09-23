@@ -409,13 +409,150 @@ class LineGraph:
         ]
         write_cumulative_graph(fig_info_list_value, html_title="折れ線-横軸_教師付開始日-縦軸_指標-教師付者用")
 
+    def write_productivity_line_graph_for_inspector(
+        self,
+        df: pandas.DataFrame,
+        first_inspection_user_id_list: Optional[List[str]] = None,
+    ):
+        """
+        日毎の生産性を検査作業者ごとにプロットする。
+
+        Args:
+            df:
+            first_acceptance_user_id_list:
+
+        Returns:
+
+        """
+
+        def write_graph(fig_info_list: List[Dict[str, str]], html_title: str):
+            """
+
+            Args:
+                fig_info_list:
+                html_title:
+
+            Returns:
+
+            """
+            output_file = f"{self.line_graph_outdir}/{html_title}.html"
+            logger.debug(f"{output_file} を出力します。")
+
+            figs: List[bokeh.plotting.Figure] = []
+            for fig_info in fig_info_list:
+                figs.append(
+                    figure(
+                        plot_width=1200,
+                        plot_height=600,
+                        title=fig_info["title"],
+                        x_axis_label=fig_info["x_axis_label"],
+                        x_axis_type="datetime",
+                        y_axis_label=fig_info["y_axis_label"],
+                    )
+                )
+
+            for user_index, user_id in enumerate(user_id_list):
+                filtered_df = df[df["first_inspection_user_id"] == user_id]
+                if filtered_df.empty:
+                    logger.debug(f"dataframe is empty. user_id = {user_id}")
+                    continue
+
+                source = ColumnDataSource(data=filtered_df)
+                color = self.my_palette[user_index]
+                username = filtered_df.iloc[0]["first_inspection_username"]
+
+                for fig, fig_info in zip(figs, fig_info_list):
+                    self._plot_line_and_circle(
+                        fig,
+                        x_column_name=fig_info["x"],
+                        y_column_name=fig_info["y"],
+                        source=source,
+                        legend_label=username,
+                        color=color,
+                    )
+
+            hover_tool = self._create_hover_tool(tooltip_item)
+            for fig in figs:
+                self._set_legend(fig, hover_tool)
+
+            bokeh.plotting.reset_output()
+            bokeh.plotting.output_file(output_file, title=html_title)
+            bokeh.plotting.save(bokeh.layouts.column(figs))
+
+        tooltip_item = [
+            "first_inspection_user_id",
+            "first_inspection_username",
+            "first_inspection_started_datetime",
+            "first_inspection_worktime_hour",
+            "inspection_worktime_hour",
+            "annotation_count",
+            "input_data_count",
+            "task_count",
+            "inspection_count",
+        ]
+
+        if len(df) == 0:
+            logger.info("データが0件のため出力しない")
+            return
+
+        user_id_list = self.create_user_id_list(
+            df,
+            "first_inspection_user_id",
+            datetime_column="first_inspection_started_date",
+            arg_user_id_list=first_inspection_user_id_list,
+        )
+        logger.debug(f"検査者用の折れ線グラフに表示する、受入者のuser_id = {user_id_list}")
+
+        df["date_first_inspection_started_date"] = df["first_inspection_started_date"].map(
+            lambda e: dateutil.parser.parse(e).date()
+        )
+
+        fig_info_list_inspection_count = [
+            dict(
+                x="date_first_inspection_started_date",
+                y="first_inspection_worktime_minute/annotation_count",
+                title="アノテーションあたり検査時間(1回目)の折れ線グラフ",
+                x_axis_label="1回目の検査開始日",
+                y_axis_label="アノテーションあたり検査時間(1回目)[min]",
+            ),
+            dict(
+                x="date_first_inspection_started_date",
+                y="inspection_worktime_minute/annotation_count",
+                title="アノテーションあたり検査時間の折れ線グラフ",
+                x_axis_label="1回目の検査開始日",
+                y_axis_label="アノテーションあたり検査時間[min]",
+            ),
+        ]
+        write_graph(
+            fig_info_list_inspection_count,
+            html_title="折れ線-横軸_検査開始日-縦軸_アノテーションあたりの指標-検査者用",
+        )
+
+        fig_info_list_input_data_count = [
+            dict(
+                x="date_first_inspection_started_date",
+                y="first_inspection_worktime_minute/input_data_count",
+                title="画像あたり検査時間(1回目)の折れ線グラフ",
+                x_axis_label="1回目の検査開始日",
+                y_axis_label="画像あたり検査時間(1回目)[min]",
+            ),
+            dict(
+                x="date_first_inspection_started_date",
+                y="inspection_worktime_minute/input_data_count",
+                title="画像あたり検査時間の折れ線グラフ",
+                x_axis_label="1回目の検査開始日",
+                y_axis_label="画像あたり検査時間[min]",
+            ),
+        ]
+        write_graph(fig_info_list_input_data_count, html_title="折れ線-横軸_検査開始日-縦軸_画像あたりの指標-検査者用")
+
     def write_productivity_line_graph_for_acceptor(
         self,
         df: pandas.DataFrame,
         first_acceptance_user_id_list: Optional[List[str]] = None,
     ):
         """
-        生産性を受入作業者ごとにプロットする。
+        日毎の生産性を受入作業者ごとにプロットする。
 
         Args:
             df:

@@ -86,6 +86,7 @@ class WriteCsvGraph:
     account_statistics_df: Optional[pandas.DataFrame] = None
     df_by_date_user_for_annotation: Optional[pandas.DataFrame] = None
     df_by_date_user_for_acceptance: Optional[pandas.DataFrame] = None
+    df_by_date_user_for_inspection: Optional[pandas.DataFrame] = None
     task_history_df: Optional[pandas.DataFrame] = None
     labor_df: Optional[pandas.DataFrame] = None
     productivity_df: Optional[pandas.DataFrame] = None
@@ -124,6 +125,12 @@ class WriteCsvGraph:
             task_df = self._get_task_df()
             self.df_by_date_user_for_annotation = self.table_obj.create_dataframe_by_date_user_for_annotation(task_df)
         return self.df_by_date_user_for_annotation
+
+    def _get_df_by_date_user_for_inspection(self):
+        if self.df_by_date_user_for_inspection is None:
+            task_df = self._get_task_df()
+            self.df_by_date_user_for_inspection = self.table_obj.create_dataframe_by_date_user_for_inspection(task_df)
+        return self.df_by_date_user_for_acceptance
 
     def _get_df_by_date_user_for_acceptance(self):
         if self.df_by_date_user_for_acceptance is None:
@@ -251,6 +258,12 @@ class WriteCsvGraph:
             catch_exception(self.linegraph_obj.write_productivity_line_graph_for_annotator)(
                 df=df_by_date_user_for_annotation, first_annotation_user_id_list=user_id_list
             )
+
+            df_by_date_user_for_inspection = self._get_df_by_date_user_for_inspection()
+            catch_exception(self.linegraph_obj.write_productivity_line_graph_for_inspector)(
+                df=df_by_date_user_for_inspection, first_acceptance_user_id_list=user_id_list
+            )
+
             df_by_date_user_for_acceptance = self._get_df_by_date_user_for_acceptance()
             catch_exception(self.linegraph_obj.write_productivity_line_graph_for_acceptor)(
                 df=df_by_date_user_for_acceptance, first_acceptance_user_id_list=user_id_list
