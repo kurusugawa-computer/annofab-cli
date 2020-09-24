@@ -2,15 +2,13 @@ import argparse
 import logging
 import multiprocessing
 import sys
-from dataclasses import dataclass
 from functools import partial
 from typing import List, Optional, Tuple
 
 import annofabapi
 import requests
 from annofabapi.dataclass.task import Task
-from annofabapi.models import ProjectMemberRole, TaskPhase, TaskStatus
-from dataclasses_json import DataClassJsonMixin
+from annofabapi.models import ProjectMemberRole, TaskStatus
 
 import annofabcli
 import annofabcli.common.cli
@@ -21,14 +19,9 @@ from annofabcli.common.cli import (
     build_annofabapi_resource_and_login,
     prompt_yesnoall,
 )
+from annofabcli.common.facade import TaskQuery, match_task_with_task_query
 
 logger = logging.getLogger(__name__)
-
-
-@dataclass(frozen=True)
-class TaskQuery(DataClassJsonMixin):
-    phase: Optional[TaskPhase] = None
-    status: Optional[TaskStatus] = None
 
 
 class ChangeOperatorMain:
@@ -74,9 +67,6 @@ class ChangeOperatorMain:
     ) -> bool:
 
         logging_prefix = f"{task_index+1} 件目" if task_index is not None else ""
-        if task_query is None:
-            task_query = TaskQuery()
-
         dict_task, _ = self.service.api.get_task(project_id, task_id)
         task: Task = Task.from_dict(dict_task)
 
@@ -88,25 +78,16 @@ class ChangeOperatorMain:
             f"{logging_prefix} : task_id = {task.task_id}, "
             f"status = {task.status.value}, "
             f"phase = {task.phase.value}, "
+            f"phase_stage = {task.phase_stage}, "
             f"user_id = {now_user_id}"
         )
 
-        if task_query.status is not None:
-            if task.status != task_query.status:
-                logger.debug(
-                    f"{logging_prefix} : task_id = {task_id} : タスクのstatusが {task_query.status.value} でないので、スキップします。"
-                )
-                return False
-
-        if task_query.phase is not None:
-            if task.phase != task_query.phase:
-                logger.debug(
-                    f"{logging_prefix} : task_id = {task_id} : タスクのphaseが {task_query.phase.value} でないので、スキップします。"
-                )
-                return False
-
         if task.status in [TaskStatus.COMPLETE, TaskStatus.WORKING]:
             logger.warning(f"{logging_prefix} : task_id = {task_id} : タスクのstatusがworking or complete なので、担当者を変更できません。")
+            return False
+
+        if not match_task_with_task_query(task, task_query):
+            logger.debug(f"{logging_prefix} : task_id = {task_id} : TaskQueryの条件にマッチしないため、スキップします。")
             return False
 
         if not self.confirm_change_operator(task):
@@ -127,7 +108,7 @@ class ChangeOperatorMain:
         self,
         tpl: Tuple[int, str],
         project_id: str,
-        task_query: TaskQuery,
+        task_query: Optional[TaskQuery] = None,
         new_account_id: Optional[str] = None,
     ) -> bool:
         task_index, task_id = tpl
@@ -155,8 +136,8 @@ class ChangeOperatorMain:
             new_user_id: 新しく担当するユーザのuser_id。Noneの場合タスクの担当者は未割り当てにする。
 
         """
-        if task_query is None:
-            task_query = TaskQuery()
+        if task_query is not None:
+            task_query = self.facade.set_account_id_of_task_query(project_id, task_query)
 
         if new_user_id is not None:
             new_account_id = self.facade.get_account_id_from_user_id(project_id, new_user_id)
@@ -256,14 +237,7 @@ def parse_args(parser: argparse.ArgumentParser):
 
     assign_group.add_argument("--not_assign", action="store_true", help="指定した場合、タスクの担当者は未割り当てになります。")
 
-    parser.add_argument(
-        "-tq",
-        "--task_query",
-        type=str,
-        help="タスクの検索クエリをJSON形式で指定します。指定しない場合はすべてのタスクを取得します。"
-        "`file://`を先頭に付けると、JSON形式のファイルを指定できます。"
-        "使用できるキーは、phase, status のみです。",
-    )
+    argument_parser.add_task_query()
 
     parser.add_argument(
         "--parallelism", type=int, help="使用するプロセス数（並列度）を指定してください。指定する場合は必ず'--yes'を指定してください。指定しない場合は、逐次的に処理します。"

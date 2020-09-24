@@ -1,6 +1,3 @@
-"""
-annofabapiのfacadeクラス
-"""
 import logging
 from dataclasses import asdict, dataclass
 from typing import Any, Callable, Dict, List, Optional, Tuple
@@ -9,7 +6,17 @@ import annofabapi
 import annofabapi.utils
 import more_itertools
 from annofabapi.dataclass.annotation import AdditionalData
-from annofabapi.models import OrganizationMember, OrganizationMemberRole, ProjectId, ProjectMemberRole, SingleAnnotation
+from annofabapi.dataclass.task import Task
+from annofabapi.models import (
+    OrganizationMember,
+    OrganizationMemberRole,
+    ProjectId,
+    ProjectMember,
+    ProjectMemberRole,
+    SingleAnnotation,
+    TaskPhase,
+    TaskStatus,
+)
 from dataclasses_json import DataClassJsonMixin
 
 logger = logging.getLogger(__name__)
@@ -58,6 +65,56 @@ class AnnotationQueryForCli(DataClassJsonMixin):
     attributes: Optional[List[AdditionalDataForCli]] = None
 
 
+@dataclass
+class TaskQuery(DataClassJsonMixin):
+    """
+    コマンドライン上で指定するタスクの検索条件
+    """
+
+    phase: Optional[TaskPhase] = None
+    status: Optional[TaskStatus] = None
+    phase_stage: Optional[int] = None
+    user_id: Optional[str] = None
+    account_id: Optional[str] = None
+    no_user: bool = False
+    """Trueなら未割り当てのタスクで絞り込む"""
+
+
+def match_task_with_task_query(  # pylint: disable=too-many-return-statements
+    task: Task, task_query: Optional[TaskQuery]
+) -> bool:
+    """
+    タスク情報が、タスククエリ条件に合致するかどうか。
+    taskにはuser_idを保持していてないので、user_idでは比較しない。
+
+    Args:
+        task:
+        task_query: タスククエリ検索条件。Noneの場合trueを返す。
+
+    Returns:
+        trueならタスククエリ条件に合致する。
+    """
+    if task_query is None:
+        return True
+
+    if task_query.status is not None and task.status != task_query.status:
+        return False
+
+    if task_query.phase is not None and task.phase != task_query.phase:
+        return False
+
+    if task_query.phase_stage is not None and task.phase_stage != task_query.phase_stage:
+        return False
+
+    if task_query.no_user and task.account_id is not None:
+        return False
+
+    if task_query.account_id is not None and task.account_id != task_query.account_id:
+        return False
+
+    return True
+
+
 class AnnofabApiFacade:
     """
     AnnofabApiのFacadeクラス。annofabapiの複雑な処理を簡単に呼び出せるようにする。
@@ -65,6 +122,9 @@ class AnnofabApiFacade:
 
     #: 組織メンバ一覧のキャッシュ
     _organization_members: Optional[Tuple[ProjectId, List[OrganizationMember]]] = None
+
+    _project_members_dict: Dict[str, List[ProjectMember]] = {}
+    """プロジェクトメンバ一覧の情報。key:project_id, value:プロジェクトメンバ一覧"""
 
     def __init__(self, service: annofabapi.Resource):
         self.service = service
@@ -173,6 +233,53 @@ class AnnofabApiFacade:
         """
         return self._get_organization_member_with_predicate(project_id, lambda e: e["account_id"] == account_id)
 
+    def _get_project_member_with_predicate(
+        self, project_id: str, predicate: Callable[[Any], bool]
+    ) -> Optional[ProjectMember]:
+        """
+        project_memberを取得する
+
+        Args:
+            project_id:
+            predicate: 組織メンバの検索条件
+
+        Returns:
+            プロジェクトメンバ
+        """
+        project_member_list = self._project_members_dict.get(project_id)
+        if project_member_list is None:
+            project_member_list = self.service.wrapper.get_all_project_members(
+                project_id, query_params={"include_inactive_member": True}
+            )
+            self._project_members_dict[project_id] = project_member_list
+        return more_itertools.first_true(project_member_list, pred=predicate)
+
+    def get_project_member_from_account_id(self, project_id: str, account_id: str) -> Optional[ProjectMember]:
+        """
+        account_idからプロジェクトメンバを取得する。
+
+        Args:
+            project_id:
+            accoaunt_id:
+
+        Returns:
+            プロジェクトメンバ。見つからない場合はNone
+        """
+        return self._get_project_member_with_predicate(project_id, predicate=lambda e: e["account_id"] == account_id)
+
+    def get_project_member_from_user_id(self, project_id: str, user_id: str) -> Optional[ProjectMember]:
+        """
+        user_idからプロジェクトメンバを取得する。
+
+        Args:
+            project_id:
+            accoaunt_id:
+
+        Returns:
+            プロジェクトメンバ。見つからない場合はNone
+        """
+        return self._get_project_member_with_predicate(project_id, predicate=lambda e: e["user_id"] == user_id)
+
     def get_organization_member_from_user_id(self, project_id: str, user_id: str) -> Optional[OrganizationMember]:
         """
         user_idから組織メンバを取得する。
@@ -200,7 +307,7 @@ class AnnofabApiFacade:
             user_id. 見つからなければNone
 
         """
-        member = self.get_organization_member_from_account_id(project_id, account_id)
+        member = self.get_project_member_from_account_id(project_id, account_id)
         if member is None:
             return None
         else:
@@ -219,7 +326,7 @@ class AnnofabApiFacade:
             account_id. 見つからなければNone
 
         """
-        member = self.get_organization_member_from_user_id(project_id, user_id)
+        member = self.get_project_member_from_user_id(project_id, user_id)
         if member is None:
             return None
         else:
@@ -662,3 +769,18 @@ class AnnofabApiFacade:
         attributes_for_dict: List[Dict[str, Any]] = [asdict(e) for e in attributes]
         request_body = [_to_request_body_elm(annotation) for annotation in annotation_list]
         return self.service.api.batch_update_annotations(project_id, request_body)[0]
+
+    def set_account_id_of_task_query(self, project_id: str, task_query: TaskQuery) -> TaskQuery:
+        """
+        タスククエリ条件のuser_idの値をaccount_idに設定する。
+
+        Args:
+            project_id:
+            task_query:
+
+        Returns:
+
+        """
+        if task_query.user_id is not None:
+            task_query.account_id = self.get_account_id_from_user_id(project_id, task_query.user_id)
+        return task_query

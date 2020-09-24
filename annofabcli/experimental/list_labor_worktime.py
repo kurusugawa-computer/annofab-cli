@@ -154,7 +154,7 @@ class Table:
         if account_id is None:
             return None
 
-        member = self.facade.get_organization_member_from_account_id(self.project_id, account_id)
+        member = self.facade.get_project_member_from_account_id(self.project_id, account_id)
         if member is not None:
             return member["user_id"]
         else:
@@ -168,7 +168,7 @@ class Table:
         if account_id is None:
             return None
 
-        member = self.facade.get_organization_member_from_account_id(self.project_id, account_id)
+        member = self.facade.get_project_member_from_account_id(self.project_id, account_id)
         if member is not None:
             return member["username"]
         else:
@@ -182,7 +182,7 @@ class Table:
         if account_id is None:
             return None
 
-        member = self.facade.get_organization_member_from_account_id(self.project_id, account_id)
+        member = self.facade.get_project_member_from_account_id(self.project_id, account_id)
         if member is not None:
             return member["biography"]
         else:
@@ -346,6 +346,7 @@ def parse_args(parser: argparse.ArgumentParser):
 
     parser.add_argument("--time_unit", type=str, default="h", choices=time_unit_choices, help="出力の時間単位(h/m/s)")
     parser.add_argument(
+        "-f",
         "--format",
         type=str,
         choices=format_choices,

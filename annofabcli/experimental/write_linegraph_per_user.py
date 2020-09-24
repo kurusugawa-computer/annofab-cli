@@ -59,9 +59,19 @@ def write_linegraph_per_user(
     )
 
     if not minimal_output:
-        df_by_date_user = Table.create_dataframe_by_date_user(task_df)
+        df_by_date_user_for_annotation = Table.create_dataframe_by_date_user_for_annotation(task_df)
         linegraph_obj.write_productivity_line_graph_for_annotator(
-            df=df_by_date_user, first_annotation_user_id_list=user_id_list
+            df=df_by_date_user_for_annotation, first_annotation_user_id_list=user_id_list
+        )
+
+        df_by_date_user_for_inspection = Table.create_dataframe_by_date_user_for_inspection(task_df)
+        linegraph_obj.write_productivity_line_graph_for_inspector(
+            df=df_by_date_user_for_inspection, first_inspection_user_id_list=user_id_list
+        )
+
+        df_by_date_user_for_acceptance = Table.create_dataframe_by_date_user_for_acceptance(task_df)
+        linegraph_obj.write_productivity_line_graph_for_acceptor(
+            df=df_by_date_user_for_acceptance, first_acceptance_user_id_list=user_id_list
         )
 
 

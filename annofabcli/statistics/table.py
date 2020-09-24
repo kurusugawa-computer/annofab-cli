@@ -224,7 +224,7 @@ class Table:
         if account_id is None:
             return None
 
-        member = self.annofab_facade.get_organization_member_from_account_id(self.project_id, account_id)
+        member = self.annofab_facade.get_project_member_from_account_id(self.project_id, account_id)
         if member is not None:
             return member["user_id"]
         else:
@@ -238,7 +238,7 @@ class Table:
         if account_id is None:
             return None
 
-        member = self.annofab_facade.get_organization_member_from_account_id(self.project_id, account_id)
+        member = self.annofab_facade.get_project_member_from_account_id(self.project_id, account_id)
         if member is not None:
             return member["username"]
         else:
@@ -251,7 +251,7 @@ class Table:
         if account_id is None:
             return None
 
-        member = self.annofab_facade.get_organization_member_from_account_id(self.project_id, account_id)
+        member = self.annofab_facade.get_project_member_from_account_id(self.project_id, account_id)
         if member is not None:
             return member["biography"]
         else:
@@ -730,7 +730,7 @@ class Table:
         return df
 
     @staticmethod
-    def create_dataframe_by_date_user(task_df: pandas.DataFrame) -> pandas.DataFrame:
+    def create_dataframe_by_date_user_for_annotation(task_df: pandas.DataFrame) -> pandas.DataFrame:
         """
         日毎、ユーザごとの情報を出力する。
 
@@ -793,6 +793,112 @@ class Table:
             sum_df["acceptance_worktime_hour"] * 60 / sum_df["input_data_count"]
         )
         sum_df["inspection_count/input_data_count"] = sum_df["inspection_count"] / sum_df["annotation_count"]
+
+        return sum_df
+
+    @staticmethod
+    def create_dataframe_by_date_user_for_inspection(task_df: pandas.DataFrame) -> pandas.DataFrame:
+        """
+        検査者用に日毎、ユーザごとの情報を出力する。
+
+        Args:
+            task_df:
+
+        Returns:
+
+        """
+        new_df = task_df
+        new_df["first_inspection_started_date"] = new_df["first_inspection_started_datetime"].map(
+            lambda e: datetime_to_date(e) if e is not None and isinstance(e, str) else None
+        )
+        new_df["task_count"] = 1  # 集計用
+
+        # first_inspection_user_id と first_inspection_username の両方を指定している理由：
+        # first_inspection_username を取得するため
+        group_obj = new_df.groupby(
+            ["first_inspection_started_date", "first_inspection_user_id", "first_inspection_username"],
+            as_index=False,
+        )
+        sum_df = group_obj[
+            [
+                "first_inspection_worktime_hour",
+                "annotation_worktime_hour",
+                "inspection_worktime_hour",
+                "acceptance_worktime_hour",
+                "sum_worktime_hour",
+                "task_count",
+                "input_data_count",
+                "annotation_count",
+                "inspection_count",
+            ]
+        ].sum()
+
+        sum_df["first_inspection_worktime_minute/annotation_count"] = (
+            sum_df["first_inspection_worktime_hour"] * 60 / sum_df["annotation_count"]
+        )
+        sum_df["inspection_worktime_minute/annotation_count"] = (
+            sum_df["inspection_worktime_hour"] * 60 / sum_df["annotation_count"]
+        )
+
+        sum_df["first_inspection_worktime_minute/input_data_count"] = (
+            sum_df["first_inspection_worktime_hour"] * 60 / sum_df["input_data_count"]
+        )
+        sum_df["inspection_worktime_minute/input_data_count"] = (
+            sum_df["inspection_worktime_hour"] * 60 / sum_df["input_data_count"]
+        )
+
+        return sum_df
+
+    @staticmethod
+    def create_dataframe_by_date_user_for_acceptance(task_df: pandas.DataFrame) -> pandas.DataFrame:
+        """
+        受入用に日毎、ユーザごとの情報を出力する。
+
+        Args:
+            task_df:
+
+        Returns:
+
+        """
+        new_df = task_df
+        new_df["first_acceptance_started_date"] = new_df["first_acceptance_started_datetime"].map(
+            lambda e: datetime_to_date(e) if e is not None and isinstance(e, str) else None
+        )
+        new_df["task_count"] = 1  # 集計用
+
+        # first_acceptance_user_id と first_acceptance_username の両方を指定している理由：
+        # first_acceptance_username を取得するため
+        group_obj = new_df.groupby(
+            ["first_acceptance_started_date", "first_acceptance_user_id", "first_acceptance_username"],
+            as_index=False,
+        )
+        sum_df = group_obj[
+            [
+                "first_acceptance_worktime_hour",
+                "annotation_worktime_hour",
+                "inspection_worktime_hour",
+                "acceptance_worktime_hour",
+                "sum_worktime_hour",
+                "task_count",
+                "input_data_count",
+                "annotation_count",
+                "inspection_count",
+            ]
+        ].sum()
+
+        sum_df["first_acceptance_worktime_minute/annotation_count"] = (
+            sum_df["first_acceptance_worktime_hour"] * 60 / sum_df["annotation_count"]
+        )
+        sum_df["acceptance_worktime_minute/annotation_count"] = (
+            sum_df["acceptance_worktime_hour"] * 60 / sum_df["annotation_count"]
+        )
+
+        sum_df["first_acceptance_worktime_minute/input_data_count"] = (
+            sum_df["first_acceptance_worktime_hour"] * 60 / sum_df["input_data_count"]
+        )
+        sum_df["acceptance_worktime_minute/input_data_count"] = (
+            sum_df["acceptance_worktime_hour"] * 60 / sum_df["input_data_count"]
+        )
 
         return sum_df
 

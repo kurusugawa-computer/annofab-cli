@@ -512,7 +512,6 @@ class TestProjectMember:
 
     def test_list_project_member(self):
         main(["project_member", "list", "--project_id", project_id])
-        main(["project_member", "list", "--organization", organization_name])
 
     def test_copy_project_member(self):
         main(["project_member", "copy", project_id, project_id, "--yes"])

@@ -96,7 +96,7 @@ class SummarizeTaskCountByUser(AbstractCommandLineInterface):
     def create_user_df(self, project_id: str, account_id_list: List[str]) -> pandas.DataFrame:
         user_list = []
         for account_id in account_id_list:
-            user = self.facade.get_organization_member_from_account_id(project_id=project_id, account_id=account_id)
+            user = self.facade.get_project_member_from_account_id(project_id=project_id, account_id=account_id)
             if user is not None:
                 user_list.append(user)
         return pandas.DataFrame(user_list, columns=["account_id", "user_id", "username", "biography"])

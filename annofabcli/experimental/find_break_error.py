@@ -72,7 +72,7 @@ class FindBreakError(AbstractCommandLineInterface):
         プロジェクトメンバのusernameを取得する。プロジェクトメンバでなければ、account_idを返す。
         account_idがNoneならばNoneを返す。
         """
-        member = self.facade.get_organization_member_from_account_id(project_id, account_id)
+        member = self.facade.get_project_member_from_account_id(project_id, account_id)
         if member is not None:
             return member["username"]
         else:
@@ -297,9 +297,7 @@ def main(args):
 def parse_args(parser: argparse.ArgumentParser):
     argument_parser = ArgumentParser(parser)
 
-    parser.add_argument(
-        "--task_history_time_threshold", type=int, default=180, help="1履歴何分以上を検知対象とするか。指定しない場合は300分(5時間)"
-    )
+    parser.add_argument("--task_history_time_threshold", type=int, default=180, help="1履歴、何分以上を検知対象とするか。")
     parser.add_argument("--import_file_path", type=str, help="importするタスク履歴イベント全件ファイル,指定しない場合はタスク履歴イベント全件を新規取得する")
 
     argument_parser.add_output()
@@ -317,7 +315,8 @@ def parse_args(parser: argparse.ArgumentParser):
         "--task_id",
         type=str,
         nargs="+",
-        help="対象のプロジェクトのtask_idを指定します。複数指定可、但しtimeを指定した場合は1つしか指定できません。",
+        help="対象のプロジェクトのtask_idを指定します。複数指定可、但しtimeを指定した場合は1つしか指定できません。"
+        "`file://`を先頭に付けると、task_idの一覧が記載されたファイルを指定できます。",
     )
     parser.add_argument(
         "--time",

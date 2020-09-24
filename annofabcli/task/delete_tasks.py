@@ -1,13 +1,15 @@
 import argparse
 import logging
-from typing import Any, Dict, List
+from typing import Any, Dict, List, Optional
 
 import requests
+from annofabapi.dataclass.task import Task
 from annofabapi.models import ProjectMemberRole, TaskStatus
 
 import annofabcli
 from annofabcli import AnnofabApiFacade
 from annofabcli.common.cli import AbstractCommandLineInterface, ArgumentParser, build_annofabapi_resource_and_login
+from annofabcli.common.facade import TaskQuery, match_task_with_task_query
 
 logger = logging.getLogger(__name__)
 
@@ -31,7 +33,13 @@ class DeleteTask(AbstractCommandLineInterface):
         annotation_list = self.service.wrapper.get_all_annotation_list(project_id, query_params=query_params)
         return annotation_list
 
-    def delete_task(self, project_id: str, task_id: str, force: bool = False):
+    def delete_task(
+        self,
+        project_id: str,
+        task_id: str,
+        force: bool = False,
+        task_query: Optional[TaskQuery] = None,
+    ):
         """
         タスクを削除します。
 
@@ -70,16 +78,24 @@ class DeleteTask(AbstractCommandLineInterface):
                 logger.info(f"アノテーションが付与されているため（{len(annotation_list)}個）、タスク'{task_id}'を削除できません。")
                 return False
 
+        if not match_task_with_task_query(Task.from_dict(task), task_query):
+            logger.debug(f"task_id={task_id}: TaskQueryの条件にマッチしないため、スキップします。")
+            return False
+
         if not self.confirm_delete_task(task_id):
             return False
 
         self.service.api.delete_task(project_id, task_id)
         return True
 
-    def delete_task_list(self, project_id: str, task_id_list: List[str], force: bool = False):
+    def delete_task_list(
+        self, project_id: str, task_id_list: List[str], force: bool = False, task_query: Optional[TaskQuery] = None
+    ):
         """
         複数のタスクを削除する。
         """
+        if task_query is not None:
+            task_query = self.facade.set_account_id_of_task_query(project_id, task_query)
 
         super().validate_project(project_id, [ProjectMemberRole.OWNER])
         project_title = self.facade.get_project_title(project_id)
@@ -88,7 +104,7 @@ class DeleteTask(AbstractCommandLineInterface):
         count_delete_task = 0
         for task_index, task_id in enumerate(task_id_list):
             try:
-                result = self.delete_task(project_id, task_id, force=force)
+                result = self.delete_task(project_id, task_id, force=force, task_query=task_query)
                 if result:
                     count_delete_task += 1
                     logger.info(f"{task_index+1} / {len(task_id_list)} 件目: タスク'{task_id}'を削除しました。")
@@ -118,6 +134,8 @@ def parse_args(parser: argparse.ArgumentParser):
     argument_parser.add_project_id()
     argument_parser.add_task_id()
     parser.add_argument("--force", action="store_true", help="アノテーションが付与されているタスクも強制的に削除します。")
+    argument_parser.add_task_query()
+
     parser.set_defaults(subcommand_func=main)
 
 
