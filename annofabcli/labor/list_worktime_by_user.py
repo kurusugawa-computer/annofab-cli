@@ -892,8 +892,6 @@ class ListWorktimeByUserMain:
         """
         作業時間の一覧を出力する
         """
-        member_list = self.get_organization_member_list(organization_name_list, project_id_list)
-
         labor_list = self.get_labor_list(
             organization_name_list=organization_name_list,
             project_id_list=project_id_list,
