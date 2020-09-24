@@ -164,12 +164,6 @@ class ListWorktimeByUserMain:
         member = more_itertools.first_true(organization_member_list, pred=lambda e: e["user_id"] == user_id)
         return member
 
-    def get_member_from_account_id(
-        self, organization_member_list: List[OrganizationMember], account_id: str
-    ) -> Optional[OrganizationMember]:
-        member = more_itertools.first_true(organization_member_list, pred=lambda e: e["account_id"] == account_id)
-        return member
-
     @staticmethod
     def get_project_title(project_list: List[Project], project_id: str) -> str:
         project = more_itertools.first_true(project_list, pred=lambda e: e["project_id"] == project_id)
@@ -581,7 +575,7 @@ class ListWorktimeByUserMain:
         if project_id_list is not None:
             for user_id in user_id_list:
                 if user_id in df.index:
-                    row = df[df["user_id"] == user_id].iloc[0]
+                    row = df.loc[user_id]
                     user = User(
                         user_id=str(user_id),
                         account_id=row["account_id"],
