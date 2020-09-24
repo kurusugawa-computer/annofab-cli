@@ -429,6 +429,15 @@ class ArgumentParser:
 
         self.parser.add_argument("-q", "--query", type=str, help=help_message)
 
+    def add_task_query(self, required: bool = False, help_message: Optional[str] = None):
+        if help_message is None:
+            help_message = (
+                "タスクを絞り込むためのクエリ条件をJSON形式で指定します。指定しない場合はすべてのタスクを取得します。"
+                "`file://`を先頭に付けると、JSON形式のファイルを指定できます。"
+                "使用できるキーは、phase, phase_stage, status, user_id, account_id, no_user (bool値)  のみです。"
+            )
+        self.parser.add_argument("-tq", "--task_query", type=str, required=required, help=help_message)
+
 
 class AbstracCommandCinfirmInterface(abc.ABC):
     """

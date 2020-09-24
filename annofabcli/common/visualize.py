@@ -1,7 +1,3 @@
-"""
-annofabapiのfacadeクラス
-"""
-
 import enum
 from typing import Any, Dict, List, Optional
 
@@ -12,6 +8,7 @@ from annofabapi.models import (
     InputData,
     Inspection,
     OrganizationMember,
+    ProjectMember,
     Task,
     TaskHistory,
     TaskPhase,
@@ -33,6 +30,7 @@ class AddProps:
 
     #: 組織メンバ一覧のキャッシュ
     _organization_members: Optional[List[OrganizationMember]] = None
+    _project_member_list: Optional[List[ProjectMember]] = None
 
     def __init__(self, service: annofabapi.Resource, project_id: str):
         self.service = service
@@ -67,7 +65,7 @@ class AddProps:
 
         account_id = target["account_id"]
         if account_id is not None:
-            member = self.get_organization_member_from_account_id(account_id)
+            member = self.get_project_member_from_account_id(account_id)
             if member is not None:
                 user_id = member["user_id"]
                 username = member["username"]
@@ -75,6 +73,17 @@ class AddProps:
         target["user_id"] = user_id
         target["username"] = username
         return target
+
+    def get_project_member_from_account_id(self, account_id: str) -> Optional[ProjectMember]:
+        if self._project_member_list is None:
+            project_member_list = self.service.wrapper.get_all_project_members(
+                self.project_id, query_params={"include_inactive_member": True}
+            )
+            self._project_member_list = project_member_list
+        else:
+            project_member_list = self._project_member_list
+
+        return more_itertools.first_true(project_member_list, pred=lambda e: e["account_id"] == account_id)
 
     def get_organization_member_from_account_id(self, account_id: str) -> Optional[OrganizationMember]:
         """
@@ -200,7 +209,7 @@ class AddProps:
 
             commenter_account_id = inspection["commenter_account_id"]
             if commenter_account_id is not None:
-                member = self.get_organization_member_from_account_id(commenter_account_id)
+                member = self.get_project_member_from_account_id(commenter_account_id)
                 if member is not None:
                     commenter_user_id = member["user_id"]
                     commenter_username = member["username"]

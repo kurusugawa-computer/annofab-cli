@@ -84,7 +84,9 @@ class WriteCsvGraph:
     task_df: Optional[pandas.DataFrame] = None
     annotation_df: Optional[pandas.DataFrame] = None
     account_statistics_df: Optional[pandas.DataFrame] = None
-    df_by_date_user: Optional[pandas.DataFrame] = None
+    df_by_date_user_for_annotation: Optional[pandas.DataFrame] = None
+    df_by_date_user_for_acceptance: Optional[pandas.DataFrame] = None
+    df_by_date_user_for_inspection: Optional[pandas.DataFrame] = None
     task_history_df: Optional[pandas.DataFrame] = None
     labor_df: Optional[pandas.DataFrame] = None
     productivity_df: Optional[pandas.DataFrame] = None
@@ -118,11 +120,23 @@ class WriteCsvGraph:
             self.account_statistics_df = self.table_obj.create_account_statistics_df()
         return self.account_statistics_df
 
-    def _get_df_by_date_user(self):
-        if self.df_by_date_user is None:
+    def _get_df_by_date_user_for_annotation(self):
+        if self.df_by_date_user_for_annotation is None:
             task_df = self._get_task_df()
-            self.df_by_date_user = self.table_obj.create_dataframe_by_date_user(task_df)
-        return self.df_by_date_user
+            self.df_by_date_user_for_annotation = self.table_obj.create_dataframe_by_date_user_for_annotation(task_df)
+        return self.df_by_date_user_for_annotation
+
+    def _get_df_by_date_user_for_inspection(self):
+        if self.df_by_date_user_for_inspection is None:
+            task_df = self._get_task_df()
+            self.df_by_date_user_for_inspection = self.table_obj.create_dataframe_by_date_user_for_inspection(task_df)
+        return self.df_by_date_user_for_acceptance
+
+    def _get_df_by_date_user_for_acceptance(self):
+        if self.df_by_date_user_for_acceptance is None:
+            task_df = self._get_task_df()
+            self.df_by_date_user_for_acceptance = self.table_obj.create_dataframe_by_date_user_for_acceptance(task_df)
+        return self.df_by_date_user_for_acceptance
 
     def _get_labor_df(self):
         if self.labor_df is None:
@@ -240,9 +254,19 @@ class WriteCsvGraph:
         )
 
         if not self.minimal_output:
-            df_by_date_user = self._get_df_by_date_user()
+            df_by_date_user_for_annotation = self._get_df_by_date_user_for_annotation()
             catch_exception(self.linegraph_obj.write_productivity_line_graph_for_annotator)(
-                df=df_by_date_user, first_annotation_user_id_list=user_id_list
+                df=df_by_date_user_for_annotation, first_annotation_user_id_list=user_id_list
+            )
+
+            df_by_date_user_for_inspection = self._get_df_by_date_user_for_inspection()
+            catch_exception(self.linegraph_obj.write_productivity_line_graph_for_inspector)(
+                df=df_by_date_user_for_inspection, first_acceptance_user_id_list=user_id_list
+            )
+
+            df_by_date_user_for_acceptance = self._get_df_by_date_user_for_acceptance()
+            catch_exception(self.linegraph_obj.write_productivity_line_graph_for_acceptor)(
+                df=df_by_date_user_for_acceptance, first_acceptance_user_id_list=user_id_list
             )
 
     def write_linegraph_for_worktime_by_user(self, user_id_list: Optional[List[str]] = None) -> None:
@@ -317,7 +341,7 @@ class WriteCsvGraph:
         """
         ユーザごと、日ごとの情報をCSVに出力する.
         """
-        df_by_date_user = self._get_df_by_date_user()
+        df_by_date_user = self._get_df_by_date_user_for_annotation()
         catch_exception(self.csv_obj.write_教師付作業者別日毎の情報)(df_by_date_user)
 
     def write_productivity_csv_per_user(self) -> None:

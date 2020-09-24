@@ -28,7 +28,7 @@ class DeleteInputData(AbstractCommandLineInterface):
         )
         return self.confirm_processing(message_for_confirm)
 
-    def delete_input_data(self, project_id: str, input_data_id: str):
+    def delete_input_data(self, project_id: str, input_data_id: str, input_data_index: int):
         input_data = self.get_input_data(project_id, input_data_id)
         if input_data is None:
             logger.info(f"input_data_id={input_data_id} は存在しません。")
@@ -49,7 +49,10 @@ class DeleteInputData(AbstractCommandLineInterface):
             return False
 
         self.service.api.delete_input_data(project_id, input_data_id)
-        logger.info(f"入力データ(input_data_id='{input_data_id}', " f"input_data_name='{input_data_name}') を削除しました。")
+        logger.info(
+            f"{str(input_data_index+1)} 件目: 入力データ(input_data_id='{input_data_id}', "
+            f"input_data_name='{input_data_name}') を削除しました。"
+        )
         return True
 
     def delete_input_data_list(self, project_id: str, input_data_id_list: List[str]):
@@ -62,9 +65,9 @@ class DeleteInputData(AbstractCommandLineInterface):
         logger.info(f"プロジェクト'{project_title}'から 、{len(input_data_id_list)} 件の入力データを削除します。")
 
         count_delete_input_data = 0
-        for input_data_id in input_data_id_list:
+        for input_data_index, input_data_id in enumerate(input_data_id_list):
             try:
-                result = self.delete_input_data(project_id, input_data_id)
+                result = self.delete_input_data(project_id, input_data_id, input_data_index=input_data_index)
                 if result:
                     count_delete_input_data += 1
 
