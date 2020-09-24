@@ -1,6 +1,6 @@
 import argparse
 import logging
-from typing import Any, Dict, List, Optional
+from typing import Any, Dict, List
 
 import requests
 from annofabapi.models import ProjectMemberRole
@@ -49,7 +49,10 @@ class DeleteInputData(AbstractCommandLineInterface):
             return False
 
         self.service.api.delete_input_data(project_id, input_data_id)
-        logger.info(f"{str(input_data_index+1)} 件目: 入力データ(input_data_id='{input_data_id}', " f"input_data_name='{input_data_name}') を削除しました。")
+        logger.info(
+            f"{str(input_data_index+1)} 件目: 入力データ(input_data_id='{input_data_id}', "
+            f"input_data_name='{input_data_name}') を削除しました。"
+        )
         return True
 
     def delete_input_data_list(self, project_id: str, input_data_id_list: List[str]):

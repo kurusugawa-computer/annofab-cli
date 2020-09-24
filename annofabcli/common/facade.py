@@ -1,6 +1,7 @@
 import logging
 from dataclasses import asdict, dataclass
 from typing import Any, Callable, Dict, List, Optional, Tuple
+
 import annofabapi
 import annofabapi.utils
 import more_itertools
@@ -8,9 +9,9 @@ from annofabapi.dataclass.annotation import AdditionalData
 from annofabapi.dataclass.task import Task
 from annofabapi.models import (
     OrganizationMember,
-    ProjectMember,
     OrganizationMemberRole,
     ProjectId,
+    ProjectMember,
     ProjectMemberRole,
     SingleAnnotation,
     TaskPhase,
@@ -247,7 +248,9 @@ class AnnofabApiFacade:
         """
         project_member_list = self._project_members_dict.get(project_id)
         if project_member_list is None:
-            project_member_list = self.service.wrapper.get_all_project_members(project_id, query_params={"include_inactive_member":True})
+            project_member_list = self.service.wrapper.get_all_project_members(
+                project_id, query_params={"include_inactive_member": True}
+            )
             self._project_members_dict[project_id] = project_member_list
         return more_itertools.first_true(project_member_list, pred=predicate)
 

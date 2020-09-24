@@ -7,6 +7,7 @@ from dataclasses import dataclass
 from pathlib import Path
 from typing import Any, Callable, Dict, List, Optional, Tuple
 
+import annofabapi
 import more_itertools
 import numpy
 import pandas
@@ -19,8 +20,6 @@ import annofabcli
 from annofabcli import AnnofabApiFacade
 from annofabcli.common.cli import AbstractCommandLineInterface, build_annofabapi_resource_and_login, get_list_from_args
 from annofabcli.common.utils import isoduration_to_hour
-import annofabapi
-
 
 logger = logging.getLogger(__name__)
 
@@ -52,6 +51,7 @@ class User(DataClassJsonMixin):
     user_id: str
     username: str
     biography: Optional[str]
+
 
 @dataclass(frozen=True)
 class LaborWorktime(DataClassJsonMixin):
@@ -164,8 +164,8 @@ class ListWorktimeByUserMain:
         member = more_itertools.first_true(organization_member_list, pred=lambda e: e["user_id"] == user_id)
         return member
 
-    def get_member_from_account_id(self,
-        organization_member_list: List[OrganizationMember], account_id: str
+    def get_member_from_account_id(
+        self, organization_member_list: List[OrganizationMember], account_id: str
     ) -> Optional[OrganizationMember]:
         member = more_itertools.first_true(organization_member_list, pred=lambda e: e["account_id"] == account_id)
         return member
@@ -221,27 +221,16 @@ class ListWorktimeByUserMain:
         )
         return new_labor
 
-    def _get_labor_availability(self, labor: Dict[str, Any], member: Optional[OrganizationMember]) -> LaborAvailability:
-        new_labor = LaborAvailability(
-            date=labor["date"],
-            account_id=labor["account_id"],
-            user_id=member["user_id"] if member is not None else labor["account_id"],
-            username=member["username"] if member is not None else labor["account_id"],
-            availability_hour=self.get_worktime_hour(labor["values"]["working_time_by_user"], "plans"),
-        )
-        return new_labor
-
     def get_labor_availability_list_dict(
         self,
-        user_id_list: List[str],
+        user_list: List[User],
         start_date: str,
         end_date: str,
-        member_list: List[OrganizationMember],
     ) -> Dict[str, List[LaborAvailability]]:
         """
         予定稼働時間を取得する
         Args:
-            member_list:
+            user_list:
             start_date:
             end_date:
 
@@ -249,25 +238,27 @@ class ListWorktimeByUserMain:
 
         """
         labor_availability_dict = {}
-        for user_id in user_id_list:
-            member = self.get_member_from_user_id(member_list, user_id)
-            if member is None:
-                continue
-
+        for user in user_list:
             # 予定稼働時間を取得するには、特殊な組織IDを渡す
             labor_list, _ = self.service.api.get_labor_control(
                 {
                     "organization_id": "___plannedWorktime___",
                     "from": start_date,
                     "to": end_date,
-                    "account_id": member["account_id"],
+                    "account_id": user.account_id,
                 }
             )
             new_labor_list = []
             for labor in labor_list:
-                new_labor = self._get_labor_availability(labor, member=member)
+                new_labor = LaborAvailability(
+                    date=labor["date"],
+                    account_id=labor["account_id"],
+                    user_id=user.user_id,
+                    username=user.username,
+                    availability_hour=self.get_worktime_hour(labor["values"]["working_time_by_user"], "plans"),
+                )
                 new_labor_list.append(new_labor)
-            labor_availability_dict[user_id] = new_labor_list
+            labor_availability_dict[user.user_id] = new_labor_list
         return labor_availability_dict
 
     def get_labor_list_from_project_id(
@@ -521,34 +512,68 @@ class ListWorktimeByUserMain:
         return member_list
 
     def get_user_list(
-        self, labor_list: List[LaborWorktime],
-            organization_name_list: Optional[List[str]],
-        project_id_list: Optional[List[str]],
-        user_id_list: Optional[List[str]],
+        self,
+        labor_list: List[LaborWorktime],
+        organization_name_list: Optional[List[str]] = None,
+        project_id_list: Optional[List[str]] = None,
+        user_id_list: Optional[List[str]] = None,
     ) -> List[User]:
-        df = pandas.DataFrame(labor_list, columns=["account_id","user_id","username","biography"]).drop_duplicates().set_index("user_id")
+        """
+        summary.csvに出力するユーザ一覧を取得する。
+
+        Args:
+            labor_list:
+            organization_name_list:
+            project_id_list:
+            user_id_list:
+
+        Returns:
+            ユーザ一覧
+
+        """
+        df = (
+            pandas.DataFrame(labor_list, columns=["account_id", "user_id", "username", "biography"])
+            .drop_duplicates()
+            .set_index("user_id")
+        )
 
         user_list: List[User] = []
 
-        for user_id, row in df.iterrows():
-            user = User(user_id=str(user_id), account_id=row["account_id"], username=row["username"],
-                        biography=row["biography"])
-            user_list.append(user)
-
         if user_id_list is None:
+            for user_id, row in df.iterrows():
+                user = User(
+                    user_id=str(user_id),
+                    account_id=row["account_id"],
+                    username=row["username"],
+                    biography=row["biography"],
+                )
+                user_list.append(user)
             return user_list
-
 
         if organization_name_list is not None:
             for user_id in user_id_list:
                 if user_id in df.index:
+                    row = df[df["user_id"] == user_id].iloc[0]
+                    user = User(
+                        user_id=str(user_id),
+                        account_id=row["account_id"],
+                        username=row["username"],
+                        biography=row["biography"],
+                    )
+                    user_list.append(user)
                     continue
 
                 for organization_name in organization_name_list:
-                    organization_member = self.service.wrapper.get_organization_member_or_none(organization_name, user_id)
+                    organization_member = self.service.wrapper.get_organization_member_or_none(
+                        organization_name, user_id
+                    )
                     if organization_member is not None:
-                        user = User(user_id=organization_member["user_id"], account_id=organization_member["account_id"], username=organization_member["username"],
-                                    biography=organization_member["biography"])
+                        user = User(
+                            user_id=organization_member["user_id"],
+                            account_id=organization_member["account_id"],
+                            username=organization_member["username"],
+                            biography=organization_member["biography"],
+                        )
                         user_list.append(user)
                         break
                 logger.warning(f"user_id={user_id} のユーザは見つかりませんでした。")
@@ -556,13 +581,25 @@ class ListWorktimeByUserMain:
         if project_id_list is not None:
             for user_id in user_id_list:
                 if user_id in df.index:
+                    row = df[df["user_id"] == user_id].iloc[0]
+                    user = User(
+                        user_id=str(user_id),
+                        account_id=row["account_id"],
+                        username=row["username"],
+                        biography=row["biography"],
+                    )
+                    user_list.append(user)
                     continue
 
                 for project_id in project_id_list:
                     project_member = self.service.wrapper.get_project_member_or_none(project_id, user_id)
                     if project_member is not None:
-                        user = User(user_id=project_member["user_id"], account_id=project_member["account_id"], username=project_member["username"],
-                                    biography=project_member["biography"])
+                        user = User(
+                            user_id=project_member["user_id"],
+                            account_id=project_member["account_id"],
+                            username=project_member["username"],
+                            biography=project_member["biography"],
+                        )
                         user_list.append(user)
                         break
                 logger.warning(f"user_id={user_id} のユーザは見つかりませんでした。")
@@ -636,44 +673,38 @@ class ListWorktimeByUserMain:
     @staticmethod
     def create_sum_worktime_df(
         labor_list: List[LaborWorktime],
-        member_list: List[OrganizationMember],
-        user_id_list: List[str],
+        user_list: List[User],
         start_date: str,
         end_date: str,
         labor_availability_list_dict: Optional[Dict[str, List[LaborAvailability]]] = None,
     ):
         reform_dict = {
             ("date", ""): [
-                e.strftime(ListWorktimeByUserMain.DATE_FORMAT) for e in pandas.date_range(start=start_date, end=end_date)
+                e.strftime(ListWorktimeByUserMain.DATE_FORMAT)
+                for e in pandas.date_range(start=start_date, end=end_date)
             ],
             ("dayofweek", ""): [e.strftime("%a") for e in pandas.date_range(start=start_date, end=end_date)],
         }
 
         username_list = []
-        for user_id in user_id_list:
+        for user in user_list:
             sum_worktime_list = ListWorktimeByUserMain.get_sum_worktime_list(
-                labor_list, user_id=user_id, start_date=start_date, end_date=end_date
+                labor_list, user_id=user.user_id, start_date=start_date, end_date=end_date
             )
-            member = ListWorktimeByUserMain.get_member_from_user_id(member_list, user_id)
-            if member is not None:
-                username = member["username"]
-            else:
-                logger.warning(f"user_idが'{user_id}'のユーザは存在しません。")
-                username = user_id
 
-            username_list.append(username)
+            username_list.append(user.username)
             reform_dict.update(
                 {
-                    (username, "作業予定"): [e.worktime_plan_hour for e in sum_worktime_list],
-                    (username, "作業実績"): [e.worktime_result_hour for e in sum_worktime_list],
+                    (user.username, "作業予定"): [e.worktime_plan_hour for e in sum_worktime_list],
+                    (user.username, "作業実績"): [e.worktime_result_hour for e in sum_worktime_list],
                 }
             )
 
             if labor_availability_list_dict is not None:
-                labor_availability_list = labor_availability_list_dict.get(user_id, [])
+                labor_availability_list = labor_availability_list_dict.get(user.user_id, [])
                 reform_dict.update(
                     {
-                        (username, "予定稼働"): ListWorktimeByUserMain.get_availability_list(
+                        (user.username, "予定稼働"): ListWorktimeByUserMain.get_availability_list(
                             labor_availability_list, start_date, end_date
                         )
                     }
@@ -803,19 +834,10 @@ class ListWorktimeByUserMain:
         df[value_columns] = df[value_columns].fillna(0)
         return df
 
-    def create_user_df(self, user_id_list: List[str], member_list: List[OrganizationMember]) -> pandas.DataFrame:
-        user_list = []
-        for user_id in user_id_list:
-            user = self.get_member_from_user_id(member_list, user_id)
-            if user is not None:
-                user_list.append(user)
-        return pandas.DataFrame(user_list, columns=["user_id", "username", "biography"])
-
     def write_labor_list(
         self,
         labor_list: List[LaborWorktime],
-        member_list: List[OrganizationMember],
-        user_id_list: List[str],
+        user_list: List[User],
         start_date: str,
         end_date: str,
         output_dir: Path,
@@ -825,10 +847,9 @@ class ListWorktimeByUserMain:
         # 行方向に日付、列方向にユーザを表示したDataFrame
         sum_worktime_df = self.create_sum_worktime_df(
             labor_list=labor_list,
-            user_id_list=user_id_list,
+            user_list=user_list,
             start_date=start_date,
             end_date=end_date,
-            member_list=member_list,
             labor_availability_list_dict=labor_availability_list_dict,
         )
         self.write_sum_worktime_list(sum_worktime_df, output_dir)
@@ -842,7 +863,7 @@ class ListWorktimeByUserMain:
             logger.info("予定作業時間または実績作業時間が入力されているデータは見つからなかったので、'作業時間の詳細一覧.csv' は出力しません。")
 
         # 日ごとの作業時間の一覧.csv を出力
-        user_df = self.create_user_df(user_id_list, member_list)
+        user_df = pandas.DataFrame(user_list)
         worktime_df_per_date_user = self.create_worktime_df_per_date_user(
             worktime_df=worktime_df, user_df=user_df, labor_availability_list_dict=labor_availability_list_dict
         )
@@ -906,19 +927,24 @@ class ListWorktimeByUserMain:
             project_id_list = sorted(list({e.project_id for e in labor_list}))
         logger.info(f"集計対象プロジェクトの数: {len(project_id_list)}")
 
+        user_list = self.get_user_list(
+            labor_list,
+            organization_name_list=organization_name_list,
+            project_id_list=project_id_list,
+            user_id_list=user_id_list,
+        )
+
         labor_availability_list_dict: Optional[Dict[str, List[LaborAvailability]]] = None
         if add_availability:
             labor_availability_list_dict = self.get_labor_availability_list_dict(
-                user_id_list=user_id_list,
+                user_list=user_list,
                 start_date=start_date,
                 end_date=end_date,
-                member_list=member_list,
             )
 
         self.write_labor_list(
             labor_list=labor_list,
-            member_list=member_list,
-            user_id_list=user_id_list,
+            user_list=user_list,
             start_date=start_date,
             end_date=end_date,
             output_dir=output_dir,
@@ -980,7 +1006,6 @@ class ListWorktimeByUserMain:
         return first_date, end_date
 
 
-
 class ListWorktimeByUser(AbstractCommandLineInterface):
     """
     作業時間をユーザごとに出力する。
@@ -1003,7 +1028,6 @@ class ListWorktimeByUser(AbstractCommandLineInterface):
             end_date = None
 
         return (start_date, end_date)
-
 
     def main(self) -> None:
         args = self.args
