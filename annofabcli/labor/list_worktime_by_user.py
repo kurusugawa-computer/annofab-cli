@@ -398,6 +398,7 @@ class ListWorktimeByUserMain:
 
         username_list = [e[0] for e in sum_worktime_df.columns if is_plan_column(e)]
 
+        sum_worktime_df.to_csv("foo.csv", encoding="utf_8_sig", index=False)
         for username in username_list:
             # SettingWithCopyWarning を避けるため、暫定的に値をコピーする
             sum_worktime_df[(username, "作業予定_記号")] = sum_worktime_df[(username, "作業予定")].map(create_mark)
@@ -547,7 +548,7 @@ class ListWorktimeByUserMain:
         if organization_name_list is not None:
             for user_id in user_id_list:
                 if user_id in df.index:
-                    row = df[df["user_id"] == user_id].iloc[0]
+                    row = df.loc[user_id]
                     user = User(
                         user_id=str(user_id),
                         account_id=row["account_id"],
@@ -910,21 +911,13 @@ class ListWorktimeByUserMain:
 
         logger.info(f"集計期間: start_date={start_date}, end_date={end_date}")
 
-        if user_id_list is None:
-            tmp_user_id_list = list({e.user_id for e in labor_list})
-            user_id_list = sorted(tmp_user_id_list)
-        logger.info(f"集計対象ユーザの数: {len(user_id_list)}")
-
-        if project_id_list is None:
-            project_id_list = sorted(list({e.project_id for e in labor_list}))
-        logger.info(f"集計対象プロジェクトの数: {len(project_id_list)}")
-
         user_list = self.get_user_list(
             labor_list,
             organization_name_list=organization_name_list,
             project_id_list=project_id_list,
             user_id_list=user_id_list,
         )
+        logger.info(f"集計対象ユーザの数: {len(user_list)}")
 
         labor_availability_list_dict: Optional[Dict[str, List[LaborAvailability]]] = None
         if add_availability:
