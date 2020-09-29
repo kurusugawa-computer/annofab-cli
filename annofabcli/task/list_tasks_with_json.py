@@ -1,9 +1,7 @@
-"""
-プロジェクトのユーザを表示する。
-"""
 import argparse
 import json
 import logging
+from pathlib import Path
 from typing import Any, Dict, List, Optional
 
 import annofabapi
@@ -12,18 +10,58 @@ from annofabapi.models import Task
 import annofabcli
 from annofabcli import AnnofabApiFacade
 from annofabcli.common.cli import AbstractCommandLineInterface, ArgumentParser, build_annofabapi_resource_and_login
+from annofabcli.common.dataclasses import WaitOptions
+from annofabcli.common.download import DownloadingFile
 from annofabcli.common.enums import FormatArgument
 from annofabcli.common.visualize import AddProps
 
 logger = logging.getLogger(__name__)
 
 
-class ListTasksMain:
-    def __init__(self, service: annofabapi.Resource, project_id: str):
+class ListTasksWithMain:
+    def __init__(self, service: annofabapi.Resource):
         self.service = service
         self.facade = AnnofabApiFacade(service)
-        self.project_id = project_id
-        self.visualize = AddProps(self.service, project_id)
+
+    def get_task_list(
+        self,
+        project_id: str,
+        task_json: Optional[Path],
+        task_id_list: Optional[List[str]],
+        is_latest: bool = False,
+        wait_options: Optional[WaitOptions] = None,
+    ) -> List[Task]:
+        if task_json is None:
+            downloading_obj = DownloadingFile(self.service)
+            cache_dir = annofabcli.utils.get_cache_dir()
+            json_path = cache_dir / f"{project_id}-task.json"
+
+            downloading_obj.download_task_json(
+                project_id, str(json_path), is_latest=is_latest, wait_options=wait_options
+            )
+        else:
+            json_path = task_json
+
+        filter_inspection_comment = create_filter_func(only_reply=only_reply, exclude_reply=exclude_reply)
+        with json_path.open() as f:
+            inspection_comment_list = json.load(f)
+
+        return self.filter_inspection_list(
+            project_id,
+            inspection_comment_list=inspection_comment_list,
+            task_id_list=task_id_list,
+            filter_inspection_comment=filter_inspection_comment,
+        )
+
+
+class ListTasks(AbstractCommandLineInterface):
+    """
+    タスクの一覧を表示する
+    """
+
+    def __init__(self, service: annofabapi.Resource, facade: AnnofabApiFacade, args: argparse.Namespace):
+        super().__init__(service, facade, args)
+        self.visualize = AddProps(self.service, args.project_id)
 
     @annofabcli.utils.allow_404_error
     def get_task(self, project_id: str, task_id: str) -> Task:
@@ -86,7 +124,7 @@ class ListTasksMain:
 
         return task_query
 
-    def get_task_list_with_api(
+    def get_tasks(
         self, project_id: str, task_query: Optional[Dict[str, Any]] = None, user_id_list: Optional[List[str]] = None
     ) -> List[Task]:
         """
@@ -123,49 +161,43 @@ class ListTasksMain:
 
         return [self.visualize.add_properties_to_task(e) for e in tasks]
 
-    def get_task_list(
+    def print_tasks(
         self,
         project_id: str,
         task_id_list: Optional[List[str]] = None,
         task_query: Optional[Dict[str, Any]] = None,
         user_id_list: Optional[List[str]] = None,
         task_list_from_json: Optional[List[Task]] = None,
-    ) -> List[Task]:
+    ):
         """
-
+        タスク一覧を出力する
 
         Args:
             project_id: 対象のproject_id
             task_id_list: 対象のタスクのtask_id
             task_query: タスク検索クエリ
-            user_id_list:
             task_list_from_json: JSONファイルから取得したタスク一覧
 
-
-        Returns:
-
         """
+
+        super().validate_project(project_id, project_member_roles=None)
+
         if task_list_from_json is None:
             # WebAPIを実行してタスク情報を取得する
             if task_id_list is not None:
                 task_list = self.get_task_list_from_task_id(project_id, task_id_list=task_id_list)
             else:
-                task_list = self.get_task_list_with_api(project_id, task_query=task_query, user_id_list=user_id_list)
+                task_list = self.get_tasks(project_id, task_query=task_query, user_id_list=user_id_list)
+                logger.debug(f"タスク一覧の件数: {len(task_list)}")
 
         else:
             task_list = [self.visualize.add_properties_to_task(e) for e in task_list_from_json]
+            logger.debug(f"タスク一覧の件数: {len(task_list)}")
 
-        return task_list
-
-
-class ListTasks(AbstractCommandLineInterface):
-    """
-    タスクの一覧を表示する
-    """
-
-    def __init__(self, service: annofabapi.Resource, facade: AnnofabApiFacade, args: argparse.Namespace):
-        super().__init__(service, facade, args)
-        self.visualize = AddProps(self.service, args.project_id)
+        if len(task_list) > 0:
+            self.print_according_to_format(task_list)
+        else:
+            logger.info(f"タスク一覧の件数が0件のため、出力しません。")
 
     @staticmethod
     def validate(args: argparse.Namespace):
@@ -203,23 +235,13 @@ class ListTasks(AbstractCommandLineInterface):
         else:
             task_list = None
 
-        project_id = args.project_id
-        super().validate_project(project_id, project_member_roles=None)
-
-        main_obj = ListTasksMain(self.service, project_id=project_id)
-        task_list = main_obj.get_task_list(
-            project_id=project_id,
+        self.print_tasks(
+            args.project_id,
             task_id_list=task_id_list,
             task_query=task_query,
             user_id_list=user_id_list,
             task_list_from_json=task_list,
         )
-        logger.debug(f"タスク一覧の件数: {len(task_list)}")
-
-        if len(task_list) > 0:
-            self.print_according_to_format(task_list)
-        else:
-            logger.info(f"タスク一覧の件数が0件のため、出力しません。")
 
 
 def main(args):
@@ -263,6 +285,20 @@ def parse_args(parser: argparse.ArgumentParser):
         "このオプションを指定すると、`--task_query`, `--task_id`オプションは無視します。"
         "JSONには記載されていない、`user_id`や`username`などの情報も追加します。"
         "JSONファイルは`$ annofabcli project download task`コマンドで取得できます。",
+    )
+
+    parser.add_argument(
+        "--latest", action="store_true", help="最新のタスク一覧ファイルを参照します。このオプションを指定すると、タスク一覧ファイルを更新するのに数分待ちます。"
+    )
+
+    parser.add_argument(
+        "--wait_options",
+        type=str,
+        help="タスク一覧ファイルの更新が完了するまで待つ際のオプションを、JSON形式で指定してください。"
+        "`file://`を先頭に付けるとjsonファイルを指定できます。"
+        'デフォルは`{"interval":60, "max_tries":360}` です。'
+        "`interval`:完了したかを問い合わせる間隔[秒], "
+        "`max_tires`:完了したかの問い合わせを最大何回行うか。",
     )
 
     parser.add_argument(
