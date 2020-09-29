@@ -5,7 +5,7 @@ from pathlib import Path
 from typing import Any, Dict, List, Optional
 
 import annofabapi
-from annofabapi.models import Task
+from annofabapi.dataclass.task import  Task
 
 import annofabcli
 from annofabcli import AnnofabApiFacade
@@ -14,6 +14,8 @@ from annofabcli.common.dataclasses import WaitOptions
 from annofabcli.common.download import DownloadingFile
 from annofabcli.common.enums import FormatArgument
 from annofabcli.common.visualize import AddProps
+from annofabcli.common.facade import TaskQuery, match_task_with_task_query
+
 
 logger = logging.getLogger(__name__)
 
@@ -23,14 +25,29 @@ class ListTasksWithMain:
         self.service = service
         self.facade = AnnofabApiFacade(service)
 
+    @staticmethod
+    def filter_task_list(
+        task: Dict[str,Any],
+        task_id_list: Optional[List[str]] = None,
+        task_query: Optional[TaskQuery] = None,
+    ) -> bool:
+        result = True
+
+        dc_task = Task.from_dict(task)
+        result = result and match_task_with_task_query(dc_task, task_query)
+        if task_id_list is not None:
+            result = result and (dc_task.task_id in task_id_list)
+        return result
+
     def get_task_list(
         self,
         project_id: str,
         task_json: Optional[Path],
-        task_id_list: Optional[List[str]],
+        task_id_list: Optional[List[str]]=None,
+        task_query: Optional[TaskQuery]=None,
         is_latest: bool = False,
         wait_options: Optional[WaitOptions] = None,
-    ) -> List[Task]:
+    ) -> List[Dict[str, Any]]:
         if task_json is None:
             downloading_obj = DownloadingFile(self.service)
             cache_dir = annofabcli.utils.get_cache_dir()
@@ -42,17 +59,14 @@ class ListTasksWithMain:
         else:
             json_path = task_json
 
-        filter_inspection_comment = create_filter_func(only_reply=only_reply, exclude_reply=exclude_reply)
         with json_path.open() as f:
-            inspection_comment_list = json.load(f)
+            task_list = json.load(f)
 
-        return self.filter_inspection_list(
-            project_id,
-            inspection_comment_list=inspection_comment_list,
-            task_id_list=task_id_list,
-            filter_inspection_comment=filter_inspection_comment,
-        )
+        if task_query is not None:
+            task_query = self.facade.set_account_id_of_task_query(project_id, task_query)
 
+        filtered_task_list = [e for e in task_list if self.filter_task_list(e, task_query=task_query, task_id_list=task_id_list)]
+        return filtered_task_list
 
 class ListTasks(AbstractCommandLineInterface):
     """
@@ -219,29 +233,27 @@ class ListTasks(AbstractCommandLineInterface):
         if not self.validate(args):
             return
 
-        task_id_list = annofabcli.common.cli.get_list_from_args(args.task_id)
-        if len(task_id_list) == 0:
-            task_id_list = None
+        task_id_list = annofabcli.common.cli.get_list_from_args(args.task_id) if args.task_id is not None else None
+        task_query = annofabcli.common.cli.get_json_from_args(args.task_query) if args.task_query is not None else None
+        wait_options = WaitOptions(get_json_from_args(args.wait_options))  if args.wait_options is not None else None
 
-        user_id_list = annofabcli.common.cli.get_list_from_args(args.user_id)
-        if len(user_id_list) == 0:
-            user_id_list = None
-
-        task_query = annofabcli.common.cli.get_json_from_args(args.task_query)
-
-        if args.task_json is not None:
-            with open(args.task_json, encoding="utf-8") as f:
-                task_list = json.load(f)
-        else:
-            task_list = None
-
-        self.print_tasks(
-            args.project_id,
+        main_obj = ListTasksWithMain(self.service)
+        task_list = main_obj.get_task_list(project_id=args.project_id, task_json=args.get_task_list,
             task_id_list=task_id_list,
-            task_query=task_query,
-            user_id_list=user_id_list,
-            task_list_from_json=task_list,
+                               task_query=task_query,
+
+        is_latest=args.latest,
+        wait_options=args.wait_options
+
         )
+
+        logger.debug(f"タスク一覧の件数: {len(task_list)}")
+
+        if len(task_list) > 0:
+            self.print_according_to_format(task_list)
+        else:
+            logger.info(f"タスク一覧の件数が0件のため、出力しません。")
+
 
 
 def main(args):
@@ -254,22 +266,9 @@ def parse_args(parser: argparse.ArgumentParser):
     argument_parser = ArgumentParser(parser)
 
     argument_parser.add_project_id()
+    argument_parser.add_task_query()
 
-    query_group = parser.add_mutually_exclusive_group()
-
-    # タスク検索クエリ
-    query_group.add_argument(
-        "-tq",
-        "--task_query",
-        type=str,
-        help="タスクの検索クエリをJSON形式で指定します。指定しない場合は、すべてのタスクを取得します。"
-        "`file://`を先頭に付けると、JSON形式のファイルを指定できます。"
-        "クエリのフォーマットは、[getTasks API](https://annofab.com/docs/api/#operation/getTasks)のクエリパラメータと同じです。"
-        "さらに追加で、`user_id`, `previous_user_id` キーも指定できます。"
-        "ただし `page`, `limit`キーは指定できません。",
-    )
-
-    query_group.add_argument(
+    parser.add_argument(
         "-t",
         "--task_id",
         type=str,
@@ -299,14 +298,6 @@ def parse_args(parser: argparse.ArgumentParser):
         'デフォルは`{"interval":60, "max_tries":360}` です。'
         "`interval`:完了したかを問い合わせる間隔[秒], "
         "`max_tires`:完了したかの問い合わせを最大何回行うか。",
-    )
-
-    parser.add_argument(
-        "-u",
-        "--user_id",
-        type=str,
-        nargs="+",
-        help="絞り込み対象である担当者のuser_idを指定します。" "`file://`を先頭に付けると、task_idの一覧が記載されたファイルを指定できます。",
     )
 
     argument_parser.add_format(
