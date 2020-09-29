@@ -74,7 +74,7 @@ class ListTasksWithJson(AbstractCommandLineInterface):
         args = self.args
 
         task_id_list = annofabcli.common.cli.get_list_from_args(args.task_id) if args.task_id is not None else None
-        task_query = annofabcli.common.cli.get_json_from_args(args.task_query) if args.task_query is not None else None
+        task_query = TaskQuery.from_dict(annofabcli.common.cli.get_json_from_args(args.task_query)) if args.task_query is not None else None
         wait_options = (
             WaitOptions.from_dict(annofabcli.common.cli.get_json_from_args(args.wait_options))
             if args.wait_options is not None
@@ -84,7 +84,7 @@ class ListTasksWithJson(AbstractCommandLineInterface):
         main_obj = ListTasksWithJsonMain(self.service)
         task_list = main_obj.get_task_list(
             project_id=args.project_id,
-            task_json=args.get_task_list,
+            task_json=args.task_json,
             task_id_list=task_id_list,
             task_query=task_query,
             is_latest=args.latest,
@@ -155,9 +155,9 @@ def parse_args(parser: argparse.ArgumentParser):
 
 
 def add_parser(subparsers: argparse._SubParsersAction):
-    subcommand_name = "list"
-    subcommand_help = "タスク一覧を出力します。"
-    description = "タスク一覧を出力します。"
+    subcommand_name = "list_with_json"
+    subcommand_help = "タスク全件数ファイルから一覧を出力します。"
+    description = "タスク全件数ファイルから一覧を出力します。"
 
     parser = annofabcli.common.cli.add_parser(subparsers, subcommand_name, subcommand_help, description)
     parse_args(parser)
