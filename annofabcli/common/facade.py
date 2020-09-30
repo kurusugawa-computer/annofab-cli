@@ -92,7 +92,7 @@ class InputDataQuery(DataClassJsonMixin):
     input_data_path: Optional[str] = None
 
 
-def match_task_with_task_query(  # pylint: disable=too-many-return-statements
+def match_task_with_query(  # pylint: disable=too-many-return-statements
     task: Task, task_query: Optional[TaskQuery]
 ) -> bool:
     """

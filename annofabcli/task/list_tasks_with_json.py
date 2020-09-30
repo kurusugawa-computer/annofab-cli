@@ -13,7 +13,7 @@ from annofabcli.common.cli import AbstractCommandLineInterface, ArgumentParser, 
 from annofabcli.common.dataclasses import WaitOptions
 from annofabcli.common.download import DownloadingFile
 from annofabcli.common.enums import FormatArgument
-from annofabcli.common.facade import TaskQuery, match_task_with_task_query
+from annofabcli.common.facade import TaskQuery, match_task_with_query
 
 logger = logging.getLogger(__name__)
 
@@ -32,7 +32,7 @@ class ListTasksWithJsonMain:
         result = True
 
         dc_task = Task.from_dict(task)
-        result = result and match_task_with_task_query(dc_task, task_query)
+        result = result and match_task_with_query(dc_task, task_query)
         if task_id_set is not None:
             result = result and (dc_task.task_id in task_id_set)
         return result

@@ -9,7 +9,7 @@ from annofabapi.models import ProjectMemberRole, TaskStatus
 import annofabcli
 from annofabcli import AnnofabApiFacade
 from annofabcli.common.cli import AbstractCommandLineInterface, ArgumentParser, build_annofabapi_resource_and_login
-from annofabcli.common.facade import TaskQuery, match_task_with_task_query
+from annofabcli.common.facade import TaskQuery, match_task_with_query
 
 logger = logging.getLogger(__name__)
 
@@ -78,7 +78,7 @@ class DeleteTask(AbstractCommandLineInterface):
                 logger.info(f"アノテーションが付与されているため（{len(annotation_list)}個）、タスク'{task_id}'を削除できません。")
                 return False
 
-        if not match_task_with_task_query(Task.from_dict(task), task_query):
+        if not match_task_with_query(Task.from_dict(task), task_query):
             logger.debug(f"task_id={task_id}: TaskQueryの条件にマッチしないため、スキップします。")
             return False
 
