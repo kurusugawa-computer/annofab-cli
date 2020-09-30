@@ -7,6 +7,8 @@ import annofabapi.utils
 import more_itertools
 from annofabapi.dataclass.annotation import AdditionalData
 from annofabapi.dataclass.task import Task
+from annofabapi.dataclass.input import InputData
+
 from annofabapi.models import (
     OrganizationMember,
     OrganizationMemberRole,
@@ -79,6 +81,15 @@ class TaskQuery(DataClassJsonMixin):
     no_user: bool = False
     """Trueなら未割り当てのタスクで絞り込む"""
 
+@dataclass
+class InputDataQuery(DataClassJsonMixin):
+    """
+    コマンドライン上で指定する入力データの検索条件
+    """
+    input_data_id:  Optional[str] = None
+    input_data_name: Optional[str] = None
+    input_data_path: Optional[str] = None
+
 
 def match_task_with_task_query(  # pylint: disable=too-many-return-statements
     task: Task, task_query: Optional[TaskQuery]
@@ -114,6 +125,39 @@ def match_task_with_task_query(  # pylint: disable=too-many-return-statements
 
     return True
 
+
+def match_input_data_with_query(  # pylint: disable=too-many-return-statements
+    input_data: InputData, input_data_query: Optional[InputDataQuery]
+) -> bool:
+    """
+    入力データが、クエリ条件に合致するかどうか。
+
+    Args:
+        input_data:
+        input_data_query: 入力データのクエリ検索条件。Noneの場合trueを返す。
+
+    Returns:
+        trueならクエリ条件に合致する。
+    """
+    def match_str(name:str, query:str, ignore_case:bool) -> bool:
+        if ignore_case:
+            return query.lower() in name.lower()
+        else:
+            return query in name
+
+    if input_data_query is None:
+        return True
+
+    if input_data_query.input_data_id is not None and match_str(input_data.input_data_id, input_data_query.input_data_id, ignore_case=True):
+        return False
+
+    if input_data_query.input_data_name is not None and match_str(input_data.input_data_id, input_data_query.input_data_name, ignore_case=True):
+        return False
+
+    if input_data_query.input_data_path is not None and match_str(input_data.input_data_path, input_data_query.input_data_path, ignore_case=False):
+        return False
+
+    return True
 
 class AnnofabApiFacade:
     """

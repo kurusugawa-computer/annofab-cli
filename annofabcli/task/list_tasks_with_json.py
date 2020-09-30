@@ -2,7 +2,7 @@ import argparse
 import json
 import logging
 from pathlib import Path
-from typing import Any, Dict, List, Optional
+from typing import Any, Dict, List, Optional, Set
 
 import annofabapi
 from annofabapi.dataclass.task import Task
@@ -26,15 +26,15 @@ class ListTasksWithJsonMain:
     @staticmethod
     def filter_task_list(
         task: Dict[str, Any],
-        task_id_list: Optional[List[str]] = None,
+        task_id_set: Optional[Set[str]] = None,
         task_query: Optional[TaskQuery] = None,
     ) -> bool:
         result = True
 
         dc_task = Task.from_dict(task)
         result = result and match_task_with_task_query(dc_task, task_query)
-        if task_id_list is not None:
-            result = result and (dc_task.task_id in task_id_list)
+        if task_id_set is not None:
+            result = result and (dc_task.task_id in task_id_set)
         return result
 
     def get_task_list(
@@ -63,8 +63,9 @@ class ListTasksWithJsonMain:
         if task_query is not None:
             task_query = self.facade.set_account_id_of_task_query(project_id, task_query)
 
+        task_id_set = set(task_id_list)
         filtered_task_list = [
-            e for e in task_list if self.filter_task_list(e, task_query=task_query, task_id_list=task_id_list)
+            e for e in task_list if self.filter_task_list(e, task_query=task_query, task_id_set=task_id_set)
         ]
         return filtered_task_list
 
@@ -116,7 +117,7 @@ def parse_args(parser: argparse.ArgumentParser):
         "--task_id",
         type=str,
         nargs="+",
-        help="対象のタスクのtask_idを指定します。`--task_query`引数とは同時に指定できません。" "`file://`を先頭に付けると、task_idの一覧が記載されたファイルを指定できます。",
+        help="対象のタスクのtask_idを指定します。" "`file://`を先頭に付けると、task_idの一覧が記載されたファイルを指定できます。",
     )
 
     parser.add_argument(
@@ -130,7 +131,7 @@ def parse_args(parser: argparse.ArgumentParser):
     )
 
     parser.add_argument(
-        "--latest", action="store_true", help="最新のタスク一覧ファイルを参照します。このオプションを指定すると、タスク一覧ファイルを更新するのに数分待ちます。"
+        "--latest", action="store_true", help="最新のタスク一覧ファイルを参照します。このオプションを指定すると、タスク一覧ファイルを更新するのに約5分以上待ちます。"
     )
 
     parser.add_argument(
