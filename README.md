@@ -16,7 +16,13 @@ AnnoFabのCLI(Command Line Interface)ツールです。
 
 ## 廃止予定
 * 2020-10-01以降：Pythonのサポートバージョンを3.6以上から、3.7以上に変更します。
-* 2020-09-01以降：`input_data list`コマンドの`--batch`オプションを削除します。入力データを１万件以上取得したい場合は、`project download input_data`コマンドを利用してください。
+* 2020-11-01以降：`task list_task_history`コマンドを、`task_history list`コマンドに変更します。
+* 2020-11-01以降：以下のコマンドに全件ファイルJSONを渡せないようにします。替わりになるコマンドが追加されたためです。
+    * `input_data list`コマンドから`--input_data_json`引数を削除
+    * `inspection_comment list`コマンドから`--inspection_comment_json`引数を削除
+    * `task list`コマンドから`--task_json`引数を削除
+    * `task list_task_history`コマンドから`--task_history_json`引数を削除    
+    
 
 # Requirements
 * Python 3.6+
