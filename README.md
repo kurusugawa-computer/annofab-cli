@@ -95,9 +95,11 @@ $ docker run -it -e ANNOFAB_USER_ID=XXXX -e ANNOFAB_PASSWORD=YYYYY annofab-cli a
 |input_data|delete             | 入力データを削除します。                                                            |オーナ|
 |input_data|list             | 入力データ一覧を出力します。                                                            |-|
 |input_data| list_merged_task | タスク一覧と結合した入力データ一覧のCSVを出力します。                                                            |オーナ/アノテーションユーザ|
+|input_data|list_with_json             | 入力データ全件ファイルから一覧を出力します。                                                            |-|
 |input_data|put             | 入力データを登録します。                                                            |オーナ|
 |input_data|update_metadata             | 入力データのメタデータを更新します。                                                            |オーナ|
 |inspection_comment| list | 検査コメントを出力します。                               |-|
+|inspection_comment| list_with_json | 検査コメント全件ファイルから一覧を出力します。                               |-|
 |inspection_comment| list_unprocessed | 未処置の検査コメントを出力します。                               |-|
 |instruction| copy             | 作業ガイドをコピーします。                                                         |チェッカー/オーナ|
 |instruction| upload             | HTMLファイルを作業ガイドとして登録します。                                                           |チェッカー/オーナ|
@@ -134,9 +136,10 @@ $ docker run -it -e ANNOFAB_USER_ID=XXXX -e ANNOFAB_PASSWORD=YYYYY annofab-cli a
 |task|list             | タスク一覧を出力します。                                                            |-|
 |task|list_added_task_history             | タスク履歴情報を加えたタスク一覧を出力します。|オーナ/アノテーションユーザ|
 |task|list_task_history             | タスク履歴の一覧を出力します。|-|
+|task| list_with_json | タスク全件ファイルから一覧を出力します。                               |-|
 |task| put                | タスクを作成します。                                 |オーナ|
 |task| reject                  | タスクを強制的に差し戻します。                                                                 |オーナ|
-
+|task_history| list_with_json | タスク履歴全件ファイルから一覧を出力します。                               |-|
 
 # Usage
 
@@ -675,6 +678,7 @@ $ annofabcli input_data list --project_id prj1 --input_data_query '{"input_data_
 
 
 
+
 ### input_data list_merged_task
 タスク一覧と結合した入力データ一覧のCSVを出力します。
 動画プロジェクトで、各タスクの動画時間を調べる際などに利用できます。
@@ -689,6 +693,19 @@ $ annofabcli input_data list_merged_task --project_id prj1 --output input_data.c
 # 入力データ全件ファイル、タスク全件ファイルのJSONから、マージしたCSVを出力する
 $ annofabcli input_data list_merged_task --input_data_json input_data.json --task_json task.json --output input_data.csv
 ```
+
+
+### input_data list_with_json
+入力データ全件ファイルから一覧を出力します。
+
+```
+# 全件の入力データを出力する
+$ annofabcli input_data list_with_json --project_id prj1 --output input_data.csv
+
+# 入力データ全件ファイルを最新化してから、出力する
+$ annofabcli input_data list_with_json --project_id prj1 --output input_data.csv --latest
+```
+
 
 
 ### input_data put
@@ -795,6 +812,18 @@ $ annofabcli inspection_comment list --project_id prj1 --task_id task1 task2 --o
 | project_id                           | task_id    | input_data_id                        | inspection_id                        | phase      | phase_stage | commenter_account_id                 | annotation_id                        | label_id                             | data                                  | parent_inspection_id | phrases | comment | status          | created_datetime              | updated_datetime              | commenter_user_id | commenter_username | phrase_names_en | phrase_names_ja | label_name_en | label_name_ja | input_data_index |
 |--------------------------------------|------------|--------------------------------------|--------------------------------------|------------|-------------|--------------------------------------|--------------------------------------|--------------------------------------|---------------------------------------|----------------------|---------|---------|-----------------|-------------------------------|-------------------------------|-------------------|--------------------|-----------------|-----------------|---------------|---------------|------------------|
 | 58a2a621-7d4b-41e7-927b-cdc570c1114a | sample_180 | bf6b4790-cdb8-4d4d-85bb-08550934ed61 | 5f096677-67e4-4e75-9eac-bbd8ac9694d9 | inspection | 1           | 12345678-abcd-1234-abcd-1234abcd5678 | 8aff181e-9df4-4c66-8fb2-10596c686d5c | 8aff181e-9df4-4c66-8fb2-10596c686d5c | {'x': 358, 'y': 48, '_type': 'Point'} |                      | []      | 枠がずれています     | error_corrected | 2019-07-26T17:41:16.626+09:00 | 2019-08-01T10:57:45.639+09:00 | user_id   | username          | []              | []              | car           | car           | 0                |
+
+
+
+### inspection_comment list_with_json
+検査コメント一覧を出力します。
+
+```
+# 検査コメント全件を出力する
+$ annofabcli inspection_comment list_with_json --project_id prj1 --output inspection_comment.csv
+
+```
+
 
 
 ### inspection_comment list_unprocessed
@@ -1545,6 +1574,21 @@ $ annofabcli task list_task_history --project_id prj1 --output task_history.csv
 ```
 
 
+### task list_with_json
+タスク全件ファイルから一覧を出力します。
+
+```
+# タスク一覧全件を出力する
+$ annofabcli task list_with_json --project_id prj1 --output task.csv
+
+# タスク全件ファイルを最新化してから、出力する
+$ annofabcli task list_with_json --project_id prj1 --output task.csv --latest
+```
+
+
+
+
+
 ### task put
 タスクを作成します。
 
@@ -1617,4 +1661,10 @@ $ annofabcli task reject --project_id prj1 --task_id file://tasks.txt \
 ```
 
 
+### task_history list_with_json
+タスク履歴全件ファイルから一覧を出力します。
 
+```
+# タスク履歴一覧全件を出力する
+$ annofabcli task_history list_with_json --project_id prj1 --output task_history.csv
+```

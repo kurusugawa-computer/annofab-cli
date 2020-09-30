@@ -122,7 +122,7 @@ class ListTaskHistoryWithJson(AbstractCommandLineInterface):
 def main(args):
     service = build_annofabapi_resource_and_login(args)
     facade = AnnofabApiFacade(service)
-    ListTaskHistory(service, facade, args).main()
+    ListTaskHistoryWithJson(service, facade, args).main()
 
 
 def parse_args(parser: argparse.ArgumentParser):
@@ -141,6 +141,7 @@ def parse_args(parser: argparse.ArgumentParser):
         "--task_history_json",
         type=Path,
         help="タスク履歴情報が記載されたJSONファイルのパスを指定すると、JSONに記載された情報を元にタスク履歴一覧を出力します。"
+        "指定しない場合、JSONファイルをダウンロードします。"
         "JSONファイルは`$ annofabcli project download task_history`コマンドで取得できます。",
     )
 
@@ -155,7 +156,7 @@ def parse_args(parser: argparse.ArgumentParser):
 
 
 def add_parser(subparsers: argparse._SubParsersAction):
-    subcommand_name = "list_task_history"
+    subcommand_name = "list_with_json"
     subcommand_help = "タスク履歴の一覧を出力します。"
     description = "タスク履歴の一覧を出力します。"
 
