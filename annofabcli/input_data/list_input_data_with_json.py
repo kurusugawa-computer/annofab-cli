@@ -1,23 +1,12 @@
 import argparse
 import datetime
-import logging
-from typing import Any, Dict, List, Optional, Tuple
-
-import annofabapi
-from annofabapi.models import InputData
-
-import annofabcli
-from annofabcli import AnnofabApiFacade
-from annofabcli.common.cli import AbstractCommandLineInterface, ArgumentParser, build_annofabapi_resource_and_login
-from annofabcli.common.enums import FormatArgument
-
-import argparse
 import json
 import logging
 from pathlib import Path
-from typing import Any, Dict, List, Optional, Set
+from typing import Any, Dict, List, Optional, Set, Tuple
 
 import annofabapi
+from annofabapi.dataclass.input import InputData
 
 import annofabcli
 from annofabcli import AnnofabApiFacade
@@ -74,9 +63,11 @@ class ListInputDataWithJsonMain:
         with json_path.open() as f:
             input_data_list = json.load(f)
 
-        input_data_id_set = set(input_data_id_list)
+        input_data_id_set = set(input_data_id_list) if input_data_id_list is not None else None
         filtered_input_data_list = [
-            e for e in input_data_list if self.filter_input_data_list(e, input_data_query=input_data_query, input_data_id_set=input_data_id_set)
+            e
+            for e in input_data_list
+            if self.filter_input_data_list(e, input_data_query=input_data_query, input_data_id_set=input_data_id_set)
         ]
         return filtered_input_data_list
 
@@ -85,8 +76,14 @@ class ListInputDataWithJson(AbstractCommandLineInterface):
     def main(self):
         args = self.args
 
-        input_data_id_list = annofabcli.common.cli.get_list_from_args(args.input_data_id) if args.input_data_id is not None else None
-        input_data_query = InputDataQuery.from_dict(annofabcli.common.cli.get_json_from_args(args.input_data_query)) if args.input_data_query is not None else None
+        input_data_id_list = (
+            annofabcli.common.cli.get_list_from_args(args.input_data_id) if args.input_data_id is not None else None
+        )
+        input_data_query = (
+            InputDataQuery.from_dict(annofabcli.common.cli.get_json_from_args(args.input_data_query))
+            if args.input_data_query is not None
+            else None
+        )
         wait_options = (
             WaitOptions.from_dict(annofabcli.common.cli.get_json_from_args(args.wait_options))
             if args.wait_options is not None
@@ -111,9 +108,6 @@ class ListInputDataWithJson(AbstractCommandLineInterface):
             logger.info(f"入力データ一覧の件数が0件のため、出力しません。")
 
 
-
-
-
 def main(args):
     service = build_annofabapi_resource_and_login(args)
     facade = AnnofabApiFacade(service)
@@ -125,14 +119,13 @@ def parse_args(parser: argparse.ArgumentParser):
 
     argument_parser.add_project_id()
 
-
     parser.add_argument(
         "-iq",
         "--input_data_query",
         type=str,
         help="入力データの検索クエリをJSON形式で指定します。"
         "`file://`を先頭に付けると、JSON形式のファイルを指定できます。"
-        "指定できるキーは、`input_data_name`, `input_data_path`です。"
+        "指定できるキーは、`input_data_name`, `input_data_path`です。",
     )
 
     parser.add_argument(
@@ -140,8 +133,15 @@ def parse_args(parser: argparse.ArgumentParser):
         "--input_data_id",
         type=str,
         nargs="+",
-        help="対象のinput_data_idを指定します。"
-        "`file://`を先頭に付けると、input_data_idの一覧が記載されたファイルを指定できます。",
+        help="対象のinput_data_idを指定します。" "`file://`を先頭に付けると、input_data_idの一覧が記載されたファイルを指定できます。",
+    )
+
+    parser.add_argument(
+        "--input_data_json",
+        type=Path,
+        help="入力データ情報が記載されたJSONファイルのパスを指定すると、JSONに記載された情報を元に入力データ一覧を出力します。"
+        "指定しない場合、全件ファイルをダウンロードします。"
+        "JSONファイルは`$ annofabcli project download input_data`コマンドで取得できます。",
     )
 
     parser.add_argument(

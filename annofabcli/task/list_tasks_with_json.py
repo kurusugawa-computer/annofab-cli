@@ -63,7 +63,7 @@ class ListTasksWithJsonMain:
         if task_query is not None:
             task_query = self.facade.set_account_id_of_task_query(project_id, task_query)
 
-        task_id_set = set(task_id_list)
+        task_id_set = set(task_id_list) if task_id_list is not None else None
         filtered_task_list = [
             e for e in task_list if self.filter_task_list(e, task_query=task_query, task_id_set=task_id_set)
         ]
@@ -75,7 +75,11 @@ class ListTasksWithJson(AbstractCommandLineInterface):
         args = self.args
 
         task_id_list = annofabcli.common.cli.get_list_from_args(args.task_id) if args.task_id is not None else None
-        task_query = TaskQuery.from_dict(annofabcli.common.cli.get_json_from_args(args.task_query)) if args.task_query is not None else None
+        task_query = (
+            TaskQuery.from_dict(annofabcli.common.cli.get_json_from_args(args.task_query))
+            if args.task_query is not None
+            else None
+        )
         wait_options = (
             WaitOptions.from_dict(annofabcli.common.cli.get_json_from_args(args.wait_options))
             if args.wait_options is not None
@@ -122,11 +126,9 @@ def parse_args(parser: argparse.ArgumentParser):
 
     parser.add_argument(
         "--task_json",
-        type=str,
+        type=Path,
         help="タスク情報が記載されたJSONファイルのパスを指定すると、JSONに記載された情報を元にタスク一覧を出力します。"
-        "AnnoFabからタスク情報を取得しません。 "
-        "このオプションを指定すると、`--task_query`, `--task_id`オプションは無視します。"
-        "JSONには記載されていない、`user_id`や`username`などの情報も追加します。"
+        "指定しない場合、全件ファイルをダウンロードします。"
         "JSONファイルは`$ annofabcli project download task`コマンドで取得できます。",
     )
 

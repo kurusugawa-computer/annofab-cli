@@ -5,6 +5,7 @@ import annofabcli.common.cli
 import annofabcli.input_data.delete_input_data
 import annofabcli.input_data.list_input_data
 import annofabcli.input_data.list_input_data_merged_task
+import annofabcli.input_data.list_input_data_with_json
 import annofabcli.input_data.put_input_data
 import annofabcli.input_data.update_metadata_of_input_data
 
@@ -17,6 +18,7 @@ def parse_args(parser: argparse.ArgumentParser):
     annofabcli.input_data.delete_input_data.add_parser(subparsers)
     annofabcli.input_data.list_input_data.add_parser(subparsers)
     annofabcli.input_data.list_input_data_merged_task.add_parser(subparsers)
+    annofabcli.input_data.list_input_data_with_json.add_parser(subparsers)
     annofabcli.input_data.put_input_data.add_parser(subparsers)
     annofabcli.input_data.update_metadata_of_input_data.add_parser(subparsers)
 
