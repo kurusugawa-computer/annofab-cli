@@ -197,24 +197,6 @@ class TestInputData:
             ]
         )
 
-    def test_list_input_data_with_batch(self):
-        out_file = str(out_path / "input_data.json")
-        main(
-            [
-                "input_data",
-                "list",
-                "--project_id",
-                project_id,
-                "--input_data_query",
-                '{"input_data_name": "abcdefg"}',
-                "--batch",
-                '{"first":"2019-01-01", "last":"2019-01-31", "days":7}',
-                "--add_details",
-                "--output",
-                out_file,
-            ]
-        )
-
     def test_list_input_data_merged_task_with_downloading(self):
         out_file = str(out_path / "input_data.csv")
         main(
@@ -238,6 +220,24 @@ class TestInputData:
                 str(data_path / "task.json"),
                 "--input_data_json",
                 str(data_path / "input_data.json"),
+                "--output",
+                out_file,
+            ]
+        )
+
+    def test_list_input_data_with_json(self):
+        out_file = str(out_path / "input_data.csv")
+        main(
+            [
+                "input_data",
+                "list_with_json",
+                "--project_id",
+                project_id,
+                "--input_data_query",
+                '{"input_data_name": "abcdefg"}',
+                "--input_data_id",
+                "test1",
+                "test2",
                 "--output",
                 out_file,
             ]
@@ -327,6 +327,21 @@ class TestInspectionComment:
                 project_id,
                 "--inspection_comment_json",
                 inspection_comment_json,
+                "--output",
+                out_file,
+            ]
+        )
+
+    def test_list_inspection_comment_with_json(self):
+        out_file = str(out_path / "inspection_comment.csv")
+        inspection_comment_json = str(data_path / "inspection-comment.json")
+        main(
+            [
+                "inspection_comment",
+                "list_with_json",
+                "--project_id",
+                project_id,
+                "--exclude_reply",
                 "--output",
                 out_file,
             ]
@@ -758,25 +773,6 @@ class TestTask:
             ]
         )
 
-    def test_list_with_task_json(self):
-        out_file = str(out_path / "task.csv")
-        task_json = str(data_path / "task.json")
-
-        main(
-            [
-                self.command_name,
-                "list",
-                "--project_id",
-                project_id,
-                "--task_json",
-                task_json,
-                "--output",
-                out_file,
-                "--format",
-                "csv",
-            ]
-        )
-
     def test_list_added_task_history(self):
         out_file = str(out_path / "task.csv")
         main(
@@ -841,6 +837,27 @@ class TestTask:
             ]
         )
 
+    def test_list_with_json(self):
+        out_file = str(out_path / "task.csv")
+
+        main(
+            [
+                self.command_name,
+                "list_with_json",
+                "--project_id",
+                project_id,
+                "--task_query",
+                '{"status":"not_started"}',
+                "--task_id",
+                "test1",
+                "test2",
+                "--output",
+                out_file,
+                "--format",
+                "csv",
+            ]
+        )
+
     # def test_reject_task(self):
     #     inspection_comment = datetime.datetime.now().isoformat()
     #     main(
@@ -887,6 +904,29 @@ class TestTask:
     #             "--yes",
     #         ]
     #     )
+
+
+class TestTaskHistory:
+    command_name = "task_history"
+
+    def test_list_with_json(self):
+        out_file = str(out_path / "task.csv")
+
+        main(
+            [
+                self.command_name,
+                "list_with_json",
+                "--project_id",
+                project_id,
+                "--task_id",
+                "test1",
+                "test2",
+                "--output",
+                out_file,
+                "--format",
+                "csv",
+            ]
+        )
 
 
 class TestExperimental:

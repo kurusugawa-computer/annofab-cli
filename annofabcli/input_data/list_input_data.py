@@ -1,15 +1,10 @@
 import argparse
-import copy
-import datetime
 import logging
 import urllib.parse
-from dataclasses import dataclass
-from typing import Any, Dict, List, Optional, Tuple
+from typing import Any, Dict, List, Optional
 
 import annofabapi
 from annofabapi.models import InputData, Task
-from annofabapi.utils import to_iso8601_extension
-from dataclasses_json import DataClassJsonMixin
 
 import annofabcli
 from annofabcli import AnnofabApiFacade
@@ -18,45 +13,6 @@ from annofabcli.common.enums import FormatArgument
 from annofabcli.common.visualize import AddProps
 
 logger = logging.getLogger(__name__)
-
-DatetimeRange = Tuple[Optional[datetime.datetime], Optional[datetime.datetime]]
-
-
-@dataclass(frozen=True)
-class InputDataBatchQuery(DataClassJsonMixin):
-    """
-    入力データをバッチ単位（段階的に）に取得する。
-    """
-
-    first: str
-    last: str
-    days: int
-
-
-def str_to_datetime(d: str) -> datetime.datetime:
-    """
-    文字列 `YYYY-MM-DDD` をdatetime.datetimeに変換する。
-    """
-    return datetime.datetime.strptime(d, "%Y-%m-%d")
-
-
-def create_datetime_range_list(
-    first_datetime: datetime.datetime, last_datetime: datetime.datetime, days: int
-) -> List[DatetimeRange]:
-    datetime_list: List[DatetimeRange] = []
-    datetime_list.append((None, first_datetime))
-
-    from_datetime = first_datetime
-    while True:
-        to_datetime = from_datetime + datetime.timedelta(days=days)
-        datetime_list.append((from_datetime, to_datetime))
-        if to_datetime >= last_datetime:
-            break
-
-        from_datetime = to_datetime
-
-    datetime_list.append((to_datetime, None))
-    return datetime_list
 
 
 class ListInputData(AbstractCommandLineInterface):
@@ -176,56 +132,11 @@ class ListInputData(AbstractCommandLineInterface):
             logger.debug(f"input_data_query: {input_data_query}")
             input_data_list = self.service.wrapper.get_all_input_data_list(project_id, query_params=input_data_query)
 
-        logger.debug(f"入力データ一覧の件数: {len(input_data_list)}")
-
         # 詳細な情報を追加する
         if add_details:
             self.add_details_to_input_data_list(project_id, input_data_list)
 
         return input_data_list
-
-    def get_input_data_with_batch(
-        self,
-        project_id: str,
-        batch_query: InputDataBatchQuery,
-        input_data_query: Optional[Dict[str, Any]] = None,
-        add_details: bool = False,
-    ) -> List[InputData]:
-        """
-        バッチ単位で入力データを取得する。
-
-        Args:
-            project_id:
-            input_data_query:
-            add_details:
-            batch_query:
-
-        Returns:
-
-        """
-        first_datetime = str_to_datetime(batch_query.first)
-        last_datetime = str_to_datetime(batch_query.last)
-
-        all_input_data_list = []
-
-        datetime_range_list = create_datetime_range_list(first_datetime, last_datetime, batch_query.days)
-        for from_datetime, to_datetime in datetime_range_list:
-            idq = copy.deepcopy(input_data_query) if input_data_query is not None else {}
-
-            if from_datetime is not None:
-                idq["from"] = to_iso8601_extension(from_datetime)
-            if to_datetime is not None:
-                idq["to"] = to_iso8601_extension(to_datetime)
-
-            logger.debug(f"入力データを取得します。query={idq}")
-            input_data_list = self.get_input_data_list(project_id, input_data_query=idq, add_details=add_details)
-            logger.debug(f"入力データを {len(input_data_list)} 件取得しました。")
-            if len(input_data_list) == 10000:
-                logger.warning("入力データ一覧は10,000件で打ち切られている可能性があります。")
-
-            all_input_data_list.extend(input_data_list)
-
-        return all_input_data_list
 
     def print_input_data(
         self,
@@ -233,7 +144,6 @@ class ListInputData(AbstractCommandLineInterface):
         input_data_query: Optional[Dict[str, Any]] = None,
         input_data_id_list: Optional[List[str]] = None,
         add_details: bool = False,
-        batch_query: Optional[InputDataBatchQuery] = None,
     ):
         """
         入力データ一覧を出力する
@@ -248,27 +158,15 @@ class ListInputData(AbstractCommandLineInterface):
 
         super().validate_project(project_id, project_member_roles=None)
 
-        if batch_query is None:
-            input_data_list = self.get_input_data_list(
-                project_id,
-                input_data_query=input_data_query,
-                input_data_id_list=input_data_id_list,
-                add_details=add_details,
-            )
-            logger.info(f"入力データ一覧の件数: {len(input_data_list)}")
-            if len(input_data_list) == 10000:
-                logger.warning("入力データ一覧は10,000件で打ち切られている可能性があります。")
-
-        else:
-            input_data_list = self.get_input_data_with_batch(
-                project_id, input_data_query=input_data_query, add_details=add_details, batch_query=batch_query
-            )
-            logger.info(f"入力データ一覧の件数: {len(input_data_list)}")
-            total_count = self.service.api.get_input_data_list(project_id, query_params=input_data_query)[0][
-                "total_count"
-            ]
-            if len(input_data_list) != total_count:
-                logger.warning(f"実際に取得した件数:{len(input_data_list)}が、取得可能な件数:{total_count} と異なっていました。")
+        input_data_list = self.get_input_data_list(
+            project_id,
+            input_data_query=input_data_query,
+            input_data_id_list=input_data_id_list,
+            add_details=add_details,
+        )
+        logger.info(f"入力データ一覧の件数: {len(input_data_list)}")
+        if len(input_data_list) == 10000:
+            logger.warning("入力データ一覧は10,000件で打ち切られている可能性があります。")
 
         if len(input_data_list) > 0:
             self.print_according_to_format(input_data_list)
@@ -282,14 +180,11 @@ class ListInputData(AbstractCommandLineInterface):
             input_data_id_list = None
 
         input_data_query = annofabcli.common.cli.get_json_from_args(args.input_data_query)
-        dict_batch_query = annofabcli.common.cli.get_json_from_args(args.batch)
-        batch_query = InputDataBatchQuery.from_dict(dict_batch_query) if dict_batch_query is not None else None
         self.print_input_data(
             args.project_id,
             input_data_id_list=input_data_id_list,
             input_data_query=input_data_query,
             add_details=args.add_details,
-            batch_query=batch_query,
         )
 
 
@@ -323,15 +218,6 @@ def parse_args(parser: argparse.ArgumentParser):
         nargs="+",
         help="対象のinput_data_idを指定します。`--input_data_query`引数とは同時に指定できません。"
         "`file://`を先頭に付けると、input_data_idの一覧が記載されたファイルを指定できます。",
-    )
-
-    parser.add_argument(
-        "--batch",
-        type=str,
-        help="段階的に入力データを取得するための情報をJSON形式で指定します。 "
-        '(ex) `{"first":"2019-01-01", "last":"2019-01-31", "days":7}` '
-        "このオプションを駆使すれば、10,000件以上のデータを取得できます。"
-        "`file://`を先頭に付けると、JSON形式のファイルを指定できます。",
     )
 
     parser.add_argument("--add_details", action="store_true", help="入力データの詳細情報を表示します（`parent_task_id_list`）")

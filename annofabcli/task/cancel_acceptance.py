@@ -19,7 +19,7 @@ from annofabcli.common.cli import (
     ArgumentParser,
     build_annofabapi_resource_and_login,
 )
-from annofabcli.common.facade import TaskQuery, match_task_with_task_query
+from annofabcli.common.facade import TaskQuery, match_task_with_query
 
 logger = logging.getLogger(__name__)
 
@@ -59,7 +59,7 @@ class CancelAcceptanceMain(AbstracCommandCinfirmInterface):
                     if user_info is not None:
                         acceptor_user_id = user_info["user_id"]
 
-            if not match_task_with_task_query(Task.from_dict(task), task_query):
+            if not match_task_with_query(Task.from_dict(task), task_query):
                 logger.debug(f"{logging_prefix} : task_id = {task_id} : TaskQueryの条件にマッチしないため、スキップします。")
                 return False
 

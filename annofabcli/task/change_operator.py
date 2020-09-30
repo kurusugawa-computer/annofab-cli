@@ -19,7 +19,7 @@ from annofabcli.common.cli import (
     build_annofabapi_resource_and_login,
     prompt_yesnoall,
 )
-from annofabcli.common.facade import TaskQuery, match_task_with_task_query
+from annofabcli.common.facade import TaskQuery, match_task_with_query
 
 logger = logging.getLogger(__name__)
 
@@ -86,7 +86,7 @@ class ChangeOperatorMain:
             logger.warning(f"{logging_prefix} : task_id = {task_id} : タスクのstatusがworking or complete なので、担当者を変更できません。")
             return False
 
-        if not match_task_with_task_query(task, task_query):
+        if not match_task_with_query(task, task_query):
             logger.debug(f"{logging_prefix} : task_id = {task_id} : TaskQueryの条件にマッチしないため、スキップします。")
             return False
 

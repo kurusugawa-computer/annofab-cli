@@ -3,6 +3,7 @@ import argparse
 import annofabcli
 import annofabcli.common.cli
 import annofabcli.inspection_comment.list_inspections
+import annofabcli.inspection_comment.list_inspections_with_json
 import annofabcli.inspection_comment.list_unprocessed_inspections
 
 
@@ -12,6 +13,7 @@ def parse_args(parser: argparse.ArgumentParser):
 
     # サブコマンドの定義
     annofabcli.inspection_comment.list_inspections.add_parser(subparsers)
+    annofabcli.inspection_comment.list_inspections_with_json.add_parser(subparsers)
     annofabcli.inspection_comment.list_unprocessed_inspections.add_parser(subparsers)
 
 
