@@ -86,9 +86,12 @@ class ListTasksWithJson(AbstractCommandLineInterface):
             else None
         )
 
+        project_id = args.project_id
+        super().validate_project(project_id, project_member_roles=None)
+
         main_obj = ListTasksWithJsonMain(self.service)
         task_list = main_obj.get_task_list(
-            project_id=args.project_id,
+            project_id=project_id,
             task_json=args.task_json,
             task_id_list=task_id_list,
             task_query=task_query,

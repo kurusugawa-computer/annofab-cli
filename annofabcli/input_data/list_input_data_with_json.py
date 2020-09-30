@@ -90,9 +90,12 @@ class ListInputDataWithJson(AbstractCommandLineInterface):
             else None
         )
 
+        project_id = args.project_id
+        super().validate_project(project_id, project_member_roles=None)
+
         main_obj = ListInputDataWithJsonMain(self.service)
         input_data_list = main_obj.get_input_data_list(
-            project_id=args.project_id,
+            project_id=project_id,
             input_data_json=args.input_data_json,
             input_data_id_list=input_data_id_list,
             input_data_query=input_data_query,

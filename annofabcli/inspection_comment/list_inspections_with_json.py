@@ -72,6 +72,7 @@ class ListInspectionCommentWithJsonMain:
         only_reply: bool,
         exclude_reply: bool,
     ) -> List[Inspection]:
+
         if inspection_comment_json is None:
             downloading_obj = DownloadingFile(self.service)
             cache_dir = annofabcli.utils.get_cache_dir()
@@ -96,11 +97,13 @@ class ListInspectionCommentWithJsonMain:
 class ListInspectionCommentWithJson(AbstractCommandLineInterface):
     def main(self):
         args = self.args
+        project_id = args.project_id
+        super().validate_project(project_id, project_member_roles=None)
 
         task_id_list = annofabcli.common.cli.get_list_from_args(args.task_id) if args.task_id is not None else None
         main_obj = ListInspectionCommentWithJsonMain(self.service)
         inspection_comment_list = main_obj.get_inspection_comment_list(
-            project_id=args.project_id,
+            project_id=project_id,
             inspection_comment_json=args.inspection_comment_json,
             task_id_list=task_id_list,
             exclude_reply=args.exclude_reply,
