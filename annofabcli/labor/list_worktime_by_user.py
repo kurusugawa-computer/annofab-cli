@@ -506,6 +506,30 @@ class ListWorktimeByUserMain:
 
         return member_list
 
+    def _get_user_from_organization_name_list(self, organization_name_list: List[str], user_id: str) -> Optional[User]:
+        for organization_name in organization_name_list:
+            organization_member = self.service.wrapper.get_organization_member_or_none(organization_name, user_id)
+            if organization_member is not None:
+                return User(
+                    user_id=organization_member["user_id"],
+                    account_id=organization_member["account_id"],
+                    username=organization_member["username"],
+                    biography=organization_member["biography"],
+                )
+        return None
+
+    def _get_user_from_project_id_list(self, project_id_list: List[str], user_id: str) -> Optional[User]:
+        for project_id in project_id_list:
+            project_member = self.service.wrapper.get_project_member_or_none(project_id, user_id)
+            if project_member is not None:
+                return User(
+                    user_id=project_member["user_id"],
+                    account_id=project_member["account_id"],
+                    username=project_member["username"],
+                    biography=project_member["biography"],
+                )
+        return None
+
     def get_user_list(
         self,
         labor_list: List[LaborWorktime],
@@ -536,68 +560,55 @@ class ListWorktimeByUserMain:
 
         if user_id_list is None:
             for user_id, row in df.iterrows():
-                user = User(
-                    user_id=str(user_id),
-                    account_id=row["account_id"],
-                    username=row["username"],
-                    biography=row["biography"],
+                user_list.append(
+                    User(
+                        user_id=str(user_id),
+                        account_id=row["account_id"],
+                        username=row["username"],
+                        biography=row["biography"],
+                    )
                 )
-                user_list.append(user)
             return user_list
 
         if organization_name_list is not None:
             for user_id in user_id_list:
                 if user_id in df.index:
                     row = df.loc[user_id]
-                    user = User(
-                        user_id=str(user_id),
-                        account_id=row["account_id"],
-                        username=row["username"],
-                        biography=row["biography"],
+                    user_list.append(
+                        User(
+                            user_id=str(user_id),
+                            account_id=row["account_id"],
+                            username=row["username"],
+                            biography=row["biography"],
+                        )
                     )
-                    user_list.append(user)
                     continue
 
-                for organization_name in organization_name_list:
-                    organization_member = self.service.wrapper.get_organization_member_or_none(
-                        organization_name, user_id
-                    )
-                    if organization_member is not None:
-                        user = User(
-                            user_id=organization_member["user_id"],
-                            account_id=organization_member["account_id"],
-                            username=organization_member["username"],
-                            biography=organization_member["biography"],
-                        )
-                        user_list.append(user)
-                        break
-                logger.warning(f"user_id={user_id} のユーザは見つかりませんでした。")
+                user = self._get_user_from_organization_name_list(organization_name_list, user_id)
+                if user is not None:
+                    user_list.append(user)
+                else:
+                    logger.warning(f"user_id={user_id} のユーザは、組織メンバに存在しませんでした。")
 
         if project_id_list is not None:
             for user_id in user_id_list:
                 if user_id in df.index:
                     row = df.loc[user_id]
-                    user = User(
-                        user_id=str(user_id),
-                        account_id=row["account_id"],
-                        username=row["username"],
-                        biography=row["biography"],
+                    user_list.append(
+                        User(
+                            user_id=str(user_id),
+                            account_id=row["account_id"],
+                            username=row["username"],
+                            biography=row["biography"],
+                        )
                     )
-                    user_list.append(user)
                     continue
 
-                for project_id in project_id_list:
-                    project_member = self.service.wrapper.get_project_member_or_none(project_id, user_id)
-                    if project_member is not None:
-                        user = User(
-                            user_id=project_member["user_id"],
-                            account_id=project_member["account_id"],
-                            username=project_member["username"],
-                            biography=project_member["biography"],
-                        )
-                        user_list.append(user)
-                        break
-                logger.warning(f"user_id={user_id} のユーザは見つかりませんでした。")
+                user = self._get_user_from_project_id_list(project_id_list, user_id)
+                if user is not None:
+                    user_list.append(user)
+                else:
+                    logger.warning(f"user_id={user_id} のユーザは、プロジェクトメンバに存在しませんでした。")
 
         return user_list
 
@@ -910,7 +921,6 @@ class ListWorktimeByUserMain:
                 end_date = sorted_labor_list[-1].date
 
         logger.info(f"集計期間: start_date={start_date}, end_date={end_date}")
-
         user_list = self.get_user_list(
             labor_list,
             organization_name_list=organization_name_list,
