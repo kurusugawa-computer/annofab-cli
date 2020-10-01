@@ -260,6 +260,9 @@ class Database:
         project, _ = self.annofab_service.api.get_project(project_id)
         last_tasks_updated_datetime = project["summary"]["last_tasks_updated_datetime"]
         logger.debug(f"タスクの最終更新日時={last_tasks_updated_datetime}")
+        if last_tasks_updated_datetime is None:
+            logger.warning("タスクの最終更新日時がNoneなので、アノテーションzipを更新しません。")
+            return
 
         annotation_specs_history = self.annofab_service.api.get_annotation_specs_histories(project_id)[0]
         annotation_specs_updated_datetime = annotation_specs_history[-1]["updated_datetime"]
