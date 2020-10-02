@@ -1,5 +1,6 @@
 import asyncio
 import logging.config
+import warnings
 from functools import partial
 from typing import Optional
 
@@ -206,6 +207,40 @@ class DownloadingFile:
                 logger.info(f"タスク履歴全件ファイルが存在しません。")
                 raise DownloadingFileNotFoundError("タスク履歴全件ファイルが存在しません。") from e
             raise e
+
+    def download_task_history_event_json(self, project_id: str, dest_path: str):
+        """
+        タスク履歴イベント全件ファイルをダウンロードする。
+
+        .. deprecated:: 0.21.1
+
+        Args:
+            project_id:
+            dest_path:
+
+        Raises:
+            DownloadingFileNotFoundError:
+        """
+        try:
+            logger.debug(f"タスク履歴イベント全件ファイルをダウンロードします。path={dest_path}")
+            self.service.wrapper.download_project_task_history_events_url(project_id, dest_path)
+        except requests.HTTPError as e:
+            if e.response.status_code == requests.codes.not_found:
+                logger.info(f"タスク履歴イベント全件ファイルが存在しません。")
+                raise DownloadingFileNotFoundError("タスク履歴イベント全件ファイルが存在しません。") from e
+            raise e
+
+    async def download_task_history_event_json_with_async(self, project_id: str, dest_path: str):
+        """
+        非同期で検査コメント全件ファイルをダウンロードする。
+
+        .. deprecated:: 0.21.1
+
+        Raises:
+            DownloadingFileNotFoundError:
+        """
+        warnings.warn("deprecated", DeprecationWarning)
+        return self.download_task_history_event_json(project_id, dest_path=dest_path)
 
     async def download_inspection_json_with_async(self, project_id: str, dest_path: str):
         """

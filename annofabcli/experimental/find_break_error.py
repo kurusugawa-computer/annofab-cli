@@ -9,7 +9,6 @@ from typing import Any, Dict, List, Optional
 import annofabapi
 import dateutil.parser
 import pandas as pd
-import requests
 
 import annofabcli
 import annofabcli.common.cli
@@ -20,21 +19,10 @@ from annofabcli.common.cli import (
     build_annofabapi_resource_and_login,
     get_list_from_args,
 )
+from annofabcli.common.download import DownloadingFile
 from annofabcli.common.utils import read_lines_except_blank_line
 
 logger = logging.getLogger(__name__)
-
-
-def download_content(url: str) -> Any:
-    """
-    HTTP GETで取得した内容を保存せずそのまま返す
-
-    Args:
-        url: ダウンロード対象のURL
-    """
-    response = requests.get(url)
-    annofabapi.utils.raise_for_status(response)
-    return response.content
 
 
 def get_err_history_events(
@@ -95,15 +83,12 @@ class FindBreakError(AbstractCommandLineInterface):
         """
         project_task_history_events: List[Dict[str, Any]] = []
         if import_file_path is None:
-            content, _ = self.service.wrapper.api.get_project_task_history_events_url(project_id=project_id)
-            url = content["url"]
-            try:
-                history_events = download_content(url)
-            except requests.HTTPError:
-                # TODO:全件JSONは今のところ30日で消える仕様の回避
-                logger.warning(f"プロジェクトの停止から30日以上が経過しているため検索対象外になります project_id:{project_id}")
-                return None
-            project_task_history_events = json.loads(history_events)
+            downloading_obj = DownloadingFile(self.service)
+            cache_dir = annofabcli.utils.get_cache_dir()
+            json_path = cache_dir / f"{project_id}-inspection.json"
+            downloading_obj.download_task_history_event_json(project_id, str(json_path))
+            with json_path.open() as f:
+                project_task_history_events = json.load(f)
 
         else:
             history_events = read_lines_except_blank_line(import_file_path)
