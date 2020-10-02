@@ -4,7 +4,7 @@ description = "Python Clinet Library of AnnoFab WebAPI (https://annofab.com/docs
 name = "annofabapi"
 optional = false
 python-versions = ">=3.6,<4.0"
-version = "0.38.9"
+version = "0.38.10"
 
 [package.dependencies]
 backoff = "*"
@@ -904,14 +904,14 @@ docs = ["sphinx", "jaraco.packaging (>=3.2)", "rst.linker (>=1.9)"]
 testing = ["pytest (>=3.5,<3.7.3 || >3.7.3)", "pytest-checkdocs (>=1.2.3)", "pytest-flake8", "pytest-cov", "jaraco.test (>=3.2.0)", "jaraco.itertools", "func-timeout", "pytest-black (>=0.3.7)", "pytest-mypy"]
 
 [metadata]
-content-hash = "83668d785f1d7bc4a3cf191821067563c8f770a9208885d3a8533b3d1471daea"
+content-hash = "a7466298ebe9f2d86b6b741ae24ab1558cb396b96e16c944ebad38d5f3b339a6"
 lock-version = "1.0"
 python-versions = "^3.6.1"
 
 [metadata.files]
 annofabapi = [
-    {file = "annofabapi-0.38.9-py3-none-any.whl", hash = "sha256:6a1a2586947d0ac01bdb6b892e285add323311a7dfed0b85ba6bbbd95a7e46b9"},
-    {file = "annofabapi-0.38.9.tar.gz", hash = "sha256:145b970afb3e07e1c6aea2f97b83863a7a03eafdcf36f3c0e92c22d49804f3ea"},
+    {file = "annofabapi-0.38.10-py3-none-any.whl", hash = "sha256:6c9976a08bdab62cae7a75102ce7cf49cb3558dde097afe62e5278f19e4d7fc6"},
+    {file = "annofabapi-0.38.10.tar.gz", hash = "sha256:b641e41cc3299d7e337515e740983717a66b01098ede997a1eeb340f8ecb55fa"},
 ]
 apipkg = [
     {file = "apipkg-1.5-py2.py3-none-any.whl", hash = "sha256:58587dd4dc3daefad0487f6d9ae32b4542b185e1c36db6993290e7c41ca2b47c"},
