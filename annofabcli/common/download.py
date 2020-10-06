@@ -21,6 +21,13 @@ DOWNLOADING_FILETYPE_DICT = {
 
 DEFAULT_WAIT_OPTIONS = WaitOptions(interval=60, max_tries=360)
 
+def _get_annofab_error_message(http_error: requests.HTTPError) -> Optional[str]:
+    obj = http_error.response.json()
+    errors = obj.get("errors")
+    if errors is None:
+        return None
+    return errors.get("message")
+
 
 class DownloadingFile:
     """"""
@@ -89,7 +96,8 @@ class DownloadingFile:
         except requests.HTTPError as e:
             # すでにジョブが進行中の場合は、無視する
             if e.response.status_code == requests.codes.conflict:
-                logger.info(f"アノテーションzipの更新処理が既に実行されています。")
+                logger.warning(f"別のバックグラウンドジョブが既に実行されているので、更新処理を無視します。")
+                logger.warning(f"{_get_annofab_error_message(e)}")
             else:
                 raise e
 
@@ -130,7 +138,8 @@ class DownloadingFile:
         except requests.HTTPError as e:
             # すでにジョブが進行中の場合は、無視する
             if e.response.status_code == requests.codes.conflict:
-                logger.info(f"入力データ全件ファイルの更新処理が既に実行されています。")
+                logger.warning(f"別のバックグラウンドジョブが既に実行されているので、更新処理を無視します。")
+                logger.warning(f"{_get_annofab_error_message(e)}")
             else:
                 raise e
 
@@ -173,7 +182,8 @@ class DownloadingFile:
         except requests.HTTPError as e:
             # すでにジョブが進行中の場合は、無視する
             if e.response.status_code == requests.codes.conflict:
-                logger.info(f"タスク全件ファイルの更新処理が既に実行されています。")
+                logger.warning(f"別のバックグラウンドジョブが既に実行されているので、更新処理を無視します。")
+                logger.warning(f"{_get_annofab_error_message(e)}")
             else:
                 raise e
 
