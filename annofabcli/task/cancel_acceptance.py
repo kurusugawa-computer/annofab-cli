@@ -2,6 +2,7 @@ import argparse
 import logging
 import multiprocessing
 import sys
+from dataclasses import dataclass
 from functools import partial
 from typing import List, Optional, Tuple
 
@@ -24,6 +25,13 @@ from annofabcli.common.facade import TaskQuery, match_task_with_query
 logger = logging.getLogger(__name__)
 
 
+@dataclass(frozen=True)
+class User:
+    account_id: str
+    user_id: str
+    username: str
+
+
 class CancelAcceptanceMain(AbstracCommandCinfirmInterface):
     def __init__(self, service: annofabapi.Resource, all_yes: bool = False):
         self.service = service
@@ -34,11 +42,14 @@ class CancelAcceptanceMain(AbstracCommandCinfirmInterface):
         self,
         project_id: str,
         task_id: str,
-        acceptor_user_id: Optional[str] = None,
+        acceptor: Optional[User] = None,
         assign_last_acceptor: bool = True,
         task_query: Optional[TaskQuery] = None,
         task_index: Optional[int] = None,
     ) -> bool:
+        def get_user_id(user: Optional[User]) -> Optional[str]:
+            return user.user_id if user is not None else None
+
         logging_prefix = f"{task_index + 1} 件目" if task_index is not None else ""
 
         try:
@@ -51,31 +62,43 @@ class CancelAcceptanceMain(AbstracCommandCinfirmInterface):
                 )
                 return False
 
-            acceptor_account_id = None
+            actual_acceptor: Optional[User] = None
             if assign_last_acceptor:
                 acceptor_account_id = task["account_id"]
                 if acceptor_account_id is not None:
-                    user_info = self.facade.get_project_member_from_account_id(project_id, acceptor_account_id)
-                    if user_info is not None:
-                        acceptor_user_id = user_info["user_id"]
+                    member = self.facade.get_project_member_from_account_id(project_id, acceptor_account_id)
+                    if member is not None:
+                        actual_acceptor = User(
+                            account_id=member["account_id"], user_id=member["user_id"], username=member["username"]
+                        )
+                    else:
+                        logger.warning(f"account_id='{acceptor_account_id}' であるユーザは見つかりませんでした。")
+                        return False
+            else:
+                actual_acceptor = acceptor
 
             if not match_task_with_query(Task.from_dict(task), task_query):
                 logger.debug(f"{logging_prefix} : task_id = {task_id} : TaskQueryの条件にマッチしないため、スキップします。")
                 return False
 
             if not self.confirm_processing(
-                f"{logging_prefix}: task_id = {task_id} のタスクの受入を取り消しますか？ user_id = '{acceptor_user_id}' に割り当てます。"
+                f"{logging_prefix}: task_id = {task_id} のタスクの受入を取り消しますか？ "
+                f"user_id = '{get_user_id(actual_acceptor)}' に割り当てます。"
             ):
                 return False
 
+            logger.debug(
+                f"{logging_prefix}: task_id = {task_id} のタスクの受入を取り消し、"
+                f"user_id = '{get_user_id(actual_acceptor)}' のユーザに割り当てます。"
+            )
             request_body = {
                 "status": "not_started",
-                "account_id": acceptor_account_id,
+                "account_id": actual_acceptor.account_id if actual_acceptor is not None else None,
                 "last_updated_datetime": task["updated_datetime"],
             }
             self.service.api.operate_task(project_id, task_id, request_body=request_body)
             logger.info(
-                f"{logging_prefix} : task_id = {task_id} の受け入れ取り消しが成功しました。 user_id = '{acceptor_user_id}' に割り当てます。"
+                f"{logging_prefix} : task_id = {task_id} の受け入れ取り消しが成功しました。"
             )
             return True
 
@@ -88,7 +111,7 @@ class CancelAcceptanceMain(AbstracCommandCinfirmInterface):
         self,
         tpl: Tuple[int, str],
         project_id: str,
-        acceptor_user_id: Optional[str] = None,
+        acceptor: Optional[User] = None,
         assign_last_acceptor: bool = True,
         task_query: Optional[TaskQuery] = None,
     ) -> bool:
@@ -96,7 +119,7 @@ class CancelAcceptanceMain(AbstracCommandCinfirmInterface):
         return self.cancel_acceptance_for_task(
             project_id=project_id,
             task_id=task_id,
-            acceptor_user_id=acceptor_user_id,
+            acceptor=acceptor,
             assign_last_acceptor=assign_last_acceptor,
             task_query=task_query,
             task_index=task_index,
@@ -125,12 +148,20 @@ class CancelAcceptanceMain(AbstracCommandCinfirmInterface):
         if task_query is not None:
             task_query = self.facade.set_account_id_of_task_query(project_id, task_query)
 
+        acceptor: Optional[User] = None
+        if acceptor_user_id is not None:
+            member = self.facade.get_project_member_from_user_id(project_id, acceptor_user_id)
+            if member is not None:
+                acceptor = User(account_id=member["account_id"], user_id=member["user_id"], username=member["username"])
+            else:
+                raise RuntimeError(f"user_id='{acceptor_user_id}' であるプロジェクトメンバは見つかりませんでした。")
+
         success_count = 0
         if parallelism is not None:
             partial_func = partial(
                 self.cancel_acceptance_for_wrapper,
                 project_id=project_id,
-                acceptor_user_id=acceptor_user_id,
+                acceptor=acceptor,
                 assign_last_acceptor=assign_last_acceptor,
                 task_query=task_query,
             )
@@ -146,7 +177,7 @@ class CancelAcceptanceMain(AbstracCommandCinfirmInterface):
                     project_id,
                     task_id,
                     task_index=task_index,
-                    acceptor_user_id=acceptor_user_id,
+                    acceptor=acceptor,
                     assign_last_acceptor=assign_last_acceptor,
                     task_query=task_query,
                 )

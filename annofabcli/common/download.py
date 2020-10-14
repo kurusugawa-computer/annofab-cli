@@ -21,6 +21,7 @@ DOWNLOADING_FILETYPE_DICT = {
 
 DEFAULT_WAIT_OPTIONS = WaitOptions(interval=60, max_tries=360)
 
+
 def _get_annofab_error_message(http_error: requests.HTTPError) -> Optional[str]:
     obj = http_error.response.json()
     errors = obj.get("errors")
