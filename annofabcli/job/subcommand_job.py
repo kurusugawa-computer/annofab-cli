@@ -6,6 +6,7 @@ import annofabcli.job.delete_job
 import annofabcli.job.list_generated_task_history
 import annofabcli.job.list_job
 import annofabcli.job.list_last_job
+import annofabcli.job.wait_job
 
 
 def parse_args(parser: argparse.ArgumentParser):
@@ -18,6 +19,7 @@ def parse_args(parser: argparse.ArgumentParser):
     annofabcli.job.list_generated_task_history.add_parser(subparsers)
     annofabcli.job.list_job.add_parser(subparsers)
     annofabcli.job.list_last_job.add_parser(subparsers)
+    annofabcli.job.wait_job.add_parser(subparsers)
 
 
 def add_parser(subparsers: argparse._SubParsersAction):

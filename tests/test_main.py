@@ -394,6 +394,19 @@ class TestJob:
             ]
         )
 
+    def test_wait_job(self):
+        main(
+            [
+                "job",
+                "wait",
+                "--project_id",
+                project_id,
+                "--job_type",
+                "delete-project",
+            ]
+        )
+
+
 
 class TestLabor:
     def test_list_worktime_by_user_with_project_id(self):
