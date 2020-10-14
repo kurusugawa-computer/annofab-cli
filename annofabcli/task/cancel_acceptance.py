@@ -83,7 +83,7 @@ class CancelAcceptanceMain(AbstracCommandCinfirmInterface):
 
             if not self.confirm_processing(
                 f"{logging_prefix}: task_id = {task_id} のタスクの受入を取り消しますか？ "
-                f"user_id = '{get_user_id(actual_acceptor)}' に割り当てます。"
+                f"user_id = '{get_user_id(actual_acceptor)}' のユーザに割り当てます。"
             ):
                 return False
 
