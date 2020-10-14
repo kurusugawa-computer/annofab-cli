@@ -272,7 +272,8 @@ class ListLaborWorktime(AbstractCommandLineInterface):
                     project_id, start_date.strftime("%Y-%m-%d"), end_date.strftime("%Y-%m-%d")
                 )
                 total_df = pd.concat([total_df, afaw_time_df], sort=True)
-            except Exception:  # pylint: disable=broad-except
+            except Exception as e:  # pylint: disable=broad-except
+                logger.error(e)
                 logger.error(f"プロジェクトにアクセスできませんでした（project_id={project_id} ）。")
 
         # データが無い場合にはwarning
