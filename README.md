@@ -112,6 +112,7 @@ $ docker run -it -e ANNOFAB_USER_ID=XXXX -e ANNOFAB_PASSWORD=YYYYY annofab-cli a
 |job|delete             | ジョブを削除します。                                                            |オーナ|
 |job|list             | ジョブ一覧を出力します。                                                            |-|
 |job|list_last             | 複数のプロジェクトに対して、最新のジョブを出力します。                                                            |-|
+|job|wait             | ジョブの終了を待ちます。                                                          |オーナ|
 |labor|list_worktime_by_user | ユーザごとに作業予定時間、作業実績時間を出力します。                                                          ||
 |organization_member|list             | 組織メンバ一覧を出力します。                                                            |-|
 |project| copy                 | プロジェクトをコピーします。                                                                           |オーナ and 組織管理者/組織オーナ|
@@ -937,6 +938,15 @@ $ annofabcli job list_last --organization org1 --job_type gen-tasks-list
 $ annofabcli job list_last --project_id prj1 --job_type gen-annotation --add_details \
  --csv_format '{"columns": ["project_id","project_title","job_status","updated_datetime", "task_last_updated_datetime"]}' 
 
+```
+
+
+### job wait
+ジョブの終了を待ちます。
+
+```
+# アノテーション更新のジョブが終了するまで待ちます。
+$ annofabcli job wait --project_id prj1 --job_type gen-annotation 
 ```
 
 
