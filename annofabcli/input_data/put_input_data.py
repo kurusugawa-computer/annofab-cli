@@ -222,7 +222,18 @@ class PutInputData(AbstractCommandLineInterface):
             header=None,
             names=("input_data_name", "input_data_path", "input_data_id", "sign_required"),
         )
+        df_duplicated_input_data_name = df[df["input_data_name"].duplicated()]
+        if len(df_duplicated_input_data_name) > 0:
+            logger.error(f"{csv_path}に記載されている`input_data_name`が重複しています。\n{df_duplicated_input_data_name['input_data_name'].to_string(index=False)}")
+            raise RuntimeError(f"{csv_path}に記載されている`input_data_name`が重複しています。")
+
+        df_duplicated_input_data_path = df[df["input_data_path"].duplicated()]
+        if len(df_duplicated_input_data_path) > 0:
+            logger.error(f"{csv_path}に記載されている`input_data_path`が重複しています。\n{df_duplicated_input_data_name['input_data_path'].to_string(index=False)}")
+            raise RuntimeError(f"{csv_path}に記載されている`input_data_path`が重複しています。")
+
         input_data_list = [create_input_data(e) for e in df.itertuples()]
+
         return input_data_list
 
     def put_input_data_from_zip_file(
