@@ -97,9 +97,7 @@ class CancelAcceptanceMain(AbstracCommandCinfirmInterface):
                 "last_updated_datetime": task["updated_datetime"],
             }
             self.service.api.operate_task(project_id, task_id, request_body=request_body)
-            logger.info(
-                f"{logging_prefix} : task_id = {task_id} の受け入れ取り消しが成功しました。"
-            )
+            logger.info(f"{logging_prefix} : task_id = {task_id} の受け入れ取り消しが成功しました。")
             return True
 
         except requests.exceptions.HTTPError as e:
