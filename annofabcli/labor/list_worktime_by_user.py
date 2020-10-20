@@ -323,7 +323,12 @@ class ListWorktimeByUserMain:
         logger.info(f"'{organization_name}'組織の労務管理情報の件数: {len(labor_list)}")
         new_labor_list = []
         for labor in labor_list:
-            member = self.facade.get_project_member_from_account_id(labor["project_id"], labor["account_id"])
+            try:
+                member = self.facade.get_project_member_from_account_id(labor["project_id"], labor["account_id"])
+            except Exception:  # pylint: disable=broad-except
+                logger.warning(f"project_id={labor['project_id']}: メンバ一覧を取得できませんでした。", exc_info=True)
+                member = None
+
             project_title = self.get_project_title(project_list, labor["project_id"])
             if add_monitored_worktime:
                 try:

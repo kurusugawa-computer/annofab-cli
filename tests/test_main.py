@@ -407,7 +407,6 @@ class TestJob:
         )
 
 
-
 class TestLabor:
     def test_list_worktime_by_user_with_project_id(self):
         output_dir = str(out_path / "labor")
