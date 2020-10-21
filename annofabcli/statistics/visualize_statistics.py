@@ -261,7 +261,7 @@ class WriteCsvGraph:
 
             df_by_date_user_for_inspection = self._get_df_by_date_user_for_inspection()
             catch_exception(self.linegraph_obj.write_productivity_line_graph_for_inspector)(
-                df=df_by_date_user_for_inspection, first_acceptance_user_id_list=user_id_list
+                df=df_by_date_user_for_inspection, first_inspection_user_id_list=user_id_list
             )
 
             df_by_date_user_for_acceptance = self._get_df_by_date_user_for_acceptance()
