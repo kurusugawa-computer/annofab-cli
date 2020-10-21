@@ -25,14 +25,25 @@ DIGIT = 2
 
 
 def _create_uniqued_masked_name(masked_name_set: Set[str], masked_name: str) -> str:
+    """
+    マスクされたユニークな名前を返す。
+    `masked_name_set` に含まれている名前なら、末尾に数字をつけて、ユニークにする。
+    """
     if masked_name not in masked_name_set:
+        masked_name_set.add(masked_name)
         return masked_name
     else:
+        # 末尾に数字を付ける
         base_masked_name = masked_name[0:DIGIT]
-        now_index = int(masked_name[DIGIT:]) if len(masked_name) > DIGIT else 0
+        try:
+            # 末尾が数字の場合(末尾の数字が２桁になると処理がおかしくなるけど、許容する）
+            now_index = int(masked_name[-1])
+        except ValueError:
+            # 末尾が数字でない場合
+            now_index = 0
+
         new_masked_name = base_masked_name + str(now_index + 1)
         return _create_uniqued_masked_name(masked_name_set, new_masked_name)
-
 
 def create_replaced_dict(name_set: Set[str]) -> Dict[str, str]:
     """
