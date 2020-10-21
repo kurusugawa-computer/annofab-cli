@@ -130,7 +130,7 @@ def _get_tuple_column(df: pandas.DataFrame, column: str) -> Union[str, Tuple]:
         return column
 
 
-def get_masked_username(df: pandas.DataFrame, replace_dict_by_user_id: Dict[str, str]) -> pandas.Series:
+def get_masked_username_series(df: pandas.DataFrame, replace_dict_by_user_id: Dict[str, str]) -> pandas.Series:
     """
     マスク後のusernameのSeriesを返す
     """
@@ -219,7 +219,7 @@ def replace_user_info_by_user_id(df: pandas.DataFrame, replacement_dict_by_user_
 
     """
     if "username" in df:
-        df["username"] = get_masked_username(df, replace_dict_by_user_id=replacement_dict_by_user_id)
+        df["username"] = get_masked_username_series(df, replace_dict_by_user_id=replacement_dict_by_user_id)
     if "account_id" in df:
         df["account_id"] = get_masked_account_id(df, replace_dict_by_user_id=replacement_dict_by_user_id)
     df["user_id"] = df["user_id"].replace(replacement_dict_by_user_id)
