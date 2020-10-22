@@ -18,6 +18,7 @@ from annofabcli.statistics.csv import Csv
 from annofabcli.statistics.database import Database, Query
 from annofabcli.statistics.histogram import Histogram
 from annofabcli.statistics.linegraph import LineGraph, OutputTarget
+from annofabcli.statistics.merge_visualization_dir import merge_visualization_dir
 from annofabcli.statistics.scatter import Scatter
 from annofabcli.statistics.table import AggregationBy, Table
 
@@ -495,21 +496,33 @@ class VisualizeStatistics(AbstractCommandLineInterface):
 
         else:
             # project_idが複数指定された場合は、project_titleのディレクトリに統計情報を出力する
+            output_project_dir_list = []
             for project_id in project_id_list:
-                project_title = self.facade.get_project_title(project_id)
-                output_project_dir = root_output_dir / get_project_output_dir(project_title)
+                try:
+                    project_title = self.facade.get_project_title(project_id)
+                    output_project_dir = root_output_dir / get_project_output_dir(project_title)
+                    self.visualize_statistics(
+                        project_id,
+                        output_project_dir=output_project_dir,
+                        work_dir=work_dir,
+                        task_query=task_query,
+                        ignored_task_id_list=ignored_task_id_list,
+                        user_id_list=user_id_list,
+                        update=not args.not_update,
+                        download_latest=args.download_latest,
+                        start_date=args.start_date,
+                        end_date=args.end_date,
+                        minimal_output=args.minimal,
+                    )
+                    output_project_dir_list.append(output_project_dir)
+                except Exception:
+                    logger.warning(f"project_id={project_id}の統計情報の出力に失敗しました。", exc_info=True)
 
-                self.visualize_statistics(
-                    project_id,
-                    output_project_dir=output_project_dir,
-                    work_dir=work_dir,
-                    task_query=task_query,
-                    ignored_task_id_list=ignored_task_id_list,
+            if args.merge:
+                merge_visualization_dir(
+                    project_dir_list=output_project_dir_list,
+                    output_dir=root_output_dir / "merge",
                     user_id_list=user_id_list,
-                    update=not args.not_update,
-                    download_latest=args.download_latest,
-                    start_date=args.start_date,
-                    end_date=args.end_date,
                     minimal_output=args.minimal,
                 )
 
@@ -582,6 +595,12 @@ def parse_args(parser: argparse.ArgumentParser):
         "--minimal",
         action="store_true",
         help="必要最小限のファイルを出力します。",
+    )
+
+    parser.add_argument(
+        "--merge",
+        action="store_true",
+        help="指定した場合、複数のproject_idを指定したときに、マージした統計情報も出力します。ディレクトリ名は`merge`です。",
     )
 
     parser.set_defaults(subcommand_func=main)

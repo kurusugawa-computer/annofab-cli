@@ -16,6 +16,7 @@ from annofabcli.experimental.mask_user_info import (
 )
 from annofabcli.experimental.write_linegraph_per_user import write_linegraph_per_user
 from annofabcli.experimental.write_performance_scatter_per_user import write_performance_scatter_per_user
+from annofabcli.statistics.csv import FILENAME_PEFORMANCE_PER_USER, FILENAME_TASK_LIST
 
 logger = logging.getLogger(__name__)
 
@@ -51,17 +52,13 @@ def _replace_df_task(df, replacement_dict_by_user_id: Dict[str, str]):
     )
 
 
-MEMBER_PERFOMANCE_CSV = "メンバごとの生産性と品質.csv"
-TASK_CSV = "タスクlist.csv"
-
-
 def mask_csv(
     project_dir: Path,
     output_dir: Path,
     not_masked_biography_set: Optional[Set[str]] = None,
     not_masked_user_id_set: Optional[Set[str]] = None,
 ):
-    df_member_perfomance = read_multiheader_csv(str(project_dir / MEMBER_PERFOMANCE_CSV), header_row_count=2)
+    df_member_perfomance = read_multiheader_csv(str(project_dir / FILENAME_PEFORMANCE_PER_USER), header_row_count=2)
 
     replacement_dict_by_user_id = create_replacement_dict_by_user_id(
         df_member_perfomance,
@@ -77,11 +74,11 @@ def mask_csv(
         replacement_dict_by_user_id=replacement_dict_by_user_id,
         replacement_dict_by_biography=replacement_dict_by_biography,
     )
-    print_csv(df_member_perfomance, output=str(output_dir / MEMBER_PERFOMANCE_CSV))
+    print_csv(df_member_perfomance, output=str(output_dir / FILENAME_PEFORMANCE_PER_USER))
 
-    df_task = pandas.read_csv(str(project_dir / TASK_CSV))
+    df_task = pandas.read_csv(str(project_dir / FILENAME_TASK_LIST))
     _replace_df_task(df_task, replacement_dict_by_user_id=replacement_dict_by_user_id)
-    print_csv(df_task, output=str(output_dir / TASK_CSV))
+    print_csv(df_task, output=str(output_dir / FILENAME_TASK_LIST))
 
 
 def mask_visualization_dir(
@@ -92,7 +89,7 @@ def mask_visualization_dir(
     minimal_output: bool = False,
     exclude_masked_user_for_linegraph: bool = False,
 ):
-    df_member_perfomance = read_multiheader_csv(str(project_dir / MEMBER_PERFOMANCE_CSV), header_row_count=2)
+    df_member_perfomance = read_multiheader_csv(str(project_dir / FILENAME_PEFORMANCE_PER_USER), header_row_count=2)
 
     replacement_dict_by_user_id = create_replacement_dict_by_user_id(
         df_member_perfomance,
@@ -111,14 +108,14 @@ def mask_visualization_dir(
         replacement_dict_by_user_id=replacement_dict_by_user_id,
         replacement_dict_by_biography=replacement_dict_by_biography,
     )
-    print_csv(df_member_perfomance, output=str(output_dir / MEMBER_PERFOMANCE_CSV))
+    print_csv(df_member_perfomance, output=str(output_dir / FILENAME_PEFORMANCE_PER_USER))
 
-    df_task = pandas.read_csv(str(project_dir / TASK_CSV))
+    df_task = pandas.read_csv(str(project_dir / FILENAME_TASK_LIST))
     _replace_df_task(df_task, replacement_dict_by_user_id=replacement_dict_by_user_id)
-    print_csv(df_task, output=str(output_dir / TASK_CSV))
+    print_csv(df_task, output=str(output_dir / FILENAME_TASK_LIST))
 
     # メンバのパフォーマンスを散布図で出力する
-    write_performance_scatter_per_user(output_dir / MEMBER_PERFOMANCE_CSV, output_dir=output_dir / "scatter")
+    write_performance_scatter_per_user(output_dir / FILENAME_PEFORMANCE_PER_USER, output_dir=output_dir / "scatter")
 
     user_id_list: Optional[List[str]] = None
     if exclude_masked_user_for_linegraph:
@@ -126,7 +123,7 @@ def mask_visualization_dir(
 
     # メンバごとにパフォーマンスを折れ線グラフで出力する
     write_linegraph_per_user(
-        output_dir / TASK_CSV,
+        output_dir / FILENAME_TASK_LIST,
         output_dir=output_dir / "line-graph",
         minimal_output=minimal_output,
         user_id_list=user_id_list,

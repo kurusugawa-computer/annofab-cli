@@ -10,6 +10,11 @@ from annofabcli.common.utils import print_csv
 logger = logging.getLogger(__name__)
 
 
+FILENAME_PEFORMANCE_PER_USER = "メンバごとの生産性と品質.csv"
+FILENAME_PEFORMANCE_PER_DATE = "日毎の生産量と生産性.csv"
+FILENAME_TASK_LIST = "タスクlist.csv"
+
+
 class Csv:
     """
     CSVを出力するクラス
@@ -179,7 +184,7 @@ class Csv:
         )
 
         required_columns = self._create_required_columns(df, prior_columns, dropped_columns)
-        self._write_csv(f"タスクlist.csv", df[required_columns])
+        self._write_csv(FILENAME_TASK_LIST, df[required_columns])
 
     def write_task_history_list(self, df: pandas.DataFrame, dropped_columns: Optional[List[str]] = None) -> None:
         """
@@ -513,7 +518,7 @@ class Csv:
         required_columns = self._create_required_columns(df, prior_columns, dropped_columns)
         target_df = df[required_columns]
         if output_path is None:
-            self._write_csv(f"メンバごとの生産性と品質.csv", target_df)
+            self._write_csv(FILENAME_PEFORMANCE_PER_USER, target_df)
         else:
             print_csv(df, output=str(output_path), to_csv_kwargs=self.CSV_FORMAT)
 
@@ -560,6 +565,6 @@ class Csv:
         required_columns = self._create_required_columns(df, prior_columns, dropped_columns)
         target_df = df[required_columns]
         if output_path is None:
-            self._write_csv(f"日毎の生産量と生産性.csv", target_df)
+            self._write_csv(FILENAME_PEFORMANCE_PER_DATE, target_df)
         else:
             print_csv(df, output=str(output_path), to_csv_kwargs=self.CSV_FORMAT)

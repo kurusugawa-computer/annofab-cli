@@ -11,13 +11,13 @@ from annofabcli.experimental import (
     mask_visualization_dir,
     merge_peformance_per_date,
     merge_peformance_per_user,
-    merge_visualization_dir,
     write_linegraph_per_user,
     write_performance_csv_per_user,
     write_performance_scatter_per_user,
     write_task_histogram,
     write_whole_linegraph,
 )
+from annofabcli.statistics import merge_visualization_dir
 
 
 def parse_args(parser: argparse.ArgumentParser):

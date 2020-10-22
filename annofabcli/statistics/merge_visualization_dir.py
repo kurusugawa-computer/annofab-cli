@@ -24,7 +24,7 @@ FILENAME_PEFORMANCE_PER_DATE = "日毎の生産量と生産性.csv"
 FILENAME_TASK_LIST = "タスクlist.csv"
 
 
-def merge_visualization(
+def merge_visualization_dir(
     project_dir_list: List[Path],
     output_dir: Path,
     user_id_list: Optional[List[str]] = None,
@@ -86,7 +86,7 @@ def merge_visualization(
 
 def main(args):
     user_id_list = get_list_from_args(args.user_id) if args.user_id is not None else None
-    merge_visualization(
+    merge_visualization_dir(
         project_dir_list=args.dir,
         user_id_list=user_id_list,
         minimal_output=args.minimal,
@@ -103,7 +103,7 @@ def parse_args(parser: argparse.ArgumentParser):
         "--user_id",
         nargs="+",
         help=(
-            "ユーザごとの折れ線グラフで絞り込むユーザのuser_idを指定してください。"
+            "ユーザごとの折れ線グラフに表示するユーザのuser_idを指定してください。"
             "指定しない場合は、上位20人のユーザ情報がプロットされます。"
             "file://`を先頭に付けると、一覧が記載されたファイルを指定できます。"
         ),
@@ -120,7 +120,7 @@ def parse_args(parser: argparse.ArgumentParser):
 
 def add_parser(subparsers: argparse._SubParsersAction):
     subcommand_name = "merge_visualization_dir"
-    subcommand_help = "`annofabcli statistics visualize`コマンドの出力結果をマージする。"
-    description = "`annofabcli statistics visualize`コマンドの出力結果をマージする。"
+    subcommand_help = "`annofabcli statistics visualize`コマンドの出力結果をマージします。"
+    description = "`annofabcli statistics visualize`コマンドの出力結果をマージします。"
     parser = annofabcli.common.cli.add_parser(subparsers, subcommand_name, subcommand_help, description)
     parse_args(parser)
