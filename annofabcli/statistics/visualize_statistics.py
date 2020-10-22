@@ -1,6 +1,7 @@
 import argparse
 import json
 import logging.handlers
+import re
 from dataclasses import dataclass
 from pathlib import Path
 from typing import Any, Callable, Dict, List, Optional
@@ -12,7 +13,7 @@ from dataclasses_json import DataClassJsonMixin
 
 import annofabcli
 from annofabcli import AnnofabApiFacade
-from annofabcli.common.cli import AbstractCommandLineInterface, ArgumentParser, build_annofabapi_resource_and_login
+from annofabcli.common.cli import AbstractCommandLineInterface, build_annofabapi_resource_and_login
 from annofabcli.statistics.csv import Csv
 from annofabcli.statistics.database import Database, Query
 from annofabcli.statistics.histogram import Histogram
@@ -78,6 +79,10 @@ def catch_exception(function: Callable[..., Any]) -> Callable[..., Any]:
             logger.exception(e)
 
     return wrapped
+
+
+def get_project_output_dir(project_title: str) -> str:
+    return re.sub(r'[\\/:*?"<>|]+', "__", project_title)
 
 
 class WriteCsvGraph:
@@ -255,19 +260,22 @@ class WriteCsvGraph:
 
         if not self.minimal_output:
             df_by_date_user_for_annotation = self._get_df_by_date_user_for_annotation()
-            catch_exception(self.linegraph_obj.write_productivity_line_graph_for_annotator)(
-                df=df_by_date_user_for_annotation, first_annotation_user_id_list=user_id_list
-            )
+            if df_by_date_user_for_annotation is not None:
+                catch_exception(self.linegraph_obj.write_productivity_line_graph_for_annotator)(
+                    df=df_by_date_user_for_annotation, first_annotation_user_id_list=user_id_list
+                )
 
             df_by_date_user_for_inspection = self._get_df_by_date_user_for_inspection()
-            catch_exception(self.linegraph_obj.write_productivity_line_graph_for_inspector)(
-                df=df_by_date_user_for_inspection, first_inspection_user_id_list=user_id_list
-            )
+            if df_by_date_user_for_inspection is not None:
+                catch_exception(self.linegraph_obj.write_productivity_line_graph_for_inspector)(
+                    df=df_by_date_user_for_inspection, first_inspection_user_id_list=user_id_list
+                )
 
             df_by_date_user_for_acceptance = self._get_df_by_date_user_for_acceptance()
-            catch_exception(self.linegraph_obj.write_productivity_line_graph_for_acceptor)(
-                df=df_by_date_user_for_acceptance, first_acceptance_user_id_list=user_id_list
-            )
+            if df_by_date_user_for_acceptance is not None:
+                catch_exception(self.linegraph_obj.write_productivity_line_graph_for_acceptor)(
+                    df=df_by_date_user_for_acceptance, first_acceptance_user_id_list=user_id_list
+                )
 
     def write_linegraph_for_worktime_by_user(self, user_id_list: Optional[List[str]] = None) -> None:
         account_statistics_df = self._get_account_statistics_df()
@@ -365,7 +373,7 @@ class VisualizeStatistics(AbstractCommandLineInterface):
         self,
         project_id: str,
         work_dir: Path,
-        output_dir: Path,
+        output_project_dir: Path,
         task_query: Dict[str, Any],
         ignored_task_id_list: Optional[List[str]],
         user_id_list: Optional[List[str]],
@@ -423,9 +431,9 @@ class VisualizeStatistics(AbstractCommandLineInterface):
                 end_date=end_date,
                 ignored_task_id_list=ignored_task_id_list,
             ),
-            output_project_dir=output_dir,
+            output_project_dir=output_project_dir,
         )
-        write_obj = WriteCsvGraph(table_obj, output_dir, minimal_output)
+        write_obj = WriteCsvGraph(table_obj, output_project_dir, minimal_output)
         write_obj.write_csv_for_task()
 
         write_obj.write_csv_for_summary()
@@ -461,25 +469,49 @@ class VisualizeStatistics(AbstractCommandLineInterface):
             annofabcli.common.cli.get_list_from_args(args.ignored_task_id) if args.ignored_task_id is not None else None
         )
         user_id_list = annofabcli.common.cli.get_list_from_args(args.user_id) if args.user_id is not None else None
+        project_id_list = annofabcli.common.cli.get_list_from_args(args.project_id)
 
         if args.work_dir is not None:
             work_dir = args.work_dir
         else:
             work_dir = annofabcli.utils.get_cache_dir()
 
-        self.visualize_statistics(
-            args.project_id,
-            output_dir=Path(args.output_dir),
-            work_dir=Path(work_dir),
-            task_query=task_query,
-            ignored_task_id_list=ignored_task_id_list,
-            user_id_list=user_id_list,
-            update=not args.not_update,
-            download_latest=args.download_latest,
-            start_date=args.start_date,
-            end_date=args.end_date,
-            minimal_output=args.minimal,
-        )
+        root_output_dir: Path = args.output_dir
+
+        if len(project_id_list) == 1:
+            self.visualize_statistics(
+                project_id_list[0],
+                output_project_dir=root_output_dir,
+                work_dir=work_dir,
+                task_query=task_query,
+                ignored_task_id_list=ignored_task_id_list,
+                user_id_list=user_id_list,
+                update=not args.not_update,
+                download_latest=args.download_latest,
+                start_date=args.start_date,
+                end_date=args.end_date,
+                minimal_output=args.minimal,
+            )
+
+        else:
+            # project_idが複数指定された場合は、project_titleのディレクトリに統計情報を出力する
+            for project_id in project_id_list:
+                project_title = self.facade.get_project_title(project_id)
+                output_project_dir = root_output_dir / get_project_output_dir(project_title)
+
+                self.visualize_statistics(
+                    project_id,
+                    output_project_dir=output_project_dir,
+                    work_dir=work_dir,
+                    task_query=task_query,
+                    ignored_task_id_list=ignored_task_id_list,
+                    user_id_list=user_id_list,
+                    update=not args.not_update,
+                    download_latest=args.download_latest,
+                    start_date=args.start_date,
+                    end_date=args.end_date,
+                    minimal_output=args.minimal,
+                )
 
 
 def main(args):
@@ -489,10 +521,19 @@ def main(args):
 
 
 def parse_args(parser: argparse.ArgumentParser):
-    argument_parser = ArgumentParser(parser)
 
-    argument_parser.add_project_id()
-    parser.add_argument("-o", "--output_dir", type=str, required=True, help="出力ディレクトリのパス")
+    parser.add_argument(
+        "-p",
+        "--project_id",
+        required=True,
+        nargs="+",
+        help=(
+            "対象のプロジェクトのproject_idを指定してください。複数指定した場合、プロジェクトごとに統計情報が出力されます。"
+            "file://`を先頭に付けると、project_idが記載されたファイルを指定できます。"
+        ),
+    )
+
+    parser.add_argument("-o", "--output_dir", type=Path, required=True, help="出力先ディレクトリのパスを指定してください。")
 
     parser.add_argument(
         "-u",
@@ -533,7 +574,7 @@ def parse_args(parser: argparse.ArgumentParser):
 
     parser.add_argument(
         "--work_dir",
-        type=str,
+        type=Path,
         help="作業ディレクトリのパス。指定しない場合はannofabcliのキャッシュディレクトリ（'$HOME/.cache/annofabcli'）に保存します。",
     )
 
