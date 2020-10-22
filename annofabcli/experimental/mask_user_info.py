@@ -1,7 +1,7 @@
 import argparse
 import logging
 from pathlib import Path
-from typing import Dict, List, Optional, Set, Tuple, Union
+from typing import Any, Dict, List, Optional, Set, Tuple, Union
 
 import numpy
 import pandas
@@ -130,8 +130,7 @@ def _get_tuple_column(df: pandas.DataFrame, column: str) -> Union[str, Tuple]:
         return column
 
 
-def replace_by_columns(df, replacement_dict: Dict[str, str], main_column: str, sub_columns: Optional[List[str]] = None):
-    df[main_column].replace(replacement_dict, inplace=True)
+def replace_by_columns(df, replacement_dict: Dict[str, str], main_column: Any, sub_columns: Optional[List[Any]] = None):
     if sub_columns is not None:
         for sub_column in sub_columns:
 
@@ -142,6 +141,8 @@ def replace_by_columns(df, replacement_dict: Dict[str, str], main_column: str, s
                     return row[sub_column]
 
             df[sub_column] = df.apply(_get_username, axis=1)
+
+    df[main_column] = df[main_column].replace(replacement_dict)
 
 
 def get_masked_username_series(df: pandas.DataFrame, replace_dict_by_user_id: Dict[str, str]) -> pandas.Series:
@@ -233,11 +234,15 @@ def replace_user_info_by_user_id(df: pandas.DataFrame, replacement_dict_by_user_
 
     """
     sub_columns = []
+    user_id_column = _get_tuple_column(df, "user_id")
+
     if "username" in df:
-        sub_columns.append("username")
+        username_column = _get_tuple_column(df, "username")
+        sub_columns.append(username_column)
     if "account_id" in df:
-        sub_columns.append("account_id")
-    replace_by_columns(df, replacement_dict_by_user_id, main_column="user_id", sub_columns=sub_columns)
+        account_id_column = _get_tuple_column(df, "account_id")
+        sub_columns.append(account_id_column)
+    replace_by_columns(df, replacement_dict_by_user_id, main_column=user_id_column, sub_columns=sub_columns)
 
 
 def create_masked_user_info_df(
