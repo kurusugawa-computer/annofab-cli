@@ -11,6 +11,7 @@ from annofabcli.common.utils import print_csv, read_multiheader_csv
 from annofabcli.experimental.mask_user_info import (
     create_replacement_dict_by_biography,
     create_replacement_dict_by_user_id,
+    replace_by_columns,
     replace_user_info_by_user_id,
 )
 from annofabcli.experimental.write_linegraph_per_user import write_linegraph_per_user
@@ -28,21 +29,30 @@ def _replace_df_member_perfomance(
 
 
 def _replace_df_task(df, replacement_dict_by_user_id: Dict[str, str]):
-    df["user_id"].replace(replacement_dict_by_user_id, inplace=True)
-    df["username"] = df["user_id"]
+    replace_by_columns(df, replacement_dict_by_user_id, main_column="user_id", sub_columns=["username"])
 
-    df["first_annotation_user_id"].replace(replacement_dict_by_user_id, inplace=True)
-    df["first_annotation_username"] = df["first_annotation_user_id"]
-
-    df["first_inspection_user_id"].replace(replacement_dict_by_user_id, inplace=True)
-    df["first_inspection_username"] = df["first_inspection_user_id"]
-
-    df["first_acceptance_user_id"].replace(replacement_dict_by_user_id, inplace=True)
-    df["first_acceptance_username"] = df["first_acceptance_user_id"]
+    replace_by_columns(
+        df,
+        replacement_dict_by_user_id,
+        main_column="first_annotation_user_id",
+        sub_columns=["first_annotation_username"],
+    )
+    replace_by_columns(
+        df,
+        replacement_dict_by_user_id,
+        main_column="first_inspection_user_id",
+        sub_columns=["first_inspection_username"],
+    )
+    replace_by_columns(
+        df,
+        replacement_dict_by_user_id,
+        main_column="first_acceptance_user_id",
+        sub_columns=["first_acceptance_username"],
+    )
 
 
 MEMBER_PERFOMANCE_CSV = "メンバごとの生産性と品質.csv"
-TASK_CSV = "タスク.csv"
+TASK_CSV = "タスクlist.csv"
 
 
 def mask_csv(
@@ -79,6 +89,7 @@ def mask_visualization_dir(
     output_dir: Path,
     not_masked_biography_set: Optional[Set[str]] = None,
     not_masked_user_id_set: Optional[Set[str]] = None,
+    minimal_output: bool = False,
 ):
     # CSVをマスクする
     mask_csv(
@@ -92,7 +103,7 @@ def mask_visualization_dir(
     write_performance_scatter_per_user(output_dir / MEMBER_PERFOMANCE_CSV, output_dir=output_dir / "scatter")
 
     # メンバごとにパフォーマンスを折れ線グラフで出力する
-    write_linegraph_per_user(output_dir / MEMBER_PERFOMANCE_CSV, output_dir=output_dir / "line-graph")
+    write_linegraph_per_user(output_dir / TASK_CSV, output_dir=output_dir / "line-graph", minimal_output=minimal_output)
 
 
 def main(args):
@@ -108,6 +119,7 @@ def main(args):
         not_masked_biography_set=not_masked_biography_set,
         not_masked_user_id_set=not_masked_user_id_set,
         output_dir=args.output_dir,
+        minimal_output=args.minimal,
     )
 
 
@@ -128,6 +140,12 @@ def parse_args(parser: argparse.ArgumentParser):
         type=str,
         nargs="+",
         help="マスクしないユーザの`user_id`を指定してください。",
+    )
+
+    parser.add_argument(
+        "--minimal",
+        action="store_true",
+        help="必要最小限のファイルを出力します。",
     )
 
     parser.add_argument("-o", "--output_dir", type=Path, required=True, help="出力先ディレクトリ。")
