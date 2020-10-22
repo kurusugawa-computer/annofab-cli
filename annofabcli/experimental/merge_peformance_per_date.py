@@ -17,8 +17,12 @@ logger = logging.getLogger(__name__)
 def merge_peformance_per_date(csv_path_list: List[Path], output_path: Path) -> None:
     df_list: List[pandas.DataFrame] = []
     for csv_path in csv_path_list:
-        df = pandas.read_csv(str(csv_path))
-        df_list.append(df)
+        if csv_path.exists():
+            df = pandas.read_csv(str(csv_path))
+            df_list.append(df)
+        else:
+            logger.warning(f"{csv_path} は存在しませんでした。")
+            continue
 
     sum_df = df_list[0]
     for df in df_list[1:]:

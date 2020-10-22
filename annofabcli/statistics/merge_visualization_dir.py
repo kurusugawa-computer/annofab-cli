@@ -14,14 +14,9 @@ from annofabcli.experimental.write_linegraph_per_user import write_linegraph_per
 from annofabcli.experimental.write_performance_scatter_per_user import write_performance_scatter_per_user
 from annofabcli.experimental.write_task_histogram import write_task_histogram
 from annofabcli.experimental.write_whole_linegraph import write_whole_linegraph
-from annofabcli.statistics.csv import Csv
+from annofabcli.statistics.csv import Csv, FILENAME_PEFORMANCE_PER_USER, FILENAME_TASK_LIST, FILENAME_PEFORMANCE_PER_DATE
 
 logger = logging.getLogger(__name__)
-
-
-FILENAME_PEFORMANCE_PER_USER = "メンバごとの生産性と品質.csv"
-FILENAME_PEFORMANCE_PER_DATE = "日毎の生産量と生産性.csv"
-FILENAME_TASK_LIST = "タスクlist.csv"
 
 
 def merge_visualization_dir(
@@ -43,7 +38,15 @@ def merge_visualization_dir(
         )
 
     def merge_task_list() -> pandas.DataFrame:
-        list_df = [pandas.read_csv(str(dir / FILENAME_TASK_LIST)) for dir in project_dir_list]
+        list_df = []
+        for project_dir in project_dir_list:
+            csv_path = project_dir / FILENAME_TASK_LIST
+            if csv_path.exists():
+                list_df.append(pandas.read_csv(str(csv_path)))
+            else:
+                logger.warning(f"{csv_path} は存在しませんでした。")
+                continue
+
         df = pandas.concat(list_df, axis=0)
         return df
 
