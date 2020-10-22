@@ -1,7 +1,7 @@
 import argparse
 import logging
 from pathlib import Path
-from typing import Dict, Optional, Set
+from typing import Dict, List, Optional, Set
 
 import pandas
 
@@ -90,20 +90,47 @@ def mask_visualization_dir(
     not_masked_biography_set: Optional[Set[str]] = None,
     not_masked_user_id_set: Optional[Set[str]] = None,
     minimal_output: bool = False,
+    exclude_masked_user_for_linegraph: bool = False,
 ):
-    # CSVをマスクする
-    mask_csv(
-        project_dir=project_dir,
-        output_dir=output_dir,
+    df_member_perfomance = read_multiheader_csv(str(project_dir / MEMBER_PERFOMANCE_CSV), header_row_count=2)
+
+    replacement_dict_by_user_id = create_replacement_dict_by_user_id(
+        df_member_perfomance,
         not_masked_biography_set=not_masked_biography_set,
         not_masked_user_id_set=not_masked_user_id_set,
     )
+    replacement_dict_by_biography = create_replacement_dict_by_biography(
+        df_member_perfomance, not_masked_biography_set=not_masked_biography_set
+    )
+
+    not_masked_user_id_set = set(df_member_perfomance[("user_id", "")]) - set(replacement_dict_by_user_id.keys())
+
+    # CSVのユーザ情報をマスクする
+    _replace_df_member_perfomance(
+        df_member_perfomance,
+        replacement_dict_by_user_id=replacement_dict_by_user_id,
+        replacement_dict_by_biography=replacement_dict_by_biography,
+    )
+    print_csv(df_member_perfomance, output=str(output_dir / MEMBER_PERFOMANCE_CSV))
+
+    df_task = pandas.read_csv(str(project_dir / TASK_CSV))
+    _replace_df_task(df_task, replacement_dict_by_user_id=replacement_dict_by_user_id)
+    print_csv(df_task, output=str(output_dir / TASK_CSV))
 
     # メンバのパフォーマンスを散布図で出力する
     write_performance_scatter_per_user(output_dir / MEMBER_PERFOMANCE_CSV, output_dir=output_dir / "scatter")
 
+    user_id_list: Optional[List[str]] = None
+    if exclude_masked_user_for_linegraph:
+        user_id_list = list(not_masked_user_id_set)
+
     # メンバごとにパフォーマンスを折れ線グラフで出力する
-    write_linegraph_per_user(output_dir / TASK_CSV, output_dir=output_dir / "line-graph", minimal_output=minimal_output)
+    write_linegraph_per_user(
+        output_dir / TASK_CSV,
+        output_dir=output_dir / "line-graph",
+        minimal_output=minimal_output,
+        user_id_list=user_id_list,
+    )
 
 
 def main(args):
@@ -120,6 +147,7 @@ def main(args):
         not_masked_user_id_set=not_masked_user_id_set,
         output_dir=args.output_dir,
         minimal_output=args.minimal,
+        exclude_masked_user_for_linegraph=args.exclude_masked_user_for_linegraph,
     )
 
 
@@ -146,6 +174,12 @@ def parse_args(parser: argparse.ArgumentParser):
         "--minimal",
         action="store_true",
         help="必要最小限のファイルを出力します。",
+    )
+
+    parser.add_argument(
+        "--exclude_masked_user_for_linegraph",
+        action="store_true",
+        help="折れ線グラフに、マスクされたユーザを除外します。",
     )
 
     parser.add_argument("-o", "--output_dir", type=Path, required=True, help="出力先ディレクトリ。")
