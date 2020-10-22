@@ -73,15 +73,15 @@ $ cd annofab-cli
 $ chmod u+x docker-build.sh
 $ ./docker-build.sh
 
-$ docker run -it annofab-cli annofabcli --help
+$ docker run -it annofab-cli --help
 
 # AnnoFabの認証情報を標準入力から指定する
-$ docker run -it annofab-cli annofabcli project diff prj1 prj2
+$ docker run -it annofab-cli project diff prj1 prj2
 Enter AnnoFab User ID: XXXXXX
 Enter AnnoFab Password: 
 
 # AnnoFabの認証情報を環境変数で指定する
-$ docker run -it -e ANNOFAB_USER_ID=XXXX -e ANNOFAB_PASSWORD=YYYYY annofab-cli annofabcli project diff prj1 prj2
+$ docker run -it -e ANNOFAB_USER_ID=XXXX -e ANNOFAB_PASSWORD=YYYYY annofab-cli project diff prj1 prj2
 ```
 
 # 機能一覧
