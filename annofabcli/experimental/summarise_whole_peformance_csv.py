@@ -28,15 +28,21 @@ def read_whole_peformance_csv(csv_path: Path) -> pandas.Series:
     return series
 
 
-def summarise_whole_peformance_csv(csv_path_list: List[Path], output_path: Path):
+def summarise_whole_peformance_csv(csv_path_list: List[Path]) -> pandas.DataFrame:
     series_list = [read_whole_peformance_csv(csv_path) for csv_path in csv_path_list]
     df = pandas.DataFrame(series_list)
-    print_csv(df, str(output_path))
+
+    first_column = ("project_title", "")
+    tmp_columns = list(df.columns)
+    tmp_columns.remove(first_column)
+    df = df[[first_column]+tmp_columns]
+    return df
 
 
 def main(args):
-    summarise_whole_peformance_csv(csv_path_list=args.csv, output_path=args.output)
-
+    output_path: Path = args.output
+    df = summarise_whole_peformance_csv(csv_path_list=args.csv)
+    print_csv(df, str(output_path))
 
 def parse_args(parser: argparse.ArgumentParser):
     parser.add_argument(

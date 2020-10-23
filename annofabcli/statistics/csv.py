@@ -10,7 +10,7 @@ from annofabcli.statistics.table import _add_ratio_column_for_productivity_per_u
 
 logger = logging.getLogger(__name__)
 
-
+FILENAME_WHOLE_PEFORMANCE = "全体の生産性と品質.csv"
 FILENAME_PEFORMANCE_PER_USER = "メンバごとの生産性と品質.csv"
 FILENAME_PEFORMANCE_PER_DATE = "日毎の生産量と生産性.csv"
 FILENAME_TASK_LIST = "タスクlist.csv"
@@ -348,7 +348,7 @@ class Csv:
 
         _add_ratio_column_for_productivity_per_user(sum_series, phase_list=phase_list)
         sum_series = sum_series[self._get_productivity_columns(phase_list)]
-        self._write_csv_for_series(f"全体の生産性と品質.csv", sum_series)
+        self._write_csv_for_series(FILENAME_WHOLE_PEFORMANCE, sum_series)
 
     def write_count_summary(self, df: pandas.DataFrame) -> None:
         """
