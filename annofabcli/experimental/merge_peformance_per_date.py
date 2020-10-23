@@ -14,7 +14,16 @@ from annofabcli.statistics.table import Table
 logger = logging.getLogger(__name__)
 
 
-def merge_peformance_per_date(csv_path_list: List[Path], output_path: Path) -> None:
+def create_df_merged_peformance_per_date(csv_path_list: List[Path]) -> pandas.DataFrame:
+    """
+    `日毎の生産量と生産性.csv` をマージしたDataFrameを返す。
+
+    Args:
+        csv_path_list:
+
+    Returns:
+
+    """
     df_list: List[pandas.DataFrame] = []
     for csv_path in csv_path_list:
         if csv_path.exists():
@@ -28,6 +37,11 @@ def merge_peformance_per_date(csv_path_list: List[Path], output_path: Path) -> N
     for df in df_list[1:]:
         sum_df = Table.merge_whole_productivity_per_date(sum_df, df)
 
+    return sum_df
+
+
+def merge_peformance_per_date(csv_path_list: List[Path], output_path: Path) -> None:
+    sum_df = create_df_merged_peformance_per_date(csv_path_list)
     csv_obj = Csv(outdir=str(output_path.parent))
     csv_obj.write_whole_productivity_per_date(sum_df, output_path=output_path)
 

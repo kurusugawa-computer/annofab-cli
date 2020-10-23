@@ -1,6 +1,6 @@
 import logging
 from pathlib import Path
-from typing import Any, List, Optional
+from typing import Any, List, Optional, Tuple
 
 import pandas
 from annofabapi.models import TaskPhase
@@ -347,6 +347,7 @@ class Csv:
         phase_list = _get_phase_list(df)
 
         _add_ratio_column_for_productivity_per_user(sum_series, phase_list=phase_list)
+        sum_series = sum_series[self._get_productivity_columns(phase_list)]
         self._write_csv_for_series(f"全体の生産性と品質.csv", sum_series)
 
     def write_count_summary(self, df: pandas.DataFrame) -> None:
@@ -499,28 +500,7 @@ class Csv:
             return
         self._write_csv(f"タスク1個当たり作業時間/タスク1個当たり作業時間_{phase.value}.csv", df)
 
-    def write_productivity_per_user(
-        self, df: pandas.DataFrame, dropped_columns: Optional[List[str]] = None, output_path: Optional[Path] = None
-    ):
-        """
-        メンバごとの生産性を出力する。
-
-        Args:
-            df:
-            dropped_columns:
-
-        Returns:
-
-        """
-
-        if len(df) == 0:
-            logger.info("プロジェクトメンバ一覧が0件のため出力しない")
-            return
-
-        phase_list = _get_phase_list(df)
-
-        user_columns = [("user_id", ""), ("username", ""), ("biography", ""), ("last_working_date", "")]
-
+    def _get_productivity_columns(self, phase_list:List[str]) -> List[Tuple[str,str]]:
         monitored_worktime_columns = (
             [("monitored_worktime_hour", phase) for phase in phase_list]
             + [("monitored_worktime_hour", "sum")]
@@ -549,14 +529,37 @@ class Csv:
             ("pointed_out_inspection_comment_count/annotation_count", TaskPhase.ANNOTATION.value),
         ]
 
-        prior_columns = (
-            user_columns
-            + monitored_worktime_columns
-            + production_columns
+        prior_columns = (monitored_worktime_columns + production_columns
             + actual_worktime_columns
             + productivity_columns
-            + inspection_comment_columns
-        )
+            + inspection_comment_columns)
+
+        return prior_columns
+
+
+    def write_productivity_per_user(
+        self, df: pandas.DataFrame, dropped_columns: Optional[List[str]] = None, output_path: Optional[Path] = None
+    ):
+        """
+        メンバごとの生産性を出力する。
+
+        Args:
+            df:
+            dropped_columns:
+
+        Returns:
+
+        """
+
+        if len(df) == 0:
+            logger.info("プロジェクトメンバ一覧が0件のため出力しない")
+            return
+
+        phase_list = _get_phase_list(df)
+        value_columns = self._get_productivity_columns(phase_list)
+
+        user_columns = [("user_id", ""), ("username", ""), ("biography", ""), ("last_working_date", "")]
+        prior_columns = user_columns + value_columns
         required_columns = self._create_required_columns(df, prior_columns, dropped_columns)
         target_df = df[required_columns]
         if output_path is None:
