@@ -500,7 +500,7 @@ class Csv:
             return
         self._write_csv(f"タスク1個当たり作業時間/タスク1個当たり作業時間_{phase.value}.csv", df)
 
-    def _get_productivity_columns(self, phase_list:List[str]) -> List[Tuple[str,str]]:
+    def _get_productivity_columns(self, phase_list: List[str]) -> List[Tuple[str, str]]:
         monitored_worktime_columns = (
             [("monitored_worktime_hour", phase) for phase in phase_list]
             + [("monitored_worktime_hour", "sum")]
@@ -529,13 +529,15 @@ class Csv:
             ("pointed_out_inspection_comment_count/annotation_count", TaskPhase.ANNOTATION.value),
         ]
 
-        prior_columns = (monitored_worktime_columns + production_columns
+        prior_columns = (
+            monitored_worktime_columns
+            + production_columns
             + actual_worktime_columns
             + productivity_columns
-            + inspection_comment_columns)
+            + inspection_comment_columns
+        )
 
         return prior_columns
-
 
     def write_productivity_per_user(
         self, df: pandas.DataFrame, dropped_columns: Optional[List[str]] = None, output_path: Optional[Path] = None
