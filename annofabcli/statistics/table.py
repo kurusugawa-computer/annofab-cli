@@ -38,6 +38,42 @@ def _get_date_list(start_date: str, end_date: str) -> List[str]:
     return [e.strftime("%Y-%m-%d") for e in pandas.date_range(start=start_date, end=end_date)]
 
 
+def _add_ratio_column_for_productivity_per_user(df: pandas.DataFrame, phase_list: List[str]):
+    for phase in phase_list:
+        # AnnoFab時間の比率
+        df[("monitored_worktime_ratio", phase)] = (
+            df[("monitored_worktime_hour", phase)] / df[("monitored_worktime_hour", "sum")]
+        )
+        # AnnoFab時間の比率から、Annowork時間を予測する
+        df[("prediction_actual_worktime_hour", phase)] = (
+            df[("actual_worktime_hour", "sum")] * df[("monitored_worktime_ratio", phase)]
+        )
+
+        # 生産性を算出
+        df[("monitored_worktime/input_data_count", phase)] = (
+            df[("monitored_worktime_hour", phase)] / df[("input_data_count", phase)]
+        )
+        df[("actual_worktime/input_data_count", phase)] = (
+            df[("prediction_actual_worktime_hour", phase)] / df[("input_data_count", phase)]
+        )
+
+        df[("monitored_worktime/annotation_count", phase)] = (
+            df[("monitored_worktime_hour", phase)] / df[("annotation_count", phase)]
+        )
+        df[("actual_worktime/annotation_count", phase)] = (
+            df[("prediction_actual_worktime_hour", phase)] / df[("annotation_count", phase)]
+        )
+
+    phase = TaskPhase.ANNOTATION.value
+    df[("pointed_out_inspection_comment_count/annotation_count", phase)] = (
+        df[("pointed_out_inspection_comment_count", phase)] / df[("annotation_count", phase)]
+    )
+    df[("pointed_out_inspection_comment_count/input_data_count", phase)] = (
+        df[("pointed_out_inspection_comment_count", phase)] / df[("input_data_count", phase)]
+    )
+    df[("rejected_count/task_count", phase)] = df[("rejected_count", phase)] / df[("task_count", phase)]
+
+
 class AggregationBy(Enum):
     BY_INPUTS = "by_inputs"
     BY_TASKS = "by_tasks"
@@ -1259,42 +1295,6 @@ class Table:
         return phase_list
 
     @staticmethod
-    def _add_ratio_column_for_productivity_per_user(df: pandas.DataFrame, phase_list: List[str]):
-        for phase in phase_list:
-            # AnnoFab時間の比率
-            df[("monitored_worktime_ratio", phase)] = (
-                df[("monitored_worktime_hour", phase)] / df[("monitored_worktime_hour", "sum")]
-            )
-            # AnnoFab時間の比率から、Annowork時間を予測する
-            df[("prediction_actual_worktime_hour", phase)] = (
-                df[("actual_worktime_hour", "sum")] * df[("monitored_worktime_ratio", phase)]
-            )
-
-            # 生産性を算出
-            df[("monitored_worktime/input_data_count", phase)] = (
-                df[("monitored_worktime_hour", phase)] / df[("input_data_count", phase)]
-            )
-            df[("actual_worktime/input_data_count", phase)] = (
-                df[("prediction_actual_worktime_hour", phase)] / df[("input_data_count", phase)]
-            )
-
-            df[("monitored_worktime/annotation_count", phase)] = (
-                df[("monitored_worktime_hour", phase)] / df[("annotation_count", phase)]
-            )
-            df[("actual_worktime/annotation_count", phase)] = (
-                df[("prediction_actual_worktime_hour", phase)] / df[("annotation_count", phase)]
-            )
-
-        phase = TaskPhase.ANNOTATION.value
-        df[("pointed_out_inspection_comment_count/annotation_count", phase)] = (
-            df[("pointed_out_inspection_comment_count", phase)] / df[("annotation_count", phase)]
-        )
-        df[("pointed_out_inspection_comment_count/input_data_count", phase)] = (
-            df[("pointed_out_inspection_comment_count", phase)] / df[("input_data_count", phase)]
-        )
-        df[("rejected_count/task_count", phase)] = df[("rejected_count", phase)] / df[("task_count", phase)]
-
-    @staticmethod
     def merge_productivity_per_user_from_aw_time(df1: pandas.DataFrame, df2: pandas.DataFrame) -> pandas.DataFrame:
         """
         ユーザごとの生産性・品質情報が格納されたDataFrameを結合する
@@ -1342,7 +1342,7 @@ class Table:
                 sum_df.loc[user_id] = added_df.loc[user_id]
 
         phase_list = Table._get_phase_list(list(sum_df["monitored_worktime_hour"].columns))
-        Table._add_ratio_column_for_productivity_per_user(sum_df, phase_list=phase_list)
+        _add_ratio_column_for_productivity_per_user(sum_df, phase_list=phase_list)
         return sum_df.reset_index().sort_values(["user_id"])
 
     @staticmethod
@@ -1403,7 +1403,7 @@ class Table:
         df = df.join(df_agg_production)
 
         # 比例関係の列を計算して追加する
-        Table._add_ratio_column_for_productivity_per_user(df, phase_list=phase_list)
+        _add_ratio_column_for_productivity_per_user(df, phase_list=phase_list)
 
         # 不要な列を削除する
         tmp_phase_list = copy.deepcopy(phase_list)

@@ -1,5 +1,6 @@
 import argparse
 import logging
+from functools import partial
 from pathlib import Path
 from typing import Any, Dict, List, Optional, Set, Tuple, Union
 
@@ -131,16 +132,16 @@ def _get_tuple_column(df: pandas.DataFrame, column: str) -> Union[str, Tuple]:
 
 
 def replace_by_columns(df, replacement_dict: Dict[str, str], main_column: Any, sub_columns: Optional[List[Any]] = None):
+    def _get_username(row, main_column: Any, sub_column: Any) -> str:
+        if row[main_column] in replacement_dict:
+            return replacement_dict[row[main_column]]
+        else:
+            return row[sub_column]
+
     if sub_columns is not None:
         for sub_column in sub_columns:
-
-            def _get_username(row) -> str:
-                if row[main_column] in replacement_dict:
-                    return replacement_dict[row[main_column]]
-                else:
-                    return row[sub_column]
-
-            df[sub_column] = df.apply(_get_username, axis=1)
+            get_username_func = partial(_get_username, main_column=main_column, sub_column=sub_column)
+            df[sub_column] = df.apply(get_username_func, axis=1)
 
     df[main_column] = df[main_column].replace(replacement_dict)
 

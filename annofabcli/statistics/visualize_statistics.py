@@ -515,7 +515,7 @@ class VisualizeStatistics(AbstractCommandLineInterface):
                         minimal_output=args.minimal,
                     )
                     output_project_dir_list.append(output_project_dir)
-                except Exception:
+                except Exception:  # pylint: disable=broad-except
                     logger.warning(f"project_id={project_id}の統計情報の出力に失敗しました。", exc_info=True)
 
             if args.merge:

@@ -14,7 +14,12 @@ from annofabcli.experimental.write_linegraph_per_user import write_linegraph_per
 from annofabcli.experimental.write_performance_scatter_per_user import write_performance_scatter_per_user
 from annofabcli.experimental.write_task_histogram import write_task_histogram
 from annofabcli.experimental.write_whole_linegraph import write_whole_linegraph
-from annofabcli.statistics.csv import Csv, FILENAME_PEFORMANCE_PER_USER, FILENAME_TASK_LIST, FILENAME_PEFORMANCE_PER_DATE
+from annofabcli.statistics.csv import (
+    FILENAME_PEFORMANCE_PER_DATE,
+    FILENAME_PEFORMANCE_PER_USER,
+    FILENAME_TASK_LIST,
+    Csv,
+)
 
 logger = logging.getLogger(__name__)
 

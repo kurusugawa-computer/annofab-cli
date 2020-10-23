@@ -6,6 +6,7 @@ import pandas
 from annofabapi.models import TaskPhase
 
 from annofabcli.common.utils import print_csv
+from annofabcli.statistics.table import _add_ratio_column_for_productivity_per_user
 
 logger = logging.getLogger(__name__)
 
@@ -13,6 +14,16 @@ logger = logging.getLogger(__name__)
 FILENAME_PEFORMANCE_PER_USER = "メンバごとの生産性と品質.csv"
 FILENAME_PEFORMANCE_PER_DATE = "日毎の生産量と生産性.csv"
 FILENAME_TASK_LIST = "タスクlist.csv"
+
+
+def _get_phase_list(df_member_performance: pandas.DataFrame) -> List[str]:
+    columns = list(df_member_performance.columns)
+    phase_list = [TaskPhase.ANNOTATION.value, TaskPhase.INSPECTION.value, TaskPhase.ACCEPTANCE.value]
+    if ("monitored_worktime_hour", TaskPhase.INSPECTION.value) not in columns:
+        phase_list.remove(TaskPhase.INSPECTION.value)
+    if ("monitored_worktime_hour", TaskPhase.ACCEPTANCE.value) not in columns:
+        phase_list.remove(TaskPhase.ACCEPTANCE.value)
+    return phase_list
 
 
 class Csv:
@@ -47,6 +58,22 @@ class Csv:
         output_path.parent.mkdir(exist_ok=True, parents=True)
         logger.debug(f"{str(output_path)} を出力します。")
         df.to_csv(str(output_path), sep=",", encoding="utf_8_sig", index=False)
+
+    def _write_csv_for_series(self, filename: str, series: pandas.Series) -> None:
+        """
+        カンマ区切りでBOM UTF-8で書きこむ(Excelで開けるようにするため）
+
+        Args:
+            filename: ファイル名
+            series: pandas.Series
+
+        Returns:
+
+        """
+        output_path = Path(f"{self.outdir}/{filename}")
+        output_path.parent.mkdir(exist_ok=True, parents=True)
+        logger.debug(f"{str(output_path)} を出力します。")
+        series.to_csv(str(output_path), sep=",", encoding="utf_8_sig", header=False)
 
     @staticmethod
     def _create_required_columns(
@@ -298,6 +325,30 @@ class Csv:
 
         self._write_csv(f"集計結果csv/集計-作業時間.csv", target_df)
 
+    def write_whole_productivity(self, df: pandas.DataFrame) -> None:
+        """
+        全体の生産性と品質をCSVで出力する。
+
+        Args:
+            df: メンバごとの生産性と品質の の情報が格納されたDataFrame
+
+        """
+        columns_for_sum = [
+            "monitored_worktime_hour",
+            "task_count",
+            "input_data_count",
+            "annotation_count",
+            "actual_worktime_hour",
+            "prediction_actual_worktime_hour",
+            "pointed_out_inspection_comment_count",
+            "rejected_count",
+        ]
+        sum_series = df[columns_for_sum].sum()
+        phase_list = _get_phase_list(df)
+
+        _add_ratio_column_for_productivity_per_user(sum_series, phase_list=phase_list)
+        self._write_csv_for_series(f"全体の生産性と品質.csv", sum_series)
+
     def write_count_summary(self, df: pandas.DataFrame) -> None:
         """
         個数に関する集計結果をCSVで出力する。
@@ -462,20 +513,11 @@ class Csv:
 
         """
 
-        def get_phase_list() -> List[str]:
-            columns = list(df.columns)
-            phase_list = [TaskPhase.ANNOTATION.value, TaskPhase.INSPECTION.value, TaskPhase.ACCEPTANCE.value]
-            if ("monitored_worktime_hour", TaskPhase.INSPECTION.value) not in columns:
-                phase_list.remove(TaskPhase.INSPECTION.value)
-            if ("monitored_worktime_hour", TaskPhase.ACCEPTANCE.value) not in columns:
-                phase_list.remove(TaskPhase.ACCEPTANCE.value)
-            return phase_list
-
         if len(df) == 0:
             logger.info("プロジェクトメンバ一覧が0件のため出力しない")
             return
 
-        phase_list = get_phase_list()
+        phase_list = _get_phase_list(df)
 
         user_columns = [("user_id", ""), ("username", ""), ("biography", ""), ("last_working_date", "")]
 
