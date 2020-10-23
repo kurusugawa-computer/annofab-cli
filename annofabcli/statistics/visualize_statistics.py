@@ -356,6 +356,7 @@ class WriteCsvGraph:
     def write_productivity_csv_per_user(self) -> None:
         productivity_df = self._get_productivity_df()
         catch_exception(self.csv_obj.write_productivity_per_user)(productivity_df)
+        catch_exception(self.csv_obj.write_whole_productivity)(productivity_df)
 
     def write_labor_and_task_history(self) -> None:
         task_history_df = self._get_task_history_df()
