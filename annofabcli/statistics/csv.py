@@ -500,6 +500,7 @@ class Csv:
             return
         self._write_csv(f"タスク1個当たり作業時間/タスク1個当たり作業時間_{phase.value}.csv", df)
 
+    @staticmethod
     def _get_productivity_columns(self, phase_list: List[str]) -> List[Tuple[str, str]]:
         monitored_worktime_columns = (
             [("monitored_worktime_hour", phase) for phase in phase_list]
