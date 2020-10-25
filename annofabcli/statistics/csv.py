@@ -12,6 +12,7 @@ logger = logging.getLogger(__name__)
 
 FILENAME_WHOLE_PEFORMANCE = "全体の生産性と品質.csv"
 FILENAME_PEFORMANCE_PER_USER = "メンバごとの生産性と品質.csv"
+
 FILENAME_PEFORMANCE_PER_DATE = "日毎の生産量と生産性.csv"
 FILENAME_TASK_LIST = "タスクlist.csv"
 
@@ -24,6 +25,44 @@ def _get_phase_list(df_member_performance: pandas.DataFrame) -> List[str]:
     if ("monitored_worktime_hour", TaskPhase.ACCEPTANCE.value) not in columns:
         phase_list.remove(TaskPhase.ACCEPTANCE.value)
     return phase_list
+
+
+def _read_whole_peformance_csv(csv_path: Path) -> pandas.Series:
+    """
+    '全体の生産量と生産性.csv' を読み込む。
+    プロジェクト名はディレクトリ名とする。
+    """
+    project_title = csv_path.parent.name
+    if csv_path.exists():
+        df = pandas.read_csv(str(csv_path), header=None, index_col=[0, 1])
+        series = df[2]
+        series[("project_title", "")] = project_title
+    else:
+        logger.warning(f"{csv_path} は存在しませんでした。")
+        series = pandas.Series([project_title], index=pandas.MultiIndex.from_tuples([("project_title", "")]))
+
+    return series
+
+
+def write_summarise_whole_peformance_csv(csv_path_list: List[Path], output_path: Path) -> None:
+    """
+    `プロジェクトごとの生産性と品質.csv` を出力する。
+
+    Args:
+        csv_path_list: '全体の生産量と生産性.csv' PathのList
+        output_path: 出力先
+
+    """
+    series_list = [_read_whole_peformance_csv(csv_path) for csv_path in csv_path_list]
+    df = pandas.DataFrame(series_list)
+
+    phase_list = _get_phase_list(df)
+    first_columns = [("project_title", "")]
+    value_columns = Csv.get_productivity_columns(phase_list)
+
+    target_df = df[first_columns + value_columns]
+    logger.debug(f"{str(output_path)} を出力します。")
+    print_csv(target_df, output=str(output_path))
 
 
 class Csv:
@@ -347,7 +386,7 @@ class Csv:
         phase_list = _get_phase_list(df)
 
         _add_ratio_column_for_productivity_per_user(sum_series, phase_list=phase_list)
-        sum_series = sum_series[self._get_productivity_columns(phase_list)]
+        sum_series = sum_series[self.get_productivity_columns(phase_list)]
         self._write_csv_for_series(FILENAME_WHOLE_PEFORMANCE, sum_series)
 
     def write_count_summary(self, df: pandas.DataFrame) -> None:
@@ -501,7 +540,7 @@ class Csv:
         self._write_csv(f"タスク1個当たり作業時間/タスク1個当たり作業時間_{phase.value}.csv", df)
 
     @staticmethod
-    def _get_productivity_columns(phase_list: List[str]) -> List[Tuple[str, str]]:
+    def get_productivity_columns(phase_list: List[str]) -> List[Tuple[str, str]]:
         monitored_worktime_columns = (
             [("monitored_worktime_hour", phase) for phase in phase_list]
             + [("monitored_worktime_hour", "sum")]
@@ -559,7 +598,7 @@ class Csv:
             return
 
         phase_list = _get_phase_list(df)
-        value_columns = self._get_productivity_columns(phase_list)
+        value_columns = self.get_productivity_columns(phase_list)
 
         user_columns = [("user_id", ""), ("username", ""), ("biography", ""), ("last_working_date", "")]
         prior_columns = user_columns + value_columns
@@ -568,7 +607,7 @@ class Csv:
         if output_path is None:
             self._write_csv(FILENAME_PEFORMANCE_PER_USER, target_df)
         else:
-            print_csv(df, output=str(output_path), to_csv_kwargs=self.CSV_FORMAT)
+            print_csv(target_df, output=str(output_path), to_csv_kwargs=self.CSV_FORMAT)
 
     def write_whole_productivity_per_date(
         self, df: pandas.DataFrame, dropped_columns: Optional[List[str]] = None, output_path: Optional[Path] = None
@@ -615,4 +654,4 @@ class Csv:
         if output_path is None:
             self._write_csv(FILENAME_PEFORMANCE_PER_DATE, target_df)
         else:
-            print_csv(df, output=str(output_path), to_csv_kwargs=self.CSV_FORMAT)
+            print_csv(target_df, output=str(output_path), to_csv_kwargs=self.CSV_FORMAT)

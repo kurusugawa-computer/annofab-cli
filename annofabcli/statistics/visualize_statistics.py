@@ -16,9 +16,7 @@ from dataclasses_json import DataClassJsonMixin
 import annofabcli
 from annofabcli import AnnofabApiFacade
 from annofabcli.common.cli import AbstractCommandLineInterface, build_annofabapi_resource_and_login
-from annofabcli.common.utils import print_csv
-from annofabcli.experimental.summarise_whole_peformance_csv import summarise_whole_peformance_csv
-from annofabcli.statistics.csv import FILENAME_WHOLE_PEFORMANCE, Csv
+from annofabcli.statistics.csv import FILENAME_WHOLE_PEFORMANCE, Csv, write_summarise_whole_peformance_csv
 from annofabcli.statistics.database import Database, Query
 from annofabcli.statistics.histogram import Histogram
 from annofabcli.statistics.linegraph import LineGraph, OutputTarget
@@ -634,8 +632,9 @@ class VisualizeStatistics(AbstractCommandLineInterface):
 
             if len(output_project_dir_list) > 0:
                 whole_peformance_csv_list = [e / FILENAME_WHOLE_PEFORMANCE for e in output_project_dir_list]
-                df_whole_peformance = summarise_whole_peformance_csv(csv_path_list=whole_peformance_csv_list)
-                print_csv(df_whole_peformance, str(root_output_dir / "プロジェクトごとの生産性と品質.csv"))
+                write_summarise_whole_peformance_csv(
+                    csv_path_list=whole_peformance_csv_list, output_path=root_output_dir / "プロジェクトごとの生産性と品質.csv"
+                )
             else:
                 logger.warning(f"出力した統計情報は0なので、`プロジェクトごとの生産性と品質.csv`を出力しません。")
 
