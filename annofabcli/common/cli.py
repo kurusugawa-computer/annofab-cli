@@ -22,7 +22,6 @@ from annofabapi.models import OrganizationMemberRole, ProjectMemberRole
 import annofabcli
 from annofabcli.common.dataclasses import WaitOptions
 from annofabcli.common.enums import FormatArgument
-from annofabcli.common.exceptions import OrganizationAuthorizationError, ProjectAuthorizationError
 from annofabcli.common.facade import AnnofabApiFacade
 from annofabcli.common.typing import InputDataSize
 
@@ -535,17 +534,11 @@ class AbstractCommandLineInterface(abc.ABC):
              AuthorizationError: 自分自身のRoleがいずれかのRoleにも合致しなければ、AuthorizationErrorが発生する。
 
         """
-        project_title = self.facade.get_project_title(project_id)
-        logger.info(f"project_title = {project_title}, project_id = {project_id}")
-
-        if project_member_roles is not None:
-            if not self.facade.contains_any_project_member_role(project_id, project_member_roles):
-                raise ProjectAuthorizationError(project_title, project_member_roles)
-
-        if organization_member_roles is not None:
-            organization_name = self.facade.get_organization_name_from_project_id(project_id)
-            if not self.facade.contains_any_organization_member_role(organization_name, organization_member_roles):
-                raise OrganizationAuthorizationError(organization_name, organization_member_roles)
+        self.facade.validate_project(
+            project_id=project_id,
+            project_member_roles=project_member_roles,
+            organization_member_roles=organization_member_roles,
+        )
 
     def confirm_processing(self, confirm_message: str) -> bool:
         """

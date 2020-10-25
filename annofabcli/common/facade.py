@@ -20,6 +20,8 @@ from annofabapi.models import (
 )
 from dataclasses_json import DataClassJsonMixin
 
+from annofabcli.common.exceptions import OrganizationAuthorizationError, ProjectAuthorizationError
+
 logger = logging.getLogger(__name__)
 
 
@@ -837,3 +839,33 @@ class AnnofabApiFacade:
         if task_query.user_id is not None:
             task_query.account_id = self.get_account_id_from_user_id(project_id, task_query.user_id)
         return task_query
+
+    def validate_project(
+        self,
+        project_id,
+        project_member_roles: Optional[List[ProjectMemberRole]] = None,
+        organization_member_roles: Optional[List[OrganizationMemberRole]] = None,
+    ):
+        """
+        プロジェクト or 組織に対して、必要な権限が付与されているかを確認する。
+
+        Args:
+            project_id:
+            project_member_roles: プロジェクトメンバロールの一覧. Noneの場合はチェックしない。
+            organization_member_roles: 組織メンバロールの一覧。Noneの場合はチェックしない。
+
+        Raises:
+             AuthorizationError: 自分自身のRoleがいずれかのRoleにも合致しなければ、AuthorizationErrorが発生する。
+
+        """
+        project_title = self.get_project_title(project_id)
+        logger.info(f"project_title = {project_title}, project_id = {project_id}")
+
+        if project_member_roles is not None:
+            if not self.contains_any_project_member_role(project_id, project_member_roles):
+                raise ProjectAuthorizationError(project_title, project_member_roles)
+
+        if organization_member_roles is not None:
+            organization_name = self.get_organization_name_from_project_id(project_id)
+            if not self.contains_any_organization_member_role(organization_name, organization_member_roles):
+                raise OrganizationAuthorizationError(organization_name, organization_member_roles)
