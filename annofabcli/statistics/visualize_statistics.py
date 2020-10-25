@@ -419,10 +419,10 @@ class VisualizeStatistics(AbstractCommandLineInterface):
 
         table_obj = Table(database, ignored_task_id_list)
         if len(table_obj._get_task_list()) == 0:
-            logger.warning(f"タスク一覧が0件なのでファイルを出力しません。終了します。")
+            logger.warning(f"project_id={project_id}: タスク一覧が0件なのでファイルを出力しません。終了します。")
             return
         if len(table_obj._get_task_histories_dict().keys()) == 0:
-            logger.warning(f"タスク履歴一覧が0件なのでファイルを出力しません。終了します。")
+            logger.warning(f"project_id={project_id}: タスク履歴一覧が0件なのでファイルを出力しません。終了します。")
             return
 
         write_project_name_file(
