@@ -35,7 +35,7 @@ def summarise_whole_peformance_csv(csv_path_list: List[Path]) -> pandas.DataFram
     first_column = ("project_title", "")
     tmp_columns = list(df.columns)
     tmp_columns.remove(first_column)
-    df = df[[first_column]+tmp_columns]
+    df = df[[first_column] + tmp_columns]
     return df
 
 
@@ -43,6 +43,7 @@ def main(args):
     output_path: Path = args.output
     df = summarise_whole_peformance_csv(csv_path_list=args.csv)
     print_csv(df, str(output_path))
+
 
 def parse_args(parser: argparse.ArgumentParser):
     parser.add_argument(

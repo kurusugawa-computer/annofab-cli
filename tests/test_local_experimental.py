@@ -3,6 +3,7 @@ from pathlib import Path
 
 from annofabcli.experimental.mask_user_info import create_masked_name, create_masked_user_info_df
 from annofabcli.experimental.summarise_whole_peformance_csv import summarise_whole_peformance_csv
+
 # プロジェクトトップに移動する
 os.chdir(os.path.dirname(os.path.abspath(__file__)) + "/../")
 
@@ -45,6 +46,7 @@ class TestMaskUserInfo:
         # ヘッダ1行のCSVを読み込む
         df = create_masked_user_info_df(test_dir / "user1.csv", csv_header=1)
         print(df)
+
 
 class TestSummariseWholePeformanceCsv:
     def test_summarise_whole_peformance_csv(self):
