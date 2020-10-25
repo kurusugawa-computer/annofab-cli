@@ -3,6 +3,8 @@ import json
 import logging.handlers
 import re
 from dataclasses import dataclass
+from functools import partial
+from multiprocessing import Pool
 from pathlib import Path
 from typing import Any, Callable, Dict, List, Optional
 
@@ -368,16 +370,152 @@ class WriteCsvGraph:
         catch_exception(self.csv_obj.write_labor_list)(df_labor)
 
 
+def visualize_statistics(
+    project_id: str,
+    annofab_service: annofabapi.Resource,
+    annofab_facade: AnnofabApiFacade,
+    work_dir: Path,
+    output_project_dir: Path,
+    task_query: Dict[str, Any],
+    ignored_task_id_list: Optional[List[str]],
+    user_id_list: Optional[List[str]],
+    update: bool = False,
+    download_latest: bool = False,
+    start_date: Optional[str] = None,
+    end_date: Optional[str] = None,
+    minimal_output: bool = False,
+):
+    """
+    プロジェクトの統計情報を出力する。
+
+    Args:
+        project_id: 対象のproject_id
+        task_query: タスク検索クエリ
+
+    """
+
+    annofab_facade.validate_project(
+        project_id, project_member_roles=[ProjectMemberRole.OWNER, ProjectMemberRole.TRAINING_DATA_USER]
+    )
+
+    checkpoint_dir = work_dir / project_id
+    checkpoint_dir.mkdir(exist_ok=True, parents=True)
+
+    database = Database(
+        annofab_service,
+        project_id,
+        str(checkpoint_dir),
+        query=Query(
+            task_query_param=task_query,
+            ignored_task_id_list=ignored_task_id_list,
+            start_date=start_date,
+            end_date=end_date,
+        ),
+    )
+    if update:
+        database.update_db(download_latest)
+
+    table_obj = Table(database, ignored_task_id_list)
+    if len(table_obj._get_task_list()) == 0:
+        logger.warning(f"project_id={project_id}: タスク一覧が0件なのでファイルを出力しません。終了します。")
+        return
+    if len(table_obj._get_task_histories_dict().keys()) == 0:
+        logger.warning(f"project_id={project_id}: タスク履歴一覧が0件なのでファイルを出力しません。終了します。")
+        return
+
+    write_project_name_file(
+        annofab_service,
+        project_id=project_id,
+        command_line_args=CommnadLineArgs(
+            task_query=task_query,
+            user_id_list=user_id_list,
+            start_date=start_date,
+            end_date=end_date,
+            ignored_task_id_list=ignored_task_id_list,
+        ),
+        output_project_dir=output_project_dir,
+    )
+    write_obj = WriteCsvGraph(table_obj, output_project_dir, minimal_output)
+    write_obj.write_csv_for_task()
+
+    write_obj.write_csv_for_summary()
+    write_obj.write_whole_productivity_csv_per_date()
+    write_obj.write_productivity_csv_per_user()
+
+    # 散布図
+    write_obj.write_scatter_per_user()
+
+    # ヒストグラム
+    write_obj.write_histogram_for_task()
+
+    # 折れ線グラフ
+    write_obj.write_linegraph_by_user(user_id_list)
+    write_obj.write_whole_linegraph()
+
+    if not minimal_output:
+        write_obj.write_histogram_for_annotation()
+        write_obj.write_linegraph_for_worktime_by_user(user_id_list)
+
+        # CSV
+        write_obj.write_labor_and_task_history()
+        write_obj.write_csv_for_annotation()
+        write_obj.write_csv_for_account_statistics()
+        write_obj.write_csv_for_date_user()
+        write_obj.write_csv_for_inspection()
+        write_obj.write_メンバー別作業時間平均_画像1枚あたり_by_phase()
+
+
+def visualize_statistics_wrapper(
+    project_id: str,
+    root_output_dir: Path,
+    annofab_service: annofabapi.Resource,
+    annofab_facade: AnnofabApiFacade,
+    work_dir: Path,
+    task_query: Dict[str, Any],
+    ignored_task_id_list: Optional[List[str]],
+    user_id_list: Optional[List[str]],
+    update: bool = False,
+    download_latest: bool = False,
+    start_date: Optional[str] = None,
+    end_date: Optional[str] = None,
+    minimal_output: bool = False,
+) -> Optional[Path]:
+
+    try:
+        project_title = annofab_facade.get_project_title(project_id)
+        output_project_dir = root_output_dir / get_project_output_dir(project_title)
+
+        visualize_statistics(
+            annofab_service=annofab_service,
+            annofab_facade=annofab_facade,
+            project_id=project_id,
+            work_dir=work_dir,
+            output_project_dir=output_project_dir,
+            task_query=task_query,
+            ignored_task_id_list=ignored_task_id_list,
+            user_id_list=user_id_list,
+            update=update,
+            download_latest=download_latest,
+            start_date=start_date,
+            end_date=end_date,
+            minimal_output=minimal_output,
+        )
+        return output_project_dir
+    except Exception:  # pylint: disable=broad-except
+        logger.warning(f"project_id={project_id}の統計情報の出力に失敗しました。", exc_info=True)
+        return None
+
+
 class VisualizeStatistics(AbstractCommandLineInterface):
     """
     統計情報を可視化する。
     """
 
-    def visualize_statistics(
+    def visualize_statistics_for_project_list(
         self,
-        project_id: str,
+        root_output_dir: Path,
+        project_id_list: List[str],
         work_dir: Path,
-        output_project_dir: Path,
         task_query: Dict[str, Any],
         ignored_task_id_list: Optional[List[str]],
         user_id_list: Optional[List[str]],
@@ -386,85 +524,52 @@ class VisualizeStatistics(AbstractCommandLineInterface):
         start_date: Optional[str] = None,
         end_date: Optional[str] = None,
         minimal_output: bool = False,
-    ):
-        """
-        タスク一覧を出力する
+        parallelism: Optional[int] = None,
+    ) -> List[Path]:
+        output_project_dir_list: List[Path] = []
 
-        Args:
-            project_id: 対象のproject_id
-            task_query: タスク検索クエリ
-
-        """
-
-        super().validate_project(
-            project_id, project_member_roles=[ProjectMemberRole.OWNER, ProjectMemberRole.TRAINING_DATA_USER]
-        )
-
-        checkpoint_dir = work_dir / project_id
-        checkpoint_dir.mkdir(exist_ok=True, parents=True)
-
-        database = Database(
-            self.service,
-            project_id,
-            str(checkpoint_dir),
-            query=Query(
-                task_query_param=task_query,
-                ignored_task_id_list=ignored_task_id_list,
-                start_date=start_date,
-                end_date=end_date,
-            ),
-        )
-        if update:
-            database.update_db(download_latest)
-
-        table_obj = Table(database, ignored_task_id_list)
-        if len(table_obj._get_task_list()) == 0:
-            logger.warning(f"タスク一覧が0件なのでファイルを出力しません。終了します。")
-            return
-        if len(table_obj._get_task_histories_dict().keys()) == 0:
-            logger.warning(f"タスク履歴一覧が0件なのでファイルを出力しません。終了します。")
-            return
-
-        write_project_name_file(
-            self.service,
-            project_id=project_id,
-            command_line_args=CommnadLineArgs(
+        if parallelism is not None:
+            partial_func = partial(
+                visualize_statistics_wrapper,
+                root_output_dir=root_output_dir,
+                annofab_service=self.service,
+                annofab_facade=self.facade,
+                work_dir=work_dir,
                 task_query=task_query,
+                ignored_task_id_list=ignored_task_id_list,
                 user_id_list=user_id_list,
+                update=update,
+                download_latest=download_latest,
                 start_date=start_date,
                 end_date=end_date,
-                ignored_task_id_list=ignored_task_id_list,
-            ),
-            output_project_dir=output_project_dir,
-        )
-        write_obj = WriteCsvGraph(table_obj, output_project_dir, minimal_output)
-        write_obj.write_csv_for_task()
+                minimal_output=minimal_output,
+            )
+            with Pool(parallelism) as pool:
+                result_list = pool.map(partial_func, project_id_list)
+                output_project_dir_list = [e for e in result_list if e is not None]
 
-        write_obj.write_csv_for_summary()
-        write_obj.write_whole_productivity_csv_per_date()
-        write_obj.write_productivity_csv_per_user()
+        else:
 
-        # 散布図
-        write_obj.write_scatter_per_user()
+            for project_id in project_id_list:
+                output_project_dir = visualize_statistics_wrapper(
+                    root_output_dir=root_output_dir,
+                    annofab_service=self.service,
+                    annofab_facade=self.facade,
+                    project_id=project_id,
+                    work_dir=work_dir,
+                    task_query=task_query,
+                    ignored_task_id_list=ignored_task_id_list,
+                    user_id_list=user_id_list,
+                    update=update,
+                    download_latest=download_latest,
+                    start_date=start_date,
+                    end_date=end_date,
+                    minimal_output=minimal_output,
+                )
+                if output_project_dir is not None:
+                    output_project_dir_list.append(output_project_dir)
 
-        # ヒストグラム
-        write_obj.write_histogram_for_task()
-
-        # 折れ線グラフ
-        write_obj.write_linegraph_by_user(user_id_list)
-        write_obj.write_whole_linegraph()
-
-        if not minimal_output:
-            write_obj.write_histogram_for_annotation()
-            write_obj.write_linegraph_for_worktime_by_user(user_id_list)
-
-            # CSV
-            write_obj.write_labor_and_task_history()
-            write_obj.write_csv_for_annotation()
-            write_obj.write_csv_for_account_statistics()
-            write_obj.write_csv_for_date_user()
-            write_obj.write_csv_for_inspection()
-            write_obj.write_メンバー別作業時間平均_画像1枚あたり_by_phase()
+        return output_project_dir_list
 
     def main(self):
         args = self.args
@@ -483,8 +588,10 @@ class VisualizeStatistics(AbstractCommandLineInterface):
         root_output_dir: Path = args.output_dir
 
         if len(project_id_list) == 1:
-            self.visualize_statistics(
-                project_id_list[0],
+            visualize_statistics(
+                annofab_service=self.service,
+                annofab_facade=self.facade,
+                project_id=project_id_list[0],
                 output_project_dir=root_output_dir,
                 work_dir=work_dir,
                 task_query=task_query,
@@ -499,39 +606,38 @@ class VisualizeStatistics(AbstractCommandLineInterface):
 
         else:
             # project_idが複数指定された場合は、project_titleのディレクトリに統計情報を出力する
-            output_project_dir_list = []
-            for project_id in project_id_list:
-                try:
-                    project_title = self.facade.get_project_title(project_id)
-                    output_project_dir = root_output_dir / get_project_output_dir(project_title)
-                    self.visualize_statistics(
-                        project_id,
-                        output_project_dir=output_project_dir,
-                        work_dir=work_dir,
-                        task_query=task_query,
-                        ignored_task_id_list=ignored_task_id_list,
-                        user_id_list=user_id_list,
-                        update=not args.not_update,
-                        download_latest=args.download_latest,
-                        start_date=args.start_date,
-                        end_date=args.end_date,
-                        minimal_output=args.minimal,
-                    )
-                    output_project_dir_list.append(output_project_dir)
-                except Exception:  # pylint: disable=broad-except
-                    logger.warning(f"project_id={project_id}の統計情報の出力に失敗しました。", exc_info=True)
+            output_project_dir_list = self.visualize_statistics_for_project_list(
+                root_output_dir=root_output_dir,
+                project_id_list=project_id_list,
+                work_dir=work_dir,
+                task_query=task_query,
+                ignored_task_id_list=ignored_task_id_list,
+                user_id_list=user_id_list,
+                update=not args.not_update,
+                download_latest=args.download_latest,
+                start_date=args.start_date,
+                end_date=args.end_date,
+                minimal_output=args.minimal,
+                parallelism=args.parallelism,
+            )
 
             if args.merge:
-                merge_visualization_dir(
-                    project_dir_list=output_project_dir_list,
-                    output_dir=root_output_dir / "merge",
-                    user_id_list=user_id_list,
-                    minimal_output=args.minimal,
-                )
+                if len(output_project_dir_list) > 1:
+                    merge_visualization_dir(
+                        project_dir_list=output_project_dir_list,
+                        output_dir=root_output_dir / "merge",
+                        user_id_list=user_id_list,
+                        minimal_output=args.minimal,
+                    )
+                else:
+                    logger.warning(f"出力した統計情報は1件以下なので、`merge`ディレクトリを出力しません。")
 
-            whole_peformance_csv_list = [e / FILENAME_WHOLE_PEFORMANCE for e in output_project_dir_list]
-            df_whole_peformance = summarise_whole_peformance_csv(csv_path_list=whole_peformance_csv_list)
-            print_csv(df_whole_peformance, str(root_output_dir / "プロジェクトごとの生産性と品質.csv"))
+            if len(output_project_dir_list) > 0:
+                whole_peformance_csv_list = [e / FILENAME_WHOLE_PEFORMANCE for e in output_project_dir_list]
+                df_whole_peformance = summarise_whole_peformance_csv(csv_path_list=whole_peformance_csv_list)
+                print_csv(df_whole_peformance, str(root_output_dir / "プロジェクトごとの生産性と品質.csv"))
+            else:
+                logger.warning(f"出力した統計情報は0なので、`プロジェクトごとの生産性と品質.csv`を出力しません。")
 
 
 def main(args):
@@ -608,6 +714,12 @@ def parse_args(parser: argparse.ArgumentParser):
         "--merge",
         action="store_true",
         help="指定した場合、複数のproject_idを指定したときに、マージした統計情報も出力します。ディレクトリ名は`merge`です。",
+    )
+
+    parser.add_argument(
+        "--parallelism",
+        type=int,
+        help="並列度。`--project_id`に複数のproject_idを指定したときのみ有効なオプションです。指定しない場合は、逐次的に処理します。また、必ず'--yes'を指定してください。",
     )
 
     parser.set_defaults(subcommand_func=main)

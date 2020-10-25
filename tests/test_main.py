@@ -592,7 +592,6 @@ class TestStatistics:
             ]
         )
 
-
     def test_list_task_progress(self):
         out_file = str(out_path / "task-progress.csv")
         main(

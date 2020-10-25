@@ -1411,6 +1411,9 @@ $ annofabcli statistics visualize --project_id prj1 --not_update
 # prj, prj2 の統計情報を、/tmp/outputにプロジェクトごとに出力します。
 $ annofabcli statistics visualize --project_id prj1 prj2 --output_dir /tmp/output
 
+# prj, prj2, prj3, prj4 の統計情報を、並列処理で出力します。
+$ annofabcli statistics visualize --project_id prj1 prj2 prj3 prj4  --output_dir /tmp/output --parallelism 2
+
 # prj, prj2 の統計情報を、/tmp/outputにプロジェクトごとに出力し、prj1,prj2の統計情報をマージした情報も、`merge`ディレクトリに出力します。
 $ annofabcli statistics visualize --project_id prj1 prj2 --output_dir /tmp/output --merge
 
