@@ -16,10 +16,13 @@ from dataclasses_json import DataClassJsonMixin
 import annofabcli
 from annofabcli import AnnofabApiFacade
 from annofabcli.common.cli import AbstractCommandLineInterface, build_annofabapi_resource_and_login
-from annofabcli.statistics.csv import Csv
+from annofabcli.common.utils import print_csv
+from annofabcli.experimental.summarise_whole_peformance_csv import summarise_whole_peformance_csv
+from annofabcli.statistics.csv import FILENAME_WHOLE_PEFORMANCE, Csv
 from annofabcli.statistics.database import Database, Query
 from annofabcli.statistics.histogram import Histogram
 from annofabcli.statistics.linegraph import LineGraph, OutputTarget
+from annofabcli.statistics.merge_visualization_dir import merge_visualization_dir
 from annofabcli.statistics.scatter import Scatter
 from annofabcli.statistics.table import AggregationBy, Table
 
@@ -476,12 +479,12 @@ def visualize_statistics_wrapper(
     start_date: Optional[str] = None,
     end_date: Optional[str] = None,
     minimal_output: bool = False,
-):
-    project_title = annofab_facade.get_project_title(project_id)
-    output_project_dir = root_output_dir / get_project_output_dir(project_title)
+) -> Optional[Path]:
 
     try:
-        print("aaaaaaaaaaaaaaaaS")
+        project_title = annofab_facade.get_project_title(project_id)
+        output_project_dir = root_output_dir / get_project_output_dir(project_title)
+
         visualize_statistics(
             annofab_service=annofab_service,
             annofab_facade=annofab_facade,
@@ -499,8 +502,8 @@ def visualize_statistics_wrapper(
         )
         return output_project_dir
     except Exception:  # pylint: disable=broad-except
-        print("ffffffffffffffffffff")
         logger.warning(f"project_id={project_id}の統計情報の出力に失敗しました。", exc_info=True)
+        return None
 
 
 class VisualizeStatistics(AbstractCommandLineInterface):
@@ -522,8 +525,8 @@ class VisualizeStatistics(AbstractCommandLineInterface):
         end_date: Optional[str] = None,
         minimal_output: bool = False,
         parallelism: Optional[int] = None,
-    ):
-        output_project_dir_list = []
+    ) -> List[Path]:
+        output_project_dir_list: List[Path] = []
 
         if parallelism is not None:
             partial_func = partial(
@@ -543,8 +546,7 @@ class VisualizeStatistics(AbstractCommandLineInterface):
             )
             with Pool(parallelism) as pool:
                 result_list = pool.map(partial_func, project_id_list)
-                print("foo0000000000000000000000000000000000000000")
-                print(result_list)
+                output_project_dir_list = [e for e in result_list if e is not None]
 
         else:
 
@@ -564,7 +566,8 @@ class VisualizeStatistics(AbstractCommandLineInterface):
                     end_date=end_date,
                     minimal_output=minimal_output,
                 )
-                output_project_dir_list.append(output_project_dir)
+                if output_project_dir is not None:
+                    output_project_dir_list.append(output_project_dir)
 
         return output_project_dir_list
 
@@ -603,7 +606,7 @@ class VisualizeStatistics(AbstractCommandLineInterface):
 
         else:
             # project_idが複数指定された場合は、project_titleのディレクトリに統計情報を出力する
-            self.visualize_statistics_for_project_list(
+            output_project_dir_list = self.visualize_statistics_for_project_list(
                 root_output_dir=root_output_dir,
                 project_id_list=project_id_list,
                 work_dir=work_dir,
@@ -618,41 +621,23 @@ class VisualizeStatistics(AbstractCommandLineInterface):
                 parallelism=args.parallelism,
             )
 
-            # output_project_dir_list = []
-            # for project_id in project_id_list:
-            #     try:
-            #         project_title = self.facade.get_project_title(project_id)
-            #         output_project_dir = root_output_dir / get_project_output_dir(project_title)
-            #         visualize_statistics(
-            #             annofab_service=self.service,
-            #             annofab_facade=self.facade,
-            #             project_id=project_id,
-            #             output_project_dir=output_project_dir,
-            #             work_dir=work_dir,
-            #             task_query=task_query,
-            #             ignored_task_id_list=ignored_task_id_list,
-            #             user_id_list=user_id_list,
-            #             update=not args.not_update,
-            #             download_latest=args.download_latest,
-            #             start_date=args.start_date,
-            #             end_date=args.end_date,
-            #             minimal_output=args.minimal,
-            #         )
-            #         output_project_dir_list.append(output_project_dir)
-            #     except Exception:  # pylint: disable=broad-except
-            #         logger.warning(f"project_id={project_id}の統計情報の出力に失敗しました。", exc_info=True)
+            if args.merge:
+                if len(output_project_dir_list) > 1:
+                    merge_visualization_dir(
+                        project_dir_list=output_project_dir_list,
+                        output_dir=root_output_dir / "merge",
+                        user_id_list=user_id_list,
+                        minimal_output=args.minimal,
+                    )
+                else:
+                    logger.warning(f"出力した統計情報は1件以下なので、`merge`ディレクトリを出力しません。")
 
-            # if args.merge:
-            #     merge_visualization_dir(
-            #         project_dir_list=output_project_dir_list,
-            #         output_dir=root_output_dir / "merge",
-            #         user_id_list=user_id_list,
-            #         minimal_output=args.minimal,
-            #     )
-            #
-            # whole_peformance_csv_list = [e / FILENAME_WHOLE_PEFORMANCE for e in output_project_dir_list]
-            # df_whole_peformance = summarise_whole_peformance_csv(csv_path_list=whole_peformance_csv_list)
-            # print_csv(df_whole_peformance, str(root_output_dir / "プロジェクトごとの生産性と品質.csv"))
+            if len(output_project_dir_list) > 0:
+                whole_peformance_csv_list = [e / FILENAME_WHOLE_PEFORMANCE for e in output_project_dir_list]
+                df_whole_peformance = summarise_whole_peformance_csv(csv_path_list=whole_peformance_csv_list)
+                print_csv(df_whole_peformance, str(root_output_dir / "プロジェクトごとの生産性と品質.csv"))
+            else:
+                logger.warning(f"出力した統計情報は0なので、`プロジェクトごとの生産性と品質.csv`を出力しません。")
 
 
 def main(args):
