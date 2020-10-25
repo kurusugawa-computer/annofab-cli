@@ -578,6 +578,21 @@ class TestStatistics:
             ]
         )
 
+    def test_merge_visualization_dir(self):
+        output_dir = str(out_path / "statistics/merge")
+        main(
+            [
+                "statistics",
+                "merge_visualization_dir",
+                "--dir",
+                str(data_path / "statistics/visualization-dir"),
+                "--output_dir",
+                output_dir,
+                "--minimal",
+            ]
+        )
+
+
     def test_list_task_progress(self):
         out_file = str(out_path / "task-progress.csv")
         main(

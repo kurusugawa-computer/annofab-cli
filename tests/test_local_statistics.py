@@ -111,6 +111,18 @@ class TestScatter:
         self.scatter_obj.write_scatter_for_productivity_by_actual_worktime_and_quality(productivity_per_user)
 
 
+class TestCsv:
+    csv_obj = None
+
+    @classmethod
+    def setup_class(cls):
+        cls.csv_obj = Csv(outdir=str(out_path))
+
+    def test_write_whole_productivity(self):
+        productivity_per_user = read_multiheader_csv(str(data_path / "productivity-per-user2.csv"))
+        self.csv_obj.write_whole_productivity(productivity_per_user)
+
+
 class TestLineGraph:
     line_graph_obj = None
 

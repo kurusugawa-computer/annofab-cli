@@ -15,16 +15,33 @@ from annofabcli.statistics.table import Table
 logger = logging.getLogger(__name__)
 
 
-def merge_peformance_per_user(csv_path_list: List[Path], output_path: Path):
+def create_df_merged_peformance_per_user(csv_path_list: List[Path]) -> pandas.DataFrame:
+    """
+    `メンバごとの生産性と品質.csv` をマージしたDataFrameを返す。
+
+    Args:
+        csv_path_list:
+
+    Returns:
+
+    """
     df_list: List[pandas.DataFrame] = []
     for csv_path in csv_path_list:
-        df = read_multiheader_csv(str(csv_path))
-        df_list.append(df)
+        if csv_path.exists():
+            df = read_multiheader_csv(str(csv_path))
+            df_list.append(df)
+        else:
+            logger.warning(f"{csv_path} は存在しませんでした。")
+            continue
 
     sum_df = df_list[0]
     for df in df_list[1:]:
         sum_df = Table.merge_productivity_per_user_from_aw_time(sum_df, df)
+    return sum_df
 
+
+def merge_peformance_per_user(csv_path_list: List[Path], output_path: Path):
+    sum_df = create_df_merged_peformance_per_user(csv_path_list)
     csv_obj = Csv(outdir=str(output_path.parent))
     csv_obj.write_productivity_per_user(sum_df, output_path=output_path)
 

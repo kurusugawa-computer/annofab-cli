@@ -8,23 +8,23 @@ import pandas
 import annofabcli
 from annofabcli.common.cli import get_list_from_args
 from annofabcli.common.utils import print_csv, print_json
-from annofabcli.experimental.merge_peformance_per_date import merge_peformance_per_date
-from annofabcli.experimental.merge_peformance_per_user import merge_peformance_per_user
+from annofabcli.experimental.merge_peformance_per_date import create_df_merged_peformance_per_date
+from annofabcli.experimental.merge_peformance_per_user import create_df_merged_peformance_per_user
 from annofabcli.experimental.write_linegraph_per_user import write_linegraph_per_user
 from annofabcli.experimental.write_performance_scatter_per_user import write_performance_scatter_per_user
 from annofabcli.experimental.write_task_histogram import write_task_histogram
 from annofabcli.experimental.write_whole_linegraph import write_whole_linegraph
-from annofabcli.statistics.csv import Csv
+from annofabcli.statistics.csv import (
+    FILENAME_PEFORMANCE_PER_DATE,
+    FILENAME_PEFORMANCE_PER_USER,
+    FILENAME_TASK_LIST,
+    Csv,
+)
 
 logger = logging.getLogger(__name__)
 
 
-FILENAME_PEFORMANCE_PER_USER = "メンバごとの生産性と品質.csv"
-FILENAME_PEFORMANCE_PER_DATE = "日毎の生産量と生産性.csv"
-FILENAME_TASK_LIST = "タスクlist.csv"
-
-
-def merge_visualization(
+def merge_visualization_dir(
     project_dir_list: List[Path],
     output_dir: Path,
     user_id_list: Optional[List[str]] = None,
@@ -32,18 +32,25 @@ def merge_visualization(
 ):
     def execute_merge_peformance_per_user():
         performance_per_user_csv_list = [dir / FILENAME_PEFORMANCE_PER_USER for dir in project_dir_list]
-        merge_peformance_per_user(
-            csv_path_list=performance_per_user_csv_list, output_path=output_dir / FILENAME_PEFORMANCE_PER_USER
-        )
+        df_per_user = create_df_merged_peformance_per_user(csv_path_list=performance_per_user_csv_list)
+        csv_obj.write_productivity_per_user(df_per_user)
+        csv_obj.write_whole_productivity(df_per_user)
 
     def execute_merge_peformance_per_date():
         performance_per_date_csv_list = [dir / FILENAME_PEFORMANCE_PER_DATE for dir in project_dir_list]
-        merge_peformance_per_date(
-            csv_path_list=performance_per_date_csv_list, output_path=output_dir / FILENAME_PEFORMANCE_PER_DATE
-        )
+        df_per_date = create_df_merged_peformance_per_date(performance_per_date_csv_list)
+        csv_obj.write_whole_productivity_per_date(df_per_date)
 
     def merge_task_list() -> pandas.DataFrame:
-        list_df = [pandas.read_csv(str(dir / FILENAME_TASK_LIST)) for dir in project_dir_list]
+        list_df = []
+        for project_dir in project_dir_list:
+            csv_path = project_dir / FILENAME_TASK_LIST
+            if csv_path.exists():
+                list_df.append(pandas.read_csv(str(csv_path)))
+            else:
+                logger.warning(f"{csv_path} は存在しませんでした。")
+                continue
+
         df = pandas.concat(list_df, axis=0)
         return df
 
@@ -51,7 +58,6 @@ def merge_visualization(
         """
         タスク関係のCSVを出力する。
         """
-        csv_obj = Csv(str(output_dir))
         csv_obj.write_task_count_summary(df_task)
         csv_obj.write_worktime_summary(df_task)
         csv_obj.write_count_summary(df_task)
@@ -61,6 +67,8 @@ def merge_visualization(
         print_json(info, is_pretty=True, output=str(output_dir / "info.json"))
 
     # CSV生成
+    csv_obj = Csv(str(output_dir))
+
     execute_merge_peformance_per_user()
     execute_merge_peformance_per_date()
     df_task = merge_task_list()
@@ -86,7 +94,7 @@ def merge_visualization(
 
 def main(args):
     user_id_list = get_list_from_args(args.user_id) if args.user_id is not None else None
-    merge_visualization(
+    merge_visualization_dir(
         project_dir_list=args.dir,
         user_id_list=user_id_list,
         minimal_output=args.minimal,
@@ -103,7 +111,7 @@ def parse_args(parser: argparse.ArgumentParser):
         "--user_id",
         nargs="+",
         help=(
-            "ユーザごとの折れ線グラフで絞り込むユーザのuser_idを指定してください。"
+            "ユーザごとの折れ線グラフに表示するユーザのuser_idを指定してください。"
             "指定しない場合は、上位20人のユーザ情報がプロットされます。"
             "file://`を先頭に付けると、一覧が記載されたファイルを指定できます。"
         ),
@@ -120,7 +128,7 @@ def parse_args(parser: argparse.ArgumentParser):
 
 def add_parser(subparsers: argparse._SubParsersAction):
     subcommand_name = "merge_visualization_dir"
-    subcommand_help = "`annofabcli statistics visualize`コマンドの出力結果をマージする。"
-    description = "`annofabcli statistics visualize`コマンドの出力結果をマージする。"
+    subcommand_help = "`annofabcli statistics visualize`コマンドの出力結果をマージします。"
+    description = "`annofabcli statistics visualize`コマンドの出力結果をマージします。"
     parser = annofabcli.common.cli.add_parser(subparsers, subcommand_name, subcommand_help, description)
     parse_args(parser)

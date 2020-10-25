@@ -1,7 +1,8 @@
 import argparse
 import logging
+from functools import partial
 from pathlib import Path
-from typing import Dict, Optional, Set, Tuple, Union
+from typing import Any, Dict, List, Optional, Set, Tuple, Union
 
 import numpy
 import pandas
@@ -25,16 +26,28 @@ DIGIT = 2
 
 
 def _create_uniqued_masked_name(masked_name_set: Set[str], masked_name: str) -> str:
+    """
+    マスクされたユニークな名前を返す。
+    `masked_name_set` に含まれている名前なら、末尾に数字をつけて、ユニークにする。
+    """
     if masked_name not in masked_name_set:
+        masked_name_set.add(masked_name)
         return masked_name
     else:
+        # 末尾に数字を付ける
         base_masked_name = masked_name[0:DIGIT]
-        now_index = int(masked_name[DIGIT:]) if len(masked_name) > DIGIT else 0
+        try:
+            # 末尾が数字の場合(末尾の数字が２桁になると処理がおかしくなるけど、許容する）
+            now_index = int(masked_name[-1])
+        except ValueError:
+            # 末尾が数字でない場合
+            now_index = 0
+
         new_masked_name = base_masked_name + str(now_index + 1)
         return _create_uniqued_masked_name(masked_name_set, new_masked_name)
 
 
-def create_replaced_dict(name_set: Set[str]) -> Dict[str, str]:
+def _create_replaced_dict(name_set: Set[str]) -> Dict[str, str]:
     """
     keyがマスク対象の名前で、valueがマスクしたあとの名前であるdictを返します。
 
@@ -118,7 +131,22 @@ def _get_tuple_column(df: pandas.DataFrame, column: str) -> Union[str, Tuple]:
         return column
 
 
-def get_masked_username(df: pandas.DataFrame, replace_dict_by_user_id: Dict[str, str]) -> pandas.Series:
+def replace_by_columns(df, replacement_dict: Dict[str, str], main_column: Any, sub_columns: Optional[List[Any]] = None):
+    def _get_username(row, main_column: Any, sub_column: Any) -> str:
+        if row[main_column] in replacement_dict:
+            return replacement_dict[row[main_column]]
+        else:
+            return row[sub_column]
+
+    if sub_columns is not None:
+        for sub_column in sub_columns:
+            get_username_func = partial(_get_username, main_column=main_column, sub_column=sub_column)
+            df[sub_column] = df.apply(get_username_func, axis=1)
+
+    df[main_column] = df[main_column].replace(replacement_dict)
+
+
+def get_masked_username_series(df: pandas.DataFrame, replace_dict_by_user_id: Dict[str, str]) -> pandas.Series:
     """
     マスク後のusernameのSeriesを返す
     """
@@ -165,11 +193,14 @@ def get_replaced_biography_set(df: pandas.DataFrame, not_masked_location_set: Op
     return biography_set
 
 
-def replate_user_info(
+def create_replacement_dict_by_user_id(
     df: pandas.DataFrame,
     not_masked_biography_set: Optional[Set[str]] = None,
     not_masked_user_id_set: Optional[Set[str]] = None,
-) -> pandas.DataFrame:
+) -> Dict[str, str]:
+    """
+    keyが置換対象のuser_id、valueが置換後のマスクされたuser_idであるdictを作成する。
+    """
     if "biography" in df:
         replaced_user_id_set = get_replaced_user_id_set_from_biography(
             df, not_masked_location_set=not_masked_biography_set
@@ -179,19 +210,40 @@ def replate_user_info(
     if not_masked_user_id_set is not None:
         replaced_user_id_set = replaced_user_id_set - not_masked_user_id_set
 
-    replace_dict_by_user_id = create_replaced_dict(replaced_user_id_set)
-    if "username" in df:
-        df["username"] = get_masked_username(df, replace_dict_by_user_id=replace_dict_by_user_id)
-    if "account_id" in df:
-        df["account_id"] = get_masked_account_id(df, replace_dict_by_user_id=replace_dict_by_user_id)
-    df["user_id"] = df["user_id"].replace(replace_dict_by_user_id)
+    return _create_replaced_dict(replaced_user_id_set)
 
-    if "biography" in df:
-        replaced_biography_set = get_replaced_biography_set(df, not_masked_location_set=not_masked_biography_set)
-        tmp_replace_dict_by_biography = create_replaced_dict(replaced_biography_set)
-        replace_dict_by_biography = {key: f"category-{value}" for key, value in tmp_replace_dict_by_biography.items()}
-        df["biography"] = df["biography"].replace(replace_dict_by_biography)
-    return df
+
+def create_replacement_dict_by_biography(
+    df: pandas.DataFrame,
+    not_masked_biography_set: Optional[Set[str]] = None,
+) -> Dict[str, str]:
+    """
+    keyが置換対象のbiography、valueが置換後のマスクされた biography であるdictを作成する。
+    """
+    replaced_biography_set = get_replaced_biography_set(df, not_masked_location_set=not_masked_biography_set)
+    tmp_replace_dict_by_biography = _create_replaced_dict(replaced_biography_set)
+    return {key: f"category-{value}" for key, value in tmp_replace_dict_by_biography.items()}
+
+
+def replace_user_info_by_user_id(df: pandas.DataFrame, replacement_dict_by_user_id: Dict[str, str]):
+    """
+    user_id, username, account_id 列を, マスクする。
+
+    Args:
+        df:
+        replacement_dict_by_user_id: user_idの置換前と置換後を示したdict
+
+    """
+    sub_columns = []
+    user_id_column = _get_tuple_column(df, "user_id")
+
+    if "username" in df:
+        username_column = _get_tuple_column(df, "username")
+        sub_columns.append(username_column)
+    if "account_id" in df:
+        account_id_column = _get_tuple_column(df, "account_id")
+        sub_columns.append(account_id_column)
+    replace_by_columns(df, replacement_dict_by_user_id, main_column=user_id_column, sub_columns=sub_columns)
 
 
 def create_masked_user_info_df(
@@ -208,10 +260,17 @@ def create_masked_user_info_df(
     if "user_id" not in df:
         raise AnnofabCliException(f"`user_id`列が存在しないため、ユーザ情報をマスクできません。")
 
-    new_df = replate_user_info(
+    replacement_dict_by_user_id = create_replacement_dict_by_user_id(
         df, not_masked_biography_set=not_masked_biography_set, not_masked_user_id_set=not_masked_user_id_set
     )
-    return new_df
+    replace_user_info_by_user_id(df, replacement_dict_by_user_id)
+    if "biography" in df:
+        replacement_dict_by_biography = create_replacement_dict_by_biography(
+            df, not_masked_biography_set=not_masked_biography_set
+        )
+        df["biography"] = df["biography"].replace(replacement_dict_by_biography)
+
+    return df
 
 
 class MaskUserInfo(AbstractCommandLineInterface):

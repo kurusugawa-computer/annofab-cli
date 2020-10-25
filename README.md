@@ -1272,6 +1272,17 @@ $ annofabcli statistics list_cumulative_labor_time --project_id prj1 --output st
 $ annofabcli statistics list_task_progress --project_id prj1 --output stat.csv
 ```
 
+### statistics merge_visualization_dir
+`annofabcli statistics visualize`コマンドの出力結果をマージします。
+
+
+```
+$ annofabcli statistics visualize --project_id prj1 --output outdir1
+$ annofabcli statistics visualize --project_id prj2 --output outdir2
+$ annofabcli statistics merge_visualization_dir --dir outdir1 outdir2 --output_dir merge_dir
+```
+
+
 ### statistics summarize_task_count
 タスクのフェーズ、ステータス、ステップごとにタスク数を、CSV形式で出力します。
 「1回目の教師付」と「2回目の教師付」を区別して集計されます。
@@ -1394,11 +1405,17 @@ $ annofabcli statistics visualize --project_id prj1 --output_dir /tmp/output \
 # アノテーションzipを更新してから、アノテーションzipをダウンロードします。
 $ annofabcli statistics visualize --project_id prj1 --output_dir /tmp/output --update_annotation
 
-
 # WebAPIを実行せずに、作業ディレクトリ（デフォルトは`$XDG_CACHE_HOME/annofabcli`）内のファイルを参照して、統計情報を可視化する。
 $ annofabcli statistics visualize --project_id prj1 --not_update
 
+# prj, prj2 の統計情報を、/tmp/outputにプロジェクトごとに出力します。
+$ annofabcli statistics visualize --project_id prj1 prj2 --output_dir /tmp/output
+
+# prj, prj2 の統計情報を、/tmp/outputにプロジェクトごとに出力し、prj1,prj2の統計情報をマージした情報も、`merge`ディレクトリに出力します。
+$ annofabcli statistics visualize --project_id prj1 prj2 --output_dir /tmp/output --merge
+
 ```
+
 
 ### supplementary list
 補助情報一覧を出力します。
