@@ -267,6 +267,7 @@ class ListWorktimeByUserMain:
         organization_name = organization["organization_name"]
 
         if account_id_list is None:
+            logger.debug(f"project_id={project_id}の、すべての労務管理情報を取得しています。")
             labor_list, _ = self.service.api.get_labor_control(
                 {
                     "project_id": project_id,
@@ -278,6 +279,7 @@ class ListWorktimeByUserMain:
         else:
             labor_list = []
             for account_id in account_id_list:
+                logger.debug(f"project_id={project_id}の、ユーザ{len(account_id_list)}件分の労務管理情報を取得しています。")
                 tmp_labor_list, _ = self.service.api.get_labor_control(
                     {"project_id": project_id, "from": start_date, "to": end_date, "account_id": account_id}
                 )
@@ -328,11 +330,13 @@ class ListWorktimeByUserMain:
         organization_id = organization["organization_id"]
 
         if account_id_list is None:
+            logger.debug(f"organization_name={organization_name}の、すべての労務管理情報を取得しています。")
             labor_list, _ = self.service.api.get_labor_control(
                 {"organization_id": organization_id, "from": start_date, "to": end_date}
             )
         else:
             labor_list = []
+            logger.debug(f"organization_name={organization_name}の、ユーザ{len(account_id_list)}件分の労務管理情報を取得しています。")
             for account_id in account_id_list:
                 tmp_labor_list, _ = self.service.api.get_labor_control(
                     {"organization_id": organization_id, "from": start_date, "to": end_date, "account_id": account_id}
@@ -672,12 +676,15 @@ class ListWorktimeByUserMain:
         account_id_list = []
         not_exists_user_id_list = []
         for user_id in user_id_list:
+            member_exists = False
             for project_id in project_id_list:
                 member = self.facade.get_project_member_from_user_id(project_id, user_id)
                 if member is not None:
                     account_id_list.append(member["account_id"])
+                    member_exists = True
                     break
-            not_exists_user_id_list.append(user_id)
+            if not member_exists:
+                not_exists_user_id_list.append(user_id)
 
         if len(not_exists_user_id_list) == 0:
             return account_id_list
