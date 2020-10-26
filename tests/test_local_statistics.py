@@ -127,6 +127,7 @@ class TestCsv:
         df = write_summarise_whole_peformance_csv(csv_path_list, output_path=out_path / "プロジェクごとの生産性と品質.csv")
         print(df)
 
+
 class TestLineGraph:
     line_graph_obj = None
 

@@ -45,4 +45,3 @@ class TestMaskUserInfo:
         # ヘッダ1行のCSVを読み込む
         df = create_masked_user_info_df(test_dir / "user1.csv", csv_header=1)
         print(df)
-
