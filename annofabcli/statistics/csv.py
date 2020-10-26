@@ -59,7 +59,7 @@ def write_summarise_whole_peformance_csv(csv_path_list: List[Path], output_path:
     phase_list = _get_phase_list(df)
     first_columns = [("project_title", "")]
     value_columns = Csv.get_productivity_columns(phase_list)
-    prior_columns = first_columns + value_columns
+    prior_columns = first_columns + value_columns + [("working_user_count", phase) for phase in phase_list]
     required_columns = Csv.create_required_columns(df, prior_columns=prior_columns)
     target_df = df[required_columns]
     print_csv(target_df, output=str(output_path))
@@ -386,7 +386,13 @@ class Csv:
         phase_list = _get_phase_list(df)
 
         _add_ratio_column_for_productivity_per_user(sum_series, phase_list=phase_list)
+        # 列の順番を整える
         sum_series = sum_series[self.get_productivity_columns(phase_list)]
+
+        # 作業している人数をカウントする
+        for phase in phase_list:
+            sum_series[("working_user_count", phase)] = (df[("task_count", phase)] > 0).sum()
+
         self._write_csv_for_series(FILENAME_WHOLE_PEFORMANCE, sum_series)
 
     def write_count_summary(self, df: pandas.DataFrame) -> None:
