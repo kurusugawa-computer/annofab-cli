@@ -258,7 +258,7 @@ class ListWorktimeByUserMain:
     def get_labor_list_from_project_id(
         self,
         project_id: str,
-            account_id_list:Optional[List[str]],
+        account_id_list: Optional[List[str]],
         start_date: Optional[str],
         end_date: Optional[str],
         add_monitored_worktime: bool = False,
@@ -282,7 +282,6 @@ class ListWorktimeByUserMain:
                     {"project_id": project_id, "from": start_date, "to": end_date, "account_id": account_id}
                 )
                 labor_list.extend(tmp_labor_list)
-
 
         project_title = self.service.api.get_project(project_id)[0]["title"]
 
@@ -659,9 +658,7 @@ class ListWorktimeByUserMain:
 
         return availability_list
 
-    def get_account_id_list_from_project_id(
-        self, user_id_list: List[str], project_id_list: List[str]
-    ) -> List[str]:
+    def get_account_id_list_from_project_id(self, user_id_list: List[str], project_id_list: List[str]) -> List[str]:
         """
         project_idのリストから、対象ユーザのaccount_id を取得する。
 
@@ -686,8 +683,6 @@ class ListWorktimeByUserMain:
             return account_id_list
         else:
             raise ValueError(f"以下のユーザは、指定されたプロジェクトのプロジェクトメンバではありませんでした。\n{not_exists_user_id_list}")
-
-
 
     def get_account_id_list_from_organization_name(
         self, user_id_list: List[str], organization_name_list: List[str]
@@ -729,7 +724,6 @@ class ListWorktimeByUserMain:
                 else:
                     not_exists_user_id_list.append(user_id)
 
-
         if len(not_exists_user_id_list) == 0:
             return account_id_list
         else:
@@ -746,6 +740,7 @@ class ListWorktimeByUserMain:
     ) -> List[LaborWorktime]:
 
         labor_list: List[LaborWorktime] = []
+        account_id_list: Optional[List[str]] = None
 
         logger.info(f"労務管理情報を取得します。")
         if project_id_list is not None:
@@ -753,10 +748,6 @@ class ListWorktimeByUserMain:
                 account_id_list = self.get_account_id_list_from_project_id(
                     user_id_list, project_id_list=project_id_list
                 )
-            else:
-                account_id_list = None
-
-
 
             for project_id in project_id_list:
                 labor_list.extend(
@@ -774,8 +765,6 @@ class ListWorktimeByUserMain:
                 account_id_list = self.get_account_id_list_from_organization_name(
                     user_id_list, organization_name_list=organization_name_list
                 )
-            else:
-                account_id_list = None
             for organization_name in organization_name_list:
                 labor_list.extend(
                     self.get_labor_list_from_organization_name(
