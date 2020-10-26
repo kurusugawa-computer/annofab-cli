@@ -258,6 +258,7 @@ class ListWorktimeByUserMain:
     def get_labor_list_from_project_id(
         self,
         project_id: str,
+            account_id_list:Optional[List[str]],
         start_date: Optional[str],
         end_date: Optional[str],
         add_monitored_worktime: bool = False,
@@ -265,14 +266,24 @@ class ListWorktimeByUserMain:
         organization, _ = self.service.api.get_organization_of_project(project_id)
         organization_name = organization["organization_name"]
 
-        labor_list, _ = self.service.api.get_labor_control(
-            {
-                "project_id": project_id,
-                "organization_id": organization["organization_id"],
-                "from": start_date,
-                "to": end_date,
-            }
-        )
+        if account_id_list is None:
+            labor_list, _ = self.service.api.get_labor_control(
+                {
+                    "project_id": project_id,
+                    "organization_id": organization["organization_id"],
+                    "from": start_date,
+                    "to": end_date,
+                }
+            )
+        else:
+            labor_list = []
+            for account_id in account_id_list:
+                tmp_labor_list, _ = self.service.api.get_labor_control(
+                    {"project_id": project_id, "from": start_date, "to": end_date, "account_id": account_id}
+                )
+                labor_list.extend(tmp_labor_list)
+
+
         project_title = self.service.api.get_project(project_id)[0]["title"]
 
         logger.info(f"'{project_title}'プロジェクト('{project_id}')の労務管理情報の件数: {len(labor_list)}")
@@ -324,7 +335,6 @@ class ListWorktimeByUserMain:
         else:
             labor_list = []
             for account_id in account_id_list:
-                print(f"{account_id=}")
                 tmp_labor_list, _ = self.service.api.get_labor_control(
                     {"organization_id": organization_id, "from": start_date, "to": end_date, "account_id": account_id}
                 )
@@ -649,6 +659,36 @@ class ListWorktimeByUserMain:
 
         return availability_list
 
+    def get_account_id_list_from_project_id(
+        self, user_id_list: List[str], project_id_list: List[str]
+    ) -> List[str]:
+        """
+        project_idのリストから、対象ユーザのaccount_id を取得する。
+
+        Args:
+            user_id_list:
+            organization_name_list:
+
+        Returns:
+            account_idのリスト
+        """
+        account_id_list = []
+        not_exists_user_id_list = []
+        for user_id in user_id_list:
+            for project_id in project_id_list:
+                member = self.facade.get_project_member_from_user_id(project_id, user_id)
+                if member is not None:
+                    account_id_list.append(member["account_id"])
+                    break
+            not_exists_user_id_list.append(user_id)
+
+        if len(not_exists_user_id_list) == 0:
+            return account_id_list
+        else:
+            raise ValueError(f"以下のユーザは、指定されたプロジェクトのプロジェクトメンバではありませんでした。\n{not_exists_user_id_list}")
+
+
+
     def get_account_id_list_from_organization_name(
         self, user_id_list: List[str], organization_name_list: List[str]
     ) -> List[str]:
@@ -678,6 +718,7 @@ class ListWorktimeByUserMain:
 
         user_id_dict = {e["user_id"]: e["account_id"] for e in all_organization_member_list}
         account_id_list = []
+        not_exists_user_id_list = []
         for user_id in user_id_list:
             if user_id in user_id_dict:
                 account_id_list.append(user_id_dict[user_id])
@@ -686,9 +727,13 @@ class ListWorktimeByUserMain:
                 if account_id is not None:
                     account_id_list.append(account_id)
                 else:
-                    raise ValueError(f"user_id={user_id} のユーザは、指定された組織の組織メンバではありませんでした。")
+                    not_exists_user_id_list.append(user_id)
 
-        return account_id_list
+
+        if len(not_exists_user_id_list) == 0:
+            return account_id_list
+        else:
+            raise ValueError(f"以下のユーザは、指定された組織の組織メンバではありませんでした。\n{not_exists_user_id_list}")
 
     def get_labor_list(
         self,
@@ -703,12 +748,21 @@ class ListWorktimeByUserMain:
         labor_list: List[LaborWorktime] = []
 
         logger.info(f"労務管理情報を取得します。")
-        print(f"{user_id_list=}")
         if project_id_list is not None:
+            if user_id_list is not None:
+                account_id_list = self.get_account_id_list_from_project_id(
+                    user_id_list, project_id_list=project_id_list
+                )
+            else:
+                account_id_list = None
+
+
+
             for project_id in project_id_list:
                 labor_list.extend(
                     self.get_labor_list_from_project_id(
                         project_id,
+                        account_id_list=account_id_list,
                         start_date=start_date,
                         end_date=end_date,
                         add_monitored_worktime=add_monitored_worktime,
@@ -722,7 +776,6 @@ class ListWorktimeByUserMain:
                 )
             else:
                 account_id_list = None
-            print(f"{account_id_list=}")
             for organization_name in organization_name_list:
                 labor_list.extend(
                     self.get_labor_list_from_organization_name(
