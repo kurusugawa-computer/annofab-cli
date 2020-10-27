@@ -1,6 +1,6 @@
 [tool.poetry]
 name = "annofabcli"
-version = "1.36.1"
+version = "1.36.4"
 description = "Utility Command Line Interface for AnnoFab"
 authors = ["yuji38kwmt <yuji38kwmt@gmail.com>"]
 maintainers = ["yuji38kwmt <yuji38kwmt@gmail.com>"]
@@ -36,7 +36,7 @@ isodate = "*"
 annofabapi = ">=0.39.0"
 pandas = "^1.1"
 bokeh = "^2.2.3"
-holoviews= "^1.13.4"
+holoviews= "^1.13.5"
 
 [tool.poetry.dev-dependencies]
 # test library

@@ -272,7 +272,7 @@ class Scatter:
 
         df["biography"] = df["biography"].fillna("")
 
-        for biography_index, biography in enumerate(set(df["biography"])):
+        for biography_index, biography in enumerate(sorted(set(df["biography"]))):
             x_column = "monitored_worktime_hour"
             y_column = "monitored_worktime/annotation_count"
             for fig, phase in zip(figure_list, phase_list):
@@ -353,7 +353,7 @@ class Scatter:
         ]
 
         df["biography"] = df["biography"].fillna("")
-        for biography_index, biography in enumerate(set(df["biography"])):
+        for biography_index, biography in enumerate(sorted(set(df["biography"]))):
             x_column = "prediction_actual_worktime_hour"
             y_column = "actual_worktime/annotation_count"
             for fig, phase in zip(figure_list, phase_list):
@@ -443,7 +443,7 @@ class Scatter:
         phase = "annotation"
 
         df["biography"] = df["biography"].fillna("")
-        for biography_index, biography in enumerate(set(df["biography"])):
+        for biography_index, biography in enumerate(sorted(set(df["biography"]))):
             for column_pair, fig in zip(column_pair_list, figure_list):
                 x_column = column_pair[0]
                 y_column = column_pair[1]
@@ -538,7 +538,7 @@ class Scatter:
         ]
         phase = TaskPhase.ANNOTATION.value
         df["biography"] = df["biography"].fillna("")
-        for biography_index, biography in enumerate(set(df["biography"])):
+        for biography_index, biography in enumerate(sorted(set(df["biography"]))):
             for fig, column_pair in zip(figure_list, column_pair_list):
                 x_column, y_column = column_pair
                 filtered_df = df[

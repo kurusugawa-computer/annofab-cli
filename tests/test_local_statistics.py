@@ -5,7 +5,7 @@ import pandas
 from annofabapi.models import TaskStatus
 
 from annofabcli.common.utils import read_multiheader_csv
-from annofabcli.statistics.csv import Csv
+from annofabcli.statistics.csv import Csv, write_summarise_whole_peformance_csv
 from annofabcli.statistics.linegraph import LineGraph
 from annofabcli.statistics.scatter import Scatter
 from annofabcli.statistics.summarize_task_count import SimpleTaskStatus
@@ -121,6 +121,11 @@ class TestCsv:
     def test_write_whole_productivity(self):
         productivity_per_user = read_multiheader_csv(str(data_path / "productivity-per-user2.csv"))
         self.csv_obj.write_whole_productivity(productivity_per_user)
+
+    def test_write_summarise_whole_peformance_csv(self):
+        csv_path_list = [data_path / "全体の生産性と品質.csv"]
+        df = write_summarise_whole_peformance_csv(csv_path_list, output_path=out_path / "プロジェクごとの生産性と品質.csv")
+        print(df)
 
 
 class TestLineGraph:

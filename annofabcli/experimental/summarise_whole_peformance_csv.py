@@ -1,48 +1,15 @@
 import argparse
 import logging
 from pathlib import Path
-from typing import List
-
-import pandas
 
 import annofabcli
-from annofabcli.common.utils import print_csv
+from annofabcli.statistics.csv import write_summarise_whole_peformance_csv
 
 logger = logging.getLogger(__name__)
 
 
-def read_whole_peformance_csv(csv_path: Path) -> pandas.Series:
-    """
-    '全体の生産量と生産性.csv' を読み込む。
-    プロジェクト名はディレクトリ名とする。
-    """
-    project_title = csv_path.parent.name
-    if csv_path.exists():
-        df = pandas.read_csv(str(csv_path), header=None, index_col=[0, 1])
-        series = df[2]
-        series[("project_title", "")] = project_title
-    else:
-        logger.warning(f"{csv_path} は存在しませんでした。")
-        series = pandas.Series([project_title], index=pandas.MultiIndex.from_tuples([("project_title", "")]))
-
-    return series
-
-
-def summarise_whole_peformance_csv(csv_path_list: List[Path]) -> pandas.DataFrame:
-    series_list = [read_whole_peformance_csv(csv_path) for csv_path in csv_path_list]
-    df = pandas.DataFrame(series_list)
-
-    first_column = ("project_title", "")
-    tmp_columns = list(df.columns)
-    tmp_columns.remove(first_column)
-    df = df[[first_column] + tmp_columns]
-    return df
-
-
 def main(args):
-    output_path: Path = args.output
-    df = summarise_whole_peformance_csv(csv_path_list=args.csv)
-    print_csv(df, str(output_path))
+    write_summarise_whole_peformance_csv(csv_path_list=args.csv, output_path=args.output)
 
 
 def parse_args(parser: argparse.ArgumentParser):

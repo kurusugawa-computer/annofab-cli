@@ -258,6 +258,7 @@ class ListWorktimeByUserMain:
     def get_labor_list_from_project_id(
         self,
         project_id: str,
+        account_id_list: Optional[List[str]],
         start_date: Optional[str],
         end_date: Optional[str],
         add_monitored_worktime: bool = False,
@@ -265,14 +266,25 @@ class ListWorktimeByUserMain:
         organization, _ = self.service.api.get_organization_of_project(project_id)
         organization_name = organization["organization_name"]
 
-        labor_list, _ = self.service.api.get_labor_control(
-            {
-                "project_id": project_id,
-                "organization_id": organization["organization_id"],
-                "from": start_date,
-                "to": end_date,
-            }
-        )
+        if account_id_list is None:
+            logger.debug(f"project_id={project_id}の、すべての労務管理情報を取得しています。")
+            labor_list, _ = self.service.api.get_labor_control(
+                {
+                    "project_id": project_id,
+                    "organization_id": organization["organization_id"],
+                    "from": start_date,
+                    "to": end_date,
+                }
+            )
+        else:
+            labor_list = []
+            for account_id in account_id_list:
+                logger.debug(f"project_id={project_id}の、ユーザ{len(account_id_list)}件分の労務管理情報を取得しています。")
+                tmp_labor_list, _ = self.service.api.get_labor_control(
+                    {"project_id": project_id, "from": start_date, "to": end_date, "account_id": account_id}
+                )
+                labor_list.extend(tmp_labor_list)
+
         project_title = self.service.api.get_project(project_id)[0]["title"]
 
         logger.info(f"'{project_title}'プロジェクト('{project_id}')の労務管理情報の件数: {len(labor_list)}")
@@ -309,18 +321,31 @@ class ListWorktimeByUserMain:
     def get_labor_list_from_organization_name(
         self,
         organization_name: str,
+        account_id_list: Optional[List[str]],
         start_date: Optional[str],
         end_date: Optional[str],
         add_monitored_worktime: bool = False,
     ) -> List[LaborWorktime]:
         organization, _ = self.service.api.get_organization(organization_name)
         organization_id = organization["organization_id"]
+
+        if account_id_list is None:
+            logger.debug(f"organization_name={organization_name}の、すべての労務管理情報を取得しています。")
+            labor_list, _ = self.service.api.get_labor_control(
+                {"organization_id": organization_id, "from": start_date, "to": end_date}
+            )
+        else:
+            labor_list = []
+            logger.debug(f"organization_name={organization_name}の、ユーザ{len(account_id_list)}件分の労務管理情報を取得しています。")
+            for account_id in account_id_list:
+                tmp_labor_list, _ = self.service.api.get_labor_control(
+                    {"organization_id": organization_id, "from": start_date, "to": end_date, "account_id": account_id}
+                )
+                labor_list.extend(tmp_labor_list)
+
+        logger.info(f"'{organization_name}'組織の労務管理情報の件数: {len(labor_list)}")
         project_list = self.service.wrapper.get_all_projects_of_organization(organization_name)
 
-        labor_list, _ = self.service.api.get_labor_control(
-            {"organization_id": organization_id, "from": start_date, "to": end_date}
-        )
-        logger.info(f"'{organization_name}'組織の労務管理情報の件数: {len(labor_list)}")
         new_labor_list = []
         for labor in labor_list:
             try:
@@ -637,6 +662,80 @@ class ListWorktimeByUserMain:
 
         return availability_list
 
+    def get_account_id_list_from_project_id(self, user_id_list: List[str], project_id_list: List[str]) -> List[str]:
+        """
+        project_idのリストから、対象ユーザのaccount_id を取得する。
+
+        Args:
+            user_id_list:
+            organization_name_list:
+
+        Returns:
+            account_idのリスト
+        """
+        account_id_list = []
+        not_exists_user_id_list = []
+        for user_id in user_id_list:
+            member_exists = False
+            for project_id in project_id_list:
+                member = self.facade.get_project_member_from_user_id(project_id, user_id)
+                if member is not None:
+                    account_id_list.append(member["account_id"])
+                    member_exists = True
+                    break
+            if not member_exists:
+                not_exists_user_id_list.append(user_id)
+
+        if len(not_exists_user_id_list) == 0:
+            return account_id_list
+        else:
+            raise ValueError(f"以下のユーザは、指定されたプロジェクトのプロジェクトメンバではありませんでした。\n{not_exists_user_id_list}")
+
+    def get_account_id_list_from_organization_name(
+        self, user_id_list: List[str], organization_name_list: List[str]
+    ) -> List[str]:
+        """
+        組織名のリストから、対象ユーザのaccount_id を取得する。
+
+        Args:
+            user_id_list:
+            organization_name_list:
+
+        Returns:
+            account_idのリスト
+        """
+
+        def _get_account_id(fuser_id: str) -> Optional[str]:
+            # 脱退した可能性のあるユーザの組織メンバ情報を取得する
+            for organization_name in organization_name_list:
+                member = self.service.wrapper.get_organization_member_or_none(organization_name, fuser_id)
+                if member is not None:
+                    return member["account_id"]
+            return None
+
+        # 組織メンバの一覧をする（ただし脱退したメンバは取得できない）
+        all_organization_member_list = []
+        for organization_name in organization_name_list:
+            all_organization_member_list.extend(self.service.wrapper.get_all_organization_members(organization_name))
+
+        user_id_dict = {e["user_id"]: e["account_id"] for e in all_organization_member_list}
+        account_id_list = []
+        not_exists_user_id_list = []
+        for user_id in user_id_list:
+            if user_id in user_id_dict:
+                account_id_list.append(user_id_dict[user_id])
+            else:
+                account_id = _get_account_id(user_id)
+                if account_id is not None:
+                    account_id_list.append(account_id)
+                else:
+                    not_exists_user_id_list.append(user_id)
+
+        if len(not_exists_user_id_list) == 0:
+            return account_id_list
+        else:
+            raise ValueError(f"以下のユーザは、指定された組織の組織メンバではありませんでした。\n{not_exists_user_id_list}")
+
     def get_labor_list(
         self,
         organization_name_list: Optional[List[str]],
@@ -648,13 +747,20 @@ class ListWorktimeByUserMain:
     ) -> List[LaborWorktime]:
 
         labor_list: List[LaborWorktime] = []
+        account_id_list: Optional[List[str]] = None
 
         logger.info(f"労務管理情報を取得します。")
         if project_id_list is not None:
+            if user_id_list is not None:
+                account_id_list = self.get_account_id_list_from_project_id(
+                    user_id_list, project_id_list=project_id_list
+                )
+
             for project_id in project_id_list:
                 labor_list.extend(
                     self.get_labor_list_from_project_id(
                         project_id,
+                        account_id_list=account_id_list,
                         start_date=start_date,
                         end_date=end_date,
                         add_monitored_worktime=add_monitored_worktime,
@@ -662,10 +768,15 @@ class ListWorktimeByUserMain:
                 )
 
         elif organization_name_list is not None:
+            if user_id_list is not None:
+                account_id_list = self.get_account_id_list_from_organization_name(
+                    user_id_list, organization_name_list=organization_name_list
+                )
             for organization_name in organization_name_list:
                 labor_list.extend(
                     self.get_labor_list_from_organization_name(
                         organization_name,
+                        account_id_list=account_id_list,
                         start_date=start_date,
                         end_date=end_date,
                         add_monitored_worktime=add_monitored_worktime,

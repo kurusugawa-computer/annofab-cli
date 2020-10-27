@@ -12,6 +12,7 @@ logger = logging.getLogger(__name__)
 
 FILENAME_WHOLE_PEFORMANCE = "全体の生産性と品質.csv"
 FILENAME_PEFORMANCE_PER_USER = "メンバごとの生産性と品質.csv"
+
 FILENAME_PEFORMANCE_PER_DATE = "日毎の生産量と生産性.csv"
 FILENAME_TASK_LIST = "タスクlist.csv"
 
@@ -24,6 +25,44 @@ def _get_phase_list(df_member_performance: pandas.DataFrame) -> List[str]:
     if ("monitored_worktime_hour", TaskPhase.ACCEPTANCE.value) not in columns:
         phase_list.remove(TaskPhase.ACCEPTANCE.value)
     return phase_list
+
+
+def _read_whole_peformance_csv(csv_path: Path) -> pandas.Series:
+    """
+    '全体の生産量と生産性.csv' を読み込む。
+    プロジェクト名はディレクトリ名とする。
+    """
+    project_title = csv_path.parent.name
+    if csv_path.exists():
+        df = pandas.read_csv(str(csv_path), header=None, index_col=[0, 1])
+        series = df[2]
+        series[("project_title", "")] = project_title
+    else:
+        logger.warning(f"{csv_path} は存在しませんでした。")
+        series = pandas.Series([project_title], index=pandas.MultiIndex.from_tuples([("project_title", "")]))
+
+    return series
+
+
+def write_summarise_whole_peformance_csv(csv_path_list: List[Path], output_path: Path) -> None:
+    """
+    `プロジェクトごとの生産性と品質.csv` を出力する。
+
+    Args:
+        csv_path_list: '全体の生産量と生産性.csv' PathのList
+        output_path: 出力先
+
+    """
+    series_list = [_read_whole_peformance_csv(csv_path) for csv_path in csv_path_list]
+    df = pandas.DataFrame(series_list)
+
+    phase_list = _get_phase_list(df)
+    first_columns = [("project_title", "")]
+    value_columns = Csv.get_productivity_columns(phase_list)
+    prior_columns = first_columns + value_columns + [("working_user_count", phase) for phase in phase_list]
+    required_columns = Csv.create_required_columns(df, prior_columns=prior_columns)
+    target_df = df[required_columns]
+    print_csv(target_df, output=str(output_path))
 
 
 class Csv:
@@ -76,7 +115,7 @@ class Csv:
         series.to_csv(str(output_path), sep=",", encoding="utf_8_sig", header=False)
 
     @staticmethod
-    def _create_required_columns(
+    def create_required_columns(
         df: pandas.DataFrame, prior_columns: List[Any], dropped_columns: Optional[List[Any]] = None
     ) -> List[str]:
         remained_columns = list(df.columns.difference(prior_columns))
@@ -127,7 +166,7 @@ class Csv:
         else:
             suffix = "返信を除く_修正不要を含む"
 
-        required_columns = self._create_required_columns(df, prior_columns, dropped_columns)
+        required_columns = self.create_required_columns(df, prior_columns, dropped_columns)
         self._write_csv(f"検査コメントlist-{suffix}.csv", df[required_columns])
 
     def write_task_list(self, df: pandas.DataFrame, dropped_columns: Optional[List[str]] = None) -> None:
@@ -210,7 +249,7 @@ class Csv:
             ]
         )
 
-        required_columns = self._create_required_columns(df, prior_columns, dropped_columns)
+        required_columns = self.create_required_columns(df, prior_columns, dropped_columns)
         self._write_csv(FILENAME_TASK_LIST, df[required_columns])
 
     def write_task_history_list(self, df: pandas.DataFrame, dropped_columns: Optional[List[str]] = None) -> None:
@@ -242,7 +281,7 @@ class Csv:
         ]
 
         df = df.sort_values(["task_id", "started_datetime"])
-        required_columns = self._create_required_columns(df, prior_columns, dropped_columns)
+        required_columns = self.create_required_columns(df, prior_columns, dropped_columns)
         self._write_csv(f"タスク履歴list.csv", df[required_columns])
 
     def write_labor_list(self, df: pandas.DataFrame, dropped_columns: Optional[List[str]] = None) -> None:
@@ -271,7 +310,7 @@ class Csv:
         ]
 
         df = df.sort_values(["date", "user_id"])
-        required_columns = self._create_required_columns(df, prior_columns, dropped_columns)
+        required_columns = self.create_required_columns(df, prior_columns, dropped_columns)
         self._write_csv(f"労務管理list.csv", df[required_columns])
 
     def write_worktime_summary(self, df: pandas.DataFrame) -> None:
@@ -347,7 +386,13 @@ class Csv:
         phase_list = _get_phase_list(df)
 
         _add_ratio_column_for_productivity_per_user(sum_series, phase_list=phase_list)
-        sum_series = sum_series[self._get_productivity_columns(phase_list)]
+        # 列の順番を整える
+        sum_series = sum_series[self.get_productivity_columns(phase_list)]
+
+        # 作業している人数をカウントする
+        for phase in phase_list:
+            sum_series[("working_user_count", phase)] = (df[("task_count", phase)] > 0).sum()
+
         self._write_csv_for_series(FILENAME_WHOLE_PEFORMANCE, sum_series)
 
     def write_count_summary(self, df: pandas.DataFrame) -> None:
@@ -424,7 +469,7 @@ class Csv:
             "annotation_count_of_first_annotation",
             "inspection_count_of_first_annotation",
         ]
-        required_columns = self._create_required_columns(df, prior_columns, dropped_columns)
+        required_columns = self.create_required_columns(df, prior_columns, dropped_columns)
         self._write_csv(f"メンバlist.csv", df[required_columns])
 
     def write_ラベルごとのアノテーション数(self, df: pandas.DataFrame):
@@ -441,7 +486,7 @@ class Csv:
             "status",
             "phase",
         ]
-        required_columns = self._create_required_columns(df, prior_columns, dropped_columns=None)
+        required_columns = self.create_required_columns(df, prior_columns, dropped_columns=None)
         self._write_csv(f"タスクlist-ラベルごとのアノテーション数.csv", df[required_columns])
 
     def write_教師付作業者別日毎の情報(self, df: pandas.DataFrame):
@@ -465,7 +510,7 @@ class Csv:
             "acceptance_worktime_hour",
             "inspection_count",
         ]
-        required_columns = self._create_required_columns(df, prior_columns, dropped_columns=None)
+        required_columns = self.create_required_columns(df, prior_columns, dropped_columns=None)
         self._write_csv(f"教師付者_教師付開始日list.csv", df[required_columns])
 
     def write_ユーザ別日毎の作業時間(self, df: pandas.DataFrame):
@@ -485,7 +530,7 @@ class Csv:
             "tasks_rejected",
             "worktime_hour",
         ]
-        required_columns = self._create_required_columns(df, prior_columns, dropped_columns=None)
+        required_columns = self.create_required_columns(df, prior_columns, dropped_columns=None)
         self._write_csv(f"ユーザ_日付list-作業時間.csv", df[required_columns])
 
     def write_メンバー別作業時間平均_画像1枚あたり(self, df: pandas.DataFrame, phase: TaskPhase):
@@ -501,7 +546,7 @@ class Csv:
         self._write_csv(f"タスク1個当たり作業時間/タスク1個当たり作業時間_{phase.value}.csv", df)
 
     @staticmethod
-    def _get_productivity_columns(phase_list: List[str]) -> List[Tuple[str, str]]:
+    def get_productivity_columns(phase_list: List[str]) -> List[Tuple[str, str]]:
         monitored_worktime_columns = (
             [("monitored_worktime_hour", phase) for phase in phase_list]
             + [("monitored_worktime_hour", "sum")]
@@ -530,12 +575,18 @@ class Csv:
             ("pointed_out_inspection_comment_count/annotation_count", TaskPhase.ANNOTATION.value),
         ]
 
+        rejected_count_columns = [
+            ("rejected_count", TaskPhase.ANNOTATION.value),
+            ("rejected_count/task_count", TaskPhase.ANNOTATION.value),
+        ]
+
         prior_columns = (
             monitored_worktime_columns
             + production_columns
             + actual_worktime_columns
             + productivity_columns
             + inspection_comment_columns
+            + rejected_count_columns
         )
 
         return prior_columns
@@ -559,16 +610,16 @@ class Csv:
             return
 
         phase_list = _get_phase_list(df)
-        value_columns = self._get_productivity_columns(phase_list)
+        value_columns = self.get_productivity_columns(phase_list)
 
         user_columns = [("user_id", ""), ("username", ""), ("biography", ""), ("last_working_date", "")]
         prior_columns = user_columns + value_columns
-        required_columns = self._create_required_columns(df, prior_columns, dropped_columns)
+        required_columns = self.create_required_columns(df, prior_columns, dropped_columns)
         target_df = df[required_columns]
         if output_path is None:
             self._write_csv(FILENAME_PEFORMANCE_PER_USER, target_df)
         else:
-            print_csv(df, output=str(output_path), to_csv_kwargs=self.CSV_FORMAT)
+            print_csv(target_df, output=str(output_path), to_csv_kwargs=self.CSV_FORMAT)
 
     def write_whole_productivity_per_date(
         self, df: pandas.DataFrame, dropped_columns: Optional[List[str]] = None, output_path: Optional[Path] = None
@@ -610,9 +661,9 @@ class Csv:
             + ["working_user_count"]
         )
 
-        required_columns = self._create_required_columns(df, prior_columns, dropped_columns)
+        required_columns = self.create_required_columns(df, prior_columns, dropped_columns)
         target_df = df[required_columns]
         if output_path is None:
             self._write_csv(FILENAME_PEFORMANCE_PER_DATE, target_df)
         else:
-            print_csv(df, output=str(output_path), to_csv_kwargs=self.CSV_FORMAT)
+            print_csv(target_df, output=str(output_path), to_csv_kwargs=self.CSV_FORMAT)

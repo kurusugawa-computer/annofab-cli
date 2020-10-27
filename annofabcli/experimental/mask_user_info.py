@@ -143,7 +143,9 @@ def replace_by_columns(df, replacement_dict: Dict[str, str], main_column: Any, s
             get_username_func = partial(_get_username, main_column=main_column, sub_column=sub_column)
             df[sub_column] = df.apply(get_username_func, axis=1)
 
-    df[main_column] = df[main_column].replace(replacement_dict)
+    # 列の型を合わせないとreplaceに失敗するため, dtypを確認する
+    if df[main_column].dtype == numpy.dtype("object"):
+        df[main_column] = df[main_column].replace(replacement_dict)
 
 
 def get_masked_username_series(df: pandas.DataFrame, replace_dict_by_user_id: Dict[str, str]) -> pandas.Series:
