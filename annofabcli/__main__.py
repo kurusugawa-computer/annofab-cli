@@ -58,6 +58,7 @@ def main(arguments: Optional[Sequence[str]] = None):
     annofabcli.filesystem.subcommand_filesystem.add_parser(subparsers)
     annofabcli.experimental.subcommand_experimental.add_parser(subparsers)
 
+    print("import test")
     if arguments is None:
         args = parser.parse_args()
     else:

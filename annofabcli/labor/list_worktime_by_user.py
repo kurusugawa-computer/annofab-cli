@@ -314,7 +314,8 @@ class ListWorktimeByUserMain:
                 organization_name=organization_name,
                 worktime_monitored_hour=worktime_monitored_hour,
             )
-            new_labor_list.append(new_labor)
+            if new_labor.worktime_result_hour > 0 or new_labor.worktime_plan_hour > 0:
+                new_labor_list.append(new_labor)
 
         return new_labor_list
 
@@ -373,7 +374,8 @@ class ListWorktimeByUserMain:
                 organization_name=organization_name,
                 worktime_monitored_hour=worktime_monitored_hour,
             )
-            new_labor_list.append(new_labor)
+            if new_labor.worktime_result_hour > 0 or new_labor.worktime_plan_hour > 0:
+                new_labor_list.append(new_labor)
 
         return new_labor_list
 
@@ -966,17 +968,6 @@ class ListWorktimeByUserMain:
         labor_availability_list_dict: Optional[Dict[str, List[LaborAvailability]]] = None,
         add_monitored_worktime: bool = False,
     ):
-        # 行方向に日付、列方向にユーザを表示したDataFrame
-        sum_worktime_df = self.create_sum_worktime_df(
-            labor_list=labor_list,
-            user_list=user_list,
-            start_date=start_date,
-            end_date=end_date,
-            labor_availability_list_dict=labor_availability_list_dict,
-        )
-        self.write_sum_worktime_list(sum_worktime_df, output_dir)
-        self.write_sum_plan_worktime_list(sum_worktime_df, output_dir)
-
         if len(labor_list) > 0:
             worktime_df = pandas.DataFrame([e.to_dict() for e in labor_list])
             self.write_worktime_list(worktime_df, output_dir, add_monitored_worktime)
@@ -999,6 +990,17 @@ class ListWorktimeByUserMain:
             worktime_df_per_date_user=worktime_df_per_date_user, user_df=user_df, add_availability=add_availability
         )
         self.write_worktime_per_user(worktime_df_per_user, output_dir, add_availability=add_availability)
+
+        # 行方向に日付、列方向にユーザを表示したDataFrame
+        sum_worktime_df = self.create_sum_worktime_df(
+            labor_list=labor_list,
+            user_list=user_list,
+            start_date=start_date,
+            end_date=end_date,
+            labor_availability_list_dict=labor_availability_list_dict,
+        )
+        self.write_sum_worktime_list(sum_worktime_df, output_dir)
+        self.write_sum_plan_worktime_list(sum_worktime_df, output_dir)
 
     def main(
         self,
@@ -1030,11 +1032,11 @@ class ListWorktimeByUserMain:
                 return
 
         if start_date is None or end_date is None:
-            sorted_labor_list = sorted(labor_list, key=lambda e: e.date)
+            sorted_date_list = sorted({e.date for e in labor_list if e.worktime_result_hour > 0})
             if start_date is None:
-                start_date = sorted_labor_list[0].date
+                start_date = sorted_date_list[0]
             if end_date is None:
-                end_date = sorted_labor_list[-1].date
+                end_date = sorted_date_list[-1]
 
         logger.info(f"集計期間: start_date={start_date}, end_date={end_date}")
         user_list = self.get_user_list(
