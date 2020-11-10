@@ -85,7 +85,6 @@ def create_task_count_summary_df(task_list: List[Task]) -> pandas.DataFrame:
     df_summary = df_task.pivot_table(
         values="task_id", index=["account_id"], columns=["status_for_summary"], aggfunc="count", fill_value=0
     ).reset_index()
-
     for status in TaskStatusForSummary:
         add_columns_if_not_exists(df_summary, status.value)
 
@@ -104,8 +103,10 @@ class SummarizeTaskCountByUser(AbstractCommandLineInterface):
     def create_summary_df(self, project_id: str, task_list: List[Task]) -> pandas.DataFrame:
         df_task_count = create_task_count_summary_df(task_list)
         df_user = self.create_user_df(project_id, df_task_count["account_id"])
-        df = pandas.merge(df_user, df_task_count, how="left", on=["account_id"])
+        if len(df_user) == 0:
+            return pandas.DataFrame()
 
+        df = pandas.merge(df_user, df_task_count, how="left", on=["account_id"])
         task_count_columns = [s.value for s in TaskStatusForSummary]
         df[task_count_columns] = df[task_count_columns].fillna(0)
         return df
@@ -141,7 +142,10 @@ class SummarizeTaskCountByUser(AbstractCommandLineInterface):
             task_list = json.load(f)
 
         df = self.create_summary_df(project_id, task_list)
-        self.print_summarize_df(df)
+        if len(df) > 0:
+            self.print_summarize_df(df)
+        else:
+            logger.error(f"出力対象データが0件のため、出力しません。")
 
 
 def parse_args(parser: argparse.ArgumentParser):

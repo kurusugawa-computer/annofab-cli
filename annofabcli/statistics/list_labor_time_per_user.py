@@ -51,20 +51,23 @@ class LaborTimePerUser(AbstractCommandLineInterface):
 
         account_stat_list = self.get_labor_time_per_user(project_id)
         df = pandas.DataFrame(account_stat_list)
-        # 出力対象の列を指定する
-        target_df = df[
-            [
-                "date",
-                "account_id",
-                "user_id",
-                "username",
-                "biography",
-                "worktime_hour",
-                "tasks_completed",
-                "tasks_rejected",
+        if len(df) > 0:
+            # 出力対象の列を指定する
+            target_df = df[
+                [
+                    "date",
+                    "account_id",
+                    "user_id",
+                    "username",
+                    "biography",
+                    "worktime_hour",
+                    "tasks_completed",
+                    "tasks_rejected",
+                ]
             ]
-        ]
-        annofabcli.utils.print_csv(target_df, output=self.output, to_csv_kwargs=self.csv_format)
+            annofabcli.utils.print_csv(target_df, output=self.output, to_csv_kwargs=self.csv_format)
+        else:
+            logger.error(f"出力対象データが0件のため、出力しません。")
 
     def main(self):
         args = self.args
