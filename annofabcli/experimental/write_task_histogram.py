@@ -23,8 +23,8 @@ def write_task_histogram(csv: Path, output_dir: Path, minimal_output: bool = Fal
         return
 
     # holivesのloadに時間がかかって、helpコマンドの出力が遅いため、遅延ロードする
-    Histogram = importlib.import_module("annofabcli.statistics.histogram")
-    histogram_obj = Histogram(outdir=str(output_dir))  # type: ignore
+    histogram_module = importlib.import_module("annofabcli.statistics.histogram")
+    histogram_obj = histogram_module.Histogram(outdir=str(output_dir))  # type: ignore
     _catch_exception(histogram_obj.write_histogram_for_worktime)(task_df)
     _catch_exception(histogram_obj.write_histogram_for_other)(task_df)
 
