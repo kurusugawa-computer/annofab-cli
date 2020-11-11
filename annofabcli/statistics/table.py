@@ -1496,19 +1496,17 @@ class Table:
             df_agg_sub_task = df_agg_sub_task.assign(**{key: 0 for key in value_columns}, task_count=0)
 
         if len(df_labor) > 0:
-            df_agg_labor = df_labor.pivot_table(
+            df_labor2 = df_labor[df_labor["worktime_result_hour"] > 0]
+            df_agg_labor = df_labor2.pivot_table(
                 values=["worktime_result_hour"], index="date", aggfunc=numpy.sum
             ).fillna(0)
-            df_tmp = (
-                df_labor[df_labor["worktime_result_hour"] > 0]
-                .pivot_table(values=["user_id"], index="date", aggfunc="count")
-                .fillna(0)
-            )
+            df_tmp = df_labor2.pivot_table(values=["user_id"], index="date", aggfunc="count").fillna(0)
 
             if len(df_tmp) > 0:
                 df_agg_labor["working_user_count"] = df_tmp
             else:
                 df_agg_labor["working_user_count"] = 0
+
         else:
             df_agg_labor = pandas.DataFrame(columns=["worktime_result_hour", "working_user_count"])
 

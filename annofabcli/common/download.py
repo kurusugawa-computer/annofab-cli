@@ -27,7 +27,7 @@ def _get_annofab_error_message(http_error: requests.HTTPError) -> Optional[str]:
     errors = obj.get("errors")
     if errors is None:
         return None
-    return errors.get("message")
+    return errors[0].get("message")
 
 
 class DownloadingFile:
