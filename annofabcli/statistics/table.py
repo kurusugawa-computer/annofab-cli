@@ -1495,8 +1495,8 @@ class Table:
             # 列だけ作る
             df_agg_sub_task = df_agg_sub_task.assign(**{key: 0 for key in value_columns}, task_count=0)
 
-        df_labor2 = df_labor[df_labor["worktime_result_hour"] > 0]
-        if len(df_labor2) > 0:
+        if len(df_labor) > 0:
+            df_labor2 = df_labor[df_labor["worktime_result_hour"] > 0]
             df_agg_labor = df_labor2.pivot_table(
                 values=["worktime_result_hour"], index="date", aggfunc=numpy.sum
             ).fillna(0)
