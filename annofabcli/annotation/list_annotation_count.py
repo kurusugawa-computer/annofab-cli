@@ -233,7 +233,7 @@ def parse_args(parser: argparse.ArgumentParser):
         help="アノテーションの検索クエリをJSON形式で指定します。"
         "`file://`を先頭に付けると、JSON形式のファイルを指定できます。"
         "クエリのフォーマットは、[getAnnotationList API](https://annofab.com/docs/api/#operation/getAnnotationList)のクエリパラメータの`query`キー配下と同じです。"  # noqa: E501
-        "さらに追加で、`label_name_en`(label_idに対応), `additional_data_definition_name_en`(additional_data_definition_idに対応) キーも指定できます。",  # noqa: E501
+        "さらに追加で、`label_name_en`, `additional_data_definition_name_en`, `choice_name_en`キーも指定できます。",  # noqa: E501
     )
 
     argument_parser.add_task_id(
