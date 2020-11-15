@@ -435,7 +435,6 @@ class ListWorktimeByUserMain:
 
         username_list = [e[0] for e in sum_worktime_df.columns if is_plan_column(e)]
 
-        sum_worktime_df.to_csv("foo.csv", encoding="utf_8_sig", index=False)
         for username in username_list:
             # SettingWithCopyWarning を避けるため、暫定的に値をコピーする
             sum_worktime_df[(username, "作業予定_記号")] = sum_worktime_df[(username, "作業予定")].map(create_mark)
