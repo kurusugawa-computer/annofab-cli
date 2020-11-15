@@ -72,7 +72,7 @@ def parse_args(parser: argparse.ArgumentParser):
 def add_parser(subparsers: argparse._SubParsersAction):
     subcommand_name = "update_metadata"
     subcommand_help = "タスクのメタデータを更新します。"
-    description = "タスクのメタデータを更新します。メタデータは上書きされて更新されます。"
+    description = "タスクのメタデータを上書きして更新します。"
     epilog = "オーナまたはアノテーションユーザロールを持つユーザで実行してください。"
     parser = annofabcli.common.cli.add_parser(
         subparsers, subcommand_name, subcommand_help, description=description, epilog=epilog

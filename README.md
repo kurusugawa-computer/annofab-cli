@@ -782,9 +782,14 @@ $ annofabcli input_data put --project_id prj1 --zip input_data.zip --input_data_
 入力データのメタデータを更新します。
 
 ```
-# `input_data.txt`に記載されている入力データIDに対して、入力データのメタデータを '{"foo":"bar"}' に変更します。
-$ annofabcli input_data update_metadata --project_id prj1 --input_data_id --file://input_data.txt --metadata '{"foo":"bar"}'
+# `input_data.txt`に記載されている入力データIDに対して、入力データのメタデータに'{"foo":"bar"}' を設定します。
+$ annofabcli input_data update_metadata --project_id prj1 --input_data_id --file://input_data.txt \
+ --metadata '{"foo":"bar"}'
 
+# `input_data.txt`に記載されている入力データIDに対して、入力データのメタデータを '{"foo":"bar"}' に変更します。
+# すでに設定されているメタデータは上書きされます
+$ annofabcli input_data update_metadata --project_id prj1 --input_data_id --file://input_data.txt \
+ --metadata '{"foo":"bar"}'  --overwrite
 ```
 
 
@@ -1701,25 +1706,12 @@ $ annofabcli task reject --project_id prj1 --task_id file://tasks.txt \
 
 ### task update_metadata
 タスクのメタデータを更新します。
-メタデータは常に上書きされて更新されることに、注意してください。
+メタデータは常に上書きされることに注意してくだださい。
 
 
 ```
-# tasks.txtに記載れたタスクを強制的に差し戻す
-# 最後のannotation phaseを担当したユーザを割り当てます（画面と同じ動き）。検査コメントは付与しません。
-$ annofabcli task reject --project_id prj1 --task_id file://tasks.txt 
-
-# 受入完了の場合は、受入を取り消してから差し戻します
-$ annofabcli task reject --project_id prj1 --task_id file://tasks.txt --cancel_acceptance
-
-# 「hoge」という検査コメントを付与して、タスクを差し戻します。その際、担当者は割り当てません
-$ annofabcli task reject --project_id prj1 --task_id file://tasks.txt \
- --comment "hoge" --not_assign
-
-# 差し戻したタスクに、ユーザuser1を割り当てる
-$ annofabcli task reject --project_id prj1 --task_id file://tasks.txt \
- --comment "hoge" --assigned_annotator_user_id user1
-
+# task1, task2のメタデータを '{"attr1":"bar"}' に変更します
+$ annofabcli task update_metadata --project_id prj1 --task_id task1 task2 --metadata '{"attr1":"bar"}'
 ```
 
 
