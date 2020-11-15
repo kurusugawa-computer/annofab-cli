@@ -146,6 +146,7 @@ $ docker run -it -e ANNOFAB_USER_ID=XXXX -e ANNOFAB_PASSWORD=YYYYY annofab-cli p
 |task| list_with_json | タスク全件ファイルから一覧を出力します。                               |-|
 |task| put                | タスクを作成します。                                 |オーナ|
 |task| reject                  | タスクを強制的に差し戻します。                                                                 |オーナ|
+|task| update_metadata                  | タスクのメタデータを更新します。                                                                |オーナ/アノテーションユーザ|
 |task_history| list_with_json | タスク履歴全件ファイルから一覧を出力します。                               |-|
 
 # Usage
@@ -781,9 +782,14 @@ $ annofabcli input_data put --project_id prj1 --zip input_data.zip --input_data_
 入力データのメタデータを更新します。
 
 ```
-# `input_data.txt`に記載されている入力データIDに対して、入力データのメタデータを '{"foo":"bar"}' に変更します。
-$ annofabcli input_data update_metadata --project_id prj1 --input_data_id --file://input_data.txt --metadata '{"foo":"bar"}'
+# `input_data.txt`に記載されている入力データIDに対して、入力データのメタデータに'{"foo":"bar"}' を設定します。
+$ annofabcli input_data update_metadata --project_id prj1 --input_data_id --file://input_data.txt \
+ --metadata '{"foo":"bar"}'
 
+# `input_data.txt`に記載されている入力データIDに対して、入力データのメタデータを '{"foo":"bar"}' に変更します。
+# すでに設定されているメタデータは上書きされます
+$ annofabcli input_data update_metadata --project_id prj1 --input_data_id --file://input_data.txt \
+ --metadata '{"foo":"bar"}'  --overwrite
 ```
 
 
@@ -1695,6 +1701,19 @@ $ annofabcli task reject --project_id prj1 --task_id file://tasks.txt \
  --comment "hoge" --assigned_annotator_user_id user1
 
 ```
+
+
+
+### task update_metadata
+タスクのメタデータを更新します。
+メタデータは常に上書きされることに注意してくだださい。
+
+
+```
+# task1, task2のメタデータを '{"attr1":"bar"}' に変更します
+$ annofabcli task update_metadata --project_id prj1 --task_id task1 task2 --metadata '{"attr1":"bar"}'
+```
+
 
 
 ### task_history list_with_json

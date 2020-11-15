@@ -178,6 +178,12 @@ class TestFilesystem:
 class TestInputData:
     command_name = "input_data"
 
+    @classmethod
+    def setup_class(cls):
+        annofab_service = annofabapi.build()
+        task, _ = annofab_service.api.get_task(project_id, task_id)
+        cls.input_data_id = task["input_data_id_list"][0]
+
     def test_delete_input_data(self):
         main(["input_data", "delete", "--project_id", project_id, "--input_data_id", "foo", "--yes"])
 
@@ -257,6 +263,21 @@ class TestInputData:
                 "--yes",
                 "--parallelism",
                 "2",
+            ]
+        )
+
+    def test_update_metadata(self):
+        main(
+            [
+                self.command_name,
+                "update_metadata",
+                "--project_id",
+                project_id,
+                "--input_data_id",
+                self.input_data_id,
+                "--metadata",
+                '{"attr1":"foo"}',
+                "--yes",
             ]
         )
 
@@ -899,6 +920,20 @@ class TestTask:
     #             "--yes",
     #         ]
     #     )
+
+    def test_update_metadata(self):
+        main(
+            [
+                self.command_name,
+                "update_metadata",
+                "--project_id",
+                project_id,
+                "--metadata",
+                '{"attr1":"foo"}',
+                "--task_id",
+                task_id,
+            ]
+        )
 
     @pytest.mark.submitting_job
     def test_put_task(self):

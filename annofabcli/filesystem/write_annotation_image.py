@@ -4,7 +4,6 @@ Semantic Segmentation(Multi Class)用の画像を生成する。
 
 import argparse
 import logging
-import zipfile
 from pathlib import Path
 from typing import List, Optional
 
@@ -17,8 +16,6 @@ from annofabcli.common.cli import ArgumentParser
 from annofabcli.common.image import IsParserFunc, write_annotation_images_from_path
 
 logger = logging.getLogger(__name__)
-
-zipfile.is_zipfile("ab")
 
 
 class WriteAnnotationImage:

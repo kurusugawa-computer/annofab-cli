@@ -190,8 +190,8 @@ class ListWorktimeByUserMain:
 
         return working_time_by_user.get("description")
 
+    @staticmethod
     def _get_labor_worktime(
-        self,
         labor: Dict[str, Any],
         member: Optional[ProjectMember],
         project_title: str,
@@ -208,9 +208,9 @@ class ListWorktimeByUserMain:
             user_id=member["user_id"] if member is not None else labor["account_id"],
             username=member["username"] if member is not None else labor["account_id"],
             biography=member["biography"] if member is not None else None,
-            worktime_plan_hour=self.get_worktime_hour(labor["values"]["working_time_by_user"], "plans"),
-            worktime_result_hour=self.get_worktime_hour(labor["values"]["working_time_by_user"], "results"),
-            working_description=self._get_working_description(labor["values"]["working_time_by_user"]),
+            worktime_plan_hour=labor["plan_worktime"] if labor["plan_worktime"] is not None else 0,
+            worktime_result_hour=labor["actual_worktime"] if labor["actual_worktime"] is not None else 0,
+            working_description=labor["working_description"],
             worktime_monitored_hour=worktime_monitored_hour,
         )
         return new_labor
@@ -234,13 +234,10 @@ class ListWorktimeByUserMain:
         labor_availability_dict = {}
         for user in user_list:
             # 予定稼働時間を取得するには、特殊な組織IDを渡す
-            labor_list, _ = self.service.api.get_labor_control(
-                {
-                    "organization_id": "___plannedWorktime___",
-                    "from": start_date,
-                    "to": end_date,
-                    "account_id": user.account_id,
-                }
+            labor_list = self.service.wrapper.get_labor_control_availability(
+                from_date=start_date,
+                to_date=end_date,
+                account_id=user.account_id,
             )
             new_labor_list = []
             for labor in labor_list:
@@ -249,7 +246,7 @@ class ListWorktimeByUserMain:
                     account_id=labor["account_id"],
                     user_id=user.user_id,
                     username=user.username,
-                    availability_hour=self.get_worktime_hour(labor["values"]["working_time_by_user"], "plans"),
+                    availability_hour=labor["availability"] if labor["availability"] is not None else 0,
                 )
                 new_labor_list.append(new_labor)
             labor_availability_dict[user.user_id] = new_labor_list
@@ -268,25 +265,28 @@ class ListWorktimeByUserMain:
 
         if account_id_list is None:
             logger.debug(f"project_id={project_id}の、すべての労務管理情報を取得しています。")
-            labor_list, _ = self.service.api.get_labor_control(
-                {
-                    "project_id": project_id,
-                    "organization_id": organization["organization_id"],
-                    "from": start_date,
-                    "to": end_date,
-                }
+            labor_list = self.service.wrapper.get_labor_control_worktime(
+                project_id=project_id,
+                organization_id=organization["organization_id"],
+                from_date=start_date,
+                to_date=end_date,
             )
         else:
             labor_list = []
             for account_id in account_id_list:
                 logger.debug(f"project_id={project_id}の、ユーザ{len(account_id_list)}件分の労務管理情報を取得しています。")
-                tmp_labor_list, _ = self.service.api.get_labor_control(
-                    {"project_id": project_id, "from": start_date, "to": end_date, "account_id": account_id}
+                tmp_labor_list = self.service.wrapper.get_labor_control_worktime(
+                    project_id=project_id, from_date=start_date, to_date=end_date, account_id=account_id
                 )
                 labor_list.extend(tmp_labor_list)
 
         project_title = self.service.api.get_project(project_id)[0]["title"]
-
+        labor_list = [
+            e
+            for e in labor_list
+            if (e["actual_worktime"] is not None and e["actual_worktime"] > 0)
+            or (e["plan_worktime"] is not None and e["plan_worktime"] > 0)
+        ]
         logger.info(f"'{project_title}'プロジェクト('{project_id}')の労務管理情報の件数: {len(labor_list)}")
 
         new_labor_list = []
@@ -314,8 +314,7 @@ class ListWorktimeByUserMain:
                 organization_name=organization_name,
                 worktime_monitored_hour=worktime_monitored_hour,
             )
-            if new_labor.worktime_result_hour > 0 or new_labor.worktime_plan_hour > 0:
-                new_labor_list.append(new_labor)
+            new_labor_list.append(new_labor)
 
         return new_labor_list
 
@@ -332,17 +331,24 @@ class ListWorktimeByUserMain:
 
         if account_id_list is None:
             logger.debug(f"organization_name={organization_name}の、すべての労務管理情報を取得しています。")
-            labor_list, _ = self.service.api.get_labor_control(
-                {"organization_id": organization_id, "from": start_date, "to": end_date}
+            labor_list = self.service.wrapper.get_labor_control_worktime(
+                organization_id=organization_id, from_date=start_date, to_date=end_date
             )
         else:
             labor_list = []
             logger.debug(f"organization_name={organization_name}の、ユーザ{len(account_id_list)}件分の労務管理情報を取得しています。")
             for account_id in account_id_list:
-                tmp_labor_list, _ = self.service.api.get_labor_control(
-                    {"organization_id": organization_id, "from": start_date, "to": end_date, "account_id": account_id}
+                tmp_labor_list = self.service.wrapper.get_labor_control_worktime(
+                    organization_id=organization_id, from_date=start_date, to_date=end_date, account_id=account_id
                 )
                 labor_list.extend(tmp_labor_list)
+
+        labor_list = [
+            e
+            for e in labor_list
+            if (e["actual_worktime"] is not None and e["actual_worktime"] > 0)
+            or (e["plan_worktime"] is not None and e["plan_worktime"] > 0)
+        ]
 
         logger.info(f"'{organization_name}'組織の労務管理情報の件数: {len(labor_list)}")
         project_list = self.service.wrapper.get_all_projects_of_organization(organization_name)
@@ -374,8 +380,7 @@ class ListWorktimeByUserMain:
                 organization_name=organization_name,
                 worktime_monitored_hour=worktime_monitored_hour,
             )
-            if new_labor.worktime_result_hour > 0 or new_labor.worktime_plan_hour > 0:
-                new_labor_list.append(new_labor)
+            new_labor_list.append(new_labor)
 
         return new_labor_list
 
@@ -430,7 +435,6 @@ class ListWorktimeByUserMain:
 
         username_list = [e[0] for e in sum_worktime_df.columns if is_plan_column(e)]
 
-        sum_worktime_df.to_csv("foo.csv", encoding="utf_8_sig", index=False)
         for username in username_list:
             # SettingWithCopyWarning を避けるため、暫定的に値をコピーする
             sum_worktime_df[(username, "作業予定_記号")] = sum_worktime_df[(username, "作業予定")].map(create_mark)
