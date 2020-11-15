@@ -4,7 +4,6 @@ Semantic Segmentation(Multi Class)用の画像を生成する。
 
 import argparse
 import logging
-import zipfile
 from pathlib import Path
 from typing import List, Optional
 
