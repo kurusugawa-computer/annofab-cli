@@ -27,11 +27,20 @@ class UpdateMetadataMain(AbstracCommandCinfirmInterface):
         AbstracCommandCinfirmInterface.__init__(self, all_yes)
 
     def set_metadata_to_input_data(
-        self, project_id: str, input_data_id: str, metadata: Dict[str, Any], input_data_index: Optional[int] = None
+        self,
+        project_id: str,
+        input_data_id: str,
+        metadata: Dict[str, Any],
+        overwrite_metadata: bool = False,
+        input_data_index: Optional[int] = None,
     ) -> bool:
         logging_prefix = f"{input_data_index+1} 件目" if input_data_index is not None else ""
 
         input_data = self.service.wrapper.get_input_data_or_none(project_id, input_data_id)
+        if input_data is None:
+            logger.warning(f"{logging_prefix} 入力データは存在しないのでスキップします。input_data_id={input_data_id}")
+            return False
+
         logger.debug(
             f"{logging_prefix} input_data_id={input_data['input_data_id']}, "
             f"input_data_name={input_data['input_data_name']}"
@@ -40,15 +49,25 @@ class UpdateMetadataMain(AbstracCommandCinfirmInterface):
             return False
 
         input_data["last_updated_datetime"] = input_data["updated_datetime"]
-        input_data["metadata"] = metadata
+        if overwrite_metadata:
+            input_data["metadata"] = metadata
+        else:
+            input_data["metadata"].update(metadata)
+
         self.service.api.put_input_data(project_id, input_data_id, request_body=input_data)
         logger.debug(f"{logging_prefix} 入力データを更新しました。input_data_id={input_data['input_data_id']}")
         return True
 
-    def set_metadata_to_input_data_wrapper(self, tpl: Tuple[int, str], project_id: str, metadata: Dict[str, Any]):
+    def set_metadata_to_input_data_wrapper(
+        self, tpl: Tuple[int, str], project_id: str, metadata: Dict[str, Any], overwrite_metadata: bool = False
+    ):
         input_data_index, input_data_id = tpl
         return self.set_metadata_to_input_data(
-            project_id, input_data_id, metadata=metadata, input_data_index=input_data_index
+            project_id,
+            input_data_id,
+            metadata=metadata,
+            overwrite_metadata=overwrite_metadata,
+            input_data_index=input_data_index,
         )
 
     def update_metadata_of_input_data(
@@ -56,6 +75,7 @@ class UpdateMetadataMain(AbstracCommandCinfirmInterface):
         project_id: str,
         input_data_id_list: List[str],
         metadata: Dict[str, Any],
+        overwrite_metadata: bool = False,
         parallelism: Optional[int] = None,
     ):
         logger.info(f"{len(input_data_id_list)} 件の入力データのmetadataを、{metadata} に変更します。")
@@ -76,7 +96,11 @@ class UpdateMetadataMain(AbstracCommandCinfirmInterface):
             # 逐次処理
             for input_data_index, input_data_id in enumerate(input_data_id_list):
                 result = self.set_metadata_to_input_data(
-                    project_id, input_data_id, metadata=metadata, input_data_index=input_data_index
+                    project_id,
+                    input_data_id,
+                    metadata=metadata,
+                    overwrite_metadata=overwrite_metadata,
+                    input_data_index=input_data_index,
                 )
                 if result:
                     success_count += 1
@@ -106,8 +130,10 @@ class UpdateMetadata(AbstractCommandLineInterface):
         input_data_id_list = annofabcli.common.cli.get_list_from_args(args.input_data_id)
         metadata = annofabcli.common.cli.get_json_from_args(args.metadata)
         super().validate_project(args.project_id, [ProjectMemberRole.OWNER])
-        main_obj = UpdateMetadataMain(self.service)
-        main_obj.update_metadata_of_input_data(args.project_id, input_data_id_list, metadata)
+        main_obj = UpdateMetadataMain(self.service, all_yes=args.yes)
+        main_obj.update_metadata_of_input_data(
+            args.project_id, input_data_id_list, metadata, overwrite_metadata=args.overwrite
+        )
 
 
 def main(args):
@@ -125,7 +151,13 @@ def parse_args(parser: argparse.ArgumentParser):
         "--metadata",
         required=True,
         type=str,
-        help="入力データに設定する`metadata`をJSON形式で指定します。" "`file://`を先頭に付けると、JSON形式のファイルを指定できます。",
+        help="入力データに設定する`metadata`をJSON形式で指定してください。メタデータの値は文字列です。" "`file://`を先頭に付けると、JSON形式のファイルを指定できます。",
+    )
+
+    parser.add_argument(
+        "--overwrite",
+        action="store_true",
+        help="指定した場合、メタデータを上書きして更新します（すでに設定されているメタデータは削除されます）。指定しない場合、`--metadata`に指定されたキーのみ更新されます。",
     )
 
     parser.add_argument(
