@@ -18,8 +18,6 @@ from annofabcli.common.image import IsParserFunc, write_annotation_images_from_p
 
 logger = logging.getLogger(__name__)
 
-zipfile.is_zipfile("ab")
-
 
 class WriteAnnotationImage:
     @staticmethod
