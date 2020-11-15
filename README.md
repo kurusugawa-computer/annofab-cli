@@ -146,6 +146,7 @@ $ docker run -it -e ANNOFAB_USER_ID=XXXX -e ANNOFAB_PASSWORD=YYYYY annofab-cli p
 |task| list_with_json | タスク全件ファイルから一覧を出力します。                               |-|
 |task| put                | タスクを作成します。                                 |オーナ|
 |task| reject                  | タスクを強制的に差し戻します。                                                                 |オーナ|
+|task| update_metadata                  | タスクのメタデータを更新します。                                                                |オーナ/アノテーションユーザ|
 |task_history| list_with_json | タスク履歴全件ファイルから一覧を出力します。                               |-|
 
 # Usage
@@ -1695,6 +1696,32 @@ $ annofabcli task reject --project_id prj1 --task_id file://tasks.txt \
  --comment "hoge" --assigned_annotator_user_id user1
 
 ```
+
+
+
+### task update_metadata
+タスクのメタデータを更新します。
+メタデータは常に上書きされて更新されることに、注意してください。
+
+
+```
+# tasks.txtに記載れたタスクを強制的に差し戻す
+# 最後のannotation phaseを担当したユーザを割り当てます（画面と同じ動き）。検査コメントは付与しません。
+$ annofabcli task reject --project_id prj1 --task_id file://tasks.txt 
+
+# 受入完了の場合は、受入を取り消してから差し戻します
+$ annofabcli task reject --project_id prj1 --task_id file://tasks.txt --cancel_acceptance
+
+# 「hoge」という検査コメントを付与して、タスクを差し戻します。その際、担当者は割り当てません
+$ annofabcli task reject --project_id prj1 --task_id file://tasks.txt \
+ --comment "hoge" --not_assign
+
+# 差し戻したタスクに、ユーザuser1を割り当てる
+$ annofabcli task reject --project_id prj1 --task_id file://tasks.txt \
+ --comment "hoge" --assigned_annotator_user_id user1
+
+```
+
 
 
 ### task_history list_with_json

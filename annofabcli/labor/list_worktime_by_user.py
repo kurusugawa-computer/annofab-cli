@@ -190,8 +190,8 @@ class ListWorktimeByUserMain:
 
         return working_time_by_user.get("description")
 
+    @staticmethod
     def _get_labor_worktime(
-        self,
         labor: Dict[str, Any],
         member: Optional[ProjectMember],
         project_title: str,
