@@ -5,7 +5,7 @@ from typing import Any, Dict, List, Optional
 import annofabapi
 import pandas
 import requests
-from annofabapi.models import OrganizationMember, Project, ProjectStatus
+from annofabapi.models import OrganizationMember, Project, ProjectStatus, ProjectMemberRole
 from more_itertools import first_true
 
 import annofabcli
@@ -111,6 +111,12 @@ class ChanegProjectStatusMain:
             logger.warning(f"project_id={project_id} のプロジェクトは存在しないので、スキップします。")
             return False
 
+        if not self.facade.contains_any_project_member_role(
+            project_id, [ProjectMemberRole.OWNER]
+        ):
+            logger.warning(f"project_id={project_id}: オーナロールでないため、アノテーションzipを更新できません。project_title={project['title']}")
+            return False
+
         logger.debug(f"{project['title']} のステータスを{status.value} に変更します。project_id={project_id}")
         project["status"] = status.value
         project["last_updated_datetime"] = project["updated_datetime"]
@@ -198,6 +204,7 @@ def add_parser(subparsers: argparse._SubParsersAction):
     subcommand_name = "change_status"
     subcommand_help = "プロジェクトのステータスを変更します。"
     description = "プロジェクトのステータスを変更します。"
+    epilog = "オーナロールを持つユーザで実行してください。"
 
-    parser = annofabcli.common.cli.add_parser(subparsers, subcommand_name, subcommand_help, description)
+    parser = annofabcli.common.cli.add_parser(subparsers, subcommand_name, subcommand_help, description,epilog=epilog)
     parse_args(parser)
