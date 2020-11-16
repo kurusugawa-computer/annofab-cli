@@ -223,21 +223,22 @@ def write_annotation_images_from_path(
                     metadata_key_of_image_width in metadata and metadata_key_of_image_height in metadata
                 ):
                     try:
-                        return tuple(
-                            int(metadata[metadata_key_of_image_width]), int(metadata[metadata_key_of_image_height])
-                        )
+                        return (int(metadata[metadata_key_of_image_width]), int(metadata[metadata_key_of_image_height]))
                     except ValueError as e:
                         logger.warning(f"input_data_id={input_data_id}の入力データのメタデータの数値変換に失敗しました。{e}")
                         return None
 
                 else:
                     logger.warning(
-                        f"input_data_id={input_data_id}の入力データのメタデータに、{metadata_key_of_image_width}, {metadata_key_of_image_height} というキーが存在しなかったので、スキップします。"
+                        f"input_data_id={input_data_id}の入力データのメタデータに、"
+                        f"{metadata_key_of_image_width}, {metadata_key_of_image_height} というキーが存在しなかったので、"
+                        f"スキップします。"
                     )
                     return None
             else:
                 raise ValueError(
-                    f"引数`input_data_dict`がNoneでない場合は、`metadata_key_of_image_width`と`metadata_key_of_image_height`はnot Noneである必要があります。"
+                    f"引数`input_data_dict`がNoneでない場合は、"
+                    f"`metadata_key_of_image_width`と`metadata_key_of_image_height`はnot Noneである必要があります。"
                 )
         else:
             raise ValueError(f"引数`image_size`または`input_data_dict`のどちらかはnot Noneである必要があります。")

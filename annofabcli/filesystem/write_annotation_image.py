@@ -12,6 +12,7 @@ import annofabcli
 import annofabcli.common.cli
 from annofabcli.common.cli import ArgumentParser
 from annofabcli.common.image import IsParserFunc, write_annotation_images_from_path
+from annofabcli.common.typing import InputDataSize
 
 logger = logging.getLogger(__name__)
 
@@ -55,19 +56,22 @@ class WriteAnnotationImage:
     def main(self, args):
         logger.info(f"args: {args}")
 
-        image_size = annofabcli.common.cli.get_input_data_size(args.image_size)
-        if image_size is None:
-            logger.error("--image_size のフォーマットが不正です")
-            print(
-                f"{self.COMMON_MESSAGE} argument --image_size: フォーマットが不正です。",
-                file=sys.stderr,
-            )
-            return
+        image_size: Optional[InputDataSize] = None
+        if args.image_size is not None:
+            image_size = annofabcli.common.cli.get_input_data_size(args.image_size)
+            if image_size is None:
+                logger.error("--image_size のフォーマットが不正です")
+                print(
+                    f"{self.COMMON_MESSAGE} argument --image_size: フォーマットが不正です。",
+                    file=sys.stderr,
+                )
+                return
 
         if args.input_data_json is not None:
             if args.metadata_key_of_image_size is None:
                 print(
-                    f"{self.COMMON_MESSAGE} argument --metadata_key_of_image_size: `--input_data_json`を指定した場合、`--metadata_key_of_image_size`は必須です。",
+                    f"{self.COMMON_MESSAGE} argument --metadata_key_of_image_size: "
+                    f"`--input_data_json`を指定した場合、`--metadata_key_of_image_size`は必須です。",
                     file=sys.stderr,
                 )
                 return
@@ -80,7 +84,7 @@ class WriteAnnotationImage:
         task_id_list = annofabcli.common.cli.get_list_from_args(args.task_id)
         is_target_parser_func = self.create_is_target_parser_func(args.task_status_complete, task_id_list)
 
-        input_data_dict = self.get_input_data_dict(args.input_data_json)
+        input_data_dict = self.get_input_data_dict(args.input_data_json) if args.input_data_json is not None else None
 
         # 画像生成
         result = write_annotation_images_from_path(
@@ -88,9 +92,13 @@ class WriteAnnotationImage:
             label_color_dict=label_color_dict,
             output_dir_path=Path(args.output_dir),
             image_size=image_size,
-            input_data_dict=self.get_input_data_dict(args.input_data_json),
-            metadata_key_of_image_width=args.metadata_key_of_image_size[0],
-            metadata_key_of_image_height=args.metadata_key_of_image_size[1],
+            input_data_dict=input_data_dict,
+            metadata_key_of_image_width=args.metadata_key_of_image_size[0]
+            if args.metadata_key_of_image_size is not None
+            else None,
+            metadata_key_of_image_height=args.metadata_key_of_image_size[1]
+            if args.metadata_key_of_image_size is not None
+            else None,
             output_image_extension=args.image_extension,
             background_color=args.background_color,
             is_target_parser_func=is_target_parser_func,
