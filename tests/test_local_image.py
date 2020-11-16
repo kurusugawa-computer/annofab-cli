@@ -3,6 +3,7 @@ import os
 import zipfile
 from pathlib import Path
 
+import pytest
 from annofabapi.parser import SimpleAnnotationDirParser, SimpleAnnotationParser, SimpleAnnotationZipParser
 
 from annofabcli.common.image import write_annotation_image, write_annotation_images_from_path
@@ -48,18 +49,81 @@ def test_write_image_wihtout_outer_file():
     )
 
 
-def test_write_annotation_images_from_path():
-    zip_path = test_dir / "simple-annotation.zip"
-    output_image_dir = out_dir / "annotation-image"
+class Test_write_annotation_images_from_path:
+    def test_write_annotation_images_from_path(self):
+        zip_path = test_dir / "simple-annotation.zip"
+        output_image_dir = out_dir / "annotation-image"
 
-    def is_target_parser_func(parser: SimpleAnnotationParser) -> bool:
-        return parser.task_id == "sample_1"
+        def is_target_parser_func(parser: SimpleAnnotationParser) -> bool:
+            return parser.task_id == "sample_1"
 
-    write_annotation_images_from_path(
-        annotation_path=zip_path,
-        image_size=(64, 64),
-        label_color_dict=label_color_dict,
-        output_dir_path=output_image_dir,
-        background_color=(64, 64, 64),
-        is_target_parser_func=is_target_parser_func,
-    )
+        write_annotation_images_from_path(
+            annotation_path=zip_path,
+            image_size=(64, 64),
+            label_color_dict=label_color_dict,
+            output_dir_path=output_image_dir,
+            background_color=(64, 64, 64),
+            is_target_parser_func=is_target_parser_func,
+        )
+
+    def test_write_annotation_images_from_path_2(self):
+        zip_path = test_dir / "simple-annotation.zip"
+        output_image_dir = out_dir / "annotation-image"
+
+        input_data_json = test_dir / "input_data2.json"
+        with input_data_json.open() as f:
+            input_data_list = json.load(f)
+            input_data_dict = {e["input_data_id"]: e for e in input_data_list}
+
+        def is_target_parser_func(parser: SimpleAnnotationParser) -> bool:
+            return parser.task_id == "sample_1"
+
+        write_annotation_images_from_path(
+            annotation_path=zip_path,
+            image_size=(64, 64),
+            label_color_dict=label_color_dict,
+            output_dir_path=output_image_dir,
+            input_data_dict=input_data_dict,
+            metadata_key_of_image_width="width",
+            metadata_key_of_image_height="height",
+            is_target_parser_func=is_target_parser_func,
+        )
+
+    def test_argument_validate_error__image_size_or_input_data_dictが引数に指定されていない(self):
+        zip_path = test_dir / "simple-annotation.zip"
+        output_image_dir = out_dir / "annotation-image"
+
+        def is_target_parser_func(parser: SimpleAnnotationParser) -> bool:
+            return parser.task_id == "sample_1"
+
+        with pytest.raises(ValueError):
+            write_annotation_images_from_path(
+                annotation_path=zip_path,
+                label_color_dict=label_color_dict,
+                output_dir_path=output_image_dir,
+                background_color=(64, 64, 64),
+                is_target_parser_func=is_target_parser_func,
+            )
+
+    def test_argument_validate_error_メタデータが引数に指定されていない(self):
+        zip_path = test_dir / "simple-annotation.zip"
+        output_image_dir = out_dir / "annotation-image"
+
+        def is_target_parser_func(parser: SimpleAnnotationParser) -> bool:
+            return parser.task_id == "sample_1"
+
+        input_data_dict = {
+            "c86205d1-bdd4-4110-ae46-194e661d622b": {
+                "input_data_id": "c86205d1-bdd4-4110-ae46-194e661d622b",
+                "metadata": {"width": "64", "height": "64"},
+            }
+        }
+
+        with pytest.raises(ValueError):
+            write_annotation_images_from_path(
+                annotation_path=zip_path,
+                label_color_dict=label_color_dict,
+                output_dir_path=output_image_dir,
+                input_data_dict=input_data_dict,
+                is_target_parser_func=is_target_parser_func,
+            )

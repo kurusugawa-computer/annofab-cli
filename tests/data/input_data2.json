@@ -1,0 +1,102 @@
+[
+  {
+    "input_data_id": "0733d1e1-ef85-455e-aec0-ff05c499b711",
+    "project_id": "1186bb00-16e6-4d20-8e24-310322911850",
+    "organization_id": "a1852f8d-1471-4562-bfd9-8cc9ce9368dc",
+    "input_data_set_id": "2b148582-993e-4874-bbb5-fa20915dfa2d",
+    "input_data_name": "./tests/data/lenna.png",
+    "input_data_path": "s3://af-production-input/organizations/a1852f8d-1471-4562-bfd9-8cc9ce9368dc/input_data_set/2b148582-993e-4874-bbb5-fa20915dfa2d/input_data/0733d1e1-ef85-455e-aec0-ff05c499b711/dbf4ade8-f6d4-4319-9192-f65687133498",
+    "url": null,
+    "etag": null,
+    "updated_datetime": "2020-11-16T15:45:19.064+09:00",
+    "resized_resolution": null,
+    "original_input_data_path": "s3://af-production-input/organizations/a1852f8d-1471-4562-bfd9-8cc9ce9368dc/input_data_set/2b148582-993e-4874-bbb5-fa20915dfa2d/input_data/0733d1e1-ef85-455e-aec0-ff05c499b711/dbf4ade8-f6d4-4319-9192-f65687133498",
+    "original_resolution": null,
+    "input_duration": null,
+    "sign_required": false,
+    "metadata": {
+      "width": "64",
+      "height": "64"
+    },
+    "system_metadata": {
+      "resized_resolution": null,
+      "original_resolution": null,
+      "_type": "Image"
+    }
+  },
+  {
+    "input_data_id": "a3281975-e632-47a7-a71f-08013fad5604",
+    "project_id": "1186bb00-16e6-4d20-8e24-310322911850",
+    "organization_id": "a1852f8d-1471-4562-bfd9-8cc9ce9368dc",
+    "input_data_set_id": "2b148582-993e-4874-bbb5-fa20915dfa2d",
+    "input_data_name": "./tests/data/lenna.png",
+    "input_data_path": "s3://af-production-input/organizations/a1852f8d-1471-4562-bfd9-8cc9ce9368dc/input_data_set/2b148582-993e-4874-bbb5-fa20915dfa2d/input_data/a3281975-e632-47a7-a71f-08013fad5604/ea48cf5b-8078-431f-ad5d-2304066fbe2e",
+    "url": null,
+    "etag": null,
+    "updated_datetime": "2020-11-16T15:45:18.046+09:00",
+    "resized_resolution": null,
+    "original_input_data_path": "s3://af-production-input/organizations/a1852f8d-1471-4562-bfd9-8cc9ce9368dc/input_data_set/2b148582-993e-4874-bbb5-fa20915dfa2d/input_data/a3281975-e632-47a7-a71f-08013fad5604/ea48cf5b-8078-431f-ad5d-2304066fbe2e",
+    "original_resolution": null,
+    "input_duration": null,
+    "sign_required": false,
+    "metadata": {
+      "width": "64",
+      "height": "64"
+    },
+    "system_metadata": {
+      "resized_resolution": null,
+      "original_resolution": null,
+      "_type": "Image"
+    }
+  },
+  {
+    "input_data_id": "c6e1c2ec-6c7c-41c6-9639-4244c2ed2839",
+    "project_id": "1186bb00-16e6-4d20-8e24-310322911850",
+    "organization_id": "a1852f8d-1471-4562-bfd9-8cc9ce9368dc",
+    "input_data_set_id": "2b148582-993e-4874-bbb5-fa20915dfa2d",
+    "input_data_name": "./tests/data/lenna.png",
+    "input_data_path": "s3://af-production-input/organizations/a1852f8d-1471-4562-bfd9-8cc9ce9368dc/input_data_set/2b148582-993e-4874-bbb5-fa20915dfa2d/input_data/c6e1c2ec-6c7c-41c6-9639-4244c2ed2839/9733f938-a1a7-4150-ba89-8667350cb921",
+    "url": null,
+    "etag": null,
+    "updated_datetime": "2020-11-16T15:45:19.514+09:00",
+    "resized_resolution": null,
+    "original_input_data_path": "s3://af-production-input/organizations/a1852f8d-1471-4562-bfd9-8cc9ce9368dc/input_data_set/2b148582-993e-4874-bbb5-fa20915dfa2d/input_data/c6e1c2ec-6c7c-41c6-9639-4244c2ed2839/9733f938-a1a7-4150-ba89-8667350cb921",
+    "original_resolution": null,
+    "input_duration": null,
+    "sign_required": false,
+    "metadata": {
+      "width": "64",
+      "height": "64"
+    },
+    "system_metadata": {
+      "resized_resolution": null,
+      "original_resolution": null,
+      "_type": "Image"
+    }
+  },
+  {
+    "input_data_id": "c86205d1-bdd4-4110-ae46-194e661d622b",
+    "project_id": "1186bb00-16e6-4d20-8e24-310322911850",
+    "organization_id": "a1852f8d-1471-4562-bfd9-8cc9ce9368dc",
+    "input_data_set_id": "2b148582-993e-4874-bbb5-fa20915dfa2d",
+    "input_data_name": "./tests/data/lenna.png",
+    "input_data_path": "s3://af-production-input/organizations/a1852f8d-1471-4562-bfd9-8cc9ce9368dc/input_data_set/2b148582-993e-4874-bbb5-fa20915dfa2d/input_data/c86205d1-bdd4-4110-ae46-194e661d622b/4337d315-de35-460a-bb26-c35a77b22dd0",
+    "url": null,
+    "etag": null,
+    "updated_datetime": "2020-11-16T15:45:18.535+09:00",
+    "resized_resolution": null,
+    "original_input_data_path": "s3://af-production-input/organizations/a1852f8d-1471-4562-bfd9-8cc9ce9368dc/input_data_set/2b148582-993e-4874-bbb5-fa20915dfa2d/input_data/c86205d1-bdd4-4110-ae46-194e661d622b/4337d315-de35-460a-bb26-c35a77b22dd0",
+    "original_resolution": null,
+    "input_duration": null,
+    "sign_required": false,
+    "metadata": {
+      "width": "64",
+      "height": "64"
+    },
+    "system_metadata": {
+      "resized_resolution": null,
+      "original_resolution": null,
+      "_type": "Image"
+    }
+  }
+]

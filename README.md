@@ -115,6 +115,7 @@ $ docker run -it -e ANNOFAB_USER_ID=XXXX -e ANNOFAB_PASSWORD=YYYYY annofab-cli p
 |job|wait             | ジョブの終了を待ちます。                                                          |オーナ|
 |labor|list_worktime_by_user | ユーザごとに作業予定時間、作業実績時間を出力します。                                                          ||
 |organization_member|list             | 組織メンバ一覧を出力します。                                                            |-|
+|project| change_status                 | プロジェクトのステータスを変更します。                                                                          |オーナ|
 |project| copy                 | プロジェクトをコピーします。                                                                           |オーナ and 組織管理者/組織オーナ|
 |project| diff                 | プロジェクト間の差分を表示します。                                                                           |チェッカー/オーナ|
 |project| download                 | タスクや検査コメント、アノテーションなどをダウンロードします。                                                                           |オーナ|
@@ -641,6 +642,15 @@ $ annofabcli filesystem write_annotation_image  --annotation annotation.zip \
  --output_dir /tmp/output \
  --task_status_complete \
  --task_id file://task.txt
+
+
+# 入力データのメタデータ"width", "height"に設定した画像サイズを参照して、アノテーション画像を生成する
+$ annfoabcli project download input_data --project_id prj1 --output input_data.json
+$ annofabcli filesystem write_annotation_image  --annotation annotation.zip \
+ --input_data_json input_data.json \
+ --metadata_key_of_image_size width height
+ --label_color file://label_color.json \
+ --output_dir /tmp/output
 ```
 
 #### 出力結果（塗りつぶし画像）
@@ -984,6 +994,21 @@ $ annofabcli labor list_worktime_by_user --project_id prj1 prj2 --user_id file:/
 # 組織org1の組織メンバ一覧を出力します。
 $ annofabcli organization_member list --organization org1
 
+```
+
+
+
+### project change_status
+プロジェクトのステータスを変更します。
+
+
+```
+# prj1, prj2を停止状態にします。
+$ annofabcli project change_status --project_id prj1 prj2 --status suspended
+
+
+# prj1, prj2を進行状態にします。
+$ annofabcli project change_status --project_id prj1 prj2 --status active
 ```
 
 

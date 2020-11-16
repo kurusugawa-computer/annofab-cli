@@ -4,13 +4,13 @@ from typing import Any, Dict, List, Optional
 
 import annofabapi
 import pandas
-from annofabapi.models import OrganizationMember, Project
+import requests
+from annofabapi.models import OrganizationMember, Project, ProjectMemberRole, ProjectStatus
 from more_itertools import first_true
 
 import annofabcli
 from annofabcli import AnnofabApiFacade
-from annofabcli.common.cli import AbstractCommandLineInterface, ArgumentParser, build_annofabapi_resource_and_login
-from annofabcli.common.enums import FormatArgument
+from annofabcli.common.cli import AbstractCommandLineInterface, build_annofabapi_resource_and_login
 
 logger = logging.getLogger(__name__)
 
@@ -32,7 +32,7 @@ def create_minimal_dataframe(project_list: List[Project]):
     ]
 
 
-class ListProjectMain:
+class ChanegProjectStatusMain:
     def __init__(self, service: annofabapi.Resource):
         self.service = service
         self.facade = AnnofabApiFacade(service)
@@ -105,123 +105,104 @@ class ListProjectMain:
 
         return project_query
 
-    def get_project_list_from_organization(
-        self, organization_name: str, project_query: Optional[Dict[str, Any]] = None
-    ) -> List[Project]:
+    def change_status_for_project(self, project_id: str, status: ProjectStatus, force_suspend: bool = False) -> bool:
+        project = self.service.wrapper.get_project_or_none(project_id)
+        if project is None:
+            logger.warning(f"project_id={project_id} のプロジェクトは存在しないので、スキップします。")
+            return False
+
+        if not self.facade.contains_any_project_member_role(project_id, [ProjectMemberRole.OWNER]):
+            logger.warning(f"project_id={project_id}: オーナロールでないため、アノテーションzipを更新できません。project_title={project['title']}")
+            return False
+
+        logger.debug(f"{project['title']} のステータスを{status.value} に変更します。project_id={project_id}")
+        project["status"] = status.value
+        project["last_updated_datetime"] = project["updated_datetime"]
+        project["force_suspend"] = force_suspend
+        self.service.api.put_project(project_id, request_body=project)
+        return True
+
+    def change_status_for_project_list(
+        self, project_id_list: List[str], status: ProjectStatus, force_suspend: bool = False
+    ):
         """
-        組織名からプロジェクト一覧を取得する。
+        複数のプロジェクトに対して、プロジェクトのステータスを変更する。
+
+        Args:
+            project_id_list:
+            status: 変更後のステータス
+            force_suspend: Trueなら作業中タスクがある状態でも停止中にする。
+
+        Returns:
+
         """
+        logger.info(f"{len(project_id_list)} 件のプロジェクトのステータスを {status.value} に変更します。")
+        success_count = 0
+        for project_id in project_id_list:
+            try:
+                result = self.change_status_for_project(project_id, status=status, force_suspend=force_suspend)
+                if result:
+                    success_count += 1
 
-        if project_query is not None:
-            project_query = self._modify_project_query(organization_name, project_query)
+            except requests.HTTPError as e:
+                if e.response.status_code == requests.codes.conflict:
+                    # 現在のプロジェクトの状態では、ステータスを変更できない場合に発生するエラー
+                    logger.warning(e)
+                else:
+                    raise e
 
-        logger.debug(f"project_query: {project_query}")
-        project_list = self.service.wrapper.get_all_projects_of_organization(
-            organization_name, query_params=project_query
-        )
-
-        for project in project_list:
-            project["organization_name"] = organization_name
-
-        return project_list
+        logger.info(f"{success_count} 件のプロジェクトのステータスを {status.value} に変更しました。")
 
 
-class ListProject(AbstractCommandLineInterface):
-    """
-    プロジェクト一覧を表示する。
-    """
-
+class ChangeProjectStatus(AbstractCommandLineInterface):
     def main(self):
         args = self.args
-        project_query = {}
-
-        organization_name = args.organization
-        main_obj = ListProjectMain(self.service)
-        if organization_name is not None:
-            if not args.include_not_joined_project:
-                # 所属しているプロジェクトのみ出力
-                project_query.update({"user_id": self.service.api.login_user_id})
-
-            if args.project_query is not None:
-                project_query.update(annofabcli.common.cli.get_json_from_args(args.project_query))
-            project_list = main_obj.get_project_list_from_organization(organization_name, project_query)
-        else:
-            assert args.project_id is not None
-            project_id_list = annofabcli.common.cli.get_list_from_args(args.project_id)
-            project_list = main_obj.get_project_list_from_project_id(project_id_list)
-
-        logger.info(f"プロジェクト一覧の件数: {len(project_list)}")
-
-        if args.format == FormatArgument.MINIMAL_CSV.value:
-            df = create_minimal_dataframe(project_list)
-            self.print_csv(df)
-        else:
-            self.print_according_to_format(project_list)
+        project_id_list = annofabcli.common.cli.get_list_from_args(args.project_id)
+        main_obj = ChanegProjectStatusMain(self.service)
+        main_obj.change_status_for_project_list(
+            project_id_list=project_id_list, status=ProjectStatus(args.status), force_suspend=args.force
+        )
 
 
 def main(args):
     service = build_annofabapi_resource_and_login(args)
     facade = AnnofabApiFacade(service)
-    ListProject(service, facade, args).main()
+    ChangeProjectStatus(service, facade, args).main()
 
 
 def parse_args(parser: argparse.ArgumentParser):
-    argument_parser = ArgumentParser(parser)
 
-    query_group = parser.add_mutually_exclusive_group(required=True)
-
-    query_group.add_argument(
+    parser.add_argument(
         "-p",
         "--project_id",
         type=str,
+        required=True,
         nargs="+",
         help="対象プロジェクトのproject_idを指定します。`file://`を先頭に付けると、project_idの一覧が記載されたファイルを指定できます。",
     )
 
-    query_group.add_argument("-org", "--organization", type=str, help="対象の組織名を指定してください。")
-
     parser.add_argument(
-        "-pq",
-        "--project_query",
+        "--status",
         type=str,
-        help="プロジェクトの検索クエリをJSON形式で指定します。'--organization'を指定したときのみ有効なオプションです。"
-        "指定しない場合は、組織配下のすべてのプロジェクトを取得します。"
-        "`file://`を先頭に付けると、JSON形式のファイルを指定できます。"
-        "クエリのフォーマットは、[getProjectsOfOrganization API]"
-        "(https://annofab.com/docs/api/#operation/getProjectsOfOrganization)のクエリパラメータと同じです。"
-        "さらに追加で、`user_id`, `except_user_id` キーも指定できます。"
-        "ただし `page`, `limit`キーは指定できません。",
+        choices=[ProjectStatus.ACTIVE.value, ProjectStatus.SUSPENDED.value],
+        required=True,
+        help="変更後のステータスを指定してください。",
     )
 
     parser.add_argument(
-        "--include_not_joined_project",
+        "--force",
         action="store_true",
-        help="'--organization'を指定したときのみ有効なオプションです。指定した場合は、所属していないプロジェクトも出力します。"
-        "指定しない場合は、自分が所属しているプロジェクトのみ出力します"
-        '（`--project_query \'{"user_id":"my_user_id"}\'`が指定されている状態と同じ）',
+        help=f"`--status {ProjectStatus.SUSPENDED.value}`を指定している状態で、`--force`を指定した場合、作業中タスクが残っていても停止状態に変更します。",
     )
 
-    argument_parser.add_format(
-        choices=[
-            FormatArgument.CSV,
-            FormatArgument.MINIMAL_CSV,
-            FormatArgument.JSON,
-            FormatArgument.PRETTY_JSON,
-            FormatArgument.PROJECT_ID_LIST,
-        ],
-        default=FormatArgument.CSV,
-    )
-    argument_parser.add_output()
-    argument_parser.add_csv_format()
-
-    argument_parser.add_query()
     parser.set_defaults(subcommand_func=main)
 
 
 def add_parser(subparsers: argparse._SubParsersAction):
-    subcommand_name = "list"
-    subcommand_help = "プロジェクト一覧を出力します。"
-    description = "プロジェクト一覧を出力します。"
+    subcommand_name = "change_status"
+    subcommand_help = "プロジェクトのステータスを変更します。"
+    description = "プロジェクトのステータスを変更します。"
+    epilog = "オーナロールを持つユーザで実行してください。"
 
-    parser = annofabcli.common.cli.add_parser(subparsers, subcommand_name, subcommand_help, description)
+    parser = annofabcli.common.cli.add_parser(subparsers, subcommand_name, subcommand_help, description, epilog=epilog)
     parse_args(parser)
