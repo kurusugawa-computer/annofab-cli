@@ -1,10 +1,10 @@
-import requests
 import argparse
 import logging
 from typing import Any, Dict, List, Optional
 
 import annofabapi
 import pandas
+import requests
 from annofabapi.models import OrganizationMember, Project, ProjectStatus
 from more_itertools import first_true
 
@@ -148,6 +148,7 @@ class ChanegProjectStatusMain:
                     raise e
 
         logger.info(f"{success_count} 件のプロジェクトのステータスを {status.value} に変更しました。")
+
 
 class ChangeProjectStatus(AbstractCommandLineInterface):
     def main(self):

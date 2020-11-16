@@ -133,10 +133,17 @@ class ListProject(AbstractCommandLineInterface):
 
     def main(self):
         args = self.args
-        project_query = annofabcli.common.cli.get_json_from_args(args.project_query)
+        project_query = {}
+
         organization_name = args.organization
         main_obj = ListProjectMain(self.service)
         if organization_name is not None:
+            if not args.include_not_joined_project:
+                # 所属しているプロジェクトのみ出力
+                project_query.update({"user_id": self.service.api.login_user_id})
+
+            if args.project_query is not None:
+                project_query.update(annofabcli.common.cli.get_json_from_args(args.project_query))
             project_list = main_obj.get_project_list_from_organization(organization_name, project_query)
         else:
             assert args.project_id is not None
@@ -184,6 +191,14 @@ def parse_args(parser: argparse.ArgumentParser):
         "(https://annofab.com/docs/api/#operation/getProjectsOfOrganization)のクエリパラメータと同じです。"
         "さらに追加で、`user_id`, `except_user_id` キーも指定できます。"
         "ただし `page`, `limit`キーは指定できません。",
+    )
+
+    parser.add_argument(
+        "--include_not_joined_project",
+        action="store_true",
+        help="'--organization'を指定したときのみ有効なオプションです。指定した場合は、所属していないプロジェクトも出力します。"
+        "指定しない場合は、自分が所属しているプロジェクトのみ出力します"
+        '（`--project_query \'{"user_id":"my_user_id"}\'`が指定されている状態と同じ）',
     )
 
     argument_parser.add_format(
