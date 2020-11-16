@@ -1,13 +1,11 @@
-"""
-Semantic Segmentation(Multi Class)用の画像を生成する。
-"""
-
 import argparse
+import json
 import logging
+import sys
 from pathlib import Path
-from typing import List, Optional
+from typing import Dict, List, Optional
 
-from annofabapi.models import TaskStatus
+from annofabapi.models import InputData, TaskStatus
 from annofabapi.parser import SimpleAnnotationParser
 
 import annofabcli
@@ -44,28 +42,55 @@ class WriteAnnotationImage:
 
         return is_target_parser
 
+    COMMON_MESSAGE = "annofabcli filesystem write_annotation_image: error:"
+
+    @staticmethod
+    def get_input_data_dict(input_data_json: Path) -> Dict[str, InputData]:
+        with input_data_json.open() as f:
+            logger.debug(f"{input_data_json} を読み込み中")
+            input_data_list = json.load(f)
+            logger.debug(f"{len(input_data_list)} 件をDictに変換中")
+            return {e["input_data_id"]: e for e in input_data_list}
+
     def main(self, args):
         logger.info(f"args: {args}")
 
         image_size = annofabcli.common.cli.get_input_data_size(args.image_size)
         if image_size is None:
             logger.error("--image_size のフォーマットが不正です")
+            print(
+                f"{self.COMMON_MESSAGE} argument --image_size: フォーマットが不正です。",
+                file=sys.stderr,
+            )
             return
+
+        if args.input_data_json is not None:
+            if args.metadata_key_of_image_size is None:
+                print(
+                    f"{self.COMMON_MESSAGE} argument --metadata_key_of_image_size: `--input_data_json`を指定した場合、`--metadata_key_of_image_size`は必須です。",
+                    file=sys.stderr,
+                )
+                return
 
         # label_color_dict を取得する
         label_color_dict = annofabcli.common.cli.get_json_from_args(args.label_color)
         label_color_dict = {k: tuple(v) for k, v in label_color_dict.items()}
 
-        annotation_path = Path(args.annotation)
+        annotation_path: Path = args.annotation
         task_id_list = annofabcli.common.cli.get_list_from_args(args.task_id)
         is_target_parser_func = self.create_is_target_parser_func(args.task_status_complete, task_id_list)
+
+        input_data_dict = self.get_input_data_dict(args.input_data_json)
 
         # 画像生成
         result = write_annotation_images_from_path(
             annotation_path,
-            image_size=image_size,
             label_color_dict=label_color_dict,
             output_dir_path=Path(args.output_dir),
+            image_size=image_size,
+            input_data_dict=self.get_input_data_dict(args.input_data_json),
+            metadata_key_of_image_width=args.metadata_key_of_image_size[0],
+            metadata_key_of_image_height=args.metadata_key_of_image_size[1],
             output_image_extension=args.image_extension,
             background_color=args.background_color,
             is_target_parser_func=is_target_parser_func,
@@ -81,9 +106,25 @@ def main(args):
 def parse_args(parser: argparse.ArgumentParser):
     argument_parser = ArgumentParser(parser)
 
-    parser.add_argument("--annotation", type=str, required=True, help="アノテーションzip、またはzipを展開したディレクトリ")
+    parser.add_argument("--annotation", type=Path, required=True, help="アノテーションzip、またはzipを展開したディレクトリ")
 
-    parser.add_argument("--image_size", type=str, required=True, help="入力データ画像のサイズ。{width}x{height}。ex) 1280x720")
+    image_size_group = parser.add_mutually_exclusive_group(required=True)
+
+    image_size_group.add_argument("--image_size", type=str, help="画像サイズ。{width}x{height}。ex) 1280x720")
+
+    image_size_group.add_argument(
+        "--metadata_key_of_image_size",
+        type=str,
+        nargs=2,
+        help="画像サイズが設定された、入力データのメタデータのキー。" "`--image_size_key_of_metadata {width_key} {height_key}`",
+    )
+
+    parser.add_argument(
+        "--input_data_json",
+        type=Path,
+        help="入力データ情報が記載されたJSONファイルのパスを指定してください。引数`--metadata_key_of_image_size`を指定したときに必須です。"
+        "JSONファイルは`$ annofabcli project download input_data`コマンドで取得できます。",
+    )
 
     parser.add_argument(
         "--label_color",

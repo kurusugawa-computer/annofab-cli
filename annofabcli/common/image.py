@@ -12,6 +12,7 @@ import PIL.Image
 import PIL.ImageDraw
 from annofabapi.dataclass.annotation import SimpleAnnotationDetail
 from annofabapi.exceptions import AnnotationOuterFileNotFoundError
+from annofabapi.models import InputData
 from annofabapi.parser import SimpleAnnotationParser, lazy_parse_simple_annotation_dir, lazy_parse_simple_annotation_zip
 
 from annofabcli.common.typing import RGB, InputDataSize
@@ -174,22 +175,28 @@ def write_annotation_image(
 
 def write_annotation_images_from_path(
     annotation_path: Path,
-    image_size: InputDataSize,
     label_color_dict: Dict[str, RGB],
     output_dir_path: Path,
+    image_size: Optional[InputDataSize] = None,
+    input_data_dict: Optional[Dict[str, InputData]] = None,
+    metadata_key_of_image_width: Optional[str] = None,
+    metadata_key_of_image_height: Optional[str] = None,
     output_image_extension: str = "png",
     background_color: Optional[Any] = None,
     is_target_parser_func: Optional[IsParserFunc] = None,
 ) -> bool:
     """
     AnnoFabからダウンロードしたアノテーションzipファイル、またはそのzipを展開したディレクトリから、アノテーション情報を画像化します。
-
+    `image_size` or `input_data_dict` のいずれかを指定する必要があります。
 
     Args:
         annotation_path: AnnoFabからダウンロードしたアノテーションzipファイル、またはそのzipを展開したディレクトリのパス
-        image_size: 画像のサイズ. Tuple[width, height]
         label_color_dict: label_nameとRGBを対応付けたdict. Key:label_name, Value: Tuple(R,G,B)
         output_dir_path: 画像の出力先のディレクトリのパス
+        image_size: 画像のサイズ. Tuple[width, height]
+        input_data_dict: 入力データのDict(key:input_data_id, value:InputData)
+        metadata_key_of_image_width: 入力データのメタデータのキー（画像width)
+        metadata_key_of_image_height: 入力データのメタデータのキー（画像height)
         output_image_extension: 出力する画像ファイルの拡張子. 指定しない場合は"png"です。
         background_color: アノテーション画像の背景色.
             (ex) "rgb(173, 216, 230)", "#add8e6", "lightgray", (173,216,230)
@@ -201,6 +208,39 @@ def write_annotation_images_from_path(
         True: アノテーション情報の画像化に成功した。False: アノテーション情報の画像化に失敗した。
 
     """
+
+    def _get_image_size(input_data_id: str) -> Optional[InputDataSize]:
+        if image_size is not None:
+            return image_size
+        elif input_data_dict is not None:
+            if metadata_key_of_image_width is not None and metadata_key_of_image_height is not None:
+                input_data = input_data_dict[input_data_id]
+                if input_data is None:
+                    logger.warning(f"input_data_id={input_data_id}の入力データは存在しなかったので、スキップします。")
+                    return None
+                metadata = input_data["metadata"]
+                if metadata is not None and (
+                    metadata_key_of_image_width in metadata and metadata_key_of_image_height in metadata
+                ):
+                    try:
+                        return tuple(
+                            int(metadata[metadata_key_of_image_width]), int(metadata[metadata_key_of_image_height])
+                        )
+                    except ValueError as e:
+                        logger.warning(f"input_data_id={input_data_id}の入力データのメタデータの数値変換に失敗しました。{e}")
+                        return None
+
+                else:
+                    logger.warning(
+                        f"input_data_id={input_data_id}の入力データのメタデータに、{metadata_key_of_image_width}, {metadata_key_of_image_height} というキーが存在しなかったので、スキップします。"
+                    )
+                    return None
+            else:
+                raise ValueError(
+                    f"引数`input_data_dict`がNoneでない場合は、`metadata_key_of_image_width`と`metadata_key_of_image_height`はnot Noneである必要があります。"
+                )
+        else:
+            raise ValueError(f"引数`image_size`または`input_data_dict`のどちらかはnot Noneである必要があります。")
 
     if not annotation_path.exists():
         logger.warning(f"annotation_path: '{annotation_path}' は存在しません。")
@@ -222,9 +262,14 @@ def write_annotation_images_from_path(
             continue
 
         output_image_file = output_dir_path / f"{Path(parser.json_file_path).stem}.{output_image_extension}"
+        tmp_image_size = _get_image_size(parser.input_data_id)
+        if tmp_image_size is None:
+            logger.warning(f"task_id={parser.task_id}, input_data_id={parser.input_data_id}: 画像サイズを取得できなかったので、スキップします。")
+            continue
+
         write_annotation_image(
             parser,
-            image_size=image_size,
+            image_size=tmp_image_size,
             label_color_dict=label_color_dict,
             background_color=background_color,
             output_image_file=output_image_file,

@@ -3,6 +3,7 @@ import os
 import zipfile
 from pathlib import Path
 
+import pytest
 from annofabapi.parser import SimpleAnnotationDirParser, SimpleAnnotationParser, SimpleAnnotationZipParser
 
 from annofabcli.common.image import write_annotation_image, write_annotation_images_from_path
@@ -48,18 +49,67 @@ def test_write_image_wihtout_outer_file():
     )
 
 
-def test_write_annotation_images_from_path():
-    zip_path = test_dir / "simple-annotation.zip"
-    output_image_dir = out_dir / "annotation-image"
+class Test_write_annotation_images_from_path:
+    def test_write_annotation_images_from_path(self):
+        zip_path = test_dir / "simple-annotation.zip"
+        output_image_dir = out_dir / "annotation-image"
 
-    def is_target_parser_func(parser: SimpleAnnotationParser) -> bool:
-        return parser.task_id == "sample_1"
+        def is_target_parser_func(parser: SimpleAnnotationParser) -> bool:
+            return parser.task_id == "sample_1"
 
-    write_annotation_images_from_path(
-        annotation_path=zip_path,
-        image_size=(64, 64),
-        label_color_dict=label_color_dict,
-        output_dir_path=output_image_dir,
-        background_color=(64, 64, 64),
-        is_target_parser_func=is_target_parser_func,
-    )
+        write_annotation_images_from_path(
+            annotation_path=zip_path,
+            image_size=(64, 64),
+            label_color_dict=label_color_dict,
+            output_dir_path=output_image_dir,
+            background_color=(64, 64, 64),
+            is_target_parser_func=is_target_parser_func,
+        )
+
+    def test_write_annotation_images_from_path_2(self):
+        zip_path = test_dir / "simple-annotation.zip"
+        output_image_dir = out_dir / "annotation-image"
+
+        def is_target_parser_func(parser: SimpleAnnotationParser) -> bool:
+            return parser.task_id == "sample_1"
+
+        write_annotation_images_from_path(
+            annotation_path=zip_path,
+            image_size=(64, 64),
+            label_color_dict=label_color_dict,
+            output_dir_path=output_image_dir,
+            background_color=(64, 64, 64),
+            is_target_parser_func=is_target_parser_func,
+        )
+
+    def test_argument_validate_1(self):
+        zip_path = test_dir / "simple-annotation.zip"
+        output_image_dir = out_dir / "annotation-image"
+
+        def is_target_parser_func(parser: SimpleAnnotationParser) -> bool:
+            return parser.task_id == "sample_1"
+
+        with pytest.raises(ValueError):
+            write_annotation_images_from_path(
+                annotation_path=zip_path,
+                label_color_dict=label_color_dict,
+                output_dir_path=output_image_dir,
+                background_color=(64, 64, 64),
+                is_target_parser_func=is_target_parser_func,
+            )
+
+    def test_argument_validate_2(self):
+        zip_path = test_dir / "simple-annotation.zip"
+        output_image_dir = out_dir / "annotation-image"
+
+        def is_target_parser_func(parser: SimpleAnnotationParser) -> bool:
+            return parser.task_id == "sample_1"
+
+        with pytest.raises(ValueError):
+            write_annotation_images_from_path(
+                annotation_path=zip_path,
+                label_color_dict=label_color_dict,
+                output_dir_path=output_image_dir,
+                background_color=(64, 64, 64),
+                is_target_parser_func=is_target_parser_func,
+            )
