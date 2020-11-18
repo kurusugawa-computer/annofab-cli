@@ -2,8 +2,7 @@
 name = "annofabcli"
 version = "1.37.2"
 description = "Utility Command Line Interface for AnnoFab"
-authors = ["yuji38kwmt <yuji38kwmt@gmail.com>"]
-maintainers = ["yuji38kwmt <yuji38kwmt@gmail.com>"]
+authors = ["yuji38kwmt"]
 license = "MIT"
 keywords=["annofab", "cli"]
 readme="README.md"
