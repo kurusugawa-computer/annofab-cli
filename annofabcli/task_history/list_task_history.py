@@ -41,13 +41,15 @@ class ListTaskHistoryMain:
         return self.service.api.get_task_histories(project_id, task_id)[0]
 
     def get_task_history_dict_from_project_id(self, project_id: str, task_id_list: List[str]) -> TaskHistoryDict:
-        logger.info(f"{len(task_id_list)} 件のタスク履歴情報を取得します。")
+        logger.info(f"{len(task_id_list)} 件のタスクの履歴情報を取得します。")
         task_history_dict: TaskHistoryDict = {}
         for task_index, task_id in enumerate(task_id_list):
             task_history_list = self.get_task_histories(project_id, task_id)
             if (task_index + 1) % 100 == 0:
-                logger.info(f"{task_index+1} 件のタスク履歴情報を取得しました。")
+                logger.info(f"{task_index+1} 件のタスクの履歴情報を取得しました。")
             if task_history_list is not None:
+                if len(task_history_list) == 0:
+                    logger.debug(f"task_id='{task_id}`の履歴情報は0件でした。")
                 task_history_dict[task_id] = task_history_list
             else:
                 logger.warning(f"task_id='{task_id}'のタスク履歴は見つかりませんでした。")
@@ -117,7 +119,10 @@ class ListTaskHistory(AbstractCommandLineInterface):
         )
         if arg_format == FormatArgument.CSV:
             all_task_history_list = main_obj.to_all_task_history_list_from_dict(task_history_dict)
-            self.print_according_to_format(all_task_history_list)
+            if len(all_task_history_list) > 0:
+                self.print_according_to_format(all_task_history_list)
+            else:
+                logger.warning(f"タスク履歴情報が0件のため、出力しません。")
         else:
             self.print_according_to_format(task_history_dict)
 
@@ -172,7 +177,7 @@ def parse_args(parser: argparse.ArgumentParser):
 
 
 def add_parser(subparsers: argparse._SubParsersAction):
-    subcommand_name = "list_task_history"
+    subcommand_name = "list"
     subcommand_help = "タスク履歴の一覧を出力します。"
     description = "タスク履歴の一覧を出力します。"
 
