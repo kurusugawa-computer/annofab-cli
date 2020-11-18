@@ -2,6 +2,7 @@ import argparse
 
 import annofabcli
 import annofabcli.common.cli
+import annofabcli.task_history.list_task_history
 import annofabcli.task_history.list_task_history_with_json
 
 
@@ -10,6 +11,7 @@ def parse_args(parser: argparse.ArgumentParser):
     subparsers = parser.add_subparsers(dest="subcommand_name")
 
     # サブコマンドの定義
+    annofabcli.task_history.list_task_history.add_parser(subparsers)
     annofabcli.task_history.list_task_history_with_json.add_parser(subparsers)
 
 

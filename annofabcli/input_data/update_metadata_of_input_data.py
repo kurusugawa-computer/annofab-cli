@@ -78,15 +78,19 @@ class UpdateMetadataMain(AbstracCommandCinfirmInterface):
         overwrite_metadata: bool = False,
         parallelism: Optional[int] = None,
     ):
-        logger.info(f"{len(input_data_id_list)} 件の入力データのmetadataを、{metadata} に変更します。")
+        if overwrite_metadata:
+            logger.info(f"{len(input_data_id_list)} 件の入力データのmetadataを、{metadata} に変更します（上書き）。")
+        else:
+            logger.info(f"{len(input_data_id_list)} 件の入力データのmetadataに、{metadata} を追加します。")
 
         success_count = 0
 
         if parallelism is not None:
             partial_func = partial(
-                self.set_metadata_to_input_data,
+                self.set_metadata_to_input_data_wrapper,
                 project_id=project_id,
                 metadata=metadata,
+                overwrite_metadata=overwrite_metadata,
             )
             with multiprocessing.Pool(parallelism) as pool:
                 result_bool_list = pool.map(partial_func, enumerate(input_data_id_list))
@@ -132,7 +136,11 @@ class UpdateMetadata(AbstractCommandLineInterface):
         super().validate_project(args.project_id, [ProjectMemberRole.OWNER])
         main_obj = UpdateMetadataMain(self.service, all_yes=args.yes)
         main_obj.update_metadata_of_input_data(
-            args.project_id, input_data_id_list, metadata, overwrite_metadata=args.overwrite
+            args.project_id,
+            input_data_id_list,
+            metadata,
+            overwrite_metadata=args.overwrite,
+            parallelism=args.parallelism,
         )
 
 
