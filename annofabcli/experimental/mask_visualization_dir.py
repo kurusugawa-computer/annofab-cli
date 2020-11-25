@@ -9,24 +9,16 @@ import annofabcli
 from annofabcli.common.cli import get_list_from_args
 from annofabcli.common.utils import print_csv, read_multiheader_csv
 from annofabcli.experimental.mask_user_info import (
+    create_masked_user_info_df,
     create_replacement_dict_by_biography,
     create_replacement_dict_by_user_id,
     replace_by_columns,
-    replace_user_info_by_user_id,
 )
 from annofabcli.experimental.write_linegraph_per_user import write_linegraph_per_user
 from annofabcli.experimental.write_performance_scatter_per_user import write_performance_scatter_per_user
 from annofabcli.statistics.csv import FILENAME_PEFORMANCE_PER_USER, FILENAME_TASK_LIST
 
 logger = logging.getLogger(__name__)
-
-
-def _replace_df_member_perfomance(
-    df, replacement_dict_by_user_id: Dict[str, str], replacement_dict_by_biography: Dict[str, str]
-):
-    replace_user_info_by_user_id(df, replacement_dict_by_user_id)
-    df["biography"] = df["biography"].replace(replacement_dict_by_biography)
-    return df
 
 
 def _replace_df_task(df, replacement_dict_by_user_id: Dict[str, str]):
@@ -52,35 +44,6 @@ def _replace_df_task(df, replacement_dict_by_user_id: Dict[str, str]):
     )
 
 
-def mask_csv(
-    project_dir: Path,
-    output_dir: Path,
-    not_masked_biography_set: Optional[Set[str]] = None,
-    not_masked_user_id_set: Optional[Set[str]] = None,
-):
-    df_member_perfomance = read_multiheader_csv(str(project_dir / FILENAME_PEFORMANCE_PER_USER), header_row_count=2)
-
-    replacement_dict_by_user_id = create_replacement_dict_by_user_id(
-        df_member_perfomance,
-        not_masked_biography_set=not_masked_biography_set,
-        not_masked_user_id_set=not_masked_user_id_set,
-    )
-    replacement_dict_by_biography = create_replacement_dict_by_biography(
-        df_member_perfomance, not_masked_biography_set=not_masked_biography_set
-    )
-
-    _replace_df_member_perfomance(
-        df_member_perfomance,
-        replacement_dict_by_user_id=replacement_dict_by_user_id,
-        replacement_dict_by_biography=replacement_dict_by_biography,
-    )
-    print_csv(df_member_perfomance, output=str(output_dir / FILENAME_PEFORMANCE_PER_USER))
-
-    df_task = pandas.read_csv(str(project_dir / FILENAME_TASK_LIST))
-    _replace_df_task(df_task, replacement_dict_by_user_id=replacement_dict_by_user_id)
-    print_csv(df_task, output=str(output_dir / FILENAME_TASK_LIST))
-
-
 def mask_visualization_dir(
     project_dir: Path,
     output_dir: Path,
@@ -96,19 +59,15 @@ def mask_visualization_dir(
         not_masked_biography_set=not_masked_biography_set,
         not_masked_user_id_set=not_masked_user_id_set,
     )
-    replacement_dict_by_biography = create_replacement_dict_by_biography(
-        df_member_perfomance, not_masked_biography_set=not_masked_biography_set
-    )
-
     not_masked_user_id_set = set(df_member_perfomance[("user_id", "")]) - set(replacement_dict_by_user_id.keys())
 
     # CSVのユーザ情報をマスクする
-    _replace_df_member_perfomance(
+    masked_df_member_perfomance = create_masked_user_info_df(
         df_member_perfomance,
-        replacement_dict_by_user_id=replacement_dict_by_user_id,
-        replacement_dict_by_biography=replacement_dict_by_biography,
+        not_masked_biography_set=not_masked_biography_set,
+        not_masked_user_id_set=not_masked_user_id_set,
     )
-    print_csv(df_member_perfomance, output=str(output_dir / FILENAME_PEFORMANCE_PER_USER))
+    print_csv(masked_df_member_perfomance, output=str(output_dir / FILENAME_PEFORMANCE_PER_USER))
 
     df_task = pandas.read_csv(str(project_dir / FILENAME_TASK_LIST))
     _replace_df_task(df_task, replacement_dict_by_user_id=replacement_dict_by_user_id)
