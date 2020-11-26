@@ -850,22 +850,7 @@ class TestTask:
             ]
         )
 
-    def test_list_task_history(self):
-        out_file = str(out_path / "task_history.csv")
-        main(
-            [
-                self.command_name,
-                "list_task_history",
-                "--project_id",
-                project_id,
-                "--task_id",
-                task_id,
-                "--format",
-                "csv",
-                "--output",
-                out_file,
-            ]
-        )
+
 
     def test_list_input_data_merged_task_with_json(self):
         out_file = str(out_path / "task.csv")
@@ -986,6 +971,23 @@ class TestTaskHistory:
                 out_file,
                 "--format",
                 "csv",
+            ]
+        )
+
+    def test_list_task_history(self):
+        out_file = str(out_path / "task_history.csv")
+        main(
+            [
+                self.command_name,
+                "list",
+                "--project_id",
+                project_id,
+                "--task_id",
+                task_id,
+                "--format",
+                "csv",
+                "--output",
+                out_file,
             ]
         )
 

@@ -124,6 +124,16 @@ def _get_header_row_count(df: pandas.DataFrame) -> int:
 
 
 def _get_tuple_column(df: pandas.DataFrame, column: str) -> Union[str, Tuple]:
+    """
+    列名を返します。ヘッダ行が複数行の場合は、タプルで返します。
+
+    Args:
+        df:
+        column:
+
+    Returns:
+
+    """
     size = _get_header_row_count(df)
     if size >= 2:
         return tuple([column] + [""] * (size - 1))
@@ -248,29 +258,54 @@ def replace_user_info_by_user_id(df: pandas.DataFrame, replacement_dict_by_user_
     replace_by_columns(df, replacement_dict_by_user_id, main_column=user_id_column, sub_columns=sub_columns)
 
 
+def replace_biography(
+    df: pandas.DataFrame, replacement_dict_by_user_id: Dict[str, str], replacement_dict_by_biography: Dict[str, str]
+):
+    """
+    biography 列を, マスクする。
+
+    Args:
+        df:
+        replacement_dict_by_user_id: user_idの置換前と置換後を示したdict
+
+    """
+    user_id_column = _get_tuple_column(df, "user_id")
+    biography_column = _get_tuple_column(df, "biography")
+
+    def _get_biography(row, user_id_column: Any, biography_column: Any) -> str:
+        if row[user_id_column] in replacement_dict_by_user_id:
+            # マスク対象のユーザなら biographyをマスクする
+            return replacement_dict_by_biography[row[biography_column]]
+        else:
+            return row[biography_column]
+
+    get_biography_func = partial(_get_biography, user_id_column=user_id_column, biography_column=biography_column)
+    df[biography_column] = df.apply(get_biography_func, axis=1)
+
+
 def create_masked_user_info_df(
-    csv: Path,
-    csv_header: int,
+    df: pandas.DataFrame,
     not_masked_biography_set: Optional[Set[str]] = None,
     not_masked_user_id_set: Optional[Set[str]] = None,
 ) -> pandas.DataFrame:
-    if csv_header == 1:
-        df = pandas.read_csv(str(csv))
-    else:
-        df = read_multiheader_csv(str(csv), header_row_count=csv_header)
-
     if "user_id" not in df:
         raise AnnofabCliException(f"`user_id`列が存在しないため、ユーザ情報をマスクできません。")
 
     replacement_dict_by_user_id = create_replacement_dict_by_user_id(
         df, not_masked_biography_set=not_masked_biography_set, not_masked_user_id_set=not_masked_user_id_set
     )
-    replace_user_info_by_user_id(df, replacement_dict_by_user_id)
+
     if "biography" in df:
         replacement_dict_by_biography = create_replacement_dict_by_biography(
             df, not_masked_biography_set=not_masked_biography_set
         )
-        df["biography"] = df["biography"].replace(replacement_dict_by_biography)
+        replace_biography(
+            df,
+            replacement_dict_by_biography=replacement_dict_by_biography,
+            replacement_dict_by_user_id=replacement_dict_by_user_id,
+        )
+
+    replace_user_info_by_user_id(df, replacement_dict_by_user_id)
 
     return df
 
@@ -286,9 +321,15 @@ class MaskUserInfo(AbstractCommandLineInterface):
             set(get_list_from_args(args.not_masked_user_id)) if args.not_masked_user_id is not None else None
         )
 
+        csv_header: int = args.csv_header
+        csv_path: Path = args.csv
+        if csv_header == 1:
+            original_df = pandas.read_csv(str(csv_path))
+        else:
+            original_df = read_multiheader_csv(str(csv_path), header_row_count=csv_header)
+
         df = create_masked_user_info_df(
-            csv=args.csv,
-            csv_header=args.csv_header,
+            df=original_df,
             not_masked_biography_set=not_masked_biography_set,
             not_masked_user_id_set=not_masked_user_id_set,
         )
