@@ -16,11 +16,6 @@ AnnoFabのCLI(Command Line Interface)ツールです。
 
 ## 廃止予定
 * 2020-10-01以降：Pythonのサポートバージョンを3.6以上から、3.7以上に変更します。
-* 2020-11-01以降：以下のコマンドに全件ファイルJSONを渡せないようにします。替わりになるコマンドが追加されたためです。
-    * `input_data list`コマンドから`--input_data_json`引数を削除
-    * `inspection_comment list`コマンドから`--inspection_comment_json`引数を削除
-    * `task list`コマンドから`--task_json`引数を削除
-    * `task list_task_history`コマンドから`--task_history_json`引数を削除    
     
 
 # Requirements
@@ -122,7 +117,7 @@ $ docker run -it -e ANNOFAB_USER_ID=XXXX -e ANNOFAB_PASSWORD=YYYYY annofab-cli p
 |project| update_annotation_zip                 | アノテーションzipを更新します。                                                                         |オーナ/アノテーションユーザ|
 |project_member| change                  | プロジェクトメンバを変更します。|オーナ|
 |project_member| copy                  | プロジェクトメンバをコピーします。|オーナ(コピー先プロジェクトに対して)|
-|project_member| delete                  | 複数のプロジェクトからユーザを削除します。                                                                 |オーナ|
+|project_member| delete                  | 複数のプロジェクトからユーザを脱退させます。                                                                 |オーナ|
 |project_member| invite                  | 複数のプロジェクトに、ユーザを招待します。                                                                 |オーナ|
 |project_member| list                  | プロジェクトメンバ一覧を出力します。                                                                |-|
 |project_member| put                  | CSVに記載されたユーザを、プロジェクトメンバとして登録します。|オーナ|
