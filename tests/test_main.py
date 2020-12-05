@@ -850,8 +850,6 @@ class TestTask:
             ]
         )
 
-
-
     def test_list_input_data_merged_task_with_json(self):
         out_file = str(out_path / "task.csv")
         main(
