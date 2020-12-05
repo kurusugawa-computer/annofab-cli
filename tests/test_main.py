@@ -306,22 +306,6 @@ class TestInspectionComment:
         out_file = str(out_path / "inspection_comment.csv")
         main(["inspection_comment", "list", "--project_id", project_id, "--task_id", task_id, "--output", out_file])
 
-    def test_list_inspection_comment_from_json(self):
-        out_file = str(out_path / "inspection_comment.csv")
-        inspection_comment_json = str(data_path / "inspection-comment.json")
-        main(
-            [
-                "inspection_comment",
-                "list",
-                "--project_id",
-                project_id,
-                "--inspection_comment_json",
-                inspection_comment_json,
-                "--output",
-                out_file,
-            ]
-        )
-
     def test_list_unprocessed_inspection_comment(self):
         out_file = str(out_path / "inspection_comment.csv")
         main(
@@ -337,25 +321,8 @@ class TestInspectionComment:
             ]
         )
 
-    def test_list_unprocessed_inspection_comment_from_json(self):
-        out_file = str(out_path / "inspection_comment.csv")
-        inspection_comment_json = str(data_path / "inspection-comment.json")
-        main(
-            [
-                "inspection_comment",
-                "list_unprocessed",
-                "--project_id",
-                project_id,
-                "--inspection_comment_json",
-                inspection_comment_json,
-                "--output",
-                out_file,
-            ]
-        )
-
     def test_list_inspection_comment_with_json(self):
         out_file = str(out_path / "inspection_comment.csv")
-        inspection_comment_json = str(data_path / "inspection-comment.json")
         main(
             [
                 "inspection_comment",
