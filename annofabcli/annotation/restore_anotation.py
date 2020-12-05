@@ -150,7 +150,7 @@ class RestoreAnnotation(AbstractCommandLineInterface):
 
         task_id_list = annofabcli.common.cli.get_list_from_args(args.task_id)
 
-        my_account_id = self.facade.get_my_account_id()
+        my_account_id = self.service.api.account_id
 
         # dumpしたアノテーションディレクトリの読み込み
         iter_task_parser = lazy_parse_simple_annotation_dir_by_task(annotation_dir_path)

@@ -230,16 +230,6 @@ class AnnofabApiFacade:
         project, _ = self.service.api.get_project(project_id)
         return project["title"]
 
-    def get_my_account_id(self) -> str:
-        """
-        自分自身のaccount_idを取得する
-        Returns:
-            account_id
-
-        """
-        account, _ = self.service.api.get_my_account()
-        return account["account_id"]
-
     def _get_organization_member_with_predicate(
         self, project_id: str, predicate: Callable[[Any], bool]
     ) -> Optional[OrganizationMember]:

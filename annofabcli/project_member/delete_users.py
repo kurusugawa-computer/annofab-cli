@@ -20,11 +20,8 @@ class DeleteUser(AbstractCommandLineInterface):
     """
 
     def drop_role_with_organization(self, organization_name: str, user_id_list: List[str]):
-
-        # 進行中で自分自身が所属しているプロジェクトの一覧を取得する
-        my_account_id = self.facade.get_my_account_id()
         projects = self.service.wrapper.get_all_projects_of_organization(
-            organization_name, query_params={"status": "active", "account_id": my_account_id}
+            organization_name, query_params={"account_id": self.service.api.account_id}
         )
 
         for project in projects:
@@ -34,32 +31,32 @@ class DeleteUser(AbstractCommandLineInterface):
             try:
                 if not self.facade.my_role_is_owner(project_id):
                     logger.warning(
-                        f"オーナではないため、プロジェクトメンバを削除できません。" f"project_id = {project_id}, project_tilte = {project_title}"
+                        f"オーナではないため、プロジェクトメンバを脱退させられません。" f"project_id = {project_id}, project_tilte = {project_title}"
                     )
                     continue
 
                 self.service.wrapper.drop_role_to_project_members(project_id, user_id_list)
-                logger.info(f"{project_title}から削除成功. project_id = {project_id}")
+                logger.info(f"{project_title} からユーザを脱退させました。project_id = {project_id}")
 
             except requests.exceptions.HTTPError as e:
                 logger.warning(e)
-                logger.warning(f"エラーのため、{project_title} から削除できなかった。")
+                logger.warning(f"エラーのため、{project_title} からユーザを脱退させられませんでした。")
 
     def drop_role_with_project_id(self, project_id_list: List[str], user_id_list: List[str]):
         for project_id in project_id_list:
 
             try:
                 if not self.facade.my_role_is_owner(project_id):
-                    logger.warning(f"オーナではないため、プロジェクトメンバを削除できません。" f"project_id = {project_id}")
+                    logger.warning(f"オーナではないため、プロジェクトメンバを脱退させられません。" f"project_id = {project_id}")
                     continue
 
                 project_title = self.service.api.get_project(project_id)[0]["title"]
                 self.service.wrapper.drop_role_to_project_members(project_id, user_id_list)
-                logger.info(f"{project_title}から削除成功. project_id={project_id}")
+                logger.info(f"{project_title} からユーザを脱退させました。project_id={project_id}")
 
             except requests.exceptions.HTTPError as e:
                 logger.warning(e)
-                logger.warning(f"エラーのため、project_id = {project_id} のプロジェクトから削除できなかった。")
+                logger.warning(f"エラーのため、project_id = {project_id} からユーザを脱退させられませんでした。")
 
     def main(self):
         args = self.args
@@ -86,7 +83,7 @@ def parse_args(parser: argparse.ArgumentParser):
         type=str,
         nargs="+",
         required=True,
-        help="削除するユーザのuser_idを指定してください。`file://`を先頭に付けると、一覧が記載されたファイルを指定できます。",
+        help="脱退させるユーザのuser_idを指定してください。`file://`を先頭に付けると、一覧が記載されたファイルを指定できます。",
     )
 
     drop_group = parser.add_mutually_exclusive_group(required=True)
@@ -95,18 +92,20 @@ def parse_args(parser: argparse.ArgumentParser):
         "--project_id",
         type=str,
         nargs="+",
-        help="削除するプロジェクトのproject_idを指定してください。`file://`を先頭に付けると、一覧が記載されたファイルを指定できます。",
+        help="脱退させるプロジェクトのproject_idを指定してください。`file://`を先頭に付けると、一覧が記載されたファイルを指定できます。",
     )
 
-    drop_group.add_argument("-org", "--organization", type=str, help="組織配下のすべての進行中のプロジェクトから削除したい場合は、組織名を指定してください。")
+    drop_group.add_argument(
+        "-org", "--organization", type=str, help="組織名を指定すると、組織配下のすべてのプロジェクト（自分が所属している）から、ユーザを脱退させます。"
+    )
 
     parser.set_defaults(subcommand_func=main)
 
 
 def add_parser(subparsers: argparse._SubParsersAction):
     subcommand_name = "delete"
-    subcommand_help = "複数のプロジェクトから、ユーザを削除する。"
-    description = "複数のプロジェクトから、ユーザを削除する。"
+    subcommand_help = "複数のプロジェクトから、ユーザを脱退させます。"
+    description = "複数のプロジェクトから、ユーザを脱退させます。"
     epilog = "オーナロールを持つユーザで実行してください。"
 
     parser = annofabcli.common.cli.add_parser(subparsers, subcommand_name, subcommand_help, description, epilog=epilog)

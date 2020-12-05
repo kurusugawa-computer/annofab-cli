@@ -345,7 +345,7 @@ class ImportAnnotation(AbstractCommandLineInterface):
         super().validate_project(project_id, [ProjectMemberRole.OWNER])
 
         task_id_list = annofabcli.common.cli.get_list_from_args(args.task_id)
-        my_account_id = self.facade.get_my_account_id()
+        my_account_id = self.service.api.account_id
 
         # Simpleアノテーションの読み込み
         if annotation_path.is_file():

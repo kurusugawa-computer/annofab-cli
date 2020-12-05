@@ -23,11 +23,8 @@ class InviteUser(AbstractCommandLineInterface):
     """
 
     def assign_role_with_organization(self, organization_name: str, user_id_list: List[str], member_role: str):
-
-        # 進行中で自分自身が所属しているプロジェクトの一覧を取得する
-        my_account_id = self.facade.get_my_account_id()
         projects = self.service.wrapper.get_all_projects_of_organization(
-            organization_name, query_params={"status": "active", "account_id": my_account_id}
+            organization_name, query_params={"account_id": self.service.api.account_id}
         )
 
         for project in projects:
@@ -110,7 +107,7 @@ def parse_args(parser: argparse.ArgumentParser):
         nargs="+",
         help="招待するプロジェクトのproject_idを指定してください。`file://`を先頭に付けると、一覧が記載されたファイルを指定できます。",
     )
-    assign_group.add_argument("-org", "--organization", type=str, help="組織配下のすべての進行中のプロジェクトに招待したい場合は、組織名を指定してください。")
+    assign_group.add_argument("-org", "--organization", type=str, help="組織名を指定すると、組織配下のすべてのプロジェクト（自分が所属している）に招待します。")
 
     parser.set_defaults(subcommand_func=main)
 
