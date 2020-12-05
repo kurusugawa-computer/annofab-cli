@@ -1,7 +1,5 @@
 import argparse
-import json
 import logging
-from pathlib import Path
 from typing import Dict, List, Optional
 
 import annofabapi
@@ -61,21 +59,12 @@ class ListTaskHistoryMain:
         return [e["task_id"] for e in all_task_list]
 
     def get_task_history_dict_for_output(
-        self, project_id: str, task_history_json: Optional[Path] = None, task_id_list: Optional[List[str]] = None
+        self, project_id: str, task_id_list: Optional[List[str]] = None
     ) -> TaskHistoryDict:
         """出力対象のタスク履歴情報を取得する"""
-        if task_history_json is not None:
-            with task_history_json.open() as f:
-                all_task_history_dict = json.load(f)
-            if task_id_list is not None:
-                task_history_dict = self.filter_task_history_dict(all_task_history_dict, task_id_list)
-            else:
-                task_history_dict = all_task_history_dict
-
-        else:
-            if task_id_list is None:
-                task_id_list = self.get_all_task_id_list(project_id)
-            task_history_dict = self.get_task_history_dict_from_project_id(project_id, task_id_list)
+        if task_id_list is None:
+            task_id_list = self.get_all_task_id_list(project_id)
+        task_history_dict = self.get_task_history_dict_from_project_id(project_id, task_id_list)
 
         visualize = AddProps(self.service, project_id)
         for task_history_list in task_history_dict.values():
@@ -96,7 +85,6 @@ class ListTaskHistory(AbstractCommandLineInterface):
     def print_task_history_list(
         self,
         project_id: str,
-        task_history_json: Optional[Path],
         task_id_list: Optional[List[str]],
         arg_format: FormatArgument,
     ):
@@ -106,17 +94,14 @@ class ListTaskHistory(AbstractCommandLineInterface):
         Args:
             project_id: 対象のproject_id
             task_id_list: 対象のタスクのtask_id
-            task_query: タスク検索クエリ
-            task_list_from_json: JSONファイルから取得したタスク一覧
+            arg_format:
 
         """
 
         super().validate_project(project_id, project_member_roles=None)
 
         main_obj = ListTaskHistoryMain(self.service)
-        task_history_dict = main_obj.get_task_history_dict_for_output(
-            project_id, task_history_json=task_history_json, task_id_list=task_id_list
-        )
+        task_history_dict = main_obj.get_task_history_dict_for_output(project_id, task_id_list=task_id_list)
         if arg_format == FormatArgument.CSV:
             all_task_history_list = main_obj.to_all_task_history_list_from_dict(task_history_dict)
             if len(all_task_history_list) > 0:
@@ -135,7 +120,6 @@ class ListTaskHistory(AbstractCommandLineInterface):
 
         self.print_task_history_list(
             args.project_id,
-            task_history_json=args.task_history_json,
             task_id_list=task_id_list,
             arg_format=FormatArgument(args.format),
         )
@@ -157,13 +141,6 @@ def parse_args(parser: argparse.ArgumentParser):
         type=str,
         nargs="+",
         help="対象のタスクのtask_idを指定します。" "`file://`を先頭に付けると、task_idの一覧が記載されたファイルを指定できます。",
-    )
-
-    parser.add_argument(
-        "--task_history_json",
-        type=Path,
-        help="タスク履歴情報が記載されたJSONファイルのパスを指定すると、JSONに記載された情報を元にタスク履歴一覧を出力します。"
-        "JSONファイルは`$ annofabcli project download task_history`コマンドで取得できます。",
     )
 
     argument_parser.add_format(

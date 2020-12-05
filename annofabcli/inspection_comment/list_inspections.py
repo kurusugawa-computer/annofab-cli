@@ -3,9 +3,7 @@
 """
 
 import argparse
-import json
 import logging
-import sys
 from typing import Callable, List, Optional
 
 import annofabapi
@@ -87,7 +85,6 @@ class PrintInspections(AbstractCommandLineInterface):
         project_id: str,
         task_id_list: List[str],
         filter_inspection: Optional[FilterInspectionFunc] = None,
-        inspection_list_from_json: Optional[List[Inspection]] = None,
     ):
         """
         検査コメントを出力する
@@ -95,23 +92,15 @@ class PrintInspections(AbstractCommandLineInterface):
         Args:
             project_id: 対象のproject_id
             task_id_list: 受け入れ完了にするタスクのtask_idのList
-            inspection_comment: 絞り込み条件となる、検査コメントの中身
-            commenter_user_id: 絞り込み条件となる、検査コメントを付与したユーザのuser_id
             filter_inspection: 検索コメントを絞り込むための関数
 
         Returns:
 
         """
 
-        if inspection_list_from_json is None:
-            inspection_list = self.get_inspections(
-                project_id, task_id_list=task_id_list, filter_inspection=filter_inspection
-            )
-
-        else:
-            inspection_list = self.filter_inspection_list(
-                inspection_list_from_json, task_id_list=task_id_list, arg_filter_inspection=filter_inspection
-            )
+        inspection_list = self.get_inspections(
+            project_id, task_id_list=task_id_list, filter_inspection=filter_inspection
+        )
 
         logger.info(f"検査コメントの件数: {len(inspection_list)}")
 
@@ -170,35 +159,14 @@ class PrintInspections(AbstractCommandLineInterface):
 
         return all_inspections
 
-    @staticmethod
-    def validate(args: argparse.Namespace):
-        if args.inspection_comment_json is None and args.task_id is None:
-            print(
-                "annofabcli inspection_comment list: error: argument -t/--task_id: "
-                "`--inspection_comment_json`を指定しないときは、必須です。",
-                file=sys.stderr,
-            )
-            return False
-        else:
-            return True
-
     def main(self):
         args = self.args
-        if not self.validate(args):
-            return
-
         task_id_list = annofabcli.common.cli.get_list_from_args(args.task_id)
-        if args.inspection_comment_json is not None:
-            with open(args.inspection_comment_json, encoding="utf-8") as f:
-                inspection_list = json.load(f)
-        else:
-            inspection_list = None
 
         filter_inspection = create_filter_func(only_reply=args.only_reply, exclude_reply=args.exclude_reply)
         self.print_inspections(
             args.project_id,
             task_id_list,
-            inspection_list_from_json=inspection_list,
             filter_inspection=filter_inspection,
         )
 
@@ -208,23 +176,13 @@ def parse_args(parser: argparse.ArgumentParser):
 
     argument_parser.add_project_id()
     argument_parser.add_task_id(
-        required=False,
-        help_message="対象のタスクのtask_idを指定します。　"
-        "`--inspection_comment_json`を指定しないときは、必須です。"
-        "`file://`を先頭に付けると、task_idの一覧が記載されたファイルを指定できます。",
+        required=True,
+        help_message="対象のタスクのtask_idを指定します。　" "`file://`を先頭に付けると、task_idの一覧が記載されたファイルを指定できます。",
     )
 
     reply_comment_group = parser.add_mutually_exclusive_group()
     reply_comment_group.add_argument("--only_reply", action="store_true", help="返信コメントのみを出力する。")
     reply_comment_group.add_argument("--exclude_reply", action="store_true", help="返信コメントを除外して出力する。")
-
-    parser.add_argument(
-        "--inspection_comment_json",
-        type=str,
-        help="検査コメント情報が記載されたJSONファイルのパスを指定すると、JSONに記載された情報を元に検査コメント一覧を出力します。AnnoFabから検査コメント情報を取得しません。"
-        "JSONには記載されていない、`commenter_username	`や`phrase_names_ja`などの情報も追加します。"
-        "JSONファイルは`$ annofabcli project download inspection_comment`コマンドで取得できます。",
-    )
 
     argument_parser.add_format(
         choices=[

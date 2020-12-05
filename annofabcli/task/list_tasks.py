@@ -2,7 +2,6 @@
 プロジェクトのユーザを表示する。
 """
 import argparse
-import json
 import logging
 from typing import Any, Dict, List, Optional
 
@@ -129,7 +128,6 @@ class ListTasksMain:
         task_id_list: Optional[List[str]] = None,
         task_query: Optional[Dict[str, Any]] = None,
         user_id_list: Optional[List[str]] = None,
-        task_list_from_json: Optional[List[Task]] = None,
     ) -> List[Task]:
         """
 
@@ -139,21 +137,14 @@ class ListTasksMain:
             task_id_list: 対象のタスクのtask_id
             task_query: タスク検索クエリ
             user_id_list:
-            task_list_from_json: JSONファイルから取得したタスク一覧
-
 
         Returns:
 
         """
-        if task_list_from_json is None:
-            # WebAPIを実行してタスク情報を取得する
-            if task_id_list is not None:
-                task_list = self.get_task_list_from_task_id(project_id, task_id_list=task_id_list)
-            else:
-                task_list = self.get_task_list_with_api(project_id, task_query=task_query, user_id_list=user_id_list)
-
+        if task_id_list is not None:
+            task_list = self.get_task_list_from_task_id(project_id, task_id_list=task_id_list)
         else:
-            task_list = [self.visualize.add_properties_to_task(e) for e in task_list_from_json]
+            task_list = self.get_task_list_with_api(project_id, task_query=task_query, user_id_list=user_id_list)
 
         return task_list
 
@@ -167,25 +158,8 @@ class ListTasks(AbstractCommandLineInterface):
         super().__init__(service, facade, args)
         self.visualize = AddProps(self.service, args.project_id)
 
-    @staticmethod
-    def validate(args: argparse.Namespace):
-        if args.task_json is not None and args.task_query is not None:
-            logger.warning(
-                "annofabcli task list: warning: argument --task_query: "
-                "`--task_json`を指定しているときは、`--task_query`オプションは無視します。"
-            )
-
-        if args.task_json is not None and args.task_id is not None:
-            logger.warning(
-                "annofabcli task list: warning: argument --task_id: " "`--task_json`を指定しているときは、`--task_id`オプションは無視します。"
-            )
-
-        return True
-
     def main(self):
         args = self.args
-        if not self.validate(args):
-            return
 
         task_id_list = annofabcli.common.cli.get_list_from_args(args.task_id)
         if len(task_id_list) == 0:
@@ -197,12 +171,6 @@ class ListTasks(AbstractCommandLineInterface):
 
         task_query = annofabcli.common.cli.get_json_from_args(args.task_query)
 
-        if args.task_json is not None:
-            with open(args.task_json, encoding="utf-8") as f:
-                task_list = json.load(f)
-        else:
-            task_list = None
-
         project_id = args.project_id
         super().validate_project(project_id, project_member_roles=None)
 
@@ -212,7 +180,6 @@ class ListTasks(AbstractCommandLineInterface):
             task_id_list=task_id_list,
             task_query=task_query,
             user_id_list=user_id_list,
-            task_list_from_json=task_list,
         )
         logger.debug(f"タスク一覧の件数: {len(task_list)}")
 
@@ -253,16 +220,6 @@ def parse_args(parser: argparse.ArgumentParser):
         type=str,
         nargs="+",
         help="対象のタスクのtask_idを指定します。`--task_query`引数とは同時に指定できません。" "`file://`を先頭に付けると、task_idの一覧が記載されたファイルを指定できます。",
-    )
-
-    parser.add_argument(
-        "--task_json",
-        type=str,
-        help="タスク情報が記載されたJSONファイルのパスを指定すると、JSONに記載された情報を元にタスク一覧を出力します。"
-        "AnnoFabからタスク情報を取得しません。 "
-        "このオプションを指定すると、`--task_query`, `--task_id`オプションは無視します。"
-        "JSONには記載されていない、`user_id`や`username`などの情報も追加します。"
-        "JSONファイルは`$ annofabcli project download task`コマンドで取得できます。",
     )
 
     parser.add_argument(
