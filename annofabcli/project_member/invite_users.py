@@ -23,9 +23,6 @@ class InviteUser(AbstractCommandLineInterface):
     """
 
     def assign_role_with_organization(self, organization_name: str, user_id_list: List[str], member_role: str):
-
-        # 進行中で自分自身が所属しているプロジェクトの一覧を取得する
-        my_account_id = self.facade.get_my_account_id()
         projects = self.service.wrapper.get_all_projects_of_organization(
             organization_name, query_params={"account_id": self.service.api.account_id}
         )
