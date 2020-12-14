@@ -1115,6 +1115,26 @@ class Table:
         return df
 
     @staticmethod
+    def create_gradient_df(task_df: pandas.DataFrame) -> pandas.DataFrame:
+        """
+        生産量あたりの指標を算出する
+
+        """
+        task_df["annotation_worktime_hour/annotation_count"] = (
+            task_df["annotation_worktime_hour"] / task_df["annotation_count"]
+        )
+        task_df["inspection_count/annotation_count"] = task_df["inspection_count"] / task_df["annotation_count"]
+        task_df["number_of_rejections/annotation_count"] = task_df["number_of_rejections"] / task_df["annotation_count"]
+
+        task_df["inspection_worktime_hour/annotation_count"] = (
+            task_df["inspection_worktime_hour"] / task_df["annotation_count"]
+        )
+        task_df["acceptance_worktime_hour/annotation_count"] = (
+            task_df["acceptance_worktime_hour"] / task_df["annotation_count"]
+        )
+        return task_df
+
+    @staticmethod
     def create_cumulative_df_by_first_inspector(task_df: pandas.DataFrame) -> pandas.DataFrame:
         """
         最初の検査作業の開始時刻の順にソートして、累計値を算出する

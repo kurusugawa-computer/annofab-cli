@@ -242,6 +242,9 @@ class WriteCsvGraph:
         if self.minimal_output:
             output_target_list = [OutputTarget.ANNOTATION]
 
+        # 単位あたりの指標を算出
+        task_df = Table.create_gradient_df(task_df)
+
         task_cumulative_df_by_annotator = self.table_obj.create_cumulative_df_by_first_annotator(task_df)
         catch_exception(self.linegraph_obj.write_cumulative_line_graph_for_annotator)(
             df=task_cumulative_df_by_annotator,
@@ -269,17 +272,26 @@ class WriteCsvGraph:
                 catch_exception(self.linegraph_obj.write_productivity_line_graph_for_annotator)(
                     df=df_by_date_user_for_annotation, first_annotation_user_id_list=user_id_list
                 )
+                catch_exception(self.linegraph_obj.write_gradient_graph_for_annotator)(
+                    df=task_cumulative_df_by_acceptor, first_annotation_user_id_list=user_id_list
+                )
 
             df_by_date_user_for_inspection = self._get_df_by_date_user_for_inspection()
             if df_by_date_user_for_inspection is not None:
                 catch_exception(self.linegraph_obj.write_productivity_line_graph_for_inspector)(
                     df=df_by_date_user_for_inspection, first_inspection_user_id_list=user_id_list
                 )
+                catch_exception(self.linegraph_obj.write_gradient_for_inspector)(
+                    df=task_cumulative_df_by_inspector, first_inspection_user_id_list=user_id_list
+                )
 
             df_by_date_user_for_acceptance = self._get_df_by_date_user_for_acceptance()
             if df_by_date_user_for_acceptance is not None:
                 catch_exception(self.linegraph_obj.write_productivity_line_graph_for_acceptor)(
                     df=df_by_date_user_for_acceptance, first_acceptance_user_id_list=user_id_list
+                )
+                catch_exception(self.linegraph_obj.write_gradient_for_acceptor)(
+                    df=task_cumulative_df_by_acceptor, first_inspection_user_id_list=user_id_list
                 )
 
     def write_linegraph_for_worktime_by_user(self, user_id_list: Optional[List[str]] = None) -> None:
