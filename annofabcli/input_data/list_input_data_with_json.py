@@ -60,6 +60,7 @@ class ListInputDataWithJsonMain:
         else:
             json_path = input_data_json
 
+        # TODO logger json load
         with json_path.open() as f:
             input_data_list = json.load(f)
 

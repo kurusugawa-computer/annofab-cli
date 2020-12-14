@@ -514,9 +514,15 @@ class Table:
         #             f"task_histories[-1].ended_datetime={task_histories[-1]['ended_datetime']}"
         #         )
         #
-        annotation_histories = [e for e in task_histories if e["phase"] == TaskPhase.ANNOTATION.value]
-        inspection_histories = [e for e in task_histories if e["phase"] == TaskPhase.INSPECTION.value]
-        acceptance_histories = [e for e in task_histories if e["phase"] == TaskPhase.ACCEPTANCE.value]
+        annotation_histories = [
+            e for e in task_histories if e["phase"] == TaskPhase.ANNOTATION.value and e["account_id"] is not None
+        ]
+        inspection_histories = [
+            e for e in task_histories if e["phase"] == TaskPhase.INSPECTION.value and e["account_id"] is not None
+        ]
+        acceptance_histories = [
+            e for e in task_histories if e["phase"] == TaskPhase.ACCEPTANCE.value and e["account_id"] is not None
+        ]
 
         # 最初の教師付情報を設定する
         first_annotation_history = annotation_histories[0] if len(annotation_histories) > 0 else None
@@ -1113,6 +1119,26 @@ class Table:
         # 元に戻す
         df = df.drop(["task_count"], axis=1)
         return df
+
+    @staticmethod
+    def create_gradient_df(task_df: pandas.DataFrame) -> pandas.DataFrame:
+        """
+        生産量あたりの指標を算出する
+
+        """
+        task_df["annotation_worktime_hour/annotation_count"] = (
+            task_df["annotation_worktime_hour"] / task_df["annotation_count"]
+        )
+        task_df["inspection_count/annotation_count"] = task_df["inspection_count"] / task_df["annotation_count"]
+        task_df["number_of_rejections/annotation_count"] = task_df["number_of_rejections"] / task_df["annotation_count"]
+
+        task_df["inspection_worktime_hour/annotation_count"] = (
+            task_df["inspection_worktime_hour"] / task_df["annotation_count"]
+        )
+        task_df["acceptance_worktime_hour/annotation_count"] = (
+            task_df["acceptance_worktime_hour"] / task_df["annotation_count"]
+        )
+        return task_df
 
     @staticmethod
     def create_cumulative_df_by_first_inspector(task_df: pandas.DataFrame) -> pandas.DataFrame:

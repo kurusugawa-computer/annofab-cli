@@ -1743,3 +1743,337 @@ class LineGraph:
         bokeh.plotting.reset_output()
         bokeh.plotting.output_file(output_file, title=html_title)
         bokeh.plotting.save(bokeh.layouts.column(fig_list))
+
+    def write_gradient_graph_for_annotator(
+        self,
+        df: pandas.DataFrame,
+        first_annotation_user_id_list: Optional[List[str]] = None,
+    ):
+        """
+        教師付作業者用の累積折れ線グラフの傾きを出力する。
+
+        Args:
+            df:
+            first_annotation_user_id_list: 最初のアノテーションを担当したuser_idのList. Noneの場合はtask_dfから決まる。
+
+        Returns:
+
+        """
+
+        def write_cumulative_graph(fig_info_list: List[Dict[str, str]], html_title: str):
+            """
+            累計グラフを出力する。
+
+            Args:
+                fig_info_list:
+                html_title:
+
+            Returns:
+
+            """
+            output_file = f"{self.line_graph_outdir}/{html_title}.html"
+            logger.debug(f"{output_file} を出力します。")
+
+            figs: List[bokeh.plotting.Figure] = []
+            for fig_info in fig_info_list:
+                figs.append(
+                    figure(
+                        plot_width=1200,
+                        plot_height=600,
+                        title=fig_info["title"],
+                        x_axis_label=fig_info["x_axis_label"],
+                        y_axis_label=fig_info["y_axis_label"],
+                    )
+                )
+
+            for user_index, user_id in enumerate(user_id_list):
+                filtered_df = df[df["first_annotation_user_id"] == user_id]
+                if filtered_df.empty:
+                    logger.debug(f"dataframe is empty. user_id = {user_id}")
+                    continue
+
+                source = ColumnDataSource(data=filtered_df)
+                color = self.my_palette[user_index]
+                username = filtered_df.iloc[0]["first_annotation_username"]
+
+                for fig, fig_info in zip(figs, fig_info_list):
+                    self._plot_line_and_circle(
+                        fig,
+                        x_column_name=fig_info["x"],
+                        y_column_name=fig_info["y"],
+                        source=source,
+                        legend_label=username,
+                        color=color,
+                    )
+
+            hover_tool = self._create_hover_tool(tooltip_item)
+            for fig in figs:
+                self._set_legend(fig, hover_tool)
+
+            bokeh.plotting.reset_output()
+            bokeh.plotting.output_file(output_file, title=html_title)
+            bokeh.plotting.save(bokeh.layouts.column(figs))
+
+        tooltip_item = [
+            "task_id",
+            "phase",
+            "status",
+            "first_annotation_user_id",
+            "first_annotation_username",
+            "first_annotation_started_datetime",
+            "updated_datetime",
+            "annotation_worktime_hour",
+            "inspection_worktime_hour",
+            "acceptance_worktime_hour",
+            "annotation_count",
+            "input_data_count",
+            "inspection_count",
+        ]
+
+        if len(df) == 0:
+            logger.info("タスク一覧が0件のため出力しない")
+            return
+
+        user_id_list = self.create_user_id_list(
+            df,
+            "first_annotation_user_id",
+            datetime_column="first_annotation_started_datetime",
+            arg_user_id_list=first_annotation_user_id_list,
+        )
+        logger.debug(f"教師付者用の累積折れ線グラフに表示する、教師付者のuser_id = {user_id_list}")
+
+        # 横軸が累計のアノテーション数
+        fig_info_list_annotation_count = [
+            dict(
+                x="cumulative_annotation_count",
+                y="annotation_worktime_hour/annotation_count",
+                title="アノテーションあたり作業時間の変化",
+                x_axis_label="アノテーション数",
+                y_axis_label="教師付時間[hour]/アノテーション数",
+            ),
+            dict(
+                x="cumulative_annotation_count",
+                y="inspection_count/annotation_count",
+                title="アノテーションあたり検査コメント数の変化",
+                x_axis_label="アノテーション数",
+                y_axis_label="検査コメント数/アノテーション数",
+            ),
+        ]
+        write_cumulative_graph(fig_info_list_annotation_count, html_title="折れ線-横軸_アノテーション数-縦軸_アノテーションあたりの指標-教師付者用")
+
+    def write_gradient_for_inspector(
+        self,
+        df: pandas.DataFrame,
+        first_inspection_user_id_list: Optional[List[str]] = None,
+    ):
+        """
+        日毎の生産性を検査作業者ごとにプロットする。
+
+        Args:
+            df:
+            first_acceptance_user_id_list:
+
+        Returns:
+
+        """
+
+        def write_graph(fig_info_list: List[Dict[str, str]], html_title: str):
+            """
+
+            Args:
+                fig_info_list:
+                html_title:
+
+            Returns:
+
+            """
+            output_file = f"{self.line_graph_outdir}/{html_title}.html"
+            logger.debug(f"{output_file} を出力します。")
+
+            figs: List[bokeh.plotting.Figure] = []
+            for fig_info in fig_info_list:
+                figs.append(
+                    figure(
+                        plot_width=1200,
+                        plot_height=600,
+                        title=fig_info["title"],
+                        x_axis_label=fig_info["x_axis_label"],
+                        x_axis_type="datetime",
+                        y_axis_label=fig_info["y_axis_label"],
+                    )
+                )
+
+            for user_index, user_id in enumerate(user_id_list):
+                filtered_df = df[df["first_inspection_user_id"] == user_id]
+                if filtered_df.empty:
+                    logger.debug(f"dataframe is empty. user_id = {user_id}")
+                    continue
+
+                source = ColumnDataSource(data=filtered_df)
+                color = self.my_palette[user_index]
+                username = filtered_df.iloc[0]["first_inspection_username"]
+
+                for fig, fig_info in zip(figs, fig_info_list):
+                    self._plot_line_and_circle(
+                        fig,
+                        x_column_name=fig_info["x"],
+                        y_column_name=fig_info["y"],
+                        source=source,
+                        legend_label=username,
+                        color=color,
+                    )
+
+            hover_tool = self._create_hover_tool(tooltip_item)
+            for fig in figs:
+                self._set_legend(fig, hover_tool)
+
+            bokeh.plotting.reset_output()
+            bokeh.plotting.output_file(output_file, title=html_title)
+            bokeh.plotting.save(bokeh.layouts.column(figs))
+
+        tooltip_item = [
+            "task_id",
+            "phase",
+            "status",
+            "first_inspection_user_id",
+            "first_inspection_username",
+            "first_inspection_started_datetime",
+            "updated_datetime",
+            "annotation_worktime_hour",
+            "inspection_worktime_hour",
+            "acceptance_worktime_hour",
+            "annotation_count",
+            "input_data_count",
+        ]
+
+        if len(df) == 0:
+            logger.info("データが0件のため出力しない")
+            return
+
+        user_id_list = self.create_user_id_list(
+            df,
+            "first_inspection_user_id",
+            datetime_column="first_inspection_started_datetime",
+            arg_user_id_list=first_inspection_user_id_list,
+        )
+        logger.debug(f"検査者用の折れ線グラフに表示する、受入者のuser_id = {user_id_list}")
+
+        fig_info_list_input_data_count = [
+            dict(
+                x="cumulative_annotation_count",
+                y="annotation_worktime_hour/annotation_count",
+                title="アノテーションあたり検査時間の変化",
+                x_axis_label="アノテーション数",
+                y_axis_label="検査時間[hour]/アノテーション数",
+            ),
+        ]
+        write_graph(fig_info_list_input_data_count, html_title="折れ線-横軸_アノテーション数-縦軸_アノテーションあたりの指標-検査者用")
+
+    def write_gradient_for_acceptor(
+        self,
+        df: pandas.DataFrame,
+        first_acceptance_user_id_list: Optional[List[str]] = None,
+    ):
+        """
+        日毎の生産性をプロットする
+
+        Args:
+            df:
+            first_acceptance_user_id_list:
+
+        Returns:
+
+        """
+
+        def write_graph(fig_info_list: List[Dict[str, str]], html_title: str):
+            """
+
+            Args:
+                fig_info_list:
+                html_title:
+
+            Returns:
+
+            """
+            output_file = f"{self.line_graph_outdir}/{html_title}.html"
+            logger.debug(f"{output_file} を出力します。")
+
+            figs: List[bokeh.plotting.Figure] = []
+            for fig_info in fig_info_list:
+                figs.append(
+                    figure(
+                        plot_width=1200,
+                        plot_height=600,
+                        title=fig_info["title"],
+                        x_axis_label=fig_info["x_axis_label"],
+                        x_axis_type="datetime",
+                        y_axis_label=fig_info["y_axis_label"],
+                    )
+                )
+
+            for user_index, user_id in enumerate(user_id_list):
+                filtered_df = df[df["first_acceptance_user_id"] == user_id]
+                if filtered_df.empty:
+                    logger.debug(f"dataframe is empty. user_id = {user_id}")
+                    continue
+
+                source = ColumnDataSource(data=filtered_df)
+                color = self.my_palette[user_index]
+                username = filtered_df.iloc[0]["first_acceptance_username"]
+
+                for fig, fig_info in zip(figs, fig_info_list):
+                    self._plot_line_and_circle(
+                        fig,
+                        x_column_name=fig_info["x"],
+                        y_column_name=fig_info["y"],
+                        source=source,
+                        legend_label=username,
+                        color=color,
+                    )
+
+            hover_tool = self._create_hover_tool(tooltip_item)
+            for fig in figs:
+                self._set_legend(fig, hover_tool)
+
+            bokeh.plotting.reset_output()
+            bokeh.plotting.output_file(output_file, title=html_title)
+            bokeh.plotting.save(bokeh.layouts.column(figs))
+
+        tooltip_item = [
+            "task_id",
+            "phase",
+            "status",
+            "first_acceptance_user_id",
+            "first_acceptance_username",
+            "first_acceptance_started_datetime",
+            "updated_datetime",
+            "annotation_worktime_hour",
+            "inspection_worktime_hour",
+            "acceptance_worktime_hour",
+            "annotation_count",
+            "input_data_count",
+        ]
+
+        if len(df) == 0:
+            logger.info("データが0件のため出力しない")
+            return
+
+        user_id_list = self.create_user_id_list(
+            df,
+            "first_acceptance_user_id",
+            datetime_column="first_acceptance_started_datetime",
+            arg_user_id_list=first_acceptance_user_id_list,
+        )
+        logger.debug(f"受入者用の折れ線グラフに表示する、受入者のuser_id = {user_id_list}")
+
+        fig_info_list_input_data_count = [
+            dict(
+                x="cumulative_annotation_count",
+                y="acceptance_worktime_hour/annotation_count",
+                title="アノテーションあたり受入時間の変化",
+                x_axis_label="アノテーション数",
+                y_axis_label="受入時間[hour]/アノテーション数",
+            ),
+        ]
+
+        write_graph(fig_info_list_input_data_count, html_title="折れ線-横軸_アノテーション数-縦軸_アノテーションあたりの指標-受入者用")
