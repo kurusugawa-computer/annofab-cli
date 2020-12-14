@@ -262,7 +262,7 @@ class LineGraph:
         tooltip_item = [
             "first_annotation_user_id",
             "first_annotation_username",
-            "first_annotation_started_datetime",
+            "first_annotation_started_date",
             "first_annotation_worktime_hour",
             "annotation_worktime_hour",
             "inspection_worktime_hour",
@@ -482,7 +482,7 @@ class LineGraph:
         tooltip_item = [
             "first_inspection_user_id",
             "first_inspection_username",
-            "first_inspection_started_datetime",
+            "first_inspection_started_date",
             "first_inspection_worktime_hour",
             "inspection_worktime_hour",
             "annotation_count",
@@ -619,7 +619,7 @@ class LineGraph:
         tooltip_item = [
             "first_acceptance_user_id",
             "first_acceptance_username",
-            "first_acceptance_started_datetime",
+            "first_acceptance_started_date",
             "first_acceptance_worktime_hour",
             "acceptance_worktime_hour",
             "annotation_count",
