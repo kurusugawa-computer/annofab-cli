@@ -273,7 +273,7 @@ class WriteCsvGraph:
                     df=df_by_date_user_for_annotation, first_annotation_user_id_list=user_id_list
                 )
                 catch_exception(self.linegraph_obj.write_gradient_graph_for_annotator)(
-                    df=task_cumulative_df_by_acceptor, first_annotation_user_id_list=user_id_list
+                    df=task_cumulative_df_by_annotator, first_annotation_user_id_list=user_id_list
                 )
 
             df_by_date_user_for_inspection = self._get_df_by_date_user_for_inspection()
