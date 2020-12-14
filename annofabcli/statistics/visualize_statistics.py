@@ -268,7 +268,7 @@ class WriteCsvGraph:
 
         if not self.minimal_output:
             df_by_date_user_for_annotation = self._get_df_by_date_user_for_annotation()
-            if df_by_date_user_for_annotation is not None:
+            if len(df_by_date_user_for_annotation) > 0:
                 catch_exception(self.linegraph_obj.write_productivity_line_graph_for_annotator)(
                     df=df_by_date_user_for_annotation, first_annotation_user_id_list=user_id_list
                 )
@@ -277,7 +277,7 @@ class WriteCsvGraph:
                 )
 
             df_by_date_user_for_inspection = self._get_df_by_date_user_for_inspection()
-            if df_by_date_user_for_inspection is not None:
+            if len(df_by_date_user_for_inspection) > 0:
                 catch_exception(self.linegraph_obj.write_productivity_line_graph_for_inspector)(
                     df=df_by_date_user_for_inspection, first_inspection_user_id_list=user_id_list
                 )
@@ -286,12 +286,12 @@ class WriteCsvGraph:
                 )
 
             df_by_date_user_for_acceptance = self._get_df_by_date_user_for_acceptance()
-            if df_by_date_user_for_acceptance is not None:
+            if len(df_by_date_user_for_acceptance) > 0:
                 catch_exception(self.linegraph_obj.write_productivity_line_graph_for_acceptor)(
                     df=df_by_date_user_for_acceptance, first_acceptance_user_id_list=user_id_list
                 )
                 catch_exception(self.linegraph_obj.write_gradient_for_acceptor)(
-                    df=task_cumulative_df_by_acceptor, first_inspection_user_id_list=user_id_list
+                    df=task_cumulative_df_by_acceptor, first_acceptance_user_id_list=user_id_list
                 )
 
     def write_linegraph_for_worktime_by_user(self, user_id_list: Optional[List[str]] = None) -> None:
