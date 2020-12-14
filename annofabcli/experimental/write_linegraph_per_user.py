@@ -61,31 +61,28 @@ def write_linegraph_per_user(
 
     if not minimal_output:
         df_by_date_user_for_annotation = Table.create_dataframe_by_date_user_for_annotation(task_df)
-        if df_by_date_user_for_annotation is not None:
-            linegraph_obj.write_productivity_line_graph_for_annotator(
-                df=df_by_date_user_for_annotation, first_annotation_user_id_list=user_id_list
-            )
-            linegraph_obj.write_gradient_graph_for_annotator(
-                df=task_cumulative_df_by_annotator, first_annotation_user_id_list=user_id_list
-            )
+        linegraph_obj.write_productivity_line_graph_for_annotator(
+            df=df_by_date_user_for_annotation, first_annotation_user_id_list=user_id_list
+        )
+        linegraph_obj.write_gradient_graph_for_annotator(
+            df=task_cumulative_df_by_annotator, first_annotation_user_id_list=user_id_list
+        )
 
-        # df_by_date_user_for_inspection = Table.create_dataframe_by_date_user_for_inspection(task_df)
-        # if df_by_date_user_for_inspection is not None:
-        #     linegraph_obj.write_productivity_line_graph_for_inspector(
-        #         df=df_by_date_user_for_inspection, first_inspection_user_id_list=user_id_list
-        #     )
-        #     linegraph_obj.write_gradient_for_inspector(
-        #         df=task_cumulative_df_by_inspector, first_inspection_user_id_list=user_id_list
-        #     )
+        df_by_date_user_for_inspection = Table.create_dataframe_by_date_user_for_inspection(task_df)
+        linegraph_obj.write_productivity_line_graph_for_inspector(
+            df=df_by_date_user_for_inspection, first_inspection_user_id_list=user_id_list
+        )
+        linegraph_obj.write_gradient_for_inspector(
+            df=task_cumulative_df_by_inspector, first_inspection_user_id_list=user_id_list
+        )
 
         df_by_date_user_for_acceptance = Table.create_dataframe_by_date_user_for_acceptance(task_df)
-        if df_by_date_user_for_acceptance is not None:
-            linegraph_obj.write_productivity_line_graph_for_acceptor(
-                df=df_by_date_user_for_acceptance, first_acceptance_user_id_list=user_id_list
-            )
-            linegraph_obj.write_gradient_for_acceptor(
-                df=task_cumulative_df_by_acceptor, first_acceptance_user_id_list=user_id_list
-            )
+        linegraph_obj.write_productivity_line_graph_for_acceptor(
+            df=df_by_date_user_for_acceptance, first_acceptance_user_id_list=user_id_list
+        )
+        linegraph_obj.write_gradient_for_acceptor(
+            df=task_cumulative_df_by_acceptor, first_acceptance_user_id_list=user_id_list
+        )
 
 
 class WriteLingraphPerUser(AbstractCommandLineInterface):

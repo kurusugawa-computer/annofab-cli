@@ -140,7 +140,7 @@ class WriteCsvGraph:
         if self.df_by_date_user_for_inspection is None:
             task_df = self._get_task_df()
             self.df_by_date_user_for_inspection = self.table_obj.create_dataframe_by_date_user_for_inspection(task_df)
-        return self.df_by_date_user_for_acceptance
+        return self.df_by_date_user_for_inspection
 
     def _get_df_by_date_user_for_acceptance(self):
         if self.df_by_date_user_for_acceptance is None:

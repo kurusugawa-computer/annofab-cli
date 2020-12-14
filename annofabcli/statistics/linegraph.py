@@ -1932,15 +1932,18 @@ class LineGraph:
             bokeh.plotting.save(bokeh.layouts.column(figs))
 
         tooltip_item = [
+            "task_id",
+            "phase",
+            "status",
             "first_inspection_user_id",
             "first_inspection_username",
             "first_inspection_started_datetime",
-            "first_inspection_worktime_hour",
+            "updated_datetime",
+            "annotation_worktime_hour",
             "inspection_worktime_hour",
+            "acceptance_worktime_hour",
             "annotation_count",
             "input_data_count",
-            "task_count",
-            "inspection_count",
         ]
 
         if len(df) == 0:
@@ -1950,14 +1953,10 @@ class LineGraph:
         user_id_list = self.create_user_id_list(
             df,
             "first_inspection_user_id",
-            datetime_column="first_inspection_started_date",
+            datetime_column="first_inspection_started_datetime",
             arg_user_id_list=first_inspection_user_id_list,
         )
         logger.debug(f"検査者用の折れ線グラフに表示する、受入者のuser_id = {user_id_list}")
-
-        df["date_first_inspection_started_date"] = df["first_inspection_started_date"].map(
-            lambda e: dateutil.parser.parse(e).date()
-        )
 
         fig_info_list_input_data_count = [
             dict(
@@ -2041,15 +2040,18 @@ class LineGraph:
             bokeh.plotting.save(bokeh.layouts.column(figs))
 
         tooltip_item = [
+            "task_id",
+            "phase",
+            "status",
             "first_acceptance_user_id",
             "first_acceptance_username",
             "first_acceptance_started_datetime",
-            "first_acceptance_worktime_hour",
+            "updated_datetime",
+            "annotation_worktime_hour",
+            "inspection_worktime_hour",
             "acceptance_worktime_hour",
             "annotation_count",
             "input_data_count",
-            "task_count",
-            "inspection_count",
         ]
 
         if len(df) == 0:
@@ -2059,14 +2061,10 @@ class LineGraph:
         user_id_list = self.create_user_id_list(
             df,
             "first_acceptance_user_id",
-            datetime_column="first_acceptance_started_date",
+            datetime_column="first_acceptance_started_datetime",
             arg_user_id_list=first_acceptance_user_id_list,
         )
         logger.debug(f"受入者用の折れ線グラフに表示する、受入者のuser_id = {user_id_list}")
-
-        df["date_first_acceptance_started_date"] = df["first_acceptance_started_date"].map(
-            lambda e: dateutil.parser.parse(e).date()
-        )
 
         fig_info_list_input_data_count = [
             dict(

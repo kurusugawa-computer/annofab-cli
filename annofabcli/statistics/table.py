@@ -514,9 +514,15 @@ class Table:
         #             f"task_histories[-1].ended_datetime={task_histories[-1]['ended_datetime']}"
         #         )
         #
-        annotation_histories = [e for e in task_histories if e["phase"] == TaskPhase.ANNOTATION.value]
-        inspection_histories = [e for e in task_histories if e["phase"] == TaskPhase.INSPECTION.value]
-        acceptance_histories = [e for e in task_histories if e["phase"] == TaskPhase.ACCEPTANCE.value]
+        annotation_histories = [
+            e for e in task_histories if e["phase"] == TaskPhase.ANNOTATION.value and e["account_id"] is not None
+        ]
+        inspection_histories = [
+            e for e in task_histories if e["phase"] == TaskPhase.INSPECTION.value and e["account_id"] is not None
+        ]
+        acceptance_histories = [
+            e for e in task_histories if e["phase"] == TaskPhase.ACCEPTANCE.value and e["account_id"] is not None
+        ]
 
         # 最初の教師付情報を設定する
         first_annotation_history = annotation_histories[0] if len(annotation_histories) > 0 else None
