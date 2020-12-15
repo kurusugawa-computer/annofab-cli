@@ -5,7 +5,7 @@
 import logging
 import zipfile
 from pathlib import Path
-from typing import Any, Callable, Dict, Optional
+from typing import Any, Callable, Dict, List, Optional
 
 import PIL
 import PIL.Image
@@ -92,7 +92,10 @@ def fill_annotation(
 
 
 def fill_annotation_list(
-    draw: PIL.ImageDraw.Draw, parser: SimpleAnnotationParser, label_color_dict: Dict[str, RGB]
+    draw: PIL.ImageDraw.Draw,
+    parser: SimpleAnnotationParser,
+    label_color_dict: Dict[str, RGB],
+    label_name_list: Optional[List[str]] = None,
 ) -> PIL.ImageDraw.Draw:
     """
     1個の入力データに属するアノテーションlistを描画する
@@ -101,13 +104,21 @@ def fill_annotation_list(
         draw: draw: (IN/OUT) PillowのDrawing Object. 変更される。
         parser: Simple Annotationのparser
         label_color_dict: label_nameとRGBを対応付けたdict
+        label_name_list: 画像化対象のlabel_name. Noneの場合は、すべてのlabel_nameが画像化対象です。
 
     Returns:
         アノテーションを描画した状態のDrawing Object
     """
     simple_annotation = parser.parse()
 
-    for annotation in reversed(simple_annotation.details):
+    # 下層レイヤにあるアノテーションから順に画像化する
+    # reversed関数を使う理由：`simple_annotation.details`は上層レイヤのアノテーションから順に格納されているため
+    if label_name_list is not None:
+        annotation_list = [e for e in reversed(simple_annotation.details) if e.label in label_name_list]
+    else:
+        annotation_list = list(reversed(simple_annotation.details))
+
+    for annotation in annotation_list:
         # 外部ファイルのImage情報を取得する
         data_uri_outer_image = get_data_uri_of_outer_file(annotation)
         if data_uri_outer_image is not None:
@@ -135,6 +146,7 @@ def write_annotation_image(
     label_color_dict: Dict[str, RGB],
     output_image_file: Path,
     background_color: Optional[Any] = None,
+    label_name_list: Optional[List[str]] = None,
 ):
     """
     JSONファイルに記載されているアノテーション情報を、画像化する。
@@ -149,7 +161,7 @@ def write_annotation_image(
             (ex) "rgb(173, 216, 230)", "#add8e6", "lightgray", (173,216,230)
             フォーマットは`ImageColor Module <https://hhsprings.bitbucket.io/docs/programming/examples/python/PIL/ImageColor.html>`_  # noqa: E501
             '指定しない場合は、黒（rgb(0,0,0)）になります。'))
-
+        label_name_list: 画像化対象のlabel_name. Noneの場合は、すべてのlabel_nameが画像化対象です。
 
     Examples:
         "simple-annotation.json" を読み込み、"out.png"画像を生成する。
@@ -167,7 +179,7 @@ def write_annotation_image(
     image = PIL.Image.new(mode="RGB", size=image_size, color=background_color)
     draw = PIL.ImageDraw.Draw(image)
 
-    fill_annotation_list(draw, parser, label_color_dict)
+    fill_annotation_list(draw, parser, label_color_dict, label_name_list=label_name_list)
 
     output_image_file.parent.mkdir(parents=True, exist_ok=True)
     image.save(output_image_file)
@@ -183,6 +195,7 @@ def write_annotation_images_from_path(
     metadata_key_of_image_height: Optional[str] = None,
     output_image_extension: str = "png",
     background_color: Optional[Any] = None,
+    label_name_list: Optional[List[str]] = None,
     is_target_parser_func: Optional[IsParserFunc] = None,
 ) -> bool:
     """
@@ -202,7 +215,8 @@ def write_annotation_images_from_path(
             (ex) "rgb(173, 216, 230)", "#add8e6", "lightgray", (173,216,230)
             フォーマットは`ImageColor Module <https://hhsprings.bitbucket.io/docs/programming/examples/python/PIL/ImageColor.html>`_  # noqa: E501
             '指定しない場合は、黒（rgb(0,0,0)）になります。'))
-        is_target_parser_func: 画像化する条件を関数で指定できます。None場合は、すべてを画像化します。関数の引数は`SimpleAnnotationParser`で、戻り値がbooleanです。戻り値がTrueならば画像化対象です。
+        label_name_list: 画像化対象のlabel_name. Noneの場合は、すべてのlabel_nameが画像化対象です。
+        is_target_parser_func: 画像化する条件を関数で指定できます。Noneの場合は、すべてを画像化します。関数の引数は`SimpleAnnotationParser`で、戻り値がbooleanです。戻り値がTrueならば画像化対象です。
 
     Returns:
         True: アノテーション情報の画像化に成功した。False: アノテーション情報の画像化に失敗した。
@@ -274,6 +288,7 @@ def write_annotation_images_from_path(
             label_color_dict=label_color_dict,
             background_color=background_color,
             output_image_file=output_image_file,
+            label_name_list=label_name_list,
         )
         logger.debug(f"画像ファイル '{str(output_image_file)}' を生成しました。")
         count_created_image += 1
