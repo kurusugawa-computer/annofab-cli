@@ -642,7 +642,7 @@ $ annofabcli filesystem write_annotation_image  --annotation annotation.zip \
 $ annfoabcli project download input_data --project_id prj1 --output input_data.json
 $ annofabcli filesystem write_annotation_image  --annotation annotation.zip \
  --input_data_json input_data.json \
- --metadata_key_of_image_size width height
+ --metadata_key_of_image_size width height \
  --label_color file://label_color.json \
  --output_dir /tmp/output
 ```

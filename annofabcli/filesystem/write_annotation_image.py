@@ -79,7 +79,9 @@ class WriteAnnotationImage:
         # label_color_dict を取得する
         label_color_dict = annofabcli.common.cli.get_json_from_args(args.label_color)
         label_color_dict = {k: tuple(v) for k, v in label_color_dict.items()}
-
+        label_name_list = (
+            annofabcli.common.cli.get_list_from_args(args.label_name) if args.label_name is not None else None
+        )
         annotation_path: Path = args.annotation
         task_id_list = annofabcli.common.cli.get_list_from_args(args.task_id)
         is_target_parser_func = self.create_is_target_parser_func(args.task_status_complete, task_id_list)
@@ -101,6 +103,7 @@ class WriteAnnotationImage:
             else None,
             output_image_extension=args.image_extension,
             background_color=args.background_color,
+            label_name_list=label_name_list,
             is_target_parser_func=is_target_parser_func,
         )
         if not result:
@@ -132,6 +135,15 @@ def parse_args(parser: argparse.ArgumentParser):
         type=Path,
         help="入力データ情報が記載されたJSONファイルのパスを指定してください。引数`--metadata_key_of_image_size`を指定したときに必須です。"
         "JSONファイルは`$ annofabcli project download input_data`コマンドで取得できます。",
+    )
+
+    parser.add_argument(
+        "--label_name",
+        type=str,
+        nargs="+",
+        required=False,
+        help="画像化対象のlabel_nameを指定します。指定しない場合は、すべてのlabel_nameが画像化対象になります。"
+        "`file://`を先頭に付けると、label_name の一覧が記載されたファイルを指定できます。",
     )
 
     parser.add_argument(
