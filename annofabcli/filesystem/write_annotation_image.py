@@ -79,7 +79,9 @@ class WriteAnnotationImage:
         # label_color_dict を取得する
         label_color_dict = annofabcli.common.cli.get_json_from_args(args.label_color)
         label_color_dict = {k: tuple(v) for k, v in label_color_dict.items()}
-        label_name_list = annofabcli.common.cli.get_list_from_args(args.label_name)
+        label_name_list = (
+            annofabcli.common.cli.get_list_from_args(args.label_name) if args.label_name is not None else None
+        )
         annotation_path: Path = args.annotation
         task_id_list = annofabcli.common.cli.get_list_from_args(args.task_id)
         is_target_parser_func = self.create_is_target_parser_func(args.task_status_complete, task_id_list)
