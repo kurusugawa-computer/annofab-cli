@@ -628,6 +628,12 @@ $ annofabcli filesystem write_annotation_image  --annotation annotation.zip \
  --label_color file://label_color.json \
  --output_dir /tmp/output
 
+# label_nameがdogとcatのアノテーションのみ画像化する
+$ annofabcli filesystem write_annotation_image  --annotation annotation.zip \
+ --image_size 1280x720 \
+ --label_color '{"dog":[255,0,0], "cat":[0,255,0]}' \
+ --label_name dog cat
+ --output_dir /tmp/output
 
 # annotation.zip から、アノテーション画像を生成する。ただしタスクのステータスが"完了"で、task.txtに記載れたタスクのみ画像化する。
 $ annofabcli filesystem write_annotation_image  --annotation annotation.zip \
