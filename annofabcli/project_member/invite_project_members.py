@@ -67,28 +67,23 @@ class InviteProjectMemberMain:
         projects = self.service.wrapper.get_all_projects_of_organization(
             organization_name, query_params={"account_id": self.service.api.account_id}
         )
-
-        for project in projects:
-            project_id = project["project_id"]
-            project_title = project["title"]
-
-            if not self.facade.my_role_is_owner(project_id):
-                logger.warning(
-                    f"オーナではないため、プロジェクトメンバを招待できません。" f"project_id = {project_id}, project_tilte = {project_title}"
-                )
-                continue
-
-            self.invite_project_members(project_id, user_id_list, member_role)
+        project_id_list = [e["project_id"] for e in projects]
+        self.assign_role_with_project_id(project_id_list, user_id_list=user_id_list, member_role=member_role)
 
     def assign_role_with_project_id(
         self, project_id_list: List[str], user_id_list: List[str], member_role: ProjectMemberRole
     ):
         for project_id in project_id_list:
-            if not self.facade.my_role_is_owner(project_id):
-                logger.warning(f"オーナではないため、プロジェクトメンバを招待できません。" f"project_id = {project_id}")
-                continue
+            try:
+                if not self.facade.my_role_is_owner(project_id):
+                    logger.warning(f"オーナではないため、プロジェクトメンバを招待できません。" f"project_id = {project_id}")
+                    continue
 
-            self.invite_project_members(project_id, user_id_list, member_role)
+                self.invite_project_members(project_id, user_id_list, member_role)
+
+            except requests.HTTPError as e:
+                logger.warning(e)
+                logger.warning(f"project_id={project_id} のプロジェクトメンバにユーザを招待できませんでした。")
 
 
 class InviteUser(AbstractCommandLineInterface):

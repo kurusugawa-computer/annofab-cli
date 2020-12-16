@@ -59,25 +59,21 @@ class DropProjectMembersMain:
             organization_name, query_params={"account_id": self.service.api.account_id}
         )
 
-        for project in projects:
-            project_id = project["project_id"]
-            project_title = project["title"]
-
-            if not self.facade.my_role_is_owner(project_id):
-                logger.warning(
-                    f"オーナではないため、プロジェクトメンバを脱退させられません。" f"project_id = {project_id}, project_tilte = {project_title}"
-                )
-                continue
-
-            self.drop_project_members(project_id, user_id_list)
+        project_id_list = [e["project_id"] for e in projects]
+        self.drop_role_with_project_id(project_id_list, user_id_list=user_id_list)
 
     def drop_role_with_project_id(self, project_id_list: List[str], user_id_list: List[str]):
         for project_id in project_id_list:
-            if not self.facade.my_role_is_owner(project_id):
-                logger.warning(f"オーナではないため、プロジェクトメンバを脱退させられません。" f"project_id = {project_id}")
-                continue
+            try:
+                if not self.facade.my_role_is_owner(project_id):
+                    logger.warning(f"オーナではないため、プロジェクトメンバを脱退させられません。" f"project_id = {project_id}")
+                    continue
 
-            self.drop_project_members(project_id, user_id_list)
+                self.drop_project_members(project_id, user_id_list)
+
+            except requests.HTTPError as e:
+                logger.warning(e)
+                logger.warning(f"project_id={project_id} のプロジェクトメンバからユーザを脱退させられませんでした。")
 
 
 class DropProjectMembers(AbstractCommandLineInterface):
