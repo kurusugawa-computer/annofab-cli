@@ -1,13 +1,11 @@
-"""
-複数のプロジェクトに、ユーザを招待する。
-"""
-
 import argparse
 import logging
 from typing import List
 
+import annofabapi
 import requests
-from annofabapi.models import ProjectMemberRole
+from annofabapi.models import ProjectMemberRole, ProjectMemberStatus
+from more_itertools import first_true
 
 import annofabcli
 import annofabcli.common.cli
@@ -17,12 +15,55 @@ from annofabcli.common.cli import AbstractCommandLineInterface, build_annofabapi
 logger = logging.getLogger(__name__)
 
 
-class InviteUser(AbstractCommandLineInterface):
-    """
-    ユーザをプロジェクトに招待する
-    """
+class InviteProjectMemberMain:
+    def __init__(self, service: annofabapi.Resource):
+        self.service = service
+        self.facade = AnnofabApiFacade(service)
 
-    def assign_role_with_organization(self, organization_name: str, user_id_list: List[str], member_role: str):
+    def invite_project_members(self, project_id: str, user_id_list: List[str], member_role: ProjectMemberRole):
+        """
+        プロジェクトに、複数ユーザをプロジェクトメンバに追加する
+
+        Args:
+            project_id:
+            user_id_list:
+            member_role:
+
+        Returns:
+
+        """
+        dest_project_members = self.service.wrapper.get_all_project_members(project_id)
+
+        def get_project_member(user_id: str):
+            return first_true(dest_project_members, pred=lambda e: e["user_id"] == user_id)
+
+        project_title = self.facade.get_project_title(project_id)
+
+        # プロジェクトメンバを追加/更新する
+        for user_id in user_id_list:
+            dest_member = get_project_member(user_id)
+            if dest_member is not None:
+                last_updated_datetime = dest_member["updated_datetime"]
+            else:
+                last_updated_datetime = None
+
+            request_body = {
+                "member_status": ProjectMemberStatus.ACTIVE.value,
+                "member_role": member_role.value,
+                "last_updated_datetime": last_updated_datetime,
+            }
+            try:
+                self.service.api.put_project_member(project_id, user_id, request_body=request_body)
+                logger.debug(f"{project_title}({project_id}) のプロジェクトメンバに、{user_id} を {member_role.value} ロールで追加しました。")
+            except requests.HTTPError as e:
+                logger.warning(e)
+                logger.warning(
+                    f"{project_title}({project_id}) のプロジェクトメンバに、{user_id} を {member_role.value} ロールで追加できませんでした。"
+                )
+
+    def assign_role_with_organization(
+        self, organization_name: str, user_id_list: List[str], member_role: ProjectMemberRole
+    ):
         projects = self.service.wrapper.get_all_projects_of_organization(
             organization_name, query_params={"account_id": self.service.api.account_id}
         )
@@ -31,47 +72,42 @@ class InviteUser(AbstractCommandLineInterface):
             project_id = project["project_id"]
             project_title = project["title"]
 
-            try:
-                if not self.facade.my_role_is_owner(project_id):
-                    logger.warning(
-                        f"オーナではないため、プロジェクトメンバを招待できません。" f"project_id = {project_id}, project_tilte = {project_title}"
-                    )
-                    continue
+            if not self.facade.my_role_is_owner(project_id):
+                logger.warning(
+                    f"オーナではないため、プロジェクトメンバを招待できません。" f"project_id = {project_id}, project_tilte = {project_title}"
+                )
+                continue
 
-                self.service.wrapper.assign_role_to_project_members(project_id, user_id_list, member_role)
-                logger.info(f"{project_title}に招待成功. project_id = {project_id}")
+            self.invite_project_members(project_id, user_id_list, member_role)
 
-            except requests.exceptions.HTTPError as e:
-                logger.warning(e)
-                logger.warning(f"エラーのため、{project_title} に招待できなかった。")
-
-    def assign_role_with_project_id(self, project_id_list: List[str], user_id_list: List[str], member_role: str):
+    def assign_role_with_project_id(
+        self, project_id_list: List[str], user_id_list: List[str], member_role: ProjectMemberRole
+    ):
         for project_id in project_id_list:
+            if not self.facade.my_role_is_owner(project_id):
+                logger.warning(f"オーナではないため、プロジェクトメンバを招待できません。" f"project_id = {project_id}")
+                continue
 
-            try:
-                if not self.facade.my_role_is_owner(project_id):
-                    logger.warning(f"オーナではないため、プロジェクトメンバを招待できません。" f"project_id = {project_id}")
-                    continue
+            self.invite_project_members(project_id, user_id_list, member_role)
 
-                project_title = self.service.api.get_project(project_id)[0]["title"]
-                self.service.wrapper.assign_role_to_project_members(project_id, user_id_list, member_role)
-                logger.info(f"{project_title}に招待成功. project_id={project_id}")
 
-            except requests.exceptions.HTTPError as e:
-                logger.warning(e)
-                logger.warning(f"エラーのため、招待できなかった。project_id={project_id}")
+class InviteUser(AbstractCommandLineInterface):
+    """
+    ユーザをプロジェクトに招待する
+    """
 
     def main(self):
         args = self.args
 
         user_id_list = annofabcli.common.cli.get_list_from_args(args.user_id)
 
+        main_obj = InviteProjectMemberMain(self.service)
         if args.organization is not None:
-            self.assign_role_with_organization(args.organization, user_id_list, args.role)
+            main_obj.assign_role_with_organization(args.organization, user_id_list, ProjectMemberRole(args.role))
 
         elif args.project_id is not None:
             project_id_list = annofabcli.common.cli.get_list_from_args(args.project_id)
-            self.assign_role_with_project_id(project_id_list, user_id_list, args.role)
+            main_obj.assign_role_with_project_id(project_id_list, user_id_list, ProjectMemberRole(args.role))
 
 
 def main(args):
