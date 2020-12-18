@@ -40,7 +40,7 @@ class UpdateMetadataOfTaskMain(AbstracCommandCinfirmInterface):
                 logger.info(
                     f"{first_index+1} 〜 {min(first_index+batch_size, len(task_id_list)-1)} 件目のタスクのmetadataを更新します。"
                 )
-                request_body = {task_id: metadata for task_id in task_id_list[first_index:batch_size]}
+                request_body = {task_id: metadata for task_id in task_id_list[first_index:first_index+batch_size]}
                 self.service.api.patch_tasks_metadata(project_id, request_body=request_body)
                 first_index += batch_size
 
@@ -79,7 +79,7 @@ def parse_args(parser: argparse.ArgumentParser):
     parser.add_argument(
         "--batch_size",
         required=False,
-        default=100,
+        default=1000,
         type=int,
         help="タスクのメタデータを何個ごとに更新するかを指定してください。一度に更新するタスクが多いとタイムアウトが発生する恐れがあります。",
     )
