@@ -57,12 +57,14 @@ class ListTasksWithJsonMain:
         else:
             json_path = task_json
 
+        logger.debug(f"{json_path} を読み込んでいます。")
         with json_path.open() as f:
             task_list = json.load(f)
 
         if task_query is not None:
             task_query = self.facade.set_account_id_of_task_query(project_id, task_query)
 
+        logger.debug(f"出力対象のタスクを抽出しています。")
         task_id_set = set(task_id_list) if task_id_list is not None else None
         filtered_task_list = [
             e for e in task_list if self.filter_task_list(e, task_query=task_query, task_id_set=task_id_set)
