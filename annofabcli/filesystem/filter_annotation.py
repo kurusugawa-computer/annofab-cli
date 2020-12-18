@@ -115,9 +115,12 @@ class FilterAnnotation:
                     logger.debug(f"スキップ")
                     continue
 
-                zip_file.extract(str(parser.json_file_path), str(output_dir / parser.json_file_path))
+                logger.debug(str(parser.json_file_path))
+                logger.debug(str(output_dir / parser.json_file_path))
+                zip_file.extract(str(parser.json_file_path), str(output_dir))
                 # 外部あの手0ション
                 # shutil.copy(annotation_path / parser.json_file_path, output_dir / parser.json_file_path)
+                logger.debug(f"コピー")
 
     @staticmethod
     def create_filter_query(args: argparse.Namespace) -> FilterQuery:
@@ -237,7 +240,7 @@ def parse_args(parser: argparse.ArgumentParser):
         help="除外する入力データのinput_data_nameを指定してください。" + "`file://`を先頭に付けると、input_data_name の一覧が記載されたファイルを指定できます。",
     )
 
-    parser.add_argument("-o", "--output_dir", type=str, required=True, help="出力先ディレクトリのパス")
+    parser.add_argument("-o", "--output_dir", type=Path, required=True, help="出力先ディレクトリのパス")
 
     parser.set_defaults(subcommand_func=main)
 
