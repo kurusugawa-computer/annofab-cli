@@ -14,6 +14,7 @@ from annofabcli.common.dataclasses import WaitOptions
 from annofabcli.common.download import DownloadingFile
 from annofabcli.common.enums import FormatArgument
 from annofabcli.common.facade import TaskQuery, match_task_with_query
+from annofabcli.common.visualize import AddProps
 
 logger = logging.getLogger(__name__)
 
@@ -69,7 +70,9 @@ class ListTasksWithJsonMain:
         filtered_task_list = [
             e for e in task_list if self.filter_task_list(e, task_query=task_query, task_id_set=task_id_set)
         ]
-        return filtered_task_list
+
+        visualize_obj = AddProps(self.service, project_id)
+        return [visualize_obj.add_properties_to_task(e) for e in filtered_task_list]
 
 
 class ListTasksWithJson(AbstractCommandLineInterface):
