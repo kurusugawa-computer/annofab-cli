@@ -1,6 +1,8 @@
 import argparse
 import logging
+import os
 import zipfile
+from collections import defaultdict
 from dataclasses import dataclass
 from pathlib import Path
 from typing import Any, Dict, List, Optional, Set
@@ -10,7 +12,6 @@ from annofabapi.parser import SimpleAnnotationParser, lazy_parse_simple_annotati
 
 import annofabcli
 import annofabcli.common.cli
-from annofabcli.common.cli import ArgumentParser
 from annofabcli.common.facade import TaskQuery
 from annofabcli.common.image import IsParserFunc
 
@@ -76,6 +77,25 @@ def match_query(annotation: Dict[str, Any], filter_query: FilterQuery) -> bool:
     return True
 
 
+def create_outer_filepath_dict(namelist: List[str]) -> Dict[str, List[str]]:
+    """
+    外部アノテーションのファイルパス一覧
+
+    Args:
+        namelist: zipファイル内のファイル一覧
+
+    Returns:
+
+    """
+    d = defaultdict(list)
+    for name in namelist:
+        if len(name.split("/")) != 3:
+            continue
+        dirname = os.path.splitext(name)[0]
+        d[dirname].append(name)
+    return d
+
+
 class FilterAnnotation:
     @staticmethod
     def create_is_target_parser_func(
@@ -102,25 +122,26 @@ class FilterAnnotation:
 
         return is_target_parser
 
-    COMMON_MESSAGE = "annofabcli filesystem write_annotation_image: error:"
+    # COMMON_MESSAGE = "annofabcli filesystem write_annotation_image: error:"
 
     @staticmethod
     def filter_annotation_zip(annotation_zip: Path, filter_query: FilterQuery, output_dir: Path):
         with zipfile.ZipFile(str(annotation_zip)) as zip_file:
-
+            zip_filepath_dict = create_outer_filepath_dict(zip_file.namelist())
             for parser in lazy_parse_simple_annotation_zip(annotation_zip):
                 logger.debug(f"{parser.json_file_path} を読み込みます。")
 
                 if not match_query(parser.load_json(), filter_query):
-                    logger.debug(f"スキップ")
                     continue
 
-                logger.debug(str(parser.json_file_path))
-                logger.debug(str(output_dir / parser.json_file_path))
-                zip_file.extract(str(parser.json_file_path), str(output_dir))
-                # 外部あの手0ション
-                # shutil.copy(annotation_path / parser.json_file_path, output_dir / parser.json_file_path)
-                logger.debug(f"コピー")
+                # JSONを展開
+                zip_file.extract(parser.json_file_path, str(output_dir))
+                # 塗りつぶしアノテーションが格納されているディレクトリを展開
+                outer_annotation_dir = os.path.splitext(parser.json_file_path)[0]
+                outer_annotation_file_list = zip_filepath_dict.get(outer_annotation_dir)
+                if outer_annotation_file_list is not None:
+                    for outer_annotation_file in outer_annotation_file_list:
+                        zip_file.extract(outer_annotation_file, str(output_dir))
 
     @staticmethod
     def create_filter_query(args: argparse.Namespace) -> FilterQuery:
@@ -132,10 +153,14 @@ class FilterAnnotation:
 
         task_id_set = set(annofabcli.common.cli.get_list_from_args(args.task_id)) if args.task_id is not None else None
         exclude_task_id_set = (
-            set(annofabcli.common.cli.get_list_from_args(args.exclude_task_id)) if args.exclude_task_id is not None else None
+            set(annofabcli.common.cli.get_list_from_args(args.exclude_task_id))
+            if args.exclude_task_id is not None
+            else None
         )
         input_data_id_set = (
-            set(annofabcli.common.cli.get_list_from_args(args.input_data_id)) if args.input_data_id is not None else None
+            set(annofabcli.common.cli.get_list_from_args(args.input_data_id))
+            if args.input_data_id is not None
+            else None
         )
         exclude_input_data_id_set = (
             set(annofabcli.common.cli.get_list_from_args(args.exclude_input_data_id))
@@ -143,7 +168,9 @@ class FilterAnnotation:
             else None
         )
         input_data_name_set = (
-            set(annofabcli.common.cli.get_list_from_args(args.input_data_name)) if args.input_data_name is not None else None
+            set(annofabcli.common.cli.get_list_from_args(args.input_data_name))
+            if args.input_data_name is not None
+            else None
         )
         exclude_input_data_name_set = (
             set(annofabcli.common.cli.get_list_from_args(args.exclude_input_data_name))
@@ -180,14 +207,8 @@ def main(args):
 
 
 def parse_args(parser: argparse.ArgumentParser):
-    argument_parser = ArgumentParser(parser)
 
     parser.add_argument("--annotation", type=Path, required=True, help="アノテーションzip、またはzipを展開したディレクトリ")
-
-    # TODO
-    # --overwrite
-    # --flatten
-    #
 
     parser.add_argument(
         "-tq",
