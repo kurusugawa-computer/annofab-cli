@@ -46,7 +46,9 @@ def _match_task_query(annotation: Dict[str, Any], task_query: Optional[TaskQuery
     return True
 
 
-def match_query(annotation: Dict[str, Any], filter_query: FilterQuery) -> bool:  # pylint: disable=too-many-return-statements
+def match_query(
+    annotation: Dict[str, Any], filter_query: FilterQuery
+) -> bool:  # pylint: disable=too-many-return-statements
     if filter_query.task_query is not None and not _match_task_query(annotation, filter_query.task_query):
         return False
 
@@ -123,7 +125,6 @@ class FilterAnnotation:
             return True
 
         return is_target_parser
-
 
     @staticmethod
     def filter_annotation_zip(annotation_zip: Path, filter_query: FilterQuery, output_dir: Path):
