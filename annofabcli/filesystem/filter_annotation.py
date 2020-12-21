@@ -46,9 +46,9 @@ def _match_task_query(annotation: Dict[str, Any], task_query: Optional[TaskQuery
     return True
 
 
-def match_query(
+def match_query(  # pylint: disable=too-many-return-statements
     annotation: Dict[str, Any], filter_query: FilterQuery
-) -> bool:  # pylint: disable=too-many-return-statements
+) -> bool:
     if filter_query.task_query is not None and not _match_task_query(annotation, filter_query.task_query):
         return False
 
