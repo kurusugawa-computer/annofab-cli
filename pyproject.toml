@@ -53,6 +53,10 @@ flake8 = "*"
 mypy = "*"
 pylint = "*"
 
+# Document library
+sphinx = "*"
+recommonmark = "*"
+
 [tool.poetry.scripts]
 annofabcli = "annofabcli.__main__:main"
 
