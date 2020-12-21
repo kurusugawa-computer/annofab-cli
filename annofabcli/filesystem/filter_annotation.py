@@ -1,6 +1,7 @@
 import argparse
 import logging
 import os
+import shutil
 import zipfile
 from collections import defaultdict
 from dataclasses import dataclass
@@ -8,7 +9,7 @@ from pathlib import Path
 from typing import Any, Dict, List, Optional, Set
 
 from annofabapi.models import TaskStatus
-from annofabapi.parser import SimpleAnnotationParser, lazy_parse_simple_annotation_zip
+from annofabapi.parser import SimpleAnnotationParser, lazy_parse_simple_annotation_dir, lazy_parse_simple_annotation_zip
 
 import annofabcli
 import annofabcli.common.cli
@@ -45,7 +46,7 @@ def _match_task_query(annotation: Dict[str, Any], task_query: Optional[TaskQuery
     return True
 
 
-def match_query(annotation: Dict[str, Any], filter_query: FilterQuery) -> bool:
+def match_query(annotation: Dict[str, Any], filter_query: FilterQuery) -> bool:  # pylint: disable=too-many-return-statements
     if filter_query.task_query is not None and not _match_task_query(annotation, filter_query.task_query):
         return False
 
@@ -89,9 +90,10 @@ def create_outer_filepath_dict(namelist: List[str]) -> Dict[str, List[str]]:
     """
     d = defaultdict(list)
     for name in namelist:
-        if len(name.split("/")) != 3:
+        tmp = name.split("/")
+        if len(tmp) != 3:
             continue
-        dirname = os.path.splitext(name)[0]
+        dirname = f"{tmp[0]}/{tmp[1]}"
         d[dirname].append(name)
     return d
 
@@ -122,14 +124,13 @@ class FilterAnnotation:
 
         return is_target_parser
 
-    # COMMON_MESSAGE = "annofabcli filesystem write_annotation_image: error:"
 
     @staticmethod
     def filter_annotation_zip(annotation_zip: Path, filter_query: FilterQuery, output_dir: Path):
         with zipfile.ZipFile(str(annotation_zip)) as zip_file:
             zip_filepath_dict = create_outer_filepath_dict(zip_file.namelist())
+            count = 0
             for parser in lazy_parse_simple_annotation_zip(annotation_zip):
-                logger.debug(f"{parser.json_file_path} を読み込みます。")
 
                 if not match_query(parser.load_json(), filter_query):
                     continue
@@ -142,6 +143,29 @@ class FilterAnnotation:
                 if outer_annotation_file_list is not None:
                     for outer_annotation_file in outer_annotation_file_list:
                         zip_file.extract(outer_annotation_file, str(output_dir))
+                count += 1
+                if count % 10000 == 0:
+                    logger.debug(f"{count} 件のJSONファイルとそれに紐づく塗りつぶし画像を {output_dir} に展開しました。")
+
+    @staticmethod
+    def filter_annotation_dir(annotation_dir: Path, filter_query: FilterQuery, output_dir: Path):
+        count = 0
+        for parser in lazy_parse_simple_annotation_dir(annotation_dir):
+            if not match_query(parser.load_json(), filter_query):
+                continue
+
+            # JSONファイルをコピー
+            dest_task_id_dir = output_dir / parser.task_id
+            dest_task_id_dir.mkdir(exist_ok=True, parents=True)
+            shutil.copy(str(annotation_dir / parser.json_file_path), str(dest_task_id_dir))
+            # 塗りつぶしアノテーションファイルをコピー
+            outer_annotation_dir = annotation_dir / os.path.splitext(parser.json_file_path)[0]
+            if outer_annotation_dir.exists():
+                shutil.copytree(str(outer_annotation_dir), str(output_dir))
+
+            count += 1
+            if count % 10000 == 0:
+                logger.debug(f"{count} 件のJSONファイルとそれに紐づく塗りつぶし画像を {output_dir} をコピーしました。")
 
     @staticmethod
     def create_filter_query(args: argparse.Namespace) -> FilterQuery:
@@ -193,10 +217,13 @@ class FilterAnnotation:
 
         annotation_path: Path = args.annotation
         output_dir: Path = args.output_dir
+        output_dir.mkdir(exist_ok=True, parents=True)
         filter_query = self.create_filter_query(args)
 
         if zipfile.is_zipfile(annotation_path):
             self.filter_annotation_zip(annotation_path, filter_query=filter_query, output_dir=output_dir)
+        elif annotation_path.is_dir():
+            self.filter_annotation_dir(annotation_path, filter_query=filter_query, output_dir=output_dir)
         else:
             logger.info("TODO")
             return
