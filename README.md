@@ -92,6 +92,7 @@ $ docker run -it -e ANNOFAB_USER_ID=XXXX -e ANNOFAB_PASSWORD=YYYYY annofab-cli p
 |annotation_specs| list_label | アノテーション仕様のラベル情報を出力します。                              |-|
 |annotation_specs| list_label_color             | アノテーション仕様から、label_nameとRGBを対応付けたJSONを出力します。                                      |-|
 |filesystem| write_annotation_image        | アノテーションzip、またはそれを展開したディレクトリから、アノテーションの画像（Semantic Segmentation用）を生成します。 |-|
+|filesystem| filter_annotation        | アノテーションzipから特定のファイルを絞り込んで、zip展開します。 |-|
 |input_data|delete             | 入力データを削除します。                                                            |オーナ|
 |input_data|list             | 入力データ一覧を出力します。                                                            |-|
 |input_data| list_merged_task | タスク一覧と結合した入力データ一覧のCSVを出力します。                                                            |オーナ/アノテーションユーザ|
@@ -602,6 +603,16 @@ $ annofabcli annotation_specs list_label_color --project_id prj1
 ```
 
 
+### filesystem filter_annotation
+アノテーションzipから特定のファイルを絞り込んで、zip展開します。
+
+
+```
+# アノテーションzipからcomplete状態で、task.txtに記載されているtask_idを除外した状態で、展開する
+$ annofabcli filesystem filter_annotation --annotation annotation.zip \
+ --task_query '{"status":"complete"}'  --exclude_task_id file://task.txt --output_dir
+
+```
 
 
 ### filesystem write_annotation_image
