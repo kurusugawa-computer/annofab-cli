@@ -52,6 +52,50 @@ class CopyProjectMembers(AbstractCommandLineInterface):
 
         return None
 
+    def put_project_members(self, project_id, project_members: List[Dict[str, Any]]) -> List[ProjectMember]:
+        """
+        複数のプロジェクトメンバを追加/更新/削除する.
+
+        Args:
+            project_id: プロジェクトID
+            project_members: 追加/更新するメンバのList. `user_id` , `member_status` , `member_role` をKeyに持つこと
+
+        Returns:
+            `putProjectMember` APIのContentのList
+
+        """
+        # 追加/更新前のプロジェクトメンバ
+        dest_project_members = self.service.wrapper.get_all_project_members(project_id)
+
+        updated_project_members = []
+        # プロジェクトメンバを追加/更新する
+        for member in project_members:
+            dest_member = [e for e in dest_project_members if e["user_id"] == member["user_id"]]
+            last_updated_datetime = dest_member[0]["updated_datetime"] if len(dest_member) > 0 else None
+
+            request_body = {
+                "member_status": member["member_status"],
+                "member_role": member["member_role"],
+                "sampling_inspection_rate": member.get("sampling_inspection_rate"),
+                "sampling_acceptance_rate": member.get("sampling_acceptance_rate"),
+                "last_updated_datetime": last_updated_datetime,
+            }
+            updated_project_member = self.service.api.put_project_member(
+                project_id, member["user_id"], request_body=request_body
+            )[0]
+            updated_project_members.append(updated_project_member)
+
+            command_name = "追加" if last_updated_datetime is None else "更新"
+            logger.debug(
+                "プロジェクトメンバの'%s' 完了." " project_id=%s, user_id=%s, " "last_updated_datetime=%s",
+                command_name,
+                project_id,
+                member["user_id"],
+                last_updated_datetime,
+            )
+
+        return updated_project_members
+
     def copy_project_members(self, src_project_id: str, dest_project_id: str, delete_dest: bool = False):
         """
         プロジェクトメンバを、別のプロジェクトにコピーする。
@@ -114,11 +158,11 @@ class CopyProjectMembers(AbstractCommandLineInterface):
 
         if len(added_members) > 0:
             if self.confirm_processing(
-                f"{self.src_project_title} プロジェクトのメンバを、"
-                f"{self.dest_project_title} にコピーしますか？"
+                f"'{self.src_project_title}' のプロジェクトのメンバを、"
+                f"'{self.dest_project_title}' にコピーしますか？"
                 f"追加対象: {len(added_members)} 件, 削除対象: {len(deleted_dest_members)} 件"
             ):
-                self.service.wrapper.put_project_members(dest_project_id, updated_members)
+                self.put_project_members(dest_project_id, updated_members)
         else:
             logger.info(f"{self.dest_project_title}のプロジェクトメンバに追加/更新はありません。")
 

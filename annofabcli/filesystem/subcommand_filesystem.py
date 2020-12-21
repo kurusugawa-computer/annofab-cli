@@ -2,6 +2,7 @@ import argparse
 
 import annofabcli
 import annofabcli.common.cli
+import annofabcli.filesystem.filter_annotation
 import annofabcli.filesystem.write_annotation_image
 
 
@@ -10,6 +11,7 @@ def parse_args(parser: argparse.ArgumentParser):
     subparsers = parser.add_subparsers()
 
     # サブコマンドの定義
+    annofabcli.filesystem.filter_annotation.add_parser(subparsers)
     annofabcli.filesystem.write_annotation_image.add_parser(subparsers)
 
 

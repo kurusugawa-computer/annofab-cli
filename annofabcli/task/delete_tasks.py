@@ -39,7 +39,7 @@ class DeleteTask(AbstractCommandLineInterface):
         task_id: str,
         force: bool = False,
         task_query: Optional[TaskQuery] = None,
-    ):
+    ) -> bool:
         """
         タスクを削除します。
 

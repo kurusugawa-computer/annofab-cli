@@ -152,7 +152,7 @@ class TestAnnotationSpecs:
 
 
 class TestFilesystem:
-    def test_filesystem(self):
+    def test_write_annotation_image(self):
         zip_path = data_path / "simple-annotation.zip"
         output_image_dir = out_path / "annotation-image"
         label_color_file = data_path / "label_color.json"
@@ -171,6 +171,23 @@ class TestFilesystem:
                 f"file://{str(label_color_file)}",
                 "--image_extension",
                 "jpg",
+            ]
+        )
+
+    def test_filter_annotation(self):
+        zip_path = data_path / "simple-annotation.zip"
+        output_dir = out_path / "filter-annotation-output"
+
+        main(
+            [
+                "filesystem",
+                "filter_annotation",
+                "--annotation",
+                str(zip_path),
+                "--output_dir",
+                str(output_dir),
+                "--task_query",
+                '{"status":"complete"}',
             ]
         )
 
