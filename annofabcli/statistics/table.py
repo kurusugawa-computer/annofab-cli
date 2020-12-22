@@ -594,7 +594,6 @@ class Table:
             if len(acceptance_histories) > 0:
                 task["task_completed_datetime"] = acceptance_histories[-1]["ended_datetime"]
             else:
-                logger.warning(f"task_id={task['task_id']}のタスク履歴が間違っている可能性があります。")
                 task["task_completed_datetime"] = None
         else:
             task["task_completed_datetime"] = None
