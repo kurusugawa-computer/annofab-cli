@@ -28,7 +28,6 @@ author = 'yuji38kwmt'
 # extensions coming with Sphinx (named 'sphinx.ext.*') or your custom
 # ones.
 extensions = [
- 'recommonmark'
 ]
 
 # Add any paths that contain templates here, relative to this directory.
@@ -60,11 +59,3 @@ html_theme = "pydata_sphinx_theme"
 html_static_path = ['_static']
 
 
-
-# At the bottom of conf.py
-from recommonmark.transform import AutoStructify
-def setup(app):
-    app.add_config_value('recommonmark_config', {
-            'auto_toc_tree_section': 'Contents',
-            }, True)
-    app.add_transform(AutoStructify)

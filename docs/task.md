@@ -4,4 +4,4 @@
 ## Description
 
 ## Available Commands
-* [list](task/list.md)
+* [list](command_reference/task/list.md)
