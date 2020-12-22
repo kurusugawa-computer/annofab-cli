@@ -347,6 +347,24 @@ def read_multiheader_csv(csv_file: str, header_row_count: int = 2, **kwargs) -> 
     return df
 
 
+def get_columns_with_priority(df: pandas.DataFrame, prior_columns: List[Any]) -> List[str]:
+    """
+    優先順位の高い列を先頭にした、列名リストを取得します。
+
+    Args:
+        df: 対象のpandas.DataFrame
+        prior_columns: 優先順位の高い列名リスト
+
+    Returns:
+        列名リスト
+    """
+    # 存在しない列名を取り除く
+    tmp_prior_columns = [c for c in prior_columns if c in df.columns]
+    remained_columns = list(df.columns.difference(tmp_prior_columns))
+    all_columns = tmp_prior_columns + remained_columns
+    return all_columns
+
+
 def _catch_exception(function: Callable[..., Any]) -> Callable[..., Any]:
     """
     Exceptionをキャッチしてログにstacktraceを出力する。

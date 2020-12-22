@@ -1,4 +1,4 @@
-
+:orphan:
 # task list
 
 ## Description
@@ -76,7 +76,7 @@ $ annofabcli task list --project_id prj1 --format pretty_json --output out.json
 
 `out.json`の中身:
 
-```json
+```
 [ 
   {
     "project_id": "prj1",

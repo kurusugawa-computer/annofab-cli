@@ -1,17 +1,16 @@
-"""
-プロジェクトのユーザを表示する。
-"""
 import argparse
 import logging
 from typing import Any, Dict, List, Optional
 
 import annofabapi
+import pandas
 from annofabapi.models import Task
 
 import annofabcli
 from annofabcli import AnnofabApiFacade
 from annofabcli.common.cli import AbstractCommandLineInterface, ArgumentParser, build_annofabapi_resource_and_login
 from annofabcli.common.enums import FormatArgument
+from annofabcli.common.utils import get_columns_with_priority
 from annofabcli.common.visualize import AddProps
 
 logger = logging.getLogger(__name__)
@@ -158,6 +157,22 @@ class ListTasks(AbstractCommandLineInterface):
         super().__init__(service, facade, args)
         self.visualize = AddProps(self.service, args.project_id)
 
+    PRIOR_COLUMNS = [
+        "project_id",
+        "task_id",
+        "phase",
+        "phase_stage",
+        "status",
+        "started_datetime",
+        "updated_datetime",
+        "user_id",
+        "username",
+        "worktime_hour",
+        "metadata",
+        "number_of_rejections_by_inspection",
+        "number_of_rejections_by_acceptance",
+    ]
+
     def main(self):
         args = self.args
 
@@ -184,7 +199,12 @@ class ListTasks(AbstractCommandLineInterface):
         logger.debug(f"タスク一覧の件数: {len(task_list)}")
 
         if len(task_list) > 0:
-            self.print_according_to_format(task_list)
+            if self.str_format == FormatArgument.CSV.value:
+                df = pandas.DataFrame(task_list)
+                columns = get_columns_with_priority(df, prior_columns=self.PRIOR_COLUMNS)
+                self.print_csv(df[columns])
+            else:
+                self.print_according_to_format(task_list)
         else:
             logger.info(f"タスク一覧の件数が0件のため、出力しません。")
 
