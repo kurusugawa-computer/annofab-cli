@@ -8,5 +8,6 @@ Command Reference
    :caption: Available Commands
    :titlesonly:
 
+   input_data/index
    task/index
 
