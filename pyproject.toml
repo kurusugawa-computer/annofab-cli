@@ -55,9 +55,7 @@ pylint = "*"
 
 # Document library
 sphinx = "*"
-recommonmark = "*"
 pydata-sphinx-theme = "*"
-sphinx-markdown-tables = "*"
 
 [tool.poetry.scripts]
 annofabcli = "annofabcli.__main__:main"
