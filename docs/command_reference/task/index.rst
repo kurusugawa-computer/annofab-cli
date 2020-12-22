@@ -15,5 +15,7 @@ Available Commands
    :maxdepth: 1
    :titlesonly:
 
-   list.rst
+   cancel_acceptance
+   change_operator
+   list
 
