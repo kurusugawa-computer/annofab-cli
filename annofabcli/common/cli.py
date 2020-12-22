@@ -431,7 +431,7 @@ class ArgumentParser:
     def add_task_query(self, required: bool = False, help_message: Optional[str] = None):
         if help_message is None:
             help_message = (
-                "タスクを絞り込むためのクエリ条件をJSON形式で指定します。指定しない場合はすべてのタスクを取得します。"
+                "タスクを絞り込むためのクエリ条件をJSON形式で指定します。"
                 "`file://`を先頭に付けると、JSON形式のファイルを指定できます。"
                 "使用できるキーは、phase, phase_stage, status, user_id, account_id, no_user (bool値)  のみです。"
             )
