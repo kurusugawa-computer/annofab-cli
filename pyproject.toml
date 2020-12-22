@@ -1,6 +1,6 @@
 [tool.poetry]
 name = "annofabcli"
-version = "1.38.3"
+version = "1.38.4"
 description = "Utility Command Line Interface for AnnoFab"
 authors = ["yuji38kwmt"]
 license = "MIT"
@@ -52,6 +52,10 @@ black = {version = "^20.8b1", allow-prereleases = true}
 flake8 = "*"
 mypy = "*"
 pylint = "*"
+
+# Document library
+sphinx = "*"
+pydata-sphinx-theme = "*"
 
 [tool.poetry.scripts]
 annofabcli = "annofabcli.__main__:main"

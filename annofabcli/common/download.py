@@ -76,16 +76,16 @@ class DownloadingFile:
         logger.debug(f"アノテーションzipをダウンロードします。path={dest_path}")
         if is_latest:
             self.wait_until_updated_annotation_zip(project_id, wait_options)
-            self.service.wrapper.download_annotation_archive(project_id, dest_path, v2=True)
+            self.service.wrapper.download_annotation_archive(project_id, dest_path)
 
         else:
             try:
-                self.service.wrapper.download_annotation_archive(project_id, dest_path, v2=True)
+                self.service.wrapper.download_annotation_archive(project_id, dest_path)
             except requests.HTTPError as e:
                 if e.response.status_code == requests.codes.not_found:
                     logger.info(f"アノテーションzipが存在しなかったので、アノテーションzipファイルの更新処理を実行します。")
                     self.wait_until_updated_annotation_zip(project_id, wait_options)
-                    self.service.wrapper.download_annotation_archive(project_id, dest_path, v2=True)
+                    self.service.wrapper.download_annotation_archive(project_id, dest_path)
                 else:
                     raise e
 
