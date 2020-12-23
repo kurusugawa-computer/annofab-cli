@@ -1,26 +1,18 @@
-from typing import List, Any, Dict
-import annofabcli
-from annofabcli.common.cli import (
-    AbstractCommandLineInterface,
-    ArgumentParser,
-    build_annofabapi_resource_and_login,
-    get_json_from_args,
-    get_wait_options_from_args,
-)
-from annofabcli.statistics.csv import FILENAME_PEFORMANCE_PER_USER
 import argparse
 import logging
-from annofabcli import AnnofabApiFacade
 import os
-from argparse import ArgumentParser
 from dataclasses import dataclass
 from pathlib import Path
-from typing import Optional
+from typing import Any, Dict, List, Optional
 
-import annofabapi
 import numpy
 import pandas
-from annofabcli.common.utils import print_csv, read_lines_except_blank_line, read_multiheader_csv
+
+import annofabcli
+from annofabcli import AnnofabApiFacade
+from annofabcli.common.cli import AbstractCommandLineInterface, build_annofabapi_resource_and_login
+from annofabcli.common.utils import print_csv, read_multiheader_csv
+from annofabcli.statistics.csv import FILENAME_PEFORMANCE_PER_USER
 
 logger = logging.getLogger(__name__)
 
@@ -31,30 +23,6 @@ class ResultDataframe:
     inspection_acceptance_productivity: pandas.DataFrame
     quality_per_task: pandas.DataFrame
     quality_per_annotation: pandas.DataFrame
-
-
-class WriteRatingCsv:
-    def __init__(self, service: annofabapi.Resource):
-        self.service = service
-
-    def _create_organization_member_df(self) -> pandas.DataFrame:
-        organization_list = read_lines_except_blank_line(
-            f"{os.path.dirname(os.path.abspath(__file__))}/../../resources/organization_name.txt"
-        )
-        organization_member_list = []
-        for organization in organization_list:
-            organization_member_list.extend(self.service.wrapper.get_all_organization_members(organization))
-
-        df = pandas.DataFrame(organization_member_list)
-        df = df.drop_duplicates(subset=["user_id"])
-        df = df[["user_id", "username", "biography"]]
-        df.columns = pandas.MultiIndex.from_tuples([("user_id", ""), ("username", ""), ("biography", "")])
-        return df
-
-
-
-def _get_member_perfomance_csv(project_dir: Path) -> Path:
-    return Path(f"{str(project_dir)}/メンバごとの生産性と品質.csv")
 
 
 def join_annotation_productivity(
@@ -175,7 +143,7 @@ def create_rating_df(
         if not project_dir.is_dir():
             continue
 
-        csv = _get_member_perfomance_csv(project_dir)
+        csv = project_dir / FILENAME_PEFORMANCE_PER_USER
         project_title = project_dir.name
         if not csv.exists():
             logger.warning(f"{csv} は存在しないのでスキップします。")
@@ -354,15 +322,6 @@ def output_basic_statistics_by_project(result: ResultDataframe, output_dir: Path
     )
 
 
-def parse_args():
-    parser = ArgumentParser(description="メンバごとのパフォーマンスを出力します。", formatter_class=argparse.ArgumentDefaultsHelpFormatter)
-
-    return parser.parse_args()
-
-
-
-
-
 def create_user_df(target_dir: Path) -> pandas.DataFrame:
     """
     "メンバごとの生産性と品質.csv"から、ユーザのDataFrameを作成する。
@@ -374,7 +333,7 @@ def create_user_df(target_dir: Path) -> pandas.DataFrame:
         ユーザのDataFrame. columnは　("user_id", ""), ("username", ""), ("biography", "")
 
     """
-    all_user_list: List[Dict[str,Any]] = []
+    all_user_list: List[Dict[str, Any]] = []
     for project_dir in target_dir.iterdir():
         if not project_dir.is_dir():
             continue
@@ -384,20 +343,19 @@ def create_user_df(target_dir: Path) -> pandas.DataFrame:
             logger.warning(f"{csv} は存在しないのでスキップします。")
             continue
 
-        tmp_df_user = read_multiheader_csv(str(csv), header_row_count=2)[[("user_id",""),("username",""),("biography","")]]
+        tmp_df_user = read_multiheader_csv(str(csv), header_row_count=2)[
+            [("user_id", ""), ("username", ""), ("biography", "")]
+        ]
         all_user_list.extend(tmp_df_user.to_dict("record"))
 
-    index = pandas.MultiIndex.from_tuples([
-        ("user_id", ""), ("username", ""), ("biography", "")
-    ])
+    index = pandas.MultiIndex.from_tuples([("user_id", ""), ("username", ""), ("biography", "")])
     df_user = pandas.DataFrame(all_user_list, columns=index)
     df_user.drop_duplicates(inplace=True)
     df_user.sort_values("user_id", inplace=True)
     return df_user
 
+
 class WritePerformanceRatingCsv(AbstractCommandLineInterface):
-
-
     def main(self) -> None:
         args = self.args
         # プロジェクトトップに移動する
@@ -405,11 +363,13 @@ class WritePerformanceRatingCsv(AbstractCommandLineInterface):
         os.chdir(os.path.dirname(os.path.abspath(__file__)) + "/../../")
 
         target_dir: Path = args.dir
-        main_obj = WriteRatingCsv(annofabapi.build())
         df_user = create_user_df(target_dir)
 
         result = create_rating_df(
-            df_user, target_dir, threshold_worktime=args.threshold_worktime, threshold_task_count=args.threshold_task_count
+            df_user,
+            target_dir,
+            threshold_worktime=args.threshold_worktime,
+            threshold_task_count=args.threshold_task_count,
         )
 
         output_dir: Path = args.output_dir
@@ -422,12 +382,13 @@ class WritePerformanceRatingCsv(AbstractCommandLineInterface):
         os.chdir(now_dir)
 
 
-
-
 def parse_args(parser: argparse.ArgumentParser):
-    argument_parser = ArgumentParser(parser)
-
-    parser.add_argument("--dir", type=Path, required=True, help="プロジェクトディレクトリが存在するディレクトリを指定してください。プロジェクトディレクトリ内の`メンバごとの生産性と品質.csv`というファイルを読み込みます。")
+    parser.add_argument(
+        "--dir",
+        type=Path,
+        required=True,
+        help="プロジェクトディレクトリが存在するディレクトリを指定してください。プロジェクトディレクトリ内の`メンバごとの生産性と品質.csv`というファイルを読み込みます。",
+    )
 
     parser.add_argument(
         "--threshold_worktime",
@@ -461,7 +422,5 @@ def add_parser(subparsers: argparse._SubParsersAction):
     subcommand_name = "write_performance_rating_csv"
     subcommand_help = "プロジェクトごとユーザごとにパフォーマンスを評価できる複数のCSVを出力します。"
     description = "プロジェクトごとユーザごとにパフォーマンスを評価できる複数のCSVを出力します。"
-    parser = annofabcli.common.cli.add_parser(
-        subparsers, subcommand_name, subcommand_help, description=description
-    )
+    parser = annofabcli.common.cli.add_parser(subparsers, subcommand_name, subcommand_help, description=description)
     parse_args(parser)
