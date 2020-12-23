@@ -1,9 +1,9 @@
+from annofabcli.common.cli import AbstractCommandLineInterface, build_annofabapi_resource_and_login, get_list_from_args
 import argparse
 import logging
-import os
 from dataclasses import dataclass
 from pathlib import Path
-from typing import Any, Dict, List, Optional
+from typing import Any, Dict, List, Optional, Set
 
 import numpy
 import pandas
@@ -36,11 +36,10 @@ def join_annotation_productivity(
     df_joined = df_joined.set_index("user_id")
 
     df_joined = df_joined[
-        (df_joined[("task_count", "annotation")] >= threshold_task_count)
+        (df_joined[("task_count", "annotation")] > threshold_task_count)
         | (df_joined[("prediction_actual_worktime_hour", "annotation")] >= threshold_worktime)
     ]
     df_tmp = df_joined[[("actual_worktime/annotation_count", "annotation")]]
-
     df_tmp.columns = pandas.MultiIndex.from_tuples([(project_title, "actual_worktime/annotation_count__annotation")])
     return df.join(df_tmp)
 
@@ -57,8 +56,8 @@ def join_inspection_acceptance_productivity(
             return df
 
         df_joined = df_performance[
-            (df_performance[("task_count", "inspection")] >= threshold_task_count)
-            | (df_performance[("prediction_actual_worktime_hour", "inspection")] >= threshold_worktime)
+            (df_performance[("task_count", "inspection")] > threshold_task_count)
+            | (df_performance[("prediction_actual_worktime_hour", "inspection")] > threshold_worktime)
         ]
         df_joined.set_index("user_id", inplace=True)
         df_tmp = df_joined[[("actual_worktime/annotation_count", "inspection")]]
@@ -72,8 +71,8 @@ def join_inspection_acceptance_productivity(
             return df
 
         df_joined = df_performance[
-            (df_performance[("task_count", "acceptance")] >= threshold_task_count)
-            | (df_performance[("prediction_actual_worktime_hour", "acceptance")] >= threshold_worktime)
+            (df_performance[("task_count", "acceptance")] > threshold_task_count)
+            | (df_performance[("prediction_actual_worktime_hour", "acceptance")] > threshold_worktime)
         ]
         df_joined.set_index("user_id", inplace=True)
         df_tmp = df_joined[[("actual_worktime/annotation_count", "acceptance")]]
@@ -99,8 +98,8 @@ def join_quality_per_task(
     df_joined = df_joined.set_index("user_id")
 
     df_joined = df_joined[
-        (df_joined[("task_count", "annotation")] >= threshold_task_count)
-        | (df_joined[("prediction_actual_worktime_hour", "annotation")] >= threshold_worktime)
+        (df_joined[("task_count", "annotation")] > threshold_task_count)
+        | (df_joined[("prediction_actual_worktime_hour", "annotation")] > threshold_worktime)
     ]
     df_tmp = df_joined[[("rejected_count/task_count", "annotation")]]
 
@@ -119,8 +118,8 @@ def join_quality_per_annotation(
     df_joined = df_joined.set_index("user_id")
 
     df_joined = df_joined[
-        (df_joined[("task_count", "annotation")] >= threshold_task_count)
-        | (df_joined[("prediction_actual_worktime_hour", "annotation")] >= threshold_worktime)
+        (df_joined[("task_count", "annotation")] > threshold_task_count)
+        | (df_joined[("prediction_actual_worktime_hour", "annotation")] > threshold_worktime)
     ]
     df_tmp = df_joined[[("pointed_out_inspection_comment_count/annotation_count", "annotation")]]
 
@@ -190,26 +189,26 @@ def create_rating_df(
 def output_csv(result: ResultDataframe, output_dir: Path):
     print_csv(result.annotation_productivity, str(output_dir / "annotation_productivity.csv"))
     print_csv(result.inspection_acceptance_productivity, str(output_dir / "inspection_acceptance_productivity.csv"))
-    print_csv(result.quality_per_task, str(output_dir / "quality_per_task.csv"))
-    print_csv(result.quality_per_annotation, str(output_dir / "quality_per_annotation.csv"))
+    print_csv(result.quality_per_task, str(output_dir / "annotation_quality_per_task.csv"))
+    print_csv(result.quality_per_annotation, str(output_dir / "annotation_quality_per_annotation.csv"))
 
 
 def to_rank(series: pandas.Series) -> pandas.Series:
     quantile = list(series.quantile([0.25, 0.5, 0.75]))
 
-    def _to_point(value) -> int:
+    def _to_point(value):
         if numpy.isnan(value):
-            return value
+            return numpy.nan
         elif value < quantile[0]:
-            return 4
+            return "A"
         elif quantile[0] <= value < quantile[1]:
-            return 3
+            return "B"
         elif quantile[1] <= value < quantile[2]:
-            return 2
+            return "C"
         elif quantile[2] <= value:
-            return 1
+            return "D"
         else:
-            return value
+            return numpy.nan
 
     if len([v for v in series if not numpy.isnan(v)]) >= 4:
         return series.map(_to_point)
@@ -219,7 +218,7 @@ def to_rank(series: pandas.Series) -> pandas.Series:
 
 def to_deviation(series: pandas.Series, threshold_deviation_user_count: Optional[int] = None) -> pandas.Series:
     if series.count() == 0 or (
-        threshold_deviation_user_count is not None and series.count() < threshold_deviation_user_count
+        threshold_deviation_user_count is not None and series.count() <= threshold_deviation_user_count
     ):
         return pandas.Series([numpy.nan] * len(series))
     else:
@@ -238,7 +237,7 @@ def create_rank_df(df: pandas.DataFrame) -> pandas.DataFrame:
     return df_rank
 
 
-def create_deviation_df(df: pandas.DataFrame, threshold_deviation_user_count: Optional[int] = None) -> pandas.DataFrame:
+def create_deviation_df(df: pandas.DataFrame, threshold_deviation_user_count: Optional[int] = None, user_id_set:Optional[Set[str]]=None) -> pandas.DataFrame:
     df_rank = df.copy()
     user_columns = df.columns[0:3]
     project_columns = df.columns[3:]
@@ -247,7 +246,11 @@ def create_deviation_df(df: pandas.DataFrame, threshold_deviation_user_count: Op
 
     df_rank["mean_of_deviation"] = df_rank[project_columns].mean(axis=1)
     df_rank["count_of_project"] = df_rank[project_columns].count(axis=1)
-    return df_rank[list(user_columns) + [("mean_of_deviation", ""), ("count_of_project", "")] + list(project_columns)]
+    df = df_rank[list(user_columns) + [("mean_of_deviation", ""), ("count_of_project", "")] + list(project_columns)]
+    if user_id_set is not None:
+        return df[df[("user_id", "")].isin(user_id_set)]
+    else:
+        return df
 
 
 def create_basic_statistics_df(df: pandas.DataFrame) -> pandas.DataFrame:
@@ -261,36 +264,37 @@ def output_rank_csv(result: ResultDataframe, output_dir: Path):
         create_rank_df(result.inspection_acceptance_productivity),
         str(output_dir / "inspection_acceptance_productivity_rank.csv"),
     )
-    print_csv(create_rank_df(result.quality_per_task), str(output_dir / "quality_per_task_rank.csv"))
-    print_csv(create_rank_df(result.quality_per_annotation), str(output_dir / "quality_per_annotation_rank.csv"))
+    print_csv(create_rank_df(result.quality_per_task), str(output_dir / "annotation_quality_per_task_rank.csv"))
+    print_csv(create_rank_df(result.quality_per_annotation), str(output_dir / "annotation_quality_per_annotation_rank.csv"))
 
 
 def output_deviation_csv(
-    result: ResultDataframe, output_dir: Path, threshold_deviation_user_count: Optional[int] = None
+    result: ResultDataframe, output_dir: Path, threshold_deviation_user_count: Optional[int] = None, user_id_list: Optional[List[str]] = None
 ):
     """
     偏差値に変換したものを出力する
     """
-    df_annotation_productivity = create_deviation_df(result.annotation_productivity, threshold_deviation_user_count)
+    user_id_set = set(user_id_list)
     print_csv(
-        df_annotation_productivity,
+        create_deviation_df(result.annotation_productivity, threshold_deviation_user_count, user_id_set=user_id_set),
         str(output_dir / "annotation_productivity_deviation.csv"),
+
     )
     print_csv(
-        create_deviation_df(result.inspection_acceptance_productivity, threshold_deviation_user_count),
+        create_deviation_df(result.inspection_acceptance_productivity, threshold_deviation_user_count,  user_id_set=user_id_set),
         str(output_dir / "inspection_acceptance_productivity_deviation.csv"),
     )
     print_csv(
-        create_deviation_df(result.quality_per_task, threshold_deviation_user_count),
-        str(output_dir / "quality_per_task_deviation.csv"),
+        create_deviation_df(result.quality_per_task, threshold_deviation_user_count,  user_id_set=user_id_set),
+        str(output_dir / "annotation_quality_per_task_deviation.csv"),
     )
 
-    df_quality_per_annotation_deviation = create_deviation_df(
-        result.quality_per_annotation, threshold_deviation_user_count
-    )
+
     print_csv(
-        df_quality_per_annotation_deviation,
-        str(output_dir / "quality_per_annotation_deviation.csv"),
+        create_deviation_df(
+            result.quality_per_annotation, threshold_deviation_user_count, user_id_set=user_id_set
+        ),
+        str(output_dir / "annotation_quality_per_annotation_deviation.csv"),
     )
 
 
@@ -312,12 +316,12 @@ def output_basic_statistics_by_project(result: ResultDataframe, output_dir: Path
     )
     print_csv(
         create_basic_statistics_df(result.quality_per_task),
-        str(output_dir / "quality_per_task_summary.csv"),
+        str(output_dir / "annotation_quality_per_task_summary.csv"),
         to_csv_kwargs=to_csv_kwargs,
     )
     print_csv(
         create_basic_statistics_df(result.quality_per_annotation),
-        str(output_dir / "quality_per_annotation_summary.csv"),
+        str(output_dir / "annotation_quality_per_annotation_summary.csv"),
         to_csv_kwargs=to_csv_kwargs,
     )
 
@@ -330,7 +334,7 @@ def create_user_df(target_dir: Path) -> pandas.DataFrame:
         target_dir:
 
     Returns:
-        ユーザのDataFrame. columnは　("user_id", ""), ("username", ""), ("biography", "")
+        ユーザのDataFrame. columnは("username", ""), ("biography", "") , indexが"user_id"
 
     """
     all_user_list: List[Dict[str, Any]] = []
@@ -346,23 +350,20 @@ def create_user_df(target_dir: Path) -> pandas.DataFrame:
         tmp_df_user = read_multiheader_csv(str(csv), header_row_count=2)[
             [("user_id", ""), ("username", ""), ("biography", "")]
         ]
-        all_user_list.extend(tmp_df_user.to_dict("record"))
+        all_user_list.extend(tmp_df_user.to_dict("records"))
 
     index = pandas.MultiIndex.from_tuples([("user_id", ""), ("username", ""), ("biography", "")])
     df_user = pandas.DataFrame(all_user_list, columns=index)
     df_user.drop_duplicates(inplace=True)
-    df_user.sort_values("user_id", inplace=True)
-    return df_user
+    return df_user.sort_values("user_id").set_index("user_id")
 
 
 class WritePerformanceRatingCsv(AbstractCommandLineInterface):
     def main(self) -> None:
         args = self.args
-        # プロジェクトトップに移動する
-        now_dir = os.getcwd()
-        os.chdir(os.path.dirname(os.path.abspath(__file__)) + "/../../")
 
         target_dir: Path = args.dir
+        user_id_list = get_list_from_args(args.user_id) if args.user_id is not None else None
         df_user = create_user_df(target_dir)
 
         result = create_rating_df(
@@ -373,13 +374,10 @@ class WritePerformanceRatingCsv(AbstractCommandLineInterface):
         )
 
         output_dir: Path = args.output_dir
-        # output_csv(result, output_dir)
-        # output_rank_csv(result, output_dir)
-        output_deviation_csv(result, output_dir, threshold_deviation_user_count=args.threshold_deviation_user_count)
+        output_csv(result, output_dir)
+        output_rank_csv(result, output_dir)
+        output_deviation_csv(result, output_dir, threshold_deviation_user_count=args.threshold_deviation_user_count, user_id_list=user_id_list)
         output_basic_statistics_by_project(result, output_dir)
-
-        # 移動前のディレクトリに戻る
-        os.chdir(now_dir)
 
 
 def parse_args(parser: argparse.ArgumentParser):
@@ -391,21 +389,31 @@ def parse_args(parser: argparse.ArgumentParser):
     )
 
     parser.add_argument(
+        "-u",
+        "--user_id",
+        type=str,
+        nargs="+",
+        help="評価対象のユーザのuser_idを指定してください。"
+        "`file://`を先頭に付けると、user_idの一覧が記載されたファイルを指定できます。",
+    )
+
+
+    parser.add_argument(
         "--threshold_worktime",
         type=int,
-        default=10.0,
-        help="作業時間の閾値。この時間未満の作業者は除外する。`threshold_task_count`とはOR条件で絞り込まれる。",
+        default=0,
+        help="作業時間の閾値。この時間以下の作業者は除外する。`threshold_task_count`とはOR条件で絞り込まれる。",
     )
     parser.add_argument(
         "--threshold_task_count",
         type=int,
-        default=10,
-        help="作業したタスク数の閾値。このタスク数未満の作業者は除外する。`threshold_worktime`とはOR条件で絞り込まれる。",
+        default=0,
+        help="作業したタスク数の閾値。このタスク数以下の作業者は除外する。`threshold_worktime`とはOR条件で絞り込まれる。",
     )
     parser.add_argument(
         "--threshold_deviation_user_count",
         type=int,
-        help="偏差値を出す際、プロジェクト内の作業者がしきい値未満であれば、偏差値を算出しない。",
+        help="偏差値を出す際、プロジェクト内の作業者がしきい値以下であれば、偏差値を算出しない。",
     )
     parser.add_argument("-o", "--output_dir", required=True, type=Path, help="出力ディレクトリ")
 
