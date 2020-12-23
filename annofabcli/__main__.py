@@ -14,6 +14,7 @@ import annofabcli.labor.subcommand_labor
 import annofabcli.organization_member.subcommand_organization_member
 import annofabcli.project.subcommand_project
 import annofabcli.project_member.subcommand_project_member
+import annofabcli.stat_visualization.subcommand_stat_visualization
 import annofabcli.statistics.subcommand_statistics
 import annofabcli.supplementary.subcommand_supplementary
 import annofabcli.task.subcommand_task
@@ -51,6 +52,7 @@ def main(arguments: Optional[Sequence[str]] = None):
     annofabcli.project.subcommand_project.add_parser(subparsers)
     annofabcli.project_member.subcommand_project_member.add_parser(subparsers)
     annofabcli.statistics.subcommand_statistics.add_parser(subparsers)
+    annofabcli.stat_visualization.subcommand_stat_visualization.add_parser(subparsers)
     annofabcli.supplementary.subcommand_supplementary.add_parser(subparsers)
     annofabcli.task.subcommand_task.add_parser(subparsers)
     annofabcli.task_history.subcommand_task_history.add_parser(subparsers)
