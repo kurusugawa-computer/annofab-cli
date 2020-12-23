@@ -1,4 +1,3 @@
-from annofabcli.common.cli import AbstractCommandLineInterface, build_annofabapi_resource_and_login, get_list_from_args
 import argparse
 import logging
 from dataclasses import dataclass
@@ -10,7 +9,7 @@ import pandas
 
 import annofabcli
 from annofabcli import AnnofabApiFacade
-from annofabcli.common.cli import AbstractCommandLineInterface, build_annofabapi_resource_and_login
+from annofabcli.common.cli import AbstractCommandLineInterface, build_annofabapi_resource_and_login, get_list_from_args
 from annofabcli.common.utils import print_csv, read_multiheader_csv
 from annofabcli.statistics.csv import FILENAME_PEFORMANCE_PER_USER
 
@@ -237,7 +236,9 @@ def create_rank_df(df: pandas.DataFrame) -> pandas.DataFrame:
     return df_rank
 
 
-def create_deviation_df(df: pandas.DataFrame, threshold_deviation_user_count: Optional[int] = None, user_id_set:Optional[Set[str]]=None) -> pandas.DataFrame:
+def create_deviation_df(
+    df: pandas.DataFrame, threshold_deviation_user_count: Optional[int] = None, user_id_set: Optional[Set[str]] = None
+) -> pandas.DataFrame:
     df_rank = df.copy()
     user_columns = df.columns[0:3]
     project_columns = df.columns[3:]
@@ -265,35 +266,38 @@ def output_rank_csv(result: ResultDataframe, output_dir: Path):
         str(output_dir / "inspection_acceptance_productivity_rank.csv"),
     )
     print_csv(create_rank_df(result.quality_per_task), str(output_dir / "annotation_quality_per_task_rank.csv"))
-    print_csv(create_rank_df(result.quality_per_annotation), str(output_dir / "annotation_quality_per_annotation_rank.csv"))
+    print_csv(
+        create_rank_df(result.quality_per_annotation), str(output_dir / "annotation_quality_per_annotation_rank.csv")
+    )
 
 
 def output_deviation_csv(
-    result: ResultDataframe, output_dir: Path, threshold_deviation_user_count: Optional[int] = None, user_id_list: Optional[List[str]] = None
+    result: ResultDataframe,
+    output_dir: Path,
+    threshold_deviation_user_count: Optional[int] = None,
+    user_id_list: Optional[List[str]] = None,
 ):
     """
     偏差値に変換したものを出力する
     """
-    user_id_set = set(user_id_list)
+    user_id_set: Optional[Set[str]] = set(user_id_list) if user_id_list is not None else None
     print_csv(
         create_deviation_df(result.annotation_productivity, threshold_deviation_user_count, user_id_set=user_id_set),
         str(output_dir / "annotation_productivity_deviation.csv"),
-
     )
     print_csv(
-        create_deviation_df(result.inspection_acceptance_productivity, threshold_deviation_user_count,  user_id_set=user_id_set),
+        create_deviation_df(
+            result.inspection_acceptance_productivity, threshold_deviation_user_count, user_id_set=user_id_set
+        ),
         str(output_dir / "inspection_acceptance_productivity_deviation.csv"),
     )
     print_csv(
-        create_deviation_df(result.quality_per_task, threshold_deviation_user_count,  user_id_set=user_id_set),
+        create_deviation_df(result.quality_per_task, threshold_deviation_user_count, user_id_set=user_id_set),
         str(output_dir / "annotation_quality_per_task_deviation.csv"),
     )
 
-
     print_csv(
-        create_deviation_df(
-            result.quality_per_annotation, threshold_deviation_user_count, user_id_set=user_id_set
-        ),
+        create_deviation_df(result.quality_per_annotation, threshold_deviation_user_count, user_id_set=user_id_set),
         str(output_dir / "annotation_quality_per_annotation_deviation.csv"),
     )
 
@@ -376,7 +380,12 @@ class WritePerformanceRatingCsv(AbstractCommandLineInterface):
         output_dir: Path = args.output_dir
         output_csv(result, output_dir)
         output_rank_csv(result, output_dir)
-        output_deviation_csv(result, output_dir, threshold_deviation_user_count=args.threshold_deviation_user_count, user_id_list=user_id_list)
+        output_deviation_csv(
+            result,
+            output_dir,
+            threshold_deviation_user_count=args.threshold_deviation_user_count,
+            user_id_list=user_id_list,
+        )
         output_basic_statistics_by_project(result, output_dir)
 
 
@@ -393,10 +402,8 @@ def parse_args(parser: argparse.ArgumentParser):
         "--user_id",
         type=str,
         nargs="+",
-        help="評価対象のユーザのuser_idを指定してください。"
-        "`file://`を先頭に付けると、user_idの一覧が記載されたファイルを指定できます。",
+        help="評価対象のユーザのuser_idを指定してください。" "`file://`を先頭に付けると、user_idの一覧が記載されたファイルを指定できます。",
     )
-
 
     parser.add_argument(
         "--threshold_worktime",
