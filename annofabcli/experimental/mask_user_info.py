@@ -271,11 +271,14 @@ def replace_biography(
     """
     user_id_column = _get_tuple_column(df, "user_id")
     biography_column = _get_tuple_column(df, "biography")
-
     def _get_biography(row, user_id_column: Any, biography_column: Any) -> str:
         if row[user_id_column] in replacement_dict_by_user_id:
             # マスク対象のユーザなら biographyをマスクする
-            return replacement_dict_by_biography[row[biography_column]]
+            biography = row[biography_column]
+            if biography in replacement_dict_by_biography:
+                return replacement_dict_by_biography[biography]
+            else:
+                return biography
         else:
             return row[biography_column]
 
