@@ -229,11 +229,15 @@ def to_deviation(series: pandas.Series, threshold_deviation_user_count: Optional
             return series.map(lambda x: 50 if not numpy.isnan(x) else numpy.nan)
 
 
-def create_rank_df(df: pandas.DataFrame) -> pandas.DataFrame:
+def create_rank_df(df: pandas.DataFrame, user_id_set: Optional[Set[str]] = None) -> pandas.DataFrame:
     df_rank = df.copy()
     for col in df.columns[3:]:
         df_rank[col] = to_rank(df[col])
-    return df_rank
+
+    if user_id_set is not None:
+        return df_rank[df_rank[("user_id", "")].isin(user_id_set)]
+    else:
+        return df_rank
 
 
 def create_deviation_df(
