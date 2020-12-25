@@ -131,8 +131,21 @@ class ListProject(AbstractCommandLineInterface):
     プロジェクト一覧を表示する。
     """
 
+    @staticmethod
+    def validate(args: argparse.Namespace) -> bool:
+        if args.project_id is not None:
+            if args.project_query is not None:
+                logger.warning(f"`--organization`と`--project_query`は同時に指定できません。")
+            if args.include_not_joined_project:
+                logger.warning(f"`--organization`と`--include_not_joined_project`は同時に指定できません。")
+
+        return True
+
+
     def main(self):
         args = self.args
+        self.validate(args)
+
         project_query = {}
 
         organization_name = args.organization

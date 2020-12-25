@@ -650,7 +650,7 @@ class VisualizeStatistics(AbstractCommandLineInterface):
                     csv_path_list=whole_peformance_csv_list, output_path=root_output_dir / "プロジェクトごとの生産性と品質.csv"
                 )
             else:
-                logger.warning(f"出力した統計情報は0なので、`プロジェクトごとの生産性と品質.csv`を出力しません。")
+                logger.warning(f"出力した統計情報は0件なので、`プロジェクトごとの生産性と品質.csv`を出力しません。")
 
 
 def main(args):
