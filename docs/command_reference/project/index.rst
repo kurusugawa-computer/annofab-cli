@@ -1,10 +1,10 @@
 ==================================================
-task
+project
 ==================================================
 
 Description
 =================================
-タスク関係のコマンドです。
+プロジェクト関係のコマンドです。
 
 
 Available Commands
@@ -15,8 +15,5 @@ Available Commands
    :maxdepth: 1
    :titlesonly:
 
-   cancel_acceptance
-   change_operator
-   delete
    list
 

@@ -10,4 +10,5 @@ Command Reference
 
    input_data/index
    task/index
+   project/index
 

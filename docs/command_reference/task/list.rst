@@ -11,6 +11,19 @@ Examples
 =================================
 
 
+基本的な使い方
+--------------------------
+
+``--project_id`` に対象プロジェクトのproject_idを指定してください。
+
+以下のコマンドは、すべてのタスクの一覧を出力します。
+ただし10,000件までしか出力できません。
+
+.. code-block::
+
+    $ annofabcli task list --project_id prj1
+
+
 
 タスクのフェーズやステータスなどで絞り込み
 ----------------------------------------------
@@ -133,7 +146,7 @@ task_idの一覧を出力
 
 .. code-block::
 
-    $ annofabcli task list --project_id prj1 --format task_id_format --output task_id.txt
+    $ annofabcli task list --project_id prj1 --format task_id_format --output out.txt
 
 
 .. code-block::

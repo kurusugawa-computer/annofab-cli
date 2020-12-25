@@ -229,11 +229,15 @@ def to_deviation(series: pandas.Series, threshold_deviation_user_count: Optional
             return series.map(lambda x: 50 if not numpy.isnan(x) else numpy.nan)
 
 
-def create_rank_df(df: pandas.DataFrame) -> pandas.DataFrame:
+def create_rank_df(df: pandas.DataFrame, user_id_set: Optional[Set[str]] = None) -> pandas.DataFrame:
     df_rank = df.copy()
     for col in df.columns[3:]:
         df_rank[col] = to_rank(df[col])
-    return df_rank
+
+    if user_id_set is not None:
+        return df_rank[df_rank[("user_id", "")].isin(user_id_set)]
+    else:
+        return df_rank
 
 
 def create_deviation_df(
@@ -259,15 +263,23 @@ def create_basic_statistics_df(df: pandas.DataFrame) -> pandas.DataFrame:
     return df_stat
 
 
-def output_rank_csv(result: ResultDataframe, output_dir: Path):
-    print_csv(create_rank_df(result.annotation_productivity), str(output_dir / "annotation_productivity_rank.csv"))
+def output_rank_csv(result: ResultDataframe, output_dir: Path, user_id_list: Optional[List[str]] = None):
+    user_id_set: Optional[Set[str]] = set(user_id_list) if user_id_list is not None else None
     print_csv(
-        create_rank_df(result.inspection_acceptance_productivity),
+        create_rank_df(result.annotation_productivity, user_id_set=user_id_set),
+        str(output_dir / "annotation_productivity_rank.csv"),
+    )
+    print_csv(
+        create_rank_df(result.inspection_acceptance_productivity, user_id_set=user_id_set),
         str(output_dir / "inspection_acceptance_productivity_rank.csv"),
     )
-    print_csv(create_rank_df(result.quality_per_task), str(output_dir / "annotation_quality_per_task_rank.csv"))
     print_csv(
-        create_rank_df(result.quality_per_annotation), str(output_dir / "annotation_quality_per_annotation_rank.csv")
+        create_rank_df(result.quality_per_task, user_id_set=user_id_set),
+        str(output_dir / "annotation_quality_per_task_rank.csv"),
+    )
+    print_csv(
+        create_rank_df(result.quality_per_annotation, user_id_set=user_id_set),
+        str(output_dir / "annotation_quality_per_annotation_rank.csv"),
     )
 
 
@@ -378,8 +390,8 @@ class WritePerformanceRatingCsv(AbstractCommandLineInterface):
         )
 
         output_dir: Path = args.output_dir
-        output_csv(result, output_dir)
-        output_rank_csv(result, output_dir)
+        # output_csv(result, output_dir)
+        output_rank_csv(result, output_dir, user_id_list=user_id_list)
         output_deviation_csv(
             result,
             output_dir,
