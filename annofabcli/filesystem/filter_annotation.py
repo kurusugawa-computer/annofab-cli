@@ -1,3 +1,4 @@
+import sys
 import argparse
 import logging
 import os
@@ -219,6 +220,7 @@ class FilterAnnotation:
 
     def main(self, args: argparse.Namespace):
         logger.info(f"args: {args}")
+        COMMON_MESSAGE = "annofabcli filesystem filter_annotation:"
 
         annotation_path: Path = args.annotation
         output_dir: Path = args.output_dir
@@ -230,8 +232,7 @@ class FilterAnnotation:
         elif annotation_path.is_dir():
             self.filter_annotation_dir(annotation_path, filter_query=filter_query, output_dir=output_dir)
         else:
-            logger.info("TODO")
-            return
+            print(f"{COMMON_MESSAGE} argument --annotation: ZIPファイルまたはディレクトリを指定してください。", file=sys.stderr)
 
 
 def main(args):
