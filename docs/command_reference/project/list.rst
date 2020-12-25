@@ -24,7 +24,7 @@ Examples
 
 
 プロジェクトのタイトルやステータスなどで絞り込み
-----------------------------------------------
+-------------------------------------------------------
 
 ``--project_query`` を指定すると、プロジェクトのタイトルやステータスなどで絞り込めます。
 ``--project_query`` に渡す値は、https://annofab.com/docs/api/#operation/getProjectsOfOrganization のクエリパラメータとほとんど同じです。
@@ -91,7 +91,7 @@ CSV出力
 
 .. code-block::
 
-    $ annofabcli project list --organization org1 --format csv --output out.json
+    $ annofabcli project list --organization org1 --format csv --output out.csv
 
 
 JSON出力
