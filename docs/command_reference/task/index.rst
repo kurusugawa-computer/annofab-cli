@@ -17,5 +17,6 @@ Available Commands
 
    cancel_acceptance
    change_operator
+   delete
    list
 
