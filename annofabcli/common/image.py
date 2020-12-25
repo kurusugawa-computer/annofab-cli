@@ -250,10 +250,24 @@ def write_annotation_images_from_path(
                     )
                     return None
             else:
-                raise ValueError(
-                    f"引数`input_data_dict`がNoneでない場合は、"
-                    f"`metadata_key_of_image_width`と`metadata_key_of_image_height`はnot Noneである必要があります。"
-                )
+                # 入力データの`input_data.system_metadata.original_resolution`を参照して、画像サイズを決める。
+                input_data = input_data_dict[input_data_id]
+                if input_data is None:
+                    logger.warning(f"input_data_id={input_data_id}の入力データは存在しなかったので、スキップします。")
+                    return None
+
+                original_resolution = input_data["system_metadata"]["original_resolution"]
+                if original_resolution is not None and (
+                    original_resolution.get("width") is not None and original_resolution.get("height") is not None
+                ):
+                    return original_resolution.get("width"), original_resolution.get("height")
+                else:
+                    logger.warning(
+                        f"input_data_id={input_data_id}のプロパティ"
+                        f"`system_metadata.original_resolution`には画像サイズが設定されていなかったので、スキップします。"
+                    )
+                    return None
+
         else:
             raise ValueError(f"引数`image_size`または`input_data_dict`のどちらかはnot Noneである必要があります。")
 

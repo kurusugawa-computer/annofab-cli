@@ -67,11 +67,11 @@ class WriteAnnotationImage:
                 )
                 return
 
-        if args.input_data_json is not None:
-            if args.metadata_key_of_image_size is None:
+        if args.metadata_key_of_image_size is not None:
+            if args.input_data_json is None:
                 print(
                     f"{self.COMMON_MESSAGE} argument --metadata_key_of_image_size: "
-                    f"`--input_data_json`を指定した場合、`--metadata_key_of_image_size`は必須です。",
+                    f"`--metadata_key_of_image_size`を指定した場合、`--input_data_json`は必須です。",
                     file=sys.stderr,
                 )
                 return
@@ -124,17 +124,18 @@ def parse_args(parser: argparse.ArgumentParser):
     image_size_group.add_argument("--image_size", type=str, help="画像サイズ。{width}x{height}。ex) 1280x720")
 
     image_size_group.add_argument(
+        "--input_data_json",
+        type=Path,
+        help="入力データ情報が記載されたJSONファイルのパスを指定してください。"
+        "入力データのプロパティ`system_metadata.original_resolution`を参照して画像サイズを決めます。"
+        "JSONファイルは`$ annofabcli project download input_data`コマンドで取得できます。",
+    )
+
+    parser.add_argument(
         "--metadata_key_of_image_size",
         type=str,
         nargs=2,
         help="画像サイズが設定された、入力データのメタデータのキー。" "`--image_size_key_of_metadata {width_key} {height_key}`",
-    )
-
-    parser.add_argument(
-        "--input_data_json",
-        type=Path,
-        help="入力データ情報が記載されたJSONファイルのパスを指定してください。引数`--metadata_key_of_image_size`を指定したときに必須です。"
-        "JSONファイルは`$ annofabcli project download input_data`コマンドで取得できます。",
     )
 
     parser.add_argument(
