@@ -91,7 +91,7 @@ CSV出力
 
 .. code-block::
 
-    $ annofabcli project list --organization org1 --project_query '{"title":"test"}'
+    $ annofabcli project list --organization org1 --format csv --output out.json
 
 
 JSON出力
@@ -99,7 +99,7 @@ JSON出力
 
 .. code-block::
 
-    $ annofabcli task list --project_id prj1 --format pretty_json --output out.json
+    $ annofabcli project list --organization org1 --format pretty_json --output out.json
 
 
 
@@ -109,51 +109,50 @@ JSON出力
     [
       {
         "project_id": "prj1",
-        "task_id": "task1",
-        "phase": "acceptance",
-        "phase_stage": 1,
-        "status": "complete",
-        "input_data_id_list": [
-          "input1"
-        ],
-        "account_id": "12345678-abcd-1234-abcd-1234abcd5678",
-        "histories_by_phase": [
-          {
-            "account_id": "12345678-abcd-1234-abcd-1234abcd5678",
-            "phase": "annotation",
-            "phase_stage": 1,
-            "worked": true,
-            "user_id": "test_user_id",
-            "username": "test_username"
-          },
-          ...
-        ],
-        "work_time_span": 8924136,
-        "started_datetime": "2020-11-24T16:21:27.753+09:00",
-        "updated_datetime": "2020-11-24T16:29:29.381+09:00",
-        "sampling": null,
-        "metadata": {},
-        "user_id": "test_user_id",
-        "username": "test_username",
-        "worktime_hour": 2.4789266666666667,
-        "number_of_rejections_by_inspection": 0,
-        "number_of_rejections_by_acceptance": 1
-      },
-      ...
+        "organization_id": "org1",
+        "title": "test-project",
+        "overview": "",
+        "project_status": "suspended",
+        "input_data_type": "image",
+        "created_datetime": "2020-03-30T13:15:01.903+09:00",
+        "updated_datetime": "2020-12-17T13:49:37.564+09:00",
+        "configuration": {
+          "number_of_inspections": 1,
+          "assignee_rule_of_resubmitted_task": "no_assignee",
+          "task_assignment_type": "random",
+          "max_tasks_per_member": 30,
+          "max_tasks_per_member_including_hold": 30,
+          "private_storage_aws_iam_role_arn": null,
+          "plugin_id": null,
+          "custom_task_assignment_plugin_id": null,
+          "custom_specs_plugin_id": null,
+          "input_data_set_id_list": null,
+          "input_data_max_long_side_length": null,
+          "sampling_inspection_rate": 50,
+          "sampling_acceptance_rate": 0,
+          "editor_version": "stable"
+        },
+        "summary": {
+          "last_tasks_updated_datetime": "2020-11-11T18:06:58.642+09:00"
+        },
+        "organization_name": "test-organization"
+      }
     ]
 
 
-task_idの一覧を出力
+
+
+project_idの一覧を出力
 ----------------------------------------------
 
 .. code-block::
 
-    $ annofabcli task list --project_id prj1 --format task_id_format --output task_id.txt
+    $ annofabcli project list --project_id prj1 --format project_id_list --output out.txt
 
 
 .. code-block::
     :caption: out.txt
 
-    task1
-    task2
+    prj1
+    prj2
     ...

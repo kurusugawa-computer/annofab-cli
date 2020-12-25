@@ -141,7 +141,6 @@ class ListProject(AbstractCommandLineInterface):
 
         return True
 
-
     def main(self):
         args = self.args
         self.validate(args)

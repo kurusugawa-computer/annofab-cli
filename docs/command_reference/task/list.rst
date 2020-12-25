@@ -146,7 +146,7 @@ task_idの一覧を出力
 
 .. code-block::
 
-    $ annofabcli task list --project_id prj1 --format task_id_format --output task_id.txt
+    $ annofabcli task list --project_id prj1 --format task_id_format --output out.txt
 
 
 .. code-block::
