@@ -123,8 +123,8 @@ class Download(AbstractCommandLineInterface):
                     f"ダウンロード対象が'task', 'input_data', 'simple_annotation', 'full_annotation'以外では`--latest`オプションは無視されます。"
                 )
 
-        if download_target == DownloadTarget.FULL_ANNOTATION:
-            logger.warning(f"ダウンロード対象`full_annotation`は非推奨です。いずれ廃止されます。")
+        if download_target in [DownloadTarget.FULL_ANNOTATION, DownloadTarget.TASK_HISTORY_EVENT]:
+            logger.warning(f"ダウンロード対象`{download_target.value}`は非推奨です。いずれ廃止されます。")
 
         return True
 
@@ -173,7 +173,7 @@ def parse_args(parser: argparse.ArgumentParser):
     parser.add_argument(
         "--latest",
         action="store_true",
-        help="ダウンロード対象を最新化してから、ダウンロードします。アノテーションの最新化は5分以上かかる場合があります。"
+        help="ダウンロード対象を最新化してから、ダウンロードします。ファイルの最新化は5分以上かかる場合があります。特にsimple_annotation,full_annotationの最新化は1時間以上かかる場合があります。"
         "ダウンロード対象が'task', 'input_data', 'simple_annotation', 'full_annotation'のときのみ、このオプションは有効です。",
     )
 

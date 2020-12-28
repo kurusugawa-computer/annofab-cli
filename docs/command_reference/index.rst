@@ -8,6 +8,7 @@ Command Reference
    :caption: Available Commands
    :titlesonly:
 
+   filesystem/index
    input_data/index
    task/index
    project/index

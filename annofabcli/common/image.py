@@ -75,7 +75,7 @@ def fill_annotation(
         draw.rectangle(xy, fill=color)
 
     elif data_type == "Points":
-        # Polygon
+        # Polygon or Polyline
         xy = [(e["x"], e["y"]) for e in data["points"]]
         draw.polygon(xy, fill=color)
 
