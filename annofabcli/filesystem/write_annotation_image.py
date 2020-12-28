@@ -22,21 +22,21 @@ class WriteAnnotationImage:
     def create_is_target_parser_func(
         task_status_complete: bool = False, task_id_list: Optional[List[str]] = None
     ) -> IsParserFunc:
+        task_id_set = set(task_id_list) if task_id_list is not None else None
+
         def is_target_parser(parser: SimpleAnnotationParser) -> bool:
-            simple_annotation = parser.parse()
+            dict_simple_annotation = parser.load_json()
             if task_status_complete:
-                if simple_annotation.task_status != TaskStatus.COMPLETE:
+                if dict_simple_annotation["task_status"] != TaskStatus.COMPLETE.value:
                     logger.debug(
-                        f"task_statusがcompleteでない( {simple_annotation.task_status.value})ため、"
-                        f"{simple_annotation.task_id}, {simple_annotation.input_data_name} はスキップします。"
+                        f"task_statusがcompleteでない( {dict_simple_annotation['task_status']})ため、"
+                        f"{parser.json_file_path} をスキップします。"
                     )
                     return False
 
-            if task_id_list is not None and len(task_id_list) > 0:
-                if simple_annotation.task_id not in task_id_list:
-                    logger.debug(
-                        f"画像化対象外のタスク {simple_annotation.task_id} であるため、 {simple_annotation.input_data_name} はスキップします。"
-                    )
+            if task_id_set is not None and len(task_id_set) > 0:
+                if dict_simple_annotation["task_id"] not in task_id_set:
+                    logger.debug(f"画像化対象外のタスクであるため、 {parser.json_file_path} をスキップします。")
                     return False
 
             return True
@@ -67,11 +67,11 @@ class WriteAnnotationImage:
                 )
                 return
 
-        if args.input_data_json is not None:
-            if args.metadata_key_of_image_size is None:
+        if args.metadata_key_of_image_size is not None:
+            if args.input_data_json is None:
                 print(
                     f"{self.COMMON_MESSAGE} argument --metadata_key_of_image_size: "
-                    f"`--input_data_json`を指定した場合、`--metadata_key_of_image_size`は必須です。",
+                    f"`--metadata_key_of_image_size`を指定した場合、`--input_data_json`は必須です。",
                     file=sys.stderr,
                 )
                 return
@@ -124,17 +124,18 @@ def parse_args(parser: argparse.ArgumentParser):
     image_size_group.add_argument("--image_size", type=str, help="画像サイズ。{width}x{height}。ex) 1280x720")
 
     image_size_group.add_argument(
+        "--input_data_json",
+        type=Path,
+        help="入力データ情報が記載されたJSONファイルのパスを指定してください。"
+        "入力データのプロパティ`system_metadata.original_resolution`を参照して画像サイズを決めます。"
+        "JSONファイルは`$ annofabcli project download input_data`コマンドで取得できます。",
+    )
+
+    parser.add_argument(
         "--metadata_key_of_image_size",
         type=str,
         nargs=2,
         help="画像サイズが設定された、入力データのメタデータのキー。" "`--image_size_key_of_metadata {width_key} {height_key}`",
-    )
-
-    parser.add_argument(
-        "--input_data_json",
-        type=Path,
-        help="入力データ情報が記載されたJSONファイルのパスを指定してください。引数`--metadata_key_of_image_size`を指定したときに必須です。"
-        "JSONファイルは`$ annofabcli project download input_data`コマンドで取得できます。",
     )
 
     parser.add_argument(
@@ -156,7 +157,13 @@ def parse_args(parser: argparse.ArgumentParser):
 
     parser.add_argument("-o", "--output_dir", type=str, required=True, help="出力ディレクトリのパス")
 
-    parser.add_argument("--image_extension", type=str, default="png", help="出力画像の拡張子")
+    parser.add_argument(
+        "--image_extension",
+        type=str,
+        default="png",
+        choices=["png", "bmp", "jpeg", "jpg", "gif", "tif", "tiff"],
+        help="出力画像の拡張子を指定してください。",
+    )
 
     parser.add_argument(
         "--background_color",
@@ -164,7 +171,7 @@ def parse_args(parser: argparse.ArgumentParser):
         help=(
             "アノテーションの画像の背景色を指定します。"
             'ex):  "rgb(173, 216, 230)", "lightgrey",  "#add8e6" '
-            "[ImageColor Module](https://hhsprings.bitbucket.io/docs/programming/examples/python/PIL/ImageColor.html) がサポートする文字列を利用できます。"  # noqa: E501
+            "[ImageColor Module](https://pillow.readthedocs.io/en/stable/reference/ImageColor.html) がサポートする文字列を利用できます。"  # noqa: E501
             "指定しない場合は、黒（rgb(0,0,0)）になります。"
         ),
     )

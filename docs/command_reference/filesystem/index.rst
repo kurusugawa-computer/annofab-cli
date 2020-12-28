@@ -1,10 +1,11 @@
 ==================================================
-project
+filesystem
 ==================================================
 
 Description
 =================================
-プロジェクト関係のコマンドです。
+ファイル操作関係（Web APIにアクセスしない）のコマンドです。
+
 
 
 Available Commands
@@ -15,6 +16,5 @@ Available Commands
    :maxdepth: 1
    :titlesonly:
 
-   download
-   list
+   write_annotation_image
 
