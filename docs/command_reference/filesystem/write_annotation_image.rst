@@ -41,8 +41,7 @@ Examples
       "cat": [255,0,0]
     }
 
-アノテーション仕様画面で設定されている色を参照したい場合は、``annofabcli annotation_specs list_label_color`` コマンドの出力結果を使用してください。
-label_name(英名)とRGBの関係をJSONで出力します。出力された内容は、`write_annotation_image`ツールに利用します。出力内容は`Dict[LabelName, [R,G,B]]`です。
+アノテーション仕様画面で設定されている色を参照したい場合は、`annofabcli annotation_specs list_label_color <../annotation_specs/list_label_color.html>`_ コマンドの出力結果を使用してください。
 
 .. code-block::
 
@@ -50,13 +49,6 @@ label_name(英名)とRGBの関係をJSONで出力します。出力された内�
 
 ``--image_size`` には、画像サイズを ``{width}x{height}`` の形式で指定してください。
 
-
-AnnoFabからダウンロードしたアノテーションzipを渡してください。`` には、AnnoFabからダウンロードしたアノテーションzipを渡してください。
-
- label_nameとRGBの関係をJSON形式で指定します。ex) `{"dog":[255,128,64], "cat":[0,0,255]}``file://`を先頭に付けると、JSON形式のファイルを指定できます。 (default: None)
-
-    # label_nameとRGBを対応付けたファイルを生成する
-    $ annofabcli annotation_specs list_label_color --project_id prj1 --output label_color.json
 
 .. code-block::
 
@@ -162,17 +154,44 @@ AnnoFabからダウンロードしたアノテーションzipを渡してくだ�
     --output_dir out/
 
 
-# 入力データのメタデータ"width", "height"に設定した画像サイズを参照して、アノテーション画像を生成する
-$ annfoabcli project download input_data --project_id prj1 --output input_data.json
-$ annofabcli filesystem write_annotation_image  --annotation annotation.zip \
- --input_data_json input_data.json \
- --metadata_key_of_image_size width height \
- --label_color file://label_color.json \
- --output_dir /tmp/output
-```
+画像サイズの指定
+--------------------------
+プロジェクトに異なるサイズの画像が含まれている場合、``--image_size`` は使用できません。
+替わりに、入力データ全件ファイルを読み込み、入力データごとに画像サイズを取得します。
 
+入力データ全件ファイルは、以下のコマンドでダウンロードします。
+
+.. code-block::
+
+    $ annfoabcli project download input_data --project_id prj1 --output input_data.json
+
+
+``--input_data_json`` に、入力データ全件ファイルを指定してください。入力データのプロパティ ``system_metadata.original_resolution`` を参照して画像サイズを取得します。
+
+.. code-block::
+
+     $ annofabcli filesystem write_annotation_image  --annotation annotation.zip \
+         --input_data_json input_data.json \
+         --label_color file://label_color.json \
+         --output_dir out/
+
+
+
+.. note::
+
+    2020-12-23 以前に登録/更新した入力データには、``system_metadata.original_resolution`` に画像サイズ情報は格納されていません。
+
+
+.. warning::
+
+    入力データのメタデータのキーで画像サイズを取得するオプション ``--metadata_key_of_image_size`` は、廃止予定です。
+    2020-12-24 以降に登録/更新した入力データは、プロパティ ``system_metadata.original_resolution`` に画像サイズが設定されるためです。
 
 
 See also
+=================================
 
-* SImpleアノテーションの構造
+* `アノテーションzipの構造 <https://annofab.com/docs/api/#section/Simple-Annotation-ZIP>`_
+* `annofabcli project download <../project/download.html>`_
+* `annofabcli annotation_specs list_label_color <../annotation_specs/list_label_color.html>`_
+
