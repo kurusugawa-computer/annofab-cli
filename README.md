@@ -15,11 +15,11 @@ AnnoFabのCLI(Command Line Interface)ツールです。
 
 
 ## 廃止予定
-* 2020-10-01以降：Pythonのサポートバージョンを3.6以上から、3.7以上に変更します。
-    
+* 2020-04-01以降：`annofabcli filesystem write_annotation_image`コマンドの`--metadata_key_of_image_size`を廃止します。入力データから画像サイズを取得できるようになったためです。
+   
 
 # Requirements
-* Python 3.6+
+* Python 3.7.1+
 
 # Install
 
