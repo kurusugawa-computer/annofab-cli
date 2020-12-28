@@ -4,9 +4,9 @@ filesystem write_annotation_image
 
 Description
 =================================
-アノテーションzip、またはそれを展開したディレクトリから、アノテーションの画像（Semantic Segmentation用）を生成します。
+アノテーションzip、またはそれを展開したディレクトリから、Semantic Segmentation用のアノテーションの画像を生成します。
 
-画像化対象のアノテーションは、アノテーションデータの``_type`` が以下の場合です。
+画像化対象のアノテーションは、アノテーションデータの ``_type`` が以下の場合です。
 
 * ``BoundingBox`` （矩形）
 * ``Points``  （ポリゴン or ポリライン）
@@ -58,7 +58,7 @@ Examples
     --output_dir out/
 
 
-ディレクトリ ``out`` には、ファイル名が入力データIDである画像ファイルが出力されます。名前がtask_idのディレクトリは出力されません。
+ディレクトリ ``out`` には、アノテーション画像が出力されます。ファイル名は ``{入力データID}.{拡張子}`` です。
 
 .. code-block::
 
@@ -69,6 +69,12 @@ Examples
 
 
 .. image:: write_annotation_image/output_image.png
+
+
+
+.. warning::
+
+    複数のタスクに同じ入力データが含まれている場合、出力されるアノテーション画像は上書きされます。
 
 
 画像化対象の絞り込み
@@ -119,41 +125,6 @@ Examples
 
 
 
-画像形式？
---------------------------
-
-デフォルトでは"png"画像が出力されます。画像フォーマットを指定する場合は、``--image_extension`` に出力される画像の拡張子を指定してください。
-
-
-.. code-block::
-
-    $ annofabcli filesystem write_annotation_image  --annotation annotation.zip \
-    --label_color file://label_color.json \
-    --image_extension bmp \
-    --image_size 1280x720 \
-    --output_dir out/
-
-
-
-デフォルトでは背景画像は黒色です。 ``--background_color`` に以下のようなフォーマットで色を指定すると、背景画像を指定できます。
-
-* ``rgb(173, 216, 230)``
-* ``lightgrey``
-* ``#add8e6``
-
-サポートしているフォーマットは、`Pillow - ImageColor Module <https://pillow.readthedocs.io/en/stable/reference/ImageColor.html>`_ を参照してください。
-
-
-
-.. code-block::
-
-    $ annofabcli filesystem write_annotation_image  --annotation annotation.zip \
-    --label_color file://label_color.json \
-    --background_color "rgb(255,255,255)" \
-    --image_size 1280x720 \
-    --output_dir out/
-
-
 画像サイズの指定
 --------------------------
 プロジェクトに異なるサイズの画像が含まれている場合、``--image_size`` は使用できません。
@@ -186,6 +157,45 @@ Examples
 
     入力データのメタデータのキーで画像サイズを取得するオプション ``--metadata_key_of_image_size`` は、廃止予定です。
     2020-12-24 以降に登録/更新した入力データは、プロパティ ``system_metadata.original_resolution`` に画像サイズが設定されるためです。
+
+
+画像フォーマットの指定
+--------------------------
+
+デフォルトでは"png"画像が出力されます。画像フォーマットを指定する場合は、``--image_extension`` に出力される画像の拡張子を指定してください。
+
+
+.. code-block::
+
+    $ annofabcli filesystem write_annotation_image  --annotation annotation.zip \
+    --label_color file://label_color.json \
+    --image_extension bmp \
+    --image_size 1280x720 \
+    --output_dir out/
+
+
+背景色の指定
+--------------------------
+
+
+デフォルトでは背景は黒色です。 ``--background_color`` に以下のようなフォーマットで色を指定すると、背景色を指定できます。
+
+* ``rgb(173, 216, 230)``
+* ``lightgrey``
+* ``#add8e6``
+
+サポートしているフォーマットは、`Pillow - ImageColor Module <https://pillow.readthedocs.io/en/stable/reference/ImageColor.html>`_ を参照してください。
+
+
+
+.. code-block::
+
+    $ annofabcli filesystem write_annotation_image  --annotation annotation.zip \
+    --label_color file://label_color.json \
+    --background_color "rgb(255,255,255)" \
+    --image_size 1280x720 \
+    --output_dir out/
+
 
 
 See also
