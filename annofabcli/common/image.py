@@ -238,8 +238,7 @@ def write_annotation_images_from_path(
             else:
                 logger.warning(
                     f"input_data_id={input_data_id}の入力データのメタデータに、"
-                    f"{metadata_key_of_image_width}, {metadata_key_of_image_height} というキーが存在しなかったので、"
-                    f"スキップします。"
+                    f"{metadata_key_of_image_width}, {metadata_key_of_image_height} というキーが存在しません。"
                 )
                 return None
 
@@ -252,8 +251,7 @@ def write_annotation_images_from_path(
                 return original_resolution.get("width"), original_resolution.get("height")
             else:
                 logger.warning(
-                    f"input_data_id={input_data_id}のプロパティ"
-                    f"`system_metadata.original_resolution`には画像サイズが設定されていなかったので、スキップします。"
+                    f"input_data_id={input_data_id}のプロパティ" f"`system_metadata.original_resolution`には画像サイズが設定されていません。"
                 )
                 return None
 
