@@ -224,49 +224,51 @@ def write_annotation_images_from_path(
     """
 
     def _get_image_size(input_data_id: str) -> Optional[InputDataSize]:
+        def _get_image_size_from_metadata():
+            metadata = input_data["metadata"]
+            if metadata is not None and (
+                metadata_key_of_image_width in metadata and metadata_key_of_image_height in metadata
+            ):
+                try:
+                    return (int(metadata[metadata_key_of_image_width]), int(metadata[metadata_key_of_image_height]))
+                except ValueError as e:
+                    logger.warning(f"input_data_id={input_data_id}の入力データのメタデータの数値変換に失敗しました。{e}")
+                    return None
+
+            else:
+                logger.warning(
+                    f"input_data_id={input_data_id}の入力データのメタデータに、"
+                    f"{metadata_key_of_image_width}, {metadata_key_of_image_height} というキーが存在しなかったので、"
+                    f"スキップします。"
+                )
+                return None
+
+        def _get_image_size_from_system_metadata():
+            # 入力データの`input_data.system_metadata.original_resolution`を参照して、画像サイズを決める。
+            original_resolution = input_data["system_metadata"]["original_resolution"]
+            if original_resolution is not None and (
+                original_resolution.get("width") is not None and original_resolution.get("height") is not None
+            ):
+                return original_resolution.get("width"), original_resolution.get("height")
+            else:
+                logger.warning(
+                    f"input_data_id={input_data_id}のプロパティ"
+                    f"`system_metadata.original_resolution`には画像サイズが設定されていなかったので、スキップします。"
+                )
+                return None
+
         if image_size is not None:
             return image_size
         elif input_data_dict is not None:
+            input_data = input_data_dict.get(input_data_id)
+            if input_data is None:
+                logger.warning(f"input_data_id={input_data_id}の入力データは存在しなかったので、スキップします。")
+                return None
+
             if metadata_key_of_image_width is not None and metadata_key_of_image_height is not None:
-                input_data = input_data_dict[input_data_id]
-                if input_data is None:
-                    logger.warning(f"input_data_id={input_data_id}の入力データは存在しなかったので、スキップします。")
-                    return None
-                metadata = input_data["metadata"]
-                if metadata is not None and (
-                    metadata_key_of_image_width in metadata and metadata_key_of_image_height in metadata
-                ):
-                    try:
-                        return (int(metadata[metadata_key_of_image_width]), int(metadata[metadata_key_of_image_height]))
-                    except ValueError as e:
-                        logger.warning(f"input_data_id={input_data_id}の入力データのメタデータの数値変換に失敗しました。{e}")
-                        return None
-
-                else:
-                    logger.warning(
-                        f"input_data_id={input_data_id}の入力データのメタデータに、"
-                        f"{metadata_key_of_image_width}, {metadata_key_of_image_height} というキーが存在しなかったので、"
-                        f"スキップします。"
-                    )
-                    return None
+                return _get_image_size_from_metadata()
             else:
-                # 入力データの`input_data.system_metadata.original_resolution`を参照して、画像サイズを決める。
-                input_data = input_data_dict[input_data_id]
-                if input_data is None:
-                    logger.warning(f"input_data_id={input_data_id}の入力データは存在しなかったので、スキップします。")
-                    return None
-
-                original_resolution = input_data["system_metadata"]["original_resolution"]
-                if original_resolution is not None and (
-                    original_resolution.get("width") is not None and original_resolution.get("height") is not None
-                ):
-                    return original_resolution.get("width"), original_resolution.get("height")
-                else:
-                    logger.warning(
-                        f"input_data_id={input_data_id}のプロパティ"
-                        f"`system_metadata.original_resolution`には画像サイズが設定されていなかったので、スキップします。"
-                    )
-                    return None
+                return _get_image_size_from_system_metadata()
 
         else:
             raise ValueError(f"引数`image_size`または`input_data_dict`のどちらかはnot Noneである必要があります。")
