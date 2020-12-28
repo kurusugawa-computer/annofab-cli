@@ -9,13 +9,11 @@ from dataclasses import dataclass
 from pathlib import Path
 from typing import Any, Dict, List, Optional, Set
 
-from annofabapi.models import TaskStatus
-from annofabapi.parser import SimpleAnnotationParser, lazy_parse_simple_annotation_dir, lazy_parse_simple_annotation_zip
+from annofabapi.parser import lazy_parse_simple_annotation_dir, lazy_parse_simple_annotation_zip
 
 import annofabcli
 import annofabcli.common.cli
 from annofabcli.common.facade import TaskQuery
-from annofabcli.common.image import IsParserFunc
 
 logger = logging.getLogger(__name__)
 
@@ -102,7 +100,6 @@ def create_outer_filepath_dict(namelist: List[str]) -> Dict[str, List[str]]:
 
 
 class FilterAnnotation:
-
     @staticmethod
     def filter_annotation_zip(annotation_zip: Path, filter_query: FilterQuery, output_dir: Path):
         with zipfile.ZipFile(str(annotation_zip)) as zip_file:

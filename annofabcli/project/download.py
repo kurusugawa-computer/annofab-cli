@@ -173,7 +173,8 @@ def parse_args(parser: argparse.ArgumentParser):
     parser.add_argument(
         "--latest",
         action="store_true",
-        help="ダウンロード対象を最新化してから、ダウンロードします。ファイルの最新化は5分以上かかる場合があります。特にsimple_annotation,full_annotationの最新化は1時間以上かかる場合があります。"
+        help="ダウンロード対象を最新化してから、ダウンロードします。ファイルの最新化は5分以上かかる場合があります。"
+        "特にsimple_annotation,full_annotationの最新化は1時間以上かかる場合があります。"
         "ダウンロード対象が'task', 'input_data', 'simple_annotation', 'full_annotation'のときのみ、このオプションは有効です。",
     )
 

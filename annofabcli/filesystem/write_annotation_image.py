@@ -23,6 +23,7 @@ class WriteAnnotationImage:
         task_status_complete: bool = False, task_id_list: Optional[List[str]] = None
     ) -> IsParserFunc:
         task_id_set = set(task_id_list) if task_id_list is not None else None
+
         def is_target_parser(parser: SimpleAnnotationParser) -> bool:
             dict_simple_annotation = parser.load_json()
             if task_status_complete:
@@ -35,9 +36,7 @@ class WriteAnnotationImage:
 
             if task_id_set is not None and len(task_id_set) > 0:
                 if dict_simple_annotation["task_id"] not in task_id_set:
-                    logger.debug(
-                        f"画像化対象外のタスクであるため、 {parser.json_file_path} をスキップします。"
-                    )
+                    logger.debug(f"画像化対象外のタスクであるため、 {parser.json_file_path} をスキップします。")
                     return False
 
             return True
@@ -158,7 +157,13 @@ def parse_args(parser: argparse.ArgumentParser):
 
     parser.add_argument("-o", "--output_dir", type=str, required=True, help="出力ディレクトリのパス")
 
-    parser.add_argument("--image_extension", type=str, default="png", choices=["png","bmp","jpeg","jpg","gif","tif","tiff"], help="出力画像の拡張子を指定してください。")
+    parser.add_argument(
+        "--image_extension",
+        type=str,
+        default="png",
+        choices=["png", "bmp", "jpeg", "jpg", "gif", "tif", "tiff"],
+        help="出力画像の拡張子を指定してください。",
+    )
 
     parser.add_argument(
         "--background_color",
