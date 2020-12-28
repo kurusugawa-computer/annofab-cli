@@ -102,30 +102,6 @@ def create_outer_filepath_dict(namelist: List[str]) -> Dict[str, List[str]]:
 
 
 class FilterAnnotation:
-    @staticmethod
-    def create_is_target_parser_func(
-        task_status_complete: bool = False, task_id_list: Optional[List[str]] = None
-    ) -> IsParserFunc:
-        def is_target_parser(parser: SimpleAnnotationParser) -> bool:
-            simple_annotation = parser.parse()
-            if task_status_complete:
-                if simple_annotation.task_status != TaskStatus.COMPLETE:
-                    logger.debug(
-                        f"task_statusがcompleteでない( {simple_annotation.task_status.value})ため、"
-                        f"{simple_annotation.task_id}, {simple_annotation.input_data_name} はスキップします。"
-                    )
-                    return False
-
-            if task_id_list is not None and len(task_id_list) > 0:
-                if simple_annotation.task_id not in task_id_list:
-                    logger.debug(
-                        f"画像化対象外のタスク {simple_annotation.task_id} であるため、 {simple_annotation.input_data_name} はスキップします。"
-                    )
-                    return False
-
-            return True
-
-        return is_target_parser
 
     @staticmethod
     def filter_annotation_zip(annotation_zip: Path, filter_query: FilterQuery, output_dir: Path):
