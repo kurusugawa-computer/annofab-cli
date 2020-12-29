@@ -350,8 +350,9 @@ class CompleteTasksMain(AbstracCommandCinfirmInterface):
             logger.info(f"{task.task_id}: 検査/受入フェーズを次のフェーズに進めました。")
             return True
 
+    @staticmethod
     def _validate_task(
-        self, task: Task, target_phase: TaskPhase, target_phase_stage: int, task_query: Optional[TaskQuery]
+        task: Task, target_phase: TaskPhase, target_phase_stage: int, task_query: Optional[TaskQuery]
     ) -> bool:
         if not (task.phase == target_phase and task.phase_stage == target_phase_stage):
             logger.warning(f"{task.task_id} は操作対象のフェーズ、フェーズステージではないため、スキップします。")
