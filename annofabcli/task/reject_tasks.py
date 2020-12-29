@@ -146,7 +146,7 @@ class RejectTasksMain(AbstracCommandCinfirmInterface):
             return False
 
         if not match_task_with_query(Task.from_dict(task), task_query):
-            logger.debug(f"task_id = {task_id} : TaskQueryの条件にマッチしないため、スキップします。")
+            logger.debug(f"task_id = {task_id} : `--task_query`の条件にマッチしないため、スキップします。task_query={task_query}")
             return False
 
         if not self.confirm_reject_task(

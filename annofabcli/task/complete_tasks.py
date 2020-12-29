@@ -350,6 +350,22 @@ class CompleteTasksMain(AbstracCommandCinfirmInterface):
             logger.info(f"{task.task_id}: 検査/受入フェーズを次のフェーズに進めました。")
             return True
 
+    def _validate_task(
+        self, task: Task, target_phase: TaskPhase, target_phase_stage: int, task_query: Optional[TaskQuery]
+    ) -> bool:
+        if not (task.phase == target_phase and task.phase_stage == target_phase_stage):
+            logger.warning(f"{task.task_id} は操作対象のフェーズ、フェーズステージではないため、スキップします。")
+            return False
+
+        if task.status == TaskStatus.COMPLETE:
+            logger.warning(f"{task.task_id} は既に完了状態であるため、スキップします。")
+            return False
+
+        if not match_task_with_query(task, task_query):
+            logger.debug(f"{task.task_id} は `--task_query` の条件にマッチしないため、スキップします。task_query={task_query}")
+            return False
+        return True
+
     def complete_task(
         self,
         project_id: str,
@@ -373,16 +389,9 @@ class CompleteTasksMain(AbstracCommandCinfirmInterface):
             f"{logging_prefix} : タスク情報 task_id={task_id}, "
             f"phase={task.phase.value}, phase_stage={task.phase_stage}, status={task.status.value}"
         )
-        if not (task.phase == target_phase and task.phase_stage == target_phase_stage):
-            logger.warning(f"{task_id} は操作対象のフェーズ、フェーズステージではないため、スキップします。")
-            return False
-
-        if task.status == TaskStatus.COMPLETE:
-            logger.warning(f"{task_id} は既に完了状態であるため、スキップします。")
-            return False
-
-        if not match_task_with_query(task, task_query):
-            logger.debug(f"{logging_prefix} : task_id = {task_id} : `--task_query` の条件にマッチしないため、スキップします。")
+        if not self._validate_task(
+            task, target_phase=target_phase, target_phase_stage=target_phase_stage, task_query=task_query
+        ):
             return False
 
         try:
@@ -442,6 +451,8 @@ class CompleteTasksMain(AbstracCommandCinfirmInterface):
             reply_comment: 未回答の検査コメントに対する指摘
             inspection_status: 未処置の検査コメントの状態
         """
+        if task_query is not None:
+            task_query = self.facade.set_account_id_of_task_query(project_id, task_query)
 
         project_title = self.facade.get_project_title(project_id)
         logger.info(f"{project_title} のタスク {len(task_id_list)} 件に対して、今のフェーズを完了状態にします。")
@@ -517,11 +528,11 @@ class ComleteTasks(AbstractCommandLineInterface):
         task_id_list = annofabcli.common.cli.get_list_from_args(args.task_id)
         inspection_status = InspectionStatus(args.inspection_status) if args.inspection_status is not None else None
 
-        dict_task_query = annofabcli.common.cli.get_json_from_args(args.task_query)
-        task_query: Optional[TaskQuery] = TaskQuery.from_dict(dict_task_query) if dict_task_query is not None else None
-
         project_id = args.project_id
         super().validate_project(project_id, [ProjectMemberRole.OWNER, ProjectMemberRole.ACCEPTER])
+
+        dict_task_query = annofabcli.common.cli.get_json_from_args(args.task_query)
+        task_query: Optional[TaskQuery] = TaskQuery.from_dict(dict_task_query) if dict_task_query is not None else None
 
         main_obj = CompleteTasksMain(self.service, all_yes=self.all_yes)
         main_obj.complete_task_list(

@@ -75,11 +75,14 @@ class DeleteTask(AbstractCommandLineInterface):
         logger.debug(f"task_id={task_id}: アノテーションが{len(annotation_list)}個付与されています。")
         if not force:
             if len(annotation_list) > 0:
-                logger.info(f"アノテーションが付与されているため（{len(annotation_list)}個）、タスク'{task_id}'を削除できません。")
+                logger.info(
+                    f"アノテーションが付与されているため（{len(annotation_list)}個）、タスク'{task_id}'の削除をスキップします。"
+                    f"削除するには`--force`を指定してください。"
+                )
                 return False
 
         if not match_task_with_query(Task.from_dict(task), task_query):
-            logger.debug(f"task_id={task_id}: TaskQueryの条件にマッチしないため、スキップします。")
+            logger.debug(f"task_id={task_id}: `--task_query`の条件にマッチしないため、スキップします。task_query={task_query}")
             return False
 
         if not self.confirm_delete_task(task_id):
@@ -119,7 +122,11 @@ class DeleteTask(AbstractCommandLineInterface):
     def main(self):
         args = self.args
         task_id_list = annofabcli.common.cli.get_list_from_args(args.task_id)
-        self.delete_task_list(args.project_id, task_id_list=task_id_list, force=args.force)
+
+        dict_task_query = annofabcli.common.cli.get_json_from_args(args.task_query)
+        task_query: Optional[TaskQuery] = TaskQuery.from_dict(dict_task_query) if dict_task_query is not None else None
+
+        self.delete_task_list(args.project_id, task_id_list=task_id_list, force=args.force, task_query=task_query)
 
 
 def main(args):
