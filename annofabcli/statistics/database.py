@@ -642,12 +642,21 @@ class Database:
 
         task_id_list: List[str] = [e["task_id"] for e in tasks]
         partial_func = partial(_get_task_histories_dict, self.annofab_service.api, self.project_id)
-        with multiprocessing.Pool() as pool:
-            task_index = 0
-            for obj in pool.map(partial_func, task_id_list):
+        process = multiprocessing.current_process()
+        # project_id単位で並列処理が実行場合があるので、デーモンプロセスかどうかを確認する
+        task_index = 0
+        if process.daemon:
+            for task_id in task_id_list:
                 if task_index % 100 == 0:
                     logger.debug(f"{self.logging_prefix}: タスク履歴一覧取得中 {task_index} / {len(tasks)} 件目")
-                tasks_dict.update(obj)
+                tasks_dict.update(partial_func(task_id))
                 task_index += 1
+        else:
+            with multiprocessing.Pool() as pool:
+                for obj in pool.map(partial_func, task_id_list):
+                    if task_index % 100 == 0:
+                        logger.debug(f"{self.logging_prefix}: タスク履歴一覧取得中 {task_index} / {len(tasks)} 件目")
+                    tasks_dict.update(obj)
+                    task_index += 1
 
         return tasks_dict
