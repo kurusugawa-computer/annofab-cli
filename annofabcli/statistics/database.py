@@ -17,7 +17,7 @@ import annofabapi.utils
 import dateutil
 import dateutil.parser
 import more_itertools
-from annofabapi.models import InputData, InputDataId, Inspection, JobStatus, JobType, Task, TaskHistory
+from annofabapi.models import InputDataId, Inspection, JobStatus, JobType, Task, TaskHistory
 from annofabapi.parser import SimpleAnnotationZipParser
 
 from annofabcli.common.dataclasses import WaitOptions
@@ -47,6 +47,15 @@ class Query:
     ignored_task_id_list: Optional[List[str]] = None
     start_date: Optional[str] = None
     end_date: Optional[str] = None
+
+
+@dataclass(frozen=True)
+class PseudoInputData:
+    """
+    入力データの必要なプロパティのみ定義したクラス
+    """
+
+    input_duration_seconds: Optional[float] = None
 
 
 class Database:
@@ -187,21 +196,17 @@ class Database:
 
         return tasks_dict
 
-    def read_input_data_from_json(self, task_list: List[Task]) -> Dict[str, List[InputData]]:
+    def read_input_data_from_json(self) -> Dict[str, PseudoInputData]:
         path = self.input_data_json_path
         logger.debug(f"{self.logging_prefix}: reading {path}")
         with open(str(path)) as f:
             all_input_data_list = json.load(f)
 
-        all_input_data_dict = {e["input_data_id"]: e for e in all_input_data_list}
-        tasks_dict: Dict[str, List[InputData]] = {}
-
-        for task in task_list:
-            task_id = task["task_id"]
-            input_data_id_list = task["input_data_id_list"]
-            tasks_dict[task_id] = [all_input_data_dict[input_data_id] for input_data_id in input_data_id_list]
-
-        return tasks_dict
+        all_input_data_dict = {
+            e["input_data_id"]: PseudoInputData(input_duration_seconds=e["system_metadata"].get("input_duration"))
+            for e in all_input_data_list
+        }
+        return all_input_data_dict
 
     def read_task_histories_from_json(self, task_id_list: Optional[List[str]] = None) -> Dict[str, List[TaskHistory]]:
         logger.debug(f"{self.logging_prefix}: reading {self.task_histories_json_path}")

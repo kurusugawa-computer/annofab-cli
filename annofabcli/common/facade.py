@@ -305,7 +305,7 @@ class AnnofabApiFacade:
 
         Args:
             project_id:
-            accoaunt_id:
+            account_id:
 
         Returns:
             プロジェクトメンバ。見つからない場合はNone

@@ -9,16 +9,7 @@ import more_itertools
 import numpy
 import pandas
 from annofabapi.dataclass.statistics import ProjectAccountStatisticsHistory, WorktimeStatistics, WorktimeStatisticsItem
-from annofabapi.models import (
-    InputData,
-    InputDataId,
-    Inspection,
-    InspectionStatus,
-    Task,
-    TaskHistory,
-    TaskPhase,
-    TaskStatus,
-)
+from annofabapi.models import InputDataId, Inspection, InspectionStatus, Task, TaskHistory, TaskPhase, TaskStatus
 from annofabapi.utils import (
     get_number_of_rejections,
     get_task_history_index_skipped_acceptance,
@@ -29,7 +20,7 @@ from more_itertools import first_true
 import annofabcli
 from annofabcli.common.facade import AnnofabApiFacade
 from annofabcli.common.utils import datetime_to_date, isoduration_to_hour
-from annofabcli.statistics.database import AnnotationDict, Database
+from annofabcli.statistics.database import AnnotationDict, Database, PseudoInputData
 
 logger = logging.getLogger(__name__)
 
@@ -104,7 +95,7 @@ class Table:
     _task_id_list: Optional[List[str]] = None
     _task_list: Optional[List[Task]] = None
     _inspections_dict: Optional[Dict[str, Dict[InputDataId, List[Inspection]]]] = None
-    _input_data_dict: Optional[Dict[str, List[InputData]]] = None
+    _input_data_dict: Optional[Dict[str, PseudoInputData]] = None
     _task_histories_dict: Optional[Dict[str, List[TaskHistory]]] = None
     _annotations_dict: Optional[Dict[str, Dict[InputDataId, Dict[str, Any]]]] = None
     _worktime_statistics: Optional[List[WorktimeStatistics]] = None
@@ -170,11 +161,11 @@ class Table:
             self._inspections_dict = self.database.read_inspections_from_json(task_id_list)
             return self._inspections_dict
 
-    def _get_input_data_dict(self) -> Dict[str, List[InputData]]:
+    def _get_input_data_dict(self) -> Dict[str, PseudoInputData]:
         if self._input_data_dict is not None:
             return self._input_data_dict
         else:
-            self._input_data_dict = self.database.read_input_data_from_json(self._get_task_list())
+            self._input_data_dict = self.database.read_input_data_from_json()
             return self._input_data_dict
 
     def _get_task_histories_dict(self) -> Dict[str, List[TaskHistory]]:
@@ -254,8 +245,7 @@ class Table:
 
     def _get_user_id(self, account_id: Optional[str]) -> Optional[str]:
         """
-        プロジェクトメンバのuser_idを取得する。プロジェクトメンバでなければ、account_idを返す。
-        account_idがNoneならばNoneを返す。
+        プロジェクトメンバのuser_idを返す。
         """
         if account_id is None:
             return None
@@ -264,12 +254,11 @@ class Table:
         if member is not None:
             return member["user_id"]
         else:
-            return account_id
+            return None
 
     def _get_username(self, account_id: Optional[str]) -> Optional[str]:
         """
-        プロジェクトメンバのusernameを取得する。プロジェクトメンバでなければ、account_idを返す。
-        account_idがNoneならばNoneを返す。
+        プロジェクトメンバのusernameを返す。
         """
         if account_id is None:
             return None
@@ -278,7 +267,7 @@ class Table:
         if member is not None:
             return member["username"]
         else:
-            return account_id
+            return None
 
     def _get_biography(self, account_id: Optional[str]) -> Optional[str]:
         """
@@ -663,22 +652,22 @@ class Table:
             annotation_worktime_hour, inspection_worktime_hour, acceptance_worktime_hour, sum_worktime_hour
         """
 
-        def set_input_data_info(arg_task):
-            input_data_list = input_data_dict.get(arg_task["task_id"])
-            input_duration_list = [e["input_duration"] for e in input_data_list]
-            if None in input_duration_list:
-                # 動画プロジェクトや動画時間が設定されていない場合
+        def set_input_data_info_for_movie(arg_task):
+            input_data_id_list = arg_task["input_data_id_list"]
+            input_data = input_data_dict.get(input_data_id_list[0])
+            if input_data is None:
+                logger.warning(f"task_id={arg_task['task_id']} に含まれる入力データID {input_data_id_list[0]} は存在しません。")
                 arg_task["input_duration_seconds"] = None
-            else:
-                arg_task["input_duration_seconds"] = sum(input_duration_list)
+                return
+            arg_task["input_duration_seconds"] = input_data.input_duration_seconds
 
         def set_annotation_info(arg_task):
             total_annotation_count = 0
             input_data_id_list = arg_task["input_data_id_list"]
-            input_data_dict = annotations_dict.get(arg_task["task_id"], None)
-            if input_data_dict is not None:
+            input_data_dict_by_annotation = annotations_dict.get(arg_task["task_id"], None)
+            if input_data_dict_by_annotation is not None:
                 for input_data_id in input_data_id_list:
-                    total_annotation_count += input_data_dict[input_data_id]["total_count"]
+                    total_annotation_count += input_data_dict_by_annotation[input_data_id]["total_count"]
             arg_task["annotation_count"] = total_annotation_count
 
         def set_inspection_info(arg_task):
@@ -721,7 +710,7 @@ class Table:
             self.set_task_histories(task, task_histories)
             set_annotation_info(task)
             set_inspection_info(task)
-            set_input_data_info(task)
+            set_input_data_info_for_movie(task)
 
         df = pandas.DataFrame(tasks)
         if len(df) > 0:
