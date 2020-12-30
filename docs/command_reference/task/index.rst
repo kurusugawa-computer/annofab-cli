@@ -20,5 +20,6 @@ Available Commands
    complete
    delete
    list
+   put
    reject
 
