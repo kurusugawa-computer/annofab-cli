@@ -147,7 +147,7 @@ project_idの一覧を出力
 
 .. code-block::
 
-    $ annofabcli project list --project_id prj1 --format project_id_list --output out.txt
+    $ annofabcli project list --organization org1 --format project_id_list --output out.txt
 
 
 .. code-block::
