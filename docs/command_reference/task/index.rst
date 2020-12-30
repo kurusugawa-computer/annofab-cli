@@ -22,4 +22,6 @@ Available Commands
    list
    put
    reject
+   update_metadata
+
 

@@ -1506,14 +1506,7 @@ https://annofab-cli.readthedocs.io/ja/latest/command_reference/task/reject.html 
 
 
 ### task update_metadata
-タスクのメタデータを更新します。
-メタデータは常に上書きされることに注意してくだださい。
-
-
-```
-# task1, task2のメタデータを '{"attr1":"bar"}' に変更します
-$ annofabcli task update_metadata --project_id prj1 --task_id task1 task2 --metadata '{"attr1":"bar"}'
-```
+https://annofab-cli.readthedocs.io/ja/latest/command_reference/task/update_metadata.html 参照
 
 
 

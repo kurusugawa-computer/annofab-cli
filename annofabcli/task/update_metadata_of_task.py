@@ -38,7 +38,7 @@ class UpdateMetadataOfTaskMain(AbstracCommandCinfirmInterface):
             first_index = 0
             while first_index < len(task_id_list):
                 logger.info(
-                    f"{first_index+1} 〜 {min(first_index+batch_size, len(task_id_list)-1)} 件目のタスクのmetadataを更新します。"
+                    f"{first_index+1} 〜 {min(first_index+batch_size, len(task_id_list))} 件目のタスクのmetadataを更新します。"
                 )
                 request_body = {task_id: metadata for task_id in task_id_list[first_index : first_index + batch_size]}
                 self.service.api.patch_tasks_metadata(project_id, request_body=request_body)
