@@ -132,10 +132,10 @@ class ListTasksAddedTaskHistory(AbstractCommandLineInterface):
             "phase",
             "phase_stage",
             "status",
-            "user_id",
-            "username",
             "started_datetime",
             "updated_datetime",
+            "user_id",
+            "username",
             # 作業時間情報
             "worktime_hour",
             "annotation_worktime_hour",
@@ -159,6 +159,8 @@ class ListTasksAddedTaskHistory(AbstractCommandLineInterface):
     ) -> None:
         logger.debug("JSONファイル読み込み中")
         df_task = self.create_df_task(task_list=task_list, task_history_dict=task_history_dict)
+
+        logger.debug(f"タスク一覧の件数: {len(df_task)}")
 
         annofabcli.utils.print_according_to_format(
             df_task[self._get_output_target_columns()],
