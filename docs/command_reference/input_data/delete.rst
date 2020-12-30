@@ -16,6 +16,14 @@ Examples
 
 ``--input_data_id`` に削除対象入力データのinput_data_idを指定してください。
 
+
+.. code-block::
+    :caption: input_data_id.txt
+
+    input1
+    input2
+    ...
+
 以下のコマンドは、``input_data_id.txt`` に記載されているinput_data_idに一致する入力データを削除します。
 
 .. code-block::

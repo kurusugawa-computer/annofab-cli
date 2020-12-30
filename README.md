@@ -616,69 +616,10 @@ $ annofabcli filesystem filter_annotation --annotation annotation.zip \
 
 
 ### filesystem write_annotation_image
-アノテーションzip、またはそれを展開したディレクトリから、アノテーションの画像（Semantic Segmentation用）を生成します。
-以下のアノテーションが画像化対象です。
-* 矩形
-* ポリゴン
-* 塗りつぶし
-* 塗りつぶしv2
-
-
-```
-# アノテーションzipをダウンロードする。
-$ annofabcli project download simple_annotation --project_id prj1 --output annotation.zip
-
-
-# label_nameとRGBを対応付けたファイルを生成する
-$ annofabcli annotation_specs list_label_color --project_id prj1 --output label_color.json
-
-
-# annotation.zip から、アノテーション画像を生成する
-$ annofabcli filesystem write_annotation_image  --annotation annotation.zip \
- --image_size 1280x720 \
- --label_color file://label_color.json \
- --output_dir /tmp/output
-
-# label_nameがdogとcatのアノテーションのみ画像化する
-$ annofabcli filesystem write_annotation_image  --annotation annotation.zip \
- --image_size 1280x720 \
- --label_color '{"dog":[255,0,0], "cat":[0,255,0]}' \
- --label_name dog cat
- --output_dir /tmp/output
-
-# annotation.zip から、アノテーション画像を生成する。ただしタスクのステータスが"完了"で、task.txtに記載れたタスクのみ画像化する。
-$ annofabcli filesystem write_annotation_image  --annotation annotation.zip \
- --image_size 1280x720 \
- --label_color file://label_color.json \
- --output_dir /tmp/output \
- --task_status_complete \
- --task_id file://task.txt
-
-
-# 入力データのメタデータ"width", "height"に設定した画像サイズを参照して、アノテーション画像を生成する
-$ annfoabcli project download input_data --project_id prj1 --output input_data.json
-$ annofabcli filesystem write_annotation_image  --annotation annotation.zip \
- --input_data_json input_data.json \
- --metadata_key_of_image_size width height \
- --label_color file://label_color.json \
- --output_dir /tmp/output
-```
-
-#### 出力結果（塗りつぶし画像）
-
-![filesystem write_annotation_iamgeの塗りつぶし画像](readme-img/write_annotation_image-output.png)
-
+https://annofab-cli.readthedocs.io/ja/latest/command_reference/filesystem/write_annotation_image.html 参照
 
 ### input_data delete
-タスクに使われていない入力データを削除します。
-
-```
-# 入力データ input1, input2 を削除する
-$ annofabcli input_data delete --project_id prj1 --input_data_id input1 input2
-
-# `input_data_id.txt` ファイルに記載されている入力データを削除する
-$ annofabcli input_data delete --project_id prj1 --input_data_id file://input_data_id.txt
-```
+https://annofab-cli.readthedocs.io/ja/latest/command_reference/input_data/delete.html 参照
 
 
 ### input_data list
@@ -1099,43 +1040,8 @@ $ annofabcli project diff  prj1 prj2 --target settings
 
 
 ### project download
-プロジェクトに対して、タスクや検査コメント、アノテーションなどをダウンロードします。
-ダウンロード対象は以下の通りです。
-* すべてのタスクが記載されたJSON
-* すべての入力データが記載されたJSON
-* すべての検査コメントが記載されたJSON
-* すべてのタスク履歴イベントが記載されたJSON
-* すべてのタスク履歴イベントが記載されたJSON（非推奨）
-* Simpleアノテーションzip
-* Fullアノテーションzip（非推奨）
+https://annofab-cli.readthedocs.io/ja/latest/command_reference/project/download.html 参照
 
-
-```
-# タスクの全一覧が記載されたJSONファイルをダウンロードする
-$ annofabcli project download task --project_id prj1 --output task.json
-
-# 入力データのすべてが記載されたJSONファイルをダウンロードする
-$ annofabcli project download input_data --project_id prj1 --output input_data.json
-
-# 検査コメントの全一覧が記載されたJSONファイルをダウンロードする
-$ annofabcli project  download inspection_comment --project_id prj1 --output inspection_comment.json
-
-# タスク履歴イベントの全一覧が記載されたJSONファイルをダウンロードする
-$ annofabcli project download task_history --project_id prj1 --output task_history.json
-
-# Simpleアノテーションのzipファイルをダウンロードする
-$ annofabcli project download simple_annotation --project_id prj1 --output simple_annotation.zip
-
-# 最新のSimpleアノテーションのzipファイルをダウンロードする
-$ annofabcli project download simple_annotation --project_id prj1 --output simple_annotation.zip --latest
-
-# 最新のタスク全一覧が記載されたJSONファイルをダウンロードする
-$ annofabcli project download task --project_id prj1 --output task.json --latest
-
-# アノテーションの最新化を最大60分(60秒間隔で最大60回アクセス)待つ
-$ annofabcli project download simple_annotation --project_id prj1  58a2a621-7d4b-41e7-927b-cdc570c1114a --output simple_annotation.zip --latest \
- --wait_options '{"interval":60, "max_tries":60}' 
-```
 
 
 ### project list
@@ -1519,109 +1425,30 @@ $ annofabcli supplementary list --project_id prj1 --input_data_id id1 id2 \
 
 
 ### task cancel_acceptance
-受け入れ完了タスクに対して、受け入れ取り消しにします。
-アノテーションルールを途中で変更したときなどに、利用します。
+https://annofab-cli.readthedocs.io/ja/latest/command_reference/task/cancel_acceptance.html 参照
 
-
-```
-# prj1プロジェクトのタスクを、受け入れ取り消しにする。最後に受入を担当したユーザに割り当てる
-$ annofabcli task cancel_acceptance --project_id prj1 --task_id file://task.txt
-
-# prj1プロジェクトのタスクを、受け入れ取り消しにする。ユーザuser1に割り当てる。
-$ annofabcli task cancel_acceptance --project_id prj1 --task_id file://task.txt --assigned_acceptor_user_id user1
-
-# prj1プロジェクトのタスクを、受け入れ取り消しにする。担当者は未割り当て
-$ annofabcli task cancel_acceptance --project_id prj1 --task_id file://task.txt --not_assign
-
-
-```
 
 
 ### task change_operator
-タスクの担当者を変更します。
+https://annofab-cli.readthedocs.io/ja/latest/command_reference/task/change_operator.html 参照
 
 
-```
-# 指定されたタスクの担当者を 'user1' に変更する。
-$ annofabcli task change_operator --project_id prj1 --task_id file://task.txt --user_id uer1
-
-# 指定されたタスクの担当者を未割り当てに変更する。
-$ annofabcli task change_operator --project_id prj1 --task_id file://task.txt --not_assign
-
-# 教師付フェーズが未着手のタスクのみ、担当者を変更する
-$ annofabcli task change_operator --project_id prj1 --task_id file://task.txt --not_assign --task_query '{"status:"not_started", "phase"}'
-
-```
 
 
 ### task complete
-タスクを完了状態にして次のフェーズに進めます。（教師付の提出、検査/受入の合格） 。
-教師付フェーズを完了にする場合は、未回答の検査コメントに対して返信することができます（未回答の検査コメントに対して返信しないと、タスクを提出できないため）。
-検査/受入フェーズを完了する場合は、未処置の検査コメントを対応完了/対応不要状態に変更できます（未処置の検査コメントが残っている状態では、タスクを合格にできないため）。
+https://annofab-cli.readthedocs.io/ja/latest/command_reference/task/complete.html 参照
 
 
-```
-# 教師付フェーズのタスクを提出して、次のフェーズに進めます。未回答の検査コメントがある場合は、スキップします。
-$ annofabcli task complete --project_id prj1 --task_id file://task.txt --phase annotation
-
-# 教師付フェーズのタスクを提出して、次のフェーズに進めます。未回答の検査コメントには「対応しました」と返信します。
-$ annofabcli task complete --project_id prj1 --task_id file://task.txt --phase annotation --reply_comment "対応しました"
-
-# 検査フェーズでステージ2のタスクを合格にして、次のフェーズに進めます。未処置の検査コメントがある場合は次に進めます
-$ annofabcli task complete --project_id prj1 --task_id file://task.txt --phase inspection --phase_stage 2
-
-# 受入フェーズのタスクを合格にして、次のフェーズに進めます。未処置の検査コメントは「対応不要」状態にします。
-$ annofabcli  task complete --project_id prj1 --task_id file://task.txt --phase acceptance \
- --inspection_status no_correction_required 
-```
 
 
 
 ### task delete
-タスクを削除します。ただし、作業中/完了状態のタスクは削除できません。デフォルトでは、アノテーションが付与されているタスクは削除できません。
-アノテーションの削除には [annotation delete](#annotation-delete) コマンドを利用できます。
+https://annofab-cli.readthedocs.io/ja/latest/command_reference/task/delete.html 参照
 
-```
-# task_id.txtに記載されたtask_idのタスクを削除します。
-$ annofabcli task delete --project_id prj1 --task_id file://task_id.txt
-
-# アノテーションが付与されているかどうかにかかわらず、タスクを削除します。
-$ annofabcli task delete --project_id prj1 --task_id file://task_id.txt --force
-
-```
 
 
 ### task list
-タスク一覧を出力します。
-
-```
-# 受入フェーズで、"usr1"が担当しているタスクの一覧を出力する
-$ annofabcli task list --project_id prj1 --task_query '{"user_id": "usr1","phase":"acceptance"}' 
-
-# task_id"id1", "id2"のタスクを取得する
-$ annofabcli task list --project_id prj1 --task_id id1 id2
-
-# 休憩中で、過去の担当者が"usr1"であるタスクの一覧を出力する。task.jsonファイルにJSON形式で出力する。
-$ annofabcli task list --project_id prj1 \
- --task_query '{"previous_user_id": "usr1","status":"break"}' --format json --out task.json
-
-# 差し戻されたタスクのtask_idを出力する
-$ annofabcli task list --project_id prj1 --task_query '{"rejected_only": true}' --format task_id_list 
-
-# タスク情報が記載されたファイルを元にして、タスク一覧を出力します
-# タスク情報が記載されたファイルは、`$ annofabcli project download task`コマンドで取得できます。
-$ annofabcli task list --project_id prj1 --task_json task.json
-
-
-```
-
-#### 出力結果
-
-| project_id                           | task_id                                | phase      | phase_stage | status      | input_data_id_list                       | account_id                           | histories_by_phase                                                                                                                                       | work_time_span | number_of_rejections | started_datetime              | updated_datetime              | sampling | user_id         | username  | worktime_hour       | number_of_rejections_by_inspection | number_of_rejections_by_acceptance |
-|--------------------------------------|----------------------------------------|------------|-------------|-------------|------------------------------------------|--------------------------------------|----------------------------------------------------------------------------------------------------------------------------------------------------------|----------------|----------------------|-------------------------------|-------------------------------|----------|-----------------|-----------|---------------------|------------------------------------|------------------------------------|
-| 12345678-abcd-1234-abcd-1234abcd5678 | 12345678-abcd-1234-abcd-1234abcd5678   | annotation | 1           | break       | ['12345678-abcd-1234-abcd-1234abcd5678'] | 12345678-abcd-1234-abcd-1234abcd5678 | [{'account_id': '12345678-abcd-1234-abcd-1234abcd5678', 'phase': 'annotation', 'phase_stage': 1, 'user_id': 'user_id1', 'username': 'username1'}] | 539662         | 0                    | 2019-05-08T13:53:21.338+09:00 | 2019-05-08T14:15:07.318+09:00 |          | user_id1 | user_name2 | 0.14990611111111113 | 0                                  | 0                                  |
-
-
+https://annofab-cli.readthedocs.io/ja/latest/command_reference/task/list.html 参照
 
 
 
@@ -1668,75 +1495,13 @@ $ annofabcli task list_with_json --project_id prj1 --output task.csv --latest
 
 
 ### task put
-タスクを作成します。
-
-### CSVファイルに記載された情報を元にタスクを作成する場合
-CSVに記載された情報を元に、タスクを登録します。
-CSVのフォーマットは以下の通りです。
-
-```
-1列目: task_id
-2列目: 空欄（どんな値でもよい）
-3列目: input_data_id
-```
-
-CSVのサンプル（`task.csv`）です。
-
-```
-task_1,,ca0cb2f9-fec5-49b4-98df-dc34490f9785
-task_1,,5ac1987e-ca7c-42a0-9c19-b5b23a41836b
-task_2,,4f2ae4d0-7a38-4f9a-be6f-170ba76aba73
-task_2,,45ac5852-f20c-4938-9ee9-cc0274401df7
-```
-
-```
-# prj1に、タスク登録処理を投入する。
-$ annofabcli task put --project_id prj1 --csv task.csv
-
-# prj1に、タスク登録処理を投入する。タスク登録が完了するまで待つ.
-$ annofabcli task put --project_id prj1 --csv task.csv --wait
-```
-
-#### 1つのタスクに割り当てる入力データの個数を指定してタスクを作成する場合
-1つのタスクに割り当てる入力データの個数などの情報を、`--by_count`引数に指定します。
-フォーマットは [initiateTasksGeneration](https://annofab.com/docs/api/#operation/initiateTasksGeneration) APIのリクエストボディ `task_generate_rule` を参照してください。
-
-```
-# 「タスクIDのプレフィックスを"sample"、1タスクの入力データ数を10個」でタスクを作成する。
-$ annofabcli task  put --project_id prj1 --by_count '{"task_id_prefix":"sample","input_data_count":10}' 
-
-# 「タスクIDのプレフィックスを"sample"、1タスクの入力データ数を10個、入力データ名を降順、
-# 既にタスクに使われている入力データも利用」でタスクを作成し、タスク作成が完了するまで待つ
-$ annofabcli task  put --project_id prj1 --by_count '{"task_id_prefix":"sample","input_data_count":10, \
- "input_data_order":"random", "allow_duplicate_input_data":true}' --wait
-```
+https://annofab-cli.readthedocs.io/ja/latest/command_reference/task/put.html 参照
 
 
 ### task reject
-タスクを強制的に差し戻します。差し戻す際に検査コメントを付与することもできます。検査コメントは、画像プロジェクトならばタスク内の先頭の画像の左上(`x=0,y=0`)に、動画プロジェクトなら動画の先頭（`start=0, end=100`)に付与します。
-この差戻しは差戻しとして扱われず、抜取検査・抜取受入のスキップ判定に影響を及ぼしません。
+https://annofab-cli.readthedocs.io/ja/latest/command_reference/task/reject.html 参照
 
-タスクの状態・フェーズを無視して、フェーズを教師付け(annotation)に、状態を未作業(not started)に変更します。
-タスクの担当者としては、直前の教師付け(annotation)フェーズの担当者を割り当てます。
-この差戻しは差戻しとして扱われず、抜取検査・抜取受入のスキップ判定に影響を及ぼしません。
 
-```
-# tasks.txtに記載れたタスクを強制的に差し戻す
-# 最後のannotation phaseを担当したユーザを割り当てます（画面と同じ動き）。検査コメントは付与しません。
-$ annofabcli task reject --project_id prj1 --task_id file://tasks.txt 
-
-# 受入完了の場合は、受入を取り消してから差し戻します
-$ annofabcli task reject --project_id prj1 --task_id file://tasks.txt --cancel_acceptance
-
-# 「hoge」という検査コメントを付与して、タスクを差し戻します。その際、担当者は割り当てません
-$ annofabcli task reject --project_id prj1 --task_id file://tasks.txt \
- --comment "hoge" --not_assign
-
-# 差し戻したタスクに、ユーザuser1を割り当てる
-$ annofabcli task reject --project_id prj1 --task_id file://tasks.txt \
- --comment "hoge" --assigned_annotator_user_id user1
-
-```
 
 
 
