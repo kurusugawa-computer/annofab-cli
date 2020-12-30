@@ -5,7 +5,7 @@ task complete
 Description
 =================================
 教師付フェーズのタスクに対しては提出、検査または受入フェーズのタスクに対しては合格にして、次のフェーズに進めます。
-
+ただし作業中また完了状態のタスクは、次のフェーズに進めません。
 
 
 Examples
@@ -31,14 +31,14 @@ Examples
 
 .. code-block::
 
-    $ annofabcli task complete --project_id prj1 --task_id file://task.txt --phase annotation
+    $ annofabcli task complete --project_id prj1 --task_id file://task_id.txt --phase annotation
 
 未回答の検査コメントがあるタスクも提出するには、``--reply_comment`` で未回答の検査コメントに対して返信する必要があります。
 以下のコマンドは、未回答の検査コメントに「対応しました」と返信してからタスクを提出します。
 
 .. code-block::
 
-    $ annofabcli task complete --project_id prj1 --task_id file://task.txt \
+    $ annofabcli task complete --project_id prj1 --task_id file://task_id.txt \
     --phase annotation --reply_comment "対応しました"
 
 
@@ -50,7 +50,7 @@ Examples
 
 .. code-block::
 
-    $ annofabcli task complete --project_id prj1 --task_id file://task.txt \
+    $ annofabcli task complete --project_id prj1 --task_id file://task_id.txt \
     --phase inspection --phase_stage 2
 
 未処置の検査コメントがあるタスクも合格にするには、``--inspection_status`` で未処置の検査コメントのステータスを変える必要があります。
@@ -63,7 +63,7 @@ Examples
 
 .. code-block::
 
-    $ annofabcli  task complete --project_id prj1 --task_id file://task.txt \
+    $ annofabcli  task complete --project_id prj1 --task_id file://task_id.txt \
     --phase acceptance --inspection_status no_correction_required
 
 
@@ -81,6 +81,15 @@ Examples
 
     $ annofabcli task complete --project_id prj1 --task_id file://task_id.txt \
     --phase annotation --task_query '{"status":"not_started"}'
+
+
+
+
+.. note::
+
+    ``--task_query '{"phase":"annotation"}'`` のようにフェーズやフェーズステージを指定する必要はありません。
+    ``annofabcli task complete`` コマンドは、``--phase`` , `--phase_stage`` で、フェーズとフェーズステージを指定するからです。
+
 
 
 並列処理

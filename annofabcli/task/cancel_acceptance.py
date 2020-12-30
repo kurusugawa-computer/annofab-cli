@@ -9,7 +9,7 @@ from typing import List, Optional, Tuple
 import annofabapi
 import requests
 from annofabapi.dataclass.task import Task
-from annofabapi.models import ProjectMemberRole
+from annofabapi.models import ProjectMemberRole, TaskStatus
 
 import annofabcli
 import annofabcli.common.cli
@@ -55,7 +55,7 @@ class CancelAcceptanceMain(AbstracCommandCinfirmInterface):
         try:
             task, _ = self.service.api.get_task(project_id, task_id)
 
-            if task["status"] != "complete":
+            if task["status"] != TaskStatus.COMPLETE.value:
                 logger.warning(
                     f"{logging_prefix}: task_id = {task_id} は受入完了でありません。"
                     f"status = {task['status']}, phase={task['phase']}"

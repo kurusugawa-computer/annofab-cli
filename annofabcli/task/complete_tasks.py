@@ -358,8 +358,8 @@ class CompleteTasksMain(AbstracCommandCinfirmInterface):
             logger.warning(f"{task.task_id} は操作対象のフェーズ、フェーズステージではないため、スキップします。")
             return False
 
-        if task.status == TaskStatus.COMPLETE:
-            logger.warning(f"{task.task_id} は既に完了状態であるため、スキップします。")
+        if task.status in {TaskStatus.COMPLETE, TaskStatus.WORKING}:
+            logger.warning(f"{task.task_id} は作業中また完了状態であるため、スキップします。")
             return False
 
         if not match_task_with_query(task, task_query):
@@ -616,6 +616,7 @@ def add_parser(subparsers: argparse._SubParsersAction):
         "（未回答の検査コメントに対して返信しないと、タスクを提出できないため）。"
         "検査/受入フェーズを完了する場合は、未処置の検査コメントを対応完了/対応不要状態に変更できます"
         "（未処置の検査コメントが残っている状態では、タスクを合格にできないため）。"
+        "作業中また完了状態のタスクは、次のフェーズに進めません。"
     )
     epilog = "チェッカーまたはオーナロールを持つユーザで実行してください。"
 
