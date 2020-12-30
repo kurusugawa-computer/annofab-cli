@@ -1,6 +1,8 @@
+import pandas
 import argparse
 import json
 import logging
+from annofabcli.common.utils import get_columns_with_priority
 from pathlib import Path
 from typing import Any, Dict, List, Optional, Set
 
@@ -15,7 +17,7 @@ from annofabcli.common.download import DownloadingFile
 from annofabcli.common.enums import FormatArgument
 from annofabcli.common.facade import TaskQuery, match_task_with_query
 from annofabcli.common.visualize import AddProps
-
+from annofabcli.task.list_tasks import ListTasks
 logger = logging.getLogger(__name__)
 
 
@@ -107,9 +109,17 @@ class ListTasksWithJson(AbstractCommandLineInterface):
         logger.debug(f"タスク一覧の件数: {len(task_list)}")
 
         if len(task_list) > 0:
-            self.print_according_to_format(task_list)
+            if self.str_format == FormatArgument.CSV.value:
+                df = pandas.DataFrame(task_list)
+                columns = get_columns_with_priority(df, prior_columns=ListTasks.PRIOR_COLUMNS)
+                self.print_csv(df[columns])
+            else:
+                self.print_according_to_format(task_list)
         else:
             logger.info(f"タスク一覧の件数が0件のため、出力しません。")
+
+
+
 
 
 def main(args):
@@ -167,8 +177,8 @@ def parse_args(parser: argparse.ArgumentParser):
 
 def add_parser(subparsers: argparse._SubParsersAction):
     subcommand_name = "list_with_json"
-    subcommand_help = "タスク全件数ファイルから一覧を出力します。"
-    description = "タスク全件数ファイルから一覧を出力します。"
+    subcommand_help = "タスク全件ファイルから一覧を出力します。"
+    description = "タスク全件ファイルから一覧を出力します。"
 
     parser = annofabcli.common.cli.add_parser(subparsers, subcommand_name, subcommand_help, description)
     parse_args(parser)

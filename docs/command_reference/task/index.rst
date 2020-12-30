@@ -20,6 +20,7 @@ Available Commands
    complete
    delete
    list
+   list_with_json
    put
    reject
    update_metadata
