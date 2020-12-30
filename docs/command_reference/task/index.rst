@@ -17,6 +17,13 @@ Available Commands
 
    cancel_acceptance
    change_operator
+   complete
    delete
    list
+   list_with_json
+   list_added_task_history
+   put
+   reject
+   update_metadata
+
 

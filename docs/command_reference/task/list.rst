@@ -24,8 +24,12 @@ Examples
     $ annofabcli task list --project_id prj1
 
 
+.. warning::
 
-タスクのフェーズやステータスなどで絞り込み
+    WebAPIの都合上、10,000件までしか出力できません。
+    10,000件以上のタスクを出力する場合は、`annofabcli task list_with_json <../task/list_with_json.html>`_ コマンドを使用してください。
+
+タスクのフェーズやステータスなどで絞り込む
 ----------------------------------------------
 
 ``--task_query`` を指定すると、タスクのフェーズやステータスなどで絞り込めます。
@@ -61,18 +65,18 @@ metadataの ``priority`` が ``5`` であるタスク一覧を出力します。
     $ annofabcli task list --project_id prj1 --task_query '{"metadata": "priority:5"}'
 
 
-タスクの担当者で絞り込み
+タスクの担当者で絞り込む
 ----------------------------------------------
-タスクの担当者が ``user1`` , ``user2`` であるタスクの一覧を出力します。
+タスクの担当者で絞り込む場合は、``--user_id`` を指定してください。
 
 .. code-block::
 
     $ annofabcli task list --project_id prj1 --user_id user1 user2
 
 
-task_idで絞り込み
+task_idで絞り込む
 ----------------------------------------------
-task_idが ``task1`` , ``task2`` であるタスクの一覧を出力します。
+task_idで絞り込む場合は、 ``--task_id`` を指定してください。
 
 .. code-block::
 
@@ -91,6 +95,7 @@ CSV出力
 
     $ annofabcli task list --project_id prj1 --format csv --output out.csv
 
+`out.csv <https://github.com/kurusugawa-computer/annofab-cli/blob/master/docs/command_reference/task/list/out.csv>`_
 
 JSON出力
 ----------------------------------------------
@@ -155,3 +160,11 @@ task_idの一覧を出力
     task1
     task2
     ...
+
+
+
+
+See also
+=================================
+* `annofabcli task list_with_json <../task/list_with_json.html>`_
+

@@ -87,7 +87,9 @@ class ChangeOperatorMain:
             return False
 
         if not match_task_with_query(task, task_query):
-            logger.debug(f"{logging_prefix} : task_id = {task_id} : TaskQueryの条件にマッチしないため、スキップします。")
+            logger.debug(
+                f"{logging_prefix} : task_id = {task_id} : `--task_query` の条件にマッチしないため、スキップします。task_query={task_query}"
+            )
             return False
 
         if not self.confirm_change_operator(task):
@@ -249,7 +251,7 @@ def parse_args(parser: argparse.ArgumentParser):
 def add_parser(subparsers: argparse._SubParsersAction):
     subcommand_name = "change_operator"
     subcommand_help = "タスクの担当者を変更します。"
-    description = "タスクの担当者を変更します。ただし、作業中/受入完了状態のタスクに対しては変更できません。"
+    description = "タスクの担当者を変更します。ただし、作業中また完了状態のタスクは、担当者を変更できません。"
     epilog = "チェッカーまたはオーナロールを持つユーザで実行してください。"
 
     parser = annofabcli.common.cli.add_parser(subparsers, subcommand_name, subcommand_help, description, epilog=epilog)

@@ -4,7 +4,7 @@ import json
 import logging
 import sys
 from pathlib import Path
-from typing import Any, Dict, List, Optional
+from typing import Any, Dict, List, Optional, Set
 
 import annofabapi
 import pandas
@@ -22,6 +22,7 @@ from annofabcli.common.cli import (
 from annofabcli.common.dataclasses import WaitOptions
 from annofabcli.common.download import DownloadingFile
 from annofabcli.common.enums import FormatArgument
+from annofabcli.common.facade import TaskQuery, match_task_with_query
 from annofabcli.common.visualize import AddProps
 
 logger = logging.getLogger(__name__)
@@ -131,10 +132,10 @@ class ListTasksAddedTaskHistory(AbstractCommandLineInterface):
             "phase",
             "phase_stage",
             "status",
-            "user_id",
-            "username",
             "started_datetime",
             "updated_datetime",
+            "user_id",
+            "username",
             # 作業時間情報
             "worktime_hour",
             "annotation_worktime_hour",
@@ -158,6 +159,8 @@ class ListTasksAddedTaskHistory(AbstractCommandLineInterface):
     ) -> None:
         logger.debug("JSONファイル読み込み中")
         df_task = self.create_df_task(task_list=task_list, task_history_dict=task_history_dict)
+
+        logger.debug(f"タスク一覧の件数: {len(df_task)}")
 
         annofabcli.utils.print_according_to_format(
             df_task[self._get_output_target_columns()],
@@ -201,12 +204,51 @@ class ListTasksAddedTaskHistory(AbstractCommandLineInterface):
 
         return True
 
+    @staticmethod
+    def match_task_with_conditions(
+        task: Dict[str, Any],
+        task_id_set: Optional[Set[str]] = None,
+        task_query: Optional[TaskQuery] = None,
+    ) -> bool:
+        result = True
+
+        dc_task = annofabapi.dataclass.task.Task.from_dict(task)
+        result = result and match_task_with_query(dc_task, task_query)
+        if task_id_set is not None:
+            result = result and (dc_task.task_id in task_id_set)
+        return result
+
+    def filter_task_list(
+        self,
+        project_id: str,
+        task_list: List[Dict[str, Any]],
+        task_id_list: Optional[List[str]] = None,
+        task_query: Optional[TaskQuery] = None,
+    ) -> List[Dict[str, Any]]:
+        if task_query is not None:
+            task_query = self.facade.set_account_id_of_task_query(project_id, task_query)
+
+        task_id_set = set(task_id_list) if task_id_list is not None else None
+        logger.debug(f"出力対象のタスクを抽出しています。")
+        filtered_task_list = [
+            e for e in task_list if self.match_task_with_conditions(e, task_query=task_query, task_id_set=task_id_set)
+        ]
+        return filtered_task_list
+
     def main(self):
         args = self.args
         if not self.validate(args):
             return
 
         project_id = args.project_id
+
+        task_id_list = annofabcli.common.cli.get_list_from_args(args.task_id) if args.task_id is not None else None
+        task_query = (
+            TaskQuery.from_dict(annofabcli.common.cli.get_json_from_args(args.task_query))
+            if args.task_query is not None
+            else None
+        )
+
         super().validate_project(project_id, [ProjectMemberRole.OWNER, ProjectMemberRole.TRAINING_DATA_USER])
 
         if args.task_json is not None and args.task_history_json is not None:
@@ -231,7 +273,10 @@ class ListTasksAddedTaskHistory(AbstractCommandLineInterface):
         with open(task_history_json_path, encoding="utf-8") as f:
             task_history_dict = json.load(f)
 
-        self.print_task_list_added_task_history(task_list=task_list, task_history_dict=task_history_dict)
+        filtered_task_list = self.filter_task_list(
+            project_id, task_list, task_id_list=task_id_list, task_query=task_query
+        )
+        self.print_task_list_added_task_history(task_list=filtered_task_list, task_history_dict=task_history_dict)
 
 
 def main(args):
@@ -243,6 +288,8 @@ def main(args):
 def parse_args(parser: argparse.ArgumentParser):
     argument_parser = ArgumentParser(parser)
     argument_parser.add_project_id()
+    argument_parser.add_task_query()
+    argument_parser.add_task_id(required=False)
 
     parser.add_argument(
         "--task_json",

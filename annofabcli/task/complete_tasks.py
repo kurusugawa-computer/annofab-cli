@@ -22,6 +22,7 @@ from annofabcli.common.cli import (
     ArgumentParser,
     build_annofabapi_resource_and_login,
 )
+from annofabcli.common.facade import TaskQuery, match_task_with_query
 
 logger = logging.getLogger(__name__)
 
@@ -349,6 +350,23 @@ class CompleteTasksMain(AbstracCommandCinfirmInterface):
             logger.info(f"{task.task_id}: 検査/受入フェーズを次のフェーズに進めました。")
             return True
 
+    @staticmethod
+    def _validate_task(
+        task: Task, target_phase: TaskPhase, target_phase_stage: int, task_query: Optional[TaskQuery]
+    ) -> bool:
+        if not (task.phase == target_phase and task.phase_stage == target_phase_stage):
+            logger.warning(f"{task.task_id} は操作対象のフェーズ、フェーズステージではないため、スキップします。")
+            return False
+
+        if task.status in {TaskStatus.COMPLETE, TaskStatus.WORKING}:
+            logger.warning(f"{task.task_id} は作業中また完了状態であるため、スキップします。")
+            return False
+
+        if not match_task_with_query(task, task_query):
+            logger.debug(f"{task.task_id} は `--task_query` の条件にマッチしないため、スキップします。task_query={task_query}")
+            return False
+        return True
+
     def complete_task(
         self,
         project_id: str,
@@ -357,6 +375,7 @@ class CompleteTasksMain(AbstracCommandCinfirmInterface):
         target_phase_stage: int,
         reply_comment: Optional[str] = None,
         inspection_status: Optional[InspectionStatus] = None,
+        task_query: Optional[TaskQuery] = None,
         task_index: Optional[int] = None,
     ) -> bool:
         logging_prefix = f"{task_index + 1} 件目" if task_index is not None else ""
@@ -371,12 +390,9 @@ class CompleteTasksMain(AbstracCommandCinfirmInterface):
             f"{logging_prefix} : タスク情報 task_id={task_id}, "
             f"phase={task.phase.value}, phase_stage={task.phase_stage}, status={task.status.value}"
         )
-        if not (task.phase == target_phase and task.phase_stage == target_phase_stage):
-            logger.warning(f"{task_id} は操作対象のフェーズ、フェーズステージではないため、スキップします。")
-            return False
-
-        if task.status == TaskStatus.COMPLETE:
-            logger.warning(f"{task_id} は既に完了状態であるため、スキップします。")
+        if not self._validate_task(
+            task, target_phase=target_phase, target_phase_stage=target_phase_stage, task_query=task_query
+        ):
             return False
 
         try:
@@ -401,6 +417,7 @@ class CompleteTasksMain(AbstracCommandCinfirmInterface):
         target_phase_stage: int,
         reply_comment: Optional[str] = None,
         inspection_status: Optional[InspectionStatus] = None,
+        task_query: Optional[TaskQuery] = None,
     ) -> bool:
         task_index, task_id = tpl
         return self.complete_task(
@@ -411,6 +428,7 @@ class CompleteTasksMain(AbstracCommandCinfirmInterface):
             target_phase_stage=target_phase_stage,
             reply_comment=reply_comment,
             inspection_status=inspection_status,
+            task_query=task_query,
         )
 
     def complete_task_list(
@@ -421,6 +439,7 @@ class CompleteTasksMain(AbstracCommandCinfirmInterface):
         target_phase_stage: int,
         reply_comment: Optional[str] = None,
         inspection_status: Optional[InspectionStatus] = None,
+        task_query: Optional[TaskQuery] = None,
         parallelism: Optional[int] = None,
     ):
         """
@@ -433,6 +452,8 @@ class CompleteTasksMain(AbstracCommandCinfirmInterface):
             reply_comment: 未回答の検査コメントに対する指摘
             inspection_status: 未処置の検査コメントの状態
         """
+        if task_query is not None:
+            task_query = self.facade.set_account_id_of_task_query(project_id, task_query)
 
         project_title = self.facade.get_project_title(project_id)
         logger.info(f"{project_title} のタスク {len(task_id_list)} 件に対して、今のフェーズを完了状態にします。")
@@ -447,6 +468,7 @@ class CompleteTasksMain(AbstracCommandCinfirmInterface):
                 target_phase_stage=target_phase_stage,
                 reply_comment=reply_comment,
                 inspection_status=inspection_status,
+                task_query=task_query,
             )
 
             with multiprocessing.Pool(parallelism) as pool:
@@ -464,6 +486,7 @@ class CompleteTasksMain(AbstracCommandCinfirmInterface):
                     target_phase_stage=target_phase_stage,
                     reply_comment=reply_comment,
                     inspection_status=inspection_status,
+                    task_query=task_query,
                 )
                 if result:
                     success_count += 1
@@ -505,8 +528,12 @@ class ComleteTasks(AbstractCommandLineInterface):
 
         task_id_list = annofabcli.common.cli.get_list_from_args(args.task_id)
         inspection_status = InspectionStatus(args.inspection_status) if args.inspection_status is not None else None
+
         project_id = args.project_id
         super().validate_project(project_id, [ProjectMemberRole.OWNER, ProjectMemberRole.ACCEPTER])
+
+        dict_task_query = annofabcli.common.cli.get_json_from_args(args.task_query)
+        task_query: Optional[TaskQuery] = TaskQuery.from_dict(dict_task_query) if dict_task_query is not None else None
 
         main_obj = CompleteTasksMain(self.service, all_yes=self.all_yes)
         main_obj.complete_task_list(
@@ -516,6 +543,7 @@ class ComleteTasks(AbstractCommandLineInterface):
             target_phase_stage=args.phase_stage,
             inspection_status=inspection_status,
             reply_comment=args.reply_comment,
+            task_query=task_query,
             parallelism=args.parallelism,
         )
 
@@ -564,6 +592,8 @@ def parse_args(parser: argparse.ArgumentParser):
         ),
     )
 
+    argument_parser.add_task_query()
+
     parser.add_argument(
         "--parallelism", type=int, help="使用するプロセス数（並列度）を指定してください。指定する場合は必ず'--yes'を指定してください。指定しない場合は、逐次的に処理します。"
     )
@@ -586,6 +616,7 @@ def add_parser(subparsers: argparse._SubParsersAction):
         "（未回答の検査コメントに対して返信しないと、タスクを提出できないため）。"
         "検査/受入フェーズを完了する場合は、未処置の検査コメントを対応完了/対応不要状態に変更できます"
         "（未処置の検査コメントが残っている状態では、タスクを合格にできないため）。"
+        "作業中また完了状態のタスクは、次のフェーズに進めません。"
     )
     epilog = "チェッカーまたはオーナロールを持つユーザで実行してください。"
 

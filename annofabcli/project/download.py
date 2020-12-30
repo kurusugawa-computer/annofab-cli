@@ -163,7 +163,7 @@ def parse_args(parser: argparse.ArgumentParser):
         "input_data: 入力データjson, "
         "inspection_comment: 検査コメントjson, "
         "task_history: タスク履歴json, "
-        "task_history_event: タスク履歴イベントjson",
+        "task_history_event: タスク履歴イベントjson(非推奨)",
     )
 
     parser.add_argument("-p", "--project_id", type=str, required=True, help="対象のプロジェクトのproject_idを指定します。")

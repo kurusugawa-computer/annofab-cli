@@ -146,7 +146,7 @@ class RejectTasksMain(AbstracCommandCinfirmInterface):
             return False
 
         if not match_task_with_query(Task.from_dict(task), task_query):
-            logger.debug(f"task_id = {task_id} : TaskQueryの条件にマッチしないため、スキップします。")
+            logger.debug(f"task_id = {task_id} : `--task_query`の条件にマッチしないため、スキップします。task_query={task_query}")
             return False
 
         if not self.confirm_reject_task(
@@ -421,11 +421,11 @@ def parse_args(parser: argparse.ArgumentParser):
 
 def add_parser(subparsers: argparse._SubParsersAction):
     subcommand_name = "reject"
-    subcommand_help = "タスクを強制的に差し戻します。"
+    subcommand_help = "タスクを差し戻します。"
     description = (
-        "タスクを強制的に差し戻します。差し戻す際、検査コメントを付与することもできます。"
-        "作業中状態のタスクに対しては変更できません。"
-        "この差戻しは差戻しとして扱われず、抜取検査・抜取受入のスキップ判定に影響を及ぼしません。"
+        "タスクを差し戻します。差し戻す際、検査コメントを付与することもできます。"
+        "作業中状態のタスクに対しては指し戻せません。"
+        "このコマンドで差し戻したタスクは、画面から差し戻したタスクとは異なり、抜取検査・抜取受入のスキップ判定に影響を及ぼしません。"
     )
     epilog = "オーナロールを持つユーザで実行してください。"
 
