@@ -1,12 +1,11 @@
-import pandas
 import argparse
 import json
 import logging
-from annofabcli.common.utils import get_columns_with_priority
 from pathlib import Path
 from typing import Any, Dict, List, Optional, Set
 
 import annofabapi
+import pandas
 from annofabapi.dataclass.task import Task
 
 import annofabcli
@@ -16,8 +15,10 @@ from annofabcli.common.dataclasses import WaitOptions
 from annofabcli.common.download import DownloadingFile
 from annofabcli.common.enums import FormatArgument
 from annofabcli.common.facade import TaskQuery, match_task_with_query
+from annofabcli.common.utils import get_columns_with_priority
 from annofabcli.common.visualize import AddProps
 from annofabcli.task.list_tasks import ListTasks
+
 logger = logging.getLogger(__name__)
 
 
@@ -27,7 +28,7 @@ class ListTasksWithJsonMain:
         self.facade = AnnofabApiFacade(service)
 
     @staticmethod
-    def filter_task_list(
+    def match_task_with_conditions(
         task: Dict[str, Any],
         task_id_set: Optional[Set[str]] = None,
         task_query: Optional[TaskQuery] = None,
@@ -70,7 +71,7 @@ class ListTasksWithJsonMain:
         logger.debug(f"出力対象のタスクを抽出しています。")
         task_id_set = set(task_id_list) if task_id_list is not None else None
         filtered_task_list = [
-            e for e in task_list if self.filter_task_list(e, task_query=task_query, task_id_set=task_id_set)
+            e for e in task_list if self.match_task_with_conditions(e, task_query=task_query, task_id_set=task_id_set)
         ]
 
         visualize_obj = AddProps(self.service, project_id)
@@ -119,9 +120,6 @@ class ListTasksWithJson(AbstractCommandLineInterface):
             logger.info(f"タスク一覧の件数が0件のため、出力しません。")
 
 
-
-
-
 def main(args):
     service = build_annofabapi_resource_and_login(args)
     facade = AnnofabApiFacade(service)
@@ -133,14 +131,7 @@ def parse_args(parser: argparse.ArgumentParser):
 
     argument_parser.add_project_id()
     argument_parser.add_task_query()
-
-    parser.add_argument(
-        "-t",
-        "--task_id",
-        type=str,
-        nargs="+",
-        help="対象のタスクのtask_idを指定します。" "`file://`を先頭に付けると、task_idの一覧が記載されたファイルを指定できます。",
-    )
+    argument_parser.add_task_id(required=False)
 
     parser.add_argument(
         "--task_json",

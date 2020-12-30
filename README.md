@@ -1480,15 +1480,7 @@ $ annofabcli task list_task_history --project_id prj1 --output task_history.csv
 
 
 ### task list_with_json
-タスク全件ファイルから一覧を出力します。
-
-```
-# タスク一覧全件を出力する
-$ annofabcli task list_with_json --project_id prj1 --output task.csv
-
-# タスク全件ファイルを最新化してから、出力する
-$ annofabcli task list_with_json --project_id prj1 --output task.csv --latest
-```
+https://annofab-cli.readthedocs.io/ja/latest/command_reference/task/list_with_json.html 参照
 
 
 
