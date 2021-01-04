@@ -976,22 +976,7 @@ https://annofab-cli.readthedocs.io/ja/latest/command_reference/project/list.html
 
 
 ### project update_annotation_zip
-アノテーションzipを更新します。
-
-```
-# prj1, prj2のアノテーションzipを更新します。更新する必要がなければ更新しません。
-$ annofabcli project update_anotation_zip --project_id prj1 prj2
-
-# prj1, prj2のアノテーションzipを更新します。更新する必要がなくても常に更新します。
-$ annofabcli project update_anotation_zip --project_id prj1 prj2 --force
-
-# prj1, prj2のアノテーションzipを更新して、すべてのプロジェクトの更新が完了するまで待ちます
-$ annofabcli project update_anotation_zip --project_id prj1 prj2 --wait
-
-# アノテーションzipの更新が完了するまで待つ処理を並列で実行します。
-$ annofabcli project update_anotation_zip --project_id prj1 prj2 --wait --parallelism 4
-```
-
+https://annofab-cli.readthedocs.io/ja/latest/command_reference/project/update_annotation_zip.html 参照
 
 
 ### project_member change
