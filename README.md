@@ -951,91 +951,17 @@ $ annofabcli organization_member list --organization org1
 
 
 ### project change_status
-プロジェクトのステータスを変更します。
-
-
-```
-# prj1, prj2を停止状態にします。
-$ annofabcli project change_status --project_id prj1 prj2 --status suspended
-
-
-# prj1, prj2を進行状態にします。
-$ annofabcli project change_status --project_id prj1 prj2 --status active
-```
+https://annofab-cli.readthedocs.io/ja/latest/command_reference/project/change_status.html 参照
 
 
 
 ### project cooy
-プロジェクトをコピーして（アノテーション仕様やメンバーを引き継いで）、新しいプロジェクトを作成します。
-
-
-
-```
-# prj1 プロジェクトをコピーして、"prj2-title"というプロジェクトを作成する
-$ annofabcli project copy --project_id prj1 --dest_title "prj2-title"
-
-
-# prj1 プロジェクトをコピーして、"prj2"というプロジェクトIDのプロジェクトを作成する。
-# コピーが完了するまで待つ(処理を継続する)
-$ annofabcli project copy --project_id prj1 --dest_title "prj2-title" --dest_project_id prj2 \
- --wait
-
-
-# prj1 プロジェクトの入力データと、タスクをコピーして、"prj2-title"というプロジェクトを作成する
-$ annofabcli project copy --project_id prj1 --dest_title "prj2-title" --copy_inputs --copy_tasks
-
-
-```
-
+https://annofab-cli.readthedocs.io/ja/latest/command_reference/project/copy.html 参照
 
 
 
 ### project diff
-プロジェクト間の差分を、以下の項目について表示します。差分がない場合、標準出力は空になります。
-* アノテーション仕様のラベル情報
-* 定型指摘
-* プロジェクトメンバ
-* プロジェクトの設定
-
-
-```
-# すべての差分
-$ annofabcli project diff  prj1 prj2
-
-# アノテーション仕様のラベル情報の差分
-$ annofabcli project diff prj1 prj2 --target annotation_labels
-
-# 定型指摘の差分
-$ annofabcli project diff prj1 prj2 --target inspection_phrases
-
-# プロジェクトメンバの差分
-$ annofabcli project diff  prj1 prj2 --target members
-
-# プロジェクト設定の差分
-$ annofabcli project diff  prj1 prj2 --target settings
-
-```
-
-
-
-プロジェクト間の差分は、以下のように出力されます。
-`dict`型の差分は、[dictdiffer](https://dictdiffer.readthedocs.io/en/latest/)のフォーマットで出力します。
-
-```
-=== prj1_title1(prj1) と prj1_title2(prj2) の差分を表示
-=== プロジェクトメンバの差分 ===
-プロジェクトメンバは同一
-=== プロジェクト設定の差分 ===
-プロジェクト設定は同一
-=== 定型指摘の差分 ===
-定型指摘は同一
-=== アノテーションラベル情報の差分 ===
-ラベル名(en): car は差分あり
-[('change', 'color.red', (4, 0)),
- ('change', 'color.green', (251, 255)),
- ('change', 'color.blue', (171, 204))]
-ラベル名(en): bike は同一
-```
+https://annofab-cli.readthedocs.io/ja/latest/command_reference/project/diff.html 参照
 
 
 
@@ -1045,137 +971,41 @@ https://annofab-cli.readthedocs.io/ja/latest/command_reference/project/download.
 
 
 ### project list
-プロジェクト一覧を出力します。
+https://annofab-cli.readthedocs.io/ja/latest/command_reference/project/list.html 参照
 
-```
-# org1配下のプロジェクトで、user1が所属する進行中のプロジェクト一覧を出力する。
-$ annofabcli project list --organization org1 --project_query '{"status": "active", "user_id": "user1}'
-
-# prj1, prj2のプロジェクト一覧を出力する
-$ annofabcli project list --project_id prj1 prj2
-```
 
 
 ### project update_annotation_zip
-アノテーションzipを更新します。
-
-```
-# prj1, prj2のアノテーションzipを更新します。更新する必要がなければ更新しません。
-$ annofabcli project update_anotation_zip --project_id prj1 prj2
-
-# prj1, prj2のアノテーションzipを更新します。更新する必要がなくても常に更新します。
-$ annofabcli project update_anotation_zip --project_id prj1 prj2 --force
-
-# prj1, prj2のアノテーションzipを更新して、すべてのプロジェクトの更新が完了するまで待ちます
-$ annofabcli project update_anotation_zip --project_id prj1 prj2 --wait
-
-# アノテーションzipの更新が完了するまで待つ処理を並列で実行します。
-$ annofabcli project update_anotation_zip --project_id prj1 prj2 --wait --parallelism 4
-```
-
+https://annofab-cli.readthedocs.io/ja/latest/command_reference/project/update_annotation_zip.html 参照
 
 
 ### project_member change
-複数のプロジェクトメンバに対して、メンバ情報を変更します。ただし、自分自身は変更できません。
-
-```
-# user1, user2のロールを"worker"（アノテータ）に変更する
-$ annofabcli project_member change --project_id prj1 --user_id user1 user2 --role worker
-
-# `user_id.txt`に記載されたuser_idに対して、抜取検査率、抜取受入率を指定する
-$ annofabcli project_member change --project_id prj1 --user_id file://user_id.txt \
- --member_info '{"sampling_inspection_rate": 10, "sampling_acceptance_rate": 20}'
-
-# すべてのユーザに対して、抜取検査率を未設定にする
-$ annofabcli project_member change --project_id prj1 --all_user \
- --member_info '{"sampling_inspection_rate": null}'
-
-```
+https://annofab-cli.readthedocs.io/ja/latest/command_reference/project_member/change.html 参照
 
 
 
 ### project_member copy
-プロジェクトメンバを別のプロジェクトにコピーします。
-
-```
-# prj1のメンバをprj2にコピーする。
-$ annofabcli project_member copy prj1 prj2
-
-# prj1のメンバをprj2にコピーする。prj2にしか存在しないメンバは削除される。
-$ annofabcli project_member copy prj1 prj2 --delete_dest
-```
+https://annofab-cli.readthedocs.io/ja/latest/command_reference/project_member/copy.html 参照
 
 
 
 ### project_member delete
-複数のプロジェクトからユーザを削除します。
+https://annofab-cli.readthedocs.io/ja/latest/command_reference/project_member/delete.html 参照
 
-```
-# ORG組織配下のすべてのプロジェクトから、user1, user2を削除する
-$ annofabcli project_member delete --user_id user1 user2  --organization ORG
-
-# prj1, prj2のプロジェクトからuser1をaccepterロールで招待する
-$ annofabcli project_member invite --user_id user1  --project_id prj1 prj2
-```
 
 
 
 ### project_member invite
-複数のプロジェクトに、ユーザを招待します。
-
-```
-# ORG組織配下のすべてのプロジェクトに、user1, user2をownerロールで招待する
-$ annofabcli project_member invite --user_id user1 user2 --role owner --organization ORG
-
-# prj1, prj2のプロジェクトに、user1をaccepterロールで招待する
-$ annofabcli project_member invite --user_id user1 --role accepter --project_id prj1 prj2
-```
+https://annofab-cli.readthedocs.io/ja/latest/command_reference/project_member/invite.html 参照
 
 
 ### project_member list
-プロジェクトメンバ一覧を出力します。
-
-```
-# ORG組織配下のすべてのプロジェクトのプロジェクトメンバ一覧を出力する
-$ annofabcli project_member list --organization ORG
-
-# prj1, prj2のプロジェクトのプロジェクトメンバ一覧を出力する
-$ annofabcli project_member list --project_id prj1 prj2
-```
-
-#### 出力結果（CSV）
-
-| project_id                           | account_id                           | user_id         | username  | member_status | member_role | updated_datetime              | created_datetime              | sampling_inspection_rate | sampling_acceptance_rate | project_title                |
-|--------------------------------------|--------------------------------------|-----------------|-----------|---------------|-------------|-------------------------------|-------------------------------|--------------------------|--------------------------|------------------------------|
-| 12345678-abcd-1234-abcd-1234abcd5678 | 12345678-abcd-1234-abcd-1234abcd5678 | user_id | username | active        | owner       | 2019-09-10T14:51:00.908+09:00 | 2019-04-19T16:29:41.069+09:00 |                          |                          | sample_project |
+https://annofab-cli.readthedocs.io/ja/latest/command_reference/project_member/list.html 参照
 
 
 ### project_member put
-CSVに記載されたユーザを、プロジェクトメンバとして登録します。
+https://annofab-cli.readthedocs.io/ja/latest/command_reference/project_member/put.html 参照
 
-members.csvの中身は以下の通りです。
-
-* ヘッダ行なし
-* カンマ区切り
-* 1列目: user_id. 必須
-* 2列目: member_role. 必須.  `owner`, `worker`, `accepter`, `training_data_user` のいずれか。
-* 3列目: sampling_inspection_rate. 省略可能。
-* 4列目: sampling_acceptance_rate. 省略可能。
-
-
-```
-user1,worker
-user2,accepter,80,40
-```
-
-
-```
-# CSVに記載れたユーザを、prj1プロジェクトのメンバとして登録します。
-$ annofabcli project_member put --project_id prj1 --csv members.csv
-
-# CSVに記載れたユーザを、prj1プロジェクトのメンバとして登録します。csvに記載されていないユーザは削除します。
-$ annofabcli project_member put --project_id prj1 --csv members.csv --delete
-```
 
 ### statistics list_annotation_count
 各ラベル、各属性値のアノテーション数を、タスクごと/入力データごとに出力します。

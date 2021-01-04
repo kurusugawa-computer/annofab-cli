@@ -11,12 +11,13 @@ import annofabcli
 from annofabcli import AnnofabApiFacade
 from annofabcli.common.cli import AbstractCommandLineInterface, ArgumentParser, build_annofabapi_resource_and_login
 from annofabcli.common.enums import FormatArgument
+from annofabcli.common.utils import get_columns_with_priority
 
 logger = logging.getLogger(__name__)
 
 
 def create_minimal_dataframe(project_list: List[Project]):
-    """必要最小限の列であるDataFramewoを作成する"""
+    """必要最小限の列であるDataFrameを作成する"""
     df = pandas.DataFrame(project_list)
     df["last_tasks_updated_datetime"] = [e["summary"]["last_tasks_updated_datetime"] for e in project_list]
     return df[
@@ -131,6 +132,20 @@ class ListProject(AbstractCommandLineInterface):
     プロジェクト一覧を表示する。
     """
 
+    PRIOR_COLUMNS = [
+        "organization_id",
+        "organization_name",
+        "project_id",
+        "title",
+        "overview",
+        "project_status",
+        "input_data_type",
+        "created_datetime",
+        "updated_datetime",
+        "summary",
+        "configuration",
+    ]
+
     @staticmethod
     def validate(args: argparse.Namespace) -> bool:
         if args.project_id is not None:
@@ -167,6 +182,10 @@ class ListProject(AbstractCommandLineInterface):
         if args.format == FormatArgument.MINIMAL_CSV.value:
             df = create_minimal_dataframe(project_list)
             self.print_csv(df)
+        elif args.format == FormatArgument.CSV.value:
+            df = pandas.DataFrame(project_list)
+            columns = get_columns_with_priority(df, prior_columns=self.PRIOR_COLUMNS)
+            self.print_csv(df[columns])
         else:
             self.print_according_to_format(project_list)
 

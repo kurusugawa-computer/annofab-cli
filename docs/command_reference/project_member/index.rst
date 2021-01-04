@@ -1,10 +1,10 @@
 ==================================================
-project
+project_member
 ==================================================
 
 Description
 =================================
-プロジェクト関係のコマンドです。
+プロジェクトメンバ関係のコマンドです。
 
 
 Available Commands
@@ -15,11 +15,11 @@ Available Commands
    :maxdepth: 1
    :titlesonly:
 
-   change_status
+   change
    copy
-   diff
-   download
+   delete
+   invite
    list
-   update_annotation_zip
+   put
 
 

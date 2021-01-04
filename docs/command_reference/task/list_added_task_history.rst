@@ -4,7 +4,7 @@ task list_added_task_history
 
 Description
 =================================
-タスク一覧に、タスク履歴から取得した以下の情報を追加した一覧を、CSV形式で出力します。
+タスク一覧に、タスク履歴から取得した以下の情報を追加して、CSV形式で出力します。
 
 * フェーズごとの作業時間
 * 各フェーズの最初の担当者と開始日時
@@ -70,11 +70,9 @@ CSV出力
 
 
 
-出力結果 `out.csv <https://github.com/kurusugawa-computer/annofab-cli/blob/master/docs/command_reference/task/list_added_task_history/out.csv>`_ は、
-`annofabcli task list_with_json <../task/list_with_json.html>`_ コマンドで出力されるCSVファイルと比較して、以下の情報（列）が追加されています。
+`out.csv <https://github.com/kurusugawa-computer/annofab-cli/blob/master/docs/command_reference/task/list_added_task_history/out.csv>`_
 
-
-
+出力されたCSVの以下の列は、タスク履歴から取得した情報です。
 
 * annotation_worktime_hour: 教師付フェーズの作業時間[hour]
 * inspection_worktime_hour: 検査フェーズの作業時間[hour]

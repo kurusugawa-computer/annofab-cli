@@ -91,6 +91,19 @@ class CopyProject(AbstractCommandLineInterface):
                 logger.info(f"プロジェクトのコピーが完了しました。")
             else:
                 logger.info(f"プロジェクトのコピーは実行中 または 失敗しました。")
+        else:
+            logger.info(f"コピーの完了を待たずに終了します。")
+
+    @staticmethod
+    def _set_copy_options(options: Dict[str, Any]):
+        if "copy_annotations" in options:
+            options["copy_tasks"] = True
+            options["copy_inputs"] = True
+        if "copy_tasks" in options:
+            options["copy_inputs"] = True
+        if "copy_supplementaly_data" in options:
+            options["copy_inputs"] = True
+        return options
 
     def main(self):
         args = self.args
@@ -107,6 +120,7 @@ class CopyProject(AbstractCommandLineInterface):
         copy_options: Dict[str, bool] = {}
         for key in copy_option_kyes:
             copy_options[key] = getattr(args, key)
+        copy_options = self._set_copy_options(copy_options)
 
         wait_options = get_wait_options_from_args(get_json_from_args(args.wait_options), DEFAULT_WAIT_OPTIONS)
 
@@ -136,12 +150,12 @@ def parse_args(parser: argparse.ArgumentParser):
     parser.add_argument("--dest_title", type=str, required=True, help="新しいプロジェクトのタイトルを指定してください。")
     parser.add_argument("--dest_overview", type=str, help="新しいプロジェクトの概要を指定してください。")
 
-    parser.add_argument("--copy_inputs", action="store_true", help="「入力データ」をコピーするかどうかを指定します。")
-    parser.add_argument("--copy_tasks", action="store_true", help="「タスク」をコピーするかどうかを指定します。")
-    parser.add_argument("--copy_annotations", action="store_true", help="「アノテーション」をコピーするかどうかを指定します。")
-    parser.add_argument("--copy_webhooks", action="store_true", help="「Webhook」をコピーするかどうかを指定します。")
-    parser.add_argument("--copy_supplementaly_data", action="store_true", help="「補助情報」をコピーするかどうかを指定します。")
-    parser.add_argument("--copy_instructions", action="store_true", help="「作業ガイド」をコピーするかどうかを指定します。")
+    parser.add_argument("--copy_inputs", action="store_true", help="「入力データ」をコピーします。")
+    parser.add_argument("--copy_tasks", action="store_true", help="「タスク」をコピーします。指定した場合は入力データもコピーします。")
+    parser.add_argument("--copy_annotations", action="store_true", help="「アノテーション」をコピーします。指定した場合は入力データとタスクもコピーします。")
+    parser.add_argument("--copy_webhooks", action="store_true", help="「Webhook」をコピーします。")
+    parser.add_argument("--copy_supplementaly_data", action="store_true", help="「補助情報」をコピーします。指定した場合は入力データもコピーします。")
+    parser.add_argument("--copy_instructions", action="store_true", help="「作業ガイド」をコピーします。")
 
     parser.add_argument("--wait", action="store_true", help="プロジェクトのコピーが完了するまで待ちます。")
 
@@ -161,7 +175,7 @@ def parse_args(parser: argparse.ArgumentParser):
 def add_parser(subparsers: argparse._SubParsersAction):
     subcommand_name = "copy"
     subcommand_help = "プロジェクトをコピーします。"
-    description = "プロジェクトをコピーして（アノテーション仕様やメンバーを引き継いで）、新しいプロジェクトを作成します。"
+    description = "プロジェクトをコピーします。"
     epilog = "コピー元のプロジェクトに対してオーナロール、組織に対して組織管理者、組織オーナを持つユーザで実行してください。"
 
     parser = annofabcli.common.cli.add_parser(subparsers, subcommand_name, subcommand_help, description, epilog=epilog)
