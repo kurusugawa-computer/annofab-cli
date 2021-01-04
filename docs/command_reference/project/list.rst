@@ -93,6 +93,7 @@ CSV出力
 
     $ annofabcli project list --organization org1 --format csv --output out.csv
 
+`out.csv <https://github.com/kurusugawa-computer/annofab-cli/blob/master/docs/command_reference/project/list/out.csv>`_
 
 JSON出力
 ----------------------------------------------
