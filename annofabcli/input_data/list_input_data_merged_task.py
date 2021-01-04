@@ -4,11 +4,11 @@ import json
 import logging
 import sys
 from pathlib import Path
-from typing import Any, Dict, List, Optional
+from typing import Any, Dict, List, Optional, Set
 
 import annofabapi
 import pandas
-from annofabapi.models import ProjectMemberRole
+from annofabapi.dataclass.input import InputData
 
 import annofabcli
 from annofabcli import AnnofabApiFacade
@@ -23,6 +23,7 @@ from annofabcli.common.cli import (
 from annofabcli.common.dataclasses import WaitOptions
 from annofabcli.common.download import DownloadingFile
 from annofabcli.common.enums import FormatArgument
+from annofabcli.common.facade import InputDataQuery, match_input_data_with_query
 
 logger = logging.getLogger(__name__)
 
@@ -76,21 +77,30 @@ class ListInputDataMergedTaskMain:
         self,
         input_data_list: List[Dict[str, Any]],
         task_list: List[Dict[str, Any]],
-        input_data_id_list: Optional[List[str]] = None,
-        input_data_name_list: Optional[List[str]] = None,
     ):
         new_task_list = self._to_task_list_based_input_data(task_list)
 
         df_input_data = pandas.DataFrame(input_data_list)
-        df_input_data = self._filter_input_data(
-            df_input_data, input_data_id_list=input_data_id_list, input_data_name_list=input_data_name_list
-        )
 
         df_task = pandas.DataFrame(new_task_list)
 
         df_merged = pandas.merge(df_input_data, df_task, how="left", on="input_data_id")
 
         return df_merged
+
+
+def match_input_data(
+    input_data: Dict[str, Any],
+    input_data_id_set: Optional[Set[str]] = None,
+    input_data_query: Optional[InputDataQuery] = None,
+) -> bool:
+    result = True
+
+    dc_input_data = InputData.from_dict(input_data)
+    result = result and match_input_data_with_query(dc_input_data, input_data_query)
+    if input_data_id_set is not None:
+        result = result and (dc_input_data.input_data_id in input_data_id_set)
+    return result
 
 
 class ListInputDataMergedTask(AbstractCommandLineInterface):
@@ -141,7 +151,7 @@ class ListInputDataMergedTask(AbstractCommandLineInterface):
 
         project_id = args.project_id
         if project_id is not None:
-            super().validate_project(project_id, [ProjectMemberRole.OWNER, ProjectMemberRole.TRAINING_DATA_USER])
+            super().validate_project(project_id, None)
             wait_options = get_wait_options_from_args(get_json_from_args(args.wait_options), DEFAULT_WAIT_OPTIONS)
             cache_dir = annofabcli.utils.get_cache_dir()
             self.download_json_files(project_id, cache_dir, args.latest, wait_options)
@@ -151,22 +161,33 @@ class ListInputDataMergedTask(AbstractCommandLineInterface):
             task_json_path = args.task_json
             input_data_json_path = args.input_data_json
 
+        logger.debug(f"{task_json_path} を読み込み中")
         with open(task_json_path, encoding="utf-8") as f:
             task_list = json.load(f)
 
+        logger.debug(f"{input_data_json_path} を読み込み中")
         with open(input_data_json_path, encoding="utf-8") as f:
             input_data_list = json.load(f)
 
-        input_data_id_list = get_list_from_args(args.input_data_id) if args.input_data_id is not None else None
-        input_data_name_list = get_list_from_args(args.input_data_name) if args.input_data_name is not None else None
+        input_data_id_set = set(get_list_from_args(args.input_data_id)) if args.input_data_id is not None else None
+        input_data_query = (
+            InputDataQuery.from_dict(annofabcli.common.cli.get_json_from_args(args.input_data_query))
+            if args.input_data_query is not None
+            else None
+        )
+        filtered_input_data_list = [
+            e
+            for e in input_data_list
+            if match_input_data(e, input_data_query=input_data_query, input_data_id_set=input_data_id_set)
+        ]
 
         main_obj = ListInputDataMergedTaskMain(self.service)
         df_merged = main_obj.create_input_data_merged_task(
-            input_data_list=input_data_list,
+            input_data_list=filtered_input_data_list,
             task_list=task_list,
-            input_data_id_list=input_data_id_list,
-            input_data_name_list=input_data_name_list,
         )
+
+        logger.debug(f"一覧の件数: {len(df_merged)}")
         annofabcli.utils.print_according_to_format(
             df_merged, arg_format=FormatArgument(FormatArgument.CSV), output=self.output, csv_format=self.csv_format
         )
@@ -220,6 +241,15 @@ def parse_args(parser: argparse.ArgumentParser):
         "--input_data_name", type=str, nargs="+", help="指定したinput_data_nameに部分一致(大文字小文字区別しない）する入力データを絞り込みます。"
     )
 
+    parser.add_argument(
+        "-iq",
+        "--input_data_query",
+        type=str,
+        help="入力データの検索クエリをJSON形式で指定します。"
+        "`file://`を先頭に付けると、JSON形式のファイルを指定できます。"
+        "指定できるキーは、`input_data_name`, `input_data_path`です。",
+    )
+
     argument_parser.add_output()
     argument_parser.add_csv_format()
 
@@ -230,7 +260,6 @@ def add_parser(subparsers: argparse._SubParsersAction):
     subcommand_name = "list_merged_task"
     subcommand_help = "タスク一覧と結合した入力データ一覧のCSVを出力します。"
     description = "タスク一覧と結合した入力データ一覧のCSVを出力します。"
-    epilog = "アノテーションユーザまたはオーナロールを持つユーザで実行してください。"
 
-    parser = annofabcli.common.cli.add_parser(subparsers, subcommand_name, subcommand_help, description, epilog=epilog)
+    parser = annofabcli.common.cli.add_parser(subparsers, subcommand_name, subcommand_help, description)
     parse_args(parser)

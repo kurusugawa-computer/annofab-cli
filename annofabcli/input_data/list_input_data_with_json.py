@@ -60,10 +60,11 @@ class ListInputDataWithJsonMain:
         else:
             json_path = input_data_json
 
-        # TODO logger json load
+        logger.debug(f"{json_path} を読み込み中")
         with json_path.open() as f:
             input_data_list = json.load(f)
 
+        logger.debug(f"入力データを絞り込み中")
         input_data_id_set = set(input_data_id_list) if input_data_id_list is not None else None
         filtered_input_data_list = [
             e
