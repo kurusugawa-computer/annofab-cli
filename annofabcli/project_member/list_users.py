@@ -1,10 +1,8 @@
-"""
-プロジェクトのユーザを表示する。
-"""
 import argparse
 import logging
 from typing import List
 
+import pandas
 import requests
 from annofabapi.models import ProjectMember
 
@@ -12,6 +10,7 @@ import annofabcli
 from annofabcli import AnnofabApiFacade
 from annofabcli.common.cli import AbstractCommandLineInterface, ArgumentParser, build_annofabapi_resource_and_login
 from annofabcli.common.enums import FormatArgument
+from annofabcli.common.utils import get_columns_with_priority
 from annofabcli.common.visualize import AddProps
 
 logger = logging.getLogger(__name__)
@@ -21,6 +20,19 @@ class ListUser(AbstractCommandLineInterface):
     """
     ユーザを表示する
     """
+
+    PRIOR_COLUMNS = [
+        "project_id",
+        "project_title",
+        "account_id",
+        "user_id",
+        "username",
+        "biography",
+        "member_status",
+        "member_role",
+        "sampling_inspection_rate",
+        "sampling_acceptance_rate",
+    ]
 
     def get_all_project_members(self, project_id: str, include_inactive: bool = False):
         query_params = {}
@@ -63,7 +75,13 @@ class ListUser(AbstractCommandLineInterface):
             include_inactive=args.include_inactive,
         )
 
-        self.print_according_to_format(project_members)
+        logger.info(f"プロジェトメンバ一覧の件数: {len(project_members)}")
+        if args.format == FormatArgument.CSV.value:
+            df = pandas.DataFrame(project_members)
+            columns = get_columns_with_priority(df, prior_columns=self.PRIOR_COLUMNS)
+            self.print_csv(df[columns])
+        else:
+            self.print_according_to_format(project_members)
 
 
 def main(args):
@@ -84,7 +102,7 @@ def parse_args(parser: argparse.ArgumentParser):
         help="ユーザを表示するプロジェクトのproject_idを指定してください。`file://`を先頭に付けると、一覧が記載されたファイルを指定できます。",
     )
 
-    parser.add_argument("--include_inactive", action="store_true", help="脱退されたメンバも表示します。")
+    parser.add_argument("--include_inactive", action="store_true", help="脱退しているメンバも出力します。")
 
     argument_parser.add_format(
         choices=[FormatArgument.CSV, FormatArgument.JSON, FormatArgument.PRETTY_JSON, FormatArgument.USER_ID_LIST],
@@ -99,8 +117,8 @@ def parse_args(parser: argparse.ArgumentParser):
 
 def add_parser(subparsers: argparse._SubParsersAction):
     subcommand_name = "list"
-    subcommand_help = "複数のプロジェクトのプロジェクトメンバを表示する。"
-    description = "複数のプロジェクトのプロジェクトメンバを表示する。"
+    subcommand_help = "複数のプロジェクトのプロジェクトメンバを出力します。"
+    description = "複数のプロジェクトのプロジェクトメンバを出力します。"
 
     parser = annofabcli.common.cli.add_parser(subparsers, subcommand_name, subcommand_help, description)
     parse_args(parser)

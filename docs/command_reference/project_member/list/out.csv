@@ -1,0 +1,3 @@
+﻿project_id,project_title,account_id,user_id,username,biography,member_status,member_role,sampling_inspection_rate,sampling_acceptance_rate,created_datetime,updated_datetime
+prj1,test-prj1,12345678-abcd-1234-abcd-1234abcd5678,user1,test-user1,,active,owner,,,2019-04-19T16:29:41.069+09:00,2020-12-30T22:56:45.493+09:00
+prj1,test-prj1,12345678-abcd-1234-abcd-1234abcd5678,user2,test-user2,,active,owner,,,2019-04-19T16:29:41.069+09:00,2020-12-30T22:56:45.493+09:00
