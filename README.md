@@ -956,76 +956,12 @@ https://annofab-cli.readthedocs.io/ja/latest/command_reference/project/change_st
 
 
 ### project cooy
-プロジェクトをコピーして（アノテーション仕様やメンバーを引き継いで）、新しいプロジェクトを作成します。
-
-
-
-```
-# prj1 プロジェクトをコピーして、"prj2-title"というプロジェクトを作成する
-$ annofabcli project copy --project_id prj1 --dest_title "prj2-title"
-
-
-# prj1 プロジェクトをコピーして、"prj2"というプロジェクトIDのプロジェクトを作成する。
-# コピーが完了するまで待つ(処理を継続する)
-$ annofabcli project copy --project_id prj1 --dest_title "prj2-title" --dest_project_id prj2 \
- --wait
-
-
-# prj1 プロジェクトの入力データと、タスクをコピーして、"prj2-title"というプロジェクトを作成する
-$ annofabcli project copy --project_id prj1 --dest_title "prj2-title" --copy_inputs --copy_tasks
-
-
-```
-
+https://annofab-cli.readthedocs.io/ja/latest/command_reference/project/copy.html 参照
 
 
 
 ### project diff
-プロジェクト間の差分を、以下の項目について表示します。差分がない場合、標準出力は空になります。
-* アノテーション仕様のラベル情報
-* 定型指摘
-* プロジェクトメンバ
-* プロジェクトの設定
-
-
-```
-# すべての差分
-$ annofabcli project diff  prj1 prj2
-
-# アノテーション仕様のラベル情報の差分
-$ annofabcli project diff prj1 prj2 --target annotation_labels
-
-# 定型指摘の差分
-$ annofabcli project diff prj1 prj2 --target inspection_phrases
-
-# プロジェクトメンバの差分
-$ annofabcli project diff  prj1 prj2 --target members
-
-# プロジェクト設定の差分
-$ annofabcli project diff  prj1 prj2 --target settings
-
-```
-
-
-
-プロジェクト間の差分は、以下のように出力されます。
-`dict`型の差分は、[dictdiffer](https://dictdiffer.readthedocs.io/en/latest/)のフォーマットで出力します。
-
-```
-=== prj1_title1(prj1) と prj1_title2(prj2) の差分を表示
-=== プロジェクトメンバの差分 ===
-プロジェクトメンバは同一
-=== プロジェクト設定の差分 ===
-プロジェクト設定は同一
-=== 定型指摘の差分 ===
-定型指摘は同一
-=== アノテーションラベル情報の差分 ===
-ラベル名(en): car は差分あり
-[('change', 'color.red', (4, 0)),
- ('change', 'color.green', (251, 255)),
- ('change', 'color.blue', (171, 204))]
-ラベル名(en): bike は同一
-```
+https://annofab-cli.readthedocs.io/ja/latest/command_reference/project/diff.html 参照
 
 
 
