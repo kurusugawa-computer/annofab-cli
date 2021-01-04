@@ -13,4 +13,5 @@ Command Reference
    task/index
    project/index
    project_member/index
+   supplementary/index
 
