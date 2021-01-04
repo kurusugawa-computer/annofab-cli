@@ -45,8 +45,8 @@ class ListInputDataMergedTaskMain:
             for input_data_id in task["input_data_id_list"]:
                 new_task = {
                     "task_id": task["task_id"],
-                    "status": task["status"],
-                    "phase": task["phase"],
+                    "task_status": task["status"],
+                    "task_phase": task["phase"],
                     "worktime_hour": millisecond_to_hour(task["work_time_span"]),
                     "input_data_id": input_data_id,
                 }
