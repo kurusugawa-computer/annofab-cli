@@ -26,7 +26,7 @@ class ListInputData(AbstractCommandLineInterface):
     def __init__(self, service: annofabapi.Resource, facade: AnnofabApiFacade, args: argparse.Namespace):
         super().__init__(service, facade, args)
         self.visualize = AddProps(self.service, args.project_id)
-        self.average_input_data_id_length = args.averate_input_data_id_length
+        self.average_input_data_id_length = args.average_input_data_id_length
 
     @staticmethod
     def _find_task_id_list(task_list: List[Task], input_data_id: str) -> List[str]:
@@ -223,7 +223,7 @@ def parse_args(parser: argparse.ArgumentParser):
     parser.add_argument("--add_details", action="store_true", help="入力データの詳細情報を表示します（`parent_task_id_list`）")
 
     parser.add_argument(
-        "--averate_input_data_id_length",
+        "--average_input_data_id_length",
         type=int,
         default=36,
         help=("入力データIDの平均長さを指定します。`add_details`がTrueのときのみ有効です。" "デフォルトはUUIDv4の長さです。" "この値を元にして、タスク一括取得APIの実行回数を決めます。"),
