@@ -124,7 +124,7 @@ class ChangeProjectMembers(AbstractCommandLineInterface):
 
     @staticmethod
     def validate(args: argparse.Namespace, member_info: Optional[Dict[str, Any]] = None) -> bool:
-        COMMON_MESSAGE = "annofabcli inspection_comment list: error:"
+        COMMON_MESSAGE = "annofabcli project_member change: error:"
         if args.role is None and args.member_info is None:
             print(f"{COMMON_MESSAGE} argument `--role`または`--member_info`のどちらかは、必ず指定してください。", file=sys.stderr)
             return False
@@ -189,7 +189,6 @@ def parse_args(parser: argparse.ArgumentParser):
     parser.add_argument(
         "--member_info",
         type=str,
-        required=True,
         help="プロジェクトメンバに対して設定するメンバ情報を、JSON形式で指定します。`file://`を先頭に付けると、JSON形式のファイルを指定できます。 "
         "以下のキーが指定可能です。sampling_inspection_rate, sampling_acceptance_rate, "
         "未設定にする場合は、値にnullを指定してください。"
