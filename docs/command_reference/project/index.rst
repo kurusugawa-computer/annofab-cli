@@ -20,4 +20,6 @@ Available Commands
    diff
    download
    list
+   update_annotation_zip
+
 

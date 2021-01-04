@@ -81,7 +81,7 @@ class SubUpdateAnnotationZip:
             else:
                 logger.debug(
                     f"project_id={project_id}: タスクの最終更新日時 or アノテーション仕様の最終更新日時が、"
-                    f"アノテーションzipの最終講師日時より新しいため、アノテーションzipを更新する必要はありません。"
+                    f"アノテーションzipの最終更新日時より古いため、アノテーションzipを更新する必要はありません。"
                 )
                 return False
         else:
@@ -164,7 +164,7 @@ class UpdateAnnotationZip(AbstractCommandLineInterface):
         複数プロジェクトに対して、アノテーションzipを更新する。
 
         Args:
-            project_id:
+            project_id_list:
             force: アノテーションzipを更新する必要がなくても、常に更新する。
             wait: アノテーションzipの更新が完了するまで待つかどうか
             wait_options: アノテーションzipの更新が完了するまで待つときのオプション
