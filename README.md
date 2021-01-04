@@ -951,17 +951,7 @@ $ annofabcli organization_member list --organization org1
 
 
 ### project change_status
-プロジェクトのステータスを変更します。
-
-
-```
-# prj1, prj2を停止状態にします。
-$ annofabcli project change_status --project_id prj1 prj2 --status suspended
-
-
-# prj1, prj2を進行状態にします。
-$ annofabcli project change_status --project_id prj1 prj2 --status active
-```
+https://annofab-cli.readthedocs.io/ja/latest/command_reference/project/change_status.html 参照
 
 
 
@@ -1045,15 +1035,8 @@ https://annofab-cli.readthedocs.io/ja/latest/command_reference/project/download.
 
 
 ### project list
-プロジェクト一覧を出力します。
+https://annofab-cli.readthedocs.io/ja/latest/command_reference/project/list.html 参照
 
-```
-# org1配下のプロジェクトで、user1が所属する進行中のプロジェクト一覧を出力する。
-$ annofabcli project list --organization org1 --project_query '{"status": "active", "user_id": "user1}'
-
-# prj1, prj2のプロジェクト一覧を出力する
-$ annofabcli project list --project_id prj1 prj2
-```
 
 
 ### project update_annotation_zip
