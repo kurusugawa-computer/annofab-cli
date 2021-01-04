@@ -16,6 +16,7 @@ Available Commands
    :titlesonly:
 
    change_status
+   copy
    download
    list
 

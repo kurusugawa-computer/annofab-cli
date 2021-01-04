@@ -1,4 +1,3 @@
-from annofabcli.common.utils import get_columns_with_priority
 import argparse
 import logging
 from typing import Any, Dict, List, Optional
@@ -12,6 +11,7 @@ import annofabcli
 from annofabcli import AnnofabApiFacade
 from annofabcli.common.cli import AbstractCommandLineInterface, ArgumentParser, build_annofabapi_resource_and_login
 from annofabcli.common.enums import FormatArgument
+from annofabcli.common.utils import get_columns_with_priority
 
 logger = logging.getLogger(__name__)
 
@@ -37,7 +37,6 @@ class ListProjectMain:
     def __init__(self, service: annofabapi.Resource):
         self.service = service
         self.facade = AnnofabApiFacade(service)
-
 
     @staticmethod
     def get_account_id_from_user_id(organization_member_list: List[OrganizationMember], user_id: str) -> Optional[str]:
@@ -132,6 +131,7 @@ class ListProject(AbstractCommandLineInterface):
     """
     プロジェクト一覧を表示する。
     """
+
     PRIOR_COLUMNS = [
         "organization_id",
         "organization_name",
@@ -143,7 +143,7 @@ class ListProject(AbstractCommandLineInterface):
         "created_datetime",
         "updated_datetime",
         "summary",
-        "configuration"
+        "configuration",
     ]
 
     @staticmethod
