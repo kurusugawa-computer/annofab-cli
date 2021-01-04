@@ -985,87 +985,27 @@ https://annofab-cli.readthedocs.io/ja/latest/command_reference/project_member/ch
 
 
 ### project_member copy
-プロジェクトメンバを別のプロジェクトにコピーします。
-
-```
-# prj1のメンバをprj2にコピーする。
-$ annofabcli project_member copy prj1 prj2
-
-# prj1のメンバをprj2にコピーする。prj2にしか存在しないメンバは削除される。
-$ annofabcli project_member copy prj1 prj2 --delete_dest
-```
+https://annofab-cli.readthedocs.io/ja/latest/command_reference/project_member/copy.html 参照
 
 
 
 ### project_member delete
-複数のプロジェクトからユーザを削除します。
+https://annofab-cli.readthedocs.io/ja/latest/command_reference/project_member/delete.html 参照
 
-```
-# ORG組織配下のすべてのプロジェクトから、user1, user2を削除する
-$ annofabcli project_member delete --user_id user1 user2  --organization ORG
-
-# prj1, prj2のプロジェクトからuser1をaccepterロールで招待する
-$ annofabcli project_member invite --user_id user1  --project_id prj1 prj2
-```
 
 
 
 ### project_member invite
-複数のプロジェクトに、ユーザを招待します。
-
-```
-# ORG組織配下のすべてのプロジェクトに、user1, user2をownerロールで招待する
-$ annofabcli project_member invite --user_id user1 user2 --role owner --organization ORG
-
-# prj1, prj2のプロジェクトに、user1をaccepterロールで招待する
-$ annofabcli project_member invite --user_id user1 --role accepter --project_id prj1 prj2
-```
+https://annofab-cli.readthedocs.io/ja/latest/command_reference/project_member/invite.html 参照
 
 
 ### project_member list
-プロジェクトメンバ一覧を出力します。
-
-```
-# ORG組織配下のすべてのプロジェクトのプロジェクトメンバ一覧を出力する
-$ annofabcli project_member list --organization ORG
-
-# prj1, prj2のプロジェクトのプロジェクトメンバ一覧を出力する
-$ annofabcli project_member list --project_id prj1 prj2
-```
-
-#### 出力結果（CSV）
-
-| project_id                           | account_id                           | user_id         | username  | member_status | member_role | updated_datetime              | created_datetime              | sampling_inspection_rate | sampling_acceptance_rate | project_title                |
-|--------------------------------------|--------------------------------------|-----------------|-----------|---------------|-------------|-------------------------------|-------------------------------|--------------------------|--------------------------|------------------------------|
-| 12345678-abcd-1234-abcd-1234abcd5678 | 12345678-abcd-1234-abcd-1234abcd5678 | user_id | username | active        | owner       | 2019-09-10T14:51:00.908+09:00 | 2019-04-19T16:29:41.069+09:00 |                          |                          | sample_project |
+https://annofab-cli.readthedocs.io/ja/latest/command_reference/project_member/list.html 参照
 
 
 ### project_member put
-CSVに記載されたユーザを、プロジェクトメンバとして登録します。
+https://annofab-cli.readthedocs.io/ja/latest/command_reference/project_member/put.html 参照
 
-members.csvの中身は以下の通りです。
-
-* ヘッダ行なし
-* カンマ区切り
-* 1列目: user_id. 必須
-* 2列目: member_role. 必須.  `owner`, `worker`, `accepter`, `training_data_user` のいずれか。
-* 3列目: sampling_inspection_rate. 省略可能。
-* 4列目: sampling_acceptance_rate. 省略可能。
-
-
-```
-user1,worker
-user2,accepter,80,40
-```
-
-
-```
-# CSVに記載れたユーザを、prj1プロジェクトのメンバとして登録します。
-$ annofabcli project_member put --project_id prj1 --csv members.csv
-
-# CSVに記載れたユーザを、prj1プロジェクトのメンバとして登録します。csvに記載されていないユーザは削除します。
-$ annofabcli project_member put --project_id prj1 --csv members.csv --delete
-```
 
 ### statistics list_annotation_count
 各ラベル、各属性値のアノテーション数を、タスクごと/入力データごとに出力します。
