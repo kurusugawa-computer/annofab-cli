@@ -1,13 +1,12 @@
-import pytest
 import configparser
 import os
 from pathlib import Path
 
 import annofabapi
+import pytest
 
-from annofabcli.task.change_operator import ChangeOperatorMain
-from tests.utils_for_test import set_logger
 from annofabcli.__main__ import main
+
 # プロジェクトトップに移動する
 os.chdir(os.path.dirname(os.path.abspath(__file__)) + "/../")
 
@@ -27,7 +26,6 @@ service = annofabapi.build()
 
 
 class TestCommandLine:
-
     @classmethod
     def setup_class(cls):
         annofab_service = annofabapi.build()
@@ -65,7 +63,6 @@ class TestCommandLine:
                 out_file,
             ]
         )
-
 
     def test_list_input_data_with_json(self):
         out_file = str(out_dir / "input_data.csv")
@@ -133,5 +130,3 @@ class TestCommandLine:
                 "--yes",
             ]
         )
-
-
