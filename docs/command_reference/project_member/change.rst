@@ -34,7 +34,7 @@ Examples
 * ``sampling_inspection_rate`` : 抜取検査率
 * ``sampling_acceptance_rate`` : 抜取受入率
 
-以下のコマンドは、ユーザuser1, user2の抜取検査率を20%、抜取受入率を20％に変更します。
+以下のコマンドは、ユーザuser1, user2の抜取検査率を10%、抜取受入率を20％に変更します。
 
 .. code-block::
     

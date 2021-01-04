@@ -980,21 +980,7 @@ https://annofab-cli.readthedocs.io/ja/latest/command_reference/project/update_an
 
 
 ### project_member change
-複数のプロジェクトメンバに対して、メンバ情報を変更します。ただし、自分自身は変更できません。
-
-```
-# user1, user2のロールを"worker"（アノテータ）に変更する
-$ annofabcli project_member change --project_id prj1 --user_id user1 user2 --role worker
-
-# `user_id.txt`に記載されたuser_idに対して、抜取検査率、抜取受入率を指定する
-$ annofabcli project_member change --project_id prj1 --user_id file://user_id.txt \
- --member_info '{"sampling_inspection_rate": 10, "sampling_acceptance_rate": 20}'
-
-# すべてのユーザに対して、抜取検査率を未設定にする
-$ annofabcli project_member change --project_id prj1 --all_user \
- --member_info '{"sampling_inspection_rate": null}'
-
-```
+https://annofab-cli.readthedocs.io/ja/latest/command_reference/project_member/change.html 参照
 
 
 

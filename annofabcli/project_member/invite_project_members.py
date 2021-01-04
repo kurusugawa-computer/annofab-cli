@@ -145,8 +145,8 @@ def parse_args(parser: argparse.ArgumentParser):
 
 def add_parser(subparsers: argparse._SubParsersAction):
     subcommand_name = "invite"
-    subcommand_help = "複数のプロジェクトに、ユーザを招待する。"
-    description = "複数のプロジェクトに、ユーザを招待する。"
+    subcommand_help = "複数のプロジェクトに、ユーザを招待します。"
+    description = "複数のプロジェクトに、ユーザを招待します。"
     epilog = "オーナロールを持つユーザで実行してください。"
 
     parser = annofabcli.common.cli.add_parser(subparsers, subcommand_name, subcommand_help, description, epilog=epilog)
