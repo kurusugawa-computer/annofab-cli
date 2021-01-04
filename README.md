@@ -618,141 +618,9 @@ $ annofabcli filesystem filter_annotation --annotation annotation.zip \
 ### filesystem write_annotation_image
 https://annofab-cli.readthedocs.io/ja/latest/command_reference/filesystem/write_annotation_image.html 参照
 
-### input_data delete
-https://annofab-cli.readthedocs.io/ja/latest/command_reference/input_data/delete.html 参照
+### input_data 
+https://annofab-cli.readthedocs.io/ja/latest/command_reference/input_data/index.html 参照
 
-
-### input_data list
-入力データ一覧を出力します。
-
-```
-# input_data_nameが"sample"の入力データ一覧を出力する
-$ annofabcli input_data list --project_id prj1 --input_data_query '{"input_data_name": "sample"}' 
-
-# input_data_idが"id1", "id2"の入力データを取得する
-$ annofabcli input_data list --project_id prj1 --input_data_id id1 id2
-
-# 入力データの詳細情報（参照されているタスクのtask_id `parent_task_id_list`）も出力する
-$ annofabcli input_data list --project_id prj1 --input_data_query '{"input_data_name": "sample"}' --add_details
-
-```
-
-
-#### 出力結果（CSV）
-
-
-| etag                             | input_data_id                        | input_data_name                   | input_data_path                                                                                                                                                                 | original_input_data_path                                                                                                                                                        | original_resolution | project_id                           | resized_resolution | sign_required | task_id_list   | updated_datetime              | url                                                                                                                                                                        |
-|----------------------------------|--------------------------------------|-----------------------------------|---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------|---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------|---------------------|--------------------------------------|--------------------|---------------|----------------|-------------------------------|----------------------------------------------------------------------------------------------------------------------------------------------------------------------------|
-| a43717273502b67a1989c9b25e252cde | 3c8d8f15-14f0-467a-a8fe-562cbbccf08a | val.zip/val/9a70bdec-1504e338.jpg | s3://example.com/example | s3://example.com/example |                     | 58a2a621-7d4b-41e7-927b-cdc570c1114a |                    | False         | ['sample_247'] | 2019-04-19T16:36:17.846+09:00 | https://annofab.com/projects/example/input_data/example |
-
-
-
-
-
-### input_data list_merged_task
-タスク一覧と結合した入力データ一覧のCSVを出力します。
-動画プロジェクトで、各タスクの動画時間を調べる際などに利用できます。
-
-```
-# prj1の入力データ全件ファイル、タスク全件ファイルをダウンロードして、マージしたCSVを出力する
-$ annofabcli input_data list_merged_task --project_id prj1 --output input_data.csv
-
-# prj1の入力データ全件ファイル、タスク全件ファイルの最新版をダウンロードして、マージしたCSVを出力する
-$ annofabcli input_data list_merged_task --project_id prj1 --output input_data.csv --latest
-
-# 入力データ全件ファイル、タスク全件ファイルのJSONから、マージしたCSVを出力する
-$ annofabcli input_data list_merged_task --input_data_json input_data.json --task_json task.json --output input_data.csv
-```
-
-
-### input_data list_with_json
-入力データ全件ファイルから一覧を出力します。
-
-```
-# 全件の入力データを出力する
-$ annofabcli input_data list_with_json --project_id prj1 --output input_data.csv
-
-# 入力データ全件ファイルを最新化してから、出力する
-$ annofabcli input_data list_with_json --project_id prj1 --output input_data.csv --latest
-```
-
-
-
-### input_data put
-CSVに記載された入力データ情報やzipファイルを、入力データとして登録します。
-
-#### CSVに記載された入力データ情報を、入力データとして登録
-
-* ヘッダ行なし
-* カンマ区切り
-* 1列目: input_data_name. 必須
-* 2列目: input_data_path. 必須. 先頭が`file://`の場合、ローカルのファイルを入力データとしてアップロードします。
-* 3列目: input_data_id. 省略可能。省略した場合UUIDv4になる。
-* 4列目: sign_required. 省略可能. `true` or `false`
-
-CSVのサンプル（`input_data.csv`）です。
-
-```
-data1,s3://example.com/data1,id1,
-data2,s3://example.com/data2,id2,true
-data3,s3://example.com/data3,id3,false
-data4,https://example.com/data4,,
-data5,file://sample.jpg,,
-data6,file:///tmp/sample.jpg,,
-```
-
-
-```
-# input_data.csvに記載されている入力データを登録する。すでに入力データが存在する場合はスキップする。
-$ annofabcli input_data put --project_id prj1 --csv input_data.csv
-
-# input_data.csvに記載されている入力データを登録する。すでに入力データが存在する場合は上書きする。
-$ annofabcli input_data put --project_id prj1 --csv input_data.csv --overwrite
-
-# input_data.csvに記載されている入力データを、並列処理で登録する（`--yes`オプションが必要）。
-$ annofabcli input_data put --project_id prj1 --csv input_data.csv --parallelism 2 --yes
-```
-
-
-`input_data list`コマンドを使えば、プロジェクトに既に登録されている入力データからCSVを作成できます。
-
-```
-$ annofabcli input_data list --project_id prj1 --input_data_query '{"input_data_name": "sample"}'  \
- --format csv --output input_data.csv \
- --csv_format '{"columns": ["input_data_name","input_data_path", "input_data_id", "sign_required"], "header":false}' 
-```
-
-
-#### zipファイルを入力データとして登録
-
-
-```
-# 画像や動画が格納されたinput_data.zipを、入力データとして登録する
-$ annofabcli input_data put --project_id prj1 --zip input_data.zip
-
-# zipファイルを入力データとして登録し、入力データの登録が完了するまで待つ。
-$ annofabcli input_data put --project_id prj1 --zip input_data.zip --wait
-
-# zipファイルを入力データとして登録する。そのときinput_data_nameを`foo.zip`にする。
-$ annofabcli input_data put --project_id prj1 --zip input_data.zip --input_data_name_for_zip foo.zip
-
-```
-
-
-
-### input_data update_metadata
-入力データのメタデータを更新します。
-
-```
-# `input_data.txt`に記載されている入力データIDに対して、入力データのメタデータに'{"foo":"bar"}' を設定します。
-$ annofabcli input_data update_metadata --project_id prj1 --input_data_id --file://input_data.txt \
- --metadata '{"foo":"bar"}'
-
-# `input_data.txt`に記載されている入力データIDに対して、入力データのメタデータを '{"foo":"bar"}' に変更します。
-# すでに設定されているメタデータは上書きされます
-$ annofabcli input_data update_metadata --project_id prj1 --input_data_id --file://input_data.txt \
- --metadata '{"foo":"bar"}'  --overwrite
-```
 
 
 ### inspection_comment list
@@ -950,62 +818,11 @@ $ annofabcli organization_member list --organization org1
 
 
 
-### project change_status
-https://annofab-cli.readthedocs.io/ja/latest/command_reference/project/change_status.html 参照
+### project
+https://annofab-cli.readthedocs.io/ja/latest/command_reference/project/index.html 参照
 
-
-
-### project cooy
-https://annofab-cli.readthedocs.io/ja/latest/command_reference/project/copy.html 参照
-
-
-
-### project diff
-https://annofab-cli.readthedocs.io/ja/latest/command_reference/project/diff.html 参照
-
-
-
-### project download
-https://annofab-cli.readthedocs.io/ja/latest/command_reference/project/download.html 参照
-
-
-
-### project list
-https://annofab-cli.readthedocs.io/ja/latest/command_reference/project/list.html 参照
-
-
-
-### project update_annotation_zip
-https://annofab-cli.readthedocs.io/ja/latest/command_reference/project/update_annotation_zip.html 参照
-
-
-### project_member change
-https://annofab-cli.readthedocs.io/ja/latest/command_reference/project_member/change.html 参照
-
-
-
-### project_member copy
-https://annofab-cli.readthedocs.io/ja/latest/command_reference/project_member/copy.html 参照
-
-
-
-### project_member delete
-https://annofab-cli.readthedocs.io/ja/latest/command_reference/project_member/delete.html 参照
-
-
-
-
-### project_member invite
-https://annofab-cli.readthedocs.io/ja/latest/command_reference/project_member/invite.html 参照
-
-
-### project_member list
-https://annofab-cli.readthedocs.io/ja/latest/command_reference/project_member/list.html 参照
-
-
-### project_member put
-https://annofab-cli.readthedocs.io/ja/latest/command_reference/project_member/put.html 参照
-
+### project_member
+https://annofab-cli.readthedocs.io/ja/latest/command_reference/project_member/index.html 参照
 
 ### statistics list_annotation_count
 各ラベル、各属性値のアノテーション数を、タスクごと/入力データごとに出力します。
@@ -1254,81 +1071,8 @@ $ annofabcli supplementary list --project_id prj1 --input_data_id id1 id2 \
 
 
 
-### task cancel_acceptance
-https://annofab-cli.readthedocs.io/ja/latest/command_reference/task/cancel_acceptance.html 参照
-
-
-
-### task change_operator
-https://annofab-cli.readthedocs.io/ja/latest/command_reference/task/change_operator.html 参照
-
-
-
-
-### task complete
-https://annofab-cli.readthedocs.io/ja/latest/command_reference/task/complete.html 参照
-
-
-
-
-
-### task delete
-https://annofab-cli.readthedocs.io/ja/latest/command_reference/task/delete.html 参照
-
-
-
-### task list
-https://annofab-cli.readthedocs.io/ja/latest/command_reference/task/list.html 参照
-
-
-
-### task list_added_task_history
-タスク履歴情報（フェーズごとの作業時間、担当者、開始日時）を加えたタスク一覧をCSV形式で出力します。
-最初に教師付を開始した日時や担当者を調べるときなどに利用できます。
-
-
-```
-# prj1のタスク全件ファイル、タスク履歴全件ファイルをダウンロードして、タスク一覧のCSVを出力する
-$ annofabcli task list_added_task_history --project_id prj1 --output task.csv
-
-# prj1のタスク全件ファイルの最新版をダウンロードして、タスク一覧のCSVを出力する。タスク履歴全件ファイルはWebAPIの都合上最新化できません。
-$ annofabcli task list_added_task_history --project_id prj1 --output task.csv --latest
-
-# タスク全件ファイルJSON、タスク履歴全件ファイルJSONを参照して、タスク一覧のCSVを出力する
-$ annofabcli task list_added_task_history --project_id prj1 --output task.csv --task_json task.json --task_history_json task_history.json
-```
-
-### task list_task_history
-タスク履歴の一覧を出力します。
-
-
-```
-# prj1の全タスクのタスク履歴の一覧を、CSV形式で出力する
-$ annofabcli task list_task_history --project_id prj1 --output task_history.csv
-
-```
-
-
-### task list_with_json
-https://annofab-cli.readthedocs.io/ja/latest/command_reference/task/list_with_json.html 参照
-
-
-
-
-
-### task put
-https://annofab-cli.readthedocs.io/ja/latest/command_reference/task/put.html 参照
-
-
-### task reject
-https://annofab-cli.readthedocs.io/ja/latest/command_reference/task/reject.html 参照
-
-
-
-
-
-### task update_metadata
-https://annofab-cli.readthedocs.io/ja/latest/command_reference/task/update_metadata.html 参照
+### task
+https://annofab-cli.readthedocs.io/ja/latest/command_reference/task/index.html 参照
 
 
 
