@@ -1,0 +1,3 @@
+project_id,organization_id,input_data_id,input_data_set_id,supplementary_data_id,supplementary_data_name,supplementary_data_path,url,etag,supplementary_data_type,supplementary_data_number,updated_datetime
+prj1,org1,input1,12345678-abcd-1234-abcd-1234abcd5678,supplementary1,test-supplementary1,s3://af-production-input/organizations/…,https://annofab.com/organizations/…,…,image,1,2021-01-04T22:02:36.33+09:00
+prj1,org1,input1,12345678-abcd-1234-abcd-1234abcd5678,supplementary2,test-supplementary2,s3://af-production-input/organizations/…,https://annofab.com/organizations/…,…,image,1,2021-01-04T22:02:36.33+09:00
