@@ -16,4 +16,9 @@ Available Commands
    :titlesonly:
 
    delete
+   list
+   list_merged_task
+   list_with_json
+   put
+   update_metadata
 
