@@ -99,10 +99,10 @@ class DeleteSupplementaryDataMain(AbstracCommandCinfirmInterface):
             str(csv_path),
             sep=",",
             header=None,
-            names=(
+            names=[
                 "input_data_id",
                 "supplementary_data_id",
-            ),
+            ],
         )
         input_data_dict = defaultdict(list)
         for input_data_id, supplementary_data_id in zip(df["input_data_id"], df["supplementary_data_id"]):
@@ -114,7 +114,7 @@ class DeleteSupplementaryDataMain(AbstracCommandCinfirmInterface):
                 deleted_count += self.delete_supplementary_data_list_for_input_data(
                     project_id, input_data_id, supplementary_data_id_list
                 )
-            except Exception as e:
+            except Exception as e:  # pylint: disable=broad-except
                 logger.warning(e)
                 logger.warning(f"入力データ(input_data_id={input_data_id})配下の補助情報の削除に失敗しました。")
 

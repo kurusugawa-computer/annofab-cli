@@ -603,25 +603,6 @@ class TestStatistics:
         )
 
 
-class TestSupplementary:
-    def test_list_supplementary(self):
-        main(["supplementary", "list", "--project_id", project_id, "--input_data_id", "foo"])
-
-    def test_put_supplementar(self):
-        main(
-            [
-                "supplementary",
-                "put",
-                "--project_id",
-                project_id,
-                "--csv",
-                str(data_path / "supplementary.csv"),
-                "--overwrite",
-                "--yes",
-            ]
-        )
-
-
 class TestTask:
     command_name = "task"
 
