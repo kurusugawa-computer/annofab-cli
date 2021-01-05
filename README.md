@@ -78,72 +78,8 @@ Enter AnnoFab Password:
 $ docker run -it -e ANNOFAB_USER_ID=XXXX -e ANNOFAB_PASSWORD=YYYYY annofab-cli project diff prj1 prj2
 ```
 
-# 機能一覧
-
-|コマンド| サブコマンド                  | 内容                                                                                                     |必要なロール|
-|----|-------------------------------|----------------------------------------------------------------------------------------------------------|------------|
-|annotation| change_attributes |アノテーションの属性を変更します。                              |オーナ|
-|annotation| delete | アノテーションを削除します。                              |オーナ|
-|annotation| dump | アノテーション情報をファイルに保存します。                             |-|
-|annotation| list_count | task_idまたはinput_data_idで集約したアノテーションの個数を出力します                              |-|
-|annotation| import | アノテーションをインポートします。                             |オーナ|
-|annotation| restore |'annotation dump'コマンドで保存したファイルから、アノテーション情報をリストアします。                            |オーナ|
-|annotation_specs| history | アノテーション仕様の履歴一覧を出力します。                              |-|
-|annotation_specs| list_label | アノテーション仕様のラベル情報を出力します。                              |-|
-|annotation_specs| list_label_color             | アノテーション仕様から、label_nameとRGBを対応付けたJSONを出力します。                                      |-|
-|filesystem| write_annotation_image        | アノテーションzip、またはそれを展開したディレクトリから、アノテーションの画像（Semantic Segmentation用）を生成します。 |-|
-|filesystem| filter_annotation        | アノテーションzipから特定のファイルを絞り込んで、zip展開します。 |-|
-|input_data|delete             | 入力データを削除します。                                                            |オーナ|
-|input_data|list             | 入力データ一覧を出力します。                                                            |-|
-|input_data| list_merged_task | タスク一覧と結合した入力データ一覧のCSVを出力します。                                                            |オーナ/アノテーションユーザ|
-|input_data|list_with_json             | 入力データ全件ファイルから一覧を出力します。                                                            |-|
-|input_data|put             | 入力データを登録します。                                                            |オーナ|
-|input_data|update_metadata             | 入力データのメタデータを更新します。                                                            |オーナ|
-|inspection_comment| list | 検査コメントを出力します。                               |-|
-|inspection_comment| list_with_json | 検査コメント全件ファイルから一覧を出力します。                               |-|
-|inspection_comment| list_unprocessed | 未処置の検査コメントを出力します。                               |-|
-|instruction| copy             | 作業ガイドをコピーします。                                                         |チェッカー/オーナ|
-|instruction| upload             | HTMLファイルを作業ガイドとして登録します。                                                           |チェッカー/オーナ|
-|job|delete             | ジョブを削除します。                                                            |オーナ|
-|job|list             | ジョブ一覧を出力します。                                                            |-|
-|job|list_last             | 複数のプロジェクトに対して、最新のジョブを出力します。                                                            |-|
-|job|wait             | ジョブの終了を待ちます。                                                          |オーナ|
-|labor|list_worktime_by_user | ユーザごとに作業予定時間、作業実績時間を出力します。                                                          ||
-|organization_member|list             | 組織メンバ一覧を出力します。                                                            |-|
-|project| change_status                 | プロジェクトのステータスを変更します。                                                                          |オーナ|
-|project| copy                 | プロジェクトをコピーします。                                                                           |オーナ and 組織管理者/組織オーナ|
-|project| diff                 | プロジェクト間の差分を表示します。                                                                           |チェッカー/オーナ|
-|project| download                 | タスクや検査コメント、アノテーションなどをダウンロードします。                                                                           |オーナ|
-|project| list                 | プロジェクト一覧を出力します。                                                                          |-|
-|project| update_annotation_zip                 | アノテーションzipを更新します。                                                                         |オーナ/アノテーションユーザ|
-|project_member| change                  | プロジェクトメンバを変更します。|オーナ|
-|project_member| copy                  | プロジェクトメンバをコピーします。|オーナ(コピー先プロジェクトに対して)|
-|project_member| delete                  | 複数のプロジェクトからユーザを脱退させます。                                                                 |オーナ|
-|project_member| invite                  | 複数のプロジェクトに、ユーザを招待します。                                                                 |オーナ|
-|project_member| list                  | プロジェクトメンバ一覧を出力します。                                                                |-|
-|project_member| put                  | CSVに記載されたユーザを、プロジェクトメンバとして登録します。|オーナ|
-|statistics| list_annotation_count             | 各ラベル、各属性値のアノテーション数を、タスクごと/入力データごとに出力します。                                                   |-|
-|statistics| list_by_date_user             | タスク数や作業時間などの情報を、日ごとユーザごとに出力します。                                                   |オーナ/アノテーションユーザ|
-|statistics| list_cumulative_labor_time             |       タスク進捗状況を出力します。                                                    |-|
-|statistics| list_task_progress             | タスクフェーズ別の累積作業時間を出力します。                                                            |-|
-|statistics|summarize_task_count|タスクのフェーズ、ステータス、ステップごとにタスク数を出力します。|オーナ/アノテーションユーザ|
-|statistics|summarize_task_count_by_task_id|task_idのプレフィックスごとに、タスク数を出力します。|オーナ/アノテーションユーザ|
-|statistics|summarize_task_count_by_user|ユーザごとに担当しているタスク数を出力します。|オーナ/アノテーションユーザ|
-|statistics| visualize             | 統計情報を可視化します。                                                            |オーナ/アノテーションユーザ|
-|supplementary| list             | 補助情報を出力します。                                                           |オーナ/アノテーションユーザ|
-|supplementary| put              | 補助情報を登録します。                                                           |オーナ|
-|task| cancel_acceptance             | 受け入れ完了タスクを、受け入れ取り消し状態にします。                                                         |オーナ|
-|task| change_operator             | タスクの担当者を変更します。                                                             |チェッカー/オーナ|
-|task| complete                | タスクを完了状態にして次のフェーズに進めます（教師付の提出、検査/受入の合格）。                                  |チェッカー/オーナ|
-|task| delete                | タスクを削除します。                                 |オーナ|
-|task|list             | タスク一覧を出力します。                                                            |-|
-|task|list_added_task_history             | タスク履歴情報を加えたタスク一覧を出力します。|オーナ/アノテーションユーザ|
-|task|list_task_history             | タスク履歴の一覧を出力します。|-|
-|task| list_with_json | タスク全件ファイルから一覧を出力します。                               |-|
-|task| put                | タスクを作成します。                                 |オーナ|
-|task| reject                  | タスクを強制的に差し戻します。                                                                 |オーナ|
-|task| update_metadata                  | タスクのメタデータを更新します。                                                                |オーナ/アノテーションユーザ|
-|task_history| list_with_json | タスク履歴全件ファイルから一覧を出力します。                               |-|
+# コマンド一覧
+https://annofab-cli.readthedocs.io/ja/latest/command_reference/index.html
 
 # Usage
 
@@ -1015,60 +951,8 @@ $ annofabcli statistics visualize --project_id prj1 prj2 --output_dir /tmp/outpu
 ```
 
 
-### supplementary list
-補助情報一覧を出力します。
-
-```
-# input_data_idが"id1", "id2"に紐づく補助情報一覧を出力します。
-$ annofabcli supplementary list --project_id prj1 --input_data_id id1 id2
-```
-
-### supplementary put
-CSVに記載された補助情報を登録します。
-
-supplementary_data_id（省略時は supplementary_data_number）が一致する補助情報が既に存在する場合は、スキップまたは上書きします。
-
-* ヘッダ行なし
-* カンマ区切り
-* 1列目: input_data_id. 必須
-* 2列目: supplementary_data_number. 必須
-* 3列目: supplementary_data_name. 必須
-* 4列目: supplementary_data_path. 必須. 先頭が`file://`の場合、ローカルのファイルを入力データとしてアップロードします。
-* 5列目: supplementary_data_id. 省略可能。省略した場合UUIDv4になる。
-* 6列目: supplementary_data_type. 省略可能. `image` or `text`
-
-CSVのサンプル（`supplementary_data.csv`）です。
-
-```
-input1,1,data1-1,s3://example.com/data1,id1,
-input1,2,data1-2,s3://example.com/data2,id2,image
-input1,3,data1-3,s3://example.com/data3,id3,text
-input2,1,data2-1,https://example.com/data4,,
-input2,2,data2-2,file://sample.jpg,,
-input2,3,data2-3,file:///tmp/sample.jpg,,
-```
-
-
-```
-# supplementary_data.csvに記載されている補助情報を登録する。すでに補助情報が存在する場合はスキップする。
-$ annofabcli supplementary put --project_id prj1 --csv supplementary_data.csv
-
-# supplementary_data.csvに記載されている補助情報を登録する。すでに補助情報が存在する場合は上書きする。
-$ annofabcli supplementary put --project_id prj1 --csv supplementary_data.csv --overwrite
-
-# supplementary_data.csvに記載されている補助情報を、並列処理で登録する（`--yes`オプションが必要）。
-$ annofabcli supplementary put --project_id prj1 --csv supplementary_data.csv --parallelism 2 --yes
-```
-
-
-`supplementary list`コマンドを使えば、プロジェクトに既に登録されている補助情報からCSVを作成できます。
-
-```
-$ annofabcli supplementary list --project_id prj1 --input_data_id id1 id2 \
- --format csv --output supplementary_data.csv \
- --csv_format '{"columns": ["input_data_id", "supplementary_data_number", "supplementary_data_name", "supplementary_data_path", "supplementary_data_id", "supplementary_data_type"], "header":false}' 
-```
-
+### supplementary
+https://annofab-cli.readthedocs.io/ja/latest/command_reference/supplementary/index.html 参照
 
 
 ### task
