@@ -3,7 +3,6 @@ import os
 from pathlib import Path
 
 import annofabapi
-import pytest
 
 from annofabcli.__main__ import main
 
@@ -601,7 +600,6 @@ class TestStatistics:
                 out_file,
             ]
         )
-
 
 
 class TestTaskHistory:

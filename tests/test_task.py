@@ -3,8 +3,9 @@ import os
 from pathlib import Path
 
 import annofabapi
-from annofabcli.__main__ import main
 import pytest
+
+from annofabcli.__main__ import main
 from annofabcli.task.change_operator import ChangeOperatorMain
 from tests.utils_for_test import set_logger
 
@@ -42,7 +43,6 @@ class TestChangeOperator:
             project_id=project_id, task_id_list=[task_id], new_user_id=service.api.login_user_id
         )
         print(actual)
-
 
 
 class TestCommandLine:
@@ -198,17 +198,7 @@ class TestCommandLine:
     @pytest.mark.submitting_job
     def test_put_task(self):
         csv_file = str(data_dir / "put_task.csv")
-        main(
-            [
-                self.command_name,
-                "put",
-                "--project_id",
-                project_id,
-                "--csv",
-                csv_file,
-                "--wait"
-            ]
-        )
+        main([self.command_name, "put", "--project_id", project_id, "--csv", csv_file, "--wait"])
 
     def test_complete_task(self):
         main(
