@@ -396,7 +396,7 @@ def parse_args(parser: argparse.ArgumentParser):
 def add_parser(subparsers: argparse._SubParsersAction):
     subcommand_name = "put"
     subcommand_help = "補助情報を登録します。"
-    description = "CSVに記載された補助情報を登録します。"
+    description = "補助情報を登録します。"
     epilog = "オーナロールを持つユーザで実行してください。"
 
     parser = annofabcli.common.cli.add_parser(subparsers, subcommand_name, subcommand_help, description, epilog=epilog)

@@ -18,14 +18,17 @@ Examples
 
 CSVのフォーマットは以下の通りです。
 
+* カンマ区切り
+* ヘッダ行なし
+
 
 .. csv-table::
    :header: 列番号,名前,必須,備考
 
     1列目,input_data_name,Yes,
-    2列目,input_data_path,Yes,file://の場合、ローカルのファイルを入力データに使用します。
+    2列目,input_data_path,Yes,先頭が ``file://`` の場合、ローカルのファイルを入力データに使用します。
     3列目,input_data_id,No,省略した場合はUUID(v4)になります。
-    4列目,sign_required,No,trueまたはfalseを指定してください。省略した場合は、nullです。
+    4列目,sign_required,No,``true`` または ``false`` を指定してください。省略した場合は ``null`` です。
 
 
 以下はCSVファイルのサンプルです。
@@ -49,7 +52,8 @@ CSVのフォーマットは以下の通りです。
     $ annofabcli input_data put --project_id prj1 --csv input_data.csv
 
 
-デフォルトでは、すでに入力データが存在する場合はスキップします。入力データを上書きする場合は、 ``--overwrite`` を指定してください。
+input_data_idが一致する入力データが既に存在する場合、デフォルトではスキップします。入力データを上書きする場合は、 ``--overwrite`` を指定してください。
+
 
 .. code-block::
     
