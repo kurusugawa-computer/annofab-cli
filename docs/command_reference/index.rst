@@ -11,6 +11,7 @@ Command Reference
    filesystem/index
    input_data/index
    task/index
+   task_history/index
    project/index
    project_member/index
    supplementary/index

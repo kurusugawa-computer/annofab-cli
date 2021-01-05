@@ -1,0 +1,4 @@
+project_id,task_id,task_history_id,started_datetime,ended_datetime,accumulated_labor_time_milliseconds,phase,phase_stage,account_id,user_id,username,worktime_hour
+pjr1,task1,fdae87b7-0fdb-46d3-8e31-cb030eb001f7,2020-12-09T02:17:42.257+09:00,,PT0S,annotation,1,,,,0
+prj1,task1,8c68ca72-2e50-4a98-9408-1e008525f550,2020-12-09T17:20:20.826+09:00,2020-12-09T17:20:30.137+09:00,PT9.311S,annotation,1,12345678-abcd-1234-abcd-1234abcd5678,user1,username1,0.002586388888889
+prj1,task2,9b265f61-3a29-4998-b586-e38e7493d786,2020-12-09T02:17:42.257+09:00,,PT0S,annotation,1,,,,0
