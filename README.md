@@ -551,8 +551,8 @@ $ annofabcli filesystem filter_annotation --annotation annotation.zip \
 ```
 
 
-### filesystem write_annotation_image
-https://annofab-cli.readthedocs.io/ja/latest/command_reference/filesystem/write_annotation_image.html 参照
+### filesystem
+https://annofab-cli.readthedocs.io/ja/latest/command_reference/filesystem/index.html 参照
 
 ### input_data 
 https://annofab-cli.readthedocs.io/ja/latest/command_reference/input_data/index.html 参照

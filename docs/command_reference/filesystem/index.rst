@@ -16,5 +16,6 @@ Available Commands
    :maxdepth: 1
    :titlesonly:
 
+   filter_annotation
    write_annotation_image
 
