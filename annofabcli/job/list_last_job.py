@@ -148,9 +148,12 @@ def parse_args(parser: argparse.ArgumentParser):
         help="対象のプロジェクトのproject_idを指定してください。`file://`を先頭に付けると、一覧が記載されたファイルを指定できます。",
     )
 
-    list_group.add_argument("-org", "--organization", type=str,
-                            help="組織配下のすべてのプロジェクトのジョブを出力したい場合は、組織名を指定してください。"
-                                 "自分が所属している進行中のプロジェクトが対象になります。")
+    list_group.add_argument(
+        "-org",
+        "--organization",
+        type=str,
+        help="組織配下のすべてのプロジェクトのジョブを出力したい場合は、組織名を指定してください。" "自分が所属している進行中のプロジェクトが対象になります。",
+    )
 
     parser.add_argument(
         "--add_details",
