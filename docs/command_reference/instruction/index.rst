@@ -1,11 +1,10 @@
 ==================================================
-filesystem
+instruction
 ==================================================
 
 Description
 =================================
-ファイル操作関係（Web APIにアクセスしない）のコマンドです。
-
+作業ガイド関係のコマンドです。
 
 
 Available Commands
@@ -16,6 +15,5 @@ Available Commands
    :maxdepth: 1
    :titlesonly:
 
-   filter_annotation
-   write_annotation_image
-
+   copy
+   upload

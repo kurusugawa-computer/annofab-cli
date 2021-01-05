@@ -41,4 +41,4 @@ Examples
 See also
 =================================
 * `annofabcli project download <../project/download.html>`_
-* `annofabcli task_history list <../task/list.html>`_
+* `annofabcli task_history list <../task_history/list.html>`_

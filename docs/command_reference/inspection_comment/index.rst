@@ -1,11 +1,10 @@
 ==================================================
-filesystem
+inspection_comment
 ==================================================
 
 Description
 =================================
-ファイル操作関係（Web APIにアクセスしない）のコマンドです。
-
+検査コメント関係のコマンドです。
 
 
 Available Commands
@@ -16,6 +15,5 @@ Available Commands
    :maxdepth: 1
    :titlesonly:
 
-   filter_annotation
-   write_annotation_image
-
+   list
+   list_with_json

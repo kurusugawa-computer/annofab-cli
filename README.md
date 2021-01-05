@@ -16,7 +16,9 @@ AnnoFabのCLI(Command Line Interface)ツールです。
 
 ## 廃止予定
 * 2020-04-01以降：`annofabcli filesystem write_annotation_image`コマンドの`--metadata_key_of_image_size`を廃止します。入力データから画像サイズを取得できるようになったためです。
-   
+* 2020-04-01以降：`annofabcli inspection_comment list_unprocessed`コマンドを廃止します。`inspection_comment list`コマンドを組み合わせて同様のことが実現できるからです。
+
+
 
 # Requirements
 * Python 3.7.1+
@@ -551,8 +553,8 @@ $ annofabcli filesystem filter_annotation --annotation annotation.zip \
 ```
 
 
-### filesystem write_annotation_image
-https://annofab-cli.readthedocs.io/ja/latest/command_reference/filesystem/write_annotation_image.html 参照
+### filesystem
+https://annofab-cli.readthedocs.io/ja/latest/command_reference/filesystem/index.html 参照
 
 ### input_data 
 https://annofab-cli.readthedocs.io/ja/latest/command_reference/input_data/index.html 参照
@@ -621,55 +623,8 @@ $ annofabcli inspection_comment list_unprocessed --project_id prj1 --inspection_
 ```
 
 
-### instruction copy
-作業ガイドを別のプロジェクトにコピーします。
-
-
-```
-# prj1の作業ガイドをprj2にコピーする
-$ annofabcli instruction copy prj1 prj2
-```
-
-
-
-### instruction upload
-HTMLファイルを作業ガイドとして登録します。
-img要素のsrc属性がローカルの画像を参照している場合（http, https, dataスキーマが付与されていない）、画像もアップロードします。
-
-`instruction.html`の中身。
-
-```html
-<html>
-<head></head>
-<body>
-作業ガイドのサンプル
-<img src="lena.png">
-</body>
-</html>
-```
-
-```
-$ annofabcli instruction upload --project_id prj1 --html instruction.html
-```
-
-
-#### Confluenceのページを作業ガイド用にHTMLとして保存する場合
-1. Confluenceのエクスポート機能で、ページをエクスポートする。
-    * HTMLファイルと添付画像が含まれたzipファイルをダウンロードする。
-2. エクスポートしたHTMLのスタイルを、style属性に反映させる。AnnoFabの作業ガイドには、スタイルシートを登録できないため。
-    1. エクスポートしたファイルをChromeで開く
-    2. Chrome開発ツールのConfoleタブで以下のJavaScriptを実行して、全要素のborder, color, backgroundスタイルを、style属性に反映させる
-
-        ```js
-        elms = document.querySelectorAll("body *");
-        for (let e of elms) {
-            s = window.getComputedStyle(e);
-            e.style.background = s.background;
-            e.style.color = s.color;
-            e.style.border = s.border;
-        }
-        ```
-    3. Chrome開発ツールのElementタブで、html要素をコピー(Copy outerHTML)して、HTMLファイルを上書きする
+### instruction
+https://annofab-cli.readthedocs.io/ja/latest/command_reference/instruction/index.html 参照
 
 
 ### job
@@ -677,14 +632,6 @@ https://annofab-cli.readthedocs.io/ja/latest/command_reference/job/index.html �
 
 
 
-
-### job wait
-ジョブの終了を待ちます。
-
-```
-# アノテーション更新のジョブが終了するまで待ちます。
-$ annofabcli job wait --project_id prj1 --job_type gen-annotation 
-```
 
 
 ### labor list_worktime_by_user
