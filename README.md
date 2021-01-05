@@ -621,55 +621,8 @@ $ annofabcli inspection_comment list_unprocessed --project_id prj1 --inspection_
 ```
 
 
-### instruction copy
-作業ガイドを別のプロジェクトにコピーします。
-
-
-```
-# prj1の作業ガイドをprj2にコピーする
-$ annofabcli instruction copy prj1 prj2
-```
-
-
-
-### instruction upload
-HTMLファイルを作業ガイドとして登録します。
-img要素のsrc属性がローカルの画像を参照している場合（http, https, dataスキーマが付与されていない）、画像もアップロードします。
-
-`instruction.html`の中身。
-
-```html
-<html>
-<head></head>
-<body>
-作業ガイドのサンプル
-<img src="lena.png">
-</body>
-</html>
-```
-
-```
-$ annofabcli instruction upload --project_id prj1 --html instruction.html
-```
-
-
-#### Confluenceのページを作業ガイド用にHTMLとして保存する場合
-1. Confluenceのエクスポート機能で、ページをエクスポートする。
-    * HTMLファイルと添付画像が含まれたzipファイルをダウンロードする。
-2. エクスポートしたHTMLのスタイルを、style属性に反映させる。AnnoFabの作業ガイドには、スタイルシートを登録できないため。
-    1. エクスポートしたファイルをChromeで開く
-    2. Chrome開発ツールのConfoleタブで以下のJavaScriptを実行して、全要素のborder, color, backgroundスタイルを、style属性に反映させる
-
-        ```js
-        elms = document.querySelectorAll("body *");
-        for (let e of elms) {
-            s = window.getComputedStyle(e);
-            e.style.background = s.background;
-            e.style.color = s.color;
-            e.style.border = s.border;
-        }
-        ```
-    3. Chrome開発ツールのElementタブで、html要素をコピー(Copy outerHTML)して、HTMLファイルを上書きする
+### instruction
+https://annofab-cli.readthedocs.io/ja/latest/command_reference/instruction/index.html 参照
 
 
 ### job
