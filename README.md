@@ -743,15 +743,6 @@ $ annofabcli labor list_worktime_by_user --project_id prj1 prj2 --user_id file:/
 ```
 
 
-### organization_member list
-組織メンバ一覧を出力します。
-
-```
-# 組織org1の組織メンバ一覧を出力します。
-$ annofabcli organization_member list --organization org1
-
-```
-
 
 
 ### project
