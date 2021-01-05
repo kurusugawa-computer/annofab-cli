@@ -10,6 +10,7 @@ Command Reference
 
    filesystem/index
    input_data/index
+   inspection_comment/index
    instruction/index
    job/index
    organization_member/index

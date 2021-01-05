@@ -1,0 +1,3 @@
+project_id,task_id,input_data_id,inspection_id,phase,phase_stage,commenter_account_id,annotation_id,label_id,data,parent_inspection_id,phrases,comment,status,created_datetime,updated_datetime,commenter_user_id,commenter_username,phrase_names_en,phrase_names_ja,label_name_en,label_name_ja,input_data_index
+prj1,task1,input1,inspection1,annotation,1,account1,,,"{'x': 0, 'y': 0, '_type': 'Point'}",,[],Test-comment,no_correction_required,2020-09-09T15:23:12.802+09:00,2020-09-09T15:23:13.18+09:00,user1,username1,[],[],,,0
+prj1,task1,input1,inspection2,annotation,1,account1,,,"{'x': 0, 'y': 0, '_type': 'Point'}",,[],Test-comment,no_correction_required,2020-09-09T15:23:12.802+09:00,2020-09-09T15:23:13.18+09:00,user1,username1,[],[],,,0

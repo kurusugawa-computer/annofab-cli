@@ -103,9 +103,9 @@ def main(args: argparse.Namespace):
 def add_parser(subparsers: argparse._SubParsersAction):
     subcommand_name = "list_unprocessed"
 
-    subcommand_help = "未処置の検査コメント一覧を出力します。"
+    subcommand_help = "未処置の検査コメント一覧を出力します(廃止予定)"
 
-    description = "未処置の検査コメント一覧を出力します。"
+    description = "未処置の検査コメント一覧を出力します(廃止予定)"
 
     parser = annofabcli.common.cli.add_parser(subparsers, subcommand_name, subcommand_help, description)
     parse_args(parser)
