@@ -16,3 +16,4 @@ Available Commands
    :titlesonly:
 
    list
+   list_with_json
