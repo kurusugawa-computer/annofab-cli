@@ -41,8 +41,12 @@ class ListTaskCreationHistory(AbstractCommandLineInterface):
         args = self.args
         main_obj = ListTaskCreationHistoryMain(self.service)
         data_list = main_obj.get_data_list(args.project_id)
-        df = pandas.DataFrame(data_list)
-        self.print_according_to_format(df)
+
+        if args.format == FormatArgument.CSV.value:
+            df = pandas.DataFrame(data_list)
+            self.print_csv(df)
+        else:
+            self.print_according_to_format(data_list)
 
 
 def main(args):

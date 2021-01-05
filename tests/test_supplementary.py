@@ -24,7 +24,7 @@ task_id = annofab_config["task_id"]
 service = annofabapi.build()
 
 
-class TestSupplementary:
+class TestCommandLine:
     def test_put_supplementar(self):
         main(
             [

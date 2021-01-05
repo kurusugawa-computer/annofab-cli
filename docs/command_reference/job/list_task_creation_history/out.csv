@@ -1,0 +1,3 @@
+project_id,job_id,job_status,generated_task_count,created_datetime,updated_datetime,task_generated_rule
+prj1,job1,failed,,2021-01-05T13:58:43.117+09:00,2021-01-05T14:00:02.953+09:00,"{'task_id_prefix': '20201231', 'input_data_name_prefix': None, '_type': 'ByDirectory'}"
+prj1,job2,succeeded,1,2020-12-30T12:56:37.255+09:00,2020-12-30T12:57:47.18+09:00,"{'task_id_prefix': '20201230', 'input_data_name_prefix': None, '_type': 'ByDirectory'}"

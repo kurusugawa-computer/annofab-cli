@@ -1,0 +1,3 @@
+organization_id,organization_name,account_id,user_id,username,biography,role,status,created_datetime,updated_datetime
+org1,orgname1,12345678-abcd-1234-abcd-1234abcd5678,user1,username1,,owner,active,2018-06-20T10:13:43.798+09:00,2018-09-13T18:06:46.598+09:00
+org1,orgname1,12345678-abcd-1234-abcd-1234abcd5678,user2,username2,,contributor,active,2019-11-19T14:16:40.708+09:00,2019-11-19T15:38:29.265+09:00

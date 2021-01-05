@@ -157,8 +157,8 @@ def parse_args(parser: argparse.ArgumentParser):
 
 def add_parser(subparsers: argparse._SubParsersAction):
     subcommand_name = "list_with_json"
-    subcommand_help = "タスク履歴の一覧を出力します。"
-    description = "タスク履歴の一覧を出力します。"
+    subcommand_help = "タスク履歴全件ファイルからタスク履歴の一覧を出力します。"
+    description = "タスク履歴全件ファイルからタスク履歴の一覧を出力します。"
 
     parser = annofabcli.common.cli.add_parser(subparsers, subcommand_name, subcommand_help, description)
     parse_args(parser)

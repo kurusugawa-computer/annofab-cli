@@ -1,10 +1,15 @@
 import argparse
 import logging
+from typing import Any, Dict, List
+
+import pandas
+import requests
 
 import annofabcli
 from annofabcli import AnnofabApiFacade
 from annofabcli.common.cli import AbstractCommandLineInterface, ArgumentParser, build_annofabapi_resource_and_login
 from annofabcli.common.enums import FormatArgument
+from annofabcli.common.utils import get_columns_with_priority
 
 logger = logging.getLogger(__name__)
 
@@ -14,21 +19,46 @@ class ListOrganizationMember(AbstractCommandLineInterface):
     組織メンバ一覧を表示する。
     """
 
-    def print_organization_member_list(self, organization_name: str):
-        """
-        組織メンバ一覧を出力する
-        """
+    PRIOR_COLUMNS = [
+        "organization_id",
+        "organization_name",
+        "account_id",
+        "user_id",
+        "username",
+        "biography",
+        "role",
+        "status",
+    ]
 
+    def get_organization_member_list(self, organization_name: str) -> List[Dict[str, Any]]:
         organization_member_list = self.service.wrapper.get_all_organization_members(organization_name)
         logger.debug(f"組織メンバ一覧の件数: {len(organization_member_list)}")
         if len(organization_member_list) == 10000:
             logger.warning("組織メンバ一覧は10,000件で打ち切られている可能性があります。")
 
-        self.print_according_to_format(organization_member_list)
+        for organization_member in organization_member_list:
+            organization_member["organization_name"] = organization_name
+        return organization_member_list
 
     def main(self):
         args = self.args
-        self.print_organization_member_list(args.organization)
+        organization_name_list = annofabcli.common.cli.get_list_from_args(args.organization)
+
+        organization_member_list = []
+        for organization_name in organization_name_list:
+            try:
+                organization_member_list.extend(self.get_organization_member_list(organization_name))
+            except requests.HTTPError as e:
+                logger.warning(e)
+                logger.warning(f"{organization_name} の組織メンバを取得できませんでした。")
+                continue
+
+        if args.format == FormatArgument.CSV.value:
+            df = pandas.DataFrame(organization_member_list)
+            columns = get_columns_with_priority(df, prior_columns=self.PRIOR_COLUMNS)
+            self.print_csv(df[columns])
+        else:
+            self.print_according_to_format(organization_member_list)
 
 
 def main(args):
@@ -40,7 +70,14 @@ def main(args):
 def parse_args(parser: argparse.ArgumentParser):
     argument_parser = ArgumentParser(parser)
 
-    parser.add_argument("-org", "--organization", required=True, type=str, help="対象の組織名を指定してください。")
+    parser.add_argument(
+        "-org",
+        "--organization",
+        required=True,
+        type=str,
+        nargs="+",
+        help="出力対象の組織名を指定してください。`file://`を先頭に付けると、組織名の一覧が記載されたファイルを指定できます。",
+    )
 
     argument_parser.add_format(
         choices=[FormatArgument.CSV, FormatArgument.JSON, FormatArgument.PRETTY_JSON, FormatArgument.USER_ID_LIST],
