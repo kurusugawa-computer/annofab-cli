@@ -2,66 +2,32 @@ import argparse
 import logging
 import sys
 from collections import defaultdict
-from dataclasses import dataclass
 from pathlib import Path
-from typing import List, Optional
+from typing import Any, Dict, List, Optional
 
 import annofabapi
 import pandas
 import requests
 from annofabapi.models import ProjectMemberRole
-from dataclasses_json import DataClassJsonMixin
 from more_itertools import first_true
 
 import annofabcli
 from annofabcli import AnnofabApiFacade
-from annofabcli.common.cli import AbstractCommandLineInterface, ArgumentParser, build_annofabapi_resource_and_login
+from annofabcli.common.cli import (
+    AbstracCommandCinfirmInterface,
+    AbstractCommandLineInterface,
+    ArgumentParser,
+    build_annofabapi_resource_and_login,
+)
 
 logger = logging.getLogger(__name__)
 
 
-@dataclass
-class CsvSupplementaryData(DataClassJsonMixin):
-    """
-    CSVに記載されている補助情報
-    """
-
-    input_data_id: str
-    supplementary_data_number: int
-    supplementary_data_name: str
-    supplementary_data_path: str
-    supplementary_data_id: Optional[str]
-    supplementary_data_type: Optional[str]
-
-
-@dataclass
-class SupplementaryDataForPut:
-    """
-    putする補助情報
-    """
-
-    input_data_id: str
-    supplementary_data_id: str
-    supplementary_data_name: str
-    supplementary_data_path: str
-    supplementary_data_type: Optional[str]
-    supplementary_data_number: int
-    last_updated_datetime: Optional[str]
-
-
-class DeleteSupplementaryDataMain:
-    """
-    1個の補助情報を登録するためのクラス。multiprocessing.Pool対応。
-
-    Args:
-        service:
-        facade:
-        all_yes:
-    """
-
-    def __init__(self, service: annofabapi.Resource):
+class DeleteSupplementaryDataMain(AbstracCommandCinfirmInterface):
+    def __init__(self, service: annofabapi.Resource, all_yes: bool = False):
         self.service = service
         self.facade = AnnofabApiFacade(service)
+        AbstracCommandCinfirmInterface.__init__(self, all_yes)
 
     def delete_supplementary_data_list_for_input_data(
         self, project_id: str, input_data_id: str, supplementary_data_id_list: List[str]
@@ -78,6 +44,12 @@ class DeleteSupplementaryDataMain:
             削除した補助情報の個数
 
         """
+
+        def _get_supplementary_data_list(supplementary_data_id: str) -> Optional[Dict[str, Any]]:
+            return first_true(
+                supplementary_data_list, pred=lambda e: e["supplementary_data_id"] == supplementary_data_id
+            )
+
         input_data = self.service.wrapper.get_input_data_or_none(project_id, input_data_id)
         if input_data is None:
             logger.warning(f"input_data_id={input_data_id} の入力データは存在しないのでスキップします。")
@@ -87,12 +59,11 @@ class DeleteSupplementaryDataMain:
 
         deleted_count = 0
         for supplementary_data_id in supplementary_data_id_list:
-            supplementary_data = first_true(
-                supplementary_data_list, pred=lambda e, f=supplementary_data_id: e["supplementary_data_id"] == f
-            )
+            supplementary_data = _get_supplementary_data_list(supplementary_data_id)
             if supplementary_data is None:
                 logger.warning(
-                    f"input_data_id={input_data_id} の入力データに、supplementary_data_id={supplementary_data_id} の補助情報は存在しないのでスキップします。"
+                    f"input_data_id={input_data_id} の入力データに、"
+                    f"supplementary_data_id={supplementary_data_id} の補助情報は存在しないのでスキップします。"
                 )
                 continue
 
@@ -110,7 +81,8 @@ class DeleteSupplementaryDataMain:
                 logger.debug(
                     f"補助情報 supplementary_data_id={supplementary_data_id}, "
                     f"supplementary_data_name={supplementary_data['supplementary_data_name']} を削除しました。"
-                    f"(入力データ input_data_id={input_data_id}, input_data_name={input_data['input_data_name']} に紐付いている)"
+                    f"(入力データ input_data_id={input_data_id}, "
+                    f"input_data_name={input_data['input_data_name']} に紐付いている)"
                 )
                 deleted_count += 1
             except requests.HTTPError as e:
@@ -168,7 +140,7 @@ class DeleteSupplementaryData(AbstractCommandLineInterface):
         project_id = args.project_id
         super().validate_project(project_id, [ProjectMemberRole.OWNER])
 
-        main_obj = DeleteSupplementaryDataMain(self.service)
+        main_obj = DeleteSupplementaryDataMain(self.service, all_yes=args.yes)
 
         main_obj.delete_supplementary_data_list(project_id, csv_path=args.csv)
 
