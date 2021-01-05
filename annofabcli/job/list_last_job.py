@@ -104,8 +104,7 @@ class ListLastJob(AbstractCommandLineInterface):
         Returns:
 
         """
-        my_account, _ = self.service.api.get_my_account()
-        query_params = {"status": "active", "account_id": my_account["account_id"]}
+        query_params = {"status": "active", "account_id": self.service.api.account_id}
         project_list = self.service.wrapper.get_all_projects_of_organization(
             organization_name, query_params=query_params
         )
@@ -149,7 +148,9 @@ def parse_args(parser: argparse.ArgumentParser):
         help="対象のプロジェクトのproject_idを指定してください。`file://`を先頭に付けると、一覧が記載されたファイルを指定できます。",
     )
 
-    list_group.add_argument("-org", "--organization", type=str, help="組織配下のすべてのプロジェクトのジョブを出力したい場合は、組織名を指定してください。")
+    list_group.add_argument("-org", "--organization", type=str,
+                            help="組織配下のすべてのプロジェクトのジョブを出力したい場合は、組織名を指定してください。"
+                                 "自分が所属している進行中のプロジェクトが対象になります。")
 
     parser.add_argument(
         "--add_details",

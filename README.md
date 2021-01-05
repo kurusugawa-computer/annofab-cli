@@ -672,45 +672,10 @@ $ annofabcli instruction upload --project_id prj1 --html instruction.html
     3. Chrome開発ツールのElementタブで、html要素をコピー(Copy outerHTML)して、HTMLファイルを上書きする
 
 
-### job delete
-ジョブを削除します。
-削除対象のjob_idは`annofabcli job list`コマンドで確認できます。
-
-```
-# アノテーション更新のジョブを削除します。
-$ annofabcli job delete --project_id prj1 --job_type gen-annotation --job_id 12345678-abcd-1234-abcd-1234abcd5678
-```
+### job
+https://annofab-cli.readthedocs.io/ja/latest/command_reference/job/index.html 参照
 
 
-### job list
-ジョブ一覧を出力します。
-
-```
-# アノテーション更新のジョブ一覧を取得します（最新のジョブ1個のみ）
-$ annofabcli job list --project_id prj1 --job_type gen-annotation
-
-# タスク作成のジョブ一覧を取得します（最大200個）
-$ annofabcli job list --project_id prj1 --job_type gen-tasks --job_query '{"limit": 200}'
-
-```
-
-
-
-### job list_last
-複数のプロジェクトに対して、最新のジョブを出力します。
-
-```
-# prj1, prj2に対して、「アノテーション更新」のジョブを出力します。
-$ annofabcli job list_last --project_id prj1 prj2 --job_type gen-annotation
-
-# 組織 org1配下のプロジェクト（進行中で、自分自身が所属している）に対して、「タスク全件ファイル更新」のジョブを出力します。
-$ annofabcli job list_last --organization org1 --job_type gen-tasks-list
-
-# アノテーションの最終更新日時を、タスクの最終更新日時と比較して出力します。
-$ annofabcli job list_last --project_id prj1 --job_type gen-annotation --add_details \
- --csv_format '{"columns": ["project_id","project_title","job_status","updated_datetime", "task_last_updated_datetime"]}' 
-
-```
 
 
 ### job wait
