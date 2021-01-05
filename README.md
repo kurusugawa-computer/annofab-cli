@@ -678,14 +678,6 @@ https://annofab-cli.readthedocs.io/ja/latest/command_reference/job/index.html �
 
 
 
-### job wait
-ジョブの終了を待ちます。
-
-```
-# アノテーション更新のジョブが終了するまで待ちます。
-$ annofabcli job wait --project_id prj1 --job_type gen-annotation 
-```
-
 
 ### labor list_worktime_by_user
 
