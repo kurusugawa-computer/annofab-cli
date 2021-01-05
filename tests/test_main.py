@@ -326,23 +326,6 @@ class TestLabor:
         )
 
 
-class TestOrganizationMember:
-    def test_list_organization_member(self):
-        out_file = str(out_path / "organization_member.csv")
-        main(
-            [
-                "organization_member",
-                "list",
-                "--organization",
-                organization_name,
-                "--format",
-                "csv",
-                "--output",
-                out_file,
-            ]
-        )
-
-
 class TestProject:
     # def test_copy_project(self):
     #     # ジョブ登録されると、後続のテストが実行できなくなるので、存在しないプロジェクトIDを渡す
