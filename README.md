@@ -958,12 +958,5 @@ https://annofab-cli.readthedocs.io/ja/latest/command_reference/supplementary/ind
 ### task
 https://annofab-cli.readthedocs.io/ja/latest/command_reference/task/index.html 参照
 
-
-
-### task_history list_with_json
-タスク履歴全件ファイルから一覧を出力します。
-
-```
-# タスク履歴一覧全件を出力する
-$ annofabcli task_history list_with_json --project_id prj1 --output task_history.csv
-```
+### task_history
+https://annofab-cli.readthedocs.io/ja/latest/command_reference/task_history/index.html 参照
