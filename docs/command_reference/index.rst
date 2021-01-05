@@ -10,10 +10,11 @@ Command Reference
 
    filesystem/index
    input_data/index
-   task/index
-   task_history/index
+   job/index
    organization_member/index
    project/index
    project_member/index
    supplementary/index
+   task/index
+   task_history/index
 
