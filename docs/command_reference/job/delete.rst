@@ -16,7 +16,7 @@ Examples
 
 ``--job_type`` にジョブの種類、``--job_id`` にjob_idを指定してください。
 
-``job_type`` に指定できる値は `annofabcli job list <../job/list.html>`_ を参照してください。
+``--job_type`` に指定できる値は `annofabcli job list <../job/list.html>`_ を参照してください。
 job_idは `annofabcli job list <../job/list.html>`_ コマンドで確認できます。
 
 
