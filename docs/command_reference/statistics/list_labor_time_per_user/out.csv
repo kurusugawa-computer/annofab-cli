@@ -1,0 +1,4 @@
+date,account_id,user_id,username,biography,worktime_hour,tasks_completed,tasks_rejected
+2020-12-15,account1,user1,username1,,2.83446194444444,19,6
+2020-12-16,account1,user1,username1,,3.41693138888889,36,2
+2020-12-17,account2,user2,username2,,0.093625277777778,0,3
