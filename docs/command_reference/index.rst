@@ -9,6 +9,7 @@ Command Reference
    :titlesonly:
 
    annotation/index
+   annotation_specs/index
    filesystem/index
    input_data/index
    inspection_comment/index
