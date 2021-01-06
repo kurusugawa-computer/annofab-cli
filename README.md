@@ -241,155 +241,6 @@ $ annofabcli project_member put --project_id prj2 --csv members.csv
 
 ## コマンド一覧
 
-### annotation change_attributes
-アノテーションの属性を一括で変更します。ただし、作業中状態のタスクのアノテーションの属性は変更できません。間違えてアノテーション属性を変更したときに復元できるようにするため、`--backup`でバックアップ用のディレクトリを指定することを推奨します。
-
-```
-# task.txtに記載されたタスクのアノテーションの属性をを変更する
-# carラベルのoccludedチェックボックスがTRUEのアノテーションに対して、occludedチェックボックスをOFFにする
-$ annofabcli annotation change_attributes --project_id prj1 --task_id file://task.txt \ 
---annotation_query '{"label_name_en": "car", "attributes":[{"additional_data_definition_name_en": "occluded", "flag": true}]}' \
---attributes '[{"additional_data_definition_name_en": "occluded", "flag": false}]' \
---backup backup_dir
-
-
-```
-
-
-
-
-### annotation delete
-タスク配下のアノテーションを削除します。ただし、作業中/完了状態のタスク、または「過去に割り当てられていて現在の担当者が自分自身でない」タスクのアノテーションは削除できません。
-
-間違えてアノテーションを削除してしまっときに復元できるようにするため、`--backup`でバックアップ用のディレクトリを指定することを推奨します。バックアップ用ディレクトリには、 [annotation dump](#annotation-dump) コマンドの出力結果と同等のアノテーション情報が保存されます。
-アノテーションの復元には [annotation restore](#annotation-restore) コマンドを使用してください。
-
-
-```
-# task.txtに記載されたタスクのアノテーションを削除します。削除する前のアノテーション情報は、`backup`ディレクトリに保存します。
-$ annofabcli annotation delete --project_id prj1 --task_id file://task.txt --backup backup
-
-# carラベルのoccludedチェックボックスがTRUEのアノテーションを削除します
-$ annofabcli annotation delete --project_id prj1 --task_id file://task.txt \ 
---annotation_query '{"label_name_en": "car", "attributes":[{"additional_data_definition_name_en": "occluded", "flag": true}]}' \
---backup backup_dir
-```
-
-### annotation dump
-指定したタスク配下のアノテーション情報をディレクトリに保存します。アノテーションをバックアップしたいときなどに利用できます。
-アノテーションの復元には [annotation restore](#annotation-restore) コマンドを使用してください。
-
-
-```
-# task.txtに記載されたタスクのアノテーションを、`output`ディレクトリに保存します。
-$ annofabcli annotation dump --project_id prj1 --task_id file://task.txt --output backup-dir
-```
-
-バックアップディレクトリは、以下のディレクトリ構成です（Simpleアノテーション(v2)と同じディレクトリ構成）。
-`{input_data_id}.json`のフォーマットは、[getEditorAnnotation](https://annofab.com/docs/api/#operation/getEditorAnnotation) APIのレスポンスと同じです。
-
-```
-ルートディレクトリ/
-├── {task_id}/
-│   ├── {input_data_id}.json
-│   ├── {input_data_id}/
-│          ├── {annotation_id}............ 塗りつぶしPNG画像
-```
-
-
-
-### annotation import
-アノテーションをプロジェクトにインポートします。
-アノテーションのフォーマットは、Simpleアノテーション(v2)と同じフォルダ構成のzipファイルまたはディレクトリです。
-
-```
-ルートディレクトリ/
-├── {task_id}/
-│   ├── {input_data_id}.json
-│   ├── {input_data_id}/
-│          ├── {annotation_id}............ 塗りつぶしPNG画像
-```
-
-JSONフォーマットのサンプルをは以下の通りです。SimpleアノテーションのJSONフォーマットに対応しています。詳しくは https://annofab.com/docs/api/#section/Simple-Annotation-ZIP を参照してください。
-
-
-```json
-{
-    "details": [
-        {
-            "label": "car",
-            "data": {
-                "left_top": {
-                    "x": 878,
-                    "y": 566
-                },
-                "right_bottom": {
-                    "x": 1065,
-                    "y": 701
-                },
-                "_type": "BoundingBox"
-            },
-            "attributes": {}
-        },
-        {
-            "label": "road",
-            "data": {
-                "data_uri": "b803193f-827f-4755-8228-e2c67d0786d9",
-                "_type": "SegmentationV2"
-            },
-            "attributes": {}
-        },
-        {
-            "label": "weather",
-            "data": {
-                "_type": "Classification"
-            },
-            "attributes": {
-                "sunny": true
-            }
-        }
-    ]
-}
-```
-
-以下のように`annotation_id`が指定されている場合、`annotation_id`もインポートされます。
-
-
-```json
-{
-    "details": [
-        {
-            "label": "car",
-            "annotation_id": "12345678-abcd-1234-abcd-1234abcd5678",
-            "data": {
-                "left_top": {
-                    "x": 878,
-                    "y": 566
-                },
-                "right_bottom": {
-                    "x": 1065,
-                    "y": 701
-                },
-                "_type": "BoundingBox"
-            },
-            "attributes": {}
-        },
-
-```
-
-アノテーションをインポートするには、事前に入力データ、タスク、アノテーション仕様を作成する必要があります。
-
-タスクの状態が作業中/完了の場合はインポートしません。
-
-
-```
-# prj1にアノテーションをインポートします。すでにアノテーションが登録されてる場合はスキップします。
-$ annofabcli annotation import --project_id prj1 --annotation simple-annotation.zip 
-
-# prj1にアノテーションをインポートします。すでに存在するアノテーションを上書きます。
-$ annofabcli annotation import --project_id prj1 --annotation simple-annotation.zip --overwrite
-```
-
 ### annotation list_count
 `task_id`または`input_data_id`で集約したアノテーションの個数を、CSV形式で出力します。
 クエリのフォーマットは、[getAnnotationList API](https://annofab.com/docs/api/#operation/getAnnotationList)のクエリパラメータの`query`キー配下と同じです。
@@ -434,17 +285,6 @@ $ annofabcli annotation list_count --project_id prj1 \
 | sample_093 | dd82cf3a-a38c-4a04-91e7-a4f1ce9af585 | 2                |
 
 
-### annotation restore
-[annotation dump](#annotation-dump) コマンドの出力結果から、アノテーション情報をリストアします。ただし、作業中/完了状態のタスク、または「過去に割り当てられていて現在の担当者が自分自身でない」タスクはリストアできません。
-
-
-```
-# `backup`ディレクトリに保存したアノテーション情報を、`prj1`プロジェクトにリストアする。
-$annofabcli annotation restore --project_id prj1 --task_id file://task.txt --annotation backup-dir
-
-# `backup`ディレクトリに保存したアノテーション情報の内、`task.txt`に記載されたタスクのアノテーション情報を、`prj1`プロジェクトにリストアする。
-$ annofabcli annotation restore --project_id prj1 --task_id file://task.txt --annotation backup-dir
-```
 
 
 
@@ -538,18 +378,6 @@ $ annofabcli annotation_specs list_label_color --project_id prj1
     0,
     255
   ],
-```
-
-
-### filesystem filter_annotation
-アノテーションzipから特定のファイルを絞り込んで、zip展開します。
-
-
-```
-# アノテーションzipからcomplete状態で、task.txtに記載されているtask_idを除外した状態で、展開する
-$ annofabcli filesystem filter_annotation --annotation annotation.zip \
- --task_query '{"status":"complete"}'  --exclude_task_id file://task.txt --output_dir
-
 ```
 
 
