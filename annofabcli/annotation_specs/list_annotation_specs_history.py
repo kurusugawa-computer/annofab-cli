@@ -59,7 +59,7 @@ def parse_args(parser: argparse.ArgumentParser):
 
 
 def add_parser(subparsers: argparse._SubParsersAction):
-    subcommand_name = "history"
+    subcommand_name = "list_history"
     subcommand_help = "アノテーション仕様の変更履歴を表示する。"
     description = "アノテーション仕様の変更履歴を表示する。"
 

@@ -121,7 +121,7 @@ class ImportAnnotation(AbstractCommandLineInterface):
         for key, value in attributes.items():
             specs_additional_data = self._get_additional_data_from_attribute_name(key, label_info)
             if specs_additional_data is None:
-                logger.warning(f"attribute_name={key} が存在しません。")
+                logger.warning(f"アノテーション仕様に attribute_name={key} が存在しません。")
                 continue
 
             additional_data = AdditionalData(
@@ -249,6 +249,7 @@ class ImportAnnotation(AbstractCommandLineInterface):
             logger.debug(
                 f"task_id={task_id}, input_data_id={input_data_id} : "
                 f"インポート先のタスクに既にアノテーションが存在するため、アノテーションの登録をスキップします。"
+                f"アノテーションを上書きする場合は、`--overwrite` を指定してください。"
             )
             return False
 
@@ -280,7 +281,7 @@ class ImportAnnotation(AbstractCommandLineInterface):
         return success_count
 
     def execute_task(
-        self, project_id: str, task_parser: SimpleAnnotationParserByTask, my_account_id: str, overwrite: bool = False
+        self, project_id: str, task_parser: SimpleAnnotationParserByTask, overwrite: bool, force: bool
     ) -> bool:
         """
         1個のタスクに対してアノテーションを登録する。
@@ -288,7 +289,6 @@ class ImportAnnotation(AbstractCommandLineInterface):
         Args:
             project_id:
             task_parser:
-            my_account_id: 自分自身のアカウントID
             overwrite:
 
         Returns:
@@ -310,11 +310,31 @@ class ImportAnnotation(AbstractCommandLineInterface):
             logger.info(f"タスク'{task_id}'は作業中または受入完了状態のため、インポートをスキップします。 status={task['status']}")
             return False
 
-        if not can_put_annotation(task, my_account_id):
-            logger.debug(f"タスク'{task_id}'は、過去に誰かに割り当てられたタスクで、現在の担当者が自分自身でないため、アノテーションのインポートをスキップします。")
-            return False
+        old_account_id: Optional[str] = None
+        changed_operator = False
+        if force:
+            if not can_put_annotation(task, self.service.api.account_id):
+                logger.debug(f"タスク'{task_id}' の担当者を自分自身に変更します。")
+                self.service.wrapper.change_task_operator(
+                    project_id, task_id, operator_account_id=self.service.api.account_id
+                )
+                changed_operator = True
+                old_account_id = task["account_id"]
+
+        else:
+            if not can_put_annotation(task, self.service.api.account_id):
+                logger.debug(
+                    f"タスク'{task_id}'は、過去に誰かに割り当てられたタスクで、現在の担当者が自分自身でないため、アノテーションのインポートをスキップします。"
+                    f"担当者を自分自身に変更してアノテーションを登録する場合は `--force` を指定してください。"
+                )
+                return False
 
         result_count = self.put_annotation_for_task(project_id, task_parser, overwrite)
+        if changed_operator:
+            logger.debug(f"タスク'{task_id}' の担当者を元に戻します。")
+            old_account_id = task["account_id"]
+            self.service.wrapper.change_task_operator(project_id, task_id, operator_account_id=old_account_id)
+
         return result_count > 0
 
     @staticmethod
@@ -345,7 +365,6 @@ class ImportAnnotation(AbstractCommandLineInterface):
         super().validate_project(project_id, [ProjectMemberRole.OWNER])
 
         task_id_list = annofabcli.common.cli.get_list_from_args(args.task_id)
-        my_account_id = self.service.api.account_id
 
         # Simpleアノテーションの読み込み
         if annotation_path.is_file():
@@ -359,15 +378,11 @@ class ImportAnnotation(AbstractCommandLineInterface):
                 if len(task_id_list) > 0:
                     # コマンドライン引数で --task_idが指定された場合は、対象のタスクのみインポートする
                     if task_parser.task_id in task_id_list:
-                        if self.execute_task(
-                            project_id, task_parser, overwrite=args.overwrite, my_account_id=my_account_id
-                        ):
+                        if self.execute_task(project_id, task_parser, overwrite=args.overwrite, force=args.force):
                             success_count += 1
                 else:
                     # コマンドライン引数で --task_idが指定されていない場合はすべてをインポートする
-                    if self.execute_task(
-                        project_id, task_parser, overwrite=args.overwrite, my_account_id=my_account_id
-                    ):
+                    if self.execute_task(project_id, task_parser, overwrite=args.overwrite, force=args.force):
                         success_count += 1
 
             except Exception as e:  # pylint: disable=broad-except
@@ -402,6 +417,10 @@ def parse_args(parser: argparse.ArgumentParser):
         help="指定した場合、すでに存在するアノテーションを上書きします（入力データ単位）。" "指定しなければ、アノテーションのインポートをスキップします。",
     )
 
+    parser.add_argument(
+        "--force", action="store_true", help="過去に割り当てられていて現在の担当者が自分自身でない場合、タスクの担当者を自分自身に変更してからアノテーションをインポートします。"
+    )
+
     parser.set_defaults(subcommand_func=main)
 
 
@@ -409,9 +428,7 @@ def add_parser(subparsers: argparse._SubParsersAction):
     subcommand_name = "import"
     subcommand_help = "アノテーションをインポートします。"
     description = (
-        "アノテーションをインポートします。"
-        "アノテーションのフォーマットは、Simpleアノテーション(v2)と同じフォルダ構成のzipファイルまたはディレクトリです。"
-        "ただし、作業中/完了状態のタスク、または「過去に割り当てられていて現在の担当者が自分自身でない」タスクはリストアできません。"
+        "アノテーションをインポートします。アノテーションのフォーマットは、Simpleアノテーションと同じフォルダ構成のzipファイルまたはディレクトリです。ただし、作業中/完了状態のタスクはインポートできません。"
     )
     epilog = "チェッカーまたはオーナロールを持つユーザで実行してください。"
 
