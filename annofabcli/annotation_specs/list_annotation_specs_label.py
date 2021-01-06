@@ -78,7 +78,7 @@ class PrintAnnotationSpecsLabel(AbstractCommandLineInterface):
 
         annofabcli.utils.output_string("\n".join(output_lines), output)
 
-    def get_history_id_from_before_index(self, project_id: str, before: int):
+    def get_history_id_from_before_index(self, project_id: str, before: int) -> Optional[str]:
         histories, _ = self.service.api.get_annotation_specs_histories(project_id)
         if before + 1 > len(histories):
             logger.warning(f"アノテーション仕様の履歴は{len(histories)}個のため、最新より{before}個前のアノテーション仕様は見つかりませんでした。")

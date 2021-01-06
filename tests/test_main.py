@@ -24,54 +24,6 @@ data_path = Path("./tests/data")
 organization_name = service.api.get_organization_of_project(project_id)[0]["organization_name"]
 
 
-class TestAnnotationSpecs:
-    command_name = "annotation_specs"
-
-    def test_annotation_specs_histories(self):
-        out_file = str(out_path / "anotaton_specs_histories.csv")
-        main([self.command_name, "history", "--project_id", project_id, "--output", out_file])
-
-    def test_annotation_specs_list_label(self):
-        out_file = str(out_path / "anotation_specs_list_label.json")
-        main([self.command_name, "list_label", "--project_id", project_id, "--output", out_file])
-
-    def test_old_annotation_specs_list_label(self):
-        out_file = str(out_path / "anotation_specs_list_label.json")
-        main([self.command_name, "list_label", "--project_id", project_id, "--before", "1", "--output", out_file])
-
-    def test_annotation_specs_list_label_from_history_id(self):
-        out_file = str(out_path / "anotation_specs_list_label.json")
-        histories, _ = service.api.get_annotation_specs_histories(project_id)
-        history_id = histories[0]["history_id"]
-        main(
-            [
-                self.command_name,
-                "list_label",
-                "--project_id",
-                project_id,
-                "--history_id",
-                history_id,
-                "--output",
-                out_file,
-            ]
-        )
-
-    def test_annotation_specs_list_label_color(self):
-        out_file = str(out_path / "anotation_specs_list_label_color.json")
-        main(
-            [
-                self.command_name,
-                "list_label_color",
-                "--project_id",
-                project_id,
-                "--format",
-                "json",
-                "--output",
-                out_file,
-            ]
-        )
-
-
 class TestFilesystem:
     def test_write_annotation_image(self):
         zip_path = data_path / "simple-annotation.zip"
