@@ -241,51 +241,8 @@ $ annofabcli project_member put --project_id prj2 --csv members.csv
 
 ## コマンド一覧
 
-### annotation list_count
-`task_id`または`input_data_id`で集約したアノテーションの個数を、CSV形式で出力します。
-クエリのフォーマットは、[getAnnotationList API](https://annofab.com/docs/api/#operation/getAnnotationList)のクエリパラメータの`query`キー配下と同じです。
-`label_name_en`(label_idに対応), `additional_data_definition_name_en`(additional_data_definition_idに対応) キーも指定できます。
-
-
-```
-# car ラベルのアノテーション個数を出力する(task_idで集約)
-$ annofabcli annotation list_count --project_id prj1 \
- --annotation_query '{"label_name_en": "car"}'
-
-# car ラベルのアノテーション個数を出力する(input_data_idで集約)
-$ annofabcli annotation list_count --project_id prj1 \
- --annotation_query '{"label_name_en": "car"}' --gropu_by input_data_id
-
-# task.txtに記載されたtask_idの一覧から、car ラベルのアノテーション個数を出力する
-$ annofabcli annotation list_count --project_id prj1 \
- --annotation_query '{"label_name_en": "car"}'  --task_id file://task.txt
-
-# carラベルの"occluded"チェックボックスがONのアノテーションの個数を出力する
-$ annofabcli annotation list_count --project_id prj1 \
- --annotation_query '{"label_name_en": "car", "attributes":[{"additional_data_definition_name_en": "occluded", "flag": true}]}'
-
-# carラベルの"type"ラジオボタン/セレクトボックスが"bus"であるアノテーションの個数を出力する
-$ annofabcli annotation list_count --project_id prj1 \
- --annotation_query '{"label_name_en": "car", "attributes":[{"additional_data_definition_name_en": "occluded", "choice_name_en": "bus"}]}'
-```
-
-#### task_idで集約したときの出力結果（CSV）
-
-| task_id    | annotation_count |
-|------------|------------------|
-| sample_030 | 1                |
-| sample_088 | 2                |
-
-
-#### input_data_idで集約したときの出力結果（CSV）
-
-| task_id    | input_data_id                        | annotation_count |
-|------------|--------------------------------------|------------------|
-| sample_030 | 5738d502-b0a0-4a82-9367-cceffd73cf57 | 1                |
-| sample_093 | dd82cf3a-a38c-4a04-91e7-a4f1ce9af585 | 2                |
-
-
-
+### annotation
+https://annofab-cli.readthedocs.io/ja/latest/command_reference/annotation/index.html 参照
 
 
 ### annotation_specs history
