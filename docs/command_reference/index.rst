@@ -18,6 +18,7 @@ Command Reference
    organization_member/index
    project/index
    project_member/index
+   statistics/index
    supplementary/index
    task/index
    task_history/index

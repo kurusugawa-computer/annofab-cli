@@ -1,0 +1,5 @@
+﻿,,,,Cat,Cat,climatic,climatic,climatic,climatic,climatic,climatic
+,,,,occluded,occluded,weather,weather,temparature,temparature,temparature,temparature
+task_id,task_status,task_phase,task_phase_stage,True,False,sunny,rainy,10,20,30,40
+sample_0,break,acceptance,1,2,0,2,0,0,2,0,0
+sample_1,complete,acceptance,1,2,0,2,0,0,2,0,0

@@ -283,7 +283,7 @@ $ annofabcli labor list_worktime_by_user --project_id prj1 prj2 --user_id user1 
 
 
 # user.txtに記載されているユーザの予定稼働時間も一緒に出力します。
-$ annofabcli labor list_worktime_by_user --project_id prj1 prj2 --user_id file://user.txt \
+$ annofabcli labor list_worktime_by_user --project_id prj1 dprj2 --user_id file://user.txt \
  --start_month 2019-10 --end_month 2019-11 --add_availability --output_dir /tmp/output
 
 ```
@@ -296,24 +296,6 @@ https://annofab-cli.readthedocs.io/ja/latest/command_reference/project/index.htm
 
 ### project_member
 https://annofab-cli.readthedocs.io/ja/latest/command_reference/project_member/index.html 参照
-
-### statistics list_annotation_count
-各ラベル、各属性値のアノテーション数を、タスクごと/入力データごとに出力します。
-`--annotation`にはAnnoFabからダウンロードしたSimpleアノテーションzipのパスを渡します。指定しない場合はAnnoFabからダウンロードします。
-出力結果には以下のファイルが含まれています。
-* `labels_count.csv`：各ラベルのアノテーション数
-* `attirbutes_count.csv`：各属性値のアノテーション数（ただし属性の種類がチェックボックス、ラジオボタン、セレクトボックスの属性のみが対象）
-
-
-```
-# タスクごとにアノテーション数を、output ディレクトリに出力
-$ annofabcli statistics list_annotation_count --project_id prj1 --output_dir output --annotation annotataion.zip
-
-# 入力データごとにアノテーション数を、output ディレクトリに出力。アノテーション情報はAnnoFabからダウンロードする
-$ annofabcli statistics list_annotation_count --project_id prj1 --output_dir output --group_by input_data_id
-
-```
-
 
 ### statistics list_by_date_user
 
