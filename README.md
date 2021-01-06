@@ -307,14 +307,6 @@ $ annofabcli statistics list_by_date_user --project_id prj1 --output data.csv
 ```
 
 
-
-### statistics list_cumulative_labor_time
-タスクフェーズ別の累積作業時間をCSV形式で出力します。
-
-```
-$ annofabcli statistics list_cumulative_labor_time --project_id prj1 --output stat.csv
-```
-
 ### statistics list_task_progress
 タスク進捗状況をCSV形式で出力します。
 

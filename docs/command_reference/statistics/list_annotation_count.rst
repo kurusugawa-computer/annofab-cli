@@ -23,6 +23,7 @@ Examples
 
 
 .. code-block::
+
     out_dir/ 
     ├── labels_count.csv                ラベルごとのアノテーション数が記載されたCSV
     ├── attirbutes_count.csv            属性ごとのアノテーション数が記載されたCSV
