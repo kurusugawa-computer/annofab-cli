@@ -559,69 +559,8 @@ https://annofab-cli.readthedocs.io/ja/latest/command_reference/filesystem/index.
 ### input_data 
 https://annofab-cli.readthedocs.io/ja/latest/command_reference/input_data/index.html 参照
 
-
-
-### inspection_comment list
-検査コメント一覧を出力します。
-
-```
-# task1, task2の検査コメント一覧を、CSVで出力する
-$ annofabcli inspection_comment list --project_id prj1 --task_id task1 task2
-
-# タブ区切りの"out.tsv"を出力する
-$ annofabcli inspection_comment list --project_id prj1 --task_id task1 task2 \
- --format csv --csv_format '{"sep":"\t"}'  --output out.tsv
-
-# JSONで出力する
-$ annofabcli inspection_comment list --project_id prj1 --task_id file://task.txt --format json
-
-# 検査コメント情報が記載されたファイルを元にして、検査コメント一覧を出力します
-# 検査コメント情報が記載されたファイルは、`$ annofabcli project download inspection_comment`コマンドで取得できます。
-$ annofabcli inspection_comment list --project_id prj1 --inspection_comment_json inspection_comment.json
-
-# 返信コメントを除外した検査コメント一覧を出力します
-$ annofabcli inspection_comment list --project_id prj1 --task_id task1 task2 --exclude_reply
-
-# 返信コメントのみの一覧を出力します
-$ annofabcli inspection_comment list --project_id prj1 --task_id task1 task2 --only_reply
-
-
-```
-
-#### 出力結果（CSV）
-
-| project_id                           | task_id    | input_data_id                        | inspection_id                        | phase      | phase_stage | commenter_account_id                 | annotation_id                        | label_id                             | data                                  | parent_inspection_id | phrases | comment | status          | created_datetime              | updated_datetime              | commenter_user_id | commenter_username | phrase_names_en | phrase_names_ja | label_name_en | label_name_ja | input_data_index |
-|--------------------------------------|------------|--------------------------------------|--------------------------------------|------------|-------------|--------------------------------------|--------------------------------------|--------------------------------------|---------------------------------------|----------------------|---------|---------|-----------------|-------------------------------|-------------------------------|-------------------|--------------------|-----------------|-----------------|---------------|---------------|------------------|
-| 58a2a621-7d4b-41e7-927b-cdc570c1114a | sample_180 | bf6b4790-cdb8-4d4d-85bb-08550934ed61 | 5f096677-67e4-4e75-9eac-bbd8ac9694d9 | inspection | 1           | 12345678-abcd-1234-abcd-1234abcd5678 | 8aff181e-9df4-4c66-8fb2-10596c686d5c | 8aff181e-9df4-4c66-8fb2-10596c686d5c | {'x': 358, 'y': 48, '_type': 'Point'} |                      | []      | 枠がずれています     | error_corrected | 2019-07-26T17:41:16.626+09:00 | 2019-08-01T10:57:45.639+09:00 | user_id   | username          | []              | []              | car           | car           | 0                |
-
-
-
-### inspection_comment list_with_json
-検査コメント一覧を出力します。
-
-```
-# 検査コメント全件を出力する
-$ annofabcli inspection_comment list_with_json --project_id prj1 --output inspection_comment.csv
-
-```
-
-
-
-### inspection_comment list_unprocessed
-未処置の検査コメント一覧を出力します。
-
-```
-# 未処置の検査コメント一覧を出力する
-$ annofabcli inspection_comment list_unprocessed --project_id prj1 --task_id file://task.txt
-
-# 未処置で、user1が"hoge"とコメントした検査コメント一覧を出力する
-$ annofabcli inspection_comment list_unprocessed  --project_id prj1 --task_id file://task.txt \
- --inspection_comment "hoge" --commenter_user_id user1 --format pretty_json --output inspection.json
-
-# 検査コメント情報が記載されたファイルを元にして、検査コメント一覧を追加します
-$ annofabcli inspection_comment list_unprocessed --project_id prj1 --inspection_comment_json inspection_comment.json
-```
-
+### inspection_comment
+https://annofab-cli.readthedocs.io/ja/latest/command_reference/inspection_comment/index.html 参照
 
 ### instruction
 https://annofab-cli.readthedocs.io/ja/latest/command_reference/instruction/index.html 参照
