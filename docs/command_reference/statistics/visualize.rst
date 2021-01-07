@@ -286,19 +286,53 @@ Examples
     
 
 
-複数指定
-----------------------------------------------
-
+複数のプロジェクトを指定した場合
+--------------------------------------------------------------------------------------------
 
 .. code-block::
 
-    $ annofabcli statistics list_annotation_count --project_id prj1 --output_dir out_by_input_data/ \
-    --group_by input_data_id
+    $ annofabcli statistics visualize --project_id prj1 prj2 --output_dir out_dir --minimal
 
-`out_by_input_data <https://github.com/kurusugawa-computer/annofab-cli/blob/master/docs/command_reference/statistics/list_annotation_count/out_by_input_data>`_
+プロジェクトごとにディレクトリが生成されます。
 
-`メンバごとの生産性と品質.csv <https://github.com/kurusugawa-computer/annofab-cli/blob/master/docs/command_reference/statistics/list_annotation_count/out_dir/メンバごとの生産性と品質.csv>`_
+.. code-block::
+
+    out_dir/
+    ├── prj_title1
+    │   ├── タスクlist.csv
+    │   ├── メンバごとの生産性と品質.csv
+    │   └── ...
+    ├── prj_title2
+    │   ├── タスクlist.csv
+    │   ├── メンバごとの生産性と品質.csv
+    │   └── ...
 
 
-マージ済
-----------------------------------------------
+
+``--merge`` を指定した場合
+--------------------------------------------------------------------------------------------
+
+.. code-block::
+
+    $ annofabcli statistics visualize --project_id prj1 prj2 --output_dir out_dir --minimal \
+    --merge
+
+prj1とprj2の出力結果をマージしたファイルが、``merge`` ディレクトリに出力されます。
+
+.. code-block::
+
+    out_dir/
+    ├── prj_title1
+    │   ├── タスクlist.csv
+    │   ├── メンバごとの生産性と品質.csv
+    │   └── ...
+    ├── prj_title2
+    │   ├── タスクlist.csv
+    │   ├── メンバごとの生産性と品質.csv
+    │   └── ...
+    ├── merge
+    │   ├── タスクlist.csv
+    │   ├── メンバごとの生産性と品質.csv
+    │   └── ...
+
+
