@@ -34,6 +34,14 @@ Examples
 
     $ annofabcli statistics list_cumulative_labor_time --project_id prj1 --output out.csv
 
+.. csv-table:: out.csv
+   :header: date,phase,worktime_hour
 
-`out.csv <https://github.com/kurusugawa-computer/annofab-cli/blob/master/docs/command_reference/statistics/list_cumulative_labor_time/out.csv>`_
 
+    2020-12-15,acceptance,1.12289361111111
+    2020-12-15,annotation,6.67816833333333
+    2020-12-16,acceptance,1.72973638888889
+    2020-12-16,annotation,13.7682875
+    2020-12-17,acceptance,2.6953075
+    2020-12-17,annotation,16.3832388888889
+    
