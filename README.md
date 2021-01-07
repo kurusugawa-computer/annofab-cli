@@ -290,34 +290,6 @@ $ annofabcli statistics merge_visualization_dir --dir outdir1 outdir2 --output_d
 
 
 
-### statistics visualize
-統計情報を可視化します。
-
-```
-# prj1の統計情報を可視化したファイルを、/tmp/outputに出力する
-$ annofabcli statistics visualize --project_id prj1 --output_dir /tmp/output
-
-# statusがcompleteのタスクを統計情報を可視化したファイルを、/tmp/outputに出力する
-$ annofabcli statistics visualize --project_id prj1 --output_dir /tmp/output \
-  --task_query '{"status": "complete"}' 
-
-# アノテーションzipを更新してから、アノテーションzipをダウンロードします。
-$ annofabcli statistics visualize --project_id prj1 --output_dir /tmp/output --update_annotation
-
-# WebAPIを実行せずに、作業ディレクトリ（デフォルトは`$XDG_CACHE_HOME/annofabcli`）内のファイルを参照して、統計情報を可視化する。
-$ annofabcli statistics visualize --project_id prj1 --not_update
-
-# prj, prj2 の統計情報を、/tmp/outputにプロジェクトごとに出力します。
-$ annofabcli statistics visualize --project_id prj1 prj2 --output_dir /tmp/output
-
-# prj, prj2, prj3, prj4 の統計情報を、並列処理で出力します。
-$ annofabcli statistics visualize --project_id prj1 prj2 prj3 prj4  --output_dir /tmp/output --parallelism 2
-
-# prj, prj2 の統計情報を、/tmp/outputにプロジェクトごとに出力し、prj1,prj2の統計情報をマージした情報も、`merge`ディレクトリに出力します。
-$ annofabcli statistics visualize --project_id prj1 prj2 --output_dir /tmp/output --merge
-
-```
-
 
 ### supplementary
 https://annofab-cli.readthedocs.io/ja/latest/command_reference/supplementary/index.html 参照

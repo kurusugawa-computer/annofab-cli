@@ -626,7 +626,7 @@ class VisualizeStatistics(AbstractCommandLineInterface):
                 ignored_task_id_list=ignored_task_id_list,
                 user_id_list=user_id_list,
                 update=not args.not_update,
-                download_latest=args.download_latest,
+                download_latest=args.latest,
                 start_date=args.start_date,
                 end_date=args.end_date,
                 minimal_output=args.minimal,
@@ -706,7 +706,7 @@ def parse_args(parser: argparse.ArgumentParser):
     )
 
     parser.add_argument(
-        "--download_latest",
+        "--latest",
         action="store_true",
         help="統計情報の元になるファイル（アノテーションzipなど）の最新版をダウンロードします。ファイルを最新版にするのに5分以上待つ必要があります。",
     )
