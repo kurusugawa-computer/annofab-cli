@@ -31,6 +31,6 @@ Available Commands
                        
    summarize_task_count_by_user
                        
-   visualize           
+   visualize
 
    merge_visualization_dir
