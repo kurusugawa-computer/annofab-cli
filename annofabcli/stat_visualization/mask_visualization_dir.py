@@ -134,7 +134,7 @@ def parse_args(parser: argparse.ArgumentParser):
     parser.add_argument(
         "--exclude_masked_user_for_linegraph",
         action="store_true",
-        help="折れ線グラフに、マスクされたユーザを除外します。",
+        help="折れ線グラフに、マスクされたユーザをプロットしません。",
     )
 
     parser.add_argument("-o", "--output_dir", type=Path, required=True, help="出力先ディレクトリ。")

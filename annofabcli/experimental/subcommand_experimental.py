@@ -7,7 +7,6 @@ from annofabcli.experimental import (
     find_break_error,
     list_labor_worktime,
     list_out_of_range_annotation_for_movie,
-    mask_visualization_dir,
     merge_peformance_per_date,
     merge_peformance_per_user,
     summarise_whole_peformance_csv,
@@ -17,7 +16,7 @@ from annofabcli.experimental import (
     write_task_histogram,
     write_whole_linegraph,
 )
-from annofabcli.stat_visualization import merge_visualization_dir
+from annofabcli.stat_visualization import merge_visualization_dir, mask_visualization_dir
 
 
 def parse_args(parser: argparse.ArgumentParser):
@@ -28,7 +27,6 @@ def parse_args(parser: argparse.ArgumentParser):
     find_break_error.add_parser(subparsers)
     list_labor_worktime.add_parser(subparsers)
     list_out_of_range_annotation_for_movie.add_parser(subparsers)
-    mask_visualization_dir.add_parser(subparsers)
     merge_peformance_per_date.add_parser(subparsers)
     merge_peformance_per_user.add_parser(subparsers)
     merge_visualization_dir.add_parser(subparsers)
