@@ -36,7 +36,15 @@ Examples
     $ annofabcli statistics list_labor_time_per_user --project_id prj1 --output out.csv
 
 
-`out.csv <https://github.com/kurusugawa-computer/annofab-cli/blob/master/docs/command_reference/statistics/list_labor_time_per_user/out.csv>`_
+
+.. csv-table:: out.csv
+   :header: date,account_id,user_id,username,biography,worktime_hour,tasks_completed,tasks_rejected
+
+    2020-12-15,account1,user1,username1,,2.834,19,6
+    2020-12-16,account1,user1,username1,,3.417,36,2
+    2020-12-17,account2,user2,username2,,0.094,0,3
+
+
 
 各列の詳細を以下に示します。
 
