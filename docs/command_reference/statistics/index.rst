@@ -24,7 +24,6 @@ Available Commands
                        
    list_by_date_user   
    list_task_progress  
-   merge_visualization_dir
                        
    summarize_task_count
                        
@@ -33,3 +32,5 @@ Available Commands
    summarize_task_count_by_user
                        
    visualize           
+
+   merge_visualization_dir

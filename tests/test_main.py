@@ -24,47 +24,6 @@ data_path = Path("./tests/data")
 organization_name = service.api.get_organization_of_project(project_id)[0]["organization_name"]
 
 
-class TestFilesystem:
-    def test_write_annotation_image(self):
-        zip_path = data_path / "simple-annotation.zip"
-        output_image_dir = out_path / "annotation-image"
-        label_color_file = data_path / "label_color.json"
-
-        main(
-            [
-                "filesystem",
-                "write_annotation_image",
-                "--annotation",
-                str(zip_path),
-                "--output_dir",
-                str(output_image_dir),
-                "--image_size",
-                "64x64",
-                "--label_color",
-                f"file://{str(label_color_file)}",
-                "--image_extension",
-                "jpg",
-            ]
-        )
-
-    def test_filter_annotation(self):
-        zip_path = data_path / "simple-annotation.zip"
-        output_dir = out_path / "filter-annotation-output"
-
-        main(
-            [
-                "filesystem",
-                "filter_annotation",
-                "--annotation",
-                str(zip_path),
-                "--output_dir",
-                str(output_dir),
-                "--task_query",
-                '{"status":"complete"}',
-            ]
-        )
-
-
 class TestInspectionComment:
     def test_list_inspection_comment(self):
         out_file = str(out_path / "inspection_comment.csv")

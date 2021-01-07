@@ -7,7 +7,6 @@ from annofabcli.experimental import (
     find_break_error,
     list_labor_worktime,
     list_out_of_range_annotation_for_movie,
-    mask_user_info,
     mask_visualization_dir,
     merge_peformance_per_date,
     merge_peformance_per_user,
@@ -29,7 +28,6 @@ def parse_args(parser: argparse.ArgumentParser):
     find_break_error.add_parser(subparsers)
     list_labor_worktime.add_parser(subparsers)
     list_out_of_range_annotation_for_movie.add_parser(subparsers)
-    mask_user_info.add_parser(subparsers)
     mask_visualization_dir.add_parser(subparsers)
     merge_peformance_per_date.add_parser(subparsers)
     merge_peformance_per_user.add_parser(subparsers)
