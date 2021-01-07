@@ -1,8 +1,9 @@
 import argparse
 
-import annofabcli.stat_visualization.write_performance_rating_csv
-import annofabcli.stat_visualization.merge_visualization_dir
 import annofabcli.stat_visualization.mask_visualization_dir
+import annofabcli.stat_visualization.merge_visualization_dir
+import annofabcli.stat_visualization.write_performance_rating_csv
+
 
 def parse_args(parser: argparse.ArgumentParser):
 

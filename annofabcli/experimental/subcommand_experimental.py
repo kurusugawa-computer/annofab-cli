@@ -16,7 +16,7 @@ from annofabcli.experimental import (
     write_task_histogram,
     write_whole_linegraph,
 )
-from annofabcli.stat_visualization import merge_visualization_dir, mask_visualization_dir
+from annofabcli.stat_visualization import merge_visualization_dir
 
 
 def parse_args(parser: argparse.ArgumentParser):

@@ -17,10 +17,10 @@ from dataclasses_json import DataClassJsonMixin
 import annofabcli
 from annofabcli import AnnofabApiFacade
 from annofabcli.common.cli import AbstractCommandLineInterface, build_annofabapi_resource_and_login
+from annofabcli.stat_visualization.merge_visualization_dir import merge_visualization_dir
 from annofabcli.statistics.csv import FILENAME_WHOLE_PEFORMANCE, Csv, write_summarise_whole_peformance_csv
 from annofabcli.statistics.database import Database, Query
 from annofabcli.statistics.linegraph import LineGraph, OutputTarget
-from annofabcli.stat_visualization.merge_visualization_dir import merge_visualization_dir
 from annofabcli.statistics.scatter import Scatter
 from annofabcli.statistics.table import AggregationBy, Table
 
@@ -610,7 +610,7 @@ class VisualizeStatistics(AbstractCommandLineInterface):
                 ignored_task_id_list=ignored_task_id_list,
                 user_id_list=user_id_list,
                 update=not args.not_update,
-                download_latest=args.download_latest,
+                download_latest=args.latest,
                 start_date=args.start_date,
                 end_date=args.end_date,
                 minimal_output=args.minimal,
