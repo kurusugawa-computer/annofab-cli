@@ -129,7 +129,7 @@ def create_task_count_summary(task_list: List[Task], number_of_inspections: int)
     summary_df.sort_values(["step", "phase", "phase_stage"])
     summary_df.loc[summary_df["step"] == sys.maxsize, "step"] = pandas.NA
     summary_df = summary_df.astype({"task_count": "Int64", "step": "Int64", "phase_stage": "Int64"})
-    return summary_df
+    return summary_df[summary_df["task_count"] > 0]
 
 
 class SummarizeTaskCount(AbstractCommandLineInterface):
