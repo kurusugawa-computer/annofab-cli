@@ -17,5 +17,6 @@ Available Commands
    :titlesonly:
 
    filter_annotation
+   mask_user_info
    write_annotation_image
 

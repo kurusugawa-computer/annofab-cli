@@ -1,14 +1,10 @@
 import configparser
-import json
 import os
 from pathlib import Path
 
 import annofabapi
 
 from annofabcli.__main__ import main
-from annofabcli.statistics.csv import Csv
-from annofabcli.statistics.database import Database
-from annofabcli.statistics.table import Table
 
 out_dir = Path("./tests/out/statistics")
 data_dir = Path("./tests/data/statistics")
@@ -137,7 +133,6 @@ class TestCommandLine:
                 "--minimal",
             ]
         )
-
 
 
 # class TestListSubmittedTaskCountMain:
