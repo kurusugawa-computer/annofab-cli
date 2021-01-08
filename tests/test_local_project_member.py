@@ -12,6 +12,7 @@ os.chdir(os.path.dirname(os.path.abspath(__file__)) + "/../")
 data_dir = Path("./tests/data/project_member")
 out_dir = Path("./tests/out/project_member")
 
+
 class TestPutProjectMembers:
     def test_get_members_from_csv(self):
         csv_path = data_dir / "project_members.csv"

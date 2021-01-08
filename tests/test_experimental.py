@@ -3,10 +3,11 @@ import datetime
 import json
 import os
 from pathlib import Path
-from annofabcli.__main__ import main
+
 import annofabapi
 import pandas
 
+from annofabcli.__main__ import main
 from annofabcli.experimental.dashboard import (
     PrintDashBoardMain,
     RemainingTaskCount,
@@ -68,7 +69,6 @@ class TestCommandLine:
                 "--yes",
             ]
         )
-
 
 
 class TestListLaborWorktime:

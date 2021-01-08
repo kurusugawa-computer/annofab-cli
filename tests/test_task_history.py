@@ -21,7 +21,6 @@ service = annofabapi.build_from_netrc()
 
 
 class TestCommandLine:
-
     def test_list_task_history(self):
 
         main(
@@ -55,5 +54,3 @@ class TestCommandLine:
                 "csv",
             ]
         )
-
-
