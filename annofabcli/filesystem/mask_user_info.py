@@ -8,13 +8,7 @@ import numpy
 import pandas
 
 import annofabcli
-from annofabcli import AnnofabApiFacade
-from annofabcli.common.cli import (
-    AbstractCommandLineInterface,
-    ArgumentParser,
-    build_annofabapi_resource_and_login,
-    get_list_from_args,
-)
+from annofabcli.common.cli import AbstractCommandLineWithoutWebapiInterface, ArgumentParser, get_list_from_args
 from annofabcli.common.exceptions import AnnofabCliException
 from annofabcli.common.utils import read_multiheader_csv
 
@@ -314,7 +308,7 @@ def create_masked_user_info_df(
     return df
 
 
-class MaskUserInfo(AbstractCommandLineInterface):
+class MaskUserInfo(AbstractCommandLineWithoutWebapiInterface):
     def main(self):
         args = self.args
 
@@ -341,9 +335,7 @@ class MaskUserInfo(AbstractCommandLineInterface):
 
 
 def main(args):
-    service = build_annofabapi_resource_and_login(args)
-    facade = AnnofabApiFacade(service)
-    MaskUserInfo(service, facade, args).main()
+    MaskUserInfo(args).main()
 
 
 def parse_args(parser: argparse.ArgumentParser):
