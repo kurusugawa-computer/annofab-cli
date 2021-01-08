@@ -278,17 +278,6 @@ https://annofab-cli.readthedocs.io/ja/latest/command_reference/project_member/in
 
 
 
-### statistics merge_visualization_dir
-`annofabcli statistics visualize`コマンドの出力結果をマージします。
-
-
-```
-$ annofabcli statistics visualize --project_id prj1 --output outdir1
-$ annofabcli statistics visualize --project_id prj2 --output outdir2
-$ annofabcli statistics merge_visualization_dir --dir outdir1 outdir2 --output_dir merge_dir
-```
-
-
 
 
 ### supplementary
