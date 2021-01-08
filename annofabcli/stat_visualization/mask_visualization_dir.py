@@ -8,13 +8,13 @@ import pandas
 import annofabcli
 from annofabcli.common.cli import get_list_from_args
 from annofabcli.common.utils import print_csv, read_multiheader_csv
-from annofabcli.experimental.mask_user_info import (
+from annofabcli.experimental.write_linegraph_per_user import write_linegraph_per_user
+from annofabcli.experimental.write_performance_scatter_per_user import write_performance_scatter_per_user
+from annofabcli.filesystem.mask_user_info import (
     create_masked_user_info_df,
     create_replacement_dict_by_user_id,
     replace_by_columns,
 )
-from annofabcli.experimental.write_linegraph_per_user import write_linegraph_per_user
-from annofabcli.experimental.write_performance_scatter_per_user import write_performance_scatter_per_user
 from annofabcli.statistics.csv import FILENAME_PEFORMANCE_PER_USER, FILENAME_TASK_LIST
 
 logger = logging.getLogger(__name__)
@@ -134,7 +134,7 @@ def parse_args(parser: argparse.ArgumentParser):
     parser.add_argument(
         "--exclude_masked_user_for_linegraph",
         action="store_true",
-        help="折れ線グラフに、マスクされたユーザを除外します。",
+        help="折れ線グラフに、マスクされたユーザをプロットしません。",
     )
 
     parser.add_argument("-o", "--output_dir", type=Path, required=True, help="出力先ディレクトリ。")

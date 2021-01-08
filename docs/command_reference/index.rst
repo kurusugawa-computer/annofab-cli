@@ -15,9 +15,11 @@ Command Reference
    inspection_comment/index
    instruction/index
    job/index
+   labor/index
    organization_member/index
    project/index
    project_member/index
+   statistics/index
    supplementary/index
    task/index
    task_history/index

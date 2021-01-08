@@ -1,17 +1,13 @@
 import configparser
-import json
 import os
 from pathlib import Path
 
 import annofabapi
 
-from annofabcli.statistics.csv import Csv
-from annofabcli.statistics.database import Database
-from annofabcli.statistics.table import Table
+from annofabcli.__main__ import main
 
-out_path = Path("./tests/out")
-data_path = Path("./tests/data/statistics")
-(out_path / "statistics").mkdir(exist_ok=True, parents=True)
+out_dir = Path("./tests/out/statistics")
+data_dir = Path("./tests/data/statistics")
 
 # プロジェクトトップに移動する
 os.chdir(os.path.dirname(os.path.abspath(__file__)) + "/../")
@@ -22,28 +18,121 @@ annofab_config = dict(inifile.items("annofab"))
 project_id = annofab_config["project_id"]
 service = annofabapi.build_from_netrc()
 
-csv_obj = Csv(str(out_path))
-database_obj = Database(
-    service,
-    project_id,
-    chekpoint_dir=str(data_path),
-    query=None,
-)
-table_obj = Table(database_obj)
 
+class TestCommandLine:
+    def test_list_annotation_count(self):
+        output_dir = str(out_dir / "list_annotation_count-out")
+        main(
+            [
+                "statistics",
+                "list_annotation_count",
+                "--project_id",
+                project_id,
+                "--output_dir",
+                output_dir,
+                "--group_by",
+                "task_id",
+            ]
+        )
 
-class TestDatabase:
-    def test_read_annotation_summary(self):
-        with open(data_path / "task.json") as f:
-            task_list = json.load(f)
-        result = database_obj.read_annotation_summary(task_list, table_obj._create_annotation_summary)
-        assert "sample_0" in result
-        assert "sample_1" in result
+    def test_list_by_date_user(self):
+        main(
+            [
+                "statistics",
+                "list_by_date_user",
+                "--project_id",
+                project_id,
+                "--output",
+                str(out_dir / "list_by_date_user-out.csv"),
+            ]
+        )
 
-    def test_read_input_data_from_json(self):
-        task_list = [{"task_id": "sample_0", "input_data_id_list": ["2186d46a-aa5f-4f9f-a69f-25500a78f647"]}]
-        result = database_obj.read_input_data_from_json(task_list)
-        assert "sample_0" in result
+    def test_list_cumulative_labor_time(self):
+        main(
+            [
+                "statistics",
+                "list_cumulative_labor_time",
+                "--project_id",
+                project_id,
+                "--output",
+                str(out_dir / "list_cumulative_labor_time-out.csv"),
+            ]
+        )
+
+    def test_list_labor_time_per_user(self):
+        main(
+            [
+                "statistics",
+                "list_labor_time_per_user",
+                "--project_id",
+                project_id,
+                "--output",
+                str(out_dir / "list_labor_time_per_user-out.csv"),
+            ]
+        )
+
+    def test_list_task_progress(self):
+        main(
+            [
+                "statistics",
+                "list_task_progress",
+                "--project_id",
+                project_id,
+                "--output",
+                str(out_dir / "task-progress-out.csv"),
+            ]
+        )
+
+    def test_summarize_task_count(self):
+        main(
+            [
+                "statistics",
+                "summarize_task_count",
+                "--project_id",
+                project_id,
+                "--output",
+                str(out_dir / "summariz-task-count-out.csv"),
+            ]
+        )
+
+    def test_summarize_task_count_by_task_id(self):
+        main(
+            [
+                "statistics",
+                "summarize_task_count_by_task_id",
+                "--project_id",
+                project_id,
+                "--output",
+                str(out_dir / "summarize_task_count_by_task_id.csv"),
+            ]
+        )
+
+    def test_summarize_task_count_by_user(self):
+        main(
+            [
+                "statistics",
+                "summarize_task_count_by_user",
+                "--project_id",
+                project_id,
+                "--output",
+                str(out_dir / "summarize_task_count_by_user.csv"),
+            ]
+        )
+
+    def test_visualize(self):
+        main(
+            [
+                "statistics",
+                "visualize",
+                "--project_id",
+                project_id,
+                "--task_query",
+                '{"status": "complete"}',
+                "--output_dir",
+                str(out_dir / "visualize-out"),
+                "--minimal",
+            ]
+        )
 
 
 # class TestListSubmittedTaskCountMain:

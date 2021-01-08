@@ -1,0 +1,3 @@
+﻿task_id,task_status,task_phase,task_phase_stage,label_Cat,label_leg,label_eye,label_dog,label_human,label_bird,label_climatic
+sample_0,break,acceptance,1,2,2,2,2,2,2,2
+sample_1,complete,acceptance,1,2,2,2,2,2,2,2

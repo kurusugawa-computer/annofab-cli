@@ -1,11 +1,10 @@
 ==================================================
-filesystem
+labor
 ==================================================
 
 Description
 =================================
-ファイル操作関係（Web APIにアクセスしない）のコマンドです。
-
+労務管理関係のコマンドです。
 
 
 Available Commands
@@ -16,7 +15,5 @@ Available Commands
    :maxdepth: 1
    :titlesonly:
 
-   filter_annotation
-   mask_user_info
-   write_annotation_image
-
+   list_worktime_by_user
+   

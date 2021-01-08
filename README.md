@@ -268,28 +268,6 @@ https://annofab-cli.readthedocs.io/ja/latest/command_reference/job/index.html �
 
 
 
-### labor list_worktime_by_user
-
-ユーザごとに作業予定時間、作業実績時間を出力します。
-
-```
-# 組織org1, org2に対して、user1, user2の作業時間を集計します。
-$ annofabcli labor list_worktime_by_user --organization org1 org2 --user_id user1 user2 \
- --start_date 2019-10-01 --end_date 2019-10-31 --output_dir /tmp/output
-
-# プロジェクトprj1, prj2に対して作業時間を集計します。集計対象のユーザはプロジェクトに所属するメンバです。
-$ annofabcli labor list_worktime_by_user --project_id prj1 prj2 --user_id user1 user2 \
- --start_date 2019-10-01 --end_date 2019-10-31 --output_dir /tmp/output
-
-
-# user.txtに記載されているユーザの予定稼働時間も一緒に出力します。
-$ annofabcli labor list_worktime_by_user --project_id prj1 prj2 --user_id file://user.txt \
- --start_month 2019-10 --end_month 2019-11 --add_availability --output_dir /tmp/output
-
-```
-
-
-
 
 ### project
 https://annofab-cli.readthedocs.io/ja/latest/command_reference/project/index.html 参照
@@ -297,48 +275,8 @@ https://annofab-cli.readthedocs.io/ja/latest/command_reference/project/index.htm
 ### project_member
 https://annofab-cli.readthedocs.io/ja/latest/command_reference/project_member/index.html 参照
 
-### statistics list_annotation_count
-各ラベル、各属性値のアノテーション数を、タスクごと/入力データごとに出力します。
-`--annotation`にはAnnoFabからダウンロードしたSimpleアノテーションzipのパスを渡します。指定しない場合はAnnoFabからダウンロードします。
-出力結果には以下のファイルが含まれています。
-* `labels_count.csv`：各ラベルのアノテーション数
-* `attirbutes_count.csv`：各属性値のアノテーション数（ただし属性の種類がチェックボックス、ラジオボタン、セレクトボックスの属性のみが対象）
 
 
-```
-# タスクごとにアノテーション数を、output ディレクトリに出力
-$ annofabcli statistics list_annotation_count --project_id prj1 --output_dir output --annotation annotataion.zip
-
-# 入力データごとにアノテーション数を、output ディレクトリに出力。アノテーション情報はAnnoFabからダウンロードする
-$ annofabcli statistics list_annotation_count --project_id prj1 --output_dir output --group_by input_data_id
-
-```
-
-
-### statistics list_by_date_user
-
-タスク数や作業時間などの情報を、日ごとユーザごとに出力します。
-
-```
-$ annofabcli statistics list_by_date_user --project_id prj1 --output data.csv
-
-```
-
-
-
-### statistics list_cumulative_labor_time
-タスクフェーズ別の累積作業時間をCSV形式で出力します。
-
-```
-$ annofabcli statistics list_cumulative_labor_time --project_id prj1 --output stat.csv
-```
-
-### statistics list_task_progress
-タスク進捗状況をCSV形式で出力します。
-
-```
-$ annofabcli statistics list_task_progress --project_id prj1 --output stat.csv
-```
 
 ### statistics merge_visualization_dir
 `annofabcli statistics visualize`コマンドの出力結果をマージします。
@@ -351,141 +289,6 @@ $ annofabcli statistics merge_visualization_dir --dir outdir1 outdir2 --output_d
 ```
 
 
-### statistics summarize_task_count
-タスクのフェーズ、ステータス、ステップごとにタスク数を、CSV形式で出力します。
-「1回目の教師付」と「2回目の教師付」を区別して集計されます。
-
-
-```
-# prj1のタスク数を出力します。ダウンロードしたタスク全件ファイルを元にして出力します（AM02:00頃更新）。
-$ annofabcli statistics summarize_task_count --project_id prj1 --output task-count.csv
-
-# `annofabcli project download task`でダウンロードした`task.json`を元にして、タスク数を出力します。
-$ annofabcli statistics summarize_task_count --project_id prj1 --task_json task.json --output task-count.csv
-
-```
-
-以下のようなCSVが出力されます。
-
-```csv
-step,phase,phase_stage,simple_status,task_count
-1,annotation,1,not_started,3761
-1,annotation,1,working_break_hold,30
-1,acceptance,1,not_started,1861
-1,acceptance,1,working_break_hold,20
-2,annotation,1,not_started,225
-2,annotation,1,working_break_hold,3
-2,acceptance,1,not_started,187
-5,acceptance,1,not_started,1
-,acceptance,1,complete,3000
-```
-
-
-* step：何回目のフェーズか
-* simple_status：タスクステータスを簡略化したもの
-    * not_started：未着手
-    * working_break_hold：作業中か休憩中か保留中
-    * complete：完了
-
-「一度も作業されていない教師付未着手」のタスク数は、先頭行（step=1, phase=annotation, simple_status=not_started）のtask_countから分かります。
-
-
-### statistics summarize_task_count_by_task_id
-task_idのプレフィックスごとに、タスク数をCSV形式で出力します。
-task_idは`{prefix}_{連番}`のようなフォーマットを想定しています。
-
-
-```
-# prj1のタスク数を出力します。ダウンロードしたタスク全件ファイルを元にして出力します（AM02:00頃更新）。
-$ annofabcli statistics summarize_task_count_by_task_id --project_id prj1 --output task-count.csv
-
-# `annofabcli project download task`でダウンロードした`task.json`を元にして、タスク数を出力します。
-$ annofabcli statistics summarize_task_count_by_task_id --project_id prj1 --task_json task.json --output task-count.csv
-
-```
-
-以下のようなCSVが出力されます。
-
-```csv
-task_id_prefix,complete,on_hold,annotation_not_started,inspection_not_started,acceptance_not_started,other,sum
-20200401,10,0,0,0,0,0,10
-20200501,10,1,4,0,1,4,20
-```
-
-各列
-* annotation_not_started: 教師付フェーズが一度も作業されていないタスク数
-* inspection_not_started: 検査フェーズが一度も作業されていないタスク数
-* acceptance_not_started: 受入フェーズが一度も作業されていないタスク数
-* other: 休憩中、作業中、
-* simple_status：タスクステータスを簡略化したもの
-    * not_started：未着手
-    * working_break_hold：作業中か休憩中か保留中
-    * complete：完了
-
-「一度も作業されていない教師付未着手」のタスク数は、先頭行（step=1, phase=annotation, simple_status=not_started）のtask_countから分かります。
-
-
-### statistics summarize_task_count_by_user
-ユーザごとに担当しているタスク数をCSV形式で出力します。
-
-
-```
-# prj1のタスク数を出力します。ダウンロードしたタスク全件ファイルを元にして出力します（AM02:00頃更新）。
-$ annofabcli statistics summarize_task_count_by_user --project_id prj1 --output task-count.csv
-
-# `annofabcli project download task`でダウンロードした`task.json`を元にして、タスク数を出力します。
-$ annofabcli statistics summarize_task_count_by_task_id --project_id prj1 --task_json task.json --output task-count.csv
-
-```
-
-以下のようなCSVが出力されます。
-
-```csv
-task_id_prefix,complete,on_hold,annotation_not_started,inspection_not_started,acceptance_not_started,other,sum
-20200401,10,0,0,0,0,0,10
-20200501,10,1,4,0,1,4,20
-```
-
-各列
-* annotation_not_started: 教師付フェーズが一度も作業されていないタスク数
-* inspection_not_started: 検査フェーズが一度も作業されていないタスク数
-* acceptance_not_started: 受入フェーズが一度も作業されていないタスク数
-* other: 休憩中、作業中、
-* simple_status：タスクステータスを簡略化したもの
-    * not_started：未着手
-    * working_break_hold：作業中か休憩中か保留中
-    * complete：完了
-
-「一度も作業されていない教師付未着手」のタスク数は、先頭行（step=1, phase=annotation, simple_status=not_started）のtask_countから分かります。
-
-
-### statistics visualize
-統計情報を可視化します。
-
-```
-# prj1の統計情報を可視化したファイルを、/tmp/outputに出力する
-$ annofabcli statistics visualize --project_id prj1 --output_dir /tmp/output
-
-# statusがcompleteのタスクを統計情報を可視化したファイルを、/tmp/outputに出力する
-$ annofabcli statistics visualize --project_id prj1 --output_dir /tmp/output \
-  --task_query '{"status": "complete"}' 
-
-# アノテーションzipを更新してから、アノテーションzipをダウンロードします。
-$ annofabcli statistics visualize --project_id prj1 --output_dir /tmp/output --update_annotation
-
-# WebAPIを実行せずに、作業ディレクトリ（デフォルトは`$XDG_CACHE_HOME/annofabcli`）内のファイルを参照して、統計情報を可視化する。
-$ annofabcli statistics visualize --project_id prj1 --not_update
-
-# prj, prj2 の統計情報を、/tmp/outputにプロジェクトごとに出力します。
-$ annofabcli statistics visualize --project_id prj1 prj2 --output_dir /tmp/output
-
-# prj, prj2, prj3, prj4 の統計情報を、並列処理で出力します。
-$ annofabcli statistics visualize --project_id prj1 prj2 prj3 prj4  --output_dir /tmp/output --parallelism 2
-
-# prj, prj2 の統計情報を、/tmp/outputにプロジェクトごとに出力し、prj1,prj2の統計情報をマージした情報も、`merge`ディレクトリに出力します。
-$ annofabcli statistics visualize --project_id prj1 prj2 --output_dir /tmp/output --merge
-
-```
 
 
 ### supplementary

@@ -463,16 +463,10 @@ class AbstracCommandCinfirmInterface(abc.ABC):
         return yes
 
 
-class AbstractCommandLineInterface(abc.ABC):
+class AbstractCommandLineWithoutWebapiInterface(abc.ABC):
     """
-    CLI用の抽象クラス
+    webapiにアクセスしないCLI用の抽象クラス
     """
-
-    #: annofabapi.Resourceインスタンス
-    service: annofabapi.Resource
-
-    #: AnnofabApiFacadeインスタンス
-    facade: AnnofabApiFacade
 
     #: Trueならば、処理中に現れる問い合わせに対して、常に'yes'と回答したものとして処理する。
     all_yes: bool = False
@@ -489,9 +483,7 @@ class AbstractCommandLineInterface(abc.ABC):
     #: 出力フォーマット
     str_format: Optional[str] = None
 
-    def __init__(self, service: annofabapi.Resource, facade: AnnofabApiFacade, args: argparse.Namespace):
-        self.service = service
-        self.facade = facade
+    def __init__(self, args: argparse.Namespace):
         self.args = args
         self.process_common_args(args)
 
@@ -515,30 +507,6 @@ class AbstractCommandLineInterface(abc.ABC):
             self.str_format = args.format
 
         logger.info(f"args: {args}")
-
-    def validate_project(
-        self,
-        project_id,
-        project_member_roles: Optional[List[ProjectMemberRole]] = None,
-        organization_member_roles: Optional[List[OrganizationMemberRole]] = None,
-    ):
-        """
-        プロジェクト or 組織に対して、必要な権限が付与されているかを確認する。
-
-        Args:
-            project_id:
-            project_member_roles: プロジェクトメンバロールの一覧. Noneの場合はチェックしない。
-            organization_member_roles: 組織メンバロールの一覧。Noneの場合はチェックしない。
-
-        Raises:
-             AuthorizationError: 自分自身のRoleがいずれかのRoleにも合致しなければ、AuthorizationErrorが発生する。
-
-        """
-        self.facade.validate_project(
-            project_id=project_id,
-            project_member_roles=project_member_roles,
-            organization_member_roles=organization_member_roles,
-        )
 
     def confirm_processing(self, confirm_message: str) -> bool:
         """
@@ -612,4 +580,45 @@ class AbstractCommandLineInterface(abc.ABC):
 
         annofabcli.utils.print_according_to_format(
             target, arg_format=FormatArgument(self.str_format), output=self.output, csv_format=self.csv_format
+        )
+
+
+class AbstractCommandLineInterface(AbstractCommandLineWithoutWebapiInterface):
+    """
+    CLI用の抽象クラス
+    """
+
+    #: annofabapi.Resourceインスタンス
+    service: annofabapi.Resource
+
+    #: AnnofabApiFacadeインスタンス
+    facade: AnnofabApiFacade
+
+    def __init__(self, service: annofabapi.Resource, facade: AnnofabApiFacade, args: argparse.Namespace):
+        self.service = service
+        self.facade = facade
+        super().__init__(args)
+
+    def validate_project(
+        self,
+        project_id,
+        project_member_roles: Optional[List[ProjectMemberRole]] = None,
+        organization_member_roles: Optional[List[OrganizationMemberRole]] = None,
+    ):
+        """
+        プロジェクト or 組織に対して、必要な権限が付与されているかを確認する。
+
+        Args:
+            project_id:
+            project_member_roles: プロジェクトメンバロールの一覧. Noneの場合はチェックしない。
+            organization_member_roles: 組織メンバロールの一覧。Noneの場合はチェックしない。
+
+        Raises:
+             AuthorizationError: 自分自身のRoleがいずれかのRoleにも合致しなければ、AuthorizationErrorが発生する。
+
+        """
+        self.facade.validate_project(
+            project_id=project_id,
+            project_member_roles=project_member_roles,
+            organization_member_roles=organization_member_roles,
         )

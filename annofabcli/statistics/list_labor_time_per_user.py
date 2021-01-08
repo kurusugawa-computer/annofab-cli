@@ -94,7 +94,7 @@ def main(args):
 
 def add_parser(subparsers: argparse._SubParsersAction):
     subcommand_name = "list_labor_time_per_user"
-    subcommand_help = "メンバ別の作業時間、完了数、差し戻し回数を出力する。"
-    description = "メンバ別の作業時間、完了数、差し戻し回数をCSV形式で出力する。"
+    subcommand_help = "メンバ別の作業時間、完了数、差し戻し回数を日毎に出力する。"
+    description = "メンバ別の作業時間、完了数、差し戻し回数を日毎にCSV形式で出力する。"
     parser = annofabcli.common.cli.add_parser(subparsers, subcommand_name, subcommand_help, description=description)
     parse_args(parser)

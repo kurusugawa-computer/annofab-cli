@@ -1,5 +1,7 @@
 import argparse
 
+import annofabcli.stat_visualization.mask_visualization_dir
+import annofabcli.stat_visualization.merge_visualization_dir
 import annofabcli.stat_visualization.write_performance_rating_csv
 
 
@@ -8,6 +10,8 @@ def parse_args(parser: argparse.ArgumentParser):
     subparsers = parser.add_subparsers(dest="subcommand_name")
 
     # サブコマンドの定義
+    annofabcli.stat_visualization.mask_visualization_dir.add_parser(subparsers)
+    annofabcli.stat_visualization.merge_visualization_dir.add_parser(subparsers)
     annofabcli.stat_visualization.write_performance_rating_csv.add_parser(subparsers)
 
 
