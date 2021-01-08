@@ -6,8 +6,8 @@ import annofabapi
 
 from annofabcli.__main__ import main
 
-out_dir = Path("./tests/out/job")
-data_dir = Path("./tests/data/job")
+out_dir = Path("./tests/out/project_member")
+data_dir = Path("./tests/data/project_member")
 
 # プロジェクトトップに移動する
 os.chdir(os.path.dirname(os.path.abspath(__file__)) + "/../")
@@ -38,7 +38,7 @@ class TestCommandLine:
         main(["project_member", "copy", project_id, project_id, "--yes"])
 
     def test_delete(self):
-        main(["project_member", "delete", project_id, "--user_id", "not_exists_user_id", "--yes"])
+        main(["project_member", "delete", "--project_id", project_id, "--user_id", "not_exists_user_id", "--yes"])
 
     def test_invite_project_member(self):
         user_id = service.api.login_user_id

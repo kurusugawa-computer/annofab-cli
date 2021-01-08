@@ -9,13 +9,12 @@ from annofabcli.project_member.put_project_members import Member, PutProjectMemb
 # プロジェクトトップに移動する
 os.chdir(os.path.dirname(os.path.abspath(__file__)) + "/../")
 
-test_dir = Path("./tests/data")
-out_dir = Path("./tests/out")
-
+data_dir = Path("./tests/data/project_member")
+out_dir = Path("./tests/out/project_member")
 
 class TestPutProjectMembers:
     def test_get_members_from_csv(self):
-        csv_path = test_dir / "project_members.csv"
+        csv_path = data_dir / "project_members.csv"
         actual_members = PutProjectMembers.get_members_from_csv(csv_path)
         expected_members = [
             Member("user1", ProjectMemberRole.OWNER, sampling_inspection_rate=None, sampling_acceptance_rate=None),

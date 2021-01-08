@@ -19,11 +19,9 @@ task_id = annofab_config["task_id"]
 
 class TestCommandLine:
     def test_list_inspection_comment(self):
-        out_file = str(data_dir / "inspection_comment.csv")
-        main(["inspection_comment", "list", "--project_id", project_id, "--task_id", task_id, "--output", out_file])
+        main(["inspection_comment", "list", "--project_id", project_id, "--task_id", task_id, "--output", str(data_dir / "list-out.csv")])
 
     def test_list_inspection_comment_with_json(self):
-        out_file = str(data_dir / "inspection_comment.csv")
         main(
             [
                 "inspection_comment",
@@ -32,6 +30,6 @@ class TestCommandLine:
                 project_id,
                 "--exclude_reply",
                 "--output",
-                out_file,
+                str(out_dir / "list_with_json-out.csv"),
             ]
         )

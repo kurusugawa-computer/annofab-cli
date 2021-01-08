@@ -65,47 +65,10 @@ class TestLabor:
         )
 
 
-### OrganizaitionMember
-
 
 class TestTaskHistory:
     command_name = "task_history"
 
-    def test_list_with_json(self):
-        out_file = str(out_path / "task.csv")
-
-        main(
-            [
-                self.command_name,
-                "list_with_json",
-                "--project_id",
-                project_id,
-                "--task_id",
-                "test1",
-                "test2",
-                "--output",
-                out_file,
-                "--format",
-                "csv",
-            ]
-        )
-
-    def test_list_task_history(self):
-        out_file = str(out_path / "task_history.csv")
-        main(
-            [
-                self.command_name,
-                "list",
-                "--project_id",
-                project_id,
-                "--task_id",
-                task_id,
-                "--format",
-                "csv",
-                "--output",
-                out_file,
-            ]
-        )
 
 
 class TestExperimental:
