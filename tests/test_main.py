@@ -69,42 +69,6 @@ class TestInstruction:
         dest_project_id = project_id
         main(["instruction", "copy", src_project_id, dest_project_id, "--yes"])
 
-
-class TestJob:
-    def test_list_job(self):
-        out_file = str(out_path / "job.csv")
-        main(
-            [
-                "job",
-                "list",
-                "--project_id",
-                project_id,
-                "--job_type",
-                "gen-annotation",
-                "--format",
-                "csv",
-                "--output",
-                out_file,
-            ]
-        )
-
-    def test_list_last_job(self):
-        out_file = str(out_path / "job.csv")
-        main(
-            [
-                "job",
-                "list_last",
-                "--project_id",
-                project_id,
-                "--job_type",
-                "gen-annotation",
-                "--format",
-                "csv",
-                "--output",
-                out_file,
-            ]
-        )
-
     def test_wait_job(self):
         main(
             [
