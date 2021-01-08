@@ -24,62 +24,6 @@ data_path = Path("./tests/data")
 organization_name = service.api.get_organization_of_project(project_id)[0]["organization_name"]
 
 
-class TestInspectionComment:
-    def test_list_inspection_comment(self):
-        out_file = str(out_path / "inspection_comment.csv")
-        main(["inspection_comment", "list", "--project_id", project_id, "--task_id", task_id, "--output", out_file])
-
-    def test_list_unprocessed_inspection_comment(self):
-        out_file = str(out_path / "inspection_comment.csv")
-        main(
-            [
-                "inspection_comment",
-                "list_unprocessed",
-                "--project_id",
-                project_id,
-                "--task_id",
-                task_id,
-                "--output",
-                out_file,
-            ]
-        )
-
-    def test_list_inspection_comment_with_json(self):
-        out_file = str(out_path / "inspection_comment.csv")
-        main(
-            [
-                "inspection_comment",
-                "list_with_json",
-                "--project_id",
-                project_id,
-                "--exclude_reply",
-                "--output",
-                out_file,
-            ]
-        )
-
-
-class TestInstruction:
-    def test_upload_instruction(self):
-        html_file = str(data_path / "instruction.html")
-        main(["instruction", "upload", "--project_id", project_id, "--html", html_file])
-
-    def test_copy_instruction(self):
-        src_project_id = project_id
-        dest_project_id = project_id
-        main(["instruction", "copy", src_project_id, dest_project_id, "--yes"])
-
-    def test_wait_job(self):
-        main(
-            [
-                "job",
-                "wait",
-                "--project_id",
-                project_id,
-                "--job_type",
-                "delete-project",
-            ]
-        )
 
 
 class TestLabor:
