@@ -28,7 +28,7 @@ class TestCommandLine:
                 "--task_id",
                 task_id,
                 "--output",
-                str(data_dir / "list-out.csv"),
+                str(out_dir / "list-out.csv"),
             ]
         )
 
