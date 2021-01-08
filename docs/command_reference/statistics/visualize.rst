@@ -50,6 +50,14 @@ Examples
     --start_date 2020-04-01
 
 
+デフォルトでは10個以上のファイルを出力します。よく利用するファイルのみ出力する場合は、 ``--minimal`` を指定してください。
+
+.. code-block::
+
+    $ annofabcli input_data put --project_id prj1 --output out_dir/
+    --minimal
+
+
 
 複数のプロジェクトをマージする
 ----------------------------------------------

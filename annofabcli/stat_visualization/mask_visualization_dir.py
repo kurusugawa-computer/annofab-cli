@@ -143,7 +143,7 @@ def parse_args(parser: argparse.ArgumentParser):
 
 
 def add_parser(subparsers: argparse._SubParsersAction):
-    subcommand_name = "mask_visualization_dir"
+    subcommand_name = "mask_user_info"
     subcommand_help = "`annofabcli statistics visualize`コマンドの出力結果のユーザ情報をマスクします。"
     description = "`annofabcli statistics visualize`コマンドの出力結果のユーザ情報をマスクします。マスク対象のファイルのみ出力します。"
     parser = annofabcli.common.cli.add_parser(subparsers, subcommand_name, subcommand_help, description)
