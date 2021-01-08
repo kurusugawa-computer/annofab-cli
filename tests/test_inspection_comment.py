@@ -2,8 +2,6 @@ import configparser
 import os
 from pathlib import Path
 
-import annofabapi
-
 from annofabcli.__main__ import main
 
 out_dir = Path("./tests/out/inspection_comment")
@@ -37,5 +35,3 @@ class TestCommandLine:
                 out_file,
             ]
         )
-
-

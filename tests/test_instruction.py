@@ -28,5 +28,3 @@ class TestCommandLine:
         src_project_id = project_id
         dest_project_id = project_id
         main(["instruction", "copy", src_project_id, dest_project_id, "--yes"])
-
-
