@@ -183,9 +183,7 @@ class AddProps:
         """
         return self._add_user_info(annotation_specs_history)
 
-    def add_properties_to_instruction(
-        self, instruction_history: AnnotationSpecsHistory
-    ) -> AnnotationSpecsHistory:
+    def add_properties_to_instruction(self, instruction_history: AnnotationSpecsHistory) -> AnnotationSpecsHistory:
         """
         作業ガイド履歴に、以下のキーを追加する.
         user_id
