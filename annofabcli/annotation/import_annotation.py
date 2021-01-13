@@ -45,14 +45,14 @@ class ImportedSimpleAnnotationDetail(DataClassJsonMixin):
     label: str
     """アノテーション仕様のラベル名(英語)"""
 
-    annotation_id: Optional[str]
-    """アノテーションID"""
-
     data: Dict[str, Any]
     """"""
 
     attributes: Dict[str, Union[str, bool, int]]
     """属性情報。キーは属性の名前、値は属性の値。 """
+
+    annotation_id: Optional[str] = None
+    """アノテーションID"""
 
 
 @dataclass
@@ -274,7 +274,8 @@ class ImportAnnotation(AbstractCommandLineInterface):
                     success_count += 1
             except Exception as e:  # pylint: disable=broad-except
                 logger.warning(
-                    f"task_id={parser.task_id}, input_data_id={parser.input_data_id} のアノテーションインポートに失敗しました。: {e}"
+                    f"task_id={parser.task_id}, input_data_id={parser.input_data_id} の"
+                    f"アノテーションインポートに失敗しました。: {type(e).__name__}: {e}"
                 )
 
         logger.info(f"タスク'{task_parser.task_id}'の入力データ {success_count} 個に対してアノテーションをインポートしました。")
@@ -386,7 +387,7 @@ class ImportAnnotation(AbstractCommandLineInterface):
                         success_count += 1
 
             except Exception as e:  # pylint: disable=broad-except
-                logger.warning(f"task_id={task_parser.task_id} のアノテーションインポートに失敗しました。: {e}")
+                logger.warning(f"task_id={task_parser.task_id} のアノテーションインポートに失敗しました。: {type(e).__name__}: {e}")
 
         logger.info(f"{success_count} 個のタスクに対してアノテーションをインポートしました。")
 

@@ -43,6 +43,7 @@ class ListTaskCreationHistory(AbstractCommandLineInterface):
         data_list = main_obj.get_data_list(args.project_id)
 
         if args.format == FormatArgument.CSV.value:
+            data_list = self.search_with_jmespath_expression(data_list)
             df = pandas.DataFrame(data_list)
             self.print_csv(df)
         else:

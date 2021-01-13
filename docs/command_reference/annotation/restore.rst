@@ -1,3 +1,5 @@
+
+
 ==========================================
 annotation restore
 ==========================================
@@ -50,5 +52,5 @@ Examples
 
 See also
 =================================
-*  `annofabcli annotation dump <../annotation/restore.html>`_
+*  `annofabcli annotation dump <../annotation/dump.html>`_
 

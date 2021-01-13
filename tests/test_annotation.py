@@ -61,7 +61,7 @@ class TestCommandLine:
             ]
         )
 
-    def test_import_annotation(self):
+    def test_import(self):
         main(
             [
                 "annotation",
@@ -77,7 +77,7 @@ class TestCommandLine:
             ]
         )
 
-    def test_annotation(self):
+    def test_list_count(self):
         main(
             [
                 "annotation",

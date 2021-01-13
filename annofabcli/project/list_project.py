@@ -180,9 +180,11 @@ class ListProject(AbstractCommandLineInterface):
         logger.info(f"プロジェクト一覧の件数: {len(project_list)}")
 
         if args.format == FormatArgument.MINIMAL_CSV.value:
+            project_list = self.search_with_jmespath_expression(project_list)
             df = create_minimal_dataframe(project_list)
             self.print_csv(df)
         elif args.format == FormatArgument.CSV.value:
+            project_list = self.search_with_jmespath_expression(project_list)
             df = pandas.DataFrame(project_list)
             columns = get_columns_with_priority(df, prior_columns=self.PRIOR_COLUMNS)
             self.print_csv(df[columns])

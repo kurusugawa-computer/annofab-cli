@@ -1,0 +1,7 @@
+user_id,username,biography,mean_of_deviation,count_of_project,prj1,prj2,prj3
+,,,,,actual_worktime/annotation_count__annotation,actual_worktime/annotation_count__annotation,actual_worktime/annotation_count__annotation
+user1,user1,,30,1,30,,
+user2,user2,,46,3,40,49,49
+user3,user3,,50,3,50,50,50
+user4,user4,,52.3,3,55,51,51
+user5,user5,,60,1,60,,

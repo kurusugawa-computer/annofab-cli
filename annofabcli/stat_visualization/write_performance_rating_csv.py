@@ -8,8 +8,7 @@ import numpy
 import pandas
 
 import annofabcli
-from annofabcli import AnnofabApiFacade
-from annofabcli.common.cli import AbstractCommandLineInterface, build_annofabapi_resource_and_login, get_list_from_args
+from annofabcli.common.cli import AbstractCommandLineWithoutWebapiInterface, get_list_from_args
 from annofabcli.common.utils import print_csv, read_multiheader_csv
 from annofabcli.statistics.csv import FILENAME_PEFORMANCE_PER_USER
 
@@ -374,7 +373,7 @@ def create_user_df(target_dir: Path) -> pandas.DataFrame:
     return df_user.sort_values("user_id").set_index("user_id")
 
 
-class WritePerformanceRatingCsv(AbstractCommandLineInterface):
+class WritePerformanceRatingCsv(AbstractCommandLineWithoutWebapiInterface):
     def main(self) -> None:
         args = self.args
 
@@ -440,9 +439,7 @@ def parse_args(parser: argparse.ArgumentParser):
 
 
 def main(args):
-    service = build_annofabapi_resource_and_login(args)
-    facade = AnnofabApiFacade(service)
-    WritePerformanceRatingCsv(service, facade, args).main()
+    WritePerformanceRatingCsv(args).main()
 
 
 def add_parser(subparsers: argparse._SubParsersAction):

@@ -1,0 +1,7 @@
+user_id,username,biography,prj1,prj2,prj3
+,,,actual_worktime/annotation_count__annotation,actual_worktime/annotation_count__annotation,actual_worktime/annotation_count__annotation
+user1,user1,,A,A,A
+user2,user2,,B,A,B
+user3,user3,,B,B,C
+user4,user4,,C,C,D
+user5,user5,,D,D,

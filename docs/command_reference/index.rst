@@ -20,6 +20,7 @@ Command Reference
    project/index
    project_member/index
    statistics/index
+   stat_visualization/index
    supplementary/index
    task/index
    task_history/index

@@ -23,12 +23,21 @@ class DeleteJobMain:
         self.facade = AnnofabApiFacade(service)
 
     def delete_job_list(self, project_id: str, job_type: JobType, job_id_list: List[str]):
+        job_list = self.service.wrapper.get_all_project_job(project_id, query_params={"type": job_type.value})
+        exists_job_id_set = {e["job_id"] for e in job_list}
+
+        count = 0
         for job_id in job_id_list:
-            logger.debug(f"job_id={job_id} のジョブを削除します。")
+            if job_id not in exists_job_id_set:
+                logger.debug(f"job_id={job_id} のジョブは存在しなかったのでスキップします。")
+                continue
             try:
                 self.service.api.delete_project_job(project_id, job_type.value, job_id)
+                logger.debug(f"job_type={job_type.value}, job_id={job_id} のジョブを削除しました。")
+                count += 1
             except Exception as e:  # pylint: disable=broad-except
                 logger.warning(e)
+        logger.info(f"{count} / {len(job_id_list)} 件のジョブを削除しました。")
 
 
 class DeleteJob(AbstractCommandLineInterface):
