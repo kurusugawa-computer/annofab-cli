@@ -16,4 +16,6 @@ Available Commands
    :titlesonly:
 
    copy
+   download
+   list_history
    upload
