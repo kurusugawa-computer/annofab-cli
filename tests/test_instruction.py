@@ -28,3 +28,9 @@ class TestCommandLine:
         src_project_id = project_id
         dest_project_id = project_id
         main(["instruction", "copy", src_project_id, dest_project_id, "--yes"])
+
+    def test_list_history(self):
+        main(["instruction", "list_history", "--project_id", project_id, "--output", str(out_dir / "list_history-out.csv")])
+
+    def test_download(self):
+        main(["instruction", "download", "--project_id", project_id, "--output_dir", str(out_dir / "download-out"), "--download_image"])

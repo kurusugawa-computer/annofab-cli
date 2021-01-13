@@ -77,7 +77,7 @@ class DownloadInstructionMain:
                 logger.warning(e)
                 logger.warning(f"{src_value} のダウンロードに失敗しました。")
 
-        return pq.html()
+        return pq.outer_html()
 
     def download_instruction(
         self, project_id: str, output_dir: Path, history_id: Optional[str] = None, is_download_image: bool = False
@@ -98,11 +98,12 @@ class DownloadInstructionMain:
             if content is None:
                 logger.warning(f"project_id={project_id} のプロジェクトに作業ガイドは設定されていなかったので、ダウンロードできませんでした。")
                 return
+            str_instruction_html = content["html"]
         else:
-            content, _ = self.service.api.get_instruction(project_id, query_params={"history_id": history_id})
+            content2, _ = self.service.api.get_instruction(project_id, query_params={"history_id": history_id})
+            str_instruction_html = content2["html"]
 
         output_dir.mkdir(exist_ok=True, parents=True)
-        str_instruction_html = content["html"]
         if is_download_image:
             str_instruction_html = self.download_images(
                 project_id, str_instruction_html=str_instruction_html, output_dir=output_dir
@@ -115,50 +116,6 @@ class DownloadInstructionMain:
 
 class DownloadInstruction(AbstractCommandLineInterface):
     COMMON_MESSAGE = "annofabcli instruction download"
-
-    def upload_html_to_instruction(self, project_id: str, html_path: Path):
-        pq_html = pyquery.PyQuery(filename=str(html_path))
-        pq_img = pq_html("img")
-
-        # 画像をすべてアップロードして、img要素のsrc属性値を annofab urlに変更する
-        for img_elm in pq_img:
-            src_value: str = img_elm.attrib.get("src")
-            if src_value is None:
-                continue
-
-            if src_value.startswith("http:") or src_value.startswith("https:") or src_value.startswith("data:"):
-                continue
-
-            if src_value[0] == "/":
-                img_path = Path(src_value)
-            else:
-                img_path = html_path.parent / src_value
-
-            if img_path.exists():
-                image_id = str(uuid.uuid4())
-                img_url = self.service.wrapper.upload_instruction_image(project_id, image_id, str(img_path))
-
-                logger.debug(f"image uploaded. file={img_path}, instruction_image_url={img_url}")
-                img_elm.attrib["src"] = img_url
-                time.sleep(1)
-
-            else:
-                logger.warning(f"image does not exist. path={img_path}")
-
-        # 作業ガイドの更新(body element)
-        html_data = pq_html("body").html()
-        self.update_instruction(project_id, html_data)
-        logger.info("作業ガイドを更新しました。")
-
-    def update_instruction(self, project_id: str, html_data: str):
-        histories, _ = self.service.api.get_instruction_history(project_id)
-        if len(histories) > 0:
-            last_updated_datetime = histories[0]["updated_datetime"]
-        else:
-            last_updated_datetime = None
-
-        request_body = {"html": html_data, "last_updated_datetime": last_updated_datetime}
-        self.service.api.put_instruction(project_id, request_body=request_body)
 
     def get_history_id_from_before_index(self, project_id: str, before: int) -> Optional[str]:
         histories, _ = self.service.api.get_instruction_history(project_id, query_params={"limit": 10000})
