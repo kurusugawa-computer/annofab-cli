@@ -2,6 +2,9 @@
 出力の制御
 ==========================================
 
+``annfoabcli task list`` コマンドなど、情報を出力するコマンドで出力を制御する方法について記載します。
+
+
 出力形式の指定
 ==================================================================
 ``--format`` で出力形式を指定できます。原則以下の値を指定できます。
@@ -15,7 +18,7 @@
 CSVの出力形式
 ==================================================================
 ``--csv_format`` で、CSVの出力形式を指定できます。
-指定した値は、`pandas.DataFrame.to_csv<https://pandas.pydata.org/pandas-docs/stable/reference/api/pandas.DataFrame.to_csv.html>`_ の引数として渡されます。
+指定した値は、`pandas.DataFrame.to_csv <https://pandas.pydata.org/pandas-docs/stable/reference/api/pandas.DataFrame.to_csv.html>`_ の引数として渡されます。
 
 デフォルトでは、カンマ区切り、BOM付UTF-8で出力します。
 
@@ -42,4 +45,8 @@ CSVの出力形式
     $ annofabcli task list --project_id prj1 --format json --query "[*].user_id"
 
 
+
+出力先の指定
+==================================================================
+出力結果は ``--output`` に指定したファイルに出力されます。``--output`` を指定しない場合は、標準出力に出力されます。
 

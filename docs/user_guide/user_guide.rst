@@ -80,16 +80,83 @@ Getting Help
       -h, --help            show this help message and exit
       -p PROJECT_ID, --project_id PROJECT_ID
                             対象のプロジェクトのproject_idを指定します。 (default: None)
-　　　...
 
     global optional arguments:
       --yes                 処理中に現れる問い合わせに対して、常に'yes'と回答します。 (default: False)
-      ...
 
 
 
 パラメータの指定
-----------------------------------------------------------------
+=================================================
+複数の値を渡せるコマンドラインオプションと、JSON形式の値を渡すコマンドラインオプションは、``file://`` を指定することでファイルの中身を渡すことができます。
 
-リスト
-^^^^^^^^^^^^
+.. code-block::
+    :caption: task_id.txt
+
+    task1
+    task2
+
+
+.. code-block::
+
+    # 標準入力で指定する
+    $ annofabcli task list --project_id prj1 --task_id task1 task2
+
+    # 相対パスでファイルを指定する
+    $ annofabcli task list --project_id prj1 --task_id file://task_id.txt
+
+
+.. code-block::
+    :caption: /tmp/task_query.json
+
+    {
+        "status":"not_started",
+        "phase":"acceptance"
+    }
+
+
+.. code-block::
+
+    # 標準入力で指定
+    $ annofabcli task list --project_id prj1 --task_query '{"status":"not_started", "phase":"acceptance"}'
+
+    # 絶対パスでファイルを指定する
+    $ annofabcli task list --project_id prj1 --task_query file:///tmp/task_query.json
+
+
+
+ロギングコントロール
+=================================================
+
+デフォルトのログ設定は以下の通りです。
+
+* ログメッセージは、標準エラー出力とログファイル ``.log/annofabcli.log`` に出力されます。
+* ``annofabcli.log`` ファイルは、1日ごとにログロテート（新しいログファイルが生成）されます
+
+詳細なログのて設定は https://github.com/kurusugawa-computer/annofab-cli/blob/master/annofabcli/data/logging.yaml を参照してください。
+
+
+ログファイルの出力先を変更する場合は、``--logdir`` にログファイルの出力先ディレクトリを指定してください。
+
+ログ設定をカスタマイズする場合は、``--logging_yaml`` にロギング設定ファイルを指定してください。
+設定ファイルの書き方は https://docs.python.org/ja/3/howto/logging.html を参照してください。
+
+
+以下のロギング設定ファイルを指定すると、WARNINGレベル以上のログのみコンソールに出力します。
+
+
+.. code-block::yaml
+
+    version: 1
+    handlers:
+      consoleHandler:
+        class: logging.StreamHandler
+    root:
+      level: WARNING
+      handlers: [consoleHandler]
+
+    # デフォルトのロガーを無効化しないようにする https://docs.djangoproject.com/ja/2.1/topics/logging/#configuring-logging
+    disable_existing_loggers: False
+
+
+
