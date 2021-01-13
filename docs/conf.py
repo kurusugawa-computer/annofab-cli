@@ -62,4 +62,3 @@ html_static_path = ['_static']
 html_theme_options = {
     "github_url": "https://github.com/kurusugawa-computer/annofab-api-python-client",
 }
-html_sidebars = {"**": ["localtoc.html", "links.html", "searchbox.html"]}

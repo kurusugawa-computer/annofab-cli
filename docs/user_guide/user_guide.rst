@@ -4,7 +4,7 @@ User Guide
 
 
 Command Structure
-----------------------------------------------------------------
+==========================================
 
 
 .. code-block::
@@ -17,7 +17,8 @@ Command Structure
 
 
 Version
-----------------------------------------------------------------
+==========================================
+
 ``--version`` を指定すると、annofabcliのバージョンが表示されます。
 
 .. code-block::
@@ -28,7 +29,7 @@ Version
 
 
 Getting Help
-----------------------------------------------------------------
+==========================================
 ``--help`` を指定すると、コマンドのヘルプが表示されます。
 
 
@@ -133,7 +134,7 @@ Getting Help
 * ログメッセージは、標準エラー出力とログファイル ``.log/annofabcli.log`` に出力されます。
 * ``annofabcli.log`` ファイルは、1日ごとにログロテート（新しいログファイルが生成）されます
 
-詳細なログのて設定は https://github.com/kurusugawa-computer/annofab-cli/blob/master/annofabcli/data/logging.yaml を参照してください。
+詳細なログの設定は https://github.com/kurusugawa-computer/annofab-cli/blob/master/annofabcli/data/logging.yaml を参照してください。
 
 
 ログファイルの出力先を変更する場合は、``--logdir`` にログファイルの出力先ディレクトリを指定してください。
@@ -145,7 +146,8 @@ Getting Help
 以下のロギング設定ファイルを指定すると、WARNINGレベル以上のログのみコンソールに出力します。
 
 
-.. code-block::yaml
+.. code-block:: yaml
+    :caption: logging.yaml
 
     version: 1
     handlers:
@@ -159,4 +161,6 @@ Getting Help
     disable_existing_loggers: False
 
 
+.. code-block::
 
+    $ annofabcli task list --project_id prj1 --loging_yaml loggin.yaml
