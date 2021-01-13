@@ -191,7 +191,8 @@ Examples
 
 日毎のタスク数や作業時間、生産性などをの推移が分かります。
 
-`折れ線-横軸_日-全体.html <https://raw.githubusercontent.com/kurusugawa-computer/annofab-cli/master/docs/command_reference/statistics/list_annotation_count/out_dir/line-graph/折れ線-横軸_日-全体.html>`_
+`折れ線-横軸_日-全体.html <https://kurusugawa-computer.github.io/annofab-cli/command_reference/statistics/visualize/out_dir/line-graph/%E6%8A%98%E3%82%8C%E7%B7%9A-%E6%A8%AA%E8%BB%B8_%E6%97%A5-%E5%85%A8%E4%BD%93.html>`_
+
 
 
 .. image:: visualize/img/日ごとのタスク数と作業時間.png
@@ -205,7 +206,7 @@ Examples
 グラフのデータは ``日毎の生産量と生産性.csv`` を参照しています。
 
 
-`累積折れ線-横軸_日-全体.html <https://raw.githubusercontent.com/kurusugawa-computer/annofab-cli/master/docs/command_reference/statistics/list_annotation_count/out_dir/line-graph/累積折れ線-横軸_日-全体.html>`_
+`累積折れ線-横軸_日-全体.html <https://kurusugawa-computer.github.io/annofab-cli/command_reference/statistics/visualize/out_dir/line-graph/%E7%B4%AF%E7%A9%8D%E6%8A%98%E3%82%8C%E7%B7%9A-%E6%A8%AA%E8%BB%B8_%E6%97%A5-%E5%85%A8%E4%BD%93.html>`_
 
 
 .. image:: visualize/img/日ごとの累積タスク数と累積作業時間.png
@@ -220,7 +221,7 @@ Examples
 生産性や品質について、習熟傾向やユーザごとの優劣が分かります。
 
 
-`累積折れ線-横軸_アノテーション数-教師付者用.html <https://raw.githubusercontent.com/kurusugawa-computer/annofab-cli/master/docs/command_reference/statistics/list_annotation_count/out_dir/line-graph/累積折れ線-横軸_アノテーション数-教師付者用.html>`_
+`累積折れ線-横軸_アノテーション数-教師付者用.html <https://kurusugawa-computer.github.io/annofab-cli/command_reference/statistics/visualize/out_dir/line-graph/%E7%B4%AF%E7%A9%8D%E6%8A%98%E3%82%8C%E7%B7%9A-%E6%A8%AA%E8%BB%B8_%E3%82%A2%E3%83%8E%E3%83%86%E3%83%BC%E3%82%B7%E3%83%A7%E3%83%B3%E6%95%B0-%E6%95%99%E5%B8%AB%E4%BB%98%E8%80%85%E7%94%A8.html>`_
 
 
 以下のグラフは、作業したタスクに含まれているアノテーション数の累積値と、教師付作業時間の累積値をプロットした折れ線グラフで、生産性を評価できます。
@@ -253,7 +254,7 @@ Examples
 
 
 
-受入作業した場合は、`累積折れ線-横軸_アノテーション数-受入者用.html <https://raw.githubusercontent.com/kurusugawa-computer/annofab-cli/master/docs/command_reference/statistics/list_annotation_count/out_dir/line-graph/累積折れ線-横軸_アノテーション数-受入者用.html>`_ も出力します。
+受入作業した場合は、`累積折れ線-横軸_アノテーション数-受入者用.html <https://kurusugawa-computer.github.io/annofab-cli/command_reference/statistics/visualize/out_dir/line-graph/%E7%B4%AF%E7%A9%8D%E6%8A%98%E3%82%8C%E7%B7%9A-%E6%A8%AA%E8%BB%B8_%E3%82%A2%E3%83%8E%E3%83%86%E3%83%BC%E3%82%B7%E3%83%A7%E3%83%B3%E6%95%B0-%E5%8F%97%E5%85%A5%E8%80%85%E7%94%A8.html>`_ も出力します。
 
 .. warning::
 
@@ -267,7 +268,7 @@ Examples
 
 グラフから、ユーザごとの生産性や経験値（累計作業時間）が分かります。
 
-`散布図-アノテーションあたり作業時間と累計作業時間の関係-実績時間.html <https://raw.githubusercontent.com/kurusugawa-computer/annofab-cli/master/docs/command_reference/statistics/list_annotation_count/out_dir/line-graph/散布図-アノテーションあたり作業時間と累計作業時間の関係-実績時間.html>`_
+`散布図-アノテーションあたり作業時間と累計作業時間の関係-実績時間.html <https://kurusugawa-computer.github.io/annofab-cli/command_reference/statistics/visualize/out_dir/scatter/%E6%95%A3%E5%B8%83%E5%9B%B3-%E3%82%A2%E3%83%8E%E3%83%86%E3%83%BC%E3%82%B7%E3%83%A7%E3%83%B3%E3%81%82%E3%81%9F%E3%82%8A%E4%BD%9C%E6%A5%AD%E6%99%82%E9%96%93%E3%81%A8%E7%B4%AF%E8%A8%88%E4%BD%9C%E6%A5%AD%E6%99%82%E9%96%93%E3%81%AE%E9%96%A2%E4%BF%82-%E5%AE%9F%E7%B8%BE%E6%99%82%E9%96%93.html>`_
 
 
 .. image:: visualize/img/散布図-教師付-実績作業時間.png
@@ -286,7 +287,7 @@ Examples
 グラフのデータは ``メンバごとの生産性と品質.csv`` を参照しています。
 
 
-`散布図-教師付者の品質と作業量の関係.html <https://raw.githubusercontent.com/kurusugawa-computer/annofab-cli/master/docs/command_reference/statistics/list_annotation_count/out_dir/line-graph/散布図-教師付者の品質と作業量の関係.html>`_
+`散布図-教師付者の品質と作業量の関係.html <https://kurusugawa-computer.github.io/annofab-cli/command_reference/statistics/visualize/out_dir/scatter/%E6%95%A3%E5%B8%83%E5%9B%B3-%E6%95%99%E5%B8%AB%E4%BB%98%E8%80%85%E3%81%AE%E5%93%81%E8%B3%AA%E3%81%A8%E4%BD%9C%E6%A5%AD%E9%87%8F%E3%81%AE%E9%96%A2%E4%BF%82.html>`_
 
 
 .. image:: visualize/img/散布図-品質-検査コメント数.png
