@@ -71,7 +71,7 @@ class DownloadInstructionMain:
                 self.download_instruction_image(project_id, src_value, img_output_path)
                 logger.debug(f"{src_value} を {img_output_path} にダウンロードしました。")
                 img_elm.attrib["src"] = f"img/{instruction_image_id}"
-            except Exception as e:
+            except Exception as e:  # pylint: disable=broad-except
                 logger.warning(e)
                 logger.warning(f"{src_value} のダウンロードに失敗しました。")
 
