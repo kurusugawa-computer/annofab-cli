@@ -109,7 +109,7 @@ class DownloadInstructionMain:
 
         output_html = output_dir / "index.html"
         output_html.write_text(str_instruction_html)
-        logger.debug(f"{output_html} をダウンロードします。")
+        logger.debug(f"{output_html} をダウンロードしました。")
 
 
 class DownloadInstruction(AbstractCommandLineInterface):
