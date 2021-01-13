@@ -276,7 +276,6 @@ class ImportAnnotation(AbstractCommandLineInterface):
                 logger.warning(
                     f"task_id={parser.task_id}, input_data_id={parser.input_data_id} の"
                     f"アノテーションインポートに失敗しました。: {type(e).__name__}: {e}"
-
                 )
 
         logger.info(f"タスク'{task_parser.task_id}'の入力データ {success_count} 個に対してアノテーションをインポートしました。")

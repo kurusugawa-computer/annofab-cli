@@ -196,10 +196,12 @@ class ListTasks(AbstractCommandLineInterface):
             task_query=task_query,
             user_id_list=user_id_list,
         )
+
         logger.debug(f"タスク一覧の件数: {len(task_list)}")
 
         if len(task_list) > 0:
             if self.str_format == FormatArgument.CSV.value:
+                task_list = self.search_with_jmespath_expression(task_list)
                 df = pandas.DataFrame(task_list)
                 columns = get_columns_with_priority(df, prior_columns=self.PRIOR_COLUMNS)
                 self.print_csv(df[columns])

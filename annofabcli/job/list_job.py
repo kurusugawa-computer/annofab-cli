@@ -55,7 +55,6 @@ class ListJob(AbstractCommandLineInterface):
 
     def main(self):
         args = self.args
-        # job_query = annofabcli.common.cli.get_json_from_args(args.job_query)
         job_type = JobType(args.job_type)
         self.print_job_list(args.project_id, job_type=job_type, job_query=None)
 
@@ -73,12 +72,6 @@ def parse_args(parser: argparse.ArgumentParser):
     argument_parser.add_project_id()
 
     parser.add_argument("--job_type", type=str, choices=job_choices, required=True, help="ジョブタイプを指定します。")
-
-    # クエリがうまく動かないので、コメントアウトする
-    # parser.add_argument(
-    #     '--job_query', type=str, help='ジョブの検索クエリをJSON形式で指定します。指定しない場合は、最新のジョブを1個取得します。 '
-    #     '`file://`を先頭に付けると、JSON形式のファイルを指定できます。'
-    #     '`limit` キーを指定できます。')
 
     argument_parser.add_format(
         choices=[FormatArgument.CSV, FormatArgument.JSON, FormatArgument.PRETTY_JSON], default=FormatArgument.CSV

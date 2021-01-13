@@ -279,14 +279,6 @@ def build_annofabapi_resource(args: argparse.Namespace) -> annofabapi.Resource:
     if endpoint_url != DEFAULT_ENDPOINT_URL:
         logger.info(f"AnnoFab WebAPIのエンドポイントURL: {endpoint_url}")
 
-    # # コマンドライン引数から認証情報を取得する
-    # dict_credentials = annofabcli.common.cli.get_json_from_args(args.credentials)
-    # if dict_credentials is not None:
-    #     return annofabapi.build(
-    #         dict_credentials.get("user_id"), dict_credentials.get("password"), endpoint_url=endpoint_url
-    #     )
-
-    # '.netrc'ファイルから認証情報を取得する
     try:
         return annofabapi.build_from_netrc(endpoint_url)
     except AnnofabApiException:
@@ -558,7 +550,7 @@ class AbstractCommandLineWithoutWebapiInterface(abc.ABC):
 
         return True
 
-    def search_with_jmespath_expression(self, target: Any):
+    def search_with_jmespath_expression(self, target: Any) -> Any:
         """
         インスタンスで保持しているJMespath情報で、targetの中身を探す。
         Args:
