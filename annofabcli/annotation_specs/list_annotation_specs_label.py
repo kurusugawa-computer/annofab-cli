@@ -88,7 +88,7 @@ class PrintAnnotationSpecsLabel(AbstractCommandLineInterface):
             f"{history['updated_datetime']}のアノテーション仕様を出力します。"
             f"history_id={history['history_id']}, comment={history['comment']}"
         )
-        return histories[-before + 1]["history_id"]
+        return history["history_id"]
 
     def main(self):
 
@@ -123,7 +123,7 @@ def parse_args(parser: argparse.ArgumentParser):
         type=str,
         help=(
             "出力したい過去のアノテーション仕様のhistory_idを指定してください。 "
-            "history_idは`annotation_specs history`コマンドで確認できます。 "
+            "history_idは`annotation_specs list_history`コマンドで確認できます。 "
             "指定しない場合は、最新のアノテーション仕様が出力されます。 "
         ),
     )

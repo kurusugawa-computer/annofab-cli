@@ -1,21 +1,11 @@
 ==================================================
-instruction
+experimental
 ==================================================
 
 Description
 =================================
-作業ガイド関係のコマンドです。
-
+``experimental`` はアルファ版です。予告なく変更される場合があります。
 
 Available Commands
 =================================
 
-
-.. toctree::
-   :maxdepth: 1
-   :titlesonly:
-
-   copy
-   download
-   list_history
-   upload

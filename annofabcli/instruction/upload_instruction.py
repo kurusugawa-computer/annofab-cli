@@ -47,8 +47,12 @@ class UploadInstruction(AbstractCommandLineInterface):
             else:
                 logger.warning(f"image does not exist. path={img_path}")
 
-        # 作業ガイドの更新(body element)
-        html_data = pq_html("body").html()
+        # body要素があればその中身、なければhtmlファイルの中身をアップロードする
+        if len(pq_html("body")) > 0:
+            html_data = pq_html("body").html()
+        else:
+            html_data = pq_html.html()
+
         self.update_instruction(project_id, html_data)
         logger.info("作業ガイドを更新しました。")
 
@@ -79,8 +83,9 @@ def parse_args(parser: argparse.ArgumentParser):
 
     argument_parser.add_project_id()
 
-    # TODO body要素内のみ？
-    parser.add_argument("--html", type=str, required=True, help="作業ガイドとして登録するHTMLファイルのパスを指定します。")
+    parser.add_argument(
+        "--html", type=str, required=True, help="作業ガイドとして登録するHTMLファイルのパスを指定します。body要素があればbody要素の中身をアップロードします。"
+    )
 
     parser.set_defaults(subcommand_func=main)
 
