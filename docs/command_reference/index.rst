@@ -10,6 +10,7 @@ Command Reference
 
    annotation/index
    annotation_specs/index
+   experimental/index
    filesystem/index
    input_data/index
    inspection_comment/index
