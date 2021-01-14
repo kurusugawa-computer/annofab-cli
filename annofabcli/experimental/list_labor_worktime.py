@@ -251,8 +251,24 @@ class ListLaborWorktime(AbstractCommandLineInterface):
         if output != sys.stdout and add_project_id:
             add_id_csv(output, self._get_project_title_list(project_id_list))
 
+    @staticmethod
+    def validate(args: argparse.Namespace) -> bool:
+        COMMON_MESSAGE = "annofabcli experimental list_labor_worktime: error:"
+        if args.start_date is not None and args.end_date is not None:
+            if args.start_date > args.end_date:
+                print(
+                    f"{COMMON_MESSAGE} argument `START_DATE <= END_DATE` の関係を満たしていません。",
+                    file=sys.stderr,
+                )
+                return False
+
+        return True
+
     def main(self):
         args = self.args
+        if not self.validate(args):
+            return
+
         format_target = FormatTarget(args.format)
         time_unit = TimeUnitTarget(args.time_unit)
 

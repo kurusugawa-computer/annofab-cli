@@ -1,3 +1,4 @@
+import sys
 import argparse
 import importlib
 import json
@@ -583,8 +584,24 @@ class VisualizeStatistics(AbstractCommandLineInterface):
 
         return output_project_dir_list
 
+    @staticmethod
+    def validate(args: argparse.Namespace) -> bool:
+        COMMON_MESSAGE = "annofabcli statistics visulize: error:"
+        if args.start_date is not None and args.end_date is not None:
+            if args.start_date > args.end_date:
+                print(
+                    f"{COMMON_MESSAGE} argument `START_DATE <= END_DATE` の関係を満たしていません。",
+                    file=sys.stderr,
+                )
+                return False
+
+        return True
+
     def main(self):
         args = self.args
+        if not self.validate(args):
+            return
+
         task_query = annofabcli.common.cli.get_json_from_args(args.task_query)
         ignored_task_id_list = (
             annofabcli.common.cli.get_list_from_args(args.ignored_task_id) if args.ignored_task_id is not None else None
