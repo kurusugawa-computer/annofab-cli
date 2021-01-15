@@ -36,7 +36,7 @@ Examples
     --exclude_task_id task1 task2
     --output_dir out/
 
-task_id以外にも ``--input_data_id`` , ``--input_data_name`` で、input_data_id, input_data_name で絞り込むことができます。
+task_id以外にも ``--input_data_id`` , ``--input_data_name`` で絞り込むことができます。
 
 
 See also

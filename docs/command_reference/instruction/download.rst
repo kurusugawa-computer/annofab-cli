@@ -24,8 +24,6 @@ Examples
 その場合、img要素のsrc属性値はローカルの画像を参照します。
 
 
-before....l
-
 .. code-block::
 
     $ annofabcli instruction download --project_id prj1 --output_dir out_dir/ --download_image
@@ -83,4 +81,11 @@ htmlファイルのみダウンロードする場合
     │   ...
     └── index.html
 
+
+
+
+
+See also
+=================================
+* `annofabcli instruction list_history <../instruction/list_history.html>`_
 

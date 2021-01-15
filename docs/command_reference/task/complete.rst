@@ -88,7 +88,7 @@ Examples
 .. note::
 
     ``--task_query '{"phase":"annotation"}'`` のようにフェーズやフェーズステージを指定する必要はありません。
-    ``annofabcli task complete`` コマンドは、``--phase`` , `--phase_stage`` で、フェーズとフェーズステージを指定するからです。
+    ``annofabcli task complete`` コマンドは、``--phase`` , ``--phase_stage`` で、フェーズとフェーズステージを指定できるからです。
 
 
 

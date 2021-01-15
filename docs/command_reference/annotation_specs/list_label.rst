@@ -129,3 +129,9 @@ https://annofab.com/docs/api/#operation/getAnnotationSpecs APIのレスポンス
     ]
 
 
+
+
+See also
+=================================
+* `annofabcli annotation_specs list_history <../annotation_specs/list_history.html>`_
+

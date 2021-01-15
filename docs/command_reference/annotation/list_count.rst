@@ -28,25 +28,25 @@ Examples
     {"label_name_en": "bike"}
 
 
-    # ラベル名（英語)が"car"で、属性名(英語)が"occluded"の値がtrueである（チェックボックス）アノテーション
+    # ラベル名（英語)が"car"で、属性(英語名)"occluded"の値がtrueである（チェックボックス）アノテーション
     {"label_name_en": "car", "attributes":[{"additional_data_definition_name_en": "occluded", "flag": true}]}
 
 
-    # ラベル名（英語)が"car"で、属性名(英語)が"count"の値が"1"であるアノテーション
+    # ラベル名（英語)が"car"で、属性(英語名)"count"の値が"1"であるアノテーション
     {"label_name_en": "car", "attributes":[{"additional_data_definition_name_en": "count", "integer": 1}]}
 
 
-    # ラベル名（英語)が"car"で、属性名(英語)が"note"の値が"test"であるアノテーション
+    # ラベル名（英語)が"car"で、属性(英語名)"note"の値が"test"であるアノテーション
     {"label_name_en": "car", "attributes":[{"additional_data_definition_name_en": "note", "comment": "test"}]}
 
 
-    # ラベル名（英語)が"car"で、属性名(英語)が"weather"の値が"sunny"である（ラジオボタンまたはドロップダウン）アノテーション
+    # ラベル名（英語)が"car"で、属性(英語名)"weather"の値が"sunny"である（ラジオボタンまたはドロップダウン）アノテーション
     {"label_name_en": "car", "attributes":[{"additional_data_definition_name_en": "weather", "choice_name_en": "sunny"}]}
 
 
-    # ラベル名（英語)が"car"で、属性名(英語)が"occluded"の値がtrue AND 属性名(英語)が"weather"の値が"sunny"であるアノテーション
+    # ラベル名（英語)が"car"で、属性(英語名)"occluded"の値がtrue AND 属性(英語名)"weather"の値が"sunny"であるアノテーション
     {"label_name_en": "car", "attributes":[{"additional_data_definition_name_en": "occluded", "flag": true}, 
-     {"additional_data_definition_name_en": "occluded", "flag": true}]}
+     {"additional_data_definition_name_en": "weather", "choice_name_en": "sunny"}]}
 
 
 
