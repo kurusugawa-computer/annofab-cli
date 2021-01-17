@@ -116,7 +116,9 @@ def parse_args(parser: argparse.ArgumentParser):
         "--user_id",
         nargs="+",
         help=(
-            "絞り込み条件となるユーザのuser_idを指定してください。" "指定しない場合は、上位20人のユーザ情報がプロットされます。" "file://`を先頭に付けると、一覧が記載されたファイルを指定できます。"
+            "折れ線グラフにプロットするユーザのuser_idを指定してください。"
+            "指定しない場合は、上位20人のユーザ情報がプロットされます。"
+            "`file://`を先頭に付けると、一覧が記載されたファイルを指定できます。"
         ),
     )
 
@@ -133,7 +135,7 @@ def parse_args(parser: argparse.ArgumentParser):
 
 def add_parser(subparsers: argparse._SubParsersAction):
     subcommand_name = "write_linegraph_per_user"
-    subcommand_help = "CSVからユーザごとの指標を折れ線グラフで出力します。"
-    description = "CSVからユーザごとの指標を折れ線グラフで出力します。"
+    subcommand_help = "`annofabcli statistics visualize`コマンドの出力ファイルである'タスクlist.csv'から、ユーザごとの指標をプロットした折れ線グラフを出力します。"
+    description = "`annofabcli statistics visualize`コマンドの出力ファイルである'タスクlist.csv'から、ユーザごとの指標をプロットした折れ線グラフを出力します。"
     parser = annofabcli.common.cli.add_parser(subparsers, subcommand_name, subcommand_help, description)
     parse_args(parser)
