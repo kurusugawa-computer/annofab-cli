@@ -1,9 +1,9 @@
-import sys
 import argparse
 import importlib
 import json
 import logging.handlers
 import re
+import sys
 from dataclasses import dataclass
 from functools import partial
 from multiprocessing import Pool

@@ -21,9 +21,9 @@ def parse_args(parser: argparse.ArgumentParser):
 
     # サブコマンドの定義
     annofabcli.stat_visualization.mask_visualization_dir.add_parser(subparsers)
+    annofabcli.stat_visualization.merge_visualization_dir.add_parser(subparsers)
     merge_peformance_per_date.add_parser(subparsers)
     merge_peformance_per_user.add_parser(subparsers)
-    annofabcli.stat_visualization.merge_visualization_dir.add_parser(subparsers)
     summarise_whole_peformance_csv.add_parser(subparsers)
     write_linegraph_per_user.add_parser(subparsers)
     write_performance_csv_per_user.add_parser(subparsers)

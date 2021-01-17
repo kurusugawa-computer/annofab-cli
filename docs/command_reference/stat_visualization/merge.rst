@@ -53,3 +53,8 @@ Examples
     │   └── 散布図-教師付者の品質と作業量の関係.html
     ├── タスクlist.csv
     └── メンバごとの生産性と品質.csv
+
+
+See also
+=================================
+* `annofabcli statistics visualize <../statistics/visualize.html>`_
