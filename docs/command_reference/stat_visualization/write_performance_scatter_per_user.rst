@@ -13,7 +13,7 @@ Examples
 基本的な使い方
 --------------------------
 
-``--csv`` に ``annofabcli statistics visualize`` コマンドの出力ファイル ``メンバごとの生産性と品質.csv`` のパスを複数指定してください。
+``--csv`` に ``annofabcli statistics visualize`` コマンドの出力ファイル ``メンバごとの生産性と品質.csv`` のパスを指定してください。
 
 
 .. code-block::
