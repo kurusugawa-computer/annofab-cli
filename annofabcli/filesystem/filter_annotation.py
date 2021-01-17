@@ -220,7 +220,7 @@ def parse_args(parser: argparse.ArgumentParser):
         "-tq",
         "--task_query",
         type=str,
-        help="タスクを絞り込むためのクエリ条件をJSON形式で指定します。使用できるキーは status, phase, phase_stage です。"
+        help="タスクを絞り込むためのクエリ条件をJSON形式で指定します。使用できるキーは task_id, status, phase, phase_stage です。"
         "`file://`を先頭に付けると、JSON形式のファイルを指定できます。",
     )
 
