@@ -36,7 +36,7 @@ def parse_args(parser: argparse.ArgumentParser):
         "--csv",
         type=Path,
         required=True,
-        help=("CSVファイルのパスを指定してください。" "CSVは、'statistics visualize'コマンドの出力結果である'日毎の生産量と生産性.csv'と同じフォーマットです。"),
+        help=("`annofabcli statistics visualize`コマンドの出力ファイルである'タスクlist.csv'のパスを指定してください。"),
     )
     parser.add_argument("-o", "--output_dir", type=Path, required=True, help="出力ディレクトリのパス")
 
@@ -45,7 +45,7 @@ def parse_args(parser: argparse.ArgumentParser):
 
 def add_parser(subparsers: argparse._SubParsersAction):
     subcommand_name = "write_whole_linegraph"
-    subcommand_help = "CSVからプロジェクト全体の生産量と生産性の折れ線グラフを出力します。"
-    description = "CSVからプロジェクト全体の生産量と生産性の折れ線グラフを出力します。"
+    subcommand_help = "`annofabcli statistics visualize`コマンドの出力ファイルである'日毎の生産量と生産性.csv'から、折れ線グラフを出力します。"
+    description = "`annofabcli statistics visualize`コマンドの出力ファイルである'日毎の生産量と生産性.csv'から、折れ線グラフを出力します。"
     parser = annofabcli.common.cli.add_parser(subparsers, subcommand_name, subcommand_help, description)
     parse_args(parser)

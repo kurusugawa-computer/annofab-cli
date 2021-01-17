@@ -108,7 +108,7 @@ def parse_args(parser: argparse.ArgumentParser):
         "--csv",
         type=Path,
         required=True,
-        help=("CSVファイルのパスを指定してください。" "CSVは、'statistics visualize'コマンドの出力結果である'タスクlist.csv'と同じフォーマットです。"),
+        help=("`annofabcli statistics visualize`コマンドの出力ファイルである'タスクlist.csv'のパスを指定してください。"),
     )
 
     parser.add_argument(
