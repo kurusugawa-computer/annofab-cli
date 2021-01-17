@@ -15,8 +15,11 @@ def main(args):
         for project_dir in root_dir.iterdir()
         if (project_dir / FILENAME_WHOLE_PEFORMANCE).exists()
     ]
-    write_summarise_whole_peformance_csv(csv_path_list=csv_path_list, output_path=args.output)
-
+    if len(csv_path_list) > 0:
+        write_summarise_whole_peformance_csv(csv_path_list=csv_path_list, output_path=args.output)
+    else:
+        logger.error(f"{root_dir} 配下に'{FILENAME_WHOLE_PEFORMANCE}'は存在しなかったので、終了します。")
+        return
 
 def parse_args(parser: argparse.ArgumentParser):
 
@@ -34,7 +37,9 @@ def parse_args(parser: argparse.ArgumentParser):
 
 def add_parser(subparsers: argparse._SubParsersAction):
     subcommand_name = "summarise_whole_peformance_csv"
-    subcommand_help = f"`annofabcli statistics visualize`コマンドの出力ファイルである複数の'{FILENAME_WHOLE_PEFORMANCE}'の値をプロジェクトごとにまとめます。"
+    subcommand_help = (
+        f"`annofabcli statistics visualize`コマンドの出力ファイルである複数の'{FILENAME_WHOLE_PEFORMANCE}'の値をプロジェクトごとにまとめます。"
+    )
     description = f"`annofabcli statistics visualize`コマンドの出力ファイルである複数の'{FILENAME_WHOLE_PEFORMANCE}'の値をプロジェクトごとにまとめます。"
     parser = annofabcli.common.cli.add_parser(subparsers, subcommand_name, subcommand_help, description)
     parse_args(parser)

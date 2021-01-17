@@ -73,7 +73,7 @@ def parse_args(parser: argparse.ArgumentParser):
 
 
 def add_parser(subparsers: argparse._SubParsersAction):
-    subcommand_name = "merge_peformance_per_user"
+    subcommand_name = "merge_peformance_csv_per_user"
     subcommand_help = f"`annofabcli statistics visualize`コマンドの出力ファイル'{FILENAME_PEFORMANCE_PER_USER}'をマージします"
     description = f"`annofabcli statistics visualize`コマンドの出力ファイル'{FILENAME_PEFORMANCE_PER_USER}'をマージします"
     parser = annofabcli.common.cli.add_parser(subparsers, subcommand_name, subcommand_help, description)
