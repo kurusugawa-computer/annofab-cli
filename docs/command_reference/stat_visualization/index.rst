@@ -23,7 +23,6 @@ Available Commands
     merge_peformance_per_user
     summarise_whole_peformance_csv
     write_linegraph_per_user
-    write_peformance_csv_per_user
     write_performance_scatter_per_user
     write_performance_rating_csv
     write_task_histogram

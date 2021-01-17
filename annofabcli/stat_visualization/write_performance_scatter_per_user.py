@@ -37,7 +37,7 @@ def parse_args(parser: argparse.ArgumentParser):
         "--csv",
         type=Path,
         required=True,
-        help=("CSVファイルのパスを指定してください。" "CSVは、'statistics visualize'コマンドの出力結果である'メンバごとの生産性と品質.csv'と同じフォーマットです。"),
+        help=("`annofabcli statistics visualize`コマンドの出力ファイルである'メンバごとの生産性と品質.csv'のパスを指定してください。"),
     )
     parser.add_argument("-o", "--output_dir", type=Path, required=True, help="出力ディレクトリのパス")
 
@@ -46,7 +46,7 @@ def parse_args(parser: argparse.ArgumentParser):
 
 def add_parser(subparsers: argparse._SubParsersAction):
     subcommand_name = "write_performance_scatter_per_user"
-    subcommand_help = "CSVからユーザごとにプロットした散布図を出力します。"
-    description = "CSVからユーザごとにプロットした散布図を出力します。"
+    subcommand_help = "`annofabcli statistics visualize`コマンドの出力ファイルである'メンバごとの生産性と品質.csv'から、ユーザごとにプロットした散布図を出力します。"
+    description = "`annofabcli statistics visualize`コマンドの出力ファイルである'メンバごとの生産性と品質.csv'から、ユーザごとにプロットした散布図を出力します。"
     parser = annofabcli.common.cli.add_parser(subparsers, subcommand_name, subcommand_help, description)
     parse_args(parser)
