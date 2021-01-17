@@ -12,17 +12,18 @@ from functools import partial
 from pathlib import Path
 from typing import Any, Callable, Dict, List, Optional, Set
 
-import annofabapi
 import annofabapi.utils
 import dateutil
 import dateutil.parser
 import more_itertools
+from annofabapi.dataclass.task import Task as DcTask
 from annofabapi.models import InputDataId, Inspection, JobStatus, JobType, Task, TaskHistory
 from annofabapi.parser import SimpleAnnotationZipParser
 
 from annofabcli.common.dataclasses import WaitOptions
 from annofabcli.common.download import DownloadingFile
 from annofabcli.common.exceptions import DownloadingFileNotFoundError
+from annofabcli.common.facade import TaskQuery, match_task_with_query
 
 logger = logging.getLogger(__name__)
 
@@ -43,7 +44,7 @@ class Query:
     絞り込み条件
     """
 
-    task_query_param: Optional[Dict[str, Any]] = None
+    task_query: Optional[TaskQuery] = None
     ignored_task_id_list: Optional[List[str]] = None
     start_date: Optional[str] = None
     end_date: Optional[str] = None
@@ -470,19 +471,17 @@ class Database:
             else None
         )
 
-        def filter_task(arg_task: Dict[str, Any]):
-            """AND条件で絞り込む"""
+        def filter_task(arg_task: Dict[str, Any]) -> bool:
+            """
+            検索条件にマッチするかどうか
+
+            Returns:
+                Trueを返すなら検索条件にマッチする
+            """
 
             flag = True
-            if query.task_query_param is not None:
-                if "phase" in query.task_query_param:
-                    flag = flag and arg_task["phase"] == query.task_query_param["phase"]
-
-                if "status" in query.task_query_param:
-                    flag = flag and arg_task["status"] == query.task_query_param["status"]
-
-                if "task_id" in query.task_query_param:
-                    flag = flag and str(query.task_query_param["task_id"]).lower() in str(arg_task["task_id"]).lower()
+            if query.task_query is not None:
+                flag = flag and match_task_with_query(DcTask.from_dict(arg_task), query.task_query)
 
             # 終了日で絞り込む
             # 開始日の絞り込み条件はタスク履歴を見る
