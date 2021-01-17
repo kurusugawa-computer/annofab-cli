@@ -9,3 +9,4 @@ User Guide
    user_guide
    configurations
    cli_usage_output
+   command_line_options

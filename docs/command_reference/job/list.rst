@@ -14,17 +14,7 @@ Examples
 基本的な使い方
 --------------------------
 
-``--job_type`` にジョブの種類を指定してください。指定できる値は以下の通りです。
-
-* ``copy-project`` : プロジェクトのコピー
-* ``gen-inputs`` : zipファイルから入力データの作成
-* ``gen-tasks`` : タスクの作成
-* ``gen-annotation`` : アノテーションZIPの更新
-* ``gen-tasks-list`` : タスク全件ファイルの更新
-* ``gen-inputs-list`` : 入力データ全件ファイルの更新
-* ``delete-project`` : プロジェクトの削除
-* ``invoke-hook`` : Webhookの起動
-* ``move-project`` : プロジェクトの所属組織の移動
+``--job_type`` にジョブの種類を指定してください。``--job_type`` に指定できる値は `Command line options <../../user_guide/command_line_options.html#job-type>`_ を参照してください。
 
 
 
