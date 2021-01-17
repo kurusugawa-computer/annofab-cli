@@ -247,7 +247,7 @@ def parse_args(parser: argparse.ArgumentParser):
         type=str,
         help="入力データの検索クエリをJSON形式で指定します。"
         "`file://`を先頭に付けると、JSON形式のファイルを指定できます。"
-        "指定できるキーは、`input_data_name`, `input_data_path`です。",
+        "指定できるキーは、`input_data_id`, `input_data_name`, `input_data_path`です。",
     )
 
     argument_parser.add_output()

@@ -45,7 +45,7 @@ Examples
      --task_query '{"status":"complete", "phase":"acceptance"}'
 
 
-task_idに ``sample`` を含むタスクの一覧を出力します（大文字小文字を無視する）。
+task_idに ``sample`` を含むタスクの一覧を出力します。大文字小文字は区別しません。
 
 .. code-block::
 

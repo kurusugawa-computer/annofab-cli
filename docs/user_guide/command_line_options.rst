@@ -58,31 +58,133 @@ Command line options
 リソースの検索条件を指定するオプション
 ==========================================
 
---project_query / -pq
-------------------------------------
-プロジェクトを絞り込む条件をJSON形式で指定します。
-
 
 
 --task_query / -tq
 ------------------------------------
 タスクを絞り込む条件をJSON形式で指定します。
 
-TODO
+特に指定がない限り、以下のキーが利用可能です。
+
+* ``task_id`` : 指定した値をtask_idに含むタスク（大文字小文字を区別しない）
+* ``phase`` : 指定したフェーズに一致するタスク
+* ``phase_stage`` : 指定したフェーズステージに一致するタスク
+* ``status`` : 指定したステータスに一致するタスク
+* ``user_id`` : 担当者のuser_idに一致するタスク
+* ``account_id`` : 担当者のaccount_idに一致するタスク
+* ``no_user`` : ``true`` なら担当者が未割り当てのタスク
+
+``phase`` に利用できる値は以下の通りです。
+
+* ``annotation`` : 教師付フェーズ
+* ``inspection`` : 検査フェーズ
+* ``acceptance`` : 受入フェーズ
+
+``status`` に利用できる値は以下の通りです。
+
+* ``not_started`` : 未着手状態
+* ``complete`` : 完了状態
+* ``on_hold`` : 保留中状態
+* ``break`` : 休憩中状態
+* ``working`` : 作業中状態
+
+
+
+.. code-block::
+
+    # task_idに"sample"を含むタスク
+    {"task_id": "sample"}
+
+    # 教師付フェーズで未着手状態のタスク
+    {"phase": "annotation", "status":"not_started"}
+
+    # フェーズステージが"2"のタスク
+    {"phase_stage": 2}
+
+    # 担当者のuser_idが"alice"であるタスク
+    {"user_id": "alice"}
+
+    # 担当者のaccount_idが"12345678-abcd-1234-abcd-1234abcd5678"であるタスク
+    {"account_id": "12345678-abcd-1234-abcd-1234abcd5678"}
+
+    # 担当者が未割り当てのタスク
+    {"no_user": true}
 
 
 --input_data_query / -iq
 ------------------------------------
 入力データを絞り込む条件をJSON形式で指定します。
 
+特に指定がない限り、以下のキーが利用可能です。
+
+* ``input_data_id`` : 指定した値をinput_data_idに含むタスク（大文字小文字を区別しない）
+* ``input_data_name`` : 指定した値を入力データ名に含むタスク（大文字小文字を区別しない）
+* ``input_data_path`` : 指定した値を入力データパスに含むタスク（大文字小文字を区別する）
+
+
+.. code-block::
+
+    # input_data_idに"202004"を含む入力データ
+    {"input_data_id": "202004"}
+
+    # 入力データ名に"lenna.png"を含む入力データ
+    {"input_data_name": "lenna.png"}
+
+    # 入力データパスに"lenna.png"を含む入力データ
+    {"input_data_path": "lenna.png"}
+
 
 --annotation_query / -aq
 ------------------------------------
 アノテーションを絞り込む条件をJSON形式で指定します。
 
+特に指定がない限り、以下のキーが利用可能です。
+
+* ``label_name_en`` : 指定したラベル名(英語)に一致するアノテーション
+* ``label_id`` : 指定したlabel_idに一致するアノテーション
+* ``attributes`` : 指定した属性の検索条件に一致するアノテーション
+    * ``additional_data_definition_name_en`` : 属性名
+    * ``additional_data_definition_id`` : 属性ID
+    * ``flag`` : 真偽値で属性値（チェックボックスの値）
+    * ``integer`` : 整数の属性値
+    * ``choice`` : 選択された項目のchoice_id
+    * ``choice_name_en`` : 選択された項目の英語名（ドロップダウン、ラジオボタンの値）
+    * ``comment`` : 文字列の属性値（自由記述、アノテーションリンク、トラッキングIDの値）
+    
+
+.. note::
+
+    ``label_id`` または ``label_name_en`` のいずれかは必ず指定する必要があります。
+
+.. code-block::
+
+    # ラベル名（英語)が"bike"のアノテーション
+    {"label_name_en": "bike"}
 
 
-パスの指定
+    # ラベル名（英語)が"car"で、属性(英語名)"occluded"の値がtrueである（チェックボックス）アノテーション
+    {"label_name_en": "car", "attributes":[{"additional_data_definition_name_en": "occluded", "flag": true}]}
+
+
+    # ラベル名（英語)が"car"で、属性(英語名)"count"の値が"1"であるアノテーション
+    {"label_name_en": "car", "attributes":[{"additional_data_definition_name_en": "count", "integer": 1}]}
+
+
+    # ラベル名（英語)が"car"で、属性(英語名)"note"の値が"test"であるアノテーション
+    {"label_name_en": "car", "attributes":[{"additional_data_definition_name_en": "note", "comment": "test"}]}
+
+
+    # ラベル名（英語)が"car"で、属性(英語名)"weather"の値が"sunny"である（ラジオボタンまたはドロップダウン）アノテーション
+    {"label_name_en": "car", "attributes":[{"additional_data_definition_name_en": "weather", "choice_name_en": "sunny"}]}
+
+
+    # ラベル名（英語)が"car"で、属性(英語名)"occluded"の値がtrue AND 属性(英語名)"weather"の値が"sunny"であるアノテーション
+    {"label_name_en": "car", "attributes":[{"additional_data_definition_name_en": "occluded", "flag": true}, 
+     {"additional_data_definition_name_en": "weather", "choice_name_en": "sunny"}]}
+
+
+
+パスを指定するオプション
 ==========================================
 
 
@@ -166,4 +268,4 @@ file:///home/vagrant/Documents/annofab-cli/docs/_build/html/command_reference/pr
 ------------------------------------
 並列数（同時に実行するプロセス数）を指定します。
 
-並列数を指定するには、``--yes`` も指定する必要があります。
+
