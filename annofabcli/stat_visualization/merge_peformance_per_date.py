@@ -6,9 +6,9 @@ from typing import List
 import pandas
 
 import annofabcli
+from annofabcli.common.cli import AbstractCommandLineWithoutWebapiInterface
 from annofabcli.statistics.csv import FILENAME_PEFORMANCE_PER_DATE, Csv
 from annofabcli.statistics.table import Table
-from annofabcli.common.cli import AbstractCommandLineWithoutWebapiInterface
 
 logger = logging.getLogger(__name__)
 

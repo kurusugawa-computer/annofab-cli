@@ -21,6 +21,7 @@ def main(args):
         logger.error(f"{root_dir} 配下に'{FILENAME_WHOLE_PEFORMANCE}'は存在しなかったので、終了します。")
         return
 
+
 def parse_args(parser: argparse.ArgumentParser):
 
     parser.add_argument(

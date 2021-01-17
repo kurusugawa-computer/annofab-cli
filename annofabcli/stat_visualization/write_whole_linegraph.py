@@ -5,8 +5,7 @@ from pathlib import Path
 import pandas
 
 import annofabcli
-from annofabcli import AnnofabApiFacade
-from annofabcli.common.cli import AbstractCommandLineWithoutWebapiInterface, build_annofabapi_resource_and_login
+from annofabcli.common.cli import AbstractCommandLineWithoutWebapiInterface
 from annofabcli.statistics.csv import FILENAME_PEFORMANCE_PER_DATE
 from annofabcli.statistics.linegraph import LineGraph
 
@@ -27,8 +26,6 @@ class WriteWholeLingraph(AbstractCommandLineWithoutWebapiInterface):
 
 
 def main(args):
-    service = build_annofabapi_resource_and_login(args)
-    facade = AnnofabApiFacade(service)
     WriteWholeLingraph(args).main()
 
 

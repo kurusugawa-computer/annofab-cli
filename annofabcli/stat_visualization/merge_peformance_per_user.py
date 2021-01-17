@@ -52,7 +52,7 @@ class MergePerfomancePerUser(AbstractCommandLineWithoutWebapiInterface):
 
 
 def main(args):
-    MergePerfomancePerUser( args).main()
+    MergePerfomancePerUser(args).main()
 
 
 def parse_args(parser: argparse.ArgumentParser):
