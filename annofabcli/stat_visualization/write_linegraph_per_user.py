@@ -6,8 +6,7 @@ from typing import List, Optional
 import pandas
 
 import annofabcli
-from annofabcli import AnnofabApiFacade
-from annofabcli.common.cli import AbstractCommandLineInterface, build_annofabapi_resource_and_login
+from annofabcli.common.cli import AbstractCommandLineWithoutWebapiInterface
 from annofabcli.statistics.csv import FILENAME_TASK_LIST
 from annofabcli.statistics.linegraph import LineGraph, OutputTarget
 from annofabcli.statistics.table import Table
@@ -89,7 +88,7 @@ def write_linegraph_per_user(
             )
 
 
-class WriteLingraphPerUser(AbstractCommandLineInterface):
+class WriteLingraphPerUser(AbstractCommandLineWithoutWebapiInterface):
     def main(self):
         args = self.args
         user_id_list = annofabcli.common.cli.get_list_from_args(args.user_id) if args.user_id is not None else None
@@ -99,9 +98,7 @@ class WriteLingraphPerUser(AbstractCommandLineInterface):
 
 
 def main(args):
-    service = build_annofabapi_resource_and_login(args)
-    facade = AnnofabApiFacade(service)
-    WriteLingraphPerUser(service, facade, args).main()
+    WriteLingraphPerUser(args).main()
 
 
 def parse_args(parser: argparse.ArgumentParser):

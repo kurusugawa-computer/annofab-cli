@@ -6,8 +6,7 @@ from pathlib import Path
 import pandas
 
 import annofabcli
-from annofabcli import AnnofabApiFacade
-from annofabcli.common.cli import AbstractCommandLineInterface, build_annofabapi_resource_and_login
+from annofabcli.common.cli import AbstractCommandLineWithoutWebapiInterface
 from annofabcli.common.utils import _catch_exception
 from annofabcli.statistics.csv import FILENAME_TASK_LIST
 
@@ -35,16 +34,14 @@ def write_task_histogram(csv: Path, output_dir: Path, minimal_output: bool = Fal
         _catch_exception(histogram_obj.write_histogram_for_acceptance_worktime_by_user)(task_df)
 
 
-class WriteTaskHistogram(AbstractCommandLineInterface):
+class WriteTaskHistogram(AbstractCommandLineWithoutWebapiInterface):
     def main(self):
         args = self.args
         write_task_histogram(csv=args.csv, output_dir=args.output_dir, minimal_output=args.minimal)
 
 
 def main(args):
-    service = build_annofabapi_resource_and_login(args)
-    facade = AnnofabApiFacade(service)
-    WriteTaskHistogram(service, facade, args).main()
+    WriteTaskHistogram(args).main()
 
 
 def parse_args(parser: argparse.ArgumentParser):

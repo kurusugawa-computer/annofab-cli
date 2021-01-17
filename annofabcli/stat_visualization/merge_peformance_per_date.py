@@ -6,10 +6,9 @@ from typing import List
 import pandas
 
 import annofabcli
-from annofabcli import AnnofabApiFacade
-from annofabcli.common.cli import AbstractCommandLineInterface, build_annofabapi_resource_and_login
 from annofabcli.statistics.csv import FILENAME_PEFORMANCE_PER_DATE, Csv
 from annofabcli.statistics.table import Table
+from annofabcli.common.cli import AbstractCommandLineWithoutWebapiInterface
 
 logger = logging.getLogger(__name__)
 
@@ -46,16 +45,14 @@ def merge_peformance_per_date(csv_path_list: List[Path], output_path: Path) -> N
     csv_obj.write_whole_productivity_per_date(sum_df, output_path=output_path)
 
 
-class MergePerfomancePerDate(AbstractCommandLineInterface):
+class MergePerfomancePerDate(AbstractCommandLineWithoutWebapiInterface):
     def main(self):
         args = self.args
         merge_peformance_per_date(csv_path_list=args.csv, output_path=args.output)
 
 
 def main(args):
-    service = build_annofabapi_resource_and_login(args)
-    facade = AnnofabApiFacade(service)
-    MergePerfomancePerDate(service, facade, args).main()
+    MergePerfomancePerDate(args).main()
 
 
 def parse_args(parser: argparse.ArgumentParser):

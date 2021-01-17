@@ -6,7 +6,7 @@ import pandas
 
 import annofabcli
 from annofabcli import AnnofabApiFacade
-from annofabcli.common.cli import AbstractCommandLineInterface, build_annofabapi_resource_and_login
+from annofabcli.common.cli import AbstractCommandLineWithoutWebapiInterface, build_annofabapi_resource_and_login
 from annofabcli.statistics.csv import FILENAME_PEFORMANCE_PER_DATE
 from annofabcli.statistics.linegraph import LineGraph
 
@@ -20,7 +20,7 @@ def write_whole_linegraph(csv: Path, output_dir: Path) -> None:
     linegraph_obj.write_whole_cumulative_line_graph(df)
 
 
-class WriteWholeLingraph(AbstractCommandLineInterface):
+class WriteWholeLingraph(AbstractCommandLineWithoutWebapiInterface):
     def main(self):
         args = self.args
         write_whole_linegraph(csv=args.csv, output_dir=args.output_dir)
@@ -29,7 +29,7 @@ class WriteWholeLingraph(AbstractCommandLineInterface):
 def main(args):
     service = build_annofabapi_resource_and_login(args)
     facade = AnnofabApiFacade(service)
-    WriteWholeLingraph(service, facade, args).main()
+    WriteWholeLingraph(args).main()
 
 
 def parse_args(parser: argparse.ArgumentParser):

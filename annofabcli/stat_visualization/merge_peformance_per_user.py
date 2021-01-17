@@ -6,8 +6,7 @@ from typing import List
 import pandas
 
 import annofabcli
-from annofabcli import AnnofabApiFacade
-from annofabcli.common.cli import AbstractCommandLineInterface, build_annofabapi_resource_and_login
+from annofabcli.common.cli import AbstractCommandLineWithoutWebapiInterface
 from annofabcli.common.utils import read_multiheader_csv
 from annofabcli.statistics.csv import FILENAME_PEFORMANCE_PER_USER, Csv
 from annofabcli.statistics.table import Table
@@ -46,16 +45,14 @@ def merge_peformance_per_user(csv_path_list: List[Path], output_path: Path):
     csv_obj.write_productivity_per_user(sum_df, output_path=output_path)
 
 
-class MergePerfomancePerUser(AbstractCommandLineInterface):
+class MergePerfomancePerUser(AbstractCommandLineWithoutWebapiInterface):
     def main(self):
         args = self.args
         merge_peformance_per_user(csv_path_list=args.csv, output_path=args.output)
 
 
 def main(args):
-    service = build_annofabapi_resource_and_login(args)
-    facade = AnnofabApiFacade(service)
-    MergePerfomancePerUser(service, facade, args).main()
+    MergePerfomancePerUser( args).main()
 
 
 def parse_args(parser: argparse.ArgumentParser):

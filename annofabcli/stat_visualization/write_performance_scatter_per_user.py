@@ -3,8 +3,7 @@ import logging
 from pathlib import Path
 
 import annofabcli
-from annofabcli import AnnofabApiFacade
-from annofabcli.common.cli import AbstractCommandLineInterface, build_annofabapi_resource_and_login
+from annofabcli.common.cli import AbstractCommandLineWithoutWebapiInterface
 from annofabcli.common.utils import read_multiheader_csv
 from annofabcli.statistics.csv import FILENAME_PEFORMANCE_PER_USER
 from annofabcli.statistics.scatter import Scatter
@@ -21,16 +20,14 @@ def write_performance_scatter_per_user(csv: Path, output_dir: Path) -> None:
     scatter_obj.write_scatter_for_productivity_by_actual_worktime_and_quality(df)
 
 
-class WriteScatterPerUser(AbstractCommandLineInterface):
+class WriteScatterPerUser(AbstractCommandLineWithoutWebapiInterface):
     def main(self):
         args = self.args
         write_performance_scatter_per_user(csv=args.csv, output_dir=args.output_dir)
 
 
 def main(args):
-    service = build_annofabapi_resource_and_login(args)
-    facade = AnnofabApiFacade(service)
-    WriteScatterPerUser(service, facade, args).main()
+    WriteScatterPerUser(args).main()
 
 
 def parse_args(parser: argparse.ArgumentParser):
