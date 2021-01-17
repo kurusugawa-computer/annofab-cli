@@ -7,6 +7,7 @@ import pandas
 import annofabcli
 from annofabcli import AnnofabApiFacade
 from annofabcli.common.cli import AbstractCommandLineInterface, build_annofabapi_resource_and_login
+from annofabcli.statistics.csv import FILENAME_PEFORMANCE_PER_DATE
 from annofabcli.statistics.linegraph import LineGraph
 
 logger = logging.getLogger(__name__)
@@ -36,7 +37,7 @@ def parse_args(parser: argparse.ArgumentParser):
         "--csv",
         type=Path,
         required=True,
-        help=("`annofabcli statistics visualize`コマンドの出力ファイルである'タスクlist.csv'のパスを指定してください。"),
+        help=(f"`annofabcli statistics visualize`コマンドの出力ファイルである'{FILENAME_PEFORMANCE_PER_DATE}'のパスを指定してください。"),
     )
     parser.add_argument("-o", "--output_dir", type=Path, required=True, help="出力ディレクトリのパス")
 
@@ -45,7 +46,7 @@ def parse_args(parser: argparse.ArgumentParser):
 
 def add_parser(subparsers: argparse._SubParsersAction):
     subcommand_name = "write_whole_linegraph"
-    subcommand_help = "`annofabcli statistics visualize`コマンドの出力ファイルである'日毎の生産量と生産性.csv'から、折れ線グラフを出力します。"
-    description = "`annofabcli statistics visualize`コマンドの出力ファイルである'日毎の生産量と生産性.csv'から、折れ線グラフを出力します。"
+    subcommand_help = f"`annofabcli statistics visualize`コマンドの出力ファイルである'{FILENAME_PEFORMANCE_PER_DATE}'から、折れ線グラフを出力します。"
+    description = f"`annofabcli statistics visualize`コマンドの出力ファイルである'{FILENAME_PEFORMANCE_PER_DATE}'から、折れ線グラフを出力します。"
     parser = annofabcli.common.cli.add_parser(subparsers, subcommand_name, subcommand_help, description)
     parse_args(parser)

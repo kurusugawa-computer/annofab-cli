@@ -9,6 +9,7 @@ import annofabcli
 from annofabcli import AnnofabApiFacade
 from annofabcli.common.cli import AbstractCommandLineInterface, build_annofabapi_resource_and_login
 from annofabcli.common.utils import _catch_exception
+from annofabcli.statistics.csv import FILENAME_TASK_LIST
 
 logger = logging.getLogger(__name__)
 
@@ -51,7 +52,7 @@ def parse_args(parser: argparse.ArgumentParser):
         "--csv",
         type=Path,
         required=True,
-        help=("`annofabcli statistics visualize`コマンドの出力ファイルである'タスクlist.csv'のパスを指定してください。"),
+        help=(f"`annofabcli statistics visualize`コマンドの出力ファイルである'{FILENAME_TASK_LIST}'のパスを指定してください。"),
     )
     parser.add_argument("-o", "--output_dir", type=Path, required=True, help="出力ディレクトリのパス")
 
@@ -66,7 +67,7 @@ def parse_args(parser: argparse.ArgumentParser):
 
 def add_parser(subparsers: argparse._SubParsersAction):
     subcommand_name = "write_task_histogram"
-    subcommand_help = "`annofabcli statistics visualize`コマンドの出力ファイルである'タスクlist.csv'から、ヒストグラムを出力します。"
-    description = "`annofabcli statistics visualize`コマンドの出力ファイルである'タスクlist.csv'から、ヒストグラムを出力します。"
+    subcommand_help = f"`annofabcli statistics visualize`コマンドの出力ファイルである'{FILENAME_TASK_LIST}'から、ヒストグラムを出力します。"
+    description = f"`annofabcli statistics visualize`コマンドの出力ファイルである'{FILENAME_TASK_LIST}'から、ヒストグラムを出力します。"
     parser = annofabcli.common.cli.add_parser(subparsers, subcommand_name, subcommand_help, description)
     parse_args(parser)

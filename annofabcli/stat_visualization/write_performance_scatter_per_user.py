@@ -6,6 +6,7 @@ import annofabcli
 from annofabcli import AnnofabApiFacade
 from annofabcli.common.cli import AbstractCommandLineInterface, build_annofabapi_resource_and_login
 from annofabcli.common.utils import read_multiheader_csv
+from annofabcli.statistics.csv import FILENAME_PEFORMANCE_PER_USER
 from annofabcli.statistics.scatter import Scatter
 
 logger = logging.getLogger(__name__)
@@ -37,7 +38,7 @@ def parse_args(parser: argparse.ArgumentParser):
         "--csv",
         type=Path,
         required=True,
-        help=("`annofabcli statistics visualize`コマンドの出力ファイルである'メンバごとの生産性と品質.csv'のパスを指定してください。"),
+        help=(f"`annofabcli statistics visualize`コマンドの出力ファイルである'{FILENAME_PEFORMANCE_PER_USER}'のパスを指定してください。"),
     )
     parser.add_argument("-o", "--output_dir", type=Path, required=True, help="出力ディレクトリのパス")
 
@@ -46,7 +47,11 @@ def parse_args(parser: argparse.ArgumentParser):
 
 def add_parser(subparsers: argparse._SubParsersAction):
     subcommand_name = "write_performance_scatter_per_user"
-    subcommand_help = "`annofabcli statistics visualize`コマンドの出力ファイルである'メンバごとの生産性と品質.csv'から、ユーザごとにプロットした散布図を出力します。"
-    description = "`annofabcli statistics visualize`コマンドの出力ファイルである'メンバごとの生産性と品質.csv'から、ユーザごとにプロットした散布図を出力します。"
+    subcommand_help = (
+        f"`annofabcli statistics visualize`コマンドの出力ファイルである'{FILENAME_PEFORMANCE_PER_USER}'から、ユーザごとにプロットした散布図を出力します。"
+    )
+    description = (
+        f"`annofabcli statistics visualize`コマンドの出力ファイルである'{FILENAME_PEFORMANCE_PER_USER}'から、ユーザごとにプロットした散布図を出力します。"
+    )
     parser = annofabcli.common.cli.add_parser(subparsers, subcommand_name, subcommand_help, description)
     parse_args(parser)

@@ -8,6 +8,7 @@ import pandas
 import annofabcli
 from annofabcli import AnnofabApiFacade
 from annofabcli.common.cli import AbstractCommandLineInterface, build_annofabapi_resource_and_login
+from annofabcli.statistics.csv import FILENAME_TASK_LIST
 from annofabcli.statistics.linegraph import LineGraph, OutputTarget
 from annofabcli.statistics.table import Table
 
@@ -108,7 +109,7 @@ def parse_args(parser: argparse.ArgumentParser):
         "--csv",
         type=Path,
         required=True,
-        help=("`annofabcli statistics visualize`コマンドの出力ファイルである'タスクlist.csv'のパスを指定してください。"),
+        help=(f"`annofabcli statistics visualize`コマンドの出力ファイルである'{FILENAME_TASK_LIST}'のパスを指定してください。"),
     )
 
     parser.add_argument(
@@ -135,7 +136,11 @@ def parse_args(parser: argparse.ArgumentParser):
 
 def add_parser(subparsers: argparse._SubParsersAction):
     subcommand_name = "write_linegraph_per_user"
-    subcommand_help = "`annofabcli statistics visualize`コマンドの出力ファイルである'タスクlist.csv'から、ユーザごとの指標をプロットした折れ線グラフを出力します。"
-    description = "`annofabcli statistics visualize`コマンドの出力ファイルである'タスクlist.csv'から、ユーザごとの指標をプロットした折れ線グラフを出力します。"
+    subcommand_help = (
+        f"`annofabcli statistics visualize`コマンドの出力ファイルである'{FILENAME_TASK_LIST}'から、ユーザごとの指標をプロットした折れ線グラフを出力します。"
+    )
+    description = (
+        f"`annofabcli statistics visualize`コマンドの出力ファイルである'{FILENAME_TASK_LIST}'から、ユーザごとの指標をプロットした折れ線グラフを出力します。"
+    )
     parser = annofabcli.common.cli.add_parser(subparsers, subcommand_name, subcommand_help, description)
     parse_args(parser)
