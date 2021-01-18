@@ -20,26 +20,10 @@ service = annofabapi.build_from_netrc()
 
 
 class TestCommandLine:
-    def test_upload_instruction(self):
-        html_file = str(data_dir / "instruction.html")
-        main(["instruction", "upload", "--project_id", project_id, "--html", html_file])
-
     def test_copy_instruction(self):
         src_project_id = project_id
         dest_project_id = project_id
         main(["instruction", "copy", src_project_id, dest_project_id, "--yes"])
-
-    def test_list_history(self):
-        main(
-            [
-                "instruction",
-                "list_history",
-                "--project_id",
-                project_id,
-                "--output",
-                str(out_dir / "list_history-out.csv"),
-            ]
-        )
 
     def test_download(self):
         main(
@@ -53,3 +37,20 @@ class TestCommandLine:
                 "--download_image",
             ]
         )
+
+    def test_list_history(self):
+        main(
+            [
+                "instruction",
+                "list_history",
+                "--project_id",
+                project_id,
+                "--output",
+                str(out_dir / "list_history-out.csv"),
+            ]
+        )
+
+    def test_upload_instruction(self):
+        html_file = str(data_dir / "instruction.html")
+        main(["instruction", "upload", "--project_id", project_id, "--html", html_file])
+
