@@ -11,8 +11,8 @@ Command Structure
 
     $ annofabcli <command> <subcommand> [options and parameters]
 
-* ``command`` : ``project`` や ``task`` など家庭ゴリに対応します。
-* ``subcommand`` : 実行する操作に対応します。
+* ``command`` : ``project`` や ``task`` などのカテゴリに対応します。
+* ``subcommand`` : ``list`` や ``delete`` など、実行する操作に対応します。
 
 
 

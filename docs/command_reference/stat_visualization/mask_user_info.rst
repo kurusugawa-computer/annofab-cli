@@ -83,3 +83,7 @@ Examples
     ├── タスクlist.csv
     └── メンバごとの生産性と品質.csv
 
+
+See also
+=================================
+* `annofabcli statistics visualize <../statistics/visualize.html>`_

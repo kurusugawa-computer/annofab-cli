@@ -1,5 +1,4 @@
 import argparse
-import json
 import logging
 from pathlib import Path
 from typing import Any, Dict, List, Optional
@@ -62,8 +61,7 @@ class RestoreAnnotation(AbstractCommandLineInterface):
             request_detail = self._to_annotation_detail_for_request(project_id, parser, detail)
 
             if request_detail is not None:
-                # Enumをシリアライズするため、一度JSONにしてからDictに変換する
-                request_details.append(json.loads(request_detail.to_json()))
+                request_details.append(request_detail.to_dict(encode_json=True))
 
         request_body = {
             "project_id": project_id,

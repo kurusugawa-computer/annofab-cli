@@ -405,7 +405,7 @@ def parse_args(parser: argparse.ArgumentParser):
         "--dir",
         type=Path,
         required=True,
-        help="プロジェクトディレクトリが存在するディレクトリを指定してください。プロジェクトディレクトリ内の`メンバごとの生産性と品質.csv`というファイルを読み込みます。",
+        help=f"プロジェクトディレクトリが存在するディレクトリを指定してください。プロジェクトディレクトリ内の`{FILENAME_PEFORMANCE_PER_USER}`というファイルを読み込みます。",
     )
 
     parser.add_argument(

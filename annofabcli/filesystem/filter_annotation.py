@@ -30,8 +30,14 @@ class FilterQuery:
 
 
 def _match_task_query(annotation: Dict[str, Any], task_query: Optional[TaskQuery]) -> bool:
+    def match_str(name: str, query: str) -> bool:
+        return query.lower() in name.lower()
+
     if task_query is None:
         return True
+
+    if task_query.task_id is not None and not match_str(annotation["task_id"], task_query.task_id):
+        return False
 
     if task_query.status is not None and annotation["task_status"] != task_query.status.value:
         return False
@@ -220,7 +226,7 @@ def parse_args(parser: argparse.ArgumentParser):
         "-tq",
         "--task_query",
         type=str,
-        help="タスクを絞り込むためのクエリ条件をJSON形式で指定します。使用できるキーは status, phase, phase_stage です。"
+        help="タスクを絞り込むためのクエリ条件をJSON形式で指定します。使用できるキーは task_id, status, phase, phase_stage です。"
         "`file://`を先頭に付けると、JSON形式のファイルを指定できます。",
     )
 

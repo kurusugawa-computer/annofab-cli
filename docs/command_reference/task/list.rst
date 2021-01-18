@@ -45,6 +45,14 @@ Examples
      --task_query '{"status":"complete", "phase":"acceptance"}'
 
 
+task_idに ``sample`` を含むタスクの一覧を出力します。大文字小文字は区別しません。
+
+.. code-block::
+
+    $ annofabcli task list --project_id prj1 \
+     --task_query '{"task_id":"sample"}'
+
+
 差し戻されたタスクの一覧を出力します。
 
 .. code-block::

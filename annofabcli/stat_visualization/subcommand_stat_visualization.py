@@ -8,7 +8,6 @@ from annofabcli.stat_visualization import (
     merge_peformance_per_user,
     summarise_whole_peformance_csv,
     write_linegraph_per_user,
-    write_performance_csv_per_user,
     write_performance_scatter_per_user,
     write_task_histogram,
     write_whole_linegraph,
@@ -21,12 +20,11 @@ def parse_args(parser: argparse.ArgumentParser):
 
     # サブコマンドの定義
     annofabcli.stat_visualization.mask_visualization_dir.add_parser(subparsers)
+    annofabcli.stat_visualization.merge_visualization_dir.add_parser(subparsers)
     merge_peformance_per_date.add_parser(subparsers)
     merge_peformance_per_user.add_parser(subparsers)
-    annofabcli.stat_visualization.merge_visualization_dir.add_parser(subparsers)
     summarise_whole_peformance_csv.add_parser(subparsers)
     write_linegraph_per_user.add_parser(subparsers)
-    write_performance_csv_per_user.add_parser(subparsers)
     write_performance_scatter_per_user.add_parser(subparsers)
     annofabcli.stat_visualization.write_performance_rating_csv.add_parser(subparsers)
     write_task_histogram.add_parser(subparsers)

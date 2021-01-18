@@ -14,7 +14,8 @@ Examples
 基本的な使い方
 --------------------------
 
-``--job_type`` にジョブの種類を指定してください。``--job_type`` に指定できる値は `annofabcli job list <../job/list.html>`_ を参照してください。
+``--job_type`` にジョブの種類を指定してください。
+``--job_type`` に指定できる値は `Command line options <../../user_guide/command_line_options.html#job-type>`_ を参照してください。
 
 プロジェクトを指定する場合は、``--project_id`` にproject_idを指定してください。
 

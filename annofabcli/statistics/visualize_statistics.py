@@ -1,14 +1,13 @@
-import sys
 import argparse
 import importlib
-import json
 import logging.handlers
 import re
+import sys
 from dataclasses import dataclass
 from functools import partial
 from multiprocessing import Pool
 from pathlib import Path
-from typing import Any, Callable, Dict, List, Optional
+from typing import Any, Callable, List, Optional
 
 import annofabapi
 import pandas
@@ -18,6 +17,7 @@ from dataclasses_json import DataClassJsonMixin
 import annofabcli
 from annofabcli import AnnofabApiFacade
 from annofabcli.common.cli import AbstractCommandLineInterface, build_annofabapi_resource_and_login
+from annofabcli.common.facade import TaskQuery
 from annofabcli.stat_visualization.merge_visualization_dir import merge_visualization_dir
 from annofabcli.statistics.csv import FILENAME_WHOLE_PEFORMANCE, Csv, write_summarise_whole_peformance_csv
 from annofabcli.statistics.database import Database, Query
@@ -30,7 +30,7 @@ logger = logging.getLogger(__name__)
 
 @dataclass
 class CommnadLineArgs(DataClassJsonMixin):
-    task_query: Optional[Dict[str, Any]]
+    task_query: TaskQuery
     user_id_list: Optional[List[str]]
     start_date: Optional[str]
     end_date: Optional[str]
@@ -59,15 +59,16 @@ def write_project_name_file(
     filename = annofabcli.utils.to_filename(project_title)
     output_project_dir.mkdir(exist_ok=True, parents=True)
 
-    prject_summary = ProjectSummary(
+    project_summary = ProjectSummary(
         project_id=project_id,
         project_title=project_title,
         measurement_datetime=annofabapi.utils.str_now(),
         args=command_line_args,
     )
 
+    print(project_summary)
     with open(str(output_project_dir / f"{filename}.json"), "w") as f:
-        json.dump(prject_summary.to_dict(), f, ensure_ascii=False, indent=2)
+        f.write(project_summary.to_json(ensure_ascii=False, indent=2))
 
 
 def catch_exception(function: Callable[..., Any]) -> Callable[..., Any]:
@@ -389,7 +390,7 @@ def visualize_statistics(
     annofab_facade: AnnofabApiFacade,
     work_dir: Path,
     output_project_dir: Path,
-    task_query: Dict[str, Any],
+    task_query: TaskQuery,
     ignored_task_id_list: Optional[List[str]],
     user_id_list: Optional[List[str]],
     update: bool = False,
@@ -419,7 +420,7 @@ def visualize_statistics(
         project_id,
         str(checkpoint_dir),
         query=Query(
-            task_query_param=task_query,
+            task_query=task_query,
             ignored_task_id_list=ignored_task_id_list,
             start_date=start_date,
             end_date=end_date,
@@ -484,7 +485,7 @@ def visualize_statistics_wrapper(
     annofab_service: annofabapi.Resource,
     annofab_facade: AnnofabApiFacade,
     work_dir: Path,
-    task_query: Dict[str, Any],
+    task_query: TaskQuery,
     ignored_task_id_list: Optional[List[str]],
     user_id_list: Optional[List[str]],
     update: bool = False,
@@ -529,7 +530,7 @@ class VisualizeStatistics(AbstractCommandLineInterface):
         root_output_dir: Path,
         project_id_list: List[str],
         work_dir: Path,
-        task_query: Dict[str, Any],
+        task_query: TaskQuery,
         ignored_task_id_list: Optional[List[str]],
         user_id_list: Optional[List[str]],
         update: bool = False,
@@ -602,7 +603,9 @@ class VisualizeStatistics(AbstractCommandLineInterface):
         if not self.validate(args):
             return
 
-        task_query = annofabcli.common.cli.get_json_from_args(args.task_query)
+        dict_task_query = annofabcli.common.cli.get_json_from_args(args.task_query)
+        task_query: Optional[TaskQuery] = TaskQuery.from_dict(dict_task_query) if dict_task_query is not None else None
+
         ignored_task_id_list = (
             annofabcli.common.cli.get_list_from_args(args.ignored_task_id) if args.ignored_task_id is not None else None
         )
@@ -704,7 +707,7 @@ def parse_args(parser: argparse.ArgumentParser):
         type=str,
         help="タスクの検索クエリをJSON形式で指定します。指定しない場合はすべてのタスクを取得します。"
         "`file://`を先頭に付けると、JSON形式のファイルを指定できます。"
-        "クエリのキーは、phase, status, task_id のみです。[getTasks API](https://annofab.com/docs/api/#operation/getTasks) 参照",
+        "クエリのキーは、task_id, phase, phase_stage, status のみです。",
     )
 
     parser.add_argument("--start_date", type=str, help="指定した日付（'YYYY-MM-DD'）以降に教師付を開始したタスクを集計する。")

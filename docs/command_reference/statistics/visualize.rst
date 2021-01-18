@@ -111,7 +111,8 @@ Examples
     │   ├── 散布図-アノテーションあたり作業時間と累計作業時間の関係-実績時間.html
     ├── タスクlist.csv
     ├── メンバごとの生産性と品質.csv
-    └── 日毎の生産量と生産性.csv
+    ├── 日毎の生産量と生産性.csv
+    └── 全体の生産性と品質.csv
 
 
 タスクlist.csv
@@ -147,7 +148,7 @@ Examples
     
     たとえばtask1が、2020/01/01に受入完了して、2020/01/02に受入取り消し、2020/01/03に再度受入完了状態になっとします。その場合、task1は2020/01/03に「作業した」ものとして集計されます。
 
-    
+
 メンバごとの生産性と品質.csv
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 メンバごとの生産量（作業したタスク数など）や生産性、教師付の品質が分かります。
@@ -182,6 +183,17 @@ Examples
 
     ``rejected_count/task_count`` より ``pointed_out_inspection_comment_count/annotation_count`` の方が粒度が細かいので、 通常のプロジェクトでは  ``pointed_out_inspection_comment_count/annotation_count`` の方が良い指標になります。
     
+
+
+全体の生産性と品質.csv
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+全体の生産性と品質が記載されています。
+``メンバごとの生産性と品質.csv`` の内容を集計した値になります。
+
+`全体の生産性と品質.csv <https://github.com/kurusugawa-computer/annofab-cli/blob/master/docs/command_reference/statistics/list_annotation_count/out_dir/全体の生産性と品質.csv>`_
+
+
+
 
 
 折れ線-横軸_日-全体.html
@@ -272,6 +284,7 @@ Examples
 
 
 .. image:: visualize/img/散布図-教師付-実績作業時間.png
+
 
 .. note::
 

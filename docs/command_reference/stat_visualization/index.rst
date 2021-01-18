@@ -14,11 +14,16 @@ Available Commands
 
 
 .. toctree::
-   :maxdepth: 1
-   :titlesonly:
+    :maxdepth: 1
+    :titlesonly:
 
-
-   mask_user_info
-   merge   
-   write_performance_rating_csv
-
+    mask_user_info
+    merge
+    merge_peformance_csv_per_date
+    merge_peformance_csv_per_user
+    summarise_whole_peformance_csv
+    write_linegraph_per_user
+    write_performance_scatter_per_user
+    write_performance_rating_csv
+    write_task_histogram
+    write_whole_linegraph

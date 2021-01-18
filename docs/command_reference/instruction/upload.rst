@@ -40,20 +40,21 @@ img要素のsrc属性がローカルの画像を参照している場合（http,
 
 1. Confluenceのエクスポート機能で、作業ガイドに登録したいページをエクスポートする。
 2. エクスポートしたHTMLのスタイルを、style属性に反映する。AnnoFabの作業ガイドには、スタイルシートを登録できないため。
-    1. エクスポートしたファイルをChromeで開く。
-    2. Chrome開発ツールのConfoleタブで以下のJavaScriptを実行して、全要素のborder, color, backgroundスタイルを、style属性に反映させる。
 
-    .. code-block:: javascript
-    
-        elms = document.querySelectorAll("body *");
-        for (let e of elms) {
-            s = window.getComputedStyle(e);
-            e.style.background = s.background;
-            e.style.color = s.color;
-            e.style.border = s.border;
-        }
-    
-    3. Chrome開発ツールのElementタブで、html要素をコピー(Copy outerHTML)して、HTMLファイルを上書きする。
+   1. エクスポートしたファイルをChromeで開く。
+   2. Chrome開発ツールのConfoleタブで以下のJavaScriptを実行して、全要素のborder, color, backgroundスタイルを、style属性に反映させる。
+   
+   .. code-block:: javascript
+   
+       elms = document.querySelectorAll("body *");
+       for (let e of elms) {
+           s = window.getComputedStyle(e);
+           e.style.background = s.background;
+           e.style.color = s.color;
+           e.style.border = s.border;
+       }
+   
+   3. Chrome開発ツールのElementタブで、html要素をコピー(Copy outerHTML)して、HTMLファイルを上書きする。
 
 
 

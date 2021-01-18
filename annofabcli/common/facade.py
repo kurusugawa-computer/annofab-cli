@@ -74,6 +74,7 @@ class TaskQuery(DataClassJsonMixin):
     コマンドライン上で指定するタスクの検索条件
     """
 
+    task_id: Optional[str] = None
     phase: Optional[TaskPhase] = None
     status: Optional[TaskStatus] = None
     phase_stage: Optional[int] = None
@@ -108,8 +109,18 @@ def match_task_with_query(  # pylint: disable=too-many-return-statements
     Returns:
         trueならタスククエリ条件に合致する。
     """
+
+    def match_str(name: str, query: str, ignore_case: bool) -> bool:
+        if ignore_case:
+            return query.lower() in name.lower()
+        else:
+            return query in name
+
     if task_query is None:
         return True
+
+    if task_query.task_id is not None and not match_str(task.task_id, task_query.task_id, ignore_case=True):
+        return False
 
     if task_query.status is not None and task.status != task_query.status:
         return False
