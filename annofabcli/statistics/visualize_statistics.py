@@ -391,6 +391,7 @@ def visualize_statistics(
     work_dir: Path,
     output_project_dir: Path,
     task_query: TaskQuery,
+    task_id_list: Optional[List[str]],
     ignored_task_id_list: Optional[List[str]],
     user_id_list: Optional[List[str]],
     update: bool = False,
@@ -421,6 +422,7 @@ def visualize_statistics(
         str(checkpoint_dir),
         query=Query(
             task_query=task_query,
+            task_id_set=set(task_id_list) if task_id_list is not None else None,
             ignored_task_id_list=ignored_task_id_list,
             start_date=start_date,
             end_date=end_date,
@@ -486,6 +488,7 @@ def visualize_statistics_wrapper(
     annofab_facade: AnnofabApiFacade,
     work_dir: Path,
     task_query: TaskQuery,
+    task_id_list: Optional[List[str]],
     ignored_task_id_list: Optional[List[str]],
     user_id_list: Optional[List[str]],
     update: bool = False,
@@ -506,6 +509,7 @@ def visualize_statistics_wrapper(
             work_dir=work_dir,
             output_project_dir=output_project_dir,
             task_query=task_query,
+            task_id_list=task_id_list,
             ignored_task_id_list=ignored_task_id_list,
             user_id_list=user_id_list,
             update=update,
@@ -531,6 +535,7 @@ class VisualizeStatistics(AbstractCommandLineInterface):
         project_id_list: List[str],
         work_dir: Path,
         task_query: TaskQuery,
+        task_id_list: Optional[List[str]],
         ignored_task_id_list: Optional[List[str]],
         user_id_list: Optional[List[str]],
         update: bool = False,
@@ -550,6 +555,7 @@ class VisualizeStatistics(AbstractCommandLineInterface):
                 annofab_facade=self.facade,
                 work_dir=work_dir,
                 task_query=task_query,
+                task_id_list=task_id_list,
                 ignored_task_id_list=ignored_task_id_list,
                 user_id_list=user_id_list,
                 update=update,
@@ -572,6 +578,7 @@ class VisualizeStatistics(AbstractCommandLineInterface):
                     project_id=project_id,
                     work_dir=work_dir,
                     task_query=task_query,
+                    task_id_list=task_id_list,
                     ignored_task_id_list=ignored_task_id_list,
                     user_id_list=user_id_list,
                     update=update,
@@ -609,6 +616,8 @@ class VisualizeStatistics(AbstractCommandLineInterface):
         ignored_task_id_list = (
             annofabcli.common.cli.get_list_from_args(args.ignored_task_id) if args.ignored_task_id is not None else None
         )
+        task_id_list = annofabcli.common.cli.get_list_from_args(args.task_id) if args.task_id is not None else None
+
         user_id_list = annofabcli.common.cli.get_list_from_args(args.user_id) if args.user_id is not None else None
         project_id_list = annofabcli.common.cli.get_list_from_args(args.project_id)
 
@@ -627,6 +636,7 @@ class VisualizeStatistics(AbstractCommandLineInterface):
                 output_project_dir=root_output_dir,
                 work_dir=work_dir,
                 task_query=task_query,
+                task_id_list=task_id_list,
                 ignored_task_id_list=ignored_task_id_list,
                 user_id_list=user_id_list,
                 update=not args.not_update,
@@ -643,6 +653,7 @@ class VisualizeStatistics(AbstractCommandLineInterface):
                 project_id_list=project_id_list,
                 work_dir=work_dir,
                 task_query=task_query,
+                task_id_list=task_id_list,
                 ignored_task_id_list=ignored_task_id_list,
                 user_id_list=user_id_list,
                 update=not args.not_update,
@@ -710,13 +721,22 @@ def parse_args(parser: argparse.ArgumentParser):
         "クエリのキーは、task_id, phase, phase_stage, status のみです。",
     )
 
+    parser.add_argument(
+        "-t",
+        "--task_id",
+        type=str,
+        required=False,
+        nargs="+",
+        help="集計対象のタスクのtask_idを指定します。" + "`file://`を先頭に付けると、task_idの一覧が記載されたファイルを指定できます。",
+    )
+
     parser.add_argument("--start_date", type=str, help="指定した日付（'YYYY-MM-DD'）以降に教師付を開始したタスクを集計する。")
     parser.add_argument("--end_date", type=str, help="指定した日付（'YYYY-MM-DD'）以前に更新されたタスクを集計する。")
 
     parser.add_argument(
         "--ignored_task_id",
         nargs="+",
-        help=("可視化対象外のタスクのtask_id。" "指定しない場合は、すべてのタスクが可視化対象です。" "file://`を先頭に付けると、一覧が記載されたファイルを指定できます。"),
+        help=("集計対象外のタスクのtask_idを指定します。`--task_id` より優先度が高いです。" "file://`を先頭に付けると、一覧が記載されたファイルを指定できます。"),
     )
 
     parser.add_argument(

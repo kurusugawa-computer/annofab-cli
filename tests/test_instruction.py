@@ -53,4 +53,3 @@ class TestCommandLine:
     def test_upload_instruction(self):
         html_file = str(data_dir / "instruction.html")
         main(["instruction", "upload", "--project_id", project_id, "--html", html_file])
-

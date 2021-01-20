@@ -45,6 +45,8 @@ class Query:
     """
 
     task_query: Optional[TaskQuery] = None
+    task_id_set: Optional[Set[str]] = None
+    """集計対象タスクのtask_idのSet"""
     ignored_task_id_list: Optional[List[str]] = None
     start_date: Optional[str] = None
     end_date: Optional[str] = None
@@ -482,6 +484,9 @@ class Database:
             flag = True
             if query.task_query is not None:
                 flag = flag and match_task_with_query(DcTask.from_dict(arg_task), query.task_query)
+
+            if query.task_id_set is not None:
+                flag = flag and arg_task["task_id"] in query.task_id_set
 
             # 終了日で絞り込む
             # 開始日の絞り込み条件はタスク履歴を見る
