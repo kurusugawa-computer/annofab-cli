@@ -423,7 +423,7 @@ def visualize_statistics(
         query=Query(
             task_query=task_query,
             task_id_set=set(task_id_list) if task_id_list is not None else None,
-            ignored_task_id_list=ignored_task_id_list,
+            ignored_task_id_set=set(ignored_task_id_list) if ignored_task_id_list is not None else None,
             start_date=start_date,
             end_date=end_date,
         ),
@@ -780,8 +780,8 @@ def parse_args(parser: argparse.ArgumentParser):
 
 def add_parser(subparsers: argparse._SubParsersAction):
     subcommand_name = "visualize"
-    subcommand_help = "統計情報を可視化したファイルを出力します。"
-    description = "統計情報を可視化したファイルを出力します。毎日 03:00JST頃に更新されます。"
+    subcommand_help = "生産性に関するCSVファイルやグラフを出力します。"
+    description = "生産性に関するCSVファイルやグラフを出力します。"
     epilog = "アノテーションユーザまたはオーナロールを持つユーザで実行してください。"
 
     parser = annofabcli.common.cli.add_parser(subparsers, subcommand_name, subcommand_help, description, epilog=epilog)
