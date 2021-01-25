@@ -13,6 +13,7 @@ from annofabapi.models import (
     AdditionalDataDefinitionType,
     AdditionalDataDefinitionV1,
     AnnotationDataHoldingType,
+    AnnotationType,
     LabelV1,
     ProjectMemberRole,
     TaskStatus,
@@ -108,13 +109,6 @@ class ImportAnnotation(AbstractCommandLineInterface):
         else:
             return AnnotationDataHoldingType.INNER
 
-    @staticmethod
-    def _create_annotation_id(data: FullAnnotationData, label_id: str) -> str:
-        if data["_type"] == "Classification":
-            return label_id
-        else:
-            return str(uuid.uuid4())
-
     def _to_additional_data_list(self, attributes: Dict[str, Any], label_info: LabelV1) -> List[AdditionalData]:
         additional_data_list: List[AdditionalData] = []
         for key, value in attributes.items():
@@ -164,18 +158,29 @@ class ImportAnnotation(AbstractCommandLineInterface):
             detail:
 
         Returns:
+            変換できない場合はNoneを返す
 
         """
         label_info = self.get_label_info_from_label_name(detail.label)
         if label_info is None:
             return None
 
+        def _get_annotation_id(arg_label_info: LabelV1) -> str:
+            if detail.annotation_id is not None:
+                return detail.annotation_id
+            else:
+                if arg_label_info["annotation_type"] == AnnotationType.CLASSIFICATION.value:
+                    # 全体アノテーションの場合、annotation_idはlabel_idである必要がある
+                    return arg_label_info["label_id"]
+                else:
+                    return str(uuid.uuid4())
+
         additional_data_list: List[AdditionalData] = self._to_additional_data_list(detail.attributes, label_info)
         data_holding_type = self._get_data_holding_type_from_data(detail.data)
 
         dest_obj = AnnotationDetail(
             label_id=label_info["label_id"],
-            annotation_id=detail.annotation_id if detail.annotation_id is not None else str(uuid.uuid4()),
+            annotation_id=_get_annotation_id(label_info),
             account_id=self.service.api.account_id,
             data_holding_type=data_holding_type,
             data=detail.data,
