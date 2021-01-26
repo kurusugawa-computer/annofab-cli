@@ -24,7 +24,7 @@ from annofabapi.parser import (
     lazy_parse_simple_annotation_dir_by_task,
     lazy_parse_simple_annotation_zip_by_task,
 )
-from annofabapi.utils import can_put_annotation
+from annofabapi.utils import can_put_annotation, str_now
 from dataclasses_json import DataClassJsonMixin
 from more_itertools import first_true
 
@@ -147,7 +147,7 @@ class ImportAnnotation(AbstractCommandLineInterface):
         return additional_data_list
 
     def _to_annotation_detail_for_request(
-        self, project_id: str, parser: SimpleAnnotationParser, detail: ImportedSimpleAnnotationDetail
+        self, project_id: str, parser: SimpleAnnotationParser, detail: ImportedSimpleAnnotationDetail, now_datetime: str
     ) -> Optional[AnnotationDetail]:
         """
         Request Bodyに渡すDataClassに変換する。塗りつぶし画像があれば、それをS3にアップロードする。
@@ -189,8 +189,8 @@ class ImportAnnotation(AbstractCommandLineInterface):
             etag=None,
             url=None,
             path=None,
-            created_datetime=None,
-            updated_datetime=None,
+            created_datetime=now_datetime,
+            updated_datetime=now_datetime,
         )
 
         if data_holding_type == AnnotationDataHoldingType.OUTER:
@@ -210,8 +210,11 @@ class ImportAnnotation(AbstractCommandLineInterface):
         old_annotation: Optional[Dict[str, Any]] = None,
     ) -> Dict[str, Any]:
         request_details: List[Dict[str, Any]] = []
+        now_datetime = str_now()
         for detail in details:
-            request_detail = self._to_annotation_detail_for_request(project_id, parser, detail)
+            request_detail = self._to_annotation_detail_for_request(
+                project_id, parser, detail, now_datetime=now_datetime
+            )
 
             if request_detail is not None:
                 request_details.append(request_detail.to_dict(encode_json=True))
