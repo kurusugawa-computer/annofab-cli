@@ -13,7 +13,7 @@ from annofabapi.parser import lazy_parse_simple_annotation_dir, lazy_parse_simpl
 
 import annofabcli
 import annofabcli.common.cli
-from annofabcli.common.facade import TaskQuery
+from annofabcli.common.facade import TaskQuery, match_annotation_with_task_query
 
 logger = logging.getLogger(__name__)
 
@@ -29,32 +29,12 @@ class FilterQuery:
     exclude_input_data_name_set: Optional[Set[str]] = None
 
 
-def _match_task_query(annotation: Dict[str, Any], task_query: Optional[TaskQuery]) -> bool:
-    def match_str(name: str, query: str) -> bool:
-        return query.lower() in name.lower()
-
-    if task_query is None:
-        return True
-
-    if task_query.task_id is not None and not match_str(annotation["task_id"], task_query.task_id):
-        return False
-
-    if task_query.status is not None and annotation["task_status"] != task_query.status.value:
-        return False
-
-    if task_query.phase is not None and annotation["task_phase"] != task_query.phase:
-        return False
-
-    if task_query.phase_stage is not None and annotation["task_phase_stage"] != task_query.phase_stage:
-        return False
-
-    return True
-
-
 def match_query(  # pylint: disable=too-many-return-statements
     annotation: Dict[str, Any], filter_query: FilterQuery
 ) -> bool:
-    if filter_query.task_query is not None and not _match_task_query(annotation, filter_query.task_query):
+    if filter_query.task_query is not None and not match_annotation_with_task_query(
+        annotation, filter_query.task_query
+    ):
         return False
 
     # xxx_set は1個のみ指定されていること前提なので、elif を羅列する
