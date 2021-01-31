@@ -842,7 +842,7 @@ class ListWorktimeByUserMain:
         for key in key_list:
             data = numpy.array([reform_dict[(username, key)] for username in username_list], dtype=float)
             data = numpy.nan_to_num(data)
-            reform_dict[("合計", key)] = list(numpy.sum(data, axis=0))
+            reform_dict[("合計", key)] = list(numpy.sum(data, axis=0)) # type: ignore
 
         columns = (
             [("date", ""), ("dayofweek", "")]
