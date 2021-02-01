@@ -823,12 +823,8 @@ class AnnofabApiFacade:
         return self.service.api.batch_update_annotations(project_id, request_body)[0]
 
     def change_annotation_attributes(
-        self,
-        project_id: str,
-        annotation_list: List[SingleAnnotation],
-        attributes: List[AdditionalData],
-        batch_size: Optional[int] = None,
-    ):
+        self, project_id: str, annotation_list: List[SingleAnnotation], attributes: List[AdditionalData]
+    ) -> Optional[List[Dict[str, Any]]]:
         """
         アノテーション属性値を変更する。
 
@@ -838,10 +834,10 @@ class AnnofabApiFacade:
             project_id:
             annotation_list: 変更対象のアノテーション一覧
             attributes: 変更後の属性値
-            batch_size: リクエストボディにアノテーションを何個ずつ渡すか。Noneの場合、一度にすべてのアノテーションを渡します。
 
-        Raises:
-            ValueError: batch_sizeに負の数を指定した場合
+        Returns:
+            `batch_update_annotations`メソッドのレスポンス
+
         """
 
         def _to_request_body_elm(annotation: Dict[str, Any]) -> Dict[str, Any]:
@@ -860,23 +856,8 @@ class AnnofabApiFacade:
             }
 
         attributes_for_dict: List[Dict[str, Any]] = [asdict(e) for e in attributes]
-
-        if batch_size is None:
-            request_body = [_to_request_body_elm(annotation) for annotation in annotation_list]
-            self.service.api.batch_update_annotations(project_id, request_body)
-            return
-        else:
-            if batch_size <= 0:
-                raise ValueError(f"batch_sizeは1以上の整数を指定してください。batch_size={batch_size}")
-
-            first_index = 0
-            while first_index < len(annotation_list):
-                request_body = [
-                    _to_request_body_elm(annotation)
-                    for annotation in annotation_list[first_index : first_index + batch_size]
-                ]
-                self.service.api.batch_update_annotations(project_id, request_body=request_body)
-                first_index += batch_size
+        request_body = [_to_request_body_elm(annotation) for annotation in annotation_list]
+        return self.service.api.batch_update_annotations(project_id, request_body)[0]
 
     def set_account_id_of_task_query(self, project_id: str, task_query: TaskQuery) -> TaskQuery:
         """

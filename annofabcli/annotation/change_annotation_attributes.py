@@ -1,6 +1,8 @@
 import argparse
 import logging
 import sys
+from collections import defaultdict
+from enum import Enum
 from pathlib import Path
 from typing import Any, Dict, List, Optional
 
@@ -23,10 +25,16 @@ from annofabcli.common.facade import AdditionalData, AdditionalDataForCli, Annot
 logger = logging.getLogger(__name__)
 
 
+class ChangeBy(Enum):
+    TASK = "task"
+    INPUT_DATA = "input_data"
+
+
 class ChangeAttributesOfAnnotation(AbstractCommandLineInterface):
     """
     アノテーション属性を変更
     """
+
     COMMON_MESSAGE = "annofabcli annotation change_attributes: error:"
 
     def __init__(self, service: annofabapi.Resource, facade: AnnofabApiFacade, args: argparse.Namespace):
@@ -39,8 +47,8 @@ class ChangeAttributesOfAnnotation(AbstractCommandLineInterface):
         task_id: str,
         annotation_query: AnnotationQuery,
         attributes: List[AdditionalData],
+        change_by: ChangeBy,
         force: bool = False,
-        batch_size: Optional[int] = None,
         backup_dir: Optional[Path] = None,
     ) -> None:
         """
@@ -87,7 +95,20 @@ class ChangeAttributesOfAnnotation(AbstractCommandLineInterface):
             self.dump_annotation_obj.dump_annotation_for_task(project_id, task_id, output_dir=backup_dir)
 
         try:
-            self.facade.change_annotation_attributes(project_id, annotation_list, attributes, batch_size=batch_size)
+            if change_by == ChangeBy.INPUT_DATA:
+                dict_annotation_list_by_input_data = defaultdict(list)
+                for annotation in annotation_list:
+                    dict_annotation_list_by_input_data[annotation["input_data_id"]].append(annotation)
+
+                for input_data_id, annotation_list_by_input_data in dict_annotation_list_by_input_data.items():
+                    logger.debug(
+                        f"task_id={task_id}, input_data_id={input_data_id}: "
+                        f"{len(annotation_list_by_input_data)}個のアノテーションの属性を変更しました。"
+                    )
+                    self.facade.change_annotation_attributes(project_id, annotation_list_by_input_data, attributes)
+            else:
+                self.facade.change_annotation_attributes(project_id, annotation_list, attributes)
+
             logger.info(f"task_id={task_id}: アノテーション属性を変更しました。")
         except requests.HTTPError as e:
             logger.warning(e)
@@ -99,8 +120,8 @@ class ChangeAttributesOfAnnotation(AbstractCommandLineInterface):
         task_id_list: List[str],
         annotation_query: AnnotationQuery,
         attributes: List[AdditionalData],
+        change_by: ChangeBy = ChangeBy.TASK,
         force: bool = False,
-        batch_size: Optional[int] = None,
         backup_dir: Optional[Path] = None,
     ):
         super().validate_project(project_id, [ProjectMemberRole.OWNER])
@@ -119,7 +140,7 @@ class ChangeAttributesOfAnnotation(AbstractCommandLineInterface):
                 annotation_query=annotation_query,
                 attributes=attributes,
                 force=force,
-                batch_size=batch_size,
+                change_by=change_by,
                 backup_dir=backup_dir,
             )
 
@@ -152,17 +173,13 @@ class ChangeAttributesOfAnnotation(AbstractCommandLineInterface):
         else:
             backup_dir = Path(args.backup)
 
-        if args.batch_size is not None and args.batch_size <= 0:
-            print(f"{self.COMMON_MESSAGE} argument '--batch_size'には1以上の整数を指定してください。", file=sys.stderr)
-            return
-
         self.change_annotation_attributes(
             project_id,
             task_id_list,
             annotation_query=annotation_query,
             attributes=attributes,
             force=args.force,
-            batch_size=args.batch_size,
+            change_by=ChangeBy(args.change_by),
             backup_dir=backup_dir,
         )
 
@@ -204,11 +221,11 @@ def parse_args(parser: argparse.ArgumentParser):
     parser.add_argument("--force", action="store_true", help="完了状態のタスクのアノテーション属性も変更します。")
 
     parser.add_argument(
-        "--batch_size",
-        required=False,
-        default=500,
-        type=int,
-        help="タスクのメタデータを何個ごとに更新するかを指定してください。一度に更新するタスクが多いとタイムアウトが発生する恐れがあります。",
+        "--change_by",
+        type=str,
+        choices=[ChangeBy.TASK.value, ChangeBy.INPUT_DATA.value],
+        default=ChangeBy.TASK.value,
+        help="アノテーション属性の変更単位を指定してください。[Deprecated] 廃止される可能性があります。",
     )
 
     parser.add_argument(

@@ -363,11 +363,10 @@ class ListAnnotationCount(AbstractCommandLineInterface):
                 json_file_path_list = task_parser.json_file_path_list
                 if len(json_file_path_list) == 0:
                     continue
-                else:
-                    input_data_parser = task_parser.get_parser(json_file_path_list[0])
-                    dict_simple_annotation = input_data_parser.load_json()
-                    if not match_annotation_with_task_query(dict_simple_annotation, task_query):
-                        continue
+                input_data_parser = task_parser.get_parser(json_file_path_list[0])
+                dict_simple_annotation = input_data_parser.load_json()
+                if not match_annotation_with_task_query(dict_simple_annotation, task_query):
+                    continue
 
             task_counter = self.count_for_task(task_parser, target_attributes=target_attributes)
             task_counter_list.append(task_counter)
