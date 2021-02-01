@@ -49,9 +49,10 @@ Examples
 
 * step：何回目のフェーズか
 * simple_status：タスクステータスを簡略化したもの
-    * not_started：未着手
-    * working_break_hold：作業中か休憩中か保留中
-    * complete：完了
+
+  * not_started：未着手
+  * working_break_hold：作業中か休憩中か保留中
+  * complete：完了
 
 「一度も作業されていない教師付未着手」のタスク数は、先頭行（step=1, phase=annotation, simple_status=not_started）のtask_countから分かります。
 

@@ -31,6 +31,7 @@ from annofabcli.common.cli import (
 )
 from annofabcli.common.dataclasses import WaitOptions
 from annofabcli.common.download import DownloadingFile
+from annofabcli.common.facade import TaskQuery, match_annotation_with_task_query
 from annofabcli.common.visualize import AddProps, MessageLocale
 
 DEFAULT_WAIT_OPTIONS = WaitOptions(interval=60, max_tries=360)
@@ -337,7 +338,14 @@ class ListAnnotationCount(AbstractCommandLineInterface):
         attributes_columns = self.get_target_attributes_columns(annotation_specs_labels)
         return (label_columns, attributes_columns)
 
-    def list_annotation_count_by_task(self, project_id: str, annotation_path: Path, output_dir: Path) -> None:
+    def list_annotation_count_by_task(
+        self,
+        project_id: str,
+        annotation_path: Path,
+        output_dir: Path,
+        task_id_set: Optional[Set[str]] = None,
+        task_query: Optional[TaskQuery] = None,
+    ) -> None:
         task_counter_list = []
         iter_task_parser = self.lazy_parse_simple_annotation_by_task(annotation_path)
         target_label_columns, target_attributes_columns = self.get_target_columns(project_id)
@@ -345,9 +353,20 @@ class ListAnnotationCount(AbstractCommandLineInterface):
         target_attributes = {(e[0], e[1]) for e in target_attributes_columns}
         logger.info(f"アノテーションzip/ディレクトリを読み込み中")
         for task_index, task_parser in enumerate(iter_task_parser):
-            task_index += 1
-            if task_index % 1000 == 0:
-                logger.debug(f"{task_index}  件目を読み込み中")
+            if (task_index + 1) % 1000 == 0:
+                logger.debug(f"{task_index+1}  件目のタスクディレクトリを読み込み中")
+
+            if task_id_set is not None and task_parser.task_id not in task_id_set:
+                continue
+
+            if task_query is not None:
+                json_file_path_list = task_parser.json_file_path_list
+                if len(json_file_path_list) == 0:
+                    continue
+                input_data_parser = task_parser.get_parser(json_file_path_list[0])
+                dict_simple_annotation = input_data_parser.load_json()
+                if not match_annotation_with_task_query(dict_simple_annotation, task_query):
+                    continue
 
             task_counter = self.count_for_task(task_parser, target_attributes=target_attributes)
             task_counter_list.append(task_counter)
@@ -360,7 +379,14 @@ class ListAnnotationCount(AbstractCommandLineInterface):
             attribute_columns=target_attributes_columns,
         )
 
-    def list_annotation_count_by_input_data(self, project_id: str, annotation_path: Path, output_dir: Path) -> None:
+    def list_annotation_count_by_input_data(
+        self,
+        project_id: str,
+        annotation_path: Path,
+        output_dir: Path,
+        task_id_set: Optional[Set[str]] = None,
+        task_query: Optional[TaskQuery] = None,
+    ) -> None:
         input_data_counter_list = []
         iter_parser = self.lazy_parse_simple_annotation_by_input_data(annotation_path)
         target_label_columns, target_attributes_columns = self.get_target_columns(project_id)
@@ -368,10 +394,17 @@ class ListAnnotationCount(AbstractCommandLineInterface):
         target_attributes = {(e[0], e[1]) for e in target_attributes_columns}
         logger.info(f"アノテーションzip/ディレクトリを読み込み中")
         for index, parser in enumerate(iter_parser):
-            if index % 1000 == 0:
-                logger.debug(f"{index}  件目を読み込み中")
+            if (index + 1) % 1000 == 0:
+                logger.debug(f"{index+1}  件目のJSONを読み込み中")
+
+            if task_id_set is not None and parser.task_id not in task_id_set:
+                continue
 
             simple_annotation_dict = parser.load_json()
+            if task_query is not None:
+                if not match_annotation_with_task_query(simple_annotation_dict, task_query):
+                    continue
+
             input_data_counter = self.count_for_input_data(simple_annotation_dict, target_attributes=target_attributes)
             input_data_counter_list.append(input_data_counter)
 
@@ -405,14 +438,29 @@ class ListAnnotationCount(AbstractCommandLineInterface):
                 wait_options=wait_options,
             )
 
+        task_id_set = set(annofabcli.common.cli.get_list_from_args(args.task_id)) if args.task_id is not None else None
+        task_query = (
+            TaskQuery.from_dict(annofabcli.common.cli.get_json_from_args(args.task_query))
+            if args.task_query is not None
+            else None
+        )
+
         group_by = GroupBy(args.group_by)
         if group_by == GroupBy.TASK_ID:
             self.list_annotation_count_by_task(
-                project_id, annotation_path=annotation_path, output_dir=Path(args.output_dir)
+                project_id,
+                annotation_path=annotation_path,
+                output_dir=Path(args.output_dir),
+                task_id_set=task_id_set,
+                task_query=task_query,
             )
         elif group_by == GroupBy.INPUT_DATA_ID:
             self.list_annotation_count_by_input_data(
-                project_id, annotation_path=annotation_path, output_dir=Path(args.output_dir)
+                project_id,
+                annotation_path=annotation_path,
+                output_dir=Path(args.output_dir),
+                task_id_set=task_id_set,
+                task_query=task_query,
             )
 
 
@@ -432,6 +480,15 @@ def parse_args(parser: argparse.ArgumentParser):
         default=GroupBy.TASK_ID.value,
         help="アノテーションの個数をどの単位で集約するかを指定してます。デフォルトは'task_id'です。",
     )
+
+    parser.add_argument(
+        "-tq",
+        "--task_query",
+        type=str,
+        help="集計対象タスクを絞り込むためのクエリ条件をJSON形式で指定します。使用できるキーは task_id, status, phase, phase_stage です。"
+        "`file://`を先頭に付けると、JSON形式のファイルを指定できます。",
+    )
+    argument_parser.add_task_id(required=False)
 
     parser.add_argument(
         "--latest",

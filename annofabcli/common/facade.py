@@ -95,6 +95,39 @@ class InputDataQuery(DataClassJsonMixin):
     input_data_path: Optional[str] = None
 
 
+def match_annotation_with_task_query(annotation: Dict[str, Any], task_query: Optional[TaskQuery]) -> bool:
+    """
+    Simple Annotationが、タスククエリ条件に合致するか
+
+    Args:
+        annotation: Simple Annotation
+        task_query: タスククエリ
+
+    Returns:
+        TrueならSimple Annotationがタスククエリ条件にが合致する
+    """
+
+    def match_str(name: str, query: str) -> bool:
+        return query.lower() in name.lower()
+
+    if task_query is None:
+        return True
+
+    if task_query.task_id is not None and not match_str(annotation["task_id"], task_query.task_id):
+        return False
+
+    if task_query.status is not None and annotation["task_status"] != task_query.status.value:
+        return False
+
+    if task_query.phase is not None and annotation["task_phase"] != task_query.phase:
+        return False
+
+    if task_query.phase_stage is not None and annotation["task_phase_stage"] != task_query.phase_stage:
+        return False
+
+    return True
+
+
 def match_task_with_query(  # pylint: disable=too-many-return-statements
     task: Task, task_query: Optional[TaskQuery]
 ) -> bool:

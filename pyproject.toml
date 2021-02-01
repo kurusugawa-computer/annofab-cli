@@ -1,6 +1,6 @@
 [tool.poetry]
 name = "annofabcli"
-version = "1.40.6"
+version = "1.40.7"
 description = "Utility Command Line Interface for AnnoFab"
 authors = ["yuji38kwmt"]
 license = "MIT"
@@ -31,7 +31,7 @@ more-itertools = "*"
 jmespath = "*"
 pyquery = "*"
 isodate = "*"
-annofabapi = "^0.41.2"
+annofabapi = ">=0.42.1"
 pandas = "^1.2"
 bokeh = "^2.2"
 holoviews= "^1.14"
