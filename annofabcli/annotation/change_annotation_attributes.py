@@ -27,6 +27,7 @@ class ChangeAttributesOfAnnotation(AbstractCommandLineInterface):
     """
     アノテーション属性を変更
     """
+    COMMON_MESSAGE = "annofabcli annotation change_attributes: error:"
 
     def __init__(self, service: annofabapi.Resource, facade: AnnofabApiFacade, args: argparse.Namespace):
         super().__init__(service, facade, args)
@@ -39,6 +40,7 @@ class ChangeAttributesOfAnnotation(AbstractCommandLineInterface):
         annotation_query: AnnotationQuery,
         attributes: List[AdditionalData],
         force: bool = False,
+        batch_size: Optional[int] = None,
         backup_dir: Optional[Path] = None,
     ) -> None:
         """
@@ -85,7 +87,7 @@ class ChangeAttributesOfAnnotation(AbstractCommandLineInterface):
             self.dump_annotation_obj.dump_annotation_for_task(project_id, task_id, output_dir=backup_dir)
 
         try:
-            self.facade.change_annotation_attributes(project_id, annotation_list, attributes)
+            self.facade.change_annotation_attributes(project_id, annotation_list, attributes, batch_size=batch_size)
             logger.info(f"task_id={task_id}: アノテーション属性を変更しました。")
         except requests.HTTPError as e:
             logger.warning(e)
@@ -98,6 +100,7 @@ class ChangeAttributesOfAnnotation(AbstractCommandLineInterface):
         annotation_query: AnnotationQuery,
         attributes: List[AdditionalData],
         force: bool = False,
+        batch_size: Optional[int] = None,
         backup_dir: Optional[Path] = None,
     ):
         super().validate_project(project_id, [ProjectMemberRole.OWNER])
@@ -116,6 +119,7 @@ class ChangeAttributesOfAnnotation(AbstractCommandLineInterface):
                 annotation_query=annotation_query,
                 attributes=attributes,
                 force=force,
+                batch_size=batch_size,
                 backup_dir=backup_dir,
             )
 
@@ -129,7 +133,7 @@ class ChangeAttributesOfAnnotation(AbstractCommandLineInterface):
         try:
             annotation_query = self.facade.to_annotation_query_from_cli(project_id, annotation_query_for_cli)
         except ValueError as e:
-            print(f"'--annotation_queryの値が不正です。{e}", file=sys.stderr)
+            print(f"{self.COMMON_MESSAGE} argument '--annotation_query' の値が不正です。{e}", file=sys.stderr)
             return
 
         attributes_of_dict: List[Dict[str, Any]] = get_json_from_args(args.attributes)
@@ -137,7 +141,7 @@ class ChangeAttributesOfAnnotation(AbstractCommandLineInterface):
         try:
             attributes = self.facade.to_attributes_from_cli(project_id, annotation_query.label_id, attributes_for_cli)
         except ValueError as e:
-            print(f"'--attributesの値が不正です。{e}", file=sys.stderr)
+            print(f"{self.COMMON_MESSAGE} argument '--attributes' の値が不正です。{e}", file=sys.stderr)
             return
 
         if args.backup is None:
@@ -148,12 +152,17 @@ class ChangeAttributesOfAnnotation(AbstractCommandLineInterface):
         else:
             backup_dir = Path(args.backup)
 
+        if args.batch_size is not None and args.batch_size <= 0:
+            print(f"{self.COMMON_MESSAGE} argument '--batch_size'には1以上の整数を指定してください。", file=sys.stderr)
+            return
+
         self.change_annotation_attributes(
             project_id,
             task_id_list,
             annotation_query=annotation_query,
             attributes=attributes,
             force=args.force,
+            batch_size=args.batch_size,
             backup_dir=backup_dir,
         )
 
@@ -193,6 +202,14 @@ def parse_args(parser: argparse.ArgumentParser):
     )
 
     parser.add_argument("--force", action="store_true", help="完了状態のタスクのアノテーション属性も変更します。")
+
+    parser.add_argument(
+        "--batch_size",
+        required=False,
+        default=500,
+        type=int,
+        help="タスクのメタデータを何個ごとに更新するかを指定してください。一度に更新するタスクが多いとタイムアウトが発生する恐れがあります。",
+    )
 
     parser.add_argument(
         "--backup",

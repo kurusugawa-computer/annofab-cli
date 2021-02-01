@@ -353,7 +353,7 @@ class ListAnnotationCount(AbstractCommandLineInterface):
         target_attributes = {(e[0], e[1]) for e in target_attributes_columns}
         logger.info(f"アノテーションzip/ディレクトリを読み込み中")
         for task_index, task_parser in enumerate(iter_task_parser):
-            if (task_index+1) % 1000 == 0:
+            if (task_index + 1) % 1000 == 0:
                 logger.debug(f"{task_index+1}  件目のタスクディレクトリを読み込み中")
 
             if task_id_set is not None and task_parser.task_id not in task_id_set:
@@ -395,7 +395,7 @@ class ListAnnotationCount(AbstractCommandLineInterface):
         target_attributes = {(e[0], e[1]) for e in target_attributes_columns}
         logger.info(f"アノテーションzip/ディレクトリを読み込み中")
         for index, parser in enumerate(iter_parser):
-            if (index+1) % 1000 == 0:
+            if (index + 1) % 1000 == 0:
                 logger.debug(f"{index+1}  件目のJSONを読み込み中")
 
             if task_id_set is not None and parser.task_id not in task_id_set:
