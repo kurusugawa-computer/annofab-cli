@@ -92,9 +92,7 @@ class ListAnnotationMain:
 
         return attributes_of_query
 
-    def modify_annotation_query(
-        self, project_id: str, annotation_query: Optional[Dict[str, Any]], task_id: Optional[str] = None
-    ) -> Dict[str, Any]:
+    def modify_annotation_query(self, project_id: str, annotation_query: Dict[str, Any]) -> Dict[str, Any]:
         """
         アノテーション検索クエリに以下のように修正する。
         * ``label_name_en`` から ``label_id`` に変換する。
@@ -104,55 +102,50 @@ class ListAnnotationMain:
         Args:
             project_id:
             annotation_query:
-            task_id: 検索対象のtask_id
 
         Returns:
             修正したタスク検索クエリ
 
         """
+        annotation_specs, _ = self.service.api.get_annotation_specs(project_id)
+        specs_labels = annotation_specs["labels"]
+
+        # label_name_en から label_idを設定
+        if "label_name_en" in annotation_query:
+            label_name_en = annotation_query["label_name_en"]
+            label = more_itertools.first_true(
+                specs_labels, pred=lambda e: AnnofabApiFacade.get_label_name_en(e) == label_name_en
+            )
+            if label is not None:
+                annotation_query["label_id"] = label["label_id"]
+            else:
+                logger.warning(f"label_name_en: {label_name_en} の label_id が見つかりませんでした。")
+
+        if annotation_query.keys() >= {"label_id", "attributes"}:
+            label = more_itertools.first_true(
+                specs_labels, pred=lambda e: e["label_id"] == annotation_query["label_id"]
+            )
+            if label is not None:
+                self._modify_attributes_of_query(annotation_query["attributes"], label["additional_data_definitions"])
+            else:
+                logger.warning(f"label_id: {annotation_query['label_id']} の label_id が見つかりませんでした。")
+
+        return annotation_query
+
+    def get_annotation_list(
+        self, project_id: str, annotation_query: Optional[Dict[str, Any]], task_id: Optional[str] = None
+    ) -> List[SingleAnnotation]:
         if annotation_query is not None:
             new_annotation_query = copy.deepcopy(annotation_query)
         else:
             new_annotation_query = {}
 
-        annotation_specs, _ = self.service.api.get_annotation_specs(project_id)
-        specs_labels = annotation_specs["labels"]
-
-        # label_name_en から label_idを設定
-        if "label_name_en" in new_annotation_query:
-            label_name_en = new_annotation_query["label_name_en"]
-            label = more_itertools.first_true(
-                specs_labels, pred=lambda e: AnnofabApiFacade.get_label_name_en(e) == label_name_en
-            )
-            if label is not None:
-                new_annotation_query["label_id"] = label["label_id"]
-            else:
-                logger.warning(f"label_name_en: {label_name_en} の label_id が見つかりませんでした。")
-
-        if new_annotation_query.keys() >= {"label_id", "attributes"}:
-            label = more_itertools.first_true(
-                specs_labels, pred=lambda e: e["label_id"] == new_annotation_query["label_id"]
-            )
-            if label is not None:
-                self._modify_attributes_of_query(
-                    new_annotation_query["attributes"], label["additional_data_definitions"]
-                )
-            else:
-                logger.warning(f"label_id: {new_annotation_query['label_id']} の label_id が見つかりませんでした。")
-
         if task_id is not None:
-            new_annotation_query["task_id"] = task_id
-            new_annotation_query["exact_match_task_id"] = True
+            new_annotation_query.update({"task_id": task_id, "exact_match_task_id": True})
 
-        return new_annotation_query
-
-    def get_annotation_list(
-        self, project_id: str, annotation_query: Optional[Dict[str, Any]], task_id: Optional[str] = None
-    ) -> List[SingleAnnotation]:
-        annotation_query = self.modify_annotation_query(project_id, annotation_query, task_id)
-        logger.debug(f"annotation_query: {annotation_query}")
+        logger.debug(f"annotation_query: {new_annotation_query}")
         annotation_list = self.service.wrapper.get_all_annotation_list(
-            project_id, query_params={"query": annotation_query}
+            project_id, query_params={"query": new_annotation_query}
         )
         return [self.visualize.add_properties_to_single_annotation(annotation) for annotation in annotation_list]
 
@@ -234,16 +227,18 @@ class ListAnnotation(AbstractCommandLineInterface):
         args = self.args
 
         project_id = args.project_id
-        annotation_query = (
-            annofabcli.common.cli.get_json_from_args(args.annotation_query)
-            if args.annotation_query is not None
-            else None
-        )
+        main_obj = ListAnnotationMain(self.service, project_id=project_id)
+
+        if args.annotation_query is not None:
+            cli_annotation_query = annofabcli.common.cli.get_json_from_args(args.annotation_query)
+            annotation_query = main_obj.modify_annotation_query(project_id, cli_annotation_query)
+        else:
+            annotation_query = None
+
         task_id_list = annofabcli.common.cli.get_list_from_args(args.task_id) if args.task_id is not None else None
 
         super().validate_project(project_id, project_member_roles=None)
 
-        main_obj = ListAnnotationMain(self.service, project_id=project_id)
         annotation_list = main_obj.get_all_annotation_list(
             project_id, annotation_query=annotation_query, task_id_list=task_id_list
         )
