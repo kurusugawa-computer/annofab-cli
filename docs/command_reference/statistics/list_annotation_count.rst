@@ -61,6 +61,26 @@ Examples
 `out_by_task <https://github.com/kurusugawa-computer/annofab-cli/blob/master/docs/command_reference/statistics/list_annotation_count/out_by_task>`_
 
 
+
+.. csv-table:: labels_count.csv
+   :header: task_id,task_status,task_phase,task_phase_stage,label_Cat,...
+
+    task1,break,annotation,1,20,...
+    task2,complete,acceptance,1,12,...
+
+
+
+.. csv-table:: labels_count.csv
+   :header: task_id,task_status,task_phase,task_phase_stage,label_Cat,...
+
+    task1,break,annotation,1,20,...
+    task2,complete,acceptance,1,12,...
+
+
+
+
+
+
 入力データごとにアノテーション数を集計
 ----------------------------------------------
 
