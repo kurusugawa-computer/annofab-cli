@@ -61,6 +61,34 @@ Examples
 `out_by_task <https://github.com/kurusugawa-computer/annofab-cli/blob/master/docs/command_reference/statistics/list_annotation_count/out_by_task>`_
 
 
+.. code-block::
+
+    out_by_task/
+    ├── labels_count.csv
+    ├── attirbutes_count.csv
+
+
+
+.. csv-table:: labels_count.csv
+   :header: task_id,task_status,task_phase,task_phase_stage,label_Cat,...
+
+    task1,break,annotation,1,20,...
+    task2,complete,acceptance,1,12,...
+
+
+
+.. csv-table:: attirbutes_count.csv
+    :header: ,,,,Cat,Cat,...
+
+    ,,,,occluded,occluded,...
+    task_id,task_status,task_phase,task_phase_stage,True,False,...
+    task1,break,acceptance,1,2,0,...
+    task2,complete,acceptance,1,2,0,...
+
+
+
+
+
 入力データごとにアノテーション数を集計
 ----------------------------------------------
 
@@ -72,3 +100,28 @@ Examples
 
 `out_by_input_data <https://github.com/kurusugawa-computer/annofab-cli/blob/master/docs/command_reference/statistics/list_annotation_count/out_by_input_data>`_
 
+
+.. code-block::
+
+    out_by_input_data/
+    ├── labels_count.csv
+    ├── attirbutes_count.csv
+
+
+
+.. csv-table:: labels_count.csv
+   :header: input_data_id,input_data_name,task_id,task_status,task_phase,task_phase_stage,label_Cat,...
+
+    input1,input1,task1,break,acceptance,1,12
+    input2,input2,task2,complete,acceptance,1,12
+
+
+
+
+.. csv-table:: attirbutes_count.csv
+    :header: ,,,,,,Cat,Cat,...
+
+    ,,,,,,occluded,occluded,...
+    input_data_id,input_data_name,task_id,task_status,task_phase,task_phase_stage,True,False,...
+    input1,input1,task1,break,acceptance,1,10,5,...
+    input2,input2,task2,complete,acceptance,1,10,5,...
