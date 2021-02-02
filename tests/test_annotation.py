@@ -77,6 +77,20 @@ class TestCommandLine:
             ]
         )
 
+    def test_list(self):
+        main(
+            [
+                "annotation",
+                "list",
+                "--project_id",
+                project_id,
+                "--task_id",
+                task_id,
+                "--output",
+                str(out_dir / "annotation_count.csv"),
+            ]
+        )
+
     def test_list_count(self):
         main(
             [
@@ -86,6 +100,8 @@ class TestCommandLine:
                 project_id,
                 "--annotation_query",
                 '{"label_name_en": "car"}',
+                "--task_id",
+                task_id,
                 "--output",
                 str(out_dir / "annotation_count.csv"),
             ]

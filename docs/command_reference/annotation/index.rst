@@ -19,6 +19,7 @@ Available Commands
    delete
    dump
    import
+   list
    list_count
    restore
 
