@@ -1,9 +1,6 @@
-"""
-アノテーション一覧を出力する
-"""
 import argparse
+import copy
 import logging
-from enum import Enum
 from typing import Any, Dict, List, Optional
 
 import annofabapi
@@ -14,20 +11,18 @@ from annofabapi.models import AdditionalDataDefinitionV1, SingleAnnotation
 import annofabcli
 from annofabcli import AnnofabApiFacade
 from annofabcli.common.cli import AbstractCommandLineInterface, ArgumentParser, build_annofabapi_resource_and_login
+from annofabcli.common.enums import FormatArgument
+from annofabcli.common.utils import get_columns_with_priority
 from annofabcli.common.visualize import AddProps
 
 logger = logging.getLogger(__name__)
 
 
-class GroupBy(Enum):
-    TASK_ID = "task_id"
-    INPUT_DATA_ID = "input_data_id"
-
-
-class ListAnnotationCount(AbstractCommandLineInterface):
-    def __init__(self, service: annofabapi.Resource, facade: AnnofabApiFacade, args: argparse.Namespace):
-        super().__init__(service, facade, args)
-        self.visualize = AddProps(self.service, args.project_id)
+class ListAnnotationMain:
+    def __init__(self, service: annofabapi.Resource, project_id: str):
+        self.service = service
+        self.facade = AnnofabApiFacade(service)
+        self.visualize = AddProps(self.service, project_id)
 
     @staticmethod
     def _modify_attribute_of_query(
@@ -97,11 +92,11 @@ class ListAnnotationCount(AbstractCommandLineInterface):
 
         return attributes_of_query
 
-    def _modify_annotation_query(
-        self, project_id: str, annotation_query: Dict[str, Any], task_id: Optional[str] = None
+    def modify_annotation_query(
+        self, project_id: str, annotation_query: Optional[Dict[str, Any]], task_id: Optional[str] = None
     ) -> Dict[str, Any]:
         """
-        アノテーション検索クエリを修正する。
+        アノテーション検索クエリに以下のように修正する。
         * ``label_name_en`` から ``label_id`` に変換する。
         * ``additional_data_definition_name_en`` から ``additional_data_definition_id`` に変換する。
         * ``choice_name_en`` から ``choice`` に変換する。
@@ -115,105 +110,161 @@ class ListAnnotationCount(AbstractCommandLineInterface):
             修正したタスク検索クエリ
 
         """
+        if annotation_query is not None:
+            new_annotation_query = copy.deepcopy(annotation_query)
+        else:
+            new_annotation_query = {}
 
         annotation_specs, _ = self.service.api.get_annotation_specs(project_id)
         specs_labels = annotation_specs["labels"]
 
         # label_name_en から label_idを設定
-        if "label_name_en" in annotation_query:
-            label_name_en = annotation_query["label_name_en"]
+        if "label_name_en" in new_annotation_query:
+            label_name_en = new_annotation_query["label_name_en"]
             label = more_itertools.first_true(
                 specs_labels, pred=lambda e: AnnofabApiFacade.get_label_name_en(e) == label_name_en
             )
             if label is not None:
-                annotation_query["label_id"] = label["label_id"]
+                new_annotation_query["label_id"] = label["label_id"]
             else:
                 logger.warning(f"label_name_en: {label_name_en} の label_id が見つかりませんでした。")
 
-        if annotation_query.keys() >= {"label_id", "attributes"}:
+        if new_annotation_query.keys() >= {"label_id", "attributes"}:
             label = more_itertools.first_true(
-                specs_labels, pred=lambda e: e["label_id"] == annotation_query["label_id"]
+                specs_labels, pred=lambda e: e["label_id"] == new_annotation_query["label_id"]
             )
             if label is not None:
-                self._modify_attributes_of_query(annotation_query["attributes"], label["additional_data_definitions"])
+                self._modify_attributes_of_query(
+                    new_annotation_query["attributes"], label["additional_data_definitions"]
+                )
             else:
-                logger.warning(f"label_id: {annotation_query['label_id']} の label_id が見つかりませんでした。")
+                logger.warning(f"label_id: {new_annotation_query['label_id']} の label_id が見つかりませんでした。")
 
         if task_id is not None:
-            annotation_query["task_id"] = task_id
-            annotation_query["exact_match_task_id"] = True
+            new_annotation_query["task_id"] = task_id
+            new_annotation_query["exact_match_task_id"] = True
 
-        return annotation_query
+        return new_annotation_query
 
-    @staticmethod
-    def aggregate_annotations(annotations: List[SingleAnnotation], group_by: GroupBy) -> pandas.DataFrame:
-        df = pandas.DataFrame(annotations)
-        df = df[["task_id", "input_data_id"]]
-        df["annotation_count"] = 1
-
-        if group_by == GroupBy.INPUT_DATA_ID:
-            return df.groupby(["task_id", "input_data_id"], as_index=False).count()
-
-        elif group_by == GroupBy.TASK_ID:
-            return df.groupby(["task_id"], as_index=False).count().drop(["input_data_id"], axis=1)
-
-        else:
-            return pandas.DataFrame()
-
-    def get_annotations(
-        self, project_id: str, annotation_query: Dict[str, Any], task_id: Optional[str] = None
+    def get_annotation_list(
+        self, project_id: str, annotation_query: Optional[Dict[str, Any]], task_id: Optional[str] = None
     ) -> List[SingleAnnotation]:
-        annotation_query = self._modify_annotation_query(project_id, annotation_query, task_id)
+        annotation_query = self.modify_annotation_query(project_id, annotation_query, task_id)
         logger.debug(f"annotation_query: {annotation_query}")
-        annotations = self.service.wrapper.get_all_annotation_list(project_id, query_params={"query": annotation_query})
-        return annotations
+        annotation_list = self.service.wrapper.get_all_annotation_list(
+            project_id, query_params={"query": annotation_query}
+        )
+        return [self.visualize.add_properties_to_single_annotation(annotation) for annotation in annotation_list]
 
-    def list_annotations(
-        self, project_id: str, annotation_query: Dict[str, Any], group_by: GroupBy, task_id_list: List[str]
-    ):
-        """
-        アノテーション一覧を出力する
-        """
-
-        super().validate_project(project_id, project_member_roles=None)
-
-        all_annotations = []
-        if len(task_id_list) > 0:
+    def get_all_annotation_list(
+        self, project_id: str, annotation_query: Optional[Dict[str, Any]], task_id_list: Optional[str] = None
+    ) -> List[SingleAnnotation]:
+        all_annotation_list = []
+        UPPER_BOUND = 10_000
+        if task_id_list is not None:
             for task_id in task_id_list:
-                annotations = self.get_annotations(project_id, annotation_query, task_id)
-                logger.debug(f"タスク {task_id} のアノテーション一覧の件数: {len(annotations)}")
-                if len(annotations) == 10000:
-                    logger.warning("アノテーション一覧は10,000件で打ち切られている可能性があります。")
-                all_annotations.extend(annotations)
+                annotation_list = self.get_annotation_list(project_id, annotation_query, task_id=task_id)
+                logger.debug(f"タスク {task_id} のアノテーション一覧の件数: {len(annotation_list)}")
+                if len(annotation_list) == UPPER_BOUND:
+                    logger.warning(f"アノテーション一覧は{UPPER_BOUND}件で打ち切られている可能性があります。")
+                all_annotation_list.extend(annotation_list)
+            return all_annotation_list
         else:
-            annotations = self.get_annotations(project_id, annotation_query)
-            if len(annotations) == 10000:
-                logger.warning("アノテーション一覧は10,000件で打ち切られている可能性があります。")
-            all_annotations.extend(annotations)
+            annotation_list = self.get_annotation_list(project_id, annotation_query)
+            if len(annotation_list) == UPPER_BOUND:
+                logger.warning(f"アノテーション一覧は{UPPER_BOUND}件で打ち切られている可能性があります。")
+            return annotation_list
 
-        logger.debug(f"アノテーション一覧の件数: {len(all_annotations)}")
-        if len(all_annotations) > 0:
-            df = self.aggregate_annotations(all_annotations, group_by)
-            self.print_csv(df)
-        else:
-            logger.info(f"アノテーション一覧が0件のため出力しません。")
-            return
+
+def to_annotation_list_for_csv(annotation_list: List[SingleAnnotation]) -> List[SingleAnnotation]:
+    """
+
+    Args:
+        annotation_list:
+
+    Returns:
+
+    """
+
+    def to_new_annotation(annotation: Dict[str, Any]) -> Dict[str, Any]:
+        detail = annotation["detail"]
+        for key, value in detail.items():
+            annotation[key] = value
+        return annotation
+
+    return [to_new_annotation(a) for a in annotation_list]
+
+
+class ListAnnotation(AbstractCommandLineInterface):
+
+    PRIOR_COLUMNS = [
+        "project_id",
+        "task_id",
+        "input_data_id",
+        "annotation_id",
+        "label_id",
+        "label_name_en",
+        "data_holding_type",
+        "created_datetime",
+        "updated_datetime",
+        "account_id",
+        "user_id",
+        "username",
+        "data",
+    ]
+
+    DROPPED_COLUMNS = [
+        "detail",
+        "additional_data_list",
+        "etag",
+        "url",
+    ]
+
+    def drop_columns(self, columns: List[str]) -> List[str]:
+        for c in self.DROPPED_COLUMNS:
+            if c in columns:
+                columns.remove(c)
+        return columns
+
+    def __init__(self, service: annofabapi.Resource, facade: AnnofabApiFacade, args: argparse.Namespace):
+        super().__init__(service, facade, args)
+        self.visualize = AddProps(self.service, args.project_id)
 
     def main(self):
         args = self.args
-        annotation_query = annofabcli.common.cli.get_json_from_args(args.annotation_query)
 
-        group_by = GroupBy(args.group_by)
-        task_id_list = annofabcli.common.cli.get_list_from_args(args.task_id)
-        self.list_annotations(
-            args.project_id, annotation_query=annotation_query, group_by=group_by, task_id_list=task_id_list
+        project_id = args.project_id
+        annotation_query = (
+            annofabcli.common.cli.get_json_from_args(args.annotation_query)
+            if args.annotation_query is not None
+            else None
         )
+        task_id_list = annofabcli.common.cli.get_list_from_args(args.task_id) if args.task_id is not None else None
+
+        super().validate_project(project_id, project_member_roles=None)
+
+        main_obj = ListAnnotationMain(self.service, project_id=project_id)
+        annotation_list = main_obj.get_all_annotation_list(
+            project_id, annotation_query=annotation_query, task_id_list=task_id_list
+        )
+        logger.debug(f"アノテーション一覧の件数: {len(annotation_list)}")
+
+        if len(annotation_list) > 0:
+            if self.str_format == FormatArgument.CSV.value:
+                annotation_list_for_csv = to_annotation_list_for_csv(annotation_list)
+                df = pandas.DataFrame(annotation_list_for_csv)
+                columns = self.drop_columns(get_columns_with_priority(df, prior_columns=self.PRIOR_COLUMNS))
+                self.print_csv(df[columns])
+            else:
+                self.print_according_to_format(annotation_list)
+        else:
+            logger.info(f"アノテーション一覧の件数が0件のため、出力しません。")
 
 
 def main(args):
     service = build_annofabapi_resource_and_login(args)
     facade = AnnofabApiFacade(service)
-    ListAnnotationCount(service, facade, args).main()
+    ListAnnotation(service, facade, args).main()
 
 
 def parse_args(parser: argparse.ArgumentParser):
@@ -225,7 +276,6 @@ def parse_args(parser: argparse.ArgumentParser):
         "-aq",
         "--annotation_query",
         type=str,
-        required=True,
         help="アノテーションの検索クエリをJSON形式で指定します。"
         "`file://`を先頭に付けると、JSON形式のファイルを指定できます。"
         "クエリのフォーマットは、[getAnnotationList API](https://annofab.com/docs/api/#operation/getAnnotationList)のクエリパラメータの`query`キー配下と同じです。"  # noqa: E501
@@ -241,24 +291,21 @@ def parse_args(parser: argparse.ArgumentParser):
         ),
     )
 
-    parser.add_argument(
-        "--group_by",
-        type=str,
-        choices=[GroupBy.TASK_ID.value, GroupBy.INPUT_DATA_ID.value],
-        default=GroupBy.TASK_ID.value,
-        help="アノテーションの個数をどの単位で集約するかを指定してます。",
+    argument_parser.add_format(
+        choices=[FormatArgument.CSV, FormatArgument.JSON, FormatArgument.PRETTY_JSON],
+        default=FormatArgument.CSV,
     )
+    argument_parser.add_csv_format()
 
     argument_parser.add_output()
-    argument_parser.add_csv_format()
 
     parser.set_defaults(subcommand_func=main)
 
 
 def add_parser(subparsers: argparse._SubParsersAction):
-    subcommand_name = "list_count"
-    subcommand_help = "task_idまたはinput_data_idで集約したアノテーションの個数を出力します。"
-    description = "task_idまたはinput_data_idで集約したアノテーションの個数を出力します。"
+    subcommand_name = "list"
+    subcommand_help = "アノテーションの一覧を出力します。"
+    description = "アノテーションの一覧を出力します。"
 
     parser = annofabcli.common.cli.add_parser(subparsers, subcommand_name, subcommand_help, description)
     parse_args(parser)
