@@ -111,7 +111,7 @@ class DeleteInputData(AbstractCommandLineInterface):
 
         if delete_supplementary:
             supplementary_data_list, _ = self.service.api.get_supplementary_data_list(project_id, input_data_id)
-            if len(supplementary_data_list) > 0 and not self.confirm_delete_supplementary(
+            if len(supplementary_data_list) > 0 and self.confirm_delete_supplementary(
                 input_data_id, input_data_name, supplementary_data_list=supplementary_data_list
             ):
                 deleted_supplementary_data = self.delete_supplementary_data_list_for_input_data(
