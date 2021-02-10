@@ -152,7 +152,7 @@ class DeleteInputData(AbstractCommandLineInterface):
                 logger.warning(f"input_data_id='{input_data_id}'の削除に失敗しました。")
                 continue
 
-        logger.info(f"プロジェクト'{project_title}'から 、{count_delete_input_data} 件の入力データを削除しました。")
+        logger.info(f"プロジェクト'{project_title}'から 、{count_delete_input_data}/{len(input_data_id_list)} 件の入力データを削除しました。")
 
     def main(self):
         args = self.args
