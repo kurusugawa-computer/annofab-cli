@@ -31,10 +31,9 @@ class TestCommandLine:
     def test_change_status(self):
         main(["project", "change_status", "--project_id", project_id, "--status", "active"])
 
-    # @pytest.mark.submitting_job
-    # def test_copy(self):
-    #     # ジョブ登録されると、後続のテストが実行できなくなるので、存在しないプロジェクトIDを渡す
-    #     main(["project", "copy", "--project_id", "not_exists_project_id", "--dest_title", "copy-project", "--wait"])
+    @pytest.mark.submitting_job
+    def test_copy(self):
+        main(["project", "copy", "--project_id", project_id, "--dest_title", "copy-project", "--wait"])
 
     def test_diff_project(self):
         main(["project", "diff", project_id, project_id, "--target", "annotation_labels"])
