@@ -96,12 +96,12 @@ class CopyProject(AbstractCommandLineInterface):
 
     @staticmethod
     def _set_copy_options(options: Dict[str, Any]):
-        if "copy_annotations" in options:
+        if options.get("copy_annotations", False):
             options["copy_tasks"] = True
             options["copy_inputs"] = True
-        if "copy_tasks" in options:
+        if options.get("copy_tasks", False):
             options["copy_inputs"] = True
-        if "copy_supplementaly_data" in options:
+        if options.get("copy_supplementaly_data", False):
             options["copy_inputs"] = True
         return options
 
@@ -175,7 +175,7 @@ def parse_args(parser: argparse.ArgumentParser):
 def add_parser(subparsers: argparse._SubParsersAction):
     subcommand_name = "copy"
     subcommand_help = "プロジェクトをコピーします。"
-    description = "プロジェクトをコピーします。"
+    description = "プロジェクトをコピーします。'プロジェクト設定', 'プロジェクトメンバー', 'アノテーション仕様'は必ずコピーされます。"
     epilog = "コピー元のプロジェクトに対してオーナロール、組織に対して組織管理者、組織オーナを持つユーザで実行してください。"
 
     parser = annofabcli.common.cli.add_parser(subparsers, subcommand_name, subcommand_help, description, epilog=epilog)
