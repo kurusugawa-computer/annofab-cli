@@ -8,7 +8,7 @@ install:
 script:
    - poetry run flake8 annofabcli
    - poetry run mypy annofabcli
-   - poetry run pylint annofabcli
+   - poetry run pylint  --jobs=0 annofabcli
    - poetry run pytest tests/test_local*.py
 branches:
   only:

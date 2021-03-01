@@ -20,7 +20,7 @@ format:
 lint:
 	poetry run mypy ${LINT_FILES}
 	poetry run flake8 ${LINT_FILES}
-	poetry run pylint ${LINT_FILES}
+	poetry run pylint --jobs=0 ${LINT_FILES}
 
 test:
 	poetry run pytest -n auto  --cov=annofabcli --cov-report=html tests
