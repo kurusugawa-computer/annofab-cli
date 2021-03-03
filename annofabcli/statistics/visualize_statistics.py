@@ -71,21 +71,6 @@ def write_project_name_file(
         f.write(project_summary.to_json(ensure_ascii=False, indent=2))
 
 
-def catch_exception(function: Callable[..., Any]) -> Callable[..., Any]:
-    """
-    Exceptionをキャッチしてログにstacktraceを出力する。
-    """
-
-    def wrapped(*args, **kwargs):
-        try:
-            return function(*args, **kwargs)
-        except Exception as e:  # pylint: disable=broad-except
-            logger.warning(e)
-            logger.exception(e)
-
-    return wrapped
-
-
 def get_project_output_dir(project_title: str) -> str:
     return re.sub(r'[\\/:*?"<>|]+', "__", project_title)
 
@@ -102,7 +87,8 @@ class WriteCsvGraph:
     productivity_df: Optional[pandas.DataFrame] = None
     whole_productivity_df: Optional[pandas.DataFrame] = None
 
-    def __init__(self, table_obj: Table, output_dir: Path, minimal_output: bool = False):
+    def __init__(self, project_id: str, table_obj: Table, output_dir: Path, minimal_output: bool = False):
+        self.project_id = project_id
         self.table_obj = table_obj
         self.csv_obj = Csv(str(output_dir))
         # holivesのloadに時間がかかって、helpコマンドの出力が遅いため、遅延ロードする
@@ -111,6 +97,20 @@ class WriteCsvGraph:
         self.linegraph_obj = LineGraph(str(output_dir / "line-graph"))
         self.scatter_obj = Scatter(str(output_dir / "scatter"))
         self.minimal_output = minimal_output
+
+    def _catch_exception(self, function: Callable[..., Any]) -> Callable[..., Any]:
+        """
+        Exceptionをキャッチしてログにstacktraceを出力する。
+        """
+
+        def wrapped(*args, **kwargs):
+            try:
+                return function(*args, **kwargs)
+            except Exception as e:  # pylint: disable=broad-except
+                logger.warning(f"project_id: {self.project_id}, exception: {e}")
+                logger.exception(e)
+
+        return wrapped
 
     def _get_task_df(self):
         if self.task_df is None:
@@ -181,30 +181,32 @@ class WriteCsvGraph:
 
         """
         task_df = self._get_task_df()
-        catch_exception(self.histogram_obj.write_histogram_for_worktime)(task_df)
-        catch_exception(self.histogram_obj.write_histogram_for_other)(task_df)
+        self._catch_exception(self.histogram_obj.write_histogram_for_worktime)(task_df)
+        self._catch_exception(self.histogram_obj.write_histogram_for_other)(task_df)
 
         if not self.minimal_output:
-            catch_exception(self.histogram_obj.write_histogram_for_annotation_worktime_by_user)(task_df)
-            catch_exception(self.histogram_obj.write_histogram_for_inspection_worktime_by_user)(task_df)
-            catch_exception(self.histogram_obj.write_histogram_for_acceptance_worktime_by_user)(task_df)
+            self._catch_exception(self.histogram_obj.write_histogram_for_annotation_worktime_by_user)(task_df)
+            self._catch_exception(self.histogram_obj.write_histogram_for_inspection_worktime_by_user)(task_df)
+            self._catch_exception(self.histogram_obj.write_histogram_for_acceptance_worktime_by_user)(task_df)
 
     def write_histogram_for_annotation(self) -> None:
         """
         アノテーションに関するヒストグラムを出力する。
         """
         annotation_df = self._get_annotation_df()
-        catch_exception(self.histogram_obj.write_histogram_for_annotation_count_by_label)(annotation_df)
+        self._catch_exception(self.histogram_obj.write_histogram_for_annotation_count_by_label)(annotation_df)
 
     def write_scatter_per_user(self) -> None:
         """
         ユーザごとにプロットした散布図を出力する。
         """
         productivity_df = self._get_productivity_df()
-        catch_exception(self.scatter_obj.write_scatter_for_productivity_by_monitored_worktime)(productivity_df)
-        catch_exception(self.scatter_obj.write_scatter_for_productivity_by_actual_worktime)(productivity_df)
-        catch_exception(self.scatter_obj.write_scatter_for_quality)(productivity_df)
-        catch_exception(self.scatter_obj.write_scatter_for_productivity_by_actual_worktime_and_quality)(productivity_df)
+        self._catch_exception(self.scatter_obj.write_scatter_for_productivity_by_monitored_worktime)(productivity_df)
+        self._catch_exception(self.scatter_obj.write_scatter_for_productivity_by_actual_worktime)(productivity_df)
+        self._catch_exception(self.scatter_obj.write_scatter_for_quality)(productivity_df)
+        self._catch_exception(self.scatter_obj.write_scatter_for_productivity_by_actual_worktime_and_quality)(
+            productivity_df
+        )
 
     def write_linegraph_for_task_overall(self) -> None:
         """
@@ -218,12 +220,12 @@ class WriteCsvGraph:
         """
         task_df = self._get_task_df()
         task_cumulative_df_overall = Table.create_cumulative_df_overall(task_df)
-        catch_exception(self.linegraph_obj.write_cumulative_line_graph_overall)(task_cumulative_df_overall)
+        self._catch_exception(self.linegraph_obj.write_cumulative_line_graph_overall)(task_cumulative_df_overall)
 
     def write_whole_linegraph(self) -> None:
         whole_productivity_df = self._get_whole_productivity_df()
-        catch_exception(self.linegraph_obj.write_whole_productivity_line_graph)(whole_productivity_df)
-        catch_exception(self.linegraph_obj.write_whole_cumulative_line_graph)(whole_productivity_df)
+        self._catch_exception(self.linegraph_obj.write_whole_productivity_line_graph)(whole_productivity_df)
+        self._catch_exception(self.linegraph_obj.write_whole_cumulative_line_graph)(whole_productivity_df)
 
     def write_linegraph_by_user(self, user_id_list: Optional[List[str]] = None) -> None:
         """
@@ -248,21 +250,21 @@ class WriteCsvGraph:
         task_df = Table.create_gradient_df(task_df)
 
         task_cumulative_df_by_annotator = self.table_obj.create_cumulative_df_by_first_annotator(task_df)
-        catch_exception(self.linegraph_obj.write_cumulative_line_graph_for_annotator)(
+        self._catch_exception(self.linegraph_obj.write_cumulative_line_graph_for_annotator)(
             df=task_cumulative_df_by_annotator,
             output_target_list=output_target_list,
             first_annotation_user_id_list=user_id_list,
         )
 
         task_cumulative_df_by_inspector = self.table_obj.create_cumulative_df_by_first_inspector(task_df)
-        catch_exception(self.linegraph_obj.write_cumulative_line_graph_for_inspector)(
+        self._catch_exception(self.linegraph_obj.write_cumulative_line_graph_for_inspector)(
             df=task_cumulative_df_by_inspector,
             output_target_list=output_target_list,
             first_inspection_user_id_list=user_id_list,
         )
 
         task_cumulative_df_by_acceptor = self.table_obj.create_cumulative_df_by_first_acceptor(task_df)
-        catch_exception(self.linegraph_obj.write_cumulative_line_graph_for_acceptor)(
+        self._catch_exception(self.linegraph_obj.write_cumulative_line_graph_for_acceptor)(
             df=task_cumulative_df_by_acceptor,
             output_target_list=output_target_list,
             first_acceptance_user_id_list=user_id_list,
@@ -271,35 +273,35 @@ class WriteCsvGraph:
         if not self.minimal_output:
             df_by_date_user_for_annotation = self._get_df_by_date_user_for_annotation()
             if len(df_by_date_user_for_annotation) > 0:
-                catch_exception(self.linegraph_obj.write_productivity_line_graph_for_annotator)(
+                self._catch_exception(self.linegraph_obj.write_productivity_line_graph_for_annotator)(
                     df=df_by_date_user_for_annotation, first_annotation_user_id_list=user_id_list
                 )
-                catch_exception(self.linegraph_obj.write_gradient_graph_for_annotator)(
+                self._catch_exception(self.linegraph_obj.write_gradient_graph_for_annotator)(
                     df=task_cumulative_df_by_annotator, first_annotation_user_id_list=user_id_list
                 )
 
             df_by_date_user_for_inspection = self._get_df_by_date_user_for_inspection()
             if len(df_by_date_user_for_inspection) > 0:
-                catch_exception(self.linegraph_obj.write_productivity_line_graph_for_inspector)(
+                self._catch_exception(self.linegraph_obj.write_productivity_line_graph_for_inspector)(
                     df=df_by_date_user_for_inspection, first_inspection_user_id_list=user_id_list
                 )
-                catch_exception(self.linegraph_obj.write_gradient_for_inspector)(
+                self._catch_exception(self.linegraph_obj.write_gradient_for_inspector)(
                     df=task_cumulative_df_by_inspector, first_inspection_user_id_list=user_id_list
                 )
 
             df_by_date_user_for_acceptance = self._get_df_by_date_user_for_acceptance()
             if len(df_by_date_user_for_acceptance) > 0:
-                catch_exception(self.linegraph_obj.write_productivity_line_graph_for_acceptor)(
+                self._catch_exception(self.linegraph_obj.write_productivity_line_graph_for_acceptor)(
                     df=df_by_date_user_for_acceptance, first_acceptance_user_id_list=user_id_list
                 )
-                catch_exception(self.linegraph_obj.write_gradient_for_acceptor)(
+                self._catch_exception(self.linegraph_obj.write_gradient_for_acceptor)(
                     df=task_cumulative_df_by_acceptor, first_acceptance_user_id_list=user_id_list
                 )
 
     def write_linegraph_for_worktime_by_user(self, user_id_list: Optional[List[str]] = None) -> None:
         account_statistics_df = self._get_account_statistics_df()
         cumulative_account_statistics_df = self.table_obj.create_cumulative_df_by_user(account_statistics_df)
-        catch_exception(self.linegraph_obj.write_cumulative_line_graph_by_date)(
+        self._catch_exception(self.linegraph_obj.write_cumulative_line_graph_by_date)(
             df=cumulative_account_statistics_df, user_id_list=user_id_list
         )
 
@@ -308,23 +310,23 @@ class WriteCsvGraph:
         タスク関係のCSVを出力する。
         """
         task_df = self._get_task_df()
-        catch_exception(self.csv_obj.write_task_list)(task_df, dropped_columns=["input_data_id_list"])
+        self._catch_exception(self.csv_obj.write_task_list)(task_df, dropped_columns=["input_data_id_list"])
 
     def write_csv_for_summary(self) -> None:
         """
         タスク関係のCSVを出力する。
         """
         task_df = self._get_task_df()
-        catch_exception(self.csv_obj.write_task_count_summary)(task_df)
-        catch_exception(self.csv_obj.write_worktime_summary)(task_df)
-        catch_exception(self.csv_obj.write_count_summary)(task_df)
+        self._catch_exception(self.csv_obj.write_task_count_summary)(task_df)
+        self._catch_exception(self.csv_obj.write_worktime_summary)(task_df)
+        self._catch_exception(self.csv_obj.write_count_summary)(task_df)
 
     def write_whole_productivity_csv_per_date(self) -> None:
         """
         日毎の生産性を出力する
         """
         whole_productivity_df = self._get_whole_productivity_df()
-        catch_exception(self.csv_obj.write_whole_productivity_per_date)(whole_productivity_df)
+        self._catch_exception(self.csv_obj.write_whole_productivity_per_date)(whole_productivity_df)
 
     def _write_メンバー別作業時間平均_画像1枚あたり_by_phase(self, phase: TaskPhase):
         df_by_inputs = self.table_obj.create_worktime_per_image_df(AggregationBy.BY_INPUTS, phase)
@@ -335,7 +337,7 @@ class WriteCsvGraph:
 
     def write_メンバー別作業時間平均_画像1枚あたり_by_phase(self):
         for phase in TaskPhase:
-            catch_exception(self._write_メンバー別作業時間平均_画像1枚あたり_by_phase)(phase)
+            self._catch_exception(self._write_メンバー別作業時間平均_画像1枚あたり_by_phase)(phase)
 
     def write_csv_for_inspection(self) -> None:
         """
@@ -344,10 +346,10 @@ class WriteCsvGraph:
         inspection_df = self.table_obj.create_inspection_df()
         inspection_df_all = self.table_obj.create_inspection_df(only_error_corrected=False)
 
-        catch_exception(self.csv_obj.write_inspection_list)(
+        self._catch_exception(self.csv_obj.write_inspection_list)(
             df=inspection_df, dropped_columns=["data"], only_error_corrected=True
         )
-        catch_exception(self.csv_obj.write_inspection_list)(
+        self._catch_exception(self.csv_obj.write_inspection_list)(
             df=inspection_df_all,
             dropped_columns=["data"],
             only_error_corrected=False,
@@ -358,30 +360,30 @@ class WriteCsvGraph:
         アノテーション関係の情報をCSVに出力する。
         """
         annotation_df = self._get_annotation_df()
-        catch_exception(self.csv_obj.write_ラベルごとのアノテーション数)(annotation_df)
+        self._catch_exception(self.csv_obj.write_ラベルごとのアノテーション数)(annotation_df)
 
     def write_csv_for_account_statistics(self) -> None:
         account_statistics_df = self._get_account_statistics_df()
-        catch_exception(self.csv_obj.write_ユーザ別日毎の作業時間)(account_statistics_df)
+        self._catch_exception(self.csv_obj.write_ユーザ別日毎の作業時間)(account_statistics_df)
 
     def write_csv_for_date_user(self) -> None:
         """
         ユーザごと、日ごとの情報をCSVに出力する.
         """
         df_by_date_user = self._get_df_by_date_user_for_annotation()
-        catch_exception(self.csv_obj.write_教師付作業者別日毎の情報)(df_by_date_user)
+        self._catch_exception(self.csv_obj.write_教師付作業者別日毎の情報)(df_by_date_user)
 
     def write_productivity_csv_per_user(self) -> None:
         productivity_df = self._get_productivity_df()
-        catch_exception(self.csv_obj.write_productivity_per_user)(productivity_df)
-        catch_exception(self.csv_obj.write_whole_productivity)(productivity_df)
+        self._catch_exception(self.csv_obj.write_productivity_per_user)(productivity_df)
+        self._catch_exception(self.csv_obj.write_whole_productivity)(productivity_df)
 
     def write_labor_and_task_history(self) -> None:
         task_history_df = self._get_task_history_df()
-        catch_exception(self.csv_obj.write_task_history_list)(task_history_df)
+        self._catch_exception(self.csv_obj.write_task_history_list)(task_history_df)
 
         df_labor = self._get_labor_df()
-        catch_exception(self.csv_obj.write_labor_list)(df_labor)
+        self._catch_exception(self.csv_obj.write_labor_list)(df_labor)
 
 
 def visualize_statistics(
@@ -451,7 +453,7 @@ def visualize_statistics(
         ),
         output_project_dir=output_project_dir,
     )
-    write_obj = WriteCsvGraph(table_obj, output_project_dir, minimal_output)
+    write_obj = WriteCsvGraph(project_id, table_obj, output_project_dir, minimal_output)
     write_obj.write_csv_for_task()
 
     write_obj.write_csv_for_summary()
