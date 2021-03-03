@@ -109,6 +109,7 @@ class WriteCsvGraph:
             except Exception as e:  # pylint: disable=broad-except
                 logger.warning(f"project_id: {self.project_id}, exception: {e}")
                 logger.exception(e)
+                return None
 
         return wrapped
 
