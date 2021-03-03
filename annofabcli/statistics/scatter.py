@@ -251,6 +251,8 @@ class Scatter:
         Returns:
 
         """
+        # numpy.inf が含まれていると散布図を出力できないので置換する
+        df = df.replace(numpy.inf, numpy.nan)
 
         def create_figure(title: str) -> bokeh.plotting.Figure:
             return figure(
@@ -333,6 +335,8 @@ class Scatter:
         Returns:
 
         """
+        # numpy.inf が含まれていると散布図を出力できないので置換する
+        df = df.replace(numpy.inf, numpy.nan)
 
         def create_figure(title: str) -> bokeh.plotting.Figure:
             return figure(
@@ -415,6 +419,8 @@ class Scatter:
         Returns:
 
         """
+        # numpy.inf が含まれていると散布図を出力できないので置換する
+        df = df.replace(numpy.inf, numpy.nan)
 
         def create_figure(title: str, x_axis_label: str, y_axis_label: str) -> bokeh.plotting.Figure:
             return figure(
@@ -508,6 +514,8 @@ class Scatter:
         """
         実績作業時間を元に算出した生産性と品質の関係を、メンバごとにプロットする
         """
+        # numpy.inf が含まれていると散布図を出力できないので置換する
+        df = df.replace(numpy.inf, numpy.nan)
 
         def create_figure(title: str, x_axis_label: str, y_axis_label: str) -> bokeh.plotting.Figure:
             return figure(
