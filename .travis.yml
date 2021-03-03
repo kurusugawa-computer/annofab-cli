@@ -6,9 +6,7 @@ python:
 install:
   - pip install poetry && poetry install
 script:
-   - poetry run flake8 annofabcli
-   - poetry run mypy annofabcli
-   - poetry run pylint  --jobs=0 annofabcli
+   - make lint
    - poetry run pytest tests/test_local*.py
 branches:
   only:

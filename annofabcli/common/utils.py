@@ -296,6 +296,7 @@ def allow_404_error(function):
         except requests.exceptions.HTTPError as e:
             if e.response.status_code != requests.codes.not_found:
                 raise e
+            return None
         finally:
             # ロガーの設定を元に戻す
             logging.getLogger("annofabapi").setLevel(level=annofabapi_logger_level)
@@ -376,5 +377,6 @@ def _catch_exception(function: Callable[..., Any]) -> Callable[..., Any]:
         except Exception as e:  # pylint: disable=broad-except
             logger.warning(e)
             logger.exception(e)
+            return None
 
     return wrapped
