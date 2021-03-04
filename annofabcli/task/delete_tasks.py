@@ -37,7 +37,6 @@ class DeleteTask(AbstractCommandLineInterface):
         """
         タスクに使われていない入力データを削除する。
         """
-        count_delete_input_data = 0
         for input_data_id in input_data_id_list:
             try:
                 input_data = self.service.wrapper.get_input_data_or_none(project_id, input_data_id)
