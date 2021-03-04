@@ -269,8 +269,8 @@ def parse_args(parser: argparse.ArgumentParser):
 
 def add_parser(subparsers: argparse._SubParsersAction):
     subcommand_name = "list_merged_task"
-    subcommand_help = "タスク一覧と結合した入力データ一覧のCSVを出力します。"
-    description = "タスク一覧と結合した入力データ一覧のCSVを出力します。"
+    subcommand_help = "タスク一覧と結合した入力データ一覧の情報を出力します。"
+    description = "タスク一覧と結合した入力データ一覧の情報を出力します。"
 
     parser = annofabcli.common.cli.add_parser(subparsers, subcommand_name, subcommand_help, description)
     parse_args(parser)
