@@ -119,7 +119,8 @@ class DeleteInputData(AbstractCommandLineInterface):
                 )
                 logger.debug(
                     f"{str(input_data_index + 1)} 件目: 入力データ(input_data_id='{input_data_id}', "
-                    f"input_data_name='{input_data_name}') に紐づく補助情報を {deleted_supplementary_data} / {len(supplementary_data_list)} 件削除しました。"
+                    f"input_data_name='{input_data_name}') に紐づく補助情報を"
+                    f" {deleted_supplementary_data} / {len(supplementary_data_list)} 件削除しました。"
                 )
         return True
 
