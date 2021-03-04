@@ -94,7 +94,7 @@ class DeleteSupplementaryDataMain(AbstracCommandCinfirmInterface):
                 continue
         return deleted_count
 
-    def delete_supplementary_data_list(self, project_id: str, csv_path: Path):
+    def delete_supplementary_data_list_by_csv(self, project_id: str, csv_path: Path):
         df = pandas.read_csv(
             str(csv_path),
             sep=",",
@@ -120,6 +120,83 @@ class DeleteSupplementaryDataMain(AbstracCommandCinfirmInterface):
 
         logger.info(f"{deleted_count} / {len(df)} 件の補助情報を削除しました。")
 
+    def delete_supplementary_data_list_for_input_data2(
+        self, project_id: str, input_data_id: str, supplementary_data_list: List[Dict[str, Any]]
+    ) -> int:
+        """
+        入力データ配下の補助情報を削除する。
+
+        Args:
+            project_id:
+            input_data_id:
+            supplementary_data_list:
+
+        Returns:
+            削除した補助情報の個数
+
+        """
+        deleted_count = 0
+        for supplementary_data in supplementary_data_list:
+            supplementary_data_id = supplementary_data["supplementary_data_id"]
+            try:
+                self.service.api.delete_supplementary_data(
+                    project_id, input_data_id=input_data_id, supplementary_data_id=supplementary_data_id
+                )
+                logger.debug(
+                    f"補助情報を削除しました。input_data_id={input_data_id}, supplementary_data_id={supplementary_data_id}, "
+                    f"supplementary_data_name={supplementary_data['supplementary_data_name']}"
+                )
+                deleted_count += 1
+            except requests.HTTPError as e:
+                logger.warning(e)
+                logger.warning(
+                    f"補助情報の削除に失敗しました。input_data_id={input_data_id}, supplementary_data_id={supplementary_data_id}, "
+                    f"supplementary_data_name={supplementary_data['supplementary_data_name']}"
+                )
+                continue
+
+        return deleted_count
+
+    def delete_supplementary_data_list_by_input_data_id(self, project_id: str, input_data_id_list: List[str]):
+        dict_deleted_count: Dict[str, int] = {}
+        for input_data_id in input_data_id_list:
+            input_data = self.service.wrapper.get_input_data_or_none(project_id, input_data_id)
+            if input_data is None:
+                logger.warning(f"input_data_id={input_data_id} の入力データは存在しません。")
+                input_data_name = None
+            else:
+                input_data_name = input_data["input_data_name"]
+
+            supplementary_data_list, _ = self.service.api.get_supplementary_data_list(project_id, input_data_id)
+            if len(supplementary_data_list) == 0:
+                logger.debug(f"入力データに紐づく補助情報は存在しないので、削除をスキップします。")
+                continue
+
+            message_for_confirm = (
+                f"入力データに紐づく補助情報 {len(supplementary_data_list)} 件を削除しますか？ "
+                f"(input_data_id='{input_data_id}', "
+                f"input_data_name='{input_data_name}') "
+            )
+            if not self.confirm_processing(message_for_confirm):
+                continue
+
+            try:
+                deleted_supplementary_data_count = self.delete_supplementary_data_list_for_input_data2(
+                    project_id, input_data_id, supplementary_data_list
+                )
+                dict_deleted_count[input_data_id] = deleted_supplementary_data_count
+                logger.debug(
+                    f"入力データに紐づく補助情報を {deleted_supplementary_data_count} / {len(supplementary_data_list)} 件削除しました。"
+                    f"(input_data_id='{input_data_id}', "
+                    f"input_data_name='{input_data_name}') "
+                )
+
+            except Exception as e:  # pylint: disable=broad-except
+                logger.warning(e)
+                logger.warning(f"入力データ(input_data_id={input_data_id})配下の補助情報の削除に失敗しました。")
+
+        logger.info(f"{len(dict_deleted_count)} / {len(input_data_id_list)} 件の入力データに紐づく補助情報を削除しました。")
+
 
 class DeleteSupplementaryData(AbstractCommandLineInterface):
     @staticmethod
@@ -142,7 +219,11 @@ class DeleteSupplementaryData(AbstractCommandLineInterface):
 
         main_obj = DeleteSupplementaryDataMain(self.service, all_yes=args.yes)
 
-        main_obj.delete_supplementary_data_list(project_id, csv_path=args.csv)
+        if args.csv is not None:
+            main_obj.delete_supplementary_data_list_by_csv(project_id, csv_path=args.csv)
+        elif args.input_data_id is not None:
+            input_data_id_list = annofabcli.common.cli.get_list_from_args(args.input_data_id)
+            main_obj.delete_supplementary_data_list_by_input_data_id(project_id, input_data_id_list=input_data_id_list)
 
 
 def main(args):
@@ -156,13 +237,25 @@ def parse_args(parser: argparse.ArgumentParser):
 
     argument_parser.add_project_id()
 
-    parser.add_argument(
+    group = parser.add_mutually_exclusive_group(required=True)
+    group.add_argument(
         "--csv",
         type=str,
-        required=True,
         help=(
-            "削除する補助情報が記載されたCVファイルのパスを指定してください。"
+            "削除する補助情報が記載されたCSVファイルのパスを指定してください。"
             "CSVのフォーマットは、「1列目:input_data_id(required), 2列目:supplementary_data_id(required) です。"
+        ),
+    )
+
+    group.add_argument(
+        "-i",
+        "--input_data_id",
+        type=str,
+        nargs="+",
+        help=(
+            "削除する補助情報に紐づく入力データのinput_data_idを指定してください。"
+            "指定した入力データに紐づくすべての補助情報を削除します。"
+            "`file://`を先頭に付けると、input_data_idの一覧が記載されたファイルを指定できます。"
         ),
     )
 

@@ -8,7 +8,7 @@ from annofabcli.common.utils import read_multiheader_csv
 from annofabcli.statistics.csv import Csv, write_summarise_whole_peformance_csv
 from annofabcli.statistics.linegraph import LineGraph
 from annofabcli.statistics.scatter import Scatter
-from annofabcli.statistics.summarize_task_count import SimpleTaskStatus
+from annofabcli.statistics.summarize_task_count import SimpleTaskStatus, get_step_for_current_phase
 from annofabcli.statistics.summarize_task_count_by_task_id import create_task_count_summary_df, get_task_id_prefix
 from annofabcli.statistics.table import Table
 
@@ -85,6 +85,19 @@ class TestSummarizeTaskCount:
         assert SimpleTaskStatus.from_task_status(TaskStatus.WORKING) == SimpleTaskStatus.WORKING_BREAK_HOLD
         assert SimpleTaskStatus.from_task_status(TaskStatus.NOT_STARTED) == SimpleTaskStatus.NOT_STARTED
         assert SimpleTaskStatus.from_task_status(TaskStatus.COMPLETE) == SimpleTaskStatus.COMPLETE
+
+    def test_get_step_for_current_phase(self):
+        task = {
+            "phase": "annotation",
+            "phase_stage": 1,
+            "status": "not_started",
+            "account_id": "account1",
+            "histories_by_phase": [
+                {"account_id": "account1", "phase": "annotation", "phase_stage": 1, "worked": False}
+            ],
+            "work_time_span": 0,
+        }
+        assert get_step_for_current_phase(task, number_of_inspections=1) == 1
 
 
 class TestScatter:
