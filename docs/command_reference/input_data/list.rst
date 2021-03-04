@@ -104,13 +104,7 @@ JSON出力
             "url": "https://annofab.com/organizations/...",
             "etag": "...",
             "updated_datetime": "2021-01-04T21:21:28.169+09:00",
-            "resized_resolution": null,
             "original_input_data_path": "s3://af-production-input/organizations/...",
-            "original_resolution": {
-            "width": 128,
-            "height": 128
-            },
-            "input_duration": null,
             "sign_required": false,
             "metadata": {},
             "system_metadata": {
