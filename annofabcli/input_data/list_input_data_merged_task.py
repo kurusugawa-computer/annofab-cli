@@ -188,9 +188,12 @@ class ListInputDataMergedTask(AbstractCommandLineInterface):
         )
 
         logger.debug(f"一覧の件数: {len(df_merged)}")
-        annofabcli.utils.print_according_to_format(
-            df_merged, arg_format=FormatArgument(FormatArgument.CSV), output=self.output, csv_format=self.csv_format
-        )
+
+        if self.str_format == FormatArgument.CSV.value:
+            self.print_according_to_format(df_merged)
+        elif self.str_format in [FormatArgument.JSON.value, FormatArgument.PRETTY_JSON.value]:
+            result = df_merged.to_dict("records")
+            self.print_according_to_format(result)
 
 
 def main(args):
@@ -250,6 +253,14 @@ def parse_args(parser: argparse.ArgumentParser):
         "指定できるキーは、`input_data_id`, `input_data_name`, `input_data_path`です。",
     )
 
+    argument_parser.add_format(
+        choices=[
+            FormatArgument.CSV,
+            FormatArgument.JSON,
+            FormatArgument.PRETTY_JSON,
+        ],
+        default=FormatArgument.CSV,
+    )
     argument_parser.add_output()
     argument_parser.add_csv_format()
 
@@ -258,8 +269,8 @@ def parse_args(parser: argparse.ArgumentParser):
 
 def add_parser(subparsers: argparse._SubParsersAction):
     subcommand_name = "list_merged_task"
-    subcommand_help = "タスク一覧と結合した入力データ一覧のCSVを出力します。"
-    description = "タスク一覧と結合した入力データ一覧のCSVを出力します。"
+    subcommand_help = "タスク一覧と結合した入力データ一覧の情報を出力します。"
+    description = "タスク一覧と結合した入力データ一覧の情報を出力します。"
 
     parser = annofabcli.common.cli.add_parser(subparsers, subcommand_name, subcommand_help, description)
     parse_args(parser)
