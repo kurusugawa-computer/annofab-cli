@@ -33,38 +33,6 @@ class DeleteTask(AbstractCommandLineInterface):
         annotation_list = self.service.wrapper.get_all_annotation_list(project_id, query_params=query_params)
         return annotation_list
 
-    def delete_input_data_list(self, project_id: str, input_data_id_list: List[str]):
-        """
-        タスクに使われていない入力データを削除する。
-        """
-        for input_data_id in input_data_id_list:
-            try:
-                input_data = self.service.wrapper.get_input_data_or_none(project_id, input_data_id)
-                if input_data is None:
-                    logger.debug(f"input_data_id='{input_data_id}'の入力データは存在しないため、削除できません。")
-                    continue
-
-                input_data_name = input_data["input_data_name"]
-                task_list = self.service.wrapper.get_all_tasks(
-                    project_id, query_params={"input_data_ids": input_data_id}
-                )
-
-                if len(task_list) > 0:
-                    used_task_id_list = [e["task_id"] for e in task_list]
-                    logger.debug(
-                        f"入力データ(input_data_id='{input_data_id}', "
-                        f"input_data_name='{input_data_name}')はタスクに使われているため、削除をスキップします。\n"
-                        f"task_id_list='{used_task_id_list}'"
-                    )
-                    continue
-
-                self.service.api.delete_input_data(project_id, input_data_id)
-
-            except requests.exceptions.HTTPError as e:
-                logger.warning(e)
-                logger.warning(f"input_data_id='{input_data_id}'の削除に失敗しました。")
-                continue
-
     def delete_task(
         self,
         project_id: str,
