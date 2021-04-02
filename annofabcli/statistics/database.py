@@ -538,7 +538,12 @@ class Database:
             if task_histories is None or len(task_histories) == 0:
                 return False
 
-            first_started_datetime = task_histories[0]["started_datetime"]
+            has_task_creation = task_histories[0]["account_id"] is None
+            if has_task_creation and len(task_histories) < 2:
+                return False
+
+            # 初回教師付けの開始日時をfirst_started_datetimeとするため「(タスク作成)」の履歴がある場合はスキップする。
+            first_started_datetime = (task_histories[0] if not has_task_creation else task_histories[1])["started_datetime"]
             if first_started_datetime is None:
                 return False
             return dateutil.parser.parse(first_started_datetime) >= dt_start_date
