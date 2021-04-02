@@ -543,7 +543,9 @@ class Database:
                 return False
 
             # 初回教師付けの開始日時をfirst_started_datetimeとするため「(タスク作成)」の履歴がある場合はスキップする。
-            first_started_datetime = (task_histories[0] if not has_task_creation else task_histories[1])["started_datetime"]
+            first_started_datetime = (task_histories[0] if not has_task_creation else task_histories[1])[
+                "started_datetime"
+            ]
             if first_started_datetime is None:
                 return False
             return dateutil.parser.parse(first_started_datetime) >= dt_start_date
