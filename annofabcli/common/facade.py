@@ -666,8 +666,7 @@ class AnnofabApiFacade:
 
         Args:
             project_id:
-            annotation_query:
-            task_id: 検索対象のtask_id
+            query:
 
         Returns:
             修正したタスク検索クエリ
@@ -679,21 +678,24 @@ class AnnofabApiFacade:
 
         # label_name_en から label_idを設定
         if query.label_id is not None:
+            label_id = query.label_id
             label_info = more_itertools.first_true(specs_labels, pred=lambda e: e["label_id"] == query.label_id)
             if label_info is None:
-                raise ValueError(f"label_id: {query.label_id} に一致するラベル情報は見つかりませんでした。")
+                logger.warning(f"label_id='{query.label_id}'に一致するラベル情報は、アノテーション仕様に存在しません。")
         elif query.label_name_en is not None:
             label_info = self.get_label_info_from_name(specs_labels, query.label_name_en)
+            label_id = label_info["label_id"]
         else:
             raise ValueError("'label_id' または 'label_name_en'のいずれかは必ず指定してください。")
 
-        api_query = AnnotationQuery(label_id=label_info["label_id"])
+        api_query = AnnotationQuery(label_id=label_id)
         if query.attributes is not None:
             api_attirbutes = []
             for cli_attirbute in query.attributes:
-                api_attirbutes.append(
-                    self._get_attribute_from_cli(label_info["additional_data_definitions"], cli_attirbute)
+                additional_data_definitions = (
+                    label_info["additional_data_definitions"] if label_info is not None else None
                 )
+                api_attirbutes.append(self._get_attribute_from_cli(additional_data_definitions, cli_attirbute))
 
             api_query.attributes = api_attirbutes
 
@@ -726,31 +728,51 @@ class AnnofabApiFacade:
 
     @staticmethod
     def _get_attribute_from_cli(
-        additional_data_definitions: List[Dict[str, Any]], cli_attirbute: AdditionalDataForCli
+        additional_data_definitions: Optional[List[Dict[str, Any]]], cli_attirbute: AdditionalDataForCli
     ) -> AdditionalData:
+        """
+        CLIの属性情報を返す
 
+        Args:
+            additional_data_definitions: アノテーション仕様の属性情報
+            cli_attirbute:
+
+        Returns:
+            アノテーションクエリになる属性情報
+        """
         if cli_attirbute.additional_data_definition_id is not None:
-            additional_data = more_itertools.first_true(
-                additional_data_definitions,
-                pred=lambda e: e["additional_data_definition_id"] == cli_attirbute.additional_data_definition_id,
-            )
-            if additional_data is None:
-                raise ValueError(
-                    f"additional_data_definition_id: {cli_attirbute.additional_data_definition_id} は存在しない値です。"
+            additional_data_definition_id = cli_attirbute.additional_data_definition_id
+            if additional_data_definitions is not None:
+                additional_data = more_itertools.first_true(
+                    additional_data_definitions,
+                    pred=lambda e: e["additional_data_definition_id"] == cli_attirbute.additional_data_definition_id,
                 )
+                if additional_data is None:
+                    logger.warning(
+                        f"additional_data_definition_id='{cli_attirbute.additional_data_definition_id}'"
+                        f"である属性情報は、アノテーション仕様に存在しません。"
+                    )
+            else:
+                additional_data = None
 
         elif cli_attirbute.additional_data_definition_name_en is not None:
-            additional_data = AnnofabApiFacade.get_additional_data_from_name(
-                additional_data_definitions, cli_attirbute.additional_data_definition_name_en
-            )
-
+            if additional_data_definitions is not None:
+                additional_data = AnnofabApiFacade.get_additional_data_from_name(
+                    additional_data_definitions, cli_attirbute.additional_data_definition_name_en
+                )
+                additional_data_definition_id = additional_data["additional_data_definition_id"]
+            else:
+                raise ValueError(
+                    f"additional_data_definition_name_en='{cli_attirbute.additional_data_definition_name_en}'"
+                    f"である属性情報は、アノテーション仕様に存在しません。"
+                )
         else:
             raise ValueError(
                 "'additional_data_definition_id' または 'additional_data_definition_name_en'のいずれかは必ず指定してください。"
             )
 
         api_attirbute = AdditionalData(
-            additional_data_definition_id=additional_data["additional_data_definition_id"],
+            additional_data_definition_id=additional_data_definition_id,
             flag=cli_attirbute.flag,
             integer=cli_attirbute.integer,
             comment=cli_attirbute.comment,
@@ -758,15 +780,16 @@ class AnnofabApiFacade:
         )
 
         # 選択肢IDを確認
-        choices = additional_data["choices"]
-        if cli_attirbute.choice is not None:
-            choice_info = more_itertools.first_true(choices, pred=lambda e: e["choice_id"] == cli_attirbute.choice)
-            if choice_info is None:
-                raise ValueError(f"choice: {cli_attirbute.choice} は存在しない値です。")
+        if additional_data is not None:
+            choices = additional_data["choices"]
+            if cli_attirbute.choice is not None:
+                choice_info = more_itertools.first_true(choices, pred=lambda e: e["choice_id"] == cli_attirbute.choice)
+                if choice_info is None:
+                    logger.warning(f"choice='{cli_attirbute.choice}'である選択肢情報は、アノテーション仕様に存在しません。")
 
-        elif cli_attirbute.choice_name_en is not None:
-            choice_info = AnnofabApiFacade.get_choice_info_from_name(choices, cli_attirbute.choice_name_en)
-            api_attirbute.choice = choice_info["choice_id"]
+            elif cli_attirbute.choice_name_en is not None:
+                choice_info = AnnofabApiFacade.get_choice_info_from_name(choices, cli_attirbute.choice_name_en)
+                api_attirbute.choice = choice_info["choice_id"]
 
         return api_attirbute
 
