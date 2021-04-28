@@ -37,6 +37,7 @@ class DeleteAnnotation(AbstractCommandLineInterface):
         project_id: str,
         task_id: str,
         annotation_query: Optional[AnnotationQuery] = None,
+        force: bool = False,
         backup_dir: Optional[Path] = None,
     ) -> None:
         """
@@ -46,6 +47,7 @@ class DeleteAnnotation(AbstractCommandLineInterface):
             project_id:
             task_id:
             annotation_query: 削除対象のアノテーションの検索条件
+            force: 完了状態のタスクのアノテーションを削除するかどうか
             backup_dir: 削除対象のアノテーションをバックアップとして保存するディレクトリ。指定しない場合は、バックアップを取得しない。
 
         """
@@ -59,9 +61,15 @@ class DeleteAnnotation(AbstractCommandLineInterface):
             f"task_id={task.task_id}, phase={task.phase.value}, status={task.status.value}, "
             f"updated_datetime={task.updated_datetime}"
         )
-        if task.status in [TaskStatus.WORKING, TaskStatus.COMPLETE]:
-            logger.warning(f"task_id={task_id}: タスクが作業中/完了状態のため、スキップします。")
+
+        if task.status == TaskStatus.WORKING:
+            logger.warning(f"task_id={task_id}: タスクが作業中状態のため、スキップします。")
             return
+
+        if not force:
+            if task.status == TaskStatus.COMPLETE:
+                logger.warning(f"task_id={task_id}: タスクが完了状態のため、スキップします。")
+                return
 
         annotation_list = self.facade.get_annotation_list_for_task(project_id, task_id, query=annotation_query)
         logger.info(f"task_id='{task_id}'の削除対象アノテーション数：{len(annotation_list)}")
@@ -87,6 +95,7 @@ class DeleteAnnotation(AbstractCommandLineInterface):
         project_id: str,
         task_id_list: List[str],
         annotation_query: Optional[AnnotationQuery] = None,
+        force: bool = False,
         backup_dir: Optional[Path] = None,
     ):
         super().validate_project(project_id, [ProjectMemberRole.OWNER])
@@ -103,6 +112,7 @@ class DeleteAnnotation(AbstractCommandLineInterface):
                 project_id,
                 task_id,
                 annotation_query=annotation_query,
+                force=force,
                 backup_dir=backup_dir,
             )
 
@@ -130,7 +140,7 @@ class DeleteAnnotation(AbstractCommandLineInterface):
             backup_dir = Path(args.backup)
 
         self.delete_annotation_for_task_list(
-            project_id, task_id_list, annotation_query=annotation_query, backup_dir=backup_dir
+            project_id, task_id_list, annotation_query=annotation_query, backup_dir=backup_dir, force=args.force
         )
 
 
@@ -160,6 +170,7 @@ def parse_args(parser: argparse.ArgumentParser):
         f"(ex): `{example_annotation_query}`",
     )
 
+    parser.add_argument("--force", action="store_true", help="完了状態のタスクのアノテーションを削除します。")
     parser.add_argument(
         "--backup",
         type=str,
@@ -173,7 +184,7 @@ def add_parser(subparsers: argparse._SubParsersAction):
     subcommand_name = "delete"
     subcommand_help = "アノテーションを削除します。"
     description = (
-        "タスク配下のアノテーションを削除します。" + "ただし、作業中/完了状態のタスクのアノテーションは削除できません。"
+        "タスク配下のアノテーションを削除します。" + "ただし、作業中状態のタスクのアノテーションは削除できません。"
         "間違えてアノテーションを削除したときに復元できるようにするため、'--backup'でバックアップ用のディレクトリを指定することを推奨します。"
     )
     epilog = "オーナロールを持つユーザで実行してください。"
