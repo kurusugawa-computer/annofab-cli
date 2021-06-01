@@ -91,7 +91,6 @@ class FindBreakError(AbstractCommandLineInterface):
         df = pd.json_normalize(task_history_events)
         df["created_datetime"] = pd.to_datetime(df["created_datetime"])
         df["created_datetime"] = df["created_datetime"].dt.tz_localize(None)
-        
 
         if args.task_id:
             task_id_list = annofabcli.common.cli.get_list_from_args(args.task_id)
@@ -113,11 +112,10 @@ class FindBreakError(AbstractCommandLineInterface):
 
         if args.end_datetime:
             end_datetime = dateutil.parser.parse(args.end_datetime)
-            df = df[df["created_datetime"] <= (end_datetime + pd.to_timedelta(1,unit='s'))].copy()
+            df = df[df["created_datetime"] <= (end_datetime + pd.to_timedelta(1, unit="s"))].copy()
 
         df = df[df["status"] != "not_started"].copy()
         df = df.sort_values("created_datetime")
-        
 
         task_sort_history_events: Dict[str, List[Any]] = {}
         for row in df.itertuples():
@@ -145,7 +143,6 @@ class FindBreakError(AbstractCommandLineInterface):
             for i, sort_history_event in enumerate(sort_history_events):
                 if sort_history_event.status == "working":
                     if len(sort_history_events) == i + 1:
-                        from IPython.core.debugger import Pdb; Pdb().set_trace()
                         dt_now = datetime.datetime.now()
                         time_diff = dt_now - sort_history_event.created_datetime
                         end = False
@@ -224,7 +221,6 @@ def output_err_events(err_events_list: List[Dict[str, Any]], output: str = None)
     df = pd.json_normalize(err_events_list)
 
     to_csv_kwargs = {"index": False, "encoding": "utf_8_sig", "line_terminator": "\r\n"}
-
 
     annofabcli.utils.print_csv(
         df,
