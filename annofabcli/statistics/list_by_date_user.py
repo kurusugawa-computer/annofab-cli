@@ -95,14 +95,14 @@ class ListSubmittedTaskCountMain:
             for stat in histories:
                 data = {
                     "account_id": account_id,
-                    "monitored_worktime_hour": isoduration_to_hour(stat["worktime"]),
+                    "worktime_hour": isoduration_to_hour(stat["worktime"]),
                     "rejected_task_count": stat["tasks_rejected"],
                     "date": stat["date"],
                 }
                 if not self._is_contained_daterange(data["date"], start_date=start_date, end_date=end_date):
                     continue
 
-                if data["monitored_worktime_hour"] == 0 and data["rejected_task_count"] == 0:
+                if data["worktime_hour"] == 0 and data["rejected_task_count"] == 0:
                     continue
 
                 data_list.append(data)
