@@ -35,7 +35,7 @@ isodate = "*"
 annofabapi = ">=0.43.0"
 
 # 一時的
-pandas = "~1.2"
+pandas = ">=1.2,<1.4"
 bokeh = "^2.2"
 holoviews= "^1.14"
 
