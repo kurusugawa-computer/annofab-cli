@@ -33,7 +33,9 @@ jmespath = "*"
 pyquery = "*"
 isodate = "*"
 annofabapi = ">=0.43.0"
-pandas = "^1.2"
+
+# 一時的
+pandas = "~1.2"
 bokeh = "^2.2"
 holoviews= "^1.14"
 
@@ -46,7 +48,7 @@ pytest-cov = "*"
 # format library
 isort = "*"
 autoflake = "*"
-black = {version = "^20.8b1", allow-prereleases = true}
+black = {version = "^21.6b0", allow-prereleases = true}
 
 # lint library
 flake8 = "*"
@@ -56,6 +58,16 @@ pylint = "*"
 # Document library
 sphinx = "*"
 pydata-sphinx-theme = "*"
+
+# type stub package
+types-requests = "*"
+types-python-dateutil = "*"
+types-PyYAML = "*"
+
+ipython = "*"
+# ipythonとjediの組み合わせによるバグを避けるため、バージョン指定
+# https://zenn.dev/hige/articles/282bf79d47378e
+jedi = "<0.18"
 
 [tool.poetry.scripts]
 annofabcli = "annofabcli.__main__:main"
