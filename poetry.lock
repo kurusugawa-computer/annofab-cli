@@ -127,25 +127,27 @@ lxml = ["lxml"]
 
 [[package]]
 name = "black"
-version = "20.8b1"
+version = "21.6b0"
 description = "The uncompromising code formatter."
 category = "dev"
 optional = false
-python-versions = ">=3.6"
+python-versions = ">=3.6.2"
 
 [package.dependencies]
 appdirs = "*"
 click = ">=7.1.2"
 mypy-extensions = ">=0.4.3"
-pathspec = ">=0.6,<1"
+pathspec = ">=0.8.1,<1"
 regex = ">=2020.1.8"
 toml = ">=0.10.1"
-typed-ast = ">=1.4.0"
-typing-extensions = ">=3.7.4"
+typed-ast = {version = ">=1.4.2", markers = "python_version < \"3.8\""}
+typing-extensions = {version = ">=3.7.4", markers = "python_version < \"3.8\""}
 
 [package.extras]
 colorama = ["colorama (>=0.4.3)"]
-d = ["aiohttp (>=3.3.2)", "aiohttp-cors"]
+d = ["aiohttp (>=3.6.0)", "aiohttp-cors (>=0.4.0)"]
+python2 = ["typed-ast (>=1.4.2)"]
+uvloop = ["uvloop (>=0.15.2)"]
 
 [[package]]
 name = "bokeh"
@@ -1188,6 +1190,14 @@ optional = false
 python-versions = "*"
 
 [[package]]
+name = "types-pyyaml"
+version = "5.4.3"
+description = "Typing stubs for PyYAML"
+category = "dev"
+optional = false
+python-versions = "*"
+
+[[package]]
 name = "types-requests"
 version = "2.25.0"
 description = "Typing stubs for requests"
@@ -1259,7 +1269,7 @@ testing = ["pytest (>=4.6)", "pytest-checkdocs (>=1.2.3)", "pytest-flake8", "pyt
 [metadata]
 lock-version = "1.1"
 python-versions = "^3.7.1"
-content-hash = "4aefdc89b09df878d26688c47810b9be54276784245767d45ff9d7be1d8956f6"
+content-hash = "a8a17b687e856553472b1d07127b5013730113c0b50edce5aba869f33b0c29ae"
 
 [metadata.files]
 alabaster = [
@@ -1311,7 +1321,8 @@ beautifulsoup4 = [
     {file = "beautifulsoup4-4.9.3.tar.gz", hash = "sha256:84729e322ad1d5b4d25f805bfa05b902dd96450f43842c4e99067d5e1369eb25"},
 ]
 black = [
-    {file = "black-20.8b1.tar.gz", hash = "sha256:1c02557aa099101b9d21496f8a914e9ed2222ef70336404eeeac8edba836fbea"},
+    {file = "black-21.6b0-py3-none-any.whl", hash = "sha256:dfb8c5a069012b2ab1e972e7b908f5fb42b6bbabcba0a788b86dc05067c7d9c7"},
+    {file = "black-21.6b0.tar.gz", hash = "sha256:dc132348a88d103016726fe360cb9ede02cecf99b76e3660ce6c596be132ce04"},
 ]
 bokeh = [
     {file = "bokeh-2.3.2.tar.gz", hash = "sha256:fcc0d0a3129ae457cdb0a4f503843a4d13d1f5d07af7748424ea8c7ddfc321f1"},
@@ -2024,6 +2035,10 @@ typed-ast = [
 types-python-dateutil = [
     {file = "types-python-dateutil-0.1.4.tar.gz", hash = "sha256:e6486ca27b6dde73e0ec079a9e1b03e208766e6bc7f1e08964a7e9104a5c7d7a"},
     {file = "types_python_dateutil-0.1.4-py2.py3-none-any.whl", hash = "sha256:39bfe0bde61fc673b8fa28167bd78622d976210f791971b9f3e10877cbf119a4"},
+]
+types-pyyaml = [
+    {file = "types-PyYAML-5.4.3.tar.gz", hash = "sha256:2e7b81b2b7af751634425107b986086c6ba7cb61270a43a5c290c58be8cdbc3a"},
+    {file = "types_PyYAML-5.4.3-py2.py3-none-any.whl", hash = "sha256:bca83cbfc0be48600a8abf1e3d87fb762a91e6d35d724029a3321dd2dce2ceb1"},
 ]
 types-requests = [
     {file = "types-requests-2.25.0.tar.gz", hash = "sha256:ee0d0c507210141b7d5b8639cc43eaa726084178775db2a5fb06fbf85c185808"},

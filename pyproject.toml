@@ -48,7 +48,7 @@ pytest-cov = "*"
 # format library
 isort = "*"
 autoflake = "*"
-black = {version = "^20.8b1", allow-prereleases = true}
+black = {version = "^21.6b0", allow-prereleases = true}
 
 # lint library
 flake8 = "*"
@@ -62,6 +62,7 @@ pydata-sphinx-theme = "*"
 # type stub package
 types-requests = "*"
 types-python-dateutil = "*"
+types-PyYAML = "*"
 
 ipython = "*"
 # ipythonとjediの組み合わせによるバグを避けるため、バージョン指定
