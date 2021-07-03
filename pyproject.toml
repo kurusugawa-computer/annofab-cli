@@ -34,7 +34,7 @@ pyquery = "*"
 isodate = "*"
 annofabapi = ">=0.43.0"
 
-# 一時的
+# pandas 1.3をインストールしようとすると`Unable to find installation candidates pandas`というエラーが発生するので、一時的に1.2にする
 pandas = "~1.2"
 bokeh = "^2.2"
 holoviews= "^1.14"
