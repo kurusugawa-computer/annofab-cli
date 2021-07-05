@@ -16,7 +16,7 @@ annofab_config = dict(inifile.items("annofab"))
 
 project_id = annofab_config["project_id"]
 
-service = annofabapi.build_from_netrc()
+service = annofabapi.build()
 
 out_path = Path("./tests/out/download")
 data_path = Path("./tests/data")

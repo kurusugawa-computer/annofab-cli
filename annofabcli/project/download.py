@@ -3,7 +3,7 @@ import logging
 from enum import Enum
 from typing import Any, Callable
 
-from annofabapi.models import JobStatus, JobType
+from annofabapi.models import JobStatus, ProjectJobType
 
 import annofabcli
 import annofabcli.common.cli
@@ -32,7 +32,7 @@ class DownloadTarget(Enum):
 
 
 class Download(AbstractCommandLineInterface):
-    def is_job_progress(self, project_id: str, job_type: JobType):
+    def is_job_progress(self, project_id: str, job_type: ProjectJobType):
         job_list = self.service.api.get_project_job(project_id, query_params={"type": job_type.value})[0]["list"]
         if len(job_list) > 0:
             if job_list[0]["job_status"] == JobStatus.PROGRESS.value:
@@ -41,7 +41,7 @@ class Download(AbstractCommandLineInterface):
         return False
 
     def update_file_and_wait(
-        self, project_id: str, job_type: JobType, update_func: Callable[[str], Any], wait_options: WaitOptions
+        self, project_id: str, job_type: ProjectJobType, update_func: Callable[[str], Any], wait_options: WaitOptions
     ) -> None:
         """
         最新化処理が完了するまで待つ。
@@ -73,7 +73,7 @@ class Download(AbstractCommandLineInterface):
         if target == DownloadTarget.TASK:
             if latest:
                 self.update_file_and_wait(
-                    project_id, JobType.GEN_TASKS_LIST, self.service.api.post_project_tasks_update, wait_options
+                    project_id, ProjectJobType.GEN_TASKS_LIST, self.service.api.post_project_tasks_update, wait_options
                 )
 
             self.service.wrapper.download_project_tasks_url(project_id, output)
@@ -81,7 +81,10 @@ class Download(AbstractCommandLineInterface):
         elif target == DownloadTarget.INPUT_DATA:
             if latest:
                 self.update_file_and_wait(
-                    project_id, JobType.GEN_INPUTS_LIST, self.service.api.post_project_inputs_update, wait_options
+                    project_id,
+                    ProjectJobType.GEN_INPUTS_LIST,
+                    self.service.api.post_project_inputs_update,
+                    wait_options,
                 )
 
             self.service.wrapper.download_project_inputs_url(project_id, output)
@@ -98,11 +101,14 @@ class Download(AbstractCommandLineInterface):
         elif target in [DownloadTarget.SIMPLE_ANNOTATION, DownloadTarget.FULL_ANNOTATION, DownloadTarget.TASK]:
             if latest:
                 self.update_file_and_wait(
-                    project_id, JobType.GEN_ANNOTATION, self.service.api.post_annotation_archive_update, wait_options
+                    project_id,
+                    ProjectJobType.GEN_ANNOTATION,
+                    self.service.api.post_annotation_archive_update,
+                    wait_options,
                 )
 
             if target == DownloadTarget.SIMPLE_ANNOTATION:
-                self.service.wrapper.download_annotation_archive(project_id, output, v2=True)
+                self.service.wrapper.download_annotation_archive(project_id, output)
 
             elif target == DownloadTarget.FULL_ANNOTATION:
                 self.service.wrapper.download_full_annotation_archive(project_id, output)

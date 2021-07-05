@@ -5,7 +5,7 @@ import logging
 from pathlib import Path
 from typing import Any, Dict
 
-from annofabapi.models import JobType, ProjectMemberRole
+from annofabapi.models import ProjectJobType, ProjectMemberRole
 
 import annofabcli
 from annofabcli import AnnofabApiFacade
@@ -73,7 +73,7 @@ class PutTask(AbstractCommandLineInterface):
 
             result = self.service.wrapper.wait_for_completion(
                 project_id,
-                job_type=JobType.GEN_TASKS,
+                job_type=ProjectJobType.GEN_TASKS,
                 job_access_interval=wait_options.interval,
                 max_job_access=wait_options.max_tries,
             )

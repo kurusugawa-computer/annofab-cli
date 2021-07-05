@@ -4,7 +4,7 @@ import logging
 import uuid
 from typing import Any, Dict, Optional
 
-from annofabapi.models import JobType, OrganizationMemberRole, ProjectMemberRole
+from annofabapi.models import OrganizationMemberRole, ProjectJobType, ProjectMemberRole
 
 import annofabcli
 from annofabcli import AnnofabApiFacade
@@ -83,7 +83,7 @@ class CopyProject(AbstractCommandLineInterface):
 
             result = self.service.wrapper.wait_for_completion(
                 src_project_id,
-                job_type=JobType.COPY_PROJECT,
+                job_type=ProjectJobType.COPY_PROJECT,
                 job_access_interval=wait_options.interval,
                 max_job_access=wait_options.max_tries,
             )
