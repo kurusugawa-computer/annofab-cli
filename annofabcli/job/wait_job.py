@@ -2,7 +2,7 @@ import argparse
 import logging
 
 import annofabapi
-from annofabapi.models import JobStatus, JobType
+from annofabapi.models import JobStatus, ProjectJobType
 
 import annofabcli
 import annofabcli.common.cli
@@ -24,7 +24,7 @@ class WaitJobMain:
         self.service = service
         self.facade = AnnofabApiFacade(service)
 
-    def is_job_progress(self, project_id: str, job_type: JobType) -> bool:
+    def is_job_progress(self, project_id: str, job_type: ProjectJobType) -> bool:
         job_list = self.service.api.get_project_job(project_id, query_params={"type": job_type.value})[0]["list"]
         if len(job_list) > 0:
             if job_list[0]["job_status"] == JobStatus.PROGRESS.value:
@@ -32,7 +32,7 @@ class WaitJobMain:
 
         return False
 
-    def wait_job(self, project_id: str, job_type: JobType, wait_options: WaitOptions):
+    def wait_job(self, project_id: str, job_type: ProjectJobType, wait_options: WaitOptions):
         if not self.is_job_progress(project_id, job_type):
             logger.info(f"job_type='{job_type.value}'の実行中のジョブはないので、終了します。")
             return
@@ -55,7 +55,7 @@ class WaitJob(AbstractCommandLineInterface):
     def main(self):
         args = self.args
         project_id = args.project_id
-        job_type = JobType(args.job_type)
+        job_type = ProjectJobType(args.job_type)
 
         DEFAULT_WAIT_OPTIONS = WaitOptions(interval=60, max_tries=360)
         wait_options = get_wait_options_from_args(get_json_from_args(args.wait_options), DEFAULT_WAIT_OPTIONS)
@@ -75,7 +75,7 @@ def parse_args(parser: argparse.ArgumentParser):
 
     argument_parser.add_project_id()
 
-    job_choices = [e.value for e in JobType]
+    job_choices = [e.value for e in ProjectJobType]
     parser.add_argument("--job_type", type=str, choices=job_choices, required=True, help="ジョブタイプを指定します。")
 
     parser.add_argument(
