@@ -34,7 +34,8 @@ pyquery = "*"
 isodate = "*"
 annofabapi = ">=0.46.1"
 
-pandas = "*"
+# pandas1.3にすると、TestCommandLine.test_list_labor_worktime が失敗するので、pandas1.2以下にする
+pandas = "~1.2"
 bokeh = "^2.2"
 holoviews= "^1.14"
 
