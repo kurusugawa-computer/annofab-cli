@@ -8,7 +8,7 @@ python-versions = "*"
 
 [[package]]
 name = "annofabapi"
-version = "0.45.2"
+version = "0.46.1"
 description = "Python Clinet Library of AnnoFab WebAPI (https://annofab.com/docs/api/)"
 category = "main"
 optional = false
@@ -1277,8 +1277,8 @@ alabaster = [
     {file = "alabaster-0.7.12.tar.gz", hash = "sha256:a661d72d58e6ea8a57f7a86e37d86716863ee5e92788398526d58b26a4e4dc02"},
 ]
 annofabapi = [
-    {file = "annofabapi-0.45.2-py3-none-any.whl", hash = "sha256:c5bf2c765078e35efc4d4fccc09be2023e38d1f2e43ce2c28b1190d825db0c07"},
-    {file = "annofabapi-0.45.2.tar.gz", hash = "sha256:9600a7848007edb528c5a8febd5d2d8be3c9d1caccbcbe359ea8c236bf7a115a"},
+    {file = "annofabapi-0.46.1-py3-none-any.whl", hash = "sha256:7c23a1d9410bb8d984d25dadbdc8686b798b29a6dcc4933880021a7c87cdaebe"},
+    {file = "annofabapi-0.46.1.tar.gz", hash = "sha256:0d434cc5dc6f9cd6090ab99de0ef2da1c72089ee33e5b985aa109ecbde36bbc2"},
 ]
 appdirs = [
     {file = "appdirs-1.4.4-py2.py3-none-any.whl", hash = "sha256:a841dacd6b99318a741b166adb07e19ee71a274450e68237b4650ca1055ab128"},
