@@ -3,7 +3,7 @@ import logging
 import sys
 from typing import Any, Dict, List, Optional
 
-from annofabapi.models import JobInfo, JobType, Project
+from annofabapi.models import JobInfo, Project, ProjectJobType
 
 import annofabcli
 from annofabcli import AnnofabApiFacade
@@ -18,7 +18,7 @@ class ListLastJob(AbstractCommandLineInterface):
     ジョブ一覧を表示する。
     """
 
-    def get_last_job(self, project_id: str, job_type: JobType) -> Optional[JobInfo]:
+    def get_last_job(self, project_id: str, job_type: ProjectJobType) -> Optional[JobInfo]:
         """
         最新のジョブを取得する。ジョブが存在しない場合はNoneを返す。
 
@@ -62,7 +62,7 @@ class ListLastJob(AbstractCommandLineInterface):
         return project
 
     def get_last_job_list(
-        self, project_id_list: List[str], job_type: JobType, add_details: bool = False
+        self, project_id_list: List[str], job_type: ProjectJobType, add_details: bool = False
     ) -> List[JobInfo]:
         job_list = []
         for project_id in project_id_list:
@@ -81,7 +81,7 @@ class ListLastJob(AbstractCommandLineInterface):
 
         return job_list
 
-    def print_job_list(self, project_id_list: List[str], job_type: JobType, add_details: bool = False) -> None:
+    def print_job_list(self, project_id_list: List[str], job_type: ProjectJobType, add_details: bool = False) -> None:
         """
         ジョブ一覧を出力する
 
@@ -112,7 +112,7 @@ class ListLastJob(AbstractCommandLineInterface):
 
     def main(self):
         args = self.args
-        job_type = JobType(args.job_type)
+        job_type = ProjectJobType(args.job_type)
 
         if args.organization is not None:
             project_id_list = self.get_project_id_list(args.organization)
@@ -136,7 +136,7 @@ def main(args):
 def parse_args(parser: argparse.ArgumentParser):
     argument_parser = ArgumentParser(parser)
 
-    job_choices = [e.value for e in JobType]
+    job_choices = [e.value for e in ProjectJobType]
     parser.add_argument("--job_type", type=str, choices=job_choices, required=True, help="ジョブタイプを指定します。")
 
     list_group = parser.add_mutually_exclusive_group(required=True)

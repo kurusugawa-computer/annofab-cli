@@ -16,7 +16,7 @@ inifile.read("./pytest.ini", "UTF-8")
 annofab_config = dict(inifile.items("annofab"))
 
 project_id = annofab_config["project_id"]
-service = annofabapi.build_from_netrc()
+service = annofabapi.build()
 
 organization_name = service.api.get_organization_of_project(project_id)[0]["organization_name"]
 

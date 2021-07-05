@@ -490,19 +490,6 @@ class Table:
             else:
                 return None
 
-        # タスク更新日維持と
-        # if len(task_histories) > 0:
-        #     # タスク情報とタスク履歴情報の整合性がとれているかを確認する
-        #     delta = dateutil.parser.parse(task["updated_datetime"]) - dateutil.parser.parse(
-        #         task_histories[-1]["ended_datetime"]
-        #     )
-        #     if abs(delta.total_seconds()) > 1:
-        #         logger.warning(
-        #             f"task_id={task['task_id']}のタスク情報とタスク履歴情報の整合性が取れていない可能性があります。"
-        #             f"task.updated_datetime={task['updated_datetime']},"
-        #             f"task_histories[-1].ended_datetime={task_histories[-1]['ended_datetime']}"
-        #         )
-        #
         annotation_histories = [
             e for e in task_histories if e["phase"] == TaskPhase.ANNOTATION.value and e["account_id"] is not None
         ]

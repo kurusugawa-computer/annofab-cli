@@ -3,7 +3,7 @@ import copy
 import logging
 from typing import Any, Dict, List, Optional
 
-from annofabapi.models import JobInfo, JobType
+from annofabapi.models import JobInfo, ProjectJobType
 
 import annofabcli
 from annofabcli import AnnofabApiFacade
@@ -19,7 +19,7 @@ class ListJob(AbstractCommandLineInterface):
     """
 
     def get_job_list(
-        self, project_id: str, job_type: JobType, job_query: Optional[Dict[str, Any]] = None
+        self, project_id: str, job_type: ProjectJobType, job_query: Optional[Dict[str, Any]] = None
     ) -> List[JobInfo]:
         """
         ジョブ一覧を取得する。
@@ -36,7 +36,7 @@ class ListJob(AbstractCommandLineInterface):
         job_list = self.service.wrapper.get_all_project_job(project_id, query_params=query_params)
         return job_list
 
-    def print_job_list(self, project_id: str, job_type: JobType, job_query: Optional[Dict[str, Any]] = None):
+    def print_job_list(self, project_id: str, job_type: ProjectJobType, job_query: Optional[Dict[str, Any]] = None):
         """
         ジョブ一覧を出力する
 
@@ -55,7 +55,7 @@ class ListJob(AbstractCommandLineInterface):
 
     def main(self):
         args = self.args
-        job_type = JobType(args.job_type)
+        job_type = ProjectJobType(args.job_type)
         self.print_job_list(args.project_id, job_type=job_type, job_query=None)
 
 
@@ -68,7 +68,7 @@ def main(args):
 def parse_args(parser: argparse.ArgumentParser):
     argument_parser = ArgumentParser(parser)
 
-    job_choices = [e.value for e in JobType]
+    job_choices = [e.value for e in ProjectJobType]
     argument_parser.add_project_id()
 
     parser.add_argument("--job_type", type=str, choices=job_choices, required=True, help="ジョブタイプを指定します。")
