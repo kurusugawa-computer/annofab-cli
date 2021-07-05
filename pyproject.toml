@@ -32,10 +32,9 @@ more-itertools = "*"
 jmespath = "*"
 pyquery = "*"
 isodate = "*"
-annofabapi = ">=0.43.0"
+annofabapi = ">=0.46.1"
 
-# pandas 1.3をインストールしようとすると`Unable to find installation candidates pandas`というエラーが発生するので、一時的に1.2にする
-pandas = "~1.2"
+pandas = "*"
 bokeh = "^2.2"
 holoviews= "^1.14"
 
