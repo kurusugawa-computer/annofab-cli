@@ -102,7 +102,7 @@ class Download(AbstractCommandLineInterface):
                 )
 
             if target == DownloadTarget.SIMPLE_ANNOTATION:
-                self.service.wrapper.download_annotation_archive(project_id, output, v2=True)
+                self.service.wrapper.download_annotation_archive(project_id, output)
 
             elif target == DownloadTarget.FULL_ANNOTATION:
                 self.service.wrapper.download_full_annotation_archive(project_id, output)
