@@ -34,7 +34,7 @@ class PrintLabelColor(AbstractCommandLineInterface):
         今のアノテーション仕様から、label名とRGBを紐付ける
         """
         # [REMOVE_V2_PARAM]
-        annotation_specs = self.service.api.get_annotation_specs(project_id, query_params={"v": "2"})[0]
+        annotation_specs, _ = self.service.api.get_annotation_specs(project_id, query_params={"v": "2"})
         labels = annotation_specs["labels"]
 
         label_color_dict = {self.facade.get_label_name_en(label): self.get_rgb(label) for label in labels}

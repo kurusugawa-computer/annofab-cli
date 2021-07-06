@@ -16,6 +16,7 @@ from annofabapi.models import (
 )
 from annofabapi.utils import get_number_of_rejections
 
+from annofabcli.common.facade import convert_annotation_specs_labels_v2_to_v1
 from annofabcli.common.utils import isoduration_to_hour
 
 
@@ -38,8 +39,11 @@ class AddProps:
         self.project_id = project_id
         self.organization_name = self._get_organization_name_from_project_id(project_id)
 
-        annotation_specs, _ = self.service.api.get_annotation_specs(project_id)
-        self.specs_labels: List[Dict[str, Any]] = annotation_specs["labels"]
+        # [REMOVE_V2_PARAM]
+        annotation_specs, _ = self.service.api.get_annotation_specs(project_id, query_params={"v": "2"})
+        self.specs_labels: List[Dict[str, Any]] = convert_annotation_specs_labels_v2_to_v1(
+            labels_v2=annotation_specs["labels"], additionals_v2=annotation_specs["additionals"]
+        )
         self.specs_inspection_phrases: List[Dict[str, Any]] = annotation_specs["inspection_phrases"]
 
     @staticmethod

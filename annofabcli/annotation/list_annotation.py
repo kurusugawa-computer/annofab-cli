@@ -12,6 +12,7 @@ import annofabcli
 from annofabcli import AnnofabApiFacade
 from annofabcli.common.cli import AbstractCommandLineInterface, ArgumentParser, build_annofabapi_resource_and_login
 from annofabcli.common.enums import FormatArgument
+from annofabcli.common.facade import convert_annotation_specs_labels_v2_to_v1
 from annofabcli.common.utils import get_columns_with_priority
 from annofabcli.common.visualize import AddProps
 
@@ -107,8 +108,11 @@ class ListAnnotationMain:
             修正したタスク検索クエリ
 
         """
-        annotation_specs, _ = self.service.api.get_annotation_specs(project_id)
-        specs_labels = annotation_specs["labels"]
+        # [REMOVE_V2_PARAM]
+        annotation_specs, _ = self.service.api.get_annotation_specs(project_id, query_params={"v": "2"})
+        specs_labels = convert_annotation_specs_labels_v2_to_v1(
+            labels_v2=annotation_specs["labels"], additionals_v2=annotation_specs["additionals"]
+        )
 
         # label_name_en から label_idを設定
         if "label_name_en" in annotation_query:
