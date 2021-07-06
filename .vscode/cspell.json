@@ -5,11 +5,7 @@
         ".devcontainer/",
         ".vscode/",
         "LICENSE",
-        "tests/",
-        // 以下は自動生成されるファイルなのでチェックしない
-        "generated_*.py",
-        "models.py",
-        "annofabapi/dataclass/*.py"
+        "tests/"
     ],
     "enabledLanguageIds": [
         "python"
@@ -20,6 +16,8 @@
         "asyncio",
         "dateutil",
         "pylint",
-        "tzlocal"
+        "tzlocal",
+        "annofabcli",
+        "itertools"
     ]
 }
