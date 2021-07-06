@@ -20,6 +20,8 @@
         "asyncio",
         "dateutil",
         "pylint",
-        "tzlocal"
+        "tzlocal",
+        "annofabcli",
+        "itertools"
     ]
 }
