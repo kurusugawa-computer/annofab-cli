@@ -31,7 +31,11 @@ from annofabcli.common.cli import (
 )
 from annofabcli.common.dataclasses import WaitOptions
 from annofabcli.common.download import DownloadingFile
-from annofabcli.common.facade import TaskQuery, match_annotation_with_task_query
+from annofabcli.common.facade import (
+    TaskQuery,
+    convert_annotation_specs_labels_v2_to_v1,
+    match_annotation_with_task_query,
+)
 from annofabcli.common.visualize import AddProps, MessageLocale
 
 DEFAULT_WAIT_OPTIONS = WaitOptions(interval=60, max_tries=360)
@@ -332,10 +336,13 @@ class ListAnnotationCount(AbstractCommandLineInterface):
         return [to_label_name(label) for label in annotation_specs_labels]
 
     def get_target_columns(self, project_id: str) -> Tuple[LabelColumnList, AttributesColumnList]:
-        annotation_specs, _ = self.service.api.get_annotation_specs(project_id)
-        annotation_specs_labels = annotation_specs["labels"]
-        label_columns = self.get_target_label_columns(annotation_specs_labels)
-        attributes_columns = self.get_target_attributes_columns(annotation_specs_labels)
+        # [REMOVE_V2_PARAM]
+        annotation_specs, _ = self.service.api.get_annotation_specs(project_id, query_params={"v": "2"})
+        labels_v1 = convert_annotation_specs_labels_v2_to_v1(
+            labels_v2=annotation_specs["labels"], additionals_v2=annotation_specs["additionals"]
+        )
+        label_columns = self.get_target_label_columns(labels_v1)
+        attributes_columns = self.get_target_attributes_columns(labels_v1)
         return (label_columns, attributes_columns)
 
     def list_annotation_count_by_task(

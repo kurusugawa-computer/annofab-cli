@@ -113,7 +113,7 @@ class Table:
         self.ignored_task_id_list = ignored_task_id_list
 
         self.project_id = self.database.project_id
-        self._update_annotaion_specs()
+        self._update_annotation_specs()
         self.project_title = self.annofab_service.api.get_project(self.project_id)[0]["title"]
 
     def _get_worktime_statistics(self) -> List[WorktimeStatistics]:
@@ -282,10 +282,11 @@ class Table:
         else:
             return None
 
-    def _update_annotaion_specs(self):
-        annotaion_specs = self.annofab_service.api.get_annotation_specs(self.project_id)[0]
-        self.inspection_phrases_dict = self.get_inspection_phrases_dict(annotaion_specs["inspection_phrases"])
-        self.label_dict = self.get_labels_dict(annotaion_specs["labels"])
+    def _update_annotation_specs(self):
+        # [REMOVE_V2_PARAM]
+        annotation_specs, _ = self.annofab_service.api.get_annotation_specs(self.project_id, query_params={"v": "2"})
+        self.inspection_phrases_dict = self.get_inspection_phrases_dict(annotation_specs["inspection_phrases"])
+        self.label_dict = self.get_labels_dict(annotation_specs["labels"])
         self.project_members_dict = self._get_project_members_dict()
 
     def _get_project_members_dict(self) -> Dict[str, Any]:
