@@ -12,3 +12,5 @@ script:
 branches:
   only:
   - master
+env:
+  - PIP_DEFAULT_TIMEOUT=100
