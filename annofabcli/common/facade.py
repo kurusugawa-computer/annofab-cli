@@ -214,6 +214,42 @@ def match_input_data_with_query(  # pylint: disable=too-many-return-statements
     return True
 
 
+def convert_annotation_specs_labels_v2_to_v1(
+    labels_v2: List[Dict[str, Any]], additionals_v2: List[Dict[str, Any]]
+) -> List[Dict[str, Any]]:
+    """アノテーション仕様のV2版からV1版に変換する。V1版の方が扱いやすいので。
+
+    Args:
+        labels_v2 (List[Dict[str, Any]]): V2版のラベル情報
+        additionals_v2 (List[Dict[str, Any]]): V2版の属性情報
+
+    Returns:
+        List[LabelV1]: V1版のラベル情報
+    """
+
+    def get_additional(additional_data_definition_id: str) -> Optional[Dict[str, Any]]:
+        return more_itertools.first_true(
+            additionals_v2, pred=lambda e: e["additional_data_definition_id"] == additional_data_definition_id
+        )
+
+    def to_label_v1(label_v2) -> Dict[str, Any]:
+        additional_data_definition_id_list = label_v2["additional_data_definitions"]
+        new_additional_data_definitions = []
+        for additional_data_definition_id in additional_data_definition_id_list:
+            additional = get_additional(additional_data_definition_id)
+            if additional is not None:
+                new_additional_data_definitions.append(additional)
+            else:
+                raise ValueError(
+                    f"additional_data_definition_id='{additional_data_definition_id}' に対応する属性情報が存在しません。"
+                    f"label_id='{label_v2['label_id']}', label_name_en='{AnnofabApiFacade.get_label_name_en(label_v2)}'"
+                )
+        label_v2["additional_data_definitions"] = new_additional_data_definitions
+        return label_v2
+
+    return [to_label_v1(label_v2) for label_v2 in labels_v2]
+
+
 class AnnofabApiFacade:
     """
     AnnofabApiのFacadeクラス。annofabapiの複雑な処理を簡単に呼び出せるようにする。
@@ -362,7 +398,7 @@ class AnnofabApiFacade:
 
         Args:
             project_id:
-            accoaunt_id:
+            account_id:
 
         Returns:
             プロジェクトメンバ。見つからない場合はNone
@@ -404,7 +440,7 @@ class AnnofabApiFacade:
 
     def get_account_id_from_user_id(self, project_id: str, user_id: str) -> Optional[str]:
         """
-        usre_idからaccount_idを取得する。
+        user_idからaccount_idを取得する。
         インスタンス変数に組織メンバがあれば、WebAPIは実行しない。
 
         Args:
