@@ -225,6 +225,7 @@ class ListAnnotationCount(AbstractCommandLineInterface):
                 ("", "", "task_status"): c.task_status.value,
                 ("", "", "task_phase"): c.task_phase.value,
                 ("", "", "task_phase_stage"): c.task_phase_stage,
+                ("", "", "input_data_count"): c.input_data_count,
             }
             for col in attribute_columns:
                 cell.update({col: c.attributes_count[col]})
@@ -236,7 +237,13 @@ class ListAnnotationCount(AbstractCommandLineInterface):
             logger.warning(f"アノテーション仕様に集計対象の属性が定義されていないため、'{output_file}' は出力しません。")
             return
 
-        columns = [("", "", "task_id"), ("", "", "task_status"), ("", "", "task_phase"), ("", "", "task_phase_stage")]
+        columns = [
+            ("", "", "task_id"),
+            ("", "", "task_status"),
+            ("", "", "task_phase"),
+            ("", "", "task_phase_stage"),
+            ("", "", "input_data_count"),
+        ]
         columns.extend(attribute_columns)
         df = pandas.DataFrame([to_cell(e) for e in task_counter_list], columns=pandas.MultiIndex.from_tuples(columns))
 

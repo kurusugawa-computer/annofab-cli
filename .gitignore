@@ -108,6 +108,7 @@ venv.bak/
 
 # output directory of tests
 tests/out/
+out/
 
 .annofab-cli/
 
