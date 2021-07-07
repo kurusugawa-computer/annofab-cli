@@ -92,6 +92,8 @@ class ListAnnotationCount(AbstractCommandLineInterface):
     """
 
     CSV_FORMAT = {"encoding": "utf_8_sig", "index": False}
+    ATTRIBUTES_COUNT_CSV = "attributes_count.csv"
+    LABELS_COUNT_CSV = "labels_count.csv"
 
     @staticmethod
     def lazy_parse_simple_annotation_by_input_data(annotation_path: Path) -> Iterator[SimpleAnnotationParser]:
@@ -208,7 +210,7 @@ class ListAnnotationCount(AbstractCommandLineInterface):
         columns.extend([f"label_{e}" for e in label_columns])
 
         df = pandas.DataFrame([to_dict(e) for e in task_counter_list], columns=columns)
-        output_file = str(output_dir / "labels_count.csv")
+        output_file = str(output_dir / self.LABELS_COUNT_CSV)
         annofabcli.utils.print_csv(df, output=output_file, to_csv_kwargs=self.CSV_FORMAT)
 
     def print_attributes_count_for_task(
@@ -229,11 +231,15 @@ class ListAnnotationCount(AbstractCommandLineInterface):
 
             return cell
 
+        output_file = str(output_dir / self.ATTRIBUTES_COUNT_CSV)
+        if len(attribute_columns) == 0:
+            logger.warning(f"アノテーション仕様に集計対象の属性が定義されていないため、'{output_file}' は出力しません。")
+            return
+
         columns = [("", "", "task_id"), ("", "", "task_status"), ("", "", "task_phase"), ("", "", "task_phase_stage")]
         columns.extend(attribute_columns)
         df = pandas.DataFrame([to_cell(e) for e in task_counter_list], columns=pandas.MultiIndex.from_tuples(columns))
 
-        output_file = str(output_dir / "attributes_count.csv")
         annofabcli.utils.print_csv(df, output=output_file, to_csv_kwargs=self.CSV_FORMAT)
 
     def print_labels_count_for_input_data(
@@ -255,7 +261,7 @@ class ListAnnotationCount(AbstractCommandLineInterface):
         columns.extend([f"label_{e}" for e in label_columns])
 
         df = pandas.DataFrame([to_dict(e) for e in input_data_counter_list])
-        output_file = str(output_dir / "labels_count.csv")
+        output_file = str(output_dir / self.LABELS_COUNT_CSV)
         annofabcli.utils.print_csv(df, output=output_file, to_csv_kwargs=self.CSV_FORMAT)
 
     def print_attributes_count_for_input_data(
@@ -278,6 +284,11 @@ class ListAnnotationCount(AbstractCommandLineInterface):
 
             return cell
 
+        output_file = str(output_dir / self.ATTRIBUTES_COUNT_CSV)
+        if len(attribute_columns) == 0:
+            logger.warning(f"アノテーション仕様に集計対象の属性が定義されていないため、'{output_file}' は出力しません。")
+            return
+
         columns = [
             ("", "", "input_data_id"),
             ("", "", "input_data_name"),
@@ -290,8 +301,6 @@ class ListAnnotationCount(AbstractCommandLineInterface):
         df = pandas.DataFrame(
             [to_cell(e) for e in input_data_counter_list], columns=pandas.MultiIndex.from_tuples(columns)
         )
-
-        output_file = str(output_dir / "attributes_count.csv")
         annofabcli.utils.print_csv(df, output=output_file, to_csv_kwargs=self.CSV_FORMAT)
 
     @staticmethod

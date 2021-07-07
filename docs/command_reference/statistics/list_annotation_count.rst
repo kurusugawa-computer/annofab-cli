@@ -17,6 +17,7 @@ Examples
 
 アノテーションzipをダウンロードして、アノテーション数が記載されたCSVファイルを出力します。
 
+
 .. code-block::
 
     $ annofabcli statistics list_annotation_count --project_id prj1 --output_dir out_dir/
@@ -28,6 +29,12 @@ Examples
     ├── labels_count.csv                ラベルごとのアノテーション数が記載されたCSV
     ├── attributes_count.csv            属性ごとのアノテーション数が記載されたCSV
     │
+
+集計対象の属性の種類は以下の通りです。
+
+* ドロップダウン
+* ラジオボタン
+* チェックボックス
 
 
 デフォルトではタスクごとにアノテーション数を集計します。入力データごとに集計する場合は、 ``--group_by input_data_id`` を指定してください。
