@@ -26,7 +26,7 @@ Examples
 
     out_dir/ 
     ├── labels_count.csv                ラベルごとのアノテーション数が記載されたCSV
-    ├── attirbutes_count.csv            属性ごとのアノテーション数が記載されたCSV
+    ├── attributes_count.csv            属性ごとのアノテーション数が記載されたCSV
     │
 
 
@@ -65,7 +65,7 @@ Examples
 
     out_by_task/
     ├── labels_count.csv
-    ├── attirbutes_count.csv
+    ├── attributes_count.csv
 
 
 
@@ -77,7 +77,7 @@ Examples
 
 
 
-.. csv-table:: attirbutes_count.csv
+.. csv-table:: attributes_count.csv
     :header: ,,,,Cat,Cat,...
 
     ,,,,occluded,occluded,...
@@ -105,7 +105,7 @@ Examples
 
     out_by_input_data/
     ├── labels_count.csv
-    ├── attirbutes_count.csv
+    ├── attributes_count.csv
 
 
 
@@ -118,7 +118,7 @@ Examples
 
 
 
-.. csv-table:: attirbutes_count.csv
+.. csv-table:: attributes_count.csv
     :header: ,,,,,,Cat,Cat,...
 
     ,,,,,,occluded,occluded,...
