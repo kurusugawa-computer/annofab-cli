@@ -20,8 +20,23 @@ service = annofabapi.build()
 
 
 class TestCommandLine:
-    def test_list_annotation_count(self):
-        output_dir = str(out_dir / "list_annotation_count-out")
+    def test_list_annotation_count_by_task(self):
+        output_dir = str(out_dir / "list_annotation_count_by_task-out")
+        main(
+            [
+                "statistics",
+                "list_annotation_count",
+                "--project_id",
+                project_id,
+                "--output_dir",
+                output_dir,
+                "--group_by",
+                "task_id",
+            ]
+        )
+
+    def test_list_annotation_count_by_input_data(self):
+        output_dir = str(out_dir / "list_annotation_count_by_input_data-out")
         main(
             [
                 "statistics",
