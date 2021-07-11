@@ -12,12 +12,13 @@
     ],
     "words": [
         "additionals",
+        "annofabcli",
         "astimezone",
         "asyncio",
         "dateutil",
+        "itertools",
+        "nargs",
         "pylint",
-        "tzlocal",
-        "annofabcli",
-        "itertools"
+        "tzlocal"
     ]
 }
