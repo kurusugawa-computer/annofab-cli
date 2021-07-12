@@ -1,11 +1,13 @@
 import argparse
 import json
 import logging
+from dataclasses import dataclass
 from pathlib import Path
 from typing import Any, Dict, Iterator, Optional, Tuple, Union
 
 import pandas
 from annofabapi.parser import SimpleAnnotationParser, lazy_parse_simple_annotation_dir, lazy_parse_simple_annotation_zip
+from dataclasses_json import DataClassJsonMixin
 from PIL import Image, ImageColor, ImageDraw
 
 import annofabcli
@@ -20,6 +22,12 @@ logger = logging.getLogger(__name__)
 
 
 Color = Union[str, Tuple[int, int, int]]
+
+
+@dataclass(frozen=True)
+class DrawingOptions(DataClassJsonMixin):
+    line_width: int = 1
+    """線の太さ[pixel]"""
 
 
 class DrawingAnnotationForOneImage:
@@ -48,11 +56,12 @@ class DrawingAnnotationForOneImage:
         label_color_dict: Optional[Dict[str, Color]] = None,
         target_label_names: Optional[Iterator[str]] = None,
         polyline_labels: Optional[Iterator[str]] = None,
+        drawing_options: Optional[DrawingOptions] = None,
     ) -> None:
         self.label_color_dict = label_color_dict if label_color_dict is not None else {}
         self.target_label_names = set(target_label_names) if target_label_names is not None else None
         self.polyline_labels = set(polyline_labels) if polyline_labels is not None else None
-
+        self.drawing_options = drawing_options if drawing_options is not None else DrawingOptions()
         self._color_palette_index = 0
 
     def get_color(self, label_name: str) -> Color:
@@ -93,20 +102,22 @@ class DrawingAnnotationForOneImage:
                 (data["left_top"]["x"], data["left_top"]["y"]),
                 (data["right_bottom"]["x"], data["right_bottom"]["y"]),
             ]
-            draw.rectangle(xy, outline=color)
+            draw.rectangle(xy, outline=color, width=self.drawing_options.line_width)
 
         def draw_single_point(data: Dict[str, Any], color: Color, radius: int = 2):
             point_x = data["point"]["x"]
             point_y = data["point"]["y"]
             draw.ellipse([(point_x - radius, point_y - radius), (point_x + radius, point_y + radius)], fill=color)
 
-        def draw_polygon(data: Dict[str, Any], color: Color):
-            xy = [(e["x"], e["y"]) for e in data["points"]]
-            draw.polygon(xy, fill=color)
+        def draw_closed_polyline(data: Dict[str, Any], color: Color):
+            points = data["points"]
+            first_point = points[0]
+            xy = [(e["x"], e["y"]) for e in points] + [(first_point["x"], first_point["y"])]
+            draw.line(xy, fill=color, width=self.drawing_options.line_width)
 
         def draw_polyline(data: Dict[str, Any], color: Color):
             xy = [(e["x"], e["y"]) for e in data["points"]]
-            draw.line(xy, fill=color)
+            draw.line(xy, fill=color, width=self.drawing_options.line_width)
 
         simple_annotation = parser.load_json()
         # 下層レイヤにあるアノテーションから順に画像化する
@@ -119,14 +130,14 @@ class DrawingAnnotationForOneImage:
             annotation_list = list(reversed(simple_annotation["details"]))
         for annotation in annotation_list:
             data = annotation["data"]
-            if data is None:
-                # 画像全体アノテーション
-                return draw
+            data_type = data["_type"]
+            if data_type == "Classification":
+                # 全体アノテーションなので描画できない
+                continue
 
             label_name: str = annotation["label"]
             color = self.get_color(label_name)
 
-            data_type = data["_type"]
             if data_type in {"SegmentationV2", "Segmentation"}:
                 draw_segmentation(data["data_uri"], color=color)
 
@@ -139,7 +150,7 @@ class DrawingAnnotationForOneImage:
                 if self.polyline_labels is not None and label_name in self.polyline_labels:
                     draw_polyline(data, color=color)
                 else:
-                    draw_polygon(data, color=color)
+                    draw_closed_polyline(data, color=color)
 
         return draw
 
@@ -171,8 +182,15 @@ def draw_annotation_all(
     *,
     label_color_dict: Optional[Dict[str, Color]] = None,
     target_label_names: Optional[Iterator[str]] = None,
+    polyline_labels: Optional[Iterator[str]] = None,
+    drawing_options: Optional[DrawingOptions] = None,
 ):
-    drawing = DrawingAnnotationForOneImage(label_color_dict=label_color_dict, target_label_names=target_label_names)
+    drawing = DrawingAnnotationForOneImage(
+        label_color_dict=label_color_dict,
+        target_label_names=target_label_names,
+        polyline_labels=polyline_labels,
+        drawing_options=drawing_options,
+    )
     total_count = 0
     success_count = 0
     for parser in iter_parser:
@@ -237,6 +255,10 @@ class DrawAnnotation(AbstractCommandLineWithoutWebapiInterface):
             output_dir=args.output_dir,
             label_color_dict=get_json_from_args(args.label_color) if args.label_color is not None else None,
             target_label_names=get_list_from_args(args.label_name) if args.label_name is not None else None,
+            polyline_labels=get_list_from_args(args.polyline_label) if args.polyline_label is not None else None,
+            drawing_options=DrawingOptions.from_dict(get_json_from_args(args.drawing_options))
+            if args.drawing_options is not None
+            else None,
         )
 
 
@@ -280,6 +302,22 @@ def parse_args(parser: argparse.ArgumentParser):
         required=False,
         help="描画対象のアノテーションのlabel_nameを指定します。指定しない場合は、すべてのlabel_nameが描画対象になります。"
         "`file://`を先頭に付けると、label_name の一覧が記載されたファイルを指定できます。",
+    )
+
+    parser.add_argument(
+        "--polyline_label",
+        type=str,
+        nargs="+",
+        required=False,
+        help="ポリラインのlabel_nameを指定してください。"
+        "2021/07時点ではアノテーションzipからポリラインかポリゴンか判断できないため、コマンドライン引数からポリラインのlabel_nameを指定する必要があります。"
+        "`file://`を先頭に付けると、label_name の一覧が記載されたファイルを指定できます。",
+    )
+
+    parser.add_argument(
+        "--drawing_options",
+        type=str,
+        help='描画オプションをJSON形式で指定します。ex) `{"line_width":3}`' "`file://`を先頭に付けると、JSON形式のファイルを指定できます。",
     )
 
     argument_parser.add_task_id(
