@@ -6,7 +6,7 @@ from typing import Optional
 
 import annofabapi
 import requests
-from annofabapi.models import JobType
+from annofabapi.models import ProjectJobType
 
 from annofabcli.common.dataclasses import WaitOptions
 from annofabcli.common.exceptions import DownloadingFileNotFoundError, UpdatedFileForDownloadingError
@@ -14,9 +14,9 @@ from annofabcli.common.exceptions import DownloadingFileNotFoundError, UpdatedFi
 logger = logging.getLogger(__name__)
 
 DOWNLOADING_FILETYPE_DICT = {
-    JobType.GEN_TASKS_LIST: "タスク全件ファイル",
-    JobType.GEN_INPUTS_LIST: "入力データ全件ファイル",
-    JobType.GEN_ANNOTATION: "アノテーションzip",
+    ProjectJobType.GEN_TASKS_LIST: "タスク全件ファイル",
+    ProjectJobType.GEN_INPUTS_LIST: "入力データ全件ファイル",
+    ProjectJobType.GEN_ANNOTATION: "アノテーションzip",
 }
 
 DEFAULT_WAIT_OPTIONS = WaitOptions(interval=60, max_tries=360)
@@ -43,7 +43,7 @@ class DownloadingFile:
     def _wait_for_completion(
         self,
         project_id: str,
-        job_type: JobType,
+        job_type: ProjectJobType,
         wait_options: Optional[WaitOptions] = None,
         job_id: Optional[str] = None,
     ):
@@ -102,7 +102,9 @@ class DownloadingFile:
             else:
                 raise e
 
-        self._wait_for_completion(project_id, job_type=JobType.GEN_ANNOTATION, wait_options=wait_options, job_id=job_id)
+        self._wait_for_completion(
+            project_id, job_type=ProjectJobType.GEN_ANNOTATION, wait_options=wait_options, job_id=job_id
+        )
 
     async def download_input_data_json_with_async(
         self, project_id: str, dest_path: str, is_latest: bool = False, wait_options: Optional[WaitOptions] = None
@@ -145,7 +147,7 @@ class DownloadingFile:
                 raise e
 
         self._wait_for_completion(
-            project_id, job_type=JobType.GEN_INPUTS_LIST, wait_options=wait_options, job_id=job_id
+            project_id, job_type=ProjectJobType.GEN_INPUTS_LIST, wait_options=wait_options, job_id=job_id
         )
 
     async def download_task_json_with_async(
@@ -188,7 +190,9 @@ class DownloadingFile:
             else:
                 raise e
 
-        self._wait_for_completion(project_id, job_type=JobType.GEN_TASKS_LIST, wait_options=wait_options, job_id=job_id)
+        self._wait_for_completion(
+            project_id, job_type=ProjectJobType.GEN_TASKS_LIST, wait_options=wait_options, job_id=job_id
+        )
 
     async def download_task_history_json_with_async(self, project_id: str, dest_path: str):
         """

@@ -106,11 +106,9 @@ venv.bak/
 # IntelliJ IDEA
 .idea/
 
-# Visual Studio Code
-.vscode
-
 # output directory of tests
 tests/out/
+out/
 
 .annofab-cli/
 

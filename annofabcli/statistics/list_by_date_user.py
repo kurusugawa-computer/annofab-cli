@@ -29,27 +29,13 @@ class ListSubmittedTaskCountMain:
         return datetime[0:10]
 
     @staticmethod
-    def _get_actual_worktime_hour(labor: Dict[str, Any]) -> float:
-        working_time_by_user = labor["values"]["working_time_by_user"]
-        if working_time_by_user is None:
-            return 0
-
-        value = working_time_by_user.get("results")
-        if value is None:
-            return 0
-        else:
-            return value / 3600 / 1000
-
-    @staticmethod
     def to_formatted_dataframe(
         submitted_task_count_df: pandas.DataFrame,
         account_statistics_df: pandas.DataFrame,
-        labor_df: pandas.DataFrame,
         user_df: pandas.DataFrame,
     ):
         df = (
             submitted_task_count_df.merge(account_statistics_df, how="outer", on=["date", "account_id"])
-            .merge(labor_df, how="outer", on=["date", "account_id"])
             .fillna(0)
             .merge(user_df, how="inner", on="account_id")
         )
@@ -59,8 +45,7 @@ class ListSubmittedTaskCountMain:
             "user_id",
             "username",
             "biography",
-            "monitored_worktime_hour",
-            "actual_worktime_hour",
+            "worktime_hour",
             "annotation_submitted_task_count",
             "inspection_submitted_task_count",
             "acceptance_submitted_task_count",
@@ -110,14 +95,14 @@ class ListSubmittedTaskCountMain:
             for stat in histories:
                 data = {
                     "account_id": account_id,
-                    "monitored_worktime_hour": isoduration_to_hour(stat["worktime"]),
+                    "worktime_hour": isoduration_to_hour(stat["worktime"]),
                     "rejected_task_count": stat["tasks_rejected"],
                     "date": stat["date"],
                 }
                 if not self._is_contained_daterange(data["date"], start_date=start_date, end_date=end_date):
                     continue
 
-                if data["monitored_worktime_hour"] == 0 and data["rejected_task_count"] == 0:
+                if data["worktime_hour"] == 0 and data["rejected_task_count"] == 0:
                     continue
 
                 data_list.append(data)
@@ -126,27 +111,6 @@ class ListSubmittedTaskCountMain:
             return pandas.DataFrame(data_list)
         else:
             return pandas.DataFrame(columns=["date", "account_id", "monitored_worktime_hour", "rejected_task_count"])
-
-    def create_labor_df(
-        self, project_id: str, start_date: Optional[str] = None, end_date: Optional[str] = None
-    ) -> pandas.DataFrame:
-        def to_new_labor(e: Dict[str, Any]) -> Dict[str, Any]:
-            return dict(
-                date=e["date"],
-                account_id=e["account_id"],
-                actual_worktime_hour=self._get_actual_worktime_hour(e),
-            )
-
-        labor_list: List[Dict[str, Any]] = self.service.api.get_labor_control(
-            {"project_id": project_id, "from": start_date, "to": end_date}
-        )[0]
-        new_labor_list = [
-            to_new_labor(e) for e in labor_list if e["account_id"] is not None and self._get_actual_worktime_hour(e) > 0
-        ]
-        if len(new_labor_list) > 0:
-            return pandas.DataFrame(new_labor_list)
-        else:
-            return pandas.DataFrame(columns=["date", "account_id", "actual_worktime_hour"])
 
     def create_submitted_task_count_df(
         self,
@@ -212,11 +176,10 @@ class ListSubmittedTaskCountMain:
         submitted_task_count_df = self.create_submitted_task_count_df(
             task_history_dict=task_history_dict, start_date=start_date, end_date=end_date
         )
-        labor_df = self.create_labor_df(project_id, start_date=start_date, end_date=end_date)
         account_statistics_df = self.create_account_statistics_df(project_id, start_date=start_date, end_date=end_date)
         user_df = self.create_user_df(project_id)
 
-        df2 = self.to_formatted_dataframe(submitted_task_count_df, account_statistics_df, labor_df, user_df)
+        df2 = self.to_formatted_dataframe(submitted_task_count_df, account_statistics_df, user_df)
         return df2
 
 

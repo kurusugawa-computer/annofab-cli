@@ -12,6 +12,7 @@ import annofabcli.common.cli
 from annofabcli import AnnofabApiFacade
 from annofabcli.common.cli import AbstractCommandLineInterface, ArgumentParser, build_annofabapi_resource_and_login
 from annofabcli.common.enums import FormatArgument
+from annofabcli.common.facade import convert_annotation_specs_labels_v2_to_v1
 
 logger = logging.getLogger(__name__)
 
@@ -26,15 +27,19 @@ class PrintAnnotationSpecsLabel(AbstractCommandLineInterface):
     def print_annotation_specs_label(
         self, project_id: str, arg_format: str, output: Optional[str] = None, history_id: Optional[str] = None
     ):
-        annotation_specs = self.service.api.get_annotation_specs(project_id, query_params={"history_id": history_id})[0]
-        labels = annotation_specs["labels"]
-
+        # [REMOVE_V2_PARAM]
+        annotation_specs, _ = self.service.api.get_annotation_specs(
+            project_id, query_params={"history_id": history_id, "v": "2"}
+        )
+        labels_v1 = convert_annotation_specs_labels_v2_to_v1(
+            labels_v2=annotation_specs["labels"], additionals_v2=annotation_specs["additionals"]
+        )
         if arg_format == "text":
-            self._print_text_format_labels(labels, output=output)
+            self._print_text_format_labels(labels_v1, output=output)
 
         elif arg_format in [FormatArgument.JSON.value, FormatArgument.PRETTY_JSON.value]:
             annofabcli.utils.print_according_to_format(
-                target=labels, arg_format=FormatArgument(arg_format), output=output
+                target=labels_v1, arg_format=FormatArgument(arg_format), output=output
             )
 
     @staticmethod

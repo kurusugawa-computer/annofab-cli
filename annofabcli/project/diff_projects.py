@@ -1,14 +1,13 @@
 """
 プロジェクト間の差分を表示する。
 """
-
 import argparse
 import copy
 import functools
 import logging
 import pprint
 from enum import Enum
-from typing import Any, Dict, List, Tuple
+from typing import Any, Dict, List, Set, Tuple
 
 import annofabapi
 import dictdiffer
@@ -19,6 +18,7 @@ import annofabcli
 import annofabcli.common.cli
 from annofabcli import AnnofabApiFacade
 from annofabcli.common.cli import AbstractCommandLineInterface, build_annofabapi_resource_and_login
+from annofabcli.common.facade import convert_annotation_specs_labels_v2_to_v1
 
 DiffResult = Tuple[bool, str]
 """差分があるかどうかと、差分メッセージ"""
@@ -63,7 +63,7 @@ def create_ignored_label(label: Dict[str, Any]):
     return copied_label
 
 
-class DiffProjecs(AbstractCommandLineInterface):
+class DiffProjects(AbstractCommandLineInterface):
     """
     プロジェクト間の差分を表示する
     """
@@ -266,7 +266,7 @@ class DiffProjecs(AbstractCommandLineInterface):
 
         return is_different, diff_message
 
-    def diff_annotation_specs(self, project_id1: str, project_id2: str, diff_targets: List[DiffTarget]) -> DiffResult:
+    def diff_annotation_specs(self, project_id1: str, project_id2: str, diff_targets: Set[DiffTarget]) -> DiffResult:
         """
         プロジェクト間のアノテーション仕様の差分を表示する。
         Args:
@@ -282,8 +282,9 @@ class DiffProjecs(AbstractCommandLineInterface):
         diff_message = ""
         is_different = False
 
-        annotation_specs1, _ = self.service.api.get_annotation_specs(project_id1)
-        annotation_specs2, _ = self.service.api.get_annotation_specs(project_id2)
+        # [REMOVE_V2_PARAM]
+        annotation_specs1, _ = self.service.api.get_annotation_specs(project_id1, query_params={"v": "2"})
+        annotation_specs2, _ = self.service.api.get_annotation_specs(project_id2, query_params={"v": "2"})
 
         if DiffTarget.INSPECTION_PHRASES in diff_targets:
             bool_result, message = self.diff_inspection_phrases(
@@ -293,15 +294,20 @@ class DiffProjecs(AbstractCommandLineInterface):
             diff_message += message
 
         if DiffTarget.ANNOTATION_LABELS in diff_targets:
-            bool_result, message = self.diff_labels_of_annotation_specs(
-                annotation_specs1["labels"], annotation_specs2["labels"]
+            labels1_v1 = convert_annotation_specs_labels_v2_to_v1(
+                labels_v2=annotation_specs1["labels"], additionals_v2=annotation_specs1["additionals"]
             )
+            labels2_v1 = convert_annotation_specs_labels_v2_to_v1(
+                labels_v2=annotation_specs2["labels"], additionals_v2=annotation_specs2["additionals"]
+            )
+
+            bool_result, message = self.diff_labels_of_annotation_specs(labels1_v1, labels2_v1)
             is_different = is_different or bool_result
             diff_message += message
 
         return is_different, diff_message
 
-    def diff_project_settingss(self, project_id1: str, project_id2: str) -> DiffResult:
+    def diff_project_settings(self, project_id1: str, project_id2: str) -> DiffResult:
         """
         プロジェクト間のプロジェクト設定の差分を表示する。
         Args:
@@ -346,7 +352,7 @@ class DiffProjecs(AbstractCommandLineInterface):
         super().validate_project(project_id1, roles)
         super().validate_project(project_id2, roles)
 
-    def diff(self, project_id1: str, project_id2: str, diff_targets: List[DiffTarget]) -> DiffResult:
+    def diff(self, project_id1: str, project_id2: str, diff_targets: Set[DiffTarget]) -> DiffResult:
         self.validate_projects(project_id1, project_id2)
 
         logger.info(f"=== {self.project_title1}({project_id1}) と {self.project_title2}({project_id2}) の差分を表示")
@@ -360,11 +366,11 @@ class DiffProjecs(AbstractCommandLineInterface):
             diff_message += message
 
         if DiffTarget.SETTINGS in diff_targets:
-            bool_result, message = self.diff_project_settingss(project_id1, project_id2)
+            bool_result, message = self.diff_project_settings(project_id1, project_id2)
             is_different = is_different or bool_result
             diff_message += message
 
-        if {DiffTarget.ANNOTATION_LABELS, DiffTarget.INSPECTION_PHRASES} <= set(diff_targets):
+        if DiffTarget.ANNOTATION_LABELS in diff_targets or DiffTarget.INSPECTION_PHRASES in diff_targets:
             bool_result, message = self.diff_annotation_specs(project_id1, project_id2, diff_targets)
             is_different = is_different or bool_result
             diff_message += message
@@ -381,7 +387,7 @@ class DiffProjecs(AbstractCommandLineInterface):
         project_id1 = args.project_id1
         project_id2 = args.project_id2
 
-        diff_targets = [DiffTarget(e) for e in args.target]
+        diff_targets = {DiffTarget(e) for e in args.target}
         _, diff_message = self.diff(project_id1, project_id2, diff_targets)
         print(diff_message)
 
@@ -412,7 +418,7 @@ def parse_args(parser: argparse.ArgumentParser):
 def main(args):
     service = build_annofabapi_resource_and_login(args)
     facade = AnnofabApiFacade(service)
-    DiffProjecs(service, facade, args).main()
+    DiffProjects(service, facade, args).main()
 
 
 def add_parser(subparsers: argparse._SubParsersAction):

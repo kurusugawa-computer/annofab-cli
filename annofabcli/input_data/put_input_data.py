@@ -13,7 +13,7 @@ from typing import Any, Dict, List, Optional
 import annofabapi
 import pandas
 import requests
-from annofabapi.models import JobType, ProjectMemberRole
+from annofabapi.models import ProjectJobType, ProjectMemberRole
 from dataclasses_json import DataClassJsonMixin
 
 import annofabcli
@@ -283,7 +283,7 @@ class PutInputData(AbstractCommandLineInterface):
 
             result = self.service.wrapper.wait_for_completion(
                 project_id,
-                job_type=JobType.GEN_INPUTS,
+                job_type=ProjectJobType.GEN_INPUTS,
                 job_access_interval=wait_options.interval,
                 max_job_access=wait_options.max_tries,
             )
