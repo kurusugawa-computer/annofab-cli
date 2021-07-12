@@ -192,8 +192,7 @@ def draw_annotation_all(
             continue
 
         json_file = Path(parser.json_file_path)
-        output_file = output_dir / f"{json_file.parent}/{json_file.stem}{image_file.suffix}"
-
+        output_file = output_dir / f"{json_file.parent.name}/{json_file.stem}{image_file.suffix}"
         try:
             drawing.main(parser, image_file=image_file, output_file=output_file)
             logger.debug(

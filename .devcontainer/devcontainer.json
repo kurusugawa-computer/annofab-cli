@@ -14,7 +14,8 @@
 	"overrideCommand": false,
 	"mounts": [
 		"source=/var/run/docker.sock,target=/var/run/docker.sock,type=bind",
-		"source=${localWorkspaceFolder}/.devcontainer/.extensions,target=/home/vscode/.vscode-server/extensions,type=bind"
+		"source=${localWorkspaceFolder}/.devcontainer/.extensions,target=/home/vscode/.vscode-server/extensions,type=bind",
+		"source=${localEnv:DATA_DIR},target=/data,type=bind"
 	],
 	"forwardPorts": [],
 	"runArgs": [
@@ -25,7 +26,7 @@
 	],
 	"containerEnv": {
 		"CONTAINER_WORKSPACE": "${containerWorkspaceFolder}",
-		"LOCAL_WORKSPACE": "${localWorkspaceFolder}"
+		"LOCAL_WORKSPACE": "${localWorkspaceFolder}",
 	},
 	"postStartCommand": "poetry install",
 	"extensions": [
