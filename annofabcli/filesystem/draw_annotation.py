@@ -1,11 +1,12 @@
 import argparse
+import json
 import logging
 from pathlib import Path
 from typing import Any, Dict, Iterator, Optional, Tuple, Union
 
 import pandas
-import PIL
 from annofabapi.parser import SimpleAnnotationParser, lazy_parse_simple_annotation_dir, lazy_parse_simple_annotation_zip
+from PIL import Image, ImageColor, ImageDraw
 
 import annofabcli
 from annofabcli.common.cli import (
@@ -67,17 +68,15 @@ class DrawingAnnotationForOneImage:
 
     def _draw_annotations(
         self,
-        draw: PIL.ImageDraw.Draw,
+        draw: ImageDraw.Draw,
         parser: SimpleAnnotationParser,
-    ) -> PIL.ImageDraw.Draw:
+    ) -> ImageDraw.Draw:
         """
-        1個の入力データに属するアノテーションlistを描画する
+        1個の入力データに属するアノテーションのみを描画する。
 
         Args:
             draw: draw: (IN/OUT) PillowのDrawing Object. 変更される。
             parser: Simple Annotationのparser
-            label_color_dict: label_nameとRGBを対応付けたdict
-            label_name_list: 画像化対象のlabel_name. Noneの場合は、すべてのlabel_nameが画像化対象です。
 
         Returns:
             アノテーションを描画した状態のDrawing Object
@@ -86,7 +85,7 @@ class DrawingAnnotationForOneImage:
         def draw_segmentation(data_uri: str, color: Color):
             # 外部ファイルを描画する
             with parser.open_outer_file(data_uri) as f:
-                with PIL.Image.open(f) as outer_image:
+                with Image.open(f) as outer_image:
                     draw.bitmap([0, 0], outer_image, fill=color)
 
         def draw_bounding_box(data: Dict[str, Any], color: Color):
@@ -96,12 +95,10 @@ class DrawingAnnotationForOneImage:
             ]
             draw.rectangle(xy, outline=color)
 
-        def draw_single_point(data: Dict[str, Any], color: Color, diameter: int = 5):
+        def draw_single_point(data: Dict[str, Any], color: Color, radius: int = 2):
             point_x = data["point"]["x"]
             point_y = data["point"]["y"]
-            draw.ellipse(
-                [(point_x - diameter, point_y - diameter), (point_x + diameter, point_y + diameter)], outline=color
-            )
+            draw.ellipse([(point_x - radius, point_y - radius), (point_x + radius, point_y + radius)], fill=color)
 
         def draw_polygon(data: Dict[str, Any], color: Color):
             xy = [(e["x"], e["y"]) for e in data["points"]]
@@ -112,14 +109,14 @@ class DrawingAnnotationForOneImage:
             draw.line(xy, fill=color)
 
         simple_annotation = parser.load_json()
-
         # 下層レイヤにあるアノテーションから順に画像化する
         # reversed関数を使う理由：`simple_annotation.details`は上層レイヤのアノテーションから順に格納されているため
         if self.target_label_names is not None:
-            annotation_list = [e for e in reversed(simple_annotation["details"]) if e.label in self.target_label_names]
+            annotation_list = [
+                e for e in reversed(simple_annotation["details"]) if e["label"] in self.target_label_names
+            ]
         else:
             annotation_list = list(reversed(simple_annotation["details"]))
-
         for annotation in annotation_list:
             data = annotation["data"]
             if data is None:
@@ -152,8 +149,15 @@ class DrawingAnnotationForOneImage:
         image_file: Path,
         output_file: Path,
     ):
-        with PIL.Image.open(image_file) as image:
-            draw = PIL.ImageDraw.Draw(image)
+        """画像にアノテーションを描画したファイルを出力する。
+
+        Args:
+            parser (SimpleAnnotationParser): [description]
+            image_file (Path): [description]
+            output_file (Path): [description]
+        """
+        with Image.open(image_file) as image:
+            draw = ImageDraw.Draw(image)
             self._draw_annotations(draw, parser)
             output_file.parent.mkdir(parents=True, exist_ok=True)
             image.save(output_file)
@@ -192,13 +196,19 @@ def draw_annotation_all(
         try:
             drawing.main(parser, image_file=image_file, output_file=output_file)
             logger.debug(
-                f"{success_count+1}件目: {str(output_file)} を出力しました。image_file={image_file}, アノテーションJSON={parser.json_file_path}"
+                f"{success_count+1}件目: {str(output_file)} を出力しました。image_file={image_file}, "
+                f"アノテーションJSON={parser.json_file_path}"
             )
             success_count += 1
         except Exception as e:
             logger.warning(f"{parser.json_file_path} のアノテーションの描画に失敗しました。", e)
 
-    return logger.info(f"{success_count} / {total_count} 件、アノテーションを描画しました。")
+    logger.info(f"{success_count} / {total_count} 件、アノテーションを描画しました。")
+
+    new_label_color_dict = {
+        label_name: ImageColor.getrgb(color) for label_name, color in drawing.label_color_dict.items()
+    }
+    logger.info(f"label_color=\n" + json.dumps(new_label_color_dict, indent=2, ensure_ascii=False))
 
 
 class DrawAnnotation(AbstractCommandLineWithoutWebapiInterface):
@@ -227,13 +237,13 @@ class DrawAnnotation(AbstractCommandLineWithoutWebapiInterface):
             image_dir=args.image_dir,
             input_data_id_relation_dict=input_data_id_relation_dict,
             output_dir=args.output_dir,
-            label_color_dict=get_json_from_args(args.label_color),
-            target_label_names=get_list_from_args(args.label_name),
+            label_color_dict=get_json_from_args(args.label_color) if args.label_color is not None else None,
+            target_label_names=get_list_from_args(args.label_name) if args.label_name is not None else None,
         )
 
 
 def main(args):
-    DrawAnnotation().main(args)
+    DrawAnnotation(args).main()
 
 
 def parse_args(parser: argparse.ArgumentParser):
@@ -262,7 +272,7 @@ def parse_args(parser: argparse.ArgumentParser):
     )
 
     parser.add_argument(
-        "-o", "--output_dir", type=str, required=True, help="出力先ディレクトリのパスを指定してください。ディレクトリの構造はアノテーションzipと同じです。"
+        "-o", "--output_dir", type=Path, required=True, help="出力先ディレクトリのパスを指定してください。ディレクトリの構造はアノテーションzipと同じです。"
     )
 
     parser.add_argument(

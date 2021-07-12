@@ -16,6 +16,7 @@
         "astimezone",
         "asyncio",
         "dateutil",
+        "getrgb",
         "itertools",
         "nargs",
         "pylint",
