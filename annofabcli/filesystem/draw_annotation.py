@@ -191,7 +191,8 @@ def draw_annotation_all(
             logger.warning(f"input_data_id='{input_data_id}'に対応する画像ファイル'{image_file}'が見つかりませんでした。")
             continue
 
-        output_file = output_dir / f"{Path(parser.json_file_path).stem}.{image_file.suffix}"
+        json_file = Path(parser.json_file_path)
+        output_file = output_dir / f"{json_file.parent}/{json_file.stem}{image_file.suffix}"
 
         try:
             drawing.main(parser, image_file=image_file, output_file=output_file)
