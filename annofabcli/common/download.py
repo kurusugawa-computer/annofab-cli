@@ -92,7 +92,7 @@ class DownloadingFile:
     def wait_until_updated_annotation_zip(self, project_id: str, wait_options: Optional[WaitOptions] = None):
         job_id = None
         try:
-            job = self.service.api.post_annotation_archive_update(project_id, query_params={"v": "2"})[0]["job"]
+            job = self.service.api.post_annotation_archive_update(project_id)[0]["job"]
             job_id = job["job_id"]
         except requests.HTTPError as e:
             # すでにジョブが進行中の場合は、無視する
@@ -180,7 +180,7 @@ class DownloadingFile:
     def wait_until_updated_task_json(self, project_id: str, wait_options: Optional[WaitOptions] = None):
         job_id = None
         try:
-            job = self.service.api.post_project_tasks_update(project_id, query_params={"v": "2"})[0]["job"]
+            job = self.service.api.post_project_tasks_update(project_id)[0]["job"]
             job_id = job["job_id"]
         except requests.HTTPError as e:
             # すでにジョブが進行中の場合は、無視する
