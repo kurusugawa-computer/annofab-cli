@@ -257,12 +257,21 @@ def draw_annotation_all(
     logger.info(f"{success_count} / {total_count} 件、アノテーションを描画しました。")
 
     new_label_color_dict = {
-        label_name: ImageColor.getrgb(color) for label_name, color in drawing.label_color_dict.items()
+        label_name: ImageColor.getrgb(color) if isinstance(color, str) else color
+        for label_name, color in drawing.label_color_dict.items()
     }
     logger.info(f"label_color=\n" + json.dumps(new_label_color_dict, indent=2, ensure_ascii=False))
 
 
 class DrawAnnotation(AbstractCommandLineWithoutWebapiInterface):
+    @staticmethod
+    def _create_label_color(args_label_color: str) -> Dict[str, Color]:
+        label_color_dict = get_json_from_args(args_label_color)
+        for label_name, color in label_color_dict.items():
+            if isinstance(color, list):
+                label_color_dict[label_name] = tuple(color)
+        return label_color_dict
+
     def main(self):
         args = self.args
 
@@ -294,7 +303,7 @@ class DrawAnnotation(AbstractCommandLineWithoutWebapiInterface):
             output_dir=args.output_dir,
             target_task_ids=get_list_from_args(args.task_id) if args.task_id is not None else None,
             task_query=task_query,
-            label_color_dict=get_json_from_args(args.label_color) if args.label_color is not None else None,
+            label_color_dict=self._create_label_color(args.label_color) if args.label_color is not None else None,
             target_label_names=get_list_from_args(args.label_name) if args.label_name is not None else None,
             polyline_labels=get_list_from_args(args.polyline_label) if args.polyline_label is not None else None,
             drawing_options=DrawingOptions.from_dict(get_json_from_args(args.drawing_options))
@@ -352,7 +361,8 @@ def parse_args(parser: argparse.ArgumentParser):
         required=False,
         help="ポリラインのlabel_nameを指定してください。"
         "2021/07時点ではアノテーションzipからポリラインかポリゴンか判断できないため、コマンドライン引数からポリラインのlabel_nameを指定する必要があります。"
-        "`file://`を先頭に付けると、label_name の一覧が記載されたファイルを指定できます。",
+        "`file://`を先頭に付けると、label_name の一覧が記載されたファイルを指定できます。"
+        "【注意】アノテーションzipでポリラインかポリゴンかを判断できるようになれば、このオプションは削除する予定です。",
     )
 
     parser.add_argument(
