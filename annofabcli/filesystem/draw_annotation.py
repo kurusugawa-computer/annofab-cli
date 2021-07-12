@@ -200,7 +200,7 @@ def draw_annotation_all(
                 f"アノテーションJSON={parser.json_file_path}"
             )
             success_count += 1
-        except Exception as e:
+        except Exception as e:  # pylint: disable=broad-except
             logger.warning(f"{parser.json_file_path} のアノテーションの描画に失敗しました。", e)
 
     logger.info(f"{success_count} / {total_count} 件、アノテーションを描画しました。")
@@ -228,9 +228,7 @@ class DrawAnnotation(AbstractCommandLineWithoutWebapiInterface):
             header=None,
             names=("input_data_id", "image_path"),
         )
-        input_data_id_relation_dict = {
-            input_data_id: image_path for input_data_id, image_path in zip(df["input_data_id"], df["image_path"])
-        }
+        input_data_id_relation_dict = dict(zip(df["input_data_id"], df["image_path"]))
 
         draw_annotation_all(
             iter_parser=iter_parser,
