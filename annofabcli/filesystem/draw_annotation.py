@@ -3,7 +3,7 @@ import json
 import logging
 from dataclasses import dataclass
 from pathlib import Path
-from typing import Any, Dict, Iterator, Optional, Tuple, Union
+from typing import Any, Callable, Dict, Iterator, Optional, Tuple, Union
 
 import pandas
 from annofabapi.parser import SimpleAnnotationParser, lazy_parse_simple_annotation_dir, lazy_parse_simple_annotation_zip
@@ -17,11 +17,13 @@ from annofabcli.common.cli import (
     get_json_from_args,
     get_list_from_args,
 )
+from annofabcli.common.facade import TaskQuery, match_annotation_with_task_query
 
 logger = logging.getLogger(__name__)
 
 
 Color = Union[str, Tuple[int, int, int]]
+IsParserFunc = Callable[[SimpleAnnotationParser], bool]
 
 
 @dataclass(frozen=True)
@@ -174,12 +176,38 @@ class DrawingAnnotationForOneImage:
             image.save(output_file)
 
 
+def create_is_target_parser_func(
+    task_ids: Optional[Iterator[str]] = None,
+    task_query: Optional[TaskQuery] = None,
+) -> Optional[IsParserFunc]:
+    if task_ids is None and task_query is None:
+        return None
+
+    task_id_set = set(task_ids) if task_ids is not None else None
+
+    def is_target_parser(parser: SimpleAnnotationParser) -> bool:
+        if task_id_set is not None and len(task_id_set) > 0:
+            if parser.task_id not in task_id_set:
+                return False
+
+        if task_query is not None:
+            dict_simple_annotation = parser.load_json()
+            if not match_annotation_with_task_query(dict_simple_annotation, task_query):
+                return False
+
+        return True
+
+    return is_target_parser
+
+
 def draw_annotation_all(
     iter_parser: Iterator[SimpleAnnotationParser],
     image_dir: Path,
     input_data_id_relation_dict: Dict[str, str],
     output_dir: Path,
     *,
+    target_task_ids: Optional[Iterator[str]] = None,
+    task_query: Optional[TaskQuery] = None,
     label_color_dict: Optional[Dict[str, Color]] = None,
     target_label_names: Optional[Iterator[str]] = None,
     polyline_labels: Optional[Iterator[str]] = None,
@@ -191,13 +219,18 @@ def draw_annotation_all(
         polyline_labels=polyline_labels,
         drawing_options=drawing_options,
     )
+
+    is_target_parser_func = create_is_target_parser_func(target_task_ids, task_query)
+
     total_count = 0
     success_count = 0
+
     for parser in iter_parser:
         logger.debug(f"{parser.json_file_path} を読み込みます。")
-        # if is_target_parser_func is not None and not is_target_parser_func(parser):
-        #     logger.debug(f"{parser.json_file_path} の画像化をスキップします。")
-        #     continue
+        if is_target_parser_func is not None and not is_target_parser_func(parser):
+            logger.debug(f"{parser.json_file_path} の画像化をスキップします。")
+            continue
+
         total_count += 1
         input_data_id = parser.input_data_id
         if input_data_id not in input_data_id_relation_dict:
@@ -248,11 +281,19 @@ class DrawAnnotation(AbstractCommandLineWithoutWebapiInterface):
         )
         input_data_id_relation_dict = dict(zip(df["input_data_id"], df["image_path"]))
 
+        task_query = (
+            TaskQuery.from_dict(annofabcli.common.cli.get_json_from_args(args.task_query))
+            if args.task_query is not None
+            else None
+        )
+
         draw_annotation_all(
             iter_parser=iter_parser,
             image_dir=args.image_dir,
             input_data_id_relation_dict=input_data_id_relation_dict,
             output_dir=args.output_dir,
+            target_task_ids=get_list_from_args(args.task_id) if args.task_id is not None else None,
+            task_query=task_query,
             label_color_dict=get_json_from_args(args.label_color) if args.label_color is not None else None,
             target_label_names=get_list_from_args(args.label_name) if args.label_name is not None else None,
             polyline_labels=get_list_from_args(args.polyline_label) if args.polyline_label is not None else None,
