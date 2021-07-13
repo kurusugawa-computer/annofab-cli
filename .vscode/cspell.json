@@ -19,7 +19,9 @@
         "getrgb",
         "itertools",
         "nargs",
+        "noqa",
         "pylint",
-        "tzlocal"
+        "tzlocal",
+        "worrd"
     ]
 }
