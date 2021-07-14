@@ -3,13 +3,16 @@ language: python
 python:
   - "3.7"
   - "3.8"
+  - "3.9"
 install:
   - pip install poetry && poetry install
 script:
-   - poetry run flake8 annofabcli
-   - poetry run mypy annofabcli
-   - poetry run pylint annofabcli
+   - make lint
    - poetry run pytest tests/test_local*.py
 branches:
   only:
   - master
+env:
+  # `poetry install`時に`Max retries exceeded with`が発生しないようにするため、タイムアウト時間を指定する
+  - PIP_DEFAULT_TIMEOUT=300
+

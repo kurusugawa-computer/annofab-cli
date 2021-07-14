@@ -11,6 +11,7 @@ from annofabapi.parser import SimpleAnnotationParser
 import annofabcli
 import annofabcli.common.cli
 from annofabcli.common.cli import ArgumentParser
+from annofabcli.common.facade import TaskQuery, match_annotation_with_task_query
 from annofabcli.common.image import IsParserFunc, write_annotation_images_from_path
 from annofabcli.common.typing import InputDataSize
 
@@ -20,7 +21,9 @@ logger = logging.getLogger(__name__)
 class WriteAnnotationImage:
     @staticmethod
     def create_is_target_parser_func(
-        task_status_complete: bool = False, task_id_list: Optional[List[str]] = None
+        task_status_complete: bool = False,
+        task_id_list: Optional[List[str]] = None,
+        task_query: Optional[TaskQuery] = None,
     ) -> IsParserFunc:
         task_id_set = set(task_id_list) if task_id_list is not None else None
 
@@ -38,6 +41,9 @@ class WriteAnnotationImage:
                 if dict_simple_annotation["task_id"] not in task_id_set:
                     logger.debug(f"画像化対象外のタスクであるため、 {parser.json_file_path} をスキップします。")
                     return False
+
+            if task_query is not None and not match_annotation_with_task_query(dict_simple_annotation, task_query):
+                return False
 
             return True
 
@@ -67,15 +73,6 @@ class WriteAnnotationImage:
                 )
                 return
 
-        if args.metadata_key_of_image_size is not None:
-            if args.input_data_json is None:
-                print(
-                    f"{self.COMMON_MESSAGE} argument --metadata_key_of_image_size: "
-                    f"`--metadata_key_of_image_size`を指定した場合、`--input_data_json`は必須です。",
-                    file=sys.stderr,
-                )
-                return
-
         # label_color_dict を取得する
         label_color_dict = annofabcli.common.cli.get_json_from_args(args.label_color)
         label_color_dict = {k: tuple(v) for k, v in label_color_dict.items()}
@@ -84,7 +81,18 @@ class WriteAnnotationImage:
         )
         annotation_path: Path = args.annotation
         task_id_list = annofabcli.common.cli.get_list_from_args(args.task_id)
-        is_target_parser_func = self.create_is_target_parser_func(args.task_status_complete, task_id_list)
+        task_query = (
+            TaskQuery.from_dict(annofabcli.common.cli.get_json_from_args(args.task_query))
+            if args.task_query is not None
+            else None
+        )
+
+        if args.task_status_complete:
+            logger.warning(f"'--task_status_complete' は非推奨です。わりに'--task_query` を使ってください。")
+
+        is_target_parser_func = self.create_is_target_parser_func(
+            args.task_status_complete, task_id_list=task_id_list, task_query=task_query
+        )
 
         input_data_dict = self.get_input_data_dict(args.input_data_json) if args.input_data_json is not None else None
 
@@ -95,12 +103,6 @@ class WriteAnnotationImage:
             output_dir_path=Path(args.output_dir),
             image_size=image_size,
             input_data_dict=input_data_dict,
-            metadata_key_of_image_width=args.metadata_key_of_image_size[0]
-            if args.metadata_key_of_image_size is not None
-            else None,
-            metadata_key_of_image_height=args.metadata_key_of_image_size[1]
-            if args.metadata_key_of_image_size is not None
-            else None,
             output_image_extension=args.image_extension,
             background_color=args.background_color,
             label_name_list=label_name_list,
@@ -129,13 +131,6 @@ def parse_args(parser: argparse.ArgumentParser):
         help="入力データ情報が記載されたJSONファイルのパスを指定してください。"
         "入力データのプロパティ`system_metadata.original_resolution`を参照して画像サイズを決めます。"
         "JSONファイルは`$ annofabcli project download input_data`コマンドで取得できます。",
-    )
-
-    parser.add_argument(
-        "--metadata_key_of_image_size",
-        type=str,
-        nargs=2,
-        help="画像サイズが設定された、入力データのメタデータのキー。" "`--image_size_key_of_metadata {width_key} {height_key}`",
     )
 
     parser.add_argument(
@@ -176,13 +171,25 @@ def parse_args(parser: argparse.ArgumentParser):
         ),
     )
 
-    parser.add_argument("--task_status_complete", action="store_true", help="taskのstatusがcompleteの場合のみ画像を生成します。")
+    parser.add_argument(
+        "--task_status_complete",
+        action="store_true",
+        help="taskのstatusがcompleteの場合のみ画像を生成します。ただし非推奨です。替わりに'--task_query` を使ってください。",
+    )
 
     argument_parser.add_task_id(
         required=False,
         help_message=(
             "画像化するタスクのtask_idを指定します。" "指定しない場合、すべてのタスクが画像化されます。" "`file://`を先頭に付けると、task_idの一覧が記載されたファイルを指定できます。"
         ),
+    )
+
+    parser.add_argument(
+        "-tq",
+        "--task_query",
+        type=str,
+        help="タスクを絞り込むためのクエリ条件をJSON形式で指定します。使用できるキーは task_id, status, phase, phase_stage です。"
+        "`file://`を先頭に付けると、JSON形式のファイルを指定できます。",
     )
 
     parser.set_defaults(subcommand_func=main)

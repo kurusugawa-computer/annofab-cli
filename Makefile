@@ -20,10 +20,11 @@ format:
 lint:
 	poetry run mypy ${LINT_FILES}
 	poetry run flake8 ${LINT_FILES}
-	poetry run pylint ${LINT_FILES}
+	poetry run pylint --jobs=0 ${LINT_FILES}
 
 test:
-	poetry run pytest -n auto  --cov=annofabcli --cov-report=html tests
+    # 更新の競合が発生する可能性があるので、並列実行しない
+	poetry run pytest --cov=annofabcli --cov-report=html tests
 
 publish:
 	poetry publish --build

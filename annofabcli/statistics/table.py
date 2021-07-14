@@ -113,7 +113,7 @@ class Table:
         self.ignored_task_id_list = ignored_task_id_list
 
         self.project_id = self.database.project_id
-        self._update_annotaion_specs()
+        self._update_annotation_specs()
         self.project_title = self.annofab_service.api.get_project(self.project_id)[0]["title"]
 
     def _get_worktime_statistics(self) -> List[WorktimeStatistics]:
@@ -282,10 +282,11 @@ class Table:
         else:
             return None
 
-    def _update_annotaion_specs(self):
-        annotaion_specs = self.annofab_service.api.get_annotation_specs(self.project_id)[0]
-        self.inspection_phrases_dict = self.get_inspection_phrases_dict(annotaion_specs["inspection_phrases"])
-        self.label_dict = self.get_labels_dict(annotaion_specs["labels"])
+    def _update_annotation_specs(self):
+        # [REMOVE_V2_PARAM]
+        annotation_specs, _ = self.annofab_service.api.get_annotation_specs(self.project_id, query_params={"v": "2"})
+        self.inspection_phrases_dict = self.get_inspection_phrases_dict(annotation_specs["inspection_phrases"])
+        self.label_dict = self.get_labels_dict(annotation_specs["labels"])
         self.project_members_dict = self._get_project_members_dict()
 
     def _get_project_members_dict(self) -> Dict[str, Any]:
@@ -490,19 +491,6 @@ class Table:
             else:
                 return None
 
-        # タスク更新日維持と
-        # if len(task_histories) > 0:
-        #     # タスク情報とタスク履歴情報の整合性がとれているかを確認する
-        #     delta = dateutil.parser.parse(task["updated_datetime"]) - dateutil.parser.parse(
-        #         task_histories[-1]["ended_datetime"]
-        #     )
-        #     if abs(delta.total_seconds()) > 1:
-        #         logger.warning(
-        #             f"task_id={task['task_id']}のタスク情報とタスク履歴情報の整合性が取れていない可能性があります。"
-        #             f"task.updated_datetime={task['updated_datetime']},"
-        #             f"task_histories[-1].ended_datetime={task_histories[-1]['ended_datetime']}"
-        #         )
-        #
         annotation_histories = [
             e for e in task_histories if e["phase"] == TaskPhase.ANNOTATION.value and e["account_id"] is not None
         ]
@@ -580,10 +568,7 @@ class Table:
 
         # 受入完了日時を設定
         if task["phase"] == TaskPhase.ACCEPTANCE.value and task["status"] == TaskStatus.COMPLETE.value:
-            if len(acceptance_histories) > 0:
-                task["task_completed_datetime"] = acceptance_histories[-1]["ended_datetime"]
-            else:
-                task["task_completed_datetime"] = None
+            task["task_completed_datetime"] = task["updated_datetime"]
         else:
             task["task_completed_datetime"] = None
 

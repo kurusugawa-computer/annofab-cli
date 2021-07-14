@@ -13,6 +13,7 @@ from annofabapi.models import (
     AdditionalDataDefinitionType,
     AdditionalDataDefinitionV1,
     AnnotationDataHoldingType,
+    AnnotationType,
     LabelV1,
     ProjectMemberRole,
     TaskStatus,
@@ -23,7 +24,7 @@ from annofabapi.parser import (
     lazy_parse_simple_annotation_dir_by_task,
     lazy_parse_simple_annotation_zip_by_task,
 )
-from annofabapi.utils import can_put_annotation
+from annofabapi.utils import can_put_annotation, str_now
 from dataclasses_json import DataClassJsonMixin
 from more_itertools import first_true
 
@@ -108,13 +109,6 @@ class ImportAnnotation(AbstractCommandLineInterface):
         else:
             return AnnotationDataHoldingType.INNER
 
-    @staticmethod
-    def _create_annotation_id(data: FullAnnotationData, label_id: str) -> str:
-        if data["_type"] == "Classification":
-            return label_id
-        else:
-            return str(uuid.uuid4())
-
     def _to_additional_data_list(self, attributes: Dict[str, Any], label_info: LabelV1) -> List[AdditionalData]:
         additional_data_list: List[AdditionalData] = []
         for key, value in attributes.items():
@@ -153,7 +147,7 @@ class ImportAnnotation(AbstractCommandLineInterface):
         return additional_data_list
 
     def _to_annotation_detail_for_request(
-        self, project_id: str, parser: SimpleAnnotationParser, detail: ImportedSimpleAnnotationDetail
+        self, project_id: str, parser: SimpleAnnotationParser, detail: ImportedSimpleAnnotationDetail, now_datetime: str
     ) -> Optional[AnnotationDetail]:
         """
         Request Bodyに渡すDataClassに変換する。塗りつぶし画像があれば、それをS3にアップロードする。
@@ -164,18 +158,29 @@ class ImportAnnotation(AbstractCommandLineInterface):
             detail:
 
         Returns:
+            変換できない場合はNoneを返す
 
         """
         label_info = self.get_label_info_from_label_name(detail.label)
         if label_info is None:
             return None
 
+        def _get_annotation_id(arg_label_info: LabelV1) -> str:
+            if detail.annotation_id is not None:
+                return detail.annotation_id
+            else:
+                if arg_label_info["annotation_type"] == AnnotationType.CLASSIFICATION.value:
+                    # 全体アノテーションの場合、annotation_idはlabel_idである必要がある
+                    return arg_label_info["label_id"]
+                else:
+                    return str(uuid.uuid4())
+
         additional_data_list: List[AdditionalData] = self._to_additional_data_list(detail.attributes, label_info)
         data_holding_type = self._get_data_holding_type_from_data(detail.data)
 
         dest_obj = AnnotationDetail(
             label_id=label_info["label_id"],
-            annotation_id=detail.annotation_id if detail.annotation_id is not None else str(uuid.uuid4()),
+            annotation_id=_get_annotation_id(label_info),
             account_id=self.service.api.account_id,
             data_holding_type=data_holding_type,
             data=detail.data,
@@ -184,8 +189,8 @@ class ImportAnnotation(AbstractCommandLineInterface):
             etag=None,
             url=None,
             path=None,
-            created_datetime=None,
-            updated_datetime=None,
+            created_datetime=now_datetime,
+            updated_datetime=now_datetime,
         )
 
         if data_holding_type == AnnotationDataHoldingType.OUTER:
@@ -205,8 +210,11 @@ class ImportAnnotation(AbstractCommandLineInterface):
         old_annotation: Optional[Dict[str, Any]] = None,
     ) -> Dict[str, Any]:
         request_details: List[Dict[str, Any]] = []
+        now_datetime = str_now()
         for detail in details:
-            request_detail = self._to_annotation_detail_for_request(project_id, parser, detail)
+            request_detail = self._to_annotation_detail_for_request(
+                project_id, parser, detail, now_datetime=now_datetime
+            )
 
             if request_detail is not None:
                 request_details.append(request_detail.to_dict(encode_json=True))

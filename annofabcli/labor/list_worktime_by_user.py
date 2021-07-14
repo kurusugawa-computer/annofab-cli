@@ -5,7 +5,7 @@ import datetime
 import logging
 from dataclasses import dataclass
 from pathlib import Path
-from typing import Any, Callable, Dict, List, Optional, Tuple
+from typing import Any, Dict, List, Optional, Tuple
 
 import annofabapi
 import more_itertools
@@ -19,7 +19,7 @@ from more_itertools import first_true
 import annofabcli
 from annofabcli import AnnofabApiFacade
 from annofabcli.common.cli import AbstractCommandLineInterface, build_annofabapi_resource_and_login, get_list_from_args
-from annofabcli.common.utils import isoduration_to_hour
+from annofabcli.common.utils import _catch_exception, isoduration_to_hour
 
 logger = logging.getLogger(__name__)
 
@@ -28,21 +28,6 @@ def _create_required_columns(df: pandas.DataFrame, prior_columns: List[Any]) -> 
     remained_columns = list(df.columns.difference(prior_columns))
     all_columns = prior_columns + remained_columns
     return all_columns
-
-
-def catch_exception(function: Callable[..., Any]) -> Callable[..., Any]:
-    """
-    Exceptionをキャッチしてログにstacktraceを出力する。
-    """
-
-    def wrapped(*args, **kwargs):
-        try:
-            return function(*args, **kwargs)
-        except Exception as e:  # pylint: disable=broad-except
-            logger.warning(e)
-            logger.exception(e)
-
-    return wrapped
 
 
 @dataclass(frozen=True)
@@ -406,12 +391,12 @@ class ListWorktimeByUserMain:
         return sum_labor_list
 
     @staticmethod
-    @catch_exception
+    @_catch_exception
     def write_sum_worktime_list(sum_worktime_df: pandas.DataFrame, output_dir: Path):
         sum_worktime_df.round(3).to_csv(str(output_dir / "ユーザごとの作業時間.csv"), encoding="utf_8_sig", index=False)
 
     @staticmethod
-    @catch_exception
+    @_catch_exception
     def write_sum_plan_worktime_list(sum_worktime_df: pandas.DataFrame, output_dir: Path) -> None:
         """
         出勤予定かどうかを判断するため、作業予定時間が"0"のときは"☓",　そうでないときは"○"で出力する
@@ -443,7 +428,7 @@ class ListWorktimeByUserMain:
         sum_worktime_df[output_columns].to_csv(str(output_dir / "ユーザごとの作業予定_記号.csv"), encoding="utf_8_sig", index=False)
 
     @staticmethod
-    @catch_exception
+    @_catch_exception
     def write_worktime_list(worktime_df: pandas.DataFrame, output_dir: Path, add_monitored_worktime: bool = False):
         worktime_df = worktime_df.rename(
             columns={
@@ -472,7 +457,7 @@ class ListWorktimeByUserMain:
         worktime_df[columns].round(3).to_csv(str(output_dir / "作業時間の詳細一覧.csv"), encoding="utf_8_sig", index=False)
 
     @staticmethod
-    @catch_exception
+    @_catch_exception
     def write_worktime_per_user_date(worktime_df_per_date_user: pandas.DataFrame, output_dir: Path):
         add_availabaility = "availability_hour" in worktime_df_per_date_user.columns
         target_renamed_columns = {"worktime_plan_hour": "作業予定時間", "worktime_result_hour": "作業実績時間"}
@@ -495,7 +480,7 @@ class ListWorktimeByUserMain:
         df[columns].round(3).to_csv(str(output_dir / "日ごとの作業時間の一覧.csv"), encoding="utf_8_sig", index=False)
 
     @staticmethod
-    @catch_exception
+    @_catch_exception
     def write_worktime_per_user(worktime_df_per_user: pandas.DataFrame, output_dir: Path, add_availability: bool):
         target_renamed_columns = {
             "worktime_plan_hour": "作業予定時間",
@@ -842,7 +827,7 @@ class ListWorktimeByUserMain:
         for key in key_list:
             data = numpy.array([reform_dict[(username, key)] for username in username_list], dtype=float)
             data = numpy.nan_to_num(data)
-            reform_dict[("合計", key)] = list(numpy.sum(data, axis=0))
+            reform_dict[("合計", key)] = list(numpy.sum(data, axis=0))  # type: ignore
 
         columns = (
             [("date", ""), ("dayofweek", "")]

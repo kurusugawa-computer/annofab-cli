@@ -436,7 +436,6 @@ class PrintDashBoardMain:
             key:date, value:実績作業時間のdict
 
         """
-        # 予定稼働時間を取得するには、特殊な組織IDを渡す
         labor_list, _ = self.service.api.get_labor_control({"project_id": project_id, "to": date})
         actual_worktime_dict: Dict[str, float] = defaultdict(float)
         for labor in labor_list:
@@ -462,7 +461,6 @@ class PrintDashBoardMain:
         dt_from_date = dt_today + datetime.timedelta(days=1)
         end_date = str(dt_today + datetime.timedelta(days=days)) if days is not None else None
 
-        # 予定稼働時間を取得するには、特殊な組織IDを渡す
         labor_list, _ = self.service.api.get_labor_control(
             {"project_id": project_id, "from": str(dt_from_date), "to": end_date}
         )

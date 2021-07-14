@@ -39,7 +39,9 @@ img要素のsrc属性がローカルの画像を参照している場合（http,
 以下の手順に従って、HTMLファイルを作成してください。
 
 1. Confluenceのエクスポート機能で、作業ガイドに登録したいページをエクスポートする。
-2. エクスポートしたHTMLのスタイルを、style属性に反映する。AnnoFabの作業ガイドには、スタイルシートを登録できないため。
+2. エクスポートしたzipに格納されている ``site.css`` を https://raw.githubusercontent.com/kurusugawa-computer/annofab-cli/master/docs/command_reference/instruction/upload/site.css に置き換える。
+   デフォルトの状態では、表の罫線や背景色が表示されていないため。
+3. エクスポートしたHTMLのスタイルを、style属性に反映する。AnnoFabの作業ガイドには、スタイルシートを登録できないため。
 
    1. エクスポートしたファイルをChromeで開く。
    2. Chrome開発ツールのConfoleタブで以下のJavaScriptを実行して、全要素のborder, color, backgroundスタイルを、style属性に反映させる。
@@ -54,7 +56,7 @@ img要素のsrc属性がローカルの画像を参照している場合（http,
            e.style.border = s.border;
        }
    
-   3. Chrome開発ツールのElementタブで、html要素をコピー(Copy outerHTML)して、HTMLファイルを上書きする。
+   1. Chrome開発ツールのElementタブで、html要素をコピー(Copy outerHTML)して、HTMLファイルを上書きする。
 
 
 

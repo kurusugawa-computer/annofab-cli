@@ -30,7 +30,7 @@ inifile.read("./pytest.ini", "UTF-8")
 annofab_config = dict(inifile.items("annofab"))
 
 project_id = annofab_config["project_id"]
-service = annofabapi.build_from_netrc()
+service = annofabapi.build()
 
 
 class TestCommandLine:

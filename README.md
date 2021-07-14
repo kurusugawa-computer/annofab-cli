@@ -15,9 +15,7 @@ AnnoFabのCLI(Command Line Interface)ツールです。
 
 
 ## 廃止予定
-* 2020-04-01以降：`annofabcli filesystem write_annotation_image`コマンドの`--metadata_key_of_image_size`を廃止します。入力データから画像サイズを取得できるようになったためです。
-* 2020-04-01以降：`annofabcli inspection_comment list_unprocessed`コマンドを廃止します。`inspection_comment list`コマンドを組み合わせて同様のことが実現できるからです。
-
+なし
 
 
 # Requirements

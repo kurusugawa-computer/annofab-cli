@@ -9,12 +9,14 @@ from annofabapi.models import (
     Inspection,
     OrganizationMember,
     ProjectMember,
+    SingleAnnotation,
     Task,
     TaskHistory,
     TaskPhase,
 )
 from annofabapi.utils import get_number_of_rejections
 
+from annofabcli.common.facade import convert_annotation_specs_labels_v2_to_v1
 from annofabcli.common.utils import isoduration_to_hour
 
 
@@ -37,8 +39,11 @@ class AddProps:
         self.project_id = project_id
         self.organization_name = self._get_organization_name_from_project_id(project_id)
 
-        annotation_specs, _ = self.service.api.get_annotation_specs(project_id)
-        self.specs_labels: List[Dict[str, Any]] = annotation_specs["labels"]
+        # [REMOVE_V2_PARAM]
+        annotation_specs, _ = self.service.api.get_annotation_specs(project_id, query_params={"v": "2"})
+        self.specs_labels: List[Dict[str, Any]] = convert_annotation_specs_labels_v2_to_v1(
+            labels_v2=annotation_specs["labels"], additionals_v2=annotation_specs["additionals"]
+        )
         self.specs_inspection_phrases: List[Dict[str, Any]] = annotation_specs["inspection_phrases"]
 
     @staticmethod
@@ -242,6 +247,36 @@ class AddProps:
             inspection.update(detail)
 
         return inspection
+
+    def add_properties_to_single_annotation(self, annotation: SingleAnnotation) -> SingleAnnotation:
+        """
+        アノテーション情報（details）検査コメントに、以下のキーを追加する.
+        detail.label_name_en
+        detail.user_id
+        detail.username
+
+        Args:
+            annotation: アノテーション
+
+        Returns:
+            情報が追加されたアノテーション
+        """
+        detail = annotation["detail"]
+        detail["label_name_en"] = self.get_label_name(detail["label_id"], MessageLocale.EN)
+
+        account_id = detail["account_id"]
+        user_id = None
+        username = None
+        if account_id is not None:
+            member = self.get_project_member_from_account_id(account_id)
+            if member is not None:
+                user_id = member["user_id"]
+                username = member["username"]
+
+        detail["user_id"] = user_id
+        detail["username"] = username
+
+        return annotation
 
     def add_properties_to_task(self, task: Task) -> Task:
         """

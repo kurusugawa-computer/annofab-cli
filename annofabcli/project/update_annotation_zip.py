@@ -6,7 +6,7 @@ from typing import List, Optional
 
 import annofabapi
 import dateutil
-from annofabapi.models import JobStatus, JobType, ProjectMemberRole
+from annofabapi.models import JobStatus, ProjectJobType, ProjectMemberRole
 
 import annofabcli
 import annofabcli.common.cli
@@ -58,7 +58,7 @@ class SubUpdateAnnotationZip:
         logger.debug(f"project_id={project_id}: アノテーション仕様の最終更新日時={annotation_specs_updated_datetime}")
 
         job_list = self.service.api.get_project_job(
-            project_id, query_params={"type": JobType.GEN_ANNOTATION.value, "limit": 1}
+            project_id, query_params={"type": ProjectJobType.GEN_ANNOTATION.value, "limit": 1}
         )[0]["list"]
 
         if len(job_list) == 0:
@@ -97,7 +97,7 @@ class SubUpdateAnnotationZip:
         MAX_WAIT_MINUTU = wait_options.max_tries * wait_options.interval / 60
         result = self.service.wrapper.wait_for_completion(
             project_id,
-            job_type=JobType.GEN_ANNOTATION,
+            job_type=ProjectJobType.GEN_ANNOTATION,
             job_access_interval=wait_options.interval,
             max_job_access=wait_options.max_tries,
         )
@@ -109,7 +109,7 @@ class SubUpdateAnnotationZip:
 
     def _update_annotation_zip_for_project(self, project_id: str) -> None:
         job_list = self.service.api.get_project_job(
-            project_id, query_params={"type": JobType.GEN_ANNOTATION.value, "limit": 1}
+            project_id, query_params={"type": ProjectJobType.GEN_ANNOTATION.value, "limit": 1}
         )[0]["list"]
         if len(job_list) > 0:
             job = job_list[0]

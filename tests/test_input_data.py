@@ -83,7 +83,7 @@ class TestCommandLine:
         )
 
     def test_put_input_data(self):
-        csv_file = str(out_dir / "input_data2.csv")
+        csv_file = str(data_dir / "input_data2.csv")
         main(
             [
                 "input_data",

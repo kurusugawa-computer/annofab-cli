@@ -191,8 +191,6 @@ def write_annotation_images_from_path(
     output_dir_path: Path,
     image_size: Optional[InputDataSize] = None,
     input_data_dict: Optional[Dict[str, InputData]] = None,
-    metadata_key_of_image_width: Optional[str] = None,
-    metadata_key_of_image_height: Optional[str] = None,
     output_image_extension: str = "png",
     background_color: Optional[Any] = None,
     label_name_list: Optional[List[str]] = None,
@@ -208,8 +206,6 @@ def write_annotation_images_from_path(
         output_dir_path: 画像の出力先のディレクトリのパス
         image_size: 画像のサイズ. Tuple[width, height]
         input_data_dict: 入力データのDict(key:input_data_id, value:InputData)
-        metadata_key_of_image_width: 入力データのメタデータのキー（画像width)
-        metadata_key_of_image_height: 入力データのメタデータのキー（画像height)
         output_image_extension: 出力する画像ファイルの拡張子. 指定しない場合は"png"です。
         background_color: アノテーション画像の背景色.
             (ex) "rgb(173, 216, 230)", "#add8e6", "lightgray", (173,216,230)
@@ -224,24 +220,6 @@ def write_annotation_images_from_path(
     """
 
     def _get_image_size(input_data_id: str) -> Optional[InputDataSize]:
-        def _get_image_size_from_metadata():
-            metadata = input_data["metadata"]
-            if metadata is not None and (
-                metadata_key_of_image_width in metadata and metadata_key_of_image_height in metadata
-            ):
-                try:
-                    return (int(metadata[metadata_key_of_image_width]), int(metadata[metadata_key_of_image_height]))
-                except ValueError as e:
-                    logger.warning(f"input_data_id={input_data_id}の入力データのメタデータの数値変換に失敗しました。{e}")
-                    return None
-
-            else:
-                logger.warning(
-                    f"input_data_id={input_data_id}の入力データのメタデータに、"
-                    f"{metadata_key_of_image_width}, {metadata_key_of_image_height} というキーが存在しません。"
-                )
-                return None
-
         def _get_image_size_from_system_metadata():
             # 入力データの`input_data.system_metadata.original_resolution`を参照して、画像サイズを決める。
             original_resolution = input_data["system_metadata"]["original_resolution"]
@@ -263,10 +241,7 @@ def write_annotation_images_from_path(
                 logger.warning(f"input_data_id={input_data_id}の入力データは存在しなかったので、スキップします。")
                 return None
 
-            if metadata_key_of_image_width is not None and metadata_key_of_image_height is not None:
-                return _get_image_size_from_metadata()
-            else:
-                return _get_image_size_from_system_metadata()
+            return _get_image_size_from_system_metadata()
 
         else:
             raise ValueError(f"引数`image_size`または`input_data_dict`のどちらかはnot Noneである必要があります。")

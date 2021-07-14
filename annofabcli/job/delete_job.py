@@ -3,7 +3,7 @@ import logging
 from typing import List
 
 import annofabapi
-from annofabapi.models import JobType, ProjectMemberRole
+from annofabapi.models import ProjectJobType, ProjectMemberRole
 
 import annofabcli
 from annofabcli import AnnofabApiFacade
@@ -22,7 +22,7 @@ class DeleteJobMain:
         self.service = service
         self.facade = AnnofabApiFacade(service)
 
-    def delete_job_list(self, project_id: str, job_type: JobType, job_id_list: List[str]):
+    def delete_job_list(self, project_id: str, job_type: ProjectJobType, job_id_list: List[str]):
         job_list = self.service.wrapper.get_all_project_job(project_id, query_params={"type": job_type.value})
         exists_job_id_set = {e["job_id"] for e in job_list}
 
@@ -46,7 +46,7 @@ class DeleteJob(AbstractCommandLineInterface):
         project_id = args.project_id
         super().validate_project(project_id, project_member_roles=[ProjectMemberRole.OWNER])
 
-        job_type = JobType(args.job_type)
+        job_type = ProjectJobType(args.job_type)
         job_id_list = get_list_from_args(args.job_id)
 
         main_obj = DeleteJobMain(self.service)
@@ -62,7 +62,7 @@ def main(args):
 def parse_args(parser: argparse.ArgumentParser):
     argument_parser = ArgumentParser(parser)
 
-    job_choices = [e.value for e in JobType]
+    job_choices = [e.value for e in ProjectJobType]
     argument_parser.add_project_id()
 
     parser.add_argument("--job_type", type=str, choices=job_choices, required=True, help="ジョブタイプを指定します。")

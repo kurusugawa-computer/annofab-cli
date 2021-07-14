@@ -17,7 +17,7 @@ import dateutil
 import dateutil.parser
 import more_itertools
 from annofabapi.dataclass.task import Task as DcTask
-from annofabapi.models import InputDataId, Inspection, JobStatus, JobType, Task, TaskHistory
+from annofabapi.models import InputDataId, Inspection, JobStatus, ProjectJobType, Task, TaskHistory
 from annofabapi.parser import SimpleAnnotationZipParser
 
 from annofabcli.common.dataclasses import WaitOptions
@@ -230,7 +230,7 @@ class Database:
         MAX_WAIT_MINUTU = MAX_JOB_ACCESS * JOB_ACCESS_INTERVAL / 60
         result = self.annofab_service.wrapper.wait_for_completion(
             project_id,
-            job_type=JobType.GEN_ANNOTATION,
+            job_type=ProjectJobType.GEN_ANNOTATION,
             job_access_interval=JOB_ACCESS_INTERVAL,
             max_job_access=MAX_JOB_ACCESS,
         )
@@ -246,7 +246,7 @@ class Database:
         MAX_WAIT_MINUTU = MAX_JOB_ACCESS * JOB_ACCESS_INTERVAL / 60
         result = self.annofab_service.wrapper.wait_for_completion(
             project_id,
-            job_type=JobType.GEN_TASKS_LIST,
+            job_type=ProjectJobType.GEN_TASKS_LIST,
             job_access_interval=JOB_ACCESS_INTERVAL,
             max_job_access=MAX_JOB_ACCESS,
         )
@@ -280,7 +280,7 @@ class Database:
         logger.debug(f"{self.logging_prefix}: アノテーション仕様の最終更新日時={annotation_specs_updated_datetime}")
 
         job_list = self.annofab_service.api.get_project_job(
-            project_id, query_params={"type": JobType.GEN_ANNOTATION.value, "limit": 1}
+            project_id, query_params={"type": ProjectJobType.GEN_ANNOTATION.value, "limit": 1}
         )[0]["list"]
         if len(job_list) > 0:
             job = job_list[0]
@@ -334,7 +334,7 @@ class Database:
         """
 
         job_list = self.annofab_service.api.get_project_job(
-            project_id, query_params={"type": JobType.GEN_TASKS_LIST.value, "limit": 1}
+            project_id, query_params={"type": ProjectJobType.GEN_TASKS_LIST.value, "limit": 1}
         )[0]["list"]
 
         if len(job_list) == 0:
@@ -379,7 +379,7 @@ class Database:
         logger.debug(f"{self.logging_prefix}: アノテーション仕様の最終更新日時={annotation_specs_updated_datetime}")
 
         job_list = self.annofab_service.api.get_project_job(
-            self.project_id, query_params={"type": JobType.GEN_ANNOTATION.value, "limit": 1}
+            self.project_id, query_params={"type": ProjectJobType.GEN_ANNOTATION.value, "limit": 1}
         )[0]["list"]
         if len(job_list) == 0:
             logger.debug(f"{self.logging_prefix}: アノテーションzipの最終更新日時は不明です。")
@@ -538,7 +538,14 @@ class Database:
             if task_histories is None or len(task_histories) == 0:
                 return False
 
-            first_started_datetime = task_histories[0]["started_datetime"]
+            has_task_creation = task_histories[0]["account_id"] is None
+            if has_task_creation and len(task_histories) < 2:
+                return False
+
+            # 初回教師付けの開始日時をfirst_started_datetimeとするため「(タスク作成)」の履歴がある場合はスキップする。
+            first_started_datetime = (task_histories[0] if not has_task_creation else task_histories[1])[
+                "started_datetime"
+            ]
             if first_started_datetime is None:
                 return False
             return dateutil.parser.parse(first_started_datetime) >= dt_start_date

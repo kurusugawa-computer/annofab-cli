@@ -1,6 +1,8 @@
 import argparse
 import logging
 import sys
+from collections import defaultdict
+from enum import Enum
 from pathlib import Path
 from typing import Any, Dict, List, Optional
 
@@ -23,10 +25,17 @@ from annofabcli.common.facade import AdditionalData, AdditionalDataForCli, Annot
 logger = logging.getLogger(__name__)
 
 
+class ChangeBy(Enum):
+    TASK = "task"
+    INPUT_DATA = "input_data"
+
+
 class ChangeAttributesOfAnnotation(AbstractCommandLineInterface):
     """
     アノテーション属性を変更
     """
+
+    COMMON_MESSAGE = "annofabcli annotation change_attributes: error:"
 
     def __init__(self, service: annofabapi.Resource, facade: AnnofabApiFacade, args: argparse.Namespace):
         super().__init__(service, facade, args)
@@ -38,6 +47,7 @@ class ChangeAttributesOfAnnotation(AbstractCommandLineInterface):
         task_id: str,
         annotation_query: AnnotationQuery,
         attributes: List[AdditionalData],
+        change_by: ChangeBy,
         force: bool = False,
         backup_dir: Optional[Path] = None,
     ) -> None:
@@ -85,7 +95,20 @@ class ChangeAttributesOfAnnotation(AbstractCommandLineInterface):
             self.dump_annotation_obj.dump_annotation_for_task(project_id, task_id, output_dir=backup_dir)
 
         try:
-            self.facade.change_annotation_attributes(project_id, annotation_list, attributes)
+            if change_by == ChangeBy.INPUT_DATA:
+                dict_annotation_list_by_input_data = defaultdict(list)
+                for annotation in annotation_list:
+                    dict_annotation_list_by_input_data[annotation["input_data_id"]].append(annotation)
+
+                for input_data_id, annotation_list_by_input_data in dict_annotation_list_by_input_data.items():
+                    logger.debug(
+                        f"task_id={task_id}, input_data_id={input_data_id}: "
+                        f"{len(annotation_list_by_input_data)}個のアノテーションの属性を変更しました。"
+                    )
+                    self.facade.change_annotation_attributes(project_id, annotation_list_by_input_data, attributes)
+            else:
+                self.facade.change_annotation_attributes(project_id, annotation_list, attributes)
+
             logger.info(f"task_id={task_id}: アノテーション属性を変更しました。")
         except requests.HTTPError as e:
             logger.warning(e)
@@ -97,6 +120,7 @@ class ChangeAttributesOfAnnotation(AbstractCommandLineInterface):
         task_id_list: List[str],
         annotation_query: AnnotationQuery,
         attributes: List[AdditionalData],
+        change_by: ChangeBy = ChangeBy.TASK,
         force: bool = False,
         backup_dir: Optional[Path] = None,
     ):
@@ -116,6 +140,7 @@ class ChangeAttributesOfAnnotation(AbstractCommandLineInterface):
                 annotation_query=annotation_query,
                 attributes=attributes,
                 force=force,
+                change_by=change_by,
                 backup_dir=backup_dir,
             )
 
@@ -129,7 +154,7 @@ class ChangeAttributesOfAnnotation(AbstractCommandLineInterface):
         try:
             annotation_query = self.facade.to_annotation_query_from_cli(project_id, annotation_query_for_cli)
         except ValueError as e:
-            print(f"'--annotation_queryの値が不正です。{e}", file=sys.stderr)
+            print(f"{self.COMMON_MESSAGE} argument '--annotation_query' の値が不正です。{e}", file=sys.stderr)
             return
 
         attributes_of_dict: List[Dict[str, Any]] = get_json_from_args(args.attributes)
@@ -137,7 +162,7 @@ class ChangeAttributesOfAnnotation(AbstractCommandLineInterface):
         try:
             attributes = self.facade.to_attributes_from_cli(project_id, annotation_query.label_id, attributes_for_cli)
         except ValueError as e:
-            print(f"'--attributesの値が不正です。{e}", file=sys.stderr)
+            print(f"{self.COMMON_MESSAGE} argument '--attributes' の値が不正です。{e}", file=sys.stderr)
             return
 
         if args.backup is None:
@@ -154,6 +179,7 @@ class ChangeAttributesOfAnnotation(AbstractCommandLineInterface):
             annotation_query=annotation_query,
             attributes=attributes,
             force=args.force,
+            change_by=ChangeBy(args.change_by),
             backup_dir=backup_dir,
         )
 
@@ -193,6 +219,14 @@ def parse_args(parser: argparse.ArgumentParser):
     )
 
     parser.add_argument("--force", action="store_true", help="完了状態のタスクのアノテーション属性も変更します。")
+
+    parser.add_argument(
+        "--change_by",
+        type=str,
+        choices=[ChangeBy.TASK.value, ChangeBy.INPUT_DATA.value],
+        default=ChangeBy.TASK.value,
+        help="アノテーション属性の変更単位を指定してください。[Deprecated] 廃止される可能性があります。",
+    )
 
     parser.add_argument(
         "--backup",

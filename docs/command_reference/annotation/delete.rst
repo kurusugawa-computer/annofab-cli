@@ -5,9 +5,7 @@ annotation delete
 Description
 =================================
 タスク配下のアノテーションを削除します。
-ただし、作業中または完了状態のタスクのアノテーションは削除できません。
-
-
+ただし、完了状態のタスクのアノテーションは削除できません。
 
 
 Examples
@@ -47,6 +45,8 @@ Examples
     --annotation_query '{"label_name_en": "car", "attributes":[{"additional_data_definition_name_en": "occluded", "flag": false}]}' \
     --backup backup_dir/
 
+
+デフォルトでは完了状態のタスクのアノテーションを削除できません。完了状態のタスクのアノテーションも変更する場合は、``--force`` を指定してください。
 
 
 See also

@@ -41,19 +41,18 @@ Examples
 
 
 .. csv-table:: out.csv
-   :header: date,user_id,username,biography,monitored_worktime_hour,actual_worktime_hour,annotation_submitted_task_count,inspection_submitted_task_count,acceptance_submitted_task_count,rejected_task_count
+   :header: date,user_id,username,biography,worktime_hour,annotation_submitted_task_count,inspection_submitted_task_count,acceptance_submitted_task_count,rejected_task_count
 
 
-    2020-12-15,user1,user1,,3.844,4.3,28,0,0,4
-    2020-12-16,user1,user2,,1.047,1.333,0,0,16,1
-    2020-12-16,user2,user3,,2.834,3,19,0,0,6
+    2020-12-15,user1,user1,,3.844,28,0,0,4
+    2020-12-16,user1,user2,,1.047,0,0,16,1
+    2020-12-16,user2,user3,,2.834,0,0,6
 
 
 
 各列の詳細は以下の通りです。
 
-* monitored_worktime_hour: 計測作業時間[hour]
-* actual_worktime_hour: 実績作業時間[hour]
+* worktime_hour: 作業時間[hour]
 * annotation_submitted_task_count: 教師付フェーズのタスクを提出した回数
 * inspection_submitted_task_count: 検査フェーズのタスクを差し戻しまたは合格にしたした回数
 * acceptance_submitted_task_count: 受入フェーズのタスクを差し戻しまたは合格にしたした回数
