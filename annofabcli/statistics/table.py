@@ -568,10 +568,7 @@ class Table:
 
         # 受入完了日時を設定
         if task["phase"] == TaskPhase.ACCEPTANCE.value and task["status"] == TaskStatus.COMPLETE.value:
-            if len(acceptance_histories) > 0:
-                task["task_completed_datetime"] = acceptance_histories[-1]["ended_datetime"]
-            else:
-                task["task_completed_datetime"] = None
+            task["task_completed_datetime"] = task["updated_datetime"]
         else:
             task["task_completed_datetime"] = None
 
