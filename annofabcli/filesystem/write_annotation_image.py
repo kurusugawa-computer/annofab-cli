@@ -73,15 +73,6 @@ class WriteAnnotationImage:
                 )
                 return
 
-        if args.metadata_key_of_image_size is not None:
-            if args.input_data_json is None:
-                print(
-                    f"{self.COMMON_MESSAGE} argument --metadata_key_of_image_size: "
-                    f"`--metadata_key_of_image_size`を指定した場合、`--input_data_json`は必須です。",
-                    file=sys.stderr,
-                )
-                return
-
         # label_color_dict を取得する
         label_color_dict = annofabcli.common.cli.get_json_from_args(args.label_color)
         label_color_dict = {k: tuple(v) for k, v in label_color_dict.items()}
@@ -112,12 +103,6 @@ class WriteAnnotationImage:
             output_dir_path=Path(args.output_dir),
             image_size=image_size,
             input_data_dict=input_data_dict,
-            metadata_key_of_image_width=args.metadata_key_of_image_size[0]
-            if args.metadata_key_of_image_size is not None
-            else None,
-            metadata_key_of_image_height=args.metadata_key_of_image_size[1]
-            if args.metadata_key_of_image_size is not None
-            else None,
             output_image_extension=args.image_extension,
             background_color=args.background_color,
             label_name_list=label_name_list,
@@ -146,13 +131,6 @@ def parse_args(parser: argparse.ArgumentParser):
         help="入力データ情報が記載されたJSONファイルのパスを指定してください。"
         "入力データのプロパティ`system_metadata.original_resolution`を参照して画像サイズを決めます。"
         "JSONファイルは`$ annofabcli project download input_data`コマンドで取得できます。",
-    )
-
-    parser.add_argument(
-        "--metadata_key_of_image_size",
-        type=str,
-        nargs=2,
-        help="画像サイズが設定された、入力データのメタデータのキー。" "`--image_size_key_of_metadata {width_key} {height_key}`",
     )
 
     parser.add_argument(

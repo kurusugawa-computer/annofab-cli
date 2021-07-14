@@ -66,30 +66,6 @@ class Test_write_annotation_images_from_path:
             is_target_parser_func=is_target_parser_func,
         )
 
-    def test_write_annotation_images_from_path_2(self):
-        # メタデータから画像サイズを参照
-        zip_path = test_dir / "simple-annotation.zip"
-        output_image_dir = out_dir / "annotation-image"
-
-        input_data_json = test_dir / "input_data2.json"
-        with input_data_json.open() as f:
-            input_data_list = json.load(f)
-            input_data_dict = {e["input_data_id"]: e for e in input_data_list}
-
-        def is_target_parser_func(parser: SimpleAnnotationParser) -> bool:
-            return parser.task_id == "sample_1"
-
-        write_annotation_images_from_path(
-            annotation_path=zip_path,
-            image_size=(64, 64),
-            label_color_dict=label_color_dict,
-            output_dir_path=output_image_dir,
-            input_data_dict=input_data_dict,
-            metadata_key_of_image_width="width",
-            metadata_key_of_image_height="height",
-            is_target_parser_func=is_target_parser_func,
-        )
-
     def test_write_annotation_images_from_path_3(self):
         # 入力データのsystem_metadataから画像サイズを参照
         zip_path = test_dir / "simple-annotation.zip"
