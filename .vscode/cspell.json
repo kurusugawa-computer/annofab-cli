@@ -5,10 +5,12 @@
         ".devcontainer/",
         ".vscode/",
         "LICENSE",
-        "tests/"
+        "tests/",
+        "docs/conf.py"
     ],
     "enabledLanguageIds": [
-        "python"
+        "python",
+        "reStructuredText"
     ],
     "words": [
         "additionals",
@@ -22,6 +24,5 @@
         "noqa",
         "pylint",
         "tzlocal",
-        "worrd"
     ]
 }
