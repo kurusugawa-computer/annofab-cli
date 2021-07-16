@@ -45,8 +45,9 @@ class MergeAnnotationMain:
 
         with parser.open_outer_file(data_uri) as src_f:
             data = src_f.read()
-            output_json.parent.mkdir(parents=True, exist_ok=True)
-            with output_json.open("wb") as dest_f:
+            output_outer_file = output_json.parent / f"{output_json.stem}/{data_uri}"
+            output_outer_file.parent.mkdir(parents=True, exist_ok=True)
+            with output_outer_file.open("wb") as dest_f:
                 dest_f.write(data)
 
     @staticmethod
@@ -219,7 +220,9 @@ class MergeAnnotation(AbstractCommandLineWithoutWebapiInterface):
             return
         main_obj = MergeAnnotationMain()
         target_task_ids = get_list_from_args(args.task_id) if args.task_id is not None else None
-        main_obj.main(args.annotation[0], args.annotation[1], output_dir=args.output_dir,target_task_ids=target_task_ids)
+        main_obj.main(
+            args.annotation[0], args.annotation[1], output_dir=args.output_dir, target_task_ids=target_task_ids
+        )
 
 
 def main(args):

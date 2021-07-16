@@ -26,7 +26,7 @@ Examples
 
 
 アノテーションJSONは以下の通りマージされます。
-annotation-A.zipとannotation-B.zipの両方に同じannotation_idが存在する場合は、``annotation-B.zip`` の情報を優先します。
+``annotation-A.zip`` と ``annotation-B.zip`` の両方に同じannotation_idが存在する場合は、``annotation-B.zip`` の情報を優先します。
 
 
 .. code-block::
@@ -71,7 +71,7 @@ annotation-A.zipとannotation-B.zipの両方に同じannotation_idが存在す�
 
 
 .. code-block::
-:caption: out/task1/input1.json
+    :caption: out/task1/input1.json
 
     {
         // ...
@@ -97,6 +97,19 @@ annotation-A.zipとannotation-B.zipの両方に同じannotation_idが存在す�
 
 
 
+タスクの絞り込み
+--------------------------
+マージ対象のタスクを指定する場合は、``--task_id`` に描画対象タスクのtask_idを指定してください。
+
+
+.. code-block::
+
+    $ annofabcli filesystem merge_annotation  \
+    --annotation annotation-A.zip annotation-B.zip \
+    --output_dir out/
+    --task_id task1 task2
+
+    
 
 See also
 =================================
