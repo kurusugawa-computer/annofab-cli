@@ -24,14 +24,7 @@ IsParserFunc = Callable[[SimpleAnnotationParser], bool]
 
 
 class MergeAnnotationMain:
-    def __init__(self, annotation_path1: Path, annotation_path2: Path, overwrite: bool = False) -> None:
-
-        # Simpleアノテーションzip内の1個のJSONファイルを読み込み
-        with zipfile.ZipFile("simple-annotation.zip", "r") as zip_file:
-            parser = SimpleAnnotationZipParser(zip_file, "task01/12345678-abcd-1234-abcd-1234abcd5678.json")
-            simple_annotation = parser.parse()
-            print(simple_annotation)
-
+    def __init__(self, overwrite: bool = False) -> None:
         self.overwrite = overwrite
 
     @staticmethod
@@ -137,7 +130,7 @@ class MergeAnnotationMain:
 
         zip_file2: Optional[zipfile.ZipFile] = None
         if annotation_path2.is_file():
-            zip_file2 = zipfile.ZipFile(str(annotation_path2), "r")
+            zip_file2 = zipfile.ZipFile(str(annotation_path2), "r")  # pylint: disable=consider-using-with
 
         for parser1 in iter_parser1:
             output_json = output_dir / parser1.json_file_path
