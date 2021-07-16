@@ -56,7 +56,7 @@ class ListOutOfRangeAnnotationForMovieMain:
 
     def create_dataframe(
         self,
-        proejct_id: str,
+        project_id: str,
         task_list: List[Dict[str, Any]],
         input_data_list: List[Dict[str, Any]],
         annotation_zip: Optional[Path],
@@ -67,7 +67,7 @@ class ListOutOfRangeAnnotationForMovieMain:
                 task["worktime_hour"] = _millisecond_to_hour(task["work_time_span"])
                 task["input_data_id"] = task["input_data_id_list"][0]
                 annotation, _ = self.service.api.get_editor_annotation(
-                    proejct_id, task["task_id"], task["input_data_id"]
+                    project_id, task["task_id"], task["input_data_id"]
                 )
                 max_seconds = self.get_max_seconds_for_webapi(annotation)
                 task["max_begin_second"] = max_seconds[0]
