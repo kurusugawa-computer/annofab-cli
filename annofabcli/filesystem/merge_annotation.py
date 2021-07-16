@@ -43,6 +43,7 @@ class MergeAnnotationMain:
 
         with parser.open_outer_file(data_uri) as src_f:
             data = src_f.read()
+            output_json.parent.mkdir(parents=True, exist_ok=True)
             with output_json.open("wb") as dest_f:
                 dest_f.write(data)
 
@@ -93,7 +94,7 @@ class MergeAnnotationMain:
             "details": merged_details,
         }
 
-        with output_json.open() as f:
+        with output_json.open("w") as f:
             json.dump(new_simple_annotation, f, ensure_ascii=False)
 
     def copy_annotation(self, parser: SimpleAnnotationParser, output_json: Path):
@@ -105,7 +106,8 @@ class MergeAnnotationMain:
             if self._is_segmentation(anno):
                 self._write_outer_file(parser, anno, output_json)
 
-        with output_json.open() as f:
+        output_json.parent.mkdir(exist_ok=True, parents=True)
+        with output_json.open("w") as f:
             json.dump(simple_annotation, f, ensure_ascii=False)
 
     @staticmethod
@@ -114,7 +116,7 @@ class MergeAnnotationMain:
     ) -> Optional[SimpleAnnotationParser]:
         if annotation_path.is_dir():
             if (annotation_path / json_path).exists():
-                return SimpleAnnotationDirParser(json_path)
+                return SimpleAnnotationDirParser(annotation_path / json_path)
             else:
                 return None
         elif annotation_path.is_file() and zip_file is not None:
@@ -133,9 +135,11 @@ class MergeAnnotationMain:
             zip_file2 = zipfile.ZipFile(str(annotation_path2), "r")  # pylint: disable=consider-using-with
 
         for parser1 in iter_parser1:
-            output_json = output_dir / parser1.json_file_path
+            json_file1 = Path(parser1.json_file_path)
+            json_file_path1 = f"{json_file1.parent.name}/{json_file1.name}"
+            output_json = output_dir / json_file_path1
 
-            parser2 = self._get_parser(annotation_path2, zip_file=zip_file2, json_path=Path(parser1.json_file_path))
+            parser2 = self._get_parser(annotation_path2, zip_file=zip_file2, json_path=Path(json_file_path1))
             if parser2 is not None:
                 self.write_merged_annotation(parser1, parser2, output_json)
             else:
