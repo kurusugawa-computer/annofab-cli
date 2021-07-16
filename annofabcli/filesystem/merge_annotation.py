@@ -66,17 +66,21 @@ class MergeAnnotationMain:
         for anno1 in details1:
             annotation_id = anno1["annotation_id"]
             anno2 = details2_dict.get(annotation_id)
-            if anno2 is not None and self.overwrite:
-                new_anno = anno2
-                adopt_two = True
+            if anno2 is not None:
                 del details2_dict[annotation_id]
-                logger.debug(f"{parser1.json_file_path}: annotation_id={annotation_id} のアノテーションを上書きしました。")
+
+                if self.overwrite:
+                    logger.debug(f"{parser1.json_file_path}: annotation_id={annotation_id} のアノテーションを上書きしました。")
+                    new_anno = anno2
+                    adopt_two = True
+                else:
+                    new_anno = anno1
+                    adopt_two = False
             else:
                 new_anno = anno1
                 adopt_two = False
 
             merged_details.append(new_anno)
-
             # 塗りつぶしアノテーションファイルをコピーする
             if self._is_segmentation(new_anno):
                 self._write_outer_file(
