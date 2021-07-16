@@ -15,12 +15,7 @@ from annofabapi.parser import (
 )
 
 import annofabcli
-from annofabcli.common.cli import (
-    AbstractCommandLineWithoutWebapiInterface,
-    ArgumentParser,
-    get_json_from_args,
-    get_list_from_args,
-)
+from annofabcli.common.cli import AbstractCommandLineWithoutWebapiInterface, ArgumentParser, get_list_from_args
 
 IsParserFunc = Callable[[SimpleAnnotationParser], bool]
 
