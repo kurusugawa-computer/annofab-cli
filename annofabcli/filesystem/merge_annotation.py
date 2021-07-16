@@ -24,7 +24,14 @@ IsParserFunc = Callable[[SimpleAnnotationParser], bool]
 
 
 class MergeAnnotationMain:
-    def __init__(self, overwrite: bool = False) -> None:
+    def __init__(self, annotation_path1: Path, annotation_path2: Path, overwrite: bool = False) -> None:
+
+        # Simpleアノテーションzip内の1個のJSONファイルを読み込み
+        with zipfile.ZipFile("simple-annotation.zip", "r") as zip_file:
+            parser = SimpleAnnotationZipParser(zip_file, "task01/12345678-abcd-1234-abcd-1234abcd5678.json")
+            simple_annotation = parser.parse()
+            print(simple_annotation)
+
         self.overwrite = overwrite
 
     @staticmethod
@@ -37,6 +44,7 @@ class MergeAnnotationMain:
         else:
             raise RuntimeError(f"{annotation_path} はサポート対象外です。")
 
+    @staticmethod
     def _write_outer_file(parser: SimpleAnnotationParser, anno: Dict[str, Any], output_json: Path):
         data_uri = anno["data"]["data_uri"]
 
@@ -45,6 +53,7 @@ class MergeAnnotationMain:
             with output_json.open("wb") as dest_f:
                 dest_f.write(data)
 
+    @staticmethod
     def _is_segmentation(anno: Dict[str, Any]):
         return anno["data"]["_type"] in ["Segmentation", "SegmentationV2"]
 
@@ -98,7 +107,6 @@ class MergeAnnotationMain:
         simple_annotation = parser.load_json()
         details = simple_annotation["details"]
 
-        merged_details = []
         for anno in details:
             # 塗りつぶしアノテーションファイルをコピーする
             if self._is_segmentation(anno):
@@ -108,16 +116,18 @@ class MergeAnnotationMain:
             json.dump(simple_annotation, f, ensure_ascii=False)
 
     @staticmethod
-    def _get_parser(annotation_path: Path, json_path: Path) -> Optional[SimpleAnnotationParser]:
+    def _get_parser(
+        annotation_path: Path, zip_file: Optional[zipfile.ZipFile], json_path: Path
+    ) -> Optional[SimpleAnnotationParser]:
         if annotation_path.is_dir():
             if (annotation_path / json_path).exists():
                 return SimpleAnnotationDirParser(json_path)
             else:
                 return None
-        elif annotation_path.is_file():
+        elif annotation_path.is_file() and zip_file is not None:
             # zipファイルであるという前提
             if zipfile.Path(annotation_path, str(json_path)).exists():
-                return SimpleAnnotationZipParser(annotation_path, str(json_path))
+                return SimpleAnnotationZipParser(zip_file, str(json_path))
             return None
         else:
             raise RuntimeError(f"{annotation_path} はサポート対象外です。")
@@ -125,14 +135,22 @@ class MergeAnnotationMain:
     def main(self, annotation_path1: Path, annotation_path2: Path, output_dir: Path):
         iter_parser1 = self.create_iter_parser(annotation_path1)
 
+        zip_file2: Optional[zipfile.ZipFile] = None
+        if annotation_path2.is_file():
+            zip_file2 = zipfile.ZipFile(str(annotation_path2), "r")
+
         for parser1 in iter_parser1:
             output_json = output_dir / parser1.json_file_path
-            parser2 = self._get_parser(annotation_path2, Path(parser1.json_file_path))
+
+            parser2 = self._get_parser(annotation_path2, zip_file=zip_file2, json_path=Path(parser1.json_file_path))
             if parser2 is not None:
                 self.write_merged_annotation(parser1, parser2, output_json)
             else:
                 self.copy_annotation(parser1, output_json)
             logger.debug(f"{output_json} を出力しました。")
+
+        if zip_file2 is not None:
+            zip_file2.close()
 
 
 class MergeAnnotation(AbstractCommandLineWithoutWebapiInterface):
