@@ -88,6 +88,40 @@ class TestCommandLine:
             ]
         )
 
+    def test_merge_annotation1(self):
+        annotation_dir1 = data_dir / "merge/annotation-A"
+        annotation_dir2 = data_dir / "merge/annotation-B"
+        output_dir = out_dir / "merge-annotation-output1"
+
+        main(
+            [
+                "filesystem",
+                "merge_annotation",
+                "--annotation",
+                str(annotation_dir1),
+                str(annotation_dir2),
+                "--output_dir",
+                str(output_dir),
+            ]
+        )
+
+    def test_merge_annotation2(self):
+        annotation_dir2 = data_dir / "annotation-B"
+        annotation_zip1 = data_dir / "annotation-A.zip"
+        output_dir = out_dir / "merge-annotation-output2"
+
+        main(
+            [
+                "filesystem",
+                "merge_annotation",
+                "--annotation",
+                str(annotation_dir2),
+                str(annotation_zip1),
+                "--output_dir",
+                str(output_dir),
+            ]
+        )
+
 
 class TestMaskUserInfo:
     def test_create_masked_name(self):

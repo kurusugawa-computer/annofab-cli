@@ -1,9 +1,10 @@
 import argparse
 import json
 import logging
+import sys
 import zipfile
 from pathlib import Path
-from typing import Any, Dict, Iterator, Optional, Set
+from typing import Any, Dict, Iterator, List, Optional, Set
 
 from annofabapi.parser import (
     SimpleAnnotationDirParser,
@@ -61,8 +62,6 @@ class MergeAnnotationMain:
             anno2 = details2_dict.get(annotation_id)
             if anno2 is not None:
                 del details2_dict[annotation_id]
-
-                logger.debug(f"{parser1.json_file_path}: annotation_id={annotation_id} のアノテーションを上書きしました。")
                 new_anno = anno2
                 adopt_two = True
             else:
@@ -87,6 +86,7 @@ class MergeAnnotationMain:
             "details": merged_details,
         }
 
+        output_json.parent.mkdir(parents=True, exist_ok=True)
         with output_json.open("w") as f:
             json.dump(new_simple_annotation, f, ensure_ascii=False)
 
@@ -156,11 +156,28 @@ class MergeAnnotationMain:
 
             output_json = output_dir / json_file_path2
             self.copy_annotation(parser2, output_json)
+            logger.debug(f"{output_json} を出力しました。")
 
 
 class MergeAnnotation(AbstractCommandLineWithoutWebapiInterface):
+    @staticmethod
+    def validate(args: argparse.Namespace) -> bool:
+        COMMON_MESSAGE = "annofabcli filesystem merge_annotation: error:"
+        if args.annotation is not None:
+            annotation_paths: List[Path] = args.annotation
+            for path in annotation_paths:
+                if not path.exists():
+                    print(
+                        f"{COMMON_MESSAGE} argument --annotation: ファイルパス '{path}' が存在しません。",
+                        file=sys.stderr,
+                    )
+                    return False
+        return True
+
     def main(self):
         args = self.args
+        if not self.validate(args):
+            return
         main_obj = MergeAnnotationMain()
         main_obj.main(args.annotation[0], args.annotation[1], output_dir=args.output_dir)
 
