@@ -3,7 +3,7 @@ import json
 import logging
 import zipfile
 from pathlib import Path
-from typing import Any, Callable, Dict, Iterator, Optional, Tuple, Union
+from typing import Any, Dict, Iterator, Optional, Set
 
 from annofabapi.parser import (
     SimpleAnnotationDirParser,
@@ -19,14 +19,7 @@ from annofabcli.common.cli import AbstractCommandLineWithoutWebapiInterface, Arg
 logger = logging.getLogger(__name__)
 
 
-Color = Union[str, Tuple[int, int, int]]
-IsParserFunc = Callable[[SimpleAnnotationParser], bool]
-
-
 class MergeAnnotationMain:
-    def __init__(self, overwrite: bool = False) -> None:
-        self.overwrite = overwrite
-
     @staticmethod
     def create_iter_parser(annotation_path: Path) -> Iterator[SimpleAnnotationParser]:
         # Simpleアノテーションの読み込み
@@ -69,13 +62,9 @@ class MergeAnnotationMain:
             if anno2 is not None:
                 del details2_dict[annotation_id]
 
-                if self.overwrite:
-                    logger.debug(f"{parser1.json_file_path}: annotation_id={annotation_id} のアノテーションを上書きしました。")
-                    new_anno = anno2
-                    adopt_two = True
-                else:
-                    new_anno = anno1
-                    adopt_two = False
+                logger.debug(f"{parser1.json_file_path}: annotation_id={annotation_id} のアノテーションを上書きしました。")
+                new_anno = anno2
+                adopt_two = True
             else:
                 new_anno = anno1
                 adopt_two = False
@@ -138,6 +127,7 @@ class MergeAnnotationMain:
         if annotation_path2.is_file():
             zip_file2 = zipfile.ZipFile(str(annotation_path2), "r")  # pylint: disable=consider-using-with
 
+        excluded_json_path2: Set[str] = set()
         for parser1 in iter_parser1:
             json_file1 = Path(parser1.json_file_path)
             json_file_path1 = f"{json_file1.parent.name}/{json_file1.name}"
@@ -145,19 +135,33 @@ class MergeAnnotationMain:
 
             parser2 = self._get_parser(annotation_path2, zip_file=zip_file2, json_path=Path(json_file_path1))
             if parser2 is not None:
+                # annotation_path1とannotation_path2両方に存在するJSONをマージして出力する
                 self.write_merged_annotation(parser1, parser2, output_json)
+                excluded_json_path2.add(json_file_path1)
             else:
+                # annotation_path2に存在しないJSONを出力する
                 self.copy_annotation(parser1, output_json)
             logger.debug(f"{output_json} を出力しました。")
 
         if zip_file2 is not None:
             zip_file2.close()
 
+        # annotation_path1に存在しないJSONを出力する
+        iter_parser2 = self.create_iter_parser(annotation_path2)
+        for parser2 in iter_parser2:
+            json_file2 = Path(parser2.json_file_path)
+            json_file_path2 = f"{json_file2.parent.name}/{json_file2.name}"
+            if json_file_path2 in excluded_json_path2:
+                continue
+
+            output_json = output_dir / json_file_path2
+            self.copy_annotation(parser2, output_json)
+
 
 class MergeAnnotation(AbstractCommandLineWithoutWebapiInterface):
     def main(self):
         args = self.args
-        main_obj = MergeAnnotationMain(args.overwrite)
+        main_obj = MergeAnnotationMain()
         main_obj.main(args.annotation[0], args.annotation[1], output_dir=args.output_dir)
 
 
@@ -175,12 +179,6 @@ def parse_args(parser: argparse.ArgumentParser):
         required=True,
         help="AnnoFabからダウンロードしたアノテーションzip、またはzipを展開したディレクトリを指定してください。"
         "1番目に指定したアノテーションzipのdetails情報の下に、2番目に指定したしたアノテーションzipのdetails情報は追加します（2番目目に指定したアノテーションzipの情報が上位レイヤになる）。",
-    )
-
-    parser.add_argument(
-        "--overwrite",
-        action="store_true",
-        help="指定した場合、`annotation_id`が一致するアノテーションを上書きします。",
     )
 
     parser.add_argument("-o", "--output_dir", type=Path, required=True, help="出力先ディレクトリ")
