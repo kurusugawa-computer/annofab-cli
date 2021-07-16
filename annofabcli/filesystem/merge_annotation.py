@@ -4,7 +4,7 @@ import logging
 import sys
 import zipfile
 from pathlib import Path
-from typing import Any, Dict, Iterator, List, Optional, Set
+from typing import Any, Callable, Dict, Iterator, List, Optional, Set
 
 from annofabapi.parser import (
     SimpleAnnotationDirParser,
@@ -15,7 +15,15 @@ from annofabapi.parser import (
 )
 
 import annofabcli
-from annofabcli.common.cli import AbstractCommandLineWithoutWebapiInterface, ArgumentParser
+from annofabcli.common.cli import (
+    AbstractCommandLineWithoutWebapiInterface,
+    ArgumentParser,
+    get_json_from_args,
+    get_list_from_args,
+)
+
+IsParserFunc = Callable[[SimpleAnnotationParser], bool]
+
 
 logger = logging.getLogger(__name__)
 
@@ -120,7 +128,33 @@ class MergeAnnotationMain:
         else:
             raise RuntimeError(f"{annotation_path} はサポート対象外です。")
 
-    def main(self, annotation_path1: Path, annotation_path2: Path, output_dir: Path):
+    @staticmethod
+    def create_is_target_parser_func(
+        task_ids: Optional[Iterator[str]] = None,
+    ) -> Optional[IsParserFunc]:
+        if task_ids is None:
+            return None
+
+        task_id_set = set(task_ids) if task_ids is not None else None
+
+        def is_target_parser(parser: SimpleAnnotationParser) -> bool:
+            if task_id_set is not None and len(task_id_set) > 0:
+                if parser.task_id not in task_id_set:
+                    return False
+
+            return True
+
+        return is_target_parser
+
+    def main(
+        self,
+        annotation_path1: Path,
+        annotation_path2: Path,
+        output_dir: Path,
+        target_task_ids: Optional[Iterator[str]] = None,
+    ):
+        is_target_parser_func = self.create_is_target_parser_func(target_task_ids)
+
         iter_parser1 = self.create_iter_parser(annotation_path1)
 
         zip_file2: Optional[zipfile.ZipFile] = None
@@ -129,6 +163,9 @@ class MergeAnnotationMain:
 
         excluded_json_path2: Set[str] = set()
         for parser1 in iter_parser1:
+            if is_target_parser_func is not None and not is_target_parser_func(parser1):
+                continue
+
             json_file1 = Path(parser1.json_file_path)
             json_file_path1 = f"{json_file1.parent.name}/{json_file1.name}"
             output_json = output_dir / json_file_path1
@@ -149,6 +186,8 @@ class MergeAnnotationMain:
         # annotation_path1に存在しないJSONを出力する
         iter_parser2 = self.create_iter_parser(annotation_path2)
         for parser2 in iter_parser2:
+            if is_target_parser_func is not None and not is_target_parser_func(parser2):
+                continue
             json_file2 = Path(parser2.json_file_path)
             json_file_path2 = f"{json_file2.parent.name}/{json_file2.name}"
             if json_file_path2 in excluded_json_path2:
@@ -179,7 +218,8 @@ class MergeAnnotation(AbstractCommandLineWithoutWebapiInterface):
         if not self.validate(args):
             return
         main_obj = MergeAnnotationMain()
-        main_obj.main(args.annotation[0], args.annotation[1], output_dir=args.output_dir)
+        target_task_ids = get_list_from_args(args.task_id) if args.task_id is not None else None
+        main_obj.main(args.annotation[0], args.annotation[1], output_dir=args.output_dir,target_task_ids=target_task_ids)
 
 
 def main(args):
@@ -194,13 +234,11 @@ def parse_args(parser: argparse.ArgumentParser):
         type=Path,
         nargs=2,
         required=True,
-        help="AnnoFabからダウンロードしたアノテーションzip、またはzipを展開したディレクトリを指定してください。"
-        "1番目に指定したアノテーションzipのdetails情報の下に、2番目に指定したしたアノテーションzipのdetails情報は追加します（2番目目に指定したアノテーションzipの情報が上位レイヤになる）。",
+        help="AnnoFabからダウンロードしたアノテーションzip、またはzipを展開したディレクトリを2つ指定してください。",
     )
 
     parser.add_argument("-o", "--output_dir", type=Path, required=True, help="出力先ディレクトリ")
 
-    # task?idは必要？
     argument_parser.add_task_id(
         required=False,
         help_message=(

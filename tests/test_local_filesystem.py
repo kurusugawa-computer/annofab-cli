@@ -102,6 +102,9 @@ class TestCommandLine:
                 str(annotation_dir2),
                 "--output_dir",
                 str(output_dir),
+                "--task_id",
+                "task1",
+                "task2",
             ]
         )
 
