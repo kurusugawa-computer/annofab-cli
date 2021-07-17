@@ -118,7 +118,7 @@ class MergeAnnotationMain:
                 return None
         elif annotation_path.is_file() and zip_file is not None:
             # zipファイルであるという前提
-            if zipfile.Path(annotation_path, str(json_path)).exists():
+            if str(json_path) in zip_file.namelist():
                 return SimpleAnnotationZipParser(zip_file, str(json_path))
             return None
         else:
