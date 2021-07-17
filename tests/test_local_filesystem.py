@@ -111,7 +111,20 @@ class TestCommandLine:
     def test_merge_annotation2(self):
         annotation_dir2 = data_dir / "merge/annotation-B"
         annotation_zip1 = data_dir / "merge/annotation-A.zip"
-        output_dir = out_dir / "merge-annotation-output2"
+        output_dir1 = out_dir / "merge-annotation-output21"
+        output_dir2 = out_dir / "merge-annotation-output22"
+
+        main(
+            [
+                "filesystem",
+                "merge_annotation",
+                "--annotation",
+                str(annotation_zip1),
+                str(annotation_dir2),
+                "--output_dir",
+                str(output_dir1),
+            ]
+        )
 
         main(
             [
@@ -121,7 +134,7 @@ class TestCommandLine:
                 str(annotation_dir2),
                 str(annotation_zip1),
                 "--output_dir",
-                str(output_dir),
+                str(output_dir2),
             ]
         )
 
