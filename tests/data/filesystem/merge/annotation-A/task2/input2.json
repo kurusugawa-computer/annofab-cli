@@ -1,0 +1,22 @@
+{
+    "project_id": "prj-A",
+    "annotation_format_version": "1.2.0",
+    "task_id": "task1",
+    "task_phase": "acceptance",
+    "task_phase_stage": 1,
+    "task_status": "not_started",
+    "input_data_id": "input2",
+    "input_data_name": "input2",
+    "details": [
+        {
+            "label": "cat",
+            "annotation_id": "1e2931d2-de34-4956-ab75-81f710dc0108",
+            "data": {
+                "data_uri": "1e2931d2-de34-4956-ab75-81f710dc0108",
+                "_type": "Segmentation"
+            },
+            "attributes": {}
+        }
+    ],
+    "updated_datetime": "2019-08-22T12:36:10.25+09:00"
+}
