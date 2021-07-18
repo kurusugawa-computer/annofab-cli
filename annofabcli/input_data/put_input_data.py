@@ -23,6 +23,7 @@ from annofabcli.common.cli import (
     ArgumentParser,
     build_annofabapi_resource_and_login,
     get_json_from_args,
+    get_list_from_args,
     get_wait_options_from_args,
     prompt_yesnoall,
 )
@@ -344,6 +345,13 @@ class PutInputData(AbstractCommandLineInterface):
                 project_id, input_data_list=input_data_list, overwrite=args.overwrite, parallelism=args.parallelism
             )
 
+        elif args.json is not None:
+            input_data_dict_list = get_json_from_args(args.json)
+            input_data_list = CsvInputData.schema().load(input_data_dict_list, many=True)
+            self.put_input_data_list(
+                project_id, input_data_list=input_data_list, overwrite=args.overwrite, parallelism=args.parallelism
+            )
+
         elif args.zip is not None:
             wait_options = get_wait_options_from_args(get_json_from_args(args.wait_options), DEFAULT_WAIT_OPTIONS)
             self.put_input_data_from_zip_file(
@@ -374,12 +382,26 @@ def parse_args(parser: argparse.ArgumentParser):
         "--csv",
         type=str,
         help=(
-            "入力データが記載されたCVファイルのパスを指定してください。"
+            "入力データが記載されたCSVファイルのパスを指定してください。"
             "CSVのフォーマットは、「1列目:input_data_name(required), 2列目:input_data_path(required), 3列目:input_data_id, "
             "4列目:sign_required(bool), ヘッダ行なし, カンマ区切り」です。"
             "input_data_pathの先頭が`file://`の場合、ローカルのファイルを入力データとして登録します。 "
             "input_data_idが空の場合はUUIDv4になります。"
-            "各項目の詳細は `putInputData` API を参照してください。"
+            "各項目の詳細は https://annofab.com/docs/api/#operation/putInputData を参照してください。"
+        ),
+    )
+
+    JSON_SAMPLE = (
+        '[{"input_data_name":"", "input_data_path":"file://lenna.png", "input_data_id":"foo","sign_required":false}]'
+    )
+    file_group.add_argument(
+        "--json",
+        type=str,
+        help=(
+            "登録対象の入力データをJSON形式で指定してください。"
+            f"(ex) '{JSON_SAMPLE}' "
+            "JSONの各キーはCSVの各列に対応しています。"
+            "`file://`を先頭に付けるとjsonファイルを指定できます。"
         ),
     )
 
