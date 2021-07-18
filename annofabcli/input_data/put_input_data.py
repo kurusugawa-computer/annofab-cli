@@ -23,7 +23,6 @@ from annofabcli.common.cli import (
     ArgumentParser,
     build_annofabapi_resource_and_login,
     get_json_from_args,
-    get_list_from_args,
     get_wait_options_from_args,
     prompt_yesnoall,
 )
@@ -44,7 +43,7 @@ class CsvInputData(DataClassJsonMixin):
     input_data_name: str
     input_data_path: str
     input_data_id: str
-    sign_required: Optional[bool]
+    sign_required: Optional[bool] = None
 
 
 class SubPutInputData:
@@ -243,6 +242,15 @@ class PutInputData(AbstractCommandLineInterface):
 
         return input_data_list
 
+    @staticmethod
+    def get_input_data_list_from_dict(input_data_dict_list: List[Dict[str, Any]]) -> List[CsvInputData]:
+        input_data_list: List[CsvInputData] = []
+        for input_data_dict in input_data_dict_list:
+            if "input_data_id" not in input_data_dict:
+                input_data_dict["input_data_id"] = str(uuid.uuid4())
+            input_data_list.append(CsvInputData.from_dict(input_data_dict))
+        return input_data_list
+
     def put_input_data_from_zip_file(
         self,
         project_id: str,
@@ -316,11 +324,12 @@ class PutInputData(AbstractCommandLineInterface):
                 print(f"{COMMON_MESSAGE} argument --csv: ファイルパスが存在しません。 '{args.csv}'", file=sys.stderr)
                 return False
 
+        if args.csv is not None or args.json is not None:
             if args.wait:
-                logger.warning(f"'--csv'オプションを指定しているとき、'--wait'オプションは無視されます。")
+                logger.warning(f"'--csv'/'--json'オプションを指定しているとき、'--wait'オプションは無視されます。")
 
             if args.input_data_name_for_zip:
-                logger.warning(f"'--csv'オプションを指定しているとき、'--input_data_name_for_zip'オプションは無視されます。")
+                logger.warning(f"'--csv'/'--json'オプションを指定しているとき、'--input_data_name_for_zip'オプションは無視されます。")
 
             if args.parallelism is not None and not args.yes:
                 print(
@@ -347,7 +356,7 @@ class PutInputData(AbstractCommandLineInterface):
 
         elif args.json is not None:
             input_data_dict_list = get_json_from_args(args.json)
-            input_data_list = CsvInputData.schema().load(input_data_dict_list, many=True)
+            input_data_list = self.get_input_data_list_from_dict(input_data_dict_list)
             self.put_input_data_list(
                 project_id, input_data_list=input_data_list, overwrite=args.overwrite, parallelism=args.parallelism
             )

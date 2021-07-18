@@ -2,9 +2,11 @@ import argparse
 import copy
 import json
 import logging
+import tempfile
 from pathlib import Path
-from typing import Any, Dict
+from typing import Any, Dict, List
 
+import pandas
 from annofabapi.models import ProjectJobType, ProjectMemberRole
 
 import annofabcli
@@ -21,6 +23,9 @@ from annofabcli.common.dataclasses import WaitOptions
 logger = logging.getLogger(__name__)
 
 DEFAULT_WAIT_OPTIONS = WaitOptions(interval=60, max_tries=360)
+
+TaskInputRelation = Dict[str, List[str]]
+"""task_idとinput_data_idの構造を表現する型"""
 
 
 class PutTask(AbstractCommandLineInterface):
@@ -82,6 +87,16 @@ class PutTask(AbstractCommandLineInterface):
             else:
                 logger.warning(f"タスクの登録に失敗しました。または、{MAX_WAIT_MINUTUE}分間待っても、タスクの登録が完了しませんでした。")
 
+    @staticmethod
+    def create_task_relation_dataframe(task_relation_dict: TaskInputRelation) -> pandas.DataFrame:
+        tmp_list = []
+        for task_id, input_data_id_list in task_relation_dict.items():
+            for input_data_id in input_data_id_list:
+                tmp_list.append({"task_id": task_id, "input_data_id": input_data_id})
+        df = pandas.DataFrame(tmp_list)
+        df["input_data_name"] = ""
+        return df[["task_id", "input_data_name", "input_data_id"]]
+
     def main(self):
         args = self.args
         project_id = args.project_id
@@ -90,6 +105,26 @@ class PutTask(AbstractCommandLineInterface):
         if args.csv is not None:
             csv_file = Path(args.csv)
             self.put_task_from_csv_file(project_id, csv_file)
+        elif args.json is not None:
+            # CSVファイルに変換する
+            task_relation_dict = get_json_from_args(args.json)
+            if len(task_relation_dict) > 1:
+                df = self.create_task_relation_dataframe(task_relation_dict)
+                with tempfile.NamedTemporaryFile() as f:
+                    df.to_csv(f, index=False, header=None)
+                    self.put_task_from_csv_file(project_id, f.name)
+            else:
+                # 登録件数が少ない場合は、put_taskの方が早いのでこちらで登録する。
+                task_count = 0
+                for task_id, input_data_id_list in task_relation_dict.items():
+                    logger.debug(f"タスク'{task_id}'を登録します。")
+                    self.service.api.put_task(
+                        project_id, task_id, request_body={"input_data_id_list": input_data_id_list}
+                    )
+                    task_count += 1
+                logger.info(f"{task_count} 件のタスクを登録しました。")
+                return
+
         elif args.by_count is not None:
             by_count = copy.deepcopy(PutTask.DEFAULT_BY_COUNT)
             by_count.update(get_json_from_args(args.by_count))
@@ -124,6 +159,18 @@ def parse_args(parser: argparse.ArgumentParser):
             "タスクに割り当てる入力データが記載されたCSVファイルのパスを指定してください。"
             "CSVのフォーマットは、「1列目:task_id,2列目:Any(無視される), 3列目:input_data_id」です。"
             "タスク作成画面でアップロードするCSVと同じフォーマットです。"
+        ),
+    )
+
+    JSON_SAMPLE = '{"task1":["input1","input2"]}'
+    file_group.add_argument(
+        "--json",
+        type=str,
+        help=(
+            "タスクに割り当てる入力データをJSON形式で指定してください。"
+            "keyがtask_id, valueがinput_data_idのlistです。"
+            f"(ex) {JSON_SAMPLE} "
+            "`file://`を先頭に付けるとjsonファイルを指定できます。"
         ),
     )
 
