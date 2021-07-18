@@ -19,10 +19,13 @@
         "asyncio",
         "dateutil",
         "getrgb",
+        "isna",
         "itertools",
+        "itertuples",
         "nargs",
         "noqa",
         "pylint",
-        "tzlocal",
+        "strtobool",
+        "tzlocal"
     ]
 }
