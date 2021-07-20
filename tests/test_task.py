@@ -196,7 +196,7 @@ class TestCommandLine:
         )
 
     @pytest.mark.submitting_job
-    def test_put_task(self):
+    def test_put_task_with_(self):
         csv_file = str(data_dir / "put_task.csv")
         main([self.command_name, "put", "--project_id", project_id, "--csv", csv_file, "--wait"])
 
