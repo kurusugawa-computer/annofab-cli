@@ -117,11 +117,19 @@ class PutTask(AbstractCommandLineInterface):
                 # 登録件数が少ない場合は、put_taskの方が早いのでこちらで登録する。
                 task_count = 0
                 for task_id, input_data_id_list in task_relation_dict.items():
-                    logger.debug(f"タスク'{task_id}'を登録します。")
-                    self.service.api.put_task(
-                        project_id, task_id, request_body={"input_data_id_list": input_data_id_list}
-                    )
-                    task_count += 1
+                    task = self.service.wrapper.get_task_or_none(project_id)
+                    if task is None:
+                        logger.debug(f"タスク'{task_id}'を登録します。")
+                        self.service.api.put_task(
+                            project_id, task_id, request_body={"input_data_id_list": input_data_id_list}
+                        )
+                        task_count += 1
+                    else:
+                        logger.warning()(f"タスク'{task_id}'はすでに存在するため、登録をスキップします。")
+                        self.service.api.put_task(
+                            project_id, task_id, request_body={"input_data_id_list": input_data_id_list}
+                        )
+
                 logger.info(f"{task_count} 件のタスクを登録しました。")
                 return
 

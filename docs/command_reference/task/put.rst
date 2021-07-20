@@ -13,7 +13,7 @@ Examples
 基本的な使い方
 --------------------------------------
 
-入力データを個別に指定する場合
+入力データを個別に指定する場合（CSV）
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 タスクに含まれる入力データを記載したCSVを指定して、タスクを作成することができます。
 
@@ -44,6 +44,29 @@ CSVのフォーマットは以下の通りです。
 
     $ annofabcli task put --project_id prj1 --csv task.csv
 
+
+入力データを個別に指定する場合（JSON）
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+タスクと入力データの関係を表したJSONを指定して、タスクを作成することができます。
+
+以下は、JSONのサンプルです。
+
+.. code-block::
+    :caption: task.json
+
+
+    {
+        "task1": ["input1","input2"],
+        "task2": ["input3","input4"],
+    }
+
+キーにtask_idを指定して、値にinput_data_idの配列を指定してください。
+
+JSON形式の文字列、またはJSONファイルのパスは `--json`` に渡します。
+
+.. code-block::
+
+    $ annofabcli task put --project_id prj1 --json '{"task1":["input1","input2"]}'
 
 
 入力データの個数を指定する場合

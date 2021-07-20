@@ -12,9 +12,9 @@ Examples
 =================================
 
 
-基本的な使い方
+CSVから補助情報を登録する
 --------------------------------------
-補助情報が記載されたCSVファイルを元に、補助情報を作成します。
+補助情報が記載されたCSVファイルを元に、補助情報を登録します。
 
 
 CSVのフォーマットは以下の通りです。
@@ -59,8 +59,49 @@ supplementary_data_id（省略時は supplementary_data_number）が一致する
     $ annofabcli supplementary put --project_id prj1 --csv supplementary_data.csv --overwrite
 
 
+JSONから補助情報を登録する
+--------------------------------------
+補助情報が記載されたJSONファイルを元に、補助情報を登録します。
 
 
+以下は、JSONのサンプルです。
+
+
+
+
+.. code-block::
+    :caption: supplementary_data.json
+
+    [
+        
+        {
+            "input_data_id": "input1",
+            "supplementary_data_number": 1,
+            "supplementary_data_name": "foo",
+            "supplementary_data_path": "file://foo.jpg",
+        }
+        ,
+        {
+            "input_data_id": "input1",
+            "supplementary_data_number": 2,
+            "supplementary_data_name": "bar",
+            "supplementary_data_path": "s3://example.com/bar.jpg",
+            "supplementary_data_id": "id2",
+            "supplementary_data_type": "image"
+        }
+    ]
+
+
+
+JSONのキーは、``--csv`` に指定するCSVファイルの列に対応します。
+
+``--json`` にJSON形式の文字列、またはJSONファイルのパスを指定できます。
+
+.. code-block::
+
+    $ annofabcli supplementary put --project_id prj1 --json file://supplementary_data.json
+
+    
 
 並列処理
 ----------------------------------------------
