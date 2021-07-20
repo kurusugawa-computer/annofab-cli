@@ -42,8 +42,20 @@ class CsvInputData(DataClassJsonMixin):
 
     input_data_name: str
     input_data_path: str
-    input_data_id: str
+    input_data_id: Optional[str] = None
     sign_required: Optional[bool] = None
+
+
+@dataclass
+class InputDataForPut(DataClassJsonMixin):
+    """
+    put用の入力データ
+    """
+
+    input_data_name: str
+    input_data_path: str
+    input_data_id: str
+    sign_required: Optional[bool]
 
 
 class SubPutInputData:
@@ -62,7 +74,7 @@ class SubPutInputData:
         self.all_yes = all_yes
 
     def put_input_data(
-        self, project_id: str, csv_input_data: CsvInputData, last_updated_datetime: Optional[str] = None
+        self, project_id: str, csv_input_data: InputDataForPut, last_updated_datetime: Optional[str] = None
     ):
 
         request_body: Dict[str, Any] = {"last_updated_datetime": last_updated_datetime}
@@ -111,43 +123,51 @@ class SubPutInputData:
 
         return yes
 
-    def confirm_put_input_data(self, csv_input_data: CsvInputData, already_exists: bool = False) -> bool:
-        message_for_confirm = f"input_data_name='{csv_input_data.input_data_name}' の入力データを登録しますか？"
+    def confirm_put_input_data(self, input_data: InputDataForPut, already_exists: bool = False) -> bool:
+        message_for_confirm = f"input_data_name='{input_data.input_data_name}' の入力データを登録しますか？"
         if already_exists:
-            message_for_confirm += f"input_data_id={csv_input_data.input_data_id} を上書きします。"
+            message_for_confirm += f"input_data_id={input_data.input_data_id} を上書きします。"
         return self.confirm_processing(message_for_confirm)
 
     def put_input_data_main(self, project_id: str, csv_input_data: CsvInputData, overwrite: bool = False) -> bool:
-        last_updated_datetime = None
-        input_data_id = csv_input_data.input_data_id
-        input_data_path = csv_input_data.input_data_path
-        input_data = self.service.wrapper.get_input_data_or_none(project_id, input_data_id)
 
-        if input_data is not None:
+        input_data = InputDataForPut(
+            input_data_name=csv_input_data.input_data_name,
+            input_data_path=csv_input_data.input_data_path,
+            input_data_id=csv_input_data.input_data_id
+            if csv_input_data.input_data_id is not None
+            else str(uuid.uuid4()),
+            sign_required=csv_input_data.sign_required,
+        )
+
+        last_updated_datetime = None
+        dict_input_data = self.service.wrapper.get_input_data_or_none(project_id, input_data.input_data_id)
+
+        if dict_input_data is not None:
             if overwrite:
-                logger.debug(f"input_data_id={input_data_id} はすでに存在します。")
-                last_updated_datetime = input_data["updated_datetime"]
+                logger.debug(f"input_data_id={input_data.input_data_id} はすでに存在します。")
+                last_updated_datetime = dict_input_data["updated_datetime"]
             else:
-                logger.debug(f"input_data_id={input_data_id} がすでに存在するのでスキップします。")
+                logger.debug(f"input_data_id={input_data.input_data_id} がすでに存在するのでスキップします。")
                 return False
 
-        file_path = get_file_scheme_path(input_data_path)
-        logger.debug(f"csv_input_data={csv_input_data}")
+        file_path = get_file_scheme_path(input_data.input_data_path)
+        logger.debug(f"input_data={input_data}")
         if file_path is not None:
             if not Path(file_path).exists():
-                logger.warning(f"{input_data_path} は存在しません。")
+                logger.warning(f"{input_data.input_data_path} は存在しません。")
                 return False
 
-        if not self.confirm_put_input_data(csv_input_data, already_exists=(last_updated_datetime is not None)):
+        if not self.confirm_put_input_data(input_data, already_exists=(last_updated_datetime is not None)):
             return False
 
         # 入力データを登録
         try:
-            self.put_input_data(project_id, csv_input_data, last_updated_datetime=last_updated_datetime)
+            self.put_input_data(project_id, input_data, last_updated_datetime=last_updated_datetime)
             logger.debug(
                 f"入力データを登録しました。"
-                f"input_data_id={csv_input_data.input_data_id}, "
-                f"input_data_name={csv_input_data.input_data_name}"
+                f"input_data_id={input_data.input_data_id}, "
+                f"input_data_name={input_data.input_data_name}"
             )
             return True
 
@@ -155,8 +175,8 @@ class SubPutInputData:
             logger.warning(e)
             logger.warning(
                 f"入力データの登録に失敗しました。"
-                f"input_data_id={csv_input_data.input_data_id}, "
-                f"input_data_name={csv_input_data.input_data_name}"
+                f"input_data_id={input_data.input_data_id}, "
+                f"input_data_name={input_data.input_data_name}"
             )
             return False
 
@@ -207,7 +227,7 @@ class PutInputData(AbstractCommandLineInterface):
     @staticmethod
     def get_input_data_list_from_csv(csv_path: Path) -> List[CsvInputData]:
         def create_input_data(e):
-            input_data_id = e.input_data_id if not pandas.isna(e.input_data_id) else str(uuid.uuid4())
+            input_data_id = e.input_data_id if not pandas.isna(e.input_data_id) else None
             sign_required = bool(strtobool(str(e.sign_required))) if not pandas.isna(e.sign_required) else None
             return CsvInputData(
                 input_data_name=e.input_data_name,
@@ -244,12 +264,7 @@ class PutInputData(AbstractCommandLineInterface):
 
     @staticmethod
     def get_input_data_list_from_dict(input_data_dict_list: List[Dict[str, Any]]) -> List[CsvInputData]:
-        input_data_list: List[CsvInputData] = []
-        for input_data_dict in input_data_dict_list:
-            if "input_data_id" not in input_data_dict:
-                input_data_dict["input_data_id"] = str(uuid.uuid4())
-            input_data_list.append(CsvInputData.from_dict(input_data_dict))
-        return input_data_list
+        return CsvInputData.schema().load(input_data_dict_list, many=True, unknown="exclude")
 
     def put_input_data_from_zip_file(
         self,

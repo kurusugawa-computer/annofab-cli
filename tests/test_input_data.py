@@ -1,4 +1,5 @@
 import configparser
+import json
 import os
 from pathlib import Path
 
@@ -82,7 +83,7 @@ class TestCommandLine:
             ]
         )
 
-    def test_put_input_data(self):
+    def test_put_input_data__with_csv(self):
         csv_file = str(data_dir / "input_data2.csv")
         main(
             [
@@ -92,6 +93,29 @@ class TestCommandLine:
                 project_id,
                 "--csv",
                 csv_file,
+                "--overwrite",
+                "--yes",
+                "--parallelism",
+                "2",
+            ]
+        )
+
+    def test_put_input_data__with_json(self):
+        json_args = [
+            {
+                "input_data_name": "test",
+                "input_data_path": "file://tests/data/lenna.png",
+                "unknown_field": "foo",
+            }
+        ]
+        main(
+            [
+                "input_data",
+                "put",
+                "--project_id",
+                project_id,
+                "--json",
+                json.dumps(json_args),
                 "--overwrite",
                 "--yes",
                 "--parallelism",

@@ -1,4 +1,5 @@
 import argparse
+import json
 import logging
 import sys
 import uuid
@@ -402,13 +403,20 @@ def parse_args(parser: argparse.ArgumentParser):
         ),
     )
 
-    JSON_SAMPLE = '[{"input_data_id":"input1", "supplementary_data_number":"1", "supplementary_data_name":"foo", "supplementary_data_path":"file://foo.jpg"]'
+    JSON_SAMPLE = [
+        {
+            "input_data_id": "input1",
+            "supplementary_data_number": 1,
+            "supplementary_data_name": "foo",
+            "supplementary_data_path": "file://foo.jpg",
+        }
+    ]
     file_group.add_argument(
         "--json",
         type=str,
         help=(
             "登録対象の補助情報データをJSON形式で指定してください。"
-            f"(ex) '{JSON_SAMPLE}' "
+            f"(ex) '{json.dumps(JSON_SAMPLE)}' "
             "JSONの各キーは'--csv'に渡すCSVの各列に対応しています。"
             "`file://`を先頭に付けるとjsonファイルを指定できます。"
         ),
