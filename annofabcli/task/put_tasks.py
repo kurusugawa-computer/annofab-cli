@@ -35,6 +35,10 @@ class PutTask(AbstractCommandLineInterface):
 
     DEFAULT_BY_COUNT = {"allow_duplicate_input_data": False, "input_data_order": "name_asc"}
 
+    TASK_THRESHOLD_FOR_JSON = 10
+    """'--json'が指定されたとき、この値以下ならば`put_task`APIでタスクを登録する。
+    この値を超えているならば、`initiate_tasks_generation`APIでタスクを登録する。"""
+
     def put_task_by_count(self, project_id: str, task_generate_rule: Dict[str, Any]):
         project_last_updated_datetime = self.service.api.get_project(project_id)[0]["updated_datetime"]
         task_generate_rule.update({"_type": "ByCount"})
@@ -73,8 +77,8 @@ class PutTask(AbstractCommandLineInterface):
         logger.info(f"タスクの登録中です（サーバ側の処理）。")
 
         if wait:
-            MAX_WAIT_MINUTUE = wait_options.max_tries * wait_options.interval / 60
-            logger.info(f"最大{MAX_WAIT_MINUTUE}分間、タスク登録処理が終了するまで待ちます。")
+            MAX_WAIT_MINUTE = wait_options.max_tries * wait_options.interval / 60
+            logger.info(f"最大{MAX_WAIT_MINUTE}分間、タスク登録処理が終了するまで待ちます。")
 
             result = self.service.wrapper.wait_for_completion(
                 project_id,
@@ -85,7 +89,7 @@ class PutTask(AbstractCommandLineInterface):
             if result:
                 logger.info(f"タスクの登録が完了しました。")
             else:
-                logger.warning(f"タスクの登録に失敗しました。または、{MAX_WAIT_MINUTUE}分間待っても、タスクの登録が完了しませんでした。")
+                logger.warning(f"タスクの登録に失敗しました。または、{MAX_WAIT_MINUTE}分間待っても、タスクの登録が完了しませんでした。")
 
     @staticmethod
     def create_task_relation_dataframe(task_relation_dict: TaskInputRelation) -> pandas.DataFrame:
@@ -108,7 +112,7 @@ class PutTask(AbstractCommandLineInterface):
         elif args.json is not None:
             # CSVファイルに変換する
             task_relation_dict = get_json_from_args(args.json)
-            if len(task_relation_dict) > 1:
+            if len(task_relation_dict) > self.TASK_THRESHOLD_FOR_JSON:
                 df = self.create_task_relation_dataframe(task_relation_dict)
                 with tempfile.NamedTemporaryFile() as f:
                     df.to_csv(f, index=False, header=None)
@@ -117,7 +121,7 @@ class PutTask(AbstractCommandLineInterface):
                 # 登録件数が少ない場合は、put_taskの方が早いのでこちらで登録する。
                 task_count = 0
                 for task_id, input_data_id_list in task_relation_dict.items():
-                    task = self.service.wrapper.get_task_or_none(project_id)
+                    task = self.service.wrapper.get_task_or_none(project_id, task_id)
                     if task is None:
                         logger.debug(f"タスク'{task_id}'を登録します。")
                         self.service.api.put_task(
@@ -125,7 +129,7 @@ class PutTask(AbstractCommandLineInterface):
                         )
                         task_count += 1
                     else:
-                        logger.warning()(f"タスク'{task_id}'はすでに存在するため、登録をスキップします。")
+                        logger.warning(f"タスク'{task_id}'はすでに存在するため、登録をスキップします。")
                         self.service.api.put_task(
                             project_id, task_id, request_body={"input_data_id_list": input_data_id_list}
                         )
