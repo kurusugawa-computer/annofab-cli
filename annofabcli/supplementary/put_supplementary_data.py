@@ -21,6 +21,7 @@ from annofabcli.common.cli import (
     AbstractCommandLineInterface,
     ArgumentParser,
     build_annofabapi_resource_and_login,
+    get_list_from_args,
     prompt_yesnoall,
 )
 from annofabcli.common.utils import get_file_scheme_path
@@ -38,8 +39,8 @@ class CsvSupplementaryData(DataClassJsonMixin):
     supplementary_data_number: int
     supplementary_data_name: str
     supplementary_data_path: str
-    supplementary_data_id: Optional[str]
-    supplementary_data_type: Optional[str]
+    supplementary_data_id: Optional[str] = None
+    supplementary_data_type: Optional[str] = None
 
 
 @dataclass
@@ -322,20 +323,20 @@ class PutSupplementaryData(AbstractCommandLineInterface):
         supplementary_data_list = [create_supplementary_data(e) for e in df.itertuples()]
         return supplementary_data_list
 
-    @staticmethod
-    def validate(args: argparse.Namespace) -> bool:
-        COMMON_MESSAGE = "annofabcli supplementary_data put: error:"
+    COMMON_MESSAGE = "annofabcli supplementary_data put: error:"
+
+    def validate(self, args: argparse.Namespace) -> bool:
         if args.csv is not None:
             if not Path(args.csv).exists():
-                print(f"{COMMON_MESSAGE} argument --csv: ファイルパスが存在しません。 '{args.csv}'", file=sys.stderr)
+                print(f"{self.COMMON_MESSAGE} argument --csv: ファイルパスが存在しません。 '{args.csv}'", file=sys.stderr)
                 return False
 
-            if args.parallelism is not None and not args.yes:
-                print(
-                    f"{COMMON_MESSAGE} argument --parallelism: '--parallelism'を指定するときは、必ず'--yes'を指定してください。",
-                    file=sys.stderr,
-                )
-                return False
+        if args.parallelism is not None and not args.yes:
+            print(
+                f"{self.COMMON_MESSAGE} argument --parallelism: '--parallelism'を指定するときは、必ず'--yes'を指定してください。",
+                file=sys.stderr,
+            )
+            return False
 
         return True
 
@@ -347,7 +348,18 @@ class PutSupplementaryData(AbstractCommandLineInterface):
         project_id = args.project_id
         super().validate_project(project_id, [ProjectMemberRole.OWNER])
 
-        supplementary_data_list = self.get_supplementary_data_list_from_csv(Path(args.csv))
+        if args.csv is not None:
+            supplementary_data_list = self.get_supplementary_data_list_from_csv(Path(args.csv))
+        elif args.json is not None:
+            supplementary_data_dict_list = get_list_from_args(args.json)
+            supplementary_data_list = CsvSupplementaryData.schema().load(supplementary_data_dict_list, many=True)
+        else:
+            print(
+                f"{self.COMMON_MESSAGE} argument --parallelism: '--csv'または'--json'のいずれかを指定してください。",
+                file=sys.stderr,
+            )
+            return
+
         self.put_supplementary_data_list(
             project_id,
             supplementary_data_list=supplementary_data_list,
@@ -367,10 +379,10 @@ def parse_args(parser: argparse.ArgumentParser):
 
     argument_parser.add_project_id()
 
-    parser.add_argument(
+    file_group = parser.add_mutually_exclusive_group(required=True)
+    file_group.add_argument(
         "--csv",
         type=str,
-        required=True,
         help=(
             "補助情報が記載されたCVファイルのパスを指定してください。"
             "CSVのフォーマットは、「1列目:input_data_id(required), 2列目:supplementary_data_number(required), "
@@ -379,6 +391,18 @@ def parse_args(parser: argparse.ArgumentParser):
             "supplementary_data_pathの先頭が`file://`の場合、ローカルのファイルを補助情報として登録します。 "
             "supplementary_data_idが空の場合はUUIDv4になります。"
             "各項目の詳細は `putSupplementaryData` API を参照してください。"
+        ),
+    )
+
+    JSON_SAMPLE = '[{"input_data_id":"input1", "supplementary_data_number":"1", "supplementary_data_name":"foo", "supplementary_data_path":"file://foo.jpg"]'
+    file_group.add_argument(
+        "--json",
+        type=str,
+        help=(
+            "登録対象の補助情報データをJSON形式で指定してください。"
+            f"(ex) '{JSON_SAMPLE}' "
+            "JSONの各キーは'--csv'に渡すCSVの各列に対応しています。"
+            "`file://`を先頭に付けるとjsonファイルを指定できます。"
         ),
     )
 
