@@ -46,13 +46,15 @@ class TestCommandLine:
         )
 
     def test_put_supplementar__with_json(self):
-        dict_json_args = {
-            "input_data_id": self.input_data_id,
-            "supplementary_data_number": 1,
-            "supplementary_data_name": "foo",
-            "supplementary_data_path": "file://foo.jpg",
-        }
-        str_json_args = json.dumps(dict_json_args)
+        json_args = [
+            {
+                "input_data_id": self.input_data_id,
+                "supplementary_data_number": 1,
+                "supplementary_data_name": "foo-data",
+                "supplementary_data_path": "file://tests/data/lenna.png",
+            }
+        ]
+        str_json_args = json.dumps(json_args)
 
         main(
             [

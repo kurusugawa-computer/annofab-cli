@@ -6,7 +6,7 @@ from dataclasses import dataclass
 from functools import partial
 from multiprocessing import Pool
 from pathlib import Path
-from typing import Dict, List, Optional
+from typing import Any, Dict, List, Optional
 
 import annofabapi
 import pandas
@@ -21,7 +21,7 @@ from annofabcli.common.cli import (
     AbstractCommandLineInterface,
     ArgumentParser,
     build_annofabapi_resource_and_login,
-    get_list_from_args,
+    get_json_from_args,
     prompt_yesnoall,
 )
 from annofabcli.common.utils import get_file_scheme_path
@@ -294,6 +294,13 @@ class PutSupplementaryData(AbstractCommandLineInterface):
         logger.info(f"{project_title} に、{count_put_supplementary_data} / {len(supplementary_data_list)} 件の補助情報を登録しました。")
 
     @staticmethod
+    def get_supplementary_data_list_from_dict(
+        supplementary_data_dict_list: List[Dict[str, Any]]
+    ) -> List[CsvSupplementaryData]:
+        print(f"{supplementary_data_dict_list=}")
+        return CsvSupplementaryData.schema().load(supplementary_data_dict_list, many=True)
+
+    @staticmethod
     def get_supplementary_data_list_from_csv(csv_path: Path) -> List[CsvSupplementaryData]:
         def create_supplementary_data(e):
             supplementary_data_id = e.supplementary_data_id if not pandas.isna(e.supplementary_data_id) else None
@@ -351,8 +358,9 @@ class PutSupplementaryData(AbstractCommandLineInterface):
         if args.csv is not None:
             supplementary_data_list = self.get_supplementary_data_list_from_csv(Path(args.csv))
         elif args.json is not None:
-            supplementary_data_dict_list = get_list_from_args(args.json)
-            supplementary_data_list = CsvSupplementaryData.schema().load(supplementary_data_dict_list, many=True)
+            # supplementary_data_dict_list = get_list_from_args(args.json)
+            # supplementary_data_list = CsvSupplementaryData.schema().load(supplementary_data_dict_list, many=True)
+            supplementary_data_list = self.get_supplementary_data_list_from_dict(get_json_from_args(args.json))
         else:
             print(
                 f"{self.COMMON_MESSAGE} argument --parallelism: '--csv'または'--json'のいずれかを指定してください。",
