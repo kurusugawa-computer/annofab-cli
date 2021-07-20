@@ -302,8 +302,8 @@ class PutInputData(AbstractCommandLineInterface):
         logger.info(f"入力データの登録中です（サーバ側の処理）。")
 
         if wait:
-            MAX_WAIT_MINUTUE = wait_options.max_tries * wait_options.interval / 60
-            logger.info(f"最大{MAX_WAIT_MINUTUE}分間、処理が終了するまで待ちます。")
+            MAX_WAIT_MINUTE = wait_options.max_tries * wait_options.interval / 60
+            logger.info(f"最大{MAX_WAIT_MINUTE}分間、処理が終了するまで待ちます。")
 
             result = self.service.wrapper.wait_for_completion(
                 project_id,
@@ -314,7 +314,7 @@ class PutInputData(AbstractCommandLineInterface):
             if result:
                 logger.info(f"入力データの登録が完了しました。")
             else:
-                logger.warning(f"入力データの登録に失敗しました。または、{MAX_WAIT_MINUTUE}分間待っても、入力データの登録が完了しませんでした。")
+                logger.warning(f"入力データの登録に失敗しました。または、{MAX_WAIT_MINUTE}分間待っても、入力データの登録が完了しませんでした。")
 
     @staticmethod
     def validate(args: argparse.Namespace) -> bool:
