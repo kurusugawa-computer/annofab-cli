@@ -298,7 +298,6 @@ class PutSupplementaryData(AbstractCommandLineInterface):
     def get_supplementary_data_list_from_dict(
         supplementary_data_dict_list: List[Dict[str, Any]]
     ) -> List[CsvSupplementaryData]:
-        print(f"{supplementary_data_dict_list=}")
         return CsvSupplementaryData.schema().load(supplementary_data_dict_list, many=True, unknown="exclude")
 
     @staticmethod
@@ -359,8 +358,6 @@ class PutSupplementaryData(AbstractCommandLineInterface):
         if args.csv is not None:
             supplementary_data_list = self.get_supplementary_data_list_from_csv(Path(args.csv))
         elif args.json is not None:
-            # supplementary_data_dict_list = get_list_from_args(args.json)
-            # supplementary_data_list = CsvSupplementaryData.schema().load(supplementary_data_dict_list, many=True)
             supplementary_data_list = self.get_supplementary_data_list_from_dict(get_json_from_args(args.json))
         else:
             print(
