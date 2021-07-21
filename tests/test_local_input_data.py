@@ -33,4 +33,4 @@ def test_get_input_data_list_from_csv():
         input_data_name="data3", input_data_path="s3://example.com/data3", input_data_id="id3", sign_required=False
     )
 
-    assert is_uuid4(actual_members[3].input_data_id)
+    assert actual_members[3].input_data_id is None

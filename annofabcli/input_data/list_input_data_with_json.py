@@ -7,6 +7,7 @@ from typing import Any, Dict, List, Optional, Set, Tuple
 
 import annofabapi
 from annofabapi.dataclass.input import InputData
+from annofabapi.models import ProjectMemberRole
 
 import annofabcli
 from annofabcli import AnnofabApiFacade
@@ -93,7 +94,9 @@ class ListInputDataWithJson(AbstractCommandLineInterface):
         )
 
         project_id = args.project_id
-        super().validate_project(project_id, project_member_roles=None)
+        super().validate_project(
+            project_id, project_member_roles=[ProjectMemberRole.TRAINING_DATA_USER, ProjectMemberRole.OWNER]
+        )
 
         main_obj = ListInputDataWithJsonMain(self.service)
         input_data_list = main_obj.get_input_data_list(
@@ -183,6 +186,7 @@ def add_parser(subparsers: argparse._SubParsersAction):
     subcommand_name = "list_with_json"
     subcommand_help = "入力データ全件ファイルから一覧を出力します。"
     description = "入力データ全件ファイルから一覧を出力します。"
+    epilog = "アノテーションユーザまたはオーナロールを持つユーザで実行してください。"
 
-    parser = annofabcli.common.cli.add_parser(subparsers, subcommand_name, subcommand_help, description)
+    parser = annofabcli.common.cli.add_parser(subparsers, subcommand_name, subcommand_help, description, epilog=epilog)
     parse_args(parser)

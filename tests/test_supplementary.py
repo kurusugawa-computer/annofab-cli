@@ -1,4 +1,5 @@
 import configparser
+import json
 import os
 from pathlib import Path
 
@@ -25,7 +26,12 @@ service = annofabapi.build()
 
 
 class TestCommandLine:
-    def test_put_supplementar(self):
+    @classmethod
+    def setup_class(cls):
+        task, _ = service.api.get_task(project_id, task_id)
+        cls.input_data_id = task["input_data_id_list"][0]
+
+    def test_put_supplementar__with_csv(self):
         main(
             [
                 "supplementary",
@@ -34,6 +40,30 @@ class TestCommandLine:
                 project_id,
                 "--csv",
                 str(data_dir / "supplementary.csv"),
+                "--overwrite",
+                "--yes",
+            ]
+        )
+
+    def test_put_supplementar__with_json(self):
+        json_args = [
+            {
+                "input_data_id": self.input_data_id,
+                "supplementary_data_number": 1,
+                "supplementary_data_name": "foo-data",
+                "supplementary_data_path": "file://tests/data/lenna.png",
+            }
+        ]
+        str_json_args = json.dumps(json_args)
+
+        main(
+            [
+                "supplementary",
+                "put",
+                "--project_id",
+                project_id,
+                "--json",
+                str_json_args,
                 "--overwrite",
                 "--yes",
             ]
