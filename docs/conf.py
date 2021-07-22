@@ -57,13 +57,14 @@ html_theme = "pydata_sphinx_theme"
 # so a file named "default.css" will overwrite the builtin "default.css".
 html_static_path = ["_static"]
 
+html_css_files = ["css/custom.css"]
 
 html_theme_options = {
     "github_url": "https://github.com/kurusugawa-computer/annofab-cli",
     "use_edit_page_button": True,
     "footer_items": [],  # footerを空にする
     # "last_updated" を footerに配置すると広告に重なるので、"last_updated"は右側に配置する
-    "page_sidebar_items": ["page-toc", "last-updated", "edit-this-page"],
+    "page_sidebar_items": ["page-toc", "edit-this-page", "last-updated"],
 }
 
 html_context = {
