@@ -27,7 +27,7 @@ author = "yuji38kwmt"
 # Add any Sphinx extension module names here, as strings. They can be
 # extensions coming with Sphinx (named 'sphinx.ext.*') or your custom
 # ones.
-extensions = []
+extensions = ["sphinx_last_updated_by_git"]
 
 # Add any paths that contain templates here, relative to this directory.
 templates_path = ["_templates"]
@@ -61,7 +61,9 @@ html_static_path = ["_static"]
 html_theme_options = {
     "github_url": "https://github.com/kurusugawa-computer/annofab-cli",
     "use_edit_page_button": True,
-    "footer_items": ["last-updated"],
+    "footer_items": [],  # footerを空にする
+    # "last_updated" を footerに配置すると広告に重なるので、"last_updated"は右側に配置する
+    "page_sidebar_items": ["page-toc", "last-updated", "edit-this-page"],
 }
 
 html_context = {

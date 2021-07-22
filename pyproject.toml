@@ -58,6 +58,7 @@ pylint = "*"
 # Document library
 sphinx = "*"
 pydata-sphinx-theme = "*"
+sphinx-last-updated-by-git = "*"
 
 # type stub package
 types-requests = "*"
