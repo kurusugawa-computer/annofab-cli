@@ -57,6 +57,7 @@ class PutTask(AbstractCommandLineInterface):
             csv_file: タスク登録に関する情報が記載されたCSV
         """
         project_title = self.facade.get_project_title(project_id)
+        logger.info(f"{project_title} に対して、{str(csv_file)} からタスクを登録します。")
         self.service.wrapper.initiate_tasks_generation_by_csv(project_id, csvfile_path=str(csv_file))
 
     def wait_for_completion(
