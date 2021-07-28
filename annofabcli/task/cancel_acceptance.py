@@ -15,8 +15,8 @@ import annofabcli
 import annofabcli.common.cli
 from annofabcli import AnnofabApiFacade
 from annofabcli.common.cli import (
-    AbstracCommandCinfirmInterface,
     AbstractCommandLineInterface,
+    AbstractCommandLineWithConfirmInterface,
     ArgumentParser,
     build_annofabapi_resource_and_login,
 )
@@ -32,11 +32,11 @@ class User:
     username: str
 
 
-class CancelAcceptanceMain(AbstracCommandCinfirmInterface):
+class CancelAcceptanceMain(AbstractCommandLineWithConfirmInterface):
     def __init__(self, service: annofabapi.Resource, all_yes: bool = False):
         self.service = service
         self.facade = AnnofabApiFacade(service)
-        AbstracCommandCinfirmInterface.__init__(self, all_yes)
+        AbstractCommandLineWithConfirmInterface.__init__(self, all_yes)
 
     def cancel_acceptance_for_task(
         self,

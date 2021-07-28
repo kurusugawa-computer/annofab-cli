@@ -17,8 +17,8 @@ import annofabcli
 import annofabcli.common.cli
 from annofabcli import AnnofabApiFacade
 from annofabcli.common.cli import (
-    AbstracCommandCinfirmInterface,
     AbstractCommandLineInterface,
+    AbstractCommandLineWithConfirmInterface,
     ArgumentParser,
     build_annofabapi_resource_and_login,
 )
@@ -32,11 +32,11 @@ Dict[task_id, Dict[input_data_id, List[Inspection]]] の検査コメント情報
 """
 
 
-class CompleteTasksMain(AbstracCommandCinfirmInterface):
+class CompleteTasksMain(AbstractCommandLineWithConfirmInterface):
     def __init__(self, service: annofabapi.Resource, all_yes: bool = False):
         self.service = service
         self.facade = AnnofabApiFacade(service)
-        AbstracCommandCinfirmInterface.__init__(self, all_yes)
+        AbstractCommandLineWithConfirmInterface.__init__(self, all_yes)
 
     @staticmethod
     def inspection_list_to_input_data_dict(inspection_list: List[Inspection]) -> Dict[str, List[Inspection]]:
@@ -494,7 +494,7 @@ class CompleteTasksMain(AbstracCommandCinfirmInterface):
         logger.info(f"{success_count} / {len(task_id_list)} 件のタスクに対して、今のフェーズを完了状態にしました。")
 
 
-class ComleteTasks(AbstractCommandLineInterface):
+class CompleteTasks(AbstractCommandLineInterface):
     """
     タスクを受け入れ完了にする
     """
@@ -604,7 +604,7 @@ def parse_args(parser: argparse.ArgumentParser):
 def main(args):
     service = build_annofabapi_resource_and_login(args)
     facade = AnnofabApiFacade(service)
-    ComleteTasks(service, facade, args).main()
+    CompleteTasks(service, facade, args).main()
 
 
 def add_parser(subparsers: argparse._SubParsersAction):

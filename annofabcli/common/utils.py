@@ -325,7 +325,7 @@ def get_cache_dir() -> Path:
 
 def read_multiheader_csv(csv_file: str, header_row_count: int = 2, **kwargs) -> pandas.DataFrame:
     """
-    複数ヘッダ行のCSVを読み込む。その際、"Unnnamed"の列名は空文字に変更する。
+    複数ヘッダ行のCSVを読み込む。その際、"Unnamed"の列名は空文字に変更する。
 
     Args:
         csv_file:

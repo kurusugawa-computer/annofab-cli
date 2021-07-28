@@ -49,7 +49,7 @@ class RestoreAnnotation(AbstractCommandLineInterface):
                     detail.path = s3_path
                     logger.debug(f"{parser.task_id}/{parser.input_data_id}/{data_uri} をS3にアップロードしました。")
             else:
-                logger.warning(f"annotattion_id={detail.annotation_id}: data_holding_typeが'outer'なのにpathがNoneです。")
+                logger.warning(f"annotation_id={detail.annotation_id}: data_holding_typeが'outer'なのにpathがNoneです。")
 
         return detail
 
