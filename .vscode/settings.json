@@ -44,6 +44,7 @@
             "source.organizeImports": true
         },
     },
-    "python.testing.autoTestDiscoverOnSaveEnabled": false
+    "python.testing.autoTestDiscoverOnSaveEnabled": false,
+    "restructuredtext.confPath": "${workspaceFolder}/docs"
 
 }
