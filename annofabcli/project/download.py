@@ -46,7 +46,7 @@ class Download(AbstractCommandLineInterface):
         """
         最新化処理が完了するまで待つ。
         """
-        MAX_WAIT_MINUTUE = wait_options.max_tries * wait_options.interval / 60
+        MAX_WAIT_MINUTES = wait_options.max_tries * wait_options.interval / 60
 
         if self.is_job_progress(project_id, job_type=job_type):
             logger.info(f"ダウンロード対象の最新化処理が既に実行されています。")
@@ -54,7 +54,7 @@ class Download(AbstractCommandLineInterface):
             logger.info(f"ダウンロード対象の最新化処理を実行します。")
             update_func(project_id)
 
-        logger.info(f"ダウンロード対象の最新化処理が完了するまで、最大{MAX_WAIT_MINUTUE}分間待ちます。")
+        logger.info(f"ダウンロード対象の最新化処理が完了するまで、最大{MAX_WAIT_MINUTES}分間待ちます。")
         result = self.service.wrapper.wait_for_completion(
             project_id,
             job_type=job_type,
@@ -64,7 +64,7 @@ class Download(AbstractCommandLineInterface):
         if result:
             logger.info(f"ダウンロード対象の最新化処理が完了しました。")
         else:
-            logger.info(f"ダウンロードの対象の最新化に失敗したか、または {MAX_WAIT_MINUTUE} 分待っても最新化処理が完了しませんでした。")
+            logger.info(f"ダウンロードの対象の最新化に失敗したか、または {MAX_WAIT_MINUTES} 分待っても最新化処理が完了しませんでした。")
 
     def download(self, target: DownloadTarget, project_id: str, output: str, latest: bool, wait_options: WaitOptions):
         project_title = self.facade.get_project_title(project_id)
