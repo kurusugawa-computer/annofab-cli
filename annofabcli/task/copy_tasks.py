@@ -10,8 +10,8 @@ import annofabcli
 import annofabcli.common.cli
 from annofabcli import AnnofabApiFacade
 from annofabcli.common.cli import (
-    AbstracCommandCinfirmInterface,
     AbstractCommandLineInterface,
+    AbstractCommandLineWithConfirmInterface,
     ArgumentParser,
     build_annofabapi_resource_and_login,
 )
@@ -20,7 +20,7 @@ from annofabcli.common.utils import duplicated_set
 logger = logging.getLogger(__name__)
 
 
-class CopyTasksMain(AbstracCommandCinfirmInterface):
+class CopyTasksMain(AbstractCommandLineWithConfirmInterface):
     def __init__(
         self,
         service: annofabapi.Resource,
@@ -31,7 +31,7 @@ class CopyTasksMain(AbstracCommandCinfirmInterface):
     ):
         self.service = service
         self.facade = AnnofabApiFacade(service)
-        AbstracCommandCinfirmInterface.__init__(self, all_yes)
+        AbstractCommandLineWithConfirmInterface.__init__(self, all_yes)
 
         self.is_copy_annotations = is_copy_annotations
         self.is_copy_metadata = is_copy_metadata

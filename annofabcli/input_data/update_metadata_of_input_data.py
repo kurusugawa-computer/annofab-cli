@@ -12,8 +12,8 @@ import annofabcli
 import annofabcli.common.cli
 from annofabcli import AnnofabApiFacade
 from annofabcli.common.cli import (
-    AbstracCommandCinfirmInterface,
     AbstractCommandLineInterface,
+    AbstractCommandLineWithConfirmInterface,
     ArgumentParser,
     build_annofabapi_resource_and_login,
 )
@@ -21,10 +21,10 @@ from annofabcli.common.cli import (
 logger = logging.getLogger(__name__)
 
 
-class UpdateMetadataMain(AbstracCommandCinfirmInterface):
+class UpdateMetadataMain(AbstractCommandLineWithConfirmInterface):
     def __init__(self, service: annofabapi.Resource, all_yes: bool = False):
         self.service = service
-        AbstracCommandCinfirmInterface.__init__(self, all_yes)
+        AbstractCommandLineWithConfirmInterface.__init__(self, all_yes)
 
     def set_metadata_to_input_data(
         self,

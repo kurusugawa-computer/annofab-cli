@@ -9,8 +9,8 @@ import annofabcli
 import annofabcli.common.cli
 from annofabcli import AnnofabApiFacade
 from annofabcli.common.cli import (
-    AbstracCommandCinfirmInterface,
     AbstractCommandLineInterface,
+    AbstractCommandLineWithConfirmInterface,
     ArgumentParser,
     build_annofabapi_resource_and_login,
 )
@@ -20,10 +20,10 @@ logger = logging.getLogger(__name__)
 Metadata = Dict[str, Union[str, bool, int]]
 
 
-class UpdateMetadataOfTaskMain(AbstracCommandCinfirmInterface):
+class UpdateMetadataOfTaskMain(AbstractCommandLineWithConfirmInterface):
     def __init__(self, service: annofabapi.Resource, all_yes: bool = False):
         self.service = service
-        AbstracCommandCinfirmInterface.__init__(self, all_yes)
+        AbstractCommandLineWithConfirmInterface.__init__(self, all_yes)
 
     def update_metadata_of_task(
         self, project_id: str, task_id_list: List[str], metadata: Metadata, batch_size: Optional[int] = None
