@@ -26,15 +26,15 @@ class CopyTasksMain(AbstracCommandCinfirmInterface):
         service: annofabapi.Resource,
         *,
         all_yes: bool,
-        copy_annotations: bool = False,
-        copy_metadata: bool = False,
+        is_copy_annotations: bool = False,
+        is_copy_metadata: bool = False,
     ):
         self.service = service
         self.facade = AnnofabApiFacade(service)
         AbstracCommandCinfirmInterface.__init__(self, all_yes)
 
-        self.copy_annotations = copy_annotations
-        self.copy_metadata = copy_metadata
+        self.is_copy_annotations = is_copy_annotations
+        self.is_copy_metadata = is_copy_metadata
 
     def copy_task(self, project_id: str, src_task_id: str, dest_task_id: str, task_index: Optional[int] = None) -> bool:
 
@@ -53,14 +53,11 @@ class CopyTasksMain(AbstracCommandCinfirmInterface):
             return False
 
         request_body = {"input_data_id_list": src_task["input_data_id_list"]}
-        if self.copy_metadata:
+        if self.is_copy_metadata:
             request_body["metadata"] = src_task["metadata"]
 
         self.service.api.put_task(project_id, dest_task_id, request_body=request_body)
         logger.debug(f"{logging_prefix} : タスク'{src_task_id}'を'{dest_task_id}'にコピーしました。")
-
-        if self.copy_annotations:
-            pass
 
         return True
 
@@ -120,7 +117,9 @@ class CopyTasks(AbstractCommandLineInterface):
         super().validate_project(project_id, [ProjectMemberRole.OWNER])
 
         main_obj = CopyTasksMain(
-            self.service, all_yes=self.all_yes, copy_annotations=args.copy_annotations, copy_metadata=args.copy_metadata
+            self.service,
+            all_yes=self.all_yes,
+            is_copy_metadata=args.copy_metadata,
         )
         main_obj.main(
             project_id,
@@ -158,7 +157,6 @@ def parse_args(parser: argparse.ArgumentParser):
     )
 
     parser.add_argument("--copy_metadata", action="store_true", help="指定した場合、タスクのメタデータもコピーします。")
-    parser.add_argument("--copy_annotations", action="store_true", help="指定した場合、アノテーションもコピーします。")
 
     parser.set_defaults(subcommand_func=main)
 
