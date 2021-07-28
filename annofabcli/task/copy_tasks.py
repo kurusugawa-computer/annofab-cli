@@ -84,7 +84,7 @@ class CopyTasksMain(AbstracCommandCinfirmInterface):
                 )
                 if result:
                     success_count += 1
-            except Exception as e:
+            except Exception as e:  # pylint: disable=broad-except
                 logger.warning(f"タスク'{src_task_id}'を'{dest_task_id}'にコピーする際に失敗しました。", e)
                 continue
 
@@ -94,21 +94,8 @@ class CopyTasksMain(AbstracCommandCinfirmInterface):
 class CopyTasks(AbstractCommandLineInterface):
     COMMON_MESSAGE = "annofabcli task copy: error:"
 
-    def validate(self, args: argparse.Namespace) -> bool:
-
-        if args.parallelism is not None and not args.yes:
-            print(
-                f"{self.COMMON_MESSAGE} argument --parallelism: '--parallelism'を指定するときは、必ず'--yes'を指定してください。",
-                file=sys.stderr,
-            )
-            return False
-
-        return True
-
     def main(self):
         args = self.args
-        if not self.validate(args):
-            return
 
         src_task_id_list = annofabcli.common.cli.get_list_from_args(args.task_id)
         dest_task_id_list = annofabcli.common.cli.get_list_from_args(args.dest_task_id)
@@ -117,12 +104,12 @@ class CopyTasks(AbstractCommandLineInterface):
         if len(duplicated_dest_task_id_list) > 0:
             print(
                 f"{self.COMMON_MESSAGE} argument --dest_task_id: 以下のtask_idが重複しています。'--dest_task_id'には一意な値を指定してください。\n"
-                + duplicated_dest_task_id_list,
+                + str(duplicated_dest_task_id_list),
                 file=sys.stderr,
             )
             return
 
-        if len(src_task_id_list) != len(duplicated_dest_task_id_list):
+        if len(src_task_id_list) != len(dest_task_id_list):
             print(
                 f"{self.COMMON_MESSAGE} argument: '--task_id'に渡した値の個数と'--dest_task_id'に渡した値の個数が異なります。",
                 file=sys.stderr,
@@ -139,8 +126,6 @@ class CopyTasks(AbstractCommandLineInterface):
             project_id,
             src_task_id_list=src_task_id_list,
             dest_task_id_list=dest_task_id_list,
-            copy_annotations=args.copy_annotations,
-            parallelism=args.parallelism,
         )
 
 
