@@ -30,7 +30,7 @@ CSVのフォーマットは以下の通りです。
     3列目,supplementary_data_name,Yes,
     4列目,supplementary_data_path,Yes,先頭が ``file://`` の場合、ローカルのファイルを補助情報に使用します。
     5列目,supplementary_data_id,No,省略した場合はUUID(v4)になります。
-    6列目,supplementary_data_type,No,``image`` , ``text`` または ``custom`` を指定ください。省略した場合は、ファイル名から推測します。
+    6列目,supplementary_data_type,No,``image`` 、 ``text`` または ``custom`` を指定ください。省略した場合は、ファイル名から推測します。
 
 以下はCSVファイルのサンプルです。
 
