@@ -136,7 +136,7 @@ class FindBreakError(AbstractCommandLineInterface):
         # phase_stage = 1,
         # status = 'working',
         # account_id = 'bc9141bf-0bac-4703-9f44-791b72a83ff3',
-
+        OUTPUT_DATETIME_FORMAT = "%Y-%m-%dT%H:%M:%S+09:00"
         event_list = []
         for sort_history_events in task_sort_history_events.values():
             # タスクのかたまりごとに処理
@@ -162,11 +162,13 @@ class FindBreakError(AbstractCommandLineInterface):
                             ),
                             "phase": sort_history_event.phase,
                             "start_task_history_id": sort_history_event.task_history_id,
-                            "start_created_datetime": sort_history_event.created_datetime.strftime("%Y/%m/%d %H:%M:%S"),
+                            "start_created_datetime": sort_history_event.created_datetime.strftime(
+                                OUTPUT_DATETIME_FORMAT
+                            ),
                             "start_status": sort_history_event.status,
                             "end_task_history_id": sort_history_events[i + 1].task_history_id if end else None,
                             "end_created_datetime": sort_history_events[i + 1].created_datetime.strftime(
-                                "%Y/%m/%d %H:%M:%S"
+                                OUTPUT_DATETIME_FORMAT
                             )
                             if end
                             else None,
@@ -180,11 +182,11 @@ class FindBreakError(AbstractCommandLineInterface):
     @staticmethod
     def validate(args: argparse.Namespace) -> bool:
         COMMON_MESSAGE = "annofabcli experimental find_break_error: error:"
-        if args.import_file_path is not None:
-            if not Path(args.import_file_path).is_file():
+        if args.task_history_event_json is not None:
+            if not args.task_history_event_json.exists():
                 print(
-                    f"{COMMON_MESSAGE} argument --import_file_path: ファイルパスが存在しません\
-                '{args.import_file_path}'",
+                    f"{COMMON_MESSAGE} argument --task_history_event_json: ファイルパスが存在しません\
+                '{args.task_history_event_json}'",
                     file=sys.stderr,
                 )
                 return False
@@ -196,14 +198,14 @@ class FindBreakError(AbstractCommandLineInterface):
             return
 
         task_history_events = self._project_task_history_events(
-            project_id=args.project_id, import_file_path=args.import_file_path
+            project_id=args.project_id, import_file_path=args.task_history_event_json
         )
         if not task_history_events:
             # 全件ファイルの更新に失敗したらスルー
             logger.warning(f"タスク履歴イベント全件ファイルの取得に失敗しました。")
             return
         task_sort_history_events = self.get_sort_events(args, task_history_events)
-        time_sort_history_events = self.get_time_sort_events(args.time, task_sort_history_events)
+        time_sort_history_events = self.get_time_sort_events(args.threshold, task_sort_history_events)
         output_err_events(err_events_list=time_sort_history_events, output=self.output)
 
 
@@ -238,21 +240,30 @@ def main(args):
 def parse_args(parser: argparse.ArgumentParser):
     argument_parser = ArgumentParser(parser)
 
-    parser.add_argument("--time", type=int, default=180, help="1履歴、何分以上を検知対象とするか。")
-    parser.add_argument("--import_file_path", type=str, help="importするタスク履歴イベント全件ファイル,指定しない場合はタスク履歴イベント全件を新規取得する")
+    argument_parser.add_project_id()
+
+    parser.add_argument("--threshold", type=int, default=180, help="1履歴、何分以上を検知対象とするか。")
+    parser.add_argument(
+        "--task_history_event_json",
+        type=Path,
+        help="タスク履歴イベント全件ファイルのパスを指定してください。"
+        "指定しない場合、タスク履歴全件ファイルをダウンロードします。"
+        "JSONファイルは`$ annofabcli project download task_history_event`コマンドで取得できます。",
+    )
 
     argument_parser.add_output()
-    argument_parser.add_project_id()
     argument_parser.add_task_id(required=False)
+
+    DATETIME_FORMAT = "%%Y-%%m-%%dT%%H:%%i:%%s"
     parser.add_argument(
         "--start_datetime",
         type=str,
-        help="検索対象の時間を指定します。(%%Y/%%m/%%d %%H:%%i:%%s)",
+        help=f"検索対象の時間を指定します。({DATETIME_FORMAT})",
     )
     parser.add_argument(
         "--end_datetime",
         type=str,
-        help="検索対象の時間を指定します。(%%Y/%%m/%%d %%H:%%i:%%s)",
+        help="検索対象の時間を指定します。({DATETIME_FORMAT})",
     )
     parser.add_argument("--user_id", type=str, help="ユーザー名")
     parser.add_argument("--phase", type=str, help="phase")
@@ -260,9 +271,9 @@ def parse_args(parser: argparse.ArgumentParser):
 
 
 def add_parser(subparsers: argparse._SubParsersAction):
-    subcommand_name = "found_break_error"
+    subcommand_name = "find_break_error"
     subcommand_help = "不当に長い作業時間の作業履歴を出力します"
-    description = "自動休憩が作動せず不当に長い作業時間になっている履歴を出力します。"
+    description = "自動休憩が作動せず不当に長い作業時間になっている履歴をCSV形式で出力します。"
 
     parser = annofabcli.common.cli.add_parser(subparsers, subcommand_name, subcommand_help, description)
     parse_args(parser)

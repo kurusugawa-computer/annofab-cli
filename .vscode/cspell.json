@@ -28,6 +28,7 @@
         "nargs",
         "netrc",
         "noqa",
+        "numpy",
         "pylint",
         "strtobool",
         "tzlocal"
