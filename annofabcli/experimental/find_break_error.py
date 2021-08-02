@@ -180,11 +180,11 @@ class FindBreakError(AbstractCommandLineInterface):
     @staticmethod
     def validate(args: argparse.Namespace) -> bool:
         COMMON_MESSAGE = "annofabcli experimental find_break_error: error:"
-        if args.import_file_path is not None:
-            if not Path(args.import_file_path).is_file():
+        if args.task_history_event_json is not None:
+            if not args.task_history_event_json.exists():
                 print(
-                    f"{COMMON_MESSAGE} argument --import_file_path: ファイルパスが存在しません\
-                '{args.import_file_path}'",
+                    f"{COMMON_MESSAGE} argument --task_history_event_json: ファイルパスが存在しません\
+                '{args.task_history_event_json}'",
                     file=sys.stderr,
                 )
                 return False
@@ -196,7 +196,7 @@ class FindBreakError(AbstractCommandLineInterface):
             return
 
         task_history_events = self._project_task_history_events(
-            project_id=args.project_id, import_file_path=args.import_file_path
+            project_id=args.project_id, import_file_path=args.task_history_event_json
         )
         if not task_history_events:
             # 全件ファイルの更新に失敗したらスルー
@@ -239,7 +239,13 @@ def parse_args(parser: argparse.ArgumentParser):
     argument_parser = ArgumentParser(parser)
 
     parser.add_argument("--time", type=int, default=180, help="1履歴、何分以上を検知対象とするか。")
-    parser.add_argument("--import_file_path", type=str, help="importするタスク履歴イベント全件ファイル,指定しない場合はタスク履歴イベント全件を新規取得する")
+    parser.add_argument(
+        "--task_history_event_json",
+        type=Path,
+        help="タスク履歴イベント全件ファイルのパスを指定してください。"
+        "指定しない場合、タスク履歴全件ファイルをダウンロードします。"
+        "JSONファイルは`$ annofabcli project download task_history_event`コマンドで取得できます。",
+    )
 
     argument_parser.add_output()
     argument_parser.add_project_id()
@@ -260,9 +266,9 @@ def parse_args(parser: argparse.ArgumentParser):
 
 
 def add_parser(subparsers: argparse._SubParsersAction):
-    subcommand_name = "found_break_error"
+    subcommand_name = "find_break_error"
     subcommand_help = "不当に長い作業時間の作業履歴を出力します"
-    description = "自動休憩が作動せず不当に長い作業時間になっている履歴を出力します。"
+    description = "自動休憩が作動せず不当に長い作業時間になっている履歴をCSV形式で出力します。"
 
     parser = annofabcli.common.cli.add_parser(subparsers, subcommand_name, subcommand_help, description)
     parse_args(parser)
