@@ -42,6 +42,18 @@ class CsvInputData(DataClassJsonMixin):
 
     input_data_name: str
     input_data_path: str
+    input_data_id: Optional[str] = None
+    sign_required: Optional[bool] = None
+
+
+@dataclass
+class InputDataForPut(DataClassJsonMixin):
+    """
+    put用の入力データ
+    """
+
+    input_data_name: str
+    input_data_path: str
     input_data_id: str
     sign_required: Optional[bool]
 
@@ -62,7 +74,7 @@ class SubPutInputData:
         self.all_yes = all_yes
 
     def put_input_data(
-        self, project_id: str, csv_input_data: CsvInputData, last_updated_datetime: Optional[str] = None
+        self, project_id: str, csv_input_data: InputDataForPut, last_updated_datetime: Optional[str] = None
     ):
 
         request_body: Dict[str, Any] = {"last_updated_datetime": last_updated_datetime}
@@ -111,43 +123,51 @@ class SubPutInputData:
 
         return yes
 
-    def confirm_put_input_data(self, csv_input_data: CsvInputData, already_exists: bool = False) -> bool:
-        message_for_confirm = f"input_data_name='{csv_input_data.input_data_name}' の入力データを登録しますか？"
+    def confirm_put_input_data(self, input_data: InputDataForPut, already_exists: bool = False) -> bool:
+        message_for_confirm = f"input_data_name='{input_data.input_data_name}' の入力データを登録しますか？"
         if already_exists:
-            message_for_confirm += f"input_data_id={csv_input_data.input_data_id} を上書きします。"
+            message_for_confirm += f"input_data_id={input_data.input_data_id} を上書きします。"
         return self.confirm_processing(message_for_confirm)
 
     def put_input_data_main(self, project_id: str, csv_input_data: CsvInputData, overwrite: bool = False) -> bool:
-        last_updated_datetime = None
-        input_data_id = csv_input_data.input_data_id
-        input_data_path = csv_input_data.input_data_path
-        input_data = self.service.wrapper.get_input_data_or_none(project_id, input_data_id)
 
-        if input_data is not None:
+        input_data = InputDataForPut(
+            input_data_name=csv_input_data.input_data_name,
+            input_data_path=csv_input_data.input_data_path,
+            input_data_id=csv_input_data.input_data_id
+            if csv_input_data.input_data_id is not None
+            else str(uuid.uuid4()),
+            sign_required=csv_input_data.sign_required,
+        )
+
+        last_updated_datetime = None
+        dict_input_data = self.service.wrapper.get_input_data_or_none(project_id, input_data.input_data_id)
+
+        if dict_input_data is not None:
             if overwrite:
-                logger.debug(f"input_data_id={input_data_id} はすでに存在します。")
-                last_updated_datetime = input_data["updated_datetime"]
+                logger.debug(f"input_data_id={input_data.input_data_id} はすでに存在します。")
+                last_updated_datetime = dict_input_data["updated_datetime"]
             else:
-                logger.debug(f"input_data_id={input_data_id} がすでに存在するのでスキップします。")
+                logger.debug(f"input_data_id={input_data.input_data_id} がすでに存在するのでスキップします。")
                 return False
 
-        file_path = get_file_scheme_path(input_data_path)
-        logger.debug(f"csv_input_data={csv_input_data}")
+        file_path = get_file_scheme_path(input_data.input_data_path)
+        logger.debug(f"input_data={input_data}")
         if file_path is not None:
             if not Path(file_path).exists():
-                logger.warning(f"{input_data_path} は存在しません。")
+                logger.warning(f"{input_data.input_data_path} は存在しません。")
                 return False
 
-        if not self.confirm_put_input_data(csv_input_data, already_exists=(last_updated_datetime is not None)):
+        if not self.confirm_put_input_data(input_data, already_exists=(last_updated_datetime is not None)):
             return False
 
         # 入力データを登録
         try:
-            self.put_input_data(project_id, csv_input_data, last_updated_datetime=last_updated_datetime)
+            self.put_input_data(project_id, input_data, last_updated_datetime=last_updated_datetime)
             logger.debug(
                 f"入力データを登録しました。"
-                f"input_data_id={csv_input_data.input_data_id}, "
-                f"input_data_name={csv_input_data.input_data_name}"
+                f"input_data_id={input_data.input_data_id}, "
+                f"input_data_name={input_data.input_data_name}"
             )
             return True
 
@@ -155,8 +175,8 @@ class SubPutInputData:
             logger.warning(e)
             logger.warning(
                 f"入力データの登録に失敗しました。"
-                f"input_data_id={csv_input_data.input_data_id}, "
-                f"input_data_name={csv_input_data.input_data_name}"
+                f"input_data_id={input_data.input_data_id}, "
+                f"input_data_name={input_data.input_data_name}"
             )
             return False
 
@@ -207,7 +227,7 @@ class PutInputData(AbstractCommandLineInterface):
     @staticmethod
     def get_input_data_list_from_csv(csv_path: Path) -> List[CsvInputData]:
         def create_input_data(e):
-            input_data_id = e.input_data_id if not pandas.isna(e.input_data_id) else str(uuid.uuid4())
+            input_data_id = e.input_data_id if not pandas.isna(e.input_data_id) else None
             sign_required = bool(strtobool(str(e.sign_required))) if not pandas.isna(e.sign_required) else None
             return CsvInputData(
                 input_data_name=e.input_data_name,
@@ -241,6 +261,10 @@ class PutInputData(AbstractCommandLineInterface):
         input_data_list = [create_input_data(e) for e in df.itertuples()]
 
         return input_data_list
+
+    @staticmethod
+    def get_input_data_list_from_dict(input_data_dict_list: List[Dict[str, Any]]) -> List[CsvInputData]:
+        return CsvInputData.schema().load(input_data_dict_list, many=True, unknown="exclude")
 
     def put_input_data_from_zip_file(
         self,
@@ -278,8 +302,8 @@ class PutInputData(AbstractCommandLineInterface):
         logger.info(f"入力データの登録中です（サーバ側の処理）。")
 
         if wait:
-            MAX_WAIT_MINUTUE = wait_options.max_tries * wait_options.interval / 60
-            logger.info(f"最大{MAX_WAIT_MINUTUE}分間、処理が終了するまで待ちます。")
+            MAX_WAIT_MINUTE = wait_options.max_tries * wait_options.interval / 60
+            logger.info(f"最大{MAX_WAIT_MINUTE}分間、処理が終了するまで待ちます。")
 
             result = self.service.wrapper.wait_for_completion(
                 project_id,
@@ -290,7 +314,7 @@ class PutInputData(AbstractCommandLineInterface):
             if result:
                 logger.info(f"入力データの登録が完了しました。")
             else:
-                logger.warning(f"入力データの登録に失敗しました。または、{MAX_WAIT_MINUTUE}分間待っても、入力データの登録が完了しませんでした。")
+                logger.warning(f"入力データの登録に失敗しました。または、{MAX_WAIT_MINUTE}分間待っても、入力データの登録が完了しませんでした。")
 
     @staticmethod
     def validate(args: argparse.Namespace) -> bool:
@@ -315,11 +339,12 @@ class PutInputData(AbstractCommandLineInterface):
                 print(f"{COMMON_MESSAGE} argument --csv: ファイルパスが存在しません。 '{args.csv}'", file=sys.stderr)
                 return False
 
+        if args.csv is not None or args.json is not None:
             if args.wait:
-                logger.warning(f"'--csv'オプションを指定しているとき、'--wait'オプションは無視されます。")
+                logger.warning(f"'--csv'/'--json'オプションを指定しているとき、'--wait'オプションは無視されます。")
 
             if args.input_data_name_for_zip:
-                logger.warning(f"'--csv'オプションを指定しているとき、'--input_data_name_for_zip'オプションは無視されます。")
+                logger.warning(f"'--csv'/'--json'オプションを指定しているとき、'--input_data_name_for_zip'オプションは無視されます。")
 
             if args.parallelism is not None and not args.yes:
                 print(
@@ -340,6 +365,13 @@ class PutInputData(AbstractCommandLineInterface):
 
         if args.csv is not None:
             input_data_list = self.get_input_data_list_from_csv(Path(args.csv))
+            self.put_input_data_list(
+                project_id, input_data_list=input_data_list, overwrite=args.overwrite, parallelism=args.parallelism
+            )
+
+        elif args.json is not None:
+            input_data_dict_list = get_json_from_args(args.json)
+            input_data_list = self.get_input_data_list_from_dict(input_data_dict_list)
             self.put_input_data_list(
                 project_id, input_data_list=input_data_list, overwrite=args.overwrite, parallelism=args.parallelism
             )
@@ -374,12 +406,26 @@ def parse_args(parser: argparse.ArgumentParser):
         "--csv",
         type=str,
         help=(
-            "入力データが記載されたCVファイルのパスを指定してください。"
+            "入力データが記載されたCSVファイルのパスを指定してください。"
             "CSVのフォーマットは、「1列目:input_data_name(required), 2列目:input_data_path(required), 3列目:input_data_id, "
             "4列目:sign_required(bool), ヘッダ行なし, カンマ区切り」です。"
             "input_data_pathの先頭が`file://`の場合、ローカルのファイルを入力データとして登録します。 "
             "input_data_idが空の場合はUUIDv4になります。"
-            "各項目の詳細は `putInputData` API を参照してください。"
+            "各項目の詳細は https://annofab.com/docs/api/#operation/putInputData を参照してください。"
+        ),
+    )
+
+    JSON_SAMPLE = (
+        '[{"input_data_name":"", "input_data_path":"file://lenna.png", "input_data_id":"foo","sign_required":false}]'
+    )
+    file_group.add_argument(
+        "--json",
+        type=str,
+        help=(
+            "登録対象の入力データをJSON形式で指定してください。"
+            f"(ex) '{JSON_SAMPLE}' "
+            "JSONの各キーは'--csv'に渡すCSVの各列に対応しています。"
+            "`file://`を先頭に付けるとjsonファイルを指定できます。"
         ),
     )
 

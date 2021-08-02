@@ -1,4 +1,5 @@
 import configparser
+import json
 import os
 from pathlib import Path
 
@@ -195,8 +196,31 @@ class TestCommandLine:
             ]
         )
 
+    def test_put_task_with_json(self):
+        json_args = {"foo": ["bar"]}
+
+        main([self.command_name, "put", "--project_id", project_id, "--json", json.dumps(json_args)])
+
+    def test_copy_task_and_delete_task(self):
+        copy_task_id = "copy-" + task_id
+        main(
+            [
+                self.command_name,
+                "copy",
+                "--project_id",
+                project_id,
+                "--task_id",
+                task_id,
+                "--dest_task_id",
+                copy_task_id,
+                "--yes",
+            ]
+        )
+
+        main([self.command_name, "delete", "--project_id", project_id, "--task_id", "not-exists-task", "--yes"])
+
     @pytest.mark.submitting_job
-    def test_put_task(self):
+    def test_put_task_with_csv(self):
         csv_file = str(data_dir / "put_task.csv")
         main([self.command_name, "put", "--project_id", project_id, "--csv", csv_file, "--wait"])
 

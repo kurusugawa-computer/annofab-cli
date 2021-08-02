@@ -14,8 +14,8 @@ from more_itertools import first_true
 import annofabcli
 from annofabcli import AnnofabApiFacade
 from annofabcli.common.cli import (
-    AbstracCommandCinfirmInterface,
     AbstractCommandLineInterface,
+    AbstractCommandLineWithConfirmInterface,
     ArgumentParser,
     build_annofabapi_resource_and_login,
 )
@@ -23,11 +23,11 @@ from annofabcli.common.cli import (
 logger = logging.getLogger(__name__)
 
 
-class DeleteSupplementaryDataMain(AbstracCommandCinfirmInterface):
+class DeleteSupplementaryDataMain(AbstractCommandLineWithConfirmInterface):
     def __init__(self, service: annofabapi.Resource, all_yes: bool = False):
         self.service = service
         self.facade = AnnofabApiFacade(service)
-        AbstracCommandCinfirmInterface.__init__(self, all_yes)
+        AbstractCommandLineWithConfirmInterface.__init__(self, all_yes)
 
     def delete_supplementary_data_list_for_input_data(
         self, project_id: str, input_data_id: str, supplementary_data_id_list: List[str]

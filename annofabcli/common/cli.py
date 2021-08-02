@@ -430,9 +430,9 @@ class ArgumentParser:
         self.parser.add_argument("-tq", "--task_query", type=str, required=required, help=help_message)
 
 
-class AbstracCommandCinfirmInterface(abc.ABC):
+class AbstractCommandLineWithConfirmInterface(abc.ABC):
     """
-    コマンドライン上でpromptを表示するときのインターフェイズ
+    コマンドライン上でpromptを表示するときのインターフェイス
     """
 
     def __init__(self, all_yes: bool = False):

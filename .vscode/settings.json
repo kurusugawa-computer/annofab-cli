@@ -31,7 +31,8 @@
     "python.linting.pycodestyleEnabled": false,
     "python.linting.ignorePatterns": [
         ".vscode/*.py",
-        "**/site-packages/**/*.py"
+        "**/site-packages/**/*.py",
+        "docs/**/*.py"
     ],
     "python.analysis.extraPaths": [
         ".venv/lib/python3.8/site-packages/"
@@ -43,6 +44,7 @@
             "source.organizeImports": true
         },
     },
-    "python.testing.autoTestDiscoverOnSaveEnabled": false
+    "python.testing.autoTestDiscoverOnSaveEnabled": false,
+    "restructuredtext.confPath": "${workspaceFolder}/docs"
 
 }

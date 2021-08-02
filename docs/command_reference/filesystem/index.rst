@@ -19,5 +19,6 @@ Available Commands
    draw_annotation
    filter_annotation
    mask_user_info
+   merge_annotation
    write_annotation_image
 

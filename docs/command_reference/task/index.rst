@@ -18,6 +18,7 @@ Available Commands
    cancel_acceptance
    change_operator
    complete
+   copy
    delete
    list
    list_with_json

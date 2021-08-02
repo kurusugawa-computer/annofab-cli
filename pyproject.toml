@@ -1,6 +1,6 @@
 [tool.poetry]
 name = "annofabcli"
-version = "1.42.2"
+version = "1.45.0"
 description = "Utility Command Line Interface for AnnoFab"
 authors = ["yuji38kwmt"]
 license = "MIT"
@@ -32,7 +32,7 @@ more-itertools = "*"
 jmespath = "*"
 pyquery = "*"
 isodate = "*"
-annofabapi = ">=0.46.1"
+annofabapi = ">=0.46.4"
 
 # pandas1.3にすると、TestCommandLine.test_list_labor_worktime が失敗するので、pandas1.2以下にする
 pandas = "~1.2"
@@ -58,6 +58,7 @@ pylint = "*"
 # Document library
 sphinx = "*"
 pydata-sphinx-theme = "*"
+sphinx-last-updated-by-git = "*"
 
 # type stub package
 types-requests = "*"

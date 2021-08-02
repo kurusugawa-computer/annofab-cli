@@ -5,23 +5,31 @@
         ".devcontainer/",
         ".vscode/",
         "LICENSE",
-        "tests/"
+        "tests/",
+        "docs/conf.py"
     ],
     "enabledLanguageIds": [
-        "python"
+        "python",
+        "reStructuredText"
     ],
     "words": [
         "additionals",
         "annofabcli",
+        "asdict",
         "astimezone",
         "asyncio",
         "dateutil",
         "getrgb",
+        "inplace",
+        "isna",
         "itertools",
+        "itertuples",
+        "jmespath",
         "nargs",
+        "netrc",
         "noqa",
         "pylint",
-        "tzlocal",
-        "worrd"
+        "strtobool",
+        "tzlocal"
     ]
 }

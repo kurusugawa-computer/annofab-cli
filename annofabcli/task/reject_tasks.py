@@ -16,8 +16,8 @@ import annofabcli
 import annofabcli.common.cli
 from annofabcli import AnnofabApiFacade
 from annofabcli.common.cli import (
-    AbstracCommandCinfirmInterface,
     AbstractCommandLineInterface,
+    AbstractCommandLineWithConfirmInterface,
     ArgumentParser,
     build_annofabapi_resource_and_login,
 )
@@ -26,11 +26,11 @@ from annofabcli.common.facade import TaskQuery, match_task_with_query
 logger = logging.getLogger(__name__)
 
 
-class RejectTasksMain(AbstracCommandCinfirmInterface):
+class RejectTasksMain(AbstractCommandLineWithConfirmInterface):
     def __init__(self, service: annofabapi.Resource, all_yes: bool = False):
         self.service = service
         self.facade = AnnofabApiFacade(service)
-        AbstracCommandCinfirmInterface.__init__(self, all_yes)
+        AbstractCommandLineWithConfirmInterface.__init__(self, all_yes)
 
     def add_inspection_comment(
         self,

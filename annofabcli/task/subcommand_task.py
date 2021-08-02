@@ -5,6 +5,7 @@ import annofabcli.common.cli
 import annofabcli.task.cancel_acceptance
 import annofabcli.task.change_operator
 import annofabcli.task.complete_tasks
+import annofabcli.task.copy_tasks
 import annofabcli.task.delete_tasks
 import annofabcli.task.list_tasks
 import annofabcli.task.list_tasks_added_task_history
@@ -22,6 +23,7 @@ def parse_args(parser: argparse.ArgumentParser):
     annofabcli.task.cancel_acceptance.add_parser(subparsers)
     annofabcli.task.change_operator.add_parser(subparsers)
     annofabcli.task.complete_tasks.add_parser(subparsers)
+    annofabcli.task.copy_tasks.add_parser(subparsers)
     annofabcli.task.delete_tasks.add_parser(subparsers)
     annofabcli.task.list_tasks.add_parser(subparsers)
     annofabcli.task.list_tasks_with_json.add_parser(subparsers)
