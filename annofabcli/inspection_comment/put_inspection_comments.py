@@ -70,6 +70,13 @@ class AddInspectionCommentsMain(AbstractCommandLineWithConfirmInterface):
     ) -> List[Dict[str, Any]]:
         """batch_update_inspections に渡すリクエストボディを作成する。"""
 
+        def _create_dict_annotation_id() -> Dict[str, str]:
+            content, _ = self.service.api.get_editor_annotation(self.project_id, task["task_id"], input_data_id)
+            details = content["details"]
+            return {e["annotation_id"]: e["label_id"] for e in details}
+
+        dict_annotation_id_label_id = _create_dict_annotation_id()
+
         def _convert(comment: AddedComment) -> Dict[str, Any]:
             return {
                 "data": {
@@ -81,8 +88,13 @@ class AddInspectionCommentsMain(AbstractCommandLineWithConfirmInterface):
                     "phase": task["phase"],
                     "commenter_account_id": self.service.api.account_id,
                     "data": comment.data,
+                    "annotation_id": comment.annotation_id,
+                    "phrases": comment.phrases,
                     "status": "annotator_action_required",
                     "created_datetime": task["updated_datetime"],
+                    "label_id": dict_annotation_id_label_id.get(comment.annotation_id)
+                    if comment.annotation_id is not None
+                    else None,
                 },
                 "_type": "Put",
             }
@@ -115,8 +127,8 @@ class AddInspectionCommentsMain(AbstractCommandLineWithConfirmInterface):
             logger.warning(f"{task_id}: 担当者の変更、または作業中状態への変更に失敗しました。")
             raise
 
+    @staticmethod
     def _can_add_comment(
-        self,
         task: Dict[str, Any],
     ) -> bool:
         task_id = task["task_id"]
@@ -124,7 +136,7 @@ class AddInspectionCommentsMain(AbstractCommandLineWithConfirmInterface):
             logger.warning(f"task_id='{task_id}': 教師付フェーズなので、検査コメントを付与できません。")
             return False
 
-        if task["status"] in [TaskStatus.NOT_STARTED.value, TaskStatus.WORKING.value, TaskStatus.BREAK.value]:
+        if task["status"] not in [TaskStatus.NOT_STARTED.value, TaskStatus.WORKING.value, TaskStatus.BREAK.value]:
             logger.warning(
                 f"task_id='{task_id}' : タスクの状態が未着手,作業中,休憩中 以外の状態なので、検査コメントを付与できません。（task_status='{task['status']}'）"
             )
@@ -170,7 +182,7 @@ class AddInspectionCommentsMain(AbstractCommandLineWithConfirmInterface):
                     self.project_id, task_id, input_data_id, request_body=request_body
                 )
                 logger.debug(f"{logging_prefix} : task_id={task_id}, input_data_id={input_data_id}: 検査コメントを付与しました。")
-            except Exception as e:
+            except Exception as e:  # pylint: disable=broad-except
                 logger.warning(
                     f"{logging_prefix} : task_id={task_id}, input_data_id={input_data_id}: 検査コメントの付与に失敗しました。", e
                 )
@@ -180,7 +192,7 @@ class AddInspectionCommentsMain(AbstractCommandLineWithConfirmInterface):
 
     def add_comments_for_task_wrapper(
         self,
-        tpl: Tuple[int, Tuple(str, AddedCommentsForTask)],
+        tpl: Tuple[int, Tuple[str, AddedCommentsForTask]],
     ) -> bool:
         task_index, (task_id, comments_for_task) = tpl
         return self.add_comments_for_task(task_id=task_id, comments_for_task=comments_for_task, task_index=task_index)
@@ -203,14 +215,18 @@ class AddInspectionCommentsMain(AbstractCommandLineWithConfirmInterface):
         else:
             # 逐次処理
             success_count = 0
-            for task_index, (task_id, comments_for_task) in enumerate(comments_for_task_list):
-                result = self.add_comments_for_task(
-                    task_id=task_id,
-                    comments_for_task=comments_for_task,
-                    task_index=task_index,
-                )
-                if result:
-                    success_count += 1
+            for task_index, (task_id, comments_for_task) in enumerate(comments_for_task_list.items()):
+                try:
+                    result = self.add_comments_for_task(
+                        task_id=task_id,
+                        comments_for_task=comments_for_task,
+                        task_index=task_index,
+                    )
+                    if result:
+                        success_count += 1
+                except Exception as e:
+                    logger.warning(f"task_id={task_id}: 検査コメントの付与に失敗しました。", e)
+                    continue
 
         logger.info(f"{success_count} / {len(comments_for_task_list)} 件 タスクに検査コメントを付与しました。")
 
@@ -268,6 +284,15 @@ def parse_args(parser: argparse.ArgumentParser):
     argument_parser = ArgumentParser(parser)
 
     argument_parser.add_project_id()
+
+    parser.add_argument(
+        "--json",
+        type=str,
+        help=(
+            "付与する検査コメントをJSON形式で指定してください。"
+            "JSONのスキーマは https://annofab-cli.readthedocs.io/ja/latest/command_reference/inspection_comment/put.html に記載されています。"
+        ),
+    )
 
     parser.add_argument(
         "--parallelism", type=int, help="使用するプロセス数（並列度）を指定してください。指定する場合は必ず'--yes'を指定してください。指定しない場合は、逐次的に処理します。"
