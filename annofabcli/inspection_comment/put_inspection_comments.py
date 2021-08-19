@@ -170,6 +170,9 @@ class AddInspectionCommentsMain(AbstractCommandLineWithConfirmInterface):
         ):
             return False
 
+        if not self.confirm_processing(f"task_id='{task_id}' のタスクに検査コメントを付与しますか？"):
+            return False
+
         # 検査コメントを付与するには作業中状態にする必要がある
         changed_task = self.change_to_working_status(self.project_id, task)
         for input_data_id, comments in comments_for_task.items():
@@ -290,7 +293,8 @@ def parse_args(parser: argparse.ArgumentParser):
         type=str,
         help=(
             "付与する検査コメントをJSON形式で指定してください。"
-            "JSONのスキーマは https://annofab-cli.readthedocs.io/ja/latest/command_reference/inspection_comment/put.html に記載されています。"
+            "JSONのスキーマは https://annofab-cli.readthedocs.io/ja/latest/command_reference/inspection_comment/put.html "
+            "に記載されています。"
         ),
     )
 
