@@ -4,14 +4,12 @@ import multiprocessing
 import sys
 import uuid
 from dataclasses import dataclass
-from functools import partial
 from typing import Any, Dict, List, Optional, Tuple
 
 import annofabapi
 import annofabapi.utils
 import requests
-from annofabapi.dataclass.task import Task
-from annofabapi.models import InputDataType, ProjectMemberRole, TaskPhase, TaskStatus
+from annofabapi.models import ProjectMemberRole, TaskPhase, TaskStatus
 from dataclasses_json import DataClassJsonMixin
 
 import annofabcli
@@ -23,7 +21,6 @@ from annofabcli.common.cli import (
     ArgumentParser,
     build_annofabapi_resource_and_login,
 )
-from annofabcli.common.facade import TaskQuery, match_task_with_query
 
 logger = logging.getLogger(__name__)
 
@@ -66,8 +63,6 @@ class AddInspectionCommentsMain(AbstractCommandLineWithConfirmInterface):
         self.facade = AnnofabApiFacade(service)
         self.project_id = project_id
 
-        # TODO: fix me
-        self.project_input_data_type = InputDataType.IMAGE
         AbstractCommandLineWithConfirmInterface.__init__(self, all_yes)
 
     def _create_request_body(
@@ -181,84 +176,43 @@ class AddInspectionCommentsMain(AbstractCommandLineWithConfirmInterface):
                 )
 
         self.facade.change_to_break_phase(self.project_id, task_id)
+        return True
 
-    def reject_task_for_task_wrapper(
+    def add_comments_for_task_wrapper(
         self,
-        tpl: Tuple[int, str],
-        project_id: str,
-        project_input_data_type: InputDataType,
-        inspection_comment: Optional[str] = None,
-        assign_last_annotator: bool = True,
-        assigned_annotator_user_id: Optional[str] = None,
-        cancel_acceptance: bool = False,
-        task_query: Optional[TaskQuery] = None,
+        tpl: Tuple[int, Tuple(str, AddedCommentsForTask)],
     ) -> bool:
-        task_index, task_id = tpl
-        return self.reject_task_with_adding_comment(
-            project_id=project_id,
-            task_id=task_id,
-            task_index=task_index,
-            project_input_data_type=project_input_data_type,
-            inspection_comment=inspection_comment,
-            assign_last_annotator=assign_last_annotator,
-            assigned_annotator_user_id=assigned_annotator_user_id,
-            cancel_acceptance=cancel_acceptance,
-            task_query=task_query,
-        )
+        task_index, (task_id, comments_for_task) = tpl
+        return self.add_comments_for_task(task_id=task_id, comments_for_task=comments_for_task, task_index=task_index)
 
-    def reject_task_list(
+    def add_comments_for_task_list(
         self,
-        project_id: str,
-        task_id_list: List[str],
-        inspection_comment: Optional[str] = None,
-        assign_last_annotator: bool = True,
-        assigned_annotator_user_id: Optional[str] = None,
-        cancel_acceptance: bool = False,
-        task_query: Optional[TaskQuery] = None,
+        comments_for_task_list: AddedComments,
         parallelism: Optional[int] = None,
     ) -> None:
-        if task_query is not None:
-            task_query = self.facade.set_account_id_of_task_query(project_id, task_query)
 
-        project, _ = self.service.api.get_project(project_id)
-        project_input_data_type = InputDataType(project["input_data_type"])
-
-        logger.info(f"差し戻すタスク数: {len(task_id_list)}")
+        logger.info(f"検査コメントを付与するタスク数: {len(comments_for_task_list)}")
 
         if parallelism is not None:
-            partial_func = partial(
-                self.reject_task_for_task_wrapper,
-                project_id=project_id,
-                project_input_data_type=project_input_data_type,
-                inspection_comment=inspection_comment,
-                assign_last_annotator=assign_last_annotator,
-                assigned_annotator_user_id=assigned_annotator_user_id,
-                cancel_acceptance=cancel_acceptance,
-                task_query=task_query,
-            )
             with multiprocessing.Pool(parallelism) as pool:
-                result_bool_list = pool.map(partial_func, enumerate(task_id_list))
+                result_bool_list = pool.map(
+                    self.add_comments_for_task_wrapper, enumerate(comments_for_task_list.items())
+                )
                 success_count = len([e for e in result_bool_list if e])
 
         else:
             # 逐次処理
             success_count = 0
-            for task_index, task_id in enumerate(task_id_list):
-                result = self.reject_task_with_adding_comment(
-                    project_id,
-                    task_id,
+            for task_index, (task_id, comments_for_task) in enumerate(comments_for_task_list):
+                result = self.add_comments_for_task(
+                    task_id=task_id,
+                    comments_for_task=comments_for_task,
                     task_index=task_index,
-                    project_input_data_type=project_input_data_type,
-                    inspection_comment=inspection_comment,
-                    assign_last_annotator=assign_last_annotator,
-                    assigned_annotator_user_id=assigned_annotator_user_id,
-                    cancel_acceptance=cancel_acceptance,
-                    task_query=task_query,
                 )
                 if result:
                     success_count += 1
 
-        logger.info(f"{success_count} / {len(task_id_list)} 件 タスクを差し戻しました。")
+        logger.info(f"{success_count} / {len(comments_for_task_list)} 件 タスクに検査コメントを付与しました。")
 
 
 class PutInspectionComments(AbstractCommandLineInterface):
@@ -275,6 +229,19 @@ class PutInspectionComments(AbstractCommandLineInterface):
 
         return True
 
+    @staticmethod
+    def _convert_comments(dict_comments: Dict[str, Any]) -> AddedComments:
+        def _covert_comments_for_task(comments_for_task):
+            return {
+                input_data_id: AddedComment.schema().load(comments, many=True)
+                for input_data_id, comments in comments_for_task.items()
+            }
+
+        return {
+            task_id: _covert_comments_for_task(comments_for_task)
+            for task_id, comments_for_task in dict_comments.items()
+        }
+
     def main(self):
         args = self.args
         if not self.validate(args):
@@ -282,17 +249,11 @@ class PutInspectionComments(AbstractCommandLineInterface):
 
         super().validate_project(args.project_id, [ProjectMemberRole.ACCEPTER, ProjectMemberRole.OWNER])
 
-        dict_inspection_comments = annofabcli.common.cli.get_json_from_args(args.json)
-
-        main_obj = RejectTasksMain(self.service, all_yes=self.all_yes)
-        main_obj.reject_task_list(
-            args.project_id,
-            task_id_list,
-            inspection_comment=args.comment,
-            assign_last_annotator=assign_last_annotator,
-            assigned_annotator_user_id=args.assigned_annotator_user_id,
-            cancel_acceptance=args.cancel_acceptance,
-            task_query=task_query,
+        dict_comments = annofabcli.common.cli.get_json_from_args(args.json)
+        comments_for_task_list = self._convert_comments(dict_comments)
+        main_obj = AddInspectionCommentsMain(self.service, project_id=args.project_id, all_yes=self.all_yes)
+        main_obj.add_comments_for_task_list(
+            comments_for_task_list=comments_for_task_list,
             parallelism=args.parallelism,
         )
 
@@ -307,8 +268,6 @@ def parse_args(parser: argparse.ArgumentParser):
     argument_parser = ArgumentParser(parser)
 
     argument_parser.add_project_id()
-
-    # argument_parser.add_task_query()
 
     parser.add_argument(
         "--parallelism", type=int, help="使用するプロセス数（並列度）を指定してください。指定する場合は必ず'--yes'を指定してください。指定しない場合は、逐次的に処理します。"
