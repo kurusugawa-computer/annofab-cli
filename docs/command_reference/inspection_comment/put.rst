@@ -64,3 +64,18 @@ Examples
 .. code-block::
 
     $ annofabcli inspection_comment put --project_id prj1 --json file://comment.json
+
+
+並列処理
+----------------------------------------------
+
+以下のコマンドは、並列数4で実行します。
+
+.. code-block::
+
+    $  annofabcli inspection_comment put --project_id prj1 --json file://comment.json \
+    --parallelism 4 --yes
+
+
+    
+    
