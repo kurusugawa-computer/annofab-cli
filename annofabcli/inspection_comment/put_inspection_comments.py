@@ -148,16 +148,24 @@ class AddInspectionCommentsMain(AbstractCommandLineWithConfirmInterface):
         task_id: str,
         comments_for_task: AddedCommentsForTask,
         task_index: Optional[int] = None,
-    ) -> bool:
+    ) -> int:
         """
         タスクに検査コメントを付与します。
+
+        Args:
+            task_id: タスクID
+            comments_for_task: 1つのタスクに付与する検査コメントの集合
+            task_index: タスクの連番
+
+        Returns:
+            付与した検査コメントの数
         """
         logging_prefix = f"{task_index+1} 件目" if task_index is not None else ""
 
         task = self.service.wrapper.get_task_or_none(self.project_id, task_id)
         if task is None:
             logger.warning(f"{logging_prefix} : task_id='{task_id}' のタスクは存在しないので、スキップします。")
-            return False
+            return 0
 
         logger.debug(
             f"{logging_prefix} : task_id = {task['task_id']}, "
@@ -168,14 +176,20 @@ class AddInspectionCommentsMain(AbstractCommandLineWithConfirmInterface):
         if not self._can_add_comment(
             task=task,
         ):
-            return False
+            return 0
 
         if not self.confirm_processing(f"task_id='{task_id}' のタスクに検査コメントを付与しますか？"):
-            return False
+            return 0
 
         # 検査コメントを付与するには作業中状態にする必要がある
         changed_task = self.change_to_working_status(self.project_id, task)
+        added_comments_count = 0
         for input_data_id, comments in comments_for_task.items():
+            if input_data_id not in task["input_data_id_list"]:
+                logger.warning(
+                    f"{logging_prefix} : task_id='{task_id}'のタスクに input_data_id='{input_data_id}'の入力データは存在しません。"
+                )
+                continue
             try:
                 # 検査コメントを付与する
                 request_body = self._create_request_body(
@@ -184,6 +198,7 @@ class AddInspectionCommentsMain(AbstractCommandLineWithConfirmInterface):
                 self.service.api.batch_update_inspections(
                     self.project_id, task_id, input_data_id, request_body=request_body
                 )
+                added_comments_count += 1
                 logger.debug(f"{logging_prefix} : task_id={task_id}, input_data_id={input_data_id}: 検査コメントを付与しました。")
             except Exception as e:  # pylint: disable=broad-except
                 logger.warning(
@@ -191,7 +206,7 @@ class AddInspectionCommentsMain(AbstractCommandLineWithConfirmInterface):
                 )
 
         self.facade.change_to_break_phase(self.project_id, task_id)
-        return True
+        return added_comments_count
 
     def add_comments_for_task_wrapper(
         self,
@@ -205,19 +220,19 @@ class AddInspectionCommentsMain(AbstractCommandLineWithConfirmInterface):
         comments_for_task_list: AddedComments,
         parallelism: Optional[int] = None,
     ) -> None:
-
-        logger.info(f"検査コメントを付与するタスク数: {len(comments_for_task_list)}")
+        comments_count = sum(len(e) for e in comments_for_task_list.values())
+        logger.info(f"検査コメントを付与するタスク数: {len(comments_for_task_list)}, 付与する検査コメント数: {comments_count}")
 
         if parallelism is not None:
             with multiprocessing.Pool(parallelism) as pool:
                 result_bool_list = pool.map(
                     self.add_comments_for_task_wrapper, enumerate(comments_for_task_list.items())
                 )
-                success_count = len([e for e in result_bool_list if e])
+                added_comments_count = sum(e for e in result_bool_list)
 
         else:
             # 逐次処理
-            success_count = 0
+            added_comments_count = 0
             for task_index, (task_id, comments_for_task) in enumerate(comments_for_task_list.items()):
                 try:
                     result = self.add_comments_for_task(
@@ -225,19 +240,18 @@ class AddInspectionCommentsMain(AbstractCommandLineWithConfirmInterface):
                         comments_for_task=comments_for_task,
                         task_index=task_index,
                     )
-                    if result:
-                        success_count += 1
+                    added_comments_count += result
                 except Exception as e:
                     logger.warning(f"task_id={task_id}: 検査コメントの付与に失敗しました。", e)
                     continue
 
-        logger.info(f"{success_count} / {len(comments_for_task_list)} 件 タスクに検査コメントを付与しました。")
+        logger.info(f"{added_comments_count} / {comments_count} 件の検査コメントを付与しました。")
 
 
 class PutInspectionComments(AbstractCommandLineInterface):
     @staticmethod
     def validate(args: argparse.Namespace) -> bool:
-        COMMON_MESSAGE = "annofabcli task reject: error:"
+        COMMON_MESSAGE = "annofabcli inspection_comment put: error:"
 
         if args.parallelism is not None and not args.yes:
             print(
