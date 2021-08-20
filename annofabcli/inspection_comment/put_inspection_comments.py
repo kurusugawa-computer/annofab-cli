@@ -211,7 +211,7 @@ class AddInspectionCommentsMain(AbstractCommandLineWithConfirmInterface):
     def add_comments_for_task_wrapper(
         self,
         tpl: Tuple[int, Tuple[str, AddedCommentsForTask]],
-    ) -> bool:
+    ) -> int:
         task_index, (task_id, comments_for_task) = tpl
         return self.add_comments_for_task(task_id=task_id, comments_for_task=comments_for_task, task_index=task_index)
 
