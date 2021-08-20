@@ -241,7 +241,7 @@ class AddInspectionCommentsMain(AbstractCommandLineWithConfirmInterface):
                         task_index=task_index,
                     )
                     added_comments_count += result
-                except Exception as e:
+                except Exception as e:  # pylint: disable=broad-except
                     logger.warning(f"task_id={task_id}: 検査コメントの付与に失敗しました。", e)
                     continue
 
