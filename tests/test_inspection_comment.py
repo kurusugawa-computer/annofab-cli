@@ -27,6 +27,10 @@ class TestCommandLine:
         task, _ = annofab_service.api.get_task(project_id, task_id)
         cls.input_data_id = task["input_data_id_list"][0]
 
+    def test_delete_inspection_comment(self):
+        dict_comments = {task_id: {self.input_data_id: ["foo", "bar"]}}
+        main(["inspection_comment", "delete", "--project_id", project_id, "--json", json.dumps(dict_comments), "--yes"])
+
     def test_list_inspection_comment(self):
         main(
             [

@@ -57,7 +57,19 @@ class DeleteInspectionCommentsMain(AbstractCommandLineWithConfirmInterface):
                 "_type": "Delete",
             }
 
-        return [_convert(e) for e in inspection_ids]
+        old_inspection_list, _ = self.service.api.get_inspections(self.project_id, task["task_id"], input_data_id)
+        old_inspection_ids = {e["inspection_id"] for e in old_inspection_list}
+
+        request_body = []
+        for inspection_id in inspection_ids:
+            if inspection_id not in old_inspection_ids:
+                logger.warning(
+                    f"task_id={task['task_id']}, input_data_id={input_data_id}: "
+                    f"inspection_id='{inspection_id}'の検査コメントは存在しません。",
+                )
+                continue
+            request_body.append(_convert(inspection_id))
+        return request_body
 
     def change_to_working_status(self, project_id: str, task: Dict[str, Any]) -> Dict[str, Any]:
         """
@@ -116,7 +128,7 @@ class DeleteInspectionCommentsMain(AbstractCommandLineWithConfirmInterface):
             task_index: タスクの連番
 
         Returns:
-            付与した検査コメントの数
+            削除した検査コメントが所属する入力データ数
         """
         logging_prefix = f"{task_index+1} 件目" if task_index is not None else ""
 
@@ -149,17 +161,25 @@ class DeleteInspectionCommentsMain(AbstractCommandLineWithConfirmInterface):
                 )
                 continue
             try:
-                # 検査コメントを付与する
+                # 検査コメントを削除
                 request_body = self._create_request_body(
                     task=changed_task, input_data_id=input_data_id, inspection_ids=inspection_ids
                 )
-                self.service.api.batch_update_inspections(
-                    self.project_id, task_id, input_data_id, request_body=request_body
-                )
-                added_comments_count += 1
-                logger.debug(
-                    f"{logging_prefix} : task_id={task_id}, input_data_id={input_data_id}: {len(inspection_ids)}件の検査コメントを削除しました。"
-                )
+                if len(request_body) > 0:
+                    self.service.api.batch_update_inspections(
+                        self.project_id, task_id, input_data_id, request_body=request_body
+                    )
+                    added_comments_count += 1
+                    logger.debug(
+                        f"{logging_prefix} : task_id={task_id}, input_data_id={input_data_id}: "
+                        f"{len(request_body)}件の検査コメントを削除しました。"
+                    )
+                else:
+                    logger.warning(
+                        f"{logging_prefix} : task_id={task_id}, input_data_id={input_data_id}: "
+                        f"削除できる検査コメントは存在しませんでした。"
+                    )
+
             except Exception as e:  # pylint: disable=broad-except
                 logger.warning(
                     f"{logging_prefix} : task_id={task_id}, input_data_id={input_data_id}: 検査コメントの削除に失敗しました。", e
@@ -270,7 +290,7 @@ def parse_args(parser: argparse.ArgumentParser):
 def add_parser(subparsers: argparse._SubParsersAction):
     subcommand_name = "delete"
     subcommand_help = "検査コメントを削除します。"
-    description = "検査コメントを削除します。"
+    description = "検査コメントを削除します。 【注意】他人の検査コメントや他のフェーズで付与された検査コメントを削除できてしまいます。"
     epilog = "チェッカーロールまたはオーナロールを持つユーザで実行してください。"
 
     parser = annofabcli.common.cli.add_parser(subparsers, subcommand_name, subcommand_help, description, epilog=epilog)
