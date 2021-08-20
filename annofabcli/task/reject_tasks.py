@@ -27,26 +27,23 @@ logger = logging.getLogger(__name__)
 
 
 class RejectTasksMain(AbstractCommandLineWithConfirmInterface):
-    def __init__(self, service: annofabapi.Resource, all_yes: bool = False):
+    def __init__(self, service: annofabapi.Resource, *, comment_data: Optional[Dict[str, Any]], all_yes: bool = False):
         self.service = service
         self.facade = AnnofabApiFacade(service)
+        self.comment_data = comment_data
         AbstractCommandLineWithConfirmInterface.__init__(self, all_yes)
 
     def add_inspection_comment(
         self,
         project_id: str,
-        project_input_data_type: InputDataType,
         task: Dict[str, Any],
         inspection_comment: str,
     ):
         """
         検査コメントを付与する。
-        画像プロジェクトなら先頭画像の左上に付与する。
-        動画プロジェクトなら最初の区間に付与する。
 
         Args:
             project_id:
-            project_input_data_type: プロジェクトの入力データの種類
             task:
             inspection_comment:
 
@@ -55,10 +52,6 @@ class RejectTasksMain(AbstractCommandLineWithConfirmInterface):
 
         """
         first_input_data_id = task["input_data_id_list"][0]
-        if project_input_data_type == InputDataType.MOVIE:
-            inspection_data = {"start": 0, "end": 100, "_type": "Time"}
-        else:
-            inspection_data = {"x": 0, "y": 0, "_type": "Point"}
 
         req_inspection = [
             {
@@ -70,7 +63,7 @@ class RejectTasksMain(AbstractCommandLineWithConfirmInterface):
                     "inspection_id": str(uuid.uuid4()),
                     "phase": task["phase"],
                     "commenter_account_id": self.service.api.account_id,
-                    "data": inspection_data,
+                    "data": self.comment_data,
                     "status": "annotator_action_required",
                     "created_datetime": task["updated_datetime"],
                 },
@@ -169,7 +162,6 @@ class RejectTasksMain(AbstractCommandLineWithConfirmInterface):
         self,
         project_id: str,
         task_id: str,
-        project_input_data_type: InputDataType,
         inspection_comment: Optional[str] = None,
         assign_last_annotator: bool = True,
         assigned_annotator_user_id: Optional[str] = None,
@@ -220,7 +212,7 @@ class RejectTasksMain(AbstractCommandLineWithConfirmInterface):
             changed_task = self.change_to_working_status(project_id, task)
             try:
                 # 検査コメントを付与する
-                self.add_inspection_comment(project_id, project_input_data_type, changed_task, inspection_comment)
+                self.add_inspection_comment(project_id, changed_task, inspection_comment)
                 logger.debug(f"{logging_prefix} : task_id = {task_id}, 検査コメントの付与 完了")
 
             except requests.exceptions.HTTPError:
@@ -261,7 +253,6 @@ class RejectTasksMain(AbstractCommandLineWithConfirmInterface):
         self,
         tpl: Tuple[int, str],
         project_id: str,
-        project_input_data_type: InputDataType,
         inspection_comment: Optional[str] = None,
         assign_last_annotator: bool = True,
         assigned_annotator_user_id: Optional[str] = None,
@@ -273,7 +264,6 @@ class RejectTasksMain(AbstractCommandLineWithConfirmInterface):
             project_id=project_id,
             task_id=task_id,
             task_index=task_index,
-            project_input_data_type=project_input_data_type,
             inspection_comment=inspection_comment,
             assign_last_annotator=assign_last_annotator,
             assigned_annotator_user_id=assigned_annotator_user_id,
@@ -295,16 +285,12 @@ class RejectTasksMain(AbstractCommandLineWithConfirmInterface):
         if task_query is not None:
             task_query = self.facade.set_account_id_of_task_query(project_id, task_query)
 
-        project, _ = self.service.api.get_project(project_id)
-        project_input_data_type = InputDataType(project["input_data_type"])
-
         logger.info(f"差し戻すタスク数: {len(task_id_list)}")
 
         if parallelism is not None:
             partial_func = partial(
                 self.reject_task_for_task_wrapper,
                 project_id=project_id,
-                project_input_data_type=project_input_data_type,
                 inspection_comment=inspection_comment,
                 assign_last_annotator=assign_last_annotator,
                 assigned_annotator_user_id=assigned_annotator_user_id,
@@ -323,7 +309,6 @@ class RejectTasksMain(AbstractCommandLineWithConfirmInterface):
                     project_id,
                     task_id,
                     task_index=task_index,
-                    project_input_data_type=project_input_data_type,
                     inspection_comment=inspection_comment,
                     assign_last_annotator=assign_last_annotator,
                     assigned_annotator_user_id=assigned_annotator_user_id,
@@ -337,13 +322,13 @@ class RejectTasksMain(AbstractCommandLineWithConfirmInterface):
 
 
 class RejectTasks(AbstractCommandLineInterface):
-    @staticmethod
-    def validate(args: argparse.Namespace) -> bool:
-        COMMON_MESSAGE = "annofabcli task reject: error:"
+    COMMON_MESSAGE = "annofabcli task reject: error:"
+
+    def validate(self, args: argparse.Namespace) -> bool:
 
         if args.parallelism is not None and not args.yes:
             print(
-                f"{COMMON_MESSAGE} argument --parallelism: '--parallelism'を指定するときは、必ず'--yes'を指定してください。",
+                f"{self.COMMON_MESSAGE} argument --parallelism: '--parallelism'を指定するときは、必ず'--yes'を指定してください。",
                 file=sys.stderr,
             )
             return False
@@ -363,7 +348,23 @@ class RejectTasks(AbstractCommandLineInterface):
         dict_task_query = annofabcli.common.cli.get_json_from_args(args.task_query)
         task_query: Optional[TaskQuery] = TaskQuery.from_dict(dict_task_query) if dict_task_query is not None else None
 
-        main_obj = RejectTasksMain(self.service, all_yes=self.all_yes)
+        comment_data = annofabcli.common.cli.get_json_from_args(args.comment_data)
+        project, _ = self.service.api.get_project(args.project_id)
+        if args.comment is not None and comment_data is None:
+            if project["input_data_type"] == InputDataType.IMAGE.value:
+                comment_data = {"x": 0, "y": 0, "_type": "Point"}
+            elif project["input_data_type"] == InputDataType.MOVIE.value:
+                # 注意：少なくとも0.1秒以上の区間にしないと、Annofab上で検査コメントを確認できない
+                comment_data = {"start": 0, "end": 100, "_type": "Time"}
+            elif project["input_data_type"] == InputDataType.CUSTOM.value:
+                # customプロジェクト
+                print(
+                    f"{self.COMMON_MESSAGE} argument --comment_data: カスタムプロジェクトに検査コメントを付与する場合は必須です。",
+                    file=sys.stderr,
+                )
+                return
+
+        main_obj = RejectTasksMain(self.service, comment_data=comment_data, all_yes=self.all_yes)
         main_obj.reject_task_list(
             args.project_id,
             task_id_list,
@@ -392,7 +393,17 @@ def parse_args(parser: argparse.ArgumentParser):
         "-c",
         "--comment",
         type=str,
-        help="差し戻すときに付与する検査コメントを指定します。" "画像プロジェクトならばタスク内の先頭の画像の左上(x=0,y=0)に、動画プロジェクトなら動画の先頭（start=0, end=100)に付与します。",
+        help="差し戻すときに付与する検査コメントを指定します。検査コメントはタスク内の先頭画像に付与します。付与する位置は'--comment_data'で指定できます。",
+    )
+
+    parser.add_argument(
+        "--comment_data",
+        type=str,
+        help="検査コメントを付与する位置や区間をJSON形式で指定します。"
+        "指定方法は https://annofab-cli.readthedocs.io/ja/latest/command_reference/task/reject.html を参照してください。"
+        "`file://`を先頭に付けると、JSON形式のファイルを指定できます。"
+        "デフォルトでは画像プロジェクトならば画像の左上(x=0,y=0)、動画プロジェクトなら動画の先頭（start=0, end=100)に付与します。"
+        "カスタムプロジェクトに検査コメントを付与する場合は必須です。",
     )
 
     # 差し戻したタスクの担当者の割当に関して

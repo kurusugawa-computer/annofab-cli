@@ -15,5 +15,7 @@ Available Commands
    :maxdepth: 1
    :titlesonly:
 
+   delete
    list
    list_with_json
+   put

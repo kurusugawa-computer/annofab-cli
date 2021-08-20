@@ -1,6 +1,9 @@
 import configparser
+import json
 import os
 from pathlib import Path
+
+import annofabapi
 
 from annofabcli.__main__ import main
 
@@ -18,6 +21,16 @@ task_id = annofab_config["task_id"]
 
 
 class TestCommandLine:
+    @classmethod
+    def setup_class(cls):
+        annofab_service = annofabapi.build()
+        task, _ = annofab_service.api.get_task(project_id, task_id)
+        cls.input_data_id = task["input_data_id_list"][0]
+
+    def test_delete_inspection_comment(self):
+        dict_comments = {task_id: {self.input_data_id: ["foo", "bar"]}}
+        main(["inspection_comment", "delete", "--project_id", project_id, "--json", json.dumps(dict_comments), "--yes"])
+
     def test_list_inspection_comment(self):
         main(
             [
@@ -44,3 +57,17 @@ class TestCommandLine:
                 str(out_dir / "list_with_json-out.csv"),
             ]
         )
+
+    def test_put_inspection_comment(self):
+        dict_comments = {
+            task_id: {
+                self.input_data_id: [
+                    {
+                        "comment": "test comment",
+                        "data": {"x": 10, "y": 20, "_type": "Point"},
+                    }
+                ]
+            }
+        }
+
+        main(["inspection_comment", "put", "--project_id", project_id, "--json", json.dumps(dict_comments), "--yes"])
