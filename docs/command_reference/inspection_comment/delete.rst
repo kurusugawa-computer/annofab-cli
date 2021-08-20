@@ -14,7 +14,7 @@ Examples
 基本的な使い方
 --------------------------
 
-``--json`` に削除する検査コメントのinspection_idを指定してください。
+``--json`` に削除する検査コメントのinspection_idをJSON形式で指定してください。
 
 .. code-block::
     :caption: inspection_id.json
