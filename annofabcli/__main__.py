@@ -4,6 +4,7 @@ from typing import Optional, Sequence
 
 import annofabcli.annotation.subcommand_annotation
 import annofabcli.annotation_specs.subcommand_annotation_specs
+import annofabcli.common.cli
 import annofabcli.experimental.subcommand_experimental
 import annofabcli.filesystem.subcommand_filesystem
 import annofabcli.input_data.subcommand_input_data
@@ -34,7 +35,7 @@ def main(arguments: Optional[Sequence[str]] = None):
     """
 
     parser = argparse.ArgumentParser(
-        description="Command Line Interface for AnnoFab", formatter_class=argparse.ArgumentDefaultsHelpFormatter
+        description="Command Line Interface for AnnoFab", formatter_class=annofabcli.common.cli.PrettyHelpFormatter
     )
     parser.add_argument("--version", action="version", version=f"annofabcli {annofabcli.__version__}")
     parser.set_defaults(command_help=parser.print_help)

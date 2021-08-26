@@ -84,7 +84,7 @@ def add_parser(
         description=description,
         help=command_help,
         epilog=epilog,
-        formatter_class=argparse.ArgumentDefaultsHelpFormatter,
+        formatter_class=PrettyHelpFormatter,
     )
     parser.set_defaults(command_help=parser.print_help)
     return parser
@@ -573,6 +573,11 @@ class AbstractCommandLineWithoutWebapiInterface(abc.ABC):
         annofabcli.utils.print_according_to_format(
             target, arg_format=FormatArgument(self.str_format), output=self.output, csv_format=self.csv_format
         )
+
+
+class PrettyHelpFormatter(argparse.RawTextHelpFormatter):
+    def _format_action(self, action: argparse.Action) -> str:
+        return super()._format_action(action) + "\n"
 
 
 class AbstractCommandLineInterface(AbstractCommandLineWithoutWebapiInterface):
