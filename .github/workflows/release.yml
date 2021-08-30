@@ -27,6 +27,9 @@ jobs:
         run: |
           mv annofabcli\__main__.py annofabcli\annofabcli.py
           pyinstaller annofabcli\annofabcli.py
+          # 設定ファイル関係は出力されないので、個別にコピーする
+          mkdir dist\annofabcli\annofabcli
+          copy annofabcli\data dist\annofabcli\annofabcli
 
       - name: upload
         uses: actions/upload-artifact@v1
