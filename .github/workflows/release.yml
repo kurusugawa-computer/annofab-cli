@@ -1,4 +1,5 @@
 name: publish executable file to release page
+# releaseページにWindows用の実行ファイルをアップロードする。windowsはpython環境の構築に少し手間がかかるので、実行可能ファイルを用意する。
 
 on:
   push:
