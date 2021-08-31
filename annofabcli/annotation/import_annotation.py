@@ -231,8 +231,54 @@ class ImportAnnotation(AbstractCommandLineInterface):
 
         return request_body
 
+    def parser_to_request_body_with_merge(
+        self,
+        project_id: str,
+        parser: SimpleAnnotationParser,
+        details: List[ImportedSimpleAnnotationDetail],
+        old_annotation: Dict[str, Any] = None,
+    ) -> Dict[str, Any]:
+
+        old_details = old_annotation["details"]
+        old_dict_detail = {}
+        INDEX_KEY = "_index"
+        for index, old_detail in enumerate(old_details):
+            # 一時的にインデックスを格納
+            old_detail.update({INDEX_KEY: index})
+            old_dict_detail[old_detail["annotation_id"]] = old_detail
+
+        new_request_details: List[Dict[str, Any]] = []
+        now_datetime = str_now()
+        for detail in details:
+            request_detail = self._to_annotation_detail_for_request(
+                project_id, parser, detail, now_datetime=now_datetime
+            )
+
+            if request_detail is None:
+                continue
+
+            if detail["annotation_id"] in old_dict_detail:
+                # アノテーションを上書き
+                old_detail = old_dict_detail[detail["annotation_id"]]
+                old_details[old_detail[INDEX_KEY]] = request_detail
+            else:
+                # アノテーションの追加
+                new_request_details.append(request_detail.to_dict(encode_json=True))
+
+        updated_datetime = old_annotation["updated_datetime"] if old_annotation is not None else None
+
+        request_body = {
+            "project_id": project_id,
+            "task_id": parser.task_id,
+            "input_data_id": parser.input_data_id,
+            "details": old_dict_detail + new_request_details,
+            "updated_datetime": updated_datetime,
+        }
+
+        return request_body
+
     def put_annotation_for_input_data(
-        self, project_id: str, parser: SimpleAnnotationParser, overwrite: bool = False
+        self, project_id: str, parser: SimpleAnnotationParser, overwrite: bool = False, merge: bool = False
     ) -> bool:
 
         task_id = parser.task_id
@@ -251,18 +297,24 @@ class ImportAnnotation(AbstractCommandLineInterface):
             return False
 
         old_annotation, _ = self.service.api.get_editor_annotation(project_id, task_id, input_data_id)
-        if len(old_annotation["details"]) > 0 and not overwrite:
-            logger.debug(
-                f"task_id={task_id}, input_data_id={input_data_id} : "
-                f"インポート先のタスクに既にアノテーションが存在するため、アノテーションの登録をスキップします。"
-                f"アノテーションを上書きする場合は、`--overwrite` を指定してください。"
-            )
-            return False
+        if len(old_annotation["details"]) > 0:
+            if not overwrite and not merge:
+                logger.debug(
+                    f"task_id={task_id}, input_data_id={input_data_id} : "
+                    f"インポート先のタスクに既にアノテーションが存在するため、アノテーションの登録をスキップします。"
+                    f"アノテーションをインポートする場合は、`--overwrite` または '--merge' を指定してください。"
+                )
+                return False
 
         logger.info(f"task_id={task_id}, input_data_id={input_data_id} : アノテーションを登録します。")
-        request_body = self.parser_to_request_body(
-            project_id, parser, simple_annotation.details, old_annotation=old_annotation
-        )
+        if merge:
+            request_body = self.parser_to_request_body_with_merge(
+                project_id, parser, simple_annotation.details, old_annotation=old_annotation
+            )
+        else:
+            request_body = self.parser_to_request_body(
+                project_id, parser, simple_annotation.details, old_annotation=old_annotation
+            )
 
         self.service.api.put_annotation(project_id, task_id, input_data_id, request_body=request_body)
         return True
@@ -418,10 +470,21 @@ def parse_args(parser: argparse.ArgumentParser):
 
     argument_parser.add_task_id(required=False)
 
-    parser.add_argument(
+    overwrite_merge_group = parser.add_mutually_exclusive_group()
+
+    overwrite_merge_group.add_argument(
         "--overwrite",
         action="store_true",
-        help="指定した場合、すでに存在するアノテーションを上書きします（入力データ単位）。" "指定しなければ、アノテーションのインポートをスキップします。",
+        help="アノテーションが存在する場合、'--overwrite'を指定していれば、すでに存在するアノテーションを削除してインポートします（入力データ単位）。"
+        "指定しなければ、アノテーションのインポートをスキップします。",
+    )
+
+    overwrite_merge_group.add_argument(
+        "--merge",
+        action="store_true",
+        help="アノテーションが存在する場合、'--merge'を指定していればアノテーションをannotation_id単位でマージしながらインポートします（入力データ単位）。"
+        "annotation_idが一致すればアノテーションを上書き、一致しなければアノテーションを追加します（アノテーション単位）。"
+        "指定しなければ、アノテーションのインポートをスキップします。",
     )
 
     parser.add_argument(
