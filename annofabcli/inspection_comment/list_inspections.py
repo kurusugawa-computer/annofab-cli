@@ -149,7 +149,7 @@ class PrintInspections(AbstractCommandLineInterface):
                     )
 
                     if filter_inspection is not None:
-                        inspections = [e for e in inspections if filter_inspection(e)]
+                        inspections = [elm for elm in inspections if filter_inspection(elm)]
 
                     all_inspections.extend(inspections)
 
