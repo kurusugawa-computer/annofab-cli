@@ -153,7 +153,7 @@ Examples
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 メンバごとの生産量（作業したタスク数など）や生産性、教師付の品質が分かります。
 
-`メンバごとの生産性と品質.csv <https://github.com/kurusugawa-computer/annofab-cli/blob/master/docs/command_reference/statistics/list_annotation_count/out_dir/メンバごとの生産性と品質.csv>`_
+`メンバごとの生産性と品質.csv <https://github.com/kurusugawa-computer/annofab-cli/blob/master/docs/command_reference/statistics/visualize/out_dir/メンバごとの生産性と品質.csv>`_
 
 参照頻度が高い列の詳細を、以下に記載します。
 
@@ -190,7 +190,7 @@ Examples
 全体の生産性と品質が記載されています。
 ``メンバごとの生産性と品質.csv`` の内容を集計した値になります。
 
-`全体の生産性と品質.csv <https://github.com/kurusugawa-computer/annofab-cli/blob/master/docs/command_reference/statistics/list_annotation_count/out_dir/全体の生産性と品質.csv>`_
+`全体の生産性と品質.csv <https://github.com/kurusugawa-computer/annofab-cli/blob/master/docs/command_reference/statistics/visualize/out_dir/全体の生産性と品質.csv>`_
 
 
 
