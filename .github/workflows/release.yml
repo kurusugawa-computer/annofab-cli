@@ -18,17 +18,15 @@ jobs:
 
       - name: Upgrade pip, and install poetry, pyinstaller
         run: |
-          python -m pip install --upgrade pip 
-          # pyinstallerのバージョンは固定する
-          python -m pip install PyInstaller==4.5.1 poetry
+          python -m pip install --upgrade pip poetry
       - name: poetry install
         run: poetry install --no-dev
 
       - name: create executable file
         run: |
           mv annofabcli\__main__.py annofabcli\annofabcli.py
-          poetry shell
-          pyinstaller annofabcli\annofabcli.py --add-data "annofabcli/data/logging.yaml;annofabcli/data"
+          poetry add "pyinstaller==4.5.1"
+          poetry run pyinstaller annofabcli\annofabcli.py --add-data "annofabcli/data/logging.yaml;annofabcli/data"
 
       - name: upload
         uses: actions/upload-artifact@v1
