@@ -23,7 +23,9 @@ jobs:
         run: poetry install --no-dev
 
       - name: create executable file
-        run: pyinstaller annofabcli\annofabcli.py --add-data "annofabcli/data/logging.yaml;annofabcli/data"
+        run: |
+          mv annofabcli\__main__.py annofabcli\annofabcli.py
+          pyinstaller annofabcli\annofabcli.py --add-data "annofabcli/data/logging.yaml;annofabcli/data"
 
       - name: upload
         uses: actions/upload-artifact@v1
