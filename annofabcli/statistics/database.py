@@ -177,7 +177,7 @@ class Database:
     def read_inspections_from_json(self, task_id_list: List[str]) -> Dict[str, Dict[InputDataId, List[Inspection]]]:
         logger.debug(f"{self.logging_prefix}: reading {self.inspection_json_path}")
 
-        with open(str(self.inspection_json_path)) as f:
+        with open(str(self.inspection_json_path), encoding="utf-8") as f:
             all_inspections = json.load(f)
 
         tasks_dict: Dict[str, Dict[InputDataId, List[Inspection]]] = {}
@@ -203,7 +203,7 @@ class Database:
     def read_input_data_from_json(self) -> Dict[str, PseudoInputData]:
         path = self.input_data_json_path
         logger.debug(f"{self.logging_prefix}: reading {path}")
-        with open(str(path)) as f:
+        with open(str(path), encoding="utf-8") as f:
             all_input_data_list = json.load(f)
 
         all_input_data_dict = {
@@ -214,7 +214,7 @@ class Database:
 
     def read_task_histories_from_json(self, task_id_list: Optional[List[str]] = None) -> Dict[str, List[TaskHistory]]:
         logger.debug(f"{self.logging_prefix}: reading {self.task_histories_json_path}")
-        with open(str(self.task_histories_json_path)) as f:
+        with open(str(self.task_histories_json_path), encoding="utf-8") as f:
             task_histories_dict = json.load(f)
 
         if task_id_list is not None:
@@ -500,7 +500,7 @@ class Database:
             return flag
 
         logger.debug(f"{self.logging_prefix}: reading {self.tasks_json_path}")
-        with open(str(self.tasks_json_path)) as f:
+        with open(str(self.tasks_json_path), encoding="utf-8") as f:
             all_tasks = json.load(f)
 
         filtered_task_list = [task for task in all_tasks if filter_task(task)]

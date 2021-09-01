@@ -67,7 +67,7 @@ def write_project_name_file(
     )
 
     print(project_summary)
-    with open(str(output_project_dir / f"{filename}.json"), "w") as f:
+    with open(str(output_project_dir / f"{filename}.json"), "w", encoding="utf-8") as f:
         f.write(project_summary.to_json(ensure_ascii=False, indent=2))
 
 
