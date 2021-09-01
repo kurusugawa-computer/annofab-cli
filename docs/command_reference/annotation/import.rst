@@ -122,7 +122,18 @@ Examples
     --task_id file://task_id.txt
 
 
-デフォルトでは、すでにアノテーションが存在する場合はスキップします。既存のアノテーションを上書きする場合は、 ``--overwrite`` を指定してください。
+デフォルトでは、すでにアノテーションが存在する場合はスキップします。
+既存のアノテーションを残してインポートする場合は、 ``--merge`` を指定してください。
+インポート対象のアノテーションのannotation_idが、既存のアノテーションのannotation_idに一致すればアノテーションを上書きします。一致しなければアノテーションを追加します。
+
+
+.. code-block::
+
+    $ annofabcli annotation import --project_id prj1 --annotation annotation.zip \
+    --merge
+
+
+既存のアノテーションを削除してからインポートする場合は、 ``--overwrite`` を指定してください。
 
 .. code-block::
 

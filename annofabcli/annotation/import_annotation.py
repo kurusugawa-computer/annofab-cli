@@ -3,10 +3,9 @@ import logging
 import sys
 import uuid
 import zipfile
-from collections.abc import Collection
 from dataclasses import dataclass
 from pathlib import Path
-from typing import Any, Dict, Iterator, List, Optional, Union
+from typing import Any, Dict, Iterator, List, Optional, Set, Union
 
 import annofabapi
 from annofabapi.dataclass.annotation import AdditionalData, AnnotationDetail, FullAnnotationData
@@ -271,7 +270,7 @@ class ImportAnnotationMain(AbstractCommandLineWithConfirmInterface):
             if detail.annotation_id in old_dict_detail:
                 # アノテーションを上書き
                 old_detail = old_dict_detail[detail.annotation_id]
-                old_details[old_detail[INDEX_KEY]] = request_detail
+                old_details[old_detail[INDEX_KEY]] = request_detail.to_dict(encode_json=True)
             else:
                 # アノテーションの追加
                 new_request_details.append(request_detail.to_dict(encode_json=True))
@@ -398,7 +397,7 @@ class ImportAnnotationMain(AbstractCommandLineWithConfirmInterface):
     def main(
         self,
         iter_task_parser: Iterator[SimpleAnnotationParserByTask],
-        target_task_ids: Optional[Collection[str]] = None,
+        target_task_ids: Optional[Set[str]] = None,
     ):
         success_count = 0
         for task_parser in iter_task_parser:
@@ -505,15 +504,14 @@ def parse_args(parser: argparse.ArgumentParser):
     overwrite_merge_group.add_argument(
         "--overwrite",
         action="store_true",
-        help="アノテーションが存在する場合、'--overwrite'を指定していれば、すでに存在するアノテーションを削除してインポートします（入力データ単位）。"
-        "指定しなければ、アノテーションのインポートをスキップします。",
+        help="アノテーションが存在する場合、'--overwrite'を指定していれば、すでに存在するアノテーションを削除してインポートします。" "指定しなければ、アノテーションのインポートをスキップします。",
     )
 
     overwrite_merge_group.add_argument(
         "--merge",
         action="store_true",
-        help="アノテーションが存在する場合、'--merge'を指定していればアノテーションをannotation_id単位でマージしながらインポートします（入力データ単位）。"
-        "annotation_idが一致すればアノテーションを上書き、一致しなければアノテーションを追加します（アノテーション単位）。"
+        help="アノテーションが存在する場合、'--merge'を指定していればアノテーションをannotation_id単位でマージしながらインポートします。"
+        "annotation_idが一致すればアノテーションを上書き、一致しなければアノテーションを追加します。"
         "指定しなければ、アノテーションのインポートをスキップします。",
     )
 
