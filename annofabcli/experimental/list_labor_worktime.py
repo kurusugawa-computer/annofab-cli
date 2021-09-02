@@ -27,7 +27,6 @@ from annofabcli.common.cli import (
 )
 from annofabcli.common.utils import isoduration_to_hour, print_csv
 from annofabcli.experimental.utils import (
-    FormatTarget,
     TimeUnitTarget,
     add_id_csv,
     create_column_list,
@@ -84,6 +83,7 @@ class DailyLaborWorktime(DataClassJsonMixin):
     """実績作業時間[hour]"""
     worktime_planned: float
     """予定作業時間[hour]"""
+    working_description: Optional[str]
 
 
 class FormatTarget(Enum):
@@ -678,6 +678,7 @@ class ListLaborWorktime(AbstractCommandLineInterface):
                 date=labor["date"],
                 worktime_actual=labor["actual_worktime"] if labor["actual_worktime"] is not None else 0,
                 worktime_planned=labor["plan_worktime"] if labor["plan_worktime"] is not None else 0,
+                working_description=labor["working_description"],
             )
 
             if new_labor.worktime_actual > 0 or new_labor.worktime_planned > 0:
@@ -703,6 +704,7 @@ class ListLaborWorktime(AbstractCommandLineInterface):
             "worktime_planned",
             "worktime_actual",
             "worktime_monitored",
+            "working_description",
         ]
 
         project = self.service.wrapper.get_project_or_none(project_id)
@@ -746,8 +748,6 @@ class ListLaborWorktime(AbstractCommandLineInterface):
             how="left",
             on=["account_id"],
         )
-        print(df_project_member)
-        print(df)
         return df[OUTPUT_COLUMNS]
 
     def create_intermediate_df(
