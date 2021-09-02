@@ -89,8 +89,6 @@ class DailyLaborWorktime(DataClassJsonMixin):
 class FormatTarget(Enum):
     DETAILS = "details"
     """日毎・人毎の詳細な値を出力する, """
-    TOTAL = "total"
-    """期間中の合計値だけを出力する"""
     BY_NAME_TOTAL = "by_name_total"
     """人毎の集計の合計値を出力する"""
     COLUMN_LIST = "column_list"
@@ -353,50 +351,6 @@ def create_df_with_format_details(
     # date列を作る
     df2.reset_index(inplace=True)
     return df2.round(2)
-
-
-def create_df_with_format_total(df_intermediate: pandas.DataFrame) -> pandas.DataFrame:
-    """`--format total`に対応するDataFrameを生成する。
-    1行のみのCSV
-
-    Args:
-        df (pd.DataFrame): [description]
-
-    Returns:
-        pd.DataFrame: `--format total`に対応するDataFrame
-    """
-    df = pandas.DataFrame(
-        [df_intermediate[["actual_worktime_hour", "af_monitored_worktime_hour", "assigned_worktime_hour"]].sum()]
-    )
-
-    df.rename(
-        columns={
-            "user_account": "user_id",
-            "company": "user_biography",
-            "member_name": "user_name",
-            "actual_worktime_hour": "worktime_actual",
-            "af_monitored_worktime_hour": "worktime_monitored",
-            "assigned_worktime_hour": "worktime_planned",
-        },
-        inplace=True,
-    )
-
-    df["activity_rate"] = df["worktime_actual"] / df["worktime_planned"]
-    df["monitor_rate"] = df["worktime_monitored"] / df["worktime_actual"]
-
-    return (
-        df[
-            [
-                "worktime_planned",
-                "worktime_actual",
-                "worktime_monitored",
-                "activity_rate",
-                "monitor_rate",
-            ]
-        ]
-        .round(2)
-        .replace(DEFAULT_TO_REPLACE_FOR_VALUE)
-    )
 
 
 class Database:
@@ -788,16 +742,13 @@ class ListLaborWorktime(AbstractCommandLineInterface):
         elif format_target == FormatTarget.DETAILS:
             df_output = create_df_with_format_details(df_intermediate)
 
-        elif format_target == FormatTarget.TOTAL:
-            df_output = create_df_with_format_total(df_intermediate)
-
         elif format_target == FormatTarget.INTERMEDIATE:
             df_output = df_intermediate
 
         else:
             raise RuntimeError(f"format_target={format_target} が不正です。")
 
-        print_csv(df_output, output)
+        print_csv(df_output, str(output) if output is not None else None)
 
     def main(self):
         args = self.args
@@ -805,8 +756,6 @@ class ListLaborWorktime(AbstractCommandLineInterface):
             return
 
         format_target = FormatTarget(args.format)
-
-        user_id_list = get_list_from_args(args.user_id) if args.user_id is not None else None
 
         project_id_list = get_list_from_args(args.project_id)
         logger.info(f"{len(project_id_list)} 件のプロジェクトの作業時間情報を取得します。")
@@ -828,7 +777,6 @@ def main(args):
 
 def parse_args(parser: argparse.ArgumentParser):
     argument_parser = ArgumentParser(parser)
-    time_unit_choices = [e.value for e in TimeUnitTarget]
     parser.add_argument(
         "-p",
         "--project_id",
@@ -836,15 +784,6 @@ def parse_args(parser: argparse.ArgumentParser):
         required=True,
         nargs="+",
         help="集計対象のプロジェクトのproject_idを指定します。複数指定した場合は合計値を出力します。`file://`を先頭に付けると、project_idの一覧が記載されたファイルを指定できます。",
-    )
-    parser.add_argument(
-        "-u",
-        "--user_id",
-        type=str,
-        nargs="+",
-        default=None,
-        help="集計対象のユーザのuser_idに部分一致するものを集計します。"
-        "指定しない場合は、プロジェクトメンバが指定されます。`file://`を先頭に付けると、user_idの一覧が記載されたファイルを指定できます。",
     )
     parser.add_argument("--start_date", type=str, required=True, help="集計開始日(YYYY-mm-dd)")
     parser.add_argument("--end_date", type=str, required=True, help="集計終了日(YYYY-mm-dd)")
@@ -865,7 +804,6 @@ def parse_args(parser: argparse.ArgumentParser):
         "intermediate: 中間ファイル。このファイルからいろんな形式に変換できる。",
     )
 
-    parser.add_argument("--add_project_id", action="store_true", help="出力する際にproject_idを出力する")
     argument_parser.add_output(required=False)
 
     parser.set_defaults(subcommand_func=main)
