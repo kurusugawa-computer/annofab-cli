@@ -79,9 +79,6 @@ class DailyLaborWorktime(DataClassJsonMixin):
 
     project_id: str
     account_id: str
-    user_id: str
-    username: str
-    biography: str
     date: str
     worktime_actual: float
     """実績作業時間[hour]"""
@@ -673,23 +670,14 @@ class ListLaborWorktime(AbstractCommandLineInterface):
             project_id=project_id, from_date=start_date, to_date=end_date
         )
 
-        project_member_list = self.service.wrapper.get_all_project_members(
-            project_id, query_params={"include_inactive_member": ""}
-        )
-        dict_project_member = {e["account_id"]: e for e in project_member_list}
-
         new_labor_list: List[DailyLaborWorktime] = []
         for labor in labor_list:
-            member = dict_project_member.get(labor["account_id"])
             new_labor = DailyLaborWorktime(
                 project_id=labor["project_id"],
                 account_id=labor["account_id"],
                 date=labor["date"],
                 worktime_actual=labor["actual_worktime"] if labor["actual_worktime"] is not None else 0,
                 worktime_planned=labor["plan_worktime"] if labor["plan_worktime"] is not None else 0,
-                user_id=member["user_id"],
-                username=member["username"],
-                biography=member["biography"],
             )
 
             if new_labor.worktime_actual > 0 or new_labor.worktime_planned > 0:
@@ -722,8 +710,11 @@ class ListLaborWorktime(AbstractCommandLineInterface):
             logger.warning(f"project_id={project_id}のプロジェクトにアクセスできませんでした。")
             return pandas.DataFrame([], columns=OUTPUT_COLUMNS)
 
-        labor_worktime = self._get_labor_worktime(project_id=project_id, from_date=start_date, to_date=end_date)
+        labor_worktime = self._get_labor_worktime(project_id=project_id, start_date=start_date, end_date=end_date)
         monitored_worktime = self._get_monitored_worktime(project_id, start_date=start_date, end_date=end_date)
+        project_member_list = self.service.wrapper.get_all_project_members(
+            project_id, query_params={"include_inactive_member": ""}
+        )
 
         df_labor_worktime = pandas.DataFrame(
             labor_worktime,
@@ -731,15 +722,15 @@ class ListLaborWorktime(AbstractCommandLineInterface):
                 "project_id",
                 "date",
                 "account_id",
-                "user_id",
-                "username",
-                "biography",
                 "worktime_actual",
                 "worktime_planned",
             ],
         )
         df_monitored_worktime = pandas.DataFrame(
             monitored_worktime, columns=["project_id", "date", "account_id", "worktime_monitored"]
+        )
+        df_project_member = pandas.DataFrame(
+            project_member_list, columns=["account_id", "user_id", "username", "biography"]
         )
 
         df_merged = pandas.merge(
@@ -748,7 +739,16 @@ class ListLaborWorktime(AbstractCommandLineInterface):
         df_merged.fillna({"worktime_actual": 0, "worktime_planned": 0, "worktime_monitored": 0}, inplace=True)
 
         df_merged["project_title"] = project["title"]
-        return df_merged[OUTPUT_COLUMNS]
+
+        df = pandas.merge(
+            df_merged,
+            df_project_member,
+            how="left",
+            on=["account_id"],
+        )
+        print(df_project_member)
+        print(df)
+        return df[OUTPUT_COLUMNS]
 
     def create_intermediate_df(
         self,
@@ -774,9 +774,6 @@ class ListLaborWorktime(AbstractCommandLineInterface):
         format_target: FormatTarget,
         output: Optional[Path] = None,
     ):
-        df_actual_times = self.create_actual_times_df(
-            start_date=start_date, end_date=end_date, project_id_list=project_id_list
-        )
 
         df_intermediate = self.create_intermediate_df(project_id_list, start_date=start_date, end_date=end_date)
         if format_target == FormatTarget.COLUMN_LIST_PER_PROJECT:
@@ -809,15 +806,17 @@ class ListLaborWorktime(AbstractCommandLineInterface):
 
         format_target = FormatTarget(args.format)
 
-        start_date = datetime.datetime.strptime(args.start_date, "%Y-%m-%d").date()
-        end_date = datetime.datetime.strptime(args.end_date, "%Y-%m-%d").date()
         user_id_list = get_list_from_args(args.user_id) if args.user_id is not None else None
 
         project_id_list = get_list_from_args(args.project_id)
         logger.info(f"{len(project_id_list)} 件のプロジェクトの作業時間情報を取得します。")
 
         self.list_labor_worktime2(
-            project_id_list, start_date=start_date, end_date=end_date, format_target=format_target, output=args.output
+            project_id_list,
+            start_date=args.start_date,
+            end_date=args.end_date,
+            format_target=format_target,
+            output=args.output,
         )
 
 
@@ -856,7 +855,7 @@ def parse_args(parser: argparse.ArgumentParser):
         "--format",
         type=str,
         choices=format_choices,
-        default="details",
+        default="intermediate",
         help="出力する際のフォーマットです。デフォルトは'details'です。"
         "details:日毎・人毎の詳細な値を出力する, "
         "total:期間中の合計値だけを出力する, "
