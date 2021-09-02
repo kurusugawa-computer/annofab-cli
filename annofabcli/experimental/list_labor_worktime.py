@@ -2,13 +2,19 @@ import argparse
 import datetime
 import logging
 import sys
+from dataclasses import dataclass
+from enum import Enum
 from pathlib import Path
 from typing import Any, Dict, List, Optional  # pylint: disable=unused-import
 
 import annofabapi
+import numpy
 import numpy as np
+import pandas
 import pandas as pd
 from annofabapi.models import ProjectMemberRole
+from annofabapi.utils import allow_404_error
+from dataclasses_json import DataClassJsonMixin
 
 import annofabcli
 import annofabcli.common.cli
@@ -19,6 +25,7 @@ from annofabcli.common.cli import (
     build_annofabapi_resource_and_login,
     get_list_from_args,
 )
+from annofabcli.common.utils import isoduration_to_hour, print_csv
 from annofabcli.experimental.utils import (
     FormatTarget,
     TimeUnitTarget,
@@ -32,6 +39,367 @@ from annofabcli.experimental.utils import (
 )
 
 logger = logging.getLogger(__name__)
+
+
+@dataclass
+class DailyTimesPerProject(DataClassJsonMixin):
+    """日ごと、メンバごと、プロジェクトごとの作業時間"""
+
+    project_id: str
+    project_name: str
+    project_group: str
+    date: str
+
+    account_id: str
+    user_id: str
+    username: str
+    biography: str
+    worktime_actual: float
+    """実績作業時間[hour]"""
+    worktime_planned: float
+    """予定作業時間[hour]"""
+    worktime_monitored: float
+    """Annofabの計測作業時間[hour]"""
+
+
+@dataclass
+class DailyMonitoredWorktime(DataClassJsonMixin):
+    """日ごとの計測作業時間情報"""
+
+    project_id: str
+    account_id: str
+    date: str
+    worktime_monitored: float
+    """Annofabの計測作業時間[hour]"""
+
+
+@dataclass
+class DailyLaborWorktime(DataClassJsonMixin):
+    """日ごとの実績作業時間と予定作業時間の情報"""
+
+    project_id: str
+    account_id: str
+    user_id: str
+    username: str
+    biography: str
+    date: str
+    worktime_actual: float
+    """実績作業時間[hour]"""
+    worktime_planned: float
+    """予定作業時間[hour]"""
+
+
+class FormatTarget(Enum):
+    DETAILS = "details"
+    """日毎・人毎の詳細な値を出力する, """
+    TOTAL = "total"
+    """期間中の合計値だけを出力する"""
+    BY_NAME_TOTAL = "by_name_total"
+    """人毎の集計の合計値を出力する"""
+    COLUMN_LIST = "column_list"
+    """列固定で詳細な値を出力する"""
+    COLUMN_LIST_PER_PROJECT = "column_list_per_project"
+    """列固定で、日、メンバ、AnnoFabプロジェクトごとの作業時間を出力する"""
+    INTERMEDIATE = "intermediate"
+    """中間ファイル。このファイルからいろんな形式に変換できる。"""
+
+
+DEFAULT_TO_REPLACE_FOR_VALUE = {numpy.inf: "--", numpy.nan: "--"}
+
+
+def create_df_with_format_column_list_per_project(df_actual_times: pandas.DataFrame) -> pandas.DataFrame:
+    """`--format column_list_per_project`に対応するDataFrameを生成する。
+
+    Args:
+        df (pd.DataFrame): [description]
+
+    Returns:
+        pd.DataFrame: [description]
+    """
+    df = df_actual_times.copy()
+
+    # 元のコマンドの出力結果にできるだけ近づける
+    df.rename(
+        columns={
+            "user_account": "user_id",
+            "company": "user_biography",
+            "member_name": "user_name",
+            "actual_worktime_hour": "worktime_actual",
+            "af_monitored_worktime_hour": "worktime_monitored",
+        },
+        inplace=True,
+    )
+    df["worktime_planned"] = 0
+
+    df["activity_rate"] = df["worktime_actual"] / df["worktime_planned"]
+    df["monitor_rate"] = df["worktime_monitored"] / df["worktime_actual"]
+
+    return (
+        df[
+            [
+                "date",
+                "project_id",
+                "project_name",
+                "sub_project_id",
+                "sub_project_name",
+                "af_project_id",
+                "user_id",
+                "user_name",
+                "user_biography",
+                "worktime_planned",
+                "worktime_actual",
+                "worktime_monitored",
+                "activity_rate",
+                "monitor_rate",
+            ]
+        ]
+        .round(2)
+        .replace(DEFAULT_TO_REPLACE_FOR_VALUE)
+    )
+
+
+def create_df_with_format_by_name_total(df_intermediate: pandas.DataFrame) -> pandas.DataFrame:
+    """`--format by_name_total`に対応するDataFrameを生成する。
+
+    Args:
+        df (pd.DataFrame): [description]
+
+    Returns:
+        pd.DataFrame: [description]
+    """
+    df = df_intermediate.groupby("member_id")[
+        ["actual_worktime_hour", "af_monitored_worktime_hour", "assigned_worktime_hour"]
+    ].sum()
+    df_user = df_intermediate.groupby("member_id").first()[["user_account", "company", "member_name"]]
+    df = df.join(df_user)
+
+    df.rename(
+        columns={
+            "user_account": "user_id",
+            "company": "user_biography",
+            "member_name": "user_name",
+            "actual_worktime_hour": "worktime_actual",
+            "af_monitored_worktime_hour": "worktime_monitored",
+            "assigned_worktime_hour": "worktime_planned",
+        },
+        inplace=True,
+    )
+
+    df["activity_rate"] = df["worktime_actual"] / df["worktime_planned"]
+    df["monitor_rate"] = df["worktime_monitored"] / df["worktime_actual"]
+
+    return (
+        df[
+            [
+                "user_id",
+                "user_name",
+                "user_biography",
+                "worktime_planned",
+                "worktime_actual",
+                "worktime_monitored",
+                "activity_rate",
+                "monitor_rate",
+            ]
+        ]
+        .round(2)
+        .replace(DEFAULT_TO_REPLACE_FOR_VALUE)
+    )
+
+
+def create_df_with_format_column_list(df_intermediate: pandas.DataFrame) -> pandas.DataFrame:
+    """`--format column_list`に対応するDataFrameを生成する。
+    日ごと、ユーザごとに、作業時間を出力する。
+
+    Args:
+        df (pd.DataFrame): [description]
+
+    Returns:
+        pd.DataFrame: `--format column_list`に対応するDataFrame
+    """
+    df = df_intermediate.groupby(["date", "member_id"])[
+        ["actual_worktime_hour", "af_monitored_worktime_hour", "assigned_worktime_hour"]
+    ].sum()
+    df_user = df_intermediate.groupby("member_id").first()[["user_account", "company", "member_name"]]
+    df = df.join(df_user)
+
+    df.rename(
+        columns={
+            "user_account": "user_id",
+            "company": "user_biography",
+            "member_name": "user_name",
+            "actual_worktime_hour": "worktime_actual",
+            "af_monitored_worktime_hour": "worktime_monitored",
+            "assigned_worktime_hour": "worktime_planned",
+        },
+        inplace=True,
+    )
+
+    df["activity_rate"] = df["worktime_actual"] / df["worktime_planned"]
+    df["monitor_rate"] = df["worktime_monitored"] / df["worktime_actual"]
+
+    # indexのdateを列名にする
+    print(f"{df.index}")
+    df.reset_index(level="date", inplace=True)
+    return (
+        df[
+            [
+                "date",
+                "user_id",
+                "user_name",
+                "user_biography",
+                "worktime_planned",
+                "worktime_actual",
+                "worktime_monitored",
+                "activity_rate",
+                "monitor_rate",
+            ]
+        ]
+        .round(2)
+        .replace(DEFAULT_TO_REPLACE_FOR_VALUE)
+    )
+
+
+def create_df_with_format_details(
+    df_intermediate: pandas.DataFrame, insert_sum_row: bool = True, insert_sum_column: bool = True
+) -> pandas.DataFrame:
+    """`--format details`に対応するDataFrameを生成する。
+
+    Args:
+        df (pd.DataFrame): 中間出力用のDataFrame
+        insert_sum_row: 合計行を追加する
+        insert_sum_column: 合計列を追加する
+
+    Returns:
+        pd.DataFrame: `--format details`に対応するDataFrame
+
+    Notes:
+        fork元のannofabcliには、AnnoFabプロジェクトのproject_idの一覧も記載されていたが、なくても問題ないため省く。
+    """
+    SUM_COLUMN_NAME = "総合計"
+    SUM_ROW_NAME = "合計"
+
+    # TODO 同姓同名だった場合、正しく集計されない
+    df = df_intermediate.groupby(["date", "member_name"])[
+        ["actual_worktime_hour", "af_monitored_worktime_hour", "assigned_worktime_hour"]
+    ].sum()
+
+    if insert_sum_column:
+        df_sum_by_date = df_intermediate.groupby(["date"])[
+            ["actual_worktime_hour", "af_monitored_worktime_hour", "assigned_worktime_hour"]
+        ].sum()
+        # 列名が"総合計"になるように、indexを変更する
+        df_sum_by_date.index = [(date, SUM_COLUMN_NAME) for date in df_sum_by_date.index]
+
+        df = df.append(df_sum_by_date)
+
+    # 既存のannofabcliの出力結果と同じになるように列名を変更する
+    df.rename(
+        columns={
+            "actual_worktime_hour": "worktime_actual",
+            "af_monitored_worktime_hour": "worktime_monitored",
+            "assigned_worktime_hour": "worktime_planned",
+        },
+        inplace=True,
+    )
+
+    # ヘッダが [member_id, value] になるように設定する
+    df2 = df.stack().unstack([1, 2])
+
+    # 日付が連続になるようにする
+    not_exists_date_set = {str(e.date()) for e in pandas.date_range(start=min(df2.index), end=max(df2.index))} - set(
+        df2.index
+    )
+    df2 = df2.append([pandas.Series(name=date, dtype="float64") for date in not_exists_date_set], sort=True)
+
+    # 作業時間がNaNの場合は0に置換する
+    df2.replace(
+        {
+            col: {numpy.nan: 0}
+            for col in df2.columns
+            if col[1] in ["worktime_actual", "worktime_monitored", "worktime_planned"]
+        },
+        inplace=True,
+    )
+
+    member_name_list = list(df_intermediate["member_name"].unique())
+    if insert_sum_column:
+        member_name_list = [SUM_COLUMN_NAME] + member_name_list
+
+    if insert_sum_row:
+        # 先頭行に合計を追加する
+        tmp_sum_row = df2.sum()
+        tmp_sum_row.name = SUM_ROW_NAME
+        df2 = pandas.concat([pandas.DataFrame([tmp_sum_row]), df2])
+
+    for member_name in member_name_list:
+        df2[(member_name, "activity_rate")] = (
+            df2[(member_name, "worktime_actual")] / df2[(member_name, "worktime_planned")]
+        )
+        df2[(member_name, "monitor_rate")] = (
+            df2[(member_name, "worktime_monitored")] / df2[(member_name, "worktime_actual")]
+        )
+
+    # 比率がNaNの場合は"--"に置換する
+    df2.replace(
+        {col: DEFAULT_TO_REPLACE_FOR_VALUE for col in df2.columns if col[1] in ["activity_rate", "monitor_rate"]},
+        inplace=True,
+    )
+
+    # 列の順番を整える
+    df2 = df2[
+        [
+            (m, v)
+            for m in member_name_list
+            for v in ["worktime_planned", "worktime_actual", "worktime_monitored", "activity_rate", "monitor_rate"]
+        ]
+    ]
+    # date列を作る
+    df2.reset_index(inplace=True)
+    return df2.round(2)
+
+
+def create_df_with_format_total(df_intermediate: pandas.DataFrame) -> pandas.DataFrame:
+    """`--format total`に対応するDataFrameを生成する。
+    1行のみのCSV
+
+    Args:
+        df (pd.DataFrame): [description]
+
+    Returns:
+        pd.DataFrame: `--format total`に対応するDataFrame
+    """
+    df = pandas.DataFrame(
+        [df_intermediate[["actual_worktime_hour", "af_monitored_worktime_hour", "assigned_worktime_hour"]].sum()]
+    )
+
+    df.rename(
+        columns={
+            "user_account": "user_id",
+            "company": "user_biography",
+            "member_name": "user_name",
+            "actual_worktime_hour": "worktime_actual",
+            "af_monitored_worktime_hour": "worktime_monitored",
+            "assigned_worktime_hour": "worktime_planned",
+        },
+        inplace=True,
+    )
+
+    df["activity_rate"] = df["worktime_actual"] / df["worktime_planned"]
+    df["monitor_rate"] = df["worktime_monitored"] / df["worktime_actual"]
+
+    return (
+        df[
+            [
+                "worktime_planned",
+                "worktime_actual",
+                "worktime_monitored",
+                "activity_rate",
+                "monitor_rate",
+            ]
+        ]
+        .round(2)
+        .replace(DEFAULT_TO_REPLACE_FOR_VALUE)
+    )
 
 
 class Database:
@@ -264,70 +632,192 @@ class ListLaborWorktime(AbstractCommandLineInterface):
 
         return True
 
+    @allow_404_error
+    def _get_account_statistics(self, project_id) -> Optional[List[Any]]:
+        account_statistics = self.service.wrapper.get_account_statistics(project_id)
+        return account_statistics
+
+    def _get_monitored_worktime(self, project_id: str, start_date: str, end_date: str) -> List[DailyMonitoredWorktime]:
+        """計測作業時間の情報を取得
+
+        Args:
+            project_id: Annofab プロジェクトのproject_id
+            start_date (str): [description]
+            end_date (str): [description]
+        """
+        account_statistics = self._get_account_statistics(project_id)
+        if account_statistics is None:
+            return []
+
+        result = []
+        for account_info in account_statistics:
+            account_id = account_info["account_id"]
+            histories = account_info["histories"]
+            for history in histories:
+                worktime_hour = isoduration_to_hour(history["worktime"])
+                if start_date <= history["date"] <= end_date and worktime_hour > 0:
+                    result.append(
+                        DailyMonitoredWorktime(
+                            project_id=project_id,
+                            account_id=account_id,
+                            date=history["date"],
+                            worktime_monitored=worktime_hour,
+                        )
+                    )
+
+        return result
+
+    def _get_labor_worktime(self, project_id: str, start_date: str, end_date: str) -> List[DailyLaborWorktime]:
+
+        labor_list = self.service.wrapper.get_labor_control_worktime(
+            project_id=project_id, from_date=start_date, to_date=end_date
+        )
+
+        project_member_list = self.service.wrapper.get_all_project_members(
+            project_id, query_params={"include_inactive_member": ""}
+        )
+        dict_project_member = {e["account_id"]: e for e in project_member_list}
+
+        new_labor_list: List[DailyLaborWorktime] = []
+        for labor in labor_list:
+            member = dict_project_member.get(labor["account_id"])
+            new_labor = DailyLaborWorktime(
+                project_id=labor["project_id"],
+                account_id=labor["account_id"],
+                date=labor["date"],
+                worktime_actual=labor["actual_worktime"] if labor["actual_worktime"] is not None else 0,
+                worktime_planned=labor["plan_worktime"] if labor["plan_worktime"] is not None else 0,
+                user_id=member["user_id"],
+                username=member["username"],
+                biography=member["biography"],
+            )
+
+            if new_labor.worktime_actual > 0 or new_labor.worktime_planned > 0:
+                new_labor_list.append(new_labor)
+        return new_labor_list
+
+    def create_intermediate_df_for_one_project(
+        self,
+        project_id: str,
+        *,
+        start_date: str,
+        end_date: str,
+    ) -> pandas.DataFrame:
+
+        OUTPUT_COLUMNS = [
+            "date",
+            "project_id",
+            "project_title",
+            "account_id",
+            "user_id",
+            "username",
+            "biography",
+            "worktime_planned",
+            "worktime_actual",
+            "worktime_monitored",
+        ]
+
+        project = self.service.wrapper.get_project_or_none(project_id)
+        if project is None:
+            logger.warning(f"project_id={project_id}のプロジェクトにアクセスできませんでした。")
+            return pandas.DataFrame([], columns=OUTPUT_COLUMNS)
+
+        labor_worktime = self._get_labor_worktime(project_id=project_id, from_date=start_date, to_date=end_date)
+        monitored_worktime = self._get_monitored_worktime(project_id, start_date=start_date, end_date=end_date)
+
+        df_labor_worktime = pandas.DataFrame(
+            labor_worktime,
+            columns=[
+                "project_id",
+                "date",
+                "account_id",
+                "user_id",
+                "username",
+                "biography",
+                "worktime_actual",
+                "worktime_planned",
+            ],
+        )
+        df_monitored_worktime = pandas.DataFrame(
+            monitored_worktime, columns=["project_id", "date", "account_id", "worktime_monitored"]
+        )
+
+        df_merged = pandas.merge(
+            df_labor_worktime, df_monitored_worktime, how="outer", on=["date", "project_id", "account_id"]
+        )
+        df_merged.fillna({"worktime_actual": 0, "worktime_planned": 0, "worktime_monitored": 0}, inplace=True)
+
+        df_merged["project_title"] = project["title"]
+        return df_merged[OUTPUT_COLUMNS]
+
+    def create_intermediate_df(
+        self,
+        project_id_list: List[str],
+        *,
+        start_date: str,
+        end_date: str,
+    ) -> pandas.DataFrame:
+        """中間ファイルの元になるDataFrameを出力する。"""
+        df_list = []
+        for project_id in project_id_list:
+            tmp_df = self.create_intermediate_df_for_one_project(project_id, start_date=start_date, end_date=end_date)
+            df_list.append(tmp_df)
+
+        df = pandas.concat(df_list)
+        return df
+
+    def list_labor_worktime2(
+        self,
+        project_id_list: List[str],
+        start_date: str,
+        end_date: str,
+        format_target: FormatTarget,
+        output: Optional[Path] = None,
+    ):
+        df_actual_times = self.create_actual_times_df(
+            start_date=start_date, end_date=end_date, project_id_list=project_id_list
+        )
+
+        df_intermediate = self.create_intermediate_df(project_id_list, start_date=start_date, end_date=end_date)
+        if format_target == FormatTarget.COLUMN_LIST_PER_PROJECT:
+            df_output = create_df_with_format_column_list_per_project(df_actual_times)
+
+        elif format_target == FormatTarget.COLUMN_LIST:
+            df_output = create_df_with_format_column_list(df_intermediate)
+
+        elif format_target == FormatTarget.BY_NAME_TOTAL:
+            df_output = create_df_with_format_by_name_total(df_intermediate)
+
+        elif format_target == FormatTarget.DETAILS:
+            df_output = create_df_with_format_details(df_intermediate)
+
+        elif format_target == FormatTarget.TOTAL:
+            df_output = create_df_with_format_total(df_intermediate)
+
+        elif format_target == FormatTarget.INTERMEDIATE:
+            df_output = df_intermediate
+
+        else:
+            raise RuntimeError(f"format_target={format_target} が不正です。")
+
+        print_csv(df_output, output)
+
     def main(self):
         args = self.args
         if not self.validate(args):
             return
 
         format_target = FormatTarget(args.format)
-        time_unit = TimeUnitTarget(args.time_unit)
 
         start_date = datetime.datetime.strptime(args.start_date, "%Y-%m-%d").date()
         end_date = datetime.datetime.strptime(args.end_date, "%Y-%m-%d").date()
         user_id_list = get_list_from_args(args.user_id) if args.user_id is not None else None
 
-        total_df = pd.DataFrame([])
-
-        # プロジェクトごとにデータを取得
         project_id_list = get_list_from_args(args.project_id)
-        logger.info(f"{len(project_id_list)} 件のプロジェクトを取得します。")
-        for i, project_id in enumerate(list(set(project_id_list))):
-            logger.debug(f"{i + 1} 件目: project_id = {project_id}")
-            try:
-                afaw_time_df = self.list_labor_worktime(
-                    project_id, start_date.strftime("%Y-%m-%d"), end_date.strftime("%Y-%m-%d")
-                )
-                total_df = pd.concat([total_df, afaw_time_df], sort=True)
-            except Exception as e:  # pylint: disable=broad-except
-                logger.error(e)
-                logger.error(f"プロジェクトにアクセスできませんでした（project_id={project_id} ）。")
+        logger.info(f"{len(project_id_list)} 件のプロジェクトの作業時間情報を取得します。")
 
-        # データが無い場合にはwarning
-        if len(total_df) == 0:
-            logger.warning(f"対象プロジェクトの労務管理情報・作業情報が0件のため、出力しません。")
-            return
-        total_df = refine_df(total_df, start_date, end_date, user_id_list)
-        if len(total_df) == 0:
-            logger.warning(f"対象期間の労務管理情報・作業情報が0件のため、出力しません。")
-            return
-
-        # 時間単位変換
-        total_df = timeunit_conversion(df=total_df, time_unit=time_unit)
-
-        # フォーマット別に出力dfを作成
-        if format_target == FormatTarget.BY_NAME_TOTAL:
-            df = print_byname_total_list(total_df)
-        elif format_target == FormatTarget.TOTAL:
-            df = print_total(total_df)
-        elif format_target == FormatTarget.COLUMN_LIST_PER_PROJECT:
-            df = create_column_list_per_project(total_df)
-        elif format_target == FormatTarget.COLUMN_LIST:
-            df = create_column_list(total_df)
-        elif format_target == FormatTarget.DETAILS:
-            df = print_time_list_from_work_time_list(total_df)
-        else:
-            raise RuntimeError(f"format_target='{format_target}'は対象外です。")
-        # 出力先別に出力
-        if args.output:
-            out_format = args.output
-        else:
-            out_format = sys.stdout
-        self._output(
-            out_format,
-            df,
-            index=(format_target == FormatTarget.DETAILS),
-            add_project_id=args.add_project_id,
-            project_id_list=project_id_list,
+        self.list_labor_worktime2(
+            project_id_list, start_date=start_date, end_date=end_date, format_target=format_target, output=args.output
         )
 
 
@@ -340,7 +830,6 @@ def main(args):
 def parse_args(parser: argparse.ArgumentParser):
     argument_parser = ArgumentParser(parser)
     time_unit_choices = [e.value for e in TimeUnitTarget]
-    format_choices = [e.value for e in FormatTarget]
     parser.add_argument(
         "-p",
         "--project_id",
@@ -361,7 +850,7 @@ def parse_args(parser: argparse.ArgumentParser):
     parser.add_argument("--start_date", type=str, required=True, help="集計開始日(YYYY-mm-dd)")
     parser.add_argument("--end_date", type=str, required=True, help="集計終了日(YYYY-mm-dd)")
 
-    parser.add_argument("--time_unit", type=str, default="h", choices=time_unit_choices, help="出力の時間単位(h/m/s)")
+    format_choices = [e.value for e in FormatTarget]
     parser.add_argument(
         "-f",
         "--format",
@@ -373,9 +862,11 @@ def parse_args(parser: argparse.ArgumentParser):
         "total:期間中の合計値だけを出力する, "
         "by_name_total:人毎の集計の合計値を出力する, "
         "column_list:列固定で詳細な値を出力する, "
-        "column_list_per_project:列固定で詳細な値をプロジェクトごとに出力する, ",
+        "column_list_per_project: 列固定で、日、メンバ、AnnoFabプロジェクトごとの作業時間を出力する,"
+        "intermediate: 中間ファイル。このファイルからいろんな形式に変換できる。",
     )
-    parser.add_argument("--add_project_id", action="store_true", help="出力する際にprojectidを出力する")
+
+    parser.add_argument("--add_project_id", action="store_true", help="出力する際にproject_idを出力する")
     argument_parser.add_output(required=False)
 
     parser.set_defaults(subcommand_func=main)
