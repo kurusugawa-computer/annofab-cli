@@ -274,28 +274,18 @@ def create_df_with_format_details(
     SUM_ROW_NAME = "合計"
 
     # TODO 同姓同名だった場合、正しく集計されない
-    df = df_intermediate.groupby(["date", "member_name"])[
-        ["actual_worktime_hour", "af_monitored_worktime_hour", "assigned_worktime_hour"]
+    df = df_intermediate.groupby(["date", "username"])[
+        ["worktime_actual", "worktime_monitored", "worktime_planned"]
     ].sum()
 
     if insert_sum_column:
         df_sum_by_date = df_intermediate.groupby(["date"])[
-            ["actual_worktime_hour", "af_monitored_worktime_hour", "assigned_worktime_hour"]
+            ["worktime_actual", "worktime_monitored", "worktime_planned"]
         ].sum()
         # 列名が"総合計"になるように、indexを変更する
         df_sum_by_date.index = [(date, SUM_COLUMN_NAME) for date in df_sum_by_date.index]
 
         df = df.append(df_sum_by_date)
-
-    # 既存のannofabcliの出力結果と同じになるように列名を変更する
-    df.rename(
-        columns={
-            "actual_worktime_hour": "worktime_actual",
-            "af_monitored_worktime_hour": "worktime_monitored",
-            "assigned_worktime_hour": "worktime_planned",
-        },
-        inplace=True,
-    )
 
     # ヘッダが [member_id, value] になるように設定する
     df2 = df.stack().unstack([1, 2])
@@ -316,9 +306,9 @@ def create_df_with_format_details(
         inplace=True,
     )
 
-    member_name_list = list(df_intermediate["member_name"].unique())
+    username_list = list(df_intermediate["username"].unique())
     if insert_sum_column:
-        member_name_list = [SUM_COLUMN_NAME] + member_name_list
+        username_list = [SUM_COLUMN_NAME] + username_list
 
     if insert_sum_row:
         # 先頭行に合計を追加する
@@ -326,13 +316,9 @@ def create_df_with_format_details(
         tmp_sum_row.name = SUM_ROW_NAME
         df2 = pandas.concat([pandas.DataFrame([tmp_sum_row]), df2])
 
-    for member_name in member_name_list:
-        df2[(member_name, "activity_rate")] = (
-            df2[(member_name, "worktime_actual")] / df2[(member_name, "worktime_planned")]
-        )
-        df2[(member_name, "monitor_rate")] = (
-            df2[(member_name, "worktime_monitored")] / df2[(member_name, "worktime_actual")]
-        )
+    for username in username_list:
+        df2[(username, "activity_rate")] = df2[(username, "worktime_actual")] / df2[(username, "worktime_planned")]
+        df2[(username, "monitor_rate")] = df2[(username, "worktime_monitored")] / df2[(username, "worktime_actual")]
 
     # 比率がNaNの場合は"--"に置換する
     df2.replace(
@@ -344,7 +330,7 @@ def create_df_with_format_details(
     df2 = df2[
         [
             (m, v)
-            for m in member_name_list
+            for m in username_list
             for v in ["worktime_planned", "worktime_actual", "worktime_monitored", "activity_rate", "monitor_rate"]
         ]
     ]
@@ -674,13 +660,7 @@ class ListLaborWorktime(AbstractCommandLineInterface):
 
         df_labor_worktime = pandas.DataFrame(
             labor_worktime,
-            columns=[
-                "project_id",
-                "date",
-                "account_id",
-                "worktime_actual",
-                "worktime_planned",
-            ],
+            columns=["project_id", "date", "account_id", "worktime_actual", "worktime_planned", "working_description"],
         )
         df_monitored_worktime = pandas.DataFrame(
             monitored_worktime, columns=["project_id", "date", "account_id", "worktime_monitored"]
