@@ -49,6 +49,11 @@ Examples
 デフォルトでは完了状態のタスクのアノテーションを削除できません。完了状態のタスクのアノテーションも変更する場合は、``--force`` を指定してください。
 
 
+.. argparse::
+    :ref: annofabcli.annotation.delete_annotation.add_parser
+    :prog: annofabcli annotation delete
+    :nosubcommands:
+
 See also
 =================================
 *  `annofabcli annotation restore <../annotation/restore.html>`_

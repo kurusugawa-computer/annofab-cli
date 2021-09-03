@@ -276,17 +276,17 @@ def parse_args(parser: argparse.ArgumentParser):
         "--annotation_query",
         type=str,
         help="アノテーションの検索クエリをJSON形式で指定します。"
-        "`file://`を先頭に付けると、JSON形式のファイルを指定できます。"
-        "クエリのフォーマットは、[getAnnotationList API](https://annofab.com/docs/api/#operation/getAnnotationList)のクエリパラメータの`query`キー配下と同じです。"  # noqa: E501
-        "さらに追加で、`label_name_en`, `additional_data_definition_name_en`, `choice_name_en`キーも指定できます。",  # noqa: E501
+        " ``file://`` を先頭に付けると、JSON形式のファイルを指定できます。"
+        "クエリのフォーマットは、[getAnnotationList API](https://annofab.com/docs/api/#operation/getAnnotationList)のクエリパラメータの ``query`` キー配下と同じです。"  # noqa: E501
+        "さらに追加で、 ``label_name_en`` , ``additional_data_definition_name_en`` , ``choice_name_en`` キーも指定できます。",  # noqa: E501
     )
 
     argument_parser.add_task_id(
         required=False,
         help_message=(
             "対象のタスクのtask_idを指定します。"
-            "`file://`を先頭に付けると、task_idの一覧が記載されたファイルを指定できます。"
-            "指定した場合、`--annotation_query`のtask_id, exact_match_task_idが上書きされます"
+            " ``file://`` を先頭に付けると、task_idの一覧が記載されたファイルを指定できます。"
+            "指定した場合、 ``--annotation_query`` のtask_id, exact_match_task_idが上書きされます"
         ),
     )
 
@@ -301,10 +301,11 @@ def parse_args(parser: argparse.ArgumentParser):
     parser.set_defaults(subcommand_func=main)
 
 
-def add_parser(subparsers: argparse._SubParsersAction):
+def add_parser(subparsers: Optional[argparse._SubParsersAction] = None):
     subcommand_name = "list"
     subcommand_help = "アノテーションの一覧を出力します。"
     description = "アノテーションの一覧を出力します。"
 
     parser = annofabcli.common.cli.add_parser(subparsers, subcommand_name, subcommand_help, description)
     parse_args(parser)
+    return parser

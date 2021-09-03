@@ -33,7 +33,27 @@ def main(arguments: Optional[Sequence[str]] = None):
         arguments: コマンドライン引数。テストコード用
 
     """
+    parser = create_parser()
 
+    if arguments is None:
+        args = parser.parse_args()
+    else:
+        args = parser.parse_args(arguments)
+
+    if hasattr(args, "subcommand_func"):
+        try:
+            annofabcli.cli.load_logging_config_from_args(args)
+            args.subcommand_func(args)
+        except Exception as e:
+            logger.exception(e)
+            raise e
+
+    else:
+        # 未知のサブコマンドの場合はヘルプを表示
+        args.command_help()
+
+
+def create_parser() -> argparse.ArgumentParser:
     parser = argparse.ArgumentParser(
         description="Command Line Interface for AnnoFab", formatter_class=annofabcli.common.cli.PrettyHelpFormatter
     )
@@ -61,22 +81,7 @@ def main(arguments: Optional[Sequence[str]] = None):
     annofabcli.filesystem.subcommand_filesystem.add_parser(subparsers)
     annofabcli.experimental.subcommand_experimental.add_parser(subparsers)
 
-    if arguments is None:
-        args = parser.parse_args()
-    else:
-        args = parser.parse_args(arguments)
-
-    if hasattr(args, "subcommand_func"):
-        try:
-            annofabcli.cli.load_logging_config_from_args(args)
-            args.subcommand_func(args)
-        except Exception as e:
-            logger.exception(e)
-            raise e
-
-    else:
-        # 未知のサブコマンドの場合はヘルプを表示
-        args.command_help()
+    return parser
 
 
 if __name__ == "__main__":

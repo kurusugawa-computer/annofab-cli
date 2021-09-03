@@ -118,3 +118,7 @@ CSV出力
 `out.csv <https://github.com/kurusugawa-computer/annofab-cli/blob/master/docs/command_reference/annotation/list/out.csv>`_
 
 
+.. argparse::
+    :ref: annofabcli.annotation.list_annotation.add_parser
+    :prog: annofabcli annotation list
+    :nosubcommands:

@@ -50,6 +50,12 @@ Examples
     --force
 
 
+.. argparse::
+    :ref: annofabcli.annotation.restore_anotation.add_parser
+    :prog: annofabcli annotation restore
+    :nosubcommands:
+
+
 See also
 =================================
 *  `annofabcli annotation dump <../annotation/dump.html>`_

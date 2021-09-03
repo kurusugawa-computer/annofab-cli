@@ -40,6 +40,12 @@ Examples
 アノテーション情報の復元は、 `annofabcli annotation restore <../annotation/restore.html>`_ コマンドで実現できます。
 
 
+.. argparse::
+    :ref: annofabcli.annotation.dump_annotation.add_parser
+    :prog: annofabcli annotation dump
+    :nosubcommands:
+
+
 See also
 =================================
 *  `annofabcli annotation restore <../annotation/restore.html>`_

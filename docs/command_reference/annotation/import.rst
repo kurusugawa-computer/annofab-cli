@@ -155,6 +155,10 @@ Examples
     --force
 
 
+.. argparse::
+    :ref: annofabcli.annotation.import_annotation.add_parser
+    :prog: annofabcli annotation import
+    :nosubcommands:
 
 
 See also

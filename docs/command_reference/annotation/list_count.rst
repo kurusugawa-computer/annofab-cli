@@ -71,6 +71,10 @@ Examples
     10,000件以上のアノテーションを集計する場合は、 `annofabcli statistics list_annotation_count <../statistics/list_annotation_count.html>`_ コマンドの使用を検討してください。
 
 
+.. argparse::
+    :ref: annofabcli.annotation.list_annotation_count.add_parser
+    :prog: annofabcli annotation list_count
+    :nosubcommands:
 
 
 See also

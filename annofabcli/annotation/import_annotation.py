@@ -504,13 +504,13 @@ def parse_args(parser: argparse.ArgumentParser):
     overwrite_merge_group.add_argument(
         "--overwrite",
         action="store_true",
-        help="アノテーションが存在する場合、'--overwrite'を指定していれば、すでに存在するアノテーションを削除してインポートします。" "指定しなければ、アノテーションのインポートをスキップします。",
+        help="アノテーションが存在する場合、 ``--overwrite`` を指定していれば、すでに存在するアノテーションを削除してインポートします。" "指定しなければ、アノテーションのインポートをスキップします。",
     )
 
     overwrite_merge_group.add_argument(
         "--merge",
         action="store_true",
-        help="アノテーションが存在する場合、'--merge'を指定していればアノテーションをannotation_id単位でマージしながらインポートします。"
+        help="アノテーションが存在する場合、 ``--merge`` を指定していればアノテーションをannotation_id単位でマージしながらインポートします。"
         "annotation_idが一致すればアノテーションを上書き、一致しなければアノテーションを追加します。"
         "指定しなければ、アノテーションのインポートをスキップします。",
     )
@@ -522,7 +522,7 @@ def parse_args(parser: argparse.ArgumentParser):
     parser.set_defaults(subcommand_func=main)
 
 
-def add_parser(subparsers: argparse._SubParsersAction):
+def add_parser(subparsers: Optional[argparse._SubParsersAction] = None):
     subcommand_name = "import"
     subcommand_help = "アノテーションをインポートします。"
     description = (
@@ -532,3 +532,4 @@ def add_parser(subparsers: argparse._SubParsersAction):
 
     parser = annofabcli.common.cli.add_parser(subparsers, subcommand_name, subcommand_help, description, epilog=epilog)
     parse_args(parser)
+    return parser
