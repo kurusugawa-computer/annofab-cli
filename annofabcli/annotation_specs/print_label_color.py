@@ -4,7 +4,7 @@
 
 import argparse
 import logging
-from typing import Any, Dict, Tuple
+from typing import Any, Dict, Optional, Tuple
 
 import annofabcli
 import annofabcli.common.cli
@@ -67,16 +67,17 @@ def main(args):
     PrintLabelColor(service, facade, args).main()
 
 
-def add_parser(subparsers: argparse._SubParsersAction):
+def add_parser(subparsers: Optional[argparse._SubParsersAction] = None):
     subcommand_name = "list_label_color"
 
     subcommand_help = "label_name(英名)とRGBの関係をJSONで出力します。"
 
     description = (
         "label_name(英名)とRGBの関係をJSONで出力します。"
-        "出力された内容は、`write_annotation_image`ツールに利用します。"
+        "出力された内容は、 ``write_annotation_image`` ツールに利用します。"
         "出力内容は`Dict[LabelName, [R,G,B]]`です。"
     )
 
     parser = annofabcli.common.cli.add_parser(subparsers, subcommand_name, subcommand_help, description)
     parse_args(parser)
+    return parser

@@ -166,7 +166,7 @@ def main(args):
     PrintAnnotationSpecsLabel(service, facade, args).main()
 
 
-def add_parser(subparsers: argparse._SubParsersAction):
+def add_parser(subparsers: Optional[argparse._SubParsersAction] = None):
     subcommand_name = "list_label"
 
     subcommand_help = "アノテーション仕様のラベル情報を出力する"
@@ -175,3 +175,4 @@ def add_parser(subparsers: argparse._SubParsersAction):
 
     parser = annofabcli.common.cli.add_parser(subparsers, subcommand_name, subcommand_help, description)
     parse_args(parser)
+    return parser

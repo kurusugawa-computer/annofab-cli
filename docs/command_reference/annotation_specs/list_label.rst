@@ -129,6 +129,10 @@ https://annofab.com/docs/api/#operation/getAnnotationSpecs APIのレスポンス
     ]
 
 
+.. argparse::
+   :ref: annofabcli.annotation_specs.list_annotation_specs_label.add_parser
+   :prog: annofabcli annotation_specs list_label
+   :nosubcommands:
 
 
 See also
