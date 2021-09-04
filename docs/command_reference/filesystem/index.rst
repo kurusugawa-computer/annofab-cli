@@ -22,3 +22,8 @@ Available Commands
    merge_annotation
    write_annotation_image
 
+
+.. argparse::
+   :ref: annofabcli.filesystem.subcommand_filesystem.add_parser
+   :prog: annofabcli filesystem
+   :nosubcommands:

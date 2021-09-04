@@ -329,7 +329,7 @@ def parse_args(parser: argparse.ArgumentParser):
         "--input_data_id_csv",
         type=Path,
         required=True,
-        help="'input_data_id'と`--image_dir`配下の画像ファイルを紐付けたCSVを指定してください。"
+        help="'input_data_id'と ``--image_dir`` 配下の画像ファイルを紐付けたCSVを指定してください。"
         "CSVのフォーマットは、「1列目:input_data_id, 2列目:画像ファイルのパス」です。"
         "詳細は https://annofab-cli.readthedocs.io/ja/latest/command_reference/filesystem/draw_annotation.html を参照してください。",
     )
@@ -337,8 +337,8 @@ def parse_args(parser: argparse.ArgumentParser):
     parser.add_argument(
         "--label_color",
         type=str,
-        help='label_nameとRGBの関係をJSON形式で指定します。ex) `{"dog":[255,128,64], "cat":[0,0,255]}`'
-        "`file://`を先頭に付けると、JSON形式のファイルを指定できます。",
+        help='label_nameとRGBの関係をJSON形式で指定します。ex) ``{"dog":[255,128,64], "cat":[0,0,255]}`` '
+        "``file://`` を先頭に付けると、JSON形式のファイルを指定できます。",
     )
 
     parser.add_argument(
@@ -351,7 +351,7 @@ def parse_args(parser: argparse.ArgumentParser):
         nargs="+",
         required=False,
         help="描画対象のアノテーションのlabel_nameを指定します。指定しない場合は、すべてのlabel_nameが描画対象になります。"
-        "`file://`を先頭に付けると、label_name の一覧が記載されたファイルを指定できます。",
+        " ``file://`` を先頭に付けると、label_name の一覧が記載されたファイルを指定できます。",
     )
 
     parser.add_argument(
@@ -361,14 +361,14 @@ def parse_args(parser: argparse.ArgumentParser):
         required=False,
         help="ポリラインのlabel_nameを指定してください。"
         "2021/07時点ではアノテーションzipからポリラインかポリゴンか判断できないため、コマンドライン引数からポリラインのlabel_nameを指定する必要があります。"
-        "`file://`を先頭に付けると、label_name の一覧が記載されたファイルを指定できます。"
+        " ``file://`` を先頭に付けると、label_name の一覧が記載されたファイルを指定できます。"
         "【注意】アノテーションzipでポリラインかポリゴンかを判断できるようになれば、このオプションは削除する予定です。",
     )
 
     parser.add_argument(
         "--drawing_options",
         type=str,
-        help='描画オプションをJSON形式で指定します。ex) `{"line_width":3}`' "`file://`を先頭に付けると、JSON形式のファイルを指定できます。",
+        help='描画オプションをJSON形式で指定します。ex) ``{"line_width":3}``' " ``file://`` を先頭に付けると、JSON形式のファイルを指定できます。",
     )
 
     argument_parser.add_task_id(
@@ -376,7 +376,7 @@ def parse_args(parser: argparse.ArgumentParser):
         help_message=(
             "描画対象であるタスクのtask_idを指定します。"
             "指定しない場合、すべてのタスクに含まれるアノテーションが描画されます。"
-            "`file://`を先頭に付けると、task_idの一覧が記載されたファイルを指定できます。"
+            " ``file://`` を先頭に付けると、task_idの一覧が記載されたファイルを指定できます。"
         ),
     )
 
@@ -385,13 +385,13 @@ def parse_args(parser: argparse.ArgumentParser):
         "--task_query",
         type=str,
         help="描画対象のタスクを絞り込むためのクエリ条件をJSON形式で指定します。使用できるキーは task_id, status, phase, phase_stage です。"
-        "`file://`を先頭に付けると、JSON形式のファイルを指定できます。",
+        " ``file://`` を先頭に付けると、JSON形式のファイルを指定できます。",
     )
 
     parser.set_defaults(subcommand_func=main)
 
 
-def add_parser(subparsers: argparse._SubParsersAction):
+def add_parser(subparsers: Optional[argparse._SubParsersAction] = None):
     subcommand_name = "draw_annotation"
 
     subcommand_help = "画像にアノテーションを描画します。"
@@ -400,3 +400,4 @@ def add_parser(subparsers: argparse._SubParsersAction):
 
     parser = annofabcli.common.cli.add_parser(subparsers, subcommand_name, subcommand_help, description)
     parse_args(parser)
+    return parser

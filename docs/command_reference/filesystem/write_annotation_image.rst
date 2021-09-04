@@ -197,6 +197,11 @@ Examples
     --output_dir out/
 
 
+.. argparse::
+   :ref: annofabcli.filesystem.write_annotation_image.add_parser
+   :prog: annofabcli filesystem write_annotation_image
+   :nosubcommands:
+
 
 See also
 =================================

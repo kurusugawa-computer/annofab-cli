@@ -78,3 +78,8 @@ Examples
     FF,FF,category-TD,1,FF
     AA,AA,category-TD,2,AA
     JE,JE,category-TU,3,JE
+
+.. argparse::
+   :ref: annofabcli.filesystem.mask_user_info.add_parser
+   :prog: annofabcli filesystem mask_user_info
+   :nosubcommands:
