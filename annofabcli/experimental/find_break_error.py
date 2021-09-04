@@ -248,7 +248,7 @@ def parse_args(parser: argparse.ArgumentParser):
         type=Path,
         help="タスク履歴イベント全件ファイルのパスを指定してください。"
         "指定しない場合、タスク履歴全件ファイルをダウンロードします。"
-        "JSONファイルは`$ annofabcli project download task_history_event`コマンドで取得できます。",
+        "JSONファイルは ``$ annofabcli project download task_history_event`` コマンドで取得できます。",
     )
 
     argument_parser.add_output()

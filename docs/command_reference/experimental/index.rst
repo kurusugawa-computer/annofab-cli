@@ -9,3 +9,6 @@ Description
 Available Commands
 =================================
 
+.. argparse::
+   :ref: annofabcli.experimental.subcommand_experimental.add_parser
+   :prog: annofabcli experimental
