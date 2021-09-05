@@ -122,8 +122,8 @@ def parse_args(parser: argparse.ArgumentParser):
     argument_parser.add_task_id(
         required=False,
         help_message="対象のタスクのtask_idを指定します。　"
-        "`--inspection_comment_json`を指定しないときは、必須です。"
-        "`file://`を先頭に付けると、task_idの一覧が記載されたファイルを指定できます。",
+        "``--inspection_comment_json`` を指定しないときは、必須です。"
+        " ``file://`` を先頭に付けると、task_idの一覧が記載されたファイルを指定できます。",
     )
 
     reply_comment_group = parser.add_mutually_exclusive_group()
@@ -134,7 +134,7 @@ def parse_args(parser: argparse.ArgumentParser):
         "--inspection_comment_json",
         type=str,
         help="検査コメント情報が記載されたJSONファイルのパスを指定すると、JSONに記載された情報を元に検査コメント一覧を出力します。指定しない場合、全件ファイルをダウンロードします。"
-        "JSONファイルは`$ annofabcli project download inspection_comment`コマンドで取得できます。",
+        "JSONファイルは ``$ annofabcli project download inspection_comment`` コマンドで取得できます。",
     )
 
     argument_parser.add_format(
@@ -158,7 +158,7 @@ def main(args):
     ListInspectionCommentWithJson(service, facade, args).main()
 
 
-def add_parser(subparsers: argparse._SubParsersAction):
+def add_parser(subparsers: Optional[argparse._SubParsersAction] = None):
     subcommand_name = "list_with_json"
 
     subcommand_help = "検査コメント全件ファイルから一覧を出力します。"
@@ -167,3 +167,4 @@ def add_parser(subparsers: argparse._SubParsersAction):
 
     parser = annofabcli.common.cli.add_parser(subparsers, subcommand_name, subcommand_help, description)
     parse_args(parser)
+    return parser

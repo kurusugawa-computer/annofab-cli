@@ -47,5 +47,7 @@ Examples
     --parallelism 4 --yes
 
 
-    
-    
+.. argparse::
+   :ref: annofabcli.inspection_comment.delete_inspection_comments.add_parser
+   :prog: annofabcli inspection_comment delete
+   :nosubcommands:

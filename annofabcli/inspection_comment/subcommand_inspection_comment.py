@@ -1,4 +1,5 @@
 import argparse
+from typing import Optional
 
 import annofabcli
 import annofabcli.common.cli
@@ -18,7 +19,7 @@ def parse_args(parser: argparse.ArgumentParser):
     annofabcli.inspection_comment.put_inspection_comments.add_parser(subparsers)
 
 
-def add_parser(subparsers: argparse._SubParsersAction):
+def add_parser(subparsers: Optional[argparse._SubParsersAction] = None):
     subcommand_name = "inspection_comment"
     subcommand_help = "検査コメント関係のサブコマンド"
     description = "検査コメント関係のサブコマンド"
@@ -27,3 +28,4 @@ def add_parser(subparsers: argparse._SubParsersAction):
         subparsers, subcommand_name, subcommand_help, description, is_subcommand=False
     )
     parse_args(parser)
+    return parser

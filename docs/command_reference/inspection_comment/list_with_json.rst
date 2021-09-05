@@ -52,6 +52,11 @@ Examples
 `annofabcli inspection_comment list <../inspection_comment/list.html>`_ コマンドの出力結果と同じです。
 
 
+.. argparse::
+   :ref: annofabcli.inspection_comment.list_inspections_with_json.add_parser
+   :prog: annofabcli inspection_comment list_with_json
+   :nosubcommands:
+
 
 See also
 =================================
