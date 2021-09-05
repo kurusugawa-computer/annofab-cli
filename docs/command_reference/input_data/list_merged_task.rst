@@ -114,4 +114,7 @@ JSON出力
     ]
 
 
-
+.. argparse::
+   :ref: annofabcli.input_data.list_input_data_merged_task.add_parser
+   :prog: annofabcli input_data list_merged_task
+   :nosubcommands:

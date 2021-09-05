@@ -159,13 +159,13 @@ def parse_args(parser: argparse.ArgumentParser):
         "--metadata",
         required=True,
         type=str,
-        help="入力データに設定する`metadata`をJSON形式で指定してください。メタデータの値は文字列です。" "`file://`を先頭に付けると、JSON形式のファイルを指定できます。",
+        help="入力データに設定する ``metadata`` をJSON形式で指定してください。メタデータの値は文字列です。" " ``file://`` を先頭に付けると、JSON形式のファイルを指定できます。",
     )
 
     parser.add_argument(
         "--overwrite",
         action="store_true",
-        help="指定した場合、メタデータを上書きして更新します（すでに設定されているメタデータは削除されます）。指定しない場合、`--metadata`に指定されたキーのみ更新されます。",
+        help="指定した場合、メタデータを上書きして更新します（すでに設定されているメタデータは削除されます）。指定しない場合、 ``--metadata`` に指定されたキーのみ更新されます。",
     )
 
     parser.add_argument(
@@ -175,7 +175,7 @@ def parse_args(parser: argparse.ArgumentParser):
     parser.set_defaults(subcommand_func=main)
 
 
-def add_parser(subparsers: argparse._SubParsersAction):
+def add_parser(subparsers: Optional[argparse._SubParsersAction] = None):
     subcommand_name = "update_metadata"
     subcommand_help = "入力データのメタデータを更新します。"
     description = "入力データのメタデータを更新します。"
@@ -184,3 +184,4 @@ def add_parser(subparsers: argparse._SubParsersAction):
         subparsers, subcommand_name, subcommand_help, description=description, epilog=epilog
     )
     parse_args(parser)
+    return parser

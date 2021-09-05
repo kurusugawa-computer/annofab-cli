@@ -378,7 +378,7 @@ class ArgumentParser:
         '--input_data_id` 引数を追加
         """
         if help_message is None:
-            help_message = "対象の入力データのinput_data_idを指定します。" + "`file://`を先頭に付けると、input_data_idの一覧が記載されたファイルを指定できます。"
+            help_message = "対象の入力データのinput_data_idを指定します。" + " ``file://`` を先頭に付けると、input_data_idの一覧が記載されたファイルを指定できます。"
 
         self.parser.add_argument("-i", "--input_data_id", type=str, required=required, nargs="+", help=help_message)
 

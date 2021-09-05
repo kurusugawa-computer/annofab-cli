@@ -132,8 +132,8 @@ def parse_args(parser: argparse.ArgumentParser):
         "--input_data_query",
         type=str,
         help="入力データの検索クエリをJSON形式で指定します。"
-        "`file://`を先頭に付けると、JSON形式のファイルを指定できます。"
-        "指定できるキーは、`input_data_id`, `input_data_name`, `input_data_path`です。",
+        " ``file://`` を先頭に付けると、JSON形式のファイルを指定できます。"
+        "指定できるキーは、``input_data_id`` , ``input_data_name`` , ``input_data_path`` です。",
     )
 
     parser.add_argument(
@@ -141,7 +141,7 @@ def parse_args(parser: argparse.ArgumentParser):
         "--input_data_id",
         type=str,
         nargs="+",
-        help="対象のinput_data_idを指定します。" "`file://`を先頭に付けると、input_data_idの一覧が記載されたファイルを指定できます。",
+        help="対象のinput_data_idを指定します。" " ``file://`` を先頭に付けると、input_data_idの一覧が記載されたファイルを指定できます。",
     )
 
     parser.add_argument(
@@ -149,7 +149,7 @@ def parse_args(parser: argparse.ArgumentParser):
         type=Path,
         help="入力データ情報が記載されたJSONファイルのパスを指定すると、JSONに記載された情報を元に入力データ一覧を出力します。"
         "指定しない場合、全件ファイルをダウンロードします。"
-        "JSONファイルは`$ annofabcli project download input_data`コマンドで取得できます。",
+        "JSONファイルは ``$ annofabcli project download input_data`` コマンドで取得できます。",
     )
 
     parser.add_argument(
@@ -160,10 +160,10 @@ def parse_args(parser: argparse.ArgumentParser):
         "--wait_options",
         type=str,
         help="入力データ一覧ファイルの更新が完了するまで待つ際のオプションを、JSON形式で指定してください。"
-        "`file://`を先頭に付けるとjsonファイルを指定できます。"
-        'デフォルは`{"interval":60, "max_tries":360}` です。'
-        "`interval`:完了したかを問い合わせる間隔[秒], "
-        "`max_tires`:完了したかの問い合わせを最大何回行うか。",
+        " ``file://`` を先頭に付けるとjsonファイルを指定できます。"
+        'デフォルトは ``{"interval":60, "max_tries":360}`` です。'
+        " ``interval`` :完了したかを問い合わせる間隔[秒], "
+        " ``max_tires`` :完了したかの問い合わせを最大何回行うか。",
     )
 
     argument_parser.add_format(
@@ -182,7 +182,7 @@ def parse_args(parser: argparse.ArgumentParser):
     parser.set_defaults(subcommand_func=main)
 
 
-def add_parser(subparsers: argparse._SubParsersAction):
+def add_parser(subparsers: Optional[argparse._SubParsersAction] = None):
     subcommand_name = "list_with_json"
     subcommand_help = "入力データ全件ファイルから一覧を出力します。"
     description = "入力データ全件ファイルから一覧を出力します。"
@@ -190,3 +190,4 @@ def add_parser(subparsers: argparse._SubParsersAction):
 
     parser = annofabcli.common.cli.add_parser(subparsers, subcommand_name, subcommand_help, description, epilog=epilog)
     parse_args(parser)
+    return parser
