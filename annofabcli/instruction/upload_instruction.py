@@ -3,6 +3,7 @@ import logging.handlers
 import time
 import uuid
 from pathlib import Path
+from typing import Optional
 
 import pyquery
 
@@ -90,7 +91,7 @@ def parse_args(parser: argparse.ArgumentParser):
     parser.set_defaults(subcommand_func=main)
 
 
-def add_parser(subparsers: argparse._SubParsersAction):
+def add_parser(subparsers: Optional[argparse._SubParsersAction] = None):
     subcommand_name = "upload"
     subcommand_help = "HTMLファイルを作業ガイドとして登録します。"
     description = (
@@ -99,3 +100,4 @@ def add_parser(subparsers: argparse._SubParsersAction):
     epilog = "チェッカーまたはオーナロールを持つユーザで実行してください。"
     parser = annofabcli.common.cli.add_parser(subparsers, subcommand_name, subcommand_help, description, epilog=epilog)
     parse_args(parser)
+    return parser

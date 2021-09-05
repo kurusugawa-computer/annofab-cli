@@ -19,3 +19,8 @@ Available Commands
    download
    list_history
    upload
+
+.. argparse::
+   :ref: annofabcli.instruction.subcommand_instruction.add_parser
+   :prog: annofabcli instruction
+   :nosubcommands:

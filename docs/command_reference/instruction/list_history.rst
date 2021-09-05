@@ -57,4 +57,7 @@ JSON出力
     ]
 
 
-
+.. argparse::
+   :ref: annofabcli.instruction.list_instruction_history.add_parser
+   :prog: annofabcli instruction list_history
+   :nosubcommands:

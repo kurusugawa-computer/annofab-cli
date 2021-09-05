@@ -22,3 +22,7 @@ Examples
     $ annofabcli instruction copy prj1 prj2
 
 
+.. argparse::
+   :ref: annofabcli.instruction.copy_instruction.add_parser
+   :prog: annofabcli instruction copy
+   :nosubcommands:

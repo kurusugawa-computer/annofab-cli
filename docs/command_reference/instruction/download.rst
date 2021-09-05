@@ -82,7 +82,10 @@ htmlファイルのみダウンロードする場合
     └── index.html
 
 
-
+.. argparse::
+   :ref: annofabcli.instruction.download_instruction.add_parser
+   :prog: annofabcli instruction download
+   :nosubcommands:
 
 
 See also

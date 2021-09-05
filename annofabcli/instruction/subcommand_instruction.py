@@ -1,4 +1,5 @@
 import argparse
+from typing import Optional
 
 import annofabcli
 import annofabcli.common.cli
@@ -19,7 +20,7 @@ def parse_args(parser: argparse.ArgumentParser):
     annofabcli.instruction.upload_instruction.add_parser(subparsers)
 
 
-def add_parser(subparsers: argparse._SubParsersAction):
+def add_parser(subparsers: Optional[argparse._SubParsersAction] = None):
     subcommand_name = "instruction"
     subcommand_help = "作業ガイド関係のサブコマンド"
     description = "作業ガイド関係のサブコマンド"
@@ -28,3 +29,4 @@ def add_parser(subparsers: argparse._SubParsersAction):
         subparsers, subcommand_name, subcommand_help, description, is_subcommand=False
     )
     parse_args(parser)
+    return parser
