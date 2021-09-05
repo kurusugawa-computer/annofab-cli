@@ -1168,7 +1168,7 @@ def parse_args(parser: argparse.ArgumentParser):
         "--organization",
         type=str,
         nargs="+",
-        help="集計対象の組織名を指定してください。`file://`を先頭に付けると、組織名の一覧が記載されたファイルを指定できます。",
+        help="集計対象の組織名を指定してください。 ``file://`` を先頭に付けると、組織名の一覧が記載されたファイルを指定できます。",
     )
 
     target_group.add_argument(
@@ -1176,7 +1176,7 @@ def parse_args(parser: argparse.ArgumentParser):
         "--project_id",
         type=str,
         nargs="+",
-        help="集計対象のプロジェクトを指定してください。`file://`を先頭に付けると、project_idの一覧が記載されたファイルを指定できます。",
+        help="集計対象のプロジェクトを指定してください。 ``file://`` を先頭に付けると、project_idの一覧が記載されたファイルを指定できます。",
     )
 
     parser.add_argument(
@@ -1184,9 +1184,9 @@ def parse_args(parser: argparse.ArgumentParser):
         "--user_id",
         type=str,
         nargs="+",
-        help="集計対象のユーザのuser_idを指定してください。`--organization`を指定した場合は必須です。"
+        help="集計対象のユーザのuser_idを指定してください。 ``--organization`` を指定した場合は必須です。"
         "指定しない場合は、プロジェクトメンバが指定されます。"
-        "`file://`を先頭に付けると、user_idの一覧が記載されたファイルを指定できます。",
+        " ``file://`` を先頭に付けると、user_idの一覧が記載されたファイルを指定できます。",
     )
 
     parser.add_argument("--add_availability", action="store_true", help="指定した場合、'ユーザごとの作業時間.csv'に予定稼働時間も出力します。")
@@ -1207,10 +1207,11 @@ def parse_args(parser: argparse.ArgumentParser):
     parser.set_defaults(subcommand_func=main)
 
 
-def add_parser(subparsers: argparse._SubParsersAction):
+def add_parser(subparsers: Optional[argparse._SubParsersAction] = None):
     subcommand_name = "list_worktime_by_user"
     subcommand_help = "ユーザごとに作業予定時間、作業実績時間を出力します。"
     description = "ユーザごとに作業予定時間、作業実績時間を出力します。"
 
     parser = annofabcli.common.cli.add_parser(subparsers, subcommand_name, subcommand_help, description)
     parse_args(parser)
+    return parser

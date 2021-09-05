@@ -73,4 +73,8 @@ Examples
 
     頻繁に修正しているコマンドのため、予告なく出力内容が変わる可能性があります。
 
-    
+
+.. argparse::
+   :ref: annofabcli.labor.list_worktime_by_user.add_parser
+   :prog: annofabcli labor list_worktime_by_user
+   :nosubcommands:
