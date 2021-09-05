@@ -145,7 +145,7 @@ def parse_args(parser: argparse.ArgumentParser):
         "--project_id",
         type=str,
         nargs="+",
-        help="対象のプロジェクトのproject_idを指定してください。`file://`を先頭に付けると、一覧が記載されたファイルを指定できます。",
+        help="対象のプロジェクトのproject_idを指定してください。 ``file://`` を先頭に付けると、一覧が記載されたファイルを指定できます。",
     )
 
     list_group.add_argument(
@@ -158,7 +158,7 @@ def parse_args(parser: argparse.ArgumentParser):
     parser.add_argument(
         "--add_details",
         action="store_true",
-        help="プロジェクトに関する詳細情報を表示します" "（`task_last_updated_datetime, annotation_specs_last_updated_datetime`）",
+        help="プロジェクトに関する詳細情報を表示します" "（ ``task_last_updated_datetime, annotation_specs_last_updated_datetime`` ）",
     )
 
     argument_parser.add_format(
@@ -171,10 +171,11 @@ def parse_args(parser: argparse.ArgumentParser):
     parser.set_defaults(subcommand_func=main)
 
 
-def add_parser(subparsers: argparse._SubParsersAction):
+def add_parser(subparsers: Optional[argparse._SubParsersAction] = None):
     subcommand_name = "list_last"
     subcommand_help = "複数のプロジェクトに対して、最新のジョブを出力します。"
     description = "複数のプロジェクトに対して、最新のジョブを出力します。"
 
     parser = annofabcli.common.cli.add_parser(subparsers, subcommand_name, subcommand_help, description)
     parse_args(parser)
+    return parser

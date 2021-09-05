@@ -83,10 +83,11 @@ def parse_args(parser: argparse.ArgumentParser):
     parser.set_defaults(subcommand_func=main)
 
 
-def add_parser(subparsers: argparse._SubParsersAction):
+def add_parser(subparsers: Optional[argparse._SubParsersAction] = None):
     subcommand_name = "list"
     subcommand_help = "ジョブ一覧を出力します。"
     description = "ジョブ一覧を出力します。"
 
     parser = annofabcli.common.cli.add_parser(subparsers, subcommand_name, subcommand_help, description)
     parse_args(parser)
+    return parser
