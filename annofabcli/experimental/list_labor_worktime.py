@@ -28,27 +28,6 @@ logger = logging.getLogger(__name__)
 
 
 @dataclass
-class DailyTimesPerProject(DataClassJsonMixin):
-    """日ごと、メンバごと、プロジェクトごとの作業時間"""
-
-    project_id: str
-    project_name: str
-    project_group: str
-    date: str
-
-    account_id: str
-    user_id: str
-    user_name: str
-    user_biography: str
-    worktime_actual: float
-    """実績作業時間[hour]"""
-    worktime_planned: float
-    """予定作業時間[hour]"""
-    worktime_monitored: float
-    """Annofabの計測作業時間[hour]"""
-
-
-@dataclass
 class DailyMonitoredWorktime(DataClassJsonMixin):
     """日ごとの計測作業時間情報"""
 
@@ -77,9 +56,11 @@ class FormatTarget(Enum):
     DETAILS = "details"
     """日毎・人毎の詳細な値を出力する"""
     BY_USER = "by_user"
-    """人毎の集計の合計値を出力する"""
+    """人毎の作業時間を出力する"""
+    BY_PROJECT = "by_project"
+    """プロジェクト毎の作業時間を出力する"""
     TOTAL = "total"
-    """期間中の合計値だけを出力する"""
+    """合計の作業時間を出力する"""
     COLUMN_LIST = "column_list"
     """列固定で詳細な値を出力する"""
     COLUMN_LIST_PER_PROJECT = "column_list_per_project"
@@ -591,6 +572,18 @@ def main(args):
     ListLaborWorktime(service, facade, args).main()
 
 
+FORMAT_HELP_MESSAGE = (
+    "出力する際のフォーマットを指定してください。\n"
+    "・details: 日毎/人毎の詳細な作業時間を出力します。\n"
+    "・by_user:人毎の作業時間を出力します。\n"
+    "・by_project:プロジェクト毎の作業時間を出力します。\n"
+    "・total: 作業時間の合計値を出力します。\n"
+    "・column_list:列固定で詳細な値を出力します。\n"
+    "・column_list_per_project: 列固定で、日、メンバ、AnnoFabプロジェクトごとの作業時間を出力します。\n"
+    "・intermediate: `annofabcli experimental list_labor_worktime_from_csv`コマンドに渡せる中間ファイルを出力します。\n"
+)
+
+
 def parse_args(parser: argparse.ArgumentParser):
     argument_parser = ArgumentParser(parser)
 
@@ -607,18 +600,7 @@ def parse_args(parser: argparse.ArgumentParser):
 
     format_choices = [e.value for e in FormatTarget]
     parser.add_argument(
-        "-f",
-        "--format",
-        type=str,
-        choices=format_choices,
-        default="intermediate",
-        help="出力する際のフォーマットを指定してください。\n"
-        "・details: 日毎/人毎の詳細な値を出力します。\n"
-        "・by_user:人毎の集計の合計値を出力します。\n"
-        "・total: 期間中の合計値だけを出力します。\n"
-        "・column_list:列固定で詳細な値を出力します。\n"
-        "・column_list_per_project: 列固定で、日、メンバ、AnnoFabプロジェクトごとの作業時間を出力します。\n"
-        "・intermediate: `annofabcli experimental list_labor_worktime_from_csv`コマンドに渡せる中間ファイルを出力します。\n",
+        "-f", "--format", type=str, choices=format_choices, default="intermediate", help=FORMAT_HELP_MESSAGE
     )
 
     parser.add_argument(

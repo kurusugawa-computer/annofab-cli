@@ -10,6 +10,7 @@ import annofabcli.common.cli
 from annofabcli.common.cli import AbstractCommandLineWithoutWebapiInterface, ArgumentParser, get_list_from_args
 from annofabcli.common.utils import print_csv
 from annofabcli.experimental.list_labor_worktime import (
+    FORMAT_HELP_MESSAGE,
     FormatTarget,
     create_df_from_intermediate,
     filter_df_intermediate,
@@ -44,7 +45,6 @@ def list_labor_worktime_from_csv(
         logger.warning(f"出力するデータの件数が0件なので、出力しません。")
 
 
-
 class ListLaborWorktimeFormCsv(AbstractCommandLineWithoutWebapiInterface):
     def main(self):
         args = self.args
@@ -59,7 +59,7 @@ class ListLaborWorktimeFormCsv(AbstractCommandLineWithoutWebapiInterface):
             user_id_list=user_id_list,
             start_date=args.start_date,
             end_date=args.end_date,
-            output=args.output
+            output=args.output,
         )
 
 
@@ -92,18 +92,7 @@ def parse_args(parser: argparse.ArgumentParser):
 
     format_choices = [e.value for e in FormatTarget]
     parser.add_argument(
-        "-f",
-        "--format",
-        type=str,
-        choices=format_choices,
-        default="intermediate",
-        help="出力する際のフォーマットを指定してください。\n"
-        "・details: 日毎/人毎の詳細な値を出力します。\n"
-        "・total: 期間中の合計値だけを出力します。\n"
-        "・by_user:人毎の集計の合計値を出力します。\n"
-        "・column_list:列固定で詳細な値を出力します。\n"
-        "・column_list_per_project: 列固定で、日、メンバ、AnnoFabプロジェクトごとの作業時間を出力します。\n"
-        "・intermediate: `annofabcli experimental list_labor_worktime_from_csv`コマンドに渡せる中間ファイルを出力します。\n",
+        "-f", "--format", type=str, choices=format_choices, default="intermediate", help=FORMAT_HELP_MESSAGE
     )
 
     argument_parser.add_output(required=False)
