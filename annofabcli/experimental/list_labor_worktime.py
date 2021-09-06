@@ -540,7 +540,10 @@ class ListLaborWorktimeMain:
 
         df_intermediate = filter_df_intermediate(df_intermediate, user_id_list=user_id_list)
         df_output = create_df_from_intermediate(df_intermediate, format_target=format_target)
-        print_csv(df_output, str(output) if output is not None else None)
+        if len(df_output) > 0:
+            print_csv(df_output, str(output) if output is not None else None)
+        else:
+            logger.warning(f"出力するデータの件数が0件なので、出力しません。")
 
 
 class ListLaborWorktime(AbstractCommandLineInterface):

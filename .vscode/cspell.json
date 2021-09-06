@@ -6,7 +6,8 @@
         ".vscode/",
         "LICENSE",
         "tests/",
-        "docs/conf.py"
+        "docs/conf.py",
+        ".venv/"
     ],
     "enabledLanguageIds": [
         "python",
@@ -19,6 +20,7 @@
         "astimezone",
         "asyncio",
         "dateutil",
+        "dtype",
         "fillna",
         "getrgb",
         "groupby",

@@ -28,7 +28,7 @@ def list_labor_worktime_from_csv(
     end_date: Optional[str] = None,
     output: Optional[Path] = None,
 ):
-    df_intermediate = pandas.read_csv(csv)
+    df_intermediate = pandas.read_csv(str(csv))
     df_intermediate = filter_df_intermediate(
         df_intermediate,
         project_id_list=project_id_list,
@@ -38,7 +38,11 @@ def list_labor_worktime_from_csv(
     )
 
     df_output = create_df_from_intermediate(df_intermediate, format_target=format_target)
-    print_csv(df_output, str(output) if output is not None else None)
+    if len(df_output) > 0:
+        print_csv(df_output, str(output) if output is not None else None)
+    else:
+        logger.warning(f"出力するデータの件数が0件なので、出力しません。")
+
 
 
 class ListLaborWorktimeFormCsv(AbstractCommandLineWithoutWebapiInterface):
@@ -49,17 +53,18 @@ class ListLaborWorktimeFormCsv(AbstractCommandLineWithoutWebapiInterface):
         user_id_list = get_list_from_args(args.user_id) if args.user_id is not None else None
 
         list_labor_worktime_from_csv(
-            csv=args,
+            csv=args.csv,
             format_target=FormatTarget(args.format),
             project_id_list=project_id_list,
             user_id_list=user_id_list,
             start_date=args.start_date,
             end_date=args.end_date,
+            output=args.output
         )
 
 
 def main(args):
-    ListLaborWorktimeFormCsv().main()
+    ListLaborWorktimeFormCsv(args).main()
 
 
 def parse_args(parser: argparse.ArgumentParser):
