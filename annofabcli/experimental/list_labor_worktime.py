@@ -147,6 +147,7 @@ def create_df_with_format_by_user(df_intermediate: pandas.DataFrame) -> pandas.D
         .sort_values(by=["user_id"])
     )
 
+
 def create_df_with_format_by_project(df_intermediate: pandas.DataFrame) -> pandas.DataFrame:
     """`--format by_project`に対応するDataFrameを生成する。
 
@@ -182,7 +183,8 @@ def create_df_with_format_by_project(df_intermediate: pandas.DataFrame) -> panda
         .round(2)
         .replace(DEFAULT_TO_REPLACE_FOR_VALUE)
         .sort_values(by=["project_title"])
-    )    
+    )
+
 
 def create_df_with_format_column_list(df_intermediate: pandas.DataFrame) -> pandas.DataFrame:
     """`--format column_list`に対応するDataFrameを生成する。

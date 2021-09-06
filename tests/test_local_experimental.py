@@ -54,4 +54,3 @@ class TestListLaborWorktime:
         df = pandas.read_csv(str(data_dir / "list_labor_worktime/intermediate.csv"))
         df2 = create_df_with_format_by_project(df)
         df2.to_csv(out_dir / "list_labor_worktime/out-by_project.csv")
-    
