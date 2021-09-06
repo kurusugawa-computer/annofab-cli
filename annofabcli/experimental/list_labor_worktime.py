@@ -1,19 +1,19 @@
 import argparse
 import datetime
 import logging
+import multiprocessing
 import sys
 from dataclasses import dataclass
 from enum import Enum
+from functools import partial
 from pathlib import Path
-from typing import Any, Dict, List, Optional  # pylint: disable=unused-import
+from typing import Any, Dict, List, Optional, Tuple  # pylint: disable=unused-import
 
 import annofabapi
 import numpy
 import numpy as np
 import pandas
 import pandas as pd
-from annofabapi.models import ProjectMemberRole
-from annofabapi.utils import allow_404_error
 from dataclasses_json import DataClassJsonMixin
 
 import annofabcli
@@ -26,16 +26,6 @@ from annofabcli.common.cli import (
     get_list_from_args,
 )
 from annofabcli.common.utils import isoduration_to_hour, print_csv
-from annofabcli.experimental.utils import (
-    TimeUnitTarget,
-    add_id_csv,
-    create_column_list,
-    create_column_list_per_project,
-    print_byname_total_list,
-    print_time_list_from_work_time_list,
-    print_total,
-    timeunit_conversion,
-)
 
 logger = logging.getLogger(__name__)
 
@@ -134,7 +124,7 @@ def create_df_with_format_column_list_per_project(df_actual_times: pandas.DataFr
                 "worktime_monitored",
                 "activity_rate",
                 "monitor_rate",
-                "working_description"
+                "working_description",
             ]
         ]
         .round(2)
@@ -506,62 +496,10 @@ def refine_df(
     return refine_user_df
 
 
-class ListLaborWorktime(AbstractCommandLineInterface):
-    """
-    労務管理画面の作業時間を出力する
-    """
-
-    def _get_project_title_list(self, project_id_list: List[str]) -> List[str]:
-        return [self.facade.get_project_title(project_id) for project_id in project_id_list]
-
-    def list_labor_worktime(self, project_id: str, start_date: str, end_date: str) -> pd.DataFrame:
-
-        """"""
-
-        super().validate_project(
-            project_id, project_member_roles=[ProjectMemberRole.OWNER, ProjectMemberRole.TRAINING_DATA_USER]
-        )
-        # プロジェクト or 組織に対して、必要な権限が付与されているかを確認
-
-        organization_id = get_organization_id_from_project_id(self.service, project_id)
-        database = Database(self.service, project_id, organization_id, start_date, end_date=end_date)
-        # Annofabから取得した情報に関するデータベースを取得するクラス
-        table_obj = Table(database=database, facade=self.facade)
-        # Databaseから取得した情報を元にPandas DataFrameを生成するクラス
-        #     チェックポイントファイルがあること前提
-        return table_obj.create_afaw_time_df()
-
-    def _output(self, output: Any, df: pd.DataFrame, index: bool, add_project_id: bool, project_id_list: List[str]):
-        if isinstance(output, str):
-            Path(output).parent.mkdir(exist_ok=True, parents=True)
-        df.to_csv(
-            output,
-            date_format="%Y-%m-%d",
-            encoding="utf_8_sig",
-            line_terminator="\r\n",
-            float_format="%.2f",
-            index=index,
-        )
-        if output != sys.stdout and add_project_id:
-            add_id_csv(output, self._get_project_title_list(project_id_list))
-
-    @staticmethod
-    def validate(args: argparse.Namespace) -> bool:
-        COMMON_MESSAGE = "annofabcli experimental list_labor_worktime: error:"
-        if args.start_date is not None and args.end_date is not None:
-            if args.start_date > args.end_date:
-                print(
-                    f"{COMMON_MESSAGE} argument `START_DATE <= END_DATE` の関係を満たしていません。",
-                    file=sys.stderr,
-                )
-                return False
-
-        return True
-
-    @allow_404_error
-    def _get_account_statistics(self, project_id) -> Optional[List[Any]]:
-        account_statistics = self.service.wrapper.get_account_statistics(project_id)
-        return account_statistics
+class ListLaborWorktimeMain:
+    def __init__(self, service: annofabapi.Resource):
+        self.service = service
+        self.facade = AnnofabApiFacade(service)
 
     def _get_monitored_worktime(self, project_id: str, start_date: str, end_date: str) -> List[DailyMonitoredWorktime]:
         """計測作業時間の情報を取得
@@ -571,9 +509,7 @@ class ListLaborWorktime(AbstractCommandLineInterface):
             start_date (str): [description]
             end_date (str): [description]
         """
-        account_statistics = self._get_account_statistics(project_id)
-        if account_statistics is None:
-            return []
+        account_statistics = self.service.wrapper.get_account_statistics(project_id)
 
         result = []
         for account_info in account_statistics:
@@ -615,11 +551,7 @@ class ListLaborWorktime(AbstractCommandLineInterface):
         return new_labor_list
 
     def create_intermediate_df_for_one_project(
-        self,
-        project_id: str,
-        *,
-        start_date: str,
-        end_date: str,
+        self, project_id: str, *, start_date: str, end_date: str, project_index: Optional[int] = None
     ) -> pandas.DataFrame:
 
         OUTPUT_COLUMNS = [
@@ -636,12 +568,10 @@ class ListLaborWorktime(AbstractCommandLineInterface):
             "working_description",
         ]
 
-        project = self.service.wrapper.get_project_or_none(project_id)
-        if project is None:
-            logger.warning(f"project_id={project_id}のプロジェクトにアクセスできませんでした。")
-            return pandas.DataFrame([], columns=OUTPUT_COLUMNS)
-        
-        logger.debug(f"project_id='{project_id}', project_title='{project['title']}'の作業時間情報を取得します。")
+        project, _ = self.service.api.get_project(project_id)
+
+        logging_prefix = f"{project_index+1} 件目" if project_index is not None else ""
+        logger.debug(f"{logging_prefix}: project_id='{project_id}', project_title='{project['title']}'の作業時間情報を取得します。")
         labor_worktime = self._get_labor_worktime(project_id=project_id, start_date=start_date, end_date=end_date)
         monitored_worktime = self._get_monitored_worktime(project_id, start_date=start_date, end_date=end_date)
         project_member_list = self.service.wrapper.get_all_project_members(
@@ -674,38 +604,63 @@ class ListLaborWorktime(AbstractCommandLineInterface):
         )
         return df[OUTPUT_COLUMNS]
 
-    def create_intermediate_df(
+    def _create_intermediate_df_for_one_project_wrapper(
         self,
-        project_id_list: List[str],
+        tpl: Tuple[int, str],
         *,
         start_date: str,
         end_date: str,
+    ):
+        project_index, project_id = tpl
+        return self.create_intermediate_df_for_one_project(
+            project_id=project_id,
+            start_date=start_date,
+            end_date=end_date,
+            project_index=project_index,
+        )
+
+    def create_intermediate_df(
+        self, project_id_list: List[str], *, start_date: str, end_date: str, parallelism: Optional[int] = None
     ) -> pandas.DataFrame:
         """中間ファイルの元になるDataFrameを出力する。"""
         df_list = []
         logger.info(f"{len(project_id_list)} 件のプロジェクトの作業時間情報を取得します。")
 
-        for project_id in project_id_list:
-            try:
-                tmp_df = self.create_intermediate_df_for_one_project(project_id, start_date=start_date, end_date=end_date)
-                df_list.append(tmp_df)
-            except Exception:  # pylint: disable=broad-except
-                logger.warning(f"project_id='{project_id}'の作業時間情報の取得に失敗しました。", exc_info=True)
+        # 集計値を出力するので、1つでも作業時間情報の取得に失敗したら終了するようにする。
 
+        if parallelism is not None:
+            partial_func = partial(
+                self._create_intermediate_df_for_one_project_wrapper,
+                start_date=start_date,
+                end_date=end_date,
+            )
+            with multiprocessing.Pool(parallelism) as pool:
+                df_list = pool.map(partial_func, enumerate(project_id_list))
+
+        else:
+            # 逐次処理
+            for project_index, project_id in enumerate(project_id_list):
+                tmp_df = self.create_intermediate_df_for_one_project(
+                    project_id, start_date=start_date, end_date=end_date, project_index=project_index
+                )
+                df_list.append(tmp_df)
 
         df = pandas.concat(df_list)
         return df
 
-    def list_labor_worktime2(
+    def main(
         self,
         project_id_list: List[str],
         start_date: str,
         end_date: str,
         format_target: FormatTarget,
         output: Optional[Path] = None,
+        parallelism: Optional[int] = None,
     ):
 
-        df_intermediate = self.create_intermediate_df(project_id_list, start_date=start_date, end_date=end_date)
+        df_intermediate = self.create_intermediate_df(
+            project_id_list, start_date=start_date, end_date=end_date, parallelism=parallelism
+        )
         if format_target == FormatTarget.COLUMN_LIST_PER_PROJECT:
             df_output = create_df_with_format_column_list_per_project(df_actual_times)
 
@@ -726,6 +681,25 @@ class ListLaborWorktime(AbstractCommandLineInterface):
 
         print_csv(df_output, str(output) if output is not None else None)
 
+
+class ListLaborWorktime(AbstractCommandLineInterface):
+    """
+    労務管理画面の作業時間を出力する
+    """
+
+    @staticmethod
+    def validate(args: argparse.Namespace) -> bool:
+        COMMON_MESSAGE = "annofabcli experimental list_labor_worktime: error:"
+        if args.start_date is not None and args.end_date is not None:
+            if args.start_date > args.end_date:
+                print(
+                    f"{COMMON_MESSAGE} argument `START_DATE <= END_DATE` の関係を満たしていません。",
+                    file=sys.stderr,
+                )
+                return False
+
+        return True
+
     def main(self):
         args = self.args
         if not self.validate(args):
@@ -735,12 +709,14 @@ class ListLaborWorktime(AbstractCommandLineInterface):
 
         project_id_list = get_list_from_args(args.project_id)
 
-        self.list_labor_worktime2(
+        main_obj = ListLaborWorktimeMain(self.service)
+        main_obj.main(
             project_id_list,
             start_date=args.start_date,
             end_date=args.end_date,
             format_target=format_target,
             output=args.output,
+            parallelism=args.parallelism,
         )
 
 
@@ -780,6 +756,8 @@ def parse_args(parser: argparse.ArgumentParser):
     )
 
     argument_parser.add_output(required=False)
+
+    parser.add_argument("--parallelism", type=int, required=False, help="並列度。指定しない場合は、逐次的に処理します。")
 
     parser.set_defaults(subcommand_func=main)
 

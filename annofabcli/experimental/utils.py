@@ -1,9 +1,9 @@
-import pandas
 import csv
 from enum import Enum
 from typing import List, Tuple
 
 import numpy as np
+import pandas
 import pandas as pd
 
 
