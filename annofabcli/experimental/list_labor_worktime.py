@@ -6,7 +6,7 @@ from dataclasses import dataclass
 from enum import Enum
 from functools import partial
 from pathlib import Path
-from typing import Any, Dict, List, Optional, Tuple  # pylint: disable=unused-import
+from typing import List, Optional, Tuple
 
 import annofabapi
 import numpy
@@ -338,7 +338,7 @@ def create_df_from_intermediate(
     elif format_target == FormatTarget.BY_USER:
         df_output = create_df_with_format_by_user(df_intermediate)
 
-    elif format_target == FormatTarget.BY_TOTAL:
+    elif format_target == FormatTarget.TOTAL:
         df_output = create_df_with_format_total(df_intermediate)
 
     elif format_target == FormatTarget.DETAILS:
@@ -350,6 +350,27 @@ def create_df_from_intermediate(
     else:
         raise RuntimeError(f"format_target={format_target} が不正です。")
     return df_output
+
+
+def filter_df_intermediate(
+    df_intermediate: pandas.DataFrame,
+    *,
+    project_id_list: Optional[List[str]] = None,
+    user_id_list: Optional[List[str]] = None,
+    start_date: Optional[str] = None,
+    end_date: Optional[str] = None,
+) -> pandas.DataFrame:
+    if project_id_list is not None:
+        df_intermediate = df_intermediate[df_intermediate["project_id"].isin(set(project_id_list))]
+    if user_id_list is not None:
+        df_intermediate = df_intermediate[df_intermediate["user_id"].isin(set(user_id_list))]
+    if start_date is not None:
+        df_intermediate = df_intermediate[df_intermediate["date"] >= start_date]
+    if end_date is not None:
+        df_intermediate = df_intermediate[df_intermediate["date"] <= end_date]
+
+    return df_intermediate
+
 
 class ListLaborWorktimeMain:
     def __init__(self, service: annofabapi.Resource):
@@ -509,12 +530,15 @@ class ListLaborWorktimeMain:
         end_date: str,
         format_target: FormatTarget,
         output: Optional[Path] = None,
+        user_id_list: Optional[List[str]] = None,
         parallelism: Optional[int] = None,
     ):
 
         df_intermediate = self.create_intermediate_df(
             project_id_list, start_date=start_date, end_date=end_date, parallelism=parallelism
         )
+
+        df_intermediate = filter_df_intermediate(df_intermediate, user_id_list=user_id_list)
         df_output = create_df_from_intermediate(df_intermediate, format_target=format_target)
         print_csv(df_output, str(output) if output is not None else None)
 
@@ -545,6 +569,7 @@ class ListLaborWorktime(AbstractCommandLineInterface):
         format_target = FormatTarget(args.format)
 
         project_id_list = get_list_from_args(args.project_id)
+        user_id_list = get_list_from_args(args.user_id) if args.user_id is not None else None
 
         main_obj = ListLaborWorktimeMain(self.service)
         main_obj.main(
@@ -552,6 +577,7 @@ class ListLaborWorktime(AbstractCommandLineInterface):
             start_date=args.start_date,
             end_date=args.end_date,
             format_target=format_target,
+            user_id_list=user_id_list,
             output=args.output,
             parallelism=args.parallelism,
         )
@@ -572,7 +598,7 @@ def parse_args(parser: argparse.ArgumentParser):
         type=str,
         required=True,
         nargs="+",
-        help="集計対象のプロジェクトのproject_idを指定します。複数指定した場合は合計値を出力します。`file://`を先頭に付けると、project_idの一覧が記載されたファイルを指定できます。",
+        help="集計対象のプロジェクトのproject_idを指定します。複数指定した場合は合計値を出力します。\n" "`file://`を先頭に付けると、project_idの一覧が記載されたファイルを指定できます。",
     )
     parser.add_argument("--start_date", type=str, required=True, help="集計開始日(YYYY-mm-dd)")
     parser.add_argument("--end_date", type=str, required=True, help="集計終了日(YYYY-mm-dd)")
@@ -593,6 +619,14 @@ def parse_args(parser: argparse.ArgumentParser):
         "・intermediate: `annofabcli experimental list_labor_worktime_from_csv`コマンドに渡せる中間ファイルを出力します。\n",
     )
 
+    parser.add_argument(
+        "-u",
+        "--user_id",
+        type=str,
+        nargs="+",
+        required=False,
+        help="集計対象のユーザのuser_idを指定します。\n" "`file://`を先頭に付けると、user_idの一覧が記載されたファイルを指定できます。",
+    )
     argument_parser.add_output(required=False)
 
     parser.add_argument("--parallelism", type=int, required=False, help="並列度。指定しない場合は、逐次的に処理します。")

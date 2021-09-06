@@ -6,6 +6,7 @@ from annofabcli.experimental import (
     dashboard,
     find_break_error,
     list_labor_worktime,
+    list_labor_worktime_from_csv,
     list_out_of_range_annotation_for_movie,
 )
 
@@ -17,6 +18,7 @@ def parse_args(parser: argparse.ArgumentParser):
     dashboard.add_parser(subparsers)
     find_break_error.add_parser(subparsers)
     list_labor_worktime.add_parser(subparsers)
+    list_labor_worktime_from_csv.add_parser(subparsers)
     list_out_of_range_annotation_for_movie.add_parser(subparsers)
 
 
