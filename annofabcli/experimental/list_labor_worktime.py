@@ -55,9 +55,9 @@ class DailyLaborWorktime(DataClassJsonMixin):
 class FormatTarget(Enum):
     DETAILS = "details"
     """日毎・人毎の詳細な値を出力する"""
-    BY_USER = "by_user"
+    TOTAL_BY_USER = "total_by_user"
     """人毎の作業時間を出力する"""
-    BY_PROJECT = "by_project"
+    TOTAL_BY_PROJECT = "total_by_project"
     """プロジェクト毎の作業時間を出力する"""
     TOTAL = "total"
     """合計の作業時間を出力する"""
@@ -110,8 +110,8 @@ def create_df_with_format_column_list_per_project(df_actual_times: pandas.DataFr
     )
 
 
-def create_df_with_format_by_user(df_intermediate: pandas.DataFrame) -> pandas.DataFrame:
-    """`--format by_user`に対応するDataFrameを生成する。
+def create_df_with_format_total_by_user(df_intermediate: pandas.DataFrame) -> pandas.DataFrame:
+    """`--format total_by_user`に対応するDataFrameを生成する。
 
     Args:
         df (pd.DataFrame): [description]
@@ -148,8 +148,8 @@ def create_df_with_format_by_user(df_intermediate: pandas.DataFrame) -> pandas.D
     )
 
 
-def create_df_with_format_by_project(df_intermediate: pandas.DataFrame) -> pandas.DataFrame:
-    """`--format by_project`に対応するDataFrameを生成する。
+def create_df_with_format_total_by_project(df_intermediate: pandas.DataFrame) -> pandas.DataFrame:
+    """`--format total_by_project`に対応するDataFrameを生成する。
 
     Args:
         df (pd.DataFrame): [description]
@@ -354,11 +354,11 @@ def create_df_from_intermediate(
     elif format_target == FormatTarget.COLUMN_LIST:
         df_output = create_df_with_format_column_list(df_intermediate)
 
-    elif format_target == FormatTarget.BY_USER:
-        df_output = create_df_with_format_by_user(df_intermediate)
+    elif format_target == FormatTarget.TOTAL_BY_USER:
+        df_output = create_df_with_format_total_by_user(df_intermediate)
 
-    elif format_target == FormatTarget.BY_PROJECT:
-        df_output = create_df_with_format_by_project(df_intermediate)
+    elif format_target == FormatTarget.TOTAL_BY_PROJECT:
+        df_output = create_df_with_format_total_by_project(df_intermediate)
 
     elif format_target == FormatTarget.TOTAL:
         df_output = create_df_with_format_total(df_intermediate)
@@ -616,8 +616,8 @@ def main(args):
 FORMAT_HELP_MESSAGE = (
     "出力する際のフォーマットを指定してください。\n"
     "・details: 日毎/人毎の詳細な作業時間を出力します。\n"
-    "・by_user:人毎の作業時間を出力します。\n"
-    "・by_project:プロジェクト毎の作業時間を出力します。\n"
+    "・total_by_user:人毎の作業時間を出力します。\n"
+    "・total_by_project:プロジェクト毎の作業時間を出力します。\n"
     "・total: 作業時間の合計値を出力します。\n"
     "・column_list:列固定で詳細な値を出力します。\n"
     "・column_list_per_project: 列固定で、日、メンバ、AnnoFabプロジェクトごとの作業時間を出力します。\n"

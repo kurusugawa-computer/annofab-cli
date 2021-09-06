@@ -4,8 +4,8 @@ from pathlib import Path
 import pandas
 
 from annofabcli.experimental.list_labor_worktime import (
-    create_df_with_format_by_project,
-    create_df_with_format_by_user,
+    create_df_with_format_total_by_project,
+    create_df_with_format_total_by_user,
     create_df_with_format_column_list,
     create_df_with_format_column_list_per_project,
     create_df_with_format_details,
@@ -29,10 +29,10 @@ class TestListLaborWorktime:
         df2 = create_df_with_format_details(df)
         df2.to_csv(out_dir / "list_labor_worktime/out-details.csv", index=False)
 
-    def test_create_df_with_format_by_user(self):
+    def test_create_df_with_format_total_by_user(self):
         df = pandas.read_csv(str(data_dir / "list_labor_worktime/intermediate.csv"))
         print(df.columns)
-        df2 = create_df_with_format_by_user(df)
+        df2 = create_df_with_format_total_by_user(df)
         df2.to_csv(out_dir / "list_labor_worktime/out-by_user.csv", index=False)
 
     def test_create_df_with_total(self):
@@ -50,7 +50,7 @@ class TestListLaborWorktime:
         df2 = create_df_with_format_column_list_per_project(df)
         df2.to_csv(out_dir / "list_labor_worktime/out-column_list_per_project.csv")
 
-    def test_create_df_with_format_by_project(self):
+    def test_create_df_with_format_total_by_project(self):
         df = pandas.read_csv(str(data_dir / "list_labor_worktime/intermediate.csv"))
-        df2 = create_df_with_format_by_project(df)
+        df2 = create_df_with_format_total_by_project(df)
         df2.to_csv(out_dir / "list_labor_worktime/out-by_project.csv")
