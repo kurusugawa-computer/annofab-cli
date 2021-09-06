@@ -35,8 +35,8 @@ isodate = "*"
 annofabapi = ">=0.46.4"
 
 # pandas1.3にすると、TestCommandLine.test_list_labor_worktime が失敗するので、pandas1.2以下にする
-pandas = "~1.2"
-bokeh = "^2.2"
+#pandas = "~1.2"
+bokeh = "^2.3"
 holoviews= "^1.14"
 
 [tool.poetry.dev-dependencies]
