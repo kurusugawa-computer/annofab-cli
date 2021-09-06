@@ -147,6 +147,42 @@ def create_df_with_format_by_user(df_intermediate: pandas.DataFrame) -> pandas.D
         .sort_values(by=["user_id"])
     )
 
+def create_df_with_format_by_project(df_intermediate: pandas.DataFrame) -> pandas.DataFrame:
+    """`--format by_project`に対応するDataFrameを生成する。
+
+    Args:
+        df (pd.DataFrame): [description]
+
+    Returns:
+        pd.DataFrame: [description]
+    """
+
+    df = df_intermediate.groupby("project_id")[["worktime_planned", "worktime_actual", "worktime_monitored"]].sum()
+    df_project = df_intermediate.groupby("project_id").first()[["project_title"]]
+    df = df.join(df_project)
+
+    df["activity_rate"] = df["worktime_actual"] / df["worktime_planned"]
+    df["monitor_rate"] = df["worktime_monitored"] / df["worktime_actual"]
+    df["monitor_diff"] = df["worktime_actual"] - df["worktime_monitored"]
+
+    df.reset_index(inplace=True)
+    return (
+        df[
+            [
+                "project_id",
+                "project_title",
+                "worktime_planned",
+                "worktime_actual",
+                "worktime_monitored",
+                "activity_rate",
+                "monitor_rate",
+                "monitor_diff",
+            ]
+        ]
+        .round(2)
+        .replace(DEFAULT_TO_REPLACE_FOR_VALUE)
+        .sort_values(by=["project_title"])
+    )    
 
 def create_df_with_format_column_list(df_intermediate: pandas.DataFrame) -> pandas.DataFrame:
     """`--format column_list`に対応するDataFrameを生成する。
@@ -319,6 +355,9 @@ def create_df_from_intermediate(
     elif format_target == FormatTarget.BY_USER:
         df_output = create_df_with_format_by_user(df_intermediate)
 
+    elif format_target == FormatTarget.BY_PROJECT:
+        df_output = create_df_with_format_by_project(df_intermediate)
+
     elif format_target == FormatTarget.TOTAL:
         df_output = create_df_with_format_total(df_intermediate)
 
@@ -457,7 +496,7 @@ class ListLaborWorktimeMain:
             how="left",
             on=["account_id"],
         )
-        return df[OUTPUT_COLUMNS]
+        return df[OUTPUT_COLUMNS].sort_values(["date"])
 
     def _create_intermediate_df_for_one_project_wrapper(
         self,

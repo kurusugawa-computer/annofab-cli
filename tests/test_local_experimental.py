@@ -4,6 +4,7 @@ from pathlib import Path
 import pandas
 
 from annofabcli.experimental.list_labor_worktime import (
+    create_df_with_format_by_project,
     create_df_with_format_by_user,
     create_df_with_format_column_list,
     create_df_with_format_column_list_per_project,
@@ -48,3 +49,9 @@ class TestListLaborWorktime:
         df = pandas.read_csv(str(data_dir / "list_labor_worktime/intermediate.csv"))
         df2 = create_df_with_format_column_list_per_project(df)
         df2.to_csv(out_dir / "list_labor_worktime/out-column_list_per_project.csv")
+
+    def test_create_df_with_format_by_project(self):
+        df = pandas.read_csv(str(data_dir / "list_labor_worktime/intermediate.csv"))
+        df2 = create_df_with_format_by_project(df)
+        df2.to_csv(out_dir / "list_labor_worktime/out-by_project.csv")
+    
