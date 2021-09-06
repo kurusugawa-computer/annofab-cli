@@ -32,19 +32,25 @@
     "python.linting.ignorePatterns": [
         ".vscode/*.py",
         "**/site-packages/**/*.py",
-        "docs/**/*.py"
+        "docs/**/*.py",
+        "tests/**/*.py",
     ],
     "python.analysis.extraPaths": [
         ".venv/lib/python3.8/site-packages/"
     ],
     "python.analysis.completeFunctionParens": true,
     "[python]": {
-        "editor.formatOnSave": true,
-        "editor.codeActionsOnSave": {
-            "source.organizeImports": true
-        },
     },
     "python.testing.autoTestDiscoverOnSaveEnabled": false,
-    "restructuredtext.confPath": "${workspaceFolder}/docs"
-
+    "restructuredtext.confPath": "${workspaceFolder}/docs",
+    "files.exclude": {
+        ".coverage*": true,
+        "**/__pycache__": true,
+        "**/.pytest_cache": true,
+        "build/": true,
+        "dist/": true,
+        "docs/_build/": true,
+        "htmlcov/": true,
+        "out/": true
+    }
 }

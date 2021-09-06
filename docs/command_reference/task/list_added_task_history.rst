@@ -58,7 +58,6 @@ Examples
 
 出力結果
 =================================
-`annofabcli task list <../task/list.html>`_ コマンドの出力結果と同じです。
 
 
 CSV出力
