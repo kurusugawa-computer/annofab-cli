@@ -17,15 +17,16 @@ jobs:
         with: { python-version: 3.9 }
 
       - name: Upgrade pip, and install poetry, pyinstaller
-        run: python -m pip install --upgrade pip PyInstaller poetry
-
+        run: |
+          python -m pip install --upgrade pip poetry
       - name: poetry install
         run: poetry install --no-dev
 
       - name: create executable file
         run: |
           mv annofabcli\__main__.py annofabcli\annofabcli.py
-          pyinstaller annofabcli\annofabcli.py --add-data "annofabcli/data/logging.yaml;annofabcli/data"
+          poetry add "pyinstaller==4.5.1"
+          poetry run pyinstaller annofabcli\annofabcli.py --add-data "annofabcli/data/logging.yaml;annofabcli/data"
 
       - name: upload
         uses: actions/upload-artifact@v1
