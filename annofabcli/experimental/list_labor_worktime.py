@@ -138,9 +138,7 @@ def create_df_with_format_by_user(df_intermediate: pandas.DataFrame) -> pandas.D
     Returns:
         pd.DataFrame: [description]
     """
-    df = df_intermediate.groupby("user_id")[
-        ["worktime_planned", "worktime_actual", "worktime_monitored"]
-    ].sum()
+    df = df_intermediate.groupby("user_id")[["worktime_planned", "worktime_actual", "worktime_monitored"]].sum()
     df_user = df_intermediate.groupby("user_id").first()[["user_name", "user_biography"]]
     df = df.join(df_user)
 
@@ -185,7 +183,6 @@ def create_df_with_format_column_list(df_intermediate: pandas.DataFrame) -> pand
     df_user = df_intermediate.groupby("user_id").first()[["user_name", "user_biography"]]
     df = df.join(df_user)
 
-
     df["activity_rate"] = df["worktime_actual"] / df["worktime_planned"]
     df["monitor_rate"] = df["worktime_monitored"] / df["worktime_actual"]
 
@@ -219,9 +216,7 @@ def create_df_with_format_total(df_intermediate: pandas.DataFrame) -> pandas.Dat
     Returns:
         pd.DataFrame: `--format total`に対応するDataFrame
     """
-    df = pandas.DataFrame(
-        [df_intermediate[["worktime_actual", "worktime_planned", "worktime_monitored"]].sum()]
-    )
+    df = pandas.DataFrame([df_intermediate[["worktime_actual", "worktime_planned", "worktime_monitored"]].sum()])
 
     df["activity_rate"] = df["worktime_actual"] / df["worktime_planned"]
     df["monitor_rate"] = df["worktime_monitored"] / df["worktime_actual"]

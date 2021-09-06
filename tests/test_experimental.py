@@ -14,7 +14,7 @@ from annofabcli.experimental.dashboard import (
     get_remaining_task_count_info_from_task_list,
     get_worktime_for_period,
 )
-from annofabcli.experimental.utils import create_column_list, create_column_list_per_project
+from annofabcli.experimental.utils import create_column_list
 
 # プロジェクトトップに移動する
 os.chdir(os.path.dirname(os.path.abspath(__file__)) + "/../")
@@ -71,16 +71,6 @@ class TestCommandLine:
         )
 
 
-class TestListLaborWorktime:
-    def test_create_column_list_per_project(self):
-        total_df = pandas.read_csv(str(test_dir / "worktime-per-project-date.csv"))
-        df = create_column_list_per_project(total_df)
-        df.to_csv(out_dir / "column-list-per-project.csv", index=False)
-
-    def test_create_column_list(self):
-        total_df = pandas.read_csv(str(test_dir / "worktime-per-project-date.csv"))
-        df = create_column_list(total_df)
-        df.to_csv(out_dir / "column-list.csv", index=False)
 
 
 class TestDashboard:
