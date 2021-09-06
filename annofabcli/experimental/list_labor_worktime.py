@@ -114,8 +114,8 @@ def create_df_with_format_column_list_per_project(df_actual_times: pandas.DataFr
                 "project_id",
                 "project_title",
                 "user_id",
-                "user_name",
-                "user_biography",
+                "username",
+                "biography",
                 "worktime_planned",
                 "worktime_actual",
                 "worktime_monitored",
@@ -139,7 +139,7 @@ def create_df_with_format_by_user(df_intermediate: pandas.DataFrame) -> pandas.D
         pd.DataFrame: [description]
     """
     df = df_intermediate.groupby("user_id")[["worktime_planned", "worktime_actual", "worktime_monitored"]].sum()
-    df_user = df_intermediate.groupby("user_id").first()[["user_name", "user_biography"]]
+    df_user = df_intermediate.groupby("user_id").first()[["username", "biography"]]
     df = df.join(df_user)
 
     df["activity_rate"] = df["worktime_actual"] / df["worktime_planned"]
@@ -151,8 +151,8 @@ def create_df_with_format_by_user(df_intermediate: pandas.DataFrame) -> pandas.D
         df[
             [
                 "user_id",
-                "user_name",
-                "user_biography",
+                "username",
+                "biography",
                 "worktime_planned",
                 "worktime_actual",
                 "worktime_monitored",
@@ -180,7 +180,7 @@ def create_df_with_format_column_list(df_intermediate: pandas.DataFrame) -> pand
     df = df_intermediate.groupby(["date", "user_id"])[
         ["worktime_actual", "worktime_monitored", "worktime_planned"]
     ].sum()
-    df_user = df_intermediate.groupby("user_id").first()[["user_name", "user_biography"]]
+    df_user = df_intermediate.groupby("user_id").first()[["username", "biography"]]
     df = df.join(df_user)
 
     df["activity_rate"] = df["worktime_actual"] / df["worktime_planned"]
@@ -192,8 +192,8 @@ def create_df_with_format_column_list(df_intermediate: pandas.DataFrame) -> pand
             [
                 "date",
                 "user_id",
-                "user_name",
-                "user_biography",
+                "username",
+                "biography",
                 "worktime_planned",
                 "worktime_actual",
                 "worktime_monitored",
@@ -258,7 +258,7 @@ def create_df_with_format_details(
     SUM_ROW_NAME = "合計"
 
     # TODO 同姓同名だった場合、正しく集計されない
-    df = df_intermediate.groupby(["date", "user_name"])[
+    df = df_intermediate.groupby(["date", "username"])[
         ["worktime_actual", "worktime_monitored", "worktime_planned"]
     ].sum()
 
@@ -290,7 +290,7 @@ def create_df_with_format_details(
         inplace=True,
     )
 
-    username_list = list(df_intermediate["user_name"].unique())
+    username_list = list(df_intermediate["username"].unique())
     if insert_sum_column:
         username_list = [SUM_COLUMN_NAME] + username_list
 
@@ -436,8 +436,8 @@ class ListLaborWorktimeMain:
             "project_title",
             "account_id",
             "user_id",
-            "user_name",
-            "user_biography",
+            "username",
+            "biography",
             "worktime_planned",
             "worktime_actual",
             "worktime_monitored",
@@ -464,7 +464,6 @@ class ListLaborWorktimeMain:
         df_project_member = pandas.DataFrame(
             project_member_list, columns=["account_id", "user_id", "username", "biography"]
         )
-        df_project_member.rename(columns={"username": "user_name", "biography": "user_biography"}, inplace=True)
         df_merged = pandas.merge(
             df_labor_worktime, df_monitored_worktime, how="outer", on=["date", "project_id", "account_id"]
         )
