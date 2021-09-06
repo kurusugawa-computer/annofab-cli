@@ -1,6 +1,6 @@
 [tool.poetry]
 name = "annofabcli"
-version = "1.46.1"
+version = "1.47.0"
 description = "Utility Command Line Interface for AnnoFab"
 authors = ["yuji38kwmt"]
 license = "MIT"
