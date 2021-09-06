@@ -1,5 +1,5 @@
-date,project_id,project_title,account_id,user_id,username,biography,worktime_planned,worktime_actual,worktime_monitored,working_description
+date,project_id,project_title,account_id,user_id,user_name,user_biography,worktime_planned,worktime_actual,worktime_monitored,working_description
 2021-08-17,prj1,prj1,user1,user1,user1,XXX,0,2,1,
-2021-08-17,prj1,prj1,user2,user1,user2,YYY,2,3,4,
+2021-08-17,prj1,prj1,user2,user1,user2,YYY,2,3,4,memo
 2021-08-20,prj2,prj2,user1,user1,user1,XXX,0,2,1,
 2021-08-29,prj2,prj2,user2,user1,user2,YYY,2,3,4,

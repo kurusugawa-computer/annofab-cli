@@ -51,8 +51,8 @@ class DailyTimesPerProject(DataClassJsonMixin):
 
     account_id: str
     user_id: str
-    username: str
-    biography: str
+    user_name: str
+    user_biography: str
     worktime_actual: float
     """実績作業時間[hour]"""
     worktime_planned: float
@@ -88,7 +88,9 @@ class DailyLaborWorktime(DataClassJsonMixin):
 
 class FormatTarget(Enum):
     DETAILS = "details"
-    """日毎・人毎の詳細な値を出力する, """
+    """日毎・人毎の詳細な値を出力する"""
+    TOTAL = "total"
+    """期間中の合計値だけを出力する"""
     BY_NAME_TOTAL = "by_name_total"
     """人毎の集計の合計値を出力する"""
     COLUMN_LIST = "column_list"
@@ -114,17 +116,6 @@ def create_df_with_format_column_list_per_project(df_actual_times: pandas.DataFr
     df = df_actual_times.copy()
 
     # 元のコマンドの出力結果にできるだけ近づける
-    df.rename(
-        columns={
-            "user_account": "user_id",
-            "company": "user_biography",
-            "member_name": "user_name",
-            "actual_worktime_hour": "worktime_actual",
-            "af_monitored_worktime_hour": "worktime_monitored",
-        },
-        inplace=True,
-    )
-    df["worktime_planned"] = 0
 
     df["activity_rate"] = df["worktime_actual"] / df["worktime_planned"]
     df["monitor_rate"] = df["worktime_monitored"] / df["worktime_actual"]
@@ -134,10 +125,7 @@ def create_df_with_format_column_list_per_project(df_actual_times: pandas.DataFr
             [
                 "date",
                 "project_id",
-                "project_name",
-                "sub_project_id",
-                "sub_project_name",
-                "af_project_id",
+                "project_title",
                 "user_id",
                 "user_name",
                 "user_biography",
@@ -146,6 +134,7 @@ def create_df_with_format_column_list_per_project(df_actual_times: pandas.DataFr
                 "worktime_monitored",
                 "activity_rate",
                 "monitor_rate",
+                "working_description"
             ]
         ]
         .round(2)
@@ -639,8 +628,8 @@ class ListLaborWorktime(AbstractCommandLineInterface):
             "project_title",
             "account_id",
             "user_id",
-            "username",
-            "biography",
+            "user_name",
+            "user_biography",
             "worktime_planned",
             "worktime_actual",
             "worktime_monitored",
@@ -651,7 +640,8 @@ class ListLaborWorktime(AbstractCommandLineInterface):
         if project is None:
             logger.warning(f"project_id={project_id}のプロジェクトにアクセスできませんでした。")
             return pandas.DataFrame([], columns=OUTPUT_COLUMNS)
-
+        
+        logger.debug(f"project_id='{project_id}', project_title='{project['title']}'の作業時間情報を取得します。")
         labor_worktime = self._get_labor_worktime(project_id=project_id, start_date=start_date, end_date=end_date)
         monitored_worktime = self._get_monitored_worktime(project_id, start_date=start_date, end_date=end_date)
         project_member_list = self.service.wrapper.get_all_project_members(
@@ -666,7 +656,7 @@ class ListLaborWorktime(AbstractCommandLineInterface):
             monitored_worktime, columns=["project_id", "date", "account_id", "worktime_monitored"]
         )
         df_project_member = pandas.DataFrame(
-            project_member_list, columns=["account_id", "user_id", "username", "biography"]
+            project_member_list, columns=["account_id", "user_id", "user_name", "user_biography"]
         )
 
         df_merged = pandas.merge(
@@ -693,9 +683,15 @@ class ListLaborWorktime(AbstractCommandLineInterface):
     ) -> pandas.DataFrame:
         """中間ファイルの元になるDataFrameを出力する。"""
         df_list = []
+        logger.info(f"{len(project_id_list)} 件のプロジェクトの作業時間情報を取得します。")
+
         for project_id in project_id_list:
-            tmp_df = self.create_intermediate_df_for_one_project(project_id, start_date=start_date, end_date=end_date)
-            df_list.append(tmp_df)
+            try:
+                tmp_df = self.create_intermediate_df_for_one_project(project_id, start_date=start_date, end_date=end_date)
+                df_list.append(tmp_df)
+            except Exception:  # pylint: disable=broad-except
+                logger.warning(f"project_id='{project_id}'の作業時間情報の取得に失敗しました。", exc_info=True)
+
 
         df = pandas.concat(df_list)
         return df
@@ -738,7 +734,6 @@ class ListLaborWorktime(AbstractCommandLineInterface):
         format_target = FormatTarget(args.format)
 
         project_id_list = get_list_from_args(args.project_id)
-        logger.info(f"{len(project_id_list)} 件のプロジェクトの作業時間情報を取得します。")
 
         self.list_labor_worktime2(
             project_id_list,
@@ -775,13 +770,13 @@ def parse_args(parser: argparse.ArgumentParser):
         type=str,
         choices=format_choices,
         default="intermediate",
-        help="出力する際のフォーマットです。デフォルトは'details'です。"
-        "details:日毎・人毎の詳細な値を出力する, "
-        "total:期間中の合計値だけを出力する, "
-        "by_name_total:人毎の集計の合計値を出力する, "
-        "column_list:列固定で詳細な値を出力する, "
-        "column_list_per_project: 列固定で、日、メンバ、AnnoFabプロジェクトごとの作業時間を出力する,"
-        "intermediate: 中間ファイル。このファイルからいろんな形式に変換できる。",
+        help="出力する際のフォーマットを指定してください。\n"
+        "・details: 日毎/人毎の詳細な値を出力します。\n"
+        "・total: 期間中の合計値だけを出力します。\n"
+        "・by_name_total:人毎の集計の合計値を出力します。\n"
+        "・column_list:列固定で詳細な値を出力します。\n"
+        "・column_list_per_project: 列固定で、日、メンバ、AnnoFabプロジェクトごとの作業時間を出力します。\n"
+        "・intermediate: `annofabcli experimental list_labor_worktime_from_csv`コマンドに渡せる中間ファイルを出力します。\n",
     )
 
     argument_parser.add_output(required=False)
