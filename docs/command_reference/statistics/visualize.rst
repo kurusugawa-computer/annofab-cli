@@ -94,7 +94,7 @@ Examples
 
     $ annofabcli statistics visualize --project_id prj1 --output_dir out_dir --minimal
 
-`out_dir <https://github.com/kurusugawa-computer/annofab-cli/blob/master/docs/command_reference/statistics/list_annotation_count/out_dir>`_
+`out_dir <https://github.com/kurusugawa-computer/annofab-cli/blob/master/docs/command_reference/statistics/visualize/out_dir>`_
 
 
 .. code-block::
@@ -122,14 +122,14 @@ Examples
 * 教師付/検査/受入の作業時間
 * 最初に教師付/検査/受入したユーザ
 
-`タスクlist.csv <https://github.com/kurusugawa-computer/annofab-cli/blob/master/docs/command_reference/statistics/list_annotation_count/out_dir/タスクlist.csv>`_
+`タスクlist.csv <https://github.com/kurusugawa-computer/annofab-cli/blob/master/docs/command_reference/statistics/visualize/out_dir/タスクlist.csv>`_
 
 
 日毎の生産量と生産性.csv
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 全体の生産量（作業したタスク数など）や生産性が、日毎に記載されています。
 
-`日毎の生産量と生産性.csv <https://github.com/kurusugawa-computer/annofab-cli/blob/master/docs/command_reference/statistics/list_annotation_count/out_dir/日毎の生産量と生産性.csv>`_
+`日毎の生産量と生産性.csv <https://github.com/kurusugawa-computer/annofab-cli/blob/master/docs/command_reference/statistics/visualize/out_dir/日毎の生産量と生産性.csv>`_
 
 参照頻度が高い列の詳細を、以下に記載します。
 
