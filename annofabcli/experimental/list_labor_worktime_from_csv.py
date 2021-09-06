@@ -56,6 +56,7 @@ class ListLaborWorktimeFormCsv(AbstractCommandLineWithoutWebapiInterface):
 
         list_labor_worktime_from_csv(
             csv=args,
+            format_target=FormatTarget(args.format),
             project_id_list=project_id_list,
             user_id_list=user_id_list,
             start_date=args.start_date,
