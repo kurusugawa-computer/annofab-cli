@@ -27,6 +27,7 @@ from annofabcli.common.cli import (
     get_list_from_args,
 )
 from annofabcli.common.utils import isoduration_to_hour, print_csv
+from annofabcli.experimental.list_labor_worktime import create_df_from_intermediate
 
 logger = logging.getLogger(__name__)
 
@@ -575,7 +576,7 @@ class ListLaborWorktimeMain:
         df_project_member = pandas.DataFrame(
             project_member_list, columns=["account_id", "user_id", "username", "userbiography"]
         )
-        df_project_member.rename({"username": "user_name", "biography": "user_biography"}, inplace==True)
+        df_project_member.rename({"username": "user_name", "biography": "user_biography"}, inplace == True)
         print(df_project_member)
         df_merged = pandas.merge(
             df_labor_worktime, df_monitored_worktime, how="outer", on=["date", "project_id", "account_id"]
@@ -710,37 +711,22 @@ class ListLaborWorktime(AbstractCommandLineInterface):
 
 
 
-def create_output_df(df_intermediate: pandas.DataFrame, format_target: FormatTarget) -> pandas.DataFrame:
-    if format_target == FormatTarget.COLUMN_LIST:
-        df_output = create_df_with_format_column_list(df_intermediate)
-
-    elif format_target == FormatTarget.BY_NAME_TOTAL:
-        df_output = create_df_with_format_by_name_total(df_intermediate)
-
-    elif format_target == FormatTarget.DETAILS:
-        df_output = create_df_with_format_details(df_intermediate)
-
-    elif format_target == FormatTarget.TOTAL:
-        df_output = create_df_with_format_total(df_intermediate)
-
-    else:
-        raise RuntimeError(f"format_target={format_target} が不正です。")
-    return df_output
-
-
 def filter_df_intermediate(
-    df_intermediate: pandas.DataFrame, *, project_id_list: Optional[List[str]] = None,     user_id_list: Optional[List[str]] = None,
-    start_date:Optional[str]=None,
-    end_date:Optional[str]=None,
+    df_intermediate: pandas.DataFrame,
+    *,
+    project_id_list: Optional[List[str]] = None,
+    user_id_list: Optional[List[str]] = None,
+    start_date: Optional[str] = None,
+    end_date: Optional[str] = None,
 ) -> pandas.DataFrame:
     if project_id_list is not None:
         df_intermediate = df_intermediate[df_intermediate["project_id"].isin(set(project_id_list))]
     if user_id_list is not None:
         df_intermediate = df_intermediate[df_intermediate["user_id"].isin(set(user_id_list))]
     if start_date is not None:
-        df_intermediate = df_intermediate[df_intermediate["date"]>=start_date]
+        df_intermediate = df_intermediate[df_intermediate["date"] >= start_date]
     if end_date is not None:
-        df_intermediate = df_intermediate[df_intermediate["date"]<=end_date]
+        df_intermediate = df_intermediate[df_intermediate["date"] <= end_date]
 
     return df_intermediate
 
@@ -751,48 +737,38 @@ def list_labor_worktime_from_csv(
     *,
     project_id_list: Optional[List[str]] = None,
     user_id_list: Optional[List[str]] = None,
-    start_date: Optional[str]=None,
-    end_date:Optional[str]=None,
+    start_date: Optional[str] = None,
+    end_date: Optional[str] = None,
     output: Optional[Path] = None,
 ):
     df_intermediate = pandas.read_csv(csv)
-    df_intermediate = filter_df_intermediate(df_intermediate, project_id_list=project_id_list, user_id_list=user_id_list,start_date=start_date,end_date=end_date)
+    df_intermediate = filter_df_intermediate(
+        df_intermediate,
+        project_id_list=project_id_list,
+        user_id_list=user_id_list,
+        start_date=start_date,
+        end_date=end_date,
+    )
 
-    df_output = create_output_df(df_intermediate, format_target=format_target)
+    df_output = create_df_from_intermediate(df_intermediate, format_target=format_target)
     print_csv(df_output, output)
 
 
-
-
 class ListLaborWorktimeFormCsv(AbstractCommandLineWithoutWebapiInterface):
-    @staticmethod
-    def validate(args: argparse.Namespace) -> bool:
-        COMMON_MESSAGE = "annofabcli filesystem merge_annotation: error:"
-        if args.annotation is not None:
-            annotation_paths: List[Path] = args.annotation
-            for path in annotation_paths:
-                if not path.exists():
-                    print(
-                        f"{COMMON_MESSAGE} argument --annotation: ファイルパス '{path}' が存在しません。",
-                        file=sys.stderr,
-                    )
-                    return False
-        return True
 
     def main(self):
         args = self.args
-        if not self.validate(args):
-            return
-
 
         project_id_list = get_list_from_args(args.project_id) if args.project_id is not None else None
-        user_id_list = get_list_from_args(args.user_id) if args.projeuser_idct_id is not None else None
+        user_id_list = get_list_from_args(args.user_id) if args.user_id is not None else None
 
         list_labor_worktime_from_csv(
             csv=args,
-            project_id_list=project_id_list, user_id_list=user_id_list, start_date=start_date, end_date=end_date
+            project_id_list=project_id_list,
+            user_id_list=user_id_list,
+            start_date=args.start_date,
+            end_date=args.end_date,
         )
-
 
 
 def main(args):
@@ -822,7 +798,7 @@ def parse_args(parser: argparse.ArgumentParser):
         help="集計対象のユーザのuser_idを指定します。`file://`を先頭に付けると、user_idの一覧が記載されたファイルを指定できます。",
     )
     parser.add_argument("--start_date", type=str, help="集計開始日(YYYY-mm-dd)")
-    parser.add_argument("--end_date", type=str,  help="集計終了日(YYYY-mm-dd)")
+    parser.add_argument("--end_date", type=str, help="集計終了日(YYYY-mm-dd)")
 
     format_choices = [e.value for e in FormatTarget]
     parser.add_argument(
@@ -834,14 +810,13 @@ def parse_args(parser: argparse.ArgumentParser):
         help="出力する際のフォーマットを指定してください。\n"
         "・details: 日毎/人毎の詳細な値を出力します。\n"
         "・total: 期間中の合計値だけを出力します。\n"
-        "・by_name_total:人毎の集計の合計値を出力します。\n"
+        "・by_user:人毎の集計の合計値を出力します。\n"
         "・column_list:列固定で詳細な値を出力します。\n"
         "・column_list_per_project: 列固定で、日、メンバ、AnnoFabプロジェクトごとの作業時間を出力します。\n"
         "・intermediate: `annofabcli experimental list_labor_worktime_from_csv`コマンドに渡せる中間ファイルを出力します。\n",
     )
 
     argument_parser.add_output(required=False)
-
 
     parser.set_defaults(subcommand_func=main)
 

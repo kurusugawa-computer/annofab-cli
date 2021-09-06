@@ -76,10 +76,10 @@ class DailyLaborWorktime(DataClassJsonMixin):
 class FormatTarget(Enum):
     DETAILS = "details"
     """日毎・人毎の詳細な値を出力する"""
-    TOTAL = "total"
-    """期間中の合計値だけを出力する"""
     BY_USER = "by_user"
     """人毎の集計の合計値を出力する"""
+    TOTAL = "total"
+    """期間中の合計値だけを出力する"""
     COLUMN_LIST = "column_list"
     """列固定で詳細な値を出力する"""
     COLUMN_LIST_PER_PROJECT = "column_list_per_project"
@@ -323,6 +323,34 @@ def create_df_with_format_details(
     return df2.round(2)
 
 
+def create_df_from_intermediate(
+    df_intermediate: pandas.DataFrame,
+    format_target: FormatTarget,
+):
+    """中間ファイルから、formatに従ったDataFrameを生成します。"""
+
+    if format_target == FormatTarget.COLUMN_LIST_PER_PROJECT:
+        df_output = create_df_with_format_column_list_per_project(df_intermediate)
+
+    elif format_target == FormatTarget.COLUMN_LIST:
+        df_output = create_df_with_format_column_list(df_intermediate)
+
+    elif format_target == FormatTarget.BY_USER:
+        df_output = create_df_with_format_by_user(df_intermediate)
+
+    elif format_target == FormatTarget.BY_TOTAL:
+        df_output = create_df_with_format_total(df_intermediate)
+
+    elif format_target == FormatTarget.DETAILS:
+        df_output = create_df_with_format_details(df_intermediate)
+
+    elif format_target == FormatTarget.INTERMEDIATE:
+        df_output = df_intermediate
+
+    else:
+        raise RuntimeError(f"format_target={format_target} が不正です。")
+    return df_output
+
 class ListLaborWorktimeMain:
     def __init__(self, service: annofabapi.Resource):
         self.service = service
@@ -487,24 +515,7 @@ class ListLaborWorktimeMain:
         df_intermediate = self.create_intermediate_df(
             project_id_list, start_date=start_date, end_date=end_date, parallelism=parallelism
         )
-        if format_target == FormatTarget.COLUMN_LIST_PER_PROJECT:
-            df_output = create_df_with_format_column_list_per_project(df_intermediate)
-
-        elif format_target == FormatTarget.COLUMN_LIST:
-            df_output = create_df_with_format_column_list(df_intermediate)
-
-        elif format_target == FormatTarget.BY_USER:
-            df_output = create_df_with_format_by_user(df_intermediate)
-
-        elif format_target == FormatTarget.DETAILS:
-            df_output = create_df_with_format_details(df_intermediate)
-
-        elif format_target == FormatTarget.INTERMEDIATE:
-            df_output = df_intermediate
-
-        else:
-            raise RuntimeError(f"format_target={format_target} が不正です。")
-
+        df_output = create_df_from_intermediate(df_intermediate, format_target=format_target)
         print_csv(df_output, str(output) if output is not None else None)
 
 
@@ -575,8 +586,8 @@ def parse_args(parser: argparse.ArgumentParser):
         default="intermediate",
         help="出力する際のフォーマットを指定してください。\n"
         "・details: 日毎/人毎の詳細な値を出力します。\n"
-        "・total: 期間中の合計値だけを出力します。\n"
         "・by_user:人毎の集計の合計値を出力します。\n"
+        "・total: 期間中の合計値だけを出力します。\n"
         "・column_list:列固定で詳細な値を出力します。\n"
         "・column_list_per_project: 列固定で、日、メンバ、AnnoFabプロジェクトごとの作業時間を出力します。\n"
         "・intermediate: `annofabcli experimental list_labor_worktime_from_csv`コマンドに渡せる中間ファイルを出力します。\n",
