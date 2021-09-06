@@ -586,16 +586,15 @@ class ListLaborWorktimeMain:
             monitored_worktime, columns=["project_id", "date", "account_id", "worktime_monitored"]
         )
         df_project_member = pandas.DataFrame(
-            project_member_list, columns=["account_id", "user_id", "user_name", "user_biography"]
+            project_member_list, columns=["account_id", "user_id", "username", "biography"]
         )
-
+        df_project_member.rename(columns={"username":"user_name","biography":"user_biography"}, inplace=True)
         df_merged = pandas.merge(
             df_labor_worktime, df_monitored_worktime, how="outer", on=["date", "project_id", "account_id"]
         )
         df_merged.fillna({"worktime_actual": 0, "worktime_planned": 0, "worktime_monitored": 0}, inplace=True)
 
         df_merged["project_title"] = project["title"]
-
         df = pandas.merge(
             df_merged,
             df_project_member,
@@ -728,6 +727,7 @@ def main(args):
 
 def parse_args(parser: argparse.ArgumentParser):
     argument_parser = ArgumentParser(parser)
+    
     parser.add_argument(
         "-p",
         "--project_id",
