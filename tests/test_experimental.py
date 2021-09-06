@@ -67,7 +67,6 @@ class TestCommandLine:
             ]
         )
 
-
     def test_dashboad(self):
         out_file = str(out_dir / "dashboard.csv")
         main(

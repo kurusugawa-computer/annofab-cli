@@ -7,13 +7,7 @@ import pandas
 
 import annofabcli
 import annofabcli.common.cli
-from annofabcli import AnnofabApiFacade
-from annofabcli.common.cli import (
-    AbstractCommandLineWithoutWebapiInterface,
-    ArgumentParser,
-    build_annofabapi_resource_and_login,
-    get_list_from_args,
-)
+from annofabcli.common.cli import AbstractCommandLineWithoutWebapiInterface, ArgumentParser, get_list_from_args
 from annofabcli.common.utils import print_csv
 from annofabcli.experimental.list_labor_worktime import (
     FormatTarget,
@@ -65,9 +59,7 @@ class ListLaborWorktimeFormCsv(AbstractCommandLineWithoutWebapiInterface):
 
 
 def main(args):
-    service = build_annofabapi_resource_and_login(args)
-    facade = AnnofabApiFacade(service)
-    ListLaborWorktimeFormCsv(service, facade, args).main()
+    ListLaborWorktimeFormCsv().main()
 
 
 def parse_args(parser: argparse.ArgumentParser):
