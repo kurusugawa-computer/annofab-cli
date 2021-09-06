@@ -51,6 +51,7 @@
         "dist/": true,
         "docs/_build/": true,
         "htmlcov/": true,
-        "out/": true
-    }
+        "out/": true,
+        "*.egg-info/": true
+    },
 }
