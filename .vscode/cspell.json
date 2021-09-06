@@ -1,5 +1,5 @@
 {
-    "version": "0.1",
+    "version": "0.2",
     "ignorePaths": [
         "**/.git/objects/**",
         ".devcontainer/",
@@ -26,6 +26,7 @@
         "groupby",
         "inplace",
         "isin",
+        "iloc",
         "isna",
         "isnan",
         "itertools",

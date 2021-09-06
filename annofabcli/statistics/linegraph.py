@@ -8,6 +8,7 @@ import bokeh
 import bokeh.layouts
 import bokeh.palettes
 import dateutil
+import dateutil.parser
 import pandas
 from bokeh.core.properties import Color
 from bokeh.models import DataRange1d, HoverTool, LinearAxis

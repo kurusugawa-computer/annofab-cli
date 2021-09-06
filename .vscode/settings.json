@@ -53,5 +53,10 @@
         "htmlcov/": true,
         "out/": true,
         "*.egg-info/": true
-    }
+    },
+    "cSpell.words": [
+        "bokeh",
+        "dropna",
+        "tolist"
+    ]
 }
