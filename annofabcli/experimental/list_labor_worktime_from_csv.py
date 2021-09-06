@@ -21,6 +21,7 @@ import annofabcli.common.cli
 from annofabcli import AnnofabApiFacade
 from annofabcli.common.cli import (
     AbstractCommandLineInterface,
+    AbstractCommandLineWithoutWebapiInterface,
     ArgumentParser,
     build_annofabapi_resource_and_login,
     get_list_from_args,
@@ -94,7 +95,7 @@ class FormatTarget(Enum):
 DEFAULT_TO_REPLACE_FOR_VALUE = {numpy.inf: "--", numpy.nan: "--"}
 
 
-def create_df_with_format_column_list_per_project(df_actual_times: pandas.DataFrame) -> pandas.DataFrame:
+def create_df_with_format_column_list_per_project(df_intermediate: pandas.DataFrame) -> pandas.DataFrame:
     """`--format column_list_per_project`に対応するDataFrameを生成する。
 
     Args:
@@ -103,7 +104,7 @@ def create_df_with_format_column_list_per_project(df_actual_times: pandas.DataFr
     Returns:
         pd.DataFrame: [description]
     """
-    df = df_actual_times.copy()
+    df = df_intermediate.copy()
 
     # 元のコマンドの出力結果にできるだけ近づける
 
@@ -141,47 +142,7 @@ def create_df_with_format_by_name_total(df_intermediate: pandas.DataFrame) -> pa
     Returns:
         pd.DataFrame: [description]
     """
-    df = df_intermediate.groupby("user_id")[
-        ["actual_worktime_hour", "af_monitored_worktime_hour", "assigned_worktime_hour"]
-    ].sum()
-    df_user = df_intermediate.groupby("user_id").first()[["user_name", "user_biography"]]
-    df = df.join(df_user)
-
-    df["activity_rate"] = df["worktime_actual"] / df["worktime_planned"]
-    df["monitor_rate"] = df["worktime_monitored"] / df["worktime_actual"]
-    df["monitor_diff"] = df["worktime_actual"] - df["worktime_monitored"]
-
-    return (
-        df[
-            [
-                "user_id",
-                "user_name",
-                "user_biography",
-                "worktime_planned",
-                "worktime_actual",
-                "worktime_monitored",
-                "activity_rate",
-                "monitor_rate",
-                "monitor_diff"
-            ]
-        ]
-        .round(2)
-        .replace(DEFAULT_TO_REPLACE_FOR_VALUE)
-        .sort_values(by=["user_id"])
-    )
-
-
-def create_df_with_format_column_list(df_intermediate: pandas.DataFrame) -> pandas.DataFrame:
-    """`--format column_list`に対応するDataFrameを生成する。
-    日ごと、ユーザごとに、作業時間を出力する。
-
-    Args:
-        df (pd.DataFrame): [description]
-
-    Returns:
-        pd.DataFrame: `--format column_list`に対応するDataFrame
-    """
-    df = df_intermediate.groupby(["date", "member_id"])[
+    df = df_intermediate.groupby("member_id")[
         ["actual_worktime_hour", "af_monitored_worktime_hour", "assigned_worktime_hour"]
     ].sum()
     df_user = df_intermediate.groupby("member_id").first()[["user_account", "company", "member_name"]]
@@ -198,6 +159,43 @@ def create_df_with_format_column_list(df_intermediate: pandas.DataFrame) -> pand
         },
         inplace=True,
     )
+
+    df["activity_rate"] = df["worktime_actual"] / df["worktime_planned"]
+    df["monitor_rate"] = df["worktime_monitored"] / df["worktime_actual"]
+
+    return (
+        df[
+            [
+                "user_id",
+                "user_name",
+                "user_biography",
+                "worktime_planned",
+                "worktime_actual",
+                "worktime_monitored",
+                "activity_rate",
+                "monitor_rate",
+            ]
+        ]
+        .round(2)
+        .replace(DEFAULT_TO_REPLACE_FOR_VALUE)
+    )
+
+
+def create_df_with_format_column_list(df_intermediate: pandas.DataFrame) -> pandas.DataFrame:
+    """`--format column_list`に対応するDataFrameを生成する。
+    日ごと、ユーザごとに、作業時間を出力する。
+
+    Args:
+        df (pd.DataFrame): [description]
+
+    Returns:
+        pd.DataFrame: `--format column_list`に対応するDataFrame
+    """
+    df = df_intermediate.groupby(["date", "user_id"])[
+        ["worktime_planned", "worktime_actual", "worktime_monitored"]
+    ].sum()
+    df_user = df_intermediate.groupby("user_id").first()[["user_name", "user_biography"]]
+    df = df.join(df_user)
 
     df["activity_rate"] = df["worktime_actual"] / df["worktime_planned"]
     df["monitor_rate"] = df["worktime_monitored"] / df["worktime_actual"]
@@ -220,42 +218,6 @@ def create_df_with_format_column_list(df_intermediate: pandas.DataFrame) -> pand
         .round(2)
         .replace(DEFAULT_TO_REPLACE_FOR_VALUE)
     )
-
-
-
-def create_df_with_format_total(df_intermediate: pandas.DataFrame) -> pandas.DataFrame:
-    """`--format total`に対応するDataFrameを生成する。
-    1行のみのCSV
-
-    Args:
-        df (pd.DataFrame): [description]
-
-    Returns:
-        pd.DataFrame: `--format total`に対応するDataFrame
-    """
-    df = pandas.DataFrame(
-        [df_intermediate[["actual_worktime_hour", "af_monitored_worktime_hour", "assigned_worktime_hour"]].sum()]
-    )
-
-    df["activity_rate"] = df["worktime_actual"] / df["worktime_planned"]
-    df["monitor_rate"] = df["worktime_monitored"] / df["worktime_actual"]
-    df["monitor_diff"] = df["worktime_actual"] -  df["worktime_monitored"]
-
-    return (
-        df[
-            [
-                "worktime_planned",
-                "worktime_actual",
-                "worktime_monitored",
-                "activity_rate",
-                "monitor_rate",
-                "monitor_diff"
-            ]
-        ]
-        .round(2)
-        .replace(DEFAULT_TO_REPLACE_FOR_VALUE)
-    )
-
 
 
 def create_df_with_format_details(
@@ -341,6 +303,41 @@ def create_df_with_format_details(
     # date列を作る
     df2.reset_index(inplace=True)
     return df2.round(2)
+
+
+class Database:
+    def __init__(
+        self,
+        annofab_service: annofabapi.Resource,
+        project_id: str,
+        organization_id: str,
+        start_date: str,
+        end_date: str,
+    ):
+        self.annofab_service = annofab_service
+        self.project_id = project_id
+        self.organization_id = organization_id
+        self.start_date = start_date
+        self.end_date = end_date
+
+    def get_labor_control(self) -> List[Dict[str, Any]]:
+        labor_control_df = self.annofab_service.api.get_labor_control(
+            {
+                "organization_id": self.organization_id,
+                "project_id": self.project_id,
+                "from": self.start_date,
+                "to": self.end_date,
+            }
+        )[0]
+        return labor_control_df
+
+    def get_account_statistics(self) -> List[Dict[str, Any]]:
+        account_statistics = self.annofab_service.wrapper.get_account_statistics(self.project_id)
+        return account_statistics
+
+    def get_project_members(self) -> dict:
+        project_members = self.annofab_service.api.get_project_members(project_id=self.project_id)[0]
+        return project_members["list"]
 
 
 class Table:
@@ -576,15 +573,17 @@ class ListLaborWorktimeMain:
             monitored_worktime, columns=["project_id", "date", "account_id", "worktime_monitored"]
         )
         df_project_member = pandas.DataFrame(
-            project_member_list, columns=["account_id", "user_id", "username", "biography"]
+            project_member_list, columns=["account_id", "user_id", "username", "userbiography"]
         )
-        df_project_member.rename(columns={"username":"user_name","biography":"user_biography"}, inplace=True)
+        df_project_member.rename({"username": "user_name", "biography": "user_biography"}, inplace==True)
+        print(df_project_member)
         df_merged = pandas.merge(
             df_labor_worktime, df_monitored_worktime, how="outer", on=["date", "project_id", "account_id"]
         )
         df_merged.fillna({"worktime_actual": 0, "worktime_planned": 0, "worktime_monitored": 0}, inplace=True)
 
         df_merged["project_title"] = project["title"]
+
         df = pandas.merge(
             df_merged,
             df_project_member,
@@ -651,7 +650,7 @@ class ListLaborWorktimeMain:
             project_id_list, start_date=start_date, end_date=end_date, parallelism=parallelism
         )
         if format_target == FormatTarget.COLUMN_LIST_PER_PROJECT:
-            df_output = create_df_with_format_column_list_per_project(df_actual_times)
+            df_output = create_df_with_format_column_list_per_project(df_intermediate)
 
         elif format_target == FormatTarget.COLUMN_LIST:
             df_output = create_df_with_format_column_list(df_intermediate)
@@ -709,6 +708,93 @@ class ListLaborWorktime(AbstractCommandLineInterface):
         )
 
 
+
+
+def create_output_df(df_intermediate: pandas.DataFrame, format_target: FormatTarget) -> pandas.DataFrame:
+    if format_target == FormatTarget.COLUMN_LIST:
+        df_output = create_df_with_format_column_list(df_intermediate)
+
+    elif format_target == FormatTarget.BY_NAME_TOTAL:
+        df_output = create_df_with_format_by_name_total(df_intermediate)
+
+    elif format_target == FormatTarget.DETAILS:
+        df_output = create_df_with_format_details(df_intermediate)
+
+    elif format_target == FormatTarget.TOTAL:
+        df_output = create_df_with_format_total(df_intermediate)
+
+    else:
+        raise RuntimeError(f"format_target={format_target} が不正です。")
+    return df_output
+
+
+def filter_df_intermediate(
+    df_intermediate: pandas.DataFrame, *, project_id_list: Optional[List[str]] = None,     user_id_list: Optional[List[str]] = None,
+    start_date:Optional[str]=None,
+    end_date:Optional[str]=None,
+) -> pandas.DataFrame:
+    if project_id_list is not None:
+        df_intermediate = df_intermediate[df_intermediate["project_id"].isin(set(project_id_list))]
+    if user_id_list is not None:
+        df_intermediate = df_intermediate[df_intermediate["user_id"].isin(set(user_id_list))]
+    if start_date is not None:
+        df_intermediate = df_intermediate[df_intermediate["date"]>=start_date]
+    if end_date is not None:
+        df_intermediate = df_intermediate[df_intermediate["date"]<=end_date]
+
+    return df_intermediate
+
+
+def list_labor_worktime_from_csv(
+    csv: Path,
+    format_target: FormatTarget,
+    *,
+    project_id_list: Optional[List[str]] = None,
+    user_id_list: Optional[List[str]] = None,
+    start_date: Optional[str]=None,
+    end_date:Optional[str]=None,
+    output: Optional[Path] = None,
+):
+    df_intermediate = pandas.read_csv(csv)
+    df_intermediate = filter_df_intermediate(df_intermediate, project_id_list=project_id_list, user_id_list=user_id_list,start_date=start_date,end_date=end_date)
+
+    df_output = create_output_df(df_intermediate, format_target=format_target)
+    print_csv(df_output, output)
+
+
+
+
+class ListLaborWorktimeFormCsv(AbstractCommandLineWithoutWebapiInterface):
+    @staticmethod
+    def validate(args: argparse.Namespace) -> bool:
+        COMMON_MESSAGE = "annofabcli filesystem merge_annotation: error:"
+        if args.annotation is not None:
+            annotation_paths: List[Path] = args.annotation
+            for path in annotation_paths:
+                if not path.exists():
+                    print(
+                        f"{COMMON_MESSAGE} argument --annotation: ファイルパス '{path}' が存在しません。",
+                        file=sys.stderr,
+                    )
+                    return False
+        return True
+
+    def main(self):
+        args = self.args
+        if not self.validate(args):
+            return
+
+
+        project_id_list = get_list_from_args(args.project_id) if args.project_id is not None else None
+        user_id_list = get_list_from_args(args.user_id) if args.projeuser_idct_id is not None else None
+
+        list_labor_worktime_from_csv(
+            csv=args,
+            project_id_list=project_id_list, user_id_list=user_id_list, start_date=start_date, end_date=end_date
+        )
+
+
+
 def main(args):
     service = build_annofabapi_resource_and_login(args)
     facade = AnnofabApiFacade(service)
@@ -717,17 +803,26 @@ def main(args):
 
 def parse_args(parser: argparse.ArgumentParser):
     argument_parser = ArgumentParser(parser)
-    
+    parser.add_argument(
+        "--csv", type=Path, help="'annofabcli experimental list_labor_worktime --format intermediate'の出力結果であるCSV"
+    )
+
     parser.add_argument(
         "-p",
         "--project_id",
         type=str,
-        required=True,
         nargs="+",
-        help="集計対象のプロジェクトのproject_idを指定します。複数指定した場合は合計値を出力します。`file://`を先頭に付けると、project_idの一覧が記載されたファイルを指定できます。",
+        help="集計対象のプロジェクトのproject_idを指定します。`file://`を先頭に付けると、project_idの一覧が記載されたファイルを指定できます。",
     )
-    parser.add_argument("--start_date", type=str, required=True, help="集計開始日(YYYY-mm-dd)")
-    parser.add_argument("--end_date", type=str, required=True, help="集計終了日(YYYY-mm-dd)")
+    parser.add_argument(
+        "-u",
+        "--user_id",
+        type=str,
+        nargs="+",
+        help="集計対象のユーザのuser_idを指定します。`file://`を先頭に付けると、user_idの一覧が記載されたファイルを指定できます。",
+    )
+    parser.add_argument("--start_date", type=str, help="集計開始日(YYYY-mm-dd)")
+    parser.add_argument("--end_date", type=str,  help="集計終了日(YYYY-mm-dd)")
 
     format_choices = [e.value for e in FormatTarget]
     parser.add_argument(
@@ -747,15 +842,14 @@ def parse_args(parser: argparse.ArgumentParser):
 
     argument_parser.add_output(required=False)
 
-    parser.add_argument("--parallelism", type=int, required=False, help="並列度。指定しない場合は、逐次的に処理します。")
 
     parser.set_defaults(subcommand_func=main)
 
 
 def add_parser(subparsers: argparse._SubParsersAction):
-    subcommand_name = "list_labor_worktime"
-    subcommand_help = "労務管理画面の作業時間を出力します。"
-    description = "作業者ごとに、「作業者が入力した実績時間」と「AnnoFabが集計した作業時間」の差分を出力します。"
+    subcommand_name = "list_labor_worktime_from_csv"
+    subcommand_help = "'annofabcli experimental list_labor_worktime --format intermediate'で出力したCSVを整形します。"
+    description = "'annofabcli experimental list_labor_worktime --format intermediate'で出力したCSVを整形します。"
 
     parser = annofabcli.common.cli.add_parser(subparsers, subcommand_name, subcommand_help, description)
     parse_args(parser)

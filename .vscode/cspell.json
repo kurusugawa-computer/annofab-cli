@@ -21,6 +21,7 @@
         "dateutil",
         "fillna",
         "getrgb",
+        "groupby",
         "inplace",
         "isin",
         "isna",
