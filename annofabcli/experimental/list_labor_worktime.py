@@ -325,7 +325,7 @@ def create_df_with_format_details(
         tmp_sum_row.name = SUM_ROW_NAME
         df2 = pandas.concat([pandas.DataFrame([tmp_sum_row]), df2])
 
-    # activity_rate,montior_rateの追加。PerformanceWarningが出ないようにするため、まとめて列を追加する
+    # activity_rate,monitor_rateの追加。PerformanceWarningが出ないようにするため、まとめて列を追加する
     added_column_list = []
     for username in username_list:
         s1 = pandas.Series(
