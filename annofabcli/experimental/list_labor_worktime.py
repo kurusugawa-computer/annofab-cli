@@ -152,10 +152,10 @@ def create_df_with_format_total_by_project(df_intermediate: pandas.DataFrame) ->
     """`--format total_by_project`に対応するDataFrameを生成する。
 
     Args:
-        df (pd.DataFrame): [description]
+        df (pd.DataFrame): 中間出力用のDataFrame
 
     Returns:
-        pd.DataFrame: [description]
+        pd.DataFrame: `--format total_by_project`に対応するDataFrame。project_titleの辞書順(大文字小文字を区別しない).
     """
 
     df = df_intermediate.groupby("project_id")[["worktime_planned", "worktime_actual", "worktime_monitored"]].sum()
@@ -182,7 +182,7 @@ def create_df_with_format_total_by_project(df_intermediate: pandas.DataFrame) ->
         ]
         .round(2)
         .replace(DEFAULT_TO_REPLACE_FOR_VALUE)
-        .sort_values(by=["project_title"])
+        .sort_values(by=["project_title"], key=lambda e: e.str.lower())
     )
 
 
