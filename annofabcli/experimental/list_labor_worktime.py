@@ -290,7 +290,7 @@ def create_df_with_format_details(
 
         df = df.append(df_sum_by_date)
 
-    # ヘッダが [member_id, value] になるように設定する
+    # ヘッダが [user_id, value] になるように設定する
     df2 = df.stack().unstack([1, 2])
 
     # 日付が連続になるようにする
@@ -298,7 +298,7 @@ def create_df_with_format_details(
         df2.index
     )
     df2 = df2.append([pandas.Series(name=date, dtype="float64") for date in not_exists_date_set], sort=True)
-
+    df2.sort_index(inplace=True)
     # 作業時間がNaNの場合は0に置換する
     df2.replace(
         {
