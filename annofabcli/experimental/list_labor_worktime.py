@@ -308,7 +308,12 @@ def create_df_with_format_details(
     )
 
     # user_idの辞書順（大文字小文字区別しない）のユーザのDataFrameを生成する。
-    df_user = df_intermediate[["user_id","username","biography"]].drop_duplicates().set_index("user_id").sort_index(key=lambda x: x.str.lower())
+    df_user = (
+        df_intermediate[["user_id", "username", "biography"]]
+        .drop_duplicates()
+        .set_index("user_id")
+        .sort_index(key=lambda x: x.str.lower())
+    )
 
     username_list = list(df_user["username"])
     if insert_sum_column:
