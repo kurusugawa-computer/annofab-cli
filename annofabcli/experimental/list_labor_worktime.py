@@ -114,10 +114,10 @@ def create_df_with_format_total_by_user(df_intermediate: pandas.DataFrame) -> pa
     """`--format total_by_user`に対応するDataFrameを生成する。
 
     Args:
-        df (pd.DataFrame): [description]
+        df (pd.DataFrame): 中間出力用のDataFrame
 
     Returns:
-        pd.DataFrame: [description]
+        pd.DataFrame: `--format total_by_user`に対応するDataFrame.user_idの辞書順(大文字小文字を区別しない).
     """
     df = df_intermediate.groupby("user_id")[["worktime_planned", "worktime_actual", "worktime_monitored"]].sum()
     df_user = df_intermediate.groupby("user_id").first()[["username", "biography"]]
@@ -127,6 +127,7 @@ def create_df_with_format_total_by_user(df_intermediate: pandas.DataFrame) -> pa
     df["monitor_rate"] = df["worktime_monitored"] / df["worktime_actual"]
     df["monitor_diff"] = df["worktime_actual"] - df["worktime_monitored"]
 
+    df.sort_index(key=lambda e: e.str.lower(), inplace=True)
     df.reset_index(inplace=True)
     return (
         df[
@@ -144,7 +145,6 @@ def create_df_with_format_total_by_user(df_intermediate: pandas.DataFrame) -> pa
         ]
         .round(2)
         .replace(DEFAULT_TO_REPLACE_FOR_VALUE)
-        .sort_values(by=["user_id"])
     )
 
 
@@ -152,10 +152,10 @@ def create_df_with_format_total_by_project(df_intermediate: pandas.DataFrame) ->
     """`--format total_by_project`に対応するDataFrameを生成する。
 
     Args:
-        df (pd.DataFrame): [description]
+        df (pd.DataFrame): 中間出力用のDataFrame
 
     Returns:
-        pd.DataFrame: [description]
+        pd.DataFrame: `--format total_by_project`に対応するDataFrame。project_titleの辞書順(大文字小文字を区別しない).
     """
 
     df = df_intermediate.groupby("project_id")[["worktime_planned", "worktime_actual", "worktime_monitored"]].sum()
@@ -182,7 +182,7 @@ def create_df_with_format_total_by_project(df_intermediate: pandas.DataFrame) ->
         ]
         .round(2)
         .replace(DEFAULT_TO_REPLACE_FOR_VALUE)
-        .sort_values(by=["project_title"])
+        .sort_values(by=["project_title"], key=lambda e: e.str.lower())
     )
 
 
@@ -268,10 +268,8 @@ def create_df_with_format_details(
         insert_sum_column: 合計列を追加する
 
     Returns:
-        pd.DataFrame: `--format details`に対応するDataFrame
+        pd.DataFrame: `--format details`に対応するDataFrame.行方向は日付順、列方向はuser_idの辞書順(大文字小文字を区別しない).
 
-    Notes:
-        fork元のannofabcliには、AnnoFabプロジェクトのproject_idの一覧も記載されていたが、なくても問題ないため省く。
     """
     SUM_COLUMN_NAME = "総合計"
     SUM_ROW_NAME = "合計"
@@ -290,7 +288,7 @@ def create_df_with_format_details(
 
         df = df.append(df_sum_by_date)
 
-    # ヘッダが [member_id, value] になるように設定する
+    # ヘッダが [user_id, value] になるように設定する
     df2 = df.stack().unstack([1, 2])
 
     # 日付が連続になるようにする
@@ -298,7 +296,7 @@ def create_df_with_format_details(
         df2.index
     )
     df2 = df2.append([pandas.Series(name=date, dtype="float64") for date in not_exists_date_set], sort=True)
-
+    df2.sort_index(inplace=True)
     # 作業時間がNaNの場合は0に置換する
     df2.replace(
         {
@@ -309,7 +307,15 @@ def create_df_with_format_details(
         inplace=True,
     )
 
-    username_list = list(df_intermediate["username"].unique())
+    # user_idの辞書順（大文字小文字区別しない）のユーザのDataFrameを生成する。
+    df_user = (
+        df_intermediate[["user_id", "username", "biography"]]
+        .drop_duplicates()
+        .set_index("user_id")
+        .sort_index(key=lambda x: x.str.lower())
+    )
+
+    username_list = list(df_user["username"])
     if insert_sum_column:
         username_list = [SUM_COLUMN_NAME] + username_list
 
@@ -323,6 +329,8 @@ def create_df_with_format_details(
         df2[(username, "activity_rate")] = df2[(username, "worktime_actual")] / df2[(username, "worktime_planned")]
         df2[(username, "monitor_rate")] = df2[(username, "worktime_monitored")] / df2[(username, "worktime_actual")]
 
+    # 最後にroundしない理由：比率に"--"を加えると列の型が'object'になり、roundされないため
+    df2 = df2.round(2)
     # 比率がNaNの場合は"--"に置換する
     df2.replace(
         {col: DEFAULT_TO_REPLACE_FOR_VALUE for col in df2.columns if col[1] in ["activity_rate", "monitor_rate"]},
@@ -339,7 +347,7 @@ def create_df_with_format_details(
     ]
     # date列を作る
     df2.reset_index(inplace=True)
-    return df2.round(2)
+    return df2
 
 
 def create_df_from_intermediate(
