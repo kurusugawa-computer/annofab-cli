@@ -274,7 +274,7 @@ def create_df_with_format_details(
     SUM_COLUMN_NAME = "総合計"
     SUM_ROW_NAME = "合計"
 
-    # TODO 同姓同名だった場合、正しく集計されない
+    # 注意：同姓同名だった場合、正しく集計されない
     df = df_intermediate.groupby(["date", "username"])[
         ["worktime_actual", "worktime_monitored", "worktime_planned"]
     ].sum()
