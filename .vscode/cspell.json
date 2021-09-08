@@ -38,6 +38,7 @@
         "numpy",
         "pylint",
         "strtobool",
-        "tzlocal"
+        "tzlocal",
+        "bokeh"
     ]
 }
