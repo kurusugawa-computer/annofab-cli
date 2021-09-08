@@ -38,3 +38,7 @@ Examples
     $ annofabcli project_member invite --user_id user1 user2 --role worker --project_id prj1 prj2
 
 
+.. argparse::
+   :ref: annofabcli.project_member.invite_project_members.add_parser
+   :prog: annofabcli project_member change
+   :nosubcommands:

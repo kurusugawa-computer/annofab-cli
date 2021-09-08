@@ -1,6 +1,6 @@
 import argparse
 import logging
-from typing import List
+from typing import List, Optional
 
 import annofabapi
 import requests
@@ -125,7 +125,7 @@ def parse_args(parser: argparse.ArgumentParser):
         type=str,
         nargs="+",
         required=True,
-        help="招待するユーザのuser_idを指定してください。`file://`を先頭に付けると、一覧が記載されたファイルを指定できます。",
+        help="招待するユーザのuser_idを指定してください。 ``file://`` を先頭に付けると、一覧が記載されたファイルを指定できます。",
     )
 
     parser.add_argument("--role", type=str, required=True, choices=role_choices, help="ユーザに割り当てるロール")
@@ -136,14 +136,14 @@ def parse_args(parser: argparse.ArgumentParser):
         "--project_id",
         type=str,
         nargs="+",
-        help="招待するプロジェクトのproject_idを指定してください。`file://`を先頭に付けると、一覧が記載されたファイルを指定できます。",
+        help="招待するプロジェクトのproject_idを指定してください。 ``file://`` を先頭に付けると、一覧が記載されたファイルを指定できます。",
     )
     assign_group.add_argument("-org", "--organization", type=str, help="組織名を指定すると、組織配下のすべてのプロジェクト（自分が所属している）に招待します。")
 
     parser.set_defaults(subcommand_func=main)
 
 
-def add_parser(subparsers: argparse._SubParsersAction):
+def add_parser(subparsers: Optional[argparse._SubParsersAction] = None):
     subcommand_name = "invite"
     subcommand_help = "複数のプロジェクトに、ユーザを招待します。"
     description = "複数のプロジェクトに、ユーザを招待します。"
@@ -151,3 +151,4 @@ def add_parser(subparsers: argparse._SubParsersAction):
 
     parser = annofabcli.common.cli.add_parser(subparsers, subcommand_name, subcommand_help, description, epilog=epilog)
     parse_args(parser)
+    return parser

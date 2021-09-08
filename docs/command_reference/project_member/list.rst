@@ -86,5 +86,8 @@ user_idの一覧を出力
     user2
     ...
 
-
+.. argparse::
+   :ref: annofabcli.project_member.list_users.add_parser
+   :prog: annofabcli project_member list
+   :nosubcommands:
 

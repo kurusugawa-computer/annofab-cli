@@ -29,3 +29,7 @@ Examples
 
     $ annofabcli project_member copy prj1 prj2 --delete_dest
 
+.. argparse::
+   :ref: annofabcli.project_member.copy_project_members.add_parser
+   :prog: annofabcli project_member copy
+   :nosubcommands:
