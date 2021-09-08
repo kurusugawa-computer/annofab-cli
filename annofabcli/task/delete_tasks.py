@@ -68,7 +68,7 @@ class DeleteTask(AbstractCommandLineInterface):
 
         task_status = TaskStatus(task["status"])
         if task_status in [TaskStatus.WORKING, TaskStatus.COMPLETE]:
-            logger.info(f"タスクの状態が作業中/完了状態のため、タスクを削除できません。")
+            logger.info("タスクの状態が作業中/完了状態のため、タスクを削除できません。")
             return False
 
         annotation_list = self.get_annotation_list(project_id, task_id)

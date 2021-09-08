@@ -228,17 +228,16 @@ class RejectTasksMain(AbstractCommandLineWithConfirmInterface):
                 logger.info(f"{logging_prefix} : task_id = {task_id} のタスクを差し戻しました。タスクの担当者は直前の教師付フェーズの担当者。")
                 return True
 
-            else:
-                # 指定したユーザに担当を割り当てる
-                self.facade.reject_task(
-                    project_id,
-                    task_id,
-                    account_id=self.service.api.account_id,
-                    annotator_account_id=assigned_annotator_account_id,
-                )
-                str_annotator_user = f"タスクの担当者: {assigned_annotator_user_id}"
-                logger.info(f"{logging_prefix} : task_id = {task_id} の差し戻し完了. {str_annotator_user}")
-                return True
+            # 指定したユーザに担当を割り当てる
+            self.facade.reject_task(
+                project_id,
+                task_id,
+                account_id=self.service.api.account_id,
+                annotator_account_id=assigned_annotator_account_id,
+            )
+            str_annotator_user = f"タスクの担当者: {assigned_annotator_user_id}"
+            logger.info(f"{logging_prefix} : task_id = {task_id} の差し戻し完了. {str_annotator_user}")
+            return True
 
         except requests.exceptions.HTTPError as e:
             logger.warning(e)
