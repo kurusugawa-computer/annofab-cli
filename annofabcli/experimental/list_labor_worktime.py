@@ -325,26 +325,31 @@ def create_df_with_format_details(
         tmp_sum_row.name = SUM_ROW_NAME
         df2 = pandas.concat([pandas.DataFrame([tmp_sum_row]), df2])
 
+    # activity_rate,monitor_rateの追加。PerformanceWarningが出ないようにするため、まとめて列を追加する
+    added_column_list = []
     for username in username_list:
-        df2[(username, "activity_rate")] = df2[(username, "worktime_actual")] / df2[(username, "worktime_planned")]
-        df2[(username, "monitor_rate")] = df2[(username, "worktime_monitored")] / df2[(username, "worktime_actual")]
+        s1 = pandas.Series(
+            df2[(username, "worktime_actual")] / df2[(username, "worktime_planned")], name=(username, "activity_rate")
+        )
+        s2 = pandas.Series(
+            df2[(username, "worktime_monitored")] / df2[(username, "worktime_actual")], name=(username, "monitor_rate")
+        )
+        added_column_list.extend([s1, s2])
 
-    # 最後にroundしない理由：比率に"--"を加えると列の型が'object'になり、roundされないため
-    df2 = df2.round(2)
-    # 比率がNaNの場合は"--"に置換する
-    df2.replace(
+    df_added_rate = pandas.concat(added_column_list, axis="columns")
+    df2 = pandas.concat([df2, df_added_rate], axis="columns")
+
+    # 比率がNaNの場合は"--"に置換した上で、列の順番を変える。
+    df2 = df2.round(2).replace(
         {col: DEFAULT_TO_REPLACE_FOR_VALUE for col in df2.columns if col[1] in ["activity_rate", "monitor_rate"]},
-        inplace=True,
-    )
-
-    # 列の順番を整える
-    df2 = df2[
+    )[
         [
             (m, v)
             for m in username_list
             for v in ["worktime_planned", "worktime_actual", "worktime_monitored", "activity_rate", "monitor_rate"]
         ]
     ]
+
     # date列を作る
     df2.reset_index(inplace=True)
     return df2
