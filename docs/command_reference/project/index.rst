@@ -23,3 +23,7 @@ Available Commands
    update_annotation_zip
 
 
+.. argparse::
+   :ref: annofabcli.project.subcommand_project.add_parser
+   :prog: annofabcli project
+   :nosubcommands:

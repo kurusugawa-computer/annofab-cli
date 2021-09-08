@@ -65,6 +65,10 @@ Examples
    ``task`` , ``input_data`` は、 ``simple_annotation`` と比較すると待ち時間は短いです。
 
 
+.. argparse::
+   :ref: annofabcli.project.download.add_parser
+   :prog: annofabcli project download
+   :nosubcommands:
 
 See also
 =================================

@@ -208,7 +208,7 @@ def parse_args(parser: argparse.ArgumentParser):
         "--project_id",
         type=str,
         nargs="+",
-        help="対象プロジェクトのproject_idを指定します。`file://`を先頭に付けると、project_idの一覧が記載されたファイルを指定できます。",
+        help="対象プロジェクトのproject_idを指定します。 ``file://`` を先頭に付けると、project_idの一覧が記載されたファイルを指定できます。",
     )
 
     query_group.add_argument("-org", "--organization", type=str, help="対象の組織名を指定してください。")
@@ -219,11 +219,11 @@ def parse_args(parser: argparse.ArgumentParser):
         type=str,
         help="プロジェクトの検索クエリをJSON形式で指定します。'--organization'を指定したときのみ有効なオプションです。"
         "指定しない場合は、組織配下のすべてのプロジェクトを取得します。"
-        "`file://`を先頭に付けると、JSON形式のファイルを指定できます。"
+        " ``file://`` を先頭に付けると、JSON形式のファイルを指定できます。"
         "クエリのフォーマットは、[getProjectsOfOrganization API]"
         "(https://annofab.com/docs/api/#operation/getProjectsOfOrganization)のクエリパラメータと同じです。"
-        "さらに追加で、`user_id`, `except_user_id` キーも指定できます。"
-        "ただし `page`, `limit`キーは指定できません。",
+        "さらに追加で、``user_id`` , ``except_user_id`` キーも指定できます。"
+        "ただし ``page`` , ``limit`` キーは指定できません。",
     )
 
     parser.add_argument(
@@ -231,7 +231,7 @@ def parse_args(parser: argparse.ArgumentParser):
         action="store_true",
         help="'--organization'を指定したときのみ有効なオプションです。指定した場合は、所属していないプロジェクトも出力します。"
         "指定しない場合は、自分が所属しているプロジェクトのみ出力します"
-        '（`--project_query \'{"user_id":"my_user_id"}\'`が指定されている状態と同じ）',
+        '（ ``--project_query \'{"user_id":"my_user_id"}\'`` が指定されている状態と同じ）',
     )
 
     argument_parser.add_format(
@@ -251,10 +251,11 @@ def parse_args(parser: argparse.ArgumentParser):
     parser.set_defaults(subcommand_func=main)
 
 
-def add_parser(subparsers: argparse._SubParsersAction):
+def add_parser(subparsers: Optional[argparse._SubParsersAction] = None):
     subcommand_name = "list"
     subcommand_help = "プロジェクト一覧を出力します。"
     description = "プロジェクト一覧を出力します。"
 
     parser = annofabcli.common.cli.add_parser(subparsers, subcommand_name, subcommand_help, description)
     parse_args(parser)
+    return parser
