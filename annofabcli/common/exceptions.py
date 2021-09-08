@@ -4,7 +4,7 @@ annofabapi.exceptions
 This module contains the set of annofabapi exceptions.
 """
 
-from typing import List, Optional
+from typing import List
 
 from annofabapi.models import OrganizationMemberRole, ProjectMemberRole
 
@@ -30,17 +30,11 @@ class UpdatedFileForDownloadingError(AnnofabCliException):
     ダウンロード対象ファイルの更新処理のエラー
     """
 
-    def __init__(self, msg: Optional[str] = None):
-        super().__init__(msg)
-
 
 class DownloadingFileNotFoundError(AnnofabCliException):
     """
     ダウンロード対象のファイルが存在しないときのエラー
     """
-
-    def __init__(self, msg: Optional[str] = None):
-        super().__init__(msg)
 
 
 class AuthorizationError(AnnofabCliException):

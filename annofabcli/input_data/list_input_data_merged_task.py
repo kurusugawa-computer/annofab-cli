@@ -104,9 +104,6 @@ def match_input_data(
 
 
 class ListInputDataMergedTask(AbstractCommandLineInterface):
-    def __init__(self, service: annofabapi.Resource, facade: AnnofabApiFacade, args: argparse.Namespace):
-        super().__init__(service, facade, args)
-
     @staticmethod
     def validate(args: argparse.Namespace) -> bool:
         COMMON_MESSAGE = "annofabcli input_data list_merged_task: error:"

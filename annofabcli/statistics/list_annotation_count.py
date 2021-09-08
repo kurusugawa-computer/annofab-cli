@@ -60,7 +60,6 @@ class GroupBy(Enum):
 
 @dataclass(frozen=True)
 class AnnotationCounterByTask(DataClassJsonMixin):
-    """"""
 
     task_id: str
     task_status: TaskStatus
@@ -73,8 +72,6 @@ class AnnotationCounterByTask(DataClassJsonMixin):
 
 @dataclass(frozen=True)
 class AnnotationCounterByInputData(DataClassJsonMixin):
-    """"""
-
     task_id: str
     task_status: TaskStatus
     task_phase: TaskPhase
