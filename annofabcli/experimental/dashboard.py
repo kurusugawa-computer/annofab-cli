@@ -150,7 +150,7 @@ class DashboardData(DataClassJsonMixin):
     result: ResultValues
     plan: Dict[int, Planvalues]
     task_exhaustation_date: Optional[str]
-    """タスク枯渇予定日"""
+    """タスク枯渇予定日 TODO 綴り間違い"""
 
 
 def add_info_to_task(task: Task):
