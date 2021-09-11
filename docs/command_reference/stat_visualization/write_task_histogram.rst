@@ -38,7 +38,10 @@ Examples
     ヒストグラム.html
 
 
-
+.. argparse::
+   :ref: annofabcli.stat_visualization.write_task_histogram.add_parser
+   :prog: annofabcli stat_visualization write_task_histogram
+   :nosubcommands:
 
 
 See also

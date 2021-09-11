@@ -106,7 +106,7 @@ def parse_args(parser: argparse.ArgumentParser):
         "--csv",
         type=Path,
         required=True,
-        help=(f"`annofabcli statistics visualize`コマンドの出力ファイルである'{FILENAME_TASK_LIST}'のパスを指定してください。"),
+        help=(f"``annofabcli statistics visualize`` コマンドの出力ファイルである'{FILENAME_TASK_LIST}'のパスを指定してください。"),
     )
 
     parser.add_argument(
@@ -116,7 +116,7 @@ def parse_args(parser: argparse.ArgumentParser):
         help=(
             "折れ線グラフにプロットするユーザのuser_idを指定してください。"
             "指定しない場合は、上位20人のユーザ情報がプロットされます。"
-            "`file://`を先頭に付けると、一覧が記載されたファイルを指定できます。"
+            " ``file://`` を先頭に付けると、一覧が記載されたファイルを指定できます。"
         ),
     )
 
@@ -131,13 +131,14 @@ def parse_args(parser: argparse.ArgumentParser):
     parser.set_defaults(subcommand_func=main)
 
 
-def add_parser(subparsers: argparse._SubParsersAction):
+def add_parser(subparsers: Optional[argparse._SubParsersAction] = None):
     subcommand_name = "write_linegraph_per_user"
     subcommand_help = (
-        f"`annofabcli statistics visualize`コマンドの出力ファイルである'{FILENAME_TASK_LIST}'から、ユーザごとの指標をプロットした折れ線グラフを出力します。"
+        f"``annofabcli statistics visualize`` コマンドの出力ファイルである'{FILENAME_TASK_LIST}'から、ユーザごとの指標をプロットした折れ線グラフを出力します。"
     )
     description = (
-        f"`annofabcli statistics visualize`コマンドの出力ファイルである'{FILENAME_TASK_LIST}'から、ユーザごとの指標をプロットした折れ線グラフを出力します。"
+        f"``annofabcli statistics visualize`` コマンドの出力ファイルである'{FILENAME_TASK_LIST}'から、ユーザごとの指標をプロットした折れ線グラフを出力します。"
     )
     parser = annofabcli.common.cli.add_parser(subparsers, subcommand_name, subcommand_help, description)
     parse_args(parser)
+    return parser

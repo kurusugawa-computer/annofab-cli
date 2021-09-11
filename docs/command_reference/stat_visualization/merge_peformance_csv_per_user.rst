@@ -26,7 +26,10 @@ Examples
      prj2_dir/メンバごとの生産性と品質.csv \
      --output merge_メンバごとの生産性と品質.csv
 
-
+.. argparse::
+   :ref: annofabcli.stat_visualization.merge_peformance_per_user.add_parser
+   :prog: annofabcli stat_visualization merge_peformance_csv_per_user
+   :nosubcommands:
 
 See also
 =================================

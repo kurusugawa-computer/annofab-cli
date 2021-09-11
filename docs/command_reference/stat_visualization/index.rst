@@ -27,3 +27,9 @@ Available Commands
     write_performance_rating_csv
     write_task_histogram
     write_whole_linegraph
+
+
+.. argparse::
+   :ref: annofabcli.stat_visualization.subcommand_stat_visualization.add_parser
+   :prog: annofabcli stat_visualization
+   :nosubcommands:

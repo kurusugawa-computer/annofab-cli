@@ -55,6 +55,11 @@ Examples
     └── メンバごとの生産性と品質.csv
 
 
+.. argparse::
+   :ref: annofabcli.stat_visualization.merge_visualization_dir.add_parser
+   :prog: annofabcli stat_visualization merge
+   :nosubcommands:
+
 See also
 =================================
 * `annofabcli statistics visualize <../statistics/visualize.html>`_

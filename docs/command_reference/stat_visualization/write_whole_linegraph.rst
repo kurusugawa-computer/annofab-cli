@@ -39,6 +39,11 @@ Examples
     累積折れ線-横軸_日-全体.html
 
 
+.. argparse::
+   :ref: annofabcli.stat_visualization.write_whole_linegraph.add_parser
+   :prog: annofabcli stat_visualization write_whole_linegraph
+   :nosubcommands:
+
 See also
 =================================
 * `annofabcli statistics visualize <../statistics/visualize.html>`_

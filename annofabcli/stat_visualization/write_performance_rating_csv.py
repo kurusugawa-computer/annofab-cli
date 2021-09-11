@@ -407,7 +407,7 @@ def parse_args(parser: argparse.ArgumentParser):
         "--dir",
         type=Path,
         required=True,
-        help=f"プロジェクトディレクトリが存在するディレクトリを指定してください。プロジェクトディレクトリ内の`{FILENAME_PEFORMANCE_PER_USER}`というファイルを読み込みます。",
+        help=f"プロジェクトディレクトリが存在するディレクトリを指定してください。プロジェクトディレクトリ内の ``{FILENAME_PEFORMANCE_PER_USER}`` というファイルを読み込みます。",
     )
 
     parser.add_argument(
@@ -415,20 +415,20 @@ def parse_args(parser: argparse.ArgumentParser):
         "--user_id",
         type=str,
         nargs="+",
-        help="評価対象のユーザのuser_idを指定してください。" "`file://`を先頭に付けると、user_idの一覧が記載されたファイルを指定できます。",
+        help="評価対象のユーザのuser_idを指定してください。" " ``file://`` を先頭に付けると、user_idの一覧が記載されたファイルを指定できます。",
     )
 
     parser.add_argument(
         "--threshold_worktime",
         type=int,
         default=0,
-        help="作業時間の閾値。この時間以下の作業者は除外する。`threshold_task_count`とはOR条件で絞り込まれる。",
+        help="作業時間の閾値。この時間以下の作業者は除外する。 ``threshold_task_count`` とはOR条件で絞り込まれる。",
     )
     parser.add_argument(
         "--threshold_task_count",
         type=int,
         default=0,
-        help="作業したタスク数の閾値。このタスク数以下の作業者は除外する。`threshold_worktime`とはOR条件で絞り込まれる。",
+        help="作業したタスク数の閾値。このタスク数以下の作業者は除外する。 ``threshold_worktime`` とはOR条件で絞り込まれる。",
     )
     parser.add_argument(
         "--threshold_deviation_user_count",
@@ -444,9 +444,10 @@ def main(args):
     WritePerformanceRatingCsv(args).main()
 
 
-def add_parser(subparsers: argparse._SubParsersAction):
+def add_parser(subparsers: Optional[argparse._SubParsersAction] = None):
     subcommand_name = "write_performance_rating_csv"
     subcommand_help = "プロジェクトごとユーザごとにパフォーマンスを評価できる複数のCSVを出力します。"
     description = "プロジェクトごとユーザごとにパフォーマンスを評価できる複数のCSVを出力します。"
     parser = annofabcli.common.cli.add_parser(subparsers, subcommand_name, subcommand_help, description=description)
     parse_args(parser)
+    return parser

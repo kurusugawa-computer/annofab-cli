@@ -40,6 +40,10 @@ Examples
     散布図-教師付者の品質と作業量の関係.html
 
 
+.. argparse::
+   :ref: annofabcli.stat_visualization.write_performance_scatter_per_user.add_parser
+   :prog: annofabcli stat_visualization write_performance_scatter_per_user
+   :nosubcommands:
 
 
 See also
