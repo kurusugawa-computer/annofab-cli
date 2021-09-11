@@ -45,3 +45,7 @@ CSVのフォーマットは以下の通りです。
     $ annofabcli supplementary delete --project_id prj1 --csv supplementary_data.csv
 
 
+.. argparse::
+   :ref: annofabcli.supplementary.delete_supplementary_data.add_parser
+   :prog: annofabcli supplementary delete
+   :nosubcommands:

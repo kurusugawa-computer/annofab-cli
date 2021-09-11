@@ -113,4 +113,7 @@ JSONのキーは、``--csv`` に指定するCSVファイルの列に対応しま
     $ annofabcli supplementary put --project_id prj1 --csv supplementary_data.csv
     --parallelism 4 --yes
 
-
+.. argparse::
+   :ref: annofabcli.supplementary.put_supplementary_data.add_parser
+   :prog: annofabcli supplementary put
+   :nosubcommands:
