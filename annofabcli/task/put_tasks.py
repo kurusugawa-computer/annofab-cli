@@ -4,7 +4,7 @@ import json
 import logging
 import tempfile
 from pathlib import Path
-from typing import Any, Dict, List
+from typing import Any, Dict, List, Optional
 
 import pandas
 from annofabapi.models import ProjectJobType, ProjectMemberRole
@@ -182,7 +182,7 @@ def parse_args(parser: argparse.ArgumentParser):
             "タスクに割り当てる入力データをJSON形式で指定してください。"
             "keyがtask_id, valueがinput_data_idのlistです。"
             f"(ex) {JSON_SAMPLE} "
-            "`file://`を先頭に付けるとjsonファイルを指定できます。"
+            "``file://`` を先頭に付けるとjsonファイルを指定できます。"
         ),
     )
 
@@ -202,16 +202,16 @@ def parse_args(parser: argparse.ArgumentParser):
         "--wait_options",
         type=str,
         help="タスクの登録が完了するまで待つ際のオプションを、JSON形式で指定してください。"
-        "`file://`を先頭に付けるとjsonファイルを指定できます。"
-        'デフォルは`{"interval":60, "max_tries":360}` です。'
-        "`interval`:完了したかを問い合わせる間隔[秒], "
-        "`max_tires`:完了したかの問い合わせを最大何回行うか。",
+        " ``file://`` を先頭に付けるとjsonファイルを指定できます。"
+        'デフォルは ``{"interval":60, "max_tries":360}`` です。'
+        "``interval`` :完了したかを問い合わせる間隔[秒], "
+        "``max_tires`` :完了したかの問い合わせを最大何回行うか。",
     )
 
     parser.set_defaults(subcommand_func=main)
 
 
-def add_parser(subparsers: argparse._SubParsersAction):
+def add_parser(subparsers: Optional[argparse._SubParsersAction] = None):
     subcommand_name = "put"
     subcommand_help = "タスクを作成します。"
     description = "タスクを作成します。"
@@ -219,3 +219,4 @@ def add_parser(subparsers: argparse._SubParsersAction):
 
     parser = annofabcli.common.cli.add_parser(subparsers, subcommand_name, subcommand_help, description, epilog=epilog)
     parse_args(parser)
+    return parser

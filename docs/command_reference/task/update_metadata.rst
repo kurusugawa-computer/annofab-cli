@@ -71,4 +71,7 @@ Examples
         {"required": true}
 
 
-
+.. argparse::
+   :ref: annofabcli.task.update_metadata_of_task.add_parser
+   :prog: annofabcli task update_metadata
+   :nosubcommands:

@@ -607,7 +607,7 @@ def main(args):
     CompleteTasks(service, facade, args).main()
 
 
-def add_parser(subparsers: argparse._SubParsersAction):
+def add_parser(subparsers: Optional[argparse._SubParsersAction] = None):
     subcommand_name = "complete"
     subcommand_help = "タスクを完了状態にして次のフェーズに進めます。（教師付の提出、検査/受入の合格）"
     description = (
@@ -622,3 +622,4 @@ def add_parser(subparsers: argparse._SubParsersAction):
 
     parser = annofabcli.common.cli.add_parser(subparsers, subcommand_name, subcommand_help, description, epilog=epilog)
     parse_args(parser)
+    return parser

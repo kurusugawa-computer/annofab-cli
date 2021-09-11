@@ -53,4 +53,7 @@ Examples
     $ annofabcli task delete --project_id prj1 --task_id file://task_id.txt \
      --task_query '{"phase":"annotation", "status:"not_started"}'
 
-
+.. argparse::
+   :ref: annofabcli.task.delete_tasks.add_parser
+   :prog: annofabcli task delete
+   :nosubcommands:

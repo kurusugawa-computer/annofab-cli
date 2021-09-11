@@ -400,7 +400,7 @@ def parse_args(parser: argparse.ArgumentParser):
         type=str,
         help="検査コメントを付与する位置や区間をJSON形式で指定します。"
         "指定方法は https://annofab-cli.readthedocs.io/ja/latest/command_reference/task/reject.html を参照してください。"
-        "`file://`を先頭に付けると、JSON形式のファイルを指定できます。"
+        " ``file://`` を先頭に付けると、JSON形式のファイルを指定できます。"
         "デフォルトでは画像プロジェクトならば画像の左上(x=0,y=0)、動画プロジェクトなら動画の先頭（start=0, end=100)に付与します。"
         "カスタムプロジェクトに検査コメントを付与する場合は必須です。",
     )
@@ -429,7 +429,7 @@ def parse_args(parser: argparse.ArgumentParser):
     parser.set_defaults(subcommand_func=main)
 
 
-def add_parser(subparsers: argparse._SubParsersAction):
+def add_parser(subparsers: Optional[argparse._SubParsersAction] = None):
     subcommand_name = "reject"
     subcommand_help = "タスクを差し戻します。"
     description = (
@@ -441,3 +441,4 @@ def add_parser(subparsers: argparse._SubParsersAction):
 
     parser = annofabcli.common.cli.add_parser(subparsers, subcommand_name, subcommand_help, description, epilog=epilog)
     parse_args(parser)
+    return parser

@@ -104,3 +104,7 @@ JSON形式の文字列、またはJSONファイルのパスは ``--json`` に渡
     $ annofabcli task put --project_id prj1 --csv task.csv --wait \
     --wait_options '{"interval":30, "max_tries":10}'
 
+.. argparse::
+   :ref: annofabcli.task.put_tasks.add_parser
+   :prog: annofabcli task put
+   :nosubcommands:

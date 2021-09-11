@@ -147,4 +147,7 @@ Examples
     --parallelism 4 --yes
 
 
-
+.. argparse::
+   :ref: annofabcli.task.reject_tasks.add_parser
+   :prog: annofabcli task reject
+   :nosubcommands:

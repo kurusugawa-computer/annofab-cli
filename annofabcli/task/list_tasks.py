@@ -230,10 +230,10 @@ def parse_args(parser: argparse.ArgumentParser):
         "--task_query",
         type=str,
         help="タスクの検索クエリをJSON形式で指定します。指定しない場合は、すべてのタスクを取得します。"
-        "`file://`を先頭に付けると、JSON形式のファイルを指定できます。"
+        " ``file://`` を先頭に付けると、JSON形式のファイルを指定できます。"
         "クエリのフォーマットは、[getTasks API](https://annofab.com/docs/api/#operation/getTasks)のクエリパラメータと同じです。"
-        "さらに追加で、`user_id`, `previous_user_id` キーも指定できます。"
-        "ただし `page`, `limit`キーは指定できません。",
+        "さらに追加で、``user_id`` , ``previous_user_id`` キーも指定できます。"
+        "ただし ``page`` , ``limit`` キーは指定できません。",
     )
 
     query_group.add_argument(
@@ -241,7 +241,8 @@ def parse_args(parser: argparse.ArgumentParser):
         "--task_id",
         type=str,
         nargs="+",
-        help="対象のタスクのtask_idを指定します。`--task_query`引数とは同時に指定できません。" "`file://`を先頭に付けると、task_idの一覧が記載されたファイルを指定できます。",
+        help="対象のタスクのtask_idを指定します。 ``--task_query`` 引数とは同時に指定できません。"
+        " ``file://`` を先頭に付けると、task_idの一覧が記載されたファイルを指定できます。",
     )
 
     parser.add_argument(
@@ -249,7 +250,7 @@ def parse_args(parser: argparse.ArgumentParser):
         "--user_id",
         type=str,
         nargs="+",
-        help="絞り込み対象である担当者のuser_idを指定します。" "`file://`を先頭に付けると、task_idの一覧が記載されたファイルを指定できます。",
+        help="絞り込み対象である担当者のuser_idを指定します。" " ``file://`` を先頭に付けると、task_idの一覧が記載されたファイルを指定できます。",
     )
 
     argument_parser.add_format(
@@ -263,10 +264,11 @@ def parse_args(parser: argparse.ArgumentParser):
     parser.set_defaults(subcommand_func=main)
 
 
-def add_parser(subparsers: argparse._SubParsersAction):
+def add_parser(subparsers: Optional[argparse._SubParsersAction] = None):
     subcommand_name = "list"
     subcommand_help = "タスク一覧を出力します。"
     description = "タスク一覧を出力します。"
 
     parser = annofabcli.common.cli.add_parser(subparsers, subcommand_name, subcommand_help, description)
     parse_args(parser)
+    return parser

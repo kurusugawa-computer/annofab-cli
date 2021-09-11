@@ -85,7 +85,10 @@ CSV出力
 * last_acceptance_started_datetime: 最後の受入フェーズを開始した日時
 
 
-
+.. argparse::
+   :ref: annofabcli.task.list_tasks_added_task_history.add_parser
+   :prog: annofabcli task list_added_task_history
+   :nosubcommands:
 
 See also
 =================================

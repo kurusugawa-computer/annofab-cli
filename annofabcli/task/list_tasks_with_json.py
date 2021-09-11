@@ -139,7 +139,7 @@ def parse_args(parser: argparse.ArgumentParser):
         type=Path,
         help="タスク情報が記載されたJSONファイルのパスを指定すると、JSONに記載された情報を元にタスク一覧を出力します。"
         "指定しない場合、全件ファイルをダウンロードします。"
-        "JSONファイルは`$ annofabcli project download task`コマンドで取得できます。",
+        "JSONファイルは ``$ annofabcli project download task`` コマンドで取得できます。",
     )
 
     parser.add_argument(
@@ -150,10 +150,10 @@ def parse_args(parser: argparse.ArgumentParser):
         "--wait_options",
         type=str,
         help="タスク一覧ファイルの更新が完了するまで待つ際のオプションを、JSON形式で指定してください。"
-        "`file://`を先頭に付けるとjsonファイルを指定できます。"
-        'デフォルは`{"interval":60, "max_tries":360}` です。'
-        "`interval`:完了したかを問い合わせる間隔[秒], "
-        "`max_tires`:完了したかの問い合わせを最大何回行うか。",
+        " ``file://`` を先頭に付けるとjsonファイルを指定できます。"
+        'デフォルは ``{"interval":60, "max_tries":360}`` です。'
+        "``interval`` :完了したかを問い合わせる間隔[秒], "
+        "``max_tires`` :完了したかの問い合わせを最大何回行うか。",
     )
 
     argument_parser.add_format(
@@ -167,10 +167,11 @@ def parse_args(parser: argparse.ArgumentParser):
     parser.set_defaults(subcommand_func=main)
 
 
-def add_parser(subparsers: argparse._SubParsersAction):
+def add_parser(subparsers: Optional[argparse._SubParsersAction] = None):
     subcommand_name = "list_with_json"
     subcommand_help = "タスク全件ファイルから一覧を出力します。"
     description = "タスク全件ファイルから一覧を出力します。"
 
     parser = annofabcli.common.cli.add_parser(subparsers, subcommand_name, subcommand_help, description)
     parse_args(parser)
+    return parser

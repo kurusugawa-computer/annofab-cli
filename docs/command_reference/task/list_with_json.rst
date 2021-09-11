@@ -62,7 +62,10 @@ task_idで絞り込み
 `annofabcli task list <../task/list.html>`_ コマンドの出力結果と同じです。
 
 
-
+.. argparse::
+   :ref: annofabcli.task.list_tasks_with_json.add_parser
+   :prog: annofabcli task list_with_json
+   :nosubcommands:
 
 
 See also
