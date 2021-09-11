@@ -68,6 +68,7 @@ Examples
     * acceptance_submitted_task_count
     * rejected_task_count
 
-    
-
-    
+.. argparse::
+   :ref: annofabcli.statistics.list_by_date_user.add_parser
+   :prog: annofabcli statistics list_by_date_user
+   :nosubcommands:

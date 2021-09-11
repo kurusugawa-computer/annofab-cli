@@ -207,7 +207,7 @@ def parse_args(parser: argparse.ArgumentParser):
     parser.add_argument(
         "--task_history_json",
         type=Path,
-        help="タスク履歴情報が記載されたJSONファイルのパスを指定してます。JSONファイルは`$ annofabcli project download task_history`コマンドで取得できます。"
+        help="タスク履歴情報が記載されたJSONファイルのパスを指定してます。JSONファイルは ``$ annofabcli project download task_history`` コマンドで取得できます。"
         "指定しない場合は、AnnoFabからタスク履歴全件ファイルをダウンロードします。",
     )
 
@@ -226,7 +226,7 @@ def main(args):
     ListSubmittedTaskCountArgs(service, facade, args).main()
 
 
-def add_parser(subparsers: argparse._SubParsersAction):
+def add_parser(subparsers: Optional[argparse._SubParsersAction] = None):
     subcommand_name = "list_by_date_user"
     subcommand_help = "タスク数や作業時間などの情報を、日ごとユーザごとに出力します。"
     description = "タスク数や作業時間などの情報を、日ごとユーザごとに出力します。"
@@ -235,3 +235,4 @@ def add_parser(subparsers: argparse._SubParsersAction):
         subparsers, subcommand_name, subcommand_help, description=description, epilog=epilog
     )
     parse_args(parser)
+    return parser

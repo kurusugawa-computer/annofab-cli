@@ -43,3 +43,7 @@ Examples
     2020-12-16,acceptance,not_started,90
     2020-12-16,acceptance,complete,10
 
+.. argparse::
+   :ref: annofabcli.statistics.list_task_progress.add_parser
+   :prog: annofabcli statistics list_task_progress
+   :nosubcommands:

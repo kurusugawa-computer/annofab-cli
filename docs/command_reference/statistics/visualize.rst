@@ -358,3 +358,7 @@ prj1とprj2の出力結果をマージしたファイルが、``merge`` ディ�
     │   └── ...
 
 
+.. argparse::
+   :ref: annofabcli.statistics.visualize_statistics.add_parser
+   :prog: annofabcli statistics visualize
+   :nosubcommands:

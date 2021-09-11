@@ -1,4 +1,5 @@
 import argparse
+from typing import Optional
 
 import annofabcli
 import annofabcli.common.cli
@@ -30,7 +31,7 @@ def parse_args(parser: argparse.ArgumentParser):
     annofabcli.statistics.visualize_statistics.add_parser(subparsers)
 
 
-def add_parser(subparsers: argparse._SubParsersAction):
+def add_parser(subparsers: Optional[argparse._SubParsersAction] = None):
     subcommand_name = "statistics"
     subcommand_help = "統計関係のサブコマンド"
     description = "統計関係のサブコマンド"
@@ -39,3 +40,4 @@ def add_parser(subparsers: argparse._SubParsersAction):
         subparsers, subcommand_name, subcommand_help, description, is_subcommand=False
     )
     parse_args(parser)
+    return parser

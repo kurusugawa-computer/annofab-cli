@@ -56,4 +56,7 @@ Examples
 
     ``tasks_completed`` , ``tasks_rejected`` は直感的でない数字になる場合があります。信用しないでください。
 
-    
+.. argparse::
+   :ref: annofabcli.statistics.list_labor_time_per_user.add_parser
+   :prog: annofabcli statistics list_labor_time_per_user
+   :nosubcommands:

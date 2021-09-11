@@ -2,7 +2,7 @@ import argparse
 import json
 import logging
 from enum import Enum
-from typing import List
+from typing import List, Optional
 
 import pandas
 from annofabapi.models import ProjectMemberRole, Task, TaskPhase, TaskStatus
@@ -167,7 +167,7 @@ def parse_args(parser: argparse.ArgumentParser):
     parser.add_argument(
         "--task_json",
         type=str,
-        help="タスク情報が記載されたJSONファイルのパスを指定してます。JSONファイルは`$ annofabcli project download task`コマンドで取得できます。"
+        help="タスク情報が記載されたJSONファイルのパスを指定してます。JSONファイルは ``$ annofabcli project download task`` コマンドで取得できます。"
         "指定しない場合は、AnnoFabからタスク全件ファイルをダウンロードします。",
     )
 
@@ -175,7 +175,7 @@ def parse_args(parser: argparse.ArgumentParser):
         "--delimiter",
         type=str,
         default="_",
-        help="task_idのprefixと連番を分ける区切り文字です。デフォルトは`_`で、`{prefix}_{連番}`のようなtask_idを想定しています。"
+        help="task_idのprefixと連番を分ける区切り文字です。デフォルトは ``_`` で、 ``{prefix}_{連番}`` のようなtask_idを想定しています。"
         "指定しない場合は、AnnoFabからタスク全件ファイルをダウンロードします。",
     )
 
@@ -187,10 +187,10 @@ def parse_args(parser: argparse.ArgumentParser):
         "--wait_options",
         type=str,
         help="タスク一覧ファイルの更新が完了するまで待つ際のオプションを、JSON形式で指定してください。"
-        "`file://`を先頭に付けるとjsonファイルを指定できます。"
-        'デフォルは`{"interval":60, "max_tries":360}` です。'
-        "`interval`:完了したかを問い合わせる間隔[秒], "
-        "`max_tires`:完了したかの問い合わせを最大何回行うか。",
+        " ``file://`` を先頭に付けるとjsonファイルを指定できます。"
+        'デフォルは ``{"interval":60, "max_tries":360}`` です。'
+        " ``interval`` :完了したかを問い合わせる間隔[秒], "
+        "``max_tires`` :完了したかの問い合わせを最大何回行うか。",
     )
 
     argument_parser.add_csv_format()
@@ -205,7 +205,7 @@ def main(args):
     SummarizeTaskCountByTaskId(service, facade, args).main()
 
 
-def add_parser(subparsers: argparse._SubParsersAction):
+def add_parser(subparsers: Optional[argparse._SubParsersAction] = None):
     subcommand_name = "summarize_task_count_by_task_id"
     subcommand_help = "task_idのプレフィックスごとに、タスク数を出力します。"
     description = "task_idのプレフィックスごとに、タスク数をCSV形式で出力します。"
@@ -214,3 +214,4 @@ def add_parser(subparsers: argparse._SubParsersAction):
         subparsers, subcommand_name, subcommand_help, description=description, epilog=epilog
     )
     parse_args(parser)
+    return parser

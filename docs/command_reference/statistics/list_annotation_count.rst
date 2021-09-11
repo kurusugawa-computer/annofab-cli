@@ -132,3 +132,9 @@ Examples
     input_data_id,input_data_name,task_id,task_status,task_phase,task_phase_stage,True,False,...
     input1,input1,task1,break,acceptance,1,10,5,...
     input2,input2,task2,complete,acceptance,1,10,5,...
+
+
+.. argparse::
+   :ref: annofabcli.statistics.list_annotation_count.add_parser
+   :prog: annofabcli statistics list_annotation_count
+   :nosubcommands:

@@ -702,7 +702,7 @@ def parse_args(parser: argparse.ArgumentParser):
         nargs="+",
         help=(
             "対象のプロジェクトのproject_idを指定してください。複数指定した場合、プロジェクトごとに統計情報が出力されます。"
-            "file://`を先頭に付けると、project_idが記載されたファイルを指定できます。"
+            " ``file://`` を先頭に付けると、project_idが記載されたファイルを指定できます。"
         ),
     )
 
@@ -712,7 +712,11 @@ def parse_args(parser: argparse.ArgumentParser):
         "-u",
         "--user_id",
         nargs="+",
-        help=("メンバごとの統計グラフに表示するユーザのuser_idを指定してください。" "指定しない場合は、上位20人が表示されます。" "file://`を先頭に付けると、一覧が記載されたファイルを指定できます。"),
+        help=(
+            "メンバごとの統計グラフに表示するユーザのuser_idを指定してください。"
+            "指定しない場合は、上位20人が表示されます。"
+            " ``file://`` を先頭に付けると、一覧が記載されたファイルを指定できます。"
+        ),
     )
 
     parser.add_argument(
@@ -720,7 +724,7 @@ def parse_args(parser: argparse.ArgumentParser):
         "--task_query",
         type=str,
         help="タスクの検索クエリをJSON形式で指定します。指定しない場合はすべてのタスクを取得します。"
-        "`file://`を先頭に付けると、JSON形式のファイルを指定できます。"
+        " ``file://`` を先頭に付けると、JSON形式のファイルを指定できます。"
         "クエリのキーは、task_id, phase, phase_stage, status のみです。",
     )
 
@@ -730,7 +734,7 @@ def parse_args(parser: argparse.ArgumentParser):
         type=str,
         required=False,
         nargs="+",
-        help="集計対象のタスクのtask_idを指定します。" + "`file://`を先頭に付けると、task_idの一覧が記載されたファイルを指定できます。",
+        help="集計対象のタスクのtask_idを指定します。" + " ``file://`` を先頭に付けると、task_idの一覧が記載されたファイルを指定できます。",
     )
 
     parser.add_argument("--start_date", type=str, help="指定した日付（'YYYY-MM-DD'）以降に教師付を開始したタスクを集計する。")
@@ -739,7 +743,7 @@ def parse_args(parser: argparse.ArgumentParser):
     parser.add_argument(
         "--ignored_task_id",
         nargs="+",
-        help=("集計対象外のタスクのtask_idを指定します。`--task_id` より優先度が高いです。" "file://`を先頭に付けると、一覧が記載されたファイルを指定できます。"),
+        help=("集計対象外のタスクのtask_idを指定します。 ``--task_id`` より優先度が高いです。" " ``file://`` を先頭に付けると、一覧が記載されたファイルを指定できます。"),
     )
 
     parser.add_argument(
@@ -769,19 +773,19 @@ def parse_args(parser: argparse.ArgumentParser):
     parser.add_argument(
         "--merge",
         action="store_true",
-        help="指定した場合、複数のproject_idを指定したときに、マージした統計情報も出力します。ディレクトリ名は`merge`です。",
+        help="指定した場合、複数のproject_idを指定したときに、マージした統計情報も出力します。ディレクトリ名は ``merge`` です。",
     )
 
     parser.add_argument(
         "--parallelism",
         type=int,
-        help="並列度。`--project_id`に複数のproject_idを指定したときのみ有効なオプションです。指定しない場合は、逐次的に処理します。また、必ず'--yes'を指定してください。",
+        help="並列度。 ``--project_id`` に複数のproject_idを指定したときのみ有効なオプションです。指定しない場合は、逐次的に処理します。また、必ず'--yes'を指定してください。",
     )
 
     parser.set_defaults(subcommand_func=main)
 
 
-def add_parser(subparsers: argparse._SubParsersAction):
+def add_parser(subparsers: Optional[argparse._SubParsersAction] = None):
     subcommand_name = "visualize"
     subcommand_help = "生産性に関するCSVファイルやグラフを出力します。"
     description = "生産性に関するCSVファイルやグラフを出力します。"
@@ -789,3 +793,4 @@ def add_parser(subparsers: argparse._SubParsersAction):
 
     parser = annofabcli.common.cli.add_parser(subparsers, subcommand_name, subcommand_help, description, epilog=epilog)
     parse_args(parser)
+    return parser

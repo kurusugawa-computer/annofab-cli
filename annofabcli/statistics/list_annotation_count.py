@@ -511,7 +511,7 @@ def parse_args(parser: argparse.ArgumentParser):
         "--task_query",
         type=str,
         help="集計対象タスクを絞り込むためのクエリ条件をJSON形式で指定します。使用できるキーは task_id, status, phase, phase_stage です。"
-        "`file://`を先頭に付けると、JSON形式のファイルを指定できます。",
+        " ``file://`` を先頭に付けると、JSON形式のファイルを指定できます。",
     )
     argument_parser.add_task_id(required=False)
 
@@ -525,10 +525,10 @@ def parse_args(parser: argparse.ArgumentParser):
         "--wait_options",
         type=str,
         help="アノテーションzipの更新が完了するまで待つ際のオプションを、JSON形式で指定してください。"
-        "`file://`を先頭に付けるとjsonファイルを指定できます。"
-        'デフォルは`{"interval":60, "max_tries":360}` です。'
-        "`interval`:完了したかを問い合わせる間隔[秒], "
-        "`max_tires`:完了したかの問い合わせを最大何回行うか。",
+        " ``file://`` を先頭に付けるとjsonファイルを指定できます。"
+        'デフォルは ``{"interval":60, "max_tries":360}`` です。'
+        "``interval`` :完了したかを問い合わせる間隔[秒], "
+        "``max_tires`` :完了したかの問い合わせを最大何回行うか。",
     )
 
     parser.set_defaults(subcommand_func=main)
@@ -540,9 +540,10 @@ def main(args):
     ListAnnotationCount(service, facade, args).main()
 
 
-def add_parser(subparsers: argparse._SubParsersAction):
+def add_parser(subparsers: Optional[argparse._SubParsersAction] = None):
     subcommand_name = "list_annotation_count"
     subcommand_help = "各ラベル、各属性値のアノテーション数を出力します。"
     description = "各ラベル、各属性値のアノテーション数を、タスクごと/入力データごとに出力します。"
     parser = annofabcli.common.cli.add_parser(subparsers, subcommand_name, subcommand_help, description=description)
     parse_args(parser)
+    return parser
