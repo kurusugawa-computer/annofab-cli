@@ -37,6 +37,8 @@ Examples
     ヒストグラム-作業時間.html
     ヒストグラム.html
 
+Usage Details
+=================================
 
 .. argparse::
    :ref: annofabcli.stat_visualization.write_task_histogram.add_parser

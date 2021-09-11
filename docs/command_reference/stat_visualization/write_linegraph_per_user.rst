@@ -45,6 +45,9 @@ Examples
     累積折れ線-横軸_アノテーション数-教師付者用.html
     累積折れ線-横軸_アノテーション数-受入者用.html
 
+Usage Details
+=================================
+
 .. argparse::
    :ref: annofabcli.stat_visualization.write_linegraph_per_user.add_parser
    :prog: annofabcli stat_visualization write_linegraph_per_user

@@ -67,6 +67,9 @@ Examples
     $  annofabcli task change_operator --project_id prj1 --task_id file://task.txt \
     --parallelism 4 --yes
 
+Usage Details
+=================================
+
 .. argparse::
    :ref: annofabcli.task.change_operator.add_parser
    :prog: annofabcli task

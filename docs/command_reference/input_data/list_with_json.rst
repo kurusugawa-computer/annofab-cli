@@ -63,6 +63,8 @@ Examples
 =================================
 `annofabcli input_data list <../input_data/list.html>`_ コマンドの出力結果と同じです。
 
+Usage Details
+=================================
 
 .. argparse::
    :ref: annofabcli.input_data.list_input_data_with_json.add_parser

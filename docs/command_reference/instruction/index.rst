@@ -20,6 +20,9 @@ Available Commands
    list_history
    upload
 
+Usage Details
+=================================
+
 .. argparse::
    :ref: annofabcli.instruction.subcommand_instruction.add_parser
    :prog: annofabcli instruction

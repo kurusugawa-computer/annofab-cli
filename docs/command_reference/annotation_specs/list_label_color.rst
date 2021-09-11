@@ -49,6 +49,8 @@ JSON出力
         ...
     }
 
+Usage Details
+=================================
 
 .. argparse::
    :ref: annofabcli.annotation_specs.print_label_color.add_parser

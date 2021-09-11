@@ -146,6 +146,8 @@ Examples
     $  annofabcli task reject --project_id prj1 --task_id file://task.txt \
     --parallelism 4 --yes
 
+Usage Details
+=================================
 
 .. argparse::
    :ref: annofabcli.task.reject_tasks.add_parser

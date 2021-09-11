@@ -109,6 +109,8 @@ Examples
     --output_dir out/
     --task_id task1 task2
 
+Usage Details
+=================================
 
 .. argparse::
    :ref: annofabcli.filesystem.merge_annotation.add_parser

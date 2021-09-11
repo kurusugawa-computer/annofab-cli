@@ -133,6 +133,8 @@ Examples
     input1,input1,task1,break,acceptance,1,10,5,...
     input2,input2,task2,complete,acceptance,1,10,5,...
 
+Usage Details
+=================================
 
 .. argparse::
    :ref: annofabcli.statistics.list_annotation_count.add_parser

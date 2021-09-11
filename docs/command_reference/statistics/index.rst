@@ -26,6 +26,8 @@ Available Commands
    summarize_task_count_by_user
    visualize
 
+Usage Details
+=================================
 
 .. argparse::
    :ref: annofabcli.statistics.subcommand_statistics.add_parser

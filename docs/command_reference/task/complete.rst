@@ -102,6 +102,9 @@ Examples
     $ annofabcli task complete --project_id prj1 --task_id file://task_id.txt \
     --phase annotation --parallelism 4 --yes
 
+Usage Details
+=================================
+
 .. argparse::
    :ref: annofabcli.task.complete_tasks.add_parser
    :prog: annofabcli task complete

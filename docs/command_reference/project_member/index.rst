@@ -22,6 +22,9 @@ Available Commands
    list
    put
 
+Usage Details
+=================================
+
 .. argparse::
    :ref: annofabcli.project_member.subcommand_project_member.add_parser
    :prog: annofabcli project_member

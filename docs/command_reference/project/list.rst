@@ -158,6 +158,9 @@ project_idの一覧を出力
     prj2
     ...
 
+Usage Details
+=================================
+
 .. argparse::
    :ref: annofabcli.project.list_project.add_parser
    :prog: annofabcli project list

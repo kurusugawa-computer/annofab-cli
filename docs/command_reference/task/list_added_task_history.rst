@@ -84,6 +84,8 @@ CSV出力
 * last_acceptance_username: 最後の受入フェーズを担当したユーザの名前
 * last_acceptance_started_datetime: 最後の受入フェーズを開始した日時
 
+Usage Details
+=================================
 
 .. argparse::
    :ref: annofabcli.task.list_tasks_added_task_history.add_parser

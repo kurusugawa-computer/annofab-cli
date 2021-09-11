@@ -137,6 +137,8 @@ zipファイルから入力データを作成する
     $ annofabcli input_data put --project_id prj1 --csv input_data.csv
     --parallelism 4 --yes
 
+Usage Details
+=================================
 
 .. argparse::
    :ref: annofabcli.input_data.put_input_data.add_parser

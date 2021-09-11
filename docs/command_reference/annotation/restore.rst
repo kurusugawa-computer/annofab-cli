@@ -49,6 +49,8 @@ Examples
     $ annofabcli annotation restore --project_id prj1 --annotation annotation.zip \
     --force
 
+Usage Details
+=================================
 
 .. argparse::
     :ref: annofabcli.annotation.restore_anotation.add_parser

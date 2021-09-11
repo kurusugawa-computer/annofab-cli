@@ -196,6 +196,8 @@ Examples
     --image_size 1280x720 \
     --output_dir out/
 
+Usage Details
+=================================
 
 .. argparse::
    :ref: annofabcli.filesystem.write_annotation_image.add_parser

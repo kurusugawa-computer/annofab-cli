@@ -52,6 +52,8 @@ JSON出力
         ...
     ]
 
+Usage Details
+=================================
 
 .. argparse::
    :ref: annofabcli.annotation_specs.list_annotation_specs_history.add_parser

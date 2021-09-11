@@ -27,6 +27,9 @@ Examples
      prj2_dir/日毎の生産量と生産性.csv \
      --output merge_日毎の生産量と生産性.csv
 
+Usage Details
+=================================
+
 .. argparse::
    :ref: annofabcli.stat_visualization.merge_peformance_per_date.add_parser
    :prog: annofabcli stat_visualization merge_peformance_csv_per_date

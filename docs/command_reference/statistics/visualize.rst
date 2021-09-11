@@ -357,6 +357,8 @@ prj1とprj2の出力結果をマージしたファイルが、``merge`` ディ�
     │   ├── メンバごとの生産性と品質.csv
     │   └── ...
 
+Usage Details
+=================================
 
 .. argparse::
    :ref: annofabcli.statistics.visualize_statistics.add_parser

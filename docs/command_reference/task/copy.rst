@@ -30,6 +30,9 @@ Examples
     $ annofabcli task copy --project_id prj1 --task_id t1 t2 \
     --dest_task_id t3 t4 --copy_metadata
 
+Usage Details
+=================================
+
 .. argparse::
    :ref: annofabcli.task.copy_tasks.add_parser
    :prog: annofabcli task copy

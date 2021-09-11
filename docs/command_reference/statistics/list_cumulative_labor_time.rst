@@ -44,7 +44,10 @@ Examples
     2020-12-16,annotation,13.7682875
     2020-12-17,acceptance,2.6953075
     2020-12-17,annotation,16.3832388888889
-    
+
+Usage Details
+=================================
+
 .. argparse::
    :ref: annofabcli.statistics.list_cumulative_labor_time.add_parser
    :prog: annofabcli statistics list_cumulative_labor_time

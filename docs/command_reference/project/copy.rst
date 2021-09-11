@@ -50,6 +50,9 @@ Examples
 
     $ annofabcli project copy --project_id prj1 --dest_title prj2-title  --wait
 
+Usage Details
+=================================
+
 .. argparse::
    :ref: annofabcli.project.copy_project.add_parser
    :prog: annofabcli project copy

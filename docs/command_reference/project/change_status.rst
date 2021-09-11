@@ -32,6 +32,9 @@ Examples
 
     $ annofabcli project change_status --project_id prj1 prj2 --status suspended --force
 
+Usage Details
+=================================
+
 .. argparse::
    :ref: annofabcli.project.change_project_status.add_parser
    :prog: annofabcli project change_status

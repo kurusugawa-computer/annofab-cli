@@ -81,6 +81,8 @@ JSON出力
      ...
     ]
 
+Usage Details
+=================================
 
 .. argparse::
    :ref: annofabcli.job.list_generated_task_history.add_parser

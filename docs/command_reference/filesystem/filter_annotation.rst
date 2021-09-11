@@ -38,6 +38,8 @@ Examples
 
 task_id以外にも ``--input_data_id`` , ``--input_data_name`` で絞り込むことができます。
 
+Usage Details
+=================================
 
 .. argparse::
    :ref: annofabcli.filesystem.filter_annotation.add_parser

@@ -48,6 +48,8 @@ Examples
 
 デフォルトでは完了状態のタスクのアノテーションは変更できません。完了状態のタスクのアノテーションも変更する場合は、``--force`` を指定してください。
 
+Usage Details
+=================================
 
 .. argparse::
     :ref: annofabcli.annotation.change_annotation_attributes.add_parser

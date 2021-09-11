@@ -22,6 +22,9 @@ Available Commands
    put
    update_metadata
 
+Usage Details
+=================================
+
 .. argparse::
    :ref: annofabcli.input_data.subcommand_input_data.add_parser
    :prog: annofabcli input_data

@@ -28,6 +28,8 @@ Available Commands
     write_task_histogram
     write_whole_linegraph
 
+Usage Details
+=================================
 
 .. argparse::
    :ref: annofabcli.stat_visualization.subcommand_stat_visualization.add_parser

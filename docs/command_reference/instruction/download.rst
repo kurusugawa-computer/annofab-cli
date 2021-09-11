@@ -81,6 +81,8 @@ htmlファイルのみダウンロードする場合
     │   ...
     └── index.html
 
+Usage Details
+=================================
 
 .. argparse::
    :ref: annofabcli.instruction.download_instruction.add_parser

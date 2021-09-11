@@ -37,6 +37,8 @@ Examples
 
     $ annofabcli project_member invite --user_id user1 user2 --role worker --project_id prj1 prj2
 
+Usage Details
+=================================
 
 .. argparse::
    :ref: annofabcli.project_member.invite_project_members.add_parser

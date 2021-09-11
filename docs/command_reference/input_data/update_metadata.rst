@@ -76,6 +76,8 @@ Examples
      --input_data_id file://input_data_id.txt \
      --metadata '{"category":"202010"}' --parallelism 4 --yes
 
+Usage Details
+=================================
 
 .. argparse::
    :ref: annofabcli.input_data.update_metadata_of_input_data.add_parser

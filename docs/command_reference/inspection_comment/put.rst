@@ -76,6 +76,8 @@ Examples
     $  annofabcli inspection_comment put --project_id prj1 --json file://comment.json \
     --parallelism 4 --yes
 
+Usage Details
+=================================
 
 .. argparse::
    :ref: annofabcli.inspection_comment.put_inspection_comments.add_parser

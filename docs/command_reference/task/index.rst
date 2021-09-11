@@ -27,6 +27,9 @@ Available Commands
    reject
    update_metadata
 
+Usage Details
+=================================
+
 .. argparse::
    :ref: annofabcli.task.subcommand_task.add_parser
    :prog: annofabcli task

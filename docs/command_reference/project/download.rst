@@ -64,6 +64,8 @@ Examples
    待ち時間はタスク数や入力データ数、コマンドを実行した時間帯にもよりますが、 ``simple_annotation`` だと長いときには2時間以上待つ場合もあります。
    ``task`` , ``input_data`` は、 ``simple_annotation`` と比較すると待ち時間は短いです。
 
+Usage Details
+=================================
 
 .. argparse::
    :ref: annofabcli.project.download.add_parser

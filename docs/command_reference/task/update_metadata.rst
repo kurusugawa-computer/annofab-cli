@@ -70,6 +70,8 @@ Examples
         --query "[0].metadata"
         {"required": true}
 
+Usage Details
+=================================
 
 .. argparse::
    :ref: annofabcli.task.update_metadata_of_task.add_parser

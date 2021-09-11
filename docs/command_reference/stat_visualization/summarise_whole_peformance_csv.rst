@@ -40,6 +40,9 @@ Examples
 
 `プロジェクトごとの生産性と品質.csv <https://github.com/kurusugawa-computer/annofab-cli/blob/master/docs/command_reference/stat_visualization/summarise_whole_peformance_csv/プロジェクトごとの生産性と品質.csv>`_
 
+Usage Details
+=================================
+
 .. argparse::
    :ref: annofabcli.stat_visualization.summarise_whole_peformance_csv.add_parser
    :prog: annofabcli stat_visualization summarise_whole_peformance_csv

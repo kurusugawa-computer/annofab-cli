@@ -24,6 +24,8 @@ Examples
 
     $ annofabcli job wait --project_id prj1  --job_type gen-annotation 
 
+Usage Details
+=================================
 
 .. argparse::
    :ref: annofabcli.job.wait_job.add_parser

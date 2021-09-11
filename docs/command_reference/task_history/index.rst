@@ -18,6 +18,9 @@ Available Commands
    list
    list_with_json
 
+Usage Details
+=================================
+
 .. argparse::
    :ref: annofabcli.task_history.subcommand_task_history.add_parser
    :prog: annofabcli task_history
