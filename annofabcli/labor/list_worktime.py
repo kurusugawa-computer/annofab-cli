@@ -1,6 +1,3 @@
-
-from annofabcli.common.cli import AbstractCommandLineInterface, ArgumentParser, build_annofabapi_resource_and_login
-from annofabcli.common.enums import FormatArgument
 import argparse
 import logging
 from dataclasses import dataclass
@@ -13,7 +10,13 @@ from dataclasses_json import DataClassJsonMixin
 
 import annofabcli
 from annofabcli import AnnofabApiFacade
-from annofabcli.common.cli import AbstractCommandLineInterface, build_annofabapi_resource_and_login, get_list_from_args
+from annofabcli.common.cli import (
+    AbstractCommandLineInterface,
+    ArgumentParser,
+    build_annofabapi_resource_and_login,
+    get_list_from_args,
+)
+from annofabcli.common.enums import FormatArgument
 
 logger = logging.getLogger(__name__)
 
@@ -97,8 +100,10 @@ class ListLaborWorktimeMain:
             )
         else:
             labor_list = []
-            logger.debug(f"organization_name={organization_name}, {start_date}〜{end_date}," 
-                f"ユーザ{len(account_id_list)}件分の労務管理情報を取得しています。")
+            logger.debug(
+                f"organization_name={organization_name}, {start_date}〜{end_date},"
+                f"ユーザ{len(account_id_list)}件分の労務管理情報を取得しています。"
+            )
             for account_id in account_id_list:
                 tmp_labor_list = self.service.wrapper.get_labor_control_worktime(
                     organization_id=organization_id, from_date=start_date, to_date=end_date, account_id=account_id
@@ -147,9 +152,9 @@ class ListLaborWorktimeMain:
         *,
         account_id_list: Optional[List[str]],
     ) -> List[LaborWorktime]:
-        project = self.service.wrapper.get_project_member_or_none(project_id)
+        project = self.service.wrapper.get_project_or_none(project_id)
         if project is None:
-            logger.warning(f"project_id='{project_id}' のプロジェクトにアクセスできんたいめ、スキップします。")
+            logger.warning(f"project_id='{project_id}' のプロジェクトにアクセスできないため、スキップします。")
             return []
 
         project_title = project["title"]
@@ -395,7 +400,7 @@ def parse_args(parser: argparse.ArgumentParser):
     parser.add_argument("-o", "--output", type=str, required=True, help="出力先ファイルのパス")
 
     argument_parser.add_format(
-        choices=[FormatArgument.CSV, FormatArgument.JSON, FormatArgument.PRETTY_JSON, FormatArgument.TASK_ID_LIST],
+        choices=[FormatArgument.CSV, FormatArgument.JSON, FormatArgument.PRETTY_JSON],
         default=FormatArgument.CSV,
     )
 
