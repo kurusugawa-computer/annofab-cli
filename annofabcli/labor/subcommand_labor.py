@@ -2,8 +2,8 @@ import argparse
 
 import annofabcli
 import annofabcli.common.cli
-import annofabcli.labor.list_worktime_by_user
 import annofabcli.labor.list_worktime
+import annofabcli.labor.list_worktime_by_user
 
 
 def parse_args(parser: argparse.ArgumentParser):
