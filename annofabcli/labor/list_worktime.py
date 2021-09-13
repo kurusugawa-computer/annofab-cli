@@ -1,7 +1,7 @@
 import argparse
 import logging
 from dataclasses import dataclass
-from typing import Any, Dict, List, Optional, Set
+from typing import Any, Dict, List, Optional
 
 import annofabapi
 import more_itertools
