@@ -1,7 +1,7 @@
 import argparse
 import logging
 from dataclasses import dataclass
-from typing import Any, Dict, List, Optional,Set
+from typing import Any, Dict, List, Optional, Set
 
 import annofabapi
 import more_itertools
@@ -78,7 +78,7 @@ class ListLaborWorktimeMain:
         else:
             return ""
 
-    def get_inaccessible_project_ids(self, labor_list: List[Dict[str,Any]]) -> Set[str]:
+    def get_inaccessible_project_ids(self, labor_list: List[Dict[str,Any]]) -> List[str]:
         project_id_set = {labor["project_id"] for labor in labor_list}
         inaccessible_project_ids = []
         for project_id in project_id_set:
@@ -87,8 +87,6 @@ class ListLaborWorktimeMain:
                 logger.warning(f"project_id={project_id} のプロジェクトにアクセスできません。")
                 inaccessible_project_ids.append(project_id)
         return inaccessible_project_ids
-
-
 
     def get_labor_list_from_organization_name(
         self,
