@@ -62,8 +62,8 @@ class ListLaborWorktimeMain:
             project_id=labor["project_id"],
             project_title=project_title,
             account_id=labor["account_id"],
-            user_id=member["user_id"] if member is not None else labor["account_id"],
-            username=member["username"] if member is not None else labor["account_id"],
+            user_id=member["user_id"] if member is not None else None,
+            username=member["username"] if member is not None else None,
             biography=member["biography"] if member is not None else None,
             plan_worktime_hour=labor["plan_worktime"] if labor["plan_worktime"] is not None else 0,
             actual_worktime_hour=labor["actual_worktime"] if labor["actual_worktime"] is not None else 0,
@@ -77,6 +77,16 @@ class ListLaborWorktimeMain:
             return project["title"]
         else:
             return ""
+
+    def get_inaccessible_project_ids(self, labor_list: List[Dict[str, Any]]) -> List[str]:
+        project_id_set = {labor["project_id"] for labor in labor_list}
+        inaccessible_project_ids = []
+        for project_id in project_id_set:
+            project = self.service.wrapper.get_project_or_none(project_id)
+            if project is None:
+                logger.warning(f"project_id='{project_id}'のプロジェクトにアクセスできません。")
+                inaccessible_project_ids.append(project_id)
+        return inaccessible_project_ids
 
     def get_labor_list_from_organization_name(
         self,
@@ -113,6 +123,7 @@ class ListLaborWorktimeMain:
         project_list = self.service.wrapper.get_all_projects_of_organization(organization_name)
 
         new_labor_list = []
+        inaccessible_project_ids = self.get_inaccessible_project_ids(labor_list)
         for labor in labor_list:
             # 個人に紐付かないデータの場合は除去
             if labor["account_id"] is None:
@@ -124,10 +135,13 @@ class ListLaborWorktimeMain:
             ):
                 continue
 
-            try:
-                member = self.facade.get_project_member_from_account_id(labor["project_id"], labor["account_id"])
-            except Exception:  # pylint: disable=broad-except
-                logger.warning(f"project_id={labor['project_id']}: メンバ一覧を取得できませんでした。")
+            if labor["project_id"] not in inaccessible_project_ids:
+                try:
+                    member = self.facade.get_project_member_from_account_id(labor["project_id"], labor["account_id"])
+                except Exception:  # pylint: disable=broad-except
+                    logger.warning(f"project_id={labor['project_id']}: メンバ一覧を取得できませんでした。")
+                    member = None
+            else:
                 member = None
 
             project_title = self.get_project_title(project_list, labor["project_id"])
