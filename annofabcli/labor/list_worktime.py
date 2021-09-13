@@ -78,7 +78,7 @@ class ListLaborWorktimeMain:
         else:
             return ""
 
-    def get_inaccessible_project_ids(self, labor_list: List[Dict[str,Any]]) -> List[str]:
+    def get_inaccessible_project_ids(self, labor_list: List[Dict[str, Any]]) -> List[str]:
         project_id_set = {labor["project_id"] for labor in labor_list}
         inaccessible_project_ids = []
         for project_id in project_id_set:
