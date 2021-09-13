@@ -580,11 +580,11 @@ def parse_args(parser: argparse.ArgumentParser):
     parser.add_argument(
         "--task_json",
         type=str,
-        help="タスク情報が記載されたJSONファイルのパスを指定してます。JSONファイルは`$ annofabcli project download task`コマンドで取得できます。"
+        help="タスク情報が記載されたJSONファイルのパスを指定してます。JSONファイルは ``$ annofabcli project download task`` コマンドで取得できます。"
         "指定しない場合は、AnnoFabからタスク全件ファイルをダウンロードします。",
     )
 
-    parser.add_argument("--date", type=str, required=True, help="`YYYY-MM-DD`形式で実績の対象日を指定してください。")
+    parser.add_argument("--date", type=str, required=True, help="``YYYY-MM-DD`` 形式で実績の対象日を指定してください。")
 
     parser.add_argument(
         "--latest", action="store_true", help="最新のタスク一覧ファイルを参照します。このオプションを指定すると、タスク一覧ファイルを更新するのに数分待ちます。"
@@ -594,10 +594,10 @@ def parse_args(parser: argparse.ArgumentParser):
         "--wait_options",
         type=str,
         help="タスク一覧ファイルの更新が完了するまで待つ際のオプションを、JSON形式で指定してください。"
-        "`file://`を先頭に付けるとjsonファイルを指定できます。"
-        'デフォルは`{"interval":60, "max_tries":360}` です。'
-        "`interval`:完了したかを問い合わせる間隔[秒], "
-        "`max_tires`:完了したかの問い合わせを最大何回行うか。",
+        " ``file://`` を先頭に付けるとjsonファイルを指定できます。"
+        'デフォルは ``{"interval":60, "max_tries":360}`` です。'
+        "``interval`` :完了したかを問い合わせる間隔[秒], "
+        "``max_tires`` :完了したかの問い合わせを最大何回行うか。",
     )
 
     argument_parser.add_format([FormatArgument.PRETTY_JSON, FormatArgument.JSON], default=FormatArgument.PRETTY_JSON)

@@ -169,8 +169,13 @@ task_idの一覧を出力
     task2
     ...
 
+Usage Details
+=================================
 
-
+.. argparse::
+   :ref: annofabcli.task.list_tasks.add_parser
+   :prog: annofabcli task list
+   :nosubcommands:
 
 See also
 =================================

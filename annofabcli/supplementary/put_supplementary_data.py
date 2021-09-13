@@ -394,9 +394,9 @@ def parse_args(parser: argparse.ArgumentParser):
             "CSVのフォーマットは、「1列目:input_data_id(required), 2列目:supplementary_data_number(required), "
             "3列目:supplementary_data_name(required), 4列目:supplementary_data_path(required), 5列目:supplementary_data_id, "
             "6列目:supplementary_data_type, ヘッダ行なし, カンマ区切り」です。"
-            "supplementary_data_pathの先頭が`file://`の場合、ローカルのファイルを補助情報として登録します。 "
+            "supplementary_data_pathの先頭が ``file://`` の場合、ローカルのファイルを補助情報として登録します。 "
             "supplementary_data_idが空の場合はUUIDv4になります。"
-            "各項目の詳細は `putSupplementaryData` API を参照してください。"
+            "各項目の詳細は ``putSupplementaryData`` API を参照してください。"
         ),
     )
 
@@ -415,7 +415,7 @@ def parse_args(parser: argparse.ArgumentParser):
             "登録対象の補助情報データをJSON形式で指定してください。"
             f"(ex) '{json.dumps(JSON_SAMPLE)}' "
             "JSONの各キーは'--csv'に渡すCSVの各列に対応しています。"
-            "`file://`を先頭に付けるとjsonファイルを指定できます。"
+            " ``file://`` を先頭に付けるとjsonファイルを指定できます。"
         ),
     )
 
@@ -430,7 +430,7 @@ def parse_args(parser: argparse.ArgumentParser):
     parser.set_defaults(subcommand_func=main)
 
 
-def add_parser(subparsers: argparse._SubParsersAction):
+def add_parser(subparsers: Optional[argparse._SubParsersAction] = None):
     subcommand_name = "put"
     subcommand_help = "補助情報を登録します。"
     description = "補助情報を登録します。"
@@ -438,3 +438,4 @@ def add_parser(subparsers: argparse._SubParsersAction):
 
     parser = annofabcli.common.cli.add_parser(subparsers, subcommand_name, subcommand_help, description, epilog=epilog)
     parse_args(parser)
+    return parser

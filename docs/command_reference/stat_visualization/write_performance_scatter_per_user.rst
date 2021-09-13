@@ -39,7 +39,13 @@ Examples
     散布図-アノテーションあたり作業時間と累計作業時間の関係-実績時間.html
     散布図-教師付者の品質と作業量の関係.html
 
+Usage Details
+=================================
 
+.. argparse::
+   :ref: annofabcli.stat_visualization.write_performance_scatter_per_user.add_parser
+   :prog: annofabcli stat_visualization write_performance_scatter_per_user
+   :nosubcommands:
 
 
 See also

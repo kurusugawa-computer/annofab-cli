@@ -49,4 +49,10 @@ Examples
 
     $ annofabcli project_member change --project_id prj1 --all_user --role worker
 
+Usage Details
+=================================
 
+.. argparse::
+   :ref: annofabcli.project_member.change_project_members.add_parser
+   :prog: annofabcli project_member change
+   :nosubcommands:

@@ -1,6 +1,6 @@
 import argparse
 import logging
-from typing import List
+from typing import List, Optional
 
 import pandas
 import requests
@@ -100,7 +100,7 @@ def parse_args(parser: argparse.ArgumentParser):
         "--project_id",
         type=str,
         nargs="+",
-        help="ユーザを表示するプロジェクトのproject_idを指定してください。`file://`を先頭に付けると、一覧が記載されたファイルを指定できます。",
+        help="ユーザを表示するプロジェクトのproject_idを指定してください。 ``file://`` を先頭に付けると、一覧が記載されたファイルを指定できます。",
     )
 
     parser.add_argument("--include_inactive", action="store_true", help="脱退しているメンバも出力します。")
@@ -116,10 +116,11 @@ def parse_args(parser: argparse.ArgumentParser):
     parser.set_defaults(subcommand_func=main)
 
 
-def add_parser(subparsers: argparse._SubParsersAction):
+def add_parser(subparsers: Optional[argparse._SubParsersAction] = None):
     subcommand_name = "list"
     subcommand_help = "複数のプロジェクトのプロジェクトメンバを出力します。"
     description = "複数のプロジェクトのプロジェクトメンバを出力します。"
 
     parser = annofabcli.common.cli.add_parser(subparsers, subcommand_name, subcommand_help, description)
     parse_args(parser)
+    return parser

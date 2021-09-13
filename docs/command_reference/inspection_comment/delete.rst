@@ -46,6 +46,10 @@ Examples
     $  annofabcli inspection_comment delete --project_id prj1 --json file://inspection_id.json \
     --parallelism 4 --yes
 
+Usage Details
+=================================
 
-    
-    
+.. argparse::
+   :ref: annofabcli.inspection_comment.delete_inspection_comments.add_parser
+   :prog: annofabcli inspection_comment delete
+   :nosubcommands:

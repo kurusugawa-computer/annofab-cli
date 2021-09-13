@@ -134,7 +134,7 @@ def parse_args(parser: argparse.ArgumentParser):
         "--task_id",
         type=str,
         nargs="+",
-        help="対象のタスクのtask_idを指定します。" "`file://`を先頭に付けると、task_idの一覧が記載されたファイルを指定できます。",
+        help="対象のタスクのtask_idを指定します。" " ``file://`` を先頭に付けると、task_idの一覧が記載されたファイルを指定できます。",
     )
 
     parser.add_argument(
@@ -142,7 +142,7 @@ def parse_args(parser: argparse.ArgumentParser):
         type=Path,
         help="タスク履歴情報が記載されたJSONファイルのパスを指定すると、JSONに記載された情報を元にタスク履歴一覧を出力します。"
         "指定しない場合、JSONファイルをダウンロードします。"
-        "JSONファイルは`$ annofabcli project download task_history`コマンドで取得できます。",
+        "JSONファイルは ``$ annofabcli project download task_history`` コマンドで取得できます。",
     )
 
     argument_parser.add_format(
@@ -155,10 +155,11 @@ def parse_args(parser: argparse.ArgumentParser):
     parser.set_defaults(subcommand_func=main)
 
 
-def add_parser(subparsers: argparse._SubParsersAction):
+def add_parser(subparsers: Optional[argparse._SubParsersAction] = None):
     subcommand_name = "list_with_json"
     subcommand_help = "タスク履歴全件ファイルからタスク履歴の一覧を出力します。"
     description = "タスク履歴全件ファイルからタスク履歴の一覧を出力します。"
 
     parser = annofabcli.common.cli.add_parser(subparsers, subcommand_name, subcommand_help, description)
     parse_args(parser)
+    return parser

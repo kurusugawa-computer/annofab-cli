@@ -34,8 +34,13 @@ Examples
 =================================
 `annofabcli task_history list <../task_history/list.html>`_ コマンドの出力結果と同じです。
 
+Usage Details
+=================================
 
-
+.. argparse::
+   :ref: annofabcli.task_history.list_task_history_with_json.add_parser
+   :prog: annofabcli task_history list_with_json
+   :nosubcommands:
 
 
 See also

@@ -255,14 +255,14 @@ def parse_args(parser: argparse.ArgumentParser):
         help=(
             "削除する補助情報に紐づく入力データのinput_data_idを指定してください。"
             "指定した入力データに紐づくすべての補助情報を削除します。"
-            "`file://`を先頭に付けると、input_data_idの一覧が記載されたファイルを指定できます。"
+            " ``file://`` を先頭に付けると、input_data_idの一覧が記載されたファイルを指定できます。"
         ),
     )
 
     parser.set_defaults(subcommand_func=main)
 
 
-def add_parser(subparsers: argparse._SubParsersAction):
+def add_parser(subparsers: Optional[argparse._SubParsersAction] = None):
     subcommand_name = "delete"
     subcommand_help = "補助情報を削除します。"
     description = "補助情報を削除します。"
@@ -270,3 +270,4 @@ def add_parser(subparsers: argparse._SubParsersAction):
 
     parser = annofabcli.common.cli.add_parser(subparsers, subcommand_name, subcommand_help, description, epilog=epilog)
     parse_args(parser)
+    return parser

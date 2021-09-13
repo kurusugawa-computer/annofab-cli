@@ -54,6 +54,11 @@ Examples
     $ annofabcli input_data delete --project_id prj1 --input_data_id file://input_data_id.txt \
      --delete_supplementary
 
+Usage Details
+=================================
 
-
+.. argparse::
+   :ref: annofabcli.input_data.delete_input_data.add_parser
+   :prog: annofabcli input_data delete
+   :nosubcommands:
 

@@ -1,5 +1,6 @@
 import argparse
 import logging
+from typing import Optional
 
 import annofabapi
 from annofabapi.models import JobStatus, ProjectJobType
@@ -91,9 +92,10 @@ def parse_args(parser: argparse.ArgumentParser):
     parser.set_defaults(subcommand_func=main)
 
 
-def add_parser(subparsers: argparse._SubParsersAction):
+def add_parser(subparsers: Optional[argparse._SubParsersAction] = None):
     subcommand_name = "wait"
     subcommand_help = "ジョブの終了を待ちます。"
     description = "ジョブの終了を待ちます。"
     parser = annofabcli.common.cli.add_parser(subparsers, subcommand_name, subcommand_help, description)
     parse_args(parser)
+    return parser

@@ -69,6 +69,7 @@ ipython = "*"
 # ipythonとjediの組み合わせによるバグを避けるため、バージョン指定
 # https://zenn.dev/hige/articles/282bf79d47378e
 jedi = "<0.18"
+sphinx-argparse = "^0.2.5"
 
 [tool.poetry.scripts]
 annofabcli = "annofabcli.__main__:main"

@@ -145,7 +145,7 @@ def parse_args(parser: argparse.ArgumentParser):
         type=str,
         required=True,
         nargs="+",
-        help="コピー元のタスクのtask_idを指定してください。file://`を先頭に付けると、task_idの一覧が記載されたファイルを指定できます。",
+        help="コピー元のタスクのtask_idを指定してください。 ``file://`` を先頭に付けると、task_idの一覧が記載されたファイルを指定できます。",
     )
 
     parser.add_argument(
@@ -153,7 +153,7 @@ def parse_args(parser: argparse.ArgumentParser):
         type=str,
         required=True,
         nargs="+",
-        help="コピー先のタスクのtask_idを指定してください。file://`を先頭に付けると、task_idの一覧が記載されたファイルを指定できます。",
+        help="コピー先のタスクのtask_idを指定してください。 ``file://`` を先頭に付けると、task_idの一覧が記載されたファイルを指定できます。",
     )
 
     parser.add_argument("--copy_metadata", action="store_true", help="指定した場合、タスクのメタデータもコピーします。")
@@ -161,7 +161,7 @@ def parse_args(parser: argparse.ArgumentParser):
     parser.set_defaults(subcommand_func=main)
 
 
-def add_parser(subparsers: argparse._SubParsersAction):
+def add_parser(subparsers: Optional[argparse._SubParsersAction] = None):
     subcommand_name = "copy"
     subcommand_help = "タスクをコピーします。"
     description = "タスクをコピーします。"
@@ -169,3 +169,4 @@ def add_parser(subparsers: argparse._SubParsersAction):
 
     parser = annofabcli.common.cli.add_parser(subparsers, subcommand_name, subcommand_help, description, epilog=epilog)
     parse_args(parser)
+    return parser

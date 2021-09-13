@@ -165,9 +165,9 @@ def parse_args(parser: argparse.ArgumentParser):
         type=str,
         required=False,
         help="削除対象のアノテーションを検索する条件をJSON形式で指定します。"
-        "'label_id' または 'label_name_en'のいずれかは必ず指定してください。"
-        "`file://`を先頭に付けると、JSON形式のファイルを指定できます。"
-        f"(ex): `{example_annotation_query}`",
+        "``label_id`` または ``label_name_en`` のいずれかは必ず指定してください。"
+        "``file://`` を先頭に付けると、JSON形式のファイルを指定できます。"
+        f"(ex): ``{example_annotation_query}``",
     )
 
     parser.add_argument("--force", action="store_true", help="完了状態のタスクのアノテーションを削除します。")
@@ -175,19 +175,20 @@ def parse_args(parser: argparse.ArgumentParser):
         "--backup",
         type=str,
         required=False,
-        help="アノテーションのバックアップを保存するディレクトリを指定してください。アノテーションの復元は'annotation restore'コマンドで実現できます。",
+        help="アノテーションのバックアップを保存するディレクトリを指定してください。アノテーションの復元は ``annotation restore`` コマンドで実現できます。",
     )
     parser.set_defaults(subcommand_func=main)
 
 
-def add_parser(subparsers: argparse._SubParsersAction):
+def add_parser(subparsers: Optional[argparse._SubParsersAction] = None):
     subcommand_name = "delete"
     subcommand_help = "アノテーションを削除します。"
     description = (
         "タスク配下のアノテーションを削除します。" + "ただし、作業中状態のタスクのアノテーションは削除できません。"
-        "間違えてアノテーションを削除したときに復元できるようにするため、'--backup'でバックアップ用のディレクトリを指定することを推奨します。"
+        "間違えてアノテーションを削除したときに復元できるようにするため、 ``--backup`` でバックアップ用のディレクトリを指定することを推奨します。"
     )
     epilog = "オーナロールを持つユーザで実行してください。"
 
     parser = annofabcli.common.cli.add_parser(subparsers, subcommand_name, subcommand_help, description, epilog=epilog)
     parse_args(parser)
+    return parser

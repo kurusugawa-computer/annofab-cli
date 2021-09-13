@@ -207,7 +207,7 @@ def parse_args(parser: argparse.ArgumentParser):
         "--task_query",
         type=str,
         help="タスクを絞り込むためのクエリ条件をJSON形式で指定します。使用できるキーは task_id, status, phase, phase_stage です。"
-        "`file://`を先頭に付けると、JSON形式のファイルを指定できます。",
+        " ``file://`` を先頭に付けると、JSON形式のファイルを指定できます。",
     )
 
     id_name_list_group = parser.add_mutually_exclusive_group()
@@ -216,14 +216,14 @@ def parse_args(parser: argparse.ArgumentParser):
         "--task_id",
         type=str,
         nargs="+",
-        help="抽出するタスクのtask_idを指定してください。" + "`file://`を先頭に付けると、task_id の一覧が記載されたファイルを指定できます。",
+        help="抽出するタスクのtask_idを指定してください。" + " ``file://`` を先頭に付けると、task_id の一覧が記載されたファイルを指定できます。",
     )
 
     id_name_list_group.add_argument(
         "--exclude_task_id",
         type=str,
         nargs="+",
-        help="除外するタスクのtask_idを指定してください。" + "`file://`を先頭に付けると、task_id の一覧が記載されたファイルを指定できます。",
+        help="除外するタスクのtask_idを指定してください。" + " ``file://`` を先頭に付けると、task_id の一覧が記載されたファイルを指定できます。",
     )
 
     id_name_list_group.add_argument(
@@ -231,26 +231,26 @@ def parse_args(parser: argparse.ArgumentParser):
         "--input_data_id",
         type=str,
         nargs="+",
-        help="抽出する入力データのinput_data_idを指定してください。" + "`file://`を先頭に付けると、input_data_id の一覧が記載されたファイルを指定できます。",
+        help="抽出する入力データのinput_data_idを指定してください。" + " ``file://`` を先頭に付けると、input_data_id の一覧が記載されたファイルを指定できます。",
     )
     id_name_list_group.add_argument(
         "--exclude_input_data_id",
         type=str,
         nargs="+",
-        help="除外する入力データのinput_data_idを指定してください。" + "`file://`を先頭に付けると、input_data_id の一覧が記載されたファイルを指定できます。",
+        help="除外する入力データのinput_data_idを指定してください。" + " ``file://`` を先頭に付けると、input_data_id の一覧が記載されたファイルを指定できます。",
     )
 
     id_name_list_group.add_argument(
         "--input_data_name",
         type=str,
         nargs="+",
-        help="抽出する入力データのinput_data_nameを指定してください。" + "`file://`を先頭に付けると、input_data_name の一覧が記載されたファイルを指定できます。",
+        help="抽出する入力データのinput_data_nameを指定してください。" + " ``file://`` を先頭に付けると、input_data_name の一覧が記載されたファイルを指定できます。",
     )
     id_name_list_group.add_argument(
         "--exclude_input_data_name",
         type=str,
         nargs="+",
-        help="除外する入力データのinput_data_nameを指定してください。" + "`file://`を先頭に付けると、input_data_name の一覧が記載されたファイルを指定できます。",
+        help="除外する入力データのinput_data_nameを指定してください。" + " ``file://`` を先頭に付けると、input_data_name の一覧が記載されたファイルを指定できます。",
     )
 
     parser.add_argument("-o", "--output_dir", type=Path, required=True, help="出力先ディレクトリのパス")
@@ -258,7 +258,7 @@ def parse_args(parser: argparse.ArgumentParser):
     parser.set_defaults(subcommand_func=main)
 
 
-def add_parser(subparsers: argparse._SubParsersAction):
+def add_parser(subparsers: Optional[argparse._SubParsersAction] = None):
     subcommand_name = "filter_annotation"
 
     subcommand_help = "アノテーションzipから特定のファイルを絞り込んで、zip展開します。"
@@ -267,3 +267,4 @@ def add_parser(subparsers: argparse._SubParsersAction):
 
     parser = annofabcli.common.cli.add_parser(subparsers, subcommand_name, subcommand_help, description)
     parse_args(parser)
+    return parser

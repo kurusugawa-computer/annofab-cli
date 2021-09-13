@@ -81,3 +81,10 @@ JSON出力
      ...
     ]
 
+Usage Details
+=================================
+
+.. argparse::
+   :ref: annofabcli.job.list_generated_task_history.add_parser
+   :prog: annofabcli job list_task_creation_history
+   :nosubcommands:

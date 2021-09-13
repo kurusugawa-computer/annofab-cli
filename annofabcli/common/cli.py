@@ -55,7 +55,7 @@ def build_annofabapi_resource_and_login(args: argparse.Namespace) -> annofabapi.
 
 
 def add_parser(
-    subparsers: argparse._SubParsersAction,
+    subparsers: Optional[argparse._SubParsersAction],
     command_name: str,
     command_help: str,
     description: str,
@@ -77,6 +77,10 @@ def add_parser(
         サブコマンドのparser
 
     """
+
+    if subparsers is None:
+        subparsers = argparse.ArgumentParser().add_subparsers()
+
     parents = [create_parent_parser()] if is_subcommand else []
     parser = subparsers.add_parser(
         command_name,
@@ -97,7 +101,7 @@ def create_parent_parser() -> argparse.ArgumentParser:
     parent_parser = argparse.ArgumentParser(add_help=False)
     group = parent_parser.add_argument_group("global optional arguments")
 
-    group.add_argument("--yes", action="store_true", help="処理中に現れる問い合わせに対して、常に'yes'と回答します。")
+    group.add_argument("--yes", action="store_true", help="処理中に現れる問い合わせに対して、常に ``yes`` と回答します。")
 
     # EXAMPLE_CREDENTAILS = '{"user_id": "test_user", "password": "test_password"}'
     # group.add_argument(
@@ -109,11 +113,11 @@ def create_parent_parser() -> argparse.ArgumentParser:
     # )
 
     group.add_argument(
-        "--endpoint_url", type=str, help=f"AnnoFab WebAPIのエンドポイントを指定します。指定しない場合は'{DEFAULT_ENDPOINT_URL}'です。"
+        "--endpoint_url", type=str, help=f"AnnoFab WebAPIのエンドポイントを指定します。指定しない場合は`{DEFAULT_ENDPOINT_URL}`です。"
     )
 
     group.add_argument(
-        "--logdir", type=str, default=".log", help="ログファイルを保存するディレクトリを指定します。指定しない場合は`.log`ディレクトリ'にログファイルが保存されます。"
+        "--logdir", type=str, default=".log", help="ログファイルを保存するディレクトリを指定します。指定しない場合は ``.log`` ディレクトリ'にログファイルが保存されます。"
     )
 
     group.add_argument("--disable_log", action="store_true", help="ログを無効にします。")
@@ -121,7 +125,7 @@ def create_parent_parser() -> argparse.ArgumentParser:
     group.add_argument(
         "--logging_yaml",
         type=str,
-        help="ロギグングの設定ファイル(YAML)を指定します。指定した場合、`--logdir`オプションは無視されます。"
+        help="ロギグングの設定ファイル(YAML)を指定します。指定した場合、 ``--logdir`` オプションは無視されます。"
         "指定しない場合、デフォルトのロギングが設定されます。"
         "設定ファイルの書き方は https://docs.python.org/ja/3/howto/logging.html 参照してください。",
     )
@@ -365,7 +369,7 @@ class ArgumentParser:
         '--task_id` 引数を追加
         """
         if help_message is None:
-            help_message = "対象のタスクのtask_idを指定します。" + "`file://`を先頭に付けると、task_idの一覧が記載されたファイルを指定できます。"
+            help_message = "対象のタスクのtask_idを指定します。" + " ``file://`` を先頭に付けると、task_idの一覧が記載されたファイルを指定できます。"
 
         self.parser.add_argument("-t", "--task_id", type=str, required=required, nargs="+", help=help_message)
 
@@ -374,7 +378,7 @@ class ArgumentParser:
         '--input_data_id` 引数を追加
         """
         if help_message is None:
-            help_message = "対象の入力データのinput_data_idを指定します。" + "`file://`を先頭に付けると、input_data_idの一覧が記載されたファイルを指定できます。"
+            help_message = "対象の入力データのinput_data_idを指定します。" + " ``file://`` を先頭に付けると、input_data_idの一覧が記載されたファイルを指定できます。"
 
         self.parser.add_argument("-i", "--input_data_id", type=str, required=required, nargs="+", help=help_message)
 
@@ -395,8 +399,8 @@ class ArgumentParser:
         """
         if help_message is None:
             help_message = (
-                "CSVのフォーマットをJSON形式で指定します。`--format`が`csv`でないときは、このオプションは無視されます。"
-                "`file://`を先頭に付けると、JSON形式のファイルを指定できます。"
+                "CSVのフォーマットをJSON形式で指定します。 ``--format`` が ``csv`` でないときは、このオプションは無視されます。"
+                " ``file://`` を先頭に付けると、JSON形式のファイルを指定できます。"
                 "指定した値は、[pandas.DataFrame.to_csv](https://pandas.pydata.org/pandas-docs/stable/reference/api/pandas.DataFrame.to_csv.html) の引数として渡されます。"  # noqa: E501
             )
 
@@ -424,7 +428,7 @@ class ArgumentParser:
         if help_message is None:
             help_message = (
                 "タスクを絞り込むためのクエリ条件をJSON形式で指定します。"
-                "`file://`を先頭に付けると、JSON形式のファイルを指定できます。"
+                " ``file://`` を先頭に付けると、JSON形式のファイルを指定できます。"
                 "使用できるキーは、task_id, phase, phase_stage, status, user_id, account_id, no_user (bool値)  のみです。"
             )
         self.parser.add_argument("-tq", "--task_query", type=str, required=required, help=help_message)

@@ -195,7 +195,7 @@ def parse_args(parser: argparse.ArgumentParser):
             "プロジェクトメンバが記載されたCVファイルのパスを指定してください。"
             "CSVのフォーマットは、「1列目:user_id(required), 2列目:member_role(required), "
             "3列目:sampling_inspection_rate, 4列目:sampling_acceptance_rate, ヘッダ行なし, カンマ区切り」です。"
-            "member_roleは `owner`, `worker`, `accepter`, `training_data_user` のいずれかです。"
+            "member_roleは ``owner``, ``worker``, ``accepter``, ``training_data_user`` のいずれかです。"
             "sampling_inspection_rate, sampling_acceptance_rate を省略した場合は未設定になります。"
             "ただし自分自身は登録しません。"
         ),
@@ -206,7 +206,7 @@ def parse_args(parser: argparse.ArgumentParser):
     parser.set_defaults(subcommand_func=main)
 
 
-def add_parser(subparsers: argparse._SubParsersAction):
+def add_parser(subparsers: Optional[argparse._SubParsersAction] = None):
     subcommand_name = "put"
     subcommand_help = "プロジェクトメンバを登録する。"
     description = "プロジェクトメンバを登録する。"
@@ -214,3 +214,4 @@ def add_parser(subparsers: argparse._SubParsersAction):
 
     parser = annofabcli.common.cli.add_parser(subparsers, subcommand_name, subcommand_help, description, epilog=epilog)
     parse_args(parser)
+    return parser

@@ -206,9 +206,9 @@ def parse_args(parser: argparse.ArgumentParser):
         "--input_data_query",
         type=str,
         help="入力データの検索クエリをJSON形式で指定します。"
-        "`file://`を先頭に付けると、JSON形式のファイルを指定できます。"
+        " ``file://`` を先頭に付けると、JSON形式のファイルを指定できます。"
         "クエリのフォーマットは、[getInputDataList API](https://annofab.com/docs/api/#operation/getInputDataList)のクエリパラメータと同じです。"
-        "ただし `page`, `limit`キーは指定できません。",
+        "ただし ``page`` , ``limit`` キーは指定できません。",
     )
 
     query_group.add_argument(
@@ -216,8 +216,8 @@ def parse_args(parser: argparse.ArgumentParser):
         "--input_data_id",
         type=str,
         nargs="+",
-        help="対象のinput_data_idを指定します。`--input_data_query`引数とは同時に指定できません。"
-        "`file://`を先頭に付けると、input_data_idの一覧が記載されたファイルを指定できます。",
+        help="対象のinput_data_idを指定します。 ``--input_data_query`` 引数とは同時に指定できません。"
+        " ``file://`` を先頭に付けると、input_data_idの一覧が記載されたファイルを指定できます。",
     )
 
     parser.add_argument("--add_details", action="store_true", help="入力データの詳細情報を表示します（`parent_task_id_list`）")
@@ -226,7 +226,9 @@ def parse_args(parser: argparse.ArgumentParser):
         "--average_input_data_id_length",
         type=int,
         default=36,
-        help=("入力データIDの平均長さを指定します。`add_details`がTrueのときのみ有効です。" "デフォルトはUUIDv4の長さです。" "この値を元にして、タスク一括取得APIの実行回数を決めます。"),
+        help=(
+            "入力データIDの平均長さを指定します。 ``add_details`` がTrueのときのみ有効です。" "デフォルトはUUIDv4の長さです。" "この値を元にして、タスク一括取得APIの実行回数を決めます。"
+        ),
     )
 
     argument_parser.add_format(
@@ -245,10 +247,11 @@ def parse_args(parser: argparse.ArgumentParser):
     parser.set_defaults(subcommand_func=main)
 
 
-def add_parser(subparsers: argparse._SubParsersAction):
+def add_parser(subparsers: Optional[argparse._SubParsersAction] = None):
     subcommand_name = "list"
     subcommand_help = "入力データ一覧を出力します。"
     description = "入力データ一覧を出力します。AnnoFabの制約上、10,000件までしか出力されません。"
 
     parser = annofabcli.common.cli.add_parser(subparsers, subcommand_name, subcommand_help, description)
     parse_args(parser)
+    return parser

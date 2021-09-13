@@ -102,14 +102,14 @@ def parse_args(parser: argparse.ArgumentParser):
         "--task_id",
         type=str,
         nargs="+",
-        help="対象のタスクのtask_idを指定します。" + "`file://`を先頭に付けると、task_idの一覧が記載されたファイルを指定できます。",
+        help="対象のタスクのtask_idを指定します。" + " ``file://`` を先頭に付けると、task_idの一覧が記載されたファイルを指定できます。",
     )
     query_group.add_argument(
         "-i",
         "--input_data_id",
         type=str,
         nargs="+",
-        help="対象の入力データのinput_data_idを指定します。" + "`file://`を先頭に付けると、input_data_idの一覧が記載されたファイルを指定できます。",
+        help="対象の入力データのinput_data_idを指定します。" + " ``file://`` を先頭に付けると、input_data_idの一覧が記載されたファイルを指定できます。",
     )
 
     argument_parser.add_format(
@@ -122,10 +122,11 @@ def parse_args(parser: argparse.ArgumentParser):
     parser.set_defaults(subcommand_func=main)
 
 
-def add_parser(subparsers: argparse._SubParsersAction):
+def add_parser(subparsers: Optional[argparse._SubParsersAction] = None):
     subcommand_name = "list"
     subcommand_help = "補助情報一覧を出力します。"
     description = "補助情報一覧を出力します。"
 
     parser = annofabcli.common.cli.add_parser(subparsers, subcommand_name, subcommand_help, description)
     parse_args(parser)
+    return parser

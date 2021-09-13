@@ -65,4 +65,10 @@ JSON出力
         ...
     ]
 
+Usage Details
+=================================
 
+.. argparse::
+   :ref: annofabcli.job.list_job.add_parser
+   :prog: annofabcli job list
+   :nosubcommands:

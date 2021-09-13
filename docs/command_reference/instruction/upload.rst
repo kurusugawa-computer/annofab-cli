@@ -58,5 +58,10 @@ img要素のsrc属性がローカルの画像を参照している場合（http,
    
    1. Chrome開発ツールのElementタブで、html要素をコピー(Copy outerHTML)して、HTMLファイルを上書きする。
 
+Usage Details
+=================================
 
-
+.. argparse::
+   :ref: annofabcli.instruction.upload_instruction.add_parser
+   :prog: annofabcli instruction upload
+   :nosubcommands:

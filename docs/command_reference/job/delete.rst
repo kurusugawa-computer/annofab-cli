@@ -25,4 +25,10 @@ job_idは `annofabcli job list <../job/list.html>`_ コマンドで確認でき�
 
     $ annofabcli job delete --project_id prj1  --job_type gen-annotation --job_id job1 job2
 
+Usage Details
+=================================
 
+.. argparse::
+   :ref: annofabcli.job.delete_job.add_parser
+   :prog: annofabcli job delete
+   :nosubcommands:

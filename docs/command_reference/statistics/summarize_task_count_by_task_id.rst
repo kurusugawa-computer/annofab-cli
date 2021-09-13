@@ -53,3 +53,10 @@ Examples
 * other: 休憩中、作業中状態のタスク数
 * sum: 合計のタスク数
 
+Usage Details
+=================================
+
+.. argparse::
+   :ref: annofabcli.statistics.summarize_task_count_by_task_id.add_parser
+   :prog: annofabcli statistics summarize_task_count_by_task_id
+   :nosubcommands:

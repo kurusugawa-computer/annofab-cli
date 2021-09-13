@@ -48,3 +48,10 @@ Examples
     $  annofabcli project change_status --project_id file://project_id.txt \
     --parallelism 4 
 
+Usage Details
+=================================
+
+.. argparse::
+   :ref: annofabcli.project.update_annotation_zip.add_parser
+   :prog: annofabcli project update_annotation_zip
+   :nosubcommands:

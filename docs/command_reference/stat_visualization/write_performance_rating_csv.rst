@@ -84,8 +84,13 @@ Examples
     * deviation: 偏差値。値が小さいほど、生産性/品質が高い。
     * rank: 四分位数から算出したランキング。A,B,C,Dの順に生産性/品質が低くなる。
 
+Usage Details
+=================================
 
-
+.. argparse::
+   :ref: annofabcli.stat_visualization.write_performance_rating_csv.add_parser
+   :prog: annofabcli stat_visualization write_performance_rating_csv
+   :nosubcommands:
 
 See also
 =================================

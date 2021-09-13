@@ -108,21 +108,21 @@ def main(args):
 
 def parse_args(parser: argparse.ArgumentParser):
     parser.add_argument(
-        "--dir", type=Path, required=True, help="マスク対象のディレクトリ。`annofabcli statistics visualize`コマンドの出力結果。"
+        "--dir", type=Path, required=True, help="マスク対象のディレクトリ。 ``annofabcli statistics visualize`` コマンドの出力結果。"
     )
 
     parser.add_argument(
         "--not_masked_biography",
         type=str,
         nargs="+",
-        help="マスクしないユーザの`biography`を指定してください。",
+        help="マスクしないユーザの ``biography`` を指定してください。",
     )
 
     parser.add_argument(
         "--not_masked_user_id",
         type=str,
         nargs="+",
-        help="マスクしないユーザの`user_id`を指定してください。",
+        help="マスクしないユーザの ``user_id`` を指定してください。",
     )
 
     parser.add_argument(
@@ -142,9 +142,10 @@ def parse_args(parser: argparse.ArgumentParser):
     parser.set_defaults(subcommand_func=main)
 
 
-def add_parser(subparsers: argparse._SubParsersAction):
+def add_parser(subparsers: Optional[argparse._SubParsersAction] = None):
     subcommand_name = "mask_user_info"
-    subcommand_help = "`annofabcli statistics visualize`コマンドの出力結果のユーザ情報をマスクします。"
-    description = "`annofabcli statistics visualize`コマンドの出力結果のユーザ情報をマスクします。マスク対象のファイルのみ出力します。"
+    subcommand_help = "`annofabcli statistics visualize` コマンドの出力結果のユーザ情報をマスクします。"
+    description = "`annofabcli statistics visualize` コマンドの出力結果のユーザ情報をマスクします。マスク対象のファイルのみ出力します。"
     parser = annofabcli.common.cli.add_parser(subparsers, subcommand_name, subcommand_help, description)
     parse_args(parser)
+    return parser

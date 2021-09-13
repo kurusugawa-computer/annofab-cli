@@ -46,3 +46,11 @@ Examples
 * break: 休憩中状態のタスク数
 * on_hold: 保留中状態のタスク数
 * complete: 完了状態のタスク数
+
+Usage Details
+=================================
+
+.. argparse::
+   :ref: annofabcli.statistics.summarize_task_count_by_user.add_parser
+   :prog: annofabcli statistics summarize_task_count_by_user
+   :nosubcommands:

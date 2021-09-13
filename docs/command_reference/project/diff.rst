@@ -62,3 +62,10 @@ Examples
 
 ``dict`` 型の差分は、`dictdiffer <https://dictdiffer.readthedocs.io/en/latest/>`_ のフォーマットで出力されます。
 
+Usage Details
+=================================
+
+.. argparse::
+   :ref: annofabcli.project.diff_projects.add_parser
+   :prog: annofabcli project diff
+   :nosubcommands:

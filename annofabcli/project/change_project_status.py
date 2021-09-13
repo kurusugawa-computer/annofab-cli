@@ -178,7 +178,7 @@ def parse_args(parser: argparse.ArgumentParser):
         type=str,
         required=True,
         nargs="+",
-        help="対象プロジェクトのproject_idを指定します。`file://`を先頭に付けると、project_idの一覧が記載されたファイルを指定できます。",
+        help="対象プロジェクトのproject_idを指定します。 ``file://`` を先頭に付けると、project_idの一覧が記載されたファイルを指定できます。",
     )
 
     parser.add_argument(
@@ -192,13 +192,13 @@ def parse_args(parser: argparse.ArgumentParser):
     parser.add_argument(
         "--force",
         action="store_true",
-        help=f"`--status {ProjectStatus.SUSPENDED.value}`を指定している状態で、`--force`を指定した場合、作業中タスクが残っていても停止状態に変更します。",
+        help=f"`--status {ProjectStatus.SUSPENDED.value}`を指定している状態で、 ``--force`` を指定した場合、作業中タスクが残っていても停止状態に変更します。",
     )
 
     parser.set_defaults(subcommand_func=main)
 
 
-def add_parser(subparsers: argparse._SubParsersAction):
+def add_parser(subparsers: Optional[argparse._SubParsersAction] = None):
     subcommand_name = "change_status"
     subcommand_help = "プロジェクトのステータスを変更します。"
     description = "プロジェクトのステータスを変更します。"
@@ -206,3 +206,4 @@ def add_parser(subparsers: argparse._SubParsersAction):
 
     parser = annofabcli.common.cli.add_parser(subparsers, subcommand_name, subcommand_help, description, epilog=epilog)
     parse_args(parser)
+    return parser

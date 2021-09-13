@@ -409,7 +409,7 @@ def parse_args(parser: argparse.ArgumentParser):
             "入力データが記載されたCSVファイルのパスを指定してください。"
             "CSVのフォーマットは、「1列目:input_data_name(required), 2列目:input_data_path(required), 3列目:input_data_id, "
             "4列目:sign_required(bool), ヘッダ行なし, カンマ区切り」です。"
-            "input_data_pathの先頭が`file://`の場合、ローカルのファイルを入力データとして登録します。 "
+            "input_data_pathの先頭が ``file://`` の場合、ローカルのファイルを入力データとして登録します。 "
             "input_data_idが空の場合はUUIDv4になります。"
             "各項目の詳細は https://annofab.com/docs/api/#operation/putInputData を参照してください。"
         ),
@@ -425,7 +425,7 @@ def parse_args(parser: argparse.ArgumentParser):
             "登録対象の入力データをJSON形式で指定してください。"
             f"(ex) '{JSON_SAMPLE}' "
             "JSONの各キーは'--csv'に渡すCSVの各列に対応しています。"
-            "`file://`を先頭に付けるとjsonファイルを指定できます。"
+            " ``file://`` を先頭に付けるとjsonファイルを指定できます。"
         ),
     )
 
@@ -434,25 +434,26 @@ def parse_args(parser: argparse.ArgumentParser):
     parser.add_argument(
         "--overwrite",
         action="store_true",
-        help="指定した場合、input_data_idがすでに存在していたら上書きします。指定しなければ、スキップします。" "`--csv`を指定したときのみ有効なオプションです。",
+        help="指定した場合、input_data_idがすでに存在していたら上書きします。指定しなければ、スキップします。" " ``--csv`` を指定したときのみ有効なオプションです。",
     )
 
     parser.add_argument(
         "--input_data_name_for_zip",
         type=str,
-        help="入力データとして登録するzipファイルのinput_data_nameを指定してください。省略した場合、`--zip`のパスになります。" "`--zip`を指定したときのみ有効なオプションです。",
+        help="入力データとして登録するzipファイルのinput_data_nameを指定してください。省略した場合、 ``--zip`` のパスになります。"
+        " ``--zip`` を指定したときのみ有効なオプションです。",
     )
 
-    parser.add_argument("--wait", action="store_true", help=("入力データの登録が完了するまで待ちます。" "`--zip`を指定したときのみ有効なオプションです。"))
+    parser.add_argument("--wait", action="store_true", help=("入力データの登録が完了するまで待ちます。" " ``--zip`` を指定したときのみ有効なオプションです。"))
 
     parser.add_argument(
         "--wait_options",
         type=str,
-        help="入力データの登録が完了するまで待つ際のオプションをJSON形式で指定してください。`--wait`を指定したときのみ有効なオプションです。"
-        "`file://`を先頭に付けるとjsonファイルを指定できます。"
-        'デフォルとは`{"interval":60, "max_tries":360}` です。'
-        "`interval`:完了したかを問い合わせる間隔[秒], "
-        "`max_tires`:完了したかの問い合わせを最大何回行うか。",
+        help="入力データの登録が完了するまで待つ際のオプションをJSON形式で指定してください。 ``--wait`` を指定したときのみ有効なオプションです。"
+        " ``file://`` を先頭に付けるとjsonファイルを指定できます。"
+        'デフォルとは ``{"interval":60, "max_tries":360}`` です。'
+        "``interval`` :完了したかを問い合わせる間隔[秒], "
+        "``max_tires`` :完了したかの問い合わせを最大何回行うか。",
     )
 
     parser.add_argument(
@@ -462,7 +463,7 @@ def parse_args(parser: argparse.ArgumentParser):
     parser.set_defaults(subcommand_func=main)
 
 
-def add_parser(subparsers: argparse._SubParsersAction):
+def add_parser(subparsers: Optional[argparse._SubParsersAction] = None):
     subcommand_name = "put"
     subcommand_help = "入力データを登録します。"
     description = "CSVに記載された入力データ情報やzipファイルを、入力データとして登録します。"
@@ -470,3 +471,4 @@ def add_parser(subparsers: argparse._SubParsersAction):
 
     parser = annofabcli.common.cli.add_parser(subparsers, subcommand_name, subcommand_help, description, epilog=epilog)
     parse_args(parser)
+    return parser

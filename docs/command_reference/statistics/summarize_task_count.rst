@@ -56,4 +56,10 @@ Examples
 
 「一度も作業されていない教師付未着手」のタスク数は、先頭行（step=1, phase=annotation, simple_status=not_started）のtask_countから分かります。
 
+Usage Details
+=================================
 
+.. argparse::
+   :ref: annofabcli.statistics.summarize_task_count.add_parser
+   :prog: annofabcli statistics summarize_task_count
+   :nosubcommands:

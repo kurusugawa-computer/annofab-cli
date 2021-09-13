@@ -205,9 +205,9 @@ def parse_args(parser: argparse.ArgumentParser):
         type=str,
         required=True,
         help="変更対象のアノテーションを検索する条件をJSON形式で指定します。"
-        "'label_id' または 'label_name_en'のいずれかは必ず指定してください。"
-        "`file://`を先頭に付けると、JSON形式のファイルを指定できます。"
-        f"(ex): `{EXAMPLE_ANNOTATION_QUERY}`",
+        "``label_id`` または ``label_name_en`` のいずれかは必ず指定してください。"
+        "``file://`` を先頭に付けると、JSON形式のファイルを指定できます。"
+        f"(ex): ``{EXAMPLE_ANNOTATION_QUERY}``",
     )
 
     EXAMPLE_ATTIRBUTES = '[{"additional_data_definition_name_en": "occluded", "flag": false}]'
@@ -215,7 +215,7 @@ def parse_args(parser: argparse.ArgumentParser):
         "--attributes",
         type=str,
         required=True,
-        help="変更後の属性をJSON形式で指定します。" "`file://`を先頭に付けると、JSON形式のファイルを指定できます。" f"(ex): `{EXAMPLE_ATTIRBUTES}`",
+        help="変更後の属性をJSON形式で指定します。" "``file://`` を先頭に付けると、JSON形式のファイルを指定できます。" f"(ex): ``{EXAMPLE_ATTIRBUTES}``",
     )
 
     parser.add_argument("--force", action="store_true", help="完了状態のタスクのアノテーション属性も変更します。")
@@ -232,19 +232,20 @@ def parse_args(parser: argparse.ArgumentParser):
         "--backup",
         type=str,
         required=False,
-        help="アノテーションのバックアップを保存するディレクトリを指定してください。アノテーションの復元は'annotation restore'コマンドで実現できます。",
+        help="アノテーションのバックアップを保存するディレクトリを指定してください。アノテーションの復元は ``annotation restore`` コマンドで実現できます。",
     )
     parser.set_defaults(subcommand_func=main)
 
 
-def add_parser(subparsers: argparse._SubParsersAction):
+def add_parser(subparsers: Optional[argparse._SubParsersAction] = None) -> argparse.ArgumentParser:
     subcommand_name = "change_attributes"
     subcommand_help = "アノテーションの属性を変更します。"
     description = (
         "アノテーションの属性を一括で変更します。ただし、作業中状態のタスクのアノテーションの属性は変更できません。"
-        "間違えてアノテーション属性を変更したときに復元できるようにするため、'--backup'でバックアップ用のディレクトリを指定することを推奨します。"
+        "間違えてアノテーション属性を変更したときに復元できるようにするため、 ``--backup`` でバックアップ用のディレクトリを指定することを推奨します。"
     )
     epilog = "オーナロールを持つユーザで実行してください。"
 
     parser = annofabcli.common.cli.add_parser(subparsers, subcommand_name, subcommand_help, description, epilog=epilog)
     parse_args(parser)
+    return parser

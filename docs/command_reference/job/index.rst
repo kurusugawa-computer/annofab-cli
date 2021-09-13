@@ -20,3 +20,11 @@ Available Commands
    list_last
    list_task_creation_history
    wait
+
+Usage Details
+=================================
+
+.. argparse::
+   :ref: annofabcli.job.subcommand_job.add_parser
+   :prog: annofabcli job
+   :nosubcommands:

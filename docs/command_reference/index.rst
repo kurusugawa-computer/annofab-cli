@@ -26,3 +26,11 @@ Command Reference
    task/index
    task_history/index
 
+Usage Details
+=================================
+
+.. argparse::
+   :filename: ../annofabcli/__main__.py
+   :func: create_parser
+   :prog: annofabcli
+   :nosubcommands:

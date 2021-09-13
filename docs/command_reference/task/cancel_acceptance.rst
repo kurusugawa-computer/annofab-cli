@@ -73,4 +73,10 @@ Examples
     $  annofabcli task cancel_acceptance --project_id prj1 --task_id file://task.txt \
     --parallelism 4 --yes
 
+Usage Details
+=================================
 
+.. argparse::
+   :ref: annofabcli.task.cancel_acceptance.add_parser
+   :prog: annofabcli task cancel_acceptance
+   :nosubcommands:

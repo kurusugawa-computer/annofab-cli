@@ -1,4 +1,5 @@
 import argparse
+from typing import Optional
 
 import annofabcli.stat_visualization.mask_visualization_dir
 import annofabcli.stat_visualization.merge_visualization_dir
@@ -31,12 +32,13 @@ def parse_args(parser: argparse.ArgumentParser):
     write_whole_linegraph.add_parser(subparsers)
 
 
-def add_parser(subparsers: argparse._SubParsersAction):
+def add_parser(subparsers: Optional[argparse._SubParsersAction] = None):
     subcommand_name = "stat_visualization"
-    subcommand_help = "`annofabcli statistics visualization`コマンドの出力結果を加工するサブコマンド（アルファ版）"
-    description = "`annofabcli statistics visualization`コマンドの出力結果を加工するサブコマンド（アルファ版）"
+    subcommand_help = "`annofabcli statistics visualization` コマンドの出力結果を加工するサブコマンド（アルファ版）"
+    description = "`annofabcli statistics visualization` コマンドの出力結果を加工するサブコマンド（アルファ版）"
 
     parser = annofabcli.common.cli.add_parser(
         subparsers, subcommand_name, subcommand_help, description, is_subcommand=False
     )
     parse_args(parser)
+    return parser

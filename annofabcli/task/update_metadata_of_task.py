@@ -72,8 +72,8 @@ def parse_args(parser: argparse.ArgumentParser):
         "--metadata",
         required=True,
         type=str,
-        help="タスクに設定する`metadata`をJSON形式で指定してください。メタデータの値には文字列、数値、真偽値のいずれかを指定してください。"
-        "`file://`を先頭に付けると、JSON形式のファイルを指定できます。",
+        help="タスクに設定する ``metadata`` をJSON形式で指定してください。メタデータの値には文字列、数値、真偽値のいずれかを指定してください。"
+        " ``file://`` を先頭に付けると、JSON形式のファイルを指定できます。",
     )
 
     parser.add_argument(
@@ -87,7 +87,7 @@ def parse_args(parser: argparse.ArgumentParser):
     parser.set_defaults(subcommand_func=main)
 
 
-def add_parser(subparsers: argparse._SubParsersAction):
+def add_parser(subparsers: Optional[argparse._SubParsersAction] = None):
     subcommand_name = "update_metadata"
     subcommand_help = "タスクのメタデータを更新します。"
     description = "タスクのメタデータを上書きして更新します。"
@@ -96,3 +96,4 @@ def add_parser(subparsers: argparse._SubParsersAction):
         subparsers, subcommand_name, subcommand_help, description=description, epilog=epilog
     )
     parse_args(parser)
+    return parser

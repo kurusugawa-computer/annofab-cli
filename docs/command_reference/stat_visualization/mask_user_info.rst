@@ -83,6 +83,13 @@ Examples
     ├── タスクlist.csv
     └── メンバごとの生産性と品質.csv
 
+Usage Details
+=================================
+
+.. argparse::
+   :ref: annofabcli.stat_visualization.mask_visualization_dir.add_parser
+   :prog: annofabcli stat_visualization mask_user_info
+   :nosubcommands:
 
 See also
 =================================

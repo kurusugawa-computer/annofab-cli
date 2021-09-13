@@ -1,6 +1,6 @@
 import argparse
 import logging
-from typing import List
+from typing import List, Optional
 
 import annofabapi
 from annofabapi.models import ProjectJobType, ProjectMemberRole
@@ -71,16 +71,17 @@ def parse_args(parser: argparse.ArgumentParser):
         type=str,
         nargs="+",
         required=True,
-        help="削除するジョブのjob_idを指定します。" + "`file://`を先頭に付けると、job_idの一覧が記載されたファイルを指定できます。",
+        help="削除するジョブのjob_idを指定します。" + " ``file://`` を先頭に付けると、job_idの一覧が記載されたファイルを指定できます。",
     )
 
     parser.set_defaults(subcommand_func=main)
 
 
-def add_parser(subparsers: argparse._SubParsersAction):
+def add_parser(subparsers: Optional[argparse._SubParsersAction] = None):
     subcommand_name = "delete"
     subcommand_help = "ジョブを削除する。"
     description = "ジョブを削除する。"
     epilog = "オーナロールで実行してください。"
     parser = annofabcli.common.cli.add_parser(subparsers, subcommand_name, subcommand_help, description, epilog=epilog)
     parse_args(parser)
+    return parser

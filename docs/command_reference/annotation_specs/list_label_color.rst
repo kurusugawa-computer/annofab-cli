@@ -49,4 +49,11 @@ JSON出力
         ...
     }
 
+Usage Details
+=================================
+
+.. argparse::
+   :ref: annofabcli.annotation_specs.print_label_color.add_parser
+   :prog: annofabcli annotation_specs list_label_color
+   :nosubcommands:
 

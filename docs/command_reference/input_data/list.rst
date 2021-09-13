@@ -136,7 +136,13 @@ input_data_idの一覧を出力
     input2
     ...
 
+Usage Details
+=================================
 
+.. argparse::
+   :ref: annofabcli.input_data.list_input_data.add_parser
+   :prog: annofabcli input_data list
+   :nosubcommands:
 
 
 See also

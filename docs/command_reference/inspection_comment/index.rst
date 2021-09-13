@@ -19,3 +19,11 @@ Available Commands
    list
    list_with_json
    put
+
+Usage Details
+=================================
+
+.. argparse::
+   :ref: annofabcli.inspection_comment.subcommand_inspection_comment.add_parser
+   :prog: annofabcli inspection_comment
+   :nosubcommands:

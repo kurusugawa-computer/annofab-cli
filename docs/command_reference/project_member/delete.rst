@@ -28,6 +28,11 @@ Examples
 
     $ annofabcli project_member delete --user_id user1 user2  --project_id prj1 prj2
 
+Usage Details
+=================================
 
-
+.. argparse::
+   :ref: annofabcli.project_member.drop_project_members.add_parser
+   :prog: annofabcli project_member delete
+   :nosubcommands:
 

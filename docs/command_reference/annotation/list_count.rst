@@ -70,7 +70,13 @@ Examples
     WebAPIの都合上、集計対象のアノテーションは10,000個までしか検索できません。
     10,000件以上のアノテーションを集計する場合は、 `annofabcli statistics list_annotation_count <../statistics/list_annotation_count.html>`_ コマンドの使用を検討してください。
 
+Usage Details
+=================================
 
+.. argparse::
+    :ref: annofabcli.annotation.list_annotation_count.add_parser
+    :prog: annofabcli annotation list_count
+    :nosubcommands:
 
 
 See also

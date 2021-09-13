@@ -67,3 +67,10 @@ JSON出力
         ...
     ]
 
+Usage Details
+=================================
+
+.. argparse::
+   :ref: annofabcli.organization_member.list_organization_member.add_parser
+   :prog: annofabcli organization_member list
+   :nosubcommands:

@@ -213,7 +213,13 @@ CSVのフォーマットは以下の通りです。
 
 ``--task_query`` の詳細は、`Command line options <../../user_guide/command_line_options.html#task-query-tq>`_ を参照してください。
 
+Usage Details
+=================================
 
+.. argparse::
+   :ref: annofabcli.filesystem.draw_annotation.add_parser
+   :prog: annofabcli filesystem draw_annotation
+   :nosubcommands:
 
 
 See also

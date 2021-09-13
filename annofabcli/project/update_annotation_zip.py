@@ -204,7 +204,7 @@ def parse_args(parser: argparse.ArgumentParser):
         type=str,
         nargs="+",
         required=True,
-        help="対象のプロジェクトのproject_idを指定します。`file://`を先頭に付けると、project_idの一覧が記載されたファイルを指定できます。",
+        help="対象のプロジェクトのproject_idを指定します。 ``file://`` を先頭に付けると、project_idの一覧が記載されたファイルを指定できます。",
     )
 
     parser.add_argument(
@@ -217,17 +217,17 @@ def parse_args(parser: argparse.ArgumentParser):
         "--wait_options",
         type=str,
         help="アノテーションzipの最新化が完了するまで待つ際のオプションを、JSON形式で指定してください。"
-        "`file://`を先頭に付けるとjsonファイルを指定できます。"
-        'デフォルとは`{"interval":300, "max_tries":72}` です。'
-        "`interval`:完了したかを問い合わせる間隔[秒], "
-        "`max_tires`:完了したかの問い合わせを最大何回行うか。",
+        " ``file://`` を先頭に付けるとjsonファイルを指定できます。"
+        'デフォルとは ``{"interval":300, "max_tries":72}`` です。'
+        " ``interval`` :完了したかを問い合わせる間隔[秒], "
+        " ``max_tires`` :完了したかの問い合わせを最大何回行うか。",
     )
 
     parser.add_argument("--parallelism", type=int, help="並列度。指定しない場合は、project_idの個数が並列度になります。")
     parser.set_defaults(subcommand_func=main)
 
 
-def add_parser(subparsers: argparse._SubParsersAction):
+def add_parser(subparsers: Optional[argparse._SubParsersAction] = None):
     subcommand_name = "update_annotation_zip"
     subcommand_help = "アノテーションzipを更新します。"
     description = "アノテーションzipを更新します。"
@@ -235,3 +235,4 @@ def add_parser(subparsers: argparse._SubParsersAction):
 
     parser = annofabcli.common.cli.add_parser(subparsers, subcommand_name, subcommand_help, description, epilog=epilog)
     parse_args(parser)
+    return parser

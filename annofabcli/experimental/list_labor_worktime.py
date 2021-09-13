@@ -647,7 +647,8 @@ def parse_args(parser: argparse.ArgumentParser):
         type=str,
         required=True,
         nargs="+",
-        help="集計対象のプロジェクトのproject_idを指定します。複数指定した場合は合計値を出力します。\n" "`file://`を先頭に付けると、project_idの一覧が記載されたファイルを指定できます。",
+        help="集計対象のプロジェクトのproject_idを指定します。複数指定した場合は合計値を出力します。\n"
+        " ``file://`` を先頭に付けると、project_idの一覧が記載されたファイルを指定できます。",
     )
     parser.add_argument("--start_date", type=str, required=True, help="集計開始日(YYYY-mm-dd)")
     parser.add_argument("--end_date", type=str, required=True, help="集計終了日(YYYY-mm-dd)")
@@ -663,7 +664,7 @@ def parse_args(parser: argparse.ArgumentParser):
         type=str,
         nargs="+",
         required=False,
-        help="集計対象のユーザのuser_idを指定します。\n" "`file://`を先頭に付けると、user_idの一覧が記載されたファイルを指定できます。",
+        help="集計対象のユーザのuser_idを指定します。\n" " ``file://`` を先頭に付けると、user_idの一覧が記載されたファイルを指定できます。",
     )
     argument_parser.add_output(required=False)
 

@@ -129,8 +129,8 @@ def parse_args(parser: argparse.ArgumentParser):
         "--input_data_json",
         type=Path,
         help="入力データ情報が記載されたJSONファイルのパスを指定してください。"
-        "入力データのプロパティ`system_metadata.original_resolution`を参照して画像サイズを決めます。"
-        "JSONファイルは`$ annofabcli project download input_data`コマンドで取得できます。",
+        "入力データのプロパティ ``system_metadata.original_resolution`` を参照して画像サイズを決めます。"
+        "JSONファイルは ``$ annofabcli project download input_data`` コマンドで取得できます。",
     )
 
     parser.add_argument(
@@ -139,15 +139,15 @@ def parse_args(parser: argparse.ArgumentParser):
         nargs="+",
         required=False,
         help="画像化対象のlabel_nameを指定します。指定しない場合は、すべてのlabel_nameが画像化対象になります。"
-        "`file://`を先頭に付けると、label_name の一覧が記載されたファイルを指定できます。",
+        " ``file://`` を先頭に付けると、label_name の一覧が記載されたファイルを指定できます。",
     )
 
     parser.add_argument(
         "--label_color",
         type=str,
         required=True,
-        help='label_nameとRGBの関係をJSON形式で指定します。ex) `{"dog":[255,128,64], "cat":[0,0,255]}`'
-        "`file://`を先頭に付けると、JSON形式のファイルを指定できます。",
+        help='label_nameとRGBの関係をJSON形式で指定します。ex) ``{"dog":[255,128,64], "cat":[0,0,255]}``\n'
+        "``file://`` を先頭に付けると、JSON形式のファイルを指定できます。",
     )
 
     parser.add_argument("-o", "--output_dir", type=str, required=True, help="出力ディレクトリのパス")
@@ -174,13 +174,13 @@ def parse_args(parser: argparse.ArgumentParser):
     parser.add_argument(
         "--task_status_complete",
         action="store_true",
-        help="taskのstatusがcompleteの場合のみ画像を生成します。ただし非推奨です。替わりに'--task_query` を使ってください。",
+        help="taskのstatusがcompleteの場合のみ画像を生成します。ただし非推奨です。替わりに ``--task_query`` を使ってください。",
     )
 
     argument_parser.add_task_id(
         required=False,
         help_message=(
-            "画像化するタスクのtask_idを指定します。" "指定しない場合、すべてのタスクが画像化されます。" "`file://`を先頭に付けると、task_idの一覧が記載されたファイルを指定できます。"
+            "画像化するタスクのtask_idを指定します。" "指定しない場合、すべてのタスクが画像化されます。" " ``file://`` を先頭に付けると、task_idの一覧が記載されたファイルを指定できます。"
         ),
     )
 
@@ -189,13 +189,13 @@ def parse_args(parser: argparse.ArgumentParser):
         "--task_query",
         type=str,
         help="タスクを絞り込むためのクエリ条件をJSON形式で指定します。使用できるキーは task_id, status, phase, phase_stage です。"
-        "`file://`を先頭に付けると、JSON形式のファイルを指定できます。",
+        " ``file://`` を先頭に付けると、JSON形式のファイルを指定できます。",
     )
 
     parser.set_defaults(subcommand_func=main)
 
 
-def add_parser(subparsers: argparse._SubParsersAction):
+def add_parser(subparsers: Optional[argparse._SubParsersAction] = None):
     subcommand_name = "write_annotation_image"
 
     subcommand_help = "アノテーションzipを展開したディレクトリから、アノテーションの画像（Semantic Segmentation用）を生成する。"
@@ -204,3 +204,4 @@ def add_parser(subparsers: argparse._SubParsersAction):
 
     parser = annofabcli.common.cli.add_parser(subparsers, subcommand_name, subcommand_help, description)
     parse_args(parser)
+    return parser

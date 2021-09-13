@@ -7,7 +7,7 @@ import functools
 import logging
 import pprint
 from enum import Enum
-from typing import Any, Dict, List, Set, Tuple
+from typing import Any, Dict, List, Optional, Set, Tuple
 
 import annofabapi
 import dictdiffer
@@ -421,7 +421,7 @@ def main(args):
     DiffProjects(service, facade, args).main()
 
 
-def add_parser(subparsers: argparse._SubParsersAction):
+def add_parser(subparsers: Optional[argparse._SubParsersAction] = None):
     subcommand_name = "diff"
     subcommand_help = "プロジェクト間の差分を表示する。"
     description = "プロジェクト間の差分を表示する。" + "ただし、AnnoFabで生成されるIDや、変化する日時などは比較しない。"
@@ -429,3 +429,4 @@ def add_parser(subparsers: argparse._SubParsersAction):
 
     parser = annofabcli.common.cli.add_parser(subparsers, subcommand_name, subcommand_help, description, epilog=epilog)
     parse_args(parser)
+    return parser

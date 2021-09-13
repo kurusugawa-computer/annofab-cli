@@ -177,7 +177,7 @@ def parse_args(parser: argparse.ArgumentParser):
     argument_parser.add_project_id()
     argument_parser.add_task_id(
         required=True,
-        help_message="対象のタスクのtask_idを指定します。　" "`file://`を先頭に付けると、task_idの一覧が記載されたファイルを指定できます。",
+        help_message="対象のタスクのtask_idを指定します。　" " ``file://`` を先頭に付けると、task_idの一覧が記載されたファイルを指定できます。",
     )
 
     reply_comment_group = parser.add_mutually_exclusive_group()
@@ -206,7 +206,7 @@ def main(args):
     PrintInspections(service, facade, args).main()
 
 
-def add_parser(subparsers: argparse._SubParsersAction):
+def add_parser(subparsers: Optional[argparse._SubParsersAction] = None):
     subcommand_name = "list"
 
     subcommand_help = "検査コメント一覧を出力します。"
@@ -215,3 +215,4 @@ def add_parser(subparsers: argparse._SubParsersAction):
 
     parser = annofabcli.common.cli.add_parser(subparsers, subcommand_name, subcommand_help, description)
     parse_args(parser)
+    return parser

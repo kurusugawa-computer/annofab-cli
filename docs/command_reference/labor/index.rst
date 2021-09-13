@@ -16,4 +16,11 @@ Available Commands
    :titlesonly:
 
    list_worktime_by_user
-   
+
+Usage Details
+=================================
+
+.. argparse::
+   :ref: annofabcli.labor.subcommand_labor.add_parser
+   :prog: annofabcli labor
+   :nosubcommands:

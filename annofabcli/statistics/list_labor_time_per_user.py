@@ -1,6 +1,6 @@
 import argparse
 import logging
-from typing import Any, Dict, List
+from typing import Any, Dict, List, Optional
 
 import pandas
 
@@ -92,9 +92,10 @@ def main(args):
     LaborTimePerUser(service, facade, args).main()
 
 
-def add_parser(subparsers: argparse._SubParsersAction):
+def add_parser(subparsers: Optional[argparse._SubParsersAction] = None):
     subcommand_name = "list_labor_time_per_user"
     subcommand_help = "メンバ別の作業時間、完了数、差し戻し回数を日毎に出力する。"
     description = "メンバ別の作業時間、完了数、差し戻し回数を日毎にCSV形式で出力する。"
     parser = annofabcli.common.cli.add_parser(subparsers, subcommand_name, subcommand_help, description=description)
     parse_args(parser)
+    return parser

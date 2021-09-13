@@ -1,6 +1,6 @@
 import argparse
 import logging
-from typing import List
+from typing import List, Optional
 
 import annofabapi
 import requests
@@ -107,7 +107,7 @@ def parse_args(parser: argparse.ArgumentParser):
         type=str,
         nargs="+",
         required=True,
-        help="脱退させるユーザのuser_idを指定してください。`file://`を先頭に付けると、一覧が記載されたファイルを指定できます。",
+        help="脱退させるユーザのuser_idを指定してください。 ``file://`` を先頭に付けると、一覧が記載されたファイルを指定できます。",
     )
 
     drop_group = parser.add_mutually_exclusive_group(required=True)
@@ -116,7 +116,7 @@ def parse_args(parser: argparse.ArgumentParser):
         "--project_id",
         type=str,
         nargs="+",
-        help="脱退させるプロジェクトのproject_idを指定してください。`file://`を先頭に付けると、一覧が記載されたファイルを指定できます。",
+        help="脱退させるプロジェクトのproject_idを指定してください。 ``file://`` を先頭に付けると、一覧が記載されたファイルを指定できます。",
     )
 
     drop_group.add_argument(
@@ -126,7 +126,7 @@ def parse_args(parser: argparse.ArgumentParser):
     parser.set_defaults(subcommand_func=main)
 
 
-def add_parser(subparsers: argparse._SubParsersAction):
+def add_parser(subparsers: Optional[argparse._SubParsersAction] = None):
     subcommand_name = "delete"
     subcommand_help = "複数のプロジェクトから、ユーザを脱退させます。"
     description = "複数のプロジェクトから、ユーザを脱退させます。"
@@ -134,3 +134,4 @@ def add_parser(subparsers: argparse._SubParsersAction):
 
     parser = annofabcli.common.cli.add_parser(subparsers, subcommand_name, subcommand_help, description, epilog=epilog)
     parse_args(parser)
+    return parser

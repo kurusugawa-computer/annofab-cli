@@ -113,7 +113,7 @@ def parse_args(parser: argparse.ArgumentParser):
         help=(
             "ユーザごとの折れ線グラフに表示するユーザのuser_idを指定してください。"
             "指定しない場合は、上位20人のユーザ情報がプロットされます。"
-            "file://`を先頭に付けると、一覧が記載されたファイルを指定できます。"
+            " ``file://`` を先頭に付けると、一覧が記載されたファイルを指定できます。"
         ),
     )
 
@@ -126,9 +126,10 @@ def parse_args(parser: argparse.ArgumentParser):
     parser.set_defaults(subcommand_func=main)
 
 
-def add_parser(subparsers: argparse._SubParsersAction):
+def add_parser(subparsers: Optional[argparse._SubParsersAction] = None):
     subcommand_name = "merge"
-    subcommand_help = "`annofabcli statistics visualize`コマンドの出力結果をマージします。"
-    description = "`annofabcli statistics visualize`コマンドの出力結果をマージします。"
+    subcommand_help = "``annofabcli statistics visualize`` コマンドの出力結果をマージします。"
+    description = "``annofabcli statistics visualize`` コマンドの出力結果をマージします。"
     parser = annofabcli.common.cli.add_parser(subparsers, subcommand_name, subcommand_help, description)
     parse_args(parser)
+    return parser

@@ -19,3 +19,10 @@ Available Commands
    list
    put
 
+Usage Details
+=================================
+
+.. argparse::
+   :ref: annofabcli.supplementary.subcommand_supplementary.add_parser
+   :prog: annofabcli supplementary
+   :nosubcommands:

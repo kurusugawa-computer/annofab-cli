@@ -190,10 +190,11 @@ def parse_args(parser: argparse.ArgumentParser):
     parser.set_defaults(subcommand_func=main)
 
 
-def add_parser(subparsers: argparse._SubParsersAction):
+def add_parser(subparsers: Optional[argparse._SubParsersAction] = None):
     subcommand_name = "download"
     subcommand_help = "作業ガイドをダウンロードします。"
     description = "作業ガイドをダウンロードします。HTMLファイルにはbodyタグの内部が記載されています。"
     epilog = "オーナロールを持つユーザで実行してください。"
     parser = annofabcli.common.cli.add_parser(subparsers, subcommand_name, subcommand_help, description, epilog=epilog)
     parse_args(parser)
+    return parser

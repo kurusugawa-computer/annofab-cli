@@ -52,3 +52,10 @@ CSVに記載されていないメンバを削除する場合は、``--delete`` �
 
     $ annofabcli project_member put --project_id prj1 --csv members.csv --delete
 
+Usage Details
+=================================
+
+.. argparse::
+   :ref: annofabcli.project_member.put_project_members.add_parser
+   :prog: annofabcli project_member put
+   :nosubcommands:

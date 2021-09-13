@@ -154,7 +154,13 @@ Examples
     $ annofabcli annotation import --project_id prj1 --annotation annotation.zip \
     --force
 
+Usage Details
+=================================
 
+.. argparse::
+    :ref: annofabcli.annotation.import_annotation.add_parser
+    :prog: annofabcli annotation import
+    :nosubcommands:
 
 
 See also

@@ -17,4 +17,10 @@ Available Commands
 
    list
 
+Usage Details
+=================================
 
+.. argparse::
+   :ref: annofabcli.organization_member.subcommand_organization_member.add_parser
+   :prog: annofabcli organization_member
+   :nosubcommands:

@@ -223,7 +223,7 @@ def main(args):
     SummarizeTaskCount(service, facade, args).main()
 
 
-def add_parser(subparsers: argparse._SubParsersAction):
+def add_parser(subparsers: Optional[argparse._SubParsersAction] = None):
     subcommand_name = "summarize_task_count"
     subcommand_help = "タスクのフェーズ、ステータス、ステップごとにタスク数を出力します。"
     description = "タスクのフェーズ、ステータス、ステップごとにタスク数を、CSV形式で出力します。"
@@ -232,3 +232,4 @@ def add_parser(subparsers: argparse._SubParsersAction):
         subparsers, subcommand_name, subcommand_help, description=description, epilog=epilog
     )
     parse_args(parser)
+    return parser

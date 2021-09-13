@@ -69,4 +69,10 @@ JSON出力
     ...
     ]
 
+Usage Details
+=================================
 
+.. argparse::
+   :ref: annofabcli.supplementary.list_supplementary_data.add_parser
+   :prog: annofabcli supplementary list
+   :nosubcommands:

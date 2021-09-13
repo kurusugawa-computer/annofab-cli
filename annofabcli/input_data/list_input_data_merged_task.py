@@ -210,30 +210,30 @@ def parse_args(parser: argparse.ArgumentParser):
         "--input_data_json",
         type=str,
         help="入力データ情報が記載されたJSONファイルのパスを指定してください。JSONに記載された情報を元に出力します。"
-        "JSONファイルは`$ annofabcli project download input_data`コマンドで取得できます。",
+        "JSONファイルは ``$ annofabcli project download input_data`` コマンドで取得できます。",
     )
 
     parser.add_argument(
         "--task_json",
         type=str,
         help="タスク情報が記載されたJSONファイルのパスを指定してください。JSONに記載された情報を元に出力します。"
-        "JSONファイルは`$ annofabcli project download task`コマンドで取得できます。",
+        "JSONファイルは ``$ annofabcli project download task`` コマンドで取得できます。",
     )
 
     parser.add_argument(
         "--latest",
         action="store_true",
-        help="入力データ一覧ファイル、タスク一覧ファイルの更新が完了するまで待って、最新のファイルをダウンロードします。" "'--project_id'を指定したときのみ有効です。",
+        help="入力データ一覧ファイル、タスク一覧ファイルの更新が完了するまで待って、最新のファイルをダウンロードします。" " ``--project_id`` を指定したときのみ有効です。",
     )
 
     parser.add_argument(
         "--wait_options",
         type=str,
         help="入力データ一覧ファイル、タスク一覧ファイルの更新が完了するまで待つ際のオプションを、JSON形式で指定してください。"
-        "`file://`を先頭に付けるとjsonファイルを指定できます。"
-        'デフォルは`{"interval":60, "max_tries":360}` です。'
-        "`interval`:完了したかを問い合わせる間隔[秒], "
-        "`max_tires`:完了したかの問い合わせを最大何回行うか。",
+        " ``file://`` を先頭に付けるとjsonファイルを指定できます。"
+        'デフォルトは ``{"interval":60, "max_tries":360}`` です。'
+        "``interval`` :完了したかを問い合わせる間隔[秒], "
+        "``max_tires`` :完了したかの問い合わせを最大何回行うか。",
     )
 
     parser.add_argument("-i", "--input_data_id", type=str, nargs="+", help="指定したinput_data_idに完全一致する入力データを絞り込みます。")
@@ -246,8 +246,8 @@ def parse_args(parser: argparse.ArgumentParser):
         "--input_data_query",
         type=str,
         help="入力データの検索クエリをJSON形式で指定します。"
-        "`file://`を先頭に付けると、JSON形式のファイルを指定できます。"
-        "指定できるキーは、`input_data_id`, `input_data_name`, `input_data_path`です。",
+        " ``file://`` を先頭に付けると、JSON形式のファイルを指定できます。"
+        "指定できるキーは、``input_data_id`` , ``input_data_name`` , ``input_data_path`` です。",
     )
 
     argument_parser.add_format(
@@ -264,10 +264,11 @@ def parse_args(parser: argparse.ArgumentParser):
     parser.set_defaults(subcommand_func=main)
 
 
-def add_parser(subparsers: argparse._SubParsersAction):
+def add_parser(subparsers: Optional[argparse._SubParsersAction] = None):
     subcommand_name = "list_merged_task"
     subcommand_help = "タスク一覧と結合した入力データ一覧の情報を出力します。"
     description = "タスク一覧と結合した入力データ一覧の情報を出力します。"
 
     parser = annofabcli.common.cli.add_parser(subparsers, subcommand_name, subcommand_help, description)
     parse_args(parser)
+    return parser
