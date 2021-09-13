@@ -60,3 +60,41 @@ class TestCommandLine:
                 str(output_dir),
             ]
         )
+
+    def test_list_worktime_with_project_id(self):
+        output_file = out_dir / "labor/list_worktime.csv"
+        main(
+            [
+                "labor",
+                "list_worktime",
+                "--project_id",
+                project_id,
+                "--user_id",
+                service.api.login_user_id,
+                "--start_date",
+                "2019-09-01",
+                "--end_date",
+                "2019-09-01",
+                "--output",
+                str(output_file),
+            ]
+        )
+
+    def test_list_worktime_with_organization_name(self):
+        output_file = out_dir / "labor/list_worktime2.csv"
+        main(
+            [
+                "labor",
+                "list_worktime",
+                "--organization",
+                organization_name,
+                "--user_id",
+                service.api.login_user_id,
+                "--start_date",
+                "2019-09-01",
+                "--end_date",
+                "2019-09-01",
+                "--output",
+                str(output_file),
+            ]
+        )

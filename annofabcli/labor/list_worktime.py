@@ -1,7 +1,7 @@
 import argparse
 import logging
 from dataclasses import dataclass
-from typing import Any, Dict, List, Optional, Set
+from typing import Any, Dict, List, Optional
 
 import annofabapi
 import more_itertools
@@ -62,8 +62,8 @@ class ListLaborWorktimeMain:
             project_id=labor["project_id"],
             project_title=project_title,
             account_id=labor["account_id"],
-            user_id=member["user_id"] if member is not None else labor["account_id"],
-            username=member["username"] if member is not None else labor["account_id"],
+            user_id=member["user_id"] if member is not None else None,
+            username=member["username"] if member is not None else None,
             biography=member["biography"] if member is not None else None,
             plan_worktime_hour=labor["plan_worktime"] if labor["plan_worktime"] is not None else 0,
             actual_worktime_hour=labor["actual_worktime"] if labor["actual_worktime"] is not None else 0,
@@ -84,7 +84,7 @@ class ListLaborWorktimeMain:
         for project_id in project_id_set:
             project = self.service.wrapper.get_project_or_none(project_id)
             if project is None:
-                logger.warning(f"project_id={project_id} のプロジェクトにアクセスできません。")
+                logger.warning(f"project_id='{project_id}'のプロジェクトにアクセスできません。")
                 inaccessible_project_ids.append(project_id)
         return inaccessible_project_ids
 
