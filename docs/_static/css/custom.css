@@ -2,3 +2,8 @@
     font-size: 0.75rem;
     padding: 0.3rem 1.5rem;
 }
+
+#usage-details pre {
+    white-space: pre-line;
+    overflow-wrap: break-word;
+}
