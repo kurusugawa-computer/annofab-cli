@@ -84,7 +84,7 @@ class ListLaborWorktimeMain:
         for project_id in project_id_set:
             project = self.service.wrapper.get_project_or_none(project_id)
             if project is None:
-                logger.warning(f"project_id={project_id} のプロジェクトにアクセスできません。")
+                logger.warning(f"project_id='{project_id}'のプロジェクトにアクセスできません。")
                 inaccessible_project_ids.append(project_id)
         return inaccessible_project_ids
 
