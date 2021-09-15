@@ -146,3 +146,4 @@ Usage Details
    :prog: annofabcli input_data put
    :nosubcommands:
 
+

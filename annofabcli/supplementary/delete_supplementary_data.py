@@ -22,6 +22,39 @@ from annofabcli.common.cli import (
 
 logger = logging.getLogger(__name__)
 
+InputDataSupplementaryDataDict = Dict[str, List[str]]
+"""
+input_data_idとsupplementary_data_idの関係を表したdict.
+key: input_data_id, value: supplementary_data_idのList
+"""
+
+
+def get_input_data_supplementary_data_dict_from_csv(csv_path: Path) -> InputDataSupplementaryDataDict:
+    df = pandas.read_csv(
+        str(csv_path),
+        sep=",",
+        header=None,
+        names=[
+            "input_data_id",
+            "supplementary_data_id",
+        ],
+    )
+    input_data_dict = defaultdict(list)
+    for input_data_id, supplementary_data_id in zip(df["input_data_id"], df["supplementary_data_id"]):
+        input_data_dict[input_data_id].append(supplementary_data_id)
+    return input_data_dict
+
+
+def get_input_data_supplementary_data_dict_from_list(
+    supplementary_data_list: List[Dict[str, Any]]
+) -> InputDataSupplementaryDataDict:
+    input_data_dict = defaultdict(list)
+    for supplementary_data in supplementary_data_list:
+        input_data_id = supplementary_data["input_data_id"]
+        supplementary_data_id = supplementary_data["supplementary_data_id"]
+        input_data_dict[input_data_id].append(supplementary_data_id)
+    return input_data_dict
+
 
 class DeleteSupplementaryDataMain(AbstractCommandLineWithConfirmInterface):
     def __init__(self, service: annofabapi.Resource, all_yes: bool = False):
@@ -94,21 +127,9 @@ class DeleteSupplementaryDataMain(AbstractCommandLineWithConfirmInterface):
                 continue
         return deleted_count
 
-    def delete_supplementary_data_list_by_csv(self, project_id: str, csv_path: Path):
-        df = pandas.read_csv(
-            str(csv_path),
-            sep=",",
-            header=None,
-            names=[
-                "input_data_id",
-                "supplementary_data_id",
-            ],
-        )
-        input_data_dict = defaultdict(list)
-        for input_data_id, supplementary_data_id in zip(df["input_data_id"], df["supplementary_data_id"]):
-            input_data_dict[input_data_id].append(supplementary_data_id)
-
+    def delete_supplementary_data_list(self, project_id: str, input_data_dict: InputDataSupplementaryDataDict):
         deleted_count = 0
+        total_count = sum(len(e) for e in input_data_dict.values())
         for input_data_id, supplementary_data_id_list in input_data_dict.items():
             try:
                 deleted_count += self.delete_supplementary_data_list_for_input_data(
@@ -118,7 +139,7 @@ class DeleteSupplementaryDataMain(AbstractCommandLineWithConfirmInterface):
                 logger.warning(e)
                 logger.warning(f"入力データ(input_data_id={input_data_id})配下の補助情報の削除に失敗しました。")
 
-        logger.info(f"{deleted_count} / {len(df)} 件の補助情報を削除しました。")
+        logger.info(f"{deleted_count} / {total_count} 件の補助情報を削除しました。")
 
     def delete_supplementary_data_list_for_input_data2(
         self, project_id: str, input_data_id: str, supplementary_data_list: List[Dict[str, Any]]
@@ -220,7 +241,14 @@ class DeleteSupplementaryData(AbstractCommandLineInterface):
         main_obj = DeleteSupplementaryDataMain(self.service, all_yes=args.yes)
 
         if args.csv is not None:
-            main_obj.delete_supplementary_data_list_by_csv(project_id, csv_path=args.csv)
+            input_data_dict = get_input_data_supplementary_data_dict_from_csv(args.csv)
+            main_obj.delete_supplementary_data_list(project_id, input_data_dict)
+
+        elif args.json is not None:
+            supplementary_data_list = annofabcli.common.cli.get_json_from_args(args.json)
+            input_data_dict = get_input_data_supplementary_data_dict_from_list(supplementary_data_list)
+            main_obj.delete_supplementary_data_list(project_id, input_data_dict)
+
         elif args.input_data_id is not None:
             input_data_id_list = annofabcli.common.cli.get_list_from_args(args.input_data_id)
             main_obj.delete_supplementary_data_list_by_input_data_id(project_id, input_data_id_list=input_data_id_list)
@@ -242,8 +270,24 @@ def parse_args(parser: argparse.ArgumentParser):
         "--csv",
         type=str,
         help=(
-            "削除する補助情報が記載されたCSVファイルのパスを指定してください。"
-            "CSVのフォーマットは、「1列目:input_data_id(required), 2列目:supplementary_data_id(required) です。"
+            "削除する補助情報が記載されたCSVファイルのパスを指定してください。\n"
+            "CSVのフォーマットは以下の通りです。"
+            "詳細は https://annofab-cli.readthedocs.io/ja/latest/command_reference/supplementary/delete.html を参照してください。\n"
+            " * ヘッダ行なし, カンマ区切り\n"
+            " * 1列目: input_data_id (required)\n"
+            " * 2列目: supplementary_data_id (required)\n"
+        ),
+    )
+
+    JSON_SAMPLE = '[{"input_data_id" : "input1", "supplementary_data_id" : "supplementary1"}]'
+    group.add_argument(
+        "--json",
+        type=str,
+        help=(
+            "削除対象の補助情報データをJSON形式で指定してください。\n"
+            "JSONの各キーは ``--csv`` に渡すCSVの各列に対応しています。\n"
+            "``file://`` を先頭に付けるとjsonファイルを指定できます。\n"
+            f"(ex) ``{JSON_SAMPLE}``"
         ),
     )
 

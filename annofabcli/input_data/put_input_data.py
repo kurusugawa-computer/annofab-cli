@@ -434,14 +434,15 @@ def parse_args(parser: argparse.ArgumentParser):
         "--csv",
         type=Path,
         help=(
-            "入力データが記載されたCSVファイルのパスを指定してください。"
+            "入力データが記載されたCSVファイルのパスを指定してください。\n"
             "CSVのフォーマットは以下の通りです。"
             "詳細は https://annofab-cli.readthedocs.io/ja/latest/command_reference/input_data/put.html を参照してください。\n"
+            "\n"
             " * ヘッダ行なし, カンマ区切り\n"
-            " * 1列目: input_data_name(required)\n"
-            " * 2列目: input_data_path(required)\n"
+            " * 1列目: input_data_name (required)\n"
+            " * 2列目: input_data_path (required)\n"
             " * 3列目: input_data_id\n"
-            " * 4列目: sign_required(bool)\n"
+            " * 4列目: sign_required (bool)\n"
         ),
     )
 
