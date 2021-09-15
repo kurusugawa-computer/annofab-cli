@@ -22,15 +22,12 @@ annofab_config = dict(inifile.items("annofab"))
 
 project_id = annofab_config["project_id"]
 task_id = annofab_config["task_id"]
-service = annofabapi.build()
+annofab_service = annofabapi.build()
+task, _ = annofab_service.api.get_task(project_id, task_id)
+input_data_id = task["input_data_id_list"][0]
 
 
-class TestCommandLine:
-    @classmethod
-    def setup_class(cls):
-        task, _ = service.api.get_task(project_id, task_id)
-        cls.input_data_id = task["input_data_id_list"][0]
-
+class TestCommandLine__put:
     def test_put_supplementar__with_csv(self):
         main(
             [
@@ -48,7 +45,7 @@ class TestCommandLine:
     def test_put_supplementar__with_json(self):
         json_args = [
             {
-                "input_data_id": self.input_data_id,
+                "input_data_id": input_data_id,
                 "supplementary_data_number": 1,
                 "supplementary_data_name": "foo-data",
                 "supplementary_data_path": "file://tests/data/lenna.png",
@@ -69,10 +66,14 @@ class TestCommandLine:
             ]
         )
 
+
+class TestCommandLine__list:
     def test_list_supplementary(self):
         main(["supplementary", "list", "--project_id", project_id, "--input_data_id", "foo"])
 
-    def test_delete_supplementar(self):
+
+class TestCommandLine__delete:
+    def test_delete_supplementar__with_csv(self):
         main(
             [
                 "supplementary",
@@ -81,6 +82,39 @@ class TestCommandLine:
                 project_id,
                 "--csv",
                 str(data_dir / "deleted-supplementary.csv"),
+                "--yes",
+            ]
+        )
+
+    def test_delete_supplementar__with_json(self):
+        json_args = [
+            {
+                "input_data_id": "input1",
+                "supplementary_data_id": "supplementary1",
+            }
+        ]
+
+        main(
+            [
+                "supplementary",
+                "delete",
+                "--project_id",
+                project_id,
+                "--json",
+                json.dumps(json_args),
+                "--yes",
+            ]
+        )
+
+    def test_delete_supplementar__with_input_data_id(self):
+        main(
+            [
+                "supplementary",
+                "delete",
+                "--project_id",
+                project_id,
+                "--input_data_id",
+                "input1",
                 "--yes",
             ]
         )

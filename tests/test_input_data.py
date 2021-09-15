@@ -23,19 +23,18 @@ annofab_config = dict(inifile.items("annofab"))
 
 project_id = annofab_config["project_id"]
 task_id = annofab_config["task_id"]
-service = annofabapi.build()
+annofab_service = annofabapi.build()
+
+task, _ = annofab_service.api.get_task(project_id, task_id)
+input_data_id = task["input_data_id_list"][0]
 
 
-class TestCommandLine:
-    @classmethod
-    def setup_class(cls):
-        annofab_service = annofabapi.build()
-        task, _ = annofab_service.api.get_task(project_id, task_id)
-        cls.input_data_id = task["input_data_id_list"][0]
-
+class TestCommandLine__delete:
     def test_delete_input_data(self):
         main(["input_data", "delete", "--project_id", project_id, "--input_data_id", "foo", "--yes"])
 
+
+class TestCommandLine__list:
     def test_list_input_data(self):
         out_file = str(out_dir / "input_data.json")
         main(
@@ -52,6 +51,8 @@ class TestCommandLine:
             ]
         )
 
+
+class TestCommandLine__list_merged_task:
     def test_list_input_data_merged_task(self):
         out_file = str(out_dir / "input_data.csv")
         main(
@@ -65,6 +66,8 @@ class TestCommandLine:
             ]
         )
 
+
+class TestCommandLine__list_with_json:
     def test_list_input_data_with_json(self):
         out_file = str(out_dir / "input_data.csv")
         main(
@@ -83,6 +86,8 @@ class TestCommandLine:
             ]
         )
 
+
+class TestCommandLine__put:
     def test_put_input_data__with_csv(self):
         csv_file = str(data_dir / "input_data2.csv")
         main(
@@ -114,7 +119,7 @@ class TestCommandLine:
                 "--yes",
                 "--parallelism",
                 "2",
-                "--allow_duplicated_input_data"
+                "--allow_duplicated_input_data",
             ]
         )
 
@@ -186,7 +191,7 @@ class TestCommandLine:
             {
                 "input_data_name": "test1",
                 "input_data_path": "file://tests/data/lenna.png",
-            }
+            },
         ]
         main(
             [
@@ -200,7 +205,7 @@ class TestCommandLine:
                 "--yes",
                 "--parallelism",
                 "2",
-                "--allow_duplicated_input_data"
+                "--allow_duplicated_input_data",
             ]
         )
 
@@ -213,7 +218,7 @@ class TestCommandLine:
             {
                 "input_data_name": "test2",
                 "input_data_path": "file://tests/data/lenna.png",
-            }
+            },
         ]
         with pytest.raises(Exception):
             main(
@@ -240,7 +245,7 @@ class TestCommandLine:
             {
                 "input_data_name": "test1",
                 "input_data_path": "file://tests/data/lenna2.png",
-            }
+            },
         ]
         with pytest.raises(Exception):
             main(
@@ -275,6 +280,8 @@ class TestCommandLine:
             ]
         )
 
+
+class TestCommandLine__update_metadata:
     def test_update_metadata(self):
         main(
             [
