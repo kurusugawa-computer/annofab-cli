@@ -48,6 +48,21 @@ class ListLaborWorktimeMain:
         self.facade = AnnofabApiFacade(service)
 
     @staticmethod
+    def is_target_labor(self, labor: Dict[str, Any]) -> bool:
+        """集計対象の労務管理情報か否か"""
+        # 個人に紐付かないデータの場合は除去
+        if labor["account_id"] is None:
+            return False
+
+        # 実績作業時間と予定作業時間の両方が無効な場合は除去
+        if (labor["actual_worktime"] is None or labor["actual_worktime"] == 0) and (
+            labor["plan_worktime"] is None or labor["plan_worktime"] == 0
+        ):
+            return False
+
+        return True
+
+    @staticmethod
     def _get_labor_worktime(
         labor: Dict[str, Any],
         *,
@@ -123,18 +138,12 @@ class ListLaborWorktimeMain:
         project_list = self.service.wrapper.get_all_projects_of_organization(organization_name)
 
         new_labor_list = []
+
+        # 労務管理情報の絞り込み
+        labor_list = [e for e in labor_list if self.is_target_labor(e)]
+
         inaccessible_project_ids = self.get_inaccessible_project_ids(labor_list)
         for labor in labor_list:
-            # 個人に紐付かないデータの場合は除去
-            if labor["account_id"] is None:
-                continue
-
-            # 実績作業時間と予定作業時間の両方が無効な場合は除去
-            if (labor["actual_worktime"] is None or labor["actual_worktime"] == 0) and (
-                labor["plan_worktime"] is None or labor["plan_worktime"] == 0
-            ):
-                continue
-
             if labor["project_id"] not in inaccessible_project_ids:
                 try:
                     member = self.facade.get_project_member_from_account_id(labor["project_id"], labor["account_id"])
@@ -193,18 +202,11 @@ class ListLaborWorktimeMain:
                 )
                 labor_list.extend(tmp_labor_list)
 
+        # 労務管理情報の絞り込み
+        labor_list = [e for e in labor_list if self.is_target_labor(e)]
         new_labor_list = []
+
         for labor in labor_list:
-            # 個人に紐付かないデータの場合は除去
-            if labor["account_id"] is None:
-                continue
-
-            # 実績作業時間と予定作業時間の両方が無効な場合は除去
-            if (labor["actual_worktime"] is None or labor["actual_worktime"] == 0) and (
-                labor["plan_worktime"] is None or labor["plan_worktime"] == 0
-            ):
-                continue
-
             member = self.facade.get_project_member_from_account_id(project_id, labor["account_id"])
 
             new_labor = self._get_labor_worktime(
