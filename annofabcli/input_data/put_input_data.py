@@ -225,7 +225,7 @@ class PutInputData(AbstractCommandLineInterface):
         logger.info(f"{project_title} に、{count_put_input_data} / {len(input_data_list)} 件の入力データを登録しました。")
 
     @staticmethod
-    def get_input_data_list_from_csv(csv_path: Path) -> List[CsvInputData]:
+    def get_input_data_list_from_csv(csv_path: Path, allow_duplicated_input_data: bool) -> List[CsvInputData]:
         def create_input_data(e):
             input_data_id = e.input_data_id if not pandas.isna(e.input_data_id) else None
             sign_required = bool(strtobool(str(e.sign_required))) if not pandas.isna(e.sign_required) else None
@@ -244,26 +244,48 @@ class PutInputData(AbstractCommandLineInterface):
         )
         df_duplicated_input_data_name = df[df["input_data_name"].duplicated()]
         if len(df_duplicated_input_data_name) > 0:
-            logger.error(
+            logger.warning(
                 f"{csv_path}に記載されている`input_data_name`が重複しています。\n"
-                f"{df_duplicated_input_data_name['input_data_name'].to_string(index=False)}"
+                f"{df_duplicated_input_data_name['input_data_name'].unique()}"
             )
-            raise RuntimeError(f"{csv_path}に記載されている`input_data_name`が重複しています。")
+            if not allow_duplicated_input_data:
+                raise RuntimeError(f"{csv_path}に記載されている`input_data_name`が重複しています。")
 
         df_duplicated_input_data_path = df[df["input_data_path"].duplicated()]
         if len(df_duplicated_input_data_path) > 0:
-            logger.error(
+            logger.warning(
                 f"{csv_path}に記載されている`input_data_path`が重複しています。\n"
-                f"{df_duplicated_input_data_name['input_data_path'].to_string(index=False)}"
+                f"{df_duplicated_input_data_path['input_data_path'].unique()}"
             )
-            raise RuntimeError(f"{csv_path}に記載されている`input_data_path`が重複しています。")
+            if not allow_duplicated_input_data:
+                raise RuntimeError(f"{csv_path}に記載されている`input_data_path`が重複しています。")
 
         input_data_list = [create_input_data(e) for e in df.itertuples()]
 
         return input_data_list
 
     @staticmethod
-    def get_input_data_list_from_dict(input_data_dict_list: List[Dict[str, Any]]) -> List[CsvInputData]:
+    def get_input_data_list_from_dict(
+        input_data_dict_list: List[Dict[str, Any]], allow_duplicated_input_data: bool
+    ) -> List[CsvInputData]:
+        # 重複チェック
+        df = pandas.DataFrame(input_data_dict_list)
+        df_duplicated_input_data_name = df[df["input_data_name"].duplicated()]
+        if len(df_duplicated_input_data_name) > 0:
+            logger.warning(
+                f"`input_data_name`が重複しています。\n" f"{df_duplicated_input_data_name['input_data_name'].unique()}"
+            )
+            if not allow_duplicated_input_data:
+                raise RuntimeError(f"`input_data_name`が重複しています。")
+
+        df_duplicated_input_data_path = df[df["input_data_path"].duplicated()]
+        if len(df_duplicated_input_data_path) > 0:
+            logger.warning(
+                f"`input_data_path`が重複しています。\n" f"{df_duplicated_input_data_path['input_data_path'].unique()}"
+            )
+            if not allow_duplicated_input_data:
+                raise RuntimeError(f"`input_data_path`が重複しています。")
+
         return CsvInputData.schema().load(input_data_dict_list, many=True, unknown="exclude")
 
     def put_input_data_from_zip_file(
@@ -364,14 +386,18 @@ class PutInputData(AbstractCommandLineInterface):
         super().validate_project(project_id, [ProjectMemberRole.OWNER])
 
         if args.csv is not None:
-            input_data_list = self.get_input_data_list_from_csv(Path(args.csv))
+            input_data_list = self.get_input_data_list_from_csv(
+                args.csv, allow_duplicated_input_data=args.allow_duplicated_input_data
+            )
             self.put_input_data_list(
                 project_id, input_data_list=input_data_list, overwrite=args.overwrite, parallelism=args.parallelism
             )
 
         elif args.json is not None:
             input_data_dict_list = get_json_from_args(args.json)
-            input_data_list = self.get_input_data_list_from_dict(input_data_dict_list)
+            input_data_list = self.get_input_data_list_from_dict(
+                input_data_dict_list, allow_duplicated_input_data=args.allow_duplicated_input_data
+            )
             self.put_input_data_list(
                 project_id, input_data_list=input_data_list, overwrite=args.overwrite, parallelism=args.parallelism
             )
@@ -380,7 +406,7 @@ class PutInputData(AbstractCommandLineInterface):
             wait_options = get_wait_options_from_args(get_json_from_args(args.wait_options), DEFAULT_WAIT_OPTIONS)
             self.put_input_data_from_zip_file(
                 project_id,
-                zip_file=Path(args.zip),
+                zip_file=args.zip,
                 input_data_name_for_zip=args.input_data_name_for_zip,
                 wait=args.wait,
                 wait_options=wait_options,
@@ -404,14 +430,17 @@ def parse_args(parser: argparse.ArgumentParser):
     file_group = parser.add_mutually_exclusive_group(required=True)
     file_group.add_argument(
         "--csv",
-        type=str,
+        type=Path,
         help=(
-            "入力データが記載されたCSVファイルのパスを指定してください。"
-            "CSVのフォーマットは、「1列目:input_data_name(required), 2列目:input_data_path(required), 3列目:input_data_id, "
-            "4列目:sign_required(bool), ヘッダ行なし, カンマ区切り」です。"
-            "input_data_pathの先頭が ``file://`` の場合、ローカルのファイルを入力データとして登録します。 "
-            "input_data_idが空の場合はUUIDv4になります。"
-            "各項目の詳細は https://annofab.com/docs/api/#operation/putInputData を参照してください。"
+            "入力データが記載されたCSVファイルのパスを指定してください。\n"
+            "CSVのフォーマットは以下の通りです。"
+            "詳細は https://annofab-cli.readthedocs.io/ja/latest/command_reference/input_data/put.html を参照してください。\n"
+            "\n"
+            " * ヘッダ行なし, カンマ区切り\n"
+            " * 1列目: input_data_name (required)\n"
+            " * 2列目: input_data_path (required)\n"
+            " * 3列目: input_data_id\n"
+            " * 4列目: sign_required (bool)\n"
         ),
     )
 
@@ -422,19 +451,19 @@ def parse_args(parser: argparse.ArgumentParser):
         "--json",
         type=str,
         help=(
-            "登録対象の入力データをJSON形式で指定してください。"
-            f"(ex) '{JSON_SAMPLE}' "
-            "JSONの各キーは'--csv'に渡すCSVの各列に対応しています。"
-            " ``file://`` を先頭に付けるとjsonファイルを指定できます。"
+            "登録対象の入力データをJSON形式で指定してください。\n"
+            "JSONの各キーは ``--csv`` に渡すCSVの各列に対応しています。\n"
+            "``file://`` を先頭に付けるとjsonファイルを指定できます。\n"
+            f"(ex) ``{JSON_SAMPLE}``"
         ),
     )
 
-    file_group.add_argument("--zip", type=str, help=("入力データとして登録するzipファイルのパスを指定してください。"))
+    file_group.add_argument("--zip", type=Path, help=("入力データとして登録するzipファイルのパスを指定してください。"))
 
     parser.add_argument(
         "--overwrite",
         action="store_true",
-        help="指定した場合、input_data_idがすでに存在していたら上書きします。指定しなければ、スキップします。" " ``--csv`` を指定したときのみ有効なオプションです。",
+        help="指定した場合、input_data_idがすでに存在していたら上書きします。指定しなければ、スキップします。" " ``--csv`` , `--json`` を指定したときのみ有効なオプションです。",
     )
 
     parser.add_argument(
@@ -442,6 +471,15 @@ def parse_args(parser: argparse.ArgumentParser):
         type=str,
         help="入力データとして登録するzipファイルのinput_data_nameを指定してください。省略した場合、 ``--zip`` のパスになります。"
         " ``--zip`` を指定したときのみ有効なオプションです。",
+    )
+
+    parser.add_argument(
+        "--allow_duplicated_input_data",
+        action="store_true",
+        help=(
+            "``--csv`` , ``--json`` に渡した入力データの重複（input_data_name, input_data_path）を許可します。\n"
+            "``--csv`` , ``--json` `を指定したときのみ有効なオプションです。"
+        ),
     )
 
     parser.add_argument("--wait", action="store_true", help=("入力データの登録が完了するまで待ちます。" " ``--zip`` を指定したときのみ有効なオプションです。"))
@@ -457,7 +495,9 @@ def parse_args(parser: argparse.ArgumentParser):
     )
 
     parser.add_argument(
-        "--parallelism", type=int, help="並列度。指定しない場合は、逐次的に処理します。" "'--csv'を指定したときのみ有効なオプションです。また、必ず'--yes'を指定してください。"
+        "--parallelism",
+        type=int,
+        help="並列度。指定しない場合は、逐次的に処理します。" "``--csv`` , ``--json`` を指定したときのみ有効なオプションです。また、必ず ``--yes`` を指定してください。",
     )
 
     parser.set_defaults(subcommand_func=main)

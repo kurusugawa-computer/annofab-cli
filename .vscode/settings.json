@@ -54,4 +54,5 @@
         "out/": true,
         "*.egg-info/": true
     },
+    "editor.minimap.enabled": false,
 }

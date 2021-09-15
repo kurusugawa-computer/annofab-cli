@@ -23,19 +23,18 @@ annofab_config = dict(inifile.items("annofab"))
 
 project_id = annofab_config["project_id"]
 task_id = annofab_config["task_id"]
-service = annofabapi.build()
+annofab_service = annofabapi.build()
+
+task, _ = annofab_service.api.get_task(project_id, task_id)
+input_data_id = task["input_data_id_list"][0]
 
 
-class TestCommandLine:
-    @classmethod
-    def setup_class(cls):
-        annofab_service = annofabapi.build()
-        task, _ = annofab_service.api.get_task(project_id, task_id)
-        cls.input_data_id = task["input_data_id_list"][0]
-
+class TestCommandLine__delete:
     def test_delete_input_data(self):
         main(["input_data", "delete", "--project_id", project_id, "--input_data_id", "foo", "--yes"])
 
+
+class TestCommandLine__list:
     def test_list_input_data(self):
         out_file = str(out_dir / "input_data.json")
         main(
@@ -52,6 +51,8 @@ class TestCommandLine:
             ]
         )
 
+
+class TestCommandLine__list_merged_task:
     def test_list_input_data_merged_task(self):
         out_file = str(out_dir / "input_data.csv")
         main(
@@ -65,6 +66,8 @@ class TestCommandLine:
             ]
         )
 
+
+class TestCommandLine__list_with_json:
     def test_list_input_data_with_json(self):
         out_file = str(out_dir / "input_data.csv")
         main(
@@ -83,6 +86,8 @@ class TestCommandLine:
             ]
         )
 
+
+class TestCommandLine__put:
     def test_put_input_data__with_csv(self):
         csv_file = str(data_dir / "input_data2.csv")
         main(
@@ -99,6 +104,60 @@ class TestCommandLine:
                 "2",
             ]
         )
+
+    def test_put_input_data__with_csv_duplicated(self):
+        csv_file = str(data_dir / "input_data_duplicated.csv")
+        main(
+            [
+                "input_data",
+                "put",
+                "--project_id",
+                project_id,
+                "--csv",
+                csv_file,
+                "--overwrite",
+                "--yes",
+                "--parallelism",
+                "2",
+                "--allow_duplicated_input_data",
+            ]
+        )
+
+    def test_put_input_data__with_csv_duplicated_name(self):
+        csv_file = str(data_dir / "input_data_duplicated_name.csv")
+        with pytest.raises(Exception):
+            main(
+                [
+                    "input_data",
+                    "put",
+                    "--project_id",
+                    project_id,
+                    "--csv",
+                    csv_file,
+                    "--overwrite",
+                    "--yes",
+                    "--parallelism",
+                    "2",
+                ]
+            )
+
+    def test_put_input_data__with_csv_duplicated_path(self):
+        csv_file = str(data_dir / "input_data_duplicated_path.csv")
+        with pytest.raises(Exception):
+            main(
+                [
+                    "input_data",
+                    "put",
+                    "--project_id",
+                    project_id,
+                    "--csv",
+                    csv_file,
+                    "--overwrite",
+                    "--yes",
+                    "--parallelism",
+                    "2",
+                ]
+            )
 
     def test_put_input_data__with_json(self):
         json_args = [
@@ -123,6 +182,87 @@ class TestCommandLine:
             ]
         )
 
+    def test_put_input_data__with_json__duplicated_input_data(self):
+        json_args = [
+            {
+                "input_data_name": "test1",
+                "input_data_path": "file://tests/data/lenna.png",
+            },
+            {
+                "input_data_name": "test1",
+                "input_data_path": "file://tests/data/lenna.png",
+            },
+        ]
+        main(
+            [
+                "input_data",
+                "put",
+                "--project_id",
+                project_id,
+                "--json",
+                json.dumps(json_args),
+                "--overwrite",
+                "--yes",
+                "--parallelism",
+                "2",
+                "--allow_duplicated_input_data",
+            ]
+        )
+
+    def test_put_input_data__with_json__duplicated_input_data_path__error(self):
+        json_args = [
+            {
+                "input_data_name": "test1",
+                "input_data_path": "file://tests/data/lenna.png",
+            },
+            {
+                "input_data_name": "test2",
+                "input_data_path": "file://tests/data/lenna.png",
+            },
+        ]
+        with pytest.raises(Exception):
+            main(
+                [
+                    "input_data",
+                    "put",
+                    "--project_id",
+                    project_id,
+                    "--json",
+                    json.dumps(json_args),
+                    "--overwrite",
+                    "--yes",
+                    "--parallelism",
+                    "2",
+                ]
+            )
+
+    def test_put_input_data__with_json__duplicated_input_data_name__error(self):
+        json_args = [
+            {
+                "input_data_name": "test1",
+                "input_data_path": "file://tests/data/lenna1.png",
+            },
+            {
+                "input_data_name": "test1",
+                "input_data_path": "file://tests/data/lenna2.png",
+            },
+        ]
+        with pytest.raises(Exception):
+            main(
+                [
+                    "input_data",
+                    "put",
+                    "--project_id",
+                    project_id,
+                    "--json",
+                    json.dumps(json_args),
+                    "--overwrite",
+                    "--yes",
+                    "--parallelism",
+                    "2",
+                ]
+            )
+
     @pytest.mark.submitting_job
     def test_put_input_data_with_zip(self):
         # 注意：ジョブ登録される
@@ -140,6 +280,8 @@ class TestCommandLine:
             ]
         )
 
+
+class TestCommandLine__update_metadata:
     def test_update_metadata(self):
         main(
             [

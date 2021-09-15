@@ -8,7 +8,7 @@ python-versions = "*"
 
 [[package]]
 name = "annofabapi"
-version = "0.47.1"
+version = "0.47.2"
 description = "Python Clinet Library of AnnoFab WebAPI (https://annofab.com/docs/api/)"
 category = "main"
 optional = false
@@ -119,7 +119,7 @@ lxml = ["lxml"]
 
 [[package]]
 name = "black"
-version = "21.8b0"
+version = "21.9b0"
 description = "The uncompromising code formatter."
 category = "dev"
 optional = false
@@ -186,7 +186,7 @@ python-versions = "*"
 
 [[package]]
 name = "charset-normalizer"
-version = "2.0.4"
+version = "2.0.5"
 description = "The Real First Universal Charset Detector. Open, modern and actively maintained alternative to Chardet."
 category = "main"
 optional = false
@@ -256,7 +256,7 @@ python-versions = ">=2.7, !=3.0.*, !=3.1.*, !=3.2.*, !=3.3.*"
 
 [[package]]
 name = "dataclasses-json"
-version = "0.5.5"
+version = "0.5.6"
 description = "Easily serialize dataclasses to and from JSON"
 category = "main"
 optional = false
@@ -1322,7 +1322,7 @@ testing = ["pytest (>=4.6)", "pytest-checkdocs (>=2.4)", "pytest-flake8", "pytes
 [metadata]
 lock-version = "1.1"
 python-versions = "^3.7.1"
-content-hash = "7ec55aac5fe556a803eee0d692afd4be481455d1bf4d0f616bd9d22728c20c37"
+content-hash = "0826f07e2cfadf7827f8c94a6904087adb82c2c3ba23a5e6b4b41a9272ffbc7c"
 
 [metadata.files]
 alabaster = [
@@ -1330,8 +1330,8 @@ alabaster = [
     {file = "alabaster-0.7.12.tar.gz", hash = "sha256:a661d72d58e6ea8a57f7a86e37d86716863ee5e92788398526d58b26a4e4dc02"},
 ]
 annofabapi = [
-    {file = "annofabapi-0.47.1-py3-none-any.whl", hash = "sha256:71c19879db6a276f74e90ae17b397fefb80e8205e1d8a42ab439df02236fd8e6"},
-    {file = "annofabapi-0.47.1.tar.gz", hash = "sha256:84369df4ecdda5bb6cc6459492f0d1484b854dbc37183687b97b9363f041a8fd"},
+    {file = "annofabapi-0.47.2-py3-none-any.whl", hash = "sha256:6eb725a162484027ff655febeddb0f6c5503fe9cd5119577e33a02abb05f6eb7"},
+    {file = "annofabapi-0.47.2.tar.gz", hash = "sha256:6248fe68cb05f2190252ac912cac8245170070e27ebdd83a9eb5f379777ddf47"},
 ]
 appnope = [
     {file = "appnope-0.1.2-py2.py3-none-any.whl", hash = "sha256:93aa393e9d6c54c5cd570ccadd8edad61ea0c4b9ea7a01409020c9aa019eb442"},
@@ -1369,8 +1369,8 @@ beautifulsoup4 = [
     {file = "beautifulsoup4-4.10.0.tar.gz", hash = "sha256:c23ad23c521d818955a4151a67d81580319d4bf548d3d49f4223ae041ff98891"},
 ]
 black = [
-    {file = "black-21.8b0-py3-none-any.whl", hash = "sha256:2a0f9a8c2b2a60dbcf1ccb058842fb22bdbbcb2f32c6cc02d9578f90b92ce8b7"},
-    {file = "black-21.8b0.tar.gz", hash = "sha256:570608d28aa3af1792b98c4a337dbac6367877b47b12b88ab42095cfc1a627c2"},
+    {file = "black-21.9b0-py3-none-any.whl", hash = "sha256:380f1b5da05e5a1429225676655dddb96f5ae8c75bdf91e53d798871b902a115"},
+    {file = "black-21.9b0.tar.gz", hash = "sha256:7de4cfc7eb6b710de325712d40125689101d21d25283eed7e9998722cf10eb91"},
 ]
 bleach = [
     {file = "bleach-4.1.0-py2.py3-none-any.whl", hash = "sha256:4d2651ab93271d1129ac9cbc679f524565cc8a1b791909c4a51eac4446a15994"},
@@ -1384,8 +1384,8 @@ certifi = [
     {file = "certifi-2021.5.30.tar.gz", hash = "sha256:2bbf76fd432960138b3ef6dda3dde0544f27cbf8546c458e60baf371917ba9ee"},
 ]
 charset-normalizer = [
-    {file = "charset-normalizer-2.0.4.tar.gz", hash = "sha256:f23667ebe1084be45f6ae0538e4a5a865206544097e4e8bbcacf42cd02a348f3"},
-    {file = "charset_normalizer-2.0.4-py3-none-any.whl", hash = "sha256:0c8911edd15d19223366a194a513099a302055a962bca2cec0f54b8b63175d8b"},
+    {file = "charset-normalizer-2.0.5.tar.gz", hash = "sha256:7098e7e862f6370a2a8d1a6398cd359815c45d12626267652c3f13dec58e2367"},
+    {file = "charset_normalizer-2.0.5-py3-none-any.whl", hash = "sha256:fa471a601dfea0f492e4f4fca035cd82155e65dc45c9b83bf4322dfab63755dd"},
 ]
 click = [
     {file = "click-8.0.1-py3-none-any.whl", hash = "sha256:fba402a4a47334742d782209a7c79bc448911afe1149d07bdabdf480b3e2f4b6"},
@@ -1458,8 +1458,8 @@ cssselect = [
     {file = "cssselect-1.1.0.tar.gz", hash = "sha256:f95f8dedd925fd8f54edb3d2dfb44c190d9d18512377d3c1e2388d16126879bc"},
 ]
 dataclasses-json = [
-    {file = "dataclasses-json-0.5.5.tar.gz", hash = "sha256:381c184e047b738397d8c8fa2f3989a96307149040891ba1b99cd63901c8134c"},
-    {file = "dataclasses_json-0.5.5-py3-none-any.whl", hash = "sha256:68e0851451962fa9019958b99af316a0469c371ecfe45c937a4e2f4c43c0ff63"},
+    {file = "dataclasses-json-0.5.6.tar.gz", hash = "sha256:1f60be3405dee30b86ffbf6a436db8ba5efaeeb676bfda358e516a97aa7dfce4"},
+    {file = "dataclasses_json-0.5.6-py3-none-any.whl", hash = "sha256:1d7f3a284a49d350ddbabde0e7d0c5ffa34a144aaf1bcb5b9f2c87673ff0c76e"},
 ]
 decorator = [
     {file = "decorator-5.1.0-py3-none-any.whl", hash = "sha256:7b12e7c3c6ab203a29e157335e9122cb03de9ab7264b137594103fd4a683b374"},
