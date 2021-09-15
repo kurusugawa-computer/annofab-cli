@@ -42,7 +42,7 @@ class LaborWorktime(DataClassJsonMixin):
     """労務管理画面の予定作業時間"""
 
 
-def is_target_labor(self, labor: Dict[str, Any]) -> bool:
+def is_target_labor(labor: Dict[str, Any]) -> bool:
     """集計対象の労務管理情報か否か"""
     # 個人に紐付かないデータの場合は除去
     if labor["account_id"] is None:
