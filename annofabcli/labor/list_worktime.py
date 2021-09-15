@@ -42,25 +42,25 @@ class LaborWorktime(DataClassJsonMixin):
     """労務管理画面の予定作業時間"""
 
 
+def is_target_labor(self, labor: Dict[str, Any]) -> bool:
+    """集計対象の労務管理情報か否か"""
+    # 個人に紐付かないデータの場合は除去
+    if labor["account_id"] is None:
+        return False
+
+    # 実績作業時間と予定作業時間の両方が無効な場合は除去
+    if (labor["actual_worktime"] is None or labor["actual_worktime"] == 0) and (
+        labor["plan_worktime"] is None or labor["plan_worktime"] == 0
+    ):
+        return False
+
+    return True
+
+
 class ListLaborWorktimeMain:
     def __init__(self, service: annofabapi.Resource):
         self.service = service
         self.facade = AnnofabApiFacade(service)
-
-    @staticmethod
-    def is_target_labor(self, labor: Dict[str, Any]) -> bool:
-        """集計対象の労務管理情報か否か"""
-        # 個人に紐付かないデータの場合は除去
-        if labor["account_id"] is None:
-            return False
-
-        # 実績作業時間と予定作業時間の両方が無効な場合は除去
-        if (labor["actual_worktime"] is None or labor["actual_worktime"] == 0) and (
-            labor["plan_worktime"] is None or labor["plan_worktime"] == 0
-        ):
-            return False
-
-        return True
 
     @staticmethod
     def _get_labor_worktime(
@@ -140,7 +140,7 @@ class ListLaborWorktimeMain:
         new_labor_list = []
 
         # 労務管理情報の絞り込み
-        labor_list = [e for e in labor_list if self.is_target_labor(e)]
+        labor_list = [e for e in labor_list if is_target_labor(e)]
 
         inaccessible_project_ids = self.get_inaccessible_project_ids(labor_list)
         for labor in labor_list:
