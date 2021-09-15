@@ -203,7 +203,7 @@ class ListLaborWorktimeMain:
                 labor_list.extend(tmp_labor_list)
 
         # 労務管理情報の絞り込み
-        labor_list = [e for e in labor_list if self.is_target_labor(e)]
+        labor_list = [e for e in labor_list if is_target_labor(e)]
         new_labor_list = []
 
         for labor in labor_list:
