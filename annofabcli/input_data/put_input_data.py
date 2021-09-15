@@ -246,7 +246,7 @@ class PutInputData(AbstractCommandLineInterface):
         if len(df_duplicated_input_data_name) > 0:
             logger.warning(
                 f"{csv_path}に記載されている`input_data_name`が重複しています。\n"
-                f"{df_duplicated_input_data_name['input_data_name'].to_string(index=False)}"
+                f"{df_duplicated_input_data_name['input_data_name'].unique()}"
             )
             if not allow_duplicated_input_data:
                 raise RuntimeError(f"{csv_path}に記載されている`input_data_name`が重複しています。")
@@ -255,7 +255,7 @@ class PutInputData(AbstractCommandLineInterface):
         if len(df_duplicated_input_data_path) > 0:
             logger.warning(
                 f"{csv_path}に記載されている`input_data_path`が重複しています。\n"
-                f"{df_duplicated_input_data_path['input_data_path'].to_string(index=False)}"
+                f"{df_duplicated_input_data_path['input_data_path'].unique()}"
             )
             if not allow_duplicated_input_data:
                 raise RuntimeError(f"{csv_path}に記載されている`input_data_path`が重複しています。")
@@ -273,8 +273,7 @@ class PutInputData(AbstractCommandLineInterface):
         df_duplicated_input_data_name = df[df["input_data_name"].duplicated()]
         if len(df_duplicated_input_data_name) > 0:
             logger.warning(
-                f"`input_data_name`が重複しています。\n"
-                f"{df_duplicated_input_data_name['input_data_name'].to_string(index=False)}"
+                f"`input_data_name`が重複しています。\n" f"{df_duplicated_input_data_name['input_data_name'].unique()}"
             )
             if not allow_duplicated_input_data:
                 raise RuntimeError(f"`input_data_name`が重複しています。")
@@ -282,8 +281,7 @@ class PutInputData(AbstractCommandLineInterface):
         df_duplicated_input_data_path = df[df["input_data_path"].duplicated()]
         if len(df_duplicated_input_data_path) > 0:
             logger.warning(
-                f"`input_data_path`が重複しています。\n"
-                f"{df_duplicated_input_data_path['input_data_path'].to_string(index=False)}"
+                f"`input_data_path`が重複しています。\n" f"{df_duplicated_input_data_path['input_data_path'].unique()}"
             )
             if not allow_duplicated_input_data:
                 raise RuntimeError(f"`input_data_path`が重複しています。")
