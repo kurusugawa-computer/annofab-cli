@@ -100,6 +100,60 @@ class TestCommandLine:
             ]
         )
 
+    def test_put_input_data__with_csv_duplicated(self):
+        csv_file = str(data_dir / "input_data_duplicated.csv")
+        main(
+            [
+                "input_data",
+                "put",
+                "--project_id",
+                project_id,
+                "--csv",
+                csv_file,
+                "--overwrite",
+                "--yes",
+                "--parallelism",
+                "2",
+                "--allow_duplicated_input_data"
+            ]
+        )
+
+    def test_put_input_data__with_csv_duplicated_name(self):
+        csv_file = str(data_dir / "input_data_duplicated_name.csv")
+        with pytest.raises(Exception):
+            main(
+                [
+                    "input_data",
+                    "put",
+                    "--project_id",
+                    project_id,
+                    "--csv",
+                    csv_file,
+                    "--overwrite",
+                    "--yes",
+                    "--parallelism",
+                    "2",
+                ]
+            )
+
+    def test_put_input_data__with_csv_duplicated_path(self):
+        csv_file = str(data_dir / "input_data_duplicated_path.csv")
+        with pytest.raises(Exception):
+            main(
+                [
+                    "input_data",
+                    "put",
+                    "--project_id",
+                    project_id,
+                    "--csv",
+                    csv_file,
+                    "--overwrite",
+                    "--yes",
+                    "--parallelism",
+                    "2",
+                ]
+            )
+
     def test_put_input_data__with_json(self):
         json_args = [
             {
@@ -122,6 +176,87 @@ class TestCommandLine:
                 "2",
             ]
         )
+
+    def test_put_input_data__with_json__duplicated_input_data(self):
+        json_args = [
+            {
+                "input_data_name": "test1",
+                "input_data_path": "file://tests/data/lenna.png",
+            },
+            {
+                "input_data_name": "test1",
+                "input_data_path": "file://tests/data/lenna.png",
+            }
+        ]
+        main(
+            [
+                "input_data",
+                "put",
+                "--project_id",
+                project_id,
+                "--json",
+                json.dumps(json_args),
+                "--overwrite",
+                "--yes",
+                "--parallelism",
+                "2",
+                "--allow_duplicated_input_data"
+            ]
+        )
+
+    def test_put_input_data__with_json__duplicated_input_data_path__error(self):
+        json_args = [
+            {
+                "input_data_name": "test1",
+                "input_data_path": "file://tests/data/lenna.png",
+            },
+            {
+                "input_data_name": "test2",
+                "input_data_path": "file://tests/data/lenna.png",
+            }
+        ]
+        with pytest.raises(Exception):
+            main(
+                [
+                    "input_data",
+                    "put",
+                    "--project_id",
+                    project_id,
+                    "--json",
+                    json.dumps(json_args),
+                    "--overwrite",
+                    "--yes",
+                    "--parallelism",
+                    "2",
+                ]
+            )
+
+    def test_put_input_data__with_json__duplicated_input_data_name__error(self):
+        json_args = [
+            {
+                "input_data_name": "test1",
+                "input_data_path": "file://tests/data/lenna1.png",
+            },
+            {
+                "input_data_name": "test1",
+                "input_data_path": "file://tests/data/lenna2.png",
+            }
+        ]
+        with pytest.raises(Exception):
+            main(
+                [
+                    "input_data",
+                    "put",
+                    "--project_id",
+                    project_id,
+                    "--json",
+                    json.dumps(json_args),
+                    "--overwrite",
+                    "--yes",
+                    "--parallelism",
+                    "2",
+                ]
+            )
 
     @pytest.mark.submitting_job
     def test_put_input_data_with_zip(self):

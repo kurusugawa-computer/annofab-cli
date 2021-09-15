@@ -255,7 +255,7 @@ class PutInputData(AbstractCommandLineInterface):
         if len(df_duplicated_input_data_path) > 0:
             logger.warning(
                 f"{csv_path}に記載されている`input_data_path`が重複しています。\n"
-                f"{df_duplicated_input_data_name['input_data_path'].to_string(index=False)}"
+                f"{df_duplicated_input_data_path['input_data_path'].to_string(index=False)}"
             )
             if not allow_duplicated_input_data:
                 raise RuntimeError(f"{csv_path}に記載されている`input_data_path`が重複しています。")
@@ -283,7 +283,7 @@ class PutInputData(AbstractCommandLineInterface):
         if len(df_duplicated_input_data_path) > 0:
             logger.warning(
                 f"`input_data_path`が重複しています。\n"
-                f"{df_duplicated_input_data_name['input_data_path'].to_string(index=False)}"
+                f"{df_duplicated_input_data_path['input_data_path'].to_string(index=False)}"
             )
             if not allow_duplicated_input_data:
                 raise RuntimeError(f"`input_data_path`が重複しています。")
@@ -435,7 +435,8 @@ def parse_args(parser: argparse.ArgumentParser):
         type=Path,
         help=(
             "入力データが記載されたCSVファイルのパスを指定してください。"
-            "CSVのフォーマットは以下の通りです。詳細は https://annofab-cli.readthedocs.io/ja/latest/command_reference/input_data/put.html を参照してください。\n"
+            "CSVのフォーマットは以下の通りです。"
+            "詳細は https://annofab-cli.readthedocs.io/ja/latest/command_reference/input_data/put.html を参照してください。\n"
             " * ヘッダ行なし, カンマ区切り\n"
             " * 1列目: input_data_name(required)\n"
             " * 2列目: input_data_path(required)\n"
