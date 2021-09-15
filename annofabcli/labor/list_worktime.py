@@ -1,10 +1,12 @@
 import argparse
 import logging
 from dataclasses import dataclass
-from typing import Any, Dict, List, Optional
+from enum import Enum
+from typing import Any, Dict, List, Optional, Set
 
 import annofabapi
 import more_itertools
+import pandas
 from annofabapi.models import Project, ProjectMember
 from dataclasses_json import DataClassJsonMixin
 
@@ -16,9 +18,13 @@ from annofabcli.common.cli import (
     build_annofabapi_resource_and_login,
     get_list_from_args,
 )
-from annofabcli.common.enums import FormatArgument
 
 logger = logging.getLogger(__name__)
+
+
+class TargetColumn(Enum):
+    ACTUAL_WORKTIME_HOUR = "actual_worktime_hour"
+    PLAN_WORKTIME_HOUR = "plan_worktime_hour"
 
 
 @dataclass(frozen=True)
@@ -42,25 +48,47 @@ class LaborWorktime(DataClassJsonMixin):
     """労務管理画面の予定作業時間"""
 
 
-def is_target_labor(labor: Dict[str, Any]) -> bool:
-    """集計対象の労務管理情報か否か"""
-    # 個人に紐付かないデータの場合は除去
-    if labor["account_id"] is None:
-        return False
-
-    # 実績作業時間と予定作業時間の両方が無効な場合は除去
-    if (labor["actual_worktime"] is None or labor["actual_worktime"] == 0) and (
-        labor["plan_worktime"] is None or labor["plan_worktime"] == 0
-    ):
-        return False
-
-    return True
+BASE_COLUMNS = [
+    "date",
+    "organization_id",
+    "organization_name",
+    "project_id",
+    "project_title",
+    "account_id",
+    "user_id",
+    "username",
+    "biography",
+]
 
 
 class ListLaborWorktimeMain:
-    def __init__(self, service: annofabapi.Resource):
+    def __init__(self, service: annofabapi.Resource, target_columns: Set[TargetColumn]):
         self.service = service
         self.facade = AnnofabApiFacade(service)
+        self.target_columns = target_columns
+
+    def is_target_labor(self, labor: Dict[str, Any]) -> bool:
+        """集計対象の労務管理情報か否か"""
+        # 個人に紐付かないデータの場合は除去
+        if labor["account_id"] is None:
+            return False
+
+        if self.target_columns == {TargetColumn.ACTUAL_WORKTIME_HOUR, TargetColumn.PLAN_WORKTIME_HOUR}:
+            # 実績作業時間と予定作業時間の両方が無効な場合は除去
+            if (labor["actual_worktime"] is None or labor["actual_worktime"] == 0) and (
+                labor["plan_worktime"] is None or labor["plan_worktime"] == 0
+            ):
+                return False
+
+        elif self.target_columns == {TargetColumn.ACTUAL_WORKTIME_HOUR}:
+            if labor["actual_worktime"] is None or labor["actual_worktime"] == 0:
+                return False
+
+        elif self.target_columns == {TargetColumn.PLAN_WORKTIME_HOUR}:
+            if labor["plan_worktime"] is None or labor["plan_worktime"] == 0:
+                return False
+
+        return True
 
     @staticmethod
     def _get_labor_worktime(
@@ -140,7 +168,7 @@ class ListLaborWorktimeMain:
         new_labor_list = []
 
         # 労務管理情報の絞り込み
-        labor_list = [e for e in labor_list if is_target_labor(e)]
+        labor_list = [e for e in labor_list if self.is_target_labor(e)]
 
         inaccessible_project_ids = self.get_inaccessible_project_ids(labor_list)
         for labor in labor_list:
@@ -203,7 +231,7 @@ class ListLaborWorktimeMain:
                 labor_list.extend(tmp_labor_list)
 
         # 労務管理情報の絞り込み
-        labor_list = [e for e in labor_list if is_target_labor(e)]
+        labor_list = [e for e in labor_list if self.is_target_labor(e)]
         new_labor_list = []
 
         for labor in labor_list:
@@ -354,7 +382,8 @@ class ListLaborWorktime(AbstractCommandLineInterface):
         project_id_list = get_list_from_args(args.project_id) if args.project_id is not None else None
         organization_name_list = get_list_from_args(args.organization) if args.organization is not None else None
 
-        main_obj = ListLaborWorktimeMain(self.service)
+        target_columns = {TargetColumn(e) for e in args.columns}
+        main_obj = ListLaborWorktimeMain(self.service, target_columns=target_columns)
         labor_worktime_list = main_obj.get_labor_worktime_list(
             organization_name_list=organization_name_list,
             project_id_list=project_id_list,
@@ -365,7 +394,9 @@ class ListLaborWorktime(AbstractCommandLineInterface):
         )
 
         if len(labor_worktime_list) > 0:
-            self.print_according_to_format(labor_worktime_list)
+            df = pandas.DataFrame(labor_worktime_list)
+            columns = BASE_COLUMNS + args.columns
+            self.print_csv(df[columns])
         else:
             logger.info(f"労務管理一覧が0件のため、出力しません。")
 
@@ -377,7 +408,6 @@ def main(args):
 
 
 def parse_args(parser: argparse.ArgumentParser):
-    argument_parser = ArgumentParser(parser)
     target_group = parser.add_mutually_exclusive_group(required=True)
     target_group.add_argument(
         "-org",
@@ -415,9 +445,13 @@ def parse_args(parser: argparse.ArgumentParser):
 
     parser.add_argument("-o", "--output", type=str, required=True, help="出力先ファイルのパス")
 
-    argument_parser.add_format(
-        choices=[FormatArgument.CSV, FormatArgument.JSON, FormatArgument.PRETTY_JSON],
-        default=FormatArgument.CSV,
+    parser.add_argument(
+        "--columns",
+        type=str,
+        nargs="+",
+        choices=[TargetColumn.ACTUAL_WORKTIME_HOUR.value, TargetColumn.PLAN_WORKTIME_HOUR.value],
+        default=[TargetColumn.ACTUAL_WORKTIME_HOUR.value, TargetColumn.PLAN_WORKTIME_HOUR.value],
+        help="出力する作業時間の列名",
     )
 
     parser.set_defaults(subcommand_func=main)
@@ -425,8 +459,8 @@ def parse_args(parser: argparse.ArgumentParser):
 
 def add_parser(subparsers: argparse._SubParsersAction):
     subcommand_name = "list_worktime"
-    subcommand_help = "作業時間の一覧を出力します。"
-    description = "作業時間の一覧を出力します。"
+    subcommand_help = "作業時間の一覧のCSVを出力します。"
+    description = "作業時間の一覧のCSVを出力します。"
 
     parser = annofabcli.common.cli.add_parser(subparsers, subcommand_name, subcommand_help, description)
     parse_args(parser)
