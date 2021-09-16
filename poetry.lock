@@ -146,35 +146,21 @@ python2 = ["typed-ast (>=1.4.2)"]
 uvloop = ["uvloop (>=0.15.2)"]
 
 [[package]]
-name = "bleach"
-version = "4.1.0"
-description = "An easy safelist-based HTML-sanitizing tool."
-category = "main"
-optional = false
-python-versions = ">=3.6"
-
-[package.dependencies]
-packaging = "*"
-six = ">=1.9.0"
-webencodings = "*"
-
-[[package]]
 name = "bokeh"
-version = "2.3.3"
+version = "2.4.0"
 description = "Interactive plots and applications in the browser from Python"
 category = "main"
 optional = false
-python-versions = ">=3.6"
+python-versions = ">=3.7"
 
 [package.dependencies]
 Jinja2 = ">=2.9"
 numpy = ">=1.11.3"
 packaging = ">=16.8"
 pillow = ">=7.1.0"
-python-dateutil = ">=2.1"
 PyYAML = ">=3.10"
 tornado = ">=5.1"
-typing_extensions = ">=3.7.4"
+typing-extensions = ">=3.10.0"
 
 [[package]]
 name = "certifi"
@@ -648,29 +634,28 @@ test = ["hypothesis (>=3.58)", "pytest (>=6.0)", "pytest-xdist"]
 
 [[package]]
 name = "panel"
-version = "0.12.1"
+version = "0.10.3"
 description = "A high level app and dashboarding solution for Python."
 category = "main"
 optional = false
 python-versions = ">=3.6"
 
 [package.dependencies]
-bleach = "*"
-bokeh = ">=2.3.0,<2.4.0"
+bokeh = ">=2.2.2"
 markdown = "*"
 param = ">=1.10.0"
 pyct = ">=0.4.4"
 pyviz-comms = ">=0.7.4"
 requests = "*"
-tqdm = ">=4.48.0"
+tqdm = "*"
 
 [package.extras]
-all = ["notebook (>=5.4)", "altair", "channels", "codecov", "datashader", "django", "flake8", "folium", "graphviz", "holoviews", "holoviews (>1.14.1)", "hvplot", "ipyleaflet", "ipympl", "ipython (>=7.0)", "ipyvolume", "ipywidgets", "ipywidgets-bokeh", "jupyter-bokeh (>=3.0.2)", "lxml", "matplotlib (<3.4)", "nbsite (>=0.7.0a4)", "nbsmoke (>=0.2.0)", "pandas (>=1.3)", "parameterized", "pillow", "plotly", "plotly (>=4.0)", "pytest", "pytest-cov", "pyvista", "scikit-learn", "scipy", "streamz", "twine", "vega-datasets", "vtk (==9.0.1)", "xarray (<0.17)"]
-build = ["param (>=1.9.2)", "pyct (>=0.4.4)", "setuptools (>=30.3.0)", "bokeh (>=2.0.0)", "pyviz-comms (>=0.6.0)", "bleach", "tqdm"]
-doc = ["notebook (>=5.4)", "holoviews (>1.14.1)", "matplotlib (<3.4)", "pillow", "plotly", "nbsite (>=0.7.0a4)", "graphviz", "lxml"]
-examples = ["hvplot", "plotly (>=4.0)", "altair", "streamz", "vega-datasets", "vtk (==9.0.1)", "scikit-learn", "datashader", "jupyter-bokeh (>=3.0.2)", "django", "channels", "pyvista", "ipywidgets", "ipywidgets-bokeh", "ipyvolume", "ipyleaflet", "xarray (<0.17)"]
-recommended = ["notebook (>=5.4)", "holoviews (>1.14.1)", "matplotlib (<3.4)", "pillow", "plotly"]
-tests = ["flake8", "parameterized", "pytest", "scipy", "nbsmoke (>=0.2.0)", "pytest-cov", "codecov", "folium", "ipympl", "twine", "pandas (>=1.3)", "ipython (>=7.0)", "holoviews"]
+all = ["altair", "channels", "codecov", "datashader", "django", "flake8", "folium", "graphviz", "holoviews (>=1.13.2)", "hvplot", "ipyleaflet", "ipympl", "ipython (>=7.0)", "ipyvolume", "ipywidgets", "ipywidgets-bokeh", "jupyter-bokeh", "lxml", "matplotlib", "nbconvert (<6.0)", "nbsite (>=0.6.1)", "nbsmoke (>=0.2.0)", "notebook (>=5.4)", "pandas", "parameterized", "phantomjs", "pillow", "plotly", "pytest", "pytest-cov", "pyvista", "scikit-learn", "scipy", "selenium", "sphinx-holoviz-theme", "streamz", "twine", "vega-datasets", "vtk"]
+build = ["param (>=1.9.2)", "pyct (>=0.4.4)", "setuptools (>=30.3.0)", "bokeh (>=2.0.0)", "pyviz-comms (>=0.6.0)", "nodejs (>=10.13.0)"]
+doc = ["notebook (>=5.4)", "holoviews (>=1.13.2)", "matplotlib", "pillow", "plotly", "nbsite (>=0.6.1)", "nbconvert (<6.0)", "sphinx-holoviz-theme", "selenium", "phantomjs", "graphviz", "lxml"]
+examples = ["hvplot", "plotly", "altair", "streamz", "vega-datasets", "vtk", "scikit-learn", "datashader", "jupyter-bokeh", "django", "channels", "pyvista", "ipywidgets", "ipywidgets-bokeh", "ipyvolume", "ipyleaflet"]
+recommended = ["notebook (>=5.4)", "holoviews (>=1.13.2)", "matplotlib", "pillow", "plotly"]
+tests = ["flake8", "parameterized", "pytest", "scipy", "nbsmoke (>=0.2.0)", "pytest-cov", "codecov", "folium", "ipympl", "twine", "pandas", "ipython (>=7.0)"]
 
 [[package]]
 name = "param"
@@ -1292,14 +1277,6 @@ optional = false
 python-versions = "*"
 
 [[package]]
-name = "webencodings"
-version = "0.5.1"
-description = "Character encoding aliases for legacy web content"
-category = "main"
-optional = false
-python-versions = "*"
-
-[[package]]
 name = "wrapt"
 version = "1.12.1"
 description = "Module for decorators, wrappers and monkey patching."
@@ -1372,12 +1349,9 @@ black = [
     {file = "black-21.9b0-py3-none-any.whl", hash = "sha256:380f1b5da05e5a1429225676655dddb96f5ae8c75bdf91e53d798871b902a115"},
     {file = "black-21.9b0.tar.gz", hash = "sha256:7de4cfc7eb6b710de325712d40125689101d21d25283eed7e9998722cf10eb91"},
 ]
-bleach = [
-    {file = "bleach-4.1.0-py2.py3-none-any.whl", hash = "sha256:4d2651ab93271d1129ac9cbc679f524565cc8a1b791909c4a51eac4446a15994"},
-    {file = "bleach-4.1.0.tar.gz", hash = "sha256:0900d8b37eba61a802ee40ac0061f8c2b5dee29c1927dd1d233e075ebf5a71da"},
-]
 bokeh = [
-    {file = "bokeh-2.3.3.tar.gz", hash = "sha256:a5fdcc181835561447fcc5a371300973fce4114692d5853addec284d1cdeb677"},
+    {file = "bokeh-2.4.0-py3-none-any.whl", hash = "sha256:91a7c3b8a42d9275df26f13269859a1add82dc9e5dda316f7476ad76a5a10851"},
+    {file = "bokeh-2.4.0.tar.gz", hash = "sha256:6fa00ed8baab5cca33f4175792c309fa2536eaae7e90abee884501ba8c90fddb"},
 ]
 certifi = [
     {file = "certifi-2021.5.30-py2.py3-none-any.whl", hash = "sha256:50b1e4f8446b06f41be7dd6338db18e0990601dce795c2b1686458aa7e8fa7d8"},
@@ -1766,8 +1740,8 @@ pandas = [
     {file = "pandas-1.3.3.tar.gz", hash = "sha256:272c8cb14aa9793eada6b1ebe81994616e647b5892a370c7135efb2924b701df"},
 ]
 panel = [
-    {file = "panel-0.12.1-py2.py3-none-any.whl", hash = "sha256:13ebcf0506fe7853ab3273ef91985f2b68944fa0ebf78393f1dcdb72c30f56d5"},
-    {file = "panel-0.12.1.tar.gz", hash = "sha256:e4898d60abdb82f8a429df7f59dbf8bcaf7e19b3e633555512ceb4ce06678458"},
+    {file = "panel-0.10.3-py2.py3-none-any.whl", hash = "sha256:0a97efd48ad9e88289c7e37b488a70eaa6e9946c8b3f886e184d5fd31aea1301"},
+    {file = "panel-0.10.3.tar.gz", hash = "sha256:3619d8d3aec631ba047b294163ddecfa62727ca89576bff4a8c08e84416eb212"},
 ]
 param = [
     {file = "param-1.11.1-py2.py3-none-any.whl", hash = "sha256:62fd2f679ed4f0dd2c146cf4b399ddc23e50df462e1c3080a3401747be56e195"},
@@ -2169,10 +2143,6 @@ urllib3 = [
 wcwidth = [
     {file = "wcwidth-0.2.5-py2.py3-none-any.whl", hash = "sha256:beb4802a9cebb9144e99086eff703a642a13d6a0052920003a230f3294bbe784"},
     {file = "wcwidth-0.2.5.tar.gz", hash = "sha256:c4d647b99872929fdb7bdcaa4fbe7f01413ed3d98077df798530e5b04f116c83"},
-]
-webencodings = [
-    {file = "webencodings-0.5.1-py2.py3-none-any.whl", hash = "sha256:a0af1213f3c2226497a97e2b3aa01a7e4bee4f403f95be16fc9acd2947514a78"},
-    {file = "webencodings-0.5.1.tar.gz", hash = "sha256:b36a1c245f2d304965eb4e0a82848379241dc04b865afcc4aab16748587e1923"},
 ]
 wrapt = [
     {file = "wrapt-1.12.1.tar.gz", hash = "sha256:b62ffa81fb85f4332a4f609cab4ac40709470da05643a082ec1eb88e6d9b97d7"},
