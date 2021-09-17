@@ -46,6 +46,7 @@ class CancelAcceptanceMain(AbstractCommandLineWithConfirmInterface):
         assign_last_acceptor: bool = True,
         task_query: Optional[TaskQuery] = None,
         task_index: Optional[int] = None,
+        dryrun: bool = False,
     ) -> bool:
         def get_user_id(user: Optional[User]) -> Optional[str]:
             return user.user_id if user is not None else None
@@ -96,7 +97,8 @@ class CancelAcceptanceMain(AbstractCommandLineWithConfirmInterface):
                 "account_id": actual_acceptor.account_id if actual_acceptor is not None else None,
                 "last_updated_datetime": task["updated_datetime"],
             }
-            self.service.api.operate_task(project_id, task_id, request_body=request_body)
+            if not dryrun:
+                self.service.api.operate_task(project_id, task_id, request_body=request_body)
             logger.info(f"{logging_prefix} : task_id = {task_id} の受け入れ取り消しが成功しました。")
             return True
 
@@ -112,6 +114,7 @@ class CancelAcceptanceMain(AbstractCommandLineWithConfirmInterface):
         acceptor: Optional[User] = None,
         assign_last_acceptor: bool = True,
         task_query: Optional[TaskQuery] = None,
+        dryrun: bool = False,
     ) -> bool:
         task_index, task_id = tpl
         return self.cancel_acceptance_for_task(
@@ -121,6 +124,7 @@ class CancelAcceptanceMain(AbstractCommandLineWithConfirmInterface):
             assign_last_acceptor=assign_last_acceptor,
             task_query=task_query,
             task_index=task_index,
+            dryrun=dryrun,
         )
 
     def cancel_acceptance_for_task_list(
@@ -131,6 +135,7 @@ class CancelAcceptanceMain(AbstractCommandLineWithConfirmInterface):
         assign_last_acceptor: bool = True,
         task_query: Optional[TaskQuery] = None,
         parallelism: Optional[int] = None,
+        dryrun: bool = False,
     ):
         """
         タスクを受入取り消しする
@@ -162,6 +167,7 @@ class CancelAcceptanceMain(AbstractCommandLineWithConfirmInterface):
                 acceptor=acceptor,
                 assign_last_acceptor=assign_last_acceptor,
                 task_query=task_query,
+                dryrun=dryrun,
             )
             with multiprocessing.Pool(parallelism) as pool:
                 result_bool_list = pool.map(partial_func, enumerate(task_id_list))
@@ -178,6 +184,7 @@ class CancelAcceptanceMain(AbstractCommandLineWithConfirmInterface):
                     acceptor=acceptor,
                     assign_last_acceptor=assign_last_acceptor,
                     task_query=task_query,
+                    dryrun=dryrun,
                 )
                 if result:
                     success_count += 1
@@ -261,6 +268,8 @@ def parse_args(parser: argparse.ArgumentParser):
     parser.add_argument(
         "--parallelism", type=int, help="使用するプロセス数（並列度）を指定してください。指定する場合は必ず'--yes'を指定してください。指定しない場合は、逐次的に処理します。"
     )
+
+    parser.add_argument("--dryrun", action="store_true", help="取り消しが行われた時の結果を表示しますが、実際は受け入れを取り消しません。")
 
     parser.set_defaults(subcommand_func=main)
 
