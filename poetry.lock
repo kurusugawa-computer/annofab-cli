@@ -327,7 +327,7 @@ pyflakes = ">=2.3.0,<2.4.0"
 
 [[package]]
 name = "holoviews"
-version = "1.14.5"
+version = "1.14.6"
 description = "Stop plotting your data - annotate your data and let it visualize itself."
 category = "main"
 optional = false
@@ -342,13 +342,13 @@ param = ">=1.9.3,<2.0"
 pyviz-comms = ">=0.7.4"
 
 [package.extras]
-all = ["path.py", "scipy", "flake8", "networkx", "matplotlib (>=3)", "cftime", "coveralls", "nbsmoke (>=0.2.0)", "plotly (>=4.0)", "nose", "netcdf4", "deepdiff", "dask", "datashader (>=0.11.1)", "bokeh (>=1.1.0)", "streamz (>=0.5.0)", "ipython (>=5.4.0)", "shapely", "nbconvert (<6)", "keyring", "awscli", "ibis-framework (>=1.3)", "ipython (==5.4.1)", "twine", "scikit-image", "ffmpeg", "xarray (>=0.10.4)", "nbconvert (==5.3.1)", "pillow", "mock", "jsonschema (==2.6.0)", "dash (>=1.16)", "notebook", "pyarrow", "rfc3986"]
+all = ["deepdiff", "ipython (>=5.4.0)", "xarray (>=0.10.4)", "scipy", "awscli", "scikit-image", "matplotlib (>=3)", "pyarrow", "coveralls", "rfc3986", "flake8", "bokeh (>=1.1.0)", "pillow", "networkx", "shapely", "notebook", "datashader (>=0.11.1)", "nbsmoke (>=0.2.0)", "streamz (>=0.5.0)", "nose", "nbconvert (<6)", "ibis-framework (>=1.3)", "path.py", "keyring", "cftime", "twine", "ffmpeg", "netcdf4", "dask", "plotly (>=4.0)", "mock", "dash (>=1.16)"]
 basic_tests = ["nose", "mock", "flake8", "coveralls", "path.py", "matplotlib (>=3)", "nbsmoke (>=0.2.0)", "nbconvert (<6)", "twine", "rfc3986", "keyring", "bokeh (>=1.1.0)", "pandas", "ipython (>=5.4.0)", "notebook"]
-build = ["param (>=1.7.0)", "setuptools (>=30.3.0)", "pyct (>=0.4.4)", "python (<3.9)", "pip"]
-doc = ["ipython (>=5.4.0)", "notebook", "matplotlib (>=3)", "bokeh (>=1.1.0)", "networkx", "pillow", "xarray (>=0.10.4)", "plotly (>=4.0)", "dash (>=1.16)", "streamz (>=0.5.0)", "datashader (>=0.11.1)", "ffmpeg", "cftime", "netcdf4", "dask", "scipy", "shapely", "scikit-image", "pyarrow", "ibis-framework (>=1.3)", "nbsite (>=0.6.8a36)", "sphinx", "sphinx-holoviz-theme", "mpl-sample-data (>=3.1.3)", "awscli", "pscript", "graphviz", "bokeh (>2.2)", "nbconvert (<6.0)"]
+build = ["param (>=1.7.0)", "setuptools (>=30.3.0)", "pyct (>=0.4.4)"]
+doc = ["ipython (>=5.4.0)", "notebook", "matplotlib (>=3)", "bokeh (>=1.1.0)", "networkx", "pillow", "xarray (>=0.10.4)", "plotly (>=4.0)", "dash (>=1.16)", "streamz (>=0.5.0)", "datashader (>=0.11.1)", "ffmpeg", "cftime", "netcdf4", "dask", "scipy", "shapely", "scikit-image", "pyarrow", "ibis-framework (>=1.3)", "nbsite (>=0.6.8a36)", "sphinx", "sphinx-holoviz-theme", "mpl-sample-data (>=3.1.3)", "awscli", "pscript", "graphviz", "bokeh (>2.2)"]
 examples = ["ipython (>=5.4.0)", "notebook", "matplotlib (>=3)", "bokeh (>=1.1.0)", "networkx", "pillow", "xarray (>=0.10.4)", "plotly (>=4.0)", "dash (>=1.16)", "streamz (>=0.5.0)", "datashader (>=0.11.1)", "ffmpeg", "cftime", "netcdf4", "dask", "scipy", "shapely", "scikit-image", "pyarrow", "ibis-framework (>=1.3)"]
 extras = ["ipython (>=5.4.0)", "notebook", "matplotlib (>=3)", "bokeh (>=1.1.0)", "networkx", "pillow", "xarray (>=0.10.4)", "plotly (>=4.0)", "dash (>=1.16)", "streamz (>=0.5.0)", "datashader (>=0.11.1)", "ffmpeg", "cftime", "netcdf4", "dask", "scipy", "shapely", "scikit-image", "pyarrow", "ibis-framework (>=1.3)", "pscript (==0.7.1)"]
-nbtests = ["ipython (>=5.4.0)", "notebook", "matplotlib (>=3)", "bokeh (>=1.1.0)", "nose", "awscli", "deepdiff", "nbconvert (==5.3.1)", "jsonschema (==2.6.0)", "ipython (==5.4.1)"]
+nbtests = ["ipython (>=5.4.0)", "notebook", "matplotlib (>=3)", "bokeh (>=1.1.0)", "nose", "awscli", "deepdiff"]
 notebook = ["ipython (>=5.4.0)", "notebook"]
 recommended = ["ipython (>=5.4.0)", "notebook", "matplotlib (>=3)", "bokeh (>=1.1.0)"]
 tests = ["nose", "mock", "flake8", "coveralls", "path.py", "matplotlib (>=3)", "nbsmoke (>=0.2.0)", "nbconvert (<6)", "twine", "rfc3986", "keyring"]
@@ -1482,8 +1482,8 @@ flake8 = [
     {file = "flake8-3.9.2.tar.gz", hash = "sha256:07528381786f2a6237b061f6e96610a4167b226cb926e2aa2b6b1d78057c576b"},
 ]
 holoviews = [
-    {file = "holoviews-1.14.5-py3-none-any.whl", hash = "sha256:8de83166f454040620d5e3a9cdf8c4b2447ad84cb65b7e2a26785671507fb522"},
-    {file = "holoviews-1.14.5.tar.gz", hash = "sha256:268e07c09012d24233d8957f0207b9aec33000b639e661ca50e68458d735e6be"},
+    {file = "holoviews-1.14.6-py3-none-any.whl", hash = "sha256:983c8f873d213e274eb7ab8568267982ca73ce4dfe3c7f334514a908da7ccfe3"},
+    {file = "holoviews-1.14.6.tar.gz", hash = "sha256:3a25c4fe3195fdc4639461abbfa5a8bebce8ab737674b6673da2236a901cfefd"},
 ]
 idna = [
     {file = "idna-3.2-py3-none-any.whl", hash = "sha256:14475042e284991034cb48e06f6851428fb14c4dc953acd9be9a5e95c7b6dd7a"},
