@@ -38,6 +38,7 @@ class DeleteTask(AbstractCommandLineInterface):
         project_id: str,
         task_id: str,
         force: bool = False,
+        dryrun: bool = False,
         task_query: Optional[TaskQuery] = None,
     ) -> bool:
         """
@@ -88,11 +89,17 @@ class DeleteTask(AbstractCommandLineInterface):
         if not self.confirm_delete_task(task_id):
             return False
 
-        self.service.api.delete_task(project_id, task_id)
+        if not dryrun:
+            self.service.api.delete_task(project_id, task_id)
         return True
 
     def delete_task_list(
-        self, project_id: str, task_id_list: List[str], force: bool = False, task_query: Optional[TaskQuery] = None
+        self,
+        project_id: str,
+        task_id_list: List[str],
+        force: bool = False,
+        dryrun: bool = False,
+        task_query: Optional[TaskQuery] = None,
     ):
         """
         複数のタスクを削除する。
@@ -107,7 +114,7 @@ class DeleteTask(AbstractCommandLineInterface):
         count_delete_task = 0
         for task_index, task_id in enumerate(task_id_list):
             try:
-                result = self.delete_task(project_id, task_id, force=force, task_query=task_query)
+                result = self.delete_task(project_id, task_id, force=force, task_query=task_query, dryrun=dryrun)
                 if result:
                     count_delete_task += 1
                     logger.info(f"{task_index+1} / {len(task_id_list)} 件目: タスク'{task_id}'を削除しました。")
@@ -126,7 +133,9 @@ class DeleteTask(AbstractCommandLineInterface):
         dict_task_query = annofabcli.common.cli.get_json_from_args(args.task_query)
         task_query: Optional[TaskQuery] = TaskQuery.from_dict(dict_task_query) if dict_task_query is not None else None
 
-        self.delete_task_list(args.project_id, task_id_list=task_id_list, force=args.force, task_query=task_query)
+        self.delete_task_list(
+            args.project_id, task_id_list=task_id_list, force=args.force, dryrun=args.dryrun, task_query=task_query
+        )
 
 
 def main(args):
@@ -141,6 +150,7 @@ def parse_args(parser: argparse.ArgumentParser):
     argument_parser.add_project_id()
     argument_parser.add_task_id()
     parser.add_argument("--force", action="store_true", help="アノテーションが付与されているタスクも強制的に削除します。")
+    parser.add_argument("--dryrun", action="store_true", help="削除が行われた時の結果を表示しますが、実際はタスクを削除しません。")
     argument_parser.add_task_query()
 
     parser.set_defaults(subcommand_func=main)
