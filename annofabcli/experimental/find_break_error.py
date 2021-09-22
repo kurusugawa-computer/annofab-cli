@@ -119,7 +119,7 @@ class FindBreakError(AbstractCommandLineInterface):
 
         task_sort_history_events: Dict[str, List[Any]] = {}
         for row in df.itertuples():
-            if row.task_id in task_sort_history_events.keys():
+            if row.task_id in task_sort_history_events:
                 task_sort_history_events[row.task_id].append(row)
             else:
                 task_sort_history_events[row.task_id] = [row]
