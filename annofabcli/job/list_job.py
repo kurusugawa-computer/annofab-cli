@@ -3,7 +3,7 @@ import copy
 import logging
 from typing import Any, Dict, List, Optional
 
-from annofabapi.models import JobInfo, ProjectJobType
+from annofabapi.models import ProjectJobInfo, ProjectJobType
 
 import annofabcli
 from annofabcli import AnnofabApiFacade
@@ -20,7 +20,7 @@ class ListJob(AbstractCommandLineInterface):
 
     def get_job_list(
         self, project_id: str, job_type: ProjectJobType, job_query: Optional[Dict[str, Any]] = None
-    ) -> List[JobInfo]:
+    ) -> List[ProjectJobInfo]:
         """
         ジョブ一覧を取得する。
         """

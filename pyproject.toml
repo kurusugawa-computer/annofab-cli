@@ -32,7 +32,7 @@ more-itertools = "*"
 jmespath = "*"
 pyquery = "*"
 isodate = "*"
-annofabapi = ">=0.47.2"
+annofabapi = ">=0.48.0"
 
 pandas = "*"
 bokeh = "*"
