@@ -35,9 +35,9 @@ isodate = "*"
 annofabapi = ">=0.47.2"
 
 pandas = "*"
-bokeh = "^2.3"
-holoviews= "^1.14"
-pyinstaller = "4.5.1"
+bokeh = "*"
+holoviews= "*"
+
 
 [tool.poetry.dev-dependencies]
 # test library
