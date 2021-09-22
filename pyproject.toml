@@ -35,8 +35,8 @@ isodate = "*"
 annofabapi = ">=0.48.0"
 
 pandas = "*"
-bokeh = "*"
-holoviews= "*"
+bokeh = "^2.3"
+holoviews= "^1.14.2"
 
 
 [tool.poetry.dev-dependencies]
