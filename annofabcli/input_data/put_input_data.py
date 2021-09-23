@@ -1,4 +1,3 @@
-from annofabapi.exceptions import CheckSumError
 import argparse
 import logging
 import sys
@@ -14,6 +13,7 @@ from typing import Any, Dict, List, Optional
 import annofabapi
 import pandas
 import requests
+from annofabapi.exceptions import CheckSumError
 from annofabapi.models import ProjectJobType, ProjectMemberRole
 from dataclasses_json import DataClassJsonMixin
 
