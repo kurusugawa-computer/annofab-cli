@@ -128,6 +128,21 @@ class DeleteTask(AbstractCommandLineInterface):
 
     def main(self):
         args = self.args
+
+        if args.dryrun:
+            parent = logger
+            while len(parent.handlers) == 0:
+                parent = parent.parent
+            fmt = logging.BASIC_FORMAT
+            for handler in parent.handlers:
+                if isinstance(handler, logging.StreamHandler):
+                    fmt = handler.formatter._fmt
+            log_formatter = logging.Formatter(fmt.replace("%(message)s", "[DRYRUN] %(message)s"))
+            log_handler = logging.StreamHandler()
+            log_handler.setFormatter(log_formatter)
+            logger.addHandler(log_handler)
+            logger.propagate = False
+
         task_id_list = annofabcli.common.cli.get_list_from_args(args.task_id)
 
         dict_task_query = annofabcli.common.cli.get_json_from_args(args.task_query)
