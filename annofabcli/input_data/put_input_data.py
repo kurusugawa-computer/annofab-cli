@@ -1,3 +1,4 @@
+from annofabapi.exceptions import CheckSumError
 import argparse
 import logging
 import sys
@@ -177,6 +178,15 @@ class SubPutInputData:
                 f"入力データの登録に失敗しました。"
                 f"input_data_id={input_data.input_data_id}, "
                 f"input_data_name={input_data.input_data_name}"
+            )
+            return False
+        except CheckSumError as e:
+            logger.warning(e)
+            logger.warning(
+                f"入力データを登録しましたが、データが破損している可能性があります。"
+                f"input_data_id={input_data.input_data_id}, "
+                f"input_data_name={input_data.input_data_name},"
+                f"input_data_name={input_data.input_data_path},"
             )
             return False
 
