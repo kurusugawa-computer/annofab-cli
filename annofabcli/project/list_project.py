@@ -51,14 +51,18 @@ class ListProjectMain:
         project_idからプロジェクト一覧を取得する。
         """
         project_list = []
-        for project_id in project_id_list:
+        for index, project_id in enumerate(project_id_list):
             project = self.service.wrapper.get_project_or_none(project_id)
             if project is None:
                 logger.warning(f"project_id='{project_id}'のプロジェクトにアクセスできませんでした。")
                 continue
+
             organization, _ = self.service.api.get_organization_of_project(project_id)
             project["organization_name"] = organization["organization_name"]
             project_list.append(project)
+
+            if (index + 1) % 100 == 0:
+                logger.debug(f"{index+1} 件のプロジェクト情報を取得しました。")
 
         return project_list
 

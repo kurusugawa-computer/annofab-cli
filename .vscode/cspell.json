@@ -39,6 +39,7 @@
         "pylint",
         "strtobool",
         "tzlocal",
-        "bokeh"
+        "bokeh",
+        "pickel"
     ]
 }

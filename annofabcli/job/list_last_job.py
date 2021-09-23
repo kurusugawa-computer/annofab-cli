@@ -3,7 +3,7 @@ import logging
 import sys
 from typing import Any, Dict, List, Optional
 
-from annofabapi.models import JobInfo, Project, ProjectJobType
+from annofabapi.models import Project, ProjectJobInfo, ProjectJobType
 
 import annofabcli
 from annofabcli import AnnofabApiFacade
@@ -18,7 +18,7 @@ class ListLastJob(AbstractCommandLineInterface):
     ジョブ一覧を表示する。
     """
 
-    def get_last_job(self, project_id: str, job_type: ProjectJobType) -> Optional[JobInfo]:
+    def get_last_job(self, project_id: str, job_type: ProjectJobType) -> Optional[ProjectJobInfo]:
         """
         最新のジョブを取得する。ジョブが存在しない場合はNoneを返す。
 
@@ -63,7 +63,7 @@ class ListLastJob(AbstractCommandLineInterface):
 
     def get_last_job_list(
         self, project_id_list: List[str], job_type: ProjectJobType, add_details: bool = False
-    ) -> List[JobInfo]:
+    ) -> List[ProjectJobInfo]:
         job_list = []
         for project_id in project_id_list:
             project = self.get_project(project_id)

@@ -95,6 +95,17 @@ CSV出力
 
 `out.csv <https://github.com/kurusugawa-computer/annofab-cli/blob/master/docs/command_reference/project/list/out.csv>`_
 
+
+最小限の列のみ出力する場合は、``--format minimal_csv`` を指定してください。
+
+.. code-block::
+
+    $ annofabcli project list --organization org1 --format minimal_csv --output out_minimal.csv
+
+`out_minimal.csv <https://github.com/kurusugawa-computer/annofab-cli/blob/master/docs/command_reference/project/list/out_minimal.csv>`_
+
+
+
 JSON出力
 ----------------------------------------------
 

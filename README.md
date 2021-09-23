@@ -35,6 +35,10 @@ $ pip install annofabcli
 
 https://pypi.org/project/annofabcli/
 
+## Windows用の実行ファイルを利用する場合
+[GitHubのリリースページ](https://github.com/kurusugawa-computer/annofab-cli/releases)から`annofabcli-vX.X.X-windows.zip`をダウンロードしてください。
+zipの中にある`annofabcli.exe`が実行ファイルになります。
+
 
 ## Dockerを利用する場合
 
@@ -92,4 +96,13 @@ $ annofabcli annotation list_count --project_id prj1 --task_id file://task.txt -
 $ annofabcli task reject --project_id prj1 --task_id file://tasks.txt --cancel_acceptance \
   --comment "carラベルのoccluded属性を見直してください"
 
+```
+
+# 補足
+
+# Windowsでannofabcliを使う場合
+WindowsのコマンドプロンプトやPowerShellでannofabcliを使う場合、JSON文字列内の二重引用をエスケープする必要があります。
+
+```
+> annofabcli task list --project_id prj1  --task_query '{"\status\": \"complete\"}'
 ```

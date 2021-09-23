@@ -366,7 +366,7 @@ class Database:
     def _write_task_histories_json(self):
         task_list = self.read_tasks_from_json()
         task_histories_dict = self.get_task_histories_dict(task_list)
-        with self.task_histories_json_path.open(mode="w") as f:
+        with self.task_histories_json_path.open(mode="w", encoding="utf-8") as f:
             json.dump(task_histories_dict, f)
 
     def _log_annotation_zip_info(self):
@@ -561,7 +561,7 @@ class Database:
         """
 
         # 残すべきファイル
-        self.filename_timestamp = "{0:%Y%m%d-%H%M%S}".format(datetime.datetime.now())
+        self.filename_timestamp = datetime.datetime.now().strftime("%Y%m%d-%H%M%S")
 
         # DB用のJSONファイルをダウンロードする
         self._download_db_file(is_latest)

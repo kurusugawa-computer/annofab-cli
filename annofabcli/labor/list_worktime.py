@@ -12,11 +12,7 @@ from dataclasses_json import DataClassJsonMixin
 
 import annofabcli
 from annofabcli import AnnofabApiFacade
-from annofabcli.common.cli import (
-    AbstractCommandLineInterface,
-    build_annofabapi_resource_and_login,
-    get_list_from_args,
-)
+from annofabcli.common.cli import AbstractCommandLineInterface, build_annofabapi_resource_and_login, get_list_from_args
 
 logger = logging.getLogger(__name__)
 
