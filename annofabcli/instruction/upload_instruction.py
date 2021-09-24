@@ -20,7 +20,9 @@ class UploadInstruction(AbstractCommandLineInterface):
     """
 
     def upload_html_to_instruction(self, project_id: str, html_path: Path):
-        pq_html = pyquery.PyQuery(filename=str(html_path))
+        with html_path.open(encoding="utf-8") as f:
+            file_content = f.read()
+        pq_html = pyquery.PyQuery(file_content)
         pq_img = pq_html("img")
 
         # 画像をすべてアップロードして、img要素のsrc属性値を annofab urlに変更する
