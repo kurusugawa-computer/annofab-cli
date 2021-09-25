@@ -22,6 +22,7 @@ from annofabcli.common.cli import (
     build_annofabapi_resource_and_login,
 )
 from annofabcli.common.facade import TaskQuery, match_task_with_query
+from annofabcli.common.utils import add_dryrun_prefix
 
 logger = logging.getLogger(__name__)
 
@@ -351,18 +352,7 @@ class RejectTasks(AbstractCommandLineInterface):
             return
 
         if args.dryrun:
-            parent = logger
-            while len(parent.handlers) == 0:
-                parent = parent.parent
-            fmt = logging.BASIC_FORMAT
-            for handler in parent.handlers:
-                if isinstance(handler, logging.StreamHandler):
-                    fmt = handler.formatter._fmt
-            log_formatter = logging.Formatter(fmt.replace("%(message)s", "[DRYRUN] %(message)s"))
-            log_handler = logging.StreamHandler()
-            log_handler.setFormatter(log_formatter)
-            logger.addHandler(log_handler)
-            logger.propagate = False
+            add_dryrun_prefix(logger)
 
         task_id_list = annofabcli.common.cli.get_list_from_args(args.task_id)
         assign_last_annotator = not args.not_assign and args.assigned_annotator_user_id is None
