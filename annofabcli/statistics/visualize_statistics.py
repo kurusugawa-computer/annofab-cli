@@ -401,6 +401,7 @@ class WriteCsvGraph:
 
 def visualize_statistics(
     project_id: str,
+    *,
     annofab_service: annofabapi.Resource,
     annofab_facade: AnnofabApiFacade,
     work_dir: Path,
@@ -411,6 +412,7 @@ def visualize_statistics(
     user_id_list: Optional[List[str]],
     update: bool = False,
     download_latest: bool = False,
+    is_get_task_histories_one_of_each: bool = False,
     start_date: Optional[str] = None,
     end_date: Optional[str] = None,
     minimal_output: bool = False,
@@ -444,7 +446,7 @@ def visualize_statistics(
         ),
     )
     if update:
-        database.update_db(download_latest)
+        database.update_db(download_latest, is_get_task_histories_one_of_each=is_get_task_histories_one_of_each)
 
     table_obj = Table(database, ignored_task_id_list)
     if len(table_obj._get_task_list()) == 0:
@@ -498,6 +500,7 @@ def visualize_statistics(
 
 def visualize_statistics_wrapper(
     project_id: str,
+    *,
     root_output_dir: Path,
     annofab_service: annofabapi.Resource,
     annofab_facade: AnnofabApiFacade,
@@ -508,6 +511,7 @@ def visualize_statistics_wrapper(
     user_id_list: Optional[List[str]],
     update: bool = False,
     download_latest: bool = False,
+    is_get_task_histories_one_of_each: bool = False,
     start_date: Optional[str] = None,
     end_date: Optional[str] = None,
     minimal_output: bool = False,
@@ -529,6 +533,7 @@ def visualize_statistics_wrapper(
             user_id_list=user_id_list,
             update=update,
             download_latest=download_latest,
+            is_get_task_histories_one_of_each=is_get_task_histories_one_of_each,
             start_date=start_date,
             end_date=end_date,
             minimal_output=minimal_output,
@@ -546,6 +551,7 @@ class VisualizeStatistics(AbstractCommandLineInterface):
 
     def visualize_statistics_for_project_list(
         self,
+        *,
         root_output_dir: Path,
         project_id_list: List[str],
         work_dir: Path,
@@ -555,6 +561,7 @@ class VisualizeStatistics(AbstractCommandLineInterface):
         user_id_list: Optional[List[str]],
         update: bool = False,
         download_latest: bool = False,
+        is_get_task_histories_one_of_each: bool = False,
         start_date: Optional[str] = None,
         end_date: Optional[str] = None,
         minimal_output: bool = False,
@@ -575,6 +582,7 @@ class VisualizeStatistics(AbstractCommandLineInterface):
                 user_id_list=user_id_list,
                 update=update,
                 download_latest=download_latest,
+                is_get_task_histories_one_of_each=is_get_task_histories_one_of_each,
                 start_date=start_date,
                 end_date=end_date,
                 minimal_output=minimal_output,
@@ -598,6 +606,7 @@ class VisualizeStatistics(AbstractCommandLineInterface):
                     user_id_list=user_id_list,
                     update=update,
                     download_latest=download_latest,
+                    is_get_task_histories_one_of_each=is_get_task_histories_one_of_each,
                     start_date=start_date,
                     end_date=end_date,
                     minimal_output=minimal_output,
@@ -609,7 +618,7 @@ class VisualizeStatistics(AbstractCommandLineInterface):
 
     @staticmethod
     def validate(args: argparse.Namespace) -> bool:
-        COMMON_MESSAGE = "annofabcli statistics visulize: error:"
+        COMMON_MESSAGE = "annofabcli statistics visualize: error:"
         if args.start_date is not None and args.end_date is not None:
             if args.start_date > args.end_date:
                 print(
@@ -656,6 +665,7 @@ class VisualizeStatistics(AbstractCommandLineInterface):
                 user_id_list=user_id_list,
                 update=not args.not_update,
                 download_latest=args.latest,
+                is_get_task_histories_one_of_each=args.get_task_histories_one_of_each,
                 start_date=args.start_date,
                 end_date=args.end_date,
                 minimal_output=args.minimal,
@@ -673,6 +683,7 @@ class VisualizeStatistics(AbstractCommandLineInterface):
                 user_id_list=user_id_list,
                 update=not args.not_update,
                 download_latest=args.latest,
+                is_get_task_histories_one_of_each=args.get_task_histories_one_of_each,
                 start_date=args.start_date,
                 end_date=args.end_date,
                 minimal_output=args.minimal,
@@ -767,7 +778,14 @@ def parse_args(parser: argparse.ArgumentParser):
     parser.add_argument(
         "--latest",
         action="store_true",
-        help="統計情報の元になるファイル（アノテーションzipなど）の最新版をダウンロードします。ファイルを最新版にするのに5分以上待つ必要があります。",
+        help="統計情報の元になるファイル（アノテーションzipなど）の最新版を参照します。このオプションを指定すると、各ファイルを更新するのに5分以上待ちます。\n"
+        "ただしWebAPIの都合上、'タスク履歴全件ファイル'は最新版を参照できません。タスク履歴の最新版を参照する場合は ``--get_task_histories_one_of_each`` を指定してください。",
+    )
+
+    parser.add_argument(
+        "--get_task_histories_one_of_each",
+        action="store_true",
+        help="タスク履歴を1個ずつ取得して、タスク履歴の最新版を参照します。タスクの数だけWebAPIを実行するので、処理時間が長くなります。",
     )
 
     parser.add_argument(
