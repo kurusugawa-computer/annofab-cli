@@ -161,6 +161,10 @@ class WriteCsvGraph:
             task_history_df = self._get_task_history_df()
             task_df = self._get_task_df()
             annotation_count_ratio_df = self.table_obj.create_annotation_count_ratio_df(task_history_df, task_df)
+            if len(annotation_count_ratio_df) == 0:
+                self.productivity_df = pandas.DataFrame()
+                return self.productivity_df
+
             productivity_df = self.table_obj.create_productivity_per_user_from_aw_time(
                 df_task_history=task_history_df,
                 df_labor=self._get_labor_df(),
@@ -202,6 +206,10 @@ class WriteCsvGraph:
         ユーザごとにプロットした散布図を出力する。
         """
         productivity_df = self._get_productivity_df()
+        if len(productivity_df):
+            logger.warning(f"'メンバごとの生産性と品質.csv'が0件なので、ユーザごとの散布図を出力しません。")
+            return
+
         self._catch_exception(self.scatter_obj.write_scatter_for_productivity_by_monitored_worktime)(productivity_df)
         self._catch_exception(self.scatter_obj.write_scatter_for_productivity_by_actual_worktime)(productivity_df)
         self._catch_exception(self.scatter_obj.write_scatter_for_quality)(productivity_df)
@@ -376,6 +384,10 @@ class WriteCsvGraph:
 
     def write_productivity_csv_per_user(self) -> None:
         productivity_df = self._get_productivity_df()
+        if len(productivity_df):
+            logger.warning(f"作業履歴がないため、'メンバごとの生産性と品質.csv'を出力しません。")
+            return
+
         self._catch_exception(self.csv_obj.write_productivity_per_user)(productivity_df)
         self._catch_exception(self.csv_obj.write_whole_productivity)(productivity_df)
 
