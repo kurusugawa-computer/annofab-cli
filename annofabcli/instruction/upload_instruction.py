@@ -1,6 +1,5 @@
 import argparse
 import logging.handlers
-import time
 import uuid
 from pathlib import Path
 from typing import Optional
@@ -41,14 +40,19 @@ class UploadInstruction(AbstractCommandLineInterface):
 
             if img_path.exists():
                 image_id = str(uuid.uuid4())
-                img_url = self.service.wrapper.upload_instruction_image(project_id, image_id, str(img_path))
 
-                logger.debug(f"image uploaded. file={img_path}, instruction_image_url={img_url}")
-                img_elm.attrib["src"] = img_url
-                time.sleep(1)
+                try:
+                    img_url = self.service.wrapper.upload_instruction_image(project_id, image_id, str(img_path))
+                    logger.debug(f"image uploaded. file={img_path}, instruction_image_url={img_url}")
+                    img_elm.attrib["src"] = img_url
+                except Exception as e:  # pylint: disable=broad-except
+                    logger.warning(e)
+                    logger.warning(f"作業ガイドの画像登録に失敗しました。{image_id=}, {img_path=}")
+                    continue
 
             else:
                 logger.warning(f"image does not exist. path={img_path}")
+                continue
 
         # body要素があればその中身、なければhtmlファイルの中身をアップロードする
         if len(pq_html("body")) > 0:
