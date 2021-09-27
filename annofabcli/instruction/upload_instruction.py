@@ -46,8 +46,7 @@ class UploadInstruction(AbstractCommandLineInterface):
                     logger.debug(f"image uploaded. file={img_path}, instruction_image_url={img_url}")
                     img_elm.attrib["src"] = img_url
                 except Exception as e:  # pylint: disable=broad-except
-                    logger.warning(e)
-                    logger.warning(f"作業ガイドの画像登録に失敗しました。{image_id=}, {img_path=}")
+                    logger.warning(f"作業ガイドの画像登録に失敗しました。{image_id=}, {img_path=}, {e}")
                     continue
 
             else:
