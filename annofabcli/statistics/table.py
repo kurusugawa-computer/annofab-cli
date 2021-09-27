@@ -1250,7 +1250,8 @@ class Table:
         def get_annotation_count(row) -> float:
             task_id = row.name[0]
             annotation_count = annotation_count_dict[task_id]["annotation_count"]
-            return row["worktime_ratio_by_task"] * annotation_count
+            result = row["worktime_ratio_by_task"] * annotation_count
+            return result
 
         def get_input_data_count(row) -> float:
             task_id = row.name[0]
@@ -1264,6 +1265,23 @@ class Table:
         group_obj = task_history_df.groupby(["task_id", "phase", "phase_stage", "user_id"]).agg(
             {"worktime_hour": "sum"}
         )
+        if len(group_obj) == 0:
+            logger.warning(f"タスク履歴情報に作業しているタスクがありませんでした。タスク履歴全件ファイルが更新されていない可能性があります。")
+            return pandas.DataFrame(
+                columns=[
+                    "task_id",
+                    "phase",
+                    "phase_stage",
+                    "user_id",
+                    "worktime_hour",
+                    "worktime_ratio_by_task",
+                    "annotation_count",
+                    "input_data_count",
+                    "pointed_out_inspection_comment_count",
+                    "rejected_count",
+                ]
+            )
+
         group_obj["worktime_ratio_by_task"] = group_obj.groupby(level=["task_id", "phase", "phase_stage"]).apply(
             lambda e: e / float(e.sum())
         )
@@ -1499,6 +1517,10 @@ class Table:
             df_agg_labor = df_labor2.pivot_table(
                 values=["worktime_result_hour"], index="date", aggfunc=numpy.sum
             ).fillna(0)
+
+            if "worktime_result_hour" not in df_agg_labor.columns:
+                # len(df_labor2)==0 のときの状況
+                df_agg_labor["worktime_result_hour"] = 0
             df_tmp = df_labor2.pivot_table(values=["user_id"], index="date", aggfunc="count").fillna(0)
 
             if len(df_tmp) > 0:

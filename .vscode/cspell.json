@@ -39,6 +39,9 @@
         "pylint",
         "strtobool",
         "tzlocal",
-        "bokeh"
+        "bokeh",
+        "pickel",
+        "pyquery",
+        "iterrows"
     ]
 }

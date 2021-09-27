@@ -1,6 +1,6 @@
 [tool.poetry]
 name = "annofabcli"
-version = "1.48.0"
+version = "1.48.6"
 description = "Utility Command Line Interface for AnnoFab"
 authors = ["yuji38kwmt"]
 license = "MIT"
@@ -32,12 +32,12 @@ more-itertools = "*"
 jmespath = "*"
 pyquery = "*"
 isodate = "*"
-annofabapi = ">=0.47.2"
+annofabapi = ">=0.48.1"
 
-# pandas1.3にすると、TestCommandLine.test_list_labor_worktime が失敗するので、pandas1.2以下にする
-#pandas = "~1.2"
+pandas = "*"
 bokeh = "^2.3"
-holoviews= "^1.14"
+holoviews= "^1.14.2"
+
 
 [tool.poetry.dev-dependencies]
 # test library
@@ -71,18 +71,15 @@ ipython = "*"
 # ipythonとjediの組み合わせによるバグを避けるため、バージョン指定
 # https://zenn.dev/hige/articles/282bf79d47378e
 jedi = "<0.18"
+pyinstaller = "^4.5.1"
 
 [tool.poetry.scripts]
 annofabcli = "annofabcli.__main__:main"
 
 [tool.isort]
+profile = "black"
 line_length = 120
-# blackの設定に合わせる
-# https://black.readthedocs.io/en/stable/the_black_code_style.html#line-length
-multi_line_output=3
-include_trailing_comma = true
-force_grid_wrap = 0
-use_parentheses = true
+
 
 [tool.black]
 line-length = 120

@@ -1,0 +1,3 @@
+﻿project_id,title,organization_name,project_status,input_data_type,last_tasks_updated_datetime,created_datetime
+prj1,prj1,org1,suspended,image,2019-08-21T09:39:55.239+09:00,2019-07-31T18:52:44.26+09:00
+prj2,prj2,org1,active,image,2019-08-21T09:39:55.239+09:00,2019-07-31T18:52:44.26+09:00

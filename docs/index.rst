@@ -10,4 +10,5 @@ Table of Contents
 
    user_guide/index
    command_reference/index
+   examples/index
    faq
