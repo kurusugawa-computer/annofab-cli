@@ -1,3 +1,5 @@
+from __future__ import annotations
+
 import argparse
 import logging.handlers
 import uuid
@@ -24,6 +26,7 @@ class UploadInstruction(AbstractCommandLineInterface):
         pq_html = pyquery.PyQuery(file_content)
         pq_img = pq_html("img")
 
+        img_path_dict: dict[str, str] = {}
         # 画像をすべてアップロードして、img要素のsrc属性値を annofab urlに変更する
         for img_elm in pq_img:
             src_value: str = img_elm.attrib.get("src")
@@ -38,6 +41,12 @@ class UploadInstruction(AbstractCommandLineInterface):
             else:
                 img_path = html_path.parent / src_value
 
+            if str(img_path) in img_path_dict:
+                image_id = img_path_dict[str(img_path)]
+                img_url = f"https://annofab.com/projects/{project_id}/instruction-images/{image_id}"
+                img_elm.attrib["src"] = img_url
+                continue
+
             if img_path.exists():
                 image_id = str(uuid.uuid4())
 
@@ -45,6 +54,7 @@ class UploadInstruction(AbstractCommandLineInterface):
                     img_url = self.service.wrapper.upload_instruction_image(project_id, image_id, str(img_path))
                     logger.debug(f"image uploaded. file={img_path}, instruction_image_url={img_url}")
                     img_elm.attrib["src"] = img_url
+                    img_path_dict[str(img_path)] = image_id
                 except Exception as e:  # pylint: disable=broad-except
                     logger.warning(f"作業ガイドの画像登録に失敗しました。image_id={image_id}, img_path={img_path}, {e}")
                     continue
