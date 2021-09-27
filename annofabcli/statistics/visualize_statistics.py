@@ -55,7 +55,7 @@ def write_project_name_file(
     """
     project_info = annofab_service.api.get_project(project_id)[0]
     project_title = project_info["title"]
-    logger.info(f"project_titile = {project_title}")
+    logger.info(f"project_title = {project_title}")
     filename = annofabcli.utils.to_filename(project_title)
     output_project_dir.mkdir(exist_ok=True, parents=True)
 
@@ -66,7 +66,6 @@ def write_project_name_file(
         args=command_line_args,
     )
 
-    print(project_summary)
     with open(str(output_project_dir / f"{filename}.json"), "w", encoding="utf-8") as f:
         f.write(project_summary.to_json(ensure_ascii=False, indent=2))
 
@@ -161,6 +160,10 @@ class WriteCsvGraph:
             task_history_df = self._get_task_history_df()
             task_df = self._get_task_df()
             annotation_count_ratio_df = self.table_obj.create_annotation_count_ratio_df(task_history_df, task_df)
+            if len(annotation_count_ratio_df) == 0:
+                self.productivity_df = pandas.DataFrame()
+                return self.productivity_df
+
             productivity_df = self.table_obj.create_productivity_per_user_from_aw_time(
                 df_task_history=task_history_df,
                 df_labor=self._get_labor_df(),
@@ -202,6 +205,10 @@ class WriteCsvGraph:
         ユーザごとにプロットした散布図を出力する。
         """
         productivity_df = self._get_productivity_df()
+        if len(productivity_df):
+            logger.warning(f"'メンバごとの生産性と品質.csv'が0件なので、ユーザごとの散布図を出力しません。")
+            return
+
         self._catch_exception(self.scatter_obj.write_scatter_for_productivity_by_monitored_worktime)(productivity_df)
         self._catch_exception(self.scatter_obj.write_scatter_for_productivity_by_actual_worktime)(productivity_df)
         self._catch_exception(self.scatter_obj.write_scatter_for_quality)(productivity_df)
@@ -376,6 +383,10 @@ class WriteCsvGraph:
 
     def write_productivity_csv_per_user(self) -> None:
         productivity_df = self._get_productivity_df()
+        if len(productivity_df):
+            logger.warning(f"作業履歴がないため、'メンバごとの生産性と品質.csv'を出力しません。")
+            return
+
         self._catch_exception(self.csv_obj.write_productivity_per_user)(productivity_df)
         self._catch_exception(self.csv_obj.write_whole_productivity)(productivity_df)
 
@@ -389,6 +400,7 @@ class WriteCsvGraph:
 
 def visualize_statistics(
     project_id: str,
+    *,
     annofab_service: annofabapi.Resource,
     annofab_facade: AnnofabApiFacade,
     work_dir: Path,
@@ -399,6 +411,7 @@ def visualize_statistics(
     user_id_list: Optional[List[str]],
     update: bool = False,
     download_latest: bool = False,
+    is_get_task_histories_one_of_each: bool = False,
     start_date: Optional[str] = None,
     end_date: Optional[str] = None,
     minimal_output: bool = False,
@@ -432,7 +445,7 @@ def visualize_statistics(
         ),
     )
     if update:
-        database.update_db(download_latest)
+        database.update_db(download_latest, is_get_task_histories_one_of_each=is_get_task_histories_one_of_each)
 
     table_obj = Table(database, ignored_task_id_list)
     if len(table_obj._get_task_list()) == 0:
@@ -486,6 +499,7 @@ def visualize_statistics(
 
 def visualize_statistics_wrapper(
     project_id: str,
+    *,
     root_output_dir: Path,
     annofab_service: annofabapi.Resource,
     annofab_facade: AnnofabApiFacade,
@@ -496,6 +510,7 @@ def visualize_statistics_wrapper(
     user_id_list: Optional[List[str]],
     update: bool = False,
     download_latest: bool = False,
+    is_get_task_histories_one_of_each: bool = False,
     start_date: Optional[str] = None,
     end_date: Optional[str] = None,
     minimal_output: bool = False,
@@ -517,6 +532,7 @@ def visualize_statistics_wrapper(
             user_id_list=user_id_list,
             update=update,
             download_latest=download_latest,
+            is_get_task_histories_one_of_each=is_get_task_histories_one_of_each,
             start_date=start_date,
             end_date=end_date,
             minimal_output=minimal_output,
@@ -534,6 +550,7 @@ class VisualizeStatistics(AbstractCommandLineInterface):
 
     def visualize_statistics_for_project_list(
         self,
+        *,
         root_output_dir: Path,
         project_id_list: List[str],
         work_dir: Path,
@@ -543,6 +560,7 @@ class VisualizeStatistics(AbstractCommandLineInterface):
         user_id_list: Optional[List[str]],
         update: bool = False,
         download_latest: bool = False,
+        is_get_task_histories_one_of_each: bool = False,
         start_date: Optional[str] = None,
         end_date: Optional[str] = None,
         minimal_output: bool = False,
@@ -563,6 +581,7 @@ class VisualizeStatistics(AbstractCommandLineInterface):
                 user_id_list=user_id_list,
                 update=update,
                 download_latest=download_latest,
+                is_get_task_histories_one_of_each=is_get_task_histories_one_of_each,
                 start_date=start_date,
                 end_date=end_date,
                 minimal_output=minimal_output,
@@ -586,6 +605,7 @@ class VisualizeStatistics(AbstractCommandLineInterface):
                     user_id_list=user_id_list,
                     update=update,
                     download_latest=download_latest,
+                    is_get_task_histories_one_of_each=is_get_task_histories_one_of_each,
                     start_date=start_date,
                     end_date=end_date,
                     minimal_output=minimal_output,
@@ -597,7 +617,7 @@ class VisualizeStatistics(AbstractCommandLineInterface):
 
     @staticmethod
     def validate(args: argparse.Namespace) -> bool:
-        COMMON_MESSAGE = "annofabcli statistics visulize: error:"
+        COMMON_MESSAGE = "annofabcli statistics visualize: error:"
         if args.start_date is not None and args.end_date is not None:
             if args.start_date > args.end_date:
                 print(
@@ -644,6 +664,7 @@ class VisualizeStatistics(AbstractCommandLineInterface):
                 user_id_list=user_id_list,
                 update=not args.not_update,
                 download_latest=args.latest,
+                is_get_task_histories_one_of_each=args.get_task_histories_one_of_each,
                 start_date=args.start_date,
                 end_date=args.end_date,
                 minimal_output=args.minimal,
@@ -661,6 +682,7 @@ class VisualizeStatistics(AbstractCommandLineInterface):
                 user_id_list=user_id_list,
                 update=not args.not_update,
                 download_latest=args.latest,
+                is_get_task_histories_one_of_each=args.get_task_histories_one_of_each,
                 start_date=args.start_date,
                 end_date=args.end_date,
                 minimal_output=args.minimal,
@@ -701,7 +723,7 @@ def parse_args(parser: argparse.ArgumentParser):
         required=True,
         nargs="+",
         help=(
-            "対象のプロジェクトのproject_idを指定してください。複数指定した場合、プロジェクトごとに統計情報が出力されます。"
+            "対象のプロジェクトのproject_idを指定してください。複数指定した場合、プロジェクトごとに統計情報が出力されます。\n"
             " ``file://`` を先頭に付けると、project_idが記載されたファイルを指定できます。"
         ),
     )
@@ -714,7 +736,7 @@ def parse_args(parser: argparse.ArgumentParser):
         nargs="+",
         help=(
             "メンバごとの統計グラフに表示するユーザのuser_idを指定してください。"
-            "指定しない場合は、上位20人が表示されます。"
+            "指定しない場合は、上位20人が表示されます。\n"
             " ``file://`` を先頭に付けると、一覧が記載されたファイルを指定できます。"
         ),
     )
@@ -723,7 +745,7 @@ def parse_args(parser: argparse.ArgumentParser):
         "-tq",
         "--task_query",
         type=str,
-        help="タスクの検索クエリをJSON形式で指定します。指定しない場合はすべてのタスクを取得します。"
+        help="タスクの検索クエリをJSON形式で指定します。指定しない場合はすべてのタスクを取得します。\n"
         " ``file://`` を先頭に付けると、JSON形式のファイルを指定できます。"
         "クエリのキーは、task_id, phase, phase_stage, status のみです。",
     )
@@ -734,7 +756,7 @@ def parse_args(parser: argparse.ArgumentParser):
         type=str,
         required=False,
         nargs="+",
-        help="集計対象のタスクのtask_idを指定します。" + " ``file://`` を先頭に付けると、task_idの一覧が記載されたファイルを指定できます。",
+        help="集計対象のタスクのtask_idを指定します。\n" + " ``file://`` を先頭に付けると、task_idの一覧が記載されたファイルを指定できます。",
     )
 
     parser.add_argument("--start_date", type=str, help="指定した日付（'YYYY-MM-DD'）以降に教師付を開始したタスクを集計する。")
@@ -743,7 +765,7 @@ def parse_args(parser: argparse.ArgumentParser):
     parser.add_argument(
         "--ignored_task_id",
         nargs="+",
-        help=("集計対象外のタスクのtask_idを指定します。 ``--task_id`` より優先度が高いです。" " ``file://`` を先頭に付けると、一覧が記載されたファイルを指定できます。"),
+        help=("集計対象外のタスクのtask_idを指定します。 ``--task_id`` より優先度が高いです。\n" " ``file://`` を先頭に付けると、一覧が記載されたファイルを指定できます。"),
     )
 
     parser.add_argument(
@@ -755,7 +777,14 @@ def parse_args(parser: argparse.ArgumentParser):
     parser.add_argument(
         "--latest",
         action="store_true",
-        help="統計情報の元になるファイル（アノテーションzipなど）の最新版をダウンロードします。ファイルを最新版にするのに5分以上待つ必要があります。",
+        help="統計情報の元になるファイル（アノテーションzipなど）の最新版を参照します。このオプションを指定すると、各ファイルを更新するのに5分以上待ちます。\n"
+        "ただしWebAPIの都合上、'タスク履歴全件ファイル'は最新版を参照できません。タスク履歴の最新版を参照する場合は ``--get_task_histories_one_of_each`` を指定してください。",
+    )
+
+    parser.add_argument(
+        "--get_task_histories_one_of_each",
+        action="store_true",
+        help="タスク履歴を1個ずつ取得して、タスク履歴の最新版を参照します。タスクの数だけWebAPIを実行するので、処理時間が長くなります。",
     )
 
     parser.add_argument(
@@ -779,7 +808,7 @@ def parse_args(parser: argparse.ArgumentParser):
     parser.add_argument(
         "--parallelism",
         type=int,
-        help="並列度。 ``--project_id`` に複数のproject_idを指定したときのみ有効なオプションです。指定しない場合は、逐次的に処理します。また、必ず'--yes'を指定してください。",
+        help="並列度。 ``--project_id`` に複数のproject_idを指定したときのみ有効なオプションです。指定しない場合は、逐次的に処理します。また、必ず ``--yes`` を指定してください。",
     )
 
     parser.set_defaults(subcommand_func=main)

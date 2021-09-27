@@ -4,14 +4,19 @@
 
 # Requirements
 * Bash
-* python 3.6+
+* python 3.7.1+
 
-# Install
-以下のコマンドを実行してください。開発に必要な環境が構築されます。
 
-```bash
-$ make init
-```
+
+# 開発方法
+VSCodeのdevcotainerを利用して開発します。
+https://code.visualstudio.com/docs/remote/containers
+
+1. 以下の環境変数を定義する
+    * `ANNOFAB_USER_ID` : AnnoFabのユーザID
+    * `ANNOFAB_PASSWORD` : AnnoFabのパスワード
+    * `DATA_DIR` : CLIがアクセスするデータが存在するディレクトリのパス
+
 
 # Test
 

@@ -41,6 +41,7 @@
         "tzlocal",
         "bokeh",
         "pickel",
-        "pyquery"
+        "pyquery",
+        "iterrows"
     ]
 }
