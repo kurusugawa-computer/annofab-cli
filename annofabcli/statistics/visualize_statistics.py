@@ -55,7 +55,7 @@ def write_project_name_file(
     """
     project_info = annofab_service.api.get_project(project_id)[0]
     project_title = project_info["title"]
-    logger.info(f"project_titile = {project_title}")
+    logger.info(f"project_title = {project_title}")
     filename = annofabcli.utils.to_filename(project_title)
     output_project_dir.mkdir(exist_ok=True, parents=True)
 
@@ -66,7 +66,6 @@ def write_project_name_file(
         args=command_line_args,
     )
 
-    print(project_summary)
     with open(str(output_project_dir / f"{filename}.json"), "w", encoding="utf-8") as f:
         f.write(project_summary.to_json(ensure_ascii=False, indent=2))
 
@@ -724,7 +723,7 @@ def parse_args(parser: argparse.ArgumentParser):
         required=True,
         nargs="+",
         help=(
-            "対象のプロジェクトのproject_idを指定してください。複数指定した場合、プロジェクトごとに統計情報が出力されます。"
+            "対象のプロジェクトのproject_idを指定してください。複数指定した場合、プロジェクトごとに統計情報が出力されます。\n"
             " ``file://`` を先頭に付けると、project_idが記載されたファイルを指定できます。"
         ),
     )
@@ -737,7 +736,7 @@ def parse_args(parser: argparse.ArgumentParser):
         nargs="+",
         help=(
             "メンバごとの統計グラフに表示するユーザのuser_idを指定してください。"
-            "指定しない場合は、上位20人が表示されます。"
+            "指定しない場合は、上位20人が表示されます。\n"
             " ``file://`` を先頭に付けると、一覧が記載されたファイルを指定できます。"
         ),
     )
@@ -746,7 +745,7 @@ def parse_args(parser: argparse.ArgumentParser):
         "-tq",
         "--task_query",
         type=str,
-        help="タスクの検索クエリをJSON形式で指定します。指定しない場合はすべてのタスクを取得します。"
+        help="タスクの検索クエリをJSON形式で指定します。指定しない場合はすべてのタスクを取得します。\n"
         " ``file://`` を先頭に付けると、JSON形式のファイルを指定できます。"
         "クエリのキーは、task_id, phase, phase_stage, status のみです。",
     )
@@ -757,7 +756,7 @@ def parse_args(parser: argparse.ArgumentParser):
         type=str,
         required=False,
         nargs="+",
-        help="集計対象のタスクのtask_idを指定します。" + " ``file://`` を先頭に付けると、task_idの一覧が記載されたファイルを指定できます。",
+        help="集計対象のタスクのtask_idを指定します。\n" + " ``file://`` を先頭に付けると、task_idの一覧が記載されたファイルを指定できます。",
     )
 
     parser.add_argument("--start_date", type=str, help="指定した日付（'YYYY-MM-DD'）以降に教師付を開始したタスクを集計する。")
@@ -766,7 +765,7 @@ def parse_args(parser: argparse.ArgumentParser):
     parser.add_argument(
         "--ignored_task_id",
         nargs="+",
-        help=("集計対象外のタスクのtask_idを指定します。 ``--task_id`` より優先度が高いです。" " ``file://`` を先頭に付けると、一覧が記載されたファイルを指定できます。"),
+        help=("集計対象外のタスクのtask_idを指定します。 ``--task_id`` より優先度が高いです。\n" " ``file://`` を先頭に付けると、一覧が記載されたファイルを指定できます。"),
     )
 
     parser.add_argument(
@@ -809,7 +808,7 @@ def parse_args(parser: argparse.ArgumentParser):
     parser.add_argument(
         "--parallelism",
         type=int,
-        help="並列度。 ``--project_id`` に複数のproject_idを指定したときのみ有効なオプションです。指定しない場合は、逐次的に処理します。また、必ず'--yes'を指定してください。",
+        help="並列度。 ``--project_id`` に複数のproject_idを指定したときのみ有効なオプションです。指定しない場合は、逐次的に処理します。また、必ず ``--yes`` を指定してください。",
     )
 
     parser.set_defaults(subcommand_func=main)

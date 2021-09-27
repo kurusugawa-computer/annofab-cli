@@ -449,11 +449,12 @@ class Database:
         elif isinstance(results[INSPECTION_JSON_INDEX], Exception):
             raise results[INSPECTION_JSON_INDEX]
 
-        if isinstance(results[TASK_HISTORY_JSON_INDEX], DownloadingFileNotFoundError):
-            # タスク履歴APIを一つずつ実行して、JSONファイルを生成する
-            self._write_task_histories_json()
-        elif isinstance(results[TASK_HISTORY_JSON_INDEX], Exception):
-            raise results[TASK_HISTORY_JSON_INDEX]
+        if not is_get_task_histories_one_of_each:
+            if isinstance(results[TASK_HISTORY_JSON_INDEX], DownloadingFileNotFoundError):
+                # タスク履歴APIを一つずつ実行して、JSONファイルを生成する
+                self._write_task_histories_json()
+            elif isinstance(results[TASK_HISTORY_JSON_INDEX], Exception):
+                raise results[TASK_HISTORY_JSON_INDEX]
 
         for result in [results[TASK_JSON_INDEX], results[INPUT_DATA_JSON_INDEX], results[ANNOTATION_ZIP_INDEX]]:
             if isinstance(result, Exception):
@@ -656,7 +657,7 @@ class Database:
 
         task_id_list: List[str] = [e["task_id"] for e in all_tasks]
 
-        logger.debug(f"{len(all_tasks)} 回, `get_task_histories` WebAPIを実行します。")
+        logger.debug(f"{len(all_tasks)} 回 `get_task_histories` WebAPIを実行します。")
 
         partial_func = partial(_get_task_histories_dict, self.annofab_service.api, self.project_id)
         process = multiprocessing.current_process()
