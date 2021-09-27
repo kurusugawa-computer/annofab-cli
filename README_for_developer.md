@@ -6,12 +6,7 @@
 * Bash
 * python 3.7.1+
 
-# Install
-以下のコマンドを実行してください。開発に必要な環境が構築されます。
 
-```bash
-$ make init
-```
 
 # 開発方法
 VSCodeのdevcotainerを利用して開発します。
