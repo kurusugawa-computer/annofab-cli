@@ -1,3 +1,6 @@
+from enum import Enum,auto
+import re
+
 import argparse
 import logging
 from typing import Optional
@@ -8,6 +11,7 @@ import annofabcli
 from annofabcli import AnnofabApiFacade
 from annofabcli.common.cli import AbstractCommandLineInterface, ArgumentParser, build_annofabapi_resource_and_login
 from annofabcli.common.visualize import AddProps
+from annofabapi.wrapper import TaskFrameKey,Wrapper
 
 logger = logging.getLogger(__name__)
 
@@ -21,15 +25,73 @@ class CopyAnnotationMain:
 
 class CopyAnnotation(AbstractCommandLineInterface):
 
+    class INPUT_TYPECHECK_ENUM(Enum):
+        TASK_AND_FILE=auto()
+        TASK_ONLY=auto()
+        FILE_PATH=auto()
+        INVALID=auto()
+
+
     def __init__(self, service: annofabapi.Resource, facade: AnnofabApiFacade, args: argparse.Namespace):
         super().__init__(service, facade, args)
         self.visualize = AddProps(self.service, args.project_id)
+    @classmethod
+    def recognize_input_type(cls, args: argparse.Namespace) -> bool:
+        """
+            引数のバリデーションをする．
+            inputについて，
+            task1:task2
+            task1/input1:task2/input2
+            file:/input.txt
+            のいづれかの形式を保持しているかをチェックする．
+        """ 
+        input_data = args.input
+        if re.match(r'^(\w|-)+\/(\w|-)+:(\w|-)+\/(\w|-)+$',input_data):
+            return cls.INPUT_TYPECHECK_ENUM.TASK_AND_FILE
+        elif re.match(r'^(\w|-)+:(\w|-)+$',input_data):
+            return cls.INPUT_TYPECHECK_ENUM.TASK_ONLY
+        elif re.match(r'file:\/\/(\w|\.)+$',input_data):
+            return cls.INPUT_TYPECHECK_ENUM.FILE_PATH
+        else:
+            return cls.INPUT_TYPECHECK_ENUM.INVALID
+
+
 
     def main(self):
         args = self.args
-        logger.debug("copy_annotation.CopyAnnotation.main in copy subcommand called")
-        logger.debug(args)
-        exit()
+        validate_result = CopyAnnotation.recognize_input_type(args)
+        logger.debug(validate_result)
+        if validate_result == self.INPUT_TYPECHECK_ENUM.INVALID:
+            return 
+        
+        project_id = args.project_id
+        input_data = args.input
+
+        from_frame_keys:list[TaskFrameKey]
+        to_frame_keys:list[TaskFrameKey]
+
+        if validate_result == self.INPUT_TYPECHECK_ENUM.TASK_AND_FILE:
+            # task1/input1:task3:input3の形式
+            from_task_and_input,to_task_and_input = input_data.split(':')
+            from_task,from_input = from_task_and_input.split('/')
+            to_task,to_input = to_task_and_input.split('/')
+            from_frame_keys = [TaskFrameKey(project_id=project_id,task_id = from_task,input_data_id=from_input )]
+            to_frame_keys = [TaskFrameKey(project_id=project_id,task_id = to_task,input_data_id=to_input )]
+        elif validate_result==self.INPUT_TYPECHECK_ENUM.TASK_ONLY:
+            #task内に含まれるinput_data_idを全て取得して，from_frame_keysおよびto_frame_keysにappendしていく
+            pass
+        elif validate_result==self.INPUT_TYPECHECK_ENUM.FILE_PATH:
+            #TODO : ファイル内の入力形式がわからないので，調べておく
+            pass
+        elif validate_result==self.INPUT_TYPECHECK_ENUM.INVALID:
+            #エラーを投げて終了
+            pass
+        else:
+            #想定外
+            pass
+        for from_frame_key,to_frame_key in zip(from_frame_keys,to_frame_keys):
+            self.service.wrapper.copy_annotation(src=from_frame_key,dest=to_frame_key)
+
 
 
 def main(args):
@@ -37,8 +99,6 @@ def main(args):
     facade = AnnofabApiFacade(service)
     CopyAnnotation(service, facade, args).main()
 
-    logger.debug("copy_annotation.main in copy subcommand called")
-    exit()
 
 
 def parse_args(parser: argparse.ArgumentParser):
@@ -64,6 +124,17 @@ def parse_args(parser: argparse.ArgumentParser):
     )
 
 
+    help_message = """アノテーションのコピー元タスクと，コピー先タスクを指定します。
+    入力データ単位でコピーする場合
+        task1:task3 task2:task4
+        入力データは、タスク内の順序に対応しています。
+        たとえば上記のコマンドだと、「task1の1番目の入力データのアノテーション」を「task3の1番目の入力データ」にコピーします。
+    ファイル単位でコピーする場合
+        task1/input1:task3/input3  task2/input2:task4/input4
+    ファイルの指定
+        file://input.txt
+    """
+    parser.add_argument("-i", "--input", type=str, required=True, help=help_message)
     parser.set_defaults(subcommand_func=main)
 
 
