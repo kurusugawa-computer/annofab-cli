@@ -67,8 +67,8 @@ class CopyAnnotation(AbstractCommandLineInterface):
         project_id = args.project_id
         input_data = args.input
 
-        from_frame_keys:list[TaskFrameKey]
-        to_frame_keys:list[TaskFrameKey]
+        from_frame_keys:list[TaskFrameKey]=[]
+        to_frame_keys:list[TaskFrameKey]=[]
 
         if validate_result == self.INPUT_TYPECHECK_ENUM.TASK_AND_FILE:
             # task1/input1:task3:input3の形式
@@ -78,8 +78,26 @@ class CopyAnnotation(AbstractCommandLineInterface):
             from_frame_keys = [TaskFrameKey(project_id=project_id,task_id = from_task,input_data_id=from_input )]
             to_frame_keys = [TaskFrameKey(project_id=project_id,task_id = to_task,input_data_id=to_input )]
         elif validate_result==self.INPUT_TYPECHECK_ENUM.TASK_ONLY:
+            # task1:task3の形式
+            from_task,to_task = input_data.split(':')
             #task内に含まれるinput_data_idを全て取得して，from_frame_keysおよびto_frame_keysにappendしていく
-            pass
+            from_task_or_none = self.service.wrapper.get_task_or_none(project_id=project_id , task_id=from_task)
+            to_task_or_none = self.service.wrapper.get_task_or_none(project_id=project_id , task_id=to_task)
+            if from_task_or_none==None or to_task_or_none==None:
+                raise Exception 
+                pass
+            else:
+                from_input_id_list = from_task_or_none["input_data_id_list"]
+                to_input_id_list = to_task_or_none["input_data_id_list"]
+                logger.debug(from_input_id_list)
+                logger.debug(to_input_id_list)
+                for from_input,to_input in zip(from_input_id_list, to_input_id_list):
+                    from_frame_keys.append(TaskFrameKey(project_id=project_id,task_id = from_task,input_data_id=from_input ))
+                    to_frame_keys.append(TaskFrameKey(project_id=project_id,task_id = to_task,input_data_id=to_input ))
+                logger.debug(from_frame_keys)
+                logger.debug(to_frame_keys)
+                exit()
+
         elif validate_result==self.INPUT_TYPECHECK_ENUM.FILE_PATH:
             #TODO : ファイル内の入力形式がわからないので，調べておく
             pass
