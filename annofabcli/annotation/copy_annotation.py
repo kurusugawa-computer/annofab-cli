@@ -24,6 +24,8 @@ class CopyAnnotationMain:
 
 
 class CopyAnnotation(AbstractCommandLineInterface):
+    COMMON_MESSAGE = "annofabcli annotation import: error:"
+    INPUT_VALIDATE_404_ERROR_MESSAGE = "argument --input: タスクの画像IDを取得しようとしましたが，404エラーが返却されました．指定されたタスクは存在しない可能性があります"
 
     class INPUT_TYPECHECK_ENUM(Enum):
         TASK_AND_FILE=auto()
@@ -61,8 +63,6 @@ class CopyAnnotation(AbstractCommandLineInterface):
         args = self.args
         validate_result = CopyAnnotation.recognize_input_type(args)
         logger.debug(validate_result)
-        if validate_result == self.INPUT_TYPECHECK_ENUM.INVALID:
-            return 
         
         project_id = args.project_id
         input_data = args.input
@@ -83,35 +83,38 @@ class CopyAnnotation(AbstractCommandLineInterface):
             #task内に含まれるinput_data_idを全て取得して，from_frame_keysおよびto_frame_keysにappendしていく
             from_task_or_none = self.service.wrapper.get_task_or_none(project_id=project_id , task_id=from_task)
             to_task_or_none = self.service.wrapper.get_task_or_none(project_id=project_id , task_id=to_task)
-            if from_task_or_none==None or to_task_or_none==None:
-                raise Exception 
-                pass
+            if from_task_or_none==None :
+                logger.error(f"{self.COMMON_MESSAGE} {self.INPUT_VALIDATE_404_ERROR_MESSAGE} ({from_task})")
+                return
+            elif to_task_or_none==None:
+                #コピー先のタスクを参照しようとしてエラー
+                logger.error(f"{self.COMMON_MESSAGE} {self.INPUT_VALIDATE_404_ERROR_MESSAGE} ({to_task})")
+                return
             else:
                 from_input_id_list = from_task_or_none["input_data_id_list"]
                 to_input_id_list = to_task_or_none["input_data_id_list"]
-                logger.debug(from_input_id_list)
-                logger.debug(to_input_id_list)
                 for from_input,to_input in zip(from_input_id_list, to_input_id_list):
                     from_frame_keys.append(TaskFrameKey(project_id=project_id,task_id = from_task,input_data_id=from_input ))
                     to_frame_keys.append(TaskFrameKey(project_id=project_id,task_id = to_task,input_data_id=to_input ))
-                logger.debug(from_frame_keys)
-                logger.debug(to_frame_keys)
-                exit()
 
         elif validate_result==self.INPUT_TYPECHECK_ENUM.FILE_PATH:
-            #TODO : ファイル内の入力形式がわからないので，調べておく
+            # 以下のように，複数のinput形式が連続するファイルであることが考えられるので，全てに対応する
+            # task1:task3
+            # task2/input2:task4/input4
             pass
         elif validate_result==self.INPUT_TYPECHECK_ENUM.INVALID:
-            #エラーを投げて終了
-            pass
+            logger.error(f"{self.COMMON_MESSAGE} argument --input: 入力されたタスクを正しく解釈できませんでした( {input_data} )")
+            return 
         else:
             #想定外
             pass
         for from_frame_key,to_frame_key in zip(from_frame_keys,to_frame_keys):
-            self.service.wrapper.copy_annotation(src=from_frame_key,dest=to_frame_key)
-
-
-
+            try:
+                self.service.wrapper.copy_annotation(src=from_frame_key,dest=to_frame_key, annotation_specs_relation=None)
+            except Exception as e:
+                logger.error(f"{e}")
+                logger.error(f"{from_frame_key},{to_frame_key}")
+            
 def main(args):
     service = build_annofabapi_resource_and_login(args)
     facade = AnnofabApiFacade(service)
@@ -152,7 +155,7 @@ def parse_args(parser: argparse.ArgumentParser):
     ファイルの指定
         file://input.txt
     """
-    parser.add_argument("-i", "--input", type=str, required=True, help=help_message)
+    parser.add_argument("--input", type=str, required=True, help=help_message)
     parser.set_defaults(subcommand_func=main)
 
 
