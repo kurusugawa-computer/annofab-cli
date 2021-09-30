@@ -383,12 +383,12 @@ def _catch_exception(function: Callable[..., Any]) -> Callable[..., Any]:
     return wrapped
 
 
-def add_dryrun_prefix(l: logging.Logger) -> None:
+def add_dryrun_prefix(lgr: logging.Logger) -> None:
     """
     ログメッセージにDRYRUNというプレフィックスを付加する。
     """
     # オリジナルのハンドラーを持っているLoggerを探す
-    parent = l
+    parent = lgr
     while len(parent.handlers) == 0 and parent.parent is not None:
         parent = parent.parent
 
@@ -405,5 +405,5 @@ def add_dryrun_prefix(l: logging.Logger) -> None:
     log_formatter = logging.Formatter(fmt_original.replace("%(message)s", "[DRYRUN] %(message)s"))
     log_handler = logging.StreamHandler()
     log_handler.setFormatter(log_formatter)
-    l.addHandler(log_handler)
-    l.propagate = False
+    lgr.addHandler(log_handler)
+    lgr.propagate = False
