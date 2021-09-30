@@ -22,6 +22,7 @@ from annofabcli.common.cli import (
     build_annofabapi_resource_and_login,
 )
 from annofabcli.common.facade import TaskQuery, match_task_with_query
+from annofabcli.common.utils import add_dryrun_prefix
 
 logger = logging.getLogger(__name__)
 
@@ -168,6 +169,7 @@ class RejectTasksMain(AbstractCommandLineWithConfirmInterface):
         cancel_acceptance: bool = False,
         task_query: Optional[TaskQuery] = None,
         task_index: Optional[int] = None,
+        dryrun: bool = False,
     ) -> bool:
         """
         タスクを強制的に差し戻す
@@ -205,14 +207,15 @@ class RejectTasksMain(AbstractCommandLineWithConfirmInterface):
         ):
             return False
 
-        if task["status"] == TaskStatus.COMPLETE.value and cancel_acceptance:
+        if task["status"] == TaskStatus.COMPLETE.value and cancel_acceptance and not dryrun:
             self._cancel_acceptance(task)
 
         if inspection_comment is not None:
             changed_task = self.change_to_working_status(project_id, task)
             try:
                 # 検査コメントを付与する
-                self.add_inspection_comment(project_id, changed_task, inspection_comment)
+                if not dryrun:
+                    self.add_inspection_comment(project_id, changed_task, inspection_comment)
                 logger.debug(f"{logging_prefix} : task_id = {task_id}, 検査コメントの付与 完了")
 
             except requests.exceptions.HTTPError:
@@ -224,17 +227,19 @@ class RejectTasksMain(AbstractCommandLineWithConfirmInterface):
             # タスクを差し戻す
             if assign_last_annotator:
                 # 最後のannotation phaseに担当を割り当てる
-                self.facade.reject_task_assign_last_annotator(project_id, task_id)
+                if not dryrun:
+                    self.facade.reject_task_assign_last_annotator(project_id, task_id)
                 logger.info(f"{logging_prefix} : task_id = {task_id} のタスクを差し戻しました。タスクの担当者は直前の教師付フェーズの担当者。")
                 return True
 
             # 指定したユーザに担当を割り当てる
-            self.facade.reject_task(
-                project_id,
-                task_id,
-                account_id=self.service.api.account_id,
-                annotator_account_id=assigned_annotator_account_id,
-            )
+            if not dryrun:
+                self.facade.reject_task(
+                    project_id,
+                    task_id,
+                    account_id=self.service.api.account_id,
+                    annotator_account_id=assigned_annotator_account_id,
+                )
             str_annotator_user = f"タスクの担当者: {assigned_annotator_user_id}"
             logger.info(f"{logging_prefix} : task_id = {task_id} の差し戻し完了. {str_annotator_user}")
             return True
@@ -243,9 +248,13 @@ class RejectTasksMain(AbstractCommandLineWithConfirmInterface):
             logger.warning(e)
             logger.warning(f"{logging_prefix} : task_id = {task_id} タスクの差し戻しに失敗")
 
-            new_task = self.service.wrapper.get_task_or_none(project_id, task_id)
-            if new_task["status"] == TaskStatus.WORKING.value and new_task["account_id"] == self.service.api.account_id:
-                self.facade.change_to_break_phase(project_id, task_id)
+            if not dryrun:
+                new_task = self.service.wrapper.get_task_or_none(project_id, task_id)
+                if (
+                    new_task["status"] == TaskStatus.WORKING.value
+                    and new_task["account_id"] == self.service.api.account_id
+                ):
+                    self.facade.change_to_break_phase(project_id, task_id)
             return False
 
     def reject_task_for_task_wrapper(
@@ -280,6 +289,7 @@ class RejectTasksMain(AbstractCommandLineWithConfirmInterface):
         cancel_acceptance: bool = False,
         task_query: Optional[TaskQuery] = None,
         parallelism: Optional[int] = None,
+        dryrun: bool = False,
     ) -> None:
         if task_query is not None:
             task_query = self.facade.set_account_id_of_task_query(project_id, task_query)
@@ -295,6 +305,7 @@ class RejectTasksMain(AbstractCommandLineWithConfirmInterface):
                 assigned_annotator_user_id=assigned_annotator_user_id,
                 cancel_acceptance=cancel_acceptance,
                 task_query=task_query,
+                dryrun=dryrun,
             )
             with multiprocessing.Pool(parallelism) as pool:
                 result_bool_list = pool.map(partial_func, enumerate(task_id_list))
@@ -313,6 +324,7 @@ class RejectTasksMain(AbstractCommandLineWithConfirmInterface):
                     assigned_annotator_user_id=assigned_annotator_user_id,
                     cancel_acceptance=cancel_acceptance,
                     task_query=task_query,
+                    dryrun=dryrun,
                 )
                 if result:
                     success_count += 1
@@ -338,6 +350,9 @@ class RejectTasks(AbstractCommandLineInterface):
         args = self.args
         if not self.validate(args):
             return
+
+        if args.dryrun:
+            add_dryrun_prefix(logger)
 
         task_id_list = annofabcli.common.cli.get_list_from_args(args.task_id)
         assign_last_annotator = not args.not_assign and args.assigned_annotator_user_id is None
@@ -373,6 +388,7 @@ class RejectTasks(AbstractCommandLineInterface):
             cancel_acceptance=args.cancel_acceptance,
             task_query=task_query,
             parallelism=args.parallelism,
+            dryrun=args.dryrun,
         )
 
 
@@ -425,6 +441,7 @@ def parse_args(parser: argparse.ArgumentParser):
     parser.add_argument(
         "--parallelism", type=int, help="使用するプロセス数（並列度）を指定してください。指定する場合は必ず'--yes'を指定してください。指定しない場合は、逐次的に処理します。"
     )
+    parser.add_argument("--dryrun", action="store_true", help="差し戻しが行われた時の結果を表示しますが、実際はタスクを差し戻しません。")
 
     parser.set_defaults(subcommand_func=main)
 

@@ -1,5 +1,6 @@
 import copy
 import json
+import logging
 import logging.config
 import os
 import pkgutil
@@ -380,3 +381,29 @@ def _catch_exception(function: Callable[..., Any]) -> Callable[..., Any]:
             return None
 
     return wrapped
+
+
+def add_dryrun_prefix(lgr: logging.Logger) -> None:
+    """
+    ログメッセージにDRYRUNというプレフィックスを付加する。
+    """
+    # オリジナルのハンドラーを持っているLoggerを探す
+    parent = lgr
+    while len(parent.handlers) == 0 and parent.parent is not None:
+        parent = parent.parent
+
+    # オリジナルのフォーマットを探す
+    fmt_original = logging.BASIC_FORMAT
+    for handler in parent.handlers:
+        if (
+            isinstance(handler, logging.StreamHandler)
+            and handler.formatter is not None
+            and handler.formatter._fmt is not None
+        ):
+            fmt_original = handler.formatter._fmt
+
+    log_formatter = logging.Formatter(fmt_original.replace("%(message)s", "[DRYRUN] %(message)s"))
+    log_handler = logging.StreamHandler()
+    log_handler.setFormatter(log_formatter)
+    lgr.addHandler(log_handler)
+    lgr.propagate = False
