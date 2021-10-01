@@ -849,7 +849,7 @@ tests = ["flake8", "pytest"]
 
 [[package]]
 name = "pydata-sphinx-theme"
-version = "0.6.3"
+version = "0.7.0"
 description = "Bootstrap-based Sphinx theme from the PyData community"
 category = "dev"
 optional = false
@@ -857,12 +857,12 @@ python-versions = ">=3.5"
 
 [package.dependencies]
 beautifulsoup4 = "*"
-docutils = "<0.17"
+docutils = "!=0.17.0"
 sphinx = "*"
 
 [package.extras]
-coverage = ["pytest-cov", "codecov", "sphinx", "numpydoc", "recommonmark", "pandas", "pytest", "pytest-regressions", "beautifulsoup4", "jupyter-sphinx", "plotly", "numpy", "xarray", "docutils (==0.16)"]
-test = ["sphinx", "numpydoc", "recommonmark", "pandas", "pytest", "pytest-regressions", "beautifulsoup4", "jupyter-sphinx", "plotly", "numpy", "xarray", "docutils (==0.16)"]
+coverage = ["pytest-cov", "codecov", "sphinx", "numpydoc", "recommonmark", "pandas", "pytest", "pytest-regressions", "beautifulsoup4", "sphinx-sitemap", "jupyter-sphinx", "plotly", "numpy", "xarray", "docutils (==0.16)"]
+test = ["sphinx", "numpydoc", "recommonmark", "pandas", "pytest", "pytest-regressions", "beautifulsoup4", "sphinx-sitemap", "jupyter-sphinx", "plotly", "numpy", "xarray", "docutils (==0.16)"]
 
 [[package]]
 name = "pyflakes"
@@ -1963,8 +1963,8 @@ pyct = [
     {file = "pyct-0.4.8.tar.gz", hash = "sha256:23d7525b5a1567535c093aea4b9c33809415aa5f018dd77f6eb738b1226df6f7"},
 ]
 pydata-sphinx-theme = [
-    {file = "pydata-sphinx-theme-0.6.3.tar.gz", hash = "sha256:32e0580ef985734d652eec2bf25e0995a330a9d4f76deaa353571ce8e180ab14"},
-    {file = "pydata_sphinx_theme-0.6.3-py3-none-any.whl", hash = "sha256:f0fee20dc33fa5efa6b9be57368be760d236d8b9c1486b14ad1d17b7e7e0db04"},
+    {file = "pydata-sphinx-theme-0.7.0.tar.gz", hash = "sha256:e549c907b1e0bb08b152db20daf577522d74a650e157b3dad8385e5db4c6e182"},
+    {file = "pydata_sphinx_theme-0.7.0-py3-none-any.whl", hash = "sha256:60af9000ce6b512e20102b8b43e8f0a3bbc700579acc078afe35eb362aa10949"},
 ]
 pyflakes = [
     {file = "pyflakes-2.3.1-py2.py3-none-any.whl", hash = "sha256:7893783d01b8a89811dd72d7dfd4d84ff098e5eed95cfa8905b22bbffe52efc3"},
