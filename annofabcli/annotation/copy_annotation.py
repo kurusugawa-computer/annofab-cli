@@ -156,11 +156,11 @@ class CopyAnnotation(AbstractCommandLineInterface):
         to_task_set = set([to_tasks.task_id for _,to_tasks in copy_tasks_info.get_tasks()])
 
         
-        # コピー先にすでにannotationがある場合，サブコマンド引数によって挙動を変える
-        # overwrite, mergeの共通処理
+        # コピー先にすでにannotationがあるかをチェック
+        # もしすでにアノテーションがある場合，サブコマンド引数によって挙動を変える
         for task_id in to_task_set:
             if self.service.wrapper.get_all_annotation_list(project_id=project_id):
-                # overwrite
+                # overwriteなら削除して続行
                 if is_overwrite:
                     # 元のアノテーションを削除
                     # TODO : クラスインスタンスを再利用できるようにする
@@ -168,7 +168,9 @@ class CopyAnnotation(AbstractCommandLineInterface):
                     delete_annotation.DeleteAnnotation(service=self.service,facade=self.facade,args=self.args).delete_annotation_for_task(
                         project_id, task_id, force=True
                     )
-                # merge
+                # mergeなら
+                # 重複する場合は上書き
+                # 重複しない場合は新規作成
                 elif is_merge:
                     logger.info(f"mergeが指定されたため，存在するアノテーションは上書きし，存在しない場合は追加します．")
                     # TODO : mergeについて，importを参考にして内部処理を作成する
