@@ -48,10 +48,12 @@ class CopyAnnotation(AbstractCommandLineInterface):
             """
                 input引数，バリデーションタイプから適切にリストを構成する
             """
+            #validate_typeの指定がなければ検査する
             if validate_type == None:
                 validate_type = self.recognize_input_type(input_data)
             if validate_type == self.INPUT_TYPECHECK_ENUM.TASK_AND_FILE:
                 # task1/input1:task3:input3の形式
+                # 分割・各変数に代入する
                 from_task_and_input,to_task_and_input = input_data.split(':')
                 from_task,from_input = from_task_and_input.split('/')
                 to_task,to_input = to_task_and_input.split('/')
@@ -60,28 +62,32 @@ class CopyAnnotation(AbstractCommandLineInterface):
             elif validate_type==self.INPUT_TYPECHECK_ENUM.TASK_ONLY:
                 # task1:task3の形式
                 from_task,to_task = input_data.split(':')
-                #task内に含まれるinput_data_idを全て取得して，__from_task_frame_keysおよび__to_task_frame_keysにappendしていく
+                # task内に含まれるinput_data_idを全て取得
+                # __from_task_frame_keysおよび__to_task_frame_keysにappendしていく
                 from_task_or_none = self.service.wrapper.get_task_or_none(project_id=project_id , task_id=from_task)
                 to_task_or_none = self.service.wrapper.get_task_or_none(project_id=project_id , task_id=to_task)
                 if from_task_or_none==None :
+                    # コピー「元」のタスクを参照しようとしてエラー
                     logger.error(f"{self.COMMON_MESSAGE} {self.INPUT_VALIDATE_404_ERROR_MESSAGE} ({from_task})")
                     return
                 elif to_task_or_none==None:
-                    #コピー先のタスクを参照しようとしてエラー
+                    # コピー「先」のタスクを参照しようとしてエラー
                     logger.error(f"{self.COMMON_MESSAGE} {self.INPUT_VALIDATE_404_ERROR_MESSAGE} ({to_task})")
                     return
                 else:
+                    # 返却されたDictからid_listを取り出す
                     from_input_id_list = from_task_or_none["input_data_id_list"]
                     to_input_id_list = to_task_or_none["input_data_id_list"]
+                    # TODO : もしかしてtupleにしたほうがスマート？
                     for from_input,to_input in zip(from_input_id_list, to_input_id_list):
                         self.__from_task_frame_keys.append(TaskFrameKey(project_id=project_id,task_id = from_task,input_data_id=from_input ))
                         self.__to_task_frame_keys.append(TaskFrameKey(project_id=project_id,task_id = to_task,input_data_id=to_input ))
                 
             elif validate_type==self.INPUT_TYPECHECK_ENUM.FILE_PATH:
-                # 以下のように，複数のinput形式が連続するファイルであることが考えられるので，全てに対応する
+                # inputの内容が複数個・複数種類だけ連続するテキストファイルが渡される
                 for line in get_list_from_args(input_data):
                     self.append(line)
-
+            # 受け入れられない形式 
             elif validate_type==self.INPUT_TYPECHECK_ENUM.INVALID:
                 logger.error(f"{self.COMMON_MESSAGE} argument --input: 入力されたタスクを正しく解釈できませんでした({input_data})")
                 return 
