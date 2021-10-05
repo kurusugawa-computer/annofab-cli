@@ -1,17 +1,23 @@
-from enum import Enum,auto
+from enum import Enum, auto
 import re
 
 import argparse
 import logging
-from typing import Optional, List 
+from typing import Optional, List
 
 import annofabapi
 
 import annofabcli
 from annofabcli import AnnofabApiFacade
-from annofabcli.common.cli import AbstractCommandLineInterface, ArgumentParser, build_annofabapi_resource_and_login, get_list_from_args
+from annofabcli.common.cli import (
+    AbstractCommandLineInterface,
+    ArgumentParser,
+    build_annofabapi_resource_and_login,
+    get_list_from_args,
+)
 from annofabcli.common.visualize import AddProps
-from annofabapi.wrapper import TaskFrameKey,Wrapper
+from annofabapi.wrapper import TaskFrameKey, Wrapper
+from annofabcli.annotation import copy_annotation, delete_annotation
 
 logger = logging.getLogger(__name__)
 
@@ -32,21 +38,22 @@ class CopyAnnotation(AbstractCommandLineInterface):
 
     class CopyTasksInfo:
         COMMON_MESSAGE = "annofabcli annotation import: error:"
-        #片方だけ変更されたりすると困るので，カプセル化しておく
-        __from_task_frame_keys:List[TaskFrameKey]=[]
-        __to_task_frame_keys:List[TaskFrameKey]=[]
+        # 片方だけ変更されたりすると困るので，カプセル化しておく
+        __from_task_frame_keys: List[TaskFrameKey] = []
+        __to_task_frame_keys: List[TaskFrameKey] = []
 
         def __init__(self, service: annofabapi.Resource):
             self.service = service
-        class INPUT_TYPECHECK_ENUM(Enum):
-            TASK_AND_FILE=auto()
-            TASK_ONLY=auto()
-            FILE_PATH=auto()
-            INVALID=auto()
 
-        def append(self,project_id:str, input_data:str, validate_type=None):
+        class INPUT_TYPECHECK_ENUM(Enum):
+            TASK_AND_FILE = auto()
+            TASK_ONLY = auto()
+            FILE_PATH = auto()
+            INVALID = auto()
+
+        def append(self, project_id: str, input_data: str, validate_type=None):
             """
-                input引数，バリデーションタイプから適切にリストを構成する
+            input引数，バリデーションタイプから適切にリストを構成する
             """
             #validate_typeの指定がなければ検査する
             if validate_type == None:
@@ -90,57 +97,76 @@ class CopyAnnotation(AbstractCommandLineInterface):
             # 受け入れられない形式 
             elif validate_type==self.INPUT_TYPECHECK_ENUM.INVALID:
                 logger.error(f"{self.COMMON_MESSAGE} argument --input: 入力されたタスクを正しく解釈できませんでした({input_data})")
-                return 
+                return
             else:
-                #想定外
+                # 想定外
                 pass
 
         def get_tasks(self):
-            return zip(self.__from_task_frame_keys,self.__to_task_frame_keys)
-
+            return zip(self.__from_task_frame_keys, self.__to_task_frame_keys)
 
         @classmethod
         def recognize_input_type(cls, input_data: str) -> bool:
             """
-                引数のバリデーションをする．
-                inputについて，
-                task1:task2
-                task1/input1:task2/input2
-                file:/input.txt
-                のいづれかの形式を保持しているかをチェックする．
-            """ 
-            if type(get_list_from_args([input_data]))=='list' and input_data:
+            引数のバリデーションをする．
+            inputについて，
+            task1:task2
+            task1/input1:task2/input2
+            file:/input.txt
+            のいづれかの形式を保持しているかをチェックする．
+            """
+            if type(get_list_from_args([input_data])) == "list" and input_data:
                 return cls.INPUT_TYPECHECK_ENUM.FILE_PATH
-            if re.match(r'^(\w|-)+\/(\w|-)+:(\w|-)+\/(\w|-)+$',input_data):
+            if re.match(r"^(\w|-)+\/(\w|-)+:(\w|-)+\/(\w|-)+$", input_data):
                 return cls.INPUT_TYPECHECK_ENUM.TASK_AND_FILE
-            elif re.match(r'^(\w|-)+:(\w|-)+$',input_data):
+            elif re.match(r"^(\w|-)+:(\w|-)+$", input_data):
                 return cls.INPUT_TYPECHECK_ENUM.TASK_ONLY
             else:
                 return cls.INPUT_TYPECHECK_ENUM.INVALID
-
-
 
     def main(self):
         args = self.args
         project_id = args.project_id
         input_data = args.input
 
-        copy_tasks_info = self.CopyTasksInfo(self.service)
+        overwrite_mode = args.overwrite
+        merge_mode = args.merge
+        force_mode = args.force
 
+
+        copy_tasks_info = self.CopyTasksInfo(self.service)
         copy_tasks_info.append(project_id, input_data)
-        
-        for from_frame_key,to_frame_key in copy_tasks_info.get_tasks():
+
+        logger.debug(self)
+
+        for from_frame_key, to_frame_key in copy_tasks_info.get_tasks():
             try:
-                self.service.wrapper.copy_annotation(src=from_frame_key,dest=to_frame_key, annotation_specs_relation=None)
+                # コピー先にすでにannotationがある場合，サブコマンド引数によって挙動を変える
+                # overwrite, mergeの共通処理
+                if self.get_all_annotation_list(project_id=project_id):
+                    # overwrite
+                    if overwrite_mode:
+                        # 元のアノテーションを削除
+                        # deleteAnnotation.delete_annotation_for_task(
+                        #     to_frame_key.project_id, to_frame_key.task_id, force=True
+                        # )
+                        pass
+                    # merge
+                    elif merge_mode:
+                        pass
+                # force
+                self.service.wrapper.copy_annotation(
+                    src=from_frame_key, dest=to_frame_key, annotation_specs_relation=None
+                )
             except Exception as e:
                 logger.error(f"{e}")
                 logger.error(f"{from_frame_key},{to_frame_key}")
-            
+
+
 def main(args):
     service = build_annofabapi_resource_and_login(args)
     facade = AnnofabApiFacade(service)
     CopyAnnotation(service, facade, args).main()
-
 
 
 def parse_args(parser: argparse.ArgumentParser):
@@ -164,7 +190,6 @@ def parse_args(parser: argparse.ArgumentParser):
     parser.add_argument(
         "--force", action="store_true", help="過去に割り当てられていて現在の担当者が自分自身でない場合、タスクの担当者を自分自身に変更してからアノテーションをコピーします。"
     )
-
 
     help_message = """アノテーションのコピー元タスクと，コピー先タスクを指定します。
     入力データ単位でコピーする場合
