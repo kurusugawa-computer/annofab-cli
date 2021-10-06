@@ -38,16 +38,16 @@ class TestCommandLine:
             ]
         )
 
-    def test_merge_peformance_csv_per_date(self):
+    def test_merge_performance_csv_per_date(self):
         main(
             [
                 "stat_visualization",
-                "merge_peformance_csv_per_date",
+                "merge_performance_csv_per_date",
                 "--csv",
                 str(data_dir / "visualization-dir/日毎の生産量と生産性.csv"),
                 str(data_dir / "visualization-dir/日毎の生産量と生産性.csv"),
                 "--output",
-                str(out_dir / "merge_peformance_csv_per_date-out.csv"),
+                str(out_dir / "merge_performance_csv_per_date-out.csv"),
             ]
         )
 
@@ -64,15 +64,15 @@ class TestCommandLine:
             ]
         )
 
-    def test_summarise_whole_peformance_csv(self):
+    def test_summarise_whole_performance_csv(self):
         main(
             [
                 "stat_visualization",
-                "summarise_whole_peformance_csv",
+                "summarise_whole_performance_csv",
                 "--dir",
                 str(data_dir),
                 "--output",
-                str(out_dir / "summarise_whole_peformance_csv-out.csv"),
+                str(out_dir / "summarise_whole_performance_csv-out.csv"),
             ]
         )
 

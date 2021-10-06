@@ -4,7 +4,7 @@ from pathlib import Path
 from typing import Optional
 
 import annofabcli
-from annofabcli.statistics.csv import FILENAME_WHOLE_PERFORMANCE, write_summarise_whole_peformance_csv
+from annofabcli.statistics.csv import FILENAME_WHOLE_PERFORMANCE, write_summarise_whole_performance_csv
 
 logger = logging.getLogger(__name__)
 
@@ -17,7 +17,7 @@ def main(args):
         if (project_dir / FILENAME_WHOLE_PERFORMANCE).exists()
     ]
     if len(csv_path_list) > 0:
-        write_summarise_whole_peformance_csv(csv_path_list=csv_path_list, output_path=args.output)
+        write_summarise_whole_performance_csv(csv_path_list=csv_path_list, output_path=args.output)
     else:
         logger.error(f"{root_dir} 配下に'{FILENAME_WHOLE_PERFORMANCE}'は存在しなかったので、終了します。")
         return
@@ -38,7 +38,7 @@ def parse_args(parser: argparse.ArgumentParser):
 
 
 def add_parser(subparsers: Optional[argparse._SubParsersAction] = None):
-    subcommand_name = "summarise_whole_peformance_csv"
+    subcommand_name = "summarise_whole_performance_csv"
     subcommand_help = (
         f"``annofabcli statistics visualize`` コマンドの出力ファイルである複数の'{FILENAME_WHOLE_PERFORMANCE}'の値をプロジェクトごとにまとめます。"
     )

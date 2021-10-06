@@ -27,7 +27,7 @@ def _get_phase_list(df_member_performance: pandas.DataFrame) -> List[str]:
     return phase_list
 
 
-def _read_whole_peformance_csv(csv_path: Path) -> pandas.Series:
+def _read_whole_performance_csv(csv_path: Path) -> pandas.Series:
     """
     '全体の生産量と生産性.csv' を読み込む。
     プロジェクト名はディレクトリ名とする。
@@ -44,7 +44,7 @@ def _read_whole_peformance_csv(csv_path: Path) -> pandas.Series:
     return series
 
 
-def write_summarise_whole_peformance_csv(csv_path_list: List[Path], output_path: Path) -> None:
+def write_summarise_whole_performance_csv(csv_path_list: List[Path], output_path: Path) -> None:
     """
     `プロジェクトごとの生産性と品質.csv` を出力する。
 
@@ -53,7 +53,7 @@ def write_summarise_whole_peformance_csv(csv_path_list: List[Path], output_path:
         output_path: 出力先
 
     """
-    series_list = [_read_whole_peformance_csv(csv_path) for csv_path in csv_path_list]
+    series_list = [_read_whole_performance_csv(csv_path) for csv_path in csv_path_list]
     df = pandas.DataFrame(series_list)
 
     phase_list = _get_phase_list(df)

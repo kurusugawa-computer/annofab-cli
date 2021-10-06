@@ -19,7 +19,7 @@ from annofabcli import AnnofabApiFacade
 from annofabcli.common.cli import AbstractCommandLineInterface, build_annofabapi_resource_and_login
 from annofabcli.common.facade import TaskQuery
 from annofabcli.stat_visualization.merge_visualization_dir import merge_visualization_dir
-from annofabcli.statistics.csv import FILENAME_WHOLE_PERFORMANCE, Csv, write_summarise_whole_peformance_csv
+from annofabcli.statistics.csv import FILENAME_WHOLE_PERFORMANCE, Csv, write_summarise_whole_performance_csv
 from annofabcli.statistics.database import Database, Query
 from annofabcli.statistics.linegraph import LineGraph, OutputTarget
 from annofabcli.statistics.scatter import Scatter
@@ -701,9 +701,9 @@ class VisualizeStatistics(AbstractCommandLineInterface):
                     logger.warning(f"出力した統計情報は1件以下なので、`merge`ディレクトリを出力しません。")
 
             if len(output_project_dir_list) > 0:
-                whole_peformance_csv_list = [e / FILENAME_WHOLE_PERFORMANCE for e in output_project_dir_list]
-                write_summarise_whole_peformance_csv(
-                    csv_path_list=whole_peformance_csv_list, output_path=root_output_dir / "プロジェクトごとの生産性と品質.csv"
+                whole_performance_csv_list = [e / FILENAME_WHOLE_PERFORMANCE for e in output_project_dir_list]
+                write_summarise_whole_performance_csv(
+                    csv_path_list=whole_performance_csv_list, output_path=root_output_dir / "プロジェクトごとの生産性と品質.csv"
                 )
             else:
                 logger.warning(f"出力した統計情報は0件なので、`プロジェクトごとの生産性と品質.csv`を出力しません。")
