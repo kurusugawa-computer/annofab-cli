@@ -30,7 +30,7 @@ Usage Details
 =================================
 
 .. argparse::
-   :ref: annofabcli.stat_visualization.merge_peformance_per_user.add_parser
+   :ref: annofabcli.stat_visualization.merge_performance_per_user.add_parser
    :prog: annofabcli stat_visualization merge_peformance_csv_per_user
    :nosubcommands:
 

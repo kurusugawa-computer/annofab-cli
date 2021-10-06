@@ -8,8 +8,8 @@ import pandas
 import annofabcli
 from annofabcli.common.cli import get_list_from_args
 from annofabcli.common.utils import print_csv, print_json
-from annofabcli.stat_visualization.merge_peformance_per_date import create_df_merged_peformance_per_date
-from annofabcli.stat_visualization.merge_peformance_per_user import create_df_merged_peformance_per_user
+from annofabcli.stat_visualization.merge_performance_per_date import create_df_merged_performance_per_date
+from annofabcli.stat_visualization.merge_performance_per_user import create_df_merged_performance_per_user
 from annofabcli.stat_visualization.write_linegraph_per_user import write_linegraph_per_user
 from annofabcli.stat_visualization.write_performance_scatter_per_user import write_performance_scatter_per_user
 from annofabcli.stat_visualization.write_task_histogram import write_task_histogram
@@ -30,15 +30,15 @@ def merge_visualization_dir(
     user_id_list: Optional[List[str]] = None,
     minimal_output: bool = False,
 ):
-    def execute_merge_peformance_per_user():
+    def execute_merge_performance_per_user():
         performance_per_user_csv_list = [dir / FILENAME_PEFORMANCE_PER_USER for dir in project_dir_list]
-        df_per_user = create_df_merged_peformance_per_user(csv_path_list=performance_per_user_csv_list)
+        df_per_user = create_df_merged_performance_per_user(csv_path_list=performance_per_user_csv_list)
         csv_obj.write_productivity_per_user(df_per_user)
         csv_obj.write_whole_productivity(df_per_user)
 
-    def execute_merge_peformance_per_date():
+    def execute_merge_performance_per_date():
         performance_per_date_csv_list = [dir / FILENAME_PEFORMANCE_PER_DATE for dir in project_dir_list]
-        df_per_date = create_df_merged_peformance_per_date(performance_per_date_csv_list)
+        df_per_date = create_df_merged_performance_per_date(performance_per_date_csv_list)
         csv_obj.write_whole_productivity_per_date(df_per_date)
 
     def merge_task_list() -> pandas.DataFrame:
@@ -69,8 +69,8 @@ def merge_visualization_dir(
     # CSV生成
     csv_obj = Csv(str(output_dir))
 
-    execute_merge_peformance_per_user()
-    execute_merge_peformance_per_date()
+    execute_merge_performance_per_user()
+    execute_merge_performance_per_date()
     df_task = merge_task_list()
     print_csv(df_task, output=str(output_dir / FILENAME_TASK_LIST))
     write_csv_for_summary(df_task)
