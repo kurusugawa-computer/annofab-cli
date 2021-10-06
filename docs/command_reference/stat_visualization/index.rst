@@ -19,9 +19,9 @@ Available Commands
 
     mask_user_info
     merge
-    merge_peformance_csv_per_date
-    merge_peformance_csv_per_user
-    summarise_whole_peformance_csv
+    merge_performance_csv_per_date
+    merge_performance_csv_per_user
+    summarise_whole_performance_csv
     write_linegraph_per_user
     write_performance_scatter_per_user
     write_performance_rating_csv

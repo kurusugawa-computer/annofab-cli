@@ -1,5 +1,5 @@
 ====================================================================================
-stat_visualization merge_peformance_csv_per_date
+stat_visualization merge_performance_csv_per_date
 ====================================================================================
 
 Description
@@ -23,7 +23,7 @@ Examples
     $ annofabcli statistics visualize --project_id prj1 --output_dir prj1_dir/
     $ annofabcli statistics visualize --project_id prj2 --output_dir prj2_dir/
 
-    $ annofabcli stat_visualization merge_peformance_csv_per_date --csv prj1_dir/日毎の生産量と生産性.csv \
+    $ annofabcli stat_visualization merge_performance_csv_per_date --csv prj1_dir/日毎の生産量と生産性.csv \
      prj2_dir/日毎の生産量と生産性.csv \
      --output merge_日毎の生産量と生産性.csv
 
@@ -31,8 +31,8 @@ Usage Details
 =================================
 
 .. argparse::
-   :ref: annofabcli.stat_visualization.merge_peformance_per_date.add_parser
-   :prog: annofabcli stat_visualization merge_peformance_csv_per_date
+   :ref: annofabcli.stat_visualization.merge_performance_per_date.add_parser
+   :prog: annofabcli stat_visualization merge_performance_csv_per_date
    :nosubcommands:
 
 See also

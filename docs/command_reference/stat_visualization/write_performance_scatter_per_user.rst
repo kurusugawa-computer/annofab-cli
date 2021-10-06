@@ -20,7 +20,7 @@ Examples
 
     $ annofabcli statistics visualize --project_id prj1 --output_dir prj1_dir/
 
-    $ annofabcli stat_visualization merge_peformance_per_date --csv prj1_dir/メンバごとの生産性と品質.csv \
+    $ annofabcli stat_visualization merge_performance_per_date --csv prj1_dir/メンバごとの生産性と品質.csv \
      --output_dir scatter/
 
 
