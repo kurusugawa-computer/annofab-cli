@@ -76,7 +76,9 @@ def merge_visualization_dir(
     write_csv_for_summary(df_task)
 
     # HTML生成
-    write_performance_scatter_per_user(csv=output_dir / FILENAME_PERFORMANCE_PER_USER, output_dir=output_dir / "scatter")
+    write_performance_scatter_per_user(
+        csv=output_dir / FILENAME_PERFORMANCE_PER_USER, output_dir=output_dir / "scatter"
+    )
     write_whole_linegraph(csv=output_dir / FILENAME_PERFORMANCE_PER_DATE, output_dir=output_dir / "line-graph")
     write_linegraph_per_user(
         csv=output_dir / FILENAME_TASK_LIST,
