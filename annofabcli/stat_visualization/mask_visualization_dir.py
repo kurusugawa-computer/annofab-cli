@@ -51,22 +51,22 @@ def mask_visualization_dir(
     minimal_output: bool = False,
     exclude_masked_user_for_linegraph: bool = False,
 ):
-    df_member_perfomance = read_multiheader_csv(str(project_dir / FILENAME_PERFORMANCE_PER_USER), header_row_count=2)
+    df_member_performance = read_multiheader_csv(str(project_dir / FILENAME_PERFORMANCE_PER_USER), header_row_count=2)
 
     replacement_dict_by_user_id = create_replacement_dict_by_user_id(
-        df_member_perfomance,
+        df_member_performance,
         not_masked_biography_set=not_masked_biography_set,
         not_masked_user_id_set=not_masked_user_id_set,
     )
-    not_masked_user_id_set = set(df_member_perfomance[("user_id", "")]) - set(replacement_dict_by_user_id.keys())
+    not_masked_user_id_set = set(df_member_performance[("user_id", "")]) - set(replacement_dict_by_user_id.keys())
 
     # CSVのユーザ情報をマスクする
-    masked_df_member_perfomance = create_masked_user_info_df(
-        df_member_perfomance,
+    masked_df_member_performance = create_masked_user_info_df(
+        df_member_performance,
         not_masked_biography_set=not_masked_biography_set,
         not_masked_user_id_set=not_masked_user_id_set,
     )
-    print_csv(masked_df_member_perfomance, output=str(output_dir / FILENAME_PERFORMANCE_PER_USER))
+    print_csv(masked_df_member_performance, output=str(output_dir / FILENAME_PERFORMANCE_PER_USER))
 
     df_task = pandas.read_csv(str(project_dir / FILENAME_TASK_LIST))
     _replace_df_task(df_task, replacement_dict_by_user_id=replacement_dict_by_user_id)

@@ -25,6 +25,7 @@
         "fillna",
         "getrgb",
         "groupby",
+        "holoviews",
         "iloc",
         "inplace",
         "isin",

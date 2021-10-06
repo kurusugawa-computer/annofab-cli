@@ -90,7 +90,7 @@ class WriteCsvGraph:
         self.project_id = project_id
         self.table_obj = table_obj
         self.csv_obj = Csv(str(output_dir))
-        # holoviewsのloadに時間がかかって、helpコマンドの出力が遅いため、遅延ロードする
+        # holoviews のloadに時間がかかって、helpコマンドの出力が遅いため、遅延ロードする
         histogram_module = importlib.import_module("annofabcli.statistics.histogram")
         self.histogram_obj = histogram_module.Histogram(str(output_dir / "histogram"))  # type: ignore
         self.linegraph_obj = LineGraph(str(output_dir / "line-graph"))
