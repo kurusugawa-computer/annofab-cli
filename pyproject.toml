@@ -1,6 +1,6 @@
 [tool.poetry]
 name = "annofabcli"
-version = "1.48.6"
+version = "1.48.7"
 description = "Utility Command Line Interface for AnnoFab"
 authors = ["yuji38kwmt"]
 license = "MIT"
@@ -32,11 +32,11 @@ more-itertools = "*"
 jmespath = "*"
 pyquery = "*"
 isodate = "*"
-annofabapi = ">=0.48.1"
+annofabapi = ">=0.48.2"
 
 pandas = "*"
-bokeh = "^2.3"
-holoviews= "^1.14.2"
+bokeh = "^2.4"
+holoviews= "^1.14.6"
 
 
 [tool.poetry.dev-dependencies]
@@ -48,7 +48,7 @@ pytest-cov = "*"
 # format library
 isort = "*"
 autoflake = "*"
-black = {version = "^21.6b0", allow-prereleases = true}
+black = {version = "^21.9b0", allow-prereleases = true}
 
 # lint library
 flake8 = "*"
