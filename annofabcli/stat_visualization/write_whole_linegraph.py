@@ -7,7 +7,7 @@ import pandas
 
 import annofabcli
 from annofabcli.common.cli import AbstractCommandLineWithoutWebapiInterface
-from annofabcli.statistics.csv import FILENAME_PEFORMANCE_PER_DATE
+from annofabcli.statistics.csv import FILENAME_PERFORMANCE_PER_DATE
 from annofabcli.statistics.linegraph import LineGraph
 
 logger = logging.getLogger(__name__)
@@ -35,7 +35,7 @@ def parse_args(parser: argparse.ArgumentParser):
         "--csv",
         type=Path,
         required=True,
-        help=(f"``annofabcli statistics visualize`` コマンドの出力ファイルである'{FILENAME_PEFORMANCE_PER_DATE}'のパスを指定してください。"),
+        help=(f"``annofabcli statistics visualize`` コマンドの出力ファイルである'{FILENAME_PERFORMANCE_PER_DATE}'のパスを指定してください。"),
     )
     parser.add_argument("-o", "--output_dir", type=Path, required=True, help="出力ディレクトリのパス")
 
@@ -45,9 +45,9 @@ def parse_args(parser: argparse.ArgumentParser):
 def add_parser(subparsers: Optional[argparse._SubParsersAction] = None):
     subcommand_name = "write_whole_linegraph"
     subcommand_help = (
-        f"``annofabcli statistics visualize`` コマンドの出力ファイルである'{FILENAME_PEFORMANCE_PER_DATE}'から、折れ線グラフを出力します。"
+        f"``annofabcli statistics visualize`` コマンドの出力ファイルである'{FILENAME_PERFORMANCE_PER_DATE}'から、折れ線グラフを出力します。"
     )
-    description = f"``annofabcli statistics visualize`` コマンドの出力ファイルである'{FILENAME_PEFORMANCE_PER_DATE}'から、折れ線グラフを出力します。"
+    description = f"``annofabcli statistics visualize`` コマンドの出力ファイルである'{FILENAME_PERFORMANCE_PER_DATE}'から、折れ線グラフを出力します。"
     parser = annofabcli.common.cli.add_parser(subparsers, subcommand_name, subcommand_help, description)
     parse_args(parser)
     return parser

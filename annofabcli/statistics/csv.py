@@ -10,10 +10,10 @@ from annofabcli.statistics.table import _add_ratio_column_for_productivity_per_u
 
 logger = logging.getLogger(__name__)
 
-FILENAME_WHOLE_PEFORMANCE = "全体の生産性と品質.csv"
-FILENAME_PEFORMANCE_PER_USER = "メンバごとの生産性と品質.csv"
+FILENAME_WHOLE_PERFORMANCE = "全体の生産性と品質.csv"
+FILENAME_PERFORMANCE_PER_USER = "メンバごとの生産性と品質.csv"
 
-FILENAME_PEFORMANCE_PER_DATE = "日毎の生産量と生産性.csv"
+FILENAME_PERFORMANCE_PER_DATE = "日毎の生産量と生産性.csv"
 FILENAME_TASK_LIST = "タスクlist.csv"
 
 
@@ -393,7 +393,7 @@ class Csv:
         for phase in phase_list:
             sum_series[("working_user_count", phase)] = (df[("task_count", phase)] > 0).sum()
 
-        self._write_csv_for_series(FILENAME_WHOLE_PEFORMANCE, sum_series)
+        self._write_csv_for_series(FILENAME_WHOLE_PERFORMANCE, sum_series)
 
     def write_count_summary(self, df: pandas.DataFrame) -> None:
         """
@@ -617,7 +617,7 @@ class Csv:
         required_columns = self.create_required_columns(df, prior_columns, dropped_columns)
         target_df = df[required_columns]
         if output_path is None:
-            self._write_csv(FILENAME_PEFORMANCE_PER_USER, target_df)
+            self._write_csv(FILENAME_PERFORMANCE_PER_USER, target_df)
         else:
             print_csv(target_df, output=str(output_path), to_csv_kwargs=self.CSV_FORMAT)
 
@@ -664,6 +664,6 @@ class Csv:
         required_columns = self.create_required_columns(df, prior_columns, dropped_columns)
         target_df = df[required_columns]
         if output_path is None:
-            self._write_csv(FILENAME_PEFORMANCE_PER_DATE, target_df)
+            self._write_csv(FILENAME_PERFORMANCE_PER_DATE, target_df)
         else:
             print_csv(target_df, output=str(output_path), to_csv_kwargs=self.CSV_FORMAT)

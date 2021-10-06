@@ -15,8 +15,8 @@ from annofabcli.stat_visualization.write_performance_scatter_per_user import wri
 from annofabcli.stat_visualization.write_task_histogram import write_task_histogram
 from annofabcli.stat_visualization.write_whole_linegraph import write_whole_linegraph
 from annofabcli.statistics.csv import (
-    FILENAME_PEFORMANCE_PER_DATE,
-    FILENAME_PEFORMANCE_PER_USER,
+    FILENAME_PERFORMANCE_PER_DATE,
+    FILENAME_PERFORMANCE_PER_USER,
     FILENAME_TASK_LIST,
     Csv,
 )
@@ -31,13 +31,13 @@ def merge_visualization_dir(
     minimal_output: bool = False,
 ):
     def execute_merge_performance_per_user():
-        performance_per_user_csv_list = [dir / FILENAME_PEFORMANCE_PER_USER for dir in project_dir_list]
+        performance_per_user_csv_list = [dir / FILENAME_PERFORMANCE_PER_USER for dir in project_dir_list]
         df_per_user = create_df_merged_performance_per_user(csv_path_list=performance_per_user_csv_list)
         csv_obj.write_productivity_per_user(df_per_user)
         csv_obj.write_whole_productivity(df_per_user)
 
     def execute_merge_performance_per_date():
-        performance_per_date_csv_list = [dir / FILENAME_PEFORMANCE_PER_DATE for dir in project_dir_list]
+        performance_per_date_csv_list = [dir / FILENAME_PERFORMANCE_PER_DATE for dir in project_dir_list]
         df_per_date = create_df_merged_performance_per_date(performance_per_date_csv_list)
         csv_obj.write_whole_productivity_per_date(df_per_date)
 
@@ -76,8 +76,8 @@ def merge_visualization_dir(
     write_csv_for_summary(df_task)
 
     # HTML生成
-    write_performance_scatter_per_user(csv=output_dir / FILENAME_PEFORMANCE_PER_USER, output_dir=output_dir / "scatter")
-    write_whole_linegraph(csv=output_dir / FILENAME_PEFORMANCE_PER_DATE, output_dir=output_dir / "line-graph")
+    write_performance_scatter_per_user(csv=output_dir / FILENAME_PERFORMANCE_PER_USER, output_dir=output_dir / "scatter")
+    write_whole_linegraph(csv=output_dir / FILENAME_PERFORMANCE_PER_DATE, output_dir=output_dir / "line-graph")
     write_linegraph_per_user(
         csv=output_dir / FILENAME_TASK_LIST,
         output_dir=output_dir / "line-graph",

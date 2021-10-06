@@ -7,7 +7,7 @@ import pandas
 
 import annofabcli
 from annofabcli.common.cli import AbstractCommandLineWithoutWebapiInterface
-from annofabcli.statistics.csv import FILENAME_PEFORMANCE_PER_DATE, Csv
+from annofabcli.statistics.csv import FILENAME_PERFORMANCE_PER_DATE, Csv
 from annofabcli.statistics.table import Table
 
 logger = logging.getLogger(__name__)
@@ -69,7 +69,7 @@ def parse_args(parser: argparse.ArgumentParser):
         type=Path,
         nargs="+",
         required=True,
-        help=(f"``annofabcli statistics visualize`` コマンドの出力ファイルである'{FILENAME_PEFORMANCE_PER_DATE}'のパスを指定してください。"),
+        help=(f"``annofabcli statistics visualize`` コマンドの出力ファイルである'{FILENAME_PERFORMANCE_PER_DATE}'のパスを指定してください。"),
     )
 
     parser.add_argument("-o", "--output", required=True, type=Path, help="出力先のファイルパスを指定します。")
@@ -79,8 +79,8 @@ def parse_args(parser: argparse.ArgumentParser):
 
 def add_parser(subparsers: Optional[argparse._SubParsersAction] = None):
     subcommand_name = "merge_performance_csv_per_date"
-    subcommand_help = f"``annofabcli statistics visualize`` コマンドの出力ファイル'{FILENAME_PEFORMANCE_PER_DATE}'をマージします。"
-    description = f"``annofabcli statistics visualize`` コマンドの出力ファイル'{FILENAME_PEFORMANCE_PER_DATE}'をマージします。"
+    subcommand_help = f"``annofabcli statistics visualize`` コマンドの出力ファイル'{FILENAME_PERFORMANCE_PER_DATE}'をマージします。"
+    description = f"``annofabcli statistics visualize`` コマンドの出力ファイル'{FILENAME_PERFORMANCE_PER_DATE}'をマージします。"
     parser = annofabcli.common.cli.add_parser(subparsers, subcommand_name, subcommand_help, description)
     parse_args(parser)
     return parser

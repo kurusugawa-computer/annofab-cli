@@ -10,7 +10,7 @@ import pandas
 import annofabcli
 from annofabcli.common.cli import AbstractCommandLineWithoutWebapiInterface, get_list_from_args
 from annofabcli.common.utils import print_csv, read_multiheader_csv
-from annofabcli.statistics.csv import FILENAME_PEFORMANCE_PER_USER
+from annofabcli.statistics.csv import FILENAME_PERFORMANCE_PER_USER
 
 logger = logging.getLogger(__name__)
 
@@ -140,7 +140,7 @@ def create_rating_df(
         if not project_dir.is_dir():
             continue
 
-        csv = project_dir / FILENAME_PEFORMANCE_PER_USER
+        csv = project_dir / FILENAME_PERFORMANCE_PER_USER
         project_title = project_dir.name
         if not csv.exists():
             logger.warning(f"{csv} は存在しないのでスキップします。")
@@ -359,7 +359,7 @@ def create_user_df(target_dir: Path) -> pandas.DataFrame:
         if not project_dir.is_dir():
             continue
 
-        csv = project_dir / FILENAME_PEFORMANCE_PER_USER
+        csv = project_dir / FILENAME_PERFORMANCE_PER_USER
         if not csv.exists():
             logger.warning(f"{csv} は存在しないのでスキップします。")
             continue
@@ -407,7 +407,7 @@ def parse_args(parser: argparse.ArgumentParser):
         "--dir",
         type=Path,
         required=True,
-        help=f"プロジェクトディレクトリが存在するディレクトリを指定してください。プロジェクトディレクトリ内の ``{FILENAME_PEFORMANCE_PER_USER}`` というファイルを読み込みます。",
+        help=f"プロジェクトディレクトリが存在するディレクトリを指定してください。プロジェクトディレクトリ内の ``{FILENAME_PERFORMANCE_PER_USER}`` というファイルを読み込みます。",
     )
 
     parser.add_argument(
