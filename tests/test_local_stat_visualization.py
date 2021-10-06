@@ -51,16 +51,16 @@ class TestCommandLine:
             ]
         )
 
-    def test_merge_peformance_csv_per_user(self):
+    def test_merge_performance_csv_per_user(self):
         main(
             [
                 "stat_visualization",
-                "merge_peformance_csv_per_user",
+                "merge_performance_csv_per_user",
                 "--csv",
                 str(data_dir / "visualization-dir/メンバごとの生産性と品質.csv"),
                 str(data_dir / "visualization-dir/メンバごとの生産性と品質.csv"),
                 "--output",
-                str(out_dir / "merge_peformance_csv_per_user-out.csv"),
+                str(out_dir / "merge_performance_csv_per_user-out.csv"),
             ]
         )
 
