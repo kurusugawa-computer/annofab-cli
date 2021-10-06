@@ -69,7 +69,7 @@ def parse_args(parser: argparse.ArgumentParser):
         type=Path,
         nargs="+",
         required=True,
-        help=(f"``annofabcli statistics visualize`` コマンドの出力ファイルである'{FILENAME_PERFORMANCE_PER_USER}'のパスを指定してください。"),
+        help=(f"``annofabcli statistics visualize`` コマンドの出力ファイルである ``{FILENAME_PERFORMANCE_PER_USER}`` のパスを指定してください。"),
     )
 
     parser.add_argument("-o", "--output", type=Path, required=True, help="出力先のファイルパスを指定します。")
@@ -79,8 +79,8 @@ def parse_args(parser: argparse.ArgumentParser):
 
 def add_parser(subparsers: Optional[argparse._SubParsersAction] = None):
     subcommand_name = "merge_performance_csv_per_user"
-    subcommand_help = f"``annofabcli statistics visualize`` コマンドの出力ファイル'{FILENAME_PERFORMANCE_PER_USER}'をマージします"
-    description = f"``annofabcli statistics visualize`` コマンドの出力ファイル'{FILENAME_PERFORMANCE_PER_USER}'をマージします"
+    subcommand_help = f"``annofabcli statistics visualize`` コマンドの出力ファイル ``{FILENAME_PERFORMANCE_PER_USER}`` をマージします"
+    description = f"``annofabcli statistics visualize`` コマンドの出力ファイル ``{FILENAME_PERFORMANCE_PER_USER}`` をマージします"
     parser = annofabcli.common.cli.add_parser(subparsers, subcommand_name, subcommand_help, description)
     parse_args(parser)
     return parser
