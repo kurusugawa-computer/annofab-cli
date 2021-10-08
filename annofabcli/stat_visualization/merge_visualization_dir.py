@@ -1,12 +1,13 @@
 import argparse
 import logging
+import sys
 from pathlib import Path
 from typing import List, Optional
 
 import pandas
 
 import annofabcli
-from annofabcli.common.cli import get_list_from_args
+from annofabcli.common.cli import COMMAND_LINE_ERROR_STATUS_CODE, get_list_from_args
 from annofabcli.common.utils import print_csv, print_json
 from annofabcli.stat_visualization.merge_performance_per_date import create_df_merged_performance_per_date
 from annofabcli.stat_visualization.merge_performance_per_user import create_df_merged_performance_per_user
@@ -94,8 +95,21 @@ def merge_visualization_dir(
     write_info_json()
 
 
+def validate(args: argparse.Namespace) -> bool:
+    COMMON_MESSAGE = "annofabcli stat_visualization merge:"
+    if len(args.dir) < 2:
+        print(f"{COMMON_MESSAGE} argument --dir: マージ対象のディレクトリは2つ以上指定してください。", file=sys.stderr)
+        return False
+
+    return True
+
+
 def main(args):
+    if not validate(args):
+        sys.exit(COMMAND_LINE_ERROR_STATUS_CODE)
+
     user_id_list = get_list_from_args(args.user_id) if args.user_id is not None else None
+
     merge_visualization_dir(
         project_dir_list=args.dir,
         user_id_list=user_id_list,
@@ -105,7 +119,7 @@ def main(args):
 
 
 def parse_args(parser: argparse.ArgumentParser):
-    parser.add_argument("--dir", type=Path, nargs="+", required=True, help="マージ対象ディレクトリ")
+    parser.add_argument("--dir", type=Path, nargs="+", required=True, help="マージ対象ディレクトリ。2つ以上指定してください。")
     parser.add_argument("-o", "--output_dir", type=Path, required=True, help="出力先ディレクトリ。配下にプロジェクト名のディレクトリが出力される。")
 
     parser.add_argument(

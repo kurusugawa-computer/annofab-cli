@@ -29,6 +29,9 @@ logger = logging.getLogger(__name__)
 
 DEFAULT_CSV_FORMAT = {"encoding": "utf_8_sig", "index": False}
 
+COMMAND_LINE_ERROR_STATUS_CODE = 2
+"""コマンドラインエラーが発生したときに返すステータスコード"""
+
 
 def build_annofabapi_resource_and_login(args: argparse.Namespace) -> annofabapi.Resource:
     """
