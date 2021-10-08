@@ -1,5 +1,6 @@
 import argparse
 import logging
+import sys
 from enum import Enum
 from typing import Any, Callable, Optional
 
@@ -9,6 +10,7 @@ import annofabcli
 import annofabcli.common.cli
 from annofabcli import AnnofabApiFacade
 from annofabcli.common.cli import (
+    COMMAND_LINE_ERROR_STATUS_CODE,
     AbstractCommandLineInterface,
     build_annofabapi_resource_and_login,
     get_json_from_args,
@@ -137,7 +139,7 @@ class Download(AbstractCommandLineInterface):
     def main(self):
         args = self.args
         if not self.validate(args):
-            return
+            sys.exit(COMMAND_LINE_ERROR_STATUS_CODE)
 
         wait_options = get_wait_options_from_args(get_json_from_args(args.wait_options), DEFAULT_WAIT_OPTIONS)
         self.download(

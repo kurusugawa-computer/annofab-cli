@@ -1,5 +1,6 @@
 import argparse
 import logging
+import sys
 from typing import Any, Dict, List, Optional
 
 import annofabapi
@@ -9,7 +10,12 @@ from more_itertools import first_true
 
 import annofabcli
 from annofabcli import AnnofabApiFacade
-from annofabcli.common.cli import AbstractCommandLineInterface, ArgumentParser, build_annofabapi_resource_and_login
+from annofabcli.common.cli import (
+    COMMAND_LINE_ERROR_STATUS_CODE,
+    AbstractCommandLineInterface,
+    ArgumentParser,
+    build_annofabapi_resource_and_login,
+)
 from annofabcli.common.enums import FormatArgument
 from annofabcli.common.utils import get_columns_with_priority
 
@@ -162,7 +168,8 @@ class ListProject(AbstractCommandLineInterface):
 
     def main(self):
         args = self.args
-        self.validate(args)
+        if self.validate(args):
+            sys.exit(COMMAND_LINE_ERROR_STATUS_CODE)
 
         project_query = {}
 

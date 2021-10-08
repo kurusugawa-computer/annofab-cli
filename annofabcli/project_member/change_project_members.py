@@ -8,7 +8,12 @@ from annofabapi.models import ProjectMember, ProjectMemberRole, ProjectMemberSta
 
 import annofabcli
 from annofabcli import AnnofabApiFacade
-from annofabcli.common.cli import AbstractCommandLineInterface, ArgumentParser, build_annofabapi_resource_and_login
+from annofabcli.common.cli import (
+    COMMAND_LINE_ERROR_STATUS_CODE,
+    AbstractCommandLineInterface,
+    ArgumentParser,
+    build_annofabapi_resource_and_login,
+)
 from annofabcli.project_member.put_project_members import PutProjectMembers
 
 logger = logging.getLogger(__name__)
@@ -155,7 +160,7 @@ class ChangeProjectMembers(AbstractCommandLineInterface):
         member_role = ProjectMemberRole(args.role) if args.role is not None else None
 
         if not self.validate(args, member_info):
-            return
+            sys.exit(COMMAND_LINE_ERROR_STATUS_CODE)
 
         self.change_project_members(
             args.project_id, user_id_list=user_id_list, member_role=member_role, member_info=member_info

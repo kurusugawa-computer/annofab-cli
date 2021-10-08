@@ -14,6 +14,7 @@ import annofabcli
 import annofabcli.common.cli
 from annofabcli import AnnofabApiFacade
 from annofabcli.common.cli import (
+    COMMAND_LINE_ERROR_STATUS_CODE,
     AbstractCommandLineInterface,
     ArgumentParser,
     build_annofabapi_resource_and_login,
@@ -195,7 +196,7 @@ class FindBreakError(AbstractCommandLineInterface):
     def main(self):
         args = self.args
         if not self.validate(args):
-            return
+            sys.exit(COMMAND_LINE_ERROR_STATUS_CODE)
 
         task_history_events = self._project_task_history_events(
             project_id=args.project_id, import_file_path=args.task_history_event_json

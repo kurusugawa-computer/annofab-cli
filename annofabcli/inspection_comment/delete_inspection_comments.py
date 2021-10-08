@@ -13,6 +13,7 @@ import annofabcli
 import annofabcli.common.cli
 from annofabcli import AnnofabApiFacade
 from annofabcli.common.cli import (
+    COMMAND_LINE_ERROR_STATUS_CODE,
     AbstractCommandLineInterface,
     AbstractCommandLineWithConfirmInterface,
     ArgumentParser,
@@ -247,7 +248,7 @@ class DeleteInspectionComments(AbstractCommandLineInterface):
     def main(self):
         args = self.args
         if not self.validate(args):
-            return
+            sys.exit(COMMAND_LINE_ERROR_STATUS_CODE)
 
         super().validate_project(args.project_id, [ProjectMemberRole.ACCEPTER, ProjectMemberRole.OWNER])
 

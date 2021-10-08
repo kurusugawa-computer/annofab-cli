@@ -17,6 +17,7 @@ import annofabcli
 import annofabcli.common.cli
 from annofabcli import AnnofabApiFacade
 from annofabcli.common.cli import (
+    COMMAND_LINE_ERROR_STATUS_CODE,
     AbstractCommandLineInterface,
     AbstractCommandLineWithConfirmInterface,
     ArgumentParser,
@@ -524,7 +525,7 @@ class CompleteTasks(AbstractCommandLineInterface):
     def main(self):
         args = self.args
         if not self.validate(args):
-            return
+            sys.exit(COMMAND_LINE_ERROR_STATUS_CODE)
 
         task_id_list = annofabcli.common.cli.get_list_from_args(args.task_id)
         inspection_status = InspectionStatus(args.inspection_status) if args.inspection_status is not None else None

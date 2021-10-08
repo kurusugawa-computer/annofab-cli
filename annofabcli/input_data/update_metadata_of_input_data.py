@@ -12,6 +12,7 @@ import annofabcli
 import annofabcli.common.cli
 from annofabcli import AnnofabApiFacade
 from annofabcli.common.cli import (
+    COMMAND_LINE_ERROR_STATUS_CODE,
     AbstractCommandLineInterface,
     AbstractCommandLineWithConfirmInterface,
     ArgumentParser,
@@ -129,7 +130,7 @@ class UpdateMetadata(AbstractCommandLineInterface):
     def main(self):
         args = self.args
         if not self.validate(args):
-            return
+            sys.exit(COMMAND_LINE_ERROR_STATUS_CODE)
 
         input_data_id_list = annofabcli.common.cli.get_list_from_args(args.input_data_id)
         metadata = annofabcli.common.cli.get_json_from_args(args.metadata)
