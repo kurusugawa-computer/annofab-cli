@@ -31,6 +31,7 @@ from more_itertools import first_true
 import annofabcli
 from annofabcli import AnnofabApiFacade
 from annofabcli.common.cli import (
+    COMMAND_LINE_ERROR_STATUS_CODE,
     AbstractCommandLineInterface,
     AbstractCommandLineWithConfirmInterface,
     ArgumentParser,
@@ -447,7 +448,7 @@ class ImportAnnotation(AbstractCommandLineInterface):
     def main(self):
         args = self.args
         if not self.validate(args):
-            return
+            sys.exit(COMMAND_LINE_ERROR_STATUS_CODE)
 
         project_id = args.project_id
         annotation_path = Path(args.annotation)
