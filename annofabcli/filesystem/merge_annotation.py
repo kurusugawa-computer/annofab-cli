@@ -15,7 +15,12 @@ from annofabapi.parser import (
 )
 
 import annofabcli
-from annofabcli.common.cli import AbstractCommandLineWithoutWebapiInterface, ArgumentParser, get_list_from_args
+from annofabcli.common.cli import (
+    COMMAND_LINE_ERROR_STATUS_CODE,
+    AbstractCommandLineWithoutWebapiInterface,
+    ArgumentParser,
+    get_list_from_args,
+)
 
 IsParserFunc = Callable[[SimpleAnnotationParser], bool]
 
@@ -212,7 +217,8 @@ class MergeAnnotation(AbstractCommandLineWithoutWebapiInterface):
     def main(self):
         args = self.args
         if not self.validate(args):
-            return
+            sys.exit(COMMAND_LINE_ERROR_STATUS_CODE)
+
         main_obj = MergeAnnotationMain()
         target_task_ids = get_list_from_args(args.task_id) if args.task_id is not None else None
         main_obj.main(

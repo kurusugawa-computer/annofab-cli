@@ -16,7 +16,11 @@ from dataclasses_json import DataClassJsonMixin
 
 import annofabcli
 from annofabcli import AnnofabApiFacade
-from annofabcli.common.cli import AbstractCommandLineInterface, build_annofabapi_resource_and_login
+from annofabcli.common.cli import (
+    COMMAND_LINE_ERROR_STATUS_CODE,
+    AbstractCommandLineInterface,
+    build_annofabapi_resource_and_login,
+)
 from annofabcli.common.facade import TaskQuery
 from annofabcli.stat_visualization.merge_visualization_dir import merge_visualization_dir
 from annofabcli.statistics.csv import FILENAME_WHOLE_PERFORMANCE, Csv, write_summarise_whole_performance_csv
@@ -631,7 +635,7 @@ class VisualizeStatistics(AbstractCommandLineInterface):
     def main(self):
         args = self.args
         if not self.validate(args):
-            return
+            sys.exit(COMMAND_LINE_ERROR_STATUS_CODE)
 
         dict_task_query = annofabcli.common.cli.get_json_from_args(args.task_query)
         task_query: Optional[TaskQuery] = TaskQuery.from_dict(dict_task_query) if dict_task_query is not None else None

@@ -1,5 +1,6 @@
 import argparse
 import logging
+import sys
 from typing import Any, Dict, List, Optional
 
 import annofabapi
@@ -9,7 +10,12 @@ from more_itertools import first_true
 
 import annofabcli
 from annofabcli import AnnofabApiFacade
-from annofabcli.common.cli import AbstractCommandLineInterface, ArgumentParser, build_annofabapi_resource_and_login
+from annofabcli.common.cli import (
+    COMMAND_LINE_ERROR_STATUS_CODE,
+    AbstractCommandLineInterface,
+    ArgumentParser,
+    build_annofabapi_resource_and_login,
+)
 from annofabcli.common.enums import FormatArgument
 from annofabcli.common.utils import get_columns_with_priority
 
@@ -154,15 +160,16 @@ class ListProject(AbstractCommandLineInterface):
     def validate(args: argparse.Namespace) -> bool:
         if args.project_id is not None:
             if args.project_query is not None:
-                logger.warning(f"`--organization`と`--project_query`は同時に指定できません。")
+                logger.warning(f"`--project_id`と`--project_query`は同時に指定できません。")
             if args.include_not_joined_project:
-                logger.warning(f"`--organization`と`--include_not_joined_project`は同時に指定できません。")
+                logger.warning(f"`--project_id`と`--include_not_joined_project`は同時に指定できません。")
 
         return True
 
     def main(self):
         args = self.args
-        self.validate(args)
+        if not self.validate(args):
+            sys.exit(COMMAND_LINE_ERROR_STATUS_CODE)
 
         project_query = {}
 
