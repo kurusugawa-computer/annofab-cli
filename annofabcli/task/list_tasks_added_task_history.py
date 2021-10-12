@@ -18,6 +18,7 @@ from annofabcli.common.cli import (
     build_annofabapi_resource_and_login,
     get_json_from_args,
     get_wait_options_from_args,
+    COMMAND_LINE_ERROR_STATUS_CODE,
 )
 from annofabcli.common.dataclasses import WaitOptions
 from annofabcli.common.download import DownloadingFile
@@ -238,7 +239,7 @@ class ListTasksAddedTaskHistory(AbstractCommandLineInterface):
     def main(self):
         args = self.args
         if not self.validate(args):
-            return
+            sys.exit(COMMAND_LINE_ERROR_STATUS_CODE)
 
         project_id = args.project_id
 
