@@ -1,12 +1,17 @@
 from __future__ import annotations
 
 import argparse
+import hashlib
+import io
 import logging.handlers
+import tempfile
 import uuid
 from pathlib import Path
 from typing import Optional
 
 import pyquery
+from datauri import DataURI
+from PIL import Image
 
 import annofabcli
 from annofabcli import AnnofabApiFacade
@@ -15,12 +20,35 @@ from annofabcli.common.cli import AbstractCommandLineInterface, ArgumentParser, 
 logger = logging.getLogger(__name__)
 
 
+def save_image_from_data_uri_scheme(value: str, temp_dir: Path) -> Path:
+    """Data URI Schemeの値を画像として保存します。
+
+    Args:
+        value (str): Data URI Schemeの値
+        temp_dir (Path): 保存先ディレクトリ
+
+    Returns:
+        Path: 保存した画像パス
+    """
+    uri = DataURI(value)
+    extension = uri.mimetype.split("/")[1]
+
+    md5_hash = hashlib.md5(uri.data).hexdigest()
+    image_file_name = f"{md5_hash}.{extension}"
+
+    with Image.open(io.BytesIO(uri.data)) as img:
+        image_file_path = temp_dir / image_file_name
+        img.save(str(image_file_path), extension.upper())
+        logger.debug(f"Data URI Schemeの画像を {str(image_file_path)} に保存しました。")
+        return image_file_path
+
+
 class UploadInstruction(AbstractCommandLineInterface):
     """
     作業ガイドをアップロードする
     """
 
-    def upload_html_to_instruction(self, project_id: str, html_path: Path):
+    def upload_html_to_instruction(self, project_id: str, html_path: Path, temp_dir: Path):
         with html_path.open(encoding="utf-8") as f:
             file_content = f.read()
         pq_html = pyquery.PyQuery(file_content)
@@ -33,13 +61,16 @@ class UploadInstruction(AbstractCommandLineInterface):
             if src_value is None:
                 continue
 
-            if src_value.startswith("http:") or src_value.startswith("https:") or src_value.startswith("data:"):
+            if src_value.startswith("http:") or src_value.startswith("https:"):
                 continue
 
-            if src_value[0] == "/":
-                img_path = Path(src_value)
+            if src_value.startswith("data:"):
+                img_path = save_image_from_data_uri_scheme(src_value, temp_dir=temp_dir)
             else:
-                img_path = html_path.parent / src_value
+                if src_value[0] == "/":
+                    img_path = Path(src_value)
+                else:
+                    img_path = html_path.parent / src_value
 
             if str(img_path) in img_path_dict:
                 image_id = img_path_dict[str(img_path)]
@@ -85,7 +116,8 @@ class UploadInstruction(AbstractCommandLineInterface):
     def main(self):
         args = self.args
 
-        self.upload_html_to_instruction(args.project_id, Path(args.html))
+        with tempfile.TemporaryDirectory() as str_temp_dir:
+            self.upload_html_to_instruction(args.project_id, Path(args.html), temp_dir=Path(str_temp_dir))
 
 
 def main(args):
