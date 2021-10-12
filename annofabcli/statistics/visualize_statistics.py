@@ -209,7 +209,7 @@ class WriteCsvGraph:
         ユーザごとにプロットした散布図を出力する。
         """
         productivity_df = self._get_productivity_df()
-        if len(productivity_df):
+        if len(productivity_df) == 0:
             logger.warning(f"'メンバごとの生産性と品質.csv'が0件なので、ユーザごとの散布図を出力しません。")
             return
 
@@ -387,7 +387,7 @@ class WriteCsvGraph:
 
     def write_productivity_csv_per_user(self) -> None:
         productivity_df = self._get_productivity_df()
-        if len(productivity_df):
+        if len(productivity_df) == 0:
             logger.warning(f"作業履歴がないため、'メンバごとの生産性と品質.csv'を出力しません。")
             return
 
