@@ -498,7 +498,7 @@ class Table:
                 if (
                     e["phase"] == phase.value
                     and e["account_id"] is not None
-                    and e["accumulated_labor_time_milliseconds"] == "PT0S"
+                    and annofabcli.utils.isoduration_to_hour(e["accumulated_labor_time_milliseconds"]) > 0
                 )
             ]
 
