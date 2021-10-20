@@ -1,24 +1,29 @@
-from enum import Enum, auto
-import re
-
 import argparse
 import logging
-from typing import Optional, List
+import re
+from enum import Enum, auto
+from typing import List, Optional, Dict, Any
+
+import requests
 
 import annofabapi
+from annofabapi import Wrapper
+from annofabapi.models import AnnotationQuery,AnnotationDataHoldingType, SingleAnnotation, Task
+from annofabapi.utils import can_put_annotation, str_now
+from annofabapi.wrapper import TaskFrameKey, Wrapper
+from annofabapi.dataclass.annotation import  AnnotationDetail
 
 import annofabcli
 from annofabcli import AnnofabApiFacade
+from annofabcli.annotation import delete_annotation, import_annotation
 from annofabcli.common.cli import (
     AbstractCommandLineInterface,
     ArgumentParser,
     build_annofabapi_resource_and_login,
     get_list_from_args,
 )
+from annofabcli.common.facade import convert_annotation_specs_labels_v2_to_v1
 from annofabcli.common.visualize import AddProps
-from annofabapi.wrapper import TaskFrameKey, Wrapper
-from annofabcli.annotation import  delete_annotation
-from annofabapi.utils import can_put_annotation
 
 logger = logging.getLogger(__name__)
 
@@ -37,6 +42,8 @@ class CopyAnnotation(AbstractCommandLineInterface):
     def __init__(self, service: annofabapi.Resource, facade: AnnofabApiFacade, args: argparse.Namespace):
         super().__init__(service, facade, args)
         self.visualize = AddProps(self.service, args.project_id)
+        self.deleteAnnotation=delete_annotation.DeleteAnnotation(service=self.service,facade=self.facade,args=self.args)
+        self.importAnnotation=import_annotation.ImportAnnotation(service=self.service,facade=self.facade,args=self.args)
 
     class CopyTasksInfo:
         COMMON_MESSAGE = "annofabcli annotation import: error:"
@@ -112,12 +119,12 @@ class CopyAnnotation(AbstractCommandLineInterface):
                     self.append(line)
             # 受け入れられない形式 
             elif validate_type==self.INPUT_TYPECHECK_ENUM.INVALID:
-                logger.error(f"{self.COMMON_MESSAGE} argument --input: 入力されたタスクを正しく解釈できませんでした({input_data})")
+                logger.error(f"{self.COMMON_MESSAGE} argument --input: 入力されたタスクを正しく解釈できませんでした．({input_data})")
                 return
             else:
                 # 想定外
                 logger.error(f"{self.COMMON_MESSAGE} argument --input: 想定外のエラーです．")
-                pass
+                return 
 
         def get_tasks(self):
             return zip(self.__from_task_frame_keys, self.__to_task_frame_keys)
@@ -152,29 +159,77 @@ class CopyAnnotation(AbstractCommandLineInterface):
 
         copy_tasks_info = self.CopyTasksInfo(self.service)
         copy_tasks_info.append(project_id, input_data)
-
-        to_task_set = set([to_tasks.task_id for _,to_tasks in copy_tasks_info.get_tasks()])
-
+        from_annotations = []
         
         # コピー先にすでにannotationがあるかをチェック
         # もしすでにアノテーションがある場合，サブコマンド引数によって挙動を変える
-        for task_id in to_task_set:
-            if self.service.wrapper.get_all_annotation_list(project_id=project_id):
-                # overwriteなら削除して続行
-                if is_overwrite:
-                    # 元のアノテーションを削除
-                    # TODO : クラスインスタンスを再利用できるようにする
-                    logger.info(f"overwriteが指定されたため，コピー前に{task_id}のアノテーションを削除します．")
-                    delete_annotation.DeleteAnnotation(service=self.service,facade=self.facade,args=self.args).delete_annotation_for_task(
-                        project_id, task_id, force=True
-                    )
-                # mergeなら
-                # 重複する場合は上書き
-                # 重複しない場合は新規作成
-                elif is_merge:
+        for from_task, to_task in copy_tasks_info.get_tasks():
+            from_task_id=from_task.task_id
+            from_input_id=from_task.input_data_id
+            to_task_id=to_task.task_id
+            to_input_id=to_task.input_data_id
+
+
+            #logger.debug(from_input_data_list)
+            #inputごと，つまりタスク内の画像ごとの処理
+                    
+            annotation_query:AnnotationQuery=dict()
+            annotation_query['task_id']=to_task_id
+            annotation_query['input_data_id']=to_input_id
+            query_params = {'query':annotation_query}
+            
+            #コピー先に一つでもアノテーションがあり，overwriteでもない場合
+            if self.service.wrapper.get_all_annotation_list(project_id=project_id, query_params=query_params) and not is_overwrite:
+                if is_merge:
                     logger.info(f"mergeが指定されたため，存在するアノテーションは上書きし，存在しない場合は追加します．")
-                    # TODO : mergeについて，importを参考にして内部処理を作成する
-                    pass
+                    from_annotations=self.service.api.get_editor_annotation(project_id=project_id,task_id=from_task_id,input_data_id=from_input_id)[0]
+                    to_annotations=self.service.api.get_editor_annotation(project_id=project_id,task_id=to_task_id,input_data_id=to_input_id)[0]
+
+                    if from_annotations['details'] : #コピー先にannotationがある
+                        # mergeならコピーではなく新規追加する
+                        # すでに存在するIDに関しては削除してから新規追加する
+                        # 新規追加はput_input_dataにて行う
+                        details = from_annotations['details']
+                        try:
+                            old_details=self.service.api.get_editor_annotation(project_id=project_id,task_id=to_task_id,input_data_id=to_input_id)[0]['details']
+                            details+=old_details
+                            updated_datetime=from_annotations['updated_datetime']
+
+                            src_annotation, _ = self.service.api.get_editor_annotation(project_id, from_task_id, from_input_id)
+                            src_annotation_details: List[Dict[str, Any]] = src_annotation["details"]
+
+                            if len(src_annotation_details) == 0:
+                                logger.debug("コピー元にアノテーションが１つもないため、アノテーションのコピーをスキップします。")
+                                return False
+
+                            old_dest_annotation, _ = self.service.api.get_editor_annotation(project_id, to_task_id, to_input_id)
+
+                            from_annotations_id = [detail['annotation_id'] for detail in src_annotation['details']]
+                            append_anno_list = []
+                            if old_dest_annotation:
+                                #for from_anno,to_anno in zip(from_annotations,to_annotations):
+                                for detail in to_annotations['details']:
+                                    if not detail['annotation_id'] in from_annotations_id:
+                                        logger.debug(append_anno_list)
+                                        append_anno_list.append(detail)
+
+                            src_annotation_details.extend(append_anno_list)
+                            updated_datetime = old_dest_annotation["updated_datetime"]
+                            request_body = self.service.wrapper._Wrapper__create_request_body_for_copy_annotation(
+                                project_id,
+                                to_task_id,
+                                to_input_id,
+                                src_details=src_annotation_details,
+                                account_id=self.service.api.account_id,
+                                annotation_specs_relation=None # annotation_specs_relation,
+                            )
+                            request_body["updated_datetime"] = updated_datetime
+                            self.service.api.put_annotation(project_id, to_task_id, to_input_id, request_body=request_body)
+        
+                        except Exception as e:
+                            logger.debug(e)
+                            logger.debug(f"task_id={to_task_id},input_data_id={to_input_id},request_body={self.to_request_body(project_id, to_task_id,to_input_id,details, updated_datetime)})")
+                        continue
                 else:
                     logger.debug(
                     f"task_id={task_id} : "
@@ -182,18 +237,57 @@ class CopyAnnotation(AbstractCommandLineInterface):
                     f"アノテーションをインポートする場合は、`--overwrite` または '--merge' を指定してください。"
                     )
                     return 
+            else:
+                for from_frame_key, to_frame_key in copy_tasks_info.get_tasks():
+                    task_id = to_frame_key.task_id
+                    try:
+                        #実際のコピー処理
+                        self.service.wrapper.copy_annotation(
+                            src=from_frame_key, dest=to_frame_key, annotation_specs_relation=None
+                        )
+                    except Exception as e:
+                        logger.error(f"{e}")
+                        logger.error(f"{from_frame_key},{to_frame_key}")
 
-        for from_frame_key, to_frame_key in copy_tasks_info.get_tasks():
-            task_id = to_frame_key.task_id
-            try:
-                #実際のコピー処理
-                self.service.wrapper.copy_annotation(
-                    src=from_frame_key, dest=to_frame_key, annotation_specs_relation=None
-                )
-            except Exception as e:
-                logger.error(f"{e}")
-                logger.error(f"{from_frame_key},{to_frame_key}")
+    def to_request_body(
+        self,
+        project_id, 
+        task_id,
+        input_data_id,
+        details: Dict[str, Any] ,
+        updated_datetime=None
+    ) -> Dict[str, Any]:
+        request_details: List[Dict[str, Any]] = []
+        for detail in details :
+            request_detail = AnnotationDetail(
+                label_id=detail['label_id'],
+                annotation_id=detail['annotation_id'],
+                account_id=detail['account_id'],
+                data_holding_type=detail['data_holding_type'],
+                data=detail['data'],
+                additional_data_list=detail['additional_data_list'],
+                is_protected=False,
+                etag=None,
+                url=None,
+                path=None,
+                created_datetime=updated_datetime,
+                updated_datetime=updated_datetime,
+            )
+            if detail['data_holding_type'] == 'outer':
+                request_detail.path = detail['path']
 
+            request_details.append(detail)
+
+            request_body = {
+                "project_id": project_id,
+                "task_id": task_id,
+                "input_data_id": input_data_id,
+                "details":request_details,
+                "updated_datetime": updated_datetime
+            }
+            return request_body
+        else:
+            return None
 
 def main(args):
     service = build_annofabapi_resource_and_login(args)
