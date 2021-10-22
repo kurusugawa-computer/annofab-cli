@@ -329,6 +329,23 @@ class AddProps:
         task_history["worktime_hour"] = isoduration_to_hour(task_history["accumulated_labor_time_milliseconds"])
         return task_history
 
+    def add_properties_to_task_history_event(self, task_history_event: Dict[str, Any]) -> Dict[str, Any]:
+        """
+        タスク履歴イベント情報に、以下のキーを追加する.
+
+        * user_id
+        * username
+
+        Args:
+            task:
+
+        Returns:
+            Task情報
+
+        """
+        self._add_user_info(task_history_event)
+        return task_history_event
+
     @staticmethod
     def add_properties_to_input_data(input_data: InputData, task_id_list: List[str]) -> InputData:
         """
