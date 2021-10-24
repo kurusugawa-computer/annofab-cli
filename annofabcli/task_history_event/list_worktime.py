@@ -110,8 +110,7 @@ class ListWorktimeFromTaskHistoryEventMain:
         self, start_event: TaskHistoryEvent, end_event: TaskHistoryEvent
     ) -> WorktimeFromTaskHistoryEvent:
         diff = parse(end_event["created_datetime"]) - parse(start_event["created_datetime"])
-        worktime_seconds = diff.seconds + diff.microseconds * 0.001
-        worktime_hour = worktime_seconds / 3600
+        worktime_hour = diff.total_seconds() / 3600
         assert worktime_hour >= 0, (
             f"worktime_hourが負の値です。"
             f"start_event.created_datetime={start_event['created_datetime']}, "
@@ -198,7 +197,7 @@ class ListWorktimeFromTaskHistoryEventMain:
         )
 
         worktime_list = []
-        for task_id, subset_event_list in task_history_event_dict.items():
+        for subset_event_list in task_history_event_dict.values():
             subset_worktime_list = self._create_worktime_list(subset_event_list)
             worktime_list.extend(subset_worktime_list)
         return worktime_list
@@ -219,11 +218,19 @@ class ListWorktimeFromTaskHistoryEvent(AbstractCommandLineInterface):
         worktime_list = main_obj.get_worktime_list(
             project_id, task_history_event_json=task_history_event_json, task_id_list=task_id_list
         )
-        if arg_format == FormatArgument.CSV:
-            df = pandas.json_normalize(worktime_list)
-            self.print_csv(df)
+
+        logger.debug(f"作業時間一覧の件数: {len(worktime_list)}")
+
+        if len(worktime_list) > 0:
+            dict_worktime_list = [e.to_dict() for e in worktime_list]
+            if arg_format == FormatArgument.CSV:
+                df = pandas.json_normalize(dict_worktime_list)
+                self.print_csv(df)
+            else:
+                self.print_according_to_format(dict_worktime_list)
         else:
-            self.print_according_to_format(WorktimeFromTaskHistoryEvent.schema().dumps(worktime_list, many=True))
+            logger.warning(f"作業時間一覧の件数が0件であるため、出力しません。")
+            return
 
     def main(self):
         args = self.args
@@ -287,10 +294,7 @@ def parse_args(parser: argparse.ArgumentParser):
 def add_parser(subparsers: Optional[argparse._SubParsersAction] = None):
     subcommand_name = "list_worktime"
     subcommand_help = "タスク履歴イベントから作業時間の一覧を出力します。"
-    description = (
-        "タスク履歴イベントから作業時間の一覧を出力します。\n"
-        "「作業中状態から休憩状態までの作業時間」など、`annofabcli task_history list`で出力したタスク履歴一覧より詳細な作業時間の情報を出力します。"
-    )
+    description = "タスク履歴イベントから作業時間の一覧を出力します。\n" "タスク履歴より詳細な作業時間の情報を出力します。"
 
     parser = annofabcli.common.cli.add_parser(subparsers, subcommand_name, subcommand_help, description=description)
     parse_args(parser)

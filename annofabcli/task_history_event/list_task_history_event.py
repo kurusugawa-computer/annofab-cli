@@ -7,8 +7,8 @@ from pathlib import Path
 from typing import Any, List, Optional
 
 import annofabapi
-from annofabapi.models import TaskHistoryEvent
 import pandas
+from annofabapi.models import TaskHistoryEvent
 
 import annofabcli
 from annofabcli import AnnofabApiFacade
@@ -41,7 +41,7 @@ class ListTaskHistoryEventWithJsonMain:
                     result.append(event)
 
             return result
-        
+
         return task_history_event_list
 
     def get_task_history_event_list(
@@ -84,11 +84,18 @@ class ListTaskHistoryEventWithJson(AbstractCommandLineInterface):
         task_history_event_list = main_obj.get_task_history_event_list(
             project_id, task_history_event_json=task_history_event_json, task_id_list=task_id_list
         )
-        if arg_format == FormatArgument.CSV:
-            df = pandas.json_normalize(task_history_event_list)
-            self.print_csv(df)
+
+        logger.debug(f"タスク履歴イベント一覧の件数: {len(task_history_event_list)}")
+
+        if len(task_history_event_list) > 0:
+            if arg_format == FormatArgument.CSV:
+                df = pandas.json_normalize(task_history_event_list)
+                self.print_csv(df)
+            else:
+                self.print_according_to_format(task_history_event_list)
         else:
-            self.print_according_to_format(task_history_event_list)
+            logger.warning(f"タスク履歴イベント一覧の件数が0件であるため、出力しません。")
+            return
 
     def main(self):
         args = self.args
