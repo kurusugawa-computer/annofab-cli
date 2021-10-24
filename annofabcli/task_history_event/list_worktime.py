@@ -1,14 +1,18 @@
 from __future__ import annotations
-from collections import defaultdict
+
 import argparse
 import json
 import logging
+from collections import defaultdict
+from dataclasses import dataclass
 from pathlib import Path
 from typing import Any, List, Optional
 
 import annofabapi
-from annofabapi.models import Task, TaskHistoryEvent, TaskStatus
 import pandas
+from annofabapi.models import TaskHistoryEvent, TaskStatus
+from dataclasses_json import DataClassJsonMixin
+from dateutil.parser import parse
 
 import annofabcli
 from annofabcli import AnnofabApiFacade
@@ -20,36 +24,36 @@ from annofabcli.common.cli import (
 )
 from annofabcli.common.download import DownloadingFile
 from annofabcli.common.enums import FormatArgument
-from annofabcli.common.utils import T
 from annofabcli.common.visualize import AddProps
-from dataclasses import dataclass
-from dataclasses_json import DataClassJsonMixin
-from enum import Enum
-from dateutil.parser import parse
+
 logger = logging.getLogger(__name__)
 
 
+@dataclass
 class SimpleTaskHistoryEvent(DataClassJsonMixin):
     task_history_id: str
     created_datetime: str
     status: str
 
+
+@dataclass
 class WorktimeFromTaskHistoryEvent(DataClassJsonMixin):
-    project_id:str
+    project_id: str
     task_id: str
     phase: str
     phase_stage: int
     account_id: str
+    user_id: str
+    username: str
     worktime_hour: float
     start_event: SimpleTaskHistoryEvent
     end_event: SimpleTaskHistoryEvent
-    user_id: Optional[str]=None
-    username: Optional[str]=None
 
 
 class ListWorktimeFromTaskHistoryEventMain:
-    def __init__(self, service: annofabapi.Resource):
+    def __init__(self, service: annofabapi.Resource, *, project_id: str):
         self.service = service
+        self.visualize = AddProps(service, project_id)
 
     @staticmethod
     def filter_task_history_event(
@@ -63,11 +67,11 @@ class ListWorktimeFromTaskHistoryEventMain:
                     result.append(event)
 
             return result
-        
+
         return task_history_event_list
 
     def get_task_history_event_list(
-        self, project_id: str, task_history_event_json: Optional[Path] = None, task_id_list: Optional[List[str]] = None
+        self, project_id: str, task_history_event_json: Optional[Path] = None
     ) -> list[dict[str, Any]]:
         if task_history_event_json is None:
             downloading_obj = DownloadingFile(self.service)
@@ -81,14 +85,12 @@ class ListWorktimeFromTaskHistoryEventMain:
         with json_path.open() as f:
             all_task_history_event_list = json.load(f)
 
-
-        for event in filtered_task_history_event_list:
-            visualize.add_properties_to_task_history_event(event)
-
-        return filtered_task_history_event_list
+        return all_task_history_event_list
 
     @staticmethod
-    def _create_task_history_event_dict(task_history_event_list:list[TaskHistoryEvent], *, task_ids: Optional[set[str]]) -> dict[str, list[TaskHistoryEvent]]:
+    def _create_task_history_event_dict(
+        task_history_event_list: list[TaskHistoryEvent], *, task_ids: Optional[set[str]]
+    ) -> dict[str, list[TaskHistoryEvent]]:
         """
         keyがtask_id, valueがタスク履歴イベントのlistであるdictを生成する。
         タスク履歴イベントlistは`created_datetime`の昇順にソートされている
@@ -97,75 +99,109 @@ class ListWorktimeFromTaskHistoryEventMain:
 
         for event in task_history_event_list:
             if task_ids is None or event["task_id"] in task_ids:
-                result[event["task_id"]].append(event)    
-        
+                result[event["task_id"]].append(event)
 
         for event_list in result.values():
             event_list.sort(key=lambda e: e["created_datetime"])
 
         return result
 
-    @staticmethod
-    def _create_worktime(start_event: TaskHistoryEvent, end_event:TaskHistoryEvent) -> WorktimeFromTaskHistoryEvent:
+    def _create_worktime(
+        self, start_event: TaskHistoryEvent, end_event: TaskHistoryEvent
+    ) -> WorktimeFromTaskHistoryEvent:
         diff = parse(end_event["created_datetime"]) - parse(start_event["created_datetime"])
         worktime_seconds = diff.seconds + diff.microseconds * 0.001
         worktime_hour = worktime_seconds / 3600
-        assert worktime_hour >= 0, (f"worktime_hourが負の値です。"
-            f"start_event.created_datetime={start_event['created_datetime']}, end_event.created_datetime{end_event['created_datetime']}")
+        assert worktime_hour >= 0, (
+            f"worktime_hourが負の値です。"
+            f"start_event.created_datetime={start_event['created_datetime']}, "
+            f"end_event.created_datetime{end_event['created_datetime']}"
+        )
+
+        member = self.visualize.get_project_member_from_account_id(start_event["account_id"])
+        if member is not None:
+            user_id = member["user_id"]
+            username = member["username"]
+        else:
+            user_id = None
+            username = None
 
         return WorktimeFromTaskHistoryEvent(
             # start_eventとend_eventの以下の属性は同じなので、start_eventの値を参照する
-            project_id = start_event["project_id"],
-            task_id = start_event["task_id"],
-            phase = start_event["phase"],
-            phase_stage = start_event["phase_stage"],
-            account_id = start_event["account_id"],
-            worktime_hour = worktime_hour,
-            start_event = start_event,
-            end_event = end_event
-        )        
+            project_id=start_event["project_id"],
+            task_id=start_event["task_id"],
+            phase=start_event["phase"],
+            phase_stage=start_event["phase_stage"],
+            account_id=start_event["account_id"],
+            user_id=user_id,
+            username=username,
+            worktime_hour=worktime_hour,
+            start_event=SimpleTaskHistoryEvent(
+                task_history_id=start_event["task_history_id"],
+                created_datetime=start_event["created_datetime"],
+                status=start_event["status"],
+            ),
+            end_event=SimpleTaskHistoryEvent(
+                task_history_id=end_event["task_history_id"],
+                created_datetime=end_event["created_datetime"],
+                status=end_event["status"],
+            ),
+        )
 
-
-
-    @classmethod
-    def _create_worktime_list(cls, task_history_event_list:list[TaskHistoryEvent]) -> list[WorktimeFromTaskHistoryEvent]:
+    def _create_worktime_list(
+        self, task_history_event_list: list[TaskHistoryEvent]
+    ) -> list[WorktimeFromTaskHistoryEvent]:
         result = []
         i = 0
 
         while i < len(task_history_event_list):
-            event = task_history_event_list[i]            
+            event = task_history_event_list[i]
             if event["status"] != TaskStatus.WORKING.value:
-                i+=1
+                i += 1
                 continue
 
             start_event = event
-            
-            if i+1 >= len(task_history_event_list):
+
+            if i + 1 >= len(task_history_event_list):
                 # タスクの状態が作業中の場合
                 break
-            
-            next_event = event[i+1]
-            if next_event["status"] not in {TaskStatus.BREAK.value, TaskStatus.ON_HOLD.value, TaskStatus.COMPLETE.value}:
-                logger.warning("作業中状態のタスク履歴イベントに対応するタスク履歴イベントが存在しませんでした。"
-                    f":: start_event={start_event}, next_event={next_event}")
-                i+=1
+
+            next_event = task_history_event_list[i + 1]
+            if next_event["status"] not in {
+                TaskStatus.BREAK.value,
+                TaskStatus.ON_HOLD.value,
+                TaskStatus.COMPLETE.value,
+            }:
+                logger.warning(
+                    "作業中状態のタスク履歴イベントに対応するタスク履歴イベントが存在しませんでした。" f":: start_event={start_event}, next_event={next_event}"
+                )
+                i += 1
                 continue
-            
-            worktime = cls._create_worktime(start_event, next_event)
+
+            worktime = self._create_worktime(start_event, next_event)
             result.append(worktime)
             # 次のタスク履歴イベントのstatusはworkingでないことがわかっているので、インデックスを2つ増加させる
-            i+=2
-        
+            i += 2
+
         return result
 
+    def get_worktime_list(
+        self, project_id: str, task_history_event_json: Optional[Path] = None, task_id_list: Optional[List[str]] = None
+    ) -> list[WorktimeFromTaskHistoryEvent]:
+        all_task_history_event_list = self.get_task_history_event_list(
+            project_id, task_history_event_json=task_history_event_json
+        )
 
-    def get_worktime_list(self, project_id: str, task_history_event_json: Optional[Path] = None, task_id_list: Optional[List[str]] = None) -> list[dict[str,Any]]:
-        all_task_history_event_list = self.get_task_history_event_list(project_id,task_history_event_json=task_history_event_json)
-        
-        task_history_event_dict = self._create_task_history_event_dict(task_history_event_list, task_id_list)
+        task_id_set = set(task_id_list) if task_id_list is not None else None
+        task_history_event_dict = self._create_task_history_event_dict(
+            all_task_history_event_list, task_ids=task_id_set
+        )
 
-        pass    
-
+        worktime_list = []
+        for task_id, subset_event_list in task_history_event_dict.items():
+            subset_worktime_list = self._create_worktime_list(subset_event_list)
+            worktime_list.extend(subset_worktime_list)
+        return worktime_list
 
 
 class ListWorktimeFromTaskHistoryEvent(AbstractCommandLineInterface):
@@ -179,15 +215,15 @@ class ListWorktimeFromTaskHistoryEvent(AbstractCommandLineInterface):
 
         super().validate_project(project_id, project_member_roles=None)
 
-        main_obj = ListWorktimeFromTaskHistoryEventMain(self.service)
-        task_history_event_list = main_obj.get_task_history_event_list(
+        main_obj = ListWorktimeFromTaskHistoryEventMain(self.service, project_id=project_id)
+        worktime_list = main_obj.get_worktime_list(
             project_id, task_history_event_json=task_history_event_json, task_id_list=task_id_list
         )
         if arg_format == FormatArgument.CSV:
-            df = pandas.json_normalize(task_history_event_list)
+            df = pandas.json_normalize(worktime_list)
             self.print_csv(df)
         else:
-            self.print_according_to_format(task_history_event_list)
+            self.print_according_to_format(WorktimeFromTaskHistoryEvent.schema().dumps(worktime_list, many=True))
 
     def main(self):
         args = self.args
@@ -251,8 +287,10 @@ def parse_args(parser: argparse.ArgumentParser):
 def add_parser(subparsers: Optional[argparse._SubParsersAction] = None):
     subcommand_name = "list_worktime"
     subcommand_help = "タスク履歴イベントから作業時間の一覧を出力します。"
-    description = ("タスク履歴イベントから作業時間の一覧を出力します。\n"
-        "「作業中状態から休憩状態までの作業時間」など、`annofabcli task_history list`で出力したタスク履歴一覧より詳細な作業時間の情報を出力します。")
+    description = (
+        "タスク履歴イベントから作業時間の一覧を出力します。\n"
+        "「作業中状態から休憩状態までの作業時間」など、`annofabcli task_history list`で出力したタスク履歴一覧より詳細な作業時間の情報を出力します。"
+    )
 
     parser = annofabcli.common.cli.add_parser(subparsers, subcommand_name, subcommand_help, description=description)
     parse_args(parser)
