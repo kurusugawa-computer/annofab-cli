@@ -7,6 +7,7 @@ from pathlib import Path
 from typing import Any, List, Optional
 
 import annofabapi
+from annofabapi.models import TaskHistoryEvent
 import pandas
 
 import annofabcli
@@ -30,18 +31,20 @@ class ListTaskHistoryEventWithJsonMain:
 
     @staticmethod
     def filter_task_history_event(
-        task_history_event_dict: dict[str, list[dict[str, Any]]], task_id_list: Optional[list[str]] = None
-    ) -> dict[str, list[dict[str, Any]]]:
+        task_history_event_list: list[TaskHistoryEvent], task_id_list: Optional[list[str]] = None
+    ) -> list[TaskHistoryEvent]:
         if task_id_list is not None:
-            result = {}
-            for task_id in task_id_list:
-                events = task_history_event_dict.get(task_id)
-                if events is not None:
-                    result[task_id] = events
+            result = []
+            task_id_set = set(task_id_list)
+            for event in task_history_event_list:
+                if event["task_id"] in task_id_set:
+                    result.append(event)
 
-        return task_history_event_dict
+            return result
+        
+        return task_history_event_list
 
-    def get_task_history_event_dict(
+    def get_task_history_event_list(
         self, project_id: str, task_history_event_json: Optional[Path] = None, task_id_list: Optional[List[str]] = None
     ) -> list[dict[str, Any]]:
         if task_history_event_json is None:
@@ -49,22 +52,21 @@ class ListTaskHistoryEventWithJsonMain:
             cache_dir = annofabcli.utils.get_cache_dir()
             json_path = cache_dir / f"{project_id}-task_history_event.json"
 
-            downloading_obj.download_task_history_evnet_json(project_id, str(json_path))
+            downloading_obj.download_task_history_event_json(project_id, str(json_path))
         else:
             json_path = task_history_event_json
 
         with json_path.open() as f:
-            all_task_history_event_dict = json.load(f)
+            all_task_history_event_list = json.load(f)
 
-        filtered_task_history_event_dict = self.filter_task_history_event(all_task_history_event_dict, task_id_list)
+        filtered_task_history_event_list = self.filter_task_history_event(all_task_history_event_list, task_id_list)
 
         visualize = AddProps(self.service, project_id)
 
-        for events in filtered_task_history_event_dict.values():
-            for event in events:
-                visualize.add_properties_to_task_history_event(event)
+        for event in filtered_task_history_event_list:
+            visualize.add_properties_to_task_history_event(event)
 
-        return filtered_task_history_event_dict
+        return filtered_task_history_event_list
 
 
 class ListTaskHistoryEventWithJson(AbstractCommandLineInterface):
@@ -79,15 +81,14 @@ class ListTaskHistoryEventWithJson(AbstractCommandLineInterface):
         super().validate_project(project_id, project_member_roles=None)
 
         main_obj = ListTaskHistoryEventWithJsonMain(self.service)
-        task_history_event_dict = main_obj.get_task_history_event_dict(
+        task_history_event_list = main_obj.get_task_history_event_list(
             project_id, task_history_event_json=task_history_event_json, task_id_list=task_id_list
         )
         if arg_format == FormatArgument.CSV:
-            event_list = self.to_all_task_history_event_list_from_dict(task_history_event_dict)
-            df = pandas.json_normalize(event_list)
+            df = pandas.json_normalize(task_history_event_list)
             self.print_csv(df)
         else:
-            self.print_according_to_format(task_history_event_dict)
+            self.print_according_to_format(task_history_event_list)
 
     def main(self):
         args = self.args
