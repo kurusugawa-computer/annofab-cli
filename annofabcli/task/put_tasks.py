@@ -176,7 +176,6 @@ def parse_args(parser: argparse.ArgumentParser):
             " * 1列目: task_id\n"
             " * 2列目: Any(無視される)\n"
             " * 3列目: input_data_id\n"
-
         ),
     )
 
