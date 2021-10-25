@@ -6,7 +6,6 @@ import sys
 from pathlib import Path
 from typing import Any, Dict, List, Optional
 
-import annofabapi
 import dateutil.parser
 import pandas as pd
 
