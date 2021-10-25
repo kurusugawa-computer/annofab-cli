@@ -89,17 +89,25 @@ class ListWorktimeFromTaskHistoryEventMain:
 
     @staticmethod
     def _create_task_history_event_dict(
-        task_history_event_list: list[TaskHistoryEvent], *, task_ids: Optional[set[str]]
+        task_history_event_list: list[TaskHistoryEvent],
+        *,
+        task_ids: Optional[set[str]],
+        account_ids: Optional[set[str]],
     ) -> dict[str, list[TaskHistoryEvent]]:
         """
         keyがtask_id, valueがタスク履歴イベントのlistであるdictを生成する。
         タスク履歴イベントlistは`created_datetime`の昇順にソートされている
         """
         result: dict[str, list[TaskHistoryEvent]] = defaultdict(list)
-
+        
         for event in task_history_event_list:
-            if task_ids is None or event["task_id"] in task_ids:
-                result[event["task_id"]].append(event)
+            if account_ids is not None and event["account_id"] not in account_ids:
+                continue
+
+            if task_ids is not None and event["task_id"] not in task_ids:
+                continue
+
+            result[event["task_id"]].append(event)
 
         for event_list in result.values():
             event_list.sort(key=lambda e: e["created_datetime"])
@@ -184,16 +192,30 @@ class ListWorktimeFromTaskHistoryEventMain:
 
         return result
 
+    def get_account_ids_from_user_ids(self, project_id: str, user_ids: set[str]) -> set[str]:
+        project_member_list = self.service.wrapper.get_all_project_members(
+            project_id, query_params={"include_inactive_member": True}
+        )
+        return {e["account_id"] for e in project_member_list if e["user_id"] in user_ids}
+
     def get_worktime_list(
-        self, project_id: str, task_history_event_json: Optional[Path] = None, task_id_list: Optional[List[str]] = None
+        self,
+        project_id: str,
+        task_history_event_json: Optional[Path] = None,
+        task_id_list: Optional[List[str]] = None,
+        user_id_list: Optional[List[str]] = None,
     ) -> list[WorktimeFromTaskHistoryEvent]:
         all_task_history_event_list = self.get_task_history_event_list(
             project_id, task_history_event_json=task_history_event_json
         )
 
         task_id_set = set(task_id_list) if task_id_list is not None else None
+        account_id_set = (
+            self.get_account_ids_from_user_ids(project_id, set(user_id_list)) if user_id_list is not None else None
+        )
+
         task_history_event_dict = self._create_task_history_event_dict(
-            all_task_history_event_list, task_ids=task_id_set
+            all_task_history_event_list, task_ids=task_id_set, account_ids=account_id_set
         )
 
         worktime_list = []
@@ -209,6 +231,7 @@ class ListWorktimeFromTaskHistoryEvent(AbstractCommandLineInterface):
         project_id: str,
         task_history_event_json: Optional[Path],
         task_id_list: Optional[list[str]],
+        user_id_list: Optional[list[str]],
         arg_format: FormatArgument,
     ):
 
@@ -216,7 +239,10 @@ class ListWorktimeFromTaskHistoryEvent(AbstractCommandLineInterface):
 
         main_obj = ListWorktimeFromTaskHistoryEventMain(self.service, project_id=project_id)
         worktime_list = main_obj.get_worktime_list(
-            project_id, task_history_event_json=task_history_event_json, task_id_list=task_id_list
+            project_id,
+            task_history_event_json=task_history_event_json,
+            task_id_list=task_id_list,
+            user_id_list=user_id_list,
         )
 
         logger.debug(f"作業時間一覧の件数: {len(worktime_list)}")
@@ -236,11 +262,13 @@ class ListWorktimeFromTaskHistoryEvent(AbstractCommandLineInterface):
         args = self.args
 
         task_id_list = get_list_from_args(args.task_id) if args.task_id is not None else None
+        user_id_list = get_list_from_args(args.user_id) if args.user_id is not None else None
 
         self.print_worktime_from_task_history_event(
             args.project_id,
             task_history_event_json=args.task_history_event_json,
             task_id_list=task_id_list,
+            user_id_list=user_id_list,
             arg_format=FormatArgument(args.format),
         )
 
@@ -270,7 +298,15 @@ def parse_args(parser: argparse.ArgumentParser):
         "--task_id",
         type=str,
         nargs="+",
-        help="対象のタスクのtask_idを指定します。\n" " ``file://`` を先頭に付けると、task_idの一覧が記載されたファイルを指定できます。",
+        help="対象のタスクのuser_idを指定します。\n" " ``file://`` を先頭に付けると、task_idの一覧が記載されたファイルを指定できます。",
+    )
+
+    parser.add_argument(
+        "-u",
+        "--user_id",
+        type=str,
+        nargs="+",
+        help="絞り込み対象のユーザのuser_idを指定します。\n" " ``file://`` を先頭に付けると、user_idの一覧が記載されたファイルを指定できます。",
     )
 
     parser.add_argument(
