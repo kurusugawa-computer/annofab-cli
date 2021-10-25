@@ -298,7 +298,7 @@ def parse_args(parser: argparse.ArgumentParser):
         "--task_id",
         type=str,
         nargs="+",
-        help="対象のタスクのuser_idを指定します。\n" " ``file://`` を先頭に付けると、task_idの一覧が記載されたファイルを指定できます。",
+        help="対象のタスクのuser_idを指定します。\n" "``file://`` を先頭に付けると、task_idの一覧が記載されたファイルを指定できます。",
     )
 
     parser.add_argument(
@@ -306,7 +306,7 @@ def parse_args(parser: argparse.ArgumentParser):
         "--user_id",
         type=str,
         nargs="+",
-        help="絞り込み対象のユーザのuser_idを指定します。\n" " ``file://`` を先頭に付けると、user_idの一覧が記載されたファイルを指定できます。",
+        help="絞り込み対象のユーザのuser_idを指定します。\n" "``file://`` を先頭に付けると、user_idの一覧が記載されたファイルを指定できます。",
     )
 
     parser.add_argument(
