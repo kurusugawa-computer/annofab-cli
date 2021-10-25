@@ -491,15 +491,20 @@ class Table:
             else:
                 return None
 
-        annotation_histories = [
-            e for e in task_histories if e["phase"] == TaskPhase.ANNOTATION.value and e["account_id"] is not None
-        ]
-        inspection_histories = [
-            e for e in task_histories if e["phase"] == TaskPhase.INSPECTION.value and e["account_id"] is not None
-        ]
-        acceptance_histories = [
-            e for e in task_histories if e["phase"] == TaskPhase.ACCEPTANCE.value and e["account_id"] is not None
-        ]
+        def filter_histories(arg_task_histories: List[TaskHistory], phase: TaskPhase) -> List[TaskHistory]:
+            return [
+                e
+                for e in arg_task_histories
+                if (
+                    e["phase"] == phase.value
+                    and e["account_id"] is not None
+                    and annofabcli.utils.isoduration_to_hour(e["accumulated_labor_time_milliseconds"]) > 0
+                )
+            ]
+
+        annotation_histories = filter_histories(task_histories, TaskPhase.ANNOTATION)
+        inspection_histories = filter_histories(task_histories, TaskPhase.INSPECTION)
+        acceptance_histories = filter_histories(task_histories, TaskPhase.ACCEPTANCE)
 
         # 最初の教師付情報を設定する
         first_annotation_history = annotation_histories[0] if len(annotation_histories) > 0 else None

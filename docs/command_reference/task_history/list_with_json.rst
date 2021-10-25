@@ -27,7 +27,7 @@ Examples
 
 .. code-block::
 
-    $ annofabcli task_history list_with_json --project_id prj1 --task_history.json task_history.json 
+    $ annofabcli task_history list_with_json --project_id prj1 --task_history_json task_history.json 
 
 
 出力結果

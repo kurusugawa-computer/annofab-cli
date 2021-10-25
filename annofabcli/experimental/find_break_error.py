@@ -6,7 +6,6 @@ import sys
 from pathlib import Path
 from typing import Any, Dict, List, Optional
 
-import annofabapi
 import dateutil.parser
 import pandas as pd
 
@@ -18,7 +17,6 @@ from annofabcli.common.cli import (
     AbstractCommandLineInterface,
     ArgumentParser,
     build_annofabapi_resource_and_login,
-    get_list_from_args,
 )
 from annofabcli.common.download import DownloadingFile
 from annofabcli.common.utils import read_lines_except_blank_line
@@ -27,11 +25,6 @@ logger = logging.getLogger(__name__)
 
 
 class FindBreakError(AbstractCommandLineInterface):
-    def __init__(self, service: annofabapi.Resource, facade: AnnofabApiFacade, args: argparse.Namespace):
-        super().__init__(service, facade, args)
-        project_id_list = get_list_from_args(args.project_id)
-        self.project_id_list = list(set(project_id_list))
-
     def _get_username(self, project_id: str, account_id: str) -> str:
         """
         プロジェクトメンバのusernameを取得する。プロジェクトメンバでなければ、account_idを返す。
@@ -128,15 +121,6 @@ class FindBreakError(AbstractCommandLineInterface):
         return task_sort_history_events
 
     def get_time_sort_events(self, time: int, task_sort_history_events: Dict[str, List[pd.DataFrame]]):
-        # Index = 2017,
-        # project_id = 'OCI_ROBOP_3DPC_202012',
-        # task_id = '2020-11-19-14-58-19.bag_UNIT2_000740',
-        # task_history_id = '80693997-5e15-49dd-b47f-f53e91db27d6',
-        # created_datetime = Timestamp('2020-12-25 19:12:03.481000'),
-        # phase = 'annotation',
-        # phase_stage = 1,
-        # status = 'working',
-        # account_id = 'bc9141bf-0bac-4703-9f44-791b72a83ff3',
         OUTPUT_DATETIME_FORMAT = "%Y-%m-%dT%H:%M:%S+09:00"
         event_list = []
         for sort_history_events in task_sort_history_events.values():
@@ -162,6 +146,7 @@ class FindBreakError(AbstractCommandLineInterface):
                                 project_id=sort_history_event.project_id, account_id=sort_history_event.account_id
                             ),
                             "phase": sort_history_event.phase,
+                            "phase_stage": sort_history_event.phase_stage,
                             "start_task_history_id": sort_history_event.task_history_id,
                             "start_created_datetime": sort_history_event.created_datetime.strftime(
                                 OUTPUT_DATETIME_FORMAT
@@ -248,23 +233,24 @@ def parse_args(parser: argparse.ArgumentParser):
         "--task_history_event_json",
         type=Path,
         help="タスク履歴イベント全件ファイルのパスを指定してください。"
-        "指定しない場合、タスク履歴全件ファイルをダウンロードします。"
+        "指定しない場合、タスク履歴全件ファイルをダウンロードします。\n"
         "JSONファイルは ``$ annofabcli project download task_history_event`` コマンドで取得できます。",
     )
 
     argument_parser.add_output()
     argument_parser.add_task_id(required=False)
 
-    DATETIME_FORMAT = "%%Y-%%m-%%dT%%H:%%i:%%s"
+    # DATETIME_FORMAT = "%%Y-%%m-%%dT%%H:%%i:%%s"
+    # YYYY-MM-DDThh:mm:ss
     parser.add_argument(
         "--start_datetime",
         type=str,
-        help=f"検索対象の時間を指定します。({DATETIME_FORMAT})",
+        help=f"タスク履歴イベントの開始日時を指定してください。( ``YYYY-MM-DDThh:mm:ss.SSS`` )",
     )
     parser.add_argument(
         "--end_datetime",
         type=str,
-        help="検索対象の時間を指定します。({DATETIME_FORMAT})",
+        help="検索対象の時間を指定します。(YYYY-MM-DDThh:mm:ss)",
     )
     parser.add_argument("--user_id", type=str, help="ユーザー名")
     parser.add_argument("--phase", type=str, help="phase")

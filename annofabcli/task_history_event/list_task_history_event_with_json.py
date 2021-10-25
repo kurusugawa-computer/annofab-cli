@@ -1,0 +1,166 @@
+from __future__ import annotations
+
+import argparse
+import json
+import logging
+from pathlib import Path
+from typing import Any, List, Optional
+
+import annofabapi
+import pandas
+from annofabapi.models import TaskHistoryEvent
+
+import annofabcli
+from annofabcli import AnnofabApiFacade
+from annofabcli.common.cli import (
+    AbstractCommandLineInterface,
+    ArgumentParser,
+    build_annofabapi_resource_and_login,
+    get_list_from_args,
+)
+from annofabcli.common.download import DownloadingFile
+from annofabcli.common.enums import FormatArgument
+from annofabcli.common.visualize import AddProps
+
+logger = logging.getLogger(__name__)
+
+
+class ListTaskHistoryEventWithJsonMain:
+    def __init__(self, service: annofabapi.Resource):
+        self.service = service
+
+    @staticmethod
+    def filter_task_history_event(
+        task_history_event_list: list[TaskHistoryEvent], task_id_list: Optional[list[str]] = None
+    ) -> list[TaskHistoryEvent]:
+        if task_id_list is not None:
+            result = []
+            task_id_set = set(task_id_list)
+            for event in task_history_event_list:
+                if event["task_id"] in task_id_set:
+                    result.append(event)
+
+            return result
+
+        return task_history_event_list
+
+    def get_task_history_event_list(
+        self, project_id: str, task_history_event_json: Optional[Path] = None, task_id_list: Optional[List[str]] = None
+    ) -> list[dict[str, Any]]:
+        if task_history_event_json is None:
+            downloading_obj = DownloadingFile(self.service)
+            cache_dir = annofabcli.utils.get_cache_dir()
+            json_path = cache_dir / f"{project_id}-task_history_event.json"
+
+            downloading_obj.download_task_history_event_json(project_id, str(json_path))
+        else:
+            json_path = task_history_event_json
+
+        with json_path.open() as f:
+            all_task_history_event_list = json.load(f)
+
+        filtered_task_history_event_list = self.filter_task_history_event(all_task_history_event_list, task_id_list)
+
+        visualize = AddProps(self.service, project_id)
+
+        for event in filtered_task_history_event_list:
+            visualize.add_properties_to_task_history_event(event)
+
+        return filtered_task_history_event_list
+
+
+class ListTaskHistoryEventWithJson(AbstractCommandLineInterface):
+    def print_task_history_event_list(
+        self,
+        project_id: str,
+        task_history_event_json: Optional[Path],
+        task_id_list: Optional[list[str]],
+        arg_format: FormatArgument,
+    ):
+
+        super().validate_project(project_id, project_member_roles=None)
+
+        main_obj = ListTaskHistoryEventWithJsonMain(self.service)
+        task_history_event_list = main_obj.get_task_history_event_list(
+            project_id, task_history_event_json=task_history_event_json, task_id_list=task_id_list
+        )
+
+        logger.debug(f"タスク履歴イベント一覧の件数: {len(task_history_event_list)}")
+
+        if len(task_history_event_list) > 0:
+            if arg_format == FormatArgument.CSV:
+                df = pandas.json_normalize(task_history_event_list)
+                self.print_csv(df)
+            else:
+                self.print_according_to_format(task_history_event_list)
+        else:
+            logger.warning(f"タスク履歴イベント一覧の件数が0件であるため、出力しません。")
+            return
+
+    def main(self):
+        args = self.args
+
+        task_id_list = get_list_from_args(args.task_id) if args.task_id is not None else None
+
+        self.print_task_history_event_list(
+            args.project_id,
+            task_history_event_json=args.task_history_event_json,
+            task_id_list=task_id_list,
+            arg_format=FormatArgument(args.format),
+        )
+
+    @staticmethod
+    def to_all_task_history_event_list_from_dict(
+        task_history_event_dict: dict[str, list[dict[str, Any]]]
+    ) -> List[dict[str, Any]]:
+        all_task_history_event_list = []
+        for task_history_event_list in task_history_event_dict.values():
+            all_task_history_event_list.extend(task_history_event_list)
+        return all_task_history_event_list
+
+
+def main(args):
+    service = build_annofabapi_resource_and_login(args)
+    facade = AnnofabApiFacade(service)
+    ListTaskHistoryEventWithJson(service, facade, args).main()
+
+
+def parse_args(parser: argparse.ArgumentParser):
+    argument_parser = ArgumentParser(parser)
+
+    argument_parser.add_project_id()
+
+    parser.add_argument(
+        "-t",
+        "--task_id",
+        type=str,
+        nargs="+",
+        help="対象のタスクのtask_idを指定します。\n" "``file://`` を先頭に付けると、task_idの一覧が記載されたファイルを指定できます。",
+    )
+
+    parser.add_argument(
+        "--task_history_event_json",
+        type=Path,
+        help="タスク履歴イベント全件ファイルパスを指定すると、JSONに記載された情報を元にタスク履歴イベント一覧を出力します。\n"
+        "指定しない場合は、タスク履歴イベント全件ファイルをダウンロードします。\n"
+        "JSONファイルは ``$ annofabcli project download task_history_event`` コマンドで取得できます。",
+    )
+
+    argument_parser.add_format(
+        choices=[FormatArgument.CSV, FormatArgument.JSON, FormatArgument.PRETTY_JSON],
+        default=FormatArgument.CSV,
+    )
+    argument_parser.add_output()
+    argument_parser.add_csv_format()
+
+    parser.set_defaults(subcommand_func=main)
+
+
+def add_parser(subparsers: Optional[argparse._SubParsersAction] = None):
+    subcommand_name = "list_with_json"
+    subcommand_help = "タスク履歴イベント全件ファイルからタスク履歴イベントの一覧を出力します。"
+    description = "タスク履歴イベント全件ファイルからタスク履歴イベントの一覧を出力します。"
+
+    parser = annofabcli.common.cli.add_parser(subparsers, subcommand_name, subcommand_help, description)
+    parse_args(parser)
+    return parser
