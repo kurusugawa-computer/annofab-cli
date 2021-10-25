@@ -99,7 +99,7 @@ class ListWorktimeFromTaskHistoryEventMain:
         タスク履歴イベントlistは`created_datetime`の昇順にソートされている
         """
         result: dict[str, list[TaskHistoryEvent]] = defaultdict(list)
-        
+
         for event in task_history_event_list:
             if account_ids is not None and event["account_id"] not in account_ids:
                 continue
