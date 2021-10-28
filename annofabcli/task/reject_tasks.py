@@ -267,6 +267,7 @@ class RejectTasksMain(AbstractCommandLineWithConfirmInterface):
         assigned_annotator_user_id: Optional[str] = None,
         cancel_acceptance: bool = False,
         task_query: Optional[TaskQuery] = None,
+        dryrun: bool = False,
     ) -> bool:
         task_index, task_id = tpl
         return self.reject_task_with_adding_comment(
@@ -278,6 +279,7 @@ class RejectTasksMain(AbstractCommandLineWithConfirmInterface):
             assigned_annotator_user_id=assigned_annotator_user_id,
             cancel_acceptance=cancel_acceptance,
             task_query=task_query,
+            dryrun=dryrun
         )
 
     def reject_task_list(
