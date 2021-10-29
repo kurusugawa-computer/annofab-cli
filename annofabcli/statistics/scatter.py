@@ -69,7 +69,7 @@ class Scatter:
             tmp = name.split("_")
             return "_".join(tmp[0 : len(tmp) - 1])
 
-        detail_tooltips = [(exclude_phase_name(e), "@{%s}" % e) for e in tool_tip_items]
+        detail_tooltips = [(exclude_phase_name(e), f"@{{{e}}}") for e in tool_tip_items]
         hover_tool = HoverTool(tooltips=detail_tooltips)
         return hover_tool
 

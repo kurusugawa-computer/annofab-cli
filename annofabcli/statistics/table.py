@@ -491,15 +491,20 @@ class Table:
             else:
                 return None
 
-        annotation_histories = [
-            e for e in task_histories if e["phase"] == TaskPhase.ANNOTATION.value and e["account_id"] is not None
-        ]
-        inspection_histories = [
-            e for e in task_histories if e["phase"] == TaskPhase.INSPECTION.value and e["account_id"] is not None
-        ]
-        acceptance_histories = [
-            e for e in task_histories if e["phase"] == TaskPhase.ACCEPTANCE.value and e["account_id"] is not None
-        ]
+        def filter_histories(arg_task_histories: List[TaskHistory], phase: TaskPhase) -> List[TaskHistory]:
+            return [
+                e
+                for e in arg_task_histories
+                if (
+                    e["phase"] == phase.value
+                    and e["account_id"] is not None
+                    and annofabcli.utils.isoduration_to_hour(e["accumulated_labor_time_milliseconds"]) > 0
+                )
+            ]
+
+        annotation_histories = filter_histories(task_histories, TaskPhase.ANNOTATION)
+        inspection_histories = filter_histories(task_histories, TaskPhase.INSPECTION)
+        acceptance_histories = filter_histories(task_histories, TaskPhase.ACCEPTANCE)
 
         # 最初の教師付情報を設定する
         first_annotation_history = annotation_histories[0] if len(annotation_histories) > 0 else None
@@ -1209,7 +1214,7 @@ class Table:
             worktime_info_list.append(worktime_info)
 
         df = pandas.DataFrame(worktime_info_list)
-        # acount_idをusernameに変更する
+        # account_idをusernameに変更する
         columns = {
             col: self._get_username(col) for col in df.columns if col != "date"  # pylint: disable=not-an-iterable
         }
@@ -1250,7 +1255,8 @@ class Table:
         def get_annotation_count(row) -> float:
             task_id = row.name[0]
             annotation_count = annotation_count_dict[task_id]["annotation_count"]
-            return row["worktime_ratio_by_task"] * annotation_count
+            result = row["worktime_ratio_by_task"] * annotation_count
+            return result
 
         def get_input_data_count(row) -> float:
             task_id = row.name[0]
@@ -1264,6 +1270,23 @@ class Table:
         group_obj = task_history_df.groupby(["task_id", "phase", "phase_stage", "user_id"]).agg(
             {"worktime_hour": "sum"}
         )
+        if len(group_obj) == 0:
+            logger.warning(f"タスク履歴情報に作業しているタスクがありませんでした。タスク履歴全件ファイルが更新されていない可能性があります。")
+            return pandas.DataFrame(
+                columns=[
+                    "task_id",
+                    "phase",
+                    "phase_stage",
+                    "user_id",
+                    "worktime_hour",
+                    "worktime_ratio_by_task",
+                    "annotation_count",
+                    "input_data_count",
+                    "pointed_out_inspection_comment_count",
+                    "rejected_count",
+                ]
+            )
+
         group_obj["worktime_ratio_by_task"] = group_obj.groupby(level=["task_id", "phase", "phase_stage"]).apply(
             lambda e: e / float(e.sum())
         )
@@ -1499,6 +1522,10 @@ class Table:
             df_agg_labor = df_labor2.pivot_table(
                 values=["worktime_result_hour"], index="date", aggfunc=numpy.sum
             ).fillna(0)
+
+            if "worktime_result_hour" not in df_agg_labor.columns:
+                # len(df_labor2)==0 のときの状況
+                df_agg_labor["worktime_result_hour"] = 0
             df_tmp = df_labor2.pivot_table(values=["user_id"], index="date", aggfunc="count").fillna(0)
 
             if len(df_tmp) > 0:

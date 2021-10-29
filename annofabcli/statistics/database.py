@@ -366,7 +366,7 @@ class Database:
     def _write_task_histories_json(self):
         task_list = self.read_tasks_from_json()
         task_histories_dict = self.get_task_histories_dict(task_list)
-        with self.task_histories_json_path.open(mode="w") as f:
+        with self.task_histories_json_path.open(mode="w", encoding="utf-8") as f:
             json.dump(task_histories_dict, f)
 
     def _log_annotation_zip_info(self):
@@ -389,26 +389,29 @@ class Database:
                 f"{self.logging_prefix}: アノテーションzipの最終更新日時={job['updated_datetime']}, job_status={job['job_status']}"
             )
 
-    def _download_db_file(self, is_latest: bool):
+    def _download_db_file(self, is_latest: bool, is_get_task_histories_one_of_each: bool):
         """
         DBになりうるファイルをダウンロードする
 
         Args:
-            is_latest: Trunなら最新のファイルをダウンロードする
+            is_latest: True なら最新のファイルをダウンロードする
+            is_execute_task_history_api: Trueなら `get_task_histories` APIを実行する
         """
 
         downloading_obj = DownloadingFile(self.annofab_service)
 
         wait_options = WaitOptions(interval=60, max_tries=360)
 
+        DOWNLOADED_FILE_COUNT = 5
+
         TASK_JSON_INDEX = 0
         INPUT_DATA_JSON_INDEX = 1
         ANNOTATION_ZIP_INDEX = 2
-        TASK_HISTORY_JSON_INDEX = 3
-        INSPECTION_JSON_INDEX = 4
+        INSPECTION_JSON_INDEX = 3
+        TASK_HISTORY_JSON_INDEX = 4
 
         loop = asyncio.get_event_loop()
-        coroutines: List[Any] = [None] * 5
+        coroutines: List[Any] = [None] * DOWNLOADED_FILE_COUNT
         coroutines[TASK_JSON_INDEX] = downloading_obj.download_task_json_with_async(
             self.project_id, dest_path=str(self.tasks_json_path), is_latest=is_latest, wait_options=wait_options
         )
@@ -424,12 +427,19 @@ class Database:
             is_latest=is_latest,
             wait_options=wait_options,
         )
-        coroutines[TASK_HISTORY_JSON_INDEX] = downloading_obj.download_task_history_json_with_async(
-            self.project_id, dest_path=str(self.task_histories_json_path)
-        )
         coroutines[INSPECTION_JSON_INDEX] = downloading_obj.download_inspection_json_with_async(
             self.project_id, dest_path=str(self.inspection_json_path)
         )
+
+        if is_get_task_histories_one_of_each:
+            # タスク履歴APIを一つずつ実行して、JSONファイルを生成する
+            self._write_task_histories_json()
+            coroutines.pop(DOWNLOADED_FILE_COUNT - 1)
+        else:
+            coroutines[TASK_HISTORY_JSON_INDEX] = downloading_obj.download_task_history_json_with_async(
+                self.project_id, dest_path=str(self.task_histories_json_path)
+            )
+
         gather = asyncio.gather(*coroutines, return_exceptions=True)
         results = loop.run_until_complete(gather)
 
@@ -439,11 +449,12 @@ class Database:
         elif isinstance(results[INSPECTION_JSON_INDEX], Exception):
             raise results[INSPECTION_JSON_INDEX]
 
-        if isinstance(results[TASK_HISTORY_JSON_INDEX], DownloadingFileNotFoundError):
-            # タスク履歴APIを一つずつ実行して、JSONファイルを生成する
-            self._write_task_histories_json()
-        elif isinstance(results[TASK_HISTORY_JSON_INDEX], Exception):
-            raise results[TASK_HISTORY_JSON_INDEX]
+        if not is_get_task_histories_one_of_each:
+            if isinstance(results[TASK_HISTORY_JSON_INDEX], DownloadingFileNotFoundError):
+                # タスク履歴APIを一つずつ実行して、JSONファイルを生成する
+                self._write_task_histories_json()
+            elif isinstance(results[TASK_HISTORY_JSON_INDEX], Exception):
+                raise results[TASK_HISTORY_JSON_INDEX]
 
         for result in [results[TASK_JSON_INDEX], results[INPUT_DATA_JSON_INDEX], results[ANNOTATION_ZIP_INDEX]]:
             if isinstance(result, Exception):
@@ -552,19 +563,20 @@ class Database:
 
         return [task for task in task_list if pred(task["task_id"])]
 
-    def update_db(self, is_latest: bool) -> None:
+    def update_db(self, is_latest: bool, is_get_task_histories_one_of_each: bool = False) -> None:
         """
         Annofabから情報を取得し、DB（pickel, jsonファイル）を更新する。
 
         Args:
             is_latest: 最新のファイル（アノテーションzipや全件ファイルjsonなど）をダウンロードする
+            is_execute_task_histories_api: Trueなら `get_task_histories` APIを実行する
         """
 
         # 残すべきファイル
-        self.filename_timestamp = "{0:%Y%m%d-%H%M%S}".format(datetime.datetime.now())
+        self.filename_timestamp = datetime.datetime.now().strftime("%Y%m%d-%H%M%S")
 
         # DB用のJSONファイルをダウンロードする
-        self._download_db_file(is_latest)
+        self._download_db_file(is_latest, is_get_task_histories_one_of_each=is_get_task_histories_one_of_each)
         self._log_annotation_zip_info()
 
         # 統計情報の出力
@@ -644,6 +656,9 @@ class Database:
             return tasks_dict
 
         task_id_list: List[str] = [e["task_id"] for e in all_tasks]
+
+        logger.debug(f"{len(all_tasks)} 回 `get_task_histories` WebAPIを実行します。")
+
         partial_func = partial(_get_task_histories_dict, self.annofab_service.api, self.project_id)
         process = multiprocessing.current_process()
         # project_id単位で並列処理が実行場合があるので、デーモンプロセスかどうかを確認する

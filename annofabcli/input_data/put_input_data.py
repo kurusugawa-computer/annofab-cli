@@ -13,12 +13,14 @@ from typing import Any, Dict, List, Optional
 import annofabapi
 import pandas
 import requests
+from annofabapi.exceptions import CheckSumError
 from annofabapi.models import ProjectJobType, ProjectMemberRole
 from dataclasses_json import DataClassJsonMixin
 
 import annofabcli
 from annofabcli import AnnofabApiFacade
 from annofabcli.common.cli import (
+    COMMAND_LINE_ERROR_STATUS_CODE,
     AbstractCommandLineInterface,
     ArgumentParser,
     build_annofabapi_resource_and_login,
@@ -177,6 +179,15 @@ class SubPutInputData:
                 f"入力データの登録に失敗しました。"
                 f"input_data_id={input_data.input_data_id}, "
                 f"input_data_name={input_data.input_data_name}"
+            )
+            return False
+        except CheckSumError as e:
+            logger.warning(e)
+            logger.warning(
+                f"入力データを登録しましたが、データが破損している可能性があります。"
+                f"input_data_id={input_data.input_data_id}, "
+                f"input_data_name={input_data.input_data_name},"
+                f"input_data_name={input_data.input_data_path},"
             )
             return False
 
@@ -380,7 +391,7 @@ class PutInputData(AbstractCommandLineInterface):
     def main(self):
         args = self.args
         if not self.validate(args):
-            return
+            sys.exit(COMMAND_LINE_ERROR_STATUS_CODE)
 
         project_id = args.project_id
         super().validate_project(project_id, [ProjectMemberRole.OWNER])

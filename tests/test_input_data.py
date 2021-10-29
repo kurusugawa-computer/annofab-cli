@@ -290,7 +290,7 @@ class TestCommandLine__update_metadata:
                 "--project_id",
                 project_id,
                 "--input_data_id",
-                self.input_data_id,
+                input_data_id,
                 "--metadata",
                 '{"attr1":"foo"}',
                 "--yes",

@@ -25,6 +25,7 @@ Command Reference
    supplementary/index
    task/index
    task_history/index
+   task_history_event/index
 
 Usage Details
 =================================

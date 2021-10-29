@@ -13,6 +13,7 @@ from annofabapi.dataclass.input import InputData
 import annofabcli
 from annofabcli import AnnofabApiFacade
 from annofabcli.common.cli import (
+    COMMAND_LINE_ERROR_STATUS_CODE,
     AbstractCommandLineInterface,
     ArgumentParser,
     build_annofabapi_resource_and_login,
@@ -144,7 +145,7 @@ class ListInputDataMergedTask(AbstractCommandLineInterface):
     def main(self):
         args = self.args
         if not self.validate(args):
-            return
+            sys.exit(COMMAND_LINE_ERROR_STATUS_CODE)
 
         project_id = args.project_id
         if project_id is not None:

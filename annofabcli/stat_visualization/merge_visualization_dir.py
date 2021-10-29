@@ -1,22 +1,23 @@
 import argparse
 import logging
+import sys
 from pathlib import Path
 from typing import List, Optional
 
 import pandas
 
 import annofabcli
-from annofabcli.common.cli import get_list_from_args
+from annofabcli.common.cli import COMMAND_LINE_ERROR_STATUS_CODE, get_list_from_args
 from annofabcli.common.utils import print_csv, print_json
-from annofabcli.stat_visualization.merge_peformance_per_date import create_df_merged_peformance_per_date
-from annofabcli.stat_visualization.merge_peformance_per_user import create_df_merged_peformance_per_user
+from annofabcli.stat_visualization.merge_performance_per_date import create_df_merged_performance_per_date
+from annofabcli.stat_visualization.merge_performance_per_user import create_df_merged_performance_per_user
 from annofabcli.stat_visualization.write_linegraph_per_user import write_linegraph_per_user
 from annofabcli.stat_visualization.write_performance_scatter_per_user import write_performance_scatter_per_user
 from annofabcli.stat_visualization.write_task_histogram import write_task_histogram
 from annofabcli.stat_visualization.write_whole_linegraph import write_whole_linegraph
 from annofabcli.statistics.csv import (
-    FILENAME_PEFORMANCE_PER_DATE,
-    FILENAME_PEFORMANCE_PER_USER,
+    FILENAME_PERFORMANCE_PER_DATE,
+    FILENAME_PERFORMANCE_PER_USER,
     FILENAME_TASK_LIST,
     Csv,
 )
@@ -30,15 +31,15 @@ def merge_visualization_dir(
     user_id_list: Optional[List[str]] = None,
     minimal_output: bool = False,
 ):
-    def execute_merge_peformance_per_user():
-        performance_per_user_csv_list = [dir / FILENAME_PEFORMANCE_PER_USER for dir in project_dir_list]
-        df_per_user = create_df_merged_peformance_per_user(csv_path_list=performance_per_user_csv_list)
+    def execute_merge_performance_per_user():
+        performance_per_user_csv_list = [dir / FILENAME_PERFORMANCE_PER_USER for dir in project_dir_list]
+        df_per_user = create_df_merged_performance_per_user(csv_path_list=performance_per_user_csv_list)
         csv_obj.write_productivity_per_user(df_per_user)
         csv_obj.write_whole_productivity(df_per_user)
 
-    def execute_merge_peformance_per_date():
-        performance_per_date_csv_list = [dir / FILENAME_PEFORMANCE_PER_DATE for dir in project_dir_list]
-        df_per_date = create_df_merged_peformance_per_date(performance_per_date_csv_list)
+    def execute_merge_performance_per_date():
+        performance_per_date_csv_list = [dir / FILENAME_PERFORMANCE_PER_DATE for dir in project_dir_list]
+        df_per_date = create_df_merged_performance_per_date(performance_per_date_csv_list)
         csv_obj.write_whole_productivity_per_date(df_per_date)
 
     def merge_task_list() -> pandas.DataFrame:
@@ -69,15 +70,17 @@ def merge_visualization_dir(
     # CSV生成
     csv_obj = Csv(str(output_dir))
 
-    execute_merge_peformance_per_user()
-    execute_merge_peformance_per_date()
+    execute_merge_performance_per_user()
+    execute_merge_performance_per_date()
     df_task = merge_task_list()
     print_csv(df_task, output=str(output_dir / FILENAME_TASK_LIST))
     write_csv_for_summary(df_task)
 
     # HTML生成
-    write_performance_scatter_per_user(csv=output_dir / FILENAME_PEFORMANCE_PER_USER, output_dir=output_dir / "scatter")
-    write_whole_linegraph(csv=output_dir / FILENAME_PEFORMANCE_PER_DATE, output_dir=output_dir / "line-graph")
+    write_performance_scatter_per_user(
+        csv=output_dir / FILENAME_PERFORMANCE_PER_USER, output_dir=output_dir / "scatter"
+    )
+    write_whole_linegraph(csv=output_dir / FILENAME_PERFORMANCE_PER_DATE, output_dir=output_dir / "line-graph")
     write_linegraph_per_user(
         csv=output_dir / FILENAME_TASK_LIST,
         output_dir=output_dir / "line-graph",
@@ -92,8 +95,21 @@ def merge_visualization_dir(
     write_info_json()
 
 
+def validate(args: argparse.Namespace) -> bool:
+    COMMON_MESSAGE = "annofabcli stat_visualization merge:"
+    if len(args.dir) < 2:
+        print(f"{COMMON_MESSAGE} argument --dir: マージ対象のディレクトリは2つ以上指定してください。", file=sys.stderr)
+        return False
+
+    return True
+
+
 def main(args):
+    if not validate(args):
+        sys.exit(COMMAND_LINE_ERROR_STATUS_CODE)
+
     user_id_list = get_list_from_args(args.user_id) if args.user_id is not None else None
+
     merge_visualization_dir(
         project_dir_list=args.dir,
         user_id_list=user_id_list,
@@ -103,7 +119,7 @@ def main(args):
 
 
 def parse_args(parser: argparse.ArgumentParser):
-    parser.add_argument("--dir", type=Path, nargs="+", required=True, help="マージ対象ディレクトリ")
+    parser.add_argument("--dir", type=Path, nargs="+", required=True, help="マージ対象ディレクトリ。2つ以上指定してください。")
     parser.add_argument("-o", "--output_dir", type=Path, required=True, help="出力先ディレクトリ。配下にプロジェクト名のディレクトリが出力される。")
 
     parser.add_argument(
