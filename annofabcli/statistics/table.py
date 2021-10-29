@@ -184,14 +184,6 @@ class Table:
             self._annotations_dict = self.database.read_annotation_summary(task_list, self._create_annotation_summary)
             return self._annotations_dict
 
-    def _get_labor_list(self) -> List[Dict[str, Any]]:
-        if self._labor_list is not None:
-            return self._labor_list
-        else:
-            labor_list = self.database.read_labor_list_from_checkpoint()
-            self._labor_list = labor_list
-            return self._labor_list
-
     def _create_annotation_summary(self, annotation_list: List[Dict[str, Any]]) -> Dict[str, Any]:
         annotation_summary = {"total_count": len(annotation_list)}
 
@@ -1459,7 +1451,9 @@ class Table:
 
         labor_list = self.database.get_labor_list(self.project_id)
         if len(labor_list) == 0:
-            return pandas.DataFrame(columns=["date","account_id","user_id","username","biography","actual_worktime_hour"])
+            return pandas.DataFrame(
+                columns=["date", "account_id", "user_id", "username", "biography", "actual_worktime_hour"]
+            )
 
         return pandas.DataFrame([add_user_info(e) for e in labor_list])
 

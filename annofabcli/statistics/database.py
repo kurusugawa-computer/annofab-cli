@@ -80,7 +80,12 @@ class Database:
     #############################################
 
     def __init__(
-        self, annofab_service: annofabapi.Resource, project_id: str, checkpoint_dir: str, query: Optional[Query] = None, is_get_labor:bool=False
+        self,
+        annofab_service: annofabapi.Resource,
+        project_id: str,
+        checkpoint_dir: str,
+        query: Optional[Query] = None,
+        is_get_labor: bool = False,
     ):
         """
         環境変数'ANNOFAB_USER_ID', 'ANNOFAB_PASSWORD'から情報を読み込み、AnnofabApiインスタンスを生成する。
@@ -588,7 +593,7 @@ class Database:
             e.pop("plan_worktime")
             return e
 
-        if not self.is_get_labor :
+        if not self.is_get_labor:
             return []
 
         # 未来のデータを取得しても意味がないので、今日の日付を指定する

@@ -279,7 +279,7 @@ class RejectTasksMain(AbstractCommandLineWithConfirmInterface):
             assigned_annotator_user_id=assigned_annotator_user_id,
             cancel_acceptance=cancel_acceptance,
             task_query=task_query,
-            dryrun=dryrun
+            dryrun=dryrun,
         )
 
     def reject_task_list(
