@@ -20,11 +20,13 @@ from annofabcli.common.visualize import AddProps
 
 logger = logging.getLogger(__name__)
 
+
 class CopyAnnotationMain:
     def __init__(self, service: annofabapi.Resource, project_id: str):
         self.service = service
         self.facade = AnnofabApiFacade(service)
         self.visualize = AddProps(self.service, project_id)
+
 
 class CopyAnnotation(AbstractCommandLineInterface):
     def __init__(self, service: annofabapi.Resource, facade: AnnofabApiFacade, args: argparse.Namespace):
@@ -35,10 +37,12 @@ class CopyAnnotation(AbstractCommandLineInterface):
         def __init__(self, service: annofabapi.Resource):
             self.service = service
             self.COMMON_MESSAGE = "annofabcli annotation import: error:"
-            self.INPUT_VALIDATE_404_ERROR_MESSAGE = "argument --input: タスクの画像IDを取得しようとしましたが，404エラーが返却されました．指定されたタスクは存在しない可能性があります"
+            self.INPUT_VALIDATE_404_ERROR_MESSAGE = (
+                "argument --input: タスクの画像IDを取得しようとしましたが，404エラーが返却されました．指定されたタスクは存在しない可能性があります"
+            )
             # from_task_frame_keysとto_task_frame_keysは要素同士が一対一対応で，どちらか片方だけ追加・変更・削除されたくないリスト
             # 外部からアクセスされると困るため，カプセル化しておく
-            self.__task_frame_keys: List[Tuple[TaskFrameKey,TaskFrameKey]] = []
+            self.__task_frame_keys: List[Tuple[TaskFrameKey, TaskFrameKey]] = []
 
         class INPUT_TYPECHECK_ENUM(Enum):
             TASK_AND_FILE = auto()
@@ -46,28 +50,38 @@ class CopyAnnotation(AbstractCommandLineInterface):
             FILE_PATH = auto()
             INVALID = auto()
 
-        def append(self, project_id: str, input_data: str,is_force:bool=False, validate_type=None):
+        def append(self, project_id: str, input_data: str, is_force: bool = False, validate_type=None):
             """
             input引数，バリデーションタイプから適切にリストを構成する
             """
-            #validate_typeの指定がなければ検査する
+            # validate_typeの指定がなければ検査する
             if validate_type is None:
                 validate_type = self.recognize_input_type(input_data)
             if validate_type == self.INPUT_TYPECHECK_ENUM.TASK_AND_FILE:
                 # task1/input1:task3:input3の形式
-                from_task_and_input,to_task_and_input = input_data.split(':')
-                from_task_data_id,from_input_data_id = from_task_and_input.split('/')
-                to_task_data_id,to_input_data_id = to_task_and_input.split('/')
+                from_task_and_input, to_task_and_input = input_data.split(":")
+                from_task_data_id, from_input_data_id = from_task_and_input.split("/")
+                to_task_data_id, to_input_data_id = to_task_and_input.split("/")
 
-                self.__task_frame_keys.append(tuple([TaskFrameKey(project_id=project_id,task_id = from_task_data_id,input_data_id=from_input_data_id ),
-                TaskFrameKey(project_id=project_id,task_id = to_task_data_id,input_data_id=to_input_data_id )]))
-            elif validate_type==self.INPUT_TYPECHECK_ENUM.TASK_ONLY:
+                self.__task_frame_keys.append(
+                    tuple(
+                        [
+                            TaskFrameKey(
+                                project_id=project_id, task_id=from_task_data_id, input_data_id=from_input_data_id
+                            ),
+                            TaskFrameKey(
+                                project_id=project_id, task_id=to_task_data_id, input_data_id=to_input_data_id
+                            ),
+                        ]
+                    )
+                )
+            elif validate_type == self.INPUT_TYPECHECK_ENUM.TASK_ONLY:
                 # task1:task3の形式
-                from_task_id,to_task_id = input_data.split(':')
+                from_task_id, to_task_id = input_data.split(":")
                 # task内に含まれるinput_data_idを全て取得
-                from_task_or_none = self.service.wrapper.get_task_or_none(project_id=project_id , task_id=from_task_id)
-                to_task_or_none = self.service.wrapper.get_task_or_none(project_id=project_id , task_id=to_task_id)
-                if from_task_or_none is None :
+                from_task_or_none = self.service.wrapper.get_task_or_none(project_id=project_id, task_id=from_task_id)
+                to_task_or_none = self.service.wrapper.get_task_or_none(project_id=project_id, task_id=to_task_id)
+                if from_task_or_none is None:
                     # コピー「元」のタスクを参照しようとしてエラー
                     logger.error(f"{self.COMMON_MESSAGE} {self.INPUT_VALIDATE_404_ERROR_MESSAGE} ({from_task_id})")
                     return
@@ -78,23 +92,35 @@ class CopyAnnotation(AbstractCommandLineInterface):
                 else:
 
                     # 返却されたDictからid_listを取り出す
-                    for from_input_data_id,to_input_data_id in zip(from_task_or_none["input_data_id_list"], to_task_or_none["input_data_id_list"]):
-                        self.__task_frame_keys.append(tuple([TaskFrameKey(project_id=project_id,task_id = from_task_id,input_data_id=from_input_data_id ),
-                        TaskFrameKey(project_id=project_id,task_id = to_task_id,input_data_id=to_input_data_id )]))
-                
-            elif validate_type==self.INPUT_TYPECHECK_ENUM.FILE_PATH:
+                    for from_input_data_id, to_input_data_id in zip(
+                        from_task_or_none["input_data_id_list"], to_task_or_none["input_data_id_list"]
+                    ):
+                        self.__task_frame_keys.append(
+                            tuple(
+                                [
+                                    TaskFrameKey(
+                                        project_id=project_id, task_id=from_task_id, input_data_id=from_input_data_id
+                                    ),
+                                    TaskFrameKey(
+                                        project_id=project_id, task_id=to_task_id, input_data_id=to_input_data_id
+                                    ),
+                                ]
+                            )
+                        )
+
+            elif validate_type == self.INPUT_TYPECHECK_ENUM.FILE_PATH:
                 # inputの内容が複数個・複数種類だけ連続するテキストファイルが渡される
                 for line in get_list_from_args([input_data]):
                     line_validate_type = self.recognize_input_type(line)
                     self.append(project_id, line, is_force, line_validate_type)
-            # 受け入れられない形式 
-            elif validate_type==self.INPUT_TYPECHECK_ENUM.INVALID:
+            # 受け入れられない形式
+            elif validate_type == self.INPUT_TYPECHECK_ENUM.INVALID:
                 logger.error(f"{self.COMMON_MESSAGE} argument --input: 入力されたタスクを正しく解釈できませんでした．({input_data})")
                 return
             else:
                 # 想定外
                 logger.error(f"{self.COMMON_MESSAGE} argument --input: 想定外のエラーです．")
-                return 
+                return
 
         def get_tasks(self):
             return self.__task_frame_keys
@@ -111,7 +137,7 @@ class CopyAnnotation(AbstractCommandLineInterface):
             if not input_data:
                 return cls.INPUT_TYPECHECK_ENUM.INVALID
             get_list_from_args_result = get_list_from_args([input_data])
-            if not get_list_from_args_result[0]==input_data:
+            if not get_list_from_args_result[0] == input_data:
                 return cls.INPUT_TYPECHECK_ENUM.FILE_PATH
             if re.match(r"^(\w|-)+\/(\w|-)+:(\w|-)+\/(\w|-)+$", input_data):
                 # task1/input1:task3:input3の形式
@@ -135,18 +161,18 @@ class CopyAnnotation(AbstractCommandLineInterface):
         copy_tasks_info.append(project_id, raw_input, is_force)
 
         for from_task, to_task in copy_tasks_info.get_tasks():
-            from_task_id=from_task.task_id
-            from_input_id=from_task.input_data_id
-            to_task_id=to_task.task_id
-            to_input_id=to_task.input_data_id
+            from_task_id = from_task.task_id
+            from_input_id = from_task.input_data_id
+            to_task_id = to_task.task_id
+            to_input_id = to_task.input_data_id
 
             # 権限がない可能性を排除する
             # コピー先のタスクが存在して，かつ，コピー先のタスクが自分の割当でない場合
-            to_task_or_none = self.service.wrapper.get_task_or_none(project_id=project_id , task_id=to_task_id)
+            to_task_or_none = self.service.wrapper.get_task_or_none(project_id=project_id, task_id=to_task_id)
             if to_task_or_none is None:
-                   # コピー「先」のタスクを参照しようとしてエラー
-                   logger.error(f"{self.COMMON_MESSAGE} {self.INPUT_VALIDATE_404_ERROR_MESSAGE} ({to_task_id})")
-                   return
+                # コピー「先」のタスクを参照しようとしてエラー
+                logger.error(f"{self.COMMON_MESSAGE} {self.INPUT_VALIDATE_404_ERROR_MESSAGE} ({to_task_id})")
+                return
             if not can_put_annotation(to_task_or_none, self.service.api.account_id):
                 if is_force:
                     logger.debug(f"`--force` が指定されているため，タスク'{to_task_id}' の担当者を自分自身に変更します。")
@@ -160,30 +186,35 @@ class CopyAnnotation(AbstractCommandLineInterface):
                     )
                     return False
 
+            from_annotations, _ = self.service.api.get_editor_annotation(
+                project_id=project_id, task_id=from_task_id, input_data_id=from_input_id
+            )
+            to_annotations, _ = self.service.api.get_editor_annotation(
+                project_id=project_id, task_id=to_task_id, input_data_id=to_input_id
+            )
 
-            from_annotations,_=self.service.api.get_editor_annotation(project_id=project_id,task_id=from_task_id,input_data_id=from_input_id)
-            to_annotations,_=self.service.api.get_editor_annotation(project_id=project_id,task_id=to_task_id,input_data_id=to_input_id)
-
-            from_annotation_details : List[Dict[str, Any]] = from_annotations["details"]
-            to_annotation_details   : List[Dict[str, Any]] = to_annotations['details']
+            from_annotation_details: List[Dict[str, Any]] = from_annotations["details"]
+            to_annotation_details: List[Dict[str, Any]] = to_annotations["details"]
 
             if not from_annotation_details:
                 logger.debug("コピー元にアノテーションが１つもないため、アノテーションのコピーをスキップします。")
                 continue
-            
+
             # コピー先にすでにannotationがあるかをチェックし，もしすでにアノテーションがある場合，サブコマンド引数によって挙動を変える
-            if to_annotations and not is_overwrite:#コピー先に一つでもアノテーションがあり，overwriteオプションがある場合
-                if is_merge:# mergeなら，
+            if to_annotations and not is_overwrite:  # コピー先に一つでもアノテーションがあり，overwriteオプションがある場合
+                if is_merge:  # mergeなら，
                     # コピー元にidがないがコピー先にidがあるものはそのまま何もしない
                     # コピー元にも，コピー先にもidがあるアノテーションはコピー元のもので上書き
                     # コピー元にidがあるがコピー先にはidがないものは新規追加(put_input_data)にて行う
                     logger.info(f"mergeが指定されたため，存在するアノテーションは上書きし，存在しない場合は追加します．")
-                    if to_annotation_details: 
+                    if to_annotation_details:
                         try:
-                            #from_annnotation_detailsからid情報だけを得る
-                            from_annotation_id = [detail['annotation_id'] for detail in from_annotation_details]
-                            #to_annotation_detailの中からfrom_annotation_idと同じidを持つものをfrom_annotation_detailsに追加
-                            append_annotation_details = filter(lambda item: not item['annotation_id'] in from_annotation_id, to_annotation_details)
+                            # from_annnotation_detailsからid情報だけを得る
+                            from_annotation_id = [detail["annotation_id"] for detail in from_annotation_details]
+                            # to_annotation_detailの中からfrom_annotation_idと同じidを持つものをfrom_annotation_detailsに追加
+                            append_annotation_details = filter(
+                                lambda item: not item["annotation_id"] in from_annotation_id, to_annotation_details
+                            )
                             from_annotation_details.extend(append_annotation_details)
 
                             request_body = self.service.wrapper._Wrapper__create_request_body_for_copy_annotation(
@@ -192,30 +223,33 @@ class CopyAnnotation(AbstractCommandLineInterface):
                                 to_input_id,
                                 src_details=from_annotation_details,
                                 account_id=self.service.api.account_id,
-                                annotation_specs_relation=None 
+                                annotation_specs_relation=None,
                             )
                             request_body["updated_datetime"] = to_annotations["updated_datetime"]
-                            self.service.api.put_annotation(project_id, to_task_id, to_input_id, request_body=request_body)
-        
+                            self.service.api.put_annotation(
+                                project_id, to_task_id, to_input_id, request_body=request_body
+                            )
+
                         except Exception as e:
                             logger.debug(e)
                             logger.debug(f"task_id={to_task_id},input_data_id={to_input_id}")
                         continue
                 else:
                     logger.debug(
-                    f"コピー先タスク={to_task_id}/{to_input_id} : "
-                    f"コピー先のタスクに既にアノテーションが存在するため、アノテーションの登録をスキップします。"
-                    f"アノテーションをインポートする場合は、`--overwrite` または '--merge' を指定してください。"
+                        f"コピー先タスク={to_task_id}/{to_input_id} : "
+                        f"コピー先のタスクに既にアノテーションが存在するため、アノテーションの登録をスキップします。"
+                        f"アノテーションをインポートする場合は、`--overwrite` または '--merge' を指定してください。"
                     )
                     continue
             else:
                 for from_frame_key, to_frame_key in copy_tasks_info.get_tasks():
                     try:
-                        #inputからinputへのコピー
-                        self.service.wrapper.copy_annotation(src=from_frame_key, dest=to_frame_key )
+                        # inputからinputへのコピー
+                        self.service.wrapper.copy_annotation(src=from_frame_key, dest=to_frame_key)
                     except Exception as e:
                         logger.error(f"{from_frame_key},{to_frame_key}")
                         logger.error(f"{e}")
+
 
 def main(args):
     service = build_annofabapi_resource_and_login(args)
