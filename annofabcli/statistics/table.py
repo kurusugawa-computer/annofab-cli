@@ -1374,8 +1374,8 @@ class Table:
         ).fillna(0)
 
         if len(df_labor) > 0:
-            df_agg_labor = df_labor.pivot_table(values="worktime_result_hour", index="user_id", aggfunc=numpy.sum)
-            df_tmp = df_labor[df_labor["worktime_result_hour"] > 0].pivot_table(
+            df_agg_labor = df_labor.pivot_table(values="actual_worktime_hour", index="user_id", aggfunc=numpy.sum)
+            df_tmp = df_labor[df_labor["actual_worktime_hour"] > 0].pivot_table(
                 values="date", index="user_id", aggfunc=numpy.max
             )
             if len(df_tmp) > 0:
@@ -1385,12 +1385,12 @@ class Table:
             df = df_agg_task_history.join(df_agg_labor)
         else:
             df = df_agg_task_history
-            df["worktime_result_hour"] = 0
+            df["actual_worktime_hour"] = 0
             df["last_working_date"] = None
 
         phase_list = Table._get_phase_list(list(df.columns))
 
-        df = df[["worktime_result_hour", "last_working_date"] + phase_list].copy()
+        df = df[["actual_worktime_hour", "last_working_date"] + phase_list].copy()
         df.columns = pandas.MultiIndex.from_tuples(
             [("actual_worktime_hour", "sum"), ("last_working_date", "")]
             + [("monitored_worktime_hour", phase) for phase in phase_list]
@@ -1515,14 +1515,14 @@ class Table:
             df_agg_sub_task = df_agg_sub_task.assign(**{key: 0 for key in value_columns}, task_count=0)
 
         if len(df_labor) > 0:
-            df_labor2 = df_labor[df_labor["worktime_result_hour"] > 0]
+            df_labor2 = df_labor[df_labor["actual_worktime_hour"] > 0]
             df_agg_labor = df_labor2.pivot_table(
-                values=["worktime_result_hour"], index="date", aggfunc=numpy.sum
+                values=["actual_worktime_hour"], index="date", aggfunc=numpy.sum
             ).fillna(0)
 
-            if "worktime_result_hour" not in df_agg_labor.columns:
+            if "actual_worktime_hour" not in df_agg_labor.columns:
                 # len(df_labor2)==0 のときの状況
-                df_agg_labor["worktime_result_hour"] = 0
+                df_agg_labor["actual_worktime_hour"] = 0
             df_tmp = df_labor2.pivot_table(values=["user_id"], index="date", aggfunc="count").fillna(0)
 
             if len(df_tmp) > 0:
@@ -1531,7 +1531,7 @@ class Table:
                 df_agg_labor["working_user_count"] = 0
 
         else:
-            df_agg_labor = pandas.DataFrame(columns=["worktime_result_hour", "working_user_count"])
+            df_agg_labor = pandas.DataFrame(columns=["actual_worktime_hour", "working_user_count"])
 
         # 日付の一覧を生成
         df_date_base = Table._create_date_df(df_agg_sub_task.index, df_agg_labor.index)
@@ -1543,7 +1543,7 @@ class Table:
                 "annotation_worktime_hour": "monitored_annotation_worktime_hour",
                 "inspection_worktime_hour": "monitored_inspection_worktime_hour",
                 "acceptance_worktime_hour": "monitored_acceptance_worktime_hour",
-                "worktime_result_hour": "actual_worktime_hour",
+                "actual_worktime_hour": "actual_worktime_hour",
                 "user_id": "working_user_count",
             },
             inplace=True,
