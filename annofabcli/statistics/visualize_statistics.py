@@ -559,7 +559,7 @@ def visualize_statistics_wrapper(
             start_date=start_date,
             end_date=end_date,
             minimal_output=minimal_output,
-            is_get_labor=is_get_labor
+            is_get_labor=is_get_labor,
         )
         return output_project_dir
     except Exception:  # pylint: disable=broad-except
@@ -579,7 +579,7 @@ class VisualizeStatistics(AbstractCommandLineInterface):
         project_id_list: List[str],
         work_dir: Path,
         task_query: TaskQuery,
-        labor_csv: Optional[Path],
+        df_labor: Optional[pandas.DataFrame],
         task_id_list: Optional[List[str]],
         ignored_task_id_list: Optional[List[str]],
         user_id_list: Optional[List[str]],
@@ -594,7 +594,6 @@ class VisualizeStatistics(AbstractCommandLineInterface):
     ) -> List[Path]:
         output_project_dir_list: List[Path] = []
 
-        df_labor = pandas.read_csv(labor_csv)
         if parallelism is not None:
             partial_func = partial(
                 visualize_statistics_wrapper,
@@ -613,7 +612,7 @@ class VisualizeStatistics(AbstractCommandLineInterface):
                 start_date=start_date,
                 end_date=end_date,
                 minimal_output=minimal_output,
-                is_get_labor=is_get_labor
+                is_get_labor=is_get_labor,
             )
             with Pool(parallelism) as pool:
                 result_list = pool.map(partial_func, project_id_list)
@@ -639,7 +638,7 @@ class VisualizeStatistics(AbstractCommandLineInterface):
                     start_date=start_date,
                     end_date=end_date,
                     minimal_output=minimal_output,
-                    is_get_labor=is_get_labor
+                    is_get_labor=is_get_labor,
                 )
                 if output_project_dir is not None:
                     output_project_dir_list.append(output_project_dir)
