@@ -1457,7 +1457,10 @@ class Table:
             d["biography"] = self._get_biography(account_id)
             return d
 
-        labor_list = self._get_labor_list()
+        labor_list = self.database.get_labor_list(self.project_id)
+        if len(labor_list) == 0:
+            return pandas.DataFrame(columns=["date","account_id","user_id","username","biography","actual_worktime_hour"])
+
         return pandas.DataFrame([add_user_info(e) for e in labor_list])
 
     @staticmethod
