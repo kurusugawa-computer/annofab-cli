@@ -217,7 +217,7 @@ class CopyAnnotation(AbstractCommandLineInterface):
                             )
                             from_annotation_details.extend(append_annotation_details)
 
-                            request_body = self.service.wrapper._Wrapper__create_request_body_for_copy_annotation(
+                            request_body = self.service.wrapper._create_request_body_for_copy_annotation(
                                 project_id,
                                 to_task_id,
                                 to_input_id,
