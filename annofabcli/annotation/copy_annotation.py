@@ -42,7 +42,7 @@ class CopyAnnotation(AbstractCommandLineInterface):
             )
             # from_task_frame_keysとto_task_frame_keysは要素同士が一対一対応で，どちらか片方だけ追加・変更・削除されたくないリスト
             # 外部からアクセスされると困るため，カプセル化しておく
-            self.__task_frame_keys: List[Tuple[TaskFrameKey, TaskFrameKey]] = []
+            self.__task_frame_keys: List[Tuple[TaskFrameKey, ...]] = []
 
         class INPUT_TYPECHECK_ENUM(Enum):
             TASK_AND_FILE = auto()
@@ -57,24 +57,23 @@ class CopyAnnotation(AbstractCommandLineInterface):
             # validate_typeの指定がなければ検査する
             if validate_type is None:
                 validate_type = self.recognize_input_type(input_data)
+
             if validate_type == self.INPUT_TYPECHECK_ENUM.TASK_AND_FILE:
                 # task1/input1:task3:input3の形式
                 from_task_and_input, to_task_and_input = input_data.split(":")
                 from_task_data_id, from_input_data_id = from_task_and_input.split("/")
                 to_task_data_id, to_input_data_id = to_task_and_input.split("/")
 
-                self.__task_frame_keys.append(
-                    tuple(
-                        [
-                            TaskFrameKey(
-                                project_id=project_id, task_id=from_task_data_id, input_data_id=from_input_data_id
-                            ),
-                            TaskFrameKey(
-                                project_id=project_id, task_id=to_task_data_id, input_data_id=to_input_data_id
-                            ),
-                        ]
-                    )
+                append_tuple = tuple(
+                    [
+                        TaskFrameKey(
+                            project_id=project_id, task_id=from_task_data_id, input_data_id=from_input_data_id
+                        ),
+                        TaskFrameKey(project_id=project_id, task_id=to_task_data_id, input_data_id=to_input_data_id),
+                    ]
                 )
+
+                self.__task_frame_keys.append(append_tuple)
             elif validate_type == self.INPUT_TYPECHECK_ENUM.TASK_ONLY:
                 # task1:task3の形式
                 from_task_id, to_task_id = input_data.split(":")
@@ -95,18 +94,16 @@ class CopyAnnotation(AbstractCommandLineInterface):
                     for from_input_data_id, to_input_data_id in zip(
                         from_task_or_none["input_data_id_list"], to_task_or_none["input_data_id_list"]
                     ):
-                        self.__task_frame_keys.append(
-                            tuple(
-                                [
-                                    TaskFrameKey(
-                                        project_id=project_id, task_id=from_task_id, input_data_id=from_input_data_id
-                                    ),
-                                    TaskFrameKey(
-                                        project_id=project_id, task_id=to_task_id, input_data_id=to_input_data_id
-                                    ),
-                                ]
-                            )
+                        append_tuple = tuple(
+                            [
+                                TaskFrameKey(
+                                    project_id=project_id, task_id=from_task_id, input_data_id=from_input_data_id
+                                ),
+                                TaskFrameKey(project_id=project_id, task_id=to_task_id, input_data_id=to_input_data_id),
+                            ]
                         )
+
+                        self.__task_frame_keys.append(append_tuple)
 
             elif validate_type == self.INPUT_TYPECHECK_ENUM.FILE_PATH:
                 # inputの内容が複数個・複数種類だけ連続するテキストファイルが渡される
@@ -126,7 +123,7 @@ class CopyAnnotation(AbstractCommandLineInterface):
             return self.__task_frame_keys
 
         @classmethod
-        def recognize_input_type(cls, input_data: str) -> bool:
+        def recognize_input_type(cls, input_data: str) -> INPUT_TYPECHECK_ENUM:
             """
             引数のバリデーションをする．すなわち，inputが
             task1:task2
@@ -172,7 +169,7 @@ class CopyAnnotation(AbstractCommandLineInterface):
             if to_task_or_none is None:
                 # コピー「先」のタスクを参照しようとしてエラー
                 logger.error(f"{self.COMMON_MESSAGE} {self.INPUT_VALIDATE_404_ERROR_MESSAGE} ({to_task_id})")
-                return
+                return False
             if not can_put_annotation(to_task_or_none, self.service.api.account_id):
                 if is_force:
                     logger.debug(f"`--force` が指定されているため，タスク'{to_task_id}' の担当者を自分自身に変更します。")
@@ -202,38 +199,32 @@ class CopyAnnotation(AbstractCommandLineInterface):
 
             # コピー先にすでにannotationがあるかをチェックし，もしすでにアノテーションがある場合，サブコマンド引数によって挙動を変える
             if to_annotations and not is_overwrite:  # コピー先に一つでもアノテーションがあり，overwriteオプションがある場合
-                if is_merge:  # mergeなら，
+                if is_merge and to_annotation_details:  # mergeなら，
                     # コピー元にidがないがコピー先にidがあるものはそのまま何もしない
                     # コピー元にも，コピー先にもidがあるアノテーションはコピー元のもので上書き
                     # コピー元にidがあるがコピー先にはidがないものは新規追加(put_input_data)にて行う
                     logger.info(f"mergeが指定されたため，存在するアノテーションは上書きし，存在しない場合は追加します．")
-                    if to_annotation_details:
-                        try:
-                            # from_annnotation_detailsからid情報だけを得る
-                            from_annotation_id = [detail["annotation_id"] for detail in from_annotation_details]
-                            # to_annotation_detailの中からfrom_annotation_idと同じidを持つものをfrom_annotation_detailsに追加
-                            append_annotation_details = filter(
-                                lambda item: not item["annotation_id"] in from_annotation_id, to_annotation_details
-                            )
-                            from_annotation_details.extend(append_annotation_details)
+                    # from_annnotation_detailsからid情報だけを得る
+                    from_annotation_id = [detail["annotation_id"] for detail in from_annotation_details]
+                    # to_annotation_detailの中からfrom_annotation_idと同じidを持つものをfrom_annotation_detailsに追加
+                    append_annotation_details = filter(
+                        lambda item, from_anno_id_list=from_annotation_id: not (
+                            item["annotation_id"] in from_anno_id_list
+                        ),
+                        to_annotation_details,
+                    )
+                    from_annotation_details.extend(append_annotation_details)
 
-                            request_body = self.service.wrapper._create_request_body_for_copy_annotation(
-                                project_id,
-                                to_task_id,
-                                to_input_id,
-                                src_details=from_annotation_details,
-                                account_id=self.service.api.account_id,
-                                annotation_specs_relation=None,
-                            )
-                            request_body["updated_datetime"] = to_annotations["updated_datetime"]
-                            self.service.api.put_annotation(
-                                project_id, to_task_id, to_input_id, request_body=request_body
-                            )
-
-                        except Exception as e:
-                            logger.debug(e)
-                            logger.debug(f"task_id={to_task_id},input_data_id={to_input_id}")
-                        continue
+                    request_body = self.service.wrapper._create_request_body_for_copy_annotation(
+                        project_id,
+                        to_task_id,
+                        to_input_id,
+                        src_details=from_annotation_details,
+                        account_id=self.service.api.account_id,
+                        annotation_specs_relation=None,
+                    )
+                    request_body["updated_datetime"] = to_annotations["updated_datetime"]
+                    self.service.api.put_annotation(project_id, to_task_id, to_input_id, request_body=request_body)
                 else:
                     logger.debug(
                         f"コピー先タスク={to_task_id}/{to_input_id} : "
@@ -243,12 +234,9 @@ class CopyAnnotation(AbstractCommandLineInterface):
                     continue
             else:
                 for from_frame_key, to_frame_key in copy_tasks_info.get_tasks():
-                    try:
-                        # inputからinputへのコピー
-                        self.service.wrapper.copy_annotation(src=from_frame_key, dest=to_frame_key)
-                    except Exception as e:
-                        logger.error(f"{from_frame_key},{to_frame_key}")
-                        logger.error(f"{e}")
+                    # inputからinputへのコピー
+                    self.service.wrapper.copy_annotation(src=from_frame_key, dest=to_frame_key)
+        return True
 
 
 def main(args):
