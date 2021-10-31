@@ -250,17 +250,8 @@ class Scatter:
             """
         )
 
-    def write_scatter_for_productivity_by_monitored_worktime(self, df: pandas.DataFrame):
-        """
-        AnnoFab計測時間を元に算出した生産性を、メンバごとにプロットする
-
-        Args:
-            df:
-            first_annotation_user_id_list: 最初のアノテーションを担当したuser_idのList. Noneの場合はtask_dfから決まる。
-
-        Returns:
-
-        """
+    def _write_scatter_for_productivity_by_monitored_worktime(self, df: pandas.DataFrame, worktime_type: WorktimeType):
+        """作業時間と生産性の関係をメンバごとにプロットする。"""
         # numpy.inf が含まれていると散布図を出力できないので置換する
         df = df.replace(numpy.inf, numpy.nan)
 
@@ -273,20 +264,28 @@ class Scatter:
                 y_axis_label="アノテーションあたり作業時間[hour/annotation]",
             )
 
-        html_title = "散布図-アノテーションあたり作業時間と累計作業時間の関係-計測時間"
+        if worktime_type == WorktimeType.ACTUAL:
+            worktime_name = "実績時間"
+            worktime_key_for_phase = "prediction_actual"
+        elif worktime_type == WorktimeType.MONITORED:
+            worktime_name = "計測時間"
+            worktime_key_for_phase = WorktimeType.MONITORED.value
+
+        html_title = f"散布図-アノテーションあたり作業時間と累計作業時間の関係-{worktime_name}"
         output_file = f"{self.scatter_outdir}/{html_title}.html"
         logger.debug(f"{output_file} を出力します。")
 
         phase_list = self._get_phase_list(df)
         figure_list = [
-            create_figure(f"{self.dict_phase_name[phase]}のアノテーションあたり作業時間と累計作業時間の関係(計測時間)") for phase in phase_list
+            create_figure(f"{self.dict_phase_name[phase]}のアノテーションあたり作業時間と累計作業時間の関係({worktime_name})")
+            for phase in phase_list
         ]
 
         df["biography"] = df["biography"].fillna("")
 
         for biography_index, biography in enumerate(sorted(set(df["biography"]))):
-            x_column = "monitored_worktime_hour"
-            y_column = "monitored_worktime/annotation_count"
+            x_column = f"{worktime_type.value}_worktime_hour"
+            y_column = f"{worktime_type.value}_worktime/annotation_count"
             for fig, phase in zip(figure_list, phase_list):
                 filtered_df = df[
                     (df["biography"] == biography) & df[(x_column, phase)].notna() & df[(y_column, phase)].notna()
@@ -306,11 +305,11 @@ class Scatter:
         for fig, phase in zip(figure_list, phase_list):
             average_value = self._get_average_value(
                 df,
-                numerator_column=("monitored_worktime_hour", phase),
+                numerator_column=(f"{worktime_key_for_phase}_worktime_hour", phase),
                 denominator_column=("annotation_count", phase),
             )
             self._plot_average_line(fig, average_value, dimension="width")
-            quartile = self._get_quartile_value(df, ("monitored_worktime/annotation_count", phase))
+            quartile = self._get_quartile_value(df, (f"{worktime_type.value}_worktime/annotation_count", phase))
             self._plot_quartile_line(fig, quartile, dimension="width")
 
         for fig, phase in zip(figure_list, phase_list):
@@ -318,15 +317,16 @@ class Scatter:
                 "user_id_",
                 "username_",
                 "biography_",
-                "last_working_date_",
-                f"monitored_worktime_hour_{phase}",
+                f"{worktime_key_for_phase}_worktime_hour_{phase}",
                 f"task_count_{phase}",
                 f"input_data_count_{phase}",
                 f"annotation_count_{phase}",
-                f"prediction_actual_worktime_hour_{phase}",
-                f"monitored_worktime/input_data_count_{phase}",
-                f"monitored_worktime/annotation_count_{phase}",
+                f"{worktime_key_for_phase}_worktime/input_data_count_{phase}",
+                f"{worktime_key_for_phase}_worktime/annotation_count_{phase}",
             ]
+            if worktime_type == WorktimeType.ACTUAL:
+                tooltip_item.append("last_working_date_")
+
             hover_tool = self._create_hover_tool(tooltip_item)
             fig.add_tools(hover_tool)
             self._set_legend(fig)
@@ -335,90 +335,18 @@ class Scatter:
         bokeh.plotting.reset_output()
         bokeh.plotting.output_file(output_file, title=html_title)
         bokeh.plotting.save(bokeh.layouts.column([div_element] + figure_list))
+
+    def write_scatter_for_productivity_by_monitored_worktime(self, df: pandas.DataFrame):
+        """
+        AnnoFab計測時間とAnnoFab計測時間を元に算出した生産性を、メンバごとにプロットする
+        """
+        self._write_scatter_for_productivity_by_monitored_worktime(df, worktime_type=WorktimeType.MONITORED)
 
     def write_scatter_for_productivity_by_actual_worktime(self, df: pandas.DataFrame):
         """
-        実績作業時間を元に算出した生産性を、メンバごとにプロットする
-
-        Args:
-            df:
-        Returns:
-
+        実績作業時間と実績作業時間を元に算出した生産性を、メンバごとにプロットする
         """
-        # numpy.inf が含まれていると散布図を出力できないので置換する
-        df = df.replace(numpy.inf, numpy.nan)
-
-        def create_figure(title: str) -> bokeh.plotting.Figure:
-            return figure(
-                plot_width=1200,
-                plot_height=800,
-                title=title,
-                x_axis_label="累計作業時間[hour]",
-                y_axis_label="アノテーションあたり作業時間[hour/annotation]",
-            )
-
-        html_title = "散布図-アノテーションあたり作業時間と累計作業時間の関係-実績時間"
-        output_file = f"{self.scatter_outdir}/{html_title}.html"
-        logger.debug(f"{output_file} を出力します。")
-
-        phase_list = self._get_phase_list(df)
-        figure_list = [
-            create_figure(f"{self.dict_phase_name[phase]}のアノテーションあたり作業時間と累計作業時間の関係(実績時間)") for phase in phase_list
-        ]
-
-        df["biography"] = df["biography"].fillna("")
-        for biography_index, biography in enumerate(sorted(set(df["biography"]))):
-            x_column = "prediction_actual_worktime_hour"
-            y_column = "actual_worktime/annotation_count"
-            for fig, phase in zip(figure_list, phase_list):
-                filtered_df = df[
-                    (df["biography"] == biography) & df[(x_column, phase)].notna() & df[(y_column, phase)].notna()
-                ]
-                if len(filtered_df) == 0:
-                    continue
-                source = ColumnDataSource(data=filtered_df)
-                self._scatter(
-                    fig=fig,
-                    source=source,
-                    x_column_name=f"{x_column}_{phase}",
-                    y_column_name=f"{y_column}_{phase}",
-                    legend_label=biography,
-                    color=self.my_palette[biography_index],
-                )
-
-        for fig, phase in zip(figure_list, phase_list):
-            average_value = self._get_average_value(
-                df,
-                numerator_column=("prediction_actual_worktime_hour", phase),
-                denominator_column=("annotation_count", phase),
-            )
-            self._plot_average_line(fig, average_value, dimension="width")
-
-            quartile = self._get_quartile_value(df, ("actual_worktime/annotation_count", phase))
-            self._plot_quartile_line(fig, quartile, dimension="width")
-
-        for fig, phase in zip(figure_list, phase_list):
-            tooltip_item = [
-                "user_id_",
-                "username_",
-                "biography_",
-                "last_working_date_",
-                f"prediction_actual_worktime_hour_{phase}",
-                f"task_count_{phase}",
-                f"input_data_count_{phase}",
-                f"annotation_count_{phase}",
-                f"monitored_worktime_hour_{phase}",
-                f"actual_worktime/input_data_count_{phase}",
-                f"actual_worktime/annotation_count_{phase}",
-            ]
-            hover_tool = self._create_hover_tool(tooltip_item)
-            fig.add_tools(hover_tool)
-            self._set_legend(fig)
-
-        div_element = self._create_div_element()
-        bokeh.plotting.reset_output()
-        bokeh.plotting.output_file(output_file, title=html_title)
-        bokeh.plotting.save(bokeh.layouts.column([div_element] + figure_list))
+        self._write_scatter_for_productivity_by_monitored_worktime(df, worktime_type=WorktimeType.ACTUAL)
 
     def write_scatter_for_quality(self, df: pandas.DataFrame):
         """
@@ -536,7 +464,7 @@ class Scatter:
         self, df: pandas.DataFrame, worktime_type: WorktimeType
     ):
         """
-        実績作業時間を元に算出した生産性と品質の関係を、メンバごとにプロットする
+        作業時間を元に算出した生産性と品質の関係を、メンバごとにプロットする
         """
         if worktime_type == WorktimeType.ACTUAL:
             worktime_name = "実績時間"
