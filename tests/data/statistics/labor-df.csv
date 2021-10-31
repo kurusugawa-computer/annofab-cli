@@ -1,4 +1,4 @@
-date,user_id,username,biography,worktime_plan_hour,worktime_result_hour
+date,user_id,username,biography,worktime_plan_hour,actual_worktime_hour
 2019-11-14,alice,Alice,USA,1,0.5
 2019-11-14,bob,Bob,USA,2,1.5
 2019-11-14,carol,Carol,UK,3,2.5

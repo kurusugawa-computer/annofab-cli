@@ -38,6 +38,7 @@
         "nargs",
         "netrc",
         "noqa",
+        "notna",
         "numpy",
         "pickel",
         "pylint",
