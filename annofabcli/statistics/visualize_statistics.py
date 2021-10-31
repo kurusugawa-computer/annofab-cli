@@ -224,11 +224,22 @@ class WriteCsvGraph:
             return
 
         self._catch_exception(self.scatter_obj.write_scatter_for_productivity_by_monitored_worktime)(productivity_df)
-        self._catch_exception(self.scatter_obj.write_scatter_for_productivity_by_actual_worktime)(productivity_df)
         self._catch_exception(self.scatter_obj.write_scatter_for_quality)(productivity_df)
-        self._catch_exception(self.scatter_obj.write_scatter_for_productivity_by_actual_worktime_and_quality)(
+        self._catch_exception(self.scatter_obj.write_scatter_for_productivity_by_monitored_worktime_and_quality)(
             productivity_df
         )
+
+        if productivity_df[("actual_worktime_hour", "sum")].sum() > 0:
+            self._catch_exception(self.scatter_obj.write_scatter_for_productivity_by_actual_worktime)(productivity_df)
+            self._catch_exception(self.scatter_obj.write_scatter_for_productivity_by_actual_worktime_and_quality)(
+                productivity_df
+            )
+        else:
+            logger.warning(
+                f"実績作業時間の合計値が0なので、実績作業時間関係の以下のグラフは出力しません。\n"
+                " * '散布図-アノテーションあたり作業時間と累計作業時間の関係-実績時間.html'\n"
+                " * '散布図-アノテーションあたり作業時間と品質の関係-実績時間-教師付者用'"
+            )
 
     def write_linegraph_for_task_overall(self) -> None:
         """

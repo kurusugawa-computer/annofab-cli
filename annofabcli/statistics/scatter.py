@@ -284,7 +284,7 @@ class Scatter:
         df["biography"] = df["biography"].fillna("")
 
         for biography_index, biography in enumerate(sorted(set(df["biography"]))):
-            x_column = f"{worktime_type.value}_worktime_hour"
+            x_column = f"{worktime_key_for_phase}_worktime_hour"
             y_column = f"{worktime_type.value}_worktime/annotation_count"
             for fig, phase in zip(figure_list, phase_list):
                 filtered_df = df[
