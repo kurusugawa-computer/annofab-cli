@@ -1446,7 +1446,9 @@ class LineGraph:
             )
             y_overlimit = 0.05
             fig_task.extra_y_ranges = {
-                y_range_name: DataRange1d(end=df["actual_worktime_hour"].max() * (1 + y_overlimit))
+                y_range_name: DataRange1d(
+                    end=max(df["actual_worktime_hour"].max(), df["monitored_worktime_hour"].max()) * (1 + y_overlimit)
+                )
             }
             plot_and_moving_average(
                 fig=fig_task,
@@ -1485,7 +1487,9 @@ class LineGraph:
             )
             y_overlimit = 0.05
             fig_input_data.extra_y_ranges = {
-                y_range_name: DataRange1d(end=df["actual_worktime_hour"].max() * (1 + y_overlimit))
+                y_range_name: DataRange1d(
+                    end=max(df["actual_worktime_hour"].max(), df["monitored_worktime_hour"].max()) * (1 + y_overlimit)
+                )
             }
             plot_and_moving_average(
                 fig=fig_input_data,
