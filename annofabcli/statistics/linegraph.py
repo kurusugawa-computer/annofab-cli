@@ -1630,7 +1630,10 @@ class LineGraph:
             )
             y_overlimit = 0.05
             fig.extra_y_ranges = {
-                y_range_name: DataRange1d(end=df["cumsum_actual_worktime_hour"].max() * (1 + y_overlimit))
+                y_range_name: DataRange1d(
+                    end=max(df["cumsum_actual_worktime_hour"].max(), df["cumsum_monitored_worktime_hour"].max())
+                    * (1 + y_overlimit)
+                )
             }
 
             # 値をプロット
@@ -1677,7 +1680,10 @@ class LineGraph:
             )
             y_overlimit = 0.05
             fig.extra_y_ranges = {
-                y_range_name: DataRange1d(end=df["cumsum_actual_worktime_hour"].max() * (1 + y_overlimit))
+                y_range_name: DataRange1d(
+                    end=max(df["cumsum_actual_worktime_hour"].max(), df["cumsum_monitored_worktime_hour"].max())
+                    * (1 + y_overlimit)
+                )
             }
 
             # 値をプロット
@@ -1707,7 +1713,7 @@ class LineGraph:
                 x_column_name=x_column_name,
                 y_column_name="cumsum_monitored_worktime_hour",
                 source=source,
-                color=self.my_small_palette[1],
+                color=self.my_small_palette[2],
                 legend_label="計測作業時間",
                 y_range_name=y_range_name,
             )
