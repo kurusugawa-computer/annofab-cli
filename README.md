@@ -21,7 +21,9 @@
 
 
 ## 廃止予定
-なし
+
+### 2022-02-01 以降
+* `annofabcli statistics visualize`：`--get_labor` オプションを廃止します。替わりに `--labor_csv` を利用してください。
 
 
 # Requirements

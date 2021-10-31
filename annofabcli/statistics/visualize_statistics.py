@@ -90,7 +90,14 @@ class WriteCsvGraph:
     productivity_df: Optional[pandas.DataFrame] = None
     whole_productivity_df: Optional[pandas.DataFrame] = None
 
-    def __init__(self, project_id: str, table_obj: Table, output_dir: Path, minimal_output: bool = False):
+    def __init__(
+        self,
+        project_id: str,
+        table_obj: Table,
+        output_dir: Path,
+        labor_df: Optional[pandas.DataFrame],
+        minimal_output: bool = False,
+    ):
         self.project_id = project_id
         self.table_obj = table_obj
         self.csv_obj = Csv(str(output_dir))
@@ -99,6 +106,8 @@ class WriteCsvGraph:
         self.histogram_obj = histogram_module.Histogram(str(output_dir / "histogram"))  # type: ignore
         self.linegraph_obj = LineGraph(str(output_dir / "line-graph"))
         self.scatter_obj = Scatter(str(output_dir / "scatter"))
+
+        self.labor_df = labor_df
         self.minimal_output = minimal_output
 
     def _catch_exception(self, function: Callable[..., Any]) -> Callable[..., Any]:
@@ -157,6 +166,7 @@ class WriteCsvGraph:
     def _get_labor_df(self):
         if self.labor_df is None:
             self.labor_df = self.table_obj.create_labor_df()
+
         return self.labor_df
 
     def _get_productivity_df(self):
@@ -214,11 +224,22 @@ class WriteCsvGraph:
             return
 
         self._catch_exception(self.scatter_obj.write_scatter_for_productivity_by_monitored_worktime)(productivity_df)
-        self._catch_exception(self.scatter_obj.write_scatter_for_productivity_by_actual_worktime)(productivity_df)
         self._catch_exception(self.scatter_obj.write_scatter_for_quality)(productivity_df)
-        self._catch_exception(self.scatter_obj.write_scatter_for_productivity_by_actual_worktime_and_quality)(
+        self._catch_exception(self.scatter_obj.write_scatter_for_productivity_by_monitored_worktime_and_quality)(
             productivity_df
         )
+
+        if productivity_df[("actual_worktime_hour", "sum")].sum() > 0:
+            self._catch_exception(self.scatter_obj.write_scatter_for_productivity_by_actual_worktime)(productivity_df)
+            self._catch_exception(self.scatter_obj.write_scatter_for_productivity_by_actual_worktime_and_quality)(
+                productivity_df
+            )
+        else:
+            logger.warning(
+                f"実績作業時間の合計値が0なので、実績作業時間関係の以下のグラフは出力しません。\n"
+                " * '散布図-アノテーションあたり作業時間と累計作業時間の関係-実績時間.html'\n"
+                " * '散布図-アノテーションあたり作業時間と品質の関係-実績時間-教師付者用'"
+            )
 
     def write_linegraph_for_task_overall(self) -> None:
         """
@@ -410,6 +431,7 @@ def visualize_statistics(
     work_dir: Path,
     output_project_dir: Path,
     task_query: TaskQuery,
+    df_labor: Optional[pandas.DataFrame],
     task_id_list: Optional[List[str]],
     ignored_task_id_list: Optional[List[str]],
     user_id_list: Optional[List[str]],
@@ -418,6 +440,7 @@ def visualize_statistics(
     is_get_task_histories_one_of_each: bool = False,
     start_date: Optional[str] = None,
     end_date: Optional[str] = None,
+    is_get_labor: bool = False,
     minimal_output: bool = False,
 ):
     """
@@ -447,6 +470,7 @@ def visualize_statistics(
             start_date=start_date,
             end_date=end_date,
         ),
+        is_get_labor=is_get_labor,
     )
     if update:
         database.update_db(download_latest, is_get_task_histories_one_of_each=is_get_task_histories_one_of_each)
@@ -471,7 +495,9 @@ def visualize_statistics(
         ),
         output_project_dir=output_project_dir,
     )
-    write_obj = WriteCsvGraph(project_id, table_obj, output_project_dir, minimal_output)
+    write_obj = WriteCsvGraph(
+        project_id, table_obj, output_project_dir, labor_df=df_labor, minimal_output=minimal_output
+    )
     write_obj.write_csv_for_task()
 
     write_obj.write_csv_for_summary()
@@ -509,6 +535,7 @@ def visualize_statistics_wrapper(
     annofab_facade: AnnofabApiFacade,
     work_dir: Path,
     task_query: TaskQuery,
+    df_labor: Optional[pandas.DataFrame],
     task_id_list: Optional[List[str]],
     ignored_task_id_list: Optional[List[str]],
     user_id_list: Optional[List[str]],
@@ -518,9 +545,11 @@ def visualize_statistics_wrapper(
     start_date: Optional[str] = None,
     end_date: Optional[str] = None,
     minimal_output: bool = False,
+    is_get_labor: bool = False,
 ) -> Optional[Path]:
 
     try:
+        df_sub_labor = df_labor[df_labor["project_id"] == project_id] if df_labor is not None else None
         project_title = annofab_facade.get_project_title(project_id)
         output_project_dir = root_output_dir / get_project_output_dir(project_title)
 
@@ -531,6 +560,7 @@ def visualize_statistics_wrapper(
             work_dir=work_dir,
             output_project_dir=output_project_dir,
             task_query=task_query,
+            df_labor=df_sub_labor,
             task_id_list=task_id_list,
             ignored_task_id_list=ignored_task_id_list,
             user_id_list=user_id_list,
@@ -540,6 +570,7 @@ def visualize_statistics_wrapper(
             start_date=start_date,
             end_date=end_date,
             minimal_output=minimal_output,
+            is_get_labor=is_get_labor,
         )
         return output_project_dir
     except Exception:  # pylint: disable=broad-except
@@ -559,6 +590,7 @@ class VisualizeStatistics(AbstractCommandLineInterface):
         project_id_list: List[str],
         work_dir: Path,
         task_query: TaskQuery,
+        df_labor: Optional[pandas.DataFrame],
         task_id_list: Optional[List[str]],
         ignored_task_id_list: Optional[List[str]],
         user_id_list: Optional[List[str]],
@@ -568,6 +600,7 @@ class VisualizeStatistics(AbstractCommandLineInterface):
         start_date: Optional[str] = None,
         end_date: Optional[str] = None,
         minimal_output: bool = False,
+        is_get_labor: bool = False,
         parallelism: Optional[int] = None,
     ) -> List[Path]:
         output_project_dir_list: List[Path] = []
@@ -580,6 +613,7 @@ class VisualizeStatistics(AbstractCommandLineInterface):
                 annofab_facade=self.facade,
                 work_dir=work_dir,
                 task_query=task_query,
+                df_labor=df_labor,
                 task_id_list=task_id_list,
                 ignored_task_id_list=ignored_task_id_list,
                 user_id_list=user_id_list,
@@ -589,6 +623,7 @@ class VisualizeStatistics(AbstractCommandLineInterface):
                 start_date=start_date,
                 end_date=end_date,
                 minimal_output=minimal_output,
+                is_get_labor=is_get_labor,
             )
             with Pool(parallelism) as pool:
                 result_list = pool.map(partial_func, project_id_list)
@@ -604,6 +639,7 @@ class VisualizeStatistics(AbstractCommandLineInterface):
                     project_id=project_id,
                     work_dir=work_dir,
                     task_query=task_query,
+                    df_labor=df_labor,
                     task_id_list=task_id_list,
                     ignored_task_id_list=ignored_task_id_list,
                     user_id_list=user_id_list,
@@ -613,6 +649,7 @@ class VisualizeStatistics(AbstractCommandLineInterface):
                     start_date=start_date,
                     end_date=end_date,
                     minimal_output=minimal_output,
+                    is_get_labor=is_get_labor,
                 )
                 if output_project_dir is not None:
                     output_project_dir_list.append(output_project_dir)
@@ -655,6 +692,14 @@ class VisualizeStatistics(AbstractCommandLineInterface):
 
         root_output_dir: Path = args.output_dir
 
+        if args.get_labor:
+            logger.warning(f"'--get_labor'は非推奨です。将来的にこのオプションは廃止されます。替わりに '--labor_csv' をご利用ください。")
+
+        if args.labor_csv is None and not args.get_labor:
+            logger.warning(f"'--get_labor'が指定されていないので、実績作業時間に関する情報は出力されません。")
+
+        df_labor = pandas.read_csv(args.labor_csv) if args.labor_csv is not None else None
+
         if len(project_id_list) == 1:
             visualize_statistics(
                 annofab_service=self.service,
@@ -663,6 +708,7 @@ class VisualizeStatistics(AbstractCommandLineInterface):
                 output_project_dir=root_output_dir,
                 work_dir=work_dir,
                 task_query=task_query,
+                df_labor=df_labor,
                 task_id_list=task_id_list,
                 ignored_task_id_list=ignored_task_id_list,
                 user_id_list=user_id_list,
@@ -671,6 +717,7 @@ class VisualizeStatistics(AbstractCommandLineInterface):
                 is_get_task_histories_one_of_each=args.get_task_histories_one_of_each,
                 start_date=args.start_date,
                 end_date=args.end_date,
+                is_get_labor=args.get_labor,
                 minimal_output=args.minimal,
             )
 
@@ -681,6 +728,7 @@ class VisualizeStatistics(AbstractCommandLineInterface):
                 project_id_list=project_id_list,
                 work_dir=work_dir,
                 task_query=task_query,
+                df_labor=df_labor,
                 task_id_list=task_id_list,
                 ignored_task_id_list=ignored_task_id_list,
                 user_id_list=user_id_list,
@@ -690,6 +738,7 @@ class VisualizeStatistics(AbstractCommandLineInterface):
                 start_date=args.start_date,
                 end_date=args.end_date,
                 minimal_output=args.minimal,
+                is_get_labor=args.get_labor,
                 parallelism=args.parallelism,
             )
 
@@ -795,6 +844,27 @@ def parse_args(parser: argparse.ArgumentParser):
         "--work_dir",
         type=Path,
         help="作業ディレクトリのパス。指定しない場合はannofabcliのキャッシュディレクトリ（'$HOME/.cache/annofabcli'）に保存します。",
+    )
+
+    parser.add_argument(
+        "--labor_csv",
+        type=Path,
+        help=(
+            "実績作業時間情報が格納されたCSVを指定してください。指定しない場合は、実績作業時間は0とみなします。列名は以下の通りです。\n"
+            " * date\n"
+            " * account_id\n"
+            " * project_id\n"
+            " * actual_worktime_hour\n"
+        ),
+    )
+
+    parser.add_argument(
+        "--get_labor",
+        action="store_true",
+        help=(
+            "[DEPRECATED] labor関係のWebAPIを使って実績作業時間情報を取得します。\n"
+            "将来的にlabor関係のWebAPIは利用できなくなります。替わりに ``--labor_csv`` を利用してください。\n"
+        ),
     )
 
     parser.add_argument(

@@ -72,7 +72,7 @@ class Database:
     # Field
     #############################################
 
-    # pickleファイルのprfixに付けるタイムスタンプ
+    # pickleファイルのprefixに付けるタイムスタンプ
     filename_timestamp: str
 
     #############################################
@@ -80,18 +80,25 @@ class Database:
     #############################################
 
     def __init__(
-        self, annofab_service: annofabapi.Resource, project_id: str, chekpoint_dir: str, query: Optional[Query] = None
+        self,
+        annofab_service: annofabapi.Resource,
+        project_id: str,
+        checkpoint_dir: str,
+        query: Optional[Query] = None,
+        is_get_labor: bool = False,
     ):
         """
         環境変数'ANNOFAB_USER_ID', 'ANNOFAB_PASSWORD'から情報を読み込み、AnnofabApiインスタンスを生成する。
         Args:
             project_id: Annofabのproject_id
+            is_get_labor: labor関係のwebapiにアクセスしてlabor情報を取得するかどうか。
         """
 
         self.annofab_service = annofab_service
         self.project_id = project_id
-        self.checkpoint_dir = chekpoint_dir
+        self.checkpoint_dir = checkpoint_dir
         self.query = query if query is not None else Query()
+        self.is_get_labor = is_get_labor
 
         # ダウンロードした一括情報
         self.tasks_json_path = Path(f"{self.checkpoint_dir}/tasks.json")
@@ -125,10 +132,6 @@ class Database:
 
     def read_account_statistics_from_checkpoint(self) -> List[Dict[str, Any]]:
         result = self.__read_checkpoint("account_statistics.pickel")
-        return result if result is not None else []
-
-    def read_labor_list_from_checkpoint(self) -> List[Dict[str, Any]]:
-        result = self.__read_checkpoint("labor_list.pickel")
         return result if result is not None else []
 
     @staticmethod
@@ -583,39 +586,25 @@ class Database:
         account_statistics = self.annofab_service.wrapper.get_account_statistics(self.project_id)
         self.__write_checkpoint(account_statistics, "account_statistics.pickel")
 
-        # 労務管理情報の出力
-        labor_list = self._get_labor_list(self.project_id)
-        self.__write_checkpoint(labor_list, "labor_list.pickel")
-
-    @staticmethod
-    def _get_worktime_hour(working_time_by_user: Optional[Dict[str, Any]], key: str) -> float:
-        if working_time_by_user is None:
-            return 0
-
-        value = working_time_by_user.get(key)
-        if value is None:
-            return 0
-        else:
-            return value / 3600 / 1000
-
-    def _get_labor_list(self, project_id: str) -> List[Dict[str, Any]]:
+    def get_labor_list(self, project_id: str) -> List[Dict[str, Any]]:
         def to_new_labor(e: Dict[str, Any]) -> Dict[str, Any]:
-            return dict(
-                date=e["date"],
-                account_id=e["account_id"],
-                worktime_plan_hour=self._get_worktime_hour(e["values"]["working_time_by_user"], "plans"),
-                worktime_result_hour=self._get_worktime_hour(e["values"]["working_time_by_user"], "results"),
-            )
+            e["actual_worktime_hour"] = e["actual_worktime"]
+            e.pop("actual_worktime")
+            e.pop("plan_worktime")
+            return e
+
+        if not self.is_get_labor:
+            return []
 
         # 未来のデータを取得しても意味がないので、今日の日付を指定する
         end_date = (
             self.query.end_date if self.query.end_date is not None else datetime.datetime.now().strftime("%Y-%m-%d")
         )
-        labor_list: List[Dict[str, Any]] = self.annofab_service.api.get_labor_control(
-            {"project_id": project_id, "from": self.query.start_date, "to": end_date}
-        )[0]
+        labor_list: List[Dict[str, Any]] = self.annofab_service.wrapper.get_labor_control_worktime(
+            project_id=project_id, from_date=self.query.start_date, to_date=end_date
+        )
 
-        return [to_new_labor(e) for e in labor_list if e["account_id"] is not None]
+        return [to_new_labor(e) for e in labor_list]
 
     @staticmethod
     def get_not_updated_task_ids(old_tasks, new_tasks) -> Set[str]:
