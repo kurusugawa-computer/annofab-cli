@@ -107,7 +107,7 @@ class WriteCsvGraph:
         self.linegraph_obj = LineGraph(str(output_dir / "line-graph"))
         self.scatter_obj = Scatter(str(output_dir / "scatter"))
 
-        self.labor_df = labor_df
+        self.labor_df = self.table_obj.create_labor_df(labor_df)
         self.minimal_output = minimal_output
 
     def _catch_exception(self, function: Callable[..., Any]) -> Callable[..., Any]:
