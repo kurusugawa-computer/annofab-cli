@@ -1526,8 +1526,6 @@ class Table:
             if "actual_worktime_hour" not in df_agg_labor.columns:
                 # len(df_labor2)==0 のときの状況
                 df_agg_labor["actual_worktime_hour"] = 0
-            print(f"{df_labor2=}")
-            print(f"{df_labor2.columns=}")
             df_tmp = df_labor2.pivot_table(values=["user_id"], index="date", aggfunc="count").fillna(0)
 
             if len(df_tmp) > 0:
