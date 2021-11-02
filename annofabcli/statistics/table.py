@@ -279,6 +279,7 @@ class Table:
         annotation_specs, _ = self.annofab_service.api.get_annotation_specs(self.project_id, query_params={"v": "2"})
         self.inspection_phrases_dict = self.get_inspection_phrases_dict(annotation_specs["inspection_phrases"])
         self.label_dict = self.get_labels_dict(annotation_specs["labels"])
+        # key:account_id, value:project_member のdict
         self.project_members_dict = self._get_project_members_dict()
 
     def _get_project_members_dict(self) -> Dict[str, Any]:
@@ -1436,26 +1437,28 @@ class Table:
 
         return df
 
-    def create_labor_df(self) -> pandas.DataFrame:
+    def create_labor_df(self, df_labor: Optional[pandas.DataFrame] = None) -> pandas.DataFrame:
         """
         労務管理 DataFrameを生成する。情報を出力する。
 
+        Args:
+            df_labor: 指定されれば、account_idに紐づくユーザ情報を添付する。そうでなければ、webapiから労務管理情報を取得する。
         """
+        if df_labor is None:
+            labor_list = self.database.get_labor_list(self.project_id)
+            df_labor = pandas.DataFrame(labor_list)
 
-        def add_user_info(d: Dict[str, Any]) -> Dict[str, Any]:
-            account_id = d["account_id"]
-            d["user_id"] = self._get_user_id(account_id)
-            d["username"] = self._get_username(account_id)
-            d["biography"] = self._get_biography(account_id)
-            return d
-
-        labor_list = self.database.get_labor_list(self.project_id)
-        if len(labor_list) == 0:
+        if len(df_labor) == 0:
             return pandas.DataFrame(
                 columns=["date", "account_id", "user_id", "username", "biography", "actual_worktime_hour"]
             )
 
-        return pandas.DataFrame([add_user_info(e) for e in labor_list])
+        df_user = pandas.DataFrame(self.project_members_dict.values())[
+            ["account_id", "user_id", "username", "biography"]
+        ]
+
+        df = df_labor.merge(df_user, how="left", on="account_id")
+        return df
 
     @staticmethod
     def _create_date_df(date_index1: pandas.Index, date_index2: pandas.Index) -> pandas.DataFrame:
