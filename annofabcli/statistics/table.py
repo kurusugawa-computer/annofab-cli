@@ -184,14 +184,6 @@ class Table:
             self._annotations_dict = self.database.read_annotation_summary(task_list, self._create_annotation_summary)
             return self._annotations_dict
 
-    def _get_labor_list(self) -> List[Dict[str, Any]]:
-        if self._labor_list is not None:
-            return self._labor_list
-        else:
-            labor_list = self.database.read_labor_list_from_checkpoint()
-            self._labor_list = labor_list
-            return self._labor_list
-
     def _create_annotation_summary(self, annotation_list: List[Dict[str, Any]]) -> Dict[str, Any]:
         annotation_summary = {"total_count": len(annotation_list)}
 
@@ -287,6 +279,7 @@ class Table:
         annotation_specs, _ = self.annofab_service.api.get_annotation_specs(self.project_id, query_params={"v": "2"})
         self.inspection_phrases_dict = self.get_inspection_phrases_dict(annotation_specs["inspection_phrases"])
         self.label_dict = self.get_labels_dict(annotation_specs["labels"])
+        # key:account_id, value:project_member のdict
         self.project_members_dict = self._get_project_members_dict()
 
     def _get_project_members_dict(self) -> Dict[str, Any]:
@@ -491,15 +484,20 @@ class Table:
             else:
                 return None
 
-        annotation_histories = [
-            e for e in task_histories if e["phase"] == TaskPhase.ANNOTATION.value and e["account_id"] is not None
-        ]
-        inspection_histories = [
-            e for e in task_histories if e["phase"] == TaskPhase.INSPECTION.value and e["account_id"] is not None
-        ]
-        acceptance_histories = [
-            e for e in task_histories if e["phase"] == TaskPhase.ACCEPTANCE.value and e["account_id"] is not None
-        ]
+        def filter_histories(arg_task_histories: List[TaskHistory], phase: TaskPhase) -> List[TaskHistory]:
+            return [
+                e
+                for e in arg_task_histories
+                if (
+                    e["phase"] == phase.value
+                    and e["account_id"] is not None
+                    and annofabcli.utils.isoduration_to_hour(e["accumulated_labor_time_milliseconds"]) > 0
+                )
+            ]
+
+        annotation_histories = filter_histories(task_histories, TaskPhase.ANNOTATION)
+        inspection_histories = filter_histories(task_histories, TaskPhase.INSPECTION)
+        acceptance_histories = filter_histories(task_histories, TaskPhase.ACCEPTANCE)
 
         # 最初の教師付情報を設定する
         first_annotation_history = annotation_histories[0] if len(annotation_histories) > 0 else None
@@ -1377,8 +1375,8 @@ class Table:
         ).fillna(0)
 
         if len(df_labor) > 0:
-            df_agg_labor = df_labor.pivot_table(values="worktime_result_hour", index="user_id", aggfunc=numpy.sum)
-            df_tmp = df_labor[df_labor["worktime_result_hour"] > 0].pivot_table(
+            df_agg_labor = df_labor.pivot_table(values="actual_worktime_hour", index="user_id", aggfunc=numpy.sum)
+            df_tmp = df_labor[df_labor["actual_worktime_hour"] > 0].pivot_table(
                 values="date", index="user_id", aggfunc=numpy.max
             )
             if len(df_tmp) > 0:
@@ -1388,12 +1386,12 @@ class Table:
             df = df_agg_task_history.join(df_agg_labor)
         else:
             df = df_agg_task_history
-            df["worktime_result_hour"] = 0
+            df["actual_worktime_hour"] = 0
             df["last_working_date"] = None
 
         phase_list = Table._get_phase_list(list(df.columns))
 
-        df = df[["worktime_result_hour", "last_working_date"] + phase_list].copy()
+        df = df[["actual_worktime_hour", "last_working_date"] + phase_list].copy()
         df.columns = pandas.MultiIndex.from_tuples(
             [("actual_worktime_hour", "sum"), ("last_working_date", "")]
             + [("monitored_worktime_hour", phase) for phase in phase_list]
@@ -1439,21 +1437,28 @@ class Table:
 
         return df
 
-    def create_labor_df(self) -> pandas.DataFrame:
+    def create_labor_df(self, df_labor: Optional[pandas.DataFrame] = None) -> pandas.DataFrame:
         """
         労務管理 DataFrameを生成する。情報を出力する。
 
+        Args:
+            df_labor: 指定されれば、account_idに紐づくユーザ情報を添付する。そうでなければ、webapiから労務管理情報を取得する。
         """
+        if df_labor is None:
+            labor_list = self.database.get_labor_list(self.project_id)
+            df_labor = pandas.DataFrame(labor_list)
 
-        def add_user_info(d: Dict[str, Any]) -> Dict[str, Any]:
-            account_id = d["account_id"]
-            d["user_id"] = self._get_user_id(account_id)
-            d["username"] = self._get_username(account_id)
-            d["biography"] = self._get_biography(account_id)
-            return d
+        if len(df_labor) == 0:
+            return pandas.DataFrame(
+                columns=["date", "account_id", "user_id", "username", "biography", "actual_worktime_hour"]
+            )
 
-        labor_list = self._get_labor_list()
-        return pandas.DataFrame([add_user_info(e) for e in labor_list])
+        df_user = pandas.DataFrame(self.project_members_dict.values())[
+            ["account_id", "user_id", "username", "biography"]
+        ]
+
+        df = df_labor.merge(df_user, how="left", on="account_id")
+        return df
 
     @staticmethod
     def _create_date_df(date_index1: pandas.Index, date_index2: pandas.Index) -> pandas.DataFrame:
@@ -1513,14 +1518,14 @@ class Table:
             df_agg_sub_task = df_agg_sub_task.assign(**{key: 0 for key in value_columns}, task_count=0)
 
         if len(df_labor) > 0:
-            df_labor2 = df_labor[df_labor["worktime_result_hour"] > 0]
+            df_labor2 = df_labor[df_labor["actual_worktime_hour"] > 0]
             df_agg_labor = df_labor2.pivot_table(
-                values=["worktime_result_hour"], index="date", aggfunc=numpy.sum
+                values=["actual_worktime_hour"], index="date", aggfunc=numpy.sum
             ).fillna(0)
 
-            if "worktime_result_hour" not in df_agg_labor.columns:
+            if "actual_worktime_hour" not in df_agg_labor.columns:
                 # len(df_labor2)==0 のときの状況
-                df_agg_labor["worktime_result_hour"] = 0
+                df_agg_labor["actual_worktime_hour"] = 0
             df_tmp = df_labor2.pivot_table(values=["user_id"], index="date", aggfunc="count").fillna(0)
 
             if len(df_tmp) > 0:
@@ -1529,7 +1534,7 @@ class Table:
                 df_agg_labor["working_user_count"] = 0
 
         else:
-            df_agg_labor = pandas.DataFrame(columns=["worktime_result_hour", "working_user_count"])
+            df_agg_labor = pandas.DataFrame(columns=["actual_worktime_hour", "working_user_count"])
 
         # 日付の一覧を生成
         df_date_base = Table._create_date_df(df_agg_sub_task.index, df_agg_labor.index)
@@ -1541,7 +1546,7 @@ class Table:
                 "annotation_worktime_hour": "monitored_annotation_worktime_hour",
                 "inspection_worktime_hour": "monitored_inspection_worktime_hour",
                 "acceptance_worktime_hour": "monitored_acceptance_worktime_hour",
-                "worktime_result_hour": "actual_worktime_hour",
+                "actual_worktime_hour": "actual_worktime_hour",
                 "user_id": "working_user_count",
             },
             inplace=True,

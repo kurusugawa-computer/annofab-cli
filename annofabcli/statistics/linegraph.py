@@ -1446,7 +1446,9 @@ class LineGraph:
             )
             y_overlimit = 0.05
             fig_task.extra_y_ranges = {
-                y_range_name: DataRange1d(end=df["actual_worktime_hour"].max() * (1 + y_overlimit))
+                y_range_name: DataRange1d(
+                    end=max(df["actual_worktime_hour"].max(), df["monitored_worktime_hour"].max()) * (1 + y_overlimit)
+                )
             }
             plot_and_moving_average(
                 fig=fig_task,
@@ -1463,6 +1465,14 @@ class LineGraph:
                 color=self.my_small_palette[1],
                 y_range_name=y_range_name,
             )
+            plot_and_moving_average(
+                fig=fig_task,
+                y_column_name="monitored_worktime_hour",
+                legend_name="計測作業時間",
+                source=source,
+                color=self.my_small_palette[2],
+                y_range_name=y_range_name,
+            )
             return fig_task
 
         def create_input_data_figure():
@@ -1477,7 +1487,9 @@ class LineGraph:
             )
             y_overlimit = 0.05
             fig_input_data.extra_y_ranges = {
-                y_range_name: DataRange1d(end=df["actual_worktime_hour"].max() * (1 + y_overlimit))
+                y_range_name: DataRange1d(
+                    end=max(df["actual_worktime_hour"].max(), df["monitored_worktime_hour"].max()) * (1 + y_overlimit)
+                )
             }
             plot_and_moving_average(
                 fig=fig_input_data,
@@ -1492,6 +1504,14 @@ class LineGraph:
                 legend_name="実績作業時間",
                 source=source,
                 color=self.my_small_palette[1],
+                y_range_name=y_range_name,
+            )
+            plot_and_moving_average(
+                fig=fig_input_data,
+                y_column_name="monitored_worktime_hour",
+                legend_name="計測作業時間",
+                source=source,
+                color=self.my_small_palette[2],
                 y_range_name=y_range_name,
             )
             return fig_input_data
@@ -1614,7 +1634,10 @@ class LineGraph:
             )
             y_overlimit = 0.05
             fig.extra_y_ranges = {
-                y_range_name: DataRange1d(end=df["cumsum_actual_worktime_hour"].max() * (1 + y_overlimit))
+                y_range_name: DataRange1d(
+                    end=max(df["cumsum_actual_worktime_hour"].max(), df["cumsum_monitored_worktime_hour"].max())
+                    * (1 + y_overlimit)
+                )
             }
 
             # 値をプロット
@@ -1637,6 +1660,15 @@ class LineGraph:
                 legend_label="実績作業時間",
                 y_range_name=y_range_name,
             )
+            self._plot_line_and_circle(
+                fig,
+                x_column_name=x_column_name,
+                y_column_name="cumsum_monitored_worktime_hour",
+                source=source,
+                color=self.my_small_palette[2],
+                legend_label="計測作業時間",
+                y_range_name=y_range_name,
+            )
 
             return fig
 
@@ -1652,7 +1684,10 @@ class LineGraph:
             )
             y_overlimit = 0.05
             fig.extra_y_ranges = {
-                y_range_name: DataRange1d(end=df["cumsum_actual_worktime_hour"].max() * (1 + y_overlimit))
+                y_range_name: DataRange1d(
+                    end=max(df["cumsum_actual_worktime_hour"].max(), df["cumsum_monitored_worktime_hour"].max())
+                    * (1 + y_overlimit)
+                )
             }
 
             # 値をプロット
@@ -1673,6 +1708,17 @@ class LineGraph:
                 source=source,
                 color=self.my_small_palette[1],
                 legend_label="実績作業時間",
+                y_range_name=y_range_name,
+            )
+
+            # 値をプロット
+            self._plot_line_and_circle(
+                fig,
+                x_column_name=x_column_name,
+                y_column_name="cumsum_monitored_worktime_hour",
+                source=source,
+                color=self.my_small_palette[2],
+                legend_label="計測作業時間",
                 y_range_name=y_range_name,
             )
 

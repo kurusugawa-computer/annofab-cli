@@ -169,8 +169,13 @@ def parse_args(parser: argparse.ArgumentParser):
         type=str,
         help=(
             "タスクに割り当てる入力データが記載されたCSVファイルのパスを指定してください。"
-            "CSVのフォーマットは、「1列目:task_id,2列目:Any(無視される), 3列目:input_data_id」です。"
+            "CSVのフォーマットは、以下の通りです。"
             "タスク作成画面でアップロードするCSVと同じフォーマットです。"
+            "\n"
+            " * ヘッダ行なし, カンマ区切り\n"
+            " * 1列目: task_id\n"
+            " * 2列目: Any(無視される)\n"
+            " * 3列目: input_data_id\n"
         ),
     )
 
@@ -180,8 +185,8 @@ def parse_args(parser: argparse.ArgumentParser):
         type=str,
         help=(
             "タスクに割り当てる入力データをJSON形式で指定してください。"
-            "keyがtask_id, valueがinput_data_idのlistです。"
-            f"(ex) {JSON_SAMPLE} "
+            "keyがtask_id, valueがinput_data_idのlistです。\n"
+            f"(ex) ``{JSON_SAMPLE}`` "
             "``file://`` を先頭に付けるとjsonファイルを指定できます。"
         ),
     )
@@ -189,11 +194,11 @@ def parse_args(parser: argparse.ArgumentParser):
     file_group.add_argument(
         "--by_count",
         type=str,
-        help=f"1つのタスクに割り当てる入力データの個数などの情報を、JSON形式で指定してください。"
+        help=f"1つのタスクに割り当てる入力データの個数などの情報を、JSON形式で指定してください。\n"
         "JSONフォーマットは https://annofab.com/docs/api/#operation/initiateTasksGeneration"
-        " APIのリクエストボディ 'task_generate_rule'と同じです。"
-        f"デフォルトは'{json.dumps(PutTask.DEFAULT_BY_COUNT)}'です。"
-        "'file://'を先頭に付けるとjsonファイルを指定できます。",
+        " APIのリクエストボディ ``task_generate_rule`` と同じです。"
+        f"デフォルトは ``{json.dumps(PutTask.DEFAULT_BY_COUNT)}`` です。\n"
+        "``file://`` を先頭に付けるとjsonファイルを指定できます。",
     )
 
     parser.add_argument("--wait", action="store_true", help=("タスク登録が完了するまで待ちます。"))

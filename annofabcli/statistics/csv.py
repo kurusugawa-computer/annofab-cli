@@ -305,8 +305,7 @@ class Csv:
             "user_id",
             "username",
             "biography",
-            "worktime_plan_hour",
-            "worktime_result_hour",
+            "actual_worktime_hour",
         ]
 
         df = df.sort_values(["date", "user_id"])
