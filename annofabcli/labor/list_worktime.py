@@ -153,6 +153,7 @@ class ListLaborWorktimeMain:
                 f"ユーザ{len(account_id_list)}件分の労務管理情報を取得しています。"
             )
             for account_id in account_id_list:
+                logger.debug(f"organization_name={organization_name}, account_id={account_id} の労務管理情報を取得しています。")
                 tmp_labor_list = self.service.wrapper.get_labor_control_worktime(
                     organization_id=organization_id, from_date=start_date, to_date=end_date, account_id=account_id
                 )
@@ -218,8 +219,9 @@ class ListLaborWorktimeMain:
             )
         else:
             labor_list = []
+            logger.debug(f"project_id={project_id}の、ユーザ{len(account_id_list)}件分の労務管理情報を取得します。")
             for account_id in account_id_list:
-                logger.debug(f"project_id={project_id}の、ユーザ{len(account_id_list)}件分の労務管理情報を取得しています。")
+                logger.debug(f"project_id={project_id}, account_id={account_id} の労務管理情報を取得します。")
                 tmp_labor_list = self.service.wrapper.get_labor_control_worktime(
                     project_id=project_id, from_date=start_date, to_date=end_date, account_id=account_id
                 )
@@ -327,7 +329,6 @@ class ListLaborWorktimeMain:
         user_id_list: Optional[List[str]],
         account_id_list: Optional[List[str]],
     ) -> List[LaborWorktime]:
-
         labor_list: List[LaborWorktime] = []
 
         logger.info(f"労務管理情報を取得します。")

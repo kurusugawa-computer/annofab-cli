@@ -6,7 +6,7 @@ python:
   - "3.9"
 install:
   - pip install poetry
-  - travis_retry poetry install  
+  - travis_retry poetry install
 script:
    - make lint
    - poetry run pytest tests/test_local*.py

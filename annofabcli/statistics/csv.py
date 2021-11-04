@@ -305,7 +305,6 @@ class Csv:
             "user_id",
             "username",
             "biography",
-            "worktime_plan_hour",
             "actual_worktime_hour",
         ]
 
