@@ -18,11 +18,13 @@ from annofabcli.common.visualize import AddProps
 
 logger = logging.getLogger(__name__)
 
+
 class CopyAnnotationMain:
     def __init__(self, service: annofabapi.Resource, project_id: str):
         self.service = service
         self.facade = AnnofabApiFacade(service)
         self.visualize = AddProps(self.service, project_id)
+
 
 class CopyAnnotation(AbstractCommandLineInterface):
     def __init__(self, service: annofabapi.Resource, facade: AnnofabApiFacade, args: argparse.Namespace):
@@ -60,7 +62,7 @@ class CopyAnnotation(AbstractCommandLineInterface):
                 from_task_data_id, from_input_data_id = from_task_and_input.split("/")
                 to_task_data_id, to_input_data_id = to_task_and_input.split("/")
 
-                append_tuple = tuple(
+                append_tuple = (
                     TaskFrameKey(project_id=project_id, task_id=from_task_data_id, input_data_id=from_input_data_id),
                     TaskFrameKey(project_id=project_id, task_id=to_task_data_id, input_data_id=to_input_data_id),
                 )
@@ -85,7 +87,7 @@ class CopyAnnotation(AbstractCommandLineInterface):
                     for from_input_data_id, to_input_data_id in zip(
                         from_task_or_none["input_data_id_list"], to_task_or_none["input_data_id_list"]
                     ):
-                        append_tuple = tuple(
+                        append_tuple = (
                             TaskFrameKey(project_id=project_id, task_id=from_task_id, input_data_id=from_input_data_id),
                             TaskFrameKey(project_id=project_id, task_id=to_task_id, input_data_id=to_input_data_id),
                         )
@@ -216,10 +218,12 @@ class CopyAnnotation(AbstractCommandLineInterface):
                     self.service.wrapper.copy_annotation(src=from_frame_key, dest=to_frame_key)
         return True
 
+
 def main(args):
     service = build_annofabapi_resource_and_login(args)
     facade = AnnofabApiFacade(service)
     CopyAnnotation(service, facade, args).main()
+
 
 def parse_args(parser: argparse.ArgumentParser):
     argument_parser = ArgumentParser(parser)
@@ -252,6 +256,7 @@ def parse_args(parser: argparse.ArgumentParser):
     """
     parser.add_argument("--input", type=str, required=True, help=help_message)
     parser.set_defaults(subcommand_func=main)
+
 
 def add_parser(subparsers: Optional[argparse._SubParsersAction] = None):
     subcommand_name = "copy"
