@@ -10,6 +10,7 @@ annofabcliを使った利用事例などを紹介します。
    :titlesonly:
 
    http_private_storage
+   edit_annotation
 
 
 
