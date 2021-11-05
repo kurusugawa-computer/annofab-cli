@@ -1,6 +1,9 @@
 import argparse
 import logging
 import re
+import sys
+from abc import ABC
+from dataclasses import dataclass
 from enum import Enum, auto
 from typing import Any, Dict, List, Optional, Tuple
 
@@ -11,7 +14,9 @@ from annofabapi.wrapper import TaskFrameKey
 import annofabcli
 from annofabcli import AnnofabApiFacade
 from annofabcli.common.cli import (
+    COMMAND_LINE_ERROR_STATUS_CODE,
     AbstractCommandLineInterface,
+    AbstractCommandLineWithConfirmInterface,
     ArgumentParser,
     build_annofabapi_resource_and_login,
     get_list_from_args,
@@ -20,8 +25,124 @@ from annofabcli.common.cli import (
 logger = logging.getLogger(__name__)
 
 
+class CopyTarget(ABC):
+    pass
+
+
+@dataclass(frozen=True)
+class CopyTargetByTask(CopyTarget):
+    src_task_id: str
+    dest_task_id: str
+
+
+@dataclass(frozen=True)
+class CopyTargetByInputData(CopyTarget):
+    src_task_id: str
+    src_input_data_id: str
+    dest_task_id: str
+    dest_input_data_id: str
+
+
+def parse_copy_target(str_copy_target: str) -> CopyTarget:
+    """
+    コピー対象の文字列をパースします。
+    以下の文字列をサポートします。
+    * `task1:task2`
+    * `task1/input5:task2/input6`
+    """
+
+    def _parse_with_slash(target: str) -> Tuple[str, Optional[str]]:
+        tmp = target.split("/")
+        if len(tmp) == 1:
+            return (tmp[0], None)
+        elif len(tmp) == 2:
+            return (tmp[0], tmp[1])
+        else:
+            raise ValueError(f"'{str_copy_target}' の形式が間違っています。")
+
+    tmp_array = str_copy_target.split(":")
+    if len(tmp_array) != 2:
+        raise ValueError(f"'{str_copy_target}' の形式が間違っています。")
+
+    str_src = tmp_array[0]
+    str_dest = tmp_array[1]
+
+    src = _parse_with_slash(str_src)
+    dest = _parse_with_slash(str_dest)
+
+    if src[1] is not None and dest[1] is not None:
+        return CopyTargetByInputData(
+            src_task_id=src[0], src_input_data_id=src[1], dest_task_id=dest[0], dest_input_data_id=dest[1]
+        )
+    elif src[1] is None and dest[1] is None:
+        return CopyTargetByTask(src_task_id=src[0], dest_task_id=dest[0])
+    else:
+        raise ValueError(f"'{str_copy_target}' の形式が間違っています。")
+
+
+class CopyAnnotationMain(AbstractCommandLineWithConfirmInterface):
+    def __init__(
+        self,
+        service: annofabapi.Resource,
+        *,
+        all_yes: bool,
+    ):
+        self.service = service
+        AbstractCommandLineWithConfirmInterface.__init__(self, all_yes)
+        # TODO コンストラク引数を追加したほうがよいかもしれない
+
+    def copy_annotation_by_task(self, project_id: str, copy_target: CopyTargetByTask):
+        """タスク単位でアノテーションをコピーする"""
+        # TODO 処理の続き
+
+    def copy_annotation_by_input_data(self, project_id: str, copy_target: CopyTargetByInputData):
+        """入力データ単位でアノテーションをコピーする"""
+        # TODO 処理の続き
+
+    def copy_annotations(self, project_id: str, copy_target_list: List[CopyTarget]):
+        for copy_target in copy_target_list:
+            if isinstance(copy_target, CopyTargetByTask):
+                if not self.confirm_processing(f"〜のアノテーションをコピーしますか？"):
+                    return False
+                self.copy_annotation_by_task(project_id, copy_target)
+
+            elif isinstance(copy_target, CopyTargetByInputData):
+                if not self.confirm_processing(f"〜のアノテーションをコピーしますか？"):
+                    return False
+                self.copy_annotation_by_input_data(project_id, copy_target)
+
+
 class CopyAnnotation(AbstractCommandLineInterface):
+    def main(self):
+        args = self.args
+        project_id = args.project_id
+        str_copy_target_list = get_list_from_args(args.input)
+
+        copy_target_list: list[CopyTarget] = []
+        for str_copy_target in str_copy_target_list:
+            try:
+                copy_target = parse_copy_target(str_copy_target)
+                copy_target_list.append(copy_target)
+            except ValueError as e:
+                logger.warning(e)
+
+        if len(str_copy_target_list) != len(copy_target_list):
+            print(f"{self.COMMON_MESSAGE} argument '--input' 値が不正です。", file=sys.stderr)
+            sys.exit(COMMAND_LINE_ERROR_STATUS_CODE)
+
+        main_obj = CopyAnnotationMain(
+            self.service,
+            all_yes=self.all_yes,
+        )
+        main_obj.copy_annotations(
+            project_id,
+            copy_target_list
+        )
+
+
     class CopyTasksInfo:
+        """TODO 削除する"""
+
         def __init__(self, service: annofabapi.Resource):
             self.service = service
             self.COMMON_MESSAGE = "annofabcli annotation import: error:"
@@ -245,7 +366,7 @@ def parse_args(parser: argparse.ArgumentParser):
     ファイルの指定
         file://input.txt
     """
-    parser.add_argument("--input", type=str, required=True, help=help_message)
+    parser.add_argument("--input", type=str, nargs="+", required=True, help=help_message)
     parser.set_defaults(subcommand_func=main)
 
 
