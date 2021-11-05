@@ -16,23 +16,11 @@ from annofabcli.common.cli import (
     build_annofabapi_resource_and_login,
     get_list_from_args,
 )
-from annofabcli.common.visualize import AddProps
 
 logger = logging.getLogger(__name__)
 
 
-class CopyAnnotationMain:
-    def __init__(self, service: annofabapi.Resource, project_id: str):
-        self.service = service
-        self.facade = AnnofabApiFacade(service)
-        self.visualize = AddProps(self.service, project_id)
-
-
 class CopyAnnotation(AbstractCommandLineInterface):
-    def __init__(self, service: annofabapi.Resource, facade: AnnofabApiFacade, args: argparse.Namespace):
-        super().__init__(service, facade, args)
-        self.visualize = AddProps(self.service, args.project_id)
-
     class CopyTasksInfo:
         def __init__(self, service: annofabapi.Resource):
             self.service = service
@@ -146,6 +134,7 @@ class CopyAnnotation(AbstractCommandLineInterface):
         copy_tasks_info = self.CopyTasksInfo(self.service)
         copy_tasks_info.append(project_id, raw_input, is_force)
         for from_task, to_task in copy_tasks_info.get_tasks():
+            print(f"{from_task=}, {to_task=}")
             from_task_id = from_task.task_id
             from_input_id = from_task.input_data_id
             to_task_id = to_task.task_id
