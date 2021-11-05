@@ -2,10 +2,12 @@ import argparse
 import logging
 import re
 from enum import Enum, auto
-from typing import List, Optional, Dict, Any, Tuple
+from typing import Any, Dict, List, Optional, Tuple
+
 import annofabapi
 from annofabapi.utils import can_put_annotation
 from annofabapi.wrapper import TaskFrameKey
+
 import annofabcli
 from annofabcli import AnnofabApiFacade
 from annofabcli.common.cli import (
