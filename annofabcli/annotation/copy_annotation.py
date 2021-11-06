@@ -376,7 +376,7 @@ def parse_args(parser: argparse.ArgumentParser):
     アノテーション単位でコピーする場合
         from_task_id/from_annotation_id:to_task_id/to_annotation_id
     ファイルの指定
-        file://input.txt
+        file://task.txt
     """
     parser.add_argument("--input", type=str, nargs="+", required=True, help=help_message)
     parser.set_defaults(subcommand_func=main)
