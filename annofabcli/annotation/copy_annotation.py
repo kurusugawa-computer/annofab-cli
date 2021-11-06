@@ -134,11 +134,7 @@ class CopyAnnotation(AbstractCommandLineInterface):
             self.service,
             all_yes=self.all_yes,
         )
-        main_obj.copy_annotations(
-            project_id,
-            copy_target_list
-        )
-
+        main_obj.copy_annotations(project_id, copy_target_list)
 
     class CopyTasksInfo:
         """TODO 削除する"""
@@ -154,14 +150,23 @@ class CopyAnnotation(AbstractCommandLineInterface):
             self.__task_frame_keys: List[Tuple[TaskFrameKey, TaskFrameKey]] = []
 
         class InputTypeCheckEnum(Enum):
+            """
+            入力タイプを表現するEnum
+            """
+
             TaskAndFile = auto()
             TaskOnly = auto()
             FilePath = auto()
             Invalid = auto()
 
         def append(self, project_id: str, input_data: str, is_force: bool = False, validate_type=None):
-            """
-            input引数，バリデーションタイプから適切にリストを構成する
+            """input引数，バリデーションタイプから適切にリストを構成する
+
+            Args:
+                project_id (str): [description]
+                input_data (str): [description]
+                is_force (bool, optional): [description]. Defaults to False.
+                validate_type ([type], optional): [description]. Defaults to None.
             """
             # validate_typeの指定がなければ検査する
             if validate_type is None:
@@ -223,13 +228,20 @@ class CopyAnnotation(AbstractCommandLineInterface):
 
         @classmethod
         def recognize_input_type(cls, input_data: str) -> InputTypeCheckEnum:
+            """input引数のバリデーションをする．
+               すなわち，inputが
+               task1:task2
+               task1/input1:task2/input2
+               file:/input.txt
+               の形式に該当するか否かをチェックする．
+
+            Args:
+                input_data (str): copyコマンドに引数として与えられるinput.
+
+            Returns:
+                InputTypeCheckEnum: inputの判別結果Enum.
             """
-            引数のバリデーションをする．すなわち，inputが
-            task1:task2
-            task1/input1:task2/input2
-            file:/input.txt
-            の形式に該当するか否かをチェックする．
-            """
+
             if not input_data:
                 return cls.InputTypeCheckEnum.Invalid
             get_list_from_args_result = get_list_from_args([input_data])
@@ -354,15 +366,15 @@ def parse_args(parser: argparse.ArgumentParser):
         "指定しなければ、アノテーションのコピーをスキップします。",
     )
     parser.add_argument(
-        "--force", action="store_true", help="過去に割り当てられていて現在の担当者が自分自身でない場合、タスクの担当者を自分自身に変更してからアノテーションをコピーします。"
+        "--force", action="store_true", help="過去に割り当てられていて現在の担当者が自分自身でない場合、タスクの担当者を一時的に自分自身に変更してからアノテーションをコピーします。"
     )
     help_message = """アノテーションのコピー元タスクと，コピー先タスクを指定します。
     入力データ単位でコピーする場合
-        task1:task3 task2:task4
+        from_task_id:to_task_id
         入力データは、タスク内の順序に対応しています。
-        たとえば上記のコマンドだと、「task1の1番目の入力データのアノテーション」を「task3の1番目の入力データ」にコピーします。
-    ファイル単位でコピーする場合
-        task1/input1:task3/input3  task2/input2:task4/input4
+        たとえば上記のコマンドだと、「from_taskの1番目の入力データのアノテーション」を「to_taskの1番目の入力データ」にコピーします。
+    アノテーション単位でコピーする場合
+        from_task_id/from_annotation_id:to_task_id/to_annotation_id
     ファイルの指定
         file://input.txt
     """
@@ -372,8 +384,8 @@ def parse_args(parser: argparse.ArgumentParser):
 
 def add_parser(subparsers: Optional[argparse._SubParsersAction] = None):
     subcommand_name = "copy"
-    subcommand_help = "debug help of copy subcommand"
-    description = "debug description of copy subcommand"
+    subcommand_help = "コピー元およびコピー先の入力を指定して，アノテーションをコピーします．"
+    description = "コピー元およびコピー先の入力を指定して，アノテーションをコピーします．"
     parser = annofabcli.common.cli.add_parser(subparsers, subcommand_name, subcommand_help, description)
     parse_args(parser)
     return parser
