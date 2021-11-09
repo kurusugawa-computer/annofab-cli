@@ -2,7 +2,7 @@
 [AnnoFab](https://annofab.com/)のCLI(Command Line Interface)ツールです。
 「タスクの一括差し戻し」や、「タスク一覧出力」など、AnnoFabの画面で実施するには時間がかかる操作を、コマンドとして提供しています。
 
-[![Build Status](https://travis-ci.com/kurusugawa-computer/annofab-cli.svg?branch=master)](https://travis-ci.com/kurusugawa-computer/annofab-api-python-client)
+[![Build Status](https://app.travis-ci.com/kurusugawa-computer/annofab-cli.svg?branch=master)](https://app.travis-ci.com/kurusugawa-computer/annofab-cli)
 [![PyPI version](https://badge.fury.io/py/annofabcli.svg)](https://badge.fury.io/py/annofabcli)
 [![Python Versions](https://img.shields.io/pypi/pyversions/annofabcli.svg)](https://pypi.org/project/annofabcli/)
 [![Documentation Status](https://readthedocs.org/projects/annofab-cli/badge/?version=latest)](https://annofab-cli.readthedocs.io/ja/latest/?badge=latest)
