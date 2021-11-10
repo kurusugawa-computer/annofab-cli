@@ -209,7 +209,11 @@ class Table:
             Trueならばフェーズ内の作業者が途中で変わった
         """
         account_id_list = [
-            e["account_id"] for e in task_history_list if TaskPhase(e["phase"]) == phase and e["account_id"] is not None
+            e["account_id"]
+            for e in task_history_list
+            if TaskPhase(e["phase"]) == phase
+            and e["account_id"] is not None
+            and isoduration_to_hour(e["accumulated_labor_time_milliseconds"]) > 0
         ]
         return len(set(account_id_list)) >= 2
 
