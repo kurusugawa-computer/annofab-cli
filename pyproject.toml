@@ -1,6 +1,6 @@
 [tool.poetry]
 name = "annofabcli"
-version = "1.51.2"
+version = "1.51.3"
 description = "Utility Command Line Interface for AnnoFab"
 authors = ["yuji38kwmt"]
 license = "MIT"
@@ -70,7 +70,7 @@ types-PyYAML = "*"
 ipython = "*"
 # ipythonとjediの組み合わせによるバグを避けるため、バージョン指定
 # https://zenn.dev/hige/articles/282bf79d47378e
-jedi = "<0.18"
+jedi = "<0.19"
 pyinstaller = "^4.5.1"
 
 [tool.poetry.scripts]
