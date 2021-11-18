@@ -23,7 +23,7 @@ Examples
     $ annofabcli annotation copy -p prj1 --input from_task_id:to_task_id 
 
 
-アノテーション単位でコピーすることも可能です．
+入力データ単位でコピーすることも可能です．
 
 .. code-block::
 
