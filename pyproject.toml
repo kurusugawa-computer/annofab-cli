@@ -68,9 +68,7 @@ types-python-dateutil = "*"
 types-PyYAML = "*"
 
 ipython = "*"
-# ipythonとjediの組み合わせによるバグを避けるため、バージョン指定
-# https://zenn.dev/hige/articles/282bf79d47378e
-jedi = "<0.18"
+jedi = "*"
 pyinstaller = "^4.5.1"
 
 [tool.poetry.scripts]
