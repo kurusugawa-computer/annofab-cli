@@ -231,7 +231,7 @@ def parse_args(parser: argparse.ArgumentParser):
         type=str,
         help="タスクの検索クエリをJSON形式で指定します。指定しない場合は、すべてのタスクを取得します。"
         " ``file://`` を先頭に付けると、JSON形式のファイルを指定できます。"
-        "クエリのフォーマットは、[getTasks API](https://annofab.com/docs/api/#operation/getTasks)のクエリパラメータと同じです。"
+        "クエリのフォーマットは、`getTasks <https://annofab.com/docs/api/#operation/getTasks>`_ APIのクエリパラメータと同じです。"
         "さらに追加で、``user_id`` , ``previous_user_id`` キーも指定できます。"
         "ただし ``page`` , ``limit`` キーは指定できません。",
     )
