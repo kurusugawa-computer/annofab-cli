@@ -721,6 +721,9 @@ class VisualizeStatistics(AbstractCommandLineInterface):
                 minimal_output=args.minimal,
             )
 
+            if args.merge:
+                logger.warning(f"出力した統計情報は1件以下なので、`merge`ディレクトリを出力しません。")
+
         else:
             # project_idが複数指定された場合は、project_titleのディレクトリに統計情報を出力する
             output_project_dir_list = self.visualize_statistics_for_project_list(
@@ -743,15 +746,12 @@ class VisualizeStatistics(AbstractCommandLineInterface):
             )
 
             if args.merge:
-                if len(output_project_dir_list) > 1:
-                    merge_visualization_dir(
-                        project_dir_list=output_project_dir_list,
-                        output_dir=root_output_dir / "merge",
-                        user_id_list=user_id_list,
-                        minimal_output=args.minimal,
-                    )
-                else:
-                    logger.warning(f"出力した統計情報は1件以下なので、`merge`ディレクトリを出力しません。")
+                merge_visualization_dir(
+                    project_dir_list=output_project_dir_list,
+                    output_dir=root_output_dir / "merge",
+                    user_id_list=user_id_list,
+                    minimal_output=args.minimal,
+                )
 
             if len(output_project_dir_list) > 0:
                 whole_performance_csv_list = [e / FILENAME_WHOLE_PERFORMANCE for e in output_project_dir_list]
