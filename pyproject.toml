@@ -59,7 +59,7 @@ pylint = "*"
 sphinx = "*"
 pydata-sphinx-theme = "*"
 sphinx-last-updated-by-git = "*"
-sphinx-argparse = "^0.2.5"
+sphinx-argparse = "^0.3.1"
 
 
 # type stub package
