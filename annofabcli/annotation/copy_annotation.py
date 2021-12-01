@@ -102,7 +102,13 @@ class CopyAnnotationMain(AbstractCommandLineWithConfirmInterface):
         else:
             for src_input, dest_input in zip(src_tasks["input_data_id_list"], dest_tasks["input_data_id_list"]):
                 self.copy_annotation_by_input_data(
-                    project_id, CopyTargetByInputData(src_task_id=src_task, dest_task_id=dest_task, src_input_id=src_input, dest_input_id=dest_input)
+                    project_id,
+                    CopyTargetByInputData(
+                        src_task_id=src_task,
+                        dest_task_id=dest_task,
+                        src_input_data_id=src_input,
+                        dest_input_data_id=dest_input,
+                    ),
                 )
 
     def copy_annotation_by_input_data(self, project_id: str, copy_target: CopyTargetByInputData):
