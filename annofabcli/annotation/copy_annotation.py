@@ -4,7 +4,6 @@ import sys
 from abc import ABC
 from dataclasses import dataclass
 from typing import Any, Dict, List, Optional, Tuple
-
 import annofabapi
 from annofabapi.utils import can_put_annotation
 
@@ -22,21 +21,20 @@ from annofabcli.common.cli import (
 logger = logging.getLogger(__name__)
 
 
+@dataclass(frozen=True)
 class CopyTarget(ABC):
-    pass
+    src_task_id: str
+    dest_task_id: str
 
 
 @dataclass(frozen=True)
 class CopyTargetByTask(CopyTarget):
-    src_task_id: str
-    dest_task_id: str
+    pass
 
 
 @dataclass(frozen=True)
 class CopyTargetByInputData(CopyTarget):
-    src_task_id: str
     src_input_data_id: str
-    dest_task_id: str
     dest_input_data_id: str
 
 
@@ -104,7 +102,7 @@ class CopyAnnotationMain(AbstractCommandLineWithConfirmInterface):
         else:
             for src_input, dest_input in zip(src_tasks["input_data_id_list"], dest_tasks["input_data_id_list"]):
                 self.copy_annotation_by_input_data(
-                    project_id, CopyTargetByInputData(src_task, src_input, dest_task, dest_input)
+                    project_id, CopyTargetByInputData(src_task_id=src_task, dest_task_id=dest_task, src_input_id=src_input, dest_input_id=dest_input)
                 )
 
     def copy_annotation_by_input_data(self, project_id: str, copy_target: CopyTargetByInputData):
@@ -158,53 +156,52 @@ class CopyAnnotationMain(AbstractCommandLineWithConfirmInterface):
 
     def copy_annotations(self, project_id: str, copy_target_list: List[CopyTarget], is_force: bool):
         for copy_target in copy_target_list:
-            if isinstance(copy_target, (CopyTargetByTask, CopyTargetByInputData)):
-                # 変数準備
-                dest_task_id = copy_target.dest_task_id
-                dest_task = self.service.wrapper.get_task_or_none(project_id, dest_task_id)
-                if dest_task is None:
-                    # コピー先のタスクを取得できない
-                    logger.error(f"{self.COMMON_MESSAGE} {self.INPUT_VALIDATE_404_ERROR_MESSAGE} ({dest_task_id})")
+            # 変数準備
+            dest_task_id = copy_target.dest_task_id
+            dest_task = self.service.wrapper.get_task_or_none(project_id, dest_task_id)
+            if dest_task is None:
+                # コピー先のタスクを取得できない
+                logger.error(f"{self.COMMON_MESSAGE} {self.INPUT_VALIDATE_404_ERROR_MESSAGE} ({dest_task_id})")
+                continue
+
+            # 担当者割り当て変更チェック
+            changed_operator = False
+            original_operator: str
+            if not can_put_annotation(dest_task, self.service.api.account_id):
+                if is_force:
+                    logger.debug(f"`--force` が指定されているため，タスク'{dest_task_id}' の担当者を自分自身に変更します。")
+                    changed_operator = True
+                    original_operator = dest_task["account_id"]
+                    self.service.wrapper.change_task_operator(project_id, dest_task_id, self.service.api.account_id)
+                else:
+                    logger.debug(
+                        f"タスク'{dest_task_id}'は、過去に誰かに割り当てられたタスクで、現在の担当者が自分自身でないため、アノテーションのコピーをスキップします。"
+                        f"担当者を自分自身に変更してアノテーションを登録する場合は `--force` を指定してください。"
+                    )
                     continue
 
-                # 担当者割り当て変更チェック
-                changed_operator = False
-                original_operator: str
-                if not can_put_annotation(dest_task, self.service.api.account_id):
-                    if is_force:
-                        logger.debug(f"`--force` が指定されているため，タスク'{dest_task_id}' の担当者を自分自身に変更します。")
-                        changed_operator = True
-                        original_operator = dest_task["account_id"]
-                        self.service.wrapper.change_task_operator(project_id, dest_task_id, self.service.api.account_id)
-                    else:
-                        logger.debug(
-                            f"タスク'{dest_task_id}'は、過去に誰かに割り当てられたタスクで、現在の担当者が自分自身でないため、アノテーションのコピーをスキップします。"
-                            f"担当者を自分自身に変更してアノテーションを登録する場合は `--force` を指定してください。"
-                        )
-                        continue
+            # コピー処理
+            if isinstance(copy_target, CopyTargetByTask):
+                src_task = copy_target.src_task_id
+                dest_task = copy_target.dest_task_id
+                if not self.confirm_processing(f"{src_task}タスクのアノテーションを{dest_task}タスクにコピーしますか？"):
+                    return False
+                self.copy_annotation_by_task(project_id, copy_target)
 
-                # コピー処理
-                if isinstance(copy_target, CopyTargetByTask):
-                    src_task = copy_target.src_task_id
-                    dest_task = copy_target.dest_task_id
-                    if not self.confirm_processing(f"{src_task}タスクのアノテーションを{dest_task}タスクにコピーしますか？"):
-                        return False
-                    self.copy_annotation_by_task(project_id, copy_target)
+            elif isinstance(copy_target, CopyTargetByInputData):
+                src_task = copy_target.src_task_id
+                src_input = copy_target.src_input_data_id
+                dest_task = copy_target.dest_task_id
+                dest_input = copy_target.dest_input_data_id
+                if not self.confirm_processing(
+                    f"{src_task}タスクの{src_input}アノテーションを{dest_task}タスクの{dest_input}にコピーしますか？"
+                ):
+                    return False
+                self.copy_annotation_by_input_data(project_id, copy_target)
 
-                elif isinstance(copy_target, CopyTargetByInputData):
-                    src_task = copy_target.src_task_id
-                    src_input = copy_target.src_input_data_id
-                    dest_task = copy_target.dest_task_id
-                    dest_input = copy_target.dest_input_data_id
-                    if not self.confirm_processing(
-                        f"{src_task}タスクの{src_input}アノテーションを{dest_task}タスクの{dest_input}にコピーしますか？"
-                    ):
-                        return False
-                    self.copy_annotation_by_input_data(project_id, copy_target)
-
-                # オペレータをもとに戻す
-                if changed_operator:
-                    self.service.wrapper.change_task_operator(project_id, dest_task_id, original_operator)
+            # オペレータをもとに戻す
+            if changed_operator:
+                self.service.wrapper.change_task_operator(project_id, dest_task_id, original_operator)
         return True
 
 
