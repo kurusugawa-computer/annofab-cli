@@ -15,18 +15,18 @@ AnnoFabcliではAnnofabプロジェクト内のアノテーションのエクス
 =================================
 
 既存のAnnoFabプロジェクト内のアノテーションをエクスポートする
---------------------------
+------------------------------------------------------------------------------
 
-1. annotation dump コマンド (https://annofab-cli.readthedocs.io/ja/latest/command_reference/annotation/dump.html) を利用してアノテーションをエクスポートします。
+1. `annotation dump <https://annofab-cli.readthedocs.io/ja/latest/command_reference/annotation/dump.html>`_ コマンドを利用してアノテーションをエクスポートします。
 
 .. code-block::
 
-    annofabcli annotation dump --project_id prj1 --task_id file://task.txt --output_dir dump-dir/
+    $ annofabcli annotation dump --project_id prj1 --task_id file://task.txt --output_dir dump-dir/
 
 
 
 エクスポートしたアノテーションを加工する
---------------------------
+------------------------------------------------------------------------------
 
 1. エクスポートされたアノテーションをコマンド・スクリプト等を用いて加工します。
 
@@ -34,7 +34,7 @@ AnnoFabcliではAnnofabプロジェクト内のアノテーションのエクス
 
 .. code-block::
 
-    #!/bin/sh
+    #!/bin/bash
     from_dir=$1
     to_dir=$2
 
@@ -50,24 +50,24 @@ AnnoFabcliではAnnofabプロジェクト内のアノテーションのエクス
 
 
 アノテーションをインポートする
---------------------------
+----------------------------------------------------
 
 1. アノテーションのインポートはエクスポート元のプロジェクト・新しく作成したプロジェクト、どちらでも利用することができます。
 
 新しく作成したプロジェクトで利用する場合、エクスポート元のプロジェクトと同一のデータ・タスクが存在する必要があります。
-project copy コマンド (https://annofab-cli.readthedocs.io/ja/latest/command_reference/project/copy.html) を利用して、エクスポート元のプロジェクトをコピーすることで同一のデータ・タスクのプロジェクトを作成できます。
+`project copy <https://annofab-cli.readthedocs.io/ja/latest/command_reference/project/copy.html>`_ コマンドを利用して、エクスポート元のプロジェクトをコピーすることで同一のデータ・タスクのプロジェクトを作成できます。
 
 .. code-block::
 
-    annofabcli project copy --project_id prj1 --dest_title prj2-title  --dest_project_id prj2 --copy_tasks
+    $ annofabcli project copy --project_id prj1 --dest_title prj2-title  --dest_project_id prj2 --copy_tasks
 
 
 
-2. annotation restore コマンド(https://annofab-cli.readthedocs.io/ja/latest/command_reference/annotation/restore.html) を利用して、編集したアノテーションをインポートします。
+2. `annotation restore <https://annofab-cli.readthedocs.io/ja/latest/command_reference/annotation/restore.html>`_ コマンド を利用して、編集したアノテーションをインポートします。
 
 .. code-block::
 
-    annofabcli annotation restore --project_id prj2 --annotation dump-dir/
+    $ annofabcli annotation restore --project_id prj2 --annotation dump-dir/
 
 
 
