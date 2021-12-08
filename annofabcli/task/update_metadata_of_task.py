@@ -136,6 +136,8 @@ class UpdateMetadataOfTaskMain(AbstractCommandLineWithConfirmInterface):
         """patch_tasks_metadata webapiを呼び出して、タスクのメタデータを更新します。
         注意：メタデータは上書きされます。
         """
+
+        # 1000件以上の大量のタスクを一度に更新しようとするとwebapiが失敗するので、何回かに分けてメタデータを更新するようにする。
         BATCH_SIZE = 500
         logger.info(f"{len(task_ids)} 件のタスクのmetadataを{metadata} に、{BATCH_SIZE}個ずつ変更します。")
         first_index = 0
