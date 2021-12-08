@@ -76,7 +76,7 @@ Examples
 
 .. note::
 
-    ``--overwrite --yes`` オプションを指定すると `patchTasksMetadata <https://annofab.com/docs/api/#operation/patchTasksMetadata>`_ WebAPIを使ってタスクのメタデータを更新するので、通常より処理時間が大幅に短くなります。
+    ``--overwrite --yes`` の両方を指定すると、通常より処理時間が大幅に短くなります。これは、task_idを複数指定できる `patchTasksMetadata <https://annofab.com/docs/api/#operation/patchTasksMetadata>`_ WebAPIを使ってタスクのメタデータを更新するからです。
     1万件以上の大量のタスクに対して初めてメタデータを付与するときは、``--overwrite --yes`` オプションを指定することを推奨します。
 
 
