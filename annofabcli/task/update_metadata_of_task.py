@@ -1,8 +1,9 @@
 from __future__ import annotations
-import sys
+
 import argparse
 import logging
 import multiprocessing
+import sys
 from functools import partial
 from typing import Any, Collection, Dict, Optional, Union
 
@@ -26,9 +27,16 @@ Metadata = Dict[str, Union[str, bool, int]]
 
 
 class UpdateMetadataOfTaskMain(AbstractCommandLineWithConfirmInterface):
-    def __init__(self, service: annofabapi.Resource, is_overwrite_metadata: bool, all_yes: bool = False):
+    def __init__(
+        self,
+        service: annofabapi.Resource,
+        is_overwrite_metadata: bool,
+        parallelism: Optional[int] = None,
+        all_yes: bool = False,
+    ):
         self.service = service
         self.is_overwrite_metadata = is_overwrite_metadata
+        self.parallelism = parallelism
         AbstractCommandLineWithConfirmInterface.__init__(self, all_yes)
 
     def get_confirm_message(self, task_id: str, metadata: dict[str, Any]) -> str:
@@ -80,7 +88,6 @@ class UpdateMetadataOfTaskMain(AbstractCommandLineWithConfirmInterface):
         project_id: str,
         task_ids: Collection[str],
         metadata: Dict[str, Any],
-        parallelism: Optional[int] = None,
     ):
         if self.is_overwrite_metadata:
             logger.info(f"{len(task_ids)} 件のタスクのメタデータを、{metadata} に変更します（上書き）。")
@@ -91,13 +98,13 @@ class UpdateMetadataOfTaskMain(AbstractCommandLineWithConfirmInterface):
             self.update_metadata_with_patch_tasks_metadata_api(project_id, task_ids=task_ids, metadata=metadata)
         else:
             success_count = 0
-            if parallelism is not None:
+            if self.parallelism is not None:
                 partial_func = partial(
                     self.set_metadata_to_task_wrapper,
                     project_id=project_id,
                     metadata=metadata,
                 )
-                with multiprocessing.Pool(parallelism) as pool:
+                with multiprocessing.Pool(self.parallelism) as pool:
                     result_bool_list = pool.map(partial_func, enumerate(task_ids))
                     success_count = len([e for e in result_bool_list if e])
 
@@ -115,6 +122,14 @@ class UpdateMetadataOfTaskMain(AbstractCommandLineWithConfirmInterface):
 
             logger.info(f"{success_count} / {len(task_ids)} 件のタスクのmetadataを変更しました。")
 
+    def update_metadata_with_patch_tasks_metadata_api_wrapper(
+        self, tpl: tuple[int, int, list[str]], project_id: str, metadata: Metadata
+    ):
+        global_start_position, global_stop_position, task_id_list = tpl
+        logger.debug(f"{global_start_position+1} 〜 {global_stop_position} 件目のタスクのmetadataを更新します。")
+        request_body = {task_id: metadata for task_id in task_id_list}
+        self.service.api.patch_tasks_metadata(project_id, request_body=request_body)
+
     def update_metadata_with_patch_tasks_metadata_api(
         self, project_id: str, task_ids: Collection[str], metadata: Metadata
     ):
@@ -125,11 +140,31 @@ class UpdateMetadataOfTaskMain(AbstractCommandLineWithConfirmInterface):
         logger.info(f"{len(task_ids)} 件のタスクのmetadataを{metadata} に、{BATCH_SIZE}個ずつ変更します。")
         first_index = 0
         task_id_list = list(task_ids)
-        while first_index < len(task_id_list):
-            logger.info(f"{first_index+1} 〜 {min(first_index+BATCH_SIZE, len(task_id_list))} 件目のタスクのmetadataを更新します。")
-            request_body = {task_id: metadata for task_id in task_id_list[first_index : first_index + BATCH_SIZE]}
-            self.service.api.patch_tasks_metadata(project_id, request_body=request_body)
-            first_index += BATCH_SIZE
+
+        if self.parallelism is None:
+            while first_index < len(task_id_list):
+                logger.info(
+                    f"{first_index+1} 〜 {min(first_index+BATCH_SIZE, len(task_id_list))} 件目のタスクのmetadataを更新します。"
+                )
+                request_body = {task_id: metadata for task_id in task_id_list[first_index : first_index + BATCH_SIZE]}
+                self.service.api.patch_tasks_metadata(project_id, request_body=request_body)
+                first_index += BATCH_SIZE
+        else:
+            partial_func = partial(
+                self.update_metadata_with_patch_tasks_metadata_api_wrapper,
+                project_id=project_id,
+                metadata=metadata,
+            )
+            tmp_list = []
+            while first_index < len(task_id_list):
+                global_start_position = first_index
+                global_stop_position = min(first_index + BATCH_SIZE, len(task_id_list))
+                subset_task_id_list = task_id_list[global_start_position:global_stop_position]
+                tmp_list.append((global_start_position, global_stop_position, subset_task_id_list))
+                first_index += BATCH_SIZE
+
+            with multiprocessing.Pool(self.parallelism) as pool:
+                pool.map(partial_func, tmp_list)
 
 
 class UpdateMetadataOfTask(AbstractCommandLineInterface):
@@ -155,10 +190,10 @@ class UpdateMetadataOfTask(AbstractCommandLineInterface):
         task_id_list = annofabcli.common.cli.get_list_from_args(args.task_id)
         metadata = annofabcli.common.cli.get_json_from_args(args.metadata)
         super().validate_project(args.project_id, [ProjectMemberRole.OWNER, ProjectMemberRole.TRAINING_DATA_USER])
-        main_obj = UpdateMetadataOfTaskMain(self.service, is_overwrite_metadata=args.overwrite, all_yes=args.yes)
-        main_obj.update_metadata_of_task(
-            args.project_id, task_ids=task_id_list, metadata=metadata, parallelism=args.parallelism
+        main_obj = UpdateMetadataOfTaskMain(
+            self.service, is_overwrite_metadata=args.overwrite, parallelism=args.parallelism, all_yes=args.yes
         )
+        main_obj.update_metadata_of_task(args.project_id, task_ids=task_id_list, metadata=metadata)
 
 
 def main(args):
