@@ -44,6 +44,7 @@ Usage Details
    :ref: annofabcli.stat_visualization.write_task_histogram.add_parser
    :prog: annofabcli stat_visualization write_task_histogram
    :nosubcommands:
+   :nodefaultconst:
 
 
 See also

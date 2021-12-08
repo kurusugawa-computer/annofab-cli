@@ -60,3 +60,4 @@ Usage Details
    :ref: annofabcli.task.delete_tasks.add_parser
    :prog: annofabcli task delete
    :nosubcommands:
+   :nodefaultconst:

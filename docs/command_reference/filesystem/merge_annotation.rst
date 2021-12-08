@@ -116,6 +116,7 @@ Usage Details
    :ref: annofabcli.filesystem.merge_annotation.add_parser
    :prog: annofabcli filesystem merge_annotation
    :nosubcommands:
+   :nodefaultconst:
     
 
 See also

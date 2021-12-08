@@ -116,7 +116,7 @@ def create_parent_parser() -> argparse.ArgumentParser:
     # )
 
     group.add_argument(
-        "--endpoint_url", type=str, help=f"AnnoFab WebAPIのエンドポイントを指定します。指定しない場合は`{DEFAULT_ENDPOINT_URL}`です。"
+        "--endpoint_url", type=str, help=f"AnnoFab WebAPIのエンドポイントを指定します。指定しない場合は ``{DEFAULT_ENDPOINT_URL}`` です。"
     )
 
     group.add_argument(

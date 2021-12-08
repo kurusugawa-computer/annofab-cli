@@ -28,3 +28,4 @@ Usage Details
    :ref: annofabcli.instruction.copy_instruction.add_parser
    :prog: annofabcli instruction copy
    :nosubcommands:
+   :nodefaultconst:

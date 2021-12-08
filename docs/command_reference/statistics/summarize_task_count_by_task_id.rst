@@ -60,3 +60,4 @@ Usage Details
    :ref: annofabcli.statistics.summarize_task_count_by_task_id.add_parser
    :prog: annofabcli statistics summarize_task_count_by_task_id
    :nosubcommands:
+   :nodefaultconst:

@@ -39,3 +39,4 @@ Usage Details
    :ref: annofabcli.project.change_project_status.add_parser
    :prog: annofabcli project change_status
    :nosubcommands:
+   :nodefaultconst:

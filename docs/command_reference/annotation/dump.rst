@@ -46,6 +46,7 @@ Usage Details
     :ref: annofabcli.annotation.dump_annotation.add_parser
     :prog: annofabcli annotation dump
     :nosubcommands:
+    :nodefaultconst:
 
 
 See also
