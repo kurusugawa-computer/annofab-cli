@@ -63,3 +63,4 @@ Usage Details
    :ref: annofabcli.statistics.list_labor_time_per_user.add_parser
    :prog: annofabcli statistics list_labor_time_per_user
    :nosubcommands:
+   :nodefaultconst:

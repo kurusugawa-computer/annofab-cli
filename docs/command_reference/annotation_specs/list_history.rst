@@ -59,3 +59,4 @@ Usage Details
    :ref: annofabcli.annotation_specs.list_annotation_specs_history.add_parser
    :prog: annofabcli annotation_specs list_history
    :nosubcommands:
+   :nodefaultconst:

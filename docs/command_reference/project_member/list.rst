@@ -93,4 +93,5 @@ Usage Details
    :ref: annofabcli.project_member.list_users.add_parser
    :prog: annofabcli project_member list
    :nosubcommands:
+   :nodefaultconst:
 

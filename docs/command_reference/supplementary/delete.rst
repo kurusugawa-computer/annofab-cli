@@ -99,3 +99,4 @@ Usage Details
    :ref: annofabcli.supplementary.delete_supplementary_data.add_parser
    :prog: annofabcli supplementary delete
    :nosubcommands:
+   :nodefaultconst:

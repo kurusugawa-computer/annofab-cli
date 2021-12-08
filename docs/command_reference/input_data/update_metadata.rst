@@ -83,3 +83,4 @@ Usage Details
    :ref: annofabcli.input_data.update_metadata_of_input_data.add_parser
    :prog: annofabcli input_data update_metadata
    :nosubcommands:
+   :nodefaultconst:

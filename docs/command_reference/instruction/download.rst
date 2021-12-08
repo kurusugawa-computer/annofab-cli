@@ -88,6 +88,7 @@ Usage Details
    :ref: annofabcli.instruction.download_instruction.add_parser
    :prog: annofabcli instruction download
    :nosubcommands:
+   :nodefaultconst:
 
 
 See also

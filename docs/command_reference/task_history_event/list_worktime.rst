@@ -99,4 +99,5 @@ Usage Details
    :ref: annofabcli.task_history_event.list_worktime.add_parser
    :prog: annofabcli task_history_event list_worktime
    :nosubcommands:
+   :nodefaultconst:
 

@@ -45,6 +45,7 @@ Usage Details
    :ref: annofabcli.filesystem.filter_annotation.add_parser
    :prog: annofabcli filesystem filter_annotation
    :nosubcommands:
+   :nodefaultconst:
 
 See also
 =================================

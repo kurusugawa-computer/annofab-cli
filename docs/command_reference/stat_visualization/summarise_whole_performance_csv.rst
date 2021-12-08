@@ -47,6 +47,7 @@ Usage Details
    :ref: annofabcli.stat_visualization.summarise_whole_performance_csv.add_parser
    :prog: annofabcli stat_visualization summarise_whole_performance_csv
    :nosubcommands:
+   :nodefaultconst:
 
 See also
 =================================

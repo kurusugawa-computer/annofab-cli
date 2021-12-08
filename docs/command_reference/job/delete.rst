@@ -32,3 +32,4 @@ Usage Details
    :ref: annofabcli.job.delete_job.add_parser
    :prog: annofabcli job delete
    :nosubcommands:
+   :nodefaultconst:

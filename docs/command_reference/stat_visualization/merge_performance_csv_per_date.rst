@@ -34,6 +34,7 @@ Usage Details
    :ref: annofabcli.stat_visualization.merge_performance_per_date.add_parser
    :prog: annofabcli stat_visualization merge_performance_csv_per_date
    :nosubcommands:
+   :nodefaultconst:
 
 See also
 =================================

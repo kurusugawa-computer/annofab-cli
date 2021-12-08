@@ -104,3 +104,4 @@ Usage Details
    :ref: annofabcli.task.update_metadata_of_task.add_parser
    :prog: annofabcli task update_metadata
    :nosubcommands:
+   :nodefaultconst:

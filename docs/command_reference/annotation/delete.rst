@@ -55,6 +55,7 @@ Usage Details
     :ref: annofabcli.annotation.delete_annotation.add_parser
     :prog: annofabcli annotation delete
     :nosubcommands:
+    :nodefaultconst:
 
 See also
 =================================

@@ -61,6 +61,7 @@ Usage Details
    :ref: annofabcli.stat_visualization.merge_visualization_dir.add_parser
    :prog: annofabcli stat_visualization merge
    :nosubcommands:
+   :nodefaultconst:
 
 See also
 =================================

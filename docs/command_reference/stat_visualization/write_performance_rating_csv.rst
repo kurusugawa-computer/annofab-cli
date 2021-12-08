@@ -91,6 +91,7 @@ Usage Details
    :ref: annofabcli.stat_visualization.write_performance_rating_csv.add_parser
    :prog: annofabcli stat_visualization write_performance_rating_csv
    :nosubcommands:
+   :nodefaultconst:
 
 See also
 =================================

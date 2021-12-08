@@ -71,6 +71,7 @@ Usage Details
    :ref: annofabcli.project.download.add_parser
    :prog: annofabcli project download
    :nosubcommands:
+   :nodefaultconst:
 
 See also
 =================================

@@ -37,3 +37,4 @@ Usage Details
    :ref: annofabcli.task.copy_tasks.add_parser
    :prog: annofabcli task copy
    :nosubcommands:
+   :nodefaultconst:

@@ -55,3 +55,4 @@ Usage Details
    :ref: annofabcli.project.update_annotation_zip.add_parser
    :prog: annofabcli project update_annotation_zip
    :nosubcommands:
+   :nodefaultconst:

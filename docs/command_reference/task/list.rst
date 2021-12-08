@@ -176,6 +176,7 @@ Usage Details
    :ref: annofabcli.task.list_tasks.add_parser
    :prog: annofabcli task list
    :nosubcommands:
+   :nodefaultconst:
 
 See also
 =================================

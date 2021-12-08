@@ -111,3 +111,4 @@ Usage Details
    :ref: annofabcli.task.put_tasks.add_parser
    :prog: annofabcli task put
    :nosubcommands:
+   :nodefaultconst:
