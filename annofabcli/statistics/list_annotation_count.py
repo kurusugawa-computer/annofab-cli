@@ -396,6 +396,10 @@ class ListAnnotationCount(AbstractCommandLineInterface):
             task_counter = self.count_for_task(task_parser, target_attributes=target_attributes)
             task_counter_list.append(task_counter)
 
+        if len(task_counter_list) == 0:
+            logger.warning(f"集計対象のタスクが0件なので、ファイルを出力しません。")
+            return
+
         self.print_labels_count_for_task(task_counter_list, label_columns=target_label_columns, output_dir=output_dir)
 
         self.print_attributes_count_for_task(
@@ -432,6 +436,10 @@ class ListAnnotationCount(AbstractCommandLineInterface):
 
             input_data_counter = self.count_for_input_data(simple_annotation_dict, target_attributes=target_attributes)
             input_data_counter_list.append(input_data_counter)
+
+        if len(input_data_counter_list) == 0:
+            logger.warning(f"集計対象の入力データが0件なので、ファイルを出力しません。")
+            return
 
         self.print_labels_count_for_input_data(
             input_data_counter_list, label_columns=target_label_columns, output_dir=output_dir
