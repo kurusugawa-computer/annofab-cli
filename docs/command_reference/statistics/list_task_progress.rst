@@ -50,3 +50,4 @@ Usage Details
    :ref: annofabcli.statistics.list_task_progress.add_parser
    :prog: annofabcli statistics list_task_progress
    :nosubcommands:
+   :nodefaultconst:

@@ -161,6 +161,7 @@ Usage Details
     :ref: annofabcli.annotation.import_annotation.add_parser
     :prog: annofabcli annotation import
     :nosubcommands:
+    :nodefaultconst:
 
 
 See also

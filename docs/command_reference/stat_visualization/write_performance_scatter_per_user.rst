@@ -46,6 +46,7 @@ Usage Details
    :ref: annofabcli.stat_visualization.write_performance_scatter_per_user.add_parser
    :prog: annofabcli stat_visualization write_performance_scatter_per_user
    :nosubcommands:
+   :nodefaultconst:
 
 
 See also

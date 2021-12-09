@@ -145,5 +145,6 @@ Usage Details
    :ref: annofabcli.input_data.put_input_data.add_parser
    :prog: annofabcli input_data put
    :nosubcommands:
+   :nodefaultconst:
 
 

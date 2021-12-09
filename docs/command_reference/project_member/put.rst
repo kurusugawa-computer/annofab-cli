@@ -59,3 +59,4 @@ Usage Details
    :ref: annofabcli.project_member.put_project_members.add_parser
    :prog: annofabcli project_member put
    :nosubcommands:
+   :nodefaultconst:

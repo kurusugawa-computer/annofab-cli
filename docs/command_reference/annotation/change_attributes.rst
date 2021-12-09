@@ -55,6 +55,7 @@ Usage Details
     :ref: annofabcli.annotation.change_annotation_attributes.add_parser
     :prog: annofabcli annotation change_attributes
     :nosubcommands:
+    :nodefaultconst:
 
 
 See also

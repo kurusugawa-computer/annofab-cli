@@ -52,3 +52,4 @@ Usage Details
    :ref: annofabcli.statistics.list_cumulative_labor_time.add_parser
    :prog: annofabcli statistics list_cumulative_labor_time
    :nosubcommands:
+   :nodefaultconst:

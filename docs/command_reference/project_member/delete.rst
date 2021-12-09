@@ -35,4 +35,5 @@ Usage Details
    :ref: annofabcli.project_member.drop_project_members.add_parser
    :prog: annofabcli project_member delete
    :nosubcommands:
+   :nodefaultconst:
 

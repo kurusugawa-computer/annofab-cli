@@ -203,6 +203,7 @@ Usage Details
    :ref: annofabcli.filesystem.write_annotation_image.add_parser
    :prog: annofabcli filesystem write_annotation_image
    :nosubcommands:
+   :nodefaultconst:
 
 
 See also

@@ -106,6 +106,7 @@ Usage Details
    :ref: annofabcli.inspection_comment.list_inspections.add_parser
    :prog: annofabcli inspection_comment list
    :nosubcommands:
+   :nodefaultconst:
 
 
 See also

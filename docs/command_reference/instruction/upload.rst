@@ -66,3 +66,4 @@ Usage Details
    :ref: annofabcli.instruction.upload_instruction.add_parser
    :prog: annofabcli instruction upload
    :nosubcommands:
+   :nodefaultconst:

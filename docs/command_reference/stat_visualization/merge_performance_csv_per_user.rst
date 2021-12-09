@@ -33,6 +33,7 @@ Usage Details
    :ref: annofabcli.stat_visualization.merge_performance_per_user.add_parser
    :prog: annofabcli stat_visualization merge_performance_csv_per_user
    :nosubcommands:
+   :nodefaultconst:
 
 See also
 =================================

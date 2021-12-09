@@ -72,3 +72,4 @@ Usage Details
    :ref: annofabcli.job.list_job.add_parser
    :prog: annofabcli job list
    :nosubcommands:
+   :nodefaultconst:
