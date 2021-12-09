@@ -17,6 +17,121 @@ from bokeh.plotting import ColumnDataSource, figure
 logger = logging.getLogger(__name__)
 
 
+def get_color_from_palette(index: int) -> Color:
+    my_palette = bokeh.palettes.Category20[20]
+    return my_palette[index % len(my_palette)]
+
+
+def get_color_from_small_palette(index: int) -> Color:
+    my_palette = bokeh.palettes.Category10[10]
+    return my_palette[index % len(my_palette)]
+
+
+def add_legend_to_figure(fig: bokeh.plotting.Figure) -> None:
+    """
+    グラフに凡例を設定する。
+    """
+    fig.legend.location = "top_left"
+    fig.legend.click_policy = "mute"
+    if len(fig.legend) > 0:
+        legend = fig.legend[0]
+        fig.add_layout(legend, "left")
+
+
+def plot_line_and_circle(
+    fig: bokeh.plotting.Figure,
+    source: ColumnDataSource,
+    x_column_name: str,
+    y_column_name: str,
+    legend_label: str,
+    color: Color,
+    **kwargs,
+) -> None:
+    """
+    線を引いて、プロットした部分に丸を付ける。
+
+    Args:
+        fig:
+        source:
+        x_column_name: sourceに対応するX軸の列名
+        y_column_name: sourceに対応するY軸の列名
+        legend_label:
+        color: 線と点の色
+
+    """
+
+    fig.line(
+        x=x_column_name,
+        y=y_column_name,
+        source=source,
+        legend_label=legend_label,
+        line_color=color,
+        line_width=1,
+        muted_alpha=0,
+        muted_color=color,
+        **kwargs,
+    )
+    fig.circle(
+        x=x_column_name,
+        y=y_column_name,
+        source=source,
+        legend_label=legend_label,
+        muted_alpha=0.0,
+        muted_color=color,
+        color=color,
+        **kwargs,
+    )
+
+
+def plot_moving_average(
+    fig: bokeh.plotting.Figure,
+    source: ColumnDataSource,
+    x_column_name: str,
+    y_column_name: str,
+    legend_label: str,
+    color: Color,
+    **kwargs,
+) -> None:
+    """
+    移動平均用にプロットする
+
+    Args:
+        fig:
+        source:
+        x_column_name: sourceに対応するX軸の列名
+        y_column_name: sourceに対応するY軸の列名
+        legend_label:
+        color: 線と点の色
+
+    """
+
+    fig.line(
+        x=x_column_name,
+        y=y_column_name,
+        source=source,
+        legend_label=legend_label,
+        line_color=color,
+        line_width=1,
+        line_dash="dashed",
+        line_alpha=0.6,
+        muted_alpha=0,
+        muted_color=color,
+        **kwargs,
+    )
+
+
+def create_hover_tool(tool_tip_items: Optional[List[str]] = None) -> HoverTool:
+    """
+    HoverTool用のオブジェクトを生成する。
+    """
+    if tool_tip_items is None:
+        tool_tip_items = []
+
+    detail_tooltips = [(e, f"@{{{e}}}") for e in tool_tip_items]
+    hover_tool = HoverTool(tooltips=[("index", "$index"), ("(x,y)", "($x, $y)")] + detail_tooltips)
+    return hover_tool
+
+
 class OutputTarget(Enum):
     ANNOTATION = "annotation"
     INPUT_DATA = "input_data"

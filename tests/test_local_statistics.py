@@ -11,6 +11,9 @@ from annofabcli.statistics.scatter import Scatter
 from annofabcli.statistics.summarize_task_count import SimpleTaskStatus, get_step_for_current_phase
 from annofabcli.statistics.summarize_task_count_by_task_id import create_task_count_summary_df, get_task_id_prefix
 from annofabcli.statistics.table import Table
+from annofabcli.statistics.visualization import dataframe
+from annofabcli.statistics.visualization.dataframe import WholeProductivityPerFirstAnnotationDate
+
 
 out_path = Path("./tests/out/statistics")
 data_path = Path("./tests/data/statistics")
@@ -193,3 +196,27 @@ class TestSummarizeTaskCountByTaskId:
         with (data_path / "task.json").open() as f:
             task_list = json.load(f)
         df = create_task_count_summary_df(task_list, delimiter="_")
+
+
+class TestWholeProductivityPerFirstAnnotationDate:
+    @classmethod
+    def setup_class(cls):
+        cls.output_dir = out_path / "visualization"
+        cls.output_dir.mkdir(exist_ok=True, parents=True)
+
+
+    def test_create(self):
+        df_task = pandas.read_csv(str(data_path / "task.csv"))
+        df = WholeProductivityPerFirstAnnotationDate.create(df_task)
+        print(df)
+        df.to_csv(self.output_dir / "out.csv", index=False)
+
+
+    def test_plot(self):
+        df_task = pandas.read_csv(str(data_path / "task.csv"))
+        df = WholeProductivityPerFirstAnnotationDate.create(df_task)
+        
+        WholeProductivityPerFirstAnnotationDate.plot(df, )
+        df.to_csv(self.output_dir / "out.csv", index=False)
+
+
