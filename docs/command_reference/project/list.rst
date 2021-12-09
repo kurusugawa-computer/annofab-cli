@@ -176,3 +176,4 @@ Usage Details
    :ref: annofabcli.project.list_project.add_parser
    :prog: annofabcli project list
    :nosubcommands:
+   :nodefaultconst:

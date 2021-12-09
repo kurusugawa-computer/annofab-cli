@@ -77,6 +77,7 @@ Usage Details
     :ref: annofabcli.annotation.list_annotation_count.add_parser
     :prog: annofabcli annotation list_count
     :nosubcommands:
+    :nodefaultconst:
 
 
 See also

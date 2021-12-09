@@ -91,3 +91,4 @@ Usage Details
    :ref: annofabcli.job.list_last_job.add_parser
    :prog: annofabcli job list_last
    :nosubcommands:
+   :nodefaultconst:

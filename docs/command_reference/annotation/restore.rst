@@ -56,6 +56,7 @@ Usage Details
     :ref: annofabcli.annotation.restore_anotation.add_parser
     :prog: annofabcli annotation restore
     :nosubcommands:
+    :nodefaultconst:
 
 
 See also

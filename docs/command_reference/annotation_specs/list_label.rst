@@ -135,6 +135,7 @@ Usage Details
    :ref: annofabcli.annotation_specs.list_annotation_specs_label.add_parser
    :prog: annofabcli annotation_specs list_label
    :nosubcommands:
+   :nodefaultconst:
 
 
 See also

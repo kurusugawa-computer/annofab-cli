@@ -54,3 +54,4 @@ Usage Details
    :ref: annofabcli.statistics.summarize_task_count_by_user.add_parser
    :prog: annofabcli statistics summarize_task_count_by_user
    :nosubcommands:
+   :nodefaultconst:

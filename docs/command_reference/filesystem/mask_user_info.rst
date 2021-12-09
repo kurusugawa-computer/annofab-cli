@@ -86,3 +86,4 @@ Usage Details
    :ref: annofabcli.filesystem.mask_user_info.add_parser
    :prog: annofabcli filesystem mask_user_info
    :nosubcommands:
+   :nodefaultconst:

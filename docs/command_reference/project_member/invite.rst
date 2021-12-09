@@ -44,3 +44,4 @@ Usage Details
    :ref: annofabcli.project_member.invite_project_members.add_parser
    :prog: annofabcli project_member change
    :nosubcommands:
+   :nodefaultconst:

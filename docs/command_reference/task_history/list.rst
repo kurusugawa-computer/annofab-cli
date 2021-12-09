@@ -91,6 +91,7 @@ Usage Details
    :ref: annofabcli.task_history.list_task_history.add_parser
    :prog: annofabcli task_history list
    :nosubcommands:
+   :nodefaultconst:
 
 See also
 =================================

@@ -80,3 +80,4 @@ Usage Details
    :ref: annofabcli.task.cancel_acceptance.add_parser
    :prog: annofabcli task cancel_acceptance
    :nosubcommands:
+   :nodefaultconst:

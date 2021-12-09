@@ -209,7 +209,11 @@ class Table:
             Trueならばフェーズ内の作業者が途中で変わった
         """
         account_id_list = [
-            e["account_id"] for e in task_history_list if TaskPhase(e["phase"]) == phase and e["account_id"] is not None
+            e["account_id"]
+            for e in task_history_list
+            if TaskPhase(e["phase"]) == phase
+            and e["account_id"] is not None
+            and isoduration_to_hour(e["accumulated_labor_time_milliseconds"]) > 0
         ]
         return len(set(account_id_list)) >= 2
 
@@ -485,6 +489,7 @@ class Table:
                 return None
 
         def filter_histories(arg_task_histories: List[TaskHistory], phase: TaskPhase) -> List[TaskHistory]:
+            """指定したフェーズで作業したタスク履歴を絞り込む。"""
             return [
                 e
                 for e in arg_task_histories
@@ -566,7 +571,8 @@ class Table:
 
         # 受入完了日時を設定
         if task["phase"] == TaskPhase.ACCEPTANCE.value and task["status"] == TaskStatus.COMPLETE.value:
-            task["task_completed_datetime"] = task["updated_datetime"]
+            assert len(task_histories) > 0
+            task["task_completed_datetime"] = task_histories[-1]["ended_datetime"]
         else:
             task["task_completed_datetime"] = None
 

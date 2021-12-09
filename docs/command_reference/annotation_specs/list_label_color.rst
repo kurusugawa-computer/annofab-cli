@@ -56,4 +56,5 @@ Usage Details
    :ref: annofabcli.annotation_specs.print_label_color.add_parser
    :prog: annofabcli annotation_specs list_label_color
    :nosubcommands:
+   :nodefaultconst:
 

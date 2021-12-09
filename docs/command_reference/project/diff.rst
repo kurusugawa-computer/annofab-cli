@@ -69,3 +69,4 @@ Usage Details
    :ref: annofabcli.project.diff_projects.add_parser
    :prog: annofabcli project diff
    :nosubcommands:
+   :nodefaultconst:

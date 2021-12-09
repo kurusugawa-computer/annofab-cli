@@ -36,3 +36,4 @@ Usage Details
    :ref: annofabcli.project_member.copy_project_members.add_parser
    :prog: annofabcli project_member copy
    :nosubcommands:
+   :nodefaultconst:

@@ -80,3 +80,4 @@ Usage Details
    :ref: annofabcli.labor.list_worktime_by_user.add_parser
    :prog: annofabcli labor list_worktime_by_user
    :nosubcommands:
+   :nodefaultconst:

@@ -44,31 +44,58 @@ Examples
 
 
 
+
+デフォルトでは ``--metadata`` に指定したキーのみ更新されます。メタデータ自体を上書きする場合は ``--overwrite`` を指定してください。
+
+
+.. code-block::
+
+    $ annofabcli task update_metadata --project_id prj1 --task_id task1 \
+     --metadata '{"category":"202010"}'
+
+    $ annofabcli task list --project_id prj1 --task_id task1 \
+     --format json --query "[0].metadata"
+    {"category": "202010"}
+
+    # メタデータの一部のキーのみ更新する
+    $ annofabcli task update_metadata --project_id prj1 --task_id task1 \
+     --metadata '{"country":"Japan"}'
+    $ annofabcli task list --project_id prj1 --task_id task1 \
+     --format json --query "[0].metadata"
+    {"category": "202010", "country":"Japan"}
+
+    # メタデータ自体を上書きする
+    $ annofabcli task update_metadata --project_id prj1 --task_id task1 \
+     --metadata '{"weather":"sunny"}' --overwrite
+    $ annofabcli task list --project_id prj1 --task_id task1 \
+     --format json --query "[0].metadata"
+    {"weather":"sunny"}
+
+
+
+
 .. note::
 
-    一度に大量のタスクのメタデータを更新すると、タイムアウトが発生する場合があります。
-    タイムアウトが発生した場合は、``--batch_size`` を指定して、更新するタスク数を減らしてください。
+    ``--overwrite --yes`` の両方を指定すると、通常より処理時間が大幅に短くなります。これは、task_idを複数指定できる `patchTasksMetadata <https://annofab.com/docs/api/#operation/patchTasksMetadata>`_ WebAPIを使ってタスクのメタデータを更新するからです。
+    1万件以上の大量のタスクに対して初めてメタデータを付与するときは、``--overwrite --yes`` オプションを指定することを推奨します。
 
 
-.. warning::
 
-    メタデータを更新すると、メタデータ自体が上書きされます。
-    メタデータの一部のキーのみ更新することはできません。
 
-    .. code-block::
+並列処理
+----------------------------------------------
 
-        $ annofabcli task list --project_id prj1 --task_id task1 --format json \
-        --query "[0].metadata"
-        {"priority": 2}
+以下のコマンドは、並列数4で実行します。
 
-        # メタデータに`required`キーも追加しようとする
-        $ annofabcli task update_metadata --project_id prj1 --task_id task1 \
-        --metadata '{"rquired":true}'
+.. code-block::
 
-        # 更新前の`priority`キーが消えてしまった
-        $ annofabcli task list --project_id prj1 --task_id task1 --format json \
-        --query "[0].metadata"
-        {"required": true}
+    $ annofabcli task update_metadata --project_id prj1 \
+     --task_id file://input_data_id.txt \
+     --metadata '{"category":"202010"}' --parallelism 4 --yes
+
+
+
+
 
 Usage Details
 =================================
@@ -77,3 +104,4 @@ Usage Details
    :ref: annofabcli.task.update_metadata_of_task.add_parser
    :prog: annofabcli task update_metadata
    :nosubcommands:
+   :nodefaultconst:
