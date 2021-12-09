@@ -119,7 +119,7 @@ def match_annotation_with_task_query(annotation: Dict[str, Any], task_query: Opt
     if task_query.status is not None and annotation["task_status"] != task_query.status.value:
         return False
 
-    if task_query.phase is not None and annotation["task_phase"] != task_query.phase:
+    if task_query.phase is not None and annotation["task_phase"] != task_query.phase.value:
         return False
 
     if task_query.phase_stage is not None and annotation["task_phase_stage"] != task_query.phase_stage:
