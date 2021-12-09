@@ -58,6 +58,7 @@ Usage Details
    :ref: annofabcli.inspection_comment.list_inspections_with_json.add_parser
    :prog: annofabcli inspection_comment list_with_json
    :nosubcommands:
+   :nodefaultconst:
 
 
 See also

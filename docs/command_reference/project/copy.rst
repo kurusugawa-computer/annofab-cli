@@ -57,3 +57,4 @@ Usage Details
    :ref: annofabcli.project.copy_project.add_parser
    :prog: annofabcli project copy
    :nosubcommands:
+   :nodefaultconst:

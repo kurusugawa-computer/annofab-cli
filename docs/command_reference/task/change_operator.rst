@@ -74,3 +74,4 @@ Usage Details
    :ref: annofabcli.task.change_operator.add_parser
    :prog: annofabcli task
    :nosubcommands:
+   :nodefaultconst:

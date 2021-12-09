@@ -45,6 +45,7 @@ Usage Details
    :ref: annofabcli.stat_visualization.write_whole_linegraph.add_parser
    :prog: annofabcli stat_visualization write_whole_linegraph
    :nosubcommands:
+   :nodefaultconst:
 
 See also
 =================================

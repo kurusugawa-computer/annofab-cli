@@ -53,3 +53,4 @@ Usage Details
    :ref: annofabcli.inspection_comment.delete_inspection_comments.add_parser
    :prog: annofabcli inspection_comment delete
    :nosubcommands:
+   :nodefaultconst:

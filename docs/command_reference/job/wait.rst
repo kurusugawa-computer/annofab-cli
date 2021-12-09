@@ -31,3 +31,4 @@ Usage Details
    :ref: annofabcli.job.wait_job.add_parser
    :prog: annofabcli job wait
    :nosubcommands:
+   :nodefaultconst:

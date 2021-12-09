@@ -70,6 +70,7 @@ Usage Details
    :ref: annofabcli.input_data.list_input_data_with_json.add_parser
    :prog: annofabcli input_data list_with_json
    :nosubcommands:
+   :nodefaultconst:
 
 
 See also

@@ -220,6 +220,7 @@ Usage Details
    :ref: annofabcli.filesystem.draw_annotation.add_parser
    :prog: annofabcli filesystem draw_annotation
    :nosubcommands:
+   :nodefaultconst:
 
 
 See also

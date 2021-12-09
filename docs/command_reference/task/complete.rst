@@ -109,3 +109,4 @@ Usage Details
    :ref: annofabcli.task.complete_tasks.add_parser
    :prog: annofabcli task complete
    :nosubcommands:
+   :nodefaultconst:

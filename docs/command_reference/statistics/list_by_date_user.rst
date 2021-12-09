@@ -75,3 +75,4 @@ Usage Details
    :ref: annofabcli.statistics.list_by_date_user.add_parser
    :prog: annofabcli statistics list_by_date_user
    :nosubcommands:
+   :nodefaultconst:

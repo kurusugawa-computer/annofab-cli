@@ -52,6 +52,7 @@ Usage Details
    :ref: annofabcli.stat_visualization.write_linegraph_per_user.add_parser
    :prog: annofabcli stat_visualization write_linegraph_per_user
    :nosubcommands:
+   :nodefaultconst:
 
 See also
 =================================

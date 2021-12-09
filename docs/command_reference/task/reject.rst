@@ -153,3 +153,4 @@ Usage Details
    :ref: annofabcli.task.reject_tasks.add_parser
    :prog: annofabcli task reject
    :nosubcommands:
+   :nodefaultconst:

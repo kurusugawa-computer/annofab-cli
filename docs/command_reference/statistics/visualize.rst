@@ -400,3 +400,4 @@ Usage Details
    :ref: annofabcli.statistics.visualize_statistics.add_parser
    :prog: annofabcli statistics visualize
    :nosubcommands:
+   :nodefaultconst:

@@ -83,3 +83,4 @@ Usage Details
    :ref: annofabcli.inspection_comment.put_inspection_comments.add_parser
    :prog: annofabcli inspection_comment put
    :nosubcommands:
+   :nodefaultconst:
