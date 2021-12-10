@@ -14,6 +14,7 @@ FILENAME_WHOLE_PERFORMANCE = "全体の生産性と品質.csv"
 FILENAME_PERFORMANCE_PER_USER = "メンバごとの生産性と品質.csv"
 
 FILENAME_PERFORMANCE_PER_DATE = "日毎の生産量と生産性.csv"
+FILENAME_PERFORMANCE_PER_FIRST_ANNOTATION_STARTED_DATE = "教師付開始日毎の生産量と生産性.csv"
 FILENAME_TASK_LIST = "タスクlist.csv"
 
 
@@ -617,52 +618,5 @@ class Csv:
         target_df = df[required_columns]
         if output_path is None:
             self._write_csv(FILENAME_PERFORMANCE_PER_USER, target_df)
-        else:
-            print_csv(target_df, output=str(output_path), to_csv_kwargs=self.CSV_FORMAT)
-
-    def write_whole_productivity_per_date(
-        self, df: pandas.DataFrame, dropped_columns: Optional[List[str]] = None, output_path: Optional[Path] = None
-    ) -> None:
-        """
-        日毎の全体の生産量、生産性を出力する。
-
-        Args:
-            df:
-            dropped_columns:
-
-
-        """
-        production_columns = [
-            "task_count",
-            "input_data_count",
-            "annotation_count",
-        ]
-        worktime_columns = [
-            "actual_worktime_hour",
-            "monitored_worktime_hour",
-            "monitored_annotation_worktime_hour",
-            "monitored_inspection_worktime_hour",
-            "monitored_acceptance_worktime_hour",
-        ]
-
-        velocity_columns = [
-            f"{numerator}/{denominator}{suffix}"
-            for numerator in ["actual_worktime_hour", "monitored_worktime_hour"]
-            for denominator in ["task_count", "input_data_count", "annotation_count"]
-            for suffix in ["", "__lastweek"]
-        ]
-
-        prior_columns = (
-            ["date", "cumsum_task_count", "cumsum_input_data_count", "cumsum_actual_worktime_hour"]
-            + production_columns
-            + worktime_columns
-            + velocity_columns
-            + ["working_user_count"]
-        )
-
-        required_columns = self.create_required_columns(df, prior_columns, dropped_columns)
-        target_df = df[required_columns]
-        if output_path is None:
-            self._write_csv(FILENAME_PERFORMANCE_PER_DATE, target_df)
         else:
             print_csv(target_df, output=str(output_path), to_csv_kwargs=self.CSV_FORMAT)

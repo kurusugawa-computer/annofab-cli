@@ -280,13 +280,13 @@ def build_annofabapi_resource(args: argparse.Namespace) -> annofabapi.Resource:
     try:
         return annofabapi.build_from_netrc(endpoint_url)
     except AnnofabApiException:
-        logger.debug("`.netrc`ファイルにはAnnoFab認証情報が存在しなかった")
+        pass
 
     # 環境変数から認証情報を取得する
     try:
         return annofabapi.build_from_env(endpoint_url)
     except AnnofabApiException:
-        logger.debug("`環境変数`ANNOFAB_USER_ID` or  `ANNOFAB_PASSWORD`が空だった")
+        pass
 
     # 標準入力から入力させる
     login_user_id = ""

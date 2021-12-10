@@ -23,11 +23,20 @@ from annofabcli.common.cli import (
 )
 from annofabcli.common.facade import TaskQuery
 from annofabcli.stat_visualization.merge_visualization_dir import merge_visualization_dir
-from annofabcli.statistics.csv import FILENAME_WHOLE_PERFORMANCE, Csv, write_summarise_whole_performance_csv
+from annofabcli.statistics.csv import (
+    FILENAME_PERFORMANCE_PER_DATE,
+    FILENAME_WHOLE_PERFORMANCE,
+    Csv,
+    write_summarise_whole_performance_csv,
+)
 from annofabcli.statistics.database import Database, Query
 from annofabcli.statistics.linegraph import LineGraph, OutputTarget
 from annofabcli.statistics.scatter import Scatter
 from annofabcli.statistics.table import AggregationBy, Table
+from annofabcli.statistics.visualization.dataframe.whole_productivity_per_date import (
+    WholeProductivityPerCompletedDate,
+    WholeProductivityPerFirstAnnotationStartedDate,
+)
 
 logger = logging.getLogger(__name__)
 
@@ -99,6 +108,7 @@ class WriteCsvGraph:
         minimal_output: bool = False,
     ):
         self.project_id = project_id
+        self.output_dir = output_dir
         self.table_obj = table_obj
         self.csv_obj = Csv(str(output_dir))
         # holoviews のloadに時間がかかって、helpコマンドの出力が遅いため、遅延ロードする
@@ -190,7 +200,7 @@ class WriteCsvGraph:
         if self.whole_productivity_df is None:
             task_df = self._get_task_df()
             labor_df = self._get_labor_df()
-            self.whole_productivity_df = self.table_obj.create_whole_productivity_per_date(task_df, labor_df)
+            self.whole_productivity_df = WholeProductivityPerCompletedDate.create(task_df, labor_df)
         return self.whole_productivity_df
 
     def write_histogram_for_task(self) -> None:
@@ -257,8 +267,17 @@ class WriteCsvGraph:
 
     def write_whole_linegraph(self) -> None:
         whole_productivity_df = self._get_whole_productivity_df()
-        self._catch_exception(self.linegraph_obj.write_whole_productivity_line_graph)(whole_productivity_df)
-        self._catch_exception(self.linegraph_obj.write_whole_cumulative_line_graph)(whole_productivity_df)
+        self._catch_exception(WholeProductivityPerCompletedDate.plot)(
+            whole_productivity_df, self.output_dir / "line-graph/折れ線-横軸_日-全体.html"
+        )
+        self._catch_exception(WholeProductivityPerCompletedDate.plot_cumulatively)(
+            whole_productivity_df, self.output_dir / "line-graph/累積折れ線-横軸_日-全体.html"
+        )
+
+    def write_whole_productivity_per_first_annotation_started_date(self) -> None:
+        df = WholeProductivityPerFirstAnnotationStartedDate.create(self.task_df)
+        WholeProductivityPerFirstAnnotationStartedDate.to_csv(df, self.output_dir / "教師付開始日毎の生産量と生産性.csv")
+        WholeProductivityPerFirstAnnotationStartedDate.plot(df, self.output_dir / "line-graph/折れ線-横軸_教師付開始日-全体.html")
 
     def write_linegraph_by_user(self, user_id_list: Optional[List[str]] = None) -> None:
         """
@@ -359,7 +378,9 @@ class WriteCsvGraph:
         日毎の生産性を出力する
         """
         whole_productivity_df = self._get_whole_productivity_df()
-        self._catch_exception(self.csv_obj.write_whole_productivity_per_date)(whole_productivity_df)
+        self._catch_exception(WholeProductivityPerCompletedDate.to_csv)(
+            whole_productivity_df, self.output_dir / FILENAME_PERFORMANCE_PER_DATE
+        )
 
     def _write_メンバー別作業時間平均_画像1枚あたり_by_phase(self, phase: TaskPhase):
         df_by_inputs = self.table_obj.create_worktime_per_image_df(AggregationBy.BY_INPUTS, phase)
@@ -513,6 +534,8 @@ def visualize_statistics(
     # 折れ線グラフ
     write_obj.write_linegraph_by_user(user_id_list)
     write_obj.write_whole_linegraph()
+
+    write_obj.write_whole_productivity_per_first_annotation_started_date()
 
     if not minimal_output:
         write_obj.write_histogram_for_annotation()

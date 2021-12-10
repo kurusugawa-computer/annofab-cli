@@ -17,9 +17,14 @@ from annofabcli.stat_visualization.write_task_histogram import write_task_histog
 from annofabcli.stat_visualization.write_whole_linegraph import write_whole_linegraph
 from annofabcli.statistics.csv import (
     FILENAME_PERFORMANCE_PER_DATE,
+    FILENAME_PERFORMANCE_PER_FIRST_ANNOTATION_STARTED_DATE,
     FILENAME_PERFORMANCE_PER_USER,
     FILENAME_TASK_LIST,
     Csv,
+)
+from annofabcli.statistics.visualization.dataframe.whole_productivity_per_date import (
+    WholeProductivityPerCompletedDate,
+    WholeProductivityPerFirstAnnotationStartedDate,
 )
 
 logger = logging.getLogger(__name__)
@@ -40,7 +45,32 @@ def merge_visualization_dir(
     def execute_merge_performance_per_date():
         performance_per_date_csv_list = [dir / FILENAME_PERFORMANCE_PER_DATE for dir in project_dir_list]
         df_per_date = create_df_merged_performance_per_date(performance_per_date_csv_list)
-        csv_obj.write_whole_productivity_per_date(df_per_date)
+        WholeProductivityPerCompletedDate.to_csv(df_per_date, output_dir / FILENAME_PERFORMANCE_PER_DATE)
+
+    def merge_performance_per_first_annotation_started_date():
+        csv_list = [dir / FILENAME_PERFORMANCE_PER_FIRST_ANNOTATION_STARTED_DATE for dir in project_dir_list]
+        df_list: List[pandas.DataFrame] = []
+        for csv in csv_list:
+            if csv.exists():
+                df = pandas.read_csv(str(csv))
+                df_list.append(df)
+            else:
+                logger.warning(f"{csv} は存在しませんでした。")
+                continue
+
+        if len(df_list) == 0:
+            logger.warning(f"マージ対象のCSVファイルは存在しませんでした。")
+            return
+
+        sum_df = df_list[0]
+        for df in df_list[1:]:
+            sum_df = WholeProductivityPerFirstAnnotationStartedDate.merge(sum_df, df)
+
+        WholeProductivityPerFirstAnnotationStartedDate.to_csv(
+            sum_df, output_dir / FILENAME_PERFORMANCE_PER_FIRST_ANNOTATION_STARTED_DATE
+        )
+
+        WholeProductivityPerFirstAnnotationStartedDate.plot(sum_df, output_dir / "line-graph/折れ線-横軸_教師付開始日-全体.html")
 
     def merge_task_list() -> pandas.DataFrame:
         list_df = []
@@ -72,6 +102,7 @@ def merge_visualization_dir(
 
     execute_merge_performance_per_user()
     execute_merge_performance_per_date()
+    merge_performance_per_first_annotation_started_date()
     df_task = merge_task_list()
     print_csv(df_task, output=str(output_dir / FILENAME_TASK_LIST))
     write_csv_for_summary(df_task)
@@ -81,6 +112,7 @@ def merge_visualization_dir(
         csv=output_dir / FILENAME_PERFORMANCE_PER_USER, output_dir=output_dir / "scatter"
     )
     write_whole_linegraph(csv=output_dir / FILENAME_PERFORMANCE_PER_DATE, output_dir=output_dir / "line-graph")
+
     write_linegraph_per_user(
         csv=output_dir / FILENAME_TASK_LIST,
         output_dir=output_dir / "line-graph",

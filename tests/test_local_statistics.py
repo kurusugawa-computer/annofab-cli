@@ -11,6 +11,10 @@ from annofabcli.statistics.scatter import Scatter
 from annofabcli.statistics.summarize_task_count import SimpleTaskStatus, get_step_for_current_phase
 from annofabcli.statistics.summarize_task_count_by_task_id import create_task_count_summary_df, get_task_id_prefix
 from annofabcli.statistics.table import Table
+from annofabcli.statistics.visualization.dataframe.whole_productivity_per_date import (
+    WholeProductivityPerCompletedDate,
+    WholeProductivityPerFirstAnnotationStartedDate,
+)
 
 out_path = Path("./tests/out/statistics")
 data_path = Path("./tests/data/statistics")
@@ -51,31 +55,6 @@ class TestTable:
         df_task = pandas.read_csv(str(data_path / "task.csv"))
         df = Table.create_annotation_count_ratio_df(task_df=df_task, task_history_df=df_task_history)
         df.to_csv(out_path / "annotation-count-ratio-df.csv")
-
-    def test_create_whole_productivity_per_date(self):
-        df_task = pandas.read_csv(str(data_path / "task.csv"))
-        df_labor = pandas.read_csv(str(data_path / "labor-df.csv"))
-        df = Table.create_whole_productivity_per_date(df_task=df_task, df_labor=df_labor)
-        self.csv_obj.write_whole_productivity_per_date(df)
-
-    def test_create_whole_productivity_per_date2(self):
-        # 完了タスクが１つもない状態で試す
-        df_task = pandas.read_csv(str(data_path / "only-working-task.csv"))
-        df_labor = pandas.read_csv(str(data_path / "labor-df.csv"))
-        df = Table.create_whole_productivity_per_date(df_task=df_task, df_labor=df_labor)
-        self.csv_obj.write_whole_productivity_per_date(df)
-
-    def test_create_whole_productivity_per_date__labor_is_empty(self):
-        df_task = pandas.read_csv(str(data_path / "task.csv"))
-        df = Table.create_whole_productivity_per_date(df_task=df_task, df_labor=pandas.DataFrame())
-        self.csv_obj.write_whole_productivity_per_date(df)
-
-    def test_merge_whole_productivity_per_date(self):
-        df1 = pandas.read_csv(str(data_path / "productivity-per-date.csv"))
-        df2 = pandas.read_csv(str(data_path / "productivity-per-date2.csv"))
-        sum_df = Table.merge_whole_productivity_per_date(df1, df2)
-        print(sum_df)
-        sum_df.to_csv(out_path / "merge-productivity-per-date.csv")
 
 
 class TestSummarizeTaskCount:
@@ -163,11 +142,6 @@ class TestLineGraph:
         cumulative_df = Table.create_cumulative_df_by_first_acceptor(df)
         self.line_graph_obj.write_cumulative_line_graph_for_acceptor(cumulative_df)
 
-    def test_write_cumulative_line_graph_overall(self):
-        df_task = pandas.read_csv(str(data_path / "task.csv"))
-        df_cumulative = Table.create_cumulative_df_overall(df_task)
-        self.line_graph_obj.write_cumulative_line_graph_overall(df_cumulative)
-
     def test_write_whole_productivity_line_graph(self):
         df = pandas.read_csv(str(data_path / "productivity-per-date3.csv"))
         self.line_graph_obj.write_whole_productivity_line_graph(df)
@@ -193,3 +167,73 @@ class TestSummarizeTaskCountByTaskId:
         with (data_path / "task.json").open() as f:
             task_list = json.load(f)
         df = create_task_count_summary_df(task_list, delimiter="_")
+
+
+class TestWholeProductivityPerFirstAnnotationStartedDate:
+    @classmethod
+    def setup_class(cls):
+        cls.output_dir = out_path / "visualization"
+        cls.output_dir.mkdir(exist_ok=True, parents=True)
+
+    def test_create(self):
+        df_task = pandas.read_csv(str(data_path / "task.csv"))
+        df = WholeProductivityPerFirstAnnotationStartedDate.create(df_task)
+        print(df)
+        df.to_csv(self.output_dir / "out.csv", index=False)
+
+    def test_plot(self):
+        df_task = pandas.read_csv(str(data_path / "task.csv"))
+        df = WholeProductivityPerFirstAnnotationStartedDate.create(df_task)
+
+        WholeProductivityPerFirstAnnotationStartedDate.plot(df, self.output_dir / "教師付開始日ごとの生産量と生産性.html")
+
+    def test_to_csv(self):
+        df_task = pandas.read_csv(str(data_path / "task.csv"))
+        df = WholeProductivityPerFirstAnnotationStartedDate.create(df_task)
+
+        WholeProductivityPerFirstAnnotationStartedDate.to_csv(df, self.output_dir / "教師付開始日ごとの生産量と生産性.csv")
+
+    def test_merge(self):
+        df1 = pandas.read_csv(str(data_path / "教師付開始日毎の生産量と生産性.csv"))
+        df2 = pandas.read_csv(str(data_path / "教師付開始日毎の生産量と生産性2.csv"))
+        sum_df = WholeProductivityPerFirstAnnotationStartedDate.merge(df1, df2)
+        WholeProductivityPerFirstAnnotationStartedDate.to_csv(sum_df, self.output_dir / "merge-教師付開始日毎の生産量と生産性.csv")
+
+
+class TestWholeProductivityPerCompletedDate:
+    @classmethod
+    def setup_class(cls):
+        cls.output_dir = out_path / "visualization"
+        cls.output_dir.mkdir(exist_ok=True, parents=True)
+
+        df_task = pandas.read_csv(str(data_path / "task.csv"))
+        df_labor = pandas.read_csv(str(data_path / "labor-df.csv"))
+
+        cls.df = WholeProductivityPerCompletedDate.create(df_task, df_labor)
+
+    def test_create2(self):
+        # 完了タスクが１つもない状態で試す
+        df_task = pandas.read_csv(str(data_path / "only-working-task.csv"))
+        df_labor = pandas.read_csv(str(data_path / "labor-df.csv"))
+        df = WholeProductivityPerCompletedDate.create(df_task, df_labor)
+
+    def test_create3(self):
+        # 完了タスクが１つもない状態で試す
+        df_task = pandas.read_csv(str(data_path / "task.csv"))
+        df_labor = pandas.DataFrame()
+        df = WholeProductivityPerCompletedDate.create(df_task, df_labor)
+
+    def test_to_csv(self):
+        WholeProductivityPerCompletedDate.to_csv(self.df, self.output_dir / "日ごとの生産量と生産性.csv")
+
+    def test_plot(self):
+        WholeProductivityPerCompletedDate.plot(self.df, self.output_dir / "折れ線-横軸_日-全体.html")
+
+    def test_plot_cumulatively(self):
+        WholeProductivityPerCompletedDate.plot_cumulatively(self.df, self.output_dir / "累積折れ線-横軸_日-全体.html")
+
+    def test_merge(self):
+        df1 = pandas.read_csv(str(data_path / "productivity-per-date.csv"))
+        df2 = pandas.read_csv(str(data_path / "productivity-per-date2.csv"))
+        sum_df = WholeProductivityPerCompletedDate.merge(df1, df2)
+        WholeProductivityPerCompletedDate.to_csv(sum_df, self.output_dir / "merge-productivity-per-date.csv")
