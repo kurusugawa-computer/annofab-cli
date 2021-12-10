@@ -2,6 +2,7 @@ from __future__ import annotations
 
 import logging
 from pathlib import Path
+from typing import Optional
 
 import bokeh
 import bokeh.layouts
@@ -184,6 +185,504 @@ class WholeProductivityPerCompletedDate:
         # CSVには"INF"という文字を出力したくないので、"INF"をNaNに置換する
         df.replace([numpy.inf, -numpy.inf], numpy.nan, inplace=True)
         return df
+
+    @classmethod
+    def merge(cls, df1: pandas.DataFrame, df2: pandas.DataFrame) -> pandas.DataFrame:
+        """
+        日毎の全体の生産量、生産性が格納されたDataFrameを結合する。
+
+        Args:
+            df1:
+            df2:
+
+        Returns:
+            マージ済のユーザごとの生産性・品質情報
+        """
+
+        def merge_row(
+            str_date: str, columns: pandas.Index, row1: Optional[pandas.Series], row2: Optional[pandas.Series]
+        ) -> pandas.Series:
+            if row1 is not None and row2 is not None:
+                sum_row = row1.fillna(0) + row2.fillna(0)
+            elif row1 is not None and row2 is None:
+                sum_row = row1.fillna(0)
+            elif row1 is None and row2 is not None:
+                sum_row = row2.fillna(0)
+            else:
+                sum_row = pandas.Series(index=columns)
+
+            sum_row.name = str_date
+            return sum_row
+
+        def date_range():
+            lower_date = min(df1["date"].min(), df2["date"].min())
+            upper_date = max(df1["date"].max(), df2["date"].max())
+            return pandas.date_range(start=lower_date, end=upper_date)
+
+        tmp_df1 = df1.set_index("date")
+        tmp_df2 = df2.set_index("date")
+
+        row_list: list[pandas.Series] = []
+        for dt in date_range():
+            str_date = str(dt.date())
+            if str_date in tmp_df1.index:
+                row1 = tmp_df1.loc[str_date]
+            else:
+                row1 = None
+            if str_date in tmp_df2.index:
+                row2 = tmp_df2.loc[str_date]
+            else:
+                row2 = None
+
+            sum_row = merge_row(str_date=str_date, columns=tmp_df1.columns, row1=row1, row2=row2)
+            row_list.append(sum_row)
+
+        sum_df = pandas.DataFrame(row_list)
+        sum_df.index.name = "date"
+        cls._add_velocity_columns(sum_df)
+        return sum_df.reset_index()
+
+    def plot(self, df: pandas.DataFrame, output_file: Path):
+        """
+        全体の生産量や生産性をプロットする
+
+
+        Args:
+            df:
+
+        Returns:
+
+        """
+
+        def create_figure(title: str, y_axis_label: str) -> bokeh.plotting.Figure:
+            return figure(
+                plot_width=1200,
+                plot_height=600,
+                title=title,
+                x_axis_label="日",
+                x_axis_type="datetime",
+                y_axis_label=y_axis_label,
+            )
+
+        def plot_and_moving_average(fig, y_column_name: str, legend_name: str, source, color, **kwargs):
+            x_column_name = "dt_date"
+
+            # 値をプロット
+            plot_line_and_circle(
+                fig,
+                x_column_name=x_column_name,
+                y_column_name=y_column_name,
+                source=source,
+                color=color,
+                legend_label=legend_name,
+                **kwargs,
+            )
+
+            # 移動平均をプロット
+            plot_moving_average(
+                fig,
+                x_column_name=x_column_name,
+                y_column_name=f"{y_column_name}{WEEKLY_MOVING_AVERAGE_COLUMN_SUFFIX}",
+                source=source,
+                color=color,
+                legend_label=f"{legend_name}の1週間移動平均",
+                **kwargs,
+            )
+
+        def create_task_figure():
+            y_range_name = "worktime_axis"
+            fig_task = create_figure(title="日ごとのタスク数と作業時間", y_axis_label="タスク数")
+            fig_task.add_layout(
+                LinearAxis(
+                    y_range_name=y_range_name,
+                    axis_label="作業時間[hour]",
+                ),
+                "right",
+            )
+            y_overlimit = 0.05
+            fig_task.extra_y_ranges = {
+                y_range_name: DataRange1d(
+                    end=max(df["actual_worktime_hour"].max(), df["monitored_worktime_hour"].max()) * (1 + y_overlimit)
+                )
+            }
+            plot_and_moving_average(
+                fig=fig_task,
+                y_column_name="task_count",
+                legend_name="タスク数",
+                source=source,
+                color=self.my_small_palette[0],
+            )
+            plot_and_moving_average(
+                fig=fig_task,
+                y_column_name="actual_worktime_hour",
+                legend_name="実績作業時間",
+                source=source,
+                color=self.my_small_palette[1],
+                y_range_name=y_range_name,
+            )
+            plot_and_moving_average(
+                fig=fig_task,
+                y_column_name="monitored_worktime_hour",
+                legend_name="計測作業時間",
+                source=source,
+                color=self.my_small_palette[2],
+                y_range_name=y_range_name,
+            )
+            return fig_task
+
+        def create_input_data_figure():
+            y_range_name = "worktime_axis"
+            fig_input_data = create_figure(title="日ごとの入力データ数と作業時間", y_axis_label="入力データ数")
+            fig_input_data.add_layout(
+                LinearAxis(
+                    y_range_name=y_range_name,
+                    axis_label="作業時間[hour]",
+                ),
+                "right",
+            )
+            y_overlimit = 0.05
+            fig_input_data.extra_y_ranges = {
+                y_range_name: DataRange1d(
+                    end=max(df["actual_worktime_hour"].max(), df["monitored_worktime_hour"].max()) * (1 + y_overlimit)
+                )
+            }
+            plot_and_moving_average(
+                fig=fig_input_data,
+                y_column_name="input_data_count",
+                legend_name="入力データ数",
+                source=source,
+                color=self.my_small_palette[0],
+            )
+            plot_and_moving_average(
+                fig=fig_input_data,
+                y_column_name="actual_worktime_hour",
+                legend_name="実績作業時間",
+                source=source,
+                color=self.my_small_palette[1],
+                y_range_name=y_range_name,
+            )
+            plot_and_moving_average(
+                fig=fig_input_data,
+                y_column_name="monitored_worktime_hour",
+                legend_name="計測作業時間",
+                source=source,
+                color=self.my_small_palette[2],
+                y_range_name=y_range_name,
+            )
+            return fig_input_data
+
+        if len(df) == 0:
+            logger.info("データが0件のため出力しない")
+            return
+
+        df["dt_date"] = df["date"].map(lambda e: parse(e).date())
+
+        logger.debug(f"{output_file} を出力します。")
+
+        fig_list = [
+            create_figure(title="日ごとの作業時間", y_axis_label="作業時間[hour]"),
+            create_figure(title="日ごとのタスクあたり作業時間", y_axis_label="タスクあたり作業時間[hour/task]"),
+            create_figure(title="日ごとの入力データあたり作業時間", y_axis_label="入力データあたり作業時間[hour/input_data]"),
+            create_figure(title="日ごとのアノテーションあたり作業時間", y_axis_label="アノテーションあたり作業時間[hour/annotation]"),
+        ]
+
+        fig_info_list = [
+            {
+                "x": "dt_date",
+                "y_info_list": [
+                    {"column": "actual_worktime_hour", "legend": "実績作業時間"},
+                    {"column": "monitored_worktime_hour", "legend": "計測作業時間"},
+                ],
+            },
+            {
+                "x": "dt_date",
+                "y_info_list": [
+                    {"column": "actual_worktime_hour/task_count", "legend": "タスクあたり実績作業時間"},
+                    {"column": "monitored_worktime_hour/task_count", "legend": "タスクあたり計測作業時間"},
+                ],
+            },
+            {
+                "x": "dt_date",
+                "y_info_list": [
+                    {"column": "actual_worktime_hour/input_data_count", "legend": "入力データあたり実績作業時間"},
+                    {"column": "monitored_worktime_hour/input_data_count", "legend": "入力データあたり計測作業時間"},
+                ],
+            },
+            {
+                "x": "dt_date",
+                "y_info_list": [
+                    {"column": "actual_worktime_hour/annotation_count", "legend": "アノテーションあたり実績作業時間"},
+                    {"column": "monitored_worktime_hour/annotation_count", "legend": "アノテーションあたり計測作業時間"},
+                ],
+            },
+        ]
+
+        MOVING_WINDOW_SIZE = 7
+        for column in ["task_count", "input_data_count", "actual_worktime_hour", "monitored_worktime_hour"]:
+            df[f"{column}__lastweek"] = df[column].rolling(MOVING_WINDOW_SIZE).mean()
+
+        source = ColumnDataSource(data=df)
+
+        for fig, fig_info in zip(fig_list, fig_info_list):
+            y_info_list: list[dict[str, str]] = fig_info["y_info_list"]  # type: ignore
+            for index, y_info in enumerate(y_info_list):
+                color = get_color_from_small_palette(index)
+
+                plot_and_moving_average(
+                    fig=fig, y_column_name=y_info["column"], legend_name=y_info["legend"], source=source, color=color
+                )
+
+        tooltip_item = [
+            "date",
+            "task_count",
+            "input_data_count",
+            "actual_worktime_hour",
+            "monitored_worktime_hour",
+            "cumsum_task_count",
+            "cumsum_input_data_count",
+            "cumsum_actual_worktime_hour",
+            "actual_worktime_hour/task_count",
+            "actual_worktime_hour/input_data_count",
+            "actual_worktime_hour/annotation_count",
+            "monitored_worktime_hour/task_count",
+            "monitored_worktime_hour/input_data_count",
+            "monitored_worktime_hour/annotation_count",
+        ]
+        hover_tool = create_hover_tool(tooltip_item)
+
+        fig_list.insert(0, create_task_figure())
+        fig_list.insert(1, create_input_data_figure())
+
+        for fig in fig_list:
+            fig.add_tools(hover_tool)
+            add_legend_to_figure(fig)
+
+        bokeh.plotting.reset_output()
+        bokeh.plotting.output_file(output_file, title=output_file.stem)
+        bokeh.plotting.save(bokeh.layouts.column(fig_list))
+
+    def plot_cumulatively(self, df: pandas.DataFrame, output_file: Path):
+        """
+        全体の生産量や作業時間の累積折れ線グラフを出力する
+        """
+
+        def create_figure(title: str, y_axis_label: str) -> bokeh.plotting.Figure:
+            return figure(
+                plot_width=1200,
+                plot_height=600,
+                title=title,
+                x_axis_label="日",
+                x_axis_type="datetime",
+                y_axis_label=y_axis_label,
+            )
+
+        def create_task_figure():
+            y_range_name = "worktime_axis"
+            fig = create_figure(title="日ごとの累積タスク数と累積作業時間", y_axis_label="タスク数")
+            fig.add_layout(
+                LinearAxis(
+                    y_range_name=y_range_name,
+                    axis_label="作業時間[hour]",
+                ),
+                "right",
+            )
+            y_overlimit = 0.05
+            fig.extra_y_ranges = {
+                y_range_name: DataRange1d(
+                    end=max(df["cumsum_actual_worktime_hour"].max(), df["cumsum_monitored_worktime_hour"].max())
+                    * (1 + y_overlimit)
+                )
+            }
+
+            # 値をプロット
+            self._plot_line_and_circle(
+                fig,
+                x_column_name=x_column_name,
+                y_column_name="cumsum_task_count",
+                source=source,
+                color=self.my_small_palette[0],
+                legend_label="タスク数",
+            )
+
+            # 値をプロット
+            self._plot_line_and_circle(
+                fig,
+                x_column_name=x_column_name,
+                y_column_name="cumsum_actual_worktime_hour",
+                source=source,
+                color=self.my_small_palette[1],
+                legend_label="実績作業時間",
+                y_range_name=y_range_name,
+            )
+            self._plot_line_and_circle(
+                fig,
+                x_column_name=x_column_name,
+                y_column_name="cumsum_monitored_worktime_hour",
+                source=source,
+                color=self.my_small_palette[2],
+                legend_label="計測作業時間",
+                y_range_name=y_range_name,
+            )
+
+            return fig
+
+        def create_input_data_figure():
+            y_range_name = "worktime_axis"
+            fig = create_figure(title="日ごとの累積入力データ数と累積作業時間", y_axis_label="入力データ数")
+            fig.add_layout(
+                LinearAxis(
+                    y_range_name=y_range_name,
+                    axis_label="作業時間[hour]",
+                ),
+                "right",
+            )
+            y_overlimit = 0.05
+            fig.extra_y_ranges = {
+                y_range_name: DataRange1d(
+                    end=max(df["cumsum_actual_worktime_hour"].max(), df["cumsum_monitored_worktime_hour"].max())
+                    * (1 + y_overlimit)
+                )
+            }
+
+            # 値をプロット
+            self._plot_line_and_circle(
+                fig,
+                x_column_name=x_column_name,
+                y_column_name="cumsum_input_data_count",
+                source=source,
+                color=self.my_small_palette[0],
+                legend_label="入力データ数",
+            )
+
+            # 値をプロット
+            self._plot_line_and_circle(
+                fig,
+                x_column_name=x_column_name,
+                y_column_name="cumsum_actual_worktime_hour",
+                source=source,
+                color=self.my_small_palette[1],
+                legend_label="実績作業時間",
+                y_range_name=y_range_name,
+            )
+
+            # 値をプロット
+            self._plot_line_and_circle(
+                fig,
+                x_column_name=x_column_name,
+                y_column_name="cumsum_monitored_worktime_hour",
+                source=source,
+                color=self.my_small_palette[2],
+                legend_label="計測作業時間",
+                y_range_name=y_range_name,
+            )
+
+            return fig
+
+        if len(df) == 0:
+            logger.info("データが0件のため出力しない")
+            return
+
+        df["dt_date"] = df["date"].map(lambda e: parse(e).date())
+        df["cumsum_monitored_worktime_hour"] = df["monitored_worktime_hour"].cumsum()
+
+        logger.debug(f"{output_file} を出力します。")
+
+        fig_list = [
+            create_figure(title="日ごとの累積作業時間", y_axis_label="作業時間[hour]"),
+        ]
+
+        fig_info_list = [
+            {
+                "x": "dt_date",
+                "y_info_list": [
+                    {"column": "cumsum_actual_worktime_hour", "legend": "実績作業時間"},
+                    {"column": "cumsum_monitored_worktime_hour", "legend": "計測作業時間"},
+                ],
+            },
+        ]
+
+        source = ColumnDataSource(data=df)
+
+        for fig, fig_info in zip(fig_list, fig_info_list):
+            x_column_name = "dt_date"
+            y_info_list: list[dict[str, str]] = fig_info["y_info_list"]  # type: ignore
+            for index, y_info in enumerate(y_info_list):
+                color = get_color_from_small_palette(index)
+
+                # 値をプロット
+                plot_line_and_circle(
+                    fig,
+                    x_column_name=x_column_name,
+                    y_column_name=y_info["column"],
+                    source=source,
+                    color=color,
+                    legend_label=y_info["legend"],
+                )
+
+        tooltip_item = [
+            "date",
+            "task_count",
+            "input_data_count",
+            "actual_worktime_hour",
+            "monitored_worktime_hour",
+            "cumsum_task_count",
+            "cumsum_input_data_count",
+            "cumsum_actual_worktime_hour",
+            "cumsum_monitored_worktime_hour",
+        ]
+        hover_tool = create_hover_tool(tooltip_item)
+
+        fig_list.insert(0, create_task_figure())
+        fig_list.insert(1, create_input_data_figure())
+
+        for fig in fig_list:
+            fig.add_tools(hover_tool)
+            add_legend_to_figure(fig)
+
+        bokeh.plotting.reset_output()
+        bokeh.plotting.output_file(output_file, title=output_file.stem)
+        bokeh.plotting.save(bokeh.layouts.column(fig_list))
+
+    @classmethod
+    def to_csv(cls, df: pandas.DataFrame, output_file: Path) -> None:
+        """
+        日毎の全体の生産量、生産性を出力する。
+
+        Args:
+            df:
+            dropped_columns:
+
+
+        """
+        production_columns = [
+            "task_count",
+            "input_data_count",
+            "annotation_count",
+        ]
+        worktime_columns = [
+            "actual_worktime_hour",
+            "monitored_worktime_hour",
+            "monitored_annotation_worktime_hour",
+            "monitored_inspection_worktime_hour",
+            "monitored_acceptance_worktime_hour",
+        ]
+
+        velocity_columns = [
+            f"{numerator}/{denominator}{suffix}"
+            for numerator in ["actual_worktime_hour", "monitored_worktime_hour"]
+            for denominator in ["task_count", "input_data_count", "annotation_count"]
+            for suffix in ["", "__lastweek"]
+        ]
+
+        columns = (
+            ["date", "cumsum_task_count", "cumsum_input_data_count", "cumsum_actual_worktime_hour"]
+            + production_columns
+            + worktime_columns
+            + velocity_columns
+            + ["working_user_count"]
+        )
+
+        print_csv(df[columns], output=str(output_file))
 
 
 class WholeProductivityPerFirstAnnotationDate:
