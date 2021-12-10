@@ -216,7 +216,11 @@ class TestWholeProductivityPerFirstAnnotationDate:
         df_task = pandas.read_csv(str(data_path / "task.csv"))
         df = WholeProductivityPerFirstAnnotationDate.create(df_task)
         
-        WholeProductivityPerFirstAnnotationDate.plot(df, )
-        df.to_csv(self.output_dir / "out.csv", index=False)
-
+        WholeProductivityPerFirstAnnotationDate.plot(df,self.output_dir / "教師付開始日ごとの生産量と生産性.html" )
+        
+    def test_to_csv(self):
+        df_task = pandas.read_csv(str(data_path / "task.csv"))
+        df = WholeProductivityPerFirstAnnotationDate.create(df_task)
+        
+        WholeProductivityPerFirstAnnotationDate.to_csv(df,self.output_dir / "教師付開始日ごとの生産量と生産性.csv" )
 

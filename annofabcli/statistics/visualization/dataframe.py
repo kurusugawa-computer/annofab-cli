@@ -11,7 +11,7 @@ from annofabapi.models import TaskStatus
 from bokeh.models import DataRange1d, LinearAxis
 from bokeh.plotting import ColumnDataSource, figure
 from dateutil.parser import parse
-
+from annofabcli.common.utils import print_csv
 from annofabcli.common.utils import datetime_to_date
 from annofabcli.statistics.linegraph import (
     add_legend_to_figure,
@@ -44,6 +44,9 @@ def get_weekly_moving_average(df: pandas.DataFrame, column: str) -> pandas.Serie
 
 
 class WholeProductivityPerFirstAnnotationDate:
+
+
+
     @classmethod
     def create(cls, df_task: pandas.DataFrame) -> pandas.DataFrame:
         """
@@ -108,6 +111,40 @@ class WholeProductivityPerFirstAnnotationDate:
         cls._add_velocity_columns(df_date)
         return df_date
 
+
+    @classmethod
+    def to_csv(cls, df: pandas.DataFrame, output_file:Path) -> pandas.DataFrame:
+        if len(df) == 0:
+            logger.info("データ件数が0件のため出力しません。")
+            return
+
+        columns = [
+            "first_annotation_started_date",
+            "task_count",
+            "input_data_count",
+
+            "annotation_count",
+            "annotation_worktime_hour",
+            "inspection_worktime_hour",
+            "acceptance_worktime_hour",
+
+            "worktime_hour/input_data_count",
+            "annotation_worktime_hour/input_data_count",
+            "inspection_worktime_hour/input_data_count",
+            "acceptance_worktime_hour/input_data_count",
+
+            "worktime_hour/annotation_count",
+            "annotation_worktime_hour/annotation_count",
+            "inspection_worktime_hour/annotation_count",
+            "acceptance_worktime_hour/annotation_count",
+
+        ]
+
+        # # CSVには"INF"という文字を出力したくないので、"INF"をNaNに置換する
+        # df.replace([numpy.inf, -numpy.inf], numpy.nan, inplace=True)
+        print_csv(df[columns], str(output_file))
+
+
     @classmethod
     def _add_velocity_columns(cls, df: pandas.DataFrame):
         """
@@ -135,9 +172,6 @@ class WholeProductivityPerFirstAnnotationDate:
         add_velocity_column(df, numerator_column="inspection_worktime_hour", denominator_column="annotation_count")
         add_velocity_column(df, numerator_column="acceptance_worktime_hour", denominator_column="annotation_count")
 
-        # CSVには"INF"という文字を出力したくないので、"INF"をNaNに置換する
-        # TODO
-        df.replace([numpy.inf, -numpy.inf], numpy.nan, inplace=True)
 
     @classmethod
     def _plot_and_moving_average(
@@ -194,6 +228,17 @@ class WholeProductivityPerFirstAnnotationDate:
         Returns:
 
         """
+        def create_div_element() -> bokeh.models.Div:
+            """
+            HTMLページの先頭に付与するdiv要素を生成する。
+            """
+            return bokeh.models.Div(
+                text="""<h4>注意</h4>
+                <p>「X日の作業時間」とは、「X日に教師付開始したタスクにかけた作業時間」です。
+                「X日に作業した時間」ではありません。
+                </p>
+                """
+            )
 
         def create_figure(title: str, y_axis_label: str) -> bokeh.plotting.Figure:
             return figure(
@@ -218,7 +263,7 @@ class WholeProductivityPerFirstAnnotationDate:
             y_overlimit = 0.05
             fig_input_data.extra_y_ranges = {
                 y_range_name: DataRange1d(
-                    end=max(df["actual_worktime_hour"].max(), df["monitored_worktime_hour"].max()) * (1 + y_overlimit)
+                    end=df["worktime_hour"].max() * (1 + y_overlimit)
                 )
             }
             cls._plot_and_moving_average(
@@ -343,4 +388,6 @@ class WholeProductivityPerFirstAnnotationDate:
 
         bokeh.plotting.reset_output()
         bokeh.plotting.output_file(output_file, title=output_file.stem)
-        bokeh.plotting.save(bokeh.layouts.column(fig_list))
+
+        bokeh.plotting.save(bokeh.layouts.column([create_div_element()] + fig_list))
+
