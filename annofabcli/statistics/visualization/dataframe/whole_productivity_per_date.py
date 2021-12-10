@@ -131,7 +131,6 @@ class WholeProductivityPerCompletedDate:
         # 日付の一覧を生成
         df_date_base = cls._create_df_date(df_agg_sub_task.index, df_agg_labor.index)
         df_date = df_date_base.join(df_agg_sub_task).join(df_agg_labor).fillna(0)
-
         df_date.rename(
             columns={
                 "sum_worktime_hour": "monitored_worktime_hour",
@@ -374,7 +373,7 @@ class WholeProductivityPerCompletedDate:
             return fig_input_data
 
         if len(df) == 0:
-            logger.info("データが0件のため出力しない")
+            logger.warning(f"データ件数が0件のため {output_file} は出力しません。")
             return
 
         df["dt_date"] = df["date"].map(lambda e: parse(e).date())
@@ -582,7 +581,7 @@ class WholeProductivityPerCompletedDate:
             return fig
 
         if len(df) == 0:
-            logger.info("データが0件のため出力しない")
+            logger.warning(f"データ件数が0件のため {output_file} は出力しません。")
             return
 
         df["dt_date"] = df["date"].map(lambda e: parse(e).date())
@@ -651,12 +650,11 @@ class WholeProductivityPerCompletedDate:
         """
         日毎の全体の生産量、生産性を出力する。
 
-        Args:
-            df:
-            dropped_columns:
-
-
         """
+        if len(df) == 0:
+            logger.warning(f"データ件数が0件のため {output_file} は出力しません。")
+            return
+
         production_columns = [
             "task_count",
             "input_data_count",
@@ -758,7 +756,7 @@ class WholeProductivityPerFirstAnnotationDate:
     @classmethod
     def to_csv(cls, df: pandas.DataFrame, output_file: Path) -> pandas.DataFrame:
         if len(df) == 0:
-            logger.info("データ件数が0件のため出力しません。")
+            logger.warning(f"データ件数が0件のため {output_file} は出力しません。")
             return
 
         columns = [
@@ -922,7 +920,7 @@ class WholeProductivityPerFirstAnnotationDate:
             return fig_input_data
 
         if len(df) == 0:
-            logger.info("データが0件のため出力しない")
+            logger.warning(f"データ件数が0件のため {output_file} は出力しません。")
             return
 
         df["dt_first_annotation_started_date"] = df["first_annotation_started_date"].map(lambda e: parse(e).date())

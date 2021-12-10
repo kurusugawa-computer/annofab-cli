@@ -259,6 +259,7 @@ class WriteCsvGraph:
 
     def write_whole_linegraph(self) -> None:
         whole_productivity_df = self._get_whole_productivity_df()
+        print(whole_productivity_df)
         self._catch_exception(WholeProductivityPerCompletedDate.plot)(
             whole_productivity_df, self.output_dir / "line-graph/折れ線-横軸_日-全体.html"
         )
