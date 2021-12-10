@@ -23,7 +23,12 @@ from annofabcli.common.cli import (
 )
 from annofabcli.common.facade import TaskQuery
 from annofabcli.stat_visualization.merge_visualization_dir import merge_visualization_dir
-from annofabcli.statistics.csv import FILENAME_WHOLE_PERFORMANCE, Csv, write_summarise_whole_performance_csv
+from annofabcli.statistics.csv import (
+    FILENAME_PERFORMANCE_PER_DATE,
+    FILENAME_WHOLE_PERFORMANCE,
+    Csv,
+    write_summarise_whole_performance_csv,
+)
 from annofabcli.statistics.database import Database, Query
 from annofabcli.statistics.linegraph import LineGraph, OutputTarget
 from annofabcli.statistics.scatter import Scatter
@@ -366,7 +371,9 @@ class WriteCsvGraph:
         日毎の生産性を出力する
         """
         whole_productivity_df = self._get_whole_productivity_df()
-        self._catch_exception(self.csv_obj.write_whole_productivity_per_date)(whole_productivity_df)
+        self._catch_exception(WholeProductivityPerCompletedDate.to_csv)(
+            whole_productivity_df, self.output_dir / FILENAME_PERFORMANCE_PER_DATE
+        )
 
     def _write_メンバー別作業時間平均_画像1枚あたり_by_phase(self, phase: TaskPhase):
         df_by_inputs = self.table_obj.create_worktime_per_image_df(AggregationBy.BY_INPUTS, phase)

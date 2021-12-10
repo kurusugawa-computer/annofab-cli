@@ -21,6 +21,7 @@ from annofabcli.statistics.csv import (
     FILENAME_TASK_LIST,
     Csv,
 )
+from annofabcli.statistics.visualization.dataframe.whole_productivity_per_date import WholeProductivityPerCompletedDate
 
 logger = logging.getLogger(__name__)
 
@@ -40,7 +41,7 @@ def merge_visualization_dir(
     def execute_merge_performance_per_date():
         performance_per_date_csv_list = [dir / FILENAME_PERFORMANCE_PER_DATE for dir in project_dir_list]
         df_per_date = create_df_merged_performance_per_date(performance_per_date_csv_list)
-        csv_obj.write_whole_productivity_per_date(df_per_date)
+        WholeProductivityPerCompletedDate.to_csv(df_per_date, output_dir / FILENAME_PERFORMANCE_PER_DATE)
 
     def merge_task_list() -> pandas.DataFrame:
         list_df = []

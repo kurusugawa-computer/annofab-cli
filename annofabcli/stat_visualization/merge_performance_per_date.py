@@ -7,7 +7,7 @@ import pandas
 
 import annofabcli
 from annofabcli.common.cli import AbstractCommandLineWithoutWebapiInterface
-from annofabcli.statistics.csv import FILENAME_PERFORMANCE_PER_DATE, Csv
+from annofabcli.statistics.csv import FILENAME_PERFORMANCE_PER_DATE
 from annofabcli.statistics.visualization.dataframe.whole_productivity_per_date import WholeProductivityPerCompletedDate
 
 logger = logging.getLogger(__name__)
@@ -43,20 +43,19 @@ def create_df_merged_performance_per_date(csv_path_list: List[Path]) -> pandas.D
     return sum_df
 
 
-def merge_performance_per_date(csv_path_list: List[Path], output_path: Path) -> None:
+def merge_performance_per_date(csv_path_list: List[Path], output_file: Path) -> None:
     sum_df = create_df_merged_performance_per_date(csv_path_list)
     if len(sum_df) == 0:
         logger.warning(f"出力対象のデータが0件であるため、CSVファイルを出力しません。")
         return
 
-    csv_obj = Csv(outdir=str(output_path.parent))
-    csv_obj.write_whole_productivity_per_date(sum_df, output_path=output_path)
+    WholeProductivityPerCompletedDate.to_csv(sum_df, output_file)
 
 
 class MergePerformancePerDate(AbstractCommandLineWithoutWebapiInterface):
     def main(self):
         args = self.args
-        merge_performance_per_date(csv_path_list=args.csv, output_path=args.output)
+        merge_performance_per_date(csv_path_list=args.csv, output_file=args.output)
 
 
 def main(args):
