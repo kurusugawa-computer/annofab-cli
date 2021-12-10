@@ -16,6 +16,9 @@ from bokeh.plotting import ColumnDataSource, figure
 
 logger = logging.getLogger(__name__)
 
+MAX_USER_COUNT_FOR_LINE_GRAPH = 20
+"""折れ線グラフにプロットできる最大のユーザ数"""
+
 
 def get_color_from_palette(index: int) -> Color:
     my_palette = bokeh.palettes.Category20[20]
@@ -130,6 +133,19 @@ def create_hover_tool(tool_tip_items: Optional[List[str]] = None) -> HoverTool:
     detail_tooltips = [(e, f"@{{{e}}}") for e in tool_tip_items]
     hover_tool = HoverTool(tooltips=[("index", "$index"), ("(x,y)", "($x, $y)")] + detail_tooltips)
     return hover_tool
+
+
+def get_plotted_user_id_list(
+    user_id_list: List[str],
+) -> List[str]:
+    """
+    グラフに表示するユーザのuser_idを生成する。最大値を超えていたら、超えている部分を切り捨てる。
+
+    """
+    if len(user_id_list) > MAX_USER_COUNT_FOR_LINE_GRAPH:
+        logger.info(f"表示対象のuser_idの数が多いため、先頭から{MAX_USER_COUNT_FOR_LINE_GRAPH}個のみプロットします")
+
+    return user_id_list[0:MAX_USER_COUNT_FOR_LINE_GRAPH]
 
 
 class OutputTarget(Enum):

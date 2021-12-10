@@ -21,6 +21,7 @@
         "asyncio",
         "bokeh",
         "dateutil",
+        "dropna",
         "dtype",
         "fillna",
         "getrgb",
@@ -45,6 +46,7 @@
         "pyquery",
         "quantile",
         "strtobool",
+        "tolist",
         "tzlocal"
     ]
 }

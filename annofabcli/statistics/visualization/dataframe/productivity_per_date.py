@@ -1,6 +1,6 @@
 # pylint: disable=too-many-lines
 """
-全体の日ごとの生産性
+日ごとユーザごとの生産性
 """
 from __future__ import annotations
 
@@ -23,6 +23,7 @@ from annofabcli.statistics.linegraph import (
     add_legend_to_figure,
     create_hover_tool,
     get_color_from_small_palette,
+    get_plotted_user_id_list,
     plot_line_and_circle,
     plot_moving_average,
 )
@@ -49,8 +50,180 @@ def get_weekly_moving_average(df: pandas.DataFrame, column: str) -> pandas.Serie
         return df[column].rolling(MOVING_WINDOW_DAYS, min_periods=MIN_WINDOW_DAYS).mean()
 
 
-class WholeProductivityPerCompletedDate:
-    """受入完了日ごとの全体の生産量と生産性に関する情報"""
+class AnnotatorProductivityPerDate:
+    """教師付開始日ごとの教師付者の生産性に関する情報"""
+
+    @classmethod
+    def create(df_task: pandas.DataFrame) -> pandas.DataFrame:
+        """
+        日毎、ユーザごとの情報を出力する。
+
+        Args:
+            task_df:
+
+        Returns:
+
+        """
+        new_df = df_task.copy()
+        new_df["first_annotation_started_date"] = new_df["first_annotation_started_datetime"].map(
+            lambda e: datetime_to_date(e) if e is not None and isinstance(e, str) else None
+        )
+        new_df["task_count"] = 1  # 集計用
+
+        # first_annotation_user_id と first_annotation_usernameの両方を指定している理由：
+        # first_annotation_username を取得するため
+        group_obj = new_df.groupby(
+            ["first_annotation_started_date", "first_annotation_user_id", "first_annotation_username"],
+            as_index=False,
+        )
+
+        sum_df = group_obj[
+            [
+                "first_annotation_worktime_hour",
+                "annotation_worktime_hour",
+                "inspection_worktime_hour",
+                "acceptance_worktime_hour",
+                "sum_worktime_hour",
+                "task_count",
+                "input_data_count",
+                "annotation_count",
+                "inspection_count",
+            ]
+        ].sum()
+
+        for denominator_column in ["input_data_count", "annotation_count"]:
+            for phase in ["annotation", "inspection", "acceptance"]:
+                numerator_column = f"{phase}_worktime_hour"
+                sum_df[f"{numerator_column}/{denominator_column}"] = (
+                    sum_df[numerator_column] / sum_df[denominator_column]
+                )
+
+        sum_df["inspection_count/annotation_count"] = sum_df["inspection_count"] / sum_df["annotation_count"]
+        sum_df["inspection_count/input_data_count"] = sum_df["inspection_count"] / sum_df["annotation_count"]
+
+        return sum_df
+
+    @classmethod
+    def write_productivity_line_graph_for_annotator(
+        cls,
+        df: pandas.DataFrame,
+        output_file: Path,
+        target_user_id_list: Optional[list[str]] = None,
+    ):
+        """
+        生産性を教師付作業者ごとにプロットする。
+
+        Args:
+            df:
+            first_annotation_user_id_list:
+
+        Returns:
+
+        """
+
+        tooltip_item = [
+            "first_annotation_user_id",
+            "first_annotation_username",
+            "first_annotation_started_date",
+            "first_annotation_worktime_hour",
+            "annotation_worktime_hour",
+            "inspection_worktime_hour",
+            "acceptance_worktime_hour",
+            "annotation_count",
+            "input_data_count",
+            "task_count",
+            "inspection_count",
+        ]
+
+        if len(df) == 0:
+            logger.info("データが0件のため出力しない")
+            return
+
+        if target_user_id_list is not None:
+            user_id_list = target_user_id_list
+        else:
+            user_id_list = (
+                df.sort_values(by="first_annotation_started_date", ascending=False)["first_annotation_user_id"]
+                .dropna()
+                .unique()
+                .tolist()
+            )
+
+        user_id_list = get_plotted_user_id_list(user_id_list)
+
+        df["dt_first_annotation_started_date"] = df["first_annotation_started_date"].map(lambda e: parse(e).date())
+
+        fig_info_list = [
+            # dict(
+            #     title="作業したアノテーション数の折れ線グラフ",
+            #     y_column_name="annotation_count",
+            #     y_axis_label="アノテーション数",
+            # ),
+            # dict(
+            #     title="作業した画像数の折れ線グラフ",
+            #     y_column_name="input_data_count",
+            #     y_axis_label="画像数",
+            # ),
+            # dict(
+            #     title="作業したタスク数の折れ線グラフ",
+            #     y_column_name="task_count",
+            #     y_axis_label="タスク数",
+            # ),
+            dict(
+                title="教師付開始日ごとのアノテーションあたり教師付作業時間",
+                y_column_name="annotation_worktime_minute/annotation_count",
+                y_axis_label="アノテーションあたり教師付時間[min]",
+            ),
+            dict(
+                title="アノテーションあたり検査コメント数の折れ線グラフ",
+                y_column_name="inspection_count/annotation_count",
+                y_axis_label="アノテーションあたり検査コメント数",
+            ),
+        ]
+
+        logger.debug(f"{output_file} を出力します。")
+
+        figs: list[bokeh.plotting.Figure] = []
+        for fig_info in fig_info_list:
+            figs.append(
+                figure(
+                    plot_width=1200,
+                    plot_height=600,
+                    title=fig_info["title"],
+                    x_axis_label="教師付開始日",
+                    x_axis_type="datetime",
+                    y_axis_label=fig_info["y_axis_label"],
+                )
+            )
+
+        for user_index, user_id in enumerate(user_id_list):
+            filtered_df = df[df["first_annotation_user_id"] == user_id]
+            if filtered_df.empty:
+                logger.debug(f"dataframe is empty. user_id = {user_id}")
+                continue
+
+            source = ColumnDataSource(data=filtered_df)
+            color = get_color_from_small_palette(user_index)
+            username = filtered_df.iloc[0]["first_annotation_username"]
+
+            for fig, fig_info in zip(figs, fig_info_list):
+                plot_line_and_circle(
+                    fig,
+                    x_column_name="dt_first_annotation_started_date",
+                    y_column_name=fig_info["y"],
+                    source=source,
+                    legend_label=username,
+                    color=color,
+                )
+
+        hover_tool = create_hover_tool(tooltip_item)
+        for fig in figs:
+            fig.add_tools(hover_tool)
+            add_legend_to_figure(fig)
+
+        bokeh.plotting.reset_output()
+        bokeh.plotting.output_file(output_file, title=output_file.stem)
+        bokeh.plotting.save(bokeh.layouts.column(figs))
 
     @staticmethod
     def _create_df_date(date_index1: pandas.Index, date_index2: pandas.Index) -> pandas.DataFrame:
@@ -70,7 +243,7 @@ class WholeProductivityPerCompletedDate:
         return pandas.DataFrame(index=[e.strftime("%Y-%m-%d") for e in pandas.date_range(start_date, end_date)])
 
     @classmethod
-    def create(cls, df_task: pandas.DataFrame, df_labor: pandas.DataFrame) -> pandas.DataFrame:
+    def create2(cls, df_task: pandas.DataFrame, df_labor: pandas.DataFrame) -> pandas.DataFrame:
         """
         受入完了日毎の全体の生産量、生産性を算出する。
         """
