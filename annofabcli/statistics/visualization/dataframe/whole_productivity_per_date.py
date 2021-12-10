@@ -242,7 +242,8 @@ class WholeProductivityPerCompletedDate:
         cls._add_velocity_columns(sum_df)
         return sum_df.reset_index()
 
-    def plot(self, df: pandas.DataFrame, output_file: Path):
+    @classmethod
+    def plot(cls, df: pandas.DataFrame, output_file: Path):
         """
         全体の生産量や生産性をプロットする
 
@@ -310,14 +311,14 @@ class WholeProductivityPerCompletedDate:
                 y_column_name="task_count",
                 legend_name="タスク数",
                 source=source,
-                color=self.my_small_palette[0],
+                color=get_color_from_small_palette(0),
             )
             plot_and_moving_average(
                 fig=fig_task,
                 y_column_name="actual_worktime_hour",
                 legend_name="実績作業時間",
                 source=source,
-                color=self.my_small_palette[1],
+                color=get_color_from_small_palette(1),
                 y_range_name=y_range_name,
             )
             plot_and_moving_average(
@@ -325,7 +326,7 @@ class WholeProductivityPerCompletedDate:
                 y_column_name="monitored_worktime_hour",
                 legend_name="計測作業時間",
                 source=source,
-                color=self.my_small_palette[2],
+                color=get_color_from_small_palette(2),
                 y_range_name=y_range_name,
             )
             return fig_task
@@ -351,14 +352,14 @@ class WholeProductivityPerCompletedDate:
                 y_column_name="input_data_count",
                 legend_name="入力データ数",
                 source=source,
-                color=self.my_small_palette[0],
+                color=get_color_from_small_palette(0),
             )
             plot_and_moving_average(
                 fig=fig_input_data,
                 y_column_name="actual_worktime_hour",
                 legend_name="実績作業時間",
                 source=source,
-                color=self.my_small_palette[1],
+                color=get_color_from_small_palette(1),
                 y_range_name=y_range_name,
             )
             plot_and_moving_average(
@@ -366,7 +367,7 @@ class WholeProductivityPerCompletedDate:
                 y_column_name="monitored_worktime_hour",
                 legend_name="計測作業時間",
                 source=source,
-                color=self.my_small_palette[2],
+                color=get_color_from_small_palette(2),
                 y_range_name=y_range_name,
             )
             return fig_input_data
@@ -461,7 +462,8 @@ class WholeProductivityPerCompletedDate:
         bokeh.plotting.output_file(output_file, title=output_file.stem)
         bokeh.plotting.save(bokeh.layouts.column(fig_list))
 
-    def plot_cumulatively(self, df: pandas.DataFrame, output_file: Path):
+    @classmethod
+    def plot_cumulatively(cls, df: pandas.DataFrame, output_file: Path):
         """
         全体の生産量や作業時間の累積折れ線グラフを出力する
         """
@@ -495,31 +497,31 @@ class WholeProductivityPerCompletedDate:
             }
 
             # 値をプロット
-            self._plot_line_and_circle(
+            plot_line_and_circle(
                 fig,
                 x_column_name=x_column_name,
                 y_column_name="cumsum_task_count",
                 source=source,
-                color=self.my_small_palette[0],
+                color=get_color_from_small_palette(0),
                 legend_label="タスク数",
             )
 
             # 値をプロット
-            self._plot_line_and_circle(
+            plot_line_and_circle(
                 fig,
                 x_column_name=x_column_name,
                 y_column_name="cumsum_actual_worktime_hour",
                 source=source,
-                color=self.my_small_palette[1],
+                color=get_color_from_small_palette(1),
                 legend_label="実績作業時間",
                 y_range_name=y_range_name,
             )
-            self._plot_line_and_circle(
+            plot_line_and_circle(
                 fig,
                 x_column_name=x_column_name,
                 y_column_name="cumsum_monitored_worktime_hour",
                 source=source,
-                color=self.my_small_palette[2],
+                color=get_color_from_small_palette(2),
                 legend_label="計測作業時間",
                 y_range_name=y_range_name,
             )
@@ -545,33 +547,33 @@ class WholeProductivityPerCompletedDate:
             }
 
             # 値をプロット
-            self._plot_line_and_circle(
+            plot_line_and_circle(
                 fig,
                 x_column_name=x_column_name,
                 y_column_name="cumsum_input_data_count",
                 source=source,
-                color=self.my_small_palette[0],
+                color=get_color_from_small_palette(0),
                 legend_label="入力データ数",
             )
 
             # 値をプロット
-            self._plot_line_and_circle(
+            plot_line_and_circle(
                 fig,
                 x_column_name=x_column_name,
                 y_column_name="cumsum_actual_worktime_hour",
                 source=source,
-                color=self.my_small_palette[1],
+                color=get_color_from_small_palette(1),
                 legend_label="実績作業時間",
                 y_range_name=y_range_name,
             )
 
             # 値をプロット
-            self._plot_line_and_circle(
+            plot_line_and_circle(
                 fig,
                 x_column_name=x_column_name,
                 y_column_name="cumsum_monitored_worktime_hour",
                 source=source,
-                color=self.my_small_palette[2],
+                color=get_color_from_small_palette(2),
                 legend_label="計測作業時間",
                 y_range_name=y_range_name,
             )

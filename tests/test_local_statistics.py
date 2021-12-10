@@ -11,7 +11,10 @@ from annofabcli.statistics.scatter import Scatter
 from annofabcli.statistics.summarize_task_count import SimpleTaskStatus, get_step_for_current_phase
 from annofabcli.statistics.summarize_task_count_by_task_id import create_task_count_summary_df, get_task_id_prefix
 from annofabcli.statistics.table import Table
-from annofabcli.statistics.visualization.dataframe import WholeProductivityPerFirstAnnotationDate
+from annofabcli.statistics.visualization.dataframe.whole_productivity_per_date import (
+    WholeProductivityPerCompletedDate,
+    WholeProductivityPerFirstAnnotationDate,
+)
 
 out_path = Path("./tests/out/statistics")
 data_path = Path("./tests/data/statistics")
@@ -219,3 +222,27 @@ class TestWholeProductivityPerFirstAnnotationDate:
         df = WholeProductivityPerFirstAnnotationDate.create(df_task)
 
         WholeProductivityPerFirstAnnotationDate.to_csv(df, self.output_dir / "教師付開始日ごとの生産量と生産性.csv")
+
+
+class TestWholeProductivityPerCompletedDate:
+    @classmethod
+    def setup_class(cls):
+        cls.output_dir = out_path / "visualization"
+        cls.output_dir.mkdir(exist_ok=True, parents=True)
+
+        df_task = pandas.read_csv(str(data_path / "task.csv"))
+        df_labor = pandas.read_csv(str(data_path / "labor-df.csv"))
+
+        cls.df = WholeProductivityPerCompletedDate.create(df_task, df_labor)
+
+    def test_to_csv(self):
+        WholeProductivityPerCompletedDate.to_csv(self.df, self.output_dir / "日ごとの生産量と生産性.csv")
+
+    def test_plot(self):
+        WholeProductivityPerCompletedDate.plot(self.df, self.output_dir / "折れ線-横軸_日-全体.html")
+
+    def test_plot_cumulatively(self):
+        WholeProductivityPerCompletedDate.plot_cumulatively(self.df, self.output_dir / "累積折れ線-横軸_日-全体.html")
+
+    # TODO
+    # merge
