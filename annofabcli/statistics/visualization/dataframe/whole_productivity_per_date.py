@@ -458,6 +458,7 @@ class WholeProductivityPerCompletedDate:
             fig.add_tools(hover_tool)
             add_legend_to_figure(fig)
 
+        output_file.parent.mkdir(exist_ok=True, parents=True)
         bokeh.plotting.reset_output()
         bokeh.plotting.output_file(output_file, title=output_file.stem)
         bokeh.plotting.save(bokeh.layouts.column(fig_list))
@@ -641,6 +642,7 @@ class WholeProductivityPerCompletedDate:
             fig.add_tools(hover_tool)
             add_legend_to_figure(fig)
 
+        output_file.parent.mkdir(exist_ok=True, parents=True)
         bokeh.plotting.reset_output()
         bokeh.plotting.output_file(output_file, title=output_file.stem)
         bokeh.plotting.save(bokeh.layouts.column(fig_list))
@@ -686,7 +688,7 @@ class WholeProductivityPerCompletedDate:
         print_csv(df[columns], output=str(output_file))
 
 
-class WholeProductivityPerFirstAnnotationDate:
+class WholeProductivityPerFirstAnnotationStartedDate:
     """教師付開始日ごとの全体の生産量と生産性に関する情報"""
 
     @classmethod
@@ -809,7 +811,6 @@ class WholeProductivityPerFirstAnnotationDate:
         add_velocity_column(df, numerator_column="inspection_worktime_hour", denominator_column="annotation_count")
         add_velocity_column(df, numerator_column="acceptance_worktime_hour", denominator_column="annotation_count")
 
-
     @classmethod
     def merge(cls, df1: pandas.DataFrame, df2: pandas.DataFrame) -> pandas.DataFrame:
         def merge_row(
@@ -854,7 +855,6 @@ class WholeProductivityPerFirstAnnotationDate:
         sum_df.index.name = "first_annotation_started_date"
         cls._add_velocity_columns(sum_df)
         return sum_df.reset_index()
-
 
     @classmethod
     def _plot_and_moving_average(
@@ -1071,8 +1071,8 @@ class WholeProductivityPerFirstAnnotationDate:
             fig.add_tools(hover_tool)
             add_legend_to_figure(fig)
 
+        output_file.parent.mkdir(exist_ok=True, parents=True)
         bokeh.plotting.reset_output()
         bokeh.plotting.output_file(output_file, title=output_file.stem)
 
         bokeh.plotting.save(bokeh.layouts.column([create_div_element()] + fig_list))
-

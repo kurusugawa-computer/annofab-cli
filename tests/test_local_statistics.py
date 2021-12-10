@@ -13,7 +13,7 @@ from annofabcli.statistics.summarize_task_count_by_task_id import create_task_co
 from annofabcli.statistics.table import Table
 from annofabcli.statistics.visualization.dataframe.whole_productivity_per_date import (
     WholeProductivityPerCompletedDate,
-    WholeProductivityPerFirstAnnotationDate,
+    WholeProductivityPerFirstAnnotationStartedDate,
 )
 
 out_path = Path("./tests/out/statistics")
@@ -169,7 +169,7 @@ class TestSummarizeTaskCountByTaskId:
         df = create_task_count_summary_df(task_list, delimiter="_")
 
 
-class TestWholeProductivityPerFirstAnnotationDate:
+class TestWholeProductivityPerFirstAnnotationStartedDate:
     @classmethod
     def setup_class(cls):
         cls.output_dir = out_path / "visualization"
@@ -177,27 +177,27 @@ class TestWholeProductivityPerFirstAnnotationDate:
 
     def test_create(self):
         df_task = pandas.read_csv(str(data_path / "task.csv"))
-        df = WholeProductivityPerFirstAnnotationDate.create(df_task)
+        df = WholeProductivityPerFirstAnnotationStartedDate.create(df_task)
         print(df)
         df.to_csv(self.output_dir / "out.csv", index=False)
 
     def test_plot(self):
         df_task = pandas.read_csv(str(data_path / "task.csv"))
-        df = WholeProductivityPerFirstAnnotationDate.create(df_task)
+        df = WholeProductivityPerFirstAnnotationStartedDate.create(df_task)
 
-        WholeProductivityPerFirstAnnotationDate.plot(df, self.output_dir / "教師付開始日ごとの生産量と生産性.html")
+        WholeProductivityPerFirstAnnotationStartedDate.plot(df, self.output_dir / "教師付開始日ごとの生産量と生産性.html")
 
     def test_to_csv(self):
         df_task = pandas.read_csv(str(data_path / "task.csv"))
-        df = WholeProductivityPerFirstAnnotationDate.create(df_task)
+        df = WholeProductivityPerFirstAnnotationStartedDate.create(df_task)
 
-        WholeProductivityPerFirstAnnotationDate.to_csv(df, self.output_dir / "教師付開始日ごとの生産量と生産性.csv")
+        WholeProductivityPerFirstAnnotationStartedDate.to_csv(df, self.output_dir / "教師付開始日ごとの生産量と生産性.csv")
 
     def test_merge(self):
         df1 = pandas.read_csv(str(data_path / "教師付開始日毎の生産量と生産性.csv"))
         df2 = pandas.read_csv(str(data_path / "教師付開始日毎の生産量と生産性2.csv"))
-        sum_df = WholeProductivityPerFirstAnnotationDate.merge(df1, df2)
-        WholeProductivityPerFirstAnnotationDate.to_csv(sum_df, self.output_dir / "merge-教師付開始日毎の生産量と生産性.csv")
+        sum_df = WholeProductivityPerFirstAnnotationStartedDate.merge(df1, df2)
+        WholeProductivityPerFirstAnnotationStartedDate.to_csv(sum_df, self.output_dir / "merge-教師付開始日毎の生産量と生産性.csv")
 
 
 class TestWholeProductivityPerCompletedDate:
