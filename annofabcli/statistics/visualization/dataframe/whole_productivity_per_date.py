@@ -764,6 +764,7 @@ class WholeProductivityPerFirstAnnotationDate:
             "task_count",
             "input_data_count",
             "annotation_count",
+            "worktime_hour",
             "annotation_worktime_hour",
             "inspection_worktime_hour",
             "acceptance_worktime_hour",
@@ -807,6 +808,53 @@ class WholeProductivityPerFirstAnnotationDate:
         add_velocity_column(df, numerator_column="annotation_worktime_hour", denominator_column="annotation_count")
         add_velocity_column(df, numerator_column="inspection_worktime_hour", denominator_column="annotation_count")
         add_velocity_column(df, numerator_column="acceptance_worktime_hour", denominator_column="annotation_count")
+
+
+    @classmethod
+    def merge(cls, df1: pandas.DataFrame, df2: pandas.DataFrame) -> pandas.DataFrame:
+        def merge_row(
+            str_date: str, columns: pandas.Index, row1: Optional[pandas.Series], row2: Optional[pandas.Series]
+        ) -> pandas.Series:
+            if row1 is not None and row2 is not None:
+                sum_row = row1.fillna(0) + row2.fillna(0)
+            elif row1 is not None and row2 is None:
+                sum_row = row1.fillna(0)
+            elif row1 is None and row2 is not None:
+                sum_row = row2.fillna(0)
+            else:
+                sum_row = pandas.Series(index=columns)
+
+            sum_row.name = str_date
+            return sum_row
+
+        def date_range():
+            lower_date = min(df1["first_annotation_started_date"].min(), df2["first_annotation_started_date"].min())
+            upper_date = max(df1["first_annotation_started_date"].max(), df2["first_annotation_started_date"].max())
+            return pandas.date_range(start=lower_date, end=upper_date)
+
+        tmp_df1 = df1.set_index("first_annotation_started_date")
+        tmp_df2 = df2.set_index("first_annotation_started_date")
+
+        row_list: list[pandas.Series] = []
+        for dt in date_range():
+            str_date = str(dt.date())
+            if str_date in tmp_df1.index:
+                row1 = tmp_df1.loc[str_date]
+            else:
+                row1 = None
+            if str_date in tmp_df2.index:
+                row2 = tmp_df2.loc[str_date]
+            else:
+                row2 = None
+
+            sum_row = merge_row(str_date=str_date, columns=tmp_df1.columns, row1=row1, row2=row2)
+            row_list.append(sum_row)
+
+        sum_df = pandas.DataFrame(row_list)
+        sum_df.index.name = "first_annotation_started_date"
+        cls._add_velocity_columns(sum_df)
+        return sum_df.reset_index()
+
 
     @classmethod
     def _plot_and_moving_average(
@@ -1027,3 +1075,4 @@ class WholeProductivityPerFirstAnnotationDate:
         bokeh.plotting.output_file(output_file, title=output_file.stem)
 
         bokeh.plotting.save(bokeh.layouts.column([create_div_element()] + fig_list))
+
