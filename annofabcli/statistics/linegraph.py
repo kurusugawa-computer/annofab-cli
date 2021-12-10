@@ -20,6 +20,17 @@ MAX_USER_COUNT_FOR_LINE_GRAPH = 20
 """折れ線グラフにプロットできる最大のユーザ数"""
 
 
+WEEKLY_MOVING_AVERAGE_COLUMN_SUFFIX = "__lastweek"
+"""1週間移動平均を表す列名のsuffix"""
+
+
+def get_weekly_moving_average(series: pandas.Series) -> pandas.Series:
+    """1週間移動平均をプロットするために、1週間移動平均用のpandas.Seriesを取得する。"""
+    MOVING_WINDOW_DAYS = 7
+    MIN_WINDOW_DAYS = 2
+    return series.rolling(MOVING_WINDOW_DAYS, min_periods=MIN_WINDOW_DAYS).sum()
+
+
 def get_color_from_palette(index: int) -> Color:
     my_palette = bokeh.palettes.Category20[20]
     return my_palette[index % len(my_palette)]

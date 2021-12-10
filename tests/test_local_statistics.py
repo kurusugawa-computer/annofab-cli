@@ -11,6 +11,7 @@ from annofabcli.statistics.scatter import Scatter
 from annofabcli.statistics.summarize_task_count import SimpleTaskStatus, get_step_for_current_phase
 from annofabcli.statistics.summarize_task_count_by_task_id import create_task_count_summary_df, get_task_id_prefix
 from annofabcli.statistics.table import Table
+from annofabcli.statistics.visualization.dataframe.productivity_per_date import AnnotatorProductivityPerDate
 from annofabcli.statistics.visualization.dataframe.whole_productivity_per_date import (
     WholeProductivityPerCompletedDate,
     WholeProductivityPerFirstAnnotationStartedDate,
@@ -237,3 +238,21 @@ class TestWholeProductivityPerCompletedDate:
         df2 = pandas.read_csv(str(data_path / "productivity-per-date2.csv"))
         sum_df = WholeProductivityPerCompletedDate.merge(df1, df2)
         WholeProductivityPerCompletedDate.to_csv(sum_df, self.output_dir / "merge-productivity-per-date.csv")
+
+
+class TestAnnotatorProductivityPerDate:
+    @classmethod
+    def setup_class(cls):
+        cls.output_dir = out_path / "visualization"
+        cls.output_dir.mkdir(exist_ok=True, parents=True)
+
+        df_task = pandas.read_csv(str(data_path / "task.csv"))
+        df_task = pandas.read_csv("out/task4.csv")
+
+        cls.df = AnnotatorProductivityPerDate.create(df_task)
+
+    def test_to_csv(self):
+        AnnotatorProductivityPerDate.to_csv(self.df, self.output_dir / "out.csv")
+
+    def test_plot(self):
+        AnnotatorProductivityPerDate.plot(self.df, self.output_dir / "out.html")
