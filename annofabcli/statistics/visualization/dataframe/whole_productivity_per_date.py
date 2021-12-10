@@ -966,6 +966,7 @@ class WholeProductivityPerFirstAnnotationDate:
         # 1週間移動平均用の列を追加する
         for column in [
             "input_data_count",
+            "worktime_hour",
             "annotation_worktime_hour",
             "inspection_worktime_hour",
             "acceptance_worktime_hour",

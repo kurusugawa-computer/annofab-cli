@@ -33,7 +33,7 @@ from annofabcli.statistics.database import Database, Query
 from annofabcli.statistics.linegraph import LineGraph, OutputTarget
 from annofabcli.statistics.scatter import Scatter
 from annofabcli.statistics.table import AggregationBy, Table
-from annofabcli.statistics.visualization.dataframe.whole_productivity_per_date import WholeProductivityPerCompletedDate
+from annofabcli.statistics.visualization.dataframe.whole_productivity_per_date import WholeProductivityPerCompletedDate, WholeProductivityPerFirstAnnotationDate
 
 logger = logging.getLogger(__name__)
 
@@ -264,13 +264,17 @@ class WriteCsvGraph:
 
     def write_whole_linegraph(self) -> None:
         whole_productivity_df = self._get_whole_productivity_df()
-        print(whole_productivity_df)
         self._catch_exception(WholeProductivityPerCompletedDate.plot)(
             whole_productivity_df, self.output_dir / "line-graph/折れ線-横軸_日-全体.html"
         )
         self._catch_exception(WholeProductivityPerCompletedDate.plot_cumulatively)(
             whole_productivity_df, self.output_dir / "line-graph/累積折れ線-横軸_日-全体.html"
         )
+
+    def write_whole_productivity_per_first_annotation_started_date(self) -> None:
+        df = WholeProductivityPerFirstAnnotationDate.create(self.task_df)
+        WholeProductivityPerFirstAnnotationDate.to_csv(df, self.output_dir / "教師付開始日毎の生産量と生産性.csv")
+        WholeProductivityPerFirstAnnotationDate.plot(df, self.output_dir / "line-graph/折れ線-横軸_教師付開始日-全体.html")
 
     def write_linegraph_by_user(self, user_id_list: Optional[List[str]] = None) -> None:
         """
@@ -527,6 +531,8 @@ def visualize_statistics(
     # 折れ線グラフ
     write_obj.write_linegraph_by_user(user_id_list)
     write_obj.write_whole_linegraph()
+
+    write_obj.write_whole_productivity_per_first_annotation_started_date()
 
     if not minimal_output:
         write_obj.write_histogram_for_annotation()
