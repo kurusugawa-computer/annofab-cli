@@ -100,6 +100,7 @@ class WriteCsvGraph:
         minimal_output: bool = False,
     ):
         self.project_id = project_id
+        self.output_dir = output_dir
         self.table_obj = table_obj
         self.csv_obj = Csv(str(output_dir))
         # holoviews のloadに時間がかかって、helpコマンドの出力が遅いため、遅延ロードする
@@ -258,8 +259,12 @@ class WriteCsvGraph:
 
     def write_whole_linegraph(self) -> None:
         whole_productivity_df = self._get_whole_productivity_df()
-        self._catch_exception(self.linegraph_obj.write_whole_productivity_line_graph)(whole_productivity_df)
-        self._catch_exception(self.linegraph_obj.write_whole_cumulative_line_graph)(whole_productivity_df)
+        self._catch_exception(WholeProductivityPerCompletedDate.plot)(
+            whole_productivity_df, self.output_dir / "line-graph/折れ線-横軸_日-全体.html"
+        )
+        self._catch_exception(WholeProductivityPerCompletedDate.plot_cumulatively)(
+            whole_productivity_df, self.output_dir / "line-graph/累積折れ線-横軸_日-全体.html"
+        )
 
     def write_linegraph_by_user(self, user_id_list: Optional[List[str]] = None) -> None:
         """

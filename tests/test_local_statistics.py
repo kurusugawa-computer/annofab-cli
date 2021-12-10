@@ -142,11 +142,6 @@ class TestLineGraph:
         cumulative_df = Table.create_cumulative_df_by_first_acceptor(df)
         self.line_graph_obj.write_cumulative_line_graph_for_acceptor(cumulative_df)
 
-    def test_write_cumulative_line_graph_overall(self):
-        df_task = pandas.read_csv(str(data_path / "task.csv"))
-        df_cumulative = Table.create_cumulative_df_overall(df_task)
-        self.line_graph_obj.write_cumulative_line_graph_overall(df_cumulative)
-
     def test_write_whole_productivity_line_graph(self):
         df = pandas.read_csv(str(data_path / "productivity-per-date3.csv"))
         self.line_graph_obj.write_whole_productivity_line_graph(df)
