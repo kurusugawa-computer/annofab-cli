@@ -28,6 +28,7 @@ from annofabcli.statistics.database import Database, Query
 from annofabcli.statistics.linegraph import LineGraph, OutputTarget
 from annofabcli.statistics.scatter import Scatter
 from annofabcli.statistics.table import AggregationBy, Table
+from annofabcli.statistics.visualization.dataframe.whole_productivity_per_date import WholeProductivityPerCompletedDate
 
 logger = logging.getLogger(__name__)
 
@@ -190,7 +191,7 @@ class WriteCsvGraph:
         if self.whole_productivity_df is None:
             task_df = self._get_task_df()
             labor_df = self._get_labor_df()
-            self.whole_productivity_df = self.table_obj.create_whole_productivity_per_date(task_df, labor_df)
+            self.whole_productivity_df = WholeProductivityPerCompletedDate.create(task_df, labor_df)
         return self.whole_productivity_df
 
     def write_histogram_for_task(self) -> None:

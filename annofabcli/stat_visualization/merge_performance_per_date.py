@@ -8,7 +8,7 @@ import pandas
 import annofabcli
 from annofabcli.common.cli import AbstractCommandLineWithoutWebapiInterface
 from annofabcli.statistics.csv import FILENAME_PERFORMANCE_PER_DATE, Csv
-from annofabcli.statistics.table import Table
+from annofabcli.statistics.visualization.dataframe.whole_productivity_per_date import WholeProductivityPerCompletedDate
 
 logger = logging.getLogger(__name__)
 
@@ -38,7 +38,7 @@ def create_df_merged_performance_per_date(csv_path_list: List[Path]) -> pandas.D
 
     sum_df = df_list[0]
     for df in df_list[1:]:
-        sum_df = Table.merge_whole_productivity_per_date(sum_df, df)
+        sum_df = WholeProductivityPerCompletedDate.merge(sum_df, df)
 
     return sum_df
 
