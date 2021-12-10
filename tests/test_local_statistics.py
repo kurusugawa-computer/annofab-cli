@@ -255,4 +255,9 @@ class TestAnnotatorProductivityPerDate:
         AnnotatorProductivityPerDate.to_csv(self.df, self.output_dir / "out.csv")
 
     def test_plot(self):
-        AnnotatorProductivityPerDate.plot(self.df, self.output_dir / "out.html")
+        AnnotatorProductivityPerDate.plot(self.df, self.output_dir / "折れ線-横軸_教師付開始日-縦軸_アノテーションあたりの指標-教師付者用.html")
+
+    def test_plot(self):
+        AnnotatorProductivityPerDate.plot_input_data_metrics(
+            self.df, self.output_dir / "折れ線-横軸_教師付開始日-縦軸_入力データあたりの指標-教師付者用.html"
+        )
