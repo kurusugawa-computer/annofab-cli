@@ -251,7 +251,6 @@ class TestAnnotatorProductivityPerDate:
         cls.output_dir.mkdir(exist_ok=True, parents=True)
 
         df_task = pandas.read_csv(str(data_path / "task.csv"))
-        df_task = pandas.read_csv("out/task4.csv")
         cls.obj = AnnotatorProductivityPerDate.from_df_task(df_task)
 
     def test_to_csv(self):
@@ -271,22 +270,17 @@ class TestInspectorProductivityPerDate:
         cls.output_dir.mkdir(exist_ok=True, parents=True)
 
         df_task = pandas.read_csv(str(data_path / "task.csv"))
-        df_task = pandas.read_csv("out/task4.csv")
 
         cls.obj = InspectorProductivityPerDate.from_df_task(df_task)
 
     def test_to_csv(self):
-        self.obj.to_csv( self.output_dir / "検査開始日ごとの検査者の生産性.csv")
+        self.obj.to_csv(self.output_dir / "検査開始日ごとの検査者の生産性.csv")
 
     def test_plot_annotation_metrics(self):
-        self.obj.plot_annotation_metrics(
-            self.output_dir / "折れ線-横軸_検査開始日-縦軸_アノテーションあたりの指標-検査者用.html"
-        )
+        self.obj.plot_annotation_metrics(self.output_dir / "折れ線-横軸_検査開始日-縦軸_アノテーションあたりの指標-検査者用.html")
 
     def test_plot_input_data_metrics(self):
-        self.obj.plot_input_data_metrics(
-            self.output_dir / "折れ線-横軸_検査開始日-縦軸_入力データあたりの指標-検査者用.html"
-        )
+        self.obj.plot_input_data_metrics(self.output_dir / "折れ線-横軸_検査開始日-縦軸_入力データあたりの指標-検査者用.html")
 
 
 class TestAcceptorProductivityPerDate:
@@ -300,14 +294,10 @@ class TestAcceptorProductivityPerDate:
         cls.obj = AcceptorProductivityPerDate.from_df_task(df_task)
 
     def test_to_csv(self):
-        self.obj.to_csv( self.output_dir / "受入開始日ごとの受入者の生産性.csv")
+        self.obj.to_csv(self.output_dir / "受入開始日ごとの受入者の生産性.csv")
 
     def test_plot_annotation_metrics(self):
-        self.obj.plot_annotation_metrics(
-            self.output_dir / "折れ線-横軸_受入開始日-縦軸_アノテーションあたりの指標-受入者用.html"
-        )
+        self.obj.plot_annotation_metrics(self.output_dir / "折れ線-横軸_受入開始日-縦軸_アノテーションあたりの指標-受入者用.html")
 
     def test_plot_input_data_metrics(self):
-        self.obj.plot_input_data_metrics(
-            self.output_dir / "折れ線-横軸_受入開始日-縦軸_入力データあたりの指標-受入者用.html"
-        )
+        self.obj.plot_input_data_metrics(self.output_dir / "折れ線-横軸_受入開始日-縦軸_入力データあたりの指標-受入者用.html")

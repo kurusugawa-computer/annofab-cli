@@ -1931,4 +1931,3 @@ class LineGraph:
         bokeh.plotting.reset_output()
         bokeh.plotting.output_file(output_file, title=html_title)
         bokeh.plotting.save(bokeh.layouts.column(fig_list))
-

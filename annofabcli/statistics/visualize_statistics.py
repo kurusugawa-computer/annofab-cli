@@ -33,6 +33,11 @@ from annofabcli.statistics.database import Database, Query
 from annofabcli.statistics.linegraph import LineGraph, OutputTarget
 from annofabcli.statistics.scatter import Scatter
 from annofabcli.statistics.table import AggregationBy, Table
+from annofabcli.statistics.visualization.dataframe.productivity_per_date import (
+    AcceptorProductivityPerDate,
+    AnnotatorProductivityPerDate,
+    InspectorProductivityPerDate,
+)
 from annofabcli.statistics.visualization.dataframe.whole_productivity_per_date import (
     WholeProductivityPerCompletedDate,
     WholeProductivityPerFirstAnnotationStartedDate,
@@ -322,34 +327,6 @@ class WriteCsvGraph:
             first_acceptance_user_id_list=user_id_list,
         )
 
-        if not self.minimal_output:
-            df_by_date_user_for_annotation = self._get_df_by_date_user_for_annotation()
-            if len(df_by_date_user_for_annotation) > 0:
-                self._catch_exception(self.linegraph_obj.write_productivity_line_graph_for_annotator)(
-                    df=df_by_date_user_for_annotation, first_annotation_user_id_list=user_id_list
-                )
-                self._catch_exception(self.linegraph_obj.write_gradient_graph_for_annotator)(
-                    df=task_cumulative_df_by_annotator, first_annotation_user_id_list=user_id_list
-                )
-
-            df_by_date_user_for_inspection = self._get_df_by_date_user_for_inspection()
-            if len(df_by_date_user_for_inspection) > 0:
-                self._catch_exception(self.linegraph_obj.write_productivity_line_graph_for_inspector)(
-                    df=df_by_date_user_for_inspection, first_inspection_user_id_list=user_id_list
-                )
-                self._catch_exception(self.linegraph_obj.write_gradient_for_inspector)(
-                    df=task_cumulative_df_by_inspector, first_inspection_user_id_list=user_id_list
-                )
-
-            df_by_date_user_for_acceptance = self._get_df_by_date_user_for_acceptance()
-            if len(df_by_date_user_for_acceptance) > 0:
-                self._catch_exception(self.linegraph_obj.write_productivity_line_graph_for_acceptor)(
-                    df=df_by_date_user_for_acceptance, first_acceptance_user_id_list=user_id_list
-                )
-                self._catch_exception(self.linegraph_obj.write_gradient_for_acceptor)(
-                    df=task_cumulative_df_by_acceptor, first_acceptance_user_id_list=user_id_list
-                )
-
     def write_linegraph_for_worktime_by_user(self, user_id_list: Optional[List[str]] = None) -> None:
         account_statistics_df = self._get_account_statistics_df()
         cumulative_account_statistics_df = self.table_obj.create_cumulative_df_by_user(account_statistics_df)
@@ -420,13 +397,6 @@ class WriteCsvGraph:
         account_statistics_df = self._get_account_statistics_df()
         self._catch_exception(self.csv_obj.write_ユーザ別日毎の作業時間)(account_statistics_df)
 
-    def write_csv_for_date_user(self) -> None:
-        """
-        ユーザごと、日ごとの情報をCSVに出力する.
-        """
-        df_by_date_user = self._get_df_by_date_user_for_annotation()
-        self._catch_exception(self.csv_obj.write_教師付作業者別日毎の情報)(df_by_date_user)
-
     def write_productivity_csv_per_user(self) -> None:
         productivity_df = self._get_productivity_df()
         if len(productivity_df) == 0:
@@ -442,6 +412,37 @@ class WriteCsvGraph:
 
         df_labor = self._get_labor_df()
         self._catch_exception(self.csv_obj.write_labor_list)(df_labor)
+
+    def write_user_productivity_per_date(self, user_id_list: Optional[List[str]] = None):
+        """ユーザごとの日ごとの生産性情報を出力する。"""
+        # 各ユーザごとの日ごとの情報
+        df_task = self._get_task_df()
+        annotator_per_date_obj = AnnotatorProductivityPerDate.from_df_task(df_task)
+        annotator_per_date_obj.to_csv(Path("教師付者_教師付開始日list.csv"))
+        annotator_per_date_obj.plot_annotation_metrics(
+            Path("line-graph/教師付者用/折れ線-横軸_教師付開始日-縦軸_アノテーション単位の指標-教師付者用.html"), user_id_list
+        )
+        annotator_per_date_obj.plot_input_data_metrics(
+            Path("line-graph/教師付者用/折れ線-横軸_教師付開始日-縦軸_入力データ単位の指標-教師付者用.html"), user_id_list
+        )
+
+        inspector_per_date_obj = InspectorProductivityPerDate.from_df_task(df_task)
+        inspector_per_date_obj.to_csv(Path("検査者_検査開始日list.csv"))
+        inspector_per_date_obj.plot_annotation_metrics(
+            Path("line-graph/検査者用/折れ線-横軸_検査開始日-縦軸_アノテーション単位の指標-検査者用.html"), user_id_list
+        )
+        inspector_per_date_obj.plot_input_data_metrics(
+            Path("line-graph/検査者用/折れ線-横軸_検査開始日-縦軸_入力データ単位の指標-検査者用.html"), user_id_list
+        )
+
+        acceptor_per_date = AcceptorProductivityPerDate.from_df_task(df_task)
+        acceptor_per_date.to_csv(Path("受入者_受入開始日list.csv"))
+        acceptor_per_date.plot_annotation_metrics(
+            Path("line-graph/検査者用/折れ線-横軸_検査開始日-縦軸_アノテーション単位の指標-検査者用.html"), user_id_list
+        )
+        acceptor_per_date.plot_input_data_metrics(
+            Path("line-graph/検査者用/折れ線-横軸_検査開始日-縦軸_入力データ単位の指標-検査者用.html"), user_id_list
+        )
 
 
 def visualize_statistics(
@@ -541,11 +542,12 @@ def visualize_statistics(
         write_obj.write_histogram_for_annotation()
         write_obj.write_linegraph_for_worktime_by_user(user_id_list)
 
+        write_obj.write_user_productivity_per_date(user_id_list)
+
         # CSV
         write_obj.write_labor_and_task_history()
         write_obj.write_csv_for_annotation()
         write_obj.write_csv_for_account_statistics()
-        write_obj.write_csv_for_date_user()
         write_obj.write_csv_for_inspection()
         write_obj.write_メンバー別作業時間平均_画像1枚あたり_by_phase()
 
