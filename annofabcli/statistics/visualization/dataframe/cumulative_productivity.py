@@ -409,32 +409,23 @@ class InspectorCumulativeProductivity(AbstractRoleCumulativeProductivity):
 
     def _get_cumulative_dataframe(self) -> pandas.DataFrame:
         """
-        最初のアノテーション作業の開始時刻の順にソートして、教師付者に関する累計値を算出する
+        最初のアノテーション作業の開始時刻の順にソートして、検査者に関する累計値を算出する
         Args:
             task_df: タスク一覧のDataFrame. 列が追加される
         """
-        # 教師付の開始時刻でソートして、indexを更新する
         df = self.df.sort_values(["first_inspection_user_id", "first_inspection_started_datetime"]).reset_index(
             drop=True
         )
-        # タスクの累計数を取得するために設定する
-        df["task_count"] = 1
-        # 教師付の作業者でgroupby
         groupby_obj = df.groupby("first_inspection_user_id")
 
         # 作業時間の累積値
         df["cumulative_inspection_worktime_hour"] = groupby_obj["inspection_worktime_hour"].cumsum()
         df["cumulative_acceptance_worktime_hour"] = groupby_obj["acceptance_worktime_hour"].cumsum()
-        df["cumulative_inspection_worktime_hour"] = groupby_obj["inspection_worktime_hour"].cumsum()
 
-        # タスク完了数、差し戻し数など
         df["cumulative_inspection_count"] = groupby_obj["inspection_count"].cumsum()
-        df["cumulative_inspection_count"] = groupby_obj["annotation_count"].cumsum()
+        df["cumulative_annotation_count"] = groupby_obj["annotation_count"].cumsum()
         df["cumulative_input_data_count"] = groupby_obj["input_data_count"].cumsum()
-        df["cumulative_task_count"] = groupby_obj["task_count"].cumsum()
 
-        # 元に戻す
-        df = df.drop(["task_count"], axis=1)
         return df
 
     def plot_annotation_metrics(
@@ -443,7 +434,7 @@ class InspectorCumulativeProductivity(AbstractRoleCumulativeProductivity):
         target_user_id_list: Optional[list[str]] = None,
     ):
         """
-        生産性を教師付作業者ごとにプロットする。
+        生産性を検査作業者ごとにプロットする。
 
         Args:
             df:
@@ -491,7 +482,6 @@ class InspectorCumulativeProductivity(AbstractRoleCumulativeProductivity):
                 logger.debug(f"dataframe is empty. user_id = {user_id}")
                 continue
 
-            df_subset.to_csv(f"{user_id}.csv")
             source = ColumnDataSource(data=df_subset)
             color = get_color_from_palette(user_index)
             username = df_subset.iloc[0]["first_inspection_username"]
@@ -532,7 +522,7 @@ class InspectorCumulativeProductivity(AbstractRoleCumulativeProductivity):
         target_user_id_list: Optional[list[str]] = None,
     ):
         """
-        教師付者の累積値を入力データ単位でプロットする。
+        kensa 者の累積値を入力データ単位でプロットする。
 
         """
 
