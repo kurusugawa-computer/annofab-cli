@@ -16,6 +16,7 @@ from annofabcli.statistics.visualization.dataframe.productivity_per_date import 
     AnnotatorProductivityPerDate,
     InspectorProductivityPerDate,
 )
+from annofabcli.statistics.visualization.dataframe.cumulative_productivity import AnnotatorCumulativeProductivity
 from annofabcli.statistics.visualization.dataframe.whole_productivity_per_date import (
     WholeProductivityPerCompletedDate,
     WholeProductivityPerFirstAnnotationStartedDate,
@@ -301,3 +302,38 @@ class TestAcceptorProductivityPerDate:
 
     def test_plot_input_data_metrics(self):
         self.obj.plot_input_data_metrics(self.output_dir / "折れ線-横軸_受入開始日-縦軸_入力データあたりの指標-受入者用.html")
+
+
+class TestAnnotatorProductivityPerDate:
+    @classmethod
+    def setup_class(cls):
+        cls.output_dir = out_path / "visualization"
+        cls.output_dir.mkdir(exist_ok=True, parents=True)
+
+        df_task = pandas.read_csv(str(data_path / "task.csv"))
+        cls.obj = AnnotatorProductivityPerDate.from_df_task(df_task)
+
+    def test_to_csv(self):
+        self.obj.to_csv(self.output_dir / "教師付開始日ごとの教師付者の生産性.csv")
+
+    def test_plot_annotation_metrics(self):
+        self.obj.plot_annotation_metrics(self.output_dir / "折れ線-横軸_教師付開始日-縦軸_アノテーションあたりの指標-教師付者用.html")
+
+    def test_plot_input_data_metrics(self):
+        self.obj.plot_input_data_metrics(self.output_dir / "折れ線-横軸_教師付開始日-縦軸_入力データあたりの指標-教師付者用.html")
+
+
+
+class TestAnnotatorCumulativeProductivity:
+    @classmethod
+    def setup_class(cls):
+        cls.output_dir = out_path / "visualization"
+        cls.output_dir.mkdir(exist_ok=True, parents=True)
+
+        df_task = pandas.read_csv(str(data_path / "task.csv"))
+        df_task = pandas.read_csv("out/task4.csv")
+        cls.obj = AnnotatorCumulativeProductivity(df_task)
+
+    def test_plot_annotation_metrics(self):
+        self.obj.plot_annotation_metrics(self.output_dir / "累積折れ線-横軸_アノテーション数-教師付者用")
+
