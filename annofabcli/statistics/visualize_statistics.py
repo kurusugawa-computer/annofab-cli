@@ -418,30 +418,30 @@ class WriteCsvGraph:
         # 各ユーザごとの日ごとの情報
         df_task = self._get_task_df()
         annotator_per_date_obj = AnnotatorProductivityPerDate.from_df_task(df_task)
-        annotator_per_date_obj.to_csv(Path("教師付者_教師付開始日list.csv"))
+        annotator_per_date_obj.to_csv(self.output_dir / Path("教師付者_教師付開始日list.csv"))
         annotator_per_date_obj.plot_annotation_metrics(
-            Path("line-graph/教師付者用/折れ線-横軸_教師付開始日-縦軸_アノテーション単位の指標-教師付者用.html"), user_id_list
+            self.output_dir / Path("line-graph/教師付者用/折れ線-横軸_教師付開始日-縦軸_アノテーション単位の指標-教師付者用.html"), user_id_list
         )
         annotator_per_date_obj.plot_input_data_metrics(
-            Path("line-graph/教師付者用/折れ線-横軸_教師付開始日-縦軸_入力データ単位の指標-教師付者用.html"), user_id_list
+            self.output_dir / Path("line-graph/教師付者用/折れ線-横軸_教師付開始日-縦軸_入力データ単位の指標-教師付者用.html"), user_id_list
         )
 
         inspector_per_date_obj = InspectorProductivityPerDate.from_df_task(df_task)
-        inspector_per_date_obj.to_csv(Path("検査者_検査開始日list.csv"))
+        inspector_per_date_obj.to_csv(self.output_dir / Path("検査者_検査開始日list.csv"))
         inspector_per_date_obj.plot_annotation_metrics(
-            Path("line-graph/検査者用/折れ線-横軸_検査開始日-縦軸_アノテーション単位の指標-検査者用.html"), user_id_list
+            self.output_dir / Path("line-graph/検査者用/折れ線-横軸_検査開始日-縦軸_アノテーション単位の指標-検査者用.html"), user_id_list
         )
         inspector_per_date_obj.plot_input_data_metrics(
-            Path("line-graph/検査者用/折れ線-横軸_検査開始日-縦軸_入力データ単位の指標-検査者用.html"), user_id_list
+            self.output_dir / Path("line-graph/検査者用/折れ線-横軸_検査開始日-縦軸_入力データ単位の指標-検査者用.html"), user_id_list
         )
 
         acceptor_per_date = AcceptorProductivityPerDate.from_df_task(df_task)
-        acceptor_per_date.to_csv(Path("受入者_受入開始日list.csv"))
+        acceptor_per_date.to_csv(self.output_dir / Path("受入者_受入開始日list.csv"))
         acceptor_per_date.plot_annotation_metrics(
-            Path("line-graph/検査者用/折れ線-横軸_検査開始日-縦軸_アノテーション単位の指標-検査者用.html"), user_id_list
+            self.output_dir / Path("line-graph/検査者用/折れ線-横軸_検査開始日-縦軸_アノテーション単位の指標-検査者用.html"), user_id_list
         )
         acceptor_per_date.plot_input_data_metrics(
-            Path("line-graph/検査者用/折れ線-横軸_検査開始日-縦軸_入力データ単位の指標-検査者用.html"), user_id_list
+            self.output_dir / Path("line-graph/検査者用/折れ線-横軸_検査開始日-縦軸_入力データ単位の指標-検査者用.html"), user_id_list
         )
 
 
@@ -542,7 +542,7 @@ def visualize_statistics(
         write_obj.write_histogram_for_annotation()
         write_obj.write_linegraph_for_worktime_by_user(user_id_list)
 
-        write_obj.write_user_productivity_per_date(user_id_list)
+        write_obj._catch_exception(write_obj.write_user_productivity_per_date)(user_id_list)
 
         # CSV
         write_obj.write_labor_and_task_history()

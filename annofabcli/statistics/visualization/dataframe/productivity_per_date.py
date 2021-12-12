@@ -26,6 +26,7 @@ from annofabcli.statistics.linegraph import (
     get_weekly_moving_average,
     plot_line_and_circle,
     plot_moving_average,
+    write_bokeh_graph,
 )
 
 logger = logging.getLogger(__name__)
@@ -53,11 +54,11 @@ class AbstractRoleProductivityPerDate(abc.ABC):
         pass
 
     @abc.abstractmethod
-    def plot_input_data_metrics(self, output_file: Path):
+    def plot_input_data_metrics(self, output_file: Path, target_user_id_list: Optional[list[str]] = None):
         pass
 
     @abc.abstractmethod
-    def plot_annotation_metrics(self, output_file: Path):
+    def plot_annotation_metrics(self, output_file: Path, target_user_id_list: Optional[list[str]] = None):
         pass
 
 
@@ -296,9 +297,7 @@ class AnnotatorProductivityPerDate(AbstractRoleProductivityPerDate):
             fig.add_tools(hover_tool)
             add_legend_to_figure(fig)
 
-        bokeh.plotting.reset_output()
-        bokeh.plotting.output_file(output_file, title=output_file.stem)
-        bokeh.plotting.save(bokeh.layouts.column(figs))
+        write_bokeh_graph(bokeh.layouts.column(figs), output_file)
 
     def plot_input_data_metrics(
         self,
@@ -433,9 +432,7 @@ class AnnotatorProductivityPerDate(AbstractRoleProductivityPerDate):
             fig.add_tools(hover_tool)
             add_legend_to_figure(fig)
 
-        bokeh.plotting.reset_output()
-        bokeh.plotting.output_file(output_file, title=output_file.stem)
-        bokeh.plotting.save(bokeh.layouts.column(figs))
+        write_bokeh_graph(bokeh.layouts.column(figs), output_file)
 
     def to_csv(self, output_file: Path) -> None:
         """
@@ -674,9 +671,7 @@ class InspectorProductivityPerDate(AbstractRoleProductivityPerDate):
             fig.add_tools(hover_tool)
             add_legend_to_figure(fig)
 
-        bokeh.plotting.reset_output()
-        bokeh.plotting.output_file(output_file, title=output_file.stem)
-        bokeh.plotting.save(bokeh.layouts.column(figs))
+        write_bokeh_graph(bokeh.layouts.column(figs), output_file)
 
     def plot_input_data_metrics(
         self,
@@ -795,9 +790,7 @@ class InspectorProductivityPerDate(AbstractRoleProductivityPerDate):
             fig.add_tools(hover_tool)
             add_legend_to_figure(fig)
 
-        bokeh.plotting.reset_output()
-        bokeh.plotting.output_file(output_file, title=output_file.stem)
-        bokeh.plotting.save(bokeh.layouts.column(figs))
+        write_bokeh_graph(bokeh.layouts.column(figs), output_file)
 
     def to_csv(self, output_file: Path) -> None:
         """
@@ -1026,9 +1019,7 @@ class AcceptorProductivityPerDate(AbstractRoleProductivityPerDate):
             fig.add_tools(hover_tool)
             add_legend_to_figure(fig)
 
-        bokeh.plotting.reset_output()
-        bokeh.plotting.output_file(output_file, title=output_file.stem)
-        bokeh.plotting.save(bokeh.layouts.column(figs))
+        write_bokeh_graph(bokeh.layouts.column(figs), output_file)
 
     def plot_input_data_metrics(
         self,
@@ -1147,9 +1138,7 @@ class AcceptorProductivityPerDate(AbstractRoleProductivityPerDate):
             fig.add_tools(hover_tool)
             add_legend_to_figure(fig)
 
-        bokeh.plotting.reset_output()
-        bokeh.plotting.output_file(output_file, title=output_file.stem)
-        bokeh.plotting.save(bokeh.layouts.column(figs))
+        write_bokeh_graph(bokeh.layouts.column(figs), output_file)
 
     def to_csv(self, output_file: Path) -> None:
         """

@@ -24,6 +24,13 @@ WEEKLY_MOVING_AVERAGE_COLUMN_SUFFIX = "__lastweek"
 """1週間移動平均を表す列名のsuffix"""
 
 
+def write_bokeh_graph(bokeh_obj, output_file: Path):
+    output_file.parent.mkdir(exist_ok=True, parents=True)
+    bokeh.plotting.reset_output()
+    bokeh.plotting.output_file(output_file, title=output_file.stem)
+    bokeh.plotting.save(bokeh_obj)
+
+
 def get_weekly_moving_average(series: pandas.Series) -> pandas.Series:
     """1週間移動平均をプロットするために、1週間移動平均用のpandas.Seriesを取得する。"""
     MOVING_WINDOW_DAYS = 7
