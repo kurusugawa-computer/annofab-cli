@@ -14,6 +14,7 @@ from annofabcli.statistics.table import Table
 from annofabcli.statistics.visualization.dataframe.productivity_per_date import (
     AcceptorProductivityPerDate,
     AnnotatorProductivityPerDate,
+    InspectorProductivityPerDate
 )
 from annofabcli.statistics.visualization.dataframe.whole_productivity_per_date import (
     WholeProductivityPerCompletedDate,
@@ -264,6 +265,31 @@ class TestAnnotatorProductivityPerDate:
     def test_plot_input_data_metrics(self):
         AnnotatorProductivityPerDate.plot_input_data_metrics(
             self.df, self.output_dir / "折れ線-横軸_教師付開始日-縦軸_入力データあたりの指標-教師付者用.html"
+        )
+
+
+class TestInspectorProductivityPerDate:
+    @classmethod
+    def setup_class(cls):
+        cls.output_dir = out_path / "visualization"
+        cls.output_dir.mkdir(exist_ok=True, parents=True)
+
+        df_task = pandas.read_csv(str(data_path / "task.csv"))
+        df_task = pandas.read_csv("out/task4.csv")
+
+        cls.df = InspectorProductivityPerDate.create(df_task)
+
+    def test_to_csv(self):
+        InspectorProductivityPerDate.to_csv(self.df, self.output_dir / "検査開始日ごとの検査者の生産性.csv")
+
+    def test_plot_annotation_metrics(self):
+        InspectorProductivityPerDate.plot_annotation_metrics(
+            self.df, self.output_dir / "折れ線-横軸_検査開始日-縦軸_アノテーションあたりの指標-検査者用.html"
+        )
+
+    def test_plot_input_data_metrics(self):
+        InspectorProductivityPerDate.plot_input_data_metrics(
+            self.df, self.output_dir / "折れ線-横軸_検査開始日-縦軸_入力データあたりの指標-検査者用.html"
         )
 
 
