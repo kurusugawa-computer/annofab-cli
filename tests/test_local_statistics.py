@@ -250,11 +250,11 @@ class TestAnnotatorProductivityPerDate:
         cls.output_dir.mkdir(exist_ok=True, parents=True)
 
         df_task = pandas.read_csv(str(data_path / "task.csv"))
-
+        df_task = pandas.read_csv("out/task4.csv")
         cls.df = AnnotatorProductivityPerDate.create(df_task)
 
     def test_to_csv(self):
-        AnnotatorProductivityPerDate.to_csv(self.df, self.output_dir / "out.csv")
+        AnnotatorProductivityPerDate.to_csv(self.df, self.output_dir / "教師付開始日ごとの教師付者の生産性.csv")
 
     def test_plot_annotation_metrics(self):
         AnnotatorProductivityPerDate.plot_annotation_metrics(

@@ -83,6 +83,49 @@ class AnnotatorProductivityPerDate:
 
         return sum_df
 
+    @staticmethod
+    def _get_df_sequential_date(df: pandas.DataFrame) -> pandas.DataFrame:
+        """連続した日付のDataFrameを生成する。"""
+        df_date = pandas.DataFrame(
+            {
+                "first_annotation_started_date": [
+                    str(e.date())
+                    for e in pandas.date_range(
+                        df["first_annotation_started_date"].min(),
+                        df["first_annotation_started_date"].max(),
+                    )
+                ]
+            }
+        )
+        df2 = df_date.merge(df, how="left", on="first_annotation_started_date")
+        df2["dt_first_annotation_started_date"] = df2["first_annotation_started_date"].map(lambda e: parse(e).date())
+
+        assert len(df) > 0
+        first_row = df.iloc[0]
+        df2["first_annotation_user_id"] = first_row["first_annotation_user_id"]
+        df2["first_annotation_username"] = first_row["first_annotation_username"]
+
+        df2.fillna(
+            {
+                key: 0
+                for key in [
+                    "first_annotation_worktime_hour",
+                    "annotation_worktime_hour",
+                    "inspection_worktime_hour",
+                    "acceptance_worktime_hour",
+                    "sum_worktime_hour",
+                    "inspection_count",
+                    "task_count",
+                    "input_data_count",
+                    "annotation_count",
+                    "inspection_comment",
+                ]
+            },
+            inplace=True,
+        )
+
+        return df2
+
     @classmethod
     def plot_annotation_metrics(
         cls,
@@ -131,8 +174,6 @@ class AnnotatorProductivityPerDate:
             )
 
         user_id_list = get_plotted_user_id_list(user_id_list)
-
-        df["dt_first_annotation_started_date"] = df["first_annotation_started_date"].map(lambda e: parse(e).date())
 
         fig_info_list = [
             dict(
@@ -183,6 +224,7 @@ class AnnotatorProductivityPerDate:
                 logger.debug(f"dataframe is empty. user_id = {user_id}")
                 continue
 
+            df_subset = cls._get_df_sequential_date(df_subset)
             df_subset[f"annotation_worktime_minute/annotation_count{WEEKLY_MOVING_AVERAGE_COLUMN_SUFFIX}"] = (
                 get_weekly_moving_average(df_subset["annotation_worktime_hour"])
                 * 60
@@ -271,8 +313,6 @@ class AnnotatorProductivityPerDate:
 
         user_id_list = get_plotted_user_id_list(user_id_list)
 
-        df["dt_first_annotation_started_date"] = df["first_annotation_started_date"].map(lambda e: parse(e).date())
-
         fig_info_list = [
             dict(
                 title="教師付開始日ごとの教師付作業時間",
@@ -322,6 +362,7 @@ class AnnotatorProductivityPerDate:
                 logger.debug(f"dataframe is empty. user_id = {user_id}")
                 continue
 
+            df_subset = cls._get_df_sequential_date(df_subset)
             df_subset[f"annotation_worktime_minute/input_data_count{WEEKLY_MOVING_AVERAGE_COLUMN_SUFFIX}"] = (
                 get_weekly_moving_average(df_subset["annotation_worktime_hour"])
                 * 60
@@ -453,9 +494,8 @@ class AcceptorProductivityPerDate:
         return sum_df
 
     @staticmethod
-    def _get_df_sequential_date(df:pandas.DataFrame) -> pandas.DataFrame:
-        """連続した日付のDataFrameを生成する。
-        """
+    def _get_df_sequential_date(df: pandas.DataFrame) -> pandas.DataFrame:
+        """連続した日付のDataFrameを生成する。"""
         df_date = pandas.DataFrame(
             {
                 "first_acceptance_started_date": [
@@ -468,9 +508,7 @@ class AcceptorProductivityPerDate:
             }
         )
         df2 = df_date.merge(df, how="left", on="first_acceptance_started_date")
-        df2["dt_first_acceptance_started_date"] = df2["first_acceptance_started_date"].map(
-            lambda e: parse(e).date()
-        )
+        df2["dt_first_acceptance_started_date"] = df2["first_acceptance_started_date"].map(lambda e: parse(e).date())
 
         assert len(df) > 0
         first_row = df.iloc[0]
@@ -491,7 +529,6 @@ class AcceptorProductivityPerDate:
             inplace=True,
         )
         return df2
-
 
     @classmethod
     def plot_annotation_metrics(
@@ -657,8 +694,6 @@ class AcceptorProductivityPerDate:
             )
 
         user_id_list = get_plotted_user_id_list(user_id_list)
-
-        df["dt_first_acceptance_started_date"] = df["first_acceptance_started_date"].map(lambda e: parse(e).date())
 
         fig_info_list = [
             dict(
