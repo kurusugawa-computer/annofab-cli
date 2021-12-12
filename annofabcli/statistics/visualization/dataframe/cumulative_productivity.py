@@ -30,6 +30,9 @@ logger = logging.getLogger(__name__)
 class AbstractRoleCumulativeProductivity(abc.ABC):
     """ロールごとの累積の生産性をプロットするための抽象クラス"""
 
+    PLOT_WIDTH=1200
+    PLOT_HEIGHT=600
+
     def __init__(self, df: pandas.DataFrame) -> None:
         self.df = df
         self.df_cumulative = self._get_cumulative_dataframe()
@@ -155,8 +158,8 @@ class AnnotatorCumulativeProductivity(AbstractRoleCumulativeProductivity):
         for fig_info in fig_info_list:
             figs.append(
                 figure(
-                    plot_width=1200,
-                    plot_height=600,
+                    plot_width=self.PLOT_WIDTH,
+                    plot_height=self.PLOT_HEIGHT,
                     title=fig_info["title"],
                     x_axis_label="アノテーション数",
                     y_axis_label=fig_info["y_axis_label"],
@@ -254,8 +257,8 @@ class AnnotatorCumulativeProductivity(AbstractRoleCumulativeProductivity):
         for fig_info in fig_info_list:
             figs.append(
                 figure(
-                    plot_width=1200,
-                    plot_height=600,
+                    plot_width=self.PLOT_WIDTH,
+                    plot_height=self.PLOT_HEIGHT,
                     title=fig_info["title"],
                     x_axis_label="入力データ数",
                     y_axis_label=fig_info["y_axis_label"],
@@ -348,8 +351,8 @@ class AnnotatorCumulativeProductivity(AbstractRoleCumulativeProductivity):
         for fig_info in fig_info_list:
             figs.append(
                 figure(
-                    plot_width=1200,
-                    plot_height=600,
+                    plot_width=self.PLOT_WIDTH,
+                    plot_height=self.PLOT_HEIGHT,
                     title=fig_info["title"],
                     x_axis_label="タスク数",
                     y_axis_label=fig_info["y_axis_label"],
@@ -467,8 +470,8 @@ class InspectorCumulativeProductivity(AbstractRoleCumulativeProductivity):
         for fig_info in fig_info_list:
             figs.append(
                 figure(
-                    plot_width=1200,
-                    plot_height=600,
+                    plot_width=self.PLOT_WIDTH,
+                    plot_height=self.PLOT_HEIGHT,
                     title=fig_info["title"],
                     x_axis_label="アノテーション数",
                     y_axis_label=fig_info["y_axis_label"],
@@ -549,8 +552,8 @@ class InspectorCumulativeProductivity(AbstractRoleCumulativeProductivity):
         for fig_info in fig_info_list:
             figs.append(
                 figure(
-                    plot_width=1200,
-                    plot_height=600,
+                    plot_width=self.PLOT_WIDTH,
+                    plot_height=self.PLOT_HEIGHT,
                     title=fig_info["title"],
                     x_axis_label="入力データ数",
                     y_axis_label=fig_info["y_axis_label"],
@@ -663,8 +666,8 @@ class AcceptorCumulativeProductivity(AbstractRoleCumulativeProductivity):
         for fig_info in fig_info_list:
             figs.append(
                 figure(
-                    plot_width=1200,
-                    plot_height=600,
+                    plot_width=self.PLOT_WIDTH,
+                    plot_height=self.PLOT_HEIGHT,
                     title=fig_info["title"],
                     x_axis_label="アノテーション数",
                     y_axis_label=fig_info["y_axis_label"],
@@ -745,8 +748,8 @@ class AcceptorCumulativeProductivity(AbstractRoleCumulativeProductivity):
         for fig_info in fig_info_list:
             figs.append(
                 figure(
-                    plot_width=1200,
-                    plot_height=600,
+                    plot_width=self.PLOT_WIDTH,
+                    plot_height=self.PLOT_HEIGHT,
                     title=fig_info["title"],
                     x_axis_label="入力データ数",
                     y_axis_label=fig_info["y_axis_label"],
