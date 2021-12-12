@@ -396,3 +396,214 @@ class AnnotatorCumulativeProductivity(AbstractRoleCumulativeProductivity):
             add_legend_to_figure(fig)
 
         write_bokeh_graph(bokeh.layouts.column(figs), output_file)
+
+
+class InspectorCumulativeProductivity(AbstractRoleCumulativeProductivity):
+    def _get_default_user_id_list(self) -> list[str]:
+        return (
+            self.df.sort_values(by="first_inspection_started_datetime", ascending=False)["first_inspection_user_id"]
+            .dropna()
+            .unique()
+            .tolist()
+        )
+
+    def _get_cumulative_dataframe(self) -> pandas.DataFrame:
+        """
+        最初のアノテーション作業の開始時刻の順にソートして、教師付者に関する累計値を算出する
+        Args:
+            task_df: タスク一覧のDataFrame. 列が追加される
+        """
+        # 教師付の開始時刻でソートして、indexを更新する
+        df = self.df.sort_values(["first_inspection_user_id", "first_inspection_started_datetime"]).reset_index(
+            drop=True
+        )
+        # タスクの累計数を取得するために設定する
+        df["task_count"] = 1
+        # 教師付の作業者でgroupby
+        groupby_obj = df.groupby("first_inspection_user_id")
+
+        # 作業時間の累積値
+        df["cumulative_inspection_worktime_hour"] = groupby_obj["inspection_worktime_hour"].cumsum()
+        df["cumulative_acceptance_worktime_hour"] = groupby_obj["acceptance_worktime_hour"].cumsum()
+        df["cumulative_inspection_worktime_hour"] = groupby_obj["inspection_worktime_hour"].cumsum()
+
+        # タスク完了数、差し戻し数など
+        df["cumulative_inspection_count"] = groupby_obj["inspection_count"].cumsum()
+        df["cumulative_inspection_count"] = groupby_obj["annotation_count"].cumsum()
+        df["cumulative_input_data_count"] = groupby_obj["input_data_count"].cumsum()
+        df["cumulative_task_count"] = groupby_obj["task_count"].cumsum()
+
+        # 元に戻す
+        df = df.drop(["task_count"], axis=1)
+        return df
+
+    def plot_annotation_metrics(
+        self,
+        output_file: Path,
+        target_user_id_list: Optional[list[str]] = None,
+    ):
+        """
+        生産性を教師付作業者ごとにプロットする。
+
+        Args:
+            df:
+            first_inspection_user_id_list:
+
+        Returns:
+
+        """
+
+        if not self._validate_df_for_output(output_file):
+            return
+
+        logger.debug(f"{output_file} を出力します。")
+
+        if target_user_id_list is not None:
+            user_id_list = target_user_id_list
+        else:
+            user_id_list = self.default_user_id_list
+
+        user_id_list = get_plotted_user_id_list(user_id_list)
+
+        fig_info_list = [
+            dict(
+                title="累積のアノテーション数と検査作業時間",
+                y_column_name="cumulative_inspection_worktime_hour",
+                y_axis_label="検査作業時間[hour]",
+            ),
+        ]
+
+        figs: list[bokeh.plotting.Figure] = []
+        for fig_info in fig_info_list:
+            figs.append(
+                figure(
+                    plot_width=1200,
+                    plot_height=600,
+                    title=fig_info["title"],
+                    x_axis_label="アノテーション数",
+                    y_axis_label=fig_info["y_axis_label"],
+                )
+            )
+
+        for user_index, user_id in enumerate(user_id_list):
+            df_subset = self.df_cumulative[self.df_cumulative["first_inspection_user_id"] == user_id]
+            if df_subset.empty:
+                logger.debug(f"dataframe is empty. user_id = {user_id}")
+                continue
+
+            df_subset.to_csv(f"{user_id}.csv")
+            source = ColumnDataSource(data=df_subset)
+            color = get_color_from_palette(user_index)
+            username = df_subset.iloc[0]["first_inspection_username"]
+
+            for fig, fig_info in zip(figs, fig_info_list):
+                plot_line_and_circle(
+                    fig,
+                    x_column_name="cumulative_annotation_count",
+                    y_column_name=fig_info["y_column_name"],
+                    source=source,
+                    legend_label=username,
+                    color=color,
+                )
+
+        hover_tool = create_hover_tool(
+            [
+                "task_id",
+                "phase",
+                "status",
+                "first_inspection_user_id",
+                "first_inspection_username",
+                "first_inspection_started_datetime",
+                "inspection_worktime_hour",
+                "annotation_count",
+                "input_data_count",
+                "inspection_count",
+            ]
+        )
+        for fig in figs:
+            fig.add_tools(hover_tool)
+            add_legend_to_figure(fig)
+
+        write_bokeh_graph(bokeh.layouts.column(figs), output_file)
+
+    def plot_input_data_metrics(
+        self,
+        output_file: Path,
+        target_user_id_list: Optional[list[str]] = None,
+    ):
+        """
+        教師付者の累積値を入力データ単位でプロットする。
+
+        """
+
+        if not self._validate_df_for_output(output_file):
+            return
+
+        logger.debug(f"{output_file} を出力します。")
+
+        if target_user_id_list is not None:
+            user_id_list = target_user_id_list
+        else:
+            user_id_list = self.default_user_id_list
+
+        user_id_list = get_plotted_user_id_list(user_id_list)
+
+        fig_info_list = [
+            dict(
+                title="累積の入力データ数と検査作業時間",
+                y_column_name="cumulative_inspection_worktime_hour",
+                y_axis_label="検査作業時間[hour]",
+            ),
+        ]
+
+        figs: list[bokeh.plotting.Figure] = []
+        for fig_info in fig_info_list:
+            figs.append(
+                figure(
+                    plot_width=1200,
+                    plot_height=600,
+                    title=fig_info["title"],
+                    x_axis_label="入力データ数",
+                    y_axis_label=fig_info["y_axis_label"],
+                )
+            )
+
+        for user_index, user_id in enumerate(user_id_list):
+            df_subset = self.df_cumulative[self.df_cumulative["first_inspection_user_id"] == user_id]
+            if df_subset.empty:
+                logger.debug(f"dataframe is empty. user_id = {user_id}")
+                continue
+
+            source = ColumnDataSource(data=df_subset)
+            color = get_color_from_palette(user_index)
+            username = df_subset.iloc[0]["first_inspection_username"]
+
+            for fig, fig_info in zip(figs, fig_info_list):
+                plot_line_and_circle(
+                    fig,
+                    x_column_name="cumulative_input_data_count",
+                    y_column_name=fig_info["y_column_name"],
+                    source=source,
+                    legend_label=username,
+                    color=color,
+                )
+
+        hover_tool = create_hover_tool(
+            [
+                "task_id",
+                "phase",
+                "status",
+                "first_inspection_user_id",
+                "first_inspection_username",
+                "first_inspection_started_datetime",
+                "inspection_worktime_hour",
+                "annotation_count",
+                "input_data_count",
+                "inspection_count",
+            ]
+        )
+        for fig in figs:
+            fig.add_tools(hover_tool)
+            add_legend_to_figure(fig)
+
+        write_bokeh_graph(bokeh.layouts.column(figs), output_file)
