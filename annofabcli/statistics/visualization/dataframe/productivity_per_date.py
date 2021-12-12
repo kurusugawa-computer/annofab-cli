@@ -4,6 +4,7 @@
 """
 from __future__ import annotations
 
+import abc
 import logging
 from pathlib import Path
 from typing import Optional
@@ -30,11 +31,40 @@ from annofabcli.statistics.linegraph import (
 logger = logging.getLogger(__name__)
 
 
-class AnnotatorProductivityPerDate:
+class AbstractRoleProductivityPerDate(abc.ABC):
+    """ロールごとの日ごとの生産性に関する情報を格納する抽象クラス"""
+
+    def __init__(self, df: pandas.DataFrame) -> None:
+        self.df = df
+
+    def _validate_df_for_output(self, output_file: Path) -> bool:
+        if len(self.df) == 0:
+            logger.warning(f"データが0件のため、{output_file} は出力しません。")
+            return False
+        return True
+
+    @abc.abstractmethod
+    def from_df_task(df_task: pandas.DataFrame) -> AbstractRoleProductivityPerDate:
+        pass
+
+    @abc.abstractmethod
+    def to_csv(self, output_file: Path):
+        pass
+
+    @abc.abstractmethod
+    def plot_input_data_metrics(self, output_file: Path):
+        pass
+
+    @abc.abstractmethod
+    def plot_annotation_metrics(self, output_file: Path):
+        pass
+
+
+class AnnotatorProductivityPerDate(AbstractRoleProductivityPerDate):
     """教師付開始日ごとの教師付者の生産性に関する情報"""
 
-    @classmethod
-    def create(cls, df_task: pandas.DataFrame) -> pandas.DataFrame:
+    @staticmethod
+    def from_df_task(df_task: pandas.DataFrame) -> AnnotatorProductivityPerDate:
         """
         日毎、ユーザごとの情報を出力する。
 
@@ -81,7 +111,7 @@ class AnnotatorProductivityPerDate:
         sum_df["inspection_count/annotation_count"] = sum_df["inspection_count"] / sum_df["annotation_count"]
         sum_df["inspection_count/input_data_count"] = sum_df["inspection_count"] / sum_df["annotation_count"]
 
-        return sum_df
+        return AnnotatorProductivityPerDate(sum_df)
 
     @staticmethod
     def _get_df_sequential_date(df: pandas.DataFrame) -> pandas.DataFrame:
@@ -126,10 +156,8 @@ class AnnotatorProductivityPerDate:
 
         return df2
 
-    @classmethod
     def plot_annotation_metrics(
-        cls,
-        df: pandas.DataFrame,
+        self,
         output_file: Path,
         target_user_id_list: Optional[list[str]] = None,
     ):
@@ -144,24 +172,10 @@ class AnnotatorProductivityPerDate:
 
         """
 
-        tooltip_item = [
-            "first_annotation_user_id",
-            "first_annotation_username",
-            "first_annotation_started_date",
-            "annotation_worktime_hour",
-            "task_count",
-            "input_data_count",
-            "annotation_count",
-            "inspection_count",
-        ]
-
-        if len(df) == 0:
-            logger.info("データが0件のため出力しない")
+        if not self._validate_df_for_output(output_file):
             return
 
-        df = df.copy()
-
-        df["annotation_worktime_minute/annotation_count"] = df["annotation_worktime_hour"] * 60 / df["annotation_count"]
+        df = self.df.copy()
 
         if target_user_id_list is not None:
             user_id_list = target_user_id_list
@@ -187,14 +201,14 @@ class AnnotatorProductivityPerDate:
                 y_axis_label="アノテーションあたり教師付時間[min/annotation]",
             ),
             dict(
-                title="教師付開始日ごとのアノテーションあたり検査コメント数",
-                y_column_name="inspection_count/annotation_count",
-                y_axis_label="アノテーションあたり検査コメント数",
-            ),
-            dict(
                 title="教師付開始日ごとのアノテーションあたり教師付作業時間(1週間移動平均)",
                 y_column_name=f"annotation_worktime_minute/annotation_count{WEEKLY_MOVING_AVERAGE_COLUMN_SUFFIX}",
                 y_axis_label="アノテーションあたり教師付時間[min/annotation]",
+            ),
+            dict(
+                title="教師付開始日ごとのアノテーションあたり検査コメント数",
+                y_column_name="inspection_count/annotation_count",
+                y_axis_label="アノテーションあたり検査コメント数",
             ),
             dict(
                 title="教師付開始日ごとのアノテーションあたり検査コメント数(1週間移動平均)",
@@ -224,7 +238,10 @@ class AnnotatorProductivityPerDate:
                 logger.debug(f"dataframe is empty. user_id = {user_id}")
                 continue
 
-            df_subset = cls._get_df_sequential_date(df_subset)
+            df_subset = self._get_df_sequential_date(df_subset)
+            df["annotation_worktime_minute/annotation_count"] = (
+                df["annotation_worktime_hour"] * 60 / df["annotation_count"]
+            )
             df_subset[f"annotation_worktime_minute/annotation_count{WEEKLY_MOVING_AVERAGE_COLUMN_SUFFIX}"] = (
                 get_weekly_moving_average(df_subset["annotation_worktime_hour"])
                 * 60
@@ -262,7 +279,18 @@ class AnnotatorProductivityPerDate:
                         color=color,
                     )
 
-        hover_tool = create_hover_tool(tooltip_item)
+        hover_tool = create_hover_tool(
+            [
+                "first_annotation_user_id",
+                "first_annotation_username",
+                "first_annotation_started_date",
+                "annotation_worktime_hour",
+                "task_count",
+                "input_data_count",
+                "annotation_count",
+                "inspection_count",
+            ]
+        )
         for fig in figs:
             fig.add_tools(hover_tool)
             add_legend_to_figure(fig)
@@ -271,10 +299,8 @@ class AnnotatorProductivityPerDate:
         bokeh.plotting.output_file(output_file, title=output_file.stem)
         bokeh.plotting.save(bokeh.layouts.column(figs))
 
-    @classmethod
     def plot_input_data_metrics(
-        cls,
-        df: pandas.DataFrame,
+        self,
         output_file: Path,
         target_user_id_list: Optional[list[str]] = None,
     ):
@@ -282,24 +308,10 @@ class AnnotatorProductivityPerDate:
         教師付者の入力データ単位の生産性情報を折れ線グラフでプロットする。
         """
 
-        tooltip_item = [
-            "first_annotation_user_id",
-            "first_annotation_username",
-            "first_annotation_started_date",
-            "annotation_worktime_hour",
-            "task_count",
-            "input_data_count",
-            "annotation_count",
-            "inspection_count",
-        ]
-
-        if len(df) == 0:
-            logger.info("データが0件のため出力しない")
+        if not self._validate_df_for_output(output_file):
             return
 
-        df = df.copy()
-
-        df["annotation_worktime_minute/input_data_count"] = df["annotation_worktime_hour"] * 60 / df["input_data_count"]
+        df = self.df.copy()
 
         if target_user_id_list is not None:
             user_id_list = target_user_id_list
@@ -325,14 +337,14 @@ class AnnotatorProductivityPerDate:
                 y_axis_label="入力データあたり教師付時間[min/input_data]",
             ),
             dict(
-                title="教師付開始日ごとの入力データあたり検査コメント数",
-                y_column_name="inspection_count/input_data_count",
-                y_axis_label="入力データあたり検査コメント数",
-            ),
-            dict(
                 title="教師付開始日ごとの入力データあたり教師付作業時間(1週間移動平均)",
                 y_column_name=f"annotation_worktime_minute/input_data_count{WEEKLY_MOVING_AVERAGE_COLUMN_SUFFIX}",
                 y_axis_label="入力データあたり教師付時間[min/annotation]",
+            ),
+            dict(
+                title="教師付開始日ごとの入力データあたり検査コメント数",
+                y_column_name="inspection_count/input_data_count",
+                y_axis_label="入力データあたり検査コメント数",
             ),
             dict(
                 title="教師付開始日ごとの入力データあたり検査コメント数(1週間移動平均)",
@@ -362,14 +374,18 @@ class AnnotatorProductivityPerDate:
                 logger.debug(f"dataframe is empty. user_id = {user_id}")
                 continue
 
-            df_subset = cls._get_df_sequential_date(df_subset)
+            df_subset = self._get_df_sequential_date(df_subset)
+            df["annotation_worktime_minute/input_data_count"] = (
+                df["annotation_worktime_hour"] * 60 / df["input_data_count"]
+            )
+
             df_subset[f"annotation_worktime_minute/input_data_count{WEEKLY_MOVING_AVERAGE_COLUMN_SUFFIX}"] = (
                 get_weekly_moving_average(df_subset["annotation_worktime_hour"])
                 * 60
                 / get_weekly_moving_average(df_subset["input_data_count"])
             )
             df_subset[
-                f"inspection_count/annotation_count{WEEKLY_MOVING_AVERAGE_COLUMN_SUFFIX}"
+                f"inspection_count/input_data_count{WEEKLY_MOVING_AVERAGE_COLUMN_SUFFIX}"
             ] = get_weekly_moving_average(df_subset["inspection_count"]) / get_weekly_moving_average(
                 df_subset["input_data_count"]
             )
@@ -400,7 +416,18 @@ class AnnotatorProductivityPerDate:
                         color=color,
                     )
 
-        hover_tool = create_hover_tool(tooltip_item)
+        hover_tool = create_hover_tool(
+            [
+                "first_annotation_user_id",
+                "first_annotation_username",
+                "first_annotation_started_date",
+                "annotation_worktime_hour",
+                "task_count",
+                "input_data_count",
+                "annotation_count",
+                "inspection_count",
+            ]
+        )
         for fig in figs:
             fig.add_tools(hover_tool)
             add_legend_to_figure(fig)
@@ -409,14 +436,13 @@ class AnnotatorProductivityPerDate:
         bokeh.plotting.output_file(output_file, title=output_file.stem)
         bokeh.plotting.save(bokeh.layouts.column(figs))
 
-    @classmethod
-    def to_csv(cls, df: pandas.DataFrame, output_file: Path) -> None:
+    def to_csv(self, output_file: Path) -> None:
         """
         日毎の全体の生産量、生産性を出力する。
 
         """
-        if len(df) == 0:
-            logger.warning(f"データ件数が0件のため {output_file} は出力しません。")
+
+        if not self._validate_df_for_output(output_file):
             return
 
         production_columns = [
@@ -445,7 +471,7 @@ class AnnotatorProductivityPerDate:
             + ["inspection_count/input_data_count", "inspection_count/annotation_count"]
         )
 
-        print_csv(df[columns], output=str(output_file))
+        print_csv(self.df[columns], output=str(output_file))
 
 
 class InspectorProductivityPerDate:
