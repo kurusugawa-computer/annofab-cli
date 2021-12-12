@@ -11,7 +11,11 @@ from annofabcli.statistics.scatter import Scatter
 from annofabcli.statistics.summarize_task_count import SimpleTaskStatus, get_step_for_current_phase
 from annofabcli.statistics.summarize_task_count_by_task_id import create_task_count_summary_df, get_task_id_prefix
 from annofabcli.statistics.table import Table
-from annofabcli.statistics.visualization.dataframe.cumulative_productivity import AnnotatorCumulativeProductivity, InspectorCumulativeProductivity
+from annofabcli.statistics.visualization.dataframe.cumulative_productivity import (
+    AcceptorCumulativeProductivity,
+    AnnotatorCumulativeProductivity,
+    InspectorCumulativeProductivity,
+)
 from annofabcli.statistics.visualization.dataframe.productivity_per_date import (
     AcceptorProductivityPerDate,
     AnnotatorProductivityPerDate,
@@ -359,3 +363,19 @@ class TestInspectorCumulativeProductivity:
     def test_plot_input_data_metrics(self):
         self.obj.plot_input_data_metrics(self.output_dir / "累積折れ線-横軸_入力データ数-検査者用")
 
+
+class TestAcceptorCumulativeProductivity:
+    @classmethod
+    def setup_class(cls):
+        cls.output_dir = out_path / "visualization"
+        cls.output_dir.mkdir(exist_ok=True, parents=True)
+
+        df_task = pandas.read_csv(str(data_path / "task.csv"))
+        df_task = pandas.read_csv("out/task4.csv")
+        cls.obj = AcceptorCumulativeProductivity(df_task)
+
+    def test_plot_annotation_metrics(self):
+        self.obj.plot_annotation_metrics(self.output_dir / "累積折れ線-横軸_アノテーション数-受入者用")
+
+    def test_plot_input_data_metrics(self):
+        self.obj.plot_input_data_metrics(self.output_dir / "累積折れ線-横軸_入力データ数-受入者用")
