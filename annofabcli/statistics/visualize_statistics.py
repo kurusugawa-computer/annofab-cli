@@ -30,9 +30,14 @@ from annofabcli.statistics.csv import (
     write_summarise_whole_performance_csv,
 )
 from annofabcli.statistics.database import Database, Query
-from annofabcli.statistics.linegraph import LineGraph, OutputTarget
+from annofabcli.statistics.linegraph import LineGraph
 from annofabcli.statistics.scatter import Scatter
 from annofabcli.statistics.table import AggregationBy, Table
+from annofabcli.statistics.visualization.dataframe.cumulative_productivity import (
+    AcceptorCumulativeProductivity,
+    AnnotatorCumulativeProductivity,
+    InspectorCumulativeProductivity,
+)
 from annofabcli.statistics.visualization.dataframe.productivity_per_date import (
     AcceptorProductivityPerDate,
     AnnotatorProductivityPerDate,
@@ -266,48 +271,36 @@ class WriteCsvGraph:
         WholeProductivityPerFirstAnnotationStartedDate.to_csv(df, self.output_dir / "教師付開始日毎の生産量と生産性.csv")
         WholeProductivityPerFirstAnnotationStartedDate.plot(df, self.output_dir / "line-graph/折れ線-横軸_教師付開始日-全体.html")
 
-    def write_linegraph_by_user(self, user_id_list: Optional[List[str]] = None) -> None:
-        """
-        折れ線グラフをユーザごとにプロットする。
+    def write_cumulative_linegraph_by_user(self, user_id_list: Optional[List[str]] = None) -> None:
+        """ユーザごとの累積折れ線グラフをプロットする。"""
+        df_task = self._get_task_df()
 
-        Args:
-            user_id_list: 折れ線グラフに表示するユーザ
+        annotator_obj = AnnotatorCumulativeProductivity(df_task)
+        inspector_obj = InspectorCumulativeProductivity(df_task)
+        acceptor_obj = AcceptorCumulativeProductivity(df_task)
 
-        Returns:
-
-        """
-        task_df = self._get_task_df()
-        if len(task_df) == 0:
-            logger.warning(f"タスク一覧が0件のため、折れ線グラフを出力しません。")
-            return
-
-        output_target_list: Optional[List[OutputTarget]] = None
-        if self.minimal_output:
-            output_target_list = [OutputTarget.ANNOTATION]
-
-        # 単位あたりの指標を算出
-        task_df = Table.create_gradient_df(task_df)
-
-        task_cumulative_df_by_annotator = self.table_obj.create_cumulative_df_by_first_annotator(task_df)
-        self._catch_exception(self.linegraph_obj.write_cumulative_line_graph_for_annotator)(
-            df=task_cumulative_df_by_annotator,
-            output_target_list=output_target_list,
-            first_annotation_user_id_list=user_id_list,
+        annotator_obj.plot_annotation_metrics(
+            self.output_dir / "line-graph/教師付者用/累積折れ線-横軸_アノテーション数-教師付者用.html", user_id_list
+        )
+        inspector_obj.plot_annotation_metrics(
+            self.output_dir / "line-graph/検査者用/累積折れ線-横軸_アノテーション数-検査者用.html", user_id_list
+        )
+        acceptor_obj.plot_annotation_metrics(
+            self.output_dir / "line-graph/受入者用/累積折れ線-横軸_アノテーション数-受入者用.html", user_id_list
         )
 
-        task_cumulative_df_by_inspector = self.table_obj.create_cumulative_df_by_first_inspector(task_df)
-        self._catch_exception(self.linegraph_obj.write_cumulative_line_graph_for_inspector)(
-            df=task_cumulative_df_by_inspector,
-            output_target_list=output_target_list,
-            first_inspection_user_id_list=user_id_list,
-        )
+        if not self.minimal_output:
+            annotator_obj.plot_input_data_metrics(
+                self.output_dir / "line-graph/教師付者用/累積折れ線-横軸_入力データ数-教師付者用.html", user_id_list
+            )
+            inspector_obj.plot_input_data_metrics(
+                self.output_dir / "line-graph/検査者用/累積折れ線-横軸_入力データ数-検査者用.html", user_id_list
+            )
+            acceptor_obj.plot_input_data_metrics(
+                self.output_dir / "line-graph/受入者用/累積折れ線-横軸_入力データ数-受入者用.html", user_id_list
+            )
 
-        task_cumulative_df_by_acceptor = self.table_obj.create_cumulative_df_by_first_acceptor(task_df)
-        self._catch_exception(self.linegraph_obj.write_cumulative_line_graph_for_acceptor)(
-            df=task_cumulative_df_by_acceptor,
-            output_target_list=output_target_list,
-            first_acceptance_user_id_list=user_id_list,
-        )
+            annotator_obj.plot_task_metrics(self.output_dir / "line-graph/教師付者用/累積折れ線-横軸_タスク数-教師付者用.html", user_id_list)
 
     def write_linegraph_for_worktime_by_user(self, user_id_list: Optional[List[str]] = None) -> None:
         account_statistics_df = self._get_account_statistics_df()
@@ -515,7 +508,7 @@ def visualize_statistics(
     write_obj.write_histogram_for_task()
 
     # 折れ線グラフ
-    write_obj.write_linegraph_by_user(user_id_list)
+    write_obj.write_cumulative_linegraph_by_user(user_id_list)
     write_obj.write_whole_linegraph()
 
     write_obj.write_whole_productivity_per_first_annotation_started_date()

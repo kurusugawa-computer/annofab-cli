@@ -30,8 +30,8 @@ logger = logging.getLogger(__name__)
 class AbstractRoleCumulativeProductivity(abc.ABC):
     """ロールごとの累積の生産性をプロットするための抽象クラス"""
 
-    PLOT_WIDTH=1200
-    PLOT_HEIGHT=600
+    PLOT_WIDTH = 1200
+    PLOT_HEIGHT = 600
 
     def __init__(self, df: pandas.DataFrame) -> None:
         self.df = df
