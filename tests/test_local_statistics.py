@@ -11,7 +11,10 @@ from annofabcli.statistics.scatter import Scatter
 from annofabcli.statistics.summarize_task_count import SimpleTaskStatus, get_step_for_current_phase
 from annofabcli.statistics.summarize_task_count_by_task_id import create_task_count_summary_df, get_task_id_prefix
 from annofabcli.statistics.table import Table
-from annofabcli.statistics.visualization.dataframe.productivity_per_date import AnnotatorProductivityPerDate, AcceptorProductivityPerDate
+from annofabcli.statistics.visualization.dataframe.productivity_per_date import (
+    AcceptorProductivityPerDate,
+    AnnotatorProductivityPerDate,
+)
 from annofabcli.statistics.visualization.dataframe.whole_productivity_per_date import (
     WholeProductivityPerCompletedDate,
     WholeProductivityPerFirstAnnotationStartedDate,
@@ -254,7 +257,9 @@ class TestAnnotatorProductivityPerDate:
         AnnotatorProductivityPerDate.to_csv(self.df, self.output_dir / "out.csv")
 
     def test_plot_annotation_metrics(self):
-        AnnotatorProductivityPerDate.plot_annotation_metrics(self.df, self.output_dir / "折れ線-横軸_教師付開始日-縦軸_アノテーションあたりの指標-教師付者用.html")
+        AnnotatorProductivityPerDate.plot_annotation_metrics(
+            self.df, self.output_dir / "折れ線-横軸_教師付開始日-縦軸_アノテーションあたりの指標-教師付者用.html"
+        )
 
     def test_plot_input_data_metrics(self):
         AnnotatorProductivityPerDate.plot_input_data_metrics(
@@ -277,7 +282,9 @@ class TestAcceptorProductivityPerDate:
         AcceptorProductivityPerDate.to_csv(self.df, self.output_dir / "受入開始日ごとの受入者の生産性.csv")
 
     def test_plot_annotation_metrics(self):
-        AcceptorProductivityPerDate.plot_annotation_metrics(self.df, self.output_dir / "折れ線-横軸_受入開始日-縦軸_アノテーションあたりの指標-受入者用.html")
+        AcceptorProductivityPerDate.plot_annotation_metrics(
+            self.df, self.output_dir / "折れ線-横軸_受入開始日-縦軸_アノテーションあたりの指標-受入者用.html"
+        )
 
     def test_plot_input_data_metrics(self):
         AcceptorProductivityPerDate.plot_input_data_metrics(

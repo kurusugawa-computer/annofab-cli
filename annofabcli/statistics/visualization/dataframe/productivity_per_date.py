@@ -440,7 +440,6 @@ class AcceptorProductivityPerDate:
                 "task_count",
                 "input_data_count",
                 "annotation_count",
-                "inspection_count",
             ]
         ].sum()
 
@@ -452,6 +451,47 @@ class AcceptorProductivityPerDate:
         )
 
         return sum_df
+
+    @staticmethod
+    def _get_df_sequential_date(df:pandas.DataFrame) -> pandas.DataFrame:
+        """連続した日付のDataFrameを生成する。
+        """
+        df_date = pandas.DataFrame(
+            {
+                "first_acceptance_started_date": [
+                    str(e.date())
+                    for e in pandas.date_range(
+                        df["first_acceptance_started_date"].min(),
+                        df["first_acceptance_started_date"].max(),
+                    )
+                ]
+            }
+        )
+        df2 = df_date.merge(df, how="left", on="first_acceptance_started_date")
+        df2["dt_first_acceptance_started_date"] = df2["first_acceptance_started_date"].map(
+            lambda e: parse(e).date()
+        )
+
+        assert len(df) > 0
+        first_row = df.iloc[0]
+        df2["first_acceptance_user_id"] = first_row["first_acceptance_user_id"]
+        df2["first_acceptance_username"] = first_row["first_acceptance_username"]
+
+        df2.fillna(
+            {
+                key: 0
+                for key in [
+                    "first_acceptance_worktime_hour",
+                    "acceptance_worktime_hour",
+                    "task_count",
+                    "input_data_count",
+                    "annotation_count",
+                ]
+            },
+            inplace=True,
+        )
+        return df2
+
 
     @classmethod
     def plot_annotation_metrics(
@@ -495,8 +535,6 @@ class AcceptorProductivityPerDate:
 
         user_id_list = get_plotted_user_id_list(user_id_list)
 
-        df["dt_first_acceptance_started_date"] = df["first_acceptance_started_date"].map(lambda e: parse(e).date())
-
         fig_info_list = [
             dict(
                 title="受入開始日ごとの受入作業時間",
@@ -536,6 +574,7 @@ class AcceptorProductivityPerDate:
                 logger.debug(f"dataframe is empty. user_id = {user_id}")
                 continue
 
+            df_subset = cls._get_df_sequential_date(df_subset)
             df_subset[f"acceptance_worktime_minute/annotation_count{WEEKLY_MOVING_AVERAGE_COLUMN_SUFFIX}"] = (
                 get_weekly_moving_average(df_subset["acceptance_worktime_hour"])
                 * 60
@@ -660,15 +699,11 @@ class AcceptorProductivityPerDate:
                 logger.debug(f"dataframe is empty. user_id = {user_id}")
                 continue
 
+            df_subset = cls._get_df_sequential_date(df_subset)
             df_subset[f"acceptance_worktime_minute/input_data_count{WEEKLY_MOVING_AVERAGE_COLUMN_SUFFIX}"] = (
                 get_weekly_moving_average(df_subset["acceptance_worktime_hour"])
                 * 60
                 / get_weekly_moving_average(df_subset["input_data_count"])
-            )
-            df_subset[
-                f"inspection_count/annotation_count{WEEKLY_MOVING_AVERAGE_COLUMN_SUFFIX}"
-            ] = get_weekly_moving_average(df_subset["inspection_count"]) / get_weekly_moving_average(
-                df_subset["input_data_count"]
             )
 
             source = ColumnDataSource(data=df_subset)
