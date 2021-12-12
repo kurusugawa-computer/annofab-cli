@@ -338,7 +338,6 @@ class LineGraph:
 
         return user_id_list[0:max_user_length]
 
-
     def write_cumulative_line_graph_for_annotator(
         self,
         df: pandas.DataFrame,

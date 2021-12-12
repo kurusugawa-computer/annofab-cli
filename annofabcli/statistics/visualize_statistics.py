@@ -160,24 +160,6 @@ class WriteCsvGraph:
             self.account_statistics_df = self.table_obj.create_account_statistics_df()
         return self.account_statistics_df
 
-    def _get_df_by_date_user_for_annotation(self):
-        if self.df_by_date_user_for_annotation is None:
-            task_df = self._get_task_df()
-            self.df_by_date_user_for_annotation = self.table_obj.create_dataframe_by_date_user_for_annotation(task_df)
-        return self.df_by_date_user_for_annotation
-
-    def _get_df_by_date_user_for_inspection(self):
-        if self.df_by_date_user_for_inspection is None:
-            task_df = self._get_task_df()
-            self.df_by_date_user_for_inspection = self.table_obj.create_dataframe_by_date_user_for_inspection(task_df)
-        return self.df_by_date_user_for_inspection
-
-    def _get_df_by_date_user_for_acceptance(self):
-        if self.df_by_date_user_for_acceptance is None:
-            task_df = self._get_task_df()
-            self.df_by_date_user_for_acceptance = self.table_obj.create_dataframe_by_date_user_for_acceptance(task_df)
-        return self.df_by_date_user_for_acceptance
-
     def _get_labor_df(self):
         if self.labor_df is None:
             self.labor_df = self.table_obj.create_labor_df()
