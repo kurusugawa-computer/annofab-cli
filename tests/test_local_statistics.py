@@ -137,25 +137,6 @@ class TestLineGraph:
     def setup_class(cls):
         cls.line_graph_obj = LineGraph(outdir=str(out_path))
 
-    def test_write_cumulative_line_graph_for_annotator(self):
-        df = pandas.read_csv(str(data_path / "task.csv"))
-        cumulative_df = Table.create_cumulative_df_by_first_annotator(df)
-        self.line_graph_obj.write_cumulative_line_graph_for_annotator(cumulative_df)
-
-    def test_write_cumulative_line_graph_for_inspector(self):
-        df = pandas.read_csv(str(data_path / "task.csv"))
-        cumulative_df = Table.create_cumulative_df_by_first_inspector(df)
-        self.line_graph_obj.write_cumulative_line_graph_for_inspector(cumulative_df)
-
-    def test_write_cumulative_line_graph_for_acceptor(self):
-        df = pandas.read_csv(str(data_path / "task.csv"))
-        cumulative_df = Table.create_cumulative_df_by_first_acceptor(df)
-        self.line_graph_obj.write_cumulative_line_graph_for_acceptor(cumulative_df)
-
-    def test_write_whole_productivity_line_graph(self):
-        df = pandas.read_csv(str(data_path / "productivity-per-date3.csv"))
-        self.line_graph_obj.write_whole_productivity_line_graph(df)
-
     def test_write_whole_cumulative_line_graph(self):
         df = pandas.read_csv(str(data_path / "productivity-per-date3.csv"))
         self.line_graph_obj.write_whole_cumulative_line_graph(df)

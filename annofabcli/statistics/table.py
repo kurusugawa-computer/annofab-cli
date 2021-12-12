@@ -886,41 +886,6 @@ class Table:
         return df
 
     @staticmethod
-    def create_cumulative_df_by_first_annotator(task_df: pandas.DataFrame) -> pandas.DataFrame:
-        """
-        最初のアノテーション作業の開始時刻の順にソートして、教師付者に関する累計値を算出する
-        Args:
-            task_df: タスク一覧のDataFrame. 列が追加される
-        """
-        # 教師付の開始時刻でソートして、indexを更新する
-        df = task_df.sort_values(["first_annotation_user_id", "first_annotation_started_datetime"]).reset_index(
-            drop=True
-        )
-        # タスクの累計数を取得するために設定する
-        df["task_count"] = 1
-        # 教師付の作業者でgroupby
-        groupby_obj = df.groupby("first_annotation_user_id")
-
-        # 作業時間の累積値
-        df["cumulative_annotation_worktime_hour"] = groupby_obj["annotation_worktime_hour"].cumsum()
-        df["cumulative_acceptance_worktime_hour"] = groupby_obj["acceptance_worktime_hour"].cumsum()
-        df["cumulative_inspection_worktime_hour"] = groupby_obj["inspection_worktime_hour"].cumsum()
-        df["cumulative_first_annotation_worktime_hour"] = groupby_obj["first_annotation_worktime_hour"].cumsum()
-
-        # タスク完了数、差し戻し数など
-        df["cumulative_inspection_count"] = groupby_obj["inspection_count"].cumsum()
-        df["cumulative_annotation_count"] = groupby_obj["annotation_count"].cumsum()
-        df["cumulative_input_data_count"] = groupby_obj["input_data_count"].cumsum()
-        df["cumulative_task_count"] = groupby_obj["task_count"].cumsum()
-        df["cumulative_number_of_rejections"] = groupby_obj["number_of_rejections"].cumsum()
-        df["cumulative_number_of_rejections_by_inspection"] = groupby_obj["number_of_rejections_by_inspection"].cumsum()
-        df["cumulative_number_of_rejections_by_acceptance"] = groupby_obj["number_of_rejections_by_acceptance"].cumsum()
-
-        # 元に戻す
-        df = df.drop(["task_count"], axis=1)
-        return df
-
-    @staticmethod
     def create_gradient_df(task_df: pandas.DataFrame) -> pandas.DataFrame:
         """
         生産量あたりの指標を算出する
@@ -939,73 +904,6 @@ class Table:
             task_df["acceptance_worktime_hour"] / task_df["annotation_count"]
         )
         return task_df
-
-    @staticmethod
-    def create_cumulative_df_by_first_inspector(task_df: pandas.DataFrame) -> pandas.DataFrame:
-        """
-        最初の検査作業の開始時刻の順にソートして、累計値を算出する
-        Args:
-            task_df: タスク一覧のDataFrame. 列が追加される
-        """
-
-        df = task_df.sort_values(["first_inspection_user_id", "first_inspection_started_datetime"]).reset_index(
-            drop=True
-        )
-        # タスクの累計数を取得するために設定する
-        df["task_count"] = 1
-        # 教師付の作業者でgroupby
-        groupby_obj = df.groupby("first_inspection_user_id")
-
-        # 作業時間の累積値
-        df["cumulative_annotation_worktime_hour"] = groupby_obj["annotation_worktime_hour"].cumsum()
-        df["cumulative_acceptance_worktime_hour"] = groupby_obj["acceptance_worktime_hour"].cumsum()
-        df["cumulative_inspection_worktime_hour"] = groupby_obj["inspection_worktime_hour"].cumsum()
-        df["cumulative_first_inspection_worktime_hour"] = groupby_obj["first_inspection_worktime_hour"].cumsum()
-
-        # タスク完了数、差し戻し数など
-        df["cumulative_inspection_count"] = groupby_obj["inspection_count"].cumsum()
-        df["cumulative_annotation_count"] = groupby_obj["annotation_count"].cumsum()
-        df["cumulative_input_data_count"] = groupby_obj["input_data_count"].cumsum()
-        df["cumulative_task_count"] = groupby_obj["task_count"].cumsum()
-        df["cumulative_number_of_rejections"] = groupby_obj["number_of_rejections"].cumsum()
-        df["cumulative_number_of_rejections_by_inspection"] = groupby_obj["number_of_rejections_by_inspection"].cumsum()
-        df["cumulative_number_of_rejections_by_acceptance"] = groupby_obj["number_of_rejections_by_acceptance"].cumsum()
-
-        # 元に戻す
-        df = df.drop(["task_count"], axis=1)
-        return df
-
-    @staticmethod
-    def create_cumulative_df_by_first_acceptor(task_df: pandas.DataFrame) -> pandas.DataFrame:
-        """
-        最初の受入作業の開始時刻の順にソートして、累計値を算出する
-        Args:
-            task_df: タスク一覧のDataFrame. 列が追加される
-        """
-
-        df = task_df.sort_values(["first_acceptance_user_id", "first_acceptance_started_datetime"]).reset_index(
-            drop=True
-        )
-        # タスクの累計数を取得するために設定する
-        df["task_count"] = 1
-        groupby_obj = df.groupby("first_acceptance_user_id")
-
-        # 作業時間の累積値
-        df["cumulative_acceptance_worktime_hour"] = groupby_obj["acceptance_worktime_hour"].cumsum()
-        df["cumulative_first_acceptance_worktime_hour"] = groupby_obj["first_acceptance_worktime_hour"].cumsum()
-
-        # タスク完了数、差し戻し数など
-        df["cumulative_inspection_count"] = groupby_obj["inspection_count"].cumsum()
-        df["cumulative_annotation_count"] = groupby_obj["annotation_count"].cumsum()
-        df["cumulative_input_data_count"] = groupby_obj["input_data_count"].cumsum()
-        df["cumulative_task_count"] = groupby_obj["task_count"].cumsum()
-        df["cumulative_number_of_rejections"] = groupby_obj["number_of_rejections"].cumsum()
-        df["cumulative_number_of_rejections_by_inspection"] = groupby_obj["number_of_rejections_by_inspection"].cumsum()
-        df["cumulative_number_of_rejections_by_acceptance"] = groupby_obj["number_of_rejections_by_acceptance"].cumsum()
-
-        # 元に戻す
-        df = df.drop(["task_count"], axis=1)
-        return df
 
     def create_worktime_per_image_df(self, aggregation_by: AggregationBy, phase: TaskPhase) -> pandas.DataFrame:
         """
