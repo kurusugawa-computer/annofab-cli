@@ -243,19 +243,6 @@ class WriteCsvGraph:
                 " * '散布図-アノテーションあたり作業時間と品質の関係-実績時間-教師付者用'"
             )
 
-    def write_linegraph_for_task_overall(self) -> None:
-        """
-        タスク関係の折れ線グラフを出力する。
-
-        Args:
-            user_id_list: 折れ線グラフに表示するユーザ
-
-        Returns:
-
-        """
-        task_df = self._get_task_df()
-        task_cumulative_df_overall = Table.create_cumulative_df_overall(task_df)
-        self._catch_exception(self.linegraph_obj.write_cumulative_line_graph_overall)(task_cumulative_df_overall)
 
     def write_whole_linegraph(self) -> None:
         whole_productivity_df = self._get_whole_productivity_df()
