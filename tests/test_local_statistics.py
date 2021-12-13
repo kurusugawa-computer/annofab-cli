@@ -25,6 +25,7 @@ from annofabcli.statistics.visualization.dataframe.whole_productivity_per_date i
     WholeProductivityPerCompletedDate,
     WholeProductivityPerFirstAnnotationStartedDate,
 )
+from annofabcli.statistics.visualization.dataframe.worktime_per_date import WorktimePerDate
 from annofabcli.task_history_event.list_worktime import SimpleTaskHistoryEvent
 
 out_path = Path("./tests/out/statistics")
@@ -391,3 +392,19 @@ class TestListWorktime:
         print(f"{df.index=}")
         print(f"{df.columns=}")
         print(df)
+
+
+class TestWorktimePerDate:
+    @classmethod
+    def setup_class(cls):
+        cls.output_dir = out_path / "visualization"
+        cls.output_dir.mkdir(exist_ok=True, parents=True)
+
+        df = pandas.read_csv(str(data_path / "ユーザ_日付list-作業時間.csv"))
+        cls.obj = WorktimePerDate(df)
+
+    def test_to_csv(self):
+        self.obj.to_csv(self.output_dir / "ユーザ_日付list-作業時間.csv")
+
+    def test_plot_cumulatively(self):
+        self.obj.plot_cumulatively(self.output_dir / "累積折れ線-横軸_日-縦軸_作業時間.html")
