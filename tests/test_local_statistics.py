@@ -129,18 +129,6 @@ class TestCsv:
         df = write_summarise_whole_performance_csv(csv_path_list, output_path=out_path / "プロジェクごとの生産性と品質.csv")
 
 
-class TestLineGraph:
-    line_graph_obj = None
-
-    @classmethod
-    def setup_class(cls):
-        cls.line_graph_obj = LineGraph(outdir=str(out_path))
-
-    def test_write_whole_cumulative_line_graph(self):
-        df = pandas.read_csv(str(data_path / "productivity-per-date3.csv"))
-        self.line_graph_obj.write_whole_cumulative_line_graph(df)
-
-
 class TestSummarizeTaskCountByTaskId:
     # task_list = [
     #     {"task_id": "A_A_01", "status": "complete", "phase":"acceptance", "phase_stage":1},
