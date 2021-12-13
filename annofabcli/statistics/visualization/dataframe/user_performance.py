@@ -97,6 +97,10 @@ class UserPerformance:
         df = read_multiheader_csv(str(csv_file))
         return cls(df)
 
+    def actual_worktime_exists(self) -> bool:
+        """実績作業時間が入力されているか否か"""
+        return self.df[("actual_worktime_hour", "sum")].sum() > 0
+
     @classmethod
     def from_df(
         cls, df_task_history: pandas.DataFrame, df_labor: pandas.DataFrame, df_worktime_ratio: pandas.DataFrame
@@ -352,7 +356,7 @@ class UserPerformance:
         for biography_index, biography in enumerate(sorted(set(df["biography"]))):
             x_column = f"{worktime_key_for_phase}_worktime_hour"
             y_column = f"{worktime_type.value}_worktime/annotation_count"
-            for fig, phase in zip(figure_list, phase_list):
+            for fig, phase in zip(figure_list, self.phase_list):
                 filtered_df = df[
                     (df["biography"] == biography) & df[(x_column, phase)].notna() & df[(y_column, phase)].notna()
                 ]
@@ -369,7 +373,7 @@ class UserPerformance:
                     color=get_color_from_palette(biography_index),
                 )
 
-        for fig, phase in zip(figure_list, phase_list):
+        for fig, phase in zip(figure_list, self.phase_list):
             average_value = self._get_average_value(
                 df,
                 numerator_column=(f"{worktime_key_for_phase}_worktime_hour", phase),
@@ -379,7 +383,7 @@ class UserPerformance:
             quartile = self._get_quartile_value(df, (f"{worktime_type.value}_worktime/annotation_count", phase))
             self._plot_quartile_line(fig, quartile, dimension="width")
 
-        for fig, phase in zip(figure_list, phase_list):
+        for fig, phase in zip(figure_list, self.phase_list):
             tooltip_item = [
                 "user_id_",
                 "username_",

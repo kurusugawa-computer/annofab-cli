@@ -25,8 +25,8 @@ from annofabcli.common.facade import TaskQuery
 from annofabcli.stat_visualization.merge_visualization_dir import merge_visualization_dir
 from annofabcli.statistics.csv import (
     FILENAME_PERFORMANCE_PER_DATE,
-    FILENAME_WHOLE_PERFORMANCE,
     FILENAME_PERFORMANCE_PER_USER,
+    FILENAME_WHOLE_PERFORMANCE,
     Csv,
     write_summarise_whole_performance_csv,
 )
@@ -211,28 +211,28 @@ class WriteCsvGraph:
             df_task_history, self._get_task_df()
         )
         if len(annotation_count_ratio_df) == 0:
-            df_user_performance = pandas.DataFrame()
+            obj = UserPerformance(pandas.DataFrame())
         else:
-            df_user_performance = UserPerformance.from_df(
+            obj = UserPerformance.from_df(
                 df_task_history=df_task_history,
                 df_labor=self._get_labor_df(),
                 df_worktime_ratio=annotation_count_ratio_df,
             )
 
-        df_user_performance.to_csv(self.output_dir / FILENAME_PERFORMANCE_PER_USER)
-        df_user_performance.plot_quality(self.output_dir / "scatter/散布図-教師付者の品質と作業量の関係.html")
-        df_user_performance.plot_productivity_from_monitored_worktime(
+        obj.to_csv(self.output_dir / FILENAME_PERFORMANCE_PER_USER)
+        obj.plot_quality(self.output_dir / "scatter/散布図-教師付者の品質と作業量の関係.html")
+        obj.plot_productivity_from_monitored_worktime(
             self.output_dir / "scatter/散布図-アノテーションあたり作業時間と累計作業時間の関係-計測時間.html"
         )
-        df_user_performance.plot_quality_and_productivity_from_monitored_worktime(
+        obj.plot_quality_and_productivity_from_monitored_worktime(
             self.output_dir / "scatter/散布図-アノテーションあたり作業時間と品質の関係-計測時間-教師付者用.html"
         )
 
-        if df_user_performance[("actual_worktime_hour", "sum")].sum() > 0:
-            df_user_performance.plot_productivity_from_actual_worktime(
+        if obj.actual_worktime_exists():
+            obj.plot_productivity_from_actual_worktime(
                 self.output_dir / "scatter/散布図-アノテーションあたり作業時間と累計作業時間の関係-実績時間.html"
             )
-            df_user_performance.plot_quality_and_productivity_from_actual_worktime(
+            obj.plot_quality_and_productivity_from_actual_worktime(
                 self.output_dir / "scatter/散布図-アノテーションあたり作業時間と品質の関係-実績時間-教師付者用.html"
             )
         else:
@@ -475,7 +475,7 @@ def visualize_statistics(
     write_obj.write_csv_for_summary()
     write_obj.write_productivity_csv_per_user()
 
-    write_obj.write_user_performance()
+    write_obj._catch_exception(write_obj.write_user_performance)
 
     # ヒストグラム
     write_obj.write_histogram_for_task()
