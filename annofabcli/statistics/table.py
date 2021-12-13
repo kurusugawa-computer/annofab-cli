@@ -24,42 +24,6 @@ from annofabcli.statistics.database import AnnotationDict, Database, PseudoInput
 logger = logging.getLogger(__name__)
 
 
-def _add_ratio_column_for_productivity_per_user(df: pandas.DataFrame, phase_list: List[str]):
-    for phase in phase_list:
-        # AnnoFab時間の比率
-        df[("monitored_worktime_ratio", phase)] = (
-            df[("monitored_worktime_hour", phase)] / df[("monitored_worktime_hour", "sum")]
-        )
-        # AnnoFab時間の比率から、Annowork時間を予測する
-        df[("prediction_actual_worktime_hour", phase)] = (
-            df[("actual_worktime_hour", "sum")] * df[("monitored_worktime_ratio", phase)]
-        )
-
-        # 生産性を算出
-        df[("monitored_worktime/input_data_count", phase)] = (
-            df[("monitored_worktime_hour", phase)] / df[("input_data_count", phase)]
-        )
-        df[("actual_worktime/input_data_count", phase)] = (
-            df[("prediction_actual_worktime_hour", phase)] / df[("input_data_count", phase)]
-        )
-
-        df[("monitored_worktime/annotation_count", phase)] = (
-            df[("monitored_worktime_hour", phase)] / df[("annotation_count", phase)]
-        )
-        df[("actual_worktime/annotation_count", phase)] = (
-            df[("prediction_actual_worktime_hour", phase)] / df[("annotation_count", phase)]
-        )
-
-    phase = TaskPhase.ANNOTATION.value
-    df[("pointed_out_inspection_comment_count/annotation_count", phase)] = (
-        df[("pointed_out_inspection_comment_count", phase)] / df[("annotation_count", phase)]
-    )
-    df[("pointed_out_inspection_comment_count/input_data_count", phase)] = (
-        df[("pointed_out_inspection_comment_count", phase)] / df[("input_data_count", phase)]
-    )
-    df[("rejected_count/task_count", phase)] = df[("rejected_count", phase)] / df[("task_count", phase)]
-
-
 class AggregationBy(Enum):
     BY_INPUTS = "by_inputs"
     BY_TASKS = "by_tasks"
@@ -124,18 +88,6 @@ class Table:
             ]
             self._worktime_statistics = worktime_statistics
             return worktime_statistics
-
-    def _get_account_statistics(self) -> List[ProjectAccountStatisticsHistory]:
-        """
-        ユーザー別タスク集計を取得
-        """
-        if self._account_statistics is not None:
-            return self._account_statistics
-        else:
-            content: List[Any] = self.annofab_service.wrapper.get_account_statistics(self.project_id)[0]
-            account_statistics = [ProjectAccountStatisticsHistory.from_dict(e) for e in content]
-            self._account_statistics = account_statistics
-            return account_statistics
 
     def _get_task_list(self) -> List[Task]:
         """
@@ -941,17 +893,6 @@ class Table:
             lambda e: 1 if e == TaskPhase.ANNOTATION.value else 0
         )
         return new_df
-
-    @staticmethod
-    def _get_phase_list(columns: List[str]) -> List[str]:
-        phase_list = [TaskPhase.ANNOTATION.value, TaskPhase.INSPECTION.value, TaskPhase.ACCEPTANCE.value]
-        if TaskPhase.INSPECTION.value not in columns:
-            phase_list.remove(TaskPhase.INSPECTION.value)
-
-        if TaskPhase.ACCEPTANCE.value not in columns:
-            phase_list.remove(TaskPhase.ACCEPTANCE.value)
-
-        return phase_list
 
     def create_labor_df(self, df_labor: Optional[pandas.DataFrame] = None) -> pandas.DataFrame:
         """

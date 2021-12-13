@@ -5,8 +5,6 @@ from typing import Any, List, Optional, Tuple
 import pandas
 from annofabapi.models import TaskPhase
 
-from annofabcli.common.utils import print_csv
-
 logger = logging.getLogger(__name__)
 
 FILENAME_WHOLE_PERFORMANCE = "全体の生産性と品質.csv"
@@ -15,65 +13,6 @@ FILENAME_PERFORMANCE_PER_USER = "メンバごとの生産性と品質.csv"
 FILENAME_PERFORMANCE_PER_DATE = "日毎の生産量と生産性.csv"
 FILENAME_PERFORMANCE_PER_FIRST_ANNOTATION_STARTED_DATE = "教師付開始日毎の生産量と生産性.csv"
 FILENAME_TASK_LIST = "タスクlist.csv"
-
-
-def _get_phase_list(df_member_performance: pandas.DataFrame) -> List[str]:
-    columns = list(df_member_performance.columns)
-    phase_list = [TaskPhase.ANNOTATION.value, TaskPhase.INSPECTION.value, TaskPhase.ACCEPTANCE.value]
-    if ("monitored_worktime_hour", TaskPhase.INSPECTION.value) not in columns:
-        phase_list.remove(TaskPhase.INSPECTION.value)
-    if ("monitored_worktime_hour", TaskPhase.ACCEPTANCE.value) not in columns:
-        phase_list.remove(TaskPhase.ACCEPTANCE.value)
-    return phase_list
-
-
-def _read_whole_performance_csv(csv_path: Path) -> pandas.Series:
-    """
-    '全体の生産量と生産性.csv' を読み込む。
-    プロジェクト名はディレクトリ名とする。
-    """
-    project_title = csv_path.parent.name
-    if csv_path.exists():
-        df = pandas.read_csv(str(csv_path), header=None, index_col=[0, 1])
-        series = df[2]
-        series[("project_title", "")] = project_title
-    else:
-        logger.warning(f"{csv_path} は存在しませんでした。")
-        series = pandas.Series([project_title], index=pandas.MultiIndex.from_tuples([("project_title", "")]))
-
-    return series
-
-
-def write_summarise_whole_performance_csv(csv_path_list: List[Path], output_path: Path) -> None:
-    """
-    `プロジェクトごとの生産性と品質.csv` を出力する。
-
-    Args:
-        csv_path_list: '全体の生産量と生産性.csv' PathのList
-        output_path: 出力先
-
-    """
-    series_list = [_read_whole_performance_csv(csv_path) for csv_path in csv_path_list]
-    df = pandas.DataFrame(series_list)
-
-    phase_list = _get_phase_list(df)
-    first_columns = [("project_title", "")]
-    value_columns = Csv.get_productivity_columns(phase_list)
-    prior_columns = first_columns + value_columns + [("working_user_count", phase) for phase in phase_list]
-    required_columns = Csv.create_required_columns(df, prior_columns=prior_columns)
-    target_df = df[required_columns]
-    print_csv(target_df, output=str(output_path))
-
-
-def write_series_to_csv(series: pandas.Series, output_file: Path) -> None:
-    """
-    pandas.SeriesをCSVに出力します。
-    indexも出力します。
-
-    """
-    output_file.parent.mkdir(exist_ok=True, parents=True)
-    logger.debug(f"{str(output_file)} を出力します。")
-    series.to_csv(str(output_file), sep=",", encoding="utf_8_sig", header=False)
 
 
 class Csv:
