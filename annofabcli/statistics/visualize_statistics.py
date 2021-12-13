@@ -291,12 +291,6 @@ class WriteCsvGraph:
 
             annotator_obj.plot_task_metrics(self.output_dir / "line-graph/教師付者用/累積折れ線-横軸_タスク数-教師付者用.html", user_id_list)
 
-    def write_linegraph_for_worktime_by_user(self, user_id_list: Optional[List[str]] = None) -> None:
-        account_statistics_df = self._get_account_statistics_df()
-        cumulative_account_statistics_df = self.table_obj.create_cumulative_df_by_user(account_statistics_df)
-        self._catch_exception(self.linegraph_obj.write_cumulative_line_graph_by_date)(
-            df=cumulative_account_statistics_df, user_id_list=user_id_list
-        )
 
     def write_worktime_per_date(self, user_id_list: Optional[List[str]] = None) -> None:
         """日ごとの作業時間情報を出力する。"""
@@ -362,10 +356,6 @@ class WriteCsvGraph:
         """
         annotation_df = self._get_annotation_df()
         self._catch_exception(self.csv_obj.write_ラベルごとのアノテーション数)(annotation_df)
-
-    def write_csv_for_account_statistics(self) -> None:
-        account_statistics_df = self._get_account_statistics_df()
-        self._catch_exception(self.csv_obj.write_ユーザ別日毎の作業時間)(account_statistics_df)
 
     def write_productivity_csv_per_user(self) -> None:
         productivity_df = self._get_productivity_df()

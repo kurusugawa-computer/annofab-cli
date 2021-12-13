@@ -489,25 +489,6 @@ class Csv:
         required_columns = self.create_required_columns(df, prior_columns, dropped_columns=None)
         self._write_csv(f"タスクlist-ラベルごとのアノテーション数.csv", df[required_columns])
 
-    def write_ユーザ別日毎の作業時間(self, df: pandas.DataFrame):
-        """
-        ユーザごと、日毎の作業時間一覧をTSVで出力する. タスク一覧とは無関係。
-        """
-        if len(df) == 0:
-            logger.info("ユーザ別日毎の作業時間一覧が0件のため出力しない")
-            return
-
-        prior_columns = [
-            "user_id",
-            "username",
-            "biography",
-            "date",
-            "tasks_completed",
-            "tasks_rejected",
-            "worktime_hour",
-        ]
-        required_columns = self.create_required_columns(df, prior_columns, dropped_columns=None)
-        self._write_csv(f"ユーザ_日付list-作業時間.csv", df[required_columns])
 
     def write_メンバー別作業時間平均_画像1枚あたり(self, df: pandas.DataFrame, phase: TaskPhase):
         if len(df) == 0:
