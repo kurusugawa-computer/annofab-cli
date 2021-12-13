@@ -47,6 +47,7 @@ from annofabcli.statistics.visualization.dataframe.whole_productivity_per_date i
     WholeProductivityPerCompletedDate,
     WholeProductivityPerFirstAnnotationStartedDate,
 )
+from annofabcli.statistics.visualization.dataframe.worktime_per_date import WorktimePerDate
 
 logger = logging.getLogger(__name__)
 
@@ -111,12 +112,14 @@ class WriteCsvGraph:
 
     def __init__(
         self,
+        service: annofabapi.Resource,
         project_id: str,
         table_obj: Table,
         output_dir: Path,
         labor_df: Optional[pandas.DataFrame],
         minimal_output: bool = False,
     ):
+        self.service = service
         self.project_id = project_id
         self.output_dir = output_dir
         self.table_obj = table_obj
@@ -294,6 +297,12 @@ class WriteCsvGraph:
         self._catch_exception(self.linegraph_obj.write_cumulative_line_graph_by_date)(
             df=cumulative_account_statistics_df, user_id_list=user_id_list
         )
+
+    def write_worktime_per_date(self, user_id_list: Optional[List[str]] = None) -> None:
+        """日ごとの作業時間情報を出力する。"""
+        obj = WorktimePerDate.from_webapi(self.service, self.project_id)
+        obj.plot_cumulatively(self.output_dir / "line-graph/累積折れ線-横軸_日-縦軸_作業時間.html", user_id_list)
+        obj.to_csv(self.output_dir / "ユーザ_日付list-作業時間.csv")
 
     def write_csv_for_task(self) -> None:
         """
@@ -479,7 +488,7 @@ def visualize_statistics(
         output_project_dir=output_project_dir,
     )
     write_obj = WriteCsvGraph(
-        project_id, table_obj, output_project_dir, labor_df=df_labor, minimal_output=minimal_output
+        annofab_service, project_id, table_obj, output_project_dir, labor_df=df_labor, minimal_output=minimal_output
     )
     write_obj.write_csv_for_task()
 
@@ -501,14 +510,13 @@ def visualize_statistics(
 
     if not minimal_output:
         write_obj.write_histogram_for_annotation()
-        write_obj.write_linegraph_for_worktime_by_user(user_id_list)
+        write_obj._catch_exception(write_obj.write_worktime_per_date)(user_id_list)
 
         write_obj._catch_exception(write_obj.write_user_productivity_per_date)(user_id_list)
 
         # CSV
         write_obj.write_labor_and_task_history()
         write_obj.write_csv_for_annotation()
-        write_obj.write_csv_for_account_statistics()
         write_obj.write_csv_for_inspection()
         write_obj.write_メンバー別作業時間平均_画像1枚あたり_by_phase()
 
