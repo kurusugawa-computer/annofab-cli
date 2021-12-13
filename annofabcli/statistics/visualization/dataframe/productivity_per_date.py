@@ -35,6 +35,9 @@ logger = logging.getLogger(__name__)
 class AbstractRoleProductivityPerDate(abc.ABC):
     """ロールごとの日ごとの生産性に関する情報を格納する抽象クラス"""
 
+    PLOT_WIDTH = 1200
+    PLOT_HEIGHT = 600
+
     def __init__(self, df: pandas.DataFrame) -> None:
         self.df = df
 
@@ -225,8 +228,8 @@ class AnnotatorProductivityPerDate(AbstractRoleProductivityPerDate):
         for fig_info in fig_info_list:
             figs.append(
                 figure(
-                    plot_width=1200,
-                    plot_height=600,
+                    plot_width=self.PLOT_WIDTH,
+                    plot_height=self.PLOT_HEIGHT,
                     title=fig_info["title"],
                     x_axis_label="教師付開始日",
                     x_axis_type="datetime",
@@ -359,8 +362,8 @@ class AnnotatorProductivityPerDate(AbstractRoleProductivityPerDate):
         for fig_info in fig_info_list:
             figs.append(
                 figure(
-                    plot_width=1200,
-                    plot_height=600,
+                    plot_width=self.PLOT_WIDTH,
+                    plot_height=self.PLOT_HEIGHT,
                     title=fig_info["title"],
                     x_axis_label="教師付開始日",
                     x_axis_type="datetime",
@@ -605,8 +608,8 @@ class InspectorProductivityPerDate(AbstractRoleProductivityPerDate):
         for fig_info in fig_info_list:
             figs.append(
                 figure(
-                    plot_width=1200,
-                    plot_height=600,
+                    plot_width=self.PLOT_WIDTH,
+                    plot_height=self.PLOT_HEIGHT,
                     title=fig_info["title"],
                     x_axis_label="受入開始日",
                     x_axis_type="datetime",
@@ -723,8 +726,8 @@ class InspectorProductivityPerDate(AbstractRoleProductivityPerDate):
         for fig_info in fig_info_list:
             figs.append(
                 figure(
-                    plot_width=1200,
-                    plot_height=600,
+                    plot_width=self.PLOT_WIDTH,
+                    plot_height=self.PLOT_HEIGHT,
                     title=fig_info["title"],
                     x_axis_label="検査開始日",
                     x_axis_type="datetime",
@@ -952,8 +955,8 @@ class AcceptorProductivityPerDate(AbstractRoleProductivityPerDate):
         for fig_info in fig_info_list:
             figs.append(
                 figure(
-                    plot_width=1200,
-                    plot_height=600,
+                    plot_width=self.PLOT_WIDTH,
+                    plot_height=self.PLOT_HEIGHT,
                     title=fig_info["title"],
                     x_axis_label="受入開始日",
                     x_axis_type="datetime",
@@ -1071,8 +1074,8 @@ class AcceptorProductivityPerDate(AbstractRoleProductivityPerDate):
         for fig_info in fig_info_list:
             figs.append(
                 figure(
-                    plot_width=1200,
-                    plot_height=600,
+                    plot_width=self.PLOT_WIDTH,
+                    plot_height=self.PLOT_HEIGHT,
                     title=fig_info["title"],
                     x_axis_label="受入開始日",
                     x_axis_type="datetime",
