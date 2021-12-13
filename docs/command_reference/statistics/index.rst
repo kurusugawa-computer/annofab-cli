@@ -21,6 +21,7 @@ Available Commands
    list_cumulative_labor_time
    list_labor_time_per_user
    list_task_progress  
+   list_worktime
    summarize_task_count
    summarize_task_count_by_task_id
    summarize_task_count_by_user

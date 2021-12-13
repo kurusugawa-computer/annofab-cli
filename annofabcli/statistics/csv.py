@@ -489,30 +489,6 @@ class Csv:
         required_columns = self.create_required_columns(df, prior_columns, dropped_columns=None)
         self._write_csv(f"タスクlist-ラベルごとのアノテーション数.csv", df[required_columns])
 
-    def write_教師付作業者別日毎の情報(self, df: pandas.DataFrame):
-        """
-        ユーザごと、日毎の作業時間一覧をTSVで出力する. タスク一覧とは無関係。
-        """
-        if len(df) == 0:
-            logger.info("データが0件のため、教師付作業者別日毎の情報は出力しない。")
-            return
-
-        prior_columns = [
-            "first_annotation_started_date",
-            "first_annotation_username",
-            "first_annotation_user_id",
-            "task_count",
-            "input_data_count",
-            "annotation_count",
-            "first_annotation_worktime_hour",
-            "annotation_worktime_hour",
-            "inspection_worktime_hour",
-            "acceptance_worktime_hour",
-            "inspection_count",
-        ]
-        required_columns = self.create_required_columns(df, prior_columns, dropped_columns=None)
-        self._write_csv(f"教師付者_教師付開始日list.csv", df[required_columns])
-
     def write_ユーザ別日毎の作業時間(self, df: pandas.DataFrame):
         """
         ユーザごと、日毎の作業時間一覧をTSVで出力する. タスク一覧とは無関係。

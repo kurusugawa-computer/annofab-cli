@@ -6,7 +6,7 @@ from annofabapi.models import TaskStatus
 
 from annofabcli.common.utils import read_multiheader_csv
 from annofabcli.statistics.csv import Csv, write_summarise_whole_performance_csv
-from annofabcli.statistics.linegraph import LineGraph
+from annofabcli.statistics.list_worktime import WorktimeFromTaskHistoryEvent, get_df_worktime
 from annofabcli.statistics.scatter import Scatter
 from annofabcli.statistics.summarize_task_count import SimpleTaskStatus, get_step_for_current_phase
 from annofabcli.statistics.summarize_task_count_by_task_id import create_task_count_summary_df, get_task_id_prefix
@@ -25,6 +25,7 @@ from annofabcli.statistics.visualization.dataframe.whole_productivity_per_date i
     WholeProductivityPerCompletedDate,
     WholeProductivityPerFirstAnnotationStartedDate,
 )
+from annofabcli.task_history_event.list_worktime import SimpleTaskHistoryEvent
 
 out_path = Path("./tests/out/statistics")
 data_path = Path("./tests/data/statistics")
@@ -345,3 +346,48 @@ class TestAcceptorCumulativeProductivity:
         self.obj.plot_input_data_metrics(self.output_dir / "累積折れ線-横軸_入力データ数-受入者用")
 
 
+class TestListWorktime:
+    def test_get_df_worktime(self):
+        event_list = [
+            WorktimeFromTaskHistoryEvent(
+                project_id="prj1",
+                task_id="task1",
+                phase="annotation",
+                phase_stage=1,
+                account_id="unknown",
+                user_id="alice",
+                username="Alice",
+                worktime_hour=3.0,
+                start_event=SimpleTaskHistoryEvent(
+                    task_history_id="unknown", created_datetime="2019-01-01T23:00:00.000+09:00", status="working"
+                ),
+                end_event=SimpleTaskHistoryEvent(
+                    task_history_id="unknown", created_datetime="2019-01-02T02:00:00.000+09:00", status="on_holding"
+                ),
+            ),
+            WorktimeFromTaskHistoryEvent(
+                project_id="prj1",
+                task_id="task2",
+                phase="acceptance",
+                phase_stage=1,
+                account_id="unknown",
+                user_id="bob",
+                username="Bob",
+                worktime_hour=1.0,
+                start_event=SimpleTaskHistoryEvent(
+                    task_history_id="unknown", created_datetime="2019-01-03T22:00:00.000+09:00", status="working"
+                ),
+                end_event=SimpleTaskHistoryEvent(
+                    task_history_id="unknown", created_datetime="2019-01-03T23:00:00.000+09:00", status="on_holding"
+                ),
+            ),
+        ]
+
+        member_list = [
+            {"user_id": "alice", "username": "Alice", "biography": "U.S."},
+            {"user_id": "bob", "username": "Bob", "biography": "Japan"},
+        ]
+        df = get_df_worktime(event_list, member_list)
+        print(f"{df.index=}")
+        print(f"{df.columns=}")
+        print(df)
