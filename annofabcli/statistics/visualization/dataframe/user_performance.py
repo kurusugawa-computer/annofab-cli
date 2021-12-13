@@ -118,6 +118,15 @@ class UserPerformance:
         Returns:
 
         """
+
+        def get_phase_list(columns) -> list[str]:
+            phase_list = []
+
+            for phase in TaskPhase:
+                if phase.value in columns:
+                    phase_list.append(phase.value)
+            return phase_list
+
         df_agg_task_history = df_task_history.pivot_table(
             values="worktime_hour", columns="phase", index="user_id", aggfunc=numpy.sum
         ).fillna(0)
@@ -137,7 +146,7 @@ class UserPerformance:
             df["actual_worktime_hour"] = 0
             df["last_working_date"] = None
 
-        phase_list = cls.get_phase_list(list(df.columns))
+        phase_list = get_phase_list(list(df.columns))
 
         df = df[["actual_worktime_hour", "last_working_date"] + phase_list].copy()
         df.columns = pandas.MultiIndex.from_tuples(

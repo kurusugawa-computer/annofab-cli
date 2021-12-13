@@ -7,7 +7,7 @@ from typing import Any, Dict, List, Optional
 import dateutil
 import more_itertools
 import pandas
-from annofabapi.dataclass.statistics import ProjectAccountStatisticsHistory, WorktimeStatistics, WorktimeStatisticsItem
+from annofabapi.dataclass.statistics import WorktimeStatistics, WorktimeStatisticsItem
 from annofabapi.models import InputDataId, Inspection, InspectionStatus, Task, TaskHistory, TaskPhase, TaskStatus
 from annofabapi.utils import (
     get_number_of_rejections,
@@ -58,7 +58,6 @@ class Table:
     _task_histories_dict: Optional[Dict[str, List[TaskHistory]]] = None
     _annotations_dict: Optional[Dict[str, Dict[InputDataId, Dict[str, Any]]]] = None
     _worktime_statistics: Optional[List[WorktimeStatistics]] = None
-    _account_statistics: Optional[List[ProjectAccountStatisticsHistory]] = None
     _labor_list: Optional[List[Dict[str, Any]]] = None
 
     def __init__(

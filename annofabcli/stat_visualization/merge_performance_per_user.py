@@ -31,7 +31,7 @@ def merge_user_performance(csv_path_list: List[Path]) -> UserPerformance:
         logger.warning(f"マージ対象のCSVファイルは存在しませんでした。")
         return pandas.DataFrame()
 
-    sum_obj = UserPerformance(obj_list[0])
+    sum_obj = obj_list[0]
     for obj in obj_list[1:]:
         sum_obj = UserPerformance.merge(sum_obj, obj)
     return sum_obj

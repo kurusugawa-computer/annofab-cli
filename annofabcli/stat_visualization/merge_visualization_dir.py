@@ -51,14 +51,14 @@ def merge_visualization_dir(  # pylint: disable=too-many-statements
             logger.warning(f"マージ対象のCSVファイルは存在しませんでした。")
             return
 
-        sum_obj = UserPerformance(obj_list[0])
+        sum_obj = obj_list[0]
         for obj in obj_list[1:]:
             sum_obj = UserPerformance.merge(sum_obj, obj)
 
-        sum_obj.to_csv("メンバごとの生産性と品質.csv")
+        sum_obj.to_csv(output_dir /"メンバごとの生産性と品質.csv")
 
         whole_obj = WholePerformance(sum_obj.get_summary())
-        whole_obj.to_csv("全体の生産性と品質.csv")
+        whole_obj.to_csv(output_dir / "全体の生産性と品質.csv")
 
     def execute_merge_performance_per_date():
         performance_per_date_csv_list = [dir / FILENAME_PERFORMANCE_PER_DATE for dir in project_dir_list]

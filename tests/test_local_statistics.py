@@ -399,7 +399,7 @@ class TestUserPerformance:
 
     def test_get_summary(self):
         ser = self.obj.get_summary()
-        assert ser[("task_count", "annotation")] == 52271
+        assert int(ser[("task_count", "annotation")]) == 45481
 
     def test_merge(self):
         merged_obj = UserPerformance.merge(self.obj, self.obj)
