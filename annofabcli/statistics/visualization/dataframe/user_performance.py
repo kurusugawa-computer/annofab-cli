@@ -7,7 +7,7 @@ import copy
 import logging
 from enum import Enum
 from pathlib import Path
-from typing import Any, Optional
+from typing import Any, Collection, Optional
 
 import bokeh
 import bokeh.layouts
@@ -228,7 +228,7 @@ class UserPerformance:
         cls._add_ratio_column_for_productivity_per_user(sum_df, phase_list=phase_list)
         sum_df.reset_index(inplace=True)
         sum_df.sort_values(["user_id"], inplace=True)
-        cls(sum_df)
+        return cls(sum_df)
 
     def _validate_df_for_output(self, output_file: Path) -> bool:
         if len(self.df) == 0:
@@ -786,7 +786,9 @@ class ProjectPerformance:
         return True
 
     @classmethod
-    def from_whole_performance_objs(cls, objs: list[WholePerformance], project_titles: list[str]) -> ProjectPerformance:
+    def from_whole_performance_objs(
+        cls, objs: Collection[WholePerformance], project_titles: Collection[str]
+    ) -> ProjectPerformance:
 
         series_list = []
         for whole_performance_obj, project_title in zip(objs, project_titles):

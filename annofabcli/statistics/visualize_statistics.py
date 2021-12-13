@@ -7,7 +7,7 @@ from dataclasses import dataclass
 from functools import partial
 from multiprocessing import Pool
 from pathlib import Path
-from typing import Any, Callable, List, Optional
+from typing import Any, Callable, Collection, List, Optional
 
 import annofabapi
 import pandas
@@ -28,7 +28,6 @@ from annofabcli.statistics.csv import (
     FILENAME_PERFORMANCE_PER_USER,
     FILENAME_WHOLE_PERFORMANCE,
     Csv,
-    write_summarise_whole_performance_csv,
 )
 from annofabcli.statistics.database import Database, Query
 from annofabcli.statistics.table import AggregationBy, Table
@@ -42,7 +41,11 @@ from annofabcli.statistics.visualization.dataframe.productivity_per_date import 
     AnnotatorProductivityPerDate,
     InspectorProductivityPerDate,
 )
-from annofabcli.statistics.visualization.dataframe.user_performance import UserPerformance, WholePerformance
+from annofabcli.statistics.visualization.dataframe.user_performance import (
+    ProjectPerformance,
+    UserPerformance,
+    WholePerformance,
+)
 from annofabcli.statistics.visualization.dataframe.whole_productivity_per_date import (
     WholeProductivityPerCompletedDate,
     WholeProductivityPerFirstAnnotationStartedDate,
@@ -69,6 +72,22 @@ class ProjectSummary(DataClassJsonMixin):
     """計測日時。（2004-04-01T12:00+09:00形式）"""
     args: CommnadLineArgs
     """コマンドライン引数"""
+
+
+def write_project_performance_csv(project_dirs: Collection[Path], output_path: Path):
+    csv_file_list = [e / FILENAME_WHOLE_PERFORMANCE for e in project_dirs]
+
+    obj_list = []
+    project_title_list = []
+    for csv_file in csv_file_list:
+        if csv_file.exists():
+            obj_list.append(WholePerformance.from_csv(csv_file))
+            project_title_list.append(csv_file.parent.name)
+        else:
+            logger.warning(f"{csv_file} は存在しないのでスキップします。")
+
+    main_obj = ProjectPerformance.from_whole_performance_objs(obj_list, project_title_list)
+    main_obj.to_csv(output_path)
 
 
 def write_project_name_file(
@@ -701,10 +720,7 @@ class VisualizeStatistics(AbstractCommandLineInterface):
                 )
 
             if len(output_project_dir_list) > 0:
-                whole_performance_csv_list = [e / FILENAME_WHOLE_PERFORMANCE for e in output_project_dir_list]
-                write_summarise_whole_performance_csv(
-                    csv_path_list=whole_performance_csv_list, output_path=root_output_dir / "プロジェクトごとの生産性と品質.csv"
-                )
+                write_project_performance_csv(output_project_dir_list, root_output_dir / "プロジェクトごとの生産性と品質.csv")
             else:
                 logger.warning(f"出力した統計情報は0件なので、`プロジェクトごとの生産性と品質.csv`を出力しません。")
 

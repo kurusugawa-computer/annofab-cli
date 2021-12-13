@@ -4,23 +4,17 @@ from pathlib import Path
 from typing import Optional
 
 import annofabcli
-from annofabcli.statistics.csv import FILENAME_WHOLE_PERFORMANCE, write_summarise_whole_performance_csv
+from annofabcli.statistics.csv import FILENAME_WHOLE_PERFORMANCE
+from annofabcli.statistics.visualize_statistics import write_project_performance_csv
 
 logger = logging.getLogger(__name__)
 
 
 def main(args):
     root_dir: Path = args.dir
-    csv_path_list = [
-        project_dir / FILENAME_WHOLE_PERFORMANCE
-        for project_dir in root_dir.iterdir()
-        if (project_dir / FILENAME_WHOLE_PERFORMANCE).exists()
-    ]
-    if len(csv_path_list) > 0:
-        write_summarise_whole_performance_csv(csv_path_list=csv_path_list, output_path=args.output)
-    else:
-        logger.error(f"{root_dir} 配下に'{FILENAME_WHOLE_PERFORMANCE}'は存在しなかったので、終了します。")
-        return
+    project_dir_list = [elm for elm in root_dir.iterdir() if elm.is_dir()]
+
+    write_project_performance_csv(project_dir_list, args.output)
 
 
 def parse_args(parser: argparse.ArgumentParser):

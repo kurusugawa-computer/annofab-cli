@@ -6,7 +6,6 @@ import pandas
 from annofabapi.models import TaskPhase
 
 from annofabcli.common.utils import print_csv
-from annofabcli.statistics.table import _add_ratio_column_for_productivity_per_user
 
 logger = logging.getLogger(__name__)
 
@@ -359,37 +358,6 @@ class Csv:
 
         self._write_csv(f"集計結果csv/集計-作業時間.csv", target_df)
 
-    def write_whole_productivity(self, df: pandas.DataFrame) -> None:
-        """
-        全体の生産性と品質をCSVで出力する。
-
-        Args:
-            df: メンバごとの生産性と品質の の情報が格納されたDataFrame
-
-        """
-        columns_for_sum = [
-            "monitored_worktime_hour",
-            "task_count",
-            "input_data_count",
-            "annotation_count",
-            "actual_worktime_hour",
-            "prediction_actual_worktime_hour",
-            "pointed_out_inspection_comment_count",
-            "rejected_count",
-        ]
-        sum_series = df[columns_for_sum].sum()
-        phase_list = _get_phase_list(df)
-
-        _add_ratio_column_for_productivity_per_user(sum_series, phase_list=phase_list)
-        # 列の順番を整える
-        sum_series = sum_series[self._get_productivity_columns(phase_list)]
-
-        # 作業している人数をカウントする
-        for phase in phase_list:
-            sum_series[("working_user_count", phase)] = (df[("task_count", phase)] > 0).sum()
-
-        self._write_csv_for_series(FILENAME_WHOLE_PERFORMANCE, sum_series)
-
     def write_count_summary(self, df: pandas.DataFrame) -> None:
         """
         個数に関する集計結果をCSVで出力する。
@@ -541,33 +509,3 @@ class Csv:
         )
 
         return prior_columns
-
-    def write_productivity_per_user(
-        self, df: pandas.DataFrame, dropped_columns: Optional[List[str]] = None, output_path: Optional[Path] = None
-    ):
-        """
-        メンバごとの生産性を出力する。
-
-        Args:
-            df:
-            dropped_columns:
-
-        Returns:
-
-        """
-
-        if len(df) == 0:
-            logger.info("プロジェクトメンバ一覧が0件のため出力しない")
-            return
-
-        phase_list = _get_phase_list(df)
-        value_columns = self.get_productivity_columns(phase_list)
-
-        user_columns = [("user_id", ""), ("username", ""), ("biography", ""), ("last_working_date", "")]
-        prior_columns = user_columns + value_columns
-        required_columns = self.create_required_columns(df, prior_columns, dropped_columns)
-        target_df = df[required_columns]
-        if output_path is None:
-            self._write_csv(FILENAME_PERFORMANCE_PER_USER, target_df)
-        else:
-            print_csv(target_df, output=str(output_path), to_csv_kwargs=self.CSV_FORMAT)

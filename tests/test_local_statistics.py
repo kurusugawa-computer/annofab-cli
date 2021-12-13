@@ -403,8 +403,7 @@ class TestUserPerformance:
 
     def test_merge(self):
         merged_obj = UserPerformance.merge(self.obj, self.obj)
-        print(merged_obj)
-        row = merged_obj.df[merged_obj.df["user_id"] == "KD"]
+        row = merged_obj.df[merged_obj.df["user_id"] == "KD"].iloc[0]
         assert row[("task_count", "annotation")] == 30
 
 
