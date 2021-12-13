@@ -21,6 +21,7 @@ from annofabcli.statistics.visualization.dataframe.productivity_per_date import 
     AnnotatorProductivityPerDate,
     InspectorProductivityPerDate,
 )
+from annofabcli.statistics.visualization.dataframe.user_performance import UserPerformance
 from annofabcli.statistics.visualization.dataframe.whole_productivity_per_date import (
     WholeProductivityPerCompletedDate,
     WholeProductivityPerFirstAnnotationStartedDate,
@@ -53,14 +54,6 @@ class TestTable:
         )
         df = Table.create_annotation_count_ratio_df(task_history_df, task_df)
         df.to_csv(out_path / "annotation-count-ratio.csv")
-
-    def test_create_productivity_per_user_from_aw_time(self):
-        df_task_history = pandas.read_csv(str(data_path / "task-history-df.csv"))
-        df_labor = pandas.read_csv(str(data_path / "labor-df.csv"))
-        df_worktime_ratio = pandas.read_csv(str(data_path / "annotation-count-ratio-df.csv"))
-        df = Table.create_productivity_per_user_from_aw_time(df_task_history, df_labor, df_worktime_ratio)
-
-        df.to_csv(out_path / "productivity-per-user.csv")
 
     def test_create_annotation_count_ratio_df(self):
         df_task_history = pandas.read_csv(str(data_path / "task-history-df.csv"))
@@ -405,3 +398,15 @@ class TestWorktimePerDate:
 
     def test_plot_cumulatively(self):
         self.obj.plot_cumulatively(self.output_dir / "累積折れ線-横軸_日-縦軸_作業時間.html")
+
+
+class TestUserPerformance:
+    @classmethod
+    def setup_class(cls):
+        df_task_history = pandas.read_csv(str(data_path / "task-history-df.csv"))
+        df_labor = pandas.read_csv(str(data_path / "labor-df.csv"))
+        df_worktime_ratio = pandas.read_csv(str(data_path / "annotation-count-ratio-df.csv"))
+        cls.obj = UserPerformance.from_df(df_task_history, df_labor, df_worktime_ratio)
+
+    def test_foo(self):
+        print(self.obj.df)
