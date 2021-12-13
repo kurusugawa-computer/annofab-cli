@@ -2,6 +2,7 @@ from __future__ import annotations
 
 import logging
 import math
+from pathlib import Path
 from typing import Any, Callable, Optional
 
 import bokeh
@@ -11,7 +12,6 @@ import numpy
 from bokeh.core.properties import Color
 from bokeh.models import HoverTool
 from bokeh.plotting import ColumnDataSource
-from pathlib import Path
 
 logger = logging.getLogger(__name__)
 

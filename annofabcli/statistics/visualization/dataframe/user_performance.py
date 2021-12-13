@@ -18,7 +18,13 @@ from annofabapi.models import TaskPhase
 from bokeh.plotting import ColumnDataSource, figure
 
 from annofabcli.common.utils import print_csv, read_multiheader_csv
-from annofabcli.statistics.scatter import create_hover_tool, get_color_from_palette, plot_bubble, plot_scatter, write_bokeh_graph
+from annofabcli.statistics.scatter import (
+    create_hover_tool,
+    get_color_from_palette,
+    plot_bubble,
+    plot_scatter,
+    write_bokeh_graph,
+)
 
 logger = logging.getLogger(__name__)
 
@@ -767,7 +773,10 @@ class WholePerformance:
 
         # 列の順番を整える
         phase_list = UserPerformance.get_phase_list(self.series.index)
-        series = self.series[UserPerformance.get_productivity_columns(phase_list)]
+        indexes = UserPerformance.get_productivity_columns(phase_list) + [
+            ("working_user_count", phase) for phase in phase_list
+        ]
+        series = self.series[indexes]
 
         output_file.parent.mkdir(exist_ok=True, parents=True)
         logger.debug(f"{str(output_file)} を出力します。")
