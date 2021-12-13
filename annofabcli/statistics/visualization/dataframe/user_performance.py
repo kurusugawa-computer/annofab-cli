@@ -18,7 +18,7 @@ from annofabapi.models import TaskPhase
 from bokeh.plotting import ColumnDataSource, figure
 
 from annofabcli.common.utils import print_csv, read_multiheader_csv
-from annofabcli.statistics.scatter import create_hover_tool, get_color_from_palette, plot_bubble, plot_scatter
+from annofabcli.statistics.scatter import create_hover_tool, get_color_from_palette, plot_bubble, plot_scatter, write_bokeh_graph
 
 logger = logging.getLogger(__name__)
 
@@ -484,9 +484,7 @@ class UserPerformance:
             self._set_legend(fig)
 
         div_element = self._create_div_element()
-        bokeh.plotting.reset_output()
-        bokeh.plotting.output_file(output_file, title=output_file.stem)
-        bokeh.plotting.save(bokeh.layouts.column([div_element] + figure_list))
+        write_bokeh_graph(bokeh.layouts.column([div_element] + figure_list), output_file)
 
     def plot_productivity_from_monitored_worktime(self, output_file: Path):
         """
@@ -598,9 +596,7 @@ class UserPerformance:
             self._set_legend(fig)
 
         div_element = self._create_div_element()
-        bokeh.plotting.reset_output()
-        bokeh.plotting.output_file(output_file, title=output_file.stem)
-        bokeh.plotting.save(bokeh.layouts.column([div_element] + figure_list))
+        write_bokeh_graph(bokeh.layouts.column([div_element] + figure_list), output_file)
 
     def plot_quality_and_productivity_from_actual_worktime(
         self,
@@ -737,9 +733,7 @@ class UserPerformance:
 
         div_element = self._create_div_element()
         div_element.text += """円の大きさ：作業時間<br>"""
-        bokeh.plotting.reset_output()
-        bokeh.plotting.output_file(output_file, title=output_file.stem)
-        bokeh.plotting.save(bokeh.layouts.column([div_element] + figure_list))
+        write_bokeh_graph(bokeh.layouts.column([div_element] + figure_list), output_file)
 
 
 class WholePerformance:

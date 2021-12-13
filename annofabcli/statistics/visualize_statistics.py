@@ -469,7 +469,7 @@ def visualize_statistics(
 
     write_obj.write_csv_for_summary()
 
-    write_obj._catch_exception(write_obj.write_user_performance)
+    write_obj._catch_exception(write_obj.write_user_performance)()
 
     # ヒストグラム
     write_obj.write_histogram_for_task()

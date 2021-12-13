@@ -11,8 +11,16 @@ import numpy
 from bokeh.core.properties import Color
 from bokeh.models import HoverTool
 from bokeh.plotting import ColumnDataSource
+from pathlib import Path
 
 logger = logging.getLogger(__name__)
+
+
+def write_bokeh_graph(bokeh_obj, output_file: Path):
+    output_file.parent.mkdir(exist_ok=True, parents=True)
+    bokeh.plotting.reset_output()
+    bokeh.plotting.output_file(output_file, title=output_file.stem)
+    bokeh.plotting.save(bokeh_obj)
 
 
 def get_color_from_palette(index: int) -> Color:

@@ -55,7 +55,7 @@ def merge_visualization_dir(  # pylint: disable=too-many-statements
         for obj in obj_list[1:]:
             sum_obj = UserPerformance.merge(sum_obj, obj)
 
-        sum_obj.to_csv(output_dir /"メンバごとの生産性と品質.csv")
+        sum_obj.to_csv(output_dir / FILENAME_PERFORMANCE_PER_USER)
 
         whole_obj = WholePerformance(sum_obj.get_summary())
         whole_obj.to_csv(output_dir / "全体の生産性と品質.csv")
