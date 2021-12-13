@@ -1,18 +1,17 @@
-# pylint: disable=too-many-lines
+"""
+折れ線グラフを出力する関数の定義など
+"""
 import logging
-from enum import Enum
 from pathlib import Path
 from typing import List, Optional
 
 import bokeh
 import bokeh.layouts
 import bokeh.palettes
-import dateutil
-import dateutil.parser
 import pandas
 from bokeh.core.properties import Color
 from bokeh.models import HoverTool
-from bokeh.plotting import ColumnDataSource, figure
+from bokeh.plotting import ColumnDataSource
 
 logger = logging.getLogger(__name__)
 
@@ -164,177 +163,3 @@ def get_plotted_user_id_list(
         logger.info(f"表示対象のuser_idの数が多いため、先頭から{MAX_USER_COUNT_FOR_LINE_GRAPH}個のみプロットします")
 
     return user_id_list[0:MAX_USER_COUNT_FOR_LINE_GRAPH]
-
-
-class OutputTarget(Enum):
-    ANNOTATION = "annotation"
-    INPUT_DATA = "input_data"
-    TASK = "task"
-
-
-class LineGraph:
-    """
-    グラフを出力するクラス
-    """
-
-    #############################################
-    # Field
-    #############################################
-    my_palette = bokeh.palettes.Category20[20]
-    my_small_palette = bokeh.palettes.Category10[10]
-
-    #############################################
-    # Private
-    #############################################
-
-    def __init__(self, outdir: str):
-        self.line_graph_outdir = outdir
-        Path(self.line_graph_outdir).mkdir(exist_ok=True, parents=True)
-
-    @staticmethod
-    def _create_hover_tool(tool_tip_items: Optional[List[str]] = None) -> HoverTool:
-        """
-        HoverTool用のオブジェクトを生成する。
-        Returns:
-
-        """
-        if tool_tip_items is None:
-            tool_tip_items = []
-
-        detail_tooltips = [(e, f"@{{{e}}}") for e in tool_tip_items]
-        hover_tool = HoverTool(tooltips=[("index", "$index"), ("(x,y)", "($x, $y)")] + detail_tooltips)
-        return hover_tool
-
-    @staticmethod
-    def _plot_line_and_circle(
-        fig: bokeh.plotting.Figure,
-        source: ColumnDataSource,
-        x_column_name: str,
-        y_column_name: str,
-        legend_label: str,
-        color: Color,
-        **kwargs,
-    ) -> None:
-        """
-        線を引いて、プロットした部分に丸を付ける。
-
-        Args:
-            fig:
-            source:
-            x_column_name: sourceに対応するX軸の列名
-            y_column_name: sourceに対応するY軸の列名
-            legend_label:
-            color: 線と点の色
-
-        """
-
-        fig.line(
-            x=x_column_name,
-            y=y_column_name,
-            source=source,
-            legend_label=legend_label,
-            line_color=color,
-            line_width=1,
-            muted_alpha=0,
-            muted_color=color,
-            **kwargs,
-        )
-        fig.circle(
-            x=x_column_name,
-            y=y_column_name,
-            source=source,
-            legend_label=legend_label,
-            muted_alpha=0.0,
-            muted_color=color,
-            color=color,
-            **kwargs,
-        )
-
-    @staticmethod
-    def _plot_moving_average(
-        fig: bokeh.plotting.Figure,
-        source: ColumnDataSource,
-        x_column_name: str,
-        y_column_name: str,
-        legend_label: str,
-        color: Color,
-        **kwargs,
-    ) -> None:
-        """
-        移動平均用にプロットする
-
-        Args:
-            fig:
-            source:
-            x_column_name: sourceに対応するX軸の列名
-            y_column_name: sourceに対応するY軸の列名
-            legend_label:
-            color: 線と点の色
-
-        """
-
-        fig.line(
-            x=x_column_name,
-            y=y_column_name,
-            source=source,
-            legend_label=legend_label,
-            line_color=color,
-            line_width=1,
-            line_dash="dashed",
-            line_alpha=0.6,
-            muted_alpha=0,
-            muted_color=color,
-            **kwargs,
-        )
-
-    @staticmethod
-    def _set_legend(fig: bokeh.plotting.Figure, hover_tool: HoverTool) -> None:
-        """
-        凡例の設定。
-
-        Args:
-            fig:
-            hover_tool:
-        """
-        fig.add_tools(hover_tool)
-        fig.legend.location = "top_left"
-        fig.legend.click_policy = "mute"
-        if len(fig.legend) > 0:
-            legend = fig.legend[0]
-            fig.add_layout(legend, "left")
-
-    def create_user_id_list(
-        self,
-        df: pandas.DataFrame,
-        user_id_column: str,
-        datetime_column: str,
-        arg_user_id_list: Optional[List[str]] = None,
-    ) -> List[str]:
-        """
-        グラフに表示するユーザのuser_idを生成する。
-
-        Args:
-            df:
-            user_id_column: user_idが格納されている列の名前
-            datetime_column: 日時列の降順でソートする
-            arg_first_annotation_user_id_list: 指定されたuser_idのList
-
-        Returns:
-            グラフに表示するユーザのuser_idのList
-
-        """
-        max_user_length = len(self.my_palette)
-        tmp_user_id_list: List[str] = (
-            df.sort_values(by=datetime_column, ascending=False)[user_id_column].dropna().unique().tolist()
-        )
-
-        if arg_user_id_list is None or len(arg_user_id_list) == 0:
-            user_id_list = tmp_user_id_list
-        else:
-            user_id_list = [user_id for user_id in tmp_user_id_list if user_id in arg_user_id_list]
-
-        if len(user_id_list) > max_user_length:
-            logger.info(f"表示対象のuser_idの数が多いため、先頭から{max_user_length}個のみグラフ化します")
-
-        return user_id_list[0:max_user_length]
-

@@ -30,7 +30,6 @@ from annofabcli.statistics.csv import (
     write_summarise_whole_performance_csv,
 )
 from annofabcli.statistics.database import Database, Query
-from annofabcli.statistics.linegraph import LineGraph
 from annofabcli.statistics.scatter import Scatter
 from annofabcli.statistics.table import AggregationBy, Table
 from annofabcli.statistics.visualization.dataframe.cumulative_productivity import (
@@ -127,7 +126,6 @@ class WriteCsvGraph:
         # holoviews のloadに時間がかかって、helpコマンドの出力が遅いため、遅延ロードする
         histogram_module = importlib.import_module("annofabcli.statistics.histogram")
         self.histogram_obj = histogram_module.Histogram(str(output_dir / "histogram"))  # type: ignore
-        self.linegraph_obj = LineGraph(str(output_dir / "line-graph"))
         self.scatter_obj = Scatter(str(output_dir / "scatter"))
 
         self.labor_df = self.table_obj.create_labor_df(labor_df)
@@ -162,11 +160,6 @@ class WriteCsvGraph:
         if self.annotation_df is None:
             self.annotation_df = self.table_obj.create_task_for_annotation_df()
         return self.annotation_df
-
-    def _get_account_statistics_df(self):
-        if self.account_statistics_df is None:
-            self.account_statistics_df = self.table_obj.create_account_statistics_df()
-        return self.account_statistics_df
 
     def _get_labor_df(self):
         if self.labor_df is None:
@@ -290,7 +283,6 @@ class WriteCsvGraph:
             )
 
             annotator_obj.plot_task_metrics(self.output_dir / "line-graph/教師付者用/累積折れ線-横軸_タスク数-教師付者用.html", user_id_list)
-
 
     def write_worktime_per_date(self, user_id_list: Optional[List[str]] = None) -> None:
         """日ごとの作業時間情報を出力する。"""
