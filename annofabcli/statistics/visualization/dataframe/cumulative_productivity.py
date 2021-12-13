@@ -6,7 +6,6 @@ from __future__ import annotations
 
 import abc
 import logging
-from os import stat
 from pathlib import Path
 from typing import Optional
 
@@ -42,7 +41,7 @@ class AbstractRoleCumulativeProductivity(abc.ABC):
         self.default_user_id_list = self._get_default_user_id_list()
 
     @staticmethod
-    def _get_phase_name(phase:str) -> str:
+    def _get_phase_name(phase: str) -> str:
         if phase == "annotation":
             return "教師付"
         elif phase == "inspection":
@@ -53,12 +52,13 @@ class AbstractRoleCumulativeProductivity(abc.ABC):
 
     def _get_default_user_id_list(self) -> list[str]:
         return (
-            self.df.sort_values(by=f"first_{self.phase}_started_datetime", ascending=False)[f"first_{self.phase}_user_id"]
+            self.df.sort_values(by=f"first_{self.phase}_started_datetime", ascending=False)[
+                f"first_{self.phase}_user_id"
+            ]
             .dropna()
             .unique()
             .tolist()
         )
-
 
     def _validate_df_for_output(self, output_file: Path) -> bool:
         if len(self.df) == 0:
@@ -66,11 +66,12 @@ class AbstractRoleCumulativeProductivity(abc.ABC):
             return False
 
         if len(self.default_user_id_list) == 0:
-            logger.warning(f"{self.phase_name} 作業したタスクが0件なので（'first_{self.phase}_user_id'がすべて空欄）、{output_file} を出力しません。")
+            logger.warning(
+                f"{self.phase_name} 作業したタスクが0件なので（'first_{self.phase}_user_id'がすべて空欄）、{output_file} を出力しません。"
+            )
             return False
 
         return True
-
 
     @abc.abstractmethod
     def _get_cumulative_dataframe(self) -> pandas.DataFrame:
@@ -419,10 +420,8 @@ class AnnotatorCumulativeProductivity(AbstractRoleCumulativeProductivity):
 
 
 class InspectorCumulativeProductivity(AbstractRoleCumulativeProductivity):
-
     def __init__(self, df: pandas.DataFrame):
         super().__init__(df, phase="inspection")
-
 
     def _get_cumulative_dataframe(self) -> pandas.DataFrame:
         """
@@ -471,7 +470,6 @@ class InspectorCumulativeProductivity(AbstractRoleCumulativeProductivity):
             user_id_list = self.default_user_id_list
 
         user_id_list = get_plotted_user_id_list(user_id_list)
-
 
         fig_info_list = [
             dict(
@@ -619,7 +617,6 @@ class InspectorCumulativeProductivity(AbstractRoleCumulativeProductivity):
 class AcceptorCumulativeProductivity(AbstractRoleCumulativeProductivity):
     def __init__(self, df: pandas.DataFrame):
         super().__init__(df, phase="acceptance")
-
 
     def _get_cumulative_dataframe(self) -> pandas.DataFrame:
         """
