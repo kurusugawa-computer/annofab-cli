@@ -76,10 +76,10 @@ def write_linegraph_per_user(
 
         acceptor_per_date = AcceptorProductivityPerDate.from_df_task(task_df)
         acceptor_per_date.plot_annotation_metrics(
-            output_dir / Path("検査者用/折れ線-横軸_検査開始日-縦軸_アノテーション単位の指標-検査者用.html"), user_id_list
+            output_dir / Path("受入者用/折れ線-横軸_受入開始日-縦軸_アノテーション単位の指標-受入者用.html"), user_id_list
         )
         acceptor_per_date.plot_input_data_metrics(
-            output_dir / Path("検査者用/折れ線-横軸_検査開始日-縦軸_入力データ単位の指標-検査者用.html"), user_id_list
+            output_dir / Path("受入者用/折れ線-横軸_受入開始日-縦軸_入力データ単位の指標-受入者用.html"), user_id_list
         )
 
 
