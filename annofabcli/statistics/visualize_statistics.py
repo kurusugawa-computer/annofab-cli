@@ -42,7 +42,7 @@ from annofabcli.statistics.visualization.dataframe.productivity_per_date import 
     AnnotatorProductivityPerDate,
     InspectorProductivityPerDate,
 )
-from annofabcli.statistics.visualization.dataframe.user_performance import UserPerformance
+from annofabcli.statistics.visualization.dataframe.user_performance import UserPerformance, WholePerformance, ProjectPerformance
 from annofabcli.statistics.visualization.dataframe.whole_productivity_per_date import (
     WholeProductivityPerCompletedDate,
     WholeProductivityPerFirstAnnotationStartedDate,
@@ -203,6 +203,8 @@ class WriteCsvGraph:
             )
 
         obj.to_csv(self.output_dir / FILENAME_PERFORMANCE_PER_USER)
+        WholePerformance(obj.get_summary()).to_csv(self.output_dir / FILENAME_WHOLE_PERFORMANCE)
+
         obj.plot_quality(self.output_dir / "scatter/散布図-教師付者の品質と作業量の関係.html")
         obj.plot_productivity_from_monitored_worktime(
             self.output_dir / "scatter/散布図-アノテーションあたり作業時間と累計作業時間の関係-計測時間.html"
@@ -330,15 +332,6 @@ class WriteCsvGraph:
         annotation_df = self._get_annotation_df()
         self._catch_exception(self.csv_obj.write_ラベルごとのアノテーション数)(annotation_df)
 
-    def write_productivity_csv_per_user(self) -> None:
-        productivity_df = self._get_productivity_df()
-        if len(productivity_df) == 0:
-            logger.warning(f"作業履歴がないため、'メンバごとの生産性と品質.csv'を出力しません。")
-            return
-
-        self._catch_exception(self.csv_obj.write_productivity_per_user)(productivity_df)
-        self._catch_exception(self.csv_obj.write_whole_productivity)(productivity_df)
-
     def write_labor_and_task_history(self) -> None:
         task_history_df = self._get_task_history_df()
         self._catch_exception(self.csv_obj.write_task_history_list)(task_history_df)
@@ -456,7 +449,6 @@ def visualize_statistics(
     write_obj.write_csv_for_task()
 
     write_obj.write_csv_for_summary()
-    write_obj.write_productivity_csv_per_user()
 
     write_obj._catch_exception(write_obj.write_user_performance)
 

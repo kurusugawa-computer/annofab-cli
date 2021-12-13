@@ -19,7 +19,6 @@ from bokeh.plotting import ColumnDataSource, figure
 
 from annofabcli.common.utils import print_csv, read_multiheader_csv
 from annofabcli.statistics.scatter import create_hover_tool, get_color_from_palette, plot_bubble, plot_scatter
-from annofabcli.statistics.csv import write_series_to_csv
 
 logger = logging.getLogger(__name__)
 
@@ -44,7 +43,7 @@ class UserPerformance:
 
     def __init__(self, df: pandas.DataFrame):
         self.df = df
-        self.phase_list = self._get_phase_list(df.columns)
+        self.phase_list = self.get_phase_list(df.columns)
 
     @staticmethod
     def _add_ratio_column_for_productivity_per_user(df: pandas.DataFrame, phase_list: list[str]):
@@ -83,13 +82,15 @@ class UserPerformance:
         df[("rejected_count/task_count", phase)] = df[("rejected_count", phase)] / df[("task_count", phase)]
 
     @staticmethod
-    def _get_phase_list(columns: list[str]) -> list[str]:
-        phase_list = [TaskPhase.ANNOTATION.value, TaskPhase.INSPECTION.value, TaskPhase.ACCEPTANCE.value]
-        if TaskPhase.INSPECTION.value not in columns:
-            phase_list.remove(TaskPhase.INSPECTION.value)
+    def get_phase_list(columns: list[str]) -> list[str]:
+        # multiindexの2段目を取得する
+        tmp_set = {c[1] for c in columns}
 
-        if TaskPhase.ACCEPTANCE.value not in columns:
-            phase_list.remove(TaskPhase.ACCEPTANCE.value)
+        phase_list = []
+
+        for phase in TaskPhase:
+            if phase.value in tmp_set:
+                phase_list.append(phase.value)
 
         return phase_list
 
@@ -136,7 +137,7 @@ class UserPerformance:
             df["actual_worktime_hour"] = 0
             df["last_working_date"] = None
 
-        phase_list = cls._get_phase_list(list(df.columns))
+        phase_list = cls.get_phase_list(list(df.columns))
 
         df = df[["actual_worktime_hour", "last_working_date"] + phase_list].copy()
         df.columns = pandas.MultiIndex.from_tuples(
@@ -190,8 +191,8 @@ class UserPerformance:
             return False
         return True
 
-    def _get_productivity_columns(self) -> list[tuple[str, str]]:
-        phase_list = self.phase_list
+    @staticmethod
+    def get_productivity_columns(phase_list: list[str]) -> list[tuple[str, str]]:
         monitored_worktime_columns = (
             [("monitored_worktime_hour", phase) for phase in phase_list]
             + [("monitored_worktime_hour", "sum")]
@@ -241,7 +242,7 @@ class UserPerformance:
         if not self._validate_df_for_output(output_file):
             return
 
-        value_columns = self._get_productivity_columns()
+        value_columns = self.get_productivity_columns(self.phase_list)
 
         user_columns = [("user_id", ""), ("username", ""), ("biography", ""), ("last_working_date", "")]
         columns = user_columns + value_columns
@@ -339,20 +340,6 @@ class UserPerformance:
             sum_series[("working_user_count", phase)] = (self.df[("task_count", phase)] > 0).sum()
 
         return sum_series
-
-    def to_summary_csv(self, output_file: Path) -> None:
-        """
-        全体の生産性と品質が格納されたCSVを出力します。
-
-        """
-        if not self._validate_df_for_output(output_file):
-            return
-
-        ser = self.get_summary()
-
-        # 列の順番を整える
-        ser = ser[self._get_productivity_columns()]
-        write_series_to_csv(ser, output_file)
 
     def _plot_productivity(self, output_file: Path, worktime_type: WorktimeType):
         """作業時間と生産性の関係をメンバごとにプロットする。"""
@@ -699,3 +686,84 @@ class UserPerformance:
         bokeh.plotting.reset_output()
         bokeh.plotting.output_file(output_file, title=output_file.stem)
         bokeh.plotting.save(bokeh.layouts.column([div_element] + figure_list))
+
+
+class WholePerformance:
+    """
+    全体の生産性と品質の情報
+    """
+
+    def __init__(self, series: pandas.Series):
+        self.series = series
+
+    def _validate_df_for_output(self, output_file: Path) -> bool:
+        if len(self.series) == 0:
+            logger.warning(f"データが0件のため、{output_file} は出力しません。")
+            return False
+        return True
+
+    @classmethod
+    def from_csv(cls, csv_file: Path) -> WholePerformance:
+        df = pandas.read_csv(str(csv_file), header=None, index_col=[0, 1])
+        # 3列目を値としたpandas.Series を取得する。
+        series = df[2]
+        return cls(series)
+
+    def to_csv(self, output_file: Path) -> None:
+        """
+        全体の生産性と品質が格納されたCSVを出力します。
+
+        """
+        if not self._validate_df_for_output(output_file):
+            return
+
+        # 列の順番を整える
+        phase_list = UserPerformance.get_phase_list(self.series.index)
+        series = self.series[UserPerformance.get_productivity_columns(phase_list)]
+
+        output_file.parent.mkdir(exist_ok=True, parents=True)
+        logger.debug(f"{str(output_file)} を出力します。")
+        series.to_csv(str(output_file), sep=",", encoding="utf_8_sig", header=False)
+
+
+class ProjectPerformance:
+    """
+    プロジェクトごとの生産性と品質
+    """
+
+    def __init__(self, df: pandas.DataFrame):
+        self.df = df
+
+    def _validate_df_for_output(self, output_file: Path) -> bool:
+        if len(self.df) == 0:
+            logger.warning(f"データが0件のため、{output_file} は出力しません。")
+            return False
+        return True
+
+    @classmethod
+    def from_whole_performance_objs(cls, objs: list[WholePerformance], project_titles: list[str]) -> ProjectPerformance:
+
+        series_list = []
+        for whole_performance_obj, project_title in zip(objs, project_titles):
+            series = whole_performance_obj.series
+            series[("project_title", "")] = project_title
+            series_list.append(series)
+
+        df = pandas.DataFrame(series_list)
+        return cls(df)
+
+    def to_csv(self, output_file: Path) -> None:
+        """
+        全体の生産性と品質が格納されたCSVを出力します。
+
+        """
+        if not self._validate_df_for_output(output_file):
+            return
+
+        phase_list = UserPerformance.get_phase_list(self.df.columns)
+
+        first_columns = [("project_title", "")]
+        value_columns = UserPerformance.get_productivity_columns(phase_list)
+
+        columns = first_columns + value_columns + [("working_user_count", phase) for phase in phase_list]
+        print_csv(self.df[columns], output=str(output_file))

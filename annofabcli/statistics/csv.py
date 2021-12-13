@@ -66,7 +66,7 @@ def write_summarise_whole_performance_csv(csv_path_list: List[Path], output_path
     print_csv(target_df, output=str(output_path))
 
 
-def write_series_to_csv( series: pandas.Series, output_file:Path) -> None:
+def write_series_to_csv(series: pandas.Series, output_file: Path) -> None:
     """
     pandas.SeriesをCSVに出力します。
     indexも出力します。
@@ -75,6 +75,7 @@ def write_series_to_csv( series: pandas.Series, output_file:Path) -> None:
     output_file.parent.mkdir(exist_ok=True, parents=True)
     logger.debug(f"{str(output_file)} を出力します。")
     series.to_csv(str(output_file), sep=",", encoding="utf_8_sig", header=False)
+
 
 class Csv:
     """
@@ -108,8 +109,6 @@ class Csv:
         output_path.parent.mkdir(exist_ok=True, parents=True)
         logger.debug(f"{str(output_path)} を出力します。")
         df.to_csv(str(output_path), sep=",", encoding="utf_8_sig", index=False)
-
-
 
     @staticmethod
     def create_required_columns(

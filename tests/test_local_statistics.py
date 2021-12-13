@@ -4,8 +4,7 @@ from pathlib import Path
 import pandas
 from annofabapi.models import TaskStatus
 
-from annofabcli.common.utils import read_multiheader_csv
-from annofabcli.statistics.csv import Csv, write_summarise_whole_performance_csv
+from annofabcli.statistics.csv import Csv
 from annofabcli.statistics.list_worktime import WorktimeFromTaskHistoryEvent, get_df_worktime
 from annofabcli.statistics.summarize_task_count import SimpleTaskStatus, get_step_for_current_phase
 from annofabcli.statistics.summarize_task_count_by_task_id import create_task_count_summary_df, get_task_id_prefix
@@ -20,7 +19,11 @@ from annofabcli.statistics.visualization.dataframe.productivity_per_date import 
     AnnotatorProductivityPerDate,
     InspectorProductivityPerDate,
 )
-from annofabcli.statistics.visualization.dataframe.user_performance import UserPerformance
+from annofabcli.statistics.visualization.dataframe.user_performance import (
+    ProjectPerformance,
+    UserPerformance,
+    WholePerformance,
+)
 from annofabcli.statistics.visualization.dataframe.whole_productivity_per_date import (
     WholeProductivityPerCompletedDate,
     WholeProductivityPerFirstAnnotationStartedDate,
@@ -81,22 +84,6 @@ class TestSummarizeTaskCount:
             "work_time_span": 0,
         }
         assert get_step_for_current_phase(task, number_of_inspections=1) == 1
-
-
-class TestCsv:
-    csv_obj = None
-
-    @classmethod
-    def setup_class(cls):
-        cls.csv_obj = Csv(outdir=str(out_path))
-
-    def test_write_whole_productivity(self):
-        productivity_per_user = read_multiheader_csv(str(data_path / "productivity-per-user2.csv"))
-        self.csv_obj.write_whole_productivity(productivity_per_user)
-
-    def test_write_summarise_whole_performance_csv(self):
-        csv_path_list = [data_path / "全体の生産性と品質.csv"]
-        df = write_summarise_whole_performance_csv(csv_path_list, output_path=out_path / "プロジェクごとの生産性と品質.csv")
 
 
 class TestSummarizeTaskCountByTaskId:
@@ -412,8 +399,27 @@ class TestUserPerformance:
 
     def test_get_summary(self):
         ser = self.obj.get_summary()
-        assert ser[("task_count","annotation")] == 52271
+        assert ser[("task_count", "annotation")] == 52271
 
-    def test_to_summary_csv(self):
-        ser = self.obj.to_summary_csv(self.output_dir / "全体の生産性と品質.csv")
-                
+
+class TestWholePerformance:
+    @classmethod
+    def setup_class(cls):
+        cls.output_dir = out_path / "visualization"
+        cls.output_dir.mkdir(exist_ok=True, parents=True)
+        cls.obj = WholePerformance.from_csv(data_path / "全体の生産性と品質.csv")
+
+    def test_to_csv(self):
+        self.obj.to_csv(self.output_dir / "全体の生産性と品質.csv")
+
+
+class TestProjectPerformance:
+    @classmethod
+    def setup_class(cls):
+        cls.output_dir = out_path / "visualization"
+        cls.output_dir.mkdir(exist_ok=True, parents=True)
+        tmp = WholePerformance.from_csv(data_path / "全体の生産性と品質.csv")
+        cls.obj = ProjectPerformance.from_whole_performance_objs([tmp, tmp], ["foo", "bar"])
+
+    def test_to_csv(self):
+        self.obj.to_csv(self.output_dir / "プロジェクごとの生産性と品質.csv")
