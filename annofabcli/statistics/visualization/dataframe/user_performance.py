@@ -2,7 +2,7 @@
 各ユーザの合計の生産性と品質
 """
 from __future__ import annotations
-
+from annofabcli.common.utils import read_multiheader_csv
 import copy
 import logging
 from enum import Enum
@@ -88,6 +88,11 @@ class UserPerformance:
             phase_list.remove(TaskPhase.ACCEPTANCE.value)
 
         return phase_list
+
+    @classmethod
+    def from_csv(cls, csv_file:Path) -> UserPerformance:
+        df = read_multiheader_csv(str(csv_file))
+        return cls(df)
 
     @classmethod
     def from_df(
@@ -382,7 +387,7 @@ class UserPerformance:
 
 
 
-    def write_scatter_for_quality(self, output_file:Path):
+    def plot_quality(self, output_file:Path):
         """
         メンバごとに品質を散布図でプロットする
 
@@ -485,19 +490,19 @@ class UserPerformance:
         bokeh.plotting.output_file(output_file, title=output_file.stem)
         bokeh.plotting.save(bokeh.layouts.column([div_element] + figure_list))
 
-    def write_scatter_for_productivity_by_actual_worktime_and_quality(self,  output_file:Path, ):
+    def plot_quality_and_productivity_from_actual_worktime(self,  output_file:Path, ):
         """
         実績作業時間を元に算出した生産性と品質の関係を、メンバごとにプロットする
         """
-        self._write_scatter_for_productivity_by_worktime_and_quality(output_file, worktime_type=WorktimeType.ACTUAL)
+        self._plot_quality_and_productivity(output_file, worktime_type=WorktimeType.ACTUAL)
 
-    def write_scatter_for_productivity_by_monitored_worktime_and_quality(self,  output_file:Path, ):
+    def plot_quality_and_productivity_from_monitored_worktime(self,  output_file:Path, ):
         """
         計測作業時間を元に算出した生産性と品質の関係を、メンバごとにプロットする
         """
-        self._write_scatter_for_productivity_by_worktime_and_quality(output_file, worktime_type=WorktimeType.MONITORED)
+        self._plot_quality_and_productivity(output_file, worktime_type=WorktimeType.MONITORED)
 
-    def _write_scatter_for_productivity_by_worktime_and_quality(
+    def _plot_quality_and_productivity(
         self, output_file:Path, worktime_type: WorktimeType
     ):
         """
@@ -508,10 +513,8 @@ class UserPerformance:
             return
 
         if worktime_type == WorktimeType.ACTUAL:
-            worktime_name = "実績時間"
             worktime_key_for_phase = "prediction_actual"
         elif worktime_type == WorktimeType.MONITORED:
-            worktime_name = "計測時間"
             worktime_key_for_phase = WorktimeType.MONITORED.value
 
         # numpy.inf が含まれていると散布図を出力できないので置換する

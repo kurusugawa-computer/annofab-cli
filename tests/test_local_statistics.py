@@ -7,7 +7,6 @@ from annofabapi.models import TaskStatus
 from annofabcli.common.utils import read_multiheader_csv
 from annofabcli.statistics.csv import Csv, write_summarise_whole_performance_csv
 from annofabcli.statistics.list_worktime import WorktimeFromTaskHistoryEvent, get_df_worktime
-from annofabcli.statistics.scatter import Scatter
 from annofabcli.statistics.summarize_task_count import SimpleTaskStatus, get_step_for_current_phase
 from annofabcli.statistics.summarize_task_count_by_task_id import create_task_count_summary_df, get_task_id_prefix
 from annofabcli.statistics.table import Table
@@ -83,29 +82,6 @@ class TestSummarizeTaskCount:
         }
         assert get_step_for_current_phase(task, number_of_inspections=1) == 1
 
-
-class TestScatter:
-    scatter_obj = None
-
-    @classmethod
-    def setup_class(cls):
-        cls.scatter_obj = Scatter(outdir=str(out_path))
-
-    def test_write_scatter_for_productivity_by_monitored_worktime(self):
-        productivity_per_user = read_multiheader_csv(str(data_path / "productivity-per-user2.csv"))
-        self.scatter_obj.write_scatter_for_productivity_by_monitored_worktime(productivity_per_user)
-
-    def test_write_scatter_for_productivity_by_actual_worktime(self):
-        productivity_per_user = read_multiheader_csv(str(data_path / "productivity-per-user2.csv"))
-        self.scatter_obj.write_scatter_for_productivity_by_actual_worktime(productivity_per_user)
-
-    def test_write_scatter_for_quality(self):
-        productivity_per_user = read_multiheader_csv(str(data_path / "productivity-per-user2.csv"))
-        self.scatter_obj.write_scatter_for_quality(productivity_per_user)
-
-    def test_write_scatter_for_productivity_by_actual_worktime_and_quality(self):
-        productivity_per_user = read_multiheader_csv(str(data_path / "productivity-per-user2.csv"))
-        self.scatter_obj.write_scatter_for_productivity_by_actual_worktime_and_quality(productivity_per_user)
 
 
 class TestCsv:
@@ -403,10 +379,30 @@ class TestWorktimePerDate:
 class TestUserPerformance:
     @classmethod
     def setup_class(cls):
+        cls.output_dir = out_path / "visualization"
+        cls.output_dir.mkdir(exist_ok=True, parents=True)
+        cls.obj = UserPerformance.from_csv(data_path / "productivity-per-user2.csv")
+
+    def test_from_df(self):
         df_task_history = pandas.read_csv(str(data_path / "task-history-df.csv"))
         df_labor = pandas.read_csv(str(data_path / "labor-df.csv"))
         df_worktime_ratio = pandas.read_csv(str(data_path / "annotation-count-ratio-df.csv"))
-        cls.obj = UserPerformance.from_df(df_task_history, df_labor, df_worktime_ratio)
+        UserPerformance.from_df(df_task_history, df_labor, df_worktime_ratio)
 
-    def test_foo(self):
-        print(self.obj.df)
+    def test_plot_quality(self):
+        self.obj.plot_quality(self.output_dir / "散布図-教師付者の品質と作業量の関係.html")
+
+    def test_plot_productivity_from_actual_worktime(self):
+        self.obj.plot_productivity_from_actual_worktime(self.output_dir / "散布図-アノテーションあたり作業時間と累計作業時間の関係-実績時間.html")
+
+    def test_plot_productivity_from_monitored_worktime(self):
+        self.obj.plot_productivity_from_monitored_worktime(self.output_dir / "散布図-アノテーションあたり作業時間と累計作業時間の関係-計測時間.html")
+
+
+    def test_plot_quality_and_productivity_from_actual_worktime(self):
+        self.obj.plot_quality_and_productivity_from_actual_worktime(self.output_dir / "散布図-アノテーションあたり作業時間と品質の関係-実績時間-教師付者用.html")
+
+    def test_plot_quality_and_productivity_from_monitored_worktime(self):
+        self.obj.plot_quality_and_productivity_from_monitored_worktime(self.output_dir / "散布図-アノテーションあたり作業時間と品質の関係-計測時間-教師付者用.html")
+
+
