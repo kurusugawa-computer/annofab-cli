@@ -31,7 +31,6 @@ class TestListLaborWorktime:
 
     def test_create_df_with_format_total_by_user(self):
         df = pandas.read_csv(str(data_dir / "list_labor_worktime/intermediate.csv"))
-        print(df.columns)
         df2 = create_df_with_format_total_by_user(df)
         df2.to_csv(out_dir / "list_labor_worktime/out-by_user.csv", index=False)
 

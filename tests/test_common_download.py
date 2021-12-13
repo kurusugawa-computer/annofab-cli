@@ -49,4 +49,3 @@ def test_download_all_file_with_async():
         return_exceptions=True,
     )
     result = loop.run_until_complete(gather)
-    print(result)

@@ -116,4 +116,3 @@ class TestDashboard:
         with open(test_dir / "task.json") as f:
             task_list = json.load(f)
         actual = self.main_obj.create_dashboard_data(project_id, date="2020-07-01", task_list=task_list)
-        print(actual)
