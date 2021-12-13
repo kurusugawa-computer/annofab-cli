@@ -6,6 +6,7 @@ from __future__ import annotations
 
 import abc
 import logging
+from os import stat
 from pathlib import Path
 from typing import Optional
 
@@ -33,20 +34,43 @@ class AbstractRoleCumulativeProductivity(abc.ABC):
     PLOT_WIDTH = 1200
     PLOT_HEIGHT = 600
 
-    def __init__(self, df: pandas.DataFrame) -> None:
+    def __init__(self, df: pandas.DataFrame, phase: str) -> None:
         self.df = df
+        self.phase = phase
+        self.phase_name = self._get_phase_name(phase)
         self.df_cumulative = self._get_cumulative_dataframe()
         self.default_user_id_list = self._get_default_user_id_list()
+
+    @staticmethod
+    def _get_phase_name(phase:str) -> str:
+        if phase == "annotation":
+            return "教師付"
+        elif phase == "inspection":
+            return "検査"
+        elif phase == "acceptance":
+            return "受入"
+        raise RuntimeError(f"phase='{phase}'が対象外です。")
+
+    def _get_default_user_id_list(self) -> list[str]:
+        return (
+            self.df.sort_values(by=f"first_{self.phase}_started_datetime", ascending=False)[f"first_{self.phase}_user_id"]
+            .dropna()
+            .unique()
+            .tolist()
+        )
+
 
     def _validate_df_for_output(self, output_file: Path) -> bool:
         if len(self.df) == 0:
             logger.warning(f"データが0件のため、{output_file} は出力しません。")
             return False
+
+        if len(self.default_user_id_list) == 0:
+            logger.warning(f"{self.phase_name} 作業したタスクが0件なので（'first_{self.phase}_user_id'がすべて空欄）、{output_file} を出力しません。")
+            return False
+
         return True
 
-    @abc.abstractmethod
-    def _get_default_user_id_list(self) -> list[str]:
-        pass
 
     @abc.abstractmethod
     def _get_cumulative_dataframe(self) -> pandas.DataFrame:
@@ -62,19 +86,12 @@ class AbstractRoleCumulativeProductivity(abc.ABC):
 
 
 class AnnotatorCumulativeProductivity(AbstractRoleCumulativeProductivity):
-    def _get_default_user_id_list(self) -> list[str]:
-        return (
-            self.df.sort_values(by="first_annotation_started_datetime", ascending=False)["first_annotation_user_id"]
-            .dropna()
-            .unique()
-            .tolist()
-        )
+    def __init__(self, df: pandas.DataFrame):
+        super().__init__(df, phase="annotation")
 
     def _get_cumulative_dataframe(self) -> pandas.DataFrame:
         """
-        最初のアノテーション作業の開始時刻の順にソートして、教師付者に関する累計値を算出する
-        Args:
-            task_df: タスク一覧のDataFrame. 列が追加される
+        累積情報が格納されたDataFrameを生成する。
         """
         # 教師付の開始時刻でソートして、indexを更新する
         df = self.df.sort_values(["first_annotation_user_id", "first_annotation_started_datetime"]).reset_index(
@@ -402,13 +419,10 @@ class AnnotatorCumulativeProductivity(AbstractRoleCumulativeProductivity):
 
 
 class InspectorCumulativeProductivity(AbstractRoleCumulativeProductivity):
-    def _get_default_user_id_list(self) -> list[str]:
-        return (
-            self.df.sort_values(by="first_inspection_started_datetime", ascending=False)["first_inspection_user_id"]
-            .dropna()
-            .unique()
-            .tolist()
-        )
+
+    def __init__(self, df: pandas.DataFrame):
+        super().__init__(df, phase="inspection")
+
 
     def _get_cumulative_dataframe(self) -> pandas.DataFrame:
         """
@@ -457,6 +471,7 @@ class InspectorCumulativeProductivity(AbstractRoleCumulativeProductivity):
             user_id_list = self.default_user_id_list
 
         user_id_list = get_plotted_user_id_list(user_id_list)
+
 
         fig_info_list = [
             dict(
@@ -602,13 +617,9 @@ class InspectorCumulativeProductivity(AbstractRoleCumulativeProductivity):
 
 
 class AcceptorCumulativeProductivity(AbstractRoleCumulativeProductivity):
-    def _get_default_user_id_list(self) -> list[str]:
-        return (
-            self.df.sort_values(by="first_acceptance_started_datetime", ascending=False)["first_acceptance_user_id"]
-            .dropna()
-            .unique()
-            .tolist()
-        )
+    def __init__(self, df: pandas.DataFrame):
+        super().__init__(df, phase="acceptance")
+
 
     def _get_cumulative_dataframe(self) -> pandas.DataFrame:
         """

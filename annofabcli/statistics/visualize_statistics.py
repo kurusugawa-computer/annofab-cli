@@ -243,7 +243,6 @@ class WriteCsvGraph:
                 " * '散布図-アノテーションあたり作業時間と品質の関係-実績時間-教師付者用'"
             )
 
-
     def write_whole_linegraph(self) -> None:
         whole_productivity_df = self._get_whole_productivity_df()
         self._catch_exception(WholeProductivityPerCompletedDate.plot)(

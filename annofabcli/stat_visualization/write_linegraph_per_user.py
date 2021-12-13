@@ -46,16 +46,16 @@ def write_linegraph_per_user(
     inspector_obj = InspectorCumulativeProductivity(df_task)
     acceptor_obj = AcceptorCumulativeProductivity(df_task)
 
-    annotator_obj.plot_annotation_metrics(output_dir / "line-graph/教師付者用/累積折れ線-横軸_アノテーション数-教師付者用.html", user_id_list)
-    inspector_obj.plot_annotation_metrics(output_dir / "line-graph/検査者用/累積折れ線-横軸_アノテーション数-検査者用.html", user_id_list)
-    acceptor_obj.plot_annotation_metrics(output_dir / "line-graph/受入者用/累積折れ線-横軸_アノテーション数-受入者用.html", user_id_list)
+    annotator_obj.plot_annotation_metrics(output_dir / "教師付者用/累積折れ線-横軸_アノテーション数-教師付者用.html", user_id_list)
+    inspector_obj.plot_annotation_metrics(output_dir / "検査者用/累積折れ線-横軸_アノテーション数-検査者用.html", user_id_list)
+    acceptor_obj.plot_annotation_metrics(output_dir / "受入者用/累積折れ線-横軸_アノテーション数-受入者用.html", user_id_list)
 
     if not minimal_output:
-        annotator_obj.plot_input_data_metrics(output_dir / "line-graph/教師付者用/累積折れ線-横軸_入力データ数-教師付者用.html", user_id_list)
-        inspector_obj.plot_input_data_metrics(output_dir / "line-graph/検査者用/累積折れ線-横軸_入力データ数-検査者用.html", user_id_list)
-        acceptor_obj.plot_input_data_metrics(output_dir / "line-graph/受入者用/累積折れ線-横軸_入力データ数-受入者用.html", user_id_list)
+        annotator_obj.plot_input_data_metrics(output_dir / "教師付者用/累積折れ線-横軸_入力データ数-教師付者用.html", user_id_list)
+        inspector_obj.plot_input_data_metrics(output_dir / "検査者用/累積折れ線-横軸_入力データ数-検査者用.html", user_id_list)
+        acceptor_obj.plot_input_data_metrics(output_dir / "受入者用/累積折れ線-横軸_入力データ数-受入者用.html", user_id_list)
 
-        annotator_obj.plot_task_metrics(output_dir / "line-graph/教師付者用/累積折れ線-横軸_タスク数-教師付者用.html", user_id_list)
+        annotator_obj.plot_task_metrics(output_dir / "教師付者用/累積折れ線-横軸_タスク数-教師付者用.html", user_id_list)
 
         # 各ユーザごとの日ごとの情報
         annotator_per_date_obj = AnnotatorProductivityPerDate.from_df_task(task_df)
