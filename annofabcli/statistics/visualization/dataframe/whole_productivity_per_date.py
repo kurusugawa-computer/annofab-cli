@@ -1,4 +1,7 @@
 # pylint: disable=too-many-lines
+"""
+全体の日ごとの生産性
+"""
 from __future__ import annotations
 
 import logging

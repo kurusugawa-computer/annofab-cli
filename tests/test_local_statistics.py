@@ -11,6 +11,16 @@ from annofabcli.statistics.scatter import Scatter
 from annofabcli.statistics.summarize_task_count import SimpleTaskStatus, get_step_for_current_phase
 from annofabcli.statistics.summarize_task_count_by_task_id import create_task_count_summary_df, get_task_id_prefix
 from annofabcli.statistics.table import Table
+from annofabcli.statistics.visualization.dataframe.cumulative_productivity import (
+    AcceptorCumulativeProductivity,
+    AnnotatorCumulativeProductivity,
+    InspectorCumulativeProductivity,
+)
+from annofabcli.statistics.visualization.dataframe.productivity_per_date import (
+    AcceptorProductivityPerDate,
+    AnnotatorProductivityPerDate,
+    InspectorProductivityPerDate,
+)
 from annofabcli.statistics.visualization.dataframe.whole_productivity_per_date import (
     WholeProductivityPerCompletedDate,
     WholeProductivityPerFirstAnnotationStartedDate,
@@ -117,38 +127,6 @@ class TestCsv:
     def test_write_summarise_whole_performance_csv(self):
         csv_path_list = [data_path / "全体の生産性と品質.csv"]
         df = write_summarise_whole_performance_csv(csv_path_list, output_path=out_path / "プロジェクごとの生産性と品質.csv")
-        print(df)
-
-
-class TestLineGraph:
-    line_graph_obj = None
-
-    @classmethod
-    def setup_class(cls):
-        cls.line_graph_obj = LineGraph(outdir=str(out_path))
-
-    def test_write_cumulative_line_graph_for_annotator(self):
-        df = pandas.read_csv(str(data_path / "task.csv"))
-        cumulative_df = Table.create_cumulative_df_by_first_annotator(df)
-        self.line_graph_obj.write_cumulative_line_graph_for_annotator(cumulative_df)
-
-    def test_write_cumulative_line_graph_for_inspector(self):
-        df = pandas.read_csv(str(data_path / "task.csv"))
-        cumulative_df = Table.create_cumulative_df_by_first_inspector(df)
-        self.line_graph_obj.write_cumulative_line_graph_for_inspector(cumulative_df)
-
-    def test_write_cumulative_line_graph_for_acceptor(self):
-        df = pandas.read_csv(str(data_path / "task.csv"))
-        cumulative_df = Table.create_cumulative_df_by_first_acceptor(df)
-        self.line_graph_obj.write_cumulative_line_graph_for_acceptor(cumulative_df)
-
-    def test_write_whole_productivity_line_graph(self):
-        df = pandas.read_csv(str(data_path / "productivity-per-date3.csv"))
-        self.line_graph_obj.write_whole_productivity_line_graph(df)
-
-    def test_write_whole_cumulative_line_graph(self):
-        df = pandas.read_csv(str(data_path / "productivity-per-date3.csv"))
-        self.line_graph_obj.write_whole_cumulative_line_graph(df)
 
 
 class TestSummarizeTaskCountByTaskId:
@@ -178,7 +156,6 @@ class TestWholeProductivityPerFirstAnnotationStartedDate:
     def test_create(self):
         df_task = pandas.read_csv(str(data_path / "task.csv"))
         df = WholeProductivityPerFirstAnnotationStartedDate.create(df_task)
-        print(df)
         df.to_csv(self.output_dir / "out.csv", index=False)
 
     def test_plot(self):
@@ -237,3 +214,134 @@ class TestWholeProductivityPerCompletedDate:
         df2 = pandas.read_csv(str(data_path / "productivity-per-date2.csv"))
         sum_df = WholeProductivityPerCompletedDate.merge(df1, df2)
         WholeProductivityPerCompletedDate.to_csv(sum_df, self.output_dir / "merge-productivity-per-date.csv")
+
+
+class TestAnnotatorProductivityPerDate:
+    @classmethod
+    def setup_class(cls):
+        cls.output_dir = out_path / "visualization"
+        cls.output_dir.mkdir(exist_ok=True, parents=True)
+
+        df_task = pandas.read_csv(str(data_path / "task.csv"))
+        cls.obj = AnnotatorProductivityPerDate.from_df_task(df_task)
+
+    def test_to_csv(self):
+        self.obj.to_csv(self.output_dir / "教師付開始日ごとの教師付者の生産性.csv")
+
+    def test_plot_annotation_metrics(self):
+        self.obj.plot_annotation_metrics(self.output_dir / "折れ線-横軸_教師付開始日-縦軸_アノテーションあたりの指標-教師付者用.html")
+
+    def test_plot_input_data_metrics(self):
+        self.obj.plot_input_data_metrics(self.output_dir / "折れ線-横軸_教師付開始日-縦軸_入力データあたりの指標-教師付者用.html")
+
+
+class TestInspectorProductivityPerDate:
+    @classmethod
+    def setup_class(cls):
+        cls.output_dir = out_path / "visualization"
+        cls.output_dir.mkdir(exist_ok=True, parents=True)
+
+        df_task = pandas.read_csv(str(data_path / "task.csv"))
+
+        cls.obj = InspectorProductivityPerDate.from_df_task(df_task)
+
+    def test_to_csv(self):
+        self.obj.to_csv(self.output_dir / "検査開始日ごとの検査者の生産性.csv")
+
+    def test_plot_annotation_metrics(self):
+        self.obj.plot_annotation_metrics(self.output_dir / "折れ線-横軸_検査開始日-縦軸_アノテーションあたりの指標-検査者用.html")
+
+    def test_plot_input_data_metrics(self):
+        self.obj.plot_input_data_metrics(self.output_dir / "折れ線-横軸_検査開始日-縦軸_入力データあたりの指標-検査者用.html")
+
+
+class TestAcceptorProductivityPerDate:
+    @classmethod
+    def setup_class(cls):
+        cls.output_dir = out_path / "visualization"
+        cls.output_dir.mkdir(exist_ok=True, parents=True)
+
+        df_task = pandas.read_csv(str(data_path / "task.csv"))
+
+        cls.obj = AcceptorProductivityPerDate.from_df_task(df_task)
+
+    def test_to_csv(self):
+        self.obj.to_csv(self.output_dir / "受入開始日ごとの受入者の生産性.csv")
+
+    def test_plot_annotation_metrics(self):
+        self.obj.plot_annotation_metrics(self.output_dir / "折れ線-横軸_受入開始日-縦軸_アノテーションあたりの指標-受入者用.html")
+
+    def test_plot_input_data_metrics(self):
+        self.obj.plot_input_data_metrics(self.output_dir / "折れ線-横軸_受入開始日-縦軸_入力データあたりの指標-受入者用.html")
+
+
+class TestAnnotatorProductivityPerDate:
+    @classmethod
+    def setup_class(cls):
+        cls.output_dir = out_path / "visualization"
+        cls.output_dir.mkdir(exist_ok=True, parents=True)
+
+        df_task = pandas.read_csv(str(data_path / "task.csv"))
+        cls.obj = AnnotatorProductivityPerDate.from_df_task(df_task)
+
+    def test_to_csv(self):
+        self.obj.to_csv(self.output_dir / "教師付開始日ごとの教師付者の生産性.csv")
+
+    def test_plot_annotation_metrics(self):
+        self.obj.plot_annotation_metrics(self.output_dir / "折れ線-横軸_教師付開始日-縦軸_アノテーションあたりの指標-教師付者用.html")
+
+    def test_plot_input_data_metrics(self):
+        self.obj.plot_input_data_metrics(self.output_dir / "折れ線-横軸_教師付開始日-縦軸_入力データあたりの指標-教師付者用.html")
+
+
+class TestAnnotatorCumulativeProductivity:
+    @classmethod
+    def setup_class(cls):
+        cls.output_dir = out_path / "visualization"
+        cls.output_dir.mkdir(exist_ok=True, parents=True)
+
+        df_task = pandas.read_csv(str(data_path / "task.csv"))
+        cls.obj = AnnotatorCumulativeProductivity(df_task)
+
+    def test_plot_annotation_metrics(self):
+        self.obj.plot_annotation_metrics(self.output_dir / "累積折れ線-横軸_アノテーション数-教師付者用")
+
+    def test_plot_input_data_metrics(self):
+        self.obj.plot_input_data_metrics(self.output_dir / "累積折れ線-横軸_入力データ数-教師付者用")
+
+    def test_plot_task_metrics(self):
+        self.obj.plot_task_metrics(self.output_dir / "累積折れ線-横軸_タスク数-教師付者用")
+
+
+class TestInspectorCumulativeProductivity:
+    @classmethod
+    def setup_class(cls):
+        cls.output_dir = out_path / "visualization"
+        cls.output_dir.mkdir(exist_ok=True, parents=True)
+
+        df_task = pandas.read_csv(str(data_path / "task.csv"))
+        cls.obj = InspectorCumulativeProductivity(df_task)
+
+    def test_plot_annotation_metrics(self):
+        self.obj.plot_annotation_metrics(self.output_dir / "累積折れ線-横軸_アノテーション数-検査者用")
+
+    def test_plot_input_data_metrics(self):
+        self.obj.plot_input_data_metrics(self.output_dir / "累積折れ線-横軸_入力データ数-検査者用")
+
+
+class TestAcceptorCumulativeProductivity:
+    @classmethod
+    def setup_class(cls):
+        cls.output_dir = out_path / "visualization"
+        cls.output_dir.mkdir(exist_ok=True, parents=True)
+
+        df_task = pandas.read_csv(str(data_path / "task.csv"))
+        cls.obj = AcceptorCumulativeProductivity(df_task)
+
+    def test_plot_annotation_metrics(self):
+        self.obj.plot_annotation_metrics(self.output_dir / "累積折れ線-横軸_アノテーション数-受入者用")
+
+    def test_plot_input_data_metrics(self):
+        self.obj.plot_input_data_metrics(self.output_dir / "累積折れ線-横軸_入力データ数-受入者用")
+
+
