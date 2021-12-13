@@ -17,7 +17,7 @@ from annofabapi.models import TaskPhase
 from bokeh.plotting import ColumnDataSource, figure
 
 from annofabcli.common.utils import print_csv
-from annofabcli.statistics.scatter import get_color_from_palette, plot_scatter, create_hover_tool
+from annofabcli.statistics.scatter import get_color_from_palette, plot_scatter, create_hover_tool, plot_bubble
 logger = logging.getLogger(__name__)
 
 
@@ -329,6 +329,7 @@ class UserPerformance:
                     source=source,
                     x_column_name=f"{x_column}_{phase}",
                     y_column_name=f"{y_column}_{phase}",
+                    text_column_name="username_",
                     legend_label=biography,
                     color=get_color_from_palette(biography_index),
                 )
@@ -367,14 +368,256 @@ class UserPerformance:
         bokeh.plotting.output_file(output_file, title=output_file.stem)
         bokeh.plotting.save(bokeh.layouts.column([div_element] + figure_list))
 
-    def plot_productivity_from_monitored_worktime(self, df: pandas.DataFrame):
+    def plot_productivity_from_monitored_worktime(self, output_file:Path):
         """
         AnnoFab計測時間とAnnoFab計測時間を元に算出した生産性を、メンバごとにプロットする
         """
-        self._write_scatter_for_productivity_by_monitored_worktime(df, worktime_type=WorktimeType.MONITORED)
+        self._write_scatter_for_productivity_by_monitored_worktime(output_file, worktime_type=WorktimeType.MONITORED)
 
-    def plot_productivity_from_actual_worktime(self, df: pandas.DataFrame):
+    def plot_productivity_from_actual_worktime(self, output_file:Path):
         """
         実績作業時間と実績作業時間を元に算出した生産性を、メンバごとにプロットする
         """
-        self._write_scatter_for_productivity_by_monitored_worktime(df, worktime_type=WorktimeType.ACTUAL)
+        self._write_scatter_for_productivity_by_monitored_worktime(output_file, worktime_type=WorktimeType.ACTUAL)
+
+
+
+    def write_scatter_for_quality(self, output_file:Path):
+        """
+        メンバごとに品質を散布図でプロットする
+
+        Args:
+            df:
+        Returns:
+
+        """
+        if not self._validate_df_for_output(output_file):
+            return
+
+
+        # numpy.inf が含まれていると散布図を出力できないので置換する
+        df = self.df.replace(numpy.inf, numpy.nan)
+
+        def create_figure(title: str, x_axis_label: str, y_axis_label: str) -> bokeh.plotting.Figure:
+            return figure(
+                plot_width=self.PLOT_WIDTH,
+                plot_height=self.PLOT_HEIGHT,
+                title=title,
+                x_axis_label=x_axis_label,
+                y_axis_label=y_axis_label,
+            )
+
+        logger.debug(f"{output_file} を出力します。")
+
+        figure_list = [
+            create_figure(title=f"タスクあたり差し戻し回数とタスク数の関係", x_axis_label="タスク数", y_axis_label="タスクあたり差し戻し回数"),
+            create_figure(
+                title=f"アノテーションあたり検査コメント数とアノテーション数の関係", x_axis_label="アノテーション数", y_axis_label="アノテーションあたり検査コメント数"
+            ),
+        ]
+        column_pair_list = [
+            ("task_count", "rejected_count/task_count"),
+            ("annotation_count", "pointed_out_inspection_comment_count/annotation_count"),
+        ]
+
+        phase = "annotation"
+
+        df["biography"] = df["biography"].fillna("")
+        for biography_index, biography in enumerate(sorted(set(df["biography"]))):
+            for column_pair, fig in zip(column_pair_list, figure_list):
+                x_column = column_pair[0]
+                y_column = column_pair[1]
+                filtered_df = df[
+                    (df["biography"] == biography) & df[(x_column, phase)].notna() & df[(y_column, phase)].notna()
+                ]
+                if len(filtered_df) == 0:
+                    continue
+
+                source = ColumnDataSource(data=filtered_df)
+                plot_scatter(
+                    fig=fig,
+                    source=source,
+                    x_column_name=f"{x_column}_{phase}",
+                    y_column_name=f"{y_column}_{phase}",
+                    text_column_name="username_",
+                    legend_label=biography,
+                    color=get_color_from_palette(biography_index),
+                )
+
+        for column_pair, fig in zip(
+            [("rejected_count", "task_count"), ("pointed_out_inspection_comment_count", "annotation_count")],
+            figure_list,
+        ):
+            average_value = self._get_average_value(
+                df, numerator_column=(column_pair[0], phase), denominator_column=(column_pair[1], phase)
+            )
+            self._plot_average_line(fig, average_value, dimension="width")
+
+        for column, fig in zip(
+            ["rejected_count/task_count", "pointed_out_inspection_comment_count/annotation_count"],
+            figure_list,
+        ):
+            quartile = self._get_quartile_value(df, (column, phase))
+            self._plot_quartile_line(fig, quartile, dimension="width")
+
+        for fig in figure_list:
+            tooltip_item = [
+                "user_id_",
+                "username_",
+                "biography_",
+                "last_working_date_",
+                f"monitored_worktime_hour_{phase}",
+                f"task_count_{phase}",
+                f"input_data_count_{phase}",
+                f"annotation_count_{phase}",
+                f"rejected_count_{phase}",
+                f"pointed_out_inspection_comment_count_{phase}",
+                f"rejected_count/task_count_{phase}",
+                f"pointed_out_inspection_comment_count/annotation_count_{phase}",
+            ]
+
+            hover_tool = create_hover_tool(tooltip_item)
+            fig.add_tools(hover_tool)
+            self._set_legend(fig)
+
+        div_element = self._create_div_element()
+        bokeh.plotting.reset_output()
+        bokeh.plotting.output_file(output_file, title=output_file.stem)
+        bokeh.plotting.save(bokeh.layouts.column([div_element] + figure_list))
+
+    def write_scatter_for_productivity_by_actual_worktime_and_quality(self,  output_file:Path, ):
+        """
+        実績作業時間を元に算出した生産性と品質の関係を、メンバごとにプロットする
+        """
+        self._write_scatter_for_productivity_by_worktime_and_quality(output_file, worktime_type=WorktimeType.ACTUAL)
+
+    def write_scatter_for_productivity_by_monitored_worktime_and_quality(self,  output_file:Path, ):
+        """
+        計測作業時間を元に算出した生産性と品質の関係を、メンバごとにプロットする
+        """
+        self._write_scatter_for_productivity_by_worktime_and_quality(output_file, worktime_type=WorktimeType.MONITORED)
+
+    def _write_scatter_for_productivity_by_worktime_and_quality(
+        self, output_file:Path, worktime_type: WorktimeType
+    ):
+        """
+        作業時間を元に算出した生産性と品質の関係を、メンバごとにプロットする
+        """
+
+        if not self._validate_df_for_output(output_file):
+            return
+
+        if worktime_type == WorktimeType.ACTUAL:
+            worktime_name = "実績時間"
+            worktime_key_for_phase = "prediction_actual"
+        elif worktime_type == WorktimeType.MONITORED:
+            worktime_name = "計測時間"
+            worktime_key_for_phase = WorktimeType.MONITORED.value
+
+        # numpy.inf が含まれていると散布図を出力できないので置換する
+        df = self.df.replace(numpy.inf, numpy.nan)
+
+        def create_figure(title: str, x_axis_label: str, y_axis_label: str) -> bokeh.plotting.Figure:
+            return figure(
+                plot_width=1200,
+                plot_height=800,
+                title=title,
+                x_axis_label=x_axis_label,
+                y_axis_label=y_axis_label,
+            )
+
+        logger.debug(f"{output_file} を出力します。")
+
+        figure_list = [
+            create_figure(
+                title=f"アノテーションあたり作業時間とタスクあたり差し戻し回数の関係", x_axis_label="アノテーションあたり作業時間", y_axis_label="タスクあたり差し戻し回数"
+            ),
+            create_figure(
+                title=f"アノテーションあたり作業時間とアノテーションあたり検査コメント数の関係",
+                x_axis_label="アノテーションあたり作業時間",
+                y_axis_label="アノテーションあたり検査コメント数",
+            ),
+        ]
+        column_pair_list = [
+            (f"{worktime_type.value}_worktime/annotation_count", "rejected_count/task_count"),
+            (
+                f"{worktime_type.value}_worktime/annotation_count",
+                "pointed_out_inspection_comment_count/annotation_count",
+            ),
+        ]
+        phase = TaskPhase.ANNOTATION.value
+        df["biography"] = df["biography"].fillna("")
+        for biography_index, biography in enumerate(sorted(set(df["biography"]))):
+            for fig, column_pair in zip(figure_list, column_pair_list):
+                x_column, y_column = column_pair
+                filtered_df = df[
+                    (df["biography"] == biography) & df[(x_column, phase)].notna() & df[(y_column, phase)].notna()
+                ]
+                if len(filtered_df) == 0:
+                    continue
+                source = ColumnDataSource(data=filtered_df)
+                plot_bubble(
+                    fig=fig,
+                    source=source,
+                    x_column_name=f"{x_column}_{phase}",
+                    y_column_name=f"{y_column}_{phase}",
+                    text_column_name="username_",
+                    size_column_name=f"{worktime_key_for_phase}_worktime_hour_{phase}",
+                    legend_label=biography,
+                    color=get_color_from_palette(biography_index),
+                )
+
+        x_average_value = self._get_average_value(
+            df,
+            numerator_column=(f"{worktime_key_for_phase}_worktime_hour", phase),
+            denominator_column=("annotation_count", phase),
+        )
+        for column_pair, fig in zip(
+            [("rejected_count", "task_count"), ("pointed_out_inspection_comment_count", "annotation_count")],
+            figure_list,
+        ):
+            self._plot_average_line(fig, x_average_value, dimension="height")
+            y_average_value = self._get_average_value(
+                df,
+                numerator_column=(column_pair[0], phase),
+                denominator_column=(column_pair[1], phase),
+            )
+            self._plot_average_line(fig, y_average_value, dimension="width")
+
+        x_quartile = self._get_quartile_value(df, (f"{worktime_type.value}_worktime/annotation_count", phase))
+        for column, fig in zip(
+            ["rejected_count/task_count", "pointed_out_inspection_comment_count/annotation_count"],
+            figure_list,
+        ):
+            self._plot_quartile_line(fig, x_quartile, dimension="height")
+            quartile = self._get_quartile_value(df, (column, phase))
+            self._plot_quartile_line(fig, quartile, dimension="width")
+
+        for fig in figure_list:
+            tooltip_item = [
+                "user_id_",
+                "username_",
+                "biography_",
+                f"{worktime_key_for_phase}_worktime_hour_{phase}",
+                f"task_count_{phase}",
+                f"input_data_count_{phase}",
+                f"annotation_count_{phase}",
+                f"{worktime_type.value}_worktime/input_data_count_{phase}",
+                f"{worktime_type.value}_worktime/annotation_count_{phase}",
+                f"rejected_count_{phase}",
+                f"pointed_out_inspection_comment_count_{phase}",
+                f"rejected_count/task_count_{phase}",
+                f"pointed_out_inspection_comment_count/annotation_count_{phase}",
+            ]
+            if worktime_type == WorktimeType.ACTUAL:
+                tooltip_item.append("last_working_date_")
+
+            hover_tool = create_hover_tool(tooltip_item)
+            fig.add_tools(hover_tool)
+            self._set_legend(fig)
+
+        div_element = self._create_div_element()
+        div_element.text += """円の大きさ：作業時間<br>"""
+        bokeh.plotting.reset_output()
+        bokeh.plotting.output_file(output_file, title=output_file.stem)
+        bokeh.plotting.save(bokeh.layouts.column([div_element] + figure_list))
