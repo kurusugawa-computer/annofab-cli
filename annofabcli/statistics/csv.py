@@ -66,6 +66,16 @@ def write_summarise_whole_performance_csv(csv_path_list: List[Path], output_path
     print_csv(target_df, output=str(output_path))
 
 
+def write_series_to_csv( series: pandas.Series, output_file:Path) -> None:
+    """
+    pandas.SeriesをCSVに出力します。
+    indexも出力します。
+
+    """
+    output_file.parent.mkdir(exist_ok=True, parents=True)
+    logger.debug(f"{str(output_file)} を出力します。")
+    series.to_csv(str(output_file), sep=",", encoding="utf_8_sig", header=False)
+
 class Csv:
     """
     CSVを出力するクラス
@@ -99,21 +109,7 @@ class Csv:
         logger.debug(f"{str(output_path)} を出力します。")
         df.to_csv(str(output_path), sep=",", encoding="utf_8_sig", index=False)
 
-    def _write_csv_for_series(self, filename: str, series: pandas.Series) -> None:
-        """
-        カンマ区切りでBOM UTF-8で書きこむ(Excelで開けるようにするため）
 
-        Args:
-            filename: ファイル名
-            series: pandas.Series
-
-        Returns:
-
-        """
-        output_path = Path(f"{self.outdir}/{filename}")
-        output_path.parent.mkdir(exist_ok=True, parents=True)
-        logger.debug(f"{str(output_path)} を出力します。")
-        series.to_csv(str(output_path), sep=",", encoding="utf_8_sig", header=False)
 
     @staticmethod
     def create_required_columns(
@@ -387,7 +383,7 @@ class Csv:
 
         _add_ratio_column_for_productivity_per_user(sum_series, phase_list=phase_list)
         # 列の順番を整える
-        sum_series = sum_series[self.get_productivity_columns(phase_list)]
+        sum_series = sum_series[self._get_productivity_columns(phase_list)]
 
         # 作業している人数をカウントする
         for phase in phase_list:

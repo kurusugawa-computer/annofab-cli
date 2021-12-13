@@ -19,6 +19,7 @@ from bokeh.plotting import ColumnDataSource, figure
 
 from annofabcli.common.utils import print_csv, read_multiheader_csv
 from annofabcli.statistics.scatter import create_hover_tool, get_color_from_palette, plot_bubble, plot_scatter
+from annofabcli.statistics.csv import write_series_to_csv
 
 logger = logging.getLogger(__name__)
 
@@ -314,7 +315,46 @@ class UserPerformance:
             legend = fig.legend[0]
             fig.add_layout(legend, "left")
 
-    def _write_scatter_for_productivity_by_monitored_worktime(self, output_file: Path, worktime_type: WorktimeType):
+    def get_summary(self) -> pandas.Series:
+        """
+        全体の生産性と品質が格納された pandas.Series を取得する。
+
+        """
+        columns_for_sum = [
+            "monitored_worktime_hour",
+            "task_count",
+            "input_data_count",
+            "annotation_count",
+            "actual_worktime_hour",
+            "prediction_actual_worktime_hour",
+            "pointed_out_inspection_comment_count",
+            "rejected_count",
+        ]
+        sum_series = self.df[columns_for_sum].sum()
+
+        self._add_ratio_column_for_productivity_per_user(sum_series, phase_list=self.phase_list)
+
+        # 作業している人数をカウントする
+        for phase in self.phase_list:
+            sum_series[("working_user_count", phase)] = (self.df[("task_count", phase)] > 0).sum()
+
+        return sum_series
+
+    def to_summary_csv(self, output_file: Path) -> None:
+        """
+        全体の生産性と品質が格納されたCSVを出力します。
+
+        """
+        if not self._validate_df_for_output(output_file):
+            return
+
+        ser = self.get_summary()
+
+        # 列の順番を整える
+        ser = ser[self._get_productivity_columns()]
+        write_series_to_csv(ser, output_file)
+
+    def _plot_productivity(self, output_file: Path, worktime_type: WorktimeType):
         """作業時間と生産性の関係をメンバごとにプロットする。"""
 
         if not self._validate_df_for_output(output_file):
@@ -411,13 +451,13 @@ class UserPerformance:
         """
         AnnoFab計測時間とAnnoFab計測時間を元に算出した生産性を、メンバごとにプロットする
         """
-        self._write_scatter_for_productivity_by_monitored_worktime(output_file, worktime_type=WorktimeType.MONITORED)
+        self._plot_productivity(output_file, worktime_type=WorktimeType.MONITORED)
 
     def plot_productivity_from_actual_worktime(self, output_file: Path):
         """
         実績作業時間と実績作業時間を元に算出した生産性を、メンバごとにプロットする
         """
-        self._write_scatter_for_productivity_by_monitored_worktime(output_file, worktime_type=WorktimeType.ACTUAL)
+        self._plot_productivity(output_file, worktime_type=WorktimeType.ACTUAL)
 
     def plot_quality(self, output_file: Path):
         """

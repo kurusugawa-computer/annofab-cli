@@ -409,3 +409,11 @@ class TestUserPerformance:
         self.obj.plot_quality_and_productivity_from_monitored_worktime(
             self.output_dir / "散布図-アノテーションあたり作業時間と品質の関係-計測時間-教師付者用.html"
         )
+
+    def test_get_summary(self):
+        ser = self.obj.get_summary()
+        assert ser[("task_count","annotation")] == 52271
+
+    def test_to_summary_csv(self):
+        ser = self.obj.to_summary_csv(self.output_dir / "全体の生産性と品質.csv")
+                

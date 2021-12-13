@@ -163,23 +163,6 @@ class WriteCsvGraph:
 
         return self.labor_df
 
-    def _get_productivity_df(self):
-        if self.productivity_df is None:
-            task_history_df = self._get_task_history_df()
-            task_df = self._get_task_df()
-            annotation_count_ratio_df = self.table_obj.create_annotation_count_ratio_df(task_history_df, task_df)
-            if len(annotation_count_ratio_df) == 0:
-                self.productivity_df = pandas.DataFrame()
-                return self.productivity_df
-
-            productivity_df = self.table_obj.create_productivity_per_user_from_aw_time(
-                df_task_history=task_history_df,
-                df_labor=self._get_labor_df(),
-                df_worktime_ratio=annotation_count_ratio_df,
-            )
-            self.productivity_df = productivity_df
-        return self.productivity_df
-
     def write_histogram_for_task(self) -> None:
         """
         タスクに関するヒストグラムを出力する。
