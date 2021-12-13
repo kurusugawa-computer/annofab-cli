@@ -82,7 +82,7 @@ class UserPerformance:
         df[("rejected_count/task_count", phase)] = df[("rejected_count", phase)] / df[("task_count", phase)]
 
     @staticmethod
-    def get_phase_list(columns: list[str]) -> list[str]:
+    def get_phase_list(columns: list[tuple[str, str]]) -> list[str]:
         # multiindexの2段目を取得する
         tmp_set = {c[1] for c in columns}
 
@@ -184,6 +184,51 @@ class UserPerformance:
         df[("user_id", "")] = df.index
 
         return cls(df)
+
+    @classmethod
+    def merge(cls, obj1: UserPerformance, obj2: UserPerformance) -> UserPerformance:
+        def max_last_working_date(date1, date2):
+            if not isinstance(date1, str) and numpy.isnan(date1):
+                date1 = ""
+            if not isinstance(date2, str) and numpy.isnan(date2):
+                date2 = ""
+            max_date = max(date1, date2)
+            if max_date == "":
+                return numpy.nan
+            else:
+                return max_date
+
+        def merge_row(row1: pandas.Series, row2: pandas.Series) -> pandas.Series:
+            string_column_list = ["username", "biography", "last_working_date"]
+            sum_row = row1.drop(labels=string_column_list, level=0).fillna(0) + row2.drop(
+                labels=string_column_list, level=0
+            ).fillna(0)
+            sum_row.loc["username", ""] = row1.loc["username", ""]
+            sum_row.loc["biography", ""] = row1.loc["biography", ""]
+            sum_row.loc["last_working_date", ""] = max_last_working_date(
+                row1.loc["last_working_date", ""], row2.loc["last_working_date", ""]
+            )
+            return sum_row
+
+        df1 = obj1.df
+        df2 = obj2.df
+        user_id_set = set(df1["user_id"]) | set(df2["user_id"])
+        sum_df = df1.set_index("user_id").copy()
+        added_df = df2.set_index("user_id")
+
+        for user_id in user_id_set:
+            if user_id not in added_df.index:
+                continue
+            if user_id in sum_df.index:
+                sum_df.loc[user_id] = merge_row(sum_df.loc[user_id], added_df.loc[user_id])
+            else:
+                sum_df.loc[user_id] = added_df.loc[user_id]
+
+        phase_list = cls.get_phase_list(list(sum_df["monitored_worktime_hour"].columns))
+        cls._add_ratio_column_for_productivity_per_user(sum_df, phase_list=phase_list)
+        sum_df.reset_index(inplace=True)
+        sum_df.sort_values(["user_id"], inplace=True)
+        cls(sum_df)
 
     def _validate_df_for_output(self, output_file: Path) -> bool:
         if len(self.df) == 0:

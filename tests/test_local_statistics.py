@@ -401,6 +401,12 @@ class TestUserPerformance:
         ser = self.obj.get_summary()
         assert ser[("task_count", "annotation")] == 52271
 
+    def test_merge(self):
+        merged_obj = UserPerformance.merge(self.obj, self.obj)
+        print(merged_obj)
+        row = merged_obj.df[merged_obj.df["user_id"] == "KD"]
+        assert row[("task_count", "annotation")] == 30
+
 
 class TestWholePerformance:
     @classmethod
