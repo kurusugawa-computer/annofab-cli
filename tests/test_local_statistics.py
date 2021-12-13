@@ -389,9 +389,6 @@ class TestListWorktime:
             {"user_id": "bob", "username": "Bob", "biography": "Japan"},
         ]
         df = get_df_worktime(event_list, member_list)
-        print(f"{df.index=}")
-        print(f"{df.columns=}")
-        print(df)
 
 
 class TestWorktimePerDate:
