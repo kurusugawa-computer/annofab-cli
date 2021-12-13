@@ -83,7 +83,6 @@ class TestSummarizeTaskCount:
         assert get_step_for_current_phase(task, number_of_inspections=1) == 1
 
 
-
 class TestCsv:
     csv_obj = None
 
@@ -389,6 +388,9 @@ class TestUserPerformance:
         df_worktime_ratio = pandas.read_csv(str(data_path / "annotation-count-ratio-df.csv"))
         UserPerformance.from_df(df_task_history, df_labor, df_worktime_ratio)
 
+    def test_to_csv(self):
+        self.obj.to_csv(self.output_dir / "メンバごとの生産性と品質.csv")
+
     def test_plot_quality(self):
         self.obj.plot_quality(self.output_dir / "散布図-教師付者の品質と作業量の関係.html")
 
@@ -398,11 +400,12 @@ class TestUserPerformance:
     def test_plot_productivity_from_monitored_worktime(self):
         self.obj.plot_productivity_from_monitored_worktime(self.output_dir / "散布図-アノテーションあたり作業時間と累計作業時間の関係-計測時間.html")
 
-
     def test_plot_quality_and_productivity_from_actual_worktime(self):
-        self.obj.plot_quality_and_productivity_from_actual_worktime(self.output_dir / "散布図-アノテーションあたり作業時間と品質の関係-実績時間-教師付者用.html")
+        self.obj.plot_quality_and_productivity_from_actual_worktime(
+            self.output_dir / "散布図-アノテーションあたり作業時間と品質の関係-実績時間-教師付者用.html"
+        )
 
     def test_plot_quality_and_productivity_from_monitored_worktime(self):
-        self.obj.plot_quality_and_productivity_from_monitored_worktime(self.output_dir / "散布図-アノテーションあたり作業時間と品質の関係-計測時間-教師付者用.html")
-
-
+        self.obj.plot_quality_and_productivity_from_monitored_worktime(
+            self.output_dir / "散布図-アノテーションあたり作業時間と品質の関係-計測時間-教師付者用.html"
+        )

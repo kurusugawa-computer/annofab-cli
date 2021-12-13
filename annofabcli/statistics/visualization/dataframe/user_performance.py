@@ -2,12 +2,13 @@
 各ユーザの合計の生産性と品質
 """
 from __future__ import annotations
-from annofabcli.common.utils import read_multiheader_csv
+
 import copy
 import logging
 from enum import Enum
 from pathlib import Path
-from typing import Optional, Any
+from typing import Any, Optional
+
 import bokeh
 import bokeh.layouts
 import bokeh.palettes
@@ -16,8 +17,9 @@ import pandas
 from annofabapi.models import TaskPhase
 from bokeh.plotting import ColumnDataSource, figure
 
-from annofabcli.common.utils import print_csv
-from annofabcli.statistics.scatter import get_color_from_palette, plot_scatter, create_hover_tool, plot_bubble
+from annofabcli.common.utils import print_csv, read_multiheader_csv
+from annofabcli.statistics.scatter import create_hover_tool, get_color_from_palette, plot_bubble, plot_scatter
+
 logger = logging.getLogger(__name__)
 
 
@@ -41,6 +43,7 @@ class UserPerformance:
 
     def __init__(self, df: pandas.DataFrame):
         self.df = df
+        self.phase_list = self._get_phase_list(df.columns)
 
     @staticmethod
     def _add_ratio_column_for_productivity_per_user(df: pandas.DataFrame, phase_list: list[str]):
@@ -90,7 +93,7 @@ class UserPerformance:
         return phase_list
 
     @classmethod
-    def from_csv(cls, csv_file:Path) -> UserPerformance:
+    def from_csv(cls, csv_file: Path) -> UserPerformance:
         df = read_multiheader_csv(str(csv_file))
         return cls(df)
 
@@ -182,38 +185,63 @@ class UserPerformance:
             return False
         return True
 
+    def _get_productivity_columns(self) -> list[tuple[str, str]]:
+        phase_list = self.phase_list
+        monitored_worktime_columns = (
+            [("monitored_worktime_hour", phase) for phase in phase_list]
+            + [("monitored_worktime_hour", "sum")]
+            + [("monitored_worktime_ratio", phase) for phase in phase_list]
+        )
+        production_columns = (
+            [("task_count", phase) for phase in phase_list]
+            + [("input_data_count", phase) for phase in phase_list]
+            + [("annotation_count", phase) for phase in phase_list]
+        )
+
+        actual_worktime_columns = [("actual_worktime_hour", "sum")] + [
+            ("prediction_actual_worktime_hour", phase) for phase in phase_list
+        ]
+
+        productivity_columns = (
+            [("monitored_worktime/input_data_count", phase) for phase in phase_list]
+            + [("actual_worktime/input_data_count", phase) for phase in phase_list]
+            + [("monitored_worktime/annotation_count", phase) for phase in phase_list]
+            + [("actual_worktime/annotation_count", phase) for phase in phase_list]
+        )
+
+        inspection_comment_columns = [
+            ("pointed_out_inspection_comment_count", TaskPhase.ANNOTATION.value),
+            ("pointed_out_inspection_comment_count/input_data_count", TaskPhase.ANNOTATION.value),
+            ("pointed_out_inspection_comment_count/annotation_count", TaskPhase.ANNOTATION.value),
+        ]
+
+        rejected_count_columns = [
+            ("rejected_count", TaskPhase.ANNOTATION.value),
+            ("rejected_count/task_count", TaskPhase.ANNOTATION.value),
+        ]
+
+        prior_columns = (
+            monitored_worktime_columns
+            + production_columns
+            + actual_worktime_columns
+            + productivity_columns
+            + inspection_comment_columns
+            + rejected_count_columns
+        )
+
+        return prior_columns
+
     def to_csv(self, output_file: Path) -> None:
 
         if not self._validate_df_for_output(output_file):
             return
 
-        production_columns = [
-            "first_annotation_started_date",
-            "first_annotation_user_id",
-            "first_annotation_username",
-            "task_count",
-            "input_data_count",
-            "annotation_count",
-            "inspection_count",
-            "sum_worktime_hour",
-            "annotation_worktime_hour",
-            "inspection_worktime_hour",
-            "acceptance_worktime_hour",
-        ]
+        value_columns = self._get_productivity_columns()
 
-        velocity_columns = [
-            f"{numerator}/{denominator}"
-            for numerator in ["annotation_worktime_hour", "inspection_worktime_hour", "acceptance_worktime_hour"]
-            for denominator in ["input_data_count", "annotation_count"]
-        ]
+        user_columns = [("user_id", ""), ("username", ""), ("biography", ""), ("last_working_date", "")]
+        columns = user_columns + value_columns
 
-        columns = (
-            production_columns
-            + velocity_columns
-            + ["inspection_count/input_data_count", "inspection_count/annotation_count"]
-        )
-
-        print_csv(self.df[columns], output=str(output_file))
+        print_csv(self.df[columns], str(output_file))
 
     @staticmethod
     def _plot_average_line(fig: bokeh.plotting.Figure, value: Optional[float], dimension: str):
@@ -285,6 +313,9 @@ class UserPerformance:
     def _write_scatter_for_productivity_by_monitored_worktime(self, output_file: Path, worktime_type: WorktimeType):
         """作業時間と生産性の関係をメンバごとにプロットする。"""
 
+        if not self._validate_df_for_output(output_file):
+            return
+
         # numpy.inf が含まれていると散布図を出力できないので置換する
         df = self.df.replace(numpy.inf, numpy.nan)
 
@@ -306,15 +337,14 @@ class UserPerformance:
 
         logger.debug(f"{output_file} を出力します。")
 
-        phase_list = self._get_phase_list(df)
         DICT_PHASE_NAME = {
             TaskPhase.ANNOTATION.value: "教師付",
             TaskPhase.INSPECTION.value: "検査",
             TaskPhase.ACCEPTANCE.value: "受入",
-        }        
+        }
         figure_list = [
             create_figure(f"{DICT_PHASE_NAME[phase]}のアノテーションあたり作業時間と累計作業時間の関係({worktime_name})")
-            for phase in phase_list
+            for phase in self.phase_list
         ]
 
         df["biography"] = df["biography"].fillna("")
@@ -373,21 +403,19 @@ class UserPerformance:
         bokeh.plotting.output_file(output_file, title=output_file.stem)
         bokeh.plotting.save(bokeh.layouts.column([div_element] + figure_list))
 
-    def plot_productivity_from_monitored_worktime(self, output_file:Path):
+    def plot_productivity_from_monitored_worktime(self, output_file: Path):
         """
         AnnoFab計測時間とAnnoFab計測時間を元に算出した生産性を、メンバごとにプロットする
         """
         self._write_scatter_for_productivity_by_monitored_worktime(output_file, worktime_type=WorktimeType.MONITORED)
 
-    def plot_productivity_from_actual_worktime(self, output_file:Path):
+    def plot_productivity_from_actual_worktime(self, output_file: Path):
         """
         実績作業時間と実績作業時間を元に算出した生産性を、メンバごとにプロットする
         """
         self._write_scatter_for_productivity_by_monitored_worktime(output_file, worktime_type=WorktimeType.ACTUAL)
 
-
-
-    def plot_quality(self, output_file:Path):
+    def plot_quality(self, output_file: Path):
         """
         メンバごとに品質を散布図でプロットする
 
@@ -398,7 +426,6 @@ class UserPerformance:
         """
         if not self._validate_df_for_output(output_file):
             return
-
 
         # numpy.inf が含まれていると散布図を出力できないので置換する
         df = self.df.replace(numpy.inf, numpy.nan)
@@ -490,21 +517,25 @@ class UserPerformance:
         bokeh.plotting.output_file(output_file, title=output_file.stem)
         bokeh.plotting.save(bokeh.layouts.column([div_element] + figure_list))
 
-    def plot_quality_and_productivity_from_actual_worktime(self,  output_file:Path, ):
+    def plot_quality_and_productivity_from_actual_worktime(
+        self,
+        output_file: Path,
+    ):
         """
         実績作業時間を元に算出した生産性と品質の関係を、メンバごとにプロットする
         """
         self._plot_quality_and_productivity(output_file, worktime_type=WorktimeType.ACTUAL)
 
-    def plot_quality_and_productivity_from_monitored_worktime(self,  output_file:Path, ):
+    def plot_quality_and_productivity_from_monitored_worktime(
+        self,
+        output_file: Path,
+    ):
         """
         計測作業時間を元に算出した生産性と品質の関係を、メンバごとにプロットする
         """
         self._plot_quality_and_productivity(output_file, worktime_type=WorktimeType.MONITORED)
 
-    def _plot_quality_and_productivity(
-        self, output_file:Path, worktime_type: WorktimeType
-    ):
+    def _plot_quality_and_productivity(self, output_file: Path, worktime_type: WorktimeType):
         """
         作業時間を元に算出した生産性と品質の関係を、メンバごとにプロットする
         """

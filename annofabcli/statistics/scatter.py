@@ -1,20 +1,19 @@
 from __future__ import annotations
+
 import logging
 import math
-from pathlib import Path
-from typing import Any, Callable, List, Optional, Sequence, Tuple
+from typing import Any, Callable, Optional
 
 import bokeh
 import bokeh.layouts
 import bokeh.palettes
 import numpy
-import pandas
-from annofabapi.models import TaskPhase
-from bokeh.models import HoverTool
-from bokeh.plotting import ColumnDataSource, figure
 from bokeh.core.properties import Color
+from bokeh.models import HoverTool
+from bokeh.plotting import ColumnDataSource
 
 logger = logging.getLogger(__name__)
+
 
 def get_color_from_palette(index: int) -> Color:
     my_palette = bokeh.palettes.Category10[10]
@@ -26,11 +25,11 @@ def plot_bubble(
     source: ColumnDataSource,
     x_column_name: str,
     y_column_name: str,
-    text_column_name:str,
+    text_column_name: str,
     size_column_name: str,
     legend_label: str,
     color: Any,
-    func_get_bubble_size:Optional[Callable[[Any],int]]=None
+    func_get_bubble_size: Optional[Callable[[Any], int]] = None,
 ) -> None:
     """
     バブルチャート用にプロットする。
@@ -61,14 +60,11 @@ def plot_bubble(
     if func_get_bubble_size is None:
         func_get_bubble_size = _worktime_hour_to_scatter_size
 
-
     if legend_label == "":
         legend_label = "none"
 
     tmp_size_field = f"__size__{size_column_name}"
-    source.data[tmp_size_field] = numpy.array(
-        list(map(func_get_bubble_size, source.data[size_column_name]))
-    )
+    source.data[tmp_size_field] = numpy.array(list(map(func_get_bubble_size, source.data[size_column_name])))
     fig.scatter(
         x=x_column_name,
         y=y_column_name,
@@ -92,13 +88,12 @@ def plot_bubble(
     )
 
 
-
 def plot_scatter(
     fig: bokeh.plotting.Figure,
     source: ColumnDataSource,
     x_column_name: str,
     y_column_name: str,
-    text_column_name:str,
+    text_column_name: str,
     legend_label: str,
     color: Any,
 ) -> None:
@@ -117,9 +112,7 @@ def plot_scatter(
     if legend_label == "":
         legend_label = "none"
 
-    fig.circle(
-        x=x_column_name, y=y_column_name, source=source, legend_label=legend_label, color=color, muted_alpha=0.2
-    )
+    fig.circle(x=x_column_name, y=y_column_name, source=source, legend_label=legend_label, color=color, muted_alpha=0.2)
     fig.text(
         x=x_column_name,
         y=y_column_name,
@@ -129,7 +122,6 @@ def plot_scatter(
         legend_label=legend_label,
         muted_alpha=0.2,
     )
-
 
 
 def create_hover_tool(tool_tip_items: list[str]) -> HoverTool:
@@ -189,7 +181,6 @@ def create_hover_tool(tool_tip_items: list[str]) -> HoverTool:
 #         if len(fig.legend) > 0:
 #             legend = fig.legend[0]
 #             fig.add_layout(legend, "left")
-
 
 
 #     @staticmethod

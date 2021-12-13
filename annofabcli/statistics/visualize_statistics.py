@@ -26,11 +26,11 @@ from annofabcli.stat_visualization.merge_visualization_dir import merge_visualiz
 from annofabcli.statistics.csv import (
     FILENAME_PERFORMANCE_PER_DATE,
     FILENAME_WHOLE_PERFORMANCE,
+    FILENAME_PERFORMANCE_PER_USER,
     Csv,
     write_summarise_whole_performance_csv,
 )
 from annofabcli.statistics.database import Database, Query
-from annofabcli.statistics.scatter import Scatter
 from annofabcli.statistics.table import AggregationBy, Table
 from annofabcli.statistics.visualization.dataframe.cumulative_productivity import (
     AcceptorCumulativeProductivity,
@@ -42,6 +42,7 @@ from annofabcli.statistics.visualization.dataframe.productivity_per_date import 
     AnnotatorProductivityPerDate,
     InspectorProductivityPerDate,
 )
+from annofabcli.statistics.visualization.dataframe.user_performance import UserPerformance
 from annofabcli.statistics.visualization.dataframe.whole_productivity_per_date import (
     WholeProductivityPerCompletedDate,
     WholeProductivityPerFirstAnnotationStartedDate,
@@ -122,7 +123,6 @@ class WriteCsvGraph:
         # holoviews のloadに時間がかかって、helpコマンドの出力が遅いため、遅延ロードする
         histogram_module = importlib.import_module("annofabcli.statistics.histogram")
         self.histogram_obj = histogram_module.Histogram(str(output_dir / "histogram"))  # type: ignore
-        self.scatter_obj = Scatter(str(output_dir / "scatter"))
 
         self.labor_df = self.table_obj.create_labor_df(labor_df)
         self.minimal_output = minimal_output
@@ -201,25 +201,39 @@ class WriteCsvGraph:
         annotation_df = self._get_annotation_df()
         self._catch_exception(self.histogram_obj.write_histogram_for_annotation_count_by_label)(annotation_df)
 
-    def write_scatter_per_user(self) -> None:
+    def write_user_performance(self) -> None:
         """
-        ユーザごとにプロットした散布図を出力する。
+        ユーザごとの生産性と品質に関する情報を出力する。
         """
-        productivity_df = self._get_productivity_df()
-        if len(productivity_df) == 0:
-            logger.warning(f"'メンバごとの生産性と品質.csv'が0件なので、ユーザごとの散布図を出力しません。")
-            return
 
-        self._catch_exception(self.scatter_obj.write_scatter_for_productivity_by_monitored_worktime)(productivity_df)
-        self._catch_exception(self.scatter_obj.write_scatter_for_quality)(productivity_df)
-        self._catch_exception(self.scatter_obj.write_scatter_for_productivity_by_monitored_worktime_and_quality)(
-            productivity_df
+        df_task_history = self._get_task_history_df()
+        annotation_count_ratio_df = self.table_obj.create_annotation_count_ratio_df(
+            df_task_history, self._get_task_df()
+        )
+        if len(annotation_count_ratio_df) == 0:
+            df_user_performance = pandas.DataFrame()
+        else:
+            df_user_performance = UserPerformance.from_df(
+                df_task_history=df_task_history,
+                df_labor=self._get_labor_df(),
+                df_worktime_ratio=annotation_count_ratio_df,
+            )
+
+        df_user_performance.to_csv(self.output_dir / FILENAME_PERFORMANCE_PER_USER)
+        df_user_performance.plot_quality(self.output_dir / "scatter/散布図-教師付者の品質と作業量の関係.html")
+        df_user_performance.plot_productivity_from_monitored_worktime(
+            self.output_dir / "scatter/散布図-アノテーションあたり作業時間と累計作業時間の関係-計測時間.html"
+        )
+        df_user_performance.plot_quality_and_productivity_from_monitored_worktime(
+            self.output_dir / "scatter/散布図-アノテーションあたり作業時間と品質の関係-計測時間-教師付者用.html"
         )
 
-        if productivity_df[("actual_worktime_hour", "sum")].sum() > 0:
-            self._catch_exception(self.scatter_obj.write_scatter_for_productivity_by_actual_worktime)(productivity_df)
-            self._catch_exception(self.scatter_obj.write_scatter_for_productivity_by_actual_worktime_and_quality)(
-                productivity_df
+        if df_user_performance[("actual_worktime_hour", "sum")].sum() > 0:
+            df_user_performance.plot_productivity_from_actual_worktime(
+                self.output_dir / "scatter/散布図-アノテーションあたり作業時間と累計作業時間の関係-実績時間.html"
+            )
+            df_user_performance.plot_quality_and_productivity_from_actual_worktime(
+                self.output_dir / "scatter/散布図-アノテーションあたり作業時間と品質の関係-実績時間-教師付者用.html"
             )
         else:
             logger.warning(
@@ -461,8 +475,7 @@ def visualize_statistics(
     write_obj.write_csv_for_summary()
     write_obj.write_productivity_csv_per_user()
 
-    # 散布図
-    write_obj.write_scatter_per_user()
+    write_obj.write_user_performance()
 
     # ヒストグラム
     write_obj.write_histogram_for_task()
