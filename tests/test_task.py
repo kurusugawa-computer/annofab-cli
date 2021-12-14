@@ -191,6 +191,7 @@ class TestCommandLine:
                 '{"attr1":"foo"}',
                 "--task_id",
                 task_id,
+                "--yes"
             ]
         )
 
