@@ -16,6 +16,7 @@ Available Commands
    :titlesonly:
 
    change_attributes
+   copy
    delete
    dump
    import
