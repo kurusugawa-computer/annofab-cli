@@ -5,9 +5,6 @@ from typing import Any, List, Optional, Tuple
 import pandas
 from annofabapi.models import TaskPhase
 
-from annofabcli.common.utils import print_csv
-from annofabcli.statistics.table import _add_ratio_column_for_productivity_per_user
-
 logger = logging.getLogger(__name__)
 
 FILENAME_WHOLE_PERFORMANCE = "全体の生産性と品質.csv"
@@ -16,54 +13,6 @@ FILENAME_PERFORMANCE_PER_USER = "メンバごとの生産性と品質.csv"
 FILENAME_PERFORMANCE_PER_DATE = "日毎の生産量と生産性.csv"
 FILENAME_PERFORMANCE_PER_FIRST_ANNOTATION_STARTED_DATE = "教師付開始日毎の生産量と生産性.csv"
 FILENAME_TASK_LIST = "タスクlist.csv"
-
-
-def _get_phase_list(df_member_performance: pandas.DataFrame) -> List[str]:
-    columns = list(df_member_performance.columns)
-    phase_list = [TaskPhase.ANNOTATION.value, TaskPhase.INSPECTION.value, TaskPhase.ACCEPTANCE.value]
-    if ("monitored_worktime_hour", TaskPhase.INSPECTION.value) not in columns:
-        phase_list.remove(TaskPhase.INSPECTION.value)
-    if ("monitored_worktime_hour", TaskPhase.ACCEPTANCE.value) not in columns:
-        phase_list.remove(TaskPhase.ACCEPTANCE.value)
-    return phase_list
-
-
-def _read_whole_performance_csv(csv_path: Path) -> pandas.Series:
-    """
-    '全体の生産量と生産性.csv' を読み込む。
-    プロジェクト名はディレクトリ名とする。
-    """
-    project_title = csv_path.parent.name
-    if csv_path.exists():
-        df = pandas.read_csv(str(csv_path), header=None, index_col=[0, 1])
-        series = df[2]
-        series[("project_title", "")] = project_title
-    else:
-        logger.warning(f"{csv_path} は存在しませんでした。")
-        series = pandas.Series([project_title], index=pandas.MultiIndex.from_tuples([("project_title", "")]))
-
-    return series
-
-
-def write_summarise_whole_performance_csv(csv_path_list: List[Path], output_path: Path) -> None:
-    """
-    `プロジェクトごとの生産性と品質.csv` を出力する。
-
-    Args:
-        csv_path_list: '全体の生産量と生産性.csv' PathのList
-        output_path: 出力先
-
-    """
-    series_list = [_read_whole_performance_csv(csv_path) for csv_path in csv_path_list]
-    df = pandas.DataFrame(series_list)
-
-    phase_list = _get_phase_list(df)
-    first_columns = [("project_title", "")]
-    value_columns = Csv.get_productivity_columns(phase_list)
-    prior_columns = first_columns + value_columns + [("working_user_count", phase) for phase in phase_list]
-    required_columns = Csv.create_required_columns(df, prior_columns=prior_columns)
-    target_df = df[required_columns]
-    print_csv(target_df, output=str(output_path))
 
 
 class Csv:
@@ -98,22 +47,6 @@ class Csv:
         output_path.parent.mkdir(exist_ok=True, parents=True)
         logger.debug(f"{str(output_path)} を出力します。")
         df.to_csv(str(output_path), sep=",", encoding="utf_8_sig", index=False)
-
-    def _write_csv_for_series(self, filename: str, series: pandas.Series) -> None:
-        """
-        カンマ区切りでBOM UTF-8で書きこむ(Excelで開けるようにするため）
-
-        Args:
-            filename: ファイル名
-            series: pandas.Series
-
-        Returns:
-
-        """
-        output_path = Path(f"{self.outdir}/{filename}")
-        output_path.parent.mkdir(exist_ok=True, parents=True)
-        logger.debug(f"{str(output_path)} を出力します。")
-        series.to_csv(str(output_path), sep=",", encoding="utf_8_sig", header=False)
 
     @staticmethod
     def create_required_columns(
@@ -364,37 +297,6 @@ class Csv:
 
         self._write_csv(f"集計結果csv/集計-作業時間.csv", target_df)
 
-    def write_whole_productivity(self, df: pandas.DataFrame) -> None:
-        """
-        全体の生産性と品質をCSVで出力する。
-
-        Args:
-            df: メンバごとの生産性と品質の の情報が格納されたDataFrame
-
-        """
-        columns_for_sum = [
-            "monitored_worktime_hour",
-            "task_count",
-            "input_data_count",
-            "annotation_count",
-            "actual_worktime_hour",
-            "prediction_actual_worktime_hour",
-            "pointed_out_inspection_comment_count",
-            "rejected_count",
-        ]
-        sum_series = df[columns_for_sum].sum()
-        phase_list = _get_phase_list(df)
-
-        _add_ratio_column_for_productivity_per_user(sum_series, phase_list=phase_list)
-        # 列の順番を整える
-        sum_series = sum_series[self.get_productivity_columns(phase_list)]
-
-        # 作業している人数をカウントする
-        for phase in phase_list:
-            sum_series[("working_user_count", phase)] = (df[("task_count", phase)] > 0).sum()
-
-        self._write_csv_for_series(FILENAME_WHOLE_PERFORMANCE, sum_series)
-
     def write_count_summary(self, df: pandas.DataFrame) -> None:
         """
         個数に関する集計結果をCSVで出力する。
@@ -489,50 +391,6 @@ class Csv:
         required_columns = self.create_required_columns(df, prior_columns, dropped_columns=None)
         self._write_csv(f"タスクlist-ラベルごとのアノテーション数.csv", df[required_columns])
 
-    def write_教師付作業者別日毎の情報(self, df: pandas.DataFrame):
-        """
-        ユーザごと、日毎の作業時間一覧をTSVで出力する. タスク一覧とは無関係。
-        """
-        if len(df) == 0:
-            logger.info("データが0件のため、教師付作業者別日毎の情報は出力しない。")
-            return
-
-        prior_columns = [
-            "first_annotation_started_date",
-            "first_annotation_username",
-            "first_annotation_user_id",
-            "task_count",
-            "input_data_count",
-            "annotation_count",
-            "first_annotation_worktime_hour",
-            "annotation_worktime_hour",
-            "inspection_worktime_hour",
-            "acceptance_worktime_hour",
-            "inspection_count",
-        ]
-        required_columns = self.create_required_columns(df, prior_columns, dropped_columns=None)
-        self._write_csv(f"教師付者_教師付開始日list.csv", df[required_columns])
-
-    def write_ユーザ別日毎の作業時間(self, df: pandas.DataFrame):
-        """
-        ユーザごと、日毎の作業時間一覧をTSVで出力する. タスク一覧とは無関係。
-        """
-        if len(df) == 0:
-            logger.info("ユーザ別日毎の作業時間一覧が0件のため出力しない")
-            return
-
-        prior_columns = [
-            "user_id",
-            "username",
-            "biography",
-            "date",
-            "tasks_completed",
-            "tasks_rejected",
-            "worktime_hour",
-        ]
-        required_columns = self.create_required_columns(df, prior_columns, dropped_columns=None)
-        self._write_csv(f"ユーザ_日付list-作業時間.csv", df[required_columns])
-
     def write_メンバー別作業時間平均_画像1枚あたり(self, df: pandas.DataFrame, phase: TaskPhase):
         if len(df) == 0:
             logger.info(f"メンバー別画像1枚当たりの作業時間平均-{phase.value} 一覧が0件のため、出力しない")
@@ -590,33 +448,3 @@ class Csv:
         )
 
         return prior_columns
-
-    def write_productivity_per_user(
-        self, df: pandas.DataFrame, dropped_columns: Optional[List[str]] = None, output_path: Optional[Path] = None
-    ):
-        """
-        メンバごとの生産性を出力する。
-
-        Args:
-            df:
-            dropped_columns:
-
-        Returns:
-
-        """
-
-        if len(df) == 0:
-            logger.info("プロジェクトメンバ一覧が0件のため出力しない")
-            return
-
-        phase_list = _get_phase_list(df)
-        value_columns = self.get_productivity_columns(phase_list)
-
-        user_columns = [("user_id", ""), ("username", ""), ("biography", ""), ("last_working_date", "")]
-        prior_columns = user_columns + value_columns
-        required_columns = self.create_required_columns(df, prior_columns, dropped_columns)
-        target_df = df[required_columns]
-        if output_path is None:
-            self._write_csv(FILENAME_PERFORMANCE_PER_USER, target_df)
-        else:
-            print_csv(target_df, output=str(output_path), to_csv_kwargs=self.CSV_FORMAT)

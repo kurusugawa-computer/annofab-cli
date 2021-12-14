@@ -6,9 +6,8 @@ from typing import Any, Dict, List, Optional
 
 import dateutil
 import more_itertools
-import numpy
 import pandas
-from annofabapi.dataclass.statistics import ProjectAccountStatisticsHistory, WorktimeStatistics, WorktimeStatisticsItem
+from annofabapi.dataclass.statistics import WorktimeStatistics, WorktimeStatisticsItem
 from annofabapi.models import InputDataId, Inspection, InspectionStatus, Task, TaskHistory, TaskPhase, TaskStatus
 from annofabapi.utils import (
     get_number_of_rejections,
@@ -23,42 +22,6 @@ from annofabcli.common.utils import isoduration_to_hour
 from annofabcli.statistics.database import AnnotationDict, Database, PseudoInputData
 
 logger = logging.getLogger(__name__)
-
-
-def _add_ratio_column_for_productivity_per_user(df: pandas.DataFrame, phase_list: List[str]):
-    for phase in phase_list:
-        # AnnoFab時間の比率
-        df[("monitored_worktime_ratio", phase)] = (
-            df[("monitored_worktime_hour", phase)] / df[("monitored_worktime_hour", "sum")]
-        )
-        # AnnoFab時間の比率から、Annowork時間を予測する
-        df[("prediction_actual_worktime_hour", phase)] = (
-            df[("actual_worktime_hour", "sum")] * df[("monitored_worktime_ratio", phase)]
-        )
-
-        # 生産性を算出
-        df[("monitored_worktime/input_data_count", phase)] = (
-            df[("monitored_worktime_hour", phase)] / df[("input_data_count", phase)]
-        )
-        df[("actual_worktime/input_data_count", phase)] = (
-            df[("prediction_actual_worktime_hour", phase)] / df[("input_data_count", phase)]
-        )
-
-        df[("monitored_worktime/annotation_count", phase)] = (
-            df[("monitored_worktime_hour", phase)] / df[("annotation_count", phase)]
-        )
-        df[("actual_worktime/annotation_count", phase)] = (
-            df[("prediction_actual_worktime_hour", phase)] / df[("annotation_count", phase)]
-        )
-
-    phase = TaskPhase.ANNOTATION.value
-    df[("pointed_out_inspection_comment_count/annotation_count", phase)] = (
-        df[("pointed_out_inspection_comment_count", phase)] / df[("annotation_count", phase)]
-    )
-    df[("pointed_out_inspection_comment_count/input_data_count", phase)] = (
-        df[("pointed_out_inspection_comment_count", phase)] / df[("input_data_count", phase)]
-    )
-    df[("rejected_count/task_count", phase)] = df[("rejected_count", phase)] / df[("task_count", phase)]
 
 
 class AggregationBy(Enum):
@@ -95,7 +58,6 @@ class Table:
     _task_histories_dict: Optional[Dict[str, List[TaskHistory]]] = None
     _annotations_dict: Optional[Dict[str, Dict[InputDataId, Dict[str, Any]]]] = None
     _worktime_statistics: Optional[List[WorktimeStatistics]] = None
-    _account_statistics: Optional[List[ProjectAccountStatisticsHistory]] = None
     _labor_list: Optional[List[Dict[str, Any]]] = None
 
     def __init__(
@@ -125,18 +87,6 @@ class Table:
             ]
             self._worktime_statistics = worktime_statistics
             return worktime_statistics
-
-    def _get_account_statistics(self) -> List[ProjectAccountStatisticsHistory]:
-        """
-        ユーザー別タスク集計を取得
-        """
-        if self._account_statistics is not None:
-            return self._account_statistics
-        else:
-            content: List[Any] = self.annofab_service.wrapper.get_account_statistics(self.project_id)[0]
-            account_statistics = [ProjectAccountStatisticsHistory.from_dict(e) for e in content]
-            self._account_statistics = account_statistics
-            return account_statistics
 
     def _get_task_list(self) -> List[Task]:
         """
@@ -803,88 +753,6 @@ class Table:
         df = pandas.DataFrame(member_list)
         return df
 
-    def create_account_statistics_df(self):
-        """
-        メンバごと、日ごとの作業時間を、統計情報APIから取得する。
-        """
-
-        account_statistics = self.database.read_account_statistics_from_checkpoint()
-
-        all_histories = []
-        for account_info in account_statistics:
-
-            account_id = account_info["account_id"]
-            histories = account_info["histories"]
-
-            member_info = self.project_members_dict.get(account_id)
-
-            for history in histories:
-                history["worktime_hour"] = annofabcli.utils.isoduration_to_hour(history["worktime"])
-                history["account_id"] = account_id
-                history["user_id"] = self._get_user_id(account_id)
-                history["username"] = self._get_username(account_id)
-                history["biography"] = self._get_biography(account_id)
-
-                if member_info is not None:
-                    history["member_role"] = member_info["member_role"]
-
-            all_histories.extend(histories)
-
-        df = pandas.DataFrame(all_histories)
-        return df
-
-    @staticmethod
-    def create_cumulative_df_by_user(account_statistics_df: pandas.DataFrame) -> pandas.DataFrame:
-        """
-        アカウントごとの作業時間に対して、累積作業時間を追加する。
-        Args:
-            account_statistics_df: アカウントごとの作業時間用DataFrame
-
-        Returns:
-
-        """
-        # 教師付の開始時刻でソートして、indexを更新する
-        df = account_statistics_df.sort_values(["account_id", "date"]).reset_index(drop=True)
-        groupby_obj = df.groupby("account_id")
-        df["cumulative_worktime_hour"] = groupby_obj["worktime_hour"].cumsum()
-        return df
-
-    @staticmethod
-    def create_cumulative_df_overall(task_df: pandas.DataFrame) -> pandas.DataFrame:
-        """
-        1回目の教師付開始日でソートして、累積値を算出する。
-
-        Args:
-            task_df: タスク一覧のDataFrame. 列が追加される
-        """
-        # 教師付の開始時刻でソートして、indexを更新する
-        if len(task_df) == 0:
-            logger.warning(f"タスク一覧が0件です。")
-            return pandas.DataFrame()
-
-        df = task_df.sort_values(["first_annotation_started_datetime"]).reset_index(drop=True)
-        # タスクの累計数を取得するために設定する
-        df["task_count"] = 1
-
-        # 作業時間の累積値
-        df["cumulative_annotation_worktime_hour"] = df["annotation_worktime_hour"].cumsum()
-        df["cumulative_inspection_worktime_hour"] = df["inspection_worktime_hour"].cumsum()
-        df["cumulative_acceptance_worktime_hour"] = df["acceptance_worktime_hour"].cumsum()
-        df["cumulative_sum_worktime_hour"] = df["sum_worktime_hour"].cumsum()
-
-        # タスク完了数、差し戻し数など
-        df["cumulative_inspection_count"] = df["inspection_count"].cumsum()
-        df["cumulative_annotation_count"] = df["annotation_count"].cumsum()
-        df["cumulative_input_data_count"] = df["input_data_count"].cumsum()
-        df["cumulative_task_count"] = df["task_count"].cumsum()
-        df["cumulative_number_of_rejections"] = df["number_of_rejections"].cumsum()
-        df["cumulative_number_of_rejections_by_inspection"] = df["number_of_rejections_by_inspection"].cumsum()
-        df["cumulative_number_of_rejections_by_acceptance"] = df["number_of_rejections_by_acceptance"].cumsum()
-
-        # 元に戻す
-        df = df.drop(["task_count"], axis=1)
-        return df
-
     @staticmethod
     def create_gradient_df(task_df: pandas.DataFrame) -> pandas.DataFrame:
         """
@@ -1024,145 +892,6 @@ class Table:
             lambda e: 1 if e == TaskPhase.ANNOTATION.value else 0
         )
         return new_df
-
-    @staticmethod
-    def _get_phase_list(columns: List[str]) -> List[str]:
-        phase_list = [TaskPhase.ANNOTATION.value, TaskPhase.INSPECTION.value, TaskPhase.ACCEPTANCE.value]
-        if TaskPhase.INSPECTION.value not in columns:
-            phase_list.remove(TaskPhase.INSPECTION.value)
-
-        if TaskPhase.ACCEPTANCE.value not in columns:
-            phase_list.remove(TaskPhase.ACCEPTANCE.value)
-
-        return phase_list
-
-    @staticmethod
-    def merge_productivity_per_user_from_aw_time(df1: pandas.DataFrame, df2: pandas.DataFrame) -> pandas.DataFrame:
-        """
-        ユーザごとの生産性・品質情報が格納されたDataFrameを結合する
-        Args:
-            df1:
-            df2:
-
-        Returns:
-            マージ済のユーザごとの生産性・品質情報
-        """
-
-        def max_last_working_date(date1, date2):
-            if not isinstance(date1, str) and numpy.isnan(date1):
-                date1 = ""
-            if not isinstance(date2, str) and numpy.isnan(date2):
-                date2 = ""
-            max_date = max(date1, date2)
-            if max_date == "":
-                return numpy.nan
-            else:
-                return max_date
-
-        def merge_row(row1: pandas.Series, row2: pandas.Series) -> pandas.Series:
-            string_column_list = ["username", "biography", "last_working_date"]
-            sum_row = row1.drop(labels=string_column_list, level=0).fillna(0) + row2.drop(
-                labels=string_column_list, level=0
-            ).fillna(0)
-            sum_row.loc["username", ""] = row1.loc["username", ""]
-            sum_row.loc["biography", ""] = row1.loc["biography", ""]
-            sum_row.loc["last_working_date", ""] = max_last_working_date(
-                row1.loc["last_working_date", ""], row2.loc["last_working_date", ""]
-            )
-            return sum_row
-
-        user_id_set = set(df1["user_id"]) | set(df2["user_id"])
-        sum_df = df1.set_index("user_id").copy()
-        added_df = df2.set_index("user_id")
-
-        for user_id in user_id_set:
-            if user_id not in added_df.index:
-                continue
-            if user_id in sum_df.index:
-                sum_df.loc[user_id] = merge_row(sum_df.loc[user_id], added_df.loc[user_id])
-            else:
-                sum_df.loc[user_id] = added_df.loc[user_id]
-
-        phase_list = Table._get_phase_list(list(sum_df["monitored_worktime_hour"].columns))
-        _add_ratio_column_for_productivity_per_user(sum_df, phase_list=phase_list)
-        return sum_df.reset_index().sort_values(["user_id"])
-
-    @staticmethod
-    def create_productivity_per_user_from_aw_time(
-        df_task_history: pandas.DataFrame, df_labor: pandas.DataFrame, df_worktime_ratio: pandas.DataFrame
-    ) -> pandas.DataFrame:
-        """
-        AnnoWorkの実績時間から、作業者ごとに生産性を算出する。
-
-        Returns:
-
-        """
-        df_agg_task_history = df_task_history.pivot_table(
-            values="worktime_hour", columns="phase", index="user_id", aggfunc=numpy.sum
-        ).fillna(0)
-
-        if len(df_labor) > 0:
-            df_agg_labor = df_labor.pivot_table(values="actual_worktime_hour", index="user_id", aggfunc=numpy.sum)
-            df_tmp = df_labor[df_labor["actual_worktime_hour"] > 0].pivot_table(
-                values="date", index="user_id", aggfunc=numpy.max
-            )
-            if len(df_tmp) > 0:
-                df_agg_labor["last_working_date"] = df_tmp
-            else:
-                df_agg_labor["last_working_date"] = numpy.nan
-            df = df_agg_task_history.join(df_agg_labor)
-        else:
-            df = df_agg_task_history
-            df["actual_worktime_hour"] = 0
-            df["last_working_date"] = None
-
-        phase_list = Table._get_phase_list(list(df.columns))
-
-        df = df[["actual_worktime_hour", "last_working_date"] + phase_list].copy()
-        df.columns = pandas.MultiIndex.from_tuples(
-            [("actual_worktime_hour", "sum"), ("last_working_date", "")]
-            + [("monitored_worktime_hour", phase) for phase in phase_list]
-        )
-
-        df[("monitored_worktime_hour", "sum")] = df[[("monitored_worktime_hour", phase) for phase in phase_list]].sum(
-            axis=1
-        )
-
-        df_agg_production = df_worktime_ratio.pivot_table(
-            values=[
-                "worktime_ratio_by_task",
-                "input_data_count",
-                "annotation_count",
-                "pointed_out_inspection_comment_count",
-                "rejected_count",
-            ],
-            columns="phase",
-            index="user_id",
-            aggfunc=numpy.sum,
-        ).fillna(0)
-
-        df_agg_production.rename(columns={"worktime_ratio_by_task": "task_count"}, inplace=True)
-        df = df.join(df_agg_production)
-
-        # 比例関係の列を計算して追加する
-        _add_ratio_column_for_productivity_per_user(df, phase_list=phase_list)
-
-        # 不要な列を削除する
-        tmp_phase_list = copy.deepcopy(phase_list)
-        tmp_phase_list.remove(TaskPhase.ANNOTATION.value)
-
-        dropped_column = [("pointed_out_inspection_comment_count", phase) for phase in tmp_phase_list] + [
-            ("rejected_count", phase) for phase in tmp_phase_list
-        ]
-        df = df.drop(dropped_column, axis=1)
-
-        # ユーザ情報を取得
-        df_user = df_task_history.groupby("user_id").first()[["username", "biography"]]
-        df_user.columns = pandas.MultiIndex.from_tuples([("username", ""), ("biography", "")])
-        df = df.join(df_user)
-        df[("user_id", "")] = df.index
-
-        return df
 
     def create_labor_df(self, df_labor: Optional[pandas.DataFrame] = None) -> pandas.DataFrame:
         """

@@ -5,24 +5,23 @@ from typing import Optional
 
 import annofabcli
 from annofabcli.common.cli import AbstractCommandLineWithoutWebapiInterface
-from annofabcli.common.utils import read_multiheader_csv
 from annofabcli.statistics.csv import FILENAME_PERFORMANCE_PER_USER
-from annofabcli.statistics.scatter import Scatter
+from annofabcli.statistics.visualization.dataframe.user_performance import UserPerformance
 
 logger = logging.getLogger(__name__)
 
 
 def write_performance_scatter_per_user(csv: Path, output_dir: Path) -> None:
-    df = read_multiheader_csv(str(csv))
 
-    scatter_obj = Scatter(str(output_dir))
-    scatter_obj.write_scatter_for_productivity_by_monitored_worktime(df)
-    scatter_obj.write_scatter_for_quality(df)
-    scatter_obj.write_scatter_for_productivity_by_monitored_worktime_and_quality(df)
+    obj = UserPerformance.from_csv(csv)
 
-    if df[("actual_worktime_hour", "sum")].sum() > 0:
-        scatter_obj.write_scatter_for_productivity_by_actual_worktime(df)
-        scatter_obj.write_scatter_for_productivity_by_actual_worktime_and_quality(df)
+    obj.plot_quality(output_dir / "散布図-教師付者の品質と作業量の関係.html")
+    obj.plot_productivity_from_monitored_worktime(output_dir / "散布図-アノテーションあたり作業時間と累計作業時間の関係-計測時間.html")
+    obj.plot_quality_and_productivity_from_monitored_worktime(output_dir / "散布図-アノテーションあたり作業時間と品質の関係-計測時間-教師付者用.html")
+
+    if obj.actual_worktime_exists():
+        obj.plot_productivity_from_actual_worktime(output_dir / "散布図-アノテーションあたり作業時間と累計作業時間の関係-実績時間.html")
+        obj.plot_quality_and_productivity_from_actual_worktime(output_dir / "散布図-アノテーションあたり作業時間と品質の関係-実績時間-教師付者用.html")
     else:
         logger.warning(
             f"実績作業時間の合計値が0なので、実績作業時間関係の以下のグラフは出力しません。\n"

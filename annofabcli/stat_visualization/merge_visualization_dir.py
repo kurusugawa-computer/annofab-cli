@@ -10,7 +10,6 @@ import annofabcli
 from annofabcli.common.cli import COMMAND_LINE_ERROR_STATUS_CODE, get_list_from_args
 from annofabcli.common.utils import print_csv, print_json
 from annofabcli.stat_visualization.merge_performance_per_date import create_df_merged_performance_per_date
-from annofabcli.stat_visualization.merge_performance_per_user import create_df_merged_performance_per_user
 from annofabcli.stat_visualization.write_linegraph_per_user import write_linegraph_per_user
 from annofabcli.stat_visualization.write_performance_scatter_per_user import write_performance_scatter_per_user
 from annofabcli.stat_visualization.write_task_histogram import write_task_histogram
@@ -22,6 +21,7 @@ from annofabcli.statistics.csv import (
     FILENAME_TASK_LIST,
     Csv,
 )
+from annofabcli.statistics.visualization.dataframe.user_performance import UserPerformance, WholePerformance
 from annofabcli.statistics.visualization.dataframe.whole_productivity_per_date import (
     WholeProductivityPerCompletedDate,
     WholeProductivityPerFirstAnnotationStartedDate,
@@ -30,7 +30,7 @@ from annofabcli.statistics.visualization.dataframe.whole_productivity_per_date i
 logger = logging.getLogger(__name__)
 
 
-def merge_visualization_dir(
+def merge_visualization_dir(  # pylint: disable=too-many-statements
     project_dir_list: List[Path],
     output_dir: Path,
     user_id_list: Optional[List[str]] = None,
@@ -38,9 +38,27 @@ def merge_visualization_dir(
 ):
     def execute_merge_performance_per_user():
         performance_per_user_csv_list = [dir / FILENAME_PERFORMANCE_PER_USER for dir in project_dir_list]
-        df_per_user = create_df_merged_performance_per_user(csv_path_list=performance_per_user_csv_list)
-        csv_obj.write_productivity_per_user(df_per_user)
-        csv_obj.write_whole_productivity(df_per_user)
+
+        obj_list = []
+        for csv_file in performance_per_user_csv_list:
+            if csv_file.exists():
+                obj_list.append(UserPerformance.from_csv(csv_file))
+            else:
+                logger.warning(f"{csv_file} は存在しませんでした。")
+                continue
+
+        if len(obj_list) == 0:
+            logger.warning(f"マージ対象のCSVファイルは存在しませんでした。")
+            return
+
+        sum_obj = obj_list[0]
+        for obj in obj_list[1:]:
+            sum_obj = UserPerformance.merge(sum_obj, obj)
+
+        sum_obj.to_csv(output_dir / FILENAME_PERFORMANCE_PER_USER)
+
+        whole_obj = WholePerformance(sum_obj.get_summary())
+        whole_obj.to_csv(output_dir / "全体の生産性と品質.csv")
 
     def execute_merge_performance_per_date():
         performance_per_date_csv_list = [dir / FILENAME_PERFORMANCE_PER_DATE for dir in project_dir_list]

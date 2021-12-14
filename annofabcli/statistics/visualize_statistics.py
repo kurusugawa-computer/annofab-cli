@@ -7,7 +7,7 @@ from dataclasses import dataclass
 from functools import partial
 from multiprocessing import Pool
 from pathlib import Path
-from typing import Any, Callable, List, Optional
+from typing import Any, Callable, Collection, List, Optional
 
 import annofabapi
 import pandas
@@ -25,13 +25,11 @@ from annofabcli.common.facade import TaskQuery
 from annofabcli.stat_visualization.merge_visualization_dir import merge_visualization_dir
 from annofabcli.statistics.csv import (
     FILENAME_PERFORMANCE_PER_DATE,
+    FILENAME_PERFORMANCE_PER_USER,
     FILENAME_WHOLE_PERFORMANCE,
     Csv,
-    write_summarise_whole_performance_csv,
 )
 from annofabcli.statistics.database import Database, Query
-from annofabcli.statistics.linegraph import LineGraph
-from annofabcli.statistics.scatter import Scatter
 from annofabcli.statistics.table import AggregationBy, Table
 from annofabcli.statistics.visualization.dataframe.cumulative_productivity import (
     AcceptorCumulativeProductivity,
@@ -43,10 +41,16 @@ from annofabcli.statistics.visualization.dataframe.productivity_per_date import 
     AnnotatorProductivityPerDate,
     InspectorProductivityPerDate,
 )
+from annofabcli.statistics.visualization.dataframe.user_performance import (
+    ProjectPerformance,
+    UserPerformance,
+    WholePerformance,
+)
 from annofabcli.statistics.visualization.dataframe.whole_productivity_per_date import (
     WholeProductivityPerCompletedDate,
     WholeProductivityPerFirstAnnotationStartedDate,
 )
+from annofabcli.statistics.visualization.dataframe.worktime_per_date import WorktimePerDate
 
 logger = logging.getLogger(__name__)
 
@@ -68,6 +72,22 @@ class ProjectSummary(DataClassJsonMixin):
     """計測日時。（2004-04-01T12:00+09:00形式）"""
     args: CommnadLineArgs
     """コマンドライン引数"""
+
+
+def write_project_performance_csv(project_dirs: Collection[Path], output_path: Path):
+    csv_file_list = [e / FILENAME_WHOLE_PERFORMANCE for e in project_dirs]
+
+    obj_list = []
+    project_title_list = []
+    for csv_file in csv_file_list:
+        if csv_file.exists():
+            obj_list.append(WholePerformance.from_csv(csv_file))
+            project_title_list.append(csv_file.parent.name)
+        else:
+            logger.warning(f"{csv_file} は存在しないのでスキップします。")
+
+    main_obj = ProjectPerformance.from_whole_performance_objs(obj_list, project_title_list)
+    main_obj.to_csv(output_path)
 
 
 def write_project_name_file(
@@ -100,10 +120,6 @@ def get_project_output_dir(project_title: str) -> str:
 class WriteCsvGraph:
     task_df: Optional[pandas.DataFrame] = None
     annotation_df: Optional[pandas.DataFrame] = None
-    account_statistics_df: Optional[pandas.DataFrame] = None
-    df_by_date_user_for_annotation: Optional[pandas.DataFrame] = None
-    df_by_date_user_for_acceptance: Optional[pandas.DataFrame] = None
-    df_by_date_user_for_inspection: Optional[pandas.DataFrame] = None
     task_history_df: Optional[pandas.DataFrame] = None
     labor_df: Optional[pandas.DataFrame] = None
     productivity_df: Optional[pandas.DataFrame] = None
@@ -111,12 +127,14 @@ class WriteCsvGraph:
 
     def __init__(
         self,
+        service: annofabapi.Resource,
         project_id: str,
         table_obj: Table,
         output_dir: Path,
         labor_df: Optional[pandas.DataFrame],
         minimal_output: bool = False,
     ):
+        self.service = service
         self.project_id = project_id
         self.output_dir = output_dir
         self.table_obj = table_obj
@@ -124,8 +142,6 @@ class WriteCsvGraph:
         # holoviews のloadに時間がかかって、helpコマンドの出力が遅いため、遅延ロードする
         histogram_module = importlib.import_module("annofabcli.statistics.histogram")
         self.histogram_obj = histogram_module.Histogram(str(output_dir / "histogram"))  # type: ignore
-        self.linegraph_obj = LineGraph(str(output_dir / "line-graph"))
-        self.scatter_obj = Scatter(str(output_dir / "scatter"))
 
         self.labor_df = self.table_obj.create_labor_df(labor_df)
         self.minimal_output = minimal_output
@@ -160,40 +176,11 @@ class WriteCsvGraph:
             self.annotation_df = self.table_obj.create_task_for_annotation_df()
         return self.annotation_df
 
-    def _get_account_statistics_df(self):
-        if self.account_statistics_df is None:
-            self.account_statistics_df = self.table_obj.create_account_statistics_df()
-        return self.account_statistics_df
-
     def _get_labor_df(self):
         if self.labor_df is None:
             self.labor_df = self.table_obj.create_labor_df()
 
         return self.labor_df
-
-    def _get_productivity_df(self):
-        if self.productivity_df is None:
-            task_history_df = self._get_task_history_df()
-            task_df = self._get_task_df()
-            annotation_count_ratio_df = self.table_obj.create_annotation_count_ratio_df(task_history_df, task_df)
-            if len(annotation_count_ratio_df) == 0:
-                self.productivity_df = pandas.DataFrame()
-                return self.productivity_df
-
-            productivity_df = self.table_obj.create_productivity_per_user_from_aw_time(
-                df_task_history=task_history_df,
-                df_labor=self._get_labor_df(),
-                df_worktime_ratio=annotation_count_ratio_df,
-            )
-            self.productivity_df = productivity_df
-        return self.productivity_df
-
-    def _get_whole_productivity_df(self):
-        if self.whole_productivity_df is None:
-            task_df = self._get_task_df()
-            labor_df = self._get_labor_df()
-            self.whole_productivity_df = WholeProductivityPerCompletedDate.create(task_df, labor_df)
-        return self.whole_productivity_df
 
     def write_histogram_for_task(self) -> None:
         """
@@ -216,25 +203,41 @@ class WriteCsvGraph:
         annotation_df = self._get_annotation_df()
         self._catch_exception(self.histogram_obj.write_histogram_for_annotation_count_by_label)(annotation_df)
 
-    def write_scatter_per_user(self) -> None:
+    def write_user_performance(self) -> None:
         """
-        ユーザごとにプロットした散布図を出力する。
+        ユーザごとの生産性と品質に関する情報を出力する。
         """
-        productivity_df = self._get_productivity_df()
-        if len(productivity_df) == 0:
-            logger.warning(f"'メンバごとの生産性と品質.csv'が0件なので、ユーザごとの散布図を出力しません。")
-            return
 
-        self._catch_exception(self.scatter_obj.write_scatter_for_productivity_by_monitored_worktime)(productivity_df)
-        self._catch_exception(self.scatter_obj.write_scatter_for_quality)(productivity_df)
-        self._catch_exception(self.scatter_obj.write_scatter_for_productivity_by_monitored_worktime_and_quality)(
-            productivity_df
+        df_task_history = self._get_task_history_df()
+        annotation_count_ratio_df = self.table_obj.create_annotation_count_ratio_df(
+            df_task_history, self._get_task_df()
+        )
+        if len(annotation_count_ratio_df) == 0:
+            obj = UserPerformance(pandas.DataFrame())
+        else:
+            obj = UserPerformance.from_df(
+                df_task_history=df_task_history,
+                df_labor=self._get_labor_df(),
+                df_worktime_ratio=annotation_count_ratio_df,
+            )
+
+        obj.to_csv(self.output_dir / FILENAME_PERFORMANCE_PER_USER)
+        WholePerformance(obj.get_summary()).to_csv(self.output_dir / FILENAME_WHOLE_PERFORMANCE)
+
+        obj.plot_quality(self.output_dir / "scatter/散布図-教師付者の品質と作業量の関係.html")
+        obj.plot_productivity_from_monitored_worktime(
+            self.output_dir / "scatter/散布図-アノテーションあたり作業時間と累計作業時間の関係-計測時間.html"
+        )
+        obj.plot_quality_and_productivity_from_monitored_worktime(
+            self.output_dir / "scatter/散布図-アノテーションあたり作業時間と品質の関係-計測時間-教師付者用.html"
         )
 
-        if productivity_df[("actual_worktime_hour", "sum")].sum() > 0:
-            self._catch_exception(self.scatter_obj.write_scatter_for_productivity_by_actual_worktime)(productivity_df)
-            self._catch_exception(self.scatter_obj.write_scatter_for_productivity_by_actual_worktime_and_quality)(
-                productivity_df
+        if obj.actual_worktime_exists():
+            obj.plot_productivity_from_actual_worktime(
+                self.output_dir / "scatter/散布図-アノテーションあたり作業時間と累計作業時間の関係-実績時間.html"
+            )
+            obj.plot_quality_and_productivity_from_actual_worktime(
+                self.output_dir / "scatter/散布図-アノテーションあたり作業時間と品質の関係-実績時間-教師付者用.html"
             )
         else:
             logger.warning(
@@ -243,14 +246,18 @@ class WriteCsvGraph:
                 " * '散布図-アノテーションあたり作業時間と品質の関係-実績時間-教師付者用'"
             )
 
-    def write_whole_linegraph(self) -> None:
-        whole_productivity_df = self._get_whole_productivity_df()
-        self._catch_exception(WholeProductivityPerCompletedDate.plot)(
-            whole_productivity_df, self.output_dir / "line-graph/折れ線-横軸_日-全体.html"
-        )
-        self._catch_exception(WholeProductivityPerCompletedDate.plot_cumulatively)(
+    def write_whole_productivity_per_date(self) -> None:
+        """日ごとの全体の生産性に関するファイルを出力する。"""
+        task_df = self._get_task_df()
+        labor_df = self._get_labor_df()
+        whole_productivity_df = WholeProductivityPerCompletedDate.create(task_df, labor_df)
+
+        WholeProductivityPerCompletedDate.plot(whole_productivity_df, self.output_dir / "line-graph/折れ線-横軸_日-全体.html")
+        WholeProductivityPerCompletedDate.plot_cumulatively(
             whole_productivity_df, self.output_dir / "line-graph/累積折れ線-横軸_日-全体.html"
         )
+
+        WholeProductivityPerCompletedDate.to_csv(whole_productivity_df, self.output_dir / FILENAME_PERFORMANCE_PER_DATE)
 
     def write_whole_productivity_per_first_annotation_started_date(self) -> None:
         df = WholeProductivityPerFirstAnnotationStartedDate.create(self.task_df)
@@ -288,12 +295,11 @@ class WriteCsvGraph:
 
             annotator_obj.plot_task_metrics(self.output_dir / "line-graph/教師付者用/累積折れ線-横軸_タスク数-教師付者用.html", user_id_list)
 
-    def write_linegraph_for_worktime_by_user(self, user_id_list: Optional[List[str]] = None) -> None:
-        account_statistics_df = self._get_account_statistics_df()
-        cumulative_account_statistics_df = self.table_obj.create_cumulative_df_by_user(account_statistics_df)
-        self._catch_exception(self.linegraph_obj.write_cumulative_line_graph_by_date)(
-            df=cumulative_account_statistics_df, user_id_list=user_id_list
-        )
+    def write_worktime_per_date(self, user_id_list: Optional[List[str]] = None) -> None:
+        """日ごとの作業時間情報を出力する。"""
+        obj = WorktimePerDate.from_webapi(self.service, self.project_id)
+        obj.plot_cumulatively(self.output_dir / "line-graph/累積折れ線-横軸_日-縦軸_作業時間.html", user_id_list)
+        obj.to_csv(self.output_dir / "ユーザ_日付list-作業時間.csv")
 
     def write_csv_for_task(self) -> None:
         """
@@ -310,15 +316,6 @@ class WriteCsvGraph:
         self._catch_exception(self.csv_obj.write_task_count_summary)(task_df)
         self._catch_exception(self.csv_obj.write_worktime_summary)(task_df)
         self._catch_exception(self.csv_obj.write_count_summary)(task_df)
-
-    def write_whole_productivity_csv_per_date(self) -> None:
-        """
-        日毎の生産性を出力する
-        """
-        whole_productivity_df = self._get_whole_productivity_df()
-        self._catch_exception(WholeProductivityPerCompletedDate.to_csv)(
-            whole_productivity_df, self.output_dir / FILENAME_PERFORMANCE_PER_DATE
-        )
 
     def _write_メンバー別作業時間平均_画像1枚あたり_by_phase(self, phase: TaskPhase):
         df_by_inputs = self.table_obj.create_worktime_per_image_df(AggregationBy.BY_INPUTS, phase)
@@ -353,19 +350,6 @@ class WriteCsvGraph:
         """
         annotation_df = self._get_annotation_df()
         self._catch_exception(self.csv_obj.write_ラベルごとのアノテーション数)(annotation_df)
-
-    def write_csv_for_account_statistics(self) -> None:
-        account_statistics_df = self._get_account_statistics_df()
-        self._catch_exception(self.csv_obj.write_ユーザ別日毎の作業時間)(account_statistics_df)
-
-    def write_productivity_csv_per_user(self) -> None:
-        productivity_df = self._get_productivity_df()
-        if len(productivity_df) == 0:
-            logger.warning(f"作業履歴がないため、'メンバごとの生産性と品質.csv'を出力しません。")
-            return
-
-        self._catch_exception(self.csv_obj.write_productivity_per_user)(productivity_df)
-        self._catch_exception(self.csv_obj.write_whole_productivity)(productivity_df)
 
     def write_labor_and_task_history(self) -> None:
         task_history_df = self._get_task_history_df()
@@ -479,36 +463,32 @@ def visualize_statistics(
         output_project_dir=output_project_dir,
     )
     write_obj = WriteCsvGraph(
-        project_id, table_obj, output_project_dir, labor_df=df_labor, minimal_output=minimal_output
+        annofab_service, project_id, table_obj, output_project_dir, labor_df=df_labor, minimal_output=minimal_output
     )
     write_obj.write_csv_for_task()
 
     write_obj.write_csv_for_summary()
-    write_obj.write_whole_productivity_csv_per_date()
-    write_obj.write_productivity_csv_per_user()
 
-    # 散布図
-    write_obj.write_scatter_per_user()
+    write_obj._catch_exception(write_obj.write_user_performance)()
 
     # ヒストグラム
     write_obj.write_histogram_for_task()
 
     # 折れ線グラフ
     write_obj.write_cumulative_linegraph_by_user(user_id_list)
-    write_obj.write_whole_linegraph()
+    write_obj.write_whole_productivity_per_date()
 
     write_obj.write_whole_productivity_per_first_annotation_started_date()
 
     if not minimal_output:
         write_obj.write_histogram_for_annotation()
-        write_obj.write_linegraph_for_worktime_by_user(user_id_list)
+        write_obj._catch_exception(write_obj.write_worktime_per_date)(user_id_list)
 
         write_obj._catch_exception(write_obj.write_user_productivity_per_date)(user_id_list)
 
         # CSV
         write_obj.write_labor_and_task_history()
         write_obj.write_csv_for_annotation()
-        write_obj.write_csv_for_account_statistics()
         write_obj.write_csv_for_inspection()
         write_obj.write_メンバー別作業時間平均_画像1枚あたり_by_phase()
 
@@ -740,10 +720,7 @@ class VisualizeStatistics(AbstractCommandLineInterface):
                 )
 
             if len(output_project_dir_list) > 0:
-                whole_performance_csv_list = [e / FILENAME_WHOLE_PERFORMANCE for e in output_project_dir_list]
-                write_summarise_whole_performance_csv(
-                    csv_path_list=whole_performance_csv_list, output_path=root_output_dir / "プロジェクトごとの生産性と品質.csv"
-                )
+                write_project_performance_csv(output_project_dir_list, root_output_dir / "プロジェクトごとの生産性と品質.csv")
             else:
                 logger.warning(f"出力した統計情報は0件なので、`プロジェクトごとの生産性と品質.csv`を出力しません。")
 
