@@ -7,50 +7,39 @@ import pandas
 
 import annofabcli
 from annofabcli.common.cli import AbstractCommandLineWithoutWebapiInterface
-from annofabcli.common.utils import read_multiheader_csv
-from annofabcli.statistics.csv import FILENAME_PERFORMANCE_PER_USER, Csv
-from annofabcli.statistics.table import Table
+from annofabcli.statistics.csv import FILENAME_PERFORMANCE_PER_USER
+from annofabcli.statistics.visualization.dataframe.user_performance import UserPerformance
 
 logger = logging.getLogger(__name__)
 
 
-def create_df_merged_performance_per_user(csv_path_list: List[Path]) -> pandas.DataFrame:
+def merge_user_performance(csv_path_list: List[Path]) -> UserPerformance:
     """
-    `メンバごとの生産性と品質.csv` をマージしたDataFrameを返す。
+    `メンバごとの生産性と品質.csv` をマージしたDataFrameをラップするオブジェクトを返す。
 
-    Args:
-        csv_path_list:
-
-    Returns:
 
     """
-    df_list: List[pandas.DataFrame] = []
+    obj_list = []
     for csv_path in csv_path_list:
         if csv_path.exists():
-            df = read_multiheader_csv(str(csv_path))
-            df_list.append(df)
+            obj_list.append(UserPerformance.from_csv(csv_path))
         else:
             logger.warning(f"{csv_path} は存在しませんでした。")
             continue
 
-    if len(df_list) == 0:
+    if len(obj_list) == 0:
         logger.warning(f"マージ対象のCSVファイルは存在しませんでした。")
         return pandas.DataFrame()
 
-    sum_df = df_list[0]
-    for df in df_list[1:]:
-        sum_df = Table.merge_productivity_per_user_from_aw_time(sum_df, df)
-    return sum_df
+    sum_obj = obj_list[0]
+    for obj in obj_list[1:]:
+        sum_obj = UserPerformance.merge(sum_obj, obj)
+    return sum_obj
 
 
 def merge_performance_per_user(csv_path_list: List[Path], output_path: Path):
-    sum_df = create_df_merged_performance_per_user(csv_path_list)
-    if len(sum_df) == 0:
-        logger.warning(f"出力対象のデータが0件であるため、CSVファイルを出力しません。")
-        return
-
-    csv_obj = Csv(outdir=str(output_path.parent))
-    csv_obj.write_productivity_per_user(sum_df, output_path=output_path)
+    obj = merge_user_performance(csv_path_list)
+    obj.to_csv(output_path)
 
 
 class MergePerformancePerUser(AbstractCommandLineWithoutWebapiInterface):

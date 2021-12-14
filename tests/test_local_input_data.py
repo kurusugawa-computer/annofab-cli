@@ -22,7 +22,6 @@ def is_uuid4(target: str):
 def test_get_input_data_list_from_csv():
     csv_path = test_dir / "input_data.csv"
     actual_members = PutInputData.get_input_data_list_from_csv(csv_path, allow_duplicated_input_data=True)
-    print(actual_members)
     assert actual_members[0] == CsvInputData(
         input_data_name="data1", input_data_path="s3://example.com/data1", input_data_id="id1", sign_required=None
     )

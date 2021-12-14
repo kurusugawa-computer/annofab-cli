@@ -3,9 +3,6 @@ import datetime
 import json
 import logging
 import multiprocessing
-import os
-import pickle
-import shutil
 import zipfile
 from dataclasses import dataclass
 from functools import partial
@@ -108,31 +105,6 @@ class Database:
         self.annotations_zip_path = Path(f"{self.checkpoint_dir}/simple-annotations.zip")
 
         self.logging_prefix = f"project_id={project_id}"
-
-    def __write_checkpoint(self, obj, pickle_file_name):
-        """
-        チェックポイントファイルに書き込む。書き込み対象のファイルが存在すれば、書き込む前に同階層にバックアップファイルを作成する。
-        """
-
-        pickle_file_path = f"{self.checkpoint_dir}/{pickle_file_name}"
-        if os.path.exists(pickle_file_path):
-            dest_file_name = f"{self.filename_timestamp}_{pickle_file_name}"
-            dest_path = f"{self.checkpoint_dir}/{dest_file_name}"
-            shutil.copyfile(pickle_file_path, dest_path)
-
-        with open(pickle_file_path, "wb") as file:
-            pickle.dump(obj, file)
-
-    def __read_checkpoint(self, pickle_file_name):
-        file_path = f"{self.checkpoint_dir}/{pickle_file_name}"
-        if not os.path.exists(file_path):
-            return None
-        with open(file_path, "rb") as file:
-            return pickle.load(file)
-
-    def read_account_statistics_from_checkpoint(self) -> List[Dict[str, Any]]:
-        result = self.__read_checkpoint("account_statistics.pickel")
-        return result if result is not None else []
 
     @staticmethod
     def task_exists(task_list: List[Task], task_id) -> bool:
@@ -581,10 +553,6 @@ class Database:
         # DB用のJSONファイルをダウンロードする
         self._download_db_file(is_latest, is_get_task_histories_one_of_each=is_get_task_histories_one_of_each)
         self._log_annotation_zip_info()
-
-        # 統計情報の出力
-        account_statistics = self.annofab_service.wrapper.get_account_statistics(self.project_id)
-        self.__write_checkpoint(account_statistics, "account_statistics.pickel")
 
     def get_labor_list(self, project_id: str) -> List[Dict[str, Any]]:
         def to_new_labor(e: Dict[str, Any]) -> Dict[str, Any]:

@@ -149,6 +149,18 @@ class TestCommandLine:
             ]
         )
 
+    def test_list_worktime(self):
+        main(
+            [
+                "statistics",
+                "list_worktime",
+                "--project_id",
+                project_id,
+                "--output",
+                str(out_dir / "list-worktime-out.csv"),
+            ]
+        )
+
 
 # class TestListSubmittedTaskCountMain:
 #     main_obj = None
