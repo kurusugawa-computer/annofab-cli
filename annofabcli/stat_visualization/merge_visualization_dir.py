@@ -19,7 +19,6 @@ from annofabcli.statistics.csv import (
     FILENAME_PERFORMANCE_PER_FIRST_ANNOTATION_STARTED_DATE,
     FILENAME_PERFORMANCE_PER_USER,
     FILENAME_TASK_LIST,
-    Csv,
 )
 from annofabcli.statistics.visualization.dataframe.user_performance import UserPerformance, WholePerformance
 from annofabcli.statistics.visualization.dataframe.whole_productivity_per_date import (
@@ -103,27 +102,15 @@ def merge_visualization_dir(  # pylint: disable=too-many-statements
         df = pandas.concat(list_df, axis=0)
         return df
 
-    def write_csv_for_summary(df_task: pandas.DataFrame) -> None:
-        """
-        タスク関係のCSVを出力する。
-        """
-        csv_obj.write_task_count_summary(df_task)
-        csv_obj.write_worktime_summary(df_task)
-        csv_obj.write_count_summary(df_task)
-
     def write_info_json() -> None:
         info = {"target_dir_list": [str(e) for e in project_dir_list]}
         print_json(info, is_pretty=True, output=str(output_dir / "info.json"))
-
-    # CSV生成
-    csv_obj = Csv(str(output_dir))
 
     execute_merge_performance_per_user()
     execute_merge_performance_per_date()
     merge_performance_per_first_annotation_started_date()
     df_task = merge_task_list()
     print_csv(df_task, output=str(output_dir / FILENAME_TASK_LIST))
-    write_csv_for_summary(df_task)
 
     # HTML生成
     write_performance_scatter_per_user(
@@ -138,7 +125,7 @@ def merge_visualization_dir(  # pylint: disable=too-many-statements
         user_id_list=user_id_list,
     )
     write_task_histogram(
-        csv=output_dir / FILENAME_TASK_LIST, output_dir=output_dir / "histogram", minimal_output=minimal_output
+        csv=output_dir / FILENAME_TASK_LIST, output_dir=output_dir / "histogram"
     )
 
     # info.jsonを出力
