@@ -60,48 +60,6 @@ class Csv:
                     all_columns.remove(key)
         return all_columns
 
-    def write_inspection_list(
-        self,
-        df: pandas.DataFrame,
-        dropped_columns: Optional[List[str]] = None,
-        only_error_corrected: bool = True,
-    ) -> None:
-        """
-        検査コメント一覧をTSVで出力する
-        Args:
-            df
-            dropped_columns:
-            only_error_corrected:
-
-        Returns:
-
-        """
-        if len(df) == 0:
-            logger.info("検査コメント一覧が0件のため出力しない")
-            return
-
-        prior_columns = [
-            "inspection_id",
-            "task_id",
-            "input_data_id",
-            "phase",
-            "status",
-            "commenter_user_id",
-            "label_name",
-            "comment",
-            "phrases",
-            "phrases_name",
-            "created_datetime",
-            "updated_datetime",
-        ]
-
-        if only_error_corrected:
-            suffix = "返信を除く_修正不要を除く"
-        else:
-            suffix = "返信を除く_修正不要を含む"
-
-        required_columns = self.create_required_columns(df, prior_columns, dropped_columns)
-        self._write_csv(f"検査コメントlist-{suffix}.csv", df[required_columns])
 
     def write_task_list(self, df: pandas.DataFrame, dropped_columns: Optional[List[str]] = None) -> None:
         """

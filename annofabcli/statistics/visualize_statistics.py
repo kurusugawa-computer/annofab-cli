@@ -328,22 +328,6 @@ class WriteCsvGraph:
         for phase in TaskPhase:
             self._catch_exception(self._write_メンバー別作業時間平均_画像1枚あたり_by_phase)(phase)
 
-    def write_csv_for_inspection(self) -> None:
-        """
-        検査コメント関係の情報をCSVに出力する。
-        """
-        inspection_df = self.table_obj.create_inspection_df()
-        inspection_df_all = self.table_obj.create_inspection_df(only_error_corrected=False)
-
-        self._catch_exception(self.csv_obj.write_inspection_list)(
-            df=inspection_df, dropped_columns=["data"], only_error_corrected=True
-        )
-        self._catch_exception(self.csv_obj.write_inspection_list)(
-            df=inspection_df_all,
-            dropped_columns=["data"],
-            only_error_corrected=False,
-        )
-
     def write_csv_for_annotation(self) -> None:
         """
         アノテーション関係の情報をCSVに出力する。
@@ -489,7 +473,6 @@ def visualize_statistics(
         # CSV
         write_obj.write_labor_and_task_history()
         write_obj.write_csv_for_annotation()
-        write_obj.write_csv_for_inspection()
         write_obj.write_メンバー別作業時間平均_画像1枚あたり_by_phase()
 
 

@@ -279,55 +279,6 @@ class Table:
 
         return inspection_phrases_dict
 
-    def create_inspection_df(self, exclude_reply: bool = True, only_error_corrected: bool = True):
-        """
-        検査コメント一覧から、検査コメント用のdataframeを作成する。
-        新たに追加した列は、"commenter_user_id","label_name"である.
-        Args:
-            exclude_reply: 返信コメント（「対応完了しました」など）を除く
-            only_error_corrected: 「修正済」のコメントのみ。指摘はあったが、修正不要の場合は除外される。
-
-        Returns:
-            検査コメント一覧
-
-        """
-
-        master_task_list = self._get_task_list()
-        inspections_dict = self._get_inspections_dict()
-
-        all_inspection_list = []
-
-        for task in master_task_list:
-            task_id = task["task_id"]
-            if task_id not in inspections_dict:
-                continue
-
-            input_data_dict = inspections_dict[task_id]
-            for inspection_list in input_data_dict.values():
-
-                # 検査コメントを絞り込む
-                filtered_inspection_list = [
-                    e for e in inspection_list if self._inspection_condition(e, exclude_reply, only_error_corrected)
-                ]
-
-                for inspection in filtered_inspection_list:
-                    commenter_account_id = inspection["commenter_account_id"]
-                    inspection["commenter_user_id"] = self._get_user_id(commenter_account_id)
-                    inspection["commenter_username"] = self._get_username(commenter_account_id)
-
-                    # inspection_phrases_dict に存在しないkeyを取得する可能性があるので、dict.getを用いる
-                    inspection["phrases_name"] = [
-                        self.inspection_phrases_dict.get(key) for key in inspection["phrases"]
-                    ]
-
-                    inspection["label_name"] = None
-                    if inspection["label_id"] is not None:
-                        inspection["label_name"] = self.label_dict.get(inspection["label_id"])
-
-                all_inspection_list.extend(filtered_inspection_list)
-
-        df = pandas.DataFrame(all_inspection_list)
-        return df
 
     def _set_first_phase_from_task_history(
         self, task: Task, task_history: Optional[TaskHistory], column_prefix: str
