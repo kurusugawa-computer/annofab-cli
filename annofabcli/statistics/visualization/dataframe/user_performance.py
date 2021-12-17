@@ -479,8 +479,8 @@ class UserPerformance:
                 f"task_count_{phase}",
                 f"input_data_count_{phase}",
                 f"annotation_count_{phase}",
-                f"{worktime_key_for_phase}_worktime/input_data_count_{phase}",
-                f"{worktime_key_for_phase}_worktime/annotation_count_{phase}",
+                f"{worktime_type.value}_worktime/input_data_count_{phase}",
+                f"{worktime_type.value}_worktime/annotation_count_{phase}",
             ]
             if worktime_type == WorktimeType.ACTUAL:
                 tooltip_item.append("last_working_date_")
