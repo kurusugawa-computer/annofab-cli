@@ -1006,10 +1006,10 @@ class WholeProductivityPerFirstAnnotationStartedDate:
             {
                 "x": "dt_date",
                 "y_info_list": [
-                    {"column": "worktime_hour/annotation_count", "legend": "入力データあたり作業時間(合計)"},
-                    {"column": "annotation_worktime_hour/annotation_count", "legend": "入力データあたり作業時間(教師付)"},
-                    {"column": "inspection_worktime_hour/annotation_count", "legend": "入力データあたり作業時間(検査)"},
-                    {"column": "acceptance_worktime_hour/annotation_count", "legend": "入力データあたり作業時間(受入)"},
+                    {"column": "worktime_hour/annotation_count", "legend": "アノテーション作業時間(合計)"},
+                    {"column": "annotation_worktime_hour/annotation_count", "legend": "アノテーションあたり作業時間(教師付)"},
+                    {"column": "inspection_worktime_hour/annotation_count", "legend": "アノテーションあたり作業時間(検査)"},
+                    {"column": "acceptance_worktime_hour/annotation_count", "legend": "アノテーションあたり作業時間(受入)"},
                 ],
             },
         ]
