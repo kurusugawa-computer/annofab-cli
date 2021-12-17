@@ -14,7 +14,7 @@ from annofabcli.statistics.csv import FILENAME_TASK_LIST
 logger = logging.getLogger(__name__)
 
 
-def write_task_histogram(csv: Path, output_dir: Path, minimal_output: bool = False) -> None:
+def write_task_histogram(csv: Path, output_dir: Path) -> None:
     """
     ヒストグラムを出力する
     """
@@ -33,7 +33,7 @@ def write_task_histogram(csv: Path, output_dir: Path, minimal_output: bool = Fal
 class WriteTaskHistogram(AbstractCommandLineWithoutWebapiInterface):
     def main(self):
         args = self.args
-        write_task_histogram(csv=args.csv, output_dir=args.output_dir, minimal_output=args.minimal)
+        write_task_histogram(csv=args.csv, output_dir=args.output_dir)
 
 
 def main(args):

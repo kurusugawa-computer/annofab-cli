@@ -303,7 +303,6 @@ class WriteCsvGraph:
         task_df = self._get_task_df()
         self._catch_exception(self.csv_obj.write_task_list)(task_df, dropped_columns=["input_data_id_list"])
 
-
     def write_labor_and_task_history(self) -> None:
         df_labor = self._get_labor_df()
         self._catch_exception(self.csv_obj.write_labor_list)(df_labor)

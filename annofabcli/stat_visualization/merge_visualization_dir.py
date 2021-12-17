@@ -19,7 +19,6 @@ from annofabcli.statistics.csv import (
     FILENAME_PERFORMANCE_PER_FIRST_ANNOTATION_STARTED_DATE,
     FILENAME_PERFORMANCE_PER_USER,
     FILENAME_TASK_LIST,
-    Csv,
 )
 from annofabcli.statistics.visualization.dataframe.user_performance import UserPerformance, WholePerformance
 from annofabcli.statistics.visualization.dataframe.whole_productivity_per_date import (
@@ -106,9 +105,6 @@ def merge_visualization_dir(  # pylint: disable=too-many-statements
     def write_info_json() -> None:
         info = {"target_dir_list": [str(e) for e in project_dir_list]}
         print_json(info, is_pretty=True, output=str(output_dir / "info.json"))
-
-    # CSV生成
-    csv_obj = Csv(str(output_dir))
 
     execute_merge_performance_per_user()
     execute_merge_performance_per_date()
