@@ -336,9 +336,6 @@ class WriteCsvGraph:
         self._catch_exception(self.csv_obj.write_ラベルごとのアノテーション数)(annotation_df)
 
     def write_labor_and_task_history(self) -> None:
-        task_history_df = self._get_task_history_df()
-        self._catch_exception(self.csv_obj.write_task_history_list)(task_history_df)
-
         df_labor = self._get_labor_df()
         self._catch_exception(self.csv_obj.write_labor_list)(df_labor)
 
