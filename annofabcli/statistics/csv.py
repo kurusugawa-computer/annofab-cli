@@ -60,7 +60,6 @@ class Csv:
                     all_columns.remove(key)
         return all_columns
 
-
     def write_task_list(self, df: pandas.DataFrame, dropped_columns: Optional[List[str]] = None) -> None:
         """
         タスク一覧をTSVで出力する
@@ -144,7 +143,6 @@ class Csv:
         required_columns = self.create_required_columns(df, prior_columns, dropped_columns)
         self._write_csv(FILENAME_TASK_LIST, df[required_columns])
 
-
     def write_labor_list(self, df: pandas.DataFrame, dropped_columns: Optional[List[str]] = None) -> None:
         """
         労務管理一覧をCSVで出力する
@@ -172,8 +170,6 @@ class Csv:
         df = df.sort_values(["date", "user_id"])
         required_columns = self.create_required_columns(df, prior_columns, dropped_columns)
         self._write_csv(f"労務管理list.csv", df[required_columns])
-
-
 
     def write_member_list(self, df: pandas.DataFrame, dropped_columns: Optional[List[str]] = None):
         """
@@ -207,23 +203,6 @@ class Csv:
         ]
         required_columns = self.create_required_columns(df, prior_columns, dropped_columns)
         self._write_csv(f"メンバlist.csv", df[required_columns])
-
-    def write_ラベルごとのアノテーション数(self, df: pandas.DataFrame):
-        """
-        アノテーションラベルごとの個数を出力
-        """
-        if len(df) == 0:
-            logger.info("アノテーションラベルごとの一覧が0件のため出力しない")
-            return
-
-        prior_columns = [
-            "task_id",
-            "input_data_count",
-            "status",
-            "phase",
-        ]
-        required_columns = self.create_required_columns(df, prior_columns, dropped_columns=None)
-        self._write_csv(f"タスクlist-ラベルごとのアノテーション数.csv", df[required_columns])
 
 
     @staticmethod

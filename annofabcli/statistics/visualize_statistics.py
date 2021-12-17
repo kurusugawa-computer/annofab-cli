@@ -11,7 +11,7 @@ from typing import Any, Callable, Collection, List, Optional
 
 import annofabapi
 import pandas
-from annofabapi.models import ProjectMemberRole, TaskPhase
+from annofabapi.models import ProjectMemberRole
 from dataclasses_json import DataClassJsonMixin
 
 import annofabcli
@@ -30,7 +30,7 @@ from annofabcli.statistics.csv import (
     Csv,
 )
 from annofabcli.statistics.database import Database, Query
-from annofabcli.statistics.table import AggregationBy, Table
+from annofabcli.statistics.table import Table
 from annofabcli.statistics.visualization.dataframe.cumulative_productivity import (
     AcceptorCumulativeProductivity,
     AnnotatorCumulativeProductivity,
@@ -191,7 +191,6 @@ class WriteCsvGraph:
         self._catch_exception(self.histogram_obj.write_histogram_for_worktime)(task_df)
         self._catch_exception(self.histogram_obj.write_histogram_for_other)(task_df)
 
-
     def write_histogram_for_annotation(self) -> None:
         """
         アノテーションに関するヒストグラムを出力する。
@@ -304,12 +303,6 @@ class WriteCsvGraph:
         task_df = self._get_task_df()
         self._catch_exception(self.csv_obj.write_task_list)(task_df, dropped_columns=["input_data_id_list"])
 
-    def write_csv_for_annotation(self) -> None:
-        """
-        アノテーション関係の情報をCSVに出力する。
-        """
-        annotation_df = self._get_annotation_df()
-        self._catch_exception(self.csv_obj.write_ラベルごとのアノテーション数)(annotation_df)
 
     def write_labor_and_task_history(self) -> None:
         df_labor = self._get_labor_df()
@@ -443,7 +436,6 @@ def visualize_statistics(
 
         # CSV
         write_obj.write_labor_and_task_history()
-        write_obj.write_csv_for_annotation()
 
 
 def visualize_statistics_wrapper(
