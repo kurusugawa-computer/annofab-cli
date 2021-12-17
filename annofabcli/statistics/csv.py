@@ -225,17 +225,6 @@ class Csv:
         required_columns = self.create_required_columns(df, prior_columns, dropped_columns=None)
         self._write_csv(f"タスクlist-ラベルごとのアノテーション数.csv", df[required_columns])
 
-    def write_メンバー別作業時間平均_画像1枚あたり(self, df: pandas.DataFrame, phase: TaskPhase):
-        if len(df) == 0:
-            logger.info(f"メンバー別画像1枚当たりの作業時間平均-{phase.value} 一覧が0件のため、出力しない")
-            return
-        self._write_csv(f"画像1枚当たり作業時間/画像1枚当たり作業時間_{phase.value}.csv", df)
-
-    def write_メンバー別作業時間平均_タスク1個あたり(self, df: pandas.DataFrame, phase: TaskPhase):
-        if len(df) == 0:
-            logger.info(f"メンバ別タスク1個当たりの作業時間平均-{phase.value} 一覧が0件のため、出力しない")
-            return
-        self._write_csv(f"タスク1個当たり作業時間/タスク1個当たり作業時間_{phase.value}.csv", df)
 
     @staticmethod
     def get_productivity_columns(phase_list: List[str]) -> List[Tuple[str, str]]:

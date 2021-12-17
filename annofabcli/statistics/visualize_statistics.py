@@ -308,18 +308,6 @@ class WriteCsvGraph:
         task_df = self._get_task_df()
         self._catch_exception(self.csv_obj.write_task_list)(task_df, dropped_columns=["input_data_id_list"])
 
-
-    def _write_メンバー別作業時間平均_画像1枚あたり_by_phase(self, phase: TaskPhase):
-        df_by_inputs = self.table_obj.create_worktime_per_image_df(AggregationBy.BY_INPUTS, phase)
-        self.csv_obj.write_メンバー別作業時間平均_画像1枚あたり(df_by_inputs, phase)
-
-        df_by_tasks = self.table_obj.create_worktime_per_image_df(AggregationBy.BY_TASKS, phase)
-        self.csv_obj.write_メンバー別作業時間平均_タスク1個あたり(df_by_tasks, phase)
-
-    def write_メンバー別作業時間平均_画像1枚あたり_by_phase(self):
-        for phase in TaskPhase:
-            self._catch_exception(self._write_メンバー別作業時間平均_画像1枚あたり_by_phase)(phase)
-
     def write_csv_for_annotation(self) -> None:
         """
         アノテーション関係の情報をCSVに出力する。
@@ -460,7 +448,6 @@ def visualize_statistics(
         # CSV
         write_obj.write_labor_and_task_history()
         write_obj.write_csv_for_annotation()
-        write_obj.write_メンバー別作業時間平均_画像1枚あたり_by_phase()
 
 
 def visualize_statistics_wrapper(
