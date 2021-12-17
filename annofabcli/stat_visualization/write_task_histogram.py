@@ -30,7 +30,6 @@ def write_task_histogram(csv: Path, output_dir: Path, minimal_output: bool = Fal
     _catch_exception(histogram_obj.write_histogram_for_other)(task_df)
 
 
-
 class WriteTaskHistogram(AbstractCommandLineWithoutWebapiInterface):
     def main(self):
         args = self.args

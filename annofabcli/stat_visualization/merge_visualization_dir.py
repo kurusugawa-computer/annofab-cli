@@ -103,7 +103,6 @@ def merge_visualization_dir(  # pylint: disable=too-many-statements
         df = pandas.concat(list_df, axis=0)
         return df
 
-
     def write_info_json() -> None:
         info = {"target_dir_list": [str(e) for e in project_dir_list]}
         print_json(info, is_pretty=True, output=str(output_dir / "info.json"))

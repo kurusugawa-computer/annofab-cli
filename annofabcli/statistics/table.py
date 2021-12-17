@@ -279,7 +279,6 @@ class Table:
 
         return inspection_phrases_dict
 
-
     def _set_first_phase_from_task_history(
         self, task: Task, task_history: Optional[TaskHistory], column_prefix: str
     ) -> Task:
