@@ -144,37 +144,6 @@ class Csv:
         required_columns = self.create_required_columns(df, prior_columns, dropped_columns)
         self._write_csv(FILENAME_TASK_LIST, df[required_columns])
 
-    def write_task_history_list(self, df: pandas.DataFrame, dropped_columns: Optional[List[str]] = None) -> None:
-        """
-        タスク履歴一覧をCSVで出力する
-
-        Args:
-            arg_df:
-            dropped_columns:
-
-        Returns:
-
-        """
-        if len(df) == 0:
-            logger.info("タスク履歴一覧が0件のため出力しない")
-            return
-
-        prior_columns = [
-            "project_id",
-            "task_id",
-            "task_history_id",
-            "phase",
-            "phase_stage",
-            "started_datetime",
-            "ended_datetime",
-            "user_id",
-            "username",
-            "worktime_hour",
-        ]
-
-        df = df.sort_values(["task_id", "started_datetime"])
-        required_columns = self.create_required_columns(df, prior_columns, dropped_columns)
-        self._write_csv(f"タスク履歴list.csv", df[required_columns])
 
     def write_labor_list(self, df: pandas.DataFrame, dropped_columns: Optional[List[str]] = None) -> None:
         """
@@ -204,100 +173,7 @@ class Csv:
         required_columns = self.create_required_columns(df, prior_columns, dropped_columns)
         self._write_csv(f"労務管理list.csv", df[required_columns])
 
-    def write_worktime_summary(self, df: pandas.DataFrame) -> None:
-        """
-        作業時間に関する集計結果をCSVで出力する。
 
-        Args:
-            df: タスクListのDataFrame
-
-        """
-        columns = [
-            "sum_worktime_hour",
-            "annotation_worktime_hour",
-            "inspection_worktime_hour",
-            "acceptance_worktime_hour",
-            "first_annotator_worktime_hour",
-            "first_inspector_worktime_hour",
-            "first_acceptor_worktime_hour",
-            "first_annotation_worktime_hour",
-            "first_inspection_worktime_hour",
-            "first_acceptance_worktime_hour",
-        ]
-        stat_df = df[columns].describe().T
-        stat_df["sum"] = df[columns].sum().values
-        stat_df["column"] = stat_df.index
-
-        # 自動検査されたタスクを除外
-        ignored_auto_inspection_df = df[~df["inspection_is_skipped"]]
-        columns_inspection = [
-            "inspection_worktime_hour",
-            "first_inspector_worktime_hour",
-            "first_inspection_worktime_hour",
-        ]
-        stat_inspection_df = ignored_auto_inspection_df[columns_inspection].describe().T
-        stat_inspection_df["sum"] = df[columns_inspection].sum().values
-        stat_inspection_df["column"] = stat_inspection_df.index + "_ignored_auto_inspection"
-
-        # 自動受入されたタスクを除外
-        ignore_auto_acceptance_df = df[~df["acceptance_is_skipped"]]
-        columns_acceptance = [
-            "acceptance_worktime_hour",
-            "first_acceptor_worktime_hour",
-            "first_acceptance_worktime_hour",
-        ]
-        stat_acceptance_df = ignore_auto_acceptance_df[columns_acceptance].describe().T
-        stat_acceptance_df["sum"] = df[columns_acceptance].sum().values
-        stat_acceptance_df["column"] = stat_acceptance_df.index + "_ignored_auto_acceptance"
-
-        target_df = pandas.concat([stat_df, stat_inspection_df, stat_acceptance_df])
-        target_df = target_df[["column", "mean", "std", "min", "25%", "50%", "75%", "max", "count", "sum"]]
-
-        self._write_csv(f"集計結果csv/集計-作業時間.csv", target_df)
-
-    def write_count_summary(self, df: pandas.DataFrame) -> None:
-        """
-        個数に関する集計結果をCSVで出力する。
-
-        Args:
-            df: タスクListのDataFrame
-
-        """
-        columns = [
-            "input_data_count",
-            "annotation_count",
-            "inspection_count",
-        ]
-        stat_df = df[columns].describe().T
-        stat_df["sum"] = df[columns].sum().values
-        stat_df["column"] = stat_df.index
-
-        target_df = stat_df[["column", "mean", "std", "min", "25%", "50%", "75%", "max", "count", "sum"]]
-
-        self._write_csv(f"集計結果csv/集計-個数.csv", target_df)
-
-    def write_task_count_summary(self, df: pandas.DataFrame) -> None:
-        """
-        タスク数の集計結果をCSVで出力する。
-
-        Args:
-            df: タスクListのDataFrame
-
-        """
-        columns = [
-            "annotator_is_changed",
-            "inspector_is_changed",
-            "acceptor_is_changed",
-            "inspection_is_skipped",
-            "acceptance_is_skipped",
-        ]
-
-        sum_series = df[columns].sum()
-        sum_df = pandas.DataFrame()
-        sum_df["column"] = sum_series.index
-        sum_df["count_if_true"] = sum_series.values
-        sum_df = sum_df.append({"column": "task_count", "count_if_true": len(df)}, ignore_index=True)
-        self._write_csv(f"集計結果csv/集計-タスク数.csv", sum_df)
 
     def write_member_list(self, df: pandas.DataFrame, dropped_columns: Optional[List[str]] = None):
         """

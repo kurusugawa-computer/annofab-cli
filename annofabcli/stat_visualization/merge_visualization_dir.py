@@ -103,13 +103,6 @@ def merge_visualization_dir(  # pylint: disable=too-many-statements
         df = pandas.concat(list_df, axis=0)
         return df
 
-    def write_csv_for_summary(df_task: pandas.DataFrame) -> None:
-        """
-        タスク関係のCSVを出力する。
-        """
-        csv_obj.write_task_count_summary(df_task)
-        csv_obj.write_worktime_summary(df_task)
-        csv_obj.write_count_summary(df_task)
 
     def write_info_json() -> None:
         info = {"target_dir_list": [str(e) for e in project_dir_list]}
@@ -123,7 +116,6 @@ def merge_visualization_dir(  # pylint: disable=too-many-statements
     merge_performance_per_first_annotation_started_date()
     df_task = merge_task_list()
     print_csv(df_task, output=str(output_dir / FILENAME_TASK_LIST))
-    write_csv_for_summary(df_task)
 
     # HTML生成
     write_performance_scatter_per_user(

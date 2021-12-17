@@ -308,14 +308,6 @@ class WriteCsvGraph:
         task_df = self._get_task_df()
         self._catch_exception(self.csv_obj.write_task_list)(task_df, dropped_columns=["input_data_id_list"])
 
-    def write_csv_for_summary(self) -> None:
-        """
-        タスク関係のCSVを出力する。
-        """
-        task_df = self._get_task_df()
-        self._catch_exception(self.csv_obj.write_task_count_summary)(task_df)
-        self._catch_exception(self.csv_obj.write_worktime_summary)(task_df)
-        self._catch_exception(self.csv_obj.write_count_summary)(task_df)
 
     def _write_メンバー別作業時間平均_画像1枚あたり_by_phase(self, phase: TaskPhase):
         df_by_inputs = self.table_obj.create_worktime_per_image_df(AggregationBy.BY_INPUTS, phase)
@@ -447,8 +439,6 @@ def visualize_statistics(
         annofab_service, project_id, table_obj, output_project_dir, labor_df=df_labor, minimal_output=minimal_output
     )
     write_obj.write_csv_for_task()
-
-    write_obj.write_csv_for_summary()
 
     write_obj._catch_exception(write_obj.write_user_performance)()
 
