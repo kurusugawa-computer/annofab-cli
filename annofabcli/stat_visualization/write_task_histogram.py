@@ -23,16 +23,12 @@ def write_task_histogram(csv: Path, output_dir: Path, minimal_output: bool = Fal
         logger.warning(f"タスク一覧が0件のため、グラフを出力しません。")
         return
 
-    # holivesのloadに時間がかかって、helpコマンドの出力が遅いため、遅延ロードする
+    # holoviews のloadに時間がかかって、helpコマンドの出力が遅いため、遅延ロードする
     histogram_module = importlib.import_module("annofabcli.statistics.histogram")
     histogram_obj = histogram_module.Histogram(outdir=str(output_dir))  # type: ignore
     _catch_exception(histogram_obj.write_histogram_for_worktime)(task_df)
     _catch_exception(histogram_obj.write_histogram_for_other)(task_df)
 
-    if not minimal_output:
-        _catch_exception(histogram_obj.write_histogram_for_annotation_worktime_by_user)(task_df)
-        _catch_exception(histogram_obj.write_histogram_for_inspection_worktime_by_user)(task_df)
-        _catch_exception(histogram_obj.write_histogram_for_acceptance_worktime_by_user)(task_df)
 
 
 class WriteTaskHistogram(AbstractCommandLineWithoutWebapiInterface):

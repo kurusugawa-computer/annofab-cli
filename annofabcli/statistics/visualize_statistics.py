@@ -191,10 +191,6 @@ class WriteCsvGraph:
         self._catch_exception(self.histogram_obj.write_histogram_for_worktime)(task_df)
         self._catch_exception(self.histogram_obj.write_histogram_for_other)(task_df)
 
-        if not self.minimal_output:
-            self._catch_exception(self.histogram_obj.write_histogram_for_annotation_worktime_by_user)(task_df)
-            self._catch_exception(self.histogram_obj.write_histogram_for_inspection_worktime_by_user)(task_df)
-            self._catch_exception(self.histogram_obj.write_histogram_for_acceptance_worktime_by_user)(task_df)
 
     def write_histogram_for_annotation(self) -> None:
         """
