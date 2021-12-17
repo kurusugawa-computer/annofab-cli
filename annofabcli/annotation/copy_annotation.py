@@ -4,6 +4,7 @@ import sys
 from abc import ABC
 from dataclasses import dataclass
 from typing import Any, Dict, List, Optional, Tuple
+
 import annofabapi
 from annofabapi.utils import can_put_annotation
 

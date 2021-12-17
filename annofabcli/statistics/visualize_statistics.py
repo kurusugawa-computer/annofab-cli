@@ -11,7 +11,7 @@ from typing import Any, Callable, Collection, List, Optional
 
 import annofabapi
 import pandas
-from annofabapi.models import ProjectMemberRole, TaskPhase
+from annofabapi.models import ProjectMemberRole
 from dataclasses_json import DataClassJsonMixin
 
 import annofabcli
@@ -30,7 +30,7 @@ from annofabcli.statistics.csv import (
     Csv,
 )
 from annofabcli.statistics.database import Database, Query
-from annofabcli.statistics.table import AggregationBy, Table
+from annofabcli.statistics.table import Table
 from annofabcli.statistics.visualization.dataframe.cumulative_productivity import (
     AcceptorCumulativeProductivity,
     AnnotatorCumulativeProductivity,
@@ -191,11 +191,6 @@ class WriteCsvGraph:
         self._catch_exception(self.histogram_obj.write_histogram_for_worktime)(task_df)
         self._catch_exception(self.histogram_obj.write_histogram_for_other)(task_df)
 
-        if not self.minimal_output:
-            self._catch_exception(self.histogram_obj.write_histogram_for_annotation_worktime_by_user)(task_df)
-            self._catch_exception(self.histogram_obj.write_histogram_for_inspection_worktime_by_user)(task_df)
-            self._catch_exception(self.histogram_obj.write_histogram_for_acceptance_worktime_by_user)(task_df)
-
     def write_histogram_for_annotation(self) -> None:
         """
         アノテーションに関するヒストグラムを出力する。
@@ -308,53 +303,7 @@ class WriteCsvGraph:
         task_df = self._get_task_df()
         self._catch_exception(self.csv_obj.write_task_list)(task_df, dropped_columns=["input_data_id_list"])
 
-    def write_csv_for_summary(self) -> None:
-        """
-        タスク関係のCSVを出力する。
-        """
-        task_df = self._get_task_df()
-        self._catch_exception(self.csv_obj.write_task_count_summary)(task_df)
-        self._catch_exception(self.csv_obj.write_worktime_summary)(task_df)
-        self._catch_exception(self.csv_obj.write_count_summary)(task_df)
-
-    def _write_メンバー別作業時間平均_画像1枚あたり_by_phase(self, phase: TaskPhase):
-        df_by_inputs = self.table_obj.create_worktime_per_image_df(AggregationBy.BY_INPUTS, phase)
-        self.csv_obj.write_メンバー別作業時間平均_画像1枚あたり(df_by_inputs, phase)
-
-        df_by_tasks = self.table_obj.create_worktime_per_image_df(AggregationBy.BY_TASKS, phase)
-        self.csv_obj.write_メンバー別作業時間平均_タスク1個あたり(df_by_tasks, phase)
-
-    def write_メンバー別作業時間平均_画像1枚あたり_by_phase(self):
-        for phase in TaskPhase:
-            self._catch_exception(self._write_メンバー別作業時間平均_画像1枚あたり_by_phase)(phase)
-
-    def write_csv_for_inspection(self) -> None:
-        """
-        検査コメント関係の情報をCSVに出力する。
-        """
-        inspection_df = self.table_obj.create_inspection_df()
-        inspection_df_all = self.table_obj.create_inspection_df(only_error_corrected=False)
-
-        self._catch_exception(self.csv_obj.write_inspection_list)(
-            df=inspection_df, dropped_columns=["data"], only_error_corrected=True
-        )
-        self._catch_exception(self.csv_obj.write_inspection_list)(
-            df=inspection_df_all,
-            dropped_columns=["data"],
-            only_error_corrected=False,
-        )
-
-    def write_csv_for_annotation(self) -> None:
-        """
-        アノテーション関係の情報をCSVに出力する。
-        """
-        annotation_df = self._get_annotation_df()
-        self._catch_exception(self.csv_obj.write_ラベルごとのアノテーション数)(annotation_df)
-
     def write_labor_and_task_history(self) -> None:
-        task_history_df = self._get_task_history_df()
-        self._catch_exception(self.csv_obj.write_task_history_list)(task_history_df)
-
         df_labor = self._get_labor_df()
         self._catch_exception(self.csv_obj.write_labor_list)(df_labor)
 
@@ -467,8 +416,6 @@ def visualize_statistics(
     )
     write_obj.write_csv_for_task()
 
-    write_obj.write_csv_for_summary()
-
     write_obj._catch_exception(write_obj.write_user_performance)()
 
     # ヒストグラム
@@ -488,9 +435,6 @@ def visualize_statistics(
 
         # CSV
         write_obj.write_labor_and_task_history()
-        write_obj.write_csv_for_annotation()
-        write_obj.write_csv_for_inspection()
-        write_obj.write_メンバー別作業時間平均_画像1枚あたり_by_phase()
 
 
 def visualize_statistics_wrapper(
