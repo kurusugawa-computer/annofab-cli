@@ -6,7 +6,7 @@ import pandas
 from annofabapi.models import TaskStatus
 
 from annofabcli.statistics.csv import Csv
-from annofabcli.statistics.list_annotation_count import GettingAnnotationCounterByInputData
+from annofabcli.statistics.list_annotation_count import GettingAnnotationCounterByInputData, GettingAnnotationCounterByTask
 from annofabcli.statistics.list_worktime import WorktimeFromTaskHistoryEvent, get_df_worktime
 from annofabcli.statistics.summarize_task_count import SimpleTaskStatus, get_step_for_current_phase
 from annofabcli.statistics.summarize_task_count_by_task_id import create_task_count_summary_df, get_task_id_prefix
@@ -473,8 +473,9 @@ class TestGettingAnnotationCounterByInputData:
             }
         )
 
-
-        counter2 = GettingAnnotationCounterByInputData.get_annotation_counter(annotation, target_labels=["climatic"], target_attributes=[("bird", "occluded")])
+        counter2 = GettingAnnotationCounterByInputData.get_annotation_counter(
+            annotation, target_labels=["climatic"], target_attributes=[("bird", "occluded")]
+        )
         assert counter2.labels_counter == collections.Counter({"climatic": 1})
         assert counter2.attributes_counter == collections.Counter(
             {
@@ -482,11 +483,59 @@ class TestGettingAnnotationCounterByInputData:
             }
         )
 
-
-
     def test_get_annotation_counter_list(self):
         counter_list = GettingAnnotationCounterByInputData.get_annotation_counter_list(
             data_path / "simple-annotations.zip"
         )
-        print(len(counter_list))
+        assert len(counter_list) == 4
+
+    def test_print_labels_count(self):
+        counter_list = GettingAnnotationCounterByInputData.get_annotation_counter_list(
+            data_path / "simple-annotations.zip"
+        )
+        GettingAnnotationCounterByInputData.print_labels_count(
+            counter_list,
+            output_file=out_path / "list_annotation_count/labels_count_by_input_data.csv",
+            label_columns=["dog", "human"],
+        )
+
+    def test_print_attributes_count(self):
+        counter_list = GettingAnnotationCounterByInputData.get_annotation_counter_list(
+            data_path / "simple-annotations.zip"
+        )
         print(counter_list)
+        GettingAnnotationCounterByInputData.print_attributes_count(
+            counter_list,
+            output_file=out_path / "list_annotation_count/attributes_count_by_input_data.csv",
+            attribute_columns=[("Cat", "occluded", "True"), ("climatic", "temparature", "20")],
+        )
+
+
+
+class TestGettingAnnotationCounterByTask:
+
+    def test_get_annotation_counter_list(self):
+        counter_list = GettingAnnotationCounterByTask.get_annotation_counter_list(
+            data_path / "simple-annotations.zip"
+        )
+        assert len(counter_list) == 2
+
+    def test_print_labels_count(self):
+        counter_list = GettingAnnotationCounterByTask.get_annotation_counter_list(
+            data_path / "simple-annotations.zip"
+        )
+        GettingAnnotationCounterByTask.print_labels_count(
+            counter_list,
+            output_file=out_path / "list_annotation_count/labels_count_by_task.csv",
+            label_columns=["dog", "human"],
+        )
+
+    def test_print_attributes_count(self):
+        counter_list = GettingAnnotationCounterByTask.get_annotation_counter_list(
+            data_path / "simple-annotations.zip"
+        )
+        GettingAnnotationCounterByTask.print_attributes_count(
+            counter_list,
+            output_file=out_path / "list_annotation_count/attributes_count_by_task.csv",
+            attribute_columns=[("Cat", "occluded", "True"), ("climatic", "temparature", "20")],
+        )

@@ -39,6 +39,7 @@ from annofabcli.common.facade import (
     convert_annotation_specs_labels_v2_to_v1,
     match_annotation_with_task_query,
 )
+from annofabcli.common.utils import print_csv
 from annofabcli.common.visualize import AddProps, MessageLocale
 
 logger = logging.getLogger(__name__)
@@ -213,6 +214,90 @@ class GettingAnnotationCounterByInputData:
 
         return counter_list
 
+    @classmethod
+    def print_labels_count(
+        cls,
+        counter_list: list[AnnotationCounterByInputData],
+        output_file: Path,
+        label_columns: Optional[list[str]] = None,
+        csv_format: Optional[dict[str, Any]] = None,
+    ):
+        def to_dict(c: AnnotationCounterByInputData) -> dict[str, Any]:
+            d = {
+                "input_data_id": c.input_data_id,
+                "input_data_name": c.input_data_name,
+                "task_id": c.task_id,
+                "task_status": c.task_status.value,
+                "task_phase": c.task_phase.value,
+                "task_phase_stage": c.task_phase_stage,
+            }
+            d.update(c.labels_counter)
+            return d
+
+        basic_columns = ["input_data_id", "input_data_name", "task_id", "task_status", "task_phase", "task_phase_stage"]
+        if label_columns is not None:
+            value_columns = [e for e in label_columns]
+        else:
+            label_column_set = {label for c in counter_list for label in c.labels_counter}
+            value_columns = sorted(list(label_column_set))
+
+        columns = basic_columns + value_columns
+        df = pandas.DataFrame([to_dict(e) for e in counter_list], columns=columns)
+
+        # NaNを0に変換する
+        df.fillna({e: 0 for e in value_columns}, inplace=True)
+
+        print_csv(df, output=str(output_file), to_csv_kwargs=csv_format)
+
+    @classmethod
+    def print_attributes_count(
+        cls,
+        counter_list: list[AnnotationCounterByInputData],
+        output_file: Path,
+        attribute_columns: Optional[list[AttributesKey]] = None,
+        csv_format: Optional[dict[str, Any]] = None,
+    ):
+        def to_cell(c: AnnotationCounterByInputData) -> dict[tuple[str, str, str], Any]:
+            cell = {
+                ("", "", "input_data_id"): c.input_data_id,
+                ("", "", "input_data_name"): c.input_data_name,
+                ("", "", "task_id"): c.task_id,
+                ("", "", "task_status"): c.task_status.value,
+                ("", "", "task_phase"): c.task_phase.value,
+                ("", "", "task_phase_stage"): c.task_phase_stage,
+            }
+            cell.update(c.attributes_counter)
+
+            return cell
+
+        # TODO 別にずらす
+        # if len(attribute_columns) == 0:
+        #     logger.warning(f"アノテーション仕様に集計対象の属性が定義されていないため、'{output_file}' は出力しません。")
+        #     return
+
+        basic_columns = [
+            ("", "", "input_data_id"),
+            ("", "", "input_data_name"),
+            ("", "", "task_id"),
+            ("", "", "task_status"),
+            ("", "", "task_phase"),
+            ("", "", "task_phase_stage"),
+        ]
+
+        if attribute_columns is not None:
+            value_columns = attribute_columns
+        else:
+            attr_key_set = {attr_key for c in counter_list for attr_key in c.attributes_counter}
+            value_columns = sorted(list(attr_key_set))
+
+        columns = basic_columns + value_columns
+        df = pandas.DataFrame([to_cell(e) for e in counter_list], columns=pandas.MultiIndex.from_tuples(columns))
+
+        # NaNを0に変換する
+        df.fillna({e: 0 for e in value_columns}, inplace=True)
+
+        print_csv(df, output=str(output_file), to_csv_kwargs=csv_format)
+
 
 class GettingAnnotationCounterByTask:
     """タスク単位で、ラベルごと/属性ごとのアノテーション数を集計情報を取得するメソッドの集まり。"""
@@ -316,6 +401,85 @@ class GettingAnnotationCounterByTask:
             counter_list.append(task_counter)
 
         return counter_list
+
+    @classmethod
+    def print_labels_count(
+        cls,
+        counter_list: list[AnnotationCounterByTask],
+        output_file: Path,
+        label_columns: Optional[list[str]] = None,
+        csv_format: Optional[dict[str, Any]] = None,
+    ):
+        def to_dict(c: AnnotationCounterByTask) -> dict[str, Any]:
+            d = {
+                "task_id": c.task_id,
+                "task_status": c.task_status.value,
+                "task_phase": c.task_phase.value,
+                "task_phase_stage": c.task_phase_stage,
+                "input_data_count": c.input_data_count,
+            }
+            d.update(c.labels_counter)
+            return d
+
+        basic_columns = ["task_id", "task_status", "task_phase", "task_phase_stage", "input_data_count"]
+        if label_columns is not None:
+            value_columns = [e for e in label_columns]
+        else:
+            label_column_set = {label for c in counter_list for label in c.labels_counter}
+            value_columns = sorted(list(label_column_set))
+
+        columns = basic_columns + value_columns
+        df = pandas.DataFrame([to_dict(e) for e in counter_list], columns=columns)
+
+        # NaNを0に変換する
+        df.fillna({e: 0 for e in value_columns}, inplace=True)
+
+        print_csv(df, output=str(output_file), to_csv_kwargs=csv_format)
+
+    @classmethod
+    def print_attributes_count(
+        cls,
+        counter_list: list[AnnotationCounterByTask],
+        output_file: Path,
+        attribute_columns: Optional[list[AttributesKey]] = None,
+        csv_format: Optional[dict[str, Any]] = None,
+    ):
+        def to_cell(c: AnnotationCounterByTask) -> dict[AttributesKey, Any]:
+            cell = {
+                ("", "", "task_id"): c.task_id,
+                ("", "", "task_status"): c.task_status.value,
+                ("", "", "task_phase"): c.task_phase.value,
+                ("", "", "task_phase_stage"): c.task_phase_stage,
+                ("", "", "input_data_count"): c.input_data_count,
+            }
+            cell.update(c.attributes_counter)
+            return cell
+
+        # if len(attribute_columns) == 0:
+        #     logger.warning(f"アノテーション仕様に集計対象の属性が定義されていないため、'{output_file}' は出力しません。")
+        #     return
+
+        basic_columns = [
+            ("", "", "task_id"),
+            ("", "", "task_status"),
+            ("", "", "task_phase"),
+            ("", "", "task_phase_stage"),
+            ("", "", "input_data_count"),
+        ]
+
+        if attribute_columns is not None:
+            value_columns = attribute_columns
+        else:
+            attr_key_set = {attr_key for c in counter_list for attr_key in c.attributes_counter}
+            value_columns = sorted(list(attr_key_set))
+
+        columns = basic_columns + value_columns
+        df = pandas.DataFrame([to_cell(e) for e in counter_list], columns=pandas.MultiIndex.from_tuples(columns))
+
+        # NaNを0に変換する
+        df.fillna({e: 0 for e in value_columns}, inplace=True)
+
+        print_csv(df, output=str(output_file), to_csv_kwargs=csv_format)
 
 
 class ListAnnotationCountMain:
@@ -430,124 +594,6 @@ class ListAnnotationCountMain:
             )
         else:
             raise RuntimeError(f"group_by='{group_by}'が対象外です。")
-
-    def print_labels_count_for_task(
-        self, task_counter_list: list[AnnotationCounterByTask], label_columns: list[str], output_dir: Path
-    ):
-        def to_dict(c: AnnotationCounterByTask) -> dict[str, Any]:
-            d = {
-                "task_id": c.task_id,
-                "task_status": c.task_status.value,
-                "task_phase": c.task_phase.value,
-                "task_phase_stage": c.task_phase_stage,
-                "input_data_count": c.input_data_count,
-            }
-            d.update({f"label_{label}": c.labels_counter[label] for label in label_columns})
-            return d
-
-        columns = ["task_id", "task_status", "task_phase", "task_phase_stage", "input_data_count"]
-        columns.extend([f"label_{e}" for e in label_columns])
-
-        df = pandas.DataFrame([to_dict(e) for e in task_counter_list], columns=columns)
-        output_file = str(output_dir / self.LABELS_COUNT_CSV)
-        annofabcli.utils.print_csv(df, output=output_file, to_csv_kwargs=self.CSV_FORMAT)
-
-    def print_attributes_count_for_task(
-        self,
-        task_counter_list: list[AnnotationCounterByTask],
-        attribute_columns: list[Tuple[str, str, str]],
-        output_dir: Path,
-    ):
-        def to_cell(c: AnnotationCounterByTask) -> dict[AttributesColumn, Any]:
-            cell = {
-                ("", "", "task_id"): c.task_id,
-                ("", "", "task_status"): c.task_status.value,
-                ("", "", "task_phase"): c.task_phase.value,
-                ("", "", "task_phase_stage"): c.task_phase_stage,
-                ("", "", "input_data_count"): c.input_data_count,
-            }
-            for col in attribute_columns:
-                cell.update({col: c.attributes_count[col]})
-
-            return cell
-
-        output_file = str(output_dir / self.ATTRIBUTES_COUNT_CSV)
-        if len(attribute_columns) == 0:
-            logger.warning(f"アノテーション仕様に集計対象の属性が定義されていないため、'{output_file}' は出力しません。")
-            return
-
-        columns = [
-            ("", "", "task_id"),
-            ("", "", "task_status"),
-            ("", "", "task_phase"),
-            ("", "", "task_phase_stage"),
-            ("", "", "input_data_count"),
-        ]
-        columns.extend(attribute_columns)
-        df = pandas.DataFrame([to_cell(e) for e in task_counter_list], columns=pandas.MultiIndex.from_tuples(columns))
-
-        annofabcli.utils.print_csv(df, output=output_file, to_csv_kwargs=self.CSV_FORMAT)
-
-    def print_labels_count_for_input_data(
-        self, input_data_counter_list: list[AnnotationCounterByInputData], label_columns: list[str], output_dir: Path
-    ):
-        def to_dict(c: AnnotationCounterByInputData) -> dict[str, Any]:
-            d = {
-                "input_data_id": c.input_data_id,
-                "input_data_name": c.input_data_name,
-                "task_id": c.task_id,
-                "task_status": c.task_status.value,
-                "task_phase": c.task_phase.value,
-                "task_phase_stage": c.task_phase_stage,
-            }
-            d.update({f"label_{label}": c.labels_count[label] for label in label_columns})
-            return d
-
-        columns = ["input_data_id", "input_data_name", "task_id", "task_status", "task_phase", "task_phase_stage"]
-        columns.extend([f"label_{e}" for e in label_columns])
-
-        df = pandas.DataFrame([to_dict(e) for e in input_data_counter_list])
-        output_file = str(output_dir / self.LABELS_COUNT_CSV)
-        annofabcli.utils.print_csv(df, output=output_file, to_csv_kwargs=self.CSV_FORMAT)
-
-    def print_attributes_count_for_input_data(
-        self,
-        input_data_counter_list: list[AnnotationCounterByInputData],
-        attribute_columns: list[Tuple[str, str, str]],
-        output_dir: Path,
-    ):
-        def to_cell(c: AnnotationCounterByInputData) -> dict[AttributesColumn, Any]:
-            cell = {
-                ("", "", "input_data_id"): c.input_data_id,
-                ("", "", "input_data_name"): c.input_data_name,
-                ("", "", "task_id"): c.task_id,
-                ("", "", "task_status"): c.task_status.value,
-                ("", "", "task_phase"): c.task_phase.value,
-                ("", "", "task_phase_stage"): c.task_phase_stage,
-            }
-            for col in attribute_columns:
-                cell.update({col: c.attributes_count[col]})
-
-            return cell
-
-        output_file = str(output_dir / self.ATTRIBUTES_COUNT_CSV)
-        if len(attribute_columns) == 0:
-            logger.warning(f"アノテーション仕様に集計対象の属性が定義されていないため、'{output_file}' は出力しません。")
-            return
-
-        columns = [
-            ("", "", "input_data_id"),
-            ("", "", "input_data_name"),
-            ("", "", "task_id"),
-            ("", "", "task_status"),
-            ("", "", "task_phase"),
-            ("", "", "task_phase_stage"),
-        ]
-        columns.extend(attribute_columns)
-        df = pandas.DataFrame(
-            [to_cell(e) for e in input_data_counter_list], columns=pandas.MultiIndex.from_tuples(columns)
-        )
-        annofabcli.utils.print_csv(df, output=output_file, to_csv_kwargs=self.CSV_FORMAT)
 
     def get_annotation_count_list():
         group_by = GroupBy(args.group_by)
