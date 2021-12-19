@@ -4,6 +4,7 @@ import abc
 import argparse
 import collections
 import logging
+import tempfile
 import zipfile
 from dataclasses import dataclass
 from enum import Enum
@@ -30,8 +31,6 @@ from annofabcli.common.cli import (
     AbstractCommandLineInterface,
     ArgumentParser,
     build_annofabapi_resource_and_login,
-    get_json_from_args,
-    get_wait_options_from_args,
 )
 from annofabcli.common.download import DownloadingFile
 from annofabcli.common.facade import (
@@ -269,11 +268,6 @@ class GettingAnnotationCounterByInputData:
             cell.update(c.attributes_counter)
 
             return cell
-
-        # TODO 別にずらす
-        # if len(attribute_columns) == 0:
-        #     logger.warning(f"アノテーション仕様に集計対象の属性が定義されていないため、'{output_file}' は出力しません。")
-        #     return
 
         basic_columns = [
             ("", "", "input_data_id"),
@@ -558,61 +552,63 @@ class ListAnnotationCountMain:
         attributes_columns = self._get_target_attributes_columns(labels_v1)
         return (label_columns, attributes_columns)
 
-    def get_annotation_counter_list(
+    def print_annotation_counter_csv(
         self,
         project_id: str,
         annotation_path: Path,
         group_by: GroupBy,
+        output_dir: Path,
         *,
         target_task_ids: Optional[Collection[str]] = None,
         task_query: Optional[TaskQuery] = None,
-        target_labels: Optional[Collection[str]] = None,
-        target_attributes: Optional[Collection[tuple[str, str]]] = None,
-    ) -> list[AnnotationCounter]:
+    ):
 
-        if target_attributes is None:
-            # 集計対象の属性を、選択肢系の属性にする
-            _, attribute_columns = self.get_target_columns(project_id)
-            target_attributes = [(label, attr_name) for (label, attr_name, _) in attribute_columns]
+        labels_count_csv = output_dir / "labels_count.csv"
+        attributes_count_csv = output_dir / "attributes_count.csv"
+
+        # 集計対象の属性を、選択肢系の属性にする
+        label_columns, attribute_columns = self.get_target_columns(project_id)
+        if len(attribute_columns) == 0:
+            logger.info(f"アノテーション仕様に集計対象の属性が定義されていないため、{attributes_count_csv} は出力しません。")
+
+        target_attributes = [(label, attr_name) for (label, attr_name, _) in attribute_columns]
 
         if group_by == GroupBy.INPUT_DATA_ID:
-            return GettingAnnotationCounterByInputData.get_annotation_counter_list(
+            counter_list_by_input_data = GettingAnnotationCounterByInputData.get_annotation_counter_list(
                 annotation_path,
                 target_task_ids=target_task_ids,
                 task_query=task_query,
-                target_labels=target_labels,
                 target_attributes=target_attributes,
             )
+
+            GettingAnnotationCounterByInputData.print_labels_count(
+                counter_list_by_input_data, labels_count_csv, label_columns=label_columns
+            )
+
+            if len(attribute_columns) > 0:
+                GettingAnnotationCounterByInputData.print_attributes_count(
+                    counter_list_by_input_data, attributes_count_csv, attribute_columns=attribute_columns
+                )
 
         elif group_by == GroupBy.TASK_ID:
-            return GettingAnnotationCounterByTask.get_annotation_counter_list(
+            counter_list_by_task = GettingAnnotationCounterByTask.get_annotation_counter_list(
                 annotation_path,
                 target_task_ids=target_task_ids,
                 task_query=task_query,
-                target_labels=target_labels,
                 target_attributes=target_attributes,
             )
+
+            GettingAnnotationCounterByTask.print_labels_count(
+                counter_list_by_task, labels_count_csv, label_columns=label_columns
+            )
+
+            if len(attribute_columns) > 0:
+                GettingAnnotationCounterByTask.print_attributes_count(
+                    counter_list_by_task, attributes_count_csv, attribute_columns=attribute_columns
+                )
+
         else:
             raise RuntimeError(f"group_by='{group_by}'が対象外です。")
-
-    def get_annotation_count_list():
-        group_by = GroupBy(args.group_by)
-        if group_by == GroupBy.TASK_ID:
-            self.list_annotation_count_by_task(
-                project_id,
-                annotation_path=annotation_path,
-                output_dir=Path(args.output_dir),
-                task_id_set=task_id_set,
-                task_query=task_query,
-            )
-        elif group_by == GroupBy.INPUT_DATA_ID:
-            self.list_annotation_count_by_input_data(
-                project_id,
-                annotation_path=annotation_path,
-                output_dir=Path(args.output_dir),
-                task_id_set=task_id_set,
-                task_query=task_query,
-            )
 
 
 class ListAnnotationCount(AbstractCommandLineInterface):
@@ -620,31 +616,15 @@ class ListAnnotationCount(AbstractCommandLineInterface):
     アノテーション数情報を出力する。
     """
 
-    CSV_FORMAT = {"encoding": "utf_8_sig", "index": False}
-    ATTRIBUTES_COUNT_CSV = "attributes_count.csv"
-    LABELS_COUNT_CSV = "labels_count.csv"
-
     def main(self):
         args = self.args
 
         project_id = args.project_id
         super().validate_project(project_id, project_member_roles=None)
 
-        if args.annotation is not None:
-            annotation_path = Path(args.annotation)
-        else:
-            cache_dir = annofabcli.utils.get_cache_dir()
-            annotation_path = cache_dir / f"annotation-{project_id}.zip"
-            wait_options = get_wait_options_from_args(get_json_from_args(args.wait_options), DEFAULT_WAIT_OPTIONS)
-            downloading_obj = DownloadingFile(self.service)
-            downloading_obj.download_annotation_zip(
-                project_id,
-                dest_path=str(annotation_path),
-                is_latest=args.latest,
-                wait_options=wait_options,
-            )
+        annotation_path = Path(args.annotation) if args.annotation is not None else None
 
-        task_id_set = set(annofabcli.common.cli.get_list_from_args(args.task_id)) if args.task_id is not None else None
+        task_id_list = annofabcli.common.cli.get_list_from_args(args.task_id) if args.task_id is not None else None
         task_query = (
             TaskQuery.from_dict(annofabcli.common.cli.get_json_from_args(args.task_query))
             if args.task_query is not None
@@ -652,20 +632,33 @@ class ListAnnotationCount(AbstractCommandLineInterface):
         )
 
         group_by = GroupBy(args.group_by)
-        if group_by == GroupBy.TASK_ID:
-            self.list_annotation_count_by_task(
-                project_id,
+
+        main_obj = ListAnnotationCountMain(self.service)
+
+        if annotation_path is not None:
+            with tempfile.NamedTemporaryFile() as f:
+                annotation_path = Path(f.name)
+                downloading_obj = DownloadingFile(self.service)
+                downloading_obj.download_annotation_zip(
+                    project_id,
+                    dest_path=str(annotation_path),
+                    is_latest=args.latest,
+                )
+                main_obj.print_annotation_counter_csv(
+                    project_id=project_id,
+                    annotation_path=annotation_path,
+                    group_by=group_by,
+                    output_dir=args.output_dir,
+                    target_task_ids=task_id_list,
+                    task_query=task_query,
+                )
+        else:
+            main_obj.print_annotation_counter_csv(
+                project_id=project_id,
                 annotation_path=annotation_path,
-                output_dir=Path(args.output_dir),
-                task_id_set=task_id_set,
-                task_query=task_query,
-            )
-        elif group_by == GroupBy.INPUT_DATA_ID:
-            self.list_annotation_count_by_input_data(
-                project_id,
-                annotation_path=annotation_path,
-                output_dir=Path(args.output_dir),
-                task_id_set=task_id_set,
+                group_by=group_by,
+                output_dir=args.output_dir,
+                target_task_ids=task_id_list,
                 task_query=task_query,
             )
 

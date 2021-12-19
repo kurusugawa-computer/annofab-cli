@@ -6,7 +6,10 @@ import pandas
 from annofabapi.models import TaskStatus
 
 from annofabcli.statistics.csv import Csv
-from annofabcli.statistics.list_annotation_count import GettingAnnotationCounterByInputData, GettingAnnotationCounterByTask
+from annofabcli.statistics.list_annotation_count import (
+    GettingAnnotationCounterByInputData,
+    GettingAnnotationCounterByTask,
+)
 from annofabcli.statistics.list_worktime import WorktimeFromTaskHistoryEvent, get_df_worktime
 from annofabcli.statistics.summarize_task_count import SimpleTaskStatus, get_step_for_current_phase
 from annofabcli.statistics.summarize_task_count_by_task_id import create_task_count_summary_df, get_task_id_prefix
@@ -511,19 +514,13 @@ class TestGettingAnnotationCounterByInputData:
         )
 
 
-
 class TestGettingAnnotationCounterByTask:
-
     def test_get_annotation_counter_list(self):
-        counter_list = GettingAnnotationCounterByTask.get_annotation_counter_list(
-            data_path / "simple-annotations.zip"
-        )
+        counter_list = GettingAnnotationCounterByTask.get_annotation_counter_list(data_path / "simple-annotations.zip")
         assert len(counter_list) == 2
 
     def test_print_labels_count(self):
-        counter_list = GettingAnnotationCounterByTask.get_annotation_counter_list(
-            data_path / "simple-annotations.zip"
-        )
+        counter_list = GettingAnnotationCounterByTask.get_annotation_counter_list(data_path / "simple-annotations.zip")
         GettingAnnotationCounterByTask.print_labels_count(
             counter_list,
             output_file=out_path / "list_annotation_count/labels_count_by_task.csv",
@@ -531,9 +528,7 @@ class TestGettingAnnotationCounterByTask:
         )
 
     def test_print_attributes_count(self):
-        counter_list = GettingAnnotationCounterByTask.get_annotation_counter_list(
-            data_path / "simple-annotations.zip"
-        )
+        counter_list = GettingAnnotationCounterByTask.get_annotation_counter_list(data_path / "simple-annotations.zip")
         GettingAnnotationCounterByTask.print_attributes_count(
             counter_list,
             output_file=out_path / "list_annotation_count/attributes_count_by_task.csv",
