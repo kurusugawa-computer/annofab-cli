@@ -27,11 +27,7 @@ from dataclasses_json import DataClassJsonMixin
 import annofabcli
 import annofabcli.common.cli
 from annofabcli import AnnofabApiFacade
-from annofabcli.common.cli import (
-    AbstractCommandLineInterface,
-    ArgumentParser,
-    build_annofabapi_resource_and_login,
-)
+from annofabcli.common.cli import AbstractCommandLineInterface, ArgumentParser, build_annofabapi_resource_and_login
 from annofabcli.common.download import DownloadingFile
 from annofabcli.common.facade import (
     TaskQuery,
@@ -235,7 +231,7 @@ class GettingAnnotationCounterByInputData:
 
         basic_columns = ["input_data_id", "input_data_name", "task_id", "task_status", "task_phase", "task_phase_stage"]
         if label_columns is not None:
-            value_columns = [e for e in label_columns]
+            value_columns = label_columns
         else:
             label_column_set = {label for c in counter_list for label in c.labels_counter}
             value_columns = sorted(list(label_column_set))
@@ -417,7 +413,7 @@ class GettingAnnotationCounterByTask:
 
         basic_columns = ["task_id", "task_status", "task_phase", "task_phase_stage", "input_data_count"]
         if label_columns is not None:
-            value_columns = [e for e in label_columns]
+            value_columns = label_columns
         else:
             label_column_set = {label for c in counter_list for label in c.labels_counter}
             value_columns = sorted(list(label_column_set))
@@ -620,6 +616,7 @@ class ListAnnotationCount(AbstractCommandLineInterface):
         args = self.args
 
         project_id = args.project_id
+        output_dir: Path = args.output_dir
         super().validate_project(project_id, project_member_roles=None)
 
         annotation_path = Path(args.annotation) if args.annotation is not None else None
@@ -635,7 +632,7 @@ class ListAnnotationCount(AbstractCommandLineInterface):
 
         main_obj = ListAnnotationCountMain(self.service)
 
-        if annotation_path is not None:
+        if annotation_path is None:
             with tempfile.NamedTemporaryFile() as f:
                 annotation_path = Path(f.name)
                 downloading_obj = DownloadingFile(self.service)
@@ -648,7 +645,7 @@ class ListAnnotationCount(AbstractCommandLineInterface):
                     project_id=project_id,
                     annotation_path=annotation_path,
                     group_by=group_by,
-                    output_dir=args.output_dir,
+                    output_dir=output_dir,
                     target_task_ids=task_id_list,
                     task_query=task_query,
                 )
@@ -657,7 +654,7 @@ class ListAnnotationCount(AbstractCommandLineInterface):
                 project_id=project_id,
                 annotation_path=annotation_path,
                 group_by=group_by,
-                output_dir=args.output_dir,
+                output_dir=output_dir,
                 target_task_ids=task_id_list,
                 task_query=task_query,
             )
@@ -670,7 +667,7 @@ def parse_args(parser: argparse.ArgumentParser):
     parser.add_argument(
         "--annotation", type=str, help="アノテーションzip、またはzipを展開したディレクトリを指定します。" "指定しない場合はAnnoFabからダウンロードします。"
     )
-    parser.add_argument("-o", "--output_dir", type=str, required=True, help="出力ディレクトリのパス")
+    parser.add_argument("-o", "--output_dir", type=Path, required=True, help="出力ディレクトリのパス")
 
     parser.add_argument(
         "--group_by",
