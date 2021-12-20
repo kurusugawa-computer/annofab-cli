@@ -468,7 +468,7 @@ class Table:
             input_data_dict_by_annotation = annotations_dict.get(arg_task["task_id"], None)
             if input_data_dict_by_annotation is not None:
                 for input_data_id in input_data_id_list:
-                    total_annotation_count += input_data_dict_by_annotation[input_data_id]["total_count"]
+                    total_annotation_count += input_data_dict_by_annotation[input_data_id]
             arg_task["annotation_count"] = total_annotation_count
 
         def set_inspection_info(arg_task):
