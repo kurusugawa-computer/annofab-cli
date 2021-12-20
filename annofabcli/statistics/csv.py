@@ -141,31 +141,3 @@ class Csv:
 
         required_columns = self.create_required_columns(df, prior_columns, dropped_columns)
         self._write_csv(FILENAME_TASK_LIST, df[required_columns])
-
-    def write_labor_list(self, df: pandas.DataFrame, dropped_columns: Optional[List[str]] = None) -> None:
-        """
-        労務管理一覧をCSVで出力する
-
-        Args:
-            df:
-            dropped_columns:
-
-        Returns:
-
-        """
-        if len(df) == 0:
-            logger.info("労務管理情報の一覧が0件のため出力しない")
-            return
-
-        prior_columns = [
-            "date",
-            "account_id",
-            "user_id",
-            "username",
-            "biography",
-            "actual_worktime_hour",
-        ]
-
-        df = df.sort_values(["date", "user_id"])
-        required_columns = self.create_required_columns(df, prior_columns, dropped_columns)
-        self._write_csv(f"労務管理list.csv", df[required_columns])

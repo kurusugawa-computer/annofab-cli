@@ -283,9 +283,11 @@ class WriteCsvGraph:
 
             annotator_obj.plot_task_metrics(self.output_dir / "line-graph/教師付者用/累積折れ線-横軸_タスク数-教師付者用.html", user_id_list)
 
-    def write_worktime_per_date(self, user_id_list: Optional[List[str]] = None) -> None:
+    def write_worktime_per_date(
+        self, user_id_list: Optional[List[str]] = None, df_labor: Optional[pandas.DataFrame] = None
+    ) -> None:
         """日ごとの作業時間情報を出力する。"""
-        obj = WorktimePerDate.from_webapi(self.service, self.project_id)
+        obj = WorktimePerDate.from_webapi(self.service, self.project_id, df_labor)
         obj.plot_cumulatively(self.output_dir / "line-graph/累積折れ線-横軸_日-縦軸_作業時間.html", user_id_list)
         obj.to_csv(self.output_dir / "ユーザ_日付list-作業時間.csv")
 
@@ -295,10 +297,6 @@ class WriteCsvGraph:
         """
         task_df = self._get_task_df()
         self._catch_exception(self.csv_obj.write_task_list)(task_df, dropped_columns=["input_data_id_list"])
-
-    def write_labor_and_task_history(self) -> None:
-        df_labor = self._get_labor_df()
-        self._catch_exception(self.csv_obj.write_labor_list)(df_labor)
 
     def write_user_productivity_per_date(self, user_id_list: Optional[List[str]] = None):
         """ユーザごとの日ごとの生産性情報を出力する。"""
@@ -421,12 +419,9 @@ def visualize_statistics(
     write_obj.write_whole_productivity_per_first_annotation_started_date()
 
     if not minimal_output:
-        write_obj._catch_exception(write_obj.write_worktime_per_date)(user_id_list)
+        write_obj._catch_exception(write_obj.write_worktime_per_date)(user_id_list, df_labor=df_labor)
 
         write_obj._catch_exception(write_obj.write_user_productivity_per_date)(user_id_list)
-
-        # CSV
-        write_obj.write_labor_and_task_history()
 
 
 def visualize_statistics_wrapper(

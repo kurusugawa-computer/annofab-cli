@@ -53,7 +53,7 @@ def _get_worktime_dict_from_event(event: WorktimeFromTaskHistoryEvent) -> Workti
     return dict_result
 
 
-def _get_worktime_dict_from_event_list(task_history_event_list: list[WorktimeFromTaskHistoryEvent]) -> WorktimeDict:
+def get_worktime_dict_from_event_list(task_history_event_list: list[WorktimeFromTaskHistoryEvent]) -> WorktimeDict:
     dict_result: WorktimeDict = defaultdict(float)
 
     for event in task_history_event_list:
@@ -66,7 +66,7 @@ def _get_worktime_dict_from_event_list(task_history_event_list: list[WorktimeFro
 def get_df_worktime(
     task_history_event_list: list[WorktimeFromTaskHistoryEvent], member_list: list[dict[str, Any]]
 ) -> pandas.DataFrame:
-    dict_worktime = _get_worktime_dict_from_event_list(task_history_event_list)
+    dict_worktime = get_worktime_dict_from_event_list(task_history_event_list)
 
     s = pandas.Series(
         dict_worktime.values(),
