@@ -37,6 +37,7 @@
         "itertuples",
         "jmespath",
         "nargs",
+        "ncols",
         "netrc",
         "noqa",
         "notna",

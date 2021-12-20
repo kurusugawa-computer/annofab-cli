@@ -1,3 +1,4 @@
+import collections
 import json
 from pathlib import Path
 
@@ -5,6 +6,11 @@ import pandas
 from annofabapi.models import TaskStatus
 
 from annofabcli.statistics.csv import Csv
+from annofabcli.statistics.list_annotation_count import (
+    GroupBy,
+    ListAnnotationCounterByInputData,
+    ListAnnotationCounterByTask,
+)
 from annofabcli.statistics.list_worktime import WorktimeFromTaskHistoryEvent, get_df_worktime
 from annofabcli.statistics.summarize_task_count import SimpleTaskStatus, get_step_for_current_phase
 from annofabcli.statistics.summarize_task_count_by_task_id import create_task_count_summary_df, get_task_id_prefix
@@ -29,6 +35,7 @@ from annofabcli.statistics.visualization.dataframe.whole_productivity_per_date i
     WholeProductivityPerFirstAnnotationStartedDate,
 )
 from annofabcli.statistics.visualization.dataframe.worktime_per_date import WorktimePerDate
+from annofabcli.statistics.visualize_annotation_count import plot_attribute_histogram, plot_label_histogram
 from annofabcli.task_history_event.list_worktime import SimpleTaskHistoryEvent
 
 out_path = Path("./tests/out/statistics")
@@ -428,3 +435,125 @@ class TestProjectPerformance:
 
     def test_to_csv(self):
         self.obj.to_csv(self.output_dir / "プロジェクごとの生産性と品質.csv")
+
+
+class TestListAnnotationCounterByInputData:
+    def test_get_annotation_counter(self):
+        annotation = {
+            "task_id": "task1",
+            "task_phase": "acceptance",
+            "task_phase_stage": 1,
+            "task_status": "complete",
+            "input_data_id": "input1",
+            "input_data_name": "input1",
+            "details": [
+                {
+                    "label": "bird",
+                    "attributes": {
+                        "weight": 4,
+                        "occluded": True,
+                    },
+                },
+                {
+                    "label": "bird",
+                    "attributes": {
+                        "weight": 3,
+                        "occluded": True,
+                    },
+                },
+                {"label": "climatic", "attributes": {"weather": "sunny"}},
+            ],
+        }
+
+        counter = ListAnnotationCounterByInputData.get_annotation_counter(annotation)
+        assert counter.input_data_id == "input1"
+        assert counter.task_id == "task1"
+        assert counter.labels_counter == collections.Counter({"bird": 2, "climatic": 1})
+        assert counter.attributes_counter == collections.Counter(
+            {
+                ("bird", "weight", "4"): 1,
+                ("bird", "weight", "3"): 1,
+                ("bird", "occluded", "True"): 2,
+                ("climatic", "weather", "sunny"): 1,
+            }
+        )
+
+        counter2 = ListAnnotationCounterByInputData.get_annotation_counter(
+            annotation, target_labels=["climatic"], target_attributes=[("bird", "occluded", "True")]
+        )
+        assert counter2.labels_counter == collections.Counter({"climatic": 1})
+        assert counter2.attributes_counter == collections.Counter(
+            {
+                ("bird", "occluded", "True"): 2,
+            }
+        )
+
+    def test_get_annotation_counter_list(self):
+        counter_list = ListAnnotationCounterByInputData.get_annotation_counter_list(
+            data_path / "simple-annotations.zip"
+        )
+        assert len(counter_list) == 4
+
+    def test_print_labels_count(self):
+        counter_list = ListAnnotationCounterByInputData.get_annotation_counter_list(
+            data_path / "simple-annotations.zip"
+        )
+        ListAnnotationCounterByInputData.print_labels_count(
+            counter_list,
+            output_file=out_path / "list_annotation_count/labels_count_by_input_data.csv",
+            label_columns=["dog", "human"],
+        )
+
+    def test_print_attributes_count(self):
+        counter_list = ListAnnotationCounterByInputData.get_annotation_counter_list(
+            data_path / "simple-annotations.zip"
+        )
+        ListAnnotationCounterByInputData.print_attributes_count(
+            counter_list,
+            output_file=out_path / "list_annotation_count/attributes_count_by_input_data.csv",
+            attribute_columns=[("Cat", "occluded", "True"), ("climatic", "temparature", "20")],
+        )
+
+
+class TestListAnnotationCounterByTask:
+    def test_get_annotation_counter_list(self):
+        counter_list = ListAnnotationCounterByTask.get_annotation_counter_list(data_path / "simple-annotations.zip")
+        assert len(counter_list) == 2
+
+    def test_print_labels_count(self):
+        counter_list = ListAnnotationCounterByTask.get_annotation_counter_list(data_path / "simple-annotations.zip")
+        ListAnnotationCounterByTask.print_labels_count(
+            counter_list,
+            output_file=out_path / "list_annotation_count/labels_count_by_task.csv",
+            label_columns=["dog", "human"],
+        )
+
+    def test_print_attributes_count(self):
+        counter_list = ListAnnotationCounterByTask.get_annotation_counter_list(data_path / "simple-annotations.zip")
+        ListAnnotationCounterByTask.print_attributes_count(
+            counter_list,
+            output_file=out_path / "list_annotation_count/attributes_count_by_task.csv",
+            attribute_columns=[("Cat", "occluded", "True"), ("climatic", "temparature", "20")],
+        )
+
+
+class TestVisualizeAnnotationCount:
+    def test_plot_label_histogram(self):
+        counter_list = ListAnnotationCounterByInputData.get_annotation_counter_list(
+            data_path / "simple-annotations.zip"
+        )
+
+        plot_label_histogram(
+            counter_list,
+            group_by=GroupBy.INPUT_DATA_ID,
+            output_file=out_path / "visualize_annotation_count/labels_count_by_input_data.html",
+        )
+
+    def test_plot_attribute_histogram(self):
+        counter_list = ListAnnotationCounterByTask.get_annotation_counter_list(data_path / "simple-annotations.zip")
+
+        plot_attribute_histogram(
+            counter_list,
+            group_by=GroupBy.TASK_ID,
+            output_file=out_path / "visualize_annotation_count/attributes_count_by_task.html",
+        )

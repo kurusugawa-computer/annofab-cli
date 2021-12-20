@@ -124,9 +124,7 @@ def merge_visualization_dir(  # pylint: disable=too-many-statements
         minimal_output=minimal_output,
         user_id_list=user_id_list,
     )
-    write_task_histogram(
-        csv=output_dir / FILENAME_TASK_LIST, output_dir=output_dir / "histogram"
-    )
+    write_task_histogram(csv=output_dir / FILENAME_TASK_LIST, output_dir=output_dir / "histogram")
 
     # info.jsonを出力
     write_info_json()
