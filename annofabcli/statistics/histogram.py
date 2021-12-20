@@ -260,32 +260,3 @@ class Histogram:
         # 軸範囲が同期しないようにする
         layout = hv.Layout(histograms).options(shared_axes=False).cols(3)
         renderer.save(layout, output_file)
-
-    def write_histogram_for_annotation_count_by_label(self, df: pandas.DataFrame) -> None:
-        """
-        アノテーションラベルごとのアノテーション数をヒストグラムで出力する。
-        """
-        if len(df) == 0:
-            logger.info("タスク一覧が0件のため出力しない")
-            return
-
-        renderer = hv.renderer("bokeh")
-
-        output_file = f"{self.histogram_outdir}/ヒストグラム-ラベルごとのアノテーション数"
-        logger.debug(f"{output_file}.html を出力します。")
-
-        histograms = []
-        label_columns = [e for e in df.columns if e.startswith("label_")]
-
-        for column in label_columns:
-            label_name = column[len("label_") :]
-            histogram_name = HistogramName(
-                column=column, x_axis_label=f"'{label_name}'のアノテーション数", title=f"{label_name}"
-            )
-            hist = self._create_histogram(df, histogram_name=histogram_name)
-
-            histograms.append(hist)
-
-        # 軸範囲が同期しないようにする
-        layout = hv.Layout(histograms).options(shared_axes=False).cols(3)
-        renderer.save(layout, output_file)

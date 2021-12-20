@@ -13,8 +13,8 @@ import annofabcli.statistics.list_worktime
 import annofabcli.statistics.summarize_task_count
 import annofabcli.statistics.summarize_task_count_by_task_id
 import annofabcli.statistics.summarize_task_count_by_user
-import annofabcli.statistics.visualize_statistics
 import annofabcli.statistics.visualize_annotation_count
+import annofabcli.statistics.visualize_statistics
 
 
 def parse_args(parser: argparse.ArgumentParser):

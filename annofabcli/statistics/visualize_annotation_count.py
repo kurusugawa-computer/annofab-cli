@@ -72,19 +72,12 @@ def plot_label_histogram(
             y_axis_label=y_axis_label,
         )
 
-        fig.add_layout(Title(text=get_sub_title_from_series(df[col],decimals=2), text_font_size="11px"), "above")
+        fig.add_layout(Title(text=get_sub_title_from_series(df[col], decimals=2), text_font_size="11px"), "above")
         fig.add_layout(Title(text=str(col)), "above")
 
         hover = HoverTool(tooltips=[("interval", "@interval"), ("frequency", "@frequency")])
 
-        fig.quad(
-            source=source,
-            top="frequency",
-            bottom=0,
-            left="left",
-            right="right",
-            line_color="white"
-        )
+        fig.quad(source=source, top="frequency", bottom=0, left="left", right="right", line_color="white")
 
         fig.add_tools(hover)
         figure_list.append(fig)
@@ -126,19 +119,12 @@ def plot_attribute_histogram(
             x_axis_label="アノテーション数",
             y_axis_label=y_axis_label,
         )
-        fig.add_layout(Title(text=get_sub_title_from_series(df[col],decimals=2), text_font_size="11px"), "above")
+        fig.add_layout(Title(text=get_sub_title_from_series(df[col], decimals=2), text_font_size="11px"), "above")
         fig.add_layout(Title(text=f"{col[0]},{col[1]},{col[2]}"), "above")
 
         hover = HoverTool(tooltips=[("interval", "@interval"), ("frequency", "@frequency")])
 
-        fig.quad(
-            source=source,
-            top="frequency",
-            bottom=0,
-            left="left",
-            right="right",
-            line_color="white"
-        )
+        fig.quad(source=source, top="frequency", bottom=0, left="left", right="right", line_color="white")
 
         fig.add_tools(hover)
         figure_list.append(fig)
@@ -157,9 +143,9 @@ class VisualizeAnnotationCount(AbstractCommandLineInterface):
         group_by: GroupBy,
         annotation_path: Path,
         output_dir: Path,
+        bins: int,
         target_task_ids: Optional[Collection[str]] = None,
         task_query: Optional[TaskQuery] = None,
-        bins: Optional[int] = None,
     ):
         labels_count_html = output_dir / "labels_count.html"
         attributes_count_html = output_dir / "attributes_count.html"

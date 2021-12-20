@@ -191,13 +191,6 @@ class WriteCsvGraph:
         self._catch_exception(self.histogram_obj.write_histogram_for_worktime)(task_df)
         self._catch_exception(self.histogram_obj.write_histogram_for_other)(task_df)
 
-    def write_histogram_for_annotation(self) -> None:
-        """
-        アノテーションに関するヒストグラムを出力する。
-        """
-        annotation_df = self._get_annotation_df()
-        self._catch_exception(self.histogram_obj.write_histogram_for_annotation_count_by_label)(annotation_df)
-
     def write_user_performance(self) -> None:
         """
         ユーザごとの生産性と品質に関する情報を出力する。
@@ -428,7 +421,6 @@ def visualize_statistics(
     write_obj.write_whole_productivity_per_first_annotation_started_date()
 
     if not minimal_output:
-        write_obj.write_histogram_for_annotation()
         write_obj._catch_exception(write_obj.write_worktime_per_date)(user_id_list)
 
         write_obj._catch_exception(write_obj.write_user_productivity_per_date)(user_id_list)

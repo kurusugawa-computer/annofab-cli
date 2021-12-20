@@ -479,7 +479,7 @@ class TestListAnnotationCounterByInputData:
         )
 
         counter2 = ListAnnotationCounterByInputData.get_annotation_counter(
-            annotation, target_labels=["climatic"], target_attributes=[("bird", "occluded","True")]
+            annotation, target_labels=["climatic"], target_attributes=[("bird", "occluded", "True")]
         )
         assert counter2.labels_counter == collections.Counter({"climatic": 1})
         assert counter2.attributes_counter == collections.Counter(
