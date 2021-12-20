@@ -61,7 +61,7 @@ def plot_label_histogram(
 
         df_histogram = pandas.DataFrame({"frequency": hist, "left": bin_edges[:-1], "right": bin_edges[1:]})
         df_histogram["interval"] = [
-            f"{left:.2f} to {right:.2f}" for left, right in zip(df_histogram["left"], df_histogram["right"])
+            f"{left:.1f} to {right:.1f}" for left, right in zip(df_histogram["left"], df_histogram["right"])
         ]
 
         source = ColumnDataSource(df_histogram)
@@ -72,7 +72,7 @@ def plot_label_histogram(
             y_axis_label=y_axis_label,
         )
 
-        fig.add_layout(Title(text=get_sub_title_from_series(df[col]), text_font_size="11px"), "above")
+        fig.add_layout(Title(text=get_sub_title_from_series(df[col],decimals=2), text_font_size="11px"), "above")
         fig.add_layout(Title(text=str(col)), "above")
 
         hover = HoverTool(tooltips=[("interval", "@interval"), ("frequency", "@frequency")])
@@ -83,12 +83,13 @@ def plot_label_histogram(
             bottom=0,
             left="left",
             right="right",
+            line_color="white"
         )
 
         fig.add_tools(hover)
         figure_list.append(fig)
 
-    bokeh_obj = bokeh.layouts.gridplot(figure_list, ncols=4, merge_tools=False)
+    bokeh_obj = bokeh.layouts.gridplot(figure_list, ncols=4)
     output_file.parent.mkdir(exist_ok=True, parents=True)
     bokeh.plotting.reset_output()
     bokeh.plotting.output_file(output_file, title=output_file.stem)
@@ -115,7 +116,7 @@ def plot_attribute_histogram(
 
         df_histogram = pandas.DataFrame({"frequency": hist, "left": bin_edges[:-1], "right": bin_edges[1:]})
         df_histogram["interval"] = [
-            f"{left:.2f} to {right:.2f}" for left, right in zip(df_histogram["left"], df_histogram["right"])
+            f"{left:.1f} to {right:.1f}" for left, right in zip(df_histogram["left"], df_histogram["right"])
         ]
 
         source = ColumnDataSource(df_histogram)
@@ -125,7 +126,7 @@ def plot_attribute_histogram(
             x_axis_label="アノテーション数",
             y_axis_label=y_axis_label,
         )
-        fig.add_layout(Title(text=get_sub_title_from_series(df[col]), text_font_size="11px"), "above")
+        fig.add_layout(Title(text=get_sub_title_from_series(df[col],decimals=2), text_font_size="11px"), "above")
         fig.add_layout(Title(text=f"{col[0]},{col[1]},{col[2]}"), "above")
 
         hover = HoverTool(tooltips=[("interval", "@interval"), ("frequency", "@frequency")])
@@ -136,6 +137,7 @@ def plot_attribute_histogram(
             bottom=0,
             left="left",
             right="right",
+            line_color="white"
         )
 
         fig.add_tools(hover)
@@ -157,6 +159,7 @@ class VisualizeAnnotationCount(AbstractCommandLineInterface):
         output_dir: Path,
         target_task_ids: Optional[Collection[str]] = None,
         task_query: Optional[TaskQuery] = None,
+        bins: Optional[int] = None,
     ):
         labels_count_html = output_dir / "labels_count.html"
         attributes_count_html = output_dir / "attributes_count.html"
@@ -165,8 +168,6 @@ class VisualizeAnnotationCount(AbstractCommandLineInterface):
 
         # 集計対象の属性を、選択肢系の属性にする
         _, attribute_columns = main_obj.get_target_columns(project_id)
-        if len(attribute_columns) == 0:
-            logger.info(f"アノテーション仕様に集計対象の属性が定義されていないため、{attributes_count_html} は出力しません。")
 
         counter_list: Sequence[AnnotationCounter] = []
         if group_by == GroupBy.INPUT_DATA_ID:
@@ -188,8 +189,11 @@ class VisualizeAnnotationCount(AbstractCommandLineInterface):
         else:
             raise RuntimeError(f"group_by='{group_by}'が対象外です。")
 
-        plot_label_histogram(counter_list, group_by=group_by, output_file=labels_count_html)
-        plot_attribute_histogram(counter_list, group_by=group_by, output_file=attributes_count_html)
+        plot_label_histogram(counter_list, group_by=group_by, output_file=labels_count_html, bins=bins)
+        if len(attribute_columns) == 0:
+            logger.info(f"アノテーション仕様に集計対象の属性が定義されていないため、{attributes_count_html} は出力しません。")
+        else:
+            plot_attribute_histogram(counter_list, group_by=group_by, output_file=attributes_count_html, bins=bins)
 
     def main(self):
         args = self.args
@@ -225,6 +229,7 @@ class VisualizeAnnotationCount(AbstractCommandLineInterface):
                     output_dir=output_dir,
                     target_task_ids=task_id_list,
                     task_query=task_query,
+                    bins=args.bins,
                 )
         else:
             self.visualize_annotation_count(
@@ -234,6 +239,7 @@ class VisualizeAnnotationCount(AbstractCommandLineInterface):
                 output_dir=output_dir,
                 target_task_ids=task_id_list,
                 task_query=task_query,
+                bins=args.bins,
             )
 
 
@@ -244,14 +250,21 @@ def parse_args(parser: argparse.ArgumentParser):
     parser.add_argument(
         "--annotation", type=str, help="アノテーションzip、またはzipを展開したディレクトリを指定します。" "指定しない場合はAnnoFabからダウンロードします。"
     )
-    parser.add_argument("-o", "--output_dir", type=str, required=True, help="出力ディレクトリのパス")
+    parser.add_argument("-o", "--output_dir", type=Path, required=True, help="出力先ディレクトリのパス")
 
     parser.add_argument(
         "--group_by",
         type=str,
         choices=[GroupBy.TASK_ID.value, GroupBy.INPUT_DATA_ID.value],
         default=GroupBy.TASK_ID.value,
-        help="アノテーションの個数をどの単位で集約するかを指定してます。デフォルトは'task_id'です。",
+        help="アノテーションの個数をどの単位で集約するかを指定します。デフォルトは'task_id'です。",
+    )
+
+    parser.add_argument(
+        "--bins",
+        type=int,
+        default=20,
+        help="ヒストグラムのビンの数を指定します。",
     )
 
     parser.add_argument(
@@ -281,7 +294,7 @@ def main(args):
 def add_parser(subparsers: Optional[argparse._SubParsersAction] = None):
     subcommand_name = "visualize_annotation_count"
     subcommand_help = "各ラベル、各属性値のアノテーション数をヒストグラムで可視化します。"
-    description = "各ラベル、各属性値のアノテーション数をヒストグラムで可視化します。"
+    description = "各ラベル、各属性値のアノテーション数をヒストグラムで可視化したファイルを出力します。"
     parser = annofabcli.common.cli.add_parser(subparsers, subcommand_name, subcommand_help, description=description)
     parse_args(parser)
     return parser
