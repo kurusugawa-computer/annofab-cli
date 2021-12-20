@@ -26,6 +26,7 @@ Available Commands
    summarize_task_count_by_task_id
    summarize_task_count_by_user
    visualize
+   visualize_annotation_count
 
 Usage Details
 =================================
