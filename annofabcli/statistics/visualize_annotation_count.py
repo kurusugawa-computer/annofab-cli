@@ -2,87 +2,239 @@ from __future__ import annotations
 
 import argparse
 import logging
+import tempfile
 from pathlib import Path
-from typing import Any, List, Optional
+from typing import Any, Collection, Optional, Sequence
 
-import annofabapi
 import bokeh
 import numpy
 import pandas
-from bokeh.models import HoverTool
+from bokeh.models import HoverTool, Title
 from bokeh.plotting import ColumnDataSource, figure
 
 import annofabcli
 import annofabcli.common.cli
 from annofabcli import AnnofabApiFacade
-from annofabcli.common.cli import ArgumentParser, build_annofabapi_resource_and_login
-from annofabcli.statistics.list_annotation_count import AnnotationCounterByInputData, GroupBy
+from annofabcli.common.cli import AbstractCommandLineInterface, ArgumentParser, build_annofabapi_resource_and_login
+from annofabcli.common.download import DownloadingFile
+from annofabcli.common.facade import TaskQuery
+from annofabcli.statistics.histogram import get_sub_title_from_series
+from annofabcli.statistics.list_annotation_count import (
+    AnnotationCounter,
+    AttributesKey,
+    GroupBy,
+    ListAnnotationCounterByInputData,
+    ListAnnotationCounterByTask,
+    ListAnnotationCountMain,
+)
 
 logger = logging.getLogger(__name__)
 
 
-def create_hover_tool(tool_tip_items: Optional[List[str]] = None) -> HoverTool:
-    """
-    HoverTool用のオブジェクトを生成する。
-    """
-    if tool_tip_items is None:
-        tool_tip_items = []
-
-    detail_tooltips = [(e, f"@{{{e}}}") for e in tool_tip_items]
-    hover_tool = HoverTool(tooltips=[("index", "$index"), ("(x,y)", "($x, $y)")] + detail_tooltips)
-    return hover_tool
+def _get_y_axis_label(group_by: GroupBy) -> str:
+    if group_by == GroupBy.TASK_ID:
+        return "タスク数"
+    elif group_by == GroupBy.INPUT_DATA_ID:
+        return "入力データ数"
+    else:
+        raise RuntimeError(f"group_by='{group_by}'が対象外です。")
 
 
-class VisualizeAnnotationCountMain:
-    def __init__(self, service: annofabapi.Resource):
-        self.service = service
+def plot_label_histogram(
+    counter_list: Sequence[AnnotationCounter],
+    group_by: GroupBy,
+    output_file: Path,
+    target_labels: Optional[list[Any]] = None,
+    bins: int = 20,
+):
+    df = pandas.DataFrame([e.labels_counter for e in counter_list])
+    if target_labels is not None:
+        df = df[target_labels]
+    df.fillna(0, inplace=True)
 
-    @classmethod
-    def plot_label_histogram_by_input_data(
-        cls,
-        counter_list: list[AnnotationCounterByInputData],
-        output_file: Path,
-        target_labels: Optional[list[Any]] = None,
+    figure_list = []
+
+    y_axis_label = _get_y_axis_label(group_by)
+    for col in df.columns:
+        # numpy.histogramで20のビンに分割
+        hist, bin_edges = numpy.histogram(df[col], bins)
+
+        df_histogram = pandas.DataFrame({"frequency": hist, "left": bin_edges[:-1], "right": bin_edges[1:]})
+        df_histogram["interval"] = [
+            f"{left:.2f} to {right:.2f}" for left, right in zip(df_histogram["left"], df_histogram["right"])
+        ]
+
+        source = ColumnDataSource(df_histogram)
+        fig = figure(
+            plot_width=400,
+            plot_height=300,
+            x_axis_label="アノテーション数",
+            y_axis_label=y_axis_label,
+        )
+
+        fig.add_layout(Title(text=get_sub_title_from_series(df[col]), text_font_size="11px"), "above")
+        fig.add_layout(Title(text=str(col)), "above")
+
+        hover = HoverTool(tooltips=[("interval", "@interval"), ("frequency", "@frequency")])
+
+        fig.quad(
+            source=source,
+            top="frequency",
+            bottom=0,
+            left="left",
+            right="right",
+        )
+
+        fig.add_tools(hover)
+        figure_list.append(fig)
+
+    bokeh_obj = bokeh.layouts.gridplot(figure_list, ncols=4, merge_tools=False)
+    output_file.parent.mkdir(exist_ok=True, parents=True)
+    bokeh.plotting.reset_output()
+    bokeh.plotting.output_file(output_file, title=output_file.stem)
+    bokeh.plotting.save(bokeh_obj)
+
+
+def plot_attribute_histogram(
+    counter_list: Sequence[AnnotationCounter],
+    group_by: GroupBy,
+    output_file: Path,
+    target_attributes: Optional[list[AttributesKey]] = None,
+    bins: int = 20,
+):
+    df = pandas.DataFrame([e.attributes_counter for e in counter_list])
+    if target_attributes is not None:
+        df = df[target_attributes]
+    df.fillna(0, inplace=True)
+
+    figure_list = []
+    y_axis_label = _get_y_axis_label(group_by)
+
+    for col in sorted(df.columns):
+        hist, bin_edges = numpy.histogram(df[col], bins)
+
+        df_histogram = pandas.DataFrame({"frequency": hist, "left": bin_edges[:-1], "right": bin_edges[1:]})
+        df_histogram["interval"] = [
+            f"{left:.2f} to {right:.2f}" for left, right in zip(df_histogram["left"], df_histogram["right"])
+        ]
+
+        source = ColumnDataSource(df_histogram)
+        fig = figure(
+            plot_width=400,
+            plot_height=300,
+            x_axis_label="アノテーション数",
+            y_axis_label=y_axis_label,
+        )
+        fig.add_layout(Title(text=get_sub_title_from_series(df[col]), text_font_size="11px"), "above")
+        fig.add_layout(Title(text=f"{col[0]},{col[1]},{col[2]}"), "above")
+
+        hover = HoverTool(tooltips=[("interval", "@interval"), ("frequency", "@frequency")])
+
+        fig.quad(
+            source=source,
+            top="frequency",
+            bottom=0,
+            left="left",
+            right="right",
+        )
+
+        fig.add_tools(hover)
+        figure_list.append(fig)
+
+    bokeh_obj = bokeh.layouts.gridplot(figure_list, ncols=4)
+    output_file.parent.mkdir(exist_ok=True, parents=True)
+    bokeh.plotting.reset_output()
+    bokeh.plotting.output_file(output_file, title=output_file.stem)
+    bokeh.plotting.save(bokeh_obj)
+
+
+class VisualizeAnnotationCount(AbstractCommandLineInterface):
+    def visualize_annotation_count(
+        self,
+        project_id: str,
+        group_by: GroupBy,
+        annotation_path: Path,
+        output_dir: Path,
+        target_task_ids: Optional[Collection[str]] = None,
+        task_query: Optional[TaskQuery] = None,
     ):
-        # 正規分布に基づく1000個の数値の要素からなる配列
+        labels_count_html = output_dir / "labels_count.html"
+        attributes_count_html = output_dir / "attributes_count.html"
 
-        df = pandas.DataFrame([e.labels_counter for e in counter_list])
-        if target_labels is not None:
-            df = df[target_labels]
-        df.fillna(0, inplace=True)
+        main_obj = ListAnnotationCountMain(self.service)
 
-        figure_list = []
+        # 集計対象の属性を、選択肢系の属性にする
+        _, attribute_columns = main_obj.get_target_columns(project_id)
+        if len(attribute_columns) == 0:
+            logger.info(f"アノテーション仕様に集計対象の属性が定義されていないため、{attributes_count_html} は出力しません。")
 
-        for col in df.columns:
-            # numpy.histogramで20のビンに分割
-            hist, bin_edges = numpy.histogram(df[col], 20)
-
-            df_histogram = pandas.DataFrame({"frequency": hist, "left": bin_edges[:-1], "right": bin_edges[1:]})
-            df_histogram["interval"] = [
-                f"{left:.2f} to {right:.2f}" for left, right in zip(df_histogram["left"], df_histogram["right"])
-            ]
-
-            source = ColumnDataSource(df_histogram)
-            fig = figure(
-                plot_width=400,
-                plot_height=300,
-                title=col,
-                x_axis_label="アノテーション数",
-                y_axis_label="入力データ数",
+        counter_list: Sequence[AnnotationCounter] = []
+        if group_by == GroupBy.INPUT_DATA_ID:
+            counter_list = ListAnnotationCounterByInputData.get_annotation_counter_list(
+                annotation_path,
+                target_task_ids=target_task_ids,
+                task_query=task_query,
+                target_attributes=attribute_columns,
             )
 
-            hover = HoverTool(tooltips=[("interval", "@interval"), ("frequency", "@frequency")])
+        elif group_by == GroupBy.TASK_ID:
+            counter_list = ListAnnotationCounterByTask.get_annotation_counter_list(
+                annotation_path,
+                target_task_ids=target_task_ids,
+                task_query=task_query,
+                target_attributes=attribute_columns,
+            )
 
-            fig.quad(source=source, top="frequency", bottom=0, left="left", right="right", )
-            
-            fig.add_tools(hover)
-            figure_list.append(fig)
+        else:
+            raise RuntimeError(f"group_by='{group_by}'が対象外です。")
 
-        bokeh_obj = bokeh.layouts.gridplot(figure_list, ncols=4, merge_tools=False)
-        output_file.parent.mkdir(exist_ok=True, parents=True)
-        bokeh.plotting.reset_output()
-        bokeh.plotting.output_file(output_file, title=output_file.stem)
-        bokeh.plotting.save(bokeh_obj)
+        plot_label_histogram(counter_list, group_by=group_by, output_file=labels_count_html)
+        plot_attribute_histogram(counter_list, group_by=group_by, output_file=attributes_count_html)
+
+    def main(self):
+        args = self.args
+
+        project_id = args.project_id
+        output_dir: Path = args.output_dir
+        super().validate_project(project_id, project_member_roles=None)
+
+        annotation_path = Path(args.annotation) if args.annotation is not None else None
+
+        task_id_list = annofabcli.common.cli.get_list_from_args(args.task_id) if args.task_id is not None else None
+        task_query = (
+            TaskQuery.from_dict(annofabcli.common.cli.get_json_from_args(args.task_query))
+            if args.task_query is not None
+            else None
+        )
+
+        group_by = GroupBy(args.group_by)
+
+        if annotation_path is None:
+            with tempfile.NamedTemporaryFile() as f:
+                annotation_path = Path(f.name)
+                downloading_obj = DownloadingFile(self.service)
+                downloading_obj.download_annotation_zip(
+                    project_id,
+                    dest_path=str(annotation_path),
+                    is_latest=args.latest,
+                )
+                self.visualize_annotation_count(
+                    project_id=project_id,
+                    annotation_path=annotation_path,
+                    group_by=group_by,
+                    output_dir=output_dir,
+                    target_task_ids=task_id_list,
+                    task_query=task_query,
+                )
+        else:
+            self.visualize_annotation_count(
+                project_id=project_id,
+                annotation_path=annotation_path,
+                group_by=group_by,
+                output_dir=output_dir,
+                target_task_ids=task_id_list,
+                task_query=task_query,
+            )
 
 
 def parse_args(parser: argparse.ArgumentParser):
@@ -123,7 +275,7 @@ def parse_args(parser: argparse.ArgumentParser):
 def main(args):
     service = build_annofabapi_resource_and_login(args)
     facade = AnnofabApiFacade(service)
-    ListAnnotationCount(service, facade, args).main()
+    VisualizeAnnotationCount(service, facade, args).main()
 
 
 def add_parser(subparsers: Optional[argparse._SubParsersAction] = None):

@@ -106,7 +106,7 @@ def lazy_parse_simple_annotation_by_task(annotation_path: Path) -> Iterator[Simp
         raise RuntimeError(f"'{annotation_path}'は、zipファイルまたはディレクトリではありません。")
 
 
-class GettingAnnotationCounterByInputData:
+class ListAnnotationCounterByInputData:
     """入力データ単位で、ラベルごと/属性ごとのアノテーション数を集計情報を取得するメソッドの集まり。"""
 
     @classmethod
@@ -115,7 +115,7 @@ class GettingAnnotationCounterByInputData:
         simple_annotation: dict[str, Any],
         *,
         target_labels: Optional[Collection[str]] = None,
-        target_attributes: Optional[Collection[tuple[str, str]]] = None,
+        target_attributes: Optional[Collection[AttributesKey]] = None,
     ) -> AnnotationCounterByInputData:
         """
         1個の入力データに対して、ラベルごと/属性ごとのアノテーション数を集計情報を取得する。
@@ -142,11 +142,7 @@ class GettingAnnotationCounterByInputData:
         attributes_counter = collections.Counter(attributes_list)
         if target_attributes is not None:
             attributes_counter = collections.Counter(
-                {
-                    (label, attribute, value): count
-                    for (label, attribute, value), count in attributes_counter.items()
-                    if (label, attribute) in target_attributes
-                }
+                {key: count for key, count in attributes_counter.items() if key in target_attributes}
             )
 
         return AnnotationCounterByInputData(
@@ -168,7 +164,7 @@ class GettingAnnotationCounterByInputData:
         target_task_ids: Optional[Collection[str]] = None,
         task_query: Optional[TaskQuery] = None,
         target_labels: Optional[Collection[str]] = None,
-        target_attributes: Optional[Collection[tuple[str, str]]] = None,
+        target_attributes: Optional[Collection[AttributesKey]] = None,
     ) -> list[AnnotationCounterByInputData]:
         """
         アノテーションzipまたはそれを展開したディレクトリから、ラベルごと/属性ごとのアノテーション数を集計情報を取得する。
@@ -289,14 +285,14 @@ class GettingAnnotationCounterByInputData:
         print_csv(df, output=str(output_file), to_csv_kwargs=csv_format)
 
 
-class GettingAnnotationCounterByTask:
+class ListAnnotationCounterByTask:
     """タスク単位で、ラベルごと/属性ごとのアノテーション数を集計情報を取得するメソッドの集まり。"""
 
     @staticmethod
     def get_annotation_counter(
         task_parser: SimpleAnnotationParserByTask,
         target_labels: Optional[Collection[str]] = None,
-        target_attributes: Optional[Collection[tuple[str, str]]] = None,
+        target_attributes: Optional[Collection[AttributesKey]] = None,
     ) -> AnnotationCounterByTask:
         """
         1個のタスクに対して、ラベルごと/属性ごとのアノテーション数を集計情報を取得する。
@@ -317,7 +313,7 @@ class GettingAnnotationCounterByTask:
         for parser in task_parser.lazy_parse():
             # parse()メソッドは遅いので、使わない
             simple_annotation_dict = parser.load_json()
-            input_data = GettingAnnotationCounterByInputData.get_annotation_counter(
+            input_data = ListAnnotationCounterByInputData.get_annotation_counter(
                 simple_annotation_dict, target_labels=target_labels, target_attributes=target_attributes
             )
             labels_counter += input_data.labels_counter
@@ -346,7 +342,7 @@ class GettingAnnotationCounterByTask:
         target_task_ids: Optional[Collection[str]] = None,
         task_query: Optional[TaskQuery] = None,
         target_labels: Optional[Collection[str]] = None,
-        target_attributes: Optional[Collection[tuple[str, str]]] = None,
+        target_attributes: Optional[Collection[AttributesKey]] = None,
     ) -> list[AnnotationCounterByTask]:
 
         """
@@ -475,7 +471,6 @@ class GettingAnnotationCounterByTask:
 class ListAnnotationCountMain:
     def __init__(self, service: annofabapi.Resource):
         self.service = service
-        self.facade = AnnofabApiFacade(service)
 
     @staticmethod
     def _get_target_attributes_columns(annotation_specs_labels: list[dict[str, Any]]) -> list[AttributesKey]:
@@ -567,39 +562,37 @@ class ListAnnotationCountMain:
         if len(attribute_columns) == 0:
             logger.info(f"アノテーション仕様に集計対象の属性が定義されていないため、{attributes_count_csv} は出力しません。")
 
-        target_attributes = [(label, attr_name) for (label, attr_name, _) in attribute_columns]
-
         if group_by == GroupBy.INPUT_DATA_ID:
-            counter_list_by_input_data = GettingAnnotationCounterByInputData.get_annotation_counter_list(
+            counter_list_by_input_data = ListAnnotationCounterByInputData.get_annotation_counter_list(
                 annotation_path,
                 target_task_ids=target_task_ids,
                 task_query=task_query,
-                target_attributes=target_attributes,
+                target_attributes=attribute_columns,
             )
 
-            GettingAnnotationCounterByInputData.print_labels_count(
+            ListAnnotationCounterByInputData.print_labels_count(
                 counter_list_by_input_data, labels_count_csv, label_columns=label_columns
             )
 
             if len(attribute_columns) > 0:
-                GettingAnnotationCounterByInputData.print_attributes_count(
+                ListAnnotationCounterByInputData.print_attributes_count(
                     counter_list_by_input_data, attributes_count_csv, attribute_columns=attribute_columns
                 )
 
         elif group_by == GroupBy.TASK_ID:
-            counter_list_by_task = GettingAnnotationCounterByTask.get_annotation_counter_list(
+            counter_list_by_task = ListAnnotationCounterByTask.get_annotation_counter_list(
                 annotation_path,
                 target_task_ids=target_task_ids,
                 task_query=task_query,
-                target_attributes=target_attributes,
+                target_attributes=attribute_columns,
             )
 
-            GettingAnnotationCounterByTask.print_labels_count(
+            ListAnnotationCounterByTask.print_labels_count(
                 counter_list_by_task, labels_count_csv, label_columns=label_columns
             )
 
             if len(attribute_columns) > 0:
-                GettingAnnotationCounterByTask.print_attributes_count(
+                ListAnnotationCounterByTask.print_attributes_count(
                     counter_list_by_task, attributes_count_csv, attribute_columns=attribute_columns
                 )
 
