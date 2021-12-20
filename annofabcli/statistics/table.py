@@ -1,20 +1,16 @@
-# pylint: disable=too-many-lines
-import copy
 import logging
-from enum import Enum
 from typing import Any, Dict, List, Optional
 
 import dateutil
 import more_itertools
 import pandas
-from annofabapi.dataclass.statistics import WorktimeStatistics, WorktimeStatisticsItem
+from annofabapi.dataclass.statistics import WorktimeStatistics
 from annofabapi.models import InputDataId, Inspection, InspectionStatus, Task, TaskHistory, TaskPhase, TaskStatus
 from annofabapi.utils import (
     get_number_of_rejections,
     get_task_history_index_skipped_acceptance,
     get_task_history_index_skipped_inspection,
 )
-from more_itertools import first_true
 
 import annofabcli
 from annofabcli.common.facade import AnnofabApiFacade
@@ -22,11 +18,6 @@ from annofabcli.common.utils import isoduration_to_hour
 from annofabcli.statistics.database import AnnotationDict, Database, PseudoInputData
 
 logger = logging.getLogger(__name__)
-
-
-class AggregationBy(Enum):
-    BY_INPUTS = "by_inputs"
-    BY_TASKS = "by_tasks"
 
 
 class Table:
@@ -64,7 +55,8 @@ class Table:
         self.ignored_task_id_list = ignored_task_id_list
 
         self.project_id = self.database.project_id
-        self._update_annotation_specs()
+        self.project_members_dict = self._get_project_members_dict()
+
         self.project_title = self.annofab_service.api.get_project(self.project_id)[0]["title"]
 
     def _get_task_list(self) -> List[Task]:
@@ -106,19 +98,11 @@ class Table:
             return self._annotations_dict
         else:
             task_list = self._get_task_list()
-            self._annotations_dict = self.database.read_annotation_summary(task_list, self._create_annotation_summary)
+            self._annotations_dict = self.database.read_annotation_summary(task_list)
             return self._annotations_dict
 
     def _create_annotation_summary(self, annotation_list: List[Dict[str, Any]]) -> Dict[str, Any]:
         annotation_summary = {"total_count": len(annotation_list)}
-
-        # labelごとのアノテーション数を算出
-        for label_name in self.label_dict.values():
-            annotation_count = 0
-            key = f"label_{label_name}"
-            annotation_count += len([e for e in annotation_list if e["label"] == label_name])
-            annotation_summary[key] = annotation_count
-
         return annotation_summary
 
     @staticmethod
@@ -203,14 +187,6 @@ class Table:
         else:
             return None
 
-    def _update_annotation_specs(self):
-        # [REMOVE_V2_PARAM]
-        annotation_specs, _ = self.annofab_service.api.get_annotation_specs(self.project_id, query_params={"v": "2"})
-        self.inspection_phrases_dict = self.get_inspection_phrases_dict(annotation_specs["inspection_phrases"])
-        self.label_dict = self.get_labels_dict(annotation_specs["labels"])
-        # key:account_id, value:project_member のdict
-        self.project_members_dict = self._get_project_members_dict()
-
     def _get_project_members_dict(self) -> Dict[str, Any]:
         project_members_dict = {}
 
@@ -218,45 +194,6 @@ class Table:
         for member in project_members:
             project_members_dict[member["account_id"]] = member
         return project_members_dict
-
-    @staticmethod
-    def get_labels_dict(labels) -> Dict[str, str]:
-        """
-        ラベル情報を設定する
-        Returns:
-            key: label_id, value: label_name(en)
-
-        """
-        label_dict = {}
-
-        for e in labels:
-            label_id = e["label_id"]
-            messages_list = e["label_name"]["messages"]
-            label_name = [m["message"] for m in messages_list if m["lang"] == "en-US"][0]
-
-            label_dict[label_id] = label_name
-
-        return label_dict
-
-    @staticmethod
-    def get_inspection_phrases_dict(inspection_phrases) -> Dict[str, str]:
-        """
-        定型指摘情報を取得
-        Returns:
-            定型指摘の辞書(key: id, value: 定型コメント(ja))
-
-        """
-
-        inspection_phrases_dict = {}
-
-        for e in inspection_phrases:
-            inspection_id = e["id"]
-            messages_list = e["text"]["messages"]
-            inspection_text = [m["message"] for m in messages_list if m["lang"] == "ja-JP"][0]
-
-            inspection_phrases_dict[inspection_id] = inspection_text
-
-        return inspection_phrases_dict
 
     def _set_first_phase_from_task_history(
         self, task: Task, task_history: Optional[TaskHistory], column_prefix: str
@@ -585,7 +522,6 @@ class Table:
         else:
             logger.warning(f"タスク一覧が0件です。")
             return pandas.DataFrame()
-
 
     @staticmethod
     def create_gradient_df(task_df: pandas.DataFrame) -> pandas.DataFrame:

@@ -24,10 +24,8 @@ from annofabcli.common.facade import TaskQuery, match_task_with_query
 
 logger = logging.getLogger(__name__)
 
-InputDataDict = Dict[InputDataId, Dict[str, Any]]
+InputDataDict = Dict[InputDataId, int]
 AnnotationDict = Dict[str, InputDataDict]
-AnnotationSummaryFunc = Callable[[List[Dict[str, Any]]], Dict[str, Any]]
-"""アノテーションの概要を算出する関数"""
 
 
 def _get_task_histories_dict(api: annofabapi.AnnofabApi, project_id: str, task_id: str) -> Dict[str, List[TaskHistory]]:
@@ -114,16 +112,14 @@ class Database:
         else:
             return True
 
-    def read_annotation_summary(
-        self, task_list: List[Task], annotation_summary_func: AnnotationSummaryFunc
-    ) -> AnnotationDict:
+    def read_annotation_summary(self, task_list: List[Task]) -> AnnotationDict:
         logger.debug(f"{self.logging_prefix}: reading {str(self.annotations_zip_path)}")
 
-        def read_annotation_summary_per_input_data(task_id: str, input_data_id_: str) -> Dict[str, Any]:
+        def get_annotation_count(task_id: str, input_data_id_: str) -> int:
             json_path = f"{task_id}/{input_data_id_}.json"
             parser = SimpleAnnotationZipParser(zip_file, json_path)
             simple_annotation: Dict[str, Any] = parser.load_json()
-            return annotation_summary_func(simple_annotation["details"])
+            return len(simple_annotation["details"])
 
         with zipfile.ZipFile(self.annotations_zip_path, "r") as zip_file:
             annotation_dict: AnnotationDict = {}
@@ -140,7 +136,7 @@ class Database:
                 try:
                     input_data_dict: InputDataDict = {}
                     for input_data_id in input_data_id_list:
-                        input_data_dict[input_data_id] = read_annotation_summary_per_input_data(task_id, input_data_id)
+                        input_data_dict[input_data_id] = get_annotation_count(task_id, input_data_id)
                     annotation_dict[task_id] = input_data_dict
                 except Exception as e:  # pylint: disable=broad-except
                     logger.warning(f"{self.logging_prefix}: task_id='{task_id}'のJSONファイル読み込みで失敗しました。")
