@@ -71,6 +71,10 @@ def get_df_worktime(
         inplace=True,
     )
 
+    # 2phaseのときは 'monitored_inspection_worktime_hour' が作れれないので、明示的に設定する
+    if "monitored_inspection_worktime_hour" not in df.columns:
+        df["monitored_inspection_worktime_hour"] = 0
+
     df["monitored_worktime_hour"] = (
         df["monitored_annotation_worktime_hour"]
         + df["monitored_inspection_worktime_hour"]
