@@ -53,21 +53,19 @@ class VisualizeAnnotationCountMain:
 
         figure_list = []
 
-        for col in df.columns[0:1]:
+        for col in df.columns:
             # numpy.histogramで20のビンに分割
             hist, bin_edges = numpy.histogram(df[col], 20)
 
-            df_histogram = pandas.DataFrame({"frequency ": hist, "left": bin_edges[:-1], "right": bin_edges[1:]})
-            df_histogram["bottom"] = 0
+            df_histogram = pandas.DataFrame({"frequency": hist, "left": bin_edges[:-1], "right": bin_edges[1:]})
             df_histogram["interval"] = [
-                "%d to %d" % (left, right) for left, right in zip(df_histogram["left"], df_histogram["right"])
+                f"{left:.2f} to {right:.2f}" for left, right in zip(df_histogram["left"], df_histogram["right"])
             ]
 
-            print(df_histogram)
             source = ColumnDataSource(df_histogram)
             fig = figure(
-                plot_width=500,
-                plot_height=500,
+                plot_width=400,
+                plot_height=300,
                 title=col,
                 x_axis_label="アノテーション数",
                 y_axis_label="入力データ数",
@@ -75,8 +73,9 @@ class VisualizeAnnotationCountMain:
 
             hover = HoverTool(tooltips=[("interval", "@interval"), ("frequency", "@frequency")])
 
-            fig.quad(source=source, top="frequency", bottom="bottom", left="left", right="right")
-            # fig.add_tools(hover)
+            fig.quad(source=source, top="frequency", bottom=0, left="left", right="right", )
+            
+            fig.add_tools(hover)
             figure_list.append(fig)
 
         bokeh_obj = bokeh.layouts.gridplot(figure_list, ncols=4, merge_tools=False)
