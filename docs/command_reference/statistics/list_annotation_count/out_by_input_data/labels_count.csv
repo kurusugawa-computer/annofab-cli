@@ -1,4 +1,4 @@
-﻿input_data_id,input_data_name,task_id,task_status,task_phase,task_phase_stage,label_Cat,label_leg,label_eye,label_dog,label_human,label_bird,label_climatic
+﻿input_data_id,input_data_name,task_id,task_status,task_phase,task_phase_stage,Cat,leg,eye,dog,human,bird,climatic
 0733d1e1-ef85-455e-aec0-ff05c499b711,./tests/data/lenna.png,sample_0,break,acceptance,1,1,1,1,1,1,1,1
 c86205d1-bdd4-4110-ae46-194e661d622b,./tests/data/lenna.png,sample_1,complete,acceptance,1,1,1,1,1,1,1,1
 a3281975-e632-47a7-a71f-08013fad5604,./tests/data/lenna.png,sample_0,break,acceptance,1,1,1,1,1,1,1,1

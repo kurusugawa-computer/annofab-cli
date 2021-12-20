@@ -119,11 +119,7 @@ def get_project_output_dir(project_title: str) -> str:
 
 class WriteCsvGraph:
     task_df: Optional[pandas.DataFrame] = None
-    annotation_df: Optional[pandas.DataFrame] = None
     task_history_df: Optional[pandas.DataFrame] = None
-    labor_df: Optional[pandas.DataFrame] = None
-    productivity_df: Optional[pandas.DataFrame] = None
-    whole_productivity_df: Optional[pandas.DataFrame] = None
 
     def __init__(
         self,
@@ -131,7 +127,7 @@ class WriteCsvGraph:
         project_id: str,
         table_obj: Table,
         output_dir: Path,
-        labor_df: Optional[pandas.DataFrame],
+        df_labor: Optional[pandas.DataFrame],
         minimal_output: bool = False,
     ):
         self.service = service
@@ -143,7 +139,7 @@ class WriteCsvGraph:
         histogram_module = importlib.import_module("annofabcli.statistics.histogram")
         self.histogram_obj = histogram_module.Histogram(str(output_dir / "histogram"))  # type: ignore
 
-        self.labor_df = self.table_obj.create_labor_df(labor_df)
+        self.df_labor = self.table_obj.create_labor_df(df_labor)
         self.minimal_output = minimal_output
 
     def _catch_exception(self, function: Callable[..., Any]) -> Callable[..., Any]:
@@ -171,17 +167,6 @@ class WriteCsvGraph:
             self.task_history_df = self.table_obj.create_task_history_df()
         return self.task_history_df
 
-    def _get_annotation_df(self):
-        if self.annotation_df is None:
-            self.annotation_df = self.table_obj.create_task_for_annotation_df()
-        return self.annotation_df
-
-    def _get_labor_df(self):
-        if self.labor_df is None:
-            self.labor_df = self.table_obj.create_labor_df()
-
-        return self.labor_df
-
     def write_histogram_for_task(self) -> None:
         """
         タスクに関するヒストグラムを出力する。
@@ -205,7 +190,7 @@ class WriteCsvGraph:
         else:
             obj = UserPerformance.from_df(
                 df_task_history=df_task_history,
-                df_labor=self._get_labor_df(),
+                df_labor=self.df_labor,
                 df_worktime_ratio=annotation_count_ratio_df,
             )
 
@@ -237,8 +222,7 @@ class WriteCsvGraph:
     def write_whole_productivity_per_date(self) -> None:
         """日ごとの全体の生産性に関するファイルを出力する。"""
         task_df = self._get_task_df()
-        labor_df = self._get_labor_df()
-        whole_productivity_df = WholeProductivityPerCompletedDate.create(task_df, labor_df)
+        whole_productivity_df = WholeProductivityPerCompletedDate.create(task_df, self.df_labor)
 
         WholeProductivityPerCompletedDate.plot(whole_productivity_df, self.output_dir / "line-graph/折れ線-横軸_日-全体.html")
         WholeProductivityPerCompletedDate.plot_cumulatively(
@@ -283,9 +267,11 @@ class WriteCsvGraph:
 
             annotator_obj.plot_task_metrics(self.output_dir / "line-graph/教師付者用/累積折れ線-横軸_タスク数-教師付者用.html", user_id_list)
 
-    def write_worktime_per_date(self, user_id_list: Optional[List[str]] = None) -> None:
+    def write_worktime_per_date(
+        self, user_id_list: Optional[List[str]] = None, df_labor: Optional[pandas.DataFrame] = None
+    ) -> None:
         """日ごとの作業時間情報を出力する。"""
-        obj = WorktimePerDate.from_webapi(self.service, self.project_id)
+        obj = WorktimePerDate.from_webapi(self.service, self.project_id, df_labor)
         obj.plot_cumulatively(self.output_dir / "line-graph/累積折れ線-横軸_日-縦軸_作業時間.html", user_id_list)
         obj.to_csv(self.output_dir / "ユーザ_日付list-作業時間.csv")
 
@@ -295,10 +281,6 @@ class WriteCsvGraph:
         """
         task_df = self._get_task_df()
         self._catch_exception(self.csv_obj.write_task_list)(task_df, dropped_columns=["input_data_id_list"])
-
-    def write_labor_and_task_history(self) -> None:
-        df_labor = self._get_labor_df()
-        self._catch_exception(self.csv_obj.write_labor_list)(df_labor)
 
     def write_user_productivity_per_date(self, user_id_list: Optional[List[str]] = None):
         """ユーザごとの日ごとの生産性情報を出力する。"""
@@ -405,7 +387,7 @@ def visualize_statistics(
         output_project_dir=output_project_dir,
     )
     write_obj = WriteCsvGraph(
-        annofab_service, project_id, table_obj, output_project_dir, labor_df=df_labor, minimal_output=minimal_output
+        annofab_service, project_id, table_obj, output_project_dir, df_labor=df_labor, minimal_output=minimal_output
     )
     write_obj.write_csv_for_task()
 
@@ -421,12 +403,9 @@ def visualize_statistics(
     write_obj.write_whole_productivity_per_first_annotation_started_date()
 
     if not minimal_output:
-        write_obj._catch_exception(write_obj.write_worktime_per_date)(user_id_list)
+        write_obj._catch_exception(write_obj.write_worktime_per_date)(user_id_list, df_labor=df_labor)
 
         write_obj._catch_exception(write_obj.write_user_productivity_per_date)(user_id_list)
-
-        # CSV
-        write_obj.write_labor_and_task_history()
 
 
 def visualize_statistics_wrapper(

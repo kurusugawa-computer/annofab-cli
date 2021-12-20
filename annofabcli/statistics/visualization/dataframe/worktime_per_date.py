@@ -7,7 +7,7 @@ from __future__ import annotations
 import datetime
 import logging
 from pathlib import Path
-from typing import Optional
+from typing import Any, Optional
 
 import annofabapi
 import bokeh
@@ -25,10 +25,93 @@ from annofabcli.statistics.linegraph import (
     plot_line_and_circle,
     write_bokeh_graph,
 )
-from annofabcli.statistics.list_worktime import get_df_worktime
-from annofabcli.task_history_event.list_worktime import ListWorktimeFromTaskHistoryEventMain
+from annofabcli.statistics.list_worktime import get_worktime_dict_from_event_list
+from annofabcli.task_history_event.list_worktime import (
+    ListWorktimeFromTaskHistoryEventMain,
+    WorktimeFromTaskHistoryEvent,
+)
 
 logger = logging.getLogger(__name__)
+
+
+def get_df_worktime(
+    task_history_event_list: list[WorktimeFromTaskHistoryEvent],
+    member_list: list[dict[str, Any]],
+    df_labor: Optional[pandas.DataFrame] = None,
+) -> pandas.DataFrame:
+    dict_worktime = get_worktime_dict_from_event_list(task_history_event_list)
+
+    s = pandas.Series(
+        dict_worktime.values(),
+        index=pandas.MultiIndex.from_tuples(dict_worktime.keys(), names=("date", "user_id", "phase")),
+    )
+    df = s.unstack()
+    df.reset_index(inplace=True)
+    df.rename(
+        columns={
+            "annotation": "monitored_annotation_worktime_hour",
+            "inspection": "monitored_inspection_worktime_hour",
+            "acceptance": "monitored_acceptance_worktime_hour",
+        },
+        inplace=True,
+    )
+
+    # 列数を固定させる
+    for phase in ["annotation", "inspection", "acceptance"]:
+        column = f"{phase}_worktime_hour"
+        if column not in df.columns:
+            df[column] = 0
+
+    df.fillna(
+        {
+            "monitored_annotation_worktime_hour": 0,
+            "monitored_inspection_worktime_hour": 0,
+            "monitored_acceptance_worktime_hour": 0,
+        },
+        inplace=True,
+    )
+
+    # 2phaseのときは 'monitored_inspection_worktime_hour' が作れれないので、明示的に設定する
+    if "monitored_inspection_worktime_hour" not in df.columns:
+        df["monitored_inspection_worktime_hour"] = 0
+
+    df["monitored_worktime_hour"] = (
+        df["monitored_annotation_worktime_hour"]
+        + df["monitored_inspection_worktime_hour"]
+        + df["monitored_acceptance_worktime_hour"]
+    )
+
+    df_member = pandas.DataFrame(member_list)[["account_id", "user_id", "username", "biography"]]
+
+    if df_labor is not None:
+        df_labor = df_labor.merge(df_member[["user_id", "account_id"]], how="left", on="account_id")
+        df = df.merge(df_labor[["date", "user_id", "actual_worktime_hour"]], how="outer", on=["date", "user_id"])
+    else:
+        df["actual_worktime_hour"] = 0
+
+    value_columns = [
+        "actual_worktime_hour",
+        "monitored_worktime_hour",
+        "monitored_annotation_worktime_hour",
+        "monitored_inspection_worktime_hour",
+        "monitored_acceptance_worktime_hour",
+    ]
+    df.fillna({c: 0 for c in value_columns}, inplace=True)
+
+    df = df.merge(df_member, how="left", on="user_id")
+    return df[
+        [
+            "date",
+            "user_id",
+            "username",
+            "biography",
+            "actual_worktime_hour",
+            "monitored_worktime_hour",
+            "monitored_annotation_worktime_hour",
+            "monitored_inspection_worktime_hour",
+            "monitored_acceptance_worktime_hour",
+        ]
+    ]
 
 
 class WorktimePerDate:
@@ -39,7 +122,19 @@ class WorktimePerDate:
         self.df = df
 
     @staticmethod
-    def from_webapi(service: annofabapi.Resource, project_id: str) -> WorktimePerDate:
+    def from_webapi(
+        service: annofabapi.Resource, project_id: str, df_labor: Optional[pandas.DataFrame] = None
+    ) -> WorktimePerDate:
+        """
+
+        Args:
+            service (annofabapi.Resource): [description]
+            project_id (str): [description]
+            df_labor: 実績作業時間が格納されたDataFrame
+
+        Returns:
+            WorktimePerDate: [description]
+        """
         main_obj = ListWorktimeFromTaskHistoryEventMain(service, project_id=project_id)
         worktime_list = main_obj.get_worktime_list(
             project_id,
@@ -47,7 +142,11 @@ class WorktimePerDate:
         project_member_list = service.wrapper.get_all_project_members(
             project_id, query_params={"include_inactive_member": ""}
         )
-        df = get_df_worktime(worktime_list, project_member_list)
+        if df_labor is not None:
+            df_labor = df_labor[df_labor["project_id"] == project_id]
+            df = get_df_worktime(worktime_list, project_member_list, df_labor=df_labor)
+        else:
+            df = get_df_worktime(worktime_list, project_member_list)
         return WorktimePerDate(df)
 
     def _get_cumulative_dataframe(self) -> pandas.DataFrame:
@@ -59,10 +158,11 @@ class WorktimePerDate:
         groupby_obj = df.groupby("user_id")
 
         # 作業時間の累積値
-        df["cumulative_worktime_hour"] = groupby_obj["worktime_hour"].cumsum()
-        df["cumulative_annotation_worktime_hour"] = groupby_obj["annotation_worktime_hour"].cumsum()
-        df["cumulative_acceptance_worktime_hour"] = groupby_obj["acceptance_worktime_hour"].cumsum()
-        df["cumulative_inspection_worktime_hour"] = groupby_obj["inspection_worktime_hour"].cumsum()
+        df["cumulative_actual_worktime_hour"] = groupby_obj["actual_worktime_hour"].cumsum()
+        df["cumulative_monitored_worktime_hour"] = groupby_obj["monitored_worktime_hour"].cumsum()
+        df["cumulative_monitored_annotation_worktime_hour"] = groupby_obj["monitored_annotation_worktime_hour"].cumsum()
+        df["cumulative_monitored_acceptance_worktime_hour"] = groupby_obj["monitored_acceptance_worktime_hour"].cumsum()
+        df["cumulative_monitored_inspection_worktime_hour"] = groupby_obj["monitored_inspection_worktime_hour"].cumsum()
 
         return df
 
@@ -99,24 +199,24 @@ class WorktimePerDate:
 
         fig_info_list = [
             dict(
-                title="作業時間の累積値",
-                y_column_name="cumulative_worktime_hour",
-                y_axis_label="作業時間[hour]",
+                title="実績作業時間の累積値",
+                y_column_name="cumulative_actual_worktime_hour",
             ),
             dict(
-                title="教師付作業時間の累積値",
-                y_column_name="cumulative_annotation_worktime_hour",
-                y_axis_label="教師付作業時間[hour]",
+                title="計測作業時間の累積値",
+                y_column_name="cumulative_monitored_worktime_hour",
             ),
             dict(
-                title="検査作業時間の累積値",
-                y_column_name="cumulative_inspection_worktime_hour",
-                y_axis_label="検査作業時間[hour]",
+                title="教師付計測作業時間の累積値",
+                y_column_name="cumulative_monitored_annotation_worktime_hour",
             ),
             dict(
-                title="受入作業時間の累積値",
-                y_column_name="cumulative_acceptance_worktime_hour",
-                y_axis_label="受入作業時間[hour]",
+                title="検査計測作業時間の累積値",
+                y_column_name="cumulative_monitored_inspection_worktime_hour",
+            ),
+            dict(
+                title="受入計測作業時間の累積値",
+                y_column_name="cumulative_monitored_acceptance_worktime_hour",
             ),
         ]
 
@@ -129,7 +229,7 @@ class WorktimePerDate:
                     title=fig_info["title"],
                     x_axis_label="日",
                     x_axis_type="datetime",
-                    y_axis_label=fig_info["y_axis_label"],
+                    y_axis_label="作業時間[hour]",
                 )
             )
 
@@ -161,10 +261,10 @@ class WorktimePerDate:
                 "user_id",
                 "username",
                 "biography",
-                "worktime_hour",
-                "annotation_worktime_hour",
-                "inspection_worktime_hour",
-                "acceptance_worktime_hour",
+                "monitored_worktime_hour",
+                "monitored_annotation_worktime_hour",
+                "monitored_inspection_worktime_hour",
+                "monitored_acceptance_worktime_hour",
             ]
         )
         for fig in figs:
@@ -184,10 +284,11 @@ class WorktimePerDate:
             "biography",
         ]
         worktime_columns = [
-            "worktime_hour",
-            "annotation_worktime_hour",
-            "inspection_worktime_hour",
-            "acceptance_worktime_hour",
+            "actual_worktime_hour",
+            "monitored_worktime_hour",
+            "monitored_annotation_worktime_hour",
+            "monitored_inspection_worktime_hour",
+            "monitored_acceptance_worktime_hour",
         ]
 
         columns = date_user_columns + worktime_columns

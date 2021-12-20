@@ -1,4 +1,4 @@
-date,user_id,username,biography,worktime_hour,annotation_worktime_hour,inspection_worktime_hour,acceptance_worktime_hour
-2021-11-01,alice,Alice,U.S.,2.35747638888889,2.35747638888889,0,0
-2021-11-01,bob,Bob,Japan,4.37651388888889,3.43365333333333,0,0.942860555555555
-2021-11-02,alice,Alice,U.S.,2.33247083333333,2.33247083333333,0,0
+date,user_id,username,biography,actual_worktime_hour,monitored_worktime_hour,monitored_annotation_worktime_hour,monitored_inspection_worktime_hour,monitored_acceptance_worktime_hour
+2021-11-01,alice,Alice,U.S.,3,2.35747638888889,2.35747638888889,0,0
+2021-11-01,bob,Bob,Japan,5,4.37651388888889,3.43365333333333,0,0.942860555555555
+2021-11-02,alice,Alice,U.S.,3,2.33247083333333,2.33247083333333,0,0
