@@ -1021,13 +1021,14 @@ class WholeProductivityPerFirstAnnotationStartedDate:
             return
 
         df["dt_first_annotation_started_date"] = df["first_annotation_started_date"].map(lambda e: parse(e).date())
+        add_velocity_columns(df)
 
         logger.debug(f"{output_file} を出力します。")
 
         fig_list = [
             create_figure(title="教師付開始日ごとの作業時間", y_axis_label="作業時間[hour]"),
-            create_figure(title="教師付開始日ごとの入力データあたり作業時間", y_axis_label="入力データあたり作業時間[hour/input_data]"),
-            create_figure(title="教師付開始日ごとのアノテーションあたり作業時間", y_axis_label="アノテーションあたり作業時間[hour/annotation]"),
+            create_figure(title="教師付開始日ごとの入力データあたり作業時間", y_axis_label="入力データあたり作業時間[minute/input_data]"),
+            create_figure(title="教師付開始日ごとのアノテーションあたり作業時間", y_axis_label="アノテーションあたり作業時間[minute/annotation]"),
         ]
 
         fig_info_list = [
@@ -1043,24 +1044,23 @@ class WholeProductivityPerFirstAnnotationStartedDate:
             {
                 "x": "dt_first_annotation_started_date",
                 "y_info_list": [
-                    {"column": "worktime_hour/input_data_count", "legend": "入力データあたり作業時間(合計)"},
-                    {"column": "annotation_worktime_hour/input_data_count", "legend": "入力データあたり作業時間(教師付)"},
-                    {"column": "inspection_worktime_hour/input_data_count", "legend": "入力データあたり作業時間(検査)"},
-                    {"column": "acceptance_worktime_hour/input_data_count", "legend": "入力データあたり作業時間(受入)"},
+                    {"column": "worktime_minute/input_data_count", "legend": "入力データあたり作業時間(合計)"},
+                    {"column": "annotation_worktime_minute/input_data_count", "legend": "入力データあたり作業時間(教師付)"},
+                    {"column": "inspection_worktime_minute/input_data_count", "legend": "入力データあたり作業時間(検査)"},
+                    {"column": "acceptance_worktime_minute/input_data_count", "legend": "入力データあたり作業時間(受入)"},
                 ],
             },
             {
                 "x": "dt_date",
                 "y_info_list": [
-                    {"column": "worktime_hour/annotation_count", "legend": "アノテーション作業時間(合計)"},
-                    {"column": "annotation_worktime_hour/annotation_count", "legend": "アノテーションあたり作業時間(教師付)"},
-                    {"column": "inspection_worktime_hour/annotation_count", "legend": "アノテーションあたり作業時間(検査)"},
-                    {"column": "acceptance_worktime_hour/annotation_count", "legend": "アノテーションあたり作業時間(受入)"},
+                    {"column": "worktime_minute/annotation_count", "legend": "アノテーション作業時間(合計)"},
+                    {"column": "annotation_worktime_minute/annotation_count", "legend": "アノテーションあたり作業時間(教師付)"},
+                    {"column": "inspection_worktime_minute/annotation_count", "legend": "アノテーションあたり作業時間(検査)"},
+                    {"column": "acceptance_worktime_minute/annotation_count", "legend": "アノテーションあたり作業時間(受入)"},
                 ],
             },
         ]
 
-        add_velocity_columns(df)
         source = ColumnDataSource(data=df)
 
         for fig, fig_info in zip(fig_list, fig_info_list):
@@ -1086,14 +1086,14 @@ class WholeProductivityPerFirstAnnotationStartedDate:
             "annotation_worktime_hour",
             "inspection_worktime_hour",
             "acceptance_worktime_hour",
-            "worktime_hour/input_data_count",
-            "annotation_worktime_hour/input_data_count",
-            "inspection_worktime_hour/input_data_count",
-            "acceptance_worktime_hour/input_data_count",
-            "worktime_hour/annotation_count",
-            "annotation_worktime_hour/annotation_count",
-            "inspection_worktime_hour/annotation_count",
-            "acceptance_worktime_hour/annotation_count",
+            "worktime_minute/input_data_count",
+            "annotation_worktime_minute/input_data_count",
+            "inspection_worktime_minute/input_data_count",
+            "acceptance_worktime_minute/input_data_count",
+            "worktime_minute/annotation_count",
+            "annotation_worktime_minute/annotation_count",
+            "inspection_worktime_minute/annotation_count",
+            "acceptance_worktime_minute/annotation_count",
         ]
         hover_tool = create_hover_tool(tooltip_item)
 
