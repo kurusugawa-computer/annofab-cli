@@ -3,7 +3,7 @@ import datetime
 import json
 import logging
 import multiprocessing
-import zipfile
+from collections import defaultdict
 from dataclasses import dataclass
 from functools import partial
 from pathlib import Path
@@ -15,7 +15,7 @@ import dateutil.parser
 import more_itertools
 from annofabapi.dataclass.task import Task as DcTask
 from annofabapi.models import InputDataId, Inspection, JobStatus, ProjectJobType, Task, TaskHistory
-from annofabapi.parser import SimpleAnnotationZipParser
+from annofabapi.parser import lazy_parse_simple_annotation_zip
 
 from annofabcli.common.dataclasses import WaitOptions
 from annofabcli.common.download import DownloadingFile
@@ -25,7 +25,6 @@ from annofabcli.common.facade import TaskQuery, match_task_with_query
 logger = logging.getLogger(__name__)
 
 InputDataDict = Dict[InputDataId, int]
-AnnotationDict = Dict[str, InputDataDict]
 
 
 def _get_task_histories_dict(api: annofabapi.AnnofabApi, project_id: str, task_id: str) -> Dict[str, List[TaskHistory]]:
@@ -112,38 +111,20 @@ class Database:
         else:
             return True
 
-    def read_annotation_summary(self, task_list: List[Task]) -> AnnotationDict:
+    def get_annotation_count_by_task(self) -> Dict[str, int]:
         logger.debug(f"{self.logging_prefix}: reading {str(self.annotations_zip_path)}")
 
-        def get_annotation_count(task_id: str, input_data_id_: str) -> int:
-            json_path = f"{task_id}/{input_data_id_}.json"
-            parser = SimpleAnnotationZipParser(zip_file, json_path)
+        result: Dict[str, int] = defaultdict(int)
+        for index, parser in enumerate(lazy_parse_simple_annotation_zip(self.annotations_zip_path)):
+            if (index + 1) % 1000 == 0:
+                logger.debug(f"{self.logging_prefix}: {index+1} 件目を読み込み中")
+
             simple_annotation: Dict[str, Any] = parser.load_json()
-            return len(simple_annotation["details"])
+            annotation_count = len(simple_annotation["details"])
 
-        with zipfile.ZipFile(self.annotations_zip_path, "r") as zip_file:
-            annotation_dict: AnnotationDict = {}
+            result[parser.task_id] += annotation_count
 
-            task_count = 0
-            for task in task_list:
-                task_count += 1
-                if task_count % 1000 == 0:
-                    logger.debug(f"{self.logging_prefix}: {task_count} / {len(task_list)} 件目を読み込み中")
-
-                task_id = task["task_id"]
-                input_data_id_list = task["input_data_id_list"]
-
-                try:
-                    input_data_dict: InputDataDict = {}
-                    for input_data_id in input_data_id_list:
-                        input_data_dict[input_data_id] = get_annotation_count(task_id, input_data_id)
-                    annotation_dict[task_id] = input_data_dict
-                except Exception as e:  # pylint: disable=broad-except
-                    logger.warning(f"{self.logging_prefix}: task_id='{task_id}'のJSONファイル読み込みで失敗しました。")
-                    logger.warning(e)
-                    continue
-
-            return annotation_dict
+        return result
 
     def read_inspections_from_json(self, task_id_list: List[str]) -> Dict[str, Dict[InputDataId, List[Inspection]]]:
         logger.debug(f"{self.logging_prefix}: reading {self.inspection_json_path}")

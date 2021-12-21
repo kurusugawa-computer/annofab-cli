@@ -4,7 +4,6 @@ from typing import Any, Dict, List, Optional
 import dateutil
 import more_itertools
 import pandas
-from annofabapi.dataclass.statistics import WorktimeStatistics
 from annofabapi.models import InputDataId, Inspection, InspectionStatus, Task, TaskHistory, TaskPhase, TaskStatus
 from annofabapi.utils import (
     get_number_of_rejections,
@@ -15,7 +14,7 @@ from annofabapi.utils import (
 import annofabcli
 from annofabcli.common.facade import AnnofabApiFacade
 from annofabcli.common.utils import isoduration_to_hour
-from annofabcli.statistics.database import Database, PseudoInputData
+from annofabcli.statistics.database import Database
 
 logger = logging.getLogger(__name__)
 
@@ -36,13 +35,9 @@ class Table:
     # Private
     #############################################
 
-    _task_id_list: Optional[List[str]] = None
     _task_list: Optional[List[Task]] = None
     _inspections_dict: Optional[Dict[str, Dict[InputDataId, List[Inspection]]]] = None
-    _input_data_dict: Optional[Dict[str, PseudoInputData]] = None
     _task_histories_dict: Optional[Dict[str, List[TaskHistory]]] = None
-    _annotations_dict: Optional[Dict[str, Dict[str, int]]] = None
-    _worktime_statistics: Optional[List[WorktimeStatistics]] = None
 
     def __init__(
         self,
@@ -443,15 +438,6 @@ class Table:
                 return
             arg_task["input_duration_seconds"] = input_data.input_duration_seconds
 
-        def set_annotation_info(arg_task):
-            total_annotation_count = 0
-            input_data_id_list = arg_task["input_data_id_list"]
-            input_data_dict_by_annotation = annotations_dict.get(arg_task["task_id"], None)
-            if input_data_dict_by_annotation is not None:
-                for input_data_id in input_data_id_list:
-                    total_annotation_count += input_data_dict_by_annotation[input_data_id]
-            arg_task["annotation_count"] = total_annotation_count
-
         def set_inspection_info(arg_task):
             # 指摘枚数
             inspection_count = 0
@@ -477,7 +463,7 @@ class Table:
         tasks = self._get_task_list()
         task_histories_dict = self._get_task_histories_dict()
         inspections_dict = self._get_inspections_dict()
-        annotations_dict = self.database.read_annotation_summary(tasks)
+        annotations_dict = self.database.get_annotation_count_by_task()
         input_data_dict = self.database.read_input_data_from_json()
 
         for task in tasks:
@@ -490,7 +476,8 @@ class Table:
             task["input_data_count"] = len(task["input_data_id_list"])
 
             self.set_task_histories(task, task_histories)
-            set_annotation_info(task)
+
+            task["annotation_count"] = annotations_dict.get(task_id, 0)
             set_inspection_info(task)
             set_input_data_info_for_movie(task)
 
