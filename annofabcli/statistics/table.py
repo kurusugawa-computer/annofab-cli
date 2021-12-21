@@ -15,7 +15,7 @@ from annofabapi.utils import (
 import annofabcli
 from annofabcli.common.facade import AnnofabApiFacade
 from annofabcli.common.utils import isoduration_to_hour
-from annofabcli.statistics.database import AnnotationDict, Database, PseudoInputData
+from annofabcli.statistics.database import Database, PseudoInputData
 
 logger = logging.getLogger(__name__)
 
@@ -41,7 +41,7 @@ class Table:
     _inspections_dict: Optional[Dict[str, Dict[InputDataId, List[Inspection]]]] = None
     _input_data_dict: Optional[Dict[str, PseudoInputData]] = None
     _task_histories_dict: Optional[Dict[str, List[TaskHistory]]] = None
-    _annotations_dict: Optional[Dict[str, Dict[InputDataId, Dict[str, Any]]]] = None
+    _annotations_dict: Optional[Dict[str, Dict[str, int]]] = None
     _worktime_statistics: Optional[List[WorktimeStatistics]] = None
 
     def __init__(
@@ -78,13 +78,6 @@ class Table:
             self._inspections_dict = self.database.read_inspections_from_json(task_id_list)
             return self._inspections_dict
 
-    def _get_input_data_dict(self) -> Dict[str, PseudoInputData]:
-        if self._input_data_dict is not None:
-            return self._input_data_dict
-        else:
-            self._input_data_dict = self.database.read_input_data_from_json()
-            return self._input_data_dict
-
     def _get_task_histories_dict(self) -> Dict[str, List[TaskHistory]]:
         if self._task_histories_dict is not None:
             return self._task_histories_dict
@@ -92,18 +85,6 @@ class Table:
             task_id_list = [t["task_id"] for t in self._get_task_list()]
             self._task_histories_dict = self.database.read_task_histories_from_json(task_id_list)
             return self._task_histories_dict
-
-    def _get_annotations_dict(self) -> AnnotationDict:
-        if self._annotations_dict is not None:
-            return self._annotations_dict
-        else:
-            task_list = self._get_task_list()
-            self._annotations_dict = self.database.read_annotation_summary(task_list)
-            return self._annotations_dict
-
-    def _create_annotation_summary(self, annotation_list: List[Dict[str, Any]]) -> Dict[str, Any]:
-        annotation_summary = {"total_count": len(annotation_list)}
-        return annotation_summary
 
     @staticmethod
     def operator_is_changed_by_phase(task_history_list: List[TaskHistory], phase: TaskPhase) -> bool:
@@ -496,8 +477,8 @@ class Table:
         tasks = self._get_task_list()
         task_histories_dict = self._get_task_histories_dict()
         inspections_dict = self._get_inspections_dict()
-        annotations_dict = self._get_annotations_dict()
-        input_data_dict = self._get_input_data_dict()
+        annotations_dict = self.database.read_annotation_summary(tasks)
+        input_data_dict = self.database.read_input_data_from_json()
 
         for task in tasks:
             task_id = task["task_id"]

@@ -7,7 +7,7 @@ import zipfile
 from dataclasses import dataclass
 from functools import partial
 from pathlib import Path
-from typing import Any, Callable, Dict, List, Optional, Set
+from typing import Any, Dict, List, Optional, Set
 
 import annofabapi.utils
 import dateutil
@@ -569,30 +569,6 @@ class Database:
         )
 
         return [to_new_labor(e) for e in labor_list]
-
-    @staticmethod
-    def get_not_updated_task_ids(old_tasks, new_tasks) -> Set[str]:
-        """
-        更新されていないtask_idのListを取得する
-        Args:
-            old_tasks:
-            new_tasks:
-
-        Returns:
-
-        """
-        updated_task_ids = set()
-        for new_task in new_tasks:
-            filterd_list = [e for e in old_tasks if e["task_id"] == new_task["task_id"]]
-            if len(filterd_list) == 0:
-                continue
-            old_task = filterd_list[0]
-            if dateutil.parser.parse(old_task["updated_datetime"]) == dateutil.parser.parse(
-                new_task["updated_datetime"]
-            ):
-                updated_task_ids.add(new_task["task_id"])
-
-        return updated_task_ids
 
     def get_task_histories_dict(self, all_tasks: List[Task]) -> Dict[str, List[TaskHistory]]:
         """
