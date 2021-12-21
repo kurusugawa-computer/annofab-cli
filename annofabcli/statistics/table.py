@@ -1,38 +1,22 @@
-# pylint: disable=too-many-lines
-import copy
 import logging
-from enum import Enum
 from typing import Any, Dict, List, Optional
 
 import dateutil
 import more_itertools
 import pandas
-from annofabapi.dataclass.statistics import WorktimeStatistics, WorktimeStatisticsItem
 from annofabapi.models import InputDataId, Inspection, InspectionStatus, Task, TaskHistory, TaskPhase, TaskStatus
 from annofabapi.utils import (
     get_number_of_rejections,
     get_task_history_index_skipped_acceptance,
     get_task_history_index_skipped_inspection,
 )
-from more_itertools import first_true
 
 import annofabcli
 from annofabcli.common.facade import AnnofabApiFacade
 from annofabcli.common.utils import isoduration_to_hour
-from annofabcli.statistics.database import AnnotationDict, Database, PseudoInputData
+from annofabcli.statistics.database import Database
 
 logger = logging.getLogger(__name__)
-
-
-class AggregationBy(Enum):
-    BY_INPUTS = "by_inputs"
-    BY_TASKS = "by_tasks"
-
-
-class AccountStatisticsValue(Enum):
-    TASKS_COMPLETED = "tasks_completed"
-    TASKS_REJECTED = "tasks_rejected"
-    WORKTIME = "worktime"
 
 
 class Table:
@@ -51,14 +35,9 @@ class Table:
     # Private
     #############################################
 
-    _task_id_list: Optional[List[str]] = None
     _task_list: Optional[List[Task]] = None
     _inspections_dict: Optional[Dict[str, Dict[InputDataId, List[Inspection]]]] = None
-    _input_data_dict: Optional[Dict[str, PseudoInputData]] = None
     _task_histories_dict: Optional[Dict[str, List[TaskHistory]]] = None
-    _annotations_dict: Optional[Dict[str, Dict[InputDataId, Dict[str, Any]]]] = None
-    _worktime_statistics: Optional[List[WorktimeStatistics]] = None
-    _labor_list: Optional[List[Dict[str, Any]]] = None
 
     def __init__(
         self,
@@ -71,22 +50,9 @@ class Table:
         self.ignored_task_id_list = ignored_task_id_list
 
         self.project_id = self.database.project_id
-        self._update_annotation_specs()
-        self.project_title = self.annofab_service.api.get_project(self.project_id)[0]["title"]
+        self.project_members_dict = self._get_project_members_dict()
 
-    def _get_worktime_statistics(self) -> List[WorktimeStatistics]:
-        """
-        タスク作業時間集計を取得
-        """
-        if self._worktime_statistics is not None:
-            return self._worktime_statistics
-        else:
-            tmp_worktime_statistics = self.annofab_service.wrapper.get_worktime_statistics(self.project_id)
-            worktime_statistics: List[WorktimeStatistics] = [
-                WorktimeStatistics.from_dict(e) for e in tmp_worktime_statistics
-            ]
-            self._worktime_statistics = worktime_statistics
-            return worktime_statistics
+        self.project_title = self.annofab_service.api.get_project(self.project_id)[0]["title"]
 
     def _get_task_list(self) -> List[Task]:
         """
@@ -107,13 +73,6 @@ class Table:
             self._inspections_dict = self.database.read_inspections_from_json(task_id_list)
             return self._inspections_dict
 
-    def _get_input_data_dict(self) -> Dict[str, PseudoInputData]:
-        if self._input_data_dict is not None:
-            return self._input_data_dict
-        else:
-            self._input_data_dict = self.database.read_input_data_from_json()
-            return self._input_data_dict
-
     def _get_task_histories_dict(self) -> Dict[str, List[TaskHistory]]:
         if self._task_histories_dict is not None:
             return self._task_histories_dict
@@ -121,26 +80,6 @@ class Table:
             task_id_list = [t["task_id"] for t in self._get_task_list()]
             self._task_histories_dict = self.database.read_task_histories_from_json(task_id_list)
             return self._task_histories_dict
-
-    def _get_annotations_dict(self) -> AnnotationDict:
-        if self._annotations_dict is not None:
-            return self._annotations_dict
-        else:
-            task_list = self._get_task_list()
-            self._annotations_dict = self.database.read_annotation_summary(task_list, self._create_annotation_summary)
-            return self._annotations_dict
-
-    def _create_annotation_summary(self, annotation_list: List[Dict[str, Any]]) -> Dict[str, Any]:
-        annotation_summary = {"total_count": len(annotation_list)}
-
-        # labelごとのアノテーション数を算出
-        for label_name in self.label_dict.values():
-            annotation_count = 0
-            key = f"label_{label_name}"
-            annotation_count += len([e for e in annotation_list if e["label"] == label_name])
-            annotation_summary[key] = annotation_count
-
-        return annotation_summary
 
     @staticmethod
     def operator_is_changed_by_phase(task_history_list: List[TaskHistory], phase: TaskPhase) -> bool:
@@ -224,14 +163,6 @@ class Table:
         else:
             return None
 
-    def _update_annotation_specs(self):
-        # [REMOVE_V2_PARAM]
-        annotation_specs, _ = self.annofab_service.api.get_annotation_specs(self.project_id, query_params={"v": "2"})
-        self.inspection_phrases_dict = self.get_inspection_phrases_dict(annotation_specs["inspection_phrases"])
-        self.label_dict = self.get_labels_dict(annotation_specs["labels"])
-        # key:account_id, value:project_member のdict
-        self.project_members_dict = self._get_project_members_dict()
-
     def _get_project_members_dict(self) -> Dict[str, Any]:
         project_members_dict = {}
 
@@ -239,45 +170,6 @@ class Table:
         for member in project_members:
             project_members_dict[member["account_id"]] = member
         return project_members_dict
-
-    @staticmethod
-    def get_labels_dict(labels) -> Dict[str, str]:
-        """
-        ラベル情報を設定する
-        Returns:
-            key: label_id, value: label_name(en)
-
-        """
-        label_dict = {}
-
-        for e in labels:
-            label_id = e["label_id"]
-            messages_list = e["label_name"]["messages"]
-            label_name = [m["message"] for m in messages_list if m["lang"] == "en-US"][0]
-
-            label_dict[label_id] = label_name
-
-        return label_dict
-
-    @staticmethod
-    def get_inspection_phrases_dict(inspection_phrases) -> Dict[str, str]:
-        """
-        定型指摘情報を取得
-        Returns:
-            定型指摘の辞書(key: id, value: 定型コメント(ja))
-
-        """
-
-        inspection_phrases_dict = {}
-
-        for e in inspection_phrases:
-            inspection_id = e["id"]
-            messages_list = e["text"]["messages"]
-            inspection_text = [m["message"] for m in messages_list if m["lang"] == "ja-JP"][0]
-
-            inspection_phrases_dict[inspection_id] = inspection_text
-
-        return inspection_phrases_dict
 
     def _set_first_phase_from_task_history(
         self, task: Task, task_history: Optional[TaskHistory], column_prefix: str
@@ -546,15 +438,6 @@ class Table:
                 return
             arg_task["input_duration_seconds"] = input_data.input_duration_seconds
 
-        def set_annotation_info(arg_task):
-            total_annotation_count = 0
-            input_data_id_list = arg_task["input_data_id_list"]
-            input_data_dict_by_annotation = annotations_dict.get(arg_task["task_id"], None)
-            if input_data_dict_by_annotation is not None:
-                for input_data_id in input_data_id_list:
-                    total_annotation_count += input_data_dict_by_annotation[input_data_id]["total_count"]
-            arg_task["annotation_count"] = total_annotation_count
-
         def set_inspection_info(arg_task):
             # 指摘枚数
             inspection_count = 0
@@ -580,8 +463,8 @@ class Table:
         tasks = self._get_task_list()
         task_histories_dict = self._get_task_histories_dict()
         inspections_dict = self._get_inspections_dict()
-        annotations_dict = self._get_annotations_dict()
-        input_data_dict = self._get_input_data_dict()
+        annotations_dict = self.database.get_annotation_count_by_task()
+        input_data_dict = self.database.read_input_data_from_json()
 
         for task in tasks:
             task_id = task["task_id"]
@@ -593,7 +476,8 @@ class Table:
             task["input_data_count"] = len(task["input_data_id_list"])
 
             self.set_task_histories(task, task_histories)
-            set_annotation_info(task)
+
+            task["annotation_count"] = annotations_dict.get(task_id, 0)
             set_inspection_info(task)
             set_input_data_info_for_movie(task)
 
@@ -606,102 +490,6 @@ class Table:
         else:
             logger.warning(f"タスク一覧が0件です。")
             return pandas.DataFrame()
-
-    def create_task_for_annotation_df(self):
-        """
-        アノテーションラベルごとのアノテーション数を表示したタスク一覧を、取得する。
-        アノテーションラベルのアノテーション数を格納した列名は、アノテーションラベルの日本語名になる。
-        """
-
-        tasks = self._get_task_list()
-        annotations_dict = self._get_annotations_dict()
-
-        task_list = []
-        for task in tasks:
-            task_id = task["task_id"]
-            new_task = {}
-            for key in ["task_id", "phase", "status"]:
-                new_task[key] = task[key]
-
-            new_task["input_data_count"] = len(task["input_data_id_list"])
-            input_data_id_list = task["input_data_id_list"]
-
-            input_data_dict = annotations_dict.get(task_id, None)
-            if input_data_dict is not None:
-                for label_name in self.label_dict.values():
-                    annotation_count = 0
-                    for input_data_id in input_data_id_list:
-                        annotation_summary = input_data_dict[input_data_id]
-                        annotation_count += annotation_summary[f"label_{label_name}"]
-
-                    new_task[f"label_{label_name}"] = annotation_count
-            else:
-                for label_name in self.label_dict.values():
-                    new_task[f"label_{label_name}"] = 0
-
-            task_list.append(new_task)
-
-        df = pandas.DataFrame(task_list)
-        return df
-
-    def create_member_df(self, task_df: pandas.DataFrame) -> pandas.DataFrame:
-        """
-        プロジェクトメンバ一覧の情報
-        """
-
-        task_histories_dict = self._get_task_histories_dict()
-
-        member_dict = {}
-        for account_id, member in self.project_members_dict.items():
-            new_member = copy.deepcopy(member)
-            new_member.update(
-                {
-                    # 初回のアノテーションに関わった個数（タスクの教師付担当者は変更されない前提）
-                    "task_count_of_first_annotation": 0,
-                    "input_data_count_of_first_annotation": 0,
-                    "annotation_count_of_first_annotation": 0,
-                    "inspection_count_of_first_annotation": 0,
-                    # 関わった作業時間
-                    "annotation_worktime_hour": 0,
-                    "inspection_worktime_hour": 0,
-                    "acceptance_worktime_hour": 0,
-                }
-            )
-            member_dict[account_id] = new_member
-
-        for _, row_task in task_df.iterrows():
-            task_id = row_task["task_id"]
-
-            task_histories = task_histories_dict.get(task_id, [])
-
-            # 初回のアノテーションに関わった個数
-            if row_task["first_annotation_account_id"] is not None:
-                first_annotation_account_id = row_task["first_annotation_account_id"]
-                if first_annotation_account_id in member_dict:
-                    member = member_dict[first_annotation_account_id]
-                    member["task_count_of_first_annotation"] += 1
-                    member["input_data_count_of_first_annotation"] += row_task["input_data_count"]
-                    member["annotation_count_of_first_annotation"] += row_task["annotation_count"]
-                    member["inspection_count_of_first_annotation"] += row_task["inspection_count"]
-
-            # 関わった作業時間を記載
-            for history in task_histories:
-                account_id = history["account_id"]
-                if account_id is None:
-                    continue
-
-                phase = history["phase"]
-                worktime_hour = annofabcli.utils.isoduration_to_hour(history["accumulated_labor_time_milliseconds"])
-                if history["account_id"] in member_dict:
-                    member = member_dict[history["account_id"]]
-                    member[f"{phase}_worktime_hour"] += worktime_hour
-
-        member_list = []
-        for account_id, member in member_dict.items():
-            member_list.append(member)
-
-        df = pandas.DataFrame(member_list)
-        return df
 
     @staticmethod
     def create_gradient_df(task_df: pandas.DataFrame) -> pandas.DataFrame:
@@ -722,41 +510,6 @@ class Table:
             task_df["acceptance_worktime_hour"] / task_df["annotation_count"]
         )
         return task_df
-
-    def create_worktime_per_image_df(self, aggregation_by: AggregationBy, phase: TaskPhase) -> pandas.DataFrame:
-        """
-        画像１枚あたり/タスク１個あたりの作業時間を算出する。
-        行方向に日付, 列方向にメンバを並べる
-
-        Args:
-            aggregation_by: 集計単位（画像1枚あたり or タスク１個あたり）
-            phase: 対象のフェーズ
-
-        Returns:
-            DataFrame
-        """
-
-        worktime_statistics = self._get_worktime_statistics()
-
-        worktime_info_list = []
-        for elm in worktime_statistics:
-            worktime_info: Dict[str, Any] = {"date": elm.date}
-            for account_info in elm.accounts:
-                stat_list = getattr(account_info, aggregation_by.value)
-                stat_item: Optional[WorktimeStatisticsItem] = first_true(stat_list, pred=lambda e: e.phase == phase)
-                if stat_item is not None:
-                    worktime_info[account_info.account_id] = isoduration_to_hour(stat_item.average)
-                else:
-                    worktime_info[account_info.account_id] = 0
-
-            worktime_info_list.append(worktime_info)
-
-        df = pandas.DataFrame(worktime_info_list)
-        # account_idをusernameに変更する
-        columns = {
-            col: self._get_username(col) for col in df.columns if col != "date"  # pylint: disable=not-an-iterable
-        }
-        return df.rename(columns=columns).fillna(0)
 
     @staticmethod
     def create_annotation_count_ratio_df(

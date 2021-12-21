@@ -9,7 +9,6 @@ import pandas
 import annofabcli
 from annofabcli.common.cli import COMMAND_LINE_ERROR_STATUS_CODE, get_list_from_args
 from annofabcli.common.utils import print_csv, print_json
-from annofabcli.stat_visualization.merge_performance_per_date import create_df_merged_performance_per_date
 from annofabcli.stat_visualization.write_linegraph_per_user import write_linegraph_per_user
 from annofabcli.stat_visualization.write_performance_scatter_per_user import write_performance_scatter_per_user
 from annofabcli.stat_visualization.write_task_histogram import write_task_histogram
@@ -27,6 +26,33 @@ from annofabcli.statistics.visualization.dataframe.whole_productivity_per_date i
 )
 
 logger = logging.getLogger(__name__)
+
+
+def create_df_merged_performance_per_date(csv_path_list: List[Path]) -> pandas.DataFrame:
+    """
+    `日毎の生産量と生産性.csv` をマージしたDataFrameを返す。
+    Args:
+        csv_path_list:
+    Returns:
+    """
+    df_list: List[pandas.DataFrame] = []
+    for csv_path in csv_path_list:
+        if csv_path.exists():
+            df = pandas.read_csv(str(csv_path))
+            df_list.append(df)
+        else:
+            logger.warning(f"{csv_path} は存在しませんでした。")
+            continue
+
+    if len(df_list) == 0:
+        logger.warning(f"マージ対象のCSVファイルは存在しませんでした。")
+        return pandas.DataFrame()
+
+    sum_df = df_list[0]
+    for df in df_list[1:]:
+        sum_df = WholeProductivityPerCompletedDate.merge(sum_df, df)
+
+    return sum_df
 
 
 def merge_visualization_dir(  # pylint: disable=too-many-statements

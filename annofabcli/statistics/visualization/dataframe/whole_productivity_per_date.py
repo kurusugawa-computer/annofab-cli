@@ -23,6 +23,7 @@ from annofabcli.statistics.linegraph import (
     add_legend_to_figure,
     create_hover_tool,
     get_color_from_small_palette,
+    get_weekly_moving_average,
     plot_line_and_circle,
     plot_moving_average,
 )
@@ -34,7 +35,7 @@ WEEKLY_MOVING_AVERAGE_COLUMN_SUFFIX = "__lastweek"
 """1週間移動平均を表す列名のsuffix"""
 
 
-def get_weekly_moving_average(df: pandas.DataFrame, column: str) -> pandas.Series:
+def get_weekly_moving_average2(df: pandas.DataFrame, column: str) -> pandas.Series:
     """1週間移動平均をプロットするために、1週間移動平均用のpandas.Seriesを取得する。"""
     MOVING_WINDOW_DAYS = 7
     MIN_WINDOW_DAYS = 2
@@ -258,6 +259,33 @@ class WholeProductivityPerCompletedDate:
 
         """
 
+        def add_velocity_columns(df: pandas.DataFrame):
+            for denominator in ["input_data_count", "annotation_count"]:
+                df[f"actual_worktime_minute/{denominator}"] = df["actual_worktime_hour"] * 60 / df[denominator]
+                df[f"monitored_worktime_minute/{denominator}"] = df["monitored_worktime_hour"] * 60 / df[denominator]
+
+            for denominator in ["input_data_count", "annotation_count"]:
+                df[f"actual_worktime_minute/{denominator}{WEEKLY_MOVING_AVERAGE_COLUMN_SUFFIX}"] = (
+                    get_weekly_moving_average(df["actual_worktime_hour"])
+                    * 60
+                    / get_weekly_moving_average(df[denominator])
+                )
+                df[f"monitored_worktime_minute/{denominator}{WEEKLY_MOVING_AVERAGE_COLUMN_SUFFIX}"] = (
+                    get_weekly_moving_average(df["monitored_worktime_hour"])
+                    * 60
+                    / get_weekly_moving_average(df[denominator])
+                )
+
+            df[f"actual_worktime_hour/task_count{WEEKLY_MOVING_AVERAGE_COLUMN_SUFFIX}"] = get_weekly_moving_average(
+                df["actual_worktime_hour"]
+            ) / get_weekly_moving_average(df["task_count"])
+            df[
+                f"monitored_worktime_minute/task_count{WEEKLY_MOVING_AVERAGE_COLUMN_SUFFIX}"
+            ] = get_weekly_moving_average(df["monitored_worktime_hour"]) / get_weekly_moving_average(df["task_count"])
+
+            for column in ["task_count", "input_data_count", "actual_worktime_hour", "monitored_worktime_hour"]:
+                df[f"{column}{WEEKLY_MOVING_AVERAGE_COLUMN_SUFFIX}"] = get_weekly_moving_average(df[column])
+
         def create_figure(title: str, y_axis_label: str) -> bokeh.plotting.Figure:
             return figure(
                 plot_width=1200,
@@ -379,15 +407,18 @@ class WholeProductivityPerCompletedDate:
             logger.warning(f"データ件数が0件のため {output_file} は出力しません。")
             return
 
+        df = df.copy()
         df["dt_date"] = df["date"].map(lambda e: parse(e).date())
+
+        add_velocity_columns(df)
 
         logger.debug(f"{output_file} を出力します。")
 
         fig_list = [
             create_figure(title="日ごとの作業時間", y_axis_label="作業時間[hour]"),
             create_figure(title="日ごとのタスクあたり作業時間", y_axis_label="タスクあたり作業時間[hour/task]"),
-            create_figure(title="日ごとの入力データあたり作業時間", y_axis_label="入力データあたり作業時間[hour/input_data]"),
-            create_figure(title="日ごとのアノテーションあたり作業時間", y_axis_label="アノテーションあたり作業時間[hour/annotation]"),
+            create_figure(title="日ごとの入力データあたり作業時間", y_axis_label="入力データあたり作業時間[minute/input_data]"),
+            create_figure(title="日ごとのアノテーションあたり作業時間", y_axis_label="アノテーションあたり作業時間[minute/annotation]"),
         ]
 
         fig_info_list = [
@@ -408,22 +439,18 @@ class WholeProductivityPerCompletedDate:
             {
                 "x": "dt_date",
                 "y_info_list": [
-                    {"column": "actual_worktime_hour/input_data_count", "legend": "入力データあたり実績作業時間"},
-                    {"column": "monitored_worktime_hour/input_data_count", "legend": "入力データあたり計測作業時間"},
+                    {"column": "actual_worktime_minute/input_data_count", "legend": "入力データあたり実績作業時間"},
+                    {"column": "monitored_worktime_minute/input_data_count", "legend": "入力データあたり計測作業時間"},
                 ],
             },
             {
                 "x": "dt_date",
                 "y_info_list": [
-                    {"column": "actual_worktime_hour/annotation_count", "legend": "アノテーションあたり実績作業時間"},
-                    {"column": "monitored_worktime_hour/annotation_count", "legend": "アノテーションあたり計測作業時間"},
+                    {"column": "actual_worktime_minute/annotation_count", "legend": "アノテーションあたり実績作業時間"},
+                    {"column": "monitored_worktime_minute/annotation_count", "legend": "アノテーションあたり計測作業時間"},
                 ],
             },
         ]
-
-        MOVING_WINDOW_SIZE = 7
-        for column in ["task_count", "input_data_count", "actual_worktime_hour", "monitored_worktime_hour"]:
-            df[f"{column}__lastweek"] = df[column].rolling(MOVING_WINDOW_SIZE).mean()
 
         source = ColumnDataSource(data=df)
 
@@ -446,11 +473,11 @@ class WholeProductivityPerCompletedDate:
             "cumsum_input_data_count",
             "cumsum_actual_worktime_hour",
             "actual_worktime_hour/task_count",
-            "actual_worktime_hour/input_data_count",
-            "actual_worktime_hour/annotation_count",
+            "actual_worktime_minute/input_data_count",
+            "actual_worktime_minute/annotation_count",
             "monitored_worktime_hour/task_count",
-            "monitored_worktime_hour/input_data_count",
-            "monitored_worktime_hour/annotation_count",
+            "monitored_worktime_minute/input_data_count",
+            "monitored_worktime_minute/annotation_count",
         ]
         hover_tool = create_hover_tool(tooltip_item)
 
@@ -915,6 +942,25 @@ class WholeProductivityPerFirstAnnotationStartedDate:
 
         """
 
+        def add_velocity_columns(df):
+            for column in [
+                "input_data_count",
+                "worktime_hour",
+                "annotation_worktime_hour",
+                "inspection_worktime_hour",
+                "acceptance_worktime_hour",
+            ]:
+                df[f"{column}{WEEKLY_MOVING_AVERAGE_COLUMN_SUFFIX}"] = get_weekly_moving_average(df[column])
+
+            for denominator in ["input_data_count", "annotation_count"]:
+                for numerator in ["worktime", "annotation_worktime", "inspection_worktime", "acceptance_worktime"]:
+                    df[f"{numerator}_minute/{denominator}"] = df[f"{numerator}_hour"] * 60 / df[denominator]
+                    df[f"{numerator}_minute/{denominator}{WEEKLY_MOVING_AVERAGE_COLUMN_SUFFIX}"] = (
+                        get_weekly_moving_average(df[f"{numerator}_hour"])
+                        * 60
+                        / get_weekly_moving_average(df[denominator])
+                    )
+
         def create_div_element() -> bokeh.models.Div:
             """
             HTMLページの先頭に付与するdiv要素を生成する。
@@ -1014,24 +1060,7 @@ class WholeProductivityPerFirstAnnotationStartedDate:
             },
         ]
 
-        # 1週間移動平均用の列を追加する
-        for column in [
-            "input_data_count",
-            "worktime_hour",
-            "annotation_worktime_hour",
-            "inspection_worktime_hour",
-            "acceptance_worktime_hour",
-            "worktime_hour/input_data_count",
-            "annotation_worktime_hour/input_data_count",
-            "inspection_worktime_hour/input_data_count",
-            "acceptance_worktime_hour/input_data_count",
-            "worktime_hour/annotation_count",
-            "annotation_worktime_hour/annotation_count",
-            "inspection_worktime_hour/annotation_count",
-            "acceptance_worktime_hour/annotation_count",
-        ]:
-            df[f"{column}{WEEKLY_MOVING_AVERAGE_COLUMN_SUFFIX}"] = get_weekly_moving_average(df, column)
-
+        add_velocity_columns(df)
         source = ColumnDataSource(data=df)
 
         for fig, fig_info in zip(fig_list, fig_info_list):

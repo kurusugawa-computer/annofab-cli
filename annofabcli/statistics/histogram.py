@@ -127,36 +127,6 @@ class Histogram:
                 x_axis_label="受入時間[hour]",
                 title="受入時間",
             ),
-            HistogramName(
-                column="first_annotator_worktime_hour",
-                x_axis_label="1回目の教師付者の作業時間[hour]",
-                title="1回目の教師付者の作業時間",
-            ),
-            HistogramName(
-                column="first_inspector_worktime_hour",
-                x_axis_label="1回目の検査者の作業時間[hour]",
-                title="1回目の検査者の作業時間",
-            ),
-            HistogramName(
-                column="first_acceptor_worktime_hour",
-                x_axis_label="1回目の受入者の作業時間[hour]",
-                title="1回目の受入者の作業時間",
-            ),
-            HistogramName(
-                column="first_annotation_worktime_hour",
-                x_axis_label="1回目の教師付時間[hour]",
-                title="1回目の教師付時間",
-            ),
-            HistogramName(
-                column="first_inspection_worktime_hour",
-                x_axis_label="1回目の検査時間[hour]",
-                title="1回目の検査時間",
-            ),
-            HistogramName(
-                column="first_acceptance_worktime_hour",
-                x_axis_label="1回目の受入時間[hour]",
-                title="1回目の受入時間",
-            ),
             HistogramName(column="sum_worktime_hour", x_axis_label="総作業時間[hour]", title="総作業時間"),
         ]
 
