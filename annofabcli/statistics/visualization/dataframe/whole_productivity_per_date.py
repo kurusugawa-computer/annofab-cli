@@ -27,6 +27,7 @@ from annofabcli.statistics.linegraph import (
     get_weekly_sum,
     plot_line_and_circle,
     plot_moving_average,
+    write_bokeh_graph,
 )
 
 logger = logging.getLogger(__name__)
@@ -232,6 +233,17 @@ class WholeProductivityPerCompletedDate:
         sum_df.index.name = "date"
         cls._add_velocity_columns(sum_df)
         return WholeProductivityPerCompletedDate(sum_df.reset_index())
+
+    @staticmethod
+    def _create_div_element() -> bokeh.models.Div:
+        """
+        HTMLページの先頭に付与するdiv要素を生成する。
+        """
+        return bokeh.models.Div(
+            text="""<h4>用語</h4>
+            <p>「X日のタスク数」とは、X日に初めて受入完了状態になったタスクの個数です。</p>
+            """
+        )
 
     def plot(self, output_file: Path):
         """
@@ -469,10 +481,8 @@ class WholeProductivityPerCompletedDate:
             fig.add_tools(hover_tool)
             add_legend_to_figure(fig)
 
-        output_file.parent.mkdir(exist_ok=True, parents=True)
-        bokeh.plotting.reset_output()
-        bokeh.plotting.output_file(output_file, title=output_file.stem)
-        bokeh.plotting.save(bokeh.layouts.column(fig_list))
+        div_element = self._create_div_element()
+        write_bokeh_graph(bokeh.layouts.column([div_element] + fig_list), output_file)
 
     def plot_cumulatively(self, output_file: Path):
         """
@@ -623,10 +633,8 @@ class WholeProductivityPerCompletedDate:
             fig.add_tools(hover_tool)
             add_legend_to_figure(fig)
 
-        output_file.parent.mkdir(exist_ok=True, parents=True)
-        bokeh.plotting.reset_output()
-        bokeh.plotting.output_file(output_file, title=output_file.stem)
-        bokeh.plotting.save(bokeh.layouts.column(fig_list))
+        div_element = self._create_div_element()
+        write_bokeh_graph(bokeh.layouts.column([div_element] + fig_list), output_file)
 
     def to_csv(self, output_file: Path) -> None:
         """
