@@ -28,7 +28,7 @@ from annofabcli.statistics.visualization.dataframe.whole_productivity_per_date i
 logger = logging.getLogger(__name__)
 
 
-def create_df_merged_performance_per_date(csv_path_list: List[Path]) -> pandas.DataFrame:
+def create_merged_performance_per_date(csv_path_list: List[Path]) -> WholeProductivityPerCompletedDate:
     """
     `日毎の生産量と生産性.csv` をマージしたDataFrameを返す。
     Args:
@@ -48,11 +48,11 @@ def create_df_merged_performance_per_date(csv_path_list: List[Path]) -> pandas.D
         logger.warning(f"マージ対象のCSVファイルは存在しませんでした。")
         return pandas.DataFrame()
 
-    sum_df = df_list[0]
+    sum_obj = WholeProductivityPerCompletedDate(df_list[0])
     for df in df_list[1:]:
-        sum_df = WholeProductivityPerCompletedDate.merge(sum_df, df)
+        sum_obj = WholeProductivityPerCompletedDate.merge(sum_obj, WholeProductivityPerCompletedDate(df))
 
-    return sum_df
+    return sum_obj
 
 
 def merge_visualization_dir(  # pylint: disable=too-many-statements
@@ -87,8 +87,8 @@ def merge_visualization_dir(  # pylint: disable=too-many-statements
 
     def execute_merge_performance_per_date():
         performance_per_date_csv_list = [dir / FILENAME_PERFORMANCE_PER_DATE for dir in project_dir_list]
-        df_per_date = create_df_merged_performance_per_date(performance_per_date_csv_list)
-        WholeProductivityPerCompletedDate.to_csv(df_per_date, output_dir / FILENAME_PERFORMANCE_PER_DATE)
+        obj = create_merged_performance_per_date(performance_per_date_csv_list)
+        obj.to_csv(output_dir / FILENAME_PERFORMANCE_PER_DATE)
 
     def merge_performance_per_first_annotation_started_date():
         csv_list = [dir / FILENAME_PERFORMANCE_PER_FIRST_ANNOTATION_STARTED_DATE for dir in project_dir_list]

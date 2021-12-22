@@ -145,12 +145,6 @@ class TestWholeProductivityPerCompletedDate:
 
         cls.main_obj = WholeProductivityPerCompletedDate.from_df(df_task, df_worktime)
 
-    def test_create2(self):
-        # 完了タスクが１つもない状態で試す
-        df_task = pandas.read_csv(str(data_path / "only-working-task.csv"))
-        df_labor = pandas.read_csv(str(data_path / "labor-df.csv"))
-        obj = WholeProductivityPerCompletedDate.from_df(df_task, df_labor)
-
     def test_create3(self):
         # 完了タスクが１つもない状態で試す
         df_task = pandas.read_csv(str(data_path / "task.csv"))
