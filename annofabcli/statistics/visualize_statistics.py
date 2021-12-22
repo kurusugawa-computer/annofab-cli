@@ -219,23 +219,6 @@ class WriteCsvGraph:
                 " * '散布図-アノテーションあたり作業時間と品質の関係-実績時間-教師付者用'"
             )
 
-    # def write_whole_productivity_per_date(self) -> None:
-    #     """日ごとの全体の生産性に関するファイルを出力する。"""
-    #     task_df = self._get_task_df()
-    #     whole_productivity_df = WholeProductivityPerCompletedDate.from_df(task_df, self.df_labor)
-
-    #     WholeProductivityPerCompletedDate.plot(whole_productivity_df, self.output_dir / "line-graph/折れ線-横軸_日-全体.html")
-    #     WholeProductivityPerCompletedDate.plot_cumulatively(
-    #         whole_productivity_df, self.output_dir / "line-graph/累積折れ線-横軸_日-全体.html"
-    #     )
-
-    #     WholeProductivityPerCompletedDate.to_csv(whole_productivity_df, self.output_dir / FILENAME_PERFORMANCE_PER_DATE)
-
-    # def write_whole_productivity_per_first_annotation_started_date(self) -> None:
-    #     obj = WholeProductivityPerFirstAnnotationStartedDate.from_df(self.task_df)
-    #     obj.to_csv(self.output_dir / "教師付開始日毎の生産量と生産性.csv")
-    #     obj.plot(self.output_dir / "line-graph/折れ線-横軸_教師付開始日-全体.html")
-
     def write_cumulative_linegraph_by_user(self, user_id_list: Optional[List[str]] = None) -> None:
         """ユーザごとの累積折れ線グラフをプロットする。"""
         df_task = self._get_task_df()

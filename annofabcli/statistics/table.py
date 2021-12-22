@@ -403,7 +403,9 @@ class Table:
             "first_acceptance_started_datetime", "first_annotation_started_datetime"
         )
 
-        task["diff_days_to_first_acceptance_completed"] = diff_days("first_acceptance_completed_datetime", "first_annotation_started_datetime")
+        task["diff_days_to_first_acceptance_completed"] = diff_days(
+            "first_acceptance_completed_datetime", "first_annotation_started_datetime"
+        )
 
         # 抜取検査/抜取受入で、検査/受入がスキップされたか否か
         task["acceptance_is_skipped"] = self._acceptance_is_skipped(task_histories)
