@@ -130,7 +130,7 @@ class CopyAnnotationMain(AbstractCommandLineWithConfirmInterface):
                 # コピー元にidがないがコピー先にidがあるものはそのまま何もしない
                 # コピー元にも，コピー先にもidがあるアノテーションはコピー元のもので上書き
                 # コピー元にidがあるがコピー先にはidがないものは新規追加(put_input_data)にて行う
-                logger.info(f"mergeが指定されたため，存在するアノテーションは上書きし，存在しない場合は追加します．")
+                logger.info(f"'--merge'が指定されたため，存在するアノテーションは上書きし，存在しない場合は追加します．")
                 # to_annotation_detailからfrom_annotation_idと同じidのものをfrom_annotation_detailsに追加
                 append_annotation_details = filter(
                     lambda item: not (
@@ -139,9 +139,11 @@ class CopyAnnotationMain(AbstractCommandLineWithConfirmInterface):
                     dest_anno_details,
                 )
                 src_anno_details.extend(append_annotation_details)
+
             elif self.overwrite:
                 # コピー先のannotaitonを無視してput_annotationすればoverwrite扱いになる
-                logger.info("overwriteが指定されたため，すでに存在するアノテーションを削除してコピーします。")
+                logger.info("'--overwrite'が指定されたため，すでに存在するアノテーションを削除してコピーします。")
+
             else:
                 logger.debug(
                     f"コピー先タスク={dest_task}/{dest_input} : "

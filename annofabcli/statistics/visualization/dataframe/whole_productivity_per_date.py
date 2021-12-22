@@ -24,6 +24,7 @@ from annofabcli.statistics.linegraph import (
     create_hover_tool,
     get_color_from_small_palette,
     get_weekly_moving_average,
+    get_weekly_sum,
     plot_line_and_circle,
     plot_moving_average,
 )
@@ -33,21 +34,6 @@ logger = logging.getLogger(__name__)
 
 WEEKLY_MOVING_AVERAGE_COLUMN_SUFFIX = "__lastweek"
 """1週間移動平均を表す列名のsuffix"""
-
-
-def get_weekly_moving_average2(df: pandas.DataFrame, column: str) -> pandas.Series:
-    """1週間移動平均をプロットするために、1週間移動平均用のpandas.Seriesを取得する。"""
-    MOVING_WINDOW_DAYS = 7
-    MIN_WINDOW_DAYS = 2
-    tmp = column.split("/")
-    if len(tmp) == 2:
-        numerator_column, denominator_column = tmp[0], tmp[1]
-        return (
-            df[numerator_column].rolling(MOVING_WINDOW_DAYS, min_periods=MIN_WINDOW_DAYS).sum()
-            / df[denominator_column].rolling(MOVING_WINDOW_DAYS, min_periods=MIN_WINDOW_DAYS).sum()
-        )
-    else:
-        return df[column].rolling(MOVING_WINDOW_DAYS, min_periods=MIN_WINDOW_DAYS).mean()
 
 
 class WholeProductivityPerCompletedDate:
@@ -721,11 +707,31 @@ class WholeProductivityPerCompletedDate:
 class WholeProductivityPerFirstAnnotationStartedDate:
     """教師付開始日ごとの全体の生産量と生産性に関する情報"""
 
+    def __init__(self, df: pandas.DataFrame):
+        self.df = df
+
     @classmethod
-    def create(cls, df_task: pandas.DataFrame) -> pandas.DataFrame:
+    def _add_velocity_columns(cls, df: pandas.DataFrame):
         """
-        教師付開始日ごとに、日毎の全体の生産量と生産性が格納されたDataFrameを生成する。
+        日毎の全体の生産量から、累計情報、生産性の列を追加する。
         """
+
+        def add_velocity_column(df: pandas.DataFrame, numerator_column: str, denominator_column: str):
+            df[f"{numerator_column}/{denominator_column}"] = df[numerator_column] / df[denominator_column]
+
+        # annofab 計測時間から算出したvelocityを追加
+        add_velocity_column(df, numerator_column="worktime_hour", denominator_column="input_data_count")
+        add_velocity_column(df, numerator_column="annotation_worktime_hour", denominator_column="input_data_count")
+        add_velocity_column(df, numerator_column="inspection_worktime_hour", denominator_column="input_data_count")
+        add_velocity_column(df, numerator_column="acceptance_worktime_hour", denominator_column="input_data_count")
+
+        add_velocity_column(df, numerator_column="worktime_hour", denominator_column="annotation_count")
+        add_velocity_column(df, numerator_column="annotation_worktime_hour", denominator_column="annotation_count")
+        add_velocity_column(df, numerator_column="inspection_worktime_hour", denominator_column="annotation_count")
+        add_velocity_column(df, numerator_column="acceptance_worktime_hour", denominator_column="annotation_count")
+
+    @classmethod
+    def from_df_task(cls, df_task: pandas.DataFrame) -> WholeProductivityPerFirstAnnotationStartedDate:
 
         df_sub_task = df_task[df_task["status"] == TaskStatus.COMPLETE.value][
             [
@@ -783,12 +789,16 @@ class WholeProductivityPerFirstAnnotationStartedDate:
 
         # 生産性情報などの列を追加する
         cls._add_velocity_columns(df_date)
-        return df_date
+        return cls(df_date)
 
-    @classmethod
-    def to_csv(cls, df: pandas.DataFrame, output_file: Path) -> pandas.DataFrame:
-        if len(df) == 0:
-            logger.warning(f"データ件数が0件のため {output_file} は出力しません。")
+    def _validate_df_for_output(self, output_file: Path) -> bool:
+        if len(self.df) == 0:
+            logger.warning(f"データが0件のため、{output_file} は出力しません。")
+            return False
+        return True
+
+    def to_csv(self, output_file: Path) -> pandas.DataFrame:
+        if not self._validate_df_for_output(output_file):
             return
 
         columns = [
@@ -810,39 +820,12 @@ class WholeProductivityPerFirstAnnotationStartedDate:
             "acceptance_worktime_hour/annotation_count",
         ]
 
-        # # CSVには"INF"という文字を出力したくないので、"INF"をNaNに置換する
-        # df.replace([numpy.inf, -numpy.inf], numpy.nan, inplace=True)
-        print_csv(df[columns], str(output_file))
+        print_csv(self.df[columns], str(output_file))
 
     @classmethod
-    def _add_velocity_columns(cls, df: pandas.DataFrame):
-        """
-        日毎の全体の生産量から、累計情報、生産性の列を追加する。
-        """
-
-        def add_velocity_column(df: pandas.DataFrame, numerator_column: str, denominator_column: str):
-            """速度情報の列を追加"""
-            MOVING_WINDOW_SIZE = 7
-            MIN_WINDOW_SIZE = 2
-            df[f"{numerator_column}/{denominator_column}"] = df[numerator_column] / df[denominator_column]
-            df[f"{numerator_column}/{denominator_column}__lastweek"] = (
-                df[numerator_column].rolling(MOVING_WINDOW_SIZE, min_periods=MIN_WINDOW_SIZE).sum()
-                / df[denominator_column].rolling(MOVING_WINDOW_SIZE, min_periods=MIN_WINDOW_SIZE).sum()
-            )
-
-        # annofab 計測時間から算出したvelocityを追加
-        add_velocity_column(df, numerator_column="worktime_hour", denominator_column="input_data_count")
-        add_velocity_column(df, numerator_column="annotation_worktime_hour", denominator_column="input_data_count")
-        add_velocity_column(df, numerator_column="inspection_worktime_hour", denominator_column="input_data_count")
-        add_velocity_column(df, numerator_column="acceptance_worktime_hour", denominator_column="input_data_count")
-
-        add_velocity_column(df, numerator_column="worktime_hour", denominator_column="annotation_count")
-        add_velocity_column(df, numerator_column="annotation_worktime_hour", denominator_column="annotation_count")
-        add_velocity_column(df, numerator_column="inspection_worktime_hour", denominator_column="annotation_count")
-        add_velocity_column(df, numerator_column="acceptance_worktime_hour", denominator_column="annotation_count")
-
-    @classmethod
-    def merge(cls, df1: pandas.DataFrame, df2: pandas.DataFrame) -> pandas.DataFrame:
+    def merge(
+        cls, obj1: WholeProductivityPerFirstAnnotationStartedDate, obj2: WholeProductivityPerFirstAnnotationStartedDate
+    ) -> WholeProductivityPerFirstAnnotationStartedDate:
         def merge_row(
             str_date: str, columns: pandas.Index, row1: Optional[pandas.Series], row2: Optional[pandas.Series]
         ) -> pandas.Series:
@@ -863,6 +846,8 @@ class WholeProductivityPerFirstAnnotationStartedDate:
             upper_date = max(df1["first_annotation_started_date"].max(), df2["first_annotation_started_date"].max())
             return pandas.date_range(start=lower_date, end=upper_date)
 
+        df1 = obj1.df
+        df2 = obj2.df
         tmp_df1 = df1.set_index("first_annotation_started_date")
         tmp_df2 = df2.set_index("first_annotation_started_date")
 
@@ -883,8 +868,9 @@ class WholeProductivityPerFirstAnnotationStartedDate:
 
         sum_df = pandas.DataFrame(row_list)
         sum_df.index.name = "first_annotation_started_date"
+        sum_df["first_annotation_started_date"] = sum_df.index
         cls._add_velocity_columns(sum_df)
-        return sum_df.reset_index()
+        return cls(sum_df)
 
     @classmethod
     def _plot_and_moving_average(
@@ -929,20 +915,12 @@ class WholeProductivityPerFirstAnnotationStartedDate:
             **kwargs,
         )
 
-    @classmethod
-    def plot(cls, df: pandas.DataFrame, output_file: Path):
+    def plot(self, output_file: Path):
         """
         全体の生産量や生産性をプロットする
-
-
-        Args:
-            df:
-
-        Returns:
-
         """
 
-        def add_velocity_columns(df):
+        def add_velocity_and_weekly_moving_average_columns(df):
             for column in [
                 "input_data_count",
                 "worktime_hour",
@@ -956,9 +934,7 @@ class WholeProductivityPerFirstAnnotationStartedDate:
                 for numerator in ["worktime", "annotation_worktime", "inspection_worktime", "acceptance_worktime"]:
                     df[f"{numerator}_minute/{denominator}"] = df[f"{numerator}_hour"] * 60 / df[denominator]
                     df[f"{numerator}_minute/{denominator}{WEEKLY_MOVING_AVERAGE_COLUMN_SUFFIX}"] = (
-                        get_weekly_moving_average(df[f"{numerator}_hour"])
-                        * 60
-                        / get_weekly_moving_average(df[denominator])
+                        get_weekly_sum(df[f"{numerator}_hour"]) * 60 / get_weekly_sum(df[denominator])
                     )
 
         def create_div_element() -> bokeh.models.Div:
@@ -997,7 +973,7 @@ class WholeProductivityPerFirstAnnotationStartedDate:
             fig_input_data.extra_y_ranges = {
                 y_range_name: DataRange1d(end=df["worktime_hour"].max() * (1 + y_overlimit))
             }
-            cls._plot_and_moving_average(
+            self._plot_and_moving_average(
                 fig=fig_input_data,
                 x_column_name="dt_first_annotation_started_date",
                 y_column_name="input_data_count",
@@ -1005,7 +981,7 @@ class WholeProductivityPerFirstAnnotationStartedDate:
                 source=source,
                 color=get_color_from_small_palette(0),
             )
-            cls._plot_and_moving_average(
+            self._plot_and_moving_average(
                 fig=fig_input_data,
                 x_column_name="dt_first_annotation_started_date",
                 y_column_name="worktime_hour",
@@ -1016,12 +992,12 @@ class WholeProductivityPerFirstAnnotationStartedDate:
             )
             return fig_input_data
 
-        if len(df) == 0:
-            logger.warning(f"データ件数が0件のため {output_file} は出力しません。")
+        if not self._validate_df_for_output(output_file):
             return
 
+        df = self.df.copy()
         df["dt_first_annotation_started_date"] = df["first_annotation_started_date"].map(lambda e: parse(e).date())
-        add_velocity_columns(df)
+        add_velocity_and_weekly_moving_average_columns(df)
 
         logger.debug(f"{output_file} を出力します。")
 
@@ -1068,7 +1044,7 @@ class WholeProductivityPerFirstAnnotationStartedDate:
             for index, y_info in enumerate(y_info_list):
                 color = get_color_from_small_palette(index)
 
-                cls._plot_and_moving_average(
+                self._plot_and_moving_average(
                     fig=fig,
                     x_column_name="dt_first_annotation_started_date",
                     y_column_name=y_info["column"],

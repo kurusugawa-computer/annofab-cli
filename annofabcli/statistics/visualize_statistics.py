@@ -232,9 +232,9 @@ class WriteCsvGraph:
         WholeProductivityPerCompletedDate.to_csv(whole_productivity_df, self.output_dir / FILENAME_PERFORMANCE_PER_DATE)
 
     def write_whole_productivity_per_first_annotation_started_date(self) -> None:
-        df = WholeProductivityPerFirstAnnotationStartedDate.create(self.task_df)
-        WholeProductivityPerFirstAnnotationStartedDate.to_csv(df, self.output_dir / "教師付開始日毎の生産量と生産性.csv")
-        WholeProductivityPerFirstAnnotationStartedDate.plot(df, self.output_dir / "line-graph/折れ線-横軸_教師付開始日-全体.html")
+        obj = WholeProductivityPerFirstAnnotationStartedDate.from_df_task(self.task_df)
+        obj.to_csv(self.output_dir / "教師付開始日毎の生産量と生産性.csv")
+        obj.plot(self.output_dir / "line-graph/折れ線-横軸_教師付開始日-全体.html")
 
     def write_cumulative_linegraph_by_user(self, user_id_list: Optional[List[str]] = None) -> None:
         """ユーザごとの累積折れ線グラフをプロットする。"""

@@ -105,15 +105,15 @@ def merge_visualization_dir(  # pylint: disable=too-many-statements
             logger.warning(f"マージ対象のCSVファイルは存在しませんでした。")
             return
 
-        sum_df = df_list[0]
+        sum_obj = WholeProductivityPerFirstAnnotationStartedDate(df_list[0])
         for df in df_list[1:]:
-            sum_df = WholeProductivityPerFirstAnnotationStartedDate.merge(sum_df, df)
+            sum_obj = WholeProductivityPerFirstAnnotationStartedDate.merge(
+                sum_obj, WholeProductivityPerFirstAnnotationStartedDate(df)
+            )
 
-        WholeProductivityPerFirstAnnotationStartedDate.to_csv(
-            sum_df, output_dir / FILENAME_PERFORMANCE_PER_FIRST_ANNOTATION_STARTED_DATE
-        )
+        sum_obj.to_csv(output_dir / FILENAME_PERFORMANCE_PER_FIRST_ANNOTATION_STARTED_DATE)
 
-        WholeProductivityPerFirstAnnotationStartedDate.plot(sum_df, output_dir / "line-graph/折れ線-横軸_教師付開始日-全体.html")
+        sum_obj.plot(output_dir / "line-graph/折れ線-横軸_教師付開始日-全体.html")
 
     def merge_task_list() -> pandas.DataFrame:
         list_df = []
