@@ -73,16 +73,12 @@ class WholeProductivityPerCompletedDate:
         df_sub_task = df_task[
             [
                 "task_id",
-                "task_completed_datetime",
+                "first_acceptance_completed_datetime",
                 "input_data_count",
                 "annotation_count",
-                "sum_worktime_hour",
-                "annotation_worktime_hour",
-                "inspection_worktime_hour",
-                "acceptance_worktime_hour",
             ]
         ].copy()
-        df_sub_task["task_completed_date"] = df_sub_task["task_completed_datetime"].map(
+        df_sub_task["first_acceptance_completed_date"] = df_sub_task["first_acceptance_completed_datetime"].map(
             lambda e: datetime_to_date(e) if not pandas.isna(e) else None
         )
 
@@ -90,57 +86,59 @@ class WholeProductivityPerCompletedDate:
         value_columns = [
             "input_data_count",
             "annotation_count",
-            "sum_worktime_hour",
-            "annotation_worktime_hour",
-            "inspection_worktime_hour",
-            "acceptance_worktime_hour",
         ]
         df_agg_sub_task = df_sub_task.pivot_table(
             values=value_columns,
-            index="task_completed_date",
+            index="first_acceptance_completed_date",
             aggfunc=numpy.sum,
         ).fillna(0)
         if len(df_agg_sub_task) > 0:
             df_agg_sub_task["task_count"] = df_sub_task.pivot_table(
-                values=["task_id"], index="task_completed_date", aggfunc="count"
+                values=["task_id"], index="first_acceptance_completed_date", aggfunc="count"
             ).fillna(0)
         else:
             # 列だけ作る
             df_agg_sub_task = df_agg_sub_task.assign(**{key: 0 for key in value_columns}, task_count=0)
 
         if len(df_labor) > 0:
-            df_labor2 = df_labor[df_labor["actual_worktime_hour"] > 0]
-            df_agg_labor = df_labor2.pivot_table(
-                values=["actual_worktime_hour"], index="date", aggfunc=numpy.sum
+            df_agg_labor = df_labor.pivot_table(
+                values=[
+                    "actual_worktime_hour",
+                    "monitored_worktime_hour",
+                    "monitored_annotation_worktime_hour",
+                    "monitored_inspection_worktime_hour",
+                    "monitored_acceptance_worktime_hour",
+                ],
+                index="date",
+                aggfunc=numpy.sum,
             ).fillna(0)
 
-            if "actual_worktime_hour" not in df_agg_labor.columns:
-                # len(df_labor2)==0 のときの状況
-                df_agg_labor["actual_worktime_hour"] = 0
-            df_tmp = df_labor2.pivot_table(values=["user_id"], index="date", aggfunc="count").fillna(0)
-
+            # 作業したユーザ数を算出
+            df_tmp = (
+                df_labor[df_labor["monitored_worktime_hour"] > 0]
+                .pivot_table(values=["user_id"], index="date", aggfunc="count")
+                .fillna(0)
+            )
             if len(df_tmp) > 0:
                 df_agg_labor["working_user_count"] = df_tmp
             else:
                 df_agg_labor["working_user_count"] = 0
 
         else:
-            df_agg_labor = pandas.DataFrame(columns=["actual_worktime_hour", "working_user_count"])
+            df_agg_labor = pandas.DataFrame(
+                columns=[
+                    "actual_worktime_hour",
+                    "monitored_worktime_hour",
+                    "monitored_annotation_worktime_hour",
+                    "monitored_inspection_worktime_hour",
+                    "monitored_acceptance_worktime_hour",
+                    "working_user_count",
+                ]
+            )
 
         # 日付の一覧を生成
         df_date_base = cls._create_df_date(df_agg_sub_task.index, df_agg_labor.index)
         df_date = df_date_base.join(df_agg_sub_task).join(df_agg_labor).fillna(0)
-        df_date.rename(
-            columns={
-                "sum_worktime_hour": "monitored_worktime_hour",
-                "annotation_worktime_hour": "monitored_annotation_worktime_hour",
-                "inspection_worktime_hour": "monitored_inspection_worktime_hour",
-                "acceptance_worktime_hour": "monitored_acceptance_worktime_hour",
-                "actual_worktime_hour": "actual_worktime_hour",
-                "user_id": "working_user_count",
-            },
-            inplace=True,
-        )
         df_date["date"] = df_date.index
 
         cls._add_velocity_columns(df_date)
@@ -263,7 +261,7 @@ class WholeProductivityPerCompletedDate:
             df[f"actual_worktime_hour/task_count{WEEKLY_MOVING_AVERAGE_COLUMN_SUFFIX}"] = get_weekly_sum(
                 df["actual_worktime_hour"]
             ) / get_weekly_sum(df["task_count"])
-            df[f"monitored_worktime_minute/task_count{WEEKLY_MOVING_AVERAGE_COLUMN_SUFFIX}"] = get_weekly_sum(
+            df[f"monitored_worktime_hour/task_count{WEEKLY_MOVING_AVERAGE_COLUMN_SUFFIX}"] = get_weekly_sum(
                 df["monitored_worktime_hour"]
             ) / get_weekly_sum(df["task_count"])
 
@@ -492,6 +490,7 @@ class WholeProductivityPerCompletedDate:
             )
 
         def create_task_figure():
+            x_column_name = "dt_date"
             y_range_name = "worktime_axis"
             fig = create_figure(title="日ごとの累積タスク数と累積作業時間", y_axis_label="タスク数")
             fig.add_layout(
@@ -542,6 +541,7 @@ class WholeProductivityPerCompletedDate:
             return fig
 
         def create_input_data_figure():
+            x_column_name = "dt_date"
             y_range_name = "worktime_axis"
             fig = create_figure(title="日ごとの累積入力データ数と累積作業時間", y_axis_label="入力データ数")
             fig.add_layout(
@@ -602,37 +602,7 @@ class WholeProductivityPerCompletedDate:
 
         logger.debug(f"{output_file} を出力します。")
 
-        fig_list = [
-            create_figure(title="日ごとの累積作業時間", y_axis_label="作業時間[hour]"),
-        ]
-
-        fig_info_list = [
-            {
-                "x": "dt_date",
-                "y_info_list": [
-                    {"column": "cumsum_actual_worktime_hour", "legend": "実績作業時間"},
-                    {"column": "cumsum_monitored_worktime_hour", "legend": "計測作業時間"},
-                ],
-            },
-        ]
-
         source = ColumnDataSource(data=df)
-
-        for fig, fig_info in zip(fig_list, fig_info_list):
-            x_column_name = "dt_date"
-            y_info_list: list[dict[str, str]] = fig_info["y_info_list"]  # type: ignore
-            for index, y_info in enumerate(y_info_list):
-                color = get_color_from_small_palette(index)
-
-                # 値をプロット
-                plot_line_and_circle(
-                    fig,
-                    x_column_name=x_column_name,
-                    y_column_name=y_info["column"],
-                    source=source,
-                    color=color,
-                    legend_label=y_info["legend"],
-                )
 
         tooltip_item = [
             "date",
@@ -647,8 +617,7 @@ class WholeProductivityPerCompletedDate:
         ]
         hover_tool = create_hover_tool(tooltip_item)
 
-        fig_list.insert(0, create_task_figure())
-        fig_list.insert(1, create_input_data_figure())
+        fig_list = [create_task_figure(), create_input_data_figure()]
 
         for fig in fig_list:
             fig.add_tools(hover_tool)
@@ -681,10 +650,9 @@ class WholeProductivityPerCompletedDate:
         ]
 
         velocity_columns = [
-            f"{numerator}/{denominator}{suffix}"
+            f"{numerator}/{denominator}"
             for numerator in ["actual_worktime_hour", "monitored_worktime_hour"]
             for denominator in ["task_count", "input_data_count", "annotation_count"]
-            for suffix in ["", "__lastweek"]
         ]
 
         columns = (

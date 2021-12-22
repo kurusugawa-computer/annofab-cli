@@ -141,9 +141,9 @@ class TestWholeProductivityPerCompletedDate:
         cls.output_dir.mkdir(exist_ok=True, parents=True)
 
         df_task = pandas.read_csv(str(data_path / "task.csv"))
-        df_labor = pandas.read_csv(str(data_path / "labor-df.csv"))
+        df_worktime = pandas.read_csv(str(data_path / "ユーザ_日付list-作業時間.csv"))
 
-        cls.main_obj = WholeProductivityPerCompletedDate.from_df(df_task, df_labor)
+        cls.main_obj = WholeProductivityPerCompletedDate.from_df(df_task, df_worktime)
 
     def test_create2(self):
         # 完了タスクが１つもない状態で試す

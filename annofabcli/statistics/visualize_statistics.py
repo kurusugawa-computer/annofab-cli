@@ -219,22 +219,22 @@ class WriteCsvGraph:
                 " * '散布図-アノテーションあたり作業時間と品質の関係-実績時間-教師付者用'"
             )
 
-    def write_whole_productivity_per_date(self) -> None:
-        """日ごとの全体の生産性に関するファイルを出力する。"""
-        task_df = self._get_task_df()
-        whole_productivity_df = WholeProductivityPerCompletedDate.from_df(task_df, self.df_labor)
+    # def write_whole_productivity_per_date(self) -> None:
+    #     """日ごとの全体の生産性に関するファイルを出力する。"""
+    #     task_df = self._get_task_df()
+    #     whole_productivity_df = WholeProductivityPerCompletedDate.from_df(task_df, self.df_labor)
 
-        WholeProductivityPerCompletedDate.plot(whole_productivity_df, self.output_dir / "line-graph/折れ線-横軸_日-全体.html")
-        WholeProductivityPerCompletedDate.plot_cumulatively(
-            whole_productivity_df, self.output_dir / "line-graph/累積折れ線-横軸_日-全体.html"
-        )
+    #     WholeProductivityPerCompletedDate.plot(whole_productivity_df, self.output_dir / "line-graph/折れ線-横軸_日-全体.html")
+    #     WholeProductivityPerCompletedDate.plot_cumulatively(
+    #         whole_productivity_df, self.output_dir / "line-graph/累積折れ線-横軸_日-全体.html"
+    #     )
 
-        WholeProductivityPerCompletedDate.to_csv(whole_productivity_df, self.output_dir / FILENAME_PERFORMANCE_PER_DATE)
+    #     WholeProductivityPerCompletedDate.to_csv(whole_productivity_df, self.output_dir / FILENAME_PERFORMANCE_PER_DATE)
 
-    def write_whole_productivity_per_first_annotation_started_date(self) -> None:
-        obj = WholeProductivityPerFirstAnnotationStartedDate.from_df(self.task_df)
-        obj.to_csv(self.output_dir / "教師付開始日毎の生産量と生産性.csv")
-        obj.plot(self.output_dir / "line-graph/折れ線-横軸_教師付開始日-全体.html")
+    # def write_whole_productivity_per_first_annotation_started_date(self) -> None:
+    #     obj = WholeProductivityPerFirstAnnotationStartedDate.from_df(self.task_df)
+    #     obj.to_csv(self.output_dir / "教師付開始日毎の生産量と生産性.csv")
+    #     obj.plot(self.output_dir / "line-graph/折れ線-横軸_教師付開始日-全体.html")
 
     def write_cumulative_linegraph_by_user(self, user_id_list: Optional[List[str]] = None) -> None:
         """ユーザごとの累積折れ線グラフをプロットする。"""
@@ -267,13 +267,23 @@ class WriteCsvGraph:
 
             annotator_obj.plot_task_metrics(self.output_dir / "line-graph/教師付者用/累積折れ線-横軸_タスク数-教師付者用.html", user_id_list)
 
-    def write_worktime_per_date(
-        self, user_id_list: Optional[List[str]] = None, df_labor: Optional[pandas.DataFrame] = None
-    ) -> None:
+    def write_worktime_per_date(self, user_id_list: Optional[List[str]] = None) -> None:
         """日ごとの作業時間情報を出力する。"""
-        obj = WorktimePerDate.from_webapi(self.service, self.project_id, df_labor)
-        obj.plot_cumulatively(self.output_dir / "line-graph/累積折れ線-横軸_日-縦軸_作業時間.html", user_id_list)
-        obj.to_csv(self.output_dir / "ユーザ_日付list-作業時間.csv")
+        worktime_per_date_obj = WorktimePerDate.from_webapi(self.service, self.project_id, self.df_labor)
+        worktime_per_date_obj.plot_cumulatively(self.output_dir / "line-graph/累積折れ線-横軸_日-縦軸_作業時間.html", user_id_list)
+        worktime_per_date_obj.to_csv(self.output_dir / "ユーザ_日付list-作業時間.csv")
+
+        df_task = self._get_task_df()
+        productivity_per_completed_date_obj = WholeProductivityPerCompletedDate.from_df(
+            df_task, worktime_per_date_obj.df
+        )
+        productivity_per_completed_date_obj.plot(self.output_dir / "line-graph/折れ線-横軸_日-全体.html")
+        productivity_per_completed_date_obj.plot_cumulatively(self.output_dir / "line-graph/累積折れ線-横軸_日-全体.html")
+        productivity_per_completed_date_obj.to_csv(self.output_dir / FILENAME_PERFORMANCE_PER_DATE)
+
+        productivity_per_started_date_obj = WholeProductivityPerFirstAnnotationStartedDate.from_df(df_task)
+        productivity_per_started_date_obj.to_csv(self.output_dir / "教師付開始日毎の生産量と生産性.csv")
+        productivity_per_started_date_obj.plot(self.output_dir / "line-graph/折れ線-横軸_教師付開始日-全体.html")
 
     def write_csv_for_task(self) -> None:
         """
@@ -398,11 +408,11 @@ def visualize_statistics(
 
     # 折れ線グラフ
     write_obj.write_cumulative_linegraph_by_user(user_id_list)
-    write_obj.write_whole_productivity_per_date()
+    # write_obj.write_whole_productivity_per_date()
 
-    write_obj.write_whole_productivity_per_first_annotation_started_date()
+    # write_obj.write_whole_productivity_per_first_annotation_started_date()
 
-    write_obj._catch_exception(write_obj.write_worktime_per_date)(user_id_list, df_labor=df_labor)
+    write_obj._catch_exception(write_obj.write_worktime_per_date)(user_id_list)
 
     if not minimal_output:
 

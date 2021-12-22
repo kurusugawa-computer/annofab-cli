@@ -204,9 +204,9 @@ class Histogram:
                 title="最初の受入を着手するまでの日数",
             ),
             HistogramName(
-                column="diff_days_to_task_completed",
-                x_axis_label="受入完了状態になるまでの日数",
-                title="受入完了状態になるまでの日数",
+                column="diff_days_to_first_acceptance_completed",
+                x_axis_label="初めて受入完了状態になるまでの日数",
+                title="初めて受入完了状態になるまでの日数",
             ),
             # 差し戻し回数
             HistogramName(
