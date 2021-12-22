@@ -222,7 +222,7 @@ class WriteCsvGraph:
     def write_whole_productivity_per_date(self) -> None:
         """日ごとの全体の生産性に関するファイルを出力する。"""
         task_df = self._get_task_df()
-        whole_productivity_df = WholeProductivityPerCompletedDate.create(task_df, self.df_labor)
+        whole_productivity_df = WholeProductivityPerCompletedDate.from_df(task_df, self.df_labor)
 
         WholeProductivityPerCompletedDate.plot(whole_productivity_df, self.output_dir / "line-graph/折れ線-横軸_日-全体.html")
         WholeProductivityPerCompletedDate.plot_cumulatively(
@@ -232,7 +232,7 @@ class WriteCsvGraph:
         WholeProductivityPerCompletedDate.to_csv(whole_productivity_df, self.output_dir / FILENAME_PERFORMANCE_PER_DATE)
 
     def write_whole_productivity_per_first_annotation_started_date(self) -> None:
-        obj = WholeProductivityPerFirstAnnotationStartedDate.from_df_task(self.task_df)
+        obj = WholeProductivityPerFirstAnnotationStartedDate.from_df(self.task_df)
         obj.to_csv(self.output_dir / "教師付開始日毎の生産量と生産性.csv")
         obj.plot(self.output_dir / "line-graph/折れ線-横軸_教師付開始日-全体.html")
 
@@ -402,8 +402,9 @@ def visualize_statistics(
 
     write_obj.write_whole_productivity_per_first_annotation_started_date()
 
+    write_obj._catch_exception(write_obj.write_worktime_per_date)(user_id_list, df_labor=df_labor)
+
     if not minimal_output:
-        write_obj._catch_exception(write_obj.write_worktime_per_date)(user_id_list, df_labor=df_labor)
 
         write_obj._catch_exception(write_obj.write_user_productivity_per_date)(user_id_list)
 

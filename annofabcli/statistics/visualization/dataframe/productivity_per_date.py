@@ -23,7 +23,7 @@ from annofabcli.statistics.linegraph import (
     create_hover_tool,
     get_color_from_palette,
     get_plotted_user_id_list,
-    get_weekly_moving_average,
+    get_weekly_sum,
     plot_line_and_circle,
     plot_moving_average,
     write_bokeh_graph,
@@ -248,15 +248,13 @@ class AnnotatorProductivityPerDate(AbstractRoleProductivityPerDate):
                 df_subset["annotation_worktime_hour"] * 60 / df_subset["annotation_count"]
             )
             df_subset[f"annotation_worktime_minute/annotation_count{WEEKLY_MOVING_AVERAGE_COLUMN_SUFFIX}"] = (
-                get_weekly_moving_average(df_subset["annotation_worktime_hour"])
+                get_weekly_sum(df_subset["annotation_worktime_hour"])
                 * 60
-                / get_weekly_moving_average(df_subset["annotation_count"])
+                / get_weekly_sum(df_subset["annotation_count"])
             )
-            df_subset[
-                f"inspection_count/annotation_count{WEEKLY_MOVING_AVERAGE_COLUMN_SUFFIX}"
-            ] = get_weekly_moving_average(df_subset["inspection_count"]) / get_weekly_moving_average(
-                df_subset["annotation_count"]
-            )
+            df_subset[f"inspection_count/annotation_count{WEEKLY_MOVING_AVERAGE_COLUMN_SUFFIX}"] = get_weekly_sum(
+                df_subset["inspection_count"]
+            ) / get_weekly_sum(df_subset["annotation_count"])
 
             source = ColumnDataSource(data=df_subset)
             color = get_color_from_palette(user_index)
@@ -383,15 +381,13 @@ class AnnotatorProductivityPerDate(AbstractRoleProductivityPerDate):
             )
 
             df_subset[f"annotation_worktime_minute/input_data_count{WEEKLY_MOVING_AVERAGE_COLUMN_SUFFIX}"] = (
-                get_weekly_moving_average(df_subset["annotation_worktime_hour"])
+                get_weekly_sum(df_subset["annotation_worktime_hour"])
                 * 60
-                / get_weekly_moving_average(df_subset["input_data_count"])
+                / get_weekly_sum(df_subset["input_data_count"])
             )
-            df_subset[
-                f"inspection_count/input_data_count{WEEKLY_MOVING_AVERAGE_COLUMN_SUFFIX}"
-            ] = get_weekly_moving_average(df_subset["inspection_count"]) / get_weekly_moving_average(
-                df_subset["input_data_count"]
-            )
+            df_subset[f"inspection_count/input_data_count{WEEKLY_MOVING_AVERAGE_COLUMN_SUFFIX}"] = get_weekly_sum(
+                df_subset["inspection_count"]
+            ) / get_weekly_sum(df_subset["input_data_count"])
 
             source = ColumnDataSource(data=df_subset)
             color = get_color_from_palette(user_index)
@@ -628,9 +624,9 @@ class InspectorProductivityPerDate(AbstractRoleProductivityPerDate):
                 df_subset["inspection_worktime_hour"] * 60 / df_subset["annotation_count"]
             )
             df_subset[f"inspection_worktime_minute/annotation_count{WEEKLY_MOVING_AVERAGE_COLUMN_SUFFIX}"] = (
-                get_weekly_moving_average(df_subset["inspection_worktime_hour"])
+                get_weekly_sum(df_subset["inspection_worktime_hour"])
                 * 60
-                / get_weekly_moving_average(df_subset["annotation_count"])
+                / get_weekly_sum(df_subset["annotation_count"])
             )
 
             source = ColumnDataSource(data=df_subset)
@@ -746,9 +742,9 @@ class InspectorProductivityPerDate(AbstractRoleProductivityPerDate):
                 df_subset["inspection_worktime_hour"] * 60 / df_subset["input_data_count"]
             )
             df_subset[f"inspection_worktime_minute/input_data_count{WEEKLY_MOVING_AVERAGE_COLUMN_SUFFIX}"] = (
-                get_weekly_moving_average(df_subset["inspection_worktime_hour"])
+                get_weekly_sum(df_subset["inspection_worktime_hour"])
                 * 60
-                / get_weekly_moving_average(df_subset["input_data_count"])
+                / get_weekly_sum(df_subset["input_data_count"])
             )
 
             source = ColumnDataSource(data=df_subset)
@@ -976,9 +972,9 @@ class AcceptorProductivityPerDate(AbstractRoleProductivityPerDate):
             )
 
             df_subset[f"acceptance_worktime_minute/annotation_count{WEEKLY_MOVING_AVERAGE_COLUMN_SUFFIX}"] = (
-                get_weekly_moving_average(df_subset["acceptance_worktime_hour"])
+                get_weekly_sum(df_subset["acceptance_worktime_hour"])
                 * 60
-                / get_weekly_moving_average(df_subset["annotation_count"])
+                / get_weekly_sum(df_subset["annotation_count"])
             )
 
             source = ColumnDataSource(data=df_subset)
@@ -1094,9 +1090,9 @@ class AcceptorProductivityPerDate(AbstractRoleProductivityPerDate):
                 df_subset["acceptance_worktime_hour"] * 60 / df_subset["input_data_count"]
             )
             df_subset[f"acceptance_worktime_minute/input_data_count{WEEKLY_MOVING_AVERAGE_COLUMN_SUFFIX}"] = (
-                get_weekly_moving_average(df_subset["acceptance_worktime_hour"])
+                get_weekly_sum(df_subset["acceptance_worktime_hour"])
                 * 60
-                / get_weekly_moving_average(df_subset["input_data_count"])
+                / get_weekly_sum(df_subset["input_data_count"])
             )
 
             source = ColumnDataSource(data=df_subset)
