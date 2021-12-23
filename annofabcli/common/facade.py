@@ -351,7 +351,7 @@ class AnnofabApiFacade:
 
         Args:
             project_id:
-            accoaunt_id:
+            account_id:
 
         Returns:
             組織メンバ。見つからない場合はNone
@@ -729,11 +729,11 @@ class AnnofabApiFacade:
         api_query = AnnotationQuery(label_id=label_id)
         if query.attributes is not None:
             api_attributes = []
-            for cli_attirbute in query.attributes:
+            for cli_attribute in query.attributes:
                 additional_data_definitions = (
                     label_info["additional_data_definitions"] if label_info is not None else None
                 )
-                api_attributes.append(self._get_attribute_from_cli(additional_data_definitions, cli_attirbute))
+                api_attributes.append(self._get_attribute_from_cli(additional_data_definitions, cli_attribute))
 
             api_query.attributes = api_attributes
 
@@ -761,50 +761,50 @@ class AnnofabApiFacade:
             raise ValueError(f"label_id: {label_id} に一致するラベル情報は見つかりませんでした。")
 
         api_attributes = []
-        for cli_attirbute in attributes:
+        for cli_attribute in attributes:
             api_attributes.append(
-                self._get_attribute_from_cli(label_info["additional_data_definitions"], cli_attirbute)
+                self._get_attribute_from_cli(label_info["additional_data_definitions"], cli_attribute)
             )
         return api_attributes
 
     @staticmethod
     def _get_attribute_from_cli(
-        additional_data_definitions: Optional[List[Dict[str, Any]]], cli_attirbute: AdditionalDataForCli
+        additional_data_definitions: Optional[List[Dict[str, Any]]], cli_attribute: AdditionalDataForCli
     ) -> AdditionalData:
         """
         CLIの属性情報を返す
 
         Args:
             additional_data_definitions: アノテーション仕様の属性情報
-            cli_attirbute:
+            cli_attribute:
 
         Returns:
             アノテーションクエリになる属性情報
         """
-        if cli_attirbute.additional_data_definition_id is not None:
-            additional_data_definition_id = cli_attirbute.additional_data_definition_id
+        if cli_attribute.additional_data_definition_id is not None:
+            additional_data_definition_id = cli_attribute.additional_data_definition_id
             if additional_data_definitions is not None:
                 additional_data = more_itertools.first_true(
                     additional_data_definitions,
-                    pred=lambda e: e["additional_data_definition_id"] == cli_attirbute.additional_data_definition_id,
+                    pred=lambda e: e["additional_data_definition_id"] == cli_attribute.additional_data_definition_id,
                 )
                 if additional_data is None:
                     logger.warning(
-                        f"additional_data_definition_id='{cli_attirbute.additional_data_definition_id}'"
+                        f"additional_data_definition_id='{cli_attribute.additional_data_definition_id}'"
                         f"である属性情報は、アノテーション仕様に存在しません。"
                     )
             else:
                 additional_data = None
 
-        elif cli_attirbute.additional_data_definition_name_en is not None:
+        elif cli_attribute.additional_data_definition_name_en is not None:
             if additional_data_definitions is not None:
                 additional_data = AnnofabApiFacade.get_additional_data_from_name(
-                    additional_data_definitions, cli_attirbute.additional_data_definition_name_en
+                    additional_data_definitions, cli_attribute.additional_data_definition_name_en
                 )
                 additional_data_definition_id = additional_data["additional_data_definition_id"]
             else:
                 raise ValueError(
-                    f"additional_data_definition_name_en='{cli_attirbute.additional_data_definition_name_en}'"
+                    f"additional_data_definition_name_en='{cli_attribute.additional_data_definition_name_en}'"
                     f"である属性情報は、アノテーション仕様に存在しません。"
                 )
         else:
@@ -812,27 +812,27 @@ class AnnofabApiFacade:
                 "'additional_data_definition_id' または 'additional_data_definition_name_en'のいずれかは必ず指定してください。"
             )
 
-        api_attirbute = AdditionalData(
+        api_attribute = AdditionalData(
             additional_data_definition_id=additional_data_definition_id,
-            flag=cli_attirbute.flag,
-            integer=cli_attirbute.integer,
-            comment=cli_attirbute.comment,
-            choice=cli_attirbute.choice,
+            flag=cli_attribute.flag,
+            integer=cli_attribute.integer,
+            comment=cli_attribute.comment,
+            choice=cli_attribute.choice,
         )
 
         # 選択肢IDを確認
         if additional_data is not None:
             choices = additional_data["choices"]
-            if cli_attirbute.choice is not None:
-                choice_info = more_itertools.first_true(choices, pred=lambda e: e["choice_id"] == cli_attirbute.choice)
+            if cli_attribute.choice is not None:
+                choice_info = more_itertools.first_true(choices, pred=lambda e: e["choice_id"] == cli_attribute.choice)
                 if choice_info is None:
-                    logger.warning(f"choice='{cli_attirbute.choice}'である選択肢情報は、アノテーション仕様に存在しません。")
+                    logger.warning(f"choice='{cli_attribute.choice}'である選択肢情報は、アノテーション仕様に存在しません。")
 
-            elif cli_attirbute.choice_name_en is not None:
-                choice_info = AnnofabApiFacade.get_choice_info_from_name(choices, cli_attirbute.choice_name_en)
-                api_attirbute.choice = choice_info["choice_id"]
+            elif cli_attribute.choice_name_en is not None:
+                choice_info = AnnofabApiFacade.get_choice_info_from_name(choices, cli_attribute.choice_name_en)
+                api_attribute.choice = choice_info["choice_id"]
 
-        return api_attirbute
+        return api_attribute
 
     def get_annotation_list_for_task(
         self, project_id: str, task_id: str, query: Optional[AnnotationQuery] = None

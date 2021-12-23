@@ -97,7 +97,7 @@ class AddProps:
 
         Args:
             project_id:
-            accoaunt_id:
+            account_id:
 
         Returns:
             組織メンバ
