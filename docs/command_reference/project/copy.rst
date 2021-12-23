@@ -36,7 +36,7 @@ Examples
 * ``--copy_tasks`` : タスク
 * ``--copy_annotations`` : アノテーション
 * ``--copy_webhooks`` : Webhook
-* ``--copy_supplementaly_data`` : 補助情報
+* ``--copy_supplementary_data`` : 補助情報
 * ``--copy_instructions`` : 作業ガイド
 
 

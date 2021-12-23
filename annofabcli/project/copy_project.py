@@ -101,7 +101,7 @@ class CopyProject(AbstractCommandLineInterface):
             options["copy_inputs"] = True
         if options.get("copy_tasks", False):
             options["copy_inputs"] = True
-        if options.get("copy_supplementaly_data", False):
+        if options.get("copy_supplementary_data", False):
             options["copy_inputs"] = True
         return options
 
@@ -109,16 +109,16 @@ class CopyProject(AbstractCommandLineInterface):
         args = self.args
         dest_project_id = args.dest_project_id if args.dest_project_id is not None else str(uuid.uuid4())
 
-        copy_option_kyes = [
+        copy_option_keys = [
             "copy_inputs",
             "copy_tasks",
             "copy_annotations",
             "copy_webhooks",
-            "copy_supplementaly_data",
+            "copy_supplementary_data",
             "copy_instructions",
         ]
         copy_options: Dict[str, bool] = {}
-        for key in copy_option_kyes:
+        for key in copy_option_keys:
             copy_options[key] = getattr(args, key)
         copy_options = self._set_copy_options(copy_options)
 
@@ -154,7 +154,7 @@ def parse_args(parser: argparse.ArgumentParser):
     parser.add_argument("--copy_tasks", action="store_true", help="「タスク」をコピーします。指定した場合は入力データもコピーします。")
     parser.add_argument("--copy_annotations", action="store_true", help="「アノテーション」をコピーします。指定した場合は入力データとタスクもコピーします。")
     parser.add_argument("--copy_webhooks", action="store_true", help="「Webhook」をコピーします。")
-    parser.add_argument("--copy_supplementaly_data", action="store_true", help="「補助情報」をコピーします。指定した場合は入力データもコピーします。")
+    parser.add_argument("--copy_supplementary_data", action="store_true", help="「補助情報」をコピーします。指定した場合は入力データもコピーします。")
     parser.add_argument("--copy_instructions", action="store_true", help="「作業ガイド」をコピーします。")
 
     parser.add_argument("--wait", action="store_true", help="プロジェクトのコピーが完了するまで待ちます。")
