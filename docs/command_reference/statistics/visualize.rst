@@ -151,82 +151,17 @@ Examples
     └── 全体の生産性と品質.csv
 
 
-タスクlist.csv
-^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-タスクごとの情報が記載されています。主に以下の情報が分かります。
-
-* 教師付/検査/受入の作業時間
-* 最初に教師付/検査/受入したユーザ
-
-`タスクlist.csv <https://github.com/kurusugawa-computer/annofab-cli/blob/master/docs/command_reference/statistics/visualize/out_dir/タスクlist.csv>`_
 
 
-日毎の生産量と生産性.csv
-^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-全体の生産量（作業したタスク数など）や生産性が、日毎に記載されています。
-
-`日毎の生産量と生産性.csv <https://github.com/kurusugawa-computer/annofab-cli/blob/master/docs/command_reference/statistics/visualize/out_dir/日毎の生産量と生産性.csv>`_
-
-参照頻度が高い列の詳細を、以下に記載します。
-
-* monitored_worktime_hour: 計測作業時間[hour](アノテーションエディタ画面を触っていた作業時間）
-* actual_worktime_hour: 実績作業時間[hour](労務管理画面から入力した作業時間）
-* task_count: 作業したタスク数。タスクが完了状態になったときに「作業した」とみなしている。
-* input_data_count: 作業したタスクに含まれている入力データ数
-* actual_worktime/annotation_count: アノテーションあたりの実績作業時間[hour]。生産性の指標になる。
-* actual_worktime_hour/annotation_count__lastweek: actual_worktime/annotation_count の1週間移動平均
-
-.. warning::
-
-    task_count は「タスクが完了状態になった日」から集計しています。「タスクが受入取り消しされない」という前提で集計しています。
-    したがって、大量のタスクが受入取り消しされると ``task_count`` が信頼できなくなることに注意してください。
-    
-    
-    たとえばtask1が、2020/01/01に受入完了して、2020/01/02に受入取り消し、2020/01/03に再度受入完了状態になっとします。その場合、task1は2020/01/03に「作業した」ものとして集計されます。
+.. toctree::
+   :maxdepth: 1
+   :titlesonly:
 
 
-メンバごとの生産性と品質.csv
-^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-メンバごとの生産量（作業したタスク数など）や生産性、教師付の品質が分かります。
-
-`メンバごとの生産性と品質.csv <https://github.com/kurusugawa-computer/annofab-cli/blob/master/docs/command_reference/statistics/visualize/out_dir/メンバごとの生産性と品質.csv>`_
-
-参照頻度が高い列の詳細を、以下に記載します。
-
-* monitored_worktime_hour: 計測作業時間[hour](アノテーションエディタ画面を触っていた作業時間）
-* actual_worktime_hour: 実績作業時間[hour](労務管理画面から入力した作業時間）
-* task_count: 作業したタスク数
-* input_data_count: 作業したタスクに含まれている入力データ数
-* actual_worktime/annotation_count: アノテーションあたりの実績作業時間[hour]。生産性の指標になる。
-* pointed_out_inspection_comment_count/annotation_count: アノテーションあたりの指摘を受けた個数（対応完了状態の検査コメント）。品質の指標になる。
-* rejected_count/task_count: タスクあたりの差し戻された回数。品質の指標になる。
-
-
-.. note::
-
-    タスクの教師付を複数人で作業した場合、ユーザごとにmonitored_worktime_hourで按分した値を「作業した」とみなします。
-    たとえば、task1の教師付の作業にユーザAが45分、ユーザBが15かかっとします。その場合、「ユーザAはtask1を0.75、ユーザBはtask1を0.25作業した」とみなします。
-    したがって、task_countは小数になる場合があります。
+   visualize_output_rst/タスクlist_csv.rst
 
 
 
-.. note::
-
-    品質の指標は以下の2つです。
-
-    * pointed_out_inspection_comment_count/annotation_count
-    * rejected_count/task_count
-
-    ``rejected_count/task_count`` より ``pointed_out_inspection_comment_count/annotation_count`` の方が粒度が細かいので、 通常のプロジェクトでは  ``pointed_out_inspection_comment_count/annotation_count`` の方が良い指標になります。
-    
-
-
-全体の生産性と品質.csv
-^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-全体の生産性と品質が記載されています。
-``メンバごとの生産性と品質.csv`` の内容を集計した値になります。
-
-`全体の生産性と品質.csv <https://github.com/kurusugawa-computer/annofab-cli/blob/master/docs/command_reference/statistics/visualize/out_dir/全体の生産性と品質.csv>`_
 
 
 
