@@ -12,7 +12,7 @@ import annofabapi
 import pandas
 from annofabapi.models import ProjectMemberRole
 from dataclasses_json import DataClassJsonMixin
-
+from annofabcli.common.facade import AnnofabApiFacade
 import annofabcli
 from annofabcli import AnnofabApiFacade
 from annofabcli.common.cli import (
