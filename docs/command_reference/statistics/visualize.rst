@@ -165,16 +165,13 @@ Examples
 
    visualize_output_rst/折れ線-横軸_日-全体_html.rst
    visualize_output_rst/累積折れ線-横軸_日-全体_html.rst
+   visualize_output_rst/累積折れ線-横軸_アノテーション数-phase者用_html.rst
+   visualize_output_rst/折れ線-横軸_教師付開始日-全体_html.rst
 
+   visualize_output_rst/散布図-アノテーションあたり作業時間と品質の関係-教師付者用_html.rst
+   visualize_output_rst/散布図-アノテーションあたり作業時間と累計作業時間の関係_html.rst
+   visualize_output_rst/散布図-教師付者の品質と作業量の関係_html.rst
 
-
-
-
-
-
-
-
-    
 
 
 複数のプロジェクトを指定した場合
