@@ -47,7 +47,7 @@ class ListTasksMain:
         """
         タスク検索クエリを修正する。
         ``user_id`` から ``account_id`` に変換する。
-        ``previous_user_id`` から ``previcous_account_id`` に変換する。
+        ``previous_user_id`` から ``previous_account_id`` に変換する。
         ``page`` , ``limit``を削除」する
 
         Args:
