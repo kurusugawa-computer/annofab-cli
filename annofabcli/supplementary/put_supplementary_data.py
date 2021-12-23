@@ -351,7 +351,7 @@ class PutSupplementaryData(AbstractCommandLineInterface):
     def main(self):
         args = self.args
         if not self.validate(args):
-            sys.eixt(COMMAND_LINE_ERROR_STATUS_CODE)
+            sys.exit(COMMAND_LINE_ERROR_STATUS_CODE)
 
         project_id = args.project_id
         super().validate_project(project_id, [ProjectMemberRole.OWNER])

@@ -16,7 +16,7 @@ logger = logging.getLogger(__name__)
 
 
 def create_minimal_dataframe(project_list: List[Project]):
-    """必要最小限の列であるDataFramewoを作成する"""
+    """必要最小限の列であるDataFrameを作成する"""
     df = pandas.DataFrame(project_list)
     df["last_tasks_updated_datetime"] = [e["summary"]["last_tasks_updated_datetime"] for e in project_list]
     return df[

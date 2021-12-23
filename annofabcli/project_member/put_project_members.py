@@ -78,7 +78,7 @@ class PutProjectMembers(AbstractCommandLineInterface):
         Args:
             project_id: プロジェクトメンバの登録先のプロジェクトのプロジェクトID
             members: 登録するプロジェクトメンバのList
-            delete: Trueならば、mebersにないメンバを、対象プロジェクトから削除する。
+            delete: Trueならば、membersにないメンバを、対象プロジェクトから削除する。
 
         """
 
