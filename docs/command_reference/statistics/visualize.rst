@@ -135,20 +135,33 @@ Examples
 
 .. code-block::
 
-    out_dir/
+    out_dir
+    ├── histogram
+    │   ├── ヒストグラム-作業時間.html
+    │   └── ヒストグラム.html
+    ├── ${project_title}.json
     ├── line-graph
+    │   ├── 教師付者用
+    │   │   └── 累積折れ線-横軸_アノテーション数-教師付者用.html
+    │   ├── 受入者用
+    │   │   └── 累積折れ線-横軸_アノテーション数-受入者用.html
+    │   ├── 折れ線-横軸_教師付開始日-全体.html
     │   ├── 折れ線-横軸_日-全体.html
-    │   ├── 累積折れ線-横軸_アノテーション数-教師付者用.html
-    │   ├── 累積折れ線-横軸_アノテーション数-受入者用.html
+    │   ├── 累積折れ線-横軸_日-縦軸_作業時間.html
     │   └── 累積折れ線-横軸_日-全体.html
     ├── scatter
-    │   ├── 散布図-教師付者の品質と作業量の関係.html
+    │   ├── 散布図-アノテーションあたり作業時間と品質の関係-計測時間-教師付者用.html
     │   ├── 散布図-アノテーションあたり作業時間と累計作業時間の関係-計測時間.html
+    │   ├── 散布図-アノテーションあたり作業時間と品質の関係-実績時間-教師付者用.html
     │   ├── 散布図-アノテーションあたり作業時間と累計作業時間の関係-実績時間.html
+    │   └── 散布図-教師付者の品質と作業量の関係.html
     ├── タスクlist.csv
     ├── メンバごとの生産性と品質.csv
-    ├── 日毎の生産量と生産性.csv
-    └── 全体の生産性と品質.csv
+    ├── ユーザ_日付list-作業時間.csv
+    ├── 教師付開始日毎の生産量と生産性.csv
+    ├── 全体の生産性と品質.csv
+    └── 日毎の生産量と生産性.csv
+
 
 
 
@@ -162,11 +175,13 @@ Examples
    visualize_output_rst/メンバごとの生産性と品質_csv.rst
    visualize_output_rst/日毎の生産量と生産性_csv.rst
    visualize_output_rst/全体の生産性と品質_csv.rst
+   visualize_output_rst/ユーザ_日付list-作業時間_csv.rst
 
    visualize_output_rst/折れ線-横軸_日-全体_html.rst
    visualize_output_rst/累積折れ線-横軸_日-全体_html.rst
-   visualize_output_rst/累積折れ線-横軸_アノテーション数-phase者用_html.rst
    visualize_output_rst/折れ線-横軸_教師付開始日-全体_html.rst
+   visualize_output_rst/累積折れ線-横軸_アノテーション数-phase者用_html.rst
+   visualize_output_rst/累積折れ線-横軸_日-縦軸_作業時間_html.rst
 
    visualize_output_rst/散布図-アノテーションあたり作業時間と品質の関係-教師付者用_html.rst
    visualize_output_rst/散布図-アノテーションあたり作業時間と累計作業時間の関係_html.rst
