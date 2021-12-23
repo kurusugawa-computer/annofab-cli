@@ -728,14 +728,14 @@ class AnnofabApiFacade:
 
         api_query = AnnotationQuery(label_id=label_id)
         if query.attributes is not None:
-            api_attirbutes = []
+            api_attributes = []
             for cli_attirbute in query.attributes:
                 additional_data_definitions = (
                     label_info["additional_data_definitions"] if label_info is not None else None
                 )
-                api_attirbutes.append(self._get_attribute_from_cli(additional_data_definitions, cli_attirbute))
+                api_attributes.append(self._get_attribute_from_cli(additional_data_definitions, cli_attirbute))
 
-            api_query.attributes = api_attirbutes
+            api_query.attributes = api_attributes
 
         return api_query
 
@@ -760,12 +760,12 @@ class AnnofabApiFacade:
         if label_info is None:
             raise ValueError(f"label_id: {label_id} に一致するラベル情報は見つかりませんでした。")
 
-        api_attirbutes = []
+        api_attributes = []
         for cli_attirbute in attributes:
-            api_attirbutes.append(
+            api_attributes.append(
                 self._get_attribute_from_cli(label_info["additional_data_definitions"], cli_attirbute)
             )
-        return api_attirbutes
+        return api_attributes
 
     @staticmethod
     def _get_attribute_from_cli(
