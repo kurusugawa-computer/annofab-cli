@@ -12,7 +12,7 @@ import annofabapi
 import pandas
 from annofabapi.models import ProjectMemberRole
 from dataclasses_json import DataClassJsonMixin
-from annofabcli.common.facade import AnnofabApiFacade
+
 import annofabcli
 from annofabcli import AnnofabApiFacade
 from annofabcli.common.cli import (
@@ -20,7 +20,7 @@ from annofabcli.common.cli import (
     AbstractCommandLineInterface,
     build_annofabapi_resource_and_login,
 )
-from annofabcli.common.facade import TaskQuery
+from annofabcli.common.facade import AnnofabApiFacade, TaskQuery
 from annofabcli.stat_visualization.merge_visualization_dir import merge_visualization_dir
 from annofabcli.statistics.csv import (
     FILENAME_PERFORMANCE_PER_DATE,
