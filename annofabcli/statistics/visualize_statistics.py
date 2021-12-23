@@ -384,7 +384,7 @@ def visualize_statistics(
     write_obj._catch_exception(write_obj.write_user_performance)()
 
     # ヒストグラム
-    write_obj._catch_exception(write_obj.write_histogram_for_task)
+    write_obj._catch_exception(write_obj.write_histogram_for_task)()
 
     # 折れ線グラフ
     write_obj.write_cumulative_linegraph_by_user(user_id_list)

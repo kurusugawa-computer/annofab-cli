@@ -38,6 +38,8 @@ class Task:
         """
         if not self._validate_df_for_output(output_file):
             return
+
+        logger.debug(f"{output_file} を出力します。")
         df = self.df
         histogram_list = [
             dict(
@@ -118,6 +120,7 @@ class Task:
         if not self._validate_df_for_output(output_file):
             return
 
+        logger.debug(f"{output_file} を出力します。")
         df = self.df
 
         histogram_list = [
