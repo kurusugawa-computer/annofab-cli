@@ -1,5 +1,5 @@
 =================================
-project update_anotation_zip
+project update_annotation_zip
 =================================
 
 Description
@@ -15,19 +15,19 @@ Examples
 
 .. code-block::
 
-    $ annofabcli project update_anotation_zip --project_id prj1 prj2
+    $ annofabcli project update_annotation_zip --project_id prj1 prj2
 
 デフォルトでは、アノテーションzipを更新する必要がない場合は、更新しません。常にアノテーションzipを更新する場合は、 ``--force`` を指定してください。
 
 .. code-block::
 
-    $ annofabcli project update_anotation_zip --project_id prj1 prj2 --force
+    $ annofabcli project update_annotation_zip --project_id prj1 prj2 --force
 
 すべてのプロジェクトの更新が完了するまで待つ場合は、``--wait`` を指定してください。
 
 .. code-block::
 
-    $ annofabcli project update_anotation_zip --project_id prj1 prj2 --wait
+    $ annofabcli project update_annotation_zip --project_id prj1 prj2 --wait
 
 
 .. note::
