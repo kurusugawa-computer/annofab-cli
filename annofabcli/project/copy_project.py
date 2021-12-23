@@ -109,7 +109,7 @@ class CopyProject(AbstractCommandLineInterface):
         args = self.args
         dest_project_id = args.dest_project_id if args.dest_project_id is not None else str(uuid.uuid4())
 
-        copy_option_kyes = [
+        copy_option_keys = [
             "copy_inputs",
             "copy_tasks",
             "copy_annotations",
@@ -118,7 +118,7 @@ class CopyProject(AbstractCommandLineInterface):
             "copy_instructions",
         ]
         copy_options: Dict[str, bool] = {}
-        for key in copy_option_kyes:
+        for key in copy_option_keys:
             copy_options[key] = getattr(args, key)
         copy_options = self._set_copy_options(copy_options)
 
