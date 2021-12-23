@@ -1,5 +1,4 @@
 import argparse
-import importlib
 import logging.handlers
 import re
 import sys
@@ -41,6 +40,7 @@ from annofabcli.statistics.visualization.dataframe.productivity_per_date import 
     AnnotatorProductivityPerDate,
     InspectorProductivityPerDate,
 )
+from annofabcli.statistics.visualization.dataframe.task import Task
 from annofabcli.statistics.visualization.dataframe.user_performance import (
     ProjectPerformance,
     UserPerformance,
@@ -135,9 +135,6 @@ class WriteCsvGraph:
         self.output_dir = output_dir
         self.table_obj = table_obj
         self.csv_obj = Csv(str(output_dir))
-        # holoviews のloadに時間がかかって、helpコマンドの出力が遅いため、遅延ロードする
-        histogram_module = importlib.import_module("annofabcli.statistics.histogram")
-        self.histogram_obj = histogram_module.Histogram(str(output_dir / "histogram"))  # type: ignore
 
         self.df_labor = self.table_obj.create_labor_df(df_labor)
         self.minimal_output = minimal_output
@@ -172,9 +169,9 @@ class WriteCsvGraph:
         タスクに関するヒストグラムを出力する。
 
         """
-        task_df = self._get_task_df()
-        self._catch_exception(self.histogram_obj.write_histogram_for_worktime)(task_df)
-        self._catch_exception(self.histogram_obj.write_histogram_for_other)(task_df)
+        obj = Task(self._get_task_df())
+        obj.plot_histogram_of_worktime(self.output_dir / "histogram/ヒストグラム-作業時間.html")
+        obj.plot_histogram_of_others(self.output_dir / "histogram/ヒストグラム.html")
 
     def write_user_performance(self) -> None:
         """
@@ -387,13 +384,10 @@ def visualize_statistics(
     write_obj._catch_exception(write_obj.write_user_performance)()
 
     # ヒストグラム
-    write_obj.write_histogram_for_task()
+    write_obj._catch_exception(write_obj.write_histogram_for_task)
 
     # 折れ線グラフ
     write_obj.write_cumulative_linegraph_by_user(user_id_list)
-    # write_obj.write_whole_productivity_per_date()
-
-    # write_obj.write_whole_productivity_per_first_annotation_started_date()
 
     write_obj._catch_exception(write_obj.write_worktime_per_date)(user_id_list)
 

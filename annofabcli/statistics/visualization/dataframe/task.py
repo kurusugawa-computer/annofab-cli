@@ -164,12 +164,12 @@ class Task:
             column = hist["column"]
             title = hist["title"]
             x_axis_label = hist["x_axis_label"]
-            sub_title = get_sub_title_from_series(df[column], decimals=2)
+            ser = df[column].dropna()
+            sub_title = get_sub_title_from_series(ser, decimals=2)
             fig = get_histogram_figure(
-                df[column], x_axis_label=x_axis_label, y_axis_label="タスク数", title=title, sub_title=sub_title, bins=bins
+                ser, x_axis_label=x_axis_label, y_axis_label="タスク数", title=title, sub_title=sub_title, bins=bins
             )
             figure_list.append(fig)
-
 
         bokeh_obj = bokeh.layouts.gridplot(figure_list, ncols=4)
         output_file.parent.mkdir(exist_ok=True, parents=True)

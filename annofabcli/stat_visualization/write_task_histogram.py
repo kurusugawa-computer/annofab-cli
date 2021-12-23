@@ -1,5 +1,4 @@
 import argparse
-import importlib
 import logging
 from pathlib import Path
 from typing import Optional
@@ -8,8 +7,8 @@ import pandas
 
 import annofabcli
 from annofabcli.common.cli import AbstractCommandLineWithoutWebapiInterface
-from annofabcli.common.utils import _catch_exception
 from annofabcli.statistics.csv import FILENAME_TASK_LIST
+from annofabcli.statistics.visualization.dataframe.task import Task
 
 logger = logging.getLogger(__name__)
 
@@ -23,11 +22,9 @@ def write_task_histogram(csv: Path, output_dir: Path) -> None:
         logger.warning(f"タスク一覧が0件のため、グラフを出力しません。")
         return
 
-    # holoviews のloadに時間がかかって、helpコマンドの出力が遅いため、遅延ロードする
-    histogram_module = importlib.import_module("annofabcli.statistics.histogram")
-    histogram_obj = histogram_module.Histogram(outdir=str(output_dir))  # type: ignore
-    _catch_exception(histogram_obj.write_histogram_for_worktime)(task_df)
-    _catch_exception(histogram_obj.write_histogram_for_other)(task_df)
+    obj = Task(task_df)
+    obj.plot_histogram_of_worktime(output_dir / "ヒストグラム-作業時間.html")
+    obj.plot_histogram_of_others(output_dir / "ヒストグラム.html")
 
 
 class WriteTaskHistogram(AbstractCommandLineWithoutWebapiInterface):

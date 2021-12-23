@@ -25,6 +25,7 @@ from annofabcli.statistics.visualization.dataframe.productivity_per_date import 
     AnnotatorProductivityPerDate,
     InspectorProductivityPerDate,
 )
+from annofabcli.statistics.visualization.dataframe.task import Task
 from annofabcli.statistics.visualization.dataframe.user_performance import (
     ProjectPerformance,
     UserPerformance,
@@ -546,3 +547,18 @@ class TestVisualizeAnnotationCount:
             group_by=GroupBy.TASK_ID,
             output_file=out_path / "visualize_annotation_count/attributes_count_by_task.html",
         )
+
+
+class TestTask:
+    @classmethod
+    def setup_class(cls):
+        cls.output_dir = out_path / "visualization"
+        cls.output_dir.mkdir(exist_ok=True, parents=True)
+        df_task = pandas.read_csv(str(data_path / "task.csv"))
+        cls.obj = Task(df_task)
+
+    def test_plot_histogram_of_worktime(self):
+        self.obj.plot_histogram_of_worktime(self.output_dir / "ヒストグラム-作業時間.html")
+
+    def test_plot_histogram_of_others(self):
+        self.obj.plot_histogram_of_others(self.output_dir / "ヒストグラム.html")
