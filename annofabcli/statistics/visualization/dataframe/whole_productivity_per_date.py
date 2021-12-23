@@ -981,28 +981,28 @@ class WholeProductivityPerFirstAnnotationStartedDate:
             {
                 "x": "dt_first_annotation_started_date",
                 "y_info_list": [
-                    {"column": "worktime_hour", "legend": "作業時間(合計)"},
-                    {"column": "annotation_worktime_hour", "legend": "作業時間(教師付)"},
-                    {"column": "inspection_worktime_hour", "legend": "作業時間(検査)"},
-                    {"column": "acceptance_worktime_hour", "legend": "作業時間(受入)"},
+                    {"column": "worktime_hour", "legend": "作業時間"},
+                    {"column": "annotation_worktime_hour", "legend": "教師付作業時間"},
+                    {"column": "inspection_worktime_hour", "legend": "検査作業時間"},
+                    {"column": "acceptance_worktime_hour", "legend": "受入作業時間"},
                 ],
             },
             {
                 "x": "dt_first_annotation_started_date",
                 "y_info_list": [
-                    {"column": "worktime_minute/input_data_count", "legend": "入力データあたり作業時間(合計)"},
-                    {"column": "annotation_worktime_minute/input_data_count", "legend": "入力データあたり作業時間(教師付)"},
-                    {"column": "inspection_worktime_minute/input_data_count", "legend": "入力データあたり作業時間(検査)"},
-                    {"column": "acceptance_worktime_minute/input_data_count", "legend": "入力データあたり作業時間(受入)"},
+                    {"column": "worktime_minute/input_data_count", "legend": "入力データあたり作業時間"},
+                    {"column": "annotation_worktime_minute/input_data_count", "legend": "入力データあたり教師付作業時間"},
+                    {"column": "inspection_worktime_minute/input_data_count", "legend": "入力データあたり検査作業時間"},
+                    {"column": "acceptance_worktime_minute/input_data_count", "legend": "入力データあたり受入作業時間"},
                 ],
             },
             {
                 "x": "dt_date",
                 "y_info_list": [
-                    {"column": "worktime_minute/annotation_count", "legend": "アノテーション作業時間(合計)"},
-                    {"column": "annotation_worktime_minute/annotation_count", "legend": "アノテーションあたり作業時間(教師付)"},
-                    {"column": "inspection_worktime_minute/annotation_count", "legend": "アノテーションあたり作業時間(検査)"},
-                    {"column": "acceptance_worktime_minute/annotation_count", "legend": "アノテーションあたり作業時間(受入)"},
+                    {"column": "worktime_minute/annotation_count", "legend": "アノテーション作業時間"},
+                    {"column": "annotation_worktime_minute/annotation_count", "legend": "アノテーションあたり教師付作業時間"},
+                    {"column": "inspection_worktime_minute/annotation_count", "legend": "アノテーションあたり検査作業時間"},
+                    {"column": "acceptance_worktime_minute/annotation_count", "legend": "アノテーションあたり受入作業時間"},
                 ],
             },
         ]
