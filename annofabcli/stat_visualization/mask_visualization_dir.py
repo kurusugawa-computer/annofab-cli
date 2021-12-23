@@ -16,6 +16,7 @@ from annofabcli.filesystem.mask_user_info import (
 from annofabcli.stat_visualization.write_linegraph_per_user import write_linegraph_per_user
 from annofabcli.stat_visualization.write_performance_scatter_per_user import write_performance_scatter_per_user
 from annofabcli.statistics.csv import FILENAME_PERFORMANCE_PER_USER, FILENAME_TASK_LIST
+from annofabcli.statistics.visualization.dataframe.worktime_per_date import WorktimePerDate
 
 logger = logging.getLogger(__name__)
 
@@ -86,6 +87,17 @@ def mask_visualization_dir(
         minimal_output=minimal_output,
         user_id_list=user_id_list,
     )
+
+    df_worktime = pandas.read_csv(str(project_dir/"ユーザ_日付list-作業時間.csv"))
+
+    df_masked_worktime = create_masked_user_info_df(
+        df_worktime,
+        not_masked_biography_set=not_masked_biography_set,
+        not_masked_user_id_set=not_masked_user_id_set,
+    )
+    worktime_per_date_obj = WorktimePerDate(df_masked_worktime)
+    worktime_per_date_obj.plot_cumulatively(output_dir / "line-graph/累積折れ線-横軸_日-縦軸_作業時間.html", user_id_list)
+    worktime_per_date_obj.to_csv(output_dir / "ユーザ_日付list-作業時間.csv")
 
 
 def main(args):
