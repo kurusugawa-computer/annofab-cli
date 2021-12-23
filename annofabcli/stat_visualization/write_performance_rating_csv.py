@@ -421,7 +421,7 @@ def parse_args(parser: argparse.ArgumentParser):
     parser.add_argument(
         "--threshold_worktime",
         type=int,
-        default=0,
+        default=10,
         help="作業時間の閾値。この時間以下の作業者は除外する。 ``threshold_task_count`` とはOR条件で絞り込まれる。",
     )
     parser.add_argument(
@@ -433,6 +433,7 @@ def parse_args(parser: argparse.ArgumentParser):
     parser.add_argument(
         "--threshold_deviation_user_count",
         type=int,
+        default=3,
         help="偏差値を出す際、プロジェクト内の作業者がしきい値以下であれば、偏差値を算出しない。",
     )
     parser.add_argument("-o", "--output_dir", required=True, type=Path, help="出力ディレクトリ")
