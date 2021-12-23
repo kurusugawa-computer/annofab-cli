@@ -682,14 +682,14 @@ class AnnofabApiFacade:
 
     @staticmethod
     def get_choice_info_from_name(choice_info_list: List[Dict[str, Any]], choice_name_en: str) -> Dict[str, Any]:
-        filterd_choice_list = [e for e in choice_info_list if AnnofabApiFacade.get_choice_name_en(e) == choice_name_en]
-        if len(filterd_choice_list) > 1:
+        filtered_choice_list = [e for e in choice_info_list if AnnofabApiFacade.get_choice_name_en(e) == choice_name_en]
+        if len(filtered_choice_list) > 1:
             raise ValueError(f"choice_name_en: {choice_name_en} に一致する選択肢情報が複数見つかりました。")
 
-        if len(filterd_choice_list) == 0:
+        if len(filtered_choice_list) == 0:
             raise ValueError(f"choice_name_en: {choice_name_en} に一致する選択肢情報が見つかりませんでした。")
 
-        return filterd_choice_list[0]
+        return filtered_choice_list[0]
 
     def to_annotation_query_from_cli(self, project_id: str, query: AnnotationQueryForCli) -> AnnotationQuery:
         """
