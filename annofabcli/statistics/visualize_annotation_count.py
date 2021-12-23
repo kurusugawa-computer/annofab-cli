@@ -14,7 +14,7 @@ from bokeh.plotting import ColumnDataSource, figure
 
 import annofabcli
 import annofabcli.common.cli
-from annofabcli import AnnofabApiFacade
+from annofabcli import AnnofabApiFacadellll
 from annofabcli.common.cli import AbstractCommandLineInterface, ArgumentParser, build_annofabapi_resource_and_login
 from annofabcli.common.download import DownloadingFile
 from annofabcli.common.facade import TaskQuery
