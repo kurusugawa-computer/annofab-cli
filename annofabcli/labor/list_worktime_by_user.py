@@ -459,9 +459,9 @@ class ListWorktimeByUserMain:
     @staticmethod
     @_catch_exception
     def write_worktime_per_user_date(worktime_df_per_date_user: pandas.DataFrame, output_dir: Path):
-        add_availabaility = "availability_hour" in worktime_df_per_date_user.columns
+        add_availability = "availability_hour" in worktime_df_per_date_user.columns
         target_renamed_columns = {"worktime_plan_hour": "作業予定時間", "worktime_result_hour": "作業実績時間"}
-        if add_availabaility:
+        if add_availability:
             target_renamed_columns.update({"availability_hour": "予定稼働時間"})
 
         df = worktime_df_per_date_user.rename(columns=target_renamed_columns)
@@ -474,7 +474,7 @@ class ListWorktimeByUserMain:
             "作業予定時間",
             "作業実績時間",
         ]
-        if not add_availabaility:
+        if not add_availability:
             columns.remove("予定稼働時間")
 
         df[columns].round(3).to_csv(str(output_dir / "日ごとの作業時間の一覧.csv"), encoding="utf_8_sig", index=False)
@@ -1142,8 +1142,8 @@ class ListWorktimeByUser(AbstractCommandLineInterface):
         output_dir = Path(args.output_dir)
         output_dir.mkdir(exist_ok=True, parents=True)
 
-        mian_obj = ListWorktimeByUserMain(self.service)
-        mian_obj.main(
+        main_obj = ListWorktimeByUserMain(self.service)
+        main_obj.main(
             organization_name_list=organization_name_list,
             project_id_list=project_id_list,
             start_date=start_date,
