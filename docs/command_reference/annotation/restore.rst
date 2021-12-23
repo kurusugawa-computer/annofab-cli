@@ -53,7 +53,7 @@ Usage Details
 =================================
 
 .. argparse::
-    :ref: annofabcli.annotation.restore_anotation.add_parser
+    :ref: annofabcli.annotation.restore_annotation.add_parser
     :prog: annofabcli annotation restore
     :nosubcommands:
     :nodefaultconst:
