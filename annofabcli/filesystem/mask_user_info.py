@@ -19,7 +19,7 @@ ALPHABET_SIZE = 26
 DIGIT = 2
 
 
-def _create_uniqued_masked_name(masked_name_set: Set[str], masked_name: str) -> str:
+def _create_unique_masked_name(masked_name_set: Set[str], masked_name: str) -> str:
     """
     マスクされたユニークな名前を返す。
     `masked_name_set` に含まれている名前なら、末尾に数字をつけて、ユニークにする。
@@ -38,7 +38,7 @@ def _create_uniqued_masked_name(masked_name_set: Set[str], masked_name: str) -> 
             now_index = 0
 
         new_masked_name = base_masked_name + str(now_index + 1)
-        return _create_uniqued_masked_name(masked_name_set, new_masked_name)
+        return _create_unique_masked_name(masked_name_set, new_masked_name)
 
 
 def _create_replaced_dict(name_set: Set[str]) -> Dict[str, str]:
@@ -55,7 +55,7 @@ def _create_replaced_dict(name_set: Set[str]) -> Dict[str, str]:
     masked_name_set: Set[str] = set()
     for name in name_set:
         masked_name = create_masked_name(name)
-        unique_masked_name = _create_uniqued_masked_name(masked_name_set, masked_name)
+        unique_masked_name = _create_unique_masked_name(masked_name_set, masked_name)
         replaced_dict[name] = unique_masked_name
     return replaced_dict
 
@@ -65,7 +65,7 @@ def create_replaced_biography_dict(name_set: Set[str]) -> Dict[str, str]:
     masked_name_set: Set[str] = set()
     for name in name_set:
         masked_name = create_masked_name(name)
-        unique_masked_name = _create_uniqued_masked_name(masked_name_set, masked_name)
+        unique_masked_name = _create_unique_masked_name(masked_name_set, masked_name)
         replaced_dict[name] = unique_masked_name
     return replaced_dict
 
