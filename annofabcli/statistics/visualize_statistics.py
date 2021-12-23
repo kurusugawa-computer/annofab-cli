@@ -1,5 +1,4 @@
 import argparse
-import importlib
 import logging.handlers
 import re
 import sys
@@ -15,13 +14,12 @@ from annofabapi.models import ProjectMemberRole
 from dataclasses_json import DataClassJsonMixin
 
 import annofabcli
-from annofabcli import AnnofabApiFacade
 from annofabcli.common.cli import (
     COMMAND_LINE_ERROR_STATUS_CODE,
     AbstractCommandLineInterface,
     build_annofabapi_resource_and_login,
 )
-from annofabcli.common.facade import TaskQuery
+from annofabcli.common.facade import AnnofabApiFacade, TaskQuery
 from annofabcli.stat_visualization.merge_visualization_dir import merge_visualization_dir
 from annofabcli.statistics.csv import (
     FILENAME_PERFORMANCE_PER_DATE,
@@ -41,6 +39,7 @@ from annofabcli.statistics.visualization.dataframe.productivity_per_date import 
     AnnotatorProductivityPerDate,
     InspectorProductivityPerDate,
 )
+from annofabcli.statistics.visualization.dataframe.task import Task
 from annofabcli.statistics.visualization.dataframe.user_performance import (
     ProjectPerformance,
     UserPerformance,
@@ -135,9 +134,6 @@ class WriteCsvGraph:
         self.output_dir = output_dir
         self.table_obj = table_obj
         self.csv_obj = Csv(str(output_dir))
-        # holoviews のloadに時間がかかって、helpコマンドの出力が遅いため、遅延ロードする
-        histogram_module = importlib.import_module("annofabcli.statistics.histogram")
-        self.histogram_obj = histogram_module.Histogram(str(output_dir / "histogram"))  # type: ignore
 
         self.df_labor = self.table_obj.create_labor_df(df_labor)
         self.minimal_output = minimal_output
@@ -172,9 +168,9 @@ class WriteCsvGraph:
         タスクに関するヒストグラムを出力する。
 
         """
-        task_df = self._get_task_df()
-        self._catch_exception(self.histogram_obj.write_histogram_for_worktime)(task_df)
-        self._catch_exception(self.histogram_obj.write_histogram_for_other)(task_df)
+        obj = Task(self._get_task_df())
+        obj.plot_histogram_of_worktime(self.output_dir / "histogram/ヒストグラム-作業時間.html")
+        obj.plot_histogram_of_others(self.output_dir / "histogram/ヒストグラム.html")
 
     def write_user_performance(self) -> None:
         """
@@ -219,23 +215,6 @@ class WriteCsvGraph:
                 " * '散布図-アノテーションあたり作業時間と品質の関係-実績時間-教師付者用'"
             )
 
-    def write_whole_productivity_per_date(self) -> None:
-        """日ごとの全体の生産性に関するファイルを出力する。"""
-        task_df = self._get_task_df()
-        whole_productivity_df = WholeProductivityPerCompletedDate.create(task_df, self.df_labor)
-
-        WholeProductivityPerCompletedDate.plot(whole_productivity_df, self.output_dir / "line-graph/折れ線-横軸_日-全体.html")
-        WholeProductivityPerCompletedDate.plot_cumulatively(
-            whole_productivity_df, self.output_dir / "line-graph/累積折れ線-横軸_日-全体.html"
-        )
-
-        WholeProductivityPerCompletedDate.to_csv(whole_productivity_df, self.output_dir / FILENAME_PERFORMANCE_PER_DATE)
-
-    def write_whole_productivity_per_first_annotation_started_date(self) -> None:
-        df = WholeProductivityPerFirstAnnotationStartedDate.create(self.task_df)
-        WholeProductivityPerFirstAnnotationStartedDate.to_csv(df, self.output_dir / "教師付開始日毎の生産量と生産性.csv")
-        WholeProductivityPerFirstAnnotationStartedDate.plot(df, self.output_dir / "line-graph/折れ線-横軸_教師付開始日-全体.html")
-
     def write_cumulative_linegraph_by_user(self, user_id_list: Optional[List[str]] = None) -> None:
         """ユーザごとの累積折れ線グラフをプロットする。"""
         df_task = self._get_task_df()
@@ -267,13 +246,23 @@ class WriteCsvGraph:
 
             annotator_obj.plot_task_metrics(self.output_dir / "line-graph/教師付者用/累積折れ線-横軸_タスク数-教師付者用.html", user_id_list)
 
-    def write_worktime_per_date(
-        self, user_id_list: Optional[List[str]] = None, df_labor: Optional[pandas.DataFrame] = None
-    ) -> None:
+    def write_worktime_per_date(self, user_id_list: Optional[List[str]] = None) -> None:
         """日ごとの作業時間情報を出力する。"""
-        obj = WorktimePerDate.from_webapi(self.service, self.project_id, df_labor)
-        obj.plot_cumulatively(self.output_dir / "line-graph/累積折れ線-横軸_日-縦軸_作業時間.html", user_id_list)
-        obj.to_csv(self.output_dir / "ユーザ_日付list-作業時間.csv")
+        worktime_per_date_obj = WorktimePerDate.from_webapi(self.service, self.project_id, self.df_labor)
+        worktime_per_date_obj.plot_cumulatively(self.output_dir / "line-graph/累積折れ線-横軸_日-縦軸_作業時間.html", user_id_list)
+        worktime_per_date_obj.to_csv(self.output_dir / "ユーザ_日付list-作業時間.csv")
+
+        df_task = self._get_task_df()
+        productivity_per_completed_date_obj = WholeProductivityPerCompletedDate.from_df(
+            df_task, worktime_per_date_obj.df
+        )
+        productivity_per_completed_date_obj.plot(self.output_dir / "line-graph/折れ線-横軸_日-全体.html")
+        productivity_per_completed_date_obj.plot_cumulatively(self.output_dir / "line-graph/累積折れ線-横軸_日-全体.html")
+        productivity_per_completed_date_obj.to_csv(self.output_dir / FILENAME_PERFORMANCE_PER_DATE)
+
+        productivity_per_started_date_obj = WholeProductivityPerFirstAnnotationStartedDate.from_df(df_task)
+        productivity_per_started_date_obj.to_csv(self.output_dir / "教師付開始日毎の生産量と生産性.csv")
+        productivity_per_started_date_obj.plot(self.output_dir / "line-graph/折れ線-横軸_教師付開始日-全体.html")
 
     def write_csv_for_task(self) -> None:
         """
@@ -394,16 +383,14 @@ def visualize_statistics(
     write_obj._catch_exception(write_obj.write_user_performance)()
 
     # ヒストグラム
-    write_obj.write_histogram_for_task()
+    write_obj._catch_exception(write_obj.write_histogram_for_task)()
 
     # 折れ線グラフ
     write_obj.write_cumulative_linegraph_by_user(user_id_list)
-    write_obj.write_whole_productivity_per_date()
 
-    write_obj.write_whole_productivity_per_first_annotation_started_date()
+    write_obj._catch_exception(write_obj.write_worktime_per_date)(user_id_list)
 
     if not minimal_output:
-        write_obj._catch_exception(write_obj.write_worktime_per_date)(user_id_list, df_labor=df_labor)
 
         write_obj._catch_exception(write_obj.write_user_productivity_per_date)(user_id_list)
 

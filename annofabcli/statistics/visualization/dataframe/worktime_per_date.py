@@ -83,8 +83,10 @@ def get_df_worktime(
 
     df_member = pandas.DataFrame(member_list)[["account_id", "user_id", "username", "biography"]]
 
-    if df_labor is not None:
-        df_labor = df_labor.merge(df_member[["user_id", "account_id"]], how="left", on="account_id")
+    if df_labor is not None and len(df_labor) > 0:
+        df_labor = df_labor.merge(
+            df_member[["user_id", "account_id"]], how="left", on="account_id", suffixes=("_tmp", None)
+        )
         df = df.merge(df_labor[["date", "user_id", "actual_worktime_hour"]], how="outer", on=["date", "user_id"])
     else:
         df["actual_worktime_hour"] = 0
@@ -143,7 +145,6 @@ class WorktimePerDate:
             project_id, query_params={"include_inactive_member": ""}
         )
         if df_labor is not None:
-            df_labor = df_labor[df_labor["project_id"] == project_id]
             df = get_df_worktime(worktime_list, project_member_list, df_labor=df_labor)
         else:
             df = get_df_worktime(worktime_list, project_member_list)

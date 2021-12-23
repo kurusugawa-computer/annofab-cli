@@ -233,6 +233,35 @@ class Table:
         )
 
     @staticmethod
+    def _get_first_acceptance_completed_datetime(task_histories: List[TaskHistory]) -> Optional[str]:
+        """はじめて受入完了状態になった日時を取得する。
+
+        Args:
+            task_histories (List[TaskHistory]): [description]
+
+        Returns:
+            str: [description]
+        """
+        # 受入フェーズで完了日時がnot Noneの場合は、受入を合格したか差し戻したとき。
+        # したがって、後続のタスク履歴を見て、初めて受入完了状態になった日時を取得する。
+
+        for index, history in enumerate(task_histories):
+            if history["phase"] != TaskPhase.ACCEPTANCE.value or history["ended_datetime"] is None:
+                continue
+
+            if index == len(task_histories) - 1:
+                # 末尾履歴なら、受入完了状態
+                return history["ended_datetime"]
+
+            next_history = task_histories[index + 1]
+            if next_history["phase"] == TaskPhase.ACCEPTANCE.value:
+                # 受入完了後、受入取り消し実行
+                return history["ended_datetime"]
+            # そうでなければ、受入フェーズでの差し戻し
+
+        return None
+
+    @staticmethod
     def _acceptance_is_skipped(task_histories: List[TaskHistory]) -> bool:
         task_history_index_list = get_task_history_index_skipped_acceptance(task_histories)
         if len(task_history_index_list) == 0:
@@ -364,6 +393,9 @@ class Table:
         else:
             task["task_completed_datetime"] = None
 
+        # 初めて受入が完了した日時
+        task["first_acceptance_completed_datetime"] = self._get_first_acceptance_completed_datetime(task_histories)
+
         task["diff_days_to_first_inspection_started"] = diff_days(
             "first_inspection_started_datetime", "first_annotation_started_datetime"
         )
@@ -371,7 +403,9 @@ class Table:
             "first_acceptance_started_datetime", "first_annotation_started_datetime"
         )
 
-        task["diff_days_to_task_completed"] = diff_days("task_completed_datetime", "first_annotation_started_datetime")
+        task["diff_days_to_first_acceptance_completed"] = diff_days(
+            "first_acceptance_completed_datetime", "first_annotation_started_datetime"
+        )
 
         # 抜取検査/抜取受入で、検査/受入がスキップされたか否か
         task["acceptance_is_skipped"] = self._acceptance_is_skipped(task_histories)

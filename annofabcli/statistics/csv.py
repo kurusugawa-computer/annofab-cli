@@ -86,7 +86,7 @@ class Csv:
             "number_of_rejections_by_acceptance",
             "started_datetime",
             "updated_datetime",
-            "task_completed_datetime",
+            "first_acceptance_completed_datetime",
             "sampling",
             # 1回目の教師付フェーズ
             "first_annotation_user_id",

@@ -15,8 +15,9 @@ logger = logging.getLogger(__name__)
 
 def write_whole_linegraph(csv: Path, output_dir: Path) -> None:
     df = pandas.read_csv(str(csv))
-    WholeProductivityPerCompletedDate.plot(df, output_dir / "折れ線-横軸_日-全体.html")
-    WholeProductivityPerCompletedDate.plot_cumulatively(df, output_dir / "累積折れ線-横軸_日-全体.html")
+    obj = WholeProductivityPerCompletedDate(df)
+    obj.plot(output_dir / "折れ線-横軸_日-全体.html")
+    obj.plot_cumulatively(output_dir / "累積折れ線-横軸_日-全体.html")
 
 
 class WriteWholeLingraph(AbstractCommandLineWithoutWebapiInterface):
