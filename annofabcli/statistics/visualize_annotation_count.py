@@ -16,7 +16,7 @@ import annofabcli
 import annofabcli.common.cli
 from annofabcli.common.cli import AbstractCommandLineInterface, ArgumentParser, build_annofabapi_resource_and_login
 from annofabcli.common.download import DownloadingFile
-from annofabcli.common.facade import TaskQuery
+from annofabcli.common.facade import AnnofabApiFacade, TaskQuery
 from annofabcli.statistics.histogram import get_sub_title_from_series
 from annofabcli.statistics.list_annotation_count import (
     AnnotationCounter,
