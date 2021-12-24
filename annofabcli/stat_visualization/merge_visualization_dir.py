@@ -8,7 +8,7 @@ import pandas
 
 import annofabcli
 from annofabcli.common.cli import COMMAND_LINE_ERROR_STATUS_CODE, get_list_from_args
-from annofabcli.common.utils import print_csv, print_json
+from annofabcli.common.utils import _catch_exception, print_csv, print_json
 from annofabcli.stat_visualization.write_linegraph_per_user import write_linegraph_per_user
 from annofabcli.stat_visualization.write_performance_scatter_per_user import write_performance_scatter_per_user
 from annofabcli.stat_visualization.write_task_histogram import write_task_histogram
@@ -61,6 +61,7 @@ def merge_visualization_dir(  # pylint: disable=too-many-statements
     user_id_list: Optional[List[str]] = None,
     minimal_output: bool = False,
 ):
+    @_catch_exception
     def execute_merge_performance_per_user():
         performance_per_user_csv_list = [dir / FILENAME_PERFORMANCE_PER_USER for dir in project_dir_list]
 
@@ -85,11 +86,13 @@ def merge_visualization_dir(  # pylint: disable=too-many-statements
         whole_obj = WholePerformance(sum_obj.get_summary())
         whole_obj.to_csv(output_dir / "全体の生産性と品質.csv")
 
+    @_catch_exception
     def execute_merge_performance_per_date():
         performance_per_date_csv_list = [dir / FILENAME_PERFORMANCE_PER_DATE for dir in project_dir_list]
         obj = create_merged_performance_per_date(performance_per_date_csv_list)
         obj.to_csv(output_dir / FILENAME_PERFORMANCE_PER_DATE)
 
+    @_catch_exception
     def merge_performance_per_first_annotation_started_date():
         csv_list = [dir / FILENAME_PERFORMANCE_PER_FIRST_ANNOTATION_STARTED_DATE for dir in project_dir_list]
         df_list: List[pandas.DataFrame] = []
@@ -115,6 +118,7 @@ def merge_visualization_dir(  # pylint: disable=too-many-statements
 
         sum_obj.plot(output_dir / "line-graph/折れ線-横軸_教師付開始日-全体.html")
 
+    @_catch_exception
     def merge_task_list() -> pandas.DataFrame:
         list_df = []
         for project_dir in project_dir_list:
@@ -128,6 +132,7 @@ def merge_visualization_dir(  # pylint: disable=too-many-statements
         df = pandas.concat(list_df, axis=0)
         return df
 
+    @_catch_exception
     def write_info_json() -> None:
         info = {"target_dir_list": [str(e) for e in project_dir_list]}
         print_json(info, is_pretty=True, output=str(output_dir / "info.json"))
