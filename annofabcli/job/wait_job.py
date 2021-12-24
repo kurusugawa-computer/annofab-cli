@@ -38,8 +38,8 @@ class WaitJobMain:
             logger.info(f"job_type='{job_type.value}'の実行中のジョブはないので、終了します。")
             return
 
-        MAX_WAIT_MINUTUE = wait_options.max_tries * wait_options.interval / 60
-        logger.info(f"ダウンロード対象の最新化処理が完了するまで、最大{MAX_WAIT_MINUTUE}分間待ちます。")
+        MAX_WAIT_MINUTE = wait_options.max_tries * wait_options.interval / 60
+        logger.info(f"ダウンロード対象の最新化処理が完了するまで、最大{MAX_WAIT_MINUTE}分間待ちます。")
         result = self.service.wrapper.wait_for_completion(
             project_id,
             job_type=job_type,
@@ -49,7 +49,7 @@ class WaitJobMain:
         if result:
             logger.info(f"job_type='{job_type.value}'のジョブが終了しました。")
         else:
-            logger.info(f"job_type='{job_type.value}'のジョブが失敗したか、または {MAX_WAIT_MINUTUE} 分待っても処理が終了しませんでした。")
+            logger.info(f"job_type='{job_type.value}'のジョブが失敗したか、または {MAX_WAIT_MINUTE} 分待っても処理が終了しませんでした。")
 
 
 class WaitJob(AbstractCommandLineInterface):

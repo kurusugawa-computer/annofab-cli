@@ -210,12 +210,12 @@ def parse_args(parser: argparse.ArgumentParser):
         f"(ex): ``{EXAMPLE_ANNOTATION_QUERY}``",
     )
 
-    EXAMPLE_ATTIRBUTES = '[{"additional_data_definition_name_en": "occluded", "flag": false}]'
+    EXAMPLE_ATTRIBUTES = '[{"additional_data_definition_name_en": "occluded", "flag": false}]'
     parser.add_argument(
         "--attributes",
         type=str,
         required=True,
-        help="変更後の属性をJSON形式で指定します。" "``file://`` を先頭に付けると、JSON形式のファイルを指定できます。" f"(ex): ``{EXAMPLE_ATTIRBUTES}``",
+        help="変更後の属性をJSON形式で指定します。" "``file://`` を先頭に付けると、JSON形式のファイルを指定できます。" f"(ex): ``{EXAMPLE_ATTRIBUTES}``",
     )
 
     parser.add_argument("--force", action="store_true", help="完了状態のタスクのアノテーション属性も変更します。")

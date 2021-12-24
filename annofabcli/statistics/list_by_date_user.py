@@ -133,8 +133,8 @@ class ListSubmittedTaskCountMain:
 
         data_list = []
         for key, task_count in task_history_count_dict.items():
-            account_id, phaes, date = key
-            data: Dict[str, Any] = {"date": date, "phase": phaes, "account_id": account_id, "task_count": task_count}
+            account_id, phase, date = key
+            data: Dict[str, Any] = {"date": date, "phase": phase, "account_id": account_id, "task_count": task_count}
             if not self._is_contained_daterange(data["date"], start_date=start_date, end_date=end_date):
                 continue
 

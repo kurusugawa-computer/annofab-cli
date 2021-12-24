@@ -48,9 +48,9 @@ class DownloadingFile:
         if wait_options is None:
             wait_options = DEFAULT_WAIT_OPTIONS
 
-        max_wait_minutues = self.get_max_wait_minutes(wait_options)
+        max_wait_minutes = self.get_max_wait_minutes(wait_options)
         filetype = DOWNLOADING_FILETYPE_DICT[job_type]
-        logger.info(f"{filetype}の更新処理が完了するまで、最大{max_wait_minutues}分間待ちます。job_id={job_id}")
+        logger.info(f"{filetype}の更新処理が完了するまで、最大{max_wait_minutes}分間待ちます。job_id={job_id}")
         result = self.service.wrapper.wait_for_completion(
             project_id,
             job_type=job_type,
@@ -58,7 +58,7 @@ class DownloadingFile:
             max_job_access=wait_options.max_tries,
         )
         if not result:
-            raise UpdatedFileForDownloadingError(f"{filetype}の更新処理が{max_wait_minutues}分以内に完了しない、または更新処理に失敗しました。")
+            raise UpdatedFileForDownloadingError(f"{filetype}の更新処理が{max_wait_minutes}分以内に完了しない、または更新処理に失敗しました。")
 
     async def download_annotation_zip_with_async(
         self, project_id: str, dest_path: str, is_latest: bool = False, wait_options: Optional[WaitOptions] = None

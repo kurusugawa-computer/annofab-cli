@@ -32,11 +32,11 @@ class TestCommandLine:
         main([self.command_name, "list_history", "--project_id", project_id, "--output", out_file])
 
     def test_annotation_specs_list_label(self):
-        out_file = str(out_dir / "anotation_specs_list_label.json")
+        out_file = str(out_dir / "annotation_specs_list_label.json")
         main([self.command_name, "list_label", "--project_id", project_id, "--before", "1", "--output", out_file])
 
     def test_annotation_specs_list_label_color(self):
-        out_file = str(out_dir / "anotation_specs_list_label_color.json")
+        out_file = str(out_dir / "annotation_specs_list_label_color.json")
         main(
             [
                 self.command_name,
