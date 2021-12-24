@@ -838,7 +838,7 @@ class WholeProductivityPerFirstAnnotationStartedDate:
 
         sum_df = pandas.DataFrame(row_list)
         sum_df.index.name = "first_annotation_started_date"
-        sum_df["first_annotation_started_date"] = sum_df.index
+        sum_df.reset_index(inplace=True)
         cls._add_velocity_columns(sum_df)
         return cls(sum_df)
 
