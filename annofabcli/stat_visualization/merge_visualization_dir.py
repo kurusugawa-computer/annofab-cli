@@ -141,7 +141,7 @@ def merge_visualization_dir(  # pylint: disable=too-many-statements
 
         sum_obj.to_csv(output_dir / "ユーザ_日付list-作業時間.csv")
 
-        sum_obj.plot(output_dir / "line-graph/累積折れ線-横軸_日-縦軸_作業時間.html", user_id_list)
+        sum_obj.plot_cumulatively(output_dir / "line-graph/累積折れ線-横軸_日-縦軸_作業時間.html", user_id_list)
 
     @_catch_exception
     def merge_task_list() -> pandas.DataFrame:
