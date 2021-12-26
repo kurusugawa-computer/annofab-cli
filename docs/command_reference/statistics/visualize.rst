@@ -174,6 +174,7 @@ Examples
    visualize_output_rst/タスクlist_csv.rst
    visualize_output_rst/メンバごとの生産性と品質_csv.rst
    visualize_output_rst/日毎の生産量と生産性_csv.rst
+   visualize_output_rst/教師付開始日毎の生産量と生産性_csv.rst
    visualize_output_rst/全体の生産性と品質_csv.rst
    visualize_output_rst/ユーザ_日付list-作業時間_csv.rst
 
