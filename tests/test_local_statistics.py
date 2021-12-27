@@ -358,6 +358,12 @@ class TestWorktimePerDate:
     def test_plot_cumulatively(self):
         self.obj.plot_cumulatively(self.output_dir / "累積折れ線-横軸_日-縦軸_作業時間.html")
 
+    def test_merge(self):
+        merged_obj = WorktimePerDate.merge(self.obj, self.obj)
+        df = merged_obj.df
+        assert df[(df["date"] == "2021-11-02") & (df["user_id"] == "alice")].iloc[0]["actual_worktime_hour"] == 6
+        merged_obj.to_csv(self.output_dir / "merged-ユーザ_日付list-作業時間.csv")
+
 
 class TestUserPerformance:
     @classmethod

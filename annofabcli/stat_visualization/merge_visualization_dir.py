@@ -24,6 +24,7 @@ from annofabcli.statistics.visualization.dataframe.whole_productivity_per_date i
     WholeProductivityPerCompletedDate,
     WholeProductivityPerFirstAnnotationStartedDate,
 )
+from annofabcli.statistics.visualization.dataframe.worktime_per_date import WorktimePerDate
 
 logger = logging.getLogger(__name__)
 
@@ -119,6 +120,30 @@ def merge_visualization_dir(  # pylint: disable=too-many-statements
         sum_obj.plot(output_dir / "line-graph/折れ線-横軸_教師付開始日-全体.html")
 
     @_catch_exception
+    def merge_worktime_per_date():
+        csv_list = [dir / "ユーザ_日付list-作業時間.csv" for dir in project_dir_list]
+        df_list: List[pandas.DataFrame] = []
+        for csv in csv_list:
+            if csv.exists():
+                df = pandas.read_csv(str(csv))
+                df_list.append(df)
+            else:
+                logger.warning(f"{csv} は存在しませんでした。")
+                continue
+
+        if len(df_list) == 0:
+            logger.warning(f"マージ対象のCSVファイル 'ユーザ_日付list-作業時間.csv'は存在しませんでした。")
+            return
+
+        sum_obj = WorktimePerDate(df_list[0])
+        for df in df_list[1:]:
+            sum_obj = WorktimePerDate.merge(sum_obj, WorktimePerDate(df))
+
+        sum_obj.to_csv(output_dir / "ユーザ_日付list-作業時間.csv")
+
+        sum_obj.plot_cumulatively(output_dir / "line-graph/累積折れ線-横軸_日-縦軸_作業時間.html", user_id_list)
+
+    @_catch_exception
     def merge_task_list() -> pandas.DataFrame:
         list_df = []
         for project_dir in project_dir_list:
@@ -140,6 +165,8 @@ def merge_visualization_dir(  # pylint: disable=too-many-statements
     execute_merge_performance_per_user()
     execute_merge_performance_per_date()
     merge_performance_per_first_annotation_started_date()
+    merge_worktime_per_date()
+
     df_task = merge_task_list()
     print_csv(df_task, output=str(output_dir / FILENAME_TASK_LIST))
 
@@ -155,6 +182,7 @@ def merge_visualization_dir(  # pylint: disable=too-many-statements
         minimal_output=minimal_output,
         user_id_list=user_id_list,
     )
+
     write_task_histogram(csv=output_dir / FILENAME_TASK_LIST, output_dir=output_dir / "histogram")
 
     # info.jsonを出力
