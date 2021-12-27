@@ -1,10 +1,9 @@
 import argparse
 import json
 import logging
-from collections.abc import Collection
 from dataclasses import dataclass
 from pathlib import Path
-from typing import Any, Callable, Dict, Iterator, Optional, Tuple, Union
+from typing import Any, Callable, Collection, Dict, Iterator, Optional, Tuple, Union
 
 import pandas
 from annofabapi.parser import SimpleAnnotationParser, lazy_parse_simple_annotation_dir, lazy_parse_simple_annotation_zip

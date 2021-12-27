@@ -3,9 +3,8 @@ import json
 import logging
 import sys
 import zipfile
-from collections.abc import Collection, Iterator
 from pathlib import Path
-from typing import Any, Callable, Dict, List, Optional, Set
+from typing import Any, Callable, Collection, Dict, Iterator, List, Optional, Set
 
 from annofabapi.parser import (
     SimpleAnnotationDirParser,
