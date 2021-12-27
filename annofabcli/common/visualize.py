@@ -90,39 +90,6 @@ class AddProps:
 
         return more_itertools.first_true(project_member_list, pred=lambda e: e["account_id"] == account_id)
 
-    def get_organization_member_from_account_id(self, account_id: str) -> Optional[OrganizationMember]:
-        """
-        account_idから組織メンバを取得する.
-        内部で保持している組織メンバ一覧を参照する。
-
-        Args:
-            project_id:
-            account_id:
-
-        Returns:
-            組織メンバ
-        """
-
-        def update_organization_members():
-            self._organization_members = self.service.wrapper.get_all_organization_members(self.organization_name)
-
-        def get_member():
-            member = more_itertools.first_true(self._organization_members, pred=lambda e: e["account_id"] == account_id)
-            return member
-
-        if self._organization_members is not None:
-            member = get_member()
-            if member is not None:
-                return member
-
-            else:
-                update_organization_members()
-                return get_member()
-
-        else:
-            update_organization_members()
-            return get_member()
-
     def _get_organization_name_from_project_id(self, project_id: str) -> str:
         """
         project_Idから組織名を取得する。

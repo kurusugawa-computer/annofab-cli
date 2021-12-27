@@ -116,7 +116,7 @@ class PutTask(AbstractCommandLineInterface):
                 df = self.create_task_relation_dataframe(task_relation_dict)
                 with tempfile.NamedTemporaryFile() as f:
                     df.to_csv(f, index=False, header=None)
-                    self.put_task_from_csv_file(project_id, f.name)
+                    self.put_task_from_csv_file(project_id, Path(f.name))
             else:
                 # 登録件数が少ない場合は、put_taskの方が早いのでこちらで登録する。
                 task_count = 0

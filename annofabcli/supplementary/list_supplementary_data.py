@@ -74,12 +74,10 @@ class ListSupplementaryData(AbstractCommandLineInterface):
 
     def main(self):
         args = self.args
-        input_data_id_list = annofabcli.common.cli.get_list_from_args(args.input_data_id)
-        if len(input_data_id_list) == 0:
-            input_data_id_list = None
-        task_id_list = annofabcli.common.cli.get_list_from_args(args.task_id)
-        if len(task_id_list) == 0:
-            task_id_list = None
+        input_data_id_list = (
+            annofabcli.common.cli.get_list_from_args(args.input_data_id) if args.input_data_id is not None else None
+        )
+        task_id_list = annofabcli.common.cli.get_list_from_args(args.task_id) if args.task_id is not None else None
 
         self.print_supplementary_data_list(
             project_id=args.project_id, input_data_id_list=input_data_id_list, task_id_list=task_id_list

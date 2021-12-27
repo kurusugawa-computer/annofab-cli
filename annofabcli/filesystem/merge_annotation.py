@@ -3,8 +3,9 @@ import json
 import logging
 import sys
 import zipfile
+from collections.abc import Collection, Iterator
 from pathlib import Path
-from typing import Any, Callable, Dict, Iterator, List, Optional, Set
+from typing import Any, Callable, Dict, List, Optional, Set
 
 from annofabapi.parser import (
     SimpleAnnotationDirParser,
@@ -131,7 +132,7 @@ class MergeAnnotationMain:
 
     @staticmethod
     def create_is_target_parser_func(
-        task_ids: Optional[Iterator[str]] = None,
+        task_ids: Optional[Collection[str]] = None,
     ) -> Optional[IsParserFunc]:
         if task_ids is None:
             return None
@@ -152,7 +153,7 @@ class MergeAnnotationMain:
         annotation_path1: Path,
         annotation_path2: Path,
         output_dir: Path,
-        target_task_ids: Optional[Iterator[str]] = None,
+        target_task_ids: Optional[Collection[str]] = None,
     ):
         is_target_parser_func = self.create_is_target_parser_func(target_task_ids)
 

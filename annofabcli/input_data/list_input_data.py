@@ -175,9 +175,9 @@ class ListInputData(AbstractCommandLineInterface):
 
     def main(self):
         args = self.args
-        input_data_id_list = annofabcli.common.cli.get_list_from_args(args.input_data_id)
-        if len(input_data_id_list) == 0:
-            input_data_id_list = None
+        input_data_id_list = (
+            annofabcli.common.cli.get_list_from_args(args.input_data_id) if args.input_data_id is not None else None
+        )
 
         input_data_query = annofabcli.common.cli.get_json_from_args(args.input_data_query)
         self.print_input_data(

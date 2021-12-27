@@ -114,9 +114,7 @@ class ListTaskHistory(AbstractCommandLineInterface):
     def main(self):
         args = self.args
 
-        task_id_list = annofabcli.common.cli.get_list_from_args(args.task_id)
-        if len(task_id_list) == 0:
-            task_id_list = None
+        task_id_list = annofabcli.common.cli.get_list_from_args(args.task_id) if args.task_id is not None else None
 
         self.print_task_history_list(
             args.project_id,

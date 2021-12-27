@@ -11,7 +11,6 @@ from annofabapi.dataclass.task import Task
 from annofabapi.models import (
     OrganizationMember,
     OrganizationMemberRole,
-    ProjectId,
     ProjectMember,
     ProjectMemberRole,
     SingleAnnotation,
@@ -256,7 +255,7 @@ class AnnofabApiFacade:
     """
 
     #: 組織メンバ一覧のキャッシュ
-    _organization_members: Optional[Tuple[ProjectId, List[OrganizationMember]]] = None
+    _organization_members: Optional[Tuple[str, List[OrganizationMember]]] = None
 
     _project_members_dict: Dict[str, List[ProjectMember]] = {}
     """プロジェクトメンバ一覧の情報。key:project_id, value:プロジェクトメンバ一覧"""
@@ -343,20 +342,6 @@ class AnnofabApiFacade:
         else:
             update_organization_members()
             return self._get_organization_member_with_predicate(project_id, predicate)
-
-    def get_organization_member_from_account_id(self, project_id: str, account_id: str) -> Optional[OrganizationMember]:
-        """
-        account_idから組織メンバを取得する。
-        インスタンス変数に組織メンバがあれば、WebAPIは実行しない。
-
-        Args:
-            project_id:
-            account_id:
-
-        Returns:
-            組織メンバ。見つからない場合はNone
-        """
-        return self._get_organization_member_with_predicate(project_id, lambda e: e["account_id"] == account_id)
 
     def _get_project_member_with_predicate(
         self, project_id: str, predicate: Callable[[Any], bool]
