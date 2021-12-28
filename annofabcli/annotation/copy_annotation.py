@@ -95,15 +95,18 @@ def parse_copy_target(str_copy_target: str) -> CopyTarget:
     str_src = tmp_array[0]
     str_dest = tmp_array[1]
 
-    src = _parse_with_slash(str_src)
-    dest = _parse_with_slash(str_dest)
+    src_task_id, src_input_data_id = _parse_with_slash(str_src)
+    dest_task_id, dest_input_data_id = _parse_with_slash(str_dest)
 
-    if src[1] is not None and dest[1] is not None:
+    if src_input_data_id is not None and dest_input_data_id is not None:
         return CopyTargetByInputData(
-            src_task_id=src[0], src_input_data_id=src[1], dest_task_id=dest[0], dest_input_data_id=dest[1]
+            src_task_id=src_task_id,
+            src_input_data_id=src_input_data_id,
+            dest_task_id=dest_task_id,
+            dest_input_data_id=dest_input_data_id,
         )
-    elif src[1] is None and dest[1] is None:
-        return CopyTargetByTask(src_task_id=src[0], dest_task_id=dest[0])
+    elif src_input_data_id is None and dest_input_data_id is None:
+        return CopyTargetByTask(src_task_id=src_task_id, dest_task_id=dest_task_id)
     else:
         raise ValueError(f"'{str_copy_target}' の形式が間違っています。")
 
