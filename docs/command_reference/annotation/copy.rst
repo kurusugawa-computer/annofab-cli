@@ -14,64 +14,57 @@ Examples
 基本的な使い方
 --------------------------
 
-``--input`` に，コピー元・コピー先となるタスクのtask_idを指定してください。
-入力データは、タスク内の順序に対応しています。
-たとえば上記のコマンドだと、「from_taskの1番目の入力データのアノテーション」を「to_taskの1番目の入力データのアノテーション」にコピーします。
+``--input`` に、アノテーションのコピー元とコピー先を ``:`` で区切って指定してください。コピー元/コピー先は、タスク単位または入力データ単位で指定できます。
+
+
+タスク単位でアノテーションをコピーする場合は、``--input`` にコピー元のtask_idとコピー先のtask_idを ``:`` で区切って指定してください。
 
 .. code-block::
 
-    $ annofabcli annotation copy -p prj1 --input from_task_id:to_task_id 
+    $ annofabcli annotation copy -p prj1 --input src_task_id:dest_task_id 
 
 
-入力データ単位でコピーすることも可能です．
+``src_task_id`` のN番目の入力データに付与されているアノテーションが、``dest_task_id`` のN番目の入力データにコピーされます。
+タスクに含まれる入力データ数が ``src_task_id`` と ``dest_task_id`` で異なる場合は、コピーできる入力データまで（ ``min(src_input_data.length, dest_input_data.length)`` 番目まで）コピーします。
+
+
+
+
+入力データ単位でアノテーションをコピーする場合は、``--input`` にtask_idとinput_data_idを ``/`` で区切り、コピ元とコピー先を指定します。
+
 
 .. code-block::
 
-    $ annofabcli annotation copy -p prj1 \
-    --input from_task_id/from_annotation_id:to_task_id/to_annotation_id 
+    $ annofabcli annotation copy -p prj1 --input src_task_id/src_input_data_id:dest_task_id/dest_input_data_id
 
 
-ファイルを入力として指定することもできます．その場合，以下のような形式で入力してください．
-入力は複数行にわたって指定することもできます．
 
-.. code-block::
-
-    $ annofabcli annotation copy -p prj1 --input file://task.txt 
-    
-
-.. code-block::
-    :caption: task.txt
-
-    from_task_id:to_task_id
-    from_task_id/from_annotation_id:to_task_id/to_annotation_id
-
-
-デフォルトでは、コピー先にすでにアノテーションが存在する場合はスキップします。
-コピー元に含まれていないコピー先のアノテーションを残してコピーする場合は、 ``--merge`` を指定してください。
+コピー先ににアノテーションが存在する場合、デフォルトではアノテーションのコピーをスキップします。
+コピー先のアノテーションを残した上でアノテーションをコピーする場合は、 ``--merge`` を指定してください。
 コピー先のアノテーションのannotation_idが、コピー元のアノテーションのannotation_idに一致すればアノテーションを上書きします。一致しなければアノテーションを追加します。
 
 .. code-block::
 
-    $ annofabcli annotaticn copy -p prj1 --merge --input from_task_id:to_task_id 
+    $ annofabcli annotaticn copy -p prj1 --input src_task_id:dest_task_id --merge
 
 
-コピー先のアノテーションを削除してからインポートする場合は、 ``--overwrite`` を指定してください。
+コピー先のアノテーションを残さない場合は、 ``--overwrite`` を指定してください。
 
 .. code-block::
 
-    $ annofabcli annotation copy -p prj1 --overwrite --input from_task_id:to_task_id 
+    $ annofabcli annotation copy -p prj1 --input src_task_id:dest_task_id --overwrite
 
 
-デフォルトでは以下のタスクに対しては、アノテーションのインポートをスキップします。
+以下のタスクに対して、デフォルトではアノテーションのコピーをスキップします。
 
 * タスクの担当者が自分自身でない
 * タスクに担当者が割り当てられたことがある
 
-``--force`` を指定すると、担当者を一時的に自分自身に変更し、アノテーションをコピーすることができます。
+``--force`` を指定すると、タスクの担当者が一時的に自分自身に変更され、アノテーションがコピーされます。
 
 .. code-block::
 
-    $ annofabcli annotation copy -p prj1 --force --input from_task_id:to_task_id 
+    $ annofabcli annotation copy -p prj1 --input src_task_id:dest_task_id --force
 
 
 Usage Details
