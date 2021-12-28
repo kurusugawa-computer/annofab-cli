@@ -104,7 +104,7 @@ class Database:
         self.logging_prefix = f"project_id={project_id}"
 
     @staticmethod
-    def task_exists(task_list: List[Task], task_id) -> bool:
+    def task_exists(task_list: List[Task], task_id: str) -> bool:
         task = more_itertools.first_true(task_list, pred=lambda e: e["task_id"] == task_id)
         if task is None:
             return False

@@ -596,7 +596,7 @@ class AbstractCommandLineInterface(AbstractCommandLineWithoutWebapiInterface):
 
     def validate_project(
         self,
-        project_id,
+        project_id: str,
         project_member_roles: Optional[List[ProjectMemberRole]] = None,
         organization_member_roles: Optional[List[OrganizationMemberRole]] = None,
     ):

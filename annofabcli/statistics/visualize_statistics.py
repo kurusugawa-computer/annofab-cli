@@ -153,12 +153,12 @@ class WriteCsvGraph:
 
         return wrapped
 
-    def _get_task_df(self):
+    def _get_task_df(self) -> pandas.DataFrame:
         if self.task_df is None:
             self.task_df = self.table_obj.create_task_df()
         return self.task_df
 
-    def _get_task_history_df(self):
+    def _get_task_history_df(self) -> pandas.DataFrame:
         if self.task_history_df is None:
             self.task_history_df = self.table_obj.create_task_history_df()
         return self.task_history_df
