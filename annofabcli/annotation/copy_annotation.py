@@ -174,6 +174,7 @@ class CopyAnnotationMain(AbstractCommandLineWithConfirmInterface):
 
         logger.debug(f"'{copy_target.src_task_id}'の{copy_count}フレームのアノテーションを、'{copy_target.dest_task_id}'にコピーしました。")
 
+    @staticmethod
     def _merge_annotation(
         src_details: list[dict[str, Any]], dest_details: list[dict[str, Any]]
     ) -> list[dict[str, Any]]:
