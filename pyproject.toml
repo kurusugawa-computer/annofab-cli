@@ -1,6 +1,6 @@
 [tool.poetry]
 name = "annofabcli"
-version = "1.53.7"
+version = "1.53.8"
 description = "Utility Command Line Interface for AnnoFab"
 authors = ["yuji38kwmt"]
 license = "MIT"
@@ -85,6 +85,7 @@ line-length = 120
 [tool.mypy]
 ignore_missing_imports = true
 
+check_untyped_defs = true
 
 [build-system]
 requires = ["poetry>=0.12"]

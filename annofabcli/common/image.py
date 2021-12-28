@@ -220,9 +220,9 @@ def write_annotation_images_from_path(
     """
 
     def _get_image_size(input_data_id: str) -> Optional[InputDataSize]:
-        def _get_image_size_from_system_metadata():
+        def _get_image_size_from_system_metadata(arg_input_data: Dict[str, Any]):
             # 入力データの`input_data.system_metadata.original_resolution`を参照して、画像サイズを決める。
-            original_resolution = input_data["system_metadata"]["original_resolution"]
+            original_resolution = arg_input_data["system_metadata"]["original_resolution"]
             if original_resolution is not None and (
                 original_resolution.get("width") is not None and original_resolution.get("height") is not None
             ):
@@ -241,7 +241,7 @@ def write_annotation_images_from_path(
                 logger.warning(f"input_data_id={input_data_id}の入力データは存在しなかったので、スキップします。")
                 return None
 
-            return _get_image_size_from_system_metadata()
+            return _get_image_size_from_system_metadata(input_data)
 
         else:
             raise ValueError(f"引数`image_size`または`input_data_dict`のどちらかはnot Noneである必要があります。")

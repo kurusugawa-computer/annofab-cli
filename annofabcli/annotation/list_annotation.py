@@ -154,7 +154,7 @@ class ListAnnotationMain:
         return [self.visualize.add_properties_to_single_annotation(annotation) for annotation in annotation_list]
 
     def get_all_annotation_list(
-        self, project_id: str, annotation_query: Optional[Dict[str, Any]], task_id_list: Optional[str] = None
+        self, project_id: str, annotation_query: Optional[Dict[str, Any]], task_id_list: Optional[List[str]] = None
     ) -> List[SingleAnnotation]:
         all_annotation_list = []
         UPPER_BOUND = 10_000

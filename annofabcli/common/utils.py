@@ -238,7 +238,7 @@ def get_file_scheme_path(str_value: str) -> Optional[str]:
         return None
 
 
-def isoduration_to_hour(duration) -> float:
+def isoduration_to_hour(duration: str) -> float:
     """
     ISO 8601 duration を 時間に変換する
     Args:
@@ -251,7 +251,7 @@ def isoduration_to_hour(duration) -> float:
     return isodate.parse_duration(duration).total_seconds() / 3600
 
 
-def isoduration_to_minute(duration) -> float:
+def isoduration_to_minute(duration: str) -> float:
     """
     ISO 8601 duration を 分に変換する
 

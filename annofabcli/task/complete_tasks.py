@@ -139,7 +139,7 @@ class CompleteTasksMain(AbstractCommandLineWithConfirmInterface):
         )
         logger.debug(f"{task.task_id}, {input_data_id}, {len(inspection_list)}件 検査コメントの状態を変更")
 
-    def get_unprocessed_inspection_list(self, task: Task, input_data_id) -> List[Inspection]:
+    def get_unprocessed_inspection_list(self, task: Task, input_data_id: str) -> List[Inspection]:
         """
         未処置の検査コメントリストを取得する。
         ただし、現在のタスクフェーズで編集できる検査コメントのみである。

@@ -45,6 +45,21 @@ class TestCommandLine:
             ]
         )
 
+    def test_copy_annotation(self):
+        main(
+            [
+                "annotation",
+                "copy",
+                "--project_id",
+                project_id,
+                "--input",
+                f"{task_id}:{task_id}",
+                "--yes",
+                "--overwrite",
+                "--force",
+            ]
+        )
+
     def test_dump_annotation(self):
         output_dir = str(out_dir / "dump-annotation")
         main(

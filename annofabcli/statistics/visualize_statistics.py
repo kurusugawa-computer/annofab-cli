@@ -56,7 +56,7 @@ logger = logging.getLogger(__name__)
 
 @dataclass
 class CommnadLineArgs(DataClassJsonMixin):
-    task_query: TaskQuery
+    task_query: Optional[TaskQuery]
     user_id_list: Optional[List[str]]
     start_date: Optional[str]
     end_date: Optional[str]
@@ -153,12 +153,12 @@ class WriteCsvGraph:
 
         return wrapped
 
-    def _get_task_df(self):
+    def _get_task_df(self) -> pandas.DataFrame:
         if self.task_df is None:
             self.task_df = self.table_obj.create_task_df()
         return self.task_df
 
-    def _get_task_history_df(self):
+    def _get_task_history_df(self) -> pandas.DataFrame:
         if self.task_history_df is None:
             self.task_history_df = self.table_obj.create_task_history_df()
         return self.task_history_df
@@ -310,7 +310,7 @@ def visualize_statistics(
     annofab_facade: AnnofabApiFacade,
     work_dir: Path,
     output_project_dir: Path,
-    task_query: TaskQuery,
+    task_query: Optional[TaskQuery],
     df_labor: Optional[pandas.DataFrame],
     task_id_list: Optional[List[str]],
     ignored_task_id_list: Optional[List[str]],
@@ -402,7 +402,7 @@ def visualize_statistics_wrapper(
     annofab_service: annofabapi.Resource,
     annofab_facade: AnnofabApiFacade,
     work_dir: Path,
-    task_query: TaskQuery,
+    task_query: Optional[TaskQuery],
     df_labor: Optional[pandas.DataFrame],
     task_id_list: Optional[List[str]],
     ignored_task_id_list: Optional[List[str]],
@@ -457,7 +457,7 @@ class VisualizeStatistics(AbstractCommandLineInterface):
         root_output_dir: Path,
         project_id_list: List[str],
         work_dir: Path,
-        task_query: TaskQuery,
+        task_query: Optional[TaskQuery],
         df_labor: Optional[pandas.DataFrame],
         task_id_list: Optional[List[str]],
         ignored_task_id_list: Optional[List[str]],

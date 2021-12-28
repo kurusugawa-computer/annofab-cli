@@ -3,7 +3,7 @@ import json
 import logging
 from dataclasses import dataclass
 from pathlib import Path
-from typing import Any, Callable, Dict, Iterator, Optional, Tuple, Union
+from typing import Any, Callable, Collection, Dict, Iterator, Optional, Tuple, Union
 
 import pandas
 from annofabapi.parser import SimpleAnnotationParser, lazy_parse_simple_annotation_dir, lazy_parse_simple_annotation_zip
@@ -56,8 +56,8 @@ class DrawingAnnotationForOneImage:
     def __init__(
         self,
         label_color_dict: Optional[Dict[str, Color]] = None,
-        target_label_names: Optional[Iterator[str]] = None,
-        polyline_labels: Optional[Iterator[str]] = None,
+        target_label_names: Optional[Collection[str]] = None,
+        polyline_labels: Optional[Collection[str]] = None,
         drawing_options: Optional[DrawingOptions] = None,
     ) -> None:
         self.label_color_dict = label_color_dict if label_color_dict is not None else {}
@@ -177,7 +177,7 @@ class DrawingAnnotationForOneImage:
 
 
 def create_is_target_parser_func(
-    task_ids: Optional[Iterator[str]] = None,
+    task_ids: Optional[Collection[str]] = None,
     task_query: Optional[TaskQuery] = None,
 ) -> Optional[IsParserFunc]:
     if task_ids is None and task_query is None:
@@ -206,11 +206,11 @@ def draw_annotation_all(
     input_data_id_relation_dict: Dict[str, str],
     output_dir: Path,
     *,
-    target_task_ids: Optional[Iterator[str]] = None,
+    target_task_ids: Optional[Collection[str]] = None,
     task_query: Optional[TaskQuery] = None,
     label_color_dict: Optional[Dict[str, Color]] = None,
-    target_label_names: Optional[Iterator[str]] = None,
-    polyline_labels: Optional[Iterator[str]] = None,
+    target_label_names: Optional[Collection[str]] = None,
+    polyline_labels: Optional[Collection[str]] = None,
     drawing_options: Optional[DrawingOptions] = None,
 ):
     drawing = DrawingAnnotationForOneImage(

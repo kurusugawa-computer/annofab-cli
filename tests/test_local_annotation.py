@@ -28,9 +28,15 @@ class TestCopyAnnotation:
         assert actual.dest_task_id == "task2"
         assert actual.dest_input_data_id == "input6"
 
-    def test_parse_copy_target__not_supported1(self):
+    def test_parse_copy_target__not_supported(self):
         with pytest.raises(ValueError):
             parse_copy_target("task1/input5:task2")
 
-    # TODO
-    # ValueErrorのテストケースを追加する
+        with pytest.raises(ValueError):
+            parse_copy_target("task1:task2/input6")
+
+        with pytest.raises(ValueError):
+            parse_copy_target("task1:task2:task3")
+
+        with pytest.raises(ValueError):
+            parse_copy_target("task1")
