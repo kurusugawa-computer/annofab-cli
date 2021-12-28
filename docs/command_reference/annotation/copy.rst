@@ -74,3 +74,4 @@ Usage Details
     :ref: annofabcli.annotation.copy_annotation.add_parser
     :prog: annofabcli annotation copy
     :nosubcommands:
+    :nodefaultconst:
