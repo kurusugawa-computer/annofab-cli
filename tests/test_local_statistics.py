@@ -307,7 +307,7 @@ class TestListWorktime:
                 task_id="task1",
                 phase="annotation",
                 phase_stage=1,
-                account_id="unknown",
+                account_id="alice",
                 user_id="alice",
                 username="Alice",
                 worktime_hour=3.0,
@@ -323,7 +323,7 @@ class TestListWorktime:
                 task_id="task2",
                 phase="acceptance",
                 phase_stage=1,
-                account_id="unknown",
+                account_id="bob",
                 user_id="bob",
                 username="Bob",
                 worktime_hour=1.0,
@@ -337,8 +337,8 @@ class TestListWorktime:
         ]
 
         member_list = [
-            {"user_id": "alice", "username": "Alice", "biography": "U.S."},
-            {"user_id": "bob", "username": "Bob", "biography": "Japan"},
+            {"account_id":"alice","user_id": "alice", "username": "Alice", "biography": "U.S."},
+            {"account_id":"bob","user_id": "bob", "username": "Bob", "biography": "Japan"},
         ]
         df = get_df_worktime(event_list, member_list)
 
