@@ -33,10 +33,10 @@ Examples
 
 
 .. csv-table:: out.csv
-   :header: date,user_id,username,biography,worktime_hour,annotation_worktime_hour,inspection_worktime_hour,acceptance_worktime_hour
+   :header: date,account_id,user_id,username,biography,worktime_hour,annotation_worktime_hour,inspection_worktime_hour,acceptance_worktime_hour
 
-    2021-11-01,alice,Alice,U.S.,2.35,2.35,0,0.0
-    2021-11-02,bob,Bob,Japan,4.37,3.43,0,0.94
+    2021-11-01,alice,alice,Alice,U.S.,2.35,2.35,0,0.0
+    2021-11-02,bob,bob,Bob,Japan,4.37,3.43,0,0.94
 
 
 Usage Details

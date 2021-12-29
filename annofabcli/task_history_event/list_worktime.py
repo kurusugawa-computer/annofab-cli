@@ -158,12 +158,19 @@ class ListWorktimeFromTaskHistoryEventMain:
     def _create_worktime_list(
         self, task_history_event_list: list[TaskHistoryEvent]
     ) -> list[WorktimeFromTaskHistoryEvent]:
+        """タスク履歴イベントから、作業時間のリストを生成する。
+
+        Args:
+            task_history_event_list: タスク履歴イベントのlist。すべて同じtask_idで、created_datetimeでソートされていること
+        """
         result = []
         i = 0
 
         while i < len(task_history_event_list):
             event = task_history_event_list[i]
-            if event["status"] != TaskStatus.WORKING.value:
+            # account_idを判定している理由：
+            # 受入完了状態のタスクで作成されたアノテーションを、アノテーション一覧画面からオーナーが一括編集すると、account_idがnullのタスク履歴イベントが生成されるため
+            if event["status"] != TaskStatus.WORKING.value or event["account_id"] is None:
                 i += 1
                 continue
 

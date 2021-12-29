@@ -89,7 +89,6 @@ def mask_visualization_dir(
     )
 
     df_worktime = pandas.read_csv(str(project_dir / "ユーザ_日付list-作業時間.csv"))
-
     df_masked_worktime = create_masked_user_info_df(
         df_worktime,
         not_masked_biography_set=not_masked_biography_set,
