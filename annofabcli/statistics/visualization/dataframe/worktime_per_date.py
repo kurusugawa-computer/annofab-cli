@@ -87,7 +87,9 @@ def get_df_worktime(
         df_labor = df_labor.merge(
             df_member[["user_id", "account_id"]], how="left", on="account_id", suffixes=("_tmp", None)
         )
-        df = df.merge(df_labor[["date", "user_id", "actual_worktime_hour"]], how="outer", on=["date", "user_id"])
+        df = df.merge(
+            df_labor[["date", "user_id", "actual_worktime_hour", "account_id"]], how="outer", on=["date", "user_id"]
+        )
     else:
         df["actual_worktime_hour"] = 0
 
@@ -107,6 +109,7 @@ def get_df_worktime(
             "user_id",
             "username",
             "biography",
+            "account_id",
             "actual_worktime_hour",
             "monitored_worktime_hour",
             "monitored_annotation_worktime_hour",
@@ -123,9 +126,9 @@ class WorktimePerDate:
     def __init__(self, df: pandas.DataFrame):
         self.df = df
 
-    @staticmethod
+    @classmethod
     def from_webapi(
-        service: annofabapi.Resource, project_id: str, df_labor: Optional[pandas.DataFrame] = None
+        cls, service: annofabapi.Resource, project_id: str, df_labor: Optional[pandas.DataFrame] = None
     ) -> WorktimePerDate:
         """
 
@@ -148,7 +151,7 @@ class WorktimePerDate:
             df = get_df_worktime(worktime_list, project_member_list, df_labor=df_labor)
         else:
             df = get_df_worktime(worktime_list, project_member_list)
-        return WorktimePerDate(df)
+        return cls(df)
 
     def _get_cumulative_dataframe(self) -> pandas.DataFrame:
         """
