@@ -21,7 +21,7 @@ from annofabcli.task_history_event.list_worktime import (
 logger = logging.getLogger(__name__)
 
 WorktimeDict = Dict[Tuple[str, str, str], float]
-"""key: date,user_id,phase"""
+"""key: date, account_id, phase"""
 
 
 def _get_worktime_dict_from_event(event: WorktimeFromTaskHistoryEvent) -> WorktimeDict:
@@ -32,7 +32,7 @@ def _get_worktime_dict_from_event(event: WorktimeFromTaskHistoryEvent) -> Workti
 
     if dt_start.date() == dt_end.date():
         worktime_hour = (dt_end - dt_start).total_seconds() / 3600
-        dict_result[(str(dt_start.date()), event.user_id, event.phase)] = worktime_hour
+        dict_result[(str(dt_start.date()), event.account_id, event.phase)] = worktime_hour
     else:
 
         jst_tzinfo = datetime.timezone(datetime.timedelta(hours=9))
@@ -44,11 +44,11 @@ def _get_worktime_dict_from_event(event: WorktimeFromTaskHistoryEvent) -> Workti
                 year=dt_next_date.year, month=dt_next_date.month, day=dt_next_date.day, tzinfo=jst_tzinfo
             )
             worktime_hour = (dt_tmp_end - dt_tmp_start).total_seconds() / 3600
-            dict_result[(str(dt_tmp_start.date()), event.user_id, event.phase)] = worktime_hour
+            dict_result[(str(dt_tmp_start.date()), event.account_id, event.phase)] = worktime_hour
             dt_tmp_start = dt_tmp_end
 
         worktime_hour = (dt_end - dt_tmp_start).total_seconds() / 3600
-        dict_result[(str(dt_tmp_start.date()), event.user_id, event.phase)] = worktime_hour
+        dict_result[(str(dt_tmp_start.date()), event.account_id, event.phase)] = worktime_hour
 
     return dict_result
 
@@ -70,7 +70,7 @@ def get_df_worktime(
 
     s = pandas.Series(
         dict_worktime.values(),
-        index=pandas.MultiIndex.from_tuples(dict_worktime.keys(), names=("date", "user_id", "phase")),
+        index=pandas.MultiIndex.from_tuples(dict_worktime.keys(), names=("date", "account_id", "phase")),
     )
     df = s.unstack()
     df.reset_index(inplace=True)
@@ -97,12 +97,13 @@ def get_df_worktime(
         df["annotation_worktime_hour"] + df["inspection_worktime_hour"] + df["acceptance_worktime_hour"]
     )
 
-    df_member = pandas.DataFrame(member_list)[["user_id", "username", "biography"]]
+    df_member = pandas.DataFrame(member_list)[["account_id", "user_id", "username", "biography"]]
 
-    df = df.merge(df_member, how="left", on="user_id")
+    df = df.merge(df_member, how="left", on="account_id")
     return df[
         [
             "date",
+            "account_id",
             "user_id",
             "username",
             "biography",
