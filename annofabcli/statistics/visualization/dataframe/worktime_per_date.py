@@ -43,7 +43,7 @@ def get_df_worktime(
 
     s = pandas.Series(
         dict_worktime.values(),
-        index=pandas.MultiIndex.from_tuples(dict_worktime.keys(), names=("date", "user_id", "phase")),
+        index=pandas.MultiIndex.from_tuples(dict_worktime.keys(), names=("date", "account_id", "phase")),
     )
     df = s.unstack()
     df.reset_index(inplace=True)
@@ -88,7 +88,7 @@ def get_df_worktime(
             df_member[["user_id", "account_id"]], how="left", on="account_id", suffixes=("_tmp", None)
         )
         df = df.merge(
-            df_labor[["date", "user_id", "actual_worktime_hour", "account_id"]], how="outer", on=["date", "user_id"]
+            df_labor[["date", "user_id", "actual_worktime_hour", "account_id"]], how="outer", on=["date", "account_id"]
         )
     else:
         df["actual_worktime_hour"] = 0
@@ -106,10 +106,10 @@ def get_df_worktime(
     return df[
         [
             "date",
+            "account_id",
             "user_id",
             "username",
             "biography",
-            "account_id",
             "actual_worktime_hour",
             "monitored_worktime_hour",
             "monitored_annotation_worktime_hour",
