@@ -211,8 +211,11 @@ class RejectTasksMain(AbstractCommandLineWithConfirmInterface):
         if task["status"] == TaskStatus.COMPLETE.value and cancel_acceptance and not dryrun:
             self._cancel_acceptance(task)
 
+        is_changed_to_working_status = False
         if inspection_comment is not None:
+            # 検査コメントを付与するには「作業中」状態に変更して、担当者を自分自身に変更する必要がある。
             changed_task = self.change_to_working_status(project_id, task)
+            is_changed_to_working_status = True
             try:
                 # 検査コメントを付与する
                 if not dryrun:
@@ -246,15 +249,11 @@ class RejectTasksMain(AbstractCommandLineWithConfirmInterface):
             return True
 
         except requests.exceptions.HTTPError as e:
-            logger.warning(e)
-            logger.warning(f"{logging_prefix} : task_id = {task_id} タスクの差し戻しに失敗")
+            logger.warning(f"{logging_prefix} : task_id = {task_id} タスクの差し戻しに失敗しました。 :: {e}")
 
+            # working中状態のままだと作業時間が増え続けるので、休憩中モードにする。
             if not dryrun:
-                new_task = self.service.wrapper.get_task_or_none(project_id, task_id)
-                if (
-                    new_task["status"] == TaskStatus.WORKING.value
-                    and new_task["account_id"] == self.service.api.account_id
-                ):
+                if is_changed_to_working_status:
                     self.facade.change_to_break_phase(project_id, task_id)
             return False
 

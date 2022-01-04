@@ -29,6 +29,7 @@ class ListSupplementaryData(AbstractCommandLineInterface):
             task = self.service.wrapper.get_task_or_none(project_id, task_id)
             if task is None:
                 logger.warning(f"task_id='{task_id}'のタスクが見つかりませんでした。")
+                continue
             all_input_data_id_list.extend(task["input_data_id_list"])
         return all_input_data_id_list
 
@@ -44,7 +45,9 @@ class ListSupplementaryData(AbstractCommandLineInterface):
             if (index + 1) % 100 == 0:
                 logger.debug(f"{index+1} 件目の入力データを取得します。")
 
-            supplementary_data_list = self.get_supplementary_data_list(project_id, input_data_id)
+            supplementary_data_list = self.service.wrapper.get_supplementary_data_list_or_none(
+                project_id, input_data_id
+            )
             if supplementary_data_list is not None:
                 all_supplementary_data_list.extend(supplementary_data_list)
             else:

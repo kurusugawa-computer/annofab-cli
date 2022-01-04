@@ -22,44 +22,6 @@ organization_name = service.api.get_organization_of_project(project_id)[0]["orga
 
 
 class TestCommandLine:
-    def test_list_worktime_by_user_with_project_id(self):
-        output_dir = str(out_dir / "labor")
-        main(
-            [
-                "labor",
-                "list_worktime_by_user",
-                "--project_id",
-                project_id,
-                "--user_id",
-                service.api.login_user_id,
-                "--start_date",
-                "2019-09-01",
-                "--end_date",
-                "2019-09-01",
-                "--add_availability",
-                "--output_dir",
-                str(output_dir),
-            ]
-        )
-
-    def test_list_worktime_by_user_with_organization_name(self):
-        output_dir = str(out_dir / "labor")
-        main(
-            [
-                "labor",
-                "list_worktime_by_user",
-                "--organization",
-                organization_name,
-                "--user_id",
-                service.api.login_user_id,
-                "--start_date",
-                "2019-09-01",
-                "--end_date",
-                "2019-09-01",
-                "--output_dir",
-                str(output_dir),
-            ]
-        )
 
     def test_list_worktime_with_project_id(self):
         output_file = out_dir / "labor/list_worktime.csv"

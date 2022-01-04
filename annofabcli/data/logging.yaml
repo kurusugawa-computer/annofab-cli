@@ -16,7 +16,7 @@ loggers:
   __main__:
     level: DEBUG
   annofabapi:
-    level: DEBUG
+    level: INFO
   annofabcli:
     level: DEBUG
 root:
