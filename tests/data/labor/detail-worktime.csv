@@ -1,5 +1,0 @@
-date,organization_name,project_title,project_id,username,biography,user_id,worktime_plan_hour,worktime_result_hour,worktime_monitored_hour
-2020-04-01,test,test1,12345678-abcd-1234-abcd-1234abcd5678,Alice,U.K,alice,1,1.2,0.9
-2020-04-01,test,test2,22345678-abcd-1234-abcd-1234abcd5678,Alice,U.K,alice,2,2.4,1.5
-2020-04-02,test,test1,12345678-abcd-1234-abcd-1234abcd5678,Alice,U.K,alice,1,1.2,0.9
-2020-04-01,test,test2,22345678-abcd-1234-abcd-1234abcd5678,Bob,U.S,bob,3,3.6,3.1
