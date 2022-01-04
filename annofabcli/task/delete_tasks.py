@@ -20,11 +20,6 @@ class DeleteTask(AbstractCommandLineInterface):
     アノテーションが付与されていないタスクを削除する
     """
 
-    @annofabcli.utils.allow_404_error
-    def get_task(self, project_id: str, task_id: str) -> Dict[str, Any]:
-        task, _ = self.service.api.get_task(project_id, task_id)
-        return task
-
     def confirm_delete_task(self, task_id: str) -> bool:
         message_for_confirm = f"タスク'{task_id}' を削除しますか？"
         return self.confirm_processing(message_for_confirm)
@@ -58,7 +53,7 @@ class DeleteTask(AbstractCommandLineInterface):
             True: タスクを削除した。False: タスクを削除しなかった。
 
         """
-        task = self.get_task(project_id, task_id)
+        task = self.service.wrapper.get_task_or_none(project_id, task_id)
         if task is None:
             logger.info(f"task_id={task_id} のタスクは存在しません。")
             return False

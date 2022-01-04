@@ -39,11 +39,6 @@ class ListInputData(AbstractCommandLineInterface):
                 task_id_list.append(task["task_id"])
         return task_id_list
 
-    @annofabcli.utils.allow_404_error
-    def get_input_data(self, project_id: str, input_data_id: str) -> InputData:
-        input_data, _ = self.service.api.get_input_data(project_id, input_data_id)
-        return input_data
-
     def get_input_data_from_input_data_id(self, project_id: str, input_data_id_list: List[str]) -> List[InputData]:
         input_data_list = []
         logger.debug(f"{len(input_data_id_list)}件の入力データを取得します。")
@@ -51,7 +46,7 @@ class ListInputData(AbstractCommandLineInterface):
             if (index + 1) % 100 == 0:
                 logger.debug(f"{index+1} 件目の入力データを取得します。")
 
-            input_data = self.get_input_data(project_id, input_data_id)
+            input_data = self.service.wrapper.get_input_data_or_none(project_id, input_data_id)
             if input_data is not None:
                 input_data_list.append(input_data)
             else:

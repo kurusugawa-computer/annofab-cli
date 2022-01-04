@@ -226,6 +226,7 @@ class CopyAnnotationMain(AbstractCommandLineWithConfirmInterface):
             copy_target.dest_task_id,
             copy_target.dest_input_data_id,
             src_details=anno_details,
+            account_id=self.service.api.account_id
         )
         request_body["updated_datetime"] = dest_annotation["updated_datetime"]
         self.service.api.put_annotation(

@@ -56,17 +56,12 @@ class ListLastJob(AbstractCommandLineInterface):
 
         return project_info
 
-    @annofabcli.utils.allow_404_error
-    def get_project(self, project_id: str) -> Project:
-        project, _ = self.service.api.get_project(project_id)
-        return project
-
     def get_last_job_list(
         self, project_id_list: List[str], job_type: ProjectJobType, add_details: bool = False
     ) -> List[ProjectJobInfo]:
         job_list = []
         for project_id in project_id_list:
-            project = self.get_project(project_id)
+            project = self.service.wrapper.get_project_or_none(project_id)
 
             if project is None:
                 logger.warning(f"project_id='{project_id}' のプロジェクトは存在しませんでした。")

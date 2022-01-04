@@ -23,11 +23,6 @@ class ListTasksMain:
         self.project_id = project_id
         self.visualize = AddProps(self.service, project_id)
 
-    @annofabcli.utils.allow_404_error
-    def get_task(self, project_id: str, task_id: str) -> Task:
-        task, _ = self.service.api.get_task(project_id, task_id)
-        return task
-
     def get_task_list_from_task_id(self, project_id: str, task_id_list: List[str]) -> List[Task]:
         task_list = []
         logger.debug(f"{len(task_id_list)}件のタスクを取得します。")
@@ -35,7 +30,7 @@ class ListTasksMain:
             if (index + 1) % 100 == 0:
                 logger.debug(f"{index+1} 件のタスクを取得します。")
 
-            task = self.get_task(project_id, task_id)
+            task = self.service.wrapper.get_task_or_none(project_id, task_id)
             if task is not None:
                 task_list.append(self.visualize.add_properties_to_task(task))
             else:
