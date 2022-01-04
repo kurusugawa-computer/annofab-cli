@@ -337,8 +337,8 @@ class TestListWorktime:
         ]
 
         member_list = [
-            {"account_id":"alice","user_id": "alice", "username": "Alice", "biography": "U.S."},
-            {"account_id":"bob","user_id": "bob", "username": "Bob", "biography": "Japan"},
+            {"account_id": "alice", "user_id": "alice", "username": "Alice", "biography": "U.S."},
+            {"account_id": "bob", "user_id": "bob", "username": "Bob", "biography": "Japan"},
         ]
         df = get_df_worktime(event_list, member_list)
 

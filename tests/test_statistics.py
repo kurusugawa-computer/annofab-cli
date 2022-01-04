@@ -50,54 +50,6 @@ class TestCommandLine:
             ]
         )
 
-    def test_list_by_date_user(self):
-        main(
-            [
-                "statistics",
-                "list_by_date_user",
-                "--project_id",
-                project_id,
-                "--output",
-                str(out_dir / "list_by_date_user-out.csv"),
-            ]
-        )
-
-    def test_list_cumulative_labor_time(self):
-        main(
-            [
-                "statistics",
-                "list_cumulative_labor_time",
-                "--project_id",
-                project_id,
-                "--output",
-                str(out_dir / "list_cumulative_labor_time-out.csv"),
-            ]
-        )
-
-    def test_list_labor_time_per_user(self):
-        main(
-            [
-                "statistics",
-                "list_labor_time_per_user",
-                "--project_id",
-                project_id,
-                "--output",
-                str(out_dir / "list_labor_time_per_user-out.csv"),
-            ]
-        )
-
-    def test_list_task_progress(self):
-        main(
-            [
-                "statistics",
-                "list_task_progress",
-                "--project_id",
-                project_id,
-                "--output",
-                str(out_dir / "task-progress-out.csv"),
-            ]
-        )
-
     def test_summarize_task_count(self):
         main(
             [
