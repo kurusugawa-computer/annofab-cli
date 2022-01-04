@@ -32,7 +32,7 @@ more-itertools = "*"
 jmespath = "*"
 pyquery = "*"
 isodate = "*"
-annofabapi = ">=0.49.0"
+annofabapi = ">=0.50.0"
 python-datauri = "*"
 pandas = "*"
 bokeh = "^2.4"
@@ -47,7 +47,7 @@ pytest-cov = "*"
 # format library
 isort = "*"
 autoflake = "*"
-black = {version = "^21.9b0", allow-prereleases = true}
+black = {version = "^21.12b0", allow-prereleases = true}
 
 # lint library
 flake8 = "*"
