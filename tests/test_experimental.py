@@ -4,8 +4,6 @@ from pathlib import Path
 
 import annofabapi
 
-from annofabcli.__main__ import main
-
 # プロジェクトトップに移動する
 os.chdir(os.path.dirname(os.path.abspath(__file__)) + "/../")
 
@@ -25,5 +23,3 @@ service = annofabapi.build()
 
 class TestCommandLine:
     command_name = "experimental"
-
-    pass

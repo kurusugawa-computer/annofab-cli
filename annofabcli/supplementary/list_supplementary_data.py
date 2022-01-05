@@ -17,11 +17,6 @@ class ListSupplementaryData(AbstractCommandLineInterface):
     補助情報一覧を表示する。
     """
 
-    @annofabcli.utils.allow_404_error
-    def get_supplementary_data_list(self, project_id: str, input_data_id: str) -> SupplementaryData:
-        supplementary_data_list, _ = self.service.api.get_supplementary_data_list(project_id, input_data_id)
-        return supplementary_data_list
-
     def get_input_data_id_from_task(self, project_id: str, task_id_list: List[str]) -> List[str]:
         all_input_data_id_list = []
         logger.info(f"{len(task_id_list)} 件のタスクを取得します。")
