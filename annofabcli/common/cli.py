@@ -1,7 +1,7 @@
 """
 Command Line Interfaceの共通部分
 """
-
+from pathlib import Path
 import abc
 import argparse
 import dataclasses
@@ -9,12 +9,14 @@ import getpass
 import json
 import logging
 import os
+import pkgutil
 from typing import Any, Dict, List, Optional, Tuple
 
 import annofabapi
 import jmespath
 import pandas
 import requests
+import yaml
 from annofabapi.api import DEFAULT_ENDPOINT_URL
 from annofabapi.exceptions import AnnofabApiException
 from annofabapi.models import OrganizationMemberRole, ProjectMemberRole
@@ -22,6 +24,7 @@ from annofabapi.models import OrganizationMemberRole, ProjectMemberRole
 import annofabcli
 from annofabcli.common.dataclasses import WaitOptions
 from annofabcli.common.enums import FormatArgument
+from annofabcli.common.exceptions import AnnofabCliException
 from annofabcli.common.facade import AnnofabApiFacade
 from annofabcli.common.typing import InputDataSize
 
@@ -111,10 +114,12 @@ def create_parent_parser() -> argparse.ArgumentParser:
     )
 
     group.add_argument(
-        "--logdir", type=str, default=".log", help="ログファイルを保存するディレクトリを指定します。指定しない場合は ``.log`` ディレクトリ'にログファイルが保存されます。"
+        "--logdir", type=Path, default=".log", help="ログファイルを保存するディレクトリを指定します。指定しない場合は ``.log`` ディレクトリ'にログファイルが保存されます。"
     )
 
     group.add_argument("--disable_log", action="store_true", help="ログを無効にします。")
+
+    group.add_argument("--debug", action="store_true", help="HTTPリクエストの内容やレスポンスのステータスコードなど、デバッグ用のログが出力されます。")
 
     group.add_argument(
         "--logging_yaml",
@@ -185,11 +190,11 @@ def get_json_from_args(target: Optional[str] = None) -> Any:
 
 def get_input_data_size(str_input_data_size: str) -> Optional[InputDataSize]:
     """400x300を(400,300)に変換する"""
-    splited_list = str_input_data_size.split("x")
-    if len(splited_list) < 2:
+    splitted_list = str_input_data_size.split("x")
+    if len(splitted_list) < 2:
         return None
 
-    return (int(splited_list[0]), int(splited_list[1]))
+    return (int(splitted_list[0]), int(splitted_list[1]))
 
 
 def get_wait_options_from_args(
@@ -230,7 +235,21 @@ def load_logging_config_from_args(args: argparse.Namespace) -> None:
     if args.disable_log:
         return
 
-    annofabcli.utils.load_logging_config(args.logdir, args.logging_yaml)
+    data = pkgutil.get_data("annofabcli", "data/logging.yaml")
+    if data is None:
+        logger.warning("annofabcli/data/logging.yaml が読み込めませんでした")
+        raise AnnofabCliException("annofabcli/data/logging.yaml が読み込めませんでした")
+
+    logging_config = yaml.safe_load(data.decode("utf-8"))
+
+    log_file = args.logdir / "annofabcli.log"
+    log_file.parent.mkdir(exist_ok=True, parents=True)
+    logging_config["handlers"]["fileRotatingHandler"]["filename"] = str(log_file)
+
+    if args.debug:
+        logging_config["loggers"]["annofabapi"]["level"] = "DEBUG"
+
+    logging.config.dictConfig(logging_config)
 
 
 def get_endpoint_url(args: argparse.Namespace) -> str:

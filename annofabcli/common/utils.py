@@ -3,7 +3,6 @@ import json
 import logging
 import logging.config
 import os
-import pkgutil
 import re
 import sys
 from pathlib import Path
@@ -12,13 +11,10 @@ from typing import Any, Callable, Dict, List, Optional, Set, TypeVar
 import dateutil.parser
 import isodate
 import pandas
-import requests
-import yaml
 
 import annofabcli
 from annofabcli.common.cli import DEFAULT_CSV_FORMAT
 from annofabcli.common.enums import FormatArgument
-from annofabcli.common.exceptions import AnnofabCliException
 
 logger = logging.getLogger(__name__)
 
@@ -38,51 +34,6 @@ def read_lines_except_blank_line(filepath: str) -> List[str]:
     return [line for line in lines if line != ""]
 
 
-def _is_file_scheme(value: str):
-    return value.startswith("file://")
-
-
-def load_logging_config(log_dir: str, logging_yaml_file: Optional[str] = None):
-    """
-    ログ設定ファイルを読み込み、loggingを設定する。
-
-    Args:
-        log_dir: ログの出力先
-        logging_yaml_file: ログ設定ファイル。指定しない場合、`data/logging.yaml`を読み込む. 指定した場合、log_dir, log_filenameは無視する。
-
-    """
-
-    if logging_yaml_file is not None:
-        if os.path.exists(logging_yaml_file):
-            with open(logging_yaml_file, encoding="utf-8") as f:
-                logging_config = yaml.safe_load(f)
-                logging.config.dictConfig(logging_config)
-        else:
-            logger.warning(f"{logging_yaml_file} does not exist.")
-            set_default_logger(log_dir)
-
-    else:
-        set_default_logger(log_dir)
-
-
-def set_default_logger(log_dir: str = ".log", log_filename: str = "annofabcli.log"):
-    """
-    デフォルトのロガーを設定する。パッケージ内のlogging.yamlを読み込む。
-    """
-    data = pkgutil.get_data("annofabcli", "data/logging.yaml")
-    if data is None:
-        logger.warning("annofabcli/data/logging.yaml が読み込めませんでした")
-        raise AnnofabCliException("annofabcli/data/logging.yaml が読み込めませんでした")
-
-    logging_config = yaml.safe_load(data.decode("utf-8"))
-
-    log_filename = f"{str(log_dir)}/{log_filename}"
-    logging_config["handlers"]["fileRotatingHandler"]["filename"] = log_filename
-    Path(log_dir).mkdir(exist_ok=True, parents=True)
-
-    logging.config.dictConfig(logging_config)
-
-
 def duplicated_set(target_list: List[T]) -> Set[T]:
     """
     重複しているsetを返す
@@ -94,15 +45,6 @@ def duplicated_set(target_list: List[T]) -> Set[T]:
 
     """
     return {x for x in set(target_list) if target_list.count(x) > 1}
-
-
-def progress_msg(index: int, size: int):
-    """
-    `1/100件目`という進捗率を表示する
-    """
-    digit = len(str(size))
-    str_format = f"{{:{digit}}} / {{:{digit}}} 件目"
-    return str_format.format(index, size)
 
 
 def output_string(target: str, output: Optional[str] = None) -> None:
@@ -251,18 +193,6 @@ def isoduration_to_hour(duration: str) -> float:
     return isodate.parse_duration(duration).total_seconds() / 3600
 
 
-def isoduration_to_minute(duration: str) -> float:
-    """
-    ISO 8601 duration を 分に変換する
-
-    Args:
-        duration (str): ISO 8601 Durationの文字
-    Returns:
-        変換後の分
-    """
-    return isodate.parse_duration(duration).total_seconds() / 60
-
-
 def datetime_to_date(str_datetime: str) -> str:
     """
     ISO8601形式の日時を日付に変換する
@@ -274,36 +204,6 @@ def datetime_to_date(str_datetime: str) -> str:
         日時(YYYY-MM-DD)
     """
     return str(dateutil.parser.parse(str_datetime).date())
-
-
-def allow_404_error(function):
-    """
-    Not Found Error(404)を無視(許容)して、処理する。Not Foundのとき戻りはNoneになる。
-    リソースの存在確認などに利用する。
-    try-exceptを行う。また404 Errorが発生したときのエラーログを無効化する
-    """
-
-    def wrapped(*args, **kwargs):
-        annofabapi_logger_level = logging.getLogger("annofabapi").level
-        backoff_logger_level = logging.getLogger("backoff").level
-
-        try:
-            # 不要なログが出力されないようにする
-            logging.getLogger("annofabapi").setLevel(level=logging.INFO)
-            logging.getLogger("backoff").setLevel(level=logging.CRITICAL)
-
-            return function(*args, **kwargs)
-
-        except requests.exceptions.HTTPError as e:
-            if e.response.status_code != requests.codes.not_found:
-                raise e
-            return None
-        finally:
-            # ロガーの設定を元に戻す
-            logging.getLogger("annofabapi").setLevel(level=annofabapi_logger_level)
-            logging.getLogger("backoff").setLevel(level=backoff_logger_level)
-
-    return wrapped
 
 
 def get_cache_dir() -> Path:

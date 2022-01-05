@@ -84,12 +84,7 @@ def get_df_worktime(
     df_member = pandas.DataFrame(member_list)[["account_id", "user_id", "username", "biography"]]
 
     if df_labor is not None and len(df_labor) > 0:
-        df_labor = df_labor.merge(
-            df_member[["user_id", "account_id"]], how="left", on="account_id", suffixes=("_tmp", None)
-        )
-        df = df.merge(
-            df_labor[["date", "user_id", "actual_worktime_hour", "account_id"]], how="outer", on=["date", "account_id"]
-        )
+        df = df.merge(df_labor[["date", "actual_worktime_hour", "account_id"]], how="outer", on=["date", "account_id"])
     else:
         df["actual_worktime_hour"] = 0
 
