@@ -1,7 +1,7 @@
 """
 Command Line Interfaceの共通部分
 """
-
+from pathlib import Path
 import abc
 import argparse
 import dataclasses
@@ -114,7 +114,7 @@ def create_parent_parser() -> argparse.ArgumentParser:
     )
 
     group.add_argument(
-        "--logdir", type=str, default=".log", help="ログファイルを保存するディレクトリを指定します。指定しない場合は ``.log`` ディレクトリ'にログファイルが保存されます。"
+        "--logdir", type=Path, default=".log", help="ログファイルを保存するディレクトリを指定します。指定しない場合は ``.log`` ディレクトリ'にログファイルが保存されます。"
     )
 
     group.add_argument("--disable_log", action="store_true", help="ログを無効にします。")
@@ -243,11 +243,11 @@ def load_logging_config_from_args(args: argparse.Namespace) -> None:
     logging_config = yaml.safe_load(data.decode("utf-8"))
 
     log_file = args.logdir / "annofabcli.log"
-    log_file.mkdir(exist_ok=True, parents=True)
+    log_file.parent.mkdir(exist_ok=True, parents=True)
     logging_config["handlers"]["fileRotatingHandler"]["filename"] = str(log_file)
 
     if args.debug:
-        logging_config["loggers"]["annofabapi"] = "DEBUG"
+        logging_config["loggers"]["annofabapi"]["level"] = "DEBUG"
 
     logging.config.dictConfig(logging_config)
 
