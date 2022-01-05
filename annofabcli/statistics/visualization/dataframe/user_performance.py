@@ -441,7 +441,9 @@ class UserPerformance:
         y_column = f"{worktime_type.value}_worktime_minute/annotation_count"
         # 分単位の生産性を算出する
         for phase in self.phase_list:
-            df[(f"{worktime_type.value}_worktime_minute/annotation_count", phase)] = df[(f"{worktime_type.value}_worktime_hour/annotation_count", phase)] * 60
+            df[(f"{worktime_type.value}_worktime_minute/annotation_count", phase)] = (
+                df[(f"{worktime_type.value}_worktime_hour/annotation_count", phase)] * 60
+            )
 
         for biography_index, biography in enumerate(sorted(set(df["biography"]))):
             for fig, phase in zip(figure_list, self.phase_list):
@@ -634,8 +636,9 @@ class UserPerformance:
         # numpy.inf が含まれていると散布図を出力できないので置換する
         df = self.df.replace(numpy.inf, numpy.nan)
         for phase in self.phase_list:
-            df[(f"{worktime_type.value}_worktime_minute/annotation_count",phase)] = df[(f"{worktime_type.value}_worktime_hour/annotation_count", phase)] * 60
-
+            df[(f"{worktime_type.value}_worktime_minute/annotation_count", phase)] = (
+                df[(f"{worktime_type.value}_worktime_hour/annotation_count", phase)] * 60
+            )
 
         def create_figure(title: str, x_axis_label: str, y_axis_label: str) -> bokeh.plotting.Figure:
             return figure(
@@ -650,7 +653,9 @@ class UserPerformance:
 
         figure_list = [
             create_figure(
-                title=f"アノテーションあたり作業時間とタスクあたり差し戻し回数の関係", x_axis_label="アノテーションあたり作業時間[minute/annotation]", y_axis_label="タスクあたり差し戻し回数"
+                title=f"アノテーションあたり作業時間とタスクあたり差し戻し回数の関係",
+                x_axis_label="アノテーションあたり作業時間[minute/annotation]",
+                y_axis_label="タスクあたり差し戻し回数",
             ),
             create_figure(
                 title=f"アノテーションあたり作業時間とアノテーションあたり検査コメント数の関係",
