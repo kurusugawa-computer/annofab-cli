@@ -61,7 +61,7 @@ def output_string(target: str, output: Optional[str] = None) -> None:
         Path(output).parent.mkdir(parents=True, exist_ok=True)
         with open(output, mode="w", encoding="utf_8") as f:
             f.write(target)
-            logger.info(f"{output} に出力しました。")
+            logger.info(f"{output} を出力しました。")
 
 
 def print_json(target: Any, is_pretty: bool = False, output: Optional[str] = None) -> None:
@@ -94,7 +94,7 @@ def print_csv(df: pandas.DataFrame, output: Optional[str] = None, to_csv_kwargs:
         df.to_csv(path_or_buf, **kwargs)
 
     if output is not None:
-        logger.info(f"{output} に出力しました。")
+        logger.info(f"{output} を出力しました。")
 
 
 def print_id_list(id_list: List[Any], output: Optional[str]):

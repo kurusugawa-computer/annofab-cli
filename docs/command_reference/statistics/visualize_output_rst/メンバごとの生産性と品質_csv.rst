@@ -12,7 +12,7 @@
 * actual_worktime_hour: 実績作業時間[hour](労務管理画面から入力した作業時間）
 * task_count: 作業したタスク数
 * input_data_count: 作業したタスクに含まれている入力データ数
-* actual_worktime/annotation_count: アノテーションあたりの実績作業時間[hour]。生産性の指標になる。
+* actual_worktime_hour/annotation_count: アノテーションあたりの実績作業時間[hour]。生産性の指標になる。
 * pointed_out_inspection_comment_count/annotation_count: アノテーションあたりの指摘を受けた個数（対応完了状態の検査コメント）。品質の指標になる。
 * rejected_count/task_count: タスクあたりの差し戻された回数。品質の指標になる。
 
