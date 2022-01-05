@@ -440,7 +440,8 @@ class UserPerformance:
         x_column = f"{worktime_type.value}_worktime_hour"
         y_column = f"{worktime_type.value}_worktime_minute/annotation_count"
         # 分単位の生産性を算出する
-        df[f"{worktime_type.value}_worktime_minute/annotation_count"] = df[f"{worktime_type.value}_worktime_hour/annotation_count"] * 60
+        for phase in self.phase_list:
+            df[(f"{worktime_type.value}_worktime_minute/annotation_count", phase)] = df[(f"{worktime_type.value}_worktime_hour/annotation_count", phase)] * 60
 
         for biography_index, biography in enumerate(sorted(set(df["biography"]))):
             for fig, phase in zip(figure_list, self.phase_list):
@@ -632,12 +633,14 @@ class UserPerformance:
 
         # numpy.inf が含まれていると散布図を出力できないので置換する
         df = self.df.replace(numpy.inf, numpy.nan)
-        df[f"{worktime_type.value}_worktime_minute/annotation_count"] = df[f"{worktime_type.value}_worktime_hour/annotation_count"] * 60
+        for phase in self.phase_list:
+            df[(f"{worktime_type.value}_worktime_minute/annotation_count",phase)] = df[(f"{worktime_type.value}_worktime_hour/annotation_count", phase)] * 60
+
 
         def create_figure(title: str, x_axis_label: str, y_axis_label: str) -> bokeh.plotting.Figure:
             return figure(
-                plot_width=1200,
-                plot_height=800,
+                plot_width=self.PLOT_WIDTH,
+                plot_height=self.PLOT_HEIGHT,
                 title=title,
                 x_axis_label=x_axis_label,
                 y_axis_label=y_axis_label,
