@@ -717,10 +717,10 @@ def parse_args(parser: argparse.ArgumentParser):
         help=(
             "実績作業時間情報が格納されたCSVを指定してください。指定しない場合は、実績作業時間は0とみなします。列名は以下の通りです。\n"
             "\n"
-            " * date\n"
-            " * account_id\n"
-            " * project_id\n"
-            " * actual_worktime_hour\n"
+            "* date\n"
+            "* account_id\n"
+            "* project_id\n"
+            "* actual_worktime_hour\n"
         ),
     )
 
