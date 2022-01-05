@@ -38,7 +38,9 @@ def join_annotation_productivity(
         | (df_joined[("actual_worktime_hour", "annotation")] >= threshold_worktime)
     ]
     df_tmp = df_joined[[("actual_worktime_hour/annotation_count", "annotation")]]
-    df_tmp.columns = pandas.MultiIndex.from_tuples([(project_title, "actual_worktime_hour/annotation_count__annotation")])
+    df_tmp.columns = pandas.MultiIndex.from_tuples(
+        [(project_title, "actual_worktime_hour/annotation_count__annotation")]
+    )
     return df.join(df_tmp)
 
 

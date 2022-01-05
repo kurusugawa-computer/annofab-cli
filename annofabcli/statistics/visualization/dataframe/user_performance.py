@@ -420,10 +420,8 @@ class UserPerformance:
 
         if worktime_type == WorktimeType.ACTUAL:
             worktime_name = "実績時間"
-            worktime_key_for_phase = "prediction_actual"
         elif worktime_type == WorktimeType.MONITORED:
             worktime_name = "計測時間"
-            worktime_key_for_phase = WorktimeType.MONITORED.value
 
         logger.debug(f"{output_file} を出力します。")
 
@@ -439,8 +437,10 @@ class UserPerformance:
 
         df["biography"] = df["biography"].fillna("")
 
-        x_column = f"{worktime_key_for_phase}_worktime_hour"
-        y_column = f"{worktime_type.value}_worktime_hour/annotation_count"
+        x_column = f"{worktime_type.value}_worktime_hour"
+        y_column = f"{worktime_type.value}_worktime_minute/annotation_count"
+        # 分単位の生産性を算出する
+        df[f"{worktime_type.value}_worktime_minute/annotation_count"] = df[f"{worktime_type.value}_worktime_hour/annotation_count"] * 60
 
         for biography_index, biography in enumerate(sorted(set(df["biography"]))):
             for fig, phase in zip(figure_list, self.phase_list):
@@ -463,7 +463,7 @@ class UserPerformance:
         for fig, phase in zip(figure_list, self.phase_list):
             average_value = self._get_average_value(
                 df,
-                numerator_column=(f"{worktime_key_for_phase}_worktime_hour", phase),
+                numerator_column=(f"{worktime_type.value}_worktime_hour", phase),
                 denominator_column=("annotation_count", phase),
             )
             self._plot_average_line(fig, average_value, dimension="width")
@@ -475,7 +475,7 @@ class UserPerformance:
                 "user_id_",
                 "username_",
                 "biography_",
-                f"{worktime_key_for_phase}_worktime_hour_{phase}",
+                f"{worktime_type.value}_worktime_hour_{phase}",
                 f"task_count_{phase}",
                 f"input_data_count_{phase}",
                 f"annotation_count_{phase}",
@@ -630,13 +630,9 @@ class UserPerformance:
         if not self._validate_df_for_output(output_file):
             return
 
-        if worktime_type == WorktimeType.ACTUAL:
-            worktime_key_for_phase = "prediction_actual"
-        elif worktime_type == WorktimeType.MONITORED:
-            worktime_key_for_phase = WorktimeType.MONITORED.value
-
         # numpy.inf が含まれていると散布図を出力できないので置換する
         df = self.df.replace(numpy.inf, numpy.nan)
+        df[f"{worktime_type.value}_worktime_minute/annotation_count"] = df[f"{worktime_type.value}_worktime_hour/annotation_count"] * 60
 
         def create_figure(title: str, x_axis_label: str, y_axis_label: str) -> bokeh.plotting.Figure:
             return figure(
@@ -651,18 +647,18 @@ class UserPerformance:
 
         figure_list = [
             create_figure(
-                title=f"アノテーションあたり作業時間とタスクあたり差し戻し回数の関係", x_axis_label="アノテーションあたり作業時間", y_axis_label="タスクあたり差し戻し回数"
+                title=f"アノテーションあたり作業時間とタスクあたり差し戻し回数の関係", x_axis_label="アノテーションあたり作業時間[minute/annotation]", y_axis_label="タスクあたり差し戻し回数"
             ),
             create_figure(
                 title=f"アノテーションあたり作業時間とアノテーションあたり検査コメント数の関係",
-                x_axis_label="アノテーションあたり作業時間",
+                x_axis_label="アノテーションあたり作業時間[minute/annotation]",
                 y_axis_label="アノテーションあたり検査コメント数",
             ),
         ]
         column_pair_list = [
-            (f"{worktime_type.value}_worktime_hour/annotation_count", "rejected_count/task_count"),
+            (f"{worktime_type.value}_worktime_minute/annotation_count", "rejected_count/task_count"),
             (
-                f"{worktime_type.value}_worktime_hour/annotation_count",
+                f"{worktime_type.value}_worktime_minute/annotation_count",
                 "pointed_out_inspection_comment_count/annotation_count",
             ),
         ]
@@ -683,14 +679,14 @@ class UserPerformance:
                     x_column_name=f"{x_column}_{phase}",
                     y_column_name=f"{y_column}_{phase}",
                     text_column_name="username_",
-                    size_column_name=f"{worktime_key_for_phase}_worktime_hour_{phase}",
+                    size_column_name=f"{worktime_type.value}_worktime_hour_{phase}",
                     legend_label=biography,
                     color=get_color_from_palette(biography_index),
                 )
 
         x_average_value = self._get_average_value(
             df,
-            numerator_column=(f"{worktime_key_for_phase}_worktime_hour", phase),
+            numerator_column=(f"{worktime_type.value}_worktime_hour", phase),
             denominator_column=("annotation_count", phase),
         )
         for column_pair, fig in zip(
@@ -719,7 +715,7 @@ class UserPerformance:
                 "user_id_",
                 "username_",
                 "biography_",
-                f"{worktime_key_for_phase}_worktime_hour_{phase}",
+                f"{worktime_type.value}_worktime_hour_{phase}",
                 f"task_count_{phase}",
                 f"input_data_count_{phase}",
                 f"annotation_count_{phase}",

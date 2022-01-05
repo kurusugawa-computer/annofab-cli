@@ -1,7 +1,6 @@
 """
 Command Line Interfaceの共通部分
 """
-from pathlib import Path
 import abc
 import argparse
 import dataclasses
@@ -10,6 +9,7 @@ import json
 import logging
 import os
 import pkgutil
+from pathlib import Path
 from typing import Any, Dict, List, Optional, Tuple
 
 import annofabapi
