@@ -642,7 +642,7 @@ def parse_args(parser: argparse.ArgumentParser):
         nargs="+",
         help=(
             "対象のプロジェクトのproject_idを指定してください。複数指定した場合、プロジェクトごとに統計情報が出力されます。\n"
-            " ``file://`` を先頭に付けると、project_idが記載されたファイルを指定できます。"
+            "``file://`` を先頭に付けると、project_idが記載されたファイルを指定できます。"
         ),
     )
 
@@ -655,7 +655,7 @@ def parse_args(parser: argparse.ArgumentParser):
         help=(
             "メンバごとの統計グラフに表示するユーザのuser_idを指定してください。"
             "指定しない場合は、上位20人が表示されます。\n"
-            " ``file://`` を先頭に付けると、一覧が記載されたファイルを指定できます。"
+            "``file://`` を先頭に付けると、一覧が記載されたファイルを指定できます。"
         ),
     )
 
@@ -664,8 +664,8 @@ def parse_args(parser: argparse.ArgumentParser):
         "--task_query",
         type=str,
         help="タスクの検索クエリをJSON形式で指定します。指定しない場合はすべてのタスクを取得します。\n"
-        " ``file://`` を先頭に付けると、JSON形式のファイルを指定できます。"
-        "クエリのキーは、task_id, phase, phase_stage, status のみです。",
+        "``file://`` を先頭に付けると、JSON形式のファイルを指定できます。"
+        "クエリのキーは、``task_id`` , ``phase`` , ``phase_stage`` , ``status`` のみです。",
     )
 
     parser.add_argument(
@@ -674,16 +674,16 @@ def parse_args(parser: argparse.ArgumentParser):
         type=str,
         required=False,
         nargs="+",
-        help="集計対象のタスクのtask_idを指定します。\n" + " ``file://`` を先頭に付けると、task_idの一覧が記載されたファイルを指定できます。",
+        help="集計対象のタスクのtask_idを指定します。\n" + "``file://`` を先頭に付けると、task_idの一覧が記載されたファイルを指定できます。",
     )
 
-    parser.add_argument("--start_date", type=str, help="指定した日付（'YYYY-MM-DD'）以降に教師付を開始したタスクを集計する。")
-    parser.add_argument("--end_date", type=str, help="指定した日付（'YYYY-MM-DD'）以前に更新されたタスクを集計する。")
+    parser.add_argument("--start_date", type=str, help="指定した日付（ ``YYYY-MM-DD`` ）以降に教師付を開始したタスクを集計する。")
+    parser.add_argument("--end_date", type=str, help="指定した日付（ ``YYYY-MM-DD`` ）以前に更新されたタスクを集計する。")
 
     parser.add_argument(
         "--ignored_task_id",
         nargs="+",
-        help=("集計対象外のタスクのtask_idを指定します。 ``--task_id`` より優先度が高いです。\n" " ``file://`` を先頭に付けると、一覧が記載されたファイルを指定できます。"),
+        help=("集計対象外のタスクのtask_idを指定します。 ``--task_id`` より優先度が高いです。\n" "``file://`` を先頭に付けると、一覧が記載されたファイルを指定できます。"),
     )
 
     parser.add_argument(
@@ -716,6 +716,7 @@ def parse_args(parser: argparse.ArgumentParser):
         type=Path,
         help=(
             "実績作業時間情報が格納されたCSVを指定してください。指定しない場合は、実績作業時間は0とみなします。列名は以下の通りです。\n"
+            "\n"
             " * date\n"
             " * account_id\n"
             " * project_id\n"
