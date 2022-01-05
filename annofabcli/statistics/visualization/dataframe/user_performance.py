@@ -59,23 +59,23 @@ class UserPerformance:
                 df[("monitored_worktime_hour", phase)] / df[("monitored_worktime_hour", "sum")]
             )
             # AnnoFab時間の比率から、Annowork時間を予測する
-            df[("prediction_actual_worktime_hour", phase)] = (
+            df[("actual_worktime_hour", phase)] = (
                 df[("actual_worktime_hour", "sum")] * df[("monitored_worktime_ratio", phase)]
             )
 
             # 生産性を算出
-            df[("monitored_worktime/input_data_count", phase)] = (
+            df[("monitored_worktime_hour/input_data_count", phase)] = (
                 df[("monitored_worktime_hour", phase)] / df[("input_data_count", phase)]
             )
-            df[("actual_worktime/input_data_count", phase)] = (
-                df[("prediction_actual_worktime_hour", phase)] / df[("input_data_count", phase)]
+            df[("actual_worktime_hour/input_data_count", phase)] = (
+                df[("actual_worktime_hour", phase)] / df[("input_data_count", phase)]
             )
 
-            df[("monitored_worktime/annotation_count", phase)] = (
+            df[("monitored_worktime_hour/annotation_count", phase)] = (
                 df[("monitored_worktime_hour", phase)] / df[("annotation_count", phase)]
             )
-            df[("actual_worktime/annotation_count", phase)] = (
-                df[("prediction_actual_worktime_hour", phase)] / df[("annotation_count", phase)]
+            df[("actual_worktime_hour/annotation_count", phase)] = (
+                df[("actual_worktime_hour", phase)] / df[("annotation_count", phase)]
             )
 
         phase = TaskPhase.ANNOTATION.value
@@ -265,14 +265,14 @@ class UserPerformance:
         )
 
         actual_worktime_columns = [("actual_worktime_hour", "sum")] + [
-            ("prediction_actual_worktime_hour", phase) for phase in phase_list
+            ("actual_worktime_hour", phase) for phase in phase_list
         ]
 
         productivity_columns = (
-            [("monitored_worktime/input_data_count", phase) for phase in phase_list]
-            + [("actual_worktime/input_data_count", phase) for phase in phase_list]
-            + [("monitored_worktime/annotation_count", phase) for phase in phase_list]
-            + [("actual_worktime/annotation_count", phase) for phase in phase_list]
+            [("monitored_worktime_hour/input_data_count", phase) for phase in phase_list]
+            + [("actual_worktime_hour/input_data_count", phase) for phase in phase_list]
+            + [("monitored_worktime_hour/annotation_count", phase) for phase in phase_list]
+            + [("actual_worktime_hour/annotation_count", phase) for phase in phase_list]
         )
 
         inspection_comment_columns = [
@@ -387,7 +387,6 @@ class UserPerformance:
             "input_data_count",
             "annotation_count",
             "actual_worktime_hour",
-            "prediction_actual_worktime_hour",
             "pointed_out_inspection_comment_count",
             "rejected_count",
         ]
@@ -416,7 +415,7 @@ class UserPerformance:
                 plot_height=self.PLOT_HEIGHT,
                 title=title,
                 x_axis_label="累計作業時間[hour]",
-                y_axis_label="アノテーションあたり作業時間[hour/annotation]",
+                y_axis_label="アノテーションあたり作業時間[minute/annotation]",
             )
 
         if worktime_type == WorktimeType.ACTUAL:
@@ -440,9 +439,10 @@ class UserPerformance:
 
         df["biography"] = df["biography"].fillna("")
 
+        x_column = f"{worktime_key_for_phase}_worktime_hour"
+        y_column = f"{worktime_type.value}_worktime_hour/annotation_count"
+
         for biography_index, biography in enumerate(sorted(set(df["biography"]))):
-            x_column = f"{worktime_key_for_phase}_worktime_hour"
-            y_column = f"{worktime_type.value}_worktime/annotation_count"
             for fig, phase in zip(figure_list, self.phase_list):
                 filtered_df = df[
                     (df["biography"] == biography) & df[(x_column, phase)].notna() & df[(y_column, phase)].notna()
@@ -467,7 +467,7 @@ class UserPerformance:
                 denominator_column=("annotation_count", phase),
             )
             self._plot_average_line(fig, average_value, dimension="width")
-            quartile = self._get_quartile_value(df, (f"{worktime_type.value}_worktime/annotation_count", phase))
+            quartile = self._get_quartile_value(df, (f"{worktime_type.value}_worktime_hour/annotation_count", phase))
             self._plot_quartile_line(fig, quartile, dimension="width")
 
         for fig, phase in zip(figure_list, self.phase_list):
@@ -479,8 +479,8 @@ class UserPerformance:
                 f"task_count_{phase}",
                 f"input_data_count_{phase}",
                 f"annotation_count_{phase}",
-                f"{worktime_type.value}_worktime/input_data_count_{phase}",
-                f"{worktime_type.value}_worktime/annotation_count_{phase}",
+                f"{worktime_type.value}_worktime_hour/input_data_count_{phase}",
+                f"{worktime_type.value}_worktime_hour/annotation_count_{phase}",
             ]
             if worktime_type == WorktimeType.ACTUAL:
                 tooltip_item.append("last_working_date_")
@@ -660,9 +660,9 @@ class UserPerformance:
             ),
         ]
         column_pair_list = [
-            (f"{worktime_type.value}_worktime/annotation_count", "rejected_count/task_count"),
+            (f"{worktime_type.value}_worktime_hour/annotation_count", "rejected_count/task_count"),
             (
-                f"{worktime_type.value}_worktime/annotation_count",
+                f"{worktime_type.value}_worktime_hour/annotation_count",
                 "pointed_out_inspection_comment_count/annotation_count",
             ),
         ]
@@ -705,7 +705,7 @@ class UserPerformance:
             )
             self._plot_average_line(fig, y_average_value, dimension="width")
 
-        x_quartile = self._get_quartile_value(df, (f"{worktime_type.value}_worktime/annotation_count", phase))
+        x_quartile = self._get_quartile_value(df, (f"{worktime_type.value}_worktime_hour/annotation_count", phase))
         for column, fig in zip(
             ["rejected_count/task_count", "pointed_out_inspection_comment_count/annotation_count"],
             figure_list,
@@ -723,8 +723,8 @@ class UserPerformance:
                 f"task_count_{phase}",
                 f"input_data_count_{phase}",
                 f"annotation_count_{phase}",
-                f"{worktime_type.value}_worktime/input_data_count_{phase}",
-                f"{worktime_type.value}_worktime/annotation_count_{phase}",
+                f"{worktime_type.value}_worktime_hour/input_data_count_{phase}",
+                f"{worktime_type.value}_worktime_hour/annotation_count_{phase}",
                 f"rejected_count_{phase}",
                 f"pointed_out_inspection_comment_count_{phase}",
                 f"rejected_count/task_count_{phase}",

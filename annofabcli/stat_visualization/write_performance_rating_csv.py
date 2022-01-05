@@ -35,10 +35,10 @@ def join_annotation_productivity(
 
     df_joined = df_joined[
         (df_joined[("task_count", "annotation")] > threshold_task_count)
-        | (df_joined[("prediction_actual_worktime_hour", "annotation")] >= threshold_worktime)
+        | (df_joined[("actual_worktime_hour", "annotation")] >= threshold_worktime)
     ]
-    df_tmp = df_joined[[("actual_worktime/annotation_count", "annotation")]]
-    df_tmp.columns = pandas.MultiIndex.from_tuples([(project_title, "actual_worktime/annotation_count__annotation")])
+    df_tmp = df_joined[[("actual_worktime_hour/annotation_count", "annotation")]]
+    df_tmp.columns = pandas.MultiIndex.from_tuples([(project_title, "actual_worktime_hour/annotation_count__annotation")])
     return df.join(df_tmp)
 
 
@@ -50,32 +50,32 @@ def join_inspection_acceptance_productivity(
     threshold_task_count: int,
 ) -> pandas.DataFrame:
     def _join_inspection():
-        if ("actual_worktime/annotation_count", "inspection") not in df_performance.columns:
+        if ("actual_worktime_hour/annotation_count", "inspection") not in df_performance.columns:
             return df
 
         df_joined = df_performance[
             (df_performance[("task_count", "inspection")] > threshold_task_count)
-            | (df_performance[("prediction_actual_worktime_hour", "inspection")] > threshold_worktime)
+            | (df_performance[("actual_worktime_hour", "inspection")] > threshold_worktime)
         ]
         df_joined.set_index("user_id", inplace=True)
-        df_tmp = df_joined[[("actual_worktime/annotation_count", "inspection")]]
+        df_tmp = df_joined[[("actual_worktime_hour/annotation_count", "inspection")]]
         df_tmp.columns = pandas.MultiIndex.from_tuples(
-            [(project_title, "actual_worktime/annotation_count__inspection")]
+            [(project_title, "actual_worktime_hour/annotation_count__inspection")]
         )
         return df.join(df_tmp)
 
     def _join_acceptance():
-        if ("actual_worktime/annotation_count", "acceptance") not in df_performance.columns:
+        if ("actual_worktime_hour/annotation_count", "acceptance") not in df_performance.columns:
             return df
 
         df_joined = df_performance[
             (df_performance[("task_count", "acceptance")] > threshold_task_count)
-            | (df_performance[("prediction_actual_worktime_hour", "acceptance")] > threshold_worktime)
+            | (df_performance[("actual_worktime_hour", "acceptance")] > threshold_worktime)
         ]
         df_joined.set_index("user_id", inplace=True)
-        df_tmp = df_joined[[("actual_worktime/annotation_count", "acceptance")]]
+        df_tmp = df_joined[[("actual_worktime_hour/annotation_count", "acceptance")]]
         df_tmp.columns = pandas.MultiIndex.from_tuples(
-            [(project_title, "actual_worktime/annotation_count__acceptance")]
+            [(project_title, "actual_worktime_hour/annotation_count__acceptance")]
         )
         return df.join(df_tmp)
 
@@ -97,7 +97,7 @@ def join_quality_per_task(
 
     df_joined = df_joined[
         (df_joined[("task_count", "annotation")] > threshold_task_count)
-        | (df_joined[("prediction_actual_worktime_hour", "annotation")] > threshold_worktime)
+        | (df_joined[("actual_worktime_hour", "annotation")] > threshold_worktime)
     ]
     df_tmp = df_joined[[("rejected_count/task_count", "annotation")]]
 
@@ -117,7 +117,7 @@ def join_quality_per_annotation(
 
     df_joined = df_joined[
         (df_joined[("task_count", "annotation")] > threshold_task_count)
-        | (df_joined[("prediction_actual_worktime_hour", "annotation")] > threshold_worktime)
+        | (df_joined[("actual_worktime_hour", "annotation")] > threshold_worktime)
     ]
     df_tmp = df_joined[[("pointed_out_inspection_comment_count/annotation_count", "annotation")]]
 
