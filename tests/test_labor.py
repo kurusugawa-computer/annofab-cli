@@ -22,7 +22,6 @@ organization_name = service.api.get_organization_of_project(project_id)[0]["orga
 
 
 class TestCommandLine:
-
     def test_list_worktime_with_project_id(self):
         output_file = out_dir / "labor/list_worktime.csv"
         main(
