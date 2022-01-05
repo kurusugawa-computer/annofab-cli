@@ -20,7 +20,7 @@ loggers:
   annofabcli:
     level: DEBUG
 root:
-  level: INFO
+  level: WARNING
   handlers: [fileRotatingHandler, consoleHandler]
 
 # Avoid disabling default logger　https://docs.djangoproject.com/ja/2.1/topics/logging/#configuring-logging
