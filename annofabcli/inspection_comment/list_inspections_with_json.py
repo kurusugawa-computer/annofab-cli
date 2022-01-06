@@ -122,7 +122,6 @@ def parse_args(parser: argparse.ArgumentParser):
     argument_parser.add_task_id(
         required=False,
         help_message="対象のタスクのtask_idを指定します。　"
-        "``--inspection_comment_json`` を指定しないときは、必須です。"
         " ``file://`` を先頭に付けると、task_idの一覧が記載されたファイルを指定できます。",
     )
 
@@ -132,7 +131,7 @@ def parse_args(parser: argparse.ArgumentParser):
 
     parser.add_argument(
         "--inspection_comment_json",
-        type=str,
+        type=Path,
         help="検査コメント情報が記載されたJSONファイルのパスを指定すると、JSONに記載された情報を元に検査コメント一覧を出力します。指定しない場合、全件ファイルをダウンロードします。"
         "JSONファイルは ``$ annofabcli project download inspection_comment`` コマンドで取得できます。",
     )
