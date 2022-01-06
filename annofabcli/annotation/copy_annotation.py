@@ -68,9 +68,6 @@ class CopyTargetByInputData(CopyTarget):
         return f"{self.dest_task_id}/{self.dest_input_data_id}"
 
 
-# CopyTarget = Union[CopyTargetByTask, CopyTargetByInputData]
-
-
 def parse_copy_target(str_copy_target: str) -> CopyTarget:
     """
     コピー対象の文字列をパースします。

@@ -14,16 +14,16 @@ Examples
 基本的な使い方
 --------------------------
 
-``--task_id`` にコピー元タスクのtask_id、 ``--dest_task_id`` にコピー先タスクのtask_idを指定してください。
-``--task_id`` に渡すタスクの個数と ``--dest_task_id`` に渡すタスクの個数は合わせる必要があります。
+
+``--input`` に、アノテーションのコピー元のtask_idとコピー先のtask_idを ``:`` で区切って指定してください。
+
 
 .. code-block::
 
-    $ annofabcli task copy --project_id prj1 --task_id t1 t2 \
-    --dest_task_id t3 t4
+    $ annofabcli annotation copy -p prj1 --input src_task_id1:dest_task_id1 src_task_id2:dest_task_id2
+
 
 ``--copy_metadata`` を指定すれば、タスクのメタデータもコピーされます。
-
 
 .. code-block::
 
