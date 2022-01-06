@@ -208,15 +208,13 @@ class TestCommandLine:
                 "copy",
                 "--project_id",
                 project_id,
-                "--task_id",
-                task_id,
-                "--dest_task_id",
-                copy_task_id,
+                "--input",
+                f"{task_id}:{copy_task_id}",
                 "--yes",
             ]
         )
 
-        main([self.command_name, "delete", "--project_id", project_id, "--task_id", "not-exists-task", "--yes"])
+        main([self.command_name, "delete", "--project_id", project_id, "--task_id", copy_task_id, "--yes"])
 
     @pytest.mark.submitting_job
     def test_put_task_with_csv(self):

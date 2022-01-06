@@ -13,6 +13,7 @@ from annofabapi.parser import lazy_parse_simple_annotation_dir, lazy_parse_simpl
 
 import annofabcli
 import annofabcli.common.cli
+from annofabcli.common.cli import COMMAND_LINE_ERROR_STATUS_CODE
 from annofabcli.common.facade import TaskQuery, match_annotation_with_task_query
 
 logger = logging.getLogger(__name__)
@@ -192,6 +193,7 @@ class FilterAnnotation:
             self.filter_annotation_dir(annotation_path, filter_query=filter_query, output_dir=output_dir)
         else:
             print(f"{COMMON_MESSAGE} argument --annotation: ZIPファイルまたはディレクトリを指定してください。", file=sys.stderr)
+            sys.exit(COMMAND_LINE_ERROR_STATUS_CODE)
 
 
 def main(args):

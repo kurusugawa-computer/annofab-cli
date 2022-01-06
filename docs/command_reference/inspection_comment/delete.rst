@@ -22,10 +22,10 @@ Examples
     {
         "task1":{
             "input_data1": ["inspection1","inspection2"],
-            "input_data2":[{},{}, ...]
+            "input_data2":[...]
         },
         "task2": {
-            "input_data3":[{},{}, ...]
+            "input_data3":[...]
         }
     }
 

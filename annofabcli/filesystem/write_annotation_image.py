@@ -10,7 +10,7 @@ from annofabapi.parser import SimpleAnnotationParser
 
 import annofabcli
 import annofabcli.common.cli
-from annofabcli.common.cli import ArgumentParser
+from annofabcli.common.cli import COMMAND_LINE_ERROR_STATUS_CODE, ArgumentParser
 from annofabcli.common.facade import TaskQuery, match_annotation_with_task_query
 from annofabcli.common.image import IsParserFunc, write_annotation_images_from_path
 from annofabcli.common.typing import InputDataSize
@@ -71,7 +71,7 @@ class WriteAnnotationImage:
                     f"{self.COMMON_MESSAGE} argument --image_size: フォーマットが不正です。",
                     file=sys.stderr,
                 )
-                return
+                sys.exit(COMMAND_LINE_ERROR_STATUS_CODE)
 
         # label_color_dict を取得する
         label_color_dict = annofabcli.common.cli.get_json_from_args(args.label_color)

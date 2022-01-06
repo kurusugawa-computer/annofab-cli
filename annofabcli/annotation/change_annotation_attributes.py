@@ -15,6 +15,7 @@ import annofabcli
 from annofabcli import AnnofabApiFacade
 from annofabcli.annotation.dump_annotation import DumpAnnotation
 from annofabcli.common.cli import (
+    COMMAND_LINE_ERROR_STATUS_CODE,
     AbstractCommandLineInterface,
     ArgumentParser,
     build_annofabapi_resource_and_login,
@@ -155,7 +156,7 @@ class ChangeAttributesOfAnnotation(AbstractCommandLineInterface):
             annotation_query = self.facade.to_annotation_query_from_cli(project_id, annotation_query_for_cli)
         except ValueError as e:
             print(f"{self.COMMON_MESSAGE} argument '--annotation_query' の値が不正です。{e}", file=sys.stderr)
-            return
+            sys.exit(COMMAND_LINE_ERROR_STATUS_CODE)
 
         attributes_of_dict: List[Dict[str, Any]] = get_json_from_args(args.attributes)
         attributes_for_cli: List[AdditionalDataForCli] = [AdditionalDataForCli.from_dict(e) for e in attributes_of_dict]
@@ -163,12 +164,12 @@ class ChangeAttributesOfAnnotation(AbstractCommandLineInterface):
             attributes = self.facade.to_attributes_from_cli(project_id, annotation_query.label_id, attributes_for_cli)
         except ValueError as e:
             print(f"{self.COMMON_MESSAGE} argument '--attributes' の値が不正です。{e}", file=sys.stderr)
-            return
+            sys.exit(COMMAND_LINE_ERROR_STATUS_CODE)
 
         if args.backup is None:
             print("間違えてアノテーションを変更してしまっときに復元できるようにするため、'--backup'でバックアップ用のディレクトリを指定することを推奨します。", file=sys.stderr)
             if not self.confirm_processing("復元用のバックアップディレクトリが指定されていません。処理を続行しますか？"):
-                return
+                sys.exit(COMMAND_LINE_ERROR_STATUS_CODE)
             backup_dir = None
         else:
             backup_dir = Path(args.backup)

@@ -1,7 +1,10 @@
+from __future__ import annotations
+
 import argparse
 import logging
 import sys
-from typing import List, Optional
+from dataclasses import dataclass
+from typing import Optional
 
 import annofabapi
 from annofabapi.models import ProjectMemberRole
@@ -10,14 +13,46 @@ import annofabcli
 import annofabcli.common.cli
 from annofabcli import AnnofabApiFacade
 from annofabcli.common.cli import (
+    COMMAND_LINE_ERROR_STATUS_CODE,
     AbstractCommandLineInterface,
     AbstractCommandLineWithConfirmInterface,
     ArgumentParser,
     build_annofabapi_resource_and_login,
 )
-from annofabcli.common.utils import duplicated_set
 
 logger = logging.getLogger(__name__)
+
+
+@dataclass(frozen=True)
+class CopyTarget:
+    src_task_id: str
+    dest_task_id: str
+
+
+def parse_copy_target(str_copy_target: str) -> CopyTarget:
+    """
+    コピー対象の文字列をパースします。
+    以下の文字列をサポートします。
+    * `src_task_id:dest_task_id`
+    """
+    tmp_array = str_copy_target.split(":")
+    if len(tmp_array) != 2:
+        raise ValueError(f"'{str_copy_target}' の形式が間違っています。")
+
+    return CopyTarget(src_task_id=tmp_array[0], dest_task_id=tmp_array[1])
+
+
+def get_copy_target_list(str_copy_target_list: list[str]) -> list[CopyTarget]:
+    """コマンドラインから受けとった文字列のlistから、コピー対象のlistを取得する。"""
+    copy_target_list: list[CopyTarget] = []
+
+    for str_copy_target in str_copy_target_list:
+        try:
+            copy_target = parse_copy_target(str_copy_target)
+            copy_target_list.append(copy_target)
+        except ValueError as e:
+            logger.warning(e)
+    return copy_target_list
 
 
 class CopyTasksMain(AbstractCommandLineWithConfirmInterface):
@@ -41,12 +76,12 @@ class CopyTasksMain(AbstractCommandLineWithConfirmInterface):
         logging_prefix = f"{task_index+1} 件目" if task_index is not None else ""
         src_task = self.service.wrapper.get_task_or_none(project_id, src_task_id)
         if src_task is None:
-            logger.warning(f"{logging_prefix}: コピー元タスク'{src_task_id}'は存在しません。")
+            logger.warning(f"{logging_prefix}: コピー元タスク'{src_task_id}'は存在しないので、スキップします。")
             return False
 
         old_dest_task = self.service.wrapper.get_task_or_none(project_id, dest_task_id)
         if old_dest_task is not None:
-            logger.warning(f"{logging_prefix}: コピー先タスク'{dest_task_id}'はすでに存在します。")
+            logger.warning(f"{logging_prefix}: コピー先タスク'{dest_task_id}'はすでに存在するので、スキップします。")
             return False
 
         if not self.confirm_processing(f"タスク'{src_task_id}'を'{dest_task_id}'にコピーしますか？"):
@@ -61,31 +96,29 @@ class CopyTasksMain(AbstractCommandLineWithConfirmInterface):
 
         return True
 
-    def main(
-        self,
-        project_id: str,
-        src_task_id_list: List[str],
-        dest_task_id_list: List[str],
-    ):
+    def main(self, project_id: str, copy_target_list: list[CopyTarget]):
         """
         タスクをコピーします
 
         """
-        logger.info(f"{len(src_task_id_list)} 件 タスクをコピーします。")
+        logger.info(f"{len(copy_target_list)} 件のタスクをコピーします。")
         success_count = 0
 
-        for task_index, (src_task_id, dest_task_id) in enumerate(zip(src_task_id_list, dest_task_id_list)):
+        for task_index, copy_target in enumerate(copy_target_list):
             try:
                 result = self.copy_task(
-                    project_id, src_task_id=src_task_id, dest_task_id=dest_task_id, task_index=task_index
+                    project_id,
+                    src_task_id=copy_target.src_task_id,
+                    dest_task_id=copy_target.dest_task_id,
+                    task_index=task_index,
                 )
                 if result:
                     success_count += 1
             except Exception as e:  # pylint: disable=broad-except
-                logger.warning(f"タスク'{src_task_id}'を'{dest_task_id}'にコピーする際に失敗しました。", e)
+                logger.warning(f"タスク'{copy_target.src_task_id}'を'{copy_target.dest_task_id}'にコピーする際に失敗しました。", e)
                 continue
 
-        logger.info(f"{success_count} / {len(src_task_id_list)} 件 タスクをコピーしました。")
+        logger.info(f"{success_count} / {len(copy_target_list)} 件 タスクをコピーしました。")
 
 
 class CopyTasks(AbstractCommandLineInterface):
@@ -94,24 +127,11 @@ class CopyTasks(AbstractCommandLineInterface):
     def main(self):
         args = self.args
 
-        src_task_id_list = annofabcli.common.cli.get_list_from_args(args.task_id)
-        dest_task_id_list = annofabcli.common.cli.get_list_from_args(args.dest_task_id)
-
-        duplicated_dest_task_id_list = duplicated_set(dest_task_id_list)
-        if len(duplicated_dest_task_id_list) > 0:
-            print(
-                f"{self.COMMON_MESSAGE} argument --dest_task_id: 以下のtask_idが重複しています。'--dest_task_id'には一意な値を指定してください。\n"
-                + str(duplicated_dest_task_id_list),
-                file=sys.stderr,
-            )
-            return
-
-        if len(src_task_id_list) != len(dest_task_id_list):
-            print(
-                f"{self.COMMON_MESSAGE} argument: '--task_id'に渡した値の個数と'--dest_task_id'に渡した値の個数が異なります。",
-                file=sys.stderr,
-            )
-            return
+        str_copy_target_list = annofabcli.common.cli.get_list_from_args(args.input)
+        copy_target_list = get_copy_target_list(str_copy_target_list)
+        if len(str_copy_target_list) != len(copy_target_list):
+            print(f"{self.COMMON_MESSAGE} argument '--input' の値が不正です。", file=sys.stderr)
+            sys.exit(COMMAND_LINE_ERROR_STATUS_CODE)
 
         project_id = args.project_id
         super().validate_project(project_id, [ProjectMemberRole.OWNER])
@@ -121,11 +141,7 @@ class CopyTasks(AbstractCommandLineInterface):
             all_yes=self.all_yes,
             is_copy_metadata=args.copy_metadata,
         )
-        main_obj.main(
-            project_id,
-            src_task_id_list=src_task_id_list,
-            dest_task_id_list=dest_task_id_list,
-        )
+        main_obj.main(project_id, copy_target_list=copy_target_list)
 
 
 def main(args: argparse.Namespace):
@@ -140,20 +156,11 @@ def parse_args(parser: argparse.ArgumentParser):
     argument_parser.add_project_id()
 
     parser.add_argument(
-        "-t",
-        "--task_id",
+        "--input",
         type=str,
-        required=True,
         nargs="+",
-        help="コピー元のタスクのtask_idを指定してください。 ``file://`` を先頭に付けると、task_idの一覧が記載されたファイルを指定できます。",
-    )
-
-    parser.add_argument(
-        "--dest_task_id",
-        type=str,
         required=True,
-        nargs="+",
-        help="コピー先のタスクのtask_idを指定してください。 ``file://`` を先頭に付けると、task_idの一覧が記載されたファイルを指定できます。",
+        help="コピー元のtask_idとコピー先のtask_idを ``:`` で区切って指定してください。\n" "``file://`` を先頭に付けると、コピー元とコピー先が記載されているファイルを指定できます。",
     )
 
     parser.add_argument("--copy_metadata", action="store_true", help="指定した場合、タスクのメタデータもコピーします。")
