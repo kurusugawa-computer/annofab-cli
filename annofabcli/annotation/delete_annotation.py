@@ -13,6 +13,7 @@ import annofabcli
 from annofabcli import AnnofabApiFacade
 from annofabcli.annotation.dump_annotation import DumpAnnotation
 from annofabcli.common.cli import (
+    COMMAND_LINE_ERROR_STATUS_CODE,
     AbstractCommandLineInterface,
     ArgumentParser,
     build_annofabapi_resource_and_login,
@@ -127,7 +128,7 @@ class DeleteAnnotation(AbstractCommandLineInterface):
                 annotation_query = self.facade.to_annotation_query_from_cli(project_id, annotation_query_for_cli)
             except ValueError as e:
                 print(f"'--annotation_queryの値が不正です。{e}", file=sys.stderr)
-                return
+                sys.exit(COMMAND_LINE_ERROR_STATUS_CODE)
         else:
             annotation_query = None
 

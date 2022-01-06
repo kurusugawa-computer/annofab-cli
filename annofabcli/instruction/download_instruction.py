@@ -10,7 +10,12 @@ from annofabapi.models import ProjectMemberRole
 
 import annofabcli
 from annofabcli import AnnofabApiFacade
-from annofabcli.common.cli import AbstractCommandLineInterface, ArgumentParser, build_annofabapi_resource_and_login
+from annofabcli.common.cli import (
+    COMMAND_LINE_ERROR_STATUS_CODE,
+    AbstractCommandLineInterface,
+    ArgumentParser,
+    build_annofabapi_resource_and_login,
+)
 
 logger = logging.getLogger(__name__)
 
@@ -137,7 +142,7 @@ class DownloadInstruction(AbstractCommandLineInterface):
                     f"{self.COMMON_MESSAGE} argument --before: 最新より{args.before}個前のアノテーション仕様は見つかりませんでした。",
                     file=sys.stderr,
                 )
-                return
+                sys.exit(COMMAND_LINE_ERROR_STATUS_CODE)
         else:
             history_id = args.history_id
 

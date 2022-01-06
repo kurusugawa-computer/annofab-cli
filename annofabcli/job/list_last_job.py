@@ -7,7 +7,12 @@ from annofabapi.models import Project, ProjectJobInfo, ProjectJobType
 
 import annofabcli
 from annofabcli import AnnofabApiFacade
-from annofabcli.common.cli import AbstractCommandLineInterface, ArgumentParser, build_annofabapi_resource_and_login
+from annofabcli.common.cli import (
+    COMMAND_LINE_ERROR_STATUS_CODE,
+    AbstractCommandLineInterface,
+    ArgumentParser,
+    build_annofabapi_resource_and_login,
+)
 from annofabcli.common.enums import FormatArgument
 
 logger = logging.getLogger(__name__)
@@ -117,7 +122,7 @@ class ListLastJob(AbstractCommandLineInterface):
 
         else:
             print("引数に`--project_id` または `--organization` を指定してください。", file=sys.stderr)
-            return
+            sys.exit(COMMAND_LINE_ERROR_STATUS_CODE)
 
         self.print_job_list(project_id_list, job_type=job_type, add_details=args.add_details)
 

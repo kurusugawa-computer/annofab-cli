@@ -10,7 +10,12 @@ from typing import Any, Dict, List, Optional
 import annofabcli
 import annofabcli.common.cli
 from annofabcli import AnnofabApiFacade
-from annofabcli.common.cli import AbstractCommandLineInterface, ArgumentParser, build_annofabapi_resource_and_login
+from annofabcli.common.cli import (
+    COMMAND_LINE_ERROR_STATUS_CODE,
+    AbstractCommandLineInterface,
+    ArgumentParser,
+    build_annofabapi_resource_and_login,
+)
 from annofabcli.common.enums import FormatArgument
 from annofabcli.common.facade import convert_annotation_specs_labels_v2_to_v1
 
@@ -106,7 +111,7 @@ class PrintAnnotationSpecsLabel(AbstractCommandLineInterface):
                     f"{self.COMMON_MESSAGE} argument --before: 最新より{args.before}個前のアノテーション仕様は見つかりませんでした。",
                     file=sys.stderr,
                 )
-                return
+                sys.exit(COMMAND_LINE_ERROR_STATUS_CODE)
         else:
             # args.beforeがNoneならば、必ずargs.history_idはNoneでない
             history_id = args.history_id
