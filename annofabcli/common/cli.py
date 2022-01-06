@@ -121,13 +121,6 @@ def create_parent_parser() -> argparse.ArgumentParser:
 
     group.add_argument("--debug", action="store_true", help="HTTPリクエストの内容やレスポンスのステータスコードなど、デバッグ用のログが出力されます。")
 
-    group.add_argument(
-        "--logging_yaml",
-        type=str,
-        help="ロギグングの設定ファイル(YAML)を指定します。指定した場合、 ``--logdir`` オプションは無視されます。"
-        "指定しない場合、デフォルトのロギングが設定されます。"
-        "設定ファイルの書き方は https://docs.python.org/ja/3/howto/logging.html 参照してください。",
-    )
     return parent_parser
 
 
