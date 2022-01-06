@@ -16,7 +16,6 @@ Command Reference
    inspection_comment/index
    instruction/index
    job/index
-   labor/index
    organization_member/index
    project/index
    project_member/index
