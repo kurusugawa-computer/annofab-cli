@@ -73,7 +73,7 @@ def parse_args(parser: argparse.ArgumentParser):
         type=str,
         nargs="+",
         required=True,
-        help="組織から脱退させるユーザのuser_idを指定してください。 ``file://`` を先頭に付けると、一覧が記載されたファイルを指定できます。",
+        help="組織に招待するユーザのuser_idを指定してください。 ``file://`` を先頭に付けると、一覧が記載されたファイルを指定できます。",
     )
 
     role_choices = [e.value for e in OrganizationMemberRole]
