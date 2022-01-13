@@ -3,6 +3,7 @@ from typing import Optional
 
 import annofabcli
 import annofabcli.common.cli
+import annofabcli.organization_member.delete_organization_member
 import annofabcli.organization_member.list_organization_member
 
 
@@ -11,6 +12,7 @@ def parse_args(parser: argparse.ArgumentParser):
     subparsers = parser.add_subparsers(dest="subcommand_name")
 
     # サブコマンドの定義
+    annofabcli.organization_member.delete_organization_member.add_parser(subparsers)
     annofabcli.organization_member.list_organization_member.add_parser(subparsers)
 
 

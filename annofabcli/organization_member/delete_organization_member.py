@@ -2,7 +2,7 @@ from __future__ import annotations
 
 import argparse
 import logging
-from typing import Collection, Optional
+from typing import Any, Collection, Optional
 
 import annofabapi
 import more_itertools
@@ -30,15 +30,19 @@ class DeleteOrganizationMemberMain(AbstractCommandLineWithConfirmInterface):
         self.facade = AnnofabApiFacade(service)
         super().__init__(all_yes)
 
+    @staticmethod
+    def get_member(organization_member_list: list[dict[str, Any]], user_id: str) -> Optional[dict[str, Any]]:
+        return more_itertools.first_true(organization_member_list, pred=lambda e: e["user_id"] == user_id)
+
     def main(self, organization_name: str, user_ids: Collection[str]):
-        logger.info(f"{len(user_ids)} 件ユーザを組織'{organization_name}'から脱退させます。")
+        logger.info(f"{len(user_ids)} 件のユーザを組織'{organization_name}'から脱退させます。")
 
         member_list = self.service.wrapper.get_all_organization_members(organization_name)
 
         # プロジェクトメンバを追加/更新する
         success_count = 0
         for user_id in user_ids:
-            member = more_itertools.first_true(member_list, pred=lambda e: e["user_id"] == user_id)
+            member = self.get_member(member_list, user_id)
             if member is None:
                 logger.warning(f"組織メンバにuser_id='{user_id}'のユーザが存在しません。")
                 continue
@@ -56,10 +60,10 @@ class DeleteOrganizationMemberMain(AbstractCommandLineWithConfirmInterface):
                 logger.debug(f"user_id='{user_id}'のユーザを組織'{organization_name}'から脱退させました。")
                 success_count += 1
 
-            except Exception:
+            except Exception:  # pylint: disable=broad-except
                 logger.warning(f"user_id='{user_id}'のユーザを組織'{organization_name}'から脱退させるのに失敗しました。", exc_info=True)
 
-        logger.info(f"{success_count} / {len(user_ids)} 件ユーザを組織'{organization_name}'から脱退させました。")
+        logger.info(f"{success_count} / {len(user_ids)} 件のユーザを組織'{organization_name}'から脱退させました。")
 
 
 class DeleteOrganizationMember(AbstractCommandLineInterface):
@@ -79,7 +83,7 @@ def main(args):
 
 
 def parse_args(parser: argparse.ArgumentParser):
-    parser.add_argument("-org", "--organization", type=str, help="対象の組織の組織名を指定してください。")
+    parser.add_argument("-org", "--organization", required=True, type=str, help="対象の組織の組織名を指定してください。")
 
     parser.add_argument(
         "-u",
