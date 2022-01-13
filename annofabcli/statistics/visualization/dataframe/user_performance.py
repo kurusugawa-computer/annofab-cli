@@ -464,13 +464,16 @@ class UserPerformance:
                 )
 
         for fig, phase in zip(figure_list, self.phase_list):
-            average_value = self._get_average_value(
-                df,
-                numerator_column=(f"{worktime_type.value}_worktime_hour", phase),
-                denominator_column=("annotation_count", phase),
+            average = (
+                self._get_average_value(
+                    df,
+                    numerator_column=(f"{worktime_type.value}_worktime_hour", phase),
+                    denominator_column=("annotation_count", phase),
+                )
+                * 60
             )
-            self._plot_average_line(fig, average_value, dimension="width")
-            quartile = self._get_quartile_value(df, (f"{worktime_type.value}_worktime_hour/annotation_count", phase))
+            self._plot_average_line(fig, average, dimension="width")
+            quartile = self._get_quartile_value(df, (f"{worktime_type.value}_worktime_minute/annotation_count", phase))
             self._plot_quartile_line(fig, quartile, dimension="width")
 
         for fig, phase in zip(figure_list, self.phase_list):
@@ -692,24 +695,27 @@ class UserPerformance:
                     color=get_color_from_palette(biography_index),
                 )
 
-        x_average_value = self._get_average_value(
-            df,
-            numerator_column=(f"{worktime_type.value}_worktime_hour", phase),
-            denominator_column=("annotation_count", phase),
+        x_average = (
+            self._get_average_value(
+                df,
+                numerator_column=(f"{worktime_type.value}_worktime_hour", phase),
+                denominator_column=("annotation_count", phase),
+            )
+            * 60
         )
         for column_pair, fig in zip(
             [("rejected_count", "task_count"), ("pointed_out_inspection_comment_count", "annotation_count")],
             figure_list,
         ):
-            self._plot_average_line(fig, x_average_value, dimension="height")
-            y_average_value = self._get_average_value(
+            self._plot_average_line(fig, x_average, dimension="height")
+            y_average = self._get_average_value(
                 df,
                 numerator_column=(column_pair[0], phase),
                 denominator_column=(column_pair[1], phase),
             )
-            self._plot_average_line(fig, y_average_value, dimension="width")
+            self._plot_average_line(fig, y_average, dimension="width")
 
-        x_quartile = self._get_quartile_value(df, (f"{worktime_type.value}_worktime_hour/annotation_count", phase))
+        x_quartile = self._get_quartile_value(df, (f"{worktime_type.value}_worktime_minute/annotation_count", phase))
         for column, fig in zip(
             ["rejected_count/task_count", "pointed_out_inspection_comment_count/annotation_count"],
             figure_list,
