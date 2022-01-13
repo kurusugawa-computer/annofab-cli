@@ -1,27 +1,30 @@
 from __future__ import annotations
+
 import argparse
 import logging
-from typing import Collection, List, Optional
+from typing import Collection, Optional
 
 import annofabapi
 import more_itertools
-import requests
-from annofabapi.models import ProjectMemberRole, ProjectMemberStatus
-from more_itertools import first_true
 
 import annofabcli
 import annofabcli.common.cli
 from annofabcli import AnnofabApiFacade
-from annofabcli.common.cli import AbstractCommandLineWithConfirmInterface,AbstractCommandLineInterface, build_annofabapi_resource_and_login
+from annofabcli.common.cli import (
+    AbstractCommandLineInterface,
+    AbstractCommandLineWithConfirmInterface,
+    build_annofabapi_resource_and_login,
+)
 
 logger = logging.getLogger(__name__)
+
 
 class DeleteOrganizationMemberMain(AbstractCommandLineWithConfirmInterface):
     def __init__(
         self,
         service: annofabapi.Resource,
         *,
-        all_yes: bool=False,
+        all_yes: bool = False,
     ):
         self.service = service
         self.facade = AnnofabApiFacade(service)
@@ -67,6 +70,7 @@ class DeleteOrganizationMember(AbstractCommandLineInterface):
 
         main_obj = DeleteOrganizationMemberMain(self.service, all_yes=args.yes)
         main_obj.main(organization_name=args.organization, user_ids=user_id_list)
+
 
 def main(args):
     service = build_annofabapi_resource_and_login(args)
