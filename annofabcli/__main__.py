@@ -1,7 +1,8 @@
 import argparse
 import logging
-from typing import Optional, Sequence
 import sys
+from typing import Optional, Sequence
+
 import annofabcli.annotation.subcommand_annotation
 import annofabcli.annotation_specs.subcommand_annotation_specs
 import annofabcli.common.cli
