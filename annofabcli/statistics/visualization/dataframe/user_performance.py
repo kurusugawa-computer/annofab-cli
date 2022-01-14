@@ -639,6 +639,75 @@ class UserPerformance:
         作業時間を元に算出した生産性と品質の関係を、メンバごとにプロットする
         """
 
+        def create_figure(title: str, x_axis_label: str, y_axis_label: str) -> bokeh.plotting.Figure:
+            return figure(
+                plot_width=self.PLOT_WIDTH,
+                plot_height=self.PLOT_HEIGHT,
+                title=title,
+                x_axis_label=x_axis_label,
+                y_axis_label=y_axis_label,
+            )
+
+        def plot_average_and_quartile_line():
+            x_average_hour = self._get_average_value(
+                df,
+                numerator_column=(f"{worktime_type.value}_worktime_hour", phase),
+                denominator_column=("annotation_count", phase),
+            )
+            x_average_minute = x_average_hour * 60 if x_average_hour is not None else None
+
+            for column_pair, fig in zip(
+                [("rejected_count", "task_count"), ("pointed_out_inspection_comment_count", "annotation_count")],
+                figure_list,
+            ):
+                if x_average_minute is not None:
+                    self._plot_average_line(fig, x_average_minute, dimension="height")
+
+                y_average = self._get_average_value(
+                    df,
+                    numerator_column=(column_pair[0], phase),
+                    denominator_column=(column_pair[1], phase),
+                )
+                if y_average is not None:
+                    self._plot_average_line(fig, y_average, dimension="width")
+
+            x_quartile = self._get_quartile_value(
+                df, (f"{worktime_type.value}_worktime_minute/annotation_count", phase)
+            )
+            for column, fig in zip(
+                ["rejected_count/task_count", "pointed_out_inspection_comment_count/annotation_count"],
+                figure_list,
+            ):
+                if x_quartile is not None:
+                    self._plot_quartile_line(fig, x_quartile, dimension="height")
+                y_quartile = self._get_quartile_value(df, (column, phase))
+                if y_quartile is not None:
+                    self._plot_quartile_line(fig, y_quartile, dimension="width")
+
+        def set_tooltip():
+            for fig in figure_list:
+                tooltip_item = [
+                    "user_id_",
+                    "username_",
+                    "biography_",
+                    f"{worktime_type.value}_worktime_hour_{phase}",
+                    f"task_count_{phase}",
+                    f"input_data_count_{phase}",
+                    f"annotation_count_{phase}",
+                    f"{worktime_type.value}_worktime_hour/input_data_count_{phase}",
+                    f"{worktime_type.value}_worktime_hour/annotation_count_{phase}",
+                    f"rejected_count_{phase}",
+                    f"pointed_out_inspection_comment_count_{phase}",
+                    f"rejected_count/task_count_{phase}",
+                    f"pointed_out_inspection_comment_count/annotation_count_{phase}",
+                ]
+                if worktime_type == WorktimeType.ACTUAL:
+                    tooltip_item.append("last_working_date_")
+
+                hover_tool = create_hover_tool(tooltip_item)
+                fig.add_tools(hover_tool)
+                self._set_legend(fig)
+
         if not self._validate_df_for_output(output_file):
             return
 
@@ -647,15 +716,6 @@ class UserPerformance:
         for phase in self.phase_list:
             df[(f"{worktime_type.value}_worktime_minute/annotation_count", phase)] = (
                 df[(f"{worktime_type.value}_worktime_hour/annotation_count", phase)] * 60
-            )
-
-        def create_figure(title: str, x_axis_label: str, y_axis_label: str) -> bokeh.plotting.Figure:
-            return figure(
-                plot_width=self.PLOT_WIDTH,
-                plot_height=self.PLOT_HEIGHT,
-                title=title,
-                x_axis_label=x_axis_label,
-                y_axis_label=y_axis_label,
             )
 
         logger.debug(f"{output_file} を出力します。")
@@ -701,61 +761,8 @@ class UserPerformance:
                     color=get_color_from_palette(biography_index),
                 )
 
-        x_average_hour = self._get_average_value(
-            df,
-            numerator_column=(f"{worktime_type.value}_worktime_hour", phase),
-            denominator_column=("annotation_count", phase),
-        )
-        x_average_minute = x_average_hour * 60 if x_average_hour is not None else None
-
-        for column_pair, fig in zip(
-            [("rejected_count", "task_count"), ("pointed_out_inspection_comment_count", "annotation_count")],
-            figure_list,
-        ):
-            if x_average_minute is not None:
-                self._plot_average_line(fig, x_average_minute, dimension="height")
-
-            y_average = self._get_average_value(
-                df,
-                numerator_column=(column_pair[0], phase),
-                denominator_column=(column_pair[1], phase),
-            )
-            if y_average is not None:
-                self._plot_average_line(fig, y_average, dimension="width")
-
-        x_quartile = self._get_quartile_value(df, (f"{worktime_type.value}_worktime_minute/annotation_count", phase))
-        for column, fig in zip(
-            ["rejected_count/task_count", "pointed_out_inspection_comment_count/annotation_count"],
-            figure_list,
-        ):
-            if x_quartile is not None:
-                self._plot_quartile_line(fig, x_quartile, dimension="height")
-            y_quartile = self._get_quartile_value(df, (column, phase))
-            if y_quartile is not None:
-                self._plot_quartile_line(fig, y_quartile, dimension="width")
-
-        for fig in figure_list:
-            tooltip_item = [
-                "user_id_",
-                "username_",
-                "biography_",
-                f"{worktime_type.value}_worktime_hour_{phase}",
-                f"task_count_{phase}",
-                f"input_data_count_{phase}",
-                f"annotation_count_{phase}",
-                f"{worktime_type.value}_worktime_hour/input_data_count_{phase}",
-                f"{worktime_type.value}_worktime_hour/annotation_count_{phase}",
-                f"rejected_count_{phase}",
-                f"pointed_out_inspection_comment_count_{phase}",
-                f"rejected_count/task_count_{phase}",
-                f"pointed_out_inspection_comment_count/annotation_count_{phase}",
-            ]
-            if worktime_type == WorktimeType.ACTUAL:
-                tooltip_item.append("last_working_date_")
-
-            hover_tool = create_hover_tool(tooltip_item)
-            fig.add_tools(hover_tool)
-            self._set_legend(fig)
+        plot_average_and_quartile_line()
+        set_tooltip()
 
         div_element = self._create_div_element()
         div_element.text += """円の大きさ：作業時間<br>"""
