@@ -310,9 +310,7 @@ class UserPerformance:
         print_csv(self.df[columns], str(output_file))
 
     @staticmethod
-    def _plot_average_line(fig: bokeh.plotting.Figure, value: Optional[float], dimension: str):
-        if value is None:
-            return
+    def _plot_average_line(fig: bokeh.plotting.Figure, value: float, dimension: str):
         span_average_line = bokeh.models.Span(
             location=value,
             dimension=dimension,
@@ -322,9 +320,14 @@ class UserPerformance:
         fig.add_layout(span_average_line)
 
     @staticmethod
-    def _plot_quartile_line(fig: bokeh.plotting.Figure, quartile: Optional[tuple[float, float, float]], dimension: str):
-        if quartile is None:
-            return
+    def _plot_quartile_line(fig: bokeh.plotting.Figure, quartile: tuple[float, float, float], dimension: str):
+        """
+
+        Args:
+            fig (bokeh.plotting.Figure):
+            quartile (tuple[float, float, float]): 四分位数。tuple[25%値, 50%値, 75%値]
+            dimension (str): [description]: width or height
+        """
 
         for value in quartile:
             span_average_line = bokeh.models.Span(
@@ -464,17 +467,18 @@ class UserPerformance:
                 )
 
         for fig, phase in zip(figure_list, self.phase_list):
-            average = (
-                self._get_average_value(
-                    df,
-                    numerator_column=(f"{worktime_type.value}_worktime_hour", phase),
-                    denominator_column=("annotation_count", phase),
-                )
-                * 60
+            average_hour = self._get_average_value(
+                df,
+                numerator_column=(f"{worktime_type.value}_worktime_hour", phase),
+                denominator_column=("annotation_count", phase),
             )
-            self._plot_average_line(fig, average, dimension="width")
+            if average_hour is not None:
+                average_minute = average_hour * 60
+                self._plot_average_line(fig, average_minute, dimension="width")
+
             quartile = self._get_quartile_value(df, (f"{worktime_type.value}_worktime_minute/annotation_count", phase))
-            self._plot_quartile_line(fig, quartile, dimension="width")
+            if quartile is not None:
+                self._plot_quartile_line(fig, quartile, dimension="width")
 
         for fig, phase in zip(figure_list, self.phase_list):
             tooltip_item = [
@@ -578,14 +582,16 @@ class UserPerformance:
             average_value = self._get_average_value(
                 df, numerator_column=(column_pair[0], phase), denominator_column=(column_pair[1], phase)
             )
-            self._plot_average_line(fig, average_value, dimension="width")
+            if average_value is not None:
+                self._plot_average_line(fig, average_value, dimension="width")
 
         for column, fig in zip(
             ["rejected_count/task_count", "pointed_out_inspection_comment_count/annotation_count"],
             figure_list,
         ):
             quartile = self._get_quartile_value(df, (column, phase))
-            self._plot_quartile_line(fig, quartile, dimension="width")
+            if quartile is not None:
+                self._plot_quartile_line(fig, quartile, dimension="width")
 
         for fig in figure_list:
             tooltip_item = [
@@ -695,34 +701,38 @@ class UserPerformance:
                     color=get_color_from_palette(biography_index),
                 )
 
-        x_average = (
-            self._get_average_value(
-                df,
-                numerator_column=(f"{worktime_type.value}_worktime_hour", phase),
-                denominator_column=("annotation_count", phase),
-            )
-            * 60
+        x_average_hour = self._get_average_value(
+            df,
+            numerator_column=(f"{worktime_type.value}_worktime_hour", phase),
+            denominator_column=("annotation_count", phase),
         )
+        x_average_minute = x_average_hour * 60 if x_average_hour is not None else None
+
         for column_pair, fig in zip(
             [("rejected_count", "task_count"), ("pointed_out_inspection_comment_count", "annotation_count")],
             figure_list,
         ):
-            self._plot_average_line(fig, x_average, dimension="height")
+            if x_average_minute is not None:
+                self._plot_average_line(fig, x_average_minute, dimension="height")
+
             y_average = self._get_average_value(
                 df,
                 numerator_column=(column_pair[0], phase),
                 denominator_column=(column_pair[1], phase),
             )
-            self._plot_average_line(fig, y_average, dimension="width")
+            if y_average is not None:
+                self._plot_average_line(fig, y_average, dimension="width")
 
         x_quartile = self._get_quartile_value(df, (f"{worktime_type.value}_worktime_minute/annotation_count", phase))
         for column, fig in zip(
             ["rejected_count/task_count", "pointed_out_inspection_comment_count/annotation_count"],
             figure_list,
         ):
-            self._plot_quartile_line(fig, x_quartile, dimension="height")
-            quartile = self._get_quartile_value(df, (column, phase))
-            self._plot_quartile_line(fig, quartile, dimension="width")
+            if x_quartile is not None:
+                self._plot_quartile_line(fig, x_quartile, dimension="height")
+            y_quartile = self._get_quartile_value(df, (column, phase))
+            if y_quartile is not None:
+                self._plot_quartile_line(fig, y_quartile, dimension="width")
 
         for fig in figure_list:
             tooltip_item = [
