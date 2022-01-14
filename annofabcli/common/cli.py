@@ -508,8 +508,6 @@ class AbstractCommandLineWithoutWebapiInterface(abc.ABC):
         if hasattr(args, "format"):
             self.str_format = args.format
 
-        logger.info(f"args: {args}")
-
     def confirm_processing(self, confirm_message: str) -> bool:
         """
         `all_yes`属性を見て、処理するかどうかユーザに問い合わせる。

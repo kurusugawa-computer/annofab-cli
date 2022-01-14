@@ -1,5 +1,6 @@
 import argparse
 import logging
+import sys
 from typing import Optional, Sequence
 
 import annofabcli.annotation.subcommand_annotation
@@ -44,6 +45,7 @@ def main(arguments: Optional[Sequence[str]] = None):
     if hasattr(args, "subcommand_func"):
         try:
             annofabcli.cli.load_logging_config_from_args(args)
+            logger.info(f"sys.argv='{sys.argv}'")
             args.subcommand_func(args)
         except Exception as e:
             logger.exception(e)
