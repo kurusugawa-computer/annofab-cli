@@ -410,7 +410,7 @@ def parse_args(parser: argparse.ArgumentParser):
         "-c",
         "--comment",
         type=str,
-        help="差し戻すときに付与する検査コメントを指定します。検査コメントはタスク内の先頭画像に付与します。付与する位置は'--comment_data'で指定できます。",
+        help="差し戻すときに付与する検査コメントを指定します。検査コメントはタスク内の先頭画像に付与します。付与する位置は ``--comment_data`` で指定できます。",
     )
 
     parser.add_argument(
@@ -433,7 +433,7 @@ def parse_args(parser: argparse.ArgumentParser):
     assign_group.add_argument(
         "--assigned_annotator_user_id",
         type=str,
-        help="差し戻したタスクに割り当てるユーザのuser_idを指定します。" "指定しない場合は、最後のannotation phaseの担当者が割り当てられます。",
+        help="差し戻したタスクに割り当てるユーザのuser_idを指定します。" "指定しない場合は、最後の教師付フェーズの担当者が割り当てられます。",
     )
 
     parser.add_argument("--cancel_acceptance", action="store_true", help="受入完了状態を取り消して、タスクを差し戻します。")
