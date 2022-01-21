@@ -435,7 +435,8 @@ class ArgumentParser:
             help_message = (
                 "タスクを絞り込むためのクエリ条件をJSON形式で指定します。"
                 " ``file://`` を先頭に付けると、JSON形式のファイルを指定できます。"
-                "使用できるキーは、``task_id`` , ``phase`` , ``phase_stage`` , ``status`` , ``user_id`` , ``account_id`` , ``no_user``  (bool値)  のみです。"
+                "使用できるキーは、``task_id`` , ``phase`` , ``phase_stage`` , ``status`` , ``user_id`` ,"
+                " ``account_id`` , ``no_user``  (bool値)  のみです。"
             )
         self.parser.add_argument("-tq", "--task_query", type=str, required=required, help=help_message)
 
