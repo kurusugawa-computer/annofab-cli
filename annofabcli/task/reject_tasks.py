@@ -341,7 +341,7 @@ class RejectTasks(AbstractCommandLineInterface):
 
         if args.parallelism is not None and not args.yes:
             print(
-                f"{self.COMMON_MESSAGE} argument --parallelism: '--parallelism'を指定するときは、必ず'--yes'を指定してください。",
+                f"{self.COMMON_MESSAGE} argument --parallelism: '--parallelism'を指定するときは、必ず ``--yes`` を指定してください。",
                 file=sys.stderr,
             )
             return False
@@ -441,7 +441,7 @@ def parse_args(parser: argparse.ArgumentParser):
     argument_parser.add_task_query()
 
     parser.add_argument(
-        "--parallelism", type=int, help="使用するプロセス数（並列度）を指定してください。指定する場合は必ず'--yes'を指定してください。指定しない場合は、逐次的に処理します。"
+        "--parallelism", type=int, help="使用するプロセス数（並列度）を指定してください。指定する場合は必ず ``--yes`` を指定してください。指定しない場合は、逐次的に処理します。"
     )
     parser.add_argument("--dryrun", action="store_true", help="差し戻しが行われた時の結果を表示しますが、実際はタスクを差し戻しません。")
 

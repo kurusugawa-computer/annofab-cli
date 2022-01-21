@@ -585,7 +585,23 @@ class AbstractCommandLineWithoutWebapiInterface(abc.ABC):
 
 class PrettyHelpFormatter(argparse.RawTextHelpFormatter, argparse.ArgumentDefaultsHelpFormatter):
     def _format_action(self, action: argparse.Action) -> str:
+        # ヘルプメッセージを見やすくするために、引数と引数の説明の間に空行を入れる
+        # https://qiita.com/yuji38kwmt/items/c7c4d487e3188afd781e 参照
         return super()._format_action(action) + "\n"
+
+    def _get_help_string(self, action):
+        # 不要なデフォルト値（--debug や オプショナルな引数）を表示させないようにする
+        # super()._get_help_string の中身を、そのまま持ってきた。
+        # https://qiita.com/yuji38kwmt/items/c7c4d487e3188afd781e 参照
+        help = action.help
+        if "%(default)" not in action.help:
+            if action.default is not argparse.SUPPRESS:
+                defaulting_nargs = [argparse.OPTIONAL, argparse.ZERO_OR_MORE]
+                if action.option_strings or action.nargs in defaulting_nargs:
+                    # 以下の条件だけ、annofabcli独自の設定
+                    if action.default is not None and not action.const:
+                        help += " (default: %(default)s)"
+        return help
 
 
 class AbstractCommandLineInterface(AbstractCommandLineWithoutWebapiInterface):

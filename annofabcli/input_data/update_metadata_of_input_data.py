@@ -120,7 +120,7 @@ class UpdateMetadata(AbstractCommandLineInterface):
 
         if args.parallelism is not None and not args.yes:
             print(
-                f"{COMMON_MESSAGE} argument --parallelism: '--parallelism'を指定するときは、必ず'--yes'を指定してください。",
+                f"{COMMON_MESSAGE} argument --parallelism: '--parallelism'を指定するときは、必ず ``--yes`` を指定してください。",
                 file=sys.stderr,
             )
             return False

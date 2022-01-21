@@ -54,7 +54,7 @@ Examples
 * 検査コメントのプロパティとして指定できるキーは以下の通りです。
 
   * ``comment``：検査コメントの内容。必須。
-  * ``data``：検査コメントの位置や区間。必須。詳細は https://annofab.com/docs/api/#operation/batchUpdateInspections のリクエストボディを参照してください。
+  * ``data``：検査コメントの位置や区間。必須。詳細は後述を参照してください。
   * ``annotation_id``：検査コメントに紐づくアノテーションのannotation_id
   * ``phrases``：参照する定型指摘のIDの配列
 
@@ -63,6 +63,9 @@ Examples
 
     $ annofabcli inspection_comment put --project_id prj1 --json file://comment.json
 
+
+``data`` プロパティに渡す値の例
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
 
 .. code-block:: json
