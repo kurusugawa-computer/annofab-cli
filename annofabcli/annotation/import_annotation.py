@@ -8,7 +8,7 @@ from pathlib import Path
 from typing import Any, Dict, Iterator, List, Optional, Set, Union
 
 import annofabapi
-from annofabapi.dataclass.annotation import AdditionalData, AnnotationDetail, FullAnnotationData
+from annofabapi.dataclass.annotation import AdditionalData, AnnotationDetail
 from annofabapi.models import (
     AdditionalDataDefinitionType,
     AdditionalDataDefinitionV1,
@@ -120,12 +120,39 @@ class ImportAnnotationMain(AbstractCommandLineWithConfirmInterface):
         else:
             return None
 
-    @staticmethod
-    def _get_data_holding_type_from_data(data: FullAnnotationData) -> AnnotationDataHoldingType:
-        if data["_type"] in ["Segmentation", "SegmentationV2"]:
-            return AnnotationDataHoldingType.OUTER
+    @classmethod
+    def _get_3dpc_segment_data_uri(cls, annotation_data: Dict[str, Any]) -> str:
+        """
+        3DセグメントのURIを取得する
+        """
+        data_uri = annotation_data["data"]
+        # この時点で data_uriは f"./{input_data_id}/{annotation_id}"
+        # paraser.open_data_uriメソッドに渡す値は、先頭のinput_data_idは不要なので、これを取り除く
+        tmp = data_uri.split("/")
+        return "/".join(tmp[2:])
+
+    @classmethod
+    def _is_3dpc_segment_label(cls, label_info: Dict[str, Any]) -> bool:
+        if label_info["annotation_type"] != AnnotationType.CUSTOM.value:
+            return False
+
+        metadata = label_info["metadata"]
+        if metadata.get("type") == "SEGMENT":
+            return True
         else:
-            return AnnotationDataHoldingType.INNER
+            return False
+
+    @classmethod
+    def _get_data_holding_type_from_data(cls, label_info) -> AnnotationDataHoldingType:
+        annotation_type = AnnotationType(label_info["annotation_type"])
+        if annotation_type in [AnnotationType.SEGMENTATION, AnnotationType.SEGMENTATION_V2]:
+            return AnnotationDataHoldingType.OUTER
+
+        # TODO: 3dpc editorに依存したコード。annofab側でSimple Annotationのフォーマットが改善されたら、このコードを削除する
+        if annotation_type == AnnotationType.CUSTOM:
+            if cls._is_3dpc_segment_label(label_info):
+                return AnnotationDataHoldingType.OUTER
+        return AnnotationDataHoldingType.INNER
 
     def _to_additional_data_list(self, attributes: Dict[str, Any], label_info: LabelV1) -> List[AdditionalData]:
         additional_data_list: List[AdditionalData] = []
@@ -211,7 +238,11 @@ class ImportAnnotationMain(AbstractCommandLineWithConfirmInterface):
         )
 
         if data_holding_type == AnnotationDataHoldingType.OUTER:
-            data_uri = detail.data["data_uri"]
+            data_uri = (
+                detail.data["data_uri"]
+                if not self._is_3dpc_segment_label(label_info)
+                else self._get_3dpc_segment_data_uri(detail.data)
+            )
             with parser.open_outer_file(data_uri) as f:
                 s3_path = self.service.wrapper.upload_data_to_s3(self.project_id, f, content_type="image/png")
                 dest_obj.path = s3_path
