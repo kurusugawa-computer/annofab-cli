@@ -44,6 +44,9 @@ language = "ja"
 # This pattern also affects html_static_path and html_extra_path.
 exclude_patterns = ["_build", "Thumbs.db", ".DS_Store"]
 
+# コードブロックのほとんどがコマンドの説明なので、デフォルトのハイライト言語はpythonからtextに変更する
+# https://www.sphinx-doc.org/ja/master/usage/configuration.html#confval-highlight_language
+highlight_language = "text"
 
 # -- Options for HTML output -------------------------------------------------
 
@@ -73,3 +76,4 @@ html_context = {
     "github_version": "master",
     "doc_path": "docs",
 }
+
