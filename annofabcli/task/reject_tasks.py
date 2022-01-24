@@ -378,7 +378,7 @@ class RejectTasks(AbstractCommandLineInterface):
                     f"{self.COMMON_MESSAGE} argument --comment_data: カスタムプロジェクトに検査コメントを付与する場合は必須です。",
                     file=sys.stderr,
                 )
-                return
+                sys.exit(COMMAND_LINE_ERROR_STATUS_CODE)
 
         main_obj = RejectTasksMain(self.service, comment_data=comment_data, all_yes=self.all_yes)
         main_obj.reject_task_list(
