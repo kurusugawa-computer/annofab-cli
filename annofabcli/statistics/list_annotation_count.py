@@ -667,7 +667,7 @@ def parse_args(parser: argparse.ArgumentParser):
         type=str,
         choices=[GroupBy.TASK_ID.value, GroupBy.INPUT_DATA_ID.value],
         default=GroupBy.TASK_ID.value,
-        help="アノテーションの個数をどの単位で集約するかを指定してます。デフォルトは'task_id'です。",
+        help="アノテーションの個数をどの単位で集約するかを指定してます。",
     )
 
     parser.add_argument(
@@ -682,7 +682,7 @@ def parse_args(parser: argparse.ArgumentParser):
     parser.add_argument(
         "--latest",
         action="store_true",
-        help="'--annotation'を指定しないとき、最新のアノテーションzipを参照します。このオプションを指定すると、アノテーションzipを更新するのに数分待ちます。",
+        help="``--annotation`` を指定しないとき、最新のアノテーションzipを参照します。このオプションを指定すると、アノテーションzipを更新するのに数分待ちます。",
     )
 
     parser.add_argument(

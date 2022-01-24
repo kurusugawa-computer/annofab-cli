@@ -128,39 +128,32 @@ Getting Help
 
 ロギングコントロール
 =================================================
-
-デフォルトのログ設定は以下の通りです。
-
-* ログメッセージは、標準エラー出力とログファイル ``.log/annofabcli.log`` に出力されます。
-* ``annofabcli.log`` ファイルは、1日ごとにログロテート（新しいログファイルが生成）されます
-
-詳細なログの設定は https://github.com/kurusugawa-computer/annofab-cli/blob/master/annofabcli/data/logging.yaml を参照してください。
-
+ログメッセージは、標準エラー出力とログファイル ``.log/annofabcli.log`` に出力されます。
+``.log/annofabcli.log`` は、1日ごとにログロテート（新しいログファイルが生成）されます。
 
 ログファイルの出力先を変更する場合は、``--logdir`` にログファイルの出力先ディレクトリを指定してください。
 
-ログ設定をカスタマイズする場合は、``--logging_yaml`` にロギング設定ファイルを指定してください。
-設定ファイルの書き方は https://docs.python.org/ja/3/howto/logging.html を参照してください。
 
-
-以下のロギング設定ファイルを指定すると、WARNINGレベル以上のログのみコンソールに出力します。
-
-
-.. code-block:: yaml
-    :caption: logging.yaml
-
-    version: 1
-    handlers:
-      consoleHandler:
-        class: logging.StreamHandler
-    root:
-      level: WARNING
-      handlers: [consoleHandler]
-
-    # デフォルトのロガーを無効化しないようにする https://docs.djangoproject.com/ja/2.1/topics/logging/#configuring-logging
-    disable_existing_loggers: False
-
+``--debug`` を指定すれば、HTTPリクエストも出力されます。
 
 .. code-block::
 
-    $ annofabcli task list --project_id prj1 --loging_yaml loggin.yaml
+  $ poetry run annofabcli project list -org kurusugawa -o out/project.csv
+  INFO     : 2022-01-24 12:27:32,145 : annofabcli.__main__            : sys.argv='['annofabcli', 'project', 'list', '-org', 'kurusugawa', '-o', 'out/project.csv']'
+  DEBUG    : 2022-01-24 12:27:34,206 : annofabcli.project.list_project : project_query: {'user_id': 'xxx', 'account_id': 'xxx'}
+  INFO     : 2022-01-24 12:27:42,240 : annofabcli.project.list_project : プロジェクト一覧の件数: 384
+  INFO     : 2022-01-24 12:27:42,281 : annofabcli.common.utils        : out/project.csv を出力しました。
+
+  $ poetry run annofabcli project list -org kurusugawa --debug -o out/project.csv
+  INFO     : 2022-01-24 12:28:22,630 : annofabcli.__main__            : sys.argv='['annofabcli', 'project', 'list', '-org', 'kurusugawa', '--debug', '-o', 'out/project.csv']'
+  DEBUG    : 2022-01-24 12:28:22,631 : annofabapi.resource            : Create annofabapi resource instance :: {'login_user_id': 'xxx', 'endpoint_url': 'https://annofab.com'}
+  DEBUG    : 2022-01-24 12:28:23,133 : annofabapi.api                 : Sent a request :: {'requests': {'http_method': 'post', 'url': 'https://annofab.com/api/v1/login', 'query_params': None, 'request_body_json': {'user_id': 'xxx', 'password': '***'}, 'request_body_data': None, 'header_params': None}, 'response': {'status_code': 200, 'content_length': 4374}}
+  DEBUG    : 2022-01-24 12:28:23,133 : annofabapi.api                 : Logged in successfully. user_id = xxx
+  DEBUG    : 2022-01-24 12:28:24,996 : annofabapi.api                 : Sent a request :: {'request': {'http_method': 'get', 'url': 'https://annofab.com/api/v1/organizations/kurusugawa/members', 'query_params': None, 'header_params': None, 'request_body': None}, 'response': {'status_code': 200, 'content_length': 42835}}
+  DEBUG    : 2022-01-24 12:28:24,996 : annofabcli.project.list_project : project_query: {'user_id': 'xxx', 'account_id': 'xxx'}
+  DEBUG    : 2022-01-24 12:28:26,485 : annofabapi.api                 : Sent a request :: {'request': {'http_method': 'get', 'url': 'https://annofab.com/api/v1/organizations/kurusugawa/projects', 'query_params': {'user_id': 'xxx', 'account_id': 'xxx', 'page': 1, 'limit': 200}, 'header_params': None, 'request_body': None}, 'response': {'status_code': 200, 'content_length': 194801}}
+  DEBUG    : 2022-01-24 12:28:26,493 : annofabapi.wrapper             : calling 'get_projects_of_organization' :: 2/2 steps
+  DEBUG    : 2022-01-24 12:28:27,399 : annofabapi.api                 : Sent a request :: {'request': {'http_method': 'get', 'url': 'https://annofab.com/api/v1/organizations/kurusugawa/projects', 'query_params': {'user_id': 'xxx', 'account_id': 'xxx', 'page': 2, 'limit': 200}, 'header_params': None, 'request_body': None}, 'response': {'status_code': 200, 'content_length': 182546}}
+  INFO     : 2022-01-24 12:28:27,409 : annofabcli.project.list_project : プロジェクト一覧の件数: 384
+  INFO     : 2022-01-24 12:28:27,441 : annofabcli.common.utils        : out/project.csv を出力しました。
+

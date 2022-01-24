@@ -1,0 +1,36 @@
+{
+    "details": [
+        {
+            "label": "road",
+            "annotation_id": "01FHSFFPHF2E5WJX8HHF0J1WCT",
+            "data": {
+                "data": "./1533151603547590/01FHSFFPHF2E5WJX8HHF0J1WCT",
+                "_type": "Unknown"
+            },
+            "attributes": {
+                "ignore": true
+            }
+        },
+        {
+            "label": "car",
+            "annotation_id": "01FS3X6FPP7WKMKJ2RFCPDBE02",
+            "data": {
+                "data": "{\"kind\":\"CUBOID\",\"shape\":{\"dimensions\":{\"width\":6.026740601957113,\"height\":1.200779917854933,\"depth\":6.004851542849621},\"location\":{\"x\":-2.5083518028259277,\"y\":-9.809929847717285,\"z\":-1.6724686607624752},\"rotation\":{\"x\":0,\"y\":0,\"z\":-0.3050000352038152},\"direction\":{\"front\":{\"x\":0.9538469314575195,\"y\":-0.3002932071685791,\"z\":0},\"up\":{\"x\":0,\"y\":0,\"z\":1}}},\"version\":\"2\"}",
+                "_type": "Unknown"
+            },
+            "attributes": {
+                "tracking_id": "01FS3X6FPP7WKMKJ2RFCPDBE02"
+            }
+        },
+        {
+            "label": "traffic_and_roadside_object",
+            "annotation_id": "01FS3X6T88BMNT69BQR1G92A0P",
+            "data": {
+                "data": "{\"kind\":\"CUBOID\",\"shape\":{\"dimensions\":{\"width\":0.4394991444741516,\"height\":0.4732247328608292,\"depth\":2.528978714725922},\"location\":{\"x\":1.0330325822469018,\"y\":6.567670847317909,\"z\":-1.3646387589052786},\"rotation\":{\"x\":0,\"y\":0,\"z\":-0.49000003320929},\"direction\":{\"front\":{\"x\":0.8823328614234924,\"y\":-0.4706259071826935,\"z\":0},\"up\":{\"x\":0,\"y\":0,\"z\":1}}},\"version\":\"2\"}",
+                "_type": "Unknown"
+            },
+            "attributes": {}
+        }
+    ],
+    "updated_datetime": "2022-01-11T15:41:05.577+09:00"
+}

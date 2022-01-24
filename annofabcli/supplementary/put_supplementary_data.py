@@ -341,7 +341,7 @@ class PutSupplementaryData(AbstractCommandLineInterface):
 
         if args.parallelism is not None and not args.yes:
             print(
-                f"{self.COMMON_MESSAGE} argument --parallelism: '--parallelism'を指定するときは、必ず'--yes'を指定してください。",
+                f"{self.COMMON_MESSAGE} argument --parallelism: '--parallelism'を指定するときは、必ず ``--yes`` を指定してください。",
                 file=sys.stderr,
             )
             return False
@@ -426,7 +426,7 @@ def parse_args(parser: argparse.ArgumentParser):
         help="指定した場合、supplementary_data_id（省略時はsupplementary_data_number）がすでに存在していたら上書きします。指定しなければ、スキップします。",
     )
 
-    parser.add_argument("--parallelism", type=int, help="並列度。指定しない場合は、逐次的に処理します。必ず'--yes'を指定してください。")
+    parser.add_argument("--parallelism", type=int, help="並列度。指定しない場合は、逐次的に処理します。必ず ``--yes`` を指定してください。")
 
     parser.set_defaults(subcommand_func=main)
 
