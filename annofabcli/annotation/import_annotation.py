@@ -139,11 +139,10 @@ class ImportAnnotationMain(AbstractCommandLineWithConfirmInterface):
         metadata = label_info["metadata"]
         if metadata.get("type") == "SEGMENT":
             return True
-        else:
-            return False
+        return False
 
     @classmethod
-    def _get_data_holding_type_from_data(cls, label_info) -> AnnotationDataHoldingType:
+    def _get_data_holding_type_from_data(cls, label_info:Dict[str, Any]) -> AnnotationDataHoldingType:
         annotation_type = AnnotationType(label_info["annotation_type"])
         if annotation_type in [AnnotationType.SEGMENTATION, AnnotationType.SEGMENTATION_V2]:
             return AnnotationDataHoldingType.OUTER
@@ -220,7 +219,7 @@ class ImportAnnotationMain(AbstractCommandLineWithConfirmInterface):
                     return str(uuid.uuid4())
 
         additional_data_list: List[AdditionalData] = self._to_additional_data_list(detail.attributes, label_info)
-        data_holding_type = self._get_data_holding_type_from_data(detail.data)
+        data_holding_type = self._get_data_holding_type_from_data(label_info)
 
         dest_obj = AnnotationDetail(
             label_id=label_info["label_id"],
@@ -364,10 +363,10 @@ class ImportAnnotationMain(AbstractCommandLineWithConfirmInterface):
             try:
                 if self.put_annotation_for_input_data(parser):
                     success_count += 1
-            except Exception as e:  # pylint: disable=broad-except
+            except Exception:  # pylint: disable=broad-except
                 logger.warning(
                     f"task_id={parser.task_id}, input_data_id={parser.input_data_id} の"
-                    f"アノテーションインポートに失敗しました。: {type(e).__name__}: {e}"
+                    f"アノテーションインポートに失敗しました。", exc_info=True
                 )
 
         logger.info(f"タスク'{task_parser.task_id}'の入力データ {success_count} 個に対してアノテーションをインポートしました。")
@@ -444,8 +443,8 @@ class ImportAnnotationMain(AbstractCommandLineWithConfirmInterface):
                     if self.execute_task(task_parser):
                         success_count += 1
 
-            except Exception as e:  # pylint: disable=broad-except
-                logger.warning(f"task_id={task_parser.task_id} のアノテーションインポートに失敗しました。: {type(e).__name__}: {e}")
+            except Exception:  # pylint: disable=broad-except
+                logger.warning(f"task_id={task_parser.task_id} のアノテーションインポートに失敗しました。", exc_info=True)
 
         logger.info(f"{success_count} 個のタスクに対してアノテーションをインポートしました。")
 

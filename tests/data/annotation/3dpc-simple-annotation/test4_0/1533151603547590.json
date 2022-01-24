@@ -1,12 +1,4 @@
 {
-    "project_id": "3bc1a5e3-73e0-4b2f-b893-dd20f3de5ff9",
-    "annotation_format_version": "1.2.0",
-    "task_id": "test4_0",
-    "task_phase": "annotation",
-    "task_phase_stage": 1,
-    "task_status": "break",
-    "input_data_id": "1533151603547590",
-    "input_data_name": "1533151603547590.bin",
     "details": [
         {
             "label": "road",
