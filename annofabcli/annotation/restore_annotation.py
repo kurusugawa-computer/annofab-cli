@@ -54,8 +54,9 @@ class RestoreAnnotation(AbstractCommandLineInterface):
         return detail
 
     def parser_to_request_body(self, project_id: str, parser: SimpleAnnotationParser) -> Dict[str, Any]:
-
-        annotation: Annotation = Annotation.from_dict(parser.load_json())
+        # infer_missing=Trueを指定する理由：Optional型のキーが存在しない場合でも、Annotationデータクラスのインスタンスを生成できるようにするため
+        # https://qiita.com/yuji38kwmt/items/c5b56f70da3b8a70ba31
+        annotation: Annotation = Annotation.from_dict(parser.load_json(), infer_missing=True)
         request_details: List[Dict[str, Any]] = []
         for detail in annotation.details:
             request_detail = self._to_annotation_detail_for_request(project_id, parser, detail)
@@ -96,9 +97,9 @@ class RestoreAnnotation(AbstractCommandLineInterface):
             try:
                 if self.put_annotation_for_input_data(project_id, parser):
                     success_count += 1
-            except Exception as e:  # pylint: disable=broad-except
+            except Exception:  # pylint: disable=broad-except
                 logger.warning(
-                    f"task_id={parser.task_id}, input_data_id={parser.input_data_id} のアノテーションのリストアに失敗しました。: {e}"
+                    f"task_id={parser.task_id}, input_data_id={parser.input_data_id} のアノテーションのリストアに失敗しました。", exc_info=True
                 )
 
         logger.info(f"タスク'{task_parser.task_id}'の入力データ {success_count} 個に対してアノテーションをリストアしました。")
@@ -184,8 +185,8 @@ class RestoreAnnotation(AbstractCommandLineInterface):
                     if self.execute_task(project_id, task_parser, force=args.force):
                         success_count += 1
 
-            except Exception as e:  # pylint: disable=broad-except
-                logger.warning(f"task_id={task_parser.task_id} のアノテーションのリストアに失敗しました。: {e}")
+            except Exception:  # pylint: disable=broad-except
+                logger.warning(f"task_id={task_parser.task_id} のアノテーションのリストアに失敗しました。", exc_info=True)
 
         logger.info(f"{success_count} 個のタスクに対してアノテーションをリストアしました。")
 
