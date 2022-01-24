@@ -126,7 +126,7 @@ class ImportAnnotationMain(AbstractCommandLineWithConfirmInterface):
         3DセグメントのURIを取得する
 
         Notes:
-            3dpc editorに依存したコード。annofab側でSimple Annotationのフォーマットが改善されたら、このコードを削除する    
+            3dpc editorに依存したコード。annofab側でSimple Annotationのフォーマットが改善されたら、このコードを削除する
         """
         data_uri = annotation_data["data"]
         # この時点で data_uriは f"./{input_data_id}/{annotation_id}"
