@@ -124,6 +124,9 @@ class ImportAnnotationMain(AbstractCommandLineWithConfirmInterface):
     def _get_3dpc_segment_data_uri(cls, annotation_data: Dict[str, Any]) -> str:
         """
         3DセグメントのURIを取得する
+
+        Notes:
+            3dpc editorに依存したコード。annofab側でSimple Annotationのフォーマットが改善されたら、このコードを削除する    
         """
         data_uri = annotation_data["data"]
         # この時点で data_uriは f"./{input_data_id}/{annotation_id}"
@@ -142,7 +145,7 @@ class ImportAnnotationMain(AbstractCommandLineWithConfirmInterface):
         return False
 
     @classmethod
-    def _get_data_holding_type_from_data(cls, label_info:Dict[str, Any]) -> AnnotationDataHoldingType:
+    def _get_data_holding_type_from_data(cls, label_info: Dict[str, Any]) -> AnnotationDataHoldingType:
         annotation_type = AnnotationType(label_info["annotation_type"])
         if annotation_type in [AnnotationType.SEGMENTATION, AnnotationType.SEGMENTATION_V2]:
             return AnnotationDataHoldingType.OUTER
@@ -237,6 +240,7 @@ class ImportAnnotationMain(AbstractCommandLineWithConfirmInterface):
         )
 
         if data_holding_type == AnnotationDataHoldingType.OUTER:
+            # TODO: 3dpc editorに依存したコード。annofab側でSimple Annotationのフォーマットが改善されたら、このコードを削除する
             data_uri = (
                 detail.data["data_uri"]
                 if not self._is_3dpc_segment_label(label_info)
@@ -365,8 +369,8 @@ class ImportAnnotationMain(AbstractCommandLineWithConfirmInterface):
                     success_count += 1
             except Exception:  # pylint: disable=broad-except
                 logger.warning(
-                    f"task_id={parser.task_id}, input_data_id={parser.input_data_id} の"
-                    f"アノテーションインポートに失敗しました。", exc_info=True
+                    f"task_id={parser.task_id}, input_data_id={parser.input_data_id} の" f"アノテーションインポートに失敗しました。",
+                    exc_info=True,
                 )
 
         logger.info(f"タスク'{task_parser.task_id}'の入力データ {success_count} 個に対してアノテーションをインポートしました。")
