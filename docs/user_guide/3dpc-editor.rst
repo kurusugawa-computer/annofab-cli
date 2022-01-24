@@ -5,6 +5,10 @@ AnnoFabの拡張機能である"3DPC-EDITOR"用のプロジェクトでも、ann
 
 ただし、以下のコマンドは3DPC-EDITOR用のコマンドライン引数を指定する必要があります。詳細はコマンドのリファレンスを参照してください。
 
-* `inspection_comment put <../inspection_comment/put.html>`_
-* `task reject <../task/put.html>`_ 
 
+.. toctree::
+   :maxdepth: 1
+   :titlesonly:
+
+   ../command_reference/inspection_comment/put
+   ../command_reference/task/put
