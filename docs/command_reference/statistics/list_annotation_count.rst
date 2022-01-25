@@ -65,7 +65,7 @@ Examples
     $ annofabcli statistics list_annotation_count --project_id prj1 --output_dir out_by_task/ \
     --group_by task_id
 
-`out_by_task <https://github.com/kurusugawa-computer/annofab-cli/blob/master/docs/command_reference/statistics/list_annotation_count/out_by_task>`_
+`out_by_task <https://github.com/kurusugawa-computer/annofab-cli/blob/main/docs/command_reference/statistics/list_annotation_count/out_by_task>`_
 
 
 .. code-block::
@@ -105,7 +105,7 @@ Examples
     $ annofabcli statistics list_annotation_count --project_id prj1 --output_dir out_by_input_data/ \
     --group_by input_data_id
 
-`out_by_input_data <https://github.com/kurusugawa-computer/annofab-cli/blob/master/docs/command_reference/statistics/list_annotation_count/out_by_input_data>`_
+`out_by_input_data <https://github.com/kurusugawa-computer/annofab-cli/blob/main/docs/command_reference/statistics/list_annotation_count/out_by_input_data>`_
 
 
 .. code-block::

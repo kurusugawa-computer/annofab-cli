@@ -115,7 +115,7 @@ CSV出力
 
     $ annofabcli annotation list --format csv --output out.csv
 
-`out.csv <https://github.com/kurusugawa-computer/annofab-cli/blob/master/docs/command_reference/annotation/list/out.csv>`_
+`out.csv <https://github.com/kurusugawa-computer/annofab-cli/blob/main/docs/command_reference/annotation/list/out.csv>`_
 
 Usage Details
 =================================

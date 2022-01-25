@@ -130,7 +130,7 @@ Examples
 
     $ annofabcli statistics visualize --project_id prj1 --output_dir out_dir --minimal
 
-`out_dir <https://github.com/kurusugawa-computer/annofab-cli/blob/master/docs/command_reference/statistics/visualize/out_dir>`_
+`out_dir <https://github.com/kurusugawa-computer/annofab-cli/blob/main/docs/command_reference/statistics/visualize/out_dir>`_
 
 
 .. code-block::

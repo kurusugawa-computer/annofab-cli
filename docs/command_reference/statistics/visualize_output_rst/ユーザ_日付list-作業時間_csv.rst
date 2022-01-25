@@ -12,5 +12,5 @@
 * monitored_acceptance_worktime_hour：計測受入作業時間[hour]
 
 
-`ユーザ_日付list-作業時間.csv <https://github.com/kurusugawa-computer/annofab-cli/blob/master/docs/command_reference/statistics/visualize/out_dir/ユーザ_日付list-作業時間.csv>`_
+`ユーザ_日付list-作業時間.csv <https://github.com/kurusugawa-computer/annofab-cli/blob/main/docs/command_reference/statistics/visualize/out_dir/ユーザ_日付list-作業時間.csv>`_
 
