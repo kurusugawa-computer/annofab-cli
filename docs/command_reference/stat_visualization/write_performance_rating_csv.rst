@@ -67,8 +67,8 @@ Examples
 
 
 
-* `annotation_productivity_rank.csv <https://github.com/kurusugawa-computer/annofab-cli/blob/master/docs/command_reference/stat_visualization/write_performance_rating_csv/out/annotation_productivity_rank.csv>`_
-* `annotation_productivity_deviation.csv <https://github.com/kurusugawa-computer/annofab-cli/blob/master/docs/command_reference/stat_visualization/write_performance_rating_csv/out/annotation_productivity_deviation.csv>`_
+* `annotation_productivity_rank.csv <https://github.com/kurusugawa-computer/annofab-cli/blob/main/docs/command_reference/stat_visualization/write_performance_rating_csv/out/annotation_productivity_rank.csv>`_
+* `annotation_productivity_deviation.csv <https://github.com/kurusugawa-computer/annofab-cli/blob/main/docs/command_reference/stat_visualization/write_performance_rating_csv/out/annotation_productivity_deviation.csv>`_
 
 
 

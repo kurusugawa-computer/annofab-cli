@@ -4,7 +4,7 @@
 
 メンバごとの生産量（作業したタスク数など）や生産性、教師付の品質が分かります。
 
-`メンバごとの生産性と品質.csv <https://github.com/kurusugawa-computer/annofab-cli/blob/master/docs/command_reference/statistics/visualize/out_dir/メンバごとの生産性と品質.csv>`_
+`メンバごとの生産性と品質.csv <https://github.com/kurusugawa-computer/annofab-cli/blob/main/docs/command_reference/statistics/visualize/out_dir/メンバごとの生産性と品質.csv>`_
 
 参照頻度が高い列の詳細を、以下に記載します。
 

@@ -73,7 +73,7 @@ Examples
 .. image:: visualize_annotation_count/img/labels_count.png
 
 
-`out_by_task <https://github.com/kurusugawa-computer/annofab-cli/blob/master/docs/command_reference/statistics/visualize_annotation_count/out_by_task>`_
+`out_by_task <https://github.com/kurusugawa-computer/annofab-cli/blob/main/docs/command_reference/statistics/visualize_annotation_count/out_by_task>`_
 
 
 

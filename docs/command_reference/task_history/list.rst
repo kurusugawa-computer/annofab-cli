@@ -33,7 +33,7 @@ CSV出力
 
     $ annofabcli task_history list --project_id prj1 --format csv --output out.csv
 
-`out.csv <https://github.com/kurusugawa-computer/annofab-cli/blob/master/docs/command_reference/task_history/list/out.csv>`_
+`out.csv <https://github.com/kurusugawa-computer/annofab-cli/blob/main/docs/command_reference/task_history/list/out.csv>`_
 
 JSON出力
 ----------------------------------------------
