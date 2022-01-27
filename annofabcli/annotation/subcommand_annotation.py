@@ -3,6 +3,7 @@ from typing import Optional
 
 import annofabcli
 import annofabcli.annotation.change_annotation_attributes
+import annofabcli.annotation.change_annotation_properties
 import annofabcli.annotation.copy_annotation
 import annofabcli.annotation.delete_annotation
 import annofabcli.annotation.dump_annotation
@@ -19,6 +20,7 @@ def parse_args(parser: argparse.ArgumentParser):
 
     # サブコマンドの定義
     annofabcli.annotation.change_annotation_attributes.add_parser(subparsers)
+    annofabcli.annotation.change_annotation_properties.add_parser(subparsers)
     annofabcli.annotation.copy_annotation.add_parser(subparsers)
     annofabcli.annotation.delete_annotation.add_parser(subparsers)
     annofabcli.annotation.dump_annotation.add_parser(subparsers)
