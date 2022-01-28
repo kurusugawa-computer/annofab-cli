@@ -55,8 +55,9 @@ mypy = "*"
 pylint = "*"
 
 # Document library
-sphinx = "*"
-pydata-sphinx-theme = "*"
+# sphinx 4.4.0, pydata-sphinx-theme 0.8.0 では、 テーブルの幅が大きいときに、横スクロールバーが表示されないので、バージョンを固定する
+sphinx = "~4.2"
+pydata-sphinx-theme = "~0.6"
 sphinx-last-updated-by-git = "*"
 sphinx-argparse = "*"
 
