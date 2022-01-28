@@ -6,7 +6,7 @@ handlers:
   fileRotatingHandler:
     class: logging.handlers.TimedRotatingFileHandler
     filename: .log/annofabcli.log
-    when: 'D'
+    when: 'MIDNIGHT'
     encoding: 'utf-8'
     formatter: customFormatter
   consoleHandler:
