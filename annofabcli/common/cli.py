@@ -615,7 +615,6 @@ class PrettyHelpFormatter(argparse.RawTextHelpFormatter, argparse.ArgumentDefaul
         # 不要なデフォルト値（--debug や オプショナルな引数）を表示させないようにする
         # super()._get_help_string の中身を、そのまま持ってきた。
         # https://qiita.com/yuji38kwmt/items/c7c4d487e3188afd781e 参照
-        help = action.help  # pylint: disable=redefined-builtin
         if "%(default)" not in action.help:
             if action.default is not argparse.SUPPRESS:
                 defaulting_nargs = [argparse.OPTIONAL, argparse.ZERO_OR_MORE]
