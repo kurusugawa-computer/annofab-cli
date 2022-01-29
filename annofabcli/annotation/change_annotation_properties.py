@@ -1,9 +1,10 @@
 import argparse
 import logging
+import sys
 from collections import defaultdict
 from enum import Enum
 from pathlib import Path
-from typing import List, Optional
+from typing import Any, Dict, List, Optional
 
 import annofabapi
 import requests
@@ -15,11 +16,13 @@ import annofabcli
 from annofabcli import AnnofabApiFacade
 from annofabcli.annotation.dump_annotation import DumpAnnotation
 from annofabcli.common.cli import (
+    COMMAND_LINE_ERROR_STATUS_CODE,
     AbstractCommandLineInterface,
     ArgumentParser,
-    build_annofabapi_resource_and_login
+    build_annofabapi_resource_and_login,
+    get_json_from_args,
 )
-from annofabcli.common.facade import AnnotationQuery
+from annofabcli.common.facade import AnnotationQuery, AnnotationQueryForCli
 
 logger = logging.getLogger(__name__)
 
@@ -33,6 +36,8 @@ class ChangePropertiesOfAnnotation(AbstractCommandLineInterface):
     """
     アノテーションのプロパティを変更
     """
+
+    COMMON_MESSAGE = "annofabcli annotation change_properties: error:"
 
     def __init__(self, service: annofabapi.Resource, facade: AnnofabApiFacade, args: argparse.Namespace):
         super().__init__(service, facade, args)
@@ -113,7 +118,42 @@ class ChangePropertiesOfAnnotation(AbstractCommandLineInterface):
 
     def main(self):
         args = self.args
-        logger.debug(args)
+        project_id = args.project_id
+        task_id_list = annofabcli.common.cli.get_list_from_args(args.task_id)
+
+        dict_annotation_query = get_json_from_args(args.annotation_query)
+        annotation_query_for_cli = AnnotationQueryForCli.from_dict(dict_annotation_query)
+        try:
+            annotation_query = self.facade.to_annotation_query_from_cli(project_id, annotation_query_for_cli)
+        except ValueError as e:
+            print(f"{self.COMMON_MESSAGE} argument '--annotation_query' の値が不正です。{e}", file=sys.stderr)
+            sys.exit(COMMAND_LINE_ERROR_STATUS_CODE)
+
+        properties_of_dict: List[Dict[str, Any]] = get_json_from_args(args.properties)
+        properties_for_cli: List[AnnotationDetailForCli] = [AnnotationDetailForCli.from_dict(e) for e in properties_of_dict]
+        try:
+            properties = self.facade.to_properties_from_cli(project_id, annotation_query.label_id, properties_for_cli)
+        except ValueError as e:
+            print(f"{self.COMMON_MESSAGE} argument '--properties' の値が不正です。{e}", file=sys.stderr)
+            sys.exit(COMMAND_LINE_ERROR_STATUS_CODE)
+
+        if args.backup is None:
+            print("間違えてアノテーションを変更してしまっときに復元できるようにするため、'--backup'でバックアップ用のディレクトリを指定することを推奨します。", file=sys.stderr)
+            if not self.confirm_processing("復元用のバックアップディレクトリが指定されていません。処理を続行しますか？"):
+                sys.exit(COMMAND_LINE_ERROR_STATUS_CODE)
+            backup_dir = None
+        else:
+            backup_dir = Path(args.backup)
+
+        self.change_annotation_properties(
+            project_id,
+            task_id_list,
+            annotation_query=annotation_query,
+            properties=properties,
+            force=args.force,
+            change_by=ChangeBy(args.change_by),
+            backup_dir=backup_dir,
+        )
 
 
 def main(args):
