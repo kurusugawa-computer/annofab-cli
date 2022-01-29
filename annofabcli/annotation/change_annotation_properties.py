@@ -1,9 +1,15 @@
 import argparse
 import logging
+from collections import defaultdict
 from enum import Enum
-from typing import Optional
+from pathlib import Path
+from typing import List, Optional
 
 import annofabapi
+import requests
+from annofabapi.dataclass.annotation import AnnotationDetail
+from annofabapi.dataclass.task import Task
+from annofabapi.models import TaskStatus
 
 import annofabcli
 from annofabcli import AnnofabApiFacade
@@ -13,6 +19,7 @@ from annofabcli.common.cli import (
     ArgumentParser,
     build_annofabapi_resource_and_login
 )
+from annofabcli.common.facade import AnnotationQuery
 
 logger = logging.getLogger(__name__)
 
@@ -30,6 +37,79 @@ class ChangePropertiesOfAnnotation(AbstractCommandLineInterface):
     def __init__(self, service: annofabapi.Resource, facade: AnnofabApiFacade, args: argparse.Namespace):
         super().__init__(service, facade, args)
         self.dump_annotation_obj = DumpAnnotation(service, facade, args)
+
+    def change_properties_for_task(
+        self,
+        project_id: str,
+        task_id: str,
+        annotation_query: AnnotationQuery,
+        properties: List[AnnotationDetail],
+        change_by: ChangeBy,
+        force: bool = False,
+        backup_dir: Optional[Path] = None,
+    ) -> None:
+        """
+        タスクに対してアノテーションのプロパティを変更する。
+
+        Args:
+            project_id:
+            task_id:
+            annotation_query: 変更対象のアノテーションの検索条件
+            properties: 変更後のアノテーションのプロパティ
+            force: タスクのステータスによらず更新する
+            backup_dir: アノテーションをバックアップとして保存するディレクトリ。指定しない場合は、バックアップを取得しない。
+
+        """
+        dict_task = self.service.wrapper.get_task_or_none(project_id, task_id)
+        if dict_task is None:
+            logger.warning(f"task_id = '{task_id}' は存在しません。")
+            return
+
+        task: Task = Task.from_dict(dict_task)
+        logger.info(
+            f"task_id={task.task_id}, phase={task.phase.value}, status={task.status.value}, "
+            f"updated_datetime={task.updated_datetime}"
+        )
+        if task.status == TaskStatus.WORKING:
+            logger.warning(f"task_id={task_id}: タスクが作業中状態のため、スキップします。")
+            return
+
+        if not force:
+            if task.status == TaskStatus.COMPLETE:
+                logger.warning(f"task_id={task_id}: タスクが完了状態のため、スキップします。")
+                return
+
+        annotation_list = self.facade.get_annotation_list_for_task(project_id, task_id, query=annotation_query)
+        logger.info(f"task_id='{task_id}'の変更対象アノテーション数：{len(annotation_list)}")
+        if len(annotation_list) == 0:
+            logger.info(f"task_id='{task_id}'には変更対象のアノテーションが存在しないので、スキップします。")
+            return
+
+        if not self.confirm_processing(f"task_id='{task_id}' のアノテーションのプロパティを変更しますか？"):
+            return
+
+        if backup_dir is not None:
+            self.dump_annotation_obj.dump_annotation_for_task(project_id, task_id, output_dir=backup_dir)
+
+        try:
+            if change_by == ChangeBy.INPUT_DATA:
+                dict_annotation_list_by_input_data = defaultdict(list)
+                for annotation in annotation_list:
+                    dict_annotation_list_by_input_data[annotation["input_data_id"]].append(annotation)
+
+                for input_data_id, annotation_list_by_input_data in dict_annotation_list_by_input_data.items():
+                    logger.debug(
+                        f"task_id={task_id}, input_data_id={input_data_id}: "
+                        f"{len(annotation_list_by_input_data)}個のアノテーションのプロパティを変更しました。"
+                    )
+                    self.facade.change_annotation_properties(project_id, annotation_list_by_input_data, properties)
+            else:
+                self.facade.change_annotation_properties(project_id, annotation_list, properties)
+
+            logger.info(f"task_id={task_id}: アノテーションのプロパティを変更しました。")
+        except requests.HTTPError as e:
+            logger.warning(e)
+            logger.warning(f"task_id={task_id}: アノテーションのプロパティの変更に失敗しました。")
 
     def main(self):
         args = self.args
@@ -49,7 +129,7 @@ def parse_args(parser: argparse.ArgumentParser):
     argument_parser.add_task_id()
 
     EXAMPLE_ANNOTATION_QUERY = (
-        '{"label_name_en": "car", "attributes":[{"additional_data_definition_name_en": "occluded", "flag": true}]}'
+        '{"label_name_en": "car", "properties":[{"additional_data_definition_name_en": "occluded", "flag": true}]}'
     )
 
     parser.add_argument(
@@ -63,12 +143,12 @@ def parse_args(parser: argparse.ArgumentParser):
         f"(ex): ``{EXAMPLE_ANNOTATION_QUERY}``",
     )
 
-    EXAMPLE_ATTRIBUTES = '[{"property_name": "is_protected", "new_value": true}]'
+    EXAMPLE_PROPERTIES = '[{"property_name": "is_protected", "new_value": true}]'
     parser.add_argument(
         "--properties",
         type=str,
         required=True,
-        help="変更後のプロパティをJSON形式で指定します。" "``file://`` を先頭に付けると、JSON形式のファイルを指定できます。" f"(ex): ``{EXAMPLE_ATTRIBUTES}``",
+        help="変更後のプロパティをJSON形式で指定します。" "``file://`` を先頭に付けると、JSON形式のファイルを指定できます。" f"(ex): ``{EXAMPLE_PROPERTIES}``",
     )
 
     parser.add_argument("--force", action="store_true", help="完了状態のタスクのアノテーションのプロパティも変更します。")
