@@ -10,7 +10,7 @@ import annofabapi
 import requests
 from annofabapi.dataclass.annotation import AnnotationDetail
 from annofabapi.dataclass.task import Task
-from annofabapi.models import TaskStatus
+from annofabapi.models import ProjectMemberRole, TaskStatus
 
 import annofabcli
 from annofabcli import AnnofabApiFacade
@@ -115,6 +115,36 @@ class ChangePropertiesOfAnnotation(AbstractCommandLineInterface):
         except requests.HTTPError as e:
             logger.warning(e)
             logger.warning(f"task_id={task_id}: アノテーションのプロパティの変更に失敗しました。")
+
+    def change_annotation_properties(
+        self,
+        project_id: str,
+        task_id_list: List[str],
+        annotation_query: AnnotationQuery,
+        properties: List[AnnotationDetail],
+        change_by: ChangeBy = ChangeBy.TASK,
+        force: bool = False,
+        backup_dir: Optional[Path] = None,
+    ):
+        super().validate_project(project_id, [ProjectMemberRole.OWNER])
+
+        project_title = self.facade.get_project_title(project_id)
+        logger.info(f"プロジェクト'{project_title}'に対して、タスク{len(task_id_list)} 件のアノテーションのプロパティを変更します。")
+
+        if backup_dir is not None:
+            backup_dir.mkdir(exist_ok=True, parents=True)
+
+        for task_index, task_id in enumerate(task_id_list):
+            logger.info(f"{task_index+1} / {len(task_id_list)} 件目: タスク '{task_id}' のアノテーションのプロパティを変更します。")
+            self.change_properties_for_task(
+                project_id,
+                task_id,
+                annotation_query=annotation_query,
+                properties=properties,
+                force=force,
+                change_by=change_by,
+                backup_dir=backup_dir,
+            )
 
     def main(self):
         args = self.args
