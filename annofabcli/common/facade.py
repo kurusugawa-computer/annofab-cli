@@ -56,6 +56,18 @@ class AdditionalDataForCli(DataClassJsonMixin):
 
 
 @dataclass
+class AnnotationDetailForCli(DataClassJsonMixin):
+    annotation_id: Optional[str] = None
+    """アノテーションID"""
+
+    account_id: Optional[str] = None
+
+    label_id: Optional[str] = None
+
+    is_protected: Optional[bool] = None
+
+
+@dataclass
 class AnnotationQueryForCli(DataClassJsonMixin):
     """
     コマンドライン上で指定するアノテーション検索条件
