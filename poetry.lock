@@ -1147,7 +1147,7 @@ python-versions = ">=3.6"
 
 [[package]]
 name = "types-python-dateutil"
-version = "2.8.8"
+version = "2.8.9"
 description = "Typing stubs for python-dateutil"
 category = "dev"
 optional = false
@@ -2033,8 +2033,8 @@ typed-ast = [
     {file = "typed_ast-1.5.2.tar.gz", hash = "sha256:525a2d4088e70a9f75b08b3f87a51acc9cde640e19cc523c7e41aa355564ae27"},
 ]
 types-python-dateutil = [
-    {file = "types-python-dateutil-2.8.8.tar.gz", hash = "sha256:efe0207836d3b09e3a2986064a5c7f36e79ea423ab9b6676a62bf5dd51fb261b"},
-    {file = "types_python_dateutil-2.8.8-py3-none-any.whl", hash = "sha256:f704c2b7981e140eac7d626424e6232c1594d392c57c252d81a90fe53c2be896"},
+    {file = "types-python-dateutil-2.8.9.tar.gz", hash = "sha256:90f95a6b6d4faba359287f17a2cae511ccc9d4abc89b01969bdac1185815c05d"},
+    {file = "types_python_dateutil-2.8.9-py3-none-any.whl", hash = "sha256:d60db7f5d40ce85ce54e7fb14e4157daf33e24f5a4bfb5f44ee7a5b790dfabd0"},
 ]
 types-pyyaml = [
     {file = "types-PyYAML-6.0.3.tar.gz", hash = "sha256:6ea4eefa8579e0ce022f785a62de2bcd647fad4a81df5cf946fd67e4b059920b"},
