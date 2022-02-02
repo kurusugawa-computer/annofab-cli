@@ -4,11 +4,10 @@ import sys
 from collections import defaultdict
 from enum import Enum
 from pathlib import Path
-from typing import Any, Dict, List, Optional
+from typing import List, Optional
 
 import annofabapi
 import requests
-from annofabapi.dataclass.annotation import AnnotationDetail
 from annofabapi.dataclass.task import Task
 from annofabapi.models import ProjectMemberRole, TaskStatus
 
@@ -22,7 +21,7 @@ from annofabcli.common.cli import (
     build_annofabapi_resource_and_login,
     get_json_from_args,
 )
-from annofabcli.common.facade import AnnotationQuery, AnnotationQueryForCli
+from annofabcli.common.facade import AnnotationDetailForCli, AnnotationQuery, AnnotationQueryForCli
 
 logger = logging.getLogger(__name__)
 
@@ -48,7 +47,7 @@ class ChangePropertiesOfAnnotation(AbstractCommandLineInterface):
         project_id: str,
         task_id: str,
         annotation_query: AnnotationQuery,
-        properties: List[AnnotationDetail],
+        properties: AnnotationDetailForCli,
         change_by: ChangeBy,
         force: bool = False,
         backup_dir: Optional[Path] = None,
@@ -121,7 +120,7 @@ class ChangePropertiesOfAnnotation(AbstractCommandLineInterface):
         project_id: str,
         task_id_list: List[str],
         annotation_query: AnnotationQuery,
-        properties: List[AnnotationDetail],
+        properties: AnnotationDetailForCli,
         change_by: ChangeBy = ChangeBy.TASK,
         force: bool = False,
         backup_dir: Optional[Path] = None,
@@ -159,13 +158,15 @@ class ChangePropertiesOfAnnotation(AbstractCommandLineInterface):
             print(f"{self.COMMON_MESSAGE} argument '--annotation_query' の値が不正です。{e}", file=sys.stderr)
             sys.exit(COMMAND_LINE_ERROR_STATUS_CODE)
 
-        properties_of_dict: List[Dict[str, Any]] = get_json_from_args(args.properties)
-        properties_for_cli: List[AnnotationDetailForCli] = [AnnotationDetailForCli.from_dict(e) for e in properties_of_dict]
+        properties_of_dict = get_json_from_args(args.properties)
+        properties_for_cli = AnnotationDetailForCli.from_dict(properties_of_dict)
+        """
         try:
             properties = self.facade.to_properties_from_cli(project_id, annotation_query.label_id, properties_for_cli)
         except ValueError as e:
             print(f"{self.COMMON_MESSAGE} argument '--properties' の値が不正です。{e}", file=sys.stderr)
             sys.exit(COMMAND_LINE_ERROR_STATUS_CODE)
+        """
 
         if args.backup is None:
             print("間違えてアノテーションを変更してしまっときに復元できるようにするため、'--backup'でバックアップ用のディレクトリを指定することを推奨します。", file=sys.stderr)
@@ -179,7 +180,7 @@ class ChangePropertiesOfAnnotation(AbstractCommandLineInterface):
             project_id,
             task_id_list,
             annotation_query=annotation_query,
-            properties=properties,
+            properties=properties_for_cli,
             force=args.force,
             change_by=ChangeBy(args.change_by),
             backup_dir=backup_dir,
@@ -245,7 +246,7 @@ def add_parser(subparsers: Optional[argparse._SubParsersAction] = None) -> argpa
     subcommand_help = "アノテーションのプロパティを変更します。"
     description = (
         "アノテーションのプロパティを一括で変更します。ただし、作業中状態のタスクのアノテーションのプロパティは変更できません。"
-        "間違えてアノテーションプロパティを変更したときに復元できるようにするため、 ``--backup`` でバックアップ用のディレクトリを指定することを推奨します。"
+        "間違えてアノテーションのプロパティを変更したときに復元できるようにするため、 ``--backup`` でバックアップ用のディレクトリを指定することを推奨します。"
     )
     epilog = "オーナロールを持つユーザで実行してください。"
 
