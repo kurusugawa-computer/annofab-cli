@@ -200,7 +200,7 @@ def parse_args(parser: argparse.ArgumentParser):
     argument_parser.add_task_id()
 
     EXAMPLE_ANNOTATION_QUERY = (
-        '{"label_name_en": "car", "properties":[{"additional_data_definition_name_en": "occluded", "flag": true}]}'
+        '{"label_name_en": "car", "attributes":[{"additional_data_definition_name_en": "occluded", "flag": true}]}'
     )
 
     parser.add_argument(
@@ -214,7 +214,7 @@ def parse_args(parser: argparse.ArgumentParser):
         f"(ex): ``{EXAMPLE_ANNOTATION_QUERY}``",
     )
 
-    EXAMPLE_PROPERTIES = '[{"property_name": "is_protected", "new_value": true}]'
+    EXAMPLE_PROPERTIES = '{"is_protected": true}'
     parser.add_argument(
         "--properties",
         type=str,
