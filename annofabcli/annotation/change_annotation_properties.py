@@ -160,13 +160,6 @@ class ChangePropertiesOfAnnotation(AbstractCommandLineInterface):
 
         properties_of_dict = get_json_from_args(args.properties)
         properties_for_cli = AnnotationDetailForCli.from_dict(properties_of_dict)
-        """
-        try:
-            properties = self.facade.to_properties_from_cli(project_id, annotation_query.label_id, properties_for_cli)
-        except ValueError as e:
-            print(f"{self.COMMON_MESSAGE} argument '--properties' の値が不正です。{e}", file=sys.stderr)
-            sys.exit(COMMAND_LINE_ERROR_STATUS_CODE)
-        """
 
         if args.backup is None:
             print("間違えてアノテーションを変更してしまっときに復元できるようにするため、'--backup'でバックアップ用のディレクトリを指定することを推奨します。", file=sys.stderr)

@@ -831,38 +831,6 @@ class AnnofabApiFacade:
 
         return api_attribute
 
-    def to_properties_from_cli(
-        self, project_id: str, label_id: str, properties: List[AnnotationDetailForCli]
-    ):
-        """
-        コマンドラインから指定されたプロパティListを、WebAPIに渡すListに変換する。
-        nameからIDを取得できない場合は、その時点で終了する。
-        """
-        # [REMOVE_V2_PARAM]
-        annotation_specs, _ = self.service.api.get_annotation_specs(project_id, query_params={"v": "2"})
-        specs_labels = convert_annotation_specs_labels_v2_to_v1(
-            labels_v2=annotation_specs["labels"], additionals_v2=annotation_specs["additionals"]
-        )
-
-        # label_name_en から label_idを設定
-        label_info = more_itertools.first_true(specs_labels, pred=lambda e: e["label_id"] == label_id)
-        if label_info is None:
-            raise ValueError(f"label_id: {label_id} に一致するラベル情報は見つかりませんでした。")
-        """
-        api_properties = []
-        for cli_property in properties:
-            api_properties.append(
-                AnnotationDetail(
-                    annotation_id=cli_property.annotation_id,
-                    account_id=cli_property.account_id,
-                    label_id=cli_property.label_id,
-                    is_protected=cli_property.is_protected
-
-                )
-            )
-        """
-        return None
-
     def get_annotation_list_for_task(
         self, project_id: str, task_id: str, query: Optional[AnnotationQuery] = None
     ) -> List[SingleAnnotation]:
