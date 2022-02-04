@@ -5,7 +5,7 @@ from typing import Any, Callable, Dict, List, Optional, Tuple
 import annofabapi
 import annofabapi.utils
 import more_itertools
-from annofabapi.dataclass.annotation import AdditionalData, AnnotationDetail
+from annofabapi.dataclass.annotation import AdditionalData, AnnotationData, AnnotationDataHoldingType, AnnotationDetail
 from annofabapi.dataclass.input import InputData
 from annofabapi.dataclass.task import Task
 from annofabapi.models import (
@@ -65,6 +65,20 @@ class AnnotationDetailForCli(DataClassJsonMixin):
     label_id: Optional[str] = None
 
     is_protected: Optional[bool] = None
+
+    data_holding_type: Optional[AnnotationDataHoldingType] = None
+
+    additional_data_list: Optional[AdditionalData] = None
+
+    data: Optional[AnnotationData] = None
+
+    path: Optional[str] = None
+
+    etag: Optional[str] = None
+
+    created_datetime: Optional[str] = None
+
+    updated_datetime: Optional[str] = None
 
 
 @dataclass
