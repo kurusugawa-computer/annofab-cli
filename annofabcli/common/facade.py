@@ -956,7 +956,10 @@ class AnnofabApiFacade:
         ) -> List[AnnotationDetail]:
             api_properties = []
             for annotation in annotation_list:
-                detail = annotation["detail"]
+                annotation, _ = self.service.api.get_editor_annotation(
+                    annotation["project_id"], annotation["task_id"], annotation["input_data_id"]
+                )
+                detail = annotation["details"][0]
                 api_properties.append(
                     AnnotationDetail(
                         annotation_id=properties.annotation_id if properties.annotation_id is not None
@@ -1001,7 +1004,7 @@ class AnnofabApiFacade:
         for idx, annotation in enumerate(annotation_list):
             details_for_dict = [asdict(details[idx])]
             _to_request_body_elm(annotation)
-        return None
+        return True
 
     def set_account_id_of_task_query(self, project_id: str, task_query: TaskQuery) -> TaskQuery:
         """
