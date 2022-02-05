@@ -106,9 +106,9 @@ class ChangePropertiesOfAnnotation(AbstractCommandLineInterface):
                         f"task_id={task_id}, input_data_id={input_data_id}: "
                         f"{len(annotation_list_by_input_data)}個のアノテーションのプロパティを変更しました。"
                     )
-                    self.facade.change_annotation_properties(project_id, annotation_list_by_input_data, properties)
+                    self.facade.change_annotation_properties(annotation_list_by_input_data, properties)
             else:
-                self.facade.change_annotation_properties(project_id, annotation_list, properties)
+                self.facade.change_annotation_properties(annotation_list, properties)
 
             logger.info(f"task_id={task_id}: アノテーションのプロパティを変更しました。")
         except requests.HTTPError as e:

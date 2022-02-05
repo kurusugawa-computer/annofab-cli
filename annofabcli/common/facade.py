@@ -935,20 +935,19 @@ class AnnofabApiFacade:
         return self.service.api.batch_update_annotations(project_id, request_body)[0]
 
     def change_annotation_properties(
-        self, project_id: str, annotation_list: List[SingleAnnotation], properties: AnnotationDetailForCli
+        self, annotation_list: List[SingleAnnotation], properties: AnnotationDetailForCli
     ):
         """
-        アノテーション属性値を変更する。
+        アノテーションのプロパティを変更する。
 
         【注意】取扱注意
 
         Args:
-            project_id:
             annotation_list: 変更対象のアノテーション一覧
-            attributes: 変更後の属性値
+            properties: 変更後のプロパティ
 
         Returns:
-            `batch_update_annotations`メソッドのレスポンス
+            ``メソッドのレスポンス
 
         """
 
@@ -968,19 +967,23 @@ class AnnofabApiFacade:
                         else detail["label_id"],
                         is_protected=properties.is_protected if properties.is_protected is not None
                         else detail["is_protected"],
-                        data_holding_type=detail["data_holding_type"],
-                        additional_data_list=detail["additional_data_list"],
-                        data=detail["data"],
-                        path=None,
+                        data_holding_type=properties.data_holding_type if properties.data_holding_type is not None
+                        else detail["data_holding_type"],
+                        additional_data_list=properties.additional_data_list
+                        if properties.additional_data_list is not None
+                        else detail["additional_data_list"],
+                        data=properties.data if properties.data is not None
+                        else detail["data"],
+                        path=properties.path,
                         etag=None,
                         url=None,
-                        created_datetime=None,
-                        updated_datetime=None,
+                        created_datetime=properties.created_datetime,
+                        updated_datetime=properties.updated_datetime,
                     )
                 )
             return api_properties
 
-        def _to_request_body_elm(annotation: Dict[str, Any], idx: int):
+        def _to_request_body_elm(annotation: Dict[str, Any]):
             return(
                 self.service.api.put_annotation(
                     annotation["project_id"], annotation["task_id"], annotation["input_data_id"],
@@ -988,7 +991,7 @@ class AnnofabApiFacade:
                         "project_id": annotation["project_id"],
                         "task_id": annotation["task_id"],
                         "input_data_id": annotation["input_data_id"],
-                        "details": api_detail,
+                        "details": details_for_dict,
                         "updated_datetime": annotation["updated_datetime"]
                     }
                 )
@@ -996,8 +999,8 @@ class AnnofabApiFacade:
 
         details = to_properties_from_cli(annotation_list, properties)
         for idx, annotation in enumerate(annotation_list):
-            api_detail = [asdict(details[idx])]
-            _to_request_body_elm(annotation, idx)
+            details_for_dict = [asdict(details[idx])]
+            _to_request_body_elm(annotation)
         return None
 
     def set_account_id_of_task_query(self, project_id: str, task_query: TaskQuery) -> TaskQuery:
