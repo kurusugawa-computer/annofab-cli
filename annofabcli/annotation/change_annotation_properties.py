@@ -1,9 +1,7 @@
 import argparse
 import logging
 import sys
-from collections import defaultdict
 from dataclasses import asdict, dataclass
-from enum import Enum
 from pathlib import Path
 from typing import Any, Dict, List, Optional
 
@@ -34,11 +32,6 @@ class AnnotationDetailForCli(DataClassJsonMixin):
     is_protected: Optional[bool] = None
 
 
-class ChangeBy(Enum):
-    TASK = "task"
-    INPUT_DATA = "input_data"
-
-
 def ch(
         annotation_list: List[SingleAnnotation], properties: AnnotationDetailForCli
 ):
@@ -61,7 +54,7 @@ def ch(
     ) -> List[AnnotationDetail]:
         api_properties = []
         for annotation in annotation_list:
-            annotation, _ = AnnofabApiFacade.service.api.get_editor_annotation(
+            annotation, _ = self.service.api.get_editor_annotation(
                 annotation["project_id"], annotation["task_id"], annotation["input_data_id"]
             )
             detail = annotation["details"][0]
@@ -86,7 +79,7 @@ def ch(
 
     def _to_request_body_elm(annotation: Dict[str, Any]):
         return(
-            AnnofabApiFacade.service.api.put_annotation(
+            self.service.api.put_annotation(
                 annotation["project_id"], annotation["task_id"], annotation["input_data_id"],
                 {
                     "project_id": annotation["project_id"],
@@ -121,7 +114,6 @@ class ChangePropertiesOfAnnotation(AbstractCommandLineInterface):
         task_id: str,
         annotation_query: AnnotationQuery,
         properties: AnnotationDetailForCli,
-        change_by: ChangeBy,
         force: bool = False,
         backup_dir: Optional[Path] = None,
     ) -> None:
@@ -169,20 +161,7 @@ class ChangePropertiesOfAnnotation(AbstractCommandLineInterface):
             self.dump_annotation_obj.dump_annotation_for_task(project_id, task_id, output_dir=backup_dir)
 
         try:
-            if change_by == ChangeBy.INPUT_DATA:
-                dict_annotation_list_by_input_data = defaultdict(list)
-                for annotation in annotation_list:
-                    dict_annotation_list_by_input_data[annotation["input_data_id"]].append(annotation)
-
-                for input_data_id, annotation_list_by_input_data in dict_annotation_list_by_input_data.items():
-                    logger.debug(
-                        f"task_id={task_id}, input_data_id={input_data_id}: "
-                        f"{len(annotation_list_by_input_data)}個のアノテーションのプロパティを変更しました。"
-                    )
-                    ch(annotation_list_by_input_data, properties)
-            else:
-                ch(annotation_list, properties)
-
+            ch(annotation_list, properties)
             logger.info(f"task_id={task_id}: アノテーションのプロパティを変更しました。")
         except requests.HTTPError as e:
             logger.warning(e)
@@ -194,7 +173,6 @@ class ChangePropertiesOfAnnotation(AbstractCommandLineInterface):
         task_id_list: List[str],
         annotation_query: AnnotationQuery,
         properties: AnnotationDetailForCli,
-        change_by: ChangeBy = ChangeBy.TASK,
         force: bool = False,
         backup_dir: Optional[Path] = None,
     ):
@@ -214,7 +192,6 @@ class ChangePropertiesOfAnnotation(AbstractCommandLineInterface):
                 annotation_query=annotation_query,
                 properties=properties,
                 force=force,
-                change_by=change_by,
                 backup_dir=backup_dir,
             )
 
@@ -248,7 +225,6 @@ class ChangePropertiesOfAnnotation(AbstractCommandLineInterface):
             annotation_query=annotation_query,
             properties=properties_for_cli,
             force=args.force,
-            change_by=ChangeBy(args.change_by),
             backup_dir=backup_dir,
         )
 
@@ -289,14 +265,6 @@ def parse_args(parser: argparse.ArgumentParser):
     )
 
     parser.add_argument("--force", action="store_true", help="完了状態のタスクのアノテーションのプロパティも変更します。")
-
-    parser.add_argument(
-        "--change_by",
-        type=str,
-        choices=[ChangeBy.TASK.value, ChangeBy.INPUT_DATA.value],
-        default=ChangeBy.TASK.value,
-        help="アノテーションプロパティの変更単位を指定してください。[Deprecated] 廃止される可能性があります。",
-    )
 
     parser.add_argument(
         "--backup",
