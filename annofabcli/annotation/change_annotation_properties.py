@@ -39,8 +39,8 @@ class ChangeBy(Enum):
     INPUT_DATA = "input_data"
 
 
-def change_annotation_properties(
-        self, annotation_list: List[SingleAnnotation], properties: AnnotationDetailForCli
+def ch(
+        annotation_list: List[SingleAnnotation], properties: AnnotationDetailForCli
 ):
     """
     アノテーションのプロパティを変更する。
@@ -61,39 +61,32 @@ def change_annotation_properties(
     ) -> List[AnnotationDetail]:
         api_properties = []
         for annotation in annotation_list:
-            annotation, _ = self.service.api.get_editor_annotation(
+            annotation, _ = AnnofabApiFacade.service.api.get_editor_annotation(
                 annotation["project_id"], annotation["task_id"], annotation["input_data_id"]
             )
             detail = annotation["details"][0]
             api_properties.append(
                 AnnotationDetail(
-                    annotation_id=properties.annotation_id if properties.annotation_id is not None
-                    else detail["annotation_id"],
-                    account_id=properties.account_id if properties.account_id is not None
-                    else detail["account_id"],
-                    label_id=properties.label_id if properties.label_id is not None
-                    else detail["label_id"],
+                    annotation_id=detail["annotation_id"],
+                    account_id=detail["account_id"],
+                    label_id=detail["label_id"],
                     is_protected=properties.is_protected if properties.is_protected is not None
                     else detail["is_protected"],
-                    data_holding_type=properties.data_holding_type if properties.data_holding_type is not None
-                    else detail["data_holding_type"],
-                    additional_data_list=properties.additional_data_list
-                    if properties.additional_data_list is not None
-                    else detail["additional_data_list"],
-                    data=properties.data if properties.data is not None
-                    else detail["data"],
-                    path=properties.path,
+                    data_holding_type=detail["data_holding_type"],
+                    additional_data_list=detail["additional_data_list"],
+                    data=detail["data"],
+                    path=None,
                     etag=None,
                     url=None,
-                    created_datetime=properties.created_datetime,
-                    updated_datetime=properties.updated_datetime,
+                    created_datetime=None,
+                    updated_datetime=None,
                 )
             )
         return api_properties
 
     def _to_request_body_elm(annotation: Dict[str, Any]):
         return(
-            self.service.api.put_annotation(
+            AnnofabApiFacade.service.api.put_annotation(
                 annotation["project_id"], annotation["task_id"], annotation["input_data_id"],
                 {
                     "project_id": annotation["project_id"],
@@ -109,7 +102,6 @@ def change_annotation_properties(
     for idx, annotation in enumerate(annotation_list):
         details_for_dict = [asdict(details[idx])]
         _to_request_body_elm(annotation)
-    return True
 
 
 class ChangePropertiesOfAnnotation(AbstractCommandLineInterface):
@@ -187,9 +179,9 @@ class ChangePropertiesOfAnnotation(AbstractCommandLineInterface):
                         f"task_id={task_id}, input_data_id={input_data_id}: "
                         f"{len(annotation_list_by_input_data)}個のアノテーションのプロパティを変更しました。"
                     )
-                    self.facade.change_annotation_properties(annotation_list_by_input_data, properties)
+                    ch(annotation_list_by_input_data, properties)
             else:
-                self.facade.change_annotation_properties(annotation_list, properties)
+                ch(annotation_list, properties)
 
             logger.info(f"task_id={task_id}: アノテーションのプロパティを変更しました。")
         except requests.HTTPError as e:
