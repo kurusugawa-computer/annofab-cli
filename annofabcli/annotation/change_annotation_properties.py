@@ -2,14 +2,16 @@ import argparse
 import logging
 import sys
 from collections import defaultdict
+from dataclasses import asdict, dataclass
 from enum import Enum
 from pathlib import Path
-from typing import List, Optional
+from typing import Any, Dict, List, Optional
 
 import annofabapi
 import requests
+from annofabapi.dataclass.annotation import AnnotationDetail
 from annofabapi.dataclass.task import Task
-from annofabapi.models import ProjectMemberRole, TaskStatus
+from annofabapi.models import ProjectMemberRole, SingleAnnotation, TaskStatus
 
 import annofabcli
 from annofabcli import AnnofabApiFacade
@@ -21,14 +23,93 @@ from annofabcli.common.cli import (
     build_annofabapi_resource_and_login,
     get_json_from_args,
 )
-from annofabcli.common.facade import AnnotationDetailForCli, AnnotationQuery, AnnotationQueryForCli
+from annofabcli.common.facade import AnnotationQuery, AnnotationQueryForCli
+from dataclasses_json import DataClassJsonMixin
 
 logger = logging.getLogger(__name__)
+
+
+@dataclass
+class AnnotationDetailForCli(DataClassJsonMixin):
+    is_protected: Optional[bool] = None
 
 
 class ChangeBy(Enum):
     TASK = "task"
     INPUT_DATA = "input_data"
+
+
+def change_annotation_properties(
+        self, annotation_list: List[SingleAnnotation], properties: AnnotationDetailForCli
+):
+    """
+    アノテーションのプロパティを変更する。
+
+    【注意】取扱注意
+
+    Args:
+        annotation_list: 変更対象のアノテーション一覧
+        properties: 変更後のプロパティ
+
+    Returns:
+        ``メソッドのレスポンス
+
+    """
+
+    def to_properties_from_cli(
+        annotation_list: List[SingleAnnotation], properties: AnnotationDetailForCli
+    ) -> List[AnnotationDetail]:
+        api_properties = []
+        for annotation in annotation_list:
+            annotation, _ = self.service.api.get_editor_annotation(
+                annotation["project_id"], annotation["task_id"], annotation["input_data_id"]
+            )
+            detail = annotation["details"][0]
+            api_properties.append(
+                AnnotationDetail(
+                    annotation_id=properties.annotation_id if properties.annotation_id is not None
+                    else detail["annotation_id"],
+                    account_id=properties.account_id if properties.account_id is not None
+                    else detail["account_id"],
+                    label_id=properties.label_id if properties.label_id is not None
+                    else detail["label_id"],
+                    is_protected=properties.is_protected if properties.is_protected is not None
+                    else detail["is_protected"],
+                    data_holding_type=properties.data_holding_type if properties.data_holding_type is not None
+                    else detail["data_holding_type"],
+                    additional_data_list=properties.additional_data_list
+                    if properties.additional_data_list is not None
+                    else detail["additional_data_list"],
+                    data=properties.data if properties.data is not None
+                    else detail["data"],
+                    path=properties.path,
+                    etag=None,
+                    url=None,
+                    created_datetime=properties.created_datetime,
+                    updated_datetime=properties.updated_datetime,
+                )
+            )
+        return api_properties
+
+    def _to_request_body_elm(annotation: Dict[str, Any]):
+        return(
+            self.service.api.put_annotation(
+                annotation["project_id"], annotation["task_id"], annotation["input_data_id"],
+                {
+                    "project_id": annotation["project_id"],
+                    "task_id": annotation["task_id"],
+                    "input_data_id": annotation["input_data_id"],
+                    "details": details_for_dict,
+                    "updated_datetime": annotation["updated_datetime"],
+                }
+            )
+        )
+
+    details = to_properties_from_cli(annotation_list, properties)
+    for idx, annotation in enumerate(annotation_list):
+        details_for_dict = [asdict(details[idx])]
+        _to_request_body_elm(annotation)
+    return True
 
 
 class ChangePropertiesOfAnnotation(AbstractCommandLineInterface):
