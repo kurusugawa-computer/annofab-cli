@@ -5,7 +5,7 @@ from typing import Any, Callable, Dict, List, Optional, Tuple
 import annofabapi
 import annofabapi.utils
 import more_itertools
-from annofabapi.dataclass.annotation import AdditionalData, AnnotationData, AnnotationDataHoldingType, AnnotationDetail
+from annofabapi.dataclass.annotation import AdditionalData
 from annofabapi.dataclass.input import InputData
 from annofabapi.dataclass.task import Task
 from annofabapi.models import (
@@ -53,32 +53,6 @@ class AdditionalDataForCli(DataClassJsonMixin):
 
     choice_name_en: Optional[str] = None
     """選択肢の英語名"""
-
-
-@dataclass
-class AnnotationDetailForCli(DataClassJsonMixin):
-    annotation_id: Optional[str] = None
-    """アノテーションID"""
-
-    account_id: Optional[str] = None
-
-    label_id: Optional[str] = None
-
-    is_protected: Optional[bool] = None
-
-    data_holding_type: Optional[AnnotationDataHoldingType] = None
-
-    additional_data_list: Optional[AdditionalData] = None
-
-    data: Optional[AnnotationData] = None
-
-    path: Optional[str] = None
-
-    etag: Optional[str] = None
-
-    created_datetime: Optional[str] = None
-
-    updated_datetime: Optional[str] = None
 
 
 @dataclass
@@ -933,78 +907,6 @@ class AnnofabApiFacade:
         attributes_for_dict: List[Dict[str, Any]] = [asdict(e) for e in attributes]
         request_body = [_to_request_body_elm(annotation) for annotation in annotation_list]
         return self.service.api.batch_update_annotations(project_id, request_body)[0]
-
-    def change_annotation_properties(
-        self, annotation_list: List[SingleAnnotation], properties: AnnotationDetailForCli
-    ):
-        """
-        アノテーションのプロパティを変更する。
-
-        【注意】取扱注意
-
-        Args:
-            annotation_list: 変更対象のアノテーション一覧
-            properties: 変更後のプロパティ
-
-        Returns:
-            ``メソッドのレスポンス
-
-        """
-
-        def to_properties_from_cli(
-            annotation_list: List[SingleAnnotation], properties: AnnotationDetailForCli
-        ) -> List[AnnotationDetail]:
-            api_properties = []
-            for annotation in annotation_list:
-                annotation, _ = self.service.api.get_editor_annotation(
-                    annotation["project_id"], annotation["task_id"], annotation["input_data_id"]
-                )
-                detail = annotation["details"][0]
-                api_properties.append(
-                    AnnotationDetail(
-                        annotation_id=properties.annotation_id if properties.annotation_id is not None
-                        else detail["annotation_id"],
-                        account_id=properties.account_id if properties.account_id is not None
-                        else detail["account_id"],
-                        label_id=properties.label_id if properties.label_id is not None
-                        else detail["label_id"],
-                        is_protected=properties.is_protected if properties.is_protected is not None
-                        else detail["is_protected"],
-                        data_holding_type=properties.data_holding_type if properties.data_holding_type is not None
-                        else detail["data_holding_type"],
-                        additional_data_list=properties.additional_data_list
-                        if properties.additional_data_list is not None
-                        else detail["additional_data_list"],
-                        data=properties.data if properties.data is not None
-                        else detail["data"],
-                        path=properties.path,
-                        etag=None,
-                        url=None,
-                        created_datetime=properties.created_datetime,
-                        updated_datetime=properties.updated_datetime,
-                    )
-                )
-            return api_properties
-
-        def _to_request_body_elm(annotation: Dict[str, Any]):
-            return(
-                self.service.api.put_annotation(
-                    annotation["project_id"], annotation["task_id"], annotation["input_data_id"],
-                    {
-                        "project_id": annotation["project_id"],
-                        "task_id": annotation["task_id"],
-                        "input_data_id": annotation["input_data_id"],
-                        "details": details_for_dict,
-                        "updated_datetime": annotation["updated_datetime"]
-                    }
-                )
-            )
-
-        details = to_properties_from_cli(annotation_list, properties)
-        for idx, annotation in enumerate(annotation_list):
-            details_for_dict = [asdict(details[idx])]
-            _to_request_body_elm(annotation)
-        return True
 
     def set_account_id_of_task_query(self, project_id: str, task_query: TaskQuery) -> TaskQuery:
         """
