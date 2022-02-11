@@ -1,13 +1,12 @@
 import argparse
 import logging
 import sys
-from dataclasses import asdict, dataclass
+from dataclasses import dataclass
 from pathlib import Path
 from typing import Any, Dict, List, Optional
 
 import annofabapi
 import requests
-from annofabapi.dataclass.annotation import AnnotationDetail
 from annofabapi.dataclass.task import Task
 from annofabapi.models import ProjectMemberRole, SingleAnnotation, TaskStatus
 
@@ -66,7 +65,8 @@ class ChangePropertiesOfAnnotation(AbstractCommandLineInterface):
         """
 
         def change_annotation_properties(
-            self, annotation_list: List[SingleAnnotation], properties: AnnotationDetailForCli
+            self, project_id: str, task_id: str, annotation_list: List[SingleAnnotation],
+            properties: AnnotationDetailForCli
         ):
             """
             アノテーションのプロパティを変更する。
@@ -84,33 +84,29 @@ class ChangePropertiesOfAnnotation(AbstractCommandLineInterface):
 
             def to_properties_from_cli(
                 annotation_list: List[SingleAnnotation], properties: AnnotationDetailForCli
-            ) -> List[AnnotationDetail]:
-                api_properties = []
+            ) -> List[Dict[str, Any]]:
+                annotations_for_api = []
+                annotation_details_by_input_data_id: Dict[str, List[Dict[str, Any]]] = dict()
                 for annotation in annotation_list:
-                    annotation, _ = self.service.api.get_editor_annotation(
-                        annotation["project_id"], annotation["task_id"], annotation["input_data_id"]
+                    input_data_id = annotation["input_data_id"]
+                    if input_data_id not in annotation_details_by_input_data_id:
+                        annotation_details_by_input_data_id[input_data_id] = []
+                    annotation_details_by_input_data_id[input_data_id].append(annotation["detail"])
+
+                for input_data_id, annotation_details in annotation_details_by_input_data_id.items():
+                    annotations, _ = self.service.api.get_editor_annotation(
+                        project_id, task_id, input_data_id
                     )
-                    detail = annotation["details"][0]
-                    api_properties.append(
-                        AnnotationDetail(
-                            annotation_id=detail["annotation_id"],
-                            account_id=detail["account_id"],
-                            label_id=detail["label_id"],
-                            is_protected=properties.is_protected if properties.is_protected is not None
-                            else detail["is_protected"],
-                            data_holding_type=detail["data_holding_type"],
-                            additional_data_list=detail["additional_data_list"],
-                            data=detail["data"],
-                            path=None,
-                            etag=None,
-                            url=None,
-                            created_datetime=None,
-                            updated_datetime=None,
-                        )
-                    )
-                return api_properties
+                    for idx, single_annotation in enumerate(annotations["details"]):
+                        for annotation_detail in annotation_details:
+                            if annotation_detail["annotation_id"] != single_annotation["annotation_id"]:
+                                continue
+                            annotations["details"][idx]["is_protected"] = properties.is_protected
+                    annotations_for_api.append(annotations)
+                return annotations_for_api
 
             def _to_request_body_elm(annotation: Dict[str, Any]):
+                print(annotation["details"])
                 return(
                     self.service.api.put_annotation(
                         annotation["project_id"], annotation["task_id"], annotation["input_data_id"],
@@ -118,15 +114,14 @@ class ChangePropertiesOfAnnotation(AbstractCommandLineInterface):
                             "project_id": annotation["project_id"],
                             "task_id": annotation["task_id"],
                             "input_data_id": annotation["input_data_id"],
-                            "details": details_for_dict,
+                            "details": annotation["details"],
                             "updated_datetime": annotation["updated_datetime"],
                         }
                     )
                 )
 
-            details = to_properties_from_cli(annotation_list, properties)
-            for idx, annotation in enumerate(annotation_list):
-                details_for_dict = [asdict(details[idx])]
+            annotations = to_properties_from_cli(annotation_list, properties)
+            for annotation in annotations:
                 _to_request_body_elm(annotation)
 
         dict_task = self.service.wrapper.get_task_or_none(project_id, task_id)
@@ -161,7 +156,7 @@ class ChangePropertiesOfAnnotation(AbstractCommandLineInterface):
             self.dump_annotation_obj.dump_annotation_for_task(project_id, task_id, output_dir=backup_dir)
 
         try:
-            change_annotation_properties(self, annotation_list, properties)
+            change_annotation_properties(self, project_id, task_id, annotation_list, properties)
             logger.info(f"task_id={task_id}: アノテーションのプロパティを変更しました。")
         except requests.HTTPError as e:
             logger.warning(e)
