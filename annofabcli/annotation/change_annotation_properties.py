@@ -87,14 +87,15 @@ class ChangePropertiesOfAnnotation(AbstractCommandLineInterface):
                 annotation_list: List[SingleAnnotation], properties: AnnotationDetailForCli
             ) -> List[Dict[str, Any]]:
                 annotations_for_api = []
-                annotation_details_by_input_data_id: Dict[str, List[Dict[str, Any]]] = {}
+                annotation_details_by_input_data: Dict[str, List[Dict[str, Any]]] = {}
+
                 for annotation in annotation_list:
                     input_data_id = annotation["input_data_id"]
-                    if input_data_id not in annotation_details_by_input_data_id:
-                        annotation_details_by_input_data_id[input_data_id] = []
-                    annotation_details_by_input_data_id[input_data_id].append(annotation["detail"])
+                    if input_data_id not in annotation_details_by_input_data:
+                        annotation_details_by_input_data[input_data_id] = []
+                    annotation_details_by_input_data[input_data_id].append(annotation["detail"])
 
-                for input_data_id, annotation_details in annotation_details_by_input_data_id.items():
+                for input_data_id, annotation_details in annotation_details_by_input_data.items():
                     annotations, _ = self.service.api.get_editor_annotation(
                         project_id, task_id, input_data_id
                     )
