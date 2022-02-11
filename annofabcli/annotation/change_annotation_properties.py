@@ -32,71 +32,6 @@ class AnnotationDetailForCli(DataClassJsonMixin):
     is_protected: Optional[bool] = None
 
 
-def ch(
-        annotation_list: List[SingleAnnotation], properties: AnnotationDetailForCli
-):
-    """
-    アノテーションのプロパティを変更する。
-
-    【注意】取扱注意
-
-    Args:
-        annotation_list: 変更対象のアノテーション一覧
-        properties: 変更後のプロパティ
-
-    Returns:
-        ``メソッドのレスポンス
-
-    """
-
-    def to_properties_from_cli(
-        annotation_list: List[SingleAnnotation], properties: AnnotationDetailForCli
-    ) -> List[AnnotationDetail]:
-        api_properties = []
-        for annotation in annotation_list:
-            annotation, _ = self.service.api.get_editor_annotation(
-                annotation["project_id"], annotation["task_id"], annotation["input_data_id"]
-            )
-            detail = annotation["details"][0]
-            api_properties.append(
-                AnnotationDetail(
-                    annotation_id=detail["annotation_id"],
-                    account_id=detail["account_id"],
-                    label_id=detail["label_id"],
-                    is_protected=properties.is_protected if properties.is_protected is not None
-                    else detail["is_protected"],
-                    data_holding_type=detail["data_holding_type"],
-                    additional_data_list=detail["additional_data_list"],
-                    data=detail["data"],
-                    path=None,
-                    etag=None,
-                    url=None,
-                    created_datetime=None,
-                    updated_datetime=None,
-                )
-            )
-        return api_properties
-
-    def _to_request_body_elm(annotation: Dict[str, Any]):
-        return(
-            self.service.api.put_annotation(
-                annotation["project_id"], annotation["task_id"], annotation["input_data_id"],
-                {
-                    "project_id": annotation["project_id"],
-                    "task_id": annotation["task_id"],
-                    "input_data_id": annotation["input_data_id"],
-                    "details": details_for_dict,
-                    "updated_datetime": annotation["updated_datetime"],
-                }
-            )
-        )
-
-    details = to_properties_from_cli(annotation_list, properties)
-    for idx, annotation in enumerate(annotation_list):
-        details_for_dict = [asdict(details[idx])]
-        _to_request_body_elm(annotation)
-
-
 class ChangePropertiesOfAnnotation(AbstractCommandLineInterface):
     """
     アノテーションのプロパティを変更
@@ -129,6 +64,71 @@ class ChangePropertiesOfAnnotation(AbstractCommandLineInterface):
             backup_dir: アノテーションをバックアップとして保存するディレクトリ。指定しない場合は、バックアップを取得しない。
 
         """
+
+        def change_annotation_properties(
+            self, annotation_list: List[SingleAnnotation], properties: AnnotationDetailForCli
+        ):
+            """
+            アノテーションのプロパティを変更する。
+
+            【注意】取扱注意
+
+            Args:
+                annotation_list: 変更対象のアノテーション一覧
+                properties: 変更後のプロパティ
+
+            Returns:
+                ``メソッドのレスポンス
+
+            """
+
+            def to_properties_from_cli(
+                annotation_list: List[SingleAnnotation], properties: AnnotationDetailForCli
+            ) -> List[AnnotationDetail]:
+                api_properties = []
+                for annotation in annotation_list:
+                    annotation, _ = self.service.api.get_editor_annotation(
+                        annotation["project_id"], annotation["task_id"], annotation["input_data_id"]
+                    )
+                    detail = annotation["details"][0]
+                    api_properties.append(
+                        AnnotationDetail(
+                            annotation_id=detail["annotation_id"],
+                            account_id=detail["account_id"],
+                            label_id=detail["label_id"],
+                            is_protected=properties.is_protected if properties.is_protected is not None
+                            else detail["is_protected"],
+                            data_holding_type=detail["data_holding_type"],
+                            additional_data_list=detail["additional_data_list"],
+                            data=detail["data"],
+                            path=None,
+                            etag=None,
+                            url=None,
+                            created_datetime=None,
+                            updated_datetime=None,
+                        )
+                    )
+                return api_properties
+
+            def _to_request_body_elm(annotation: Dict[str, Any]):
+                return(
+                    self.service.api.put_annotation(
+                        annotation["project_id"], annotation["task_id"], annotation["input_data_id"],
+                        {
+                            "project_id": annotation["project_id"],
+                            "task_id": annotation["task_id"],
+                            "input_data_id": annotation["input_data_id"],
+                            "details": details_for_dict,
+                            "updated_datetime": annotation["updated_datetime"],
+                        }
+                    )
+                )
+
+            details = to_properties_from_cli(annotation_list, properties)
+            for idx, annotation in enumerate(annotation_list):
+                details_for_dict = [asdict(details[idx])]
+                _to_request_body_elm(annotation)
+
         dict_task = self.service.wrapper.get_task_or_none(project_id, task_id)
         if dict_task is None:
             logger.warning(f"task_id = '{task_id}' は存在しません。")
@@ -161,7 +161,7 @@ class ChangePropertiesOfAnnotation(AbstractCommandLineInterface):
             self.dump_annotation_obj.dump_annotation_for_task(project_id, task_id, output_dir=backup_dir)
 
         try:
-            ch(annotation_list, properties)
+            change_annotation_properties(self, annotation_list, properties)
             logger.info(f"task_id={task_id}: アノテーションのプロパティを変更しました。")
         except requests.HTTPError as e:
             logger.warning(e)
