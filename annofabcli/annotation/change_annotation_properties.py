@@ -10,6 +10,8 @@ import requests
 from annofabapi.dataclass.task import Task
 from annofabapi.models import ProjectMemberRole, SingleAnnotation, TaskStatus
 
+from dataclasses_json import DataClassJsonMixin
+
 import annofabcli
 from annofabcli import AnnofabApiFacade
 from annofabcli.annotation.dump_annotation import DumpAnnotation
@@ -21,7 +23,6 @@ from annofabcli.common.cli import (
     get_json_from_args,
 )
 from annofabcli.common.facade import AnnotationQuery, AnnotationQueryForCli
-from dataclasses_json import DataClassJsonMixin
 
 logger = logging.getLogger(__name__)
 
@@ -86,7 +87,7 @@ class ChangePropertiesOfAnnotation(AbstractCommandLineInterface):
                 annotation_list: List[SingleAnnotation], properties: AnnotationDetailForCli
             ) -> List[Dict[str, Any]]:
                 annotations_for_api = []
-                annotation_details_by_input_data_id: Dict[str, List[Dict[str, Any]]] = dict()
+                annotation_details_by_input_data_id: Dict[str, List[Dict[str, Any]]] = {}
                 for annotation in annotation_list:
                     input_data_id = annotation["input_data_id"]
                     if input_data_id not in annotation_details_by_input_data_id:
