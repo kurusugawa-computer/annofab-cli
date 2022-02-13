@@ -99,11 +99,11 @@ class ChangePropertiesOfAnnotation(AbstractCommandLineInterface):
                     annotations, _ = self.service.api.get_editor_annotation(
                         project_id, task_id, input_data_id
                     )
-                    for idx, single_annotation in enumerate(annotations["details"]):
+                    for single_annotation in annotations["details"]:
                         for annotation_detail in annotation_details:
                             if annotation_detail["annotation_id"] != single_annotation["annotation_id"]:
                                 continue
-                            annotations["details"][idx]["is_protected"] = properties.is_protected
+                            single_annotation["is_protected"] = properties.is_protected
                     annotations_for_api.append(annotations)
                 return annotations_for_api
 
