@@ -47,8 +47,8 @@ class ChangePropertiesOfAnnotation(AbstractCommandLineInterface):
         self,
         project_id: str,
         task_id: str,
-        annotation_query: AnnotationQuery,
         properties: AnnotationDetailForCli,
+        annotation_query: Optional[AnnotationQuery] = None,
         force: bool = False,
         backup_dir: Optional[Path] = None,
     ) -> None:
@@ -167,8 +167,8 @@ class ChangePropertiesOfAnnotation(AbstractCommandLineInterface):
         self,
         project_id: str,
         task_id_list: List[str],
-        annotation_query: AnnotationQuery,
         properties: AnnotationDetailForCli,
+        annotation_query: Optional[AnnotationQuery] = None,
         force: bool = False,
         backup_dir: Optional[Path] = None,
     ):
@@ -185,8 +185,8 @@ class ChangePropertiesOfAnnotation(AbstractCommandLineInterface):
             self.change_properties_for_task(
                 project_id,
                 task_id,
-                annotation_query=annotation_query,
                 properties=properties,
+                annotation_query=annotation_query,
                 force=force,
                 backup_dir=backup_dir,
             )
@@ -197,12 +197,15 @@ class ChangePropertiesOfAnnotation(AbstractCommandLineInterface):
         task_id_list = annofabcli.common.cli.get_list_from_args(args.task_id)
 
         dict_annotation_query = get_json_from_args(args.annotation_query)
-        annotation_query_for_cli = AnnotationQueryForCli.from_dict(dict_annotation_query)
-        try:
-            annotation_query = self.facade.to_annotation_query_from_cli(project_id, annotation_query_for_cli)
-        except ValueError as e:
-            print(f"{self.COMMON_MESSAGE} argument '--annotation_query' の値が不正です。{e}", file=sys.stderr)
-            sys.exit(COMMAND_LINE_ERROR_STATUS_CODE)
+        if dict_annotation_query is not None:
+            annotation_query_for_cli = AnnotationQueryForCli.from_dict(dict_annotation_query)
+            try:
+                annotation_query = self.facade.to_annotation_query_from_cli(project_id, annotation_query_for_cli)
+            except ValueError as e:
+                print(f"{self.COMMON_MESSAGE} argument '--annotation_query' の値が不正です。{e}", file=sys.stderr)
+                sys.exit(COMMAND_LINE_ERROR_STATUS_CODE)
+        else:
+            annotation_query = None
 
         properties_of_dict = get_json_from_args(args.properties)
         properties_for_cli = AnnotationDetailForCli.from_dict(properties_of_dict)
@@ -218,8 +221,8 @@ class ChangePropertiesOfAnnotation(AbstractCommandLineInterface):
         self.change_annotation_properties(
             project_id,
             task_id_list,
-            annotation_query=annotation_query,
             properties=properties_for_cli,
+            annotation_query=annotation_query,
             force=args.force,
             backup_dir=backup_dir,
         )
@@ -245,7 +248,7 @@ def parse_args(parser: argparse.ArgumentParser):
         "-aq",
         "--annotation_query",
         type=str,
-        required=True,
+        required=False,
         help="変更対象のアノテーションを検索する条件をJSON形式で指定します。"
         "``label_id`` または ``label_name_en`` のいずれかは必ず指定してください。"
         "``file://`` を先頭に付けると、JSON形式のファイルを指定できます。"
