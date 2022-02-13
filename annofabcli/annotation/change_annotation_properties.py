@@ -108,7 +108,6 @@ class ChangePropertiesOfAnnotation(AbstractCommandLineInterface):
                 return annotations_for_api
 
             def _to_request_body_elm(annotation: Dict[str, Any]):
-                print(annotation["details"])
                 return(
                     self.service.api.put_annotation(
                         annotation["project_id"], annotation["task_id"], annotation["input_data_id"],
