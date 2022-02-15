@@ -24,7 +24,8 @@ lint:
 
 test:
     # 更新の競合が発生する可能性があるので、並列実行しない
-	poetry run pytest --cov=annofabcli --cov-report=html tests -m "not submittig_job and not depending_on_annotation_specs"
+	# skip対象のmakersを実行しないように"-m"で指定する
+	poetry run pytest --cov=annofabcli --cov-report=html tests -m "not submitting_job and not depending_on_annotation_specs" 
 
 publish:
 	poetry publish --build
