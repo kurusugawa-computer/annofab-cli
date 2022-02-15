@@ -131,7 +131,7 @@ class ChangePropertiesOfAnnotation(AbstractCommandLineInterface):
         dict_task = self.service.wrapper.get_task_or_none(project_id, task_id)
         if dict_task is None:
             logger.warning(f"task_id = '{task_id}' は存在しません。")
-            return
+            return False
 
         logger.debug(
             f"task_id={task_id}, phase={dict_task['phase']}, status={dict_task['status']}, "
@@ -288,7 +288,9 @@ def parse_args(parser: argparse.ArgumentParser):
         "--properties",
         type=str,
         required=True,
-        help="変更後のプロパティをJSON形式で指定します。変更可能なキーは ``is_protected`` です。" "``file://`` を先頭に付けると、JSON形式のファイルを指定できます。" f"(ex): ``{EXAMPLE_PROPERTIES}``",
+        help="変更後のプロパティをJSON形式で指定します。変更可能なキーは ``is_protected`` です。"
+        "``file://`` を先頭に付けると、JSON形式のファイルを指定できます。"
+        f"(ex): ``{EXAMPLE_PROPERTIES}``",
     )
 
     parser.add_argument(
