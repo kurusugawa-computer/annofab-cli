@@ -6,10 +6,8 @@ from pathlib import Path
 from typing import Any, Dict, List, Optional
 
 import annofabapi
-import requests
-from annofabapi.dataclass.task import Task
 from annofabapi.models import ProjectMemberRole, SingleAnnotation, TaskStatus
-
+from annofabapi.utils import can_put_annotation, str_now
 from dataclasses_json import DataClassJsonMixin
 
 import annofabcli
@@ -51,7 +49,7 @@ class ChangePropertiesOfAnnotation(AbstractCommandLineInterface):
         annotation_query: Optional[AnnotationQuery] = None,
         force: bool = False,
         backup_dir: Optional[Path] = None,
-    ) -> None:
+    ) -> bool:
         """
         タスクに対してアノテーションのプロパティを変更する。
 
@@ -66,8 +64,11 @@ class ChangePropertiesOfAnnotation(AbstractCommandLineInterface):
         """
 
         def change_annotation_properties(
-            self, project_id: str, task_id: str, annotation_list: List[SingleAnnotation],
-            properties: AnnotationDetailForCli
+            self,
+            project_id: str,
+            task_id: str,
+            annotation_list: List[SingleAnnotation],
+            properties: AnnotationDetailForCli,
         ):
             """
             アノテーションのプロパティを変更する。
@@ -83,6 +84,8 @@ class ChangePropertiesOfAnnotation(AbstractCommandLineInterface):
 
             """
 
+            now_datetime = str_now()
+
             def to_properties_from_cli(
                 annotation_list: List[SingleAnnotation], properties: AnnotationDetailForCli
             ) -> List[Dict[str, Any]]:
@@ -96,29 +99,29 @@ class ChangePropertiesOfAnnotation(AbstractCommandLineInterface):
                     annotation_details_by_input_data[input_data_id].append(annotation["detail"])
 
                 for input_data_id, annotation_details in annotation_details_by_input_data.items():
-                    annotations, _ = self.service.api.get_editor_annotation(
-                        project_id, task_id, input_data_id
-                    )
+                    annotations, _ = self.service.api.get_editor_annotation(project_id, task_id, input_data_id)
                     for single_annotation in annotations["details"]:
                         for annotation_detail in annotation_details:
                             if annotation_detail["annotation_id"] != single_annotation["annotation_id"]:
                                 continue
                             single_annotation["is_protected"] = properties.is_protected
+                            # 更新日時も一緒に変更する
+                            single_annotation["updated_datetime"] = now_datetime
                     annotations_for_api.append(annotations)
                 return annotations_for_api
 
             def _to_request_body_elm(annotation: Dict[str, Any]):
-                return(
-                    self.service.api.put_annotation(
-                        annotation["project_id"], annotation["task_id"], annotation["input_data_id"],
-                        {
-                            "project_id": annotation["project_id"],
-                            "task_id": annotation["task_id"],
-                            "input_data_id": annotation["input_data_id"],
-                            "details": annotation["details"],
-                            "updated_datetime": annotation["updated_datetime"],
-                        }
-                    )
+                return self.service.api.put_annotation(
+                    annotation["project_id"],
+                    annotation["task_id"],
+                    annotation["input_data_id"],
+                    {
+                        "project_id": annotation["project_id"],
+                        "task_id": annotation["task_id"],
+                        "input_data_id": annotation["input_data_id"],
+                        "details": annotation["details"],
+                        "updated_datetime": annotation["updated_datetime"],
+                    },
                 )
 
             annotations = to_properties_from_cli(annotation_list, properties)
@@ -130,28 +133,43 @@ class ChangePropertiesOfAnnotation(AbstractCommandLineInterface):
             logger.warning(f"task_id = '{task_id}' は存在しません。")
             return
 
-        task: Task = Task.from_dict(dict_task)
-        logger.info(
-            f"task_id={task.task_id}, phase={task.phase.value}, status={task.status.value}, "
-            f"updated_datetime={task.updated_datetime}"
+        logger.debug(
+            f"task_id={task_id}, phase={dict_task['phase']}, status={dict_task['status']}, "
+            f"updated_datetime={dict_task['updated_datetime']}"
         )
-        if task.status == TaskStatus.WORKING:
-            logger.warning(f"task_id={task_id}: タスクが作業中状態のため、スキップします。")
-            return
 
-        if not force:
-            if task.status == TaskStatus.COMPLETE:
-                logger.warning(f"task_id={task_id}: タスクが完了状態のため、スキップします。")
-                return
+        if dict_task["status"] in [TaskStatus.WORKING.value, TaskStatus.COMPLETE.value]:
+            logger.info(f"タスク'{task_id}'は作業中または受入完了状態のため、アノテーションプロパティの変更をスキップします。 status={dict_task['status']}")
+            return False
+
+        old_account_id: Optional[str] = None
+        changed_operator = False
+
+        if force:
+            if not can_put_annotation(dict_task, self.service.api.account_id):
+                logger.debug(f"タスク'{task_id}' の担当者を自分自身に変更します。")
+                self.service.wrapper.change_task_operator(
+                    project_id, task_id, operator_account_id=self.service.api.account_id
+                )
+                changed_operator = True
+                old_account_id = dict_task["account_id"]
+
+        else:
+            if not can_put_annotation(dict_task, self.service.api.account_id):
+                logger.debug(
+                    f"タスク'{task_id}'は、過去に誰かに割り当てられたタスクで、現在の担当者が自分自身でないため、アノテーションのプロパティの変更をスキップします。"
+                    f"担当者を自分自身に変更してアノテーションのプロパティを変更する場合は `--force` を指定してください。"
+                )
+                return False
 
         annotation_list = self.facade.get_annotation_list_for_task(project_id, task_id, query=annotation_query)
         logger.info(f"task_id='{task_id}'の変更対象アノテーション数：{len(annotation_list)}")
         if len(annotation_list) == 0:
             logger.info(f"task_id='{task_id}'には変更対象のアノテーションが存在しないので、スキップします。")
-            return
+            return False
 
         if not self.confirm_processing(f"task_id='{task_id}' のアノテーションのプロパティを変更しますか？"):
-            return
+            return False
 
         if backup_dir is not None:
             self.dump_annotation_obj.dump_annotation_for_task(project_id, task_id, output_dir=backup_dir)
@@ -159,9 +177,15 @@ class ChangePropertiesOfAnnotation(AbstractCommandLineInterface):
         try:
             change_annotation_properties(self, project_id, task_id, annotation_list, properties)
             logger.info(f"task_id={task_id}: アノテーションのプロパティを変更しました。")
-        except requests.HTTPError as e:
-            logger.warning(e)
-            logger.warning(f"task_id={task_id}: アノテーションのプロパティの変更に失敗しました。")
+            return True
+        except Exception:  # pylint: disable=broad-except
+            logger.warning(f"task_id={task_id}: アノテーションのプロパティの変更に失敗しました。", exc_info=True)
+            return False
+        finally:
+            if changed_operator:
+                logger.debug(f"タスク'{task_id}' の担当者を元に戻します。")
+                old_account_id = dict_task["account_id"]
+                self.service.wrapper.change_task_operator(project_id, task_id, operator_account_id=old_account_id)
 
     def change_annotation_properties(
         self,
@@ -181,15 +205,19 @@ class ChangePropertiesOfAnnotation(AbstractCommandLineInterface):
             backup_dir.mkdir(exist_ok=True, parents=True)
 
         for task_index, task_id in enumerate(task_id_list):
-            logger.info(f"{task_index+1} / {len(task_id_list)} 件目: タスク '{task_id}' のアノテーションのプロパティを変更します。")
-            self.change_properties_for_task(
-                project_id,
-                task_id,
-                properties=properties,
-                annotation_query=annotation_query,
-                force=force,
-                backup_dir=backup_dir,
-            )
+            logger.debug(f"{task_index+1} / {len(task_id_list)} 件目: タスク '{task_id}' のアノテーションのプロパティを変更します。")
+
+            try:
+                self.change_properties_for_task(
+                    project_id,
+                    task_id,
+                    properties=properties,
+                    annotation_query=annotation_query,
+                    force=force,
+                    backup_dir=backup_dir,
+                )
+            except Exception:  # pylint: disable=broad-except
+                logger.warning(f"task_id={task_id}: アノテーションのプロパティの変更に失敗しました。", exc_info=True)
 
     def main(self):
         args = self.args
@@ -263,7 +291,9 @@ def parse_args(parser: argparse.ArgumentParser):
         help="変更後のプロパティをJSON形式で指定します。" "``file://`` を先頭に付けると、JSON形式のファイルを指定できます。" f"(ex): ``{EXAMPLE_PROPERTIES}``",
     )
 
-    parser.add_argument("--force", action="store_true", help="完了状態のタスクのアノテーションのプロパティも変更します。")
+    parser.add_argument(
+        "--force", action="store_true", help="過去に割り当てられていて現在の担当者が自分自身でない場合、タスクの担当者を自分自身に変更してからアノテーションプロパティを変更します。"
+    )
 
     parser.add_argument(
         "--backup",
