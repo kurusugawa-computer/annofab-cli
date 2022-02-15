@@ -69,7 +69,7 @@ CSV出力
 
 
 
-`out.csv <https://github.com/kurusugawa-computer/annofab-cli/blob/master/docs/command_reference/task/list_added_task_history/out.csv>`_
+`out.csv <https://github.com/kurusugawa-computer/annofab-cli/blob/main/docs/command_reference/task/list_added_task_history/out.csv>`_
 
 出力されたCSVの以下の列は、タスク履歴から取得した情報です。
 

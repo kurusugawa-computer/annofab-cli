@@ -341,7 +341,7 @@ class RejectTasks(AbstractCommandLineInterface):
 
         if args.parallelism is not None and not args.yes:
             print(
-                f"{self.COMMON_MESSAGE} argument --parallelism: '--parallelism'を指定するときは、必ず'--yes'を指定してください。",
+                f"{self.COMMON_MESSAGE} argument --parallelism: '--parallelism'を指定するときは、必ず ``--yes`` を指定してください。",
                 file=sys.stderr,
             )
             return False
@@ -378,7 +378,7 @@ class RejectTasks(AbstractCommandLineInterface):
                     f"{self.COMMON_MESSAGE} argument --comment_data: カスタムプロジェクトに検査コメントを付与する場合は必須です。",
                     file=sys.stderr,
                 )
-                return
+                sys.exit(COMMAND_LINE_ERROR_STATUS_CODE)
 
         main_obj = RejectTasksMain(self.service, comment_data=comment_data, all_yes=self.all_yes)
         main_obj.reject_task_list(
@@ -410,7 +410,7 @@ def parse_args(parser: argparse.ArgumentParser):
         "-c",
         "--comment",
         type=str,
-        help="差し戻すときに付与する検査コメントを指定します。検査コメントはタスク内の先頭画像に付与します。付与する位置は'--comment_data'で指定できます。",
+        help="差し戻すときに付与する検査コメントを指定します。検査コメントはタスク内の先頭画像に付与します。付与する位置は ``--comment_data`` で指定できます。",
     )
 
     parser.add_argument(
@@ -433,7 +433,7 @@ def parse_args(parser: argparse.ArgumentParser):
     assign_group.add_argument(
         "--assigned_annotator_user_id",
         type=str,
-        help="差し戻したタスクに割り当てるユーザのuser_idを指定します。" "指定しない場合は、最後のannotation phaseの担当者が割り当てられます。",
+        help="差し戻したタスクに割り当てるユーザのuser_idを指定します。" "指定しない場合は、最後の教師付フェーズの担当者が割り当てられます。",
     )
 
     parser.add_argument("--cancel_acceptance", action="store_true", help="受入完了状態を取り消して、タスクを差し戻します。")
@@ -441,7 +441,7 @@ def parse_args(parser: argparse.ArgumentParser):
     argument_parser.add_task_query()
 
     parser.add_argument(
-        "--parallelism", type=int, help="使用するプロセス数（並列度）を指定してください。指定する場合は必ず'--yes'を指定してください。指定しない場合は、逐次的に処理します。"
+        "--parallelism", type=int, help="使用するプロセス数（並列度）を指定してください。指定する場合は必ず ``--yes`` を指定してください。指定しない場合は、逐次的に処理します。"
     )
     parser.add_argument("--dryrun", action="store_true", help="差し戻しが行われた時の結果を表示しますが、実際はタスクを差し戻しません。")
 

@@ -37,7 +37,7 @@ CSV出力
 
     $ annofabcli job list --project_id prj1 --job_type gen-annotation --format csv --output out.csv
 
-`out.csv <https://github.com/kurusugawa-computer/annofab-cli/blob/master/docs/command_reference/job/list/out.csv>`_
+`out.csv <https://github.com/kurusugawa-computer/annofab-cli/blob/main/docs/command_reference/job/list/out.csv>`_
 
 JSON出力
 ----------------------------------------------

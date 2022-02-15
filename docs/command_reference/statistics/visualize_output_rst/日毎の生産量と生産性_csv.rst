@@ -5,7 +5,7 @@
 
 全体の生産量（作業したタスク数など）や生産性が、日毎に記載されています。
 
-`日毎の生産量と生産性.csv <https://github.com/kurusugawa-computer/annofab-cli/blob/master/docs/command_reference/statistics/visualize/out_dir/日毎の生産量と生産性.csv>`_
+`日毎の生産量と生産性.csv <https://github.com/kurusugawa-computer/annofab-cli/blob/main/docs/command_reference/statistics/visualize/out_dir/日毎の生産量と生産性.csv>`_
 
 参照頻度が高い列の詳細を、以下に記載します。
 

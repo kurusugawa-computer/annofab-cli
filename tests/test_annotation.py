@@ -3,6 +3,7 @@ import os
 from pathlib import Path
 
 import annofabapi
+import pytest
 
 from annofabcli.__main__ import main
 
@@ -87,6 +88,22 @@ class TestCommandLine:
                 str(data_dir / "imported-annotation.zip"),
                 "--task_id",
                 task_id,
+                "--overwrite",
+                "--yes",
+            ]
+        )
+
+    @pytest.mark.skip(reason="3dpc editorプロジェクトに対するテストなので、スキップします。")
+    def test_import_3dpc_annotation(self):
+        project_id_of_3dpc = annofab_config["3dpc_project_id"]
+        main(
+            [
+                "annotation",
+                "import",
+                "--project_id",
+                project_id_of_3dpc,
+                "--annotation",
+                str(data_dir / "3dpc-simple-annotation"),
                 "--overwrite",
                 "--yes",
             ]
