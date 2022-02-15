@@ -288,7 +288,7 @@ def parse_args(parser: argparse.ArgumentParser):
         "--properties",
         type=str,
         required=True,
-        help="変更後のプロパティをJSON形式で指定します。" "``file://`` を先頭に付けると、JSON形式のファイルを指定できます。" f"(ex): ``{EXAMPLE_PROPERTIES}``",
+        help="変更後のプロパティをJSON形式で指定します。変更可能なキーは ``is_protected`` です。" "``file://`` を先頭に付けると、JSON形式のファイルを指定できます。" f"(ex): ``{EXAMPLE_PROPERTIES}``",
     )
 
     parser.add_argument(
