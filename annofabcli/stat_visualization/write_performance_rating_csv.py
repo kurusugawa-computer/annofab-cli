@@ -1,11 +1,13 @@
 import argparse
 import logging
 from dataclasses import dataclass
+from enum import Enum
 from pathlib import Path
 from typing import Any, Dict, List, Optional, Set
 
 import numpy
 import pandas
+from annofabapi.models import TaskPhase
 
 import annofabcli
 from annofabcli.common.cli import AbstractCommandLineWithoutWebapiInterface, get_list_from_args
@@ -23,182 +25,191 @@ class ResultDataframe:
     quality_per_annotation: pandas.DataFrame
 
 
-def join_annotation_productivity(
-    df: pandas.DataFrame,
-    df_performance: pandas.DataFrame,
-    project_title: str,
-    threshold_worktime: Optional[float],
-    threshold_task_count: Optional[int],
-) -> pandas.DataFrame:
-    df_joined = df_performance
-    df_joined = df_joined.set_index("user_id")
-
-    if threshold_worktime is not None:
-        df_joined = df_joined[df_joined[("actual_worktime_hour", "annotation")] >= threshold_worktime]
-
-    if threshold_task_count is not None:
-        df_joined = df_joined[df_joined[("task_count", "annotation")] > threshold_task_count]
-
-    df_tmp = df_joined[[("actual_worktime_hour/annotation_count", "annotation")]]
-    df_tmp.columns = pandas.MultiIndex.from_tuples(
-        [(project_title, "actual_worktime_hour/annotation_count__annotation")]
-    )
-    return df.join(df_tmp)
+class PerformanceUnit(Enum):
+    ANNOTATION_COUNT = "annotation_count"
+    INPUT_DATA_COUNT = "input_data_count"
 
 
-def join_inspection_acceptance_productivity(
-    df: pandas.DataFrame,
-    df_performance: pandas.DataFrame,
-    project_title: str,
-    threshold_worktime: Optional[float],
-    threshold_task_count: Optional[int],
-) -> pandas.DataFrame:
-    def _join_inspection():
-        if ("actual_worktime_hour/annotation_count", "inspection") not in df_performance.columns:
-            return df
+class WorktimeType(Enum):
+    ACTUAL_WORKTIME_HOUR = "actual_worktime_hour"
+    MONITORED_WORKTIME_HOUR = "monitored_worktime_hour"
 
+
+class CollectingPerformanceInfo:
+    """
+    メンバごとの生産性と品質.csv からパフォーマンスの指標となる情報を収集します。
+    """
+
+    def __init__(
+        self,
+        worktime_type: WorktimeType,
+        performance_unit: PerformanceUnit,
+        threshold_worktime: Optional[float],
+        threshold_task_count: Optional[int],
+    ) -> None:
+        self.worktime_type = worktime_type
+        self.performance_unit = performance_unit
+        self.threshold_worktime = threshold_worktime
+        self.threshold_task_count = threshold_task_count
+
+    def filter_df_with_threshold(self, df, phase: TaskPhase):
+        if self.threshold_worktime is not None:
+            df = df[df[(self.worktime_type.value, phase.value)] >= self.threshold_worktime]
+
+        if self.threshold_task_count is not None:
+            df = df[df[("task_count", phase.value)] > self.threshold_task_count]
+
+        return df
+
+    def join_annotation_productivity(
+        self,
+        df: pandas.DataFrame,
+        df_performance: pandas.DataFrame,
+        project_title: str,
+    ) -> pandas.DataFrame:
         df_joined = df_performance
-        if threshold_worktime is not None:
-            df_joined = df_joined[df_joined[("actual_worktime_hour", "inspection")] >= threshold_worktime]
+        df_joined = df_joined.set_index("user_id")
 
-        if threshold_task_count is not None:
-            df_joined = df_joined[df_joined[("task_count", "inspection")] > threshold_task_count]
+        phase = TaskPhase.ANNOTATION
 
-        df_joined.set_index("user_id", inplace=True)
-        df_tmp = df_joined[[("actual_worktime_hour/annotation_count", "inspection")]]
+        df_joined = self.filter_df_with_threshold(df_joined, phase)
+
+        df_tmp = df_joined[[(f"{self.worktime_type.value}/{self.performance_unit}", phase.value)]]
         df_tmp.columns = pandas.MultiIndex.from_tuples(
-            [(project_title, "actual_worktime_hour/annotation_count__inspection")]
+            [(project_title, f"{self.worktime_type.value}/{self.performance_unit}__{phase.value}")]
         )
         return df.join(df_tmp)
 
-    def _join_acceptance():
-        if ("actual_worktime_hour/annotation_count", "acceptance") not in df_performance.columns:
-            return df
+    def join_inspection_acceptance_productivity(
+        self,
+        df: pandas.DataFrame,
+        df_performance: pandas.DataFrame,
+        project_title: str,
+    ) -> pandas.DataFrame:
+        def _join_inspection():
+            phase = TaskPhase.INSPECTION
+            if (f"{self.worktime_type.value}/{self.performance_unit}", phase.value) not in df_performance.columns:
+                return df
+
+            df_joined = df_performance
+            df_joined = self.filter_df_with_threshold(df_joined, phase)
+
+            df_joined.set_index("user_id", inplace=True)
+
+            df_tmp = df_joined[[(f"{self.worktime_type.value}/{self.performance_unit}", phase.value)]]
+            df_tmp.columns = pandas.MultiIndex.from_tuples(
+                [(project_title, f"{self.worktime_type.value}/{self.performance_unit}__{phase.value}")]
+            )
+
+            return df.join(df_tmp)
+
+        def _join_acceptance():
+            phase = TaskPhase.ACCEPTANCE
+            if (f"{self.worktime_type.value}/{self.performance_unit}", phase.value) not in df_performance.columns:
+                return df
+
+            df_joined = df_performance
+            df_joined = self.filter_df_with_threshold(df_joined, phase)
+
+            df_joined.set_index("user_id", inplace=True)
+            df_tmp = df_joined[[(f"{self.worktime_type.value}/{self.performance_unit}", phase.value)]]
+            df_tmp.columns = pandas.MultiIndex.from_tuples(
+                [(project_title, f"{self.worktime_type.value}/{self.performance_unit}__{phase.value}")]
+            )
+
+            return df.join(df_tmp)
+
+        df = _join_inspection()
+        df = _join_acceptance()
+
+        return df
+
+    def join_quality_with_task_rejected_count(
+        self,
+        df: pandas.DataFrame,
+        df_performance: pandas.DataFrame,
+        project_title: str,
+    ) -> pandas.DataFrame:
+        """タスクの差し戻し回数を品質の指標にしたDataFrameを生成する。"""
+        df_joined = df_performance
+        df_joined = df_joined.set_index("user_id")
+
+        df_joined = self.filter_df_with_threshold(df_joined, phase=TaskPhase.ANNOTATION)
+
+        df_tmp = df_joined[[("rejected_count/task_count", "annotation")]]
+
+        df_tmp.columns = pandas.MultiIndex.from_tuples([(project_title, "rejected_count/task_count")])
+        return df.join(df_tmp)
+
+    def join_quality_with_inspection_comment(
+        self,
+        df: pandas.DataFrame,
+        df_performance: pandas.DataFrame,
+        project_title: str,
+    ) -> pandas.DataFrame:
+        """検査コメント数を品質の指標にしたDataFrameを生成する。"""
 
         df_joined = df_performance
-        if threshold_worktime is not None:
-            df_joined = df_joined[df_joined[("actual_worktime_hour", "acceptance")] >= threshold_worktime]
+        df_joined = df_joined.set_index("user_id")
 
-        if threshold_task_count is not None:
-            df_joined = df_joined[df_joined[("task_count", "acceptance")] > threshold_task_count]
+        df_joined = self.filter_df_with_threshold(df_joined, phase=TaskPhase.ANNOTATION)
 
-        df_joined.set_index("user_id", inplace=True)
-        df_tmp = df_joined[[("actual_worktime_hour/annotation_count", "acceptance")]]
+        df_tmp = df_joined[[(f"pointed_out_inspection_comment_count/{self.performance_unit}", "annotation")]]
+
         df_tmp.columns = pandas.MultiIndex.from_tuples(
-            [(project_title, "actual_worktime_hour/annotation_count__acceptance")]
+            [(project_title, f"pointed_out_inspection_comment_count/{self.performance_unit}")]
         )
         return df.join(df_tmp)
 
-    df = _join_inspection()
-    df = _join_acceptance()
+    def create_rating_df(
+        self,
+        df_user: pandas.DataFrame,
+        target_dir: Path,
+    ) -> ResultDataframe:
+        """対象ディレクトリから、評価対象の指標になる情報を取得します。"""
+        df_annotation_productivity = df_user
+        df_inspection_acceptance_productivity = df_user
+        df_quality_per_task = df_user
+        df_quality_per_annotation = df_user
 
-    return df
+        for project_dir in target_dir.iterdir():
+            if not project_dir.is_dir():
+                continue
 
+            csv = project_dir / FILENAME_PERFORMANCE_PER_USER
+            project_title = project_dir.name
+            if not csv.exists():
+                logger.warning(f"{csv} は存在しないのでスキップします。")
+                continue
 
-def join_quality_per_task(
-    df: pandas.DataFrame,
-    df_performance: pandas.DataFrame,
-    project_title: str,
-    threshold_worktime: Optional[float],
-    threshold_task_count: Optional[int],
-) -> pandas.DataFrame:
-    df_joined = df_performance
-    df_joined = df_joined.set_index("user_id")
+            df_performance = read_multiheader_csv(str(csv), header_row_count=2)
+            df_annotation_productivity = self.join_annotation_productivity(
+                df_annotation_productivity,
+                df_performance,
+                project_title=project_title,
+            )
+            df_inspection_acceptance_productivity = self.join_inspection_acceptance_productivity(
+                df_inspection_acceptance_productivity,
+                df_performance,
+                project_title=project_title,
+            )
+            df_quality_per_task = self.join_quality_with_task_rejected_count(
+                df_quality_per_task,
+                df_performance,
+                project_title=project_title,
+            )
+            df_quality_per_annotation = self.join_quality_with_inspection_comment(
+                df_quality_per_annotation,
+                df_performance,
+                project_title=project_title,
+            )
 
-    if threshold_worktime is not None:
-        df_joined = df_joined[df_joined[("actual_worktime_hour", "annotation")] >= threshold_worktime]
-
-    if threshold_task_count is not None:
-        df_joined = df_joined[df_joined[("task_count", "annotation")] > threshold_task_count]
-
-    df_tmp = df_joined[[("rejected_count/task_count", "annotation")]]
-
-    df_tmp.columns = pandas.MultiIndex.from_tuples([(project_title, "rejected_count/task_count")])
-    return df.join(df_tmp)
-
-
-def join_quality_per_annotation(
-    df: pandas.DataFrame,
-    df_performance: pandas.DataFrame,
-    project_title: str,
-    threshold_worktime: Optional[float],
-    threshold_task_count: Optional[int],
-) -> pandas.DataFrame:
-    df_joined = df_performance
-    df_joined = df_joined.set_index("user_id")
-
-    if threshold_worktime is not None:
-        df_joined = df_joined[df_joined[("actual_worktime_hour", "annotation")] >= threshold_worktime]
-
-    if threshold_task_count is not None:
-        df_joined = df_joined[df_joined[("task_count", "annotation")] > threshold_task_count]
-
-    df_tmp = df_joined[[("pointed_out_inspection_comment_count/annotation_count", "annotation")]]
-
-    df_tmp.columns = pandas.MultiIndex.from_tuples(
-        [(project_title, "pointed_out_inspection_comment_count/annotation_count")]
-    )
-    return df.join(df_tmp)
-
-
-def create_rating_df(
-    df_user: pandas.DataFrame,
-    target_dir: Path,
-    threshold_worktime: Optional[float],
-    threshold_task_count: Optional[int],
-) -> ResultDataframe:
-
-    df_annotation_productivity = df_user
-    df_inspection_acceptance_productivity = df_user
-    df_quality_per_task = df_user
-    df_quality_per_annotation = df_user
-
-    for project_dir in target_dir.iterdir():
-        if not project_dir.is_dir():
-            continue
-
-        csv = project_dir / FILENAME_PERFORMANCE_PER_USER
-        project_title = project_dir.name
-        if not csv.exists():
-            logger.warning(f"{csv} は存在しないのでスキップします。")
-            continue
-
-        df_performance = read_multiheader_csv(str(csv), header_row_count=2)
-        df_annotation_productivity = join_annotation_productivity(
-            df_annotation_productivity,
-            df_performance,
-            project_title=project_title,
-            threshold_worktime=threshold_worktime,
-            threshold_task_count=threshold_task_count,
+        return ResultDataframe(
+            annotation_productivity=df_annotation_productivity.reset_index(),
+            inspection_acceptance_productivity=df_inspection_acceptance_productivity.reset_index(),
+            quality_per_task=df_quality_per_task.reset_index(),
+            quality_per_annotation=df_quality_per_annotation.reset_index(),
         )
-        df_inspection_acceptance_productivity = join_inspection_acceptance_productivity(
-            df_inspection_acceptance_productivity,
-            df_performance,
-            project_title=project_title,
-            threshold_worktime=threshold_worktime,
-            threshold_task_count=threshold_task_count,
-        )
-        df_quality_per_task = join_quality_per_task(
-            df_quality_per_task,
-            df_performance,
-            project_title=project_title,
-            threshold_worktime=threshold_worktime,
-            threshold_task_count=threshold_task_count,
-        )
-        df_quality_per_annotation = join_quality_per_annotation(
-            df_quality_per_annotation,
-            df_performance,
-            project_title=project_title,
-            threshold_worktime=threshold_worktime,
-            threshold_task_count=threshold_task_count,
-        )
-
-    return ResultDataframe(
-        annotation_productivity=df_annotation_productivity.reset_index(),
-        inspection_acceptance_productivity=df_inspection_acceptance_productivity.reset_index(),
-        quality_per_task=df_quality_per_task.reset_index(),
-        quality_per_annotation=df_quality_per_annotation.reset_index(),
-    )
 
 
 def output_csv(result: ResultDataframe, output_dir: Path):
@@ -400,11 +411,15 @@ class WritePerformanceRatingCsv(AbstractCommandLineWithoutWebapiInterface):
         user_id_list = get_list_from_args(args.user_id) if args.user_id is not None else None
         df_user = create_user_df(target_dir)
 
-        result = create_rating_df(
-            df_user,
-            target_dir,
+        performance_unit = PerformanceUnit(args.performance_unit)
+        result = CollectingPerformanceInfo(
+            worktime_type=WorktimeType.ACTUAL_WORKTIME_HOUR,
+            performance_unit=performance_unit,
             threshold_worktime=args.threshold_worktime,
             threshold_task_count=args.threshold_task_count,
+        ).create_rating_df(
+            df_user,
+            target_dir,
         )
 
         output_dir: Path = args.output_dir
@@ -433,6 +448,14 @@ def parse_args(parser: argparse.ArgumentParser):
         type=str,
         nargs="+",
         help="評価対象のユーザのuser_idを指定してください。" " ``file://`` を先頭に付けると、user_idの一覧が記載されたファイルを指定できます。",
+    )
+
+    parser.add_argument(
+        "--performance_unit",
+        type=str,
+        choices=[e.value for e in PerformanceUnit],
+        default=PerformanceUnit.ANNOTATION_COUNT,
+        help="評価指標の単位",
     )
 
     parser.add_argument(

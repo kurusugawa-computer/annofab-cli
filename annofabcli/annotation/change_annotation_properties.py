@@ -41,7 +41,7 @@ class ChangePropertiesOfAnnotation(AbstractCommandLineInterface):
         super().__init__(service, facade, args)
         self.dump_annotation_obj = DumpAnnotation(service, facade, args)
 
-    def change_properties_for_task(
+    def change_properties_for_task(  # pylint: disable=too-many-return-statements
         self,
         project_id: str,
         task_id: str,
