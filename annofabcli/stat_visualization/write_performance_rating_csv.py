@@ -1,4 +1,3 @@
-# TODO 出力結果をまとめる
 import argparse
 import logging
 from dataclasses import dataclass
@@ -175,7 +174,7 @@ class CollectingPerformanceInfo:
 
             csv = project_dir / FILENAME_PERFORMANCE_PER_USER
             project_title = project_dir.name
-
+            
             if not csv.exists():
                 logger.warning(f"{csv} は存在しないのでスキップします。")
                 continue
@@ -284,7 +283,9 @@ def create_deviation_df(
 
     df_rank["mean_of_deviation"] = df_rank[project_columns].mean(axis=1)
     df_rank["count_of_project"] = df_rank[project_columns].count(axis=1)
-    df = df_rank[list(user_columns) + [("mean_of_deviation", ""), ("count_of_project", "")] + list(project_columns)]
+    df = df_rank[
+        list(user_columns) + [("mean_of_deviation", ""), ("count_of_project", "")] + list(project_columns)
+    ]
     if user_ids is not None:
         return df[df[("user_id", "")].isin(user_ids)]
     else:
@@ -293,7 +294,6 @@ def create_deviation_df(
 
 def create_basic_statistics_df(df: pandas.DataFrame) -> pandas.DataFrame:
     df_stat = df.describe().T
-    print(df_stat.index)
     return df_stat
 
 
