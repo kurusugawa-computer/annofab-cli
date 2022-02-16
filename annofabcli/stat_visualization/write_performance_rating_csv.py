@@ -27,16 +27,18 @@ def join_annotation_productivity(
     df: pandas.DataFrame,
     df_performance: pandas.DataFrame,
     project_title: str,
-    threshold_worktime: float,
-    threshold_task_count: int,
+    threshold_worktime: Optional[float],
+    threshold_task_count: Optional[int],
 ) -> pandas.DataFrame:
     df_joined = df_performance
     df_joined = df_joined.set_index("user_id")
 
-    df_joined = df_joined[
-        (df_joined[("task_count", "annotation")] > threshold_task_count)
-        | (df_joined[("actual_worktime_hour", "annotation")] >= threshold_worktime)
-    ]
+    if threshold_worktime is not None:
+        df_joined = df_joined[df_joined[("actual_worktime_hour", "annotation")] >= threshold_worktime]
+
+    if threshold_task_count is not None:
+        df_joined = df_joined[df_joined[("task_count", "annotation")] > threshold_task_count]
+
     df_tmp = df_joined[[("actual_worktime_hour/annotation_count", "annotation")]]
     df_tmp.columns = pandas.MultiIndex.from_tuples(
         [(project_title, "actual_worktime_hour/annotation_count__annotation")]
@@ -48,17 +50,20 @@ def join_inspection_acceptance_productivity(
     df: pandas.DataFrame,
     df_performance: pandas.DataFrame,
     project_title: str,
-    threshold_worktime: float,
-    threshold_task_count: int,
+    threshold_worktime: Optional[float],
+    threshold_task_count: Optional[int],
 ) -> pandas.DataFrame:
     def _join_inspection():
         if ("actual_worktime_hour/annotation_count", "inspection") not in df_performance.columns:
             return df
 
-        df_joined = df_performance[
-            (df_performance[("task_count", "inspection")] > threshold_task_count)
-            | (df_performance[("actual_worktime_hour", "inspection")] > threshold_worktime)
-        ]
+        df_joined = df_performance
+        if threshold_worktime is not None:
+            df_joined = df_joined[df_joined[("actual_worktime_hour", "inspection")] >= threshold_worktime]
+
+        if threshold_task_count is not None:
+            df_joined = df_joined[df_joined[("task_count", "inspection")] > threshold_task_count]
+
         df_joined.set_index("user_id", inplace=True)
         df_tmp = df_joined[[("actual_worktime_hour/annotation_count", "inspection")]]
         df_tmp.columns = pandas.MultiIndex.from_tuples(
@@ -70,10 +75,13 @@ def join_inspection_acceptance_productivity(
         if ("actual_worktime_hour/annotation_count", "acceptance") not in df_performance.columns:
             return df
 
-        df_joined = df_performance[
-            (df_performance[("task_count", "acceptance")] > threshold_task_count)
-            | (df_performance[("actual_worktime_hour", "acceptance")] > threshold_worktime)
-        ]
+        df_joined = df_performance
+        if threshold_worktime is not None:
+            df_joined = df_joined[df_joined[("actual_worktime_hour", "acceptance")] >= threshold_worktime]
+
+        if threshold_task_count is not None:
+            df_joined = df_joined[df_joined[("task_count", "acceptance")] > threshold_task_count]
+
         df_joined.set_index("user_id", inplace=True)
         df_tmp = df_joined[[("actual_worktime_hour/annotation_count", "acceptance")]]
         df_tmp.columns = pandas.MultiIndex.from_tuples(
@@ -91,16 +99,18 @@ def join_quality_per_task(
     df: pandas.DataFrame,
     df_performance: pandas.DataFrame,
     project_title: str,
-    threshold_worktime: float,
-    threshold_task_count: int,
+    threshold_worktime: Optional[float],
+    threshold_task_count: Optional[int],
 ) -> pandas.DataFrame:
     df_joined = df_performance
     df_joined = df_joined.set_index("user_id")
 
-    df_joined = df_joined[
-        (df_joined[("task_count", "annotation")] > threshold_task_count)
-        | (df_joined[("actual_worktime_hour", "annotation")] > threshold_worktime)
-    ]
+    if threshold_worktime is not None:
+        df_joined = df_joined[df_joined[("actual_worktime_hour", "annotation")] >= threshold_worktime]
+
+    if threshold_task_count is not None:
+        df_joined = df_joined[df_joined[("task_count", "annotation")] > threshold_task_count]
+
     df_tmp = df_joined[[("rejected_count/task_count", "annotation")]]
 
     df_tmp.columns = pandas.MultiIndex.from_tuples([(project_title, "rejected_count/task_count")])
@@ -111,16 +121,18 @@ def join_quality_per_annotation(
     df: pandas.DataFrame,
     df_performance: pandas.DataFrame,
     project_title: str,
-    threshold_worktime: float,
-    threshold_task_count: int,
+    threshold_worktime: Optional[float],
+    threshold_task_count: Optional[int],
 ) -> pandas.DataFrame:
     df_joined = df_performance
     df_joined = df_joined.set_index("user_id")
 
-    df_joined = df_joined[
-        (df_joined[("task_count", "annotation")] > threshold_task_count)
-        | (df_joined[("actual_worktime_hour", "annotation")] > threshold_worktime)
-    ]
+    if threshold_worktime is not None:
+        df_joined = df_joined[df_joined[("actual_worktime_hour", "annotation")] >= threshold_worktime]
+
+    if threshold_task_count is not None:
+        df_joined = df_joined[df_joined[("task_count", "annotation")] > threshold_task_count]
+
     df_tmp = df_joined[[("pointed_out_inspection_comment_count/annotation_count", "annotation")]]
 
     df_tmp.columns = pandas.MultiIndex.from_tuples(
@@ -130,7 +142,10 @@ def join_quality_per_annotation(
 
 
 def create_rating_df(
-    df_user: pandas.DataFrame, target_dir: Path, threshold_worktime: float, threshold_task_count: int
+    df_user: pandas.DataFrame,
+    target_dir: Path,
+    threshold_worktime: Optional[float],
+    threshold_task_count: Optional[int],
 ) -> ResultDataframe:
 
     df_annotation_productivity = df_user
@@ -393,7 +408,7 @@ class WritePerformanceRatingCsv(AbstractCommandLineWithoutWebapiInterface):
         )
 
         output_dir: Path = args.output_dir
-        # output_csv(result, output_dir)
+        output_csv(result, output_dir)
         output_rank_csv(result, output_dir, user_id_list=user_id_list)
         output_deviation_csv(
             result,
@@ -423,14 +438,12 @@ def parse_args(parser: argparse.ArgumentParser):
     parser.add_argument(
         "--threshold_worktime",
         type=int,
-        default=10,
-        help="作業時間の閾値。この時間以下の作業者は除外する。 ``threshold_task_count`` とはOR条件で絞り込まれる。",
+        help="作業時間の閾値。指定した時間以下の作業者は除外する。",
     )
     parser.add_argument(
         "--threshold_task_count",
         type=int,
-        default=0,
-        help="作業したタスク数の閾値。このタスク数以下の作業者は除外する。 ``threshold_worktime`` とはOR条件で絞り込まれる。",
+        help="作業したタスク数の閾値。作業したタスク数が指定した数以下作業者は除外する。 ",
     )
     parser.add_argument(
         "--threshold_deviation_user_count",
