@@ -399,14 +399,14 @@ class WritePerformanceRatingCsv(AbstractCommandLineWithoutWebapiInterface):
         # タスクの差し戻し回数を品質の指標にしたファイルを出力
         obj.write(
             result.quality_with_task_rejected_count,
-            csv_basename="quality_task_rejected_count",
-            output_dir=output_dir / "quality_task_rejected_count",
+            csv_basename="annotation_quality_task_rejected_count",
+            output_dir=output_dir / "annotation_quality_task_rejected_count",
         )
         # 検査コメント数を品質の指標にしたファイルを出力
         obj.write(
             result.quality_with_inspection_comment,
-            csv_basename="quality_inspection_comment",
-            output_dir=output_dir / "quality_inspection_comment",
+            csv_basename="annotation_quality_inspection_comment",
+            output_dir=output_dir / "annotation_quality_inspection_comment",
         )
 
 
