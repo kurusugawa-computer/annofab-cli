@@ -1,9 +1,10 @@
+# TODO 出力結果をまとめる
 import argparse
 import logging
 from dataclasses import dataclass
 from enum import Enum
 from pathlib import Path
-from typing import Any, Dict, List, Optional, Set
+from typing import Any, Collection, Dict, List, Optional
 
 import numpy
 import pandas
@@ -21,8 +22,8 @@ logger = logging.getLogger(__name__)
 class ResultDataframe:
     annotation_productivity: pandas.DataFrame
     inspection_acceptance_productivity: pandas.DataFrame
-    quality_per_task: pandas.DataFrame
-    quality_per_annotation: pandas.DataFrame
+    quality_with_task_rejected_count: pandas.DataFrame
+    quality_with_inspection_comment: pandas.DataFrame
 
 
 class PerformanceUnit(Enum):
@@ -67,16 +68,15 @@ class CollectingPerformanceInfo:
         df_performance: pandas.DataFrame,
         project_title: str,
     ) -> pandas.DataFrame:
-        df_joined = df_performance
-        df_joined = df_joined.set_index("user_id")
-
+        """教師付生産性の指標を抽出してdfにjoinする"""
         phase = TaskPhase.ANNOTATION
 
+        df_joined = df_performance
         df_joined = self.filter_df_with_threshold(df_joined, phase)
 
-        df_tmp = df_joined[[(f"{self.worktime_type.value}/{self.performance_unit}", phase.value)]]
+        df_tmp = df_joined[[(f"{self.worktime_type.value}/{self.performance_unit.value}", phase.value)]]
         df_tmp.columns = pandas.MultiIndex.from_tuples(
-            [(project_title, f"{self.worktime_type.value}/{self.performance_unit}__{phase.value}")]
+            [(project_title, f"{self.worktime_type.value}/{self.performance_unit.value}__{phase.value}")]
         )
         return df.join(df_tmp)
 
@@ -86,35 +86,34 @@ class CollectingPerformanceInfo:
         df_performance: pandas.DataFrame,
         project_title: str,
     ) -> pandas.DataFrame:
+        """検査,受入生産性の指標を抽出してdfにjoinする"""
+
         def _join_inspection():
             phase = TaskPhase.INSPECTION
-            if (f"{self.worktime_type.value}/{self.performance_unit}", phase.value) not in df_performance.columns:
+            if (f"{self.worktime_type.value}/{self.performance_unit.value}", phase.value) not in df_performance.columns:
                 return df
 
             df_joined = df_performance
             df_joined = self.filter_df_with_threshold(df_joined, phase)
 
-            df_joined.set_index("user_id", inplace=True)
-
-            df_tmp = df_joined[[(f"{self.worktime_type.value}/{self.performance_unit}", phase.value)]]
+            df_tmp = df_joined[[(f"{self.worktime_type.value}/{self.performance_unit.value}", phase.value)]]
             df_tmp.columns = pandas.MultiIndex.from_tuples(
-                [(project_title, f"{self.worktime_type.value}/{self.performance_unit}__{phase.value}")]
+                [(project_title, f"{self.worktime_type.value}/{self.performance_unit.value}__{phase.value}")]
             )
 
             return df.join(df_tmp)
 
         def _join_acceptance():
             phase = TaskPhase.ACCEPTANCE
-            if (f"{self.worktime_type.value}/{self.performance_unit}", phase.value) not in df_performance.columns:
+            if (f"{self.worktime_type.value}/{self.performance_unit.value}", phase.value) not in df_performance.columns:
                 return df
 
             df_joined = df_performance
             df_joined = self.filter_df_with_threshold(df_joined, phase)
 
-            df_joined.set_index("user_id", inplace=True)
-            df_tmp = df_joined[[(f"{self.worktime_type.value}/{self.performance_unit}", phase.value)]]
+            df_tmp = df_joined[[(f"{self.worktime_type.value}/{self.performance_unit.value}", phase.value)]]
             df_tmp.columns = pandas.MultiIndex.from_tuples(
-                [(project_title, f"{self.worktime_type.value}/{self.performance_unit}__{phase.value}")]
+                [(project_title, f"{self.worktime_type.value}/{self.performance_unit.value}__{phase.value}")]
             )
 
             return df.join(df_tmp)
@@ -132,7 +131,6 @@ class CollectingPerformanceInfo:
     ) -> pandas.DataFrame:
         """タスクの差し戻し回数を品質の指標にしたDataFrameを生成する。"""
         df_joined = df_performance
-        df_joined = df_joined.set_index("user_id")
 
         df_joined = self.filter_df_with_threshold(df_joined, phase=TaskPhase.ANNOTATION)
 
@@ -150,14 +148,13 @@ class CollectingPerformanceInfo:
         """検査コメント数を品質の指標にしたDataFrameを生成する。"""
 
         df_joined = df_performance
-        df_joined = df_joined.set_index("user_id")
 
         df_joined = self.filter_df_with_threshold(df_joined, phase=TaskPhase.ANNOTATION)
 
-        df_tmp = df_joined[[(f"pointed_out_inspection_comment_count/{self.performance_unit}", "annotation")]]
+        df_tmp = df_joined[[(f"pointed_out_inspection_comment_count/{self.performance_unit.value}", "annotation")]]
 
         df_tmp.columns = pandas.MultiIndex.from_tuples(
-            [(project_title, f"pointed_out_inspection_comment_count/{self.performance_unit}")]
+            [(project_title, f"pointed_out_inspection_comment_count/{self.performance_unit.value}")]
         )
         return df.join(df_tmp)
 
@@ -183,6 +180,8 @@ class CollectingPerformanceInfo:
                 continue
 
             df_performance = read_multiheader_csv(str(csv), header_row_count=2)
+            df_performance.set_index("user_id", inplace=True)
+
             df_annotation_productivity = self.join_annotation_productivity(
                 df_annotation_productivity,
                 df_performance,
@@ -207,16 +206,9 @@ class CollectingPerformanceInfo:
         return ResultDataframe(
             annotation_productivity=df_annotation_productivity.reset_index(),
             inspection_acceptance_productivity=df_inspection_acceptance_productivity.reset_index(),
-            quality_per_task=df_quality_per_task.reset_index(),
-            quality_per_annotation=df_quality_per_annotation.reset_index(),
+            quality_with_task_rejected_count=df_quality_per_task.reset_index(),
+            quality_with_inspection_comment=df_quality_per_annotation.reset_index(),
         )
-
-
-def output_csv(result: ResultDataframe, output_dir: Path):
-    print_csv(result.annotation_productivity, str(output_dir / "annotation_productivity.csv"))
-    print_csv(result.inspection_acceptance_productivity, str(output_dir / "inspection_acceptance_productivity.csv"))
-    print_csv(result.quality_per_task, str(output_dir / "annotation_quality_per_task.csv"))
-    print_csv(result.quality_per_annotation, str(output_dir / "annotation_quality_per_annotation.csv"))
 
 
 def to_rank(series: pandas.Series) -> pandas.Series:
@@ -256,20 +248,33 @@ def to_deviation(series: pandas.Series, threshold_deviation_user_count: Optional
             return series.map(lambda x: 50 if not numpy.isnan(x) else numpy.nan)
 
 
-def create_rank_df(df: pandas.DataFrame, user_id_set: Optional[Set[str]] = None) -> pandas.DataFrame:
+def create_rank_df(df: pandas.DataFrame, *, user_ids: Optional[Collection[str]] = None) -> pandas.DataFrame:
     df_rank = df.copy()
     for col in df.columns[3:]:
         df_rank[col] = to_rank(df[col])
 
-    if user_id_set is not None:
-        return df_rank[df_rank[("user_id", "")].isin(user_id_set)]
+    if user_ids is not None:
+        return df_rank[df_rank[("user_id", "")].isin(user_ids)]
     else:
         return df_rank
 
 
 def create_deviation_df(
-    df: pandas.DataFrame, threshold_deviation_user_count: Optional[int] = None, user_id_set: Optional[Set[str]] = None
+    df: pandas.DataFrame,
+    *,
+    threshold_deviation_user_count: Optional[int] = None,
+    user_ids: Optional[Collection[str]] = None,
 ) -> pandas.DataFrame:
+    """偏差値が格納されたDataFrameを返す。
+
+    Args:
+        df (pandas.DataFrame):
+        threshold_deviation_user_count: プロジェクト内の作業者がしきい値以下であれば、偏差値を算出しない。
+        user_ids (Optional[Set[str]], optional): 指定してあればuser_idで絞り込む
+
+    Returns:
+        pandas.DataFrame: [description]
+    """
     df_rank = df.copy()
     user_columns = df.columns[0:3]
     project_columns = df.columns[3:]
@@ -281,8 +286,8 @@ def create_deviation_df(
     df = df_rank[
         list(user_columns) + [("mean_of_deviation", ""), ("count_of_project", "")] + sorted(list(project_columns))
     ]
-    if user_id_set is not None:
-        return df[df[("user_id", "")].isin(user_id_set)]
+    if user_ids is not None:
+        return df[df[("user_id", "")].isin(user_ids)]
     else:
         return df
 
@@ -290,85 +295,6 @@ def create_deviation_df(
 def create_basic_statistics_df(df: pandas.DataFrame) -> pandas.DataFrame:
     df_stat = df.describe().T
     return df_stat
-
-
-def output_rank_csv(result: ResultDataframe, output_dir: Path, user_id_list: Optional[List[str]] = None):
-    user_id_set: Optional[Set[str]] = set(user_id_list) if user_id_list is not None else None
-    print_csv(
-        create_rank_df(result.annotation_productivity, user_id_set=user_id_set),
-        str(output_dir / "annotation_productivity_rank.csv"),
-    )
-    print_csv(
-        create_rank_df(result.inspection_acceptance_productivity, user_id_set=user_id_set),
-        str(output_dir / "inspection_acceptance_productivity_rank.csv"),
-    )
-    print_csv(
-        create_rank_df(result.quality_per_task, user_id_set=user_id_set),
-        str(output_dir / "annotation_quality_per_task_rank.csv"),
-    )
-    print_csv(
-        create_rank_df(result.quality_per_annotation, user_id_set=user_id_set),
-        str(output_dir / "annotation_quality_per_annotation_rank.csv"),
-    )
-
-
-def output_deviation_csv(
-    result: ResultDataframe,
-    output_dir: Path,
-    threshold_deviation_user_count: Optional[int] = None,
-    user_id_list: Optional[List[str]] = None,
-):
-    """
-    偏差値に変換したものを出力する
-    """
-    user_id_set: Optional[Set[str]] = set(user_id_list) if user_id_list is not None else None
-    print_csv(
-        create_deviation_df(result.annotation_productivity, threshold_deviation_user_count, user_id_set=user_id_set),
-        str(output_dir / "annotation_productivity_deviation.csv"),
-    )
-    print_csv(
-        create_deviation_df(
-            result.inspection_acceptance_productivity, threshold_deviation_user_count, user_id_set=user_id_set
-        ),
-        str(output_dir / "inspection_acceptance_productivity_deviation.csv"),
-    )
-    print_csv(
-        create_deviation_df(result.quality_per_task, threshold_deviation_user_count, user_id_set=user_id_set),
-        str(output_dir / "annotation_quality_per_task_deviation.csv"),
-    )
-
-    print_csv(
-        create_deviation_df(result.quality_per_annotation, threshold_deviation_user_count, user_id_set=user_id_set),
-        str(output_dir / "annotation_quality_per_annotation_deviation.csv"),
-    )
-
-
-def output_basic_statistics_by_project(result: ResultDataframe, output_dir: Path):
-    """
-    プロジェクトごとの基本統計情報を出力する。
-    """
-    to_csv_kwargs = {"index": True}
-
-    print_csv(
-        create_basic_statistics_df(result.annotation_productivity),
-        str(output_dir / "annotation_productivity_summary.csv"),
-        to_csv_kwargs=to_csv_kwargs,
-    )
-    print_csv(
-        create_basic_statistics_df(result.inspection_acceptance_productivity),
-        str(output_dir / "inspection_acceptance_productivity_summary.csv"),
-        to_csv_kwargs=to_csv_kwargs,
-    )
-    print_csv(
-        create_basic_statistics_df(result.quality_per_task),
-        str(output_dir / "annotation_quality_per_task_summary.csv"),
-        to_csv_kwargs=to_csv_kwargs,
-    )
-    print_csv(
-        create_basic_statistics_df(result.quality_per_annotation),
-        str(output_dir / "annotation_quality_per_annotation_summary.csv"),
-        to_csv_kwargs=to_csv_kwargs,
-    )
 
 
 def create_user_df(target_dir: Path) -> pandas.DataFrame:
@@ -403,6 +329,39 @@ def create_user_df(target_dir: Path) -> pandas.DataFrame:
     return df_user.sort_values("user_id").set_index("user_id")
 
 
+class WritingCsv:
+    def __init__(
+        self, threshold_deviation_user_count: Optional[int] = None, user_ids: Optional[Collection[str]] = None
+    ) -> None:
+        self.threshold_deviation_user_count = threshold_deviation_user_count
+        self.user_ids = user_ids
+
+    def write(self, df: pandas.DataFrame, csv_basename: str, output_dir: Path):
+
+        print_csv(df, str(output_dir / f"{csv_basename}.csv"))
+
+        # 偏差値のCSVを出力
+        print_csv(
+            create_deviation_df(
+                df, threshold_deviation_user_count=self.threshold_deviation_user_count, user_ids=self.user_ids
+            ),
+            str(output_dir / f"{csv_basename}_deviation.csv"),
+        )
+
+        # A,B,C,DでランクされたCSVを出力
+        print_csv(
+            create_rank_df(df, user_ids=self.user_ids),
+            str(output_dir / f"{csv_basename}_rank.csv"),
+        )
+
+        # プロジェクトごとのサマリを出力
+        print_csv(
+            create_basic_statistics_df(df),
+            str(output_dir / f"{csv_basename}_summary.csv"),
+            to_csv_kwargs={"index": True},
+        )
+
+
 class WritePerformanceRatingCsv(AbstractCommandLineWithoutWebapiInterface):
     def main(self) -> None:
         args = self.args
@@ -423,15 +382,33 @@ class WritePerformanceRatingCsv(AbstractCommandLineWithoutWebapiInterface):
         )
 
         output_dir: Path = args.output_dir
-        output_csv(result, output_dir)
-        output_rank_csv(result, output_dir, user_id_list=user_id_list)
-        output_deviation_csv(
-            result,
-            output_dir,
-            threshold_deviation_user_count=args.threshold_deviation_user_count,
-            user_id_list=user_id_list,
+
+        obj = WritingCsv(threshold_deviation_user_count=args.threshold_deviation_user_count, user_ids=user_id_list)
+
+        # 教師付生産性に関するファイルを出力
+        obj.write(
+            result.annotation_productivity,
+            csv_basename="annotation_productivity",
+            output_dir=output_dir / "annotation_productivity",
         )
-        output_basic_statistics_by_project(result, output_dir)
+        # 検査/受入生産性に関するファイルを出力
+        obj.write(
+            result.inspection_acceptance_productivity,
+            csv_basename="inspection_acceptance_productivity",
+            output_dir=output_dir / "inspection_acceptance_productivity",
+        )
+        # タスクの差し戻し回数を品質の指標にしたファイルを出力
+        obj.write(
+            result.quality_with_task_rejected_count,
+            csv_basename="quality_task_rejected_count",
+            output_dir=output_dir / "quality_task_rejected_count",
+        )
+        # 検査コメント数を品質の指標にしたファイルを出力
+        obj.write(
+            result.quality_with_inspection_comment,
+            csv_basename="quality_inspection_comment",
+            output_dir=output_dir / "quality_inspection_comment",
+        )
 
 
 def parse_args(parser: argparse.ArgumentParser):
