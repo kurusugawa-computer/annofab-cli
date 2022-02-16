@@ -173,7 +173,7 @@ class CollectingPerformanceInfo:
                 continue
 
             csv = project_dir / FILENAME_PERFORMANCE_PER_USER
-            project_title = project_dir.name            
+            project_title = project_dir.name
             if not csv.exists():
                 logger.warning(f"{csv} は存在しないのでスキップします。")
                 continue
