@@ -134,8 +134,7 @@ class WriteCsvGraph:
         self.output_dir = output_dir
         self.table_obj = table_obj
         self.csv_obj = Csv(str(output_dir))
-
-        self.df_labor = self.table_obj.create_labor_df(df_labor)
+        self.df_labor = df_labor
         self.minimal_output = minimal_output
 
     def _catch_exception(self, function: Callable[..., Any]) -> Callable[..., Any]:
