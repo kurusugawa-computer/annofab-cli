@@ -1,7 +1,7 @@
-date,user_id,username,biography,worktime_plan_hour,actual_worktime_hour
-2019-11-14,alice,Alice,USA,1,0.5
-2019-11-14,bob,Bob,USA,2,1.5
-2019-11-14,carol,Carol,UK,3,2.5
-2019-11-14,dave,Dave,UK,4,3.5
-2019-11-14,eve,Eve,,5,4.5
-2019-11-15,alice,Alice,USA,2,2
+date,account_id,actual_worktime_hour
+2019-11-14,alice,0.5
+2019-11-14,bob,1.5
+2019-11-14,carol,2.5
+2019-11-14,dave,3.5
+2019-11-14,eve,4.5
+2019-11-15,alice,2

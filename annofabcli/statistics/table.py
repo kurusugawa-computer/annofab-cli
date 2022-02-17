@@ -556,6 +556,7 @@ class Table:
 
         Returns:
 
+
         """
         annotation_count_dict = {
             row["task_id"]: {
@@ -592,7 +593,7 @@ class Table:
             logger.warning("タスク一覧が0件です。")
             return pandas.DataFrame()
 
-        group_obj = task_history_df.groupby(["task_id", "phase", "phase_stage", "user_id"]).agg(
+        group_obj = task_history_df.groupby(["task_id", "phase", "phase_stage", "account_id"]).agg(
             {"worktime_hour": "sum"}
         )
         if len(group_obj) == 0:
@@ -602,7 +603,7 @@ class Table:
                     "task_id",
                     "phase",
                     "phase_stage",
-                    "user_id",
+                    "account_id",
                     "worktime_hour",
                     "worktime_ratio_by_task",
                     "annotation_count",
@@ -629,26 +630,3 @@ class Table:
             lambda e: 1 if e == TaskPhase.ANNOTATION.value else 0
         )
         return new_df
-
-    def create_labor_df(self, df_labor: Optional[pandas.DataFrame] = None) -> pandas.DataFrame:
-        """
-        労務管理 DataFrameを生成する。情報を出力する。
-
-        Args:
-            df_labor: 指定されれば、account_idに紐づくユーザ情報を添付する。そうでなければ、webapiから労務管理情報を取得する。
-        """
-        if df_labor is None:
-            labor_list = self.database.get_labor_list(self.project_id)
-            df_labor = pandas.DataFrame(labor_list)
-
-        if len(df_labor) == 0:
-            return pandas.DataFrame(
-                columns=["date", "account_id", "user_id", "username", "biography", "actual_worktime_hour"]
-            )
-
-        df_user = pandas.DataFrame(self.project_members_dict.values())[
-            ["account_id", "user_id", "username", "biography"]
-        ]
-
-        df = df_labor.merge(df_user, how="left", on="account_id")
-        return df
