@@ -556,6 +556,7 @@ class Table:
 
         Returns:
 
+
         """
         annotation_count_dict = {
             row["task_id"]: {
@@ -592,7 +593,7 @@ class Table:
             logger.warning("タスク一覧が0件です。")
             return pandas.DataFrame()
 
-        group_obj = task_history_df.groupby(["task_id", "phase", "phase_stage", "user_id"]).agg(
+        group_obj = task_history_df.groupby(["task_id", "phase", "phase_stage", "account_id"]).agg(
             {"worktime_hour": "sum"}
         )
         if len(group_obj) == 0:
@@ -602,7 +603,7 @@ class Table:
                     "task_id",
                     "phase",
                     "phase_stage",
-                    "user_id",
+                    "account_id",
                     "worktime_hour",
                     "worktime_ratio_by_task",
                     "annotation_count",
