@@ -1,4 +1,4 @@
-task_id,phase,phase_stage,user_id,worktime_hour,worktime_ratio_by_task,annotation_count,input_data_count,pointed_out_inspection_comment_count,rejected_count
+task_id,phase,phase_stage,account_id,worktime_hour,worktime_ratio_by_task,annotation_count,input_data_count,pointed_out_inspection_comment_count,rejected_count
 task1,acceptance,1,eve,0.1,1,100,2,0,0
 task1,annotation,1,alice,2,1,100,2,5,1
 task1,inspection,1,bob,0.5,0.5,50,1,0,0
