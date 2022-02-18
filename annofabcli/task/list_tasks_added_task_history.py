@@ -275,6 +275,7 @@ class ListTasksAddedTaskHistory(AbstractCommandLineInterface):
     """
     タスクの一覧を表示する
     """
+
     def get_detail_task_list(
         self,
         task_list: List[Dict[str, Any]],
@@ -316,7 +317,6 @@ class ListTasksAddedTaskHistory(AbstractCommandLineInterface):
             # 差し戻し回数
             "number_of_rejections_by_inspection",
             "number_of_rejections_by_acceptance",
-
             "first_acceptance_completed_datetime",
             "completed_datetime",
             "inspection_is_skipped",
@@ -440,6 +440,7 @@ class ListTasksAddedTaskHistory(AbstractCommandLineInterface):
             project_id, task_list, task_id_list=task_id_list, task_query=task_query
         )
 
+        logger.debug(f"タスク履歴に関する付加的情報を取得しています。")
         detail_task_list = self.get_detail_task_list(
             project_id=project_id, task_list=filtered_task_list, task_history_dict=task_history_dict
         )
