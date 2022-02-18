@@ -180,7 +180,7 @@ class Table:
             else:
                 return None
 
-        task["sum_worktime_hour"] = sum(
+        task["worktime_hour"] = sum(
             [annofabcli.utils.isoduration_to_hour(e["accumulated_labor_time_milliseconds"]) for e in task_histories]
         )
 
@@ -246,7 +246,7 @@ class Table:
         タスク一覧からdataframeを作成する。
         新たに追加した列は、user_id, annotation_count, inspection_count,
             first_annotation_user_id, first_annotation_started_datetime,
-            annotation_worktime_hour, inspection_worktime_hour, acceptance_worktime_hour, sum_worktime_hour
+            annotation_worktime_hour, inspection_worktime_hour, acceptance_worktime_hour, worktime_hour
         """
 
         def set_input_data_info_for_movie(arg_task):

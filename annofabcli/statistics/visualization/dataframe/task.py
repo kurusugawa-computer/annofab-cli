@@ -54,7 +54,7 @@ class Task:
                 title="受入作業時間",
                 column="acceptance_worktime_hour",
             ),
-            dict(title="総作業時間", column="sum_worktime_hour"),
+            dict(title="総作業時間", column="worktime_hour"),
         ]
 
         figure_list = []

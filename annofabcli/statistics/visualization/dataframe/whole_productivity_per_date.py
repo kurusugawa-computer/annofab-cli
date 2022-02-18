@@ -718,7 +718,7 @@ class WholeProductivityPerFirstAnnotationStartedDate:
                 "first_annotation_started_datetime",
                 "input_data_count",
                 "annotation_count",
-                "sum_worktime_hour",
+                "worktime_hour",
                 "annotation_worktime_hour",
                 "inspection_worktime_hour",
                 "acceptance_worktime_hour",
@@ -731,7 +731,7 @@ class WholeProductivityPerFirstAnnotationStartedDate:
         value_columns = [
             "input_data_count",
             "annotation_count",
-            "sum_worktime_hour",
+            "worktime_hour",
             "annotation_worktime_hour",
             "inspection_worktime_hour",
             "acceptance_worktime_hour",
@@ -760,7 +760,7 @@ class WholeProductivityPerFirstAnnotationStartedDate:
 
         df_date.rename(
             columns={
-                "sum_worktime_hour": "worktime_hour",
+                "worktime_hour": "worktime_hour",
             },
             inplace=True,
         )

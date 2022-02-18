@@ -104,7 +104,7 @@ class Csv:
             "first_acceptance_worktime_hour",
             "first_acceptance_started_datetime",
             # 作業時間に関する内容
-            "sum_worktime_hour",
+            "worktime_hour",
             "annotation_worktime_hour",
             "inspection_worktime_hour",
             "acceptance_worktime_hour",
