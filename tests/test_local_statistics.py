@@ -5,7 +5,6 @@ from pathlib import Path
 import pandas
 from annofabapi.models import TaskStatus
 
-from annofabcli.statistics.csv import Csv
 from annofabcli.statistics.list_annotation_count import (
     GroupBy,
     ListAnnotationCounterByInputData,
@@ -47,10 +46,6 @@ project_id = "12345678-abcd-1234-abcd-1234abcd5678"
 
 
 class TestTable:
-    @classmethod
-    def setup_class(cls):
-        cls.csv_obj = Csv(str(out_path))
-
     def test_get_task_history_df(self):
         task_history_df = pandas.read_csv(str(data_path / "task-history-df.csv"))
         task_df = pandas.DataFrame(

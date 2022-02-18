@@ -47,9 +47,9 @@ class AbstractRoleProductivityPerDate(abc.ABC):
             return False
         return True
 
-    @staticmethod
+    @classmethod
     @abc.abstractmethod
-    def from_df_task(df_task: pandas.DataFrame) -> AbstractRoleProductivityPerDate:
+    def from_df_task(cls, df_task: pandas.DataFrame) -> AbstractRoleProductivityPerDate:
         pass
 
     @abc.abstractmethod
@@ -68,8 +68,8 @@ class AbstractRoleProductivityPerDate(abc.ABC):
 class AnnotatorProductivityPerDate(AbstractRoleProductivityPerDate):
     """教師付開始日ごとの教師付者の生産性に関する情報"""
 
-    @staticmethod
-    def from_df_task(df_task: pandas.DataFrame) -> AnnotatorProductivityPerDate:
+    @classmethod
+    def from_df_task(cls, df_task: pandas.DataFrame) -> AnnotatorProductivityPerDate:
         """
         日毎、ユーザごとの情報を出力する。
 
@@ -98,7 +98,7 @@ class AnnotatorProductivityPerDate(AbstractRoleProductivityPerDate):
                 "annotation_worktime_hour",
                 "inspection_worktime_hour",
                 "acceptance_worktime_hour",
-                "sum_worktime_hour",
+                "worktime_hour",
                 "task_count",
                 "input_data_count",
                 "annotation_count",
@@ -116,7 +116,7 @@ class AnnotatorProductivityPerDate(AbstractRoleProductivityPerDate):
         sum_df["inspection_count/annotation_count"] = sum_df["inspection_count"] / sum_df["annotation_count"]
         sum_df["inspection_count/input_data_count"] = sum_df["inspection_count"] / sum_df["annotation_count"]
 
-        return AnnotatorProductivityPerDate(sum_df)
+        return cls(sum_df)
 
     @staticmethod
     def _get_df_sequential_date(df: pandas.DataFrame) -> pandas.DataFrame:
@@ -148,7 +148,7 @@ class AnnotatorProductivityPerDate(AbstractRoleProductivityPerDate):
                     "annotation_worktime_hour",
                     "inspection_worktime_hour",
                     "acceptance_worktime_hour",
-                    "sum_worktime_hour",
+                    "worktime_hour",
                     "inspection_count",
                     "task_count",
                     "input_data_count",
@@ -434,10 +434,6 @@ class AnnotatorProductivityPerDate(AbstractRoleProductivityPerDate):
         write_bokeh_graph(bokeh.layouts.column(figs), output_file)
 
     def to_csv(self, output_file: Path) -> None:
-        """
-        日毎の全体の生産量、生産性を出力する。
-
-        """
 
         if not self._validate_df_for_output(output_file):
             return
@@ -450,7 +446,7 @@ class AnnotatorProductivityPerDate(AbstractRoleProductivityPerDate):
             "input_data_count",
             "annotation_count",
             "inspection_count",
-            "sum_worktime_hour",
+            "worktime_hour",
             "annotation_worktime_hour",
             "inspection_worktime_hour",
             "acceptance_worktime_hour",
@@ -474,8 +470,8 @@ class AnnotatorProductivityPerDate(AbstractRoleProductivityPerDate):
 class InspectorProductivityPerDate(AbstractRoleProductivityPerDate):
     """検査開始日ごとの検査者の生産性に関する情報"""
 
-    @staticmethod
-    def from_df_task(df_task: pandas.DataFrame) -> InspectorProductivityPerDate:
+    @classmethod
+    def from_df_task(cls, df_task: pandas.DataFrame) -> InspectorProductivityPerDate:
         """
         検査開始日ごとの受入者の生産性に関するDataFrameを生成する。
 
@@ -514,7 +510,7 @@ class InspectorProductivityPerDate(AbstractRoleProductivityPerDate):
             sum_df["inspection_worktime_hour"] / sum_df["input_data_count"]
         )
 
-        return InspectorProductivityPerDate(sum_df)
+        return cls(sum_df)
 
     @staticmethod
     def _get_df_sequential_date(df: pandas.DataFrame) -> pandas.DataFrame:
@@ -821,8 +817,8 @@ class InspectorProductivityPerDate(AbstractRoleProductivityPerDate):
 class AcceptorProductivityPerDate(AbstractRoleProductivityPerDate):
     """受入開始日ごとの受入者の生産性に関する情報"""
 
-    @staticmethod
-    def from_df_task(df_task: pandas.DataFrame) -> AcceptorProductivityPerDate:
+    @classmethod
+    def from_df_task(cls, df_task: pandas.DataFrame) -> AcceptorProductivityPerDate:
         """
         受入開始日ごとの受入者の生産性に関するDataFrameを生成する。
 
