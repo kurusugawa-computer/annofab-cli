@@ -202,7 +202,6 @@ class AddingAdditionalInfoToTask:
         first_task_history = task_history_by_phase[0] if len(task_history_by_phase) > 0 else None
         self._add_task_history_info(task, first_task_history, column_prefix=f"first_{phase.value}")
 
-        # TODO lastは必要か？
         # 最後の対象フェーズに関する情報を設定
         last_task_history = task_history_by_phase[-1] if len(task_history_by_phase) > 0 else None
         self._add_task_history_info(task, last_task_history, column_prefix=f"last_{phase.value}")
@@ -317,6 +316,11 @@ class ListTasksAddedTaskHistory(AbstractCommandLineInterface):
             # 差し戻し回数
             "number_of_rejections_by_inspection",
             "number_of_rejections_by_acceptance",
+
+            "first_acceptance_completed_datetime",
+            "completed_datetime",
+            "inspection_is_skipped",
+            "acceptance_is_skipped",
         ]
 
         task_history_columns = [
@@ -326,14 +330,7 @@ class ListTasksAddedTaskHistory(AbstractCommandLineInterface):
             for info in ["user_id", "username", "started_datetime"]
         ]
 
-        last_columns = [
-            "first_acceptance_completed_datetime",
-            "completed_datetime",
-            "inspection_is_skipped",
-            "acceptance_is_skipped",
-        ]
-
-        return base_columns + task_history_columns + last_columns
+        return base_columns + task_history_columns
 
     def download_json_files(
         self,
