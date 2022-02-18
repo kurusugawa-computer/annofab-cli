@@ -24,8 +24,8 @@ from annofabcli.stat_visualization.merge_visualization_dir import merge_visualiz
 from annofabcli.statistics.csv import (
     FILENAME_PERFORMANCE_PER_DATE,
     FILENAME_PERFORMANCE_PER_USER,
+    FILENAME_TASK_LIST,
     FILENAME_WHOLE_PERFORMANCE,
-    Csv,
 )
 from annofabcli.statistics.database import Database, Query
 from annofabcli.statistics.table import Table
@@ -133,7 +133,6 @@ class WriteCsvGraph:
         self.project_id = project_id
         self.output_dir = output_dir
         self.table_obj = table_obj
-        self.csv_obj = Csv(str(output_dir))
         self.df_labor = df_labor
         self.minimal_output = minimal_output
 
@@ -162,12 +161,13 @@ class WriteCsvGraph:
             self.task_history_df = self.table_obj.create_task_history_df()
         return self.task_history_df
 
-    def write_histogram_for_task(self) -> None:
+    def write_task_info(self) -> None:
         """
         タスクに関するヒストグラムを出力する。
 
         """
         obj = Task(self._get_task_df())
+        obj.to_csv(self.output_dir / FILENAME_TASK_LIST)
         obj.plot_histogram_of_worktime(self.output_dir / "histogram/ヒストグラム-作業時間.html")
         obj.plot_histogram_of_others(self.output_dir / "histogram/ヒストグラム.html")
 
@@ -262,13 +262,6 @@ class WriteCsvGraph:
         productivity_per_started_date_obj = WholeProductivityPerFirstAnnotationStartedDate.from_df(df_task)
         productivity_per_started_date_obj.to_csv(self.output_dir / "教師付開始日毎の生産量と生産性.csv")
         productivity_per_started_date_obj.plot(self.output_dir / "line-graph/折れ線-横軸_教師付開始日-全体.html")
-
-    def write_csv_for_task(self) -> None:
-        """
-        タスク関係のCSVを出力する。
-        """
-        task_df = self._get_task_df()
-        self._catch_exception(self.csv_obj.write_task_list)(task_df, dropped_columns=["input_data_id_list"])
 
     def write_user_productivity_per_date(self, user_id_list: Optional[List[str]] = None):
         """ユーザごとの日ごとの生産性情報を出力する。"""
@@ -375,12 +368,10 @@ def visualize_statistics(
     write_obj = WriteCsvGraph(
         annofab_service, project_id, table_obj, output_project_dir, df_labor=df_labor, minimal_output=minimal_output
     )
-    write_obj.write_csv_for_task()
 
     write_obj._catch_exception(write_obj.write_user_performance)()
 
-    # ヒストグラム
-    write_obj._catch_exception(write_obj.write_histogram_for_task)()
+    write_obj._catch_exception(write_obj.write_task_info)()
 
     # 折れ線グラフ
     write_obj.write_cumulative_linegraph_by_user(user_id_list)
