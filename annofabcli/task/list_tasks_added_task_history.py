@@ -144,6 +144,7 @@ class AddingAdditionalInfoToTask:
     def __init__(self, service: annofabapi.Resource, project_id: str):
         self.service = service
         self.project_id = project_id
+        self.visualize = AddProps(self.service, project_id)
 
     def _add_task_history_info(self, task: Task, task_history: Optional[TaskHistory], column_prefix: str) -> Task:
         """
@@ -278,7 +279,6 @@ class ListTasksAddedTaskHistory(AbstractCommandLineInterface):
 
     def __init__(self, service: annofabapi.Resource, facade: AnnofabApiFacade, args: argparse.Namespace):
         super().__init__(service, facade, args)
-        self.visualize = AddProps(self.service, args.project_id)
 
     def get_detail_task_list(
         self,
