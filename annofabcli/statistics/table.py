@@ -357,26 +357,10 @@ class Table:
             [annofabcli.utils.isoduration_to_hour(e["accumulated_labor_time_milliseconds"]) for e in task_histories]
         )
 
-        task["number_of_rejections_by_inspection"] = get_number_of_rejections(
-            task["histories_by_phase"], TaskPhase.INSPECTION
-        )
-        task["number_of_rejections_by_acceptance"] = get_number_of_rejections(
-            task["histories_by_phase"], TaskPhase.ACCEPTANCE
-        )
         # APIで取得した 'number_of_rejections' は非推奨で、number_of_rejections_by_inspection/acceptanceと矛盾する場合があるので、書き換える
         task["number_of_rejections"] = (
             task["number_of_rejections_by_inspection"] + task["number_of_rejections_by_acceptance"]
         )
-
-        # 受入完了日時を設定
-        if task["phase"] == TaskPhase.ACCEPTANCE.value and task["status"] == TaskStatus.COMPLETE.value:
-            assert len(task_histories) > 0
-            task["task_completed_datetime"] = task_histories[-1]["ended_datetime"]
-        else:
-            task["task_completed_datetime"] = None
-
-        # 初めて受入が完了した日時
-        task["first_acceptance_completed_datetime"] = self._get_first_acceptance_completed_datetime(task_histories)
 
         task["diff_days_to_first_inspection_started"] = diff_days(
             "first_inspection_started_datetime", "first_annotation_started_datetime"
@@ -388,13 +372,6 @@ class Table:
         task["diff_days_to_first_acceptance_completed"] = diff_days(
             "first_acceptance_completed_datetime", "first_annotation_started_datetime"
         )
-
-        # 抜取検査/抜取受入で、検査/受入がスキップされたか否か
-        task["acceptance_is_skipped"] = self._acceptance_is_skipped(task_histories)
-        task["inspection_is_skipped"] = self._inspection_is_skipped(task_histories)
-        task["annotator_is_changed"] = self.operator_is_changed_by_phase(task_histories, TaskPhase.ANNOTATION)
-        task["inspector_is_changed"] = self.operator_is_changed_by_phase(task_histories, TaskPhase.INSPECTION)
-        task["acceptor_is_changed"] = self.operator_is_changed_by_phase(task_histories, TaskPhase.ACCEPTANCE)
 
         return task
 

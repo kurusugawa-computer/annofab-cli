@@ -115,9 +115,6 @@ class Csv:
             "inspection_count",
             "input_data_count_of_inspection",
             # タスクの状態
-            "annotator_is_changed",
-            "inspector_is_changed",
-            "acceptor_is_changed",
             "inspection_is_skipped",
             "acceptance_is_skipped",
         ]
