@@ -1,5 +1,5 @@
 from __future__ import annotations
-import more_itertools
+
 import argparse
 import asyncio
 import json
@@ -7,15 +7,12 @@ import logging
 import sys
 from pathlib import Path
 from typing import Any, Dict, List, Optional, Set
-from annofabapi.utils import (
-    get_number_of_rejections,
-    get_task_history_index_skipped_acceptance,
-    get_task_history_index_skipped_inspection,
-)
 
 import annofabapi
+import more_itertools
 import pandas
 from annofabapi.models import ProjectMemberRole, Task, TaskHistory, TaskPhase, TaskStatus
+from annofabapi.utils import get_task_history_index_skipped_acceptance, get_task_history_index_skipped_inspection
 
 import annofabcli
 from annofabcli import AnnofabApiFacade
@@ -39,6 +36,23 @@ TaskHistoryDict = Dict[str, List[TaskHistory]]
 """タスク履歴の辞書（key: task_id, value: タスク履歴一覧）"""
 
 DEFAULT_WAIT_OPTIONS = WaitOptions(interval=60, max_tries=360)
+
+
+def get_completed_datetime(task: dict[str, Any], task_histories: list[TaskHistory]) -> Optional[str]:
+    """受入完了状態になった日時を取得する。
+
+    Args:
+        task_histories (List[TaskHistory]): [description]
+
+    Returns:
+        str: 受入完了状態になった日時
+    """
+    # 受入完了日時を設定
+    if task["phase"] == TaskPhase.ACCEPTANCE.value and task["status"] == TaskStatus.COMPLETE.value:
+        assert len(task_histories) > 0
+        return task_histories[-1]["ended_datetime"]
+    else:
+        return None
 
 
 def get_first_acceptance_completed_datetime(task_histories: list[TaskHistory]) -> Optional[str]:
@@ -69,8 +83,9 @@ def get_first_acceptance_completed_datetime(task_histories: list[TaskHistory]) -
 
     return None
 
+
 def is_acceptance_phase_skipped(task_histories: list[TaskHistory]) -> bool:
-    """タスク履歴から、受入フェーズでスキップされたことがあるかを取得する。
+    """抜取受入によって、受入フェーズでスキップされたことがあるかを取得する。
 
     Args:
         task_histories (List[TaskHistory]): タスク履歴
@@ -93,8 +108,9 @@ def is_acceptance_phase_skipped(task_histories: list[TaskHistory]) -> bool:
         is None
     )
 
-def is_inspection_phase_skipped(task_histories: List[TaskHistory]) -> bool:
-    """タスク履歴から、検査フェーズでスキップされたことがあるかを取得する。
+
+def is_inspection_phase_skipped(task_histories: list[TaskHistory]) -> bool:
+    """抜取検査によって、検査フェーズでスキップされたことがあるかを取得する。
 
     Args:
         task_histories (List[TaskHistory]): タスク履歴
@@ -116,13 +132,18 @@ def is_inspection_phase_skipped(task_histories: List[TaskHistory]) -> bool:
     )
 
 
+class AddingAdditionalInfoToTask:
+    """タスクに付加的な情報を追加するためのクラス
 
-class ListTasksAddedTaskHistory2:
+    Args:
+        service: annofabapiにアクセスするためのインスタンス
+        project_id: プロジェクトID
 
-    def __init__(self, service: annofabapi.Resource, project_id:str):
+    """
+
+    def __init__(self, service: annofabapi.Resource, project_id: str):
         self.service = service
         self.project_id = project_id
-        self.visualize = AddProps(self.service, project_id)
 
     def _add_task_history_info(self, task: Task, task_history: Optional[TaskHistory], column_prefix: str) -> Task:
         """
@@ -163,10 +184,16 @@ class ListTasksAddedTaskHistory2:
         return task
 
     def _add_task_history_info_by_phase(
-        self, task: dict[str,Any], task_histories:list[TaskHistory], phase: TaskPhase
+        self, task: dict[str, Any], task_histories: list[TaskHistory], phase: TaskPhase
     ) -> Task:
         if task_histories is not None:
-            task_history_by_phase = [e for e in task_histories if e["phase"] == phase.value and e["account_id"] is not None and annofabcli.utils.isoduration_to_hour(e["accumulated_labor_time_milliseconds"]) > 0]
+            task_history_by_phase = [
+                e
+                for e in task_histories
+                if e["phase"] == phase.value
+                and e["account_id"] is not None
+                and annofabcli.utils.isoduration_to_hour(e["accumulated_labor_time_milliseconds"]) > 0
+            ]
         else:
             task_history_by_phase = []
 
@@ -189,41 +216,59 @@ class ListTasksAddedTaskHistory2:
 
         return task
 
+    def add_additional_info_to_task(self, task: dict[str, Any]):
+        """タスクの付加的情報を、タスクに追加する。
+        以下の列を追加する。
+        * user_id
+        * username
+        * number_of_rejections_by_inspection
+        * number_of_rejections_by_acceptance
+        * worktime_hour
 
-    def add_task_history_info_to_task(self, task:dict[str,Any], task_histories:list[TaskHistory]):
-        """[summary]
 
         Args:
-            task (dict[str,Any]): [description]
-            task_histories (list[TaskHistory]): [description]
+            task (dict[str,Any]): (IN/OUT) タスク情報
 
-        Returns:
-            [type]: [description]
         """
+        # タスク情報から取得できる、付加的な情報を追加する
+        self.visualize.add_properties_to_task(task)
+
+    def add_task_history_additional_info_to_task(self, task: dict[str, Any], task_histories: list[TaskHistory]):
+        """タスク履歴から取得できる付加的情報を、タスクに追加する。
+        以下の列を追加する。
+        * annotation_worktime_hour
+        * first_annotation_user_id
+        * first_annotation_username
+        * first_annotation_started_datetime
+        ... inspection, acceptanceも同様
+
+        * first_acceptance_completed_datetime
+        * completed_datetime
+        * inspection_is_skipped
+        * acceptance_is_skipped
+
+        Args:
+            task (dict[str,Any]): (IN/OUT) タスク情報
+            task_histories (list[TaskHistory]): タスク履歴
+
+        """
+        # タスク情報から取得できる、付加的な情報を追加する
         task = self.visualize.add_properties_to_task(task)
 
         # フェーズごとのタスク履歴情報を追加する
-        self._add_task_history_info_by_phase(
-            task, task_histories, phase=TaskPhase.ANNOTATION
-        )
-        self._add_task_history_info_by_phase(
-            task, task_histories, phase=TaskPhase.INSPECTION
-        )
-        self._add_task_history_info_by_phase(
-            task, task_histories, phase=TaskPhase.ACCEPTANCE
-        )
+        self._add_task_history_info_by_phase(task, task_histories, phase=TaskPhase.ANNOTATION)
+        self._add_task_history_info_by_phase(task, task_histories, phase=TaskPhase.INSPECTION)
+        self._add_task_history_info_by_phase(task, task_histories, phase=TaskPhase.ACCEPTANCE)
 
         # 初めて受入が完了した日時
         task["first_acceptance_completed_datetime"] = get_first_acceptance_completed_datetime(task_histories)
 
         # 受入完了日時を設定
-        if task["phase"] == TaskPhase.ACCEPTANCE.value and task["status"] == TaskStatus.COMPLETE.value:
-            assert len(task_histories) > 0
-            task["completed_datetime"] = task_histories[-1]["ended_datetime"]
-        else:
-            task["completed_datetime"] = None
+        task["completed_datetime"] = get_completed_datetime(task, task_histories)
 
-
+        # 抜取検査/受入によって、スキップされたかどうか
+        task["inspection_is_skipped"] = is_inspection_phase_skipped(task_histories)
+        task["acceptance_is_skipped"] = is_acceptance_phase_skipped(task_histories)
 
 
 class ListTasksAddedTaskHistory(AbstractCommandLineInterface):
@@ -235,36 +280,26 @@ class ListTasksAddedTaskHistory(AbstractCommandLineInterface):
         super().__init__(service, facade, args)
         self.visualize = AddProps(self.service, args.project_id)
 
+    def get_detail_task_list(
+        self,
+        task_list: List[Dict[str, Any]],
+        task_history_dict: TaskHistoryDict,
+        project_id: str,
+    ):
+        obj = AddingAdditionalInfoToTask(self.service, project_id=project_id)
 
-    def create_df_task(self, task_list: List[Dict[str, Any]], task_history_dict: TaskHistoryDict) -> pandas.DataFrame:
         for task in task_list:
-            # ユーザ表示用の情報を出力する
-            task = self.visualize.add_properties_to_task(task)
+
+            obj.add_additional_info_to_task(task)
+
             task_id = task["task_id"]
-            task_history_list = task_history_dict.get(task_id)
-            self._add_task_history_info_by_phase(
-                task=task, task_history_list=task_history_list, phase=TaskPhase.ANNOTATION
-            )
-            self._add_task_history_info_by_phase(
-                task=task, task_history_list=task_history_list, phase=TaskPhase.INSPECTION
-            )
-            self._add_task_history_info_by_phase(
-                task=task, task_history_list=task_history_list, phase=TaskPhase.ACCEPTANCE
-            )
+            task_histories = task_history_dict.get(task_id)
+            if task_histories is None:
+                logger.warning(f"task_id='{task_id}' に紐づくタスク履歴情報は存在しないので、タスク履歴の付加的情報はタスクに追加しません。")
+                continue
+            obj.add_task_history_additional_info_to_task(task, task_histories)
 
-            # 受入完了日時を設定
-            if task["phase"] == TaskPhase.ACCEPTANCE.value and task["status"] == TaskStatus.COMPLETE.value:
-                assert len(task_histories) > 0
-                task["task_completed_datetime"] = task_histories[-1]["ended_datetime"]
-            else:
-                task["task_completed_datetime"] = None
-
-            # 初めて受入が完了した日時
-            task["first_acceptance_completed_datetime"] = self._get_first_acceptance_completed_datetime(task_histories)
-
-
-
-        return pandas.DataFrame(task_list)
+        return task_list
 
     @staticmethod
     def _get_output_target_columns() -> List[str]:
@@ -294,22 +329,15 @@ class ListTasksAddedTaskHistory(AbstractCommandLineInterface):
             for phase in [TaskPhase.ANNOTATION, TaskPhase.INSPECTION, TaskPhase.ACCEPTANCE]
             for info in ["user_id", "username", "started_datetime"]
         ]
-        return base_columns + task_history_columns
 
-    def print_task_list_added_task_history(
-        self, task_list: List[Dict[str, Any]], task_history_dict: TaskHistoryDict
-    ) -> None:
-        logger.debug("JSONファイル読み込み中")
-        df_task = self.create_df_task(task_list=task_list, task_history_dict=task_history_dict)
+        last_columns = [
+            "first_acceptance_completed_datetime",
+            "completed_datetime",
+            "inspection_is_skipped",
+            "acceptance_is_skipped",
+        ]
 
-        logger.debug(f"タスク一覧の件数: {len(df_task)}")
-
-        annofabcli.utils.print_according_to_format(
-            df_task[self._get_output_target_columns()],
-            arg_format=FormatArgument(FormatArgument.CSV),
-            output=self.output,
-            csv_format=self.csv_format,
-        )
+        return base_columns + task_history_columns + last_columns
 
     def download_json_files(
         self,
@@ -418,7 +446,19 @@ class ListTasksAddedTaskHistory(AbstractCommandLineInterface):
         filtered_task_list = self.filter_task_list(
             project_id, task_list, task_id_list=task_id_list, task_query=task_query
         )
-        self.print_task_list_added_task_history(task_list=filtered_task_list, task_history_dict=task_history_dict)
+
+        detail_task_list = self.get_detail_task_list(
+            project_id=project_id, task_list=filtered_task_list, task_history_dict=task_history_dict
+        )
+
+        df_task = pandas.DataFrame(detail_task_list)
+
+        annofabcli.utils.print_according_to_format(
+            df_task[self._get_output_target_columns()],
+            arg_format=FormatArgument(FormatArgument.CSV),
+            output=self.output,
+            csv_format=self.csv_format,
+        )
 
 
 def main(args):
