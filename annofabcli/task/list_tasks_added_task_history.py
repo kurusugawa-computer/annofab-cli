@@ -325,6 +325,7 @@ class ListTasksAddedTaskHistory(AbstractCommandLineInterface):
             "completed_datetime",
             "inspection_is_skipped",
             "acceptance_is_skipped",
+            "sampling",
         ]
 
         task_history_columns = [
