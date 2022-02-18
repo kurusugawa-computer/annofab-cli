@@ -164,12 +164,20 @@ class AddingAdditionalInfoToTask:
                     f"{column_prefix}_user_id": None,
                     f"{column_prefix}_username": None,
                     f"{column_prefix}_started_datetime": None,
+                    f"{column_prefix}_worktime_hour": None,
                 }
             )
             return task
 
         account_id = task_history["account_id"]
-        task.update({f"{column_prefix}_started_datetime": task_history["started_datetime"]})
+        task.update(
+            {
+                f"{column_prefix}_started_datetime": task_history["started_datetime"],
+                f"{column_prefix}_worktime_hour": annofabcli.utils.isoduration_to_hour(
+                    task_history["accumulated_labor_time_milliseconds"]
+                ),
+            }
+        )
 
         organization_member = self.visualize.get_project_member_from_account_id(account_id)
         if organization_member is not None:
@@ -201,10 +209,6 @@ class AddingAdditionalInfoToTask:
         # 最初の対象フェーズに関する情報を設定
         first_task_history = task_history_by_phase[0] if len(task_history_by_phase) > 0 else None
         self._add_task_history_info(task, first_task_history, column_prefix=f"first_{phase.value}")
-
-        # 最後の対象フェーズに関する情報を設定
-        last_task_history = task_history_by_phase[-1] if len(task_history_by_phase) > 0 else None
-        self._add_task_history_info(task, last_task_history, column_prefix=f"last_{phase.value}")
 
         # 作業時間に関する情報を設定
         task[f"{phase.value}_worktime_hour"] = sum(
@@ -324,10 +328,9 @@ class ListTasksAddedTaskHistory(AbstractCommandLineInterface):
         ]
 
         task_history_columns = [
-            f"{step}_{phase.value}_{info}"
-            for step in ["first", "last"]
+            f"first_{phase.value}_{info}"
             for phase in [TaskPhase.ANNOTATION, TaskPhase.INSPECTION, TaskPhase.ACCEPTANCE]
-            for info in ["user_id", "username", "started_datetime"]
+            for info in ["user_id", "username", "started_datetime", "worktime_hour"]
         ]
 
         return base_columns + task_history_columns
