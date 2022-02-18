@@ -8,6 +8,7 @@ import bokeh.layouts
 import bokeh.palettes
 import pandas
 
+from annofabcli.common.utils import print_csv
 from annofabcli.statistics.histogram import get_histogram_figure, get_sub_title_from_series
 
 logger = logging.getLogger(__name__)
@@ -54,7 +55,7 @@ class Task:
                 title="受入作業時間",
                 column="acceptance_worktime_hour",
             ),
-            dict(title="総作業時間", column="sum_worktime_hour"),
+            dict(title="総作業時間", column="worktime_hour"),
         ]
 
         figure_list = []
@@ -179,3 +180,65 @@ class Task:
         bokeh.plotting.reset_output()
         bokeh.plotting.output_file(output_file, title=output_file.stem)
         bokeh.plotting.save(bokeh_obj)
+
+    def to_csv(self, output_file: Path) -> None:
+        """
+        タスク一覧をTSVで出力する
+        Args:
+            arg_df:
+            dropped_columns:
+
+        Returns:
+
+        """
+
+        if not self._validate_df_for_output(output_file):
+            return
+
+        columns = [
+            "project_id",
+            "task_id",
+            "phase",
+            "phase_stage",
+            "status",
+            "user_id",
+            "username",
+            "number_of_rejections",
+            "number_of_rejections_by_inspection",
+            "number_of_rejections_by_acceptance",
+            "started_datetime",
+            "updated_datetime",
+            "first_acceptance_completed_datetime",
+            "sampling",
+            # 1回目の教師付フェーズ
+            "first_annotation_user_id",
+            "first_annotation_username",
+            "first_annotation_worktime_hour",
+            "first_annotation_started_datetime",
+            # 1回目の検査フェーズ
+            "first_inspection_user_id",
+            "first_inspection_username",
+            "first_inspection_worktime_hour",
+            "first_inspection_started_datetime",
+            # 1回目の受入フェーズ
+            "first_acceptance_user_id",
+            "first_acceptance_username",
+            "first_acceptance_worktime_hour",
+            "first_acceptance_started_datetime",
+            # 作業時間に関する内容
+            "worktime_hour",
+            "annotation_worktime_hour",
+            "inspection_worktime_hour",
+            "acceptance_worktime_hour",
+            # 個数
+            "input_data_count",
+            "input_duration_seconds",
+            "annotation_count",
+            "inspection_count",
+            "input_data_count_of_inspection",
+            # タスクの状態
+            "inspection_is_skipped",
+            "acceptance_is_skipped",
+        ]
+
+        print_csv(self.df[columns], str(output_file))

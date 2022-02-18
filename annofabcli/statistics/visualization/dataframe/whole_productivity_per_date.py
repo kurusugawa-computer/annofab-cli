@@ -158,6 +158,10 @@ class WholeProductivityPerCompletedDate:
         def add_velocity_column(df: pandas.DataFrame, numerator_column: str, denominator_column: str):
             """速度情報の列を追加"""
             df[f"{numerator_column}/{denominator_column}"] = df[numerator_column] / df[denominator_column]
+            # 1週間移動平均も出力
+            df[f"{numerator_column}/{denominator_column}{WEEKLY_MOVING_AVERAGE_COLUMN_SUFFIX}"] = get_weekly_sum(
+                df[numerator_column]
+            ) / get_weekly_sum(df[denominator_column])
 
         # 累計情報を追加
         add_cumsum_column(df, column="task_count")
@@ -658,7 +662,8 @@ class WholeProductivityPerCompletedDate:
         ]
 
         velocity_columns = [
-            f"{numerator}/{denominator}"
+            f"{numerator}/{denominator}{suffix}"
+            for suffix in ["", WEEKLY_MOVING_AVERAGE_COLUMN_SUFFIX]
             for numerator in ["actual_worktime_hour", "monitored_worktime_hour"]
             for denominator in ["task_count", "input_data_count", "annotation_count"]
         ]
@@ -689,6 +694,10 @@ class WholeProductivityPerFirstAnnotationStartedDate:
         def add_velocity_column(df: pandas.DataFrame, numerator_column: str, denominator_column: str):
             df[f"{numerator_column}/{denominator_column}"] = df[numerator_column] / df[denominator_column]
 
+            df[
+                f"{numerator_column}/{denominator_column}{WEEKLY_MOVING_AVERAGE_COLUMN_SUFFIX}"
+            ] = get_weekly_moving_average(df[numerator_column]) / get_weekly_moving_average(df[denominator_column])
+
         # annofab 計測時間から算出したvelocityを追加
         add_velocity_column(df, numerator_column="worktime_hour", denominator_column="input_data_count")
         add_velocity_column(df, numerator_column="annotation_worktime_hour", denominator_column="input_data_count")
@@ -709,7 +718,7 @@ class WholeProductivityPerFirstAnnotationStartedDate:
                 "first_annotation_started_datetime",
                 "input_data_count",
                 "annotation_count",
-                "sum_worktime_hour",
+                "worktime_hour",
                 "annotation_worktime_hour",
                 "inspection_worktime_hour",
                 "acceptance_worktime_hour",
@@ -722,7 +731,7 @@ class WholeProductivityPerFirstAnnotationStartedDate:
         value_columns = [
             "input_data_count",
             "annotation_count",
-            "sum_worktime_hour",
+            "worktime_hour",
             "annotation_worktime_hour",
             "inspection_worktime_hour",
             "acceptance_worktime_hour",
@@ -751,7 +760,7 @@ class WholeProductivityPerFirstAnnotationStartedDate:
 
         df_date.rename(
             columns={
-                "sum_worktime_hour": "worktime_hour",
+                "worktime_hour": "worktime_hour",
             },
             inplace=True,
         )
@@ -771,7 +780,7 @@ class WholeProductivityPerFirstAnnotationStartedDate:
         if not self._validate_df_for_output(output_file):
             return
 
-        columns = [
+        basic_columns = [
             "first_annotation_started_date",
             "task_count",
             "input_data_count",
@@ -780,15 +789,21 @@ class WholeProductivityPerFirstAnnotationStartedDate:
             "annotation_worktime_hour",
             "inspection_worktime_hour",
             "acceptance_worktime_hour",
-            "worktime_hour/input_data_count",
-            "annotation_worktime_hour/input_data_count",
-            "inspection_worktime_hour/input_data_count",
-            "acceptance_worktime_hour/input_data_count",
-            "worktime_hour/annotation_count",
-            "annotation_worktime_hour/annotation_count",
-            "inspection_worktime_hour/annotation_count",
-            "acceptance_worktime_hour/annotation_count",
         ]
+
+        velocity_columns = [
+            f"{numerator}/{denominator}{suffix}"
+            for suffix in ["", WEEKLY_MOVING_AVERAGE_COLUMN_SUFFIX]
+            for denominator in ["input_data_count", "annotation_count"]
+            for numerator in [
+                "worktime_hour",
+                "annotation_worktime_hour",
+                "inspection_worktime_hour",
+                "acceptance_worktime_hour",
+            ]
+        ]
+
+        columns = basic_columns + velocity_columns
 
         print_csv(self.df[columns], str(output_file))
 

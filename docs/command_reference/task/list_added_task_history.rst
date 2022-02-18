@@ -76,6 +76,10 @@ CSV出力
 * annotation_worktime_hour: 教師付フェーズの作業時間[hour]
 * inspection_worktime_hour: 検査フェーズの作業時間[hour]
 * acceptance_worktime_hour: 受入フェーズの作業時間[hour]
+* first_acceptance_completed_datetime: はじめて受入完了状態になった日時
+* completed_datetime: 受入完了状態になった日時
+* inspection_is_skipped: 抜取検査により検査フェーズがスキップされたかどうか
+* acceptance_is_skipped: 抜取受入により受入フェーズがスキップされたかどうか
 * first_annotation_user_id: 最初の教師付フェーズを担当したユーザのuser_id
 * first_annotation_username: 最初の教師付フェーズを担当したユーザの名前
 * first_annotation_started_datetime: 最初の教師付フェーズを開始した日時
@@ -83,6 +87,8 @@ CSV出力
 * last_acceptance_user_id: 最後の受入フェーズを担当したユーザのuser_id
 * last_acceptance_username: 最後の受入フェーズを担当したユーザの名前
 * last_acceptance_started_datetime: 最後の受入フェーズを開始した日時
+
+
 
 Usage Details
 =================================
