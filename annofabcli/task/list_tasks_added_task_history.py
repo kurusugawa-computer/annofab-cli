@@ -276,10 +276,6 @@ class ListTasksAddedTaskHistory(AbstractCommandLineInterface):
     """
     タスクの一覧を表示する
     """
-
-    def __init__(self, service: annofabapi.Resource, facade: AnnofabApiFacade, args: argparse.Namespace):
-        super().__init__(service, facade, args)
-
     def get_detail_task_list(
         self,
         task_list: List[Dict[str, Any]],
