@@ -108,9 +108,6 @@ class Csv:
             "annotation_worktime_hour",
             "inspection_worktime_hour",
             "acceptance_worktime_hour",
-            "first_annotator_worktime_hour",
-            "first_inspector_worktime_hour",
-            "first_acceptor_worktime_hour",
             # 個数
             "input_data_count",
             "input_duration_seconds",

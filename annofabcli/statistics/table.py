@@ -1,6 +1,6 @@
 import logging
 from typing import Any, Dict, List, Optional
-
+from annofabcli.task.list_tasks_added_task_history import AddingAdditionalInfoToTask
 import dateutil
 import more_itertools
 import pandas
@@ -352,24 +352,6 @@ class Table:
             ]
         )
 
-        # 最初の教師者が担当した履歴の合計作業時間を取得する。
-        # 担当者変更がなければ、"annotation_worktime_hour"と"first_annotation_worktime_hour"は同じ値
-        task["first_annotator_worktime_hour"] = (
-            self._get_first_operator_worktime(annotation_histories, first_annotation_history["account_id"])
-            if first_annotation_history is not None
-            else 0
-        )
-
-        task["first_inspector_worktime_hour"] = (
-            self._get_first_operator_worktime(inspection_histories, first_inspection_history["account_id"])
-            if first_inspection_history is not None
-            else 0
-        )
-        task["first_acceptor_worktime_hour"] = (
-            self._get_first_operator_worktime(acceptance_histories, first_acceptance_history["account_id"])
-            if first_acceptance_history is not None
-            else 0
-        )
 
         task["sum_worktime_hour"] = sum(
             [annofabcli.utils.isoduration_to_hour(e["accumulated_labor_time_milliseconds"]) for e in task_histories]
@@ -493,7 +475,6 @@ class Table:
 
             arg_task["inspection_count"] = inspection_count
 
-            # たぶん不要
             arg_task["input_data_count_of_inspection"] = input_data_count_of_inspection
 
         tasks = self._get_task_list()
@@ -502,14 +483,21 @@ class Table:
         annotations_dict = self.database.get_annotation_count_by_task()
         input_data_dict = self.database.read_input_data_from_json()
 
+
+        adding_obj = AddingAdditionalInfoToTask(self.annofab_service, project_id=self.project_id)
+
+
+
         for task in tasks:
+
+            adding_obj.add_additional_info_to_task(task)
+
             task_id = task["task_id"]
             task_histories = task_histories_dict.get(task_id, [])
 
-            account_id = task["account_id"]
-            task["user_id"] = self._get_user_id(account_id)
-            task["username"] = self._get_username(account_id)
             task["input_data_count"] = len(task["input_data_id_list"])
+
+            adding_obj.add_task_history_additional_info_to_task(task, task_histories)
 
             self.set_task_histories(task, task_histories)
 
