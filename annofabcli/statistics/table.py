@@ -492,6 +492,8 @@ class Table:
                         input_data_count_of_inspection += 1
 
             arg_task["inspection_count"] = inspection_count
+
+            # たぶん不要
             arg_task["input_data_count_of_inspection"] = input_data_count_of_inspection
 
         tasks = self._get_task_list()
