@@ -162,6 +162,15 @@ class ListAnnotationCounterByInputData:
 
 
         """
+        def convert_attribute_value_to_key(value:Any) -> str:
+            if isinstance(value , bool):
+                # bool値をCSVの列名やJSONのキーとして扱う場合、`True/False`だとPythonに依存したように見えてしまうので（本当？）、`true/false`に変換する
+                if value:
+                    return "true"
+                elif not value:
+                    return "false"
+            return str(value)
+                
         details = simple_annotation["details"]
 
         annotation_count_by_label = collections.Counter([e["label"] for e in details])
@@ -175,7 +184,7 @@ class ListAnnotationCounterByInputData:
             label = detail["label"]
             for attribute, value in detail["attributes"].items():
                 # 属性値を json.dumps関数で変換している理由： bool値の表現をJSONに合わせるため
-                attributes_list.append((label, attribute, json.dumps(value)))
+                attributes_list.append((label, attribute, convert_attribute_value_to_key(value)))
 
         annotation_count_by_attribute = collections.Counter(attributes_list)
         if target_attributes is not None:
