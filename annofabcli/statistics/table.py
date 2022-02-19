@@ -244,7 +244,7 @@ class Table:
     def create_task_df(self) -> pandas.DataFrame:
         """
         タスク一覧からdataframeを作成する。
-        新たに追加した列は、user_id, annotation_count, inspection_count,
+        新たに追加した列は、user_id, annotation_count, inspection_comment_count,
             first_annotation_user_id, first_annotation_started_datetime,
             annotation_worktime_hour, inspection_worktime_hour, acceptance_worktime_hour, worktime_hour
         """
@@ -325,7 +325,9 @@ class Table:
         task_df["annotation_worktime_hour/annotation_count"] = (
             task_df["annotation_worktime_hour"] / task_df["annotation_count"]
         )
-        task_df["inspection_comment_count/annotation_count"] = task_df["inspection_comment_count"] / task_df["annotation_count"]
+        task_df["inspection_comment_count/annotation_count"] = (
+            task_df["inspection_comment_count"] / task_df["annotation_count"]
+        )
         task_df["number_of_rejections/annotation_count"] = task_df["number_of_rejections"] / task_df["annotation_count"]
 
         task_df["inspection_worktime_hour/annotation_count"] = (

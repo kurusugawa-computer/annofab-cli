@@ -53,7 +53,7 @@ class TestTable:
                 "task_id": ["task1", "task2"],
                 "annotation_count": [100, 200],
                 "input_data_count": [2, 4],
-                "inspection_count": [5, 6],
+                "inspection_comment_count": [5, 6],
                 "number_of_rejections": [1, 2],
             }
         )

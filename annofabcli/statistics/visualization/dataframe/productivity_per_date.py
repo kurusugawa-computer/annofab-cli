@@ -102,7 +102,7 @@ class AnnotatorProductivityPerDate(AbstractRoleProductivityPerDate):
                 "task_count",
                 "input_data_count",
                 "annotation_count",
-                "inspection_count",
+                "inspection_comment_count",
             ]
         ].sum()
 
@@ -113,8 +113,8 @@ class AnnotatorProductivityPerDate(AbstractRoleProductivityPerDate):
                     sum_df[numerator_column] / sum_df[denominator_column]
                 )
 
-        sum_df["inspection_comment_count/annotation_count"] = sum_df["inspection_count"] / sum_df["annotation_count"]
-        sum_df["inspection_count/input_data_count"] = sum_df["inspection_count"] / sum_df["annotation_count"]
+        sum_df["inspection_comment_count/annotation_count"] = sum_df["inspection_comment_count"] / sum_df["annotation_count"]
+        sum_df["inspection_comment_count/input_data_count"] = sum_df["inspection_comment_count"] / sum_df["annotation_count"]
 
         return cls(sum_df)
 
@@ -149,7 +149,7 @@ class AnnotatorProductivityPerDate(AbstractRoleProductivityPerDate):
                     "inspection_worktime_hour",
                     "acceptance_worktime_hour",
                     "worktime_hour",
-                    "inspection_count",
+                    "inspection_comment_count",
                     "task_count",
                     "input_data_count",
                     "annotation_count",
@@ -253,7 +253,7 @@ class AnnotatorProductivityPerDate(AbstractRoleProductivityPerDate):
                 / get_weekly_sum(df_subset["annotation_count"])
             )
             df_subset[f"inspection_comment_count/annotation_count{WEEKLY_MOVING_AVERAGE_COLUMN_SUFFIX}"] = get_weekly_sum(
-                df_subset["inspection_count"]
+                df_subset["inspection_comment_count"]
             ) / get_weekly_sum(df_subset["annotation_count"])
 
             source = ColumnDataSource(data=df_subset)
@@ -291,7 +291,7 @@ class AnnotatorProductivityPerDate(AbstractRoleProductivityPerDate):
                 "task_count",
                 "input_data_count",
                 "annotation_count",
-                "inspection_count",
+                "inspection_comment_count",
             ]
         )
         for fig in figs:
@@ -344,12 +344,12 @@ class AnnotatorProductivityPerDate(AbstractRoleProductivityPerDate):
             ),
             dict(
                 title="教師付開始日ごとの入力データあたり検査コメント数",
-                y_column_name="inspection_count/input_data_count",
+                y_column_name="inspection_comment_count/input_data_count",
                 y_axis_label="入力データあたり検査コメント数",
             ),
             dict(
                 title="教師付開始日ごとの入力データあたり検査コメント数(1週間移動平均)",
-                y_column_name=f"inspection_count/input_data_count{WEEKLY_MOVING_AVERAGE_COLUMN_SUFFIX}",
+                y_column_name=f"inspection_comment_count/input_data_count{WEEKLY_MOVING_AVERAGE_COLUMN_SUFFIX}",
                 y_axis_label="入力データあたり検査コメント数",
             ),
         ]
@@ -385,8 +385,8 @@ class AnnotatorProductivityPerDate(AbstractRoleProductivityPerDate):
                 * 60
                 / get_weekly_sum(df_subset["input_data_count"])
             )
-            df_subset[f"inspection_count/input_data_count{WEEKLY_MOVING_AVERAGE_COLUMN_SUFFIX}"] = get_weekly_sum(
-                df_subset["inspection_count"]
+            df_subset[f"inspection_comment_count/input_data_count{WEEKLY_MOVING_AVERAGE_COLUMN_SUFFIX}"] = get_weekly_sum(
+                df_subset["inspection_comment_count"]
             ) / get_weekly_sum(df_subset["input_data_count"])
 
             source = ColumnDataSource(data=df_subset)
@@ -424,7 +424,7 @@ class AnnotatorProductivityPerDate(AbstractRoleProductivityPerDate):
                 "task_count",
                 "input_data_count",
                 "annotation_count",
-                "inspection_count",
+                "inspection_comment_count",
             ]
         )
         for fig in figs:
@@ -445,7 +445,7 @@ class AnnotatorProductivityPerDate(AbstractRoleProductivityPerDate):
             "task_count",
             "input_data_count",
             "annotation_count",
-            "inspection_count",
+            "inspection_comment_count",
             "worktime_hour",
             "annotation_worktime_hour",
             "inspection_worktime_hour",
@@ -461,7 +461,7 @@ class AnnotatorProductivityPerDate(AbstractRoleProductivityPerDate):
         columns = (
             production_columns
             + velocity_columns
-            + ["inspection_count/input_data_count", "inspection_comment_count/annotation_count"]
+            + ["inspection_comment_count/input_data_count", "inspection_comment_count/annotation_count"]
         )
 
         print_csv(self.df[columns], output=str(output_file))
@@ -778,7 +778,7 @@ class InspectorProductivityPerDate(AbstractRoleProductivityPerDate):
                 "task_count",
                 "input_data_count",
                 "annotation_count",
-                "inspection_count",
+                "inspection_comment_count",
             ]
         )
         for fig in figs:
@@ -1126,7 +1126,7 @@ class AcceptorProductivityPerDate(AbstractRoleProductivityPerDate):
                 "task_count",
                 "input_data_count",
                 "annotation_count",
-                "inspection_count",
+                "inspection_comment_count",
             ]
         )
         for fig in figs:
