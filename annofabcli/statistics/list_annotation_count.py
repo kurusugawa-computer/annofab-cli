@@ -1,8 +1,9 @@
 from __future__ import annotations
-import json
+
 import abc
 import argparse
 import collections
+import json
 import logging
 import tempfile
 import zipfile
@@ -249,7 +250,15 @@ class ListAnnotationCounterByInputData:
             d.update(c.labels_counter)
             return d
 
-        basic_columns = ["task_id", "status", "phase", "phase_stage", "input_data_id", "input_data_name", "annotation_count"]
+        basic_columns = [
+            "task_id",
+            "status",
+            "phase",
+            "phase_stage",
+            "input_data_id",
+            "input_data_name",
+            "annotation_count",
+        ]
         if label_columns is not None:
             value_columns = label_columns
         else:
