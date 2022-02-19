@@ -1,6 +1,5 @@
 from __future__ import annotations
-from functools import partial
-from annofabcli.common.enums import FormatArgument
+
 import abc
 import argparse
 import collections
@@ -11,6 +10,7 @@ import zipfile
 from collections import defaultdict
 from dataclasses import dataclass, field
 from enum import Enum
+from functools import partial
 from pathlib import Path
 from typing import Any, Collection, Counter, Iterator, Optional, Tuple
 
@@ -32,6 +32,7 @@ import annofabcli.common.cli
 from annofabcli import AnnofabApiFacade
 from annofabcli.common.cli import AbstractCommandLineInterface, ArgumentParser, build_annofabapi_resource_and_login
 from annofabcli.common.download import DownloadingFile
+from annofabcli.common.enums import FormatArgument
 from annofabcli.common.facade import (
     TaskQuery,
     convert_annotation_specs_labels_v2_to_v1,
@@ -656,7 +657,6 @@ class ListAnnotationCountMain:
         else:
             raise RuntimeError(f"group_by='{group_by}'が対象外です。")
 
-
     def print_annotation_counter_json(
         self,
         project_id: str,
@@ -666,10 +666,9 @@ class ListAnnotationCountMain:
         *,
         target_task_ids: Optional[Collection[str]] = None,
         task_query: Optional[TaskQuery] = None,
-        json_is_pretty: bool= False
+        json_is_pretty: bool = False,
     ):
-        """ラベルごと/属性ごとのアノテーション数をJSONファイルに出力します。
-        """
+        """ラベルごと/属性ごとのアノテーション数をJSONファイルに出力します。"""
         # 集計対象の属性を、選択肢系の属性にする
         _, attribute_columns = self.get_target_columns(project_id)
 
@@ -695,7 +694,6 @@ class ListAnnotationCountMain:
         else:
             raise RuntimeError(f"group_by='{group_by}'が対象外です。")
 
-
     def print_annotation_counter(
         self,
         project_id: str,
@@ -706,36 +704,32 @@ class ListAnnotationCountMain:
         *,
         target_task_ids: Optional[Collection[str]] = None,
         task_query: Optional[TaskQuery] = None,
-        csv_type: Optional[CsvType]=None,
-
+        csv_type: Optional[CsvType] = None,
     ):
-        """ラベルごと/属性ごとのアノテーション数を出力します。
-        """
+        """ラベルごと/属性ごとのアノテーション数を出力します。"""
         if arg_format == FormatArgument.CSV:
             assert csv_type is not None
             self.print_annotation_counter_csv(
-                    project_id=project_id,
-                    annotation_path=annotation_path,
-                    group_by=group_by,
-                    csv_type=csv_type,
-                    output_file=output_file,
-                    target_task_ids=target_task_ids,
-                    task_query=task_query,
-                )
+                project_id=project_id,
+                annotation_path=annotation_path,
+                group_by=group_by,
+                csv_type=csv_type,
+                output_file=output_file,
+                target_task_ids=target_task_ids,
+                task_query=task_query,
+            )
 
         elif arg_format in [FormatArgument.PRETTY_JSON, FormatArgument.JSON]:
-            json_is_pretty = True if arg_format == FormatArgument.PRETTY_JSON else False
+            json_is_pretty = (arg_format == FormatArgument.PRETTY_JSON)
             self.print_annotation_counter_json(
-                    project_id=project_id,
-                    annotation_path=annotation_path,
-                    group_by=group_by,
-                    output_file=output_file,
-                    target_task_ids=target_task_ids,
-                    task_query=task_query,
-                    json_is_pretty=json_is_pretty
-                )
-
-
+                project_id=project_id,
+                annotation_path=annotation_path,
+                group_by=group_by,
+                output_file=output_file,
+                target_task_ids=target_task_ids,
+                task_query=task_query,
+                json_is_pretty=json_is_pretty,
+            )
 
 
 class ListAnnotationCount(AbstractCommandLineInterface):
@@ -764,14 +758,15 @@ class ListAnnotationCount(AbstractCommandLineInterface):
         arg_format = FormatArgument(args.format)
         main_obj = ListAnnotationCountMain(self.service)
 
-
-        func = partial(main_obj.print_annotation_counter,                     project_id=project_id,
-                    group_by=group_by,
-                    csv_type=csv_type,
-                    arg_format=arg_format,
-                    output_file=output_file,
-                    target_task_ids=task_id_list,
-                    task_query=task_query,
+        func = partial(
+            main_obj.print_annotation_counter,
+            project_id=project_id,
+            group_by=group_by,
+            csv_type=csv_type,
+            arg_format=arg_format,
+            output_file=output_file,
+            target_task_ids=task_id_list,
+            task_query=task_query,
         )
 
         if annotation_path is None:
