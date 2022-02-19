@@ -46,7 +46,7 @@ def plot_label_histogram(
     target_labels: Optional[list[Any]] = None,
     bins: int = 20,
 ):
-    df = pandas.DataFrame([e.labels_counter for e in counter_list])
+    df = pandas.DataFrame([e.annotation_count_by_label for e in counter_list])
     if target_labels is not None:
         df = df[target_labels]
     df.fillna(0, inplace=True)
@@ -95,7 +95,7 @@ def plot_attribute_histogram(
     target_attributes: Optional[list[AttributesKey]] = None,
     bins: int = 20,
 ):
-    df = pandas.DataFrame([e.attributes_counter for e in counter_list])
+    df = pandas.DataFrame([e.annotation_count_by_attribute for e in counter_list])
     if target_attributes is not None:
         df = df[target_attributes]
     df.fillna(0, inplace=True)
