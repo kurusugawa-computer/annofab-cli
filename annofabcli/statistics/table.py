@@ -258,9 +258,9 @@ class Table:
                 return
             arg_task["input_duration_seconds"] = input_data.input_duration_seconds
 
-        def set_inspection_info(arg_task):
+        def set_inspection_comment_info(arg_task):
             # 指摘枚数
-            inspection_count = 0
+            inspection_comment_count = 0
             # 指摘された画像枚数
             input_data_count_of_inspection = 0
 
@@ -273,11 +273,11 @@ class Table:
                         for e in inspection_list
                         if self._inspection_condition(e, exclude_reply=True, only_error_corrected=True)
                     ]
-                    inspection_count += len(filtered_inspection_list)
+                    inspection_comment_count += len(filtered_inspection_list)
                     if len(filtered_inspection_list) > 0:
                         input_data_count_of_inspection += 1
 
-            arg_task["inspection_count"] = inspection_count
+            arg_task["inspection_comment_count"] = inspection_comment_count
 
             arg_task["input_data_count_of_inspection"] = input_data_count_of_inspection
 
@@ -303,7 +303,7 @@ class Table:
             self.set_task_histories(task, task_histories)
 
             task["annotation_count"] = annotations_dict.get(task_id, 0)
-            set_inspection_info(task)
+            set_inspection_comment_info(task)
             set_input_data_info_for_movie(task)
 
         df = pandas.DataFrame(tasks)
@@ -325,7 +325,7 @@ class Table:
         task_df["annotation_worktime_hour/annotation_count"] = (
             task_df["annotation_worktime_hour"] / task_df["annotation_count"]
         )
-        task_df["inspection_count/annotation_count"] = task_df["inspection_count"] / task_df["annotation_count"]
+        task_df["inspection_comment_count/annotation_count"] = task_df["inspection_comment_count"] / task_df["annotation_count"]
         task_df["number_of_rejections/annotation_count"] = task_df["number_of_rejections"] / task_df["annotation_count"]
 
         task_df["inspection_worktime_hour/annotation_count"] = (
@@ -353,7 +353,7 @@ class Table:
             row["task_id"]: {
                 "annotation_count": row["annotation_count"],
                 "input_data_count": row["input_data_count"],
-                "inspection_comment_count": row["inspection_count"],
+                "inspection_comment_count": row["inspection_comment_count"],
                 "rejected_count": row["number_of_rejections"],
             }
             for _, row in task_df.iterrows()

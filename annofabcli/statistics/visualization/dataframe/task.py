@@ -127,7 +127,7 @@ class Task:
         histogram_list = [
             dict(column="annotation_count", x_axis_label="アノテーション数", title="アノテーション数"),
             dict(column="input_data_count", x_axis_label="画像枚数", title="画像枚数"),
-            dict(column="inspection_count", x_axis_label="検査コメント数", title="検査コメント数"),
+            dict(column="inspection_commnet_count", x_axis_label="検査コメント数", title="検査コメント数"),
             dict(
                 column="input_data_count_of_inspection",
                 x_axis_label="指摘を受けた画像枚数",
@@ -234,7 +234,7 @@ class Task:
             "input_data_count",
             "input_duration_seconds",
             "annotation_count",
-            "inspection_count",
+            "inspection_comment_count",
             "input_data_count_of_inspection",
             # タスクの状態
             "inspection_is_skipped",
