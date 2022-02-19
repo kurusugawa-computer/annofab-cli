@@ -822,6 +822,7 @@ def parse_args(parser: argparse.ArgumentParser):
         choices=[e.value for e in CsvType],
         default=CsvType.LABEL,
         help="出力するCSVの種類を指定してください。 ``--format csv`` を指定したときのみ有効なオプションです。\n"
+        "\n"
         "* label: ラベルごとにアノテーション数が記載されているCSV\n"
         "* attribute: 属性値ごとにアノテーション数が記載されているCSV",
     )

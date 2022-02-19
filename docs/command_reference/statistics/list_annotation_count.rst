@@ -153,7 +153,7 @@ JSON出力
 
 
 .. code-block:: json
-    :caption: out_by_task.json
+    :caption: out_by_input_data.json
 
     [
     {
@@ -205,10 +205,7 @@ CSV出力
 
 .. csv-table:: out_by_task_label.csv 
     :header-rows: 1
-
-    task_id,task_status,task_phase,task_phase_stage,input_data_count,annotation_count,car,bike
-    task1,break,annotation,1,5,100,20,10...
-    task2,complete,acceptance,1,5,80,12,5...
+    :file: list_annotation_count/out_by_task_label.csv
 
 
 タスクごと属性ごとのアノテーション数
@@ -220,13 +217,9 @@ CSV出力
     --format csv --type attribute --output out_by_task_attribute.csv 
 
 
-.. csv-table:: out_by_input_data_attribute.csv 
+.. csv-table:: out_by_task_attribute.csv 
     :header-rows: 1
-
-    task_id,status,phase,phase_stage,input_data_count,annotation_count,car,car
-    ,,,,,,occlusion,occlusion
-    ,,,,,,true,false
-
+    :file: list_annotation_count/out_by_task_attribute.csv
 
 
 入力データごとラベルごとのアノテーション数
@@ -241,10 +234,7 @@ CSV出力
 
 .. csv-table:: out_by_input_data_label.csv 
     :header-rows: 1
-
-    task_id,task_status,task_phase,task_phase_stage,input_data_id,input_data_name,annotation_count,car,bike
-    task1,break,annotation,1,input1,input1,100,20,10...
-    task2,complete,acceptance,1,input2,input2,80,12,5...
+    :file: list_annotation_count/out_by_input_data_label.csv
 
 
 入力データごと属性ごとのアノテーション数
@@ -256,12 +246,10 @@ CSV出力
     --format csv --type attribute --output out_by_input_data_attribute.csv 
 
 
-.. csv-table:: out_by_input_data_attribute.csv 
+.. csv-table:: out_by_input_data_attribute.csv
     :header-rows: 1
+    :file: list_annotation_count/out_by_input_data_attribute.csv
 
-    task_id,status,phase,phase_stage,input_data_id,input_data_name,annotation_count,car,car
-    ,,,,,,,occlusion,occlusion
-    ,,,,,,,true,false
 
 
 
@@ -274,3 +262,4 @@ Usage Details
    :prog: annofabcli statistics list_annotation_count
    :nosubcommands:
    :nodefaultconst:
+
