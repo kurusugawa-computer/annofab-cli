@@ -3,7 +3,6 @@ from __future__ import annotations
 import abc
 import argparse
 import collections
-import json
 import logging
 import tempfile
 import zipfile
@@ -162,15 +161,16 @@ class ListAnnotationCounterByInputData:
 
 
         """
-        def convert_attribute_value_to_key(value:Any) -> str:
-            if isinstance(value , bool):
+
+        def convert_attribute_value_to_key(value: Any) -> str:
+            if isinstance(value, bool):
                 # bool値をCSVの列名やJSONのキーとして扱う場合、`True/False`だとPythonに依存したように見えてしまうので（本当？）、`true/false`に変換する
                 if value:
                     return "true"
                 elif not value:
                     return "false"
             return str(value)
-                
+
         details = simple_annotation["details"]
 
         annotation_count_by_label = collections.Counter([e["label"] for e in details])
@@ -320,12 +320,12 @@ class ListAnnotationCounterByInputData:
             return cell
 
         basic_columns = [
-            ("input_data_id", "", ""),
-            ("input_data_name", "", ""),
             ("task_id", "", ""),
             ("status", "", ""),
             ("phase", "", ""),
             ("phase_stage", "", ""),
+            ("input_data_id", "", ""),
+            ("input_data_name", "", ""),
             ("annotation_count", "", ""),
         ]
 
@@ -702,7 +702,11 @@ class ListAnnotationCountMain:
                 task_query=task_query,
                 target_attributes=attribute_columns,
             )
-            print_json([e.to_dict(encode_json=True) for e in counter_list_by_task], is_pretty=json_is_pretty, output=output_file)
+            print_json(
+                [e.to_dict(encode_json=True) for e in counter_list_by_task],
+                is_pretty=json_is_pretty,
+                output=output_file,
+            )
 
         else:
             raise RuntimeError(f"group_by='{group_by}'が対象外です。")
