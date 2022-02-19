@@ -36,7 +36,9 @@ from annofabcli.common.facade import (
 )
 from annofabcli.common.utils import print_csv
 from annofabcli.common.visualize import AddProps, MessageLocale
-
+from dataclasses import dataclass, field
+from dataclasses_json import dataclass_json, config
+from collections import defaultdict
 logger = logging.getLogger(__name__)
 
 AttributesKey = Tuple[str, str, str]
@@ -54,11 +56,31 @@ class GroupBy(Enum):
     TASK_ID = "task_id"
     INPUT_DATA_ID = "input_data_id"
 
+def encode_attributes_counter(attributes_counter: Counter[AttributesKey]) -> dict[str,dict[str,dict[str,int]]]:
+    """attributes_counterを `{label_name: {attribute_name: {attribute_value: annotation_count}}}`のdictに変換します。
+    JSONへの変換用関数です。
+    """
+    def _factory():
+        """入れ子の辞書を利用できるようにするための関数"""
+        return collections.defaultdict(_factory)
+
+    result: dict[str,dict[str,dict[str,int]]] = defaultdict(_factory)
+    for (label_name, attribute_name, attribute_value), annotation_count in attributes_counter.items():
+        result[label_name][attribute_name][attribute_value] = annotation_count
+    return result
+
+
+
 
 @dataclass(frozen=True)
 class AnnotationCounter(abc.ABC):
+    annotation_count: int
     labels_counter: Counter[str]
-    attributes_counter: Counter[AttributesKey]
+    attributes_counter: Counter[AttributesKey] = field(
+        metadata=config(
+            encoder=encode_attributes_counter,
+        )
+    )
 
 
 @dataclass(frozen=True)
@@ -152,6 +174,7 @@ class ListAnnotationCounterByInputData:
             task_status=TaskStatus(simple_annotation["task_status"]),
             input_data_id=simple_annotation["input_data_id"],
             input_data_name=simple_annotation["input_data_name"],
+            annotation_count=sum(labels_counter.values()),
             labels_counter=labels_counter,
             attributes_counter=attributes_counter,
         )
@@ -218,14 +241,15 @@ class ListAnnotationCounterByInputData:
                 "input_data_id": c.input_data_id,
                 "input_data_name": c.input_data_name,
                 "task_id": c.task_id,
-                "task_status": c.task_status.value,
-                "task_phase": c.task_phase.value,
-                "task_phase_stage": c.task_phase_stage,
+                "status": c.task_status.value,
+                "phase": c.task_phase.value,
+                "phase_stage": c.task_phase_stage,
+                "annotation_count": c.annotation_count,
             }
             d.update(c.labels_counter)
             return d
 
-        basic_columns = ["input_data_id", "input_data_name", "task_id", "task_status", "task_phase", "task_phase_stage"]
+        basic_columns = ["task_id", "status", "phase", "stage", "input_data_id", "input_data_name", "annotation_count"]
         if label_columns is not None:
             value_columns = label_columns
         else:
@@ -250,24 +274,26 @@ class ListAnnotationCounterByInputData:
     ):
         def to_cell(c: AnnotationCounterByInputData) -> dict[tuple[str, str, str], Any]:
             cell = {
-                ("", "", "input_data_id"): c.input_data_id,
-                ("", "", "input_data_name"): c.input_data_name,
-                ("", "", "task_id"): c.task_id,
-                ("", "", "task_status"): c.task_status.value,
-                ("", "", "task_phase"): c.task_phase.value,
-                ("", "", "task_phase_stage"): c.task_phase_stage,
+                ("input_data_id", "", ""): c.input_data_id,
+                ("input_data_name", "", ""): c.input_data_name,
+                ("task_id", "", ""): c.task_id,
+                ("status", "", ""): c.task_status.value,
+                ("phase", "", ""): c.task_phase.value,
+                ("phase_stage", "", ""): c.task_phase_stage,
+                ("annotation_count", "", ""): c.annotation_count,
             }
             cell.update(c.attributes_counter)
 
             return cell
 
         basic_columns = [
-            ("", "", "input_data_id"),
-            ("", "", "input_data_name"),
-            ("", "", "task_id"),
-            ("", "", "task_status"),
-            ("", "", "task_phase"),
-            ("", "", "task_phase_stage"),
+                ("input_data_id", "", ""),
+                ("input_data_name", "", ""),
+                ("task_id", "", ""),
+                ("status", "", ""),
+                ("phase", "", ""),
+                ("phase_stage", "", ""),
+                ("annotation_count", "", ""),
         ]
 
         if attribute_columns is not None:
@@ -322,7 +348,7 @@ class ListAnnotationCounterByTask:
             input_data_count += 1
 
         if last_simple_annotation is None:
-            raise RuntimeError(f"{task_parser.task_id} ディレクトリにはjsonファイルが１つも含まれていません。")
+            raise RuntimeError(f"{task_parser.task_id} ディレクトリにはjsonファイルが1つも含まれていません。")
 
         return AnnotationCounterByTask(
             task_id=last_simple_annotation["task_id"],
@@ -330,6 +356,7 @@ class ListAnnotationCounterByTask:
             task_phase=TaskPhase(last_simple_annotation["task_phase"]),
             task_phase_stage=last_simple_annotation["task_phase_stage"],
             input_data_count=input_data_count,
+            annotation_count=sum(labels_counter.values()),
             labels_counter=labels_counter,
             attributes_counter=attributes_counter,
         )
@@ -399,15 +426,24 @@ class ListAnnotationCounterByTask:
         def to_dict(c: AnnotationCounterByTask) -> dict[str, Any]:
             d = {
                 "task_id": c.task_id,
-                "task_status": c.task_status.value,
-                "task_phase": c.task_phase.value,
-                "task_phase_stage": c.task_phase_stage,
+                "status": c.task_status.value,
+                "phase": c.task_phase.value,
+                "phase_stage": c.task_phase_stage,
                 "input_data_count": c.input_data_count,
+                "annotation_count": c.annotation_count,
             }
+            # キーをラベル名、値をラベルごとのアノテーション数にしたdictに変換する
             d.update(c.labels_counter)
             return d
 
-        basic_columns = ["task_id", "task_status", "task_phase", "task_phase_stage", "input_data_count"]
+        basic_columns = [
+            "task_id",
+            "status",
+            "phase",
+            "phase_stage",
+            "input_data_count",
+            "annotation_count",
+        ]
         if label_columns is not None:
             value_columns = label_columns
         else:
@@ -432,11 +468,12 @@ class ListAnnotationCounterByTask:
     ):
         def to_cell(c: AnnotationCounterByTask) -> dict[AttributesKey, Any]:
             cell = {
-                ("", "", "task_id"): c.task_id,
-                ("", "", "task_status"): c.task_status.value,
-                ("", "", "task_phase"): c.task_phase.value,
-                ("", "", "task_phase_stage"): c.task_phase_stage,
-                ("", "", "input_data_count"): c.input_data_count,
+                ("task_id", "", ""): c.task_id,
+                ("task_status", "", ""): c.task_status.value,
+                ("task_phase", "", ""): c.task_phase.value,
+                ("task_phase_stage", "", ""): c.task_phase_stage,
+                ("input_data_count", "", ""): c.input_data_count,
+                ("annotation_count", "", ""): c.annotation_count,
             }
             cell.update(c.attributes_counter)
             return cell
@@ -446,11 +483,12 @@ class ListAnnotationCounterByTask:
         #     return
 
         basic_columns = [
-            ("", "", "task_id"),
-            ("", "", "task_status"),
-            ("", "", "task_phase"),
-            ("", "", "task_phase_stage"),
-            ("", "", "input_data_count"),
+                ("task_id", "", ""),
+                ("task_status", "", ""),
+                ("task_phase", "", ""),
+                ("task_phase_stage", "", ""),
+                ("input_data_count", "", ""),
+                ("annotation_count", "", ""),
         ]
 
         if attribute_columns is not None:
