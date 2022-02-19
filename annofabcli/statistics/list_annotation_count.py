@@ -1,5 +1,6 @@
 from __future__ import annotations
-
+from functools import partial
+from annofabcli.common.enums import FormatArgument
 import abc
 import argparse
 import collections
@@ -36,7 +37,7 @@ from annofabcli.common.facade import (
     convert_annotation_specs_labels_v2_to_v1,
     match_annotation_with_task_query,
 )
-from annofabcli.common.utils import print_csv
+from annofabcli.common.utils import print_csv, print_json
 from annofabcli.common.visualize import AddProps, MessageLocale
 
 logger = logging.getLogger(__name__)
@@ -239,7 +240,7 @@ class ListAnnotationCounterByInputData:
         return counter_list
 
     @classmethod
-    def print_labels_count(
+    def print_labels_count_csv(
         cls,
         counter_list: list[AnnotationCounterByInputData],
         output_file: Path,
@@ -283,7 +284,7 @@ class ListAnnotationCounterByInputData:
         print_csv(df, output=str(output_file), to_csv_kwargs=csv_format)
 
     @classmethod
-    def print_attributes_count(
+    def print_attributes_count_csv(
         cls,
         counter_list: list[AnnotationCounterByInputData],
         output_file: Path,
@@ -434,7 +435,7 @@ class ListAnnotationCounterByTask:
         return counter_list
 
     @classmethod
-    def print_labels_count(
+    def print_labels_count_csv(
         cls,
         counter_list: list[AnnotationCounterByTask],
         output_file: Path,
@@ -477,7 +478,7 @@ class ListAnnotationCounterByTask:
         print_csv(df, output=str(output_file), to_csv_kwargs=csv_format)
 
     @classmethod
-    def print_attributes_count(
+    def print_attributes_count_csv(
         cls,
         counter_list: list[AnnotationCounterByTask],
         output_file: Path,
@@ -622,14 +623,14 @@ class ListAnnotationCountMain:
             )
 
             if csv_type == CsvType.LABEL:
-                ListAnnotationCounterByInputData.print_labels_count(
+                ListAnnotationCounterByInputData.print_labels_count_csv(
                     counter_list_by_input_data, output_file, label_columns=label_columns
                 )
             elif csv_type == CsvType.ATTRIBUTE:
                 if len(attribute_columns) == 0:
                     logger.error(f"アノテーション仕様に集計対象の属性が定義されていないため、{output_file} は出力しません。")
                     return
-                ListAnnotationCounterByInputData.print_attributes_count(
+                ListAnnotationCounterByInputData.print_attributes_count_csv(
                     counter_list_by_input_data, output_file, attribute_columns=attribute_columns
                 )
 
@@ -641,19 +642,100 @@ class ListAnnotationCountMain:
                 target_attributes=attribute_columns,
             )
             if csv_type == CsvType.LABEL:
-                ListAnnotationCounterByTask.print_labels_count(
+                ListAnnotationCounterByTask.print_labels_count_csv(
                     counter_list_by_task, output_file, label_columns=label_columns
                 )
             elif csv_type == CsvType.ATTRIBUTE:
                 if len(attribute_columns) == 0:
                     logger.error(f"アノテーション仕様に集計対象の属性が定義されていないため、{output_file} は出力しません。")
                     return
-                ListAnnotationCounterByTask.print_attributes_count(
+                ListAnnotationCounterByTask.print_attributes_count_csv(
                     counter_list_by_task, output_file, attribute_columns=attribute_columns
                 )
 
         else:
             raise RuntimeError(f"group_by='{group_by}'が対象外です。")
+
+
+    def print_annotation_counter_json(
+        self,
+        project_id: str,
+        annotation_path: Path,
+        group_by: GroupBy,
+        output_file: Path,
+        *,
+        target_task_ids: Optional[Collection[str]] = None,
+        task_query: Optional[TaskQuery] = None,
+        json_is_pretty: bool= False
+    ):
+        """ラベルごと/属性ごとのアノテーション数をJSONファイルに出力します。
+        """
+        # 集計対象の属性を、選択肢系の属性にする
+        _, attribute_columns = self.get_target_columns(project_id)
+
+        if group_by == GroupBy.INPUT_DATA_ID:
+            counter_list_by_input_data = ListAnnotationCounterByInputData.get_annotation_counter_list(
+                annotation_path,
+                target_task_ids=target_task_ids,
+                task_query=task_query,
+                target_attributes=attribute_columns,
+            )
+
+            print_json([e.to_dict() for e in counter_list_by_input_data], is_pretty=json_is_pretty, output=output_file)
+
+        elif group_by == GroupBy.TASK_ID:
+            counter_list_by_task = ListAnnotationCounterByTask.get_annotation_counter_list(
+                annotation_path,
+                target_task_ids=target_task_ids,
+                task_query=task_query,
+                target_attributes=attribute_columns,
+            )
+            print_json([e.to_dict() for e in counter_list_by_task], is_pretty=json_is_pretty, output=output_file)
+
+        else:
+            raise RuntimeError(f"group_by='{group_by}'が対象外です。")
+
+
+    def print_annotation_counter(
+        self,
+        project_id: str,
+        annotation_path: Path,
+        group_by: GroupBy,
+        output_file: Path,
+        arg_format: FormatArgument,
+        *,
+        target_task_ids: Optional[Collection[str]] = None,
+        task_query: Optional[TaskQuery] = None,
+        csv_type: Optional[CsvType]=None,
+
+    ):
+        """ラベルごと/属性ごとのアノテーション数を出力します。
+        """
+        if arg_format == FormatArgument.CSV:
+            assert csv_type is not None
+            self.print_annotation_counter_csv(
+                    project_id=project_id,
+                    annotation_path=annotation_path,
+                    group_by=group_by,
+                    csv_type=csv_type,
+                    output_file=output_file,
+                    target_task_ids=target_task_ids,
+                    task_query=task_query,
+                )
+
+        elif arg_format in [FormatArgument.PRETTY_JSON, FormatArgument.JSON]:
+            json_is_pretty = True if arg_format == FormatArgument.PRETTY_JSON else False
+            self.print_annotation_counter_json(
+                    project_id=project_id,
+                    annotation_path=annotation_path,
+                    group_by=group_by,
+                    output_file=output_file,
+                    target_task_ids=target_task_ids,
+                    task_query=task_query,
+                    json_is_pretty=json_is_pretty
+                )
+
+
 
 
 class ListAnnotationCount(AbstractCommandLineInterface):
@@ -679,7 +761,18 @@ class ListAnnotationCount(AbstractCommandLineInterface):
         group_by = GroupBy(args.group_by)
         csv_type = CsvType(args.type)
         output_file: Path = args.output
+        arg_format = FormatArgument(args.format)
         main_obj = ListAnnotationCountMain(self.service)
+
+
+        func = partial(main_obj.print_annotation_counter,                     project_id=project_id,
+                    group_by=group_by,
+                    csv_type=csv_type,
+                    arg_format=arg_format,
+                    output_file=output_file,
+                    target_task_ids=task_id_list,
+                    task_query=task_query,
+        )
 
         if annotation_path is None:
             with tempfile.NamedTemporaryFile() as f:
@@ -690,25 +783,9 @@ class ListAnnotationCount(AbstractCommandLineInterface):
                     dest_path=str(annotation_path),
                     is_latest=args.latest,
                 )
-                main_obj.print_annotation_counter_csv(
-                    project_id=project_id,
-                    annotation_path=annotation_path,
-                    group_by=group_by,
-                    csv_type=csv_type,
-                    output_file=output_file,
-                    target_task_ids=task_id_list,
-                    task_query=task_query,
-                )
+                func(annotation_path=annotation_path)
         else:
-            main_obj.print_annotation_counter_csv(
-                project_id=project_id,
-                annotation_path=annotation_path,
-                group_by=group_by,
-                csv_type=csv_type,
-                output_file=output_file,
-                target_task_ids=task_id_list,
-                task_query=task_query,
-            )
+            func(annotation_path=annotation_path)
 
 
 def parse_args(parser: argparse.ArgumentParser):
@@ -735,6 +812,11 @@ def parse_args(parser: argparse.ArgumentParser):
         help="出力するCSVの種類を指定してください。 ``--format csv`` を指定したときのみ有効なオプションです。\n"
         "* label: ラベルごとにアノテーション数が記載されているCSV\n"
         "* attribute: 属性値ごとにアノテーション数が記載されているCSV",
+    )
+
+    argument_parser.add_format(
+        choices=[FormatArgument.CSV, FormatArgument.JSON, FormatArgument.PRETTY_JSON],
+        default=FormatArgument.CSV,
     )
 
     argument_parser.add_output()
