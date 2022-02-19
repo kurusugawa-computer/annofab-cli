@@ -32,7 +32,7 @@ class TestCommandLine:
                 "--group_by",
                 "task_id",
                 "--format",
-                "pretty_json"
+                "pretty_json",
             ]
         )
 
@@ -50,8 +50,7 @@ class TestCommandLine:
                 "--type",
                 "attribute",
                 "--format",
-                "csv"
-
+                "csv",
             ]
         )
 
