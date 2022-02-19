@@ -52,6 +52,15 @@ LabelKeys = Collection[str]
 AttributeKeys = Collection[Collection]
 
 
+class CsvType(Enum):
+    """出力するCSVの種類"""
+
+    LABEL = "label"
+    """ラベルごとのアノテーション数を出力"""
+    ATTRIBUTE = "attribute"
+    """属性値ごとのアノテーション数を出力"""
+
+
 class GroupBy(Enum):
     TASK_ID = "task_id"
     INPUT_DATA_ID = "input_data_id"
@@ -595,19 +604,14 @@ class ListAnnotationCountMain:
         project_id: str,
         annotation_path: Path,
         group_by: GroupBy,
-        output_dir: Path,
+        csv_type: CsvType,
+        output_file: Path,
         *,
         target_task_ids: Optional[Collection[str]] = None,
         task_query: Optional[TaskQuery] = None,
     ):
-
-        labels_count_csv = output_dir / "labels_count.csv"
-        attributes_count_csv = output_dir / "attributes_count.csv"
-
         # 集計対象の属性を、選択肢系の属性にする
         label_columns, attribute_columns = self.get_target_columns(project_id)
-        if len(attribute_columns) == 0:
-            logger.info(f"アノテーション仕様に集計対象の属性が定義されていないため、{attributes_count_csv} は出力しません。")
 
         if group_by == GroupBy.INPUT_DATA_ID:
             counter_list_by_input_data = ListAnnotationCounterByInputData.get_annotation_counter_list(
@@ -617,13 +621,16 @@ class ListAnnotationCountMain:
                 target_attributes=attribute_columns,
             )
 
-            ListAnnotationCounterByInputData.print_labels_count(
-                counter_list_by_input_data, labels_count_csv, label_columns=label_columns
-            )
-
-            if len(attribute_columns) > 0:
+            if csv_type == CsvType.LABEL:
+                ListAnnotationCounterByInputData.print_labels_count(
+                    counter_list_by_input_data, output_file, label_columns=label_columns
+                )
+            elif csv_type == CsvType.ATTRIBUTE:
+                if len(attribute_columns) == 0:
+                    logger.error(f"アノテーション仕様に集計対象の属性が定義されていないため、{output_file} は出力しません。")
+                    return
                 ListAnnotationCounterByInputData.print_attributes_count(
-                    counter_list_by_input_data, attributes_count_csv, attribute_columns=attribute_columns
+                    counter_list_by_input_data, output_file, attribute_columns=attribute_columns
                 )
 
         elif group_by == GroupBy.TASK_ID:
@@ -633,14 +640,16 @@ class ListAnnotationCountMain:
                 task_query=task_query,
                 target_attributes=attribute_columns,
             )
-
-            ListAnnotationCounterByTask.print_labels_count(
-                counter_list_by_task, labels_count_csv, label_columns=label_columns
-            )
-
-            if len(attribute_columns) > 0:
+            if csv_type == CsvType.LABEL:
+                ListAnnotationCounterByTask.print_labels_count(
+                    counter_list_by_task, output_file, label_columns=label_columns
+                )
+            elif csv_type == CsvType.ATTRIBUTE:
+                if len(attribute_columns) == 0:
+                    logger.error(f"アノテーション仕様に集計対象の属性が定義されていないため、{output_file} は出力しません。")
+                    return
                 ListAnnotationCounterByTask.print_attributes_count(
-                    counter_list_by_task, attributes_count_csv, attribute_columns=attribute_columns
+                    counter_list_by_task, output_file, attribute_columns=attribute_columns
                 )
 
         else:
@@ -669,7 +678,8 @@ class ListAnnotationCount(AbstractCommandLineInterface):
         )
 
         group_by = GroupBy(args.group_by)
-
+        csv_type = CsvType(args.type)
+        output_file: Path = args.output
         main_obj = ListAnnotationCountMain(self.service)
 
         if annotation_path is None:
@@ -685,7 +695,8 @@ class ListAnnotationCount(AbstractCommandLineInterface):
                     project_id=project_id,
                     annotation_path=annotation_path,
                     group_by=group_by,
-                    output_dir=output_dir,
+                    csv_type=csv_type,
+                    output_file=output_file,
                     target_task_ids=task_id_list,
                     task_query=task_query,
                 )
@@ -694,7 +705,8 @@ class ListAnnotationCount(AbstractCommandLineInterface):
                 project_id=project_id,
                 annotation_path=annotation_path,
                 group_by=group_by,
-                output_dir=output_dir,
+                csv_type=csv_type,
+                output_file=output_file,
                 target_task_ids=task_id_list,
                 task_query=task_query,
             )
@@ -707,7 +719,6 @@ def parse_args(parser: argparse.ArgumentParser):
     parser.add_argument(
         "--annotation", type=str, help="アノテーションzip、またはzipを展開したディレクトリを指定します。" "指定しない場合はAnnoFabからダウンロードします。"
     )
-    parser.add_argument("-o", "--output_dir", type=Path, required=True, help="出力ディレクトリのパス")
 
     parser.add_argument(
         "--group_by",
@@ -716,6 +727,18 @@ def parse_args(parser: argparse.ArgumentParser):
         default=GroupBy.TASK_ID.value,
         help="アノテーションの個数をどの単位で集約するかを指定してます。",
     )
+
+    parser.add_argument(
+        "--type",
+        type=str,
+        choices=[e.value for e in CsvType],
+        default=CsvType.LABEL,
+        help="出力するCSVの種類を指定してください。 ``--format csv`` を指定したときのみ有効なオプションです。\n"
+        "* label: ラベルごとにアノテーション数が記載されているCSV\n"
+        "* attribute: 属性値ごとにアノテーション数が記載されているCSV",
+    )
+
+    argument_parser.add_output()
 
     parser.add_argument(
         "-tq",
