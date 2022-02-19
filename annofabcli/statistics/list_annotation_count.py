@@ -98,18 +98,18 @@ class AnnotationCounter(abc.ABC):
 class AnnotationCounterByTask(AnnotationCounter, DataClassJsonMixin):
 
     task_id: str
-    task_status: TaskStatus
-    task_phase: TaskPhase
-    task_phase_stage: int
+    status: TaskStatus
+    phase: TaskPhase
+    phase_stage: int
     input_data_count: int
 
 
 @dataclass(frozen=True)
 class AnnotationCounterByInputData(AnnotationCounter, DataClassJsonMixin):
     task_id: str
-    task_status: TaskStatus
-    task_phase: TaskPhase
-    task_phase_stage: int
+    status: TaskStatus
+    phase: TaskPhase
+    phase_stage: int
 
     input_data_id: str
     input_data_name: str
@@ -181,9 +181,9 @@ class ListAnnotationCounterByInputData:
 
         return AnnotationCounterByInputData(
             task_id=simple_annotation["task_id"],
-            task_phase=TaskPhase(simple_annotation["task_phase"]),
-            task_phase_stage=simple_annotation["task_phase_stage"],
-            task_status=TaskStatus(simple_annotation["task_status"]),
+            phase=TaskPhase(simple_annotation["task_phase"]),
+            phase_stage=simple_annotation["task_phase_stage"],
+            status=TaskStatus(simple_annotation["task_status"]),
             input_data_id=simple_annotation["input_data_id"],
             input_data_name=simple_annotation["input_data_name"],
             annotation_count=sum(labels_counter.values()),
@@ -253,9 +253,9 @@ class ListAnnotationCounterByInputData:
                 "input_data_id": c.input_data_id,
                 "input_data_name": c.input_data_name,
                 "task_id": c.task_id,
-                "status": c.task_status.value,
-                "phase": c.task_phase.value,
-                "phase_stage": c.task_phase_stage,
+                "status": c.status.value,
+                "phase": c.phase.value,
+                "phase_stage": c.phase_stage,
                 "annotation_count": c.annotation_count,
             }
             d.update(c.labels_counter)
@@ -297,9 +297,9 @@ class ListAnnotationCounterByInputData:
                 ("input_data_id", "", ""): c.input_data_id,
                 ("input_data_name", "", ""): c.input_data_name,
                 ("task_id", "", ""): c.task_id,
-                ("status", "", ""): c.task_status.value,
-                ("phase", "", ""): c.task_phase.value,
-                ("phase_stage", "", ""): c.task_phase_stage,
+                ("status", "", ""): c.status.value,
+                ("phase", "", ""): c.phase.value,
+                ("phase_stage", "", ""): c.phase_stage,
                 ("annotation_count", "", ""): c.annotation_count,
             }
             cell.update(c.attributes_counter)
@@ -372,9 +372,9 @@ class ListAnnotationCounterByTask:
 
         return AnnotationCounterByTask(
             task_id=last_simple_annotation["task_id"],
-            task_status=TaskStatus(last_simple_annotation["task_status"]),
-            task_phase=TaskPhase(last_simple_annotation["task_phase"]),
-            task_phase_stage=last_simple_annotation["task_phase_stage"],
+            status=TaskStatus(last_simple_annotation["task_status"]),
+            phase=TaskPhase(last_simple_annotation["task_phase"]),
+            phase_stage=last_simple_annotation["task_phase_stage"],
             input_data_count=input_data_count,
             annotation_count=sum(labels_counter.values()),
             labels_counter=labels_counter,
@@ -446,9 +446,9 @@ class ListAnnotationCounterByTask:
         def to_dict(c: AnnotationCounterByTask) -> dict[str, Any]:
             d = {
                 "task_id": c.task_id,
-                "status": c.task_status.value,
-                "phase": c.task_phase.value,
-                "phase_stage": c.task_phase_stage,
+                "status": c.status.value,
+                "phase": c.phase.value,
+                "phase_stage": c.phase_stage,
                 "input_data_count": c.input_data_count,
                 "annotation_count": c.annotation_count,
             }
@@ -489,9 +489,9 @@ class ListAnnotationCounterByTask:
         def to_cell(c: AnnotationCounterByTask) -> dict[AttributesKey, Any]:
             cell = {
                 ("task_id", "", ""): c.task_id,
-                ("status", "", ""): c.task_status.value,
-                ("phase", "", ""): c.task_phase.value,
-                ("phase_stage", "", ""): c.task_phase_stage,
+                ("status", "", ""): c.status.value,
+                ("phase", "", ""): c.phase.value,
+                ("phase_stage", "", ""): c.phase_stage,
                 ("input_data_count", "", ""): c.input_data_count,
                 ("annotation_count", "", ""): c.annotation_count,
             }
@@ -680,7 +680,9 @@ class ListAnnotationCountMain:
                 target_attributes=attribute_columns,
             )
 
-            print_json([e.to_dict() for e in counter_list_by_input_data], is_pretty=json_is_pretty, output=output_file)
+            tmp = [e.to_dict() for e in counter_list_by_input_data]
+            print(f"{tmp[0]=}")
+            print_json([e.to_dict(encode_json=True) for e in counter_list_by_input_data], is_pretty=json_is_pretty, output=output_file)
 
         elif group_by == GroupBy.TASK_ID:
             counter_list_by_task = ListAnnotationCounterByTask.get_annotation_counter_list(
@@ -720,7 +722,7 @@ class ListAnnotationCountMain:
             )
 
         elif arg_format in [FormatArgument.PRETTY_JSON, FormatArgument.JSON]:
-            json_is_pretty = (arg_format == FormatArgument.PRETTY_JSON)
+            json_is_pretty = arg_format == FormatArgument.PRETTY_JSON
             self.print_annotation_counter_json(
                 project_id=project_id,
                 annotation_path=annotation_path,
