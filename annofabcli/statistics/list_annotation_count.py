@@ -665,7 +665,6 @@ class ListAnnotationCount(AbstractCommandLineInterface):
         args = self.args
 
         project_id = args.project_id
-        output_dir: Path = args.output_dir
         super().validate_project(project_id, project_member_roles=None)
 
         annotation_path = Path(args.annotation) if args.annotation is not None else None
