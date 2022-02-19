@@ -1,6 +1,6 @@
 [tool.poetry]
 name = "annofabcli"
-version = "1.57.2"
+version = "1.57.3"
 description = "Utility Command Line Interface for AnnoFab"
 authors = ["yuji38kwmt"]
 license = "MIT"
@@ -47,7 +47,7 @@ pytest-cov = "*"
 # format library
 isort = "*"
 autoflake = "*"
-black = {version = "^21.12b0", allow-prereleases = true}
+black = "*"
 
 # lint library
 flake8 = "*"
