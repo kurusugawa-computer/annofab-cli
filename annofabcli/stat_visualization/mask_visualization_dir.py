@@ -76,14 +76,6 @@ def mask_visualization_dir(
     if exclude_masked_user_for_linegraph:
         user_id_list = list(not_masked_user_id_set)
 
-    # メンバごとにパフォーマンスを折れ線グラフで出力する
-    write_linegraph_per_user(
-        output_dir / FILENAME_TASK_LIST,
-        output_dir=output_dir / "line-graph",
-        minimal_output=minimal_output,
-        user_id_list=user_id_list,
-    )
-
     task_csv_file = project_dir / FILENAME_TASK_LIST
     if task_csv_file.exists():
         df_task = pandas.read_csv(str(project_dir / FILENAME_TASK_LIST))
@@ -91,6 +83,16 @@ def mask_visualization_dir(
         print_csv(df_task, output=str(output_dir / FILENAME_TASK_LIST))
     else:
         logger.warning(f"'{task_csv_file}' が存在しないため、" f"'{output_dir / FILENAME_TASK_LIST}' は出力しません。 ")
+
+    if (output_dir / FILENAME_TASK_LIST).exists():
+        # メンバごとにパフォーマンスを折れ線グラフで出力する
+        write_linegraph_per_user(
+            output_dir / FILENAME_TASK_LIST,
+            output_dir=output_dir / "line-graph",
+            minimal_output=minimal_output,
+            user_id_list=user_id_list,
+        )
+
 
     user_date_csv_file = project_dir / "ユーザ_日付list-作業時間.csv"
     if user_date_csv_file.exists():
