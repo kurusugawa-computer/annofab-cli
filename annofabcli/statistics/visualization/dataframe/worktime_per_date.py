@@ -131,7 +131,7 @@ class WorktimePerDate:
         Args:
             service (annofabapi.Resource): [description]
             project_id (str): [description]
-            df_labor: 実績作業時間が格納されたDataFrame
+            df_labor: 実績作業時間が格納されたDataFrame。date, account_id, actual_worktime_hour 列を参照する。
 
         Returns:
             WorktimePerDate: [description]

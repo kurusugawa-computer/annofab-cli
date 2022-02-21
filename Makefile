@@ -14,7 +14,7 @@ init:
 format:
 	poetry run autoflake  --in-place --remove-all-unused-imports  --ignore-init-module-imports --recursive ${FORMAT_FILES}
 	poetry run black ${FORMAT_FILES}
-	poetry run isort --verbose ${FORMAT_FILES}
+	poetry run isort ${FORMAT_FILES}
 
 
 lint:
@@ -24,7 +24,8 @@ lint:
 
 test:
     # 更新の競合が発生する可能性があるので、並列実行しない
-	poetry run pytest --cov=annofabcli --cov-report=html tests
+	# skip対象のmakersを実行しないように"-m"で指定する
+	poetry run pytest --cov=annofabcli --cov-report=html tests -m "not submitting_job and not depending_on_annotation_specs" 
 
 publish:
 	poetry publish --build

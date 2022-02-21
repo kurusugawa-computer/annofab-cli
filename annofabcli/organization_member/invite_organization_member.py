@@ -31,9 +31,16 @@ class InviteOrganizationMemberMain(AbstractCommandLineWithConfirmInterface):
     def main(self, organization_name: str, user_ids: Collection[str], role: str):
         logger.info(f"{len(user_ids)} 件のユーザを組織'{organization_name}'に招待して、ロール'{role}'を付与します。")
 
+        organization_member_list = self.service.wrapper.get_all_organization_members(organization_name)
+        all_user_ids = {e["user_id"] for e in organization_member_list}
+
         # プロジェクトメンバを追加/更新する
         success_count = 0
         for user_id in user_ids:
+            if user_id in all_user_ids:
+                logger.warning(f"user_id='{user_id}'のユーザは、すでに組織'{organization_name}'に存在しています。")
+                continue
+
             if not self.confirm_processing(f"user_id='{user_id}'のユーザを組織'{organization_name}'に招待しますか？ :: role='{role}'"):
                 continue
 

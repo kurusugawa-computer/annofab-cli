@@ -111,15 +111,20 @@ class UserPerformance:
 
     @classmethod
     def from_df(
-        cls, df_task_history: pandas.DataFrame, df_labor: pandas.DataFrame, df_worktime_ratio: pandas.DataFrame
+        cls,
+        df_task_history: pandas.DataFrame,
+        df_worktime_ratio: pandas.DataFrame,
+        df_labor: Optional[pandas.DataFrame] = None,
     ) -> UserPerformance:
         """
         AnnoWorkの実績時間から、作業者ごとに生産性を算出する。
 
         Args:
             df_task_history: タスク履歴のDataFrame
-            df_labor: 実績作業時間のDataFrame
-            df_worktime_ratio: 作業したタスク数を、作業時間で按分した値が格納されたDataFrame
+            df_worktime_ratio: 作業したタスク数を、作業時間で按分した値が格納されたDataFrame. 以下の列を参照する。
+                account_id, phase, worktime_hour
+            df_labor: 実績作業時間のDataFrame。以下の列を参照する
+                actual_worktime_hour, date, account_id
 
         Returns:
 
@@ -134,13 +139,13 @@ class UserPerformance:
             return phase_list
 
         df_agg_task_history = df_task_history.pivot_table(
-            values="worktime_hour", columns="phase", index="user_id", aggfunc=numpy.sum
+            values="worktime_hour", columns="phase", index="account_id", aggfunc=numpy.sum
         ).fillna(0)
 
-        if len(df_labor) > 0:
-            df_agg_labor = df_labor.pivot_table(values="actual_worktime_hour", index="user_id", aggfunc=numpy.sum)
+        if df_labor is not None and len(df_labor) > 0:
+            df_agg_labor = df_labor.pivot_table(values="actual_worktime_hour", index="account_id", aggfunc=numpy.sum)
             df_tmp = df_labor[df_labor["actual_worktime_hour"] > 0].pivot_table(
-                values="date", index="user_id", aggfunc=numpy.max
+                values="date", index="account_id", aggfunc=numpy.max
             )
             if len(df_tmp) > 0:
                 df_agg_labor["last_working_date"] = df_tmp
@@ -173,7 +178,7 @@ class UserPerformance:
                 "rejected_count",
             ],
             columns="phase",
-            index="user_id",
+            index="account_id",
             aggfunc=numpy.sum,
         ).fillna(0)
 
@@ -193,11 +198,9 @@ class UserPerformance:
         df = df.drop(dropped_column, axis=1)
 
         # ユーザ情報を取得
-        df_user = df_task_history.groupby("user_id").first()[["username", "biography"]]
-        df_user.columns = pandas.MultiIndex.from_tuples([("username", ""), ("biography", "")])
+        df_user = df_task_history.groupby("account_id").first()[["user_id", "username", "biography"]]
+        df_user.columns = pandas.MultiIndex.from_tuples([("user_id", ""), ("username", ""), ("biography", "")])
         df = df.join(df_user)
-        df[("user_id", "")] = df.index
-
         return cls(df)
 
     @classmethod

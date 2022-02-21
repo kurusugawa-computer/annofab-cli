@@ -79,20 +79,17 @@ class Database:
         project_id: str,
         checkpoint_dir: str,
         query: Optional[Query] = None,
-        is_get_labor: bool = False,
     ):
         """
         環境変数'ANNOFAB_USER_ID', 'ANNOFAB_PASSWORD'から情報を読み込み、AnnofabApiインスタンスを生成する。
         Args:
             project_id: Annofabのproject_id
-            is_get_labor: labor関係のwebapiにアクセスしてlabor情報を取得するかどうか。
         """
 
         self.annofab_service = annofab_service
         self.project_id = project_id
         self.checkpoint_dir = checkpoint_dir
         self.query = query if query is not None else Query()
-        self.is_get_labor = is_get_labor
 
         # ダウンロードした一括情報
         self.tasks_json_path = Path(f"{self.checkpoint_dir}/tasks.json")
@@ -530,26 +527,6 @@ class Database:
         # DB用のJSONファイルをダウンロードする
         self._download_db_file(is_latest, is_get_task_histories_one_of_each=is_get_task_histories_one_of_each)
         self._log_annotation_zip_info()
-
-    def get_labor_list(self, project_id: str) -> List[Dict[str, Any]]:
-        def to_new_labor(e: Dict[str, Any]) -> Dict[str, Any]:
-            e["actual_worktime_hour"] = e["actual_worktime"]
-            e.pop("actual_worktime")
-            e.pop("plan_worktime")
-            return e
-
-        if not self.is_get_labor:
-            return []
-
-        # 未来のデータを取得しても意味がないので、今日の日付を指定する
-        end_date = (
-            self.query.end_date if self.query.end_date is not None else datetime.datetime.now().strftime("%Y-%m-%d")
-        )
-        labor_list: List[Dict[str, Any]] = self.annofab_service.wrapper.get_labor_control_worktime(
-            project_id=project_id, from_date=self.query.start_date, to_date=end_date
-        )
-
-        return [to_new_labor(e) for e in labor_list]
 
     def get_task_histories_dict(self, all_tasks: List[Task]) -> Dict[str, List[TaskHistory]]:
         """

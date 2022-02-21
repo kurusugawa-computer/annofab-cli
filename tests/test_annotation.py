@@ -26,6 +26,7 @@ service = annofabapi.build()
 
 
 class TestCommandLine:
+    @pytest.mark.depending_on_annotation_specs
     def test_change_attributes_of_annotation(self):
         backup_dir = str(out_dir / "backup-annotation")
         main(
@@ -42,6 +43,21 @@ class TestCommandLine:
                 '{"label_name_en": "car"}',
                 "--attributes",
                 '[{"additional_data_definition_name_en": "occluded", "flag": false}]',
+                "--yes",
+            ]
+        )
+
+    def test_change_properties(self):
+        main(
+            [
+                "annotation",
+                "change_properties",
+                "--project_id",
+                project_id,
+                "--task_id",
+                task_id,
+                "--properties",
+                '{"is_protected":true}',
                 "--yes",
             ]
         )
@@ -93,7 +109,7 @@ class TestCommandLine:
             ]
         )
 
-    @pytest.mark.skip(reason="3dpc editorプロジェクトに対するテストなので、スキップします。")
+    @pytest.mark.depending_on_annotation_specs
     def test_import_3dpc_annotation(self):
         project_id_of_3dpc = annofab_config["3dpc_project_id"]
         main(

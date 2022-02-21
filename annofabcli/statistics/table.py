@@ -4,17 +4,13 @@ from typing import Any, Dict, List, Optional
 import dateutil
 import more_itertools
 import pandas
-from annofabapi.models import InputDataId, Inspection, InspectionStatus, Task, TaskHistory, TaskPhase, TaskStatus
-from annofabapi.utils import (
-    get_number_of_rejections,
-    get_task_history_index_skipped_acceptance,
-    get_task_history_index_skipped_inspection,
-)
+from annofabapi.models import InputDataId, Inspection, InspectionStatus, Task, TaskHistory, TaskPhase
 
 import annofabcli
 from annofabcli.common.facade import AnnofabApiFacade
 from annofabcli.common.utils import isoduration_to_hour
 from annofabcli.statistics.database import Database
+from annofabcli.task.list_tasks_added_task_history import AddingAdditionalInfoToTask
 
 logger = logging.getLogger(__name__)
 
@@ -171,129 +167,8 @@ class Table:
             project_members_dict[member["account_id"]] = member
         return project_members_dict
 
-    def _set_first_phase_from_task_history(
-        self, task: Task, task_history: Optional[TaskHistory], column_prefix: str
-    ) -> Task:
-        """
-        最初のフェーズに関する情報をTask情報に設定する。
-
-        Args:
-            task:
-            task_history:
-            column_prefix:
-
-        Returns:
-
-        """
-        if task_history is None:
-            task.update(
-                {
-                    f"{column_prefix}_account_id": None,
-                    f"{column_prefix}_user_id": None,
-                    f"{column_prefix}_username": None,
-                    f"{column_prefix}_started_datetime": None,
-                    f"{column_prefix}_worktime_hour": 0,
-                }
-            )
-        else:
-            account_id = task_history["account_id"]
-            task.update(
-                {
-                    f"{column_prefix}_account_id": account_id,
-                    f"{column_prefix}_user_id": self._get_user_id(account_id),
-                    f"{column_prefix}_username": self._get_username(account_id),
-                    f"{column_prefix}_started_datetime": task_history["started_datetime"],
-                    f"{column_prefix}_worktime_hour": isoduration_to_hour(
-                        task_history["accumulated_labor_time_milliseconds"]
-                    ),
-                }
-            )
-
-        return task
-
-    @staticmethod
-    def _get_first_operator_worktime(task_histories: List[TaskHistory], account_id: str) -> float:
-        """
-        対象ユーザが担当したフェーズの合計作業時間を取得する。
-
-        Args:
-            task_histories:
-            account_id: 対象】ユーザのaccount_id
-
-        Returns:
-            作業時間
-
-        """
-        return sum(
-            [
-                isoduration_to_hour(e["accumulated_labor_time_milliseconds"])
-                for e in task_histories
-                if e["account_id"] == account_id
-            ]
-        )
-
-    @staticmethod
-    def _get_first_acceptance_completed_datetime(task_histories: List[TaskHistory]) -> Optional[str]:
-        """はじめて受入完了状態になった日時を取得する。
-
-        Args:
-            task_histories (List[TaskHistory]): [description]
-
-        Returns:
-            str: [description]
-        """
-        # 受入フェーズで完了日時がnot Noneの場合は、受入を合格したか差し戻したとき。
-        # したがって、後続のタスク履歴を見て、初めて受入完了状態になった日時を取得する。
-
-        for index, history in enumerate(task_histories):
-            if history["phase"] != TaskPhase.ACCEPTANCE.value or history["ended_datetime"] is None:
-                continue
-
-            if index == len(task_histories) - 1:
-                # 末尾履歴なら、受入完了状態
-                return history["ended_datetime"]
-
-            next_history = task_histories[index + 1]
-            if next_history["phase"] == TaskPhase.ACCEPTANCE.value:
-                # 受入完了後、受入取り消し実行
-                return history["ended_datetime"]
-            # そうでなければ、受入フェーズでの差し戻し
-
-        return None
-
-    @staticmethod
-    def _acceptance_is_skipped(task_histories: List[TaskHistory]) -> bool:
-        task_history_index_list = get_task_history_index_skipped_acceptance(task_histories)
-        if len(task_history_index_list) == 0:
-            return False
-
-        # スキップされた履歴より後に受入フェーズがなければ、受入がスキップされたタスクとみなす
-        # ただし、スキップされた履歴より後で、「アノテーション一覧で修正された」受入フェーズがある場合（account_id is None）は、スキップされた受入とみなす。
-        last_task_history_index = task_history_index_list[-1]
-        return (
-            more_itertools.first_true(
-                task_histories[last_task_history_index + 1 :],
-                pred=lambda e: e["phase"] == TaskPhase.ACCEPTANCE.value and e["account_id"] is not None,
-            )
-            is None
-        )
-
-    @staticmethod
-    def _inspection_is_skipped(task_histories: List[TaskHistory]) -> bool:
-        task_history_index_list = get_task_history_index_skipped_inspection(task_histories)
-        if len(task_history_index_list) == 0:
-            return False
-
-        # スキップされた履歴より後に検査フェーズがなければ、検査がスキップされたタスクとみなす
-        last_task_history_index = task_history_index_list[-1]
-        return (
-            more_itertools.first_true(
-                task_histories[last_task_history_index + 1 :], pred=lambda e: e["phase"] == TaskPhase.INSPECTION.value
-            )
-            is None
-        )
-
-    def set_task_histories(self, task: Task, task_histories: List[TaskHistory]):
+    @classmethod
+    def set_task_histories(cls, task: Task, task_histories: List[TaskHistory]):
         """
         タスク履歴関係の情報を設定する
         """
@@ -305,96 +180,14 @@ class Table:
             else:
                 return None
 
-        def filter_histories(arg_task_histories: List[TaskHistory], phase: TaskPhase) -> List[TaskHistory]:
-            """指定したフェーズで作業したタスク履歴を絞り込む。"""
-            return [
-                e
-                for e in arg_task_histories
-                if (
-                    e["phase"] == phase.value
-                    and e["account_id"] is not None
-                    and annofabcli.utils.isoduration_to_hour(e["accumulated_labor_time_milliseconds"]) > 0
-                )
-            ]
-
-        annotation_histories = filter_histories(task_histories, TaskPhase.ANNOTATION)
-        inspection_histories = filter_histories(task_histories, TaskPhase.INSPECTION)
-        acceptance_histories = filter_histories(task_histories, TaskPhase.ACCEPTANCE)
-
-        # 最初の教師付情報を設定する
-        first_annotation_history = annotation_histories[0] if len(annotation_histories) > 0 else None
-        self._set_first_phase_from_task_history(task, first_annotation_history, column_prefix="first_annotation")
-
-        # 最初の検査情報を設定する
-        first_inspection_history = inspection_histories[0] if len(inspection_histories) > 0 else None
-        self._set_first_phase_from_task_history(task, first_inspection_history, column_prefix="first_inspection")
-
-        # 最初の受入情報を設定する
-        first_acceptance_history = acceptance_histories[0] if len(acceptance_histories) > 0 else None
-        self._set_first_phase_from_task_history(task, first_acceptance_history, column_prefix="first_acceptance")
-
-        task["annotation_worktime_hour"] = sum(
-            [
-                annofabcli.utils.isoduration_to_hour(e["accumulated_labor_time_milliseconds"])
-                for e in annotation_histories
-            ]
-        )
-        task["inspection_worktime_hour"] = sum(
-            [
-                annofabcli.utils.isoduration_to_hour(e["accumulated_labor_time_milliseconds"])
-                for e in inspection_histories
-            ]
-        )
-        task["acceptance_worktime_hour"] = sum(
-            [
-                annofabcli.utils.isoduration_to_hour(e["accumulated_labor_time_milliseconds"])
-                for e in acceptance_histories
-            ]
-        )
-
-        # 最初の教師者が担当した履歴の合計作業時間を取得する。
-        # 担当者変更がなければ、"annotation_worktime_hour"と"first_annotation_worktime_hour"は同じ値
-        task["first_annotator_worktime_hour"] = (
-            self._get_first_operator_worktime(annotation_histories, first_annotation_history["account_id"])
-            if first_annotation_history is not None
-            else 0
-        )
-
-        task["first_inspector_worktime_hour"] = (
-            self._get_first_operator_worktime(inspection_histories, first_inspection_history["account_id"])
-            if first_inspection_history is not None
-            else 0
-        )
-        task["first_acceptor_worktime_hour"] = (
-            self._get_first_operator_worktime(acceptance_histories, first_acceptance_history["account_id"])
-            if first_acceptance_history is not None
-            else 0
-        )
-
-        task["sum_worktime_hour"] = sum(
+        task["worktime_hour"] = sum(
             [annofabcli.utils.isoduration_to_hour(e["accumulated_labor_time_milliseconds"]) for e in task_histories]
         )
 
-        task["number_of_rejections_by_inspection"] = get_number_of_rejections(
-            task["histories_by_phase"], TaskPhase.INSPECTION
-        )
-        task["number_of_rejections_by_acceptance"] = get_number_of_rejections(
-            task["histories_by_phase"], TaskPhase.ACCEPTANCE
-        )
         # APIで取得した 'number_of_rejections' は非推奨で、number_of_rejections_by_inspection/acceptanceと矛盾する場合があるので、書き換える
         task["number_of_rejections"] = (
             task["number_of_rejections_by_inspection"] + task["number_of_rejections_by_acceptance"]
         )
-
-        # 受入完了日時を設定
-        if task["phase"] == TaskPhase.ACCEPTANCE.value and task["status"] == TaskStatus.COMPLETE.value:
-            assert len(task_histories) > 0
-            task["task_completed_datetime"] = task_histories[-1]["ended_datetime"]
-        else:
-            task["task_completed_datetime"] = None
-
-        # 初めて受入が完了した日時
-        task["first_acceptance_completed_datetime"] = self._get_first_acceptance_completed_datetime(task_histories)
 
         task["diff_days_to_first_inspection_started"] = diff_days(
             "first_inspection_started_datetime", "first_annotation_started_datetime"
@@ -406,13 +199,6 @@ class Table:
         task["diff_days_to_first_acceptance_completed"] = diff_days(
             "first_acceptance_completed_datetime", "first_annotation_started_datetime"
         )
-
-        # 抜取検査/抜取受入で、検査/受入がスキップされたか否か
-        task["acceptance_is_skipped"] = self._acceptance_is_skipped(task_histories)
-        task["inspection_is_skipped"] = self._inspection_is_skipped(task_histories)
-        task["annotator_is_changed"] = self.operator_is_changed_by_phase(task_histories, TaskPhase.ANNOTATION)
-        task["inspector_is_changed"] = self.operator_is_changed_by_phase(task_histories, TaskPhase.INSPECTION)
-        task["acceptor_is_changed"] = self.operator_is_changed_by_phase(task_histories, TaskPhase.ACCEPTANCE)
 
         return task
 
@@ -458,9 +244,9 @@ class Table:
     def create_task_df(self) -> pandas.DataFrame:
         """
         タスク一覧からdataframeを作成する。
-        新たに追加した列は、user_id, annotation_count, inspection_count,
+        新たに追加した列は、user_id, annotation_count, inspection_comment_count,
             first_annotation_user_id, first_annotation_started_datetime,
-            annotation_worktime_hour, inspection_worktime_hour, acceptance_worktime_hour, sum_worktime_hour
+            annotation_worktime_hour, inspection_worktime_hour, acceptance_worktime_hour, worktime_hour
         """
 
         def set_input_data_info_for_movie(arg_task):
@@ -472,9 +258,9 @@ class Table:
                 return
             arg_task["input_duration_seconds"] = input_data.input_duration_seconds
 
-        def set_inspection_info(arg_task):
+        def set_inspection_comment_info(arg_task):
             # 指摘枚数
-            inspection_count = 0
+            inspection_comment_count = 0
             # 指摘された画像枚数
             input_data_count_of_inspection = 0
 
@@ -487,11 +273,12 @@ class Table:
                         for e in inspection_list
                         if self._inspection_condition(e, exclude_reply=True, only_error_corrected=True)
                     ]
-                    inspection_count += len(filtered_inspection_list)
+                    inspection_comment_count += len(filtered_inspection_list)
                     if len(filtered_inspection_list) > 0:
                         input_data_count_of_inspection += 1
 
-            arg_task["inspection_count"] = inspection_count
+            arg_task["inspection_comment_count"] = inspection_comment_count
+
             arg_task["input_data_count_of_inspection"] = input_data_count_of_inspection
 
         tasks = self._get_task_list()
@@ -500,19 +287,23 @@ class Table:
         annotations_dict = self.database.get_annotation_count_by_task()
         input_data_dict = self.database.read_input_data_from_json()
 
+        adding_obj = AddingAdditionalInfoToTask(self.annofab_service, project_id=self.project_id)
+
         for task in tasks:
+
+            adding_obj.add_additional_info_to_task(task)
+
             task_id = task["task_id"]
             task_histories = task_histories_dict.get(task_id, [])
 
-            account_id = task["account_id"]
-            task["user_id"] = self._get_user_id(account_id)
-            task["username"] = self._get_username(account_id)
             task["input_data_count"] = len(task["input_data_id_list"])
 
+            # タスク履歴から取得できる付加的な情報を追加する
+            adding_obj.add_task_history_additional_info_to_task(task, task_histories)
             self.set_task_histories(task, task_histories)
 
             task["annotation_count"] = annotations_dict.get(task_id, 0)
-            set_inspection_info(task)
+            set_inspection_comment_info(task)
             set_input_data_info_for_movie(task)
 
         df = pandas.DataFrame(tasks)
@@ -534,7 +325,9 @@ class Table:
         task_df["annotation_worktime_hour/annotation_count"] = (
             task_df["annotation_worktime_hour"] / task_df["annotation_count"]
         )
-        task_df["inspection_count/annotation_count"] = task_df["inspection_count"] / task_df["annotation_count"]
+        task_df["inspection_comment_count/annotation_count"] = (
+            task_df["inspection_comment_count"] / task_df["annotation_count"]
+        )
         task_df["number_of_rejections/annotation_count"] = task_df["number_of_rejections"] / task_df["annotation_count"]
 
         task_df["inspection_worktime_hour/annotation_count"] = (
@@ -556,12 +349,13 @@ class Table:
 
         Returns:
 
+
         """
         annotation_count_dict = {
             row["task_id"]: {
                 "annotation_count": row["annotation_count"],
                 "input_data_count": row["input_data_count"],
-                "inspection_comment_count": row["inspection_count"],
+                "inspection_comment_count": row["inspection_comment_count"],
                 "rejected_count": row["number_of_rejections"],
             }
             for _, row in task_df.iterrows()
@@ -592,7 +386,7 @@ class Table:
             logger.warning("タスク一覧が0件です。")
             return pandas.DataFrame()
 
-        group_obj = task_history_df.groupby(["task_id", "phase", "phase_stage", "user_id"]).agg(
+        group_obj = task_history_df.groupby(["task_id", "phase", "phase_stage", "account_id"]).agg(
             {"worktime_hour": "sum"}
         )
         if len(group_obj) == 0:
@@ -602,7 +396,7 @@ class Table:
                     "task_id",
                     "phase",
                     "phase_stage",
-                    "user_id",
+                    "account_id",
                     "worktime_hour",
                     "worktime_ratio_by_task",
                     "annotation_count",
@@ -629,26 +423,3 @@ class Table:
             lambda e: 1 if e == TaskPhase.ANNOTATION.value else 0
         )
         return new_df
-
-    def create_labor_df(self, df_labor: Optional[pandas.DataFrame] = None) -> pandas.DataFrame:
-        """
-        労務管理 DataFrameを生成する。情報を出力する。
-
-        Args:
-            df_labor: 指定されれば、account_idに紐づくユーザ情報を添付する。そうでなければ、webapiから労務管理情報を取得する。
-        """
-        if df_labor is None:
-            labor_list = self.database.get_labor_list(self.project_id)
-            df_labor = pandas.DataFrame(labor_list)
-
-        if len(df_labor) == 0:
-            return pandas.DataFrame(
-                columns=["date", "account_id", "user_id", "username", "biography", "actual_worktime_hour"]
-            )
-
-        df_user = pandas.DataFrame(self.project_members_dict.values())[
-            ["account_id", "user_id", "username", "biography"]
-        ]
-
-        df = df_labor.merge(df_user, how="left", on="account_id")
-        return df

@@ -1,0 +1,4 @@
+task_id,status,phase,phase_stage,input_data_id,input_data_name,annotation_count,car,car
+,,,,,,,occlusion,occlusion
+,,,,,,,true,false
+task2,complete,acceptance,1,input2,input2,80,12,5

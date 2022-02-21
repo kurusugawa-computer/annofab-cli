@@ -22,9 +22,6 @@
 
 ## 廃止予定
 
-### 2022-02-01 以降
-* `annofabcli statistics visualize`：`--get_labor` オプションを廃止します。替わりに `--labor_csv` を利用してください。
-
 ### 2022-04-01 以降
 * python3.7のサポートを廃止して、python3.8以上をサポートするようにします。
 
