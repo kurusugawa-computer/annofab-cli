@@ -93,7 +93,6 @@ def mask_visualization_dir(
             user_id_list=user_id_list,
         )
 
-
     user_date_csv_file = project_dir / "ユーザ_日付list-作業時間.csv"
     if user_date_csv_file.exists():
         df_worktime = pandas.read_csv(str(user_date_csv_file))
