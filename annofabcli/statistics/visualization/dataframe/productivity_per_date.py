@@ -113,8 +113,12 @@ class AnnotatorProductivityPerDate(AbstractRoleProductivityPerDate):
                     sum_df[numerator_column] / sum_df[denominator_column]
                 )
 
-        sum_df["inspection_comment_count/annotation_count"] = sum_df["inspection_comment_count"] / sum_df["annotation_count"]
-        sum_df["inspection_comment_count/input_data_count"] = sum_df["inspection_comment_count"] / sum_df["annotation_count"]
+        sum_df["inspection_comment_count/annotation_count"] = (
+            sum_df["inspection_comment_count"] / sum_df["annotation_count"]
+        )
+        sum_df["inspection_comment_count/input_data_count"] = (
+            sum_df["inspection_comment_count"] / sum_df["annotation_count"]
+        )
 
         return cls(sum_df)
 
@@ -252,9 +256,9 @@ class AnnotatorProductivityPerDate(AbstractRoleProductivityPerDate):
                 * 60
                 / get_weekly_sum(df_subset["annotation_count"])
             )
-            df_subset[f"inspection_comment_count/annotation_count{WEEKLY_MOVING_AVERAGE_COLUMN_SUFFIX}"] = get_weekly_sum(
-                df_subset["inspection_comment_count"]
-            ) / get_weekly_sum(df_subset["annotation_count"])
+            df_subset[
+                f"inspection_comment_count/annotation_count{WEEKLY_MOVING_AVERAGE_COLUMN_SUFFIX}"
+            ] = get_weekly_sum(df_subset["inspection_comment_count"]) / get_weekly_sum(df_subset["annotation_count"])
 
             source = ColumnDataSource(data=df_subset)
             color = get_color_from_palette(user_index)
@@ -385,9 +389,9 @@ class AnnotatorProductivityPerDate(AbstractRoleProductivityPerDate):
                 * 60
                 / get_weekly_sum(df_subset["input_data_count"])
             )
-            df_subset[f"inspection_comment_count/input_data_count{WEEKLY_MOVING_AVERAGE_COLUMN_SUFFIX}"] = get_weekly_sum(
-                df_subset["inspection_comment_count"]
-            ) / get_weekly_sum(df_subset["input_data_count"])
+            df_subset[
+                f"inspection_comment_count/input_data_count{WEEKLY_MOVING_AVERAGE_COLUMN_SUFFIX}"
+            ] = get_weekly_sum(df_subset["inspection_comment_count"]) / get_weekly_sum(df_subset["input_data_count"])
 
             source = ColumnDataSource(data=df_subset)
             color = get_color_from_palette(user_index)
