@@ -186,7 +186,7 @@ def parse_args(parser: argparse.ArgumentParser):
         help=(
             "タスクに割り当てる入力データをJSON形式で指定してください。"
             "keyがtask_id, valueがinput_data_idのlistです。\n"
-            f"(ex) ``{JSON_SAMPLE}`` "
+            f"(ex) ``{JSON_SAMPLE}`` \n"
             "``file://`` を先頭に付けるとjsonファイルを指定できます。"
         ),
     )
