@@ -109,7 +109,7 @@ class AnnotatorCumulativeProductivity(AbstractRoleCumulativeProductivity):
         df["cumulative_inspection_worktime_hour"] = groupby_obj["inspection_worktime_hour"].cumsum()
 
         # タスク完了数、差し戻し数など
-        df["cumulative_inspection_count"] = groupby_obj["inspection_count"].cumsum()
+        df["cumulative_inspection_comment_count"] = groupby_obj["inspection_comment_count"].cumsum()
         df["cumulative_annotation_count"] = groupby_obj["annotation_count"].cumsum()
         df["cumulative_input_data_count"] = groupby_obj["input_data_count"].cumsum()
         df["cumulative_task_count"] = groupby_obj["task_count"].cumsum()
@@ -167,7 +167,7 @@ class AnnotatorCumulativeProductivity(AbstractRoleCumulativeProductivity):
             ),
             dict(
                 title="累積のアノテーション数と検査コメント数",
-                y_column_name="cumulative_inspection_count",
+                y_column_name="cumulative_inspection_comment_count",
                 y_axis_label="検査コメント数",
             ),
         ]
@@ -217,7 +217,7 @@ class AnnotatorCumulativeProductivity(AbstractRoleCumulativeProductivity):
                 "acceptance_worktime_hour",
                 "annotation_count",
                 "input_data_count",
-                "inspection_count",
+                "inspection_comment_count",
             ]
         )
         for fig in figs:
@@ -266,7 +266,7 @@ class AnnotatorCumulativeProductivity(AbstractRoleCumulativeProductivity):
             ),
             dict(
                 title="累積の入力データ数と検査コメント数",
-                y_column_name="cumulative_inspection_count",
+                y_column_name="cumulative_inspection_comment_count",
                 y_axis_label="検査コメント数",
             ),
         ]
@@ -316,7 +316,7 @@ class AnnotatorCumulativeProductivity(AbstractRoleCumulativeProductivity):
                 "acceptance_worktime_hour",
                 "annotation_count",
                 "input_data_count",
-                "inspection_count",
+                "inspection_comment_count",
             ]
         )
         for fig in figs:
@@ -437,7 +437,7 @@ class InspectorCumulativeProductivity(AbstractRoleCumulativeProductivity):
         # 作業時間の累積値
         df["cumulative_inspection_worktime_hour"] = groupby_obj["inspection_worktime_hour"].cumsum()
 
-        df["cumulative_inspection_count"] = groupby_obj["inspection_count"].cumsum()
+        df["cumulative_inspection_comment_count"] = groupby_obj["inspection_comment_count"].cumsum()
         df["cumulative_annotation_count"] = groupby_obj["annotation_count"].cumsum()
         df["cumulative_input_data_count"] = groupby_obj["input_data_count"].cumsum()
 
@@ -522,7 +522,7 @@ class InspectorCumulativeProductivity(AbstractRoleCumulativeProductivity):
                 "inspection_worktime_hour",
                 "annotation_count",
                 "input_data_count",
-                "inspection_count",
+                "inspection_comment_count",
             ]
         )
         for fig in figs:
@@ -604,7 +604,7 @@ class InspectorCumulativeProductivity(AbstractRoleCumulativeProductivity):
                 "inspection_worktime_hour",
                 "annotation_count",
                 "input_data_count",
-                "inspection_count",
+                "inspection_comment_count",
             ]
         )
         for fig in figs:
@@ -713,7 +713,7 @@ class AcceptorCumulativeProductivity(AbstractRoleCumulativeProductivity):
                 "acceptance_worktime_hour",
                 "annotation_count",
                 "input_data_count",
-                "inspection_count",
+                "inspection_comment_count",
             ]
         )
         for fig in figs:
