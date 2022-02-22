@@ -688,11 +688,6 @@ def parse_args(parser: argparse.ArgumentParser):
         help="タスク履歴を1個ずつ取得して、タスク履歴の最新版を参照します。タスクの数だけWebAPIを実行するので、処理時間が長くなります。",
     )
 
-    parser.add_argument(
-        "--work_dir",
-        type=Path,
-        help="作業ディレクトリのパス。指定しない場合はannofabcliのキャッシュディレクトリ（'$HOME/.cache/annofabcli'）に保存します。",
-    )
 
     parser.add_argument(
         "--labor_csv",
