@@ -133,7 +133,7 @@ def create_task_count_summary_df(
         add_columns_if_not_exists(df_summary, status.value)
 
     df_summary["sum"] = (
-        df_task.pivot_table(values="task_id", index=["task_id_prefix"], aggfunc="count", fill_value=0)
+        df_task.pivot_table(values="task_id", index=["task_id_group"], aggfunc="count", fill_value=0)
         .reset_index()
         .fillna(0)["task_id"]
     )
@@ -143,7 +143,7 @@ def create_task_count_summary_df(
 
 class SummarizeTaskCountByTaskId(AbstractCommandLineInterface):
     def print_summarize_task_count(self, df: pandas.DataFrame) -> None:
-        columns = ["task_id_prefix"] + [status.value for status in TaskStatusForSummary] + ["sum"]
+        columns = ["task_id_group"] + [status.value for status in TaskStatusForSummary] + ["sum"]
         annofabcli.utils.print_according_to_format(
             df[columns],
             arg_format=FormatArgument(FormatArgument.CSV),
