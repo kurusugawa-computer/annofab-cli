@@ -229,7 +229,7 @@ def main(args):
 
 
 def add_parser(subparsers: Optional[argparse._SubParsersAction] = None):
-    subcommand_name = "summarize_task_count_by_task_id"
+    subcommand_name = "summarize_task_count_by_task_id_group"
     subcommand_help = "task_idのプレフィックスごとに、タスク数を出力します。"
     description = "task_idのプレフィックスごとに、タスク数をCSV形式で出力します。"
     epilog = "アノテーションユーザまたはオーナロールを持つユーザで実行してください。"
