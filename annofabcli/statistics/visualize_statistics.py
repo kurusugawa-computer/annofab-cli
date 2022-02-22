@@ -89,27 +89,6 @@ def write_project_performance_csv(project_dirs: Collection[Path], output_path: P
     main_obj.to_csv(output_path)
 
 
-def write_project_name_file(
-    annofab_service: annofabapi.Resource, project_id: str, command_line_args: CommnadLineArgs, output_project_dir: Path
-):
-    """
-    ファイル名がプロジェクト名のjsonファイルを生成する。
-    """
-    project_info = annofab_service.api.get_project(project_id)[0]
-    project_title = project_info["title"]
-    logger.info(f"project_title = {project_title}")
-    filename = annofabcli.utils.to_filename(project_title)
-    output_project_dir.mkdir(exist_ok=True, parents=True)
-
-    project_summary = ProjectSummary(
-        project_id=project_id,
-        project_title=project_title,
-        measurement_datetime=annofabapi.utils.str_now(),
-        args=command_line_args,
-    )
-
-    with open(str(output_project_dir / f"{filename}.json"), "w", encoding="utf-8") as f:
-        f.write(project_summary.to_json(ensure_ascii=False, indent=2))
 
 
 def get_project_output_dir(project_title: str) -> str:
@@ -128,6 +107,7 @@ class WriteCsvGraph:
         output_dir: Path,
         df_labor: Optional[pandas.DataFrame],
         minimal_output: bool = False,
+        output_csv_only:bool=False
     ):
         self.service = service
         self.project_id = project_id
@@ -135,6 +115,7 @@ class WriteCsvGraph:
         self.table_obj = table_obj
         self.df_labor = df_labor
         self.minimal_output = minimal_output
+        self.output_csv_only = output_csv_only
 
     def _catch_exception(self, function: Callable[..., Any]) -> Callable[..., Any]:
         """
@@ -295,103 +276,132 @@ class WriteCsvGraph:
         )
 
 
-def visualize_statistics(
-    project_id: str,
-    *,
-    annofab_service: annofabapi.Resource,
-    annofab_facade: AnnofabApiFacade,
-    work_dir: Path,
-    output_project_dir: Path,
-    task_query: Optional[TaskQuery],
-    df_labor: Optional[pandas.DataFrame],
-    task_id_list: Optional[List[str]],
-    ignored_task_id_list: Optional[List[str]],
-    user_id_list: Optional[List[str]],
-    update: bool = False,
-    download_latest: bool = False,
-    is_get_task_histories_one_of_each: bool = False,
-    start_date: Optional[str] = None,
-    end_date: Optional[str] = None,
-    minimal_output: bool = False,
-):
-    """
-    プロジェクトの統計情報を出力する。
 
-    Args:
-        project_id: 対象のproject_id
-        task_query: タスク検索クエリ
+class VisualizingStatisticsMain:
+    def __init__(self, service: annofabapi.Resource):
+        self.service = service
+        self.facade = AnnofabApiFacade(service)
 
-    """
 
-    annofab_facade.validate_project(
-        project_id, project_member_roles=[ProjectMemberRole.OWNER, ProjectMemberRole.TRAINING_DATA_USER]
-    )
+    def write_project_name_file(
+        self, project_id: str, command_line_args: CommnadLineArgs, output_project_dir: Path
+    ):
+        """
+        ファイル名がプロジェクト名のjsonファイルを生成する。
+        """
+        project_info = self.service.api.get_project(project_id)[0]
+        project_title = project_info["title"]
+        logger.info(f"project_title = {project_title}")
+        filename = annofabcli.utils.to_filename(project_title)
+        output_project_dir.mkdir(exist_ok=True, parents=True)
 
-    checkpoint_dir = work_dir / project_id
-    checkpoint_dir.mkdir(exist_ok=True, parents=True)
+        project_summary = ProjectSummary(
+            project_id=project_id,
+            project_title=project_title,
+            measurement_datetime=annofabapi.utils.str_now(),
+            args=command_line_args,
+        )
 
-    database = Database(
-        annofab_service,
-        project_id,
-        str(checkpoint_dir),
-        query=Query(
-            task_query=task_query,
-            task_id_set=set(task_id_list) if task_id_list is not None else None,
-            ignored_task_id_set=set(ignored_task_id_list) if ignored_task_id_list is not None else None,
-            start_date=start_date,
-            end_date=end_date,
-        ),
-    )
-    if update:
+        with open(str(output_project_dir / f"{filename}.json"), "w", encoding="utf-8") as f:
+            f.write(project_summary.to_json(ensure_ascii=False, indent=2))
+
+
+    def visualize_statistics(
+        self,
+        project_id: str,
+        *,
+        work_dir: Path,
+        output_project_dir: Path,
+        task_query: Optional[TaskQuery],
+        df_labor: Optional[pandas.DataFrame],
+        task_id_list: Optional[List[str]],
+        ignored_task_id_list: Optional[List[str]],
+        user_id_list: Optional[List[str]],
+        update: bool = False,
+        download_latest: bool = False,
+        is_get_task_histories_one_of_each: bool = False,
+        start_date: Optional[str] = None,
+        end_date: Optional[str] = None,
+        minimal_output: bool = False,
+        output_csv_only:bool=False
+    ):
+        """
+        プロジェクトの統計情報を出力する。
+
+        Args:
+            project_id: 対象のproject_id
+            task_query: タスク検索クエリ
+
+        """
+
+        self.facade.validate_project(
+            project_id, project_member_roles=[ProjectMemberRole.OWNER, ProjectMemberRole.TRAINING_DATA_USER]
+        )
+
+        checkpoint_dir = work_dir / project_id
+        checkpoint_dir.mkdir(exist_ok=True, parents=True)
+
+        database = Database(
+            annofab_service,
+            project_id,
+            str(checkpoint_dir),
+            query=Query(
+                task_query=task_query,
+                task_id_set=set(task_id_list) if task_id_list is not None else None,
+                ignored_task_id_set=set(ignored_task_id_list) if ignored_task_id_list is not None else None,
+                start_date=start_date,
+                end_date=end_date,
+            ),
+        )
         database.update_db(download_latest, is_get_task_histories_one_of_each=is_get_task_histories_one_of_each)
 
-    table_obj = Table(database, ignored_task_id_list)
-    if len(table_obj._get_task_list()) == 0:
-        logger.warning(f"project_id={project_id}: タスク一覧が0件なのでファイルを出力しません。終了します。")
-        return
-    if len(table_obj._get_task_histories_dict().keys()) == 0:
-        logger.warning(f"project_id={project_id}: タスク履歴一覧が0件なのでファイルを出力しません。終了します。")
-        return
+        table_obj = Table(database, ignored_task_id_list)
+        if len(table_obj._get_task_list()) == 0:
+            logger.warning(f"project_id={project_id}: タスク一覧が0件なのでファイルを出力しません。終了します。")
+            return
+        if len(table_obj._get_task_histories_dict().keys()) == 0:
+            logger.warning(f"project_id={project_id}: タスク履歴一覧が0件なのでファイルを出力しません。終了します。")
+            return
 
-    write_project_name_file(
-        annofab_service,
-        project_id=project_id,
-        command_line_args=CommnadLineArgs(
-            task_query=task_query,
-            user_id_list=user_id_list,
-            start_date=start_date,
-            end_date=end_date,
-            ignored_task_id_list=ignored_task_id_list,
-        ),
-        output_project_dir=output_project_dir,
-    )
-    write_obj = WriteCsvGraph(
-        annofab_service, project_id, table_obj, output_project_dir, df_labor=df_labor, minimal_output=minimal_output
-    )
+        write_project_name_file(
+            annofab_service,
+            project_id=project_id,
+            command_line_args=CommnadLineArgs(
+                task_query=task_query,
+                user_id_list=user_id_list,
+                start_date=start_date,
+                end_date=end_date,
+                ignored_task_id_list=ignored_task_id_list,
+            ),
+            output_project_dir=output_project_dir,
+        )
+        write_obj = WriteCsvGraph(
+            annofab_service, project_id, table_obj, output_project_dir, df_labor=df_labor, minimal_output=minimal_output, output_csv_only=output_csv_only
+        )
 
-    write_obj._catch_exception(write_obj.write_user_performance)()
+        write_obj._catch_exception(write_obj.write_user_performance)()
 
-    write_obj._catch_exception(write_obj.write_task_info)()
+        write_obj._catch_exception(write_obj.write_task_info)()
 
-    # 折れ線グラフ
-    write_obj.write_cumulative_linegraph_by_user(user_id_list)
+        # 折れ線グラフ
+        write_obj.write_cumulative_linegraph_by_user(user_id_list)
 
-    write_obj._catch_exception(write_obj.write_worktime_per_date)(user_id_list)
+        write_obj._catch_exception(write_obj.write_worktime_per_date)(user_id_list)
 
-    if not minimal_output:
+        if not minimal_output:
 
-        write_obj._catch_exception(write_obj.write_user_productivity_per_date)(user_id_list)
+            write_obj._catch_exception(write_obj.write_user_productivity_per_date)(user_id_list)
 
 
 def visualize_statistics_wrapper(
     project_id: str,
     *,
     root_output_dir: Path,
+    df_labor: Optional[pandas.DataFrame],
     annofab_service: annofabapi.Resource,
     annofab_facade: AnnofabApiFacade,
     work_dir: Path,
     task_query: Optional[TaskQuery],
-    df_labor: Optional[pandas.DataFrame],
     task_id_list: Optional[List[str]],
     ignored_task_id_list: Optional[List[str]],
     user_id_list: Optional[List[str]],
@@ -664,11 +674,6 @@ def parse_args(parser: argparse.ArgumentParser):
         help=("集計対象外のタスクのtask_idを指定します。 ``--task_id`` より優先度が高いです。\n" "``file://`` を先頭に付けると、一覧が記載されたファイルを指定できます。"),
     )
 
-    parser.add_argument(
-        "--not_update",
-        action="store_true",
-        help="作業ディレクトリ内のファイルを参照して、統計情報を出力します。" "AnnoFab Web APIへのアクセスを最小限にします。",
-    )
 
     parser.add_argument(
         "--latest",
