@@ -27,8 +27,8 @@ from annofabcli.statistics.summarize_task_count import get_step_for_current_phas
 logger = logging.getLogger(__name__)
 
 DEFAULT_WAIT_OPTIONS = WaitOptions(interval=60, max_tries=360)
-DEFAULT_TASK_ID_DELIMITER = "_"
-
+TASK_ID_GROUP_UNKNOWN = "unknown"
+"""task_id_groupが不明な場合に表示する値"""
 
 class TaskStatusForSummary(Enum):
     """
@@ -79,10 +79,10 @@ class TaskStatusForSummary(Enum):
             return TaskStatusForSummary.OTHER
 
 
-def get_task_id_prefix(task_id: str, delimiter: str = DEFAULT_TASK_ID_DELIMITER):
+def get_task_id_prefix(task_id: str, delimiter: str):
     tmp_list = task_id.split(delimiter)
     if len(tmp_list) <= 1:
-        return "unknown"
+        return TASK_ID_GROUP_UNKNOWN
     else:
         return delimiter.join(tmp_list[0 : len(tmp_list) - 1])
 
@@ -123,7 +123,7 @@ def create_task_count_summary_df(
     if task_id_delimiter is not None:
         df_task["task_id_group"] = df_task["task_id"].map(lambda e: get_task_id_prefix(e, delimiter=task_id_delimiter))
 
-    df_task["task_id_group"].fillna("unknown", inplace=True)
+    df_task["task_id_group"].fillna(TASK_ID_GROUP_UNKNOWN, inplace=True)
 
     df_summary = df_task.pivot_table(
         values="task_id", index=["task_id_group"], columns=["status_for_summary"], aggfunc="count", fill_value=0
@@ -230,11 +230,10 @@ def main(args):
 
 def add_parser(subparsers: Optional[argparse._SubParsersAction] = None):
     subcommand_name = "summarize_task_count_by_task_id_group"
-    subcommand_help = "task_idのプレフィックスごとに、タスク数を出力します。"
-    description = "task_idのプレフィックスごとに、タスク数をCSV形式で出力します。"
+    subcommand_help = "task_idのグループごとにタスク数を集計します。"
     epilog = "アノテーションユーザまたはオーナロールを持つユーザで実行してください。"
     parser = annofabcli.common.cli.add_parser(
-        subparsers, subcommand_name, subcommand_help, description=description, epilog=epilog
+        subparsers, subcommand_name, subcommand_help, epilog=epilog
     )
     parse_args(parser)
     return parser

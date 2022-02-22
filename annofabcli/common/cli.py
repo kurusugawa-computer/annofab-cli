@@ -65,7 +65,7 @@ def add_parser(
     subparsers: Optional[argparse._SubParsersAction],
     command_name: str,
     command_help: str,
-    description: str,
+    description: Optional[str]=None,
     is_subcommand: bool = True,
     epilog: Optional[str] = None,
 ) -> argparse.ArgumentParser:
@@ -76,7 +76,7 @@ def add_parser(
         subparsers:
         command_name:
         command_help: 1階層上のコマンドヘルプに表示される コマンドの説明（簡易的な説明）
-        description: ヘルプ出力に表示される説明（詳細な説明）
+        description: ヘルプ出力に表示される説明（詳細な説明）。未指定の場合は command_help と同じ値です。
         is_subcommand: サブコマンドかどうか. `annofabcli project`はコマンド、`annofabcli project list`はサブコマンドとみなす。
         epilog: ヘルプ出力後に表示される内容。デフォルトはNoneです。
 
@@ -119,7 +119,7 @@ def add_parser(
     parser = subparsers.add_parser(
         command_name,
         parents=parents,
-        description=description,
+        description=description if description is not None else command_help,
         help=command_help,
         epilog=epilog,
         formatter_class=PrettyHelpFormatter,
