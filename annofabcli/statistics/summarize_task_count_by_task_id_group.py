@@ -30,6 +30,7 @@ DEFAULT_WAIT_OPTIONS = WaitOptions(interval=60, max_tries=360)
 TASK_ID_GROUP_UNKNOWN = "unknown"
 """task_id_groupが不明な場合に表示する値"""
 
+
 class TaskStatusForSummary(Enum):
     """
     TaskStatusのサマリー用（知りたい情報をstatusにしている）
@@ -232,8 +233,6 @@ def add_parser(subparsers: Optional[argparse._SubParsersAction] = None):
     subcommand_name = "summarize_task_count_by_task_id_group"
     subcommand_help = "task_idのグループごとにタスク数を集計します。"
     epilog = "アノテーションユーザまたはオーナロールを持つユーザで実行してください。"
-    parser = annofabcli.common.cli.add_parser(
-        subparsers, subcommand_name, subcommand_help, epilog=epilog
-    )
+    parser = annofabcli.common.cli.add_parser(subparsers, subcommand_name, subcommand_help, epilog=epilog)
     parse_args(parser)
     return parser

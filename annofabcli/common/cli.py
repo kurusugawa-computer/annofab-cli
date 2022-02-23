@@ -65,7 +65,7 @@ def add_parser(
     subparsers: Optional[argparse._SubParsersAction],
     command_name: str,
     command_help: str,
-    description: Optional[str]=None,
+    description: Optional[str] = None,
     is_subcommand: bool = True,
     epilog: Optional[str] = None,
 ) -> argparse.ArgumentParser:

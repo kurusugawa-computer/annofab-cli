@@ -40,9 +40,8 @@ class Query:
 
     task_query: Optional[TaskQuery] = None
     task_id_set: Optional[Set[str]] = None
-    """集計対象タスクのtask_idのSet"""
     ignored_task_id_set: Optional[Set[str]] = None
-    """集計対象外タスクのtask_idのSet"""
+    """集計対象タスクのtask_idのSet"""
     start_date: Optional[str] = None
     end_date: Optional[str] = None
 
@@ -77,7 +76,7 @@ class Database:
         self,
         annofab_service: annofabapi.Resource,
         project_id: str,
-        checkpoint_dir: str,
+        temp_dir: Path,
         query: Optional[Query] = None,
     ):
         """
@@ -88,15 +87,15 @@ class Database:
 
         self.annofab_service = annofab_service
         self.project_id = project_id
-        self.checkpoint_dir = checkpoint_dir
+        self.temp_dir = temp_dir
         self.query = query if query is not None else Query()
 
         # ダウンロードした一括情報
-        self.tasks_json_path = Path(f"{self.checkpoint_dir}/tasks.json")
-        self.input_data_json_path = Path(f"{self.checkpoint_dir}/input_data.json")
-        self.inspection_json_path = Path(f"{self.checkpoint_dir}/inspections.json")
-        self.task_histories_json_path = Path(f"{self.checkpoint_dir}/task_histories.json")
-        self.annotations_zip_path = Path(f"{self.checkpoint_dir}/simple-annotations.zip")
+        self.tasks_json_path = self.temp_dir/"tasks.json"
+        self.input_data_json_path = temp_dir/"input_data.json"
+        self.inspection_json_path = temp_dir/"inspections.json"
+        self.task_histories_json_path = temp_dir/"task_histories.json"
+        self.annotations_zip_path = temp_dir/"simple-annotations.zip"
 
         self.logging_prefix = f"project_id={project_id}"
 

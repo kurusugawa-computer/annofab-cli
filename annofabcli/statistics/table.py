@@ -38,12 +38,10 @@ class Table:
     def __init__(
         self,
         database: Database,
-        ignored_task_id_list: Optional[List[str]] = None,
     ):
         self.annofab_service = database.annofab_service
         self.annofab_facade = AnnofabApiFacade(database.annofab_service)
         self.database = database
-        self.ignored_task_id_list = ignored_task_id_list
 
         self.project_id = self.database.project_id
         self.project_members_dict = self._get_project_members_dict()
