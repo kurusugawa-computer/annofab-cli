@@ -67,9 +67,20 @@ class WholeProductivityPerCompletedDate:
         return pandas.DataFrame(index=[e.strftime("%Y-%m-%d") for e in pandas.date_range(start_date, end_date)])
 
     @classmethod
-    def from_df(cls, df_task: pandas.DataFrame, df_labor: pandas.DataFrame) -> WholeProductivityPerCompletedDate:
+    def from_df(cls, df_task: pandas.DataFrame, df_worktime: pandas.DataFrame) -> WholeProductivityPerCompletedDate:
         """
         受入完了日毎の全体の生産量、生産性を算出する。
+
+        Args:
+            df_task: タスク情報が格納されたDataFrame
+            df_worktime: ユーザごと日ごとの作業時間が格納されたDataFrame。以下の列を参照する
+                date
+                user_id
+                actual_worktime_hour
+                monitored_worktime_hour
+                monitored_annotation_worktime_hour
+                monitored_inspection_worktime_hour
+                monitored_acceptance_worktime_hour
         """
         df_sub_task = df_task[
             [
@@ -101,8 +112,8 @@ class WholeProductivityPerCompletedDate:
             # 列だけ作る
             df_agg_sub_task = df_agg_sub_task.assign(**{key: 0 for key in value_columns}, task_count=0)
 
-        if len(df_labor) > 0:
-            df_agg_labor = df_labor.pivot_table(
+        if len(df_worktime) > 0:
+            df_agg_labor = df_worktime.pivot_table(
                 values=[
                     "actual_worktime_hour",
                     "monitored_worktime_hour",
@@ -116,7 +127,7 @@ class WholeProductivityPerCompletedDate:
 
             # 作業したユーザ数を算出
             df_tmp = (
-                df_labor[df_labor["monitored_worktime_hour"] > 0]
+                df_worktime[df_worktime["monitored_worktime_hour"] > 0]
                 .pivot_table(values=["user_id"], index="date", aggfunc="count")
                 .fillna(0)
             )
@@ -124,6 +135,10 @@ class WholeProductivityPerCompletedDate:
                 df_agg_labor["working_user_count"] = df_tmp
             else:
                 df_agg_labor["working_user_count"] = 0
+
+            df_agg_labor["unmonitored_worktime_hour"] = (
+                df_agg_labor["actual_worktime_hour"] - df_agg_labor["monitored_worktime_hour"]
+            )
 
         else:
             df_agg_labor = pandas.DataFrame(
@@ -133,6 +148,7 @@ class WholeProductivityPerCompletedDate:
                     "monitored_annotation_worktime_hour",
                     "monitored_inspection_worktime_hour",
                     "monitored_acceptance_worktime_hour",
+                    "unmonitored_worktime_hour",
                     "working_user_count",
                 ]
             )
@@ -167,16 +183,17 @@ class WholeProductivityPerCompletedDate:
         add_cumsum_column(df, column="task_count")
         add_cumsum_column(df, column="input_data_count")
         add_cumsum_column(df, column="actual_worktime_hour")
+        add_cumsum_column(df, column="monitored_worktime_hour")
 
-        # annofab 計測時間から算出したvelocityを追加
-        add_velocity_column(df, numerator_column="monitored_worktime_hour", denominator_column="task_count")
-        add_velocity_column(df, numerator_column="monitored_worktime_hour", denominator_column="input_data_count")
-        add_velocity_column(df, numerator_column="monitored_worktime_hour", denominator_column="annotation_count")
+        # 生産性情報を追加
+        for category in ["actual", "monitored"]:
+            for unit in ["task_count", "input_data_count", "annotation_count"]:
+                add_velocity_column(df, numerator_column=f"{category}_worktime_hour", denominator_column=unit)
 
-        # 実績作業時間から算出したvelocityを追加
-        add_velocity_column(df, numerator_column="actual_worktime_hour", denominator_column="task_count")
-        add_velocity_column(df, numerator_column="actual_worktime_hour", denominator_column="input_data_count")
-        add_velocity_column(df, numerator_column="actual_worktime_hour", denominator_column="annotation_count")
+        # フェーズごとの作業時間は、細かい単位で生産性を出したいので、task_countを使わない
+        for category in ["monitored_annotation", "monitored_inspection", "monitored_acceptance", "unmonitored"]:
+            for unit in ["input_data_count", "annotation_count"]:
+                add_velocity_column(df, numerator_column=f"{category}_worktime_hour", denominator_column=unit)
 
     @classmethod
     def merge(
@@ -263,16 +280,20 @@ class WholeProductivityPerCompletedDate:
 
         def add_velocity_columns(df: pandas.DataFrame):
             for denominator in ["input_data_count", "annotation_count"]:
-                df[f"actual_worktime_minute/{denominator}"] = df["actual_worktime_hour"] * 60 / df[denominator]
-                df[f"monitored_worktime_minute/{denominator}"] = df["monitored_worktime_hour"] * 60 / df[denominator]
-
-            for denominator in ["input_data_count", "annotation_count"]:
-                df[f"actual_worktime_minute/{denominator}{WEEKLY_MOVING_AVERAGE_COLUMN_SUFFIX}"] = (
-                    get_weekly_sum(df["actual_worktime_hour"]) * 60 / get_weekly_sum(df[denominator])
-                )
-                df[f"monitored_worktime_minute/{denominator}{WEEKLY_MOVING_AVERAGE_COLUMN_SUFFIX}"] = (
-                    get_weekly_sum(df["monitored_worktime_hour"]) * 60 / get_weekly_sum(df[denominator])
-                )
+                for category in [
+                    "actual",
+                    "monitored",
+                    "monitored_annotation",
+                    "monitored_inspection",
+                    "monitored_acceptance",
+                    "unmonitored",
+                ]:
+                    df[f"{category}_worktime_minute/{denominator}"] = (
+                        df[f"{category}_worktime_hour"] * 60 / df[denominator]
+                    )
+                    df[f"{category}_worktime_minute/{denominator}{WEEKLY_MOVING_AVERAGE_COLUMN_SUFFIX}"] = (
+                        get_weekly_sum(df[f"{category}_worktime_hour"]) * 60 / get_weekly_sum(df[denominator])
+                    )
 
             df[f"actual_worktime_hour/task_count{WEEKLY_MOVING_AVERAGE_COLUMN_SUFFIX}"] = get_weekly_sum(
                 df["actual_worktime_hour"]
@@ -411,53 +432,59 @@ class WholeProductivityPerCompletedDate:
 
         logger.debug(f"{output_file} を出力します。")
 
-        fig_list = [
-            create_figure(title="日ごとの作業時間", y_axis_label="作業時間[hour]"),
-            create_figure(title="日ごとのタスクあたり作業時間", y_axis_label="タスクあたり作業時間[hour/task]"),
-            create_figure(title="日ごとの入力データあたり作業時間", y_axis_label="入力データあたり作業時間[minute/input_data]"),
-            create_figure(title="日ごとのアノテーションあたり作業時間", y_axis_label="アノテーションあたり作業時間[minute/annotation]"),
+        phase_prefix = [
+            ("actual_worktime", "実績作業時間"),
+            ("monitored_worktime", "計測作業時間"),
+            ("monitored_annotation_worktime", "計測作業時間(教師付)"),
+            ("monitored_inspection_worktime", "計測作業時間(検査)"),
+            ("monitored_acceptance_worktime", "計測作業時間(受入)"),
         ]
+        if df["actual_worktime_hour"].sum() > 0:
+            # 条件分岐の理由：実績作業時間がないときは、非計測作業時間がマイナス値になり、分かりづらいグラフになるため。必要なときのみ非計測作業時間をプロットする
+            phase_prefix.append(("unmonitored_worktime", "非計測作業時間"))
 
         fig_info_list = [
             {
-                "x": "dt_date",
+                "figure": create_figure(title="日ごとの作業時間", y_axis_label="作業時間[hour]"),
                 "y_info_list": [
                     {"column": "actual_worktime_hour", "legend": "実績作業時間"},
                     {"column": "monitored_worktime_hour", "legend": "計測作業時間"},
                 ],
             },
             {
-                "x": "dt_date",
+                "figure": create_figure(title="日ごとのタスクあたり作業時間", y_axis_label="タスクあたり作業時間[hour/task]"),
                 "y_info_list": [
                     {"column": "actual_worktime_hour/task_count", "legend": "タスクあたり実績作業時間"},
                     {"column": "monitored_worktime_hour/task_count", "legend": "タスクあたり計測作業時間"},
                 ],
             },
             {
-                "x": "dt_date",
+                "figure": create_figure(title="日ごとの入力データあたり作業時間", y_axis_label="入力データあたり作業時間[minute/input_data]"),
                 "y_info_list": [
-                    {"column": "actual_worktime_minute/input_data_count", "legend": "入力データあたり実績作業時間"},
-                    {"column": "monitored_worktime_minute/input_data_count", "legend": "入力データあたり計測作業時間"},
+                    {"column": f"{e[0]}_minute/input_data_count", "legend": f"入力データあたり{e[1]}"} for e in phase_prefix
                 ],
             },
             {
-                "x": "dt_date",
+                "figure": create_figure(title="日ごとのアノテーションあたり作業時間", y_axis_label="アノテーションあたり作業時間[minute/annotation]"),
                 "y_info_list": [
-                    {"column": "actual_worktime_minute/annotation_count", "legend": "アノテーションあたり実績作業時間"},
-                    {"column": "monitored_worktime_minute/annotation_count", "legend": "アノテーションあたり計測作業時間"},
+                    {"column": f"{e[0]}_minute/annotation_count", "legend": f"アノテーションあたり{e[1]}"} for e in phase_prefix
                 ],
             },
         ]
 
         source = ColumnDataSource(data=df)
 
-        for fig, fig_info in zip(fig_list, fig_info_list):
+        for fig_info in fig_info_list:
             y_info_list: list[dict[str, str]] = fig_info["y_info_list"]  # type: ignore
             for index, y_info in enumerate(y_info_list):
                 color = get_color_from_small_palette(index)
 
                 plot_and_moving_average(
-                    fig=fig, y_column_name=y_info["column"], legend_name=y_info["legend"], source=source, color=color
+                    fig=fig_info["figure"],
+                    y_column_name=y_info["column"],
+                    legend_name=y_info["legend"],
+                    source=source,
+                    color=color,
                 )
 
         tooltip_item = [
@@ -478,15 +505,18 @@ class WholeProductivityPerCompletedDate:
         ]
         hover_tool = create_hover_tool(tooltip_item)
 
-        fig_list.insert(0, create_task_figure())
-        fig_list.insert(1, create_input_data_figure())
+        figure_list = [
+            create_task_figure(),
+            create_input_data_figure(),
+        ]
+        figure_list.extend([info["figure"] for info in fig_info_list])
 
-        for fig in fig_list:
+        for fig in figure_list:
             fig.add_tools(hover_tool)
             add_legend_to_figure(fig)
 
         div_element = self._create_div_element()
-        write_bokeh_graph(bokeh.layouts.column([div_element] + fig_list), output_file)
+        write_bokeh_graph(bokeh.layouts.column([div_element] + figure_list), output_file)
 
     def plot_cumulatively(self, output_file: Path):
         """
@@ -659,6 +689,7 @@ class WholeProductivityPerCompletedDate:
             "monitored_annotation_worktime_hour",
             "monitored_inspection_worktime_hour",
             "monitored_acceptance_worktime_hour",
+            "unmonitored_worktime_hour",
         ]
 
         velocity_columns = [
@@ -668,11 +699,31 @@ class WholeProductivityPerCompletedDate:
             for denominator in ["task_count", "input_data_count", "annotation_count"]
         ]
 
+        # フェーズごとの作業時間に関する生産性
+        velocity_details_columns = [
+            f"{numerator}/{denominator}{suffix}"
+            for suffix in ["", WEEKLY_MOVING_AVERAGE_COLUMN_SUFFIX]
+            for numerator in [
+                "monitored_annotation_worktime_hour",
+                "monitored_inspection_worktime_hour",
+                "monitored_acceptance_worktime_hour",
+                "unmonitored_worktime_hour",
+            ]
+            for denominator in ["input_data_count", "annotation_count"]
+        ]
+
         columns = (
-            ["date", "cumsum_task_count", "cumsum_input_data_count", "cumsum_actual_worktime_hour"]
+            [
+                "date",
+                "cumsum_task_count",
+                "cumsum_input_data_count",
+                "cumsum_actual_worktime_hour",
+                "cumsum_monitored_worktime_hour",
+            ]
             + production_columns
             + worktime_columns
             + velocity_columns
+            + velocity_details_columns
             + ["working_user_count"]
         )
 
