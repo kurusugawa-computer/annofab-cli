@@ -148,7 +148,6 @@ class WholeProductivityPerCompletedDate:
                     "monitored_annotation_worktime_hour",
                     "monitored_inspection_worktime_hour",
                     "monitored_acceptance_worktime_hour",
-                    "monitored_acceptance_worktime_hour",
                     "unmonitored_worktime_hour",
                     "working_user_count",
                 ]
