@@ -433,6 +433,8 @@ class WholeProductivityPerCompletedDate:
         logger.debug(f"{output_file} を出力します。")
 
         phase_prefix = [
+            ("actual_worktime", "実績作業時間"),
+            ("monitored_worktime", "計測作業時間"),
             ("monitored_annotation_worktime", "計測作業時間(教師付)"),
             ("monitored_inspection_worktime", "計測作業時間(検査)"),
             ("monitored_acceptance_worktime", "計測作業時間(受入)"),
@@ -459,29 +461,11 @@ class WholeProductivityPerCompletedDate:
             {
                 "figure": create_figure(title="日ごとの入力データあたり作業時間", y_axis_label="入力データあたり作業時間[minute/input_data]"),
                 "y_info_list": [
-                    {"column": "actual_worktime_minute/input_data_count", "legend": "入力データあたり実績作業時間"},
-                    {"column": "monitored_worktime_minute/input_data_count", "legend": "入力データあたり計測作業時間"},
-                ],
-            },
-            {
-                "figure": create_figure(title="日ごとのアノテーションあたり作業時間", y_axis_label="アノテーションあたり作業時間[minute/annotation]"),
-                "y_info_list": [
-                    {"column": "actual_worktime_minute/annotation_count", "legend": "アノテーションあたり実績作業時間"},
-                    {"column": "monitored_worktime_minute/annotation_count", "legend": "アノテーションあたり計測作業時間"},
-                ],
-            },
-            {
-                "figure": create_figure(
-                    title="日ごとの入力データあたり作業時間（フェーズごと）", y_axis_label="入力データあたり作業時間[minute/annotation]"
-                ),
-                "y_info_list": [
                     {"column": f"{e[0]}_minute/input_data_count", "legend": f"入力データあたり{e[1]}"} for e in phase_prefix
                 ],
             },
             {
-                "figure": create_figure(
-                    title="日ごとのアノテーションあたり作業時間（フェーズごと）", y_axis_label="アノテーションあたり作業時間[minute/annotation]"
-                ),
+                "figure": create_figure(title="日ごとのアノテーションあたり作業時間", y_axis_label="アノテーションあたり作業時間[minute/annotation]"),
                 "y_info_list": [
                     {"column": f"{e[0]}_minute/annotation_count", "legend": f"アノテーションあたり{e[1]}"} for e in phase_prefix
                 ],
