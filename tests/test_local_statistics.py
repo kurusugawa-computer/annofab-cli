@@ -108,6 +108,7 @@ class TestSummarizeTaskCountByTaskId:
         assert len(df) == 1
         df.iloc[0]["task_id_group"] == "sample"
 
+
 class TestWholeProductivityPerFirstAnnotationStartedDate:
     @classmethod
     def setup_class(cls):
