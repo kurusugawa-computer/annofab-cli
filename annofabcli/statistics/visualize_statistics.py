@@ -104,7 +104,7 @@ class WriteCsvGraph:
         output_dir: Path,
         df_labor: Optional[pandas.DataFrame],
         minimal_output: bool = False,
-        output_csv_only: bool = False,
+        output_text_only: bool = False,
     ):
         self.service = service
         self.project_id = project_id
@@ -112,7 +112,7 @@ class WriteCsvGraph:
         self.table_obj = table_obj
         self.df_labor = df_labor
         self.minimal_output = minimal_output
-        self.output_csv_only = output_csv_only
+        self.output_text_only = output_text_only
 
     def _catch_exception(self, function: Callable[..., Any]) -> Callable[..., Any]:
         """
@@ -396,7 +396,7 @@ class VisualizingStatisticsMain:
             output_project_dir,
             df_labor=df_labor,
             minimal_output=self.minimal_output,
-            output_csv_only=self.output_csv_only,
+            output_text_only=self.output_text_only,
         )
 
         write_obj._catch_exception(write_obj.write_user_performance)()
@@ -480,11 +480,6 @@ class VisualizeStatistics(AbstractCommandLineInterface):
         user_id_list = annofabcli.common.cli.get_list_from_args(args.user_id) if args.user_id is not None else None
         project_id_list = annofabcli.common.cli.get_list_from_args(args.project_id)
 
-        if args.work_dir is not None:
-            work_dir = args.work_dir
-        else:
-            work_dir = annofabcli.utils.get_cache_dir()
-
         root_output_dir: Path = args.output_dir
 
         if args.labor_csv is None:
@@ -506,7 +501,7 @@ class VisualizeStatistics(AbstractCommandLineInterface):
                 start_date=args.start_date,
                 end_date=args.end_date,
                 minimal_output=args.minimal,
-                output_csv_only=args.csv_only,
+                output_text_only=args.output_text_only,
             )
 
         if len(project_id_list) == 1:
