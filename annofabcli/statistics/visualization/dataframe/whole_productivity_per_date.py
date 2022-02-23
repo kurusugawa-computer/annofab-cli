@@ -289,19 +289,7 @@ class WholeProductivityPerCompletedDate:
                     "monitored_acceptance",
                     "unmonitored",
                 ]:
-                    df[f"{category}_worktime_minute/{denominator}{WEEKLY_MOVING_AVERAGE_COLUMN_SUFFIX}"] = (
-                        get_weekly_sum(df[f"{category}_worktime_hour"]) * 60 / get_weekly_sum(df[denominator])
-                    )
-
-            for denominator in ["input_data_count", "annotation_count"]:
-                for category in [
-                    "actual",
-                    "monitored",
-                    "monitored_annotation",
-                    "monitored_inspection",
-                    "monitored_acceptance",
-                    "unmonitored",
-                ]:
+                    df[f"{category}_worktime_minute/{denominator}"] = df[f"{category}_worktime_hour"] * 60 / df[denominator]
                     df[f"{category}_worktime_minute/{denominator}{WEEKLY_MOVING_AVERAGE_COLUMN_SUFFIX}"] = (
                         get_weekly_sum(df[f"{category}_worktime_hour"]) * 60 / get_weekly_sum(df[denominator])
                     )
