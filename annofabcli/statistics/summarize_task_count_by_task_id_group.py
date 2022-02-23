@@ -1,3 +1,5 @@
+from __future__ import annotations
+
 import argparse
 import json
 import logging
@@ -25,7 +27,8 @@ from annofabcli.statistics.summarize_task_count import get_step_for_current_phas
 logger = logging.getLogger(__name__)
 
 DEFAULT_WAIT_OPTIONS = WaitOptions(interval=60, max_tries=360)
-DEFAULT_TASK_ID_DELIMITER = "_"
+TASK_ID_GROUP_UNKNOWN = "unknown"
+"""task_id_groupが不明な場合に表示する値"""
 
 
 class TaskStatusForSummary(Enum):
@@ -77,23 +80,17 @@ class TaskStatusForSummary(Enum):
             return TaskStatusForSummary.OTHER
 
 
-def get_task_id_prefix(task_id: str, delimiter: str = DEFAULT_TASK_ID_DELIMITER):
+def get_task_id_prefix(task_id: str, delimiter: str):
     tmp_list = task_id.split(delimiter)
     if len(tmp_list) <= 1:
-        return "unknown"
+        return TASK_ID_GROUP_UNKNOWN
     else:
         return delimiter.join(tmp_list[0 : len(tmp_list) - 1])
 
 
-def add_task_id_prefix_to_task_list(task_list: List[Task], delimiter: str = DEFAULT_TASK_ID_DELIMITER) -> List[Task]:
-    for task in task_list:
-        task["task_id_prefix"] = get_task_id_prefix(task["task_id"], delimiter=delimiter)
-        task["status_for_summary"] = TaskStatusForSummary.from_task(task).value
-
-    return task_list
-
-
-def create_task_count_summary_df(task_list: List[Task], delimiter: str = DEFAULT_TASK_ID_DELIMITER) -> pandas.DataFrame:
+def create_task_count_summary_df(
+    task_list: List[Task], task_id_delimiter: Optional[str], task_id_groups: Optional[dict[str, list[str]]]
+) -> pandas.DataFrame:
     """
     タスク数を集計したDataFrameを生成する。
 
@@ -108,17 +105,36 @@ def create_task_count_summary_df(task_list: List[Task], delimiter: str = DEFAULT
         if column not in df.columns:
             df[column] = 0
 
-    df_task = pandas.DataFrame(add_task_id_prefix_to_task_list(task_list, delimiter=delimiter))
+    for task in task_list:
+        task["status_for_summary"] = TaskStatusForSummary.from_task(task).value
+
+    df_task = pandas.DataFrame(task_list)
+
+    if task_id_groups is not None:
+        df_tmp = pandas.DataFrame(
+            [
+                (task_id_group, task_id)
+                for task_id_group, task_id_list in task_id_groups.items()
+                for task_id in task_id_list
+            ],
+            columns=("task_id_group", "task_id"),
+        )
+        df_task = df_task.merge(df_tmp, on="task_id", how="left")
+
+    if task_id_delimiter is not None:
+        df_task["task_id_group"] = df_task["task_id"].map(lambda e: get_task_id_prefix(e, delimiter=task_id_delimiter))
+
+    df_task["task_id_group"].fillna(TASK_ID_GROUP_UNKNOWN, inplace=True)
 
     df_summary = df_task.pivot_table(
-        values="task_id", index=["task_id_prefix"], columns=["status_for_summary"], aggfunc="count", fill_value=0
+        values="task_id", index=["task_id_group"], columns=["status_for_summary"], aggfunc="count", fill_value=0
     ).reset_index()
 
     for status in TaskStatusForSummary:
         add_columns_if_not_exists(df_summary, status.value)
 
     df_summary["sum"] = (
-        df_task.pivot_table(values="task_id", index=["task_id_prefix"], aggfunc="count", fill_value=0)
+        df_task.pivot_table(values="task_id", index=["task_id_group"], aggfunc="count", fill_value=0)
         .reset_index()
         .fillna(0)["task_id"]
     )
@@ -128,7 +144,7 @@ def create_task_count_summary_df(task_list: List[Task], delimiter: str = DEFAULT
 
 class SummarizeTaskCountByTaskId(AbstractCommandLineInterface):
     def print_summarize_task_count(self, df: pandas.DataFrame) -> None:
-        columns = ["task_id_prefix"] + [status.value for status in TaskStatusForSummary] + ["sum"]
+        columns = ["task_id_group"] + [status.value for status in TaskStatusForSummary] + ["sum"]
         annofabcli.utils.print_according_to_format(
             df[columns],
             arg_format=FormatArgument(FormatArgument.CSV),
@@ -156,7 +172,9 @@ class SummarizeTaskCountByTaskId(AbstractCommandLineInterface):
         with open(task_json_path, encoding="utf-8") as f:
             task_list = json.load(f)
 
-        df = create_task_count_summary_df(task_list, delimiter=args.delimiter)
+        df = create_task_count_summary_df(
+            task_list, task_id_delimiter=args.task_id_delimiter, task_id_groups=get_json_from_args(args.task_id_groups)
+        )
         self.print_summarize_task_count(df)
 
 
@@ -171,12 +189,18 @@ def parse_args(parser: argparse.ArgumentParser):
         "指定しない場合は、AnnoFabからタスク全件ファイルをダウンロードします。",
     )
 
-    parser.add_argument(
-        "--delimiter",
+    task_id_group = parser.add_mutually_exclusive_group(required=True)
+
+    task_id_group.add_argument(
+        "--task_id_delimiter",
         type=str,
-        default="_",
-        help="task_idのprefixと連番を分ける区切り文字です。デフォルトは ``_`` で、 ``{prefix}_{連番}`` のようなtask_idを想定しています。"
-        "指定しない場合は、AnnoFabからタスク全件ファイルをダウンロードします。",
+        help="task_idのprefixと連番を分ける区切り文字です。デフォルトは ``_`` で、 ``{prefix}_{連番}`` のようなtask_idを想定しています。",
+    )
+
+    task_id_group.add_argument(
+        "--task_id_groups",
+        type=str,
+        help="keyがtask_id_group, valueがtask_idのlistであるJSON文字列を渡します。``file://`` を先頭に付けるとJSONファイルを指定できます。",
     )
 
     parser.add_argument(
@@ -206,12 +230,9 @@ def main(args):
 
 
 def add_parser(subparsers: Optional[argparse._SubParsersAction] = None):
-    subcommand_name = "summarize_task_count_by_task_id"
-    subcommand_help = "task_idのプレフィックスごとに、タスク数を出力します。"
-    description = "task_idのプレフィックスごとに、タスク数をCSV形式で出力します。"
+    subcommand_name = "summarize_task_count_by_task_id_group"
+    subcommand_help = "task_idのグループごとにタスク数を集計します。"
     epilog = "アノテーションユーザまたはオーナロールを持つユーザで実行してください。"
-    parser = annofabcli.common.cli.add_parser(
-        subparsers, subcommand_name, subcommand_help, description=description, epilog=epilog
-    )
+    parser = annofabcli.common.cli.add_parser(subparsers, subcommand_name, subcommand_help, epilog=epilog)
     parse_args(parser)
     return parser

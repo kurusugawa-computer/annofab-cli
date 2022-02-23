@@ -66,15 +66,15 @@ class TestCommandLine:
             ]
         )
 
-    def test_summarize_task_count_by_task_id(self):
+    def test_summarize_task_count_by_task_id_group(self):
         main(
             [
                 "statistics",
-                "summarize_task_count_by_task_id",
+                "summarize_task_count_by_task_id_group",
                 "--project_id",
                 project_id,
                 "--output",
-                str(out_dir / "summarize_task_count_by_task_id.csv"),
+                str(out_dir / "summarize_task_count_by_task_id_group.csv"),
             ]
         )
 

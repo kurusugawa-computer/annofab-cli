@@ -12,7 +12,7 @@ from annofabcli.statistics.list_annotation_count import (
 )
 from annofabcli.statistics.list_worktime import WorktimeFromTaskHistoryEvent, get_df_worktime
 from annofabcli.statistics.summarize_task_count import SimpleTaskStatus, get_step_for_current_phase
-from annofabcli.statistics.summarize_task_count_by_task_id import create_task_count_summary_df, get_task_id_prefix
+from annofabcli.statistics.summarize_task_count_by_task_id_group import create_task_count_summary_df, get_task_id_prefix
 from annofabcli.statistics.table import Table
 from annofabcli.statistics.visualization.dataframe.cumulative_productivity import (
     AcceptorCumulativeProductivity,
@@ -98,14 +98,15 @@ class TestSummarizeTaskCountByTaskId:
     # ]
 
     def test_get_task_id_prefix(self):
-        assert get_task_id_prefix("A_A_01") == "A_A"
-        assert get_task_id_prefix("abc") == "unknown"
+        assert get_task_id_prefix("A_A_01", delimiter="_") == "A_A"
+        assert get_task_id_prefix("abc", delimiter="_") == "unknown"
 
     def test_create_task_count_summary_df(self):
         with (data_path / "task.json").open() as f:
             task_list = json.load(f)
-        df = create_task_count_summary_df(task_list, delimiter="_")
-
+        df = create_task_count_summary_df(task_list, task_id_delimiter="_", task_id_groups=None)
+        assert len(df) == 1
+        df.iloc[0]["task_id_group"] == "sample"
 
 class TestWholeProductivityPerFirstAnnotationStartedDate:
     @classmethod
