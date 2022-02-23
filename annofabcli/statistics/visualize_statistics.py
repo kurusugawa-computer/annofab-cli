@@ -146,8 +146,10 @@ class WriteCsvGraph:
         """
         obj = Task(self._get_task_df())
         obj.to_csv(self.output_dir / FILENAME_TASK_LIST)
-        obj.plot_histogram_of_worktime(self.output_dir / "histogram/ヒストグラム-作業時間.html")
-        obj.plot_histogram_of_others(self.output_dir / "histogram/ヒストグラム.html")
+
+        if not self.output_text_only:
+            obj.plot_histogram_of_worktime(self.output_dir / "histogram/ヒストグラム-作業時間.html")
+            obj.plot_histogram_of_others(self.output_dir / "histogram/ヒストグラム.html")
 
     def write_user_performance(self) -> None:
         """
@@ -170,27 +172,28 @@ class WriteCsvGraph:
         obj.to_csv(self.output_dir / FILENAME_PERFORMANCE_PER_USER)
         WholePerformance(obj.get_summary()).to_csv(self.output_dir / FILENAME_WHOLE_PERFORMANCE)
 
-        obj.plot_quality(self.output_dir / "scatter/散布図-教師付者の品質と作業量の関係.html")
-        obj.plot_productivity_from_monitored_worktime(
-            self.output_dir / "scatter/散布図-アノテーションあたり作業時間と累計作業時間の関係-計測時間.html"
-        )
-        obj.plot_quality_and_productivity_from_monitored_worktime(
-            self.output_dir / "scatter/散布図-アノテーションあたり作業時間と品質の関係-計測時間-教師付者用.html"
-        )
+        if not self.output_text_only:
+            obj.plot_quality(self.output_dir / "scatter/散布図-教師付者の品質と作業量の関係.html")
+            obj.plot_productivity_from_monitored_worktime(
+                self.output_dir / "scatter/散布図-アノテーションあたり作業時間と累計作業時間の関係-計測時間.html"
+            )
+            obj.plot_quality_and_productivity_from_monitored_worktime(
+                self.output_dir / "scatter/散布図-アノテーションあたり作業時間と品質の関係-計測時間-教師付者用.html"
+            )
 
-        if obj.actual_worktime_exists():
-            obj.plot_productivity_from_actual_worktime(
-                self.output_dir / "scatter/散布図-アノテーションあたり作業時間と累計作業時間の関係-実績時間.html"
-            )
-            obj.plot_quality_and_productivity_from_actual_worktime(
-                self.output_dir / "scatter/散布図-アノテーションあたり作業時間と品質の関係-実績時間-教師付者用.html"
-            )
-        else:
-            logger.warning(
-                f"実績作業時間の合計値が0なので、実績作業時間関係の以下のグラフは出力しません。\n"
-                " * '散布図-アノテーションあたり作業時間と累計作業時間の関係-実績時間.html'\n"
-                " * '散布図-アノテーションあたり作業時間と品質の関係-実績時間-教師付者用'"
-            )
+            if obj.actual_worktime_exists():
+                obj.plot_productivity_from_actual_worktime(
+                    self.output_dir / "scatter/散布図-アノテーションあたり作業時間と累計作業時間の関係-実績時間.html"
+                )
+                obj.plot_quality_and_productivity_from_actual_worktime(
+                    self.output_dir / "scatter/散布図-アノテーションあたり作業時間と品質の関係-実績時間-教師付者用.html"
+                )
+            else:
+                logger.warning(
+                    f"実績作業時間の合計値が0なので、実績作業時間関係の以下のグラフは出力しません。\n"
+                    " * '散布図-アノテーションあたり作業時間と累計作業時間の関係-実績時間.html'\n"
+                    " * '散布図-アノテーションあたり作業時間と品質の関係-実績時間-教師付者用'"
+                )
 
     def write_cumulative_linegraph_by_user(self, user_id_list: Optional[List[str]] = None) -> None:
         """ユーザごとの累積折れ線グラフをプロットする。"""
@@ -200,46 +203,53 @@ class WriteCsvGraph:
         inspector_obj = InspectorCumulativeProductivity(df_task)
         acceptor_obj = AcceptorCumulativeProductivity(df_task)
 
-        annotator_obj.plot_annotation_metrics(
-            self.output_dir / "line-graph/教師付者用/累積折れ線-横軸_アノテーション数-教師付者用.html", user_id_list
-        )
-        inspector_obj.plot_annotation_metrics(
-            self.output_dir / "line-graph/検査者用/累積折れ線-横軸_アノテーション数-検査者用.html", user_id_list
-        )
-        acceptor_obj.plot_annotation_metrics(
-            self.output_dir / "line-graph/受入者用/累積折れ線-横軸_アノテーション数-受入者用.html", user_id_list
-        )
-
-        if not self.minimal_output:
-            annotator_obj.plot_input_data_metrics(
-                self.output_dir / "line-graph/教師付者用/累積折れ線-横軸_入力データ数-教師付者用.html", user_id_list
+        if not self.output_text_only:
+            annotator_obj.plot_annotation_metrics(
+                self.output_dir / "line-graph/教師付者用/累積折れ線-横軸_アノテーション数-教師付者用.html", user_id_list
             )
-            inspector_obj.plot_input_data_metrics(
-                self.output_dir / "line-graph/検査者用/累積折れ線-横軸_入力データ数-検査者用.html", user_id_list
+            inspector_obj.plot_annotation_metrics(
+                self.output_dir / "line-graph/検査者用/累積折れ線-横軸_アノテーション数-検査者用.html", user_id_list
             )
-            acceptor_obj.plot_input_data_metrics(
-                self.output_dir / "line-graph/受入者用/累積折れ線-横軸_入力データ数-受入者用.html", user_id_list
+            acceptor_obj.plot_annotation_metrics(
+                self.output_dir / "line-graph/受入者用/累積折れ線-横軸_アノテーション数-受入者用.html", user_id_list
             )
 
-            annotator_obj.plot_task_metrics(self.output_dir / "line-graph/教師付者用/累積折れ線-横軸_タスク数-教師付者用.html", user_id_list)
+            if not self.minimal_output:
+                annotator_obj.plot_input_data_metrics(
+                    self.output_dir / "line-graph/教師付者用/累積折れ線-横軸_入力データ数-教師付者用.html", user_id_list
+                )
+                inspector_obj.plot_input_data_metrics(
+                    self.output_dir / "line-graph/検査者用/累積折れ線-横軸_入力データ数-検査者用.html", user_id_list
+                )
+                acceptor_obj.plot_input_data_metrics(
+                    self.output_dir / "line-graph/受入者用/累積折れ線-横軸_入力データ数-受入者用.html", user_id_list
+                )
+
+                annotator_obj.plot_task_metrics(
+                    self.output_dir / "line-graph/教師付者用/累積折れ線-横軸_タスク数-教師付者用.html", user_id_list
+                )
 
     def write_worktime_per_date(self, user_id_list: Optional[List[str]] = None) -> None:
         """日ごとの作業時間情報を出力する。"""
         worktime_per_date_obj = WorktimePerDate.from_webapi(self.service, self.project_id, self.df_labor)
-        worktime_per_date_obj.plot_cumulatively(self.output_dir / "line-graph/累積折れ線-横軸_日-縦軸_作業時間.html", user_id_list)
         worktime_per_date_obj.to_csv(self.output_dir / "ユーザ_日付list-作業時間.csv")
 
         df_task = self._get_task_df()
         productivity_per_completed_date_obj = WholeProductivityPerCompletedDate.from_df(
             df_task, worktime_per_date_obj.df
         )
-        productivity_per_completed_date_obj.plot(self.output_dir / "line-graph/折れ線-横軸_日-全体.html")
-        productivity_per_completed_date_obj.plot_cumulatively(self.output_dir / "line-graph/累積折れ線-横軸_日-全体.html")
         productivity_per_completed_date_obj.to_csv(self.output_dir / FILENAME_PERFORMANCE_PER_DATE)
 
         productivity_per_started_date_obj = WholeProductivityPerFirstAnnotationStartedDate.from_df(df_task)
         productivity_per_started_date_obj.to_csv(self.output_dir / "教師付開始日毎の生産量と生産性.csv")
-        productivity_per_started_date_obj.plot(self.output_dir / "line-graph/折れ線-横軸_教師付開始日-全体.html")
+
+        if not self.output_text_only:
+            worktime_per_date_obj.plot_cumulatively(
+                self.output_dir / "line-graph/累積折れ線-横軸_日-縦軸_作業時間.html", user_id_list
+            )
+            productivity_per_completed_date_obj.plot(self.output_dir / "line-graph/折れ線-横軸_日-全体.html")
+            productivity_per_completed_date_obj.plot_cumulatively(self.output_dir / "line-graph/累積折れ線-横軸_日-全体.html")
+            productivity_per_started_date_obj.plot(self.output_dir / "line-graph/折れ線-横軸_教師付開始日-全体.html")
 
     def write_user_productivity_per_date(self, user_id_list: Optional[List[str]] = None):
         """ユーザごとの日ごとの生産性情報を出力する。"""
@@ -247,30 +257,34 @@ class WriteCsvGraph:
         df_task = self._get_task_df()
         annotator_per_date_obj = AnnotatorProductivityPerDate.from_df_task(df_task)
         annotator_per_date_obj.to_csv(self.output_dir / Path("教師付者_教師付開始日list.csv"))
-        annotator_per_date_obj.plot_annotation_metrics(
-            self.output_dir / Path("line-graph/教師付者用/折れ線-横軸_教師付開始日-縦軸_アノテーション単位の指標-教師付者用.html"), user_id_list
-        )
-        annotator_per_date_obj.plot_input_data_metrics(
-            self.output_dir / Path("line-graph/教師付者用/折れ線-横軸_教師付開始日-縦軸_入力データ単位の指標-教師付者用.html"), user_id_list
-        )
 
         inspector_per_date_obj = InspectorProductivityPerDate.from_df_task(df_task)
         inspector_per_date_obj.to_csv(self.output_dir / Path("検査者_検査開始日list.csv"))
-        inspector_per_date_obj.plot_annotation_metrics(
-            self.output_dir / Path("line-graph/検査者用/折れ線-横軸_検査開始日-縦軸_アノテーション単位の指標-検査者用.html"), user_id_list
-        )
-        inspector_per_date_obj.plot_input_data_metrics(
-            self.output_dir / Path("line-graph/検査者用/折れ線-横軸_検査開始日-縦軸_入力データ単位の指標-検査者用.html"), user_id_list
-        )
 
         acceptor_per_date = AcceptorProductivityPerDate.from_df_task(df_task)
         acceptor_per_date.to_csv(self.output_dir / Path("受入者_受入開始日list.csv"))
-        acceptor_per_date.plot_annotation_metrics(
-            self.output_dir / Path("line-graph/検査者用/折れ線-横軸_検査開始日-縦軸_アノテーション単位の指標-検査者用.html"), user_id_list
-        )
-        acceptor_per_date.plot_input_data_metrics(
-            self.output_dir / Path("line-graph/検査者用/折れ線-横軸_検査開始日-縦軸_入力データ単位の指標-検査者用.html"), user_id_list
-        )
+
+        if not self.output_text_only:
+            annotator_per_date_obj.plot_annotation_metrics(
+                self.output_dir / Path("line-graph/教師付者用/折れ線-横軸_教師付開始日-縦軸_アノテーション単位の指標-教師付者用.html"), user_id_list
+            )
+            annotator_per_date_obj.plot_input_data_metrics(
+                self.output_dir / Path("line-graph/教師付者用/折れ線-横軸_教師付開始日-縦軸_入力データ単位の指標-教師付者用.html"), user_id_list
+            )
+
+            inspector_per_date_obj.plot_annotation_metrics(
+                self.output_dir / Path("line-graph/検査者用/折れ線-横軸_検査開始日-縦軸_アノテーション単位の指標-検査者用.html"), user_id_list
+            )
+            inspector_per_date_obj.plot_input_data_metrics(
+                self.output_dir / Path("line-graph/検査者用/折れ線-横軸_検査開始日-縦軸_入力データ単位の指標-検査者用.html"), user_id_list
+            )
+
+            acceptor_per_date.plot_annotation_metrics(
+                self.output_dir / Path("line-graph/検査者用/折れ線-横軸_検査開始日-縦軸_アノテーション単位の指標-検査者用.html"), user_id_list
+            )
+            acceptor_per_date.plot_input_data_metrics(
+                self.output_dir / Path("line-graph/検査者用/折れ線-横軸_検査開始日-縦軸_入力データ単位の指標-検査者用.html"), user_id_list
+            )
 
 
 class VisualizingStatisticsMain:
