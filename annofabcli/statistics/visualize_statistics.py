@@ -104,7 +104,7 @@ class WriteCsvGraph:
         output_dir: Path,
         df_labor: Optional[pandas.DataFrame],
         minimal_output: bool = False,
-        output_text_only: bool = False,
+        output_only_text: bool = False,
     ):
         self.service = service
         self.project_id = project_id
@@ -112,7 +112,7 @@ class WriteCsvGraph:
         self.table_obj = table_obj
         self.df_labor = df_labor
         self.minimal_output = minimal_output
-        self.output_text_only = output_text_only
+        self.output_only_text = output_only_text
 
     def _catch_exception(self, function: Callable[..., Any]) -> Callable[..., Any]:
         """
@@ -147,7 +147,7 @@ class WriteCsvGraph:
         obj = Task(self._get_task_df())
         obj.to_csv(self.output_dir / FILENAME_TASK_LIST)
 
-        if not self.output_text_only:
+        if not self.output_only_text:
             obj.plot_histogram_of_worktime(self.output_dir / "histogram/ヒストグラム-作業時間.html")
             obj.plot_histogram_of_others(self.output_dir / "histogram/ヒストグラム.html")
 
@@ -172,7 +172,7 @@ class WriteCsvGraph:
         obj.to_csv(self.output_dir / FILENAME_PERFORMANCE_PER_USER)
         WholePerformance(obj.get_summary()).to_csv(self.output_dir / FILENAME_WHOLE_PERFORMANCE)
 
-        if not self.output_text_only:
+        if not self.output_only_text:
             obj.plot_quality(self.output_dir / "scatter/散布図-教師付者の品質と作業量の関係.html")
             obj.plot_productivity_from_monitored_worktime(
                 self.output_dir / "scatter/散布図-アノテーションあたり作業時間と累計作業時間の関係-計測時間.html"
@@ -203,7 +203,7 @@ class WriteCsvGraph:
         inspector_obj = InspectorCumulativeProductivity(df_task)
         acceptor_obj = AcceptorCumulativeProductivity(df_task)
 
-        if not self.output_text_only:
+        if not self.output_only_text:
             annotator_obj.plot_annotation_metrics(
                 self.output_dir / "line-graph/教師付者用/累積折れ線-横軸_アノテーション数-教師付者用.html", user_id_list
             )
@@ -243,7 +243,7 @@ class WriteCsvGraph:
         productivity_per_started_date_obj = WholeProductivityPerFirstAnnotationStartedDate.from_df(df_task)
         productivity_per_started_date_obj.to_csv(self.output_dir / "教師付開始日毎の生産量と生産性.csv")
 
-        if not self.output_text_only:
+        if not self.output_only_text:
             worktime_per_date_obj.plot_cumulatively(
                 self.output_dir / "line-graph/累積折れ線-横軸_日-縦軸_作業時間.html", user_id_list
             )
@@ -264,7 +264,7 @@ class WriteCsvGraph:
         acceptor_per_date = AcceptorProductivityPerDate.from_df_task(df_task)
         acceptor_per_date.to_csv(self.output_dir / Path("受入者_受入開始日list.csv"))
 
-        if not self.output_text_only:
+        if not self.output_only_text:
             annotator_per_date_obj.plot_annotation_metrics(
                 self.output_dir / Path("line-graph/教師付者用/折れ線-横軸_教師付開始日-縦軸_アノテーション単位の指標-教師付者用.html"), user_id_list
             )
@@ -300,7 +300,7 @@ class VisualizingStatisticsMain:
         end_date: Optional[str] = None,
         # 出力方法
         minimal_output: bool = False,
-        output_text_only: bool = False,
+        output_only_text: bool = False,
         # その他
         download_latest: bool = False,
         is_get_task_histories_one_of_each: bool = False,
@@ -316,7 +316,7 @@ class VisualizingStatisticsMain:
         self.start_date = start_date
         self.end_date = end_date
         self.minimal_output = minimal_output
-        self.output_text_only = output_text_only
+        self.output_only_text = output_only_text
         self.download_latest = download_latest
         self.is_get_task_histories_one_of_each = is_get_task_histories_one_of_each
         self.df_labor = df_labor
@@ -410,7 +410,7 @@ class VisualizingStatisticsMain:
             output_project_dir,
             df_labor=df_labor,
             minimal_output=self.minimal_output,
-            output_text_only=self.output_text_only,
+            output_only_text=self.output_only_text,
         )
 
         write_obj._catch_exception(write_obj.write_user_performance)()
@@ -444,7 +444,7 @@ class VisualizingStatisticsMain:
                     output_project_dir=output_project_dir,
                 )
                 return output_project_dir
-            except Exception:
+            except Exception:  # pylint: disable=broad-except
                 logger.warning(f"project_id='{project_id}'の可視化処理に失敗しました。")
                 return None
 
@@ -515,7 +515,7 @@ class VisualizeStatistics(AbstractCommandLineInterface):
                 start_date=args.start_date,
                 end_date=args.end_date,
                 minimal_output=args.minimal,
-                output_text_only=args.output_text_only,
+                output_only_text=args.output_only_text,
             )
 
         if len(project_id_list) == 1:
@@ -631,7 +631,7 @@ def parse_args(parser: argparse.ArgumentParser):
     )
 
     parser.add_argument(
-        "--output_text_only",
+        "--output_only_text",
         action="store_true",
         help="テキストファイルのみ出力します。グラフが掲載されているHTMLファイルは出力しません。",
     )
