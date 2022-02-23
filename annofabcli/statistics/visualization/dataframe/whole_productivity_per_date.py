@@ -289,7 +289,9 @@ class WholeProductivityPerCompletedDate:
                     "monitored_acceptance",
                     "unmonitored",
                 ]:
-                    df[f"{category}_worktime_minute/{denominator}"] = df[f"{category}_worktime_hour"] * 60 / df[denominator]
+                    df[f"{category}_worktime_minute/{denominator}"] = (
+                        df[f"{category}_worktime_hour"] * 60 / df[denominator]
+                    )
                     df[f"{category}_worktime_minute/{denominator}{WEEKLY_MOVING_AVERAGE_COLUMN_SUFFIX}"] = (
                         get_weekly_sum(df[f"{category}_worktime_hour"]) * 60 / get_weekly_sum(df[denominator])
                     )
@@ -431,6 +433,15 @@ class WholeProductivityPerCompletedDate:
 
         logger.debug(f"{output_file} を出力します。")
 
+        phase_prefix = [
+            ("monitored_annotation_worktime", "計測作業時間(教師付)"),
+            ("monitored_inspection_worktime", "計測作業時間(検査)"),
+            ("monitored_acceptance_worktime", "計測作業時間(受入)"),
+        ]
+        if df["actual_worktime_hour"].sum() > 0:
+            # 条件分岐の理由：実績作業時間がないときは、非計測作業時間がマイナス値になり、分かりづらいグラフになるため。必要なときのみ非計測作業時間をプロットする
+            phase_prefix.append(("unmonitored_worktime", "非計測作業時間"))
+
         fig_info_list = [
             {
                 "figure": create_figure(title="日ごとの作業時間", y_axis_label="作業時間[hour]"),
@@ -462,16 +473,10 @@ class WholeProductivityPerCompletedDate:
             },
             {
                 "figure": create_figure(
-                    title="日ごとの入力データあたり作業時間（フェーズごと）", y_axis_label="アノテーションあたり作業時間[minute/annotation]"
+                    title="日ごとの入力データあたり作業時間（フェーズごと）", y_axis_label="入力データあたり作業時間[minute/annotation]"
                 ),
                 "y_info_list": [
-                    {
-                        "column": "monitored_annotation_worktime_minute/input_data_count",
-                        "legend": "入力データあたり計測作業時間(教師付)",
-                    },
-                    {"column": "monitored_inspection_worktime_minute/input_data_count", "legend": "入力データあたり計測作業時間(検査)"},
-                    {"column": "monitored_acceptance_worktime_minute/input_data_count", "legend": "入力データあたり計測作業時間(受入)"},
-                    {"column": "unmonitored_worktime_minute/input_data_count", "legend": "入力データあたり非計測作業時間"},
+                    {"column": f"{e[0]}_minute/input_data_count", "legend": f"入力データあたり{e[1]}"} for e in phase_prefix
                 ],
             },
             {
@@ -479,19 +484,7 @@ class WholeProductivityPerCompletedDate:
                     title="日ごとのアノテーションあたり作業時間（フェーズごと）", y_axis_label="アノテーションあたり作業時間[minute/annotation]"
                 ),
                 "y_info_list": [
-                    {
-                        "column": "monitored_annotation_worktime_minute/annotation_count",
-                        "legend": "アノテーションあたり計測作業時間(教師付)",
-                    },
-                    {
-                        "column": "monitored_inspection_worktime_minute/annotation_count",
-                        "legend": "アノテーションあたり計測作業時間(検査)",
-                    },
-                    {
-                        "column": "monitored_acceptance_worktime_minute/annotation_count",
-                        "legend": "アノテーションあたり計測作業時間(受入)",
-                    },
-                    {"column": "unmonitored_worktime_minute/annotation_count", "legend": "アノテーションあたり非計測作業時間"},
+                    {"column": f"{e[0]}_minute/annotation_count", "legend": f"アノテーションあたり{e[1]}"} for e in phase_prefix
                 ],
             },
         ]
