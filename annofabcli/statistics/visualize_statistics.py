@@ -584,7 +584,6 @@ def parse_args(parser: argparse.ArgumentParser):
     parser.add_argument("--start_date", type=str, help="指定した日付（ ``YYYY-MM-DD`` ）以降に教師付を開始したタスクを集計する。")
     parser.add_argument("--end_date", type=str, help="指定した日付（ ``YYYY-MM-DD`` ）以前に更新されたタスクを集計する。")
 
-
     parser.add_argument(
         "--latest",
         action="store_true",
@@ -606,8 +605,8 @@ def parse_args(parser: argparse.ArgumentParser):
             "\n"
             "* date\n"
             "* account_id\n"
-            "* project_id\n"
             "* actual_worktime_hour\n"
+            "* project_id (optional: ``--project_id`` に複数の値を指定したときは必須です) \n"
         ),
     )
 
