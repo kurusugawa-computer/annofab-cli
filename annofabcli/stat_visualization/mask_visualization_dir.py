@@ -145,14 +145,19 @@ def mask_visualization_root_dir(
 
         project_output_dir = output_dir / project_dir.name
 
-        mask_visualization_dir(
-            project_dir,
-            project_output_dir,
-            not_masked_biography_set=not_masked_biography_set,
-            not_masked_user_id_set=not_masked_user_id_set,
-            minimal_output=minimal_output,
-            exclude_masked_user_for_linegraph=exclude_masked_user_for_linegraph,
-        )
+        try:
+            mask_visualization_dir(
+                project_dir,
+                project_output_dir,
+                not_masked_biography_set=not_masked_biography_set,
+                not_masked_user_id_set=not_masked_user_id_set,
+                minimal_output=minimal_output,
+                exclude_masked_user_for_linegraph=exclude_masked_user_for_linegraph,
+            )
+        except Exception:
+            logger.warning(f"'{project_dir}'のユーザのマスク処理に失敗しました。", exc_info=True)
+            continue
+
 
 
 def main(args):
