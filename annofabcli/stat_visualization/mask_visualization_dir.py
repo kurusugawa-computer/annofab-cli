@@ -154,7 +154,7 @@ def mask_visualization_root_dir(
                 minimal_output=minimal_output,
                 exclude_masked_user_for_linegraph=exclude_masked_user_for_linegraph,
             )
-        except Exception:
+        except Exception:  # pylint: disable=broad-except
             logger.warning(f"'{project_dir}'のユーザのマスク処理に失敗しました。", exc_info=True)
             continue
 
