@@ -159,7 +159,6 @@ def mask_visualization_root_dir(
             continue
 
 
-
 def main(args):
     not_masked_biography_set = (
         set(get_list_from_args(args.not_masked_biography)) if args.not_masked_biography is not None else None
