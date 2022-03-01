@@ -428,7 +428,7 @@ def parse_args(parser: argparse.ArgumentParser):
         "--performance_unit",
         type=str,
         choices=[e.value for e in PerformanceUnit],
-        default=PerformanceUnit.ANNOTATION_COUNT,
+        default=PerformanceUnit.ANNOTATION_COUNT.value,
         help="評価指標の単位",
     )
 
