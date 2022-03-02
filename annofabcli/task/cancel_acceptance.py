@@ -232,6 +232,7 @@ class CancelAcceptance(AbstractCommandLineInterface):
             assign_last_acceptor=assign_last_acceptor,
             task_query=task_query,
             parallelism=args.parallelism,
+            dryrun=args.dryrun,
         )
 
 

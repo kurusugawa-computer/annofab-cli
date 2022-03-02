@@ -79,6 +79,15 @@ Examples
 
 
 .. code-block:: json
+    :caption: 画像プロジェクト：(x=0,y=0),(x=100,y=100)のポリライン
+
+    {
+        "coordinates": [{"x":0, "y":0}, {"x":100, "y":100}],
+        "_type": "Polyline"
+    }
+
+
+.. code-block:: json
     :caption: 動画プロジェクト：0〜100ミリ秒の区間
 
     {

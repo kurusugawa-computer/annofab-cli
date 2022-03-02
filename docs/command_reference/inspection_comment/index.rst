@@ -19,6 +19,7 @@ Available Commands
    list
    list_with_json
    put
+   put_simply
 
 Usage Details
 =================================
