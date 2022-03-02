@@ -304,7 +304,7 @@ def parse_args(parser: argparse.ArgumentParser):
         "--comment_data",
         type=str,
         help="検査コメントを付与する位置や区間をJSON形式で指定します。"
-        "指定方法は https://annofab-cli.readthedocs.io/ja/latest/command_reference/inspection_comment/put_simply.html を参照してください。\n"
+        "指定方法は https://annofab-cli.readthedocs.io/ja/latest/command_reference/inspection_comment/put_simply.html を参照してください。\n"  # noqa: E501
         " ``file://`` を先頭に付けると、JSON形式のファイルを指定できます。\n"
         "デフォルトでは画像プロジェクトならば画像の左上(x=0,y=0)、動画プロジェクトなら動画の先頭（start=0, end=100)に付与します。"
         "カスタムプロジェクトに検査コメントを付与する場合は必須です。",

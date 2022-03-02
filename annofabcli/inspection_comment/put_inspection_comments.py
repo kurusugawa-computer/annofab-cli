@@ -206,7 +206,8 @@ class AddInspectionCommentsMain(AbstractCommandLineWithConfirmInterface):
                 )
             except Exception:  # pylint: disable=broad-except
                 logger.warning(
-                    f"{logging_prefix} : task_id={task_id}, input_data_id={input_data_id}: 検査コメントの付与に失敗しました。", exc_info=True
+                    f"{logging_prefix} : task_id={task_id}, input_data_id={input_data_id}: 検査コメントの付与に失敗しました。",
+                    exc_info=True,
                 )
             finally:
                 self.facade.change_to_break_phase(self.project_id, task_id)
