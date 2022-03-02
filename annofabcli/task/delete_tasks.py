@@ -1,40 +1,128 @@
+from __future__ import annotations
+
 import argparse
 import logging
 from typing import Any, Dict, List, Optional
 
+import annofabapi
 import requests
 from annofabapi.dataclass.task import Task
 from annofabapi.models import ProjectMemberRole, TaskStatus
 
 import annofabcli
 from annofabcli import AnnofabApiFacade
-from annofabcli.common.cli import AbstractCommandLineInterface, ArgumentParser, build_annofabapi_resource_and_login
+from annofabcli.common.cli import (
+    AbstractCommandLineInterface,
+    AbstractCommandLineWithConfirmInterface,
+    ArgumentParser,
+    build_annofabapi_resource_and_login,
+)
 from annofabcli.common.facade import TaskQuery, match_task_with_query
 from annofabcli.common.utils import add_dryrun_prefix
 
 logger = logging.getLogger(__name__)
 
 
-class DeleteTask(AbstractCommandLineInterface):
-    """
-    アノテーションが付与されていないタスクを削除する
-    """
+class DeleteTaskMain(AbstractCommandLineWithConfirmInterface):
+    def __init__(
+        self,
+        service: annofabapi.Resource,
+        project_id: str,
+        *,
+        all_yes: bool = False,
+        dryrun: bool = False,
+        force: bool = False,
+        should_delete_input_data: bool = False,
+    ):
+        self.service = service
+        self.facade = AnnofabApiFacade(service)
+        self.project_id = project_id
+        self.dryrun = dryrun
+        self.force = force
+        self.should_delete_input_data = should_delete_input_data
 
-    def confirm_delete_task(self, task_id: str) -> bool:
-        message_for_confirm = f"タスク'{task_id}' を削除しますか？"
+        AbstractCommandLineWithConfirmInterface.__init__(self, all_yes)
+
+    def delete_supplementary_data_list(self, task_id: str, input_data_id: str) -> int:
+        supplementary_data_list, _ = self.service.api.get_supplementary_data_list(self.project_id, input_data_id)
+        if len(supplementary_data_list) == 0:
+            return 0
+
+        logger.debug(
+            f"task_id='{task_id}', input_data_id='{input_data_id}' :: 補助情報 {len(supplementary_data_list)} 件を削除します。"
+        )
+
+        deleted_count = 0
+        for supplementary_data in supplementary_data_list:
+            supplementary_data_id = supplementary_data["supplementary_data_id"]
+            try:
+                if not self.dryrun:
+                    self.service.api.delete_supplementary_data(
+                        self.project_id, input_data_id=input_data_id, supplementary_data_id=supplementary_data_id
+                    )
+                logger.debug(
+                    f"task_id='{task_id}', input_data_id='{input_data_id}' :: 補助情報を削除しました。 :: "
+                    f"supplementary_data_id='{supplementary_data_id}', supplementary_data_name='{supplementary_data['supplementary_data_name']}'"
+                )
+                deleted_count += 1
+            except Exception:
+                logger.warning(
+                    f"task_id='{task_id}', input_data_id='{input_data_id}' :: 補助情報の削除に失敗しました。 :: "
+                    f"supplementary_data_id='{supplementary_data_id}', supplementary_data_name='{supplementary_data['supplementary_data_name']}'",
+                    exc_info=True,
+                )
+                continue
+
+        logger.debug(
+            f"task_id='{task_id}', input_data_id='{input_data_id}' :: 補助情報 {deleted_count} / {len(supplementary_data_list)} 件を削除しました。"
+        )
+
+        return deleted_count
+
+    def confirm_deleting_input_data(self, task_id, input_data_id: str, input_data_name: str) -> bool:
+        message_for_confirm = (
+            f"task_id='{task_id}'のタスクから参照されている入力データと補助情報を削除しますか？  :: "
+            f"input_data_id='{input_data_id}', "
+            f"input_data_name='{input_data_name}'"
+        )
         return self.confirm_processing(message_for_confirm)
 
-    def get_annotation_list(self, project_id: str, task_id: str) -> List[Dict[str, Any]]:
-        query_params = {"query": {"task_id": task_id, "exact_match_task_id": True}}
-        annotation_list = self.service.wrapper.get_all_annotation_list(project_id, query_params=query_params)
-        return annotation_list
+    def delete_input_data_and_supplementary_data(self, task_id: str, input_data_id: str) -> bool:
+        """タスクから使われている入力データと、それに紐づく補助情報データを削除します。
+
+        Args:
+            project_id (str): _description_
+            task_id (str): _description_
+        """
+        # 削除対象の入力データを使っているタスクを取得する
+        task_list = self.service.wrapper.get_all_tasks(self.project_id, query_params={"input_data_ids": input_data_id})
+        # input_data_id も判定している理由： get_all_tasksの`input_data_ids` は大文字小文字を区別しないので、ちゃんと区別する
+        other_task_list = [e for e in task_list if e["task_id"] != task_id and input_data_id in e["input_data_id_list"]]
+        if len(other_task_list) > 0:
+            other_task_id_list = [e["task_id"] for e in other_task_list]
+            logger.info(
+                f"input_data_id='{input_data_id}'の入力データは、他のタスクから参照されているため、削除しません。 :: 参照しているタスク = {other_task_id_list}"
+            )
+            return False
+
+        input_data, _ = self.service.api.get_input_data(self.project_id, input_data_id)
+        if not self.confirm_deleting_input_data(task_id, input_data_id, input_data_name=input_data["input_data_name"]):
+            return False
+
+        # 入力データに紐づく補助情報を削除
+        self.delete_supplementary_data_list(self.project_id, task_id, input_data_id)
+
+        # 入力データに紐づく補助情報を削除
+        if not self.dryrun:
+            self.service.api.delete_input_data(self.project_id, input_data_id)
+        logger.debug(
+            f"task_id='{task_id}' :: 入力データを削除しました。 :: input_data_id='{input_data_id}', input_data_name='{input_data['input_data_name']}'"
+        )
+        return True
 
     def delete_task(
         self,
-        project_id: str,
         task_id: str,
-        force: bool = False,
-        dryrun: bool = False,
         task_query: Optional[TaskQuery] = None,
     ) -> bool:
         """
@@ -53,7 +141,7 @@ class DeleteTask(AbstractCommandLineInterface):
             True: タスクを削除した。False: タスクを削除しなかった。
 
         """
-        task = self.service.wrapper.get_task_or_none(project_id, task_id)
+        task = self.service.wrapper.get_task_or_none(self.project_id, task_id)
         if task is None:
             logger.info(f"task_id={task_id} のタスクは存在しません。")
             return False
@@ -68,9 +156,9 @@ class DeleteTask(AbstractCommandLineInterface):
             logger.info("タスクの状態が作業中/完了状態のため、タスクを削除できません。")
             return False
 
-        annotation_list = self.get_annotation_list(project_id, task_id)
+        annotation_list = self.get_annotation_list(self.project_id, task_id)
         logger.debug(f"task_id={task_id}: アノテーションが{len(annotation_list)}個付与されています。")
-        if not force:
+        if not self.force:
             if len(annotation_list) > 0:
                 logger.info(
                     f"アノテーションが付与されているため（{len(annotation_list)}個）、タスク'{task_id}'の削除をスキップします。"
@@ -85,32 +173,54 @@ class DeleteTask(AbstractCommandLineInterface):
         if not self.confirm_delete_task(task_id):
             return False
 
-        if not dryrun:
-            self.service.api.delete_task(project_id, task_id)
+        if not self.dryrun:
+            self.service.api.delete_task(self.project_id, task_id)
+            logger.debug(f"タスクを削除しました。 :: task_id='{task_id}'")
+
+        if self.should_delete_input_data:
+            deleted_input_data_count = 0
+            for input_data_id in task["input_data_id_list"]:
+                try:
+                    result = self.delete_input_data_and_supplementary_data(self.project_id, task_id, input_data_id)
+                    if result:
+                        deleted_input_data_count += 1
+                except Exception:
+                    logger.warning(
+                        f"task_id='{task_id}' :: 入力データの削除に失敗しました。 :: input_data_id='{input_data_id}'", exc_info=True
+                    )
+                continue
+            logger.debug(f"task_id='{task_id}' :: {deleted_input_data_count} 件の入力データを削除しました。")
+
         return True
+
+    def confirm_delete_task(self, task_id: str) -> bool:
+        message_for_confirm = f"タスク'{task_id}' を削除しますか？"
+        return self.confirm_processing(message_for_confirm)
+
+    def get_annotation_list(self, task_id: str) -> List[Dict[str, Any]]:
+        query_params = {"query": {"task_id": task_id, "exact_match_task_id": True}}
+        annotation_list = self.service.wrapper.get_all_annotation_list(self.project_id, query_params=query_params)
+        return annotation_list
 
     def delete_task_list(
         self,
-        project_id: str,
         task_id_list: List[str],
-        force: bool = False,
-        dryrun: bool = False,
         task_query: Optional[TaskQuery] = None,
     ):
         """
         複数のタスクを削除する。
         """
         if task_query is not None:
-            task_query = self.facade.set_account_id_of_task_query(project_id, task_query)
+            task_query = self.facade.set_account_id_of_task_query(self.project_id, task_query)
 
-        super().validate_project(project_id, [ProjectMemberRole.OWNER])
-        project_title = self.facade.get_project_title(project_id)
+        super().validate_project(self.project_id, [ProjectMemberRole.OWNER])
+        project_title = self.facade.get_project_title(self.project_id)
         logger.info(f"プロジェクト'{project_title}'から 、{len(task_id_list)} 件のタスクを削除します。")
 
         count_delete_task = 0
         for task_index, task_id in enumerate(task_id_list):
             try:
-                result = self.delete_task(project_id, task_id, force=force, task_query=task_query, dryrun=dryrun)
+                result = self.delete_task(self.project_id, task_id, task_query=task_query)
                 if result:
                     count_delete_task += 1
                     logger.info(f"{task_index+1} / {len(task_id_list)} 件目: タスク'{task_id}'を削除しました。")
@@ -121,6 +231,12 @@ class DeleteTask(AbstractCommandLineInterface):
                 continue
 
         logger.info(f"プロジェクト'{project_title}'から 、{count_delete_task} / {len(task_id_list)} 件のタスクを削除しました。")
+
+
+class DeleteTask(AbstractCommandLineInterface):
+    """
+    タスクを削除する
+    """
 
     def main(self):
         args = self.args
@@ -133,8 +249,11 @@ class DeleteTask(AbstractCommandLineInterface):
         dict_task_query = annofabcli.common.cli.get_json_from_args(args.task_query)
         task_query: Optional[TaskQuery] = TaskQuery.from_dict(dict_task_query) if dict_task_query is not None else None
 
-        self.delete_task_list(
-            args.project_id, task_id_list=task_id_list, force=args.force, dryrun=args.dryrun, task_query=task_query
+        main_obj = DeleteTaskMain(
+            self.service, project_id=args.project_id, all_yes=args.yes, dryrun=args.dryrun, force=args.force
+        )
+        main_obj.delete_task_list(
+            task_id_list=task_id_list, force=args.force, dryrun=args.dryrun, task_query=task_query
         )
 
 
