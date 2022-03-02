@@ -228,8 +228,21 @@ class PutInspectionCommentsSimply(AbstractCommandLineInterface):
 
     COMMON_MESSAGE = "annofabcli inspection_comment put_simply: error:"
 
+    def validate(self, args: argparse.Namespace) -> bool:
+        if args.parallelism is not None and not args.yes:
+            print(
+                f"{self.COMMON_MESSAGE} argument --parallelism: '--parallelism'を指定するときは、必ず ``--yes`` を指定してください。",
+                file=sys.stderr,
+            )
+            return False
+
+        return True
+
     def main(self):
         args = self.args
+        if not self.validate(args):
+            sys.exit(COMMAND_LINE_ERROR_STATUS_CODE)
+
         super().validate_project(args.project_id, [ProjectMemberRole.ACCEPTER, ProjectMemberRole.OWNER])
 
         comment_data = annofabcli.common.cli.get_json_from_args(args.comment_data)
@@ -249,10 +262,11 @@ class PutInspectionCommentsSimply(AbstractCommandLineInterface):
                 sys.exit(COMMAND_LINE_ERROR_STATUS_CODE)
 
         task_id_list = get_list_from_args(args.task_id)
+        phrase_id_list = get_list_from_args(args.phrase_id)
         main_obj = PutInspectionCommentsSimplyMain(self.service, project_id=args.project_id, all_yes=self.all_yes)
         main_obj.put_inspection_comment_for_task_list(
             task_ids=task_id_list,
-            comment_info=AddedSimpleComment(comment=args.comment, data=comment_data),
+            comment_info=AddedSimpleComment(comment=args.comment, data=comment_data, phrases=phrase_id_list),
             parallelism=args.parallelism,
         )
 
@@ -284,13 +298,14 @@ def parse_args(parser: argparse.ArgumentParser):
         help="付与する検査コメントのメッセージを指定します。",
     )
 
-    # TODO  phrase
+    parser.add_argument("--phrase_id", type=str, nargs="+", help="定型指摘コメントのIDを指定してください。")
+
     parser.add_argument(
         "--comment_data",
         type=str,
         help="検査コメントを付与する位置や区間をJSON形式で指定します。"
-        "指定方法は https://annofab-cli.readthedocs.io/ja/latest/command_reference/task/reject.html を参照してください。"
-        " ``file://`` を先頭に付けると、JSON形式のファイルを指定できます。"
+        "指定方法は https://annofab-cli.readthedocs.io/ja/latest/command_reference/inspection_comment/put_simply.html を参照してください。\n"
+        " ``file://`` を先頭に付けると、JSON形式のファイルを指定できます。\n"
         "デフォルトでは画像プロジェクトならば画像の左上(x=0,y=0)、動画プロジェクトなら動画の先頭（start=0, end=100)に付与します。"
         "カスタムプロジェクトに検査コメントを付与する場合は必須です。",
     )
