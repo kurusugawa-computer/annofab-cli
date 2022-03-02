@@ -204,12 +204,17 @@ class AddInspectionCommentsMain(AbstractCommandLineWithConfirmInterface):
                     f"{logging_prefix} : task_id={task_id}, input_data_id={input_data_id}: "
                     f"{len(comments)}件の検査コメントを付与しました。"
                 )
-            except Exception as e:  # pylint: disable=broad-except
+            except Exception:  # pylint: disable=broad-except
                 logger.warning(
-                    f"{logging_prefix} : task_id={task_id}, input_data_id={input_data_id}: 検査コメントの付与に失敗しました。", e
+                    f"{logging_prefix} : task_id={task_id}, input_data_id={input_data_id}: 検査コメントの付与に失敗しました。", exc_info=True
                 )
+            finally:
+                self.facade.change_to_break_phase(self.project_id, task_id)
+                # 担当者が変えている場合は、元に戻す
+                if task["account_id"] != changed_task["account_id"]:
+                    self.facade.change_operator_of_task(self.project_id, task_id, task["account_id"])
+                    logger.debug(f"{task_id}: 担当者を元のユーザ( account_id={task['account_id']}）に戻しました。")
 
-        self.facade.change_to_break_phase(self.project_id, task_id)
         return added_comments_count
 
     def add_comments_for_task_wrapper(
