@@ -64,38 +64,7 @@ Examples
      --comment "weather属性を見直してください。" \
      --comment_data '{"x":10,"y":10,"_type":"Point"}'
 
-``--comment_data`` に渡す形式は、https://annofab.com/docs/api/#operation/batchUpdateInspections APIのリクエストボディ ``data`` を参照してください。
-
-以下は、``--comment_data`` に渡すJSON文字列のサンプルです。
-
-.. code-block:: json
-    :caption: 画像プロジェクト：(x=0,y=0)の位置に点
-
-    {
-        "x":0,
-        "y":0,
-        "_type": "Point"
-    }
-
-
-.. code-block:: json
-    :caption: 動画プロジェクト：0〜100ミリ秒の区間
-
-    {
-        "start":0,
-        "end":100,
-        "_type": "Time"
-    }
-
-
-.. code-block:: json
-    :caption: カスタムプロジェクト（3dpc editor）：原点付近に辺が1の立方体
-
-    {
-        "data": "{\"kind\": \"CUBOID\", \"shape\": {\"dimensions\": {\"width\": 1.0, \"height\": 1.0, \"depth\": 1.0}, \"location\": {\"x\": 0.0, \"y\": 0.0, \"z\": 0.0}, \"rotation\": {\"x\": 0.0, \"y\": 0.0, \"z\": 0.0}, \"direction\": {\"front\": {\"x\": 1.0, \"y\": 0.0, \"z\": 0.0}, \"up\": {\"x\": 0.0, \"y\": 0.0, \"z\": 1.0}}}, \"version\": \"2\"}",
-        "_type": "Custom"    
-    }
-
+``--comment_data`` に渡す形式は、https://annofab-cli.readthedocs.io/ja/latest/command_reference/inspection_comment/put_simply.html を参照してください。
 
 ``--comment_data`` を指定しない場合は、以下の値になります。
 

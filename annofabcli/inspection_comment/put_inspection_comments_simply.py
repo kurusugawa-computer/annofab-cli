@@ -303,7 +303,7 @@ def parse_args(parser: argparse.ArgumentParser):
     parser.add_argument(
         "--comment_data",
         type=str,
-        help="検査コメントを付与する位置や区間をJSON形式で指定します。"
+        help="検査コメントを付与する位置や区間をJSON形式で指定します。\n"
         "指定方法は https://annofab-cli.readthedocs.io/ja/latest/command_reference/inspection_comment/put_simply.html を参照してください。\n"  # noqa: E501
         " ``file://`` を先頭に付けると、JSON形式のファイルを指定できます。\n"
         "デフォルトでは画像プロジェクトならば画像の左上(x=0,y=0)、動画プロジェクトなら動画の先頭（start=0, end=100)に付与します。"
@@ -319,7 +319,7 @@ def parse_args(parser: argparse.ArgumentParser):
 
 def add_parser(subparsers: Optional[argparse._SubParsersAction] = None):
     subcommand_name = "put_simply"
-    subcommand_help = "タスクIDとコメンドだけで、検査コメントを付与します。``inspection_comment put``コマンドよりも簡単に検査コメントを付与できます。"
+    subcommand_help = "``inspection_comment put`` コマンドよりも、簡単に検査コメントを付与します。"
     epilog = "チェッカーロールまたはオーナロールを持つユーザで実行してください。"
 
     parser = annofabcli.common.cli.add_parser(subparsers, subcommand_name, subcommand_help, epilog=epilog)
