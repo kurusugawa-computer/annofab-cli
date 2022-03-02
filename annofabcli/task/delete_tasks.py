@@ -256,9 +256,7 @@ class DeleteTask(AbstractCommandLineInterface):
         main_obj = DeleteTaskMain(
             self.service, project_id=args.project_id, all_yes=args.yes, dryrun=args.dryrun, force=args.force
         )
-        main_obj.delete_task_list(
-            task_id_list=task_id_list, task_query=task_query
-        )
+        main_obj.delete_task_list(task_id_list=task_id_list, task_query=task_query)
 
 
 def main(args):
@@ -273,7 +271,11 @@ def parse_args(parser: argparse.ArgumentParser):
     argument_parser.add_project_id()
     argument_parser.add_task_id()
     parser.add_argument("--force", action="store_true", help="アノテーションが付与されているタスクも強制的に削除します。")
-    parser.add_argument("--delete_input_data", action="store_true", help="指定した場合、タスクから参照されている入力データと、その入力データに紐づく補助情報を削除します。ただし、他のタスクから参照されている場合は、削除しません。")
+    parser.add_argument(
+        "--delete_input_data",
+        action="store_true",
+        help="指定した場合、タスクから参照されている入力データと、その入力データに紐づく補助情報を削除します。ただし、他のタスクから参照されている場合は、削除しません。",
+    )
     parser.add_argument("--dryrun", action="store_true", help="削除が行われた時の結果を表示しますが、実際はタスクを削除しません。")
     argument_parser.add_task_query()
 
