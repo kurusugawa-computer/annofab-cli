@@ -419,8 +419,10 @@ def parse_args(parser: argparse.ArgumentParser):
         type=str,
         help=(
             "登録対象の補助情報データをJSON形式で指定してください。\n"
+            "\n"
             f"(ex) ``{json.dumps(JSON_SAMPLE)}`` \n"
-            "JSONの各キーは'--csv'に渡すCSVの各列に対応しています。"
+            "\n"
+            "JSONの各キーは ``--csv`` に渡すCSVの各列に対応しています。"
             " ``file://`` を先頭に付けるとjsonファイルを指定できます。"
         ),
     )

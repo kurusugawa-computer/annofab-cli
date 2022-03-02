@@ -274,7 +274,7 @@ def parse_args(parser: argparse.ArgumentParser):
     parser.add_argument(
         "--delete_input_data",
         action="store_true",
-        help="指定した場合、タスクから参照されている入力データと、その入力データに紐づく補助情報を削除します。ただし、他のタスクから参照されている場合は、削除しません。",
+        help="指定した場合、タスクから参照されている入力データと、その入力データに紐づく補助情報を削除します。ただし、他のタスクから参照されている入力データは削除しません。",
     )
     parser.add_argument("--dryrun", action="store_true", help="削除が行われた時の結果を表示しますが、実際はタスクを削除しません。")
     argument_parser.add_task_query()
