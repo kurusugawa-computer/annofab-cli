@@ -1,10 +1,10 @@
-from functools import partial
 import argparse
 import logging
 import multiprocessing
 import sys
 import uuid
 from dataclasses import dataclass
+from functools import partial
 from typing import Any, Collection, Dict, List, Optional, Tuple
 
 import annofabapi
