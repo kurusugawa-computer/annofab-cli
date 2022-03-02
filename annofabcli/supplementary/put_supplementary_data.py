@@ -391,15 +391,20 @@ def parse_args(parser: argparse.ArgumentParser):
         "--csv",
         type=str,
         help=(
-            "補助情報が記載されたCVファイルのパスを指定してください。"
-            "CSVのフォーマットは、「1列目:input_data_id(required), 2列目:supplementary_data_number(required), "
-            "3列目:supplementary_data_name(required), 4列目:supplementary_data_path(required), 5列目:supplementary_data_id, "
-            "6列目:supplementary_data_type, ヘッダ行なし, カンマ区切り」です。"
-            "supplementary_data_pathの先頭が ``file://`` の場合、ローカルのファイルを補助情報として登録します。 "
-            "supplementary_data_idが空の場合はUUIDv4になります。"
-            "各項目の詳細は ``putSupplementaryData`` API を参照してください。"
+            "補助情報が記載されたCVファイルのパスを指定してください。CSVのフォーマットは、以下の通りです。\n"
+            "\n"
+            " * ヘッダ行なし, カンマ区切り\n"
+            " * 1列目: input_data_id (required)\n"
+            " * 2列目: supplementary_data_number (required)\n"
+            " * 3列目: supplementary_data_name (required)\n"
+            " * 4列目: supplementary_data_path (required)\n"
+            " * 5列目: supplementary_data_id\n"
+            " * 6列目: supplementary_data_type\n"
+            "\n"
+            "各項目の詳細は https://annofab-cli.readthedocs.io/ja/latest/command_reference/supplementary/put.html を参照してください。"
         ),
     )
+
 
     JSON_SAMPLE = [
         {
@@ -413,8 +418,8 @@ def parse_args(parser: argparse.ArgumentParser):
         "--json",
         type=str,
         help=(
-            "登録対象の補助情報データをJSON形式で指定してください。"
-            f"(ex) '{json.dumps(JSON_SAMPLE)}' "
+            "登録対象の補助情報データをJSON形式で指定してください。\n"
+            f"(ex) ``{json.dumps(JSON_SAMPLE)}`` \n"
             "JSONの各キーは'--csv'に渡すCSVの各列に対応しています。"
             " ``file://`` を先頭に付けるとjsonファイルを指定できます。"
         ),

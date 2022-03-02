@@ -104,7 +104,7 @@ class DeleteTaskMain(AbstractCommandLineWithConfirmInterface):
         if len(other_task_list) > 0:
             other_task_id_list = [e["task_id"] for e in other_task_list]
             logger.info(
-                f"input_data_id='{input_data_id}'の入力データは、他のタスクから参照されているため、削除しません。 :: 参照しているタスク = {other_task_id_list}"
+                f"task_id='{task_id}' :: input_data_id='{input_data_id}'の入力データは、他のタスクから参照されているため、削除しません。 :: 参照しているタスク = {other_task_id_list}"
             )
             return False
 
@@ -147,7 +147,7 @@ class DeleteTaskMain(AbstractCommandLineWithConfirmInterface):
         """
         task = self.service.wrapper.get_task_or_none(self.project_id, task_id)
         if task is None:
-            logger.info(f"task_id={task_id} のタスクは存在しません。")
+            logger.warning(f"task_id={task_id} のタスクは存在しません。")
             return False
 
         logger.debug(
@@ -193,7 +193,8 @@ class DeleteTaskMain(AbstractCommandLineWithConfirmInterface):
                         f"task_id='{task_id}' :: 入力データの削除に失敗しました。 :: input_data_id='{input_data_id}'", exc_info=True
                     )
                 continue
-            logger.debug(f"task_id='{task_id}' :: {deleted_input_data_count} 件の入力データを削除しました。")
+            if deleted_input_data_count > 0:
+                logger.debug(f"task_id='{task_id}' :: {deleted_input_data_count} 件の入力データを削除しました。")
 
         return True
 
@@ -225,7 +226,6 @@ class DeleteTaskMain(AbstractCommandLineWithConfirmInterface):
                 result = self.delete_task(task_id, task_query=task_query)
                 if result:
                     count_delete_task += 1
-                    logger.info(f"{task_index+1} / {len(task_id_list)} 件目: タスク'{task_id}'を削除しました。")
 
             except requests.exceptions.HTTPError as e:
                 logger.warning(e)
@@ -254,7 +254,7 @@ class DeleteTask(AbstractCommandLineInterface):
         super().validate_project(args.project_id, [ProjectMemberRole.OWNER])
 
         main_obj = DeleteTaskMain(
-            self.service, project_id=args.project_id, all_yes=args.yes, dryrun=args.dryrun, force=args.force
+            self.service, project_id=args.project_id, all_yes=args.yes, dryrun=args.dryrun, force=args.force, should_delete_input_data=args.delete_input_data
         )
         main_obj.delete_task_list(task_id_list=task_id_list, task_query=task_query)
 
