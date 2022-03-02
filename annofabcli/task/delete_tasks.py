@@ -62,19 +62,22 @@ class DeleteTaskMain(AbstractCommandLineWithConfirmInterface):
                     )
                 logger.debug(
                     f"task_id='{task_id}', input_data_id='{input_data_id}' :: 補助情報を削除しました。 :: "
-                    f"supplementary_data_id='{supplementary_data_id}', supplementary_data_name='{supplementary_data['supplementary_data_name']}'"
+                    f"supplementary_data_id='{supplementary_data_id}', "
+                    f"supplementary_data_name='{supplementary_data['supplementary_data_name']}'"
                 )
                 deleted_count += 1
             except Exception:
                 logger.warning(
                     f"task_id='{task_id}', input_data_id='{input_data_id}' :: 補助情報の削除に失敗しました。 :: "
-                    f"supplementary_data_id='{supplementary_data_id}', supplementary_data_name='{supplementary_data['supplementary_data_name']}'",
+                    f"supplementary_data_id='{supplementary_data_id}', "
+                    f"supplementary_data_name='{supplementary_data['supplementary_data_name']}'",
                     exc_info=True,
                 )
                 continue
 
         logger.debug(
-            f"task_id='{task_id}', input_data_id='{input_data_id}' :: 補助情報 {deleted_count} / {len(supplementary_data_list)} 件を削除しました。"
+            f"task_id='{task_id}', input_data_id='{input_data_id}' :: "
+            f"補助情報 {deleted_count} / {len(supplementary_data_list)} 件を削除しました。"
         )
 
         return deleted_count
@@ -110,13 +113,14 @@ class DeleteTaskMain(AbstractCommandLineWithConfirmInterface):
             return False
 
         # 入力データに紐づく補助情報を削除
-        self.delete_supplementary_data_list(self.project_id, task_id, input_data_id)
+        self.delete_supplementary_data_list(task_id, input_data_id)
 
         # 入力データに紐づく補助情報を削除
         if not self.dryrun:
             self.service.api.delete_input_data(self.project_id, input_data_id)
         logger.debug(
-            f"task_id='{task_id}' :: 入力データを削除しました。 :: input_data_id='{input_data_id}', input_data_name='{input_data['input_data_name']}'"
+            f"task_id='{task_id}' :: 入力データを削除しました。 :: "
+            f"input_data_id='{input_data_id}', input_data_name='{input_data['input_data_name']}'"
         )
         return True
 
@@ -156,7 +160,7 @@ class DeleteTaskMain(AbstractCommandLineWithConfirmInterface):
             logger.info("タスクの状態が作業中/完了状態のため、タスクを削除できません。")
             return False
 
-        annotation_list = self.get_annotation_list(self.project_id, task_id)
+        annotation_list = self.get_annotation_list(task_id)
         logger.debug(f"task_id={task_id}: アノテーションが{len(annotation_list)}個付与されています。")
         if not self.force:
             if len(annotation_list) > 0:
@@ -181,7 +185,7 @@ class DeleteTaskMain(AbstractCommandLineWithConfirmInterface):
             deleted_input_data_count = 0
             for input_data_id in task["input_data_id_list"]:
                 try:
-                    result = self.delete_input_data_and_supplementary_data(self.project_id, task_id, input_data_id)
+                    result = self.delete_input_data_and_supplementary_data(task_id, input_data_id)
                     if result:
                         deleted_input_data_count += 1
                 except Exception:
@@ -213,14 +217,12 @@ class DeleteTaskMain(AbstractCommandLineWithConfirmInterface):
         if task_query is not None:
             task_query = self.facade.set_account_id_of_task_query(self.project_id, task_query)
 
-        super().validate_project(self.project_id, [ProjectMemberRole.OWNER])
-        project_title = self.facade.get_project_title(self.project_id)
-        logger.info(f"プロジェクト'{project_title}'から 、{len(task_id_list)} 件のタスクを削除します。")
+        logger.info(f"{len(task_id_list)} 件のタスクを削除します。")
 
         count_delete_task = 0
         for task_index, task_id in enumerate(task_id_list):
             try:
-                result = self.delete_task(self.project_id, task_id, task_query=task_query)
+                result = self.delete_task(task_id, task_query=task_query)
                 if result:
                     count_delete_task += 1
                     logger.info(f"{task_index+1} / {len(task_id_list)} 件目: タスク'{task_id}'を削除しました。")
@@ -230,7 +232,7 @@ class DeleteTaskMain(AbstractCommandLineWithConfirmInterface):
                 logger.warning(f"task_id='{task_id}'の削除に失敗しました。")
                 continue
 
-        logger.info(f"プロジェクト'{project_title}'から 、{count_delete_task} / {len(task_id_list)} 件のタスクを削除しました。")
+        logger.info(f"{count_delete_task} / {len(task_id_list)} 件のタスクを削除しました。")
 
 
 class DeleteTask(AbstractCommandLineInterface):
@@ -249,11 +251,13 @@ class DeleteTask(AbstractCommandLineInterface):
         dict_task_query = annofabcli.common.cli.get_json_from_args(args.task_query)
         task_query: Optional[TaskQuery] = TaskQuery.from_dict(dict_task_query) if dict_task_query is not None else None
 
+        super().validate_project(args.project_id, [ProjectMemberRole.OWNER])
+
         main_obj = DeleteTaskMain(
             self.service, project_id=args.project_id, all_yes=args.yes, dryrun=args.dryrun, force=args.force
         )
         main_obj.delete_task_list(
-            task_id_list=task_id_list, force=args.force, dryrun=args.dryrun, task_query=task_query
+            task_id_list=task_id_list, task_query=task_query
         )
 
 
@@ -269,6 +273,7 @@ def parse_args(parser: argparse.ArgumentParser):
     argument_parser.add_project_id()
     argument_parser.add_task_id()
     parser.add_argument("--force", action="store_true", help="アノテーションが付与されているタスクも強制的に削除します。")
+    parser.add_argument("--delete_input_data", action="store_true", help="指定した場合、タスクから参照されている入力データと、その入力データに紐づく補助情報を削除します。ただし、他のタスクから参照されている場合は、削除しません。")
     parser.add_argument("--dryrun", action="store_true", help="削除が行われた時の結果を表示しますが、実際はタスクを削除しません。")
     argument_parser.add_task_query()
 
