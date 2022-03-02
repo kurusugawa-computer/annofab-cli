@@ -66,7 +66,7 @@ class DeleteTaskMain(AbstractCommandLineWithConfirmInterface):
                     f"supplementary_data_name='{supplementary_data['supplementary_data_name']}'"
                 )
                 deleted_count += 1
-            except Exception:
+            except Exception:  # pylint: disable=broad-except
                 logger.warning(
                     f"task_id='{task_id}', input_data_id='{input_data_id}' :: 補助情報の削除に失敗しました。 :: "
                     f"supplementary_data_id='{supplementary_data_id}', "
@@ -188,7 +188,7 @@ class DeleteTaskMain(AbstractCommandLineWithConfirmInterface):
                     result = self.delete_input_data_and_supplementary_data(task_id, input_data_id)
                     if result:
                         deleted_input_data_count += 1
-                except Exception:
+                except Exception:  # pylint: disable=broad-except
                     logger.warning(
                         f"task_id='{task_id}' :: 入力データの削除に失敗しました。 :: input_data_id='{input_data_id}'", exc_info=True
                     )
