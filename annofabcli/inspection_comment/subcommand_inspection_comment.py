@@ -6,6 +6,7 @@ import annofabcli.common.cli
 import annofabcli.inspection_comment.delete_inspection_comments
 import annofabcli.inspection_comment.list_inspections_with_json
 import annofabcli.inspection_comment.put_inspection_comments
+import annofabcli.inspection_comment.put_inspection_comments_simply
 
 
 def parse_args(parser: argparse.ArgumentParser):
@@ -17,6 +18,7 @@ def parse_args(parser: argparse.ArgumentParser):
     annofabcli.inspection_comment.list_inspections.add_parser(subparsers)
     annofabcli.inspection_comment.list_inspections_with_json.add_parser(subparsers)
     annofabcli.inspection_comment.put_inspection_comments.add_parser(subparsers)
+    annofabcli.inspection_comment.put_inspection_comments_simply.add_parser(subparsers)
 
 
 def add_parser(subparsers: Optional[argparse._SubParsersAction] = None):

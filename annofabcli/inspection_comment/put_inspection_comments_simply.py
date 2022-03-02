@@ -1,3 +1,4 @@
+from functools import partial
 import argparse
 import logging
 import multiprocessing
@@ -119,7 +120,7 @@ class PutInspectionCommentsSimplyMain(AbstractCommandLineWithConfirmInterface):
         task_id: str,
         comment_info: AddedSimpleComment,
         task_index: Optional[int] = None,
-    ) -> int:
+    ) -> bool:
         """
         タスクに検査コメントを付与します。
 
@@ -179,7 +180,7 @@ class PutInspectionCommentsSimplyMain(AbstractCommandLineWithConfirmInterface):
                 self.facade.change_operator_of_task(self.project_id, task_id, task["account_id"])
                 logger.debug(f"{task_id}: 担当者を元のユーザ( account_id={task['account_id']}）に戻しました。")
 
-    def add_comments_for_task_wrapper(self, tpl: Tuple[int, str], comment_info: AddedSimpleComment) -> False:
+    def add_comments_for_task_wrapper(self, tpl: Tuple[int, str], comment_info: AddedSimpleComment) -> bool:
         task_index, task_id = tpl
         try:
             return self.put_inspection_comment_for_task(
@@ -199,14 +200,15 @@ class PutInspectionCommentsSimplyMain(AbstractCommandLineWithConfirmInterface):
         logger.info(f"{len(task_ids)} 件のタスクに検査コメントを付与します。")
 
         if parallelism is not None:
+            func = partial(self.add_comments_for_task_wrapper, comment_info=comment_info)
             with multiprocessing.Pool(parallelism) as pool:
-                result_bool_list = pool.map(self.add_comments_for_task_wrapper, enumerate(task_ids.items()))
+                result_bool_list = pool.map(func, enumerate(task_ids))
                 success_count = sum(e for e in result_bool_list if e)
 
         else:
             # 逐次処理
             success_count = 0
-            for task_index, task_id in enumerate(task_ids.items()):
+            for task_index, task_id in enumerate(task_ids):
                 try:
                     result = self.put_inspection_comment_for_task(
                         task_id=task_id,
@@ -215,7 +217,7 @@ class PutInspectionCommentsSimplyMain(AbstractCommandLineWithConfirmInterface):
                     )
                     if result:
                         success_count += 1
-                except Exception as e:  # pylint: disable=broad-except
+                except Exception:  # pylint: disable=broad-except
                     logger.warning(f"task_id={task_id}: 検査コメントの付与に失敗しました。", exc_info=True)
                     continue
 
@@ -228,9 +230,6 @@ class PutInspectionCommentsSimply(AbstractCommandLineInterface):
 
     def main(self):
         args = self.args
-        if not self.validate(args):
-            sys.exit(COMMAND_LINE_ERROR_STATUS_CODE)
-
         super().validate_project(args.project_id, [ProjectMemberRole.ACCEPTER, ProjectMemberRole.OWNER])
 
         comment_data = annofabcli.common.cli.get_json_from_args(args.comment_data)
@@ -273,6 +272,7 @@ def parse_args(parser: argparse.ArgumentParser):
         "-t",
         "--task_id",
         type=str,
+        nargs="+",
         required=True,
         help=("検査コメントを付与するタスクのtask_idを指定してください。\n" "``file://`` を先頭に付けると、task_idの一覧が記載されたファイルを指定できます。"),
     )
@@ -280,7 +280,7 @@ def parse_args(parser: argparse.ArgumentParser):
     parser.add_argument(
         "--comment",
         type=str,
-        require=True,
+        required=True,
         help="付与する検査コメントのメッセージを指定します。",
     )
 
