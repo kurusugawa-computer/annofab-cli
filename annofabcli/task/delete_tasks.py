@@ -124,6 +124,40 @@ class DeleteTaskMain(AbstractCommandLineWithConfirmInterface):
         )
         return True
 
+    def _should_delete_task(
+        self,
+        task: dict[str, Any],
+        log_prefix: str,
+        task_query: Optional[TaskQuery] = None,
+    ) -> bool:
+        """タスクを削除するかどうかを判定する"""
+
+        task_id = task["task_id"]
+
+        task_status = TaskStatus(task["status"])
+        if task_status in [TaskStatus.WORKING, TaskStatus.COMPLETE]:
+            logger.info(f"{log_prefix} :: タスクの状態が作業中/完了状態のため、タスクを削除できません。")
+            return False
+
+        annotation_list = self.get_annotation_list(task_id)
+        logger.debug(f"{log_prefix} :: アノテーションが{len(annotation_list)}個付与されています。")
+        if not self.force:
+            if len(annotation_list) > 0:
+                logger.info(
+                    f"{log_prefix} :: アノテーションが付与されているため（{len(annotation_list)}個）、タスクの削除をスキップします。"
+                    f"削除するには`--force`を指定してください。"
+                )
+                return False
+
+        if not match_task_with_query(Task.from_dict(task), task_query):
+            logger.debug(f"{log_prefix} :: `--task_query`の条件にマッチしないため、スキップします。task_query={task_query}")
+            return False
+
+        if not self.confirm_delete_task(task_id):
+            return False
+
+        return True
+
     def delete_task(
         self, task_id: str, task_query: Optional[TaskQuery] = None, task_index: Optional[int] = None
     ) -> bool:
@@ -158,26 +192,7 @@ class DeleteTaskMain(AbstractCommandLineWithConfirmInterface):
             f"phase={task['phase']}, updated_datetime={task['updated_datetime']}"
         )
 
-        task_status = TaskStatus(task["status"])
-        if task_status in [TaskStatus.WORKING, TaskStatus.COMPLETE]:
-            logger.info(f"{log_prefix} :: タスクの状態が作業中/完了状態のため、タスクを削除できません。")
-            return False
-
-        annotation_list = self.get_annotation_list(task_id)
-        logger.debug(f"{log_prefix} :: アノテーションが{len(annotation_list)}個付与されています。")
-        if not self.force:
-            if len(annotation_list) > 0:
-                logger.info(
-                    f"{log_prefix} :: アノテーションが付与されているため（{len(annotation_list)}個）、タスクの削除をスキップします。"
-                    f"削除するには`--force`を指定してください。"
-                )
-                return False
-
-        if not match_task_with_query(Task.from_dict(task), task_query):
-            logger.debug(f"{log_prefix} :: `--task_query`の条件にマッチしないため、スキップします。task_query={task_query}")
-            return False
-
-        if not self.confirm_delete_task(task_id):
+        if not self._should_delete_task(task, log_prefix, task_query=task_query):
             return False
 
         if not self.dryrun:
