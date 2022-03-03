@@ -126,9 +126,7 @@ class DeleteTaskMain(AbstractCommandLineWithConfirmInterface):
         return True
 
     def delete_task(
-        self,
-        task_id: str,
-        task_query: Optional[TaskQuery] = None,
+        self, task_id: str, task_query: Optional[TaskQuery] = None, task_index: Optional[int] = None
     ) -> bool:
         """
         タスクを削除します。
@@ -146,33 +144,38 @@ class DeleteTaskMain(AbstractCommandLineWithConfirmInterface):
             True: タスクを削除した。False: タスクを削除しなかった。
 
         """
+        if task_index is not None:
+            log_prefix = f"{task_index+1} 件目, task_id='{task_id}'"
+        else:
+            log_prefix = f"task_id='{task_id}'"
+
         task = self.service.wrapper.get_task_or_none(self.project_id, task_id)
         if task is None:
-            logger.warning(f"task_id={task_id} のタスクは存在しません。")
+            logger.warning(f"{log_prefix} :: タスクは存在しません。")
             return False
 
         logger.debug(
-            f"task_id={task['task_id']}, status={task['status']}, "
+            f"{log_prefix} :: status={task['status']}, "
             f"phase={task['phase']}, updated_datetime={task['updated_datetime']}"
         )
 
         task_status = TaskStatus(task["status"])
         if task_status in [TaskStatus.WORKING, TaskStatus.COMPLETE]:
-            logger.info("タスクの状態が作業中/完了状態のため、タスクを削除できません。")
+            logger.info(f"{log_prefix} :: タスクの状態が作業中/完了状態のため、タスクを削除できません。")
             return False
 
         annotation_list = self.get_annotation_list(task_id)
-        logger.debug(f"task_id={task_id}: アノテーションが{len(annotation_list)}個付与されています。")
+        logger.debug(f"{log_prefix} :: アノテーションが{len(annotation_list)}個付与されています。")
         if not self.force:
             if len(annotation_list) > 0:
                 logger.info(
-                    f"アノテーションが付与されているため（{len(annotation_list)}個）、タスク'{task_id}'の削除をスキップします。"
+                    f"{log_prefix} :: アノテーションが付与されているため（{len(annotation_list)}個）、タスクの削除をスキップします。"
                     f"削除するには`--force`を指定してください。"
                 )
                 return False
 
         if not match_task_with_query(Task.from_dict(task), task_query):
-            logger.debug(f"task_id={task_id}: `--task_query`の条件にマッチしないため、スキップします。task_query={task_query}")
+            logger.debug(f"{log_prefix} :: `--task_query`の条件にマッチしないため、スキップします。task_query={task_query}")
             return False
 
         if not self.confirm_delete_task(task_id):
@@ -180,7 +183,7 @@ class DeleteTaskMain(AbstractCommandLineWithConfirmInterface):
 
         if not self.dryrun:
             self.service.api.delete_task(self.project_id, task_id)
-            logger.debug(f"タスクを削除しました。 :: task_id='{task_id}'")
+            logger.debug(f"{log_prefix} :: タスクを削除しました。")
 
         if self.should_delete_input_data:
             deleted_input_data_count = 0
@@ -191,11 +194,11 @@ class DeleteTaskMain(AbstractCommandLineWithConfirmInterface):
                         deleted_input_data_count += 1
                 except Exception:  # pylint: disable=broad-except
                     logger.warning(
-                        f"task_id='{task_id}' :: 入力データの削除に失敗しました。 :: input_data_id='{input_data_id}'", exc_info=True
+                        f"{log_prefix} :: 入力データの削除に失敗しました。 :: input_data_id='{input_data_id}'", exc_info=True
                     )
                 continue
             if deleted_input_data_count > 0:
-                logger.debug(f"task_id='{task_id}' :: {deleted_input_data_count} 件の入力データを削除しました。")
+                logger.debug(f"{log_prefix} :: {deleted_input_data_count} 件の入力データを削除しました。")
 
         return True
 
@@ -224,13 +227,12 @@ class DeleteTaskMain(AbstractCommandLineWithConfirmInterface):
         count_delete_task = 0
         for task_index, task_id in enumerate(task_id_list):
             try:
-                result = self.delete_task(task_id, task_query=task_query)
+                result = self.delete_task(task_id, task_query=task_query, task_index=task_index)
                 if result:
                     count_delete_task += 1
 
             except requests.exceptions.HTTPError as e:
-                logger.warning(e)
-                logger.warning(f"task_id='{task_id}'の削除に失敗しました。")
+                logger.warning(f"task_id='{task_id}'の削除に失敗しました。", exc_info=True)
                 continue
 
         logger.info(f"{count_delete_task} / {len(task_id_list)} 件のタスクを削除しました。")
