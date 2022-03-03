@@ -57,23 +57,21 @@ class RejectTasksMain(AbstractCommandLineWithConfirmInterface):
 
         req_inspection = [
             {
-                "data": {
-                    "project_id": project_id,
-                    "comment": inspection_comment,
-                    "task_id": task["task_id"],
-                    "input_data_id": first_input_data_id,
-                    "inspection_id": str(uuid.uuid4()),
-                    "phase": task["phase"],
-                    "commenter_account_id": self.service.api.account_id,
+                "comment_id": str(uuid.uuid4()),
+                "phase": task["phase"],
+                "account_id": self.service.api.account_id,
+                "comment_type": "inspection",
+                "comment": inspection_comment,
+                "comment_node": {
                     "data": self.comment_data,
-                    "status": "annotator_action_required",
-                    "created_datetime": task["updated_datetime"],
+                    "status": "open",
+                    "_type": "Root"
                 },
                 "_type": "Put",
             }
         ]
 
-        return self.service.api.batch_update_inspections(
+        return self.service.api.batch_update_comments(
             project_id, task["task_id"], first_input_data_id, request_body=req_inspection
         )[0]
 
