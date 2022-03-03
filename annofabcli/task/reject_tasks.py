@@ -62,11 +62,7 @@ class RejectTasksMain(AbstractCommandLineWithConfirmInterface):
                 "account_id": self.service.api.account_id,
                 "comment_type": "inspection",
                 "comment": inspection_comment,
-                "comment_node": {
-                    "data": self.comment_data,
-                    "status": "open",
-                    "_type": "Root"
-                },
+                "comment_node": {"data": self.comment_data, "status": "open", "_type": "Root"},
                 "_type": "Put",
             }
         ]

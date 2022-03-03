@@ -86,20 +86,12 @@ class CompleteTasksMain(AbstractCommandLineWithConfirmInterface):
 
         def to_req_inspection(i: Inspection) -> Dict[str, Any]:
             return {
-                "data": {
-                    "project_id": task.project_id,
-                    "comment": reply_comment,
-                    "task_id": task.task_id,
-                    "input_data_id": input_data_id,
-                    "inspection_id": str(uuid.uuid4()),
-                    "phase": task.phase.value,
-                    "phase_stage": task.phase_stage,
-                    "commenter_account_id": self.service.api.account_id,
-                    "data": i["data"],
-                    "parent_inspection_id": i["inspection_id"],
-                    "status": InspectionStatus.NO_CORRECTION_REQUIRED.value,
-                    "created_datetime": task.updated_datetime,
-                },
+                "comment": reply_comment,
+                "comment_id": str(uuid.uuid4()),
+                "phase": task.phase.value,
+                "phase_stage": task.phase_stage,
+                "account_id": self.service.api.account_id,
+                "comment_node": {"root_comment_id": i["comment_id"], "_type": "Reply"},
                 "_type": "Put",
             }
 
@@ -214,7 +206,7 @@ class CompleteTasksMain(AbstractCommandLineWithConfirmInterface):
 
         """
 
-        def exists_answered_comment(parent_inspection_id: str) -> bool:
+        def exists_answered_comment(parent_comment_id: str) -> bool:
             """
             回答済の返信コメントがあるかどうか
 
@@ -228,23 +220,25 @@ class CompleteTasksMain(AbstractCommandLineWithConfirmInterface):
                 # タスク未着手状態なので、回答済のコメントはない
                 return False
             task_started_datetime = task.started_datetime
+            # 教師付フェーズになった日時より、後に付与された返信コメントを取得する
             answered_comment = first_true(
-                inspection_list,
-                pred=lambda e: e["parent_inspection_id"] == parent_inspection_id
+                comment_list,
+                pred=lambda e: e["comment_node"]["_type"] == "Reply"
+                and e["root_comment_id"] == parent_comment_id
                 and dateutil.parser.parse(e["created_datetime"]) >= dateutil.parser.parse(task_started_datetime),
             )
             return answered_comment is not None
 
-        inspection_list, _ = self.service.api.get_inspections(task.project_id, task.task_id, input_data_id)
+        comment_list, _ = self.service.api.get_comments(
+            task.project_id, task.task_id, input_data_id, query_params={"v": "2"}
+        )
         # 未処置の検査コメント
         unprocessed_inspection_list = [
-            e
-            for e in inspection_list
-            if e["parent_inspection_id"] is None and e["status"] == InspectionStatus.ANNOTATOR_ACTION_REQUIRED.value
+            e for e in comment_list if e["comment_type"] == "inspection" and e["comment_type"]["status"] == "open"
         ]
 
         unanswered_comment_list = [
-            e for e in unprocessed_inspection_list if not exists_answered_comment(e["inspection_id"])
+            e for e in unprocessed_inspection_list if not exists_answered_comment(e["comment_id"])
         ]
         return unanswered_comment_list
 
