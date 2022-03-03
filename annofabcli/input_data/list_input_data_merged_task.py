@@ -234,13 +234,15 @@ def parse_args(parser: argparse.ArgumentParser):
         "指定できるキーは、``input_data_id`` , ``input_data_name`` , ``input_data_path`` です。",
     )
 
-    parser.add_argument(
+    used_by_task_group = parser.add_mutually_exclusive_group()
+
+    used_by_task_group.add_argument(
         "--not_used_by_task",
         action="store_true",
         help="タスクから使われていない入力データのみ出力します。",
     )
 
-    parser.add_argument(
+    used_by_task_group.add_argument(
         "--used_by_multiple_task",
         action="store_true",
         help="複数のタスクから使われている入力データのみ出力します。",
