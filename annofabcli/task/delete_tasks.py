@@ -5,7 +5,6 @@ import logging
 from typing import Any, Dict, List, Optional
 
 import annofabapi
-import requests
 from annofabapi.dataclass.task import Task
 from annofabapi.models import ProjectMemberRole, TaskStatus
 
