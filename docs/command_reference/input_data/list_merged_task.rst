@@ -53,6 +53,12 @@ Examples
      --input_data_id file://input_data_id.txt
 
 
+``--not_used_by_task`` を指定すれば、タスクに使われていない入力データがあります。
+
+``--used_by_multiple_task`` を指定すれば、複数のタスクから使われている入力データが出力されます。
+
+
+
 出力結果
 =================================
 
@@ -108,7 +114,11 @@ JSON出力
                 "width": 128,
                 "height": 128
             },
-            "_type": "Image"
+            "_type": "Image",
+            "task_id": "task1",
+            "task_status": "break",
+            "task_phase": "annotation",
+            "worktime_hour": 4.308171944444444
         },
         ...
     ]
