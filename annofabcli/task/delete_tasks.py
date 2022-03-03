@@ -104,7 +104,8 @@ class DeleteTaskMain(AbstractCommandLineWithConfirmInterface):
         if len(other_task_list) > 0:
             other_task_id_list = [e["task_id"] for e in other_task_list]
             logger.info(
-                f"task_id='{task_id}' :: input_data_id='{input_data_id}'の入力データは、他のタスクから参照されているため、削除しません。 :: 参照しているタスク = {other_task_id_list}"
+                f"task_id='{task_id}' :: input_data_id='{input_data_id}'の入力データは、"
+                f"他のタスクから参照されているため、削除しません。 :: 参照しているタスク = {other_task_id_list}"
             )
             return False
 
@@ -254,7 +255,12 @@ class DeleteTask(AbstractCommandLineInterface):
         super().validate_project(args.project_id, [ProjectMemberRole.OWNER])
 
         main_obj = DeleteTaskMain(
-            self.service, project_id=args.project_id, all_yes=args.yes, dryrun=args.dryrun, force=args.force, should_delete_input_data=args.delete_input_data
+            self.service,
+            project_id=args.project_id,
+            all_yes=args.yes,
+            dryrun=args.dryrun,
+            force=args.force,
+            should_delete_input_data=args.delete_input_data,
         )
         main_obj.delete_task_list(task_id_list=task_id_list, task_query=task_query)
 

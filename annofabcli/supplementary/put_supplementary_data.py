@@ -405,7 +405,6 @@ def parse_args(parser: argparse.ArgumentParser):
         ),
     )
 
-
     JSON_SAMPLE = [
         {
             "input_data_id": "input1",
