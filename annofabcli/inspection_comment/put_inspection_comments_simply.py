@@ -51,28 +51,20 @@ class PutInspectionCommentsSimplyMain(AbstractCommandLineWithConfirmInterface):
 
         AbstractCommandLineWithConfirmInterface.__init__(self, all_yes)
 
-    def _create_request_body(
-        self, task: Dict[str, Any], input_data_id: str, comment_info: AddedSimpleComment
-    ) -> List[Dict[str, Any]]:
-        """batch_update_inspections に渡すリクエストボディを作成する。"""
+    def _create_request_body(self, task: Dict[str, Any], comment_info: AddedSimpleComment) -> List[Dict[str, Any]]:
+        """batch_update_comments に渡すリクエストボディを作成する。"""
 
         def _convert(comment: AddedSimpleComment) -> Dict[str, Any]:
             return {
-                "data": {
-                    "project_id": self.project_id,
-                    "comment": comment.comment,
-                    "task_id": task["task_id"],
-                    "input_data_id": input_data_id,
-                    "inspection_id": str(uuid.uuid4()),
-                    "phase": task["phase"],
-                    "commenter_account_id": self.service.api.account_id,
+                "comment": comment.comment,
+                "comment_id": str(uuid.uuid4()),
+                "phase": task["phase"],
+                "account_id": self.service.api.account_id,
+                "comment_node": {
                     "data": comment.data,
-                    "annotation_id": None,
-                    "phrases": comment.phrases,
-                    "status": "annotator_action_required",
-                    "created_datetime": task["updated_datetime"],
-                    "label_id": None,
+                    "status": "open",
                 },
+                "phrases": comment.phrases,
                 "_type": "Put",
             }
 
@@ -161,11 +153,9 @@ class PutInspectionCommentsSimplyMain(AbstractCommandLineWithConfirmInterface):
         try:
             # 検査コメントを付与する
             request_body = self._create_request_body(
-                task=changed_task, input_data_id=input_data_id, comment_info=comment_info
+                task=changed_task, comment_info=comment_info
             )
-            self.service.api.batch_update_inspections(
-                self.project_id, task_id, input_data_id, request_body=request_body
-            )
+            self.service.api.batch_update_comments(self.project_id, task_id, input_data_id, request_body=request_body)
             logger.debug(f"{logging_prefix} : task_id={task_id} のタスクに検査コメントを付与しました。")
             return True
         except Exception:  # pylint: disable=broad-except

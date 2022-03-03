@@ -402,7 +402,7 @@ class CompleteTasksMain(AbstractCommandLineWithConfirmInterface):
             else:
                 return self.complete_task_for_inspection_acceptance_phase(task, inspection_status=inspection_status)
 
-        except Exception as e:  # pylint: disable=broad-except
+        except Exception:  # pylint: disable=broad-except
             logger.warning(f"{task_id}: {task.phase} フェーズを完了状態にするのに失敗しました。", exc_info=True)
             new_task: Task = Task.from_dict(self.service.wrapper.get_task_or_none(project_id, task_id))
             if new_task.status == TaskStatus.WORKING and new_task.account_id == self.service.api.account_id:
