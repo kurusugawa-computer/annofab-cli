@@ -231,7 +231,7 @@ class DeleteTaskMain(AbstractCommandLineWithConfirmInterface):
                 if result:
                     count_delete_task += 1
 
-            except requests.exceptions.HTTPError as e:
+            except Exception:  # pylint: disable=broad-except
                 logger.warning(f"task_id='{task_id}'の削除に失敗しました。", exc_info=True)
                 continue
 
