@@ -91,13 +91,14 @@ class CompleteTasksMain(AbstractCommandLineWithConfirmInterface):
                 "phase": task.phase.value,
                 "phase_stage": task.phase_stage,
                 "account_id": self.service.api.account_id,
+                "comment_type": "inspection",
                 "comment_node": {"root_comment_id": i["comment_id"], "_type": "Reply"},
                 "_type": "Put",
             }
 
         request_body = [to_req_inspection(e) for e in unanswered_comment_list]
-        
-        return self.service.api.batch_update_inspections(
+
+        return self.service.api.batch_update_comments(
             task.project_id, task.task_id, input_data_id, request_body=request_body
         )[0]
 
@@ -225,7 +226,7 @@ class CompleteTasksMain(AbstractCommandLineWithConfirmInterface):
             answered_comment = first_true(
                 comment_list,
                 pred=lambda e: e["comment_node"]["_type"] == "Reply"
-                and e["root_comment_id"] == parent_comment_id
+                and e["comment_node"]["root_comment_id"] == parent_comment_id
                 and dateutil.parser.parse(e["created_datetime"]) >= dateutil.parser.parse(task_started_datetime),
             )
             return answered_comment is not None
@@ -235,7 +236,11 @@ class CompleteTasksMain(AbstractCommandLineWithConfirmInterface):
         )
         # 未処置の検査コメント
         unprocessed_inspection_list = [
-            e for e in comment_list if e["comment_type"] == "inspection" and e["comment_node"]["status"] == "open"
+            e
+            for e in comment_list
+            if e["comment_type"] == "inspection"
+            and e["comment_node"]["_type"] == "Root"
+            and e["comment_node"]["status"] == "open"
         ]
 
         unanswered_comment_list = [
