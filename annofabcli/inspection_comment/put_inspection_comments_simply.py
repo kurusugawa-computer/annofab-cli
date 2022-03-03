@@ -152,9 +152,7 @@ class PutInspectionCommentsSimplyMain(AbstractCommandLineWithConfirmInterface):
 
         try:
             # 検査コメントを付与する
-            request_body = self._create_request_body(
-                task=changed_task, comment_info=comment_info
-            )
+            request_body = self._create_request_body(task=changed_task, comment_info=comment_info)
             self.service.api.batch_update_comments(self.project_id, task_id, input_data_id, request_body=request_body)
             logger.debug(f"{logging_prefix} : task_id={task_id} のタスクに検査コメントを付与しました。")
             return True
