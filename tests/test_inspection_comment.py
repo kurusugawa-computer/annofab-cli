@@ -72,6 +72,17 @@ class TestCommandLine:
 
         main(["inspection_comment", "put", "--project_id", project_id, "--json", json.dumps(dict_comments), "--yes"])
 
-
     def test_put_inspection_comment_simply(self):
-        main(["inspection_comment", "put_simply", "--project_id", project_id, "--task_id",  task_id, "--comment", "annofab-cli 自動テスト", "--yes"])
+        main(
+            [
+                "inspection_comment",
+                "put_simply",
+                "--project_id",
+                project_id,
+                "--task_id",
+                task_id,
+                "--comment",
+                "annofab-cli 自動テスト",
+                "--yes",
+            ]
+        )
