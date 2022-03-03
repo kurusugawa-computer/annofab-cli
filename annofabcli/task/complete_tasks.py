@@ -96,6 +96,7 @@ class CompleteTasksMain(AbstractCommandLineWithConfirmInterface):
             }
 
         request_body = [to_req_inspection(e) for e in unanswered_comment_list]
+        
         return self.service.api.batch_update_inspections(
             task.project_id, task.task_id, input_data_id, request_body=request_body
         )[0]
@@ -234,7 +235,7 @@ class CompleteTasksMain(AbstractCommandLineWithConfirmInterface):
         )
         # 未処置の検査コメント
         unprocessed_inspection_list = [
-            e for e in comment_list if e["comment_type"] == "inspection" and e["comment_type"]["status"] == "open"
+            e for e in comment_list if e["comment_type"] == "inspection" and e["comment_node"]["status"] == "open"
         ]
 
         unanswered_comment_list = [
@@ -397,8 +398,7 @@ class CompleteTasksMain(AbstractCommandLineWithConfirmInterface):
                 return self.complete_task_for_inspection_acceptance_phase(task, inspection_status=inspection_status)
 
         except Exception as e:  # pylint: disable=broad-except
-            logger.warning(f"{task_id}: {task.phase} フェーズを完了状態にするのに失敗しました。")
-            logger.warning(e)
+            logger.warning(f"{task_id}: {task.phase} フェーズを完了状態にするのに失敗しました。", exc_info=True)
             new_task: Task = Task.from_dict(self.service.wrapper.get_task_or_none(project_id, task_id))
             if new_task.status == TaskStatus.WORKING and new_task.account_id == self.service.api.account_id:
                 self.facade.change_to_break_phase(project_id, task_id)
