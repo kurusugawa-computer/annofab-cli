@@ -59,6 +59,7 @@ class RejectTasksMain(AbstractCommandLineWithConfirmInterface):
             {
                 "comment_id": str(uuid.uuid4()),
                 "phase": task["phase"],
+                "phase_stage": task["phase_stage"],
                 "account_id": self.service.api.account_id,
                 "comment_type": "inspection",
                 "comment": inspection_comment,

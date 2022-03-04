@@ -69,7 +69,7 @@ class AddInspectionCommentsMain(AbstractCommandLineWithConfirmInterface):
     def _create_request_body(
         self, task: Dict[str, Any], input_data_id: str, comments: List[AddedComment]
     ) -> List[Dict[str, Any]]:
-        """batch_update_inspections に渡すリクエストボディを作成する。"""
+        """batch_update_comments に渡すリクエストボディを作成する。"""
 
         def _create_dict_annotation_id() -> Dict[str, str]:
             content, _ = self.service.api.get_editor_annotation(self.project_id, task["task_id"], input_data_id)
@@ -96,7 +96,7 @@ class AddInspectionCommentsMain(AbstractCommandLineWithConfirmInterface):
                     "_type": "Root",
                 },
                 "phrases": comment.phrases,
-                "_type": "Put",
+                # "_type": "Put",
             }
 
         return [_convert(e) for e in comments]
