@@ -69,7 +69,7 @@ class AddInspectionCommentsMain(AbstractCommandLineWithConfirmInterface):
     def _create_request_body(
         self, task: Dict[str, Any], input_data_id: str, comments: List[AddedComment]
     ) -> List[Dict[str, Any]]:
-        """batch_update_inspections に渡すリクエストボディを作成する。"""
+        """batch_update_comments に渡すリクエストボディを作成する。"""
 
         def _create_dict_annotation_id() -> Dict[str, str]:
             content, _ = self.service.api.get_editor_annotation(self.project_id, task["task_id"], input_data_id)
@@ -80,24 +80,23 @@ class AddInspectionCommentsMain(AbstractCommandLineWithConfirmInterface):
 
         def _convert(comment: AddedComment) -> Dict[str, Any]:
             return {
-                "data": {
-                    "project_id": self.project_id,
-                    "comment": comment.comment,
-                    "task_id": task["task_id"],
-                    "input_data_id": input_data_id,
-                    "inspection_id": str(uuid.uuid4()),
-                    "phase": task["phase"],
-                    "commenter_account_id": self.service.api.account_id,
+                "comment_id": str(uuid.uuid4()),
+                "phase": task["phase"],
+                "phase_stage": task["phase_stage"],
+                "account_id": self.service.api.account_id,
+                "comment_type": "inspection",
+                "comment": comment.comment,
+                "comment_node": {
                     "data": comment.data,
                     "annotation_id": comment.annotation_id,
-                    "phrases": comment.phrases,
-                    "status": "annotator_action_required",
-                    "created_datetime": task["updated_datetime"],
                     "label_id": dict_annotation_id_label_id.get(comment.annotation_id)
                     if comment.annotation_id is not None
                     else None,
+                    "status": "open",
+                    "_type": "Root",
                 },
-                "_type": "Put",
+                "phrases": comment.phrases,
+                # "_type": "Put",
             }
 
         return [_convert(e) for e in comments]
@@ -196,7 +195,7 @@ class AddInspectionCommentsMain(AbstractCommandLineWithConfirmInterface):
                 request_body = self._create_request_body(
                     task=changed_task, input_data_id=input_data_id, comments=comments
                 )
-                self.service.api.batch_update_inspections(
+                self.service.api.batch_update_comments(
                     self.project_id, task_id, input_data_id, request_body=request_body
                 )
                 added_comments_count += 1

@@ -1,3 +1,5 @@
+from __future__ import annotations
+
 import argparse
 import logging
 import multiprocessing
@@ -10,7 +12,7 @@ import annofabapi.utils
 import dateutil
 import requests
 from annofabapi.dataclass.task import Task
-from annofabapi.models import Inspection, InspectionStatus, ProjectMemberRole, TaskPhase, TaskStatus
+from annofabapi.models import CommentStatus, Inspection, ProjectMemberRole, TaskPhase, TaskStatus
 from more_itertools import first_true
 
 import annofabcli
@@ -86,25 +88,19 @@ class CompleteTasksMain(AbstractCommandLineWithConfirmInterface):
 
         def to_req_inspection(i: Inspection) -> Dict[str, Any]:
             return {
-                "data": {
-                    "project_id": task.project_id,
-                    "comment": reply_comment,
-                    "task_id": task.task_id,
-                    "input_data_id": input_data_id,
-                    "inspection_id": str(uuid.uuid4()),
-                    "phase": task.phase.value,
-                    "phase_stage": task.phase_stage,
-                    "commenter_account_id": self.service.api.account_id,
-                    "data": i["data"],
-                    "parent_inspection_id": i["inspection_id"],
-                    "status": InspectionStatus.NO_CORRECTION_REQUIRED.value,
-                    "created_datetime": task.updated_datetime,
-                },
+                "comment": reply_comment,
+                "comment_id": str(uuid.uuid4()),
+                "phase": task.phase.value,
+                "phase_stage": task.phase_stage,
+                "account_id": self.service.api.account_id,
+                "comment_type": "inspection",
+                "comment_node": {"root_comment_id": i["comment_id"], "_type": "Reply"},
                 "_type": "Put",
             }
 
         request_body = [to_req_inspection(e) for e in unanswered_comment_list]
-        return self.service.api.batch_update_inspections(
+
+        return self.service.api.batch_update_comments(
             task.project_id, task.task_id, input_data_id, request_body=request_body
         )[0]
 
@@ -112,32 +108,38 @@ class CompleteTasksMain(AbstractCommandLineWithConfirmInterface):
         self,
         task: Task,
         input_data_id: str,
-        inspection_list: List[Inspection],
-        inspection_status: InspectionStatus,
+        comment_list: List[dict[str, Any]],
+        comment_status: CommentStatus,
     ):
 
-        if inspection_list is None or len(inspection_list) == 0:
+        if comment_list is None or len(comment_list) == 0:
             logger.warning(f"変更対象の検査コメントはなかった。task_id = {task.task_id}, input_data_id = {input_data_id}")
             return
 
-        target_inspection_id_list = [inspection["inspection_id"] for inspection in inspection_list]
+        def to_req_inspection(comment: dict[str, Any]) -> dict[str, Any]:
+            tmp = {
+                key: comment[key]
+                for key in [
+                    "comment",
+                    "comment_id",
+                    "phase",
+                    "phase_stage",
+                    "account_id",
+                    "comment_type",
+                    "comment_node",
+                    "phrases",
+                    "datetime_for_sorting",
+                ]
+            }
+            tmp["_type"] = "Put"
+            tmp["comment_node"]["status"] = comment_status.value
+            return tmp
 
-        def filter_inspection(arg_inspection: Inspection) -> bool:
-            """
-            statusを変更する検査コメントの条件。
-            """
+        request_body = [to_req_inspection(e) for e in comment_list]
 
-            return arg_inspection["inspection_id"] in target_inspection_id_list
+        self.service.api.batch_update_comments(task.project_id, task.task_id, input_data_id, request_body=request_body)
 
-        self.service.wrapper.update_status_of_inspections(
-            task.project_id,
-            task.task_id,
-            input_data_id,
-            filter_inspection=filter_inspection,
-            inspection_status=inspection_status,
-            updated_datetime=task.updated_datetime,
-        )
-        logger.debug(f"{task.task_id}, {input_data_id}, {len(inspection_list)}件 検査コメントの状態を変更")
+        logger.debug(f"{task.task_id}, {input_data_id}, {len(comment_list)}件 検査コメントの状態を変更")
 
     def get_unprocessed_inspection_list(self, task: Task, input_data_id: str) -> List[Inspection]:
         """
@@ -153,32 +155,18 @@ class CompleteTasksMain(AbstractCommandLineWithConfirmInterface):
         Returns:
 
         """
-        inspectin_list, _ = self.service.api.get_inspections(task.project_id, task.task_id, input_data_id)
+        comment_list, _ = self.service.api.get_comments(
+            task.project_id, task.task_id, input_data_id, query_params={"v": "2"}
+        )
         return [
             e
-            for e in inspectin_list
-            if e["status"] == InspectionStatus.ANNOTATOR_ACTION_REQUIRED.value
+            for e in comment_list
+            if e["comment_type"] == "inspection"
             and e["phase"] == task.phase.value
             and e["phase_stage"] == task.phase_stage
+            and e["comment_node"]["_type"] == "Root"
+            and e["comment_node"]["status"] == "open"
         ]
-
-    def get_unprocessed_inspection_list_by_task_id(
-        self, project_id: str, task: Task, target_phase: TaskPhase, target_phase_stage: int
-    ) -> List[Inspection]:
-        all_inspection_list = []
-        for input_data_id in task.input_data_id_list:
-            inspectins, _ = self.service.api.get_inspections(project_id, task.task_id, input_data_id)
-            all_inspection_list.extend(
-                [
-                    e
-                    for e in inspectins
-                    if e["status"] == InspectionStatus.ANNOTATOR_ACTION_REQUIRED.value
-                    and e["phase"] == target_phase.value
-                    and e["phase_stage"] == target_phase_stage
-                ]
-            )
-
-        return all_inspection_list
 
     def change_to_working_status(self, task: Task) -> Task:
         """
@@ -214,7 +202,7 @@ class CompleteTasksMain(AbstractCommandLineWithConfirmInterface):
 
         """
 
-        def exists_answered_comment(parent_inspection_id: str) -> bool:
+        def exists_answered_comment(parent_comment_id: str) -> bool:
             """
             回答済の返信コメントがあるかどうか
 
@@ -228,23 +216,29 @@ class CompleteTasksMain(AbstractCommandLineWithConfirmInterface):
                 # タスク未着手状態なので、回答済のコメントはない
                 return False
             task_started_datetime = task.started_datetime
+            # 教師付フェーズになった日時より、後に付与された返信コメントを取得する
             answered_comment = first_true(
-                inspection_list,
-                pred=lambda e: e["parent_inspection_id"] == parent_inspection_id
+                comment_list,
+                pred=lambda e: e["comment_node"]["_type"] == "Reply"
+                and e["comment_node"]["root_comment_id"] == parent_comment_id
                 and dateutil.parser.parse(e["created_datetime"]) >= dateutil.parser.parse(task_started_datetime),
             )
             return answered_comment is not None
 
-        inspection_list, _ = self.service.api.get_inspections(task.project_id, task.task_id, input_data_id)
+        comment_list, _ = self.service.api.get_comments(
+            task.project_id, task.task_id, input_data_id, query_params={"v": "2"}
+        )
         # 未処置の検査コメント
         unprocessed_inspection_list = [
             e
-            for e in inspection_list
-            if e["parent_inspection_id"] is None and e["status"] == InspectionStatus.ANNOTATOR_ACTION_REQUIRED.value
+            for e in comment_list
+            if e["comment_type"] == "inspection"
+            and e["comment_node"]["_type"] == "Root"
+            and e["comment_node"]["status"] == "open"
         ]
 
         unanswered_comment_list = [
-            e for e in unprocessed_inspection_list if not exists_answered_comment(e["inspection_id"])
+            e for e in unprocessed_inspection_list if not exists_answered_comment(e["comment_id"])
         ]
         return unanswered_comment_list
 
@@ -307,7 +301,7 @@ class CompleteTasksMain(AbstractCommandLineWithConfirmInterface):
     def complete_task_for_inspection_acceptance_phase(
         self,
         task: Task,
-        inspection_status: Optional[InspectionStatus] = None,
+        inspection_status: Optional[CommentStatus] = None,
     ) -> bool:
         unprocessed_inspection_list_dict: Dict[str, List[Inspection]] = {}
         for input_data_id in task.input_data_id_list:
@@ -343,8 +337,8 @@ class CompleteTasksMain(AbstractCommandLineWithConfirmInterface):
                 self.update_status_of_inspections(
                     changed_task,
                     input_data_id,
-                    inspection_list=unprocessed_inspection_list,
-                    inspection_status=inspection_status,
+                    comment_list=unprocessed_inspection_list,
+                    comment_status=inspection_status,
                 )
 
             self.facade.complete_task(task.project_id, task.task_id)
@@ -375,7 +369,7 @@ class CompleteTasksMain(AbstractCommandLineWithConfirmInterface):
         target_phase: TaskPhase,
         target_phase_stage: int,
         reply_comment: Optional[str] = None,
-        inspection_status: Optional[InspectionStatus] = None,
+        inspection_status: Optional[CommentStatus] = None,
         task_query: Optional[TaskQuery] = None,
         task_index: Optional[int] = None,
     ) -> bool:
@@ -402,9 +396,8 @@ class CompleteTasksMain(AbstractCommandLineWithConfirmInterface):
             else:
                 return self.complete_task_for_inspection_acceptance_phase(task, inspection_status=inspection_status)
 
-        except Exception as e:  # pylint: disable=broad-except
-            logger.warning(f"{task_id}: {task.phase} フェーズを完了状態にするのに失敗しました。")
-            logger.warning(e)
+        except Exception:  # pylint: disable=broad-except
+            logger.warning(f"{task_id}: {task.phase} フェーズを完了状態にするのに失敗しました。", exc_info=True)
             new_task: Task = Task.from_dict(self.service.wrapper.get_task_or_none(project_id, task_id))
             if new_task.status == TaskStatus.WORKING and new_task.account_id == self.service.api.account_id:
                 self.facade.change_to_break_phase(project_id, task_id)
@@ -417,7 +410,7 @@ class CompleteTasksMain(AbstractCommandLineWithConfirmInterface):
         target_phase: TaskPhase,
         target_phase_stage: int,
         reply_comment: Optional[str] = None,
-        inspection_status: Optional[InspectionStatus] = None,
+        inspection_status: Optional[CommentStatus] = None,
         task_query: Optional[TaskQuery] = None,
     ) -> bool:
         task_index, task_id = tpl
@@ -439,7 +432,7 @@ class CompleteTasksMain(AbstractCommandLineWithConfirmInterface):
         target_phase: TaskPhase,
         target_phase_stage: int,
         reply_comment: Optional[str] = None,
-        inspection_status: Optional[InspectionStatus] = None,
+        inspection_status: Optional[CommentStatus] = None,
         task_query: Optional[TaskQuery] = None,
         parallelism: Optional[int] = None,
     ):
@@ -528,7 +521,7 @@ class CompleteTasks(AbstractCommandLineInterface):
             sys.exit(COMMAND_LINE_ERROR_STATUS_CODE)
 
         task_id_list = annofabcli.common.cli.get_list_from_args(args.task_id)
-        inspection_status = InspectionStatus(args.inspection_status) if args.inspection_status is not None else None
+        inspection_status = CommentStatus(args.inspection_status) if args.inspection_status is not None else None
 
         project_id = args.project_id
         super().validate_project(project_id, [ProjectMemberRole.OWNER, ProjectMemberRole.ACCEPTER])
@@ -583,13 +576,13 @@ def parse_args(parser: argparse.ArgumentParser):
     parser.add_argument(
         "--inspection_status",
         type=str,
-        choices=[InspectionStatus.ERROR_CORRECTED.value, InspectionStatus.NO_CORRECTION_REQUIRED.value],
+        choices=[CommentStatus.RESOLVED.value, CommentStatus.CLOSED.value],
         help=(
             "操作対象のフェーズ未処置の検査コメントをどの状態に変更するかを指定します。"
             f"'--phase'に'{TaskPhase.INSPECTION.value}'または'{TaskPhase.ACCEPTANCE.value}' を指定したときのみ有効なオプションです。"
             "指定しない場合、未処置の検査コメントが含まれるタスクはスキップします。"
-            f"{InspectionStatus.ERROR_CORRECTED.value}: 対応完了,"
-            f"{InspectionStatus.NO_CORRECTION_REQUIRED.value}: 対応不要"
+            f"{CommentStatus.RESOLVED.value}: 対応完了,"
+            f"{CommentStatus.CLOSED.value}: 対応不要"
         ),
     )
 
