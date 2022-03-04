@@ -80,23 +80,22 @@ class AddInspectionCommentsMain(AbstractCommandLineWithConfirmInterface):
 
         def _convert(comment: AddedComment) -> Dict[str, Any]:
             return {
-                "data": {
-                    "project_id": self.project_id,
-                    "comment": comment.comment,
-                    "task_id": task["task_id"],
-                    "input_data_id": input_data_id,
-                    "inspection_id": str(uuid.uuid4()),
-                    "phase": task["phase"],
-                    "commenter_account_id": self.service.api.account_id,
+                "comment_id": str(uuid.uuid4()),
+                "phase": task["phase"],
+                "phase_stage": task["phase_stage"],
+                "account_id": self.service.api.account_id,
+                "comment_type": "inspection",
+                "comment": comment.comment,
+                "comment_node": {
                     "data": comment.data,
                     "annotation_id": comment.annotation_id,
-                    "phrases": comment.phrases,
-                    "status": "annotator_action_required",
-                    "created_datetime": task["updated_datetime"],
                     "label_id": dict_annotation_id_label_id.get(comment.annotation_id)
                     if comment.annotation_id is not None
                     else None,
+                    "status": "open",
+                    "_type": "Root",
                 },
+                "phrases": comment.phrases,
                 "_type": "Put",
             }
 
@@ -196,7 +195,7 @@ class AddInspectionCommentsMain(AbstractCommandLineWithConfirmInterface):
                 request_body = self._create_request_body(
                     task=changed_task, input_data_id=input_data_id, comments=comments
                 )
-                self.service.api.batch_update_inspections(
+                self.service.api.batch_update_comments(
                     self.project_id, task_id, input_data_id, request_body=request_body
                 )
                 added_comments_count += 1

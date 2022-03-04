@@ -59,11 +59,10 @@ class PutInspectionCommentsSimplyMain(AbstractCommandLineWithConfirmInterface):
                 "comment": comment.comment,
                 "comment_id": str(uuid.uuid4()),
                 "phase": task["phase"],
+                "phase_stage": task["phase_stage"],
+                "comment_type": "inspection",
                 "account_id": self.service.api.account_id,
-                "comment_node": {
-                    "data": comment.data,
-                    "status": "open",
-                },
+                "comment_node": {"data": comment.data, "status": "open", "_type": "Root"},
                 "phrases": comment.phrases,
                 "_type": "Put",
             }
