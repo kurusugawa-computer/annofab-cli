@@ -1,7 +1,6 @@
 from __future__ import annotations
 
 import argparse
-import copy
 import logging
 import multiprocessing
 import sys
@@ -118,7 +117,21 @@ class CompleteTasksMain(AbstractCommandLineWithConfirmInterface):
             return
 
         def to_req_inspection(comment: dict[str, Any]) -> dict[str, Any]:
-            tmp = copy.deepcopy(comment)
+            tmp = {
+                key: comment[key]
+                for key in [
+                    "comment",
+                    "comment_id",
+                    "phase",
+                    "phase_stage",
+                    "account_id",
+                    "comment_type",
+                    "comment_node",
+                    "phrases",
+                    "datetime_for_sorting",
+                ]
+            }
+            tmp["_type"] = "Put"
             tmp["comment_node"]["status"] = comment_status.value
             return tmp
 

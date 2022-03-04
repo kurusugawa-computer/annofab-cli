@@ -56,15 +56,15 @@ Examples
 未処置の検査コメントがあるタスクも合格にするには、``--inspection_status`` で未処置の検査コメントのステータスを変える必要があります。
 検査コメントは以下のステータスに変更できます。
 
-* ``error_corrected`` : 対応完了
-* ``no_correction_required`` : 対応不要
+* ``resolved`` : 対応完了
+* ``closed`` : 対応不要
 
 以下のコマンドは、未処置の検査コメントは「対応不要」状態にしてから、受入フェーズのタスクを合格にします。
 
 .. code-block::
 
     $ annofabcli  task complete --project_id prj1 --task_id file://task_id.txt \
-    --phase acceptance --inspection_status no_correction_required
+    --phase acceptance --inspection_status closed
 
 
 
