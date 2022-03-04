@@ -10,7 +10,7 @@ import annofabapi.utils
 import dateutil
 import requests
 from annofabapi.dataclass.task import Task
-from annofabapi.models import Inspection, InspectionStatus, ProjectMemberRole, TaskPhase, TaskStatus
+from annofabapi.models import Inspection, CommentStatus, ProjectMemberRole, TaskPhase, TaskStatus
 from more_itertools import first_true
 
 import annofabcli
@@ -106,32 +106,24 @@ class CompleteTasksMain(AbstractCommandLineWithConfirmInterface):
         self,
         task: Task,
         input_data_id: str,
-        inspection_list: List[Inspection],
-        inspection_status: InspectionStatus,
+        comment_list: List[dict[str,Any]],
+        comment_status: CommentStatus,
     ):
 
-        if inspection_list is None or len(inspection_list) == 0:
+        if comment_list is None or len(comment_list) == 0:
             logger.warning(f"変更対象の検査コメントはなかった。task_id = {task.task_id}, input_data_id = {input_data_id}")
             return
 
-        target_inspection_id_list = [inspection["inspection_id"] for inspection in inspection_list]
+        def to_req_inspection(comment:dict[str,Any]) -> dict[str, Any]:
+            tmp = copy.deepcopy(comment)
+            tmp["comment_node"]["status"] = comment_status.value
+            return tmp
 
-        def filter_inspection(arg_inspection: Inspection) -> bool:
-            """
-            statusを変更する検査コメントの条件。
-            """
+        request_body = [to_req_inspection(e) for e in comment_list]
 
-            return arg_inspection["inspection_id"] in target_inspection_id_list
+        self.service.api.bach_update_comments(task.project_id, task.task_id, input_data_id, request_body=request_body)
 
-        self.service.wrapper.update_status_of_inspections(
-            task.project_id,
-            task.task_id,
-            input_data_id,
-            filter_inspection=filter_inspection,
-            inspection_status=inspection_status,
-            updated_datetime=task.updated_datetime,
-        )
-        logger.debug(f"{task.task_id}, {input_data_id}, {len(inspection_list)}件 検査コメントの状態を変更")
+        logger.debug(f"{task.task_id}, {input_data_id}, {len(comment_list)}件 検査コメントの状態を変更")
 
     def get_unprocessed_inspection_list(self, task: Task, input_data_id: str) -> List[Inspection]:
         """
@@ -147,13 +139,15 @@ class CompleteTasksMain(AbstractCommandLineWithConfirmInterface):
         Returns:
 
         """
-        inspectin_list, _ = self.service.api.get_inspections(task.project_id, task.task_id, input_data_id)
+        comment_list, _ = self.service.api.get_comments(task.project_id, task.task_id, input_data_id, query_params={"v": "2"})
         return [
             e
-            for e in inspectin_list
-            if e["status"] == InspectionStatus.ANNOTATOR_ACTION_REQUIRED.value
+            for e in comment_list
+            if e["comment_type"] == "inspection"
             and e["phase"] == task.phase.value
             and e["phase_stage"] == task.phase_stage
+            and e["comment_node"]["_type"] == "Root"
+            and e["comment_node"]["status"] == "open"
         ]
 
     def get_unprocessed_inspection_list_by_task_id(
@@ -307,7 +301,7 @@ class CompleteTasksMain(AbstractCommandLineWithConfirmInterface):
     def complete_task_for_inspection_acceptance_phase(
         self,
         task: Task,
-        inspection_status: Optional[InspectionStatus] = None,
+        inspection_status: Optional[CommentStatus] = None,
     ) -> bool:
         unprocessed_inspection_list_dict: Dict[str, List[Inspection]] = {}
         for input_data_id in task.input_data_id_list:
@@ -344,7 +338,7 @@ class CompleteTasksMain(AbstractCommandLineWithConfirmInterface):
                     changed_task,
                     input_data_id,
                     inspection_list=unprocessed_inspection_list,
-                    inspection_status=inspection_status,
+                    comment_status=inspection_status,
                 )
 
             self.facade.complete_task(task.project_id, task.task_id)
