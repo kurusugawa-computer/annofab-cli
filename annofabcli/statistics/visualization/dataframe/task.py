@@ -241,7 +241,7 @@ class Task:
             "acceptance_is_skipped",
             "diff_days_to_first_inspection_started",
             "diff_days_to_first_acceptance_started",
-            "diff_days_to_first_acceptance_completed"
+            "diff_days_to_first_acceptance_completed",
         ]
 
         print_csv(self.df[columns], str(output_file))
