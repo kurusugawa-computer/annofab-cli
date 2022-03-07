@@ -22,15 +22,24 @@ Examples
 --------------------------
 
 ``--dir`` に ``annofabcli statistics visualize`` コマンドの出力先ディレクトリのパスを指定してください。
-
+``--dir`` に指定したディレクトリ配下に各プロジェクトディレクトリが存在している状態です。
 
 
 .. code-block::
 
-    $ annofabcli statistics visualize --project_id prj1 --output_dir project_dir/
+    $ annofabcli statistics visualize --project_id prj1 prj2 --output_dir visualize_out/
 
-    $ annofabcli stat_visualization mask_user_info --dir project_dir/ --output_dir mask_dir/
+    $ tree out
+    visualize_out
+    ├── project_1_name
+    │   ├── メンバごとの生産性と品質.csv
+    │   ├── ...
+    ├── project_2_name
+    │   ├── メンバごとの生産性と品質.csv
+    │   ├── ...
+    ├── ...
 
+    $ annofabcli stat_visualization mask_user_info --dir visualize_out/ --output_dir mask_dir/
 
 
 ``--not_masked_user_id`` には「マスクしないユーザ」のuser_idを指定できます。
@@ -38,7 +47,7 @@ Examples
 
 .. code-block::
 
-    $ annofabcli stat_visualization mask_user_info --dir project_dir/ --output_dir mask_dir/ \
+    $ annofabcli stat_visualization mask_user_info --dir visualize_out/ --output_dir mask_dir/ \
      --not_masked_user_id alice
 
 
@@ -48,11 +57,8 @@ Examples
 
 .. code-block::
 
-    $ annofabcli stat_visualization mask_user_info --dir project_dir/ --output_dir mask_dir/ \
+    $ annofabcli stat_visualization mask_user_info --dir visualize_out/ --output_dir mask_dir/ \
      --not_masked_biography Japan
-
-
-
 
 
 
@@ -63,7 +69,7 @@ Examples
 
 .. code-block::
 
-    $ annofabcli stat_visualization mask_user_info --dir project_dir/ --output_dir mask_dir/ \
+    $ annofabcli stat_visualization mask_user_info --dir visualize_out/ --output_dir mask_dir/ \
     --minimal
 
 ユーザ情報が記載されている以下のファイルを出力します。ユーザ情報が記載されていないファイル( ``日毎の生産量と生産性.csv`` など)は出力しません。
@@ -72,16 +78,19 @@ Examples
 .. code-block::
 
     mask_dir
-    ├── line-graph
-    │   ├── 累積折れ線-横軸_アノテーション数-教師付者用.html
-    │   └── 累積折れ線-横軸_アノテーション数-受入者用.html
-    ├── scatter
-    │   ├── 散布図-アノテーションあたり作業時間と品質の関係-実績時間-教師付者用.html
-    │   ├── 散布図-アノテーションあたり作業時間と累計作業時間の関係-計測時間.html
-    │   ├── 散布図-アノテーションあたり作業時間と累計作業時間の関係-実績時間.html
-    │   └── 散布図-教師付者の品質と作業量の関係.html
-    ├── タスクlist.csv
-    └── メンバごとの生産性と品質.csv
+    ├── project_1_name
+        ├── line-graph
+        │   ├── 累積折れ線-横軸_アノテーション数-教師付者用.html
+        │   └── 累積折れ線-横軸_アノテーション数-受入者用.html
+        ├── scatter
+        │   ├── 散布図-アノテーションあたり作業時間と品質の関係-実績時間-教師付者用.html
+        │   ├── 散布図-アノテーションあたり作業時間と累計作業時間の関係-計測時間.html
+        │   ├── 散布図-アノテーションあたり作業時間と累計作業時間の関係-実績時間.html
+        │   └── 散布図-教師付者の品質と作業量の関係.html
+        ├── タスクlist.csv
+        └── メンバごとの生産性と品質.csv
+    ├── project_2_name
+
 
 Usage Details
 =================================
