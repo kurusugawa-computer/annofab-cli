@@ -435,10 +435,10 @@ class VisualizingStatisticsMain:
         def wrap(
             project_id: str,
         ) -> Optional[Path]:
-            project_title = self.facade.get_project_title(project_id)
-            output_project_dir = root_output_dir / get_project_output_dir(project_title)
 
             try:
+                project_title = self.facade.get_project_title(project_id)
+                output_project_dir = root_output_dir / get_project_output_dir(project_title)
                 self.visualize_statistics(
                     project_id=project_id,
                     output_project_dir=output_project_dir,
