@@ -1,4 +1,5 @@
 from __future__ import annotations
+
 import argparse
 import logging
 import sys
@@ -67,59 +68,55 @@ class ListAttributeRestrictionMain:
             return f"'{value}'"
 
     def get_restriction_text(self, attribute_id: str, condition: dict[str, Any]) -> str:
-        attribute = self.attribute_dict.get(attribute_id)
+        """制約情報のテキストを返します。
 
+        Args:
+            attribute_id (str): 属性ID
+            condition (dict[str, Any]): 制約条件
+
+        Returns:
+            str: 制約を表す文
+        """
+        type = condition["_type"]
+
+        if type == "Imply":
+            # 属性間の制約
+            premise = condition["premise"]
+            if_condition_text = self.get_restriction_text(
+                premise["additional_data_definition_id"], premise["condition"]
+            )
+            then_text = self.get_restriction_text(attribute_id, condition["condition"])
+            return f"{then_text} IF {if_condition_text}"
+
+        attribute = self.attribute_dict.get(attribute_id)
         if attribute is not None:
-            subject = f"'{AnnofabApiFacade.get_additional_data_definition_name_en(attribute)}'(id={attribute_id}, type={attribute['type']})"
+            subject = f"'{AnnofabApiFacade.get_additional_data_definition_name_en(attribute)}' (id={attribute_id}, type={attribute['type']})"
         else:
             subject = f"''(id={attribute_id})"
-
-        type = condition["_type"]
 
         if type == "CanInput":
             verb = "can input" if condition["enable"] else "can not input"
             object = ""
 
         elif type == "HasLabel":
-            verb = "has label"
+            verb = "HAS LABEL"
             object = self.get_labels_text(condition["labels"])
 
         elif type == "Equals":
-            verb = "equals"
+            verb = "EQUALS"
             object = self.get_object_for_equals_or_notequals(condition["value"], attribute)
 
         elif type == "NotEquals":
-            verb = "does not equal"
+            verb = "DOES NOT EQUAL"
             object = self.get_object_for_equals_or_notequals(condition["value"], attribute)
 
         elif type == "Matches":
-            verb = "matches"
+            verb = "MATCHES"
             object = f"'{condition['value']}'"
 
         elif type == "NotMatches":
-            verb = "does not match"
+            verb = "DOES NOT MATCH"
             object = f"'{condition['value']}'"
-
-        else:
-            pass
-            # 相関制約の話
-        # {
-        #     "additional_data_definition_id": "26874d1a-1017-46e4-bf22-131a733c7233",
-        #     "condition": {
-        #         "_type": "Imply",
-        #         "premise": {
-        #             "additional_data_definition_id": "a85ea588-fc48-48d3-a597-e97df919ab3c",
-        #             "condition": {
-        #                 "_type": "Equals",
-        #                 "value": "true"
-        #             }
-        #         },
-        #         "condition": {
-        #             "_type": "NotEquals",
-        #             "value": "true"
-        #         }
-        #     }
-        # }
 
         return f"{subject} {verb} {object}"
 

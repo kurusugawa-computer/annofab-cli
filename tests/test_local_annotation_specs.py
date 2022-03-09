@@ -2,7 +2,6 @@ import json
 import os
 from pathlib import Path
 
-from annofabcli.__main__ import main
 from annofabcli.annotation_specs.list_attribute_restriction import ListAttributeRestrictionMain
 
 # プロジェクトトップに移動する
@@ -29,5 +28,7 @@ class TestListAttributeRestrictionMain:
 
     def test_get_restriction_text(self):
         for restriction in self.annotation_specs["restrictions"]:
-            actual = self.obj.get_restriction_text(restriction["additional_data_definition_id"], restriction["condition"])
+            actual = self.obj.get_restriction_text(
+                restriction["additional_data_definition_id"], restriction["condition"]
+            )
             print(actual)
