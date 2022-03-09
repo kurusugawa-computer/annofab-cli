@@ -86,7 +86,7 @@ class ListAttributeRestrictionMain:
                 premise["additional_data_definition_id"], premise["condition"]
             )
             then_text = self.get_restriction_text(attribute_id, condition["condition"])
-            return f"{then_text} IF {if_condition_text}"
+            return f"{then_text} if {if_condition_text}"
 
         attribute = self.attribute_dict.get(attribute_id)
         if attribute is not None:
@@ -99,26 +99,29 @@ class ListAttributeRestrictionMain:
             object = ""
 
         elif type == "HasLabel":
-            verb = "HAS LABEL"
+            verb = "has label"
             object = self.get_labels_text(condition["labels"])
 
         elif type == "Equals":
-            verb = "EQUALS"
+            verb = "equals"
             object = self.get_object_for_equals_or_notequals(condition["value"], attribute)
 
         elif type == "NotEquals":
-            verb = "DOES NOT EQUAL"
+            verb = "does not equal"
             object = self.get_object_for_equals_or_notequals(condition["value"], attribute)
 
         elif type == "Matches":
-            verb = "MATCHES"
+            verb = "matches"
             object = f"'{condition['value']}'"
 
         elif type == "NotMatches":
-            verb = "DOES NOT MATCH"
+            verb = "does not match"
             object = f"'{condition['value']}'"
 
         return f"{subject} {verb} {object}"
+
+    def get_restriction_text_list(self, restrictions: list[dict[str,Any]], target_attribute_names:Optional[Collection[str]]=None, target_label_names:Optional[Collection[str]]=None) -> list[str]:
+        
 
 
 class ListAttributeRestriction(AbstractCommandLineInterface):
