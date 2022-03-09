@@ -1,0 +1,209 @@
+{
+    "labels": [{
+            "label_id": "car_label_id",
+            "label_name": {
+                "messages": [{
+                        "lang": "ja-JP",
+                        "message": "car"
+                    },
+                    {
+                        "lang": "en-US",
+                        "message": "car"
+                    }
+                ],
+                "default_lang": "ja-JP"
+            },
+            "keybind": [],
+            "annotation_type": "bounding_box",
+            "bounding_box_metadata": null,
+            "segmentation_metadata": null,
+            "additional_data_definitions": [
+                "54fa5e97-6f88-49a4-aeb0-a91a15d11528",
+                "15235360-4f46-42ac-927d-0e046bf52ddd"
+            ],
+            "color": {
+                "red": 255,
+                "green": 0,
+                "blue": 0
+            },
+            "annotation_editor_feature": {
+                "append": false,
+                "erase": false,
+                "freehand": false,
+                "rectangle_fill": false,
+                "polygon_fill": false,
+                "fill_near": false
+            },
+            "allow_out_of_image_bounds": true,
+            "metadata": {}
+        },
+        {
+            "label_id": "40f7796b-3722-4eed-9c0c-04a27f9165d2",
+            "label_name": {
+                "messages": [{
+                        "lang": "ja-JP",
+                        "message": "bike"
+                    },
+                    {
+                        "lang": "en-US",
+                        "message": "bike"
+                    }
+                ],
+                "default_lang": "ja-JP"
+            },
+            "keybind": [],
+            "annotation_type": "bounding_box",
+            "bounding_box_metadata": null,
+            "segmentation_metadata": null,
+            "additional_data_definitions": [],
+            "color": {
+                "red": 67,
+                "green": 1,
+                "blue": 140
+            },
+            "annotation_editor_feature": {
+                "append": false,
+                "erase": false,
+                "freehand": false,
+                "rectangle_fill": false,
+                "polygon_fill": false,
+                "fill_near": false
+            },
+            "allow_out_of_image_bounds": true,
+            "metadata": {}
+        },
+        {
+            "label_id": "22b5189b-af7b-4d9c-83a5-b92f122170ec",
+            "label_name": {
+                "messages": [{
+                        "lang": "ja-JP",
+                        "message": "bus"
+                    },
+                    {
+                        "lang": "en-US",
+                        "message": "bus"
+                    }
+                ],
+                "default_lang": "ja-JP"
+            },
+            "keybind": [],
+            "annotation_type": "bounding_box",
+            "bounding_box_metadata": null,
+            "segmentation_metadata": null,
+            "additional_data_definitions": [],
+            "color": {
+                "red": 93,
+                "green": 42,
+                "blue": 123
+            },
+            "annotation_editor_feature": {
+                "append": false,
+                "erase": false,
+                "freehand": false,
+                "rectangle_fill": false,
+                "polygon_fill": false,
+                "fill_near": false
+            },
+            "allow_out_of_image_bounds": true,
+            "metadata": {}
+        }
+    ],
+    "additionals": [{
+            "additional_data_definition_id": "54fa5e97-6f88-49a4-aeb0-a91a15d11528",
+            "read_only": false,
+            "name": {
+                "messages": [{
+                        "lang": "ja-JP",
+                        "message": "comment"
+                    },
+                    {
+                        "lang": "en-US",
+                        "message": "comment"
+                    }
+                ],
+                "default_lang": "ja-JP"
+            },
+            "keybind": [],
+            "type": "comment",
+            "default": "",
+            "choices": [],
+            "metadata": {}
+        },
+        {
+            "additional_data_definition_id": "15235360-4f46-42ac-927d-0e046bf52ddd",
+            "read_only": false,
+            "name": {
+                "messages": [{
+                        "lang": "ja-JP",
+                        "message": "link"
+                    },
+                    {
+                        "lang": "en-US",
+                        "message": "link"
+                    }
+                ],
+                "default_lang": "ja-JP"
+            },
+            "keybind": [],
+            "type": "link",
+            "default": "",
+            "choices": [],
+            "metadata": {}
+        }
+    ],
+    "restrictions": [{
+            "additional_data_definition_id": "54fa5e97-6f88-49a4-aeb0-a91a15d11528",
+            "condition": {
+                "value": "",
+                "_type": "NotEquals"
+            }
+        },
+        {
+            "additional_data_definition_id": "54fa5e97-6f88-49a4-aeb0-a91a15d11528",
+            "condition": {
+                "value": "foo",
+                "_type": "Equals"
+            }
+        },
+        {
+            "additional_data_definition_id": "54fa5e97-6f88-49a4-aeb0-a91a15d11528",
+            "condition": {
+                "value": "bar",
+                "_type": "NotEquals"
+            }
+        },
+        {
+            "additional_data_definition_id": "54fa5e97-6f88-49a4-aeb0-a91a15d11528",
+            "condition": {
+                "value": "[abc]+",
+                "_type": "Matches"
+            }
+        },
+        {
+            "additional_data_definition_id": "54fa5e97-6f88-49a4-aeb0-a91a15d11528",
+            "condition": {
+                "value": "[0-9]+",
+                "_type": "NotMatches"
+            }
+        },
+        {
+            "additional_data_definition_id": "15235360-4f46-42ac-927d-0e046bf52ddd",
+            "condition": {
+                "labels": [
+                    "40f7796b-3722-4eed-9c0c-04a27f9165d2",
+                    "22b5189b-af7b-4d9c-83a5-b92f122170ec"
+                ],
+                "_type": "HasLabel"
+            }
+        }
+    ],
+    "inspection_phrases": [],
+    "comment": null,
+    "auto_marking": false,
+    "format_version": "2.1.0",
+    "last_updated_datetime": "2022-03-09T13:53:18.449+09:00",
+    "option": {
+        "can_overwrap": true
+    },
+    "metadata": {}
+}
