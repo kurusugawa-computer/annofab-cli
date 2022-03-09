@@ -15,15 +15,15 @@ from annofabcli.common.cli import (
     AbstractCommandLineInterface,
     ArgumentParser,
     build_annofabapi_resource_and_login,
+    get_list_from_args,
 )
-from annofabcli.common.enums import FormatArgument
 
 logger = logging.getLogger(__name__)
 
 
 class ListAttributeRestrictionMain:
     """
-    アノテーション仕様の制約を自然言語で出力します。
+    アノテーション仕様の制約から自然言語で書かれたメッセージを生成します。
 
     Args:
         labels: アノテーション仕様のラベル情報
@@ -90,7 +90,7 @@ class ListAttributeRestrictionMain:
 
         attribute = self.attribute_dict.get(attribute_id)
         if attribute is not None:
-            subject = f"'{AnnofabApiFacade.get_additional_data_definition_name_en(attribute)}' (id={attribute_id}, type={attribute['type']})"
+            subject = f"'{AnnofabApiFacade.get_additional_data_definition_name_en(attribute)}' (id={attribute_id}, type={attribute['type']})"  # noqa: E501
         else:
             subject = f"''(id={attribute_id})"
 
@@ -118,20 +118,98 @@ class ListAttributeRestrictionMain:
             verb = "does not match"
             object = f"'{condition['value']}'"
 
-        return f"{subject} {verb} {object}"
+        tmp = f"{subject} {verb}"
+        if object != "":
+            tmp = f"{tmp} {object}"
+        return tmp
 
-    def get_restriction_text_list(self, restrictions: list[dict[str,Any]], target_attribute_names:Optional[Collection[str]]=None, target_label_names:Optional[Collection[str]]=None) -> list[str]:
-        
+    def get_attribute_from_name(self, attribute_name: str) -> Optional[dict[str, Any]]:
+        tmp = [
+            attribute
+            for attribute in self.attribute_dict.values()
+            if AnnofabApiFacade.get_additional_data_definition_name_en(attribute) == attribute_name
+        ]
+        if len(tmp) == 1:
+            return tmp[0]
+        elif len(tmp) == 0:
+            logger.warning(f"属性名(英語)が'{attribute_name}'の属性は存在しません。")
+            return None
+        else:
+            logger.warning(f"属性名(英語)が'{attribute_name}'の属性は複数存在します。")
+            return None
+
+    def get_label_from_name(self, label_name: str) -> Optional[dict[str, Any]]:
+        tmp = [label for label in self.label_dict.values() if AnnofabApiFacade.get_label_name_en(label) == label_name]
+        if len(tmp) == 1:
+            return tmp[0]
+        elif len(tmp) == 0:
+            logger.warning(f"ラベル名(英語)が'{label_name}'のラベルは存在しません。")
+            return None
+        else:
+            logger.warning(f"ラベル名(英語)が'{label_name}'のラベルは複数存在します。")
+            return None
+
+    def get_target_attribute_ids(
+        self,
+        target_attribute_names: Optional[Collection[str]] = None,
+        target_label_names: Optional[Collection[str]] = None,
+    ) -> set[str]:
+        result: set[str] = set()
+
+        if target_attribute_names is not None:
+            tmp_attribute_list = [
+                self.get_attribute_from_name(attribute_name) for attribute_name in target_attribute_names
+            ]
+            tmp_ids = {
+                attribute["additional_data_definition_id"] for attribute in tmp_attribute_list if attribute is not None
+            }
+            result = result | tmp_ids
+
+        if target_label_names is not None:
+            tmp_label_list = [self.get_label_from_name(label_name) for label_name in target_label_names]
+            tmp_ids_list = [label["additional_data_definitions"] for label in tmp_label_list if label is not None]
+            for attribute_ids in tmp_ids_list:
+                result = result | set(attribute_ids)
+
+        return result
+
+    def get_restriction_text_list(
+        self,
+        restrictions: list[dict[str, Any]],
+        *,
+        target_attribute_names: Optional[Collection[str]] = None,
+        target_label_names: Optional[Collection[str]] = None,
+    ) -> list[str]:
+        if target_attribute_names is not None or target_label_names is not None:
+            target_attribute_ids = self.get_target_attribute_ids(
+                target_attribute_names=target_attribute_names, target_label_names=target_label_names
+            )
+            return [
+                self.get_restriction_text(e["additional_data_definition_id"], e["condition"])
+                for e in restrictions
+                if e["additional_data_definition_id"] in target_attribute_ids
+            ]
+        else:
+            return [self.get_restriction_text(e["additional_data_definition_id"], e["condition"]) for e in restrictions]
 
 
 class ListAttributeRestriction(AbstractCommandLineInterface):
-    """
-    アノテーション仕様を出力する
-    """
+    COMMON_MESSAGE = "annofabcli annotation_specs list_restriction: error:"
+
+    def get_history_id_from_before_index(self, project_id: str, before: int) -> Optional[str]:
+        histories, _ = self.service.api.get_annotation_specs_histories(project_id)
+        if before + 1 > len(histories):
+            logger.warning(f"アノテーション仕様の履歴は{len(histories)}個のため、最新より{before}個前のアノテーション仕様は見つかりませんでした。")
+            return None
+        history = histories[-(before + 1)]
+        return history["history_id"]
 
     def main(self):
-
         args = self.args
+
+        history_id = None
+        if args.history_id is not None:
+            history_id = args.history_id
 
         if args.before is not None:
             history_id = self.get_history_id_from_before_index(args.project_id, args.before)
@@ -141,13 +219,24 @@ class ListAttributeRestriction(AbstractCommandLineInterface):
                     file=sys.stderr,
                 )
                 sys.exit(COMMAND_LINE_ERROR_STATUS_CODE)
-        else:
-            # args.beforeがNoneならば、必ずargs.history_idはNoneでない
-            history_id = args.history_id
 
-        self.print_annotation_specs_label(
-            args.project_id, arg_format=args.format, output=args.output, history_id=history_id
+        query_params = {"v": "2"}
+        if history_id is not None:
+            query_params["history_id"] = history_id
+
+        annotation_specs, _ = self.service.api.get_annotation_specs(args.project_id, query_params=query_params)
+        main_obj = ListAttributeRestrictionMain(
+            labels=annotation_specs["labels"], additionals=annotation_specs["additionals"]
         )
+        target_attribute_names = get_list_from_args(args.attribute_name)
+        target_label_names = get_list_from_args(args.label_name)
+        restriction_text_list = main_obj.get_restriction_text_list(
+            annotation_specs["restrictions"],
+            target_attribute_names=target_attribute_names,
+            target_label_names=target_label_names,
+        )
+
+        annofabcli.utils.output_string("\n".join(restriction_text_list), args.output)
 
 
 def parse_args(parser: argparse.ArgumentParser):
@@ -177,18 +266,8 @@ def parse_args(parser: argparse.ArgumentParser):
         ),
     )
 
-    parser.add_argument(
-        "-f",
-        "--format",
-        type=str,
-        choices=["text", FormatArgument.PRETTY_JSON.value, FormatArgument.JSON.value],
-        default="text",
-        help=f"出力フォーマット "
-        "text: 人が見やすい形式, "
-        f"{FormatArgument.PRETTY_JSON.value}: インデントされたJSON, "
-        f"{FormatArgument.JSON.value}: フラットなJSON",
-    )
-
+    parser.add_argument("--attribute_name", type=str, nargs="+", help="指定した属性名（英語）の属性の制約を出力します。")
+    parser.add_argument("--label_name", type=str, nargs="+", help="指定したラベル名（英語）のラベルに紐づく属性の制約を出力します。")
     argument_parser.add_output()
 
     parser.set_defaults(subcommand_func=main)
