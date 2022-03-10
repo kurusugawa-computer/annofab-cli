@@ -40,7 +40,7 @@ class ListAttributeRestrictionMain:
         for label_id in label_ids:
             label = self.label_dict.get(label_id)
             label_name = AnnofabApiFacade.get_label_name_en(label) if label is not None else ""
-            label_message_list.append(f"'{label_name}' (id={label_id})")
+            label_message_list.append(f"'{label_name}' (id='{label_id}')")
 
         return ", ".join(label_message_list)
 
@@ -61,9 +61,9 @@ class ListAttributeRestrictionMain:
             choice = first_true(choices, pred=lambda e: e["choice_id"] == value)
             if choice is not None:
                 choice_name = AnnofabApiFacade.get_choice_name_en(choice)
-                return f"'{choice_name}'(id={value})"
+                return f"'{value}'(name='{choice_name}')"
             else:
-                return f"''(id={value})"
+                return f"'{value}'"
         else:
             return f"'{value}'"
 
@@ -86,36 +86,37 @@ class ListAttributeRestrictionMain:
                 premise["additional_data_definition_id"], premise["condition"]
             )
             then_text = self.get_restriction_text(attribute_id, condition["condition"])
-            return f"{then_text} if {if_condition_text}"
+            return f"{then_text} IF {if_condition_text}"
 
         attribute = self.attribute_dict.get(attribute_id)
         if attribute is not None:
-            subject = f"'{AnnofabApiFacade.get_additional_data_definition_name_en(attribute)}' (id={attribute_id}, type={attribute['type']})"  # noqa: E501
+            subject = f"'{AnnofabApiFacade.get_additional_data_definition_name_en(attribute)}' (id='{attribute_id}', type='{attribute['type']}')"  # noqa: E501
         else:
-            subject = f"''(id={attribute_id})"
+            logger.warning(f"属性IDが'{attribute_id}'の属性は存在しません。")
+            subject = f"'' (id='{attribute_id}')"
 
         if type == "CanInput":
-            verb = "can input" if condition["enable"] else "can not input"
+            verb = "CAN INPUT" if condition["enable"] else "CAN NOT INPUT"
             object = ""
 
         elif type == "HasLabel":
-            verb = "has label"
+            verb = "HAS LABEL"
             object = self.get_labels_text(condition["labels"])
 
         elif type == "Equals":
-            verb = "equals"
+            verb = "EQUALS"
             object = self.get_object_for_equals_or_notequals(condition["value"], attribute)
 
         elif type == "NotEquals":
-            verb = "does not equal"
+            verb = "DOES NOT EQUAL"
             object = self.get_object_for_equals_or_notequals(condition["value"], attribute)
 
         elif type == "Matches":
-            verb = "matches"
+            verb = "MATCHES"
             object = f"'{condition['value']}'"
 
         elif type == "NotMatches":
-            verb = "does not match"
+            verb = "DOES NOT MATCH"
             object = f"'{condition['value']}'"
 
         tmp = f"{subject} {verb}"
@@ -228,8 +229,8 @@ class ListAttributeRestriction(AbstractCommandLineInterface):
         main_obj = ListAttributeRestrictionMain(
             labels=annotation_specs["labels"], additionals=annotation_specs["additionals"]
         )
-        target_attribute_names = get_list_from_args(args.attribute_name)
-        target_label_names = get_list_from_args(args.label_name)
+        target_attribute_names = get_list_from_args(args.attribute_name) if args.attribute_name is not None else None
+        target_label_names = get_list_from_args(args.label_name) if args.label_name is not None else None
         restriction_text_list = main_obj.get_restriction_text_list(
             annotation_specs["restrictions"],
             target_attribute_names=target_attribute_names,

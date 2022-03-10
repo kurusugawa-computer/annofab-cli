@@ -32,7 +32,7 @@ class TestListAttributeRestrictionMain:
             "condition": {"value": "foo", "_type": "Equals"},
         }
         actual = self.obj.get_restriction_text(restriction["additional_data_definition_id"], restriction["condition"])
-        assert actual == "'comment' (id=54fa5e97-6f88-49a4-aeb0-a91a15d11528, type=comment) equals 'foo'"
+        assert actual == "'comment' (id='54fa5e97-6f88-49a4-aeb0-a91a15d11528', type='comment') EQUALS 'foo'"
 
     def test_get_restriction_text__equals_dropdown(self):
         restriction = {
@@ -42,7 +42,7 @@ class TestListAttributeRestrictionMain:
         actual = self.obj.get_restriction_text(restriction["additional_data_definition_id"], restriction["condition"])
         assert (
             actual
-            == "'type' (id=71620647-98cf-48ad-b43b-4af425a24f32, type=select) equals 'medium'(id=b690fa1a-7b3d-4181-95d8-f5c75927c3fc)"
+            == "'type' (id='71620647-98cf-48ad-b43b-4af425a24f32', type='select') EQUALS 'b690fa1a-7b3d-4181-95d8-f5c75927c3fc'(name='medium')"
         )
 
     def test_get_restriction_text__caninput(self):
@@ -52,7 +52,7 @@ class TestListAttributeRestrictionMain:
         }
 
         actual = self.obj.get_restriction_text(restriction["additional_data_definition_id"], restriction["condition"])
-        assert actual == "'comment' (id=54fa5e97-6f88-49a4-aeb0-a91a15d11528, type=comment) can not input"
+        assert actual == "'comment' (id='54fa5e97-6f88-49a4-aeb0-a91a15d11528', type='comment') CAN NOT INPUT"
 
     def test_get_restriction_text__haslabel(self):
         restriction = {
@@ -66,7 +66,7 @@ class TestListAttributeRestrictionMain:
         actual = self.obj.get_restriction_text(restriction["additional_data_definition_id"], restriction["condition"])
         assert (
             actual
-            == "'link' (id=15235360-4f46-42ac-927d-0e046bf52ddd, type=link) has label 'bike' (id=40f7796b-3722-4eed-9c0c-04a27f9165d2), 'bus' (id=22b5189b-af7b-4d9c-83a5-b92f122170ec)"
+            == "'link' (id='15235360-4f46-42ac-927d-0e046bf52ddd', type='link') HAS LABEL 'bike' (id='40f7796b-3722-4eed-9c0c-04a27f9165d2'), 'bus' (id='22b5189b-af7b-4d9c-83a5-b92f122170ec')"
         )
 
     def test_get_restriction_text__imply(self):
@@ -85,8 +85,24 @@ class TestListAttributeRestrictionMain:
         actual = self.obj.get_restriction_text(restriction["additional_data_definition_id"], restriction["condition"])
         assert (
             actual
-            == "'comment' (id=54fa5e97-6f88-49a4-aeb0-a91a15d11528, type=comment) matches '[0-9]' if 'unclear' (id=f12a0b59-dfce-4241-bb87-4b2c0259fc6f, type=flag) equals 'true'"
+            == "'comment' (id='54fa5e97-6f88-49a4-aeb0-a91a15d11528', type='comment') MATCHES '[0-9]' IF 'unclear' (id='f12a0b59-dfce-4241-bb87-4b2c0259fc6f', type='flag') EQUALS 'true'"
         )
+
+    def test_get_restriction_text__equals_not_exist_attribute(self):
+        restriction = {
+            "additional_data_definition_id": "not-exist",
+            "condition": {"value": "foo", "_type": "Equals"},
+        }
+        actual = self.obj.get_restriction_text(restriction["additional_data_definition_id"], restriction["condition"])
+        assert actual == "'' (id='not-exist') EQUALS 'foo'"
+
+    def test_get_restriction_text__dropdown_not_exist_attribute(self):
+        restriction = {
+            "additional_data_definition_id": "71620647-98cf-48ad-b43b-4af425a24f32",
+            "condition": {"value": "", "_type": "Equals"},
+        }
+        actual = self.obj.get_restriction_text(restriction["additional_data_definition_id"], restriction["condition"])
+        assert actual == "'type' (id='71620647-98cf-48ad-b43b-4af425a24f32', type='select') EQUALS ''"
 
     def test_get_restriction_text_list(self):
         actual1 = self.obj.get_restriction_text_list(
