@@ -133,7 +133,7 @@ def parse_args(parser: argparse.ArgumentParser):
         type=str,
         help=(
             "出力したいアノテーション仕様のhistory_idを指定してください。 "
-            "history_idは `annotation_specs list_history`` コマンドで確認できます。 "
+            "history_idは ``annotation_specs list_history`` コマンドで確認できます。 "
             "指定しない場合は、最新のアノテーション仕様が出力されます。 "
         ),
     )

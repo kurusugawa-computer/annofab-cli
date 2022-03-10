@@ -27,6 +27,19 @@ service = annofabapi.build()
 class TestCommandLine:
     command_name = "annotation_specs"
 
+    def test_annotation_specs_list_restriction(self):
+        out_file = str(out_dir / "annotation_specs_list_restriction.txt")
+        main(
+            [
+                self.command_name,
+                "list_attribute_restriction",
+                "--project_id",
+                project_id,
+                "--output",
+                out_file,
+            ]
+        )
+
     def test_annotation_specs_histories(self):
         out_file = str(out_dir / "anotaton_specs_histories.csv")
         main([self.command_name, "list_history", "--project_id", project_id, "--output", out_file])
@@ -50,15 +63,3 @@ class TestCommandLine:
             ]
         )
 
-    def test_annotation_specs_list_restriction(self):
-        out_file = str(out_dir / "annotation_specs_list_restriction.txt")
-        main(
-            [
-                self.command_name,
-                "list_restriction",
-                "--project_id",
-                project_id,
-                "--output",
-                out_file,
-            ]
-        )

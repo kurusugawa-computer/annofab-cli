@@ -44,7 +44,8 @@ class ListAttributeRestrictionMain:
 
         return ", ".join(label_message_list)
 
-    def get_object_for_equals_or_notequals(self, value: str, attribute: Optional[dict[str, Any]]) -> str:
+    @staticmethod
+    def get_object_for_equals_or_notequals(value: str, attribute: Optional[dict[str, Any]]) -> str:
         """制約条件が `Equals` or `NotEquals`のときの目的語を生成する。
         属性の種類がドロップダウンかセレクトボックスのときは、選択肢の名前を返す。
 
@@ -77,9 +78,9 @@ class ListAttributeRestrictionMain:
         Returns:
             str: 制約を表す文
         """
-        type = condition["_type"]
+        str_type = condition["_type"]
 
-        if type == "Imply":
+        if str_type == "Imply":
             # 属性間の制約
             premise = condition["premise"]
             if_condition_text = self.get_restriction_text(
@@ -95,33 +96,33 @@ class ListAttributeRestrictionMain:
             logger.warning(f"属性IDが'{attribute_id}'の属性は存在しません。")
             subject = f"'' (id='{attribute_id}')"
 
-        if type == "CanInput":
+        if str_type == "CanInput":
             verb = "CAN INPUT" if condition["enable"] else "CAN NOT INPUT"
-            object = ""
+            str_object = ""
 
-        elif type == "HasLabel":
+        elif str_type == "HasLabel":
             verb = "HAS LABEL"
-            object = self.get_labels_text(condition["labels"])
+            str_object = self.get_labels_text(condition["labels"])
 
-        elif type == "Equals":
+        elif str_type == "Equals":
             verb = "EQUALS"
-            object = self.get_object_for_equals_or_notequals(condition["value"], attribute)
+            str_object = self.get_object_for_equals_or_notequals(condition["value"], attribute)
 
-        elif type == "NotEquals":
+        elif str_type == "NotEquals":
             verb = "DOES NOT EQUAL"
-            object = self.get_object_for_equals_or_notequals(condition["value"], attribute)
+            str_object = self.get_object_for_equals_or_notequals(condition["value"], attribute)
 
-        elif type == "Matches":
+        elif str_type == "Matches":
             verb = "MATCHES"
-            object = f"'{condition['value']}'"
+            str_object = f"'{condition['value']}'"
 
-        elif type == "NotMatches":
+        elif str_type == "NotMatches":
             verb = "DOES NOT MATCH"
-            object = f"'{condition['value']}'"
+            str_object = f"'{condition['value']}'"
 
         tmp = f"{subject} {verb}"
-        if object != "":
-            tmp = f"{tmp} {object}"
+        if str_object != "":
+            tmp = f"{tmp} {str_object}"
         return tmp
 
     def get_attribute_from_name(self, attribute_name: str) -> Optional[dict[str, Any]]:
@@ -252,7 +253,7 @@ def parse_args(parser: argparse.ArgumentParser):
         type=str,
         help=(
             "出力したいアノテーション仕様のhistory_idを指定してください。 "
-            "history_idは `annotation_specs list_history`` コマンドで確認できます。 "
+            "history_idは ``annotation_specs list_history`` コマンドで確認できます。 "
             "指定しない場合は、最新のアノテーション仕様が出力されます。 "
         ),
     )
@@ -281,7 +282,7 @@ def main(args):
 
 
 def add_parser(subparsers: Optional[argparse._SubParsersAction] = None):
-    subcommand_name = "list_restriction"
+    subcommand_name = "list_attribute_restriction"
 
     subcommand_help = "アノテーション仕様の属性の制約情報を出力します。"
 

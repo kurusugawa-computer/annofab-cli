@@ -1,6 +1,6 @@
-==========================================
-annotation_specs list_restriction
-==========================================
+====================================================================================
+annotation_specs list_attribute_restriction
+====================================================================================
 
 Description
 =================================
@@ -19,7 +19,7 @@ Examples
 
 .. code-block::
 
-    $ annofabcli annotation_specs list_restriction --project_id prj1 --out out.txt
+    $ annofabcli annotation_specs list_attribute_restriction --project_id prj1 --out out.txt
 
 
 .. code-block::
@@ -38,7 +38,7 @@ Usage Details
 
 .. argparse::
    :ref: annofabcli.annotation_specs.list_attribute_restriction.add_parser
-   :prog: annofabcli annotation_specs list_restriction
+   :prog: annofabcli annotation_specs list_attribute_restriction
    :nosubcommands:
    :nodefaultconst:
 
