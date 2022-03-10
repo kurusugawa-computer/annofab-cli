@@ -62,4 +62,3 @@ class TestCommandLine:
                 out_file,
             ]
         )
-
