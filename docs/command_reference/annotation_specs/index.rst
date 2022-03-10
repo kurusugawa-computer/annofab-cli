@@ -15,6 +15,7 @@ Available Commands
    :maxdepth: 1
    :titlesonly:
 
+   list_attribute_restriction
    list_history
    list_label
    list_label_color
