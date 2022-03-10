@@ -18,6 +18,7 @@ Available Commands
    list_history
    list_label
    list_label_color
+   list_restriction
 
 Usage Details
 =================================

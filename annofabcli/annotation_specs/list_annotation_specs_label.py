@@ -132,8 +132,8 @@ def parse_args(parser: argparse.ArgumentParser):
         "--history_id",
         type=str,
         help=(
-            "出力したい過去のアノテーション仕様のhistory_idを指定してください。 "
-            "history_idは`annotation_specs list_history`コマンドで確認できます。 "
+            "出力したいアノテーション仕様のhistory_idを指定してください。 "
+            "history_idは `annotation_specs list_history`` コマンドで確認できます。 "
             "指定しない場合は、最新のアノテーション仕様が出力されます。 "
         ),
     )
@@ -143,10 +143,11 @@ def parse_args(parser: argparse.ArgumentParser):
         type=int,
         help=(
             "出力したい過去のアノテーション仕様が、最新よりいくつ前のアノテーション仕様であるかを指定してください。  "
-            "たとえば`1`を指定した場合、最新より1個前のアノテーション仕様を出力します。 "
+            "たとえば ``1`` を指定した場合、最新より1個前のアノテーション仕様を出力します。 "
             "指定しない場合は、最新のアノテーション仕様が出力されます。 "
         ),
     )
+
 
     parser.add_argument(
         "-f",

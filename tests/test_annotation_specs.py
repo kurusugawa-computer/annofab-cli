@@ -49,3 +49,16 @@ class TestCommandLine:
                 out_file,
             ]
         )
+
+    def test_annotation_specs_list_restriction(self):
+        out_file = str(out_dir / "annotation_specs_list_restriction.txt")
+        main(
+            [
+                self.command_name,
+                "list_restriction",
+                "--project_id",
+                project_id,
+                "--output",
+                out_file,
+            ]
+        )
