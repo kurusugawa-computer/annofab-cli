@@ -280,10 +280,10 @@ class WriteCsvGraph:
             )
 
             acceptor_per_date.plot_annotation_metrics(
-                self.output_dir / Path("line-graph/検査者用/折れ線-横軸_検査開始日-縦軸_アノテーション単位の指標-検査者用.html"), user_id_list
+                self.output_dir / Path("line-graph/受入者用/折れ線-横軸_受入開始日-縦軸_アノテーション単位の指標-受入者用.html"), user_id_list
             )
             acceptor_per_date.plot_input_data_metrics(
-                self.output_dir / Path("line-graph/検査者用/折れ線-横軸_検査開始日-縦軸_入力データ単位の指標-検査者用.html"), user_id_list
+                self.output_dir / Path("line-graph/受入者用/折れ線-横軸_受入開始日-縦軸_入力データ単位の指標-受入者用.html"), user_id_list
             )
 
 
