@@ -47,7 +47,7 @@ class ApiWithCreatingTask(Enum):
 
 def get_task_relation_dict(csv_file: Path) -> TaskInputRelation:
     """CSVから、keyがtask_id, valueがinput_data_idのlistのdictを生成します。"""
-    df = pandas.read_csv(str(csv_file), header=None, usecols=(0, 2), names=("task_id", "input_data_id"))
+    df = pandas.read_csv(str(csv_file), header=None, usecols=(0, 1), names=("task_id", "input_data_id"))
     result: TaskInputRelation = defaultdict(list)
     for task_id, input_data_id in zip(df["task_id"], df["input_data_id"]):
         result[task_id].append(input_data_id)
@@ -68,8 +68,10 @@ def create_task_relation_csv(task_relation_dict: TaskInputRelation, csv_file: Pa
         for input_data_id in input_data_id_list:
             tmp_list.append({"task_id": task_id, "input_data_id": input_data_id})
     df = pandas.DataFrame(tmp_list)
-    df["input_data_name"] = ""
-    df = df[["task_id", "input_data_name", "input_data_id"]]
+
+    # webapiの都合上、2列目は空文字でないといけない
+    df["empty"] = ""
+    df = df[["task_id", "empty", "input_data_id"]]
 
     csv_file.parent.mkdir(exist_ok=True, parents=True)
     df.to_csv(str(csv_file), index=False, header=None)
@@ -150,13 +152,12 @@ class PuttingTaskMain(AbstractCommandLineWithConfirmInterface):
         else:
             logger.info(
                 f"以下のコマンドを実行すれば、タスク登録ジョブが終了するまで待ちます。 :: `annofabcli job wait --project_id {self.project_id} --job_type {job['job_type']} --job_id {job['job_id']}`"  # noqa: E501
-            )  # noqa: E501
+            )
 
     def generate_task(
         self,
         api: Optional[ApiWithCreatingTask],
         task_relation_dict: TaskInputRelation,
-        csv_file: Optional[Path],
     ) -> None:
         """
         put_task または initiate_tasks_generation WebAPIを使って、タスクを生成します。
@@ -168,12 +169,9 @@ class PuttingTaskMain(AbstractCommandLineWithConfirmInterface):
         """
         if api is None:
             if len(task_relation_dict) > TASK_THRESHOLD_FOR_JSON:
-                if csv_file is not None:
-                    self.put_task_from_csv_file(csv_file)
-                else:
-                    with tempfile.NamedTemporaryFile() as f:
-                        create_task_relation_csv(task_relation_dict, Path(f.name))
-                        self.put_task_from_csv_file(Path(f.name))
+                with tempfile.NamedTemporaryFile() as f:
+                    create_task_relation_csv(task_relation_dict, Path(f.name))
+                    self.put_task_from_csv_file(Path(f.name))
             else:
                 self.put_task_list(task_relation_dict)
 
@@ -181,12 +179,9 @@ class PuttingTaskMain(AbstractCommandLineWithConfirmInterface):
             self.put_task_list(task_relation_dict)
 
         elif api == ApiWithCreatingTask.INITIATE_TASKS_GENERATION:
-            if csv_file is not None:
-                self.put_task_from_csv_file(csv_file)
-            else:
-                with tempfile.NamedTemporaryFile() as f:
-                    create_task_relation_csv(task_relation_dict, Path(f.name))
-                    self.put_task_from_csv_file(Path(f.name))
+            with tempfile.NamedTemporaryFile() as f:
+                create_task_relation_csv(task_relation_dict, Path(f.name))
+                self.put_task_from_csv_file(Path(f.name))
 
     def wait_for_completion(self, job_id: str) -> None:
         """
@@ -232,12 +227,12 @@ class PutTask(AbstractCommandLineInterface):
         if args.csv is not None:
             csv_file = args.csv
             task_relation_dict = get_task_relation_dict(csv_file)
-            main_obj.generate_task(api_with_creating_task, task_relation_dict, csv_file)
+            main_obj.generate_task(api_with_creating_task, task_relation_dict)
 
         elif args.json is not None:
             # CSVファイルに変換する
             task_relation_dict = get_json_from_args(args.json)
-            main_obj.generate_task(api_with_creating_task, task_relation_dict, csv_file=None)
+            main_obj.generate_task(api_with_creating_task, task_relation_dict)
 
 
 def main(args):
@@ -262,8 +257,7 @@ def parse_args(parser: argparse.ArgumentParser):
             "\n"
             " * ヘッダ行なし, カンマ区切り\n"
             " * 1列目: task_id\n"
-            " * 2列目: Any(無視される)\n"
-            " * 3列目: input_data_id\n"
+            " * 2列目: input_data_id\n"
         ),
     )
 
