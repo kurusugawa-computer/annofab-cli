@@ -190,7 +190,7 @@ class PutInspectionCommentsSimplyMain(AbstractCommandLineWithConfirmInterface):
             func = partial(self.add_comments_for_task_wrapper, comment_info=comment_info)
             with multiprocessing.Pool(parallelism) as pool:
                 result_bool_list = pool.map(func, enumerate(task_ids))
-                success_count = sum(e for e in result_bool_list if e)
+                success_count = len([e for e in result_bool_list if e])
 
         else:
             # 逐次処理
