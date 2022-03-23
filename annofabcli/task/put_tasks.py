@@ -1,11 +1,15 @@
+from __future__ import annotations
+
 import argparse
 import copy
 import json
 import logging
+import multiprocessing
 import tempfile
 from pathlib import Path
 from typing import Any, Dict, List, Optional
 
+import annofabapi
 import pandas
 from annofabapi.models import ProjectJobType, ProjectMemberRole
 
@@ -13,6 +17,7 @@ import annofabcli
 from annofabcli import AnnofabApiFacade
 from annofabcli.common.cli import (
     AbstractCommandLineInterface,
+    AbstractCommandLineWithConfirmInterface,
     ArgumentParser,
     build_annofabapi_resource_and_login,
     get_json_from_args,
@@ -28,6 +33,52 @@ TaskInputRelation = Dict[str, List[str]]
 """task_idとinput_data_idの構造を表現する型"""
 
 
+class PuttingTaskMain(AbstractCommandLineWithConfirmInterface):
+    def __init__(self, service: annofabapi.Resource, project_id: str, all_yes: bool = False):
+        self.service = service
+        self.facade = AnnofabApiFacade(service)
+        self.project_id = project_id
+
+        AbstractCommandLineWithConfirmInterface.__init__(self, all_yes)
+
+    def put_task(self, task_id: str, input_data_id_list: list[str]) -> bool:
+        task = self.service.wrapper.get_task_or_none(self.project_id, task_id)
+        if task is not None:
+            logger.warning(f"タスク'{task_id}'はすでに存在するため、登録をスキップします。")
+            return False
+
+        # タスクを上書きしない理由：タスクを上書きすると、タスクに紐づくアノテーションまで消えてしまう恐れがあるため
+        self.service.api.put_task(self.project_id, task_id, request_body={"input_data_id_list": input_data_id_list})
+        logger.debug(f"タスク'{task_id}'を登録しました。")
+        return True
+
+    def put_task_wrapper(self, tpl: tuple[str, list[str]]) -> bool:
+        task_id, input_data_id_list = tpl
+        try:
+            return self.put_task(task_id, input_data_id_list)
+        except Exception:
+            logger.warning(f"タスク'{task_id}'の登録に失敗しました。", exc_info=True)
+            return False
+
+    def put_task_list(self, task_relation_dict: dict[str, list[str]], parallelism: Optional[int]):
+        success_count = 0
+        if parallelism is None:
+            for task_id, input_data_id_list in task_relation_dict.items():
+                try:
+                    result = self.put_task(task_id, input_data_id_list)
+                    if result:
+                        success_count += 1
+                except Exception:
+                    logger.warning(f"タスク'{task_id}'の登録に失敗しました。", exc_info=True)
+
+        else:
+            with multiprocessing.Pool(parallelism) as p:
+                results = p.map(self.put_task_wrapper, task_relation_dict.items())
+                success_count = len([e for e in results if e])
+
+        logger.info(f"{success_count} / {len(task_relation_dict)} 件のタスクを登録しました。")
+
+
 class PutTask(AbstractCommandLineInterface):
     """
     CSVからタスクを登録する。
@@ -35,7 +86,7 @@ class PutTask(AbstractCommandLineInterface):
 
     DEFAULT_BY_COUNT = {"allow_duplicate_input_data": False, "input_data_order": "name_asc"}
 
-    TASK_THRESHOLD_FOR_JSON = 10
+    TASK_THRESHOLD_FOR_JSON = 230
     """'--json'が指定されたとき、この値以下ならば`put_task`APIでタスクを登録する。
     この値を超えているならば、`initiate_tasks_generation`APIでタスクを登録する。"""
 
