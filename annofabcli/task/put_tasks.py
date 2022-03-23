@@ -6,6 +6,8 @@ import json
 import logging
 import multiprocessing
 import tempfile
+from collections import defaultdict
+from enum import Enum
 from pathlib import Path
 from typing import Any, Dict, List, Optional
 
@@ -29,8 +31,47 @@ logger = logging.getLogger(__name__)
 
 DEFAULT_WAIT_OPTIONS = WaitOptions(interval=60, max_tries=360)
 
+TASK_THRESHOLD_FOR_JSON = 230
+
 TaskInputRelation = Dict[str, List[str]]
 """task_idとinput_data_idの構造を表現する型"""
+
+
+class ApiWithCreatingTask(Enum):
+    """タスク作成に使われるWebAPI"""
+
+    PUT_TASK = "put_task"
+    INITIATE_TASKS_GENERATION = "initiate_tasks_generation"
+
+
+def get_task_relation_dict(csv_file: Path) -> TaskInputRelation:
+    """CSVから、keyがtask_id, valueがinput_data_idのlistのdictを生成します。"""
+    df = pandas.read_csv(str(csv_file), header=None, usecols=(0, 2), names=("task_id", "input_data_id"))
+    result: TaskInputRelation = defaultdict(list)
+    for task_id, input_data_id in zip(df["task_id"], df["input_data_id"]):
+        result[task_id].append(input_data_id)
+    return result
+
+
+def create_task_relation_csv(task_relation_dict: TaskInputRelation, csv_file: Path):
+    """task_idとinput_data_idの関係を持つdictから、``initiate_tasks_generation`` APIに渡すCSVを生成します。
+
+
+    Args:
+        task_relation_dict: keyがtask_id, valueがinput_data_idのlistのdict
+        csv_file: 出力先
+
+    """
+    tmp_list = []
+    for task_id, input_data_id_list in task_relation_dict.items():
+        for input_data_id in input_data_id_list:
+            tmp_list.append({"task_id": task_id, "input_data_id": input_data_id})
+    df = pandas.DataFrame(tmp_list)
+    df["input_data_name"] = ""
+    df = df[["task_id", "input_data_name", "input_data_id"]]
+
+    csv_file.parent.mkdir(exist_ok=True, parents=True)
+    df.to_csv(str(csv_file), index=False, header=None)
 
 
 class PuttingTaskMain(AbstractCommandLineWithConfirmInterface):
@@ -56,11 +97,11 @@ class PuttingTaskMain(AbstractCommandLineWithConfirmInterface):
         task_id, input_data_id_list = tpl
         try:
             return self.put_task(task_id, input_data_id_list)
-        except Exception:
+        except Exception:  # pylint: disable=broad-except
             logger.warning(f"タスク'{task_id}'の登録に失敗しました。", exc_info=True)
             return False
 
-    def put_task_list(self, task_relation_dict: dict[str, list[str]], parallelism: Optional[int]):
+    def put_task_list(self, task_relation_dict: TaskInputRelation, parallelism: Optional[int]):
         success_count = 0
         if parallelism is None:
             for task_id, input_data_id_list in task_relation_dict.items():
@@ -68,7 +109,7 @@ class PuttingTaskMain(AbstractCommandLineWithConfirmInterface):
                     result = self.put_task(task_id, input_data_id_list)
                     if result:
                         success_count += 1
-                except Exception:
+                except Exception:  # pylint: disable=broad-except
                     logger.warning(f"タスク'{task_id}'の登録に失敗しました。", exc_info=True)
 
         else:
@@ -78,6 +119,54 @@ class PuttingTaskMain(AbstractCommandLineWithConfirmInterface):
 
         logger.info(f"{success_count} / {len(task_relation_dict)} 件のタスクを登録しました。")
 
+    def put_task_from_csv_file(self, csv_file: Path) -> None:
+        """
+        CSVファイルからタスクを登録する。
+
+        Args:
+            project_id:
+            csv_file: タスク登録に関する情報が記載されたCSV
+        """
+        self.service.wrapper.initiate_tasks_generation_by_csv(self.project_id, csvfile_path=str(csv_file))
+        logger.info(f"AnnoFab上でタスク作成処理が開始されました。 :: csv_file='{csv_file}'")
+
+    def generate_task(
+        self,
+        api: Optional[ApiWithCreatingTask],
+        task_relation_dict: TaskInputRelation,
+        csv_file: Optional[Path],
+        parallelism: Optional[int],
+    ) -> None:
+        """
+        put_task または initiate_tasks_generation WebAPIを使って、タスクを生成します。
+
+        Args:
+            task_relation_dict: task_idとinput_data_id_listのdict
+            csv_file: task_relation_dictに対応するCSVファイルです。Noneの場合は生成します。
+            parallelism: `put_task` APIでタスクを生成する際に、指定した値だけ並列で処理します。
+        """
+        if api is None:
+            if len(task_relation_dict) > TASK_THRESHOLD_FOR_JSON:
+                if csv_file is not None:
+                    self.put_task_from_csv_file(csv_file)
+                else:
+                    with tempfile.NamedTemporaryFile() as f:
+                        create_task_relation_csv(task_relation_dict, Path(f.name))
+                        self.put_task_from_csv_file(Path(f.name))
+            else:
+                self.put_task_list(task_relation_dict, parallelism)
+
+        if api == ApiWithCreatingTask.PUT_TASK:
+            self.put_task_list(task_relation_dict, parallelism)
+
+        elif api == ApiWithCreatingTask.INITIATE_TASKS_GENERATION:
+            if csv_file is not None:
+                self.put_task_from_csv_file(csv_file)
+            else:
+                with tempfile.NamedTemporaryFile() as f:
+                    create_task_relation_csv(task_relation_dict, Path(f.name))
+                    self.put_task_from_csv_file(Path(f.name))
+
 
 class PutTask(AbstractCommandLineInterface):
     """
@@ -86,7 +175,6 @@ class PutTask(AbstractCommandLineInterface):
 
     DEFAULT_BY_COUNT = {"allow_duplicate_input_data": False, "input_data_order": "name_asc"}
 
-    TASK_THRESHOLD_FOR_JSON = 230
     """'--json'が指定されたとき、この値以下ならば`put_task`APIでタスクを登録する。
     この値を超えているならば、`initiate_tasks_generation`APIでタスクを登録する。"""
 
@@ -98,18 +186,6 @@ class PutTask(AbstractCommandLineInterface):
             "project_last_updated_datetime": project_last_updated_datetime,
         }
         self.service.api.initiate_tasks_generation(project_id, request_body=request_body)
-
-    def put_task_from_csv_file(self, project_id: str, csv_file: Path) -> None:
-        """
-        CSVファイルからタスクを登録する。
-
-        Args:
-            project_id:
-            csv_file: タスク登録に関する情報が記載されたCSV
-        """
-        project_title = self.facade.get_project_title(project_id)
-        logger.info(f"{project_title} に対して、{str(csv_file)} からタスクを登録します。")
-        self.service.wrapper.initiate_tasks_generation_by_csv(project_id, csvfile_path=str(csv_file))
 
     def wait_for_completion(
         self,
@@ -142,51 +218,25 @@ class PutTask(AbstractCommandLineInterface):
             else:
                 logger.warning(f"タスクの登録に失敗しました。または、{MAX_WAIT_MINUTE}分間待っても、タスクの登録が完了しませんでした。")
 
-    @staticmethod
-    def create_task_relation_dataframe(task_relation_dict: TaskInputRelation) -> pandas.DataFrame:
-        tmp_list = []
-        for task_id, input_data_id_list in task_relation_dict.items():
-            for input_data_id in input_data_id_list:
-                tmp_list.append({"task_id": task_id, "input_data_id": input_data_id})
-        df = pandas.DataFrame(tmp_list)
-        df["input_data_name"] = ""
-        return df[["task_id", "input_data_name", "input_data_id"]]
-
     def main(self):
         args = self.args
         project_id = args.project_id
         super().validate_project(project_id, [ProjectMemberRole.OWNER])
 
+        api_with_creating_task = ApiWithCreatingTask(args.api) if args.api is not None else None
+        main_obj = PuttingTaskMain(self.service, project_id=args.project_id, all_yes=args.yes)
+
         if args.csv is not None:
-            csv_file = Path(args.csv)
-            self.put_task_from_csv_file(project_id, csv_file)
+            csv_file = args.csv
+            task_relation_dict = get_task_relation_dict(csv_file)
+            main_obj.generate_task(api_with_creating_task, task_relation_dict, csv_file, parallelism=args.parallelism)
+
         elif args.json is not None:
             # CSVファイルに変換する
             task_relation_dict = get_json_from_args(args.json)
-            if len(task_relation_dict) > self.TASK_THRESHOLD_FOR_JSON:
-                df = self.create_task_relation_dataframe(task_relation_dict)
-                with tempfile.NamedTemporaryFile() as f:
-                    df.to_csv(f, index=False, header=None)
-                    self.put_task_from_csv_file(project_id, Path(f.name))
-            else:
-                # 登録件数が少ない場合は、put_taskの方が早いのでこちらで登録する。
-                task_count = 0
-                for task_id, input_data_id_list in task_relation_dict.items():
-                    task = self.service.wrapper.get_task_or_none(project_id, task_id)
-                    if task is None:
-                        logger.debug(f"タスク'{task_id}'を登録します。")
-                        self.service.api.put_task(
-                            project_id, task_id, request_body={"input_data_id_list": input_data_id_list}
-                        )
-                        task_count += 1
-                    else:
-                        logger.warning(f"タスク'{task_id}'はすでに存在するため、登録をスキップします。")
-                        self.service.api.put_task(
-                            project_id, task_id, request_body={"input_data_id_list": input_data_id_list}
-                        )
-
-                logger.info(f"{task_count} 件のタスクを登録しました。")
-                return
+            main_obj.generate_task(
+                api_with_creating_task, task_relation_dict, csv_file=None, parallelism=args.parallelism
+            )
 
         elif args.by_count is not None:
             by_count = copy.deepcopy(PutTask.DEFAULT_BY_COUNT)
@@ -217,7 +267,7 @@ def parse_args(parser: argparse.ArgumentParser):
     file_group = parser.add_mutually_exclusive_group(required=True)
     file_group.add_argument(
         "--csv",
-        type=str,
+        type=Path,
         help=(
             "タスクに割り当てる入力データが記載されたCSVファイルのパスを指定してください。"
             "CSVのフォーマットは、以下の通りです。"
@@ -250,6 +300,20 @@ def parse_args(parser: argparse.ArgumentParser):
         " APIのリクエストボディ ``task_generate_rule`` と同じです。"
         f"デフォルトは ``{json.dumps(PutTask.DEFAULT_BY_COUNT)}`` です。\n"
         "``file://`` を先頭に付けるとjsonファイルを指定できます。",
+    )
+
+    parser.add_argument(
+        "--api",
+        type=str,
+        choices=[e.value for e in ApiWithCreatingTask],
+        help=f"タスク作成に使うWebAPIを指定できます。 ``--csv`` or ``--json`` を指定したときのみ有効なオプションです。\n"
+        "未指定の場合は、作成するタスク数に応じて、適切なWebAPIを選択します。\n",
+    )
+
+    parser.add_argument(
+        "--parallelism",
+        type=int,
+        help="並列度。指定しない場合は、逐次的に処理します。``put_task`` WebAPIを使うときのみ有効なオプおションです。",
     )
 
     parser.add_argument("--wait", action="store_true", help=("タスク登録が完了するまで待ちます。"))
