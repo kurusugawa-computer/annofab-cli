@@ -28,6 +28,11 @@ logger = logging.getLogger(__name__)
 
 
 TASK_THRESHOLD_FOR_JSON = 230
+"""
+タスク作成処理のwebapiに put_taskを使うか initiate_generation_task を使うかのしきい値。
+作成するタスク数が指定した値以下の場合は、put_task webapiを使います。
+https://github.com/kurusugawa-computer/annofab-cli/pull/738
+"""
 
 TaskInputRelation = Dict[str, List[str]]
 """task_idとinput_data_idの構造を表現する型"""
@@ -189,7 +194,7 @@ class PuttingTaskMain(AbstractCommandLineWithConfirmInterface):
         """
         wait_options = WaitOptions(interval=30, max_tries=720)
         max_wait_minute = wait_options.max_tries * wait_options.interval / 60
-        logger.info(f"最大{max_wait_minute}分間、タスク登録のジョブが終了するまで待ちます。")
+        logger.info(f"job_id='{job_id}' :: 最大{max_wait_minute}分間、タスク登録のジョブが終了するまで待ちます。")
 
         result = self.service.wrapper.wait_until_job_finished(
             self.project_id,
