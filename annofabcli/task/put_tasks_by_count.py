@@ -136,7 +136,7 @@ def parse_args(parser: argparse.ArgumentParser):
         "--input_data_order",
         type=str,
         choices=[e.value for e in InputDataOrder],
-        default=InputDataOrder.NAME_ASC,
+        default=InputDataOrder.NAME_ASC.value,
         help="タスクに割り当てる入力データの順序",
     )
 
