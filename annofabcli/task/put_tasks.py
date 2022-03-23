@@ -1,19 +1,17 @@
 from __future__ import annotations
 
 import argparse
-import copy
-import json
 import logging
 import multiprocessing
 import tempfile
 from collections import defaultdict
 from enum import Enum
 from pathlib import Path
-from typing import Any, Dict, List, Optional
+from typing import Dict, List, Optional
 
 import annofabapi
 import pandas
-from annofabapi.models import ProjectJobType, ProjectMemberRole
+from annofabapi.models import JobStatus, ProjectJobType, ProjectMemberRole
 
 import annofabcli
 from annofabcli import AnnofabApiFacade
@@ -23,13 +21,11 @@ from annofabcli.common.cli import (
     ArgumentParser,
     build_annofabapi_resource_and_login,
     get_json_from_args,
-    get_wait_options_from_args,
 )
 from annofabcli.common.dataclasses import WaitOptions
 
 logger = logging.getLogger(__name__)
 
-DEFAULT_WAIT_OPTIONS = WaitOptions(interval=60, max_tries=360)
 
 TASK_THRESHOLD_FOR_JSON = 230
 
@@ -75,10 +71,20 @@ def create_task_relation_csv(task_relation_dict: TaskInputRelation, csv_file: Pa
 
 
 class PuttingTaskMain(AbstractCommandLineWithConfirmInterface):
-    def __init__(self, service: annofabapi.Resource, project_id: str, all_yes: bool = False):
+    def __init__(
+        self,
+        service: annofabapi.Resource,
+        project_id: str,
+        *,
+        all_yes: bool = False,
+        parallelism: Optional[int],
+        should_wait: bool = False,
+    ):
         self.service = service
         self.facade = AnnofabApiFacade(service)
         self.project_id = project_id
+        self.parallelism = parallelism
+        self.should_wait = should_wait
 
         AbstractCommandLineWithConfirmInterface.__init__(self, all_yes)
 
@@ -101,9 +107,10 @@ class PuttingTaskMain(AbstractCommandLineWithConfirmInterface):
             logger.warning(f"タスク'{task_id}'の登録に失敗しました。", exc_info=True)
             return False
 
-    def put_task_list(self, task_relation_dict: TaskInputRelation, parallelism: Optional[int]):
+    def put_task_list(self, task_relation_dict: TaskInputRelation):
+        logger.debug(f"'put_task' WebAPIを用いてタスクを生成します。")
         success_count = 0
-        if parallelism is None:
+        if self.parallelism is None:
             for task_id, input_data_id_list in task_relation_dict.items():
                 try:
                     result = self.put_task(task_id, input_data_id_list)
@@ -113,7 +120,7 @@ class PuttingTaskMain(AbstractCommandLineWithConfirmInterface):
                     logger.warning(f"タスク'{task_id}'の登録に失敗しました。", exc_info=True)
 
         else:
-            with multiprocessing.Pool(parallelism) as p:
+            with multiprocessing.Pool(self.parallelism) as p:
                 results = p.map(self.put_task_wrapper, task_relation_dict.items())
                 success_count = len([e for e in results if e])
 
@@ -127,15 +134,20 @@ class PuttingTaskMain(AbstractCommandLineWithConfirmInterface):
             project_id:
             csv_file: タスク登録に関する情報が記載されたCSV
         """
-        self.service.wrapper.initiate_tasks_generation_by_csv(self.project_id, csvfile_path=str(csv_file))
-        logger.info(f"AnnoFab上でタスク作成処理が開始されました。 :: csv_file='{csv_file}'")
+        logger.debug(f"'initiate_tasks_generation' WebAPIを用いてタスクを生成します。")
+        content = self.service.wrapper.initiate_tasks_generation_by_csv(self.project_id, csvfile_path=str(csv_file))
+        job = content["job"]
+        logger.info(
+            f"AnnoFab上でタスク作成処理が開始されました。 :: csv_file='{csv_file}', job_type='{job['job_type']}', job_id='{job['job_id']}'"  # noqa: E501
+        )
+        if self.should_wait:
+            self.wait_for_completion(job["job_id"])
 
     def generate_task(
         self,
         api: Optional[ApiWithCreatingTask],
         task_relation_dict: TaskInputRelation,
         csv_file: Optional[Path],
-        parallelism: Optional[int],
     ) -> None:
         """
         put_task または initiate_tasks_generation WebAPIを使って、タスクを生成します。
@@ -154,10 +166,10 @@ class PuttingTaskMain(AbstractCommandLineWithConfirmInterface):
                         create_task_relation_csv(task_relation_dict, Path(f.name))
                         self.put_task_from_csv_file(Path(f.name))
             else:
-                self.put_task_list(task_relation_dict, parallelism)
+                self.put_task_list(task_relation_dict)
 
         if api == ApiWithCreatingTask.PUT_TASK:
-            self.put_task_list(task_relation_dict, parallelism)
+            self.put_task_list(task_relation_dict)
 
         elif api == ApiWithCreatingTask.INITIATE_TASKS_GENERATION:
             if csv_file is not None:
@@ -167,90 +179,56 @@ class PuttingTaskMain(AbstractCommandLineWithConfirmInterface):
                     create_task_relation_csv(task_relation_dict, Path(f.name))
                     self.put_task_from_csv_file(Path(f.name))
 
+    def wait_for_completion(self, job_id: str) -> None:
+        """
+        タスク登録ジョブが終了するまで待ちます。
+        """
+        wait_options = WaitOptions(interval=30, max_tries=720)
+        max_wait_minute = wait_options.max_tries * wait_options.interval / 60
+        logger.info(f"最大{max_wait_minute}分間、タスク登録のジョブが終了するまで待ちます。")
+
+        result = self.service.wrapper.wait_until_job_finished(
+            self.project_id,
+            job_type=ProjectJobType.GEN_TASKS,
+            job_id=job_id,
+            job_access_interval=wait_options.interval,
+            max_job_access=wait_options.max_tries,
+        )
+        if result is None:
+            logger.error(f"job_id='{job_id}' :: タスク登録のジョブが存在しません。")
+            return
+        if result == JobStatus.SUCCEEDED:
+            logger.info(f"job_id='{job_id}' :: タスク登録のジョブが成功しました。")
+        elif result == JobStatus.FAILED:
+            logger.error(f"job_id='{job_id}' :: タスク登録のジョブが失敗しました。")
+        elif result == JobStatus.PROGRESS:
+            logger.warning(f"job_id='{job_id}' :: {max_wait_minute}分間待ちましたが、タスク登録のジョブが終了しませんでした。")
+
 
 class PutTask(AbstractCommandLineInterface):
-    """
-    CSVからタスクを登録する。
-    """
-
-    DEFAULT_BY_COUNT = {"allow_duplicate_input_data": False, "input_data_order": "name_asc"}
-
-    """'--json'が指定されたとき、この値以下ならば`put_task`APIでタスクを登録する。
-    この値を超えているならば、`initiate_tasks_generation`APIでタスクを登録する。"""
-
-    def put_task_by_count(self, project_id: str, task_generate_rule: Dict[str, Any]):
-        project_last_updated_datetime = self.service.api.get_project(project_id)[0]["updated_datetime"]
-        task_generate_rule.update({"_type": "ByCount"})
-        request_body = {
-            "task_generate_rule": task_generate_rule,
-            "project_last_updated_datetime": project_last_updated_datetime,
-        }
-        self.service.api.initiate_tasks_generation(project_id, request_body=request_body)
-
-    def wait_for_completion(
-        self,
-        project_id: str,
-        wait_options: WaitOptions,
-        wait: bool = False,
-    ) -> None:
-        """
-        CSVファイルからタスクを登録する。
-
-        Args:
-            project_id:
-            wait_options: タスク登録の完了を待つ処理
-            wait: タスク登録が完了するまで待つかどうか
-        """
-        logger.info(f"タスクの登録中です（サーバ側の処理）。")
-
-        if wait:
-            MAX_WAIT_MINUTE = wait_options.max_tries * wait_options.interval / 60
-            logger.info(f"最大{MAX_WAIT_MINUTE}分間、タスク登録処理が終了するまで待ちます。")
-
-            result = self.service.wrapper.wait_for_completion(
-                project_id,
-                job_type=ProjectJobType.GEN_TASKS,
-                job_access_interval=wait_options.interval,
-                max_job_access=wait_options.max_tries,
-            )
-            if result:
-                logger.info(f"タスクの登録が完了しました。")
-            else:
-                logger.warning(f"タスクの登録に失敗しました。または、{MAX_WAIT_MINUTE}分間待っても、タスクの登録が完了しませんでした。")
-
     def main(self):
         args = self.args
         project_id = args.project_id
         super().validate_project(project_id, [ProjectMemberRole.OWNER])
 
         api_with_creating_task = ApiWithCreatingTask(args.api) if args.api is not None else None
-        main_obj = PuttingTaskMain(self.service, project_id=args.project_id, all_yes=args.yes)
+        main_obj = PuttingTaskMain(
+            self.service,
+            project_id=args.project_id,
+            all_yes=args.yes,
+            parallelism=args.parallelism,
+            should_wait=args.wait,
+        )
 
         if args.csv is not None:
             csv_file = args.csv
             task_relation_dict = get_task_relation_dict(csv_file)
-            main_obj.generate_task(api_with_creating_task, task_relation_dict, csv_file, parallelism=args.parallelism)
+            main_obj.generate_task(api_with_creating_task, task_relation_dict, csv_file)
 
         elif args.json is not None:
             # CSVファイルに変換する
             task_relation_dict = get_json_from_args(args.json)
-            main_obj.generate_task(
-                api_with_creating_task, task_relation_dict, csv_file=None, parallelism=args.parallelism
-            )
-
-        elif args.by_count is not None:
-            by_count = copy.deepcopy(PutTask.DEFAULT_BY_COUNT)
-            by_count.update(get_json_from_args(args.by_count))
-            self.put_task_by_count(project_id, by_count)
-        else:
-            raise RuntimeError("--csv or --by_count が指定されていません。")
-
-        wait_options = get_wait_options_from_args(get_json_from_args(args.wait_options), DEFAULT_WAIT_OPTIONS)
-        self.wait_for_completion(
-            project_id,
-            wait=args.wait,
-            wait_options=wait_options,
-        )
+            main_obj.generate_task(api_with_creating_task, task_relation_dict, csv_file=None)
 
 
 def main(args):
@@ -292,16 +270,6 @@ def parse_args(parser: argparse.ArgumentParser):
         ),
     )
 
-    file_group.add_argument(
-        "--by_count",
-        type=str,
-        help=f"1つのタスクに割り当てる入力データの個数などの情報を、JSON形式で指定してください。\n"
-        "JSONフォーマットは https://annofab.com/docs/api/#operation/initiateTasksGeneration"
-        " APIのリクエストボディ ``task_generate_rule`` と同じです。"
-        f"デフォルトは ``{json.dumps(PutTask.DEFAULT_BY_COUNT)}`` です。\n"
-        "``file://`` を先頭に付けるとjsonファイルを指定できます。",
-    )
-
     parser.add_argument(
         "--api",
         type=str,
@@ -313,19 +281,11 @@ def parse_args(parser: argparse.ArgumentParser):
     parser.add_argument(
         "--parallelism",
         type=int,
-        help="並列度。指定しない場合は、逐次的に処理します。``put_task`` WebAPIを使うときのみ有効なオプおションです。",
+        help="並列度。指定しない場合は、逐次的に処理します。``put_task`` WebAPIを使うときのみ有効なオプションです。",
     )
 
-    parser.add_argument("--wait", action="store_true", help=("タスク登録が完了するまで待ちます。"))
-
     parser.add_argument(
-        "--wait_options",
-        type=str,
-        help="タスクの登録が完了するまで待つ際のオプションを、JSON形式で指定してください。"
-        " ``file://`` を先頭に付けるとjsonファイルを指定できます。"
-        'デフォルは ``{"interval":60, "max_tries":360}`` です。'
-        "``interval`` :完了したかを問い合わせる間隔[秒], "
-        "``max_tires`` :完了したかの問い合わせを最大何回行うか。",
+        "--wait", action="store_true", help="タスク登録ジョブが終了するまで待ちます。``initiate_tasks_generation`` WebAPIを使うときのみ有効なオプションです。"
     )
 
     parser.set_defaults(subcommand_func=main)
