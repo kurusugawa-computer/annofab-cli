@@ -17,7 +17,6 @@ import annofabcli
 from annofabcli import AnnofabApiFacade
 from annofabcli.common.cli import (
     AbstractCommandLineInterface,
-    AbstractCommandLineWithConfirmInterface,
     ArgumentParser,
     build_annofabapi_resource_and_login,
     get_json_from_args,
@@ -77,13 +76,12 @@ def create_task_relation_csv(task_relation_dict: TaskInputRelation, csv_file: Pa
     df.to_csv(str(csv_file), index=False, header=None)
 
 
-class PuttingTaskMain(AbstractCommandLineWithConfirmInterface):
+class PuttingTaskMain:
     def __init__(
         self,
         service: annofabapi.Resource,
         project_id: str,
         *,
-        all_yes: bool = False,
         parallelism: Optional[int],
         should_wait: bool = False,
     ):
@@ -92,8 +90,6 @@ class PuttingTaskMain(AbstractCommandLineWithConfirmInterface):
         self.project_id = project_id
         self.parallelism = parallelism
         self.should_wait = should_wait
-
-        AbstractCommandLineWithConfirmInterface.__init__(self, all_yes)
 
     def put_task(self, task_id: str, input_data_id_list: list[str]) -> bool:
         task = self.service.wrapper.get_task_or_none(self.project_id, task_id)
@@ -219,7 +215,6 @@ class PutTask(AbstractCommandLineInterface):
         main_obj = PuttingTaskMain(
             self.service,
             project_id=args.project_id,
-            all_yes=args.yes,
             parallelism=args.parallelism,
             should_wait=args.wait,
         )
