@@ -142,6 +142,10 @@ class PuttingTaskMain(AbstractCommandLineWithConfirmInterface):
         )
         if self.should_wait:
             self.wait_for_completion(job["job_id"])
+        else:
+            logger.info(
+                f"以下のコマンドを実行すれば、タスク登録ジョブが終了するまで待ちます。 :: `annofabcli job wait --project_id {self.project_id} --job_type {job['job_type']} --job_id {job['job_id']}`"  # noqa: E501
+            )  # noqa: E501
 
     def generate_task(
         self,
