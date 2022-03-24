@@ -30,7 +30,8 @@ TASK_THRESHOLD_FOR_JSON = 230
 """
 タスク作成処理のwebapiに put_taskを使うか initiate_generation_task を使うかのしきい値。
 作成するタスク数が指定した値以下の場合は、put_task webapiを使います。
-https://github.com/kurusugawa-computer/annofab-cli/pull/738
+しきい値は、実際にwebapiの処理時間を計測して決めました。詳細は以下を参照してください。
+https://github.com/kurusugawa-computer/annofab-cli/pull/738#issuecomment-1077013844
 """
 
 TaskInputRelation = Dict[str, List[str]]
