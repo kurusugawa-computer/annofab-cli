@@ -12,6 +12,7 @@ import annofabcli.task.list_tasks
 import annofabcli.task.list_tasks_added_task_history
 import annofabcli.task.list_tasks_with_json
 import annofabcli.task.put_tasks
+import annofabcli.task.put_tasks_by_count
 import annofabcli.task.reject_tasks
 import annofabcli.task.update_metadata_of_task
 
@@ -30,6 +31,7 @@ def parse_args(parser: argparse.ArgumentParser):
     annofabcli.task.list_tasks_with_json.add_parser(subparsers)
     annofabcli.task.list_tasks_added_task_history.add_parser(subparsers)
     annofabcli.task.put_tasks.add_parser(subparsers)
+    annofabcli.task.put_tasks_by_count.add_parser(subparsers)
     annofabcli.task.reject_tasks.add_parser(subparsers)
     annofabcli.task.update_metadata_of_task.add_parser(subparsers)
 

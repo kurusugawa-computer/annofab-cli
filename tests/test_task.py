@@ -217,9 +217,20 @@ class TestCommandLine:
         main([self.command_name, "delete", "--project_id", project_id, "--task_id", copy_task_id, "--yes"])
 
     @pytest.mark.submitting_job
-    def test_put_task_with_csv(self):
-        csv_file = str(data_dir / "put_task.csv")
-        main([self.command_name, "put", "--project_id", project_id, "--csv", csv_file, "--wait"])
+    def test_put_task_by_count(self):
+        main(
+            [
+                self.command_name,
+                "put_by_count",
+                "--project_id",
+                project_id,
+                "--task_id_prefix",
+                "sample",
+                "--input_data_count",
+                "10",
+                "--wait",
+            ]
+        )
 
     def test_complete_task(self):
         main(
