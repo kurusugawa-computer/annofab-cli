@@ -163,6 +163,7 @@ class PuttingTaskMain:
             csv_file: task_relation_dictに対応するCSVファイルです。Noneの場合は生成します。
             parallelism: `put_task` APIでタスクを生成する際に、指定した値だけ並列で処理します。
         """
+        logger.info(f"{len(task_relation_dict)}件のタスクを生成します。")
         if api is None:
             if len(task_relation_dict) > TASK_THRESHOLD_FOR_JSON:
                 with tempfile.NamedTemporaryFile() as f:
