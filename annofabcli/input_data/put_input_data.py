@@ -60,6 +60,52 @@ class InputDataForPut(DataClassJsonMixin):
     sign_required: Optional[bool]
 
 
+def read_input_data_csv(csv_file: Path) -> pandas.DataFrame:
+    """入力データの情報が記載されているCSVを読み込み、pandas.DataFrameを返します。
+    DataFrameには以下の列が存在します。
+    * input_data_name
+    * input_data_path
+    * input_data_id
+    * sign_required
+
+    Args:
+        csv_file (Path): CSVファイルのパス
+
+    Returns:
+        CSVの情報が格納されたpandas.DataFrame
+    """
+    df = pandas.read_csv(
+        str(csv_file),
+        sep=",",
+        header=None,
+        names=("input_data_name", "input_data_path", "input_data_id", "sign_required"),
+    )
+    return df
+
+
+def is_duplicated_input_data(df: pandas.DataFrame) -> bool:
+    """DataFrame内のinput_data_name または input_data_pathが重複しているかどうかを返します。
+
+    Args:
+        df (pandas.DataFrame): 入力データが格納されているDataFrame
+
+    Returns:
+        bool: _description_
+    """
+    df_duplicated_input_data_name = df[df["input_data_name"].duplicated()]
+    result = False
+    if len(df_duplicated_input_data_name) > 0:
+        logger.warning(f"'input_data_name'が重複しています。\n" f"{df_duplicated_input_data_name['input_data_name'].unique()}")
+        result = True
+
+    df_duplicated_input_data_path = df[df["input_data_path"].duplicated()]
+    if len(df_duplicated_input_data_path) > 0:
+        logger.warning(f"'input_data_path'が重複しています。\n" f"{df_duplicated_input_data_path['input_data_path'].unique()}")
+        result = True
+
+    return result
+
+
 class SubPutInputData:
     """
     1個の入力データを登録するためのクラス。multiprocessing.Pool対応。
@@ -126,9 +172,14 @@ class SubPutInputData:
         return yes
 
     def confirm_put_input_data(self, input_data: InputDataForPut, already_exists: bool = False) -> bool:
-        message_for_confirm = f"input_data_name='{input_data.input_data_name}' の入力データを登録しますか？"
+        message_for_confirm = (
+            f"input_data_name='{input_data.input_data_name}', input_data_id='{input_data.input_data_id}' の入力データを登録しますか？"
+        )
         if already_exists:
-            message_for_confirm += f"input_data_id={input_data.input_data_id} を上書きします。"
+            message_for_confirm = f"input_data_name='{input_data.input_data_name}', input_data_id='{input_data.input_data_id}' の入力データを上書きして登録しますか？"  # noqa: E501
+        else:
+            message_for_confirm = f"input_data_name='{input_data.input_data_name}', input_data_id='{input_data.input_data_id}' の入力データを登録しますか？"  # noqa: E501
+
         return self.confirm_processing(message_for_confirm)
 
     def put_input_data_main(self, project_id: str, csv_input_data: CsvInputData, overwrite: bool = False) -> bool:
@@ -154,7 +205,6 @@ class SubPutInputData:
                 return False
 
         file_path = get_file_scheme_path(input_data.input_data_path)
-        logger.debug(f"input_data={input_data}")
         if file_path is not None:
             if not Path(file_path).exists():
                 logger.warning(f"{input_data.input_data_path} は存在しません。")
@@ -167,9 +217,10 @@ class SubPutInputData:
         try:
             self.put_input_data(project_id, input_data, last_updated_datetime=last_updated_datetime)
             logger.debug(
-                f"入力データを登録しました。"
-                f"input_data_id={input_data.input_data_id}, "
-                f"input_data_name={input_data.input_data_name}"
+                f"入力データを登録しました。 :: "
+                f"input_data_id='{input_data.input_data_id}', "
+                f"input_data_name='{input_data.input_data_name}'"
+                f"input_data_name='{input_data.input_data_name}'"
             )
             return True
 
@@ -196,6 +247,8 @@ class PutInputData(AbstractCommandLineInterface):
     """
     入力データをCSVで登録する。
     """
+
+    COMMON_MESSAGE = "annofabcli input_data put: error:"
 
     def put_input_data_list(
         self,
@@ -236,7 +289,7 @@ class PutInputData(AbstractCommandLineInterface):
         logger.info(f"{project_title} に、{count_put_input_data} / {len(input_data_list)} 件の入力データを登録しました。")
 
     @staticmethod
-    def get_input_data_list_from_csv(csv_path: Path, allow_duplicated_input_data: bool) -> List[CsvInputData]:
+    def get_input_data_list_from_df(df: pandas.DataFrame) -> List[CsvInputData]:
         def create_input_data(e):
             input_data_id = e.input_data_id if not pandas.isna(e.input_data_id) else None
             sign_required = bool(strtobool(str(e.sign_required))) if not pandas.isna(e.sign_required) else None
@@ -246,30 +299,6 @@ class PutInputData(AbstractCommandLineInterface):
                 input_data_id=input_data_id,
                 sign_required=sign_required,
             )
-
-        df = pandas.read_csv(
-            str(csv_path),
-            sep=",",
-            header=None,
-            names=("input_data_name", "input_data_path", "input_data_id", "sign_required"),
-        )
-        df_duplicated_input_data_name = df[df["input_data_name"].duplicated()]
-        if len(df_duplicated_input_data_name) > 0:
-            logger.warning(
-                f"{csv_path}に記載されている`input_data_name`が重複しています。\n"
-                f"{df_duplicated_input_data_name['input_data_name'].unique()}"
-            )
-            if not allow_duplicated_input_data:
-                raise RuntimeError(f"{csv_path}に記載されている`input_data_name`が重複しています。")
-
-        df_duplicated_input_data_path = df[df["input_data_path"].duplicated()]
-        if len(df_duplicated_input_data_path) > 0:
-            logger.warning(
-                f"{csv_path}に記載されている`input_data_path`が重複しています。\n"
-                f"{df_duplicated_input_data_path['input_data_path'].unique()}"
-            )
-            if not allow_duplicated_input_data:
-                raise RuntimeError(f"{csv_path}に記載されている`input_data_path`が重複しています。")
 
         input_data_list = [create_input_data(e) for e in df.itertuples()]
 
@@ -349,16 +378,14 @@ class PutInputData(AbstractCommandLineInterface):
             else:
                 logger.warning(f"入力データの登録に失敗しました。または、{MAX_WAIT_MINUTE}分間待っても、入力データの登録が完了しませんでした。")
 
-    @staticmethod
-    def validate(args: argparse.Namespace) -> bool:
-        COMMON_MESSAGE = "annofabcli input_data put: error:"
+    def validate(self, args: argparse.Namespace) -> bool:
         if args.zip is not None:
             if not Path(args.zip).exists():
-                print(f"{COMMON_MESSAGE} argument --zip: ファイルパスが存在しません。 '{args.zip}'", file=sys.stderr)
+                print(f"{self.COMMON_MESSAGE} argument --zip: ファイルパスが存在しません。 '{args.zip}'", file=sys.stderr)
                 return False
 
             if not zipfile.is_zipfile(args.zip):
-                print(f"{COMMON_MESSAGE} argument --zip: zipファイルではありません。 '{args.zip}'", file=sys.stderr)
+                print(f"{self.COMMON_MESSAGE} argument --zip: zipファイルではありません。 '{args.zip}'", file=sys.stderr)
                 return False
 
             if args.overwrite:
@@ -369,7 +396,7 @@ class PutInputData(AbstractCommandLineInterface):
 
         if args.csv is not None:
             if not Path(args.csv).exists():
-                print(f"{COMMON_MESSAGE} argument --csv: ファイルパスが存在しません。 '{args.csv}'", file=sys.stderr)
+                print(f"{self.COMMON_MESSAGE} argument --csv: ファイルパスが存在しません。 '{args.csv}'", file=sys.stderr)
                 return False
 
         if args.csv is not None or args.json is not None:
@@ -381,7 +408,7 @@ class PutInputData(AbstractCommandLineInterface):
 
             if args.parallelism is not None and not args.yes:
                 print(
-                    f"{COMMON_MESSAGE} argument --parallelism: '--parallelism'を指定するときは、必ず ``--yes`` を指定してください。",
+                    f"{self.COMMON_MESSAGE} argument --parallelism: '--parallelism'を指定するときは、必ず '--yes' を指定してください。",
                     file=sys.stderr,
                 )
                 return False
@@ -397,9 +424,17 @@ class PutInputData(AbstractCommandLineInterface):
         super().validate_project(project_id, [ProjectMemberRole.OWNER])
 
         if args.csv is not None:
-            input_data_list = self.get_input_data_list_from_csv(
-                args.csv, allow_duplicated_input_data=args.allow_duplicated_input_data
-            )
+            df = read_input_data_csv(args.csv)
+            is_duplicated = is_duplicated_input_data(df)
+            if not args.allow_duplicated_input_data and is_duplicated:
+                print(
+                    f"{self.COMMON_MESSAGE} argument --csv: '{args.csv}' に記載されている'input_data_name'または'input_data_path'が重複しているため、入力データを登録しません。"  # noqa: E501
+                    f"重複している状態で入力データを登録する際は、'--allow_duplicated_input_data'を指定してください。",
+                    file=sys.stderr,
+                )
+                sys.exit(COMMAND_LINE_ERROR_STATUS_CODE)
+
+            input_data_list = self.get_input_data_list_from_df(df)
             self.put_input_data_list(
                 project_id, input_data_list=input_data_list, overwrite=args.overwrite, parallelism=args.parallelism
             )
