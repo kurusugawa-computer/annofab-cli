@@ -2,7 +2,7 @@ import os
 import uuid
 from pathlib import Path
 
-from annofabcli.input_data.put_input_data import CsvInputData, PutInputData
+from annofabcli.input_data.put_input_data import CsvInputData, PutInputData, read_input_data_csv
 
 # プロジェクトトップに移動する
 os.chdir(os.path.dirname(os.path.abspath(__file__)) + "/../")
@@ -21,7 +21,8 @@ def is_uuid4(target: str):
 
 def test_get_input_data_list_from_csv():
     csv_path = test_dir / "input_data.csv"
-    actual_members = PutInputData.get_input_data_list_from_csv(csv_path, allow_duplicated_input_data=True)
+    df = read_input_data_csv(csv_path)
+    actual_members = PutInputData.get_input_data_list_from_df(df)
     assert actual_members[0] == CsvInputData(
         input_data_name="data1", input_data_path="s3://example.com/data1", input_data_id="id1", sign_required=None
     )
