@@ -327,6 +327,8 @@ class PutSupplementaryData(AbstractCommandLineInterface):
                 "supplementary_data_id",
                 "supplementary_data_type",
             ),
+            # IDは必ず文字列として読み込むようにする
+            dtype={"input_data_id": str, "supplementary_data_id": str},
         )
         supplementary_data_list = [create_supplementary_data(e) for e in df.itertuples()]
         return supplementary_data_list
