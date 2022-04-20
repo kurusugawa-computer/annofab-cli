@@ -39,6 +39,8 @@ def get_input_data_supplementary_data_dict_from_csv(csv_path: Path) -> InputData
             "input_data_id",
             "supplementary_data_id",
         ],
+        # IDは必ず文字列として読み込むようにする
+        dtype={"input_data_id": str, "supplementary_data_id": str},
     )
     input_data_dict = defaultdict(list)
     for input_data_id, supplementary_data_id in zip(df["input_data_id"], df["supplementary_data_id"]):

@@ -166,6 +166,8 @@ class PutProjectMembers(AbstractCommandLineInterface):
             sep=",",
             header=None,
             names=("user_id", "member_role", "sampling_inspection_rate", "sampling_acceptance_rate"),
+            # IDは必ず文字列として読み込むようにする
+            dtype={"user_id": str},
         ).replace({numpy.nan: None})
         members = [create_member(e) for e in df.itertuples()]
         return members
