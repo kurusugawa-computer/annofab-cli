@@ -123,42 +123,6 @@ class TestCommandLine__put:
             ]
         )
 
-    def test_put_input_data__with_csv_duplicated_name(self):
-        csv_file = str(data_dir / "input_data_duplicated_name.csv")
-        with pytest.raises(Exception):
-            main(
-                [
-                    "input_data",
-                    "put",
-                    "--project_id",
-                    project_id,
-                    "--csv",
-                    csv_file,
-                    "--overwrite",
-                    "--yes",
-                    "--parallelism",
-                    "2",
-                ]
-            )
-
-    def test_put_input_data__with_csv_duplicated_path(self):
-        csv_file = str(data_dir / "input_data_duplicated_path.csv")
-        with pytest.raises(Exception):
-            main(
-                [
-                    "input_data",
-                    "put",
-                    "--project_id",
-                    project_id,
-                    "--csv",
-                    csv_file,
-                    "--overwrite",
-                    "--yes",
-                    "--parallelism",
-                    "2",
-                ]
-            )
-
     def test_put_input_data__with_json(self):
         json_args = [
             {

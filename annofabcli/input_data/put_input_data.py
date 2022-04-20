@@ -79,6 +79,8 @@ def read_input_data_csv(csv_file: Path) -> pandas.DataFrame:
         sep=",",
         header=None,
         names=("input_data_name", "input_data_path", "input_data_id", "sign_required"),
+        # IDと名前は必ず文字列として読み込むようにする
+        dtype={"input_data_id": str, "input_data_name": str},
     )
     return df
 
