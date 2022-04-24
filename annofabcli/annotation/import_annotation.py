@@ -253,7 +253,6 @@ class ImportAnnotationMain(AbstractCommandLineWithConfirmInterface):
             with parser.open_outer_file(data_uri) as f:
                 s3_path = self.service.wrapper.upload_data_to_s3(self.project_id, f, content_type="image/png")
                 dest_obj.path = s3_path
-                logger.debug(f"{parser.task_id}/{parser.input_data_id}/{data_uri} をS3にアップロードしました。")
 
         return dest_obj
 

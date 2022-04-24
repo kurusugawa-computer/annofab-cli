@@ -47,7 +47,6 @@ class RestoreAnnotation(AbstractCommandLineInterface):
                 with parser.open_outer_file(data_uri) as f:
                     s3_path = self.service.wrapper.upload_data_to_s3(project_id, f, content_type="image/png")
                     detail.path = s3_path
-                    logger.debug(f"{parser.task_id}/{parser.input_data_id}/{data_uri} をS3にアップロードしました。")
             else:
                 logger.warning(f"annotation_id={detail.annotation_id}: data_holding_typeが'outer'なのにpathがNoneです。")
 
