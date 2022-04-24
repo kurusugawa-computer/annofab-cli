@@ -54,7 +54,7 @@ class ImportedSimpleAnnotationDetail(DataClassJsonMixin):
     data: Dict[str, Any]
     """"""
 
-    attributes: Dict[str, Union[str, bool, int]]
+    attributes: Optional[Dict[str, Union[str, bool, int]]] = None
     """属性情報。キーは属性の名前、値は属性の値。 """
 
     annotation_id: Optional[str] = None
@@ -131,8 +131,8 @@ class ImportAnnotationMain(AbstractCommandLineWithConfirmInterface):
         data_uri = annotation_data["data"]
         # この時点で data_uriは f"./{input_data_id}/{annotation_id}"
         # paraser.open_data_uriメソッドに渡す値は、先頭のinput_data_idは不要なので、これを取り除く
-        tmp = data_uri.split("/")
-        return "/".join(tmp[2:])
+        path = Path(data_uri)
+        return str(path.relative_to(path.parts[0]))
 
     @classmethod
     def _is_3dpc_segment_label(cls, label_info: Dict[str, Any]) -> bool:
@@ -221,7 +221,11 @@ class ImportAnnotationMain(AbstractCommandLineWithConfirmInterface):
                 else:
                     return str(uuid.uuid4())
 
-        additional_data_list: List[AdditionalData] = self._to_additional_data_list(detail.attributes, label_info)
+        if detail.attributes is not None:
+            additional_data_list = self._to_additional_data_list(detail.attributes, label_info)
+        else:
+            additional_data_list = []
+
         data_holding_type = self._get_data_holding_type_from_data(label_info)
 
         dest_obj = AnnotationDetail(
