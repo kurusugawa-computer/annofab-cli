@@ -7,7 +7,7 @@ from __future__ import annotations
 import datetime
 import logging
 from pathlib import Path
-from typing import Any, Optional
+from typing import Optional
 
 import annofabapi
 import bokeh
@@ -34,93 +34,114 @@ from annofabcli.task_history_event.list_worktime import (
 logger = logging.getLogger(__name__)
 
 
-def get_df_worktime(
-    task_history_event_list: list[WorktimeFromTaskHistoryEvent],
-    member_list: list[dict[str, Any]],
-    df_labor: Optional[pandas.DataFrame] = None,
-) -> pandas.DataFrame:
-    dict_worktime = get_worktime_dict_from_event_list(task_history_event_list)
-
-    s = pandas.Series(
-        dict_worktime.values(),
-        index=pandas.MultiIndex.from_tuples(dict_worktime.keys(), names=("date", "account_id", "phase")),
-    )
-    df = s.unstack()
-    df.reset_index(inplace=True)
-    df.rename(
-        columns={
-            "annotation": "monitored_annotation_worktime_hour",
-            "inspection": "monitored_inspection_worktime_hour",
-            "acceptance": "monitored_acceptance_worktime_hour",
-        },
-        inplace=True,
-    )
-
-    # 列数を固定させる
-    for phase in ["annotation", "inspection", "acceptance"]:
-        column = f"{phase}_worktime_hour"
-        if column not in df.columns:
-            df[column] = 0
-
-    df.fillna(
-        {
-            "monitored_annotation_worktime_hour": 0,
-            "monitored_inspection_worktime_hour": 0,
-            "monitored_acceptance_worktime_hour": 0,
-        },
-        inplace=True,
-    )
-
-    # フェーズごとのmonitor_worktime_hour 列がない場合は、強制的に列を作成する
-    for phase in ["annotation", "inspection", "acceptance"]:
-        if f"monitored_{phase}_worktime_hour" not in df.columns:
-            df[f"monitored_{phase}_worktime_hour"] = 0
-
-    df["monitored_worktime_hour"] = (
-        df["monitored_annotation_worktime_hour"]
-        + df["monitored_inspection_worktime_hour"]
-        + df["monitored_acceptance_worktime_hour"]
-    )
-
-    df_member = pandas.DataFrame(member_list)[["account_id", "user_id", "username", "biography"]]
-
-    if df_labor is not None and len(df_labor) > 0:
-        df = df.merge(df_labor[["date", "actual_worktime_hour", "account_id"]], how="outer", on=["date", "account_id"])
-    else:
-        df["actual_worktime_hour"] = 0
-
-    value_columns = [
-        "actual_worktime_hour",
-        "monitored_worktime_hour",
-        "monitored_annotation_worktime_hour",
-        "monitored_inspection_worktime_hour",
-        "monitored_acceptance_worktime_hour",
-    ]
-    df.fillna({c: 0 for c in value_columns}, inplace=True)
-
-    df = df.merge(df_member, how="left", on="account_id")
-    return df[
-        [
-            "date",
-            "account_id",
-            "user_id",
-            "username",
-            "biography",
-            "actual_worktime_hour",
-            "monitored_worktime_hour",
-            "monitored_annotation_worktime_hour",
-            "monitored_inspection_worktime_hour",
-            "monitored_acceptance_worktime_hour",
-        ]
-    ]
-
-
 class WorktimePerDate:
     PLOT_WIDTH = 1200
     PLOT_HEIGHT = 600
 
     def __init__(self, df: pandas.DataFrame):
         self.df = df
+
+    @classmethod
+    def get_df_worktime(
+        cls,
+        task_history_event_list: list[WorktimeFromTaskHistoryEvent],
+        df_member: pandas.DataFrame,
+        df_labor: Optional[pandas.DataFrame] = None,
+    ) -> pandas.DataFrame:
+        dict_worktime = get_worktime_dict_from_event_list(task_history_event_list)
+
+        s = pandas.Series(
+            dict_worktime.values(),
+            index=pandas.MultiIndex.from_tuples(dict_worktime.keys(), names=("date", "account_id", "phase")),
+        )
+        df = s.unstack()
+        df.reset_index(inplace=True)
+        df.rename(
+            columns={
+                "annotation": "monitored_annotation_worktime_hour",
+                "inspection": "monitored_inspection_worktime_hour",
+                "acceptance": "monitored_acceptance_worktime_hour",
+            },
+            inplace=True,
+        )
+
+        # 列数を固定させる
+        for phase in ["annotation", "inspection", "acceptance"]:
+            column = f"{phase}_worktime_hour"
+            if column not in df.columns:
+                df[column] = 0
+
+        df.fillna(
+            {
+                "monitored_annotation_worktime_hour": 0,
+                "monitored_inspection_worktime_hour": 0,
+                "monitored_acceptance_worktime_hour": 0,
+            },
+            inplace=True,
+        )
+
+        # フェーズごとのmonitor_worktime_hour 列がない場合は、強制的に列を作成する
+        for phase in ["annotation", "inspection", "acceptance"]:
+            if f"monitored_{phase}_worktime_hour" not in df.columns:
+                df[f"monitored_{phase}_worktime_hour"] = 0
+
+        df["monitored_worktime_hour"] = (
+            df["monitored_annotation_worktime_hour"]
+            + df["monitored_inspection_worktime_hour"]
+            + df["monitored_acceptance_worktime_hour"]
+        )
+
+        if df_labor is not None and len(df_labor) > 0:
+            df = df.merge(
+                df_labor[["date", "actual_worktime_hour", "account_id"]], how="outer", on=["date", "account_id"]
+            )
+        else:
+            df["actual_worktime_hour"] = 0
+
+        value_columns = [
+            "actual_worktime_hour",
+            "monitored_worktime_hour",
+            "monitored_annotation_worktime_hour",
+            "monitored_inspection_worktime_hour",
+            "monitored_acceptance_worktime_hour",
+        ]
+        df.fillna({c: 0 for c in value_columns}, inplace=True)
+
+        df = df.merge(df_member, how="left", on="account_id")
+        return df[
+            [
+                "date",
+                "account_id",
+                "user_id",
+                "username",
+                "biography",
+                "actual_worktime_hour",
+                "monitored_worktime_hour",
+                "monitored_annotation_worktime_hour",
+                "monitored_inspection_worktime_hour",
+                "monitored_acceptance_worktime_hour",
+            ]
+        ]
+
+    @classmethod
+    def _get_df_member(cls, service: annofabapi.Resource, project_id: str) -> pandas.DataFrame:
+        """project_idに関するメンバ情報を取得します。
+        Annoworkで作業したメンバが、Annofabのプロジェクトで作業していない場合もあるので、
+        できるだけたくさんのメンバを取得できるようにするため、組織メンバを取得しています。
+        """
+        project_member_list = service.wrapper.get_all_project_members(
+            project_id, query_params={"include_inactive_member": ""}
+        )
+        df_project_member = pandas.DataFrame(project_member_list)
+        organization, _ = service.api.get_organization_of_project(project_id)
+        organization_member_list = service.wrapper.get_all_organization_members(organization["organization_name"])
+        df_organization_member = pandas.DataFrame(organization_member_list)
+
+        df_member = pandas.concat([df_project_member, df_organization_member])[
+            "account_id", "user_id", "username", "biography"
+        ]
+        df_member.drop_duplicates(subset=["account_id", "user_id", "username", "biography"], inplace=True)
+        return df_member
 
     @classmethod
     def from_webapi(
@@ -136,17 +157,15 @@ class WorktimePerDate:
         Returns:
             WorktimePerDate: [description]
         """
+
         main_obj = ListWorktimeFromTaskHistoryEventMain(service, project_id=project_id)
         worktime_list = main_obj.get_worktime_list(
             project_id,
         )
-        project_member_list = service.wrapper.get_all_project_members(
-            project_id, query_params={"include_inactive_member": ""}
-        )
-        if df_labor is not None:
-            df = get_df_worktime(worktime_list, project_member_list, df_labor=df_labor)
-        else:
-            df = get_df_worktime(worktime_list, project_member_list)
+
+        df_member = cls._get_df_member(service, project_id)
+
+        df = cls.get_df_worktime(worktime_list, df_member, df_labor=df_labor)
         return cls(df)
 
     def _get_cumulative_dataframe(self) -> pandas.DataFrame:
