@@ -107,7 +107,8 @@ def get_replaced_user_id_set_from_biography(
     else:
         filtered_df = df[df["biography"].map(lambda e: e not in not_masked_location_set)]
 
-    return set(filtered_df["user_id"])
+    # user_id列にnanが含まれている可能性があるので、それを除外する
+    return set(filtered_df[filtered_df["user_id"].notna()]["user_id"])
 
 
 def _get_header_row_count(df: pandas.DataFrame) -> int:
