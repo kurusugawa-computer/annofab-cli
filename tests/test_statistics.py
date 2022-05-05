@@ -3,11 +3,15 @@ import os
 from pathlib import Path
 
 import annofabapi
+import pandas
 
 from annofabcli.__main__ import main
+from annofabcli.statistics.visualization.dataframe.worktime_per_date import WorktimePerDate
 
 out_dir = Path("./tests/out/statistics")
 data_dir = Path("./tests/data/statistics")
+out_dir.mkdir(exist_ok=True, parents=True)
+
 
 # プロジェクトトップに移動する
 os.chdir(os.path.dirname(os.path.abspath(__file__)) + "/../")
@@ -118,21 +122,12 @@ class TestCommandLine:
         )
 
 
-# class TestListSubmittedTaskCountMain:
-#     main_obj = None
-#
-#     @classmethod
-#     def setup_class(cls):
-#         cls.main_obj = ListSubmittedTaskCountMain(service)
-#
-#     def test_create_labor_df(self):
-#         df = self.main_obj.create_labor_df(project_id)
-#         df.to_csv("labor_df.csv")
-#
-#     def test_create_account_statistics_df(self):
-#         df = self.main_obj.create_account_statistics_df(project_id)
-#         df.to_csv("account_statistics.csv")
-#
-#     def test_create_user_df(self):
-#         df = self.main_obj.create_user_df(project_id)
-#         df.to_csv("user.csv")
+class TestWorktimePerDate:
+    def test_from_webapi(self):
+        actual = WorktimePerDate.from_webapi(service, project_id)
+        assert len(actual.df) > 0
+
+    def test_from_webapi_with_labor(self):
+        df_labor = pandas.read_csv(str(data_dir / "labor-df.csv"))
+        actual = WorktimePerDate.from_webapi(service, project_id, df_labor=df_labor)
+        assert len(actual.df) > 0

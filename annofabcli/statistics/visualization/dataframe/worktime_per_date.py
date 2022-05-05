@@ -138,7 +138,7 @@ class WorktimePerDate:
         df_organization_member = pandas.DataFrame(organization_member_list)
 
         df_member = pandas.concat([df_project_member, df_organization_member])[
-            "account_id", "user_id", "username", "biography"
+            ["account_id", "user_id", "username", "biography"]
         ]
         df_member.drop_duplicates(subset=["account_id", "user_id", "username", "biography"], inplace=True)
         return df_member
