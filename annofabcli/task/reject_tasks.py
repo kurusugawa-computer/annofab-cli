@@ -177,6 +177,8 @@ class RejectTasksMain(AbstractCommandLineWithConfirmInterface):
             assign_last_annotator: Trueなら差し戻したタスクに対して、最後のannotation phaseを担当者を割り当てる
             assigned_annotator_user_id: 差し戻したタスクに割り当てるユーザのuser_id. assign_last_annotatorがTrueの場合、この引数は無視される。
 
+        Returns:
+            タスクを差し戻したかどうか
         """
         logging_prefix = f"{task_index+1} 件目" if task_index is not None else ""
 
@@ -186,7 +188,10 @@ class RejectTasksMain(AbstractCommandLineWithConfirmInterface):
             else None
         )
 
-        task, _ = self.service.api.get_task(project_id, task_id)
+        task = self.service.wrapper.get_task_or_none(project_id, task_id)
+        if task is None:
+            logger.warning(f"{logging_prefix} : task_id='{task_id}'のタスクをは存在しないので、スキップします。")
+            return False
 
         logger.debug(
             f"{logging_prefix} : task_id = {task['task_id']}, "
@@ -228,7 +233,7 @@ class RejectTasksMain(AbstractCommandLineWithConfirmInterface):
                 # 最後のannotation phaseに担当を割り当てる
                 if not dryrun:
                     self.facade.reject_task_assign_last_annotator(project_id, task_id)
-                logger.info(f"{logging_prefix} : task_id = {task_id} のタスクを差し戻しました。タスクの担当者は直前の教師付フェーズの担当者。")
+                logger.info(f"{logging_prefix} : task_id = {task_id} のタスクを差し戻しました。タスクの担当者は直前の教師付フェーズの担当者です。")
                 return True
 
             # 指定したユーザに担当を割り当てる
@@ -264,17 +269,22 @@ class RejectTasksMain(AbstractCommandLineWithConfirmInterface):
         dryrun: bool = False,
     ) -> bool:
         task_index, task_id = tpl
-        return self.reject_task_with_adding_comment(
-            project_id=project_id,
-            task_id=task_id,
-            task_index=task_index,
-            inspection_comment=inspection_comment,
-            assign_last_annotator=assign_last_annotator,
-            assigned_annotator_user_id=assigned_annotator_user_id,
-            cancel_acceptance=cancel_acceptance,
-            task_query=task_query,
-            dryrun=dryrun,
-        )
+        try:
+            return self.reject_task_with_adding_comment(
+                project_id=project_id,
+                task_id=task_id,
+                task_index=task_index,
+                inspection_comment=inspection_comment,
+                assign_last_annotator=assign_last_annotator,
+                assigned_annotator_user_id=assigned_annotator_user_id,
+                cancel_acceptance=cancel_acceptance,
+                task_query=task_query,
+                dryrun=dryrun,
+            )
+        except Exception:  # pylint: disable=broad-except
+            logger.warning(f"タスク'{task_id}'の差し戻しに失敗しました。", exc_info=True)
+            return False
+
 
     def reject_task_list(
         self,
@@ -291,7 +301,7 @@ class RejectTasksMain(AbstractCommandLineWithConfirmInterface):
         if task_query is not None:
             task_query = self.facade.set_account_id_of_task_query(project_id, task_query)
 
-        logger.info(f"差し戻すタスク数: {len(task_id_list)}")
+        logger.info(f"{len(task_id_list)} 件のタスクを差し戻します。")
 
         if parallelism is not None:
             partial_func = partial(
@@ -312,19 +322,23 @@ class RejectTasksMain(AbstractCommandLineWithConfirmInterface):
             # 逐次処理
             success_count = 0
             for task_index, task_id in enumerate(task_id_list):
-                result = self.reject_task_with_adding_comment(
-                    project_id,
-                    task_id,
-                    task_index=task_index,
-                    inspection_comment=inspection_comment,
-                    assign_last_annotator=assign_last_annotator,
-                    assigned_annotator_user_id=assigned_annotator_user_id,
-                    cancel_acceptance=cancel_acceptance,
-                    task_query=task_query,
-                    dryrun=dryrun,
-                )
-                if result:
-                    success_count += 1
+                try:
+                    result = self.reject_task_with_adding_comment(
+                        project_id,
+                        task_id,
+                        task_index=task_index,
+                        inspection_comment=inspection_comment,
+                        assign_last_annotator=assign_last_annotator,
+                        assigned_annotator_user_id=assigned_annotator_user_id,
+                        cancel_acceptance=cancel_acceptance,
+                        task_query=task_query,
+                        dryrun=dryrun,
+                    )
+                    if result:
+                        success_count += 1
+                except Exception:
+                    logger.warning(f"タスク'{task_id}'の差し戻しに失敗しました。", exc_info=True)
+                    continue
 
         logger.info(f"{success_count} / {len(task_id_list)} 件 タスクを差し戻しました。")
 
