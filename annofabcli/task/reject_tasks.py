@@ -285,7 +285,6 @@ class RejectTasksMain(AbstractCommandLineWithConfirmInterface):
             logger.warning(f"タスク'{task_id}'の差し戻しに失敗しました。", exc_info=True)
             return False
 
-
     def reject_task_list(
         self,
         project_id: str,
@@ -336,7 +335,7 @@ class RejectTasksMain(AbstractCommandLineWithConfirmInterface):
                     )
                     if result:
                         success_count += 1
-                except Exception:
+                except Exception:  # pylint: disable=broad-except
                     logger.warning(f"タスク'{task_id}'の差し戻しに失敗しました。", exc_info=True)
                     continue
 
