@@ -1,17 +1,18 @@
 from __future__ import annotations
-import more_itertools
+
 import argparse
 import logging
 import multiprocessing
 import sys
 from dataclasses import dataclass
 from functools import partial
-from typing import List, Optional, Tuple, Any
+from typing import Any, List, Optional, Tuple
 
 import annofabapi
+import more_itertools
 import requests
 from annofabapi.dataclass.task import Task
-from annofabapi.models import ProjectMemberRole, TaskStatus, TaskPhase
+from annofabapi.models import ProjectMemberRole, TaskPhase, TaskStatus
 
 import annofabcli
 import annofabcli.common.cli
@@ -37,21 +38,21 @@ class User:
 
 
 class CancelAcceptanceMain(AbstractCommandLineWithConfirmInterface):
-    def __init__(self, service: annofabapi.Resource, project_id:str, all_yes: bool = False):
+    _project_members_dict: Optional[dict[str, dict[str,Any]]]
+
+    def __init__(self, service: annofabapi.Resource, project_id: str, all_yes: bool = False):
         self.service = service
-        self.project_id=project_id
+        self.project_id = project_id
         self.facade = AnnofabApiFacade(service)
         AbstractCommandLineWithConfirmInterface.__init__(self, all_yes)
 
-    def get_project_member_from_account_id(self, account_id: str) -> Optional[dict[str,Any]]:
-        """account_idからプロジェクトメンバを取得します。
-        """
+    def get_project_member_from_account_id(self, account_id: str) -> Optional[dict[str, Any]]:
+        """account_idからプロジェクトメンバを取得します。"""
         if self._project_members_dict is None:
             project_member_list = self.service.wrapper.get_all_project_members(self.project_id)
             self._project_members_dict = {e["account_id"]: e for e in project_member_list}
 
         return self._project_members_dict.get(account_id)
-
 
     def cancel_acceptance_for_task(
         self,
@@ -114,7 +115,9 @@ class CancelAcceptanceMain(AbstractCommandLineWithConfirmInterface):
             )
             operator_account_id = actual_acceptor.account_id if actual_acceptor is not None else None
             if not dryrun:
-                self.service.wrapper.cancel_completed_task(self.project_id, task_id, operator_account_id=operator_account_id)
+                self.service.wrapper.cancel_completed_task(
+                    self.project_id, task_id, operator_account_id=operator_account_id
+                )
             logger.info(f"{logging_prefix} : task_id = {task_id} の受け入れ取り消しが成功しました。")
             return True
 
@@ -162,7 +165,7 @@ class CancelAcceptanceMain(AbstractCommandLineWithConfirmInterface):
             acceptor_user_id: 再度受入を担当させたいユーザのuser_id. Noneならば、未割り当てにする
             assign_last_acceptor: trueなら最後の受入担当者に割り当てる
         """
-        assert not(assign_last_acceptor and acceptor is not None)
+        assert not (assign_last_acceptor and acceptor is not None)
         logger.info(f"受け入れを取り消すタスク数: {len(task_id_list)}")
 
         if task_query is not None:
@@ -228,7 +231,7 @@ class CancelAcceptance(AbstractCommandLineInterface):
 
         task_id_list = annofabcli.common.cli.get_list_from_args(args.task_id)
 
-        assigned_acceptor_user_id:Optional[str] = args.assigned_acceptor_user_id
+        assigned_acceptor_user_id: Optional[str] = args.assigned_acceptor_user_id
 
         # 最後の受入フェーズの担当者に割り当てるか否か
         assign_last_acceptor = not args.not_assign and assigned_acceptor_user_id is None
@@ -236,17 +239,18 @@ class CancelAcceptance(AbstractCommandLineInterface):
         # 受入担当者の情報を取得する
         acceptor: Optional[User] = None  # 受入担当者
         if assigned_acceptor_user_id is not None:
-            project_member_list = self.service.wrapper.get_all_project_members(self.project_id)
-            member = more_itertools.first_true(project_member_list, pred=lambda e:e["user_id"] == assigned_acceptor_user_id)
+            project_member_list = self.service.wrapper.get_all_project_members(args.project_id)
+            member = more_itertools.first_true(
+                project_member_list, pred=lambda e: e["user_id"] == assigned_acceptor_user_id
+            )
             if member is None:
                 print(
-                    f"{self.COMMON_MESSAGE} argument --assigned_acceptor_user_id: プロジェクトメンバーに user_id='{assigned_acceptor_user_id}'メンバーは存在しません",
+                    f"{self.COMMON_MESSAGE} argument --assigned_acceptor_user_id: プロジェクトメンバーに user_id='{assigned_acceptor_user_id}'メンバーは存在しません",  # noqa: E501
                     file=sys.stderr,
                 )
                 sys.exit(COMMAND_LINE_ERROR_STATUS_CODE)
             else:
                 acceptor = User(account_id=member["account_id"], user_id=member["user_id"], username=member["username"])
-
 
         dict_task_query = annofabcli.common.cli.get_json_from_args(args.task_query)
         task_query: Optional[TaskQuery] = TaskQuery.from_dict(dict_task_query) if dict_task_query is not None else None
@@ -256,7 +260,7 @@ class CancelAcceptance(AbstractCommandLineInterface):
         main_obj.cancel_acceptance_for_task_list(
             task_id_list,
             assign_last_acceptor=assign_last_acceptor,
-            acceptor=args.acceptor,
+            acceptor=acceptor,
             task_query=task_query,
             parallelism=args.parallelism,
             dryrun=args.dryrun,
