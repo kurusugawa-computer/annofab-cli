@@ -38,7 +38,7 @@ class User:
 
 
 class CancelAcceptanceMain(AbstractCommandLineWithConfirmInterface):
-    _project_members_dict: Optional[dict[str, dict[str,Any]]]
+    _project_members_dict: Optional[dict[str, dict[str, Any]]]
 
     def __init__(self, service: annofabapi.Resource, project_id: str, all_yes: bool = False):
         self.service = service
@@ -103,15 +103,16 @@ class CancelAcceptanceMain(AbstractCommandLineWithConfirmInterface):
                 logger.debug(f"{logging_prefix} : task_id = {task_id} : TaskQueryの条件にマッチしないため、スキップします。")
                 return False
 
-            if not self.confirm_processing(
-                f"{logging_prefix}: task_id = {task_id} のタスクの受入を取り消しますか？ "
-                f"user_id = '{get_user_id(actual_acceptor)}' のユーザに割り当てます。"
-            ):
+            if not self.confirm_processing(f"{logging_prefix}: task_id = {task_id} のタスクの受入完了状態を取り消しますか？ "):
                 return False
 
             logger.debug(
-                f"{logging_prefix}: task_id = {task_id} のタスクの受入を取り消し、"
-                f"user_id = '{get_user_id(actual_acceptor)}' のユーザに割り当てます。"
+                f"{logging_prefix}: task_id = {task_id} のタスクの受入完了状態を取り消します。"
+                + (
+                    f"タスクの担当者は {actual_acceptor.username}({actual_acceptor.user_id}) です。"
+                    if actual_acceptor is not None
+                    else "タスクの担当者は未割り当てです。"
+                )
             )
             operator_account_id = actual_acceptor.account_id if actual_acceptor is not None else None
             if not dryrun:
