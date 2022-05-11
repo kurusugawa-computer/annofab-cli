@@ -493,7 +493,6 @@ class CompleteTasksMain(AbstractCommandLineWithConfirmInterface):
                     logger.warning(f"タスク'{task_id}'のフェーズを完了状態にするのに失敗しました。", exc_info=True)
                     continue
 
-
         logger.info(f"{success_count} / {len(task_id_list)} 件のタスクに対して、今のフェーズを完了状態にしました。")
 
 
