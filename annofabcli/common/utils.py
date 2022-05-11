@@ -25,6 +25,8 @@ def read_lines(filepath: str) -> List[str]:
     """ファイルを行単位で読み込む。改行コードを除く"""
     with open(filepath, encoding="utf-8") as f:
         lines = f.readlines()
+    # BOMがあれば除去する
+    lines[0] = lines[0].lstrip("\ufeff")
     return [e.rstrip("\r\n") for e in lines]
 
 
