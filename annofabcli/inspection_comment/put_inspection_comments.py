@@ -122,7 +122,7 @@ class AddInspectionCommentsMain(AbstractCommandLineWithConfirmInterface):
             changed_task = self.service.wrapper.change_task_status_to_working(project_id, task_id)
             return changed_task
 
-        except requests.HTTPError as e:
+        except requests.HTTPError:
             logger.warning(f"{task_id}: 担当者の変更、または作業中状態への変更に失敗しました。", exc_info=True)
             raise
 
