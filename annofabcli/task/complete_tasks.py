@@ -186,7 +186,7 @@ class CompleteTasksMain(AbstractCommandLineWithConfirmInterface):
                 logger.debug(f"{task.task_id}: 担当者を自分自身に変更しました。")
 
             dict_task = self.service.wrapper.change_task_status_to_working(
-                project_id=task.project_id, task_id=task.task_id, account_id=my_account_id
+                project_id=task.project_id, task_id=task.task_id
             )
             return Task.from_dict(dict_task)
 

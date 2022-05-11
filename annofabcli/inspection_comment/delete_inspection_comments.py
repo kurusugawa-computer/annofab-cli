@@ -90,7 +90,7 @@ class DeleteInspectionCommentsMain(AbstractCommandLineWithConfirmInterface):
                 self.service.wrapper.change_task_operator(project_id, task_id, self.service.api.account_id)
                 logger.debug(f"{task_id}: 担当者を自分自身に変更しました。")
 
-            changed_task = self.service.wrapper.change_task_status_to_working(project_id, task_id, self.service.api.account_id)
+            changed_task = self.service.wrapper.change_task_status_to_working(project_id, task_id)
             return changed_task
 
         except requests.HTTPError as e:
