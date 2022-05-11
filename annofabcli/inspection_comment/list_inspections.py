@@ -157,7 +157,7 @@ class PrintInspections(AbstractCommandLineInterface):
 
                     all_inspections.extend(inspections)
 
-            except requests.HTTPError as e:
+            except requests.HTTPError:
                 logger.warning(f"タスク task_id = {task_id} の検査コメントを取得できなかった。", exc_info=True)
 
         return all_inspections
