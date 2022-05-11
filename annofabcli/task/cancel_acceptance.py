@@ -63,9 +63,6 @@ class CancelAcceptanceMain(AbstractCommandLineWithConfirmInterface):
         task_index: Optional[int] = None,
         dryrun: bool = False,
     ) -> bool:
-        def get_user_id(user: Optional[User]) -> Optional[str]:
-            return user.user_id if user is not None else None
-
         logging_prefix = f"{task_index + 1} 件目" if task_index is not None else ""
 
         try:
@@ -112,7 +109,7 @@ class CancelAcceptanceMain(AbstractCommandLineWithConfirmInterface):
                     f"タスクの担当者は {actual_acceptor.username}({actual_acceptor.user_id}) です。"
                     if actual_acceptor is not None
                     else "タスクの担当者は未割り当てです。"
-                )
+                )  # noqa: E501
             )
             operator_account_id = actual_acceptor.account_id if actual_acceptor is not None else None
             if not dryrun:

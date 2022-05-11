@@ -377,7 +377,7 @@ class CompleteTasksMain(AbstractCommandLineWithConfirmInterface):
 
         dict_task = self.service.wrapper.get_task_or_none(project_id, task_id)
         if dict_task is None:
-            logger.warning(f"{task_id} のタスクを取得できませんでした。")
+            logger.warning(f"{logging_prefix}: task_id='{task_id}'のタスクは存在しないので、スキップします。")
             return False
 
         task: Task = Task.from_dict(dict_task)
@@ -414,16 +414,20 @@ class CompleteTasksMain(AbstractCommandLineWithConfirmInterface):
         task_query: Optional[TaskQuery] = None,
     ) -> bool:
         task_index, task_id = tpl
-        return self.complete_task(
-            project_id=project_id,
-            task_id=task_id,
-            task_index=task_index,
-            target_phase=target_phase,
-            target_phase_stage=target_phase_stage,
-            reply_comment=reply_comment,
-            inspection_status=inspection_status,
-            task_query=task_query,
-        )
+        try:
+            return self.complete_task(
+                project_id=project_id,
+                task_id=task_id,
+                task_index=task_index,
+                target_phase=target_phase,
+                target_phase_stage=target_phase_stage,
+                reply_comment=reply_comment,
+                inspection_status=inspection_status,
+                task_query=task_query,
+            )
+        except Exception:  # pylint: disable=broad-except
+            logger.warning(f"タスク'{task_id}'のフェーズを完了状態にするのに失敗しました。", exc_info=True)
+            return False
 
     def complete_task_list(
         self,
@@ -472,18 +476,23 @@ class CompleteTasksMain(AbstractCommandLineWithConfirmInterface):
         else:
             # 逐次処理
             for task_index, task_id in enumerate(task_id_list):
-                result = self.complete_task(
-                    project_id,
-                    task_id,
-                    task_index=task_index,
-                    target_phase=target_phase,
-                    target_phase_stage=target_phase_stage,
-                    reply_comment=reply_comment,
-                    inspection_status=inspection_status,
-                    task_query=task_query,
-                )
-                if result:
-                    success_count += 1
+                try:
+                    result = self.complete_task(
+                        project_id,
+                        task_id,
+                        task_index=task_index,
+                        target_phase=target_phase,
+                        target_phase_stage=target_phase_stage,
+                        reply_comment=reply_comment,
+                        inspection_status=inspection_status,
+                        task_query=task_query,
+                    )
+                    if result:
+                        success_count += 1
+                except Exception:  # pylint: disable=broad-except
+                    logger.warning(f"タスク'{task_id}'のフェーズを完了状態にするのに失敗しました。", exc_info=True)
+                    continue
+
 
         logger.info(f"{success_count} / {len(task_id_list)} 件のタスクに対して、今のフェーズを完了状態にしました。")
 
