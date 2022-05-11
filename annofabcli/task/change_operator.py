@@ -66,9 +66,12 @@ class ChangeOperatorMain:
         task_query: Optional[TaskQuery] = None,
         task_index: Optional[int] = None,
     ) -> bool:
-
         logging_prefix = f"{task_index+1} 件目" if task_index is not None else ""
-        dict_task, _ = self.service.api.get_task(project_id, task_id)
+        dict_task = self.service.wrapper.get_task_or_none(project_id, task_id)
+        if dict_task is None:
+            logger.warning(f"{logging_prefix}: task_id='{task_id}'のタスクは存在しないので、スキップします。")
+            return False
+
         task: Task = Task.from_dict(dict_task)
 
         now_user_id = None
@@ -98,13 +101,12 @@ class ChangeOperatorMain:
 
         try:
             # 担当者を変更する
-            self.facade.change_operator_of_task(project_id, task_id, new_account_id)
+            self.service.wrapper.change_task_operator(project_id, task_id, operator_account_id=new_account_id)
             logger.debug(f"{logging_prefix} : task_id = {task_id}, phase={dict_task['phase']} のタスクの担当者を変更しました。")
             return True
 
-        except requests.exceptions.HTTPError as e:
-            logger.warning(f"{logging_prefix} : task_id = {task_id} の担当者を変更するのに失敗しました。")
-            logger.warning(e)
+        except requests.exceptions.HTTPError:
+            logger.warning(f"{logging_prefix} : task_id = {task_id} の担当者を変更するのに失敗しました。", exc_info=True)
             return False
 
     def change_operator_for_task_wrapper(
@@ -115,13 +117,17 @@ class ChangeOperatorMain:
         new_account_id: Optional[str] = None,
     ) -> bool:
         task_index, task_id = tpl
-        return self.change_operator_for_task(
-            project_id=project_id,
-            task_id=task_id,
-            task_index=task_index,
-            task_query=task_query,
-            new_account_id=new_account_id,
-        )
+        try:
+            return self.change_operator_for_task(
+                project_id=project_id,
+                task_id=task_id,
+                task_index=task_index,
+                task_query=task_query,
+                new_account_id=new_account_id,
+            )
+        except Exception:  # pylint: disable=broad-except
+            logger.warning(f"タスク'{task_id}'の担当者の変更に失敗しました。", exc_info=True)
+            return False
 
     def change_operator(
         self,
@@ -148,10 +154,10 @@ class ChangeOperatorMain:
                 logger.error(f"ユーザ '{new_user_id}' のaccount_idが見つかりませんでした。終了します。")
                 return
             else:
-                logger.info(f" {len(task_id_list)}のタスクの担当者を、{new_user_id}に変更します。")
+                logger.info(f"{len(task_id_list)} 件のタスクの担当者を、{new_user_id}に変更します。")
         else:
             new_account_id = None
-            logger.info(f" {len(task_id_list)} 件のタスクの担当者を未割り当てに変更します。")
+            logger.info(f"{len(task_id_list)} 件のタスクの担当者を未割り当てに変更します。")
 
         success_count = 0
 
@@ -169,11 +175,15 @@ class ChangeOperatorMain:
         else:
             # 逐次処理
             for task_index, task_id in enumerate(task_id_list):
-                result = self.change_operator_for_task(
-                    project_id, task_id, task_index=task_index, task_query=task_query, new_account_id=new_account_id
-                )
-                if result:
-                    success_count += 1
+                try:
+                    result = self.change_operator_for_task(
+                        project_id, task_id, task_index=task_index, task_query=task_query, new_account_id=new_account_id
+                    )
+                    if result:
+                        success_count += 1
+                except Exception:  # pylint: disable=broad-except
+                    logger.warning(f"タスク'{task_id}'の担当者の変更に失敗しました。", exc_info=True)
+                    continue
 
         logger.info(f"{success_count} / {len(task_id_list)} 件 タスクの担当者を変更しました。")
 

@@ -77,6 +77,8 @@ class TestCommandLine:
                 "summarize_task_count_by_task_id_group",
                 "--project_id",
                 project_id,
+                "--task_id_delimiter",
+                "_",
                 "--output",
                 str(out_dir / "summarize_task_count_by_task_id_group.csv"),
             ]
