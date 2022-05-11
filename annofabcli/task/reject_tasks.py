@@ -100,15 +100,16 @@ class RejectTasksMain(AbstractCommandLineWithConfirmInterface):
         task_id = task["task_id"]
         try:
             if task["account_id"] != self.service.api.account_id:
-                self.facade.change_operator_of_task(project_id, task_id, self.service.api.account_id)
+                self.service.wrapper.change_task_operator(
+                    project_id, task_id, operator_account_id=self.service.api.account_id
+                )
                 logger.debug(f"{task_id}: 担当者を自分自身に変更しました。")
 
-            changed_task = self.facade.change_to_working_status(project_id, task_id, self.service.api.account_id)
+            changed_task = self.service.wrapper.change_task_status_to_working(project_id, task_id)
             return changed_task
 
-        except requests.HTTPError as e:
-            logger.warning(e)
-            logger.warning(f"{task_id}: 担当者の変更、または作業中状態への変更に失敗しました。")
+        except requests.HTTPError:
+            logger.warning(f"{task_id}: 担当者の変更、または作業中状態への変更に失敗しました。", exc_info=True)
             raise
 
     def _can_reject_task(
@@ -224,7 +225,7 @@ class RejectTasksMain(AbstractCommandLineWithConfirmInterface):
 
             except requests.exceptions.HTTPError:
                 logger.warning(f"{logging_prefix} : task_id = {task_id} 検査コメントの付与に失敗", exc_info=True)
-                self.facade.change_to_break_phase(project_id, task_id)
+                self.service.wrapper.change_task_status_to_break(project_id, task_id)
                 return False
 
         try:
@@ -232,29 +233,29 @@ class RejectTasksMain(AbstractCommandLineWithConfirmInterface):
             if assign_last_annotator:
                 # 最後のannotation phaseに担当を割り当てる
                 if not dryrun:
-                    self.facade.reject_task_assign_last_annotator(project_id, task_id)
+                    # 担当者やステータスに関係なく差し戻すため、`force=True`を指定する
+                    self.service.wrapper.reject_task(project_id, task_id, force=True)
                 logger.info(f"{logging_prefix} : task_id = {task_id} のタスクを差し戻しました。タスクの担当者は直前の教師付フェーズの担当者です。")
                 return True
 
             # 指定したユーザに担当を割り当てる
             if not dryrun:
-                self.facade.reject_task(
-                    project_id,
-                    task_id,
-                    account_id=self.service.api.account_id,
-                    annotator_account_id=assigned_annotator_account_id,
+                self.service.wrapper.reject_task(project_id, task_id, force=True)
+                self.service.wrapper.change_task_operator(
+                    project_id, task_id, operator_account_id=assigned_annotator_account_id
                 )
+
             str_annotator_user = f"タスクの担当者: {assigned_annotator_user_id}"
             logger.info(f"{logging_prefix} : task_id = {task_id} の差し戻し完了. {str_annotator_user}")
             return True
 
-        except requests.exceptions.HTTPError as e:
-            logger.warning(f"{logging_prefix} : task_id = {task_id} タスクの差し戻しに失敗しました。 :: {e}")
+        except requests.exceptions.HTTPError:
+            logger.warning(f"{logging_prefix} : task_id = {task_id} タスクの差し戻しに失敗しました。", exc_info=True)
 
             # working中状態のままだと作業時間が増え続けるので、休憩中モードにする。
             if not dryrun:
                 if is_changed_to_working_status:
-                    self.facade.change_to_break_phase(project_id, task_id)
+                    self.service.wrapper.change_task_status_to_break(project_id, task_id)
             return False
 
     def reject_task_for_task_wrapper(
