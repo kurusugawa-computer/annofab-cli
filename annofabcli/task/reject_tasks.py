@@ -191,22 +191,31 @@ class RejectTasksMain(AbstractCommandLineWithConfirmInterface):
             タスクを差し戻したかどうか
         """
 
-        def _add_inspection_comment(task: dict[str, Any]):
-            # 検査コメントを付与するには「作業中」状態にする必要があるので、担当者を自分自身に変更して作業中状態にする
-            task = self.change_to_working_status(project_id, task)
-            try:
-                # 検査コメントを付与する
-                if not dryrun:
+        def _add_inspection_comment(task: dict[str, Any]) -> dict[str, Any]:
+            # 検査コメントを付与する
+            if not dryrun:
+                # 検査コメントを付与するには「作業中」状態にする必要があるので、担当者を自分自身に変更して作業中状態にする
+                task = self.change_to_working_status(project_id, task)
+
+                try:
                     self.add_inspection_comment(project_id, task, inspection_comment)
+                    # 作業時間が増えすぎないようにするため、すぐに休憩中状態にする
+                    task = self.service.wrapper.change_task_status_to_break(
+                        project_id, task_id, last_updated_datetime=task["updated_datetime"]
+                    )
+                    logger.debug(f"{logging_prefix} : task_id = {task_id}, 検査コメントを付与しました。")
+                    return task
+                except requests.exceptions.HTTPError:
+                    logger.warning(f"{logging_prefix} : task_id = {task_id} 検査コメントの付与に失敗しました。", exc_info=True)
+                    # 作業時間が増えすぎないようにするため、すぐに休憩中状態にする
+                    self.service.wrapper.change_task_status_to_break(
+                        project_id, task_id, last_updated_datetime=task["updated_datetime"]
+                    )
+                    raise
+            else:
+                task = self.service.wrapper.get_task_or_none(project_id, task_id)
                 logger.debug(f"{logging_prefix} : task_id = {task_id}, 検査コメントを付与しました。")
-
-            except requests.exceptions.HTTPError:
-                logger.warning(f"{logging_prefix} : task_id = {task_id} 検査コメントの付与に失敗", exc_info=True)
-                raise
-
-            finally:
-                # 作業中状態が続かないようにするため、休憩中にする
-                self.service.wrapper.change_task_status_to_break(project_id, task_id)
+            return task
 
         logging_prefix = f"{task_index+1} 件目" if task_index is not None else ""
 
@@ -231,11 +240,10 @@ class RejectTasksMain(AbstractCommandLineWithConfirmInterface):
             return False
 
         if task["status"] == TaskStatus.COMPLETE.value and cancel_acceptance and not dryrun:
-            self._cancel_acceptance(task)
+            task = self._cancel_acceptance(task)
 
         if inspection_comment is not None:
-            _add_inspection_comment(task)
-
+            task = _add_inspection_comment(task)
         try:
             if not dryrun:
                 # タスクを差し戻す
