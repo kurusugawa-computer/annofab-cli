@@ -116,15 +116,14 @@ class AddInspectionCommentsMain(AbstractCommandLineWithConfirmInterface):
         task_id = task["task_id"]
         try:
             if task["account_id"] != self.service.api.account_id:
-                self.facade.change_operator_of_task(project_id, task_id, self.service.api.account_id)
+                self.service.wrapper.change_task_operator(project_id, task_id, self.service.api.account_id)
                 logger.debug(f"{task_id}: 担当者を自分自身に変更しました。")
 
-            changed_task = self.facade.change_to_working_status(project_id, task_id, self.service.api.account_id)
+            changed_task = self.service.wrapper.change_task_status_to_working(project_id, task_id)
             return changed_task
 
-        except requests.HTTPError as e:
-            logger.warning(e)
-            logger.warning(f"{task_id}: 担当者の変更、または作業中状態への変更に失敗しました。")
+        except requests.HTTPError:
+            logger.warning(f"{task_id}: 担当者の変更、または作業中状態への変更に失敗しました。", exc_info=True)
             raise
 
     @staticmethod
@@ -209,10 +208,10 @@ class AddInspectionCommentsMain(AbstractCommandLineWithConfirmInterface):
                     exc_info=True,
                 )
             finally:
-                self.facade.change_to_break_phase(self.project_id, task_id)
+                self.service.wrapper.change_task_status_to_break(self.project_id, task_id)
                 # 担当者が変えている場合は、元に戻す
                 if task["account_id"] != changed_task["account_id"]:
-                    self.facade.change_operator_of_task(self.project_id, task_id, task["account_id"])
+                    self.service.wrapper.change_task_operator(self.project_id, task_id, task["account_id"])
                     logger.debug(f"{task_id}: 担当者を元のユーザ( account_id={task['account_id']}）に戻しました。")
 
         return added_comments_count

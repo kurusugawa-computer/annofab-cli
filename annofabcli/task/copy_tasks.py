@@ -1,7 +1,9 @@
 from __future__ import annotations
 
 import argparse
+import functools
 import logging
+import multiprocessing
 import sys
 from dataclasses import dataclass
 from typing import Optional
@@ -72,7 +74,6 @@ class CopyTasksMain(AbstractCommandLineWithConfirmInterface):
         self.is_copy_metadata = is_copy_metadata
 
     def copy_task(self, project_id: str, src_task_id: str, dest_task_id: str, task_index: Optional[int] = None) -> bool:
-
         logging_prefix = f"{task_index+1} 件目" if task_index is not None else ""
         src_task = self.service.wrapper.get_task_or_none(project_id, src_task_id)
         if src_task is None:
@@ -96,7 +97,24 @@ class CopyTasksMain(AbstractCommandLineWithConfirmInterface):
 
         return True
 
-    def main(self, project_id: str, copy_target_list: list[CopyTarget]):
+    def copy_task_wrapper(
+        self,
+        tpl: tuple[int, CopyTarget],
+        project_id: str,
+    ) -> bool:
+        task_index, copy_target = tpl
+        try:
+            return self.copy_task(
+                project_id=project_id,
+                src_task_id=copy_target.src_task_id,
+                dest_task_id=copy_target.dest_task_id,
+                task_index=task_index,
+            )
+        except Exception:  # pylint: disable=broad-except
+            logger.warning(f"タスク'{copy_target.src_task_id}'を'{copy_target.dest_task_id}'にコピーする際に失敗しました。", exc_info=True)
+            return False
+
+    def main(self, project_id: str, copy_target_list: list[CopyTarget], parallelism: Optional[int] = None):
         """
         タスクをコピーします
 
@@ -104,19 +122,30 @@ class CopyTasksMain(AbstractCommandLineWithConfirmInterface):
         logger.info(f"{len(copy_target_list)} 件のタスクをコピーします。")
         success_count = 0
 
-        for task_index, copy_target in enumerate(copy_target_list):
-            try:
-                result = self.copy_task(
-                    project_id,
-                    src_task_id=copy_target.src_task_id,
-                    dest_task_id=copy_target.dest_task_id,
-                    task_index=task_index,
-                )
-                if result:
-                    success_count += 1
-            except Exception as e:  # pylint: disable=broad-except
-                logger.warning(f"タスク'{copy_target.src_task_id}'を'{copy_target.dest_task_id}'にコピーする際に失敗しました。", e)
-                continue
+        if parallelism is not None:
+            partial_func = functools.partial(
+                self.copy_task_wrapper,
+                project_id=project_id,
+            )
+
+            with multiprocessing.Pool(parallelism) as pool:
+                result_bool_list = pool.map(partial_func, enumerate(copy_target_list))
+                success_count = len([e for e in result_bool_list if e])
+
+        else:
+            for task_index, copy_target in enumerate(copy_target_list):
+                try:
+                    result = self.copy_task(
+                        project_id,
+                        src_task_id=copy_target.src_task_id,
+                        dest_task_id=copy_target.dest_task_id,
+                        task_index=task_index,
+                    )
+                    if result:
+                        success_count += 1
+                except Exception as e:  # pylint: disable=broad-except
+                    logger.warning(f"タスク'{copy_target.src_task_id}'を'{copy_target.dest_task_id}'にコピーする際に失敗しました。", e)
+                    continue
 
         logger.info(f"{success_count} / {len(copy_target_list)} 件 タスクをコピーしました。")
 
@@ -164,6 +193,10 @@ def parse_args(parser: argparse.ArgumentParser):
     )
 
     parser.add_argument("--copy_metadata", action="store_true", help="指定した場合、タスクのメタデータもコピーします。")
+
+    parser.add_argument(
+        "--parallelism", type=int, help="使用するプロセス数（並列度）を指定してください。指定する場合は必ず ``--yes`` を指定してください。指定しない場合は、逐次的に処理します。"
+    )
 
     parser.set_defaults(subcommand_func=main)
 
