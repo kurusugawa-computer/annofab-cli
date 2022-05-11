@@ -139,7 +139,11 @@ class PrintInspections(AbstractCommandLineInterface):
         all_inspections: List[Inspection] = []
         for task_id in task_id_list:
             try:
-                task, _ = self.service.api.get_task(project_id, task_id)
+                task = self.service.wrapper.get_task_or_none(project_id, task_id)
+                if task is None:
+                    logger.warning(f"タスク'{task_id}'は存在しないので、スキップします。")
+                    continue
+
                 input_data_id_list = task["input_data_id_list"]
                 logger.info(f"タスク '{task_id}' に紐づく検査コメントを取得します。input_dataの個数 = {len(input_data_id_list)}")
                 for input_data_index, input_data_id in enumerate(input_data_id_list):
@@ -154,8 +158,7 @@ class PrintInspections(AbstractCommandLineInterface):
                     all_inspections.extend(inspections)
 
             except requests.HTTPError as e:
-                logger.warning(e)
-                logger.warning(f"タスク task_id = {task_id} の検査コメントを取得できなかった。")
+                logger.warning(f"タスク task_id = {task_id} の検査コメントを取得できなかった。", exc_info=True)
 
         return all_inspections
 

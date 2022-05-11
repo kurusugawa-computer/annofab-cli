@@ -1,4 +1,5 @@
 import configparser
+import datetime
 import json
 import os
 from pathlib import Path
@@ -197,7 +198,6 @@ class TestCommandLine:
 
     def test_put_task_with_json(self):
         json_args = {"foo": ["bar"]}
-
         main([self.command_name, "put", "--project_id", project_id, "--json", json.dumps(json_args)])
 
     def test_copy_task_and_delete_task(self):
@@ -248,3 +248,103 @@ class TestCommandLine:
                 "--yes",
             ]
         )
+
+    def test_main(self):
+        """
+        `task reject`コマンドなどタスクのフェーズや状態によって実行できないコマンドのテスト。
+        タスクの作成から、タスクのフェーズを遷移させて、最後に削除する
+        """
+        task, _ = service.api.get_task(project_id, task_id)
+        input_data_id = task["input_data_id_list"][0]
+
+        # タスクの作成
+        new_task_id = str(datetime.datetime.now().timestamp())
+        json_args = {new_task_id: [input_data_id]}
+        main([self.command_name, "put", "--project_id", project_id, "--json", json.dumps(json_args), "--yes"])
+
+        # タスクの提出
+        main(
+            [
+                self.command_name,
+                "complete",
+                "--project_id",
+                project_id,
+                "--task_id",
+                new_task_id,
+                "--phase",
+                "annotation",
+                "--yes",
+            ]
+        )
+
+        # タスクの差し戻し
+        main(
+            [
+                self.command_name,
+                "reject",
+                "--project_id",
+                project_id,
+                "--task_id",
+                new_task_id,
+                "--comment",
+                "指摘（自動コメント）",
+                "--yes",
+            ]
+        )
+
+        # タスクの再提出
+        main(
+            [
+                self.command_name,
+                "complete",
+                "--project_id",
+                project_id,
+                "--task_id",
+                new_task_id,
+                "--reply_comment",
+                "返信（自動コメント）",
+                "--phase",
+                "annotation",
+                "--yes",
+            ]
+        )
+
+        # タスクの再提出(検査フェーズ)
+        main(
+            [
+                self.command_name,
+                "complete",
+                "--project_id",
+                project_id,
+                "--task_id",
+                new_task_id,
+                "--phase",
+                "inspection",
+                "--inspection_status",
+                "closed",
+                "--yes",
+            ]
+        )
+
+        # タスクの再提出(受入フェーズ)
+        main(
+            [
+                self.command_name,
+                "complete",
+                "--project_id",
+                project_id,
+                "--task_id",
+                new_task_id,
+                "--phase",
+                "acceptance",
+                "--inspection_status",
+                "closed",
+                "--yes",
+            ]
+        )
+
+        # タスクの再提出(受入フェーズ)
+        main([self.command_name, "cancel_acceptance", "--project_id", project_id, "--task_id", new_task_id, "--yes"])
+
+        # タスクの削除
+        main([self.command_name, "delete", "--project_id", project_id, "--task_id", new_task_id, "--force", "--yes"])

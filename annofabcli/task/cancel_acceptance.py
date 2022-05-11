@@ -38,12 +38,14 @@ class User:
 
 
 class CancelAcceptanceMain(AbstractCommandLineWithConfirmInterface):
-    _project_members_dict: Optional[dict[str, dict[str, Any]]]
-
     def __init__(self, service: annofabapi.Resource, project_id: str, all_yes: bool = False):
         self.service = service
         self.project_id = project_id
         self.facade = AnnofabApiFacade(service)
+
+        self._project_members_dict: Optional[dict[str, dict[str, Any]]] = None
+        """プロジェクトメンバー情報を保持する変数"""
+
         AbstractCommandLineWithConfirmInterface.__init__(self, all_yes)
 
     def get_project_member_from_account_id(self, account_id: str) -> Optional[dict[str, Any]]:
