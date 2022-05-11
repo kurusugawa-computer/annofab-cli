@@ -521,21 +521,6 @@ class AnnofabApiFacade:
         }
         return self.service.api.operate_task(project_id, task_id, request_body=req)[0]
 
-    def change_to_break_phase(self, project_id: str, task_id: str) -> Dict[str, Any]:
-        """
-        タスクを休憩中に変更する
-        Returns:
-            変更後のtask情報
-        """
-        task, _ = self.service.api.get_task(project_id, task_id)
-
-        req = {
-            "status": "break",
-            "account_id": self.service.api.account_id,
-            "last_updated_datetime": task["updated_datetime"],
-        }
-        return self.service.api.operate_task(project_id, task_id, request_body=req)[0]
-
     @staticmethod
     def get_label_info_from_name(annotation_specs_labels: List[Dict[str, Any]], label_name_en: str) -> Dict[str, Any]:
         labels = [e for e in annotation_specs_labels if AnnofabApiFacade.get_label_name_en(e) == label_name_en]

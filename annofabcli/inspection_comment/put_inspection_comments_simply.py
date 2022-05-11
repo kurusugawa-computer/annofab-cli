@@ -87,7 +87,7 @@ class PutInspectionCommentsSimplyMain(AbstractCommandLineWithConfirmInterface):
             self.service.wrapper.change_task_operator(project_id, task_id, self.service.api.account_id)
             logger.debug(f"{task_id}: 担当者を自分自身に変更しました。")
 
-        changed_task = self.facade.change_to_working_status(project_id, task_id, self.service.api.account_id)
+        changed_task = self.service.wrapper.change_task_status_to_working(project_id, task_id, self.service.api.account_id)
         return changed_task
 
     @staticmethod
@@ -161,7 +161,7 @@ class PutInspectionCommentsSimplyMain(AbstractCommandLineWithConfirmInterface):
             )
             return False
         finally:
-            self.facade.change_to_break_phase(self.project_id, task_id)
+            self.service.wrapper.change_task_status_to_break(self.project_id, task_id)
             # 担当者が変えている場合は、元に戻す
             if task["account_id"] != changed_task["account_id"]:
                 self.service.wrapper.change_task_operator(self.project_id, task_id, task["account_id"])

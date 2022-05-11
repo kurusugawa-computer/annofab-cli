@@ -185,7 +185,7 @@ class CompleteTasksMain(AbstractCommandLineWithConfirmInterface):
                 self.service.wrapper.change_task_operator(task.project_id, task.task_id, my_account_id)
                 logger.debug(f"{task.task_id}: 担当者を自分自身に変更しました。")
 
-            dict_task = self.facade.change_to_working_status(
+            dict_task = self.service.wrapper.change_task_status_to_working(
                 project_id=task.project_id, task_id=task.task_id, account_id=my_account_id
             )
             return Task.from_dict(dict_task)
@@ -400,7 +400,7 @@ class CompleteTasksMain(AbstractCommandLineWithConfirmInterface):
             logger.warning(f"{task_id}: {task.phase} フェーズを完了状態にするのに失敗しました。", exc_info=True)
             new_task: Task = Task.from_dict(self.service.wrapper.get_task_or_none(project_id, task_id))
             if new_task.status == TaskStatus.WORKING and new_task.account_id == self.service.api.account_id:
-                self.facade.change_to_break_phase(project_id, task_id)
+                self.service.wrapper.change_task_status_to_break(project_id, task_id)
             return False
 
     def complete_task_for_task_wrapper(
