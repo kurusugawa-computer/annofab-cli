@@ -190,9 +190,9 @@ class CompleteTasksMain(AbstractCommandLineWithConfirmInterface):
             )
             return Task.from_dict(dict_task)
 
-        except requests.HTTPError as e:
-            logger.warning(f"{task.task_id}: 担当者の変更、または作業中状態への変更に失敗しました。")
-            raise e
+        except requests.HTTPError:
+            logger.warning(f"{task.task_id}: 担当者の変更、または作業中状態への変更に失敗しました。", exc_info=True)
+            raise
 
     def get_unanswered_comment_list(self, task: Task, input_data_id: str) -> List[Inspection]:
         """
@@ -270,7 +270,7 @@ class CompleteTasksMain(AbstractCommandLineWithConfirmInterface):
                 return False
 
             self.change_to_working_status(task)
-            self.facade.complete_task(task.project_id, task.task_id)
+            self.service.wrapper.complete_task(task.project_id, task.task_id)
             logger.info(f"{task.task_id}: 教師付フェーズを次のフェーズに進めました。")
             return True
         else:
@@ -294,7 +294,7 @@ class CompleteTasksMain(AbstractCommandLineWithConfirmInterface):
                         reply_comment=reply_comment,
                     )
 
-                self.facade.complete_task(task.project_id, task.task_id)
+                self.service.wrapper.complete_task(task.project_id, task.task_id)
                 logger.info(f"{task.task_id}: 教師付フェーズをフェーズに進めました。")
                 return True
 
@@ -315,7 +315,7 @@ class CompleteTasksMain(AbstractCommandLineWithConfirmInterface):
                 return False
 
             self.change_to_working_status(task)
-            self.facade.complete_task(task.project_id, task.task_id)
+            self.service.wrapper.complete_task(task.project_id, task.task_id)
             logger.info(f"{task.task_id}: 検査/受入フェーズを次のフェーズに進めました。")
             return True
 
@@ -341,7 +341,7 @@ class CompleteTasksMain(AbstractCommandLineWithConfirmInterface):
                     comment_status=inspection_status,
                 )
 
-            self.facade.complete_task(task.project_id, task.task_id)
+            self.service.wrapper.complete_task(task.project_id, task.task_id)
             logger.info(f"{task.task_id}: 検査/受入フェーズを次のフェーズに進めました。")
             return True
 
