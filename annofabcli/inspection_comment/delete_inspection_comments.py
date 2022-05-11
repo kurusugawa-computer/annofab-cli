@@ -87,7 +87,7 @@ class DeleteInspectionCommentsMain(AbstractCommandLineWithConfirmInterface):
         task_id = task["task_id"]
         try:
             if task["account_id"] != self.service.api.account_id:
-                self.facade.change_operator_of_task(project_id, task_id, self.service.api.account_id)
+                self.service.wrapper.change_task_operator(project_id, task_id, self.service.api.account_id)
                 logger.debug(f"{task_id}: 担当者を自分自身に変更しました。")
 
             changed_task = self.facade.change_to_working_status(project_id, task_id, self.service.api.account_id)

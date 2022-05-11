@@ -182,7 +182,7 @@ class CompleteTasksMain(AbstractCommandLineWithConfirmInterface):
         my_account_id = self.service.api.account_id
         try:
             if task.account_id != my_account_id:
-                self.facade.change_operator_of_task(task.project_id, task.task_id, my_account_id)
+                self.service.wrapper.change_task_operator(task.project_id, task.task_id, my_account_id)
                 logger.debug(f"{task.task_id}: 担当者を自分自身に変更しました。")
 
             dict_task = self.facade.change_to_working_status(
