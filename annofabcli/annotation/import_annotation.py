@@ -1,15 +1,14 @@
 from __future__ import annotations
-
-import argparse
-import functools
-import logging
 import multiprocessing
+import functools
+import argparse
+import logging
 import sys
 import uuid
 import zipfile
 from dataclasses import dataclass
 from pathlib import Path
-from typing import Any, Collection, Dict, Iterator, List, Optional, Union
+from typing import Any, Collection, Dict, Iterator, List, Optional, Set, Union
 
 import annofabapi
 from annofabapi.dataclass.annotation import AdditionalData, AnnotationDetail
@@ -380,10 +379,9 @@ class ImportAnnotationMain(AbstractCommandLineWithConfirmInterface):
                     exc_info=True,
                 )
 
-        logger.info(f"タスク'{task_parser.task_id}'の入力データ {success_count} 個に対してアノテーションをインポートしました。")
         return success_count
 
-    def execute_task(self, task_parser: SimpleAnnotationParserByTask) -> bool:
+    def execute_task(self, task_parser: SimpleAnnotationParserByTask, task_index: Optional[int]=None) -> bool:
         """
         1個のタスクに対してアノテーションを登録する。
 
@@ -398,7 +396,8 @@ class ImportAnnotationMain(AbstractCommandLineWithConfirmInterface):
         if not self.confirm_processing(f"task_id={task_id} のアノテーションをインポートしますか？"):
             return False
 
-        logger.info(f"task_id={task_id} に対して処理します。")
+        logger_prefix = f"{str(task_index+1)} 件目: " if task_index is not None else ""
+        logger.info(f"{logger_prefix}task_id={task_id} に対して処理します。")
 
         task = self.service.wrapper.get_task_or_none(self.project_id, task_id)
         if task is None:
@@ -410,15 +409,13 @@ class ImportAnnotationMain(AbstractCommandLineWithConfirmInterface):
             return False
 
         old_account_id: Optional[str] = None
+        changed_operator = False
         if self.is_force:
             if not can_put_annotation(task, self.service.api.account_id):
                 logger.debug(f"タスク'{task_id}' の担当者を自分自身に変更します。")
                 old_account_id = task["account_id"]
                 task = self.service.wrapper.change_task_operator(
-                    self.project_id,
-                    task_id,
-                    operator_account_id=self.service.api.account_id,
-                    last_updated_datetime=task["updated_datetime"],
+                    self.project_id, task_id, operator_account_id=self.service.api.account_id, last_updated_datetime=task["updated_datetime"]
                 )
                 changed_operator = True
 
@@ -431,32 +428,22 @@ class ImportAnnotationMain(AbstractCommandLineWithConfirmInterface):
                 return False
 
         result_count = self.put_annotation_for_task(task_parser)
+        logger.info(f"{logger_prefix}タスク'{task_parser.task_id}'の入力データ {result_count} 個に対してアノテーションをインポートしました。")
+
         if changed_operator:
             logger.debug(f"タスク'{task_id}' の担当者を元に戻します。")
-            self.service.wrapper.change_task_operator(
-                self.project_id,
-                task_id,
-                operator_account_id=old_account_id,
-                last_updated_datetime=task["updated_datetime"],
-            )
+            self.service.wrapper.change_task_operator(self.project_id, task_id, operator_account_id=old_account_id, last_updated_datetime=task["updated_datetime"] )
 
         return result_count > 0
 
-    def wrapper(
+
+    def execute_task_wrapper(
         self,
-        task_parser: SimpleAnnotationParserByTask,
-        target_task_ids: Optional[Collection[str]],
+        tpl: tuple[int, SimpleAnnotationParserByTask],
     ) -> bool:
+        task_index, task_parser = tpl
         try:
-            if target_task_ids is not None and len(target_task_ids) > 0:
-                # コマンドライン引数で --task_idが指定された場合は、対象のタスクのみインポートする
-                if task_parser.task_id in target_task_ids:
-                    return self.execute_task(task_parser)
-                else:
-                    return False
-            else:
-                # コマンドライン引数で --task_idが指定されていない場合はすべてをインポートする
-                return self.execute_task(task_parser)
+            return self.execute_task(task_parser, task_index=task_index)
         except Exception:  # pylint: disable=broad-except
             logger.warning(f"task_id={task_parser.task_id} のアノテーションインポートに失敗しました。", exc_info=True)
             return False
@@ -465,27 +452,27 @@ class ImportAnnotationMain(AbstractCommandLineWithConfirmInterface):
         self,
         iter_task_parser: Iterator[SimpleAnnotationParserByTask],
         target_task_ids: Optional[Collection[str]] = None,
-        parallelism: Optional[int] = None,
+        parallelism: Optional[int] = None
     ):
+        if target_task_ids is not None and len(target_task_ids) > 0:
+            # コマンドライン引数で --task_idが指定された場合は、対象のタスクのみインポートする
+            iter_task_parser = (task_parser for task_parser in iter_task_parser if task_parser.task_id in target_task_ids)
+
         success_count = 0
         if parallelism is not None:
-            partial_func = functools.partial(
-                self.wrapper,
-                target_task_ids=target_task_ids,
-            )
-
             with multiprocessing.Pool(parallelism) as pool:
-                result_bool_list = pool.map(partial_func, iter_task_parser)
+                result_bool_list = pool.map(self.execute_task_wrapper, enumerate(iter_task_parser))
                 success_count = len([e for e in result_bool_list if e])
 
         else:
-            for task_parser in iter_task_parser:
-                result = self.wrapper(
-                    task_parser,
-                    target_task_ids=target_task_ids,
-                )
-                if result:
-                    success_count += 1
+            for task_index, task_parser in enumerate(iter_task_parser):
+                try:
+                    result = self.execute_task(task_parser, task_index=task_index)
+                    if result:
+                        success_count += 1
+                except Exception:
+                    logger.warning(f"task_id={task_parser.task_id} のアノテーションインポートに失敗しました。", exc_info=True)
+                    continue
 
         logger.info(f"{success_count} 個のタスクに対してアノテーションをインポートしました。")
 
@@ -548,7 +535,7 @@ class ImportAnnotation(AbstractCommandLineInterface):
             is_force=args.force,
         )
 
-        main_obj.main(iter_task_parser, target_task_ids=target_task_ids)
+        main_obj.main(iter_task_parser, target_task_ids=target_task_ids, parallelism=args.parallelism)
 
 
 def main(args):
