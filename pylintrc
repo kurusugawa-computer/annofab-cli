@@ -27,3 +27,4 @@ disable=
   no-else-return,
   f-string-without-interpolation,
   broad-except
+  

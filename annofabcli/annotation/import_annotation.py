@@ -498,7 +498,7 @@ class ImportAnnotationMain(AbstractCommandLineWithConfirmInterface):
 
         if target_task_ids is not None and len(tmp_target_task_ids) > 0:
             logger.warning(
-                f"'--task_id'で指定したタスクの内 {len(tmp_target_task_ids)} 件は、インポート対象のアノテーションデータに含まれていません。 :: {tmp_target_task_ids}"
+                f"'--task_id'で指定したタスクの内 {len(tmp_target_task_ids)} 件は、インポート対象のアノテーションデータに含まれていません。 :: {tmp_target_task_ids}"  # noqa: E501
             )
 
         logger.info(f"{success_count} / {task_count} 件のタスクに対してアノテーションをインポートしました。")
