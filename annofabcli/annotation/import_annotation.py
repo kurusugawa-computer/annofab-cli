@@ -466,7 +466,6 @@ class ImportAnnotationMain(AbstractCommandLineWithConfirmInterface):
             _iter_task_parser: Iterator[SimpleAnnotationParserByTask], _target_task_ids: set[str]
         ) -> Iterator[SimpleAnnotationParserByTask]:
             for task_parser in _iter_task_parser:
-                print(f"{len(_target_task_ids)=}")
                 if task_parser.task_id in _target_task_ids:
                     _target_task_ids.remove(task_parser.task_id)
                     yield task_parser
@@ -476,13 +475,14 @@ class ImportAnnotationMain(AbstractCommandLineWithConfirmInterface):
             # tmp_target_task_idsが関数内で変更されるので、事前にコピーする
             tmp_target_task_ids = copy.deepcopy(target_task_ids)
             iter_task_parser = get_iter_task_parser_from_task_ids(iter_task_parser, tmp_target_task_ids)
-            print(f"{tmp_target_task_ids=}")
 
         success_count = 0
+        task_count = 0
         if parallelism is not None:
             with multiprocessing.Pool(parallelism) as pool:
                 result_bool_list = pool.map(self.execute_task_wrapper, enumerate(iter_task_parser))
                 success_count = len([e for e in result_bool_list if e])
+                task_count = len(result_bool_list)
 
         else:
             for task_index, task_parser in enumerate(iter_task_parser):
@@ -493,12 +493,15 @@ class ImportAnnotationMain(AbstractCommandLineWithConfirmInterface):
                 except Exception:
                     logger.warning(f"task_id={task_parser.task_id} のアノテーションインポートに失敗しました。", exc_info=True)
                     continue
+                finally:
+                    task_count += 1
 
-        if len(tmp_target_task_ids) > 0:
-            logger.warning(f"'--task_id'で指定した以下のタスクは、インポート対象のアノテーションデータに含まれていません。 :: {tmp_target_task_ids}")
+        if target_task_ids is not None and len(tmp_target_task_ids) > 0:
+            logger.warning(
+                f"'--task_id'で指定したタスクの内 {len(tmp_target_task_ids)} 件は、インポート対象のアノテーションデータに含まれていません。 :: {tmp_target_task_ids}"
+            )
 
-            print(f"{tmp_target_task_ids=}")
-        logger.info(f"{success_count} 個のタスクに対してアノテーションをインポートしました。")
+        logger.info(f"{success_count} / {task_count} 件のタスクに対してアノテーションをインポートしました。")
 
 
 class ImportAnnotation(AbstractCommandLineInterface):
