@@ -16,7 +16,7 @@ python-versions = "*"
 
 [[package]]
 name = "annofabapi"
-version = "0.57.0"
+version = "0.58.0"
 description = "Python Clinet Library of AnnoFab WebAPI (https://annofab.com/docs/api/)"
 category = "main"
 optional = false
@@ -1255,7 +1255,7 @@ testing = ["pytest (>=6)", "pytest-checkdocs (>=2.4)", "pytest-flake8", "pytest-
 [metadata]
 lock-version = "1.1"
 python-versions = "^3.7.1"
-content-hash = "9baa3e66b3a8372df84853beac447cab1b373a33869499621bd8595daa8358c0"
+content-hash = "56fb18c562d8461a6e7522e065720f53cda8ec2a4afe5fd87b1b2dc7602ef411"
 
 [metadata.files]
 alabaster = [
@@ -1267,8 +1267,8 @@ altgraph = [
     {file = "altgraph-0.17.2.tar.gz", hash = "sha256:ebf2269361b47d97b3b88e696439f6e4cbc607c17c51feb1754f90fb79839158"},
 ]
 annofabapi = [
-    {file = "annofabapi-0.57.0-py3-none-any.whl", hash = "sha256:ea58975e836e4c6fc7da24c2173b57af04f99d8ab91760036a5d4b0a4ffb4e57"},
-    {file = "annofabapi-0.57.0.tar.gz", hash = "sha256:f75b2d4d19cfa4e8eab265c949e2aafbe5e9242cc07d1d1b95ca1c12763c98fd"},
+    {file = "annofabapi-0.58.0-py3-none-any.whl", hash = "sha256:835ec01ccf1b7848cdd8afbba8dc4958d1c96b6dd962ef8666c0aa6966724614"},
+    {file = "annofabapi-0.58.0.tar.gz", hash = "sha256:ab62acd1e884941717516eada34700319ec267fb9de10220376e132c390d91a4"},
 ]
 appnope = [
     {file = "appnope-0.1.3-py2.py3-none-any.whl", hash = "sha256:265a455292d0bd8a72453494fa24df5a11eb18373a60c7c0430889f22548605e"},
