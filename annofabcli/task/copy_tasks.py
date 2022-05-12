@@ -153,8 +153,22 @@ class CopyTasksMain(AbstractCommandLineWithConfirmInterface):
 class CopyTasks(AbstractCommandLineInterface):
     COMMON_MESSAGE = "annofabcli task copy: error:"
 
+    def validate(self, args: argparse.Namespace) -> bool:
+
+        if args.parallelism is not None and not args.yes:
+            print(
+                f"{self.COMMON_MESSAGE} argument --parallelism: '--parallelism'を指定するときは、必ず '--yes' を指定してください。",
+                file=sys.stderr,
+            )
+            return False
+
+        return True
+
     def main(self):
         args = self.args
+
+        if not self.validate(args):
+            sys.exit(COMMAND_LINE_ERROR_STATUS_CODE)
 
         str_copy_target_list = annofabcli.common.cli.get_list_from_args(args.input)
         copy_target_list = get_copy_target_list(str_copy_target_list)
@@ -170,7 +184,7 @@ class CopyTasks(AbstractCommandLineInterface):
             all_yes=self.all_yes,
             is_copy_metadata=args.copy_metadata,
         )
-        main_obj.main(project_id, copy_target_list=copy_target_list)
+        main_obj.main(project_id, copy_target_list=copy_target_list, parallelism=args.parallelism)
 
 
 def main(args: argparse.Namespace):

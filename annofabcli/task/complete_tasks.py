@@ -296,38 +296,6 @@ class CompleteTasksMain(AbstractCommandLineWithConfirmInterface):
         self.service.wrapper.complete_task(task.project_id, task.task_id, last_updated_datetime=task.updated_datetime)
         logger.info(f"{task.task_id}: 教師付フェーズをフェーズに進めました。")
         return True
-        # if unanswered_comment_count_for_task == 0:
-        #     if not self.confirm_processing(f"タスク'{task.task_id}'の教師付フェーズを次のフェーズに進めますか？"):
-        #         return False
-
-        #     self.change_to_working_status(task)
-        #     self.service.wrapper.complete_task(task.project_id, task.task_id)
-        #     logger.info(f"{task.task_id}: 教師付フェーズを次のフェーズに進めました。")
-        #     return True
-        # else:
-        #     logger.debug(f"{task.task_id}: 未回答の検査コメントが {unanswered_comment_count_for_task} 件あります。")
-        #     if reply_comment is None:
-        #         logger.warning(f"{task.task_id}: 未回答の検査コメントに対する返信コメント（'--reply_comment'）が指定されていないので、スキップします。")
-        #         return False
-        #     elif not self.confirm_processing(f"タスク'{task.task_id}'の教師付フェーズを次のフェーズに進めますか？"):
-        #         return False
-        #     else:
-        #         changed_task = self.change_to_working_status(task)
-
-        #         logger.debug(f"{task.task_id}: 未回答の検査コメント {unanswered_comment_count_for_task} 件に対して、返信コメントを付与します。")
-        #         for input_data_id, unanswered_comment_list in unanswered_comment_list_dict.items():
-        #             if len(unanswered_comment_list) == 0:
-        #                 continue
-        #             self.reply_inspection_comment(
-        #                 changed_task,
-        #                 input_data_id=input_data_id,
-        #                 unanswered_comment_list=unanswered_comment_list,
-        #                 reply_comment=reply_comment,
-        #             )
-
-        #         self.service.wrapper.complete_task(task.project_id, task.task_id)
-        #         logger.info(f"{task.task_id}: 教師付フェーズをフェーズに進めました。")
-        #         return True
 
     def complete_task_for_inspection_acceptance_phase(
         self,
@@ -372,41 +340,6 @@ class CompleteTasksMain(AbstractCommandLineWithConfirmInterface):
         self.service.wrapper.complete_task(task.project_id, task.task_id, last_updated_datetime=task.updated_datetime)
         logger.info(f"{task.task_id}: 検査/受入フェーズを次のフェーズに進めました。")
         return True
-
-        # if unprocessed_inspection_count == 0:
-        #     if not self.confirm_processing(f"タスク'{task.task_id}'の検査/受入フェーズを次のフェーズに進めますか？"):
-        #         return False
-
-        #     self.change_to_working_status(task)
-        #     self.service.wrapper.complete_task(task.project_id, task.task_id)
-        #     logger.info(f"{task.task_id}: 検査/受入フェーズを次のフェーズに進めました。")
-        #     return True
-
-        # else:
-        #     logger.debug(f"{task.task_id}: 未処置の検査コメントが {unprocessed_inspection_count} 件あります。")
-        #     if inspection_status is None:
-        #         logger.warning(f"{task.task_id}: 未処置の検査コメントに対する対応方法（'--inspection_status'）が指定されていないので、スキップします。")
-        #         return False
-        #     elif not self.confirm_processing(f"タスク'{task.task_id}'の検査/受入フェーズを次のフェーズに進めますか？"):
-        #         return False
-
-        #     changed_task = self.change_to_working_status(task)
-
-        #     logger.debug(f"{task.task_id}: 未処置の検査コメントを、{inspection_status.value} 状態にします。")
-        #     for input_data_id, unprocessed_inspection_list in unprocessed_inspection_list_dict.items():
-        #         if len(unprocessed_inspection_list) == 0:
-        #             continue
-
-        #         self.update_status_of_inspections(
-        #             changed_task,
-        #             input_data_id,
-        #             comment_list=unprocessed_inspection_list,
-        #             comment_status=inspection_status,
-        #         )
-
-        #     self.service.wrapper.complete_task(task.project_id, task.task_id)
-        #     logger.info(f"{task.task_id}: 検査/受入フェーズを次のフェーズに進めました。")
-        #     return True
 
     @staticmethod
     def _validate_task(
@@ -579,7 +512,7 @@ class CompleteTasks(AbstractCommandLineInterface):
 
         if args.parallelism is not None and not args.yes:
             print(
-                f"{COMMON_MESSAGE} argument --parallelism: '--parallelism'を指定するときは、必ず ``--yes`` を指定してください。",
+                f"{COMMON_MESSAGE} argument --parallelism: '--parallelism'を指定するときは、'--yes' を指定してください。",
                 file=sys.stderr,
             )
             return False
