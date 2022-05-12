@@ -376,7 +376,7 @@ class ImportAnnotationMain(AbstractCommandLineWithConfirmInterface):
                     success_count += 1
             except Exception:  # pylint: disable=broad-except
                 logger.warning(
-                    f"task_id={parser.task_id}, input_data_id={parser.input_data_id} の" f"アノテーションインポートに失敗しました。",
+                    f"task_id={parser.task_id}, input_data_id={parser.input_data_id} の" f"アノテーションのインポートに失敗しました。",
                     exc_info=True,
                 )
 
@@ -453,7 +453,7 @@ class ImportAnnotationMain(AbstractCommandLineWithConfirmInterface):
         try:
             return self.execute_task(task_parser, task_index=task_index)
         except Exception:  # pylint: disable=broad-except
-            logger.warning(f"task_id={task_parser.task_id} のアノテーションインポートに失敗しました。", exc_info=True)
+            logger.warning(f"task_id={task_parser.task_id} のアノテーションのインポートに失敗しました。", exc_info=True)
             return False
 
     def main(
@@ -491,7 +491,7 @@ class ImportAnnotationMain(AbstractCommandLineWithConfirmInterface):
                     if result:
                         success_count += 1
                 except Exception:
-                    logger.warning(f"task_id={task_parser.task_id} のアノテーションインポートに失敗しました。", exc_info=True)
+                    logger.warning(f"task_id={task_parser.task_id} のアノテーションのインポートに失敗しました。", exc_info=True)
                     continue
                 finally:
                     task_count += 1
@@ -536,7 +536,7 @@ class ImportAnnotation(AbstractCommandLineInterface):
             sys.exit(COMMAND_LINE_ERROR_STATUS_CODE)
 
         project_id = args.project_id
-        annotation_path = Path(args.annotation)
+        annotation_path: Path = args.annotation
 
         super().validate_project(project_id, [ProjectMemberRole.OWNER])
 
@@ -578,7 +578,7 @@ def parse_args(parser: argparse.ArgumentParser):
 
     parser.add_argument(
         "--annotation",
-        type=str,
+        type=Path,
         required=True,
         help="Simpleアノテーションと同じフォルダ構成のzipファイル or ディレクトリのパスを指定してください。" "タスクの状態が作業中/完了の場合はインポートしません。",
     )
