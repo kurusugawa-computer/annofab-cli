@@ -524,8 +524,16 @@ class ImportAnnotation(AbstractCommandLineInterface):
             )
             return False
 
-        elif annotation_path.is_file() and not zipfile.is_zipfile(str(annotation_path)):
+        elif (annotation_path.is_file() and not zipfile.is_zipfile(str(annotation_path))) or (
+            not annotation_path.is_dir()):
             print(f"{COMMON_MESSAGE} argument --annotation: ZIPファイルまたはディレクトリを指定してください。", file=sys.stderr)
+            return False
+
+        if args.parallelism is not None and not args.yes:
+            print(
+                f"{COMMON_MESSAGE} argument --parallelism: '--parallelism'を指定するときは、必ず '--yes' を指定してください。",
+                file=sys.stderr,
+            )
             return False
 
         return True
