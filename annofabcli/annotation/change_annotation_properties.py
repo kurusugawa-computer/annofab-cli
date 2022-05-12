@@ -256,12 +256,13 @@ class ChangePropertiesOfAnnotation(AbstractCommandLineInterface):
 
         super().validate_project(project_id, [ProjectMemberRole.OWNER])
 
-        self.change_annotation_properties_task_list(
-            project_id,
+        main_obj = ChangePropertiesOfAnnotationMain(
+            self.service, project_id=project_id, is_force=args.force, all_yes=args.yes
+        )
+        main_obj.change_annotation_properties_task_list(
             task_id_list,
             properties=properties_for_cli,
             annotation_query=annotation_query,
-            force=args.force,
             backup_dir=backup_dir,
         )
 

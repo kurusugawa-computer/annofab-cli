@@ -1,13 +1,12 @@
 import argparse
+import dataclasses
 import logging
 import sys
-from collections import defaultdict
 from enum import Enum
 from pathlib import Path
 from typing import Any, Dict, List, Optional
 
 import annofabapi
-import requests
 from annofabapi.dataclass.task import Task
 from annofabapi.models import ProjectMemberRole, TaskStatus
 
@@ -17,6 +16,7 @@ from annofabcli.annotation.dump_annotation import DumpAnnotationMain
 from annofabcli.common.cli import (
     COMMAND_LINE_ERROR_STATUS_CODE,
     AbstractCommandLineInterface,
+    AbstractCommandLineWithConfirmInterface,
     ArgumentParser,
     build_annofabapi_resource_and_login,
     get_json_from_args,
@@ -31,25 +31,63 @@ class ChangeBy(Enum):
     INPUT_DATA = "input_data"
 
 
-class ChangeAttributesOfAnnotation(AbstractCommandLineInterface):
-    """
-    アノテーション属性を変更
-    """
+class ChangeAnnotationAttributesMain(AbstractCommandLineWithConfirmInterface):
+    def __init__(
+        self,
+        service: annofabapi.Resource,
+        *,
+        project_id: str,
+        is_force: bool,
+        all_yes: bool,
+    ):
+        self.service = service
+        self.facade = AnnofabApiFacade(service)
+        AbstractCommandLineWithConfirmInterface.__init__(self, all_yes)
 
-    COMMON_MESSAGE = "annofabcli annotation change_attributes: error:"
+        self.project_id = project_id
+        self.is_force = is_force
 
-    def __init__(self, service: annofabapi.Resource, facade: AnnofabApiFacade, args: argparse.Namespace):
-        super().__init__(service, facade, args)
         self.dump_annotation_obj = DumpAnnotationMain(service, project_id)
+
+    def change_annotation_attributes(
+        self, annotation_list: List[Dict[str, Any]], attributes: List[AdditionalData]
+    ) -> Optional[List[Dict[str, Any]]]:
+        """
+        アノテーション属性値を変更する。
+
+        Args:
+            annotation_list: 変更対象のアノテーション一覧
+            attributes: 変更後の属性値
+
+        Returns:
+            `batch_update_annotations`メソッドのレスポンス
+
+        """
+
+        def _to_request_body_elm(annotation: Dict[str, Any]) -> Dict[str, Any]:
+            detail = annotation["detail"]
+            return {
+                "data": {
+                    "project_id": annotation["project_id"],
+                    "task_id": annotation["task_id"],
+                    "input_data_id": annotation["input_data_id"],
+                    "updated_datetime": annotation["updated_datetime"],
+                    "annotation_id": detail["annotation_id"],
+                    "label_id": detail["label_id"],
+                    "additional_data_list": attributes_for_dict,
+                },
+                "_type": "Put",
+            }
+
+        attributes_for_dict: List[Dict[str, Any]] = [dataclasses.asdict(e) for e in attributes]
+        request_body = [_to_request_body_elm(annotation) for annotation in annotation_list]
+        return self.service.api.batch_update_annotations(self.project_id, request_body)[0]
 
     def change_attributes_for_task(
         self,
-        project_id: str,
         task_id: str,
         annotation_query: AnnotationQuery,
         attributes: List[AdditionalData],
-        change_by: ChangeBy,
-        force: bool = False,
         backup_dir: Optional[Path] = None,
     ) -> None:
         """
@@ -64,7 +102,7 @@ class ChangeAttributesOfAnnotation(AbstractCommandLineInterface):
             backup_dir: アノテーションをバックアップとして保存するディレクトリ。指定しない場合は、バックアップを取得しない。
 
         """
-        dict_task = self.service.wrapper.get_task_or_none(project_id, task_id)
+        dict_task = self.service.wrapper.get_task_or_none(self.project_id, task_id)
         if dict_task is None:
             logger.warning(f"task_id = '{task_id}' は存在しません。")
             return
@@ -78,12 +116,12 @@ class ChangeAttributesOfAnnotation(AbstractCommandLineInterface):
             logger.warning(f"task_id={task_id}: タスクが作業中状態のため、スキップします。")
             return
 
-        if not force:
+        if not self.is_force:
             if task.status == TaskStatus.COMPLETE:
                 logger.warning(f"task_id={task_id}: タスクが完了状態のため、スキップします。")
                 return
 
-        annotation_list = self.facade.get_annotation_list_for_task(project_id, task_id, query=annotation_query)
+        annotation_list = self.facade.get_annotation_list_for_task(self.project_id, task_id, query=annotation_query)
         logger.info(f"task_id='{task_id}'の変更対象アノテーション数：{len(annotation_list)}")
         if len(annotation_list) == 0:
             logger.info(f"task_id='{task_id}'には変更対象のアノテーションが存在しないので、スキップします。")
@@ -95,55 +133,43 @@ class ChangeAttributesOfAnnotation(AbstractCommandLineInterface):
         if backup_dir is not None:
             self.dump_annotation_obj.dump_annotation_for_task(task_id, output_dir=backup_dir)
 
-        try:
-            if change_by == ChangeBy.INPUT_DATA:
-                dict_annotation_list_by_input_data = defaultdict(list)
-                for annotation in annotation_list:
-                    dict_annotation_list_by_input_data[annotation["input_data_id"]].append(annotation)
+        self.change_annotation_attributes(annotation_list, attributes)
+        logger.info(f"task_id={task_id}: アノテーション属性を変更しました。")
 
-                for input_data_id, annotation_list_by_input_data in dict_annotation_list_by_input_data.items():
-                    logger.debug(
-                        f"task_id={task_id}, input_data_id={input_data_id}: "
-                        f"{len(annotation_list_by_input_data)}個のアノテーションの属性を変更しました。"
-                    )
-                    self.facade.change_annotation_attributes(project_id, annotation_list_by_input_data, attributes)
-            else:
-                self.facade.change_annotation_attributes(project_id, annotation_list, attributes)
-
-            logger.info(f"task_id={task_id}: アノテーション属性を変更しました。")
-        except requests.HTTPError as e:
-            logger.warning(e)
-            logger.warning(f"task_id={task_id}: アノテーション属性の変更に失敗しました。")
-
-    def change_annotation_attributes(
+    def change_annotation_attributes_for_task_list(
         self,
-        project_id: str,
         task_id_list: List[str],
         annotation_query: AnnotationQuery,
         attributes: List[AdditionalData],
-        change_by: ChangeBy = ChangeBy.TASK,
-        force: bool = False,
         backup_dir: Optional[Path] = None,
     ):
-        super().validate_project(project_id, [ProjectMemberRole.OWNER])
-
-        project_title = self.facade.get_project_title(project_id)
-        logger.info(f"プロジェクト'{project_title}'に対して、タスク{len(task_id_list)} 件のアノテーションの属性を変更します。")
-
         if backup_dir is not None:
             backup_dir.mkdir(exist_ok=True, parents=True)
 
         for task_index, task_id in enumerate(task_id_list):
-            logger.info(f"{task_index+1} / {len(task_id_list)} 件目: タスク '{task_id}' のアノテーションの属性を変更します。")
-            self.change_attributes_for_task(
-                project_id,
-                task_id,
-                annotation_query=annotation_query,
-                attributes=attributes,
-                force=force,
-                change_by=change_by,
-                backup_dir=backup_dir,
-            )
+            logger.info(f"{task_index+1} 件目: タスク '{task_id}' のアノテーションの属性を変更します。")
+
+            try:
+                self.change_attributes_for_task(
+                    task_id,
+                    annotation_query=annotation_query,
+                    attributes=attributes,
+                    backup_dir=backup_dir,
+                )
+            except Exception:
+                logger.warning(f"タスク'{task_id}'のアノテーションの属性の変更に失敗しました。")
+                continue
+
+
+class ChangeAttributesOfAnnotation(AbstractCommandLineInterface):
+    """
+    アノテーション属性を変更
+    """
+
+    COMMON_MESSAGE = "annofabcli annotation change_attributes: error:"
+
+    def __init__(self, service: annofabapi.Resource, facade: AnnofabApiFacade, args: argparse.Namespace):
+        super().__init__(service, facade, args)
 
     def main(self):
         args = self.args
@@ -174,13 +200,18 @@ class ChangeAttributesOfAnnotation(AbstractCommandLineInterface):
         else:
             backup_dir = Path(args.backup)
 
-        self.change_annotation_attributes(
-            project_id,
+        super().validate_project(project_id, [ProjectMemberRole.OWNER])
+
+        project_title = self.facade.get_project_title(project_id)
+        logger.info(f"プロジェクト'{project_title}'に対して、タスク{len(task_id_list)} 件のアノテーションの属性を変更します。")
+
+        main_obj = ChangeAnnotationAttributesMain(
+            self.service, project_id=project_id, is_force=args.force, all_yes=args.yes
+        )
+        main_obj.change_annotation_attributes_for_task_list(
             task_id_list,
             annotation_query=annotation_query,
             attributes=attributes,
-            force=args.force,
-            change_by=ChangeBy(args.change_by),
             backup_dir=backup_dir,
         )
 
