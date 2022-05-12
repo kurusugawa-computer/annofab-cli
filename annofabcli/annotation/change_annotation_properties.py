@@ -80,7 +80,7 @@ class ChangePropertiesOfAnnotation(AbstractCommandLineInterface):
                 properties: 変更後のプロパティ
 
             Returns:
-                ``メソッドのレスポンス
+                メソッドのレスポンス
 
             """
 

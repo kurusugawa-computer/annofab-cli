@@ -184,3 +184,11 @@ class TestCommandLine:
                 "--yes",
             ]
         )
+
+
+    def test_main():
+        pass
+
+        # Simpleアノテーションのインポート
+
+        
