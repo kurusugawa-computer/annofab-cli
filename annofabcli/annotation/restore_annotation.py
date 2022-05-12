@@ -1,11 +1,13 @@
 from __future__ import annotations
-import copy
-import argparse
-import logging
-from pathlib import Path
-import multiprocessing
-from typing import Any, Dict, List, Optional, Iterator
 
+import argparse
+import copy
+import logging
+import multiprocessing
+from pathlib import Path
+from typing import Any, Dict, Iterator, List, Optional
+
+import annofabapi
 from annofabapi.dataclass.annotation import Annotation, AnnotationDetail
 from annofabapi.models import AnnotationDataHoldingType, ProjectMemberRole, TaskStatus
 from annofabapi.parser import (
@@ -17,19 +19,14 @@ from annofabapi.utils import can_put_annotation
 
 import annofabcli
 from annofabcli import AnnofabApiFacade
-from annofabcli.common.cli import AbstractCommandLineInterface, ArgumentParser, build_annofabapi_resource_and_login
-
 from annofabcli.common.cli import (
-    COMMAND_LINE_ERROR_STATUS_CODE,
     AbstractCommandLineInterface,
     AbstractCommandLineWithConfirmInterface,
     ArgumentParser,
     build_annofabapi_resource_and_login,
 )
-import annofabapi
 
 logger = logging.getLogger(__name__)
-
 
 
 class RestoreAnnotationMain(AbstractCommandLineWithConfirmInterface):
@@ -46,8 +43,6 @@ class RestoreAnnotationMain(AbstractCommandLineWithConfirmInterface):
 
         self.project_id = project_id
         self.is_force = is_force
-
-
 
     def _to_annotation_detail_for_request(
         self, parser: SimpleAnnotationParser, detail: AnnotationDetail
@@ -129,7 +124,7 @@ class RestoreAnnotationMain(AbstractCommandLineWithConfirmInterface):
 
         return success_count
 
-    def execute_task(self, task_parser: SimpleAnnotationParserByTask, task_index:Optional[int]=None) -> bool:
+    def execute_task(self, task_parser: SimpleAnnotationParserByTask, task_index: Optional[int] = None) -> bool:
         """
         1個のタスクに対してアノテーションを登録する。
 
@@ -165,7 +160,10 @@ class RestoreAnnotationMain(AbstractCommandLineWithConfirmInterface):
                 logger.debug(f"タスク'{task_id}' の担当者を自分自身に変更します。")
                 old_account_id = task["account_id"]
                 task = self.service.wrapper.change_task_operator(
-                    self.project_id, task_id, operator_account_id=self.service.api.account_id, last_updated_datetime=task["updated_datetime"]
+                    self.project_id,
+                    task_id,
+                    operator_account_id=self.service.api.account_id,
+                    last_updated_datetime=task["updated_datetime"],
                 )
                 changed_operator = True
 
@@ -182,10 +180,14 @@ class RestoreAnnotationMain(AbstractCommandLineWithConfirmInterface):
 
         if changed_operator:
             logger.debug(f"タスク'{task_id}' の担当者を元に戻します。")
-            self.service.wrapper.change_task_operator(self.project_id, task_id, operator_account_id=old_account_id,last_updated_datetime=task["updated_datetime"])
+            self.service.wrapper.change_task_operator(
+                self.project_id,
+                task_id,
+                operator_account_id=old_account_id,
+                last_updated_datetime=task["updated_datetime"],
+            )
 
         return result_count > 0
-
 
     def execute_task_wrapper(
         self,
@@ -197,7 +199,6 @@ class RestoreAnnotationMain(AbstractCommandLineWithConfirmInterface):
         except Exception:  # pylint: disable=broad-except
             logger.warning(f"task_id={task_parser.task_id} のアノテーションのリストアに失敗しました。", exc_info=True)
             return False
-
 
     def main(
         self,
@@ -257,6 +258,7 @@ class RestoreAnnotationMain(AbstractCommandLineWithConfirmInterface):
 
         logger.info(f"{success_count} / {task_count} 件のタスクに対してアノテーションをリストアしました。")
 
+
 class RestoreAnnotation(AbstractCommandLineInterface):
     """
     アノテーションをリストアする。
@@ -270,7 +272,9 @@ class RestoreAnnotation(AbstractCommandLineInterface):
 
         task_id_list = set(annofabcli.common.cli.get_list_from_args(args.task_id)) if args.task_id is not None else None
 
-        RestoreAnnotationMain(args.service, project_id=project_id, is_force=args.force, all_yes=args.yes).main(args.annotation, target_task_ids=task_id_list, parallelism=args.parallelism)
+        RestoreAnnotationMain(args.service, project_id=project_id, is_force=args.force, all_yes=args.yes).main(
+            args.annotation, target_task_ids=task_id_list, parallelism=args.parallelism
+        )
         # # dumpしたアノテーションディレクトリの読み込み
         # iter_task_parser = lazy_parse_simple_annotation_dir_by_task(annotation_dir_path)
 
