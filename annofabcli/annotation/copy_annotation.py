@@ -314,9 +314,7 @@ class CopyAnnotationMain(AbstractCommandLineWithConfirmInterface):
             logger.warning(f"'{copy_target.src}'のアノテーションを'{copy_target.dest}'へコピーするのに失敗しました。", exc_info=True)
             return False
 
-    def copy_annotations(
-        self, project_id: str, copy_target_list: list[CopyTarget], *, parallelism: Optional[int] = None
-    ):
+    def copy_annotations(self, copy_target_list: list[CopyTarget], *, parallelism: Optional[int] = None):
         if parallelism is not None:
             with multiprocessing.Pool(parallelism) as pool:
                 result_bool_list = pool.map(self.copy_annotation_wrapper, copy_target_list)
@@ -373,7 +371,7 @@ class CopyAnnotation(AbstractCommandLineInterface):
             merge=args.merge,
             force=args.force,
         )
-        main_obj.copy_annotations(project_id, copy_target_list, parallelism=args.parallelism)
+        main_obj.copy_annotations(copy_target_list, parallelism=args.parallelism)
 
 
 def main(args):

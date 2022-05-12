@@ -14,13 +14,12 @@ from annofabcli.common.cli import AbstractCommandLineInterface, ArgumentParser, 
 logger = logging.getLogger(__name__)
 
 
-class DumpAnnotation(AbstractCommandLineInterface):
-    """
-    アノテーション情報をダンプする
-    """
+class DumpAnnotationMain:
+    def __init__(self, project_id: str):
+        self.project_id = project_id
 
-    def dump_annotation_for_input_data(self, project_id: str, task_id: str, input_data_id: str, task_dir: Path) -> None:
-        annotation, _ = self.service.api.get_editor_annotation(project_id, task_id, input_data_id)
+    def dump_annotation_for_input_data(self, task_id: str, input_data_id: str, task_dir: Path) -> None:
+        annotation, _ = self.service.api.get_editor_annotation(self.project_id, task_id, input_data_id)
         json_path = task_dir / f"{input_data_id}.json"
         json_path.write_text(json.dumps(annotation, ensure_ascii=False), encoding="utf-8")
 
@@ -49,19 +48,18 @@ class DumpAnnotation(AbstractCommandLineInterface):
             outer_file_path = outer_dir / f"{annotation_id}"
             outer_file_path.write_bytes(response.content)
 
-    def dump_annotation_for_task(self, project_id: str, task_id: str, output_dir: Path) -> bool:
+    def dump_annotation_for_task(self, task_id: str, output_dir: Path) -> bool:
         """
         タスク配下のアノテーションをファイルに保存する。
 
         Args:
-            project_id:
             task_id:
             output_dir: 保存先。配下に"task_id"のディレクトリを作成する。
 
         Returns:
             アノテーション情報をファイルに保存したかどうか。
         """
-        task = self.service.wrapper.get_task_or_none(project_id, task_id)
+        task = self.service.wrapper.get_task_or_none(self.project_id, task_id)
         if task is None:
             logger.warning(f"task_id = '{task_id}' のタスクは存在しません。スキップします。")
             return False
@@ -71,29 +69,37 @@ class DumpAnnotation(AbstractCommandLineInterface):
         task_dir.mkdir(exist_ok=True, parents=True)
         logger.debug(f"task_id = '{task_id}' のアノテーション情報を '{task_dir}' ディレクトリに保存します。")
         for input_data_id in input_data_id_list:
-            self.dump_annotation_for_input_data(project_id, task_id, input_data_id, task_dir=task_dir)
+            self.dump_annotation_for_input_data(task_id, input_data_id, task_dir=task_dir)
 
         return True
 
-    def dump_annotation(self, project_id: str, task_id_list: List[str], output_dir: Path):
-        super().validate_project(project_id, project_member_roles=None)
+    def dump_annotation(self, task_id_list: List[str], output_dir: Path):
+        super().validate_project(self.project_id, project_member_roles=None)
 
-        project_title = self.facade.get_project_title(project_id)
+        project_title = self.facade.get_project_title(self.project_id)
         logger.info(f"プロジェクト'{project_title}'に対して、タスク{len(task_id_list)} 件のアノテーションをファイルに保存します。")
 
         output_dir.mkdir(exist_ok=True, parents=True)
 
         for task_id in task_id_list:
-            self.dump_annotation_for_task(project_id, task_id, output_dir=output_dir)
+            self.dump_annotation_for_task(task_id, output_dir=output_dir)
 
         logger.info(f"処理が完了しました。")
+
+
+class DumpAnnotation(AbstractCommandLineInterface):
+    """
+    アノテーション情報をダンプする
+    """
 
     def main(self):
         args = self.args
         project_id = args.project_id
         task_id_list = annofabcli.common.cli.get_list_from_args(args.task_id)
         output_dir = Path(args.output_dir)
-        self.dump_annotation(project_id, task_id_list, output_dir=output_dir)
+
+        main_obj = DumpAnnotationMain(project_id)
+        main_obj.dump_annotation(task_id_list, output_dir=output_dir)
 
 
 def main(args):
