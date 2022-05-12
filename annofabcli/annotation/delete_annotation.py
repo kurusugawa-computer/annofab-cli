@@ -131,7 +131,8 @@ class DeleteAnnotationMain(AbstractCommandLineWithConfirmInterface):
         annotation_query: Optional[AnnotationQuery] = None,
         backup_dir: Optional[Path] = None,
     ):
-        logger.info(f"project_id='{self.project_id}'に対して、タスク{len(task_id_list)} 件のアノテーションを削除します。")
+        project_title = self.facade.get_project_title(self.project_id)
+        logger.info(f"プロジェクト'{project_title}'に対して、タスク{len(task_id_list)} 件のアノテーションを削除します。")
 
         if backup_dir is not None:
             backup_dir.mkdir(exist_ok=True, parents=True)

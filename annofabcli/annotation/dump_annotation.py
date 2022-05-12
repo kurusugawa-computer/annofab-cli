@@ -1,6 +1,10 @@
+from __future__ import annotations
+
 import argparse
+import functools
 import json
 import logging
+import multiprocessing
 from pathlib import Path
 from typing import List, Optional
 
@@ -50,7 +54,7 @@ class DumpAnnotationMain:
             outer_file_path = outer_dir / f"{annotation_id}"
             outer_file_path.write_bytes(response.content)
 
-    def dump_annotation_for_task(self, task_id: str, output_dir: Path) -> bool:
+    def dump_annotation_for_task(self, task_id: str, output_dir: Path, *, task_index: Optional[int] = None) -> bool:
         """
         タスク配下のアノテーションをファイルに保存する。
 
@@ -61,6 +65,8 @@ class DumpAnnotationMain:
         Returns:
             アノテーション情報をファイルに保存したかどうか。
         """
+        logger_prefix = f"{str(task_index+1)} 件目: " if task_index is not None else ""
+
         task = self.service.wrapper.get_task_or_none(self.project_id, task_id)
         if task is None:
             logger.warning(f"task_id = '{task_id}' のタスクは存在しません。スキップします。")
@@ -69,22 +75,51 @@ class DumpAnnotationMain:
         input_data_id_list = task["input_data_id_list"]
         task_dir = output_dir / task_id
         task_dir.mkdir(exist_ok=True, parents=True)
-        logger.debug(f"task_id = '{task_id}' のアノテーション情報を '{task_dir}' ディレクトリに保存します。")
+        logger.debug(f"{logger_prefix}task_id = '{task_id}' のアノテーション情報を '{task_dir}' ディレクトリに保存します。")
+
+        is_failure = False
         for input_data_id in input_data_id_list:
-            self.dump_annotation_for_input_data(task_id, input_data_id, task_dir=task_dir)
+            try:
+                self.dump_annotation_for_input_data(task_id, input_data_id, task_dir=task_dir)
+            except Exception:
+                logger.warning(f"タスク'{task_id}', 入力データ'{is_failure}' のアノテーション情報のダンプに失敗しました。", exc_info=True)
+                is_failure = True
+                continue
 
-        return True
+        return not is_failure
 
-    def dump_annotation(self, task_id_list: List[str], output_dir: Path):
+    def dump_annotation_for_task_wrapper(self, tpl: tuple[int, str], output_dir: Path) -> bool:
+        task_index, task_id = tpl
+        try:
+            return self.dump_annotation_for_task(task_id, output_dir=output_dir, task_index=task_index)
+        except Exception:  # pylint: disable=broad-except
+            logger.warning(f"タスク'{task_id}'のアノテーション情報のダンプに失敗しました。", exc_info=True)
+            return False
+
+    def dump_annotation(self, task_id_list: List[str], output_dir: Path, parallelism: Optional[int] = None):
 
         logger.info(f"project_id='{self.project_id=}'のプロジェクトのタスク{len(task_id_list)} 件のアノテーションをファイルに保存します。")
 
         output_dir.mkdir(exist_ok=True, parents=True)
 
-        for task_id in task_id_list:
-            self.dump_annotation_for_task(task_id, output_dir=output_dir)
+        success_count = 0
 
-        logger.info(f"処理が完了しました。")
+        if parallelism is not None:
+            func = functools.partial(self.dump_annotation_for_task_wrapper, output_dir=output_dir)
+            with multiprocessing.Pool(parallelism) as pool:
+                result_bool_list = pool.map(func, enumerate(task_id_list))
+                success_count = len([e for e in result_bool_list if e])
+
+        else:
+            for task_id in task_id_list:
+                try:
+                    result = self.dump_annotation_for_task(task_id, output_dir=output_dir)
+                    if result:
+                        success_count += 1
+                except Exception:
+                    logger.warning(f"タスク'{task_id}'のアノテーション情報のダンプに失敗しました。", exc_info=True)
+
+        logger.info(f"{success_count} / {len(task_id_list)} 件のタスクのアノテーション情報をダンプしました。")
 
 
 class DumpAnnotation(AbstractCommandLineInterface):
@@ -117,6 +152,12 @@ def parse_args(parser: argparse.ArgumentParser):
     argument_parser.add_task_id()
 
     parser.add_argument("-o", "--output_dir", type=str, required=True, help="出力先ディレクトリのパス")
+
+    parser.add_argument(
+        "--parallelism",
+        type=int,
+        help="並列度。指定しない場合は、逐次的に処理します。",
+    )
 
     parser.set_defaults(subcommand_func=main)
 

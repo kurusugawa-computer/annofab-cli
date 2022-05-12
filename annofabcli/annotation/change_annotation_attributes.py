@@ -143,6 +143,9 @@ class ChangeAnnotationAttributesMain(AbstractCommandLineWithConfirmInterface):
         attributes: List[AdditionalData],
         backup_dir: Optional[Path] = None,
     ):
+        project_title = self.facade.get_project_title(self.project_id)
+        logger.info(f"プロジェクト'{project_title}'に対して、タスク{len(task_id_list)} 件のアノテーションの属性を変更します。")
+
         if backup_dir is not None:
             backup_dir.mkdir(exist_ok=True, parents=True)
 
@@ -201,9 +204,6 @@ class ChangeAttributesOfAnnotation(AbstractCommandLineInterface):
             backup_dir = Path(args.backup)
 
         super().validate_project(project_id, [ProjectMemberRole.OWNER])
-
-        project_title = self.facade.get_project_title(project_id)
-        logger.info(f"プロジェクト'{project_title}'に対して、タスク{len(task_id_list)} 件のアノテーションの属性を変更します。")
 
         main_obj = ChangeAnnotationAttributesMain(
             self.service, project_id=project_id, is_force=args.force, all_yes=args.yes
