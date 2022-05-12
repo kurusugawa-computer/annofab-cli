@@ -215,8 +215,8 @@ class CopyAnnotationMain(AbstractCommandLineWithConfirmInterface):
         )
         if src_annotation is None:
             logger.warning(
-                f"task_id='{copy_target.src_task_id}'のタスクが存在しないか、またはtask_id='{copy_target.src_task_id}'のタスクにinput_data_id='{copy_target.src_input_data_id}'の入力データが存在しません。"
-            )  # noqa: E501
+                f"task_id='{copy_target.src_task_id}'のタスクが存在しないか、またはtask_id='{copy_target.src_task_id}'のタスクにinput_data_id='{copy_target.src_input_data_id}'の入力データが存在しません。"  # noqa: E501
+            )
             return False
 
         src_anno_details = src_annotation["details"]
@@ -226,8 +226,8 @@ class CopyAnnotationMain(AbstractCommandLineWithConfirmInterface):
         )
         if dest_annotation is None:
             logger.warning(
-                f"task_id='{copy_target.dest_task_id}'のタスクが存在しないか、またはtask_id='{copy_target.dest_task_id}'のタスクにinput_data_id='{copy_target.dest_input_data_id}'の入力データが存在しません。"
-            )  # noqa: E501
+                f"task_id='{copy_target.dest_task_id}'のタスクが存在しないか、またはtask_id='{copy_target.dest_task_id}'のタスクにinput_data_id='{copy_target.dest_input_data_id}'の入力データが存在しません。"  # noqa: E501
+            )
             return False
 
         dest_anno_details = dest_annotation["details"]
@@ -307,10 +307,19 @@ class CopyAnnotationMain(AbstractCommandLineWithConfirmInterface):
 
         return result
 
-    def copy_annotations(self, project_id: str, copy_target_list: list[CopyTarget], parallelism: Optional[int] = None):
+    def copy_annotation_wrapper(self, copy_target: CopyTarget) -> bool:
+        try:
+            return self.copy_annotation(copy_target)
+        except Exception:  # pylint: disable=broad-except
+            logger.warning(f"'{copy_target.src}'のアノテーションを'{copy_target.dest}'へコピーするのに失敗しました。", exc_info=True)
+            return False
+
+    def copy_annotations(
+        self, project_id: str, copy_target_list: list[CopyTarget], *, parallelism: Optional[int] = None
+    ):
         if parallelism is not None:
             with multiprocessing.Pool(parallelism) as pool:
-                result_bool_list = pool.map(self.copy_annotation, copy_target_list)
+                result_bool_list = pool.map(self.copy_annotation_wrapper, copy_target_list)
                 success_count = len([e for e in result_bool_list if e])
 
         else:
@@ -327,14 +336,27 @@ class CopyAnnotationMain(AbstractCommandLineWithConfirmInterface):
                     logger.warning(f"'{copy_target.src}'のアノテーションを'{copy_target.dest}'へコピーするのに失敗しました。", exc_info=True)
                     continue
 
-        logger.info(f"{success_count} / {len(copy_target_list)} 件 タスクを差し戻しました。")
+        logger.info(f"{success_count} / {len(copy_target_list)} 件のタスクまたは入力データに対して、アノテーションをコピーしました。")
 
 
 class CopyAnnotation(AbstractCommandLineInterface):
     COMMON_MESSAGE = "annofabcli annotation copy: error:"
 
+    def validate(self, args: argparse.Namespace) -> bool:
+        if args.parallelism is not None and not args.yes:
+            print(
+                f"{self.COMMON_MESSAGE} argument --parallelism: '--parallelism'を指定するときは、'--yes' を指定してください。",
+                file=sys.stderr,
+            )
+            return False
+
+        return True
+
     def main(self):
         args = self.args
+        if not self.validate(args):
+            sys.exit(COMMAND_LINE_ERROR_STATUS_CODE)
+
         project_id = args.project_id
         str_copy_target_list = get_list_from_args(args.input)
 
@@ -351,7 +373,7 @@ class CopyAnnotation(AbstractCommandLineInterface):
             merge=args.merge,
             force=args.force,
         )
-        main_obj.copy_annotations(project_id, copy_target_list)
+        main_obj.copy_annotations(project_id, copy_target_list, parallelism=args.parallelism)
 
 
 def main(args):
@@ -400,7 +422,7 @@ def parse_args(parser: argparse.ArgumentParser):
 def add_parser(subparsers: Optional[argparse._SubParsersAction] = None):
     subcommand_name = "copy"
     subcommand_help = "アノテーションをコピーします．"
-    description = "アノテーションをコピーします。"
+    description = "タスク単位または入力データ単位で、アノテーションをコピーします。"
     parser = annofabcli.common.cli.add_parser(subparsers, subcommand_name, subcommand_help, description)
     parse_args(parser)
     return parser
