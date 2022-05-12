@@ -4,6 +4,7 @@ import argparse
 import copy
 import logging
 import multiprocessing
+import sys
 from pathlib import Path
 from typing import Any, Dict, Iterator, List, Optional
 
@@ -20,6 +21,7 @@ from annofabapi.utils import can_put_annotation
 import annofabcli
 from annofabcli import AnnofabApiFacade
 from annofabcli.common.cli import (
+    COMMAND_LINE_ERROR_STATUS_CODE,
     AbstractCommandLineInterface,
     AbstractCommandLineWithConfirmInterface,
     ArgumentParser,
@@ -253,7 +255,7 @@ class RestoreAnnotationMain(AbstractCommandLineWithConfirmInterface):
 
         if target_task_ids is not None and len(tmp_target_task_ids) > 0:
             logger.warning(
-                f"'--task_id'で指定したタスクの内 {len(tmp_target_task_ids)} 件は、レストア対象のアノテーションデータに含まれていません。 :: {tmp_target_task_ids}"  # noqa: E501
+                f"'--task_id'で指定したタスクの内 {len(tmp_target_task_ids)} 件は、リストア対象のアノテーションデータに含まれていません。 :: {tmp_target_task_ids}"  # noqa: E501
             )
 
         logger.info(f"{success_count} / {task_count} 件のタスクに対してアノテーションをリストアしました。")
@@ -264,37 +266,34 @@ class RestoreAnnotation(AbstractCommandLineInterface):
     アノテーションをリストアする。
     """
 
+    COMMON_MESSAGE = "annofabcli annotation restore: error:"
+
+    def validate(self, args: argparse.Namespace) -> bool:
+
+        if args.parallelism is not None and not args.yes:
+            print(
+                f"{self.COMMON_MESSAGE} argument --parallelism: '--parallelism'を指定するときは、必ず ``--yes`` を指定してください。",
+                file=sys.stderr,
+            )
+            return False
+
+        return True
+
     def main(self):
         args = self.args
+
+        if not self.validate(args):
+            sys.exit(COMMAND_LINE_ERROR_STATUS_CODE)
+
         project_id = args.project_id
 
         super().validate_project(project_id, [ProjectMemberRole.OWNER])
 
         task_id_list = set(annofabcli.common.cli.get_list_from_args(args.task_id)) if args.task_id is not None else None
 
-        RestoreAnnotationMain(args.service, project_id=project_id, is_force=args.force, all_yes=args.yes).main(
+        RestoreAnnotationMain(self.service, project_id=project_id, is_force=args.force, all_yes=args.yes).main(
             args.annotation, target_task_ids=task_id_list, parallelism=args.parallelism
         )
-        # # dumpしたアノテーションディレクトリの読み込み
-        # iter_task_parser = lazy_parse_simple_annotation_dir_by_task(annotation_dir_path)
-
-        # success_count = 0
-        # for task_parser in iter_task_parser:
-        #     try:
-        #         if len(task_id_list) > 0:
-        #             # コマンドライン引数で --task_idが指定された場合は、対象のタスクのみリストアする
-        #             if task_parser.task_id in task_id_list:
-        #                 if self.execute_task(project_id, task_parser, force=args.force):
-        #                     success_count += 1
-        #         else:
-        #             # コマンドライン引数で --task_idが指定されていない場合はすべてをリストアする
-        #             if self.execute_task(project_id, task_parser, force=args.force):
-        #                 success_count += 1
-
-        #     except Exception:  # pylint: disable=broad-except
-        #         logger.warning(f"task_id={task_parser.task_id} のアノテーションのリストアに失敗しました。", exc_info=True)
-
-        # logger.info(f"{success_count} 個のタスクに対してアノテーションをリストアしました。")
 
 
 def main(args):
