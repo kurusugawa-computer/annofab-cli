@@ -495,6 +495,10 @@ class AnnofabApiFacade:
         else:
             return False
 
+    ##################
+    # operateTaskのfacade
+    ##################
+
     @staticmethod
     def get_label_info_from_name(annotation_specs_labels: List[Dict[str, Any]], label_name_en: str) -> Dict[str, Any]:
         labels = [e for e in annotation_specs_labels if AnnofabApiFacade.get_label_name_en(e) == label_name_en]
@@ -700,38 +704,7 @@ class AnnofabApiFacade:
             dict_query.update(asdict(query))
         query_params = {"query": dict_query}
         annotation_list = self.service.wrapper.get_all_annotation_list(project_id, query_params=query_params)
-        assert all(e["task_id"] == task_id for e in annotation_list), f"task_id='{task_id}' 以外のアノテーションが取得されています！！"
         return annotation_list
-
-    def delete_annotation_list(
-        self, project_id: str, annotation_list: List[SingleAnnotation]
-    ) -> Optional[List[Dict[str, Any]]]:
-        """
-        アノテーション一覧を削除する。
-        【注意】取扱注意
-
-        Args:
-            project_id:
-            annotation_list: アノテーション一覧
-
-        Returns:
-            `batch_update_annotations`メソッドのレスポンス
-
-        """
-
-        def _to_request_body_elm(annotation: Dict[str, Any]) -> Dict[str, Any]:
-            detail = annotation["detail"]
-            return {
-                "project_id": annotation["project_id"],
-                "task_id": annotation["task_id"],
-                "input_data_id": annotation["input_data_id"],
-                "updated_datetime": annotation["updated_datetime"],
-                "annotation_id": detail["annotation_id"],
-                "_type": "Delete",
-            }
-
-        request_body = [_to_request_body_elm(annotation) for annotation in annotation_list]
-        return self.service.api.batch_update_annotations(project_id, request_body)[0]
 
     def change_annotation_attributes(
         self, project_id: str, annotation_list: List[SingleAnnotation], attributes: List[AdditionalData]

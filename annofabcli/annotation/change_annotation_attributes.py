@@ -13,7 +13,7 @@ from annofabapi.models import ProjectMemberRole, TaskStatus
 
 import annofabcli
 from annofabcli import AnnofabApiFacade
-from annofabcli.annotation.dump_annotation import DumpAnnotation
+from annofabcli.annotation.dump_annotation import DumpAnnotationMain
 from annofabcli.common.cli import (
     COMMAND_LINE_ERROR_STATUS_CODE,
     AbstractCommandLineInterface,
@@ -40,7 +40,7 @@ class ChangeAttributesOfAnnotation(AbstractCommandLineInterface):
 
     def __init__(self, service: annofabapi.Resource, facade: AnnofabApiFacade, args: argparse.Namespace):
         super().__init__(service, facade, args)
-        self.dump_annotation_obj = DumpAnnotation(service, facade, args)
+        self.dump_annotation_obj = DumpAnnotationMain(service, project_id)
 
     def change_attributes_for_task(
         self,
@@ -93,7 +93,7 @@ class ChangeAttributesOfAnnotation(AbstractCommandLineInterface):
             return
 
         if backup_dir is not None:
-            self.dump_annotation_obj.dump_annotation_for_task(project_id, task_id, output_dir=backup_dir)
+            self.dump_annotation_obj.dump_annotation_for_task(task_id, output_dir=backup_dir)
 
         try:
             if change_by == ChangeBy.INPUT_DATA:

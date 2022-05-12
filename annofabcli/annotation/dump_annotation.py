@@ -4,13 +4,13 @@ import logging
 from pathlib import Path
 from typing import List, Optional
 
+import annofabapi
 import requests
 from annofabapi.models import AnnotationDataHoldingType
 
 import annofabcli
 from annofabcli import AnnofabApiFacade
 from annofabcli.common.cli import AbstractCommandLineInterface, ArgumentParser, build_annofabapi_resource_and_login
-import annofabapi
 
 logger = logging.getLogger(__name__)
 
@@ -76,7 +76,6 @@ class DumpAnnotationMain:
         return True
 
     def dump_annotation(self, task_id_list: List[str], output_dir: Path):
-        super().validate_project(self.project_id, project_member_roles=None)
 
         logger.info(f"project_id='{self.project_id=}'のプロジェクトのタスク{len(task_id_list)} 件のアノテーションをファイルに保存します。")
 
@@ -99,7 +98,9 @@ class DumpAnnotation(AbstractCommandLineInterface):
         task_id_list = annofabcli.common.cli.get_list_from_args(args.task_id)
         output_dir = Path(args.output_dir)
 
-        main_obj = DumpAnnotationMain(project_id)
+        super().validate_project(project_id, project_member_roles=None)
+
+        main_obj = DumpAnnotationMain(self.service, project_id)
         main_obj.dump_annotation(task_id_list, output_dir=output_dir)
 
 

@@ -1,8 +1,10 @@
+from __future__ import annotations
+
 import argparse
 import logging
 import sys
 from pathlib import Path
-from typing import List, Optional
+from typing import Any, List, Optional
 
 import annofabapi
 import requests
@@ -11,10 +13,11 @@ from annofabapi.models import ProjectMemberRole, TaskStatus
 
 import annofabcli
 from annofabcli import AnnofabApiFacade
-from annofabcli.annotation.dump_annotation import DumpAnnotation
+from annofabcli.annotation.dump_annotation import DumpAnnotationMain
 from annofabcli.common.cli import (
     COMMAND_LINE_ERROR_STATUS_CODE,
     AbstractCommandLineInterface,
+    AbstractCommandLineWithConfirmInterface,
     ArgumentParser,
     build_annofabapi_resource_and_login,
     get_json_from_args,
@@ -24,35 +27,67 @@ from annofabcli.common.facade import AnnotationQuery, AnnotationQueryForCli
 logger = logging.getLogger(__name__)
 
 
-class DeleteAnnotation(AbstractCommandLineInterface):
-    """
-    アノテーションを削除する
+class DeleteAnnotationMain(AbstractCommandLineWithConfirmInterface):
+    """アノテーション削除処理用のクラス
+
+    Args:
+        is_force: 完了状態のタスクを削除するかどうか
     """
 
-    def __init__(self, service: annofabapi.Resource, facade: AnnofabApiFacade, args: argparse.Namespace):
-        super().__init__(service, facade, args)
-        self.dump_annotation_obj = DumpAnnotation(service, facade, args)
+    def __init__(
+        self,
+        service: annofabapi.Resource,
+        project_id: str,
+        *,
+        is_force: bool,
+        all_yes: bool,
+    ):
+        self.service = service
+        self.facade = AnnofabApiFacade(service)
+        self.is_force = is_force
+        AbstractCommandLineWithConfirmInterface.__init__(self, all_yes)
+        self.project_id = project_id
+        self.dump_annotation_obj = DumpAnnotationMain(service, project_id)
+
+    def delete_annotation_list(self, annotation_list: list[dict[str, Any]]):
+        """
+        アノテーション一覧を削除する。
+
+        Args:
+            annotation_list: アノテーション一覧
+
+        """
+
+        def _to_request_body_elm(annotation: dict[str, Any]) -> dict[str, Any]:
+            detail = annotation["detail"]
+            return {
+                "project_id": annotation["project_id"],
+                "task_id": annotation["task_id"],
+                "input_data_id": annotation["input_data_id"],
+                "updated_datetime": annotation["updated_datetime"],
+                "annotation_id": detail["annotation_id"],
+                "_type": "Delete",
+            }
+
+        request_body = [_to_request_body_elm(annotation) for annotation in annotation_list]
+        self.service.api.batch_update_annotations(self.project_id, request_body)
 
     def delete_annotation_for_task(
         self,
-        project_id: str,
         task_id: str,
         annotation_query: Optional[AnnotationQuery] = None,
-        force: bool = False,
         backup_dir: Optional[Path] = None,
     ) -> None:
         """
         タスクに対してアノテーションを削除する
 
         Args:
-            project_id:
             task_id:
             annotation_query: 削除対象のアノテーションの検索条件
-            force: 完了状態のタスクのアノテーションを削除するかどうか
             backup_dir: 削除対象のアノテーションをバックアップとして保存するディレクトリ。指定しない場合は、バックアップを取得しない。
 
         """
-        dict_task = self.service.wrapper.get_task_or_none(project_id, task_id)
+        dict_task = self.service.wrapper.get_task_or_none(self.project_id, task_id)
         if dict_task is None:
             logger.warning(f"task_id = '{task_id}' は存在しません。")
             return
@@ -67,12 +102,12 @@ class DeleteAnnotation(AbstractCommandLineInterface):
             logger.warning(f"task_id={task_id}: タスクが作業中状態のため、スキップします。")
             return
 
-        if not force:
+        if not self.is_force:
             if task.status == TaskStatus.COMPLETE:
                 logger.warning(f"task_id={task_id}: タスクが完了状態のため、スキップします。")
                 return
 
-        annotation_list = self.facade.get_annotation_list_for_task(project_id, task_id, query=annotation_query)
+        annotation_list = self.facade.get_annotation_list_for_task(self.project_id, task_id, query=annotation_query)
         logger.info(f"task_id='{task_id}'の削除対象アノテーション数：{len(annotation_list)}")
         if len(annotation_list) == 0:
             logger.info(f"task_id='{task_id}'には削除対象のアノテーションが存在しないので、スキップします。")
@@ -82,27 +117,21 @@ class DeleteAnnotation(AbstractCommandLineInterface):
             return
 
         if backup_dir is not None:
-            self.dump_annotation_obj.dump_annotation_for_task(project_id, task_id, output_dir=backup_dir)
+            self.dump_annotation_obj.dump_annotation_for_task(task_id, output_dir=backup_dir)
 
         try:
-            self.facade.delete_annotation_list(project_id, annotation_list=annotation_list)
+            self.delete_annotation_list(annotation_list=annotation_list)
             logger.info(f"task_id={task_id}: アノテーションを削除しました。")
-        except requests.HTTPError as e:
-            logger.warning(e)
-            logger.warning(f"task_id={task_id}: アノテーションの削除に失敗しました。")
+        except requests.HTTPError:
+            logger.warning(f"task_id={task_id}: アノテーションの削除に失敗しました。", exc_info=True)
 
     def delete_annotation_for_task_list(
         self,
-        project_id: str,
         task_id_list: List[str],
         annotation_query: Optional[AnnotationQuery] = None,
-        force: bool = False,
         backup_dir: Optional[Path] = None,
     ):
-        super().validate_project(project_id, [ProjectMemberRole.OWNER])
-
-        project_title = self.facade.get_project_title(project_id)
-        logger.info(f"プロジェクト'{project_title}'に対して、タスク{len(task_id_list)} 件のアノテーションを削除します。")
+        logger.info(f"project_id='{self.project_id}'に対して、タスク{len(task_id_list)} 件のアノテーションを削除します。")
 
         if backup_dir is not None:
             backup_dir.mkdir(exist_ok=True, parents=True)
@@ -110,12 +139,19 @@ class DeleteAnnotation(AbstractCommandLineInterface):
         for task_index, task_id in enumerate(task_id_list):
             logger.info(f"{task_index+1} / {len(task_id_list)} 件目: タスク '{task_id}' を削除します。")
             self.delete_annotation_for_task(
-                project_id,
                 task_id,
                 annotation_query=annotation_query,
-                force=force,
                 backup_dir=backup_dir,
             )
+
+
+class DeleteAnnotation(AbstractCommandLineInterface):
+    """
+    アノテーションを削除する
+    """
+
+    def __init__(self, service: annofabapi.Resource, facade: AnnofabApiFacade, args: argparse.Namespace):
+        super().__init__(service, facade, args)
 
     def main(self):
         args = self.args
@@ -140,9 +176,10 @@ class DeleteAnnotation(AbstractCommandLineInterface):
         else:
             backup_dir = Path(args.backup)
 
-        self.delete_annotation_for_task_list(
-            project_id, task_id_list, annotation_query=annotation_query, backup_dir=backup_dir, force=args.force
-        )
+        super().validate_project(project_id, [ProjectMemberRole.OWNER])
+
+        main_obj = DeleteAnnotationMain(self.service, project_id, all_yes=args.yes, is_force=args.force)
+        main_obj.delete_annotation_for_task_list(task_id_list, annotation_query=annotation_query, backup_dir=backup_dir)
 
 
 def main(args):
