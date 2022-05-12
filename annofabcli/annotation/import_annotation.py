@@ -1,14 +1,15 @@
 from __future__ import annotations
-import multiprocessing
-import functools
+
 import argparse
+import copy
 import logging
+import multiprocessing
 import sys
 import uuid
 import zipfile
 from dataclasses import dataclass
 from pathlib import Path
-from typing import Any, Collection, Dict, Iterator, List, Optional, Set, Union
+from typing import Any, Dict, Iterator, List, Optional, Union
 
 import annofabapi
 from annofabapi.dataclass.annotation import AdditionalData, AnnotationDetail
@@ -381,7 +382,7 @@ class ImportAnnotationMain(AbstractCommandLineWithConfirmInterface):
 
         return success_count
 
-    def execute_task(self, task_parser: SimpleAnnotationParserByTask, task_index: Optional[int]=None) -> bool:
+    def execute_task(self, task_parser: SimpleAnnotationParserByTask, task_index: Optional[int] = None) -> bool:
         """
         1個のタスクに対してアノテーションを登録する。
 
@@ -415,7 +416,10 @@ class ImportAnnotationMain(AbstractCommandLineWithConfirmInterface):
                 logger.debug(f"タスク'{task_id}' の担当者を自分自身に変更します。")
                 old_account_id = task["account_id"]
                 task = self.service.wrapper.change_task_operator(
-                    self.project_id, task_id, operator_account_id=self.service.api.account_id, last_updated_datetime=task["updated_datetime"]
+                    self.project_id,
+                    task_id,
+                    operator_account_id=self.service.api.account_id,
+                    last_updated_datetime=task["updated_datetime"],
                 )
                 changed_operator = True
 
@@ -432,10 +436,14 @@ class ImportAnnotationMain(AbstractCommandLineWithConfirmInterface):
 
         if changed_operator:
             logger.debug(f"タスク'{task_id}' の担当者を元に戻します。")
-            self.service.wrapper.change_task_operator(self.project_id, task_id, operator_account_id=old_account_id, last_updated_datetime=task["updated_datetime"] )
+            self.service.wrapper.change_task_operator(
+                self.project_id,
+                task_id,
+                operator_account_id=old_account_id,
+                last_updated_datetime=task["updated_datetime"],
+            )
 
         return result_count > 0
-
 
     def execute_task_wrapper(
         self,
@@ -451,12 +459,24 @@ class ImportAnnotationMain(AbstractCommandLineWithConfirmInterface):
     def main(
         self,
         iter_task_parser: Iterator[SimpleAnnotationParserByTask],
-        target_task_ids: Optional[Collection[str]] = None,
-        parallelism: Optional[int] = None
+        target_task_ids: Optional[set[str]] = None,
+        parallelism: Optional[int] = None,
     ):
-        if target_task_ids is not None and len(target_task_ids) > 0:
+        def get_iter_task_parser_from_task_ids(
+            _iter_task_parser: Iterator[SimpleAnnotationParserByTask], _target_task_ids: set[str]
+        ) -> Iterator[SimpleAnnotationParserByTask]:
+            for task_parser in _iter_task_parser:
+                print(f"{len(_target_task_ids)=}")
+                if task_parser.task_id in _target_task_ids:
+                    _target_task_ids.remove(task_parser.task_id)
+                    yield task_parser
+
+        if target_task_ids is not None:
             # コマンドライン引数で --task_idが指定された場合は、対象のタスクのみインポートする
-            iter_task_parser = (task_parser for task_parser in iter_task_parser if task_parser.task_id in target_task_ids)
+            # tmp_target_task_idsが関数内で変更されるので、事前にコピーする
+            tmp_target_task_ids = copy.deepcopy(target_task_ids)
+            iter_task_parser = get_iter_task_parser_from_task_ids(iter_task_parser, tmp_target_task_ids)
+            print(f"{tmp_target_task_ids=}")
 
         success_count = 0
         if parallelism is not None:
@@ -474,6 +494,10 @@ class ImportAnnotationMain(AbstractCommandLineWithConfirmInterface):
                     logger.warning(f"task_id={task_parser.task_id} のアノテーションインポートに失敗しました。", exc_info=True)
                     continue
 
+        if len(tmp_target_task_ids) > 0:
+            logger.warning(f"'--task_id'で指定した以下のタスクは、インポート対象のアノテーションデータに含まれていません。 :: {tmp_target_task_ids}")
+
+            print(f"{tmp_target_task_ids=}")
         logger.info(f"{success_count} 個のタスクに対してアノテーションをインポートしました。")
 
 
