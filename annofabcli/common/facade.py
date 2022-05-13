@@ -706,43 +706,6 @@ class AnnofabApiFacade:
         annotation_list = self.service.wrapper.get_all_annotation_list(project_id, query_params=query_params)
         return annotation_list
 
-    def change_annotation_attributes(
-        self, project_id: str, annotation_list: List[SingleAnnotation], attributes: List[AdditionalData]
-    ) -> Optional[List[Dict[str, Any]]]:
-        """
-        アノテーション属性値を変更する。
-
-        【注意】取扱注意
-
-        Args:
-            project_id:
-            annotation_list: 変更対象のアノテーション一覧
-            attributes: 変更後の属性値
-
-        Returns:
-            `batch_update_annotations`メソッドのレスポンス
-
-        """
-
-        def _to_request_body_elm(annotation: Dict[str, Any]) -> Dict[str, Any]:
-            detail = annotation["detail"]
-            return {
-                "data": {
-                    "project_id": annotation["project_id"],
-                    "task_id": annotation["task_id"],
-                    "input_data_id": annotation["input_data_id"],
-                    "updated_datetime": annotation["updated_datetime"],
-                    "annotation_id": detail["annotation_id"],
-                    "label_id": detail["label_id"],
-                    "additional_data_list": attributes_for_dict,
-                },
-                "_type": "Put",
-            }
-
-        attributes_for_dict: List[Dict[str, Any]] = [asdict(e) for e in attributes]
-        request_body = [_to_request_body_elm(annotation) for annotation in annotation_list]
-        return self.service.api.batch_update_annotations(project_id, request_body)[0]
-
     def set_account_id_of_task_query(self, project_id: str, task_query: TaskQuery) -> TaskQuery:
         """
         タスククエリ条件のuser_idの値をaccount_idに設定する。

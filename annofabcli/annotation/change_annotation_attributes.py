@@ -116,10 +116,6 @@ class ChangeAnnotationAttributesMain(AbstractCommandLineWithConfirmInterface):
             return False
 
         task: Task = Task.from_dict(dict_task)
-        logger.info(
-            f"{logger_prefix}task_id={task.task_id}, phase={task.phase.value}, status={task.status.value}, "
-            f"updated_datetime={task.updated_datetime}"
-        )
         if task.status == TaskStatus.WORKING:
             logger.warning(f"task_id={task_id}: タスクが作業中状態のため、スキップします。")
             return False
@@ -130,7 +126,9 @@ class ChangeAnnotationAttributesMain(AbstractCommandLineWithConfirmInterface):
                 return False
 
         annotation_list = self.facade.get_annotation_list_for_task(self.project_id, task_id, query=annotation_query)
-        logger.info(f"{logger_prefix}task_id='{task_id}'の変更対象アノテーション数：{len(annotation_list)}")
+        logger.info(
+            f"{logger_prefix}task_id='{task_id}'の変更対象アノテーション数：{len(annotation_list)}, phase={task.phase.value}, status={task.status.value}, updated_datetime={task.updated_datetime}"
+        )  # noqa: E501
         if len(annotation_list) == 0:
             logger.info(f"{logger_prefix}task_id='{task_id}'には変更対象のアノテーションが存在しないので、スキップします。")
             return False
@@ -219,8 +217,22 @@ class ChangeAttributesOfAnnotation(AbstractCommandLineInterface):
 
     COMMON_MESSAGE = "annofabcli annotation change_attributes: error:"
 
+    def validate(self, args: argparse.Namespace) -> bool:
+        if args.parallelism is not None and not args.yes:
+            print(
+                f"{self.COMMON_MESSAGE} argument --parallelism: '--parallelism'を指定するときは、'--yes' を指定してください。",
+                file=sys.stderr,
+            )
+            return False
+
+        return True
+
     def main(self):
         args = self.args
+
+        if not self.validate(args):
+            sys.exit(COMMAND_LINE_ERROR_STATUS_CODE)
+
         project_id = args.project_id
         task_id_list = annofabcli.common.cli.get_list_from_args(args.task_id)
 
@@ -258,6 +270,7 @@ class ChangeAttributesOfAnnotation(AbstractCommandLineInterface):
             annotation_query=annotation_query,
             attributes=attributes,
             backup_dir=backup_dir,
+            parallelism=args.parallelism,
         )
 
 
