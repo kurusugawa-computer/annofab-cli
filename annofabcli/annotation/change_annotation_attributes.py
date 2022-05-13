@@ -127,8 +127,8 @@ class ChangeAnnotationAttributesMain(AbstractCommandLineWithConfirmInterface):
 
         annotation_list = self.facade.get_annotation_list_for_task(self.project_id, task_id, query=annotation_query)
         logger.info(
-            f"{logger_prefix}task_id='{task_id}'の変更対象アノテーション数：{len(annotation_list)}, phase={task.phase.value}, status={task.status.value}, updated_datetime={task.updated_datetime}"
-        )  # noqa: E501
+            f"{logger_prefix}task_id='{task_id}'の変更対象アノテーション数：{len(annotation_list)}, phase={task.phase.value}, status={task.status.value}, updated_datetime={task.updated_datetime}"  # noqa: E501
+        )
         if len(annotation_list) == 0:
             logger.info(f"{logger_prefix}task_id='{task_id}'には変更対象のアノテーションが存在しないので、スキップします。")
             return False
