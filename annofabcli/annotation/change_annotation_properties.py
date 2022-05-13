@@ -225,9 +225,6 @@ class ChangePropertiesOfAnnotation(AbstractCommandLineInterface):
 
     COMMON_MESSAGE = "annofabcli annotation change_properties: error:"
 
-    def __init__(self, service: annofabapi.Resource, facade: AnnofabApiFacade, args: argparse.Namespace):
-        super().__init__(service, facade, args)
-
     def main(self):
         args = self.args
         project_id = args.project_id

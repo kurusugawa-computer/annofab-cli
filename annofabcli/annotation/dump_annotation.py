@@ -9,7 +9,6 @@ from pathlib import Path
 from typing import List, Optional
 
 import annofabapi
-import requests
 from annofabapi.models import AnnotationDataHoldingType
 
 import annofabcli
@@ -37,22 +36,11 @@ class DumpAnnotationMain:
         outer_dir = task_dir / input_data_id
         outer_dir.mkdir(exist_ok=True, parents=True)
 
+        # 塗りつぶし画像など外部リソースに保存されているファイルをダウンロードする
         for detail in outer_details:
-            if not detail["data_holding_type"] == AnnotationDataHoldingType.OUTER.value:
-                continue
-
-            outer_file_url = detail["url"]
-            response = self.service.api.session.get(outer_file_url)
-            if response.status_code != requests.codes.ok:
-                logger.warning(
-                    f"塗りつぶし画像ファイルのダウンロード失敗しました。"
-                    f"status_code={response.status_code}, url={response.url}, text={response.text}"
-                )
-                continue
-
             annotation_id = detail["annotation_id"]
             outer_file_path = outer_dir / f"{annotation_id}"
-            outer_file_path.write_bytes(response.content)
+            self.service.wrapper.download(detail["url"], outer_file_path)
 
     def dump_annotation_for_task(self, task_id: str, output_dir: Path, *, task_index: Optional[int] = None) -> bool:
         """
@@ -66,7 +54,6 @@ class DumpAnnotationMain:
             アノテーション情報をファイルに保存したかどうか。
         """
         logger_prefix = f"{str(task_index+1)} 件目: " if task_index is not None else ""
-
         task = self.service.wrapper.get_task_or_none(self.project_id, task_id)
         if task is None:
             logger.warning(f"task_id = '{task_id}' のタスクは存在しません。スキップします。")
@@ -82,7 +69,7 @@ class DumpAnnotationMain:
             try:
                 self.dump_annotation_for_input_data(task_id, input_data_id, task_dir=task_dir)
             except Exception:
-                logger.warning(f"タスク'{task_id}', 入力データ'{is_failure}' のアノテーション情報のダンプに失敗しました。", exc_info=True)
+                logger.warning(f"タスク'{task_id}', 入力データ'{input_data_id}' のアノテーション情報のダンプに失敗しました。", exc_info=True)
                 is_failure = True
                 continue
 
@@ -111,9 +98,9 @@ class DumpAnnotationMain:
                 success_count = len([e for e in result_bool_list if e])
 
         else:
-            for task_id in task_id_list:
+            for task_index, task_id in enumerate(task_id_list):
                 try:
-                    result = self.dump_annotation_for_task(task_id, output_dir=output_dir)
+                    result = self.dump_annotation_for_task(task_id, output_dir=output_dir, task_index=task_index)
                     if result:
                         success_count += 1
                 except Exception:
@@ -136,7 +123,7 @@ class DumpAnnotation(AbstractCommandLineInterface):
         super().validate_project(project_id, project_member_roles=None)
 
         main_obj = DumpAnnotationMain(self.service, project_id)
-        main_obj.dump_annotation(task_id_list, output_dir=output_dir)
+        main_obj.dump_annotation(task_id_list, output_dir=output_dir, parallelism=args.parallelism)
 
 
 def main(args):
