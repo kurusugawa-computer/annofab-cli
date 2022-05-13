@@ -150,6 +150,7 @@ class DeleteAnnotation(AbstractCommandLineInterface):
     """
     アノテーションを削除する
     """
+
     def main(self):
         args = self.args
         project_id = args.project_id
