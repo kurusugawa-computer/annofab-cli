@@ -232,6 +232,7 @@ class ChangePropertiesOfAnnotationMain(AbstractCommandLineWithConfirmInterface):
         if backup_dir is not None:
             backup_dir.mkdir(exist_ok=True, parents=True)
 
+        success_count = 0
         if parallelism is not None:
             func = functools.partial(
                 self.change_properties_for_task_wrapper,
@@ -248,12 +249,14 @@ class ChangePropertiesOfAnnotationMain(AbstractCommandLineWithConfirmInterface):
                 logger.debug(f"{task_index+1} / {len(task_id_list)} 件目: タスク '{task_id}' のアノテーションのプロパティを変更します。")
 
                 try:
-                    self.change_properties_for_task(
+                    result = self.change_properties_for_task(
                         task_id,
                         properties=properties,
                         annotation_query=annotation_query,
                         backup_dir=backup_dir,
                     )
+                    if result:
+                        success_count += 1
                 except Exception:  # pylint: disable=broad-except
                     logger.warning(f"task_id={task_id}: アノテーションのプロパティの変更に失敗しました。", exc_info=True)
                     continue
