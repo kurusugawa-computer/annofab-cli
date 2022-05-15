@@ -69,7 +69,10 @@ class AnnotationQueryForCLI(DataClassJsonMixin):
         ]:
             result["comment"] = attribute_value
 
-        elif additional_data_type in [AdditionalDataDefinitionType.CHOICE.value, AdditionalDataDefinitionType.SELECT.value]:
+        elif additional_data_type in [
+            AdditionalDataDefinitionType.CHOICE.value,
+            AdditionalDataDefinitionType.SELECT.value,
+        ]:
             # 排他選択の場合、属性値に選択肢IDが入っているため、対象の選択肢を探す
             choice_info = more_itertools.first_true(
                 additional_data["choices"], pred=lambda e: get_message_for_i18n(e["name"]) == attribute_value

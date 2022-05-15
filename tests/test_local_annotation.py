@@ -3,10 +3,8 @@ from pathlib import Path
 
 import pytest
 
+from annofabcli.annotation.annotation_query import AdditionalData, AnnotationQueryForCLI
 from annofabcli.annotation.copy_annotation import CopyTargetByInputData, CopyTargetByTask, parse_copy_target
-from annofabcli.annotation.annotation_query import AnnotationQueryForCLI, AnnotationQueryForAPI, AdditionalData
-
-
 
 # プロジェクトトップに移動する
 os.chdir(os.path.dirname(os.path.abspath(__file__)) + "/../")
@@ -72,8 +70,7 @@ class TestAnnotationQueryForCLI:
                 "additional_data_definitions": [
                     "69a20a12-ef5f-446f-a03e-0c4ab487ff90",
                 ],
-            }
-
+            },
         ],
         "additionals": [
             {
@@ -141,47 +138,75 @@ class TestAnnotationQueryForCLI:
                     "default_lang": "ja-JP",
                 },
                 "type": "flag",
-                "choices": [
-                ],
+                "choices": [],
             },
         ],
     }
 
-
     def test_normal(self):
-        query = AnnotationQueryForCLI(label="car", attributes={"car_kind":"emergency_vehicle", "traffic_lane":1, "tracking_id":"foo"})
+        query = AnnotationQueryForCLI(
+            label="car", attributes={"car_kind": "emergency_vehicle", "traffic_lane": 1, "tracking_id": "foo"}
+        )
         actual = query.to_query_for_api(self.ANNOTATION_SPECS)
         assert actual.label_id == "9d6cca8d-3f5a-4808-a6c9-0ae18a478176"
 
         expected_attributes = [
-            AdditionalData(additional_data_definition_id="cbb0155f-1631-48e1-8fc3-43c5f254b6f2", flag=None, comment=None,integer=None, choice="c07f9702-4760-4e7c-824d-b87bac356a80"),
-            AdditionalData(additional_data_definition_id="ec27de5d-122c-40e7-89bc-5500e37bae6a", flag=None, comment=None,integer=1, choice=None),
-            AdditionalData(additional_data_definition_id="d349e76d-b59a-44cd-94b4-713a00b2e84d", flag=None, comment="foo",integer=None, choice=None)
+            AdditionalData(
+                additional_data_definition_id="cbb0155f-1631-48e1-8fc3-43c5f254b6f2",
+                flag=None,
+                comment=None,
+                integer=None,
+                choice="c07f9702-4760-4e7c-824d-b87bac356a80",
+            ),
+            AdditionalData(
+                additional_data_definition_id="ec27de5d-122c-40e7-89bc-5500e37bae6a",
+                flag=None,
+                comment=None,
+                integer=1,
+                choice=None,
+            ),
+            AdditionalData(
+                additional_data_definition_id="d349e76d-b59a-44cd-94b4-713a00b2e84d",
+                flag=None,
+                comment="foo",
+                integer=None,
+                choice=None,
+            ),
         ]
         assert actual.attributes == expected_attributes
 
-
     def test_normal2(self):
-        query = AnnotationQueryForCLI(label="pedestrian", attributes={"occlusion":True})
+        query = AnnotationQueryForCLI(label="pedestrian", attributes={"occlusion": True})
         actual = query.to_query_for_api(self.ANNOTATION_SPECS)
         assert actual.label_id == "39d05700-7c12-4732-bc35-02d65367cc3e"
 
         expected_attributes = [
-            AdditionalData(additional_data_definition_id="69a20a12-ef5f-446f-a03e-0c4ab487ff90", flag=True, comment=None,integer=None, choice=None)
+            AdditionalData(
+                additional_data_definition_id="69a20a12-ef5f-446f-a03e-0c4ab487ff90",
+                flag=True,
+                comment=None,
+                integer=None,
+                choice=None,
+            )
         ]
         assert actual.attributes == expected_attributes
 
     def test_normal3(self):
         # 属性を未指定
-        query = AnnotationQueryForCLI(label="car", attributes={"car_kind":None})
+        query = AnnotationQueryForCLI(label="car", attributes={"car_kind": None})
         actual = query.to_query_for_api(self.ANNOTATION_SPECS)
         assert actual.label_id == "9d6cca8d-3f5a-4808-a6c9-0ae18a478176"
 
         expected_attributes = [
-            AdditionalData(additional_data_definition_id="cbb0155f-1631-48e1-8fc3-43c5f254b6f2", flag=None, comment=None,integer=None, choice=None)
+            AdditionalData(
+                additional_data_definition_id="cbb0155f-1631-48e1-8fc3-43c5f254b6f2",
+                flag=None,
+                comment=None,
+                integer=None,
+                choice=None,
+            )
         ]
         assert actual.attributes == expected_attributes
-
 
     def test_normal4(self):
         # ラベルだけ指定する
@@ -190,24 +215,20 @@ class TestAnnotationQueryForCLI:
         assert actual.label_id == "9d6cca8d-3f5a-4808-a6c9-0ae18a478176"
         assert actual.attributes is None
 
-
     def test_exception(self):
         query = AnnotationQueryForCLI(label="car__")
         with pytest.raises(ValueError):
             # 存在しないラベル名を指定している
             query.to_query_for_api(self.ANNOTATION_SPECS)
 
-
     def test_exception2(self):
-        query = AnnotationQueryForCLI(label="car", attributes={"traffic_lane__":1})
+        query = AnnotationQueryForCLI(label="car", attributes={"traffic_lane__": 1})
         with pytest.raises(ValueError):
             # 存在しない属性名を指定している
             query.to_query_for_api(self.ANNOTATION_SPECS)
 
-
     def test_exception3(self):
-        query = AnnotationQueryForCLI(label="car", attributes={"car_kind":"emergency_vehicle__"})
+        query = AnnotationQueryForCLI(label="car", attributes={"car_kind": "emergency_vehicle__"})
         with pytest.raises(ValueError):
             # 存在しない選択肢名を指定している
             query.to_query_for_api(self.ANNOTATION_SPECS)
-
