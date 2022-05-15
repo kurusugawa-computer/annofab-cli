@@ -204,7 +204,6 @@ class TestCommandLine:
         )
 
         main([self.command_name, "delete", "--project_id", project_id, "--task_id", copy_task_id, "--yes"])
-
     @pytest.mark.submitting_job
     def test_put_task_by_count(self):
         main(
@@ -221,22 +220,6 @@ class TestCommandLine:
             ]
         )
 
-    def test_complete_task(self):
-        main(
-            [
-                self.command_name,
-                "complete",
-                "--project_id",
-                project_id,
-                "--task_id",
-                task_id,
-                "--phase",
-                "annotation",
-                "--reply_comment",
-                "対応しました（自動投稿）",
-                "--yes",
-            ]
-        )
 
     @pytest.fixture
     def target_task(self):
@@ -409,6 +392,71 @@ class TestCommandLine:
 
         task, _ = service.api.get_task(project_id, task_id)
         assert task["account_id"] == service.api.account_id
+
+
+    def _execute_list_command(self, task_id: str):
+        """list系のコマンドを実行する"""
+
+        main(
+            [
+                self.command_name,
+                "list",
+                "--project_id",
+                project_id,
+                "--task_id",
+                task_id,
+                "--output",
+                str(out_dir / "list.csv"),
+                "--format",
+                "csv",
+            ]
+        )
+
+        main(
+            [
+                self.command_name,
+                "list_with_json",
+                "--project_id",
+                project_id,
+                "--task_id",
+                task_id,
+                "--output",
+                str(out_dir / "list.csv"),
+                "--format",
+                "csv",
+            ]
+        )
+
+
+
+    def test_list_added_task_history_with_downloading(self):
+        out_file = str(out_dir / "task.csv")
+        main(
+            [
+                self.command_name,
+                "list_added_task_history",
+                "--project_id",
+                project_id,
+                "--output",
+                out_file,
+            ]
+        )
+
+    def test_list_input_data_merged_task_with_json(self):
+        out_file = str(out_dir / "task.csv")
+        main(
+            [
+                self.command_name,
+                "list_added_task_history",
+                "--project_id",
+                project_id,
+                "--output",
+                out_file,
+            ]
+        )
+
+
+
 
     def test_scenario(self, target_task):
         """
