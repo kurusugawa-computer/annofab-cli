@@ -28,7 +28,8 @@ class AnnotationQueryForCLI(DataClassJsonMixin):
     属性が排他選択の場合、属性値は選択肢名(英語)
     """
 
-    def _to_attribute_for_api(self, additional_data: dict[str, Any], attribute_value: AttributeValue) -> AdditionalData:
+    @classmethod
+    def _to_attribute_for_api(cls, additional_data: dict[str, Any], attribute_value: AttributeValue) -> AdditionalData:
         """アノテーション仕様の属性情報と属性値から、WebAPIに渡すクエリの属性部分を返す。
 
         Args:
@@ -112,7 +113,8 @@ class AnnotationQueryForCLI(DataClassJsonMixin):
         attributes_for_webapi: list[AdditionalData] = []
         for attribute_name, attribute_value in self.attributes.items():
             additional_data = more_itertools.first_true(
-                tmp_additionals, pred=lambda e: get_message_for_i18n(e["name"]) == attribute_name
+                tmp_additionals,
+                pred=lambda e: get_message_for_i18n(e["name"]) == attribute_name,  # pylint: disable=cell-var-from-loop
             )
             if additional_data is None:
                 raise ValueError(
