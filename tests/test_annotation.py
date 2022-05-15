@@ -72,7 +72,7 @@ class TestCommandLine:
             作成したタスク
         """
         # タスクの作成
-        new_task_id = f"test-{str(datetime.datetime.now().timestamp())}"
+        new_task_id = f"test-{str(int(datetime.datetime.now().timestamp()))}"
         task, _ = service.api.put_task(project_id, new_task_id, request_body={"input_data_id_list": [input_data_id]})
         yield task
         # タスクの削除
@@ -290,7 +290,7 @@ class TestCommandLine:
 
         service.api.delete_task(project_id, dest_task_id)
 
-    def _execute_list(self, task_id: str):
+    def test_list(self, task_id: str):
         """
         list系のコマンドのテスト
         """
@@ -300,13 +300,12 @@ class TestCommandLine:
                 "list",
                 "--project_id",
                 project_id,
-                "--task_id",
-                task_id,
                 "--output",
-                str(out_dir / "annotation.csv"),
+                str(out_dir / "annotation-list.csv"),
             ]
         )
 
+    def test_list_count(self, task_id: str):
         main(
             [
                 "annotation",
@@ -316,6 +315,6 @@ class TestCommandLine:
                 "--task_id",
                 task_id,
                 "--output",
-                str(out_dir / "annotation_count.csv"),
+                str(out_dir / "annotation-list_count.csv"),
             ]
         )
