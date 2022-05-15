@@ -1,9 +1,10 @@
 from __future__ import annotations
 
 from dataclasses import dataclass
-from typing import Any, Dict, Optional, Union
+from typing import Any, Dict, List, Optional, Union
 
 import more_itertools
+from annofabapi.dataclass.annotation import AdditionalData
 from annofabapi.models import AdditionalDataDefinitionType
 from annofabapi.utils import get_message_for_i18n
 from dataclasses_json import DataClassJsonMixin
@@ -12,9 +13,9 @@ AttributeValue = Union[str, int, bool]
 
 
 @dataclass
-class AnnotationQuery(DataClassJsonMixin):
+class AnnotationQueryForCLI(DataClassJsonMixin):
     """
-    アノテーションを絞り込むためのクエリ
+    CLIでアノテーションを絞り込むためのクエリ。
     """
 
     label: str
@@ -27,7 +28,7 @@ class AnnotationQuery(DataClassJsonMixin):
     属性が排他選択の場合、属性値は選択肢名(英語)
     """
 
-    def to_yyy(self, additional_data: dict[str, Any], attribute_value: AttributeValue) -> dict[str, Any]:
+    def _to_attribute_for_api(self, additional_data: dict[str, Any], attribute_value: AttributeValue) -> AdditionalData:
         """アノテーション仕様の属性情報と属性値から、WebAPIに渡すクエリの属性部分を返す。
 
         Args:
@@ -41,7 +42,14 @@ class AnnotationQuery(DataClassJsonMixin):
             WebAPIに渡すクエリの属性部分
         """
         additional_data_definition_id = additional_data["additional_data_definition_id"]
-        result = {"additional_data_definition_id": additional_data_definition_id}
+        result = {
+            "additional_data_definition_id": additional_data_definition_id,
+            "flag": None,
+            "integer": None,
+            "comment": None,
+            "choice": None,
+        }
+
         additional_data_type = additional_data["type"]
         if additional_data_type == AdditionalDataDefinitionType.FLAG.value:
             result["flag"] = attribute_value
@@ -65,14 +73,15 @@ class AnnotationQuery(DataClassJsonMixin):
             if choice_info is None:
                 attribute_name = get_message_for_i18n(additional_data["name"])
                 raise ValueError(
-                    f"アノテーション仕様の'{attribute_name}'属性に、選択肢名(英語)が'{attribute_value}'である選択肢は存在しません。 :: additional_data_definition_id='{additional_data_definition_id}'"
+                    f"アノテーション仕様の'{attribute_name}'属性に、選択肢名(英語)が'{attribute_value}'である選択肢は存在しません。"
+                    f" :: additional_data_definition_id='{additional_data_definition_id}'"
                 )
 
             result["choice"] = choice_info["choice_id"]
 
-        return result
+        return AdditionalData(**result)
 
-    def to_xxx(self, annotation_specs: dict[str, Any]) -> dict[str, Any]:
+    def to_query_for_api(self, annotation_specs: dict[str, Any]) -> AnnotationQueryForAPI:
         """
         WebAPIのquery_params( https://annofab.com/docs/api/#section/AnnotationQuery )に渡すdictに変換する。
 
@@ -90,7 +99,7 @@ class AnnotationQuery(DataClassJsonMixin):
 
         label_id = label_info["label_id"]
         if self.attributes is None:
-            return {"label_id": label_id}
+            return AnnotationQueryForAPI(label_id=label_id)
 
         # ラベル配下の属性情報から、`self.attributes`に対応する属性情報を探す
         tmp_additional_data_definition_ids = set(label_info["additional_data_definitions"])
@@ -100,7 +109,7 @@ class AnnotationQuery(DataClassJsonMixin):
             if e["additional_data_definition_id"] in tmp_additional_data_definition_ids
         ]
 
-        attributes_for_webapi = []
+        attributes_for_webapi: list[AdditionalData] = []
         for attribute_name, attribute_value in self.attributes.items():
             additional_data = more_itertools.first_true(
                 tmp_additionals, pred=lambda e: get_message_for_i18n(e["name"]) == attribute_name
@@ -110,6 +119,19 @@ class AnnotationQuery(DataClassJsonMixin):
                     f"アノテーション仕様の'{self.label}'ラベルに、属性名(英語)が'{attribute_name}'である属性は存在しません。 :: label_id='{label_id}'"
                 )
 
-            attributes_for_webapi.append(self.to_yyy(additional_data, attribute_value))
+            attributes_for_webapi.append(self._to_attribute_for_api(additional_data, attribute_value))
 
-        return {"label_id": label_id, "attributes": attributes_for_webapi}
+        return AnnotationQueryForAPI(label_id=label_id, attributes=attributes_for_webapi)
+
+
+@dataclass
+class AnnotationQueryForAPI(DataClassJsonMixin):
+    """
+    WebAPIでアノテーションを絞り込むためのクエリ。
+    """
+
+    label_id: str
+    """ラベルID"""
+
+    attributes: Optional[List[AdditionalData]] = None
+    """属性IDと属性値のList"""
