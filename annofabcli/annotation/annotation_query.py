@@ -51,7 +51,6 @@ class AnnotationQueryForCLI(DataClassJsonMixin):
             "comment": None,
             "choice": None,
         }
-        print(f"additional_data={additional_data}")
         if attribute_value is None:
             return AdditionalData(**result)
 

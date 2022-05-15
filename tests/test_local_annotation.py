@@ -191,21 +191,23 @@ class TestAnnotationQueryForCLI:
         assert actual.attributes is None
 
 
-    # def test_exception(self):
-    #     query = AnnotationQueryForCLI(label="car__")
-    #     with pytest.raises(ValueError):
-    #         parse_copy_target("task1/input5:task2")
+    def test_exception(self):
+        query = AnnotationQueryForCLI(label="car__")
+        with pytest.raises(ValueError):
+            # 存在しないラベル名を指定している
+            query.to_query_for_api(self.ANNOTATION_SPECS)
 
 
-    #     actual = query.to_query_for_api(self.ANNOTATION_SPECS)
-    #     assert actual.label_id == "9d6cca8d-3f5a-4808-a6c9-0ae18a478176"
-
-    #     expected_attributes = [
-    #         {"additional_data_definition_id":"cbb0155f-1631-48e1-8fc3-43c5f254b6f2", "flag":None, "comment":None,"integer":None, "choice":"c07f9702-4760-4e7c-824d-b87bac356a80"},
-    #         {"additional_data_definition_id":"ec27de5d-122c-40e7-89bc-5500e37bae6a", "flag":None, "comment":None,"integer":1, "choice":None},            
-    #         {"additional_data_definition_id":"cbb0155f-1631-48e1-8fc3-43c5f254b6f2", "flag":None, "comment":"foo","integer":None, "choice":None},            
-    #     ]
-    #     assert actual.attributes == expected_attributes
+    def test_exception2(self):
+        query = AnnotationQueryForCLI(label="car", attributes={"traffic_lane__":1})
+        with pytest.raises(ValueError):
+            # 存在しない属性名を指定している
+            query.to_query_for_api(self.ANNOTATION_SPECS)
 
 
+    def test_exception3(self):
+        query = AnnotationQueryForCLI(label="car", attributes={"car_kind":"emergency_vehicle__"})
+        with pytest.raises(ValueError):
+            # 存在しない選択肢名を指定している
+            query.to_query_for_api(self.ANNOTATION_SPECS)
 
