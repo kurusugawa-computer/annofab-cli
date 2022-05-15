@@ -9,7 +9,9 @@ import time
 from pathlib import Path
 
 import annofabapi
+import more_itertools
 import pytest
+from annofabapi.utils import get_message_for_i18n
 
 from annofabcli.__main__ import main
 
@@ -27,45 +29,82 @@ inifile.read("./pytest.ini", "UTF-8")
 annofab_config = dict(inifile.items("annofab"))
 
 project_id = annofab_config["project_id"]
-task_id = annofab_config["task_id"]
 input_data_id = annofab_config["input_data_id"]
 service = annofabapi.build()
 
 
 class TestCommandLine:
-    def _validate_annotation_specs(self):
-        annotation_specs, _ = service.api.get_annotation_specs(project_id, query_params={"v": "2"})
-        labels = annotation_specs["labels"]
+    def _validate_annotation_specs_for_scenario_test(self):
+        """シナリオテストを実行できるアノテーション仕様かどうかを判定する
 
-    def test_scenario(self):
+        Rreturns:
+            Trueならシナリオテストを実行できるアノテーション仕様
+        """
+        annotation_specs, _ = service.api.get_annotation_specs(project_id, query_params={"v": "2"})
+        car_label = more_itertools.first_true(
+            annotation_specs["labels"], pred=lambda e: get_message_for_i18n(e["label_name"]) == "car"
+        )
+        if car_label is None:
+            return False
+
+        if car_label["annotation_type"] != "bounding_box":
+            return False
+
+        truncation_attribute = more_itertools.first_true(
+            annotation_specs["additionals"], pred=lambda e: get_message_for_i18n(e["name"]) == "truncation"
+        )
+        if truncation_attribute is None:
+            return False
+
+        if truncation_attribute["type"] != "flag":
+            return False
+
+        if truncation_attribute["additional_data_definition_id"] not in car_label["additional_data_definitions"]:
+            return False
+
+        return True
+
+    @pytest.fixture
+    def target_task(self):
+        """シナリオテスト用のタスクを作成する
+
+        Yields:
+            作成したタスク
+        """
+        # タスクの作成
+        new_task_id = f"test-{str(datetime.datetime.now().timestamp())}"
+        task, _ = service.api.put_task(project_id, new_task_id, request_body={"input_data_id_list": [input_data_id]})
+        yield task
+        # タスクの削除
+        service.api.delete_task(project_id, new_task_id)
+
+    def test_scenario(self, target_task):
         """
         シナリオテスト。すべてのannotation系コマンドを実行する。
         前提条件：矩形の"car"ラベルに"truncation"チェックボックスが存在すること
         """
-        # タスクの作成
-        new_task_id = f"test-{str(datetime.datetime.now().timestamp())}"
-        service.api.put_task(project_id, new_task_id, request_body={"input_data_id_list": [input_data_id]})
+        assert (
+            self._validate_annotation_specs_for_scenario_test()
+        ), "アノテーション仕様がシナリオテストを実行できる状態でありません。矩形の'car'ラベルを追加して、その下に'turncation'チェックボックスを追加してください。"
 
+        task_id = target_task["task_id"]
         # インポート用のアノテーションを生成して、アノテーションをインポートする
-        self._execute_import(new_task_id, input_data_id)
+        self._execute_import(task_id, input_data_id)
 
-        print("すぐに`api.get_annotation_list`を実行すると、インポートしたアノテーションが含まれないので、数秒待つ")
-        time.sleep(3)
+        # すぐに`api.get_annotation_list`を実行すると、インポートしたアノテーションが含まれないので、数秒待つ
+        time.sleep(2)
 
         # list系のコマンドのテスト
-        self._execute_list(new_task_id)
+        self._execute_list(task_id)
 
         # copyコマンドのテスト
-        self._execute_copy(new_task_id, input_data_id)
+        self._execute_copy(task_id, input_data_id)
 
         # 属性とプロパティの変更
-        self._execute_change_properties_and_attributes(new_task_id, input_data_id)
+        self._execute_change_properties_and_attributes(task_id, input_data_id)
 
         # アノテーションのダンプ、削除、リストア
-        self._execute_dump_delete_restore(new_task_id, input_data_id)
-
-        # タスクの削除
-        service.api.delete_task(project_id, new_task_id)
+        self._execute_dump_delete_restore(task_id, input_data_id)
 
     @pytest.mark.depending_on_annotation_specs
     def test_import_3dpc_annotation(self):
@@ -172,10 +211,13 @@ class TestCommandLine:
             )
 
             # print("すぐに`annotation delete`を実行すると、'ALREADY UPDATED'で失敗する可能性があるので、数秒待つ")
-            # time.sleep(3)
+            time.sleep(2)
 
             # アノテーションの削除
             main(["annotation", "delete", "--project_id", project_id, "--task_id", task_id, "--yes"])
+
+            # print("すぐに`annotation delete`を実行すると、'ALREADY UPDATED'で失敗する可能性があるので、数秒待つ")
+            time.sleep(2)
             editor_annotation, _ = service.api.get_editor_annotation(project_id, task_id, input_data_id)
             assert len(editor_annotation["details"]) == 0
 
@@ -193,6 +235,8 @@ class TestCommandLine:
                     "--yes",
                 ]
             )
+            # print("すぐに`annotation delete`を実行すると、'ALREADY UPDATED'で失敗する可能性があるので、数秒待つ")
+            time.sleep(2)
             editor_annotation, _ = service.api.get_editor_annotation(project_id, task_id, input_data_id)
             assert len(editor_annotation["details"]) == 1
 
