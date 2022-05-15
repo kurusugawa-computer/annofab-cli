@@ -9,7 +9,7 @@ from annofabapi.models import AdditionalDataDefinitionType
 from annofabapi.utils import get_message_for_i18n
 from dataclasses_json import DataClassJsonMixin
 
-AttributeValue = Union[str, int, bool]
+AttributeValue = Optional[Union[str, int, bool]]
 
 
 @dataclass
@@ -24,8 +24,9 @@ class AnnotationQueryForCLI(DataClassJsonMixin):
     # attributes: Optional[List[AdditionalData]] = None
     attributes: Optional[Dict[str, AttributeValue]] = None
     """
-    keyが属性名(英語),valueが属性値のdict
-    属性が排他選択の場合、属性値は選択肢名(英語)
+    keyが属性名(英語),valueが属性値のdict。
+    属性が排他選択の場合、属性値は選択肢名(英語)。
+    属性値がNoneのときは、「未指定」で絞り込む。
     """
 
     @classmethod
@@ -50,8 +51,11 @@ class AnnotationQueryForCLI(DataClassJsonMixin):
             "comment": None,
             "choice": None,
         }
+        print(f"additional_data={additional_data}")
+        if attribute_value is None:
+            return AdditionalData(**result)
 
-        additional_data_type = additional_data["type"]
+        additional_data_type: str = additional_data["type"]
         if additional_data_type == AdditionalDataDefinitionType.FLAG.value:
             result["flag"] = attribute_value
 
@@ -59,14 +63,14 @@ class AnnotationQueryForCLI(DataClassJsonMixin):
             result["integer"] = attribute_value
 
         elif additional_data_type in [
-            AdditionalDataDefinitionType.TEXT,
-            AdditionalDataDefinitionType.COMMENT,
-            AdditionalDataDefinitionType.TRACKING,
-            AdditionalDataDefinitionType.LINK,
+            AdditionalDataDefinitionType.TEXT.value,
+            AdditionalDataDefinitionType.COMMENT.value,
+            AdditionalDataDefinitionType.TRACKING.value,
+            AdditionalDataDefinitionType.LINK.value,
         ]:
             result["comment"] = attribute_value
 
-        elif additional_data_type in [AdditionalDataDefinitionType.CHOICE, AdditionalDataDefinitionType.SELECT]:
+        elif additional_data_type in [AdditionalDataDefinitionType.CHOICE.value, AdditionalDataDefinitionType.SELECT.value]:
             # 排他選択の場合、属性値に選択肢IDが入っているため、対象の選択肢を探す
             choice_info = more_itertools.first_true(
                 additional_data["choices"], pred=lambda e: get_message_for_i18n(e["name"]) == attribute_value
