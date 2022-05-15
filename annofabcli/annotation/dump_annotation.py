@@ -21,6 +21,7 @@ logger = logging.getLogger(__name__)
 class DumpAnnotationMain:
     def __init__(self, service: annofabapi.Resource, project_id: str):
         self.service = service
+        self.facade = AnnofabApiFacade(service)
         self.project_id = project_id
 
     def dump_annotation_for_input_data(self, task_id: str, input_data_id: str, task_dir: Path) -> None:
@@ -84,8 +85,8 @@ class DumpAnnotationMain:
             return False
 
     def dump_annotation(self, task_id_list: List[str], output_dir: Path, parallelism: Optional[int] = None):
-
-        logger.info(f"project_id='{self.project_id=}'のプロジェクトのタスク{len(task_id_list)} 件のアノテーションをファイルに保存します。")
+        project_title = self.facade.get_project_title(self.project_id)
+        logger.info(f"プロジェクト'{project_title}'に対して、タスク{len(task_id_list)} 件のアノテーションをファイルに保存します。")
 
         output_dir.mkdir(exist_ok=True, parents=True)
 
