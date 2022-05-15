@@ -1,3 +1,4 @@
+import more_itertools
 import configparser
 import datetime
 import json
@@ -26,6 +27,7 @@ annofab_config = dict(inifile.items("annofab"))
 
 project_id = annofab_config["project_id"]
 task_id = annofab_config["task_id"]
+input_data_id = annofab_config["input_data_id"]
 service = annofabapi.build()
 
 set_logger()
@@ -248,6 +250,119 @@ class TestCommandLine:
                 "--yes",
             ]
         )
+
+    @pytest.fixture
+    def target_task(self):
+        """シナリオテスト用のタスクを作成する
+
+        Yields:
+            作成したタスク
+        """
+        # タスクの作成
+        new_task_id = f"test-{str(datetime.datetime.now().timestamp())}"
+        task, _ = service.api.put_task(project_id, new_task_id, request_body={"input_data_id_list": [input_data_id]})
+        yield task
+        # タスクの削除
+        service.api.delete_task(project_id, new_task_id)
+
+    def test_scenario_phase_transition(self, target_task):
+        """
+        フェーズ遷移を確認するテスト
+
+        Args:
+            作成直後のタスク
+
+        """
+        project, _ = service.api.get_project(project_id)
+        number_of_inspections = project["configuration"]["number_of_inspections"]
+        assert number_of_inspections == 0, "プロジェクト設定の検査回数が0でないと、タスクのフェーズの遷移を確認するテストを実行できません。"
+
+        task_id = target_task["task_id"]
+
+        # タスクの提出（教師付→受入）
+        main(
+            [
+                self.command_name,
+                "complete",
+                "--project_id",
+                project_id,
+                "--task_id",
+                task_id,
+                "--phase",
+                "annotation",
+                "--yes",
+            ]
+        )
+        task, _ = service.api.get_task(project_id, task_id)
+        assert task["phase"] == "acceptance"
+
+        # タスクの差し戻し
+        main(
+            [
+                self.command_name,
+                "reject",
+                "--project_id",
+                project_id,
+                "--task_id",
+                task_id,
+                "--comment",
+                "枠が付いていません（自動テストによるコメント）",
+                "--yes",
+            ]
+        )
+        task, _ = service.api.get_task(project_id, task_id)
+        assert task["phase"] == "annotation"
+        comments, _ = service.api.get_comments(project_id, task_id, input_data_id, query_params={"v": "2"})
+        assert len(comments) == 1
+
+        # タスクの再提出（教師付→受入）
+        main(
+            [
+                self.command_name,
+                "complete",
+                "--project_id",
+                project_id,
+                "--task_id",
+                task_id,
+                "--phase",
+                "annotation",
+                "--reply_comment",
+                "対応しました（自動テストによるコメント）",
+                "--yes",
+            ]
+        )
+        task, _ = service.api.get_task(project_id, task_id)
+        assert task["phase"] == "acceptance"
+        comments, _ = service.api.get_comments(project_id, task_id, input_data_id, query_params={"v": "2"})
+        # 返信コメントの数だけ、コメントの数が増える
+        assert len(comments) == 2
+
+        # タスクを合格にする（受入未着手→受入完了）
+        main(
+            [
+                self.command_name,
+                "complete",
+                "--project_id",
+                project_id,
+                "--task_id",
+                task_id,
+                "--phase",
+                "acceptance",
+                "--inspection_status",
+                "resolved",
+                "--yes",
+            ]
+        )
+        task, _ = service.api.get_task(project_id, task_id)
+        assert task["status"] == "complete"
+        comments, _ = service.api.get_comments(project_id, task_id, input_data_id, query_params={"v": "2"})
+        target_comment = more_itertools.first_true(comments, pred=lambda e:e["comment_node"]["_type"] == "Root")
+        assert target_comment["comment_node"]["status"] == "resolved"
+
+        # タスクの受入取り消し
+        main([self.command_name, "cancel_acceptance", "--project_id", project_id, "--task_id", task_id, "--yes"])
+        task, _ = service.api.get_task(project_id, task_id)
+        assert task["status"] == "not_started"
 
     def test_main(self):
         """
