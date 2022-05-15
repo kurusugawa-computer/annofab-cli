@@ -30,7 +30,7 @@ Examples
     WebAPIの都合上、集計対象のアノテーションは10,000個までしか検索できません。
 
 
-``--annotation_query`` で、アノテーションを検索するする条件を指定することができます。。フォーマットは https://annofab.com/docs/api/#section/AnnotationQuery とほとんど同じです。
+``--annotation_query`` で、アノテーションを検索するする条件を指定することができます。フォーマットは https://annofab.com/docs/api/#section/AnnotationQuery とほとんど同じです。
 さらに追加で ``label_name_en`` , ``additional_data_definition_name_en`` , ``choice_name_en`` キーも指定できます。``label_id`` または ``label_name_en`` のいずれかは必ず指定してください。
 
 ``--annotation_query`` のサンプルは、`Command line options <../../user_guide/command_line_options.html#annotation-query-aq>`_ を参照してください。

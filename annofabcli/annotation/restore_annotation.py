@@ -1,8 +1,14 @@
-import argparse
-import logging
-from pathlib import Path
-from typing import Any, Dict, List, Optional
+from __future__ import annotations
 
+import argparse
+import copy
+import logging
+import multiprocessing
+import sys
+from pathlib import Path
+from typing import Any, Dict, Iterator, List, Optional
+
+import annofabapi
 from annofabapi.dataclass.annotation import Annotation, AnnotationDetail
 from annofabapi.models import AnnotationDataHoldingType, ProjectMemberRole, TaskStatus
 from annofabapi.parser import (
@@ -14,18 +20,34 @@ from annofabapi.utils import can_put_annotation
 
 import annofabcli
 from annofabcli import AnnofabApiFacade
-from annofabcli.common.cli import AbstractCommandLineInterface, ArgumentParser, build_annofabapi_resource_and_login
+from annofabcli.common.cli import (
+    COMMAND_LINE_ERROR_STATUS_CODE,
+    AbstractCommandLineInterface,
+    AbstractCommandLineWithConfirmInterface,
+    ArgumentParser,
+    build_annofabapi_resource_and_login,
+)
 
 logger = logging.getLogger(__name__)
 
 
-class RestoreAnnotation(AbstractCommandLineInterface):
-    """
-    アノテーションをリストアする。
-    """
+class RestoreAnnotationMain(AbstractCommandLineWithConfirmInterface):
+    def __init__(
+        self,
+        service: annofabapi.Resource,
+        *,
+        project_id: str,
+        is_force: bool,
+        all_yes: bool,
+    ):
+        self.service = service
+        AbstractCommandLineWithConfirmInterface.__init__(self, all_yes)
+
+        self.project_id = project_id
+        self.is_force = is_force
 
     def _to_annotation_detail_for_request(
-        self, project_id: str, parser: SimpleAnnotationParser, detail: AnnotationDetail
+        self, parser: SimpleAnnotationParser, detail: AnnotationDetail
     ) -> AnnotationDetail:
         """
         Request Bodyに渡すDataClassに変換する。塗りつぶし画像があれば、それをS3にアップロードする。
@@ -45,27 +67,26 @@ class RestoreAnnotation(AbstractCommandLineInterface):
 
             if data_uri is not None:
                 with parser.open_outer_file(data_uri) as f:
-                    s3_path = self.service.wrapper.upload_data_to_s3(project_id, f, content_type="image/png")
+                    s3_path = self.service.wrapper.upload_data_to_s3(self.project_id, f, content_type="image/png")
                     detail.path = s3_path
-                    logger.debug(f"{parser.task_id}/{parser.input_data_id}/{data_uri} をS3にアップロードしました。")
             else:
                 logger.warning(f"annotation_id={detail.annotation_id}: data_holding_typeが'outer'なのにpathがNoneです。")
 
         return detail
 
-    def parser_to_request_body(self, project_id: str, parser: SimpleAnnotationParser) -> Dict[str, Any]:
+    def parser_to_request_body(self, parser: SimpleAnnotationParser) -> Dict[str, Any]:
         # infer_missing=Trueを指定する理由：Optional型のキーが存在しない場合でも、Annotationデータクラスのインスタンスを生成できるようにするため
         # https://qiita.com/yuji38kwmt/items/c5b56f70da3b8a70ba31
         annotation: Annotation = Annotation.from_dict(parser.load_json(), infer_missing=True)
         request_details: List[Dict[str, Any]] = []
         for detail in annotation.details:
-            request_detail = self._to_annotation_detail_for_request(project_id, parser, detail)
+            request_detail = self._to_annotation_detail_for_request(parser, detail)
 
             if request_detail is not None:
                 request_details.append(request_detail.to_dict(encode_json=True))
 
         request_body = {
-            "project_id": project_id,
+            "project_id": self.project_id,
             "task_id": parser.task_id,
             "input_data_id": parser.input_data_id,
             "details": request_details,
@@ -73,29 +94,29 @@ class RestoreAnnotation(AbstractCommandLineInterface):
 
         return request_body
 
-    def put_annotation_for_input_data(self, project_id: str, parser: SimpleAnnotationParser) -> bool:
+    def put_annotation_for_input_data(self, parser: SimpleAnnotationParser) -> bool:
 
         task_id = parser.task_id
         input_data_id = parser.input_data_id
 
-        old_annotation, _ = self.service.api.get_editor_annotation(project_id, task_id, input_data_id)
+        old_annotation, _ = self.service.api.get_editor_annotation(self.project_id, task_id, input_data_id)
 
         logger.info(f"task_id={task_id}, input_data_id={input_data_id} : アノテーションをリストアします。")
-        request_body = self.parser_to_request_body(project_id, parser)
+        request_body = self.parser_to_request_body(parser)
 
         updated_datetime = old_annotation["updated_datetime"] if old_annotation is not None else None
         request_body["updated_datetime"] = updated_datetime
-        self.service.api.put_annotation(project_id, task_id, input_data_id, request_body=request_body)
+        self.service.api.put_annotation(self.project_id, task_id, input_data_id, request_body=request_body)
         return True
 
-    def put_annotation_for_task(self, project_id: str, task_parser: SimpleAnnotationParserByTask) -> int:
+    def put_annotation_for_task(self, task_parser: SimpleAnnotationParserByTask) -> int:
 
         logger.info(f"タスク'{task_parser.task_id}' のアノテーションをリストアします。")
 
         success_count = 0
         for parser in task_parser.lazy_parse():
             try:
-                if self.put_annotation_for_input_data(project_id, parser):
+                if self.put_annotation_for_input_data(parser):
                     success_count += 1
             except Exception:  # pylint: disable=broad-except
                 logger.warning(
@@ -103,29 +124,29 @@ class RestoreAnnotation(AbstractCommandLineInterface):
                     exc_info=True,
                 )
 
-        logger.info(f"タスク'{task_parser.task_id}'の入力データ {success_count} 個に対してアノテーションをリストアしました。")
         return success_count
 
-    def execute_task(self, project_id: str, task_parser: SimpleAnnotationParserByTask, force: bool) -> bool:
+    def execute_task(self, task_parser: SimpleAnnotationParserByTask, task_index: Optional[int] = None) -> bool:
         """
         1個のタスクに対してアノテーションを登録する。
 
         Args:
-            project_id:
-            task_parser:
-            force:
+            task_parser: タスクをパースするためのインスタンス。
+                Simpleアノテーションではないのに型が`SimpleAnnotationParserByTask`である理由：SimpleAnnotationParserByTaskのメソッドを利用するため
+            task_index: タスクのインデックス
 
         Returns:
             1個以上の入力データのアノテーションを変更したか
 
         """
+        logger_prefix = f"{str(task_index+1)} 件目: " if task_index is not None else ""
         task_id = task_parser.task_id
         if not self.confirm_processing(f"task_id={task_id} のアノテーションをリストアしますか？"):
             return False
 
-        logger.info(f"task_id={task_id} に対して処理します。")
+        logger.info(f"{logger_prefix}task_id={task_id} に対して処理します。")
 
-        task = self.service.wrapper.get_task_or_none(project_id, task_id)
+        task = self.service.wrapper.get_task_or_none(self.project_id, task_id)
         if task is None:
             logger.warning(f"task_id = '{task_id}' は存在しません。")
             return False
@@ -136,14 +157,17 @@ class RestoreAnnotation(AbstractCommandLineInterface):
 
         old_account_id: Optional[str] = None
         changed_operator = False
-        if force:
+        if self.is_force:
             if not can_put_annotation(task, self.service.api.account_id):
                 logger.debug(f"タスク'{task_id}' の担当者を自分自身に変更します。")
-                self.service.wrapper.change_task_operator(
-                    project_id, task_id, operator_account_id=self.service.api.account_id
+                old_account_id = task["account_id"]
+                task = self.service.wrapper.change_task_operator(
+                    self.project_id,
+                    task_id,
+                    operator_account_id=self.service.api.account_id,
+                    last_updated_datetime=task["updated_datetime"],
                 )
                 changed_operator = True
-                old_account_id = task["account_id"]
 
         else:
             if not can_put_annotation(task, self.service.api.account_id):
@@ -153,43 +177,123 @@ class RestoreAnnotation(AbstractCommandLineInterface):
                 )
                 return False
 
-        result_count = self.put_annotation_for_task(project_id, task_parser)
+        result_count = self.put_annotation_for_task(task_parser)
+        logger.info(f"{logger_prefix}タスク'{task_parser.task_id}'の入力データ {result_count} 個に対してアノテーションをリストアしました。")
+
         if changed_operator:
             logger.debug(f"タスク'{task_id}' の担当者を元に戻します。")
-            old_account_id = task["account_id"]
-            self.service.wrapper.change_task_operator(project_id, task_id, operator_account_id=old_account_id)
+            self.service.wrapper.change_task_operator(
+                self.project_id,
+                task_id,
+                operator_account_id=old_account_id,
+                last_updated_datetime=task["updated_datetime"],
+            )
 
         return result_count > 0
 
+    def execute_task_wrapper(
+        self,
+        tpl: tuple[int, SimpleAnnotationParserByTask],
+    ) -> bool:
+        task_index, task_parser = tpl
+        try:
+            return self.execute_task(task_parser, task_index=task_index)
+        except Exception:  # pylint: disable=broad-except
+            logger.warning(f"task_id={task_parser.task_id} のアノテーションのリストアに失敗しました。", exc_info=True)
+            return False
+
+    def main(
+        self,
+        annotation_dir: Path,
+        target_task_ids: Optional[set[str]] = None,
+        parallelism: Optional[int] = None,
+    ):
+        """`annotation_dir`にあるファイルからアノテーションをリストアします。
+
+        Args:
+            annotation_dir (Path): `annofabcli annotation dump`で出力したディレクトリ
+            target_task_ids: リストア対象のtask_id
+            parallelism: 並列度。Noneなら逐次処理
+        """
+
+        def get_iter_task_parser_from_task_ids(
+            _iter_task_parser: Iterator[SimpleAnnotationParserByTask], _target_task_ids: set[str]
+        ) -> Iterator[SimpleAnnotationParserByTask]:
+            for task_parser in _iter_task_parser:
+                if task_parser.task_id in _target_task_ids:
+                    _target_task_ids.remove(task_parser.task_id)
+                    yield task_parser
+
+        # Simpleアノテーションではないのに`lazy_parse_simple_annotation_dir_by_task`を実行した理由：SimpleAnnotationParseに関する関数を利用するため
+        iter_task_parser = lazy_parse_simple_annotation_dir_by_task(annotation_dir)
+
+        if target_task_ids is not None:
+            # コマンドライン引数で --task_idが指定された場合は、対象のタスクのみインポートする
+            # tmp_target_task_idsが関数内で変更されるので、事前にコピーする
+            tmp_target_task_ids = copy.deepcopy(target_task_ids)
+            iter_task_parser = get_iter_task_parser_from_task_ids(iter_task_parser, tmp_target_task_ids)
+
+        success_count = 0
+        task_count = 0
+        if parallelism is not None:
+            with multiprocessing.Pool(parallelism) as pool:
+                result_bool_list = pool.map(self.execute_task_wrapper, enumerate(iter_task_parser))
+                success_count = len([e for e in result_bool_list if e])
+                task_count = len(result_bool_list)
+
+        else:
+            for task_index, task_parser in enumerate(iter_task_parser):
+                try:
+                    result = self.execute_task(task_parser, task_index=task_index)
+                    if result:
+                        success_count += 1
+                except Exception:
+                    logger.warning(f"task_id={task_parser.task_id} のアノテーションのリストアに失敗しました。", exc_info=True)
+                    continue
+                finally:
+                    task_count += 1
+
+        if target_task_ids is not None and len(tmp_target_task_ids) > 0:
+            logger.warning(
+                f"'--task_id'で指定したタスクの内 {len(tmp_target_task_ids)} 件は、リストア対象のアノテーションデータに含まれていません。 :: {tmp_target_task_ids}"  # noqa: E501
+            )
+
+        logger.info(f"{success_count} / {task_count} 件のタスクに対してアノテーションをリストアしました。")
+
+
+class RestoreAnnotation(AbstractCommandLineInterface):
+    """
+    アノテーションをリストアする。
+    """
+
+    COMMON_MESSAGE = "annofabcli annotation restore: error:"
+
+    def validate(self, args: argparse.Namespace) -> bool:
+
+        if args.parallelism is not None and not args.yes:
+            print(
+                f"{self.COMMON_MESSAGE} argument --parallelism: '--parallelism'を指定するときは、必ず '--yes' を指定してください。",
+                file=sys.stderr,
+            )
+            return False
+
+        return True
+
     def main(self):
         args = self.args
+
+        if not self.validate(args):
+            sys.exit(COMMAND_LINE_ERROR_STATUS_CODE)
+
         project_id = args.project_id
-        annotation_dir_path = Path(args.annotation)
 
         super().validate_project(project_id, [ProjectMemberRole.OWNER])
 
-        task_id_list = annofabcli.common.cli.get_list_from_args(args.task_id)
+        task_id_list = set(annofabcli.common.cli.get_list_from_args(args.task_id)) if args.task_id is not None else None
 
-        # dumpしたアノテーションディレクトリの読み込み
-        iter_task_parser = lazy_parse_simple_annotation_dir_by_task(annotation_dir_path)
-
-        success_count = 0
-        for task_parser in iter_task_parser:
-            try:
-                if len(task_id_list) > 0:
-                    # コマンドライン引数で --task_idが指定された場合は、対象のタスクのみリストアする
-                    if task_parser.task_id in task_id_list:
-                        if self.execute_task(project_id, task_parser, force=args.force):
-                            success_count += 1
-                else:
-                    # コマンドライン引数で --task_idが指定されていない場合はすべてをリストアする
-                    if self.execute_task(project_id, task_parser, force=args.force):
-                        success_count += 1
-
-            except Exception:  # pylint: disable=broad-except
-                logger.warning(f"task_id={task_parser.task_id} のアノテーションのリストアに失敗しました。", exc_info=True)
-
-        logger.info(f"{success_count} 個のタスクに対してアノテーションをリストアしました。")
+        RestoreAnnotationMain(self.service, project_id=project_id, is_force=args.force, all_yes=args.yes).main(
+            args.annotation, target_task_ids=task_id_list, parallelism=args.parallelism
+        )
 
 
 def main(args):
@@ -205,7 +309,7 @@ def parse_args(parser: argparse.ArgumentParser):
 
     parser.add_argument(
         "--annotation",
-        type=str,
+        type=Path,
         required=True,
         help="'annotation dump'コマンドの保存先ディレクトリのパスを指定してください。",
     )
@@ -214,6 +318,12 @@ def parse_args(parser: argparse.ArgumentParser):
 
     parser.add_argument(
         "--force", action="store_true", help="過去に割り当てられていて現在の担当者が自分自身でない場合、タスクの担当者を自分自身に変更してからアノテーションをリストアします。"
+    )
+
+    parser.add_argument(
+        "--parallelism",
+        type=int,
+        help="並列度。指定しない場合は、逐次的に処理します。指定した場合は、``--yes`` も指定してください。",
     )
 
     parser.set_defaults(subcommand_func=main)

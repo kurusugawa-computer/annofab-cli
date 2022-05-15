@@ -1,11 +1,15 @@
+from __future__ import annotations
+
 import argparse
+import copy
 import logging
+import multiprocessing
 import sys
 import uuid
 import zipfile
 from dataclasses import dataclass
 from pathlib import Path
-from typing import Any, Dict, Iterator, List, Optional, Set, Union
+from typing import Any, Dict, Iterator, List, Optional, Union
 
 import annofabapi
 from annofabapi.dataclass.annotation import AdditionalData, AnnotationDetail
@@ -253,7 +257,6 @@ class ImportAnnotationMain(AbstractCommandLineWithConfirmInterface):
             with parser.open_outer_file(data_uri) as f:
                 s3_path = self.service.wrapper.upload_data_to_s3(self.project_id, f, content_type="image/png")
                 dest_obj.path = s3_path
-                logger.debug(f"{parser.task_id}/{parser.input_data_id}/{data_uri} をS3にアップロードしました。")
 
         return dest_obj
 
@@ -373,14 +376,13 @@ class ImportAnnotationMain(AbstractCommandLineWithConfirmInterface):
                     success_count += 1
             except Exception:  # pylint: disable=broad-except
                 logger.warning(
-                    f"task_id={parser.task_id}, input_data_id={parser.input_data_id} の" f"アノテーションインポートに失敗しました。",
+                    f"task_id={parser.task_id}, input_data_id={parser.input_data_id} の" f"アノテーションのインポートに失敗しました。",
                     exc_info=True,
                 )
 
-        logger.info(f"タスク'{task_parser.task_id}'の入力データ {success_count} 個に対してアノテーションをインポートしました。")
         return success_count
 
-    def execute_task(self, task_parser: SimpleAnnotationParserByTask) -> bool:
+    def execute_task(self, task_parser: SimpleAnnotationParserByTask, task_index: Optional[int] = None) -> bool:
         """
         1個のタスクに対してアノテーションを登録する。
 
@@ -395,7 +397,8 @@ class ImportAnnotationMain(AbstractCommandLineWithConfirmInterface):
         if not self.confirm_processing(f"task_id={task_id} のアノテーションをインポートしますか？"):
             return False
 
-        logger.info(f"task_id={task_id} に対して処理します。")
+        logger_prefix = f"{str(task_index+1)} 件目: " if task_index is not None else ""
+        logger.info(f"{logger_prefix}task_id={task_id} に対して処理します。")
 
         task = self.service.wrapper.get_task_or_none(self.project_id, task_id)
         if task is None:
@@ -411,11 +414,14 @@ class ImportAnnotationMain(AbstractCommandLineWithConfirmInterface):
         if self.is_force:
             if not can_put_annotation(task, self.service.api.account_id):
                 logger.debug(f"タスク'{task_id}' の担当者を自分自身に変更します。")
-                self.service.wrapper.change_task_operator(
-                    self.project_id, task_id, operator_account_id=self.service.api.account_id
+                old_account_id = task["account_id"]
+                task = self.service.wrapper.change_task_operator(
+                    self.project_id,
+                    task_id,
+                    operator_account_id=self.service.api.account_id,
+                    last_updated_datetime=task["updated_datetime"],
                 )
                 changed_operator = True
-                old_account_id = task["account_id"]
 
         else:
             if not can_put_annotation(task, self.service.api.account_id):
@@ -426,35 +432,76 @@ class ImportAnnotationMain(AbstractCommandLineWithConfirmInterface):
                 return False
 
         result_count = self.put_annotation_for_task(task_parser)
+        logger.info(f"{logger_prefix}タスク'{task_parser.task_id}'の入力データ {result_count} 個に対してアノテーションをインポートしました。")
+
         if changed_operator:
             logger.debug(f"タスク'{task_id}' の担当者を元に戻します。")
-            old_account_id = task["account_id"]
-            self.service.wrapper.change_task_operator(self.project_id, task_id, operator_account_id=old_account_id)
+            self.service.wrapper.change_task_operator(
+                self.project_id,
+                task_id,
+                operator_account_id=old_account_id,
+                last_updated_datetime=task["updated_datetime"],
+            )
 
         return result_count > 0
+
+    def execute_task_wrapper(
+        self,
+        tpl: tuple[int, SimpleAnnotationParserByTask],
+    ) -> bool:
+        task_index, task_parser = tpl
+        try:
+            return self.execute_task(task_parser, task_index=task_index)
+        except Exception:  # pylint: disable=broad-except
+            logger.warning(f"task_id={task_parser.task_id} のアノテーションのインポートに失敗しました。", exc_info=True)
+            return False
 
     def main(
         self,
         iter_task_parser: Iterator[SimpleAnnotationParserByTask],
-        target_task_ids: Optional[Set[str]] = None,
+        target_task_ids: Optional[set[str]] = None,
+        parallelism: Optional[int] = None,
     ):
+        def get_iter_task_parser_from_task_ids(
+            _iter_task_parser: Iterator[SimpleAnnotationParserByTask], _target_task_ids: set[str]
+        ) -> Iterator[SimpleAnnotationParserByTask]:
+            for task_parser in _iter_task_parser:
+                if task_parser.task_id in _target_task_ids:
+                    _target_task_ids.remove(task_parser.task_id)
+                    yield task_parser
+
+        if target_task_ids is not None:
+            # コマンドライン引数で --task_idが指定された場合は、対象のタスクのみインポートする
+            # tmp_target_task_idsが関数内で変更されるので、事前にコピーする
+            tmp_target_task_ids = copy.deepcopy(target_task_ids)
+            iter_task_parser = get_iter_task_parser_from_task_ids(iter_task_parser, tmp_target_task_ids)
+
         success_count = 0
-        for task_parser in iter_task_parser:
-            try:
-                if target_task_ids is not None and len(target_task_ids) > 0:
-                    # コマンドライン引数で --task_idが指定された場合は、対象のタスクのみインポートする
-                    if task_parser.task_id in target_task_ids:
-                        if self.execute_task(task_parser):
-                            success_count += 1
-                else:
-                    # コマンドライン引数で --task_idが指定されていない場合はすべてをインポートする
-                    if self.execute_task(task_parser):
+        task_count = 0
+        if parallelism is not None:
+            with multiprocessing.Pool(parallelism) as pool:
+                result_bool_list = pool.map(self.execute_task_wrapper, enumerate(iter_task_parser))
+                success_count = len([e for e in result_bool_list if e])
+                task_count = len(result_bool_list)
+
+        else:
+            for task_index, task_parser in enumerate(iter_task_parser):
+                try:
+                    result = self.execute_task(task_parser, task_index=task_index)
+                    if result:
                         success_count += 1
+                except Exception:
+                    logger.warning(f"task_id={task_parser.task_id} のアノテーションのインポートに失敗しました。", exc_info=True)
+                    continue
+                finally:
+                    task_count += 1
 
-            except Exception:  # pylint: disable=broad-except
-                logger.warning(f"task_id={task_parser.task_id} のアノテーションインポートに失敗しました。", exc_info=True)
+        if target_task_ids is not None and len(tmp_target_task_ids) > 0:
+            logger.warning(
+                f"'--task_id'で指定したタスクの内 {len(tmp_target_task_ids)} 件は、インポート対象のアノテーションデータに含まれていません。 :: {tmp_target_task_ids}"  # noqa: E501
+            )
 
-        logger.info(f"{success_count} 個のタスクに対してアノテーションをインポートしました。")
+        logger.info(f"{success_count} / {task_count} 件のタスクに対してアノテーションをインポートしました。")
 
 
 class ImportAnnotation(AbstractCommandLineInterface):
@@ -477,8 +524,17 @@ class ImportAnnotation(AbstractCommandLineInterface):
             )
             return False
 
-        elif annotation_path.is_file() and not zipfile.is_zipfile(str(annotation_path)):
+        elif (annotation_path.is_file() and not zipfile.is_zipfile(str(annotation_path))) or (
+            not annotation_path.is_dir()
+        ):
             print(f"{COMMON_MESSAGE} argument --annotation: ZIPファイルまたはディレクトリを指定してください。", file=sys.stderr)
+            return False
+
+        if args.parallelism is not None and not args.yes:
+            print(
+                f"{COMMON_MESSAGE} argument --parallelism: '--parallelism'を指定するときは、必ず '--yes' を指定してください。",
+                file=sys.stderr,
+            )
             return False
 
         return True
@@ -489,7 +545,7 @@ class ImportAnnotation(AbstractCommandLineInterface):
             sys.exit(COMMAND_LINE_ERROR_STATUS_CODE)
 
         project_id = args.project_id
-        annotation_path = Path(args.annotation)
+        annotation_path: Path = args.annotation
 
         super().validate_project(project_id, [ProjectMemberRole.OWNER])
 
@@ -515,7 +571,7 @@ class ImportAnnotation(AbstractCommandLineInterface):
             is_force=args.force,
         )
 
-        main_obj.main(iter_task_parser, target_task_ids=target_task_ids)
+        main_obj.main(iter_task_parser, target_task_ids=target_task_ids, parallelism=args.parallelism)
 
 
 def main(args):
@@ -531,7 +587,7 @@ def parse_args(parser: argparse.ArgumentParser):
 
     parser.add_argument(
         "--annotation",
-        type=str,
+        type=Path,
         required=True,
         help="Simpleアノテーションと同じフォルダ構成のzipファイル or ディレクトリのパスを指定してください。" "タスクの状態が作業中/完了の場合はインポートしません。",
     )
@@ -556,6 +612,12 @@ def parse_args(parser: argparse.ArgumentParser):
 
     parser.add_argument(
         "--force", action="store_true", help="過去に割り当てられていて現在の担当者が自分自身でない場合、タスクの担当者を自分自身に変更してからアノテーションをインポートします。"
+    )
+
+    parser.add_argument(
+        "--parallelism",
+        type=int,
+        help="並列度。指定しない場合は、逐次的に処理します。指定した場合は、``--yes`` も指定してください。",
     )
 
     parser.set_defaults(subcommand_func=main)

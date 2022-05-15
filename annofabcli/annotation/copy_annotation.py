@@ -3,6 +3,7 @@ from __future__ import annotations
 import argparse
 import copy
 import logging
+import multiprocessing
 import sys
 from abc import ABC, abstractmethod
 from dataclasses import dataclass
@@ -122,27 +123,35 @@ def get_copy_target_list(str_copy_target_list: list[str]) -> list[CopyTarget]:
 
 
 class CopyAnnotationMain(AbstractCommandLineWithConfirmInterface):
-    def __init__(self, service: annofabapi.Resource, *, all_yes: bool, overwrite: bool, merge: bool, force: bool):
+    def __init__(
+        self, service: annofabapi.Resource, *, project_id: str, all_yes: bool, overwrite: bool, merge: bool, force: bool
+    ):
 
         self.service = service
+        self.project_id = project_id
         self.overwrite = overwrite
         self.merge = merge
         self.force = force
 
         AbstractCommandLineWithConfirmInterface.__init__(self, all_yes)
 
-    def copy_annotation_by_task(self, project_id: str, copy_target: CopyTargetByTask):
-        """タスク単位でアノテーションをコピーする"""
-        src_task = self.service.wrapper.get_task_or_none(project_id=project_id, task_id=copy_target.src_task_id)
-        dest_task = self.service.wrapper.get_task_or_none(project_id=project_id, task_id=copy_target.dest_task_id)
+    def copy_annotation_by_task(self, copy_target: CopyTargetByTask) -> bool:
+        """
+        タスク単位でアノテーションをコピーする
+
+        Returns:
+            1フレーム以上のアノテーションをコピーしたどうか
+        """
+        src_task = self.service.wrapper.get_task_or_none(project_id=self.project_id, task_id=copy_target.src_task_id)
+        dest_task = self.service.wrapper.get_task_or_none(project_id=self.project_id, task_id=copy_target.dest_task_id)
 
         if src_task is None:
             logger.warning(f"コピー元のタスク '{copy_target.src_task_id}' は存在しません。")
-            return
+            return False
 
         if dest_task is None:
             logger.warning(f"コピー先のタスク '{copy_target.dest_task_id}' は存在しません。")
-            return
+            return False
 
         src_input_data_id_list = src_task["input_data_id_list"]
         dest_input_data_id_list = dest_task["input_data_id_list"]
@@ -159,7 +168,6 @@ class CopyAnnotationMain(AbstractCommandLineWithConfirmInterface):
         for src_input_data_id, dest_input_data_id in zip(src_input_data_id_list, dest_input_data_id_list):
             try:
                 result = self.copy_annotation_by_input_data(
-                    project_id,
                     CopyTargetByInputData(
                         src_task_id=copy_target.src_task_id,
                         dest_task_id=copy_target.dest_task_id,
@@ -173,6 +181,7 @@ class CopyAnnotationMain(AbstractCommandLineWithConfirmInterface):
                 logger.warning(f"'{copy_target.src}'のアノテーションを'{copy_target.dest}'にコピーするのに失敗しました。", exc_info=True)
 
         logger.debug(f"'{copy_target.src_task_id}'の{copy_count}フレームのアノテーションを、'{copy_target.dest_task_id}'にコピーしました。")
+        return copy_count > 0
 
     @staticmethod
     def _merge_annotation(
@@ -193,16 +202,34 @@ class CopyAnnotationMain(AbstractCommandLineWithConfirmInterface):
                 details.append(src_anno)
         return details
 
-    def copy_annotation_by_input_data(self, project_id: str, copy_target: CopyTargetByInputData) -> bool:
-        """入力データ単位でアノテーションをコピーする"""
-        src_annotation, _ = self.service.api.get_editor_annotation(
-            project_id=project_id, task_id=copy_target.src_task_id, input_data_id=copy_target.src_input_data_id
+    def copy_annotation_by_input_data(self, copy_target: CopyTargetByInputData) -> bool:
+        """
+        入力データ単位でアノテーションをコピーする。
+
+        Returns:
+            アノテーションをコピーしたかどうか。
+
+        """
+        src_annotation = self.service.wrapper.get_editor_annotation_or_none(
+            project_id=self.project_id, task_id=copy_target.src_task_id, input_data_id=copy_target.src_input_data_id
         )
+        if src_annotation is None:
+            logger.warning(
+                f"task_id='{copy_target.src_task_id}'のタスクが存在しないか、またはtask_id='{copy_target.src_task_id}'のタスクにinput_data_id='{copy_target.src_input_data_id}'の入力データが存在しません。"  # noqa: E501
+            )
+            return False
+
         src_anno_details = src_annotation["details"]
 
-        dest_annotation, _ = self.service.api.get_editor_annotation(
-            project_id=project_id, task_id=copy_target.dest_task_id, input_data_id=copy_target.dest_input_data_id
+        dest_annotation = self.service.wrapper.get_editor_annotation_or_none(
+            project_id=self.project_id, task_id=copy_target.dest_task_id, input_data_id=copy_target.dest_input_data_id
         )
+        if dest_annotation is None:
+            logger.warning(
+                f"task_id='{copy_target.dest_task_id}'のタスクが存在しないか、またはtask_id='{copy_target.dest_task_id}'のタスクにinput_data_id='{copy_target.dest_input_data_id}'の入力データが存在しません。"  # noqa: E501
+            )
+            return False
+
         dest_anno_details = dest_annotation["details"]
 
         anno_details = []
@@ -219,7 +246,7 @@ class CopyAnnotationMain(AbstractCommandLineWithConfirmInterface):
             return False
 
         request_body = self.service.wrapper._create_request_body_for_copy_annotation(
-            project_id,
+            self.project_id,
             copy_target.dest_task_id,
             copy_target.dest_input_data_id,
             src_details=anno_details,
@@ -227,57 +254,107 @@ class CopyAnnotationMain(AbstractCommandLineWithConfirmInterface):
         )
         request_body["updated_datetime"] = dest_annotation["updated_datetime"]
         self.service.api.put_annotation(
-            project_id, copy_target.dest_task_id, copy_target.dest_input_data_id, request_body=request_body
+            self.project_id, copy_target.dest_task_id, copy_target.dest_input_data_id, request_body=request_body
         )
         logger.debug(f"'{copy_target.src}'のアノテーションを'{copy_target.dest}'にコピーしました。")
         return True
 
-    def copy_annotations(self, project_id: str, copy_target_list: list[CopyTarget]):
-        for copy_target in copy_target_list:
+    def copy_annotation(self, copy_target: CopyTarget) -> bool:
+        dest_task = self.service.wrapper.get_task_or_none(self.project_id, copy_target.dest_task_id)
+        if dest_task is None:
+            logger.warning(f"コピー先のタスク '{copy_target.dest_task_id}' は存在しません。")
+            return False
 
-            if not self.confirm_processing(f"'{copy_target.src}'のアノテーションを、'{copy_target.dest}'にコピーしますか？"):
-                continue
+        if not self.confirm_processing(f"'{copy_target.src}'のアノテーションを、'{copy_target.dest}'にコピーしますか？"):
+            return False
 
-            dest_task = self.service.wrapper.get_task_or_none(project_id, copy_target.dest_task_id)
-            if dest_task is None:
-                logger.warning(f"コピー先のタスク '{copy_target.dest_task_id}' は存在しません。")
-                continue
+        # 担当者割り当て変更チェック
+        changed_operator = False
+        original_operator = dest_task["account_id"]
+        if not can_put_annotation(dest_task, self.service.api.account_id):
+            if self.force:
+                logger.debug(f"`--force` が指定されているため，コピー先タスク'{copy_target.dest_task_id}' の担当者を自分自身に変更します。")
+                changed_operator = True
+                dest_task = self.service.wrapper.change_task_operator(
+                    self.project_id,
+                    copy_target.dest_task_id,
+                    self.service.api.account_id,
+                    last_updated_datetime=dest_task["updated_datetime"],
+                )
+            else:
+                logger.debug(
+                    f"コピー先タスク'{copy_target.dest_task_id}'は、過去に誰かに割り当てられたタスクで、"
+                    f"現在の担当者が自分自身でないため、アノテーションのコピーをスキップします。"
+                    f"担当者を自分自身に変更してアノテーションをコピーする場合は `--force` を指定してください。"
+                )
+                return False
 
-            # 担当者割り当て変更チェック
-            changed_operator = False
-            original_operator = dest_task["account_id"]
-            if not can_put_annotation(dest_task, self.service.api.account_id):
-                if self.force:
-                    logger.debug(f"`--force` が指定されているため，コピー先タスク'{copy_target.dest_task_id}' の担当者を自分自身に変更します。")
-                    changed_operator = True
-                    self.service.wrapper.change_task_operator(
-                        project_id, copy_target.dest_task_id, self.service.api.account_id
+        result = False
+        if isinstance(copy_target, CopyTargetByTask):
+            result = self.copy_annotation_by_task(copy_target)
+
+        elif isinstance(copy_target, CopyTargetByInputData):
+            result = self.copy_annotation_by_input_data(copy_target)
+
+        # 担当者を元に戻す
+        if changed_operator:
+            self.service.wrapper.change_task_operator(
+                self.project_id,
+                copy_target.dest_task_id,
+                original_operator,
+                last_updated_datetime=dest_task["updated_datetime"],
+            )
+
+        return result
+
+    def copy_annotation_wrapper(self, copy_target: CopyTarget) -> bool:
+        try:
+            return self.copy_annotation(copy_target)
+        except Exception:  # pylint: disable=broad-except
+            logger.warning(f"'{copy_target.src}'のアノテーションを'{copy_target.dest}'へコピーするのに失敗しました。", exc_info=True)
+            return False
+
+    def copy_annotations(self, copy_target_list: list[CopyTarget], *, parallelism: Optional[int] = None):
+        if parallelism is not None:
+            with multiprocessing.Pool(parallelism) as pool:
+                result_bool_list = pool.map(self.copy_annotation_wrapper, copy_target_list)
+                success_count = len([e for e in result_bool_list if e])
+
+        else:
+            # 逐次処理
+            success_count = 0
+            for copy_target in copy_target_list:
+                try:
+                    result = self.copy_annotation(
+                        copy_target,
                     )
-                else:
-                    logger.debug(
-                        f"コピー先タスク'{copy_target.dest_task_id}'は、過去に誰かに割り当てられたタスクで、"
-                        f"現在の担当者が自分自身でないため、アノテーションのコピーをスキップします。"
-                        f"担当者を自分自身に変更してアノテーションをコピーする場合は `--force` を指定してください。"
-                    )
+                    if result:
+                        success_count += 1
+                except Exception:  # pylint: disable=broad-except
+                    logger.warning(f"'{copy_target.src}'のアノテーションを'{copy_target.dest}'へコピーするのに失敗しました。", exc_info=True)
                     continue
 
-            if isinstance(copy_target, CopyTargetByTask):
-                self.copy_annotation_by_task(project_id, copy_target)
-
-            elif isinstance(copy_target, CopyTargetByInputData):
-                self.copy_annotation_by_input_data(project_id, copy_target)
-
-            # 担当者を元に戻す
-            if changed_operator:
-                self.service.wrapper.change_task_operator(project_id, copy_target.dest_task_id, original_operator)
-        return True
+        logger.info(f"{success_count} / {len(copy_target_list)} 件のタスクまたは入力データに対して、アノテーションをコピーしました。")
 
 
 class CopyAnnotation(AbstractCommandLineInterface):
     COMMON_MESSAGE = "annofabcli annotation copy: error:"
 
+    def validate(self, args: argparse.Namespace) -> bool:
+        if args.parallelism is not None and not args.yes:
+            print(
+                f"{self.COMMON_MESSAGE} argument --parallelism: '--parallelism'を指定するときは、'--yes' を指定してください。",
+                file=sys.stderr,
+            )
+            return False
+
+        return True
+
     def main(self):
         args = self.args
+        if not self.validate(args):
+            sys.exit(COMMAND_LINE_ERROR_STATUS_CODE)
+
         project_id = args.project_id
         str_copy_target_list = get_list_from_args(args.input)
 
@@ -287,9 +364,14 @@ class CopyAnnotation(AbstractCommandLineInterface):
             sys.exit(COMMAND_LINE_ERROR_STATUS_CODE)
 
         main_obj = CopyAnnotationMain(
-            self.service, all_yes=self.all_yes, overwrite=args.overwrite, merge=args.merge, force=args.force
+            self.service,
+            project_id=project_id,
+            all_yes=self.all_yes,
+            overwrite=args.overwrite,
+            merge=args.merge,
+            force=args.force,
         )
-        main_obj.copy_annotations(project_id, copy_target_list)
+        main_obj.copy_annotations(copy_target_list, parallelism=args.parallelism)
 
 
 def main(args):
@@ -326,13 +408,19 @@ def parse_args(parser: argparse.ArgumentParser):
         "--force", action="store_true", help="過去に割り当てられていて現在の担当者が自分自身でない場合、タスクの担当者を一時的に自分自身に変更してからアノテーションをコピーします。"
     )
 
+    parser.add_argument(
+        "--parallelism",
+        type=int,
+        help="並列度。指定しない場合は、逐次的に処理します。指定した場合は、``--yes`` も指定してください。",
+    )
+
     parser.set_defaults(subcommand_func=main)
 
 
 def add_parser(subparsers: Optional[argparse._SubParsersAction] = None):
     subcommand_name = "copy"
     subcommand_help = "アノテーションをコピーします．"
-    description = "アノテーションをコピーします。"
+    description = "タスク単位または入力データ単位で、アノテーションをコピーします。"
     parser = annofabcli.common.cli.add_parser(subparsers, subcommand_name, subcommand_help, description)
     parse_args(parser)
     return parser
