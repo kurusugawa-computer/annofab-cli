@@ -52,6 +52,21 @@ class TestCommandLine__list:
         )
 
 
+class TestCommandLine__download:
+    def test_download(self):
+        out_file = str(out_dir / "input_data-download.json")
+        main(
+            [
+                "input_data",
+                "download",
+                "--project_id",
+                project_id,
+                "--output",
+                out_file,
+            ]
+        )
+
+
 class TestCommandLine__list_merged_task:
     def test_list_input_data_merged_task(self):
         out_file = str(out_dir / "input_data.csv")

@@ -290,7 +290,19 @@ class TestCommandLine:
 
         service.api.delete_task(project_id, dest_task_id)
 
-    def test_list(self, task_id: str):
+    def test_download(self):
+        main(
+            [
+                "annotation",
+                "download",
+                "--project_id",
+                project_id,
+                "--output",
+                str(out_dir / "annotation-download.zip"),
+            ]
+        )
+
+    def test_list(self):
         """
         list系のコマンドのテスト
         """
@@ -305,15 +317,13 @@ class TestCommandLine:
             ]
         )
 
-    def test_list_count(self, task_id: str):
+    def test_list_count(self):
         main(
             [
                 "annotation",
                 "list_count",
                 "--project_id",
                 project_id,
-                "--task_id",
-                task_id,
                 "--output",
                 str(out_dir / "annotation-list_count.csv"),
             ]
