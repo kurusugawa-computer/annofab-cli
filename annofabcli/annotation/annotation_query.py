@@ -66,7 +66,7 @@ def _get_attribute_to_api(additional_data: dict[str, Any], attribute_value: Attr
                 f"アノテーション仕様の'{get_attribute_name(additional_data)}'属性に、選択肢名(英語)が'{attribute_value}'である選択肢は存在しません。"
                 f" :: additional_data_definition_id='{additional_data_definition_id}'"
             )
-        elif len(tmp) > 1:
+        if len(tmp) > 1:
             raise ValueError(
                 f"アノテーション仕様の'{get_attribute_name(additional_data)}'属性に、選択肢名(英語)が'{attribute_value}'である選択肢が複数存在します。"
                 f" :: additional_data_definition_id='{additional_data_definition_id}'"
@@ -122,20 +122,23 @@ def convert_attributes_from_cli_to_api(
         tmp = [e for e in tmp_additionals if get_message_for_i18n(e["name"]) == attribute_name]
         if len(tmp) == 0:
             if label_info is None:
-                raise ValueError(f"アノテーション仕様に、属性名(英語)が'{attribute_name}'である属性は存在しません。")
+                error_message = f"アノテーション仕様に、属性名(英語)が'{attribute_name}'である属性は存在しません。"
             else:
-                raise ValueError(
+                error_message = (
                     f"アノテーション仕様の'{get_label_name(label_info)}'ラベルに、"
                     f"属性名(英語)が'{attribute_name}'である属性は存在しません。 :: label_id='{label_id}'"
                 )
+            raise ValueError(error_message)
+
         elif len(tmp) > 1:
             if label_info is None:
-                raise ValueError(f"アノテーション仕様に、属性名(英語)が'{attribute_name}'である属性が複数存在します。")
+                error_message = f"アノテーション仕様に、属性名(英語)が'{attribute_name}'である属性が複数存在します。"
             else:
-                raise ValueError(
+                error_message = (
                     f"アノテーション仕様の'{get_label_name(label_info)}'ラベルに、"
                     f"属性名(英語)が'{attribute_name}'である属性が複数存在します。 :: label_id='{label_id}'"
                 )
+            raise ValueError(error_message)
         additional_data = tmp[0]
         attributes_for_webapi.append(_get_attribute_to_api(additional_data, attribute_value))
 

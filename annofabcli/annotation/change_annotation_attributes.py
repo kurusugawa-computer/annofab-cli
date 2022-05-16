@@ -250,8 +250,9 @@ class ChangeAttributesOfAnnotation(AbstractCommandLineInterface):
 
         return True
 
+    @classmethod
     def get_annotation_query_for_api(
-        self, str_annotation_query: str, annotation_specs: dict[str, Any]
+        cls, str_annotation_query: str, annotation_specs: dict[str, Any]
     ) -> AnnotationQueryForAPI:
         """
         CLIから受け取った`--annotation_query`の値から、APIに渡すクエリー情報を返す。
@@ -260,8 +261,9 @@ class ChangeAttributesOfAnnotation(AbstractCommandLineInterface):
         annotation_query_for_cli = AnnotationQueryForCLI.from_dict(dict_annotation_query)
         return annotation_query_for_cli.to_query_for_api(annotation_specs)
 
+    @classmethod
     def get_attributes_for_api(
-        self, str_attributes: str, annotation_specs: dict[str, Any], label_id: str
+        cls, str_attributes: str, annotation_specs: dict[str, Any], label_id: str
     ) -> list[AdditionalData]:
         """
         CLIから受け取った`--attributes`の値から、APIに渡す属性情報を返す。
