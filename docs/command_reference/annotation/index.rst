@@ -19,6 +19,7 @@ Available Commands
    change_properties
    copy
    delete
+   download
    dump
    import
    list

@@ -20,6 +20,7 @@ Available Commands
    complete
    copy
    delete
+   download
    list
    list_with_json
    list_added_task_history
