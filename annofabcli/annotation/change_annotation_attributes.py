@@ -107,10 +107,10 @@ class ChangeAnnotationAttributesMain(AbstractCommandLineWithConfirmInterface):
             アノテーション一覧
         """
         dict_query = annotation_query.to_dict()
-        dict_query.update(
-            {"task_id": task_id, "exact_match_task_id": True}
+        dict_query.update({"task_id": task_id, "exact_match_task_id": True})
+        annotation_list = self.service.wrapper.get_all_annotation_list(
+            self.project_id, query_params={"query": dict_query}
         )
-        annotation_list = self.service.wrapper.get_all_annotation_list(self.project_id, query_params={"query":dict_query})
         return annotation_list
 
     def change_attributes_for_task(

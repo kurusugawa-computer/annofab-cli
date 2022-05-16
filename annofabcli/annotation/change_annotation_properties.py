@@ -16,6 +16,7 @@ from dataclasses_json import DataClassJsonMixin
 
 import annofabcli
 from annofabcli import AnnofabApiFacade
+from annofabcli.annotation.annotation_query import AnnotationQueryForAPI, AnnotationQueryForCLI
 from annofabcli.annotation.dump_annotation import DumpAnnotationMain
 from annofabcli.common.cli import (
     COMMAND_LINE_ERROR_STATUS_CODE,
@@ -25,7 +26,6 @@ from annofabcli.common.cli import (
     build_annofabapi_resource_and_login,
     get_json_from_args,
 )
-from annofabcli.common.facade import AnnotationQuery, AnnotationQueryForCli
 
 logger = logging.getLogger(__name__)
 
@@ -113,11 +113,34 @@ class ChangePropertiesOfAnnotationMain(AbstractCommandLineWithConfirmInterface):
         for annotation in annotations:
             _to_request_body_elm(annotation)
 
+    def get_annotation_list_for_task(
+        self, task_id: str, annotation_query: Optional[AnnotationQueryForAPI]
+    ) -> list[dict[str, Any]]:
+        """
+        タスク内のアノテーション一覧を取得する。
+
+        Args:
+            project_id:
+            task_id:
+            annotation_query: アノテーションの検索条件
+
+        Returns:
+            アノテーション一覧
+        """
+        dict_query = {"task_id": task_id, "exact_match_task_id": True}
+        if annotation_query is not None:
+            dict_query.update(annotation_query.to_dict())
+
+        annotation_list = self.service.wrapper.get_all_annotation_list(
+            self.project_id, query_params={"query": dict_query}
+        )
+        return annotation_list
+
     def change_properties_for_task(  # pylint: disable=too-many-return-statements
         self,
         task_id: str,
         properties: AnnotationDetailForCli,
-        annotation_query: Optional[AnnotationQuery] = None,
+        annotation_query: Optional[AnnotationQueryForAPI] = None,
         backup_dir: Optional[Path] = None,
         task_index: Optional[int] = None,
     ) -> bool:
@@ -168,7 +191,7 @@ class ChangePropertiesOfAnnotationMain(AbstractCommandLineWithConfirmInterface):
                 )
                 return False
 
-        annotation_list = self.facade.get_annotation_list_for_task(self.project_id, task_id, query=annotation_query)
+        annotation_list = self.get_annotation_list_for_task(task_id, annotation_query=annotation_query)
         logger.info(f"{logger_prefix}task_id='{task_id}'の変更対象アノテーション数：{len(annotation_list)}")
         if len(annotation_list) == 0:
             logger.info(f"task_id='{task_id}'には変更対象のアノテーションが存在しないので、スキップします。")
@@ -201,7 +224,7 @@ class ChangePropertiesOfAnnotationMain(AbstractCommandLineWithConfirmInterface):
         self,
         tpl: tuple[int, str],
         properties: AnnotationDetailForCli,
-        annotation_query: Optional[AnnotationQuery] = None,
+        annotation_query: Optional[AnnotationQueryForAPI] = None,
         backup_dir: Optional[Path] = None,
     ) -> bool:
         task_index, task_id = tpl
@@ -221,7 +244,7 @@ class ChangePropertiesOfAnnotationMain(AbstractCommandLineWithConfirmInterface):
         self,
         task_id_list: List[str],
         properties: AnnotationDetailForCli,
-        annotation_query: Optional[AnnotationQuery] = None,
+        annotation_query: Optional[AnnotationQueryForAPI] = None,
         backup_dir: Optional[Path] = None,
         parallelism: Optional[int] = None,
     ):
@@ -291,10 +314,12 @@ class ChangePropertiesOfAnnotation(AbstractCommandLineInterface):
         task_id_list = annofabcli.common.cli.get_list_from_args(args.task_id)
 
         dict_annotation_query = get_json_from_args(args.annotation_query)
-        if dict_annotation_query is not None:
-            annotation_query_for_cli = AnnotationQueryForCli.from_dict(dict_annotation_query)
+        if args.annotation_query is not None:
+            annotation_specs, _ = self.service.api.get_annotation_specs(project_id, query_params={"v": "2"})
             try:
-                annotation_query = self.facade.to_annotation_query_from_cli(project_id, annotation_query_for_cli)
+                dict_annotation_query = get_json_from_args(args.annotation_query)
+                annotation_query_for_cli = AnnotationQueryForCLI.from_dict(dict_annotation_query)
+                annotation_query = annotation_query_for_cli.to_query_for_api(annotation_specs)
             except ValueError as e:
                 print(f"{self.COMMON_MESSAGE} argument '--annotation_query' の値が不正です。{e}", file=sys.stderr)
                 sys.exit(COMMAND_LINE_ERROR_STATUS_CODE)
