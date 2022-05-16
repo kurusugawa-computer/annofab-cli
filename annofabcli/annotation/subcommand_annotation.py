@@ -7,6 +7,7 @@ import annofabcli.annotation.change_annotation_properties
 import annofabcli.annotation.copy_annotation
 import annofabcli.annotation.delete_annotation
 import annofabcli.annotation.dump_annotation
+import annofabcli.annotation.download_annotation_zip
 import annofabcli.annotation.import_annotation
 import annofabcli.annotation.list_annotation
 import annofabcli.annotation.list_annotation_count
@@ -23,6 +24,7 @@ def parse_args(parser: argparse.ArgumentParser):
     annofabcli.annotation.change_annotation_properties.add_parser(subparsers)
     annofabcli.annotation.copy_annotation.add_parser(subparsers)
     annofabcli.annotation.delete_annotation.add_parser(subparsers)
+    annofabcli.annotation.download_annotation_zip.add_parser(subparsers)
     annofabcli.annotation.dump_annotation.add_parser(subparsers)
     annofabcli.annotation.import_annotation.add_parser(subparsers)
     annofabcli.annotation.list_annotation.add_parser(subparsers)
