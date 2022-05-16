@@ -17,9 +17,7 @@ Examples
 
 基本的な使い方
 --------------------------
-``--annotation_query`` に、集計対象のアノテーションを検索するする条件をJSON形式で指定してください。フォーマットは https://annofab.com/docs/api/#section/AnnotationQuery とほとんど同じです。
-さらに追加で ``label_name_en`` , ``additional_data_definition_name_en`` , ``choice_name_en`` キーも指定できます。``label_id`` または ``label_name_en`` のいずれかは必ず指定してください。
-
+``--annotation_query`` に、集計対象のアノテーションを検索するする条件をJSON形式で指定してください。
 ``--annotation_query`` のサンプルは、`Command line options <../../user_guide/command_line_options.html#annotation-query-aq>`_ を参照してください。
 
 
@@ -29,7 +27,7 @@ Examples
 .. code-block::
 
     $ annofabcli annotation list_count --project_id prj1 \
-    --annotation_query '{"label_name_en": "car"}' --output out_by_task.csv
+    --annotation_query '{"label": "car"}' --output out_by_task.csv
 
 
 .. csv-table:: out_by_task.csv
@@ -45,7 +43,7 @@ Examples
 .. code-block::
 
     $ annofabcli annotation list_count --project_id prj1 \
-    --annotation_query '{"label_name_en": "car"}' --gropu_by input_data_id --output out_by_input_data.csv
+    --annotation_query '{"label": "car"}' --gropu_by input_data_id --output out_by_input_data.csv
 
 
 .. csv-table:: out_by_input_data.csv
@@ -62,7 +60,7 @@ Examples
 .. code-block::
 
     $ annofabcli annotation list_count --project_id prj1 \
-    --annotation_query '{"label_name_en": "car"}'  --task_id file://task.txt
+    --annotation_query '{"label": "car"}'  --task_id file://task.txt
 
 
 .. warning::

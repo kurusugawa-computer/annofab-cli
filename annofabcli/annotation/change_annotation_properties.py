@@ -362,19 +362,14 @@ def parse_args(parser: argparse.ArgumentParser):
     argument_parser.add_project_id()
     argument_parser.add_task_id()
 
-    EXAMPLE_ANNOTATION_QUERY = (
-        '{"label_name_en": "car", "attributes":[{"additional_data_definition_name_en": "occluded", "flag": true}]}'
-    )
+    EXAMPLE_ANNOTATION_QUERY = '{"label": "car", "attributes":{"occluded" true} }'
 
     parser.add_argument(
         "-aq",
         "--annotation_query",
         type=str,
         required=False,
-        help="変更対象のアノテーションを検索する条件をJSON形式で指定します。"
-        "``label_id`` または ``label_name_en`` のいずれかは必ず指定してください。"
-        "``file://`` を先頭に付けると、JSON形式のファイルを指定できます。"
-        f"(ex): ``{EXAMPLE_ANNOTATION_QUERY}``",
+        help="変更対象のアノテーションを検索する条件をJSON形式で指定します。" f"(ex): ``{EXAMPLE_ANNOTATION_QUERY}``",
     )
 
     EXAMPLE_PROPERTIES = '{"is_protected": true}'

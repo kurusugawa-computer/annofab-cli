@@ -172,12 +172,14 @@ class AnnotationQueryForCLI(DataClassJsonMixin):
         Returns:
             dict[str,Any]: WebAPIのquery_paramsに渡すdict
         """
-        label_info = more_itertools.first_true(
-            annotation_specs["labels"], pred=lambda e: get_message_for_i18n(e["label_name"]) == self.label
-        )
-        if label_info is None:
-            raise ValueError(f"アノテーション仕様に、ラベル名（英語）が'{self.label}'であるラベルは存在しません。")
+        tmp = [e for e in annotation_specs["labels"] if get_message_for_i18n(e["label_name"]) == self.label]
 
+        if len(tmp) == 0:
+            raise ValueError(f"アノテーション仕様に、ラベル名（英語）が'{self.label}'であるラベルは存在しません。")
+        if len(tmp) > 1:
+            raise ValueError(f"アノテーション仕様に、ラベル名（英語）が'{self.label}'であるラベルが複数存在します。")
+
+        label_info = tmp[0]
         label_id = label_info["label_id"]
         if self.attributes is None:
             return AnnotationQueryForAPI(label_id=label_id)

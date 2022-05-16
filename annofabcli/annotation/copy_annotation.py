@@ -384,7 +384,9 @@ def parse_args(parser: argparse.ArgumentParser):
     argument_parser = ArgumentParser(parser)
     argument_parser.add_project_id()
 
-    INPUT_HELP_MESSAGE = """アノテーションのコピー元とコピー先を':'で区切って指定します。
+    INPUT_HELP_MESSAGE = """
+    アノテーションのコピー元とコピー先を':'で区切って指定します。
+    
     タスク単位でコピーする場合の例： ``src_task_id:dest_task_id``
     入力データ単位でコピーする場合： ``src_task_id/src_input_data_id:dest_task_id/dest_input_data_id``
     ``file://`` を先頭に付けると、コピー元とコピー先が記載されているファイルを指定できます。
