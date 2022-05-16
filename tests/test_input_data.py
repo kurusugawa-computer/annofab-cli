@@ -1,3 +1,4 @@
+import datetime
 import configparser
 import json
 import os
@@ -22,16 +23,8 @@ inifile.read("./pytest.ini", "UTF-8")
 annofab_config = dict(inifile.items("annofab"))
 
 project_id = annofab_config["project_id"]
-task_id = annofab_config["task_id"]
 annofab_service = annofabapi.build()
 
-task, _ = annofab_service.api.get_task(project_id, task_id)
-input_data_id = task["input_data_id_list"][0]
-
-
-class TestCommandLine__delete:
-    def test_delete_input_data(self):
-        main(["input_data", "delete", "--project_id", project_id, "--input_data_id", "foo", "--yes"])
 
 
 class TestCommandLine__list:
@@ -260,8 +253,31 @@ class TestCommandLine__put:
         )
 
 
-class TestCommandLine__update_metadata:
-    def test_update_metadata(self):
+class TestCommandLine:
+    def test_scenario(self):
+        input_data_id = f"test-{str(datetime.datetime.now().timestamp())}"
+
+        json_args = [
+            {
+                "input_data_name": f"{input_data_id}--input_data_name",
+                "input_data_path": "file://tests/data/small-lenna.png",
+                "input_data_id": input_data_id,
+            }
+        ]
+        main(
+            [
+                "input_data",
+                "put",
+                "--project_id",
+                project_id,
+                "--json",
+                json.dumps(json_args),
+                "--yes",
+            ]
+        )
+        assert annofab_service.wrapper.get_input_data_or_none(project_id, input_data_id) is not None
+
+        # メタデータの更新
         main(
             [
                 "input_data",
@@ -275,3 +291,10 @@ class TestCommandLine__update_metadata:
                 "--yes",
             ]
         )
+        input_data, _ = annofab_service.api.get_input_data(project_id, input_data_id)
+        assert input_data["metadata"] == {"attr1":"foo"}
+
+        # 入力データの削除
+        main(["input_data", "delete", "--project_id", project_id, "--input_data_id", input_data_id, "--yes"])
+        assert annofab_service.wrapper.get_input_data_or_none(project_id, input_data_id) is None
+

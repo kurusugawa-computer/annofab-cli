@@ -4,9 +4,9 @@ import os
 from pathlib import Path
 
 import annofabapi
-
+import datetime
 from annofabcli.__main__ import main
-
+import pytest
 # プロジェクトトップに移動する
 os.chdir(os.path.dirname(os.path.abspath(__file__)) + "/../")
 
@@ -21,38 +21,43 @@ inifile.read("./pytest.ini", "UTF-8")
 annofab_config = dict(inifile.items("annofab"))
 
 project_id = annofab_config["project_id"]
-task_id = annofab_config["task_id"]
+input_data_id = annofab_config["input_data_id"]
 annofab_service = annofabapi.build()
-task, _ = annofab_service.api.get_task(project_id, task_id)
-input_data_id = task["input_data_id_list"][0]
 
 
-class TestCommandLine__put:
-    def test_put_supplementar__with_csv(self):
-        main(
-            [
-                "supplementary",
-                "put",
-                "--project_id",
-                project_id,
-                "--csv",
-                str(data_dir / "supplementary.csv"),
-                "--overwrite",
-                "--yes",
-            ]
-        )
 
-    def test_put_supplementar__with_json(self):
+
+class TestCommandLine:
+
+    @pytest.fixture
+    def target_input_data(self):
+        """シナリオテスト用の入力データを作成する
+
+        Yields:
+            作成した入力データ
+
+        """
+        new_input_data_id = f"test-{str(int(datetime.datetime.now().timestamp()))}"
+        # 入力データの作成
+        input_data = annofab_service.wrapper.put_input_data_from_file(project_id, new_input_data_id, file_path=str("tests/data/small-lenna.png"))
+        yield input_data
+        # 入力データの削除
+        annofab_service.api.delete_input_data(project_id, new_input_data_id)
+
+
+    def test_scenario(self, target_input_data):
+        input_data_id = target_input_data["input_data_id"]
         json_args = [
             {
                 "input_data_id": input_data_id,
                 "supplementary_data_number": 1,
                 "supplementary_data_name": "foo-data",
-                "supplementary_data_path": "file://tests/data/lenna.png",
+                "supplementary_data_path": "file://tests/data/small-lenna.png",
             }
         ]
         str_json_args = json.dumps(json_args)
 
+        # 補助情報の作成
         main(
             [
                 "supplementary",
@@ -66,55 +71,32 @@ class TestCommandLine__put:
             ]
         )
 
+        supplementary_data_list, _ = annofab_service.api.get_supplementary_data_list(project_id, input_data_id)
+        assert len(supplementary_data_list) == 1
 
-class TestCommandLine__list:
-    def test_list_supplementary(self):
-        main(["supplementary", "list", "--project_id", project_id, "--input_data_id", "foo"])
-
-
-class TestCommandLine__delete:
-    def test_delete_supplementar__with_csv(self):
+        # 補助情報のリストを出力
         main(
             [
                 "supplementary",
-                "delete",
-                "--project_id",
-                project_id,
-                "--csv",
-                str(data_dir / "deleted-supplementary.csv"),
-                "--yes",
-            ]
-        )
-
-    def test_delete_supplementar__with_json(self):
-        json_args = [
-            {
-                "input_data_id": "input1",
-                "supplementary_data_id": "supplementary1",
-            }
-        ]
-
-        main(
-            [
-                "supplementary",
-                "delete",
-                "--project_id",
-                project_id,
-                "--json",
-                json.dumps(json_args),
-                "--yes",
-            ]
-        )
-
-    def test_delete_supplementar__with_input_data_id(self):
-        main(
-            [
-                "supplementary",
-                "delete",
+                "list",
                 "--project_id",
                 project_id,
                 "--input_data_id",
-                "input1",
+                input_data_id,
+                "--output",
+                str(out_dir / "list.csv"),
                 "--yes",
             ]
         )
+
+        # 補助情報の削除
+        json_args_delete = [
+            {
+                "input_data_id": input_data_id,
+                "supplementary_data_id": supplementary_data_list[0]["supplementary_data_id"],
+            }
+        ]        
+        main(["supplementary", "delete", "--project_id", project_id, "--json", json.dumps(json_args_delete), "--yes"])
+        supplementary_data_list, _ = annofab_service.api.get_supplementary_data_list(project_id, input_data_id)
+        assert len(supplementary_data_list) == 0
+
