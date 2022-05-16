@@ -6,9 +6,8 @@ import sys
 from typing import Any, Dict, List, Optional
 
 import annofabapi
-import more_itertools
 import pandas
-from annofabapi.models import AdditionalDataDefinitionV1, SingleAnnotation
+from annofabapi.models import SingleAnnotation
 
 import annofabcli
 from annofabcli import AnnofabApiFacade
@@ -22,7 +21,6 @@ from annofabcli.common.cli import (
     get_list_from_args,
 )
 from annofabcli.common.enums import FormatArgument
-from annofabcli.common.facade import convert_annotation_specs_labels_v2_to_v1
 from annofabcli.common.utils import get_columns_with_priority
 from annofabcli.common.visualize import AddProps
 
@@ -34,117 +32,6 @@ class ListAnnotationMain:
         self.service = service
         self.facade = AnnofabApiFacade(service)
         self.visualize = AddProps(self.service, project_id)
-
-    @staticmethod
-    def _modify_attribute_of_query(
-        attribute_query: Dict[str, Any], additional_data_definition: AdditionalDataDefinitionV1
-    ) -> Dict[str, Any]:
-        if "choice_name_en" in attribute_query:
-            choice_info = more_itertools.first_true(
-                additional_data_definition["choices"],
-                pred=lambda e: AnnofabApiFacade.get_choice_name_en(e) == attribute_query["choice_name_en"],
-            )
-
-            if choice_info is not None:
-                attribute_query["choice"] = choice_info["choice_id"]
-            else:
-                logger.warning(f"choice_name_en = {attribute_query['choice_name_en']} の選択肢は存在しませんでした。")
-
-        return attribute_query
-
-    @staticmethod
-    def _find_additional_data_with_name(
-        additional_data_definitions: List[AdditionalDataDefinitionV1], name: str
-    ) -> Optional[AdditionalDataDefinitionV1]:
-
-        additional_data_definition = more_itertools.first_true(
-            additional_data_definitions,
-            pred=lambda e: AnnofabApiFacade.get_additional_data_definition_name_en(e) == name,
-        )
-        return additional_data_definition
-
-    @staticmethod
-    def _find_additional_data_with_id(
-        additional_data_definitions: List[AdditionalDataDefinitionV1], definition_id: str
-    ) -> Optional[AdditionalDataDefinitionV1]:
-
-        additional_data_definition = more_itertools.first_true(
-            additional_data_definitions, pred=lambda e: e["additional_data_definition_id"] == definition_id
-        )
-        return additional_data_definition
-
-    def _modify_attributes_of_query(
-        self, attributes_of_query: List[Dict[str, Any]], definitions: List[AdditionalDataDefinitionV1]
-    ) -> List[Dict[str, Any]]:
-        for attribute_query in attributes_of_query:
-            definition_name = attribute_query.get("additional_data_definition_name_en")
-            if definition_name is not None:
-                additional_data_definition = self._find_additional_data_with_name(definitions, definition_name)
-                if additional_data_definition is None:
-                    logger.warning(
-                        f"additional_data_definition_name_name_en = {attribute_query['additional_data_definition_name_en']} の属性は存在しませんでした。"  # noqa: E501
-                    )
-                    continue
-
-                if additional_data_definition is not None:
-                    attribute_query["additional_data_definition_id"] = additional_data_definition[
-                        "additional_data_definition_id"
-                    ]
-
-            definition_id = attribute_query["additional_data_definition_id"]
-            additional_data_definition = self._find_additional_data_with_id(definitions, definition_id)
-            if additional_data_definition is None:
-                logger.warning(
-                    f"additional_data_definition_id = {attribute_query['additional_data_definition_id']} の属性は存在しませんでした。"  # noqa: E501
-                )
-                continue
-
-            self._modify_attribute_of_query(attribute_query, additional_data_definition)
-
-        return attributes_of_query
-
-    def modify_annotation_query(self, project_id: str, annotation_query: Dict[str, Any]) -> Dict[str, Any]:
-        """
-        アノテーション検索クエリに以下のように修正する。
-        * ``label_name_en`` から ``label_id`` に変換する。
-        * ``additional_data_definition_name_en`` から ``additional_data_definition_id`` に変換する。
-        * ``choice_name_en`` から ``choice`` に変換する。
-
-        Args:
-            project_id:
-            annotation_query:
-
-        Returns:
-            修正したタスク検索クエリ
-
-        """
-        # [REMOVE_V2_PARAM]
-        annotation_specs, _ = self.service.api.get_annotation_specs(project_id, query_params={"v": "2"})
-        specs_labels = convert_annotation_specs_labels_v2_to_v1(
-            labels_v2=annotation_specs["labels"], additionals_v2=annotation_specs["additionals"]
-        )
-
-        # label_name_en から label_idを設定
-        if "label_name_en" in annotation_query:
-            label_name_en = annotation_query["label_name_en"]
-            label = more_itertools.first_true(
-                specs_labels, pred=lambda e: AnnofabApiFacade.get_label_name_en(e) == label_name_en
-            )
-            if label is not None:
-                annotation_query["label_id"] = label["label_id"]
-            else:
-                logger.warning(f"label_name_en: {label_name_en} の label_id が見つかりませんでした。")
-
-        if annotation_query.keys() >= {"label_id", "attributes"}:
-            label = more_itertools.first_true(
-                specs_labels, pred=lambda e: e["label_id"] == annotation_query["label_id"]
-            )
-            if label is not None:
-                self._modify_attributes_of_query(annotation_query["attributes"], label["additional_data_definitions"])
-            else:
-                logger.warning(f"label_id: {annotation_query['label_id']} の label_id が見つかりませんでした。")
-
-        return annotation_query
 
     def get_annotation_list(
         self,
