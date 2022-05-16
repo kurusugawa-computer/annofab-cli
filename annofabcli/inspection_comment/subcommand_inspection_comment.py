@@ -16,7 +16,8 @@ def parse_args(parser: argparse.ArgumentParser):
 
     # サブコマンドの定義
     annofabcli.inspection_comment.delete_inspection_comments.add_parser(subparsers)
-    annofabcli.inspection_comment.download_inspection_comment_json.add_parser(subparsers)
+    # 検査コメント関係は非推奨なので、インポートせずにおく
+    # annofabcli.inspection_comment.download_inspection_comment_json.add_parser(subparsers)
     annofabcli.inspection_comment.list_inspections.add_parser(subparsers)
     annofabcli.inspection_comment.list_inspections_with_json.add_parser(subparsers)
     annofabcli.inspection_comment.put_inspection_comments.add_parser(subparsers)
