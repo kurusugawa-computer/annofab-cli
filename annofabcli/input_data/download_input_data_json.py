@@ -14,24 +14,24 @@ from annofabcli.common.download import DownloadingFile
 logger = logging.getLogger(__name__)
 
 
-class DownloadingTaskCsv(AbstractCommandLineInterface):
-    def download_task_csv(self, project_id: str, output_file: Path, is_latest: bool):
+class DownloadingInputData(AbstractCommandLineInterface):
+    def download_input_data_json(self, project_id: str, output_file: Path, is_latest: bool):
         super().validate_project(project_id, [ProjectMemberRole.OWNER, ProjectMemberRole.TRAINING_DATA_USER])
         project_title = self.facade.get_project_title(project_id)
-        logger.info(f"{project_title} のタスク全件ファイルをダウンロードします。")
+        logger.info(f"{project_title} の入力データ全件ファイルをダウンロードします。")
 
         obj = DownloadingFile(self.service)
-        obj.download_task_json(
+        obj.download_input_data_json(
             project_id,
             str(output_file),
             is_latest=is_latest,
         )
-        logger.info(f"タスク全件ファイルをダウンロードしました。output={output_file}")
+        logger.info(f"入力データ全件ファイルをダウンロードしました。output={output_file}")
 
     def main(self):
         args = self.args
 
-        self.download_task_csv(
+        self.download_input_data_json(
             args.project_id,
             output_file=args.output,
             is_latest=args.latest,
@@ -41,7 +41,7 @@ class DownloadingTaskCsv(AbstractCommandLineInterface):
 def main(args: argparse.Namespace):
     service = build_annofabapi_resource_and_login(args)
     facade = AnnofabApiFacade(service)
-    DownloadingTaskCsv(service, facade, args).main()
+    DownloadingInputData(service, facade, args).main()
 
 
 def parse_args(parser: argparse.ArgumentParser):
@@ -52,7 +52,7 @@ def parse_args(parser: argparse.ArgumentParser):
     parser.add_argument(
         "--latest",
         action="store_true",
-        help="現在のタスクの状態をタスク全件ファイルに反映させてから、ダウンロードします。タスク全件ファイルへの反映には、データ数に応じて数分から数十分かかります。",
+        help="現在の入力データの状態を入力データ全件ファイルに反映させてから、ダウンロードします。入力データ全件ファイルへの反映には、データ数に応じて数分から数十分かかります。",
     )
 
     parser.set_defaults(subcommand_func=main)
@@ -60,10 +60,11 @@ def parse_args(parser: argparse.ArgumentParser):
 
 def add_parser(subparsers: Optional[argparse._SubParsersAction] = None):
     subcommand_name = "download"
-    subcommand_help = "タスク全件ファイルをダウンロードします。"
-    description = "タスク全件ファイルをダウンロードします。"
+    subcommand_help = "入力データ全件ファイルをダウンロードします。"
     epilog = "オーナロールまたはアノテーションユーザロールを持つユーザで実行してください。"
 
-    parser = annofabcli.common.cli.add_parser(subparsers, subcommand_name, subcommand_help, description, epilog=epilog)
+    parser = annofabcli.common.cli.add_parser(
+        subparsers, subcommand_name, subcommand_help, description=subcommand_help, epilog=epilog
+    )
     parse_args(parser)
     return parser
