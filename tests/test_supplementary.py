@@ -1,12 +1,14 @@
 import configparser
+import datetime
 import json
 import os
 from pathlib import Path
 
 import annofabapi
-import datetime
-from annofabcli.__main__ import main
 import pytest
+
+from annofabcli.__main__ import main
+
 # プロジェクトトップに移動する
 os.chdir(os.path.dirname(os.path.abspath(__file__)) + "/../")
 
@@ -25,10 +27,7 @@ input_data_id = annofab_config["input_data_id"]
 annofab_service = annofabapi.build()
 
 
-
-
 class TestCommandLine:
-
     @pytest.fixture
     def target_input_data(self):
         """シナリオテスト用の入力データを作成する
@@ -39,11 +38,12 @@ class TestCommandLine:
         """
         new_input_data_id = f"test-{str(int(datetime.datetime.now().timestamp()))}"
         # 入力データの作成
-        input_data = annofab_service.wrapper.put_input_data_from_file(project_id, new_input_data_id, file_path=str("tests/data/small-lenna.png"))
+        input_data = annofab_service.wrapper.put_input_data_from_file(
+            project_id, new_input_data_id, file_path=str("tests/data/small-lenna.png")
+        )
         yield input_data
         # 入力データの削除
         annofab_service.api.delete_input_data(project_id, new_input_data_id)
-
 
     def test_scenario(self, target_input_data):
         input_data_id = target_input_data["input_data_id"]
@@ -95,8 +95,7 @@ class TestCommandLine:
                 "input_data_id": input_data_id,
                 "supplementary_data_id": supplementary_data_list[0]["supplementary_data_id"],
             }
-        ]        
+        ]
         main(["supplementary", "delete", "--project_id", project_id, "--json", json.dumps(json_args_delete), "--yes"])
         supplementary_data_list, _ = annofab_service.api.get_supplementary_data_list(project_id, input_data_id)
         assert len(supplementary_data_list) == 0
-

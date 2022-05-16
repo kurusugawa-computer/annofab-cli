@@ -1,5 +1,5 @@
-import datetime
 import configparser
+import datetime
 import json
 import os
 from pathlib import Path
@@ -24,7 +24,6 @@ annofab_config = dict(inifile.items("annofab"))
 
 project_id = annofab_config["project_id"]
 annofab_service = annofabapi.build()
-
 
 
 class TestCommandLine__list:
@@ -292,9 +291,8 @@ class TestCommandLine:
             ]
         )
         input_data, _ = annofab_service.api.get_input_data(project_id, input_data_id)
-        assert input_data["metadata"] == {"attr1":"foo"}
+        assert input_data["metadata"] == {"attr1": "foo"}
 
         # 入力データの削除
         main(["input_data", "delete", "--project_id", project_id, "--input_data_id", input_data_id, "--yes"])
         assert annofab_service.wrapper.get_input_data_or_none(project_id, input_data_id) is None
-
