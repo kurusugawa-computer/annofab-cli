@@ -107,8 +107,10 @@ class DownloadingFile:
         except requests.HTTPError as e:
             # すでにジョブが進行中の場合は、無視する
             if e.response.status_code == requests.codes.conflict:
-                logger.warning(f"別のバックグラウンドジョブが既に実行されているので、更新処理を無視します。")
-                logger.warning(f"{_get_annofab_error_message(e)}")
+                logger.warning(
+                    f"別のバックグラウンドジョブが既に実行されているので、アノテーションZIPの更新処理を実行できません。"
+                    f" :: error_message: {_get_annofab_error_message(e)}"
+                )
             else:
                 raise e
 
@@ -150,8 +152,9 @@ class DownloadingFile:
         except requests.HTTPError as e:
             # すでにジョブが進行中の場合は、無視する
             if e.response.status_code == requests.codes.conflict:
-                logger.warning(f"別のバックグラウンドジョブが既に実行されているので、更新処理を無視します。")
-                logger.warning(f"{_get_annofab_error_message(e)}")
+                logger.warning(
+                    f"別のバックグラウンドジョブが既に実行されているので、更新処理を無視します。 :: error_message: {_get_annofab_error_message(e)}"
+                )
             else:
                 raise e
 
@@ -193,8 +196,9 @@ class DownloadingFile:
         except requests.HTTPError as e:
             # すでにジョブが進行中の場合は、無視する
             if e.response.status_code == requests.codes.conflict:
-                logger.warning(f"別のバックグラウンドジョブが既に実行されているので、更新処理を無視します。")
-                logger.warning(f"{_get_annofab_error_message(e)}")
+                logger.warning(
+                    f"別のバックグラウンドジョブが既に実行されているので、更新処理を無視します。 :: error_message={_get_annofab_error_message(e)}"
+                )
             else:
                 raise e
 

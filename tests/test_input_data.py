@@ -26,160 +26,7 @@ project_id = annofab_config["project_id"]
 annofab_service = annofabapi.build()
 
 
-class TestCommandLine__list:
-    def test_list_input_data(self):
-        out_file = str(out_dir / "input_data.json")
-        main(
-            [
-                "input_data",
-                "list",
-                "--project_id",
-                project_id,
-                "--input_data_query",
-                '{"input_data_name": "abcdefg"}',
-                "--add_details",
-                "--output",
-                out_file,
-            ]
-        )
-
-
-class TestCommandLine__download:
-    def test_download(self):
-        out_file = str(out_dir / "input_data-download.json")
-        main(
-            [
-                "input_data",
-                "download",
-                "--project_id",
-                project_id,
-                "--output",
-                out_file,
-            ]
-        )
-
-
-class TestCommandLine__list_merged_task:
-    def test_list_input_data_merged_task(self):
-        out_file = str(out_dir / "input_data.csv")
-        main(
-            [
-                "input_data",
-                "list_merged_task",
-                "--project_id",
-                project_id,
-                "--output",
-                out_file,
-            ]
-        )
-
-
-class TestCommandLine__list_with_json:
-    def test_list_input_data_with_json(self):
-        out_file = str(out_dir / "input_data.csv")
-        main(
-            [
-                "input_data",
-                "list_with_json",
-                "--project_id",
-                project_id,
-                "--input_data_query",
-                '{"input_data_name": "abcdefg"}',
-                "--input_data_id",
-                "test1",
-                "test2",
-                "--output",
-                out_file,
-            ]
-        )
-
-
 class TestCommandLine__put:
-    def test_put_input_data__with_csv(self):
-        csv_file = str(data_dir / "input_data2.csv")
-        main(
-            [
-                "input_data",
-                "put",
-                "--project_id",
-                project_id,
-                "--csv",
-                csv_file,
-                "--overwrite",
-                "--yes",
-                "--parallelism",
-                "2",
-            ]
-        )
-
-    def test_put_input_data__with_csv_duplicated(self):
-        csv_file = str(data_dir / "input_data_duplicated.csv")
-        main(
-            [
-                "input_data",
-                "put",
-                "--project_id",
-                project_id,
-                "--csv",
-                csv_file,
-                "--overwrite",
-                "--yes",
-                "--parallelism",
-                "2",
-                "--allow_duplicated_input_data",
-            ]
-        )
-
-    def test_put_input_data__with_json(self):
-        json_args = [
-            {
-                "input_data_name": "test",
-                "input_data_path": "file://tests/data/lenna.png",
-                "unknown_field": "foo",
-            }
-        ]
-        main(
-            [
-                "input_data",
-                "put",
-                "--project_id",
-                project_id,
-                "--json",
-                json.dumps(json_args),
-                "--overwrite",
-                "--yes",
-                "--parallelism",
-                "2",
-            ]
-        )
-
-    def test_put_input_data__with_json__duplicated_input_data(self):
-        json_args = [
-            {
-                "input_data_name": "test1",
-                "input_data_path": "file://tests/data/lenna.png",
-            },
-            {
-                "input_data_name": "test1",
-                "input_data_path": "file://tests/data/lenna.png",
-            },
-        ]
-        main(
-            [
-                "input_data",
-                "put",
-                "--project_id",
-                project_id,
-                "--json",
-                json.dumps(json_args),
-                "--overwrite",
-                "--yes",
-                "--parallelism",
-                "2",
-                "--allow_duplicated_input_data",
-            ]
-        )
-
     def test_put_input_data__with_json__duplicated_input_data_path__error(self):
         json_args = [
             {
@@ -296,3 +143,55 @@ class TestCommandLine:
         # 入力データの削除
         main(["input_data", "delete", "--project_id", project_id, "--input_data_id", input_data_id, "--yes"])
         assert annofab_service.wrapper.get_input_data_or_none(project_id, input_data_id) is None
+
+    def test_download(self):
+        out_file = str(out_dir / "input_data-download.json")
+        main(
+            [
+                "input_data",
+                "download",
+                "--project_id",
+                project_id,
+                "--output",
+                out_file,
+            ]
+        )
+
+    def test_list_input_data(self):
+        out_file = str(out_dir / "input_data.json")
+        main(
+            [
+                "input_data",
+                "list",
+                "--project_id",
+                project_id,
+                "--output",
+                out_file,
+            ]
+        )
+
+    def test_list_input_data_with_json(self):
+        out_file = str(out_dir / "input_data.csv")
+        main(
+            [
+                "input_data",
+                "list_with_json",
+                "--project_id",
+                project_id,
+                "--output",
+                out_file,
+            ]
+        )
+
+    def test_list_input_data_merged_task(self):
+        out_file = str(out_dir / "input_data.csv")
+        main(
+            [
+                "input_data",
+                "list_merged_task",
+                "--project_id",
+                project_id,
+                "--output",
+                out_file,
+            ]
+        )

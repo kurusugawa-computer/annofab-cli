@@ -94,9 +94,6 @@ class TestCommandLine:
         # すぐに`api.get_annotation_list`を実行すると、インポートしたアノテーションが含まれないので、数秒待つ
         time.sleep(2)
 
-        # list系のコマンドのテスト
-        self._execute_list(task_id)
-
         # copyコマンドのテスト
         self._execute_copy(task_id, input_data_id)
 
