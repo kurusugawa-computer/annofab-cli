@@ -34,7 +34,7 @@ Examples
 
     $ annofabcli annotation change_properties --project_id prj1 --task_id task1 task2 \ 
     --properties '{"is_protected":true}' \
-    --annotation_query '{"label_name_en": "car", "attributes":[{"additional_data_definition_name_en": "occluded", "flag": true}]}}' 
+    --annotation_query '{"label": "car", "attributes":{"occluded": true}}' 
 
 
 

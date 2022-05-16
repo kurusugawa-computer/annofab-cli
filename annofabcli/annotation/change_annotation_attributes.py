@@ -16,6 +16,12 @@ from annofabapi.models import ProjectMemberRole, TaskStatus
 
 import annofabcli
 from annofabcli import AnnofabApiFacade
+from annofabcli.annotation.annotation_query import (
+    AdditionalData,
+    AnnotationQueryForAPI,
+    AnnotationQueryForCLI,
+    convert_attributes_from_cli_to_api,
+)
 from annofabcli.annotation.dump_annotation import DumpAnnotationMain
 from annofabcli.common.cli import (
     COMMAND_LINE_ERROR_STATUS_CODE,
@@ -25,7 +31,6 @@ from annofabcli.common.cli import (
     build_annofabapi_resource_and_login,
     get_json_from_args,
 )
-from annofabcli.common.facade import AdditionalData, AdditionalDataForCli, AnnotationQuery, AnnotationQueryForCli
 
 logger = logging.getLogger(__name__)
 
@@ -87,10 +92,31 @@ class ChangeAnnotationAttributesMain(AbstractCommandLineWithConfirmInterface):
         request_body = [_to_request_body_elm(annotation) for annotation in annotation_list]
         return self.service.api.batch_update_annotations(self.project_id, request_body)[0]
 
+    def get_annotation_list_for_task(
+        self, task_id: str, annotation_query: AnnotationQueryForAPI
+    ) -> list[dict[str, Any]]:
+        """
+        タスク内のアノテーション一覧を取得する。
+
+        Args:
+            project_id:
+            task_id:
+            annotation_query: アノテーションの検索条件
+
+        Returns:
+            アノテーション一覧
+        """
+        dict_query = annotation_query.to_dict()
+        dict_query.update({"task_id": task_id, "exact_match_task_id": True})
+        annotation_list = self.service.wrapper.get_all_annotation_list(
+            self.project_id, query_params={"query": dict_query}
+        )
+        return annotation_list
+
     def change_attributes_for_task(
         self,
         task_id: str,
-        annotation_query: AnnotationQuery,
+        annotation_query: AnnotationQueryForAPI,
         attributes: List[AdditionalData],
         backup_dir: Optional[Path] = None,
         task_index: Optional[int] = None,
@@ -125,7 +151,7 @@ class ChangeAnnotationAttributesMain(AbstractCommandLineWithConfirmInterface):
                 logger.warning(f"task_id={task_id}: タスクが完了状態のため、スキップします。")
                 return False
 
-        annotation_list = self.facade.get_annotation_list_for_task(self.project_id, task_id, query=annotation_query)
+        annotation_list = self.get_annotation_list_for_task(task_id, annotation_query)
         logger.info(
             f"{logger_prefix}task_id='{task_id}'の変更対象アノテーション数：{len(annotation_list)}, phase={task.phase.value}, status={task.status.value}, updated_datetime={task.updated_datetime}"  # noqa: E501
         )
@@ -146,7 +172,7 @@ class ChangeAnnotationAttributesMain(AbstractCommandLineWithConfirmInterface):
     def change_attributes_for_task_wrapper(
         self,
         tpl: tuple[int, str],
-        annotation_query: AnnotationQuery,
+        annotation_query: AnnotationQueryForAPI,
         attributes: List[AdditionalData],
         backup_dir: Optional[Path] = None,
     ) -> bool:
@@ -166,7 +192,7 @@ class ChangeAnnotationAttributesMain(AbstractCommandLineWithConfirmInterface):
     def change_annotation_attributes_for_task_list(
         self,
         task_id_list: List[str],
-        annotation_query: AnnotationQuery,
+        annotation_query: AnnotationQueryForAPI,
         attributes: List[AdditionalData],
         backup_dir: Optional[Path] = None,
         parallelism: Optional[int] = None,
@@ -227,6 +253,27 @@ class ChangeAttributesOfAnnotation(AbstractCommandLineInterface):
 
         return True
 
+    @classmethod
+    def get_annotation_query_for_api(
+        cls, str_annotation_query: str, annotation_specs: dict[str, Any]
+    ) -> AnnotationQueryForAPI:
+        """
+        CLIから受け取った`--annotation_query`の値から、APIに渡すクエリー情報を返す。
+        """
+        dict_annotation_query = get_json_from_args(str_annotation_query)
+        annotation_query_for_cli = AnnotationQueryForCLI.from_dict(dict_annotation_query)
+        return annotation_query_for_cli.to_query_for_api(annotation_specs)
+
+    @classmethod
+    def get_attributes_for_api(
+        cls, str_attributes: str, annotation_specs: dict[str, Any], label_id: str
+    ) -> list[AdditionalData]:
+        """
+        CLIから受け取った`--attributes`の値から、APIに渡す属性情報を返す。
+        """
+        dict_attributes = get_json_from_args(str_attributes)
+        return convert_attributes_from_cli_to_api(dict_attributes, annotation_specs, label_id=label_id)
+
     def main(self):
         args = self.args
 
@@ -236,20 +283,20 @@ class ChangeAttributesOfAnnotation(AbstractCommandLineInterface):
         project_id = args.project_id
         task_id_list = annofabcli.common.cli.get_list_from_args(args.task_id)
 
-        dict_annotation_query = get_json_from_args(args.annotation_query)
-        annotation_query_for_cli = AnnotationQueryForCli.from_dict(dict_annotation_query)
+        annotation_specs, _ = self.service.api.get_annotation_specs(project_id, query_params={"v": "2"})
+
         try:
-            annotation_query = self.facade.to_annotation_query_from_cli(project_id, annotation_query_for_cli)
+            annotation_query = self.get_annotation_query_for_api(args.annotation_query, annotation_specs)
         except ValueError as e:
-            print(f"{self.COMMON_MESSAGE} argument '--annotation_query' の値が不正です。{e}", file=sys.stderr)
+            print(f"{self.COMMON_MESSAGE} argument '--annotation_query' の値が不正です。 :: {e}", file=sys.stderr)
             sys.exit(COMMAND_LINE_ERROR_STATUS_CODE)
 
-        attributes_of_dict: List[Dict[str, Any]] = get_json_from_args(args.attributes)
-        attributes_for_cli: List[AdditionalDataForCli] = [AdditionalDataForCli.from_dict(e) for e in attributes_of_dict]
         try:
-            attributes = self.facade.to_attributes_from_cli(project_id, annotation_query.label_id, attributes_for_cli)
+            attributes = self.get_attributes_for_api(
+                args.attributes, annotation_specs, label_id=annotation_query.label_id
+            )
         except ValueError as e:
-            print(f"{self.COMMON_MESSAGE} argument '--attributes' の値が不正です。{e}", file=sys.stderr)
+            print(f"{self.COMMON_MESSAGE} argument '--attributes' の値が不正です。 :: {e}", file=sys.stderr)
             sys.exit(COMMAND_LINE_ERROR_STATUS_CODE)
 
         if args.backup is None:
@@ -286,21 +333,18 @@ def parse_args(parser: argparse.ArgumentParser):
     argument_parser.add_project_id()
     argument_parser.add_task_id()
 
-    EXAMPLE_ANNOTATION_QUERY = (
-        '{"label_name_en": "car", "attributes":[{"additional_data_definition_name_en": "occluded", "flag": true}]}'
-    )
+    EXAMPLE_ANNOTATION_QUERY = '{"label": "car", "attributes":{"occluded" true} }'
     parser.add_argument(
         "-aq",
         "--annotation_query",
         type=str,
         required=True,
         help="変更対象のアノテーションを検索する条件をJSON形式で指定します。"
-        "``label_id`` または ``label_name_en`` のいずれかは必ず指定してください。"
         "``file://`` を先頭に付けると、JSON形式のファイルを指定できます。"
         f"(ex): ``{EXAMPLE_ANNOTATION_QUERY}``",
     )
 
-    EXAMPLE_ATTRIBUTES = '[{"additional_data_definition_name_en": "occluded", "flag": false}]'
+    EXAMPLE_ATTRIBUTES = '{"occluded": false}'
     parser.add_argument(
         "--attributes",
         type=str,

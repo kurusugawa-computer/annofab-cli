@@ -159,9 +159,9 @@ class TestCommandLine:
                 "--task_id",
                 task_id,
                 "--annotation_query",
-                '{"label_name_en":"car"}',
+                '{"label":"car"}',
                 "--attributes",
-                '[{"additional_data_definition_name_en": "truncation", "flag": false}]',
+                '{"truncation": false}',
                 "--yes",
             ]
         )
