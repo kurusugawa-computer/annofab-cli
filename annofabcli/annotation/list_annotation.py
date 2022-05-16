@@ -175,15 +175,17 @@ class ListAnnotationMain:
         task_id_list: Optional[List[str]],
         input_data_id_list: Optional[List[str]],
     ) -> List[SingleAnnotation]:
-        assert (
-            task_id_list is None or input_data_id_list is None
-        ), "task_id_listとinput_data_listのどちらかはNoneにしてください。"
+        assert task_id_list is None or input_data_id_list is None, "task_id_listとinput_data_listのどちらかはNoneにしてください。"
 
         all_annotation_list = []
         UPPER_BOUND = 10_000
         if task_id_list is not None:
             for task_id in task_id_list:
-                annotation_list = self.get_annotation_list(project_id, annotation_query, task_id=task_id)
+                try:
+                    annotation_list = self.get_annotation_list(project_id, annotation_query, task_id=task_id)
+                except Exception:
+                    logger.warning(f"タスク'{task_id}'のアノテーションの一覧の取得に失敗しました。", exc_info=True)
+                    continue
                 logger.debug(f"タスク {task_id} のアノテーション一覧の件数: {len(annotation_list)}")
                 if len(annotation_list) == UPPER_BOUND:
                     logger.warning(f"アノテーション一覧は{UPPER_BOUND}件で打ち切られている可能性があります。")
@@ -191,7 +193,14 @@ class ListAnnotationMain:
             return all_annotation_list
         elif input_data_id_list is not None:
             for input_data_id in input_data_id_list:
-                annotation_list = self.get_annotation_list(project_id, annotation_query, input_data_id=input_data_id)
+                try:
+                    annotation_list = self.get_annotation_list(
+                        project_id, annotation_query, input_data_id=input_data_id
+                    )
+                except Exception:
+                    logger.warning(f"入力データ'{input_data_id}'のアノテーションの一覧の取得に失敗しました。", exc_info=True)
+                    continue
+
                 logger.debug(f"入力データ'{input_data_id}'のアノテーション一覧の件数: {len(annotation_list)}")
                 if len(annotation_list) == UPPER_BOUND:
                     logger.warning(f"アノテーション一覧は{UPPER_BOUND}件で打ち切られている可能性があります。")
@@ -283,8 +292,10 @@ class ListAnnotation(AbstractCommandLineInterface):
         super().validate_project(project_id, project_member_roles=None)
 
         annotation_list = main_obj.get_all_annotation_list(
-            project_id, annotation_query=annotation_query, 
-            task_id_list=task_id_list, input_data_id_list=input_data_id_list
+            project_id,
+            annotation_query=annotation_query,
+            task_id_list=task_id_list,
+            input_data_id_list=input_data_id_list,
         )
         logger.debug(f"アノテーション一覧の件数: {len(annotation_list)}")
 
@@ -315,10 +326,7 @@ def parse_args(parser: argparse.ArgumentParser):
         "-aq",
         "--annotation_query",
         type=str,
-        help="アノテーションの検索クエリをJSON形式で指定します。"
-        " ``file://`` を先頭に付けると、JSON形式のファイルを指定できます。"
-        "クエリのフォーマットは、[getAnnotationList API](https://annofab.com/docs/api/#operation/getAnnotationList)のクエリパラメータの ``query`` キー配下と同じです。"  # noqa: E501
-        "さらに追加で、 ``label_name_en`` , ``additional_data_definition_name_en`` , ``choice_name_en`` キーも指定できます。",  # noqa: E501
+        help="アノテーションの検索クエリをJSON形式で指定します。" " ``file://`` を先頭に付けると、JSON形式のファイルを指定できます。",
     )
 
     id_group = parser.add_mutually_exclusive_group()
