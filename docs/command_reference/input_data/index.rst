@@ -16,6 +16,7 @@ Available Commands
    :titlesonly:
 
    delete
+   download
    list
    list_merged_task
    list_with_json

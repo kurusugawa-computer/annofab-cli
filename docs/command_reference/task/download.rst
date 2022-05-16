@@ -16,7 +16,7 @@ Examples
 --------------------------
 
 以下のコマンドを実行すると、タスク全件ファイルがダウンロードされます。
-タスク全件ファイルのフォーマットについては https://annofab.com/docs/api/#tag/x-data-types を参照してください。
+タスク全件ファイルのフォーマットについては https://annofab.com/docs/api/#section/Task を参照してください。
 
 .. code-block::
 
