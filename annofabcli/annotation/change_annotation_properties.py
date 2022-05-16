@@ -313,7 +313,6 @@ class ChangePropertiesOfAnnotation(AbstractCommandLineInterface):
         project_id = args.project_id
         task_id_list = annofabcli.common.cli.get_list_from_args(args.task_id)
 
-        dict_annotation_query = get_json_from_args(args.annotation_query)
         if args.annotation_query is not None:
             annotation_specs, _ = self.service.api.get_annotation_specs(project_id, query_params={"v": "2"})
             try:
