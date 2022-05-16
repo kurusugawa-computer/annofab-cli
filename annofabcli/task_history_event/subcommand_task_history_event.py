@@ -3,9 +3,9 @@ from typing import Optional
 
 import annofabcli
 import annofabcli.common.cli
+import annofabcli.task_history_event.download_task_history_event_json
 import annofabcli.task_history_event.list_task_history_event_with_json
 import annofabcli.task_history_event.list_worktime
-import annofabcli.task_history_event.download_task_history_event_json
 
 
 def parse_args(parser: argparse.ArgumentParser):

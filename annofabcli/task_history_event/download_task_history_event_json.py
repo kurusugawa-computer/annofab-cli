@@ -14,14 +14,14 @@ from annofabcli.common.download import DownloadingFile
 logger = logging.getLogger(__name__)
 
 
-class DownloadingTaskHistory(AbstractCommandLineInterface):
-    def download_task_history_json(self, project_id: str, output_file: Path):
+class DownloadingTaskHistoryEvent(AbstractCommandLineInterface):
+    def download_task_history_event_json(self, project_id: str, output_file: Path):
         super().validate_project(project_id, [ProjectMemberRole.OWNER, ProjectMemberRole.TRAINING_DATA_USER])
         project_title = self.facade.get_project_title(project_id)
         logger.info(f"{project_title} のタスク履歴イベント全件ファイルをダウンロードします。")
 
         obj = DownloadingFile(self.service)
-        obj.download_task_history_json(
+        obj.download_task_history_event_json(
             project_id,
             str(output_file),
         )
@@ -30,7 +30,7 @@ class DownloadingTaskHistory(AbstractCommandLineInterface):
     def main(self):
         args = self.args
 
-        self.download_task_history_json(
+        self.download_task_history_event_json(
             args.project_id,
             output_file=args.output,
         )
@@ -39,7 +39,7 @@ class DownloadingTaskHistory(AbstractCommandLineInterface):
 def main(args: argparse.Namespace):
     service = build_annofabapi_resource_and_login(args)
     facade = AnnofabApiFacade(service)
-    DownloadingTaskHistory(service, facade, args).main()
+    DownloadingTaskHistoryEvent(service, facade, args).main()
 
 
 def parse_args(parser: argparse.ArgumentParser):
