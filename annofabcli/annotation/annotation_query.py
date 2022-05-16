@@ -130,7 +130,7 @@ def convert_attributes_from_cli_to_api(
                 )
             raise ValueError(error_message)
 
-        elif len(tmp) > 1:
+        if len(tmp) > 1:
             if label_info is None:
                 error_message = f"アノテーション仕様に、属性名(英語)が'{attribute_name}'である属性が複数存在します。"
             else:
