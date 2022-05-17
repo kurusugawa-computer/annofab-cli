@@ -26,7 +26,7 @@
 * python3.7のサポートを廃止して、python3.8以上をサポートするようにします。
 
 ### 2022-07-01 以降
-* `project download`コマンドを廃止します。替わりに`annotation download`コマンドなど、各リソースに対するdownloadコマンドをご利用ください。
+* `project download`コマンドを廃止します。`project download`コマンドは、名前からどのようなファイルがダウンロードできるのか想像しにくいためです。替わりに`annotation download`コマンドなど、各リソースに対するdownloadコマンドをご利用ください。
 
 
 # Requirements
