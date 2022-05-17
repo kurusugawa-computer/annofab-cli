@@ -8,6 +8,7 @@ import annofabcli.task.change_operator
 import annofabcli.task.complete_tasks
 import annofabcli.task.copy_tasks
 import annofabcli.task.delete_tasks
+import annofabcli.task.download_task_json
 import annofabcli.task.list_tasks
 import annofabcli.task.list_tasks_added_task_history
 import annofabcli.task.list_tasks_with_json
@@ -27,6 +28,7 @@ def parse_args(parser: argparse.ArgumentParser):
     annofabcli.task.complete_tasks.add_parser(subparsers)
     annofabcli.task.copy_tasks.add_parser(subparsers)
     annofabcli.task.delete_tasks.add_parser(subparsers)
+    annofabcli.task.download_task_json.add_parser(subparsers)
     annofabcli.task.list_tasks.add_parser(subparsers)
     annofabcli.task.list_tasks_with_json.add_parser(subparsers)
     annofabcli.task.list_tasks_added_task_history.add_parser(subparsers)

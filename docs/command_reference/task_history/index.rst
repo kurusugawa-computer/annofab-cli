@@ -15,6 +15,7 @@ Available Commands
    :maxdepth: 1
    :titlesonly:
 
+   download
    list
    list_with_json
 

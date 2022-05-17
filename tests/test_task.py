@@ -103,6 +103,19 @@ class TestCommandLine:
             ]
         )
 
+    def test_download(self):
+        out_file = str(out_dir / "task-download.json")
+        main(
+            [
+                self.command_name,
+                "download",
+                "--project_id",
+                project_id,
+                "--output",
+                out_file,
+            ]
+        )
+
     @pytest.mark.submitting_job
     def test_put_task_by_count(self):
         task_id_prefix = f"test-{str(int(datetime.datetime.now().timestamp()))}"

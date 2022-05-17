@@ -21,6 +21,18 @@ service = annofabapi.build()
 
 
 class TestCommandLine:
+    def test_download(self):
+        main(
+            [
+                "task_history_event",
+                "download",
+                "--project_id",
+                project_id,
+                "--output",
+                str(out_dir / "download.json"),
+            ]
+        )
+
     def test_list_with_json(self):
         main(
             [

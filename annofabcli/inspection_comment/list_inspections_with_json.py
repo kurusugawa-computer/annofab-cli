@@ -78,7 +78,7 @@ class ListInspectionCommentWithJsonMain:
             cache_dir = annofabcli.utils.get_cache_dir()
             json_path = cache_dir / f"{project_id}-inspection.json"
 
-            downloading_obj.download_inspection_json(project_id, str(json_path))
+            downloading_obj.download_inspection_comment_json(project_id, str(json_path))
         else:
             json_path = inspection_comment_json
 

@@ -3,6 +3,7 @@ from typing import Optional
 
 import annofabcli
 import annofabcli.common.cli
+import annofabcli.task_history_event.download_task_history_event_json
 import annofabcli.task_history_event.list_task_history_event_with_json
 import annofabcli.task_history_event.list_worktime
 
@@ -12,6 +13,7 @@ def parse_args(parser: argparse.ArgumentParser):
     subparsers = parser.add_subparsers(dest="subcommand_name")
 
     # サブコマンドの定義
+    annofabcli.task_history_event.download_task_history_event_json.add_parser(subparsers)
     annofabcli.task_history_event.list_task_history_event_with_json.add_parser(subparsers)
     annofabcli.task_history_event.list_worktime.add_parser(subparsers)
 
