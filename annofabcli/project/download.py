@@ -141,6 +141,10 @@ class Download(AbstractCommandLineInterface):
         if not self.validate(args):
             sys.exit(COMMAND_LINE_ERROR_STATUS_CODE)
 
+        logger.warning(
+            "[DEPRECATED] `project download`コマンドは廃止予定のため、非推奨です。"
+            "替わりに`annoation download`コマンドなど、各リソースをダウンロードするコマンドを使ってください。"
+        )
         wait_options = get_wait_options_from_args(get_json_from_args(args.wait_options), DEFAULT_WAIT_OPTIONS)
         self.download(
             DownloadTarget(args.target),
