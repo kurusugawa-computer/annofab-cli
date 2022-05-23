@@ -15,7 +15,7 @@ https://code.visualstudio.com/docs/remote/containers
 1. 以下の環境変数を定義する
     * `ANNOFAB_USER_ID` : AnnoFabのユーザID
     * `ANNOFAB_PASSWORD` : AnnoFabのパスワード
-    * `DATA_DIR` : CLIがアクセスするデータが存在するディレクトリのパス
+    * `DATA_DIR` : devcontainer外のファイルにアクセスしたい場合、そのファイルの存在するディレクトリを指定してください。devcontainerでは`/data`でアクセスできます。この環境変数は`devcontainer.json`でしか参照されていません。https://github.com/kurusugawa-computer/annofab-cli/blob/62c6bb420d50b7ef87aa2074ca040b118ed60c80/.devcontainer/devcontainer.json#L20
 
 
 # Test
