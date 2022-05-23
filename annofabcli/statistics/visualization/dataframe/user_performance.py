@@ -54,11 +54,11 @@ class UserPerformance:
     @staticmethod
     def _add_ratio_column_for_productivity_per_user(df: pandas.DataFrame, phase_list: list[str]):
         for phase in phase_list:
-            # AnnoFab時間の比率
+            # Annofab時間の比率
             df[("monitored_worktime_ratio", phase)] = (
                 df[("monitored_worktime_hour", phase)] / df[("monitored_worktime_hour", "sum")]
             )
-            # AnnoFab時間の比率から、Annowork時間を予測する
+            # Annofab時間の比率から、Annowork時間を予測する
             df[("actual_worktime_hour", phase)] = (
                 df[("actual_worktime_hour", "sum")] * df[("monitored_worktime_ratio", phase)]
             )
@@ -507,7 +507,7 @@ class UserPerformance:
 
     def plot_productivity_from_monitored_worktime(self, output_file: Path):
         """
-        AnnoFab計測時間とAnnoFab計測時間を元に算出した生産性を、メンバごとにプロットする
+        Annofab計測時間とAnnofab計測時間を元に算出した生産性を、メンバごとにプロットする
         """
         self._plot_productivity(output_file, worktime_type=WorktimeType.MONITORED)
 

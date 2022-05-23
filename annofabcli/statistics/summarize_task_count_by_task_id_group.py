@@ -186,7 +186,7 @@ def parse_args(parser: argparse.ArgumentParser):
         "--task_json",
         type=str,
         help="タスク情報が記載されたJSONファイルのパスを指定してます。JSONファイルは ``$ annofabcli project download task`` コマンドで取得できます。"
-        "指定しない場合は、AnnoFabからタスク全件ファイルをダウンロードします。",
+        "指定しない場合は、Annofabからタスク全件ファイルをダウンロードします。",
     )
 
     task_id_group = parser.add_mutually_exclusive_group(required=True)

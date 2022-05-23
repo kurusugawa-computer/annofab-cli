@@ -58,7 +58,7 @@ class PuttingTaskByCountMain:
         content, _ = self.service.api.initiate_tasks_generation(self.project_id, request_body=request_body)
         job = content["job"]
         logger.info(
-            f"AnnoFab上でタスク作成処理が開始されました。 :: task_id_prefix='{task_id_prefix}', input_data_count='input_data_count'"
+            f"Annofab上でタスク作成処理が開始されました。 :: task_id_prefix='{task_id_prefix}', input_data_count='input_data_count'"
         )
         if should_wait:
             self.wait_for_completion(job["job_id"])
