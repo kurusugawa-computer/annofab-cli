@@ -238,7 +238,7 @@ def parse_args(parser: argparse.ArgumentParser):
         type=Path,
         nargs=2,
         required=True,
-        help="AnnoFabからダウンロードしたアノテーションzip、またはzipを展開したディレクトリを2つ指定してください。",
+        help="Annofabからダウンロードしたアノテーションzip、またはzipを展開したディレクトリを2つ指定してください。",
     )
 
     parser.add_argument("-o", "--output_dir", type=Path, required=True, help="出力先ディレクトリ")

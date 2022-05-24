@@ -14,7 +14,7 @@ Examples
 基本的な使い方
 --------------------------
 
-``--annotation`` には、AnnoFabからダウンロードしたアノテーションzipか、アノテーションzipを展開したディレクトリを指定してください。
+``--annotation`` には、Annofabからダウンロードしたアノテーションzipか、アノテーションzipを展開したディレクトリを指定してください。
 アノテーションzipは、`annofabcli project download <../project/download.html>`_ コマンドでダウンロードできます。
 
 
