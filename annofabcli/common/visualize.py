@@ -48,10 +48,10 @@ class AddProps:
         アノテーション仕様に関する情報をインスタンス変数に格納します。
         """
         annotation_specs, _ = self.service.api.get_annotation_specs(self.project_id, query_params={"v": "2"})
-        self._specs_labels: List[Dict[str, Any]] = convert_annotation_specs_labels_v2_to_v1(
+        self._specs_labels = convert_annotation_specs_labels_v2_to_v1(
             labels_v2=annotation_specs["labels"], additionals_v2=annotation_specs["additionals"]
         )
-        self._specs_inspection_phrases: List[Dict[str, Any]] = annotation_specs["inspection_phrases"]
+        self._specs_inspection_phrases = annotation_specs["inspection_phrases"]
 
     @property
     def specs_labels(self) -> list[dict[str, Any]]:
@@ -62,10 +62,11 @@ class AddProps:
         Returns:
             アノテーション仕様のラベルlist
         """
-        if self._specs_labels is None:
-            self._set_annotation_specs()
+        if self._specs_labels is not None:
+            return self._specs_labels
 
-        return self._specs_labels
+        self._set_annotation_specs()
+        return self.specs_labels
 
     @property
     def specs_inspection_phrases(self) -> list[dict[str, Any]]:
@@ -75,10 +76,11 @@ class AddProps:
         Returns:
             アノテーション仕様の定型指摘のlist
         """
-        if self._specs_inspection_phrases is None:
-            self._set_annotation_specs()
+        if self._specs_inspection_phrases is not None:
+            return self._specs_inspection_phrases
 
-        return self._specs_inspection_phrases
+        self._set_annotation_specs()
+        return self.specs_inspection_phrases
 
     @staticmethod
     def millisecond_to_hour(millisecond: int):
