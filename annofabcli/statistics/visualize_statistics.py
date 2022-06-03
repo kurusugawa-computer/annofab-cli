@@ -1,4 +1,5 @@
 import argparse
+import functools
 import logging.handlers
 import re
 import sys
@@ -425,6 +426,23 @@ class VisualizingStatisticsMain:
         if not self.minimal_output:
             write_obj._catch_exception(write_obj.write_user_productivity_per_date)(self.user_ids)
 
+    def visualize_statistics_wrapper(
+        self,
+        project_id: str,
+        root_output_dir: Path,
+    ) -> Optional[Path]:
+        try:
+            project_title = self.facade.get_project_title(project_id)
+            output_project_dir = root_output_dir / get_project_output_dir(project_title)
+            self.visualize_statistics(
+                project_id=project_id,
+                output_project_dir=output_project_dir,
+            )
+            return output_project_dir
+        except Exception:  # pylint: disable=broad-except
+            logger.warning(f"project_id='{project_id}'の可視化処理に失敗しました。", exc_info=True)
+            return None
+
     def visualize_statistics_for_project_list(
         self,
         project_id_list: List[str],
@@ -432,24 +450,10 @@ class VisualizingStatisticsMain:
         *,
         parallelism: Optional[int] = None,
     ) -> List[Path]:
-        def wrap(
-            project_id: str,
-        ) -> Optional[Path]:
-
-            try:
-                project_title = self.facade.get_project_title(project_id)
-                output_project_dir = root_output_dir / get_project_output_dir(project_title)
-                self.visualize_statistics(
-                    project_id=project_id,
-                    output_project_dir=output_project_dir,
-                )
-                return output_project_dir
-            except Exception:  # pylint: disable=broad-except
-                logger.warning(f"project_id='{project_id}'の可視化処理に失敗しました。")
-                return None
 
         output_project_dir_list: List[Path] = []
 
+        wrap = functools.partial(self.visualize_statistics_wrapper, root_output_dir=root_output_dir)
         if parallelism is not None:
             with Pool(parallelism) as pool:
                 result_list = pool.map(wrap, project_id_list)
