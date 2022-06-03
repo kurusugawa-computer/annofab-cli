@@ -524,9 +524,7 @@ class ImportAnnotation(AbstractCommandLineInterface):
             )
             return False
 
-        elif (annotation_path.is_file() and not zipfile.is_zipfile(str(annotation_path))) or (
-            not annotation_path.is_dir()
-        ):
+        elif not (zipfile.is_zipfile(str(annotation_path)) or annotation_path.is_dir()):
             print(f"{COMMON_MESSAGE} argument --annotation: ZIPファイルまたはディレクトリを指定してください。", file=sys.stderr)
             return False
 
