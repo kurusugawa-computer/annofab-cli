@@ -1,4 +1,4 @@
-from annofabcli.common.utils import _catch_exception, print_csv, print_json
+from annofabcli.common.utils import print_json
 import argparse
 import functools
 import logging.handlers
