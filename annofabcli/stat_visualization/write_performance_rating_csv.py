@@ -1,3 +1,5 @@
+from __future__ import annotations
+
 import argparse
 import logging
 from dataclasses import dataclass
@@ -25,39 +27,68 @@ class ResultDataframe:
     quality_with_inspection_comment: pandas.DataFrame
 
 
+@dataclass
+class ThresholdInfo:
+    """閾値の情報"""
+
+    threshold_worktime: Optional[float]
+    """作業時間の閾値。指定した時間以下の作業者は除外する。"""
+    threshold_task_count: Optional[int]
+    """作業したタスク数の閾値。作業したタスク数が指定した数以下作業者は除外する。"""
+
+
 class PerformanceUnit(Enum):
+    """生産性の単位"""
+
     ANNOTATION_COUNT = "annotation_count"
     INPUT_DATA_COUNT = "input_data_count"
 
 
 class WorktimeType(Enum):
+    """作業時間の種類"""
+
     ACTUAL_WORKTIME_HOUR = "actual_worktime_hour"
+    """実績作業時間"""
     MONITORED_WORKTIME_HOUR = "monitored_worktime_hour"
+    """計測作業時間"""
 
 
 class CollectingPerformanceInfo:
     """
     メンバごとの生産性と品質.csv からパフォーマンスの指標となる情報を収集します。
+
+    Args:
+        worktime_type: 作業時間の種類
+        performance_unit: 生産性の単位
+        threshold_info: 閾値の情報
+        threshold_infos_per_project: プロジェクトごとの閾値の情報。`threshold_info`より優先される
     """
 
     def __init__(
         self,
         worktime_type: WorktimeType,
         performance_unit: PerformanceUnit,
-        threshold_worktime: Optional[float],
-        threshold_task_count: Optional[int],
+        threshold_info: ThresholdInfo,
+        threshold_infos_per_project: dict[str, ThresholdInfo],
     ) -> None:
         self.worktime_type = worktime_type
         self.performance_unit = performance_unit
-        self.threshold_worktime = threshold_worktime
-        self.threshold_task_count = threshold_task_count
+        self.threshold_info = threshold_info
+        self.threshold_infos_per_project = threshold_infos_per_project
 
-    def filter_df_with_threshold(self, df, phase: TaskPhase):
-        if self.threshold_worktime is not None:
-            df = df[df[(self.worktime_type.value, phase.value)] >= self.threshold_worktime]
+    def get_threshold_info(self, project_title: str) -> ThresholdInfo:
+        """指定したプロジェクト名に対応する、閾値情報を取得する。"""
+        threshold_info = self.threshold_infos_per_project.get(project_title)
+        if threshold_info is not None:
+            return threshold_info
+        return self.threshold_info
 
-        if self.threshold_task_count is not None:
-            df = df[df[("task_count", phase.value)] > self.threshold_task_count]
+    def filter_df_with_threshold(self, df, phase: TaskPhase, threshold_info: ThresholdInfo):
+        if threshold_info.threshold_worktime is not None:
+            df = df[df[(self.worktime_type.value, phase.value)] > threshold_info.threshold_worktime]
+
+        if threshold_info.threshold_task_count is not None:
+            df = df[df[("task_count", phase.value)] > threshold_info.threshold_task_count]
 
         return df
 
@@ -71,7 +102,10 @@ class CollectingPerformanceInfo:
         phase = TaskPhase.ANNOTATION
 
         df_joined = df_performance
-        df_joined = self.filter_df_with_threshold(df_joined, phase)
+
+        df_joined = self.filter_df_with_threshold(
+            df_joined, phase, threshold_info=self.get_threshold_info(project_title)
+        )
 
         df_tmp = df_joined[[(f"{self.worktime_type.value}/{self.performance_unit.value}", phase.value)]]
         df_tmp.columns = pandas.MultiIndex.from_tuples(
@@ -87,13 +121,15 @@ class CollectingPerformanceInfo:
     ) -> pandas.DataFrame:
         """検査,受入生産性の指標を抽出してdfにjoinする"""
 
+        threshold_info = self.get_threshold_info(project_title)
+
         def _join_inspection():
             phase = TaskPhase.INSPECTION
             if (f"{self.worktime_type.value}/{self.performance_unit.value}", phase.value) not in df_performance.columns:
                 return df
 
             df_joined = df_performance
-            df_joined = self.filter_df_with_threshold(df_joined, phase)
+            df_joined = self.filter_df_with_threshold(df_joined, phase, threshold_info=threshold_info)
 
             df_tmp = df_joined[[(f"{self.worktime_type.value}/{self.performance_unit.value}", phase.value)]]
             df_tmp.columns = pandas.MultiIndex.from_tuples(
@@ -108,7 +144,7 @@ class CollectingPerformanceInfo:
                 return df
 
             df_joined = df_performance
-            df_joined = self.filter_df_with_threshold(df_joined, phase)
+            df_joined = self.filter_df_with_threshold(df_joined, phase, threshold_info=threshold_info)
 
             df_tmp = df_joined[[(f"{self.worktime_type.value}/{self.performance_unit.value}", phase.value)]]
             df_tmp.columns = pandas.MultiIndex.from_tuples(
@@ -131,7 +167,9 @@ class CollectingPerformanceInfo:
         """タスクの差し戻し回数を品質の指標にしたDataFrameを生成する。"""
         df_joined = df_performance
 
-        df_joined = self.filter_df_with_threshold(df_joined, phase=TaskPhase.ANNOTATION)
+        df_joined = self.filter_df_with_threshold(
+            df_joined, phase=TaskPhase.ANNOTATION, threshold_info=self.get_threshold_info(project_title)
+        )
 
         df_tmp = df_joined[[("rejected_count/task_count", "annotation")]]
 
@@ -148,7 +186,9 @@ class CollectingPerformanceInfo:
 
         df_joined = df_performance
 
-        df_joined = self.filter_df_with_threshold(df_joined, phase=TaskPhase.ANNOTATION)
+        df_joined = self.filter_df_with_threshold(
+            df_joined, phase=TaskPhase.ANNOTATION, threshold_info=self.get_threshold_info(project_title)
+        )
 
         df_tmp = df_joined[[(f"pointed_out_inspection_comment_count/{self.performance_unit.value}", "annotation")]]
 
