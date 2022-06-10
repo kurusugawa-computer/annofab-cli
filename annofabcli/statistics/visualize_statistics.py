@@ -421,6 +421,8 @@ class VisualizingStatisticsMain:
             table_obj,
             output_project_dir,
             df_labor=df_labor,
+            start_date=self.start_date,
+            end_date=self.end_date,
             minimal_output=self.minimal_output,
             output_only_text=self.output_only_text,
         )
