@@ -56,21 +56,17 @@ logger = logging.getLogger(__name__)
 
 
 @dataclass
-class CommnadLineArgs(DataClassJsonMixin):
-    task_query: Optional[TaskQuery]
-    user_id_list: Optional[List[str]]
-    start_date: Optional[str]
-    end_date: Optional[str]
-
-
-@dataclass
 class ProjectSummary(DataClassJsonMixin):
+    """プロジェクトの概要情報"""
+
     project_id: str
     project_title: str
+    input_data_type: str
+    """入力データの種類"""
     measurement_datetime: str
     """計測日時。（2004-04-01T12:00+09:00形式）"""
-    args: CommnadLineArgs
-    """コマンドライン引数"""
+    query: Query
+    """集計対象を絞り込むためのクエリ"""
 
 
 def write_project_performance_csv(project_dirs: Collection[Path], output_path: Path):
@@ -329,24 +325,26 @@ class VisualizingStatisticsMain:
         self.df_labor = df_labor
         self.user_ids = user_ids
 
-    def write_project_name_file(self, project_id: str, command_line_args: CommnadLineArgs, output_project_dir: Path):
+    def write_project_info_json(self, project_id: str, output_file: Path):
         """
-        ファイル名がプロジェクト名のjsonファイルを生成する。
+        プロジェクト情報をJSONファイルに出力します。
         """
         project_info = self.service.api.get_project(project_id)[0]
         project_title = project_info["title"]
         logger.info(f"project_title = {project_title}")
-        filename = annofabcli.utils.to_filename(project_title)
-        output_project_dir.mkdir(exist_ok=True, parents=True)
 
         project_summary = ProjectSummary(
             project_id=project_id,
-            project_title=project_title,
+            project_title=project_info["title"],
+            input_data_type=project_info["input_data_type"],
             measurement_datetime=annofabapi.utils.str_now(),
-            args=command_line_args,
+            query=Query(
+                task_query=self.task_query, task_ids=self.task_ids, start_date=self.start_date, end_date=self.end_date
+            ),
         )
 
-        with open(str(output_project_dir / f"{filename}.json"), "w", encoding="utf-8") as f:
+        output_file.parent.mkdir(exist_ok=True, parents=True)
+        with output_file.open("w", encoding="utf-8") as f:
             f.write(project_summary.to_json(ensure_ascii=False, indent=2))
 
     def visualize_statistics(
@@ -373,7 +371,7 @@ class VisualizingStatisticsMain:
             self.temp_dir,
             query=Query(
                 task_query=self.task_query,
-                task_id_set=set(self.task_ids) if self.task_ids is not None else None,
+                task_ids=set(self.task_ids) if self.task_ids is not None else None,
                 start_date=self.start_date,
                 end_date=self.end_date,
             ),
@@ -390,15 +388,9 @@ class VisualizingStatisticsMain:
             logger.warning(f"project_id={project_id}: タスク履歴一覧が0件なのでファイルを出力しません。終了します。")
             return
 
-        self.write_project_name_file(
+        self.write_project_info_json(
             project_id=project_id,
-            command_line_args=CommnadLineArgs(
-                task_query=self.task_query,
-                user_id_list=self.user_ids,
-                start_date=self.start_date,
-                end_date=self.end_date,
-            ),
-            output_project_dir=output_project_dir,
+            output_file=output_project_dir / "project_info.json",
         )
 
         if self.df_labor is not None:
