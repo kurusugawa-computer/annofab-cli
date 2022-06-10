@@ -5,6 +5,12 @@ from pathlib import Path
 import pandas
 from annofabapi.models import TaskStatus
 
+from annofabcli.stat_visualization.write_performance_rating_csv import (
+    CollectingPerformanceInfo,
+    PerformanceUnit,
+    ThresholdInfo,
+    WorktimeType,
+)
 from annofabcli.statistics.list_annotation_count import (
     GroupBy,
     ListAnnotationCounterByInputData,
@@ -565,3 +571,24 @@ class TestTask:
 
     def test_plot_histogram_of_others(self):
         self.obj.plot_histogram_of_others(self.output_dir / "ヒストグラム.html")
+
+
+class TestCollectingPerformanceInfo:
+    def test_get_threshold_info(self):
+        obj = CollectingPerformanceInfo(
+            WorktimeType.ACTUAL_WORKTIME_HOUR,
+            PerformanceUnit.ANNOTATION_COUNT,
+            threshold_info=ThresholdInfo(threshold_worktime=10, threshold_task_count=20),
+            threshold_infos_per_project={
+                "dir1": ThresholdInfo(None, None),
+                "dir2": ThresholdInfo(11, None),
+                "dir3": ThresholdInfo(None, 21),
+                "dir4": ThresholdInfo(12, 22),
+            },
+        )
+
+        assert obj.get_threshold_info("not-exists") == ThresholdInfo(10, 20)
+        assert obj.get_threshold_info("dir1") == ThresholdInfo(10, 20)
+        assert obj.get_threshold_info("dir2") == ThresholdInfo(11, 20)
+        assert obj.get_threshold_info("dir3") == ThresholdInfo(10, 21)
+        assert obj.get_threshold_info("dir4") == ThresholdInfo(12, 22)

@@ -82,6 +82,7 @@ class CollectingPerformanceInfo:
         global_info = self.threshold_info
         local_info = self.threshold_infos_per_project.get(project_title)
         if local_info is None:
+            print(f"{global_info=}")
             return global_info
 
         worktime = (
