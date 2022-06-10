@@ -1,3 +1,4 @@
+from annofabcli.common.utils import _catch_exception, print_csv, print_json
 import argparse
 import functools
 import logging.handlers
@@ -320,17 +321,14 @@ class VisualizingStatisticsMain:
 
         project_summary = ProjectInfo(
             project_id=project_id,
-            project_title=project_info["title"],
+            project_title=project_title,
             input_data_type=project_info["input_data_type"],
             measurement_datetime=annofabapi.utils.str_now(),
             query=Query(
                 task_query=self.task_query, task_ids=self.task_ids, start_date=self.start_date, end_date=self.end_date
             ),
         )
-
-        output_file.parent.mkdir(exist_ok=True, parents=True)
-        with output_file.open("w", encoding="utf-8") as f:
-            f.write(project_summary.to_json(ensure_ascii=False, indent=2))
+        print_json(project_summary.to_dict(), output=output_file, is_pretty=True)
 
     def visualize_statistics(
         self,
