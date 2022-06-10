@@ -24,9 +24,9 @@ def write_performance_scatter_per_user(csv: Path, output_dir: Path) -> None:
         obj.plot_quality_and_productivity_from_actual_worktime(output_dir / "散布図-アノテーションあたり作業時間と品質の関係-実績時間-教師付者用.html")
     else:
         logger.warning(
-            f"実績作業時間の合計値が0なので、実績作業時間関係の以下のグラフは出力しません。\n"
-            " * '散布図-アノテーションあたり作業時間と累計作業時間の関係-実績時間.html'\n"
-            " * '散布図-アノテーションあたり作業時間と品質の関係-実績時間-教師付者用'"
+            f"実績作業時間の合計値が0なので、実績作業時間関係の以下のグラフは出力しません。:: "
+            "'散布図-アノテーションあたり作業時間と累計作業時間の関係-実績時間.html',"
+            "'散布図-アノテーションあたり作業時間と品質の関係-実績時間-教師付者用'"
         )
 
 
