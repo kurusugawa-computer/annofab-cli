@@ -104,6 +104,8 @@ class WriteCsvGraph:
         table_obj: Table,
         output_dir: Path,
         df_labor: Optional[pandas.DataFrame],
+        start_date: Optional[str] = None,
+        end_date: Optional[str] = None,
         minimal_output: bool = False,
         output_only_text: bool = False,
     ):
@@ -112,6 +114,8 @@ class WriteCsvGraph:
         self.output_dir = output_dir
         self.table_obj = table_obj
         self.df_labor = df_labor
+        self.start_date = start_date
+        self.end_date = end_date
         self.minimal_output = minimal_output
         self.output_only_text = output_only_text
 
@@ -232,7 +236,9 @@ class WriteCsvGraph:
 
     def write_worktime_per_date(self, user_id_list: Optional[List[str]] = None) -> None:
         """日ごとの作業時間情報を出力する。"""
-        worktime_per_date_obj = WorktimePerDate.from_webapi(self.service, self.project_id, self.df_labor)
+        worktime_per_date_obj = WorktimePerDate.from_webapi(
+            self.service, self.project_id, self.df_labor, start_date=self.start_date, end_date=self.end_date
+        )
         worktime_per_date_obj.to_csv(self.output_dir / "ユーザ_日付list-作業時間.csv")
 
         df_task = self._get_task_df()
@@ -401,6 +407,11 @@ class VisualizingStatisticsMain:
                 df_labor = self.df_labor[self.df_labor["project_id"] == project_id]
             else:
                 df_labor = self.df_labor
+            if self.start_date is not None:
+                df_labor = df_labor[df_labor["date"] >= self.start_date]
+            if self.end_date is not None:
+                df_labor = df_labor[df_labor["date"] <= self.end_date]
+
         else:
             df_labor = None
 
@@ -599,8 +610,8 @@ def parse_args(parser: argparse.ArgumentParser):
         help="集計対象のタスクのtask_idを指定します。\n" + "``file://`` を先頭に付けると、task_idの一覧が記載されたファイルを指定できます。",
     )
 
-    parser.add_argument("--start_date", type=str, help="指定した日付（ ``YYYY-MM-DD`` ）以降に教師付を開始したタスクを集計する。")
-    parser.add_argument("--end_date", type=str, help="指定した日付（ ``YYYY-MM-DD`` ）以前に更新されたタスクを集計する。")
+    parser.add_argument("--start_date", type=str, help="指定した日付（ ``YYYY-MM-DD`` ）以降に教師付を開始したタスクから生産性を算出します。")
+    parser.add_argument("--end_date", type=str, help="指定した日付（ ``YYYY-MM-DD`` ）以前に更新されたタスクから生産性を算出します。")
 
     parser.add_argument(
         "--latest",

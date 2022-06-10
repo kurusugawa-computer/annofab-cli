@@ -41,6 +41,7 @@
         "itertuples",
         "jmespath",
         "lenna",
+        "linegraph",
         "nargs",
         "ncols",
         "netrc",
@@ -54,6 +55,8 @@
         "quantile",
         "strtobool",
         "tolist",
-        "tzlocal"
+        "tzlocal",
+        "webapi",
+        "worktime"
     ]
 }
