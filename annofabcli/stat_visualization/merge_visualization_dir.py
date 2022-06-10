@@ -1,10 +1,13 @@
 import argparse
+import json
 import logging
 import sys
+from dataclasses import dataclass
 from pathlib import Path
 from typing import List, Optional
 
 import pandas
+from dataclasses_json import DataClassJsonMixin
 
 import annofabcli
 from annofabcli.common.cli import COMMAND_LINE_ERROR_STATUS_CODE, get_list_from_args
@@ -25,8 +28,19 @@ from annofabcli.statistics.visualization.dataframe.whole_productivity_per_date i
     WholeProductivityPerFirstAnnotationStartedDate,
 )
 from annofabcli.statistics.visualization.dataframe.worktime_per_date import WorktimePerDate
+from annofabcli.statistics.visualization.project_info import ProjectInfo
 
 logger = logging.getLogger(__name__)
+
+
+@dataclass
+class MergingInfo(DataClassJsonMixin):
+    """可視化結果のファイルをマージする際の情報"""
+
+    target_dir_list: List[str]
+    """マージ対象のディレクトリ名"""
+    project_info_list: List[ProjectInfo]
+    """マージ対象のプロジェクト情報"""
 
 
 def create_merged_performance_per_date(csv_path_list: List[Path]) -> WholeProductivityPerCompletedDate:
@@ -158,9 +172,23 @@ def merge_visualization_dir(  # pylint: disable=too-many-statements
         return df
 
     @_catch_exception
-    def write_info_json() -> None:
-        info = {"target_dir_list": [str(e) for e in project_dir_list]}
-        print_json(info, is_pretty=True, output=str(output_dir / "info.json"))
+    def write_merge_info_json() -> None:
+        """マージ情報に関するJSONファイルを出力する。"""
+        target_dir_list = [str(e) for e in project_dir_list]
+
+        output_file = output_dir / "merge_info.json"
+        project_info_list = []
+        for project_dir in project_dir_list:
+            project_info_file = project_dir / "project_info.json"
+            if not project_info_file.exists():
+                logger.warning(f"'{project_info_file}'は存在しないため、'{output_file}'に出力する情報が一部欠けます。")
+                continue
+            with project_info_file.open() as f:
+                project_info = json.load(f)
+                project_info_list.append(project_info)
+
+        info = MergingInfo(target_dir_list=target_dir_list, project_info_list=project_info_list)
+        print_json(info.to_dict(), is_pretty=True, output=str(output_file))
 
     execute_merge_performance_per_user()
     execute_merge_performance_per_date()
@@ -186,7 +214,7 @@ def merge_visualization_dir(  # pylint: disable=too-many-statements
     write_task_histogram(csv=output_dir / FILENAME_TASK_LIST, output_dir=output_dir / "histogram")
 
     # info.jsonを出力
-    write_info_json()
+    write_merge_info_json()
 
 
 def validate(args: argparse.Namespace) -> bool:

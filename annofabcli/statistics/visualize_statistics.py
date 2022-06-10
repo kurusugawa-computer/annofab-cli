@@ -4,7 +4,6 @@ import logging.handlers
 import re
 import sys
 import tempfile
-from dataclasses import dataclass
 from multiprocessing import Pool
 from pathlib import Path
 from typing import Any, Callable, Collection, List, Optional
@@ -12,7 +11,6 @@ from typing import Any, Callable, Collection, List, Optional
 import annofabapi
 import pandas
 from annofabapi.models import ProjectMemberRole
-from dataclasses_json import DataClassJsonMixin
 
 import annofabcli
 from annofabcli.common.cli import (
@@ -51,22 +49,9 @@ from annofabcli.statistics.visualization.dataframe.whole_productivity_per_date i
     WholeProductivityPerFirstAnnotationStartedDate,
 )
 from annofabcli.statistics.visualization.dataframe.worktime_per_date import WorktimePerDate
+from annofabcli.statistics.visualization.project_info import ProjectInfo
 
 logger = logging.getLogger(__name__)
-
-
-@dataclass
-class ProjectSummary(DataClassJsonMixin):
-    """プロジェクトの概要情報"""
-
-    project_id: str
-    project_title: str
-    input_data_type: str
-    """入力データの種類"""
-    measurement_datetime: str
-    """計測日時。（2004-04-01T12:00+09:00形式）"""
-    query: Query
-    """集計対象を絞り込むためのクエリ"""
 
 
 def write_project_performance_csv(project_dirs: Collection[Path], output_path: Path):
@@ -333,7 +318,7 @@ class VisualizingStatisticsMain:
         project_title = project_info["title"]
         logger.info(f"project_title = {project_title}")
 
-        project_summary = ProjectSummary(
+        project_summary = ProjectInfo(
             project_id=project_id,
             project_title=project_info["title"],
             input_data_type=project_info["input_data_type"],
