@@ -10,9 +10,10 @@ from typing import Any, Collection, Dict, List, Optional
 import numpy
 import pandas
 from annofabapi.models import TaskPhase
+from dataclasses_json import DataClassJsonMixin
 
 import annofabcli
-from annofabcli.common.cli import AbstractCommandLineWithoutWebapiInterface, get_list_from_args
+from annofabcli.common.cli import AbstractCommandLineWithoutWebapiInterface, get_json_from_args, get_list_from_args
 from annofabcli.common.utils import print_csv, read_multiheader_csv
 from annofabcli.statistics.csv import FILENAME_PERFORMANCE_PER_USER
 
@@ -28,12 +29,12 @@ class ResultDataframe:
 
 
 @dataclass
-class ThresholdInfo:
+class ThresholdInfo(DataClassJsonMixin):
     """閾値の情報"""
 
-    threshold_worktime: Optional[float]
+    threshold_worktime: Optional[float] = None
     """作業時間の閾値。指定した時間以下の作業者は除外する。"""
-    threshold_task_count: Optional[int]
+    threshold_task_count: Optional[int] = None
     """作業したタスク数の閾値。作業したタスク数が指定した数以下作業者は除外する。"""
 
 
@@ -78,10 +79,22 @@ class CollectingPerformanceInfo:
 
     def get_threshold_info(self, project_title: str) -> ThresholdInfo:
         """指定したプロジェクト名に対応する、閾値情報を取得する。"""
-        threshold_info = self.threshold_infos_per_project.get(project_title)
-        if threshold_info is not None:
-            return threshold_info
-        return self.threshold_info
+        global_info = self.threshold_info
+        local_info = self.threshold_infos_per_project.get(project_title)
+        if local_info is None:
+            return global_info
+
+        worktime = (
+            local_info.threshold_worktime
+            if local_info.threshold_worktime is not None
+            else global_info.threshold_worktime
+        )
+        task_count = (
+            local_info.threshold_task_count
+            if local_info.threshold_task_count is not None
+            else global_info.threshold_task_count
+        )
+        return ThresholdInfo(threshold_worktime=worktime, threshold_task_count=task_count)
 
     def filter_df_with_threshold(self, df, phase: TaskPhase, threshold_info: ThresholdInfo):
         if threshold_info.threshold_worktime is not None:
@@ -400,6 +413,17 @@ class WritingCsv:
 
 
 class WritePerformanceRatingCsv(AbstractCommandLineWithoutWebapiInterface):
+    @staticmethod
+    def get_threshold_infos_per_project(dict_threshold_settings: Optional[dict[str, Any]]) -> dict[str, ThresholdInfo]:
+        if dict_threshold_settings is None:
+            return {}
+
+        result = {}
+        for dirname, info in dict_threshold_settings.items():
+            threshold_info = ThresholdInfo.from_dict(info)
+            result[dirname] = threshold_info
+        return result
+
     def main(self) -> None:
         args = self.args
 
@@ -407,12 +431,18 @@ class WritePerformanceRatingCsv(AbstractCommandLineWithoutWebapiInterface):
         user_id_list = get_list_from_args(args.user_id) if args.user_id is not None else None
         df_user = create_user_df(target_dir)
 
+        dict_threshold_settings = get_json_from_args(args.threshold_settings)
+        threshold_infos_per_project = self.get_threshold_infos_per_project(dict_threshold_settings)
+
         performance_unit = PerformanceUnit(args.performance_unit)
         result = CollectingPerformanceInfo(
             worktime_type=WorktimeType.ACTUAL_WORKTIME_HOUR,
             performance_unit=performance_unit,
-            threshold_worktime=args.threshold_worktime,
-            threshold_task_count=args.threshold_task_count,
+            threshold_info=ThresholdInfo(
+                threshold_worktime=args.threshold_worktime,
+                threshold_task_count=args.threshold_task_count,
+            ),
+            threshold_infos_per_project=threshold_infos_per_project,
         ).create_rating_df(
             df_user,
             target_dir,
@@ -488,6 +518,14 @@ def parse_args(parser: argparse.ArgumentParser):
         default=3,
         help="偏差値を出す際、プロジェクト内の作業者がしきい値以下であれば、偏差値を算出しない。",
     )
+
+    THRESHOLD_SETTINGS_SAMPLE = {"dirname1": {"threshold_worktime": 20}, "dirname2": {"threshold_task_count": 5}}
+    parser.add_argument(
+        "--threshold_settings",
+        type=int,
+        help="JSON形式で、ディレクトリ名ごとに閾値を指定してください。\n" f"(ex) ``{THRESHOLD_SETTINGS_SAMPLE}``",
+    )
+
     parser.add_argument("-o", "--output_dir", required=True, type=Path, help="出力ディレクトリ")
 
     parser.set_defaults(subcommand_func=main)
