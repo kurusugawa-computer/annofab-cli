@@ -5,7 +5,7 @@ import logging
 from dataclasses import dataclass
 from enum import Enum
 from pathlib import Path
-from typing import Any, Collection, Dict, List, Optional
+from typing import Any, Collection, Dict, List, Optional, Tuple
 
 import numpy
 import pandas
@@ -45,6 +45,13 @@ class PerformanceUnit(Enum):
     INPUT_DATA_COUNT = "input_data_count"
 
 
+class ProductivityType(Enum):
+    """生産性情報の種類"""
+    ANNOTATION = "annotation"
+    """教師付"""
+    INSPECTION_ACCEPTANCE="inspection_acceptance"
+    """検査または受入"""
+
 class WorktimeType(Enum):
     """作業時間の種類"""
 
@@ -53,6 +60,12 @@ class WorktimeType(Enum):
     MONITORED_WORKTIME_HOUR = "monitored_worktime_hour"
     """計測作業時間"""
 
+ThresholdInfoSettings = Dict[Tuple[str, ProductivityType],ThresholdInfo ]
+"""
+閾値の設定情報
+key: tuple(ディレクトリ名, 生産性の種類)
+value: 閾値情報
+"""
 
 class CollectingPerformanceInfo:
     """
@@ -70,17 +83,17 @@ class CollectingPerformanceInfo:
         worktime_type: WorktimeType,
         performance_unit: PerformanceUnit,
         threshold_info: ThresholdInfo,
-        threshold_infos_per_project: dict[str, ThresholdInfo],
+        threshold_infos_per_project: ThresholdInfoSettings,
     ) -> None:
         self.worktime_type = worktime_type
         self.performance_unit = performance_unit
         self.threshold_info = threshold_info
         self.threshold_infos_per_project = threshold_infos_per_project
 
-    def get_threshold_info(self, project_title: str) -> ThresholdInfo:
+    def get_threshold_info(self, project_title: str, productivity_type:ProductivityType) -> ThresholdInfo:
         """指定したプロジェクト名に対応する、閾値情報を取得する。"""
         global_info = self.threshold_info
-        local_info = self.threshold_infos_per_project.get(project_title)
+        local_info = self.threshold_infos_per_project.get((project_title,productivity_type))
         if local_info is None:
             print(f"{global_info=}")
             return global_info
@@ -117,7 +130,7 @@ class CollectingPerformanceInfo:
         df_joined = df_performance
 
         df_joined = self.filter_df_with_threshold(
-            df_joined, phase, threshold_info=self.get_threshold_info(project_title)
+            df_joined, phase, threshold_info=threshold_info
         )
 
         df_tmp = df_joined[[(f"{self.worktime_type.value}/{self.performance_unit.value}", phase.value)]]
@@ -219,21 +232,25 @@ class CollectingPerformanceInfo:
             df_performance = read_multiheader_csv(str(csv), header_row_count=2)
             df_performance.set_index("user_id", inplace=True)
 
-            threshold_info = self.get_threshold_info(project_title)
+            annotation_threshold_info = self.get_threshold_info(project_title, ProductivityType.ANNOTATION)
             df_annotation_productivity = self.join_annotation_productivity(
-                df_annotation_productivity, df_performance, project_title=project_title, threshold_info=threshold_info
+                df_annotation_productivity, df_performance, project_title=project_title, threshold_info=annotation_threshold_info
             )
+
+            df_quality_per_task = self.join_quality_with_task_rejected_count(
+                df_quality_per_task, df_performance, project_title=project_title, threshold_info=annotation_threshold_info
+            )
+            df_quality_per_annotation = self.join_quality_with_inspection_comment(
+                df_quality_per_annotation, df_performance, project_title=project_title, threshold_info=annotation_threshold_info
+            )
+
+            # 閾値が教師付と検査/受入で別れている理由：作業を評価するのに必要な作業時間/タスク数は、教師付作業とは異なるため
+            inspection_acceptance_threshold_info = self.get_threshold_info(project_title, ProductivityType.INSPECTION_ACCEPTANCE)
             df_inspection_acceptance_productivity = self.join_inspection_acceptance_productivity(
                 df_inspection_acceptance_productivity,
                 df_performance,
                 project_title=project_title,
-                threshold_info=threshold_info,
-            )
-            df_quality_per_task = self.join_quality_with_task_rejected_count(
-                df_quality_per_task, df_performance, project_title=project_title, threshold_info=threshold_info
-            )
-            df_quality_per_annotation = self.join_quality_with_inspection_comment(
-                df_quality_per_annotation, df_performance, project_title=project_title, threshold_info=threshold_info
+                threshold_info=inspection_acceptance_threshold_info,
             )
 
         return ResultDataframe(
@@ -395,14 +412,16 @@ class WritingCsv:
 
 class WritePerformanceRatingCsv(AbstractCommandLineWithoutWebapiInterface):
     @staticmethod
-    def get_threshold_infos_per_project(dict_threshold_settings: Optional[dict[str, Any]]) -> dict[str, ThresholdInfo]:
+    def get_threshold_infos_per_project(dict_threshold_settings: Optional[dict[str, Any]]) -> ThresholdInfoSettings:
         if dict_threshold_settings is None:
             return {}
 
         result = {}
-        for dirname, info in dict_threshold_settings.items():
-            threshold_info = ThresholdInfo.from_dict(info)
-            result[dirname] = threshold_info
+        for dirname, infos in dict_threshold_settings.items():
+            for str_productivity_type, info in infos.items():
+                productivity_type = ProductivityType(str_productivity_type)
+                threshold_info = ThresholdInfo.from_dict(info)
+                result[(dirname, productivity_type)] = threshold_info
         return result
 
     def main(self) -> None:
@@ -500,7 +519,7 @@ def parse_args(parser: argparse.ArgumentParser):
         help="偏差値を出す際、プロジェクト内の作業者がしきい値以下であれば、偏差値を算出しない。",
     )
 
-    THRESHOLD_SETTINGS_SAMPLE = {"dirname1": {"threshold_worktime": 20}, "dirname2": {"threshold_task_count": 5}}
+    THRESHOLD_SETTINGS_SAMPLE = {"dirname1":{"annotation":{"threshold_worktime": 20}}, "dirname2": {"inspection_acceptance":{"threshold_task_count": 5}}}
     parser.add_argument(
         "--threshold_settings",
         type=str,
