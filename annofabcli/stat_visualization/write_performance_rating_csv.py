@@ -94,6 +94,8 @@ class CollectingPerformanceInfo:
             if local_info.threshold_task_count is not None
             else global_info.threshold_task_count
         )
+
+        print(f"{global_info=}, {local_info=}, {worktime=}, {task_count=}")
         return ThresholdInfo(threshold_worktime=worktime, threshold_task_count=task_count)
 
     def filter_df_with_threshold(self, df, phase: TaskPhase, threshold_info: ThresholdInfo):
@@ -106,10 +108,7 @@ class CollectingPerformanceInfo:
         return df
 
     def join_annotation_productivity(
-        self,
-        df: pandas.DataFrame,
-        df_performance: pandas.DataFrame,
-        project_title: str,
+        self, df: pandas.DataFrame, df_performance: pandas.DataFrame, project_title: str, threshold_info: ThresholdInfo
     ) -> pandas.DataFrame:
         """教師付生産性の指標を抽出してdfにjoinする"""
         phase = TaskPhase.ANNOTATION
@@ -127,14 +126,9 @@ class CollectingPerformanceInfo:
         return df.join(df_tmp)
 
     def join_inspection_acceptance_productivity(
-        self,
-        df: pandas.DataFrame,
-        df_performance: pandas.DataFrame,
-        project_title: str,
+        self, df: pandas.DataFrame, df_performance: pandas.DataFrame, project_title: str, threshold_info: ThresholdInfo
     ) -> pandas.DataFrame:
         """検査,受入生産性の指標を抽出してdfにjoinする"""
-
-        threshold_info = self.get_threshold_info(project_title)
 
         def _join_inspection():
             phase = TaskPhase.INSPECTION
@@ -172,17 +166,12 @@ class CollectingPerformanceInfo:
         return df
 
     def join_quality_with_task_rejected_count(
-        self,
-        df: pandas.DataFrame,
-        df_performance: pandas.DataFrame,
-        project_title: str,
+        self, df: pandas.DataFrame, df_performance: pandas.DataFrame, project_title: str, threshold_info: ThresholdInfo
     ) -> pandas.DataFrame:
         """タスクの差し戻し回数を品質の指標にしたDataFrameを生成する。"""
         df_joined = df_performance
 
-        df_joined = self.filter_df_with_threshold(
-            df_joined, phase=TaskPhase.ANNOTATION, threshold_info=self.get_threshold_info(project_title)
-        )
+        df_joined = self.filter_df_with_threshold(df_joined, phase=TaskPhase.ANNOTATION, threshold_info=threshold_info)
 
         df_tmp = df_joined[[("rejected_count/task_count", "annotation")]]
 
@@ -190,18 +179,13 @@ class CollectingPerformanceInfo:
         return df.join(df_tmp)
 
     def join_quality_with_inspection_comment(
-        self,
-        df: pandas.DataFrame,
-        df_performance: pandas.DataFrame,
-        project_title: str,
+        self, df: pandas.DataFrame, df_performance: pandas.DataFrame, project_title: str, threshold_info: ThresholdInfo
     ) -> pandas.DataFrame:
         """検査コメント数を品質の指標にしたDataFrameを生成する。"""
 
         df_joined = df_performance
 
-        df_joined = self.filter_df_with_threshold(
-            df_joined, phase=TaskPhase.ANNOTATION, threshold_info=self.get_threshold_info(project_title)
-        )
+        df_joined = self.filter_df_with_threshold(df_joined, phase=TaskPhase.ANNOTATION, threshold_info=threshold_info)
 
         df_tmp = df_joined[[(f"pointed_out_inspection_comment_count/{self.performance_unit.value}", "annotation")]]
 
@@ -234,25 +218,21 @@ class CollectingPerformanceInfo:
             df_performance = read_multiheader_csv(str(csv), header_row_count=2)
             df_performance.set_index("user_id", inplace=True)
 
+            threshold_info = self.get_threshold_info(project_title)
             df_annotation_productivity = self.join_annotation_productivity(
-                df_annotation_productivity,
-                df_performance,
-                project_title=project_title,
+                df_annotation_productivity, df_performance, project_title=project_title, threshold_info=threshold_info
             )
             df_inspection_acceptance_productivity = self.join_inspection_acceptance_productivity(
                 df_inspection_acceptance_productivity,
                 df_performance,
                 project_title=project_title,
+                threshold_info=threshold_info,
             )
             df_quality_per_task = self.join_quality_with_task_rejected_count(
-                df_quality_per_task,
-                df_performance,
-                project_title=project_title,
+                df_quality_per_task, df_performance, project_title=project_title, threshold_info=threshold_info
             )
             df_quality_per_annotation = self.join_quality_with_inspection_comment(
-                df_quality_per_annotation,
-                df_performance,
-                project_title=project_title,
+                df_quality_per_annotation, df_performance, project_title=project_title, threshold_info=threshold_info
             )
 
         return ResultDataframe(
@@ -522,7 +502,7 @@ def parse_args(parser: argparse.ArgumentParser):
     THRESHOLD_SETTINGS_SAMPLE = {"dirname1": {"threshold_worktime": 20}, "dirname2": {"threshold_task_count": 5}}
     parser.add_argument(
         "--threshold_settings",
-        type=int,
+        type=str,
         help="JSON形式で、ディレクトリ名ごとに閾値を指定してください。\n" f"(ex) ``{THRESHOLD_SETTINGS_SAMPLE}``",
     )
 
