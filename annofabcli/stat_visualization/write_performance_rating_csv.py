@@ -523,7 +523,8 @@ def parse_args(parser: argparse.ArgumentParser):
     parser.add_argument(
         "--threshold_settings",
         type=str,
-        help="JSON形式で、ディレクトリ名ごとに閾値を指定してください。\n" f"(ex) ``{THRESHOLD_SETTINGS_SAMPLE}``",
+        help="JSON形式で、ディレクトリ名ごとに閾値を指定してください。\n"
+         f"(ex) ``{THRESHOLD_SETTINGS_SAMPLE}``",
     )
 
     parser.add_argument("-o", "--output_dir", required=True, type=Path, help="出力ディレクトリ")
