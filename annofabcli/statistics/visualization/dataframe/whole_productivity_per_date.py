@@ -762,7 +762,6 @@ class WholeProductivityPerFirstAnnotationStartedDate:
 
     @classmethod
     def from_df(cls, df_task: pandas.DataFrame) -> WholeProductivityPerFirstAnnotationStartedDate:
-
         df_sub_task = df_task[df_task["status"] == TaskStatus.COMPLETE.value][
             [
                 "task_id",
@@ -801,20 +800,18 @@ class WholeProductivityPerFirstAnnotationStartedDate:
             df_agg_sub_task = df_agg_sub_task.assign(**{key: 0 for key in value_columns}, task_count=0)
 
         # 日付の一覧を生成
-        df_date_base = pandas.DataFrame(
-            index=[
-                e.strftime("%Y-%m-%d")
-                for e in pandas.date_range(start=df_agg_sub_task.index.min(), end=df_agg_sub_task.index.max())
-            ]
-        )
+        if len(df_agg_sub_task) > 0:
+            df_date_base = pandas.DataFrame(
+                index=[
+                    e.strftime("%Y-%m-%d")
+                    for e in pandas.date_range(start=df_agg_sub_task.index.min(), end=df_agg_sub_task.index.max())
+                ]
+            )
+        else:
+            df_date_base = pandas.DataFrame()
+
         df_date = df_date_base.join(df_agg_sub_task).fillna(0)
 
-        df_date.rename(
-            columns={
-                "worktime_hour": "worktime_hour",
-            },
-            inplace=True,
-        )
         df_date["first_annotation_started_date"] = df_date.index
 
         # 生産性情報などの列を追加する
