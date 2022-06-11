@@ -775,6 +775,9 @@ class UserPerformance:
 class WholePerformance:
     """
     全体の生産性と品質の情報
+
+    Attributes:
+        series: 全体の生産性と品質が格納されたpandas.Series
     """
 
     def __init__(self, series: pandas.Series):
