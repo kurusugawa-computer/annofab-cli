@@ -38,6 +38,29 @@ class ThresholdInfo(DataClassJsonMixin):
     """作業したタスク数の閾値。作業したタスク数が指定した数以下作業者は除外する。"""
 
 
+@dataclass
+class ProjectDirMetaInfo(DataClassJsonMixin):
+    """評価対象プロジェクトのディレクトリのメタ情報"""
+    dirname: str
+    """ディレクトリ名"""
+    project_id_list: List[str]
+    """project_idのlist。評価対象のディレクトリはマージされている可能性があるのでlistで受け取る"""
+    project_title_list: List[str]
+    """project_titleのlist。評価対象のディレクトリはマージされている可能性があるのでlistで受け取る"""
+    input_data_type: str
+    """projectの入力データの種類。"""
+    start_date: str
+    """作業開始日"""
+    end_date: str
+    """作業終了日"""
+    task_count: int
+    """作業したタスク数"""
+    actual_worktime_hour: float
+    """合計の実績作業時間"""
+    monitored_worktime_hour: float
+    """合計の計測作業時間"""
+
+
 class PerformanceUnit(Enum):
     """生産性の単位"""
 
@@ -61,6 +84,8 @@ class WorktimeType(Enum):
     """実績作業時間"""
     MONITORED_WORKTIME_HOUR = "monitored_worktime_hour"
     """計測作業時間"""
+
+
 
 
 ThresholdInfoSettings = Dict[Tuple[str, ProductivityType], ThresholdInfo]
@@ -209,6 +234,9 @@ class CollectingPerformanceInfo:
             [(project_title, f"pointed_out_inspection_comment_count/{self.performance_unit.value}")]
         )
         return df.join(df_tmp)
+
+    def get_project_dir_meta_info(self, project_dir:Path) -> ProjectDirMetaInfo:
+        obj = ProjectDir()
 
     def create_rating_df(
         self,
