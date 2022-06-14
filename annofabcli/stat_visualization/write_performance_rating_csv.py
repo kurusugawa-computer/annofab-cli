@@ -20,6 +20,7 @@ from annofabcli.statistics.visualization.dataframe.project_performance import (
     ProjectPerformance,
     ProjectWorktimePerMonth,
 )
+from annofabcli.statistics.visualization.model import WorktimeColumn
 from annofabcli.statistics.visualization.project_dir import ProjectDir
 
 logger = logging.getLogger(__name__)
@@ -35,8 +36,10 @@ class ResultDataframe:
     project_performance: ProjectPerformance
     """プロジェクトごとの生産性と品質"""
 
-    project_worktime: ProjectWorktimePerMonth
-    """プロジェクトごとの作業時間"""
+    project_actual_worktime: ProjectWorktimePerMonth
+    """プロジェクトごとの実績作業時間"""
+    project_monitored_worktime: ProjectWorktimePerMonth
+    """プロジェクトごとの計測作業時間"""
 
 
 @dataclass
@@ -281,14 +284,20 @@ class CollectingPerformanceInfo:
 
         # プロジェクトの生産性と品質のDataFrameを生成する
         project_performance = ProjectPerformance.from_project_dirs(project_dir_list)
-        project_worktime = ProjectWorktimePerMonth.from_project_dirs(project_dir_list)
+        project_actual_worktime = ProjectWorktimePerMonth.from_project_dirs(
+            project_dir_list, WorktimeColumn.ACTUAL_WORKTIME_HOUR
+        )
+        project_monitored_worktime = ProjectWorktimePerMonth.from_project_dirs(
+            project_dir_list, WorktimeColumn.MONITORED_WORKTIME_HOUR
+        )
         return ResultDataframe(
             annotation_productivity=df_annotation_productivity.reset_index(),
             inspection_acceptance_productivity=df_inspection_acceptance_productivity.reset_index(),
             quality_with_task_rejected_count=df_quality_per_task.reset_index(),
             quality_with_inspection_comment=df_quality_per_annotation.reset_index(),
             project_performance=project_performance,
-            project_worktime=project_worktime,
+            project_actual_worktime=project_actual_worktime,
+            project_monitored_worktime=project_monitored_worktime,
         )
 
 
@@ -509,7 +518,8 @@ class WritePerformanceRatingCsv(AbstractCommandLineWithoutWebapiInterface):
         )
 
         result.project_performance.to_csv(output_dir / "プロジェクごとの生産性と品質.csv")
-        result.project_worktime.to_csv(output_dir / "プロジェクごとの毎月の作業時間.csv")
+        result.project_actual_worktime.to_csv(output_dir / "プロジェクごとの毎月の実績作業時間.csv")
+        result.project_monitored_worktime.to_csv(output_dir / "プロジェクごとの毎月の計測作業時間.csv")
 
 
 def parse_args(parser: argparse.ArgumentParser):

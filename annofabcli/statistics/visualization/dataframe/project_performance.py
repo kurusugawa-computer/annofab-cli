@@ -9,6 +9,7 @@ import pandas
 from annofabcli.common.utils import print_csv
 from annofabcli.statistics.visualization.dataframe.user_performance import UserPerformance
 from annofabcli.statistics.visualization.dataframe.worktime_per_date import WorktimePerDate
+from annofabcli.statistics.visualization.model import WorktimeColumn
 from annofabcli.statistics.visualization.project_dir import ProjectDir
 
 logger = logging.getLogger(__name__)
@@ -136,7 +137,7 @@ class ProjectWorktimePerMonth:
         return True
 
     @classmethod
-    def _get_series_from_project_dir(cls, project_dir: ProjectDir) -> pandas.Series:
+    def _get_series_from_project_dir(cls, project_dir: ProjectDir, worktime_column: WorktimeColumn) -> pandas.Series:
         """
         1個のプロジェクトディレクトリから、月ごとの作業時間を算出する
         """
@@ -144,7 +145,7 @@ class ProjectWorktimePerMonth:
         df = project_dir.read_worktime_per_date_user().df.copy()
 
         df["dt_date"] = pandas.to_datetime(df["date"])
-        series = df.groupby(pandas.Grouper(key="dt_date", freq="M")).sum()["actual_worktime_hour"]
+        series = df.groupby(pandas.Grouper(key="dt_date", freq="M")).sum()[worktime_column.value]
 
         # indexを"2022-04"という形式にする
         new_index = [str(dt)[0:7] for dt in series.index]
@@ -153,11 +154,22 @@ class ProjectWorktimePerMonth:
         return result
 
     @classmethod
-    def from_project_dirs(cls, project_dir_list: list[ProjectDir]) -> ProjectWorktimePerMonth:
+    def from_project_dirs(
+        cls, project_dir_list: list[ProjectDir], worktime_column: WorktimeColumn
+    ) -> ProjectWorktimePerMonth:
+        """
+        プロジェクトディレクトリのlistから、インスタンスを生成します。
+        Args:
+            project_dir_list (list[ProjectDir]): _description_
+            worktime_column: 作業時間を表す列
+
+        Returns:
+            ProjectWorktimePerMonth: _description_
+        """
         row_list: list[pandas.Series] = []
         for project_dir in project_dir_list:
             try:
-                row_list.append(cls._get_series_from_project_dir(project_dir))
+                row_list.append(cls._get_series_from_project_dir(project_dir, worktime_column))
             except Exception:
                 logger.warning(f"'{project_dir}'から、プロジェクトごとの作業時間を算出するのに失敗しました。", exc_info=True)
                 row_list.append(
@@ -176,9 +188,7 @@ class ProjectWorktimePerMonth:
 
         header_columns = ["dirname"]
         remain_columns = list(self.df.columns)
-        print(f"{remain_columns=}")
         for col in header_columns:
-            print(f"{col=}")
             remain_columns.remove(col)
 
         month_columns = sorted(remain_columns)
