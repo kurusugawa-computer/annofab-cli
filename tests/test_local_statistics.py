@@ -8,6 +8,7 @@ from annofabapi.models import TaskStatus
 from annofabcli.stat_visualization.write_performance_rating_csv import (
     CollectingPerformanceInfo,
     PerformanceUnit,
+    ProductivityType,
     ThresholdInfo,
     WorktimeType,
 )
@@ -30,14 +31,12 @@ from annofabcli.statistics.visualization.dataframe.productivity_per_date import 
     AnnotatorProductivityPerDate,
     InspectorProductivityPerDate,
 )
-from annofabcli.statistics.visualization.dataframe.task import Task
-from annofabcli.statistics.visualization.dataframe.user_performance import (
-    UserPerformance,
-    WholePerformance,
-)
 from annofabcli.statistics.visualization.dataframe.project_performance import (
-    ProjectWorktimePerMonth, ProjectPerformance
+    ProjectPerformance,
+    ProjectWorktimePerMonth,
 )
+from annofabcli.statistics.visualization.dataframe.task import Task
+from annofabcli.statistics.visualization.dataframe.user_performance import UserPerformance, WholePerformance
 from annofabcli.statistics.visualization.dataframe.whole_productivity_per_date import (
     WholeProductivityPerCompletedDate,
     WholeProductivityPerFirstAnnotationStartedDate,
@@ -47,7 +46,6 @@ from annofabcli.statistics.visualization.model import WorktimeColumn
 from annofabcli.statistics.visualization.project_dir import ProjectDir
 from annofabcli.statistics.visualize_annotation_count import plot_attribute_histogram, plot_label_histogram
 from annofabcli.task_history_event.list_worktime import SimpleTaskHistoryEvent
-
 
 out_path = Path("./tests/out/statistics")
 data_path = Path("./tests/data/statistics")
@@ -445,12 +443,10 @@ class TestProjectPerformance:
         assert len(df) == 1
         row = df.iloc[0]
         # メインの項目をアサートする
-        assert row[("dirname","")] == "visualization-dir1"
-        assert row[("project_title","")] == "test-project"
+        assert row[("dirname", "")] == "visualization-dir1"
+        assert row[("project_title", "")] == "test-project"
         assert row[("start_date", "")] == "2022-01-01"
-        assert row[("actual_worktime_hour","sum")] == 4503
-
-
+        assert row[("actual_worktime_hour", "sum")] == 4503
 
 
 class TestListAnnotationCounterByInputData:
@@ -597,23 +593,25 @@ class TestCollectingPerformanceInfo:
             PerformanceUnit.ANNOTATION_COUNT,
             threshold_info=ThresholdInfo(threshold_worktime=10, threshold_task_count=20),
             threshold_infos_per_project={
-                "dir1": ThresholdInfo(None, None),
-                "dir2": ThresholdInfo(11, None),
-                "dir3": ThresholdInfo(None, 21),
-                "dir4": ThresholdInfo(12, 22),
+                ("dir1", ProductivityType.ANNOTATION): ThresholdInfo(None, None),
+                ("dir2", ProductivityType.ANNOTATION): ThresholdInfo(11, None),
+                ("dir3", ProductivityType.ANNOTATION): ThresholdInfo(None, 21),
+                ("dir4", ProductivityType.ANNOTATION): ThresholdInfo(12, 22),
             },
         )
 
-        assert obj.get_threshold_info("not-exists") == ThresholdInfo(10, 20)
-        assert obj.get_threshold_info("dir1") == ThresholdInfo(10, 20)
-        assert obj.get_threshold_info("dir2") == ThresholdInfo(11, 20)
-        assert obj.get_threshold_info("dir3") == ThresholdInfo(10, 21)
-        assert obj.get_threshold_info("dir4") == ThresholdInfo(12, 22)
+        assert obj.get_threshold_info("not-exists", ProductivityType.ANNOTATION) == ThresholdInfo(10, 20)
+        assert obj.get_threshold_info("dir1", ProductivityType.ANNOTATION) == ThresholdInfo(10, 20)
+        assert obj.get_threshold_info("dir2", ProductivityType.ANNOTATION) == ThresholdInfo(11, 20)
+        assert obj.get_threshold_info("dir3", ProductivityType.ANNOTATION) == ThresholdInfo(10, 21)
+        assert obj.get_threshold_info("dir4", ProductivityType.ANNOTATION) == ThresholdInfo(12, 22)
 
 
 class TestProjectWorktimePerMonth:
     def test_from_project_dirs(self):
-        actual_worktime = ProjectWorktimePerMonth.from_project_dirs([ProjectDir(data_path / "visualization-dir1")], worktime_column=WorktimeColumn.ACTUAL_WORKTIME_HOUR)
+        actual_worktime = ProjectWorktimePerMonth.from_project_dirs(
+            [ProjectDir(data_path / "visualization-dir1")], worktime_column=WorktimeColumn.ACTUAL_WORKTIME_HOUR
+        )
         df = actual_worktime.df
         assert len(df) == 1
         row = df.iloc[0]

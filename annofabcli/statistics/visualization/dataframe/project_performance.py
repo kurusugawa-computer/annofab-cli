@@ -4,6 +4,7 @@ import logging
 from pathlib import Path
 from typing import Any, Optional
 
+import numpy
 import pandas
 
 from annofabcli.common.utils import print_csv
@@ -85,6 +86,24 @@ class ProjectPerformance:
         return series
 
     @classmethod
+    def _get_empty_series(cls, dirname: str) -> pandas.Series:
+        series = pandas.Series([dirname], index=pandas.MultiIndex.from_tuples(("dirname", "")))
+
+        header_index = [
+            ("project_title", ""),
+            ("project_id", ""),
+            ("input_data_type", ""),
+            ("start_date", ""),
+            ("end_date", ""),
+        ]
+        value_index = UserPerformance.get_productivity_columns(["annotation"])
+        index = header_index + value_index
+
+        for key in index:
+            series[key] = numpy.nan
+        return series
+
+    @classmethod
     def from_project_dirs(cls, project_dir_list: list[ProjectDir]) -> ProjectPerformance:
         row_list: list[pandas.Series] = []
         for project_dir in project_dir_list:
@@ -92,9 +111,7 @@ class ProjectPerformance:
                 row_list.append(cls._get_series_from_project_dir(project_dir))
             except Exception:
                 logger.warning(f"'{project_dir}'から、プロジェクトごとの生産性と品質を算出するのに失敗しました。", exc_info=True)
-                row_list.append(
-                    pandas.Series([project_dir.project_dir.name], index={("dirname", ""): project_dir.project_dir.name})
-                )
+                row_list.append(cls._get_empty_series(project_dir.project_dir.name))
 
         return cls(pandas.DataFrame(row_list))
 
@@ -105,7 +122,7 @@ class ProjectPerformance:
         if not self._validate_df_for_output(output_file):
             return
 
-        phase_list = UserPerformance.get_phase_list(self.df.columns)
+        phase_list = UserPerformance.get_phase_list(self.df)
 
         first_columns = [
             ("dirname", ""),
