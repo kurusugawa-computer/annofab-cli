@@ -10,7 +10,6 @@ from annofabcli.stat_visualization.write_performance_rating_csv import (
     PerformanceUnit,
     ProductivityType,
     ThresholdInfo,
-    WorktimeType,
 )
 from annofabcli.statistics.list_annotation_count import (
     GroupBy,
