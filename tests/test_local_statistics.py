@@ -32,17 +32,22 @@ from annofabcli.statistics.visualization.dataframe.productivity_per_date import 
 )
 from annofabcli.statistics.visualization.dataframe.task import Task
 from annofabcli.statistics.visualization.dataframe.user_performance import (
-    ProjectPerformance,
     UserPerformance,
     WholePerformance,
+)
+from annofabcli.statistics.visualization.dataframe.project_performance import (
+    ProjectWorktimePerMonth, ProjectPerformance
 )
 from annofabcli.statistics.visualization.dataframe.whole_productivity_per_date import (
     WholeProductivityPerCompletedDate,
     WholeProductivityPerFirstAnnotationStartedDate,
 )
 from annofabcli.statistics.visualization.dataframe.worktime_per_date import WorktimePerDate
+from annofabcli.statistics.visualization.model import WorktimeColumn
+from annofabcli.statistics.visualization.project_dir import ProjectDir
 from annofabcli.statistics.visualize_annotation_count import plot_attribute_histogram, plot_label_histogram
 from annofabcli.task_history_event.list_worktime import SimpleTaskHistoryEvent
+
 
 out_path = Path("./tests/out/statistics")
 data_path = Path("./tests/data/statistics")
@@ -430,11 +435,22 @@ class TestProjectPerformance:
     def setup_class(cls):
         cls.output_dir = out_path / "visualization"
         cls.output_dir.mkdir(exist_ok=True, parents=True)
-        tmp = WholePerformance.from_csv(data_path / "全体の生産性と品質.csv")
-        cls.obj = ProjectPerformance.from_whole_performance_objs([tmp, tmp], ["foo", "bar"])
+        cls.obj = ProjectPerformance.from_project_dirs([ProjectDir(data_path / "visualization-dir1")])
 
     def test_to_csv(self):
         self.obj.to_csv(self.output_dir / "プロジェクごとの生産性と品質.csv")
+
+    def test_instance(self):
+        df = self.obj.df
+        assert len(df) == 1
+        row = df.iloc[0]
+        # メインの項目をアサートする
+        assert row[("dirname","")] == "visualization-dir1"
+        assert row[("project_title","")] == "test-project"
+        assert row[("start_date", "")] == "2022-01-01"
+        assert row[("actual_worktime_hour","sum")] == 4503
+
+
 
 
 class TestListAnnotationCounterByInputData:
@@ -593,3 +609,14 @@ class TestCollectingPerformanceInfo:
         assert obj.get_threshold_info("dir2") == ThresholdInfo(11, 20)
         assert obj.get_threshold_info("dir3") == ThresholdInfo(10, 21)
         assert obj.get_threshold_info("dir4") == ThresholdInfo(12, 22)
+
+
+class TestProjectWorktimePerMonth:
+    def test_from_project_dirs(self):
+        actual_worktime = ProjectWorktimePerMonth.from_project_dirs([ProjectDir(data_path / "visualization-dir1")], worktime_column=WorktimeColumn.ACTUAL_WORKTIME_HOUR)
+        df = actual_worktime.df
+        assert len(df) == 1
+        row = df.iloc[0]
+        assert row["dirname"] == "visualization-dir1"
+        assert row["2022-01"] == 3
+        assert row["2022-02"] == 7
