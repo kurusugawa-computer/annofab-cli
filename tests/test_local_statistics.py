@@ -419,6 +419,7 @@ class TestWholePerformance:
         cls.output_dir = out_path / "visualization"
         cls.output_dir.mkdir(exist_ok=True, parents=True)
         cls.obj = WholePerformance.from_csv(data_path / "全体の生産性と品質.csv")
+        assert cls.obj.series["task_count"]["annotation"] == 1051
 
     def test_to_csv(self):
         self.obj.to_csv(self.output_dir / "全体の生産性と品質.csv")

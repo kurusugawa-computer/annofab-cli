@@ -16,6 +16,7 @@ import annofabcli
 from annofabcli.common.cli import AbstractCommandLineWithoutWebapiInterface, get_json_from_args, get_list_from_args
 from annofabcli.common.utils import print_csv, read_multiheader_csv
 from annofabcli.statistics.csv import FILENAME_PERFORMANCE_PER_USER
+from annofabcli.statistics.visualization.project_dir import ProjectDir
 
 logger = logging.getLogger(__name__)
 
@@ -41,6 +42,7 @@ class ThresholdInfo(DataClassJsonMixin):
 @dataclass
 class ProjectDirMetaInfo(DataClassJsonMixin):
     """評価対象プロジェクトのディレクトリのメタ情報"""
+
     dirname: str
     """ディレクトリ名"""
     project_id_list: List[str]
@@ -84,8 +86,6 @@ class WorktimeType(Enum):
     """実績作業時間"""
     MONITORED_WORKTIME_HOUR = "monitored_worktime_hour"
     """計測作業時間"""
-
-
 
 
 ThresholdInfoSettings = Dict[Tuple[str, ProductivityType], ThresholdInfo]
@@ -235,8 +235,13 @@ class CollectingPerformanceInfo:
         )
         return df.join(df_tmp)
 
-    def get_project_dir_meta_info(self, project_dir:Path) -> ProjectDirMetaInfo:
-        obj = ProjectDir()
+    # def get_project_dir_meta_info(self, project_dir: Path) -> ProjectDirMetaInfo:
+    #     obj = ProjectDir(project_dir)
+    #     obj.read_whole_performance()
+
+    # # working_user_count	annotation	13
+    # # working_user_count	inspection	13
+    # # working_user_count	acceptance	10
 
     def create_rating_df(
         self,

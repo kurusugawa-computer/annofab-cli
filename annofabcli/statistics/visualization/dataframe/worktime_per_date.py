@@ -35,11 +35,21 @@ logger = logging.getLogger(__name__)
 
 
 class WorktimePerDate:
+    """
+    日ごとユーザごとの作業時間情報
+    """
+
     PLOT_WIDTH = 1200
     PLOT_HEIGHT = 600
 
     def __init__(self, df: pandas.DataFrame):
         self.df = df
+
+    @classmethod
+    def from_csv(cls, csv_file: Path) -> WorktimePerDate:
+        """CSVファイルからインスタンスを生成します。"""
+        df = pandas.read_csv(str(csv_file))
+        return cls(df)
 
     @classmethod
     def get_df_worktime(

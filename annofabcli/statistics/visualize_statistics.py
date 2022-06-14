@@ -1,4 +1,3 @@
-from annofabcli.common.utils import print_json
 import argparse
 import functools
 import logging.handlers
@@ -20,6 +19,7 @@ from annofabcli.common.cli import (
     build_annofabapi_resource_and_login,
 )
 from annofabcli.common.facade import AnnofabApiFacade, TaskQuery
+from annofabcli.common.utils import print_json
 from annofabcli.stat_visualization.merge_visualization_dir import merge_visualization_dir
 from annofabcli.statistics.csv import (
     FILENAME_PERFORMANCE_PER_DATE,
@@ -50,7 +50,7 @@ from annofabcli.statistics.visualization.dataframe.whole_productivity_per_date i
     WholeProductivityPerFirstAnnotationStartedDate,
 )
 from annofabcli.statistics.visualization.dataframe.worktime_per_date import WorktimePerDate
-from annofabcli.statistics.visualization.project_info import ProjectInfo
+from annofabcli.statistics.visualization.project_dir import ProjectDir, ProjectInfo
 
 logger = logging.getLogger(__name__)
 
@@ -100,6 +100,8 @@ class WriteCsvGraph:
         self.end_date = end_date
         self.minimal_output = minimal_output
         self.output_only_text = output_only_text
+
+        self.project_dir = ProjectDir(output_dir)
 
     def _catch_exception(self, function: Callable[..., Any]) -> Callable[..., Any]:
         """
@@ -157,7 +159,9 @@ class WriteCsvGraph:
             )
 
         obj.to_csv(self.output_dir / FILENAME_PERFORMANCE_PER_USER)
-        WholePerformance(obj.get_summary()).to_csv(self.output_dir / FILENAME_WHOLE_PERFORMANCE)
+
+        whole_performance = WholePerformance.from_user_performance(obj)
+        self.project_dir.write_whole_performance(whole_performance)
 
         if not self.output_only_text:
             obj.plot_quality(self.output_dir / "scatter/散布図-教師付者の品質と作業量の関係.html")

@@ -2,12 +2,10 @@ import argparse
 import json
 import logging
 import sys
-from dataclasses import dataclass
 from pathlib import Path
 from typing import List, Optional
 
 import pandas
-from dataclasses_json import DataClassJsonMixin
 
 import annofabcli
 from annofabcli.common.cli import COMMAND_LINE_ERROR_STATUS_CODE, get_list_from_args
@@ -28,19 +26,9 @@ from annofabcli.statistics.visualization.dataframe.whole_productivity_per_date i
     WholeProductivityPerFirstAnnotationStartedDate,
 )
 from annofabcli.statistics.visualization.dataframe.worktime_per_date import WorktimePerDate
-from annofabcli.statistics.visualization.project_info import ProjectInfo
+from annofabcli.statistics.visualization.project_dir import MergingInfo
 
 logger = logging.getLogger(__name__)
-
-
-@dataclass
-class MergingInfo(DataClassJsonMixin):
-    """可視化結果のファイルをマージする際の情報"""
-
-    target_dir_list: List[str]
-    """マージ対象のディレクトリ名"""
-    project_info_list: List[ProjectInfo]
-    """マージ対象のプロジェクト情報"""
 
 
 def create_merged_performance_per_date(csv_path_list: List[Path]) -> WholeProductivityPerCompletedDate:

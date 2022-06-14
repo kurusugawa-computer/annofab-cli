@@ -790,7 +790,14 @@ class WholePerformance:
         return True
 
     @classmethod
+    def from_user_performance(cls, user_performance: UserPerformance) -> WholePerformance:
+        """`メンバごとの生産性と品質.csv`に相当する情報から、インスタンスを生成します。"""
+        series = user_performance.get_summary()
+        return cls(series)
+
+    @classmethod
     def from_csv(cls, csv_file: Path) -> WholePerformance:
+        """CSVファイルからインスタンスを生成します。"""
         df = pandas.read_csv(str(csv_file), header=None, index_col=[0, 1])
         # 3列目を値としたpandas.Series を取得する。
         series = df[2]
