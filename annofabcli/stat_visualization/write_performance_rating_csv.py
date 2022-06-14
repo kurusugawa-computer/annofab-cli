@@ -68,15 +68,6 @@ class ProductivityType(Enum):
     """検査または受入"""
 
 
-class WorktimeType(Enum):
-    """作業時間の種類"""
-
-    ACTUAL_WORKTIME_HOUR = "actual_worktime_hour"
-    """実績作業時間"""
-    MONITORED_WORKTIME_HOUR = "monitored_worktime_hour"
-    """計測作業時間"""
-
-
 ThresholdInfoSettings = Dict[Tuple[str, ProductivityType], ThresholdInfo]
 """
 閾値の設定情報
@@ -98,7 +89,7 @@ class CollectingPerformanceInfo:
 
     def __init__(
         self,
-        worktime_type: WorktimeType,
+        worktime_type: WorktimeColumn,
         performance_unit: PerformanceUnit,
         threshold_info: ThresholdInfo,
         threshold_infos_per_project: ThresholdInfoSettings,
@@ -476,7 +467,7 @@ class WritePerformanceRatingCsv(AbstractCommandLineWithoutWebapiInterface):
 
         performance_unit = PerformanceUnit(args.performance_unit)
         result = CollectingPerformanceInfo(
-            worktime_type=WorktimeType.ACTUAL_WORKTIME_HOUR,
+            worktime_type=WorktimeColumn.ACTUAL_WORKTIME_HOUR,
             performance_unit=performance_unit,
             threshold_info=ThresholdInfo(
                 threshold_worktime=args.threshold_worktime,

@@ -34,7 +34,10 @@ from annofabcli.statistics.visualization.dataframe.productivity_per_date import 
     AnnotatorProductivityPerDate,
     InspectorProductivityPerDate,
 )
-from annofabcli.statistics.visualization.dataframe.project_performance import ProjectPerformance
+from annofabcli.statistics.visualization.dataframe.project_performance import (
+    ProjectPerformance,
+    ProjectWorktimePerMonth,
+)
 from annofabcli.statistics.visualization.dataframe.task import Task
 from annofabcli.statistics.visualization.dataframe.user_performance import UserPerformance, WholePerformance
 from annofabcli.statistics.visualization.dataframe.whole_productivity_per_date import (
@@ -42,6 +45,7 @@ from annofabcli.statistics.visualization.dataframe.whole_productivity_per_date i
     WholeProductivityPerFirstAnnotationStartedDate,
 )
 from annofabcli.statistics.visualization.dataframe.worktime_per_date import WorktimePerDate
+from annofabcli.statistics.visualization.model import WorktimeColumn
 from annofabcli.statistics.visualization.project_dir import ProjectDir, ProjectInfo
 
 logger = logging.getLogger(__name__)
@@ -512,10 +516,19 @@ class VisualizeStatistics(AbstractCommandLineInterface):
                 )
 
             if len(output_project_dir_list) > 0:
-                project_performance = ProjectPerformance.from_project_dirs(
-                    [ProjectDir(e) for e in output_project_dir_list]
-                )
+                project_dir_list = [ProjectDir(e) for e in output_project_dir_list]
+                project_performance = ProjectPerformance.from_project_dirs(project_dir_list)
                 project_performance.to_csv(root_output_dir / "プロジェクトごとの生産性と品質.csv")
+
+                project_actual_worktime = ProjectWorktimePerMonth.from_project_dirs(
+                    project_dir_list, WorktimeColumn.ACTUAL_WORKTIME_HOUR
+                )
+                project_actual_worktime.to_csv(root_output_dir / "プロジェクごとの毎月の実績作業時間.csv")
+
+                project_monitored_worktime = ProjectWorktimePerMonth.from_project_dirs(
+                    project_dir_list, WorktimeColumn.MONITORED_WORKTIME_HOUR
+                )
+                project_monitored_worktime.to_csv(root_output_dir / "プロジェクごとの毎月の計測作業時間.csv")
 
             else:
                 logger.warning(f"出力した統計情報は0件なので、`プロジェクトごとの生産性と品質.csv`を出力しません。")
