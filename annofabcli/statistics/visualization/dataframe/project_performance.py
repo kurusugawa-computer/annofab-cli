@@ -39,7 +39,7 @@ class ProjectPerformance:
         return df2["date"].min(), df2["date"].max()
 
     @classmethod
-    def _get_project_info(cls, project_dir: ProjectDir) -> dict[str, Any]:
+    def _get_project_info(cls, project_dir: ProjectDir) -> dict[tuple[str, str], Any]:
         if project_dir.is_merged():
             merge_info = project_dir.read_merge_info()
             project_id_list = []
@@ -53,48 +53,47 @@ class ProjectPerformance:
 
             # マージされている場合、CSVの列に複数の値を表示する
             return {
-                "project_id": project_id_list,
-                "project_title": project_title_list,
-                "input_data_type": input_data_type,
+                ("project_id", ""): project_id_list,
+                ("project_title", ""): project_title_list,
+                ("input_data_type", ""): input_data_type,
             }
 
         else:
             project_info = project_dir.read_project_info()
             return {
-                "project_id": project_info.project_id,
-                "project_title": project_info.project_title,
-                "input_data_type": project_info.input_data_type,
+                ("project_id", ""): project_info.project_id,
+                ("project_title", ""): project_info.project_title,
+                ("input_data_type", ""): project_info.input_data_type,
             }
 
     @classmethod
-    def _get_dict_from_project_dir(cls, project_dir: ProjectDir) -> dict[str, Any]:
+    def _get_dict_from_project_dir(cls, project_dir: ProjectDir) -> pandas.Series:
+        """1個のプロジェクトディレクトリから、プロジェクトの生産性や品質が格納されたpandas.Seriesを取得します。"""
         # プロジェクトの生産性と品質を取得
         whole_performance_obj = project_dir.read_whole_performance()
         series = whole_performance_obj.series
-        result = series.to_dict()
-
-        result["dirname"] = project_dir.project_dir.name
+        series[("dirname", "")] = project_dir.project_dir.name
 
         start_date, end_date = cls._get_start_date_end_date(project_dir.read_worktime_per_date_user())
-        result.update(
-            {
-                "start_date": start_date,
-                "end_date": end_date,
-            }
-        )
+        series[("start_date", "")] = start_date
+        series[("end_date", "")] = end_date
 
-        result.update(cls._get_project_info(project_dir))
-        return result
+        for key, value in cls._get_project_info(project_dir).items():
+            series[key] = value
+
+        return series
 
     @classmethod
     def from_project_dirs(cls, project_dir_list: list[ProjectDir]) -> ProjectPerformance:
-        row_list = []
+        row_list: list[pandas.Series] = []
         for project_dir in project_dir_list:
             try:
                 row_list.append(cls._get_dict_from_project_dir(project_dir))
             except Exception:
                 logger.warning(f"'{project_dir}'から、プロジェクトごとの生産性と品質を算出するのに失敗しました。", exc_info=True)
-                row_list.append({"dirname": project_dir.project_dir.name})
+                row_list.append(
+                    pandas.Series([project_dir.project_dir.name], index={("dirname", ""): project_dir.project_dir.name})
+                )
 
         return cls(pandas.DataFrame(row_list))
 
