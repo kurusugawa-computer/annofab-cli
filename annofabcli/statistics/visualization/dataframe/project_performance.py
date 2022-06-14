@@ -67,7 +67,7 @@ class ProjectPerformance:
             }
 
     @classmethod
-    def _get_dict_from_project_dir(cls, project_dir: ProjectDir) -> pandas.Series:
+    def _get_series_from_project_dir(cls, project_dir: ProjectDir) -> pandas.Series:
         """1個のプロジェクトディレクトリから、プロジェクトの生産性や品質が格納されたpandas.Seriesを取得します。"""
         # プロジェクトの生産性と品質を取得
         whole_performance_obj = project_dir.read_whole_performance()
@@ -88,7 +88,7 @@ class ProjectPerformance:
         row_list: list[pandas.Series] = []
         for project_dir in project_dir_list:
             try:
-                row_list.append(cls._get_dict_from_project_dir(project_dir))
+                row_list.append(cls._get_series_from_project_dir(project_dir))
             except Exception:
                 logger.warning(f"'{project_dir}'から、プロジェクトごとの生産性と品質を算出するのに失敗しました。", exc_info=True)
                 row_list.append(
@@ -117,4 +117,71 @@ class ProjectPerformance:
         value_columns = UserPerformance.get_productivity_columns(phase_list)
 
         columns = first_columns + value_columns + [("working_user_count", phase) for phase in phase_list]
+        print_csv(self.df[columns], output=str(output_file))
+
+
+class ProjectWorktimePerMonth:
+    """
+    プロジェクトごとの月ごとの作業時間。
+    行方向にプロジェクト、列方向に月ごとの作業時間を出力する。
+    """
+
+    def __init__(self, df: pandas.DataFrame):
+        self.df = df
+
+    def _validate_df_for_output(self, output_file: Path) -> bool:
+        if len(self.df) == 0:
+            logger.warning(f"データが0件のため、{output_file} は出力しません。")
+            return False
+        return True
+
+    @classmethod
+    def _get_series_from_project_dir(cls, project_dir: ProjectDir) -> pandas.Series:
+        """
+        1個のプロジェクトディレクトリから、月ごとの作業時間を算出する
+        """
+        # プロジェクトの生産性と品質を取得
+        df = project_dir.read_worktime_per_date_user().df.copy()
+
+        df["dt_date"] = pandas.to_datetime(df["date"])
+        series = df.groupby(pandas.Grouper(key="dt_date", freq="M")).sum()["actual_worktime_hour"]
+
+        # indexを"2022-04"という形式にする
+        new_index = [str(dt)[0:7] for dt in series.index]
+        result = pandas.Series(series.values, index=new_index)
+        result["dirname"] = project_dir.project_dir.name
+        return result
+
+    @classmethod
+    def from_project_dirs(cls, project_dir_list: list[ProjectDir]) -> ProjectWorktimePerMonth:
+        row_list: list[pandas.Series] = []
+        for project_dir in project_dir_list:
+            try:
+                row_list.append(cls._get_series_from_project_dir(project_dir))
+            except Exception:
+                logger.warning(f"'{project_dir}'から、プロジェクトごとの作業時間を算出するのに失敗しました。", exc_info=True)
+                row_list.append(
+                    pandas.Series([project_dir.project_dir.name], index={("dirname", ""): project_dir.project_dir.name})
+                )
+        df = pandas.DataFrame(row_list)
+        df.fillna(0, inplace=True)
+        return cls(df)
+
+    def to_csv(self, output_file: Path) -> None:
+        """
+        行方向にプロジェクト、列方向に月が並んだ作業時間のCSVを出力します。
+        """
+        if not self._validate_df_for_output(output_file):
+            return
+
+        header_columns = ["dirname"]
+        remain_columns = list(self.df.columns)
+        print(f"{remain_columns=}")
+        for col in header_columns:
+            print(f"{col=}")
+            remain_columns.remove(col)
+
+        month_columns = sorted(remain_columns)
+
+        columns = header_columns + month_columns
         print_csv(self.df[columns], output=str(output_file))

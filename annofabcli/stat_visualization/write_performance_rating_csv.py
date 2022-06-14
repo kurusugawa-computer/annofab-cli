@@ -16,7 +16,10 @@ import annofabcli
 from annofabcli.common.cli import AbstractCommandLineWithoutWebapiInterface, get_json_from_args, get_list_from_args
 from annofabcli.common.utils import print_csv, read_multiheader_csv
 from annofabcli.statistics.csv import FILENAME_PERFORMANCE_PER_USER
-from annofabcli.statistics.visualization.dataframe.project_performance import ProjectPerformance
+from annofabcli.statistics.visualization.dataframe.project_performance import (
+    ProjectPerformance,
+    ProjectWorktimePerMonth,
+)
 from annofabcli.statistics.visualization.project_dir import ProjectDir
 
 logger = logging.getLogger(__name__)
@@ -30,7 +33,10 @@ class ResultDataframe:
     quality_with_inspection_comment: pandas.DataFrame
 
     project_performance: ProjectPerformance
-    """プロジェクトごとの生産性と品質が格納されたDataFrameをラップしたオブジェクト"""
+    """プロジェクトごとの生産性と品質"""
+
+    project_worktime: ProjectWorktimePerMonth
+    """プロジェクトごとの作業時間"""
 
 
 @dataclass
@@ -41,30 +47,6 @@ class ThresholdInfo(DataClassJsonMixin):
     """作業時間の閾値。指定した時間以下の作業者は除外する。"""
     threshold_task_count: Optional[int] = None
     """作業したタスク数の閾値。作業したタスク数が指定した数以下作業者は除外する。"""
-
-
-@dataclass
-class ProjectDirMetaInfo(DataClassJsonMixin):
-    """評価対象プロジェクトのディレクトリのメタ情報"""
-
-    dirname: str
-    """ディレクトリ名"""
-    project_id_list: List[str]
-    """project_idのlist。評価対象のディレクトリはマージされている可能性があるのでlistで受け取る"""
-    project_title_list: List[str]
-    """project_titleのlist。評価対象のディレクトリはマージされている可能性があるのでlistで受け取る"""
-    input_data_type: str
-    """projectの入力データの種類。"""
-    start_date: str
-    """作業開始日"""
-    end_date: str
-    """作業終了日"""
-    task_count: int
-    """作業したタスク数"""
-    actual_worktime_hour: float
-    """合計の実績作業時間"""
-    monitored_worktime_hour: float
-    """合計の計測作業時間"""
 
 
 class PerformanceUnit(Enum):
@@ -128,7 +110,6 @@ class CollectingPerformanceInfo:
         global_info = self.threshold_info
         local_info = self.threshold_infos_per_project.get((project_title, productivity_type))
         if local_info is None:
-            print(f"{global_info=}")
             return global_info
 
         worktime = (
@@ -300,12 +281,14 @@ class CollectingPerformanceInfo:
 
         # プロジェクトの生産性と品質のDataFrameを生成する
         project_performance = ProjectPerformance.from_project_dirs(project_dir_list)
+        project_worktime = ProjectWorktimePerMonth.from_project_dirs(project_dir_list)
         return ResultDataframe(
             annotation_productivity=df_annotation_productivity.reset_index(),
             inspection_acceptance_productivity=df_inspection_acceptance_productivity.reset_index(),
             quality_with_task_rejected_count=df_quality_per_task.reset_index(),
             quality_with_inspection_comment=df_quality_per_annotation.reset_index(),
             project_performance=project_performance,
+            project_worktime=project_worktime,
         )
 
 
@@ -525,8 +508,8 @@ class WritePerformanceRatingCsv(AbstractCommandLineWithoutWebapiInterface):
             output_dir=output_dir / "annotation_quality_inspection_comment",
         )
 
-        # プロジェクトごとの生産性と品質を算出する
         result.project_performance.to_csv(output_dir / "プロジェクごとの生産性と品質.csv")
+        result.project_worktime.to_csv(output_dir / "プロジェクごとの毎月の作業時間.csv")
 
 
 def parse_args(parser: argparse.ArgumentParser):
