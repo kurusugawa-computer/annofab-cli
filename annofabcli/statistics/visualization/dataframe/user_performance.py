@@ -7,7 +7,7 @@ import copy
 import logging
 from enum import Enum
 from pathlib import Path
-from typing import Any, Collection, Optional
+from typing import Any, Optional
 
 import bokeh
 import bokeh.layouts
@@ -821,48 +821,3 @@ class WholePerformance:
         output_file.parent.mkdir(exist_ok=True, parents=True)
         logger.debug(f"{str(output_file)} を出力します。")
         series.to_csv(str(output_file), sep=",", encoding="utf_8_sig", header=False)
-
-
-class ProjectPerformance:
-    """
-    プロジェクトごとの生産性と品質
-    """
-
-    def __init__(self, df: pandas.DataFrame):
-        self.df = df
-
-    def _validate_df_for_output(self, output_file: Path) -> bool:
-        if len(self.df) == 0:
-            logger.warning(f"データが0件のため、{output_file} は出力しません。")
-            return False
-        return True
-
-    @classmethod
-    def from_whole_performance_objs(
-        cls, objs: Collection[WholePerformance], project_titles: Collection[str]
-    ) -> ProjectPerformance:
-
-        series_list = []
-        for whole_performance_obj, project_title in zip(objs, project_titles):
-            series = whole_performance_obj.series
-            series[("project_title", "")] = project_title
-            series_list.append(series)
-
-        df = pandas.DataFrame(series_list)
-        return cls(df)
-
-    def to_csv(self, output_file: Path) -> None:
-        """
-        全体の生産性と品質が格納されたCSVを出力します。
-
-        """
-        if not self._validate_df_for_output(output_file):
-            return
-
-        phase_list = UserPerformance.get_phase_list(self.df.columns)
-
-        first_columns = [("project_title", "")]
-        value_columns = UserPerformance.get_productivity_columns(phase_list)
-
-        columns = first_columns + value_columns + [("working_user_count", phase) for phase in phase_list]
-        print_csv(self.df[columns], output=str(output_file))

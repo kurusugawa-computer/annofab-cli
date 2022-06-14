@@ -21,12 +21,7 @@ from annofabcli.common.cli import (
 from annofabcli.common.facade import AnnofabApiFacade, TaskQuery
 from annofabcli.common.utils import print_json
 from annofabcli.stat_visualization.merge_visualization_dir import merge_visualization_dir
-from annofabcli.statistics.csv import (
-    FILENAME_PERFORMANCE_PER_DATE,
-    FILENAME_PERFORMANCE_PER_USER,
-    FILENAME_TASK_LIST,
-    FILENAME_WHOLE_PERFORMANCE,
-)
+from annofabcli.statistics.csv import FILENAME_PERFORMANCE_PER_DATE, FILENAME_PERFORMANCE_PER_USER, FILENAME_TASK_LIST
 from annofabcli.statistics.database import Database, Query
 from annofabcli.statistics.table import Table
 from annofabcli.statistics.visualization.dataframe.cumulative_productivity import (
@@ -39,12 +34,9 @@ from annofabcli.statistics.visualization.dataframe.productivity_per_date import 
     AnnotatorProductivityPerDate,
     InspectorProductivityPerDate,
 )
+from annofabcli.statistics.visualization.dataframe.project_performance import ProjectPerformance
 from annofabcli.statistics.visualization.dataframe.task import Task
-from annofabcli.statistics.visualization.dataframe.user_performance import (
-    ProjectPerformance,
-    UserPerformance,
-    WholePerformance,
-)
+from annofabcli.statistics.visualization.dataframe.user_performance import UserPerformance, WholePerformance
 from annofabcli.statistics.visualization.dataframe.whole_productivity_per_date import (
     WholeProductivityPerCompletedDate,
     WholeProductivityPerFirstAnnotationStartedDate,
@@ -53,22 +45,6 @@ from annofabcli.statistics.visualization.dataframe.worktime_per_date import Work
 from annofabcli.statistics.visualization.project_dir import ProjectDir, ProjectInfo
 
 logger = logging.getLogger(__name__)
-
-
-def write_project_performance_csv(project_dirs: Collection[Path], output_path: Path):
-    csv_file_list = [e / FILENAME_WHOLE_PERFORMANCE for e in project_dirs]
-
-    obj_list = []
-    project_title_list = []
-    for csv_file in csv_file_list:
-        if csv_file.exists():
-            obj_list.append(WholePerformance.from_csv(csv_file))
-            project_title_list.append(csv_file.parent.name)
-        else:
-            logger.warning(f"{csv_file} は存在しないのでスキップします。")
-
-    main_obj = ProjectPerformance.from_whole_performance_objs(obj_list, project_title_list)
-    main_obj.to_csv(output_path)
 
 
 def get_project_output_dir(project_title: str) -> str:
@@ -536,7 +512,11 @@ class VisualizeStatistics(AbstractCommandLineInterface):
                 )
 
             if len(output_project_dir_list) > 0:
-                write_project_performance_csv(output_project_dir_list, root_output_dir / "プロジェクトごとの生産性と品質.csv")
+                project_performance = ProjectPerformance.from_project_dirs(
+                    [ProjectDir(e) for e in output_project_dir_list]
+                )
+                project_performance.to_csv(root_output_dir / "プロジェクトごとの生産性と品質.csv")
+
             else:
                 logger.warning(f"出力した統計情報は0件なので、`プロジェクトごとの生産性と品質.csv`を出力しません。")
 

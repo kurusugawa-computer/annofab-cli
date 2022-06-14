@@ -88,10 +88,13 @@ class ProjectPerformance:
 
     @classmethod
     def from_project_dirs(cls, project_dir_list: list[ProjectDir]) -> ProjectPerformance:
-
         row_list = []
         for project_dir in project_dir_list:
-            row_list.append(cls._get_dict_from_project_dir(project_dir))
+            try:
+                row_list.append(cls._get_dict_from_project_dir(project_dir))
+            except Exception:
+                logger.warning(f"'{project_dir}'から、プロジェクトごとの生産性と品質を算出するのに失敗しました。", exc_info=True)
+                row_list.append({"dirname": project_dir.project_dir.name})
 
         return cls(pandas.DataFrame(row_list))
 

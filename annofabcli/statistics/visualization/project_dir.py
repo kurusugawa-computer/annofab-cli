@@ -30,6 +30,9 @@ class ProjectDir(DataClassJsonMixin):
     def __init__(self, project_dir: Path):
         self.project_dir = project_dir
 
+    def __repr__(self) -> str:
+        return f"ProjectDir(project_dir={self.project_dir!r})"
+
     def is_merged(self) -> bool:
         """
         マージされたディレクトリかどうか

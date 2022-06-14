@@ -16,6 +16,7 @@ import annofabcli
 from annofabcli.common.cli import AbstractCommandLineWithoutWebapiInterface, get_json_from_args, get_list_from_args
 from annofabcli.common.utils import print_csv, read_multiheader_csv
 from annofabcli.statistics.csv import FILENAME_PERFORMANCE_PER_USER
+from annofabcli.statistics.visualization.dataframe.project_performance import ProjectPerformance
 from annofabcli.statistics.visualization.project_dir import ProjectDir
 
 logger = logging.getLogger(__name__)
@@ -27,6 +28,9 @@ class ResultDataframe:
     inspection_acceptance_productivity: pandas.DataFrame
     quality_with_task_rejected_count: pandas.DataFrame
     quality_with_inspection_comment: pandas.DataFrame
+
+    project_performance: ProjectPerformance
+    """プロジェクトごとの生産性と品質が格納されたDataFrameをラップしたオブジェクト"""
 
 
 @dataclass
@@ -235,14 +239,6 @@ class CollectingPerformanceInfo:
         )
         return df.join(df_tmp)
 
-    # def get_project_dir_meta_info(self, project_dir: Path) -> ProjectDirMetaInfo:
-    #     obj = ProjectDir(project_dir)
-    #     obj.read_whole_performance()
-
-    # # working_user_count	annotation	13
-    # # working_user_count	inspection	13
-    # # working_user_count	acceptance	10
-
     def create_rating_df(
         self,
         df_user: pandas.DataFrame,
@@ -254,9 +250,12 @@ class CollectingPerformanceInfo:
         df_quality_per_task = df_user
         df_quality_per_annotation = df_user
 
+        project_dir_list: list[ProjectDir] = []
         for project_dir in target_dir.iterdir():
             if not project_dir.is_dir():
                 continue
+
+            project_dir_list.append(ProjectDir(project_dir))
 
             csv = project_dir / FILENAME_PERFORMANCE_PER_USER
             project_title = project_dir.name
@@ -299,11 +298,14 @@ class CollectingPerformanceInfo:
                 threshold_info=inspection_acceptance_threshold_info,
             )
 
+        # プロジェクトの生産性と品質のDataFrameを生成する
+        project_performance = ProjectPerformance.from_project_dirs(project_dir_list)
         return ResultDataframe(
             annotation_productivity=df_annotation_productivity.reset_index(),
             inspection_acceptance_productivity=df_inspection_acceptance_productivity.reset_index(),
             quality_with_task_rejected_count=df_quality_per_task.reset_index(),
             quality_with_inspection_comment=df_quality_per_annotation.reset_index(),
+            project_performance=project_performance,
         )
 
 
@@ -522,6 +524,9 @@ class WritePerformanceRatingCsv(AbstractCommandLineWithoutWebapiInterface):
             csv_basename="annotation_quality_inspection_comment",
             output_dir=output_dir / "annotation_quality_inspection_comment",
         )
+
+        # プロジェクトごとの生産性と品質を算出する
+        result.project_performance.to_csv(output_dir / "プロジェクごとの生産性と品質.csv")
 
 
 def parse_args(parser: argparse.ArgumentParser):
