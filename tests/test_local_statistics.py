@@ -588,7 +588,7 @@ class TestTask:
 class TestCollectingPerformanceInfo:
     def test_get_threshold_info(self):
         obj = CollectingPerformanceInfo(
-            WorktimeType.ACTUAL_WORKTIME_HOUR,
+            WorktimeColumn.ACTUAL_WORKTIME_HOUR,
             PerformanceUnit.ANNOTATION_COUNT,
             threshold_info=ThresholdInfo(threshold_worktime=10, threshold_task_count=20),
             threshold_infos_per_project={
