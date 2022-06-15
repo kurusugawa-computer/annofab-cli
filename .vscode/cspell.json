@@ -15,14 +15,18 @@
     ],
     "words": [
         "additionals",
+        "aggfunc",
+        "Annofab",
         "annofabapi",
         "annofabcli",
+        "Annowork",
         "asdict",
         "astimezone",
         "astype",
         "asyncio",
         "bokeh",
         "dataclass",
+        "Dataframe",
         "dateutil",
         "ddof",
         "dropna",
@@ -41,6 +45,9 @@
         "itertuples",
         "jmespath",
         "lenna",
+        "linegraph",
+        "multiheader",
+        "multiindex",
         "nargs",
         "ncols",
         "netrc",
@@ -54,6 +61,8 @@
         "quantile",
         "strtobool",
         "tolist",
-        "tzlocal"
+        "tzlocal",
+        "webapi",
+        "worktime"
     ]
 }

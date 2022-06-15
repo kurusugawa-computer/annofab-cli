@@ -132,7 +132,7 @@ Examples
     ├── histogram
     │   ├── ヒストグラム-作業時間.html
     │   └── ヒストグラム.html
-    ├── ${project_title}.json
+    ├── project_info.json
     ├── line-graph
     │   ├── 教師付者用
     │   │   └── 累積折れ線-横軸_アノテーション数-教師付者用.html
