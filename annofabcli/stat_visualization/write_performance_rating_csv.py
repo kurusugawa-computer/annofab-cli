@@ -117,7 +117,6 @@ class CollectingPerformanceInfo:
             else global_info.threshold_task_count
         )
 
-        print(f"{global_info=}, {local_info=}, {worktime=}, {task_count=}")
         return ThresholdInfo(threshold_worktime=worktime, threshold_task_count=task_count)
 
     def filter_df_with_threshold(self, df, phase: TaskPhase, threshold_info: ThresholdInfo):
