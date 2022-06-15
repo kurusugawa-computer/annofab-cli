@@ -247,15 +247,6 @@ class Table:
             annotation_worktime_hour, inspection_worktime_hour, acceptance_worktime_hour, worktime_hour
         """
 
-        def set_input_data_info_for_movie(arg_task):
-            input_data_id_list = arg_task["input_data_id_list"]
-            input_data = input_data_dict.get(input_data_id_list[0])
-            if input_data is None:
-                logger.warning(f"task_id={arg_task['task_id']} に含まれる入力データID {input_data_id_list[0]} は存在しません。")
-                arg_task["input_duration_seconds"] = None
-                return
-            arg_task["input_duration_seconds"] = input_data.input_duration_seconds
-
         def set_inspection_comment_info(arg_task):
             # 指摘枚数
             inspection_comment_count = 0
@@ -283,7 +274,6 @@ class Table:
         task_histories_dict = self._get_task_histories_dict()
         inspections_dict = self._get_inspections_dict()
         annotations_dict = self.database.get_annotation_count_by_task()
-        input_data_dict = self.database.read_input_data_from_json()
 
         adding_obj = AddingAdditionalInfoToTask(self.annofab_service, project_id=self.project_id)
 
@@ -302,7 +292,6 @@ class Table:
 
             task["annotation_count"] = annotations_dict.get(task_id, 0)
             set_inspection_comment_info(task)
-            set_input_data_info_for_movie(task)
 
         df = pandas.DataFrame(tasks)
         if len(df) > 0:

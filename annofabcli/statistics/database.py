@@ -44,15 +44,6 @@ class Query:
     end_date: Optional[str] = None
 
 
-@dataclass(frozen=True)
-class PseudoInputData:
-    """
-    入力データの必要なプロパティのみ定義したクラス
-    """
-
-    input_duration_seconds: Optional[float] = None
-
-
 class Database:
     """
     Annofabから取得した情報に関するデータベース。
@@ -90,7 +81,6 @@ class Database:
 
         # ダウンロードした一括情報
         self.tasks_json_path = self.temp_dir / "tasks.json"
-        self.input_data_json_path = temp_dir / "input_data.json"
         self.inspection_json_path = temp_dir / "inspections.json"
         self.task_histories_json_path = temp_dir / "task_histories.json"
         self.annotations_zip_path = temp_dir / "simple-annotations.zip"
@@ -145,18 +135,6 @@ class Database:
             tasks_dict[task_id] = input_data_dict
 
         return tasks_dict
-
-    def read_input_data_from_json(self) -> Dict[str, PseudoInputData]:
-        path = self.input_data_json_path
-        logger.debug(f"{self.logging_prefix}: reading '{path}'")
-        with open(str(path), encoding="utf-8") as f:
-            all_input_data_list = json.load(f)
-
-        all_input_data_dict = {
-            e["input_data_id"]: PseudoInputData(input_duration_seconds=e["system_metadata"].get("input_duration"))
-            for e in all_input_data_list
-        }
-        return all_input_data_dict
 
     def read_task_histories_from_json(self, task_id_list: Optional[List[str]] = None) -> Dict[str, List[TaskHistory]]:
         logger.debug(f"{self.logging_prefix}: reading '{self.task_histories_json_path}'")
@@ -351,7 +329,6 @@ class Database:
         DOWNLOADED_FILE_COUNT = 5
 
         TASK_JSON_INDEX = 0
-        INPUT_DATA_JSON_INDEX = 1
         ANNOTATION_ZIP_INDEX = 2
         INSPECTION_JSON_INDEX = 3
         TASK_HISTORY_JSON_INDEX = 4
@@ -360,12 +337,6 @@ class Database:
         coroutines: List[Any] = [None] * DOWNLOADED_FILE_COUNT
         coroutines[TASK_JSON_INDEX] = downloading_obj.download_task_json_with_async(
             self.project_id, dest_path=str(self.tasks_json_path), is_latest=is_latest, wait_options=wait_options
-        )
-        coroutines[INPUT_DATA_JSON_INDEX] = downloading_obj.download_input_data_json_with_async(
-            self.project_id,
-            dest_path=str(self.input_data_json_path),
-            is_latest=is_latest,
-            wait_options=wait_options,
         )
         coroutines[ANNOTATION_ZIP_INDEX] = downloading_obj.download_annotation_zip_with_async(
             self.project_id,
@@ -402,7 +373,7 @@ class Database:
             elif isinstance(results[TASK_HISTORY_JSON_INDEX], Exception):
                 raise results[TASK_HISTORY_JSON_INDEX]
 
-        for result in [results[TASK_JSON_INDEX], results[INPUT_DATA_JSON_INDEX], results[ANNOTATION_ZIP_INDEX]]:
+        for result in [results[TASK_JSON_INDEX], results[ANNOTATION_ZIP_INDEX]]:
             if isinstance(result, Exception):
                 raise result
 

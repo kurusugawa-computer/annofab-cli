@@ -232,7 +232,6 @@ class Task:
             "acceptance_worktime_hour",
             # 個数
             "input_data_count",
-            "input_duration_seconds",
             "annotation_count",
             "inspection_comment_count",
             "input_data_count_of_inspection",
