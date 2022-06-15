@@ -20,7 +20,7 @@ from annofabcli.common.cli import (
 )
 from annofabcli.common.facade import AnnofabApiFacade, TaskQuery
 from annofabcli.stat_visualization.merge_visualization_dir import merge_visualization_dir
-from annofabcli.statistics.csv import FILENAME_PERFORMANCE_PER_DATE, FILENAME_PERFORMANCE_PER_USER, FILENAME_TASK_LIST
+from annofabcli.statistics.csv import FILENAME_PERFORMANCE_PER_DATE, FILENAME_TASK_LIST
 from annofabcli.statistics.database import Database, Query
 from annofabcli.statistics.table import Table
 from annofabcli.statistics.visualization.dataframe.cumulative_productivity import (

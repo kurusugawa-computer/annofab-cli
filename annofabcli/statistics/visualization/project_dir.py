@@ -49,7 +49,6 @@ class ProjectDir(DataClassJsonMixin):
         """`全体の生産性と品質.csv`を出力します。"""
         whole_performance.to_csv(self.project_dir / self.FILENAME_WHOLE_PERFORMANCE)
 
-
     def read_user_performance(self) -> UserPerformance:
         """
         メンバごとの生産性と品質の情報を読み込みます。

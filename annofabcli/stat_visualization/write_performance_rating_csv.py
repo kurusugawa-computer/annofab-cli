@@ -14,8 +14,7 @@ from dataclasses_json import DataClassJsonMixin
 
 import annofabcli
 from annofabcli.common.cli import AbstractCommandLineWithoutWebapiInterface, get_json_from_args, get_list_from_args
-from annofabcli.common.utils import print_csv, read_multiheader_csv
-from annofabcli.statistics.csv import FILENAME_PERFORMANCE_PER_USER
+from annofabcli.common.utils import print_csv
 from annofabcli.statistics.visualization.dataframe.project_performance import (
     ProjectPerformance,
     ProjectWorktimePerMonth,
@@ -228,7 +227,7 @@ class CollectingPerformanceInfo:
         for p_project_dir in target_dir.iterdir():
             if not p_project_dir.is_dir():
                 continue
-            
+
             project_title = p_project_dir.name
             project_dir = ProjectDir(p_project_dir)
             project_dir_list.append(project_dir)
@@ -236,7 +235,7 @@ class CollectingPerformanceInfo:
             try:
                 user_performance = project_dir.read_user_performance()
             except Exception:
-                logger.warning(f"{project_dir}からメンバごとの生産性と品質を読み込むのに失敗しました。",exc_info=True)
+                logger.warning(f"{project_dir}からメンバごとの生産性と品質を読み込むのに失敗しました。", exc_info=True)
                 continue
 
             df_performance = user_performance.df.copy()
@@ -389,18 +388,19 @@ def create_user_df(target_dir: Path) -> pandas.DataFrame:
 
     """
     all_user_list: List[Dict[str, Any]] = []
-    for project_dir in target_dir.iterdir():
-        if not project_dir.is_dir():
+    for p_project_dir in target_dir.iterdir():
+        if not p_project_dir.is_dir():
             continue
 
-        csv = project_dir / FILENAME_PERFORMANCE_PER_USER
-        if not csv.exists():
-            logger.warning(f"{csv} は存在しないのでスキップします。")
+        project_dir = ProjectDir(p_project_dir)
+
+        try:
+            user_performance = project_dir.read_user_performance()
+        except Exception:
+            logger.warning(f"{project_dir}からメンバごとの生産性と品質を読み込むのに失敗しました。", exc_info=True)
             continue
 
-        tmp_df_user = read_multiheader_csv(str(csv), header_row_count=2)[
-            [("user_id", ""), ("username", ""), ("biography", "")]
-        ]
+        tmp_df_user = user_performance.df[[("user_id", ""), ("username", ""), ("biography", "")]].copy()
         all_user_list.extend(tmp_df_user.to_dict("records"))
 
     index = pandas.MultiIndex.from_tuples([("user_id", ""), ("username", ""), ("biography", "")])
@@ -519,7 +519,7 @@ def parse_args(parser: argparse.ArgumentParser):
         "--dir",
         type=Path,
         required=True,
-        help=f"プロジェクトディレクトリが存在するディレクトリを指定してください。プロジェクトディレクトリ内の ``{FILENAME_PERFORMANCE_PER_USER}`` というファイルを読み込みます。",
+        help=f"プロジェクトディレクトリが存在するディレクトリを指定してください。",
     )
 
     parser.add_argument(
