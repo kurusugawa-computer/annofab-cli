@@ -129,33 +129,33 @@ class WriteCsvGraph:
             df_task_history, self._get_task_df()
         )
         if len(annotation_count_ratio_df) == 0:
-            obj = UserPerformance(pandas.DataFrame())
+            user_performance = UserPerformance(pandas.DataFrame())
         else:
-            obj = UserPerformance.from_df(
+            user_performance = UserPerformance.from_df(
                 df_task_history=df_task_history,
                 df_labor=self.df_labor,
                 df_worktime_ratio=annotation_count_ratio_df,
             )
 
-        obj.to_csv(self.output_dir / FILENAME_PERFORMANCE_PER_USER)
+        self.project_dir.write_user_performance(user_performance)
 
-        whole_performance = WholePerformance.from_user_performance(obj)
+        whole_performance = WholePerformance.from_user_performance(user_performance)
         self.project_dir.write_whole_performance(whole_performance)
 
         if not self.output_only_text:
-            obj.plot_quality(self.output_dir / "scatter/散布図-教師付者の品質と作業量の関係.html")
-            obj.plot_productivity_from_monitored_worktime(
+            user_performance.plot_quality(self.output_dir / "scatter/散布図-教師付者の品質と作業量の関係.html")
+            user_performance.plot_productivity_from_monitored_worktime(
                 self.output_dir / "scatter/散布図-アノテーションあたり作業時間と累計作業時間の関係-計測時間.html"
             )
-            obj.plot_quality_and_productivity_from_monitored_worktime(
+            user_performance.plot_quality_and_productivity_from_monitored_worktime(
                 self.output_dir / "scatter/散布図-アノテーションあたり作業時間と品質の関係-計測時間-教師付者用.html"
             )
 
-            if obj.actual_worktime_exists():
-                obj.plot_productivity_from_actual_worktime(
+            if user_performance.actual_worktime_exists():
+                user_performance.plot_productivity_from_actual_worktime(
                     self.output_dir / "scatter/散布図-アノテーションあたり作業時間と累計作業時間の関係-実績時間.html"
                 )
-                obj.plot_quality_and_productivity_from_actual_worktime(
+                user_performance.plot_quality_and_productivity_from_actual_worktime(
                     self.output_dir / "scatter/散布図-アノテーションあたり作業時間と品質の関係-実績時間-教師付者用.html"
                 )
             else:

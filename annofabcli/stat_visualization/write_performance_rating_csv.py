@@ -225,19 +225,21 @@ class CollectingPerformanceInfo:
         df_quality_per_annotation = df_user
 
         project_dir_list: list[ProjectDir] = []
-        for project_dir in target_dir.iterdir():
-            if not project_dir.is_dir():
+        for p_project_dir in target_dir.iterdir():
+            if not p_project_dir.is_dir():
+                continue
+            
+            project_title = p_project_dir.name
+            project_dir = ProjectDir(p_project_dir)
+            project_dir_list.append(project_dir)
+
+            try:
+                user_performance = project_dir.read_user_performance()
+            except Exception:
+                logger.warning(f"{project_dir}からメンバごとの生産性と品質を読み込むのに失敗しました。",exc_info=True)
                 continue
 
-            project_dir_list.append(ProjectDir(project_dir))
-
-            csv = project_dir / FILENAME_PERFORMANCE_PER_USER
-            project_title = project_dir.name
-            if not csv.exists():
-                logger.warning(f"{csv} は存在しないのでスキップします。")
-                continue
-
-            df_performance = read_multiheader_csv(str(csv), header_row_count=2)
+            df_performance = user_performance.df.copy()
             df_performance.set_index("user_id", inplace=True)
 
             annotation_threshold_info = self.get_threshold_info(project_title, ProductivityType.ANNOTATION)

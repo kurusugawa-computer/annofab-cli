@@ -9,7 +9,7 @@ from dataclasses_json import DataClassJsonMixin
 
 from annofabcli.common.utils import print_json
 from annofabcli.statistics.database import Query
-from annofabcli.statistics.visualization.dataframe.user_performance import WholePerformance
+from annofabcli.statistics.visualization.dataframe.user_performance import UserPerformance, WholePerformance
 from annofabcli.statistics.visualization.dataframe.worktime_per_date import WorktimePerDate
 
 
@@ -22,6 +22,7 @@ class ProjectDir(DataClassJsonMixin):
     """
 
     FILENAME_WHOLE_PERFORMANCE = "全体の生産性と品質.csv"
+    FILENAME_USER_PERFORMANCE = "メンバごとの生産性と品質.csv"
     FILENAME_PERFORMANCE_PER_DATE = "日毎の生産量と生産性.csv"
     FILENAME_WORKTIME_PER_DATE_USER = "ユーザ_日付list-作業時間.csv"
 
@@ -47,6 +48,19 @@ class ProjectDir(DataClassJsonMixin):
     def write_whole_performance(self, whole_performance: WholePerformance):
         """`全体の生産性と品質.csv`を出力します。"""
         whole_performance.to_csv(self.project_dir / self.FILENAME_WHOLE_PERFORMANCE)
+
+
+    def read_user_performance(self) -> UserPerformance:
+        """
+        メンバごとの生産性と品質の情報を読み込みます。
+        """
+        return UserPerformance.from_csv(self.project_dir / self.FILENAME_USER_PERFORMANCE)
+
+    def write_user_performance(self, user_performance: UserPerformance):
+        """
+        メンバごとの生産性と品質の情報を書き込みます。
+        """
+        user_performance.to_csv(self.project_dir / self.FILENAME_USER_PERFORMANCE)
 
     def read_worktime_per_date_user(self) -> WorktimePerDate:
         """`ユーザ_日付list-作業時間.csvを読み込む。"""
