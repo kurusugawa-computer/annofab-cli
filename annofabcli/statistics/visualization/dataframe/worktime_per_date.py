@@ -35,11 +35,21 @@ logger = logging.getLogger(__name__)
 
 
 class WorktimePerDate:
+    """
+    日ごとユーザごとの作業時間情報
+    """
+
     PLOT_WIDTH = 1200
     PLOT_HEIGHT = 600
 
     def __init__(self, df: pandas.DataFrame):
         self.df = df
+
+    @classmethod
+    def from_csv(cls, csv_file: Path) -> WorktimePerDate:
+        """CSVファイルからインスタンスを生成します。"""
+        df = pandas.read_csv(str(csv_file))
+        return cls(df)
 
     @classmethod
     def get_df_worktime(
@@ -145,7 +155,12 @@ class WorktimePerDate:
 
     @classmethod
     def from_webapi(
-        cls, service: annofabapi.Resource, project_id: str, df_labor: Optional[pandas.DataFrame] = None
+        cls,
+        service: annofabapi.Resource,
+        project_id: str,
+        df_labor: Optional[pandas.DataFrame] = None,
+        start_date: Optional[str] = None,
+        end_date: Optional[str] = None,
     ) -> WorktimePerDate:
         """
 
@@ -153,6 +168,8 @@ class WorktimePerDate:
             service (annofabapi.Resource): [description]
             project_id (str): [description]
             df_labor: 実績作業時間が格納されたDataFrame。date, account_id, actual_worktime_hour 列を参照する。
+            start_date: 指定した日以降で絞り込みます
+            end_date: 指定した日以前で絞り込みます
 
         Returns:
             WorktimePerDate: [description]
@@ -166,6 +183,10 @@ class WorktimePerDate:
         df_member = cls._get_df_member(service, project_id)
 
         df = cls.get_df_worktime(worktime_list, df_member, df_labor=df_labor)
+        if start_date is not None:
+            df = df[df["date"] >= start_date]
+        if end_date is not None:
+            df = df[df["date"] <= end_date]
         return cls(df)
 
     def _get_cumulative_dataframe(self) -> pandas.DataFrame:

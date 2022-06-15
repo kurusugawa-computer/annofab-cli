@@ -7,7 +7,7 @@ from collections import defaultdict
 from dataclasses import dataclass
 from functools import partial
 from pathlib import Path
-from typing import Any, Dict, List, Optional, Set
+from typing import Any, Collection, Dict, List, Optional
 
 import annofabapi.utils
 import dateutil
@@ -39,9 +39,7 @@ class Query:
     """
 
     task_query: Optional[TaskQuery] = None
-    task_id_set: Optional[Set[str]] = None
-    ignored_task_id_set: Optional[Set[str]] = None
-    """集計対象タスクのtask_idのSet"""
+    task_ids: Optional[Collection[str]] = None
     start_date: Optional[str] = None
     end_date: Optional[str] = None
 
@@ -445,16 +443,13 @@ class Database:
             if query.task_query is not None:
                 flag = flag and match_task_with_query(DcTask.from_dict(arg_task), query.task_query)
 
-            if query.task_id_set is not None:
-                flag = flag and arg_task["task_id"] in query.task_id_set
+            if query.task_ids is not None:
+                flag = flag and arg_task["task_id"] in query.task_ids
 
             # 終了日で絞り込む
             # 開始日の絞り込み条件はタスク履歴を見る
             if dt_end_date is not None:
                 flag = flag and (dateutil.parser.parse(arg_task["updated_datetime"]) < dt_end_date)
-
-            if query.ignored_task_id_set is not None:
-                flag = flag and arg_task["task_id"] not in query.ignored_task_id_set
 
             return flag
 

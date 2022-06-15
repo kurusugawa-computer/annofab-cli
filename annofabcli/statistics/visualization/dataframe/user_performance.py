@@ -7,7 +7,7 @@ import copy
 import logging
 from enum import Enum
 from pathlib import Path
-from typing import Any, Collection, Optional
+from typing import Any, Optional
 
 import bokeh
 import bokeh.layouts
@@ -775,6 +775,9 @@ class UserPerformance:
 class WholePerformance:
     """
     全体の生産性と品質の情報
+
+    Attributes:
+        series: 全体の生産性と品質が格納されたpandas.Series
     """
 
     def __init__(self, series: pandas.Series):
@@ -787,7 +790,14 @@ class WholePerformance:
         return True
 
     @classmethod
+    def from_user_performance(cls, user_performance: UserPerformance) -> WholePerformance:
+        """`メンバごとの生産性と品質.csv`に相当する情報から、インスタンスを生成します。"""
+        series = user_performance.get_summary()
+        return cls(series)
+
+    @classmethod
     def from_csv(cls, csv_file: Path) -> WholePerformance:
+        """CSVファイルからインスタンスを生成します。"""
         df = pandas.read_csv(str(csv_file), header=None, index_col=[0, 1])
         # 3列目を値としたpandas.Series を取得する。
         series = df[2]
@@ -811,48 +821,3 @@ class WholePerformance:
         output_file.parent.mkdir(exist_ok=True, parents=True)
         logger.debug(f"{str(output_file)} を出力します。")
         series.to_csv(str(output_file), sep=",", encoding="utf_8_sig", header=False)
-
-
-class ProjectPerformance:
-    """
-    プロジェクトごとの生産性と品質
-    """
-
-    def __init__(self, df: pandas.DataFrame):
-        self.df = df
-
-    def _validate_df_for_output(self, output_file: Path) -> bool:
-        if len(self.df) == 0:
-            logger.warning(f"データが0件のため、{output_file} は出力しません。")
-            return False
-        return True
-
-    @classmethod
-    def from_whole_performance_objs(
-        cls, objs: Collection[WholePerformance], project_titles: Collection[str]
-    ) -> ProjectPerformance:
-
-        series_list = []
-        for whole_performance_obj, project_title in zip(objs, project_titles):
-            series = whole_performance_obj.series
-            series[("project_title", "")] = project_title
-            series_list.append(series)
-
-        df = pandas.DataFrame(series_list)
-        return cls(df)
-
-    def to_csv(self, output_file: Path) -> None:
-        """
-        全体の生産性と品質が格納されたCSVを出力します。
-
-        """
-        if not self._validate_df_for_output(output_file):
-            return
-
-        phase_list = UserPerformance.get_phase_list(self.df.columns)
-
-        first_columns = [("project_title", "")]
-        value_columns = UserPerformance.get_productivity_columns(phase_list)
-
-        columns = first_columns + value_columns + [("working_user_count", phase) for phase in phase_list]
-        print_csv(self.df[columns], output=str(output_file))

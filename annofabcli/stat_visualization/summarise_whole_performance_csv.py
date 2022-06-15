@@ -5,16 +5,18 @@ from typing import Optional
 
 import annofabcli
 from annofabcli.statistics.csv import FILENAME_WHOLE_PERFORMANCE
-from annofabcli.statistics.visualize_statistics import write_project_performance_csv
+from annofabcli.statistics.visualization.dataframe.project_performance import ProjectPerformance
+from annofabcli.statistics.visualization.project_dir import ProjectDir
 
 logger = logging.getLogger(__name__)
 
 
 def main(args):
     root_dir: Path = args.dir
-    project_dir_list = [elm for elm in root_dir.iterdir() if elm.is_dir()]
+    project_dir_list = [ProjectDir(elm) for elm in root_dir.iterdir() if elm.is_dir()]
 
-    write_project_performance_csv(project_dir_list, args.output)
+    project_performance = ProjectPerformance.from_project_dirs(project_dir_list)
+    project_performance.to_csv(args.output)
 
 
 def parse_args(parser: argparse.ArgumentParser):
