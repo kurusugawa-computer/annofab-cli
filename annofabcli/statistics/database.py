@@ -324,12 +324,12 @@ class Database:
 
         wait_options = WaitOptions(interval=60, max_tries=360)
 
-        DOWNLOADED_FILE_COUNT = 5
+        DOWNLOADED_FILE_COUNT = 4
 
         TASK_JSON_INDEX = 0
-        ANNOTATION_ZIP_INDEX = 2
-        INSPECTION_JSON_INDEX = 3
-        TASK_HISTORY_JSON_INDEX = 4
+        ANNOTATION_ZIP_INDEX = 1
+        INSPECTION_JSON_INDEX = 2
+        TASK_HISTORY_JSON_INDEX = 3
 
         loop = asyncio.get_event_loop()
         coroutines: List[Any] = [None] * DOWNLOADED_FILE_COUNT

@@ -19,7 +19,6 @@ from annofabcli.common.cli import (
     build_annofabapi_resource_and_login,
 )
 from annofabcli.common.facade import AnnofabApiFacade, TaskQuery
-from annofabcli.common.utils import print_json
 from annofabcli.stat_visualization.merge_visualization_dir import merge_visualization_dir
 from annofabcli.statistics.csv import FILENAME_PERFORMANCE_PER_DATE, FILENAME_PERFORMANCE_PER_USER, FILENAME_TASK_LIST
 from annofabcli.statistics.database import Database, Query
@@ -295,7 +294,7 @@ class VisualizingStatisticsMain:
         self.df_labor = df_labor
         self.user_ids = user_ids
 
-    def write_project_info_json(self, project_id: str, output_file: Path):
+    def write_project_info_json(self, project_id: str, project_dir: ProjectDir):
         """
         プロジェクト情報をJSONファイルに出力します。
         """
@@ -312,7 +311,7 @@ class VisualizingStatisticsMain:
                 task_query=self.task_query, task_ids=self.task_ids, start_date=self.start_date, end_date=self.end_date
             ),
         )
-        print_json(project_summary.to_dict(), output=output_file, is_pretty=True)
+        project_dir.write_project_info(project_summary)
 
     def visualize_statistics(
         self,
@@ -331,6 +330,9 @@ class VisualizingStatisticsMain:
         self.facade.validate_project(
             project_id, project_member_roles=[ProjectMemberRole.OWNER, ProjectMemberRole.TRAINING_DATA_USER]
         )
+
+        project_dir = ProjectDir(output_project_dir)
+        self.write_project_info_json(project_id=project_id, project_dir=project_dir)
 
         database = Database(
             self.service,
@@ -354,11 +356,6 @@ class VisualizingStatisticsMain:
         if len(table_obj._get_task_histories_dict().keys()) == 0:
             logger.warning(f"project_id={project_id}: タスク履歴一覧が0件なのでファイルを出力しません。終了します。")
             return
-
-        self.write_project_info_json(
-            project_id=project_id,
-            output_file=output_project_dir / "project_info.json",
-        )
 
         if self.df_labor is not None:
             # project_id列がある場合（複数のproject_id列を指定した場合）はproject_idで絞り込む

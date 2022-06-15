@@ -7,6 +7,7 @@ from typing import List
 
 from dataclasses_json import DataClassJsonMixin
 
+from annofabcli.common.utils import print_json
 from annofabcli.statistics.database import Query
 from annofabcli.statistics.visualization.dataframe.user_performance import WholePerformance
 from annofabcli.statistics.visualization.dataframe.worktime_per_date import WorktimePerDate
@@ -59,6 +60,9 @@ class ProjectDir(DataClassJsonMixin):
         """
         with (self.project_dir / self.FILENAME_PROJECT_INFO).open() as f:
             return ProjectInfo.from_dict(json.load(f))
+
+    def write_project_info(self, project_info: ProjectInfo):
+        print_json(project_info.to_dict(), output=self.project_dir / self.FILENAME_PROJECT_INFO, is_pretty=True)
 
     def read_merge_info(self) -> MergingInfo:
         """
