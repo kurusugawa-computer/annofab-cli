@@ -87,7 +87,7 @@ class ProjectPerformance:
 
     @classmethod
     def _get_empty_series(cls, dirname: str) -> pandas.Series:
-        series = pandas.Series([dirname], index=pandas.MultiIndex.from_tuples(("dirname", "")))
+        series = pandas.Series([dirname], index=pandas.MultiIndex.from_tuples([("dirname", "")]))
 
         header_index = [
             ("project_title", ""),
@@ -187,9 +187,7 @@ class ProjectWorktimePerMonth:
                 row_list.append(cls._get_series_from_project_dir(project_dir, worktime_column))
             except Exception:
                 logger.warning(f"'{project_dir}'から、プロジェクトごとの作業時間を算出するのに失敗しました。", exc_info=True)
-                row_list.append(
-                    pandas.Series([project_dir.project_dir.name], index={("dirname", ""): project_dir.project_dir.name})
-                )
+                row_list.append(pandas.Series([project_dir.project_dir.name], index=["dirname"]))
         df = pandas.DataFrame(row_list)
         df.fillna(0, inplace=True)
         return cls(df)

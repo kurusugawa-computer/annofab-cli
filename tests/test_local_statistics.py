@@ -2,6 +2,7 @@ import collections
 import json
 from pathlib import Path
 
+import numpy
 import pandas
 from annofabapi.models import TaskStatus
 
@@ -447,6 +448,17 @@ class TestProjectPerformance:
         assert row[("start_date", "")] == "2022-01-01"
         assert row[("actual_worktime_hour", "sum")] == 4503
 
+    def test_from_project_dirs_with_empty(self):
+        obj = ProjectPerformance.from_project_dirs([ProjectDir(data_path / "empty")])
+        df = obj.df
+        assert len(df) == 1
+        row = df.iloc[0]
+        # メインの項目をアサートする
+        assert row[("dirname", "")] == "empty"
+        assert numpy.isnan(row[("project_title", "")])
+        assert numpy.isnan(row[("start_date", "")])
+        assert numpy.isnan(row[("actual_worktime_hour", "sum")])
+
 
 class TestListAnnotationCounterByInputData:
     def test_get_annotation_counter(self):
@@ -617,3 +629,12 @@ class TestProjectWorktimePerMonth:
         assert row["dirname"] == "visualization-dir1"
         assert row["2022-01"] == 3
         assert row["2022-02"] == 7
+
+    def test_from_project_dirs_empty_dir(self):
+        actual_worktime = ProjectWorktimePerMonth.from_project_dirs(
+            [ProjectDir(data_path / "empty")], worktime_column=WorktimeColumn.ACTUAL_WORKTIME_HOUR
+        )
+        df = actual_worktime.df
+        assert len(df) == 1
+        row = df.iloc[0]
+        assert row["dirname"] == "empty"
