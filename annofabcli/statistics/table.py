@@ -250,7 +250,7 @@ class Table:
         def set_inspection_comment_info(arg_task):
             # 指摘枚数
             inspection_comment_count = 0
-            # 指摘された画像枚数
+            # 指摘された入力データ数
             input_data_count_of_inspection = 0
 
             input_data_dict = inspections_dict.get(arg_task["task_id"])
