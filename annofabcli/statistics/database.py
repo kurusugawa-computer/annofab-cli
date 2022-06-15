@@ -96,22 +96,20 @@ class Database:
             return True
 
     def get_annotation_count_by_task(self) -> Dict[str, int]:
-        logger.debug(f"{self.logging_prefix}: reading '{str(self.annotations_zip_path)}'")
+        logger.debug(f"{self.logging_prefix}: アノテーションZIPを読み込みます。file='{str(self.annotations_zip_path)}'")
 
         result: Dict[str, int] = defaultdict(int)
         for index, parser in enumerate(lazy_parse_simple_annotation_zip(self.annotations_zip_path)):
-            if (index + 1) % 1000 == 0:
-                logger.debug(f"{self.logging_prefix}: {index+1} 件目を読み込み中")
-
             simple_annotation: Dict[str, Any] = parser.load_json()
             annotation_count = len(simple_annotation["details"])
-
             result[parser.task_id] += annotation_count
+            if (index + 1) % 10000 == 0:
+                logger.debug(f"{self.logging_prefix}: {index+1} 件の入力データに含まれているアノテーション情報を読み込みました。")
 
         return result
 
     def read_inspections_from_json(self, task_id_list: List[str]) -> Dict[str, Dict[InputDataId, List[Inspection]]]:
-        logger.debug(f"{self.logging_prefix}: reading '{self.inspection_json_path}'")
+        logger.debug(f"{self.logging_prefix}: 検査コメント全件ファイルを読み込みます。file='{self.inspection_json_path}'")
 
         with open(str(self.inspection_json_path), encoding="utf-8") as f:
             all_inspections = json.load(f)
@@ -137,7 +135,7 @@ class Database:
         return tasks_dict
 
     def read_task_histories_from_json(self, task_id_list: Optional[List[str]] = None) -> Dict[str, List[TaskHistory]]:
-        logger.debug(f"{self.logging_prefix}: reading '{self.task_histories_json_path}'")
+        logger.debug(f"{self.logging_prefix}: タスク履歴全件ファイルを読み込みます。file='{self.task_histories_json_path}'")
         with open(str(self.task_histories_json_path), encoding="utf-8") as f:
             task_histories_dict = json.load(f)
 
@@ -424,7 +422,7 @@ class Database:
 
             return flag
 
-        logger.debug(f"{self.logging_prefix}: reading '{self.tasks_json_path}'")
+        logger.debug(f"{self.logging_prefix}: タスク全件ファイルを読み込みます。file='{self.tasks_json_path}'")
         with open(str(self.tasks_json_path), encoding="utf-8") as f:
             all_tasks = json.load(f)
 
