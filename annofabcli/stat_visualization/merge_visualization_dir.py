@@ -31,32 +31,6 @@ from annofabcli.statistics.visualization.project_dir import MergingInfo, Project
 logger = logging.getLogger(__name__)
 
 
-def create_merged_performance_per_date(csv_path_list: List[Path]) -> WholeProductivityPerCompletedDate:
-    """
-    `日毎の生産量と生産性.csv` をマージしたDataFrameを返す。
-    Args:
-        csv_path_list:
-    Returns:
-    """
-    df_list: List[pandas.DataFrame] = []
-    for csv_path in csv_path_list:
-        if csv_path.exists():
-            df = pandas.read_csv(str(csv_path))
-            df_list.append(df)
-        else:
-            logger.warning(f"{csv_path} は存在しませんでした。")
-            continue
-
-    if len(df_list) == 0:
-        logger.warning(f"マージ対象のCSVファイルは存在しませんでした。")
-        return pandas.DataFrame()
-
-    sum_obj = WholeProductivityPerCompletedDate(df_list[0])
-    for df in df_list[1:]:
-        sum_obj = WholeProductivityPerCompletedDate.merge(sum_obj, WholeProductivityPerCompletedDate(df))
-
-    return sum_obj
-
 
 def merge_visualization_dir(  # pylint: disable=too-many-statements
     project_dir_list: List[ProjectDir],
@@ -79,21 +53,38 @@ def merge_visualization_dir(  # pylint: disable=too-many-statements
             else:
                 merged_user_performance = UserPerformance.merge(merged_user_performance, user_performance)
 
-
         if merged_user_performance is not None:
             output_project_dir.write_user_performance(merged_user_performance)
             whole_performance = WholePerformance.from_user_performance(merged_user_performance)
             output_project_dir.write_whole_performance(whole_performance)
 
         else:
-            logger.warning(f"マージ対象の'メンバごとの生産性と品質'は存在しませんでした。")
-
+            logger.warning(
+                f"マージ対象の'メンバごとの生産性と品質'は存在しないため、'{output_project_dir.FILENAME_USER_PERFORMANCE}', '{output_project_dir.FILENAME_WHOLE_PERFORMANCE}'は出力しません。"  # noqa: E501
+            )
 
     @_catch_exception
     def execute_merge_performance_per_date():
-        performance_per_date_csv_list = [dir / FILENAME_PERFORMANCE_PER_DATE for dir in project_dir_list]
-        obj = create_merged_performance_per_date(performance_per_date_csv_list)
-        obj.to_csv(output_dir / FILENAME_PERFORMANCE_PER_DATE)
+        merged_obj: Optional[WholeProductivityPerCompletedDate] = None
+        for project_dir in project_dir_list:
+            try:
+                tmp_obj = project_dir.read_whole_productivity_per_date()
+            except Exception:
+                logger.warning(f"'{project_dir}'の日ごとの生産量と生産性の取得に失敗しました。", exc_info=True)
+                continue
+
+            if merged_obj is None:
+                merged_obj = tmp_obj
+            else:
+                merged_obj = WholeProductivityPerCompletedDate.merge(merged_obj, tmp_obj)
+
+        if merged_obj is not None:
+            output_project_dir.write_whole_productivity_per_date(merged_obj)
+
+        else:
+            logger.warning(
+                f"マージ対象の'日ごとの生産量と生産性'は存在しないため、'{output_project_dir.FILENAME_WHOLE_PRODUCTIVITY_PER_DATE}'は出力しません。"
+            )  # noqa: E501
 
     @_catch_exception
     def merge_performance_per_first_annotation_started_date():

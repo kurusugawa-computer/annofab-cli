@@ -49,6 +49,12 @@ class WholeProductivityPerCompletedDate:
             return False
         return True
 
+    @classmethod
+    def from_csv(cls, csv_file: Path) -> WholeProductivityPerCompletedDate:
+        """CSVファイルからインスタンスを生成します。"""
+        df = pandas.read_csv(str(csv_file))
+        return cls(df)
+
     @staticmethod
     def _create_df_date(date_index1: pandas.Index, date_index2: pandas.Index) -> pandas.DataFrame:
         # 日付の一覧を生成
