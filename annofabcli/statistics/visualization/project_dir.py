@@ -9,6 +9,7 @@ from dataclasses_json import DataClassJsonMixin
 
 from annofabcli.common.utils import print_json
 from annofabcli.statistics.database import Query
+from annofabcli.statistics.visualization.dataframe.task import Task
 from annofabcli.statistics.visualization.dataframe.user_performance import UserPerformance, WholePerformance
 from annofabcli.statistics.visualization.dataframe.whole_productivity_per_date import (
     WholeProductivityPerCompletedDate,
@@ -31,6 +32,7 @@ class ProjectDir(DataClassJsonMixin):
     FILENAME_WHOLE_PRODUCTIVITY_PER_FIRST_ANNOTATION_STARTED_DATE = "教師付開始日毎の生産量と生産性.csv"
 
     FILENAME_WORKTIME_PER_DATE_USER = "ユーザ_日付list-作業時間.csv"
+    FILENAME_TASK_LIST = "タスクlist.csv"
 
     FILENAME_PROJECT_INFO = "project_info.json"
     FILENAME_MERGE_INFO = "merge_info.json"
@@ -46,6 +48,14 @@ class ProjectDir(DataClassJsonMixin):
         マージされたディレクトリかどうか
         """
         return (self.project_dir / self.FILENAME_MERGE_INFO).exists()
+
+    def read_task_list(self) -> Task:
+        """`タスクlist.csv`を読み込む。"""
+        return Task.from_csv(self.project_dir / self.FILENAME_TASK_LIST)
+
+    def write_task_list(self, obj: Task):
+        """`タスクlist.csv`を書き込む。"""
+        obj.to_csv(self.project_dir / self.FILENAME_TASK_LIST)
 
     def read_whole_performance(self) -> WholePerformance:
         """`全体の生産性と品質.csv`を読み込む。"""

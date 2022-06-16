@@ -9,12 +9,13 @@ import pandas
 
 import annofabcli
 from annofabcli.common.cli import COMMAND_LINE_ERROR_STATUS_CODE, get_list_from_args
-from annofabcli.common.utils import _catch_exception, print_csv, print_json
+from annofabcli.common.utils import _catch_exception, print_json
 from annofabcli.stat_visualization.write_linegraph_per_user import write_linegraph_per_user
 from annofabcli.stat_visualization.write_performance_scatter_per_user import write_performance_scatter_per_user
 from annofabcli.stat_visualization.write_task_histogram import write_task_histogram
 from annofabcli.stat_visualization.write_whole_linegraph import write_whole_linegraph
 from annofabcli.statistics.csv import FILENAME_PERFORMANCE_PER_DATE, FILENAME_PERFORMANCE_PER_USER, FILENAME_TASK_LIST
+from annofabcli.statistics.visualization.dataframe.task import Task
 from annofabcli.statistics.visualization.dataframe.user_performance import UserPerformance, WholePerformance
 from annofabcli.statistics.visualization.dataframe.whole_productivity_per_date import (
     WholeProductivityPerCompletedDate,
@@ -132,17 +133,24 @@ def merge_visualization_dir(  # pylint: disable=too-many-statements
 
     @_catch_exception
     def merge_task_list() -> pandas.DataFrame:
-        list_df = []
+
+        merged_obj: Optional[Task] = None
         for project_dir in project_dir_list:
-            csv_path = project_dir / FILENAME_TASK_LIST
-            if csv_path.exists():
-                list_df.append(pandas.read_csv(str(csv_path)))
-            else:
-                logger.warning(f"{csv_path} は存在しませんでした。")
+            try:
+                tmp_obj = project_dir.read_task()
+            except Exception:
+                logger.warning(f"'{project_dir}'からタスク情報の取得に失敗しました。", exc_info=True)
                 continue
 
-        df = pandas.concat(list_df, axis=0)
-        return df
+            if merged_obj is None:
+                merged_obj = tmp_obj
+            else:
+                merged_obj = Task.merge(merged_obj, tmp_obj)
+
+        if merged_obj is not None:
+            output_project_dir.write_task_list(merged_obj)
+        else:
+            logger.warning(f"マージ対象のタスク情報は存在しないため、'{output_project_dir.FILENAME_TASK_LIST}'は出力しません。")  # noqa: E501
 
     @_catch_exception
     def write_merge_info_json() -> None:
@@ -169,7 +177,6 @@ def merge_visualization_dir(  # pylint: disable=too-many-statements
     merge_worktime_per_date()
 
     df_task = merge_task_list()
-    print_csv(df_task, output=str(output_dir / FILENAME_TASK_LIST))
 
     # HTML生成
     write_performance_scatter_per_user(
