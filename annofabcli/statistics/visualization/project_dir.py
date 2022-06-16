@@ -73,7 +73,7 @@ class ProjectDir(DataClassJsonMixin):
         """
         教師付開始日ごとの生産性と品質の情報を読み込みます。
         """
-        return WholeProductivityPerCompletedDate.from_csv(
+        return WholeProductivityPerFirstAnnotationStartedDate.from_csv(
             self.project_dir / self.FILENAME_WHOLE_PRODUCTIVITY_PER_FIRST_ANNOTATION_STARTED_DATE
         )
 
@@ -100,6 +100,10 @@ class ProjectDir(DataClassJsonMixin):
     def read_worktime_per_date_user(self) -> WorktimePerDate:
         """`ユーザ_日付list-作業時間.csvを読み込む。"""
         return WorktimePerDate.from_csv(self.project_dir / self.FILENAME_WORKTIME_PER_DATE_USER)
+
+    def write_worktime_per_date_user(self, obj: WorktimePerDate):
+        """`ユーザ_日付list-作業時間.csvを書き込む"""
+        obj.to_csv(self.project_dir / self.FILENAME_WORKTIME_PER_DATE_USER)
 
     def read_project_info(self) -> ProjectInfo:
         """

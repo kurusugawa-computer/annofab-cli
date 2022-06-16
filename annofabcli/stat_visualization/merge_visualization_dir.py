@@ -106,27 +106,29 @@ def merge_visualization_dir(  # pylint: disable=too-many-statements
 
     @_catch_exception
     def merge_worktime_per_date():
-        csv_list = [dir / "ユーザ_日付list-作業時間.csv" for dir in project_dir_list]
-        df_list: List[pandas.DataFrame] = []
-        for csv in csv_list:
-            if csv.exists():
-                df = pandas.read_csv(str(csv))
-                df_list.append(df)
-            else:
-                logger.warning(f"{csv} は存在しませんでした。")
+        merged_obj: Optional[WorktimePerDate] = None
+        for project_dir in project_dir_list:
+            try:
+                tmp_obj = project_dir.read_worktime_per_date_user()
+            except Exception:
+                logger.warning(f"'{project_dir}'からユーザごと日ごとの作業時間の取得に失敗しました。", exc_info=True)
                 continue
 
-        if len(df_list) == 0:
-            logger.warning(f"マージ対象のCSVファイル 'ユーザ_日付list-作業時間.csv'は存在しませんでした。")
-            return
+            if merged_obj is None:
+                merged_obj = tmp_obj
+            else:
+                merged_obj = WorktimePerDate.merge(merged_obj, tmp_obj)
 
-        sum_obj = WorktimePerDate(df_list[0])
-        for df in df_list[1:]:
-            sum_obj = WorktimePerDate.merge(sum_obj, WorktimePerDate(df))
-
-        sum_obj.to_csv(output_dir / "ユーザ_日付list-作業時間.csv")
-
-        sum_obj.plot_cumulatively(output_dir / "line-graph/累積折れ線-横軸_日-縦軸_作業時間.html", user_id_list)
+        if merged_obj is not None:
+            output_project_dir.write_worktime_per_date_user(merged_obj)
+            # TODO 見直す
+            merged_obj.plot_cumulatively(
+                output_project_dir.project_dir / "line-graph/累積折れ線-横軸_日-縦軸_作業時間.html", user_id_list
+            )
+        else:
+            logger.warning(
+                f"マージ対象の'ユーザごと日ごとの作業時間'は存在しないため、'{output_project_dir.FILENAME_WORKTIME_PER_DATE_USER}'とそのCSVから生成される折れ線グラフは出力しません。"  # noqa: E501
+            )
 
     @_catch_exception
     def merge_task_list() -> pandas.DataFrame:
