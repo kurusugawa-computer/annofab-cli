@@ -212,7 +212,7 @@ def main(args):
     user_id_list = get_list_from_args(args.user_id) if args.user_id is not None else None
 
     merge_visualization_dir(
-        project_dir_list=args.dir,
+        project_dir_list=[ProjectDir(e) for e in args.dir],
         user_id_list=user_id_list,
         minimal_output=args.minimal,
         output_project_dir=ProjectDir(args.output_dir),

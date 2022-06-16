@@ -15,7 +15,7 @@ from annofabcli.filesystem.mask_user_info import (
 )
 from annofabcli.stat_visualization.write_linegraph_per_user import write_linegraph_per_user
 from annofabcli.stat_visualization.write_performance_scatter_per_user import write_performance_scatter_per_user
-from annofabcli.statistics.csv import FILENAME_PERFORMANCE_PER_USER, FILENAME_TASK_LIST
+from annofabcli.statistics.csv import FILENAME_PERFORMANCE_PER_USER
 from annofabcli.statistics.visualization.dataframe.worktime_per_date import WorktimePerDate
 
 logger = logging.getLogger(__name__)
