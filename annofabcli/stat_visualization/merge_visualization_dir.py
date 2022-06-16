@@ -147,7 +147,7 @@ def merge_visualization_dir(  # pylint: disable=too-many-statements
 
         if merged_obj is not None:
             output_project_dir.write_task_list(merged_obj)
-            output_project_dir.write_histogram_per_task(merged_obj)
+            output_project_dir.write_task_histogram(merged_obj)
 
         else:
             logger.warning(
