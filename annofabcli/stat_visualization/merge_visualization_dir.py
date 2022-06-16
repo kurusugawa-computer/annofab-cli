@@ -148,8 +148,10 @@ def merge_visualization_dir(  # pylint: disable=too-many-statements
 
         if merged_obj is not None:
             output_project_dir.write_task_list(merged_obj)
+            output_project_dir.write_histogram_per_task(merged_obj)
+
         else:
-            logger.warning(f"マージ対象のタスク情報は存在しないため、'{output_project_dir.FILENAME_TASK_LIST}'は出力しません。")  # noqa: E501
+            logger.warning(f"マージ対象のタスク情報は存在しないため、'{output_project_dir.FILENAME_TASK_LIST}'とそのCSVから生成されるヒストグラム出力しません。")  # noqa: E501
 
     @_catch_exception
     def write_merge_info_json() -> None:
@@ -171,23 +173,19 @@ def merge_visualization_dir(  # pylint: disable=too-many-statements
     execute_merge_performance_per_date()
     merge_performance_per_first_annotation_started_date()
     merge_worktime_per_date()
-
-    df_task = merge_task_list()
-
+    merge_task_list()
     # HTML生成
     write_performance_scatter_per_user(
-        csv=output_dir / FILENAME_PERFORMANCE_PER_USER, output_dir=output_dir / "scatter"
+        csv=output_project_dir.project_dir / FILENAME_PERFORMANCE_PER_USER, output_dir=output_project_dir.project_dir / "scatter"
     )
-    write_whole_linegraph(csv=output_dir / FILENAME_PERFORMANCE_PER_DATE, output_dir=output_dir / "line-graph")
+    write_whole_linegraph(csv=output_project_dir.project_dir / FILENAME_PERFORMANCE_PER_DATE, output_dir=output_project_dir.project_dir / "line-graph")
 
     write_linegraph_per_user(
-        csv=output_dir / FILENAME_TASK_LIST,
-        output_dir=output_dir / "line-graph",
+        csv=output_project_dir.project_dir / FILENAME_TASK_LIST,
+        output_dir=output_project_dir.project_dir / "line-graph",
         minimal_output=minimal_output,
         user_id_list=user_id_list,
     )
-
-    write_task_histogram(csv=output_dir / FILENAME_TASK_LIST, output_dir=output_dir / "histogram")
 
     # info.jsonを出力
     write_merge_info_json()

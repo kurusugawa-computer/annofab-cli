@@ -57,6 +57,13 @@ class ProjectDir(DataClassJsonMixin):
         """`タスクlist.csv`を書き込む。"""
         obj.to_csv(self.project_dir / self.FILENAME_TASK_LIST)
 
+    def write_task_histogram(self, obj:Task):
+        """
+        タスク単位のヒストグラムを出力します。
+        """
+        obj.plot_histogram_of_worktime(self.project_dir / "histogram/ヒストグラム-作業時間.html")
+        obj.plot_histogram_of_others(self.project_dir / "histogram/ヒストグラム.html")
+
     def read_whole_performance(self) -> WholePerformance:
         """`全体の生産性と品質.csv`を読み込む。"""
         return WholePerformance.from_csv(self.project_dir / self.FILENAME_WHOLE_PERFORMANCE)
