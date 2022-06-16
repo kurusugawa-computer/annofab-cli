@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import json
+import logging
 from dataclasses import dataclass
 from pathlib import Path
 from typing import List
@@ -16,6 +17,20 @@ from annofabcli.statistics.visualization.dataframe.whole_productivity_per_date i
     WholeProductivityPerFirstAnnotationStartedDate,
 )
 from annofabcli.statistics.visualization.dataframe.worktime_per_date import WorktimePerDate
+
+from annofabcli.statistics.visualization.dataframe.cumulative_productivity import (
+    AcceptorCumulativeProductivity,
+    AnnotatorCumulativeProductivity,
+    InspectorCumulativeProductivity,
+)
+from annofabcli.statistics.visualization.dataframe.productivity_per_date import (
+    AcceptorProductivityPerDate,
+    AnnotatorProductivityPerDate,
+    InspectorProductivityPerDate,
+)
+from annofabcli.statistics.table import Table
+from typing import Optional
+logger = logging.getLogger(__name__)
 
 
 class ProjectDir(DataClassJsonMixin):
@@ -63,6 +78,68 @@ class ProjectDir(DataClassJsonMixin):
         """
         obj.plot_histogram_of_worktime(self.project_dir / "histogram/ヒストグラム-作業時間.html")
         obj.plot_histogram_of_others(self.project_dir / "histogram/ヒストグラム.html")
+
+    def write_line_graph_per_user(self, 
+        task: Task,  user_id_list: Optional[List[str]] = None, minimal_output: bool = False
+    ):
+        """
+        生産量や作業時間などの指標を、ユーザごとに折れ線グラフとしてプロットします。
+
+        Args:
+            user_id_list: 折れ線グラフに表示するユーザ
+            minimal_output: 詳細なグラフを出力するかどうか。Trueなら
+
+        Returns:
+
+        """
+        if len(task.df) == 0:
+            logger.warning(f"タスク一覧が0件のため、折れ線グラフを出力しません。")
+            return
+
+        df_task = Table.create_gradient_df(task.df.copy())
+
+        annotator_obj = AnnotatorCumulativeProductivity(df_task)
+        inspector_obj = InspectorCumulativeProductivity(df_task)
+        acceptor_obj = AcceptorCumulativeProductivity(df_task)
+
+        output_dir = self.project_dir / "line-graph"
+        annotator_obj.plot_annotation_metrics(output_dir / "教師付者用/累積折れ線-横軸_アノテーション数-教師付者用.html", user_id_list)
+        inspector_obj.plot_annotation_metrics(output_dir / "検査者用/累積折れ線-横軸_アノテーション数-検査者用.html", user_id_list)
+        acceptor_obj.plot_annotation_metrics(output_dir / "受入者用/累積折れ線-横軸_アノテーション数-受入者用.html", user_id_list)
+
+        if not minimal_output:
+            annotator_obj.plot_input_data_metrics(output_dir / "教師付者用/累積折れ線-横軸_入力データ数-教師付者用.html", user_id_list)
+            inspector_obj.plot_input_data_metrics(output_dir / "検査者用/累積折れ線-横軸_入力データ数-検査者用.html", user_id_list)
+            acceptor_obj.plot_input_data_metrics(output_dir / "受入者用/累積折れ線-横軸_入力データ数-受入者用.html", user_id_list)
+
+            annotator_obj.plot_task_metrics(output_dir / "教師付者用/累積折れ線-横軸_タスク数-教師付者用.html", user_id_list)
+
+            # 各ユーザごとの日ごとの情報
+            annotator_per_date_obj = AnnotatorProductivityPerDate.from_df_task(task.df)
+            annotator_per_date_obj.plot_annotation_metrics(
+                output_dir / Path("教師付者用/折れ線-横軸_教師付開始日-縦軸_アノテーション単位の指標-教師付者用.html"), user_id_list
+            )
+            annotator_per_date_obj.plot_input_data_metrics(
+                output_dir / Path("教師付者用/折れ線-横軸_教師付開始日-縦軸_入力データ単位の指標-教師付者用.html"), user_id_list
+            )
+
+            inspector_per_date_obj = InspectorProductivityPerDate.from_df_task(task.df)
+            inspector_per_date_obj.plot_annotation_metrics(
+                output_dir / Path("検査者用/折れ線-横軸_検査開始日-縦軸_アノテーション単位の指標-検査者用.html"), user_id_list
+            )
+            inspector_per_date_obj.plot_input_data_metrics(
+                output_dir / Path("検査者用/折れ線-横軸_検査開始日-縦軸_入力データ単位の指標-検査者用.html"), user_id_list
+            )
+
+            acceptor_per_date = AcceptorProductivityPerDate.from_df_task(task.df)
+            acceptor_per_date.plot_annotation_metrics(
+                output_dir / Path("受入者用/折れ線-横軸_受入開始日-縦軸_アノテーション単位の指標-受入者用.html"), user_id_list
+            )
+            acceptor_per_date.plot_input_data_metrics(
+                output_dir / Path("受入者用/折れ線-横軸_受入開始日-縦軸_入力データ単位の指標-受入者用.html"), user_id_list
+            )
+
+
 
     def read_whole_performance(self) -> WholePerformance:
         """`全体の生産性と品質.csv`を読み込む。"""
@@ -114,6 +191,28 @@ class ProjectDir(DataClassJsonMixin):
         """
         user_performance.to_csv(self.project_dir / self.FILENAME_USER_PERFORMANCE)
 
+    def write_plot_user_performance(self, obj: UserPerformance):
+        """
+        メンバごとの生産性と品質に関する散布図を出力します。
+        """
+        obj.plot_quality(self.project_dir / "散布図-教師付者の品質と作業量の関係.html")
+        obj.plot_productivity_from_monitored_worktime(self.project_dir / "散布図-アノテーションあたり作業時間と累計作業時間の関係-計測時間.html")
+        obj.plot_quality_and_productivity_from_monitored_worktime(
+            self.project_dir / "散布図-アノテーションあたり作業時間と品質の関係-計測時間-教師付者用.html"
+        )
+
+        if obj.actual_worktime_exists():
+            obj.plot_productivity_from_actual_worktime(self.project_dir / "散布図-アノテーションあたり作業時間と累計作業時間の関係-実績時間.html")
+            obj.plot_quality_and_productivity_from_actual_worktime(
+                self.project_dir / "散布図-アノテーションあたり作業時間と品質の関係-実績時間-教師付者用.html"
+            )
+        else:
+            logger.warning(
+                f"実績作業時間の合計値が0なので、実績作業時間関係の以下のグラフは出力しません。:: "
+                "'散布図-アノテーションあたり作業時間と累計作業時間の関係-実績時間.html',"
+                "'散布図-アノテーションあたり作業時間と品質の関係-実績時間-教師付者用'"
+            )
+
     def read_worktime_per_date_user(self) -> WorktimePerDate:
         """`ユーザ_日付list-作業時間.csvを読み込む。"""
         return WorktimePerDate.from_csv(self.project_dir / self.FILENAME_WORKTIME_PER_DATE_USER)
@@ -150,6 +249,8 @@ class ProjectDir(DataClassJsonMixin):
         `merge_info.json`を書き込む。
         """
         print_json(obj.to_dict(), output=self.project_dir / self.FILENAME_MERGE_INFO, is_pretty=True)
+
+
 
 
 @dataclass

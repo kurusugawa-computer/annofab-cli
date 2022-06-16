@@ -7,7 +7,6 @@ import pandas
 
 import annofabcli
 from annofabcli.common.cli import get_list_from_args
-from annofabcli.common.utils import print_csv, read_multiheader_csv
 from annofabcli.filesystem.mask_user_info import (
     create_masked_user_info_df,
     create_replacement_dict_by_user_id,
@@ -16,46 +15,42 @@ from annofabcli.filesystem.mask_user_info import (
 from annofabcli.stat_visualization.write_linegraph_per_user import write_linegraph_per_user
 from annofabcli.stat_visualization.write_performance_scatter_per_user import write_performance_scatter_per_user
 from annofabcli.statistics.csv import FILENAME_PERFORMANCE_PER_USER
+from annofabcli.statistics.visualization.dataframe.task import Task
+from annofabcli.statistics.visualization.dataframe.user_performance import UserPerformance
 from annofabcli.statistics.visualization.dataframe.worktime_per_date import WorktimePerDate
+from annofabcli.statistics.visualization.project_dir import ProjectDir
 
 logger = logging.getLogger(__name__)
 
 
-def _replace_df_task(df, replacement_dict_by_user_id: Dict[str, str]):
-    replace_by_columns(df, replacement_dict_by_user_id, main_column="user_id", sub_columns=["username"])
+def _replace_df_task(task: Task, replacement_dict_by_user_id: Dict[str, str]) -> Task:
+    df_output = task.df.copy()
+    replace_by_columns(df_output, replacement_dict_by_user_id, main_column="user_id", sub_columns=["username"])
 
     replace_by_columns(
-        df,
+        df_output,
         replacement_dict_by_user_id,
         main_column="first_annotation_user_id",
         sub_columns=["first_annotation_username"],
     )
     replace_by_columns(
-        df,
+        df_output,
         replacement_dict_by_user_id,
         main_column="first_inspection_user_id",
         sub_columns=["first_inspection_username"],
     )
     replace_by_columns(
-        df,
+        df_output,
         replacement_dict_by_user_id,
         main_column="first_acceptance_user_id",
         sub_columns=["first_acceptance_username"],
     )
-
-
-# class MaskingVisualizationDir:
-#     def __init__(self,     not_masked_biography_set: Optional[Set[str]] = None,
-#         not_masked_user_id_set: Optional[Set[str]] = None,
-#         minimal_output: bool = False,
-#         exclude_masked_user_for_linegraph: bool = False,
-#     ) -> None:
-#         self.not_masked_biography_set
+    return Task(df_output)
 
 
 def mask_visualization_dir(
-    project_dir: Path,
-    output_dir: Path,
+    project_dir: ProjectDir,
+    output_project_dir: ProjectDir,
     *,
     not_masked_biography_set: Optional[Set[str]] = None,
     not_masked_user_id_set: Optional[Set[str]] = None,
@@ -68,37 +63,37 @@ def mask_visualization_dir(
         )
         return
 
-    df_member_performance = read_multiheader_csv(str(project_dir / FILENAME_PERFORMANCE_PER_USER), header_row_count=2)
+    # TODO: validation
+    user_performance = project_dir.read_user_performance()
 
+    # マスクするユーザの情報を取得する
     replacement_dict_by_user_id = create_replacement_dict_by_user_id(
-        df_member_performance,
+        user_performance.df,
         not_masked_biography_set=not_masked_biography_set,
         not_masked_user_id_set=not_masked_user_id_set,
     )
-    not_masked_user_id_set = set(df_member_performance[("user_id", "")]) - set(replacement_dict_by_user_id.keys())
+    not_masked_user_id_set = set(user_performance.df[("user_id", "")]) - set(replacement_dict_by_user_id.keys())
 
     # CSVのユーザ情報をマスクする
     masked_df_member_performance = create_masked_user_info_df(
-        df_member_performance,
+        user_performance.df,
         not_masked_biography_set=not_masked_biography_set,
         not_masked_user_id_set=not_masked_user_id_set,
     )
-    print_csv(masked_df_member_performance, output=str(output_dir / FILENAME_PERFORMANCE_PER_USER))
+    masked_user_performance = UserPerformance(masked_df_member_performance)
+    output_project_dir.write_user_performance(masked_user_performance)
 
     # メンバのパフォーマンスを散布図で出力する
-    write_performance_scatter_per_user(output_dir / FILENAME_PERFORMANCE_PER_USER, output_dir=output_dir / "scatter")
+    write_performance_scatter_per_user(masked_user_performance, output_dir=output_project_dir.project_dir / "scatter")
 
     user_id_list: Optional[List[str]] = None
     if exclude_masked_user_for_linegraph:
         user_id_list = list(not_masked_user_id_set)
 
-    task_csv_file = project_dir / FILENAME_TASK_LIST
-    if task_csv_file.exists():
-        df_task = pandas.read_csv(str(project_dir / FILENAME_TASK_LIST))
-        _replace_df_task(df_task, replacement_dict_by_user_id=replacement_dict_by_user_id)
-        print_csv(df_task, output=str(output_dir / FILENAME_TASK_LIST))
-    else:
-        logger.warning(f"'{task_csv_file}' が存在しないため、" f"'{output_dir / FILENAME_TASK_LIST}' は出力しません。 ")
+    # TODO: validation
+    task = project_dir.read_task_list()
+    masked_task = _replace_df_task(task, replacement_dict_by_user_id=replacement_dict_by_user_id)
+    project_dir.write_task_list(masked_task)
 
     if (output_dir / FILENAME_TASK_LIST).exists():
         # メンバごとにパフォーマンスを折れ線グラフで出力する

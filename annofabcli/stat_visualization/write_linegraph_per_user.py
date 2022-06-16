@@ -3,8 +3,6 @@ import logging
 from pathlib import Path
 from typing import List, Optional
 
-import pandas
-
 import annofabcli
 from annofabcli.common.cli import AbstractCommandLineWithoutWebapiInterface
 from annofabcli.statistics.table import Table
@@ -18,69 +16,11 @@ from annofabcli.statistics.visualization.dataframe.productivity_per_date import 
     AnnotatorProductivityPerDate,
     InspectorProductivityPerDate,
 )
+from annofabcli.statistics.visualization.dataframe.task import Task
 from annofabcli.statistics.visualization.project_dir import ProjectDir
 
 logger = logging.getLogger(__name__)
 
-
-def write_linegraph_per_user(
-    csv: Path, output_dir: Path, user_id_list: Optional[List[str]] = None, minimal_output: bool = False
-) -> None:
-    """
-    折れ線グラフをユーザごとにプロットする。
-
-    Args:
-        user_id_list: 折れ線グラフに表示するユーザ
-
-    Returns:
-
-    """
-    task_df = pandas.read_csv(str(csv))
-    if len(task_df) == 0:
-        logger.warning(f"タスク一覧が0件のため、折れ線グラフを出力しません。")
-        return
-
-    df_task = Table.create_gradient_df(task_df)
-
-    annotator_obj = AnnotatorCumulativeProductivity(df_task)
-    inspector_obj = InspectorCumulativeProductivity(df_task)
-    acceptor_obj = AcceptorCumulativeProductivity(df_task)
-
-    annotator_obj.plot_annotation_metrics(output_dir / "教師付者用/累積折れ線-横軸_アノテーション数-教師付者用.html", user_id_list)
-    inspector_obj.plot_annotation_metrics(output_dir / "検査者用/累積折れ線-横軸_アノテーション数-検査者用.html", user_id_list)
-    acceptor_obj.plot_annotation_metrics(output_dir / "受入者用/累積折れ線-横軸_アノテーション数-受入者用.html", user_id_list)
-
-    if not minimal_output:
-        annotator_obj.plot_input_data_metrics(output_dir / "教師付者用/累積折れ線-横軸_入力データ数-教師付者用.html", user_id_list)
-        inspector_obj.plot_input_data_metrics(output_dir / "検査者用/累積折れ線-横軸_入力データ数-検査者用.html", user_id_list)
-        acceptor_obj.plot_input_data_metrics(output_dir / "受入者用/累積折れ線-横軸_入力データ数-受入者用.html", user_id_list)
-
-        annotator_obj.plot_task_metrics(output_dir / "教師付者用/累積折れ線-横軸_タスク数-教師付者用.html", user_id_list)
-
-        # 各ユーザごとの日ごとの情報
-        annotator_per_date_obj = AnnotatorProductivityPerDate.from_df_task(task_df)
-        annotator_per_date_obj.plot_annotation_metrics(
-            output_dir / Path("教師付者用/折れ線-横軸_教師付開始日-縦軸_アノテーション単位の指標-教師付者用.html"), user_id_list
-        )
-        annotator_per_date_obj.plot_input_data_metrics(
-            output_dir / Path("教師付者用/折れ線-横軸_教師付開始日-縦軸_入力データ単位の指標-教師付者用.html"), user_id_list
-        )
-
-        inspector_per_date_obj = InspectorProductivityPerDate.from_df_task(task_df)
-        inspector_per_date_obj.plot_annotation_metrics(
-            output_dir / Path("検査者用/折れ線-横軸_検査開始日-縦軸_アノテーション単位の指標-検査者用.html"), user_id_list
-        )
-        inspector_per_date_obj.plot_input_data_metrics(
-            output_dir / Path("検査者用/折れ線-横軸_検査開始日-縦軸_入力データ単位の指標-検査者用.html"), user_id_list
-        )
-
-        acceptor_per_date = AcceptorProductivityPerDate.from_df_task(task_df)
-        acceptor_per_date.plot_annotation_metrics(
-            output_dir / Path("受入者用/折れ線-横軸_受入開始日-縦軸_アノテーション単位の指標-受入者用.html"), user_id_list
-        )
-        acceptor_per_date.plot_input_data_metrics(
-            output_dir / Path("受入者用/折れ線-横軸_受入開始日-縦軸_入力データ単位の指標-受入者用.html"), user_id_list
-        )
 
 
 class WriteLingraphPerUser(AbstractCommandLineWithoutWebapiInterface):
