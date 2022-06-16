@@ -57,7 +57,7 @@ class ProjectDir(DataClassJsonMixin):
         """`タスクlist.csv`を書き込む。"""
         obj.to_csv(self.project_dir / self.FILENAME_TASK_LIST)
 
-    def write_task_histogram(self, obj:Task):
+    def write_task_histogram(self, obj: Task):
         """
         タスク単位のヒストグラムを出力します。
         """
