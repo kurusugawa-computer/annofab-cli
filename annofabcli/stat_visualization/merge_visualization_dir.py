@@ -1,17 +1,14 @@
 from __future__ import annotations
+
 import argparse
 import logging
 import sys
 from pathlib import Path
 from typing import List, Optional
 
-import pandas
-
 import annofabcli
 from annofabcli.common.cli import COMMAND_LINE_ERROR_STATUS_CODE, get_list_from_args
 from annofabcli.common.utils import _catch_exception
-from annofabcli.stat_visualization.write_whole_linegraph import write_whole_linegraph
-from annofabcli.statistics.csv import FILENAME_PERFORMANCE_PER_DATE, FILENAME_PERFORMANCE_PER_USER
 from annofabcli.statistics.visualization.dataframe.task import Task
 from annofabcli.statistics.visualization.dataframe.user_performance import UserPerformance, WholePerformance
 from annofabcli.statistics.visualization.dataframe.whole_productivity_per_date import (
@@ -50,10 +47,8 @@ def merge_visualization_dir(  # pylint: disable=too-many-statements
             whole_performance = WholePerformance.from_user_performance(merged_user_performance)
             output_project_dir.write_whole_performance(whole_performance)
 
-        else:
-            logger.warning(
-                f"マージ対象の'メンバごとの生産性と品質'は存在しないため、'{output_project_dir.FILENAME_USER_PERFORMANCE}', '{output_project_dir.FILENAME_WHOLE_PERFORMANCE}'は出力しません。"  # noqa: E501
-            )
+            # ユーザーごとの散布図を出力
+            output_project_dir.write_user_performance_scatter_plot(merged_user_performance)
 
     @_catch_exception
     def execute_merge_performance_per_date():
@@ -73,10 +68,9 @@ def merge_visualization_dir(  # pylint: disable=too-many-statements
         if merged_obj is not None:
             output_project_dir.write_whole_productivity_per_date(merged_obj)
 
-        else:
-            logger.warning(
-                f"マージ対象の'日ごとの生産量と生産性'は存在しないため、'{output_project_dir.FILENAME_WHOLE_PRODUCTIVITY_PER_DATE}'は出力しません。"
-            )  # noqa: E501
+            # TODO: あとで直す
+            merged_obj.plot(output_project_dir.project_dir / "折れ線-横軸_日-全体.html")
+            merged_obj.plot_cumulatively(output_project_dir.project_dir / "累積折れ線-横軸_日-全体.html")
 
     @_catch_exception
     def merge_performance_per_first_annotation_started_date():
@@ -97,10 +91,6 @@ def merge_visualization_dir(  # pylint: disable=too-many-statements
             output_project_dir.write_whole_productivity_per_first_annotation_started_date(merged_obj)
             # TODO 見直す
             merged_obj.plot(output_project_dir.project_dir / "line-graph/折れ線-横軸_教師付開始日-全体.html")
-        else:
-            logger.warning(
-                f"マージ対象の'教師付開始日ごとの生産量と生産性'は存在しないため、'{output_project_dir.FILENAME_WHOLE_PRODUCTIVITY_PER_FIRST_ANNOTATION_STARTED_DATE}'とそのCSVから生成される折れ線グラフは出力しません。"  # noqa: E501
-            )
 
     @_catch_exception
     def merge_worktime_per_date():
@@ -122,10 +112,6 @@ def merge_visualization_dir(  # pylint: disable=too-many-statements
             # TODO 見直す
             merged_obj.plot_cumulatively(
                 output_project_dir.project_dir / "line-graph/累積折れ線-横軸_日-縦軸_作業時間.html", user_id_list
-            )
-        else:
-            logger.warning(
-                f"マージ対象の'ユーザごと日ごとの作業時間'は存在しないため、'{output_project_dir.FILENAME_WORKTIME_PER_DATE_USER}'とそのCSVから生成される折れ線グラフは出力しません。"  # noqa: E501
             )
 
     @_catch_exception
@@ -176,15 +162,6 @@ def merge_visualization_dir(  # pylint: disable=too-many-statements
     merge_performance_per_first_annotation_started_date()
     merge_worktime_per_date()
     merge_task_list()
-    # HTML生成
-    write_performance_scatter_per_user(
-        csv=output_project_dir.project_dir / FILENAME_PERFORMANCE_PER_USER,
-        output_dir=output_project_dir.project_dir / "scatter",
-    )
-    write_whole_linegraph(
-        csv=output_project_dir.project_dir / FILENAME_PERFORMANCE_PER_DATE,
-        output_dir=output_project_dir.project_dir / "line-graph",
-    )
 
     # info.jsonを出力
     write_merge_info_json()

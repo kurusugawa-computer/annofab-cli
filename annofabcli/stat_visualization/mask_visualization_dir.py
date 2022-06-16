@@ -3,8 +3,6 @@ import logging
 from pathlib import Path
 from typing import Dict, List, Optional, Set
 
-import pandas
-
 import annofabcli
 from annofabcli.common.cli import get_list_from_args
 from annofabcli.filesystem.mask_user_info import (
@@ -55,12 +53,6 @@ def mask_visualization_dir(
     minimal_output: bool = False,
     exclude_masked_user_for_linegraph: bool = False,
 ):
-    if not (project_dir / FILENAME_PERFORMANCE_PER_USER).exists():
-        logger.warning(
-            f"'{str(project_dir / FILENAME_PERFORMANCE_PER_USER)}'が存在しないので、'{str(project_dir)}'のマスク処理をスキップします。"
-        )
-        return
-
     # TODO: validation
     user_performance = project_dir.read_user_performance()
 
@@ -95,25 +87,23 @@ def mask_visualization_dir(
 
     output_project_dir.write_line_graph_per_user(task, minimal_output=minimal_output, user_id_list=user_id_list)
 
-    user_date_csv_file = project_dir / "ユーザ_日付list-作業時間.csv"
-    if user_date_csv_file.exists():
-        df_worktime = pandas.read_csv(str(user_date_csv_file))
+    try:
+        worktime_per_date_user = project_dir.read_worktime_per_date_user()
+    except Exception:
+        logger.warning(f"'{project_dir}'のユーザごと日ごとの作業時間の読み込みに失敗しました。")
+    else:
         df_masked_worktime = create_masked_user_info_df(
-            df_worktime,
+            worktime_per_date_user.df,
             not_masked_biography_set=not_masked_biography_set,
             not_masked_user_id_set=not_masked_user_id_set,
         )
-        worktime_per_date_obj = WorktimePerDate(df_masked_worktime)
-        worktime_per_date_obj.plot_cumulatively(output_dir / "line-graph/累積折れ線-横軸_日-縦軸_作業時間.html", user_id_list)
-        worktime_per_date_obj.to_csv(output_dir / "ユーザ_日付list-作業時間.csv")
-    else:
-        logger.warning(
-            f"{user_date_csv_file}が存在しないため、"
-            f"'{output_dir / 'line-graph/累積折れ線-横軸_日-縦軸_作業時間.html'}', "
-            f"'{output_dir / 'ユーザ_日付list-作業時間.csv'}' は出力しません。"
+        masked_worktime_per_date_user = WorktimePerDate(df_masked_worktime)
+        project_dir.write_worktime_per_date_user(masked_worktime_per_date_user)
+        masked_worktime_per_date_user.plot_cumulatively(
+            project_dir.project_dir / "line-graph/累積折れ線-横軸_日-縦軸_作業時間.html", user_id_list
         )
 
-    logger.debug(f"'{project_dir}'のマスクした結果を'{output_dir}'に出力しました。")
+    logger.debug(f"'{project_dir}'のマスクした結果を'{output_project_dir}'に出力しました。")
 
 
 def mask_visualization_root_dir(
@@ -125,13 +115,14 @@ def mask_visualization_root_dir(
     exclude_masked_user_for_linegraph: bool = False,
 ):
 
-    for project_dir in project_root_dir.iterdir():
-        if not project_dir.is_dir():
+    for p_project_dir in project_root_dir.iterdir():
+        if not p_project_dir.is_dir():
             continue
 
-        project_output_dir = output_dir / project_dir.name
+        project_output_dir = ProjectDir(output_dir / p_project_dir.name)
 
         try:
+            project_dir = ProjectDir(p_project_dir)
             mask_visualization_dir(
                 project_dir,
                 project_output_dir,

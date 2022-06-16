@@ -290,23 +290,24 @@ def create_masked_user_info_df(
     if "user_id" not in df:
         raise AnnofabCliException(f"`user_id`列が存在しないため、ユーザ情報をマスクできません。")
 
+    df_output = df.coy()
     replacement_dict_by_user_id = create_replacement_dict_by_user_id(
         df, not_masked_biography_set=not_masked_biography_set, not_masked_user_id_set=not_masked_user_id_set
     )
 
-    if "biography" in df:
+    if "biography" in df_output:
         replacement_dict_by_biography = create_replacement_dict_by_biography(
-            df, not_masked_biography_set=not_masked_biography_set
+            df_output, not_masked_biography_set=not_masked_biography_set
         )
         replace_biography(
-            df,
+            df_output,
             replacement_dict_by_biography=replacement_dict_by_biography,
             replacement_dict_by_user_id=replacement_dict_by_user_id,
         )
 
-    replace_user_info_by_user_id(df, replacement_dict_by_user_id)
+    replace_user_info_by_user_id(df_output, replacement_dict_by_user_id)
 
-    return df
+    return df_output
 
 
 class MaskUserInfo(AbstractCommandLineWithoutWebapiInterface):

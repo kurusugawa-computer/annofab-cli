@@ -3,8 +3,6 @@ import logging
 from pathlib import Path
 from typing import Optional
 
-import pandas
-
 import annofabcli
 from annofabcli.common.cli import AbstractCommandLineWithoutWebapiInterface
 from annofabcli.statistics.csv import FILENAME_PERFORMANCE_PER_DATE
@@ -13,17 +11,16 @@ from annofabcli.statistics.visualization.dataframe.whole_productivity_per_date i
 logger = logging.getLogger(__name__)
 
 
-def write_whole_linegraph(csv: Path, output_dir: Path) -> None:
-    df = pandas.read_csv(str(csv))
-    obj = WholeProductivityPerCompletedDate(df)
-    obj.plot(output_dir / "折れ線-横軸_日-全体.html")
-    obj.plot_cumulatively(output_dir / "累積折れ線-横軸_日-全体.html")
+def write_whole_linegraph(whole_productivity: WholeProductivityPerCompletedDate, output_dir: Path) -> None:
+    whole_productivity.plot(output_dir / "折れ線-横軸_日-全体.html")
+    whole_productivity.plot_cumulatively(output_dir / "累積折れ線-横軸_日-全体.html")
 
 
 class WriteWholeLingraph(AbstractCommandLineWithoutWebapiInterface):
     def main(self):
         args = self.args
-        write_whole_linegraph(csv=args.csv, output_dir=args.output_dir)
+        whole_productivity = WholeProductivityPerCompletedDate.from_csv(args.csv)
+        write_whole_linegraph(whole_productivity, output_dir=args.output_dir)
 
 
 def main(args):

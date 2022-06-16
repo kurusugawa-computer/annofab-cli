@@ -20,7 +20,7 @@ from annofabcli.common.cli import (
 )
 from annofabcli.common.facade import AnnofabApiFacade, TaskQuery
 from annofabcli.stat_visualization.merge_visualization_dir import merge_visualization_dir
-from annofabcli.statistics.csv import FILENAME_PERFORMANCE_PER_DATE, FILENAME_TASK_LIST
+from annofabcli.statistics.csv import FILENAME_PERFORMANCE_PER_DATE
 from annofabcli.statistics.database import Database, Query
 from annofabcli.statistics.table import Table
 from annofabcli.statistics.visualization.dataframe.cumulative_productivity import (
@@ -113,11 +113,11 @@ class WriteCsvGraph:
 
         """
         obj = Task(self._get_task_df())
-        obj.to_csv(self.output_dir / FILENAME_TASK_LIST)
+
+        self.project_dir.write_task_list(obj)
 
         if not self.output_only_text:
-            obj.plot_histogram_of_worktime(self.output_dir / "histogram/ヒストグラム-作業時間.html")
-            obj.plot_histogram_of_others(self.output_dir / "histogram/ヒストグラム.html")
+            self.project_dir.write_task_histogram(obj)
 
     def write_user_performance(self) -> None:
         """
@@ -506,8 +506,8 @@ class VisualizeStatistics(AbstractCommandLineInterface):
 
             if args.merge:
                 merge_visualization_dir(
-                    project_dir_list=output_project_dir_list,
-                    output_dir=root_output_dir / "merge",
+                    project_dir_list=[ProjectDir(e) for e in output_project_dir_list],
+                    output_project_dir=ProjectDir(root_output_dir / "merge"),
                     user_id_list=user_id_list,
                     minimal_output=args.minimal,
                 )
