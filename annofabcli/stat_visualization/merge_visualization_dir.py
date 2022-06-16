@@ -12,7 +12,7 @@ from annofabcli.common.utils import _catch_exception
 from annofabcli.stat_visualization.write_linegraph_per_user import write_linegraph_per_user
 from annofabcli.stat_visualization.write_performance_scatter_per_user import write_performance_scatter_per_user
 from annofabcli.stat_visualization.write_whole_linegraph import write_whole_linegraph
-from annofabcli.statistics.csv import FILENAME_PERFORMANCE_PER_DATE, FILENAME_PERFORMANCE_PER_USER, FILENAME_TASK_LIST
+from annofabcli.statistics.csv import FILENAME_PERFORMANCE_PER_DATE, FILENAME_PERFORMANCE_PER_USER
 from annofabcli.statistics.visualization.dataframe.task import Task
 from annofabcli.statistics.visualization.dataframe.user_performance import UserPerformance, WholePerformance
 from annofabcli.statistics.visualization.dataframe.whole_productivity_per_date import (
@@ -135,7 +135,7 @@ def merge_visualization_dir(  # pylint: disable=too-many-statements
         merged_obj: Optional[Task] = None
         for project_dir in project_dir_list:
             try:
-                tmp_obj = project_dir.read_task()
+                tmp_obj = project_dir.read_task_list()
             except Exception:
                 logger.warning(f"'{project_dir}'からタスク情報の取得に失敗しました。", exc_info=True)
                 continue
@@ -186,7 +186,7 @@ def merge_visualization_dir(  # pylint: disable=too-many-statements
     )
 
     write_linegraph_per_user(
-        csv=output_project_dir.project_dir / FILENAME_TASK_LIST,
+        csv=output_project_dir.project_dir / output_project_dir.FILENAME_TASK_LIST,
         output_dir=output_project_dir.project_dir / "line-graph",
         minimal_output=minimal_output,
         user_id_list=user_id_list,

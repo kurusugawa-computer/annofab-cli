@@ -7,8 +7,8 @@ import pandas
 
 import annofabcli
 from annofabcli.common.cli import AbstractCommandLineWithoutWebapiInterface
-from annofabcli.statistics.visualization.project_dir import ProjectDir
 from annofabcli.statistics.visualization.dataframe.task import Task
+from annofabcli.statistics.visualization.project_dir import ProjectDir
 
 logger = logging.getLogger(__name__)
 
@@ -57,7 +57,9 @@ def parse_args(parser: argparse.ArgumentParser):
 
 def add_parser(subparsers: Optional[argparse._SubParsersAction] = None):
     subcommand_name = "write_task_histogram"
-    subcommand_help = f"``annofabcli statistics visualize`` コマンドの出力ファイルである'{ProjectDir.FILENAME_TASK_LIST}'から、ヒストグラムを出力します。"
+    subcommand_help = (
+        f"``annofabcli statistics visualize`` コマンドの出力ファイルである'{ProjectDir.FILENAME_TASK_LIST}'から、ヒストグラムを出力します。"
+    )
     parser = annofabcli.common.cli.add_parser(subparsers, subcommand_name, subcommand_help, description=subcommand_help)
     parse_args(parser)
     return parser

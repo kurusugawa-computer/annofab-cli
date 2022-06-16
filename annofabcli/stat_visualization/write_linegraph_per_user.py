@@ -19,6 +19,7 @@ from annofabcli.statistics.visualization.dataframe.productivity_per_date import 
     AnnotatorProductivityPerDate,
     InspectorProductivityPerDate,
 )
+from annofabcli.statistics.visualization.project_dir import ProjectDir
 
 logger = logging.getLogger(__name__)
 
@@ -101,7 +102,7 @@ def parse_args(parser: argparse.ArgumentParser):
         "--csv",
         type=Path,
         required=True,
-        help=(f"``annofabcli statistics visualize`` コマンドの出力ファイルである'{FILENAME_TASK_LIST}'のパスを指定してください。"),
+        help=(f"``annofabcli statistics visualize`` コマンドの出力ファイルである'{ProjectDir.FILENAME_TASK_LIST}'のパスを指定してください。"),
     )
 
     parser.add_argument(

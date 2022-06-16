@@ -26,6 +26,11 @@ class Task:
             return False
         return True
 
+    @classmethod
+    def from_csv(cls, csv_file: Path) -> Task:
+        df = pandas.read_csv(str(csv_file))
+        return cls(df)
+
     def plot_histogram_of_worktime(
         self,
         output_file: Path,
