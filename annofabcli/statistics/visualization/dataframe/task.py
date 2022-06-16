@@ -31,6 +31,18 @@ class Task:
         df = pandas.read_csv(str(csv_file))
         return cls(df)
 
+    @staticmethod
+    def merge(*obj: Task) -> Task:
+        """
+        複数のインスタンスをマージします。
+
+        Notes:
+            pandas.DataFrameのインスタンス生成のコストを減らすため、複数の引数を受け取れるようにした。
+        """
+        df_list = [task.df for task in obj]
+        df_merged = pandas.concat(df_list)
+        return Task(df_merged)
+
     def plot_histogram_of_worktime(
         self,
         output_file: Path,

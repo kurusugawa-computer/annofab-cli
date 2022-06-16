@@ -128,12 +128,8 @@ def parse_args(parser: argparse.ArgumentParser):
 
 def add_parser(subparsers: Optional[argparse._SubParsersAction] = None):
     subcommand_name = "write_linegraph_per_user"
-    subcommand_help = (
-        f"``annofabcli statistics visualize`` コマンドの出力ファイルである'{FILENAME_TASK_LIST}'から、ユーザごとの指標をプロットした折れ線グラフを出力します。"
-    )
-    description = (
-        f"``annofabcli statistics visualize`` コマンドの出力ファイルである'{FILENAME_TASK_LIST}'から、ユーザごとの指標をプロットした折れ線グラフを出力します。"
-    )
+    subcommand_help = f"``annofabcli statistics visualize`` コマンドの出力ファイルである'{ProjectDir.FILENAME_TASK_LIST}'から、ユーザごとの指標をプロットした折れ線グラフを出力します。"
+    description = f"``annofabcli statistics visualize`` コマンドの出力ファイルである'{ProjectDir.FILENAME_TASK_LIST}'から、ユーザごとの指標をプロットした折れ線グラフを出力します。"
     parser = annofabcli.common.cli.add_parser(subparsers, subcommand_name, subcommand_help, description)
     parse_args(parser)
     return parser

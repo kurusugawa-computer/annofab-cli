@@ -215,7 +215,7 @@ def main(args):
         project_dir_list=args.dir,
         user_id_list=user_id_list,
         minimal_output=args.minimal,
-        output_dir=args.output_dir,
+        output_project_dir=ProjectDir(args.output_dir),
     )
 
 
