@@ -26,7 +26,7 @@ from annofabcli.statistics.visualization.dataframe.whole_productivity_per_date i
     WholeProductivityPerFirstAnnotationStartedDate,
 )
 from annofabcli.statistics.visualization.dataframe.worktime_per_date import WorktimePerDate
-from annofabcli.statistics.visualization.project_dir import MergingInfo
+from annofabcli.statistics.visualization.project_dir import MergingInfo, ProjectDir
 
 logger = logging.getLogger(__name__)
 
@@ -59,35 +59,35 @@ def create_merged_performance_per_date(csv_path_list: List[Path]) -> WholeProduc
 
 
 def merge_visualization_dir(  # pylint: disable=too-many-statements
-    project_dir_list: List[Path],
-    output_dir: Path,
+    project_dir_list: List[ProjectDir],
+    output_project_dir: ProjectDir,
     user_id_list: Optional[List[str]] = None,
     minimal_output: bool = False,
 ):
     @_catch_exception
     def execute_merge_performance_per_user():
-        performance_per_user_csv_list = [dir / FILENAME_PERFORMANCE_PER_USER for dir in project_dir_list]
-
-        obj_list = []
-        for csv_file in performance_per_user_csv_list:
-            if csv_file.exists():
-                obj_list.append(UserPerformance.from_csv(csv_file))
-            else:
-                logger.warning(f"{csv_file} は存在しませんでした。")
+        merged_user_performance: Optional[UserPerformance] = None
+        for project_dir in project_dir_list:
+            try:
+                user_performance = project_dir.read_user_performance()
+            except Exception:
+                logger.warning(f"'{project_dir}'のメンバごとの生産性と品質の取得に失敗しました。", exc_info=True)
                 continue
 
-        if len(obj_list) == 0:
-            logger.warning(f"マージ対象のCSVファイルは存在しませんでした。")
-            return
+            if merged_user_performance is None:
+                merged_user_performance = user_performance
+            else:
+                merged_user_performance = UserPerformance.merge(merged_user_performance, user_performance)
 
-        sum_obj = obj_list[0]
-        for obj in obj_list[1:]:
-            sum_obj = UserPerformance.merge(sum_obj, obj)
 
-        sum_obj.to_csv(output_dir / FILENAME_PERFORMANCE_PER_USER)
+        if merged_user_performance is not None:
+            output_project_dir.write_user_performance(merged_user_performance)
+            whole_performance = WholePerformance.from_user_performance(merged_user_performance)
+            output_project_dir.write_whole_performance(whole_performance)
 
-        whole_obj = WholePerformance(sum_obj.get_summary())
-        whole_obj.to_csv(output_dir / "全体の生産性と品質.csv")
+        else:
+            logger.warning(f"マージ対象の'メンバごとの生産性と品質'は存在しませんでした。")
+
 
     @_catch_exception
     def execute_merge_performance_per_date():
