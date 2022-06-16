@@ -1,3 +1,4 @@
+from __future__ import annotations
 import argparse
 import logging
 import sys
@@ -9,8 +10,6 @@ import pandas
 import annofabcli
 from annofabcli.common.cli import COMMAND_LINE_ERROR_STATUS_CODE, get_list_from_args
 from annofabcli.common.utils import _catch_exception
-from annofabcli.stat_visualization.write_linegraph_per_user import write_linegraph_per_user
-from annofabcli.stat_visualization.write_performance_scatter_per_user import write_performance_scatter_per_user
 from annofabcli.stat_visualization.write_whole_linegraph import write_whole_linegraph
 from annofabcli.statistics.csv import FILENAME_PERFORMANCE_PER_DATE, FILENAME_PERFORMANCE_PER_USER
 from annofabcli.statistics.visualization.dataframe.task import Task
@@ -130,24 +129,26 @@ def merge_visualization_dir(  # pylint: disable=too-many-statements
             )
 
     @_catch_exception
-    def merge_task_list() -> pandas.DataFrame:
-
-        merged_obj: Optional[Task] = None
+    def merge_task_list():
+        task_list: list[Task] = []
         for project_dir in project_dir_list:
             try:
                 tmp_obj = project_dir.read_task_list()
+                task_list.append(tmp_obj)
             except Exception:
                 logger.warning(f"'{project_dir}'からタスク情報の取得に失敗しました。", exc_info=True)
                 continue
 
-            if merged_obj is None:
-                merged_obj = tmp_obj
-            else:
-                merged_obj = Task.merge(merged_obj, tmp_obj)
-
-        if merged_obj is not None:
+        if len(task_list) > 0:
+            merged_obj = Task.merge(*task_list)
             output_project_dir.write_task_list(merged_obj)
             output_project_dir.write_task_histogram(merged_obj)
+
+            output_project_dir.write_line_graph_per_user(
+                merged_obj,
+                minimal_output=minimal_output,
+                user_id_list=user_id_list,
+            )
 
         else:
             logger.warning(
@@ -183,13 +184,6 @@ def merge_visualization_dir(  # pylint: disable=too-many-statements
     write_whole_linegraph(
         csv=output_project_dir.project_dir / FILENAME_PERFORMANCE_PER_DATE,
         output_dir=output_project_dir.project_dir / "line-graph",
-    )
-
-    write_linegraph_per_user(
-        csv=output_project_dir.project_dir / output_project_dir.FILENAME_TASK_LIST,
-        output_dir=output_project_dir.project_dir / "line-graph",
-        minimal_output=minimal_output,
-        user_id_list=user_id_list,
     )
 
     # info.jsonを出力

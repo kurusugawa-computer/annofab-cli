@@ -12,8 +12,6 @@ from annofabcli.filesystem.mask_user_info import (
     create_replacement_dict_by_user_id,
     replace_by_columns,
 )
-from annofabcli.stat_visualization.write_linegraph_per_user import write_linegraph_per_user
-from annofabcli.stat_visualization.write_performance_scatter_per_user import write_performance_scatter_per_user
 from annofabcli.statistics.csv import FILENAME_PERFORMANCE_PER_USER
 from annofabcli.statistics.visualization.dataframe.task import Task
 from annofabcli.statistics.visualization.dataframe.user_performance import UserPerformance
@@ -84,7 +82,7 @@ def mask_visualization_dir(
     output_project_dir.write_user_performance(masked_user_performance)
 
     # メンバのパフォーマンスを散布図で出力する
-    write_performance_scatter_per_user(masked_user_performance, output_dir=output_project_dir.project_dir / "scatter")
+    output_project_dir.write_user_performance_scatter_plot(masked_user_performance)
 
     user_id_list: Optional[List[str]] = None
     if exclude_masked_user_for_linegraph:
@@ -95,14 +93,7 @@ def mask_visualization_dir(
     masked_task = _replace_df_task(task, replacement_dict_by_user_id=replacement_dict_by_user_id)
     project_dir.write_task_list(masked_task)
 
-    if (output_dir / FILENAME_TASK_LIST).exists():
-        # メンバごとにパフォーマンスを折れ線グラフで出力する
-        write_linegraph_per_user(
-            output_dir / FILENAME_TASK_LIST,
-            output_dir=output_dir / "line-graph",
-            minimal_output=minimal_output,
-            user_id_list=user_id_list,
-        )
+    output_project_dir.write_line_graph_per_user(task, minimal_output=minimal_output, user_id_list=user_id_list)
 
     user_date_csv_file = project_dir / "ユーザ_日付list-作業時間.csv"
     if user_date_csv_file.exists():

@@ -4,20 +4,13 @@ import json
 import logging
 from dataclasses import dataclass
 from pathlib import Path
-from typing import List
+from typing import List, Optional
 
 from dataclasses_json import DataClassJsonMixin
 
 from annofabcli.common.utils import print_json
 from annofabcli.statistics.database import Query
-from annofabcli.statistics.visualization.dataframe.task import Task
-from annofabcli.statistics.visualization.dataframe.user_performance import UserPerformance, WholePerformance
-from annofabcli.statistics.visualization.dataframe.whole_productivity_per_date import (
-    WholeProductivityPerCompletedDate,
-    WholeProductivityPerFirstAnnotationStartedDate,
-)
-from annofabcli.statistics.visualization.dataframe.worktime_per_date import WorktimePerDate
-
+from annofabcli.statistics.table import Table
 from annofabcli.statistics.visualization.dataframe.cumulative_productivity import (
     AcceptorCumulativeProductivity,
     AnnotatorCumulativeProductivity,
@@ -28,8 +21,14 @@ from annofabcli.statistics.visualization.dataframe.productivity_per_date import 
     AnnotatorProductivityPerDate,
     InspectorProductivityPerDate,
 )
-from annofabcli.statistics.table import Table
-from typing import Optional
+from annofabcli.statistics.visualization.dataframe.task import Task
+from annofabcli.statistics.visualization.dataframe.user_performance import UserPerformance, WholePerformance
+from annofabcli.statistics.visualization.dataframe.whole_productivity_per_date import (
+    WholeProductivityPerCompletedDate,
+    WholeProductivityPerFirstAnnotationStartedDate,
+)
+from annofabcli.statistics.visualization.dataframe.worktime_per_date import WorktimePerDate
+
 logger = logging.getLogger(__name__)
 
 
@@ -79,8 +78,8 @@ class ProjectDir(DataClassJsonMixin):
         obj.plot_histogram_of_worktime(self.project_dir / "histogram/ヒストグラム-作業時間.html")
         obj.plot_histogram_of_others(self.project_dir / "histogram/ヒストグラム.html")
 
-    def write_line_graph_per_user(self, 
-        task: Task,  user_id_list: Optional[List[str]] = None, minimal_output: bool = False
+    def write_line_graph_per_user(
+        self, task: Task, user_id_list: Optional[List[str]] = None, minimal_output: bool = False
     ):
         """
         生産量や作業時間などの指標を、ユーザごとに折れ線グラフとしてプロットします。
@@ -139,8 +138,6 @@ class ProjectDir(DataClassJsonMixin):
                 output_dir / Path("受入者用/折れ線-横軸_受入開始日-縦軸_入力データ単位の指標-受入者用.html"), user_id_list
             )
 
-
-
     def read_whole_performance(self) -> WholePerformance:
         """`全体の生産性と品質.csv`を読み込む。"""
         return WholePerformance.from_csv(self.project_dir / self.FILENAME_WHOLE_PERFORMANCE)
@@ -191,20 +188,21 @@ class ProjectDir(DataClassJsonMixin):
         """
         user_performance.to_csv(self.project_dir / self.FILENAME_USER_PERFORMANCE)
 
-    def write_plot_user_performance(self, obj: UserPerformance):
+    def write_user_performance_scatter_plot(self, obj: UserPerformance):
         """
         メンバごとの生産性と品質に関する散布図を出力します。
         """
-        obj.plot_quality(self.project_dir / "散布図-教師付者の品質と作業量の関係.html")
-        obj.plot_productivity_from_monitored_worktime(self.project_dir / "散布図-アノテーションあたり作業時間と累計作業時間の関係-計測時間.html")
+        output_dir = self.project_dir / "scatter"
+        obj.plot_quality(output_dir / "散布図-教師付者の品質と作業量の関係.html")
+        obj.plot_productivity_from_monitored_worktime(output_dir / "散布図-アノテーションあたり作業時間と累計作業時間の関係-計測時間.html")
         obj.plot_quality_and_productivity_from_monitored_worktime(
-            self.project_dir / "散布図-アノテーションあたり作業時間と品質の関係-計測時間-教師付者用.html"
+            output_dir / "散布図-アノテーションあたり作業時間と品質の関係-計測時間-教師付者用.html"
         )
 
         if obj.actual_worktime_exists():
-            obj.plot_productivity_from_actual_worktime(self.project_dir / "散布図-アノテーションあたり作業時間と累計作業時間の関係-実績時間.html")
+            obj.plot_productivity_from_actual_worktime(output_dir / "散布図-アノテーションあたり作業時間と累計作業時間の関係-実績時間.html")
             obj.plot_quality_and_productivity_from_actual_worktime(
-                self.project_dir / "散布図-アノテーションあたり作業時間と品質の関係-実績時間-教師付者用.html"
+                output_dir / "散布図-アノテーションあたり作業時間と品質の関係-実績時間-教師付者用.html"
             )
         else:
             logger.warning(
@@ -249,8 +247,6 @@ class ProjectDir(DataClassJsonMixin):
         `merge_info.json`を書き込む。
         """
         print_json(obj.to_dict(), output=self.project_dir / self.FILENAME_MERGE_INFO, is_pretty=True)
-
-
 
 
 @dataclass
