@@ -10,7 +10,10 @@ from dataclasses_json import DataClassJsonMixin
 from annofabcli.common.utils import print_json
 from annofabcli.statistics.database import Query
 from annofabcli.statistics.visualization.dataframe.user_performance import UserPerformance, WholePerformance
-from annofabcli.statistics.visualization.dataframe.whole_productivity_per_date import WholeProductivityPerCompletedDate
+from annofabcli.statistics.visualization.dataframe.whole_productivity_per_date import (
+    WholeProductivityPerCompletedDate,
+    WholeProductivityPerFirstAnnotationStartedDate,
+)
 from annofabcli.statistics.visualization.dataframe.worktime_per_date import WorktimePerDate
 
 
@@ -25,6 +28,8 @@ class ProjectDir(DataClassJsonMixin):
     FILENAME_WHOLE_PERFORMANCE = "全体の生産性と品質.csv"
     FILENAME_USER_PERFORMANCE = "メンバごとの生産性と品質.csv"
     FILENAME_WHOLE_PRODUCTIVITY_PER_DATE = "日毎の生産量と生産性.csv"
+    FILENAME_WHOLE_PRODUCTIVITY_PER_FIRST_ANNOTATION_STARTED_DATE = "教師付開始日毎の生産量と生産性.csv"
+
     FILENAME_WORKTIME_PER_DATE_USER = "ユーザ_日付list-作業時間.csv"
 
     FILENAME_PROJECT_INFO = "project_info.json"
@@ -61,6 +66,24 @@ class ProjectDir(DataClassJsonMixin):
         日ごとの生産性と品質の情報を書き込みます。
         """
         obj.to_csv(self.project_dir / self.FILENAME_WHOLE_PRODUCTIVITY_PER_DATE)
+
+    def read_whole_productivity_per_first_annotation_started_date(
+        self,
+    ) -> WholeProductivityPerFirstAnnotationStartedDate:
+        """
+        教師付開始日ごとの生産性と品質の情報を読み込みます。
+        """
+        return WholeProductivityPerCompletedDate.from_csv(
+            self.project_dir / self.FILENAME_WHOLE_PRODUCTIVITY_PER_FIRST_ANNOTATION_STARTED_DATE
+        )
+
+    def write_whole_productivity_per_first_annotation_started_date(
+        self, obj: WholeProductivityPerFirstAnnotationStartedDate
+    ):
+        """
+        教師付開始日ごとの生産性と品質の情報を書き込みます。
+        """
+        obj.to_csv(self.project_dir / self.FILENAME_WHOLE_PRODUCTIVITY_PER_FIRST_ANNOTATION_STARTED_DATE)
 
     def read_user_performance(self) -> UserPerformance:
         """

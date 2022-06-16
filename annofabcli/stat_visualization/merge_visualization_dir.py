@@ -14,12 +14,7 @@ from annofabcli.stat_visualization.write_linegraph_per_user import write_linegra
 from annofabcli.stat_visualization.write_performance_scatter_per_user import write_performance_scatter_per_user
 from annofabcli.stat_visualization.write_task_histogram import write_task_histogram
 from annofabcli.stat_visualization.write_whole_linegraph import write_whole_linegraph
-from annofabcli.statistics.csv import (
-    FILENAME_PERFORMANCE_PER_DATE,
-    FILENAME_PERFORMANCE_PER_FIRST_ANNOTATION_STARTED_DATE,
-    FILENAME_PERFORMANCE_PER_USER,
-    FILENAME_TASK_LIST,
-)
+from annofabcli.statistics.csv import FILENAME_PERFORMANCE_PER_DATE, FILENAME_PERFORMANCE_PER_USER, FILENAME_TASK_LIST
 from annofabcli.statistics.visualization.dataframe.user_performance import UserPerformance, WholePerformance
 from annofabcli.statistics.visualization.dataframe.whole_productivity_per_date import (
     WholeProductivityPerCompletedDate,
@@ -29,7 +24,6 @@ from annofabcli.statistics.visualization.dataframe.worktime_per_date import Work
 from annofabcli.statistics.visualization.project_dir import MergingInfo, ProjectDir
 
 logger = logging.getLogger(__name__)
-
 
 
 def merge_visualization_dir(  # pylint: disable=too-many-statements
@@ -88,29 +82,27 @@ def merge_visualization_dir(  # pylint: disable=too-many-statements
 
     @_catch_exception
     def merge_performance_per_first_annotation_started_date():
-        csv_list = [dir / FILENAME_PERFORMANCE_PER_FIRST_ANNOTATION_STARTED_DATE for dir in project_dir_list]
-        df_list: List[pandas.DataFrame] = []
-        for csv in csv_list:
-            if csv.exists():
-                df = pandas.read_csv(str(csv))
-                df_list.append(df)
-            else:
-                logger.warning(f"{csv} は存在しませんでした。")
+        merged_obj: Optional[WholeProductivityPerFirstAnnotationStartedDate] = None
+        for project_dir in project_dir_list:
+            try:
+                tmp_obj = project_dir.read_whole_productivity_per_first_annotation_started_date()
+            except Exception:
+                logger.warning(f"'{project_dir}'の教師付開始日ごとの生産量と生産性の取得に失敗しました。", exc_info=True)
                 continue
 
-        if len(df_list) == 0:
-            logger.warning(f"マージ対象のCSVファイルは存在しませんでした。")
-            return
+            if merged_obj is None:
+                merged_obj = tmp_obj
+            else:
+                merged_obj = WholeProductivityPerFirstAnnotationStartedDate.merge(merged_obj, tmp_obj)
 
-        sum_obj = WholeProductivityPerFirstAnnotationStartedDate(df_list[0])
-        for df in df_list[1:]:
-            sum_obj = WholeProductivityPerFirstAnnotationStartedDate.merge(
-                sum_obj, WholeProductivityPerFirstAnnotationStartedDate(df)
+        if merged_obj is not None:
+            output_project_dir.write_whole_productivity_per_first_annotation_started_date(merged_obj)
+            # TODO 見直す
+            merged_obj.plot(output_project_dir.project_dir / "line-graph/折れ線-横軸_教師付開始日-全体.html")
+        else:
+            logger.warning(
+                f"マージ対象の'教師付開始日ごとの生産量と生産性'は存在しないため、'{output_project_dir.FILENAME_WHOLE_PRODUCTIVITY_PER_FIRST_ANNOTATION_STARTED_DATE}'とそのCSVから生成される折れ線グラフは出力しません。"  # noqa: E501
             )
-
-        sum_obj.to_csv(output_dir / FILENAME_PERFORMANCE_PER_FIRST_ANNOTATION_STARTED_DATE)
-
-        sum_obj.plot(output_dir / "line-graph/折れ線-横軸_教師付開始日-全体.html")
 
     @_catch_exception
     def merge_worktime_per_date():

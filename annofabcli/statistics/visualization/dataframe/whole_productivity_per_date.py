@@ -743,6 +743,12 @@ class WholeProductivityPerFirstAnnotationStartedDate:
         self.df = df
 
     @classmethod
+    def from_csv(cls, csv_file: Path) -> WholeProductivityPerFirstAnnotationStartedDate:
+        """CSVファイルからインスタンスを生成します。"""
+        df = pandas.read_csv(str(csv_file))
+        return cls(df)
+
+    @classmethod
     def _add_velocity_columns(cls, df: pandas.DataFrame):
         """
         日毎の全体の生産量から、累計情報、生産性の列を追加する。
