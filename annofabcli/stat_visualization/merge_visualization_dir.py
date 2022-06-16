@@ -1,5 +1,4 @@
 import argparse
-import json
 import logging
 import sys
 from pathlib import Path
@@ -9,7 +8,7 @@ import pandas
 
 import annofabcli
 from annofabcli.common.cli import COMMAND_LINE_ERROR_STATUS_CODE, get_list_from_args
-from annofabcli.common.utils import _catch_exception, print_json
+from annofabcli.common.utils import _catch_exception
 from annofabcli.stat_visualization.write_linegraph_per_user import write_linegraph_per_user
 from annofabcli.stat_visualization.write_performance_scatter_per_user import write_performance_scatter_per_user
 from annofabcli.stat_visualization.write_task_histogram import write_task_histogram
@@ -155,21 +154,18 @@ def merge_visualization_dir(  # pylint: disable=too-many-statements
     @_catch_exception
     def write_merge_info_json() -> None:
         """マージ情報に関するJSONファイルを出力する。"""
-        target_dir_list = [str(e) for e in project_dir_list]
-
-        output_file = output_dir / "merge_info.json"
+        target_dir_list = [str(e.project_dir) for e in project_dir_list]
         project_info_list = []
         for project_dir in project_dir_list:
-            project_info_file = project_dir / "project_info.json"
-            if not project_info_file.exists():
-                logger.warning(f"'{project_info_file}'は存在しないため、'{output_file}'に出力する情報が一部欠けます。")
-                continue
-            with project_info_file.open() as f:
-                project_info = json.load(f)
+            try:
+                project_info = project_dir.read_project_info()
                 project_info_list.append(project_info)
+            except Exception:
+                logger.warning(f"'{project_dir}'からプロジェクト情報の取得に失敗しました。", exc_info=True)
+                continue
 
-        info = MergingInfo(target_dir_list=target_dir_list, project_info_list=project_info_list)
-        print_json(info.to_dict(), is_pretty=True, output=str(output_file))
+        merge_info = MergingInfo(target_dir_list=target_dir_list, project_info_list=project_info_list)
+        output_project_dir.write_merge_info(merge_info)
 
     execute_merge_performance_per_user()
     execute_merge_performance_per_date()

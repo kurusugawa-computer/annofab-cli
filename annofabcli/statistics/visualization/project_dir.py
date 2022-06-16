@@ -125,6 +125,9 @@ class ProjectDir(DataClassJsonMixin):
             return ProjectInfo.from_dict(json.load(f))
 
     def write_project_info(self, project_info: ProjectInfo):
+        """
+        `project_info.json`を書き込む。
+        """
         print_json(project_info.to_dict(), output=self.project_dir / self.FILENAME_PROJECT_INFO, is_pretty=True)
 
     def read_merge_info(self) -> MergingInfo:
@@ -134,6 +137,12 @@ class ProjectDir(DataClassJsonMixin):
         """
         with (self.project_dir / self.FILENAME_MERGE_INFO).open() as f:
             return MergingInfo.from_dict(json.load(f))
+
+    def write_merge_info(self, obj: MergingInfo):
+        """
+        `merge_info.json`を書き込む。
+        """
+        print_json(obj.to_dict(), output=self.project_dir / self.FILENAME_MERGE_INFO, is_pretty=True)
 
 
 @dataclass
