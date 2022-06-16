@@ -9,7 +9,6 @@ import pandas
 
 from annofabcli.common.utils import print_csv
 from annofabcli.statistics.visualization.dataframe.user_performance import UserPerformance
-from annofabcli.statistics.visualization.dataframe.worktime_per_date import WorktimePerDate
 from annofabcli.statistics.visualization.model import WorktimeColumn
 from annofabcli.statistics.visualization.project_dir import ProjectDir
 
@@ -31,57 +30,88 @@ class ProjectPerformance:
         return True
 
     @classmethod
-    def _get_start_date_end_date(
-        cls, worktime_per_date_user_obj: WorktimePerDate
-    ) -> tuple[Optional[str], Optional[str]]:
-        df = worktime_per_date_user_obj.df
-        df2 = df[df["actual_worktime_hour"] > 0]
-        if len(df2) == 0:
+    def _get_start_date_end_date(cls, project_dir: ProjectDir) -> tuple[Optional[str], Optional[str]]:
+        try:
+            worktime_per_date_user_obj = project_dir.read_worktime_per_date_user()
+            df = worktime_per_date_user_obj.df
+            df2 = df[df["actual_worktime_hour"] > 0]
+            if len(df2) == 0:
+                return None, None
+            return df2["date"].min(), df2["date"].max()
+        except Exception:
+            logger.warning(f"'{project_dir}'のユーザごと日ごとの作業時間から`start_date`,`end_date`を取得するのに失敗しました。", exc_info=True)
             return None, None
-        return df2["date"].min(), df2["date"].max()
 
     @classmethod
     def _get_project_info(cls, project_dir: ProjectDir) -> dict[tuple[str, str], Any]:
         if project_dir.is_merged():
-            merge_info = project_dir.read_merge_info()
-            project_id_list = []
-            project_title_list = []
-            for project_info in merge_info.project_info_list:
-                project_id_list.append(project_info.project_id)
-                project_title_list.append(project_info.project_title)
+            try:
+                merge_info = project_dir.read_merge_info()
 
-            # 異なるプロジェクトの種類でマージすることはないはずなので、先頭要素のinput_data_typeを参照する
-            input_data_type = merge_info.project_info_list[0].input_data_type
+                project_id_list = []
+                project_title_list = []
+                for project_info in merge_info.project_info_list:
+                    project_id_list.append(project_info.project_id)
+                    project_title_list.append(project_info.project_title)
 
-            # マージされている場合、CSVの列に複数の値を表示する
-            return {
-                ("project_id", ""): project_id_list,
-                ("project_title", ""): project_title_list,
-                ("input_data_type", ""): input_data_type,
-            }
+                # 異なるプロジェクトの種類でマージすることはないはずなので、先頭要素のinput_data_typeを参照する
+                input_data_type = merge_info.project_info_list[0].input_data_type
+
+                # マージされている場合、CSVの列に複数の値を表示する
+                return {
+                    ("project_id", ""): project_id_list,
+                    ("project_title", ""): project_title_list,
+                    ("input_data_type", ""): input_data_type,
+                }
+
+            except Exception:
+                logger.warning(f"'{project_dir}'の`merge_info.json`の読み込みに失敗しました。", exc_info=True)
+                return {
+                    ("project_id", ""): None,
+                    ("project_title", ""): None,
+                    ("input_data_type", ""): None,
+                }
 
         else:
-            project_info = project_dir.read_project_info()
-            return {
-                ("project_id", ""): project_info.project_id,
-                ("project_title", ""): project_info.project_title,
-                ("input_data_type", ""): project_info.input_data_type,
-            }
+            try:
+                project_info = project_dir.read_project_info()
+                return {
+                    ("project_id", ""): project_info.project_id,
+                    ("project_title", ""): project_info.project_title,
+                    ("input_data_type", ""): project_info.input_data_type,
+                }
+
+            except Exception:
+                logger.warning(f"'{project_dir}'の`project_info.json`の読み込みに失敗しました。", exc_info=True)
+                return {
+                    ("project_id", ""): None,
+                    ("project_title", ""): None,
+                    ("input_data_type", ""): None,
+                }
 
     @classmethod
     def _get_series_from_project_dir(cls, project_dir: ProjectDir) -> pandas.Series:
         """1個のプロジェクトディレクトリから、プロジェクトの生産性や品質が格納されたpandas.Seriesを取得します。"""
-        # プロジェクトの生産性と品質を取得
-        whole_performance_obj = project_dir.read_whole_performance()
-        series = whole_performance_obj.series
-        series[("dirname", "")] = project_dir.project_dir.name
 
-        start_date, end_date = cls._get_start_date_end_date(project_dir.read_worktime_per_date_user())
+        series = pandas.Series([project_dir.project_dir.name], index=pandas.MultiIndex.from_tuples([("dirname", "")]))
+
+        # プロジェクトの基本情報を取得
+        for key, value in cls._get_project_info(project_dir).items():
+            series[key] = value
+
+        start_date, end_date = cls._get_start_date_end_date(project_dir)
         series[("start_date", "")] = start_date
         series[("end_date", "")] = end_date
 
-        for key, value in cls._get_project_info(project_dir).items():
-            series[key] = value
+        # プロジェクトの生産性と品質を取得
+        try:
+            whole_performance_obj = project_dir.read_whole_performance()
+            series = pandas.concat([series, whole_performance_obj.series])
+        except Exception:
+            logger.warning(f"'{project_dir}'の全体の生産性と品質を取得するのに失敗しました。", exc_info=True)
+            value_index = UserPerformance.get_productivity_columns(["annotation"])
+            value_index.append(("working_user_count", "annotation"))
+            series = pandas.concat([series, pandas.Series([numpy.nan] * len(value_index), index=value_index)])
 
         return series
 
@@ -122,6 +152,7 @@ class ProjectPerformance:
         if not self._validate_df_for_output(output_file):
             return
 
+        print(f"{self.df.columns=}")
         phase_list = UserPerformance.get_phase_list(self.df)
 
         first_columns = [
