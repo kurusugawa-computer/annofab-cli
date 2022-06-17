@@ -311,7 +311,6 @@ class TestAcceptorCumulativeProductivity:
         self.obj.plot_task_metrics(self.output_dir / "累積折れ線-横軸_タスク数-受入者用")
 
 
-
 class TestListWorktime:
     def test_get_df_worktime(self):
         event_list = [

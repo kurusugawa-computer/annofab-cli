@@ -17,12 +17,7 @@ from annofabcli.statistics.visualization.dataframe.cumulative_productivity impor
     AnnotatorCumulativeProductivity,
     InspectorCumulativeProductivity,
 )
-from annofabcli.statistics.visualization.dataframe.productivity_per_date import (
-    AbstractPhaseProductivityPerDate,
-    AcceptorProductivityPerDate,
-    AnnotatorProductivityPerDate,
-    InspectorProductivityPerDate,
-)
+from annofabcli.statistics.visualization.dataframe.productivity_per_date import AbstractPhaseProductivityPerDate
 from annofabcli.statistics.visualization.dataframe.task import Task
 from annofabcli.statistics.visualization.dataframe.user_performance import UserPerformance, WholePerformance
 from annofabcli.statistics.visualization.dataframe.whole_productivity_per_date import (
@@ -128,31 +123,6 @@ class ProjectDir(DataClassJsonMixin):
             acceptor_obj.plot_input_data_metrics(output_dir / "受入者用/累積折れ線-横軸_入力データ数-受入者用.html", user_id_list)
 
             annotator_obj.plot_task_metrics(output_dir / "教師付者用/累積折れ線-横軸_タスク数-教師付者用.html", user_id_list)
-
-            # 各ユーザごとの日ごとの情報
-            annotator_per_date_obj = AnnotatorProductivityPerDate.from_df_task(task.df)
-            annotator_per_date_obj.plot_annotation_metrics(
-                output_dir / Path("教師付者用/折れ線-横軸_教師付開始日-縦軸_アノテーション単位の指標-教師付者用.html"), user_id_list
-            )
-            annotator_per_date_obj.plot_input_data_metrics(
-                output_dir / Path("教師付者用/折れ線-横軸_教師付開始日-縦軸_入力データ単位の指標-教師付者用.html"), user_id_list
-            )
-
-            inspector_per_date_obj = InspectorProductivityPerDate.from_df_task(task.df)
-            inspector_per_date_obj.plot_annotation_metrics(
-                output_dir / Path("検査者用/折れ線-横軸_検査開始日-縦軸_アノテーション単位の指標-検査者用.html"), user_id_list
-            )
-            inspector_per_date_obj.plot_input_data_metrics(
-                output_dir / Path("検査者用/折れ線-横軸_検査開始日-縦軸_入力データ単位の指標-検査者用.html"), user_id_list
-            )
-
-            acceptor_per_date = AcceptorProductivityPerDate.from_df_task(task.df)
-            acceptor_per_date.plot_annotation_metrics(
-                output_dir / Path("受入者用/折れ線-横軸_受入開始日-縦軸_アノテーション単位の指標-受入者用.html"), user_id_list
-            )
-            acceptor_per_date.plot_input_data_metrics(
-                output_dir / Path("受入者用/折れ線-横軸_受入開始日-縦軸_入力データ単位の指標-受入者用.html"), user_id_list
-            )
 
     def write_performance_per_start_date_csv(self, obj: AbstractPhaseProductivityPerDate, phase: TaskPhase):
         """
