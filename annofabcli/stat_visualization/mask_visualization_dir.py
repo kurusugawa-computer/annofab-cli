@@ -3,6 +3,8 @@ import logging
 from pathlib import Path
 from typing import Dict, List, Optional, Set
 
+from annofabapi.models import TaskPhase
+
 import annofabcli
 from annofabcli.common.cli import get_list_from_args
 from annofabcli.filesystem.mask_user_info import (
@@ -10,7 +12,17 @@ from annofabcli.filesystem.mask_user_info import (
     create_replacement_dict_by_user_id,
     replace_by_columns,
 )
-from annofabcli.statistics.csv import FILENAME_PERFORMANCE_PER_USER
+from annofabcli.statistics.table import Table
+from annofabcli.statistics.visualization.dataframe.cumulative_productivity import (
+    AcceptorCumulativeProductivity,
+    AnnotatorCumulativeProductivity,
+    InspectorCumulativeProductivity,
+)
+from annofabcli.statistics.visualization.dataframe.productivity_per_date import (
+    AcceptorProductivityPerDate,
+    AnnotatorProductivityPerDate,
+    InspectorProductivityPerDate,
+)
 from annofabcli.statistics.visualization.dataframe.task import Task
 from annofabcli.statistics.visualization.dataframe.user_performance import UserPerformance
 from annofabcli.statistics.visualization.dataframe.worktime_per_date import WorktimePerDate
@@ -42,6 +54,35 @@ def _replace_df_task(task: Task, replacement_dict_by_user_id: Dict[str, str]) ->
         sub_columns=["first_acceptance_username"],
     )
     return Task(df_output)
+
+
+def write_line_graph(
+    task: Task, output_project_dir: ProjectDir, user_id_list: Optional[List[str]] = None, minimal_output: bool = False
+):
+    df = Table.create_gradient_df(task.df.copy())
+
+    output_project_dir.write_cumulative_line_graph(AnnotatorCumulativeProductivity(df), phase=TaskPhase.ANNOTATION)
+    output_project_dir.write_cumulative_line_graph(InspectorCumulativeProductivity(df), phase=TaskPhase.INSPECTION)
+    output_project_dir.write_cumulative_line_graph(AcceptorCumulativeProductivity(df), phase=TaskPhase.ACCEPTANCE)
+
+    annotator_per_date_obj = AnnotatorProductivityPerDate.from_df_task(task.df)
+    inspector_per_date_obj = InspectorProductivityPerDate.from_df_task(task.df)
+    acceptor_per_date_obj = AcceptorProductivityPerDate.from_df_task(task.df)
+
+    output_project_dir.write_performance_per_start_date_csv(annotator_per_date_obj, phase=TaskPhase.ANNOTATION)
+    output_project_dir.write_performance_per_start_date_csv(inspector_per_date_obj, phase=TaskPhase.INSPECTION)
+    output_project_dir.write_performance_per_start_date_csv(acceptor_per_date_obj, phase=TaskPhase.ACCEPTANCE)
+
+    if not minimal_output:
+        output_project_dir.write_performance_line_graph_per_date(
+            annotator_per_date_obj, phase=TaskPhase.ANNOTATION, user_id_list=user_id_list
+        )
+        output_project_dir.write_performance_line_graph_per_date(
+            inspector_per_date_obj, phase=TaskPhase.INSPECTION, user_id_list=user_id_list
+        )
+        output_project_dir.write_performance_line_graph_per_date(
+            acceptor_per_date_obj, phase=TaskPhase.ACCEPTANCE, user_id_list=user_id_list
+        )
 
 
 def mask_visualization_dir(
@@ -83,9 +124,9 @@ def mask_visualization_dir(
     # TODO: validation
     task = project_dir.read_task_list()
     masked_task = _replace_df_task(task, replacement_dict_by_user_id=replacement_dict_by_user_id)
-    project_dir.write_task_list(masked_task)
+    output_project_dir.write_task_list(masked_task)
 
-    output_project_dir.write_line_graph_per_user(task, minimal_output=minimal_output, user_id_list=user_id_list)
+    write_line_graph(masked_task, output_project_dir, user_id_list=user_id_list, minimal_output=minimal_output)
 
     try:
         worktime_per_date_user = project_dir.read_worktime_per_date_user()
@@ -98,7 +139,7 @@ def mask_visualization_dir(
             not_masked_user_id_set=not_masked_user_id_set,
         )
         masked_worktime_per_date_user = WorktimePerDate(df_masked_worktime)
-        project_dir.write_worktime_per_date_user(masked_worktime_per_date_user)
+        output_project_dir.write_worktime_per_date_user(masked_worktime_per_date_user)
         masked_worktime_per_date_user.plot_cumulatively(
             project_dir.project_dir / "line-graph/累積折れ線-横軸_日-縦軸_作業時間.html", user_id_list
         )
@@ -160,8 +201,7 @@ def parse_args(parser: argparse.ArgumentParser):
         "--dir",
         type=Path,
         required=True,
-        help=f"マスクしたいプロジェクトディレクトリが存在するディレクトリを指定してください。プロジェクトディレクトリは  ``annofabcli statistics visualize`` コマンドの出力結果です。\n"
-        f"プロジェクトディレクトリ配下の'{FILENAME_PERFORMANCE_PER_USER}'を読み込み、ユーザ情報をマスクします。",
+        help=f"マスクしたいプロジェクトディレクトリが存在するディレクトリを指定してください。プロジェクトディレクトリは  ``annofabcli statistics visualize`` コマンドの出力結果です。\n",
     )
 
     parser.add_argument(
