@@ -16,6 +16,7 @@ from annofabcli.statistics.visualization.dataframe.cumulative_productivity impor
     AcceptorCumulativeProductivity,
     AnnotatorCumulativeProductivity,
     InspectorCumulativeProductivity,
+    AbstractPhaseCumulativeProductivity
 )
 from annofabcli.statistics.visualization.dataframe.productivity_per_date import AbstractPhaseProductivityPerDate
 from annofabcli.statistics.visualization.dataframe.task import Task
@@ -89,11 +90,12 @@ class ProjectDir(DataClassJsonMixin):
         obj.plot_histogram_of_worktime(self.project_dir / "histogram/ヒストグラム-作業時間.html")
         obj.plot_histogram_of_others(self.project_dir / "histogram/ヒストグラム.html")
 
-    def write_line_graph_per_user(
+    def write_cumulative_line_graph_old(
         self, task: Task, user_id_list: Optional[List[str]] = None, minimal_output: bool = False
     ):
         """
-        生産量や作業時間などの指標を、ユーザごとに折れ線グラフとしてプロットします。
+        ユーザごとにプロットした累積折れ線グラフを出力します。
+        横軸が生産量、縦軸が作業時間でうｓ．
 
         Args:
             user_id_list: 折れ線グラフに表示するユーザ
@@ -123,6 +125,35 @@ class ProjectDir(DataClassJsonMixin):
             acceptor_obj.plot_input_data_metrics(output_dir / "受入者用/累積折れ線-横軸_入力データ数-受入者用.html", user_id_list)
 
             annotator_obj.plot_task_metrics(output_dir / "教師付者用/累積折れ線-横軸_タスク数-教師付者用.html", user_id_list)
+
+
+
+    def write_cumulative_line_graph(
+        self, obj: AbstractPhaseCumulativeProductivity, phase:TaskPhase, user_id_list: Optional[List[str]] = None, minimal_output: bool = False
+    ):
+        """
+        ユーザごとにプロットした累積折れ線グラフを出力します。
+        横軸が生産量、縦軸が作業時間です。
+
+        Args:
+            user_id_list: 折れ線グラフに表示するユーザ
+            minimal_output: 詳細なグラフを出力するかどうか。Trueなら
+
+        """
+        output_dir = self.project_dir / "line-graph"
+
+        phase_name = self.get_phase_name_for_filename(phase)
+        obj.plot_annotation_metrics(output_dir / f"{phase_name}者用/累積折れ線-横軸_アノテーション数-{phase_name}者用.html", user_id_list)
+
+        if not minimal_output:
+            # アノテーション単位より大きい単位の折れ線グラフは不要かもしれないので、オプションにした
+            obj.plot_input_data_metrics(output_dir / f"{phase_name}者用/累積折れ線-横軸_入力データ数-{phase_name}者用.html", user_id_list)
+
+            if phase == TaskPhase.ANNOTATION:
+                # 教師付フェーズの場合は、「差し戻し回数」で品質を評価した場合があるので、タスク単位の指標も出力する
+                obj.plot_task_metrics(output_dir / f"{phase_name}者用/累積折れ線-横軸_タスク数-{phase_name}者用.html", user_id_list)
+
+
 
     def write_performance_per_start_date_csv(self, obj: AbstractPhaseProductivityPerDate, phase: TaskPhase):
         """
