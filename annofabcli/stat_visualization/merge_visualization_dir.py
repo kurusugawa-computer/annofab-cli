@@ -5,10 +5,22 @@ import logging
 import sys
 from pathlib import Path
 from typing import List, Optional
+from annofabcli.statistics.table import Table
+from annofabapi.models import TaskPhase
 
 import annofabcli
 from annofabcli.common.cli import COMMAND_LINE_ERROR_STATUS_CODE, get_list_from_args
 from annofabcli.common.utils import _catch_exception
+from annofabcli.statistics.visualization.dataframe.cumulative_productivity import (
+    AcceptorCumulativeProductivity,
+    AnnotatorCumulativeProductivity,
+    InspectorCumulativeProductivity,
+)
+from annofabcli.statistics.visualization.dataframe.productivity_per_date import (
+    AcceptorProductivityPerDate,
+    AnnotatorProductivityPerDate,
+    InspectorProductivityPerDate,
+)
 from annofabcli.statistics.visualization.dataframe.task import Task
 from annofabcli.statistics.visualization.dataframe.user_performance import UserPerformance, WholePerformance
 from annofabcli.statistics.visualization.dataframe.whole_productivity_per_date import (
@@ -115,7 +127,7 @@ def merge_visualization_dir(  # pylint: disable=too-many-statements
             )
 
     @_catch_exception
-    def merge_task_list():
+    def merge_task_list() -> Optional[Task]:
         task_list: list[Task] = []
         for project_dir in project_dir_list:
             try:
@@ -129,17 +141,13 @@ def merge_visualization_dir(  # pylint: disable=too-many-statements
             merged_obj = Task.merge(*task_list)
             output_project_dir.write_task_list(merged_obj)
             output_project_dir.write_task_histogram(merged_obj)
-
-            output_project_dir.write_line_graph_per_user(
-                merged_obj,
-                minimal_output=minimal_output,
-                user_id_list=user_id_list,
-            )
+            return merged_obj
 
         else:
             logger.warning(
                 f"マージ対象のタスク情報は存在しないため、'{output_project_dir.FILENAME_TASK_LIST}'とそのCSVから生成されるヒストグラム出力しません。"
             )  # noqa: E501
+            return None
 
     @_catch_exception
     def write_merge_info_json() -> None:
@@ -157,11 +165,46 @@ def merge_visualization_dir(  # pylint: disable=too-many-statements
         merge_info = MergingInfo(target_dir_list=target_dir_list, project_info_list=project_info_list)
         output_project_dir.write_merge_info(merge_info)
 
+    @_catch_exception
+    def write_cumulative_line_graph(task: Task) -> None:
+        """ユーザごとにプロットした累積折れ線グラフを出力する。"""
+        df = Table.create_gradient_df(task.df.copy())
+
+        output_project_dir.write_cumulative_line_graph(AnnotatorCumulativeProductivity(df), phase=TaskPhase.ANNOTATION)
+        output_project_dir.write_cumulative_line_graph(InspectorCumulativeProductivity(df), phase=TaskPhase.INSPECTION)
+        output_project_dir.write_cumulative_line_graph(AcceptorCumulativeProductivity(df), phase=TaskPhase.ACCEPTANCE)
+
+    @_catch_exception
+    def write_line_graph(task: Task) -> None:
+        """ユーザごとにプロットした折れ線グラフを出力する。"""
+
+        annotator_per_date_obj = AnnotatorProductivityPerDate.from_df_task(task.df)
+        inspector_per_date_obj = InspectorProductivityPerDate.from_df_task(task.df)
+        acceptor_per_date_obj = AcceptorProductivityPerDate.from_df_task(task.df)
+
+        output_project_dir.write_performance_per_start_date_csv(annotator_per_date_obj, phase=TaskPhase.ANNOTATION)
+        output_project_dir.write_performance_per_start_date_csv(inspector_per_date_obj, phase=TaskPhase.INSPECTION)
+        output_project_dir.write_performance_per_start_date_csv(acceptor_per_date_obj, phase=TaskPhase.ACCEPTANCE)
+
+        if not minimal_output:
+            output_project_dir.write_performance_line_graph_per_date(
+                annotator_per_date_obj, phase=TaskPhase.ANNOTATION, user_id_list=user_id_list
+            )
+            output_project_dir.write_performance_line_graph_per_date(
+                inspector_per_date_obj, phase=TaskPhase.INSPECTION, user_id_list=user_id_list
+            )
+            output_project_dir.write_performance_line_graph_per_date(
+                acceptor_per_date_obj, phase=TaskPhase.ACCEPTANCE, user_id_list=user_id_list
+            )
+
     execute_merge_performance_per_user()
     execute_merge_performance_per_date()
     merge_performance_per_first_annotation_started_date()
     merge_worktime_per_date()
-    merge_task_list()
+    task = merge_task_list()
+    if task is not None:
+        write_cumulative_line_graph(task)
+        write_line_graph(task)
 
     # info.jsonを出力
     write_merge_info_json()

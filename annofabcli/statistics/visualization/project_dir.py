@@ -13,10 +13,10 @@ from annofabcli.common.utils import print_json
 from annofabcli.statistics.database import Query
 from annofabcli.statistics.table import Table
 from annofabcli.statistics.visualization.dataframe.cumulative_productivity import (
+    AbstractPhaseCumulativeProductivity,
     AcceptorCumulativeProductivity,
     AnnotatorCumulativeProductivity,
     InspectorCumulativeProductivity,
-    AbstractPhaseCumulativeProductivity
 )
 from annofabcli.statistics.visualization.dataframe.productivity_per_date import AbstractPhaseProductivityPerDate
 from annofabcli.statistics.visualization.dataframe.task import Task
@@ -126,10 +126,12 @@ class ProjectDir(DataClassJsonMixin):
 
             annotator_obj.plot_task_metrics(output_dir / "教師付者用/累積折れ線-横軸_タスク数-教師付者用.html", user_id_list)
 
-
-
     def write_cumulative_line_graph(
-        self, obj: AbstractPhaseCumulativeProductivity, phase:TaskPhase, user_id_list: Optional[List[str]] = None, minimal_output: bool = False
+        self,
+        obj: AbstractPhaseCumulativeProductivity,
+        phase: TaskPhase,
+        user_id_list: Optional[List[str]] = None,
+        minimal_output: bool = False,
     ):
         """
         ユーザごとにプロットした累積折れ線グラフを出力します。
@@ -147,20 +149,20 @@ class ProjectDir(DataClassJsonMixin):
 
         if not minimal_output:
             # アノテーション単位より大きい単位の折れ線グラフは不要かもしれないので、オプションにした
-            obj.plot_input_data_metrics(output_dir / f"{phase_name}者用/累積折れ線-横軸_入力データ数-{phase_name}者用.html", user_id_list)
+            obj.plot_input_data_metrics(
+                output_dir / f"{phase_name}者用/累積折れ線-横軸_入力データ数-{phase_name}者用.html", user_id_list
+            )
 
             if phase == TaskPhase.ANNOTATION:
                 # 教師付フェーズの場合は、「差し戻し回数」で品質を評価した場合があるので、タスク単位の指標も出力する
                 obj.plot_task_metrics(output_dir / f"{phase_name}者用/累積折れ線-横軸_タスク数-{phase_name}者用.html", user_id_list)
-
-
 
     def write_performance_per_start_date_csv(self, obj: AbstractPhaseProductivityPerDate, phase: TaskPhase):
         """
         指定したフェーズの開始日ごとの作業時間や生産性情報を、CSVに出力します。
         """
         phase_name = self.get_phase_name_for_filename(phase)
-        obj.to_csv(self.output_dir / Path(f"{phase_name}者_{phase_name}開始日list.csv"))
+        obj.to_csv(self.project_dir / Path(f"{phase_name}者_{phase_name}開始日list.csv"))
 
     def write_performance_line_graph_per_date(
         self, obj: AbstractPhaseProductivityPerDate, phase: TaskPhase, user_id_list: Optional[List[str]] = None
