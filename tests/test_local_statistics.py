@@ -288,6 +288,9 @@ class TestInspectorCumulativeProductivity:
     def test_plot_input_data_metrics(self):
         self.obj.plot_input_data_metrics(self.output_dir / "累積折れ線-横軸_入力データ数-検査者用")
 
+    def test_plot_task_metrics(self):
+        self.obj.plot_task_metrics(self.output_dir / "累積折れ線-横軸_タスク数-検査者用")
+
 
 class TestAcceptorCumulativeProductivity:
     @classmethod
@@ -303,6 +306,10 @@ class TestAcceptorCumulativeProductivity:
 
     def test_plot_input_data_metrics(self):
         self.obj.plot_input_data_metrics(self.output_dir / "累積折れ線-横軸_入力データ数-受入者用")
+
+    def test_plot_task_metrics(self):
+        self.obj.plot_task_metrics(self.output_dir / "累積折れ線-横軸_タスク数-受入者用")
+
 
 
 class TestListWorktime:

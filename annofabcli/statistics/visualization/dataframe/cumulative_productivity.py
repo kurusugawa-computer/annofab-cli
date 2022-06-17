@@ -27,7 +27,7 @@ from annofabcli.statistics.linegraph import (
 logger = logging.getLogger(__name__)
 
 
-class AbstractRoleCumulativeProductivity(abc.ABC):
+class AbstractPhaseCumulativeProductivity(abc.ABC):
     """ロールごとの累積の生産性をプロットするための抽象クラス"""
 
     PLOT_WIDTH = 1200
@@ -75,18 +75,22 @@ class AbstractRoleCumulativeProductivity(abc.ABC):
 
     @abc.abstractmethod
     def _get_cumulative_dataframe(self) -> pandas.DataFrame:
-        pass
+        raise NotImplementedError()
 
     @abc.abstractmethod
     def plot_annotation_metrics(self, output_file: Path, target_user_id_list: Optional[list[str]] = None):
-        pass
+        raise NotImplementedError()
 
     @abc.abstractmethod
     def plot_input_data_metrics(self, output_file: Path, target_user_id_list: Optional[list[str]] = None):
-        pass
+        raise NotImplementedError()
+
+    @abc.abstractmethod
+    def plot_task_metrics(self, output_file: Path, target_user_id_list: Optional[list[str]] = None):
+        raise NotImplementedError()
 
 
-class AnnotatorCumulativeProductivity(AbstractRoleCumulativeProductivity):
+class AnnotatorCumulativeProductivity(AbstractPhaseCumulativeProductivity):
     def __init__(self, df: pandas.DataFrame):
         super().__init__(df, phase="annotation")
 
@@ -331,7 +335,7 @@ class AnnotatorCumulativeProductivity(AbstractRoleCumulativeProductivity):
         target_user_id_list: Optional[list[str]] = None,
     ):
         """
-        教師付者の累積値を入力データ単位でプロットする。
+        教師付者の累積値をタスク単位でプロットする。
 
         """
 
@@ -419,7 +423,7 @@ class AnnotatorCumulativeProductivity(AbstractRoleCumulativeProductivity):
         write_bokeh_graph(bokeh.layouts.column(figs), output_file)
 
 
-class InspectorCumulativeProductivity(AbstractRoleCumulativeProductivity):
+class InspectorCumulativeProductivity(AbstractPhaseCumulativeProductivity):
     def __init__(self, df: pandas.DataFrame):
         super().__init__(df, phase="inspection")
 
@@ -440,6 +444,7 @@ class InspectorCumulativeProductivity(AbstractRoleCumulativeProductivity):
         df["cumulative_inspection_comment_count"] = groupby_obj["inspection_comment_count"].cumsum()
         df["cumulative_annotation_count"] = groupby_obj["annotation_count"].cumsum()
         df["cumulative_input_data_count"] = groupby_obj["input_data_count"].cumsum()
+        df["cumulative_task_count"] = groupby_obj["task_count"].cumsum()
 
         return df
 
@@ -613,8 +618,90 @@ class InspectorCumulativeProductivity(AbstractRoleCumulativeProductivity):
 
         write_bokeh_graph(bokeh.layouts.column(figs), output_file)
 
+    def plot_task_metrics(
+        self,
+        output_file: Path,
+        target_user_id_list: Optional[list[str]] = None,
+    ):
+        """
+        検査者者の累積値をタスク単位でプロットする。
 
-class AcceptorCumulativeProductivity(AbstractRoleCumulativeProductivity):
+        """
+
+        if not self._validate_df_for_output(output_file):
+            return
+
+        logger.debug(f"{output_file} を出力します。")
+
+        if target_user_id_list is not None:
+            user_id_list = target_user_id_list
+        else:
+            user_id_list = self.default_user_id_list
+
+        user_id_list = get_plotted_user_id_list(user_id_list)
+
+        fig_info_list = [
+            dict(
+                title="累積のタスク数と検査作業時間",
+                y_column_name="cumulative_inspection_worktime_hour",
+                y_axis_label="検査作業時間[hour]",
+            ),
+        ]
+
+        figs: list[bokeh.plotting.Figure] = []
+        for fig_info in fig_info_list:
+            figs.append(
+                figure(
+                    plot_width=self.PLOT_WIDTH,
+                    plot_height=self.PLOT_HEIGHT,
+                    title=fig_info["title"],
+                    x_axis_label="タスク数",
+                    y_axis_label=fig_info["y_axis_label"],
+                )
+            )
+
+        for user_index, user_id in enumerate(user_id_list):
+            df_subset = self.df_cumulative[self.df_cumulative["first_inspection_user_id"] == user_id]
+            if df_subset.empty:
+                logger.debug(f"dataframe is empty. user_id = {user_id}")
+                continue
+
+            source = ColumnDataSource(data=df_subset)
+            color = get_color_from_palette(user_index)
+            username = df_subset.iloc[0]["first_inspection_username"]
+
+            for fig, fig_info in zip(figs, fig_info_list):
+                plot_line_and_circle(
+                    fig,
+                    x_column_name="cumulative_task_count",
+                    y_column_name=fig_info["y_column_name"],
+                    source=source,
+                    legend_label=username,
+                    color=color,
+                )
+
+        hover_tool = create_hover_tool(
+            [
+                "task_id",
+                "phase",
+                "status",
+                "first_inspection_user_id",
+                "first_inspection_username",
+                "first_inspection_started_datetime",
+                "inspection_worktime_hour",
+                "annotation_count",
+                "input_data_count",
+                "inspection_comment_count",
+            ]
+        )
+        for fig in figs:
+            fig.add_tools(hover_tool)
+            add_legend_to_figure(fig)
+
+        write_bokeh_graph(bokeh.layouts.column(figs), output_file)
+
+
+class AcceptorCumulativeProductivity(AbstractPhaseCumulativeProductivity):
     def __init__(self, df: pandas.DataFrame):
         super().__init__(df, phase="acceptance")
 
@@ -631,6 +718,7 @@ class AcceptorCumulativeProductivity(AbstractRoleCumulativeProductivity):
         df["cumulative_acceptance_worktime_hour"] = groupby_obj["acceptance_worktime_hour"].cumsum()
         df["cumulative_annotation_count"] = groupby_obj["annotation_count"].cumsum()
         df["cumulative_input_data_count"] = groupby_obj["input_data_count"].cumsum()
+        df["cumulative_task_count"] = groupby_obj["task_count"].cumsum()
 
         return df
 
@@ -796,6 +884,86 @@ class AcceptorCumulativeProductivity(AbstractRoleCumulativeProductivity):
                 "annotation_count",
                 "input_data_count",
                 "acceptance_count",
+            ]
+        )
+        for fig in figs:
+            fig.add_tools(hover_tool)
+            add_legend_to_figure(fig)
+
+        write_bokeh_graph(bokeh.layouts.column(figs), output_file)
+
+    def plot_task_metrics(
+        self,
+        output_file: Path,
+        target_user_id_list: Optional[list[str]] = None,
+    ):
+        """
+        受入者の累積値をタスク単位でプロットする。
+        """
+        if not self._validate_df_for_output(output_file):
+            return
+
+        logger.debug(f"{output_file} を出力します。")
+
+        if target_user_id_list is not None:
+            user_id_list = target_user_id_list
+        else:
+            user_id_list = self.default_user_id_list
+
+        user_id_list = get_plotted_user_id_list(user_id_list)
+
+        fig_info_list = [
+            dict(
+                title="累積のタスク数と受入作業時間",
+                y_column_name="cumulative_acceptance_worktime_hour",
+                y_axis_label="受入作業時間[hour]",
+            ),
+        ]
+
+        figs: list[bokeh.plotting.Figure] = []
+        for fig_info in fig_info_list:
+            figs.append(
+                figure(
+                    plot_width=self.PLOT_WIDTH,
+                    plot_height=self.PLOT_HEIGHT,
+                    title=fig_info["title"],
+                    x_axis_label="タスク数",
+                    y_axis_label=fig_info["y_axis_label"],
+                )
+            )
+
+        for user_index, user_id in enumerate(user_id_list):
+            df_subset = self.df_cumulative[self.df_cumulative["first_acceptance_user_id"] == user_id]
+            if df_subset.empty:
+                logger.debug(f"dataframe is empty. user_id = {user_id}")
+                continue
+
+            source = ColumnDataSource(data=df_subset)
+            color = get_color_from_palette(user_index)
+            username = df_subset.iloc[0]["first_acceptance_username"]
+
+            for fig, fig_info in zip(figs, fig_info_list):
+                plot_line_and_circle(
+                    fig,
+                    x_column_name="cumulative_task_count",
+                    y_column_name=fig_info["y_column_name"],
+                    source=source,
+                    legend_label=username,
+                    color=color,
+                )
+
+        hover_tool = create_hover_tool(
+            [
+                "task_id",
+                "phase",
+                "status",
+                "first_acceptance_user_id",
+                "first_acceptance_username",
+                "first_acceptance_started_datetime",
+                "acceptance_worktime_hour",
+                "annotation_count",
+                "input_data_count",
+                "inspection_comment_count",
             ]
         )
         for fig in figs:
