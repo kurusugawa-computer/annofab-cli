@@ -61,9 +61,24 @@ def write_line_graph(
 ):
     df = Table.create_gradient_df(task.df.copy())
 
-    output_project_dir.write_cumulative_line_graph(AnnotatorCumulativeProductivity(df), phase=TaskPhase.ANNOTATION)
-    output_project_dir.write_cumulative_line_graph(InspectorCumulativeProductivity(df), phase=TaskPhase.INSPECTION)
-    output_project_dir.write_cumulative_line_graph(AcceptorCumulativeProductivity(df), phase=TaskPhase.ACCEPTANCE)
+    output_project_dir.write_cumulative_line_graph(
+        AnnotatorCumulativeProductivity(df),
+        phase=TaskPhase.ANNOTATION,
+        user_id_list=user_id_list,
+        minimal_output=minimal_output,
+    )
+    output_project_dir.write_cumulative_line_graph(
+        InspectorCumulativeProductivity(df),
+        phase=TaskPhase.INSPECTION,
+        user_id_list=user_id_list,
+        minimal_output=minimal_output,
+    )
+    output_project_dir.write_cumulative_line_graph(
+        AcceptorCumulativeProductivity(df),
+        phase=TaskPhase.ACCEPTANCE,
+        user_id_list=user_id_list,
+        minimal_output=minimal_output,
+    )
 
     annotator_per_date_obj = AnnotatorProductivityPerDate.from_df_task(task.df)
     inspector_per_date_obj = InspectorProductivityPerDate.from_df_task(task.df)

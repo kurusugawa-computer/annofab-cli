@@ -11,13 +11,7 @@ from dataclasses_json import DataClassJsonMixin
 
 from annofabcli.common.utils import print_json
 from annofabcli.statistics.database import Query
-from annofabcli.statistics.table import Table
-from annofabcli.statistics.visualization.dataframe.cumulative_productivity import (
-    AbstractPhaseCumulativeProductivity,
-    AcceptorCumulativeProductivity,
-    AnnotatorCumulativeProductivity,
-    InspectorCumulativeProductivity,
-)
+from annofabcli.statistics.visualization.dataframe.cumulative_productivity import AbstractPhaseCumulativeProductivity
 from annofabcli.statistics.visualization.dataframe.productivity_per_date import AbstractPhaseProductivityPerDate
 from annofabcli.statistics.visualization.dataframe.task import Task
 from annofabcli.statistics.visualization.dataframe.user_performance import UserPerformance, WholePerformance
@@ -89,42 +83,6 @@ class ProjectDir(DataClassJsonMixin):
         """
         obj.plot_histogram_of_worktime(self.project_dir / "histogram/ヒストグラム-作業時間.html")
         obj.plot_histogram_of_others(self.project_dir / "histogram/ヒストグラム.html")
-
-    def write_cumulative_line_graph_old(
-        self, task: Task, user_id_list: Optional[List[str]] = None, minimal_output: bool = False
-    ):
-        """
-        ユーザごとにプロットした累積折れ線グラフを出力します。
-        横軸が生産量、縦軸が作業時間でうｓ．
-
-        Args:
-            user_id_list: 折れ線グラフに表示するユーザ
-            minimal_output: 詳細なグラフを出力するかどうか。Trueなら
-
-        Returns:
-
-        """
-        if len(task.df) == 0:
-            logger.warning(f"タスク一覧が0件のため、折れ線グラフを出力しません。")
-            return
-
-        df_task = Table.create_gradient_df(task.df.copy())
-
-        annotator_obj = AnnotatorCumulativeProductivity(df_task)
-        inspector_obj = InspectorCumulativeProductivity(df_task)
-        acceptor_obj = AcceptorCumulativeProductivity(df_task)
-
-        output_dir = self.project_dir / "line-graph"
-        annotator_obj.plot_annotation_metrics(output_dir / "教師付者用/累積折れ線-横軸_アノテーション数-教師付者用.html", user_id_list)
-        inspector_obj.plot_annotation_metrics(output_dir / "検査者用/累積折れ線-横軸_アノテーション数-検査者用.html", user_id_list)
-        acceptor_obj.plot_annotation_metrics(output_dir / "受入者用/累積折れ線-横軸_アノテーション数-受入者用.html", user_id_list)
-
-        if not minimal_output:
-            annotator_obj.plot_input_data_metrics(output_dir / "教師付者用/累積折れ線-横軸_入力データ数-教師付者用.html", user_id_list)
-            inspector_obj.plot_input_data_metrics(output_dir / "検査者用/累積折れ線-横軸_入力データ数-検査者用.html", user_id_list)
-            acceptor_obj.plot_input_data_metrics(output_dir / "受入者用/累積折れ線-横軸_入力データ数-受入者用.html", user_id_list)
-
-            annotator_obj.plot_task_metrics(output_dir / "教師付者用/累積折れ線-横軸_タスク数-教師付者用.html", user_id_list)
 
     def write_cumulative_line_graph(
         self,

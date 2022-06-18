@@ -10,7 +10,7 @@ from typing import Any, Callable, Collection, List, Optional
 
 import annofabapi
 import pandas
-from annofabapi.models import ProjectMemberRole
+from annofabapi.models import ProjectMemberRole, TaskPhase
 
 import annofabcli
 from annofabcli.common.cli import (
@@ -142,27 +142,7 @@ class WriteCsvGraph:
         self.project_dir.write_whole_performance(whole_performance)
 
         if not self.output_only_text:
-            user_performance.plot_quality(self.output_dir / "scatter/散布図-教師付者の品質と作業量の関係.html")
-            user_performance.plot_productivity_from_monitored_worktime(
-                self.output_dir / "scatter/散布図-アノテーションあたり作業時間と累計作業時間の関係-計測時間.html"
-            )
-            user_performance.plot_quality_and_productivity_from_monitored_worktime(
-                self.output_dir / "scatter/散布図-アノテーションあたり作業時間と品質の関係-計測時間-教師付者用.html"
-            )
-
-            if user_performance.actual_worktime_exists():
-                user_performance.plot_productivity_from_actual_worktime(
-                    self.output_dir / "scatter/散布図-アノテーションあたり作業時間と累計作業時間の関係-実績時間.html"
-                )
-                user_performance.plot_quality_and_productivity_from_actual_worktime(
-                    self.output_dir / "scatter/散布図-アノテーションあたり作業時間と品質の関係-実績時間-教師付者用.html"
-                )
-            else:
-                logger.warning(
-                    f"実績作業時間の合計値が0なので、実績作業時間関係の以下のグラフは出力しません。 :: "
-                    "'散布図-アノテーションあたり作業時間と累計作業時間の関係-実績時間.html',"
-                    "'散布図-アノテーションあたり作業時間と品質の関係-実績時間-教師付者用'"
-                )
+            self.project_dir.write_user_performance_scatter_plot(user_performance)
 
     def write_cumulative_linegraph_by_user(self, user_id_list: Optional[List[str]] = None) -> None:
         """ユーザごとの累積折れ線グラフをプロットする。"""
@@ -173,30 +153,16 @@ class WriteCsvGraph:
         acceptor_obj = AcceptorCumulativeProductivity(df_task)
 
         if not self.output_only_text:
-            annotator_obj.plot_annotation_metrics(
-                self.output_dir / "line-graph/教師付者用/累積折れ線-横軸_アノテーション数-教師付者用.html", user_id_list
-            )
-            inspector_obj.plot_annotation_metrics(
-                self.output_dir / "line-graph/検査者用/累積折れ線-横軸_アノテーション数-検査者用.html", user_id_list
-            )
-            acceptor_obj.plot_annotation_metrics(
-                self.output_dir / "line-graph/受入者用/累積折れ線-横軸_アノテーション数-受入者用.html", user_id_list
-            )
 
-            if not self.minimal_output:
-                annotator_obj.plot_input_data_metrics(
-                    self.output_dir / "line-graph/教師付者用/累積折れ線-横軸_入力データ数-教師付者用.html", user_id_list
-                )
-                inspector_obj.plot_input_data_metrics(
-                    self.output_dir / "line-graph/検査者用/累積折れ線-横軸_入力データ数-検査者用.html", user_id_list
-                )
-                acceptor_obj.plot_input_data_metrics(
-                    self.output_dir / "line-graph/受入者用/累積折れ線-横軸_入力データ数-受入者用.html", user_id_list
-                )
-
-                annotator_obj.plot_task_metrics(
-                    self.output_dir / "line-graph/教師付者用/累積折れ線-横軸_タスク数-教師付者用.html", user_id_list
-                )
+            self.project_dir.write_cumulative_line_graph(
+                annotator_obj, phase=TaskPhase.ANNOTATION, user_id_list=user_id_list, minimal_output=self.minimal_output
+            )
+            self.project_dir.write_cumulative_line_graph(
+                inspector_obj, phase=TaskPhase.INSPECTION, user_id_list=user_id_list, minimal_output=self.minimal_output
+            )
+            self.project_dir.write_cumulative_line_graph(
+                acceptor_obj, phase=TaskPhase.ACCEPTANCE, user_id_list=user_id_list, minimal_output=self.minimal_output
+            )
 
     def write_worktime_per_date(self, user_id_list: Optional[List[str]] = None) -> None:
         """日ごとの作業時間情報を出力する。"""
@@ -225,37 +191,26 @@ class WriteCsvGraph:
 
     def write_user_productivity_per_date(self, user_id_list: Optional[List[str]] = None):
         """ユーザごとの日ごとの生産性情報を出力する。"""
-        # 各ユーザごとの日ごとの情報
         df_task = self._get_task_df()
+
         annotator_per_date_obj = AnnotatorProductivityPerDate.from_df_task(df_task)
-        annotator_per_date_obj.to_csv(self.output_dir / Path("教師付者_教師付開始日list.csv"))
-
         inspector_per_date_obj = InspectorProductivityPerDate.from_df_task(df_task)
-        inspector_per_date_obj.to_csv(self.output_dir / Path("検査者_検査開始日list.csv"))
+        acceptor_per_date_obj = AcceptorProductivityPerDate.from_df_task(df_task)
 
-        acceptor_per_date = AcceptorProductivityPerDate.from_df_task(df_task)
-        acceptor_per_date.to_csv(self.output_dir / Path("受入者_受入開始日list.csv"))
+        # 開始日ごとのCSVを出力
+        self.project_dir.write_performance_per_start_date_csv(annotator_per_date_obj, phase=TaskPhase.ANNOTATION)
+        self.project_dir.write_performance_per_start_date_csv(inspector_per_date_obj, phase=TaskPhase.INSPECTION)
+        self.project_dir.write_performance_per_start_date_csv(acceptor_per_date_obj, phase=TaskPhase.ACCEPTANCE)
 
         if not self.output_only_text:
-            annotator_per_date_obj.plot_annotation_metrics(
-                self.output_dir / Path("line-graph/教師付者用/折れ線-横軸_教師付開始日-縦軸_アノテーション単位の指標-教師付者用.html"), user_id_list
+            self.project_dir.write_performance_line_graph_per_date(
+                annotator_per_date_obj, phase=TaskPhase.ANNOTATION, user_id_list=user_id_list
             )
-            annotator_per_date_obj.plot_input_data_metrics(
-                self.output_dir / Path("line-graph/教師付者用/折れ線-横軸_教師付開始日-縦軸_入力データ単位の指標-教師付者用.html"), user_id_list
+            self.project_dir.write_performance_line_graph_per_date(
+                inspector_per_date_obj, phase=TaskPhase.INSPECTION, user_id_list=user_id_list
             )
-
-            inspector_per_date_obj.plot_annotation_metrics(
-                self.output_dir / Path("line-graph/検査者用/折れ線-横軸_検査開始日-縦軸_アノテーション単位の指標-検査者用.html"), user_id_list
-            )
-            inspector_per_date_obj.plot_input_data_metrics(
-                self.output_dir / Path("line-graph/検査者用/折れ線-横軸_検査開始日-縦軸_入力データ単位の指標-検査者用.html"), user_id_list
-            )
-
-            acceptor_per_date.plot_annotation_metrics(
-                self.output_dir / Path("line-graph/受入者用/折れ線-横軸_受入開始日-縦軸_アノテーション単位の指標-受入者用.html"), user_id_list
-            )
-            acceptor_per_date.plot_input_data_metrics(
-                self.output_dir / Path("line-graph/受入者用/折れ線-横軸_受入開始日-縦軸_入力データ単位の指標-受入者用.html"), user_id_list
+            self.project_dir.write_performance_line_graph_per_date(
+                acceptor_per_date_obj, phase=TaskPhase.ACCEPTANCE, user_id_list=user_id_list
             )
 
 

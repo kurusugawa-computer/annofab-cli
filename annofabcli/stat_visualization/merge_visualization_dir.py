@@ -171,9 +171,24 @@ def merge_visualization_dir(  # pylint: disable=too-many-statements
         """ユーザごとにプロットした累積折れ線グラフを出力する。"""
         df = Table.create_gradient_df(task.df.copy())
 
-        output_project_dir.write_cumulative_line_graph(AnnotatorCumulativeProductivity(df), phase=TaskPhase.ANNOTATION)
-        output_project_dir.write_cumulative_line_graph(InspectorCumulativeProductivity(df), phase=TaskPhase.INSPECTION)
-        output_project_dir.write_cumulative_line_graph(AcceptorCumulativeProductivity(df), phase=TaskPhase.ACCEPTANCE)
+        output_project_dir.write_cumulative_line_graph(
+            AnnotatorCumulativeProductivity(df),
+            phase=TaskPhase.ANNOTATION,
+            user_id_list=user_id_list,
+            minimal_output=minimal_output,
+        )
+        output_project_dir.write_cumulative_line_graph(
+            InspectorCumulativeProductivity(df),
+            phase=TaskPhase.INSPECTION,
+            user_id_list=user_id_list,
+            minimal_output=minimal_output,
+        )
+        output_project_dir.write_cumulative_line_graph(
+            AcceptorCumulativeProductivity(df),
+            phase=TaskPhase.ACCEPTANCE,
+            user_id_list=user_id_list,
+            minimal_output=minimal_output,
+        )
 
     @_catch_exception
     def write_line_graph(task: Task) -> None:
@@ -187,16 +202,16 @@ def merge_visualization_dir(  # pylint: disable=too-many-statements
         output_project_dir.write_performance_per_start_date_csv(inspector_per_date_obj, phase=TaskPhase.INSPECTION)
         output_project_dir.write_performance_per_start_date_csv(acceptor_per_date_obj, phase=TaskPhase.ACCEPTANCE)
 
-        if not minimal_output:
-            output_project_dir.write_performance_line_graph_per_date(
-                annotator_per_date_obj, phase=TaskPhase.ANNOTATION, user_id_list=user_id_list
-            )
-            output_project_dir.write_performance_line_graph_per_date(
-                inspector_per_date_obj, phase=TaskPhase.INSPECTION, user_id_list=user_id_list
-            )
-            output_project_dir.write_performance_line_graph_per_date(
-                acceptor_per_date_obj, phase=TaskPhase.ACCEPTANCE, user_id_list=user_id_list
-            )
+        # 折れ線グラフを出力
+        output_project_dir.write_performance_line_graph_per_date(
+            annotator_per_date_obj, phase=TaskPhase.ANNOTATION, user_id_list=user_id_list
+        )
+        output_project_dir.write_performance_line_graph_per_date(
+            inspector_per_date_obj, phase=TaskPhase.INSPECTION, user_id_list=user_id_list
+        )
+        output_project_dir.write_performance_line_graph_per_date(
+            acceptor_per_date_obj, phase=TaskPhase.ACCEPTANCE, user_id_list=user_id_list
+        )
 
     execute_merge_performance_per_user()
     execute_merge_performance_per_date()
