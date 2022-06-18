@@ -115,7 +115,7 @@ class ProjectDir(DataClassJsonMixin):
                 # 教師付フェーズの場合は、「差し戻し回数」で品質を評価した場合があるので、タスク単位の指標も出力する
                 obj.plot_task_metrics(output_dir / f"{phase_name}者用/累積折れ線-横軸_タスク数-{phase_name}者用.html", user_id_list)
 
-    def write_performance_per_start_date_csv(self, obj: AbstractPhaseProductivityPerDate, phase: TaskPhase):
+    def write_performance_per_started_date_csv(self, obj: AbstractPhaseProductivityPerDate, phase: TaskPhase):
         """
         指定したフェーズの開始日ごとの作業時間や生産性情報を、CSVに出力します。
         """
@@ -158,6 +158,13 @@ class ProjectDir(DataClassJsonMixin):
         """
         obj.to_csv(self.project_dir / self.FILENAME_WHOLE_PRODUCTIVITY_PER_DATE)
 
+    def write_whole_productivity_line_graph_per_date(self, obj: WholeProductivityPerCompletedDate):
+        """
+        横軸が日付、縦軸が全体の生産性などをプロットした折れ線グラフを出力します。
+        """
+        obj.plot(self.project_dir / "line-graph/折れ線-横軸_日-全体.html")
+        obj.plot_cumulatively(self.project_dir / "line-graph/累積折れ線-横軸_日-全体.html")
+
     def read_whole_productivity_per_first_annotation_started_date(
         self,
     ) -> WholeProductivityPerFirstAnnotationStartedDate:
@@ -175,6 +182,14 @@ class ProjectDir(DataClassJsonMixin):
         教師付開始日ごとの生産性と品質の情報を書き込みます。
         """
         obj.to_csv(self.project_dir / self.FILENAME_WHOLE_PRODUCTIVITY_PER_FIRST_ANNOTATION_STARTED_DATE)
+
+    def write_whole_productivity_line_graph_per_annotation_started_date(
+        self, obj: WholeProductivityPerFirstAnnotationStartedDate
+    ):
+        """
+        横軸が教師付開始日、縦軸が全体の生産性などをプロットした折れ線グラフを出力します。
+        """
+        obj.plot(self.project_dir / "line-graph/折れ線-横軸_教師付開始日-全体.html")
 
     def read_user_performance(self) -> UserPerformance:
         """
@@ -218,6 +233,10 @@ class ProjectDir(DataClassJsonMixin):
     def write_worktime_per_date_user(self, obj: WorktimePerDate):
         """`ユーザ_日付list-作業時間.csvを書き込む"""
         obj.to_csv(self.project_dir / self.FILENAME_WORKTIME_PER_DATE_USER)
+
+    def write_worktime_line_graph(self, obj: WorktimePerDate, user_id_list: Optional[list[str]] = None):
+        """横軸が日付、縦軸がユーザごとの作業時間である折れ線グラフを出力します。"""
+        obj.plot_cumulatively(self.project_dir / "line-graph/累積折れ線-横軸_日-縦軸_作業時間.html", user_id_list)
 
     def read_project_info(self) -> ProjectInfo:
         """

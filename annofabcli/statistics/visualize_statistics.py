@@ -183,12 +183,11 @@ class WriteCsvGraph:
         self.project_dir.write_whole_productivity_per_first_annotation_started_date(productivity_per_started_date_obj)
 
         if not self.output_only_text:
-            worktime_per_date_obj.plot_cumulatively(
-                self.output_dir / "line-graph/累積折れ線-横軸_日-縦軸_作業時間.html", user_id_list
+            self.project_dir.write_worktime_line_graph(worktime_per_date_obj, user_id_list=user_id_list)
+            self.project_dir.write_whole_productivity_line_graph_per_date(productivity_per_completed_date_obj)
+            self.project_dir.write_whole_productivity_line_graph_per_annotation_started_date(
+                productivity_per_started_date_obj
             )
-            productivity_per_completed_date_obj.plot(self.output_dir / "line-graph/折れ線-横軸_日-全体.html")
-            productivity_per_completed_date_obj.plot_cumulatively(self.output_dir / "line-graph/累積折れ線-横軸_日-全体.html")
-            productivity_per_started_date_obj.plot(self.output_dir / "line-graph/折れ線-横軸_教師付開始日-全体.html")
 
     def write_user_productivity_per_date(self, user_id_list: Optional[List[str]] = None):
         """ユーザごとの日ごとの生産性情報を出力する。"""
@@ -199,9 +198,9 @@ class WriteCsvGraph:
         acceptor_per_date_obj = AcceptorProductivityPerDate.from_df_task(df_task)
 
         # 開始日ごとのCSVを出力
-        self.project_dir.write_performance_per_start_date_csv(annotator_per_date_obj, phase=TaskPhase.ANNOTATION)
-        self.project_dir.write_performance_per_start_date_csv(inspector_per_date_obj, phase=TaskPhase.INSPECTION)
-        self.project_dir.write_performance_per_start_date_csv(acceptor_per_date_obj, phase=TaskPhase.ACCEPTANCE)
+        self.project_dir.write_performance_per_started_date_csv(annotator_per_date_obj, phase=TaskPhase.ANNOTATION)
+        self.project_dir.write_performance_per_started_date_csv(inspector_per_date_obj, phase=TaskPhase.INSPECTION)
+        self.project_dir.write_performance_per_started_date_csv(acceptor_per_date_obj, phase=TaskPhase.ACCEPTANCE)
 
         if not self.output_only_text:
             self.project_dir.write_performance_line_graph_per_date(

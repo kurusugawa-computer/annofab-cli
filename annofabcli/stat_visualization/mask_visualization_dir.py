@@ -84,9 +84,9 @@ def write_line_graph(
     inspector_per_date_obj = InspectorProductivityPerDate.from_df_task(task.df)
     acceptor_per_date_obj = AcceptorProductivityPerDate.from_df_task(task.df)
 
-    output_project_dir.write_performance_per_start_date_csv(annotator_per_date_obj, phase=TaskPhase.ANNOTATION)
-    output_project_dir.write_performance_per_start_date_csv(inspector_per_date_obj, phase=TaskPhase.INSPECTION)
-    output_project_dir.write_performance_per_start_date_csv(acceptor_per_date_obj, phase=TaskPhase.ACCEPTANCE)
+    output_project_dir.write_performance_per_started_date_csv(annotator_per_date_obj, phase=TaskPhase.ANNOTATION)
+    output_project_dir.write_performance_per_started_date_csv(inspector_per_date_obj, phase=TaskPhase.INSPECTION)
+    output_project_dir.write_performance_per_started_date_csv(acceptor_per_date_obj, phase=TaskPhase.ACCEPTANCE)
 
     if not minimal_output:
         output_project_dir.write_performance_line_graph_per_date(
