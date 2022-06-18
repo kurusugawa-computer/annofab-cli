@@ -216,7 +216,7 @@ def parse_args(parser: argparse.ArgumentParser):
         "--dir",
         type=Path,
         required=True,
-        help=f"マスクしたいプロジェクトディレクトリが存在するディレクトリを指定してください。プロジェクトディレクトリは  ``annofabcli statistics visualize`` コマンドの出力結果です。\n",
+        help=f"マスクしたいプロジェクトディレクトリが存在するディレクトリを指定してください。プロジェクトディレクトリは  ``annofabcli statistics visualize`` コマンドの出力結果です。",  # noqa: E501
     )
 
     parser.add_argument(

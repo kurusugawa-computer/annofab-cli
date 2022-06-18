@@ -169,7 +169,8 @@ class WriteCsvGraph:
         worktime_per_date_obj = WorktimePerDate.from_webapi(
             self.service, self.project_id, self.df_labor, start_date=self.start_date, end_date=self.end_date
         )
-        worktime_per_date_obj.to_csv(self.output_dir / "ユーザ_日付list-作業時間.csv")
+
+        self.project_dir.write_worktime_per_date_user(worktime_per_date_obj)
 
         df_task = self._get_task_df()
         productivity_per_completed_date_obj = WholeProductivityPerCompletedDate.from_df(
