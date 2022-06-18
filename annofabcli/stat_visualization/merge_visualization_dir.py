@@ -80,10 +80,7 @@ def merge_visualization_dir(  # pylint: disable=too-many-statements
 
         if merged_obj is not None:
             output_project_dir.write_whole_productivity_per_date(merged_obj)
-
-            # TODO: あとで直す
-            merged_obj.plot(output_project_dir.project_dir / "折れ線-横軸_日-全体.html")
-            merged_obj.plot_cumulatively(output_project_dir.project_dir / "累積折れ線-横軸_日-全体.html")
+            output_project_dir.write_whole_productivity_line_graph_per_date(merged_obj)
 
     @_catch_exception
     def merge_performance_per_first_annotation_started_date():
@@ -102,8 +99,7 @@ def merge_visualization_dir(  # pylint: disable=too-many-statements
 
         if merged_obj is not None:
             output_project_dir.write_whole_productivity_per_first_annotation_started_date(merged_obj)
-            # TODO 見直す
-            merged_obj.plot(output_project_dir.project_dir / "line-graph/折れ線-横軸_教師付開始日-全体.html")
+            output_project_dir.write_whole_productivity_line_graph_per_annotation_started_date(merged_obj)
 
     @_catch_exception
     def merge_worktime_per_date():
@@ -122,10 +118,7 @@ def merge_visualization_dir(  # pylint: disable=too-many-statements
 
         if merged_obj is not None:
             output_project_dir.write_worktime_per_date_user(merged_obj)
-            # TODO 見直す
-            merged_obj.plot_cumulatively(
-                output_project_dir.project_dir / "line-graph/累積折れ線-横軸_日-縦軸_作業時間.html", user_id_list
-            )
+            output_project_dir.write_worktime_line_graph(merged_obj, user_id_list=user_id_list)
 
     @_catch_exception
     def merge_task_list() -> Optional[Task]:

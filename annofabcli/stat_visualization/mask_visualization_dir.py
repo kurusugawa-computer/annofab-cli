@@ -155,9 +155,7 @@ def mask_visualization_dir(
         )
         masked_worktime_per_date_user = WorktimePerDate(df_masked_worktime)
         output_project_dir.write_worktime_per_date_user(masked_worktime_per_date_user)
-        masked_worktime_per_date_user.plot_cumulatively(
-            project_dir.project_dir / "line-graph/累積折れ線-横軸_日-縦軸_作業時間.html", user_id_list
-        )
+        output_project_dir.write_worktime_line_graph(masked_worktime_per_date_user, user_id_list=user_id_list)
 
     logger.debug(f"'{project_dir}'のマスクした結果を'{output_project_dir}'に出力しました。")
 
