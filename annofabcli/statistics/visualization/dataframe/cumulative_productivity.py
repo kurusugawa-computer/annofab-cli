@@ -436,6 +436,10 @@ class InspectorCumulativeProductivity(AbstractPhaseCumulativeProductivity):
         df = self.df.sort_values(["first_inspection_user_id", "first_inspection_started_datetime"]).reset_index(
             drop=True
         )
+
+        # タスクの累計数を取得するために設定する
+        df["task_count"] = 1
+
         groupby_obj = df.groupby("first_inspection_user_id")
 
         # 作業時間の累積値
@@ -445,6 +449,9 @@ class InspectorCumulativeProductivity(AbstractPhaseCumulativeProductivity):
         df["cumulative_annotation_count"] = groupby_obj["annotation_count"].cumsum()
         df["cumulative_input_data_count"] = groupby_obj["input_data_count"].cumsum()
         df["cumulative_task_count"] = groupby_obj["task_count"].cumsum()
+
+        # 元に戻す
+        df = df.drop(["task_count"], axis=1)
 
         return df
 
@@ -712,6 +719,9 @@ class AcceptorCumulativeProductivity(AbstractPhaseCumulativeProductivity):
         df = self.df.sort_values(["first_acceptance_user_id", "first_acceptance_started_datetime"]).reset_index(
             drop=True
         )
+        # タスクの累計数を取得するために設定する
+        df["task_count"] = 1
+
         groupby_obj = df.groupby("first_acceptance_user_id")
 
         # 作業時間の累積値
@@ -719,6 +729,9 @@ class AcceptorCumulativeProductivity(AbstractPhaseCumulativeProductivity):
         df["cumulative_annotation_count"] = groupby_obj["annotation_count"].cumsum()
         df["cumulative_input_data_count"] = groupby_obj["input_data_count"].cumsum()
         df["cumulative_task_count"] = groupby_obj["task_count"].cumsum()
+
+        # 元に戻す
+        df = df.drop(["task_count"], axis=1)
 
         return df
 

@@ -50,31 +50,6 @@ class TestCommandLine:
             ]
         )
 
-    def test_write_linegraph_per_user(self):
-        main(
-            [
-                "stat_visualization",
-                "write_linegraph_per_user",
-                "--csv",
-                str(data_dir / "visualization-dir/タスクlist.csv"),
-                "--output_dir",
-                str(out_dir / "write_linegraph_per_user-out"),
-                "--minimal",
-            ]
-        )
-
-    def test_write_performance_scatter_per_user(self):
-        main(
-            [
-                "stat_visualization",
-                "write_performance_scatter_per_user",
-                "--csv",
-                str(data_dir / "visualization-dir/メンバごとの生産性と品質.csv"),
-                "--output_dir",
-                str(out_dir / "write_performance_scatter_per_user-out"),
-            ]
-        )
-
     def test_write_performance_rating_csv(self):
         main(
             [
@@ -84,30 +59,5 @@ class TestCommandLine:
                 str(data_dir),
                 "--output_dir",
                 str(out_dir / "write_performance_rating_csv-out"),
-            ]
-        )
-
-    def test_write_task_histogram(self):
-        main(
-            [
-                "stat_visualization",
-                "write_task_histogram",
-                "--csv",
-                str(data_dir / "visualization-dir/タスクlist.csv"),
-                "--output_dir",
-                str(out_dir / "write_task_histogram-out"),
-                "--minimal",
-            ]
-        )
-
-    def test_write_whole_linegraph(self):
-        main(
-            [
-                "stat_visualization",
-                "write_whole_linegraph",
-                "--csv",
-                str(data_dir / "visualization-dir/日毎の生産量と生産性.csv"),
-                "--output_dir",
-                str(out_dir / "write_whole_linegraph-out"),
             ]
         )

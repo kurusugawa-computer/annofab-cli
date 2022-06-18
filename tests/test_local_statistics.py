@@ -461,6 +461,7 @@ class TestProjectPerformance:
         row = df.iloc[0]
         # メインの項目をアサートする
         assert row[("dirname", "")] == "empty"
+        print(f"{row[('project_title', '')]=}")
         assert numpy.isnan(row[("project_title", "")])
         assert numpy.isnan(row[("start_date", "")])
         assert numpy.isnan(row[("actual_worktime_hour", "sum")])

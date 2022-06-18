@@ -20,7 +20,6 @@ from annofabcli.common.cli import (
 )
 from annofabcli.common.facade import AnnofabApiFacade, TaskQuery
 from annofabcli.stat_visualization.merge_visualization_dir import merge_visualization_dir
-from annofabcli.statistics.csv import FILENAME_PERFORMANCE_PER_DATE
 from annofabcli.statistics.database import Database, Query
 from annofabcli.statistics.table import Table
 from annofabcli.statistics.visualization.dataframe.cumulative_productivity import (
@@ -210,10 +209,11 @@ class WriteCsvGraph:
         productivity_per_completed_date_obj = WholeProductivityPerCompletedDate.from_df(
             df_task, worktime_per_date_obj.df
         )
-        productivity_per_completed_date_obj.to_csv(self.output_dir / FILENAME_PERFORMANCE_PER_DATE)
+
+        self.project_dir.write_whole_productivity_per_date(productivity_per_completed_date_obj)
 
         productivity_per_started_date_obj = WholeProductivityPerFirstAnnotationStartedDate.from_df(df_task)
-        productivity_per_started_date_obj.to_csv(self.output_dir / "教師付開始日毎の生産量と生産性.csv")
+        self.project_dir.write_whole_productivity_per_first_annotation_started_date(productivity_per_started_date_obj)
 
         if not self.output_only_text:
             worktime_per_date_obj.plot_cumulatively(

@@ -290,7 +290,7 @@ def create_masked_user_info_df(
     if "user_id" not in df:
         raise AnnofabCliException(f"`user_id`列が存在しないため、ユーザ情報をマスクできません。")
 
-    df_output = df.coy()
+    df_output = df.copy()
     replacement_dict_by_user_id = create_replacement_dict_by_user_id(
         df, not_masked_biography_set=not_masked_biography_set, not_masked_user_id_set=not_masked_user_id_set
     )
