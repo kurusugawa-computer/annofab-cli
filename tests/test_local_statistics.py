@@ -111,7 +111,7 @@ class TestSummarizeTaskCountByTaskId:
         assert get_task_id_prefix("abc", delimiter="_") == "unknown"
 
     def test_create_task_count_summary_df(self):
-        with (data_path / "task.json").open() as f:
+        with (data_path / "task.json").open(encoding="utf-8") as f:
             task_list = json.load(f)
         df = create_task_count_summary_df(task_list, task_id_delimiter="_", task_id_groups=None)
         assert len(df) == 1

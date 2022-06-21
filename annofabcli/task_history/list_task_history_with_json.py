@@ -54,7 +54,7 @@ class ListTaskHistoryWithJsonMain:
         else:
             json_path = task_history_json
 
-        with json_path.open() as f:
+        with json_path.open(encoding="utf-8") as f:
             all_task_history_dict = json.load(f)
 
         task_history_dict = self.filter_task_history_dict(all_task_history_dict, task_id_list)
