@@ -32,7 +32,7 @@ from annofabcli.statistics.linegraph import (
 logger = logging.getLogger(__name__)
 
 
-class AbstractRoleProductivityPerDate(abc.ABC):
+class AbstractPhaseProductivityPerDate(abc.ABC):
     """ロールごとの日ごとの生産性に関する情報を格納する抽象クラス"""
 
     PLOT_WIDTH = 1200
@@ -49,23 +49,23 @@ class AbstractRoleProductivityPerDate(abc.ABC):
 
     @classmethod
     @abc.abstractmethod
-    def from_df_task(cls, df_task: pandas.DataFrame) -> AbstractRoleProductivityPerDate:
-        pass
+    def from_df_task(cls, df_task: pandas.DataFrame) -> AbstractPhaseProductivityPerDate:
+        raise NotImplementedError()
 
     @abc.abstractmethod
     def to_csv(self, output_file: Path):
-        pass
+        raise NotImplementedError()
 
     @abc.abstractmethod
     def plot_input_data_metrics(self, output_file: Path, target_user_id_list: Optional[list[str]] = None):
-        pass
+        raise NotImplementedError()
 
     @abc.abstractmethod
     def plot_annotation_metrics(self, output_file: Path, target_user_id_list: Optional[list[str]] = None):
-        pass
+        raise NotImplementedError()
 
 
-class AnnotatorProductivityPerDate(AbstractRoleProductivityPerDate):
+class AnnotatorProductivityPerDate(AbstractPhaseProductivityPerDate):
     """教師付開始日ごとの教師付者の生産性に関する情報"""
 
     @classmethod
@@ -471,7 +471,7 @@ class AnnotatorProductivityPerDate(AbstractRoleProductivityPerDate):
         print_csv(self.df[columns], output=str(output_file))
 
 
-class InspectorProductivityPerDate(AbstractRoleProductivityPerDate):
+class InspectorProductivityPerDate(AbstractPhaseProductivityPerDate):
     """検査開始日ごとの検査者の生産性に関する情報"""
 
     @classmethod
@@ -818,7 +818,7 @@ class InspectorProductivityPerDate(AbstractRoleProductivityPerDate):
         print_csv(self.df[columns], output=str(output_file))
 
 
-class AcceptorProductivityPerDate(AbstractRoleProductivityPerDate):
+class AcceptorProductivityPerDate(AbstractPhaseProductivityPerDate):
     """受入開始日ごとの受入者の生産性に関する情報"""
 
     @classmethod

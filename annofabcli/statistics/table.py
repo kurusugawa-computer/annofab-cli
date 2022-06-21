@@ -4,7 +4,7 @@ from typing import Any, Dict, List, Optional
 import dateutil
 import more_itertools
 import pandas
-from annofabapi.models import InputDataId, Inspection, InspectionStatus, Task, TaskHistory, TaskPhase
+from annofabapi.models import InputDataId, Inspection, Task, TaskHistory, TaskPhase
 
 import annofabcli
 from annofabcli.common.facade import AnnofabApiFacade
@@ -59,14 +59,6 @@ class Table:
             self._task_list = task_list
             return self._task_list
 
-    def _get_inspections_dict(self) -> Dict[str, Dict[InputDataId, List[Inspection]]]:
-        if self._inspections_dict is not None:
-            return self._inspections_dict
-        else:
-            task_id_list = [t["task_id"] for t in self._get_task_list()]
-            self._inspections_dict = self.database.read_inspections_from_json(task_id_list)
-            return self._inspections_dict
-
     def _get_task_histories_dict(self) -> Dict[str, List[TaskHistory]]:
         if self._task_histories_dict is not None:
             return self._task_histories_dict
@@ -95,28 +87,6 @@ class Table:
             and isoduration_to_hour(e["accumulated_labor_time_milliseconds"]) > 0
         ]
         return len(set(account_id_list)) >= 2
-
-    @staticmethod
-    def _inspection_condition(inspection_arg, exclude_reply: bool, only_error_corrected: bool):
-        """
-        対象の検査コメントかどうかの判定
-        Args:
-            inspection_arg:
-            exclude_reply:
-            only_error_corrected:
-
-        Returns:
-
-        """
-        exclude_reply_flag = True
-        if exclude_reply:
-            exclude_reply_flag = inspection_arg["parent_inspection_id"] is None
-
-        only_error_corrected_flag = True
-        if only_error_corrected:
-            only_error_corrected_flag = inspection_arg["status"] == InspectionStatus.ERROR_CORRECTED.value
-
-        return exclude_reply_flag and only_error_corrected_flag
 
     def _get_user_id(self, account_id: Optional[str]) -> Optional[str]:
         """
@@ -246,44 +216,10 @@ class Table:
             first_annotation_user_id, first_annotation_started_datetime,
             annotation_worktime_hour, inspection_worktime_hour, acceptance_worktime_hour, worktime_hour
         """
-
-        def set_input_data_info_for_movie(arg_task):
-            input_data_id_list = arg_task["input_data_id_list"]
-            input_data = input_data_dict.get(input_data_id_list[0])
-            if input_data is None:
-                logger.warning(f"task_id={arg_task['task_id']} に含まれる入力データID {input_data_id_list[0]} は存在しません。")
-                arg_task["input_duration_seconds"] = None
-                return
-            arg_task["input_duration_seconds"] = input_data.input_duration_seconds
-
-        def set_inspection_comment_info(arg_task):
-            # 指摘枚数
-            inspection_comment_count = 0
-            # 指摘された画像枚数
-            input_data_count_of_inspection = 0
-
-            input_data_dict = inspections_dict.get(arg_task["task_id"])
-            if input_data_dict is not None:
-                for inspection_list in input_data_dict.values():
-                    # 検査コメントを絞り込む
-                    filtered_inspection_list = [
-                        e
-                        for e in inspection_list
-                        if self._inspection_condition(e, exclude_reply=True, only_error_corrected=True)
-                    ]
-                    inspection_comment_count += len(filtered_inspection_list)
-                    if len(filtered_inspection_list) > 0:
-                        input_data_count_of_inspection += 1
-
-            arg_task["inspection_comment_count"] = inspection_comment_count
-
-            arg_task["input_data_count_of_inspection"] = input_data_count_of_inspection
-
         tasks = self._get_task_list()
         task_histories_dict = self._get_task_histories_dict()
-        inspections_dict = self._get_inspections_dict()
+        inspections_dict = self.database.get_inspection_comment_count_by_task()
         annotations_dict = self.database.get_annotation_count_by_task()
-        input_data_dict = self.database.read_input_data_from_json()
 
         adding_obj = AddingAdditionalInfoToTask(self.annofab_service, project_id=self.project_id)
 
@@ -301,8 +237,7 @@ class Table:
             self.set_task_histories(task, task_histories)
 
             task["annotation_count"] = annotations_dict.get(task_id, 0)
-            set_inspection_comment_info(task)
-            set_input_data_info_for_movie(task)
+            task["inspection_comment_count"] = inspections_dict.get(task_id, 0)
 
         df = pandas.DataFrame(tasks)
         if len(df) > 0:

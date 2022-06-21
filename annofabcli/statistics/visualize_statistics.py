@@ -10,7 +10,7 @@ from typing import Any, Callable, Collection, List, Optional
 
 import annofabapi
 import pandas
-from annofabapi.models import ProjectMemberRole
+from annofabapi.models import ProjectMemberRole, TaskPhase
 
 import annofabcli
 from annofabcli.common.cli import (
@@ -19,9 +19,7 @@ from annofabcli.common.cli import (
     build_annofabapi_resource_and_login,
 )
 from annofabcli.common.facade import AnnofabApiFacade, TaskQuery
-from annofabcli.common.utils import print_json
 from annofabcli.stat_visualization.merge_visualization_dir import merge_visualization_dir
-from annofabcli.statistics.csv import FILENAME_PERFORMANCE_PER_DATE, FILENAME_PERFORMANCE_PER_USER, FILENAME_TASK_LIST
 from annofabcli.statistics.database import Database, Query
 from annofabcli.statistics.table import Table
 from annofabcli.statistics.visualization.dataframe.cumulative_productivity import (
@@ -114,11 +112,11 @@ class WriteCsvGraph:
 
         """
         obj = Task(self._get_task_df())
-        obj.to_csv(self.output_dir / FILENAME_TASK_LIST)
+
+        self.project_dir.write_task_list(obj)
 
         if not self.output_only_text:
-            obj.plot_histogram_of_worktime(self.output_dir / "histogram/ヒストグラム-作業時間.html")
-            obj.plot_histogram_of_others(self.output_dir / "histogram/ヒストグラム.html")
+            self.project_dir.write_task_histogram(obj)
 
     def write_user_performance(self) -> None:
         """
@@ -130,41 +128,21 @@ class WriteCsvGraph:
             df_task_history, self._get_task_df()
         )
         if len(annotation_count_ratio_df) == 0:
-            obj = UserPerformance(pandas.DataFrame())
+            user_performance = UserPerformance(pandas.DataFrame())
         else:
-            obj = UserPerformance.from_df(
+            user_performance = UserPerformance.from_df(
                 df_task_history=df_task_history,
                 df_labor=self.df_labor,
                 df_worktime_ratio=annotation_count_ratio_df,
             )
 
-        obj.to_csv(self.output_dir / FILENAME_PERFORMANCE_PER_USER)
+        self.project_dir.write_user_performance(user_performance)
 
-        whole_performance = WholePerformance.from_user_performance(obj)
+        whole_performance = WholePerformance.from_user_performance(user_performance)
         self.project_dir.write_whole_performance(whole_performance)
 
         if not self.output_only_text:
-            obj.plot_quality(self.output_dir / "scatter/散布図-教師付者の品質と作業量の関係.html")
-            obj.plot_productivity_from_monitored_worktime(
-                self.output_dir / "scatter/散布図-アノテーションあたり作業時間と累計作業時間の関係-計測時間.html"
-            )
-            obj.plot_quality_and_productivity_from_monitored_worktime(
-                self.output_dir / "scatter/散布図-アノテーションあたり作業時間と品質の関係-計測時間-教師付者用.html"
-            )
-
-            if obj.actual_worktime_exists():
-                obj.plot_productivity_from_actual_worktime(
-                    self.output_dir / "scatter/散布図-アノテーションあたり作業時間と累計作業時間の関係-実績時間.html"
-                )
-                obj.plot_quality_and_productivity_from_actual_worktime(
-                    self.output_dir / "scatter/散布図-アノテーションあたり作業時間と品質の関係-実績時間-教師付者用.html"
-                )
-            else:
-                logger.warning(
-                    f"実績作業時間の合計値が0なので、実績作業時間関係の以下のグラフは出力しません。 :: "
-                    "'散布図-アノテーションあたり作業時間と累計作業時間の関係-実績時間.html',"
-                    "'散布図-アノテーションあたり作業時間と品質の関係-実績時間-教師付者用'"
-                )
+            self.project_dir.write_user_performance_scatter_plot(user_performance)
 
     def write_cumulative_linegraph_by_user(self, user_id_list: Optional[List[str]] = None) -> None:
         """ユーザごとの累積折れ線グラフをプロットする。"""
@@ -175,88 +153,64 @@ class WriteCsvGraph:
         acceptor_obj = AcceptorCumulativeProductivity(df_task)
 
         if not self.output_only_text:
-            annotator_obj.plot_annotation_metrics(
-                self.output_dir / "line-graph/教師付者用/累積折れ線-横軸_アノテーション数-教師付者用.html", user_id_list
-            )
-            inspector_obj.plot_annotation_metrics(
-                self.output_dir / "line-graph/検査者用/累積折れ線-横軸_アノテーション数-検査者用.html", user_id_list
-            )
-            acceptor_obj.plot_annotation_metrics(
-                self.output_dir / "line-graph/受入者用/累積折れ線-横軸_アノテーション数-受入者用.html", user_id_list
-            )
 
-            if not self.minimal_output:
-                annotator_obj.plot_input_data_metrics(
-                    self.output_dir / "line-graph/教師付者用/累積折れ線-横軸_入力データ数-教師付者用.html", user_id_list
-                )
-                inspector_obj.plot_input_data_metrics(
-                    self.output_dir / "line-graph/検査者用/累積折れ線-横軸_入力データ数-検査者用.html", user_id_list
-                )
-                acceptor_obj.plot_input_data_metrics(
-                    self.output_dir / "line-graph/受入者用/累積折れ線-横軸_入力データ数-受入者用.html", user_id_list
-                )
-
-                annotator_obj.plot_task_metrics(
-                    self.output_dir / "line-graph/教師付者用/累積折れ線-横軸_タスク数-教師付者用.html", user_id_list
-                )
+            self.project_dir.write_cumulative_line_graph(
+                annotator_obj, phase=TaskPhase.ANNOTATION, user_id_list=user_id_list, minimal_output=self.minimal_output
+            )
+            self.project_dir.write_cumulative_line_graph(
+                inspector_obj, phase=TaskPhase.INSPECTION, user_id_list=user_id_list, minimal_output=self.minimal_output
+            )
+            self.project_dir.write_cumulative_line_graph(
+                acceptor_obj, phase=TaskPhase.ACCEPTANCE, user_id_list=user_id_list, minimal_output=self.minimal_output
+            )
 
     def write_worktime_per_date(self, user_id_list: Optional[List[str]] = None) -> None:
         """日ごとの作業時間情報を出力する。"""
         worktime_per_date_obj = WorktimePerDate.from_webapi(
             self.service, self.project_id, self.df_labor, start_date=self.start_date, end_date=self.end_date
         )
-        worktime_per_date_obj.to_csv(self.output_dir / "ユーザ_日付list-作業時間.csv")
+
+        self.project_dir.write_worktime_per_date_user(worktime_per_date_obj)
 
         df_task = self._get_task_df()
         productivity_per_completed_date_obj = WholeProductivityPerCompletedDate.from_df(
             df_task, worktime_per_date_obj.df
         )
-        productivity_per_completed_date_obj.to_csv(self.output_dir / FILENAME_PERFORMANCE_PER_DATE)
+
+        self.project_dir.write_whole_productivity_per_date(productivity_per_completed_date_obj)
 
         productivity_per_started_date_obj = WholeProductivityPerFirstAnnotationStartedDate.from_df(df_task)
-        productivity_per_started_date_obj.to_csv(self.output_dir / "教師付開始日毎の生産量と生産性.csv")
+        self.project_dir.write_whole_productivity_per_first_annotation_started_date(productivity_per_started_date_obj)
 
         if not self.output_only_text:
-            worktime_per_date_obj.plot_cumulatively(
-                self.output_dir / "line-graph/累積折れ線-横軸_日-縦軸_作業時間.html", user_id_list
+            self.project_dir.write_worktime_line_graph(worktime_per_date_obj, user_id_list=user_id_list)
+            self.project_dir.write_whole_productivity_line_graph_per_date(productivity_per_completed_date_obj)
+            self.project_dir.write_whole_productivity_line_graph_per_annotation_started_date(
+                productivity_per_started_date_obj
             )
-            productivity_per_completed_date_obj.plot(self.output_dir / "line-graph/折れ線-横軸_日-全体.html")
-            productivity_per_completed_date_obj.plot_cumulatively(self.output_dir / "line-graph/累積折れ線-横軸_日-全体.html")
-            productivity_per_started_date_obj.plot(self.output_dir / "line-graph/折れ線-横軸_教師付開始日-全体.html")
 
     def write_user_productivity_per_date(self, user_id_list: Optional[List[str]] = None):
         """ユーザごとの日ごとの生産性情報を出力する。"""
-        # 各ユーザごとの日ごとの情報
         df_task = self._get_task_df()
+
         annotator_per_date_obj = AnnotatorProductivityPerDate.from_df_task(df_task)
-        annotator_per_date_obj.to_csv(self.output_dir / Path("教師付者_教師付開始日list.csv"))
-
         inspector_per_date_obj = InspectorProductivityPerDate.from_df_task(df_task)
-        inspector_per_date_obj.to_csv(self.output_dir / Path("検査者_検査開始日list.csv"))
+        acceptor_per_date_obj = AcceptorProductivityPerDate.from_df_task(df_task)
 
-        acceptor_per_date = AcceptorProductivityPerDate.from_df_task(df_task)
-        acceptor_per_date.to_csv(self.output_dir / Path("受入者_受入開始日list.csv"))
+        # 開始日ごとのCSVを出力
+        self.project_dir.write_performance_per_started_date_csv(annotator_per_date_obj, phase=TaskPhase.ANNOTATION)
+        self.project_dir.write_performance_per_started_date_csv(inspector_per_date_obj, phase=TaskPhase.INSPECTION)
+        self.project_dir.write_performance_per_started_date_csv(acceptor_per_date_obj, phase=TaskPhase.ACCEPTANCE)
 
         if not self.output_only_text:
-            annotator_per_date_obj.plot_annotation_metrics(
-                self.output_dir / Path("line-graph/教師付者用/折れ線-横軸_教師付開始日-縦軸_アノテーション単位の指標-教師付者用.html"), user_id_list
+            self.project_dir.write_performance_line_graph_per_date(
+                annotator_per_date_obj, phase=TaskPhase.ANNOTATION, user_id_list=user_id_list
             )
-            annotator_per_date_obj.plot_input_data_metrics(
-                self.output_dir / Path("line-graph/教師付者用/折れ線-横軸_教師付開始日-縦軸_入力データ単位の指標-教師付者用.html"), user_id_list
+            self.project_dir.write_performance_line_graph_per_date(
+                inspector_per_date_obj, phase=TaskPhase.INSPECTION, user_id_list=user_id_list
             )
-
-            inspector_per_date_obj.plot_annotation_metrics(
-                self.output_dir / Path("line-graph/検査者用/折れ線-横軸_検査開始日-縦軸_アノテーション単位の指標-検査者用.html"), user_id_list
-            )
-            inspector_per_date_obj.plot_input_data_metrics(
-                self.output_dir / Path("line-graph/検査者用/折れ線-横軸_検査開始日-縦軸_入力データ単位の指標-検査者用.html"), user_id_list
-            )
-
-            acceptor_per_date.plot_annotation_metrics(
-                self.output_dir / Path("line-graph/受入者用/折れ線-横軸_受入開始日-縦軸_アノテーション単位の指標-受入者用.html"), user_id_list
-            )
-            acceptor_per_date.plot_input_data_metrics(
-                self.output_dir / Path("line-graph/受入者用/折れ線-横軸_受入開始日-縦軸_入力データ単位の指標-受入者用.html"), user_id_list
+            self.project_dir.write_performance_line_graph_per_date(
+                acceptor_per_date_obj, phase=TaskPhase.ACCEPTANCE, user_id_list=user_id_list
             )
 
 
@@ -295,7 +249,7 @@ class VisualizingStatisticsMain:
         self.df_labor = df_labor
         self.user_ids = user_ids
 
-    def write_project_info_json(self, project_id: str, output_file: Path):
+    def write_project_info_json(self, project_id: str, project_dir: ProjectDir):
         """
         プロジェクト情報をJSONファイルに出力します。
         """
@@ -312,7 +266,7 @@ class VisualizingStatisticsMain:
                 task_query=self.task_query, task_ids=self.task_ids, start_date=self.start_date, end_date=self.end_date
             ),
         )
-        print_json(project_summary.to_dict(), output=output_file, is_pretty=True)
+        project_dir.write_project_info(project_summary)
 
     def visualize_statistics(
         self,
@@ -331,6 +285,9 @@ class VisualizingStatisticsMain:
         self.facade.validate_project(
             project_id, project_member_roles=[ProjectMemberRole.OWNER, ProjectMemberRole.TRAINING_DATA_USER]
         )
+
+        project_dir = ProjectDir(output_project_dir)
+        self.write_project_info_json(project_id=project_id, project_dir=project_dir)
 
         database = Database(
             self.service,
@@ -354,11 +311,6 @@ class VisualizingStatisticsMain:
         if len(table_obj._get_task_histories_dict().keys()) == 0:
             logger.warning(f"project_id={project_id}: タスク履歴一覧が0件なのでファイルを出力しません。終了します。")
             return
-
-        self.write_project_info_json(
-            project_id=project_id,
-            output_file=output_project_dir / "project_info.json",
-        )
 
         if self.df_labor is not None:
             # project_id列がある場合（複数のproject_id列を指定した場合）はproject_idで絞り込む
@@ -509,8 +461,8 @@ class VisualizeStatistics(AbstractCommandLineInterface):
 
             if args.merge:
                 merge_visualization_dir(
-                    project_dir_list=output_project_dir_list,
-                    output_dir=root_output_dir / "merge",
+                    project_dir_list=[ProjectDir(e) for e in output_project_dir_list],
+                    output_project_dir=ProjectDir(root_output_dir / "merge"),
                     user_id_list=user_id_list,
                     minimal_output=args.minimal,
                 )

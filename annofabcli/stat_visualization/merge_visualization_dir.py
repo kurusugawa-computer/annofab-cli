@@ -1,205 +1,219 @@
+from __future__ import annotations
+
 import argparse
-import json
 import logging
 import sys
 from pathlib import Path
 from typing import List, Optional
 
-import pandas
+from annofabapi.models import TaskPhase
 
 import annofabcli
 from annofabcli.common.cli import COMMAND_LINE_ERROR_STATUS_CODE, get_list_from_args
-from annofabcli.common.utils import _catch_exception, print_csv, print_json
-from annofabcli.stat_visualization.write_linegraph_per_user import write_linegraph_per_user
-from annofabcli.stat_visualization.write_performance_scatter_per_user import write_performance_scatter_per_user
-from annofabcli.stat_visualization.write_task_histogram import write_task_histogram
-from annofabcli.stat_visualization.write_whole_linegraph import write_whole_linegraph
-from annofabcli.statistics.csv import (
-    FILENAME_PERFORMANCE_PER_DATE,
-    FILENAME_PERFORMANCE_PER_FIRST_ANNOTATION_STARTED_DATE,
-    FILENAME_PERFORMANCE_PER_USER,
-    FILENAME_TASK_LIST,
+from annofabcli.common.utils import _catch_exception
+from annofabcli.statistics.table import Table
+from annofabcli.statistics.visualization.dataframe.cumulative_productivity import (
+    AcceptorCumulativeProductivity,
+    AnnotatorCumulativeProductivity,
+    InspectorCumulativeProductivity,
 )
+from annofabcli.statistics.visualization.dataframe.productivity_per_date import (
+    AcceptorProductivityPerDate,
+    AnnotatorProductivityPerDate,
+    InspectorProductivityPerDate,
+)
+from annofabcli.statistics.visualization.dataframe.task import Task
 from annofabcli.statistics.visualization.dataframe.user_performance import UserPerformance, WholePerformance
 from annofabcli.statistics.visualization.dataframe.whole_productivity_per_date import (
     WholeProductivityPerCompletedDate,
     WholeProductivityPerFirstAnnotationStartedDate,
 )
 from annofabcli.statistics.visualization.dataframe.worktime_per_date import WorktimePerDate
-from annofabcli.statistics.visualization.project_dir import MergingInfo
+from annofabcli.statistics.visualization.project_dir import MergingInfo, ProjectDir
 
 logger = logging.getLogger(__name__)
 
 
-def create_merged_performance_per_date(csv_path_list: List[Path]) -> WholeProductivityPerCompletedDate:
-    """
-    `日毎の生産量と生産性.csv` をマージしたDataFrameを返す。
-    Args:
-        csv_path_list:
-    Returns:
-    """
-    df_list: List[pandas.DataFrame] = []
-    for csv_path in csv_path_list:
-        if csv_path.exists():
-            df = pandas.read_csv(str(csv_path))
-            df_list.append(df)
-        else:
-            logger.warning(f"{csv_path} は存在しませんでした。")
-            continue
-
-    if len(df_list) == 0:
-        logger.warning(f"マージ対象のCSVファイルは存在しませんでした。")
-        return pandas.DataFrame()
-
-    sum_obj = WholeProductivityPerCompletedDate(df_list[0])
-    for df in df_list[1:]:
-        sum_obj = WholeProductivityPerCompletedDate.merge(sum_obj, WholeProductivityPerCompletedDate(df))
-
-    return sum_obj
-
-
 def merge_visualization_dir(  # pylint: disable=too-many-statements
-    project_dir_list: List[Path],
-    output_dir: Path,
+    project_dir_list: List[ProjectDir],
+    output_project_dir: ProjectDir,
     user_id_list: Optional[List[str]] = None,
     minimal_output: bool = False,
 ):
     @_catch_exception
     def execute_merge_performance_per_user():
-        performance_per_user_csv_list = [dir / FILENAME_PERFORMANCE_PER_USER for dir in project_dir_list]
-
-        obj_list = []
-        for csv_file in performance_per_user_csv_list:
-            if csv_file.exists():
-                obj_list.append(UserPerformance.from_csv(csv_file))
-            else:
-                logger.warning(f"{csv_file} は存在しませんでした。")
+        merged_user_performance: Optional[UserPerformance] = None
+        for project_dir in project_dir_list:
+            try:
+                user_performance = project_dir.read_user_performance()
+            except Exception:
+                logger.warning(f"'{project_dir}'のメンバごとの生産性と品質の取得に失敗しました。", exc_info=True)
                 continue
 
-        if len(obj_list) == 0:
-            logger.warning(f"マージ対象のCSVファイルは存在しませんでした。")
-            return
+            if merged_user_performance is None:
+                merged_user_performance = user_performance
+            else:
+                merged_user_performance = UserPerformance.merge(merged_user_performance, user_performance)
 
-        sum_obj = obj_list[0]
-        for obj in obj_list[1:]:
-            sum_obj = UserPerformance.merge(sum_obj, obj)
+        if merged_user_performance is not None:
+            output_project_dir.write_user_performance(merged_user_performance)
+            whole_performance = WholePerformance.from_user_performance(merged_user_performance)
+            output_project_dir.write_whole_performance(whole_performance)
 
-        sum_obj.to_csv(output_dir / FILENAME_PERFORMANCE_PER_USER)
-
-        whole_obj = WholePerformance(sum_obj.get_summary())
-        whole_obj.to_csv(output_dir / "全体の生産性と品質.csv")
+            # ユーザーごとの散布図を出力
+            output_project_dir.write_user_performance_scatter_plot(merged_user_performance)
 
     @_catch_exception
     def execute_merge_performance_per_date():
-        performance_per_date_csv_list = [dir / FILENAME_PERFORMANCE_PER_DATE for dir in project_dir_list]
-        obj = create_merged_performance_per_date(performance_per_date_csv_list)
-        obj.to_csv(output_dir / FILENAME_PERFORMANCE_PER_DATE)
+        merged_obj: Optional[WholeProductivityPerCompletedDate] = None
+        for project_dir in project_dir_list:
+            try:
+                tmp_obj = project_dir.read_whole_productivity_per_date()
+            except Exception:
+                logger.warning(f"'{project_dir}'の日ごとの生産量と生産性の取得に失敗しました。", exc_info=True)
+                continue
+
+            if merged_obj is None:
+                merged_obj = tmp_obj
+            else:
+                merged_obj = WholeProductivityPerCompletedDate.merge(merged_obj, tmp_obj)
+
+        if merged_obj is not None:
+            output_project_dir.write_whole_productivity_per_date(merged_obj)
+            output_project_dir.write_whole_productivity_line_graph_per_date(merged_obj)
 
     @_catch_exception
     def merge_performance_per_first_annotation_started_date():
-        csv_list = [dir / FILENAME_PERFORMANCE_PER_FIRST_ANNOTATION_STARTED_DATE for dir in project_dir_list]
-        df_list: List[pandas.DataFrame] = []
-        for csv in csv_list:
-            if csv.exists():
-                df = pandas.read_csv(str(csv))
-                df_list.append(df)
-            else:
-                logger.warning(f"{csv} は存在しませんでした。")
+        merged_obj: Optional[WholeProductivityPerFirstAnnotationStartedDate] = None
+        for project_dir in project_dir_list:
+            try:
+                tmp_obj = project_dir.read_whole_productivity_per_first_annotation_started_date()
+            except Exception:
+                logger.warning(f"'{project_dir}'の教師付開始日ごとの生産量と生産性の取得に失敗しました。", exc_info=True)
                 continue
 
-        if len(df_list) == 0:
-            logger.warning(f"マージ対象のCSVファイルは存在しませんでした。")
-            return
+            if merged_obj is None:
+                merged_obj = tmp_obj
+            else:
+                merged_obj = WholeProductivityPerFirstAnnotationStartedDate.merge(merged_obj, tmp_obj)
 
-        sum_obj = WholeProductivityPerFirstAnnotationStartedDate(df_list[0])
-        for df in df_list[1:]:
-            sum_obj = WholeProductivityPerFirstAnnotationStartedDate.merge(
-                sum_obj, WholeProductivityPerFirstAnnotationStartedDate(df)
-            )
-
-        sum_obj.to_csv(output_dir / FILENAME_PERFORMANCE_PER_FIRST_ANNOTATION_STARTED_DATE)
-
-        sum_obj.plot(output_dir / "line-graph/折れ線-横軸_教師付開始日-全体.html")
+        if merged_obj is not None:
+            output_project_dir.write_whole_productivity_per_first_annotation_started_date(merged_obj)
+            output_project_dir.write_whole_productivity_line_graph_per_annotation_started_date(merged_obj)
 
     @_catch_exception
     def merge_worktime_per_date():
-        csv_list = [dir / "ユーザ_日付list-作業時間.csv" for dir in project_dir_list]
-        df_list: List[pandas.DataFrame] = []
-        for csv in csv_list:
-            if csv.exists():
-                df = pandas.read_csv(str(csv))
-                df_list.append(df)
-            else:
-                logger.warning(f"{csv} は存在しませんでした。")
+        merged_obj: Optional[WorktimePerDate] = None
+        for project_dir in project_dir_list:
+            try:
+                tmp_obj = project_dir.read_worktime_per_date_user()
+            except Exception:
+                logger.warning(f"'{project_dir}'からユーザごと日ごとの作業時間の取得に失敗しました。", exc_info=True)
                 continue
 
-        if len(df_list) == 0:
-            logger.warning(f"マージ対象のCSVファイル 'ユーザ_日付list-作業時間.csv'は存在しませんでした。")
-            return
+            if merged_obj is None:
+                merged_obj = tmp_obj
+            else:
+                merged_obj = WorktimePerDate.merge(merged_obj, tmp_obj)
 
-        sum_obj = WorktimePerDate(df_list[0])
-        for df in df_list[1:]:
-            sum_obj = WorktimePerDate.merge(sum_obj, WorktimePerDate(df))
-
-        sum_obj.to_csv(output_dir / "ユーザ_日付list-作業時間.csv")
-
-        sum_obj.plot_cumulatively(output_dir / "line-graph/累積折れ線-横軸_日-縦軸_作業時間.html", user_id_list)
+        if merged_obj is not None:
+            output_project_dir.write_worktime_per_date_user(merged_obj)
+            output_project_dir.write_worktime_line_graph(merged_obj, user_id_list=user_id_list)
 
     @_catch_exception
-    def merge_task_list() -> pandas.DataFrame:
-        list_df = []
+    def merge_task_list() -> Optional[Task]:
+        task_list: list[Task] = []
         for project_dir in project_dir_list:
-            csv_path = project_dir / FILENAME_TASK_LIST
-            if csv_path.exists():
-                list_df.append(pandas.read_csv(str(csv_path)))
-            else:
-                logger.warning(f"{csv_path} は存在しませんでした。")
+            try:
+                tmp_obj = project_dir.read_task_list()
+                task_list.append(tmp_obj)
+            except Exception:
+                logger.warning(f"'{project_dir}'からタスク情報の取得に失敗しました。", exc_info=True)
                 continue
 
-        df = pandas.concat(list_df, axis=0)
-        return df
+        if len(task_list) > 0:
+            merged_obj = Task.merge(*task_list)
+            output_project_dir.write_task_list(merged_obj)
+            output_project_dir.write_task_histogram(merged_obj)
+            return merged_obj
+
+        else:
+            logger.warning(
+                f"マージ対象のタスク情報は存在しないため、'{output_project_dir.FILENAME_TASK_LIST}'とそのCSVから生成されるヒストグラム出力しません。"
+            )  # noqa: E501
+            return None
 
     @_catch_exception
     def write_merge_info_json() -> None:
         """マージ情報に関するJSONファイルを出力する。"""
-        target_dir_list = [str(e) for e in project_dir_list]
-
-        output_file = output_dir / "merge_info.json"
+        target_dir_list = [str(e.project_dir) for e in project_dir_list]
         project_info_list = []
         for project_dir in project_dir_list:
-            project_info_file = project_dir / "project_info.json"
-            if not project_info_file.exists():
-                logger.warning(f"'{project_info_file}'は存在しないため、'{output_file}'に出力する情報が一部欠けます。")
-                continue
-            with project_info_file.open(encoding="utf-8") as f:
-                project_info = json.load(f)
+            try:
+                project_info = project_dir.read_project_info()
                 project_info_list.append(project_info)
+            except Exception:
+                logger.warning(f"'{project_dir}'からプロジェクト情報の取得に失敗しました。", exc_info=True)
+                continue
 
-        info = MergingInfo(target_dir_list=target_dir_list, project_info_list=project_info_list)
-        print_json(info.to_dict(), is_pretty=True, output=str(output_file))
+        merge_info = MergingInfo(target_dir_list=target_dir_list, project_info_list=project_info_list)
+        output_project_dir.write_merge_info(merge_info)
+
+    @_catch_exception
+    def write_cumulative_line_graph(task: Task) -> None:
+        """ユーザごとにプロットした累積折れ線グラフを出力する。"""
+        df = Table.create_gradient_df(task.df.copy())
+
+        output_project_dir.write_cumulative_line_graph(
+            AnnotatorCumulativeProductivity(df),
+            phase=TaskPhase.ANNOTATION,
+            user_id_list=user_id_list,
+            minimal_output=minimal_output,
+        )
+        output_project_dir.write_cumulative_line_graph(
+            InspectorCumulativeProductivity(df),
+            phase=TaskPhase.INSPECTION,
+            user_id_list=user_id_list,
+            minimal_output=minimal_output,
+        )
+        output_project_dir.write_cumulative_line_graph(
+            AcceptorCumulativeProductivity(df),
+            phase=TaskPhase.ACCEPTANCE,
+            user_id_list=user_id_list,
+            minimal_output=minimal_output,
+        )
+
+    @_catch_exception
+    def write_line_graph(task: Task) -> None:
+        """ユーザごとにプロットした折れ線グラフを出力する。"""
+
+        annotator_per_date_obj = AnnotatorProductivityPerDate.from_df_task(task.df)
+        inspector_per_date_obj = InspectorProductivityPerDate.from_df_task(task.df)
+        acceptor_per_date_obj = AcceptorProductivityPerDate.from_df_task(task.df)
+
+        output_project_dir.write_performance_per_started_date_csv(annotator_per_date_obj, phase=TaskPhase.ANNOTATION)
+        output_project_dir.write_performance_per_started_date_csv(inspector_per_date_obj, phase=TaskPhase.INSPECTION)
+        output_project_dir.write_performance_per_started_date_csv(acceptor_per_date_obj, phase=TaskPhase.ACCEPTANCE)
+
+        # 折れ線グラフを出力
+        output_project_dir.write_performance_line_graph_per_date(
+            annotator_per_date_obj, phase=TaskPhase.ANNOTATION, user_id_list=user_id_list
+        )
+        output_project_dir.write_performance_line_graph_per_date(
+            inspector_per_date_obj, phase=TaskPhase.INSPECTION, user_id_list=user_id_list
+        )
+        output_project_dir.write_performance_line_graph_per_date(
+            acceptor_per_date_obj, phase=TaskPhase.ACCEPTANCE, user_id_list=user_id_list
+        )
 
     execute_merge_performance_per_user()
     execute_merge_performance_per_date()
     merge_performance_per_first_annotation_started_date()
     merge_worktime_per_date()
-
-    df_task = merge_task_list()
-    print_csv(df_task, output=str(output_dir / FILENAME_TASK_LIST))
-
-    # HTML生成
-    write_performance_scatter_per_user(
-        csv=output_dir / FILENAME_PERFORMANCE_PER_USER, output_dir=output_dir / "scatter"
-    )
-    write_whole_linegraph(csv=output_dir / FILENAME_PERFORMANCE_PER_DATE, output_dir=output_dir / "line-graph")
-
-    write_linegraph_per_user(
-        csv=output_dir / FILENAME_TASK_LIST,
-        output_dir=output_dir / "line-graph",
-        minimal_output=minimal_output,
-        user_id_list=user_id_list,
-    )
-
-    write_task_histogram(csv=output_dir / FILENAME_TASK_LIST, output_dir=output_dir / "histogram")
+    task = merge_task_list()
+    if task is not None:
+        write_cumulative_line_graph(task)
+        write_line_graph(task)
 
     # info.jsonを出力
     write_merge_info_json()
@@ -221,10 +235,10 @@ def main(args):
     user_id_list = get_list_from_args(args.user_id) if args.user_id is not None else None
 
     merge_visualization_dir(
-        project_dir_list=args.dir,
+        project_dir_list=[ProjectDir(e) for e in args.dir],
         user_id_list=user_id_list,
         minimal_output=args.minimal,
-        output_dir=args.output_dir,
+        output_project_dir=ProjectDir(args.output_dir),
     )
 
 

@@ -25,6 +25,7 @@
         "astype",
         "asyncio",
         "bokeh",
+        "cumsum",
         "dataclass",
         "Dataframe",
         "dateutil",
