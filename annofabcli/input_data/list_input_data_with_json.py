@@ -62,7 +62,7 @@ class ListInputDataWithJsonMain:
             json_path = input_data_json
 
         logger.debug(f"{json_path} を読み込み中")
-        with json_path.open() as f:
+        with json_path.open(encoding="utf-8") as f:
             input_data_list = json.load(f)
 
         logger.debug(f"入力データを絞り込み中")

@@ -244,7 +244,7 @@ class ProjectDir(DataClassJsonMixin):
         ただし`self.is_merged()`がFalseのときのみ、読み込みに成功します。
 
         """
-        with (self.project_dir / self.FILENAME_PROJECT_INFO).open() as f:
+        with (self.project_dir / self.FILENAME_PROJECT_INFO).open(encoding="utf-8") as f:
             return ProjectInfo.from_dict(json.load(f))
 
     def write_project_info(self, project_info: ProjectInfo):
@@ -258,7 +258,7 @@ class ProjectDir(DataClassJsonMixin):
         `merge_info.json`を読み込む。
         ただし`self.is_merged()`がTrueのときのみ、読み込みに成功します。
         """
-        with (self.project_dir / self.FILENAME_MERGE_INFO).open() as f:
+        with (self.project_dir / self.FILENAME_MERGE_INFO).open(encoding="utf-8") as f:
             return MergingInfo.from_dict(json.load(f))
 
     def write_merge_info(self, obj: MergingInfo):

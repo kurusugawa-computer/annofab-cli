@@ -18,7 +18,7 @@ os.chdir(os.path.dirname(os.path.abspath(__file__)) + "/../")
 class TestListAttributeRestrictionMain:
     @classmethod
     def setup_class(cls):
-        with (data_dir / "annotation_specs.json").open() as f:
+        with (data_dir / "annotation_specs.json").open(encoding="utf-8") as f:
             annotation_specs = json.load(f)
 
         cls.obj = ListAttributeRestrictionMain(
