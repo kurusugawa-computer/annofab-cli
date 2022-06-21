@@ -112,10 +112,10 @@ class WritingGraph:
 
 
 def main(args):
-    user_id_list = get_list_from_args(args.user_id)
+    user_id_list = get_list_from_args(args.user_id) if args.user_id is not None else None
     main_obj = WritingGraph(
         project_dir=ProjectDir(args.dir),
-        output_project_dir=ProjectDir(args.output),
+        output_project_dir=ProjectDir(args.output_dir),
         minimal_output=args.minimal,
         user_id_list=user_id_list,
     )
@@ -130,6 +130,17 @@ def parse_args(parser: argparse.ArgumentParser):
         required=True,
         help=f"``annofabcli statistics visualize`` コマンドの出力結果であるプロジェクトのディレクトリを指定してください。",  # noqa: E501
     )
+    parser.add_argument(
+        "-u",
+        "--user_id",
+        nargs="+",
+        help=(
+            "ユーザごとの折れ線グラフに表示するユーザのuser_idを指定してください。"
+            "指定しない場合は、上位20人のユーザ情報がプロットされます。"
+            " ``file://`` を先頭に付けると、一覧が記載されたファイルを指定できます。"
+        ),
+    )
+
 
     parser.add_argument(
         "--minimal",
@@ -143,7 +154,7 @@ def parse_args(parser: argparse.ArgumentParser):
 
 
 def add_parser(subparsers: Optional[argparse._SubParsersAction] = None):
-    subcommand_name = "mask_user_info"
+    subcommand_name = "write_graph"
     subcommand_help = "`annofabcli statistics visualize` コマンドの出力結果であるプロジェクトのディレクトリから、グラフを出力します。"
     parser = annofabcli.common.cli.add_parser(subparsers, subcommand_name, subcommand_help, description=subcommand_help)
     parse_args(parser)

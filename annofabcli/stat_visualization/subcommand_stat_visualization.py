@@ -5,6 +5,7 @@ import annofabcli.stat_visualization.mask_visualization_dir
 import annofabcli.stat_visualization.merge_visualization_dir
 import annofabcli.stat_visualization.write_performance_rating_csv
 from annofabcli.stat_visualization import summarise_whole_performance_csv
+import annofabcli.stat_visualization.write_graph
 
 
 def parse_args(parser: argparse.ArgumentParser):
@@ -15,6 +16,7 @@ def parse_args(parser: argparse.ArgumentParser):
     annofabcli.stat_visualization.mask_visualization_dir.add_parser(subparsers)
     annofabcli.stat_visualization.merge_visualization_dir.add_parser(subparsers)
     summarise_whole_performance_csv.add_parser(subparsers)
+    annofabcli.stat_visualization.write_graph.add_parser(subparsers)
     annofabcli.stat_visualization.write_performance_rating_csv.add_parser(subparsers)
 
 
