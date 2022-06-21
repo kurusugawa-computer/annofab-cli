@@ -13,6 +13,7 @@ import bokeh
 import bokeh.layouts
 import bokeh.palettes
 import pandas
+from annofabapi.models import TaskPhase
 from bokeh.plotting import ColumnDataSource, figure
 
 from annofabcli.statistics.linegraph import (
@@ -33,7 +34,7 @@ class AbstractPhaseCumulativeProductivity(abc.ABC):
     PLOT_WIDTH = 1200
     PLOT_HEIGHT = 600
 
-    def __init__(self, df: pandas.DataFrame, phase: str) -> None:
+    def __init__(self, df: pandas.DataFrame, phase: TaskPhase) -> None:
         self.df = df
         self.phase = phase
         self.phase_name = self._get_phase_name(phase)
@@ -41,19 +42,19 @@ class AbstractPhaseCumulativeProductivity(abc.ABC):
         self.default_user_id_list = self._get_default_user_id_list()
 
     @staticmethod
-    def _get_phase_name(phase: str) -> str:
-        if phase == "annotation":
+    def _get_phase_name(phase: TaskPhase) -> str:
+        if phase == TaskPhase.ANNOTATION:
             return "教師付"
-        elif phase == "inspection":
+        elif phase == TaskPhase.INSPECTION:
             return "検査"
-        elif phase == "acceptance":
+        elif phase == TaskPhase.ACCEPTANCE:
             return "受入"
         raise RuntimeError(f"phase='{phase}'が対象外です。")
 
     def _get_default_user_id_list(self) -> list[str]:
         return (
-            self.df.sort_values(by=f"first_{self.phase}_started_datetime", ascending=False)[
-                f"first_{self.phase}_user_id"
+            self.df.sort_values(by=f"first_{self.phase.value}_started_datetime", ascending=False)[
+                f"first_{self.phase.value}_user_id"
             ]
             .dropna()
             .unique()
@@ -67,7 +68,7 @@ class AbstractPhaseCumulativeProductivity(abc.ABC):
 
         if len(self.default_user_id_list) == 0:
             logger.warning(
-                f"{self.phase_name} 作業したタスクが0件なので（'first_{self.phase}_user_id'がすべて空欄）、{output_file} を出力しません。"
+                f"{self.phase_name} 作業したタスクが0件なので（'first_{self.phase.value}_user_id'がすべて空欄）、{output_file} を出力しません。"
             )
             return False
 
@@ -92,7 +93,7 @@ class AbstractPhaseCumulativeProductivity(abc.ABC):
 
 class AnnotatorCumulativeProductivity(AbstractPhaseCumulativeProductivity):
     def __init__(self, df: pandas.DataFrame):
-        super().__init__(df, phase="annotation")
+        super().__init__(df, phase=TaskPhase.ANNOTATION)
 
     def _get_cumulative_dataframe(self) -> pandas.DataFrame:
         """
@@ -425,7 +426,7 @@ class AnnotatorCumulativeProductivity(AbstractPhaseCumulativeProductivity):
 
 class InspectorCumulativeProductivity(AbstractPhaseCumulativeProductivity):
     def __init__(self, df: pandas.DataFrame):
-        super().__init__(df, phase="inspection")
+        super().__init__(df, phase=TaskPhase.INSPECTION)
 
     def _get_cumulative_dataframe(self) -> pandas.DataFrame:
         """
@@ -710,7 +711,7 @@ class InspectorCumulativeProductivity(AbstractPhaseCumulativeProductivity):
 
 class AcceptorCumulativeProductivity(AbstractPhaseCumulativeProductivity):
     def __init__(self, df: pandas.DataFrame):
-        super().__init__(df, phase="acceptance")
+        super().__init__(df, phase=TaskPhase.ACCEPTANCE)
 
     def _get_cumulative_dataframe(self) -> pandas.DataFrame:
         """
