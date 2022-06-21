@@ -82,7 +82,7 @@ class ListWorktimeFromTaskHistoryEventMain:
         else:
             json_path = task_history_event_json
 
-        with json_path.open() as f:
+        with json_path.open(encoding="utf-8") as f:
             all_task_history_event_list = json.load(f)
 
         return all_task_history_event_list

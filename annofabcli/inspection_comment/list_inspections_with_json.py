@@ -83,7 +83,7 @@ class ListInspectionCommentWithJsonMain:
             json_path = inspection_comment_json
 
         filter_inspection_comment = create_filter_func(only_reply=only_reply, exclude_reply=exclude_reply)
-        with json_path.open() as f:
+        with json_path.open(encoding="utf-8") as f:
             inspection_comment_list = json.load(f)
 
         return self.filter_inspection_list(

@@ -53,7 +53,7 @@ class WriteAnnotationImage:
 
     @staticmethod
     def get_input_data_dict(input_data_json: Path) -> Dict[str, InputData]:
-        with input_data_json.open() as f:
+        with input_data_json.open(encoding="utf-8") as f:
             logger.debug(f"{input_data_json} を読み込み中")
             input_data_list = json.load(f)
             logger.debug(f"{len(input_data_list)} 件をDictに変換中")

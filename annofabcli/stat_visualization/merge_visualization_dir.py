@@ -171,7 +171,7 @@ def merge_visualization_dir(  # pylint: disable=too-many-statements
             if not project_info_file.exists():
                 logger.warning(f"'{project_info_file}'は存在しないため、'{output_file}'に出力する情報が一部欠けます。")
                 continue
-            with project_info_file.open() as f:
+            with project_info_file.open(encoding="utf-8") as f:
                 project_info = json.load(f)
                 project_info_list.append(project_info)
 
