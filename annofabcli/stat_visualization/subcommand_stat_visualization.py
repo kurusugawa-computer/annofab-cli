@@ -3,9 +3,9 @@ from typing import Optional
 
 import annofabcli.stat_visualization.mask_visualization_dir
 import annofabcli.stat_visualization.merge_visualization_dir
+import annofabcli.stat_visualization.write_graph
 import annofabcli.stat_visualization.write_performance_rating_csv
 from annofabcli.stat_visualization import summarise_whole_performance_csv
-import annofabcli.stat_visualization.write_graph
 
 
 def parse_args(parser: argparse.ArgumentParser):

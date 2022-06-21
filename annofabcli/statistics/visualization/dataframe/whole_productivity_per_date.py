@@ -1129,3 +1129,4 @@ class WholeProductivityPerFirstAnnotationStartedDate:
         bokeh.plotting.output_file(output_file, title=output_file.stem)
 
         bokeh.plotting.save(bokeh.layouts.column([create_div_element()] + fig_list))
+        logger.debug(f"'{output_file}'を出力しました。")

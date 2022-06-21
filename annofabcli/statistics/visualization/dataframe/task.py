@@ -123,6 +123,7 @@ class Task:
         bokeh.plotting.reset_output()
         bokeh.plotting.output_file(output_file, title=output_file.stem)
         bokeh.plotting.save(bokeh_obj)
+        logger.debug(f"'{output_file}'を出力しました。")
 
     def plot_histogram_of_others(
         self,
@@ -192,6 +193,7 @@ class Task:
         bokeh.plotting.reset_output()
         bokeh.plotting.output_file(output_file, title=output_file.stem)
         bokeh.plotting.save(bokeh_obj)
+        logger.debug(f"'{output_file}'を出力しました。")
 
     def to_csv(self, output_file: Path) -> None:
         """

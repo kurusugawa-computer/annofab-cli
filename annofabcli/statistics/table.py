@@ -4,7 +4,7 @@ from typing import Any, Dict, List, Optional
 import dateutil
 import more_itertools
 import pandas
-from annofabapi.models import InputDataId, Inspection, Task, TaskHistory, TaskPhase
+from annofabapi.models import Task, TaskHistory, TaskPhase
 
 import annofabcli
 from annofabcli.common.facade import AnnofabApiFacade
@@ -32,7 +32,6 @@ class Table:
     #############################################
 
     _task_list: Optional[List[Task]] = None
-    _inspections_dict: Optional[Dict[str, Dict[InputDataId, List[Inspection]]]] = None
     _task_histories_dict: Optional[Dict[str, List[TaskHistory]]] = None
 
     def __init__(
