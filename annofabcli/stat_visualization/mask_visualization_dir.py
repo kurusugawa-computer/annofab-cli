@@ -59,7 +59,7 @@ def _replace_df_task(task: Task, replacement_dict_by_user_id: Dict[str, str]) ->
 def write_line_graph(
     task: Task, output_project_dir: ProjectDir, user_id_list: Optional[List[str]] = None, minimal_output: bool = False
 ):
-    df = Table.create_gradient_df(task.df.copy())
+    df = task.df.copy()
 
     output_project_dir.write_cumulative_line_graph(
         AnnotatorCumulativeProductivity(df),

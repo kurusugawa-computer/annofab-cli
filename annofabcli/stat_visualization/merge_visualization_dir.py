@@ -162,7 +162,7 @@ def merge_visualization_dir(  # pylint: disable=too-many-statements
     @_catch_exception
     def write_cumulative_line_graph(task: Task) -> None:
         """ユーザごとにプロットした累積折れ線グラフを出力する。"""
-        df = Table.create_gradient_df(task.df.copy())
+        df = task.df.copy()
 
         output_project_dir.write_cumulative_line_graph(
             AnnotatorCumulativeProductivity(df),

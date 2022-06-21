@@ -38,7 +38,7 @@ class WritingGraph:
         self.minimal_output = minimal_output
 
     def write_line_graph(self, task: Task):
-        df = Table.create_gradient_df(task.df.copy())
+        df = task.df.copy()
 
         self.output_project_dir.write_cumulative_line_graph(
             AnnotatorCumulativeProductivity(df),
