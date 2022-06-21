@@ -248,7 +248,6 @@ class Table:
             logger.warning(f"タスク一覧が0件です。")
             return pandas.DataFrame()
 
-
     @staticmethod
     def create_annotation_count_ratio_df(
         task_history_df: pandas.DataFrame, task_df: pandas.DataFrame

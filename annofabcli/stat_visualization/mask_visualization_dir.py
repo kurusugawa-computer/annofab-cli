@@ -12,7 +12,6 @@ from annofabcli.filesystem.mask_user_info import (
     create_replacement_dict_by_user_id,
     replace_by_columns,
 )
-from annofabcli.statistics.table import Table
 from annofabcli.statistics.visualization.dataframe.cumulative_productivity import (
     AcceptorCumulativeProductivity,
     AnnotatorCumulativeProductivity,

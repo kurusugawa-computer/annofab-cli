@@ -7,7 +7,6 @@ from annofabapi.models import TaskPhase
 
 import annofabcli
 from annofabcli.common.cli import get_list_from_args
-from annofabcli.statistics.table import Table
 from annofabcli.statistics.visualization.dataframe.cumulative_productivity import (
     AcceptorCumulativeProductivity,
     AnnotatorCumulativeProductivity,
