@@ -122,11 +122,12 @@ class Database:
             """
             if comment["comment_type"] != "inspection":
                 return False
+
             comment_node = comment["comment_node"]
             if comment_node["_type"] != "Root":
                 return False
 
-            if comment_node["status"] != CommentStatus.RESOLVED:
+            if comment_node["status"] != CommentStatus.RESOLVED.value:
                 return False
             return True
 

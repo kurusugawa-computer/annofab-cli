@@ -11,7 +11,6 @@ from annofabapi.models import TaskPhase
 import annofabcli
 from annofabcli.common.cli import COMMAND_LINE_ERROR_STATUS_CODE, get_list_from_args
 from annofabcli.common.utils import _catch_exception
-from annofabcli.statistics.table import Table
 from annofabcli.statistics.visualization.dataframe.cumulative_productivity import (
     AcceptorCumulativeProductivity,
     AnnotatorCumulativeProductivity,
@@ -162,7 +161,7 @@ def merge_visualization_dir(  # pylint: disable=too-many-statements
     @_catch_exception
     def write_cumulative_line_graph(task: Task) -> None:
         """ユーザごとにプロットした累積折れ線グラフを出力する。"""
-        df = Table.create_gradient_df(task.df.copy())
+        df = task.df.copy()
 
         output_project_dir.write_cumulative_line_graph(
             AnnotatorCumulativeProductivity(df),

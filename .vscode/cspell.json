@@ -14,6 +14,7 @@
         "reStructuredText"
     ],
     "words": [
+        "__lastweek",
         "additionals",
         "aggfunc",
         "Annofab",
@@ -34,6 +35,7 @@
         "dtype",
         "fillna",
         "getrgb",
+        "gridplot",
         "groupby",
         "holoviews",
         "iloc",

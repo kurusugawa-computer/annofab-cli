@@ -4,7 +4,7 @@ from typing import Any, Dict, List, Optional
 import dateutil
 import more_itertools
 import pandas
-from annofabapi.models import InputDataId, Inspection, Task, TaskHistory, TaskPhase
+from annofabapi.models import Task, TaskHistory, TaskPhase
 
 import annofabcli
 from annofabcli.common.facade import AnnofabApiFacade
@@ -32,7 +32,6 @@ class Table:
     #############################################
 
     _task_list: Optional[List[Task]] = None
-    _inspections_dict: Optional[Dict[str, Dict[InputDataId, List[Inspection]]]] = None
     _task_histories_dict: Optional[Dict[str, List[TaskHistory]]] = None
 
     def __init__(
@@ -248,28 +247,6 @@ class Table:
         else:
             logger.warning(f"タスク一覧が0件です。")
             return pandas.DataFrame()
-
-    @staticmethod
-    def create_gradient_df(task_df: pandas.DataFrame) -> pandas.DataFrame:
-        """
-        生産量あたりの指標を算出する
-
-        """
-        task_df["annotation_worktime_hour/annotation_count"] = (
-            task_df["annotation_worktime_hour"] / task_df["annotation_count"]
-        )
-        task_df["inspection_comment_count/annotation_count"] = (
-            task_df["inspection_comment_count"] / task_df["annotation_count"]
-        )
-        task_df["number_of_rejections/annotation_count"] = task_df["number_of_rejections"] / task_df["annotation_count"]
-
-        task_df["inspection_worktime_hour/annotation_count"] = (
-            task_df["inspection_worktime_hour"] / task_df["annotation_count"]
-        )
-        task_df["acceptance_worktime_hour/annotation_count"] = (
-            task_df["acceptance_worktime_hour"] / task_df["annotation_count"]
-        )
-        return task_df
 
     @staticmethod
     def create_annotation_count_ratio_df(
