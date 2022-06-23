@@ -1,12 +1,12 @@
-import time
-import pytest
 import configparser
+import datetime
 import json
 import os
+import time
 from pathlib import Path
 
 import annofabapi
-import datetime
+import pytest
 
 from annofabcli.__main__ import main
 
@@ -25,8 +25,6 @@ service = annofabapi.build()
 
 
 class TestCommandLine:
-
-
     @pytest.fixture
     def target_task(self):
         """シナリオテスト用のタスクを作成する
@@ -56,8 +54,6 @@ class TestCommandLine:
         yield task
         # タスクの削除
         service.api.delete_task(project_id, new_task_id)
-
-
 
     def test_scenario(self, target_task):
         """
@@ -99,11 +95,9 @@ class TestCommandLine:
         print(json.dumps(dict_comments))
         main(["inspection_comment", "put", "--project_id", project_id, "--json", json.dumps(dict_comments), "--yes"])
 
-
         time.sleep(2)
 
-
-        comment_list, _ = service.api.get_comments(project_id, task_id, input_data_id, query_params={"v":2})
+        comment_list, _ = service.api.get_comments(project_id, task_id, input_data_id, query_params={"v": 2})
         print(f"{comment_list=}")
         inspection_comment_list = [e for e in comment_list if e["comment_type"] == "inspection"]
         assert len(inspection_comment_list) == 2
@@ -122,14 +116,13 @@ class TestCommandLine:
             ]
         )
 
-        # delete command 
+        # delete command
         dict_comments = {task_id: {input_data_id: [e["comment_id"] for e in inspection_comment_list]}}
         main(["inspection_comment", "delete", "--project_id", project_id, "--json", json.dumps(dict_comments), "--yes"])
 
-        comment_list, _ = service.api.get_comments(project_id, task_id, input_data_id,query_params={"v":2})
+        comment_list, _ = service.api.get_comments(project_id, task_id, input_data_id, query_params={"v": 2})
         inspection_comment_list = [e for e in comment_list if e["comment_type"] == "inspection"]
         assert len(inspection_comment_list) == 0
-
 
     def test_list_inspection_comment_with_json(self):
         main(
@@ -143,4 +136,3 @@ class TestCommandLine:
                 str(out_dir / "list_with_json-out.csv"),
             ]
         )
-
