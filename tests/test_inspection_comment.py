@@ -2,7 +2,6 @@ import configparser
 import datetime
 import json
 import os
-import time
 from pathlib import Path
 
 import annofabapi
@@ -92,13 +91,9 @@ class TestCommandLine:
                 ]
             }
         }
-        print(json.dumps(dict_comments))
         main(["inspection_comment", "put", "--project_id", project_id, "--json", json.dumps(dict_comments), "--yes"])
 
-        time.sleep(2)
-
         comment_list, _ = service.api.get_comments(project_id, task_id, input_data_id, query_params={"v": 2})
-        print(f"{comment_list=}")
         inspection_comment_list = [e for e in comment_list if e["comment_type"] == "inspection"]
         assert len(inspection_comment_list) == 2
 
