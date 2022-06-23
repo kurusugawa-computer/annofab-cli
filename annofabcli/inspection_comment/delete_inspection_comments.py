@@ -286,7 +286,7 @@ def parse_args(parser: argparse.ArgumentParser):
 def add_parser(subparsers: Optional[argparse._SubParsersAction] = None):
     subcommand_name = "delete"
     subcommand_help = "検査コメントを削除します。"
-    description = "検査コメントを削除します。 【注意】他人の検査コメントや他のフェーズで付与された検査コメントを削除できてしまいます。"
+    description = "検査コメントを削除します。 \n" "【注意】他人の検査コメントや他のフェーズで付与された検査コメントを削除できてしまいます。"
     epilog = "チェッカーロールまたはオーナロールを持つユーザで実行してください。"
 
     parser = annofabcli.common.cli.add_parser(subparsers, subcommand_name, subcommand_help, description, epilog=epilog)
