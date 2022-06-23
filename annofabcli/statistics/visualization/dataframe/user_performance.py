@@ -53,6 +53,9 @@ class UserPerformance:
 
     @staticmethod
     def _add_ratio_column_for_productivity_per_user(df: pandas.DataFrame, phase_list: list[str]):
+        """
+        ユーザーの生産性に関する列を、DataFrameに追加します。
+        """
         for phase in phase_list:
             # Annofab時間の比率
             df[("monitored_worktime_ratio", phase)] = (

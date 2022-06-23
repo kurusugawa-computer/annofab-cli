@@ -96,7 +96,7 @@ class AddInspectionCommentsMain(AbstractCommandLineWithConfirmInterface):
                     "_type": "Root",
                 },
                 "phrases": comment.phrases,
-                # "_type": "Put",
+                "_type": "Put",
             }
 
         return [_convert(e) for e in comments]

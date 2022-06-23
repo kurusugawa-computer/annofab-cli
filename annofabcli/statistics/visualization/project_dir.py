@@ -251,7 +251,9 @@ class ProjectDir(DataClassJsonMixin):
         """
         `project_info.json`を書き込む。
         """
-        print_json(project_info.to_dict(), output=self.project_dir / self.FILENAME_PROJECT_INFO, is_pretty=True)
+        print_json(
+            project_info.to_dict(encode_json=True), output=self.project_dir / self.FILENAME_PROJECT_INFO, is_pretty=True
+        )
 
     def read_merge_info(self) -> MergingInfo:
         """
