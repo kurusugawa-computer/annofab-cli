@@ -280,16 +280,6 @@ class AnnotatorCumulativeProductivity(AbstractPhaseCumulativeProductivity):
                 y_axis_label="教師付作業時間[hour]",
             ),
             dict(
-                title="累積の入力データ数と検査作業時間",
-                y_column_name="cumulative_inspection_worktime_hour",
-                y_axis_label="検査作業時間[hour]",
-            ),
-            dict(
-                title="累積の入力データ数と受入作業時間",
-                y_column_name="cumulative_acceptance_worktime_hour",
-                y_axis_label="受入作業時間[hour]",
-            ),
-            dict(
                 title="累積の入力データ数と検査コメント数",
                 y_column_name="cumulative_inspection_comment_count",
                 y_axis_label="検査コメント数",
