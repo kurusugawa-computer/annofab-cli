@@ -1,9 +1,11 @@
 """
 折れ線グラフを出力する関数の定義など
 """
+from __future__ import annotations
+
 import logging
 from pathlib import Path
-from typing import List, Optional
+from typing import Any, List, Optional
 
 import bokeh
 import bokeh.layouts
@@ -11,7 +13,7 @@ import bokeh.palettes
 import pandas
 from bokeh.core.properties import Color
 from bokeh.models import HoverTool
-from bokeh.plotting import ColumnDataSource
+from bokeh.plotting import ColumnDataSource, figure
 
 logger = logging.getLogger(__name__)
 
@@ -21,6 +23,67 @@ MAX_USER_COUNT_FOR_LINE_GRAPH = 20
 
 WEEKLY_MOVING_AVERAGE_COLUMN_SUFFIX = "__lastweek"
 """1週間移動平均を表す列名のsuffix"""
+
+
+class LineGraph:
+    def __init__(
+        self,
+        *,
+        title: str,
+        x_axis_label: str,
+        y_axis_label: str,
+        x_column: str,
+        y_column: str,
+        plot_width: int = 1200,
+        plot_height: int = 600,
+        tooltip_columns: Optional[list[str]] = None,
+        **figure_kwargs,
+    ) -> None:
+        # ツールチップを生成
+        tooltips = create_hover_tool(tooltip_columns) if tooltip_columns is not None else None
+        fig = figure(
+            title=title,
+            x_axis_label=x_axis_label,
+            y_axis_label=y_axis_label,
+            plot_width=plot_width,
+            plot_height=plot_height,
+            tooltips=tooltips,
+        )
+        self.figure = fig
+        self.x_column = x_column
+        self.y_column = y_column
+
+        required_columns = {x_column, y_column}
+        if tooltip_columns is not None:
+            required_columns = required_columns | set(tooltip_columns)
+        self.required_columns = required_columns
+
+    def add_line(self, df: pandas.DataFrame, *, legend_label: str, color: Optional[Any] = None):
+        source = ColumnDataSource(df[self.required_columns])
+
+        # pandas.DataFrameをColumnDataSourceに指定すると、"index"が追加される。"index"は不要なので、削除する
+        if "index" in source.column_names:
+            source.remove("index")
+
+        plot_line_and_circle(
+            self.figure,
+            source=source,
+            x_column_name=self.x_column,
+            y_column_name=self.y_column,
+            legend_label=legend_label,
+            color=color,
+        )
+
+    def config_legend(self) -> None:
+        """
+        折れ線を追加した後に、凡例の位置などを設定します。
+        """
+        fig = self.figure
+        fig.legend.location = "top_left"
+        fig.legend.click_policy = "mute"
+        if len(fig.legend) > 0:
+            legend = fig.legend[0]
+            fig.add_layout(legend, "left")
 
 
 def write_bokeh_graph(bokeh_obj, output_file: Path):
