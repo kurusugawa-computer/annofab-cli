@@ -39,16 +39,16 @@ class LineGraph:
         tooltip_columns: Optional[list[str]] = None,
         **figure_kwargs,
     ) -> None:
-        # ツールチップを生成
-        tooltips = create_hover_tool(tooltip_columns) if tooltip_columns is not None else None
         fig = figure(
             title=title,
             x_axis_label=x_axis_label,
             y_axis_label=y_axis_label,
             plot_width=plot_width,
             plot_height=plot_height,
-            tooltips=tooltips,
         )
+        hover_tool = create_hover_tool(tooltip_columns) if tooltip_columns is not None else None
+        fig.add_tools(hover_tool)
+
         self.figure = fig
         self.x_column = x_column
         self.y_column = y_column

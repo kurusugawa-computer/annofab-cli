@@ -164,7 +164,8 @@ class AnnotatorCumulativeProductivity(AbstractPhaseCumulativeProductivity):
                 y_axis_label="教師付作業時間[hour]",
                 y_column="cumulative_annotation_worktime_hour",
                 tooltip_columns=[
-                    "task_id" "first_annotation_user_id",
+                    "task_id",
+                    "first_annotation_user_id",
                     "first_annotation_username",
                     "first_annotation_started_date",
                     "annotation_worktime_hour",
@@ -179,9 +180,10 @@ class AnnotatorCumulativeProductivity(AbstractPhaseCumulativeProductivity):
                 y_axis_label="検査作業時間[hour]",
                 y_column="cumulative_inspection_worktime_hour",
                 tooltip_columns=[
-                    "task_id" "first_inspection_user_id",
-                    "first_inspection_username",
-                    "first_inspection_started_date",
+                    "task_id", 
+                    "first_annotation_user_id",
+                    "first_annotation_username",
+                    "first_annotation_started_date",
                     "inspection_worktime_hour",
                     "annotation_count",
                     "inspection_comment_count",
@@ -194,9 +196,10 @@ class AnnotatorCumulativeProductivity(AbstractPhaseCumulativeProductivity):
                 y_axis_label="受入作業時間[hour]",
                 y_column="cumulative_acceptance_worktime_hour",
                 tooltip_columns=[
-                    "task_id" "first_acceptance_user_id",
-                    "first_acceptance_username",
-                    "first_acceptance_started_date",
+                    "task_id", "first_acceptance_user_id",
+                    "first_annotation_user_id",
+                    "first_annotation_username",
+                    "first_annotation_started_date",
                     "acceptance_worktime_hour",
                     "annotation_count",
                     "inspection_comment_count",
@@ -208,15 +211,27 @@ class AnnotatorCumulativeProductivity(AbstractPhaseCumulativeProductivity):
                 title="累積のアノテーション数と検査コメント数",
                 y_axis_label="検査コメント数",
                 y_column="cumulative_inspection_comment_count",
+                tooltip_columns=[
+                    "task_id",
+                    "first_annotation_user_id",
+                    "first_annotation_username",
+                    "first_annotation_started_date",
+                    "annotation_count",
+                    "inspection_comment_count",
+                ],
                 x_axis_label=x_axis_label,
                 x_column=x_column,
             ),
         ]
 
+        df = self.df_cumulative.copy()
+        # YYYY-MM-DDの部分を抽出する: ツールチップでは時間情報は不要なので、日付のみ表示する
+        df["first_annotation_started_date"] = df["first_annotation_started_datetime"].map(lambda e: e[0:10])
+
         for line_graph in line_graph_list:
 
             for user_index, user_id in enumerate(user_id_list):
-                df_subset = self.df_cumulative[self.df_cumulative["first_annotation_user_id"] == user_id]
+                df_subset = df[df["first_annotation_user_id"] == user_id]
                 if df_subset.empty:
                     logger.debug(f"dataframe is empty. user_id = {user_id}")
                     continue
