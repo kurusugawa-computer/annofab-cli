@@ -178,39 +178,6 @@ class AnnotatorCumulativeProductivity(AbstractPhaseCumulativeProductivity):
                 x_column=x_column,
             ),
             LineGraph(
-                title="累積のアノテーション数と検査作業時間",
-                y_axis_label="検査作業時間[hour]",
-                y_column="cumulative_inspection_worktime_hour",
-                tooltip_columns=[
-                    "task_id",
-                    "first_annotation_user_id",
-                    "first_annotation_username",
-                    "first_annotation_started_date",
-                    "inspection_worktime_hour",
-                    "annotation_count",
-                    "inspection_comment_count",
-                ],
-                x_axis_label=x_axis_label,
-                x_column=x_column,
-            ),
-            LineGraph(
-                title="累積のアノテーション数と受入作業時間",
-                y_axis_label="受入作業時間[hour]",
-                y_column="cumulative_acceptance_worktime_hour",
-                tooltip_columns=[
-                    "task_id",
-                    "first_acceptance_user_id",
-                    "first_annotation_user_id",
-                    "first_annotation_username",
-                    "first_annotation_started_date",
-                    "acceptance_worktime_hour",
-                    "annotation_count",
-                    "inspection_comment_count",
-                ],
-                x_axis_label=x_axis_label,
-                x_column=x_column,
-            ),
-            LineGraph(
                 title="累積のアノテーション数と検査コメント数",
                 y_axis_label="検査コメント数",
                 y_column="cumulative_inspection_comment_count",
@@ -453,6 +420,31 @@ class InspectorCumulativeProductivity(AbstractPhaseCumulativeProductivity):
 
         return df
 
+    def _plot(self, line_graph_list: list[LineGraph], user_id_list: list[str], output_file: Path):
+        df = self.df_cumulative.copy()
+        # YYYY-MM-DDの部分を抽出する: ツールチップでは時間情報は不要なので、日付のみ表示する
+        df["first_annotation_started_date"] = df["first_annotation_started_datetime"].map(lambda e: e[0:10])
+
+        required_columns = set(itertools.chain.from_iterable([e.required_columns for e in line_graph_list]))
+
+        for user_index, user_id in enumerate(user_id_list):
+            df_subset = df[df["first_annotation_user_id"] == user_id]
+            if df_subset.empty:
+                logger.debug(f"dataframe is empty. user_id = {user_id}")
+                continue
+
+            source = ColumnDataSource(df_subset[required_columns])
+            color = get_color_from_palette(user_index)
+            username = df_subset.iloc[0]["first_annotation_username"]
+
+            for line_graph in line_graph_list:
+                line_graph.add_line(source, legend_label=username, color=color)
+
+        for line_graph in line_graph_list:
+            line_graph.config_legend()
+
+        write_bokeh_graph(bokeh.layouts.column([e.figure for e in line_graph_list]), output_file)
+
     def plot_annotation_metrics(
         self,
         output_file: Path,
@@ -481,65 +473,29 @@ class InspectorCumulativeProductivity(AbstractPhaseCumulativeProductivity):
 
         user_id_list = get_plotted_user_id_list(user_id_list)
 
-        fig_info_list = [
-            dict(
+        x_axis_label = "アノテーション数"
+        x_column = "cumulative_annotation_count"
+
+        line_graph_list = [
+            LineGraph(
                 title="累積のアノテーション数と検査作業時間",
-                y_column_name="cumulative_inspection_worktime_hour",
+                y_column="cumulative_inspection_worktime_hour",
                 y_axis_label="検査作業時間[hour]",
+                tooltip_columns=[
+                    "task_id",
+                    "first_inspection_user_id",
+                    "first_inspection_username",
+                    "first_inspection_started_date",
+                    "inspection_worktime_hour",
+                    "annotation_count",
+                    "inspection_comment_count",
+                ],
+                x_axis_label=x_axis_label,
+                x_column=x_column,
             ),
         ]
 
-        figs: list[bokeh.plotting.Figure] = []
-        for fig_info in fig_info_list:
-            figs.append(
-                figure(
-                    plot_width=self.PLOT_WIDTH,
-                    plot_height=self.PLOT_HEIGHT,
-                    title=fig_info["title"],
-                    x_axis_label="アノテーション数",
-                    y_axis_label=fig_info["y_axis_label"],
-                )
-            )
-
-        for user_index, user_id in enumerate(user_id_list):
-            df_subset = self.df_cumulative[self.df_cumulative["first_inspection_user_id"] == user_id]
-            if df_subset.empty:
-                logger.debug(f"dataframe is empty. user_id = {user_id}")
-                continue
-
-            source = ColumnDataSource(data=df_subset)
-            color = get_color_from_palette(user_index)
-            username = df_subset.iloc[0]["first_inspection_username"]
-
-            for fig, fig_info in zip(figs, fig_info_list):
-                plot_line_and_circle(
-                    fig,
-                    x_column_name="cumulative_annotation_count",
-                    y_column_name=fig_info["y_column_name"],
-                    source=source,
-                    legend_label=username,
-                    color=color,
-                )
-
-        hover_tool = create_hover_tool(
-            [
-                "task_id",
-                "phase",
-                "status",
-                "first_inspection_user_id",
-                "first_inspection_username",
-                "first_inspection_started_datetime",
-                "inspection_worktime_hour",
-                "annotation_count",
-                "input_data_count",
-                "inspection_comment_count",
-            ]
-        )
-        for fig in figs:
-            fig.add_tools(hover_tool)
-            add_legend_to_figure(fig)
-
-        write_bokeh_graph(bokeh.layouts.column(figs), output_file)
+        self._plot(line_graph_list, user_id_list, output_file)
 
     def plot_input_data_metrics(
         self,
@@ -563,65 +519,29 @@ class InspectorCumulativeProductivity(AbstractPhaseCumulativeProductivity):
 
         user_id_list = get_plotted_user_id_list(user_id_list)
 
-        fig_info_list = [
-            dict(
+        x_axis_label = "入力データ数"
+        x_column = "cumulative_input_data_count"
+
+        line_graph_list = [
+            LineGraph(
                 title="累積の入力データ数と検査作業時間",
-                y_column_name="cumulative_inspection_worktime_hour",
+                y_column="cumulative_inspection_worktime_hour",
                 y_axis_label="検査作業時間[hour]",
+                tooltip_columns=[
+                    "task_id",
+                    "first_inspection_user_id",
+                    "first_inspection_username",
+                    "first_inspection_started_date",
+                    "inspection_worktime_hour",
+                    "input_data_count",
+                    "inspection_comment_count",
+                ],
+                x_axis_label=x_axis_label,
+                x_column=x_column,
             ),
         ]
 
-        figs: list[bokeh.plotting.Figure] = []
-        for fig_info in fig_info_list:
-            figs.append(
-                figure(
-                    plot_width=self.PLOT_WIDTH,
-                    plot_height=self.PLOT_HEIGHT,
-                    title=fig_info["title"],
-                    x_axis_label="入力データ数",
-                    y_axis_label=fig_info["y_axis_label"],
-                )
-            )
-
-        for user_index, user_id in enumerate(user_id_list):
-            df_subset = self.df_cumulative[self.df_cumulative["first_inspection_user_id"] == user_id]
-            if df_subset.empty:
-                logger.debug(f"dataframe is empty. user_id = {user_id}")
-                continue
-
-            source = ColumnDataSource(data=df_subset)
-            color = get_color_from_palette(user_index)
-            username = df_subset.iloc[0]["first_inspection_username"]
-
-            for fig, fig_info in zip(figs, fig_info_list):
-                plot_line_and_circle(
-                    fig,
-                    x_column_name="cumulative_input_data_count",
-                    y_column_name=fig_info["y_column_name"],
-                    source=source,
-                    legend_label=username,
-                    color=color,
-                )
-
-        hover_tool = create_hover_tool(
-            [
-                "task_id",
-                "phase",
-                "status",
-                "first_inspection_user_id",
-                "first_inspection_username",
-                "first_inspection_started_datetime",
-                "inspection_worktime_hour",
-                "annotation_count",
-                "input_data_count",
-                "inspection_comment_count",
-            ]
-        )
-        for fig in figs:
-            fig.add_tools(hover_tool)
-            add_legend_to_figure(fig)
-
-        write_bokeh_graph(bokeh.layouts.column(figs), output_file)
+        self._plot(line_graph_list, user_id_list, output_file)
 
     def plot_task_metrics(
         self,
@@ -645,65 +565,30 @@ class InspectorCumulativeProductivity(AbstractPhaseCumulativeProductivity):
 
         user_id_list = get_plotted_user_id_list(user_id_list)
 
-        fig_info_list = [
-            dict(
+        x_axis_label = "タスク数"
+        x_column = "cumulative_task_count"
+
+        line_graph_list = [
+            LineGraph(
                 title="累積のタスク数と検査作業時間",
-                y_column_name="cumulative_inspection_worktime_hour",
+                y_column="cumulative_inspection_worktime_hour",
                 y_axis_label="検査作業時間[hour]",
+                tooltip_columns=[
+                    "task_id",
+                    "first_inspection_user_id",
+                    "first_inspection_username",
+                    "first_inspection_started_date",
+                    "inspection_worktime_hour",
+                    "inspection_comment_count",
+                    "number_of_rejections_by_inspection",
+                    "number_of_rejections_by_acceptance",
+                ],
+                x_axis_label=x_axis_label,
+                x_column=x_column,
             ),
         ]
 
-        figs: list[bokeh.plotting.Figure] = []
-        for fig_info in fig_info_list:
-            figs.append(
-                figure(
-                    plot_width=self.PLOT_WIDTH,
-                    plot_height=self.PLOT_HEIGHT,
-                    title=fig_info["title"],
-                    x_axis_label="タスク数",
-                    y_axis_label=fig_info["y_axis_label"],
-                )
-            )
-
-        for user_index, user_id in enumerate(user_id_list):
-            df_subset = self.df_cumulative[self.df_cumulative["first_inspection_user_id"] == user_id]
-            if df_subset.empty:
-                logger.debug(f"dataframe is empty. user_id = {user_id}")
-                continue
-
-            source = ColumnDataSource(data=df_subset)
-            color = get_color_from_palette(user_index)
-            username = df_subset.iloc[0]["first_inspection_username"]
-
-            for fig, fig_info in zip(figs, fig_info_list):
-                plot_line_and_circle(
-                    fig,
-                    x_column_name="cumulative_task_count",
-                    y_column_name=fig_info["y_column_name"],
-                    source=source,
-                    legend_label=username,
-                    color=color,
-                )
-
-        hover_tool = create_hover_tool(
-            [
-                "task_id",
-                "phase",
-                "status",
-                "first_inspection_user_id",
-                "first_inspection_username",
-                "first_inspection_started_datetime",
-                "inspection_worktime_hour",
-                "annotation_count",
-                "input_data_count",
-                "inspection_comment_count",
-            ]
-        )
-        for fig in figs:
-            fig.add_tools(hover_tool)
-            add_legend_to_figure(fig)
-
-        write_bokeh_graph(bokeh.layouts.column(figs), output_file)
+        self._plot(line_graph_list, user_id_list, output_file)
 
 
 class AcceptorCumulativeProductivity(AbstractPhaseCumulativeProductivity):
