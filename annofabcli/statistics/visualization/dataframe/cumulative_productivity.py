@@ -162,7 +162,7 @@ class AnnotatorCumulativeProductivity(AbstractPhaseCumulativeProductivity):
 
         # 追加理由：ツールチップでは時間情報は不要なので、作業開始「日」のみ表示するため
         # `YYYY-MM-DDThh:mm:ss.sss+09:00`から`YYYY-MM-DD`を取得する
-        df["first_annotation_started_date"] = df["first_annotation_started_datetime"].map(lambda e: e[0:10])
+        df["first_annotation_started_date"] = df["first_annotation_started_datetime"].str[:10]
 
         # 元に戻す
         df = df.drop(["task_count"], axis=1)
@@ -390,7 +390,7 @@ class InspectorCumulativeProductivity(AbstractPhaseCumulativeProductivity):
 
         # 追加理由：ツールチップでは時間情報は不要なので、作業開始「日」のみ表示するため
         # `YYYY-MM-DDThh:mm:ss.sss+09:00`から`YYYY-MM-DD`を取得する
-        df["first_inspection_started_date"] = df["first_inspection_started_datetime"].map(lambda e: e[0:10])
+        df["first_inspection_started_date"] = df["first_inspection_started_datetime"].str[:10]
 
         # 元に戻す
         df = df.drop(["task_count"], axis=1)
@@ -565,7 +565,7 @@ class AcceptorCumulativeProductivity(AbstractPhaseCumulativeProductivity):
 
         # 追加理由：ツールチップでは時間情報は不要なので、作業開始「日」のみ表示するため
         # `YYYY-MM-DDThh:mm:ss.sss+09:00`から`YYYY-MM-DD`を取得する
-        df["first_acceptance_started_date"] = df["first_acceptance_started_datetime"].map(lambda e: e[0:10])
+        df["first_acceptance_started_date"] = df["first_acceptance_started_datetime"].str[:10]
 
         # 元に戻す
         df = df.drop(["task_count"], axis=1)
