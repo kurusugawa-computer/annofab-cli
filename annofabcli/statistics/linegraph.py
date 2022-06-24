@@ -58,13 +58,7 @@ class LineGraph:
             required_columns = required_columns | set(tooltip_columns)
         self.required_columns = required_columns
 
-    def add_line(self, df: pandas.DataFrame, *, legend_label: str, color: Optional[Any] = None):
-        source = ColumnDataSource(df[self.required_columns])
-
-        # pandas.DataFrameをColumnDataSourceに指定すると、"index"が追加される。"index"は不要なので、削除する
-        if "index" in source.column_names:
-            source.remove("index")
-
+    def add_line(self, source: ColumnDataSource, *, legend_label: str, color: Optional[Any] = None):
         plot_line_and_circle(
             self.figure,
             source=source,

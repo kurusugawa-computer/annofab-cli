@@ -2,9 +2,11 @@
 """
 累積の生産性に関する内容
 """
+
 from __future__ import annotations
 
 import abc
+import itertools
 import logging
 from pathlib import Path
 from typing import Optional
@@ -180,7 +182,7 @@ class AnnotatorCumulativeProductivity(AbstractPhaseCumulativeProductivity):
                 y_axis_label="検査作業時間[hour]",
                 y_column="cumulative_inspection_worktime_hour",
                 tooltip_columns=[
-                    "task_id", 
+                    "task_id",
                     "first_annotation_user_id",
                     "first_annotation_username",
                     "first_annotation_started_date",
@@ -196,7 +198,8 @@ class AnnotatorCumulativeProductivity(AbstractPhaseCumulativeProductivity):
                 y_axis_label="受入作業時間[hour]",
                 y_column="cumulative_acceptance_worktime_hour",
                 tooltip_columns=[
-                    "task_id", "first_acceptance_user_id",
+                    "task_id",
+                    "first_acceptance_user_id",
                     "first_annotation_user_id",
                     "first_annotation_username",
                     "first_annotation_started_date",
@@ -228,19 +231,22 @@ class AnnotatorCumulativeProductivity(AbstractPhaseCumulativeProductivity):
         # YYYY-MM-DDの部分を抽出する: ツールチップでは時間情報は不要なので、日付のみ表示する
         df["first_annotation_started_date"] = df["first_annotation_started_datetime"].map(lambda e: e[0:10])
 
+        required_columns = set(itertools.chain.from_iterable([e.required_columns for e in line_graph_list]))
+
+        for user_index, user_id in enumerate(user_id_list):
+            df_subset = df[df["first_annotation_user_id"] == user_id]
+            if df_subset.empty:
+                logger.debug(f"dataframe is empty. user_id = {user_id}")
+                continue
+
+            source = ColumnDataSource(df_subset[required_columns])
+            color = get_color_from_palette(user_index)
+            username = df_subset.iloc[0]["first_annotation_username"]
+
+            for line_graph in line_graph_list:
+                line_graph.add_line(source, legend_label=username, color=color)
+
         for line_graph in line_graph_list:
-
-            for user_index, user_id in enumerate(user_id_list):
-                df_subset = df[df["first_annotation_user_id"] == user_id]
-                if df_subset.empty:
-                    logger.debug(f"dataframe is empty. user_id = {user_id}")
-                    continue
-
-                color = get_color_from_palette(user_index)
-                username = df_subset.iloc[0]["first_annotation_username"]
-
-                line_graph.add_line(df_subset, legend_label=username, color=color)
-
             line_graph.config_legend()
 
         write_bokeh_graph(bokeh.layouts.column([e.figure for e in line_graph_list]), output_file)
