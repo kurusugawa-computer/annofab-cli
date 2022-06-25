@@ -69,7 +69,7 @@ class AbstractPhaseCumulativeProductivity(abc.ABC):
 
         if len(self.default_user_id_list) == 0:
             logger.warning(
-                f"{self.phase_name} 作業したタスクが0件なので（'first_{self.phase.value}_user_id'がすべて空欄）、{output_file} を出力しません。"
+                f"{self.phase_name}作業したタスクが0件なので（'first_{self.phase.value}_user_id'がすべて空欄）、{output_file} を出力しません。"
             )
             return False
 
@@ -162,7 +162,8 @@ class AnnotatorCumulativeProductivity(AbstractPhaseCumulativeProductivity):
 
         # 追加理由：ツールチップでは時間情報は不要なので、作業開始「日」のみ表示するため
         # `YYYY-MM-DDThh:mm:ss.sss+09:00`から`YYYY-MM-DD`を取得する
-        df["first_annotation_started_date"] = df["first_annotation_started_datetime"].str[:10]
+        # キャストする理由: 全部nanだとfloat型になって、".str"にアクセスできないため
+        df["first_annotation_started_date"] = df["first_annotation_started_datetime"].astype("string").str[:10]
 
         # 元に戻す
         df = df.drop(["task_count"], axis=1)
@@ -390,7 +391,8 @@ class InspectorCumulativeProductivity(AbstractPhaseCumulativeProductivity):
 
         # 追加理由：ツールチップでは時間情報は不要なので、作業開始「日」のみ表示するため
         # `YYYY-MM-DDThh:mm:ss.sss+09:00`から`YYYY-MM-DD`を取得する
-        df["first_inspection_started_date"] = df["first_inspection_started_datetime"].str[:10]
+        # キャストする理由: 全部nanだとfloat型になって、".str"にアクセスできないため
+        df["first_inspection_started_date"] = df["first_inspection_started_datetime"].astype("string").str[:10]
 
         # 元に戻す
         df = df.drop(["task_count"], axis=1)
@@ -565,7 +567,8 @@ class AcceptorCumulativeProductivity(AbstractPhaseCumulativeProductivity):
 
         # 追加理由：ツールチップでは時間情報は不要なので、作業開始「日」のみ表示するため
         # `YYYY-MM-DDThh:mm:ss.sss+09:00`から`YYYY-MM-DD`を取得する
-        df["first_acceptance_started_date"] = df["first_acceptance_started_datetime"].str[:10]
+        # キャストする理由: 全部nanだとfloat型になって、".str"にアクセスできないため
+        df["first_acceptance_started_date"] = df["first_acceptance_started_datetime"].astype("string").str[:10]
 
         # 元に戻す
         df = df.drop(["task_count"], axis=1)

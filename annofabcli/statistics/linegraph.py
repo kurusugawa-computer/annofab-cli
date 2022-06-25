@@ -45,6 +45,7 @@ class LineGraph:
             y_axis_label=y_axis_label,
             plot_width=plot_width,
             plot_height=plot_height,
+            **figure_kwargs
         )
         hover_tool = create_hover_tool(tooltip_columns) if tooltip_columns is not None else None
         fig.add_tools(hover_tool)
