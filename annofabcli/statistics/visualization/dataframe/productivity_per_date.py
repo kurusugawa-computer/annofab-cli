@@ -53,13 +53,17 @@ class AbstractPhaseProductivityPerDate(abc.ABC):
         graph_group_list = []
         for line_graph in line_graph_list:
             line_graph.config_legend()
+
+            widget_list = []
             hide_all_button = line_graph.create_button_hiding_all_lines()
+            widget_list.append(hide_all_button)
 
             # マーカーがある場合は、マーカーを表示/非表示切り替えられるチェックボックスを配置する
             if len(line_graph.marker_glyphs) > 0:
                 checkbox_group = line_graph.create_checkbox_displaying_markers()
+                widget_list.append(checkbox_group)
 
-            widgets = bokeh.layouts.column([hide_all_button, checkbox_group])
+            widgets = bokeh.layouts.column(widget_list)
             graph_group = bokeh.layouts.row([line_graph.figure, widgets])
             graph_group_list.append(graph_group)
 
