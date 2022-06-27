@@ -24,15 +24,13 @@ from annofabcli.statistics.linegraph import (
     get_plotted_user_id_list,
     write_bokeh_graph,
 )
+from annofabcli.statistics.visualization.dataframe.task import Task
 
 logger = logging.getLogger(__name__)
 
 
 class AbstractPhaseCumulativeProductivity(abc.ABC):
     """ロールごとの累積の生産性をプロットするための抽象クラス"""
-
-    PLOT_WIDTH = 1200
-    PLOT_HEIGHT = 600
 
     def __init__(self, df: pandas.DataFrame, phase: TaskPhase) -> None:
         self.df = df
@@ -100,10 +98,14 @@ class AbstractPhaseCumulativeProductivity(abc.ABC):
             for line_graph in line_graph_list:
                 line_graph.add_line(source, legend_label=username, color=color)
 
+
+        dom_list = []
         for line_graph in line_graph_list:
             line_graph.config_legend()
-
-        write_bokeh_graph(bokeh.layouts.column([e.figure for e in line_graph_list]), output_file)
+            mute_all_button = line_graph.create_mute_all_button()
+            dom_list.extend([line_graph.figure, mute_all_button])
+        
+        write_bokeh_graph(bokeh.layouts.column(dom_list), output_file)
 
     @abc.abstractmethod
     def _get_cumulative_dataframe(self) -> pandas.DataFrame:
@@ -132,6 +134,13 @@ class AbstractPhaseCumulativeProductivity(abc.ABC):
 class AnnotatorCumulativeProductivity(AbstractPhaseCumulativeProductivity):
     def __init__(self, df: pandas.DataFrame):
         super().__init__(df, phase=TaskPhase.ANNOTATION)
+
+    @classmethod
+    def from_task(cls, task: Task) -> AnnotatorCumulativeProductivity:
+        """
+        `タスクlist.csv`に相当する情報から、インスタンスを生成します。
+        """
+        return cls(task.df)
 
     def _get_cumulative_dataframe(self) -> pandas.DataFrame:
         """
@@ -366,6 +375,13 @@ class InspectorCumulativeProductivity(AbstractPhaseCumulativeProductivity):
     def __init__(self, df: pandas.DataFrame):
         super().__init__(df, phase=TaskPhase.INSPECTION)
 
+    @classmethod
+    def from_task(cls, task: Task) -> InspectorCumulativeProductivity:
+        """
+        `タスクlist.csv`に相当する情報から、インスタンスを生成します。
+        """
+        return cls(task.df)
+
     def _get_cumulative_dataframe(self) -> pandas.DataFrame:
         """
         最初のアノテーション作業の開始時刻の順にソートして、検査者に関する累計値を算出する
@@ -546,6 +562,13 @@ class InspectorCumulativeProductivity(AbstractPhaseCumulativeProductivity):
 class AcceptorCumulativeProductivity(AbstractPhaseCumulativeProductivity):
     def __init__(self, df: pandas.DataFrame):
         super().__init__(df, phase=TaskPhase.ACCEPTANCE)
+
+    @classmethod
+    def from_task(cls, task: Task) -> AcceptorCumulativeProductivity:
+        """
+        `タスクlist.csv`に相当する情報から、インスタンスを生成します。
+        """
+        return cls(task.df)
 
     def _get_cumulative_dataframe(self) -> pandas.DataFrame:
         """

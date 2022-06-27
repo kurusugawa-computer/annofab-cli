@@ -2,7 +2,7 @@
 折れ線グラフを出力する関数の定義など
 """
 from __future__ import annotations
-
+from bokeh.models import GlyphRenderer
 import logging
 from pathlib import Path
 from typing import Any, List, Optional
@@ -14,10 +14,10 @@ import pandas
 from bokeh.core.properties import Color
 from bokeh.models import HoverTool
 from bokeh.plotting import ColumnDataSource, figure
-
+from bokeh.models import Button, CustomJS
 logger = logging.getLogger(__name__)
 
-MAX_USER_COUNT_FOR_LINE_GRAPH = 20
+MAX_USER_COUNT_FOR_LINE_GRAPH = 60
 """折れ線グラフにプロットできる最大のユーザ数"""
 
 
@@ -35,7 +35,7 @@ class LineGraph:
         x_column: str,
         y_column: str,
         plot_width: int = 1200,
-        plot_height: int = 600,
+        plot_height: int = 1200,
         tooltip_columns: Optional[list[str]] = None,
         **figure_kwargs,
     ) -> None:
@@ -45,7 +45,7 @@ class LineGraph:
             y_axis_label=y_axis_label,
             plot_width=plot_width,
             plot_height=plot_height,
-            **figure_kwargs
+            **figure_kwargs,
         )
         hover_tool = create_hover_tool(tooltip_columns) if tooltip_columns is not None else None
         fig.add_tools(hover_tool)
@@ -59,8 +59,10 @@ class LineGraph:
             required_columns = required_columns | set(tooltip_columns)
         self.required_columns = required_columns
 
-    def add_line(self, source: ColumnDataSource, *, legend_label: str, color: Optional[Any] = None):
-        plot_line_and_circle(
+        self.line_glyphs = {}
+
+    def add_line(self, source: ColumnDataSource, *, legend_label: str, color: Optional[Any] = None) -> list[GlyphRenderer]:
+        result = plot_line_and_circle(
             self.figure,
             source=source,
             x_column_name=self.x_column,
@@ -68,6 +70,8 @@ class LineGraph:
             legend_label=legend_label,
             color=color,
         )
+        self.line_glyphs[legend_label] = result
+        return result
 
     def config_legend(self) -> None:
         """
@@ -75,10 +79,36 @@ class LineGraph:
         """
         fig = self.figure
         fig.legend.location = "top_left"
-        fig.legend.click_policy = "mute"
+        fig.legend.click_policy = "hide"
+
+        fig.legend.label_text_font_size = "9px"
+        fig.legend.label_height = 10
+        fig.legend.glyph_height = 10
+
         if len(fig.legend) > 0:
             legend = fig.legend[0]
             fig.add_layout(legend, "left")
+
+
+    def create_mute_all_button(self) -> Button:
+        button = Button(label="Mute all", button_type="primary")
+
+        args = {"line_glyphs": self.line_glyphs}
+        code = """
+            for (let key in line_glyphs) {
+                let glyphs = line_glyphs[key]
+                for (let glyph of glyphs) {
+                    console.log(glyph)
+                    console.log(typeof(glyph))
+                    console.log(glyph.visible)
+                    glyph.visible = false
+                    console.log(glyph.visible)
+                }
+            }
+        """
+        button.js_on_click(CustomJS(code=code, args=args))
+        return button
+
 
 
 def write_bokeh_graph(bokeh_obj, output_file: Path):
@@ -132,7 +162,7 @@ def plot_line_and_circle(
     legend_label: str,
     color: Color,
     **kwargs,
-) -> None:
+) -> list[GlyphRenderer]:
     """
     線を引いて、プロットした部分に丸を付ける。
 
@@ -145,7 +175,8 @@ def plot_line_and_circle(
         color: 線と点の色
 
     """
-
+    result = []
+    result.append(
     fig.line(
         x=x_column_name,
         y=y_column_name,
@@ -153,20 +184,19 @@ def plot_line_and_circle(
         legend_label=legend_label,
         line_color=color,
         line_width=1,
-        muted_alpha=0,
-        muted_color=color,
         **kwargs,
-    )
+    ))
+    result.append(
     fig.circle(
         x=x_column_name,
         y=y_column_name,
         source=source,
         legend_label=legend_label,
-        muted_alpha=0.0,
-        muted_color=color,
         color=color,
         **kwargs,
     )
+    )
+    return result
 
 
 def plot_moving_average(
