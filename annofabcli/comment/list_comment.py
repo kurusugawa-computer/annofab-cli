@@ -36,7 +36,7 @@ class ListingComments(AbstractCommandLineInterface):
                     all_comments.extend(comments)
 
             except requests.HTTPError:
-                logger.warning(f"タスク task_id = {task_id} の検査コメントを取得できませんでした。", exc_info=True)
+                logger.warning(f"タスク task_id = {task_id} のコメントを取得できませんでした。", exc_info=True)
 
         logger.info(f"対象タスクに紐付いたコメントをすべて取得しました。output={output_file}")
 
