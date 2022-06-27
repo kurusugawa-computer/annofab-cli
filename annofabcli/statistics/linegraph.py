@@ -35,7 +35,7 @@ class LineGraph:
         x_column: str,
         y_column: str,
         plot_width: int = 1200,
-        plot_height: int = 1200,
+        plot_height: int = 1000,
         tooltip_columns: Optional[list[str]] = None,
         **figure_kwargs,
     ) -> None:
@@ -65,6 +65,9 @@ class LineGraph:
     def add_line(
         self, source: ColumnDataSource, *, legend_label: str, color: Optional[Any] = None
     ) -> tuple[GlyphRenderer, GlyphRenderer]:
+        """
+        折れ線を追加する
+        """
 
         line = self.figure.line(
             x=self.x_column,
@@ -87,6 +90,26 @@ class LineGraph:
 
         return (line, circle)
 
+    def add_moving_average_line(
+        self, source: ColumnDataSource, *, legend_label: str, color: Optional[Any] = None
+    ) -> tuple[GlyphRenderer, GlyphRenderer]:
+        """
+        移動平均用の折れ線を追加する
+        """
+
+        line = self.figure.line(
+            x=self.x_column,
+            y=self.y_column,
+            source=source,
+            legend_label=legend_label,
+            line_color=color,
+            line_width=1,
+            line_dash="dashed",
+            line_alpha=0.6,
+        )
+        self.line_glyphs[legend_label] = line
+        return line
+
     def config_legend(self) -> None:
         """
         折れ線を追加した後に、凡例の位置などを設定します。
@@ -95,9 +118,11 @@ class LineGraph:
         fig.legend.location = "top_left"
         fig.legend.click_policy = "hide"
 
-        fig.legend.label_text_font_size = "9px"
-        fig.legend.label_height = 10
-        fig.legend.glyph_height = 10
+        # 項目数が多いと、凡例に文字が入り切らないので、フォントサイズを小さくする
+        if len(fig.legend.items) > 20:
+            fig.legend.label_text_font_size = "9px"
+            fig.legend.label_height = 10
+            fig.legend.glyph_height = 10
 
         if len(fig.legend) > 0:
             legend = fig.legend[0]
@@ -123,9 +148,12 @@ class LineGraph:
         return button
 
     def create_checkbox_group(self) -> Button:
+        """
+        アクション系のチェックボックスグループを生成する
+        """
         checkbox_group = CheckboxGroup(labels=["折れ線のマーカーを表示する"], active=[0])
 
-        glyph_list = list([e.glyph for e in self.marker_glyphs.values()])
+        glyph_list = [e.glyph for e in self.marker_glyphs.values()]
 
         args = {"glyph_list": glyph_list}
         code = """
@@ -175,7 +203,7 @@ def add_legend_to_figure(fig: bokeh.plotting.Figure) -> None:
     グラフに凡例を設定する。
     """
     fig.legend.location = "top_left"
-    fig.legend.click_policy = "mute"
+    fig.legend.click_policy = "hide"
     if len(fig.legend) > 0:
         legend = fig.legend[0]
         fig.add_layout(legend, "left")
@@ -258,8 +286,6 @@ def plot_moving_average(
         line_width=1,
         line_dash="dashed",
         line_alpha=0.6,
-        muted_alpha=0,
-        muted_color=color,
         **kwargs,
     )
 

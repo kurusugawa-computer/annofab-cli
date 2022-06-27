@@ -5,6 +5,7 @@
 from __future__ import annotations
 
 import abc
+import itertools
 import logging
 from pathlib import Path
 from typing import Optional
@@ -13,12 +14,14 @@ import bokeh
 import bokeh.layouts
 import bokeh.palettes
 import pandas
+from annofabapi.models import TaskPhase
 from bokeh.plotting import ColumnDataSource, figure
 from dateutil.parser import parse
 
 from annofabcli.common.utils import datetime_to_date, print_csv
 from annofabcli.statistics.linegraph import (
     WEEKLY_MOVING_AVERAGE_COLUMN_SUFFIX,
+    LineGraph,
     add_legend_to_figure,
     create_hover_tool,
     get_color_from_palette,
@@ -38,14 +41,55 @@ class AbstractPhaseProductivityPerDate(abc.ABC):
     PLOT_WIDTH = 1200
     PLOT_HEIGHT = 600
 
-    def __init__(self, df: pandas.DataFrame) -> None:
+    def __init__(self, df: pandas.DataFrame, phase: TaskPhase) -> None:
         self.df = df
+        self.phase = phase
 
     def _validate_df_for_output(self, output_file: Path) -> bool:
         if len(self.df) == 0:
             logger.warning(f"データが0件のため、{output_file} は出力しません。")
             return False
         return True
+
+    def _plot(self, line_graph_list: list[LineGraph], user_id_list: list[str], output_file: Path):
+        """
+        折れ線グラフを、HTMLファイルに出力します。
+        """
+        df = self.df.copy()
+
+        # HTMLに出力するすべてのグラフから、必要な列名を求める
+        # ColumnDataSourceを生成する際に、必要最小限のデータのみHTMLファイルに出力されるようにするため
+        # 不要な情報がHTMLファイルに出力されることにより、ファイルサイズが大きくなってしまう
+        # (例) 20000件をプロットする際、この対応がないと、ファイルサイズが3倍以上になる
+        required_columns = set(itertools.chain.from_iterable([e.required_columns for e in line_graph_list]))
+
+        for user_index, user_id in enumerate(user_id_list):
+            df_subset = df[df[f"first_{self.phase.value}_user_id"] == user_id]
+            if df_subset.empty:
+                logger.debug(f"dataframe is empty. user_id = {user_id}")
+                continue
+
+            source = ColumnDataSource(df_subset[required_columns])
+            color = get_color_from_palette(user_index)
+            username = df_subset.iloc[0][f"first_{self.phase.value}_username"]
+
+            for line_graph in line_graph_list:
+                if line_graph.y_column.endswith(WEEKLY_MOVING_AVERAGE_COLUMN_SUFFIX):
+                    line_graph.add_moving_average_line(source, legend_label=username, color=color)
+                else:
+                    line_graph.add_line(source, legend_label=username, color=color)
+
+        graph_group_list = []
+        for line_graph in line_graph_list:
+            line_graph.config_legend()
+            hide_all_button = line_graph.create_button_hiding_all_lines()
+            checkbox_group = line_graph.create_checkbox_group()
+
+            widgets = bokeh.layouts.column([hide_all_button, checkbox_group])
+            graph_group = bokeh.layouts.row([line_graph.figure, widgets])
+            graph_group_list.append(graph_group)
+
+        write_bokeh_graph(bokeh.layouts.layout(graph_group_list), output_file)
 
     @classmethod
     @abc.abstractmethod
@@ -67,6 +111,9 @@ class AbstractPhaseProductivityPerDate(abc.ABC):
 
 class AnnotatorProductivityPerDate(AbstractPhaseProductivityPerDate):
     """教師付開始日ごとの教師付者の生産性に関する情報"""
+
+    def __init__(self, df: pandas.DataFrame):
+        super().__init__(df, phase=TaskPhase.ANNOTATION)
 
     @classmethod
     def from_df_task(cls, df_task: pandas.DataFrame) -> AnnotatorProductivityPerDate:
@@ -198,111 +245,69 @@ class AnnotatorProductivityPerDate(AbstractPhaseProductivityPerDate):
 
         user_id_list = get_plotted_user_id_list(user_id_list)
 
-        fig_info_list = [
-            dict(
+        x_axis_label = "教師付開始日"
+        x_column = "dt_first_annotation_started_date"
+        tooltip_columns = [
+            "first_annotation_user_id",
+            "first_annotation_username",
+            "first_annotation_started_date",
+            "annotation_worktime_hour",
+            "task_count",
+            "input_data_count",
+            "annotation_count",
+            "inspection_comment_count",
+        ]
+        line_graph_list = [
+            LineGraph(
                 title="教師付開始日ごとの教師付作業時間",
-                y_column_name="annotation_worktime_hour",
+                y_column="annotation_worktime_hour",
                 y_axis_label="教師付作業時間[hour]",
+                tooltip_columns=tooltip_columns,
+                x_axis_label=x_axis_label,
+                x_column=x_column,
+                x_axis_type="datetime",
             ),
-            dict(
+            LineGraph(
                 title="教師付開始日ごとのアノテーションあたり教師付作業時間",
-                y_column_name="annotation_worktime_minute/annotation_count",
+                y_column="annotation_worktime_minute/annotation_count",
                 y_axis_label="アノテーションあたり教師付時間[min/annotation]",
+                tooltip_columns=tooltip_columns,
+                x_axis_label=x_axis_label,
+                x_column=x_column,
+                x_axis_type="datetime",
             ),
-            dict(
+            LineGraph(
                 title="教師付開始日ごとのアノテーションあたり教師付作業時間(1週間移動平均)",
-                y_column_name=f"annotation_worktime_minute/annotation_count{WEEKLY_MOVING_AVERAGE_COLUMN_SUFFIX}",
+                y_column=f"annotation_worktime_minute/annotation_count{WEEKLY_MOVING_AVERAGE_COLUMN_SUFFIX}",
                 y_axis_label="アノテーションあたり教師付時間[min/annotation]",
+                tooltip_columns=tooltip_columns,
+                x_axis_label=x_axis_label,
+                x_column=x_column,
+                x_axis_type="datetime",
             ),
-            dict(
+            LineGraph(
                 title="教師付開始日ごとのアノテーションあたり検査コメント数",
-                y_column_name="inspection_comment_count/annotation_count",
+                y_column="inspection_comment_count/annotation_count",
                 y_axis_label="アノテーションあたり検査コメント数",
+                tooltip_columns=tooltip_columns,
+                x_axis_label=x_axis_label,
+                x_column=x_column,
+                x_axis_type="datetime",
             ),
-            dict(
+            LineGraph(
                 title="教師付開始日ごとのアノテーションあたり検査コメント数(1週間移動平均)",
-                y_column_name=f"inspection_comment_count/annotation_count{WEEKLY_MOVING_AVERAGE_COLUMN_SUFFIX}",
+                y_column=f"inspection_comment_count/annotation_count{WEEKLY_MOVING_AVERAGE_COLUMN_SUFFIX}",
                 y_axis_label="アノテーションあたり検査コメント数",
+                tooltip_columns=tooltip_columns,
+                x_axis_label=x_axis_label,
+                x_column=x_column,
+                x_axis_type="datetime",
             ),
         ]
 
         logger.debug(f"{output_file} を出力します。")
 
-        figs: list[bokeh.plotting.Figure] = []
-        for fig_info in fig_info_list:
-            figs.append(
-                figure(
-                    plot_width=self.PLOT_WIDTH,
-                    plot_height=self.PLOT_HEIGHT,
-                    title=fig_info["title"],
-                    x_axis_label="教師付開始日",
-                    x_axis_type="datetime",
-                    y_axis_label=fig_info["y_axis_label"],
-                )
-            )
-
-        for user_index, user_id in enumerate(user_id_list):
-            df_subset = df[df["first_annotation_user_id"] == user_id]
-            if df_subset.empty:
-                logger.debug(f"dataframe is empty. user_id = {user_id}")
-                continue
-
-            df_subset = self._get_df_sequential_date(df_subset)
-            df_subset["annotation_worktime_minute/annotation_count"] = (
-                df_subset["annotation_worktime_hour"] * 60 / df_subset["annotation_count"]
-            )
-            df_subset[f"annotation_worktime_minute/annotation_count{WEEKLY_MOVING_AVERAGE_COLUMN_SUFFIX}"] = (
-                get_weekly_sum(df_subset["annotation_worktime_hour"])
-                * 60
-                / get_weekly_sum(df_subset["annotation_count"])
-            )
-            df_subset[
-                f"inspection_comment_count/annotation_count{WEEKLY_MOVING_AVERAGE_COLUMN_SUFFIX}"
-            ] = get_weekly_sum(df_subset["inspection_comment_count"]) / get_weekly_sum(df_subset["annotation_count"])
-
-            source = ColumnDataSource(data=df_subset)
-            color = get_color_from_palette(user_index)
-            username = df_subset.iloc[0]["first_annotation_username"]
-
-            for fig, fig_info in zip(figs, fig_info_list):
-                y_column_name = fig_info["y_column_name"]
-                if y_column_name.endswith(WEEKLY_MOVING_AVERAGE_COLUMN_SUFFIX):
-                    plot_moving_average(
-                        fig,
-                        source=source,
-                        x_column_name="dt_first_annotation_started_date",
-                        y_column_name=y_column_name,
-                        legend_label=username,
-                        color=color,
-                    )
-
-                else:
-                    plot_line_and_circle(
-                        fig,
-                        x_column_name="dt_first_annotation_started_date",
-                        y_column_name=y_column_name,
-                        source=source,
-                        legend_label=username,
-                        color=color,
-                    )
-
-        hover_tool = create_hover_tool(
-            [
-                "first_annotation_user_id",
-                "first_annotation_username",
-                "first_annotation_started_date",
-                "annotation_worktime_hour",
-                "task_count",
-                "input_data_count",
-                "annotation_count",
-                "inspection_comment_count",
-            ]
-        )
-        for fig in figs:
-            fig.add_tools(hover_tool)
-            add_legend_to_figure(fig)
-
-        write_bokeh_graph(bokeh.layouts.column(figs), output_file)
+        self._plot(line_graph_list, user_id_list, output_file)
 
     def plot_input_data_metrics(
         self,
@@ -473,6 +478,9 @@ class AnnotatorProductivityPerDate(AbstractPhaseProductivityPerDate):
 
 class InspectorProductivityPerDate(AbstractPhaseProductivityPerDate):
     """検査開始日ごとの検査者の生産性に関する情報"""
+
+    def __init__(self, df: pandas.DataFrame):
+        super().__init__(df, phase=TaskPhase.INSPECTION)
 
     @classmethod
     def from_df_task(cls, df_task: pandas.DataFrame) -> InspectorProductivityPerDate:
@@ -820,6 +828,9 @@ class InspectorProductivityPerDate(AbstractPhaseProductivityPerDate):
 
 class AcceptorProductivityPerDate(AbstractPhaseProductivityPerDate):
     """受入開始日ごとの受入者の生産性に関する情報"""
+
+    def __init__(self, df: pandas.DataFrame):
+        super().__init__(df, phase=TaskPhase.ACCEPTANCE)
 
     @classmethod
     def from_df_task(cls, df_task: pandas.DataFrame) -> AcceptorProductivityPerDate:
