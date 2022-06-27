@@ -46,7 +46,8 @@ class AbstractPhaseProductivityPerDate(abc.ABC):
             return False
         return True
 
-    def _plot(self, line_graph_list: list[LineGraph], output_file: Path):
+    @staticmethod
+    def _plot(line_graph_list: list[LineGraph], output_file: Path):
         """
         折れ線グラフを、HTMLファイルに出力します。
         """
