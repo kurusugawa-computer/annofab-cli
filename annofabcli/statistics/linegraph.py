@@ -134,6 +134,7 @@ class LineGraph:
     def create_button_hiding_all_lines(self) -> Button:
         """
         全ての折れ線を非表示にするボタンを生成します。
+        折れ線が20個以上あると見えづらくなるので、すべて非表示にするボタンを用意しました。
         """
         button = Button(label="すべての折れ線を非表示にする", button_type="primary")
 
