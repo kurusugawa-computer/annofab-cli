@@ -2,7 +2,7 @@
 折れ線グラフを出力する関数の定義など
 """
 from __future__ import annotations
-from bokeh.models import GlyphRenderer
+
 import logging
 from pathlib import Path
 from typing import Any, List, Optional
@@ -12,9 +12,9 @@ import bokeh.layouts
 import bokeh.palettes
 import pandas
 from bokeh.core.properties import Color
-from bokeh.models import HoverTool
+from bokeh.models import Button, CheckboxGroup, CustomJS, GlyphRenderer, HoverTool
 from bokeh.plotting import ColumnDataSource, figure
-from bokeh.models import Button, CustomJS
+
 logger = logging.getLogger(__name__)
 
 MAX_USER_COUNT_FOR_LINE_GRAPH = 60
@@ -59,19 +59,33 @@ class LineGraph:
             required_columns = required_columns | set(tooltip_columns)
         self.required_columns = required_columns
 
-        self.line_glyphs = {}
+        self.line_glyphs: dict[str, GlyphRenderer] = {}
+        self.marker_glyphs: dict[str, GlyphRenderer] = {}
 
-    def add_line(self, source: ColumnDataSource, *, legend_label: str, color: Optional[Any] = None) -> list[GlyphRenderer]:
-        result = plot_line_and_circle(
-            self.figure,
+    def add_line(
+        self, source: ColumnDataSource, *, legend_label: str, color: Optional[Any] = None
+    ) -> tuple[GlyphRenderer, GlyphRenderer]:
+
+        line = self.figure.line(
+            x=self.x_column,
+            y=self.y_column,
             source=source,
-            x_column_name=self.x_column,
-            y_column_name=self.y_column,
+            legend_label=legend_label,
+            line_color=color,
+            line_width=1,
+        )
+        circle = self.figure.circle(
+            x=self.x_column,
+            y=self.y_column,
+            source=source,
             legend_label=legend_label,
             color=color,
         )
-        self.line_glyphs[legend_label] = result
-        return result
+
+        self.line_glyphs[legend_label] = line
+        self.marker_glyphs[legend_label] = circle
+
+        return (line, circle)
 
     def config_legend(self) -> None:
         """
@@ -89,26 +103,39 @@ class LineGraph:
             legend = fig.legend[0]
             fig.add_layout(legend, "left")
 
+    def create_button_hiding_all_lines(self) -> Button:
+        """
+        全ての折れ線を非表示にするボタンを生成します。
+        """
+        button = Button(label="すべての折れ線を非表示にする", button_type="primary")
 
-    def create_mute_all_button(self) -> Button:
-        button = Button(label="Mute all", button_type="primary")
+        glyph_list: list[GlyphRenderer] = []
+        glyph_list.extend(self.line_glyphs.values())
+        glyph_list.extend(self.marker_glyphs.values())
 
-        args = {"line_glyphs": self.line_glyphs}
+        args = {"glyph_list": glyph_list}
         code = """
-            for (let key in line_glyphs) {
-                let glyphs = line_glyphs[key]
-                for (let glyph of glyphs) {
-                    console.log(glyph)
-                    console.log(typeof(glyph))
-                    console.log(glyph.visible)
-                    glyph.visible = false
-                    console.log(glyph.visible)
-                }
+            for (let glyph of glyph_list) {
+                glyph.visible = false
             }
         """
         button.js_on_click(CustomJS(code=code, args=args))
         return button
 
+    def create_checkbox_group(self) -> Button:
+        checkbox_group = CheckboxGroup(labels=["折れ線のマーカーを表示する"], active=[0])
+
+        glyph_list = list([e.glyph for e in self.marker_glyphs.values()])
+
+        args = {"glyph_list": glyph_list}
+        code = """
+            let radius = ( "0" in this.active) ? null : 0
+            for (let glyph of glyph_list) {
+                glyph.radius = radius
+            }
+        """
+        checkbox_group.js_on_click(CustomJS(code=code, args=args))
+        return checkbox_group
 
 
 def write_bokeh_graph(bokeh_obj, output_file: Path):
@@ -177,24 +204,25 @@ def plot_line_and_circle(
     """
     result = []
     result.append(
-    fig.line(
-        x=x_column_name,
-        y=y_column_name,
-        source=source,
-        legend_label=legend_label,
-        line_color=color,
-        line_width=1,
-        **kwargs,
-    ))
-    result.append(
-    fig.circle(
-        x=x_column_name,
-        y=y_column_name,
-        source=source,
-        legend_label=legend_label,
-        color=color,
-        **kwargs,
+        fig.line(
+            x=x_column_name,
+            y=y_column_name,
+            source=source,
+            legend_label=legend_label,
+            line_color=color,
+            line_width=1,
+            **kwargs,
+        )
     )
+    result.append(
+        fig.circle(
+            x=x_column_name,
+            y=y_column_name,
+            source=source,
+            legend_label=legend_label,
+            color=color,
+            **kwargs,
+        )
     )
     return result
 

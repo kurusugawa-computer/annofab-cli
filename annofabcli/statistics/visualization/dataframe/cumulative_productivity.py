@@ -98,14 +98,17 @@ class AbstractPhaseCumulativeProductivity(abc.ABC):
             for line_graph in line_graph_list:
                 line_graph.add_line(source, legend_label=username, color=color)
 
-
-        dom_list = []
+        graph_group_list = []
         for line_graph in line_graph_list:
             line_graph.config_legend()
-            mute_all_button = line_graph.create_mute_all_button()
-            dom_list.extend([line_graph.figure, mute_all_button])
-        
-        write_bokeh_graph(bokeh.layouts.column(dom_list), output_file)
+            hide_all_button = line_graph.create_button_hiding_all_lines()
+            checkbox_group = line_graph.create_checkbox_group()
+
+            widgets = bokeh.layouts.column([hide_all_button, checkbox_group])
+            graph_group = bokeh.layouts.row([line_graph.figure, widgets])
+            graph_group_list.append(graph_group)
+
+        write_bokeh_graph(bokeh.layouts.layout(graph_group_list), output_file)
 
     @abc.abstractmethod
     def _get_cumulative_dataframe(self) -> pandas.DataFrame:
