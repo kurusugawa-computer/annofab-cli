@@ -260,8 +260,8 @@ class TestAnnotatorCumulativeProductivity:
         cls.output_dir = out_path / "visualization"
         cls.output_dir.mkdir(exist_ok=True, parents=True)
 
-        df_task = pandas.read_csv(str(data_path / "task.csv"))
-        cls.obj = AnnotatorCumulativeProductivity(df_task)
+        task = Task.from_csv(data_path / "task.csv")
+        cls.obj = AnnotatorCumulativeProductivity.from_task(task)
 
     def test_plot_annotation_metrics(self):
         self.obj.plot_annotation_metrics(self.output_dir / "累積折れ線-横軸_アノテーション数-教師付者用")
