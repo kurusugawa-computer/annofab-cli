@@ -152,7 +152,8 @@ class LineGraph:
 
     def create_checkbox_displaying_markers(self) -> Button:
         """
-        アクション系のチェックボックスグループを生成する
+        マーカーの表示/非表示を切り替えるチェックボックスを生成します。
+        プロット数が多いと、マーカーによって見えづらくなるケースがあるため、表示/非表示を切り替えるチェックボックスを作成しました。
         """
         checkbox_group = CheckboxGroup(labels=["折れ線のマーカーを表示する"], active=[0])
 
