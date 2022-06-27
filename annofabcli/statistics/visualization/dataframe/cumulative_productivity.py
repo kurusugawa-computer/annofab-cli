@@ -102,7 +102,7 @@ class AbstractPhaseCumulativeProductivity(abc.ABC):
         for line_graph in line_graph_list:
             line_graph.config_legend()
             hide_all_button = line_graph.create_button_hiding_all_lines()
-            checkbox_group = line_graph.create_checkbox_group()
+            checkbox_group = line_graph.create_checkbox_displaying_markers()
 
             widgets = bokeh.layouts.column([hide_all_button, checkbox_group])
             graph_group = bokeh.layouts.row([line_graph.figure, widgets])

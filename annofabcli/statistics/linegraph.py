@@ -147,7 +147,7 @@ class LineGraph:
         button.js_on_click(CustomJS(code=code, args=args))
         return button
 
-    def create_checkbox_group(self) -> Button:
+    def create_checkbox_displaying_markers(self) -> Button:
         """
         アクション系のチェックボックスグループを生成する
         """
