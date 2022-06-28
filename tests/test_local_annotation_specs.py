@@ -111,5 +111,4 @@ class TestListAttributeRestrictionMain:
         assert len(actual1) == 1
 
         actual2 = self.obj.get_restriction_text_list(self.annotation_specs["restrictions"], target_label_names=["car"])
-        print(actual2)
         assert len(actual2) == 9

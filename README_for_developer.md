@@ -4,7 +4,7 @@
 
 # Requirements
 * Bash
-* python 3.7.1+
+* python 3.8+
 
 
 
