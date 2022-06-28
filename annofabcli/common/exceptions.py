@@ -17,11 +17,11 @@ class AnnofabCliException(Exception):
 
 class AuthenticationError(AnnofabCliException):
     """
-    AnnoFabの認証エラー
+    Annofabの認証エラー
     """
 
     def __init__(self, loing_user_id: str):
-        msg = f"AnnoFabにログインできませんでした。User ID: {loing_user_id}"
+        msg = f"Annofabにログインできませんでした。User ID: {loing_user_id}"
         super().__init__(msg)
 
 
@@ -43,7 +43,7 @@ class AuthorizationError(AnnofabCliException):
 
 class ProjectAuthorizationError(AuthorizationError):
     """
-    AnnoFabプロジェクトに関する認可エラー
+    Annofabプロジェクトに関する認可エラー
     """
 
     def __init__(self, project_title: str, roles: List[ProjectMemberRole]):
@@ -54,7 +54,7 @@ class ProjectAuthorizationError(AuthorizationError):
 
 class OrganizationAuthorizationError(AuthorizationError):
     """
-    AnnoFab組織に関する認可エラー
+    Annofab組織に関する認可エラー
     """
 
     def __init__(self, organization_name: str, roles: List[OrganizationMemberRole]):

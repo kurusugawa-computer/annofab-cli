@@ -4,7 +4,6 @@ import sys
 import uuid
 import zipfile
 from dataclasses import dataclass
-from distutils.util import strtobool  # pylint: disable=import-error,no-name-in-module
 from functools import partial
 from multiprocessing import Pool
 from pathlib import Path
@@ -294,7 +293,7 @@ class PutInputData(AbstractCommandLineInterface):
     def get_input_data_list_from_df(df: pandas.DataFrame) -> List[CsvInputData]:
         def create_input_data(e):
             input_data_id = e.input_data_id if not pandas.isna(e.input_data_id) else None
-            sign_required = bool(strtobool(str(e.sign_required))) if not pandas.isna(e.sign_required) else None
+            sign_required: Optional[bool] = e.sign_required if pandas.notna(e.sign_required) else None
             return CsvInputData(
                 input_data_name=e.input_data_name,
                 input_data_path=e.input_data_path,

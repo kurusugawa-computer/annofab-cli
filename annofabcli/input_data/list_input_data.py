@@ -245,7 +245,7 @@ def parse_args(parser: argparse.ArgumentParser):
 def add_parser(subparsers: Optional[argparse._SubParsersAction] = None):
     subcommand_name = "list"
     subcommand_help = "入力データ一覧を出力します。"
-    description = "入力データ一覧を出力します。AnnoFabの制約上、10,000件までしか出力されません。"
+    description = "入力データ一覧を出力します。Annofabの制約上、10,000件までしか出力されません。"
 
     parser = annofabcli.common.cli.add_parser(subparsers, subcommand_name, subcommand_help, description)
     parse_args(parser)

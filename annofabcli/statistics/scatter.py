@@ -21,6 +21,7 @@ def write_bokeh_graph(bokeh_obj, output_file: Path):
     bokeh.plotting.reset_output()
     bokeh.plotting.output_file(output_file, title=output_file.stem)
     bokeh.plotting.save(bokeh_obj)
+    logger.debug(f"'{output_file}'を出力しました。")
 
 
 def get_color_from_palette(index: int) -> Color:

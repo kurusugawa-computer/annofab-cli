@@ -14,19 +14,28 @@
         "reStructuredText"
     ],
     "words": [
+        "__lastweek",
         "additionals",
+        "aggfunc",
+        "Annofab",
+        "annofabapi",
         "annofabcli",
+        "Annowork",
         "asdict",
         "astimezone",
         "astype",
         "asyncio",
         "bokeh",
+        "cumsum",
+        "dataclass",
+        "Dataframe",
         "dateutil",
         "ddof",
         "dropna",
         "dtype",
         "fillna",
         "getrgb",
+        "gridplot",
         "groupby",
         "holoviews",
         "iloc",
@@ -39,6 +48,9 @@
         "itertuples",
         "jmespath",
         "lenna",
+        "linegraph",
+        "multiheader",
+        "multiindex",
         "nargs",
         "ncols",
         "netrc",
@@ -52,6 +64,8 @@
         "quantile",
         "strtobool",
         "tolist",
-        "tzlocal"
+        "tzlocal",
+        "webapi",
+        "worktime"
     ]
 }

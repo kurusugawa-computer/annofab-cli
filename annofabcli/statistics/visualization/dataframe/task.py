@@ -26,6 +26,23 @@ class Task:
             return False
         return True
 
+    @classmethod
+    def from_csv(cls, csv_file: Path) -> Task:
+        df = pandas.read_csv(str(csv_file))
+        return cls(df)
+
+    @staticmethod
+    def merge(*obj: Task) -> Task:
+        """
+        複数のインスタンスをマージします。
+
+        Notes:
+            pandas.DataFrameのインスタンス生成のコストを減らすため、複数の引数を受け取れるようにした。
+        """
+        df_list = [task.df for task in obj]
+        df_merged = pandas.concat(df_list)
+        return Task(df_merged)
+
     def plot_histogram_of_worktime(
         self,
         output_file: Path,
@@ -106,6 +123,7 @@ class Task:
         bokeh.plotting.reset_output()
         bokeh.plotting.output_file(output_file, title=output_file.stem)
         bokeh.plotting.save(bokeh_obj)
+        logger.debug(f"'{output_file}'を出力しました。")
 
     def plot_histogram_of_others(
         self,
@@ -126,13 +144,8 @@ class Task:
 
         histogram_list = [
             dict(column="annotation_count", x_axis_label="アノテーション数", title="アノテーション数"),
-            dict(column="input_data_count", x_axis_label="画像枚数", title="画像枚数"),
+            dict(column="input_data_count", x_axis_label="入力データ数", title="入力データ数"),
             dict(column="inspection_comment_count", x_axis_label="検査コメント数", title="検査コメント数"),
-            dict(
-                column="input_data_count_of_inspection",
-                x_axis_label="指摘を受けた画像枚数",
-                title="指摘を受けた画像枚数",
-            ),
             # 経過日数
             dict(
                 column="diff_days_to_first_inspection_started",
@@ -180,6 +193,7 @@ class Task:
         bokeh.plotting.reset_output()
         bokeh.plotting.output_file(output_file, title=output_file.stem)
         bokeh.plotting.save(bokeh_obj)
+        logger.debug(f"'{output_file}'を出力しました。")
 
     def to_csv(self, output_file: Path) -> None:
         """
@@ -232,10 +246,8 @@ class Task:
             "acceptance_worktime_hour",
             # 個数
             "input_data_count",
-            "input_duration_seconds",
             "annotation_count",
             "inspection_comment_count",
-            "input_data_count_of_inspection",
             # タスクの状態
             "inspection_is_skipped",
             "acceptance_is_skipped",

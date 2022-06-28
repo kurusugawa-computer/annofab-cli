@@ -39,7 +39,7 @@ Getting Help
 
     usage: annofabcli [-h] [--version] {annotation,annotation_specs,...} ...
 
-    Command Line Interface for AnnoFab
+    Command Line Interface for Annofab
 
     positional arguments:
       {annotation,annotation_specs,...}

@@ -96,7 +96,7 @@ def add_parser(
         group.add_argument("--yes", action="store_true", help="処理中に現れる問い合わせに対して、常に ``yes`` と回答します。")
 
         group.add_argument(
-            "--endpoint_url", type=str, help=f"AnnoFab WebAPIのエンドポイントを指定します。指定しない場合は ``{DEFAULT_ENDPOINT_URL}`` です。"
+            "--endpoint_url", type=str, help=f"Annofab WebAPIのエンドポイントを指定します。指定しない場合は ``{DEFAULT_ENDPOINT_URL}`` です。"
         )
 
         group.add_argument(
@@ -263,7 +263,7 @@ def load_logging_config_from_args(args: argparse.Namespace) -> None:
 
 def get_endpoint_url(args: argparse.Namespace) -> str:
     """
-    AnnoFab WebAPIのエンドポイントURLを、以下の優先順位で取得する。
+    Annofab WebAPIのエンドポイントURLを、以下の優先順位で取得する。
 
     1. コマンドライン引数 ``--endpoint_url``
     2. 環境変数 ``ANNOFAB_ENDPOINT_URL``
@@ -274,7 +274,7 @@ def get_endpoint_url(args: argparse.Namespace) -> str:
         args: コマンドライン引数情報
 
     Returns:
-        AnnoFab WebAPIのエンドポイントURL
+        Annofab WebAPIのエンドポイントURL
 
     """
     endpoint_url = args.endpoint_url
@@ -291,7 +291,7 @@ def get_endpoint_url(args: argparse.Namespace) -> str:
 def build_annofabapi_resource(args: argparse.Namespace) -> annofabapi.Resource:
     """
     annofabapi.Resourceインスタンスを生成する。
-    以下の順にAnnoFabの認証情報を読み込む。
+    以下の順にAnnofabの認証情報を読み込む。
     1. `.netrc`ファイル
     2. 環境変数`ANNOFAB_USER_ID` , `ANNOFAB_PASSWORD`
 
@@ -303,7 +303,7 @@ def build_annofabapi_resource(args: argparse.Namespace) -> annofabapi.Resource:
     """
     endpoint_url = get_endpoint_url(args)
     if endpoint_url != DEFAULT_ENDPOINT_URL:
-        logger.info(f"AnnoFab WebAPIのエンドポイントURL: {endpoint_url}")
+        logger.info(f"Annofab WebAPIのエンドポイントURL: {endpoint_url}")
 
     try:
         return annofabapi.build_from_netrc(endpoint_url)
@@ -319,11 +319,11 @@ def build_annofabapi_resource(args: argparse.Namespace) -> annofabapi.Resource:
     # 標準入力から入力させる
     login_user_id = ""
     while login_user_id == "":
-        login_user_id = input("Enter AnnoFab User ID: ")
+        login_user_id = input("Enter Annofab User ID: ")
 
     login_password = ""
     while login_password == "":
-        login_password = getpass.getpass("Enter AnnoFab Password: ")
+        login_password = getpass.getpass("Enter Annofab Password: ")
 
     return annofabapi.build(login_user_id, login_password, endpoint_url=endpoint_url)
 

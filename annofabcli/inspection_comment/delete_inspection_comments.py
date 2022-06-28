@@ -1,4 +1,5 @@
 import argparse
+import json
 import logging
 import multiprocessing
 import sys
@@ -45,31 +46,29 @@ class DeleteInspectionCommentsMain(AbstractCommandLineWithConfirmInterface):
         AbstractCommandLineWithConfirmInterface.__init__(self, all_yes)
 
     def _create_request_body(
-        self, task: Dict[str, Any], input_data_id: str, inspection_ids: List[str]
+        self, task: Dict[str, Any], input_data_id: str, comment_ids: List[str]
     ) -> List[Dict[str, Any]]:
         """batch_update_inspections に渡すリクエストボディを作成する。"""
 
         def _convert(inspection_id: str) -> Dict[str, Any]:
             return {
-                "project_id": self.project_id,
-                "task_id": task["task_id"],
-                "input_data_id": input_data_id,
-                "inspection_id": inspection_id,
+                "comment_id": inspection_id,
                 "_type": "Delete",
             }
 
-        old_inspection_list, _ = self.service.api.get_inspections(self.project_id, task["task_id"], input_data_id)
-        old_inspection_ids = {e["inspection_id"] for e in old_inspection_list}
-
+        old_comment_list, _ = self.service.api.get_comments(
+            self.project_id, task["task_id"], input_data_id, query_params={"v": "2"}
+        )
+        old_comment_ids = {e["comment_id"] for e in old_comment_list if e["comment_type"] == "inspection"}
         request_body = []
-        for inspection_id in inspection_ids:
-            if inspection_id not in old_inspection_ids:
+        for comment_id in comment_ids:
+            if comment_id not in old_comment_ids:
                 logger.warning(
                     f"task_id={task['task_id']}, input_data_id={input_data_id}: "
-                    f"inspection_id='{inspection_id}'の検査コメントは存在しません。",
+                    f"comment_id='{comment_id}'の検査コメントは存在しません。",
                 )
                 continue
-            request_body.append(_convert(inspection_id))
+            request_body.append(_convert(comment_id))
         return request_body
 
     def change_to_working_status(self, project_id: str, task: Dict[str, Any]) -> Dict[str, Any]:
@@ -93,9 +92,8 @@ class DeleteInspectionCommentsMain(AbstractCommandLineWithConfirmInterface):
             changed_task = self.service.wrapper.change_task_status_to_working(project_id, task_id)
             return changed_task
 
-        except requests.HTTPError as e:
-            logger.warning(e)
-            logger.warning(f"{task_id}: 担当者の変更、または作業中状態への変更に失敗しました。")
+        except requests.HTTPError:
+            logger.warning(f"{task_id}: 担当者の変更、または作業中状態への変更に失敗しました。", exc_info=True)
             raise
 
     @staticmethod
@@ -149,7 +147,7 @@ class DeleteInspectionCommentsMain(AbstractCommandLineWithConfirmInterface):
         ):
             return 0
 
-        if not self.confirm_processing(f"task_id='{task_id}' のタスクに検査コメントを削除しますか？"):
+        if not self.confirm_processing(f"task_id='{task_id}' のタスクに付与された検査コメントを削除しますか？"):
             return 0
 
         # 検査コメントを削除するには作業中状態にする必要がある
@@ -164,10 +162,10 @@ class DeleteInspectionCommentsMain(AbstractCommandLineWithConfirmInterface):
             try:
                 # 検査コメントを削除
                 request_body = self._create_request_body(
-                    task=changed_task, input_data_id=input_data_id, inspection_ids=inspection_ids
+                    task=changed_task, input_data_id=input_data_id, comment_ids=inspection_ids
                 )
                 if len(request_body) > 0:
-                    self.service.api.batch_update_inspections(
+                    self.service.api.batch_update_comments(
                         self.project_id, task_id, input_data_id, request_body=request_body
                     )
                     added_comments_count += 1
@@ -271,14 +269,11 @@ def parse_args(parser: argparse.ArgumentParser):
 
     argument_parser.add_project_id()
 
+    JSON_SAMPLE = {"task_id1": {"input_data_id1": ["comment_id1", "comment_id2"]}}
     parser.add_argument(
         "--json",
         type=str,
-        help=(
-            "削除する検査コメントのIDをJSON形式で指定してください。"
-            "JSONのスキーマは https://annofab-cli.readthedocs.io/ja/latest/command_reference/inspection_comment/delete.html "
-            "に記載されています。"
-        ),
+        help=("削除する検査コメントIDをJSON形式で指定してください。\n" f"(ex) '{json.dumps(JSON_SAMPLE)}' \n"),
     )
 
     parser.add_argument(
@@ -291,7 +286,7 @@ def parse_args(parser: argparse.ArgumentParser):
 def add_parser(subparsers: Optional[argparse._SubParsersAction] = None):
     subcommand_name = "delete"
     subcommand_help = "検査コメントを削除します。"
-    description = "検査コメントを削除します。 【注意】他人の検査コメントや他のフェーズで付与された検査コメントを削除できてしまいます。"
+    description = "検査コメントを削除します。\n【注意】他人の検査コメントや他のフェーズで付与された検査コメントを削除できてしまいます。"
     epilog = "チェッカーロールまたはオーナロールを持つユーザで実行してください。"
 
     parser = annofabcli.common.cli.add_parser(subparsers, subcommand_name, subcommand_help, description, epilog=epilog)

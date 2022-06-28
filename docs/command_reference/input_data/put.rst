@@ -30,7 +30,7 @@ CSVのフォーマットは以下の通りです。
     3列目,input_data_id,No,省略した場合はUUID(v4)になります。
     4列目,sign_required,No,``true`` または ``false`` を指定してください。省略した場合は ``null`` です。
 
-各項目の詳細は `AnnoFabのWebAPIドキュメント <https://annofab.com/docs/api/#operation/putInputData>`_ を参照してください。
+各項目の詳細は `AnnofabのWebAPIドキュメント <https://annofab.com/docs/api/#operation/putInputData>`_ を参照してください。
 
 以下はCSVファイルのサンプルです。
 

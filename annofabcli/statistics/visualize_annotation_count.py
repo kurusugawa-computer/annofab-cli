@@ -233,7 +233,7 @@ def parse_args(parser: argparse.ArgumentParser):
 
     argument_parser.add_project_id()
     parser.add_argument(
-        "--annotation", type=str, help="アノテーションzip、またはzipを展開したディレクトリを指定します。" "指定しない場合はAnnoFabからダウンロードします。"
+        "--annotation", type=str, help="アノテーションzip、またはzipを展開したディレクトリを指定します。" "指定しない場合はAnnofabからダウンロードします。"
     )
     parser.add_argument("-o", "--output_dir", type=Path, required=True, help="出力先ディレクトリのパス")
 

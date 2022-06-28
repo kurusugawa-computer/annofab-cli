@@ -62,7 +62,7 @@ class ListTasksWithJsonMain:
             json_path = task_json
 
         logger.debug(f"{json_path} を読み込んでいます。")
-        with json_path.open() as f:
+        with json_path.open(encoding="utf-8") as f:
             task_list = json.load(f)
 
         if task_query is not None:

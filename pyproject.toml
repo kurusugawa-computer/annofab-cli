@@ -1,6 +1,6 @@
 [tool.poetry]
 name = "annofabcli"
-version = "1.64.0"
+version = "1.66.0"
 description = "Utility Command Line Interface for AnnoFab"
 authors = ["yuji38kwmt"]
 license = "MIT"
@@ -14,16 +14,16 @@ classifiers = [
         "Environment :: Console",
         "Programming Language :: Python",
         "Programming Language :: Python :: 3 :: Only",
-        "Programming Language :: Python :: 3.7",
         "Programming Language :: Python :: 3.8",
         "Programming Language :: Python :: 3.9",
+        "Programming Language :: Python :: 3.10",        
         "Topic :: Utilities",
         "Operating System :: OS Independent",
 ]
 
 
 [tool.poetry.dependencies]
-python = "^3.7.1"
+python = "^3.8"
 requests = "*"
 pillow = "*"
 pyyaml = "*"

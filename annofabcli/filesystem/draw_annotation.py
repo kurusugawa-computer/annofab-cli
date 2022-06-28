@@ -320,7 +320,7 @@ def parse_args(parser: argparse.ArgumentParser):
     argument_parser = ArgumentParser(parser)
 
     parser.add_argument(
-        "--annotation", type=Path, required=True, help="AnnoFabからダウンロードしたアノテーションzip、またはzipを展開したディレクトリを指定してください。"
+        "--annotation", type=Path, required=True, help="Annofabからダウンロードしたアノテーションzip、またはzipを展開したディレクトリを指定してください。"
     )
 
     parser.add_argument("--image_dir", type=Path, required=True, help="画像が存在するディレクトリを指定してください。")

@@ -49,6 +49,12 @@ class WholeProductivityPerCompletedDate:
             return False
         return True
 
+    @classmethod
+    def from_csv(cls, csv_file: Path) -> WholeProductivityPerCompletedDate:
+        """CSVファイルからインスタンスを生成します。"""
+        df = pandas.read_csv(str(csv_file))
+        return cls(df)
+
     @staticmethod
     def _create_df_date(date_index1: pandas.Index, date_index2: pandas.Index) -> pandas.DataFrame:
         # 日付の一覧を生成
@@ -737,6 +743,12 @@ class WholeProductivityPerFirstAnnotationStartedDate:
         self.df = df
 
     @classmethod
+    def from_csv(cls, csv_file: Path) -> WholeProductivityPerFirstAnnotationStartedDate:
+        """CSVファイルからインスタンスを生成します。"""
+        df = pandas.read_csv(str(csv_file))
+        return cls(df)
+
+    @classmethod
     def _add_velocity_columns(cls, df: pandas.DataFrame):
         """
         日毎の全体の生産量から、累計情報、生産性の列を追加する。
@@ -762,7 +774,6 @@ class WholeProductivityPerFirstAnnotationStartedDate:
 
     @classmethod
     def from_df(cls, df_task: pandas.DataFrame) -> WholeProductivityPerFirstAnnotationStartedDate:
-
         df_sub_task = df_task[df_task["status"] == TaskStatus.COMPLETE.value][
             [
                 "task_id",
@@ -801,20 +812,18 @@ class WholeProductivityPerFirstAnnotationStartedDate:
             df_agg_sub_task = df_agg_sub_task.assign(**{key: 0 for key in value_columns}, task_count=0)
 
         # 日付の一覧を生成
-        df_date_base = pandas.DataFrame(
-            index=[
-                e.strftime("%Y-%m-%d")
-                for e in pandas.date_range(start=df_agg_sub_task.index.min(), end=df_agg_sub_task.index.max())
-            ]
-        )
+        if len(df_agg_sub_task) > 0:
+            df_date_base = pandas.DataFrame(
+                index=[
+                    e.strftime("%Y-%m-%d")
+                    for e in pandas.date_range(start=df_agg_sub_task.index.min(), end=df_agg_sub_task.index.max())
+                ]
+            )
+        else:
+            df_date_base = pandas.DataFrame()
+
         df_date = df_date_base.join(df_agg_sub_task).fillna(0)
 
-        df_date.rename(
-            columns={
-                "worktime_hour": "worktime_hour",
-            },
-            inplace=True,
-        )
         df_date["first_annotation_started_date"] = df_date.index
 
         # 生産性情報などの列を追加する
@@ -1120,3 +1129,4 @@ class WholeProductivityPerFirstAnnotationStartedDate:
         bokeh.plotting.output_file(output_file, title=output_file.stem)
 
         bokeh.plotting.save(bokeh.layouts.column([create_div_element()] + fig_list))
+        logger.debug(f"'{output_file}'を出力しました。")

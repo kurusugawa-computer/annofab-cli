@@ -152,10 +152,10 @@ class ListOutOfRangeAnnotationForMovieMain:
         loop = asyncio.get_event_loop()
         loop.run_until_complete(gather)
 
-        with input_data_json_path.open() as f:
+        with input_data_json_path.open(encoding="utf-8") as f:
             input_data_list = json.load(f)
 
-        with task_json_path.open() as f:
+        with task_json_path.open(encoding="utf-8") as f:
             task_list = json.load(f)
             if task_id_list is not None:
                 task_list = self.filter_task_list(task_list, task_id_list)
