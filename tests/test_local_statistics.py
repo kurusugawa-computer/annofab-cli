@@ -645,7 +645,3 @@ class TestProjectWorktimePerMonth:
         row = df.iloc[0]
         assert row["dirname"] == "empty"
 
-
-def test_xxx():
-    task = Task.from_csv(Path("out/KRSGIS/タスクlist.csv"))
-    AnnotatorCumulativeProductivity.from_task(task).plot_annotation_metrics(Path("out/test.html"))
