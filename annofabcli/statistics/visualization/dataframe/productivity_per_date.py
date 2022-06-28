@@ -13,19 +13,17 @@ import bokeh
 import bokeh.layouts
 import bokeh.palettes
 import pandas
-from bokeh.plotting import ColumnDataSource, figure
+from annofabapi.models import TaskPhase
+from bokeh.plotting import ColumnDataSource
 from dateutil.parser import parse
 
 from annofabcli.common.utils import datetime_to_date, print_csv
 from annofabcli.statistics.linegraph import (
     WEEKLY_MOVING_AVERAGE_COLUMN_SUFFIX,
-    add_legend_to_figure,
-    create_hover_tool,
+    LineGraph,
     get_color_from_palette,
     get_plotted_user_id_list,
     get_weekly_sum,
-    plot_line_and_circle,
-    plot_moving_average,
     write_bokeh_graph,
 )
 
@@ -38,14 +36,39 @@ class AbstractPhaseProductivityPerDate(abc.ABC):
     PLOT_WIDTH = 1200
     PLOT_HEIGHT = 600
 
-    def __init__(self, df: pandas.DataFrame) -> None:
+    def __init__(self, df: pandas.DataFrame, phase: TaskPhase) -> None:
         self.df = df
+        self.phase = phase
 
     def _validate_df_for_output(self, output_file: Path) -> bool:
         if len(self.df) == 0:
             logger.warning(f"データが0件のため、{output_file} は出力しません。")
             return False
         return True
+
+    @staticmethod
+    def _plot(line_graph_list: list[LineGraph], output_file: Path):
+        """
+        折れ線グラフを、HTMLファイルに出力します。
+        """
+        graph_group_list = []
+        for line_graph in line_graph_list:
+            line_graph.config_legend()
+
+            widget_list = []
+            hide_all_button = line_graph.create_button_hiding_all_lines()
+            widget_list.append(hide_all_button)
+
+            # マーカーがある場合は、マーカーを表示/非表示切り替えられるチェックボックスを配置する
+            if len(line_graph.marker_glyphs) > 0:
+                checkbox_group = line_graph.create_checkbox_displaying_markers()
+                widget_list.append(checkbox_group)
+
+            widgets = bokeh.layouts.column(widget_list)
+            graph_group = bokeh.layouts.row([line_graph.figure, widgets])
+            graph_group_list.append(graph_group)
+
+        write_bokeh_graph(bokeh.layouts.layout(graph_group_list), output_file)
 
     @classmethod
     @abc.abstractmethod
@@ -67,6 +90,9 @@ class AbstractPhaseProductivityPerDate(abc.ABC):
 
 class AnnotatorProductivityPerDate(AbstractPhaseProductivityPerDate):
     """教師付開始日ごとの教師付者の生産性に関する情報"""
+
+    def __init__(self, df: pandas.DataFrame):
+        super().__init__(df, phase=TaskPhase.ANNOTATION)
 
     @classmethod
     def from_df_task(cls, df_task: pandas.DataFrame) -> AnnotatorProductivityPerDate:
@@ -198,48 +224,67 @@ class AnnotatorProductivityPerDate(AbstractPhaseProductivityPerDate):
 
         user_id_list = get_plotted_user_id_list(user_id_list)
 
-        fig_info_list = [
-            dict(
+        x_axis_label = "教師付開始日"
+        x_column = "dt_first_annotation_started_date"
+        tooltip_columns = [
+            "first_annotation_user_id",
+            "first_annotation_username",
+            "first_annotation_started_date",
+            "annotation_worktime_hour",
+            "task_count",
+            "input_data_count",
+            "annotation_count",
+            "inspection_comment_count",
+        ]
+        line_graph_list = [
+            LineGraph(
                 title="教師付開始日ごとの教師付作業時間",
-                y_column_name="annotation_worktime_hour",
+                y_column="annotation_worktime_hour",
                 y_axis_label="教師付作業時間[hour]",
+                tooltip_columns=tooltip_columns,
+                x_axis_label=x_axis_label,
+                x_column=x_column,
+                x_axis_type="datetime",
             ),
-            dict(
+            LineGraph(
                 title="教師付開始日ごとのアノテーションあたり教師付作業時間",
-                y_column_name="annotation_worktime_minute/annotation_count",
+                y_column="annotation_worktime_minute/annotation_count",
                 y_axis_label="アノテーションあたり教師付時間[min/annotation]",
+                tooltip_columns=tooltip_columns,
+                x_axis_label=x_axis_label,
+                x_column=x_column,
+                x_axis_type="datetime",
             ),
-            dict(
+            LineGraph(
                 title="教師付開始日ごとのアノテーションあたり教師付作業時間(1週間移動平均)",
-                y_column_name=f"annotation_worktime_minute/annotation_count{WEEKLY_MOVING_AVERAGE_COLUMN_SUFFIX}",
+                y_column=f"annotation_worktime_minute/annotation_count{WEEKLY_MOVING_AVERAGE_COLUMN_SUFFIX}",
                 y_axis_label="アノテーションあたり教師付時間[min/annotation]",
+                tooltip_columns=tooltip_columns,
+                x_axis_label=x_axis_label,
+                x_column=x_column,
+                x_axis_type="datetime",
             ),
-            dict(
+            LineGraph(
                 title="教師付開始日ごとのアノテーションあたり検査コメント数",
-                y_column_name="inspection_comment_count/annotation_count",
+                y_column="inspection_comment_count/annotation_count",
                 y_axis_label="アノテーションあたり検査コメント数",
+                tooltip_columns=tooltip_columns,
+                x_axis_label=x_axis_label,
+                x_column=x_column,
+                x_axis_type="datetime",
             ),
-            dict(
+            LineGraph(
                 title="教師付開始日ごとのアノテーションあたり検査コメント数(1週間移動平均)",
-                y_column_name=f"inspection_comment_count/annotation_count{WEEKLY_MOVING_AVERAGE_COLUMN_SUFFIX}",
+                y_column=f"inspection_comment_count/annotation_count{WEEKLY_MOVING_AVERAGE_COLUMN_SUFFIX}",
                 y_axis_label="アノテーションあたり検査コメント数",
+                tooltip_columns=tooltip_columns,
+                x_axis_label=x_axis_label,
+                x_column=x_column,
+                x_axis_type="datetime",
             ),
         ]
 
         logger.debug(f"{output_file} を出力します。")
-
-        figs: list[bokeh.plotting.Figure] = []
-        for fig_info in fig_info_list:
-            figs.append(
-                figure(
-                    plot_width=self.PLOT_WIDTH,
-                    plot_height=self.PLOT_HEIGHT,
-                    title=fig_info["title"],
-                    x_axis_label="教師付開始日",
-                    x_axis_type="datetime",
-                    y_axis_label=fig_info["y_axis_label"],
-                )
-            )
 
         for user_index, user_id in enumerate(user_id_list):
             df_subset = df[df["first_annotation_user_id"] == user_id]
@@ -264,45 +309,22 @@ class AnnotatorProductivityPerDate(AbstractPhaseProductivityPerDate):
             color = get_color_from_palette(user_index)
             username = df_subset.iloc[0]["first_annotation_username"]
 
-            for fig, fig_info in zip(figs, fig_info_list):
-                y_column_name = fig_info["y_column_name"]
-                if y_column_name.endswith(WEEKLY_MOVING_AVERAGE_COLUMN_SUFFIX):
-                    plot_moving_average(
-                        fig,
+            for line_graph in line_graph_list:
+                if line_graph.y_column.endswith(WEEKLY_MOVING_AVERAGE_COLUMN_SUFFIX):
+                    line_graph.add_moving_average_line(
                         source=source,
-                        x_column_name="dt_first_annotation_started_date",
-                        y_column_name=y_column_name,
                         legend_label=username,
                         color=color,
                     )
 
                 else:
-                    plot_line_and_circle(
-                        fig,
-                        x_column_name="dt_first_annotation_started_date",
-                        y_column_name=y_column_name,
+                    line_graph.add_line(
                         source=source,
                         legend_label=username,
                         color=color,
                     )
 
-        hover_tool = create_hover_tool(
-            [
-                "first_annotation_user_id",
-                "first_annotation_username",
-                "first_annotation_started_date",
-                "annotation_worktime_hour",
-                "task_count",
-                "input_data_count",
-                "annotation_count",
-                "inspection_comment_count",
-            ]
-        )
-        for fig in figs:
-            fig.add_tools(hover_tool)
-            add_legend_to_figure(fig)
-
-        write_bokeh_graph(bokeh.layouts.column(figs), output_file)
+        self._plot(line_graph_list, output_file)
 
     def plot_input_data_metrics(
         self,
@@ -330,48 +352,67 @@ class AnnotatorProductivityPerDate(AbstractPhaseProductivityPerDate):
 
         user_id_list = get_plotted_user_id_list(user_id_list)
 
-        fig_info_list = [
-            dict(
+        x_axis_label = "教師付開始日"
+        x_column = "dt_first_annotation_started_date"
+        tooltip_columns = [
+            "first_annotation_user_id",
+            "first_annotation_username",
+            "first_annotation_started_date",
+            "annotation_worktime_hour",
+            "task_count",
+            "input_data_count",
+            "inspection_comment_count",
+        ]
+
+        line_graph_list = [
+            LineGraph(
                 title="教師付開始日ごとの教師付作業時間",
-                y_column_name="annotation_worktime_hour",
+                y_column="annotation_worktime_hour",
                 y_axis_label="教師付作業時間[hour]",
+                tooltip_columns=tooltip_columns,
+                x_axis_label=x_axis_label,
+                x_column=x_column,
+                x_axis_type="datetime",
             ),
-            dict(
+            LineGraph(
                 title="教師付開始日ごとの入力データあたり教師付作業時間",
-                y_column_name="annotation_worktime_minute/input_data_count",
+                y_column="annotation_worktime_minute/input_data_count",
                 y_axis_label="入力データあたり教師付時間[min/input_data]",
+                tooltip_columns=tooltip_columns,
+                x_axis_label=x_axis_label,
+                x_column=x_column,
+                x_axis_type="datetime",
             ),
-            dict(
+            LineGraph(
                 title="教師付開始日ごとの入力データあたり教師付作業時間(1週間移動平均)",
-                y_column_name=f"annotation_worktime_minute/input_data_count{WEEKLY_MOVING_AVERAGE_COLUMN_SUFFIX}",
+                y_column=f"annotation_worktime_minute/input_data_count{WEEKLY_MOVING_AVERAGE_COLUMN_SUFFIX}",
                 y_axis_label="入力データあたり教師付時間[min/annotation]",
+                tooltip_columns=tooltip_columns,
+                x_axis_label=x_axis_label,
+                x_column=x_column,
+                x_axis_type="datetime",
             ),
-            dict(
+            LineGraph(
                 title="教師付開始日ごとの入力データあたり検査コメント数",
-                y_column_name="inspection_comment_count/input_data_count",
+                y_column="inspection_comment_count/input_data_count",
                 y_axis_label="入力データあたり検査コメント数",
+                tooltip_columns=tooltip_columns,
+                x_axis_label=x_axis_label,
+                x_column=x_column,
+                x_axis_type="datetime",
             ),
-            dict(
+            LineGraph(
                 title="教師付開始日ごとの入力データあたり検査コメント数(1週間移動平均)",
-                y_column_name=f"inspection_comment_count/input_data_count{WEEKLY_MOVING_AVERAGE_COLUMN_SUFFIX}",
+                y_column=f"inspection_comment_count/input_data_count{WEEKLY_MOVING_AVERAGE_COLUMN_SUFFIX}",
                 y_axis_label="入力データあたり検査コメント数",
+                tooltip_columns=tooltip_columns,
+                x_axis_label=x_axis_label,
+                x_column=x_column,
+                x_axis_type="datetime",
             ),
         ]
 
         logger.debug(f"{output_file} を出力します。")
-
-        figs: list[bokeh.plotting.Figure] = []
-        for fig_info in fig_info_list:
-            figs.append(
-                figure(
-                    plot_width=self.PLOT_WIDTH,
-                    plot_height=self.PLOT_HEIGHT,
-                    title=fig_info["title"],
-                    x_axis_label="教師付開始日",
-                    x_axis_type="datetime",
-                    y_axis_label=fig_info["y_axis_label"],
-                )
-            )
 
         for user_index, user_id in enumerate(user_id_list):
             df_subset = df[df["first_annotation_user_id"] == user_id]
@@ -397,45 +438,22 @@ class AnnotatorProductivityPerDate(AbstractPhaseProductivityPerDate):
             color = get_color_from_palette(user_index)
             username = df_subset.iloc[0]["first_annotation_username"]
 
-            for fig, fig_info in zip(figs, fig_info_list):
-                y_column_name = fig_info["y_column_name"]
-                if y_column_name.endswith(WEEKLY_MOVING_AVERAGE_COLUMN_SUFFIX):
-                    plot_moving_average(
-                        fig,
+            for line_graph in line_graph_list:
+                if line_graph.y_column.endswith(WEEKLY_MOVING_AVERAGE_COLUMN_SUFFIX):
+                    line_graph.add_moving_average_line(
                         source=source,
-                        x_column_name="dt_first_annotation_started_date",
-                        y_column_name=y_column_name,
                         legend_label=username,
                         color=color,
                     )
 
                 else:
-                    plot_line_and_circle(
-                        fig,
-                        x_column_name="dt_first_annotation_started_date",
-                        y_column_name=y_column_name,
+                    line_graph.add_line(
                         source=source,
                         legend_label=username,
                         color=color,
                     )
 
-        hover_tool = create_hover_tool(
-            [
-                "first_annotation_user_id",
-                "first_annotation_username",
-                "first_annotation_started_date",
-                "annotation_worktime_hour",
-                "task_count",
-                "input_data_count",
-                "annotation_count",
-                "inspection_comment_count",
-            ]
-        )
-        for fig in figs:
-            fig.add_tools(hover_tool)
-            add_legend_to_figure(fig)
-
-        write_bokeh_graph(bokeh.layouts.column(figs), output_file)
+        self._plot(line_graph_list, output_file)
 
     def to_csv(self, output_file: Path) -> None:
 
@@ -473,6 +491,9 @@ class AnnotatorProductivityPerDate(AbstractPhaseProductivityPerDate):
 
 class InspectorProductivityPerDate(AbstractPhaseProductivityPerDate):
     """検査開始日ごとの検査者の生産性に関する情報"""
+
+    def __init__(self, df: pandas.DataFrame):
+        super().__init__(df, phase=TaskPhase.INSPECTION)
 
     @classmethod
     def from_df_task(cls, df_task: pandas.DataFrame) -> InspectorProductivityPerDate:
@@ -580,38 +601,49 @@ class InspectorProductivityPerDate(AbstractPhaseProductivityPerDate):
 
         user_id_list = get_plotted_user_id_list(user_id_list)
 
-        fig_info_list = [
-            dict(
+        x_axis_label = "検査開始日"
+        x_column = "dt_first_inspection_started_date"
+        tooltip_columns = [
+            "first_inspection_user_id",
+            "first_inspection_username",
+            "first_inspection_started_date",
+            "inspection_worktime_hour",
+            "task_count",
+            "input_data_count",
+            "annotation_count",
+        ]
+
+        line_graph_list = [
+            LineGraph(
                 title="検査開始日ごとの受入作業時間",
-                y_column_name="inspection_worktime_hour",
+                y_column="inspection_worktime_hour",
                 y_axis_label="検査作業時間[hour]",
+                tooltip_columns=tooltip_columns,
+                x_axis_label=x_axis_label,
+                x_column=x_column,
+                x_axis_type="datetime",
             ),
-            dict(
+            LineGraph(
                 title="検査開始日ごとのアノテーションあたり検査作業時間",
-                y_column_name="inspection_worktime_minute/annotation_count",
+                y_column="inspection_worktime_minute/annotation_count",
                 y_axis_label="アノテーションあたり検査作業時間[min/annotation]",
+                tooltip_columns=tooltip_columns,
+                x_axis_label=x_axis_label,
+                x_column=x_column,
+                x_axis_type="datetime",
             ),
-            dict(
+            LineGraph(
                 title="検査開始日ごとのアノテーションあたり検査作業時間(1週間移動平均)",
-                y_column_name=f"inspection_worktime_minute/annotation_count{WEEKLY_MOVING_AVERAGE_COLUMN_SUFFIX}",
+                y_column=f"inspection_worktime_minute/annotation_count{WEEKLY_MOVING_AVERAGE_COLUMN_SUFFIX}",
                 y_axis_label="アノテーションあたり検査作業時間[min/annotation]",
+                tooltip_columns=tooltip_columns,
+                x_axis_label=x_axis_label,
+                x_column=x_column,
+                x_axis_type="datetime",
             ),
         ]
 
         logger.debug(f"{output_file} を出力します。")
-
-        figs: list[bokeh.plotting.Figure] = []
-        for fig_info in fig_info_list:
-            figs.append(
-                figure(
-                    plot_width=self.PLOT_WIDTH,
-                    plot_height=self.PLOT_HEIGHT,
-                    title=fig_info["title"],
-                    x_axis_label="受入開始日",
-                    x_axis_type="datetime",
-                    y_axis_label=fig_info["y_axis_label"],
-                )
-            )
 
         for user_index, user_id in enumerate(user_id_list):
             df_subset = df[df["first_inspection_user_id"] == user_id]
@@ -633,44 +665,22 @@ class InspectorProductivityPerDate(AbstractPhaseProductivityPerDate):
             color = get_color_from_palette(user_index)
             username = df_subset.iloc[0]["first_inspection_username"]
 
-            for fig, fig_info in zip(figs, fig_info_list):
-                y_column_name = fig_info["y_column_name"]
-                if y_column_name.endswith(WEEKLY_MOVING_AVERAGE_COLUMN_SUFFIX):
-                    plot_moving_average(
-                        fig,
+            for line_graph in line_graph_list:
+                if line_graph.y_column.endswith(WEEKLY_MOVING_AVERAGE_COLUMN_SUFFIX):
+                    line_graph.add_moving_average_line(
                         source=source,
-                        x_column_name="dt_first_inspection_started_date",
-                        y_column_name=y_column_name,
                         legend_label=username,
                         color=color,
                     )
 
                 else:
-                    plot_line_and_circle(
-                        fig,
-                        x_column_name="dt_first_inspection_started_date",
-                        y_column_name=y_column_name,
+                    line_graph.add_line(
                         source=source,
                         legend_label=username,
                         color=color,
                     )
 
-        hover_tool = create_hover_tool(
-            [
-                "first_inspection_user_id",
-                "first_inspection_username",
-                "first_inspection_started_date",
-                "inspection_worktime_hour",
-                "task_count",
-                "input_data_count",
-                "annotation_count",
-            ]
-        )
-        for fig in figs:
-            fig.add_tools(hover_tool)
-            add_legend_to_figure(fig)
-
-        write_bokeh_graph(bokeh.layouts.column(figs), output_file)
+        self._plot(line_graph_list, output_file)
 
     def plot_input_data_metrics(
         self,
@@ -698,38 +708,49 @@ class InspectorProductivityPerDate(AbstractPhaseProductivityPerDate):
 
         user_id_list = get_plotted_user_id_list(user_id_list)
 
-        fig_info_list = [
-            dict(
+        x_axis_label = "検査開始日"
+        x_column = "dt_first_inspection_started_date"
+        tooltip_columns = [
+            "first_annotation_user_id",
+            "first_inspection_username",
+            "first_inspection_started_date",
+            "inspection_worktime_hour",
+            "task_count",
+            "input_data_count",
+            "inspection_comment_count",
+        ]
+
+        line_graph_list = [
+            LineGraph(
                 title="検査開始日ごとの検査作業時間",
-                y_column_name="inspection_worktime_hour",
-                y_axis_label="教師付作業時間[hour]",
+                y_column="inspection_worktime_hour",
+                y_axis_label="検査作業時間[hour]",
+                tooltip_columns=tooltip_columns,
+                x_axis_label=x_axis_label,
+                x_column=x_column,
+                x_axis_type="datetime",
             ),
-            dict(
+            LineGraph(
                 title="検査開始日ごとの入力データあたり検査作業時間",
-                y_column_name="inspection_worktime_minute/input_data_count",
+                y_column="inspection_worktime_minute/input_data_count",
                 y_axis_label="入力データあたり検査時間[min/input_data]",
+                tooltip_columns=tooltip_columns,
+                x_axis_label=x_axis_label,
+                x_column=x_column,
+                x_axis_type="datetime",
             ),
-            dict(
+            LineGraph(
                 title="検査開始日ごとの入力データあたり検査作業時間(1週間移動平均)",
-                y_column_name=f"inspection_worktime_minute/input_data_count{WEEKLY_MOVING_AVERAGE_COLUMN_SUFFIX}",
+                y_column=f"inspection_worktime_minute/input_data_count{WEEKLY_MOVING_AVERAGE_COLUMN_SUFFIX}",
                 y_axis_label="入力データあたり検査時間[min/annotation]",
+                tooltip_columns=tooltip_columns,
+                x_axis_label=x_axis_label,
+                x_column=x_column,
+                x_axis_type="datetime",
             ),
         ]
 
         logger.debug(f"{output_file} を出力します。")
-
-        figs: list[bokeh.plotting.Figure] = []
-        for fig_info in fig_info_list:
-            figs.append(
-                figure(
-                    plot_width=self.PLOT_WIDTH,
-                    plot_height=self.PLOT_HEIGHT,
-                    title=fig_info["title"],
-                    x_axis_label="検査開始日",
-                    x_axis_type="datetime",
-                    y_axis_label=fig_info["y_axis_label"],
-                )
-            )
 
         for user_index, user_id in enumerate(user_id_list):
             df_subset = df[df["first_inspection_user_id"] == user_id]
@@ -751,45 +772,22 @@ class InspectorProductivityPerDate(AbstractPhaseProductivityPerDate):
             color = get_color_from_palette(user_index)
             username = df_subset.iloc[0]["first_inspection_username"]
 
-            for fig, fig_info in zip(figs, fig_info_list):
-                y_column_name = fig_info["y_column_name"]
-                if y_column_name.endswith(WEEKLY_MOVING_AVERAGE_COLUMN_SUFFIX):
-                    plot_moving_average(
-                        fig,
+            for line_graph in line_graph_list:
+                if line_graph.y_column.endswith(WEEKLY_MOVING_AVERAGE_COLUMN_SUFFIX):
+                    line_graph.add_moving_average_line(
                         source=source,
-                        x_column_name="dt_first_inspection_started_date",
-                        y_column_name=y_column_name,
                         legend_label=username,
                         color=color,
                     )
 
                 else:
-                    plot_line_and_circle(
-                        fig,
-                        x_column_name="dt_first_inspection_started_date",
-                        y_column_name=y_column_name,
+                    line_graph.add_line(
                         source=source,
                         legend_label=username,
                         color=color,
                     )
 
-        hover_tool = create_hover_tool(
-            [
-                "first_annotation_user_id",
-                "first_inspection_username",
-                "first_inspection_started_date",
-                "inspection_worktime_hour",
-                "task_count",
-                "input_data_count",
-                "annotation_count",
-                "inspection_comment_count",
-            ]
-        )
-        for fig in figs:
-            fig.add_tools(hover_tool)
-            add_legend_to_figure(fig)
-
-        write_bokeh_graph(bokeh.layouts.column(figs), output_file)
+        self._plot(line_graph_list, output_file)
 
     def to_csv(self, output_file: Path) -> None:
         """
@@ -820,6 +818,9 @@ class InspectorProductivityPerDate(AbstractPhaseProductivityPerDate):
 
 class AcceptorProductivityPerDate(AbstractPhaseProductivityPerDate):
     """受入開始日ごとの受入者の生産性に関する情報"""
+
+    def __init__(self, df: pandas.DataFrame):
+        super().__init__(df, phase=TaskPhase.ACCEPTANCE)
 
     @classmethod
     def from_df_task(cls, df_task: pandas.DataFrame) -> AcceptorProductivityPerDate:
@@ -927,38 +928,49 @@ class AcceptorProductivityPerDate(AbstractPhaseProductivityPerDate):
 
         user_id_list = get_plotted_user_id_list(user_id_list)
 
-        fig_info_list = [
-            dict(
+        x_axis_label = "受入開始日"
+        x_column = "dt_first_acceptance_started_date"
+        tooltip_columns = [
+            "first_acceptance_user_id",
+            "first_acceptance_username",
+            "first_acceptance_started_date",
+            "acceptance_worktime_hour",
+            "task_count",
+            "input_data_count",
+            "annotation_count",
+        ]
+
+        line_graph_list = [
+            LineGraph(
                 title="受入開始日ごとの受入作業時間",
-                y_column_name="acceptance_worktime_hour",
+                y_column="acceptance_worktime_hour",
                 y_axis_label="受入作業時間[hour]",
+                tooltip_columns=tooltip_columns,
+                x_axis_label=x_axis_label,
+                x_column=x_column,
+                x_axis_type="datetime",
             ),
-            dict(
+            LineGraph(
                 title="受入開始日ごとのアノテーションあたり受入作業時間",
-                y_column_name="acceptance_worktime_minute/annotation_count",
+                y_column="acceptance_worktime_minute/annotation_count",
                 y_axis_label="アノテーションあたり受入時間[min/annotation]",
+                tooltip_columns=tooltip_columns,
+                x_axis_label=x_axis_label,
+                x_column=x_column,
+                x_axis_type="datetime",
             ),
-            dict(
+            LineGraph(
                 title="受入開始日ごとのアノテーションあたり受入作業時間(1週間移動平均)",
-                y_column_name=f"acceptance_worktime_minute/annotation_count{WEEKLY_MOVING_AVERAGE_COLUMN_SUFFIX}",
+                y_column=f"acceptance_worktime_minute/annotation_count{WEEKLY_MOVING_AVERAGE_COLUMN_SUFFIX}",
                 y_axis_label="アノテーションあたり受入時間[min/annotation]",
+                tooltip_columns=tooltip_columns,
+                x_axis_label=x_axis_label,
+                x_column=x_column,
+                x_axis_type="datetime",
             ),
         ]
 
         logger.debug(f"{output_file} を出力します。")
-
-        figs: list[bokeh.plotting.Figure] = []
-        for fig_info in fig_info_list:
-            figs.append(
-                figure(
-                    plot_width=self.PLOT_WIDTH,
-                    plot_height=self.PLOT_HEIGHT,
-                    title=fig_info["title"],
-                    x_axis_label="受入開始日",
-                    x_axis_type="datetime",
-                    y_axis_label=fig_info["y_axis_label"],
-                )
-            )
 
         for user_index, user_id in enumerate(user_id_list):
             df_subset = df[df["first_acceptance_user_id"] == user_id]
@@ -981,44 +993,22 @@ class AcceptorProductivityPerDate(AbstractPhaseProductivityPerDate):
             color = get_color_from_palette(user_index)
             username = df_subset.iloc[0]["first_acceptance_username"]
 
-            for fig, fig_info in zip(figs, fig_info_list):
-                y_column_name = fig_info["y_column_name"]
-                if y_column_name.endswith(WEEKLY_MOVING_AVERAGE_COLUMN_SUFFIX):
-                    plot_moving_average(
-                        fig,
+            for line_graph in line_graph_list:
+                if line_graph.y_column.endswith(WEEKLY_MOVING_AVERAGE_COLUMN_SUFFIX):
+                    line_graph.add_moving_average_line(
                         source=source,
-                        x_column_name="dt_first_acceptance_started_date",
-                        y_column_name=y_column_name,
                         legend_label=username,
                         color=color,
                     )
 
                 else:
-                    plot_line_and_circle(
-                        fig,
-                        x_column_name="dt_first_acceptance_started_date",
-                        y_column_name=y_column_name,
+                    line_graph.add_line(
                         source=source,
                         legend_label=username,
                         color=color,
                     )
 
-        hover_tool = create_hover_tool(
-            [
-                "first_acceptance_user_id",
-                "first_acceptance_username",
-                "first_acceptance_started_date",
-                "acceptance_worktime_hour",
-                "task_count",
-                "input_data_count",
-                "annotation_count",
-            ]
-        )
-        for fig in figs:
-            fig.add_tools(hover_tool)
-            add_legend_to_figure(fig)
-
-        write_bokeh_graph(bokeh.layouts.column(figs), output_file)
+        self._plot(line_graph_list, output_file)
 
     def plot_input_data_metrics(
         self,
@@ -1046,38 +1036,48 @@ class AcceptorProductivityPerDate(AbstractPhaseProductivityPerDate):
 
         user_id_list = get_plotted_user_id_list(user_id_list)
 
-        fig_info_list = [
-            dict(
+        x_axis_label = "受入開始日"
+        x_column = "dt_first_acceptance_started_date"
+        tooltip_columns = [
+            "first_acceptance_user_id",
+            "first_acceptance_username",
+            "first_acceptance_started_date",
+            "acceptance_worktime_hour",
+            "task_count",
+            "input_data_count",
+        ]
+
+        line_graph_list = [
+            LineGraph(
                 title="受入開始日ごとの受入作業時間",
-                y_column_name="acceptance_worktime_hour",
+                y_column="acceptance_worktime_hour",
                 y_axis_label="受入作業時間[hour]",
+                tooltip_columns=tooltip_columns,
+                x_axis_label=x_axis_label,
+                x_column=x_column,
+                x_axis_type="datetime",
             ),
-            dict(
+            LineGraph(
                 title="受入開始日ごとの入力データあたり受入作業時間",
-                y_column_name="acceptance_worktime_minute/input_data_count",
+                y_column="acceptance_worktime_minute/input_data_count",
                 y_axis_label="入力データあたり受入作業時間[min/input_data]",
+                tooltip_columns=tooltip_columns,
+                x_axis_label=x_axis_label,
+                x_column=x_column,
+                x_axis_type="datetime",
             ),
-            dict(
+            LineGraph(
                 title="受入開始日ごとの入力データあたり受入作業時間(1週間移動平均)",
-                y_column_name=f"acceptance_worktime_minute/input_data_count{WEEKLY_MOVING_AVERAGE_COLUMN_SUFFIX}",
+                y_column=f"acceptance_worktime_minute/input_data_count{WEEKLY_MOVING_AVERAGE_COLUMN_SUFFIX}",
                 y_axis_label="入力データあたり受入作業時間[min/annotation]",
+                tooltip_columns=tooltip_columns,
+                x_axis_label=x_axis_label,
+                x_column=x_column,
+                x_axis_type="datetime",
             ),
         ]
 
         logger.debug(f"{output_file} を出力します。")
-
-        figs: list[bokeh.plotting.Figure] = []
-        for fig_info in fig_info_list:
-            figs.append(
-                figure(
-                    plot_width=self.PLOT_WIDTH,
-                    plot_height=self.PLOT_HEIGHT,
-                    title=fig_info["title"],
-                    x_axis_label="受入開始日",
-                    x_axis_type="datetime",
-                    y_axis_label=fig_info["y_axis_label"],
-                )
-            )
 
         for user_index, user_id in enumerate(user_id_list):
             df_subset = df[df["first_acceptance_user_id"] == user_id]
@@ -1099,45 +1099,22 @@ class AcceptorProductivityPerDate(AbstractPhaseProductivityPerDate):
             color = get_color_from_palette(user_index)
             username = df_subset.iloc[0]["first_acceptance_username"]
 
-            for fig, fig_info in zip(figs, fig_info_list):
-                y_column_name = fig_info["y_column_name"]
-                if y_column_name.endswith(WEEKLY_MOVING_AVERAGE_COLUMN_SUFFIX):
-                    plot_moving_average(
-                        fig,
+            for line_graph in line_graph_list:
+                if line_graph.y_column.endswith(WEEKLY_MOVING_AVERAGE_COLUMN_SUFFIX):
+                    line_graph.add_moving_average_line(
                         source=source,
-                        x_column_name="dt_first_acceptance_started_date",
-                        y_column_name=y_column_name,
                         legend_label=username,
                         color=color,
                     )
 
                 else:
-                    plot_line_and_circle(
-                        fig,
-                        x_column_name="dt_first_acceptance_started_date",
-                        y_column_name=y_column_name,
+                    line_graph.add_line(
                         source=source,
                         legend_label=username,
                         color=color,
                     )
 
-        hover_tool = create_hover_tool(
-            [
-                "first_annotation_user_id",
-                "first_acceptance_username",
-                "first_acceptance_started_date",
-                "acceptance_worktime_hour",
-                "task_count",
-                "input_data_count",
-                "annotation_count",
-                "inspection_comment_count",
-            ]
-        )
-        for fig in figs:
-            fig.add_tools(hover_tool)
-            add_legend_to_figure(fig)
-
-        write_bokeh_graph(bokeh.layouts.column(figs), output_file)
+        self._plot(line_graph_list, output_file)
 
     def to_csv(self, output_file: Path) -> None:
         """

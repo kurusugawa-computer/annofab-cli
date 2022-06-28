@@ -371,7 +371,6 @@ class Database:
 
         if isinstance(results[COMMENT_JSON_INDEX], DownloadingFileNotFoundError):
             # 空のJSONファイルを作り、検査コメント0件として処理する
-            # TODO おかしい
             self.comment_json_path.write_text("{}", encoding="utf-8")
         elif isinstance(results[COMMENT_JSON_INDEX], Exception):
             raise results[COMMENT_JSON_INDEX]
