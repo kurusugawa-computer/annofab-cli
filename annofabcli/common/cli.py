@@ -22,12 +22,17 @@ from annofabapi.exceptions import AnnofabApiException
 from annofabapi.models import OrganizationMemberRole, ProjectMemberRole
 from more_itertools import first_true
 
-import annofabcli
 from annofabcli.common.dataclasses import WaitOptions
 from annofabcli.common.enums import FormatArgument
-from annofabcli.common.exceptions import AnnofabCliException
+from annofabcli.common.exceptions import AnnofabCliException, AuthenticationError
 from annofabcli.common.facade import AnnofabApiFacade
 from annofabcli.common.typing import InputDataSize
+from annofabcli.common.utils import (
+    get_file_scheme_path,
+    print_according_to_format,
+    print_csv,
+    read_lines_except_blank_line,
+)
 
 logger = logging.getLogger(__name__)
 
@@ -57,7 +62,7 @@ def build_annofabapi_resource_and_login(args: argparse.Namespace) -> annofabapi.
 
     except requests.exceptions.HTTPError as e:
         if e.response.status_code == requests.codes.unauthorized:
-            raise annofabcli.exceptions.AuthenticationError(service.api.login_user_id)
+            raise AuthenticationError(service.api.login_user_id) from e
         raise e
 
 
@@ -159,9 +164,9 @@ def get_list_from_args(str_list: Optional[List[str]] = None) -> List[str]:
         return str_list
 
     str_value = str_list[0]
-    path = annofabcli.utils.get_file_scheme_path(str_value)
+    path = get_file_scheme_path(str_value)
     if path is not None:
-        return annofabcli.utils.read_lines_except_blank_line(path)
+        return read_lines_except_blank_line(path)
     else:
         return str_list
 
@@ -189,7 +194,7 @@ def get_json_from_args(target: Optional[str] = None) -> Any:
     if target is None:
         return None
 
-    path = annofabcli.utils.get_file_scheme_path(target)
+    path = get_file_scheme_path(target)
     if path is not None:
         with open(path, encoding="utf-8") as f:
             return json.load(f)
@@ -517,7 +522,7 @@ class AbstractCommandLineWithoutWebapiInterface(abc.ABC):
             self.query = args.query
 
         if hasattr(args, "csv_format"):
-            self.csv_format = annofabcli.common.cli.get_csv_format_from_args(args.csv_format)
+            self.csv_format = get_csv_format_from_args(args.csv_format)
 
         if hasattr(args, "output"):
             self.output = args.output
@@ -590,12 +595,12 @@ class AbstractCommandLineWithoutWebapiInterface(abc.ABC):
         return target
 
     def print_csv(self, df: pandas.DataFrame):
-        annofabcli.utils.print_csv(df, output=self.output, to_csv_kwargs=self.csv_format)
+        print_csv(df, output=self.output, to_csv_kwargs=self.csv_format)
 
     def print_according_to_format(self, target: Any):
         target = self.search_with_jmespath_expression(target)
 
-        annofabcli.utils.print_according_to_format(
+        print_according_to_format(
             target, arg_format=FormatArgument(self.str_format), output=self.output, csv_format=self.csv_format
         )
 

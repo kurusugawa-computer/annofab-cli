@@ -44,6 +44,7 @@
         "isin",
         "isna",
         "isnan",
+        "isodate",
         "isoduration_to_hour",
         "iterrows",
         "itertools",
