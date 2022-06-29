@@ -17,7 +17,7 @@ class TestCommandLine:
                 "stat_visualization",
                 "mask_user_info",
                 "--dir",
-                str(data_dir),
+                str(data_dir / "visualization-dir"),
                 "--output_dir",
                 str(out_dir / "mask_user_info-out"),
                 "--minimal",
