@@ -2,7 +2,7 @@ ifndef FORMAT_FILES
 	export FORMAT_FILES:=annofabcli tests scripts
 endif
 ifndef LINT_FILES
-	export LINT_FILES:=annofabcli scripts
+	export LINT_FILES:=annofabcli 
 endif
 .PHONY: docs lint test format publish_test publish
 
