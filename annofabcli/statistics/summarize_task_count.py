@@ -69,15 +69,15 @@ def get_step_for_current_phase(task: Task, number_of_inspections: int) -> int:
 
     elif current_phase == TaskPhase.ANNOTATION:
         number_of_rejections_by_inspection = sum(
-                get_number_of_rejections(histories_by_phase, phase=TaskPhase.INSPECTION, phase_stage=phase_stage)
-                for phase_stage in range(1, number_of_inspections + 1)
+            get_number_of_rejections(histories_by_phase, phase=TaskPhase.INSPECTION, phase_stage=phase_stage)
+            for phase_stage in range(1, number_of_inspections + 1)
         )
         return number_of_rejections_by_inspection + number_of_rejections_by_acceptance + 1
 
     elif current_phase == TaskPhase.INSPECTION:
         number_of_rejections_by_inspection = sum(
-                get_number_of_rejections(histories_by_phase, phase=TaskPhase.INSPECTION, phase_stage=phase_stage)
-                for phase_stage in range(current_phase_stage, number_of_inspections + 1)
+            get_number_of_rejections(histories_by_phase, phase=TaskPhase.INSPECTION, phase_stage=phase_stage)
+            for phase_stage in range(current_phase_stage, number_of_inspections + 1)
         )
         return number_of_rejections_by_inspection + number_of_rejections_by_acceptance + 1
 

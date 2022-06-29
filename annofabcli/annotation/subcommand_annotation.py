@@ -1,7 +1,6 @@
 import argparse
 from typing import Optional
 
-import annofabcli
 import annofabcli.annotation.change_annotation_attributes
 import annofabcli.annotation.change_annotation_properties
 import annofabcli.annotation.copy_annotation

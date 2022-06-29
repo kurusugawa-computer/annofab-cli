@@ -147,7 +147,7 @@ class Task:
             # その状態で加算すると、`TypeError: DatetimeArray subtraction must have the same timezones or no timezones`というエラーが発生するため  # noqa:E501
             if not isinstance(dt1.dtype, pandas.DatetimeTZDtype):
                 dt1 = dt1.dt.tz_localize(pytz.FixedOffset(540))
-            if not isinstance(dt2.dtype,  pandas.DatetimeTZDtype):
+            if not isinstance(dt2.dtype, pandas.DatetimeTZDtype):
                 dt2 = dt2.dt.tz_localize(pytz.FixedOffset(540))
 
             return (dt1 - dt2).dt.total_seconds() / 3600 / 24
