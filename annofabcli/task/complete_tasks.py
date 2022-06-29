@@ -268,7 +268,7 @@ class CompleteTasksMain(AbstractCommandLineWithConfirmInterface):
             unanswered_comment_list = self.get_unanswered_comment_list(task, input_data_id)
             unanswered_comment_list_dict[input_data_id] = unanswered_comment_list
 
-        unanswered_comment_count_for_task = sum([len(e) for e in unanswered_comment_list_dict.values()])
+        unanswered_comment_count_for_task = sum(len(e) for e in unanswered_comment_list_dict.values())
 
         logger.debug(f"{task.task_id}: 未回答の検査コメントが {unanswered_comment_count_for_task} 件あります。")
         if unanswered_comment_count_for_task > 0:
@@ -308,7 +308,7 @@ class CompleteTasksMain(AbstractCommandLineWithConfirmInterface):
             unprocessed_inspection_list = self.get_unprocessed_inspection_list(task, input_data_id)
             unprocessed_inspection_list_dict[input_data_id] = unprocessed_inspection_list
 
-        unprocessed_inspection_count = sum([len(e) for e in unprocessed_inspection_list_dict.values()])
+        unprocessed_inspection_count = sum(len(e) for e in unprocessed_inspection_list_dict.values())
 
         logger.debug(f"{task.task_id}: 未処置の検査コメントが {unprocessed_inspection_count} 件あります。")
         if unprocessed_inspection_count > 0:

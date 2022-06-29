@@ -39,8 +39,8 @@ class ListOutOfRangeAnnotationForMovieMain:
         if len(range_list) == 0:
             return 0, 0
         else:
-            max_begin = max([e[0] for e in range_list]) / 1000
-            max_end = max([e[1] for e in range_list]) / 1000
+            max_begin = max(e[0] for e in range_list) / 1000
+            max_end = max(e[1] for e in range_list) / 1000
             return max_begin, max_end
 
     @staticmethod
@@ -50,8 +50,8 @@ class ListOutOfRangeAnnotationForMovieMain:
         if len(range_list) == 0:
             return 0, 0
         else:
-            max_begin = max([e[0] for e in range_list]) / 1000
-            max_end = max([e[1] for e in range_list]) / 1000
+            max_begin = max(e[0] for e in range_list) / 1000
+            max_end = max(e[1] for e in range_list) / 1000
             return max_begin, max_end
 
     def create_dataframe(

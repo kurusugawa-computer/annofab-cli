@@ -212,10 +212,8 @@ class AddingAdditionalInfoToTask:
 
         # 作業時間に関する情報を設定
         task[f"{phase.value}_worktime_hour"] = sum(
-            [
-                annofabcli.utils.isoduration_to_hour(e["accumulated_labor_time_milliseconds"])
-                for e in task_history_by_phase
-            ]
+            annofabcli.utils.isoduration_to_hour(e["accumulated_labor_time_milliseconds"])
+            for e in task_history_by_phase
         )
 
         return task
