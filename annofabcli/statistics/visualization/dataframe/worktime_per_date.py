@@ -249,7 +249,7 @@ class WorktimePerDate:
         return True
 
     def _get_default_user_id_list(self) -> list[str]:
-        return self.df.sort_values(by=f"date", ascending=False)[f"user_id"].dropna().unique().tolist()
+        return list(self.df.sort_values(by=f"date", ascending=False)[f"user_id"].dropna().unique())
 
     def plot_cumulatively(
         self,

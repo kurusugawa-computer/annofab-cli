@@ -63,7 +63,8 @@ class TestTable:
                 "annotation_count": [100, 200],
                 "input_data_count": [2, 4],
                 "inspection_comment_count": [5, 6],
-                "number_of_rejections": [1, 2],
+                "number_of_rejections_by_inspection": [1, 2],
+                "number_of_rejections_by_acceptance": [3, 4],
             }
         )
         df = Table.create_annotation_count_ratio_df(task_history_df, task_df)
@@ -376,7 +377,6 @@ class TestWorktimePerDate:
         assert df[(df["date"] == "2021-11-02") & (df["user_id"] == "alice")].iloc[0]["actual_worktime_hour"] == 6
         merged_obj.to_csv(self.output_dir / "merged-ユーザ_日付list-作業時間.csv")
 
-
     def test_empty(self):
         empty = WorktimePerDate.empty()
         assert len(empty.df) == 0
@@ -387,7 +387,6 @@ class TestWorktimePerDate:
 
         merged_obj = WorktimePerDate.merge(empty, self.obj)
         assert len(merged_obj.df) == len(self.obj.df)
-        
 
 
 class TestUserPerformance:

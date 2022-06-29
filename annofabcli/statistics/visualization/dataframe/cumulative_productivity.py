@@ -168,7 +168,6 @@ class AnnotatorCumulativeProductivity(AbstractPhaseCumulativeProductivity):
         df["cumulative_annotation_count"] = groupby_obj["annotation_count"].cumsum()
         df["cumulative_input_data_count"] = groupby_obj["input_data_count"].cumsum()
         df["cumulative_task_count"] = groupby_obj["task_count"].cumsum()
-        df["cumulative_number_of_rejections"] = groupby_obj["number_of_rejections"].cumsum()
         df["cumulative_number_of_rejections_by_inspection"] = groupby_obj["number_of_rejections_by_inspection"].cumsum()
         df["cumulative_number_of_rejections_by_acceptance"] = groupby_obj["number_of_rejections_by_acceptance"].cumsum()
 

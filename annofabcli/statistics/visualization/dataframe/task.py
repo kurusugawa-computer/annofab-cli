@@ -136,11 +136,37 @@ class Task:
             output_file (Path): [description]
             bins (int, optional): [description]. Defaults to 20.
         """
+
+        def diff_days(s1: pandas.Series, s2: pandas.Series) -> pandas.Series:
+            dt1 = pandas.to_datetime(s1)
+            dt2 = pandas.to_datetime(s2)
+
+            # タイムゾーンを指定している理由::
+            # すべてがNaNのseriesをdatetimeに変換すると、型にタイムゾーンが指定されない。
+            # その状態で加算すると、`TypeError: DatetimeArray subtraction must have the same timezones or no timezones`というエラーが発生するため  # noqa:E501
+            if type(dt1.dtype) != pandas.DatetimeTZDtype:
+                dt1 = dt1.dt.tz_localize("Asia/Tokyo")
+            if type(dt2.dtype) != pandas.DatetimeTZDtype:
+                dt2 = dt2.dt.tz_localize("Asia/Tokyo")
+
+            return (dt1 - dt2).dt.total_seconds() / 3600 / 24
+
         if not self._validate_df_for_output(output_file):
             return
 
         logger.debug(f"{output_file} を出力します。")
-        df = self.df
+        df = self.df.copy()
+
+        df["diff_days_to_first_inspection_started"] = diff_days(
+            df["first_inspection_started_datetime"], df["first_annotation_started_datetime"]
+        )
+        df["diff_days_to_first_acceptance_started"] = diff_days(
+            df["first_acceptance_started_datetime"], df["first_annotation_started_datetime"]
+        )
+
+        df["diff_days_to_first_acceptance_completed"] = diff_days(
+            df["first_acceptance_completed_datetime"], df["first_annotation_started_datetime"]
+        )
 
         histogram_list = [
             dict(column="annotation_count", x_axis_label="アノテーション数", title="アノテーション数"),
@@ -215,15 +241,10 @@ class Task:
             "phase",
             "phase_stage",
             "status",
-            "user_id",
-            "username",
             "number_of_rejections",
             "number_of_rejections_by_inspection",
             "number_of_rejections_by_acceptance",
-            "started_datetime",
-            "updated_datetime",
             "first_acceptance_completed_datetime",
-            "sampling",
             # 1回目の教師付フェーズ
             "first_annotation_user_id",
             "first_annotation_username",
@@ -251,9 +272,6 @@ class Task:
             # タスクの状態
             "inspection_is_skipped",
             "acceptance_is_skipped",
-            "diff_days_to_first_inspection_started",
-            "diff_days_to_first_acceptance_started",
-            "diff_days_to_first_acceptance_completed",
         ]
 
         print_csv(self.df[columns], str(output_file))
