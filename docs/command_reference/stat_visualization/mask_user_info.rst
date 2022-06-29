@@ -67,7 +67,7 @@ Examples
 
 .. code-block::
 
-    $ annofabcli stat_visualization mask_user_info --dir visualize_out/ --output_dir mask_dir/ \
+    $ annofabcli stat_visualization mask_user_info --dir prj-dir/ --output_dir masked_out/ \
     --minimal
 
 ユーザ情報が記載されている以下のファイルを出力します。ユーザ情報が記載されていないファイル( ``日毎の生産量と生産性.csv`` など)は出力しません。
@@ -75,19 +75,18 @@ Examples
 
 .. code-block::
 
-    mask_dir
-    ├── project_1_name
-        ├── line-graph
-        │   ├── 累積折れ線-横軸_アノテーション数-教師付者用.html
-        │   └── 累積折れ線-横軸_アノテーション数-受入者用.html
-        ├── scatter
-        │   ├── 散布図-アノテーションあたり作業時間と品質の関係-実績時間-教師付者用.html
-        │   ├── 散布図-アノテーションあたり作業時間と累計作業時間の関係-計測時間.html
-        │   ├── 散布図-アノテーションあたり作業時間と累計作業時間の関係-実績時間.html
-        │   └── 散布図-教師付者の品質と作業量の関係.html
-        ├── タスクlist.csv
-        └── メンバごとの生産性と品質.csv
-    ├── project_2_name
+    masked_out
+    ├── line-graph
+    │   ├── 累積折れ線-横軸_アノテーション数-教師付者用.html
+    │   └── 累積折れ線-横軸_アノテーション数-受入者用.html
+    ├── scatter
+    │   ├── 散布図-アノテーションあたり作業時間と品質の関係-実績時間-教師付者用.html
+    │   ├── 散布図-アノテーションあたり作業時間と累計作業時間の関係-計測時間.html
+    │   ├── 散布図-アノテーションあたり作業時間と累計作業時間の関係-実績時間.html
+    │   └── 散布図-教師付者の品質と作業量の関係.html
+    ├── タスクlist.csv
+    └── メンバごとの生産性と品質.csv
+    
 
 
 Usage Details
