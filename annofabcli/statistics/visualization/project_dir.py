@@ -228,7 +228,11 @@ class ProjectDir(DataClassJsonMixin):
 
     def read_worktime_per_date_user(self) -> WorktimePerDate:
         """`ユーザ_日付list-作業時間.csvを読み込む。"""
-        return WorktimePerDate.from_csv(self.project_dir / self.FILENAME_WORKTIME_PER_DATE_USER)
+        file = self.project_dir / self.FILENAME_WORKTIME_PER_DATE_USER
+        if file.exists():
+            return WorktimePerDate.from_csv(file)
+        else:
+            return WorktimePerDate.empty()
 
     def write_worktime_per_date_user(self, obj: WorktimePerDate):
         """`ユーザ_日付list-作業時間.csvを書き込む"""

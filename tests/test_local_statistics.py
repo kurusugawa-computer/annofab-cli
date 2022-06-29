@@ -377,6 +377,19 @@ class TestWorktimePerDate:
         merged_obj.to_csv(self.output_dir / "merged-ユーザ_日付list-作業時間.csv")
 
 
+    def test_empty(self):
+        empty = WorktimePerDate.empty()
+        assert len(empty.df) == 0
+
+        # 出力されないことの確認
+        empty.to_csv(self.output_dir / "empty.csv")
+        empty.plot_cumulatively(self.output_dir / "empty.html")
+
+        merged_obj = WorktimePerDate.merge(empty, self.obj)
+        assert len(merged_obj.df) == len(self.obj.df)
+        
+
+
 class TestUserPerformance:
     @classmethod
     def setup_class(cls):
