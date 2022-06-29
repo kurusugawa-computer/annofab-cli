@@ -38,12 +38,12 @@ Examples
     task2,2
 
 
-デフォルトではタスクごとに集計します。入力データごとに出力する場合は、``--gropu_by input_data_id`` を指定しでください。
+デフォルトではタスクごとに集計します。入力データごとに出力する場合は、``--group_by input_data_id`` を指定しでください。
 
 .. code-block::
 
     $ annofabcli annotation list_count --project_id prj1 \
-    --annotation_query '{"label": "car"}' --gropu_by input_data_id --output out_by_input_data.csv
+    --annotation_query '{"label": "car"}' --group_by input_data_id --output out_by_input_data.csv
 
 
 .. csv-table:: out_by_input_data.csv
