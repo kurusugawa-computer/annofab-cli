@@ -140,7 +140,8 @@ class Table:
         """
 
         task["worktime_hour"] = sum(
-            annofabcli.utils.isoduration_to_hour(e["accumulated_labor_time_milliseconds"]) for e in task_histories
+            annofabcli.common.utils.isoduration_to_hour(e["accumulated_labor_time_milliseconds"])
+            for e in task_histories
         )
 
         # APIで取得した 'number_of_rejections' は非推奨で、number_of_rejections_by_inspection/acceptanceと矛盾する場合があるので、書き換える
@@ -175,7 +176,7 @@ class Table:
                 history["user_id"] = self._get_user_id(account_id)
                 history["username"] = self._get_username(account_id)
                 history["biography"] = self._get_biography(account_id)
-                history["worktime_hour"] = annofabcli.utils.isoduration_to_hour(
+                history["worktime_hour"] = annofabcli.common.utils.isoduration_to_hour(
                     history["accumulated_labor_time_milliseconds"]
                 )
                 # task statusがあると分析しやすいので追加する
