@@ -33,6 +33,7 @@
         "ddof",
         "dropna",
         "dtype",
+        "dtypes",
         "fillna",
         "getrgb",
         "gridplot",

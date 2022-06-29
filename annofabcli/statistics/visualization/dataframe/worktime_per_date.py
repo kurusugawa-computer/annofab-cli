@@ -37,13 +37,31 @@ class WorktimePerDate:
     日ごとユーザごとの作業時間情報
     """
 
+    df_dtype = {
+        "date": "string",
+        "user_id": "string",
+        "username": "string",
+        "biography": "string",
+        "actual_worktime_hour": "float64",
+        "monitored_worktime_hour": "float64",
+        "monitored_annotation_worktime_hour": "float64",
+        "monitored_inspection_worktime_hour": "float64",
+        "monitored_acceptance_worktime_hour": "float64",
+    }
+
     def __init__(self, df: pandas.DataFrame):
         self.df = df
 
     @classmethod
     def from_csv(cls, csv_file: Path) -> WorktimePerDate:
         """CSVファイルからインスタンスを生成します。"""
-        df = pandas.read_csv(str(csv_file))
+        df = pandas.read_csv(str(csv_file), dtype=cls.df_dtype)
+        return cls(df)
+
+    @classmethod
+    def empty(cls) -> WorktimePerDate:
+        """空のデータフレームを持つインスタンスを生成します。"""
+        df = pandas.DataFrame(columns=cls.df_dtype.values()).astype(cls.df_dtype)
         return cls(df)
 
     @classmethod
@@ -351,20 +369,6 @@ class WorktimePerDate:
         if not self._validate_df_for_output(output_file):
             return
 
-        date_user_columns = [
-            "date",
-            "user_id",
-            "username",
-            "biography",
-        ]
-        worktime_columns = [
-            "actual_worktime_hour",
-            "monitored_worktime_hour",
-            "monitored_annotation_worktime_hour",
-            "monitored_inspection_worktime_hour",
-            "monitored_acceptance_worktime_hour",
-        ]
-
-        columns = date_user_columns + worktime_columns
+        columns = self.df_dtype.values()
 
         print_csv(self.df[columns], output=str(output_file))
