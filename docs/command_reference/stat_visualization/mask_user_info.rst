@@ -22,24 +22,22 @@ Examples
 --------------------------
 
 ``--dir`` に ``annofabcli statistics visualize`` コマンドの出力先ディレクトリのパスを指定してください。
-``--dir`` に指定したディレクトリ配下に各プロジェクトディレクトリが存在している状態です。
 
 
 .. code-block::
 
-    $ annofabcli statistics visualize --project_id prj1 prj2 --output_dir visualize_out/
+    $ annofabcli statistics visualize --project_id prj1 --output_dir prj-out/
 
-    $ tree out
-    visualize_out
-    ├── project_1_name
-    │   ├── メンバごとの生産性と品質.csv
-    │   ├── ...
-    ├── project_2_name
-    │   ├── メンバごとの生産性と品質.csv
-    │   ├── ...
-    ├── ...
+    $ tree prj-out/
+    prj-out/
+    ├── タスクlist.csv
+    ├── メンバごとの生産性と品質.csv
+    ├── ユーザ_日付list-作業時間.csv
+    ├── 教師付開始日毎の生産量と生産性.csv
+    ├── 全体の生産性と品質.csv
+    └── 日毎の生産量と生産性.csv
 
-    $ annofabcli stat_visualization mask_user_info --dir visualize_out/ --output_dir mask_dir/
+    $ annofabcli stat_visualization mask_user_info --dir prj-out/ --output_dir masked_out/
 
 
 ``--not_masked_user_id`` には「マスクしないユーザ」のuser_idを指定できます。
@@ -47,7 +45,7 @@ Examples
 
 .. code-block::
 
-    $ annofabcli stat_visualization mask_user_info --dir visualize_out/ --output_dir mask_dir/ \
+    $ annofabcli stat_visualization mask_user_info --dir prj-out/ --output_dir masked_out/ \
      --not_masked_user_id alice
 
 
@@ -57,7 +55,7 @@ Examples
 
 .. code-block::
 
-    $ annofabcli stat_visualization mask_user_info --dir visualize_out/ --output_dir mask_dir/ \
+    $ annofabcli stat_visualization mask_user_info --dir prj-out/ --output_dir masked_out/ \
      --not_masked_biography Japan
 
 
