@@ -29,6 +29,7 @@ class LineGraph:
     """
     折れ線グラフに対応するクラス
     """
+
     def __init__(
         self,
         *,

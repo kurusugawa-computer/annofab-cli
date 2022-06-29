@@ -644,4 +644,3 @@ class TestProjectWorktimePerMonth:
         assert len(df) == 1
         row = df.iloc[0]
         assert row["dirname"] == "empty"
-

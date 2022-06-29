@@ -106,7 +106,7 @@ def mask_visualization_dir(
     not_masked_biography_set: Optional[Set[str]] = None,
     not_masked_user_id_set: Optional[Set[str]] = None,
     minimal_output: bool = False,
-    exclude_masked_user_for_linegraph: bool = False,
+    exclude_masked_user_for_line_graph: bool = False,
 ):
     # TODO: validation
     user_performance = project_dir.read_user_performance()
@@ -132,7 +132,7 @@ def mask_visualization_dir(
     output_project_dir.write_user_performance_scatter_plot(masked_user_performance)
 
     user_id_list: Optional[List[str]] = None
-    if exclude_masked_user_for_linegraph:
+    if exclude_masked_user_for_line_graph:
         user_id_list = list(not_masked_user_id_set)
 
     # TODO: validation
@@ -159,36 +159,6 @@ def mask_visualization_dir(
     logger.debug(f"'{project_dir}'のマスクした結果を'{output_project_dir}'に出力しました。")
 
 
-def mask_visualization_root_dir(
-    project_root_dir: Path,
-    output_dir: Path,
-    not_masked_biography_set: Optional[Set[str]] = None,
-    not_masked_user_id_set: Optional[Set[str]] = None,
-    minimal_output: bool = False,
-    exclude_masked_user_for_linegraph: bool = False,
-):
-
-    for p_project_dir in project_root_dir.iterdir():
-        if not p_project_dir.is_dir():
-            continue
-
-        project_output_dir = ProjectDir(output_dir / p_project_dir.name)
-
-        try:
-            project_dir = ProjectDir(p_project_dir)
-            mask_visualization_dir(
-                project_dir,
-                project_output_dir,
-                not_masked_biography_set=not_masked_biography_set,
-                not_masked_user_id_set=not_masked_user_id_set,
-                minimal_output=minimal_output,
-                exclude_masked_user_for_linegraph=exclude_masked_user_for_linegraph,
-            )
-        except Exception:  # pylint: disable=broad-except
-            logger.warning(f"'{project_dir}'のユーザのマスク処理に失敗しました。", exc_info=True)
-            continue
-
-
 def main(args):
     not_masked_biography_set = (
         set(get_list_from_args(args.not_masked_biography)) if args.not_masked_biography is not None else None
@@ -197,13 +167,13 @@ def main(args):
         set(get_list_from_args(args.not_masked_user_id)) if args.not_masked_user_id is not None else None
     )
 
-    mask_visualization_root_dir(
-        project_root_dir=args.dir,
+    mask_visualization_dir(
+        project_dir=ProjectDir(args.dir),
+        output_project_dir=ProjectDir(args.output_dir),
         not_masked_biography_set=not_masked_biography_set,
         not_masked_user_id_set=not_masked_user_id_set,
-        output_dir=args.output_dir,
         minimal_output=args.minimal,
-        exclude_masked_user_for_linegraph=args.exclude_masked_user_for_linegraph,
+        exclude_masked_user_for_line_graph=args.exclude_masked_user_for_line_graph,
     )
 
 
@@ -213,7 +183,7 @@ def parse_args(parser: argparse.ArgumentParser):
         "--dir",
         type=Path,
         required=True,
-        help=f"マスクしたいプロジェクトディレクトリが存在するディレクトリを指定してください。プロジェクトディレクトリは  ``annofabcli statistics visualize`` コマンドの出力結果です。",  # noqa: E501
+        help=f"マスクしたいプロジェクトディレクトリを指定してください。プロジェクトディレクトリは  ``annofabcli statistics visualize`` コマンドの出力結果です。",  # noqa: E501
     )
 
     parser.add_argument(
@@ -237,12 +207,12 @@ def parse_args(parser: argparse.ArgumentParser):
     )
 
     parser.add_argument(
-        "--exclude_masked_user_for_linegraph",
+        "--exclude_masked_user_for_line_graph",
         action="store_true",
         help="折れ線グラフに、マスクされたユーザをプロットしません。",
     )
 
-    parser.add_argument("-o", "--output_dir", type=Path, required=True, help="出力先ディレクトリ。配下にプロジェクトディレクトリが生成されます。")
+    parser.add_argument("-o", "--output_dir", type=Path, required=True, help="出力先ディレクトリ。")
 
     parser.set_defaults(subcommand_func=main)
 
