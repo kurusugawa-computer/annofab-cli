@@ -9,7 +9,6 @@ from annofabapi.models import ProjectMemberRole, Task, TaskPhase, TaskStatus
 
 import annofabcli
 import annofabcli.common.cli
-from annofabcli import AnnofabApiFacade
 from annofabcli.common.cli import (
     AbstractCommandLineInterface,
     ArgumentParser,
@@ -20,6 +19,7 @@ from annofabcli.common.cli import (
 from annofabcli.common.dataclasses import WaitOptions
 from annofabcli.common.download import DownloadingFile
 from annofabcli.common.enums import FormatArgument
+from annofabcli.common.facade import AnnofabApiFacade
 
 logger = logging.getLogger(__name__)
 
@@ -114,7 +114,7 @@ class SummarizeTaskCountByUser(AbstractCommandLineInterface):
     def print_summarize_df(self, df: pandas.DataFrame) -> None:
         columns = ["user_id", "username", "biography"] + [status.value for status in TaskStatusForSummary]
         target_df = df[columns].sort_values("user_id")
-        annofabcli.utils.print_according_to_format(
+        annofabcli.common.utils.print_according_to_format(
             target_df,
             arg_format=FormatArgument(FormatArgument.CSV),
             output=self.output,
@@ -130,7 +130,7 @@ class SummarizeTaskCountByUser(AbstractCommandLineInterface):
             task_json_path = args.task_json
         else:
             wait_options = get_wait_options_from_args(get_json_from_args(args.wait_options), DEFAULT_WAIT_OPTIONS)
-            cache_dir = annofabcli.utils.get_cache_dir()
+            cache_dir = annofabcli.common.utils.get_cache_dir()
             task_json_path = cache_dir / f"{project_id}-task.json"
 
             downloading_obj = DownloadingFile(self.service)

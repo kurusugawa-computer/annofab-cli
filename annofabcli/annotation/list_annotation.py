@@ -10,7 +10,6 @@ import pandas
 from annofabapi.models import SingleAnnotation
 
 import annofabcli
-from annofabcli import AnnofabApiFacade
 from annofabcli.annotation.annotation_query import AnnotationQueryForAPI, AnnotationQueryForCLI
 from annofabcli.common.cli import (
     COMMAND_LINE_ERROR_STATUS_CODE,
@@ -21,6 +20,7 @@ from annofabcli.common.cli import (
     get_list_from_args,
 )
 from annofabcli.common.enums import FormatArgument
+from annofabcli.common.facade import AnnofabApiFacade
 from annofabcli.common.utils import get_columns_with_priority
 from annofabcli.common.visualize import AddProps
 

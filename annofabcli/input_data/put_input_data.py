@@ -17,7 +17,6 @@ from annofabapi.models import ProjectJobType, ProjectMemberRole
 from dataclasses_json import DataClassJsonMixin
 
 import annofabcli
-from annofabcli import AnnofabApiFacade
 from annofabcli.common.cli import (
     COMMAND_LINE_ERROR_STATUS_CODE,
     AbstractCommandLineInterface,
@@ -28,6 +27,7 @@ from annofabcli.common.cli import (
     prompt_yesnoall,
 )
 from annofabcli.common.dataclasses import WaitOptions
+from annofabcli.common.facade import AnnofabApiFacade
 from annofabcli.common.utils import get_file_scheme_path
 
 logger = logging.getLogger(__name__)

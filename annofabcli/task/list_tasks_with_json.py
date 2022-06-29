@@ -9,12 +9,11 @@ import pandas
 from annofabapi.dataclass.task import Task
 
 import annofabcli
-from annofabcli import AnnofabApiFacade
 from annofabcli.common.cli import AbstractCommandLineInterface, ArgumentParser, build_annofabapi_resource_and_login
 from annofabcli.common.dataclasses import WaitOptions
 from annofabcli.common.download import DownloadingFile
 from annofabcli.common.enums import FormatArgument
-from annofabcli.common.facade import TaskQuery, match_task_with_query
+from annofabcli.common.facade import AnnofabApiFacade, TaskQuery, match_task_with_query
 from annofabcli.common.utils import get_columns_with_priority
 from annofabcli.common.visualize import AddProps
 from annofabcli.task.list_tasks import ListTasks
@@ -52,7 +51,7 @@ class ListTasksWithJsonMain:
     ) -> List[Dict[str, Any]]:
         if task_json is None:
             downloading_obj = DownloadingFile(self.service)
-            cache_dir = annofabcli.utils.get_cache_dir()
+            cache_dir = annofabcli.common.utils.get_cache_dir()
             json_path = cache_dir / f"{project_id}-task.json"
 
             downloading_obj.download_task_json(

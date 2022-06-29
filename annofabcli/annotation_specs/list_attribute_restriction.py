@@ -9,7 +9,6 @@ from more_itertools import first_true
 
 import annofabcli
 import annofabcli.common.cli
-from annofabcli import AnnofabApiFacade
 from annofabcli.common.cli import (
     COMMAND_LINE_ERROR_STATUS_CODE,
     AbstractCommandLineInterface,
@@ -17,6 +16,7 @@ from annofabcli.common.cli import (
     build_annofabapi_resource_and_login,
     get_list_from_args,
 )
+from annofabcli.common.facade import AnnofabApiFacade
 
 logger = logging.getLogger(__name__)
 
@@ -238,7 +238,7 @@ class ListAttributeRestriction(AbstractCommandLineInterface):
             target_label_names=target_label_names,
         )
 
-        annofabcli.utils.output_string("\n".join(restriction_text_list), args.output)
+        annofabcli.common.utils.output_string("\n".join(restriction_text_list), args.output)
 
 
 def parse_args(parser: argparse.ArgumentParser):

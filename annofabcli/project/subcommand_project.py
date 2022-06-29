@@ -1,14 +1,13 @@
 import argparse
 from typing import Optional
 
-import annofabcli
-import annofabcli.common.cli
 import annofabcli.project.change_project_status
 import annofabcli.project.copy_project
 import annofabcli.project.diff_projects
 import annofabcli.project.download
 import annofabcli.project.list_project
 import annofabcli.project.update_annotation_zip
+from annofabcli.common.cli import add_parser as common_add_parser
 
 
 def parse_args(parser: argparse.ArgumentParser):
@@ -29,8 +28,6 @@ def add_parser(subparsers: Optional[argparse._SubParsersAction] = None):
     subcommand_help = "プロジェクト関係のサブコマンド"
     description = "プロジェクト関係のサブコマンド"
 
-    parser = annofabcli.common.cli.add_parser(
-        subparsers, subcommand_name, subcommand_help, description, is_subcommand=False
-    )
+    parser = common_add_parser(subparsers, subcommand_name, subcommand_help, description, is_subcommand=False)
     parse_args(parser)
     return parser

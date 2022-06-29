@@ -1,6 +1,6 @@
 [tool.poetry]
 name = "annofabcli"
-version = "1.66.0"
+version = "1.66.1"
 description = "Utility Command Line Interface for AnnoFab"
 authors = ["yuji38kwmt"]
 license = "MIT"
@@ -43,6 +43,7 @@ bokeh = "^2.4"
 pytest = "*"
 pytest-xdist = "*"
 pytest-cov = "*"
+types-pytz = "*"
 
 # format library
 isort = "*"

@@ -11,7 +11,6 @@ import pandas
 from annofabapi.dataclass.input import InputData
 
 import annofabcli
-from annofabcli import AnnofabApiFacade
 from annofabcli.common.cli import (
     COMMAND_LINE_ERROR_STATUS_CODE,
     AbstractCommandLineInterface,
@@ -24,7 +23,7 @@ from annofabcli.common.cli import (
 from annofabcli.common.dataclasses import WaitOptions
 from annofabcli.common.download import DownloadingFile
 from annofabcli.common.enums import FormatArgument
-from annofabcli.common.facade import InputDataQuery, match_input_data_with_query
+from annofabcli.common.facade import AnnofabApiFacade, InputDataQuery, match_input_data_with_query
 
 logger = logging.getLogger(__name__)
 
@@ -162,7 +161,7 @@ class ListInputDataMergedTask(AbstractCommandLineInterface):
         if project_id is not None:
             super().validate_project(project_id, None)
             wait_options = get_wait_options_from_args(get_json_from_args(args.wait_options), DEFAULT_WAIT_OPTIONS)
-            cache_dir = annofabcli.utils.get_cache_dir()
+            cache_dir = annofabcli.common.utils.get_cache_dir()
             self.download_json_files(project_id, cache_dir, args.latest, wait_options)
             task_json_path = cache_dir / "task.json"
             input_data_json_path = cache_dir / "input_data.json"

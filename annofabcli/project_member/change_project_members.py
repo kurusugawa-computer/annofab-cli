@@ -7,13 +7,13 @@ import requests
 from annofabapi.models import ProjectMember, ProjectMemberRole, ProjectMemberStatus
 
 import annofabcli
-from annofabcli import AnnofabApiFacade
 from annofabcli.common.cli import (
     COMMAND_LINE_ERROR_STATUS_CODE,
     AbstractCommandLineInterface,
     ArgumentParser,
     build_annofabapi_resource_and_login,
 )
+from annofabcli.common.facade import AnnofabApiFacade
 from annofabcli.project_member.put_project_members import PutProjectMembers
 
 logger = logging.getLogger(__name__)

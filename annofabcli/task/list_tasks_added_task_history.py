@@ -15,7 +15,6 @@ from annofabapi.models import ProjectMemberRole, Task, TaskHistory, TaskPhase, T
 from annofabapi.utils import get_task_history_index_skipped_acceptance, get_task_history_index_skipped_inspection
 
 import annofabcli
-from annofabcli import AnnofabApiFacade
 from annofabcli.common.cli import (
     COMMAND_LINE_ERROR_STATUS_CODE,
     AbstractCommandLineInterface,
@@ -27,7 +26,7 @@ from annofabcli.common.cli import (
 from annofabcli.common.dataclasses import WaitOptions
 from annofabcli.common.download import DownloadingFile
 from annofabcli.common.enums import FormatArgument
-from annofabcli.common.facade import TaskQuery, match_task_with_query
+from annofabcli.common.facade import AnnofabApiFacade, TaskQuery, match_task_with_query
 from annofabcli.common.visualize import AddProps
 
 logger = logging.getLogger(__name__)
@@ -173,7 +172,7 @@ class AddingAdditionalInfoToTask:
         task.update(
             {
                 f"{column_prefix}_started_datetime": task_history["started_datetime"],
-                f"{column_prefix}_worktime_hour": annofabcli.utils.isoduration_to_hour(
+                f"{column_prefix}_worktime_hour": annofabcli.common.utils.isoduration_to_hour(
                     task_history["accumulated_labor_time_milliseconds"]
                 ),
             }
@@ -201,7 +200,7 @@ class AddingAdditionalInfoToTask:
                 for e in task_histories
                 if e["phase"] == phase.value
                 and e["account_id"] is not None
-                and annofabcli.utils.isoduration_to_hour(e["accumulated_labor_time_milliseconds"]) > 0
+                and annofabcli.common.utils.isoduration_to_hour(e["accumulated_labor_time_milliseconds"]) > 0
             ]
         else:
             task_history_by_phase = []
@@ -212,10 +211,8 @@ class AddingAdditionalInfoToTask:
 
         # 作業時間に関する情報を設定
         task[f"{phase.value}_worktime_hour"] = sum(
-            [
-                annofabcli.utils.isoduration_to_hour(e["accumulated_labor_time_milliseconds"])
-                for e in task_history_by_phase
-            ]
+            annofabcli.common.utils.isoduration_to_hour(e["accumulated_labor_time_milliseconds"])
+            for e in task_history_by_phase
         )
 
         return task
@@ -423,7 +420,7 @@ class ListTasksAddedTaskHistory(AbstractCommandLineInterface):
             task_history_json_path = args.task_history_json
         else:
             wait_options = get_wait_options_from_args(get_json_from_args(args.wait_options), DEFAULT_WAIT_OPTIONS)
-            cache_dir = annofabcli.utils.get_cache_dir()
+            cache_dir = annofabcli.common.utils.get_cache_dir()
             task_json_path = cache_dir / f"{project_id}-task.json"
             task_history_json_path = cache_dir / f"{project_id}-task_history.json"
             self.download_json_files(
@@ -451,7 +448,7 @@ class ListTasksAddedTaskHistory(AbstractCommandLineInterface):
 
         df_task = pandas.DataFrame(detail_task_list)
 
-        annofabcli.utils.print_according_to_format(
+        annofabcli.common.utils.print_according_to_format(
             df_task[self._get_output_target_columns()],
             arg_format=FormatArgument(FormatArgument.CSV),
             output=self.output,

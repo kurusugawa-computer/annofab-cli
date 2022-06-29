@@ -1,7 +1,6 @@
 import logging
 from typing import Any, Dict, List, Optional
 
-import dateutil
 import more_itertools
 import pandas
 from annofabapi.models import Task, TaskHistory, TaskPhase
@@ -140,31 +139,14 @@ class Table:
         タスク履歴関係の情報を設定する
         """
 
-        def diff_days(ended_key: str, started_key: str) -> Optional[float]:
-            if task[ended_key] is not None and task[started_key] is not None:
-                delta = dateutil.parser.parse(task[ended_key]) - dateutil.parser.parse(task[started_key])
-                return delta.total_seconds() / 3600 / 24
-            else:
-                return None
-
         task["worktime_hour"] = sum(
-            [annofabcli.utils.isoduration_to_hour(e["accumulated_labor_time_milliseconds"]) for e in task_histories]
+            annofabcli.common.utils.isoduration_to_hour(e["accumulated_labor_time_milliseconds"])
+            for e in task_histories
         )
 
         # APIで取得した 'number_of_rejections' は非推奨で、number_of_rejections_by_inspection/acceptanceと矛盾する場合があるので、書き換える
         task["number_of_rejections"] = (
             task["number_of_rejections_by_inspection"] + task["number_of_rejections_by_acceptance"]
-        )
-
-        task["diff_days_to_first_inspection_started"] = diff_days(
-            "first_inspection_started_datetime", "first_annotation_started_datetime"
-        )
-        task["diff_days_to_first_acceptance_started"] = diff_days(
-            "first_acceptance_started_datetime", "first_annotation_started_datetime"
-        )
-
-        task["diff_days_to_first_acceptance_completed"] = diff_days(
-            "first_acceptance_completed_datetime", "first_annotation_started_datetime"
         )
 
         return task
@@ -194,7 +176,7 @@ class Table:
                 history["user_id"] = self._get_user_id(account_id)
                 history["username"] = self._get_username(account_id)
                 history["biography"] = self._get_biography(account_id)
-                history["worktime_hour"] = annofabcli.utils.isoduration_to_hour(
+                history["worktime_hour"] = annofabcli.common.utils.isoduration_to_hour(
                     history["accumulated_labor_time_milliseconds"]
                 )
                 # task statusがあると分析しやすいので追加する
@@ -266,7 +248,7 @@ class Table:
                 "annotation_count": row["annotation_count"],
                 "input_data_count": row["input_data_count"],
                 "inspection_comment_count": row["inspection_comment_count"],
-                "rejected_count": row["number_of_rejections"],
+                "rejected_count": row["number_of_rejections_by_inspection"] + row["number_of_rejections_by_acceptance"],
             }
             for _, row in task_df.iterrows()
         }

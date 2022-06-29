@@ -17,7 +17,6 @@ from dataclasses_json import DataClassJsonMixin
 from more_itertools import first_true
 
 import annofabcli
-from annofabcli import AnnofabApiFacade
 from annofabcli.common.cli import (
     COMMAND_LINE_ERROR_STATUS_CODE,
     AbstractCommandLineInterface,
@@ -26,6 +25,7 @@ from annofabcli.common.cli import (
     get_json_from_args,
     prompt_yesnoall,
 )
+from annofabcli.common.facade import AnnofabApiFacade
 from annofabcli.common.utils import get_file_scheme_path
 
 logger = logging.getLogger(__name__)

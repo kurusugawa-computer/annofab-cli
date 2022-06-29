@@ -83,7 +83,7 @@ class AbstractPhaseCumulativeProductivity(abc.ABC):
         # ColumnDataSourceを生成する際に、必要最小限のデータのみHTMLファイルに出力されるようにするため
         # 不要な情報がHTMLファイルに出力されることにより、ファイルサイズが大きくなってしまう
         # (例) 20000件をプロットする際、この対応がないと、ファイルサイズが3倍以上になる
-        required_columns = set(itertools.chain.from_iterable([e.required_columns for e in line_graph_list]))
+        required_columns = list(set(itertools.chain.from_iterable([e.required_columns for e in line_graph_list])))
 
         for user_index, user_id in enumerate(user_id_list):
             df_subset = df[df[f"first_{self.phase.value}_user_id"] == user_id]
@@ -168,7 +168,6 @@ class AnnotatorCumulativeProductivity(AbstractPhaseCumulativeProductivity):
         df["cumulative_annotation_count"] = groupby_obj["annotation_count"].cumsum()
         df["cumulative_input_data_count"] = groupby_obj["input_data_count"].cumsum()
         df["cumulative_task_count"] = groupby_obj["task_count"].cumsum()
-        df["cumulative_number_of_rejections"] = groupby_obj["number_of_rejections"].cumsum()
         df["cumulative_number_of_rejections_by_inspection"] = groupby_obj["number_of_rejections_by_inspection"].cumsum()
         df["cumulative_number_of_rejections_by_acceptance"] = groupby_obj["number_of_rejections_by_acceptance"].cumsum()
 

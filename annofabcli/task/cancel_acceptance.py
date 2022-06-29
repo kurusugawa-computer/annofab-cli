@@ -16,7 +16,6 @@ from annofabapi.models import ProjectMemberRole, TaskPhase, TaskStatus
 
 import annofabcli
 import annofabcli.common.cli
-from annofabcli import AnnofabApiFacade
 from annofabcli.common.cli import (
     COMMAND_LINE_ERROR_STATUS_CODE,
     AbstractCommandLineInterface,
@@ -24,7 +23,7 @@ from annofabcli.common.cli import (
     ArgumentParser,
     build_annofabapi_resource_and_login,
 )
-from annofabcli.common.facade import TaskQuery, match_task_with_query
+from annofabcli.common.facade import AnnofabApiFacade, TaskQuery, match_task_with_query
 from annofabcli.common.utils import add_dryrun_prefix
 
 logger = logging.getLogger(__name__)
