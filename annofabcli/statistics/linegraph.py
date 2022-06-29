@@ -61,7 +61,7 @@ class LineGraph:
         required_columns = {x_column, y_column}
         if tooltip_columns is not None:
             required_columns = required_columns | set(tooltip_columns)
-        self.required_columns = required_columns
+        self.required_columns = list(required_columns)
 
         self.line_glyphs: dict[str, GlyphRenderer] = {}
         self.marker_glyphs: dict[str, GlyphRenderer] = {}

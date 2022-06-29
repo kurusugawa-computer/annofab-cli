@@ -83,7 +83,7 @@ class AbstractPhaseCumulativeProductivity(abc.ABC):
         # ColumnDataSourceを生成する際に、必要最小限のデータのみHTMLファイルに出力されるようにするため
         # 不要な情報がHTMLファイルに出力されることにより、ファイルサイズが大きくなってしまう
         # (例) 20000件をプロットする際、この対応がないと、ファイルサイズが3倍以上になる
-        required_columns = set(itertools.chain.from_iterable([e.required_columns for e in line_graph_list]))
+        required_columns = list(set(itertools.chain.from_iterable([e.required_columns for e in line_graph_list])))
 
         for user_index, user_id in enumerate(user_id_list):
             df_subset = df[df[f"first_{self.phase.value}_user_id"] == user_id]
