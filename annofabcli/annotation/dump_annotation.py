@@ -12,8 +12,8 @@ import annofabapi
 from annofabapi.models import AnnotationDataHoldingType
 
 import annofabcli
-from annofabcli import AnnofabApiFacade
 from annofabcli.common.cli import AbstractCommandLineInterface, ArgumentParser, build_annofabapi_resource_and_login
+from annofabcli.common.facade import AnnofabApiFacade
 
 logger = logging.getLogger(__name__)
 

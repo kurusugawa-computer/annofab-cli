@@ -15,7 +15,6 @@ from dataclasses_json import DataClassJsonMixin
 from dateutil.parser import parse
 
 import annofabcli
-from annofabcli import AnnofabApiFacade
 from annofabcli.common.cli import (
     AbstractCommandLineInterface,
     ArgumentParser,
@@ -24,6 +23,7 @@ from annofabcli.common.cli import (
 )
 from annofabcli.common.download import DownloadingFile
 from annofabcli.common.enums import FormatArgument
+from annofabcli.common.facade import AnnofabApiFacade
 from annofabcli.common.visualize import AddProps
 
 logger = logging.getLogger(__name__)
@@ -75,7 +75,7 @@ class ListWorktimeFromTaskHistoryEventMain:
     ) -> list[dict[str, Any]]:
         if task_history_event_json is None:
             downloading_obj = DownloadingFile(self.service)
-            cache_dir = annofabcli.utils.get_cache_dir()
+            cache_dir = annofabcli.common.utils.get_cache_dir()
             json_path = cache_dir / f"{project_id}-task_history_event.json"
 
             downloading_obj.download_task_history_event_json(project_id, str(json_path))

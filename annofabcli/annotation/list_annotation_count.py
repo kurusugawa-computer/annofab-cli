@@ -9,7 +9,6 @@ import pandas
 from annofabapi.models import SingleAnnotation
 
 import annofabcli
-from annofabcli import AnnofabApiFacade
 from annofabcli.annotation.annotation_query import AnnotationQueryForCLI
 from annofabcli.annotation.list_annotation import ListAnnotationMain
 from annofabcli.common.cli import (
@@ -20,6 +19,7 @@ from annofabcli.common.cli import (
     get_json_from_args,
     get_list_from_args,
 )
+from annofabcli.common.facade import AnnofabApiFacade
 from annofabcli.common.visualize import AddProps
 
 logger = logging.getLogger(__name__)

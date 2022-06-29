@@ -28,11 +28,11 @@ from dataclasses_json import DataClassJsonMixin, config
 
 import annofabcli
 import annofabcli.common.cli
-from annofabcli import AnnofabApiFacade
 from annofabcli.common.cli import AbstractCommandLineInterface, ArgumentParser, build_annofabapi_resource_and_login
 from annofabcli.common.download import DownloadingFile
 from annofabcli.common.enums import FormatArgument
 from annofabcli.common.facade import (
+    AnnofabApiFacade,
     TaskQuery,
     convert_annotation_specs_labels_v2_to_v1,
     match_annotation_with_task_query,

@@ -16,9 +16,8 @@ from annofabapi.models import ProjectMemberRole
 
 import annofabcli
 import annofabcli.common.cli
-from annofabcli import AnnofabApiFacade
 from annofabcli.common.cli import AbstractCommandLineInterface, build_annofabapi_resource_and_login
-from annofabcli.common.facade import convert_annotation_specs_labels_v2_to_v1
+from annofabcli.common.facade import AnnofabApiFacade, convert_annotation_specs_labels_v2_to_v1
 
 DiffResult = Tuple[bool, str]
 """差分があるかどうかと、差分メッセージ"""
@@ -141,8 +140,8 @@ class DiffProjects(AbstractCommandLineInterface):
 
         diff_message = ""
 
-        duplicated_set1 = annofabcli.utils.duplicated_set(label_names1)
-        duplicated_set2 = annofabcli.utils.duplicated_set(label_names2)
+        duplicated_set1 = annofabcli.common.utils.duplicated_set(label_names1)
+        duplicated_set2 = annofabcli.common.utils.duplicated_set(label_names2)
 
         flag = False
         if len(duplicated_set1) > 0:

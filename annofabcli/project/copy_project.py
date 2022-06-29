@@ -7,7 +7,6 @@ from typing import Any, Dict, Optional
 from annofabapi.models import OrganizationMemberRole, ProjectJobType, ProjectMemberRole
 
 import annofabcli
-from annofabcli import AnnofabApiFacade
 from annofabcli.common.cli import (
     AbstractCommandLineInterface,
     ArgumentParser,
@@ -16,6 +15,7 @@ from annofabcli.common.cli import (
     get_wait_options_from_args,
 )
 from annofabcli.common.dataclasses import WaitOptions
+from annofabcli.common.facade import AnnofabApiFacade
 
 DEFAULT_WAIT_OPTIONS = WaitOptions(interval=60, max_tries=360)
 

@@ -13,10 +13,10 @@ from annofabapi.models import Inspection
 
 import annofabcli
 import annofabcli.common.cli
-from annofabcli import AnnofabApiFacade
 from annofabcli.common.cli import AbstractCommandLineInterface, ArgumentParser, build_annofabapi_resource_and_login
 from annofabcli.common.download import DownloadingFile
 from annofabcli.common.enums import FormatArgument
+from annofabcli.common.facade import AnnofabApiFacade
 from annofabcli.common.visualize import AddProps
 from annofabcli.inspection_comment.list_inspections import create_filter_func
 
@@ -75,7 +75,7 @@ class ListInspectionCommentWithJsonMain:
 
         if inspection_comment_json is None:
             downloading_obj = DownloadingFile(self.service)
-            cache_dir = annofabcli.utils.get_cache_dir()
+            cache_dir = annofabcli.common.utils.get_cache_dir()
             json_path = cache_dir / f"{project_id}-inspection.json"
 
             downloading_obj.download_inspection_comment_json(project_id, str(json_path))

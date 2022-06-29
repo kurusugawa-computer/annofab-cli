@@ -12,7 +12,6 @@ from annofabapi.utils import get_number_of_rejections
 
 import annofabcli
 import annofabcli.common.cli
-from annofabcli import AnnofabApiFacade
 from annofabcli.common.cli import (
     AbstractCommandLineInterface,
     ArgumentParser,
@@ -22,6 +21,7 @@ from annofabcli.common.cli import (
 )
 from annofabcli.common.dataclasses import WaitOptions
 from annofabcli.common.download import DownloadingFile
+from annofabcli.common.facade import AnnofabApiFacade
 
 logger = logging.getLogger(__name__)
 
@@ -151,13 +151,13 @@ class SummarizeTaskCount(AbstractCommandLineInterface):
 
         number_of_inspections = self.get_number_of_inspections_for_project(project_id)
         task_count_df = create_task_count_summary(task_list, number_of_inspections=number_of_inspections)
-        annofabcli.utils.print_csv(task_count_df, output=self.output, to_csv_kwargs=self.csv_format)
+        annofabcli.common.utils.print_csv(task_count_df, output=self.output, to_csv_kwargs=self.csv_format)
 
     def get_task_list(
         self, project_id: str, task_json_path: Optional[Path], is_latest: bool, wait_options: WaitOptions
     ) -> List[Task]:
         if task_json_path is None:
-            cache_dir = annofabcli.utils.get_cache_dir()
+            cache_dir = annofabcli.common.utils.get_cache_dir()
             task_json_path = cache_dir / f"task-{project_id}.json"
 
             downloading_obj = DownloadingFile(self.service)

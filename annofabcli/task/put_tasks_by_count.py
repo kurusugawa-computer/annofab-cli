@@ -9,9 +9,9 @@ import annofabapi
 from annofabapi.models import JobStatus, ProjectJobType, ProjectMemberRole
 
 import annofabcli
-from annofabcli import AnnofabApiFacade
 from annofabcli.common.cli import AbstractCommandLineInterface, ArgumentParser, build_annofabapi_resource_and_login
 from annofabcli.common.dataclasses import WaitOptions
+from annofabcli.common.facade import AnnofabApiFacade
 
 logger = logging.getLogger(__name__)
 

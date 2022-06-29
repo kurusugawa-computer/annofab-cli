@@ -10,12 +10,11 @@ from annofabapi.dataclass.input import InputData
 from annofabapi.models import ProjectMemberRole
 
 import annofabcli
-from annofabcli import AnnofabApiFacade
 from annofabcli.common.cli import AbstractCommandLineInterface, ArgumentParser, build_annofabapi_resource_and_login
 from annofabcli.common.dataclasses import WaitOptions
 from annofabcli.common.download import DownloadingFile
 from annofabcli.common.enums import FormatArgument
-from annofabcli.common.facade import InputDataQuery, match_input_data_with_query
+from annofabcli.common.facade import AnnofabApiFacade, InputDataQuery, match_input_data_with_query
 
 logger = logging.getLogger(__name__)
 
@@ -52,7 +51,7 @@ class ListInputDataWithJsonMain:
     ) -> List[Dict[str, Any]]:
         if input_data_json is None:
             downloading_obj = DownloadingFile(self.service)
-            cache_dir = annofabcli.utils.get_cache_dir()
+            cache_dir = annofabcli.common.utils.get_cache_dir()
             json_path = cache_dir / f"{project_id}-input_data.json"
 
             downloading_obj.download_input_data_json(

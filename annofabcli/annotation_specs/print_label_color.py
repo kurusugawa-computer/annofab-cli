@@ -8,13 +8,13 @@ from typing import Any, Dict, Optional, Tuple
 
 import annofabcli
 import annofabcli.common.cli
-from annofabcli import AnnofabApiFacade
 from annofabcli.common.cli import (
     AbstractCommandLineInterface,
     ArgumentParser,
     FormatArgument,
     build_annofabapi_resource_and_login,
 )
+from annofabcli.common.facade import AnnofabApiFacade
 
 logger = logging.getLogger(__name__)
 
