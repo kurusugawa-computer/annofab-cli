@@ -14,7 +14,7 @@ def execute_mask_user_info_command(project_dir: Path, output_project_dir: Path, 
         "mask_user_info",
         "--dir",
         str(project_dir),
-        "--output_dir" "--start_date",
+        "--output_dir",
         str(output_project_dir),
     ]
     if remainder_options is not None:
