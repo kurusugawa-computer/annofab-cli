@@ -12,12 +12,14 @@ import dateutil.parser
 import isodate
 import pandas
 
-from annofabcli.common.cli import DEFAULT_CSV_FORMAT
 from annofabcli.common.enums import FormatArgument
 
 logger = logging.getLogger(__name__)
 
 T = TypeVar("T")  # Can be anything
+
+
+DEFAULT_CSV_FORMAT = {"encoding": "utf_8_sig", "index": False}
 
 
 def read_lines(filepath: str) -> List[str]:

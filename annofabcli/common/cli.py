@@ -28,6 +28,7 @@ from annofabcli.common.exceptions import AnnofabCliException, AuthenticationErro
 from annofabcli.common.facade import AnnofabApiFacade
 from annofabcli.common.typing import InputDataSize
 from annofabcli.common.utils import (
+    DEFAULT_CSV_FORMAT,
     get_file_scheme_path,
     print_according_to_format,
     print_csv,
@@ -36,7 +37,6 @@ from annofabcli.common.utils import (
 
 logger = logging.getLogger(__name__)
 
-DEFAULT_CSV_FORMAT = {"encoding": "utf_8_sig", "index": False}
 
 COMMAND_LINE_ERROR_STATUS_CODE = 2
 """コマンドラインエラーが発生したときに返すステータスコード"""
