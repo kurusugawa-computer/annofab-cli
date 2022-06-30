@@ -32,7 +32,6 @@ logger = logging.getLogger(__name__)
 
 def _replace_df_task(task: Task, replacement_dict_by_user_id: Dict[str, str]) -> Task:
     df_output = task.df.copy()
-    replace_by_columns(df_output, replacement_dict_by_user_id, main_column="user_id", sub_columns=["username"])
 
     replace_by_columns(
         df_output,

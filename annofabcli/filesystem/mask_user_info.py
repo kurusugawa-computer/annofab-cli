@@ -136,7 +136,15 @@ def _get_tuple_column(df: pandas.DataFrame, column: str) -> Union[str, Tuple]:
         return column
 
 
-def replace_by_columns(df, replacement_dict: Dict[str, str], main_column: Any, sub_columns: Optional[List[Any]] = None):
+def replace_by_columns(df: pandas.DataFrame, replacement_dict: Dict[str, str], main_column: Any, sub_columns: Optional[List[Any]] = None):
+    """引数dfの中のユーザ情報を、指定した列名を元に置換します。
+
+    Args:
+        df (pandas.DataFrame): _description_
+        replacement_dict (Dict[str, str]): 置換対象のuser_idと置換後のuser_id(username)。key: 置換対象のuser_id, value: 置換後のuser_id
+        main_column: 置換対象の列名(ex: user_id)
+        sub_column: main_columnと同じ値で置換する列(ex: username)
+    """
     def _get_username(row, main_column: Any, sub_column: Any) -> str:
         if row[main_column] in replacement_dict:
             return replacement_dict[row[main_column]]
