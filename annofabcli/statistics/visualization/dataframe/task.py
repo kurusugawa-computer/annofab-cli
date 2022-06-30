@@ -244,7 +244,6 @@ class Task:
             "status",
             "number_of_rejections_by_inspection",
             "number_of_rejections_by_acceptance",
-            "first_acceptance_completed_datetime",
             # 1回目の教師付フェーズ
             "first_annotation_user_id",
             "first_annotation_username",
@@ -260,6 +259,8 @@ class Task:
             "first_acceptance_username",
             "first_acceptance_worktime_hour",
             "first_acceptance_started_datetime",
+            # 最後の受入
+            "first_acceptance_completed_datetime",
             # 作業時間に関する内容
             "worktime_hour",
             "annotation_worktime_hour",
