@@ -8,7 +8,7 @@ from annofabapi.models import Comment
 
 import annofabcli
 import annofabcli.common.cli
-from annofabcli import AnnofabApiFacade
+from annofabcli.common.facade import AnnofabApiFacade
 from annofabcli.common.cli import AbstractCommandLineInterface, build_annofabapi_resource_and_login
 
 logger = logging.getLogger(__name__)
