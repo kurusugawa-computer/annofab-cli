@@ -242,7 +242,6 @@ class Task:
             "phase",
             "phase_stage",
             "status",
-            "number_of_rejections",
             "number_of_rejections_by_inspection",
             "number_of_rejections_by_acceptance",
             "first_acceptance_completed_datetime",

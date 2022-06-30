@@ -144,11 +144,6 @@ class Table:
             for e in task_histories
         )
 
-        # APIで取得した 'number_of_rejections' は非推奨で、number_of_rejections_by_inspection/acceptanceと矛盾する場合があるので、書き換える
-        task["number_of_rejections"] = (
-            task["number_of_rejections_by_inspection"] + task["number_of_rejections_by_acceptance"]
-        )
-
         return task
 
     @staticmethod
