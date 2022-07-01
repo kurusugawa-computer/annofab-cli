@@ -28,6 +28,8 @@ WEEKLY_MOVING_AVERAGE_COLUMN_SUFFIX = "__lastweek"
 class LineGraph:
     """
     折れ線グラフに対応するクラス
+
+    TODO: 引数にx_column, y_columnを受け取るのはよくないかもしれない
     """
 
     def __init__(
