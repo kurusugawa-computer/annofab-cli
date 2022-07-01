@@ -308,7 +308,15 @@ class WholeProductivityPerCompletedDate:
                 df["monitored_worktime_hour"]
             ) / get_weekly_sum(df["task_count"])
 
-            for column in ["task_count", "input_data_count", "actual_worktime_hour", "monitored_worktime_hour"]:
+            for column in [
+                "task_count",
+                "input_data_count",
+                "actual_worktime_hour",
+                "monitored_worktime_hour",
+                "monitored_annotation_worktime_hour",
+                "monitored_inspection_worktime_hour",
+                "monitored_acceptance_worktime_hour",
+            ]:
                 df[f"{column}{WEEKLY_MOVING_AVERAGE_COLUMN_SUFFIX}"] = get_weekly_moving_average(df[column])
 
         def create_figure(title: str, y_axis_label: str) -> bokeh.plotting.Figure:
@@ -452,10 +460,7 @@ class WholeProductivityPerCompletedDate:
         fig_info_list = [
             {
                 "figure": create_figure(title="日ごとの作業時間", y_axis_label="作業時間[hour]"),
-                "y_info_list": [
-                    {"column": "actual_worktime_hour", "legend": "実績作業時間"},
-                    {"column": "monitored_worktime_hour", "legend": "計測作業時間"},
-                ],
+                "y_info_list": [{"column": f"{e[0]}_hour", "legend": f"{e[1]}"} for e in phase_prefix],
             },
             {
                 "figure": create_figure(title="日ごとのタスクあたり作業時間", y_axis_label="タスクあたり作業時間[hour/task]"),
@@ -499,9 +504,6 @@ class WholeProductivityPerCompletedDate:
             "input_data_count",
             "actual_worktime_hour",
             "monitored_worktime_hour",
-            "cumsum_task_count",
-            "cumsum_input_data_count",
-            "cumsum_actual_worktime_hour",
             "actual_worktime_hour/task_count",
             "actual_worktime_minute/input_data_count",
             "actual_worktime_minute/annotation_count",
@@ -643,12 +645,72 @@ class WholeProductivityPerCompletedDate:
 
             return fig
 
+        def create_worktime_figure():
+            x_column_name = "dt_date"
+            fig = create_figure(title="日ごとの累積作業時間", y_axis_label="作業時間[hour]")
+
+            # 値をプロット
+            index = 0
+            plot_line_and_circle(
+                fig,
+                x_column_name=x_column_name,
+                y_column_name="cumsum_actual_worktime_hour",
+                source=source,
+                color=get_color_from_small_palette(index),
+                legend_label="実績作業時間",
+            )
+
+            index += 1
+            plot_line_and_circle(
+                fig,
+                x_column_name=x_column_name,
+                y_column_name="cumsum_monitored_worktime_hour",
+                source=source,
+                color=get_color_from_small_palette(index),
+                legend_label="計測作業時間",
+            )
+
+            index += 1
+            plot_line_and_circle(
+                fig,
+                x_column_name=x_column_name,
+                y_column_name="cumsum_monitored_annotation_worktime_hour",
+                source=source,
+                color=get_color_from_small_palette(index),
+                legend_label="計測作業時間(教師付)",
+            )
+
+            index += 1
+            plot_line_and_circle(
+                fig,
+                x_column_name=x_column_name,
+                y_column_name="cumsum_monitored_inspection_worktime_hour",
+                source=source,
+                color=get_color_from_small_palette(index),
+                legend_label="計測作業時間(検査)",
+            )
+
+            index += 1
+            plot_line_and_circle(
+                fig,
+                x_column_name=x_column_name,
+                y_column_name="cumsum_monitored_acceptance_worktime_hour",
+                source=source,
+                color=get_color_from_small_palette(index),
+                legend_label="計測作業時間(受入)",
+            )
+
+            return fig
+
         if not self._validate_df_for_output(output_file):
             return
 
         df = self.df.copy()
         df["dt_date"] = df["date"].map(lambda e: parse(e).date())
-        df["cumsum_monitored_worktime_hour"] = df["monitored_worktime_hour"].cumsum()
+
+        df["cumsum_monitored_annotation_worktime_hour"] = df["monitored_annotation_worktime_hour"].cumsum()
+        df["cumsum_monitored_inspection_worktime_hour"] = df["monitored_inspection_worktime_hour"].cumsum()
+        df["cumsum_monitored_acceptance_worktime_hour"] = df["monitored_acceptance_worktime_hour"].cumsum()
 
         logger.debug(f"{output_file} を出力します。")
 
@@ -664,10 +726,13 @@ class WholeProductivityPerCompletedDate:
             "cumsum_input_data_count",
             "cumsum_actual_worktime_hour",
             "cumsum_monitored_worktime_hour",
+            "cumsum_monitored_annotation_worktime_hour",
+            "cumsum_monitored_inspection_worktime_hour",
+            "cumsum_monitored_acceptance_worktime_hour",
         ]
         hover_tool = create_hover_tool(tooltip_item)
 
-        fig_list = [create_task_figure(), create_input_data_figure()]
+        fig_list = [create_task_figure(), create_input_data_figure(), create_worktime_figure()]
 
         for fig in fig_list:
             fig.add_tools(hover_tool)
