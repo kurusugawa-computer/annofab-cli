@@ -49,6 +49,10 @@ class WorktimePerDate:
         "monitored_acceptance_worktime_hour": "float64",
     }
 
+    @property
+    def columns(self) -> list[str]:
+        return list(self.df_dtype.keys())
+
     def __init__(self, df: pandas.DataFrame):
         self.df = df
 
@@ -202,22 +206,29 @@ class WorktimePerDate:
             df = df[df["date"] <= end_date]
         return cls(df)
 
-    def _get_cumulative_dataframe(self) -> pandas.DataFrame:
+    @staticmethod
+    def _get_cumulative_dataframe(df: pandas.DataFrame) -> pandas.DataFrame:
         """
         累積情報が格納されたDataFrameを生成する。
         """
         # 教師付の開始時刻でソートして、indexを更新する
-        df = self.df.sort_values(["user_id", "date"]).reset_index(drop=True)
-        groupby_obj = df.groupby("user_id")
+        df_result = df.sort_values(["user_id", "date"]).reset_index(drop=True)
+        groupby_obj = df_result.groupby("user_id")
 
         # 作業時間の累積値
-        df["cumulative_actual_worktime_hour"] = groupby_obj["actual_worktime_hour"].cumsum()
-        df["cumulative_monitored_worktime_hour"] = groupby_obj["monitored_worktime_hour"].cumsum()
-        df["cumulative_monitored_annotation_worktime_hour"] = groupby_obj["monitored_annotation_worktime_hour"].cumsum()
-        df["cumulative_monitored_acceptance_worktime_hour"] = groupby_obj["monitored_acceptance_worktime_hour"].cumsum()
-        df["cumulative_monitored_inspection_worktime_hour"] = groupby_obj["monitored_inspection_worktime_hour"].cumsum()
+        df_result["cumulative_actual_worktime_hour"] = groupby_obj["actual_worktime_hour"].cumsum()
+        df_result["cumulative_monitored_worktime_hour"] = groupby_obj["monitored_worktime_hour"].cumsum()
+        df_result["cumulative_monitored_annotation_worktime_hour"] = groupby_obj[
+            "monitored_annotation_worktime_hour"
+        ].cumsum()
+        df_result["cumulative_monitored_acceptance_worktime_hour"] = groupby_obj[
+            "monitored_acceptance_worktime_hour"
+        ].cumsum()
+        df_result["cumulative_monitored_inspection_worktime_hour"] = groupby_obj[
+            "monitored_inspection_worktime_hour"
+        ].cumsum()
 
-        return df
+        return df_result
 
     @classmethod
     def merge(cls, obj1: WorktimePerDate, obj2: WorktimePerDate) -> WorktimePerDate:
@@ -250,6 +261,37 @@ class WorktimePerDate:
 
     def _get_default_user_id_list(self) -> list[str]:
         return list(self.df.sort_values(by=f"date", ascending=False)[f"user_id"].dropna().unique())
+
+    def _get_continuous_date_dataframe(self) -> pandas.DataFrame:
+        """
+        日付が連続しているDataFrameを生成する。そうしないと、折れ線グラフが正しくなくなるため。
+        """
+
+        groupby_obj = self.df.groupby("user_id")
+        min_series = groupby_obj["date"].min()
+        max_series = groupby_obj["date"].max()
+
+        date_list = []
+        user_id_list = []
+        for user_id, min_date in min_series.items():
+            max_date = max_series[user_id]
+            # 日付の一覧を生成
+            sub_date_list = [e.strftime("%Y-%m-%d") for e in pandas.date_range(min_date, max_date)]
+            date_list.extend(sub_date_list)
+            user_id_list.extend([user_id] * len(sub_date_list))
+
+        df = pandas.DataFrame({"date": date_list, "user_id": user_id_list})
+
+        # ユーザ情報のjoin
+        df_user = self.df.drop_duplicates(subset=["user_id"])[["user_id", "username", "biography"]]
+        # suffixesを付ける理由, username, biographyの列名にx,yが付くため
+        df = df.merge(df_user, how="left", on="user_id", suffixes=("_tmp", None))
+        df = df.merge(self.df, how="left", on=["date", "user_id"], suffixes=(None, "_tmp"))[self.columns]
+
+        # 作業時間関係の列を0で埋める
+        df.fillna(0, inplace=True)
+
+        return df
 
     def plot_cumulatively(
         self,
@@ -334,7 +376,8 @@ class WorktimePerDate:
             ),
         ]
 
-        df_cumulative = self._get_cumulative_dataframe()
+        df_continuous_date = self._get_continuous_date_dataframe()
+        df_cumulative = self._get_cumulative_dataframe(df_continuous_date)
         df_cumulative["dt_date"] = df_cumulative["date"].map(lambda e: datetime.datetime.fromisoformat(e).date())
 
         line_count = 0
