@@ -504,9 +504,6 @@ class WholeProductivityPerCompletedDate:
             "input_data_count",
             "actual_worktime_hour",
             "monitored_worktime_hour",
-            "cumsum_task_count",
-            "cumsum_input_data_count",
-            "cumsum_actual_worktime_hour",
             "actual_worktime_hour/task_count",
             "actual_worktime_minute/input_data_count",
             "actual_worktime_minute/annotation_count",
@@ -729,6 +726,9 @@ class WholeProductivityPerCompletedDate:
             "cumsum_input_data_count",
             "cumsum_actual_worktime_hour",
             "cumsum_monitored_worktime_hour",
+            "cumsum_monitored_annotation_worktime_hour",
+            "cumsum_monitored_inspection_worktime_hour",
+            "cumsum_monitored_acceptance_worktime_hour",
         ]
         hover_tool = create_hover_tool(tooltip_item)
 
