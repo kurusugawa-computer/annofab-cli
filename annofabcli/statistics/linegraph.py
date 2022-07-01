@@ -119,6 +119,9 @@ class LineGraph:
         折れ線を追加した後に、凡例の位置などを設定します。
         """
         fig = self.figure
+        if len(fig.legend) == 0:
+            return
+
         fig.legend.location = "top_left"
         fig.legend.click_policy = "hide"
 
@@ -128,9 +131,9 @@ class LineGraph:
             fig.legend.label_height = 10
             fig.legend.glyph_height = 10
 
-        if len(fig.legend) > 0:
-            legend = fig.legend[0]
-            fig.add_layout(legend, "left")
+        # グラフの左側に凡例を表示
+        legend = fig.legend[0]
+        fig.add_layout(legend, "left")
 
     def create_button_hiding_all_lines(self) -> Button:
         """

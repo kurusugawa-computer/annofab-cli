@@ -85,6 +85,7 @@ class AbstractPhaseCumulativeProductivity(abc.ABC):
         # (例) 20000件をプロットする際、この対応がないと、ファイルサイズが3倍以上になる
         required_columns = list(set(itertools.chain.from_iterable([e.required_columns for e in line_graph_list])))
 
+        line_count = 0
         for user_index, user_id in enumerate(user_id_list):
             df_subset = df[df[f"first_{self.phase.value}_user_id"] == user_id]
             if df_subset.empty:
@@ -95,8 +96,13 @@ class AbstractPhaseCumulativeProductivity(abc.ABC):
             color = get_color_from_palette(user_index)
             username = df_subset.iloc[0][f"first_{self.phase.value}_username"]
 
+            line_count += 1
             for line_graph in line_graph_list:
                 line_graph.add_line(source, legend_label=username, color=color)
+
+        if line_count == 0:
+            logger.warning(f"プロットするデータがなかっため、'{output_file}'は出力しません。")
+            return
 
         graph_group_list = []
         for line_graph in line_graph_list:

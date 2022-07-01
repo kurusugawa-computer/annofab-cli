@@ -336,6 +336,8 @@ class WorktimePerDate:
 
         df_cumulative = self._get_cumulative_dataframe()
         df_cumulative["dt_date"] = df_cumulative["date"].map(lambda e: datetime.datetime.fromisoformat(e).date())
+
+        line_count = 0
         for user_index, user_id in enumerate(user_id_list):
             df_subset = df_cumulative[df_cumulative["user_id"] == user_id]
             if df_subset.empty:
@@ -346,6 +348,7 @@ class WorktimePerDate:
             color = get_color_from_palette(user_index)
             username = df_subset.iloc[0]["username"]
 
+            line_count  += 1
             for line_graph in line_graph_list:
                 line_graph.add_line(
                     source=source,
@@ -362,6 +365,10 @@ class WorktimePerDate:
             widgets = bokeh.layouts.column([hide_all_button, checkbox_group])
             graph_group = bokeh.layouts.row([line_graph.figure, widgets])
             graph_group_list.append(graph_group)
+
+        if line_count == 0:
+            logger.warning(f"プロットするデータがなかっため、'{output_file}'は出力しません。")
+            return
 
         write_bokeh_graph(bokeh.layouts.layout(graph_group_list), output_file)
 
