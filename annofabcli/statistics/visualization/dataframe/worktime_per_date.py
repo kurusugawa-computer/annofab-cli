@@ -348,7 +348,7 @@ class WorktimePerDate:
             color = get_color_from_palette(user_index)
             username = df_subset.iloc[0]["username"]
 
-            line_count  += 1
+            line_count += 1
             for line_graph in line_graph_list:
                 line_graph.add_line(
                     source=source,
