@@ -316,6 +316,7 @@ class WholeProductivityPerCompletedDate:
                 "monitored_annotation_worktime_hour",
                 "monitored_inspection_worktime_hour",
                 "monitored_acceptance_worktime_hour",
+                "unmonitored_worktime_hour",
             ]:
                 df[f"{column}{WEEKLY_MOVING_AVERAGE_COLUMN_SUFFIX}"] = get_weekly_moving_average(df[column])
 
