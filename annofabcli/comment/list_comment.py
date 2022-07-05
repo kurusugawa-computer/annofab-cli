@@ -8,7 +8,8 @@ from annofabapi.models import Comment
 
 import annofabcli
 import annofabcli.common.cli
-from annofabcli.common.cli import AbstractCommandLineInterface, build_annofabapi_resource_and_login
+from annofabcli.common.cli import AbstractCommandLineInterface, ArgumentParser, build_annofabapi_resource_and_login
+from annofabcli.common.enums import FormatArgument
 from annofabcli.common.facade import AnnofabApiFacade
 
 logger = logging.getLogger(__name__)
@@ -16,7 +17,7 @@ logger = logging.getLogger(__name__)
 
 class ListingComments(AbstractCommandLineInterface):
     def get_comments(self, project_id: str, task_id: str, input_data_id: str):
-        comments, _ = self.service.api.get_comments(project_id, task_id, input_data_id)
+        comments, _ = self.service.api.get_comments(project_id, task_id, input_data_id, query_params={"v": "2"})
         return comments
 
     def list_comments(self, project_id: str, task_id_list: List[str], output_file: Path):
@@ -60,20 +61,32 @@ def main(args: argparse.Namespace):
 
 
 def parse_args(parser: argparse.ArgumentParser):
-    parser.add_argument("-p", "--project_id", type=str, required=True, help="対象のプロジェクトのproject_idを指定します。")
+    argument_parser = ArgumentParser(parser)
 
-    parser.add_argument("-t", "--task_id", type=str, required=True, nargs="+", help="対象のタスクのtask_idを指定します。")
+    argument_parser.add_project_id()
+    argument_parser.add_task_id(
+        required=True,
+        help_message="対象のタスクのtask_idを指定します。" " ``file://`` を先頭に付けると、task_idの一覧が記載されたファイルを指定できます。",
+    )
 
-    parser.add_argument("-o", "--output", type=Path, required=True, help="ダウンロード先を指定します。")
-
-    parser.add_argument("-f", "--format", type=str, default="json", help="出力フォーマットを指定します。指定しない場合は、json フォーマットになります。")
+    argument_parser.add_format(
+        choices=[
+            FormatArgument.CSV,
+            FormatArgument.JSON,
+            FormatArgument.PRETTY_JSON,
+            FormatArgument.COMMENT_ID_LIST,
+        ],
+        default=FormatArgument.CSV,
+    )
+    argument_parser.add_output()
+    argument_parser.add_csv_format()
 
     parser.set_defaults(subcommand_func=main)
 
 
 def add_parser(subparsers: Optional[argparse._SubParsersAction] = None):
     subcommand_name = "list"
-    subcommand_help = "保留コメント一覧を出力します。"
+    subcommand_help = "コメント一覧を出力します。"
 
     parser = annofabcli.common.cli.add_parser(subparsers, subcommand_name, subcommand_help, description=subcommand_help)
     parse_args(parser)

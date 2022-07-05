@@ -33,6 +33,9 @@ class FormatArgument(Enum):
     #: inspection_idの一覧
     INSPECTION_ID_LIST = "inspection_id_list"
 
+    #: comment_idの一覧
+    COMMENT_ID_LIST = "comment_id_list"
+
     #: user_idの一覧
     USER_ID_LIST = "user_id_list"
 
