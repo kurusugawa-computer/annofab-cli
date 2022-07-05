@@ -16,6 +16,7 @@ Available Commands
    :titlesonly:
 
    download
+   list
 
 Usage Details
 =================================
