@@ -286,6 +286,7 @@ class AnnotatorProductivityPerDate(AbstractPhaseProductivityPerDate):
 
         logger.debug(f"{output_file} を出力します。")
 
+        line_count = 0
         for user_index, user_id in enumerate(user_id_list):
             df_subset = df[df["first_annotation_user_id"] == user_id]
             if df_subset.empty:
@@ -309,6 +310,7 @@ class AnnotatorProductivityPerDate(AbstractPhaseProductivityPerDate):
             color = get_color_from_palette(user_index)
             username = df_subset.iloc[0]["first_annotation_username"]
 
+            line_count += 1
             for line_graph in line_graph_list:
                 if line_graph.y_column.endswith(WEEKLY_MOVING_AVERAGE_COLUMN_SUFFIX):
                     line_graph.add_moving_average_line(
@@ -323,6 +325,10 @@ class AnnotatorProductivityPerDate(AbstractPhaseProductivityPerDate):
                         legend_label=username,
                         color=color,
                     )
+
+        if line_count == 0:
+            logger.warning(f"プロットするデータがなかっため、'{output_file}'は出力しません。")
+            return
 
         self._plot(line_graph_list, output_file)
 
@@ -414,6 +420,8 @@ class AnnotatorProductivityPerDate(AbstractPhaseProductivityPerDate):
 
         logger.debug(f"{output_file} を出力します。")
 
+        line_count = 0
+
         for user_index, user_id in enumerate(user_id_list):
             df_subset = df[df["first_annotation_user_id"] == user_id]
             if df_subset.empty:
@@ -438,6 +446,7 @@ class AnnotatorProductivityPerDate(AbstractPhaseProductivityPerDate):
             color = get_color_from_palette(user_index)
             username = df_subset.iloc[0]["first_annotation_username"]
 
+            line_count += 1
             for line_graph in line_graph_list:
                 if line_graph.y_column.endswith(WEEKLY_MOVING_AVERAGE_COLUMN_SUFFIX):
                     line_graph.add_moving_average_line(
@@ -452,6 +461,10 @@ class AnnotatorProductivityPerDate(AbstractPhaseProductivityPerDate):
                         legend_label=username,
                         color=color,
                     )
+
+        if line_count == 0:
+            logger.warning(f"プロットするデータがなかっため、'{output_file}'は出力しません。")
+            return
 
         self._plot(line_graph_list, output_file)
 
@@ -645,6 +658,7 @@ class InspectorProductivityPerDate(AbstractPhaseProductivityPerDate):
 
         logger.debug(f"{output_file} を出力します。")
 
+        line_count = 0
         for user_index, user_id in enumerate(user_id_list):
             df_subset = df[df["first_inspection_user_id"] == user_id]
             if df_subset.empty:
@@ -679,6 +693,10 @@ class InspectorProductivityPerDate(AbstractPhaseProductivityPerDate):
                         legend_label=username,
                         color=color,
                     )
+
+        if line_count == 0:
+            logger.warning(f"プロットするデータがなかっため、'{output_file}'は出力しません。")
+            return
 
         self._plot(line_graph_list, output_file)
 
@@ -752,6 +770,7 @@ class InspectorProductivityPerDate(AbstractPhaseProductivityPerDate):
 
         logger.debug(f"{output_file} を出力します。")
 
+        line_count = 0
         for user_index, user_id in enumerate(user_id_list):
             df_subset = df[df["first_inspection_user_id"] == user_id]
             if df_subset.empty:
@@ -772,6 +791,7 @@ class InspectorProductivityPerDate(AbstractPhaseProductivityPerDate):
             color = get_color_from_palette(user_index)
             username = df_subset.iloc[0]["first_inspection_username"]
 
+            line_count += 1
             for line_graph in line_graph_list:
                 if line_graph.y_column.endswith(WEEKLY_MOVING_AVERAGE_COLUMN_SUFFIX):
                     line_graph.add_moving_average_line(
@@ -786,6 +806,10 @@ class InspectorProductivityPerDate(AbstractPhaseProductivityPerDate):
                         legend_label=username,
                         color=color,
                     )
+
+        if line_count == 0:
+            logger.warning(f"プロットするデータがなかっため、'{output_file}'は出力しません。")
+            return
 
         self._plot(line_graph_list, output_file)
 
@@ -972,6 +996,7 @@ class AcceptorProductivityPerDate(AbstractPhaseProductivityPerDate):
 
         logger.debug(f"{output_file} を出力します。")
 
+        line_count = 0
         for user_index, user_id in enumerate(user_id_list):
             df_subset = df[df["first_acceptance_user_id"] == user_id]
             if df_subset.empty:
@@ -993,6 +1018,7 @@ class AcceptorProductivityPerDate(AbstractPhaseProductivityPerDate):
             color = get_color_from_palette(user_index)
             username = df_subset.iloc[0]["first_acceptance_username"]
 
+            line_count += 1
             for line_graph in line_graph_list:
                 if line_graph.y_column.endswith(WEEKLY_MOVING_AVERAGE_COLUMN_SUFFIX):
                     line_graph.add_moving_average_line(
@@ -1007,6 +1033,10 @@ class AcceptorProductivityPerDate(AbstractPhaseProductivityPerDate):
                         legend_label=username,
                         color=color,
                     )
+
+        if line_count == 0:
+            logger.warning(f"プロットするデータがなかっため、'{output_file}'は出力しません。")
+            return
 
         self._plot(line_graph_list, output_file)
 
@@ -1079,6 +1109,7 @@ class AcceptorProductivityPerDate(AbstractPhaseProductivityPerDate):
 
         logger.debug(f"{output_file} を出力します。")
 
+        line_count = 0
         for user_index, user_id in enumerate(user_id_list):
             df_subset = df[df["first_acceptance_user_id"] == user_id]
             if df_subset.empty:
@@ -1099,6 +1130,7 @@ class AcceptorProductivityPerDate(AbstractPhaseProductivityPerDate):
             color = get_color_from_palette(user_index)
             username = df_subset.iloc[0]["first_acceptance_username"]
 
+            line_count += 1
             for line_graph in line_graph_list:
                 if line_graph.y_column.endswith(WEEKLY_MOVING_AVERAGE_COLUMN_SUFFIX):
                     line_graph.add_moving_average_line(
@@ -1113,6 +1145,10 @@ class AcceptorProductivityPerDate(AbstractPhaseProductivityPerDate):
                         legend_label=username,
                         color=color,
                     )
+
+        if line_count == 0:
+            logger.warning(f"プロットするデータがなかっため、'{output_file}'は出力しません。")
+            return
 
         self._plot(line_graph_list, output_file)
 
