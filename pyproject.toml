@@ -25,7 +25,9 @@ classifiers = [
 [tool.poetry.dependencies]
 python = "^3.8"
 requests = "*"
-pillow = "*"
+# 以下のエラーが発生したため、バージョンを指定する
+# ERROR: Pillow-9.2.0-cp39-cp39-manylinux_2_28_x86_64.whl is not a supported wheel on this platform.
+pillow = "<9.2"
 pyyaml = "*"
 dictdiffer = "*"
 more-itertools = "*"
