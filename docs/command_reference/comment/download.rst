@@ -1,5 +1,5 @@
 ==========================================
-annotation download
+comment download
 ==========================================
 
 Description
@@ -16,7 +16,6 @@ Examples
 --------------------------
 
 以下のコマンドを実行すると、コメント全件ファイルがダウンロードされます。
-アノテーションZIPのフォーマットについては https://annofab.com/docs/api/#section/Comment を参照してください。
 
 .. code-block::
 

@@ -201,6 +201,9 @@ def get_replaced_biography_set(df: pandas.DataFrame, not_masked_location_set: Op
     if numpy.nan in biography_set:
         biography_set.remove(numpy.nan)
 
+    if pandas.NA in biography_set:
+        biography_set.remove(pandas.NA)
+
     if not_masked_location_set is None:
         return biography_set
     else:

@@ -17,7 +17,7 @@ from annofabapi.models import (
     AdditionalDataDefinitionType,
     AdditionalDataDefinitionV1,
     AnnotationDataHoldingType,
-    AnnotationType,
+    DefaultAnnotationType,
     LabelV1,
     ProjectMemberRole,
     TaskStatus,
@@ -140,7 +140,7 @@ class ImportAnnotationMain(AbstractCommandLineWithConfirmInterface):
 
     @classmethod
     def _is_3dpc_segment_label(cls, label_info: Dict[str, Any]) -> bool:
-        if label_info["annotation_type"] != AnnotationType.CUSTOM.value:
+        if label_info["annotation_type"] != DefaultAnnotationType.CUSTOM.value:
             return False
 
         metadata = label_info["metadata"]
@@ -150,12 +150,13 @@ class ImportAnnotationMain(AbstractCommandLineWithConfirmInterface):
 
     @classmethod
     def _get_data_holding_type_from_data(cls, label_info: Dict[str, Any]) -> AnnotationDataHoldingType:
-        annotation_type = AnnotationType(label_info["annotation_type"])
-        if annotation_type in [AnnotationType.SEGMENTATION, AnnotationType.SEGMENTATION_V2]:
+
+        annotation_type = label_info["annotation_type"]
+        if annotation_type in [DefaultAnnotationType.SEGMENTATION.value, DefaultAnnotationType.SEGMENTATION_V2.value]:
             return AnnotationDataHoldingType.OUTER
 
         # TODO: 3dpc editorに依存したコード。annofab側でSimple Annotationのフォーマットが改善されたら、このコードを削除する
-        if annotation_type == AnnotationType.CUSTOM:
+        if annotation_type == DefaultAnnotationType.CUSTOM.value:
             if cls._is_3dpc_segment_label(label_info):
                 return AnnotationDataHoldingType.OUTER
         return AnnotationDataHoldingType.INNER
@@ -219,7 +220,7 @@ class ImportAnnotationMain(AbstractCommandLineWithConfirmInterface):
             if detail.annotation_id is not None:
                 return detail.annotation_id
             else:
-                if arg_label_info["annotation_type"] == AnnotationType.CLASSIFICATION.value:
+                if arg_label_info["annotation_type"] == DefaultAnnotationType.CLASSIFICATION.value:
                     # 全体アノテーションの場合、annotation_idはlabel_idである必要がある
                     return arg_label_info["label_id"]
                 else:
