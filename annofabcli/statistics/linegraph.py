@@ -5,7 +5,7 @@ from __future__ import annotations
 
 import logging
 from pathlib import Path
-from typing import Any, List, Optional
+from typing import Any, Collection, List, Optional
 
 import bokeh
 import bokeh.layouts
@@ -30,6 +30,9 @@ class LineGraph:
     折れ線グラフに対応するクラス
 
     TODO: 引数にx_column, y_columnを受け取るのはよくないかもしれない
+
+    Args:
+        required_columns
     """
 
     def __init__(
@@ -57,55 +60,53 @@ class LineGraph:
         fig.add_tools(hover_tool)
 
         self.figure = fig
-        self.x_column = x_column
-        self.y_column = y_column
 
-        required_columns = {x_column, y_column}
+        required_columns = set()
         if tooltip_columns is not None:
             required_columns = required_columns | set(tooltip_columns)
-        self.required_columns = list(required_columns)
+        self.required_columns: set[str] = required_columns
 
         self.line_glyphs: dict[str, GlyphRenderer] = {}
         self.marker_glyphs: dict[str, GlyphRenderer] = {}
 
     def add_line(
-        self, source: ColumnDataSource, *, legend_label: str, color: Optional[Any] = None
+        self, source: ColumnDataSource, x_column: str, y_column: str, *, legend_label: str, color: Optional[Any] = None
     ) -> tuple[GlyphRenderer, GlyphRenderer]:
         """
         折れ線を追加する
         """
-
         line = self.figure.line(
-            x=self.x_column,
-            y=self.y_column,
+            x=x_column,
+            y=y_column,
             source=source,
             legend_label=legend_label,
             line_color=color,
             line_width=1,
         )
         circle = self.figure.circle(
-            x=self.x_column,
-            y=self.y_column,
+            x=x_column,
+            y=y_column,
             source=source,
             legend_label=legend_label,
             color=color,
         )
 
+        self.required_columns = self.required_columns | {x_column, y_column}
         self.line_glyphs[legend_label] = line
         self.marker_glyphs[legend_label] = circle
 
         return (line, circle)
 
     def add_moving_average_line(
-        self, source: ColumnDataSource, *, legend_label: str, color: Optional[Any] = None
+        self, source: ColumnDataSource, x_column: str, y_column: str,*, legend_label: str, color: Optional[Any] = None
     ) -> tuple[GlyphRenderer, GlyphRenderer]:
         """
         移動平均用の折れ線を追加する
         """
 
         line = self.figure.line(
-            x=self.x_column,
-            y=self.y_column,
+            x=x_column,
+            y=y_column,
             source=source,
             legend_label=legend_label,
             line_color=color,
@@ -113,6 +114,8 @@ class LineGraph:
             line_dash="dashed",
             line_alpha=0.6,
         )
+
+        self.required_columns = self.required_columns | {x_column, y_column}
         self.line_glyphs[legend_label] = line
         return line
 
