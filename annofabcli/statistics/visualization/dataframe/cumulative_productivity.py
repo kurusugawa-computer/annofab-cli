@@ -285,12 +285,10 @@ class AnnotatorCumulativeProductivity(AbstractPhaseCumulativeProductivity):
         user_id_list = get_plotted_user_id_list(user_id_list)
 
         x_axis_label = "入力データ数"
-        x_column = "cumulative_input_data_count"
 
         line_graph_list = [
             LineGraph(
                 title="累積の入力データ数と教師付作業時間",
-                y_column="cumulative_annotation_worktime_hour",
                 y_axis_label="教師付作業時間[hour]",
                 tooltip_columns=[
                     "task_id",
@@ -302,11 +300,9 @@ class AnnotatorCumulativeProductivity(AbstractPhaseCumulativeProductivity):
                     "inspection_comment_count",
                 ],
                 x_axis_label=x_axis_label,
-                x_column=x_column,
             ),
             LineGraph(
                 title="累積の入力データ数と検査コメント数",
-                y_column="cumulative_inspection_comment_count",
                 y_axis_label="検査コメント数",
                 tooltip_columns=[
                     "task_id",
@@ -318,11 +314,16 @@ class AnnotatorCumulativeProductivity(AbstractPhaseCumulativeProductivity):
                     "inspection_comment_count",
                 ],
                 x_axis_label=x_axis_label,
-                x_column=x_column,
             ),
         ]
 
-        self._plot(line_graph_list, user_id_list, output_file)
+        x_column = "cumulative_input_data_count"
+        columns_list = [
+            (x_column, "cumulative_annotation_worktime_hour"),
+            (x_column, "cumulative_inspection_comment_count"),
+        ]
+
+        self._plot(line_graph_list, columns_list, user_id_list, output_file)
 
     def plot_task_metrics(
         self,
@@ -347,7 +348,6 @@ class AnnotatorCumulativeProductivity(AbstractPhaseCumulativeProductivity):
         user_id_list = get_plotted_user_id_list(user_id_list)
 
         x_axis_label = "タスク数"
-        x_column = "cumulative_task_count"
         tooltip_columns = [
             "task_id",
             "first_annotation_user_id",
@@ -361,31 +361,32 @@ class AnnotatorCumulativeProductivity(AbstractPhaseCumulativeProductivity):
         line_graph_list = [
             LineGraph(
                 title="累積のタスク数と教師付作業時間",
-                y_column="cumulative_annotation_worktime_hour",
                 y_axis_label="教師付作業時間[hour]",
                 tooltip_columns=tooltip_columns,
                 x_axis_label=x_axis_label,
-                x_column=x_column,
             ),
             LineGraph(
                 title="累積のタスク数と差し戻し回数(検査フェーズ)",
-                y_column="cumulative_number_of_rejections_by_inspection",
                 y_axis_label="差し戻し回数(検査フェーズ)",
                 tooltip_columns=tooltip_columns,
                 x_axis_label=x_axis_label,
-                x_column=x_column,
             ),
             LineGraph(
                 title="累積のタスク数と差し戻し回数(受入フェーズ)",
-                y_column="cumulative_number_of_rejections_by_acceptance",
                 y_axis_label="差し戻し回数(受入フェーズ)",
                 tooltip_columns=tooltip_columns,
                 x_axis_label=x_axis_label,
-                x_column=x_column,
             ),
         ]
 
-        self._plot(line_graph_list, user_id_list, output_file)
+        x_column = "cumulative_task_count"
+        columns_list = [
+            (x_column, "cumulative_annotation_worktime_hour"),
+            (x_column, "cumulative_number_of_rejections_by_inspection"),
+            (x_column, "cumulative_number_of_rejections_by_acceptance"),
+        ]
+
+        self._plot(line_graph_list, columns_list, user_id_list, output_file)
 
 
 class InspectorCumulativeProductivity(AbstractPhaseCumulativeProductivity):
@@ -461,12 +462,10 @@ class InspectorCumulativeProductivity(AbstractPhaseCumulativeProductivity):
         user_id_list = get_plotted_user_id_list(user_id_list)
 
         x_axis_label = "アノテーション数"
-        x_column = "cumulative_annotation_count"
 
         line_graph_list = [
             LineGraph(
                 title="累積のアノテーション数と検査作業時間",
-                y_column="cumulative_inspection_worktime_hour",
                 y_axis_label="検査作業時間[hour]",
                 tooltip_columns=[
                     "task_id",
@@ -478,11 +477,15 @@ class InspectorCumulativeProductivity(AbstractPhaseCumulativeProductivity):
                     "inspection_comment_count",
                 ],
                 x_axis_label=x_axis_label,
-                x_column=x_column,
             ),
         ]
 
-        self._plot(line_graph_list, user_id_list, output_file)
+        x_column = "cumulative_annotation_count"
+        columns_list = [
+            (x_column, "cumulative_inspection_worktime_hour"),
+        ]
+
+        self._plot(line_graph_list, columns_list, user_id_list, output_file)
 
     def plot_input_data_metrics(
         self,
@@ -507,7 +510,6 @@ class InspectorCumulativeProductivity(AbstractPhaseCumulativeProductivity):
         user_id_list = get_plotted_user_id_list(user_id_list)
 
         x_axis_label = "入力データ数"
-        x_column = "cumulative_input_data_count"
 
         line_graph_list = [
             LineGraph(
@@ -524,11 +526,15 @@ class InspectorCumulativeProductivity(AbstractPhaseCumulativeProductivity):
                     "inspection_comment_count",
                 ],
                 x_axis_label=x_axis_label,
-                x_column=x_column,
             ),
         ]
 
-        self._plot(line_graph_list, user_id_list, output_file)
+        x_column = "cumulative_input_data_count"
+        columns_list = [
+            (x_column, "cumulative_inspection_worktime_hour"),
+        ]
+
+        self._plot(line_graph_list, columns_list, user_id_list, output_file)
 
     def plot_task_metrics(
         self,
@@ -553,12 +559,10 @@ class InspectorCumulativeProductivity(AbstractPhaseCumulativeProductivity):
         user_id_list = get_plotted_user_id_list(user_id_list)
 
         x_axis_label = "タスク数"
-        x_column = "cumulative_task_count"
 
         line_graph_list = [
             LineGraph(
                 title="累積のタスク数と検査作業時間",
-                y_column="cumulative_inspection_worktime_hour",
                 y_axis_label="検査作業時間[hour]",
                 tooltip_columns=[
                     "task_id",
@@ -569,8 +573,12 @@ class InspectorCumulativeProductivity(AbstractPhaseCumulativeProductivity):
                     "inspection_comment_count",
                 ],
                 x_axis_label=x_axis_label,
-                x_column=x_column,
             ),
+        ]
+
+        x_column = "cumulative_task_count"
+        columns_list = [
+            (x_column, "cumulative_inspection_worktime_hour"),
         ]
 
         self._plot(line_graph_list, user_id_list, output_file)
@@ -644,7 +652,6 @@ class AcceptorCumulativeProductivity(AbstractPhaseCumulativeProductivity):
         user_id_list = get_plotted_user_id_list(user_id_list)
 
         x_axis_label = "アノテーション数"
-        x_column = "cumulative_annotation_count"
 
         line_graph_list = [
             LineGraph(
@@ -661,10 +668,15 @@ class AcceptorCumulativeProductivity(AbstractPhaseCumulativeProductivity):
                     "inspection_comment_count",
                 ],
                 x_axis_label=x_axis_label,
-                x_column=x_column,
             ),
         ]
-        self._plot(line_graph_list, user_id_list, output_file)
+
+        x_column = "cumulative_annotation_count"
+        columns_list = [
+            (x_column, "cumulative_acceptance_worktime_hour"),
+        ]
+
+        self._plot(line_graph_list, columns_list, user_id_list, output_file)
 
     def plot_input_data_metrics(
         self,
@@ -689,7 +701,6 @@ class AcceptorCumulativeProductivity(AbstractPhaseCumulativeProductivity):
         user_id_list = get_plotted_user_id_list(user_id_list)
 
         x_axis_label = "入力データ数"
-        x_column = "cumulative_input_data_count"
 
         line_graph_list = [
             LineGraph(
@@ -710,7 +721,12 @@ class AcceptorCumulativeProductivity(AbstractPhaseCumulativeProductivity):
             ),
         ]
 
-        self._plot(line_graph_list, user_id_list, output_file)
+        x_column = "cumulative_input_data_count"
+        columns_list = [
+            (x_column, "cumulative_acceptance_worktime_hour"),
+        ]
+
+        self._plot(line_graph_list,columns_list, user_id_list, output_file)
 
     def plot_task_metrics(
         self,
@@ -733,7 +749,7 @@ class AcceptorCumulativeProductivity(AbstractPhaseCumulativeProductivity):
         user_id_list = get_plotted_user_id_list(user_id_list)
 
         x_axis_label = "タスク数"
-        x_column = "cumulative_task_count"
+        
 
         line_graph_list = [
             LineGraph(
@@ -749,8 +765,12 @@ class AcceptorCumulativeProductivity(AbstractPhaseCumulativeProductivity):
                     "inspection_comment_count",
                 ],
                 x_axis_label=x_axis_label,
-                x_column=x_column,
             ),
         ]
 
-        self._plot(line_graph_list, user_id_list, output_file)
+        x_column = "cumulative_task_count"
+        columns_list = [
+            (x_column, "cumulative_acceptance_worktime_hour"),
+        ]
+
+        self._plot(line_graph_list, columns_list, user_id_list, output_file)
