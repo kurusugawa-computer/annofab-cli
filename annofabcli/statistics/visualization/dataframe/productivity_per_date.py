@@ -225,7 +225,6 @@ class AnnotatorProductivityPerDate(AbstractPhaseProductivityPerDate):
         user_id_list = get_plotted_user_id_list(user_id_list)
 
         x_axis_label = "教師付開始日"
-        x_column = "dt_first_annotation_started_date"
         tooltip_columns = [
             "first_annotation_user_id",
             "first_annotation_username",
@@ -239,49 +238,48 @@ class AnnotatorProductivityPerDate(AbstractPhaseProductivityPerDate):
         line_graph_list = [
             LineGraph(
                 title="教師付開始日ごとの教師付作業時間",
-                y_column="annotation_worktime_hour",
                 y_axis_label="教師付作業時間[hour]",
                 tooltip_columns=tooltip_columns,
                 x_axis_label=x_axis_label,
-                x_column=x_column,
                 x_axis_type="datetime",
             ),
             LineGraph(
                 title="教師付開始日ごとのアノテーションあたり教師付作業時間",
-                y_column="annotation_worktime_minute/annotation_count",
                 y_axis_label="アノテーションあたり教師付時間[min/annotation]",
                 tooltip_columns=tooltip_columns,
                 x_axis_label=x_axis_label,
-                x_column=x_column,
                 x_axis_type="datetime",
             ),
             LineGraph(
                 title="教師付開始日ごとのアノテーションあたり教師付作業時間(1週間移動平均)",
-                y_column=f"annotation_worktime_minute/annotation_count{WEEKLY_MOVING_AVERAGE_COLUMN_SUFFIX}",
                 y_axis_label="アノテーションあたり教師付時間[min/annotation]",
                 tooltip_columns=tooltip_columns,
                 x_axis_label=x_axis_label,
-                x_column=x_column,
                 x_axis_type="datetime",
             ),
             LineGraph(
                 title="教師付開始日ごとのアノテーションあたり検査コメント数",
-                y_column="inspection_comment_count/annotation_count",
                 y_axis_label="アノテーションあたり検査コメント数",
                 tooltip_columns=tooltip_columns,
                 x_axis_label=x_axis_label,
-                x_column=x_column,
                 x_axis_type="datetime",
             ),
             LineGraph(
                 title="教師付開始日ごとのアノテーションあたり検査コメント数(1週間移動平均)",
-                y_column=f"inspection_comment_count/annotation_count{WEEKLY_MOVING_AVERAGE_COLUMN_SUFFIX}",
                 y_axis_label="アノテーションあたり検査コメント数",
                 tooltip_columns=tooltip_columns,
                 x_axis_label=x_axis_label,
-                x_column=x_column,
                 x_axis_type="datetime",
             ),
+        ]
+
+        x_column = "dt_first_annotation_started_date"
+        columns_list = [
+            (x_column, "annotation_worktime_hour"),
+            (x_column, "annotation_worktime_minute/annotation_count"),
+            (x_column, f"annotation_worktime_minute/annotation_count{WEEKLY_MOVING_AVERAGE_COLUMN_SUFFIX}"),
+            (x_column, "inspection_comment_count/annotation_count"),
+            (x_column, f"inspection_comment_count/annotation_count{WEEKLY_MOVING_AVERAGE_COLUMN_SUFFIX}"),
         ]
 
         logger.debug(f"{output_file} を出力します。")
@@ -311,10 +309,12 @@ class AnnotatorProductivityPerDate(AbstractPhaseProductivityPerDate):
             username = df_subset.iloc[0]["first_annotation_username"]
 
             line_count += 1
-            for line_graph in line_graph_list:
-                if line_graph.y_column.endswith(WEEKLY_MOVING_AVERAGE_COLUMN_SUFFIX):
+            for line_graph, (x_column, y_column) in zip(line_graph_list, columns_list):
+                if y_column.endswith(WEEKLY_MOVING_AVERAGE_COLUMN_SUFFIX):
                     line_graph.add_moving_average_line(
                         source=source,
+                        x_column=x_column,
+                        y_column=y_column,
                         legend_label=username,
                         color=color,
                     )
@@ -322,6 +322,8 @@ class AnnotatorProductivityPerDate(AbstractPhaseProductivityPerDate):
                 else:
                     line_graph.add_line(
                         source=source,
+                        x_column=x_column,
+                        y_column=y_column,
                         legend_label=username,
                         color=color,
                     )
@@ -359,7 +361,6 @@ class AnnotatorProductivityPerDate(AbstractPhaseProductivityPerDate):
         user_id_list = get_plotted_user_id_list(user_id_list)
 
         x_axis_label = "教師付開始日"
-        x_column = "dt_first_annotation_started_date"
         tooltip_columns = [
             "first_annotation_user_id",
             "first_annotation_username",
@@ -373,49 +374,49 @@ class AnnotatorProductivityPerDate(AbstractPhaseProductivityPerDate):
         line_graph_list = [
             LineGraph(
                 title="教師付開始日ごとの教師付作業時間",
-                y_column="annotation_worktime_hour",
                 y_axis_label="教師付作業時間[hour]",
                 tooltip_columns=tooltip_columns,
                 x_axis_label=x_axis_label,
-                x_column=x_column,
                 x_axis_type="datetime",
             ),
             LineGraph(
                 title="教師付開始日ごとの入力データあたり教師付作業時間",
-                y_column="annotation_worktime_minute/input_data_count",
                 y_axis_label="入力データあたり教師付時間[min/input_data]",
                 tooltip_columns=tooltip_columns,
                 x_axis_label=x_axis_label,
-                x_column=x_column,
                 x_axis_type="datetime",
             ),
             LineGraph(
                 title="教師付開始日ごとの入力データあたり教師付作業時間(1週間移動平均)",
-                y_column=f"annotation_worktime_minute/input_data_count{WEEKLY_MOVING_AVERAGE_COLUMN_SUFFIX}",
                 y_axis_label="入力データあたり教師付時間[min/annotation]",
                 tooltip_columns=tooltip_columns,
                 x_axis_label=x_axis_label,
-                x_column=x_column,
                 x_axis_type="datetime",
             ),
             LineGraph(
                 title="教師付開始日ごとの入力データあたり検査コメント数",
-                y_column="inspection_comment_count/input_data_count",
                 y_axis_label="入力データあたり検査コメント数",
                 tooltip_columns=tooltip_columns,
                 x_axis_label=x_axis_label,
-                x_column=x_column,
                 x_axis_type="datetime",
             ),
             LineGraph(
                 title="教師付開始日ごとの入力データあたり検査コメント数(1週間移動平均)",
-                y_column=f"inspection_comment_count/input_data_count{WEEKLY_MOVING_AVERAGE_COLUMN_SUFFIX}",
                 y_axis_label="入力データあたり検査コメント数",
                 tooltip_columns=tooltip_columns,
                 x_axis_label=x_axis_label,
-                x_column=x_column,
                 x_axis_type="datetime",
             ),
+        ]
+
+        x_column = "dt_first_annotation_started_date"
+
+        columns_list = [
+            (x_column, "annotation_worktime_hour"),
+            (x_column, "annotation_worktime_minute/input_data_count"),
+            (x_column, f"annotation_worktime_minute/input_data_count{WEEKLY_MOVING_AVERAGE_COLUMN_SUFFIX}"),
+            (x_column, "inspection_comment_count/input_data_count"),
+            (x_column, f"inspection_comment_count/input_data_count{WEEKLY_MOVING_AVERAGE_COLUMN_SUFFIX}"),
         ]
 
         logger.debug(f"{output_file} を出力します。")
@@ -447,10 +448,12 @@ class AnnotatorProductivityPerDate(AbstractPhaseProductivityPerDate):
             username = df_subset.iloc[0]["first_annotation_username"]
 
             line_count += 1
-            for line_graph in line_graph_list:
-                if line_graph.y_column.endswith(WEEKLY_MOVING_AVERAGE_COLUMN_SUFFIX):
+            for line_graph, (x_column, y_column) in zip(line_graph_list, columns_list):
+                if y_column.endswith(WEEKLY_MOVING_AVERAGE_COLUMN_SUFFIX):
                     line_graph.add_moving_average_line(
                         source=source,
+                        x_column=x_column,
+                        y_column=y_column,
                         legend_label=username,
                         color=color,
                     )
@@ -458,6 +461,8 @@ class AnnotatorProductivityPerDate(AbstractPhaseProductivityPerDate):
                 else:
                     line_graph.add_line(
                         source=source,
+                        x_column=x_column,
+                        y_column=y_column,
                         legend_label=username,
                         color=color,
                     )
@@ -615,7 +620,6 @@ class InspectorProductivityPerDate(AbstractPhaseProductivityPerDate):
         user_id_list = get_plotted_user_id_list(user_id_list)
 
         x_axis_label = "検査開始日"
-        x_column = "dt_first_inspection_started_date"
         tooltip_columns = [
             "first_inspection_user_id",
             "first_inspection_username",
@@ -629,31 +633,32 @@ class InspectorProductivityPerDate(AbstractPhaseProductivityPerDate):
         line_graph_list = [
             LineGraph(
                 title="検査開始日ごとの受入作業時間",
-                y_column="inspection_worktime_hour",
                 y_axis_label="検査作業時間[hour]",
                 tooltip_columns=tooltip_columns,
                 x_axis_label=x_axis_label,
-                x_column=x_column,
                 x_axis_type="datetime",
             ),
             LineGraph(
                 title="検査開始日ごとのアノテーションあたり検査作業時間",
-                y_column="inspection_worktime_minute/annotation_count",
                 y_axis_label="アノテーションあたり検査作業時間[min/annotation]",
                 tooltip_columns=tooltip_columns,
                 x_axis_label=x_axis_label,
-                x_column=x_column,
                 x_axis_type="datetime",
             ),
             LineGraph(
                 title="検査開始日ごとのアノテーションあたり検査作業時間(1週間移動平均)",
-                y_column=f"inspection_worktime_minute/annotation_count{WEEKLY_MOVING_AVERAGE_COLUMN_SUFFIX}",
                 y_axis_label="アノテーションあたり検査作業時間[min/annotation]",
                 tooltip_columns=tooltip_columns,
                 x_axis_label=x_axis_label,
-                x_column=x_column,
                 x_axis_type="datetime",
             ),
+        ]
+
+        x_column = "dt_first_inspection_started_date"
+        columns_list = [
+            (x_column, "inspection_worktime_hour"),
+            (x_column, "inspection_worktime_minute/annotation_count"),
+            (x_column, f"inspection_worktime_minute/annotation_count{WEEKLY_MOVING_AVERAGE_COLUMN_SUFFIX}"),
         ]
 
         logger.debug(f"{output_file} を出力します。")
@@ -679,10 +684,12 @@ class InspectorProductivityPerDate(AbstractPhaseProductivityPerDate):
             color = get_color_from_palette(user_index)
             username = df_subset.iloc[0]["first_inspection_username"]
 
-            for line_graph in line_graph_list:
-                if line_graph.y_column.endswith(WEEKLY_MOVING_AVERAGE_COLUMN_SUFFIX):
+            for line_graph, (x_column, y_column) in zip(line_graph_list, columns_list):
+                if y_column.endswith(WEEKLY_MOVING_AVERAGE_COLUMN_SUFFIX):
                     line_graph.add_moving_average_line(
                         source=source,
+                        x_column=x_column,
+                        y_column=y_column,
                         legend_label=username,
                         color=color,
                     )
@@ -690,6 +697,8 @@ class InspectorProductivityPerDate(AbstractPhaseProductivityPerDate):
                 else:
                     line_graph.add_line(
                         source=source,
+                        x_column=x_column,
+                        y_column=y_column,
                         legend_label=username,
                         color=color,
                     )
@@ -741,31 +750,32 @@ class InspectorProductivityPerDate(AbstractPhaseProductivityPerDate):
         line_graph_list = [
             LineGraph(
                 title="検査開始日ごとの検査作業時間",
-                y_column="inspection_worktime_hour",
                 y_axis_label="検査作業時間[hour]",
                 tooltip_columns=tooltip_columns,
                 x_axis_label=x_axis_label,
-                x_column=x_column,
                 x_axis_type="datetime",
             ),
             LineGraph(
                 title="検査開始日ごとの入力データあたり検査作業時間",
-                y_column="inspection_worktime_minute/input_data_count",
                 y_axis_label="入力データあたり検査時間[min/input_data]",
                 tooltip_columns=tooltip_columns,
                 x_axis_label=x_axis_label,
-                x_column=x_column,
                 x_axis_type="datetime",
             ),
             LineGraph(
                 title="検査開始日ごとの入力データあたり検査作業時間(1週間移動平均)",
-                y_column=f"inspection_worktime_minute/input_data_count{WEEKLY_MOVING_AVERAGE_COLUMN_SUFFIX}",
                 y_axis_label="入力データあたり検査時間[min/annotation]",
                 tooltip_columns=tooltip_columns,
                 x_axis_label=x_axis_label,
-                x_column=x_column,
                 x_axis_type="datetime",
             ),
+        ]
+
+        x_column = "dt_first_inspection_started_date"
+        columns_list = [
+            (x_column, "inspection_worktime_hour"),
+            (x_column, "inspection_worktime_minute/input_data_count"),
+            (x_column, f"inspection_worktime_minute/input_data_count{WEEKLY_MOVING_AVERAGE_COLUMN_SUFFIX}"),
         ]
 
         logger.debug(f"{output_file} を出力します。")
@@ -792,10 +802,12 @@ class InspectorProductivityPerDate(AbstractPhaseProductivityPerDate):
             username = df_subset.iloc[0]["first_inspection_username"]
 
             line_count += 1
-            for line_graph in line_graph_list:
-                if line_graph.y_column.endswith(WEEKLY_MOVING_AVERAGE_COLUMN_SUFFIX):
+            for line_graph, (x_column, y_column) in zip(line_graph_list, columns_list):
+                if y_column.endswith(WEEKLY_MOVING_AVERAGE_COLUMN_SUFFIX):
                     line_graph.add_moving_average_line(
                         source=source,
+                        x_column=x_column,
+                        y_column=y_column,
                         legend_label=username,
                         color=color,
                     )
@@ -803,6 +815,8 @@ class InspectorProductivityPerDate(AbstractPhaseProductivityPerDate):
                 else:
                     line_graph.add_line(
                         source=source,
+                        x_column=x_column,
+                        y_column=y_column,
                         legend_label=username,
                         color=color,
                     )
@@ -994,6 +1008,13 @@ class AcceptorProductivityPerDate(AbstractPhaseProductivityPerDate):
             ),
         ]
 
+        x_column = "dt_first_acceptance_started_date"
+        columns_list = [
+            (x_column, "acceptance_worktime_hour"),
+            (x_column, "acceptance_worktime_minute/annotation_count"),
+            (x_column, f"acceptance_worktime_minute/annotation_count{WEEKLY_MOVING_AVERAGE_COLUMN_SUFFIX}"),
+        ]
+
         logger.debug(f"{output_file} を出力します。")
 
         line_count = 0
@@ -1019,10 +1040,12 @@ class AcceptorProductivityPerDate(AbstractPhaseProductivityPerDate):
             username = df_subset.iloc[0]["first_acceptance_username"]
 
             line_count += 1
-            for line_graph in line_graph_list:
-                if line_graph.y_column.endswith(WEEKLY_MOVING_AVERAGE_COLUMN_SUFFIX):
+            for line_graph, (x_column, y_column) in zip(line_graph_list, columns_list):
+                if y_column.endswith(WEEKLY_MOVING_AVERAGE_COLUMN_SUFFIX):
                     line_graph.add_moving_average_line(
                         source=source,
+                        x_column=x_column,
+                        y_column=y_column,
                         legend_label=username,
                         color=color,
                     )
@@ -1030,6 +1053,8 @@ class AcceptorProductivityPerDate(AbstractPhaseProductivityPerDate):
                 else:
                     line_graph.add_line(
                         source=source,
+                        x_column=x_column,
+                        y_column=y_column,
                         legend_label=username,
                         color=color,
                     )
@@ -1107,6 +1132,13 @@ class AcceptorProductivityPerDate(AbstractPhaseProductivityPerDate):
             ),
         ]
 
+        x_column = "dt_first_acceptance_started_date"
+        columns_list = [
+            (x_column, "acceptance_worktime_hour"),
+            (x_column, "acceptance_worktime_minute/input_data_count"),
+            (x_column, f"acceptance_worktime_minute/input_data_count{WEEKLY_MOVING_AVERAGE_COLUMN_SUFFIX}"),
+        ]
+
         logger.debug(f"{output_file} を出力します。")
 
         line_count = 0
@@ -1131,10 +1163,12 @@ class AcceptorProductivityPerDate(AbstractPhaseProductivityPerDate):
             username = df_subset.iloc[0]["first_acceptance_username"]
 
             line_count += 1
-            for line_graph in line_graph_list:
-                if line_graph.y_column.endswith(WEEKLY_MOVING_AVERAGE_COLUMN_SUFFIX):
+            for line_graph, (x_column, y_column) in zip(line_graph_list, columns_list):
+                if y_column.endswith(WEEKLY_MOVING_AVERAGE_COLUMN_SUFFIX):
                     line_graph.add_moving_average_line(
                         source=source,
+                        x_column=x_column,
+                        y_column=y_column,
                         legend_label=username,
                         color=color,
                     )
@@ -1142,6 +1176,8 @@ class AcceptorProductivityPerDate(AbstractPhaseProductivityPerDate):
                 else:
                     line_graph.add_line(
                         source=source,
+                        x_column=x_column,
+                        y_column=y_column,
                         legend_label=username,
                         color=color,
                     )

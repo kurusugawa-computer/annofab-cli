@@ -59,7 +59,7 @@ class LineGraph:
 
         self.figure = fig
 
-        required_columns = set()
+        required_columns: set[str] = set()
         if tooltip_columns is not None:
             required_columns = required_columns | set(tooltip_columns)
         self.required_columns: set[str] = required_columns
