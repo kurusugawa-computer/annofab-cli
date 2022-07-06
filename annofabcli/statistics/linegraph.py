@@ -5,7 +5,7 @@ from __future__ import annotations
 
 import logging
 from pathlib import Path
-from typing import Any, Collection, List, Optional
+from typing import Any, List, Optional
 
 import bokeh
 import bokeh.layouts
@@ -41,8 +41,6 @@ class LineGraph:
         title: str,
         x_axis_label: str,
         y_axis_label: str,
-        x_column: str,
-        y_column: str,
         plot_width: int = 1200,
         plot_height: int = 1000,
         tooltip_columns: Optional[list[str]] = None,
@@ -98,7 +96,7 @@ class LineGraph:
         return (line, circle)
 
     def add_moving_average_line(
-        self, source: ColumnDataSource, x_column: str, y_column: str,*, legend_label: str, color: Optional[Any] = None
+        self, source: ColumnDataSource, x_column: str, y_column: str, *, legend_label: str, color: Optional[Any] = None
     ) -> tuple[GlyphRenderer, GlyphRenderer]:
         """
         移動平均用の折れ線を追加する

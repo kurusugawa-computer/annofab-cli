@@ -73,9 +73,18 @@ class AbstractPhaseCumulativeProductivity(abc.ABC):
 
         return True
 
-    def _plot(self, line_graph_list: list[LineGraph], user_id_list: list[str], output_file: Path):
+    def _plot(
+        self,
+        line_graph_list: list[LineGraph],
+        columns_list: list[tuple[str, str]],
+        user_id_list: list[str],
+        output_file: Path,
+    ):
         """
         折れ線グラフを、HTMLファイルに出力します。
+
+        Args:
+            columns_list
         """
         df = self._df_cumulative
 
@@ -97,8 +106,8 @@ class AbstractPhaseCumulativeProductivity(abc.ABC):
             username = df_subset.iloc[0][f"first_{self.phase.value}_username"]
 
             line_count += 1
-            for line_graph in line_graph_list:
-                line_graph.add_line(source, legend_label=username, color=color)
+            for line_graph, (x_column, y_column) in zip(line_graph_list, columns_list):
+                line_graph.add_line(source, x_column=x_column, y_column=y_column, legend_label=username, color=color)
 
         if line_count == 0:
             logger.warning(f"プロットするデータがなかっため、'{output_file}'は出力しません。")
@@ -215,13 +224,11 @@ class AnnotatorCumulativeProductivity(AbstractPhaseCumulativeProductivity):
         user_id_list = get_plotted_user_id_list(user_id_list)
 
         x_axis_label = "アノテーション数"
-        x_column = "cumulative_annotation_count"
 
         line_graph_list = [
             LineGraph(
                 title="累積のアノテーション数と教師付作業時間",
                 y_axis_label="教師付作業時間[hour]",
-                y_column="cumulative_annotation_worktime_hour",
                 tooltip_columns=[
                     "task_id",
                     "first_annotation_user_id",
@@ -232,12 +239,10 @@ class AnnotatorCumulativeProductivity(AbstractPhaseCumulativeProductivity):
                     "inspection_comment_count",
                 ],
                 x_axis_label=x_axis_label,
-                x_column=x_column,
             ),
             LineGraph(
                 title="累積のアノテーション数と検査コメント数",
                 y_axis_label="検査コメント数",
-                y_column="cumulative_inspection_comment_count",
                 tooltip_columns=[
                     "task_id",
                     "first_annotation_user_id",
@@ -247,11 +252,15 @@ class AnnotatorCumulativeProductivity(AbstractPhaseCumulativeProductivity):
                     "inspection_comment_count",
                 ],
                 x_axis_label=x_axis_label,
-                x_column=x_column,
             ),
         ]
 
-        self._plot(line_graph_list, user_id_list, output_file)
+        x_column = "cumulative_annotation_count"
+        columns_list = [
+            (x_column, "cumulative_annotation_worktime_hour"),
+            (x_column, "cumulative_inspection_comment_count"),
+        ]
+        self._plot(line_graph_list, columns_list, user_id_list, output_file)
 
     def plot_input_data_metrics(
         self,
