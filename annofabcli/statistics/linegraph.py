@@ -54,15 +54,14 @@ class LineGraph:
             plot_height=plot_height,
             **figure_kwargs,
         )
+        self.x_axis_label = x_axis_label
+        self.y_axis_label = y_axis_label
+        self.tooltip_columns = tooltip_columns
+
         hover_tool = create_hover_tool(tooltip_columns) if tooltip_columns is not None else None
         fig.add_tools(hover_tool)
 
         self.figure = fig
-
-        required_columns: set[str] = set()
-        if tooltip_columns is not None:
-            required_columns = required_columns | set(tooltip_columns)
-        self.required_columns: set[str] = required_columns
 
         self.line_glyphs: dict[str, GlyphRenderer] = {}
         self.marker_glyphs: dict[str, GlyphRenderer] = {}
@@ -89,7 +88,6 @@ class LineGraph:
             color=color,
         )
 
-        self.required_columns = self.required_columns | {x_column, y_column}
         self.line_glyphs[legend_label] = line
         self.marker_glyphs[legend_label] = circle
 
@@ -113,7 +111,6 @@ class LineGraph:
             line_alpha=0.6,
         )
 
-        self.required_columns = self.required_columns | {x_column, y_column}
         self.line_glyphs[legend_label] = line
         return line
 
