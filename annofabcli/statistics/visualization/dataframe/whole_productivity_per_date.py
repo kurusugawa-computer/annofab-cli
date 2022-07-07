@@ -1144,7 +1144,6 @@ class WholeProductivityPerFirstAnnotationStartedDate:
 
         fig_info_list = [
             {
-                "x": "dt_first_annotation_started_date",
                 "y_info_list": [
                     {"column": "worktime_hour", "legend": "計測作業時間"},
                     {"column": "annotation_worktime_hour", "legend": "計測作業時間(教師付)"},
@@ -1153,7 +1152,6 @@ class WholeProductivityPerFirstAnnotationStartedDate:
                 ],
             },
             {
-                "x": "dt_first_annotation_started_date",
                 "y_info_list": [
                     {"column": "worktime_minute/input_data_count", "legend": "入力データあたり計測作業時間"},
                     {"column": "annotation_worktime_minute/input_data_count", "legend": "入力データあたり計測作業時間(教師付)"},
@@ -1162,8 +1160,6 @@ class WholeProductivityPerFirstAnnotationStartedDate:
                 ],
             },
             {
-                # TODO: Why?
-                "x": "dt_date",
                 "y_info_list": [
                     {"column": "worktime_minute/annotation_count", "legend": "アノテーションあたり計測作業時間"},
                     {"column": "annotation_worktime_minute/annotation_count", "legend": "アノテーションあたり計測作業時間(教師付)"},
@@ -1173,7 +1169,6 @@ class WholeProductivityPerFirstAnnotationStartedDate:
             },
         ]
 
-        x_axis_label = "教師開始日"
         line_graph_list = [
             create_line_graph(
                 title="教師付開始日ごとの計測作業時間",
