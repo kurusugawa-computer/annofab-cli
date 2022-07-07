@@ -39,10 +39,7 @@ class LineGraph:
     """
     折れ線グラフに対応するクラス
 
-    TODO: 引数にx_column, y_columnを受け取るのはよくないかもしれない
-
     Args:
-        required_columns
         exists_secondary_y_axis
     """
 
