@@ -331,49 +331,48 @@ class WorktimePerDate:
         line_graph_list = [
             LineGraph(
                 title="実績作業時間の累積値",
-                y_column="cumulative_actual_worktime_hour",
                 y_axis_label="作業時間[hour]",
                 tooltip_columns=tooltip_columns,
                 x_axis_label=x_axis_label,
-                x_column=x_column,
                 x_axis_type="datetime",
             ),
             LineGraph(
                 title="計測作業時間の累積値",
-                y_column="cumulative_monitored_worktime_hour",
                 y_axis_label="作業時間[hour]",
                 tooltip_columns=tooltip_columns,
                 x_axis_label=x_axis_label,
-                x_column=x_column,
                 x_axis_type="datetime",
             ),
             LineGraph(
                 title="計測作業時間(教師付)の累積値",
-                y_column="cumulative_monitored_annotation_worktime_hour",
                 y_axis_label="作業時間[hour]",
                 tooltip_columns=tooltip_columns,
                 x_axis_label=x_axis_label,
-                x_column=x_column,
                 x_axis_type="datetime",
             ),
             LineGraph(
                 title="計測作業時間(検査)の累積値",
-                y_column="cumulative_monitored_inspection_worktime_hour",
                 y_axis_label="作業時間[hour]",
                 tooltip_columns=tooltip_columns,
                 x_axis_label=x_axis_label,
-                x_column=x_column,
                 x_axis_type="datetime",
             ),
             LineGraph(
                 title="計測作業時間(受入)の累積値",
-                y_column="cumulative_monitored_acceptance_worktime_hour",
                 y_axis_label="作業時間[hour]",
                 tooltip_columns=tooltip_columns,
                 x_axis_label=x_axis_label,
-                x_column=x_column,
                 x_axis_type="datetime",
             ),
+        ]
+
+        x_column = "dt_date"
+        columns_list = [
+            (x_column, "cumulative_actual_worktime_hour"),
+            (x_column, "cumulative_monitored_worktime_hour"),
+            (x_column, "cumulative_monitored_annotation_worktime_hour"),
+            (x_column, "cumulative_monitored_inspection_worktime_hour"),
+            (x_column, "cumulative_monitored_acceptance_worktime_hour"),
         ]
 
         df_continuous_date = self._get_continuous_date_dataframe()
@@ -392,9 +391,11 @@ class WorktimePerDate:
             username = df_subset.iloc[0]["username"]
 
             line_count += 1
-            for line_graph in line_graph_list:
+            for line_graph, (x_column, y_column) in zip(line_graph_list, columns_list):
                 line_graph.add_line(
                     source=source,
+                    x_column=x_column,
+                    y_column=y_column,
                     legend_label=username,
                     color=color,
                 )
