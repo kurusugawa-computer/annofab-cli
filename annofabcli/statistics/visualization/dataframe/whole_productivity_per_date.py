@@ -364,7 +364,7 @@ class WholeProductivityPerCompletedDate:
             ]:
                 df[f"{column}{WEEKLY_MOVING_AVERAGE_COLUMN_SUFFIX}"] = get_weekly_moving_average(df[column])
 
-        def create_line_graph(title: str, y_axis_label: str) -> LineGraph:
+        def create_line_graph(title: str, y_axis_label: str, tooltip_columns:list[str]) -> LineGraph:
             return LineGraph(
                 plot_width=1200,
                 plot_height=600,
@@ -372,12 +372,19 @@ class WholeProductivityPerCompletedDate:
                 x_axis_label="日",
                 x_axis_type="datetime",
                 y_axis_label=y_axis_label,
+                tooltip_columns=tooltip_columns
             )
 
-        def create_task_figure() -> LineGraph:
+        def create_task_line_graph() -> LineGraph:
             line_graph = create_line_graph(
                 title="日ごとのタスク数と作業時間",
                 y_axis_label="タスク数",
+                tooltip_columns=[
+                    "date",
+                    "task_count",
+                    "actual_worktime_hour",
+                    "monitored_worktime_hour",
+                ]
             )
             y_overlimit = 0.05
             line_graph.add_secondary_y_axis(
@@ -420,10 +427,17 @@ class WholeProductivityPerCompletedDate:
             )
             return line_graph
 
-        def create_input_data_figure():
+        def create_input_data_line_graph() -> LineGraph:
             line_graph = create_line_graph(
                 title="日ごとの入力データ数と作業時間",
                 y_axis_label="入力データ数",
+                tooltip_columns=[
+                    "date",
+                    "input_data_count",
+                    "actual_worktime_hour",
+                    "monitored_worktime_hour",
+                ]
+
             )
             y_overlimit = 0.05
             line_graph.add_secondary_y_axis(
@@ -490,19 +504,32 @@ class WholeProductivityPerCompletedDate:
 
         fig_info_list = [
             {
-                "line_graph": create_line_graph(title="日ごとの作業時間", y_axis_label="作業時間[hour]"),
+                "line_graph": create_line_graph(title="日ごとの作業時間", y_axis_label="作業時間[hour]", tooltip_columns=[
+                    "date",
+                    "actual_worktime_hour",
+                    "monitored_worktime_hour",
+                    "monitored_annotation_worktime_hour",
+                    "monitored_inspection_worktime_hour",
+                    "monitored_acceptance_worktime_hour",
+                ]),
                 "y_info_list": [{"column": f"{e[0]}_hour", "legend": f"{e[1]}"} for e in phase_prefix],
             },
             {
-                "line_graph": create_line_graph(title="日ごとのタスクあたり作業時間", y_axis_label="タスクあたり作業時間[hour/task]"),
-                "y_info_list": [
-                    {"column": "actual_worktime_hour/task_count", "legend": "タスクあたり実績作業時間"},
-                    {"column": "monitored_worktime_hour/task_count", "legend": "タスクあたり計測作業時間"},
-                ],
-            },
-            {
                 "line_graph": create_line_graph(
-                    title="日ごとの入力データあたり作業時間", y_axis_label="入力データあたり作業時間[minute/input_data]"
+                    title="日ごとの入力データあたり作業時間", y_axis_label="入力データあたり作業時間[minute/input_data]", tooltip_columns=[
+                        "date",
+                        "input_data_count",
+                        "actual_worktime_hour",
+                        "monitored_worktime_hour",
+                        "monitored_annotation_worktime_hour",
+                        "monitored_inspection_worktime_hour",
+                        "monitored_acceptance_worktime_hour",
+                        "actual_worktime_minute/input_data_count",
+                        "monitored_worktime_minute/input_data_count",
+                        "monitored_annotation_worktime_minute/input_data_count",
+                        "monitored_inspection_worktime_minute/input_data_count",
+                        "monitored_acceptance_worktime_minute/input_data_count",
+                    ]
                 ),
                 "y_info_list": [
                     {"column": f"{e[0]}_minute/input_data_count", "legend": f"入力データあたり{e[1]}"} for e in phase_prefix
@@ -510,7 +537,20 @@ class WholeProductivityPerCompletedDate:
             },
             {
                 "line_graph": create_line_graph(
-                    title="日ごとのアノテーションあたり作業時間", y_axis_label="アノテーションあたり作業時間[minute/annotation]"
+                    title="日ごとのアノテーションあたり作業時間", y_axis_label="アノテーションあたり作業時間[minute/annotation]",tooltip_columns=[
+                        "date",
+                        "annotation_count",
+                        "actual_worktime_hour",
+                        "monitored_worktime_hour",
+                        "monitored_annotation_worktime_hour",
+                        "monitored_inspection_worktime_hour",
+                        "monitored_acceptance_worktime_hour",
+                        "actual_worktime_minute/annotation_count",
+                        "monitored_worktime_minute/annotation_count",
+                        "monitored_annotation_worktime_minute/annotation_count",
+                        "monitored_inspection_worktime_minute/annotation_count",
+                        "monitored_acceptance_worktime_minute/annotation_count",
+                    ]
                 ),
                 "y_info_list": [
                     {"column": f"{e[0]}_minute/annotation_count", "legend": f"アノテーションあたり{e[1]}"} for e in phase_prefix
@@ -534,33 +574,17 @@ class WholeProductivityPerCompletedDate:
                     color=color,
                 )
 
-        tooltip_item = [
-            "date",
-            "task_count",
-            "input_data_count",
-            "actual_worktime_hour",
-            "monitored_worktime_hour",
-            "actual_worktime_hour/task_count",
-            "actual_worktime_minute/input_data_count",
-            "actual_worktime_minute/annotation_count",
-            "monitored_worktime_hour/task_count",
-            "monitored_worktime_minute/input_data_count",
-            "monitored_worktime_minute/annotation_count",
+        line_graph_list = [
+            create_task_line_graph(),
+            create_input_data_line_graph(),
         ]
-        hover_tool = create_hover_tool(tooltip_item)
+        line_graph_list.extend([info["line_graph"] for info in fig_info_list])
 
-        figure_list = [
-            create_task_figure(),
-            create_input_data_figure(),
-        ]
-        figure_list.extend([info["line_graph"] for info in fig_info_list])
-
-        for fig in figure_list:
-            fig.add_tools(hover_tool)
-            add_legend_to_figure(fig)
+        for line_graph in line_graph_list:
+            line_graph.config_legend()
 
         div_element = self._create_div_element()
-        write_bokeh_graph(bokeh.layouts.column([div_element] + figure_list), output_file)
+        write_bokeh_graph(bokeh.layouts.column([div_element] + [e.figure for e in line_graph_list]), output_file)
 
     def plot_cumulatively(self, output_file: Path):
         """
