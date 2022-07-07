@@ -1094,6 +1094,44 @@ class WholeProductivityPerFirstAnnotationStartedDate:
                 tooltip_columns=tooltip_columns,
             )
 
+        def create_task_graph() -> LineGraph:
+            line_graph = create_line_graph(
+                title="教師付開始日ごとのタスク数と計測作業時間",
+                y_axis_label="タスク数",
+                tooltip_columns=[
+                    "first_annotation_started_date",
+                    "task_count",
+                    "worktime_hour",
+                ],
+            )
+
+            y_overlimit = 0.05
+            line_graph.add_secondary_y_axis(
+                "作業時間[hour]", y_range=DataRange1d(end=df["worktime_hour"].max() * (1 + y_overlimit))
+            )
+
+            plot_index = 0
+            _plot_and_moving_average(
+                line_graph,
+                x_column="dt_first_annotation_started_date",
+                y_column="task_count",
+                legend_name="タスク数",
+                source=source,
+                color=get_color_from_small_palette(plot_index),
+            )
+
+            plot_index += 1
+            _plot_and_moving_average(
+                line_graph,
+                x_column="dt_first_annotation_started_date",
+                y_column="worktime_hour",
+                legend_name="計測作業時間",
+                source=source,
+                color=get_color_from_small_palette(plot_index),
+                is_secondary_y_axis=True,
+            )
+            return line_graph
+
         def create_input_data_graph() -> LineGraph:
 
             line_graph = create_line_graph(
@@ -1203,7 +1241,7 @@ class WholeProductivityPerFirstAnnotationStartedDate:
                 y_axis_label="アノテーションあたり作業時間[minute/annotation]",
                 tooltip_columns=[
                     "first_annotation_started_date",
-                    "input_data_count",
+                    "annotation_count",
                     "worktime_hour",
                     "annotation_worktime_hour",
                     "inspection_worktime_hour",
@@ -1232,14 +1270,11 @@ class WholeProductivityPerFirstAnnotationStartedDate:
                     color=color,
                 )
 
-        line_graph_list.insert(0, create_input_data_graph())
+        line_graph_list = [create_task_graph(), create_input_data_graph()] + line_graph_list
 
         for line_graph in line_graph_list:
             line_graph.config_legend()
 
-        output_file.parent.mkdir(exist_ok=True, parents=True)
-        bokeh.plotting.reset_output()
-        bokeh.plotting.output_file(output_file, title=output_file.stem)
-
-        bokeh.plotting.save(bokeh.layouts.column([create_div_element()] + [e.figure for e in line_graph_list]))
-        logger.debug(f"'{output_file}'を出力しました。")
+        write_bokeh_graph(
+            bokeh.layouts.column([create_div_element()] + [e.figure for e in line_graph_list]), output_file
+        )
