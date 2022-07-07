@@ -2,7 +2,7 @@
 折れ線グラフを出力する関数の定義など
 """
 from __future__ import annotations
-
+import copy
 import logging
 from pathlib import Path
 from typing import Any, List, Optional
@@ -63,8 +63,9 @@ class LineGraph:
         self.title = title
         self.tooltip_columns = tooltip_columns
 
-        hover_tool = create_hover_tool(tooltip_columns) if tooltip_columns is not None else None
-        fig.add_tools(hover_tool)
+        if tooltip_columns is not None:
+            hover_tool = create_hover_tool(tooltip_columns)
+            fig.add_tools(hover_tool)
 
         self.figure = fig
 
@@ -76,7 +77,6 @@ class LineGraph:
         """
         第2のY軸を追加する。
         """
-        y_range_name = "secondary"
         self.figure.add_layout(
             LinearAxis(
                 y_range_name=self._SECONDARY_Y_RANGE_NAME,
@@ -105,7 +105,9 @@ class LineGraph:
 
         is_secondary_y_axis
         """
-        y_range_name = self._SECONDARY_Y_RANGE_NAME if is_secondary_y_axis else None
+        new_kwargs = copy.deepcopy(kwargs)
+        if is_secondary_y_axis:
+            new_kwargs["y_range_name"] = self._SECONDARY_Y_RANGE_NAME
 
         line = self.figure.line(
             x=x_column,
@@ -114,8 +116,7 @@ class LineGraph:
             legend_label=legend_label,
             line_color=color,
             line_width=1,
-            y_range_name=y_range_name,
-            **kwargs,
+            **new_kwargs,
         )
         circle = self.figure.circle(
             x=x_column,
@@ -123,8 +124,7 @@ class LineGraph:
             source=source,
             legend_label=legend_label,
             color=color,
-            y_range_name=y_range_name,
-            **kwargs,
+            **new_kwargs,
         )
 
         self.line_glyphs[legend_label] = line
@@ -146,7 +146,9 @@ class LineGraph:
         """
         移動平均用の折れ線を追加する
         """
-        y_range_name = self._SECONDARY_Y_RANGE_NAME if is_secondary_y_axis else None
+        new_kwargs = copy.deepcopy(kwargs)
+        if is_secondary_y_axis:
+            new_kwargs["y_range_name"] = self._SECONDARY_Y_RANGE_NAME
 
         line = self.figure.line(
             x=x_column,
@@ -157,8 +159,7 @@ class LineGraph:
             line_width=1,
             line_dash="dashed",
             line_alpha=0.6,
-            y_range_name=y_range_name,
-            **kwargs,
+            **new_kwargs,
         )
 
         self.line_glyphs[legend_label] = line
