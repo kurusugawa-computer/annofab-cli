@@ -33,6 +33,11 @@ logger = logging.getLogger(__name__)
 WEEKLY_MOVING_AVERAGE_COLUMN_SUFFIX = "__lastweek"
 """1週間移動平均を表す列名のsuffix"""
 
+SECONDARY_Y_RANGE_RATIO = 1.05
+"""
+第2のY軸の範囲の最大値を、値の最大値に対して何倍にするか
+"""
+
 
 def _plot_and_moving_average(
     line_graph: LineGraph,
@@ -383,11 +388,11 @@ class WholeProductivityPerCompletedDate:
                     "monitored_worktime_hour",
                 ],
             )
-            y_overlimit = 0.05
             line_graph.add_secondary_y_axis(
                 "作業時間[hour]",
                 DataRange1d(
-                    end=max(df["actual_worktime_hour"].max(), df["monitored_worktime_hour"].max()) * (1 + y_overlimit)
+                    end=max(df["actual_worktime_hour"].max(), df["monitored_worktime_hour"].max())
+                    * SECONDARY_Y_RANGE_RATIO
                 ),
             )
 
@@ -435,11 +440,11 @@ class WholeProductivityPerCompletedDate:
                     "monitored_worktime_hour",
                 ],
             )
-            y_overlimit = 0.05
             line_graph.add_secondary_y_axis(
                 "作業時間[hour]",
                 DataRange1d(
-                    end=max(df["actual_worktime_hour"].max(), df["monitored_worktime_hour"].max()) * (1 + y_overlimit)
+                    end=max(df["actual_worktime_hour"].max(), df["monitored_worktime_hour"].max())
+                    * SECONDARY_Y_RANGE_RATIO
                 ),
             )
 
@@ -620,12 +625,11 @@ class WholeProductivityPerCompletedDate:
                     "cumsum_monitored_worktime_hour",
                 ],
             )
-            y_overlimit = 0.05
             line_graph.add_secondary_y_axis(
                 "作業時間[hour]",
                 y_range=DataRange1d(
                     end=max(df["cumsum_actual_worktime_hour"].max(), df["cumsum_monitored_worktime_hour"].max())
-                    * (1 + y_overlimit)
+                    * SECONDARY_Y_RANGE_RATIO
                 ),
             )
 
@@ -677,12 +681,11 @@ class WholeProductivityPerCompletedDate:
                     "cumsum_monitored_worktime_hour",
                 ],
             )
-            y_overlimit = 0.05
             line_graph.add_secondary_y_axis(
                 "作業時間[hour]",
                 y_range=DataRange1d(
                     end=max(df["cumsum_actual_worktime_hour"].max(), df["cumsum_monitored_worktime_hour"].max())
-                    * (1 + y_overlimit)
+                    * SECONDARY_Y_RANGE_RATIO
                 ),
             )
 
@@ -1106,9 +1109,8 @@ class WholeProductivityPerFirstAnnotationStartedDate:
                 ],
             )
 
-            y_overlimit = 0.05
             line_graph.add_secondary_y_axis(
-                "作業時間[hour]", y_range=DataRange1d(end=df["worktime_hour"].max() * (1 + y_overlimit))
+                "作業時間[hour]", y_range=DataRange1d(end=df["worktime_hour"].max() * SECONDARY_Y_RANGE_RATIO)
             )
 
             plot_index = 0
@@ -1133,8 +1135,6 @@ class WholeProductivityPerFirstAnnotationStartedDate:
             )
             return line_graph
 
-
-
         def create_input_data_graph() -> LineGraph:
 
             line_graph = create_line_graph(
@@ -1147,9 +1147,8 @@ class WholeProductivityPerFirstAnnotationStartedDate:
                 ],
             )
 
-            y_overlimit = 0.05
             line_graph.add_secondary_y_axis(
-                "作業時間[hour]", y_range=DataRange1d(end=df["worktime_hour"].max() * (1 + y_overlimit))
+                "作業時間[hour]", y_range=DataRange1d(end=df["worktime_hour"].max() * SECONDARY_Y_RANGE_RATIO)
             )
 
             plot_index = 0
@@ -1277,4 +1276,6 @@ class WholeProductivityPerFirstAnnotationStartedDate:
         for line_graph in line_graph_list:
             line_graph.config_legend()
 
-        write_bokeh_graph(bokeh.layouts.column([create_div_element()] + [e.figure for e in line_graph_list]), output_file)
+        write_bokeh_graph(
+            bokeh.layouts.column([create_div_element()] + [e.figure for e in line_graph_list]), output_file
+        )
