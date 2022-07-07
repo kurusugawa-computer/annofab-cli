@@ -20,6 +20,7 @@ from dateutil.parser import parse
 
 from annofabcli.common.utils import datetime_to_date, print_csv
 from annofabcli.statistics.linegraph import (
+    LineGraph,
     add_legend_to_figure,
     create_hover_tool,
     get_color_from_small_palette,
@@ -357,6 +358,7 @@ class WholeProductivityPerCompletedDate:
 
         def create_task_figure():
             y_range_name = "worktime_axis"
+            line_graph = LineGraph()
             fig_task = create_figure(title="日ごとのタスク数と作業時間", y_axis_label="タスク数")
             fig_task.add_layout(
                 LinearAxis(
@@ -986,12 +988,13 @@ class WholeProductivityPerFirstAnnotationStartedDate:
     @classmethod
     def _plot_and_moving_average(
         cls,
-        fig: bokeh.plotting.Figure,
+        line_graph: LineGraph,
         source: ColumnDataSource,
-        x_column_name: str,
-        y_column_name: str,
+        x_column: str,
+        y_column: str,
         legend_name: str,
         color,
+        is_secondary_y_axis: bool = False,
         **kwargs,
     ):
         """
@@ -1005,24 +1008,24 @@ class WholeProductivityPerFirstAnnotationStartedDate:
         """
 
         # 値をプロット
-        plot_line_and_circle(
-            fig,
-            x_column_name=x_column_name,
-            y_column_name=y_column_name,
+        line_graph.add_line(
             source=source,
+            x_column=x_column,
+            y_column=y_column,
             color=color,
             legend_label=legend_name,
+            is_secondary_y_axis=is_secondary_y_axis,
             **kwargs,
         )
 
         # 移動平均をプロット
-        plot_moving_average(
-            fig,
-            x_column_name=x_column_name,
-            y_column_name=f"{y_column_name}{WEEKLY_MOVING_AVERAGE_COLUMN_SUFFIX}",
+        line_graph.add_moving_average_line(
             source=source,
+            x_column=x_column,
+            y_column=f"{y_column}{WEEKLY_MOVING_AVERAGE_COLUMN_SUFFIX}",
             color=color,
             legend_label=f"{legend_name}の1週間移動平均",
+            is_secondary_y_axis=is_secondary_y_axis,
             **kwargs,
         )
 
@@ -1060,48 +1063,42 @@ class WholeProductivityPerFirstAnnotationStartedDate:
                 """
             )
 
-        def create_figure(title: str, y_axis_label: str) -> bokeh.plotting.Figure:
-            return figure(
-                plot_width=1200,
-                plot_height=600,
-                title=title,
-                x_axis_label="教師開始日",
+        def create_input_data_figure() -> LineGraph:
+
+            line_graph = LineGraph(
+                title="教師付開始日ごとの入力データ数と計測作業時間",
+                y_axis_label="入力データ数",
+                tooltip_columns=[],
+                x_axis_label=x_axis_label,
                 x_axis_type="datetime",
-                y_axis_label=y_axis_label,
             )
 
-        def create_input_data_figure():
-            y_range_name = "worktime_axis"
-            fig_input_data = create_figure(title="日ごとの入力データ数と計測作業時間", y_axis_label="入力データ数")
-            fig_input_data.add_layout(
-                LinearAxis(
-                    y_range_name=y_range_name,
-                    axis_label="作業時間[hour]",
-                ),
-                "right",
-            )
             y_overlimit = 0.05
-            fig_input_data.extra_y_ranges = {
-                y_range_name: DataRange1d(end=df["worktime_hour"].max() * (1 + y_overlimit))
-            }
+            line_graph.add_secondary_y_axis(
+                "作業時間[hour]", y_range=DataRange1d(end=df["worktime_hour"].max() * (1 + y_overlimit))
+            )
+
+            plot_index = 0
             self._plot_and_moving_average(
-                fig=fig_input_data,
+                line_graph,
                 x_column_name="dt_first_annotation_started_date",
                 y_column_name="input_data_count",
                 legend_name="入力データ数",
                 source=source,
-                color=get_color_from_small_palette(0),
+                color=get_color_from_small_palette(plot_index),
             )
+
+            plot_index += 1
             self._plot_and_moving_average(
-                fig=fig_input_data,
+                line_graph,
                 x_column_name="dt_first_annotation_started_date",
                 y_column_name="worktime_hour",
                 legend_name="計測作業時間",
                 source=source,
-                color=get_color_from_small_palette(1),
-                y_range_name=y_range_name,
+                color=get_color_from_small_palette(plot_index),
+                is_secondary_y_axis=True,
             )
-            return fig_input_data
+            return line_graph
 
         if not self._validate_df_for_output(output_file):
             return
@@ -1111,12 +1108,6 @@ class WholeProductivityPerFirstAnnotationStartedDate:
         add_velocity_and_weekly_moving_average_columns(df)
 
         logger.debug(f"{output_file} を出力します。")
-
-        fig_list = [
-            create_figure(title="教師付開始日ごとの計測作業時間", y_axis_label="作業時間[hour]"),
-            create_figure(title="教師付開始日ごとの入力データあたり計測作業時間", y_axis_label="入力データあたり作業時間[minute/input_data]"),
-            create_figure(title="教師付開始日ごとのアノテーションあたり計測作業時間", y_axis_label="アノテーションあたり作業時間[minute/annotation]"),
-        ]
 
         fig_info_list = [
             {
@@ -1138,6 +1129,7 @@ class WholeProductivityPerFirstAnnotationStartedDate:
                 ],
             },
             {
+                # TODO: Why?
                 "x": "dt_date",
                 "y_info_list": [
                     {"column": "worktime_minute/annotation_count", "legend": "アノテーションあたり計測作業時間"},
@@ -1148,17 +1140,42 @@ class WholeProductivityPerFirstAnnotationStartedDate:
             },
         ]
 
+        x_axis_label = ("教師開始日",)
+        line_graph_list = [
+            LineGraph(
+                title="教師付開始日ごとの計測作業時間",
+                y_axis_label="作業時間[hour]",
+                tooltip_columns=[],
+                x_axis_label=x_axis_label,
+                x_axis_type="datetime",
+            ),
+            LineGraph(
+                title="教師付開始日ごとの入力データあたり計測作業時間",
+                y_axis_label="入力データあたり作業時間[minute/input_data]",
+                tooltip_columns=[],
+                x_axis_label=x_axis_label,
+                x_axis_type="datetime",
+            ),
+            LineGraph(
+                title="教師付開始日ごとのアノテーションあたり計測作業時間",
+                y_axis_label="アノテーションあたり作業時間[minute/annotation]",
+                tooltip_columns=[],
+                x_axis_label=x_axis_label,
+                x_axis_type="datetime",
+            ),
+        ]
+
         source = ColumnDataSource(data=df)
 
-        for fig, fig_info in zip(fig_list, fig_info_list):
+        for line_graph, fig_info in zip(line_graph_list, fig_info_list):
             y_info_list: list[dict[str, str]] = fig_info["y_info_list"]  # type: ignore
             for index, y_info in enumerate(y_info_list):
                 color = get_color_from_small_palette(index)
 
                 self._plot_and_moving_average(
-                    fig=fig,
-                    x_column_name="dt_first_annotation_started_date",
-                    y_column_name=y_info["column"],
+                    line_graph,
+                    x_column="dt_first_annotation_started_date",
+                    y_column=y_info["column"],
                     legend_name=y_info["legend"],
                     source=source,
                     color=color,

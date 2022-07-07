@@ -12,9 +12,9 @@ import bokeh.layouts
 import bokeh.palettes
 import pandas
 from bokeh.core.properties import Color
-from bokeh.models import Button, CheckboxGroup, CustomJS, GlyphRenderer, HoverTool
+from bokeh.models import Button, CheckboxGroup, CustomJS, DataRange1d, GlyphRenderer, HoverTool, LinearAxis
 from bokeh.plotting import ColumnDataSource, figure
-from bokeh.models import DataRange1d, LinearAxis
+
 logger = logging.getLogger(__name__)
 
 MAX_USER_COUNT_FOR_LINE_GRAPH = 60
@@ -72,7 +72,7 @@ class LineGraph:
         self.line_glyphs: dict[str, GlyphRenderer] = {}
         self.marker_glyphs: dict[str, GlyphRenderer] = {}
 
-    def add_secondary_y_axis(self, axis_label:str, y_range: Optional[DataRange1d]=None):
+    def add_secondary_y_axis(self, axis_label: str, y_range: Optional[DataRange1d] = None):
         """
         第2のY軸を追加する。
         """
@@ -85,14 +85,20 @@ class LineGraph:
             "right",
         )
         if y_range is not None:
-            self.figure.extra_y_ranges = {
-            self._SECONDARY_Y_RANGE_NAME: y_range
-        }
+            self.figure.extra_y_ranges = {self._SECONDARY_Y_RANGE_NAME: y_range}
 
         self.exists_secondary_y_axis = True
 
     def add_line(
-        self, source: ColumnDataSource, x_column: str, y_column: str, *, legend_label: str, color: Optional[Any] = None, is_secondary_y_axis:bool=False, **kwargs
+        self,
+        source: ColumnDataSource,
+        x_column: str,
+        y_column: str,
+        *,
+        legend_label: str,
+        color: Optional[Any] = None,
+        is_secondary_y_axis: bool = False,
+        **kwargs,
     ) -> tuple[GlyphRenderer, GlyphRenderer]:
         """
         折れ線を追加する
@@ -127,7 +133,15 @@ class LineGraph:
         return (line, circle)
 
     def add_moving_average_line(
-        self, source: ColumnDataSource, x_column: str, y_column: str, *, legend_label: str, color: Optional[Any] = None, is_secondary_y_axis:bool=False, **kwargs
+        self,
+        source: ColumnDataSource,
+        x_column: str,
+        y_column: str,
+        *,
+        legend_label: str,
+        color: Optional[Any] = None,
+        is_secondary_y_axis: bool = False,
+        **kwargs,
     ) -> tuple[GlyphRenderer, GlyphRenderer]:
         """
         移動平均用の折れ線を追加する
