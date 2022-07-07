@@ -12,7 +12,7 @@ import bokeh.layouts
 import bokeh.palettes
 import pandas
 from bokeh.core.properties import Color
-from bokeh.models import Button, CheckboxGroup, CustomJS, DataRange1d, GlyphRenderer, HoverTool, LinearAxis
+from bokeh.models import Button, CheckboxGroup, CustomJS, DataRange1d, GlyphRenderer, HoverTool, LinearAxis, CrosshairTool
 from bokeh.plotting import ColumnDataSource, figure
 
 logger = logging.getLogger(__name__)
@@ -66,6 +66,8 @@ class LineGraph:
         if tooltip_columns is not None:
             hover_tool = create_hover_tool(tooltip_columns)
             fig.add_tools(hover_tool)
+
+        fig.add_tools(CrosshairTool())
 
         self.figure = fig
 
