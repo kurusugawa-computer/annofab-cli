@@ -1056,6 +1056,7 @@ class WholeProductivityPerFirstAnnotationStartedDate:
 
         def add_velocity_and_weekly_moving_average_columns(df):
             for column in [
+                "task_count",
                 "input_data_count",
                 "worktime_hour",
                 "annotation_worktime_hour",
@@ -1131,6 +1132,8 @@ class WholeProductivityPerFirstAnnotationStartedDate:
                 is_secondary_y_axis=True,
             )
             return line_graph
+
+
 
         def create_input_data_graph() -> LineGraph:
 
@@ -1213,7 +1216,6 @@ class WholeProductivityPerFirstAnnotationStartedDate:
                 y_axis_label="作業時間[hour]",
                 tooltip_columns=[
                     "first_annotation_started_date",
-                    "input_data_count",
                     "worktime_hour",
                     "annotation_worktime_hour",
                     "inspection_worktime_hour",
@@ -1275,6 +1277,4 @@ class WholeProductivityPerFirstAnnotationStartedDate:
         for line_graph in line_graph_list:
             line_graph.config_legend()
 
-        write_bokeh_graph(
-            bokeh.layouts.column([create_div_element()] + [e.figure for e in line_graph_list]), output_file
-        )
+        write_bokeh_graph(bokeh.layouts.column([create_div_element()] + [e.figure for e in line_graph_list]), output_file)
