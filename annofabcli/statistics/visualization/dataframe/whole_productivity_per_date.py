@@ -21,7 +21,6 @@ from dateutil.parser import parse
 from annofabcli.common.utils import datetime_to_date, print_csv
 from annofabcli.statistics.linegraph import (
     LineGraph,
-    create_hover_tool,
     get_color_from_small_palette,
     get_weekly_moving_average,
     get_weekly_sum,
@@ -569,9 +568,9 @@ class WholeProductivityPerCompletedDate:
             y_info_list: list[dict[str, str]] = fig_info["y_info_list"]  # type: ignore
             for index, y_info in enumerate(y_info_list):
                 color = get_color_from_small_palette(index)
-
+                line_graph: LineGraph = fig_info["line_graph"]  # type: ignore
                 _plot_and_moving_average(
-                    line_graph=fig_info["line_graph"],
+                    line_graph=line_graph,
                     x_column="dt_date",
                     y_column=y_info["column"],
                     legend_name=y_info["legend"],
@@ -583,7 +582,7 @@ class WholeProductivityPerCompletedDate:
             create_task_line_graph(),
             create_input_data_line_graph(),
         ]
-        line_graph_list.extend([info["line_graph"] for info in fig_info_list])
+        line_graph_list.extend([info["line_graph"] for info in fig_info_list])  # type: ignore
 
         for line_graph in line_graph_list:
             line_graph.config_legend()
@@ -1084,14 +1083,27 @@ class WholeProductivityPerFirstAnnotationStartedDate:
                 """
             )
 
+        def create_line_graph(title: str, y_axis_label: str, tooltip_columns: list[str]) -> LineGraph:
+            return LineGraph(
+                plot_width=1200,
+                plot_height=600,
+                title=title,
+                x_axis_label="教師付開始日",
+                x_axis_type="datetime",
+                y_axis_label=y_axis_label,
+                tooltip_columns=tooltip_columns,
+            )
+
         def create_input_data_graph() -> LineGraph:
 
-            line_graph = LineGraph(
+            line_graph = create_line_graph(
                 title="教師付開始日ごとの入力データ数と計測作業時間",
                 y_axis_label="入力データ数",
-                tooltip_columns=[],
-                x_axis_label=x_axis_label,
-                x_axis_type="datetime",
+                tooltip_columns=[
+                    "first_annotation_started_date",
+                    "input_data_count",
+                    "worktime_hour",
+                ],
             )
 
             y_overlimit = 0.05
@@ -1163,26 +1175,49 @@ class WholeProductivityPerFirstAnnotationStartedDate:
 
         x_axis_label = "教師開始日"
         line_graph_list = [
-            LineGraph(
+            create_line_graph(
                 title="教師付開始日ごとの計測作業時間",
                 y_axis_label="作業時間[hour]",
-                tooltip_columns=[],
-                x_axis_label=x_axis_label,
-                x_axis_type="datetime",
+                tooltip_columns=[
+                    "first_annotation_started_date",
+                    "input_data_count",
+                    "worktime_hour",
+                    "annotation_worktime_hour",
+                    "inspection_worktime_hour",
+                    "acceptance_worktime_hour",
+                ],
             ),
-            LineGraph(
+            create_line_graph(
                 title="教師付開始日ごとの入力データあたり計測作業時間",
                 y_axis_label="入力データあたり作業時間[minute/input_data]",
-                tooltip_columns=[],
-                x_axis_label=x_axis_label,
-                x_axis_type="datetime",
+                tooltip_columns=[
+                    "first_annotation_started_date",
+                    "input_data_count",
+                    "worktime_hour",
+                    "annotation_worktime_hour",
+                    "inspection_worktime_hour",
+                    "acceptance_worktime_hour",
+                    "worktime_minute/input_data_count",
+                    "annotation_worktime_minute/input_data_count",
+                    "inspection_worktime_minute/input_data_count",
+                    "acceptance_worktime_minute/input_data_count",
+                ],
             ),
-            LineGraph(
+            create_line_graph(
                 title="教師付開始日ごとのアノテーションあたり計測作業時間",
                 y_axis_label="アノテーションあたり作業時間[minute/annotation]",
-                tooltip_columns=[],
-                x_axis_label=x_axis_label,
-                x_axis_type="datetime",
+                tooltip_columns=[
+                    "first_annotation_started_date",
+                    "input_data_count",
+                    "worktime_hour",
+                    "annotation_worktime_hour",
+                    "inspection_worktime_hour",
+                    "acceptance_worktime_hour",
+                    "worktime_minute/annotation_count",
+                    "annotation_worktime_minute/annotation_count",
+                    "inspection_worktime_minute/annotation_count",
+                    "acceptance_worktime_minute/annotation_count",
+                ],
             ),
         ]
 
@@ -1201,26 +1236,6 @@ class WholeProductivityPerFirstAnnotationStartedDate:
                     source=source,
                     color=color,
                 )
-
-        tooltip_item = [
-            "first_annotation_started_date",
-            "task_count",
-            "input_data_count",
-            "annotation_count",
-            "worktime_hour",
-            "annotation_worktime_hour",
-            "inspection_worktime_hour",
-            "acceptance_worktime_hour",
-            "worktime_minute/input_data_count",
-            "annotation_worktime_minute/input_data_count",
-            "inspection_worktime_minute/input_data_count",
-            "acceptance_worktime_minute/input_data_count",
-            "worktime_minute/annotation_count",
-            "annotation_worktime_minute/annotation_count",
-            "inspection_worktime_minute/annotation_count",
-            "acceptance_worktime_minute/annotation_count",
-        ]
-        hover_tool = create_hover_tool(tooltip_item)
 
         line_graph_list.insert(0, create_input_data_graph())
 
