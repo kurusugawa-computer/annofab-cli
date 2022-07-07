@@ -27,7 +27,6 @@ from annofabcli.statistics.linegraph import (
     get_weekly_moving_average,
     get_weekly_sum,
     plot_line_and_circle,
-    plot_moving_average,
     write_bokeh_graph,
 )
 
@@ -36,6 +35,51 @@ logger = logging.getLogger(__name__)
 
 WEEKLY_MOVING_AVERAGE_COLUMN_SUFFIX = "__lastweek"
 """1週間移動平均を表す列名のsuffix"""
+
+
+def _plot_and_moving_average(
+    cls,
+    line_graph: LineGraph,
+    source: ColumnDataSource,
+    x_column: str,
+    y_column: str,
+    legend_name: str,
+    color,
+    is_secondary_y_axis: bool = False,
+    **kwargs,
+):
+    """
+    折れ線と1週間移動平均をプロットします。
+
+    Args:
+        fig ([type]): [description]
+        y_column_name (str): [description]
+        legend_name (str): [description]
+        source ([type]): [description]
+        color ([type]): [description]
+    """
+
+    # 値をプロット
+    line_graph.add_line(
+        source=source,
+        x_column=x_column,
+        y_column=y_column,
+        color=color,
+        legend_label=legend_name,
+        is_secondary_y_axis=is_secondary_y_axis,
+        **kwargs,
+    )
+
+    # 移動平均をプロット
+    line_graph.add_moving_average_line(
+        source=source,
+        x_column=x_column,
+        y_column=f"{y_column}{WEEKLY_MOVING_AVERAGE_COLUMN_SUFFIX}",
+        color=color,
+        legend_label=f"{legend_name}の1週間移動平均",
+        is_secondary_y_axis=is_secondary_y_axis,
+        **kwargs,
+    )
 
 
 class WholeProductivityPerCompletedDate:
@@ -321,8 +365,8 @@ class WholeProductivityPerCompletedDate:
             ]:
                 df[f"{column}{WEEKLY_MOVING_AVERAGE_COLUMN_SUFFIX}"] = get_weekly_moving_average(df[column])
 
-        def create_figure(title: str, y_axis_label: str) -> bokeh.plotting.Figure:
-            return figure(
+        def create_line_graph(title: str, y_axis_label: str) -> LineGraph:
+            return LineGraph(
                 plot_width=1200,
                 plot_height=600,
                 title=title,
@@ -331,113 +375,97 @@ class WholeProductivityPerCompletedDate:
                 y_axis_label=y_axis_label,
             )
 
-        def plot_and_moving_average(fig, y_column_name: str, legend_name: str, source, color, **kwargs):
-            x_column_name = "dt_date"
-
-            # 値をプロット
-            plot_line_and_circle(
-                fig,
-                x_column_name=x_column_name,
-                y_column_name=y_column_name,
-                source=source,
-                color=color,
-                legend_label=legend_name,
-                **kwargs,
-            )
-
-            # 移動平均をプロット
-            plot_moving_average(
-                fig,
-                x_column_name=x_column_name,
-                y_column_name=f"{y_column_name}{WEEKLY_MOVING_AVERAGE_COLUMN_SUFFIX}",
-                source=source,
-                color=color,
-                legend_label=f"{legend_name}の1週間移動平均",
-                **kwargs,
-            )
-
-        def create_task_figure():
-            y_range_name = "worktime_axis"
-            line_graph = LineGraph()
-            fig_task = create_figure(title="日ごとのタスク数と作業時間", y_axis_label="タスク数")
-            fig_task.add_layout(
-                LinearAxis(
-                    y_range_name=y_range_name,
-                    axis_label="作業時間[hour]",
-                ),
-                "right",
+        def create_task_figure() -> LineGraph:
+            line_graph = create_line_graph(
+                title="日ごとのタスク数と作業時間",
+                y_axis_label="タスク数",
             )
             y_overlimit = 0.05
-            fig_task.extra_y_ranges = {
-                y_range_name: DataRange1d(
+            line_graph.add_secondary_y_axis(
+                "作業時間[hour]",
+                DataRange1d(
                     end=max(df["actual_worktime_hour"].max(), df["monitored_worktime_hour"].max()) * (1 + y_overlimit)
-                )
-            }
-            plot_and_moving_average(
-                fig=fig_task,
-                y_column_name="task_count",
+                ),
+            )
+
+            plot_index = 0
+            _plot_and_moving_average(
+                line_graph,
+                source=source,
+                x_column="dt_date",
+                y_column="task_count",
                 legend_name="タスク数",
-                source=source,
-                color=get_color_from_small_palette(0),
+                color=get_color_from_small_palette(plot_index),
             )
-            plot_and_moving_average(
-                fig=fig_task,
-                y_column_name="actual_worktime_hour",
+
+            plot_index += 1
+            _plot_and_moving_average(
+                line_graph,
+                source=source,
+                x_column="dt_date",
+                y_column="actual_worktime_hour",
                 legend_name="実績作業時間",
-                source=source,
-                color=get_color_from_small_palette(1),
-                y_range_name=y_range_name,
+                color=get_color_from_small_palette(plot_index),
+                is_secondary_y_axis=True,
             )
-            plot_and_moving_average(
-                fig=fig_task,
-                y_column_name="monitored_worktime_hour",
+
+            plot_index += 1
+            _plot_and_moving_average(
+                line_graph,
+                source=source,
+                x_column="dt_date",
+                y_column="monitored_worktime_hour",
                 legend_name="計測作業時間",
-                source=source,
-                color=get_color_from_small_palette(2),
-                y_range_name=y_range_name,
+                color=get_color_from_small_palette(plot_index),
+                is_secondary_y_axis=True,
             )
-            return fig_task
+            return line_graph
 
         def create_input_data_figure():
-            y_range_name = "worktime_axis"
-            fig_input_data = create_figure(title="日ごとの入力データ数と作業時間", y_axis_label="入力データ数")
-            fig_input_data.add_layout(
-                LinearAxis(
-                    y_range_name=y_range_name,
-                    axis_label="作業時間[hour]",
-                ),
-                "right",
+            line_graph = create_line_graph(
+                title="日ごとの入力データ数と作業時間",
+                y_axis_label="入力データ数",
             )
-            y_overlimit = 0.05
-            fig_input_data.extra_y_ranges = {
-                y_range_name: DataRange1d(
+            line_graph.add_secondary_y_axis(
+                "作業時間[hour]",
+                DataRange1d(
                     end=max(df["actual_worktime_hour"].max(), df["monitored_worktime_hour"].max()) * (1 + y_overlimit)
-                )
-            }
-            plot_and_moving_average(
-                fig=fig_input_data,
-                y_column_name="input_data_count",
+                ),
+            )
+
+            plot_index = 0
+            _plot_and_moving_average(
+                line_graph,
+                source=source,
+                x_column="dt_date",
+                y_column="input_data_count",
                 legend_name="入力データ数",
-                source=source,
-                color=get_color_from_small_palette(0),
+                color=get_color_from_small_palette(plot_index),
             )
-            plot_and_moving_average(
-                fig=fig_input_data,
-                y_column_name="actual_worktime_hour",
+
+            plot_index += 1
+            _plot_and_moving_average(
+                line_graph,
+                source=source,
+                x_column="dt_date",
+                y_column="actual_worktime_hour",
                 legend_name="実績作業時間",
-                source=source,
-                color=get_color_from_small_palette(1),
-                y_range_name=y_range_name,
+                color=get_color_from_small_palette(plot_index),
+                is_secondary_y_axis=True,
             )
-            plot_and_moving_average(
-                fig=fig_input_data,
-                y_column_name="monitored_worktime_hour",
+
+            plot_index += 1
+            _plot_and_moving_average(
+                line_graph,
+                source=source,
+                x_column="dt_date",
+                y_column="monitored_worktime_hour",
                 legend_name="計測作業時間",
-                source=source,
-                color=get_color_from_small_palette(2),
-                y_range_name=y_range_name,
+                color=get_color_from_small_palette(plot_index),
+                is_secondary_y_axis=True,
             )
-            return fig_input_data
+
+            return line_graph
 
         if not self._validate_df_for_output(output_file):
             return
@@ -462,24 +490,28 @@ class WholeProductivityPerCompletedDate:
 
         fig_info_list = [
             {
-                "figure": create_figure(title="日ごとの作業時間", y_axis_label="作業時間[hour]"),
+                "line_graph": create_line_graph(title="日ごとの作業時間", y_axis_label="作業時間[hour]"),
                 "y_info_list": [{"column": f"{e[0]}_hour", "legend": f"{e[1]}"} for e in phase_prefix],
             },
             {
-                "figure": create_figure(title="日ごとのタスクあたり作業時間", y_axis_label="タスクあたり作業時間[hour/task]"),
+                "line_graph": create_line_graph(title="日ごとのタスクあたり作業時間", y_axis_label="タスクあたり作業時間[hour/task]"),
                 "y_info_list": [
                     {"column": "actual_worktime_hour/task_count", "legend": "タスクあたり実績作業時間"},
                     {"column": "monitored_worktime_hour/task_count", "legend": "タスクあたり計測作業時間"},
                 ],
             },
             {
-                "figure": create_figure(title="日ごとの入力データあたり作業時間", y_axis_label="入力データあたり作業時間[minute/input_data]"),
+                "line_graph": create_line_graph(
+                    title="日ごとの入力データあたり作業時間", y_axis_label="入力データあたり作業時間[minute/input_data]"
+                ),
                 "y_info_list": [
                     {"column": f"{e[0]}_minute/input_data_count", "legend": f"入力データあたり{e[1]}"} for e in phase_prefix
                 ],
             },
             {
-                "figure": create_figure(title="日ごとのアノテーションあたり作業時間", y_axis_label="アノテーションあたり作業時間[minute/annotation]"),
+                "line_graph": create_line_graph(
+                    title="日ごとのアノテーションあたり作業時間", y_axis_label="アノテーションあたり作業時間[minute/annotation]"
+                ),
                 "y_info_list": [
                     {"column": f"{e[0]}_minute/annotation_count", "legend": f"アノテーションあたり{e[1]}"} for e in phase_prefix
                 ],
@@ -493,9 +525,10 @@ class WholeProductivityPerCompletedDate:
             for index, y_info in enumerate(y_info_list):
                 color = get_color_from_small_palette(index)
 
-                plot_and_moving_average(
-                    fig=fig_info["figure"],
-                    y_column_name=y_info["column"],
+                _plot_and_moving_average(
+                    line_graph=fig_info["line_graph"],
+                    x_column="dt_date",
+                    y_column=y_info["column"],
                     legend_name=y_info["legend"],
                     source=source,
                     color=color,
@@ -984,50 +1017,6 @@ class WholeProductivityPerFirstAnnotationStartedDate:
         sum_df.reset_index(inplace=True)
         cls._add_velocity_columns(sum_df)
         return cls(sum_df)
-
-    @classmethod
-    def _plot_and_moving_average(
-        cls,
-        line_graph: LineGraph,
-        source: ColumnDataSource,
-        x_column: str,
-        y_column: str,
-        legend_name: str,
-        color,
-        is_secondary_y_axis: bool = False,
-        **kwargs,
-    ):
-        """
-
-        Args:
-            fig ([type]): [description]
-            y_column_name (str): [description]
-            legend_name (str): [description]
-            source ([type]): [description]
-            color ([type]): [description]
-        """
-
-        # 値をプロット
-        line_graph.add_line(
-            source=source,
-            x_column=x_column,
-            y_column=y_column,
-            color=color,
-            legend_label=legend_name,
-            is_secondary_y_axis=is_secondary_y_axis,
-            **kwargs,
-        )
-
-        # 移動平均をプロット
-        line_graph.add_moving_average_line(
-            source=source,
-            x_column=x_column,
-            y_column=f"{y_column}{WEEKLY_MOVING_AVERAGE_COLUMN_SUFFIX}",
-            color=color,
-            legend_label=f"{legend_name}の1週間移動平均",
-            is_secondary_y_axis=is_secondary_y_axis,
-            **kwargs,
-        )
 
     def plot(self, output_file: Path):
         """
