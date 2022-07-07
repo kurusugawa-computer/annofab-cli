@@ -90,13 +90,19 @@ class AbstractPhaseCumulativeProductivity(abc.ABC):
         def get_required_columns() -> list[str]:
             """
             HTMLに出力するすべてのグラフから、必要な列名を取得します。
-            
+
             ColumnDataSourceを生成する際に、必要最小限のデータのみHTMLファイルに出力されるようにするためです。
             そうしないと、不要な情報がHTMLファイルに出力されることにより、ファイルサイズが大きくなってしまいます。
             たとえば、20000件をプロットする際、すべての列を出力すると、そうでないときに比べてファイルサイズが3倍以上になる
             """
             xy_columns = set(itertools.chain.from_iterable(columns for columns in columns_list))
-            tooltip_columns = set(itertools.chain.from_iterable(line_graph.tooltip_columns for line_graph  in line_graph_list if line_graph.tooltip_columns is not None))
+            tooltip_columns = set(
+                itertools.chain.from_iterable(
+                    line_graph.tooltip_columns
+                    for line_graph in line_graph_list
+                    if line_graph.tooltip_columns is not None
+                )
+            )
             return list(xy_columns | tooltip_columns)
 
         df = self._df_cumulative
