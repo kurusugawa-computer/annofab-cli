@@ -2,6 +2,7 @@
 折れ線グラフを出力する関数の定義など
 """
 from __future__ import annotations
+
 import copy
 import logging
 from pathlib import Path
@@ -12,7 +13,16 @@ import bokeh.layouts
 import bokeh.palettes
 import pandas
 from bokeh.core.properties import Color
-from bokeh.models import Button, CheckboxGroup, CustomJS, DataRange1d, GlyphRenderer, HoverTool, LinearAxis, CrosshairTool
+from bokeh.models import (
+    Button,
+    CheckboxGroup,
+    CrosshairTool,
+    CustomJS,
+    DataRange1d,
+    GlyphRenderer,
+    HoverTool,
+    LinearAxis,
+)
 from bokeh.plotting import ColumnDataSource, figure
 
 logger = logging.getLogger(__name__)
