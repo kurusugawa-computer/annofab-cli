@@ -14,7 +14,7 @@ import pandas
 from bokeh.core.properties import Color
 from bokeh.models import Button, CheckboxGroup, CustomJS, GlyphRenderer, HoverTool
 from bokeh.plotting import ColumnDataSource, figure
-
+from bokeh.models import DataRange1d, LinearAxis
 logger = logging.getLogger(__name__)
 
 MAX_USER_COUNT_FOR_LINE_GRAPH = 60
@@ -33,6 +33,12 @@ class LineGraph:
 
     Args:
         required_columns
+        exists_secondary_y_axis
+    """
+
+    _SECONDARY_Y_RANGE_NAME = "secondary"
+    """
+    第2のY軸用の内部的な名前
     """
 
     def __init__(
@@ -54,8 +60,7 @@ class LineGraph:
             plot_height=plot_height,
             **figure_kwargs,
         )
-        self.x_axis_label = x_axis_label
-        self.y_axis_label = y_axis_label
+        self.title = title
         self.tooltip_columns = tooltip_columns
 
         hover_tool = create_hover_tool(tooltip_columns) if tooltip_columns is not None else None
@@ -63,15 +68,39 @@ class LineGraph:
 
         self.figure = fig
 
+        self.exists_secondary_y_axis = False
         self.line_glyphs: dict[str, GlyphRenderer] = {}
         self.marker_glyphs: dict[str, GlyphRenderer] = {}
 
+    def add_secondary_y_axis(self, axis_label:str, y_range: Optional[DataRange1d]=None):
+        """
+        第2のY軸を追加する。
+        """
+        y_range_name = "secondary"
+        self.figure.add_layout(
+            LinearAxis(
+                y_range_name=self._SECONDARY_Y_RANGE_NAME,
+                axis_label=axis_label,
+            ),
+            "right",
+        )
+        if y_range is not None:
+            self.figure.extra_y_ranges = {
+            self._SECONDARY_Y_RANGE_NAME: y_range
+        }
+
+        self.exists_secondary_y_axis = True
+
     def add_line(
-        self, source: ColumnDataSource, x_column: str, y_column: str, *, legend_label: str, color: Optional[Any] = None
+        self, source: ColumnDataSource, x_column: str, y_column: str, *, legend_label: str, color: Optional[Any] = None, is_secondary_y_axis:bool=False, **kwargs
     ) -> tuple[GlyphRenderer, GlyphRenderer]:
         """
         折れ線を追加する
+
+        is_secondary_y_axis
         """
+        y_range_name = self._SECONDARY_Y_RANGE_NAME if is_secondary_y_axis else None
+
         line = self.figure.line(
             x=x_column,
             y=y_column,
@@ -79,6 +108,8 @@ class LineGraph:
             legend_label=legend_label,
             line_color=color,
             line_width=1,
+            y_range_name=y_range_name,
+            **kwargs,
         )
         circle = self.figure.circle(
             x=x_column,
@@ -86,6 +117,8 @@ class LineGraph:
             source=source,
             legend_label=legend_label,
             color=color,
+            y_range_name=y_range_name,
+            **kwargs,
         )
 
         self.line_glyphs[legend_label] = line
@@ -94,11 +127,12 @@ class LineGraph:
         return (line, circle)
 
     def add_moving_average_line(
-        self, source: ColumnDataSource, x_column: str, y_column: str, *, legend_label: str, color: Optional[Any] = None
+        self, source: ColumnDataSource, x_column: str, y_column: str, *, legend_label: str, color: Optional[Any] = None, is_secondary_y_axis:bool=False, **kwargs
     ) -> tuple[GlyphRenderer, GlyphRenderer]:
         """
         移動平均用の折れ線を追加する
         """
+        y_range_name = self._SECONDARY_Y_RANGE_NAME if is_secondary_y_axis else None
 
         line = self.figure.line(
             x=x_column,
@@ -109,6 +143,8 @@ class LineGraph:
             line_width=1,
             line_dash="dashed",
             line_alpha=0.6,
+            y_range_name=y_range_name,
+            **kwargs,
         )
 
         self.line_glyphs[legend_label] = line
