@@ -14,19 +14,17 @@ import bokeh.palettes
 import numpy
 import pandas
 from annofabapi.models import TaskStatus
-from bokeh.models import DataRange1d, LinearAxis
-from bokeh.plotting import ColumnDataSource, figure
+from bokeh.models import DataRange1d
+from bokeh.plotting import ColumnDataSource
 from dateutil.parser import parse
 
 from annofabcli.common.utils import datetime_to_date, print_csv
 from annofabcli.statistics.linegraph import (
     LineGraph,
-    add_legend_to_figure,
     create_hover_tool,
     get_color_from_small_palette,
     get_weekly_moving_average,
     get_weekly_sum,
-    plot_line_and_circle,
     write_bokeh_graph,
 )
 
@@ -606,22 +604,30 @@ class WholeProductivityPerCompletedDate:
                 x_axis_label="日",
                 x_axis_type="datetime",
                 y_axis_label=y_axis_label,
-                tooltip_columns=tooltip_columns
+                tooltip_columns=tooltip_columns,
             )
 
         def create_task_line_graph() -> LineGraph:
-            line_graph = create_line_graph(title="日ごとの累積タスク数と累積作業時間", y_axis_label="タスク数", tooltip_columns=[
-                "date",
-                "task_count",
-                "actual_worktime_hour",
-                "monitored_worktime_hour",
-                "cumsum_task_count",
-                "cumsum_actual_worktime_hour",
-                "cumsum_monitored_worktime_hour",
-            ])
+            line_graph = create_line_graph(
+                title="日ごとの累積タスク数と累積作業時間",
+                y_axis_label="タスク数",
+                tooltip_columns=[
+                    "date",
+                    "task_count",
+                    "actual_worktime_hour",
+                    "monitored_worktime_hour",
+                    "cumsum_task_count",
+                    "cumsum_actual_worktime_hour",
+                    "cumsum_monitored_worktime_hour",
+                ],
+            )
             y_overlimit = 0.05
             line_graph.add_secondary_y_axis(
-                "作業時間[hour]", y_range=DataRange1d(end=max(df["cumsum_actual_worktime_hour"].max(), df["cumsum_monitored_worktime_hour"].max()) * (1 + y_overlimit))
+                "作業時間[hour]",
+                y_range=DataRange1d(
+                    end=max(df["cumsum_actual_worktime_hour"].max(), df["cumsum_monitored_worktime_hour"].max())
+                    * (1 + y_overlimit)
+                ),
             )
 
             # 値をプロット
@@ -642,9 +648,8 @@ class WholeProductivityPerCompletedDate:
                 source=source,
                 color=get_color_from_small_palette(plot_index),
                 legend_label="実績作業時間",
-                is_secondary_y_axis=True
+                is_secondary_y_axis=True,
             )
-
 
             plot_index += 1
             line_graph.add_line(
@@ -653,28 +658,34 @@ class WholeProductivityPerCompletedDate:
                 source=source,
                 color=get_color_from_small_palette(plot_index),
                 legend_label="計測作業時間",
-                is_secondary_y_axis=True
+                is_secondary_y_axis=True,
             )
 
             return line_graph
 
         def create_input_data_line_graph() -> LineGraph:
 
-            line_graph = create_line_graph(title="日ごとの累積入力データ数と累積作業時間", y_axis_label="入力データ数", tooltip_columns=[
-                "date",
-                "input_data_count",
-                "actual_worktime_hour",
-                "monitored_worktime_hour",
-                "cumsum_input_data_count",
-                "cumsum_actual_worktime_hour",
-                "cumsum_monitored_worktime_hour",
-            ])
+            line_graph = create_line_graph(
+                title="日ごとの累積入力データ数と累積作業時間",
+                y_axis_label="入力データ数",
+                tooltip_columns=[
+                    "date",
+                    "input_data_count",
+                    "actual_worktime_hour",
+                    "monitored_worktime_hour",
+                    "cumsum_input_data_count",
+                    "cumsum_actual_worktime_hour",
+                    "cumsum_monitored_worktime_hour",
+                ],
+            )
             y_overlimit = 0.05
             line_graph.add_secondary_y_axis(
-                "作業時間[hour]", y_range=DataRange1d(end=max(df["cumsum_actual_worktime_hour"].max(), df["cumsum_monitored_worktime_hour"].max()) * (1 + y_overlimit))
+                "作業時間[hour]",
+                y_range=DataRange1d(
+                    end=max(df["cumsum_actual_worktime_hour"].max(), df["cumsum_monitored_worktime_hour"].max())
+                    * (1 + y_overlimit)
+                ),
             )
-
-
 
             x_column = "dt_date"
             plot_index = 0
@@ -693,9 +704,8 @@ class WholeProductivityPerCompletedDate:
                 source=source,
                 color=get_color_from_small_palette(plot_index),
                 legend_label="実績作業時間",
-                is_secondary_y_axis=True
+                is_secondary_y_axis=True,
             )
-
 
             plot_index += 1
             line_graph.add_line(
@@ -704,26 +714,29 @@ class WholeProductivityPerCompletedDate:
                 source=source,
                 color=get_color_from_small_palette(plot_index),
                 legend_label="計測作業時間",
-                is_secondary_y_axis=True
+                is_secondary_y_axis=True,
             )
             return line_graph
 
         def create_worktime_line_graph() -> LineGraph:
 
-            line_graph = create_line_graph(title="日ごとの累積作業時間", y_axis_label="作業時間[hour]", tooltip_columns=[
-                "date",
-                "actual_worktime_hour",
-                "monitored_worktime_hour",
-                "monitored_annotation_worktime_hour",
-                "monitored_inspection_worktime_hour",
-                "monitored_acceptance_worktime_hour",
-                "cumsum_actual_worktime_hour",
-                "cumsum_monitored_worktime_hour",
-                "cumsum_monitored_annotation_worktime_hour",
-                "cumsum_monitored_inspection_worktime_hour",
-                "cumsum_monitored_acceptance_worktime_hour",
-            ])
-
+            line_graph = create_line_graph(
+                title="日ごとの累積作業時間",
+                y_axis_label="作業時間[hour]",
+                tooltip_columns=[
+                    "date",
+                    "actual_worktime_hour",
+                    "monitored_worktime_hour",
+                    "monitored_annotation_worktime_hour",
+                    "monitored_inspection_worktime_hour",
+                    "monitored_acceptance_worktime_hour",
+                    "cumsum_actual_worktime_hour",
+                    "cumsum_monitored_worktime_hour",
+                    "cumsum_monitored_annotation_worktime_hour",
+                    "cumsum_monitored_inspection_worktime_hour",
+                    "cumsum_monitored_acceptance_worktime_hour",
+                ],
+            )
 
             # 値をプロット
             x_column = "dt_date"
@@ -745,7 +758,6 @@ class WholeProductivityPerCompletedDate:
                 legend_label="計測作業時間",
             )
 
-
             plot_index += 1
             line_graph.add_line(
                 x_column=x_column,
@@ -755,7 +767,6 @@ class WholeProductivityPerCompletedDate:
                 legend_label="計測作業時間(教師付)",
             )
 
-
             plot_index += 1
             line_graph.add_line(
                 x_column=x_column,
@@ -764,8 +775,6 @@ class WholeProductivityPerCompletedDate:
                 color=get_color_from_small_palette(plot_index),
                 legend_label="計測作業時間(検査)",
             )
-
-
 
             plot_index += 1
             line_graph.add_line(
