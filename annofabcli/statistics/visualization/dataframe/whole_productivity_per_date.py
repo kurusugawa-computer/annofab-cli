@@ -27,6 +27,7 @@ from annofabcli.statistics.linegraph import (
     get_weekly_moving_average,
     get_weekly_sum,
     plot_line_and_circle,
+    plot_moving_average,
     write_bokeh_graph,
 )
 
@@ -38,7 +39,6 @@ WEEKLY_MOVING_AVERAGE_COLUMN_SUFFIX = "__lastweek"
 
 
 def _plot_and_moving_average(
-    cls,
     line_graph: LineGraph,
     source: ColumnDataSource,
     x_column: str,
@@ -377,16 +377,12 @@ class WholeProductivityPerCompletedDate:
 
         def create_task_figure() -> LineGraph:
             line_graph = create_line_graph(
-                title="日ごとのタスク数と作業時間",
-                y_axis_label="タスク数",
+                title="日ごとのタスク数と作業時間", y_axis_label="タスク数", 
             )
             y_overlimit = 0.05
-            line_graph.add_secondary_y_axis(
-                "作業時間[hour]",
-                DataRange1d(
+            line_graph.add_secondary_y_axis("作業時間[hour]", DataRange1d(
                     end=max(df["actual_worktime_hour"].max(), df["monitored_worktime_hour"].max()) * (1 + y_overlimit)
-                ),
-            )
+                ) )
 
             plot_index = 0
             _plot_and_moving_average(
@@ -406,7 +402,7 @@ class WholeProductivityPerCompletedDate:
                 y_column="actual_worktime_hour",
                 legend_name="実績作業時間",
                 color=get_color_from_small_palette(plot_index),
-                is_secondary_y_axis=True,
+                is_secondary_y_axis=True
             )
 
             plot_index += 1
@@ -417,21 +413,17 @@ class WholeProductivityPerCompletedDate:
                 y_column="monitored_worktime_hour",
                 legend_name="計測作業時間",
                 color=get_color_from_small_palette(plot_index),
-                is_secondary_y_axis=True,
+                is_secondary_y_axis=True
             )
             return line_graph
 
         def create_input_data_figure():
             line_graph = create_line_graph(
-                title="日ごとの入力データ数と作業時間",
-                y_axis_label="入力データ数",
+                title="日ごとの入力データ数と作業時間", y_axis_label="入力データ数", 
             )
-            line_graph.add_secondary_y_axis(
-                "作業時間[hour]",
-                DataRange1d(
+            line_graph.add_secondary_y_axis("作業時間[hour]", DataRange1d(
                     end=max(df["actual_worktime_hour"].max(), df["monitored_worktime_hour"].max()) * (1 + y_overlimit)
-                ),
-            )
+                ) )
 
             plot_index = 0
             _plot_and_moving_average(
@@ -443,7 +435,7 @@ class WholeProductivityPerCompletedDate:
                 color=get_color_from_small_palette(plot_index),
             )
 
-            plot_index += 1
+            plot_index+=1
             _plot_and_moving_average(
                 line_graph,
                 source=source,
@@ -451,10 +443,10 @@ class WholeProductivityPerCompletedDate:
                 y_column="actual_worktime_hour",
                 legend_name="実績作業時間",
                 color=get_color_from_small_palette(plot_index),
-                is_secondary_y_axis=True,
+                is_secondary_y_axis=True
             )
 
-            plot_index += 1
+            plot_index+=1
             _plot_and_moving_average(
                 line_graph,
                 source=source,
@@ -462,7 +454,7 @@ class WholeProductivityPerCompletedDate:
                 y_column="monitored_worktime_hour",
                 legend_name="計測作業時間",
                 color=get_color_from_small_palette(plot_index),
-                is_secondary_y_axis=True,
+                is_secondary_y_axis=True
             )
 
             return line_graph
@@ -501,17 +493,13 @@ class WholeProductivityPerCompletedDate:
                 ],
             },
             {
-                "line_graph": create_line_graph(
-                    title="日ごとの入力データあたり作業時間", y_axis_label="入力データあたり作業時間[minute/input_data]"
-                ),
+                "line_graph": create_line_graph(title="日ごとの入力データあたり作業時間", y_axis_label="入力データあたり作業時間[minute/input_data]"),
                 "y_info_list": [
                     {"column": f"{e[0]}_minute/input_data_count", "legend": f"入力データあたり{e[1]}"} for e in phase_prefix
                 ],
             },
             {
-                "line_graph": create_line_graph(
-                    title="日ごとのアノテーションあたり作業時間", y_axis_label="アノテーションあたり作業時間[minute/annotation]"
-                ),
+                "line_graph": create_line_graph(title="日ごとのアノテーションあたり作業時間", y_axis_label="アノテーションあたり作業時間[minute/annotation]"),
                 "y_info_list": [
                     {"column": f"{e[0]}_minute/annotation_count", "legend": f"アノテーションあたり{e[1]}"} for e in phase_prefix
                 ],
@@ -1017,6 +1005,7 @@ class WholeProductivityPerFirstAnnotationStartedDate:
         sum_df.reset_index(inplace=True)
         cls._add_velocity_columns(sum_df)
         return cls(sum_df)
+
 
     def plot(self, output_file: Path):
         """
