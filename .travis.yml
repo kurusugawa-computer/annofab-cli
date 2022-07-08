@@ -5,7 +5,7 @@ python:
   - "3.9"
   - "3.10"
 install:
-  - pip install poetry
+  - pip install pip poetry --upgrade
   - travis_retry poetry install
 script:
    - make lint
