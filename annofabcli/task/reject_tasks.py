@@ -130,7 +130,7 @@ class RejectTasksMain(AbstractCommandLineWithConfirmInterface):
     ):
         task_id = task["task_id"]
         if task["phase"] == TaskPhase.ANNOTATION.value:
-            logger.warning(f"task_id = {task_id}: annofation phaseのため、差し戻しできません。")
+            logger.warning(f"task_id = {task_id}: annotation phaseのため、差し戻しできません。")
             return False
 
         if task["status"] == TaskStatus.WORKING.value:
