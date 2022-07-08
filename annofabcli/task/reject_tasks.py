@@ -461,13 +461,14 @@ def parse_args(parser: argparse.ArgumentParser):
     parser.add_argument(
         "--comment_data",
         type=str,
-        help="検査コメントを付与する位置や区間をJSON形式で指定します。"
+        help="検査コメントの種類や付与する位置をJSON形式で指定します。"
         "指定方法は https://annofab-cli.readthedocs.io/ja/latest/command_reference/task/reject.html を参照してください。\n"
-        " ``file://`` を先頭に付けると、JSON形式のファイルを指定できます。\n"
-        "デフォルトの検査コメントの位置は以下の通りです。\n"
-        " * 画像プロジェクト：画像の左上(x=0,y=0)\n"
-        " * 動画プロジェクト：動画の先頭（start=0, end=100)\n"
-        " * カスタムプロジェクト(3dpc)：原点(辺が1の立方体)\n",
+        "``file://`` を先頭に付けると、JSON形式のファイルを指定できます。\n"
+        "デフォルトの検査コメントの種類と位置は以下の通りです。\n"
+        "\n"
+        " * 画像プロジェクト：点。先頭画像の左上\n"
+        " * 動画プロジェクト：区間。動画の先頭\n"
+        " * カスタムプロジェクト(3dpc)：辺が1の立方体。原点\n",
     )
 
     parser.add_argument(
