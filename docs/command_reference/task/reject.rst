@@ -37,7 +37,6 @@ Examples
 
     $ annofabcli task reject --project_id prj1 --task_id file://task_id.txt
 
-完了状態のタスクを差し戻すには、先に受入取り消し（`annofabcli task cancel_acceptance <../task/cancel_acceptance.html>`_）を実行する必要があります。
 受入取り消しと差し戻しを同時に行う場合は、``--cancel_acceptance`` を指定してください。
 
 .. code-block::
