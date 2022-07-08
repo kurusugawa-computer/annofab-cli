@@ -175,14 +175,14 @@ JSON文字列の指定
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 WindowsのコマンドプロンプトやPowerShellでannofabcliを使う場合、JSON文字列内のダブルクォートをエスケープする必要があります。
 
-PowerShell場合は、JSON文字列内のダブルクォートを ``\`` でエスケープして、JSON文字列全体をシングルクォートで括ります。
+PowerShellでは、JSON文字列内のダブルクォートを ``\`` でエスケープして、JSON文字列全体をシングルクォートで括ってください。
 
 .. code-block::
 
     PS >  annofabcli task list --project_id prj --task_query '{\"status\": \"complete\"}'
 
 
-コマンドプロンプトの場合は、JSON文字列内のダブルクォートを ``\`` または ``"`` でエスケープして、JSON文字列全体をダブルクォートで括ります。
+コマンドプロンプトでは、JSON文字列内のダブルクォートを ``\`` または ``"`` でエスケープして、JSON文字列全体をダブルクォートで括ってください。
 
 
 .. code-block::
@@ -190,6 +190,9 @@ PowerShell場合は、JSON文字列内のダブルクォートを ``\`` でエ�
     >  annofabcli task list --project_id prj --task_query "{\"status\": \"complete\"}"
 
     >  annofabcli task list --project_id prj --task_query "{""status"": ""complete""}"
+
+
+エスケープ処理の詳細については https://zenn.dev/yuji38kwmt/articles/68ed55564df1f2 を参照ください。
 
 
 エスケープが面倒な場合は、JSON文字列をファイルに保存して、そのファイルパスを指定する方法がおすすめです。
