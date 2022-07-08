@@ -157,3 +157,54 @@ Getting Help
   INFO     : 2022-01-24 12:28:27,409 : annofabcli.project.list_project : プロジェクト一覧の件数: 384
   INFO     : 2022-01-24 12:28:27,441 : annofabcli.common.utils        : out/project.csv を出力しました。
 
+
+
+Windowsでannofabcliを実行する
+=================================================
+annofabcliはWindowsでも実行できます。
+
+
+
+インストール
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+Python環境がなくてもannoafbcliを実行できるようにするため、Windows用の実行ファイルを用意しています。
+https://github.com/kurusugawa-computer/annofab-cli/releases から ``annofabcli-vX.X.X-windows.zip`` をダウンロードして、zip内の ``annofabcli.exe`` を実行してください。
+
+
+JSON文字列の指定
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+WindowsのコマンドプロンプトやPowerShellでannofabcliを使う場合、JSON文字列内のダブルクォートをエスケープする必要があります。
+
+PowerShell場合は、JSON文字列内のダブルクォートを ``\`` でエスケープして、JSON文字列全体をシングルクォートで括ります。
+
+.. code-block::
+
+    PS >  annofabcli task list --project_id prj --task_query '{\"status\": \"complete\"}'
+
+
+コマンドプロンプトの場合は、JSON文字列内のダブルクォートを ``\`` または ``"`` でエスケープして、JSON文字列全体をダブルクォートで括ります。
+
+
+.. code-block::
+
+    >  annofabcli task list --project_id prj --task_query "{\"status\": \"complete\"}"
+
+    >  annofabcli task list --project_id prj --task_query "{""status"": ""complete""}"
+
+
+エスケープが面倒な場合は、JSON文字列をファイルに保存して、そのファイルパスを指定する方法がおすすめです。
+
+
+.. code-block::
+   :caption: task_query.json
+
+    {"status": "complete"}
+
+
+.. code-block::
+
+    PS >  annofabcli task list --project_id prj --task_query file://task_query.json
+
+
+
+
