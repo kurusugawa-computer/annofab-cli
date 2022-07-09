@@ -481,11 +481,10 @@ def parse_args(parser: argparse.ArgumentParser):
     parser.add_argument(
         "--input_data_name_prefix",
         type=str,
-        help="入力データとして登録するzipファイルのinput_data_nameを指定してください。省略した場合、 ``--zip`` のパスになります。"
-        " ``--zip`` を指定したときのみ有効なオプションです。",
+        help="入力データとして登録するzipファイルのinput_data_nameを指定してください。省略した場合、 ``--zip`` のパスになります。",
     )
 
-    parser.add_argument("--wait", action="store_true", help=("入力データの登録が完了するまで待ちます。" " ``--zip`` を指定したときのみ有効なオプションです。"))
+    parser.add_argument("--wait", action="store_true", help=("入力データの登録が完了するまで待ちます。"))
 
     parser.add_argument(
         "--wait_options",
