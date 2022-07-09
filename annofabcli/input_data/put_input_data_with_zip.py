@@ -34,7 +34,7 @@ class PutInputData(AbstractCommandLineInterface):
         project_id: str,
         zip_file: Path,
         wait_options: WaitOptions,
-        input_data_name_for_zip: Optional[str] = None,
+        input_data_name_prefix: Optional[str] = None,
         wait: bool = False,
     ) -> None:
         """
@@ -43,7 +43,7 @@ class PutInputData(AbstractCommandLineInterface):
         Args:
             project_id: 入力データの登録先プロジェクトのプロジェクトID
             zip_file: 入力データとして登録するzipファイルのパス
-            input_data_name_for_zip: zipファイルのinput_data_name
+            input_data_name_prefix: zipファイルのinput_data_name
             wait: 入力データの登録が完了するまで待つかどうか
 
         """
@@ -52,8 +52,8 @@ class PutInputData(AbstractCommandLineInterface):
         logger.info(f"{project_title} に、{str(zip_file)} を登録します。")
 
         request_body = {}
-        if input_data_name_for_zip is not None:
-            request_body["input_data_name"] = input_data_name_for_zip
+        if input_data_name_prefix is not None:
+            request_body["input_data_name"] = input_data_name_prefix
 
         self.service.wrapper.put_input_data_from_file(
             project_id,
@@ -103,7 +103,7 @@ class PutInputData(AbstractCommandLineInterface):
             self.put_input_data_from_zip_file(
                 project_id,
                 zip_file=args.zip,
-                input_data_name_for_zip=args.input_data_name_for_zip,
+                input_data_name_prefix=args.input_data_name_prefix,
                 wait=args.wait,
                 wait_options=wait_options,
             )
