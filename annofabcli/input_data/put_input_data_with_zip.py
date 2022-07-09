@@ -26,6 +26,9 @@ DEFAULT_WAIT_OPTIONS = WaitOptions(interval=60, max_tries=360)
 
 
 class PutInputData(AbstractCommandLineInterface):
+    """
+    入力データをZIPで登録する。
+    """
 
     COMMON_MESSAGE = "annofabcli input_data put_with_zip: error:"
 
