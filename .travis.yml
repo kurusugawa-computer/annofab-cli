@@ -5,6 +5,7 @@ python:
   - "3.9"
   - "3.10"
 install:
+  # pipをアップグレードする理由: pipのバージョンが古いと、pillowなど環境ごとにwheelを提供しているライブラリのインストールに失敗する可能性があるため
   - pip install pip poetry --upgrade
   - travis_retry poetry install
 script:
