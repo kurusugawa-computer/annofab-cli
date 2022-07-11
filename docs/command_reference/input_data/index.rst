@@ -21,6 +21,7 @@ Available Commands
    list_merged_task
    list_with_json
    put
+   put_with_zip
    update_metadata
 
 Usage Details
