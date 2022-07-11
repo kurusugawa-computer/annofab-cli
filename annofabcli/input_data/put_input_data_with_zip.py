@@ -14,8 +14,6 @@ from annofabcli.common.cli import (
     AbstractCommandLineInterface,
     ArgumentParser,
     build_annofabapi_resource_and_login,
-    get_json_from_args,
-    get_wait_options_from_args,
 )
 from annofabcli.common.dataclasses import WaitOptions
 from annofabcli.common.facade import AnnofabApiFacade
@@ -102,7 +100,7 @@ class PutInputData(AbstractCommandLineInterface):
         project_id = args.project_id
         super().validate_project(project_id, [ProjectMemberRole.OWNER])
         if args.zip is not None:
-            wait_options = get_wait_options_from_args(get_json_from_args(args.wait_options), DEFAULT_WAIT_OPTIONS)
+            wait_options = DEFAULT_WAIT_OPTIONS
             self.put_input_data_from_zip_file(
                 project_id,
                 zip_file=args.zip,
@@ -135,16 +133,6 @@ def parse_args(parser: argparse.ArgumentParser):
     )
 
     parser.add_argument("--wait", action="store_true", help=("入力データの登録が完了するまで待ちます。"))
-
-    parser.add_argument(
-        "--wait_options",
-        type=str,
-        help="入力データの登録が完了するまで待つ際のオプションをJSON形式で指定してください。 ``--wait`` を指定したときのみ有効なオプションです。"
-        " ``file://`` を先頭に付けるとjsonファイルを指定できます。"
-        'デフォルトは ``{"interval":60, "max_tries":360}`` です。'
-        "``interval`` :完了したかを問い合わせる間隔[秒], "
-        "``max_tires`` :完了したかの問い合わせを最大何回行うか。",
-    )
 
     parser.set_defaults(subcommand_func=main)
 
