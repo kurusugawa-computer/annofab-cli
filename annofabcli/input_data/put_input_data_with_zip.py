@@ -126,9 +126,7 @@ def parse_args(parser: argparse.ArgumentParser):
 
     argument_parser.add_project_id()
 
-    file_group = parser.add_mutually_exclusive_group(required=True)
-
-    file_group.add_argument("--zip", type=Path, help=("入力データとして登録するzipファイルのパスを指定してください。"))
+    parser.add_argument("--zip", type=Path, help=("入力データとして登録するzipファイルのパスを指定してください。"))
 
     parser.add_argument(
         "--input_data_name_prefix",
