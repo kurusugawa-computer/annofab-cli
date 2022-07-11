@@ -151,7 +151,7 @@ def parse_args(parser: argparse.ArgumentParser):
 
 def add_parser(subparsers: Optional[argparse._SubParsersAction] = None):
     subcommand_name = "put_with_zip"
-    subcommand_help = "入力データを登録します。"
+    subcommand_help = "zipファイルを入力データとして登録します。"
     description = "zipファイルを入力データとして登録します。"
     epilog = "オーナロールを持つユーザで実行してください。"
 
