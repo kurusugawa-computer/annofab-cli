@@ -26,6 +26,11 @@
 * `project download`コマンドを廃止します。`project download`コマンドは、名前からどのようなファイルがダウンロードできるのか想像しにくいためです。替わりに`annotation download`コマンドなど、各リソースに対するdownloadコマンドをご利用ください。
 
 
+### 2022-09-01 以降
+* `input_data put`コマンドでZIPファイルの登録する機能を廃止します。替わりに`input_data put_with_json`コマンドはご利用ください。
+
+
+
 # Requirements
 * Python 3.8+
 

@@ -88,7 +88,7 @@ class TestCommandLine__put:
         main(
             [
                 "input_data",
-                "put",
+                "put_with_zip",
                 "--project_id",
                 project_id,
                 "--zip",
