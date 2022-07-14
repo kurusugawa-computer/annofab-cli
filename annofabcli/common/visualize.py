@@ -251,6 +251,49 @@ class AddProps:
 
         return inspection
 
+    def add_properties_to_comment(self, comment: Dict[str, Any]) -> Dict[str, Any]:
+        """
+        検査コメントに、以下のキーを追加する.
+        user_id
+        username
+        phrase_names_en
+        phrase_names_ja
+        label_name_en
+        label_name_en
+
+        Args:
+            comment:
+
+        Returns:
+
+        """
+
+        def add_commenter_info():
+            commenter_user_id = None
+            commenter_username = None
+
+            commenter_account_id = comment["account_id"]
+            if commenter_account_id is not None:
+                member = self.get_project_member_from_account_id(commenter_account_id)
+                if member is not None:
+                    commenter_user_id = member["user_id"]
+                    commenter_username = member["username"]
+
+            comment["user_id"] = commenter_user_id
+            comment["username"] = commenter_username
+
+        add_commenter_info()
+
+        comment["phrase_names_en"] = [self.get_phrase_name(e, MessageLocale.EN) for e in comment["phrases"]]
+        comment["phrase_names_ja"] = [self.get_phrase_name(e, MessageLocale.JA) for e in comment["phrases"]]
+
+        comment_node = comment["comment_node"]
+        if "label_id" in comment_node:
+            comment_node["label_name_en"] = self.get_label_name(comment_node["label_id"], MessageLocale.EN)
+            comment_node["label_name_ja"] = self.get_label_name(comment_node["label_id"], MessageLocale.JA)
+
+        return comment
+
     def add_properties_to_single_annotation(self, annotation: SingleAnnotation) -> SingleAnnotation:
         """
         アノテーション情報（details）検査コメントに、以下のキーを追加する.

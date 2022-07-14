@@ -28,21 +28,21 @@ Examples
 
     $ annofabcli project copy --project_id prj1 --dest_title prj2-title  --dest_project_id prj2
 
-デフォルトでは、タスクや入力データなどはコピーされません。コピー対象のデータを指定する場合は、コマンドライン引数を指定してください。
+デフォルトでは、タスクや入力データなどはコピーされません。コピー対象のデータを指定する場合は、``--copied_target`` 引数に以下の値を複数指定してください。
 指定できる値は以下の通りです。
 
 
-* ``--copy_inputs`` : 入力データ
-* ``--copy_tasks`` : タスク
-* ``--copy_annotations`` : アノテーション
-* ``--copy_webhooks`` : Webhook
-* ``--copy_supplementary_data`` : 補助情報
-* ``--copy_instructions`` : 作業ガイド
+* ``input_data`` : 入力データ
+* ``supplementary_data`` : 補助情報
+* ``task`` : タスク
+* ``annotation`` : アノテーション
+* ``webhook`` : Webhook
+* ``instruction`` : 作業ガイド
 
 
 .. code-block::
 
-    $ annofabcli project copy --project_id prj1 --dest_title prj2-title  --copy_annotations
+    $ annofabcli project copy --project_id prj1 --dest_title prj2-title  --copied_target annotation
 
 デフォルトではコピーの完了を待たずに処理が終了します。コピーがが完了するまで処理を継続する場合は、 ``--wait`` を指定してください。
 

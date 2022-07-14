@@ -50,13 +50,17 @@ JSON出力
         "account_id": "account1",
         "comment_type": "onhold",
         "phrases": [],
+        "phrase_names_en": [],
+        "phrase_names_ja": [],
         "comment": "画像が間違っている",
         "comment_node": {
-        "data": null,
-        "annotation_id": "8ec9417b-abef-47ad-af7d-e0a03c680eac",
-        "label_id": "8ec9417b-abef-47ad-af7d-e0a03c680eac",
-        "status": "open",
-        "_type": "Root"
+            "data": null,
+            "annotation_id": "8ec9417b-abef-47ad-af7d-e0a03c680eac",
+            "label_id": "8ec9417b-abef-47ad-af7d-e0a03c680eac",
+            "label_name_en": "car",
+            "label_name_ja": "自動車",
+            "status": "open",
+            "_type": "Root"
         },
         "datetime_for_sorting": "2022-07-05T11:45:21.968+09:00",
         "created_datetime": "2022-07-05T11:45:32.88+09:00",
@@ -72,17 +76,21 @@ JSON出力
         "account_id": "account2",
         "comment_type": "inspection",
         "phrases": [],
+        "phrase_names_en": [],
+        "phrase_names_ja": [],
         "comment": "枠がずれています",
         "comment_node": {
-        "data": {
-            "x": 62,
-            "y": 137,
-            "_type": "Point"
-        },
-        "annotation_id": "8ec9417b-abef-47ad-af7d-e0a03c680eac",
-        "label_id": "8ec9417b-abef-47ad-af7d-e0a03c680eac",
-        "status": "open",
-        "_type": "Root"
+            "data": {
+                "x": 62,
+                "y": 137,
+                "_type": "Point"
+            },
+            "annotation_id": "8ec9417b-abef-47ad-af7d-e0a03c680eac",
+            "label_id": "8ec9417b-abef-47ad-af7d-e0a03c680eac",
+            "label_name_en": "car",
+            "label_name_ja": "自動車",
+            "status": "open",
+            "_type": "Root"
         },
         "datetime_for_sorting": "2022-07-05T11:45:08.506+09:00",
         "created_datetime": "2022-07-05T11:45:32.88+09:00",

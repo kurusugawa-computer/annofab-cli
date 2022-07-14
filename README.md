@@ -28,7 +28,7 @@
 
 ### 2022-09-01 以降
 * `input_data put`コマンドでZIPファイルの登録する機能を廃止します。替わりに`input_data put_with_`コマンドはご利用ください。
-
+* `task list_with_json`などの`list_with_json`コマンドの名前を、`list_all`コマンドに変更します。`list_with_json`コマンドという名前と実際の機能機能が一致していないためです。
 
 
 # Requirements
