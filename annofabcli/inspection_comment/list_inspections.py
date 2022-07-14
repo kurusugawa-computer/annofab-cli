@@ -120,8 +120,8 @@ class PrintInspections(AbstractCommandLineInterface):
         """
 
         detail = {"input_data_index": input_data_index}
-        inspectins, _ = self.service.api.get_inspections(project_id, task_id, input_data_id)
-        return [self.visualize.add_properties_to_inspection(e, detail) for e in inspectins]
+        inspections, _ = self.service.api.get_inspections(project_id, task_id, input_data_id)
+        return [self.visualize.add_properties_to_inspection(e, detail) for e in inspections]
 
     def get_inspections(
         self, project_id: str, task_id_list: List[str], filter_inspection: Optional[FilterInspectionFunc] = None

@@ -108,10 +108,11 @@ JSON出力
             "sign_required": false,
             "metadata": {},
             "system_metadata": {
-            "resized_resolution": null,
-            "original_resolution": {
-                "width": 128,
-                "height": 128
+                "resized_resolution": null,
+                "original_resolution": {
+                    "width": 128,
+                    "height": 128
+                }
             },
             "_type": "Image"
         },

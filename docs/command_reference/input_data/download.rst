@@ -33,6 +33,47 @@ Examples
     $ annofabcli input_data download --project_id prj1 --output input_data.json --latest
 
 
+
+出力結果
+=================================
+
+
+.. code-block::
+
+    $ annofabcli input_data download --output out.json
+    $ jq . out.json > out-pretty.json
+
+
+.. code-block::
+    :caption: out-pretty.json
+
+    [
+        {
+            "input_data_id": "input1",
+            "project_id": "prj1",
+            "organization_id": "org1",
+            "input_data_set_id": ",12345678-abcd-1234-abcd-1234abcd5678",
+            "input_data_name": "data1",
+            "input_data_path": "s3://af-production-input/organizations/...",
+            "url": "https://annofab.com/organizations/...",
+            "etag": "...",
+            "updated_datetime": "2021-01-04T21:21:28.169+09:00",
+            "original_input_data_path": "s3://af-production-input/organizations/...",
+            "sign_required": false,
+            "metadata": {},
+            "system_metadata": {
+                "resized_resolution": null,
+                "original_resolution": {
+                    "width": 128,
+                    "height": 128
+                }
+            },
+            "_type": "Image"
+        },
+        ...
+    ]
+
+
 Usage Details
 =================================
 
