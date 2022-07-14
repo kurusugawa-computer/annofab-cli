@@ -77,11 +77,12 @@ class CopyProject(AbstractCommandLineInterface):
 
         set_copied_targets = self._get_completion_copied_targets(copied_targets) if copied_targets is not None else None
         if set_copied_targets is not None:
-            str_copied_targets = ",".join([e.value for e in set_copied_targets])
+            str_copied_targets = ", ".join([e.value for e in set_copied_targets])
             logger.info(f"コピー対象: {str_copied_targets}")
 
         confirm_message = f"{src_project_title} ({src_project_id} を、{dest_title} ({dest_project_id}) にコピーしますか？"
         if not self.confirm_processing(confirm_message):
+            logger.info(f"{src_project_title} ({src_project_id} をコピーせずに終了します。")
             return
 
         request_body: Dict[str, Any] = {}
@@ -137,7 +138,7 @@ class CopyProject(AbstractCommandLineInterface):
     def main(self):
         args = self.args
         dest_project_id = args.dest_project_id if args.dest_project_id is not None else str(uuid.uuid4())
-        copied_targets = {CopiedTarget(e) for e in args.copied_targets} if args.copied_targets is not None else None
+        copied_targets = {CopiedTarget(e) for e in args.copied_target} if args.copied_target is not None else None
         self.copy_project(
             args.project_id,
             dest_project_id=dest_project_id,
