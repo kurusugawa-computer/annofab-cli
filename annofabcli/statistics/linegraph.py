@@ -94,7 +94,7 @@ class LineGraph:
         self.line_glyphs: dict[str, GlyphRenderer] = {}
         self.marker_glyphs: dict[str, GlyphRenderer] = {}
 
-    def add_secondary_y_axis(self, axis_label: str, y_range: Optional[DataRange1d] = None):
+    def add_secondary_y_axis(self, axis_label: str, y_range: DataRange1d):
         """
         第2のY軸を追加する。
         """
@@ -227,7 +227,7 @@ class LineGraph:
         button.js_on_click(CustomJS(code=code, args=args))
         return button
 
-    def create_checkbox_displaying_markers(self) -> Button:
+    def create_checkbox_displaying_markers(self) -> CheckboxGroup:
         """
         マーカーの表示/非表示を切り替えるチェックボックスを生成します。
         プロット数が多いと、マーカーによって見えづらくなるケースがあるため、表示/非表示を切り替えるチェックボックスを作成しました。
