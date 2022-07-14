@@ -11,6 +11,7 @@ import annofabcli.common.cli
 from annofabcli.common.cli import AbstractCommandLineInterface, ArgumentParser, build_annofabapi_resource_and_login
 from annofabcli.common.enums import FormatArgument
 from annofabcli.common.facade import AnnofabApiFacade
+from annofabcli.common.visualize import AddProps
 
 logger = logging.getLogger(__name__)
 
@@ -41,6 +42,8 @@ class ListingComments(AbstractCommandLineInterface):
 
         logger.info(f"対象タスクに紐付いたコメントをすべて取得しました。output={output_file}")
 
+        visualize = AddProps(self.service, project_id)
+        all_comments = [visualize.add_properties_to_comment(e) for e in all_comments]
         self.print_according_to_format(all_comments)
 
     def main(self):

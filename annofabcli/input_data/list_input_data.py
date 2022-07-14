@@ -215,9 +215,9 @@ def parse_args(parser: argparse.ArgumentParser):
         " ``file://`` を先頭に付けると、input_data_idの一覧が記載されたファイルを指定できます。",
     )
 
-    parser.add_argument("--add_details", action="store_true", help="入力データの詳細情報を表示します。以下の列を追加します。\n"
-    "\n"
-    " * parent_task_id_list")
+    parser.add_argument(
+        "--add_details", action="store_true", help="入力データの詳細情報を表示します。以下の列を追加します。\n" "\n" " * parent_task_id_list"
+    )
 
     parser.add_argument(
         "--average_input_data_id_length",
