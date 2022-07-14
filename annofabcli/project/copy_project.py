@@ -1,25 +1,43 @@
+from __future__ import annotations
+
 import argparse
-import copy
 import logging
 import uuid
-from typing import Any, Dict, Optional
+from enum import Enum
+from typing import Any, Collection, Dict, Optional
 
 from annofabapi.models import OrganizationMemberRole, ProjectJobType, ProjectMemberRole
 
 import annofabcli
-from annofabcli.common.cli import (
-    AbstractCommandLineInterface,
-    ArgumentParser,
-    build_annofabapi_resource_and_login,
-    get_json_from_args,
-    get_wait_options_from_args,
-)
+from annofabcli.common.cli import AbstractCommandLineInterface, ArgumentParser, build_annofabapi_resource_and_login
 from annofabcli.common.dataclasses import WaitOptions
 from annofabcli.common.facade import AnnofabApiFacade
 
 DEFAULT_WAIT_OPTIONS = WaitOptions(interval=60, max_tries=360)
 
 logger = logging.getLogger(__name__)
+
+
+class CopiedTarget(Enum):
+    """コピー対象のリソース"""
+
+    INPUT_DATA = "input_data"
+    SUPPLEMENTARY_DATA = "supplementary_data"
+    TASK = "task"
+    ANNOTATION = "annotation"
+    WEBHOOK = "webhook"
+    INSTRUCTION = "instruction"
+
+
+COPIED_TARGET_AND_KEY_MAP = {
+    CopiedTarget.INPUT_DATA: "copy_inputs",
+    CopiedTarget.SUPPLEMENTARY_DATA: "copy_supplementary_data",
+    CopiedTarget.TASK: "copy_tasks",
+    CopiedTarget.ANNOTATION: "copy_annotations",
+    CopiedTarget.WEBHOOK: "copy_webhooks",
+    CopiedTarget.INSTRUCTION: "copy_instructions",
+}
+"""コピー対象とリクエストボディに渡すキーの関係"""
 
 
 class CopyProject(AbstractCommandLineInterface):
@@ -32,9 +50,8 @@ class CopyProject(AbstractCommandLineInterface):
         src_project_id: str,
         dest_project_id: str,
         dest_title: str,
-        wait_options: WaitOptions,
         dest_overview: Optional[str] = None,
-        copy_options: Optional[Dict[str, bool]] = None,
+        copied_targets: Optional[Collection[CopiedTarget]] = None,
         wait_for_completion: bool = False,
     ):
         """
@@ -58,17 +75,21 @@ class CopyProject(AbstractCommandLineInterface):
 
         src_project_title = self.facade.get_project_title(src_project_id)
 
-        if copy_options is not None:
-            copy_target = [key.replace("copy_", "") for key in copy_options.keys() if copy_options[key]]
-            logger.info(f"コピー対象: {str(copy_target)}")
+        set_copied_targets = self._get_completion_copied_targets(copied_targets) if copied_targets is not None else None
+        if set_copied_targets is not None:
+            str_copied_targets = ",".join([e.value for e in set_copied_targets])
+            logger.info(f"コピー対象: {str_copied_targets}")
 
         confirm_message = f"{src_project_title} ({src_project_id} を、{dest_title} ({dest_project_id}) にコピーしますか？"
         if not self.confirm_processing(confirm_message):
             return
 
         request_body: Dict[str, Any] = {}
-        if copy_options is not None:
-            request_body = copy.deepcopy(copy_options)
+
+        if set_copied_targets is not None:
+            for target in set_copied_targets:
+                key = COPIED_TARGET_AND_KEY_MAP[target]
+                request_body[key] = True
 
         request_body.update(
             {"dest_project_id": dest_project_id, "dest_title": dest_title, "dest_overview": dest_overview}
@@ -78,14 +99,14 @@ class CopyProject(AbstractCommandLineInterface):
         logger.info(f"プロジェクトのコピーを実施しています。")
 
         if wait_for_completion:
-            MAX_WAIT_MINUTE = wait_options.max_tries * wait_options.interval / 60
+            MAX_WAIT_MINUTE = DEFAULT_WAIT_OPTIONS.max_tries * DEFAULT_WAIT_OPTIONS.interval / 60
             logger.info(f"最大{MAX_WAIT_MINUTE}分間、コピーが完了するまで待ちます。")
 
             result = self.service.wrapper.wait_for_completion(
                 src_project_id,
                 job_type=ProjectJobType.COPY_PROJECT,
-                job_access_interval=wait_options.interval,
-                max_job_access=wait_options.max_tries,
+                job_access_interval=DEFAULT_WAIT_OPTIONS.interval,
+                max_job_access=DEFAULT_WAIT_OPTIONS.max_tries,
             )
             if result:
                 logger.info(f"プロジェクトのコピーが完了しました。")
@@ -95,43 +116,35 @@ class CopyProject(AbstractCommandLineInterface):
             logger.info(f"コピーの完了を待たずに終了します。")
 
     @staticmethod
-    def _set_copy_options(options: Dict[str, Any]):
-        if options.get("copy_annotations", False):
-            options["copy_tasks"] = True
-            options["copy_inputs"] = True
-        if options.get("copy_tasks", False):
-            options["copy_inputs"] = True
-        if options.get("copy_supplementary_data", False):
-            options["copy_inputs"] = True
-        return options
+    def _get_completion_copied_targets(copied_targets: Collection[CopiedTarget]) -> set[CopiedTarget]:
+        """
+        コピー対象から、補完したコピー対象を取得する。
+        """
+        result = set(copied_targets)
+
+        if CopiedTarget.ANNOTATION in result:
+            result.add(CopiedTarget.TASK)
+            result.add(CopiedTarget.INPUT_DATA)
+
+        if CopiedTarget.TASK in result:
+            result.add(CopiedTarget.INPUT_DATA)
+
+        if CopiedTarget.SUPPLEMENTARY_DATA in result:
+            result.add(CopiedTarget.INPUT_DATA)
+
+        return result
 
     def main(self):
         args = self.args
         dest_project_id = args.dest_project_id if args.dest_project_id is not None else str(uuid.uuid4())
-
-        copy_option_keys = [
-            "copy_inputs",
-            "copy_tasks",
-            "copy_annotations",
-            "copy_webhooks",
-            "copy_supplementary_data",
-            "copy_instructions",
-        ]
-        copy_options: Dict[str, bool] = {}
-        for key in copy_option_keys:
-            copy_options[key] = getattr(args, key)
-        copy_options = self._set_copy_options(copy_options)
-
-        wait_options = get_wait_options_from_args(get_json_from_args(args.wait_options), DEFAULT_WAIT_OPTIONS)
-
+        copied_targets = {CopiedTarget(e) for e in args.copied_targets} if args.copied_targets is not None else None
         self.copy_project(
             args.project_id,
             dest_project_id=dest_project_id,
             dest_title=args.dest_title,
             dest_overview=args.dest_overview,
-            copy_options=copy_options,
+            copied_targets=copied_targets,
             wait_for_completion=args.wait,
-            wait_options=wait_options,
         )
 
 
@@ -150,24 +163,11 @@ def parse_args(parser: argparse.ArgumentParser):
     parser.add_argument("--dest_title", type=str, required=True, help="新しいプロジェクトのタイトルを指定してください。")
     parser.add_argument("--dest_overview", type=str, help="新しいプロジェクトの概要を指定してください。")
 
-    parser.add_argument("--copy_inputs", action="store_true", help="「入力データ」をコピーします。")
-    parser.add_argument("--copy_tasks", action="store_true", help="「タスク」をコピーします。指定した場合は入力データもコピーします。")
-    parser.add_argument("--copy_annotations", action="store_true", help="「アノテーション」をコピーします。指定した場合は入力データとタスクもコピーします。")
-    parser.add_argument("--copy_webhooks", action="store_true", help="「Webhook」をコピーします。")
-    parser.add_argument("--copy_supplementary_data", action="store_true", help="「補助情報」をコピーします。指定した場合は入力データもコピーします。")
-    parser.add_argument("--copy_instructions", action="store_true", help="「作業ガイド」をコピーします。")
+    parser.add_argument(
+        "--copied_target", type=str, nargs="+", choices=[e.value for e in CopiedTarget], help="コピー対象を指定してください。"
+    )
 
     parser.add_argument("--wait", action="store_true", help="プロジェクトのコピーが完了するまで待ちます。")
-
-    parser.add_argument(
-        "--wait_options",
-        type=str,
-        help="プロジェクトのコピーが完了するまで待つ際のオプションをJSON形式で指定してください。"
-        "`file://`を先頭に付けるとjsonファイルを指定できます。"
-        'デフォルとは`{"interval":60, "max_tries":360}` です。'
-        "`interval`:完了したかを問い合わせる間隔[秒], "
-        "`max_tires`:完了したかの問い合わせを最大何回行うか。",
-    )
 
     parser.set_defaults(subcommand_func=main)
 
