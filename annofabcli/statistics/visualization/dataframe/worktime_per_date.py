@@ -69,6 +69,11 @@ class WorktimePerDate:
         return cls(df)
 
     @classmethod
+    def is_empty(cls) -> bool:
+        """空のデータフレームを持つかどうか"""
+        return len(cls.df) == 0
+
+    @classmethod
     def get_df_worktime(
         cls,
         task_history_event_list: list[WorktimeFromTaskHistoryEvent],
