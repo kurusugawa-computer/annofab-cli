@@ -68,10 +68,9 @@ class WorktimePerDate:
         df = pandas.DataFrame(columns=cls.df_dtype.keys()).astype(cls.df_dtype)
         return cls(df)
 
-    @classmethod
-    def is_empty(cls) -> bool:
+    def is_empty(self) -> bool:
         """空のデータフレームを持つかどうか"""
-        return len(cls.df) == 0
+        return len(self.df) == 0
 
     @classmethod
     def get_df_worktime(
