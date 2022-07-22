@@ -53,7 +53,7 @@ class AbstractPhaseProductivityPerDate(abc.ABC):
         """
         graph_group_list = []
         for line_graph in line_graph_list:
-            line_graph.config_legend()
+            line_graph.process_after_adding_glyphs()
 
             widget_list = []
             hide_all_button = line_graph.create_button_hiding_all_lines()

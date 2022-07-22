@@ -94,9 +94,24 @@ class LineGraph:
         self.line_glyphs: dict[str, GlyphRenderer] = {}
         self.marker_glyphs: dict[str, GlyphRenderer] = {}
 
-    def add_secondary_y_axis(self, axis_label: str, y_range: DataRange1d):
+    def add_secondary_y_axis(
+        self,
+        axis_label: str,
+        *,
+        secondary_y_axis_range: Optional[DataRange1d] = None,
+        primary_y_axis_range: Optional[DataRange1d] = None,
+    ):
         """
         第2のY軸を追加する。
+
+        Notes:
+            軸範囲を設定する理由：第1軸と第2軸の軸範囲を指定しないと、第1軸と第2軸の軸範囲が同じになり、適切な軸範囲にならないため。
+            https://qiita.com/yuji38kwmt/items/ccbee24184789686b102 参考
+
+        Args:
+            axis_label: 第2軸の名前
+            secondary_y_axis_range: 第2Y軸の軸範囲
+            primary_y_axis_range: 第1Y軸の軸範囲
         """
         self.figure.add_layout(
             LinearAxis(
@@ -105,8 +120,13 @@ class LineGraph:
             ),
             "right",
         )
-        if y_range is not None:
-            self.figure.extra_y_ranges = {self._SECONDARY_Y_RANGE_NAME: y_range}
+        if secondary_y_axis_range is not None:
+            self.figure.extra_y_ranges = {self._SECONDARY_Y_RANGE_NAME: secondary_y_axis_range}
+        else:
+            self.figure.extra_y_ranges = {self._SECONDARY_Y_RANGE_NAME: DataRange1d()}
+
+        if primary_y_axis_range is not None:
+            self.figure.y_range = primary_y_axis_range
 
         self.exists_secondary_y_axis = True
 
@@ -186,9 +206,23 @@ class LineGraph:
         self.line_glyphs[legend_label] = line
         return line
 
-    def config_legend(self) -> None:
+    def process_after_adding_glyphs(self) -> None:
         """
-        折れ線を追加した後に、凡例の位置などを設定します。
+        折れ線などのGlyphを追加した後に実行する処理です。
+        以下を設定します。
+        * 凡例
+        * 軸の範囲
+
+        """
+        self.configure_legend()
+
+    def configure_legend(self):
+        """
+        凡例を設定します。
+
+        Notes:
+            折れ線などのGlyphを追加した後に実行する必要があります。
+
         """
         fig = self.figure
         if len(fig.legend) == 0:

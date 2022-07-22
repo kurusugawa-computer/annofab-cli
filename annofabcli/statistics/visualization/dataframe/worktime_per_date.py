@@ -406,7 +406,7 @@ class WorktimePerDate:
 
         graph_group_list = []
         for line_graph in line_graph_list:
-            line_graph.config_legend()
+            line_graph.process_after_adding_glyphs()
             hide_all_button = line_graph.create_button_hiding_all_lines()
             checkbox_group = line_graph.create_checkbox_displaying_markers()
 
