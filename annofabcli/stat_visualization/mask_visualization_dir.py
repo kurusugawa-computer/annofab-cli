@@ -141,11 +141,8 @@ def mask_visualization_dir(
 
     write_line_graph(masked_task, output_project_dir, user_id_list=user_id_list, minimal_output=minimal_output)
 
-    try:
-        worktime_per_date_user = project_dir.read_worktime_per_date_user()
-    except Exception:
-        logger.warning(f"'{project_dir}'のユーザごと日ごとの作業時間の読み込みに失敗しました。")
-    else:
+    worktime_per_date_user = project_dir.read_worktime_per_date_user()
+    if not worktime_per_date_user.is_empty():
         df_masked_worktime = create_masked_user_info_df(
             worktime_per_date_user.df,
             not_masked_biography_set=not_masked_biography_set,
@@ -154,6 +151,11 @@ def mask_visualization_dir(
         masked_worktime_per_date_user = WorktimePerDate(df_masked_worktime)
         output_project_dir.write_worktime_per_date_user(masked_worktime_per_date_user)
         output_project_dir.write_worktime_line_graph(masked_worktime_per_date_user, user_id_list=user_id_list)
+    else:
+        logger.warning(
+            f"'{project_dir.project_dir / project_dir.FILENAME_WORKTIME_PER_DATE_USER}'が存在しないかデータがないため、"
+            f"'{project_dir.FILENAME_WORKTIME_PER_DATE_USER}'から生成できるファイルを出力しません。"
+        )
 
     logger.debug(f"'{project_dir}'のマスクした結果を'{output_project_dir}'に出力しました。")
 

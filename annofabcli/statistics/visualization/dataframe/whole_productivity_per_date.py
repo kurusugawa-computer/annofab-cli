@@ -390,10 +390,11 @@ class WholeProductivityPerCompletedDate:
             )
             line_graph.add_secondary_y_axis(
                 "作業時間[hour]",
-                DataRange1d(
+                secondary_y_axis_range=DataRange1d(
                     end=max(df["actual_worktime_hour"].max(), df["monitored_worktime_hour"].max())
                     * SECONDARY_Y_RANGE_RATIO
                 ),
+                primary_y_axis_range=DataRange1d(end=df["task_count"].max() * SECONDARY_Y_RANGE_RATIO),
             )
 
             plot_index = 0
@@ -442,10 +443,11 @@ class WholeProductivityPerCompletedDate:
             )
             line_graph.add_secondary_y_axis(
                 "作業時間[hour]",
-                DataRange1d(
+                secondary_y_axis_range=DataRange1d(
                     end=max(df["actual_worktime_hour"].max(), df["monitored_worktime_hour"].max())
                     * SECONDARY_Y_RANGE_RATIO
                 ),
+                primary_y_axis_range=DataRange1d(end=df["input_data_count"].max() * SECONDARY_Y_RANGE_RATIO),
             )
 
             plot_index = 0
@@ -590,7 +592,7 @@ class WholeProductivityPerCompletedDate:
         line_graph_list.extend([info["line_graph"] for info in fig_info_list])  # type: ignore
 
         for line_graph in line_graph_list:
-            line_graph.config_legend()
+            line_graph.process_after_adding_glyphs()
 
         div_element = self._create_div_element()
         write_bokeh_graph(bokeh.layouts.column([div_element] + [e.figure for e in line_graph_list]), output_file)
@@ -627,10 +629,11 @@ class WholeProductivityPerCompletedDate:
             )
             line_graph.add_secondary_y_axis(
                 "作業時間[hour]",
-                y_range=DataRange1d(
+                secondary_y_axis_range=DataRange1d(
                     end=max(df["cumsum_actual_worktime_hour"].max(), df["cumsum_monitored_worktime_hour"].max())
                     * SECONDARY_Y_RANGE_RATIO
                 ),
+                primary_y_axis_range=DataRange1d(end=df["cumsum_task_count"].max() * SECONDARY_Y_RANGE_RATIO),
             )
 
             # 値をプロット
@@ -683,10 +686,11 @@ class WholeProductivityPerCompletedDate:
             )
             line_graph.add_secondary_y_axis(
                 "作業時間[hour]",
-                y_range=DataRange1d(
+                secondary_y_axis_range=DataRange1d(
                     end=max(df["cumsum_actual_worktime_hour"].max(), df["cumsum_monitored_worktime_hour"].max())
                     * SECONDARY_Y_RANGE_RATIO
                 ),
+                primary_y_axis_range=DataRange1d(end=df["cumsum_input_data_count"].max() * SECONDARY_Y_RANGE_RATIO),
             )
 
             x_column = "dt_date"
@@ -806,7 +810,7 @@ class WholeProductivityPerCompletedDate:
         line_graph_list = [create_task_line_graph(), create_input_data_line_graph(), create_worktime_line_graph()]
 
         for line_graph in line_graph_list:
-            line_graph.config_legend()
+            line_graph.process_after_adding_glyphs()
 
         div_element = self._create_div_element()
         write_bokeh_graph(bokeh.layouts.column([div_element] + [e.figure for e in line_graph_list]), output_file)
@@ -1110,7 +1114,9 @@ class WholeProductivityPerFirstAnnotationStartedDate:
             )
 
             line_graph.add_secondary_y_axis(
-                "作業時間[hour]", y_range=DataRange1d(end=df["worktime_hour"].max() * SECONDARY_Y_RANGE_RATIO)
+                "作業時間[hour]",
+                secondary_y_axis_range=DataRange1d(end=df["worktime_hour"].max() * SECONDARY_Y_RANGE_RATIO),
+                primary_y_axis_range=DataRange1d(end=df["task_count"].max() * SECONDARY_Y_RANGE_RATIO),
             )
 
             plot_index = 0
@@ -1147,9 +1153,7 @@ class WholeProductivityPerFirstAnnotationStartedDate:
                 ],
             )
 
-            line_graph.add_secondary_y_axis(
-                "作業時間[hour]", y_range=DataRange1d(end=df["worktime_hour"].max() * SECONDARY_Y_RANGE_RATIO)
-            )
+            line_graph.add_secondary_y_axis("作業時間[hour]")
 
             plot_index = 0
             _plot_and_moving_average(
@@ -1274,7 +1278,7 @@ class WholeProductivityPerFirstAnnotationStartedDate:
         line_graph_list = [create_task_graph(), create_input_data_graph()] + line_graph_list
 
         for line_graph in line_graph_list:
-            line_graph.config_legend()
+            line_graph.process_after_adding_glyphs()
 
         write_bokeh_graph(
             bokeh.layouts.column([create_div_element()] + [e.figure for e in line_graph_list]), output_file

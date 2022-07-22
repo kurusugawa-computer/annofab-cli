@@ -232,6 +232,7 @@ class ProjectDir(DataClassJsonMixin):
         if file.exists():
             return WorktimePerDate.from_csv(file)
         else:
+            logger.warning(f"'{str(file)}'を読み込もうとしましたが、ファイルは存在しません。")
             return WorktimePerDate.empty()
 
     def write_worktime_per_date_user(self, obj: WorktimePerDate):
