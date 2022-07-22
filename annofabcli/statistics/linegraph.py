@@ -241,23 +241,25 @@ class LineGraph:
         legend = fig.legend[0]
         fig.add_layout(legend, "left")
 
-    def create_button_hiding_all_lines(self) -> Button:
+    def create_button_hiding_showing_all_lines(self, is_hiding: bool) -> Button:
         """
         全ての折れ線を非表示にするボタンを生成します。
         折れ線が20個以上あると見えづらくなるので、すべて非表示にするボタンを用意しました。
+
+        Args:
+            is_hiding: Trueなら非表示ボタンを生成します。
         """
-        button = Button(label="すべての折れ線を非表示にする", button_type="primary")
+        button_label = "すべての折れ線を非表示にする" if is_hiding else "すべての折れ線を表示する"
+
+        button = Button(label=button_label, button_type="primary")
 
         glyph_list: list[GlyphRenderer] = []
         glyph_list.extend(self.line_glyphs.values())
         glyph_list.extend(self.marker_glyphs.values())
 
         args = {"glyph_list": glyph_list}
-        code = """
-            for (let glyph of glyph_list) {
-                glyph.visible = false
-            }
-        """
+        str_is_visible = "false" if is_hiding else "true"
+        code = f"for (let glyph of glyph_list) {{glyph.visible = {str_is_visible} }}"
         button.js_on_click(CustomJS(code=code, args=args))
         return button
 
