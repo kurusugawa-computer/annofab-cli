@@ -38,12 +38,23 @@ class ChangeStatusMain:
 
     def change_status_for_task_wrapper(
         self,
-        status: str,
         tpl: Tuple[int, str],
+        status: str,
         project_id: str,
         task_query: Optional[TaskQuery] = None,
     ) -> bool:
-        return True
+        task_index, task_id = tpl
+        try:
+            return self.change_status_for_task(
+                project_id=project_id,
+                task_id=task_id,
+                task_index=task_index,
+                task_query=task_query,
+                status=status,
+            )
+        except Exception:  # pylint: disable=broad-except
+            logger.warning(f"タスク'{task_id}'のステータスの変更に失敗しました。", exc_info=True)
+            return False
 
     def change_status(
         self,
