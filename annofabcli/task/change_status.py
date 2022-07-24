@@ -37,7 +37,7 @@ class ChangeStatusMain:
 
 class ChangeStatus(AbstractCommandLineInterface):
     """
-    作業中のタスクの状態を変更する。
+    作業中のタスクのステータスを変更する。
     """
 
     @staticmethod
@@ -64,7 +64,7 @@ class ChangeStatus(AbstractCommandLineInterface):
         elif args.to_on_hold is True:
             status = "on_hold"
         else:
-            logger.error(f"変更後のタスクの状態の指定方法が正しくありません。")
+            logger.error(f"変更後のタスクのステータスの指定方法が正しくありません。")
             return
 
         dict_task_query = annofabcli.common.cli.get_json_from_args(args.task_query)
@@ -111,8 +111,8 @@ def parse_args(parser: argparse.ArgumentParser):
 
 def add_parser(subparsers: Optional[argparse._SubParsersAction] = None):
     subcommand_name = "change_status"
-    subcommand_help = "タスクの状態を変更します。"
-    description = "タスクの状態を作業中から休憩中、または保留中に変更します。"
+    subcommand_help = "タスクのステータスを変更します。"
+    description = "タスクのステータスを作業中から休憩中、または保留中に変更します。"
     epilog = ""
 
     parser = annofabcli.common.cli.add_parser(subparsers, subcommand_name, subcommand_help, description, epilog=epilog)
