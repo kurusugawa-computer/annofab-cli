@@ -1,4 +1,5 @@
 import argparse
+import logging
 import sys
 from typing import List, Optional
 
@@ -14,6 +15,8 @@ from annofabcli.common.cli import (
 )
 from annofabcli.common.facade import AnnofabApiFacade, TaskQuery
 
+logger = logging.getLogger(__name__)
+
 
 class ChangeStatusMain:
     def __init__(self, service: annofabapi.Resource, all_yes: bool):
@@ -25,6 +28,7 @@ class ChangeStatusMain:
         self,
         project_id: str,
         task_id_list: List[str],
+        status: str,
         task_query: Optional[TaskQuery] = None,
         parallelism: Optional[int] = None,
     ):
@@ -55,6 +59,13 @@ class ChangeStatus(AbstractCommandLineInterface):
             sys.exit(COMMAND_LINE_ERROR_STATUS_CODE)
 
         task_id_list = annofabcli.common.cli.get_list_from_args(args.task_id)
+        if args.to_break is True:
+            status = "break"
+        elif args.to_on_hold is True:
+            status = "on_hold"
+        else:
+            logger.error(f"変更後のタスクの状態の指定方法が正しくありません。")
+            return
 
         dict_task_query = annofabcli.common.cli.get_json_from_args(args.task_query)
         task_query: Optional[TaskQuery] = TaskQuery.from_dict(dict_task_query) if dict_task_query is not None else None
@@ -65,6 +76,7 @@ class ChangeStatus(AbstractCommandLineInterface):
         main_obj.change_status(
             project_id,
             task_id_list=task_id_list,
+            status=status,
             task_query=task_query,
             parallelism=args.parallelism,
         )
