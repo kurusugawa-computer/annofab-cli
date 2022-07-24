@@ -1,7 +1,9 @@
 import argparse
 import logging
+import multiprocessing
 import sys
-from typing import List, Optional
+from functools import partial
+from typing import List, Optional, Tuple
 
 import annofabapi
 
@@ -24,6 +26,25 @@ class ChangeStatusMain:
         self.facade = AnnofabApiFacade(service)
         self.all_yes = all_yes
 
+    def change_status_for_task(
+        self,
+        project_id: str,
+        status: str,
+        task_id: str,
+        task_query: Optional[TaskQuery] = None,
+        task_index: Optional[int] = None,
+    ) -> bool:
+        return True
+
+    def change_status_for_task_wrapper(
+        self,
+        status: str,
+        tpl: Tuple[int, str],
+        project_id: str,
+        task_query: Optional[TaskQuery] = None,
+    ) -> bool:
+        return True
+
     def change_status(
         self,
         project_id: str,
@@ -32,7 +53,53 @@ class ChangeStatusMain:
         task_query: Optional[TaskQuery] = None,
         parallelism: Optional[int] = None,
     ):
-        print(1)
+        """
+        作業中のタスクのステータスを変更する。
+
+        Args:
+            project_id:
+            task_id_list:
+            status: 変更後のタスクのステータス。
+            parallelism: 並列度
+
+        """
+
+        if task_query is not None:
+            task_query = self.facade.set_account_id_of_task_query(project_id, task_query)
+
+        if status == "break":
+            logger.info(f"{len(task_id_list)} 件のタスクのステータスを、作業中から休憩中に変更します。")
+        else:
+            logger.info(f"{len(task_id_list)} 件のタスクのステータスを、作業中から保留中に変更します。")
+
+        if parallelism is not None:
+            partial_func = partial(
+                self.change_status_for_task_wrapper,
+                project_id=project_id,
+                task_query=task_query,
+                status=status,
+            )
+            with multiprocessing.Pool(parallelism) as pool:
+                result_bool_list = pool.map(partial_func, enumerate(task_id_list))
+                success_count = len([e for e in result_bool_list if e])
+
+        else:
+            # 逐次処理
+            for task_index, task_id in enumerate(task_id_list):
+                try:
+                    result = self.change_status_for_task(
+                        project_id, status, task_id, task_index=task_index, task_query=task_query,
+                    )
+                    if result:
+                        success_count += 1
+                except Exception:  # pylint: disable=broad-except
+                    logger.warning(f"タスク'{task_id}'のステータスの変更に失敗しました。", exc_info=True)
+                    continue
+
+        if status == "break":
+            logger.info(f"{success_count} / {len(task_id_list)} 件 タスクのステータスを休憩中に変更しました。")
+        else:
+            logger.info(f"{success_count} / {len(task_id_list)} 件 タスクのステータスを保留中に変更しました。")
 
 
 class ChangeStatus(AbstractCommandLineInterface):
