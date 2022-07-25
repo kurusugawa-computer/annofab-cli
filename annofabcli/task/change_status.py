@@ -16,6 +16,7 @@ from annofabcli.common.cli import (
     AbstractCommandLineInterface,
     ArgumentParser,
     build_annofabapi_resource_and_login,
+    prompt_yesnoall,
 )
 from annofabcli.common.facade import AnnofabApiFacade, TaskQuery
 
@@ -27,6 +28,36 @@ class ChangeStatusMain:
         self.service = service
         self.facade = AnnofabApiFacade(service)
         self.all_yes = all_yes
+
+    def confirm_processing(self, confirm_message: str) -> bool:
+        """
+        `all_yes`属性を見て、処理するかどうかユーザに問い合わせる。
+        "ALL"が入力されたら、`all_yes`属性をTrueにする
+
+        Args:
+            task_id: 処理するtask_id
+            confirm_message: 確認メッセージ
+
+        Returns:
+            True: Yes, False: No
+
+        """
+        if self.all_yes:
+            return True
+
+        yes, all_yes = prompt_yesnoall(confirm_message)
+
+        if all_yes:
+            self.all_yes = True
+
+        return yes
+
+    def confirm_change_status(self, task: Task, status: str) -> bool:
+        if status == "break":
+            confirm_message = f"task_id = {task.task_id} のタスクのステータスを休憩中に変更しますか？"
+        else:
+            confirm_message = f"task_id = {task.task_id} のタスクのステータスを保留中に変更しますか？"
+        return self.confirm_processing(confirm_message)
 
     def change_status_for_task(
         self,
@@ -46,6 +77,9 @@ class ChangeStatusMain:
 
         if task.status != TaskStatus.WORKING:
             logger.warning(f"{logging_prefix}: task_id='{task_id}'のタスクは作業中ではないので、スキップします。")
+            return False
+
+        if not self.confirm_change_status(task, status):
             return False
 
         return True
