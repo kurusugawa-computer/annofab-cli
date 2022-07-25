@@ -18,7 +18,7 @@ from annofabcli.common.cli import (
     build_annofabapi_resource_and_login,
     prompt_yesnoall,
 )
-from annofabcli.common.facade import AnnofabApiFacade, TaskQuery
+from annofabcli.common.facade import AnnofabApiFacade, TaskQuery, match_task_with_query
 
 logger = logging.getLogger(__name__)
 
@@ -74,6 +74,12 @@ class ChangeStatusMain:
             return False
 
         task: Task = Task.from_dict(dict_task)
+
+        if not match_task_with_query(task, task_query):
+            logger.debug(
+                f"{logging_prefix} : task_id = {task_id} : `--task_query` の条件にマッチしないため、スキップします。task_query={task_query}"
+            )
+            return False
 
         if task.status != TaskStatus.WORKING:
             logger.warning(f"{logging_prefix}: task_id='{task_id}'のタスクは作業中ではないので、スキップします。")
