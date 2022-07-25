@@ -6,6 +6,8 @@ from functools import partial
 from typing import List, Optional, Tuple
 
 import annofabapi
+from annofabapi.dataclass.task import Task
+from annofabapi.models import TaskStatus
 
 import annofabcli
 import annofabcli.common.cli
@@ -39,6 +41,13 @@ class ChangeStatusMain:
         if dict_task is None:
             logger.warning(f"{logging_prefix}: task_id='{task_id}'のタスクは存在しないので、スキップします。")
             return False
+
+        task: Task = Task.from_dict(dict_task)
+
+        if task.status != TaskStatus.WORKING:
+            logger.warning(f"{logging_prefix}: task_id='{task_id}'のタスクは作業中ではないので、スキップします。")
+            return False
+
         return True
 
     def change_status_for_task_wrapper(
