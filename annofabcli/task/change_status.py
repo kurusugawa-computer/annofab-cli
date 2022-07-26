@@ -65,8 +65,8 @@ class ChangeStatusMain:
         project_id: str,
         status: str,
         task_id: str,
-        task_query: Optional[TaskQuery] = None,
         task_index: Optional[int] = None,
+        task_query: Optional[TaskQuery] = None,
     ) -> bool:
         logging_prefix = f"{task_index+1} 件目" if task_index is not None else ""
         dict_task = self.service.wrapper.get_task_or_none(project_id, task_id)
@@ -106,18 +106,18 @@ class ChangeStatusMain:
     def change_status_for_task_wrapper(
         self,
         tpl: Tuple[int, str],
-        status: str,
         project_id: str,
+        status: str,
         task_query: Optional[TaskQuery] = None,
     ) -> bool:
         task_index, task_id = tpl
         try:
             return self.change_status_for_task(
                 project_id=project_id,
+                status=status,
                 task_id=task_id,
                 task_index=task_index,
                 task_query=task_query,
-                status=status,
             )
         except Exception:  # pylint: disable=broad-except
             logger.warning(f"タスク'{task_id}'のステータスの変更に失敗しました。", exc_info=True)
@@ -156,8 +156,8 @@ class ChangeStatusMain:
             partial_func = partial(
                 self.change_status_for_task_wrapper,
                 project_id=project_id,
-                task_query=task_query,
                 status=status,
+                task_query=task_query,
             )
             with multiprocessing.Pool(parallelism) as pool:
                 result_bool_list = pool.map(partial_func, enumerate(task_id_list))
