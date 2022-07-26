@@ -71,7 +71,7 @@ class ChangeStatusMain:
         logging_prefix = f"{task_index+1} 件目" if task_index is not None else ""
         dict_task = self.service.wrapper.get_task_or_none(project_id, task_id)
         if dict_task is None:
-            logger.warning(f"{logging_prefix}: task_id='{task_id}'のタスクは存在しないので、スキップします。")
+            logger.warning(f"{logging_prefix}: task_id ='{task_id}' のタスクは存在しないので、スキップします。")
             return False
 
         task: Task = Task.from_dict(dict_task)
@@ -83,7 +83,7 @@ class ChangeStatusMain:
             return False
 
         if task.status != TaskStatus.WORKING:
-            logger.warning(f"{logging_prefix}: task_id='{task_id}'のタスクは作業中ではないので、スキップします。")
+            logger.warning(f"{logging_prefix}: task_id = '{task_id}' のタスクは作業中ではないので、スキップします。")
             return False
 
         if not self.confirm_change_status(task, status):
@@ -93,14 +93,14 @@ class ChangeStatusMain:
             # ステータスを変更する
             if status == "break":
                 self.service.wrapper.change_task_status_to_break(project_id, task_id)
-                logger.debug(f"{logging_prefix} : task_id = {task_id}, タスクのステータスを休憩中に変更しました。")
+                # logger.debug(f"{logging_prefix} : task_id = {task_id}, タスクのステータスを休憩中に変更しました。")
             else:
                 self.service.wrapper.change_task_status_to_on_hold(project_id, task_id)
-                logger.debug(f"{logging_prefix} : task_id = {task_id}, タスクのステータスを保留中に変更しました。")
+                # logger.debug(f"{logging_prefix} : task_id = {task_id}, タスクのステータスを保留中に変更しました。")
             return True
 
         except requests.exceptions.HTTPError:
-            logger.warning(f"{logging_prefix} : task_id = {task_id} の担当者を変更するのに失敗しました。", exc_info=True)
+            logger.warning(f"{logging_prefix} : task_id = {task_id} のステータスを変更するのに失敗しました。", exc_info=True)
             return False
 
     def change_status_for_task_wrapper(
@@ -146,9 +146,9 @@ class ChangeStatusMain:
             task_query = self.facade.set_account_id_of_task_query(project_id, task_query)
 
         if status == "break":
-            logger.info(f"{len(task_id_list)} 件のタスクのステータスを、作業中から休憩中に変更します。")
+            logger.info(f"{len(task_id_list)} 件のタスクのステータスを、休憩中に変更します。")
         else:
-            logger.info(f"{len(task_id_list)} 件のタスクのステータスを、作業中から保留中に変更します。")
+            logger.info(f"{len(task_id_list)} 件のタスクのステータスを、保留中に変更します。")
 
         success_count = 0
 
@@ -184,7 +184,7 @@ class ChangeStatusMain:
 
 class ChangeStatus(AbstractCommandLineInterface):
     """
-    作業中のタスクのステータスを変更する。
+    タスクのステータスを変更する。
     """
 
     @staticmethod
