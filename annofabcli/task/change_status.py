@@ -6,6 +6,7 @@ from functools import partial
 from typing import List, Optional, Tuple
 
 import annofabapi
+import requests
 from annofabapi.dataclass.task import Task
 from annofabapi.models import TaskStatus
 
@@ -88,7 +89,19 @@ class ChangeStatusMain:
         if not self.confirm_change_status(task, status):
             return False
 
-        return True
+        try:
+            # ステータスを変更する
+            if status == "break":
+                self.service.wrapper.change_task_status_to_break(project_id, task_id)
+                logger.debug(f"{logging_prefix} : task_id = {task_id}, タスクのステータスを休憩中に変更しました。")
+            else:
+                self.service.wrapper.change_task_status_to_on_hold(project_id, task_id)
+                logger.debug(f"{logging_prefix} : task_id = {task_id}, タスクのステータスを保留中に変更しました。")
+            return True
+
+        except requests.exceptions.HTTPError:
+            logger.warning(f"{logging_prefix} : task_id = {task_id} の担当者を変更するのに失敗しました。", exc_info=True)
+            return False
 
     def change_status_for_task_wrapper(
         self,
@@ -136,6 +149,8 @@ class ChangeStatusMain:
             logger.info(f"{len(task_id_list)} 件のタスクのステータスを、作業中から休憩中に変更します。")
         else:
             logger.info(f"{len(task_id_list)} 件のタスクのステータスを、作業中から保留中に変更します。")
+
+        success_count = 0
 
         if parallelism is not None:
             partial_func = partial(
