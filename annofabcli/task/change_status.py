@@ -8,7 +8,7 @@ from typing import List, Optional, Tuple
 import annofabapi
 import requests
 from annofabapi.dataclass.task import Task
-from annofabapi.models import TaskStatus
+from annofabapi.models import ProjectMemberRole, TaskStatus
 
 import annofabcli
 import annofabcli.common.cli
@@ -218,6 +218,7 @@ class ChangeStatus(AbstractCommandLineInterface):
         task_query: Optional[TaskQuery] = TaskQuery.from_dict(dict_task_query) if dict_task_query is not None else None
 
         project_id = args.project_id
+        super().validate_project(project_id, [ProjectMemberRole.OWNER, ProjectMemberRole.ACCEPTER])
 
         main_obj = ChangeStatusMain(self.service, all_yes=self.all_yes)
         main_obj.change_status(
@@ -260,7 +261,7 @@ def add_parser(subparsers: Optional[argparse._SubParsersAction] = None):
     subcommand_name = "change_status"
     subcommand_help = "タスクのステータスを変更します。"
     description = "タスクのステータスを作業中から休憩中、または保留中に変更します。"
-    epilog = ""
+    epilog = "チェッカーまたはオーナロールを持つユーザで実行してください。"
 
     parser = annofabcli.common.cli.add_parser(subparsers, subcommand_name, subcommand_help, description, epilog=epilog)
     parse_args(parser)
