@@ -211,7 +211,6 @@ class LineGraph:
         折れ線などのGlyphを追加した後に実行する処理です。
         以下を設定します。
         * 凡例
-        * 軸の範囲
 
         """
         self.configure_legend()
