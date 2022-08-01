@@ -59,7 +59,7 @@ Usage Details
 =================================
 
 .. argparse::
-   :ref: annofabcli.task.change_operator.add_parser
+   :ref: annofabcli.task.change_status_to_break.add_parser
    :prog: annofabcli task
    :nosubcommands:
    :nodefaultconst:
