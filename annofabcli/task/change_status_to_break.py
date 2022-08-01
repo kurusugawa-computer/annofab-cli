@@ -88,9 +88,8 @@ class ChangeStatusToBreakMain:
         try:
             # ステータスを変更する
             self.service.wrapper.change_task_status_to_break(project_id, task_id)
-            # logger.debug(f"{logging_prefix} : task_id = {task_id}, タスクのステータスを休憩中に変更しました。")
+            logger.debug(f"{logging_prefix} : task_id = {task_id}, タスクのステータスを休憩中に変更しました。")
             return True
-
         except requests.exceptions.HTTPError:
             logger.warning(f"{logging_prefix} : task_id = {task_id} のステータスを変更するのに失敗しました。", exc_info=True)
             return False
@@ -122,10 +121,10 @@ class ChangeStatusToBreakMain:
     ):
         """
         タスクのステータスを作業中から休憩中に変更する。
-
         Args:
             project_id:
             task_id_list:
+            task_query:
             parallelism: 並列度
 
         """
@@ -197,7 +196,7 @@ class ChangeStatusToBreak(AbstractCommandLineInterface):
         main_obj = ChangeStatusToBreakMain(self.service, all_yes=self.all_yes)
         main_obj.change_status_to_break(
             project_id,
-            task_id_list=task_id_list,
+            task_id_list,
             task_query=task_query,
             parallelism=args.parallelism,
         )
