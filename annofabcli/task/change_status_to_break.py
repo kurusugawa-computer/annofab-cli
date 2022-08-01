@@ -24,7 +24,7 @@ from annofabcli.common.facade import AnnofabApiFacade, TaskQuery, match_task_wit
 logger = logging.getLogger(__name__)
 
 
-class ChangeStatusMain:
+class ChangeStatusToBreakMain:
     def __init__(self, service: annofabapi.Resource, all_yes: bool):
         self.service = service
         self.facade = AnnofabApiFacade(service)
@@ -163,7 +163,7 @@ class ChangeStatusMain:
         logger.info(f"{success_count} / {len(task_id_list)} 件 タスクのステータスを休憩中に変更しました。")
 
 
-class ChangeStatus(AbstractCommandLineInterface):
+class ChangeStatusToBreak(AbstractCommandLineInterface):
     """
     タスクのステータスを作業中から休憩中に変更する。
     """
@@ -194,7 +194,7 @@ class ChangeStatus(AbstractCommandLineInterface):
         project_id = args.project_id
         super().validate_project(project_id, [ProjectMemberRole.OWNER, ProjectMemberRole.ACCEPTER])
 
-        main_obj = ChangeStatusMain(self.service, all_yes=self.all_yes)
+        main_obj = ChangeStatusToBreakMain(self.service, all_yes=self.all_yes)
         main_obj.change_status_to_break(
             project_id,
             task_id_list=task_id_list,
@@ -206,7 +206,7 @@ class ChangeStatus(AbstractCommandLineInterface):
 def main(args: argparse.Namespace):
     service = build_annofabapi_resource_and_login(args)
     facade = AnnofabApiFacade(service)
-    ChangeStatus(service, facade, args).main()
+    ChangeStatusToBreak(service, facade, args).main()
 
 
 def parse_args(parser: argparse.ArgumentParser):
