@@ -15,43 +15,20 @@ import annofabcli.common.cli
 from annofabcli.common.cli import (
     COMMAND_LINE_ERROR_STATUS_CODE,
     AbstractCommandLineInterface,
+    AbstractCommandLineWithConfirmInterface,
     ArgumentParser,
     build_annofabapi_resource_and_login,
-    prompt_yesnoall,
 )
 from annofabcli.common.facade import AnnofabApiFacade, TaskQuery, match_task_with_query
 
 logger = logging.getLogger(__name__)
 
 
-class ChangeStatusToBreakMain:
+class ChangeStatusToBreakMain(AbstractCommandLineWithConfirmInterface):
     def __init__(self, service: annofabapi.Resource, all_yes: bool):
+        super().__init__(all_yes)
         self.service = service
         self.facade = AnnofabApiFacade(service)
-        self.all_yes = all_yes
-
-    def confirm_processing(self, confirm_message: str) -> bool:
-        """
-        `all_yes`属性を見て、処理するかどうかユーザに問い合わせる。
-        "ALL"が入力されたら、`all_yes`属性をTrueにする
-
-        Args:
-            task_id: 処理するtask_id
-            confirm_message: 確認メッセージ
-
-        Returns:
-            True: Yes, False: No
-
-        """
-        if self.all_yes:
-            return True
-
-        yes, all_yes = prompt_yesnoall(confirm_message)
-
-        if all_yes:
-            self.all_yes = True
-
-        return yes
 
     def confirm_change_status_to_break(self, task: Task) -> bool:
         confirm_message = f"task_id = {task.task_id} のタスクのステータスを休憩中に変更しますか？"
@@ -151,7 +128,10 @@ class ChangeStatusToBreakMain:
             for task_index, task_id in enumerate(task_id_list):
                 try:
                     result = self.change_status_to_break_for_task(
-                        project_id, task_id, task_index=task_index, task_query=task_query,
+                        project_id,
+                        task_id,
+                        task_index=task_index,
+                        task_query=task_query,
                     )
                     if result:
                         success_count += 1
