@@ -55,8 +55,8 @@ class ChangeStatusToBreakMain(AbstractCommandLineWithConfirmInterface):
             )
             return False
 
-        if task.status != TaskStatus.WORKING:
-            logger.warning(f"{logging_prefix}: task_id = '{task_id}' のタスクは作業中ではないので、スキップします。")
+        if task.status not in (TaskStatus.WORKING, TaskStatus.ON_HOLD):
+            logger.warning(f"{logging_prefix}: task_id = '{task_id}' のタスクは作業中でも保留中でもないので、スキップします。")
             return False
 
         if not self.confirm_change_status_to_break(task):
@@ -64,11 +64,16 @@ class ChangeStatusToBreakMain(AbstractCommandLineWithConfirmInterface):
 
         try:
             # ステータスを変更する
+
+            # 保留中なら一度作業中にする(APIの都合上)
+            if task.status == TaskStatus.ON_HOLD:
+                self.service.wrapper.change_task_status_to_working(project_id, task_id)
+
             self.service.wrapper.change_task_status_to_break(project_id, task_id)
             logger.debug(f"{logging_prefix} : task_id = {task_id}, タスクのステータスを休憩中に変更しました。")
             return True
         except requests.exceptions.HTTPError:
-            logger.warning(f"{logging_prefix} : task_id = {task_id} のステータスを変更するのに失敗しました。", exc_info=True)
+            logger.warning(f"{logging_prefix} : task_id = {task_id} のステータスの変更に失敗しました。", exc_info=True)
             return False
 
     def change_status_to_break_for_task_wrapper(
@@ -97,7 +102,7 @@ class ChangeStatusToBreakMain(AbstractCommandLineWithConfirmInterface):
         parallelism: Optional[int] = None,
     ):
         """
-        タスクのステータスを作業中から休憩中に変更する。
+        タスクのステータスを休憩中に変更する。
         Args:
             project_id:
             task_id_list:
@@ -109,7 +114,7 @@ class ChangeStatusToBreakMain(AbstractCommandLineWithConfirmInterface):
         if task_query is not None:
             task_query = self.facade.set_account_id_of_task_query(project_id, task_query)
 
-        logger.info(f"{len(task_id_list)} 件のタスクのステータスを、作業中から休憩中に変更します。")
+        logger.info(f"{len(task_id_list)} 件のタスクのステータスを、休憩中に変更します。")
 
         success_count = 0
 
@@ -144,7 +149,7 @@ class ChangeStatusToBreakMain(AbstractCommandLineWithConfirmInterface):
 
 class ChangeStatusToBreak(AbstractCommandLineInterface):
     """
-    タスクのステータスを作業中から休憩中に変更する。
+    タスクのステータスを休憩中に変更する。
     """
 
     @staticmethod
@@ -205,8 +210,8 @@ def parse_args(parser: argparse.ArgumentParser):
 
 def add_parser(subparsers: Optional[argparse._SubParsersAction] = None):
     subcommand_name = "change_status_to_break"
-    subcommand_help = "タスクのステータスを作業中から休憩中に変更します。"
-    description = "タスクのステータスを作業中から休憩中に変更します。"
+    subcommand_help = "タスクのステータスを休憩中に変更します。"
+    description = "タスクのステータスを休憩中に変更します。ただし、操作対象のタスクは作業中か保留中である必要があります。"
     epilog = "チェッカーまたはオーナロールを持つユーザで実行してください。"
 
     parser = annofabcli.common.cli.add_parser(subparsers, subcommand_name, subcommand_help, description, epilog=epilog)
