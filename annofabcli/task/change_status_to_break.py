@@ -212,8 +212,6 @@ def add_parser(subparsers: Optional[argparse._SubParsersAction] = None):
     subcommand_name = "change_status_to_break"
     subcommand_help = "タスクのステータスを休憩中に変更します。"
     description = "タスクのステータスを休憩中に変更します。ただし、操作対象のタスクは作業中か保留中である必要があります。"
-    epilog = "チェッカーまたはオーナロールを持つユーザで実行してください。"
-
-    parser = annofabcli.common.cli.add_parser(subparsers, subcommand_name, subcommand_help, description, epilog=epilog)
+    epilog = "アノテータ、チェッカーまたはオーナロールを持つユーザで実行してください。"
     parse_args(parser)
     return parser
