@@ -176,7 +176,7 @@ class ChangeStatusToBreak(AbstractCommandLineInterface):
         task_query: Optional[TaskQuery] = TaskQuery.from_dict(dict_task_query) if dict_task_query is not None else None
 
         project_id = args.project_id
-        super().validate_project(project_id, [ProjectMemberRole.OWNER, ProjectMemberRole.ACCEPTER])
+        super().validate_project(project_id, [ProjectMemberRole.OWNER, ProjectMemberRole.ACCEPTER, ProjectMemberRole.WORKER])
 
         main_obj = ChangeStatusToBreakMain(self.service, all_yes=self.all_yes)
         main_obj.change_status_to_break(
