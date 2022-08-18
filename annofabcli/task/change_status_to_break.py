@@ -177,8 +177,7 @@ class ChangeStatusToBreak(AbstractCommandLineInterface):
 
         project_id = args.project_id
         super().validate_project(
-            project_id,
-            [ProjectMemberRole.OWNER, ProjectMemberRole.ACCEPTER, ProjectMemberRole.WORKER]
+            project_id, [ProjectMemberRole.OWNER, ProjectMemberRole.ACCEPTER, ProjectMemberRole.WORKER]
         )
 
         main_obj = ChangeStatusToBreakMain(self.service, all_yes=self.all_yes)
