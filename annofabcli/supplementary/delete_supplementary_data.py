@@ -188,8 +188,7 @@ class DeleteSupplementaryDataMain(AbstractCommandLineWithConfirmInterface):
             if input_data is None:
                 logger.warning(f"input_data_id={input_data_id} の入力データは存在しないので、補助情報の削除をスキップします。")
                 continue
-            else:
-                input_data_name = input_data["input_data_name"]
+            input_data_name = input_data["input_data_name"]
 
             supplementary_data_list, _ = self.service.api.get_supplementary_data_list(project_id, input_data_id)
             if len(supplementary_data_list) == 0:
