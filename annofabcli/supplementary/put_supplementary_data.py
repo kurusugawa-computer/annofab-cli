@@ -182,6 +182,11 @@ class SubPutSupplementaryData:
         supplementary_data_id = csv_supplementary_data.supplementary_data_id
         supplementary_data_path = csv_supplementary_data.supplementary_data_path
 
+        # input_data_idの存在確認
+        if self.service.wrapper.get_input_data_or_none(project_id, input_data_id) is None:
+            logger.warning(f"input_data_id='{input_data_id}'である入力データは存在しないため、補助情報の登録をスキップします。")
+            return False
+
         if supplementary_data_id is not None:
             old_supplementary_data_key = f"supplementary_data_id={supplementary_data_id}"
             old_supplementary_data = self.get_supplementary_data_by_id(project_id, input_data_id, supplementary_data_id)
