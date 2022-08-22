@@ -143,8 +143,8 @@ class CopyTasksMain(AbstractCommandLineWithConfirmInterface):
                     )
                     if result:
                         success_count += 1
-                except Exception as e:  # pylint: disable=broad-except
-                    logger.warning(f"タスク'{copy_target.src_task_id}'を'{copy_target.dest_task_id}'にコピーする際に失敗しました。", e)
+                except Exception:  # pylint: disable=broad-except
+                    logger.warning(f"タスク'{copy_target.src_task_id}'を'{copy_target.dest_task_id}'にコピーする際に失敗しました。", exc_info=True)
                     continue
 
         logger.info(f"{success_count} / {len(copy_target_list)} 件 タスクをコピーしました。")
