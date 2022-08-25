@@ -9,7 +9,6 @@ import pandas
 
 import annofabcli
 from annofabcli.common.cli import AbstractCommandLineWithoutWebapiInterface, ArgumentParser, get_list_from_args
-from annofabcli.common.exceptions import AnnofabCliException
 from annofabcli.common.utils import read_multiheader_csv
 
 logger = logging.getLogger(__name__)
@@ -302,7 +301,8 @@ def create_masked_user_info_df(
     not_masked_user_id_set: Optional[Set[str]] = None,
 ) -> pandas.DataFrame:
     if "user_id" not in df:
-        raise AnnofabCliException(f"`user_id`列が存在しないため、ユーザ情報をマスクできません。")
+        logger.warning("引数`df`に`user_id`列が存在しないため、ユーザ情報をマスクできません。")
+        return df
 
     df_output = df.copy()
     replacement_dict_by_user_id = create_replacement_dict_by_user_id(
