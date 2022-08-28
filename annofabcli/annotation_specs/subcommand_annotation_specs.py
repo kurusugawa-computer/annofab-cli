@@ -2,6 +2,7 @@ import argparse
 from typing import Optional
 
 import annofabcli
+import annofabcli.annotation_specs.get_annotation_specs_with_label_id_replaced
 import annofabcli.annotation_specs.list_annotation_specs_history
 import annofabcli.annotation_specs.list_annotation_specs_label
 import annofabcli.annotation_specs.list_attribute_restriction
@@ -14,6 +15,7 @@ def parse_args(parser: argparse.ArgumentParser):
     subparsers = parser.add_subparsers(dest="subcommand_name")
 
     # サブコマンドの定義
+    annofabcli.annotation_specs.get_annotation_specs_with_label_id_replaced.add_parser(subparsers)
     annofabcli.annotation_specs.list_attribute_restriction.add_parser(subparsers)
     annofabcli.annotation_specs.list_annotation_specs_history.add_parser(subparsers)
     annofabcli.annotation_specs.list_annotation_specs_label.add_parser(subparsers)
