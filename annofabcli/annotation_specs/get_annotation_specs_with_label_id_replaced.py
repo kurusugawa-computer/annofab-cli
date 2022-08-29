@@ -164,10 +164,10 @@ def add_parser(subparsers: Optional[argparse._SubParsersAction] = None):
     subcommand_help = "label_idをUUIDから英語名に置換したアノテーション仕様のJSONを出力します。"
 
     description = (
-        "label_idをUUIDから英語名に置換したアノテーション仕様のJSONを出力します。\n"
+        "ラベルIDをUUIDから英語名に置換したアノテーション仕様のJSONを出力します。\n"
         "アノテーション仕様は変更しません。画面のインポート機能を使って、アノテーション仕様を変更することを想定しています。\n"
         "相関制約をJSONで直接設定する際などに利用すると便利です。IDをがUUID形式から分かりやすい名前になるため、JSON記述しやすくなります。\n"
-        "【注意】既にアノテーションが存在する状態でlabel_idを変更すると、既存のアノテーション情報が消える恐れがあります。十分注意して、label_idを変更してください。"
+        "【注意】既にアノテーションが存在する状態でラベルIDを変更すると、既存のアノテーション情報が消える恐れがあります。十分注意して、IDを変更してください。"
     )
 
     parser = annofabcli.common.cli.add_parser(subparsers, subcommand_name, subcommand_help, description=description)

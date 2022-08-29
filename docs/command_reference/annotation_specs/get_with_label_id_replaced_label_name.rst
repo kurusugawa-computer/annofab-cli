@@ -1,10 +1,10 @@
 ====================================================================================
-annotation_specs get_with_label_id_replaced_label_name
+annotation_specs get_with_label_id_replaced_english_name
 ====================================================================================
 
 Description
 =================================
-label_idをUUIDから英語名に置換したアノテーション仕様のJSONを出力します。
+ラベルIDをUUIDから英語名に置換したアノテーション仕様のJSONを出力します。
 
 アノテーション仕様は変更しません。画面のインポート機能を使って、アノテーション仕様を変更することを想定しています。
 
@@ -12,7 +12,7 @@ label_idをUUIDから英語名に置換したアノテーション仕様のJSON�
 
 .. warning::
 
-    既にアノテーションが存在する状態でlabel_idを変更すると、既存のアノテーション情報が消える恐れがあります。十分注意して、label_idを変更してください。
+    既にアノテーションが存在する状態でラベルIDを変更すると、既存のアノテーション情報が消える恐れがあります。十分注意して、IDを変更してください。
 
 
 
@@ -45,8 +45,8 @@ Examples
         ...
     }
 
-    # label_idを英語名に変更したアノテーション仕様を出力
-    $ annofabcli annotation_specs get_with_label_id_replaced_label_name --project_id prj1 --out out.json
+    # ラベルIDを英語名に変更したアノテーション仕様を出力
+    $ annofabcli annotation_specs get_with_label_id_replaced_english_name --project_id prj1 --out out.json
 
     $ jq ".labels[0]" out.json
     {
@@ -69,11 +69,11 @@ Examples
 
 
 
-特定のラベルのlabel_idのみ変更する場合は、 ``--label_name`` を指定してください。
+特定のラベルのラベルIDのみ変更する場合は、 ``--label_name`` を指定してください。
 
 .. code-block::
 
-    $ annofabcli annotation_specs get_with_label_id_replaced_label_name --project_id prj1 \
+    $ annofabcli annotation_specs get_with_label_id_replaced_english_name --project_id prj1 \
      --label_name weather car --out out.json
 
 
@@ -84,7 +84,7 @@ Usage Details
 
 .. argparse::
    :ref: annofabcli.annotation_specs.get_annotation_specs_with_label_id_replaced.add_parser
-   :prog: annofabcli annotation_specs get_with_label_id_replaced_label_name
+   :prog: annofabcli annotation_specs get_with_label_id_replaced_english_name
    :nosubcommands:
    :nodefaultconst:
 

@@ -17,6 +17,7 @@ Available Commands
 
    cancel_acceptance
    change_operator
+   change_status_to_break
    complete
    copy
    delete
