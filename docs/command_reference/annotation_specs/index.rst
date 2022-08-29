@@ -15,6 +15,7 @@ Available Commands
    :maxdepth: 1
    :titlesonly:
 
+   get_with_label_id_replaced_label_name
    list_attribute_restriction
    list_history
    list_label
