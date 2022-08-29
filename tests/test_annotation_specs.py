@@ -63,7 +63,6 @@ class TestCommandLine:
             ]
         )
 
-
     def test_get_with_label_id_replaced_label_name(self):
         out_file = str(out_dir / "get_with_label_id_replaced_label_name.json")
         main(
@@ -74,6 +73,6 @@ class TestCommandLine:
                 project_id,
                 "--output",
                 out_file,
-                "--yes"
+                "--yes",
             ]
         )

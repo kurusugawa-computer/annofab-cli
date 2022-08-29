@@ -159,7 +159,7 @@ def main(args):
 
 
 def add_parser(subparsers: Optional[argparse._SubParsersAction] = None):
-    subcommand_name = "get_with_label_id_replaced_label_name"
+    subcommand_name = "get_with_label_id_replaced_english_name"
 
     subcommand_help = "label_idをUUIDから英語名に置換したアノテーション仕様のJSONを出力します。"
 
