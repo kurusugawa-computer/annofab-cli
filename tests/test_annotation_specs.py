@@ -62,3 +62,18 @@ class TestCommandLine:
                 out_file,
             ]
         )
+
+
+    def test_get_with_label_id_replaced_label_name(self):
+        out_file = str(out_dir / "get_with_label_id_replaced_label_name.json")
+        main(
+            [
+                self.command_name,
+                "get_with_label_id_replaced_label_name",
+                "--project_id",
+                project_id,
+                "--output",
+                out_file,
+                "--yes"
+            ]
+        )

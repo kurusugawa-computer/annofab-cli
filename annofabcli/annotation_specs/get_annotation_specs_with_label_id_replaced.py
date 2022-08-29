@@ -61,7 +61,7 @@ class ReplacingLabelId(AbstractCommandLineWithConfirmInterface):
         """
         指定した文字列が、label_idに利用できる文字列か否か
         """
-        return re.fullmatch("[A-Za-z0-9_.\-]+", str_id) is not None
+        return re.fullmatch("[A-Za-z0-9_.\\-]+", str_id) is not None
 
     def main(self, annotation_specs: dict[str, Any], *, target_label_names: Optional[Collection[str]] = None) -> None:
         """
@@ -75,6 +75,7 @@ class ReplacingLabelId(AbstractCommandLineWithConfirmInterface):
         label_list = annotation_specs["labels"]
         restriction_list = annotation_specs["restrictions"]
 
+        replaced_count = 0
         for label in label_list:
             label_id = label["label_id"]
             label_name_en = AnnofabApiFacade.get_label_name_en(label)
@@ -85,7 +86,8 @@ class ReplacingLabelId(AbstractCommandLineWithConfirmInterface):
 
             if not self.validate_label_id(label_name_en):
                 logger.warning(
-                    f"label_name_en='{label_name_en}'はlabel_idにできない文字列であるため、label_id='{label_id}'を'{label_name_en}'に変更しません。"
+                    f"label_name_en='{label_name_en}'はlabel_idにできない文字を含むため、"
+                    f"label_id='{label_id}'を'{label_name_en}'に変更しません。"
                 )
                 continue
 
@@ -103,6 +105,9 @@ class ReplacingLabelId(AbstractCommandLineWithConfirmInterface):
             self.replace_label_id_of_restrictions(
                 old_label_id=label_id, new_label_id=label_name_en, restriction_list=restriction_list
             )
+            replaced_count += 1
+
+        logger.info(f"{replaced_count} 個のラベルのlabel_idを変更しました。")
 
 
 class GetAnnotationSpecsWithLabelIdReplaced(AbstractCommandLineInterface):
