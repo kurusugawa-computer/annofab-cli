@@ -24,7 +24,9 @@ logger = logging.getLogger(__name__)
 
 class ReplacingAttributeId(AbstractCommandLineWithConfirmInterface):
     @staticmethod
-    def replace_attribute_id_of_restrictions(new_attribute_id, restriction_list: list[dict[str, Any]]) -> None:
+    def replace_attribute_id_of_restrictions(
+        old_attribute_id, new_attribute_id, restriction_list: list[dict[str, Any]]
+    ) -> None:
         """
         制約情報の中で使用されている属性IDを新しい属性IDに変更する
 
@@ -35,12 +37,16 @@ class ReplacingAttributeId(AbstractCommandLineWithConfirmInterface):
 
         def _replace_attribute_id_in_condition(condition: dict[str, Any]) -> None:
             if condition["_type"] == "Imply":
-                condition["premise"]["additional_data_definition_id"] = new_attribute_id
+                if condition["premise"]["additional_data_definition_id"] == old_attribute_id:
+                    condition["premise"]["additional_data_definition_id"] = new_attribute_id
+
                 _replace_attribute_id_in_condition(condition["premise"]["condition"])
                 _replace_attribute_id_in_condition(condition["condition"])
 
         for restriction in restriction_list:
-            restriction["additional_data_definition_id"] = new_attribute_id
+            if restriction["additional_data_definition_id"] == old_attribute_id:
+                restriction["additional_data_definition_id"] = new_attribute_id
+
             _replace_attribute_id_in_condition(restriction["condition"])
 
     @staticmethod
@@ -121,7 +127,7 @@ class ReplacingAttributeId(AbstractCommandLineWithConfirmInterface):
                 old_attribute_id=attribute_id, new_attribute_id=attribute_name_en, label_list=label_list
             )
             self.replace_attribute_id_of_restrictions(
-                new_attribute_id=attribute_name_en, restriction_list=restriction_list
+                old_attribute_id=attribute_id, new_attribute_id=attribute_name_en, restriction_list=restriction_list
             )
             replaced_count += 1
 

@@ -2,8 +2,8 @@ import argparse
 from typing import Optional
 
 import annofabcli
-import annofabcli.annotation_specs.get_annotation_specs_with_choice_id_replaced
 import annofabcli.annotation_specs.get_annotation_specs_with_attribute_id_replaced
+import annofabcli.annotation_specs.get_annotation_specs_with_choice_id_replaced
 import annofabcli.annotation_specs.get_annotation_specs_with_label_id_replaced
 import annofabcli.annotation_specs.list_annotation_specs_history
 import annofabcli.annotation_specs.list_annotation_specs_label

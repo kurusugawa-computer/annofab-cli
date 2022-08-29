@@ -26,7 +26,8 @@ Examples
 .. code-block::
 
     # 元のアノテーション仕様の最初のラベル情報を出力
-    $ annofabcli annotation_specs list_label -p 58a2a621-7d4b-41e7-927b-cdc570c1114a -f pretty_json | jq  ".[0]"
+    $ annofabcli annotation_specs list_label --project_id prj1 \
+     --format pretty_json | jq  ".[0]"
     {
         "label_id": "8ec9417b-abef-47ad-af7d-e0a03c680eac",
         "label_name": {

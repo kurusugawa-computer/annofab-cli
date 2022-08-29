@@ -63,12 +63,40 @@ class TestCommandLine:
             ]
         )
 
-    def test_get_with_label_id_replaced_label_name(self):
-        out_file = str(out_dir / "get_with_label_id_replaced_label_name.json")
+    def test_get_with_label_id_replaced_english_name(self):
+        out_file = str(out_dir / "get_with_label_id_replaced_englisth_name.json")
         main(
             [
                 self.command_name,
-                "get_with_label_id_replaced_label_name",
+                "get_with_label_id_replaced_english_name",
+                "--project_id",
+                project_id,
+                "--output",
+                out_file,
+                "--yes",
+            ]
+        )
+
+    def test_get_with_attribute_id_replaced_english_name(self):
+        out_file = str(out_dir / "get_with_attribute_id_replaced_englisth_name.json")
+        main(
+            [
+                self.command_name,
+                "get_with_attribute_id_replaced_english_name",
+                "--project_id",
+                project_id,
+                "--output",
+                out_file,
+                "--yes",
+            ]
+        )
+
+    def test_get_with_choice_id_replaced_english_name(self):
+        out_file = str(out_dir / "get_with_choice_id_replaced_englisth_name.json")
+        main(
+            [
+                self.command_name,
+                "get_with_choice_id_replaced_english_name",
                 "--project_id",
                 project_id,
                 "--output",

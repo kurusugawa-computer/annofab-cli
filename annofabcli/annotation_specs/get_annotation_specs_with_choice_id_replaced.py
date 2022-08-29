@@ -86,6 +86,9 @@ class ReplacingChoiceId(AbstractCommandLineWithConfirmInterface):
                     continue
 
                 choice["choice_id"] = choice_name_en
+                if attribute["default"] == choice_id:
+                    attribute["default"] = choice_name_en
+
                 replaced_choice_id_count += 1
 
             logger.info(f"{replaced_choice_id_count} / {len(choice_list)} 個の選択肢IDを変更しました。")
