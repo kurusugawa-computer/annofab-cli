@@ -62,7 +62,7 @@ class ReplacingAttributeId(AbstractCommandLineWithConfirmInterface):
                 pass
 
     @staticmethod
-    def exists_label_with_attribute_id(attribute_list: list[dict[str, Any]], attribute_id: str) -> bool:
+    def exists_attribute_with_attribute_id(attribute_list: list[dict[str, Any]], attribute_id: str) -> bool:
         """指定したlabel_idを持つラベル情報が存在するか否か"""
         return (
             more_itertools.first_true(attribute_list, pred=lambda e: e["additional_data_definition_id"] == attribute_id)
@@ -107,7 +107,7 @@ class ReplacingAttributeId(AbstractCommandLineWithConfirmInterface):
                 )
                 continue
 
-            if self.exists_label_with_attribute_id(attribute_list, attribute_id=attribute_name_en):
+            if self.exists_attribute_with_attribute_id(attribute_list, attribute_id=attribute_name_en):
                 logger.warning(
                     f"属性ID='{attribute_name_en}'である属性が既に存在するため、属性ID='{attribute_id}'を'{attribute_name_en}'に変更しません。"
                 )
