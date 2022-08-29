@@ -1,6 +1,6 @@
 [tool.poetry]
 name = "annofabcli"
-version = "1.69.0"
+version = "1.70.0"
 description = "Utility Command Line Interface for AnnoFab"
 authors = ["yuji38kwmt"]
 license = "MIT"
@@ -25,8 +25,6 @@ classifiers = [
 [tool.poetry.dependencies]
 python = "^3.8"
 requests = "*"
-# 以下のエラーが発生したため、バージョンを指定する
-# ERROR: Pillow-9.2.0-cp39-cp39-manylinux_2_28_x86_64.whl is not a supported wheel on this platform.
 pillow = "*"
 pyyaml = "*"
 dictdiffer = "*"
