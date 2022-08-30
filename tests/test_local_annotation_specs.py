@@ -1,7 +1,11 @@
+import copy
 import json
 import os
 from pathlib import Path
 
+from annofabcli.annotation_specs.get_annotation_specs_with_attribute_id_replaced import ReplacingAttributeId
+from annofabcli.annotation_specs.get_annotation_specs_with_choice_id_replaced import ReplacingChoiceId
+from annofabcli.annotation_specs.get_annotation_specs_with_label_id_replaced import ReplacingLabelId
 from annofabcli.annotation_specs.list_attribute_restriction import ListAttributeRestrictionMain
 
 # プロジェクトトップに移動する
@@ -112,3 +116,163 @@ class TestListAttributeRestrictionMain:
 
         actual2 = self.obj.get_restriction_text_list(self.annotation_specs["restrictions"], target_label_names=["car"])
         assert len(actual2) == 9
+
+
+class TestReplacingLabelId:
+    label_list = [
+        {
+            "label_id": "id1",
+            "label_name": {
+                "messages": [{"lang": "ja-JP", "message": "name_ja1"}, {"lang": "en-US", "message": "name_en1"}],
+                "default_lang": "ja-JP",
+            },
+        }
+    ]
+    restriction_list = [
+        {
+            "additional_data_definition_id": "attr1",
+            "condition": {
+                "_type": "Imply",
+                "premise": {
+                    "additional_data_definition_id": "attr2",
+                    "condition": {"_type": "Equals", "value": "true"},
+                },
+                "condition": {"_type": "HasLabel", "labels": ["id1", "id2"]},
+            },
+        }
+    ]
+
+    def test_replace_label_id_of_restrictions(self):
+
+        restriction_list = copy.deepcopy(self.restriction_list)
+        ReplacingLabelId().replace_label_id_of_restrictions("id1", "new_label1", restriction_list)
+        assert restriction_list[0]["condition"]["condition"]["labels"][0] == "new_label1"
+
+    def test_main(self):
+        annotation_specs = {
+            "labels": copy.deepcopy(self.label_list),
+            "restrictions": copy.deepcopy(self.restriction_list),
+        }
+        ReplacingLabelId(all_yes=True).main(annotation_specs)
+        assert annotation_specs["labels"][0]["label_id"] == "name_en1"
+        assert annotation_specs["restrictions"][0]["condition"]["condition"]["labels"][0] == "name_en1"
+
+
+class TestReplacingAttributeId:
+    attribute_list = [
+        {
+            "additional_data_definition_id": "attr1",
+            "name": {
+                "messages": [{"lang": "ja-JP", "message": "属性1"}, {"lang": "en-US", "message": "new_attr1"}],
+                "default_lang": "ja-JP",
+            },
+            "choices": [
+                {
+                    "choice_id": "aaa",
+                    "name": {
+                        "messages": [{"lang": "ja-JP", "message": "真正面"}, {"lang": "en-US", "message": "rear"}],
+                        "default_lang": "ja-JP",
+                    },
+                    "keybind": [],
+                },
+                {
+                    "choice_id": "a5ebf59b-0484-446d-ac11-14a4736026e4",
+                    "name": {
+                        "messages": [{"lang": "ja-JP", "message": "真後ろ"}, {"lang": "en-US", "message": "rear"}],
+                        "default_lang": "ja-JP",
+                    },
+                    "keybind": [],
+                },
+            ],
+        }
+    ]
+    label_list = [
+        {
+            "label_id": "id1",
+            "label_name": {
+                "messages": [{"lang": "ja-JP", "message": "name_ja1"}, {"lang": "en-US", "message": "name_en1"}],
+                "default_lang": "ja-JP",
+            },
+            "additional_data_definitions": ["attr1", "attr2"],
+        }
+    ]
+    restriction_list = [
+        {
+            "additional_data_definition_id": "attr1",
+            "condition": {
+                "_type": "Imply",
+                "premise": {
+                    "additional_data_definition_id": "attr2",
+                    "condition": {"_type": "Equals", "value": "true"},
+                },
+                "condition": {"_type": "HasLabel", "labels": ["id1", "id2"]},
+            },
+        }
+    ]
+
+    def test_replace_attribute_id_of_restrictions(self):
+
+        restriction_list = copy.deepcopy(self.restriction_list)
+        ReplacingAttributeId().replace_attribute_id_of_restrictions("attr1", "new_attr1", restriction_list)
+        restriction = restriction_list[0]
+        assert restriction["additional_data_definition_id"] == "new_attr1"
+        # 変わっていないことの確認
+        assert restriction["condition"]["premise"]["additional_data_definition_id"] == "attr2"
+
+    def test_replace_attribute_id_of_labels(self):
+
+        label_list = copy.deepcopy(self.label_list)
+        ReplacingAttributeId().replace_attribute_id_of_labels("attr1", "new_attr1", label_list)
+        label = label_list[0]
+        assert label["additional_data_definitions"] == ["new_attr1", "attr2"]
+
+    def test_main(self):
+        annotation_specs = {
+            "labels": copy.deepcopy(self.label_list),
+            "additionals": copy.deepcopy(self.attribute_list),
+            "restrictions": copy.deepcopy(self.restriction_list),
+        }
+        ReplacingAttributeId(all_yes=True).main(annotation_specs)
+        assert annotation_specs["additionals"][0]["additional_data_definition_id"] == "new_attr1"
+        assert annotation_specs["labels"][0]["additional_data_definitions"] == ["new_attr1", "attr2"]
+        assert annotation_specs["restrictions"][0]["additional_data_definition_id"] == "new_attr1"
+
+
+class TestReplacingChoiceId:
+    attribute_list = [
+        {
+            "additional_data_definition_id": "f98a9545-5864-4e5b-a945-d327001a0179",
+            "name": {
+                "messages": [{"lang": "ja-JP", "message": "向き"}, {"lang": "en-US", "message": "direction"}],
+                "default_lang": "ja-JP",
+            },
+            "type":"select",
+            "default": "3475515f-ba44-4a8d-b32b-72635e420048",
+            "choices": [
+                {
+                    "choice_id": "3475515f-ba44-4a8d-b32b-72635e420048",
+                    "name": {
+                        "messages": [{"lang": "ja-JP", "message": "前"}, {"lang": "en-US", "message": "front"}],
+                        "default_lang": "ja-JP",
+                    },
+                },
+                {
+                    "choice_id": "a5ebf59b-0484-446d-ac11-14a4736026e4",
+                    "name": {
+                        "messages": [{"lang": "ja-JP", "message": "後ろ"}, {"lang": "en-US", "message": "rear"}],
+                        "default_lang": "ja-JP",
+                    },
+                },
+            ],
+        }
+    ]
+
+    def test_main(self):
+        annotation_specs = {
+            "additionals": copy.deepcopy(self.attribute_list),
+        }
+        ReplacingChoiceId(all_yes=True).main(annotation_specs)
+        attribtue = annotation_specs["additionals"][0]
+        assert attribtue["default"] == "front"
+        assert attribtue["choices"][0]["choice_id"] == "front"
+        assert attribtue["choices"][1]["choice_id"] == "rear"
