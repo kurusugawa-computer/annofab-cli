@@ -3,6 +3,7 @@ from __future__ import annotations
 import argparse
 import logging
 import sys
+from enum import Enum
 from typing import Any, Collection, Optional
 
 from more_itertools import first_true
@@ -21,6 +22,19 @@ from annofabcli.common.facade import AnnofabApiFacade
 logger = logging.getLogger(__name__)
 
 
+class FormatArgument(Enum):
+    """
+    表示するフォーマット ``--format`` で指定できる値
+
+    Attributes:
+        TEXT: 属性IDや種類を隠したシンプルなテキスト
+        DETAILED_TEXT: 属性IDや属性種類などの詳細情報を表示したテキスト
+    """
+
+    TEXT = "text"
+    DETAILED_TEXT = "detailed_text"
+
+
 class ListAttributeRestrictionMain:
     """
     アノテーション仕様の制約から自然言語で書かれたメッセージを生成します。
@@ -31,21 +45,30 @@ class ListAttributeRestrictionMain:
 
     """
 
-    def __init__(self, labels: list[dict[str, Any]], additionals: list[dict[str, Any]]):
+    def __init__(
+        self,
+        labels: list[dict[str, Any]],
+        additionals: list[dict[str, Any]],
+        format: FormatArgument = FormatArgument.DETAILED_TEXT,  # pylint: disable=redefined-builtin
+    ):
         self.attribute_dict = {e["additional_data_definition_id"]: e for e in additionals}
         self.label_dict = {e["label_id"]: e for e in labels}
+        self.format = format
 
     def get_labels_text(self, label_ids: Collection[str]) -> str:
         label_message_list = []
         for label_id in label_ids:
             label = self.label_dict.get(label_id)
             label_name = AnnofabApiFacade.get_label_name_en(label) if label is not None else ""
-            label_message_list.append(f"'{label_name}' (id='{label_id}')")
+
+            label_message = f"'{label_name}'"
+            if self.format == FormatArgument.DETAILED_TEXT:
+                label_message = f"{label_message} (id='{label_id}')"
+            label_message_list.append(label_message)
 
         return ", ".join(label_message_list)
 
-    @staticmethod
-    def get_object_for_equals_or_notequals(value: str, attribute: Optional[dict[str, Any]]) -> str:
+    def get_object_for_equals_or_notequals(self, value: str, attribute: Optional[dict[str, Any]]) -> str:
         """制約条件が `Equals` or `NotEquals`のときの目的語を生成する。
         属性の種類がドロップダウンかセレクトボックスのときは、選択肢の名前を返す。
 
@@ -62,7 +85,11 @@ class ListAttributeRestrictionMain:
             choice = first_true(choices, pred=lambda e: e["choice_id"] == value)
             if choice is not None:
                 choice_name = AnnofabApiFacade.get_choice_name_en(choice)
-                return f"'{value}'(name='{choice_name}')"
+                tmp = f"'{value}'"
+                if self.format == FormatArgument.DETAILED_TEXT:
+                    tmp = f"{tmp} (name='{choice_name}')"
+                return tmp
+
             else:
                 return f"'{value}'"
         else:
@@ -91,10 +118,14 @@ class ListAttributeRestrictionMain:
 
         attribute = self.attribute_dict.get(attribute_id)
         if attribute is not None:
-            subject = f"'{AnnofabApiFacade.get_additional_data_definition_name_en(attribute)}' (id='{attribute_id}', type='{attribute['type']}')"  # noqa: E501
+            subject = f"'{AnnofabApiFacade.get_additional_data_definition_name_en(attribute)}'"
+            if self.format == FormatArgument.DETAILED_TEXT:
+                subject = f"{subject} (id='{attribute_id}', type='{attribute['type']}')"
         else:
             logger.warning(f"属性IDが'{attribute_id}'の属性は存在しません。")
-            subject = f"'' (id='{attribute_id}')"
+            subject = "''"
+            if self.format == FormatArgument.DETAILED_TEXT:
+                subject = f"{subject} (id='{attribute_id}')"
 
         if str_type == "CanInput":
             verb = "CAN INPUT" if condition["enable"] else "CAN NOT INPUT"
@@ -228,7 +259,9 @@ class ListAttributeRestriction(AbstractCommandLineInterface):
 
         annotation_specs, _ = self.service.api.get_annotation_specs(args.project_id, query_params=query_params)
         main_obj = ListAttributeRestrictionMain(
-            labels=annotation_specs["labels"], additionals=annotation_specs["additionals"]
+            labels=annotation_specs["labels"],
+            additionals=annotation_specs["additionals"],
+            format=FormatArgument(args.format),
         )
         target_attribute_names = get_list_from_args(args.attribute_name) if args.attribute_name is not None else None
         target_label_names = get_list_from_args(args.label_name) if args.label_name is not None else None
@@ -271,6 +304,17 @@ def parse_args(parser: argparse.ArgumentParser):
     parser.add_argument("--attribute_name", type=str, nargs="+", help="指定した属性名（英語）の属性の制約を出力します。")
     parser.add_argument("--label_name", type=str, nargs="+", help="指定したラベル名（英語）のラベルに紐づく属性の制約を出力します。")
     argument_parser.add_output()
+
+    parser.add_argument(
+        "-f",
+        "--format",
+        type=str,
+        choices=[e.value for e in FormatArgument],
+        default=FormatArgument.TEXT,
+        help=f"出力フォーマット\n"
+        f"・{FormatArgument.TEXT.value}: 英語名のみ出力する形式\n"
+        f"・{FormatArgument.DETAILED_TEXT.value}: 属性IDや属性種類などの詳細情報を出力する形式",
+    )
 
     parser.set_defaults(subcommand_func=main)
 
