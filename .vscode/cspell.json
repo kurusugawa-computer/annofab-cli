@@ -59,6 +59,7 @@
         "ncols",
         "netrc",
         "noqa",
+        "notequals",
         "notna",
         "numpy",
         "pformat",
