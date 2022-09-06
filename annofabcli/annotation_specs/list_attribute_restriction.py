@@ -49,11 +49,11 @@ class ListAttributeRestrictionMain:
         self,
         labels: list[dict[str, Any]],
         additionals: list[dict[str, Any]],
-        arg_format: FormatArgument = FormatArgument.DETAILED_TEXT,
+        format: FormatArgument = FormatArgument.DETAILED_TEXT,
     ):
         self.attribute_dict = {e["additional_data_definition_id"]: e for e in additionals}
         self.label_dict = {e["label_id"]: e for e in labels}
-        self.format = arg_format
+        self.format = format
 
     def get_labels_text(self, label_ids: Collection[str]) -> str:
         label_message_list = []
@@ -123,7 +123,7 @@ class ListAttributeRestrictionMain:
                 subject = f"{subject} (id='{attribute_id}', type='{attribute['type']}')"
         else:
             logger.warning(f"属性IDが'{attribute_id}'の属性は存在しません。")
-            subject = ""
+            subject = "''"
             if self.format == FormatArgument.DETAILED_TEXT:
                 subject = f"{subject} (id='{attribute_id}')"
 
@@ -259,7 +259,9 @@ class ListAttributeRestriction(AbstractCommandLineInterface):
 
         annotation_specs, _ = self.service.api.get_annotation_specs(args.project_id, query_params=query_params)
         main_obj = ListAttributeRestrictionMain(
-            labels=annotation_specs["labels"], additionals=annotation_specs["additionals"]
+            labels=annotation_specs["labels"],
+            additionals=annotation_specs["additionals"],
+            format=FormatArgument(args.format),
         )
         target_attribute_names = get_list_from_args(args.attribute_name) if args.attribute_name is not None else None
         target_label_names = get_list_from_args(args.label_name) if args.label_name is not None else None

@@ -6,7 +6,7 @@ from pathlib import Path
 from annofabcli.annotation_specs.get_annotation_specs_with_attribute_id_replaced import ReplacingAttributeId
 from annofabcli.annotation_specs.get_annotation_specs_with_choice_id_replaced import ReplacingChoiceId
 from annofabcli.annotation_specs.get_annotation_specs_with_label_id_replaced import ReplacingLabelId
-from annofabcli.annotation_specs.list_attribute_restriction import ListAttributeRestrictionMain
+from annofabcli.annotation_specs.list_attribute_restriction import FormatArgument, ListAttributeRestrictionMain
 
 # プロジェクトトップに移動する
 os.chdir(os.path.dirname(os.path.abspath(__file__)) + "/../")
@@ -26,7 +26,9 @@ class TestListAttributeRestrictionMain:
             annotation_specs = json.load(f)
 
         cls.obj = ListAttributeRestrictionMain(
-            labels=annotation_specs["labels"], additionals=annotation_specs["additionals"]
+            labels=annotation_specs["labels"],
+            additionals=annotation_specs["additionals"],
+            format=FormatArgument.DETAILED_TEXT,
         )
         cls.annotation_specs = annotation_specs
 
@@ -46,7 +48,7 @@ class TestListAttributeRestrictionMain:
         actual = self.obj.get_restriction_text(restriction["additional_data_definition_id"], restriction["condition"])
         assert (
             actual
-            == "'type' (id='71620647-98cf-48ad-b43b-4af425a24f32', type='select') EQUALS 'b690fa1a-7b3d-4181-95d8-f5c75927c3fc'(name='medium')"
+            == "'type' (id='71620647-98cf-48ad-b43b-4af425a24f32', type='select') EQUALS 'b690fa1a-7b3d-4181-95d8-f5c75927c3fc' (name='medium')"
         )
 
     def test_get_restriction_text__caninput(self):
