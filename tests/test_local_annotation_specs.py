@@ -246,7 +246,7 @@ class TestReplacingChoiceId:
                 "messages": [{"lang": "ja-JP", "message": "向き"}, {"lang": "en-US", "message": "direction"}],
                 "default_lang": "ja-JP",
             },
-            "type":"select",
+            "type": "select",
             "default": "3475515f-ba44-4a8d-b32b-72635e420048",
             "choices": [
                 {
