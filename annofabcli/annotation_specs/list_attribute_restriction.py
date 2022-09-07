@@ -310,10 +310,11 @@ def parse_args(parser: argparse.ArgumentParser):
         "--format",
         type=str,
         choices=[e.value for e in FormatArgument],
-        default=FormatArgument.TEXT,
+        default=FormatArgument.TEXT.value,
         help=f"出力フォーマット\n"
-        f"・{FormatArgument.TEXT.value}: 英語名のみ出力する形式\n"
-        f"・{FormatArgument.DETAILED_TEXT.value}: 属性IDや属性種類などの詳細情報を出力する形式",
+        "\n"
+        f"* {FormatArgument.TEXT.value}: 英語名のみ出力する形式\n"
+        f"* {FormatArgument.DETAILED_TEXT.value}: 属性IDや属性種類などの詳細情報を出力する形式\n",
     )
 
     parser.set_defaults(subcommand_func=main)
