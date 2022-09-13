@@ -195,7 +195,12 @@ class ProjectDir(DataClassJsonMixin):
         """
         メンバごとの生産性と品質の情報を読み込みます。
         """
-        return UserPerformance.from_csv(self.project_dir / self.FILENAME_USER_PERFORMANCE)
+        file = self.project_dir / self.FILENAME_USER_PERFORMANCE
+        if file.exists():
+            return UserPerformance.from_csv(file)
+        else:
+            logger.warning(f"'{str(file)}'を読み込もうとしましたが、ファイルは存在しません。")
+            return UserPerformance.empty()
 
     def write_user_performance(self, user_performance: UserPerformance):
         """
