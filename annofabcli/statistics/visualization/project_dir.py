@@ -221,7 +221,7 @@ class ProjectDir(DataClassJsonMixin):
             )
         else:
             logger.warning(
-                f"実績作業時間の合計値が0なので、実績作業時間関係の以下のグラフは出力しません。:: "
+                f"実績作業時間の合計値が0なので、実績作業時間関係の次のグラフを'{output_dir}'に出力しません。:: "
                 "'散布図-アノテーションあたり作業時間と累計作業時間の関係-実績時間.html',"
                 "'散布図-アノテーションあたり作業時間と品質の関係-実績時間-教師付者用'"
             )
@@ -272,7 +272,7 @@ class ProjectDir(DataClassJsonMixin):
         """
         `merge_info.json`を書き込む。
         """
-        print_json(obj.to_dict(), output=self.project_dir / self.FILENAME_MERGE_INFO, is_pretty=True)
+        print_json(obj.to_dict(encode_json=True), output=self.project_dir / self.FILENAME_MERGE_INFO, is_pretty=True)
 
 
 @dataclass
