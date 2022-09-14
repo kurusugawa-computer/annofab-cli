@@ -627,20 +627,24 @@ class ListAnnotationCountMain:
         target_task_ids: Optional[Collection[str]] = None,
         task_query: Optional[TaskQuery] = None,
     ):
+        def warn_if_columns_are_duplicated():
+            if csv_type == CsvType.LABEL:
+                duplicated_label_columns = [
+                    key for key, value in collections.Counter(label_columns).items() if value > 1
+                ]
+                if len(duplicated_label_columns) > 0:
+                    logger.warning(f"次のラベル名(英語)が重複しています。:: {duplicated_label_columns}")
+
+            elif csv_type == CsvType.ATTRIBUTE:
+                duplicated_attributes_columns = [
+                    key for key, value in collections.Counter(attribute_columns).items() if value > 1
+                ]
+                if len(duplicated_attributes_columns) > 0:
+                    logger.warning(f"次の属性情報が重複しています。:: {duplicated_attributes_columns}")
+
         # 集計対象の属性を、選択肢系の属性にする
         label_columns, attribute_columns = self.get_target_columns(project_id)
-
-        if csv_type == CsvType.LABEL:
-            duplicated_label_columns = [key for key, value in collections.Counter(label_columns).items() if value > 1]
-            if len(duplicated_label_columns) > 0:
-                logger.warning(f"次のラベル名(英語)が重複しています。:: {duplicated_label_columns}")
-
-        elif csv_type == CsvType.ATTRIBUTE:
-            duplicated_attributes_columns = [
-                key for key, value in collections.Counter(attribute_columns).items() if value > 1
-            ]
-            if len(duplicated_attributes_columns) > 0:
-                logger.warning(f"次の属性情報が重複しています。:: {duplicated_attributes_columns}")
+        warn_if_columns_are_duplicated()
 
         if group_by == GroupBy.INPUT_DATA_ID:
             counter_list_by_input_data = ListAnnotationCounterByInputData.get_annotation_counter_list(
