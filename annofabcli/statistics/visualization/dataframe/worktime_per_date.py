@@ -28,11 +28,12 @@ from annofabcli.task_history_event.list_worktime import (
     ListWorktimeFromTaskHistoryEventMain,
     WorktimeFromTaskHistoryEvent,
 )
+from annofabcli.statistics.visualization.model import VisualizationDataFrame
 
 logger = logging.getLogger(__name__)
 
 
-class WorktimePerDate:
+class WorktimePerDate(VisualizationDataFrame):
     """
     日ごとユーザごとの作業時間情報
     """
@@ -53,9 +54,6 @@ class WorktimePerDate:
     def columns(self) -> list[str]:
         return list(self._df_dtype.keys())
 
-    def __init__(self, df: pandas.DataFrame):
-        self.df = df
-
     @classmethod
     def from_csv(cls, csv_file: Path) -> WorktimePerDate:
         """CSVファイルからインスタンスを生成します。"""
@@ -67,10 +65,6 @@ class WorktimePerDate:
         """空のデータフレームを持つインスタンスを生成します。"""
         df = pandas.DataFrame(columns=cls._df_dtype.keys()).astype(cls._df_dtype)
         return cls(df)
-
-    def is_empty(self) -> bool:
-        """空のデータフレームを持つかどうか"""
-        return len(self.df) == 0
 
     @classmethod
     def get_df_worktime(
