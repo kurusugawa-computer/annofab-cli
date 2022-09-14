@@ -25,6 +25,7 @@ from annofabcli.statistics.scatter import (
     plot_scatter,
     write_bokeh_graph,
 )
+from annofabcli.statistics.visualization.model import VisualizationDataFrame
 
 logger = logging.getLogger(__name__)
 
@@ -38,7 +39,7 @@ class WorktimeType(Enum):
     MONITORED = "monitored"
 
 
-class UserPerformance:
+class UserPerformance(VisualizationDataFrame):
     """
     各ユーザの合計の生産性と品質
 
@@ -48,8 +49,8 @@ class UserPerformance:
     PLOT_HEIGHT = 800
 
     def __init__(self, df: pandas.DataFrame):
-        self.df = df
         self.phase_list = self.get_phase_list(df.columns)
+        super().__init__(df)
 
     @staticmethod
     def _add_ratio_column_for_productivity_per_user(df: pandas.DataFrame, phase_list: list[str]):
@@ -106,6 +107,23 @@ class UserPerformance:
     @classmethod
     def from_csv(cls, csv_file: Path) -> UserPerformance:
         df = read_multiheader_csv(str(csv_file))
+        return cls(df)
+
+    @classmethod
+    def empty(cls) -> UserPerformance:
+        """空のデータフレームを持つインスタンスを生成します。"""
+
+        df_dtype: dict[tuple[str, str], str] = {
+            ("user_id", ""): "string",
+            ("username", ""): "string",
+            ("biography", ""): "string",
+            ("last_working_date", ""): "string",
+            # phaseがannotation, inspection, acceptanceの列は出力されない可能性があるので、絶対出力される"sum"の列のみ定義する
+            ("monitored_worktime_hour", "sum"): "float64",
+            ("actual_worktime_hour", "sum"): "float64",
+        }
+
+        df = pandas.DataFrame(columns=pandas.MultiIndex.from_tuples(df_dtype.keys())).astype(df_dtype)
         return cls(df)
 
     def actual_worktime_exists(self) -> bool:

@@ -80,10 +80,10 @@ class Database:
         self.query = query if query is not None else Query()
 
         # ダウンロードした一括情報
-        self.tasks_json_path = self.temp_dir / "tasks.json"
-        self.comment_json_path = temp_dir / "comments.json"
-        self.task_histories_json_path = temp_dir / "task_histories.json"
-        self.annotations_zip_path = temp_dir / "simple-annotations.zip"
+        self.tasks_json_path = self.temp_dir / f"{self.project_id}__tasks.json"
+        self.comment_json_path = temp_dir / f"{self.project_id}__comments.json"
+        self.task_histories_json_path = temp_dir / f"{self.project_id}__task_histories.json"
+        self.annotations_zip_path = temp_dir / f"{self.project_id}__simple-annotations.zip"
 
         self.logging_prefix = f"project_id={project_id}"
 
