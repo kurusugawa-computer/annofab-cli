@@ -26,8 +26,8 @@ class VisualizationDataFrame(abc.ABC):
     def __init__(self, df: pandas.DataFrame) -> None:
         self.df = df
 
-    @abc.abstractmethod
     @classmethod
+    @abc.abstractmethod
     def from_csv(cls, csv_file: Path) -> "VisualizationDataFrame":
         """
         CSVからインスタンスを生成します。
@@ -48,8 +48,8 @@ class VisualizationDataFrame(abc.ABC):
             output_file: 出力先のパス
         """
 
-    @abc.abstractmethod
     @classmethod
+    @abc.abstractmethod
     def empty(cls) -> "VisualizationDataFrame":
         """
         空であるDataFrameを持つインスタンスを生成します。

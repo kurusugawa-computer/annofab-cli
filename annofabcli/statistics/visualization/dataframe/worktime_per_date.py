@@ -37,7 +37,7 @@ class WorktimePerDate:
     日ごとユーザごとの作業時間情報
     """
 
-    df_dtype = {
+    _df_dtype = {
         "date": "string",
         "user_id": "string",
         "username": "string",
@@ -51,7 +51,7 @@ class WorktimePerDate:
 
     @property
     def columns(self) -> list[str]:
-        return list(self.df_dtype.keys())
+        return list(self._df_dtype.keys())
 
     def __init__(self, df: pandas.DataFrame):
         self.df = df
@@ -59,13 +59,13 @@ class WorktimePerDate:
     @classmethod
     def from_csv(cls, csv_file: Path) -> WorktimePerDate:
         """CSVファイルからインスタンスを生成します。"""
-        df = pandas.read_csv(str(csv_file), dtype=cls.df_dtype)
+        df = pandas.read_csv(str(csv_file), dtype=cls._df_dtype)
         return cls(df)
 
     @classmethod
     def empty(cls) -> WorktimePerDate:
         """空のデータフレームを持つインスタンスを生成します。"""
-        df = pandas.DataFrame(columns=cls.df_dtype.keys()).astype(cls.df_dtype)
+        df = pandas.DataFrame(columns=cls._df_dtype.keys()).astype(cls._df_dtype)
         return cls(df)
 
     def is_empty(self) -> bool:
@@ -425,6 +425,6 @@ class WorktimePerDate:
         if not self._validate_df_for_output(output_file):
             return
 
-        columns = self.df_dtype.keys()
+        columns = self._df_dtype.keys()
 
         print_csv(self.df[columns], output=str(output_file))

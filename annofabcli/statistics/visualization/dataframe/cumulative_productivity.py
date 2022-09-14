@@ -66,7 +66,7 @@ class AbstractPhaseCumulativeProductivity(abc.ABC):
             return False
 
         if len(self.default_user_id_list) == 0:
-            logger.warning(
+            logger.info(
                 f"{self.phase_name}作業したタスクが0件なので（'first_{self.phase.value}_user_id'がすべて空欄）、{output_file} を出力しません。"
             )
             return False
