@@ -24,11 +24,11 @@ from annofabcli.statistics.linegraph import (
     write_bokeh_graph,
 )
 from annofabcli.statistics.list_worktime import get_worktime_dict_from_event_list
+from annofabcli.statistics.visualization.model import VisualizationDataFrame
 from annofabcli.task_history_event.list_worktime import (
     ListWorktimeFromTaskHistoryEventMain,
     WorktimeFromTaskHistoryEvent,
 )
-from annofabcli.statistics.visualization.model import VisualizationDataFrame
 
 logger = logging.getLogger(__name__)
 

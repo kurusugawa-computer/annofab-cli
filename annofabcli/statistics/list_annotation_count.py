@@ -45,7 +45,7 @@ logger = logging.getLogger(__name__)
 AttributesKey = Tuple[str, str, str]
 """
 属性のキー.
-Tuplelabel_name_en, attribute_name_en, attribute_value] で表す。
+tuple[label_name_en, attribute_name_en, attribute_value] で表す。
 """
 
 LabelKeys = Collection[str]
@@ -220,7 +220,7 @@ class ListAnnotationCounterByInputData:
         Args:
             simple_annotation: JSONファイルの内容
             target_labels: 集計対象のラベル（label_name_en）
-            target_attributes: 集計対象の属性（tuplelabel_name_en, attribute_name_en]
+            target_attributes: 集計対象の属性
 
 
         """
@@ -293,7 +293,8 @@ class ListAnnotationCounterByInputData:
         df = pandas.DataFrame([to_dict(e) for e in counter_list], columns=columns)
 
         # NaNを0に変換する
-        df.fillna({e: 0 for e in value_columns}, inplace=True)
+        # `basic_columns`は必ずnanではないので、問題ないはず
+        df.fillna(0, inplace=True)
 
         print_csv(df, output=str(output_file), to_csv_kwargs=csv_format)
 
@@ -339,7 +340,9 @@ class ListAnnotationCounterByInputData:
         df = pandas.DataFrame([to_cell(e) for e in counter_list], columns=pandas.MultiIndex.from_tuples(columns))
 
         # NaNを0に変換する
-        df.fillna({e: 0 for e in value_columns}, inplace=True)
+        # 列が重複していると`ValueError: cannot handle a non-unique multi-index!`が発生するため、列を指定せずに`fillna`関数を実行する
+        # `basic_columns`は必ずnanではないので、問題ないはず
+        df.fillna(0, inplace=True)
 
         print_csv(df, output=str(output_file), to_csv_kwargs=csv_format)
 
@@ -359,7 +362,7 @@ class ListAnnotationCounterByTask:
         Args:
             simple_annotation: JSONファイルの内容
             target_labels: 集計対象のラベル（label_name_en）
-            target_attributes: 集計対象の属性（tuplelabel_name_en, attribute_name_en]
+            target_attributes: 集計対象の属性
 
 
         """
@@ -411,7 +414,7 @@ class ListAnnotationCounterByTask:
         Args:
             simple_annotation: JSONファイルの内容
             target_labels: 集計対象のラベル（label_name_en）
-            target_attributes: 集計対象の属性（tuplelabel_name_en, attribute_name_en]
+            target_attributes: 集計対象の属性
 
 
         """
@@ -487,7 +490,8 @@ class ListAnnotationCounterByTask:
         df = pandas.DataFrame([to_dict(e) for e in counter_list], columns=columns)
 
         # NaNを0に変換する
-        df.fillna({e: 0 for e in value_columns}, inplace=True)
+        # `basic_columns`は必ずnanではないので、問題ないはず
+        df.fillna(0, inplace=True)
 
         print_csv(df, output=str(output_file), to_csv_kwargs=csv_format)
 
@@ -530,7 +534,9 @@ class ListAnnotationCounterByTask:
         df = pandas.DataFrame([to_cell(e) for e in counter_list], columns=pandas.MultiIndex.from_tuples(columns))
 
         # NaNを0に変換する
-        df.fillna({e: 0 for e in value_columns}, inplace=True)
+        # 列が重複していると`ValueError: cannot handle a non-unique multi-index!`が発生するため、列を指定せずに`fillna`関数を実行する
+        # `basic_columns`は必ずnanではないので、問題ないはず
+        df.fillna(0, inplace=True)
 
         print_csv(df, output=str(output_file), to_csv_kwargs=csv_format)
 
@@ -598,8 +604,8 @@ class ListAnnotationCountMain:
             project_id (str): [description]
 
         Returns:
-            tuple0] : 出力対象ラベルの一覧。list[label_name_en]
-            tuple1] : 出力対象属性の一覧。list[tuplelabel_name_en, attribute_name_en, attribute_value].
+            tuple0 : 出力対象ラベルの一覧。list[label_name_en]
+            tuple1 : 出力対象属性の一覧。
         """
         # [REMOVE_V2_PARAM]
         annotation_specs, _ = self.service.api.get_annotation_specs(project_id, query_params={"v": "2"})
@@ -623,6 +629,18 @@ class ListAnnotationCountMain:
     ):
         # 集計対象の属性を、選択肢系の属性にする
         label_columns, attribute_columns = self.get_target_columns(project_id)
+
+        if csv_type == CsvType.LABEL:
+            duplicated_label_columns = [key for key, value in collections.Counter(label_columns).items() if value > 1]
+            if len(duplicated_label_columns) > 0:
+                logger.warning(f"次のラベル名(英語)が重複しています。:: {duplicated_label_columns}")
+
+        elif csv_type == CsvType.ATTRIBUTE:
+            duplicated_attributes_columns = [
+                key for key, value in collections.Counter(attribute_columns).items() if value > 1
+            ]
+            if len(duplicated_attributes_columns) > 0:
+                logger.warning(f"次の属性情報が重複しています。:: {duplicated_attributes_columns}")
 
         if group_by == GroupBy.INPUT_DATA_ID:
             counter_list_by_input_data = ListAnnotationCounterByInputData.get_annotation_counter_list(
