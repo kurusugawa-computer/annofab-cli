@@ -60,7 +60,7 @@ pylint = "*"
 # sphinx 4.4.0, pydata-sphinx-theme 0.8.0 では、 テーブルの幅が大きいときに、横スクロールバーが表示されないので、バージョンを固定する
 # 例: `command_reference/statistics/summarize_task_count_by_task_id_group.rst`
 sphinx = "~4.2"
-pydata-sphinx-theme = "~0.6"
+pydata-sphinx-theme = "~0.10"
 sphinx-last-updated-by-git = "*"
 sphinx-argparse = "*"
 
