@@ -490,7 +490,7 @@ class TestProjectPerformance:
         assert row[("dirname", "")] == "empty"
         assert numpy.isnan(row[("project_title", "")])
         assert numpy.isnan(row[("start_date", "")])
-        assert numpy.isnan(row[("actual_worktime_hour", "sum")])
+        assert row[("actual_worktime_hour", "sum")] == 0
 
 
 class TestListAnnotationCounterByInputData:
