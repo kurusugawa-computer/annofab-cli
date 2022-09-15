@@ -65,46 +65,49 @@ class UserPerformance:
         """
         ユーザーの生産性に関する列を、DataFrameに追加します。
         """
-        for phase in phase_list:
-            # Annofab時間の比率
-            df[("monitored_worktime_ratio", phase)] = (
-                df[("monitored_worktime_hour", phase)] / df[("monitored_worktime_hour", "sum")]
-            )
+        # 作業時間が0の場合、"RuntimeWarning: invalid value encountered in double_scalars"警告が発生するので、一時的に無視する
+        with numpy.errstate(divide="ignore", invalid="ignore"):
 
-            # 計測作業時間の合計値が0のときはinfinityになるので、それに対応する
-            if isinstance(df[("monitored_worktime_ratio", phase)], pandas.Series):
-                df[("monitored_worktime_ratio", phase)].replace([numpy.inf, -numpy.inf], 1, inplace=True)
-            else:
-                df[("monitored_worktime_ratio", phase)] = 1
+            for phase in phase_list:
+                # Annofab時間の比率
+                df[("monitored_worktime_ratio", phase)] = (
+                    df[("monitored_worktime_hour", phase)] / df[("monitored_worktime_hour", "sum")]
+                )
 
-            # Annofab時間の比率から、Annowork時間を予測する
-            df[("actual_worktime_hour", phase)] = (
-                df[("actual_worktime_hour", "sum")] * df[("monitored_worktime_ratio", phase)]
-            )
+                # 計測作業時間の合計値が0のときはinfinityになるので、それに対応する
+                if isinstance(df[("monitored_worktime_ratio", phase)], pandas.Series):
+                    df[("monitored_worktime_ratio", phase)].replace([numpy.inf, -numpy.inf], 1, inplace=True)
+                else:
+                    df[("monitored_worktime_ratio", phase)] = 1
 
-            # 生産性を算出
-            df[("monitored_worktime_hour/input_data_count", phase)] = (
-                df[("monitored_worktime_hour", phase)] / df[("input_data_count", phase)]
-            )
-            df[("actual_worktime_hour/input_data_count", phase)] = (
-                df[("actual_worktime_hour", phase)] / df[("input_data_count", phase)]
-            )
+                # Annofab時間の比率から、Annowork時間を予測する
+                df[("actual_worktime_hour", phase)] = (
+                    df[("actual_worktime_hour", "sum")] * df[("monitored_worktime_ratio", phase)]
+                )
 
-            df[("monitored_worktime_hour/annotation_count", phase)] = (
-                df[("monitored_worktime_hour", phase)] / df[("annotation_count", phase)]
-            )
-            df[("actual_worktime_hour/annotation_count", phase)] = (
-                df[("actual_worktime_hour", phase)] / df[("annotation_count", phase)]
-            )
+                # 生産性を算出
+                df[("monitored_worktime_hour/input_data_count", phase)] = (
+                    df[("monitored_worktime_hour", phase)] / df[("input_data_count", phase)]
+                )
+                df[("actual_worktime_hour/input_data_count", phase)] = (
+                    df[("actual_worktime_hour", phase)] / df[("input_data_count", phase)]
+                )
 
-        phase = TaskPhase.ANNOTATION.value
-        df[("pointed_out_inspection_comment_count/annotation_count", phase)] = (
-            df[("pointed_out_inspection_comment_count", phase)] / df[("annotation_count", phase)]
-        )
-        df[("pointed_out_inspection_comment_count/input_data_count", phase)] = (
-            df[("pointed_out_inspection_comment_count", phase)] / df[("input_data_count", phase)]
-        )
-        df[("rejected_count/task_count", phase)] = df[("rejected_count", phase)] / df[("task_count", phase)]
+                df[("monitored_worktime_hour/annotation_count", phase)] = (
+                    df[("monitored_worktime_hour", phase)] / df[("annotation_count", phase)]
+                )
+                df[("actual_worktime_hour/annotation_count", phase)] = (
+                    df[("actual_worktime_hour", phase)] / df[("annotation_count", phase)]
+                )
+
+            phase = TaskPhase.ANNOTATION.value
+            df[("pointed_out_inspection_comment_count/annotation_count", phase)] = (
+                df[("pointed_out_inspection_comment_count", phase)] / df[("annotation_count", phase)]
+            )
+            df[("pointed_out_inspection_comment_count/input_data_count", phase)] = (
+                df[("pointed_out_inspection_comment_count", phase)] / df[("input_data_count", phase)]
+            )
+            df[("rejected_count/task_count", phase)] = df[("rejected_count", phase)] / df[("task_count", phase)]
 
     @staticmethod
     def get_phase_list(columns: list[tuple[str, str]]) -> list[str]:
@@ -862,26 +865,7 @@ class WholePerformance:
     @classmethod
     def empty(cls) -> WholePerformance:
         """空のデータフレームを持つインスタンスを生成します。"""
-
-        df_dtype: dict[tuple[str, str], str] = {
-            ("user_id", ""): "string",
-            ("username", ""): "string",
-            ("biography", ""): "string",
-            ("last_working_date", ""): "string",
-            # phaseがinspection, acceptanceの列は出力されない可能性があるので、絶対出力される"sum", "annotation"の列のみ定義する
-            ("monitored_worktime_hour", "annotation"): "float64",
-            ("monitored_worktime_hour", "sum"): "float64",
-            ("task_count", "annotation"): "float64",
-            ("input_data_count", "annotation"): "float64",
-            ("annotation_count", "annotation"): "float64",
-            ("actual_worktime_hour", "sum"): "float64",
-            ("actual_worktime_hour", "annotation"): "float64",
-            ("pointed_out_inspection_comment_count", "annotation"): "float64",
-            ("rejected_count", "annotation"): "float64",
-        }
-
-        df = pandas.DataFrame(columns=pandas.MultiIndex.from_tuples(df_dtype.keys())).astype(df_dtype)
-        return cls(df)
+        return cls.from_user_performance(UserPerformance.empty())
 
     @classmethod
     def from_csv(cls, csv_file: Path) -> WholePerformance:
