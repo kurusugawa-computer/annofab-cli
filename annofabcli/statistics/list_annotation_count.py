@@ -157,7 +157,7 @@ class ListAnnotationCounterByInputData:
         Args:
             simple_annotation: JSONファイルの内容
             target_labels: 集計対象のラベル（label_name_en）
-            target_attributes: 集計対象の属性（tuplelabel_name_en, attribute_name_en]
+            target_attributes: 集計対象の属性
 
 
         """
@@ -869,16 +869,6 @@ def parse_args(parser: argparse.ArgumentParser):
         "--latest",
         action="store_true",
         help="``--annotation`` を指定しないとき、最新のアノテーションzipを参照します。このオプションを指定すると、アノテーションzipを更新するのに数分待ちます。",
-    )
-
-    parser.add_argument(
-        "--wait_options",
-        type=str,
-        help="アノテーションzipの更新が完了するまで待つ際のオプションを、JSON形式で指定してください。"
-        " ``file://`` を先頭に付けるとjsonファイルを指定できます。"
-        'デフォルは ``{"interval":60, "max_tries":360}`` です。'
-        "``interval`` :完了したかを問い合わせる間隔[秒], "
-        "``max_tires`` :完了したかの問い合わせを最大何回行うか。",
     )
 
     parser.set_defaults(subcommand_func=main)

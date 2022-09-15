@@ -35,6 +35,7 @@
         "dryrun",
         "dtype",
         "dtypes",
+        "errstate",
         "fillna",
         "getrgb",
         "gridplot",
