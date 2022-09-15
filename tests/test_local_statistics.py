@@ -434,8 +434,15 @@ class TestUserPerformance:
         assert row[("task_count", "annotation")] == 30
 
     def test_empty(self):
-        actual = UserPerformance.empty()
-        assert actual.is_empty()
+        empty = UserPerformance.empty()
+        assert empty.is_empty()
+        summary = empty.get_summary()
+        assert summary[("task_count", "annotation")] == 0
+        assert summary[("monitored_worktime_hour", "annotation")] == 0
+
+        merged_obj = UserPerformance.merge(empty, self.obj)
+        row = merged_obj.df[merged_obj.df["user_id"] == "KD"].iloc[0]
+        assert row[("task_count", "annotation")] == 15
 
 
 class TestWholePerformance:

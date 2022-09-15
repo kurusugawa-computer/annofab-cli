@@ -7,7 +7,7 @@ import copy
 import logging
 from enum import Enum
 from pathlib import Path
-from typing import Any, Optional
+from typing import Any, Optional, Union
 
 import bokeh
 import bokeh.layouts
@@ -25,7 +25,6 @@ from annofabcli.statistics.scatter import (
     plot_scatter,
     write_bokeh_graph,
 )
-from annofabcli.statistics.visualization.model import VisualizationDataFrame
 
 logger = logging.getLogger(__name__)
 
@@ -39,7 +38,7 @@ class WorktimeType(Enum):
     MONITORED = "monitored"
 
 
-class UserPerformance(VisualizationDataFrame):
+class UserPerformance:
     """
     各ユーザの合計の生産性と品質
 
@@ -50,10 +49,19 @@ class UserPerformance(VisualizationDataFrame):
 
     def __init__(self, df: pandas.DataFrame):
         self.phase_list = self.get_phase_list(df.columns)
-        super().__init__(df)
+        self.df = df
+
+    def is_empty(self) -> bool:
+        """
+        空のデータフレームを持つかどうかを返します。
+
+        Returns:
+            空のデータフレームを持つかどうか
+        """
+        return len(self.df) == 0
 
     @staticmethod
-    def _add_ratio_column_for_productivity_per_user(df: pandas.DataFrame, phase_list: list[str]):
+    def _add_ratio_column_for_productivity_per_user(df: Union[pandas.DataFrame, pandas.Series], phase_list: list[str]):
         """
         ユーザーの生産性に関する列を、DataFrameに追加します。
         """
@@ -62,6 +70,13 @@ class UserPerformance(VisualizationDataFrame):
             df[("monitored_worktime_ratio", phase)] = (
                 df[("monitored_worktime_hour", phase)] / df[("monitored_worktime_hour", "sum")]
             )
+
+            # 計測作業時間の合計値が0のときはinfinityになるので、それに対応する
+            if isinstance(df[("monitored_worktime_ratio", phase)], pandas.Series):
+                df[("monitored_worktime_ratio", phase)].replace([numpy.inf, -numpy.inf], 1, inplace=True)
+            else:
+                df[("monitored_worktime_ratio", phase)] = 1
+
             # Annofab時間の比率から、Annowork時間を予測する
             df[("actual_worktime_hour", phase)] = (
                 df[("actual_worktime_hour", "sum")] * df[("monitored_worktime_ratio", phase)]
@@ -118,9 +133,16 @@ class UserPerformance(VisualizationDataFrame):
             ("username", ""): "string",
             ("biography", ""): "string",
             ("last_working_date", ""): "string",
-            # phaseがannotation, inspection, acceptanceの列は出力されない可能性があるので、絶対出力される"sum"の列のみ定義する
+            # phaseがinspection, acceptanceの列は出力されない可能性があるので、絶対出力される"sum", "annotation"の列のみ定義する
+            ("monitored_worktime_hour", "annotation"): "float64",
             ("monitored_worktime_hour", "sum"): "float64",
+            ("task_count", "annotation"): "float64",
+            ("input_data_count", "annotation"): "float64",
+            ("annotation_count", "annotation"): "float64",
             ("actual_worktime_hour", "sum"): "float64",
+            ("actual_worktime_hour", "annotation"): "float64",
+            ("pointed_out_inspection_comment_count", "annotation"): "float64",
+            ("rejected_count", "annotation"): "float64",
         }
 
         df = pandas.DataFrame(columns=pandas.MultiIndex.from_tuples(df_dtype.keys())).astype(df_dtype)
@@ -225,7 +247,22 @@ class UserPerformance(VisualizationDataFrame):
         return cls(df)
 
     @classmethod
-    def merge(cls, obj1: UserPerformance, obj2: UserPerformance) -> UserPerformance:
+    def _convert_column_dtypes(cls, df: pandas.DataFrame) -> pandas.DataFrame:
+        """
+        引数`df`の列の型を正しい型に変換する。
+        """
+
+        columns = set(df.columns)
+        # 列ヘッダに相当する列名
+        basic_columns = [("user_id", ""), ("username", ""), ("biography", ""), ("last_working_date", "")]
+
+        value_columns = columns - set(basic_columns)
+        dtypes = {col: "string" for col in basic_columns}
+        dtypes.update({col: "float64" for col in value_columns})
+        return df.astype(dtypes)
+
+    @staticmethod
+    def merge(obj1: UserPerformance, obj2: UserPerformance) -> UserPerformance:
         def max_last_working_date(date1, date2):
             if not isinstance(date1, str) and numpy.isnan(date1):
                 date1 = ""
@@ -242,6 +279,7 @@ class UserPerformance(VisualizationDataFrame):
             sum_row = row1.drop(labels=string_column_list, level=0).fillna(0) + row2.drop(
                 labels=string_column_list, level=0
             ).fillna(0)
+
             sum_row.loc["username", ""] = row1.loc["username", ""]
             sum_row.loc["biography", ""] = row1.loc["biography", ""]
             sum_row.loc["last_working_date", ""] = max_last_working_date(
@@ -251,6 +289,7 @@ class UserPerformance(VisualizationDataFrame):
 
         df1 = obj1.df
         df2 = obj2.df
+
         user_id_set = set(df1["user_id"]) | set(df2["user_id"])
         sum_df = df1.set_index("user_id").copy()
         added_df = df2.set_index("user_id")
@@ -258,16 +297,20 @@ class UserPerformance(VisualizationDataFrame):
         for user_id in user_id_set:
             if user_id not in added_df.index:
                 continue
+
             if user_id in sum_df.index:
                 sum_df.loc[user_id] = merge_row(sum_df.loc[user_id], added_df.loc[user_id])
             else:
                 sum_df.loc[user_id] = added_df.loc[user_id]
 
-        phase_list = cls.get_phase_list(list(sum_df["monitored_worktime_hour"].columns))
-        cls._add_ratio_column_for_productivity_per_user(sum_df, phase_list=phase_list)
         sum_df.reset_index(inplace=True)
+        # DataFrameを一旦Seriesに変換することで、列の型情報がすべてobjectになるので、再度正しい列の型に変換する
+        sum_df = UserPerformance._convert_column_dtypes(sum_df)
+
+        phase_list = UserPerformance.get_phase_list(list(sum_df["monitored_worktime_hour"].columns))
+        UserPerformance._add_ratio_column_for_productivity_per_user(sum_df, phase_list=phase_list)
         sum_df.sort_values(["user_id"], inplace=True)
-        return cls(sum_df)
+        return UserPerformance(sum_df)
 
     def _validate_df_for_output(self, output_file: Path) -> bool:
         if len(self.df) == 0:
@@ -815,6 +858,30 @@ class WholePerformance:
         """`メンバごとの生産性と品質.csv`に相当する情報から、インスタンスを生成します。"""
         series = user_performance.get_summary()
         return cls(series)
+
+    @classmethod
+    def empty(cls) -> WholePerformance:
+        """空のデータフレームを持つインスタンスを生成します。"""
+
+        df_dtype: dict[tuple[str, str], str] = {
+            ("user_id", ""): "string",
+            ("username", ""): "string",
+            ("biography", ""): "string",
+            ("last_working_date", ""): "string",
+            # phaseがinspection, acceptanceの列は出力されない可能性があるので、絶対出力される"sum", "annotation"の列のみ定義する
+            ("monitored_worktime_hour", "annotation"): "float64",
+            ("monitored_worktime_hour", "sum"): "float64",
+            ("task_count", "annotation"): "float64",
+            ("input_data_count", "annotation"): "float64",
+            ("annotation_count", "annotation"): "float64",
+            ("actual_worktime_hour", "sum"): "float64",
+            ("actual_worktime_hour", "annotation"): "float64",
+            ("pointed_out_inspection_comment_count", "annotation"): "float64",
+            ("rejected_count", "annotation"): "float64",
+        }
+
+        df = pandas.DataFrame(columns=pandas.MultiIndex.from_tuples(df_dtype.keys())).astype(df_dtype)
+        return cls(df)
 
     @classmethod
     def from_csv(cls, csv_file: Path) -> WholePerformance:
