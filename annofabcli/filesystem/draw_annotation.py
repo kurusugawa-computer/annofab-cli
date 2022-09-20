@@ -1,6 +1,9 @@
+from __future__ import annotations
+
 import argparse
 import json
 import logging
+import sys
 from dataclasses import dataclass
 from pathlib import Path
 from typing import Any, Callable, Collection, Dict, Iterator, Optional, Tuple, Union
@@ -12,6 +15,7 @@ from PIL import Image, ImageColor, ImageDraw
 
 import annofabcli
 from annofabcli.common.cli import (
+    COMMAND_LINE_ERROR_STATUS_CODE,
     AbstractCommandLineWithoutWebapiInterface,
     ArgumentParser,
     get_json_from_args,
@@ -159,8 +163,9 @@ class DrawingAnnotationForOneImage:
     def main(
         self,
         parser: SimpleAnnotationParser,
-        image_file: Path,
+        image_file: Optional[Path],
         output_file: Path,
+        image_size: Optional[tuple[int, int]] = None,
     ):
         """画像にアノテーションを描画したファイルを出力する。
 
@@ -169,11 +174,23 @@ class DrawingAnnotationForOneImage:
             image_file (Path): [description]
             output_file (Path): [description]
         """
-        with Image.open(image_file) as image:
-            draw = ImageDraw.Draw(image)
-            self._draw_annotations(draw, parser)
+        assert image_file is not None or image_size is not None
+
+        if image_file is not None:
+            with Image.open(image_file) as base_image:
+                annotation_image = Image.new("RGBA", base_image.size)
+                draw_annotation = ImageDraw.Draw(annotation_image)
+                self._draw_annotations(draw_annotation, parser)
+                composited_image = Image.alpha_composite(base_image, annotation_image)
+                output_file.parent.mkdir(parents=True, exist_ok=True)
+                composited_image.save(output_file)
+
+        elif image_size is not None:
+            annotation_image = Image.new("RGBA", image_size, color="black")
+            draw_annotation = ImageDraw.Draw(annotation_image)
+            self._draw_annotations(draw_annotation, parser)
             output_file.parent.mkdir(parents=True, exist_ok=True)
-            image.save(output_file)
+            annotation_image.save(output_file)
 
 
 def create_is_target_parser_func(
@@ -202,8 +219,8 @@ def create_is_target_parser_func(
 
 def draw_annotation_all(
     iter_parser: Iterator[SimpleAnnotationParser],
-    image_dir: Path,
-    input_data_id_relation_dict: Dict[str, str],
+    image_dir: Optional[Path],
+    input_data_id_relation_dict: Optional[Dict[str, str]],
     output_dir: Path,
     *,
     target_task_ids: Optional[Collection[str]] = None,
@@ -212,6 +229,7 @@ def draw_annotation_all(
     target_label_names: Optional[Collection[str]] = None,
     polyline_labels: Optional[Collection[str]] = None,
     drawing_options: Optional[DrawingOptions] = None,
+    default_image_size: Optional[tuple[int, int]] = None,
 ):
     drawing = DrawingAnnotationForOneImage(
         label_color_dict=label_color_dict,
@@ -233,19 +251,26 @@ def draw_annotation_all(
 
         total_count += 1
         input_data_id = parser.input_data_id
-        if input_data_id not in input_data_id_relation_dict:
-            logger.warning(f"input_data_id='{input_data_id}'に対応する画像ファイルのパスが見つかりませんでした。")
-            continue
+        if input_data_id_relation_dict is not None:
+            if input_data_id not in input_data_id_relation_dict:
+                logger.warning(f"input_data_id='{input_data_id}'に対応する画像ファイルのパスが見つかりませんでした。")
+                continue
 
-        image_file = image_dir / input_data_id_relation_dict[input_data_id]
-        if not image_file.exists():
-            logger.warning(f"input_data_id='{input_data_id}'に対応する画像ファイル'{image_file}'が見つかりませんでした。")
-            continue
+        image_file: Optional[Path] = None
+        if image_dir is not None and input_data_id_relation_dict is not None:
+            image_file = image_dir / input_data_id_relation_dict[input_data_id]
+            if not image_file.exists():
+                logger.warning(f"input_data_id='{input_data_id}'に対応する画像ファイル'{image_file}'が見つかりませんでした。")
+                continue
 
         json_file = Path(parser.json_file_path)
-        output_file = output_dir / f"{json_file.parent.name}/{json_file.stem}{image_file.suffix}"
+        if image_file is not None:
+            output_file = output_dir / f"{json_file.parent.name}/{json_file.stem}{image_file.suffix}"
+        else:
+            output_file = output_dir / f"{json_file.parent.name}/{json_file.stem}.png"
+
         try:
-            drawing.main(parser, image_file=image_file, output_file=output_file)
+            drawing.main(parser, image_file=image_file, output_file=output_file, image_size=default_image_size)
             logger.debug(
                 f"{success_count+1}件目: {str(output_file)} を出力しました。image_file={image_file}, "
                 f"アノテーションJSON={parser.json_file_path}"
@@ -260,10 +285,12 @@ def draw_annotation_all(
         label_name: ImageColor.getrgb(color) if isinstance(color, str) else color
         for label_name, color in drawing.label_color_dict.items()
     }
-    logger.info(f"label_color=\n" + json.dumps(new_label_color_dict, indent=2, ensure_ascii=False))
+    logger.info(f"label_color=" + json.dumps(new_label_color_dict, ensure_ascii=False))
 
 
 class DrawAnnotation(AbstractCommandLineWithoutWebapiInterface):
+    COMMON_MESSAGE = "annofabcli filesystem draw_annotation:"
+
     @staticmethod
     def _create_label_color(args_label_color: str) -> Dict[str, Color]:
         label_color_dict = get_json_from_args(args_label_color)
@@ -275,6 +302,15 @@ class DrawAnnotation(AbstractCommandLineWithoutWebapiInterface):
     def main(self):
         args = self.args
 
+        if args.default_image_size is not None:
+            default_image_size = annofabcli.common.cli.get_input_data_size(args.default_image_size)
+            if default_image_size is None:
+                print(
+                    f"{self.COMMON_MESSAGE} argument '--default_image_size': フォーマットが不正です。",
+                    file=sys.stderr,
+                )
+                sys.exit(COMMAND_LINE_ERROR_STATUS_CODE)
+
         annotation_path: Path = args.annotation
         # Simpleアノテーションの読み込み
         if annotation_path.is_file():
@@ -282,13 +318,15 @@ class DrawAnnotation(AbstractCommandLineWithoutWebapiInterface):
         else:
             iter_parser = lazy_parse_simple_annotation_dir(annotation_path)
 
-        df = pandas.read_csv(
-            args.input_data_id_csv,
-            sep=",",
-            header=None,
-            names=("input_data_id", "image_path"),
-        )
-        input_data_id_relation_dict = dict(zip(df["input_data_id"], df["image_path"]))
+        input_data_id_relation_dict: Optional[dict[str, str]] = None
+        if args.input_data_id_csv is not None:
+            df = pandas.read_csv(
+                args.input_data_id_csv,
+                sep=",",
+                header=None,
+                names=("input_data_id", "image_path"),
+            )
+            input_data_id_relation_dict = dict(zip(df["input_data_id"], df["image_path"]))
 
         task_query = (
             TaskQuery.from_dict(annofabcli.common.cli.get_json_from_args(args.task_query))
@@ -309,6 +347,7 @@ class DrawAnnotation(AbstractCommandLineWithoutWebapiInterface):
             drawing_options=DrawingOptions.from_dict(get_json_from_args(args.drawing_options))
             if args.drawing_options is not None
             else None,
+            default_image_size=default_image_size,
         )
 
 
@@ -323,21 +362,24 @@ def parse_args(parser: argparse.ArgumentParser):
         "--annotation", type=Path, required=True, help="Annofabからダウンロードしたアノテーションzip、またはzipを展開したディレクトリを指定してください。"
     )
 
-    parser.add_argument("--image_dir", type=Path, required=True, help="画像が存在するディレクトリを指定してください。")
+    parser.add_argument("--image_dir", type=Path, help="画像が存在するディレクトリを指定してください。")
 
     parser.add_argument(
         "--input_data_id_csv",
         type=Path,
-        required=True,
         help="'input_data_id'と ``--image_dir`` 配下の画像ファイルを紐付けたCSVを指定してください。"
         "CSVのフォーマットは、「1列目:input_data_id, 2列目:画像ファイルのパス」です。"
         "詳細は https://annofab-cli.readthedocs.io/ja/latest/command_reference/filesystem/draw_annotation.html を参照してください。",
     )
 
+    parser.add_argument("--default_image_size", type=str, help="デフォルトの画像サイズ。{width}x{height}。\n" "(例) 1280x720")
+
+    LABEL_COLOR_SAMPLE = {"dog": [255, 128, 64], "cat": "blue"}
     parser.add_argument(
         "--label_color",
         type=str,
-        help='label_nameとRGBの関係をJSON形式で指定します。ex) ``{"dog":[255,128,64], "cat":[0,0,255]}`` '
+        help="label_nameとRGBの関係をJSON形式で指定します。\n"
+        f"(例) ``{json.dumps(LABEL_COLOR_SAMPLE)}``\n"
         "``file://`` を先頭に付けると、JSON形式のファイルを指定できます。",
     )
 
@@ -365,10 +407,13 @@ def parse_args(parser: argparse.ArgumentParser):
         "【注意】アノテーションzipでポリラインかポリゴンかを判断できるようになれば、このオプションは削除する予定です。",
     )
 
+    DRAWING_OPTIONS_SAMPLE = {"line_width": 3}
     parser.add_argument(
         "--drawing_options",
         type=str,
-        help='描画オプションをJSON形式で指定します。ex) ``{"line_width":3}``' " ``file://`` を先頭に付けると、JSON形式のファイルを指定できます。",
+        help="描画オプションをJSON形式で指定します。\n"
+        f"(例) ``{json.dumps(DRAWING_OPTIONS_SAMPLE)}``\n"
+        "``file://`` を先頭に付けると、JSON形式のファイルを指定できます。",
     )
 
     argument_parser.add_task_id(
