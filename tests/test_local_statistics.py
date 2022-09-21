@@ -434,8 +434,15 @@ class TestUserPerformance:
         assert row[("task_count", "annotation")] == 30
 
     def test_empty(self):
-        actual = UserPerformance.empty()
-        assert actual.is_empty()
+        empty = UserPerformance.empty()
+        assert empty.is_empty()
+        summary = empty.get_summary()
+        assert summary[("task_count", "annotation")] == 0
+        assert summary[("monitored_worktime_hour", "annotation")] == 0
+
+        # merged_obj = UserPerformance.merge(empty, self.obj)
+        # row = merged_obj.df[merged_obj.df["user_id"] == "KD"].iloc[0]
+        # assert row[("task_count", "annotation")] == 15
 
 
 class TestWholePerformance:
@@ -448,6 +455,10 @@ class TestWholePerformance:
 
     def test_to_csv(self):
         self.obj.to_csv(self.output_dir / "全体の生産性と品質.csv")
+
+    def test_empty(self):
+        empty = WholePerformance.empty()
+        assert empty.series[("task_count", "annotation")] == 0
 
 
 class TestProjectPerformance:
@@ -479,7 +490,7 @@ class TestProjectPerformance:
         assert row[("dirname", "")] == "empty"
         assert numpy.isnan(row[("project_title", "")])
         assert numpy.isnan(row[("start_date", "")])
-        assert numpy.isnan(row[("actual_worktime_hour", "sum")])
+        assert row[("actual_worktime_hour", "sum")] == 0
 
 
 class TestListAnnotationCounterByInputData:

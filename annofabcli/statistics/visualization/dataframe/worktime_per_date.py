@@ -24,7 +24,6 @@ from annofabcli.statistics.linegraph import (
     write_bokeh_graph,
 )
 from annofabcli.statistics.list_worktime import get_worktime_dict_from_event_list
-from annofabcli.statistics.visualization.model import VisualizationDataFrame
 from annofabcli.task_history_event.list_worktime import (
     ListWorktimeFromTaskHistoryEventMain,
     WorktimeFromTaskHistoryEvent,
@@ -33,10 +32,13 @@ from annofabcli.task_history_event.list_worktime import (
 logger = logging.getLogger(__name__)
 
 
-class WorktimePerDate(VisualizationDataFrame):
+class WorktimePerDate:
     """
     日ごとユーザごとの作業時間情報
     """
+
+    def __init__(self, df: pandas.DataFrame):
+        self.df = df
 
     _df_dtype = {
         "date": "string",
@@ -49,6 +51,15 @@ class WorktimePerDate(VisualizationDataFrame):
         "monitored_inspection_worktime_hour": "float64",
         "monitored_acceptance_worktime_hour": "float64",
     }
+
+    def is_empty(self) -> bool:
+        """
+        空のデータフレームを持つかどうかを返します。
+
+        Returns:
+            空のデータフレームを持つかどうか
+        """
+        return len(self.df) == 0
 
     @property
     def columns(self) -> list[str]:

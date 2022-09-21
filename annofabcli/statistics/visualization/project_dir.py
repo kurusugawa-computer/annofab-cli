@@ -140,7 +140,12 @@ class ProjectDir(DataClassJsonMixin):
 
     def read_whole_performance(self) -> WholePerformance:
         """`全体の生産性と品質.csv`を読み込む。"""
-        return WholePerformance.from_csv(self.project_dir / self.FILENAME_WHOLE_PERFORMANCE)
+        file = self.project_dir / self.FILENAME_WHOLE_PERFORMANCE
+        if file.exists():
+            return WholePerformance.from_csv(file)
+        else:
+            logger.warning(f"'{str(file)}'を読み込もうとしましたが、ファイルは存在しません。")
+            return WholePerformance.empty()
 
     def write_whole_performance(self, whole_performance: WholePerformance):
         """`全体の生産性と品質.csv`を出力します。"""
