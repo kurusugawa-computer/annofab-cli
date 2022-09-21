@@ -83,6 +83,18 @@ CSVのフォーマットは以下の通りです。
 .. image:: draw_annotation/output_image.png
 
 
+アノテーションのみを描画する
+----------------------------------------------------
+アノテーションのみを描画する場合は、``--default_image_size`` を指定してください。
+
+.. code-block::
+
+    $ annofabcli filesystem draw_annotation  --annotation annotation.zip \
+    --default_image_size 1280x720 \
+    --output_dir out/
+
+
+
 ポリラインの描画方法
 --------------------------
 アノテーションzip内のJSONでは、ポリゴンアノテーションとポリラインアノテーションを区別することができません。

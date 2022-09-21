@@ -177,20 +177,19 @@ class DrawingAnnotationForOneImage:
         assert image_file is not None or image_size is not None
 
         if image_file is not None:
-            with Image.open(image_file) as base_image:
-                annotation_image = Image.new("RGBA", base_image.size)
-                draw_annotation = ImageDraw.Draw(annotation_image)
-                self._draw_annotations(draw_annotation, parser)
-                composited_image = Image.alpha_composite(base_image, annotation_image)
+
+            with Image.open(image_file) as image:
+                draw = ImageDraw.Draw(image)
+                self._draw_annotations(draw, parser)
                 output_file.parent.mkdir(parents=True, exist_ok=True)
-                composited_image.save(output_file)
+                image.save(output_file)
 
         elif image_size is not None:
-            annotation_image = Image.new("RGBA", image_size, color="black")
-            draw_annotation = ImageDraw.Draw(annotation_image)
-            self._draw_annotations(draw_annotation, parser)
+            image = Image.new("RGBA", image_size, color="black")
+            draw = ImageDraw.Draw(image)
+            self._draw_annotations(draw, parser)
             output_file.parent.mkdir(parents=True, exist_ok=True)
-            annotation_image.save(output_file)
+            image.save(output_file)
 
 
 def create_is_target_parser_func(
@@ -311,6 +310,20 @@ class DrawAnnotation(AbstractCommandLineWithoutWebapiInterface):
                 )
                 sys.exit(COMMAND_LINE_ERROR_STATUS_CODE)
 
+        if args.default_image_size is None and args.input_data_id_csv is None:
+            print(
+                f"{self.COMMON_MESSAGE} '--default_image_size'または'--input_data_id_csv'のいずれかは必須です。",
+                file=sys.stderr,
+            )
+            sys.exit(COMMAND_LINE_ERROR_STATUS_CODE)
+
+        if args.image_dir is None and args.input_data_id_csv is not None:
+            print(
+                f"{self.COMMON_MESSAGE} argument '--image_dir': '--input_data_id_csv'を指定したときは必須です。",
+                file=sys.stderr,
+            )
+            sys.exit(COMMAND_LINE_ERROR_STATUS_CODE)
+
         annotation_path: Path = args.annotation
         # Simpleアノテーションの読み込み
         if annotation_path.is_file():
@@ -362,17 +375,20 @@ def parse_args(parser: argparse.ArgumentParser):
         "--annotation", type=Path, required=True, help="Annofabからダウンロードしたアノテーションzip、またはzipを展開したディレクトリを指定してください。"
     )
 
-    parser.add_argument("--image_dir", type=Path, help="画像が存在するディレクトリを指定してください。")
+    parser.add_argument("--image_dir", type=Path, help="画像が存在するディレクトリを指定してください。\n" "'--input_data_id_csv'を指定したときは必須です。")
 
     parser.add_argument(
         "--input_data_id_csv",
         type=Path,
-        help="'input_data_id'と ``--image_dir`` 配下の画像ファイルを紐付けたCSVを指定してください。"
-        "CSVのフォーマットは、「1列目:input_data_id, 2列目:画像ファイルのパス」です。"
+        help="'input_data_id'と ``--image_dir`` 配下の画像ファイルを紐付けたCSVを指定してください。\n"
+        "'--default_image_size'を指定しないときは必須です。\n"
+        "CSVのフォーマットは、「1列目:input_data_id, 2列目:画像ファイルのパス」です。\n"
         "詳細は https://annofab-cli.readthedocs.io/ja/latest/command_reference/filesystem/draw_annotation.html を参照してください。",
     )
 
-    parser.add_argument("--default_image_size", type=str, help="デフォルトの画像サイズ。{width}x{height}。\n" "(例) 1280x720")
+    parser.add_argument(
+        "--default_image_size", type=str, help="デフォルトの画像サイズ。'--input_data_id_csv'を指定しないときは必須です。\n" "(例) 1280x720"
+    )
 
     LABEL_COLOR_SAMPLE = {"dog": [255, 128, 64], "cat": "blue"}
     parser.add_argument(

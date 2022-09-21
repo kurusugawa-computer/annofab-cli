@@ -14,6 +14,11 @@ Description
 * ``SegmentationV2`` （塗りつぶしv2）
 
 
+.. warning::
+
+    ``filesystem write_annotation_image`` コマンドは非推奨です。2022-12-01以降に廃止する予定です。
+    替わりに ``filesystem draw_image`` コマンドを利用してください。
+
 
 Examples
 =================================
