@@ -301,6 +301,7 @@ class DrawAnnotation(AbstractCommandLineWithoutWebapiInterface):
     def main(self):
         args = self.args
 
+        default_image_size: Optional[tuple[int, int]] = None
         if args.default_image_size is not None:
             default_image_size = annofabcli.common.cli.get_input_data_size(args.default_image_size)
             if default_image_size is None:
