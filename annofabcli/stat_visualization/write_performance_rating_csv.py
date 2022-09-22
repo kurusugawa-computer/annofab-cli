@@ -238,6 +238,9 @@ class CollectingPerformanceInfo:
                 logger.warning(f"{project_dir}からメンバごとの生産性と品質を読み込むのに失敗しました。", exc_info=True)
                 continue
 
+            if user_performance.is_empty():
+                continue
+
             df_performance = user_performance.df.copy()
             df_performance.set_index("user_id", inplace=True)
 
@@ -398,6 +401,9 @@ def create_user_df(target_dir: Path) -> pandas.DataFrame:
             user_performance = project_dir.read_user_performance()
         except Exception:
             logger.warning(f"{project_dir}からメンバごとの生産性と品質を読み込むのに失敗しました。", exc_info=True)
+            continue
+
+        if user_performance.is_empty():
             continue
 
         tmp_df_user = user_performance.df[[("user_id", ""), ("username", ""), ("biography", "")]].copy()
