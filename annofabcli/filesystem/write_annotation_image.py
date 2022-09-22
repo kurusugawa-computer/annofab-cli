@@ -198,9 +198,11 @@ def parse_args(parser: argparse.ArgumentParser):
 def add_parser(subparsers: Optional[argparse._SubParsersAction] = None):
     subcommand_name = "write_annotation_image"
 
-    subcommand_help = "アノテーションzipを展開したディレクトリから、アノテーションの画像（Semantic Segmentation用）を生成する。"
+    subcommand_help = "[DEPRECATED] アノテーションzipを展開したディレクトリから、アノテーションの画像（Semantic Segmentation用）を生成します。"
 
-    description = "アノテーションzipを展開したディレクトリから、アノテーションの画像（Semantic Segmentation用）を生成する。" + "矩形、ポリゴン、塗りつぶし、塗りつぶしv2が対象。"
+    description = (
+        "[DEPRECATED] アノテーションzipを展開したディレクトリから、アノテーションの画像（Semantic Segmentation用）を生成する。" + "矩形、ポリゴン、塗りつぶし、塗りつぶしv2が対象。"
+    )
 
     parser = annofabcli.common.cli.add_parser(subparsers, subcommand_name, subcommand_help, description)
     parse_args(parser)
