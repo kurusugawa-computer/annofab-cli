@@ -380,14 +380,14 @@ def parse_args(parser: argparse.ArgumentParser):
     parser.add_argument(
         "--input_data_id_csv",
         type=Path,
-        help="'input_data_id'と ``--image_dir`` 配下の画像ファイルを紐付けたCSVを指定してください。\n"
-        "'--default_image_size'を指定しないときは必須です。\n"
+        help="``input_data_id`` と ``--image_dir`` 配下の画像ファイルを紐付けたCSVを指定してください。\n"
+        "``--default_image_size`` を指定しないときは必須です。\n"
         "CSVのフォーマットは、「1列目:input_data_id, 2列目:画像ファイルのパス」です。\n"
         "詳細は https://annofab-cli.readthedocs.io/ja/latest/command_reference/filesystem/draw_annotation.html を参照してください。",
     )
 
     parser.add_argument(
-        "--default_image_size", type=str, help="デフォルトの画像サイズ。'--input_data_id_csv'を指定しないときは必須です。\n" "(例) 1280x720"
+        "--default_image_size", type=str, help="デフォルトの画像サイズ。 ``--input_data_id_csv`` を指定しないときは必須です。\n" "(例) 1280x720"
     )
 
     LABEL_COLOR_SAMPLE = {"dog": [255, 128, 64], "cat": "blue"}
@@ -419,7 +419,7 @@ def parse_args(parser: argparse.ArgumentParser):
         required=False,
         help="ポリラインのlabel_nameを指定してください。"
         "2021/07時点ではアノテーションzipからポリラインかポリゴンか判断できないため、コマンドライン引数からポリラインのlabel_nameを指定する必要があります。"
-        " ``file://`` を先頭に付けると、label_name の一覧が記載されたファイルを指定できます。"
+        " ``file://`` を先頭に付けると、label_name の一覧が記載されたファイルを指定できます。 \n"
         "【注意】アノテーションzipでポリラインかポリゴンかを判断できるようになれば、このオプションは削除する予定です。",
     )
 
@@ -428,7 +428,7 @@ def parse_args(parser: argparse.ArgumentParser):
         "--drawing_options",
         type=str,
         help="描画オプションをJSON形式で指定します。\n"
-        f"(例) ``{json.dumps(DRAWING_OPTIONS_SAMPLE)}``\n"
+        f"(例) ``{json.dumps(DRAWING_OPTIONS_SAMPLE)}``\n\n"
         "``file://`` を先頭に付けると、JSON形式のファイルを指定できます。",
     )
 
@@ -445,8 +445,9 @@ def parse_args(parser: argparse.ArgumentParser):
         "-tq",
         "--task_query",
         type=str,
-        help="描画対象のタスクを絞り込むためのクエリ条件をJSON形式で指定します。使用できるキーは task_id, status, phase, phase_stage です。"
-        " ``file://`` を先頭に付けると、JSON形式のファイルを指定できます。",
+        help="描画対象のタスクを絞り込むためのクエリ条件をJSON形式で指定します。\n"
+        "使用できるキーは task_id, status, phase, phase_stage です。\n"
+        "``file://`` を先頭に付けると、JSON形式のファイルを指定できます。",
     )
 
     parser.set_defaults(subcommand_func=main)
