@@ -160,7 +160,4 @@ Usage Details
     :nodefaultconst:
 
 
-See also
-=================================
-*  `annofabcli project download <../project/download.html>`_
 

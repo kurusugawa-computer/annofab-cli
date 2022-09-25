@@ -15,7 +15,7 @@ Examples
 --------------------------
 
 ``--annotation`` には、Annofabからダウンロードしたアノテーションzip、またはアノテーションzipを展開したディレクトリを2つ指定してください。
-アノテーションzipは、`annofabcli project download <../project/download.html>`_ コマンドでダウンロードできます。
+アノテーションzipは、`annofabcli annotation download <../annotation/download.html>`_ コマンドでダウンロードできます。
 
 
 .. code-block::
@@ -123,5 +123,4 @@ See also
 =================================
 
 * `アノテーションzipの構造 <https://annofab.com/docs/api/#section/Simple-Annotation-ZIP>`_
-* `annofabcli project download <../project/download.html>`_
 

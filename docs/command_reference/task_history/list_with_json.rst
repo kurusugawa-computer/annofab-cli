@@ -22,7 +22,7 @@ Examples
 
 
 タスク履歴全件ファイルを指定する場合は、``--task_history_json`` にタスク履歴全件ファイルのパスを指定してください。
-タスク全件ファイルは、`annofabcli project download <../project/download.html>`_ コマンドでダウンロードできます。
+タスク履歴全件ファイルは、`annofabcli task_history download <../task_history/download.html>`_ コマンドでダウンロードできます。
 
 
 .. code-block::
@@ -46,5 +46,4 @@ Usage Details
 
 See also
 =================================
-* `annofabcli project download <../project/download.html>`_
 * `annofabcli task_history list <../task_history/list.html>`_

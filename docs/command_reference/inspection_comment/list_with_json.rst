@@ -20,9 +20,6 @@ Examples
 
     $ annofabcli inspection_comment list_with_json --project_id prj1
 
-検査コメント全件ファイルを指定する場合は、``--inspection_comment_json`` を指定してください。
-検査コメント全件ファイルは、`annofabcli project download <../project/download.html>`_ コマンドでダウンロードできます。
-
 .. code-block::
 
     $ annofabcli inspection_comment list_with_json --project_id prj1 --inspection_comment_json inspection_comment.json
@@ -63,5 +60,4 @@ Usage Details
 
 See also
 =================================
-* `annofabcli project download <../project/download.html>`_
 * `annofabcli inspection_comment list <../inspection_comment/list.html>`_
