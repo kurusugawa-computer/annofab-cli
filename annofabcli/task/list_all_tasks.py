@@ -11,7 +11,6 @@ from annofabapi.dataclass.task import Task
 
 import annofabcli
 from annofabcli.common.cli import AbstractCommandLineInterface, ArgumentParser, build_annofabapi_resource_and_login
-from annofabcli.common.dataclasses import WaitOptions
 from annofabcli.common.download import DownloadingFile
 from annofabcli.common.enums import FormatArgument
 from annofabcli.common.facade import AnnofabApiFacade, TaskQuery, match_task_with_query
@@ -48,7 +47,6 @@ class ListTasksWithJsonMain:
         task_id_list: Optional[List[str]] = None,
         task_query: Optional[TaskQuery] = None,
         is_latest: bool = False,
-        wait_options: Optional[WaitOptions] = None,
     ) -> List[Dict[str, Any]]:
         if task_json is None:
             downloading_obj = DownloadingFile(self.service)
