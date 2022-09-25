@@ -142,7 +142,7 @@ def parse_args(parser: argparse.ArgumentParser):
         type=Path,
         help="タスク履歴情報が記載されたJSONファイルのパスを指定すると、JSONに記載された情報を元にタスク履歴一覧を出力します。"
         "指定しない場合、JSONファイルをダウンロードします。"
-        "JSONファイルは ``$ annofabcli project download task_history`` コマンドで取得できます。",
+        "JSONファイルは ``$ annofabcli task_history download`` コマンドで取得できます。",
     )
 
     argument_parser.add_format(

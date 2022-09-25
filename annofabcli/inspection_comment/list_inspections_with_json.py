@@ -132,7 +132,7 @@ def parse_args(parser: argparse.ArgumentParser):
         "--inspection_comment_json",
         type=Path,
         help="検査コメント情報が記載されたJSONファイルのパスを指定すると、JSONに記載された情報を元に検査コメント一覧を出力します。指定しない場合、全件ファイルをダウンロードします。"
-        "JSONファイルは ``$ annofabcli project download inspection_comment`` コマンドで取得できます。",
+        "JSONファイルは ``$ annofabcli inspection_comment download`` コマンドで取得できます。",
     )
 
     argument_parser.add_format(
