@@ -18,7 +18,6 @@ Available Commands
    change_status
    copy
    diff
-   download
    list
    update_annotation_zip
 
