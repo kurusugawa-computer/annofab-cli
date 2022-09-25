@@ -17,6 +17,7 @@ Available Commands
 
    download
    list
+   list_all
 
 Usage Details
 =================================

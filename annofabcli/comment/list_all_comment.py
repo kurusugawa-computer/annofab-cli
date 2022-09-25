@@ -40,12 +40,15 @@ class ListAllCommentMain:
         if comment_json is None:
             downloading_obj = DownloadingFile(self.service)
             with tempfile.NamedTemporaryFile() as f:
-                downloading_obj.download_comment_json(project_id, f.name)
+                json_path = Path(f.name)
+                downloading_obj.download_comment_json(project_id, str(json_path))
+                with json_path.open(encoding="utf-8") as f:
+                    comment_list = json.load(f)
+                
         else:
             json_path = comment_json
-
-        with json_path.open(encoding="utf-8") as f:
-            comment_list = json.load(f)
+            with json_path.open(encoding="utf-8") as f:
+                comment_list = json.load(f)
 
         if task_ids is not None:
             task_id_set = set(task_ids)
@@ -86,7 +89,7 @@ def parse_args(parser: argparse.ArgumentParser):
     parser.add_argument(
         "--comment_json",
         type=Path,
-        help="コメント情報が記載されたJSONファイルのパスを指定すると、JSONに記載された情報を元にコメント一覧を出力します。"
+        help="コメント情報が記載されたJSONファイルのパスを指定すると、JSONに記載された情報を元にコメント一覧を出力します。\n"
         "JSONファイルは ``$ annofabcli comment download`` コマンドで取得できます。",
     )
 
@@ -113,9 +116,10 @@ def main(args):
 
 def add_parser(subparsers: Optional[argparse._SubParsersAction] = None):
     subcommand_name = "list_all"
-    subcommand_help = "コメント全件ファイルから一覧を出力します。"
-    description = "コメント全件ファイルから一覧を出力します。"
+    subcommand_help = "すべてのコメントの一覧を出力します。"
+    description = ("すべてのコメントの一覧を出力します。\n"
+    "コメント一覧は、コマンドを実行した日の02:00(JST)頃の状態です。最新のコメント情報を取得したい場合は、 ``annofabcli comment list`` コマンドを実行してください。")
 
-    parser = annofabcli.common.cli.add_parser(subparsers, subcommand_name, subcommand_help, description)
+    parser = annofabcli.common.cli.add_parser(subparsers, subcommand_name, subcommand_help, description=description)
     parse_args(parser)
     return parser
