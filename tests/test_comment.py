@@ -28,3 +28,27 @@ class TestCommandLine:
                 str(out_dir / "download.json"),
             ]
         )
+
+    def test_list(self):
+        main(
+            [
+                "comment",
+                "list",
+                "--project_id",
+                project_id,
+                "--output",
+                str(out_dir / "list-comment.csv"),
+            ]
+        )
+
+    def test_list(self):
+        main(
+            [
+                "comment",
+                "list_all",
+                "--project_id",
+                project_id,
+                "--output",
+                str(out_dir / "list-all-comment.csv"),
+            ]
+        )
