@@ -1,10 +1,15 @@
 ==========================================
-task_history_event list_with_json
+task_history_event list_all
 ==========================================
 
 Description
 =================================
-タスク履歴イベント全件ファイルからタスク履歴イベント一覧を出力します。
+
+すべてのタスク履歴イベントの一覧を出力します。
+
+.. note::
+
+    出力されるタスク履歴イベントは、コマンドを実行した日の02:00(JST)頃の状態です。最新の情報を出力する方法はありません。
 
 
 Examples
@@ -14,21 +19,20 @@ Examples
 基本的な使い方
 --------------------------
 
-以下のコマンドは、タスク履歴全件イベントファイルをダウンロードしてから、タスク履歴イベント一覧を出力します。
+以下のコマンドは、すべてのタスク履歴イベントの一覧を出力します。
 
 .. code-block::
 
-    $ annofabcli task_history_event list_with_json --project_id prj1
+    $ annofabcli task_history_event list_all --project_id prj1
 
 
-タスク履歴イベント全件ファイルを指定する場合は、``--task_history_event_json`` にタスク履歴全件ファイルのパスを指定してください。
-タスク履歴イベント全件ファイルは、`annofabcli task_history_event download <../task_history_event/download.html>`_ コマンドでダウンロードできます。
-
+`annofabcli task_history_event download <../task_history_event/download.html>`_ コマンドでダウンロードできるタスク履歴イベント全件ファイルから、タスク履歴イベントの一覧を出力することもできます。
 
 .. code-block::
-    
-    $ annofabcli task_history_event download --project_id prj1 --output task_history_event.json
-    $ annofabcli task_history_event list_with_json --project_id prj1 --task_history_event_json task_history_event.json
+
+    $ annofabcli task_history_event download --project_id prj1 --output task_history_event.json 
+    $ annofabcli task_history_event list_all --project_id prj1 --task_history_json task_history_event.json 
+
 
 
 出力結果
@@ -40,9 +44,9 @@ CSV出力
 
 .. code-block::
 
-    $ annofabcli task_history_event list_with_json --project_id prj1 --format csv --output out.csv
+    $ annofabcli task_history_event list_all --project_id prj1 --format csv --output out.csv
 
-`out.csv <https://github.com/kurusugawa-computer/annofab-cli/blob/main/docs/command_reference/task_history_event/list_with_json/out.csv>`_
+`out.csv <https://github.com/kurusugawa-computer/annofab-cli/blob/main/docs/command_reference/task_history_event/list_all/out.csv>`_
 
 
 JSON出力
@@ -50,7 +54,7 @@ JSON出力
 
 .. code-block::
 
-    $ annofabcli task_history_event list_with_json --project_id prj1 --format pretty_json --output out.json
+    $ annofabcli task_history_event list_all --project_id prj1 --format pretty_json --output out.json
 
 
 
@@ -103,13 +107,13 @@ Usage Details
 =================================
 
 .. argparse::
-   :ref: annofabcli.task_history_event.list_task_history_event_with_json.add_parser
-   :prog: annofabcli task_history_event list_with_json
+   :ref: annofabcli.task_history_event.list_all_task_history_event.add_parser
+   :prog: annofabcli task_history_event list_all
    :nosubcommands:
    :nodefaultconst:
 
 
 See also
 =================================
-* `annofabcli task_history_event list_with_json <../task_history_event/list_with_json.html>`_
+* `annofabcli task_history_event list_all <../task_history_event/list_all.html>`_
 

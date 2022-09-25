@@ -175,7 +175,7 @@ def add_parser(subparsers: Optional[argparse._SubParsersAction] = None):
     subcommand_name = "list_all"
     subcommand_help = "すべての入力データの一覧を出力します。"
     description = (
-        "すべての入力データの一覧を出力します。\n" "出力される入力データは、コマンドを実行した日の02:00(JST)頃の状態です。最新の情報を出力したい場合は、 ``--latest`` を指定してください。"
+        "すべての入力データの一覧を出力します。\n出力される入力データは、コマンドを実行した日の02:00(JST)頃の状態です。最新の情報を出力したい場合は、 ``--latest`` を指定してください。"
     )
     epilog = "アノテーションユーザまたはオーナロールを持つユーザで実行してください。"
 

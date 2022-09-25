@@ -111,6 +111,6 @@ Usage Details
 
 See also
 =================================
-* `annofabcli inspection_comment list_with_json <../inspection_comment/list_with_json.html>`_     
+* `annofabcli inspection_comment list_all <../inspection_comment/list_all.html>`_     
 
 

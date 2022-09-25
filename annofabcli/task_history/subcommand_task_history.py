@@ -4,8 +4,8 @@ from typing import Optional
 import annofabcli
 import annofabcli.common.cli
 import annofabcli.task_history.download_task_history_json
-import annofabcli.task_history.list_task_history
 import annofabcli.task_history.list_all_task_history
+import annofabcli.task_history.list_task_history
 
 
 def parse_args(parser: argparse.ArgumentParser):

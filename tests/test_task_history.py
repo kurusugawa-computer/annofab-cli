@@ -50,18 +50,18 @@ class TestCommandLine:
             ]
         )
 
-    def test_list_with_json(self):
+    def test_list_all(self):
         main(
             [
                 "task_history",
-                "list_with_json",
+                "list_all",
                 "--project_id",
                 project_id,
                 "--task_id",
                 "test1",
                 "test2",
                 "--output",
-                str(out_dir / "list_with_json-out.csv"),
+                str(out_dir / "list_all-out.csv"),
                 "--format",
                 "csv",
             ]
