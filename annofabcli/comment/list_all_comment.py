@@ -44,7 +44,7 @@ class ListAllCommentMain:
                 downloading_obj.download_comment_json(project_id, str(json_path))
                 with json_path.open(encoding="utf-8") as f:
                     comment_list = json.load(f)
-                
+
         else:
             json_path = comment_json
             with json_path.open(encoding="utf-8") as f:
@@ -117,8 +117,10 @@ def main(args):
 def add_parser(subparsers: Optional[argparse._SubParsersAction] = None):
     subcommand_name = "list_all"
     subcommand_help = "すべてのコメントの一覧を出力します。"
-    description = ("すべてのコメントの一覧を出力します。\n"
-    "コメント一覧は、コマンドを実行した日の02:00(JST)頃の状態です。最新のコメント情報を取得したい場合は、 ``annofabcli comment list`` コマンドを実行してください。")
+    description = (
+        "すべてのコメントの一覧を出力します。\n"
+        "コメント一覧は、コマンドを実行した日の02:00(JST)頃の状態です。最新のコメント情報を取得したい場合は、 ``annofabcli comment list`` コマンドを実行してください。"
+    )
 
     parser = annofabcli.common.cli.add_parser(subparsers, subcommand_name, subcommand_help, description=description)
     parse_args(parser)
