@@ -32,6 +32,8 @@
 
 ### 2022-12-01 以降
 * `filesystem write_annotation_image`：2022-12-01以降に廃止する予定です。替わりに`filesystem draw_annotation`コマンドを利用してください。
+* `inspection_comment` コマンド配下：2022-12-01以降に廃止する予定です。替わりに`comment`コマンドを利用してください。
+
 
 # Requirements
 * Python 3.8+
