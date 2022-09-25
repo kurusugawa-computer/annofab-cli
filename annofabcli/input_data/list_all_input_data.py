@@ -2,6 +2,7 @@ import argparse
 import datetime
 import json
 import logging
+import tempfile
 from pathlib import Path
 from typing import Any, Dict, List, Optional, Set, Tuple
 
@@ -11,7 +12,6 @@ from annofabapi.models import ProjectMemberRole
 
 import annofabcli
 from annofabcli.common.cli import AbstractCommandLineInterface, ArgumentParser, build_annofabapi_resource_and_login
-from annofabcli.common.dataclasses import WaitOptions
 from annofabcli.common.download import DownloadingFile
 from annofabcli.common.enums import FormatArgument
 from annofabcli.common.facade import AnnofabApiFacade, InputDataQuery, match_input_data_with_query
@@ -47,22 +47,21 @@ class ListInputDataWithJsonMain:
         input_data_id_list: Optional[List[str]] = None,
         input_data_query: Optional[InputDataQuery] = None,
         is_latest: bool = False,
-        wait_options: Optional[WaitOptions] = None,
     ) -> List[Dict[str, Any]]:
         if input_data_json is None:
             downloading_obj = DownloadingFile(self.service)
-            cache_dir = annofabcli.common.utils.get_cache_dir()
-            json_path = cache_dir / f"{project_id}-input_data.json"
-
-            downloading_obj.download_input_data_json(
-                project_id, str(json_path), is_latest=is_latest, wait_options=wait_options
-            )
+            with tempfile.NamedTemporaryFile() as temp_file:
+                downloading_obj.download_input_data_json(
+                    project_id,
+                    temp_file.name,
+                    is_latest=is_latest,
+                )
+                with open(temp_file.name, encoding="utf-8") as f:
+                    input_data_list = json.load(f)
         else:
             json_path = input_data_json
-
-        logger.debug(f"{json_path} を読み込み中")
-        with json_path.open(encoding="utf-8") as f:
-            input_data_list = json.load(f)
+            with json_path.open(encoding="utf-8") as f:
+                input_data_list = json.load(f)
 
         logger.debug(f"入力データを絞り込み中")
         input_data_id_set = set(input_data_id_list) if input_data_id_list is not None else None
@@ -86,11 +85,6 @@ class ListInputDataWithJson(AbstractCommandLineInterface):
             if args.input_data_query is not None
             else None
         )
-        wait_options = (
-            WaitOptions.from_dict(annofabcli.common.cli.get_json_from_args(args.wait_options))
-            if args.wait_options is not None
-            else None
-        )
 
         project_id = args.project_id
         super().validate_project(
@@ -104,7 +98,6 @@ class ListInputDataWithJson(AbstractCommandLineInterface):
             input_data_id_list=input_data_id_list,
             input_data_query=input_data_query,
             is_latest=args.latest,
-            wait_options=wait_options,
         )
 
         logger.debug(f"入力データ一覧の件数: {len(input_data_list)}")
@@ -126,13 +119,18 @@ def parse_args(parser: argparse.ArgumentParser):
 
     argument_parser.add_project_id()
 
+    INPUT_DATA_QUERY_SAMPLE = {"input_data_name": "sample"}
     parser.add_argument(
         "-iq",
         "--input_data_query",
         type=str,
-        help="入力データの検索クエリをJSON形式で指定します。"
-        " ``file://`` を先頭に付けると、JSON形式のファイルを指定できます。"
-        "指定できるキーは、``input_data_id`` , ``input_data_name`` , ``input_data_path`` です。",
+        help="入力データの検索クエリをJSON形式で指定します。\n"
+        "``file://`` を先頭に付けると、JSON形式のファイルを指定できます。\n"
+        f"(ex) '{json.dumps(INPUT_DATA_QUERY_SAMPLE)}'\n\n"
+        "以下のキーを指定できます。\n"
+        " * ``input_data_id`` \n"
+        " * ``input_data_name`` \n"
+        " * ``input_data_path``",
     )
 
     parser.add_argument(
@@ -140,29 +138,22 @@ def parse_args(parser: argparse.ArgumentParser):
         "--input_data_id",
         type=str,
         nargs="+",
-        help="対象のinput_data_idを指定します。" " ``file://`` を先頭に付けると、input_data_idの一覧が記載されたファイルを指定できます。",
+        help="対象のinput_data_idを指定します。\n" "``file://`` を先頭に付けると、input_data_idの一覧が記載されたファイルを指定できます。",
     )
 
     parser.add_argument(
         "--input_data_json",
         type=Path,
-        help="入力データ情報が記載されたJSONファイルのパスを指定すると、JSONに記載された情報を元に入力データ一覧を出力します。"
-        "指定しない場合、全件ファイルをダウンロードします。"
+        help="入力データ情報が記載されたJSONファイルのパスを指定すると、JSONに記載された情報を元に入力データ一覧を出力します。\n"
         "JSONファイルは ``$ annofabcli input_data download`` コマンドで取得できます。",
     )
 
     parser.add_argument(
-        "--latest", action="store_true", help="最新の入力データ一覧ファイルを参照します。このオプションを指定すると、入力データ一覧ファイルを更新するのに約5分以上待ちます。"
-    )
-
-    parser.add_argument(
-        "--wait_options",
-        type=str,
-        help="入力データ一覧ファイルの更新が完了するまで待つ際のオプションを、JSON形式で指定してください。"
-        " ``file://`` を先頭に付けるとjsonファイルを指定できます。"
-        'デフォルトは ``{"interval":60, "max_tries":360}`` です。'
-        " ``interval`` :完了したかを問い合わせる間隔[秒], "
-        " ``max_tires`` :完了したかの問い合わせを最大何回行うか。",
+        "--latest",
+        action="store_true",
+        help="最新の入力データの情報を出力します。"
+        "このオプションを指定すると約5分以上待ちます。Annofabからダウンロードする「入力データ全件ファイル」に、最新の情報を反映させるのに時間がかかるためです。\n"
+        "指定しない場合は、コマンドを実行した日の02:00(JST)頃の入力データの一覧が出力されます。",
     )
 
     argument_parser.add_format(
@@ -177,14 +168,13 @@ def parse_args(parser: argparse.ArgumentParser):
     argument_parser.add_output()
     argument_parser.add_csv_format()
 
-    argument_parser.add_query()
     parser.set_defaults(subcommand_func=main)
 
 
 def add_parser(subparsers: Optional[argparse._SubParsersAction] = None):
-    subcommand_name = "list_with_json"
-    subcommand_help = "入力データ全件ファイルから一覧を出力します。"
-    description = "入力データ全件ファイルから一覧を出力します。"
+    subcommand_name = "list_all"
+    subcommand_help = "すべての入力データの一覧を出力します。"
+    description = "すべての入力データの一覧を出力します。\n" "入力データ一覧は、コマンドを実行した日の02:00(JST)頃の状態です。最新の情報を出力したい場合は、 ``--latest`` を指定してください。"
     epilog = "アノテーションユーザまたはオーナロールを持つユーザで実行してください。"
 
     parser = annofabcli.common.cli.add_parser(subparsers, subcommand_name, subcommand_help, description, epilog=epilog)
