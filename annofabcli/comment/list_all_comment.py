@@ -39,8 +39,8 @@ class ListAllCommentMain:
 
         if comment_json is None:
             downloading_obj = DownloadingFile(self.service)
-            with tempfile.NamedTemporaryFile() as f:
-                json_path = Path(f.name)
+            with tempfile.NamedTemporaryFile() as temp_file:
+                json_path = Path(temp_file.name)
                 downloading_obj.download_comment_json(project_id, str(json_path))
                 with json_path.open(encoding="utf-8") as f:
                     comment_list = json.load(f)
