@@ -73,6 +73,7 @@
         "tolist",
         "tzlocal",
         "webapi",
-        "worktime"
+        "worktime",
+        "yesnoall"
     ]
 }

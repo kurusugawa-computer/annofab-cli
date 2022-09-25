@@ -1,8 +1,8 @@
-import tempfile
 import argparse
 import datetime
 import json
 import logging
+import tempfile
 from pathlib import Path
 from typing import Any, Dict, List, Optional, Set, Tuple
 
@@ -127,7 +127,7 @@ def parse_args(parser: argparse.ArgumentParser):
         help="入力データの検索クエリをJSON形式で指定します。\n"
         "``file://`` を先頭に付けると、JSON形式のファイルを指定できます。\n"
         f"(ex) ``{json.dumps(INPUT_DATA_QUERY_SAMPLE)}``\n\n"
-        "以下のキーを指定できます。詳細は https://annofab-cli.readthedocs.io/ja/latest/command_reference/input_data/list_all.html を参照してください。\n\n"
+        "以下のキーを指定できます。\n\n"
         " * ``input_data_id`` \n"
         " * ``input_data_name`` \n"
         " * ``input_data_path``",
@@ -152,7 +152,7 @@ def parse_args(parser: argparse.ArgumentParser):
         "--latest",
         action="store_true",
         help="最新の入力データの情報を出力します。"
-        "このオプションを指定すると約5分以上待ちます。Annofabからダウンロードする「入力データ全件ファイル」に、最新の情報を反映させるのに時間がかかるためです。\n"
+        "このオプションを指定すると数分待ちます。Annofabからダウンロードする「入力データ全件ファイル」に、最新の情報を反映させるのに時間がかかるためです。\n"
         "指定しない場合は、コマンドを実行した日の02:00(JST)頃の入力データの一覧が出力されます。",
     )
 
@@ -174,7 +174,9 @@ def parse_args(parser: argparse.ArgumentParser):
 def add_parser(subparsers: Optional[argparse._SubParsersAction] = None):
     subcommand_name = "list_all"
     subcommand_help = "すべての入力データの一覧を出力します。"
-    description = "すべての入力データの一覧を出力します。\n" "入力データ一覧は、コマンドを実行した日の02:00(JST)頃の状態です。最新の情報を出力したい場合は、 ``--latest`` を指定してください。"
+    description = (
+        "すべての入力データの一覧を出力します。\n" "出力される入力データは、コマンドを実行した日の02:00(JST)頃の状態です。最新の情報を出力したい場合は、 ``--latest`` を指定してください。"
+    )
     epilog = "アノテーションユーザまたはオーナロールを持つユーザで実行してください。"
 
     parser = annofabcli.common.cli.add_parser(subparsers, subcommand_name, subcommand_help, description, epilog=epilog)

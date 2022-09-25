@@ -1,6 +1,7 @@
 import argparse
 import json
 import logging
+import tempfile
 from pathlib import Path
 from typing import Any, Dict, List, Optional, Set
 
@@ -51,18 +52,15 @@ class ListTasksWithJsonMain:
     ) -> List[Dict[str, Any]]:
         if task_json is None:
             downloading_obj = DownloadingFile(self.service)
-            cache_dir = annofabcli.common.utils.get_cache_dir()
-            json_path = cache_dir / f"{project_id}-task.json"
+            with tempfile.NamedTemporaryFile() as temp_file:
+                downloading_obj.download_task_json(project_id, temp_file.name, is_latest=is_latest)
+                with open(temp_file.name, encoding="utf-8") as f:
+                    task_list = json.load(f)
 
-            downloading_obj.download_task_json(
-                project_id, str(json_path), is_latest=is_latest, wait_options=wait_options
-            )
         else:
             json_path = task_json
-
-        logger.debug(f"{json_path} を読み込んでいます。")
-        with json_path.open(encoding="utf-8") as f:
-            task_list = json.load(f)
+            with json_path.open(encoding="utf-8") as f:
+                task_list = json.load(f)
 
         if task_query is not None:
             task_query = self.facade.set_account_id_of_task_query(project_id, task_query)
@@ -87,11 +85,6 @@ class ListTasksWithJson(AbstractCommandLineInterface):
             if args.task_query is not None
             else None
         )
-        wait_options = (
-            WaitOptions.from_dict(annofabcli.common.cli.get_json_from_args(args.wait_options))
-            if args.wait_options is not None
-            else None
-        )
 
         project_id = args.project_id
         super().validate_project(project_id, project_member_roles=None)
@@ -103,7 +96,6 @@ class ListTasksWithJson(AbstractCommandLineInterface):
             task_id_list=task_id_list,
             task_query=task_query,
             is_latest=args.latest,
-            wait_options=wait_options,
         )
 
         logger.debug(f"タスク一覧の件数: {len(task_list)}")
@@ -136,23 +128,16 @@ def parse_args(parser: argparse.ArgumentParser):
     parser.add_argument(
         "--task_json",
         type=Path,
-        help="タスク情報が記載されたJSONファイルのパスを指定すると、JSONに記載された情報を元にタスク一覧を出力します。"
-        "指定しない場合、全件ファイルをダウンロードします。"
+        help="タスク情報が記載されたJSONファイルのパスを指定すると、JSONに記載された情報を元にタスク一覧を出力します。\n"
         "JSONファイルは ``$ annofabcli task download`` コマンドで取得できます。",
     )
 
     parser.add_argument(
-        "--latest", action="store_true", help="最新のタスク一覧ファイルを参照します。このオプションを指定すると、タスク一覧ファイルを更新するのに約5分以上待ちます。"
-    )
-
-    parser.add_argument(
-        "--wait_options",
-        type=str,
-        help="タスク一覧ファイルの更新が完了するまで待つ際のオプションを、JSON形式で指定してください。"
-        " ``file://`` を先頭に付けるとjsonファイルを指定できます。"
-        'デフォルは ``{"interval":60, "max_tries":360}`` です。'
-        "``interval`` :完了したかを問い合わせる間隔[秒], "
-        "``max_tires`` :完了したかの問い合わせを最大何回行うか。",
+        "--latest",
+        action="store_true",
+        help="最新のタスクの情報を出力します。"
+        "このオプションを指定すると数分待ちます。Annofabからダウンロードする「タスク全件ファイル」に、最新の情報を反映させるのに時間がかかるためです。\n"
+        "指定しない場合は、コマンドを実行した日の02:00(JST)頃のタスクの一覧が出力されます。",
     )
 
     argument_parser.add_format(
@@ -162,15 +147,13 @@ def parse_args(parser: argparse.ArgumentParser):
     argument_parser.add_output()
     argument_parser.add_csv_format()
 
-    argument_parser.add_query()
     parser.set_defaults(subcommand_func=main)
 
 
 def add_parser(subparsers: Optional[argparse._SubParsersAction] = None):
-    subcommand_name = "list_with_json"
-    subcommand_help = "タスク全件ファイルから一覧を出力します。"
-    description = "タスク全件ファイルから一覧を出力します。"
-
-    parser = annofabcli.common.cli.add_parser(subparsers, subcommand_name, subcommand_help, description)
+    subcommand_name = "list_all"
+    subcommand_help = "すべてのタスクの一覧を出力します。"
+    description = "すべてのタスクの一覧を出力します。\n" "出力されるタスクは、コマンドを実行した日の02:00(JST)頃の状態です。最新の情報を出力したい場合は、 ``--latest`` を指定してください。"
+    parser = annofabcli.common.cli.add_parser(subparsers, subcommand_name, subcommand_help, description=description)
     parse_args(parser)
     return parser

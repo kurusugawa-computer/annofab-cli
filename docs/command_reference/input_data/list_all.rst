@@ -23,19 +23,18 @@ Examples
 基本的な使い方
 --------------------------
 
-以下のコマンドは、入力データ全件ファイルをダウンロードしてから、入力データ一覧を出力します。
+以下のコマンドは、すべての入力データの一覧を出力します。
 
 .. code-block::
 
     $ annofabcli input_data list_all --project_id prj1
 
 
-入力データ全件ファイルを指定する場合は、``--input_data_json`` に入力データ全件ファイルのパスを指定してください。
-入力データ全件ファイルは、 `annofabcli input_data download <../input_data/download.html>`_ コマンドでダウンロードできます。
-
+`annofabcli input_data download <../input_data/download.html>`_ コマンドでダウンロードできる入力データ全件ファイルから、入力データの一覧を出力することもできます。
 
 .. code-block::
 
+    $ annofabcli input_data download --project_id prj1 --output input_data.json 
     $ annofabcli input_data list_all --project_id prj1 --input_data_json input_data.json 
 
 
@@ -44,26 +43,23 @@ Examples
 ----------------------------------------------
 
 ``--input_data_query`` を指定すると、入力データの名前や入力データのパスで絞り込めます。
+詳細は `Command line options <../../user_guide/command_line_options.html#input-data-query-iq>`_ を参照してください。
 以下のコマンドは、入力データ名に"sample"を含む入力データの一覧を出力します。
+
 
 .. code-block::
 
-    $ annofabcli input_data list_with_json --project_id prj1  \
+    $ annofabcli input_data list_all --project_id prj1  \
      --input_data_query '{"input_data_name": "sample"}' 
 
 
-以下に ``--input_data_query`` に利用できるキーと、絞り込みの内容を記載します。
-
-* input_data_id : 入力データIDを部分一致で絞り込む（大文字小文字を区別しない）
-* input_data_name : 入力データ名を部分一致で絞り込む（大文字小文字を区別しない）
-* input_data_path : 入力データ名を部分一致で絞り込む
 
 
 ``--input_data_id`` を指定すると、input_data_idに合致する入力データの一覧を出力します。
 
 .. code-block::
 
-    $ annofabcli input_data list_with_json --project_id prj1 \
+    $ annofabcli input_data list_all --project_id prj1 \
      --input_data_id file://input_data_id.txt
 
 

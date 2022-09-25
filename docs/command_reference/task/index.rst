@@ -23,7 +23,7 @@ Available Commands
    delete
    download
    list
-   list_with_json
+   list_all
    list_added_task_history
    put
    put_by_count

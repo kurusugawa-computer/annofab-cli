@@ -23,7 +23,7 @@ Examples
 .. warning::
 
     WebAPIの都合上、10,000件までしか出力できません。
-    10,000件以上の入力データを出力する場合は、`annofabcli input_data list_with_json <../input_data/list_with_json.html>`_ コマンドを使用してください。
+    10,000件以上の入力データを出力する場合は、`annofabcli input_data list_all <../input_data/list_all.html>`_ コマンドを使用してください。
 
 
 
@@ -149,6 +149,6 @@ Usage Details
 
 See also
 =================================
-* `annofabcli input_data list_with_json <../input_data/list_with_json.html>`_     
+* `annofabcli input_data list_all <../input_data/list_all.html>`_     
 
 

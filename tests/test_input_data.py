@@ -171,11 +171,11 @@ class TestCommandLine:
         )
 
     def test_list_input_data_with_json(self):
-        out_file = str(out_dir / "input_data.csv")
+        out_file = str(out_dir / "list_all_input_data.csv")
         main(
             [
                 "input_data",
-                "list_with_json",
+                "list_all",
                 "--project_id",
                 project_id,
                 "--output",
