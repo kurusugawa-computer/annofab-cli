@@ -23,7 +23,7 @@ Examples
 
 
 タスク全件ファイルを指定する場合は、``--task_json`` にタスク全件ファイルのパスを指定してください。
-タスク全件ファイルは、`annofabcli project download <../project/download.html>`_ コマンドでダウンロードできます。
+タスク全件ファイルは、`annofabcli task download <../task/download.html>`_ コマンドでダウンロードできます。
 
 
 .. code-block::
@@ -73,5 +73,4 @@ Usage Details
 
 See also
 =================================
-* `annofabcli project download <../project/download.html>`_
 * `annofabcli task list <../task/list.html>`_

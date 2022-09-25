@@ -35,7 +35,7 @@ Examples
     $ annofabcli task list_added_task_history --project_id prj1 --output task.csv \
     --task_json task.json --task_history_json task_history.json
 
-タスク全件ファイルやタスク履歴全件ファイルは、`annofabcli project download <../project/download.html>`_ コマンドでダウンロードできます。
+タスク全件ファイルは`annofabcli task download <../task/download.html>`_ コマンド、タスク履歴全件ファイルは、`annofabcli task_history download <../task_history/download.html>`_ コマンドでダウンロードできます。
 
 
 タスクの絞り込み
@@ -101,6 +101,5 @@ Usage Details
 
 See also
 =================================
-* `annofabcli project download <../project/download.html>`_
 * `annofabcli task list <../task/list.html>`_
 * `annofabcli task list_with_json <../task/list_with_json.html>`_

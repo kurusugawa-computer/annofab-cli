@@ -130,7 +130,7 @@ def parse_args(parser: argparse.ArgumentParser):
         type=Path,
         help="入力データ情報が記載されたJSONファイルのパスを指定してください。"
         "入力データのプロパティ ``system_metadata.original_resolution`` を参照して画像サイズを決めます。"
-        "JSONファイルは ``$ annofabcli project download input_data`` コマンドで取得できます。",
+        "JSONファイルは ``$ annofabcli input_data download`` コマンドで取得できます。",
     )
 
     parser.add_argument(

@@ -251,14 +251,14 @@ def parse_args(parser: argparse.ArgumentParser):
         "--input_data_json",
         type=str,
         help="入力データ情報が記載されたJSONファイルのパスを指定してください。JSONに記載された情報を元に出力します。"
-        "JSONファイルは ``$ annofabcli project download input_data`` コマンドで取得できます。",
+        "JSONファイルは ``$ annofabcli input_data download`` コマンドで取得できます。",
     )
 
     parser.add_argument(
         "--task_json",
         type=str,
         help="タスク情報が記載されたJSONファイルのパスを指定してください。JSONに記載された情報を元に出力します。"
-        "JSONファイルは ``$ annofabcli project download task`` コマンドで取得できます。",
+        "JSONファイルは ``$ annofabcli task download`` コマンドで取得できます。",
     )
 
     parser.add_argument(

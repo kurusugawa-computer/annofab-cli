@@ -25,7 +25,7 @@ Examples
 
 
 入力データ全件ファイルを指定する場合は、``--input_data_json`` に入力データ全件ファイルのパスを指定してください。
-入力データ全件ファイルは、`annofabcli project download <../project/download.html>`_ コマンドでダウンロードできます。
+入力データ全件ファイルは、 `annofabcli input_data download <../input_data/download.html>`_ コマンドでダウンロードできます。
 
 
 .. code-block::
@@ -75,5 +75,4 @@ Usage Details
 
 See also
 =================================
-* `annofabcli project download <../project/download.html>`_
 * `annofabcli input_data list <../input_data/list.html>`_

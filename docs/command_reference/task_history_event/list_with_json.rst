@@ -22,12 +22,13 @@ Examples
 
 
 タスク履歴イベント全件ファイルを指定する場合は、``--task_history_event_json`` にタスク履歴全件ファイルのパスを指定してください。
-タスク全件ファイルは、`annofabcli project download <../project/download.html>`_ コマンドでダウンロードできます。
+タスク履歴イベント全件ファイルは、`annofabcli task_history_event download <../task_history_event/download.html>`_ コマンドでダウンロードできます。
 
 
 .. code-block::
-
-    $ annofabcli task_history_event list_with_json --project_id prj1 --task_history_event_json task_history.json 
+    
+    $ annofabcli task_history_event download --project_id prj1 --output task_history_event.json
+    $ annofabcli task_history_event list_with_json --project_id prj1 --task_history_event_json task_history_event.json
 
 
 出力結果
@@ -110,6 +111,5 @@ Usage Details
 
 See also
 =================================
-* `annofabcli project download <../project/download.html>`_
 * `annofabcli task_history_event list_with_json <../task_history_event/list_with_json.html>`_
 

@@ -148,7 +148,7 @@ def parse_args(parser: argparse.ArgumentParser):
         type=Path,
         help="入力データ情報が記載されたJSONファイルのパスを指定すると、JSONに記載された情報を元に入力データ一覧を出力します。"
         "指定しない場合、全件ファイルをダウンロードします。"
-        "JSONファイルは ``$ annofabcli project download input_data`` コマンドで取得できます。",
+        "JSONファイルは ``$ annofabcli input_data download`` コマンドで取得できます。",
     )
 
     parser.add_argument(

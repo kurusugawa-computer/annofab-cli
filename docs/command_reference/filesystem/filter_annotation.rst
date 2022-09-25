@@ -15,7 +15,7 @@ Examples
 --------------------------
 
 ``--annotation`` には、Annofabからダウンロードしたアノテーションzipか、アノテーションzipを展開したディレクトリを指定してください。
-アノテーションzipは、`annofabcli project download <../project/download.html>`_ コマンドでダウンロードできます。
+アノテーションzipは、`annofabcli annotation download <../annotation/download.html>`_ コマンドでダウンロードできます。
 
 
 ``--task_query`` を指定して、タスクのフェーズやステータスで絞り込むことができます。以下のコマンドは、完了状態のタスクのみzip展開します。
@@ -46,9 +46,4 @@ Usage Details
    :prog: annofabcli filesystem filter_annotation
    :nosubcommands:
    :nodefaultconst:
-
-See also
-=================================
-
-* `annofabcli project download <../project/download.html>`_
 
