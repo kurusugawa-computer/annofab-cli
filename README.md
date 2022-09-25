@@ -30,6 +30,8 @@
 * `input_data put`コマンドでZIPファイルの登録する機能を廃止します。替わりに`input_data put_with_`コマンドはご利用ください。
 * `task list_with_json`などの`list_with_json`コマンドの名前を、`list_all`コマンドに変更します。`list_with_json`コマンドという名前と実際の機能機能が一致していないためです。
 
+### 2022-12-01 以降
+* `filesystem write_annotation_image`：2022-12-01以降に廃止する予定です。替わりに`filesystem draw_annotation`コマンドを利用してください。
 
 # Requirements
 * Python 3.8+
