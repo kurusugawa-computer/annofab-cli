@@ -1,8 +1,8 @@
+import tempfile
 import argparse
 import datetime
 import json
 import logging
-import tempfile
 from pathlib import Path
 from typing import Any, Dict, List, Optional, Set, Tuple
 
@@ -126,8 +126,8 @@ def parse_args(parser: argparse.ArgumentParser):
         type=str,
         help="入力データの検索クエリをJSON形式で指定します。\n"
         "``file://`` を先頭に付けると、JSON形式のファイルを指定できます。\n"
-        f"(ex) '{json.dumps(INPUT_DATA_QUERY_SAMPLE)}'\n\n"
-        "以下のキーを指定できます。\n"
+        f"(ex) ``{json.dumps(INPUT_DATA_QUERY_SAMPLE)}``\n\n"
+        "以下のキーを指定できます。詳細は https://annofab-cli.readthedocs.io/ja/latest/command_reference/input_data/list_all.html を参照してください。\n\n"
         " * ``input_data_id`` \n"
         " * ``input_data_name`` \n"
         " * ``input_data_path``",
