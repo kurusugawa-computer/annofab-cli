@@ -18,6 +18,7 @@ Available Commands
    download
    list
    list_all
+   put_inspection
 
 Usage Details
 =================================
