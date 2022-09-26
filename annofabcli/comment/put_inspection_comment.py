@@ -319,7 +319,7 @@ def parse_args(parser: argparse.ArgumentParser):
         type=str,
         help=(
             "付与する検査コメントをJSON形式で指定してください。"
-            "``file://`` を先頭に付けると、JSON形式のファイルを指定できます。\n"
+            "``file://`` を先頭に付けると、JSON形式のファイルを指定できます。\n\n"
             f"(ex)  ``{json.dumps(SAMPLE_JSON, ensure_ascii=False)}``"
         ),
     )
@@ -333,8 +333,8 @@ def parse_args(parser: argparse.ArgumentParser):
 
 def add_parser(subparsers: Optional[argparse._SubParsersAction] = None):
     subcommand_name = "put_inspection"
-    subcommand_help = "検査コメントを付与します。"
-    description = "検査コメントを付与します。"
+    subcommand_help = "検査コメントを付与できます。"
+    description = "検査コメントを付与できます。"
     epilog = "チェッカーロールまたはオーナロールを持つユーザで実行してください。"
 
     parser = annofabcli.common.cli.add_parser(subparsers, subcommand_name, subcommand_help, description, epilog=epilog)
