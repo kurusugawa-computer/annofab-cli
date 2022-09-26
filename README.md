@@ -22,18 +22,17 @@
 
 ## 廃止予定
 
-### 2022-07-01 以降
-* `project download`コマンドを廃止します。`project download`コマンドは、名前からどのようなファイルがダウンロードできるのか想像しにくいためです。替わりに`annotation download`コマンドなど、各リソースに対するdownloadコマンドをご利用ください。
-
 
 ### 2022-09-01 以降
 * `input_data put`コマンドでZIPファイルの登録する機能を廃止します。替わりに`input_data put_with_`コマンドはご利用ください。
-* `task list_with_json`などの`list_with_json`コマンドの名前を、`list_all`コマンドに変更します。`list_with_json`コマンドという名前と実際の機能機能が一致していないためです。
+
+### 2022-11-01 以降
+* JMESPathを指定できる `--query`を削除します。使いどころがあまりないのと、`jq`コマンドでも対応できるためです。
+* `--wait_options`を削除します。使いどころがあまりないためです。
 
 ### 2022-12-01 以降
-* `filesystem write_annotation_image`：2022-12-01以降に廃止する予定です。替わりに`filesystem draw_annotation`コマンドを利用してください。
-* `inspection_comment` コマンド配下：2022-12-01以降に廃止する予定です。替わりに`comment`コマンドを利用してください。
-
+* `filesystem write_annotation_image`を2022-12-01以降に廃止する予定です。替わりに`filesystem draw_annotation`コマンドを利用してください。
+* `inspection_comment` コマンド配下を2022-12-01以降に廃止する予定です。替わりに`comment`コマンドを利用してください。
 
 # Requirements
 * Python 3.8+

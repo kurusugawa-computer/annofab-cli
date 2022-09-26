@@ -1,11 +1,15 @@
 =====================
-task list_with_json
+task list_all
 =====================
 
 Description
 =================================
-タスク全件ファイルからタスク一覧を出力します。
-10,000件以上のタスクを出力する際に利用できます。
+すべてのタスクの一覧を出力します。
+
+.. note::
+
+    出力されるタスクは、コマンドを実行した日の02:00(JST)頃の状態です。
+    最新の情報を出力したい場合は、 ``--latest`` を指定してください。
 
 
 Examples
@@ -15,32 +19,31 @@ Examples
 基本的な使い方
 --------------------------
 
-以下のコマンドは、タスク全件ファイルをダウンロードしてから、タスク一覧を出力します。
+以下のコマンドは、すべてのタスクの一覧を出力します。
 
 .. code-block::
 
-    $ annofabcli task list_with_json --project_id prj1 --output task.csv
+    $ annofabcli task list_all --project_id prj1 --output task.csv
 
 
-タスク全件ファイルを指定する場合は、``--task_json`` にタスク全件ファイルのパスを指定してください。
-タスク全件ファイルは、`annofabcli task download <../task/download.html>`_ コマンドでダウンロードできます。
-
+`annofabcli task download <../task/download.html>`_ コマンドでダウンロードできるタスク全件ファイルから、タスクの一覧を出力することもできます。
 
 .. code-block::
 
-    $ annofabcli task list_with_json --project_id prj1 --task_json task.json \
-    --output task.csv
+    $ annofabcli task download --project_id prj1 --output task.json 
+    $ annofabcli task list_all --project_id prj1 --task_json task.json 
 
 
 タスクのフェーズやステータスなどで絞り込み
 ----------------------------------------------
 
 ``--task_query`` を指定すると、タスクのフェーズやステータスなどで絞り込めます。
+詳細は `Command line options <../../user_guide/command_line_options.html#task-query-tq>`_ を参照してください。
 以下のコマンドは、受入フェーズで未着手状態のタスクを出力します。
 
 .. code-block::
 
-    $ annofabcli task list_with_json --project_id prj1 \
+    $ annofabcli task list_all --project_id prj1 \
      --task_query '{"status":"complete", "phase":"not_started"}'
 
 
@@ -52,7 +55,7 @@ task_idで絞り込み
 
 .. code-block::
 
-    $ annofabcli task list_with_json --project_id prj1 --task_id file://task_id.txt
+    $ annofabcli task list_all --project_id prj1 --task_id file://task_id.txt
 
 
 
@@ -65,8 +68,8 @@ Usage Details
 =================================
 
 .. argparse::
-   :ref: annofabcli.task.list_tasks_with_json.add_parser
-   :prog: annofabcli task list_with_json
+   :ref: annofabcli.task.list_all_tasks.add_parser
+   :prog: annofabcli task list_all
    :nosubcommands:
    :nodefaultconst:
 

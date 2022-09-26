@@ -17,7 +17,7 @@ Available Commands
    :titlesonly:
 
    download
-   list_with_json
+   list_all
    list_worktime
 
 Usage Details

@@ -102,4 +102,3 @@ Usage Details
 See also
 =================================
 * `annofabcli task list <../task/list.html>`_
-* `annofabcli task list_with_json <../task/list_with_json.html>`_

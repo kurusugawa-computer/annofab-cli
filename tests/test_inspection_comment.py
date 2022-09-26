@@ -123,11 +123,11 @@ class TestCommandLine:
         main(
             [
                 "inspection_comment",
-                "list_with_json",
+                "list_all",
                 "--project_id",
                 project_id,
                 "--exclude_reply",
                 "--output",
-                str(out_dir / "list_with_json-out.csv"),
+                str(out_dir / "list_all-out.csv"),
             ]
         )

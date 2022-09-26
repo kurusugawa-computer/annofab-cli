@@ -117,9 +117,9 @@ Command line options
 
 特に指定がない限り、以下のキーが利用可能です。
 
-* ``input_data_id`` : 指定した値をinput_data_idに含むタスク（大文字小文字を区別しない）
-* ``input_data_name`` : 指定した値を入力データ名に含むタスク（大文字小文字を区別しない）
-* ``input_data_path`` : 指定した値を入力データパスに含むタスク（大文字小文字を区別する）
+* ``input_data_id`` : 指定した値をinput_data_idに含む入力データ（大文字小文字を区別しない）
+* ``input_data_name`` : 指定した値を入力データ名に含む入力データ（大文字小文字を区別しない）
+* ``input_data_path`` : 指定した値を入力データパスに含む入力データ（大文字小文字を区別する）
 
 
 .. code-block::
@@ -150,15 +150,15 @@ Command line options
 
 
     # ラベル名（英語)が"car"で、属性(英語名)"occluded"の値がtrueである（チェックボックス）アノテーション
-    {"label_name_en": "car", "attributes":{"occluded":true}}
+    {"label": "car", "attributes":{"occluded":true}}
 
 
     # ラベル名（英語)が"car"で、属性(英語名)"count"の値が"1" AND 属性(英語名)"note"の値が"comment"であるアノテーション
-    {"label_name_en": "car", "attributes":{"count":1, "note":"comment"}}
+    {"label": "car", "attributes":{"count":1, "note":"comment"}}
 
 
     # ラベル名（英語)が"car"で、属性(英語名)"weather"の選択肢名(英語)が"sunny"であるアノテーション
-    {"label_name_en": "car", "attributes":{"weather": "sunny"}}
+    {"label": "car", "attributes":{"weather": "sunny"}}
 
 
 パスを指定するオプション

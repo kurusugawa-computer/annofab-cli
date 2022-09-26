@@ -1,6 +1,7 @@
 import argparse
 import json
 import logging
+import tempfile
 from pathlib import Path
 from typing import Dict, List, Optional
 
@@ -47,15 +48,15 @@ class ListTaskHistoryWithJsonMain:
         """出力対象のタスク履歴情報を取得する"""
         if task_history_json is None:
             downloading_obj = DownloadingFile(self.service)
-            cache_dir = annofabcli.common.utils.get_cache_dir()
-            json_path = cache_dir / f"{project_id}-task_history.json"
+            with tempfile.NamedTemporaryFile() as temp_file:
+                downloading_obj.download_task_history_json(project_id, temp_file.name)
 
-            downloading_obj.download_task_history_json(project_id, str(json_path))
+                with open(temp_file.name, encoding="utf-8") as f:
+                    all_task_history_dict = json.load(f)
+
         else:
-            json_path = task_history_json
-
-        with json_path.open(encoding="utf-8") as f:
-            all_task_history_dict = json.load(f)
+            with task_history_json.open(encoding="utf-8") as f:
+                all_task_history_dict = json.load(f)
 
         task_history_dict = self.filter_task_history_dict(all_task_history_dict, task_id_list)
 
@@ -100,6 +101,7 @@ class ListTaskHistoryWithJson(AbstractCommandLineInterface):
         task_history_dict = main_obj.get_task_history_dict(
             project_id, task_history_json=task_history_json, task_id_list=task_id_list
         )
+        logger.debug(f"{len(task_history_dict)} 件のタスクの履歴情報を出力します。")
         if arg_format == FormatArgument.CSV:
             all_task_history_list = main_obj.to_all_task_history_list_from_dict(task_history_dict)
             self.print_according_to_format(all_task_history_list)
@@ -140,8 +142,7 @@ def parse_args(parser: argparse.ArgumentParser):
     parser.add_argument(
         "--task_history_json",
         type=Path,
-        help="タスク履歴情報が記載されたJSONファイルのパスを指定すると、JSONに記載された情報を元にタスク履歴一覧を出力します。"
-        "指定しない場合、JSONファイルをダウンロードします。"
+        help="タスク履歴情報が記載されたJSONファイルのパスを指定すると、JSONに記載された情報を元にタスク履歴一覧を出力します。\n"
         "JSONファイルは ``$ annofabcli task_history download`` コマンドで取得できます。",
     )
 
@@ -156,9 +157,12 @@ def parse_args(parser: argparse.ArgumentParser):
 
 
 def add_parser(subparsers: Optional[argparse._SubParsersAction] = None):
-    subcommand_name = "list_with_json"
-    subcommand_help = "タスク履歴全件ファイルからタスク履歴の一覧を出力します。"
-    description = "タスク履歴全件ファイルからタスク履歴の一覧を出力します。"
+    subcommand_name = "list_all"
+    subcommand_help = "すべてのタスク履歴の一覧を出力します。"
+    description = (
+        "すべてのタスク履歴の一覧を出力します。\n"
+        "出力されるタスク履歴は、コマンドを実行した日の02:00(JST)頃の状態です。最新の情報を出力したい場合は、 ``annofabcli task_history list`` コマンドを実行してください。"
+    )
 
     parser = annofabcli.common.cli.add_parser(subparsers, subcommand_name, subcommand_help, description)
     parse_args(parser)

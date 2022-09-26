@@ -40,7 +40,7 @@ class TestCommandLine:
 
     def test_download(self):
         out_file = str(out_dir / "task.json")
-        main(["project", "download", "task", "--project_id", project_id, "--output", out_file])
+        main(["project", "task", "download", "--project_id", project_id, "--output", out_file])
 
     def test_list(self):
         main(

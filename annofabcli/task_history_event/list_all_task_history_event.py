@@ -3,6 +3,7 @@ from __future__ import annotations
 import argparse
 import json
 import logging
+import tempfile
 from pathlib import Path
 from typing import Any, List, Optional
 
@@ -49,15 +50,14 @@ class ListTaskHistoryEventWithJsonMain:
     ) -> list[dict[str, Any]]:
         if task_history_event_json is None:
             downloading_obj = DownloadingFile(self.service)
-            cache_dir = annofabcli.common.utils.get_cache_dir()
-            json_path = cache_dir / f"{project_id}-task_history_event.json"
+            with tempfile.NamedTemporaryFile() as temp_file:
+                downloading_obj.download_task_history_event_json(project_id, temp_file.name)
+                with open(temp_file.name, encoding="utf-8") as f:
+                    all_task_history_event_list = json.load(f)
 
-            downloading_obj.download_task_history_event_json(project_id, str(json_path))
         else:
-            json_path = task_history_event_json
-
-        with json_path.open(encoding="utf-8") as f:
-            all_task_history_event_list = json.load(f)
+            with task_history_event_json.open(encoding="utf-8") as f:
+                all_task_history_event_list = json.load(f)
 
         filtered_task_history_event_list = self.filter_task_history_event(all_task_history_event_list, task_id_list)
 
@@ -142,7 +142,6 @@ def parse_args(parser: argparse.ArgumentParser):
         "--task_history_event_json",
         type=Path,
         help="タスク履歴イベント全件ファイルパスを指定すると、JSONに記載された情報を元にタスク履歴イベント一覧を出力します。\n"
-        "指定しない場合は、タスク履歴イベント全件ファイルをダウンロードします。\n"
         "JSONファイルは ``$ annofabcli task_history_event download`` コマンドで取得できます。",
     )
 
@@ -157,9 +156,9 @@ def parse_args(parser: argparse.ArgumentParser):
 
 
 def add_parser(subparsers: Optional[argparse._SubParsersAction] = None):
-    subcommand_name = "list_with_json"
-    subcommand_help = "タスク履歴イベント全件ファイルからタスク履歴イベントの一覧を出力します。"
-    description = "タスク履歴イベント全件ファイルからタスク履歴イベントの一覧を出力します。"
+    subcommand_name = "list_all"
+    subcommand_help = "すべてのタスク履歴イベントの一覧を出力します。"
+    description = "すべてのタスク履歴イベントの一覧を出力します。\n出力されるタスク履歴イベントは、コマンドを実行した日の02:00(JST)頃の状態です。最新の情報を出力する方法はありません。"
 
     parser = annofabcli.common.cli.add_parser(subparsers, subcommand_name, subcommand_help, description)
     parse_args(parser)

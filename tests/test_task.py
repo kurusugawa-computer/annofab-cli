@@ -82,13 +82,13 @@ class TestCommandLine:
             ]
         )
 
-    def test_list_with_json(self):
-        out_file = str(out_dir / "list_with_json.csv")
+    def test_list_list_all(self):
+        out_file = str(out_dir / "list_all.csv")
 
         main(
             [
                 self.command_name,
-                "list_with_json",
+                "list_all",
                 "--project_id",
                 project_id,
                 "--task_query",

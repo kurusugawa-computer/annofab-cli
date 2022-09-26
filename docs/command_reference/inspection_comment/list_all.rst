@@ -1,10 +1,19 @@
 ==========================================
-inspection_comment list_with_json
+inspection_comment list_all
 ==========================================
 
 Description
 =================================
-検査コメント全件ファイルから検査コメント一覧を出力します。
+すべての検査コメンの一覧を出力します。
+
+
+.. warning::
+
+    非推奨なコマンドです。2022-12-01以降に廃止する予定です。
+    替わりに `annofabcli comment list_all <../comment/list_all.html>`_ コマンドを使用してください。
+
+    
+
 
 
 Examples
@@ -18,11 +27,11 @@ Examples
 
 .. code-block::
 
-    $ annofabcli inspection_comment list_with_json --project_id prj1
+    $ annofabcli inspection_comment list_all --project_id prj1
 
 .. code-block::
 
-    $ annofabcli inspection_comment list_with_json --project_id prj1 --inspection_comment_json inspection_comment.json
+    $ annofabcli inspection_comment list_all --project_id prj1 --inspection_comment_json inspection_comment.json
 
 
 絞り込み
@@ -31,14 +40,14 @@ Examples
 
 .. code-block::
 
-    $ annofabcli inspection_comment list_with_json --project_id prj1  --exclude_reply
+    $ annofabcli inspection_comment list_all --project_id prj1  --exclude_reply
 
 
 以下のコマンドは、返信コメントのみを出力します。
 
 .. code-block::
 
-    $ annofabcli inspection_comment list_with_json --project_id prj1  --only_reply
+    $ annofabcli inspection_comment list_all --project_id prj1  --only_reply
 
 
 
@@ -52,8 +61,8 @@ Usage Details
 =================================
 
 .. argparse::
-   :ref: annofabcli.inspection_comment.list_inspections_with_json.add_parser
-   :prog: annofabcli inspection_comment list_with_json
+   :ref: annofabcli.inspection_comment.list_all_inspection_comment.add_parser
+   :prog: annofabcli inspection_comment list_all
    :nosubcommands:
    :nodefaultconst:
 

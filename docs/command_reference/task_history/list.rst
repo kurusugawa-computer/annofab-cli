@@ -95,5 +95,5 @@ Usage Details
 
 See also
 =================================
-* `annofabcli task_history list_with_json <../task_history/list_with_json.html>`_
+* `annofabcli task_history list_all <../task_history/list_all.html>`_
 

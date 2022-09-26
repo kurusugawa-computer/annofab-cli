@@ -2,7 +2,7 @@ import argparse
 from typing import Optional
 
 import annofabcli.task_history_event.download_task_history_event_json
-import annofabcli.task_history_event.list_task_history_event_with_json
+import annofabcli.task_history_event.list_all_task_history_event
 import annofabcli.task_history_event.list_worktime
 from annofabcli.common.cli import add_parser as common_add_parser
 
@@ -13,7 +13,7 @@ def parse_args(parser: argparse.ArgumentParser):
 
     # サブコマンドの定義
     annofabcli.task_history_event.download_task_history_event_json.add_parser(subparsers)
-    annofabcli.task_history_event.list_task_history_event_with_json.add_parser(subparsers)
+    annofabcli.task_history_event.list_all_task_history_event.add_parser(subparsers)
     annofabcli.task_history_event.list_worktime.add_parser(subparsers)
 
 
