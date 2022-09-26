@@ -9,7 +9,7 @@ Description
 
 .. warning::
 
-    非推奨なコマンドです。2022-12-01以降に廃止する予定です。
+    非推奨なコマンドです。2022/12/01以降に廃止する予定です。
     替わりに `annofabcli comment put_inspection <../comment/put_inspection.html>`_ コマンドを使用してください。
 
 

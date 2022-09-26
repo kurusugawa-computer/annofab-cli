@@ -257,14 +257,14 @@ class AddInspectionCommentsMain(AbstractCommandLineWithConfirmInterface):
         logger.info(f"{added_comments_count} / {comments_count} 件の入力データに検査コメントを付与しました。")
 
 
-class PutInspectionComments(AbstractCommandLineInterface):
-    @staticmethod
-    def validate(args: argparse.Namespace) -> bool:
-        COMMON_MESSAGE = "annofabcli comment put_inspection: error:"
+class PutInspectionComment(AbstractCommandLineInterface):
+    COMMON_MESSAGE = "annofabcli comment put_inspection: error:"
+
+    def validate(self, args: argparse.Namespace) -> bool:
 
         if args.parallelism is not None and not args.yes:
             print(
-                f"{COMMON_MESSAGE} argument --parallelism: '--parallelism'を指定するときは、必ず '--yes' を指定してください。",
+                f"{self.COMMON_MESSAGE} argument --parallelism: '--parallelism'を指定するときは、必ず '--yes' を指定してください。",
                 file=sys.stderr,
             )
             return False
@@ -303,7 +303,7 @@ class PutInspectionComments(AbstractCommandLineInterface):
 def main(args: argparse.Namespace):
     service = build_annofabapi_resource_and_login(args)
     facade = AnnofabApiFacade(service)
-    PutInspectionComments(service, facade, args).main()
+    PutInspectionComment(service, facade, args).main()
 
 
 def parse_args(parser: argparse.ArgumentParser):

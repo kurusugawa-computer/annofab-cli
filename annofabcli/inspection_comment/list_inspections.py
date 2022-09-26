@@ -212,9 +212,10 @@ def main(args):
 def add_parser(subparsers: Optional[argparse._SubParsersAction] = None):
     subcommand_name = "list"
 
-    subcommand_help = "検査コメント一覧を出力します。"
+    subcommand_help = "[DEPRECATED] 検査コメント一覧を出力します。"
 
-    description = "検査コメント一覧を出力します。"
+    description = ("[DEPRECATED] 検査コメント一覧を出力します。\n"
+        ""
 
     parser = annofabcli.common.cli.add_parser(subparsers, subcommand_name, subcommand_help, description)
     parse_args(parser)
