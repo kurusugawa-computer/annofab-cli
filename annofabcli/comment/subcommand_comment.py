@@ -6,6 +6,7 @@ import annofabcli.comment.download_comment_json
 import annofabcli.comment.list_all_comment
 import annofabcli.comment.list_comment
 import annofabcli.comment.put_inspection_comment
+import annofabcli.comment.put_inspection_comment_simply
 import annofabcli.common.cli
 
 
@@ -18,6 +19,7 @@ def parse_args(parser: argparse.ArgumentParser):
     annofabcli.comment.list_comment.add_parser(subparsers)
     annofabcli.comment.list_all_comment.add_parser(subparsers)
     annofabcli.comment.put_inspection_comment.add_parser(subparsers)
+    annofabcli.comment.put_inspection_comment_simply.add_parser(subparsers)
 
 
 def add_parser(subparsers: Optional[argparse._SubParsersAction] = None):
