@@ -19,6 +19,7 @@ Available Commands
    list
    list_all
    put_inspection
+   put_inspection_simply
 
 Usage Details
 =================================

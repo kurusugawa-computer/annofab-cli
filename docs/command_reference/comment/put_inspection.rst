@@ -60,7 +60,7 @@ Examples
 
 .. code-block::
 
-    $ annofabcli inspection_comment put --project_id prj1 --json file://comment.json
+    $ annofabcli comment put_inspection --project_id prj1 --json file://comment.json
 
 
 ``data`` プロパティに渡す値の例
@@ -115,7 +115,7 @@ Examples
 
 .. code-block::
 
-    $  annofabcli inspection_comment put --project_id prj1 --json file://comment.json \
+    $  annofabcli comment put_inspection --project_id prj1 --json file://comment.json \
     --parallelism 4 --yes
 
 Usage Details
