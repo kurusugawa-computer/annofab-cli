@@ -28,11 +28,11 @@ def add_parser(subparsers: Optional[argparse._SubParsersAction] = None):
     subcommand_name = "put"
     subcommand_help = "[DEPRECATED] 検査コメントを付与します。"
     description = (
-        "[DEPRECATED] 検査コメントを付与します。\n" "2022/12/01以降に廃止する予定です。替わりに ``annofabcli comment put_inspection`` コマンドを利用してください。"
+        "[DEPRECATED] 検査コメントを付与します。\n2022/12/01以降に廃止する予定です。替わりに ``annofabcli comment put_inspection`` コマンドを利用してください。"
     )
 
     epilog = "チェッカーロールまたはオーナロールを持つユーザで実行してください。"
 
-    parser = annofabcli.common.cli.add_parser(subparsers, subcommand_name, subcommand_help, description, epilog=epilog)
+    parser = annofabcli.common.cli.add_parser(subparsers, subcommand_name, subcommand_help, description=description, epilog=epilog)
     parse_args(parser)
     return parser

@@ -70,3 +70,4 @@ Usage Details
 See also
 =================================
 * `annofabcli inspection_comment list <../inspection_comment/list.html>`_
+

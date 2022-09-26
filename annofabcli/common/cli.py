@@ -427,7 +427,7 @@ class ArgumentParser:
         if help_message is None:
             help_message = (
                 "CSVのフォーマットをJSON形式で指定します。 ``--format`` が ``csv`` でないときは、このオプションは無視されます。\n"
-                " ``file://`` を先頭に付けると、JSON形式のファイルを指定できます。\n"
+                "``file://`` を先頭に付けると、JSON形式のファイルを指定できます。\n"
                 "指定した値は ``pandas.DataFrame.to_csv`` の引数として渡されます。"
             )
 
