@@ -8,10 +8,10 @@ import json
 import logging
 import tempfile
 from pathlib import Path
-from typing import Any, Callable, Collection, Optional
+from typing import Any, Collection, Optional
 
 import annofabapi
-from annofabapi.models import  CommentType
+from annofabapi.models import CommentType
 
 import annofabcli
 import annofabcli.common.cli
@@ -24,7 +24,6 @@ from annofabcli.common.visualize import AddProps
 logger = logging.getLogger(__name__)
 
 
-
 class ListAllCommentMain:
     def __init__(self, service: annofabapi.Resource):
         self.service = service
@@ -34,7 +33,7 @@ class ListAllCommentMain:
         project_id: str,
         comment_json: Optional[Path],
         task_ids: Optional[Collection[str]],
-        comment_type:Optional[CommentType]
+        comment_type: Optional[CommentType],
     ) -> list[dict[str, Any]]:
 
         if comment_json is None:
@@ -73,10 +72,7 @@ class ListAllComment(AbstractCommandLineInterface):
 
         main_obj = ListAllCommentMain(self.service)
         comment_list = main_obj.get_all_comment(
-            project_id=project_id,
-            comment_json=args.comment_json,
-            task_ids=task_id_list,
-            comment_type=comment_type
+            project_id=project_id, comment_json=args.comment_json, task_ids=task_id_list, comment_type=comment_type
         )
 
         logger.info(f"コメントの件数: {len(comment_list)}")
@@ -92,11 +88,15 @@ def parse_args(parser: argparse.ArgumentParser):
         help_message=("対象のタスクのtask_idを指定します。 \n" "``file://`` を先頭に付けると、task_idの一覧が記載されたファイルを指定できます。"),
     )
 
-    parser.add_argument("--comment_type", choices=[CommentType.INSPECTION.value, CommentType.ONHOLD.value], 
-        help=("コメントの種類で絞り込みます。\n\n"
+    parser.add_argument(
+        "--comment_type",
+        choices=[CommentType.INSPECTION.value, CommentType.ONHOLD.value],
+        help=(
+            "コメントの種類で絞り込みます。\n\n"
             f" * {CommentType.INSPECTION.value}: 検査コメント\n"
             f" * {CommentType.ONHOLD.value}: 保留コメント\n"
-        ))
+        ),
+    )
 
     parser.add_argument(
         "--comment_json",

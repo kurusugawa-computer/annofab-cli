@@ -21,7 +21,9 @@ class ListingComments(AbstractCommandLineInterface):
         comments, _ = self.service.api.get_comments(project_id, task_id, input_data_id, query_params={"v": "2"})
         return comments
 
-    def list_comments(self, project_id: str, task_id_list: List[str], output_file: Path, *, comment_type:Optional[CommentType]):
+    def list_comments(
+        self, project_id: str, task_id_list: List[str], output_file: Path, *, comment_type: Optional[CommentType]
+    ):
         all_comments: List[Comment] = []
 
         for task_id in task_id_list:
@@ -76,11 +78,15 @@ def parse_args(parser: argparse.ArgumentParser):
         help_message="対象のタスクのtask_idを指定します。" " ``file://`` を先頭に付けると、task_idの一覧が記載されたファイルを指定できます。",
     )
 
-    parser.add_argument("--comment_type", choices=[CommentType.INSPECTION.value, CommentType.ONHOLD.value], 
-        help=("コメントの種類で絞り込みます。\n\n"
+    parser.add_argument(
+        "--comment_type",
+        choices=[CommentType.INSPECTION.value, CommentType.ONHOLD.value],
+        help=(
+            "コメントの種類で絞り込みます。\n\n"
             f" * {CommentType.INSPECTION.value}: 検査コメント\n"
             f" * {CommentType.ONHOLD.value}: 保留コメント\n"
-        ))
+        ),
+    )
 
     argument_parser.add_format(
         choices=[
