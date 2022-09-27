@@ -123,6 +123,6 @@ Usage Details
 
 .. argparse::
    :ref: annofabcli.comment.put_inspection_comment.add_parser
-   :prog: annofabcli comment put
+   :prog: annofabcli comment put_inspection
    :nosubcommands:
    :nodefaultconst:
