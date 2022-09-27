@@ -8,7 +8,7 @@ from typing import Any, Dict, List, Optional, Tuple
 import annofabapi
 import annofabapi.utils
 import requests
-from annofabapi.models import CommentType, ProjectMemberRole, TaskStatus
+from annofabapi.models import ProjectMemberRole, TaskStatus
 
 import annofabcli
 import annofabcli.common.cli
@@ -225,7 +225,7 @@ class DeleteCommentMain(AbstractCommandLineWithConfirmInterface):
         logger.info(f"{added_comments_count} / {comments_count} 件の入力データからコメントを削除しました。")
 
 
-class DeleteInspectionComment(AbstractCommandLineInterface):
+class DeleteComment(AbstractCommandLineInterface):
     COMMON_MESSAGE = "annofabcli comment delete: error:"
 
     def validate(self, args: argparse.Namespace) -> bool:
@@ -247,9 +247,7 @@ class DeleteInspectionComment(AbstractCommandLineInterface):
         super().validate_project(args.project_id, [ProjectMemberRole.ACCEPTER, ProjectMemberRole.OWNER])
 
         dict_comments = annofabcli.common.cli.get_json_from_args(args.json)
-        main_obj = DeleteCommentMain(
-            self.service, project_id=args.project_id,  all_yes=self.all_yes
-        )
+        main_obj = DeleteCommentMain(self.service, project_id=args.project_id, all_yes=self.all_yes)
         main_obj.delete_comments_for_task_list(
             comment_ids_for_task_list=dict_comments,
             parallelism=args.parallelism,
@@ -259,7 +257,7 @@ class DeleteInspectionComment(AbstractCommandLineInterface):
 def main(args: argparse.Namespace):
     service = build_annofabapi_resource_and_login(args)
     facade = AnnofabApiFacade(service)
-    DeleteCommentMain(service, facade, args).main()
+    DeleteComment(service, facade, args).main()
 
 
 def parse_args(parser: argparse.ArgumentParser):
@@ -276,7 +274,7 @@ def parse_args(parser: argparse.ArgumentParser):
     )
 
     parser.add_argument(
-        "--parallelism", type=int, help="使用するプロセス数（並列度）を指定してください。指定する場合は必ず ``--yes`` を指定してください。指定しない場合は、逐次的に処理します。"
+        "--parallelism", type=int, help="使用するプロセス数（並列度）を指定してください。指定する場合は必ず '--yes' を指定してください。指定しない場合は、逐次的に処理します。"
     )
 
     parser.set_defaults(subcommand_func=main)
