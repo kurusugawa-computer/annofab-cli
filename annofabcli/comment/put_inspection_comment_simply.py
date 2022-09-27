@@ -118,7 +118,6 @@ def parse_args(parser: argparse.ArgumentParser):
         " * 画像プロジェクト：点。先頭画像の左上\n"
         " * 動画プロジェクト：区間。動画の先頭\n"
         " * カスタムプロジェクト(3dpc)：辺が1の立方体。原点\n",
-
     )
 
     parser.add_argument(

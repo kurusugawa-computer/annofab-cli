@@ -9,9 +9,10 @@ import annofabapi
 import annofabapi.utils
 from annofabapi.models import CommentType, TaskPhase, TaskStatus
 
+from annofabcli.comment.utils import get_comment_type_name
 from annofabcli.common.cli import AbstractCommandLineWithConfirmInterface
 from annofabcli.common.facade import AnnofabApiFacade
-from annofabcli.comment.utils import get_comment_type_name
+
 logger = logging.getLogger(__name__)
 
 
@@ -41,7 +42,6 @@ class PutCommentSimplyMain(AbstractCommandLineWithConfirmInterface):
         self.comment_type_name = get_comment_type_name(comment_type)
 
         AbstractCommandLineWithConfirmInterface.__init__(self, all_yes)
-
 
     def _create_request_body(self, task: Dict[str, Any], comment_info: AddedSimpleComment) -> List[Dict[str, Any]]:
         """batch_update_comments に渡すリクエストボディを作成する。"""

@@ -12,9 +12,10 @@ import requests
 from annofabapi.models import CommentType, TaskPhase, TaskStatus
 from dataclasses_json import DataClassJsonMixin
 
+from annofabcli.comment.utils import get_comment_type_name
 from annofabcli.common.cli import AbstractCommandLineWithConfirmInterface
 from annofabcli.common.facade import AnnofabApiFacade
-from annofabcli.comment.utils import get_comment_type_name
+
 logger = logging.getLogger(__name__)
 
 
@@ -60,7 +61,6 @@ class PutCommentMain(AbstractCommandLineWithConfirmInterface):
         self.comment_type_name = get_comment_type_name(comment_type)
 
         AbstractCommandLineWithConfirmInterface.__init__(self, all_yes)
-
 
     def _create_request_body(
         self, task: Dict[str, Any], input_data_id: str, comments: List[AddedComment]

@@ -1,44 +1,34 @@
-import argparse
-import json
 import logging
 import multiprocessing
-import sys
 from typing import Any, Dict, List, Optional, Tuple
 
 import annofabapi
 import annofabapi.utils
 import requests
-from annofabapi.models import ProjectMemberRole, TaskPhase, TaskStatus, CommentType
+from annofabapi.models import CommentType, TaskPhase, TaskStatus
 
-import annofabcli
-import annofabcli.common.cli
-from annofabcli.common.cli import (
-    COMMAND_LINE_ERROR_STATUS_CODE,
-    AbstractCommandLineInterface,
-    AbstractCommandLineWithConfirmInterface,
-    ArgumentParser,
-    build_annofabapi_resource_and_login,
-)
-from annofabcli.common.facade import AnnofabApiFacade
 from annofabcli.comment.utils import get_comment_type_name
+from annofabcli.common.cli import AbstractCommandLineWithConfirmInterface
+from annofabcli.common.facade import AnnofabApiFacade
+
 logger = logging.getLogger(__name__)
 
 
 DeletedCommentsForTask = Dict[str, List[str]]
 """
 タスク配下の削除対象のコメント
-keyはinput_data_id, value: input_data_idのlist
+keyはinput_data_id, value: comment_idのlist
 """
 
-DeletedInspectionIds = Dict[str, DeletedCommentsForTask]
+DeletedComments = Dict[str, DeletedCommentsForTask]
 """
 削除対象のコメント
-keyはtask_id
+keyはtask_id, value: `DeletedCommentsForTask`
 """
 
 
 class DeleteCommentMain(AbstractCommandLineWithConfirmInterface):
-    def __init__(self, service: annofabapi.Resource, project_id: str, comment_type:CommentType, all_yes: bool = False):
+    def __init__(self, service: annofabapi.Resource, project_id: str, comment_type: CommentType, all_yes: bool = False):
         self.service = service
         self.facade = AnnofabApiFacade(service)
         self.project_id = project_id
@@ -52,16 +42,16 @@ class DeleteCommentMain(AbstractCommandLineWithConfirmInterface):
     ) -> List[Dict[str, Any]]:
         """batch_update_comments に渡すリクエストボディを作成する。"""
 
-        def _convert(inspection_id: str) -> Dict[str, Any]:
+        def _convert(comment_id: str) -> Dict[str, Any]:
             return {
-                "comment_id": inspection_id,
+                "comment_id": comment_id,
                 "_type": "Delete",
             }
 
         old_comment_list, _ = self.service.api.get_comments(
             self.project_id, task["task_id"], input_data_id, query_params={"v": "2"}
         )
-        old_comment_ids = {e["comment_id"] for e in old_comment_list}
+        old_comment_ids = {e["comment_id"] for e in old_comment_list if e["comment_type"] == self.comment_type.value}
         request_body = []
         for comment_id in comment_ids:
             if comment_id not in old_comment_ids:
@@ -118,7 +108,7 @@ class DeleteCommentMain(AbstractCommandLineWithConfirmInterface):
     def delete_comments_for_task(
         self,
         task_id: str,
-        inspection_ids_for_task: DeletedCommentsForTask,
+        comment_ids_for_task: DeletedCommentsForTask,
         task_index: Optional[int] = None,
     ) -> int:
         """
@@ -126,11 +116,11 @@ class DeleteCommentMain(AbstractCommandLineWithConfirmInterface):
 
         Args:
             task_id: タスクID
-            inspection_ids_for_task: 削除対象のコメントのIDの集合
+            comment_ids_for_task: 削除対象のコメントのIDの集合
             task_index: タスクの連番
 
         Returns:
-            削除した検査コメントが所属する入力データ数
+            削除したコメントが所属する入力データ数
         """
         logging_prefix = f"{task_index+1} 件目" if task_index is not None else ""
 
@@ -150,22 +140,22 @@ class DeleteCommentMain(AbstractCommandLineWithConfirmInterface):
         ):
             return 0
 
-        if not self.confirm_processing(f"task_id='{task_id}' のタスクに付与された検査コメントを削除しますか？"):
+        if not self.confirm_processing(f"task_id='{task_id}' のタスクに付与された{self.comment_type_name}を削除しますか？"):
             return 0
 
-        # 検査コメントを削除するには作業中状態にする必要がある
+        # コメントを削除するには作業中状態にする必要がある
         changed_task = self.change_to_working_status(self.project_id, task)
         added_comments_count = 0
-        for input_data_id, inspection_ids in inspection_ids_for_task.items():
+        for input_data_id, comment_ids in comment_ids_for_task.items():
             if input_data_id not in task["input_data_id_list"]:
                 logger.warning(
                     f"{logging_prefix} : task_id='{task_id}'のタスクに input_data_id='{input_data_id}'の入力データは存在しません。"
                 )
                 continue
             try:
-                # 検査コメントを削除
+                # コメントを削除
                 request_body = self._create_request_body(
-                    task=changed_task, input_data_id=input_data_id, comment_ids=inspection_ids
+                    task=changed_task, input_data_id=input_data_id, comment_ids=comment_ids
                 )
                 if len(request_body) > 0:
                     self.service.api.batch_update_comments(
@@ -174,17 +164,16 @@ class DeleteCommentMain(AbstractCommandLineWithConfirmInterface):
                     added_comments_count += 1
                     logger.debug(
                         f"{logging_prefix} : task_id={task_id}, input_data_id={input_data_id}: "
-                        f"{len(request_body)}件の検査コメントを削除しました。"
+                        f"{len(request_body)}件のコメントを削除しました。"
                     )
                 else:
                     logger.warning(
-                        f"{logging_prefix} : task_id={task_id}, input_data_id={input_data_id}: "
-                        f"削除できる検査コメントは存在しませんでした。"
+                        f"{logging_prefix} : task_id={task_id}, input_data_id={input_data_id}: " f"削除できるコメントは存在しませんでした。"
                     )
 
             except Exception as e:  # pylint: disable=broad-except
                 logger.warning(
-                    f"{logging_prefix} : task_id={task_id}, input_data_id={input_data_id}: 検査コメントの削除に失敗しました。", e
+                    f"{logging_prefix} : task_id={task_id}, input_data_id={input_data_id}: コメントの削除に失敗しました。", e
                 )
 
         self.service.wrapper.change_task_status_to_break(self.project_id, task_id)
@@ -194,40 +183,39 @@ class DeleteCommentMain(AbstractCommandLineWithConfirmInterface):
         self,
         tpl: Tuple[int, Tuple[str, DeletedCommentsForTask]],
     ) -> int:
-        task_index, (task_id, inspection_ids_for_task) = tpl
+        task_index, (task_id, comment_ids_for_task) = tpl
         return self.delete_comments_for_task(
-            task_id=task_id, inspection_ids_for_task=inspection_ids_for_task, task_index=task_index
+            task_id=task_id, comment_ids_for_task=comment_ids_for_task, task_index=task_index
         )
 
     def delete_comments_for_task_list(
         self,
-        inspection_ids_for_task_list: DeletedInspectionIds,
+        comment_ids_for_task_list: DeletedComments,
         parallelism: Optional[int] = None,
     ) -> None:
-        comments_count = sum(len(e) for e in inspection_ids_for_task_list.values())
-        logger.info(f"検査コメントを削除するタスク数: {len(inspection_ids_for_task_list)}, 検査コメントを削除する入力データ数: {comments_count}")
+        comments_count = sum(len(e) for e in comment_ids_for_task_list.values())
+        logger.info(f"削除対象のコメントを含むタスクの個数: {len(comment_ids_for_task_list)}, 削除対象のコメントを含む入力データ数: {comments_count}")
 
         if parallelism is not None:
             with multiprocessing.Pool(parallelism) as pool:
                 result_bool_list = pool.map(
-                    self.delete_comments_for_task_wrapper, enumerate(inspection_ids_for_task_list.items())
+                    self.delete_comments_for_task_wrapper, enumerate(comment_ids_for_task_list.items())
                 )
                 added_comments_count = sum(e for e in result_bool_list)
 
         else:
             # 逐次処理
             added_comments_count = 0
-            for task_index, (task_id, inspection_ids_for_task) in enumerate(inspection_ids_for_task_list.items()):
+            for task_index, (task_id, comment_ids_for_task) in enumerate(comment_ids_for_task_list.items()):
                 try:
                     result = self.delete_comments_for_task(
                         task_id=task_id,
-                        inspection_ids_for_task=inspection_ids_for_task,
+                        comment_ids_for_task=comment_ids_for_task,
                         task_index=task_index,
                     )
                     added_comments_count += result
                 except Exception as e:  # pylint: disable=broad-except
-                    logger.warning(f"task_id={task_id}: 検査コメントの削除に失敗しました。", e)
+                    logger.warning(f"task_id={task_id}: コメントの削除に失敗しました。", e)
                     continue
 
-        logger.info(f"{added_comments_count} / {comments_count} 件の入力データから検査コメントを削除しました。")
-
+        logger.info(f"{added_comments_count} / {comments_count} 件の入力データから{self.comment_type_name}を削除しました。")
