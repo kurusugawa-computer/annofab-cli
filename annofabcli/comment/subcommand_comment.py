@@ -6,8 +6,8 @@ import annofabcli.comment.download_comment_json
 import annofabcli.comment.list_all_comment
 import annofabcli.comment.list_comment
 import annofabcli.comment.put_inspection_comment
-import annofabcli.comment.put_onhold_comment
 import annofabcli.comment.put_inspection_comment_simply
+import annofabcli.comment.put_onhold_comment
 import annofabcli.common.cli
 
 

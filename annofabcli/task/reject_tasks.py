@@ -5,7 +5,6 @@ import logging
 import multiprocessing
 import sys
 import uuid
-from enum import Enum
 from functools import partial
 from typing import Any, Optional
 
@@ -24,17 +23,11 @@ from annofabcli.common.cli import (
     ArgumentParser,
     build_annofabapi_resource_and_login,
 )
+from annofabcli.common.enums import CustomProjectType
 from annofabcli.common.facade import AnnofabApiFacade, TaskQuery, match_task_with_query
 from annofabcli.common.utils import add_dryrun_prefix
 
 logger = logging.getLogger(__name__)
-
-
-class CustomProjectType(Enum):
-    """カスタムプロジェクトの場合、検査コメントのフォーマットが分からないため、カスタムプロジェクトの種類をannofabcliで定義する。"""
-
-    THREE_DIMENSION_POINT_CLOUD = "3dpc"
-    """3DPCプロジェクト"""
 
 
 class RejectTasksMain(AbstractCommandLineWithConfirmInterface):

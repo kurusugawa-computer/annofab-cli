@@ -4,7 +4,7 @@ import logging
 import sys
 from typing import Optional
 
-from annofabapi.models import CommentType, ProjectMemberRole
+from annofabapi.models import CommentType
 
 import annofabcli
 import annofabcli.common.cli
