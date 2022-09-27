@@ -283,7 +283,7 @@ def parse_args(parser: argparse.ArgumentParser):
 def add_parser(subparsers: Optional[argparse._SubParsersAction] = None):
     subcommand_name = "delete"
     subcommand_help = "コメントを削除します。"
-    description = "コメントを削除します。\n【注意】他人の付けたコメントや他のフェーズで付与されたコメントも削除できてしまいます。"
+    description = "コメントを削除します。\n【注意】他人の付けたコメントも削除できてしまいます。"
 
     parser = annofabcli.common.cli.add_parser(subparsers, subcommand_name, subcommand_help, description)
     parse_args(parser)
