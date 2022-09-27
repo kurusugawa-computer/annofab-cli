@@ -39,8 +39,11 @@ def parse_args(parser: argparse.ArgumentParser):
 
 def add_parser(subparsers: Optional[argparse._SubParsersAction] = None):
     subcommand_name = "delete"
-    subcommand_help = "検査コメントを削除します。"
-    description = "検査コメントを削除します。\n【注意】他人の検査コメントや他のフェーズで付与された検査コメントを削除できてしまいます。"
+    subcommand_help = "[DEPRECATED] 検査コメントを削除します。"
+    description = (
+        "[DEPRECATED] 検査コメントを削除します。\n【注意】他人の検査コメントや他のフェーズで付与された検査コメントを削除できてしまいます。"
+        "2022/12/01以降に廃止する予定です。替わりに ``annofabcli comment delete`` コマンドを利用してください。"
+    )
 
     parser = annofabcli.common.cli.add_parser(subparsers, subcommand_name, subcommand_help, description)
     parse_args(parser)

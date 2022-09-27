@@ -63,3 +63,4 @@ Usage Details
    :prog: annofabcli comment delete
    :nosubcommands:
    :nodefaultconst:
+

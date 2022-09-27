@@ -7,44 +7,22 @@ Description
 検査コメントを削除します。
 
 
+.. warning::
+
+    非推奨なコマンドです。2022/12/01以降に廃止する予定です。
+    替わりに `annofabcli comment delete <../comment/delete.html>`_ コマンドを使用してください。
+
+
+
 
 Examples
 =================================
 
-基本的な使い方
---------------------------
 
-``--json`` に削除する検査コメントのinspection_idをJSON形式で指定してください。
-
-.. code-block::
-    :caption: inspection_id.json
-
-    {
-        "task1":{
-            "input_data1": ["inspection1","inspection2"],
-            "input_data2":[...]
-        },
-        "task2": {
-            "input_data3":[...]
-        }
-    }
+`annofabcli comment delete <../comment/delete.html>`_ コマンドを参照ください。
+コマンドライン引数の使い方は同じです。
 
 
-
-.. code-block::
-
-    $ annofabcli inspection_comment delete --project_id prj1 --json file://inspection_id.json
-
-
-並列処理
-----------------------------------------------
-
-以下のコマンドは、並列数4で実行します。
-
-.. code-block::
-
-    $  annofabcli inspection_comment delete --project_id prj1 --json file://inspection_id.json \
-    --parallelism 4 --yes
 
 Usage Details
 =================================

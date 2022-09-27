@@ -270,7 +270,7 @@ def parse_args(parser: argparse.ArgumentParser):
         "--json",
         type=str,
         required=True,
-        help=("削除するコメントのcomment_idをJSON形式で指定してください。\n" f"(ex) '{json.dumps(JSON_SAMPLE)}' \n"),
+        help=("削除するコメントのcomment_idをJSON形式で指定してください。\n\n" f"(ex) ``{json.dumps(JSON_SAMPLE)}``"),
     )
 
     parser.add_argument(

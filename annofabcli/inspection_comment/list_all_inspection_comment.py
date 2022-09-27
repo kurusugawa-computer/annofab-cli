@@ -159,8 +159,11 @@ def main(args):
 def add_parser(subparsers: Optional[argparse._SubParsersAction] = None):
     subcommand_name = "list_all"
 
-    subcommand_help = "すべての検査コメントの一覧を出力します。"
-    description = "すべての検査コメントの一覧を出力します。\n出力される検査コメントは、コマンドを実行した日の02:00(JST)頃の状態です。"
+    subcommand_help = "[DEPRECATED] すべての検査コメントの一覧を出力します。"
+    description = (
+        "[DEPRECATED] すべての検査コメントの一覧を出力します。\n出力される検査コメントは、コマンドを実行した日の02:00(JST)頃の状態です。"
+        "2022/12/01以降に廃止する予定です。替わりに ``annofabcli comment list_all`` コマンドを利用してください。"
+    )
 
     parser = annofabcli.common.cli.add_parser(subparsers, subcommand_name, subcommand_help, description)
     parse_args(parser)
