@@ -20,6 +20,8 @@ Available Commands
    list_all
    put_inspection
    put_inspection_simply
+   put_onhold
+   put_onhold_simply
 
 Usage Details
 =================================
