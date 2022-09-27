@@ -1,14 +1,24 @@
+import argparse
+import json
 import logging
 import multiprocessing
+import sys
 from typing import Any, Dict, List, Optional, Tuple
 
 import annofabapi
 import annofabapi.utils
 import requests
-from annofabapi.models import CommentType, TaskPhase, TaskStatus
+from annofabapi.models import CommentType, ProjectMemberRole, TaskStatus
 
-from annofabcli.comment.utils import get_comment_type_name
-from annofabcli.common.cli import AbstractCommandLineWithConfirmInterface
+import annofabcli
+import annofabcli.common.cli
+from annofabcli.common.cli import (
+    COMMAND_LINE_ERROR_STATUS_CODE,
+    AbstractCommandLineInterface,
+    AbstractCommandLineWithConfirmInterface,
+    ArgumentParser,
+    build_annofabapi_resource_and_login,
+)
 from annofabcli.common.facade import AnnofabApiFacade
 
 logger = logging.getLogger(__name__)
@@ -28,12 +38,10 @@ keyはtask_id, value: `DeletedCommentsForTask`
 
 
 class DeleteCommentMain(AbstractCommandLineWithConfirmInterface):
-    def __init__(self, service: annofabapi.Resource, project_id: str, comment_type: CommentType, all_yes: bool = False):
+    def __init__(self, service: annofabapi.Resource, project_id: str, all_yes: bool = False):
         self.service = service
         self.facade = AnnofabApiFacade(service)
         self.project_id = project_id
-        self.comment_type = comment_type
-        self.comment_type_name = get_comment_type_name(comment_type)
 
         AbstractCommandLineWithConfirmInterface.__init__(self, all_yes)
 
@@ -51,7 +59,7 @@ class DeleteCommentMain(AbstractCommandLineWithConfirmInterface):
         old_comment_list, _ = self.service.api.get_comments(
             self.project_id, task["task_id"], input_data_id, query_params={"v": "2"}
         )
-        old_comment_ids = {e["comment_id"] for e in old_comment_list if e["comment_type"] == self.comment_type.value}
+        old_comment_ids = {e["comment_id"] for e in old_comment_list}
         request_body = []
         for comment_id in comment_ids:
             if comment_id not in old_comment_ids:
@@ -93,11 +101,6 @@ class DeleteCommentMain(AbstractCommandLineWithConfirmInterface):
         task: Dict[str, Any],
     ) -> bool:
         task_id = task["task_id"]
-        if self.comment_type == CommentType.INSPECTION:
-            if task["phase"] == TaskPhase.ANNOTATION.value:
-                logger.warning(f"task_id='{task_id}': 教師付フェーズなので、検査コメントを削除できません。")
-                return False
-
         if task["status"] not in [TaskStatus.NOT_STARTED.value, TaskStatus.WORKING.value, TaskStatus.BREAK.value]:
             logger.warning(
                 f"task_id='{task_id}' : タスクの状態が未着手,作業中,休憩中 以外の状態なので、コメントを削除できません。（task_status='{task['status']}'）"
@@ -140,7 +143,7 @@ class DeleteCommentMain(AbstractCommandLineWithConfirmInterface):
         ):
             return 0
 
-        if not self.confirm_processing(f"task_id='{task_id}' のタスクに付与された{self.comment_type_name}を削除しますか？"):
+        if not self.confirm_processing(f"task_id='{task_id}' のタスクに付与されたコメントを削除しますか？"):
             return 0
 
         # コメントを削除するには作業中状態にする必要がある
@@ -171,9 +174,10 @@ class DeleteCommentMain(AbstractCommandLineWithConfirmInterface):
                         f"{logging_prefix} : task_id={task_id}, input_data_id={input_data_id}: " f"削除できるコメントは存在しませんでした。"
                     )
 
-            except Exception as e:  # pylint: disable=broad-except
+            except Exception:  # pylint: disable=broad-except
                 logger.warning(
-                    f"{logging_prefix} : task_id={task_id}, input_data_id={input_data_id}: コメントの削除に失敗しました。", e
+                    f"{logging_prefix} : task_id={task_id}, input_data_id={input_data_id}: コメントの削除に失敗しました。",
+                    exc_info=True,
                 )
 
         self.service.wrapper.change_task_status_to_break(self.project_id, task_id)
@@ -214,8 +218,75 @@ class DeleteCommentMain(AbstractCommandLineWithConfirmInterface):
                         task_index=task_index,
                     )
                     added_comments_count += result
-                except Exception as e:  # pylint: disable=broad-except
-                    logger.warning(f"task_id={task_id}: コメントの削除に失敗しました。", e)
+                except Exception:  # pylint: disable=broad-except
+                    logger.warning(f"task_id={task_id}: コメントの削除に失敗しました。", exc_info=True)
                     continue
 
-        logger.info(f"{added_comments_count} / {comments_count} 件の入力データから{self.comment_type_name}を削除しました。")
+        logger.info(f"{added_comments_count} / {comments_count} 件の入力データからコメントを削除しました。")
+
+
+class DeleteInspectionComment(AbstractCommandLineInterface):
+    COMMON_MESSAGE = "annofabcli comment delete: error:"
+
+    def validate(self, args: argparse.Namespace) -> bool:
+
+        if args.parallelism is not None and not args.yes:
+            print(
+                f"{self.COMMON_MESSAGE} argument --parallelism: '--parallelism'を指定するときは、必ず '--yes' を指定してください。",
+                file=sys.stderr,
+            )
+            return False
+
+        return True
+
+    def main(self):
+        args = self.args
+        if not self.validate(args):
+            sys.exit(COMMAND_LINE_ERROR_STATUS_CODE)
+
+        super().validate_project(args.project_id, [ProjectMemberRole.ACCEPTER, ProjectMemberRole.OWNER])
+
+        dict_comments = annofabcli.common.cli.get_json_from_args(args.json)
+        main_obj = DeleteCommentMain(
+            self.service, project_id=args.project_id,  all_yes=self.all_yes
+        )
+        main_obj.delete_comments_for_task_list(
+            comment_ids_for_task_list=dict_comments,
+            parallelism=args.parallelism,
+        )
+
+
+def main(args: argparse.Namespace):
+    service = build_annofabapi_resource_and_login(args)
+    facade = AnnofabApiFacade(service)
+    DeleteCommentMain(service, facade, args).main()
+
+
+def parse_args(parser: argparse.ArgumentParser):
+    argument_parser = ArgumentParser(parser)
+
+    argument_parser.add_project_id()
+
+    JSON_SAMPLE = {"task_id1": {"input_data_id1": ["comment_id1", "comment_id2"]}}
+    parser.add_argument(
+        "--json",
+        type=str,
+        required=True,
+        help=("削除するコメントのcomment_idをJSON形式で指定してください。\n" f"(ex) '{json.dumps(JSON_SAMPLE)}' \n"),
+    )
+
+    parser.add_argument(
+        "--parallelism", type=int, help="使用するプロセス数（並列度）を指定してください。指定する場合は必ず ``--yes`` を指定してください。指定しない場合は、逐次的に処理します。"
+    )
+
+    parser.set_defaults(subcommand_func=main)
+
+
+def add_parser(subparsers: Optional[argparse._SubParsersAction] = None):
+    subcommand_name = "delete"
+    subcommand_help = "コメントを削除します。"
+    description = "コメントを削除します。\n【注意】他人の付けたコメントや他のフェーズで付与されたコメントも削除できてしまいます。"
+
+    parser = annofabcli.common.cli.add_parser(subparsers, subcommand_name, subcommand_help, description)
+    parse_args(parser)
+    return parser

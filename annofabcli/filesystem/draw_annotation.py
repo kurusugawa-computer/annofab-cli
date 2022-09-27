@@ -275,8 +275,8 @@ def draw_annotation_all(
                 f"アノテーションJSON={parser.json_file_path}"
             )
             success_count += 1
-        except Exception as e:  # pylint: disable=broad-except
-            logger.warning(f"{parser.json_file_path} のアノテーションの描画に失敗しました。", e)
+        except Exception:  # pylint: disable=broad-except
+            logger.warning(f"{parser.json_file_path} のアノテーションの描画に失敗しました。", exc_info=True)
 
     logger.info(f"{success_count} / {total_count} 件、アノテーションを描画しました。")
 
