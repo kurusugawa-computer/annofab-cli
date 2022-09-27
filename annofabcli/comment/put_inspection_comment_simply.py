@@ -15,6 +15,7 @@ from annofabcli.common.cli import (
     build_annofabapi_resource_and_login,
     get_list_from_args,
 )
+from annofabcli.common.enums import CustomProjectType
 from annofabcli.common.facade import AnnofabApiFacade
 
 logger = logging.getLogger(__name__)
@@ -42,6 +43,10 @@ class PutInspectionCommentSimply(AbstractCommandLineInterface):
         super().validate_project(args.project_id, [ProjectMemberRole.ACCEPTER, ProjectMemberRole.OWNER])
 
         comment_data = annofabcli.common.cli.get_json_from_args(args.comment_data)
+        custom_project_type = (
+            CustomProjectType(args.custom_project_type) if args.custom_project_type is not None else None
+        )
+
         project, _ = self.service.api.get_project(args.project_id)
         if comment_data is None:
             if project["input_data_type"] == InputDataType.IMAGE.value:
@@ -50,12 +55,17 @@ class PutInspectionCommentSimply(AbstractCommandLineInterface):
                 # 注意：少なくとも0.1秒以上の区間にしないと、Annofab上で検査コメントを確認できない
                 comment_data = {"start": 0, "end": 100, "_type": "Time"}
             elif project["input_data_type"] == InputDataType.CUSTOM.value:
-                # customプロジェクト
-                print(
-                    f"{self.COMMON_MESSAGE} argument --comment_data: カスタムプロジェクトに検査コメントを付与する場合は必須です。",
-                    file=sys.stderr,
-                )
-                sys.exit(COMMAND_LINE_ERROR_STATUS_CODE)
+                if custom_project_type == CustomProjectType.THREE_DIMENSION_POINT_CLOUD:
+                    comment_data = {
+                        "data": '{"kind": "CUBOID", "shape": {"dimensions": {"width": 1.0, "height": 1.0, "depth": 1.0}, "location": {"x": 0.0, "y": 0.0, "z": 0.0}, "rotation": {"x": 0.0, "y": 0.0, "z": 0.0}, "direction": {"front": {"x": 1.0, "y": 0.0, "z": 0.0}, "up": {"x": 0.0, "y": 0.0, "z": 1.0}}}, "version": "2"}',  # noqa: E501
+                        "_type": "Custom",
+                    }
+                else:
+                    print(
+                        f"{self.COMMON_MESSAGE}: カスタムプロジェクトに検査コメントを付与する場合は、'--comment_data' または '--custom_project_type'を指定してください。",  # noqa: E501
+                        file=sys.stderr,
+                    )
+                    sys.exit(COMMAND_LINE_ERROR_STATUS_CODE)
 
         task_id_list = get_list_from_args(args.task_id)
         phrase_id_list = get_list_from_args(args.phrase_id)
@@ -105,6 +115,14 @@ def parse_args(parser: argparse.ArgumentParser):
         "``file://`` を先頭に付けると、JSON形式のファイルを指定できます。\n"
         "デフォルトでは画像プロジェクトならば画像の左上(x=0,y=0)、動画プロジェクトなら動画の先頭（start=0, end=100)に付与します。"
         "カスタムプロジェクトに検査コメントを付与する場合は必須です。",
+    )
+
+    parser.add_argument(
+        "--custom_project_type",
+        type=str,
+        choices=[e.value for e in CustomProjectType],
+        help="[BETA] カスタムプロジェクトの種類を指定します。カスタムプロジェクトに対して、検査コメントの位置を指定しない場合は必須です。\n"
+        "※ Annofabの情報だけでは'3dpc'プロジェクトかどうかが分からないため、指定する必要があります。",
     )
 
     parser.add_argument(

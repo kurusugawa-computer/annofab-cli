@@ -468,8 +468,8 @@ def parse_args(parser: argparse.ArgumentParser):
         "--custom_project_type",
         type=str,
         choices=[e.value for e in CustomProjectType],
-        help="[BETA] カスタムプロジェクトの種類を指定します。カスタムプロジェクトに対して、適当な箇所に検査コメントを付与する場合は必須です。\n"
-        "※ Annofabの情報だけでは'3dpc'プロジェクトかどうかが分からないため、ユーザーに指定させています。",
+        help="[BETA] カスタムプロジェクトの種類を指定します。カスタムプロジェクトに対して、検査コメントの位置を指定しない場合は必須です。\n"
+        "※ Annofabの情報だけでは'3dpc'プロジェクトかどうかが分からないため、指定する必要があります。",
     )
 
     # 差し戻したタスクの担当者の割当に関して
