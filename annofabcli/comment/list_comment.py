@@ -20,7 +20,9 @@ class ListingComments(AbstractCommandLineInterface):
         comments, _ = self.service.api.get_comments(project_id, task_id, input_data_id, query_params={"v": "2"})
         return comments
 
-    def list_comments(self, project_id: str, task_id_list: List[str], *, comment_type: Optional[CommentType]):
+    def list_comments(
+        self, project_id: str, task_id_list: List[str], *, comment_type: Optional[CommentType], exclude_reply: bool
+    ):
         all_comments: List[Comment] = []
 
         for task_id in task_id_list:
@@ -34,8 +36,14 @@ class ListingComments(AbstractCommandLineInterface):
                 logger.debug(f"タスク '{task_id}' に紐づくコメントを取得します。input_dataの個数 = {len(input_data_id_list)}")
                 for input_data_id in input_data_id_list:
                     comments = self.get_comments(project_id, task_id, input_data_id)
+
                     if comment_type is not None:
                         comments = [e for e in comments if e["comment_type"] == comment_type.value]
+
+                    if exclude_reply:
+                        # 返信コメントを除外する
+                        comments = [e for e in comments if e["comment_node"]["_type"] != "Reply"]
+
                     all_comments.extend(comments)
 
             except requests.HTTPError:
@@ -52,11 +60,7 @@ class ListingComments(AbstractCommandLineInterface):
         task_id_list = annofabcli.common.cli.get_list_from_args(args.task_id)
         comment_type = CommentType(args.comment_type) if args.comment_type is not None else None
 
-        self.list_comments(
-            args.project_id,
-            task_id_list,
-            comment_type=comment_type,
-        )
+        self.list_comments(args.project_id, task_id_list, comment_type=comment_type, exclude_reply=args.exclude_reply)
 
 
 def main(args: argparse.Namespace):
@@ -83,6 +87,8 @@ def parse_args(parser: argparse.ArgumentParser):
             f" * {CommentType.ONHOLD.value}: 保留コメント\n"
         ),
     )
+
+    parser.add_argument("--exclude_reply", action="store_true", help="返信コメントを除外します。")
 
     argument_parser.add_format(
         choices=[

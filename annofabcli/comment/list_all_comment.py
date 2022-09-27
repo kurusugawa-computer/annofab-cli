@@ -34,6 +34,7 @@ class ListAllCommentMain:
         comment_json: Optional[Path],
         task_ids: Optional[Collection[str]],
         comment_type: Optional[CommentType],
+        exclude_reply: bool,
     ) -> list[dict[str, Any]]:
 
         if comment_json is None:
@@ -56,6 +57,10 @@ class ListAllCommentMain:
         if comment_type is not None:
             comment_list = [e for e in comment_list if e["comment_type"] == comment_type.value]
 
+        if exclude_reply:
+            # 返信コメントを除外する
+            comment_list = [e for e in comment_list if e["comment_node"]["_type"] != "Reply"]
+
         visualize = AddProps(self.service, project_id)
         comment_list = [visualize.add_properties_to_comment(e) for e in comment_list]
         return comment_list
@@ -72,7 +77,11 @@ class ListAllComment(AbstractCommandLineInterface):
 
         main_obj = ListAllCommentMain(self.service)
         comment_list = main_obj.get_all_comment(
-            project_id=project_id, comment_json=args.comment_json, task_ids=task_id_list, comment_type=comment_type
+            project_id=project_id,
+            comment_json=args.comment_json,
+            task_ids=task_id_list,
+            comment_type=comment_type,
+            exclude_reply=args.exclude_reply,
         )
 
         logger.info(f"コメントの件数: {len(comment_list)}")
@@ -104,6 +113,8 @@ def parse_args(parser: argparse.ArgumentParser):
         help="コメント情報が記載されたJSONファイルのパスを指定すると、JSONに記載された情報を元にコメント一覧を出力します。\n"
         "JSONファイルは ``$ annofabcli comment download`` コマンドで取得できます。",
     )
+
+    parser.add_argument("--exclude_reply", action="store_true", help="返信コメントを除外します。")
 
     argument_parser.add_format(
         choices=[
