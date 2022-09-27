@@ -20,9 +20,7 @@ class ListingComments(AbstractCommandLineInterface):
         comments, _ = self.service.api.get_comments(project_id, task_id, input_data_id, query_params={"v": "2"})
         return comments
 
-    def list_comments(
-        self, project_id: str, task_id_list: List[str], *, comment_type: Optional[CommentType]
-    ):
+    def list_comments(self, project_id: str, task_id_list: List[str], *, comment_type: Optional[CommentType]):
         all_comments: List[Comment] = []
 
         for task_id in task_id_list:
