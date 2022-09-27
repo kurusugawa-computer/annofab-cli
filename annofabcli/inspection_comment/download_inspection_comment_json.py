@@ -63,7 +63,6 @@ def add_parser(subparsers: Optional[argparse._SubParsersAction] = None):
         subparsers,
         subcommand_name,
         subcommand_help,
-        description=subcommand_help,
         description=description,
         epilog=epilog,
     )
