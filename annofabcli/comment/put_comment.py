@@ -14,7 +14,7 @@ from dataclasses_json import DataClassJsonMixin
 
 from annofabcli.common.cli import AbstractCommandLineWithConfirmInterface
 from annofabcli.common.facade import AnnofabApiFacade
-
+from annofabcli.comment.utils import get_comment_type_name
 logger = logging.getLogger(__name__)
 
 
@@ -57,18 +57,10 @@ class PutCommentMain(AbstractCommandLineWithConfirmInterface):
         self.project_id = project_id
 
         self.comment_type = comment_type
-        self.comment_type_name = self.get_comment_type_name(comment_type)
+        self.comment_type_name = get_comment_type_name(comment_type)
 
         AbstractCommandLineWithConfirmInterface.__init__(self, all_yes)
 
-    @staticmethod
-    def get_comment_type_name(comment_type) -> str:
-        if comment_type == CommentType.INSPECTION:
-            return "検査コメント"
-        elif comment_type == CommentType.ONHOLD:
-            return "保留コメント"
-        else:
-            raise RuntimeError(f"{comment_type=}は無効な値です。")
 
     def _create_request_body(
         self, task: Dict[str, Any], input_data_id: str, comments: List[AddedComment]
