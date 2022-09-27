@@ -36,7 +36,6 @@ Examples
 検査コメントの位置や区間を指定する
 --------------------------------------
 ``--comment_data`` に、検査コメントの位置や区間をJSON形式で指定することができます。
-``--comment_data`` に渡す形式は、https://annofab.com/docs/api/#operation/batchUpdateInspections APIのリクエストボディ ``data`` を参照してください。
 
 
 以下は、 ``--comment_data`` に渡すJSON文字列のサンプルです。
@@ -80,20 +79,21 @@ Examples
     }
 
 
-``--comment_data`` を指定しない場合は、以下の値になります。
 
-* 画像プロジェクト： ``{"x":0, "y":0, "_type": "Point"}``
-* 動画プロジェクト： ``{"start":0, "end":100, "_type": "Time"}``
+``--comment_data`` を指定しない場合は、以下の検査コメントが付与されます。
 
-カスタムプロジェクトの場合は、検査コメントの位置を決められないので、 ``--comment_data`` は必須です。
+* 画像プロジェクト： 点。先頭画像の左上に位置する。
+* 動画プロジェクト： 区間。動画の先頭に位置する。
+* カスタムプロジェクト（3dpc）： 辺が1の立方体。先頭フレームの原点に位置する。
 
-
-
-
+ただし、カスタムプロジェクトの場合は ``--csutom_project_type`` が必須です。
 
 
+.. code-block::
 
-
+    $ annofabcli comment put_inspection_simply --project_id prj1 --task_id task1 \
+    --comment "weather属性を見直してください。" \
+    --custom_project_type 3dpc
 
 
 
