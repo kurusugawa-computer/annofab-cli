@@ -1,6 +1,5 @@
 import argparse
 import logging
-from pathlib import Path
 from typing import List, Optional
 
 import requests
@@ -22,7 +21,7 @@ class ListingComments(AbstractCommandLineInterface):
         return comments
 
     def list_comments(
-        self, project_id: str, task_id_list: List[str], output_file: Path, *, comment_type: Optional[CommentType]
+        self, project_id: str, task_id_list: List[str], *, comment_type: Optional[CommentType]
     ):
         all_comments: List[Comment] = []
 
@@ -59,7 +58,6 @@ class ListingComments(AbstractCommandLineInterface):
             args.project_id,
             task_id_list,
             comment_type=comment_type,
-            output_file=args.output,
         )
 
 

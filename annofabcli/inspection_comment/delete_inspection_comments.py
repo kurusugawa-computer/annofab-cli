@@ -48,7 +48,7 @@ class DeleteInspectionCommentsMain(AbstractCommandLineWithConfirmInterface):
     def _create_request_body(
         self, task: Dict[str, Any], input_data_id: str, comment_ids: List[str]
     ) -> List[Dict[str, Any]]:
-        """batch_update_inspections に渡すリクエストボディを作成する。"""
+        """batch_update_comments に渡すリクエストボディを作成する。"""
 
         def _convert(inspection_id: str) -> Dict[str, Any]:
             return {
