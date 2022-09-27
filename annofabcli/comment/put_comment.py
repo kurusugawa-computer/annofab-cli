@@ -88,7 +88,7 @@ class PutCommentMain(AbstractCommandLineWithConfirmInterface):
                 "phase": task["phase"],
                 "phase_stage": task["phase_stage"],
                 "account_id": self.service.api.account_id,
-                "comment_type": "inspection",
+                "comment_type": self.comment_type.value,
                 "comment": comment.comment,
                 "comment_node": {
                     "data": comment.data,
