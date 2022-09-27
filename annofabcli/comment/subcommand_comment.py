@@ -2,6 +2,7 @@ import argparse
 from typing import Optional
 
 import annofabcli
+import annofabcli.comment.delete_inspection_comment
 import annofabcli.comment.download_comment_json
 import annofabcli.comment.list_all_comment
 import annofabcli.comment.list_comment
@@ -17,6 +18,7 @@ def parse_args(parser: argparse.ArgumentParser):
     subparsers = parser.add_subparsers(dest="subcommand_name")
 
     # サブコマンドの定義
+    annofabcli.comment.delete_inspection_comment.add_parser(subparsers)
     annofabcli.comment.download_comment_json.add_parser(subparsers)
     annofabcli.comment.list_comment.add_parser(subparsers)
     annofabcli.comment.list_all_comment.add_parser(subparsers)
