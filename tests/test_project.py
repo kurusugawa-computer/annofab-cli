@@ -43,10 +43,6 @@ class TestCommandLine:
     def test_diff_project(self):
         main(["project", "diff", project_id, project_id, "--target", "annotation_labels"])
 
-    def test_download(self):
-        out_file = str(out_dir / "task.json")
-        main(["project", "task", "download", "--project_id", project_id, "--output", out_file])
-
     def test_list(self):
         main(
             [
