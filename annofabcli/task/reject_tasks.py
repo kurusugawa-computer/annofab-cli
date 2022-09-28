@@ -5,7 +5,6 @@ import logging
 import multiprocessing
 import sys
 import uuid
-from enum import Enum
 from functools import partial
 from typing import Any, Optional
 
@@ -24,17 +23,11 @@ from annofabcli.common.cli import (
     ArgumentParser,
     build_annofabapi_resource_and_login,
 )
+from annofabcli.common.enums import CustomProjectType
 from annofabcli.common.facade import AnnofabApiFacade, TaskQuery, match_task_with_query
 from annofabcli.common.utils import add_dryrun_prefix
 
 logger = logging.getLogger(__name__)
-
-
-class CustomProjectType(Enum):
-    """カスタムプロジェクトの場合、検査コメントのフォーマットが分からないため、カスタムプロジェクトの種類をannofabcliで定義する。"""
-
-    THREE_DIMENSION_POINT_CLOUD = "3dpc"
-    """3DPCプロジェクト"""
 
 
 class RejectTasksMain(AbstractCommandLineWithConfirmInterface):
@@ -475,8 +468,8 @@ def parse_args(parser: argparse.ArgumentParser):
         "--custom_project_type",
         type=str,
         choices=[e.value for e in CustomProjectType],
-        help="[BETA] カスタムプロジェクトの種類を指定します。カスタムプロジェクトに対して、適当な箇所に検査コメントを付与する場合は必須です。\n"
-        "※ Annofabの情報だけでは'3dpc'プロジェクトかどうかが分からないため、ユーザーに指定させています。",
+        help="[BETA] カスタムプロジェクトの種類を指定します。カスタムプロジェクトに対して、検査コメントの位置を指定しない場合は必須です。\n"
+        "※ Annofabの情報だけでは'3dpc'プロジェクトかどうかが分からないため、指定する必要があります。",
     )
 
     # 差し戻したタスクの担当者の割当に関して

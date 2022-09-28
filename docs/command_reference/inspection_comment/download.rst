@@ -10,7 +10,7 @@ Description
 .. warning::
 
     非推奨なコマンドです。2022-12-01以降に廃止する予定です。
-    替わりに ``annofabcli comment download`` コマンドを利用してください。
+    替わりに `annofabcli comment download <../comment/download.html>`_ コマンドを利用してください。
 
 
 Examples

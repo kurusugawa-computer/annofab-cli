@@ -7,6 +7,11 @@ Description
 検査コメントの一覧を出力します。
 
 
+.. warning::
+
+    非推奨なコマンドです。2022/12/01以降に廃止する予定です。
+    替わりに `annofabcli comment list <../comment/list.html>`_ コマンドを使用してください。
+
 
 Examples
 =================================

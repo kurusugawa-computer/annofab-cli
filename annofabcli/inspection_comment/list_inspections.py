@@ -212,10 +212,10 @@ def main(args):
 def add_parser(subparsers: Optional[argparse._SubParsersAction] = None):
     subcommand_name = "list"
 
-    subcommand_help = "検査コメント一覧を出力します。"
+    subcommand_help = "[DEPRECATED] 検査コメント一覧を出力します。"
 
-    description = "検査コメント一覧を出力します。"
+    description = "[DEPRECATED] 検査コメント一覧を出力します。\n2022/12/01以降に廃止する予定です。替わりに ``annofabcli comment list`` コマンドを利用してください。"
 
-    parser = annofabcli.common.cli.add_parser(subparsers, subcommand_name, subcommand_help, description)
+    parser = annofabcli.common.cli.add_parser(subparsers, subcommand_name, subcommand_help, description=description)
     parse_args(parser)
     return parser

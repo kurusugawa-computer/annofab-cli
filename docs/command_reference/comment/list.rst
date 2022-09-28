@@ -22,6 +22,28 @@ Examples
     $ annofabcli comment list --project_id prj1 --task_id task1 task2
 
 
+``--comment_type`` を指定すると、コメントの種類で絞り込めます。
+
+.. code-block::
+
+    # 検査コメントを出力
+    $ annofabcli comment list --project_id prj1 --task_id task1 task2 \
+     --comment_type inspection
+
+    # 保留コメントを出力
+    $ annofabcli comment list --project_id prj1 --task_id task1 task2 \
+     --comment_type onhold
+
+
+デフォルトでは返信コメントも出力されます。返信コメントを除去する場合は、 ``--exclude_reply`` を指定してください。
+
+.. code-block::
+
+    $ annofabcli comment list --project_id prj1 --task_id task1 task2 \
+     --exclude_reply
+
+
+
 
 出力結果
 =================================
@@ -108,5 +130,4 @@ Usage Details
     :prog: annofabcli comment list
     :nosubcommands:
     :nodefaultconst:
-
 

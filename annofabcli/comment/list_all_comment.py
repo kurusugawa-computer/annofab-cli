@@ -8,10 +8,10 @@ import json
 import logging
 import tempfile
 from pathlib import Path
-from typing import Any, Callable, Collection, Optional
+from typing import Any, Collection, Optional
 
 import annofabapi
-from annofabapi.models import Inspection
+from annofabapi.models import CommentType
 
 import annofabcli
 import annofabcli.common.cli
@@ -23,8 +23,6 @@ from annofabcli.common.visualize import AddProps
 
 logger = logging.getLogger(__name__)
 
-FilterInspectionFunc = Callable[[Inspection], bool]
-
 
 class ListAllCommentMain:
     def __init__(self, service: annofabapi.Resource):
@@ -35,6 +33,8 @@ class ListAllCommentMain:
         project_id: str,
         comment_json: Optional[Path],
         task_ids: Optional[Collection[str]],
+        comment_type: Optional[CommentType],
+        exclude_reply: bool,
     ) -> list[dict[str, Any]]:
 
         if comment_json is None:
@@ -54,6 +54,13 @@ class ListAllCommentMain:
             task_id_set = set(task_ids)
             comment_list = [e for e in comment_list if e["task_id"] in task_id_set]
 
+        if comment_type is not None:
+            comment_list = [e for e in comment_list if e["comment_type"] == comment_type.value]
+
+        if exclude_reply:
+            # 返信コメントを除外する
+            comment_list = [e for e in comment_list if e["comment_node"]["_type"] != "Reply"]
+
         visualize = AddProps(self.service, project_id)
         comment_list = [visualize.add_properties_to_comment(e) for e in comment_list]
         return comment_list
@@ -66,11 +73,15 @@ class ListAllComment(AbstractCommandLineInterface):
         super().validate_project(project_id, project_member_roles=None)
 
         task_id_list = annofabcli.common.cli.get_list_from_args(args.task_id) if args.task_id is not None else None
+        comment_type = CommentType(args.comment_type) if args.comment_type is not None else None
+
         main_obj = ListAllCommentMain(self.service)
         comment_list = main_obj.get_all_comment(
             project_id=project_id,
             comment_json=args.comment_json,
             task_ids=task_id_list,
+            comment_type=comment_type,
+            exclude_reply=args.exclude_reply,
         )
 
         logger.info(f"コメントの件数: {len(comment_list)}")
@@ -87,11 +98,23 @@ def parse_args(parser: argparse.ArgumentParser):
     )
 
     parser.add_argument(
+        "--comment_type",
+        choices=[CommentType.INSPECTION.value, CommentType.ONHOLD.value],
+        help=(
+            "コメントの種類で絞り込みます。\n\n"
+            f" * {CommentType.INSPECTION.value}: 検査コメント\n"
+            f" * {CommentType.ONHOLD.value}: 保留コメント\n"
+        ),
+    )
+
+    parser.add_argument(
         "--comment_json",
         type=Path,
         help="コメント情報が記載されたJSONファイルのパスを指定すると、JSONに記載された情報を元にコメント一覧を出力します。\n"
         "JSONファイルは ``$ annofabcli comment download`` コマンドで取得できます。",
     )
+
+    parser.add_argument("--exclude_reply", action="store_true", help="返信コメントを除外します。")
 
     argument_parser.add_format(
         choices=[
