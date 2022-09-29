@@ -174,10 +174,9 @@ class ProjectWorktimePerMonth:
         """
         1個のプロジェクトディレクトリから、月ごとの作業時間を算出する
         """
-        # プロジェクトの生産性と品質を取得
         df = project_dir.read_worktime_per_date_user().df.copy()
         df["dt_date"] = pandas.to_datetime(df["date"])
-        series = df.groupby(pandas.Grouper(key="dt_date", freq="M")).sum()[worktime_column.value]
+        series = df.groupby(pandas.Grouper(key="dt_date", freq="M")).sum(numeric_only=True)[worktime_column.value]
         # indexを"2022-04"という形式にする
         new_index = [str(dt)[0:7] for dt in series.index]
         result = pandas.Series(series.values, index=new_index)

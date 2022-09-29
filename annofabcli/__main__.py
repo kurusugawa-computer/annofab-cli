@@ -13,6 +13,8 @@ import annofabcli.input_data.subcommand_input_data
 import annofabcli.inspection_comment.subcommand_inspection_comment
 import annofabcli.instruction.subcommand_instruction
 import annofabcli.job.subcommand_job
+import annofabcli.my_account.subcommand_my_account
+import annofabcli.organization.subcommand_organization
 import annofabcli.organization_member.subcommand_organization_member
 import annofabcli.project.subcommand_project
 import annofabcli.project_member.subcommand_project_member
@@ -72,6 +74,8 @@ def create_parser() -> argparse.ArgumentParser:
     annofabcli.inspection_comment.subcommand_inspection_comment.add_parser(subparsers)
     annofabcli.instruction.subcommand_instruction.add_parser(subparsers)
     annofabcli.job.subcommand_job.add_parser(subparsers)
+    annofabcli.my_account.subcommand_my_account.add_parser(subparsers)
+    annofabcli.organization.subcommand_organization.add_parser(subparsers)
     annofabcli.organization_member.subcommand_organization_member.add_parser(subparsers)
     annofabcli.project.subcommand_project.add_parser(subparsers)
     annofabcli.project_member.subcommand_project_member.add_parser(subparsers)

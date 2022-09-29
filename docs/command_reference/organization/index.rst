@@ -1,10 +1,10 @@
 ==================================================
-project
+organization
 ==================================================
 
 Description
 =================================
-プロジェクト関係のコマンドです。
+組織関係のコマンドです。
 
 
 Available Commands
@@ -15,17 +15,13 @@ Available Commands
    :maxdepth: 1
    :titlesonly:
 
-   change_status
-   copy
-   diff
    list
-   put
-   update_annotation_zip
+
 
 Usage Details
 =================================
 
 .. argparse::
-   :ref: annofabcli.project.subcommand_project.add_parser
-   :prog: annofabcli project
+   :ref: annofabcli.organization.subcommand_organization.add_parser
+   :prog: annofabcli organization
    :nosubcommands:

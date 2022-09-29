@@ -1,10 +1,10 @@
 ==================================================
-project
+my_account
 ==================================================
 
 Description
 =================================
-プロジェクト関係のコマンドです。
+自分のアカウント関係のコマンドです。
 
 
 Available Commands
@@ -15,17 +15,12 @@ Available Commands
    :maxdepth: 1
    :titlesonly:
 
-   change_status
-   copy
-   diff
-   list
-   put
-   update_annotation_zip
+   get
 
 Usage Details
 =================================
 
 .. argparse::
-   :ref: annofabcli.project.subcommand_project.add_parser
-   :prog: annofabcli project
+   :ref: annofabcli.my_account.subcommand_my_account.add_parser
+   :prog: annofabcli my_account
    :nosubcommands:

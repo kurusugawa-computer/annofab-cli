@@ -189,6 +189,7 @@ class TestCommandLine:
                 task_id,
                 "--comment",
                 "枠が付いていません（自動テストによるコメント）",
+                "--cancel_acceptance",
                 "--yes",
             ]
         )

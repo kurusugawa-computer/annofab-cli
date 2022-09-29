@@ -28,6 +28,11 @@ organization_name = service.api.get_organization_of_project(project_id)[0]["orga
 
 
 class TestCommandLine:
+    """
+    Notes:
+        `project put`のテストは無視する。プロジェクトを作成した後、削除する手段がないため。
+    """
+
     def test_change_status(self):
         main(["project", "change_status", "--project_id", project_id, "--status", "active"])
 
@@ -37,10 +42,6 @@ class TestCommandLine:
 
     def test_diff_project(self):
         main(["project", "diff", project_id, project_id, "--target", "annotation_labels"])
-
-    def test_download(self):
-        out_file = str(out_dir / "task.json")
-        main(["project", "task", "download", "--project_id", project_id, "--output", out_file])
 
     def test_list(self):
         main(

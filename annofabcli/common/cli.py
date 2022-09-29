@@ -101,14 +101,14 @@ def add_parser(
         group.add_argument("--yes", action="store_true", help="処理中に現れる問い合わせに対して、常に ``yes`` と回答します。")
 
         group.add_argument(
-            "--endpoint_url", type=str, help=f"Annofab WebAPIのエンドポイントを指定します。指定しない場合は ``{DEFAULT_ENDPOINT_URL}`` です。"
+            "--endpoint_url", type=str, help=f"Annofab WebAPIのエンドポイントを指定します。", default=DEFAULT_ENDPOINT_URL
         )
 
         group.add_argument(
             "--logdir",
             type=Path,
             default=".log",
-            help="ログファイルを保存するディレクトリを指定します。指定しない場合は ``.log`` ディレクトリ'にログファイルが保存されます。",
+            help="ログファイルを保存するディレクトリを指定します。",
         )
 
         group.add_argument("--disable_log", action="store_true", help="ログを無効にします。")
@@ -414,7 +414,7 @@ class ArgumentParser:
         '--format` 引数を追加
         """
         if help_message is None:
-            help_message = f"出力フォーマットを指定します。指定しない場合は、{default.value} フォーマットになります。"
+            help_message = f"出力フォーマットを指定します。"
 
         self.parser.add_argument(
             "-f", "--format", type=str, choices=[e.value for e in choices], default=default.value, help=help_message
@@ -438,7 +438,7 @@ class ArgumentParser:
         '--output` 引数を追加
         """
         if help_message is None:
-            help_message = "出力先のファイルパスを指定します。指定しない場合は、標準出力に出力されます。"
+            help_message = "出力先のファイルパスを指定します。未指定の場合は、標準出力に出力されます。"
 
         self.parser.add_argument("-o", "--output", type=str, required=required, help=help_message)
 

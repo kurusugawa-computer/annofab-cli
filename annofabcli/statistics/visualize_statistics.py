@@ -89,9 +89,8 @@ class WriteCsvGraph:
         def wrapped(*args, **kwargs):
             try:
                 return function(*args, **kwargs)
-            except Exception as e:  # pylint: disable=broad-except
-                logger.warning(f"project_id: {self.project_id}, exception: {e}")
-                logger.exception(e)
+            except Exception:  # pylint: disable=broad-except
+                logger.warning(f"project_id='{self.project_id}'であるプロジェクトでのファイル出力に失敗しました。", exc_info=True)
                 return None
 
         return wrapped
