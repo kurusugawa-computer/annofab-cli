@@ -75,7 +75,7 @@ JSON形式の文字列、またはJSONファイルのパスは ``--json`` に渡
 * ``put_task`` ： タスクを1個ずつ作成します。
 * ``initiate_tasks_generation`` ： タスクを一括で生成します。タスク作成ジョブが登録され、ジョブが終了するまで数分待ちます。1個のタスク生成に失敗した場合、すべてのタスクは生成されません。
 
-使用するWebAPI ``--api`` で指定できます。
+使用するWebAPIは ``--api`` で指定できます。
 デフォルトでは、作成するタスク数が少ないときは ``put_task`` WebAPI、 タスク数が多いときは ``initiate_tasks_generation`` WebAPIが実行されます。
 
 ``initiate_tasks_generation`` WebAPIでは、1個のタスク生成に失敗した場合、すべてのタスクは生成されません。
