@@ -308,9 +308,6 @@ class ImportAnnotationMain(AbstractCommandLineWithConfirmInterface):
             if old_detail["data_holding_type"] == AnnotationDataHoldingType.OUTER.value:
                 # 外部アノテーションを利用する際はurlが不要でpathが必要なので、対応する
                 old_detail.pop("url", None)
-                if old_detail["path"] is None:
-                    # TODO なぜか3次元アノテーションのセグメントではpathがNoneだったので、annotation_idを設定する
-                    old_detail["path"] = old_detail["annotation_id"]
 
             # 一時的にインデックスを格納
             old_detail.update({INDEX_KEY: index})
