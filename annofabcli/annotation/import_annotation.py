@@ -274,7 +274,8 @@ class ImportAnnotationMain(AbstractCommandLineWithConfirmInterface):
                 request_detail = self._to_annotation_detail_for_request(parser, detail, now_datetime=now_datetime)
             except Exception:
                 logger.warning(
-                    f"{parser.task_id}/{parser.input_data_id} :: アノテーションをrequest_bodyに変換するのに失敗しました。 :: annotation_id={detail.annotation_id}, label={detail.label}",
+                    f"{parser.task_id}/{parser.input_data_id} :: アノテーションをrequest_bodyに変換するのに失敗しました。 :: "
+                    f"annotation_id={detail.annotation_id}, label={detail.label}",
                     exc_info=True,
                 )
                 continue
@@ -320,7 +321,8 @@ class ImportAnnotationMain(AbstractCommandLineWithConfirmInterface):
                 request_detail = self._to_annotation_detail_for_request(parser, detail, now_datetime=now_datetime)
             except Exception:
                 logger.warning(
-                    f"{parser.task_id}/{parser.input_data_id} :: アノテーションをrequest_bodyに変換するのに失敗しました。 :: annotation_id={detail.annotation_id}, label={detail.label}",
+                    f"{parser.task_id}/{parser.input_data_id} :: アノテーションをrequest_bodyに変換するのに失敗しました。 :: "
+                    f"annotation_id={detail.annotation_id}, label={detail.label}",
                     exc_info=True,
                 )
                 continue
