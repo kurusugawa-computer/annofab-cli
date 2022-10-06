@@ -7,7 +7,7 @@ import copy
 import logging
 from enum import Enum
 from pathlib import Path
-from typing import Any, Optional, Union
+from typing import Any, Optional
 
 import bokeh
 import bokeh.layouts
@@ -61,53 +61,56 @@ class UserPerformance:
         return len(self.df) == 0
 
     @staticmethod
-    def _add_ratio_column_for_productivity_per_user(df: Union[pandas.DataFrame, pandas.Series], phase_list: list[str]):
+    def _add_ratio_column_for_productivity_per_user(df: pandas.DataFrame, phase_list: list[str]):
         """
         ユーザーの生産性に関する列を、DataFrameに追加します。
         """
-        # 作業時間が0の場合、"RuntimeWarning: invalid value encountered in double_scalars"警告が発生するので、一時的に無視する
-        with numpy.errstate(divide="ignore", invalid="ignore"):
+        for phase in phase_list:
 
-            for phase in phase_list:
-                # Annofab時間の比率
-                df[("monitored_worktime_ratio", phase)] = (
-                    df[("monitored_worktime_hour", phase)] / df[("monitored_worktime_hour", "sum")]
-                )
+            def get_monitored_worktime_ratio(row: pandas.Series) -> float:
+                """
 
-                # 計測作業時間の合計値が0のときはinfinityになるので、それに対応する
-                if isinstance(df[("monitored_worktime_ratio", phase)], pandas.Series):
-                    df[("monitored_worktime_ratio", phase)].replace([numpy.inf, -numpy.inf], 1, inplace=True)
+                計測作業時間の合計値が0により、monitored_worktime_ratioはnanになる場合は、教師付の実績作業時間を実績作業時間の合計値になるようなmonitored_worktime_ratioに変更する
+                """
+                if row[("monitored_worktime_hour", "sum")] == 0:
+                    if phase == TaskPhase.ANNOTATION.value:
+                        return 1
+                    else:
+                        return 0
                 else:
-                    df[("monitored_worktime_ratio", phase)] = 1
+                    return row[("monitored_worktime_hour", phase)] / row[("monitored_worktime_hour", "sum")]
 
-                # Annofab時間の比率から、Annowork時間を予測する
-                df[("actual_worktime_hour", phase)] = (
-                    df[("actual_worktime_hour", "sum")] * df[("monitored_worktime_ratio", phase)]
-                )
+            # Annofab時間の比率
+            df[("monitored_worktime_ratio", phase)] = df.apply(get_monitored_worktime_ratio, axis=1)
 
-                # 生産性を算出
-                df[("monitored_worktime_hour/input_data_count", phase)] = (
-                    df[("monitored_worktime_hour", phase)] / df[("input_data_count", phase)]
-                )
-                df[("actual_worktime_hour/input_data_count", phase)] = (
-                    df[("actual_worktime_hour", phase)] / df[("input_data_count", phase)]
-                )
-
-                df[("monitored_worktime_hour/annotation_count", phase)] = (
-                    df[("monitored_worktime_hour", phase)] / df[("annotation_count", phase)]
-                )
-                df[("actual_worktime_hour/annotation_count", phase)] = (
-                    df[("actual_worktime_hour", phase)] / df[("annotation_count", phase)]
-                )
-
-            phase = TaskPhase.ANNOTATION.value
-            df[("pointed_out_inspection_comment_count/annotation_count", phase)] = (
-                df[("pointed_out_inspection_comment_count", phase)] / df[("annotation_count", phase)]
+            # Annofab時間の比率から、Annowork時間を予測する
+            df[("actual_worktime_hour", phase)] = (
+                df[("actual_worktime_hour", "sum")] * df[("monitored_worktime_ratio", phase)]
             )
-            df[("pointed_out_inspection_comment_count/input_data_count", phase)] = (
-                df[("pointed_out_inspection_comment_count", phase)] / df[("input_data_count", phase)]
+
+            # 生産性を算出
+            df[("monitored_worktime_hour/input_data_count", phase)] = (
+                df[("monitored_worktime_hour", phase)] / df[("input_data_count", phase)]
             )
-            df[("rejected_count/task_count", phase)] = df[("rejected_count", phase)] / df[("task_count", phase)]
+            df[("actual_worktime_hour/input_data_count", phase)] = (
+                df[("actual_worktime_hour", phase)] / df[("input_data_count", phase)]
+            )
+
+            df[("monitored_worktime_hour/annotation_count", phase)] = (
+                df[("monitored_worktime_hour", phase)] / df[("annotation_count", phase)]
+            )
+            df[("actual_worktime_hour/annotation_count", phase)] = (
+                df[("actual_worktime_hour", phase)] / df[("annotation_count", phase)]
+            )
+
+        phase = TaskPhase.ANNOTATION.value
+        df[("pointed_out_inspection_comment_count/annotation_count", phase)] = (
+            df[("pointed_out_inspection_comment_count", phase)] / df[("annotation_count", phase)]
+        )
+        df[("pointed_out_inspection_comment_count/input_data_count", phase)] = (
+            df[("pointed_out_inspection_comment_count", phase)] / df[("input_data_count", phase)]
+        )
+        df[("rejected_count/task_count", phase)] = df[("rejected_count", phase)] / df[("task_count", phase)]
 
     @staticmethod
     def get_phase_list(columns: list[tuple[str, str]]) -> list[str]:
@@ -182,6 +185,7 @@ class UserPerformance:
             for phase in TaskPhase:
                 if phase.value in columns:
                     phase_list.append(phase.value)
+
             return phase_list
 
         df_agg_task_history = df_task_history.pivot_table(
@@ -197,14 +201,20 @@ class UserPerformance:
                 df_agg_labor["last_working_date"] = df_tmp
             else:
                 df_agg_labor["last_working_date"] = numpy.nan
-            df = df_agg_task_history.join(df_agg_labor)
+
+            if len(df_agg_task_history) > 0:
+                df = df_agg_task_history.join(df_agg_labor)
+            else:
+                # Annofabで作業していないけど実績がある状態
+                df = df_agg_labor.copy()
+                # 教師付作業時間を0にする
+                df["annotation"] = 0
         else:
             df = df_agg_task_history
             df["actual_worktime_hour"] = 0
             df["last_working_date"] = None
 
         phase_list = get_phase_list(list(df.columns))
-
         df = df[["actual_worktime_hour", "last_working_date"] + phase_list].copy()
         df.columns = pandas.MultiIndex.from_tuples(
             [("actual_worktime_hour", "sum"), ("last_working_date", "")]
@@ -215,18 +225,31 @@ class UserPerformance:
             axis=1
         )
 
-        df_agg_production = df_worktime_ratio.pivot_table(
-            values=[
-                "worktime_ratio_by_task",
-                "input_data_count",
-                "annotation_count",
-                "pointed_out_inspection_comment_count",
-                "rejected_count",
-            ],
-            columns="phase",
-            index="account_id",
-            aggfunc=numpy.sum,
-        ).fillna(0)
+        if len(df_worktime_ratio) > 0:
+            df_agg_production = df_worktime_ratio.pivot_table(
+                values=[
+                    "worktime_ratio_by_task",
+                    "input_data_count",
+                    "annotation_count",
+                    "pointed_out_inspection_comment_count",
+                    "rejected_count",
+                ],
+                columns="phase",
+                index="account_id",
+                aggfunc=numpy.sum,
+            ).fillna(0)
+        else:
+            df_agg_production = pandas.DataFrame(
+                columns=pandas.MultiIndex.from_tuples(
+                    [
+                        ("worktime_ratio_by_task", "annotation"),
+                        ("input_data_count", "annotation"),
+                        ("annotation_count", "annotation"),
+                        ("pointed_out_inspection_comment_count", "annotation"),
+                        ("rejected_count", "annotation"),
+                    ]
+                )
+            )
 
         df_agg_production.rename(columns={"worktime_ratio_by_task": "task_count"}, inplace=True)
         df = df.join(df_agg_production)
@@ -449,6 +472,57 @@ class UserPerformance:
             legend = fig.legend[0]
             fig.add_layout(legend, "left")
 
+    @staticmethod
+    def _add_ratio_key_for_whole_productivity(series: pandas.Series, phase_list: list[str]):
+        """
+        プロジェクト全体の生産性に関するkeyを、pandas.Seriesに追加します。
+        """
+        # ゼロ割の警告を無視する
+        with numpy.errstate(divide="ignore", invalid="ignore"):
+            for phase in phase_list:
+                # Annofab時間の比率を算出
+                # 計測作業時間の合計値が0により、monitored_worktime_ratioはnanになる場合は、教師付の実績作業時間を実績作業時間の合計値になるようなmonitored_worktime_ratioに変更する
+                if series[("monitored_worktime_hour", "sum")] == 0:
+                    if phase == TaskPhase.ANNOTATION.value:
+                        series[("monitored_worktime_ratio", phase)] = 1
+                    else:
+                        series[("monitored_worktime_ratio", phase)] = 0
+                else:
+                    series[("monitored_worktime_ratio", phase)] = (
+                        series[("monitored_worktime_hour", phase)] / series[("monitored_worktime_hour", "sum")]
+                    )
+
+                # Annofab時間の比率から、Annowork時間を予測する
+                series[("actual_worktime_hour", phase)] = (
+                    series[("actual_worktime_hour", "sum")] * series[("monitored_worktime_ratio", phase)]
+                )
+
+                # 生産性を算出
+                series[("monitored_worktime_hour/input_data_count", phase)] = (
+                    series[("monitored_worktime_hour", phase)] / series[("input_data_count", phase)]
+                )
+                series[("actual_worktime_hour/input_data_count", phase)] = (
+                    series[("actual_worktime_hour", phase)] / series[("input_data_count", phase)]
+                )
+
+                series[("monitored_worktime_hour/annotation_count", phase)] = (
+                    series[("monitored_worktime_hour", phase)] / series[("annotation_count", phase)]
+                )
+                series[("actual_worktime_hour/annotation_count", phase)] = (
+                    series[("actual_worktime_hour", phase)] / series[("annotation_count", phase)]
+                )
+
+            phase = TaskPhase.ANNOTATION.value
+            series[("pointed_out_inspection_comment_count/annotation_count", phase)] = (
+                series[("pointed_out_inspection_comment_count", phase)] / series[("annotation_count", phase)]
+            )
+            series[("pointed_out_inspection_comment_count/input_data_count", phase)] = (
+                series[("pointed_out_inspection_comment_count", phase)] / series[("input_data_count", phase)]
+            )
+            series[("rejected_count/task_count", phase)] = (
+                series[("rejected_count", phase)] / series[("task_count", phase)]
+            )
+
     def get_summary(self) -> pandas.Series:
         """
         全体の生産性と品質が格納された pandas.Series を取得する。
@@ -464,8 +538,7 @@ class UserPerformance:
             "rejected_count",
         ]
         sum_series = self.df[columns_for_sum].sum()
-
-        self._add_ratio_column_for_productivity_per_user(sum_series, phase_list=self.phase_list)
+        self._add_ratio_key_for_whole_productivity(sum_series, phase_list=self.phase_list)
 
         # 作業している人数をカウントする
         for phase in self.phase_list:
