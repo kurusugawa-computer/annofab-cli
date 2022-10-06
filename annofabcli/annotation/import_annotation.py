@@ -134,7 +134,7 @@ class ImportAnnotationMain(AbstractCommandLineWithConfirmInterface):
         """
         data_uri = annotation_data["data"]
         # この時点で data_uriは f"./{input_data_id}/{annotation_id}"
-        # paraser.open_data_uriメソッドに渡す値は、先頭のinput_data_idは不要なので、これを取り除く
+        # parser.open_data_uriメソッドに渡す値は、先頭のinput_data_idは不要なので、これを取り除く
         path = Path(data_uri)
         return str(path.relative_to(path.parts[0]))
 
@@ -270,7 +270,15 @@ class ImportAnnotationMain(AbstractCommandLineWithConfirmInterface):
         request_details: List[Dict[str, Any]] = []
         now_datetime = str_now()
         for detail in details:
-            request_detail = self._to_annotation_detail_for_request(parser, detail, now_datetime=now_datetime)
+            try:
+                request_detail = self._to_annotation_detail_for_request(parser, detail, now_datetime=now_datetime)
+            except Exception:
+                logger.warning(
+                    f"{parser.task_id}/{parser.input_data_id} :: アノテーションをrequest_bodyに変換するのに失敗しました。 :: "
+                    f"annotation_id={detail.annotation_id}, label={detail.label}",
+                    exc_info=True,
+                )
+                continue
 
             if request_detail is not None:
                 request_details.append(request_detail.to_dict(encode_json=True))
@@ -298,6 +306,10 @@ class ImportAnnotationMain(AbstractCommandLineWithConfirmInterface):
         old_dict_detail = {}
         INDEX_KEY = "_index"
         for index, old_detail in enumerate(old_details):
+            if old_detail["data_holding_type"] == AnnotationDataHoldingType.OUTER.value:
+                # 外部アノテーションを利用する際はurlが不要でpathが必要なので、対応する
+                old_detail.pop("url", None)
+
             # 一時的にインデックスを格納
             old_detail.update({INDEX_KEY: index})
             old_dict_detail[old_detail["annotation_id"]] = old_detail
@@ -305,7 +317,15 @@ class ImportAnnotationMain(AbstractCommandLineWithConfirmInterface):
         new_request_details: List[Dict[str, Any]] = []
         now_datetime = str_now()
         for detail in details:
-            request_detail = self._to_annotation_detail_for_request(parser, detail, now_datetime=now_datetime)
+            try:
+                request_detail = self._to_annotation_detail_for_request(parser, detail, now_datetime=now_datetime)
+            except Exception:
+                logger.warning(
+                    f"{parser.task_id}/{parser.input_data_id} :: アノテーションをrequest_bodyに変換するのに失敗しました。 :: "
+                    f"annotation_id={detail.annotation_id}, label={detail.label}",
+                    exc_info=True,
+                )
+                continue
 
             if request_detail is None:
                 continue
@@ -318,11 +338,13 @@ class ImportAnnotationMain(AbstractCommandLineWithConfirmInterface):
                 # アノテーションの追加
                 new_request_details.append(request_detail.to_dict(encode_json=True))
 
+        new_details = old_details + new_request_details
+
         request_body = {
             "project_id": self.project_id,
             "task_id": parser.task_id,
             "input_data_id": parser.input_data_id,
-            "details": old_details + new_request_details,
+            "details": new_details,
             "updated_datetime": old_annotation["updated_datetime"],
         }
 

@@ -439,10 +439,12 @@ class TestUserPerformance:
         summary = empty.get_summary()
         assert summary[("task_count", "annotation")] == 0
         assert summary[("monitored_worktime_hour", "annotation")] == 0
+        assert summary[("actual_worktime_hour", "annotation")] == 0
+        assert summary[("monitored_worktime_ratio", "annotation")] == 1
 
-        # merged_obj = UserPerformance.merge(empty, self.obj)
-        # row = merged_obj.df[merged_obj.df["user_id"] == "KD"].iloc[0]
-        # assert row[("task_count", "annotation")] == 15
+        merged_obj = UserPerformance.merge(empty, self.obj)
+        row = merged_obj.df[merged_obj.df["user_id"] == "KD"].iloc[0]
+        assert row[("task_count", "annotation")] == 15
 
 
 class TestWholePerformance:
