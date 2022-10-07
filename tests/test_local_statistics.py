@@ -399,8 +399,21 @@ class TestUserPerformance:
     def test_from_df(self):
         df_task_history = pandas.read_csv(str(data_path / "task-history-df.csv"))
         df_labor = pandas.read_csv(str(data_path / "labor-df.csv"))
+        df_user = pandas.read_csv(str(data_path / "user.csv"))
         df_worktime_ratio = pandas.read_csv(str(data_path / "annotation-count-ratio-df.csv"))
-        UserPerformance.from_df(df_task_history, df_worktime_ratio=df_worktime_ratio, df_labor=df_labor)
+        UserPerformance.from_df(
+            df_task_history, df_worktime_ratio=df_worktime_ratio, df_user=df_user, df_labor=df_labor
+        )
+
+    def test_from_df_with_empty(self):
+        df_task_history = pandas.read_csv(str(data_path / "task-history-df-empty.csv"))
+        df_worktime_ratio = pandas.read_csv(str(data_path / "annotation-count-ratio-df-empty.csv"))
+        df_labor = pandas.read_csv(str(data_path / "labor-df.csv"))
+        df_user = pandas.read_csv(str(data_path / "user.csv"))
+        obj = UserPerformance.from_df(
+            df_task_history, df_worktime_ratio=df_worktime_ratio, df_user=df_user, df_labor=df_labor
+        )
+        obj.to_csv("out/user.csv")
 
     def test_to_csv(self):
         self.obj.to_csv(self.output_dir / "メンバごとの生産性と品質.csv")
