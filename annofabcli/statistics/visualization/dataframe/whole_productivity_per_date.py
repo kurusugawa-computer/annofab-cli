@@ -134,6 +134,7 @@ class WholeProductivityPerCompletedDate:
                 monitored_inspection_worktime_hour
                 monitored_acceptance_worktime_hour
         """
+        print(f"{df_task.columns=}")
         df_sub_task = df_task[
             [
                 "task_id",
