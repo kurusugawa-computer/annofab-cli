@@ -163,6 +163,7 @@ class UserPerformance:
         cls,
         df_task_history: pandas.DataFrame,
         df_worktime_ratio: pandas.DataFrame,
+        df_user: pandas.DataFrame,
         df_labor: Optional[pandas.DataFrame] = None,
     ) -> UserPerformance:
         """
@@ -253,6 +254,8 @@ class UserPerformance:
 
         df_agg_production.rename(columns={"worktime_ratio_by_task": "task_count"}, inplace=True)
         df = df.join(df_agg_production)
+        # 数値列のNaNを0にする(df_agg_productionが0件のときの対応)
+        df.fillna(0, inplace=True)
 
         # 比例関係の列を計算して追加する
         cls._add_ratio_column_for_productivity_per_user(df, phase_list=phase_list)
@@ -267,9 +270,9 @@ class UserPerformance:
         df = df.drop(dropped_column, axis=1)
 
         # ユーザ情報を取得
-        df_user = df_task_history.groupby("account_id").first()[["user_id", "username", "biography"]]
-        df_user.columns = pandas.MultiIndex.from_tuples([("user_id", ""), ("username", ""), ("biography", "")])
-        df = df.join(df_user)
+        tmp_df_user = df_user.set_index("account_id")[["user_id", "username", "biography"]]
+        tmp_df_user.columns = pandas.MultiIndex.from_tuples([("user_id", ""), ("username", ""), ("biography", "")])
+        df = df.join(tmp_df_user)
         return cls(df)
 
     @classmethod

@@ -178,12 +178,23 @@ class Table:
                 history["task_status"] = task["status"]
                 all_task_history_list.append(history)
 
-        df = pandas.DataFrame(all_task_history_list)
+        df = pandas.DataFrame(
+            all_task_history_list,
+            columns=[
+                "project_id",
+                "task_id",
+                "phase",
+                "phase_stage",
+                "account_id",
+                "user_id",
+                "username",
+                "biography",
+                "worktime_hour",
+            ],
+        )
         if len(df) == 0:
             logger.warning("タスク履歴の件数が0件です。")
-            return pandas.DataFrame()
-        else:
-            return df
+        return df
 
     def create_task_df(self) -> pandas.DataFrame:
         """
@@ -223,7 +234,43 @@ class Table:
             return df
         else:
             logger.warning(f"タスク一覧が0件です。")
-            return pandas.DataFrame()
+
+            numeric_columns = [
+                "worktime_hour",
+                "annotation_worktime_hour",
+                "inspection_worktime_hour",
+                "acceptance_worktime_hour",
+                "input_data_count",
+                "annotation_count",
+                "inspection_comment_count",
+                "number_of_rejections_by_inspection",
+                "number_of_rejections_by_acceptance",
+            ]
+            string_columns = [
+                "project_id",
+                "task_id",
+                "phase",
+                "phase_stage",
+                "status",
+                "first_annotation_user_id",
+                "first_annotation_username",
+                "first_annotation_worktime_hour",
+                "first_annotation_started_datetime",
+                "first_inspection_user_id",
+                "first_inspection_username",
+                "first_inspection_worktime_hour",
+                "first_inspection_started_datetime",
+                "first_acceptance_user_id",
+                "first_acceptance_username",
+                "first_acceptance_worktime_hour",
+                "first_acceptance_started_datetime",
+                "first_acceptance_completed_datetime",
+            ]
+            boolean_columns = ["inspection_is_skipped", "acceptance_is_skipped"]
+            columns = string_columns + numeric_columns + boolean_columns
+            dtypes = {e: "float64" for e in numeric_columns}
+            dtypes.update({e: "boolean" for e in boolean_columns})
+            return pandas.DataFrame([], columns=columns).astype(dtypes)
 
     @staticmethod
     def create_annotation_count_ratio_df(

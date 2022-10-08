@@ -132,7 +132,7 @@ class AnnotatorProductivityPerDate(AbstractPhaseProductivityPerDate):
                 "annotation_count",
                 "inspection_comment_count",
             ]
-        ].sum()
+        ].sum(numeric_only=True)
 
         for denominator_column in ["input_data_count", "annotation_count"]:
             for phase in ["annotation", "inspection", "acceptance"]:
@@ -546,7 +546,7 @@ class InspectorProductivityPerDate(AbstractPhaseProductivityPerDate):
                 "input_data_count",
                 "annotation_count",
             ]
-        ].sum()
+        ].sum(numeric_only=True)
 
         sum_df["inspection_worktime_hour/annotation_count"] = (
             sum_df["inspection_worktime_hour"] / sum_df["annotation_count"]
@@ -893,7 +893,7 @@ class AcceptorProductivityPerDate(AbstractPhaseProductivityPerDate):
                 "input_data_count",
                 "annotation_count",
             ]
-        ].sum()
+        ].sum(numeric_only=True)
 
         sum_df["acceptance_worktime_hour/annotation_count"] = (
             sum_df["acceptance_worktime_hour"] / sum_df["annotation_count"]

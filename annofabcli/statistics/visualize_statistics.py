@@ -126,14 +126,12 @@ class WriteCsvGraph:
         annotation_count_ratio_df = self.table_obj.create_annotation_count_ratio_df(
             df_task_history, self._get_task_df()
         )
-        if len(annotation_count_ratio_df) == 0:
-            user_performance = UserPerformance(pandas.DataFrame())
-        else:
-            user_performance = UserPerformance.from_df(
-                df_task_history=df_task_history,
-                df_labor=self.df_labor,
-                df_worktime_ratio=annotation_count_ratio_df,
-            )
+        user_performance = UserPerformance.from_df(
+            df_task_history=df_task_history,
+            df_worktime_ratio=annotation_count_ratio_df,
+            df_user=pandas.DataFrame(self.table_obj.project_members_dict.values()),
+            df_labor=self.df_labor,
+        )
 
         self.project_dir.write_user_performance(user_performance)
 
@@ -304,12 +302,6 @@ class VisualizingStatisticsMain:
         )
 
         table_obj = Table(database)
-        if len(table_obj._get_task_list()) == 0:
-            logger.warning(f"project_id={project_id}: タスク一覧が0件なのでファイルを出力しません。終了します。")
-            return
-        if len(table_obj._get_task_histories_dict().keys()) == 0:
-            logger.warning(f"project_id={project_id}: タスク履歴一覧が0件なのでファイルを出力しません。終了します。")
-            return
 
         if self.df_labor is not None:
             # project_id列がある場合（複数のproject_id列を指定した場合）はproject_idで絞り込む
@@ -338,13 +330,12 @@ class VisualizingStatisticsMain:
         )
 
         write_obj._catch_exception(write_obj.write_user_performance)()
+        write_obj._catch_exception(write_obj.write_worktime_per_date)(self.user_ids)
 
         write_obj._catch_exception(write_obj.write_task_info)()
 
         # 折れ線グラフ
         write_obj.write_cumulative_linegraph_by_user(self.user_ids)
-
-        write_obj._catch_exception(write_obj.write_worktime_per_date)(self.user_ids)
 
         if not self.minimal_output:
             write_obj._catch_exception(write_obj.write_user_productivity_per_date)(self.user_ids)
