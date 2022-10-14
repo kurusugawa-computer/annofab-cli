@@ -3,6 +3,7 @@ from __future__ import annotations
 import abc
 import argparse
 import collections
+import json
 import logging
 import tempfile
 import zipfile
@@ -555,6 +556,7 @@ class ListAnnotationCountMain:
     def __init__(self, service: annofabapi.Resource):
         self.service = service
 
+    @staticmethod
     def get_frame_no_map(task_json_path: Path) -> dict[tuple[str, str], int]:
         with task_json_path.open() as f:
             task_list = json.load(f)
