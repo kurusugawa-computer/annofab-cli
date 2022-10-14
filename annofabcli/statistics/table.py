@@ -211,7 +211,6 @@ class Table:
         adding_obj = AddingAdditionalInfoToTask(self.annofab_service, project_id=self.project_id)
 
         for task in tasks:
-
             adding_obj.add_additional_info_to_task(task)
 
             task_id = task["task_id"]

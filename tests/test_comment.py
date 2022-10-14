@@ -136,7 +136,7 @@ class TestCommandLine:
 
         task, _ = service.api.get_task(project_id, task_id)
         # アノテーション仕様に全体ラベルがあって属性が必須だと、タスクを次の状態に遷移させられないので、ここで確認する
-        assert task["phase"] == {"inspection", "acceptance"}
+        assert task["phase"] in {"inspection", "acceptance"}
         # 抜き取り検査率/受入率が設定されていると、完了状態になっている可能性があるので確認する
         assert task["status"] == "not_started"
 
@@ -176,14 +176,15 @@ class TestCommandLine:
         # list command
         main(
             [
-                "inspection_comment",
+                "comment",
                 "list",
                 "--project_id",
                 project_id,
                 "--task_id",
                 task_id,
                 "--comment_type",
-                "inspection" "--output",
+                "inspection",
+                "--output",
                 str(out_dir / "list-inspection-out.csv"),
             ]
         )

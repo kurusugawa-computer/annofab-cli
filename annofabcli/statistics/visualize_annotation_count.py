@@ -86,6 +86,7 @@ def plot_label_histogram(
     bokeh.plotting.reset_output()
     bokeh.plotting.output_file(output_file, title=output_file.stem)
     bokeh.plotting.save(bokeh_obj)
+    logger.info(f"'{output_file}'を出力しました。")
 
 
 def plot_attribute_histogram(
@@ -133,6 +134,7 @@ def plot_attribute_histogram(
     bokeh.plotting.reset_output()
     bokeh.plotting.output_file(output_file, title=output_file.stem)
     bokeh.plotting.save(bokeh_obj)
+    logger.info(f"'{output_file}'を出力しました。")
 
 
 class VisualizeAnnotationCount(AbstractCommandLineInterface):

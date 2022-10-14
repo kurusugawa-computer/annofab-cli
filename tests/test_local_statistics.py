@@ -610,7 +610,7 @@ class TestListAnnotationCounterByTask:
 
 class TestVisualizeAnnotationCount:
     def test_plot_label_histogram(self):
-        counter_list = ListAnnotationCounterByInputData.get_annotation_counter_list(
+        counter_list = ListAnnotationCounterByInputData().get_annotation_counter_list(
             data_path / "simple-annotations.zip"
         )
 
@@ -621,7 +621,7 @@ class TestVisualizeAnnotationCount:
         )
 
     def test_plot_attribute_histogram(self):
-        counter_list = ListAnnotationCounterByTask.get_annotation_counter_list(data_path / "simple-annotations.zip")
+        counter_list = ListAnnotationCounterByTask().get_annotation_counter_list(data_path / "simple-annotations.zip")
 
         plot_attribute_histogram(
             counter_list,
