@@ -555,6 +555,19 @@ class ListAnnotationCountMain:
     def __init__(self, service: annofabapi.Resource):
         self.service = service
 
+    def get_frame_no_map(task_json_path: Path) -> dict[tuple[str, str], int]:
+        with task_json_path.open() as f:
+            task_list = json.load(f)
+
+        result = {}
+        for task in task_list:
+            task_id = task["task_id"]
+            input_data_id_list = task["input_data_id_list"]
+            for index, input_data_id in enumerate(input_data_id_list):
+                # 画面に合わせて1始まりにする
+                result[(task_id, input_data_id)] = index + 1
+        return result
+
     @staticmethod
     def _get_target_attributes_columns(annotation_specs_labels: list[dict[str, Any]]) -> list[AttributesKey]:
         """
@@ -630,6 +643,7 @@ class ListAnnotationCountMain:
         self,
         project_id: str,
         annotation_path: Path,
+        task_json_path: Path,
         group_by: GroupBy,
         csv_type: CsvType,
         output_file: Path,
@@ -657,7 +671,10 @@ class ListAnnotationCountMain:
         warn_if_columns_are_duplicated()
 
         if group_by == GroupBy.INPUT_DATA_ID:
-            counter_by_input_data = ListAnnotationCounterByInputData(target_attributes=attribute_columns)
+            frame_no_map = self.get_frame_no_map(task_json_path)
+            counter_by_input_data = ListAnnotationCounterByInputData(
+                target_attributes=attribute_columns, frame_no_map=frame_no_map
+            )
             counter_list_by_input_data = counter_by_input_data.get_annotation_counter_list(
                 annotation_path,
                 target_task_ids=target_task_ids,
@@ -702,6 +719,7 @@ class ListAnnotationCountMain:
         self,
         project_id: str,
         annotation_path: Path,
+        task_json_path: Path,
         group_by: GroupBy,
         output_file: Path,
         *,
@@ -714,8 +732,9 @@ class ListAnnotationCountMain:
         _, attribute_columns = self.get_target_columns(project_id)
 
         if group_by == GroupBy.INPUT_DATA_ID:
+            frame_no_map = self.get_frame_no_map(task_json_path)
             counter_by_input_data = ListAnnotationCounterByInputData(
-                target_attributes=attribute_columns,
+                target_attributes=attribute_columns, frame_no_map=frame_no_map
             )
             counter_list_by_input_data = counter_by_input_data.get_annotation_counter_list(
                 annotation_path,
@@ -751,6 +770,7 @@ class ListAnnotationCountMain:
         self,
         project_id: str,
         annotation_path: Path,
+        task_json_path: Path,
         group_by: GroupBy,
         output_file: Path,
         arg_format: FormatArgument,
@@ -765,6 +785,7 @@ class ListAnnotationCountMain:
             self.print_annotation_counter_csv(
                 project_id=project_id,
                 annotation_path=annotation_path,
+                task_json_path=task_json_path,
                 group_by=group_by,
                 csv_type=csv_type,
                 output_file=output_file,
@@ -777,6 +798,7 @@ class ListAnnotationCountMain:
             self.print_annotation_counter_json(
                 project_id=project_id,
                 annotation_path=annotation_path,
+                task_json_path=task_json_path,
                 group_by=group_by,
                 output_file=output_file,
                 target_task_ids=target_task_ids,
@@ -811,21 +833,30 @@ class ListAnnotationCount(AbstractCommandLineInterface):
         arg_format = FormatArgument(args.format)
         main_obj = ListAnnotationCountMain(self.service)
 
-        func = partial(
-            main_obj.print_annotation_counter,
-            project_id=project_id,
-            group_by=group_by,
-            csv_type=csv_type,
-            arg_format=arg_format,
-            output_file=output_file,
-            target_task_ids=task_id_list,
-            task_query=task_query,
-        )
+        downloading_obj = DownloadingFile(self.service)
+
+        with tempfile.NamedTemporaryFile() as f1:
+            # タスク全件ファイルは、フレーム番号を参照するのに利用する
+            task_json_path = Path(f1.name)
+            downloading_obj.download_task_json(
+                project_id,
+                dest_path=str(task_json_path),
+            )
+            func = partial(
+                main_obj.print_annotation_counter,
+                project_id=project_id,
+                task_json_path=task_json_path,
+                group_by=group_by,
+                csv_type=csv_type,
+                arg_format=arg_format,
+                output_file=output_file,
+                target_task_ids=task_id_list,
+                task_query=task_query,
+            )
 
         if annotation_path is None:
             with tempfile.NamedTemporaryFile() as f:
                 annotation_path = Path(f.name)
-                downloading_obj = DownloadingFile(self.service)
                 downloading_obj.download_annotation_zip(
                     project_id,
                     dest_path=str(annotation_path),
