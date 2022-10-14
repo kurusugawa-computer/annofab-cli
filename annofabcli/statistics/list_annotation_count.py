@@ -277,6 +277,7 @@ class ListAnnotationCounterByInputData:
             d = {
                 "input_data_id": c.input_data_id,
                 "input_data_name": c.input_data_name,
+                "frame_no": c.frame_no,
                 "task_id": c.task_id,
                 "status": c.status.value,
                 "phase": c.phase.value,
@@ -293,6 +294,7 @@ class ListAnnotationCounterByInputData:
             "phase_stage",
             "input_data_id",
             "input_data_name",
+            "frame_no",
             "annotation_count",
         ]
         if label_columns is not None:
@@ -322,6 +324,7 @@ class ListAnnotationCounterByInputData:
             cell = {
                 ("input_data_id", "", ""): c.input_data_id,
                 ("input_data_name", "", ""): c.input_data_name,
+                ("frame_no", "", ""): c.frame_no,
                 ("task_id", "", ""): c.task_id,
                 ("status", "", ""): c.status.value,
                 ("phase", "", ""): c.phase.value,
@@ -339,6 +342,7 @@ class ListAnnotationCounterByInputData:
             ("phase_stage", "", ""),
             ("input_data_id", "", ""),
             ("input_data_name", "", ""),
+            ("frame_no", "", ""),
             ("annotation_count", "", ""),
         ]
 
@@ -856,17 +860,17 @@ class ListAnnotationCount(AbstractCommandLineInterface):
                 task_query=task_query,
             )
 
-        if annotation_path is None:
-            with tempfile.NamedTemporaryFile() as f:
-                annotation_path = Path(f.name)
-                downloading_obj.download_annotation_zip(
-                    project_id,
-                    dest_path=str(annotation_path),
-                    is_latest=args.latest,
-                )
+            if annotation_path is None:
+                with tempfile.NamedTemporaryFile() as f:
+                    annotation_path = Path(f.name)
+                    downloading_obj.download_annotation_zip(
+                        project_id,
+                        dest_path=str(annotation_path),
+                        is_latest=args.latest,
+                    )
+                    func(annotation_path=annotation_path)
+            else:
                 func(annotation_path=annotation_path)
-        else:
-            func(annotation_path=annotation_path)
 
 
 def parse_args(parser: argparse.ArgumentParser):
