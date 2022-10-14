@@ -536,7 +536,7 @@ class TestListAnnotationCounterByInputData:
             ],
         }
 
-        counter = ListAnnotationCounterByInputData.get_annotation_counter(annotation)
+        counter = ListAnnotationCounterByInputData().get_annotation_counter(annotation)
         assert counter.input_data_id == "input1"
         assert counter.task_id == "task1"
         assert counter.annotation_count_by_label == collections.Counter({"bird": 2, "climatic": 1})
@@ -549,9 +549,9 @@ class TestListAnnotationCounterByInputData:
             }
         )
 
-        counter2 = ListAnnotationCounterByInputData.get_annotation_counter(
-            annotation, target_labels=["climatic"], target_attributes=[("bird", "occluded", "true")]
-        )
+        counter2 = ListAnnotationCounterByInputData(
+            target_labels=["climatic"], target_attributes=[("bird", "occluded", "true")]
+        ).get_annotation_counter(annotation)
         assert counter2.annotation_count_by_label == collections.Counter({"climatic": 1})
         assert counter2.annotation_count_by_attribute == collections.Counter(
             {
@@ -560,13 +560,13 @@ class TestListAnnotationCounterByInputData:
         )
 
     def test_get_annotation_counter_list(self):
-        counter_list = ListAnnotationCounterByInputData.get_annotation_counter_list(
+        counter_list = ListAnnotationCounterByInputData().get_annotation_counter_list(
             data_path / "simple-annotations.zip"
         )
         assert len(counter_list) == 4
 
     def test_print_labels_count(self):
-        counter_list = ListAnnotationCounterByInputData.get_annotation_counter_list(
+        counter_list = ListAnnotationCounterByInputData().get_annotation_counter_list(
             data_path / "simple-annotations.zip"
         )
         ListAnnotationCounterByInputData.print_labels_count_csv(
@@ -576,7 +576,7 @@ class TestListAnnotationCounterByInputData:
         )
 
     def test_print_attributes_count(self):
-        counter_list = ListAnnotationCounterByInputData.get_annotation_counter_list(
+        counter_list = ListAnnotationCounterByInputData().get_annotation_counter_list(
             data_path / "simple-annotations.zip"
         )
         ListAnnotationCounterByInputData.print_attributes_count_csv(
@@ -588,11 +588,11 @@ class TestListAnnotationCounterByInputData:
 
 class TestListAnnotationCounterByTask:
     def test_get_annotation_counter_list(self):
-        counter_list = ListAnnotationCounterByTask.get_annotation_counter_list(data_path / "simple-annotations.zip")
+        counter_list = ListAnnotationCounterByTask().get_annotation_counter_list(data_path / "simple-annotations.zip")
         assert len(counter_list) == 2
 
     def test_print_labels_count_csv(self):
-        counter_list = ListAnnotationCounterByTask.get_annotation_counter_list(data_path / "simple-annotations.zip")
+        counter_list = ListAnnotationCounterByTask().get_annotation_counter_list(data_path / "simple-annotations.zip")
         ListAnnotationCounterByTask.print_labels_count_csv(
             counter_list,
             output_file=out_path / "list_annotation_count/labels_count_by_task.csv",
@@ -600,7 +600,7 @@ class TestListAnnotationCounterByTask:
         )
 
     def test_print_attributes_count_csv(self):
-        counter_list = ListAnnotationCounterByTask.get_annotation_counter_list(data_path / "simple-annotations.zip")
+        counter_list = ListAnnotationCounterByTask().get_annotation_counter_list(data_path / "simple-annotations.zip")
         ListAnnotationCounterByTask.print_attributes_count_csv(
             counter_list,
             output_file=out_path / "list_annotation_count/attributes_count_by_task.csv",
