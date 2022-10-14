@@ -273,6 +273,27 @@ class ListAnnotationCounterByInputData:
         label_columns: Optional[list[str]] = None,
         csv_format: Optional[dict[str, Any]] = None,
     ):
+        def get_columns() -> list[str]:
+            basic_columns = [
+                "task_id",
+                "status",
+                "phase",
+                "phase_stage",
+                "input_data_id",
+                "input_data_name",
+                "frame_no",
+                "annotation_count",
+            ]
+
+            all_label_column_set = {label for c in counter_list for label in c.annotation_count_by_label}
+            if label_columns is not None:
+                remain_columns = sorted(all_label_column_set - set(label_columns))
+                value_columns = label_columns + remain_columns
+            else:
+                value_columns = sorted(all_label_column_set)
+
+            return basic_columns + value_columns
+
         def to_dict(c: AnnotationCounterByInputData) -> dict[str, Any]:
             d = {
                 "input_data_id": c.input_data_id,
@@ -287,23 +308,7 @@ class ListAnnotationCounterByInputData:
             d.update(c.annotation_count_by_label)
             return d
 
-        basic_columns = [
-            "task_id",
-            "status",
-            "phase",
-            "phase_stage",
-            "input_data_id",
-            "input_data_name",
-            "frame_no",
-            "annotation_count",
-        ]
-        if label_columns is not None:
-            value_columns = label_columns
-        else:
-            label_column_set = {label for c in counter_list for label in c.annotation_count_by_label}
-            value_columns = sorted(list(label_column_set))
-
-        columns = basic_columns + value_columns
+        columns = get_columns()
         df = pandas.DataFrame([to_dict(e) for e in counter_list], columns=columns)
 
         # NaNを0に変換する
@@ -320,6 +325,27 @@ class ListAnnotationCounterByInputData:
         attribute_columns: Optional[list[AttributesKey]] = None,
         csv_format: Optional[dict[str, Any]] = None,
     ):
+        def get_columns() -> list[AttributesKey]:
+            basic_columns = [
+                ("task_id", "", ""),
+                ("status", "", ""),
+                ("phase", "", ""),
+                ("phase_stage", "", ""),
+                ("input_data_id", "", ""),
+                ("input_data_name", "", ""),
+                ("frame_no", "", ""),
+                ("annotation_count", "", ""),
+            ]
+
+            all_attr_key_set = {attr_key for c in counter_list for attr_key in c.annotation_count_by_attribute}
+            if attribute_columns is not None:
+                remain_columns = sorted(all_attr_key_set - set(attribute_columns))
+                value_columns = attribute_columns + remain_columns
+            else:
+                value_columns = sorted(all_attr_key_set)
+
+            return basic_columns + value_columns
+
         def to_cell(c: AnnotationCounterByInputData) -> dict[tuple[str, str, str], Any]:
             cell = {
                 ("input_data_id", "", ""): c.input_data_id,
@@ -335,24 +361,7 @@ class ListAnnotationCounterByInputData:
 
             return cell
 
-        basic_columns = [
-            ("task_id", "", ""),
-            ("status", "", ""),
-            ("phase", "", ""),
-            ("phase_stage", "", ""),
-            ("input_data_id", "", ""),
-            ("input_data_name", "", ""),
-            ("frame_no", "", ""),
-            ("annotation_count", "", ""),
-        ]
-
-        if attribute_columns is not None:
-            value_columns = attribute_columns
-        else:
-            attr_key_set = {attr_key for c in counter_list for attr_key in c.annotation_count_by_attribute}
-            value_columns = sorted(list(attr_key_set))
-
-        columns = basic_columns + value_columns
+        columns = get_columns()
         df = pandas.DataFrame([to_cell(e) for e in counter_list], columns=pandas.MultiIndex.from_tuples(columns))
 
         # NaNを0に変換する
@@ -474,6 +483,25 @@ class ListAnnotationCounterByTask:
         label_columns: Optional[list[str]] = None,
         csv_format: Optional[dict[str, Any]] = None,
     ):
+        def get_columns() -> list[str]:
+            basic_columns = [
+                "task_id",
+                "status",
+                "phase",
+                "phase_stage",
+                "input_data_count",
+                "annotation_count",
+            ]
+
+            all_label_column_set = {label for c in counter_list for label in c.annotation_count_by_label}
+            if label_columns is not None:
+                remain_columns = sorted(all_label_column_set - set(label_columns))
+                value_columns = label_columns + remain_columns
+            else:
+                value_columns = sorted(all_label_column_set)
+
+            return basic_columns + value_columns
+
         def to_dict(c: AnnotationCounterByTask) -> dict[str, Any]:
             d = {
                 "task_id": c.task_id,
@@ -487,22 +515,7 @@ class ListAnnotationCounterByTask:
             d.update(c.annotation_count_by_label)
             return d
 
-        basic_columns = [
-            "task_id",
-            "status",
-            "phase",
-            "phase_stage",
-            "input_data_count",
-            "annotation_count",
-        ]
-        if label_columns is not None:
-            value_columns = label_columns
-        else:
-            label_column_set = {label for c in counter_list for label in c.annotation_count_by_label}
-            value_columns = sorted(list(label_column_set))
-
-        columns = basic_columns + value_columns
-        df = pandas.DataFrame([to_dict(e) for e in counter_list], columns=columns)
+        df = pandas.DataFrame([to_dict(e) for e in counter_list], columns=get_columns())
 
         # NaNを0に変換する
         # `basic_columns`は必ずnanではないので、問題ないはず
@@ -518,6 +531,25 @@ class ListAnnotationCounterByTask:
         attribute_columns: Optional[list[AttributesKey]] = None,
         csv_format: Optional[dict[str, Any]] = None,
     ):
+        def get_columns() -> list[AttributesKey]:
+            basic_columns = [
+                ("task_id", "", ""),
+                ("status", "", ""),
+                ("phase", "", ""),
+                ("phase_stage", "", ""),
+                ("input_data_count", "", ""),
+                ("annotation_count", "", ""),
+            ]
+
+            all_attr_key_set = {attr_key for c in counter_list for attr_key in c.annotation_count_by_attribute}
+            if attribute_columns is not None:
+                remain_columns = sorted(all_attr_key_set - set(attribute_columns))
+                value_columns = attribute_columns + remain_columns
+            else:
+                value_columns = sorted(all_attr_key_set)
+
+            return basic_columns + value_columns
+
         def to_cell(c: AnnotationCounterByTask) -> dict[AttributesKey, Any]:
             cell = {
                 ("task_id", "", ""): c.task_id,
@@ -530,22 +562,7 @@ class ListAnnotationCounterByTask:
             cell.update(c.annotation_count_by_attribute)
             return cell
 
-        basic_columns = [
-            ("task_id", "", ""),
-            ("status", "", ""),
-            ("phase", "", ""),
-            ("phase_stage", "", ""),
-            ("input_data_count", "", ""),
-            ("annotation_count", "", ""),
-        ]
-
-        if attribute_columns is not None:
-            value_columns = attribute_columns
-        else:
-            attr_key_set = {attr_key for c in counter_list for attr_key in c.annotation_count_by_attribute}
-            value_columns = sorted(list(attr_key_set))
-
-        columns = basic_columns + value_columns
+        columns = get_columns()
         df = pandas.DataFrame([to_cell(e) for e in counter_list], columns=pandas.MultiIndex.from_tuples(columns))
 
         # NaNを0に変換する
