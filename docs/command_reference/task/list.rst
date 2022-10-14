@@ -126,6 +126,7 @@ JSON出力
         "phase": "acceptance",
         "phase_stage": 1,
         "status": "complete",
+        "input_data_count": 1,
         "input_data_id_list": [
           "input1"
         ],
@@ -141,7 +142,6 @@ JSON出力
           },
           ...
         ],
-        "work_time_span": 8924136,
         "started_datetime": "2020-11-24T16:21:27.753+09:00",
         "updated_datetime": "2020-11-24T16:29:29.381+09:00",
         "sampling": null,

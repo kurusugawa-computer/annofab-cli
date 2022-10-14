@@ -253,9 +253,6 @@ class AddingAdditionalInfoToTask:
             task_histories (list[TaskHistory]): タスク履歴
 
         """
-        # タスク情報から取得できる、付加的な情報を追加する
-        task = self.visualize.add_properties_to_task(task)
-
         # フェーズごとのタスク履歴情報を追加する
         self._add_task_history_info_by_phase(task, task_histories, phase=TaskPhase.ANNOTATION)
         self._add_task_history_info_by_phase(task, task_histories, phase=TaskPhase.INSPECTION)
@@ -308,8 +305,13 @@ class ListTasksAddedTaskHistory(AbstractCommandLineInterface):
             "status",
             "started_datetime",
             "updated_datetime",
+            "operation_updated_datetime",
+            "account_id",
             "user_id",
             "username",
+            "input_data_count",
+            "metadata",
+            "sampling",
             # 作業時間情報
             "worktime_hour",
             "annotation_worktime_hour",
@@ -322,7 +324,6 @@ class ListTasksAddedTaskHistory(AbstractCommandLineInterface):
             "completed_datetime",
             "inspection_is_skipped",
             "acceptance_is_skipped",
-            "sampling",
         ]
 
         task_history_columns = [

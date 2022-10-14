@@ -86,6 +86,7 @@ def plot_label_histogram(
     bokeh.plotting.reset_output()
     bokeh.plotting.output_file(output_file, title=output_file.stem)
     bokeh.plotting.save(bokeh_obj)
+    logger.info(f"'{output_file}'を出力しました。")
 
 
 def plot_attribute_histogram(
@@ -133,6 +134,7 @@ def plot_attribute_histogram(
     bokeh.plotting.reset_output()
     bokeh.plotting.output_file(output_file, title=output_file.stem)
     bokeh.plotting.save(bokeh_obj)
+    logger.info(f"'{output_file}'を出力しました。")
 
 
 class VisualizeAnnotationCount(AbstractCommandLineInterface):
@@ -156,19 +158,21 @@ class VisualizeAnnotationCount(AbstractCommandLineInterface):
 
         counter_list: Sequence[AnnotationCounter] = []
         if group_by == GroupBy.INPUT_DATA_ID:
-            counter_list = ListAnnotationCounterByInputData.get_annotation_counter_list(
+            counter_list = ListAnnotationCounterByInputData(
+                target_attributes=attribute_columns,
+            ).get_annotation_counter_list(
                 annotation_path,
                 target_task_ids=target_task_ids,
                 task_query=task_query,
-                target_attributes=attribute_columns,
             )
 
         elif group_by == GroupBy.TASK_ID:
-            counter_list = ListAnnotationCounterByTask.get_annotation_counter_list(
+            counter_list = ListAnnotationCounterByTask(
+                target_attributes=attribute_columns,
+            ).get_annotation_counter_list(
                 annotation_path,
                 target_task_ids=target_task_ids,
                 task_query=task_query,
-                target_attributes=attribute_columns,
             )
 
         else:

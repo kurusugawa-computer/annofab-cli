@@ -160,12 +160,17 @@ class ListTasks(AbstractCommandLineInterface):
         "status",
         "started_datetime",
         "updated_datetime",
+        "operation_updated_datetime",
+        "account_id",
         "user_id",
         "username",
         "worktime_hour",
-        "metadata",
         "number_of_rejections_by_inspection",
         "number_of_rejections_by_acceptance",
+        "metadata",
+        "sampling",
+        "input_data_count",
+        "input_data_id_list",
     ]
 
     def main(self):
