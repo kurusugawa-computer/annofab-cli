@@ -333,6 +333,12 @@ class AddProps:
         * worktime_hour
         * number_of_rejections_by_inspection
         * number_of_rejections_by_acceptance
+        * input_data_count
+
+        以下のキーを削除する。
+        * work_time_span
+        * number_of_rejections
+
 
         Args:
             task:
@@ -344,6 +350,8 @@ class AddProps:
 
         self._add_user_info(task)
         task["worktime_hour"] = self.millisecond_to_hour(task["work_time_span"])
+        # worktime_hourと重複するので削除
+        task.pop("work_time_span")
 
         histories = [self._add_user_info(e) for e in task["histories_by_phase"]]
         task["histories_by_phase"] = histories
@@ -353,6 +361,8 @@ class AddProps:
 
         # number_of_rejectionsは非推奨なプロパティで、number_of_rejections_by_inspection/number_of_rejections_by_acceptanceと矛盾する場合があるので、削除する
         task.pop("number_of_rejections", None)
+
+        task["input_data_count"] = len(task["input_data_id_list"])
         return task
 
     def add_properties_to_task_history(self, task_history: TaskHistory) -> TaskHistory:
