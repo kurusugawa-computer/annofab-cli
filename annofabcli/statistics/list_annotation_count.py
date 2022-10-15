@@ -164,6 +164,7 @@ class ListAnnotationCounterByInputData:
 
     def __init__(
         self,
+        *,
         target_labels: Optional[Collection[str]] = None,
         non_target_labels: Optional[Collection[str]] = None,
         target_attribute_names: Optional[Collection[AttributeNameKey]] = None,
@@ -172,7 +173,7 @@ class ListAnnotationCounterByInputData:
     ):
 
         self.target_labels = set(target_labels) if target_labels is not None else None
-        self.target_attributes = set(target_attribute_names) if target_attribute_names is not None else None
+        self.target_attribute_names = set(target_attribute_names) if target_attribute_names is not None else None
         self.non_target_labels = set(non_target_labels) if non_target_labels is not None else None
         self.non_target_attribute_names = (
             set(non_target_attribute_names) if non_target_attribute_names is not None else None
