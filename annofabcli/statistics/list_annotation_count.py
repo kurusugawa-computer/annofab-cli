@@ -155,10 +155,10 @@ class ListAnnotationCounterByInputData:
 
     Args:
         target_labels: 集計対象のラベル（label_name_en）
-        target_attributes: 集計対象の属性
+        target_attribute_names: 集計対象の属性名
+        non_target_labels: 集計対象外のラベル
         non_target_attribute_names: 集計対象外の属性名のキー。
         frame_no_map: key:task_id,input_data_idのtuple, value:フレーム番号
-
 
     """
 
@@ -414,11 +414,16 @@ class ListAnnotationCounterByTask:
         self,
         *,
         target_labels: Optional[Collection[str]] = None,
-        target_attributes: Optional[Collection[AttributeValueKey]] = None,
+        non_target_labels: Optional[Collection[str]] = None,
+        target_attribute_names: Optional[Collection[AttributeNameKey]] = None,
+        non_target_attribute_names: Optional[Collection[AttributeNameKey]] = None,
     ):
-        self.target_labels = target_labels
-        self.target_attributes = target_attributes
-        self.counter_by_input_data = ListAnnotationCounterByInputData(target_labels, target_attributes)
+        self.counter_by_input_data = ListAnnotationCounterByInputData(
+            target_labels=target_labels,
+            non_target_labels=non_target_labels,
+            target_attribute_names=target_attribute_names,
+            non_target_attribute_names=non_target_attribute_names,
+        )
 
     def get_annotation_counter(self, task_parser: SimpleAnnotationParserByTask) -> AnnotationCounterByTask:
         """
@@ -813,54 +818,73 @@ class ListAnnotationCountMain:
         else:
             raise RuntimeError(f"group_by='{group_by}'が対象外です。")
 
-    def print_annotation_counter_json(
+    def print_annotation_counter_json_by_input_data(
         self,
-        project_id: str,
         annotation_path: Path,
         task_json_path: Path,
-        group_by: GroupBy,
         output_file: Path,
         *,
+        project_id: Optional[str] = None,
         target_task_ids: Optional[Collection[str]] = None,
         task_query: Optional[TaskQuery] = None,
         json_is_pretty: bool = False,
     ):
-        """ラベルごと/属性ごとのアノテーション数をJSONファイルに出力します。"""
-        # 集計対象の属性を、選択肢系の属性にする
+        """ラベルごと/属性ごとのアノテーション数を入力データ単位でJSONファイルに出力します。"""
 
-        # TODO 出力しない属性の一覧を決めるべき。
-        _, attribute_columns = self.get_target_columns(project_id)
-
-        if group_by == GroupBy.INPUT_DATA_ID:
-            frame_no_map = self.get_frame_no_map(task_json_path)
-            counter_list_by_input_data = ListAnnotationCounterByInputData(
-                frame_no_map=frame_no_map
-            ).get_annotation_counter_list(
-                annotation_path,
-                target_task_ids=target_task_ids,
-                task_query=task_query,
-            )
-
-            print_json(
-                [e.to_dict(encode_json=True) for e in counter_list_by_input_data],
-                is_pretty=json_is_pretty,
-                output=output_file,
-            )
-
-        elif group_by == GroupBy.TASK_ID:
-            counter_list_by_task = ListAnnotationCounterByTask().get_annotation_counter_list(
-                annotation_path,
-                target_task_ids=target_task_ids,
-                task_query=task_query,
-            )
-            print_json(
-                [e.to_dict(encode_json=True) for e in counter_list_by_task],
-                is_pretty=json_is_pretty,
-                output=output_file,
-            )
-
+        # アノテーション仕様の非選択系の属性は、集計しないようにする。集計しても意味がないため。
+        if project_id is not None:
+            annotation_specs = AnnotationSpecs(self.service, project_id)
+            non_selective_attribute_name_keys = annotation_specs.non_selective_attribute_name_keys()
         else:
-            raise RuntimeError(f"group_by='{group_by}'が対象外です。")
+            non_selective_attribute_name_keys = None
+
+        frame_no_map = self.get_frame_no_map(task_json_path)
+        counter_list_by_input_data = ListAnnotationCounterByInputData(
+            non_target_attribute_names=non_selective_attribute_name_keys, frame_no_map=frame_no_map
+        ).get_annotation_counter_list(
+            annotation_path,
+            target_task_ids=target_task_ids,
+            task_query=task_query,
+        )
+
+        print_json(
+            [e.to_dict(encode_json=True) for e in counter_list_by_input_data],
+            is_pretty=json_is_pretty,
+            output=output_file,
+        )
+
+    def print_annotation_counter_json_by_task(
+        self,
+        annotation_path: Path,
+        output_file: Path,
+        *,
+        project_id: Optional[str] = None,
+        target_task_ids: Optional[Collection[str]] = None,
+        task_query: Optional[TaskQuery] = None,
+        json_is_pretty: bool = False,
+    ):
+        """ラベルごと/属性ごとのアノテーション数をタスク単位でJSONファイルに出力します。"""
+
+        # アノテーション仕様の非選択系の属性は、集計しないようにする。集計しても意味がないため。
+        if project_id is not None:
+            annotation_specs = AnnotationSpecs(self.service, project_id)
+            non_selective_attribute_name_keys = annotation_specs.non_selective_attribute_name_keys()
+        else:
+            non_selective_attribute_name_keys = None
+
+        counter_list_by_input_data = ListAnnotationCounterByTask(
+            non_target_attribute_names=non_selective_attribute_name_keys,
+        ).get_annotation_counter_list(
+            annotation_path,
+            target_task_ids=target_task_ids,
+            task_query=task_query,
+        )
+
+        print_json(
+            [e.to_dict(encode_json=True) for e in counter_list_by_input_data],
+            is_pretty=json_is_pretty,
+            output=output_file,
+        )
 
     def print_annotation_counter(
         self,
@@ -891,16 +915,27 @@ class ListAnnotationCountMain:
 
         elif arg_format in [FormatArgument.PRETTY_JSON, FormatArgument.JSON]:
             json_is_pretty = arg_format == FormatArgument.PRETTY_JSON
-            self.print_annotation_counter_json(
-                project_id=project_id,
-                annotation_path=annotation_path,
-                task_json_path=task_json_path,
-                group_by=group_by,
-                output_file=output_file,
-                target_task_ids=target_task_ids,
-                task_query=task_query,
-                json_is_pretty=json_is_pretty,
-            )
+
+            if group_by == GroupBy.INPUT_DATA_ID:
+                self.print_annotation_counter_json_by_input_data(
+                    project_id=project_id,
+                    annotation_path=annotation_path,
+                    task_json_path=task_json_path,
+                    output_file=output_file,
+                    target_task_ids=target_task_ids,
+                    task_query=task_query,
+                    json_is_pretty=json_is_pretty,
+                )
+
+            elif group_by == GroupBy.TASK_ID:
+                self.print_annotation_counter_json_by_task(
+                    project_id=project_id,
+                    annotation_path=annotation_path,
+                    output_file=output_file,
+                    target_task_ids=target_task_ids,
+                    task_query=task_query,
+                    json_is_pretty=json_is_pretty,
+                )
 
 
 class ListAnnotationCount(AbstractCommandLineInterface):
