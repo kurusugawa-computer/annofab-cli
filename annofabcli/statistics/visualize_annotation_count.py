@@ -20,7 +20,7 @@ from annofabcli.common.facade import AnnofabApiFacade, TaskQuery
 from annofabcli.statistics.histogram import get_sub_title_from_series
 from annofabcli.statistics.list_annotation_count import (
     AnnotationCounter,
-    AttributesKey,
+    AttributeValueKey,
     GroupBy,
     ListAnnotationCounterByInputData,
     ListAnnotationCounterByTask,
@@ -93,7 +93,7 @@ def plot_attribute_histogram(
     counter_list: Sequence[AnnotationCounter],
     group_by: GroupBy,
     output_file: Path,
-    target_attributes: Optional[list[AttributesKey]] = None,
+    target_attributes: Optional[list[AttributeValueKey]] = None,
     bins: int = 20,
 ):
     df = pandas.DataFrame([e.annotation_count_by_attribute for e in counter_list])
