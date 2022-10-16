@@ -1,10 +1,12 @@
 from __future__ import annotations
 
+from annofabapi.models import ProjectMemberRole, TaskStatus
 import abc
 import argparse
 import collections
 import json
 import logging
+import sys
 import tempfile
 import zipfile
 from collections import defaultdict
@@ -29,7 +31,12 @@ from dataclasses_json import DataClassJsonMixin, config
 
 import annofabcli
 import annofabcli.common.cli
-from annofabcli.common.cli import AbstractCommandLineInterface, ArgumentParser, build_annofabapi_resource_and_login
+from annofabcli.common.cli import (
+    COMMAND_LINE_ERROR_STATUS_CODE,
+    AbstractCommandLineInterface,
+    ArgumentParser,
+    build_annofabapi_resource_and_login,
+)
 from annofabcli.common.download import DownloadingFile
 from annofabcli.common.enums import FormatArgument
 from annofabcli.common.facade import (
@@ -792,11 +799,11 @@ class ListAnnotationCountMain:
     def print_annotation_counter_csv_by_input_data(
         self,
         annotation_path: Path,
-        task_json_path: Path,
         csv_type: CsvType,
         output_file: Path,
         *,
         project_id: Optional[str] = None,
+        task_json_path: Optional[Path]=None,
         target_task_ids: Optional[Collection[str]] = None,
         task_query: Optional[TaskQuery] = None,
     ):
@@ -807,7 +814,7 @@ class ListAnnotationCountMain:
             annotation_specs = AnnotationSpecs(self.service, project_id)
             non_selective_attribute_name_keys = annotation_specs.non_selective_attribute_name_keys()
 
-        frame_no_map = self.get_frame_no_map(task_json_path)
+        frame_no_map = self.get_frame_no_map(task_json_path) if task_json_path is not None else None
         counter_by_input_data = ListAnnotationCounterByInputData(
             non_target_attribute_names=non_selective_attribute_name_keys, frame_no_map=frame_no_map
         )
@@ -881,10 +888,10 @@ class ListAnnotationCountMain:
     def print_annotation_counter_json_by_input_data(
         self,
         annotation_path: Path,
-        task_json_path: Path,
         output_file: Path,
         *,
         project_id: Optional[str] = None,
+        task_json_path: Optional[Path]=None,
         target_task_ids: Optional[Collection[str]] = None,
         task_query: Optional[TaskQuery] = None,
         json_is_pretty: bool = False,
@@ -898,7 +905,7 @@ class ListAnnotationCountMain:
         else:
             non_selective_attribute_name_keys = None
 
-        frame_no_map = self.get_frame_no_map(task_json_path)
+        frame_no_map = self.get_frame_no_map(task_json_path) if task_json_path is not None else None
         counter_list_by_input_data = ListAnnotationCounterByInputData(
             non_target_attribute_names=non_selective_attribute_name_keys, frame_no_map=frame_no_map
         ).get_annotation_counter_list(
@@ -948,13 +955,13 @@ class ListAnnotationCountMain:
 
     def print_annotation_counter(
         self,
-        project_id: str,
         annotation_path: Path,
-        task_json_path: Path,
         group_by: GroupBy,
         output_file: Path,
         arg_format: FormatArgument,
         *,
+        project_id: Optional[str] = None,
+        task_json_path: Optional[Path]=None,
         target_task_ids: Optional[Collection[str]] = None,
         task_query: Optional[TaskQuery] = None,
         csv_type: Optional[CsvType] = None,
@@ -1013,11 +1020,27 @@ class ListAnnotationCount(AbstractCommandLineInterface):
     アノテーション数情報を出力する。
     """
 
+    COMMON_MESSAGE = "annofabcli statistics list_annotation_count:"
+
+    def validate(self, args: argparse.Namespace) -> bool:
+        if args.project_id is None and args.annotation is None:
+            print(
+                f"{self.COMMON_MESSAGE} error: argument --project_id: '--annotation'が未指定のときは、'--project_id' を指定してください。。",
+                file=sys.stderr,
+            )
+            return False
+
+        return True
+
     def main(self):
         args = self.args
 
-        project_id = args.project_id
-        super().validate_project(project_id, project_member_roles=None)
+        if not self.validate(args):
+            sys.exit(COMMAND_LINE_ERROR_STATUS_CODE)
+
+        project_id: Optional[str] = args.project_id
+        if project_id is not None:
+            super().validate_project(project_id, project_member_roles=[ProjectMemberRole.OWNER, ProjectMemberRole.TRAINING_DATA_USER])
 
         annotation_path = Path(args.annotation) if args.annotation is not None else None
 
@@ -1038,11 +1061,15 @@ class ListAnnotationCount(AbstractCommandLineInterface):
 
         with tempfile.NamedTemporaryFile() as f1:
             # タスク全件ファイルは、フレーム番号を参照するのに利用する
-            task_json_path = Path(f1.name)
-            downloading_obj.download_task_json(
-                project_id,
-                dest_path=str(task_json_path),
-            )
+            if project_id is not None:
+                task_json_path = Path(f1.name)
+                downloading_obj.download_task_json(
+                    project_id,
+                    dest_path=str(task_json_path),
+                )
+            else:
+                task_json_path = None
+                
             func = partial(
                 main_obj.print_annotation_counter,
                 project_id=project_id,
@@ -1071,9 +1098,15 @@ class ListAnnotationCount(AbstractCommandLineInterface):
 def parse_args(parser: argparse.ArgumentParser):
     argument_parser = ArgumentParser(parser)
 
-    argument_parser.add_project_id()
     parser.add_argument(
         "--annotation", type=str, help="アノテーションzip、またはzipを展開したディレクトリを指定します。" "指定しない場合はAnnofabからダウンロードします。"
+    )
+
+    parser.add_argument(
+        "-p",
+        "--project_id",
+        type=str,
+        help="project_id。``--annotation`` が未指定のときは必須です。``--annotation``が指定されているときに`--project_id``を指定すると、アノテーション仕様を参照して、集計対象の属性やCSV列順が決まります。",
     )
 
     parser.add_argument(
@@ -1130,6 +1163,7 @@ def add_parser(subparsers: Optional[argparse._SubParsersAction] = None):
     subcommand_name = "list_annotation_count"
     subcommand_help = "各ラベル、各属性値のアノテーション数を出力します。"
     description = "各ラベル、各属性値のアノテーション数を、タスクごと/入力データごとに出力します。"
-    parser = annofabcli.common.cli.add_parser(subparsers, subcommand_name, subcommand_help, description=description)
+    epilog = "オーナロールまたはアノテーションユーザロールを持つユーザで実行してください。"
+    parser = annofabcli.common.cli.add_parser(subparsers, subcommand_name, subcommand_help, description=description, epilog=epilog)
     parse_args(parser)
     return parser
