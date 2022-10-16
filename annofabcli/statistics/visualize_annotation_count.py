@@ -25,6 +25,7 @@ from annofabcli.statistics.list_annotation_count import (
     ListAnnotationCounterByInputData,
     ListAnnotationCounterByTask,
     ListAnnotationCountMain,
+    AnnotationSpecs
 )
 
 logger = logging.getLogger(__name__)
@@ -154,12 +155,13 @@ class VisualizeAnnotationCount(AbstractCommandLineInterface):
         main_obj = ListAnnotationCountMain(self.service)
 
         # 集計対象の属性を、選択肢系の属性にする
-        _, attribute_columns = main_obj.get_target_columns(project_id)
+        annotation_specs = AnnotationSpecs(self.service, project_id)
+        non_selective_attribute_name_keys = annotation_specs.non_selective_attribute_name_keys()
 
         counter_list: Sequence[AnnotationCounter] = []
         if group_by == GroupBy.INPUT_DATA_ID:
             counter_list = ListAnnotationCounterByInputData(
-                target_attributes=attribute_columns,
+                non_target_attribute_names=non_selective_attribute_name_keys,
             ).get_annotation_counter_list(
                 annotation_path,
                 target_task_ids=target_task_ids,
@@ -168,7 +170,7 @@ class VisualizeAnnotationCount(AbstractCommandLineInterface):
 
         elif group_by == GroupBy.TASK_ID:
             counter_list = ListAnnotationCounterByTask(
-                target_attributes=attribute_columns,
+                non_target_attribute_names=non_selective_attribute_name_keys,
             ).get_annotation_counter_list(
                 annotation_path,
                 target_task_ids=target_task_ids,
@@ -179,10 +181,7 @@ class VisualizeAnnotationCount(AbstractCommandLineInterface):
             raise RuntimeError(f"group_by='{group_by}'が対象外です。")
 
         plot_label_histogram(counter_list, group_by=group_by, output_file=labels_count_html, bins=bins)
-        if len(attribute_columns) == 0:
-            logger.info(f"アノテーション仕様に集計対象の属性が定義されていないため、{attributes_count_html} は出力しません。")
-        else:
-            plot_attribute_histogram(counter_list, group_by=group_by, output_file=attributes_count_html, bins=bins)
+        plot_attribute_histogram(counter_list, group_by=group_by, output_file=attributes_count_html, bins=bins)
 
     def main(self):
         args = self.args
