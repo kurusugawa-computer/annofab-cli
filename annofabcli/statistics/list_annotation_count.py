@@ -305,7 +305,7 @@ class ListAnnotationCounterByInputData:
         cls,
         counter_list: list[AnnotationCounterByInputData],
         output_file: Path,
-        label_columns: Optional[list[str]] = None,
+        prior_label_columns: Optional[list[str]] = None,
         csv_format: Optional[dict[str, Any]] = None,
     ):
         def get_columns() -> list[str]:
@@ -321,9 +321,9 @@ class ListAnnotationCounterByInputData:
             ]
 
             all_label_column_set = {label for c in counter_list for label in c.annotation_count_by_label}
-            if label_columns is not None:
-                remain_columns = sorted(all_label_column_set - set(label_columns))
-                value_columns = label_columns + remain_columns
+            if prior_label_columns is not None:
+                remain_columns = sorted(all_label_column_set - set(prior_label_columns))
+                value_columns = prior_label_columns + remain_columns
             else:
                 value_columns = sorted(all_label_column_set)
 
@@ -357,7 +357,7 @@ class ListAnnotationCounterByInputData:
         cls,
         counter_list: list[AnnotationCounterByInputData],
         output_file: Path,
-        attribute_columns: Optional[list[AttributeValueKey]] = None,
+        prior_attribute_columns: Optional[list[AttributeValueKey]] = None,
         csv_format: Optional[dict[str, Any]] = None,
     ):
         def get_columns() -> list[AttributeValueKey]:
@@ -373,9 +373,9 @@ class ListAnnotationCounterByInputData:
             ]
 
             all_attr_key_set = {attr_key for c in counter_list for attr_key in c.annotation_count_by_attribute}
-            if attribute_columns is not None:
-                remain_columns = sorted(all_attr_key_set - set(attribute_columns))
-                value_columns = attribute_columns + remain_columns
+            if prior_attribute_columns is not None:
+                remain_columns = sorted(all_attr_key_set - set(prior_attribute_columns))
+                value_columns = prior_attribute_columns + remain_columns
             else:
                 value_columns = sorted(all_attr_key_set)
 
@@ -622,6 +622,21 @@ class AnnotationSpecs:
             labels_v2=annotation_specs["labels"], additionals_v2=annotation_specs["additionals"]
         )
 
+        def warn_if_columns_are_duplicated():
+            if csv_type == CsvType.LABEL:
+                duplicated_label_columns = [
+                    key for key, value in collections.Counter(label_columns).items() if value > 1
+                ]
+                if len(duplicated_label_columns) > 0:
+                    logger.warning(f"次のラベル名(英語)が重複しています。:: {duplicated_label_columns}")
+
+            elif csv_type == CsvType.ATTRIBUTE:
+                duplicated_attributes_columns = [
+                    key for key, value in collections.Counter(attribute_columns).items() if value > 1
+                ]
+                if len(duplicated_attributes_columns) > 0:
+                    logger.warning(f"次の属性情報が重複しています。:: {duplicated_attributes_columns}")
+
     def label_keys(self) -> list[str]:
         """ラベル名（英語名）のキーの一覧"""
 
@@ -630,7 +645,11 @@ class AnnotationSpecs:
             label_name_en = label_name_en if label_name_en is not None else ""
             return label_name_en
 
-        return [to_label_name(label) for label in self._labels_v1]
+        result = [to_label_name(label) for label in self._labels_v1]
+        duplicated_labels = [key for key, value in collections.Counter(result).items() if value > 1]
+        if len(duplicated_labels) > 0:
+            logger.warning(f"アノテーション仕様のラベル英語名が重複しています。:: {duplicated_labels}")
+        return result
 
     def selective_attribute_value_keys(self) -> list[AttributeValueKey]:
         """
@@ -641,7 +660,7 @@ class AnnotationSpecs:
         * ラジオボタン
         * チェックボックス
         """
-        target_attributes_columns = []
+        target_attribute_value_keys = []
         for label in self._labels_v1:
             label_name_en = AddProps.get_message(label["label_name"], MessageLocale.EN)
             label_name_en = label_name_en if label_name_en is not None else ""
@@ -657,16 +676,22 @@ class AnnotationSpecs:
                     for choice in attribute["choices"]:
                         choice_name_en = AddProps.get_message(choice["name"], MessageLocale.EN)
                         choice_name_en = choice_name_en if choice_name_en is not None else ""
-                        target_attributes_columns.append((label_name_en, attribute_name_en, choice_name_en))
+                        target_attribute_value_keys.append((label_name_en, attribute_name_en, choice_name_en))
 
                 elif AdditionalDataDefinitionType(attribute["type"]) == AdditionalDataDefinitionType.FLAG:
-                    target_attributes_columns.append((label_name_en, attribute_name_en, "true"))
-                    target_attributes_columns.append((label_name_en, attribute_name_en, "false"))
+                    target_attribute_value_keys.append((label_name_en, attribute_name_en, "true"))
+                    target_attribute_value_keys.append((label_name_en, attribute_name_en, "false"))
 
                 else:
                     continue
 
-        return target_attributes_columns
+        duplicated_attributes = [
+            key for key, value in collections.Counter(target_attribute_value_keys).items() if value > 1
+        ]
+        if len(duplicated_attributes) > 0:
+            logger.warning(f"アノテーション仕様の属性情報（ラベル英語名、属性英語名、選択肢英語名）が重複しています。:: {duplicated_attributes}")
+
+        return target_attribute_value_keys
 
     def non_selective_attribute_name_keys(self) -> list[AttributeNameKey]:
         """
@@ -786,14 +811,14 @@ class ListAnnotationCountMain:
 
             if csv_type == CsvType.LABEL:
                 ListAnnotationCounterByInputData.print_labels_count_csv(
-                    counter_list_by_input_data, output_file, label_columns=label_columns
+                    counter_list_by_input_data, output_file, prior_label_columns=label_columns
                 )
             elif csv_type == CsvType.ATTRIBUTE:
                 if len(attribute_columns) == 0:
                     logger.error(f"アノテーション仕様に集計対象の属性が定義されていないため、{output_file} は出力しません。")
                     return
                 ListAnnotationCounterByInputData.print_attributes_count_csv(
-                    counter_list_by_input_data, output_file, attribute_columns=attribute_columns
+                    counter_list_by_input_data, output_file, prior_attribute_columns=attribute_columns
                 )
 
         elif group_by == GroupBy.TASK_ID:
@@ -817,6 +842,96 @@ class ListAnnotationCountMain:
 
         else:
             raise RuntimeError(f"group_by='{group_by}'が対象外です。")
+
+    def print_annotation_counter_csv_by_input_data(
+        self,
+        annotation_path: Path,
+        task_json_path: Path,
+        csv_type: CsvType,
+        output_file: Path,
+        *,
+        project_id: Optional[str] = None,
+        target_task_ids: Optional[Collection[str]] = None,
+        task_query: Optional[TaskQuery] = None,
+    ):
+        # アノテーション仕様の非選択系の属性は、集計しないようにする。集計しても意味がないため。
+        annotation_specs: Optional[AnnotationSpecs] = None
+        non_selective_attribute_name_keys: Optional[list[AttributeNameKey]] = None
+        if project_id is not None:
+            annotation_specs = AnnotationSpecs(self.service, project_id)
+            non_selective_attribute_name_keys = annotation_specs.non_selective_attribute_name_keys()
+
+        frame_no_map = self.get_frame_no_map(task_json_path)
+        counter_by_input_data = ListAnnotationCounterByInputData(
+            non_target_attribute_names=non_selective_attribute_name_keys, frame_no_map=frame_no_map
+        )
+        counter_list_by_input_data = counter_by_input_data.get_annotation_counter_list(
+            annotation_path,
+            target_task_ids=target_task_ids,
+            task_query=task_query,
+        )
+
+        if csv_type == CsvType.LABEL:
+            # ラベル名の列順が、アノテーション仕様にあるラベル名の順番に対応するようにする。
+            label_columns: Optional[list[str]] = None
+            if annotation_specs is not None:
+                label_columns = annotation_specs.label_keys()
+
+            ListAnnotationCounterByInputData.print_labels_count_csv(
+                counter_list_by_input_data, output_file, prior_label_columns=label_columns
+            )
+        elif csv_type == CsvType.ATTRIBUTE:
+            attribute_columns: Optional[list[AttributeValueKey]] = None
+            if annotation_specs is not None:
+                attribute_columns = annotation_specs.selective_attribute_value_keys()
+
+            ListAnnotationCounterByInputData.print_attributes_count_csv(
+                counter_list_by_input_data, output_file, prior_attribute_columns=attribute_columns
+            )
+
+    def print_annotation_counter_csv_by_task(
+        self,
+        annotation_path: Path,
+        csv_type: CsvType,
+        output_file: Path,
+        *,
+        project_id: Optional[str] = None,
+        target_task_ids: Optional[Collection[str]] = None,
+        task_query: Optional[TaskQuery] = None,
+    ):
+        # アノテーション仕様の非選択系の属性は、集計しないようにする。集計しても意味がないため。
+        annotation_specs: Optional[AnnotationSpecs] = None
+        non_selective_attribute_name_keys: Optional[list[AttributeNameKey]] = None
+        if project_id is not None:
+            annotation_specs = AnnotationSpecs(self.service, project_id)
+            non_selective_attribute_name_keys = annotation_specs.non_selective_attribute_name_keys()
+
+        counter_by_input_data = ListAnnotationCounterByInputData(
+            non_target_attribute_names=non_selective_attribute_name_keys
+        )
+        counter_list_by_input_data = counter_by_input_data.get_annotation_counter_list(
+            annotation_path,
+            target_task_ids=target_task_ids,
+            task_query=task_query,
+        )
+
+        if csv_type == CsvType.LABEL:
+            # ラベル名の列順が、アノテーション仕様にあるラベル名の順番に対応するようにする。
+            label_columns: Optional[list[str]] = None
+            if annotation_specs is not None:
+                label_columns = annotation_specs.label_keys()
+
+            ListAnnotationCounterByTask.print_labels_count_csv(
+                counter_list_by_input_data, output_file, prior_label_columns=label_columns
+            )
+        elif csv_type == CsvType.ATTRIBUTE:
+            attribute_columns: Optional[list[AttributeValueKey]] = None
+            if annotation_specs is not None:
+                attribute_columns = annotation_specs.selective_attribute_value_keys()
+
+            ListAnnotationCounterByTask.print_attributes_count_csv(
+                counter_list_by_input_data, output_file, prior_attribute_columns=attribute_columns
+            )
 
     def print_annotation_counter_json_by_input_data(
         self,
@@ -902,16 +1017,26 @@ class ListAnnotationCountMain:
         """ラベルごと/属性ごとのアノテーション数を出力します。"""
         if arg_format == FormatArgument.CSV:
             assert csv_type is not None
-            self.print_annotation_counter_csv(
-                project_id=project_id,
-                annotation_path=annotation_path,
-                task_json_path=task_json_path,
-                group_by=group_by,
-                csv_type=csv_type,
-                output_file=output_file,
-                target_task_ids=target_task_ids,
-                task_query=task_query,
-            )
+            if group_by == GroupBy.INPUT_DATA_ID:
+                self.print_annotation_counter_csv_by_input_data(
+                    project_id=project_id,
+                    annotation_path=annotation_path,
+                    task_json_path=task_json_path,
+                    output_file=output_file,
+                    target_task_ids=target_task_ids,
+                    task_query=task_query,
+                    csv_type=csv_type,
+                )
+
+            elif group_by == GroupBy.TASK_ID:
+                self.print_annotation_counter_task_by_task(
+                    project_id=project_id,
+                    annotation_path=annotation_path,
+                    output_file=output_file,
+                    target_task_ids=target_task_ids,
+                    task_query=task_query,
+                    csv_type=csv_type,
+                )
 
         elif arg_format in [FormatArgument.PRETTY_JSON, FormatArgument.JSON]:
             json_is_pretty = arg_format == FormatArgument.PRETTY_JSON

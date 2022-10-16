@@ -572,7 +572,7 @@ class TestListAnnotationCounterByInputData:
         ListAnnotationCounterByInputData.print_labels_count_csv(
             counter_list,
             output_file=out_path / "list_annotation_count/labels_count_by_input_data.csv",
-            label_columns=["dog", "human"],
+            prior_label_columns=["dog", "human"],
         )
 
     def test_print_attributes_count(self):
@@ -582,7 +582,7 @@ class TestListAnnotationCounterByInputData:
         ListAnnotationCounterByInputData.print_attributes_count_csv(
             counter_list,
             output_file=out_path / "list_annotation_count/attributes_count_by_input_data.csv",
-            attribute_columns=[("Cat", "occluded", "True"), ("climatic", "temparature", "20")],
+            prior_attribute_columns=[("Cat", "occluded", "True"), ("climatic", "temparature", "20")],
         )
 
 
