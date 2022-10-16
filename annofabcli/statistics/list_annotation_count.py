@@ -506,55 +506,6 @@ class ListAnnotationCounterByTask:
 
         print_csv(df, output=str(output_file), to_csv_kwargs=csv_format)
 
-    @classmethod
-    def print_attributes_count_csv(
-        cls,
-        counter_list: list[AnnotationCounterByTask],
-        output_file: Path,
-        prior_attribute_columns: Optional[list[AttributeValueKey]] = None,
-        csv_format: Optional[dict[str, Any]] = None,
-    ):
-        def get_columns() -> list[AttributeValueKey]:
-            basic_columns = [
-                ("task_id", "", ""),
-                ("status", "", ""),
-                ("phase", "", ""),
-                ("phase_stage", "", ""),
-                ("input_data_count", "", ""),
-                ("annotation_count", "", ""),
-            ]
-
-            all_attr_key_set = {attr_key for c in counter_list for attr_key in c.annotation_count_by_attribute}
-            if prior_attribute_columns is not None:
-                remain_columns = sorted(all_attr_key_set - set(prior_attribute_columns))
-                value_columns = prior_attribute_columns + remain_columns
-            else:
-                value_columns = sorted(all_attr_key_set)
-
-            return basic_columns + value_columns
-
-        def to_cell(c: AnnotationCounterByTask) -> dict[AttributeValueKey, Any]:
-            cell = {
-                ("task_id", "", ""): c.task_id,
-                ("status", "", ""): c.status.value,
-                ("phase", "", ""): c.phase.value,
-                ("phase_stage", "", ""): c.phase_stage,
-                ("input_data_count", "", ""): c.input_data_count,
-                ("annotation_count", "", ""): c.annotation_count,
-            }
-            cell.update(c.annotation_count_by_attribute)
-            return cell
-
-        columns = get_columns()
-        df = pandas.DataFrame([to_cell(e) for e in counter_list], columns=pandas.MultiIndex.from_tuples(columns))
-
-        # NaNを0に変換する
-        # 列が重複していると`ValueError: cannot handle a non-unique multi-index!`が発生するため、列を指定せずに`fillna`関数を実行する
-        # `basic_columns`は必ずnanではないので、問題ないはず
-        df.fillna(0, inplace=True)
-
-        print_csv(df, output=str(output_file), to_csv_kwargs=csv_format)
-
 
 class AttributeCountCsv:
     """
@@ -577,19 +528,23 @@ class AttributeCountCsv:
         属性値の個数が多い場合、非選択肢系の属性（トラッキングIDやアノテーションリンクなど）の可能性があるため、それらを除外する。
         CSVの列数を増やしすぎないための対策。
         """
-        attribute_name_list = []
+        attribute_name_list: list[AttributeNameKey] = []
         for (label, attribute_name, _) in columns:
-            attribute_name_list.append(label, attribute_name)
+            attribute_name_list.append((label, attribute_name))
 
-        selective_attribute_name_list = [
+        selective_attribute_names = {
             key
             for key, value in collections.Counter(attribute_name_list).items()
             if value <= self.selective_attribute_value_max_count
+        }
+        return [
+            (label, attribute_name, attribute_value)
+            for (label, attribute_name, attribute_value) in columns
+            if (label, attribute_name) in selective_attribute_names
         ]
-        return selective_attribute_name_list
 
     def _value_columns(
-        self, counter_list: list[AnnotationCounter], prior_attribute_columns: Optional[list[AttributeValueKey]]
+        self, counter_list: Collection[AnnotationCounter], prior_attribute_columns: Optional[list[AttributeValueKey]]
     ):
         all_attr_key_set = {attr_key for c in counter_list for attr_key in c.annotation_count_by_attribute}
         if prior_attribute_columns is not None:
@@ -872,7 +827,7 @@ class ListAnnotationCountMain:
             if annotation_specs is not None:
                 attribute_columns = annotation_specs.selective_attribute_value_keys()
 
-            ListAnnotationCounterByInputData.print_attributes_count_csv(
+            AttributeCountCsv().print_csv_by_input_data(
                 counter_list_by_input_data, output_file, prior_attribute_columns=attribute_columns
             )
 
@@ -915,7 +870,7 @@ class ListAnnotationCountMain:
             if annotation_specs is not None:
                 attribute_columns = annotation_specs.selective_attribute_value_keys()
 
-            ListAnnotationCounterByTask.print_attributes_count_csv(
+            AttributeCountCsv().print_csv_by_task(
                 counter_list_by_task, output_file, prior_attribute_columns=attribute_columns
             )
 
