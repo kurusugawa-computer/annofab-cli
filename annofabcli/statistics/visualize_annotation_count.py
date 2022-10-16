@@ -20,12 +20,11 @@ from annofabcli.common.facade import AnnofabApiFacade, TaskQuery
 from annofabcli.statistics.histogram import get_sub_title_from_series
 from annofabcli.statistics.list_annotation_count import (
     AnnotationCounter,
+    AnnotationSpecs,
     AttributeValueKey,
     GroupBy,
     ListAnnotationCounterByInputData,
     ListAnnotationCounterByTask,
-    ListAnnotationCountMain,
-    AnnotationSpecs
 )
 
 logger = logging.getLogger(__name__)
@@ -151,8 +150,6 @@ class VisualizeAnnotationCount(AbstractCommandLineInterface):
     ):
         labels_count_html = output_dir / "labels_count.html"
         attributes_count_html = output_dir / "attributes_count.html"
-
-        main_obj = ListAnnotationCountMain(self.service)
 
         # 集計対象の属性を、選択肢系の属性にする
         annotation_specs = AnnotationSpecs(self.service, project_id)

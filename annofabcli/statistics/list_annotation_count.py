@@ -352,60 +352,6 @@ class ListAnnotationCounterByInputData:
 
         print_csv(df, output=str(output_file), to_csv_kwargs=csv_format)
 
-    @classmethod
-    def print_attributes_count_csv(
-        cls,
-        counter_list: list[AnnotationCounterByInputData],
-        output_file: Path,
-        prior_attribute_columns: Optional[list[AttributeValueKey]] = None,
-        csv_format: Optional[dict[str, Any]] = None,
-    ):
-        def get_columns() -> list[AttributeValueKey]:
-            basic_columns = [
-                ("task_id", "", ""),
-                ("status", "", ""),
-                ("phase", "", ""),
-                ("phase_stage", "", ""),
-                ("input_data_id", "", ""),
-                ("input_data_name", "", ""),
-                ("frame_no", "", ""),
-                ("annotation_count", "", ""),
-            ]
-
-            all_attr_key_set = {attr_key for c in counter_list for attr_key in c.annotation_count_by_attribute}
-            if prior_attribute_columns is not None:
-                remain_columns = sorted(all_attr_key_set - set(prior_attribute_columns))
-                value_columns = prior_attribute_columns + remain_columns
-            else:
-                value_columns = sorted(all_attr_key_set)
-
-            return basic_columns + value_columns
-
-        def to_cell(c: AnnotationCounterByInputData) -> dict[tuple[str, str, str], Any]:
-            cell = {
-                ("input_data_id", "", ""): c.input_data_id,
-                ("input_data_name", "", ""): c.input_data_name,
-                ("frame_no", "", ""): c.frame_no,
-                ("task_id", "", ""): c.task_id,
-                ("status", "", ""): c.status.value,
-                ("phase", "", ""): c.phase.value,
-                ("phase_stage", "", ""): c.phase_stage,
-                ("annotation_count", "", ""): c.annotation_count,
-            }
-            cell.update(c.annotation_count_by_attribute)
-
-            return cell
-
-        columns = get_columns()
-        df = pandas.DataFrame([to_cell(e) for e in counter_list], columns=pandas.MultiIndex.from_tuples(columns))
-
-        # NaNを0に変換する
-        # 列が重複していると`ValueError: cannot handle a non-unique multi-index!`が発生するため、列を指定せずに`fillna`関数を実行する
-        # `basic_columns`は必ずnanではないので、問題ないはず
-        df.fillna(0, inplace=True)
-
-        print_csv(df, output=str(output_file), to_csv_kwargs=csv_format)
-
 
 class ListAnnotationCounterByTask:
     """タスク単位で、ラベルごと/属性ごとのアノテーション数を集計情報を取得するメソッドの集まり。"""
@@ -610,6 +556,138 @@ class ListAnnotationCounterByTask:
         print_csv(df, output=str(output_file), to_csv_kwargs=csv_format)
 
 
+class AttributeCountCsv:
+    """
+    属性値ごとのアノテーション数を記載するCSV。
+
+    Args:
+        selective_attribute_value_max_count: 選択肢系の属性の値の個数の上限。これを超えた場合は、非選択肢系属性（トラッキングIDやアノテーションリンクなど）とみなす
+
+    """
+
+    def __init__(
+        self, selective_attribute_value_max_count: int = 20, csv_format: Optional[dict[str, Any]] = None
+    ) -> None:
+        self.csv_format = csv_format
+        self.selective_attribute_value_max_count = selective_attribute_value_max_count
+
+    def _only_selective_attribute(self, columns: list[AttributeValueKey]) -> list[AttributeValueKey]:
+        """
+        選択肢系の属性に対応する列のみ抽出する。
+        属性値の個数が多い場合、非選択肢系の属性（トラッキングIDやアノテーションリンクなど）の可能性があるため、それらを除外する。
+        CSVの列数を増やしすぎないための対策。
+        """
+        attribute_name_list = []
+        for (label, attribute_name, _) in columns:
+            attribute_name_list.append(label, attribute_name)
+
+        selective_attribute_name_list = [
+            key
+            for key, value in collections.Counter(attribute_name_list).items()
+            if value <= self.selective_attribute_value_max_count
+        ]
+        return selective_attribute_name_list
+
+    def _value_columns(
+        self, counter_list: list[AnnotationCounter], prior_attribute_columns: Optional[list[AttributeValueKey]]
+    ):
+        all_attr_key_set = {attr_key for c in counter_list for attr_key in c.annotation_count_by_attribute}
+        if prior_attribute_columns is not None:
+            remaining_columns = sorted(all_attr_key_set - set(prior_attribute_columns))
+            remaining_columns_only_selective_attribute = self._only_selective_attribute(remaining_columns)
+            value_columns = prior_attribute_columns + remaining_columns_only_selective_attribute
+        else:
+            remaining_columns = sorted(all_attr_key_set)
+            value_columns = self._only_selective_attribute(remaining_columns)
+
+        return value_columns
+
+    def print_csv_by_task(
+        self,
+        counter_list: list[AnnotationCounterByTask],
+        output_file: Path,
+        prior_attribute_columns: Optional[list[AttributeValueKey]] = None,
+    ):
+        def get_columns() -> list[AttributeValueKey]:
+            basic_columns = [
+                ("task_id", "", ""),
+                ("status", "", ""),
+                ("phase", "", ""),
+                ("phase_stage", "", ""),
+                ("input_data_count", "", ""),
+                ("annotation_count", "", ""),
+            ]
+            value_columns = self._value_columns(counter_list, prior_attribute_columns)
+            return basic_columns + value_columns
+
+        def to_cell(c: AnnotationCounterByTask) -> dict[AttributeValueKey, Any]:
+            cell = {
+                ("task_id", "", ""): c.task_id,
+                ("status", "", ""): c.status.value,
+                ("phase", "", ""): c.phase.value,
+                ("phase_stage", "", ""): c.phase_stage,
+                ("input_data_count", "", ""): c.input_data_count,
+                ("annotation_count", "", ""): c.annotation_count,
+            }
+            cell.update(c.annotation_count_by_attribute)
+            return cell
+
+        columns = get_columns()
+        df = pandas.DataFrame([to_cell(e) for e in counter_list], columns=pandas.MultiIndex.from_tuples(columns))
+
+        # NaNを0に変換する
+        # 列が重複していると`ValueError: cannot handle a non-unique multi-index!`が発生するため、列を指定せずに`fillna`関数を実行する
+        # `basic_columns`は必ずnanではないので、問題ないはず
+        df.fillna(0, inplace=True)
+
+        print_csv(df, output=str(output_file), to_csv_kwargs=self.csv_format)
+
+    def print_csv_by_input_data(
+        self,
+        counter_list: list[AnnotationCounterByInputData],
+        output_file: Path,
+        prior_attribute_columns: Optional[list[AttributeValueKey]] = None,
+    ):
+        def get_columns() -> list[AttributeValueKey]:
+            basic_columns = [
+                ("task_id", "", ""),
+                ("status", "", ""),
+                ("phase", "", ""),
+                ("phase_stage", "", ""),
+                ("input_data_id", "", ""),
+                ("input_data_name", "", ""),
+                ("frame_no", "", ""),
+                ("annotation_count", "", ""),
+            ]
+            value_columns = self._value_columns(counter_list, prior_attribute_columns)
+            return basic_columns + value_columns
+
+        def to_cell(c: AnnotationCounterByInputData) -> dict[tuple[str, str, str], Any]:
+            cell = {
+                ("input_data_id", "", ""): c.input_data_id,
+                ("input_data_name", "", ""): c.input_data_name,
+                ("frame_no", "", ""): c.frame_no,
+                ("task_id", "", ""): c.task_id,
+                ("status", "", ""): c.status.value,
+                ("phase", "", ""): c.phase.value,
+                ("phase_stage", "", ""): c.phase_stage,
+                ("annotation_count", "", ""): c.annotation_count,
+            }
+            cell.update(c.annotation_count_by_attribute)
+
+            return cell
+
+        columns = get_columns()
+        df = pandas.DataFrame([to_cell(e) for e in counter_list], columns=pandas.MultiIndex.from_tuples(columns))
+
+        # NaNを0に変換する
+        # 列が重複していると`ValueError: cannot handle a non-unique multi-index!`が発生するため、列を指定せずに`fillna`関数を実行する
+        # `basic_columns`は必ずnanではないので、問題ないはず
+        df.fillna(0, inplace=True)
+
+        print_csv(df, output=str(output_file), to_csv_kwargs=self.csv_format)
+
+
 class AnnotationSpecs:
     def __init__(self, service: annofabapi.Resource, project_id: str) -> None:
         self.service = service
@@ -678,9 +756,9 @@ class AnnotationSpecs:
 
         return target_attribute_value_keys
 
-    def non_selective_attribute_name_keys(self) -> list[AttributeNameKey]:
+    def selective_attribute_name_keys(self) -> list[AttributeNameKey]:
         """
-        非選択系の属性の名前のキーの一覧
+        選択系の属性の名前のキーの一覧
         * ドロップダウン
         * ラジオボタン
         * チェックボックス
@@ -703,7 +781,7 @@ class AnnotationSpecs:
 
         return target_attributes_columns
 
-    def selective_attribute_name_keys(self) -> list[AttributeNameKey]:
+    def non_selective_attribute_name_keys(self) -> list[AttributeNameKey]:
         """
         非選択系の属性の名前のキー
         * トラッキングID
