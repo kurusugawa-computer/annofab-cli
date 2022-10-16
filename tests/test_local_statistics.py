@@ -596,7 +596,7 @@ class TestListAnnotationCounterByTask:
         ListAnnotationCounterByTask.print_labels_count_csv(
             counter_list,
             output_file=out_path / "list_annotation_count/labels_count_by_task.csv",
-            label_columns=["dog", "human"],
+            prior_label_columns=["dog", "human"],
         )
 
     def test_print_attributes_count_csv(self):
@@ -604,7 +604,7 @@ class TestListAnnotationCounterByTask:
         ListAnnotationCounterByTask.print_attributes_count_csv(
             counter_list,
             output_file=out_path / "list_annotation_count/attributes_count_by_task.csv",
-            attribute_columns=[("Cat", "occluded", "true"), ("climatic", "temparature", "20")],
+            prior_attribute_columns=[("Cat", "occluded", "true"), ("climatic", "temparature", "20")],
         )
 
 
