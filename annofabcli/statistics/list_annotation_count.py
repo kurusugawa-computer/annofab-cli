@@ -300,58 +300,6 @@ class ListAnnotationCounterByInputData:
 
         return counter_list
 
-    @classmethod
-    def print_labels_count_csv(
-        cls,
-        counter_list: list[AnnotationCounterByInputData],
-        output_file: Path,
-        prior_label_columns: Optional[list[str]] = None,
-        csv_format: Optional[dict[str, Any]] = None,
-    ):
-        def get_columns() -> list[str]:
-            basic_columns = [
-                "task_id",
-                "status",
-                "phase",
-                "phase_stage",
-                "input_data_id",
-                "input_data_name",
-                "frame_no",
-                "annotation_count",
-            ]
-
-            all_label_column_set = {label for c in counter_list for label in c.annotation_count_by_label}
-            if prior_label_columns is not None:
-                remain_columns = sorted(all_label_column_set - set(prior_label_columns))
-                value_columns = prior_label_columns + remain_columns
-            else:
-                value_columns = sorted(all_label_column_set)
-
-            return basic_columns + value_columns
-
-        def to_dict(c: AnnotationCounterByInputData) -> dict[str, Any]:
-            d = {
-                "input_data_id": c.input_data_id,
-                "input_data_name": c.input_data_name,
-                "frame_no": c.frame_no,
-                "task_id": c.task_id,
-                "status": c.status.value,
-                "phase": c.phase.value,
-                "phase_stage": c.phase_stage,
-                "annotation_count": c.annotation_count,
-            }
-            d.update(c.annotation_count_by_label)
-            return d
-
-        columns = get_columns()
-        df = pandas.DataFrame([to_dict(e) for e in counter_list], columns=columns)
-
-        # NaNを0に変換する
-        # `basic_columns`は必ずnanではないので、問題ないはず
-        df.fillna(0, inplace=True)
-
-        print_csv(df, output=str(output_file), to_csv_kwargs=csv_format)
-
 
 class ListAnnotationCounterByTask:
     """タスク単位で、ラベルごと/属性ごとのアノテーション数を集計情報を取得するメソッドの集まり。"""
@@ -458,54 +406,6 @@ class ListAnnotationCounterByTask:
 
         return counter_list
 
-    @classmethod
-    def print_labels_count_csv(
-        cls,
-        counter_list: list[AnnotationCounterByTask],
-        output_file: Path,
-        prior_label_columns: Optional[list[str]] = None,
-        csv_format: Optional[dict[str, Any]] = None,
-    ):
-        def get_columns() -> list[str]:
-            basic_columns = [
-                "task_id",
-                "status",
-                "phase",
-                "phase_stage",
-                "input_data_count",
-                "annotation_count",
-            ]
-
-            all_label_column_set = {label for c in counter_list for label in c.annotation_count_by_label}
-            if prior_label_columns is not None:
-                remain_columns = sorted(all_label_column_set - set(prior_label_columns))
-                value_columns = prior_label_columns + remain_columns
-            else:
-                value_columns = sorted(all_label_column_set)
-
-            return basic_columns + value_columns
-
-        def to_dict(c: AnnotationCounterByTask) -> dict[str, Any]:
-            d = {
-                "task_id": c.task_id,
-                "status": c.status.value,
-                "phase": c.phase.value,
-                "phase_stage": c.phase_stage,
-                "input_data_count": c.input_data_count,
-                "annotation_count": c.annotation_count,
-            }
-            # キーをラベル名、値をラベルごとのアノテーション数にしたdictに変換する
-            d.update(c.annotation_count_by_label)
-            return d
-
-        df = pandas.DataFrame([to_dict(e) for e in counter_list], columns=get_columns())
-
-        # NaNを0に変換する
-        # `basic_columns`は必ずnanではないので、問題ないはず
-        df.fillna(0, inplace=True)
-
-        print_csv(df, output=str(output_file), to_csv_kwargs=csv_format)
-
 
 class AttributeCountCsv:
     """
@@ -545,7 +445,7 @@ class AttributeCountCsv:
 
     def _value_columns(
         self, counter_list: Collection[AnnotationCounter], prior_attribute_columns: Optional[list[AttributeValueKey]]
-    ):
+    ) -> list[AttributeValueKey]:
         all_attr_key_set = {attr_key for c in counter_list for attr_key in c.annotation_count_by_attribute}
         if prior_attribute_columns is not None:
             remaining_columns = sorted(all_attr_key_set - set(prior_attribute_columns))
@@ -640,6 +540,110 @@ class AttributeCountCsv:
         # `basic_columns`は必ずnanではないので、問題ないはず
         df.fillna(0, inplace=True)
 
+        print_csv(df, output=str(output_file), to_csv_kwargs=self.csv_format)
+
+
+class LabelCountCsv:
+    """
+    ラベルごとのアノテーション数を記載するCSV。
+
+
+    """
+
+    def __init__(self, csv_format: Optional[dict[str, Any]] = None) -> None:
+        self.csv_format = csv_format
+
+    def _value_columns(
+        self, counter_list: Collection[AnnotationCounter], prior_label_columns: Optional[list[str]]
+    ) -> list[str]:
+        all_attr_key_set = {attr_key for c in counter_list for attr_key in c.annotation_count_by_label}
+        if prior_label_columns is not None:
+            remaining_columns = sorted(all_attr_key_set - set(prior_label_columns))
+            value_columns = prior_label_columns + remaining_columns
+        else:
+            remaining_columns = sorted(all_attr_key_set)
+            value_columns = remaining_columns
+
+        return value_columns
+
+    def print_csv_by_task(
+        self,
+        counter_list: list[AnnotationCounterByTask],
+        output_file: Path,
+        prior_label_columns: Optional[list[str]] = None,
+    ):
+        def get_columns() -> list[str]:
+            basic_columns = [
+                "task_id",
+                "status",
+                "phase",
+                "phase_stage",
+                "input_data_count",
+                "annotation_count",
+            ]
+            value_columns = self._value_columns(counter_list, prior_label_columns)
+            return basic_columns + value_columns
+
+        def to_dict(c: AnnotationCounterByTask) -> dict[str, Any]:
+            d = {
+                "task_id": c.task_id,
+                "status": c.status.value,
+                "phase": c.phase.value,
+                "phase_stage": c.phase_stage,
+                "input_data_count": c.input_data_count,
+                "annotation_count": c.annotation_count,
+            }
+            # キーをラベル名、値をラベルごとのアノテーション数にしたdictに変換する
+            d.update(c.annotation_count_by_label)
+            return d
+
+        df = pandas.DataFrame([to_dict(e) for e in counter_list], columns=get_columns())
+
+        # NaNを0に変換する
+        # `basic_columns`は必ずnanではないので、すべての列に対してfillnaを実行しても問題ないはず
+        df.fillna(0, inplace=True)
+        print_csv(df, output=str(output_file), to_csv_kwargs=self.csv_format)
+
+    def print_csv_by_input_data(
+        self,
+        counter_list: list[AnnotationCounterByInputData],
+        output_file: Path,
+        prior_label_columns: Optional[list[str]] = None,
+    ):
+        def get_columns() -> list[str]:
+            basic_columns = [
+                "task_id",
+                "status",
+                "phase",
+                "phase_stage",
+                "input_data_id",
+                "input_data_name",
+                "frame_no",
+                "annotation_count",
+            ]
+            value_columns = self._value_columns(counter_list, prior_label_columns)
+            return basic_columns + value_columns
+
+        def to_dict(c: AnnotationCounterByInputData) -> dict[str, Any]:
+            d = {
+                "input_data_id": c.input_data_id,
+                "input_data_name": c.input_data_name,
+                "frame_no": c.frame_no,
+                "task_id": c.task_id,
+                "status": c.status.value,
+                "phase": c.phase.value,
+                "phase_stage": c.phase_stage,
+                "annotation_count": c.annotation_count,
+            }
+            d.update(c.annotation_count_by_label)
+            return d
+
+        columns = get_columns()
+        df = pandas.DataFrame([to_dict(e) for e in counter_list], columns=columns)
+
+        # NaNを0に変換する
+        # `basic_columns`は必ずnanではないので、すべての列に対してfillnaを実行しても問題ないはず
+        df.fillna(0, inplace=True)
         print_csv(df, output=str(output_file), to_csv_kwargs=self.csv_format)
 
 
@@ -819,7 +823,7 @@ class ListAnnotationCountMain:
             if annotation_specs is not None:
                 label_columns = annotation_specs.label_keys()
 
-            ListAnnotationCounterByInputData.print_labels_count_csv(
+            LabelCountCsv().print_csv_by_input_data(
                 counter_list_by_input_data, output_file, prior_label_columns=label_columns
             )
         elif csv_type == CsvType.ATTRIBUTE:
@@ -857,15 +861,15 @@ class ListAnnotationCountMain:
         )
 
         if csv_type == CsvType.LABEL:
-            # ラベル名の列順が、アノテーション仕様にあるラベル名の順番に対応するようにする。
+            # 列順が、アノテーション仕様にあるラベル名の順番に対応するようにする。
             label_columns: Optional[list[str]] = None
             if annotation_specs is not None:
                 label_columns = annotation_specs.label_keys()
 
-            ListAnnotationCounterByTask.print_labels_count_csv(
-                counter_list_by_task, output_file, prior_label_columns=label_columns
-            )
+            LabelCountCsv().print_csv_by_task(counter_list_by_task, output_file, prior_label_columns=label_columns)
+
         elif csv_type == CsvType.ATTRIBUTE:
+            # 列順が、アノテーション仕様にある属性名と属性値の順番に対応するようにする。
             attribute_columns: Optional[list[AttributeValueKey]] = None
             if annotation_specs is not None:
                 attribute_columns = annotation_specs.selective_attribute_value_keys()
