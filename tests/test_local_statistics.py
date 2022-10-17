@@ -1,7 +1,6 @@
 import json
 from pathlib import Path
 
-import numpy
 import pandas
 from annofabapi.models import TaskStatus
 
@@ -15,10 +14,6 @@ from annofabcli.statistics.list_worktime import WorktimeFromTaskHistoryEvent, ge
 from annofabcli.statistics.summarize_task_count import SimpleTaskStatus, get_step_for_current_phase
 from annofabcli.statistics.summarize_task_count_by_task_id_group import create_task_count_summary_df, get_task_id_prefix
 from annofabcli.statistics.table import Table
-from annofabcli.statistics.visualization.dataframe.project_performance import (
-    ProjectPerformance,
-    ProjectWorktimePerMonth,
-)
 from annofabcli.statistics.visualization.dataframe.task import Task
 from annofabcli.statistics.visualization.dataframe.user_performance import UserPerformance, WholePerformance
 from annofabcli.statistics.visualization.dataframe.whole_productivity_per_date import (
@@ -27,7 +22,6 @@ from annofabcli.statistics.visualization.dataframe.whole_productivity_per_date i
 )
 from annofabcli.statistics.visualization.dataframe.worktime_per_date import WorktimePerDate
 from annofabcli.statistics.visualization.model import WorktimeColumn
-from annofabcli.statistics.visualization.project_dir import ProjectDir
 from annofabcli.task_history_event.list_worktime import SimpleTaskHistoryEvent
 
 out_path = Path("./tests/out/statistics")
@@ -324,38 +318,6 @@ class TestWholePerformance:
         assert empty.series[("task_count", "annotation")] == 0
 
 
-class TestProjectPerformance:
-    @classmethod
-    def setup_class(cls):
-        cls.output_dir = out_path / "visualization"
-        cls.output_dir.mkdir(exist_ok=True, parents=True)
-        cls.obj = ProjectPerformance.from_project_dirs([ProjectDir(data_path / "visualization-dir1")])
-
-    def test_to_csv(self):
-        self.obj.to_csv(self.output_dir / "プロジェクごとの生産性と品質.csv")
-
-    def test_instance(self):
-        df = self.obj.df
-        assert len(df) == 1
-        row = df.iloc[0]
-        # メインの項目をアサートする
-        assert row[("dirname", "")] == "visualization-dir1"
-        assert row[("project_title", "")] == "test-project"
-        assert row[("start_date", "")] == "2022-01-01"
-        assert row[("actual_worktime_hour", "sum")] == 4503
-
-    def test_from_project_dirs_with_empty(self):
-        obj = ProjectPerformance.from_project_dirs([ProjectDir(data_path / "empty")])
-        df = obj.df
-        assert len(df) == 1
-        row = df.iloc[0]
-        # メインの項目をアサートする
-        assert row[("dirname", "")] == "empty"
-        assert numpy.isnan(row[("project_title", "")])
-        assert numpy.isnan(row[("start_date", "")])
-        assert row[("actual_worktime_hour", "sum")] == 0
-
-
 class TestTask:
     @classmethod
     def setup_class(cls):
@@ -390,25 +352,3 @@ class TestCollectingPerformanceInfo:
         assert obj.get_threshold_info("dir2", ProductivityType.ANNOTATION) == ThresholdInfo(11, 20)
         assert obj.get_threshold_info("dir3", ProductivityType.ANNOTATION) == ThresholdInfo(10, 21)
         assert obj.get_threshold_info("dir4", ProductivityType.ANNOTATION) == ThresholdInfo(12, 22)
-
-
-class TestProjectWorktimePerMonth:
-    def test_from_project_dirs(self):
-        actual_worktime = ProjectWorktimePerMonth.from_project_dirs(
-            [ProjectDir(data_path / "visualization-dir1")], worktime_column=WorktimeColumn.ACTUAL_WORKTIME_HOUR
-        )
-        df = actual_worktime.df
-        assert len(df) == 1
-        row = df.iloc[0]
-        assert row["dirname"] == "visualization-dir1"
-        assert row["2022-01"] == 3
-        assert row["2022-02"] == 7
-
-    def test_from_project_dirs_empty_dir(self):
-        actual_worktime = ProjectWorktimePerMonth.from_project_dirs(
-            [ProjectDir(data_path / "empty")], worktime_column=WorktimeColumn.ACTUAL_WORKTIME_HOUR
-        )
-        df = actual_worktime.df
-        assert len(df) == 1
-        row = df.iloc[0]
-        assert row["dirname"] == "empty"
