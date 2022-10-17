@@ -9,14 +9,20 @@ from annofabapi.parser import SimpleAnnotationDirParser, SimpleAnnotationParser,
 from annofabcli.common.image import write_annotation_image, write_annotation_images_from_path
 
 # プロジェクトトップに移動する
-os.chdir(os.path.dirname(os.path.abspath(__file__)) + "/../")
+os.chdir(os.path.dirname(os.path.abspath(__file__)) + "/../../")
 
 test_dir = Path("./tests/data")
 out_dir = Path("./tests/out")
 
-with (test_dir / "label_color.json").open(encoding="utf-8") as f:
-    label_color_json = json.load(f)
-    label_color_dict = {label_name: tuple(rgb) for label_name, rgb in label_color_json.items()}
+label_color_dict = {
+    "Cat": (255, 99, 71),
+    "leg": (27, 144, 185),
+    "eye": (88, 113, 249),
+    "dog": (188, 83, 41),
+    "human": (210, 54, 28),
+    "bird": (29, 202, 101),
+    "climatic": (255, 255, 255),
+}
 
 
 def test_write_image():

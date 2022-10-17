@@ -1,13 +1,4 @@
-import os
-from pathlib import Path
-
 from annofabcli.common.cli import get_json_from_args, get_list_from_args
-
-# プロジェクトトップに移動する
-os.chdir(os.path.dirname(os.path.abspath(__file__)) + "/../")
-
-test_dir = Path("./tests/data")
-out_dir = Path("./tests/out")
 
 
 def test_get_json_from_args():
