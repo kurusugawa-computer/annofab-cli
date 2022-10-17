@@ -27,10 +27,15 @@ project_id = annofab_config["project_id"]
 task_id = annofab_config["task_id"]
 service = annofabapi.build()
 
-organization_name = service.api.get_organization_of_project(project_id)[0]["organization_name"]
-
 
 class TestCommandLine:
+    organization_name: str
+    
+    @classmethod
+    def setup_class(cls):
+        cls.organization_name = service.api.get_organization_of_project(project_id)[0]["organization_name"]
+
+
     def test_list_organization_member(self):
         out_file = str(out_dir / "organization_member.csv")
         main(
@@ -38,7 +43,7 @@ class TestCommandLine:
                 "organization_member",
                 "list",
                 "--organization",
-                organization_name,
+                self.organization_name,
                 "--format",
                 "csv",
                 "--output",

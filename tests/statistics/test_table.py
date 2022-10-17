@@ -4,8 +4,8 @@ import pandas
 
 from annofabcli.statistics.table import Table
 
-output_dir = Path("./tests/out/statistics/table")
-data_dir = Path("./tests/data/statistics")
+output_dir = Path("tests/out/statistics/table")
+data_dir = Path("tests/data/statistics")
 output_dir.mkdir(exist_ok=True, parents=True)
 
 project_id = "12345678-abcd-1234-abcd-1234abcd5678"
