@@ -68,13 +68,3 @@ class TestCommandLine:
         main(["project", "update_annotation_zip", "--project_id", project_id, "--wait"])
 
 
-class TestListProject:
-    @classmethod
-    def setup_class(cls):
-        cls.main_obj = ListProjectMain(service)
-
-    def test_get_project_list_from_project_id(self):
-        actual = self.main_obj.get_project_list_from_project_id([project_id])
-
-    def test_get_project_list_from_organization(self):
-        actual = self.main_obj.get_project_list_from_organization(organization_name)
