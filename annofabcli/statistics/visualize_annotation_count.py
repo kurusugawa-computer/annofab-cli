@@ -59,15 +59,16 @@ def _only_selective_attribute(columns: list[AttributeValueKey]) -> list[Attribut
     for (label, attribute_name, _) in columns:
         attribute_name_list.append((label, attribute_name))
 
-    selective_attribute_names = {
+    non_selective_attribute_names = {
         key
         for key, value in collections.Counter(attribute_name_list).items()
-        if value <= SELECTIVE_ATTRIBUTE_VALUE_MAX_COUNT
+        if value > SELECTIVE_ATTRIBUTE_VALUE_MAX_COUNT
     }
+    logger.debug(f"以下の属性は値の個数が{SELECTIVE_ATTRIBUTE_VALUE_MAX_COUNT}を超えていたため、集計しません。 :: {non_selective_attribute_names}")
     return [
         (label, attribute_name, attribute_value)
         for (label, attribute_name, attribute_value) in columns
-        if (label, attribute_name) in selective_attribute_names
+        if (label, attribute_name) not in non_selective_attribute_names
     ]
 
 
@@ -99,7 +100,7 @@ def plot_label_histogram(
 
     y_axis_label = _get_y_axis_label(group_by)
 
-    logger.debug(f"{len(df.columns)}個のラベルごとヒストグラムを出力します。")
+    logger.debug(f"{len(df.columns)}個のラベルごとのヒストグラムを出力します。")
     for col in df.columns:
         # numpy.histogramで20のビンに分割
         hist, bin_edges = numpy.histogram(df[col], bins)
@@ -159,7 +160,7 @@ def plot_attribute_histogram(
     figure_list = []
     y_axis_label = _get_y_axis_label(group_by)
 
-    logger.debug(f"{len(df.columns)}個の属性値ごとヒストグラムを出力します。")
+    logger.debug(f"{len(df.columns)}個の属性値ごとのヒストグラムを出力します。")
     for col in sorted(df.columns):
         hist, bin_edges = numpy.histogram(df[col], bins)
 

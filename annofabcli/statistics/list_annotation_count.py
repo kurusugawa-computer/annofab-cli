@@ -439,15 +439,16 @@ class AttributeCountCsv:
         for (label, attribute_name, _) in columns:
             attribute_name_list.append((label, attribute_name))
 
-        selective_attribute_names = {
+        non_selective_attribute_names = {
             key
             for key, value in collections.Counter(attribute_name_list).items()
-            if value <= self.selective_attribute_value_max_count
+            if value > self.selective_attribute_value_max_count
         }
+        logger.debug(f"以下の属性は値の個数が{self.selective_attribute_value_max_count}を超えていたため、集計しません。 :: {non_selective_attribute_names}")
         return [
             (label, attribute_name, attribute_value)
             for (label, attribute_name, attribute_value) in columns
-            if (label, attribute_name) in selective_attribute_names
+            if (label, attribute_name) not in non_selective_attribute_names
         ]
 
     def _value_columns(
