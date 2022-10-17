@@ -64,7 +64,11 @@ def _only_selective_attribute(columns: list[AttributeValueKey]) -> list[Attribut
         for key, value in collections.Counter(attribute_name_list).items()
         if value > SELECTIVE_ATTRIBUTE_VALUE_MAX_COUNT
     }
-    logger.debug(f"以下の属性は値の個数が{SELECTIVE_ATTRIBUTE_VALUE_MAX_COUNT}を超えていたため、集計しません。 :: {non_selective_attribute_names}")
+
+    if len(non_selective_attribute_names) > 0:
+        logger.debug(f"以下の属性は値の個数が{SELECTIVE_ATTRIBUTE_VALUE_MAX_COUNT}を超えていたため、集計しません。 :: "
+            f"{non_selective_attribute_names}")
+    
     return [
         (label, attribute_name, attribute_value)
         for (label, attribute_name, attribute_value) in columns
