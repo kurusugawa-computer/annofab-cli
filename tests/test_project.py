@@ -6,7 +6,6 @@ import annofabapi
 import pytest
 
 from annofabcli.__main__ import main
-from annofabcli.project.list_project import ListProjectMain
 
 # webapiにアクセスするテストモジュール
 pytestmark = pytest.mark.access_webapi
@@ -66,5 +65,3 @@ class TestCommandLine:
     @pytest.mark.submitting_job
     def test_update_annotation_zip(self):
         main(["project", "update_annotation_zip", "--project_id", project_id, "--wait"])
-
-

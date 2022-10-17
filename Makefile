@@ -18,7 +18,7 @@ format:
 
 
 lint:
-	poetry run mypy ${LINT_FILES}
+	poetry run mypy ${LINT_FILES} tests
 	poetry run flake8 ${LINT_FILES}
 	poetry run pylint --jobs=0 ${LINT_FILES}
 

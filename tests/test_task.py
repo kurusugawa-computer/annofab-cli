@@ -11,8 +11,6 @@ import more_itertools
 import pytest
 
 from annofabcli.__main__ import main
-from annofabcli.task.change_operator import ChangeOperatorMain
-from tests.utils_for_test import set_logger
 
 # webapiにアクセスするテストモジュール
 pytestmark = pytest.mark.access_webapi
