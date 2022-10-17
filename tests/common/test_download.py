@@ -13,7 +13,7 @@ from annofabcli.common.download import DownloadingFile
 pytestmark = pytest.mark.access_webapi
 
 # プロジェクトトップに移動する
-os.chdir(os.path.dirname(os.path.abspath(__file__)) + "/../")
+os.chdir(os.path.dirname(os.path.abspath(__file__)) + "/../../")
 inifile = configparser.ConfigParser()
 inifile.read("./pytest.ini", "UTF-8")
 annofab_config = dict(inifile.items("annofab"))
@@ -46,10 +46,6 @@ def test_download_all_file_with_async():
         downloading_obj.download_annotation_zip_with_async(
             project_id, dest_path=str(out_path / "annotation.zip"), is_latest=is_latest, wait_options=wait_options
         ),
-        downloading_obj.download_task_history_json_with_async(
-            project_id, dest_path=str(out_path / "task_history.json")
-        ),
-        downloading_obj.download_inspection_json_with_async(project_id, dest_path=str(out_path / "inspecction.json")),
         return_exceptions=True,
     )
     result = loop.run_until_complete(gather)
