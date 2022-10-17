@@ -27,14 +27,18 @@ annofab_config = dict(inifile.items("annofab"))
 project_id = annofab_config["project_id"]
 service = annofabapi.build()
 
-organization_name = service.api.get_organization_of_project(project_id)[0]["organization_name"]
-
 
 class TestCommandLine:
     """
     Notes:
         `project put`のテストは無視する。プロジェクトを作成した後、削除する手段がないため。
     """
+
+    organization_name: str
+
+    @classmethod
+    def setup_class(cls):
+        cls.organization_name = service.api.get_organization_of_project(project_id)[0]["organization_name"]
 
     def test_change_status(self):
         main(["project", "change_status", "--project_id", project_id, "--status", "active"])
@@ -52,7 +56,7 @@ class TestCommandLine:
                 "project",
                 "list",
                 "--organization",
-                organization_name,
+                self.organization_name,
                 "--project_query",
                 '{"status": "active"}',
                 "--format",
