@@ -3,16 +3,9 @@ from pathlib import Path
 
 import pandas
 
-from annofabcli.stat_visualization.write_performance_rating_csv import (
-    CollectingPerformanceInfo,
-    PerformanceUnit,
-    ProductivityType,
-    ThresholdInfo,
-)
 from annofabcli.statistics.list_worktime import WorktimeFromTaskHistoryEvent, get_df_worktime
 from annofabcli.statistics.summarize_task_count_by_task_id_group import create_task_count_summary_df, get_task_id_prefix
 from annofabcli.statistics.table import Table
-from annofabcli.statistics.visualization.model import WorktimeColumn
 from annofabcli.task_history_event.list_worktime import SimpleTaskHistoryEvent
 
 out_path = Path("./tests/out/statistics")
@@ -107,24 +100,3 @@ class TestListWorktime:
             {"account_id": "bob", "user_id": "bob", "username": "Bob", "biography": "Japan"},
         ]
         df = get_df_worktime(event_list, member_list)
-
-
-class TestCollectingPerformanceInfo:
-    def test_get_threshold_info(self):
-        obj = CollectingPerformanceInfo(
-            WorktimeColumn.ACTUAL_WORKTIME_HOUR,
-            PerformanceUnit.ANNOTATION_COUNT,
-            threshold_info=ThresholdInfo(threshold_worktime=10, threshold_task_count=20),
-            threshold_infos_per_project={
-                ("dir1", ProductivityType.ANNOTATION): ThresholdInfo(None, None),
-                ("dir2", ProductivityType.ANNOTATION): ThresholdInfo(11, None),
-                ("dir3", ProductivityType.ANNOTATION): ThresholdInfo(None, 21),
-                ("dir4", ProductivityType.ANNOTATION): ThresholdInfo(12, 22),
-            },
-        )
-
-        assert obj.get_threshold_info("not-exists", ProductivityType.ANNOTATION) == ThresholdInfo(10, 20)
-        assert obj.get_threshold_info("dir1", ProductivityType.ANNOTATION) == ThresholdInfo(10, 20)
-        assert obj.get_threshold_info("dir2", ProductivityType.ANNOTATION) == ThresholdInfo(11, 20)
-        assert obj.get_threshold_info("dir3", ProductivityType.ANNOTATION) == ThresholdInfo(10, 21)
-        assert obj.get_threshold_info("dir4", ProductivityType.ANNOTATION) == ThresholdInfo(12, 22)
