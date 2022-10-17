@@ -18,22 +18,22 @@ class TestMaskUserInfo:
 
     def test_create_masked_user_info_df(self):
         # ヘッダ２行のCSVを読み込む
-        df = create_masked_user_info_df(read_multiheader_csv(data_dir / "user2.csv", header_row_count=2))
+        df = create_masked_user_info_df(read_multiheader_csv(str(data_dir / "user2.csv"), header_row_count=2))
 
         df = create_masked_user_info_df(
-            read_multiheader_csv(data_dir / "user2.csv", header_row_count=2),
+            read_multiheader_csv(str(data_dir / "user2.csv"), header_row_count=2),
             not_masked_biography_set={"China"},
             not_masked_user_id_set=None,
         )
 
         df = create_masked_user_info_df(
-            read_multiheader_csv(data_dir / "user2.csv", header_row_count=2),
+            read_multiheader_csv(str(data_dir / "user2.csv"), header_row_count=2),
             not_masked_biography_set=None,
             not_masked_user_id_set={"alice"},
         )
 
         df = create_masked_user_info_df(
-            read_multiheader_csv(data_dir / "user2.csv", header_row_count=2),
+            read_multiheader_csv(str(data_dir / "user2.csv"), header_row_count=2),
             not_masked_biography_set={"China"},
             not_masked_user_id_set={"chris"},
         )
@@ -41,7 +41,7 @@ class TestMaskUserInfo:
     def test_create_masked_user_info_df2(self):
         # ヘッダ２行のCSVを読み込む。ただし username, biography, account_id がないCSV
         df = create_masked_user_info_df(
-            read_multiheader_csv(data_dir / "user2_1.csv", header_row_count=2),
+            read_multiheader_csv(str(data_dir / "user2_1.csv"), header_row_count=2),
             not_masked_biography_set={"China"},
             not_masked_user_id_set={"chris"},
         )
