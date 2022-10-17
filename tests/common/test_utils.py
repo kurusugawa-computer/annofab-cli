@@ -7,7 +7,6 @@ from annofabcli.common.utils import (
     read_multiheader_csv,
 )
 
-out_path = Path("./tests/out/utils")
 data_path = Path("./tests/data/utils")
 
 
