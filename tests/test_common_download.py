@@ -4,9 +4,13 @@ import os
 from pathlib import Path
 
 import annofabapi
+import pytest
 
 from annofabcli.common.dataclasses import WaitOptions
 from annofabcli.common.download import DownloadingFile
+
+# webapiにアクセスするテストモジュール
+pytestmark = pytest.mark.access_webapi
 
 # プロジェクトトップに移動する
 os.chdir(os.path.dirname(os.path.abspath(__file__)) + "/../")

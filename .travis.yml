@@ -12,7 +12,9 @@ install:
   - travis_retry poetry install
 script:
    - make lint
-   - poetry run pytest tests/test_local*.py
+     # webapiにアクセスするテストは実行しないようにする
+   - poetry run pytest -n auto -m "not access_webapi"
+
 branches:
   only:
   - main

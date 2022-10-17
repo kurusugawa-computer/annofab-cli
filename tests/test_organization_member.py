@@ -3,8 +3,12 @@ import os
 from pathlib import Path
 
 import annofabapi
+import pytest
 
 from annofabcli.__main__ import main
+
+# webapiにアクセスするテストモジュール
+pytestmark = pytest.mark.access_webapi
 
 # プロジェクトトップに移動する
 os.chdir(os.path.dirname(os.path.abspath(__file__)) + "/../")

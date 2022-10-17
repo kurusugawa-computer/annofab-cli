@@ -5,6 +5,10 @@ from pathlib import Path
 import annofabapi
 
 from annofabcli.__main__ import main
+import pytest
+# webapiにアクセスするテストモジュール
+pytestmark = pytest.mark.access_webapi
+
 
 out_dir = Path("./tests/out/task_history_event")
 data_dir = Path("./tests/data/task_history_event")

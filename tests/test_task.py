@@ -14,6 +14,9 @@ from annofabcli.__main__ import main
 from annofabcli.task.change_operator import ChangeOperatorMain
 from tests.utils_for_test import set_logger
 
+# webapiにアクセスするテストモジュール
+pytestmark = pytest.mark.access_webapi
+
 # プロジェクトトップに移動する
 os.chdir(os.path.dirname(os.path.abspath(__file__)) + "/../")
 
