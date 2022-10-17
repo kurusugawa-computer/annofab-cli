@@ -31,7 +31,8 @@ class TestReplacingLabelId:
 
         restriction_list = copy.deepcopy(self.restriction_list)
         ReplacingLabelId().replace_label_id_of_restrictions("id1", "new_label1", restriction_list)
-        assert restriction_list[0]["condition"]["condition"]["labels"][0] == "new_label1"
+        labels: list[str] = restriction_list[0]["condition"]["condition"]["labels"]  # type: ignore
+        assert labels[0] == "new_label1"
 
     def test_main(self):
         annotation_specs = {
@@ -40,4 +41,4 @@ class TestReplacingLabelId:
         }
         ReplacingLabelId(all_yes=True).main(annotation_specs)
         assert annotation_specs["labels"][0]["label_id"] == "name_en1"
-        assert annotation_specs["restrictions"][0]["condition"]["condition"]["labels"][0] == "name_en1"
+        assert annotation_specs["restrictions"][0]["condition"]["condition"]["labels"][0] == "name_en1"  # type: ignore

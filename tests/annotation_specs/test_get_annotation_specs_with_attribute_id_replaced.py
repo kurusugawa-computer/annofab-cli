@@ -62,7 +62,7 @@ class TestReplacingAttributeId:
         restriction = restriction_list[0]
         assert restriction["additional_data_definition_id"] == "new_attr1"
         # 変わっていないことの確認
-        assert restriction["condition"]["premise"]["additional_data_definition_id"] == "attr2"
+        assert restriction["condition"]["premise"]["additional_data_definition_id"] == "attr2"  # type: ignore
 
     def test_replace_attribute_id_of_labels(self):
 
@@ -78,6 +78,6 @@ class TestReplacingAttributeId:
             "restrictions": copy.deepcopy(self.restriction_list),
         }
         ReplacingAttributeId(all_yes=True).main(annotation_specs)
-        assert annotation_specs["additionals"][0]["additional_data_definition_id"] == "new_attr1"
-        assert annotation_specs["labels"][0]["additional_data_definitions"] == ["new_attr1", "attr2"]
-        assert annotation_specs["restrictions"][0]["additional_data_definition_id"] == "new_attr1"
+        assert annotation_specs["additionals"][0]["additional_data_definition_id"] == "new_attr1"  # type: ignore
+        assert annotation_specs["labels"][0]["additional_data_definitions"] == ["new_attr1", "attr2"]  # type: ignore
+        assert annotation_specs["restrictions"][0]["additional_data_definition_id"] == "new_attr1"  # type: ignore
