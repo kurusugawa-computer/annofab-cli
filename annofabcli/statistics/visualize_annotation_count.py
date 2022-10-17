@@ -1,10 +1,11 @@
 from __future__ import annotations
 
 import argparse
+import collections
 import logging
 import tempfile
 from pathlib import Path
-from typing import Any, Collection, Optional, Sequence
+from typing import Collection, Optional, Sequence
 
 import bokeh
 import numpy
@@ -21,6 +22,7 @@ from annofabcli.statistics.histogram import get_sub_title_from_series
 from annofabcli.statistics.list_annotation_count import (
     AnnotationCounter,
     AnnotationSpecs,
+    AttributeNameKey,
     AttributeValueKey,
     GroupBy,
     ListAnnotationCounterByInputData,
@@ -39,16 +41,51 @@ def _get_y_axis_label(group_by: GroupBy) -> str:
         raise RuntimeError(f"group_by='{group_by}'が対象外です。")
 
 
+def _only_selective_attribute(columns: list[AttributeValueKey]) -> list[AttributeValueKey]:
+    """
+    選択肢系の属性に対応する列のみ抽出する。
+    属性値の個数が多い場合、非選択肢系の属性（トラッキングIDやアノテーションリンクなど）の可能性があるため、それらを除外する。
+    CSVの列数を増やしすぎないための対策。
+    """
+    SELECTIVE_ATTRIBUTE_VALUE_MAX_COUNT = 20
+    attribute_name_list: list[AttributeNameKey] = []
+    for (label, attribute_name, _) in columns:
+        attribute_name_list.append((label, attribute_name))
+
+    selective_attribute_names = {
+        key
+        for key, value in collections.Counter(attribute_name_list).items()
+        if value <= SELECTIVE_ATTRIBUTE_VALUE_MAX_COUNT
+    }
+    return [
+        (label, attribute_name, attribute_value)
+        for (label, attribute_name, attribute_value) in columns
+        if (label, attribute_name) in selective_attribute_names
+    ]
+
+
 def plot_label_histogram(
     counter_list: Sequence[AnnotationCounter],
     group_by: GroupBy,
     output_file: Path,
-    target_labels: Optional[list[Any]] = None,
+    *,
+    prior_keys: Optional[list[str]] = None,
     bins: int = 20,
 ):
+    """
+    ラベルごとのアノテーション数のヒストグラムを出力する。
+
+    Args:
+        prior_keys: 優先して表示するcounter_listのキーlist
+    """
     df = pandas.DataFrame([e.annotation_count_by_label for e in counter_list])
-    if target_labels is not None:
-        df = df[target_labels]
+    if prior_keys is not None:
+        remaining_columns = sorted(set(df.columns) - set(prior_keys))
+        columns = prior_keys + remaining_columns
+    else:
+        columns = sorted(df.columns)
+    df = df[columns]
+
     df.fillna(0, inplace=True)
 
     figure_list = []
@@ -93,12 +130,21 @@ def plot_attribute_histogram(
     counter_list: Sequence[AnnotationCounter],
     group_by: GroupBy,
     output_file: Path,
-    target_attributes: Optional[list[AttributeValueKey]] = None,
+    *,
+    prior_keys: Optional[list[AttributeValueKey]] = None,
     bins: int = 20,
 ):
     df = pandas.DataFrame([e.annotation_count_by_attribute for e in counter_list])
-    if target_attributes is not None:
-        df = df[target_attributes]
+    if prior_keys is not None:
+        remaining_columns = list(set(df.columns) - set(prior_keys))
+        remaining_columns_selective_attribute = sorted(_only_selective_attribute(remaining_columns))
+        columns = prior_keys + remaining_columns_selective_attribute
+    else:
+        remaining_columns_selective_attribute = sorted(_only_selective_attribute(df.columns))
+        columns = remaining_columns_selective_attribute
+
+    df = df[columns]
+
     df.fillna(0, inplace=True)
 
     figure_list = []
@@ -140,11 +186,12 @@ def plot_attribute_histogram(
 class VisualizeAnnotationCount(AbstractCommandLineInterface):
     def visualize_annotation_count(
         self,
-        project_id: str,
         group_by: GroupBy,
         annotation_path: Path,
         output_dir: Path,
         bins: int,
+        *,
+        project_id: Optional[str] = None,
         target_task_ids: Optional[Collection[str]] = None,
         task_query: Optional[TaskQuery] = None,
     ):
@@ -152,8 +199,11 @@ class VisualizeAnnotationCount(AbstractCommandLineInterface):
         attributes_count_html = output_dir / "attributes_count.html"
 
         # 集計対象の属性を、選択肢系の属性にする
-        annotation_specs = AnnotationSpecs(self.service, project_id)
-        non_selective_attribute_name_keys = annotation_specs.non_selective_attribute_name_keys()
+        annotation_specs: Optional[AnnotationSpecs] = None
+        non_selective_attribute_name_keys: Optional[list[AttributeNameKey]] = None
+        if project_id is not None:
+            annotation_specs = AnnotationSpecs(self.service, project_id)
+            non_selective_attribute_name_keys = annotation_specs.non_selective_attribute_name_keys()
 
         counter_list: Sequence[AnnotationCounter] = []
         if group_by == GroupBy.INPUT_DATA_ID:
@@ -177,8 +227,22 @@ class VisualizeAnnotationCount(AbstractCommandLineInterface):
         else:
             raise RuntimeError(f"group_by='{group_by}'が対象外です。")
 
-        plot_label_histogram(counter_list, group_by=group_by, output_file=labels_count_html, bins=bins)
-        plot_attribute_histogram(counter_list, group_by=group_by, output_file=attributes_count_html, bins=bins)
+        label_keys: Optional[list[str]] = None
+        attribute_value_keys: Optional[list[AttributeValueKey]] = None
+        if annotation_specs is not None:
+            label_keys = annotation_specs.label_keys()
+            attribute_value_keys = annotation_specs.selective_attribute_value_keys()
+
+        plot_label_histogram(
+            counter_list, group_by=group_by, output_file=labels_count_html, bins=bins, prior_keys=label_keys
+        )
+        plot_attribute_histogram(
+            counter_list,
+            group_by=group_by,
+            output_file=attributes_count_html,
+            bins=bins,
+            prior_keys=attribute_value_keys,
+        )
 
     def main(self):
         args = self.args
@@ -231,10 +295,21 @@ class VisualizeAnnotationCount(AbstractCommandLineInterface):
 def parse_args(parser: argparse.ArgumentParser):
     argument_parser = ArgumentParser(parser)
 
-    argument_parser.add_project_id()
     parser.add_argument(
-        "--annotation", type=str, help="アノテーションzip、またはzipを展開したディレクトリを指定します。" "指定しない場合はAnnofabからダウンロードします。"
+        "--annotation",
+        type=str,
+        required=False,
+        help="アノテーションzip、またはzipを展開したディレクトリを指定します。" "指定しない場合はAnnofabからダウンロードします。",
     )
+
+    parser.add_argument(
+        "-p",
+        "--project_id",
+        type=str,
+        required=False,
+        help="project_id。``--annotation`` が未指定のときは必須です。``--annotation`` が指定されているときに ``--project_id`` を指定すると、アノテーション仕様を参照して、集計対象の属性やグラフの順番が決まります。",  # noqa: E501
+    )
+
     parser.add_argument("-o", "--output_dir", type=Path, required=True, help="出力先ディレクトリのパス")
 
     parser.add_argument(
