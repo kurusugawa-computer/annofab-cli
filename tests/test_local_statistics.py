@@ -2,7 +2,6 @@ import json
 from pathlib import Path
 
 import pandas
-from annofabapi.models import TaskStatus
 
 from annofabcli.stat_visualization.write_performance_rating_csv import (
     CollectingPerformanceInfo,
@@ -11,10 +10,8 @@ from annofabcli.stat_visualization.write_performance_rating_csv import (
     ThresholdInfo,
 )
 from annofabcli.statistics.list_worktime import WorktimeFromTaskHistoryEvent, get_df_worktime
-from annofabcli.statistics.summarize_task_count import SimpleTaskStatus, get_step_for_current_phase
 from annofabcli.statistics.summarize_task_count_by_task_id_group import create_task_count_summary_df, get_task_id_prefix
 from annofabcli.statistics.table import Table
-from annofabcli.statistics.visualization.dataframe.worktime_per_date import WorktimePerDate
 from annofabcli.statistics.visualization.model import WorktimeColumn
 from annofabcli.task_history_event.list_worktime import SimpleTaskHistoryEvent
 
@@ -46,28 +43,6 @@ class TestTable:
         df_task = pandas.read_csv(str(data_path / "task.csv"))
         df = Table.create_annotation_count_ratio_df(task_df=df_task, task_history_df=df_task_history)
         df.to_csv(out_path / "annotation-count-ratio-df.csv")
-
-
-class TestSummarizeTaskCount:
-    def test_SimpleTaskStatus_from_task_status(self):
-        assert SimpleTaskStatus.from_task_status(TaskStatus.ON_HOLD) == SimpleTaskStatus.WORKING_BREAK_HOLD
-        assert SimpleTaskStatus.from_task_status(TaskStatus.BREAK) == SimpleTaskStatus.WORKING_BREAK_HOLD
-        assert SimpleTaskStatus.from_task_status(TaskStatus.WORKING) == SimpleTaskStatus.WORKING_BREAK_HOLD
-        assert SimpleTaskStatus.from_task_status(TaskStatus.NOT_STARTED) == SimpleTaskStatus.NOT_STARTED
-        assert SimpleTaskStatus.from_task_status(TaskStatus.COMPLETE) == SimpleTaskStatus.COMPLETE
-
-    def test_get_step_for_current_phase(self):
-        task = {
-            "phase": "annotation",
-            "phase_stage": 1,
-            "status": "not_started",
-            "account_id": "account1",
-            "histories_by_phase": [
-                {"account_id": "account1", "phase": "annotation", "phase_stage": 1, "worked": False}
-            ],
-            "work_time_span": 0,
-        }
-        assert get_step_for_current_phase(task, number_of_inspections=1) == 1
 
 
 class TestSummarizeTaskCountByTaskId:
@@ -132,39 +107,6 @@ class TestListWorktime:
             {"account_id": "bob", "user_id": "bob", "username": "Bob", "biography": "Japan"},
         ]
         df = get_df_worktime(event_list, member_list)
-
-
-class TestWorktimePerDate:
-    @classmethod
-    def setup_class(cls):
-        cls.output_dir = out_path / "visualization"
-        cls.output_dir.mkdir(exist_ok=True, parents=True)
-
-        df = pandas.read_csv(str(data_path / "ユーザ_日付list-作業時間.csv"))
-        cls.obj = WorktimePerDate(df)
-
-    def test_to_csv(self):
-        self.obj.to_csv(self.output_dir / "ユーザ_日付list-作業時間.csv")
-
-    def test_plot_cumulatively(self):
-        self.obj.plot_cumulatively(self.output_dir / "累積折れ線-横軸_日-縦軸_作業時間.html")
-
-    def test_merge(self):
-        merged_obj = WorktimePerDate.merge(self.obj, self.obj)
-        df = merged_obj.df
-        assert df[(df["date"] == "2021-11-02") & (df["user_id"] == "alice")].iloc[0]["actual_worktime_hour"] == 6
-        merged_obj.to_csv(self.output_dir / "merged-ユーザ_日付list-作業時間.csv")
-
-    def test_empty(self):
-        empty = WorktimePerDate.empty()
-        assert len(empty.df) == 0
-
-        # 出力されないことの確認
-        empty.to_csv(self.output_dir / "empty.csv")
-        empty.plot_cumulatively(self.output_dir / "empty.html")
-
-        merged_obj = WorktimePerDate.merge(empty, self.obj)
-        assert len(merged_obj.df) == len(self.obj.df)
 
 
 class TestCollectingPerformanceInfo:
