@@ -11,11 +11,6 @@ from annofabcli.stat_visualization.write_performance_rating_csv import (
     ProductivityType,
     ThresholdInfo,
 )
-from annofabcli.statistics.list_annotation_count import (
-    GroupBy,
-    ListAnnotationCounterByInputData,
-    ListAnnotationCounterByTask,
-)
 from annofabcli.statistics.list_worktime import WorktimeFromTaskHistoryEvent, get_df_worktime
 from annofabcli.statistics.summarize_task_count import SimpleTaskStatus, get_step_for_current_phase
 from annofabcli.statistics.summarize_task_count_by_task_id_group import create_task_count_summary_df, get_task_id_prefix
