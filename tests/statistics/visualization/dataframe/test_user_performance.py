@@ -33,7 +33,7 @@ class TestUserPerformance:
         obj = UserPerformance.from_df(
             df_task_history, df_worktime_ratio=df_worktime_ratio, df_user=df_user, df_labor=df_labor
         )
-        obj.to_csv("out/user.csv")
+        obj.to_csv(Path("out/user.csv"))
 
     def test_to_csv(self):
         self.obj.to_csv(output_dir / "メンバごとの生産性と品質.csv")

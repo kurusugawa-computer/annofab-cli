@@ -10,6 +10,8 @@ output_dir.mkdir(exist_ok=True, parents=True)
 
 
 class TestWorktimePerDate:
+    obj: WorktimePerDate
+    
     @classmethod
     def setup_class(cls):
         df = pandas.read_csv(str(data_dir / "ユーザ_日付list-作業時間.csv"))
