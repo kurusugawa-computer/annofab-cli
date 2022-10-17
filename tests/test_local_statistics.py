@@ -14,7 +14,6 @@ from annofabcli.statistics.list_worktime import WorktimeFromTaskHistoryEvent, ge
 from annofabcli.statistics.summarize_task_count import SimpleTaskStatus, get_step_for_current_phase
 from annofabcli.statistics.summarize_task_count_by_task_id_group import create_task_count_summary_df, get_task_id_prefix
 from annofabcli.statistics.table import Table
-from annofabcli.statistics.visualization.dataframe.task import Task
 from annofabcli.statistics.visualization.dataframe.worktime_per_date import WorktimePerDate
 from annofabcli.statistics.visualization.model import WorktimeColumn
 from annofabcli.task_history_event.list_worktime import SimpleTaskHistoryEvent
@@ -166,21 +165,6 @@ class TestWorktimePerDate:
 
         merged_obj = WorktimePerDate.merge(empty, self.obj)
         assert len(merged_obj.df) == len(self.obj.df)
-
-
-class TestTask:
-    @classmethod
-    def setup_class(cls):
-        cls.output_dir = out_path / "visualization"
-        cls.output_dir.mkdir(exist_ok=True, parents=True)
-        df_task = pandas.read_csv(str(data_path / "task.csv"))
-        cls.obj = Task(df_task)
-
-    def test_plot_histogram_of_worktime(self):
-        self.obj.plot_histogram_of_worktime(self.output_dir / "ヒストグラム-作業時間.html")
-
-    def test_plot_histogram_of_others(self):
-        self.obj.plot_histogram_of_others(self.output_dir / "ヒストグラム.html")
 
 
 class TestCollectingPerformanceInfo:
