@@ -13,8 +13,6 @@ output_dir = Path("./tests/out/statistics/visualization/dataframe")
 data_dir = Path("./tests/data/statistics")
 output_dir.mkdir(exist_ok=True, parents=True)
 
-# 出力できることを確認する
-
 
 class TestProjectPerformance:
     obj: ProjectPerformance
