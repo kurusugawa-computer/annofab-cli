@@ -1,22 +1,12 @@
 import os
-import uuid
 from pathlib import Path
 
 from annofabcli.input_data.put_input_data import CsvInputData, PutInputData, read_input_data_csv
 
 # プロジェクトトップに移動する
-os.chdir(os.path.dirname(os.path.abspath(__file__)) + "/../")
+os.chdir(os.path.dirname(os.path.abspath(__file__)) + "/../../")
 
 test_dir = Path("./tests/data/input_data")
-out_dir = Path("./tests/out/input_data")
-
-
-def is_uuid4(target: str):
-    try:
-        uuid.UUID(target, version=4)
-        return True
-    except ValueError:
-        return False
 
 
 def test_get_input_data_list_from_csv():

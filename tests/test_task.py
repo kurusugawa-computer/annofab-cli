@@ -11,8 +11,9 @@ import more_itertools
 import pytest
 
 from annofabcli.__main__ import main
-from annofabcli.task.change_operator import ChangeOperatorMain
-from tests.utils_for_test import set_logger
+
+# webapiにアクセスするテストモジュール
+pytestmark = pytest.mark.access_webapi
 
 # プロジェクトトップに移動する
 os.chdir(os.path.dirname(os.path.abspath(__file__)) + "/../")
@@ -31,22 +32,6 @@ project_id = annofab_config["project_id"]
 task_id = annofab_config["task_id"]
 input_data_id = annofab_config["input_data_id"]
 service = annofabapi.build()
-
-set_logger()
-
-
-class TestChangeOperator:
-    @classmethod
-    def setup_class(cls):
-        cls.main_obj = ChangeOperatorMain(service, all_yes=True)
-
-    def test_change_operator_for_task(self):
-        actual = self.main_obj.change_operator_for_task(project_id=project_id, task_id=task_id, new_account_id=None)
-
-    def test_change_operator(self):
-        actual = self.main_obj.change_operator(
-            project_id=project_id, task_id_list=[task_id], new_user_id=service.api.login_user_id
-        )
 
 
 class TestCommandLine:
@@ -240,6 +225,7 @@ class TestCommandLine:
         assert task["status"] == "complete"
         comments, _ = service.api.get_comments(project_id, task_id, input_data_id, query_params={"v": "2"})
         target_comment = more_itertools.first_true(comments, pred=lambda e: e["comment_node"]["_type"] == "Root")
+        assert target_comment is not None
         assert target_comment["comment_node"]["status"] == "resolved"
 
         # タスクの受入取り消し

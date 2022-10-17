@@ -9,6 +9,9 @@ import pytest
 
 from annofabcli.__main__ import main
 
+# webapiにアクセスするテストモジュール
+pytestmark = pytest.mark.access_webapi
+
 out_dir = Path("./tests/out/inspection_comment")
 data_dir = Path("./tests/data/inspection_comment")
 

@@ -6,7 +6,10 @@ import annofabapi
 import pytest
 
 from annofabcli.__main__ import main
-from annofabcli.project.list_project import ListProjectMain
+
+# webapiにアクセスするテストモジュール
+pytestmark = pytest.mark.access_webapi
+
 
 # プロジェクトトップに移動する
 os.chdir(os.path.dirname(os.path.abspath(__file__)) + "/../")
@@ -24,14 +27,18 @@ annofab_config = dict(inifile.items("annofab"))
 project_id = annofab_config["project_id"]
 service = annofabapi.build()
 
-organization_name = service.api.get_organization_of_project(project_id)[0]["organization_name"]
-
 
 class TestCommandLine:
     """
     Notes:
         `project put`のテストは無視する。プロジェクトを作成した後、削除する手段がないため。
     """
+
+    organization_name: str
+
+    @classmethod
+    def setup_class(cls):
+        cls.organization_name = service.api.get_organization_of_project(project_id)[0]["organization_name"]
 
     def test_change_status(self):
         main(["project", "change_status", "--project_id", project_id, "--status", "active"])
@@ -49,7 +56,7 @@ class TestCommandLine:
                 "project",
                 "list",
                 "--organization",
-                organization_name,
+                self.organization_name,
                 "--project_query",
                 '{"status": "active"}',
                 "--format",
@@ -62,15 +69,3 @@ class TestCommandLine:
     @pytest.mark.submitting_job
     def test_update_annotation_zip(self):
         main(["project", "update_annotation_zip", "--project_id", project_id, "--wait"])
-
-
-class TestListProject:
-    @classmethod
-    def setup_class(cls):
-        cls.main_obj = ListProjectMain(service)
-
-    def test_get_project_list_from_project_id(self):
-        actual = self.main_obj.get_project_list_from_project_id([project_id])
-
-    def test_get_project_list_from_organization(self):
-        actual = self.main_obj.get_project_list_from_organization(organization_name)
