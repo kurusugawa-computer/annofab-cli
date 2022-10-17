@@ -4,16 +4,16 @@ import pandas
 
 from annofabcli.statistics.table import Table
 
-out_path = Path("./tests/out/statistics")
-data_path = Path("./tests/data/statistics")
-out_path.mkdir(exist_ok=True, parents=True)
+output_dir = Path("./tests/out/statistics/table")
+data_dir = Path("./tests/data/statistics")
+output_dir.mkdir(exist_ok=True, parents=True)
 
 project_id = "12345678-abcd-1234-abcd-1234abcd5678"
 
 
 class TestTable:
     def test_get_task_history_df(self):
-        task_history_df = pandas.read_csv(str(data_path / "task-history-df.csv"))
+        task_history_df = pandas.read_csv(str(data_dir / "task-history-df.csv"))
         task_df = pandas.DataFrame(
             {
                 "task_id": ["task1", "task2"],
@@ -25,10 +25,10 @@ class TestTable:
             }
         )
         df = Table.create_annotation_count_ratio_df(task_history_df, task_df)
-        df.to_csv(out_path / "annotation-count-ratio.csv")
+        df.to_csv(output_dir / "annotation-count-ratio.csv")
 
     def test_create_annotation_count_ratio_df(self):
-        df_task_history = pandas.read_csv(str(data_path / "task-history-df.csv"))
-        df_task = pandas.read_csv(str(data_path / "task.csv"))
+        df_task_history = pandas.read_csv(str(data_dir / "task-history-df.csv"))
+        df_task = pandas.read_csv(str(data_dir / "task.csv"))
         df = Table.create_annotation_count_ratio_df(task_df=df_task, task_history_df=df_task_history)
-        df.to_csv(out_path / "annotation-count-ratio-df.csv")
+        df.to_csv(output_dir / "annotation-count-ratio-df.csv")
