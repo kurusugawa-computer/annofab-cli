@@ -1,30 +1,39 @@
 from __future__ import annotations
 
 import argparse
+import collections
 import logging
+import sys
 import tempfile
 from pathlib import Path
-from typing import Any, Collection, Optional, Sequence
+from typing import Collection, Optional, Sequence
 
 import bokeh
 import numpy
 import pandas
+from annofabapi.models import ProjectMemberRole
 from bokeh.models import HoverTool, Title
 from bokeh.plotting import ColumnDataSource, figure
 
 import annofabcli
 import annofabcli.common.cli
-from annofabcli.common.cli import AbstractCommandLineInterface, ArgumentParser, build_annofabapi_resource_and_login
+from annofabcli.common.cli import (
+    COMMAND_LINE_ERROR_STATUS_CODE,
+    AbstractCommandLineInterface,
+    ArgumentParser,
+    build_annofabapi_resource_and_login,
+)
 from annofabcli.common.download import DownloadingFile
 from annofabcli.common.facade import AnnofabApiFacade, TaskQuery
 from annofabcli.statistics.histogram import get_sub_title_from_series
 from annofabcli.statistics.list_annotation_count import (
     AnnotationCounter,
-    AttributesKey,
+    AnnotationSpecs,
+    AttributeNameKey,
+    AttributeValueKey,
     GroupBy,
     ListAnnotationCounterByInputData,
     ListAnnotationCounterByTask,
-    ListAnnotationCountMain,
 )
 
 logger = logging.getLogger(__name__)
@@ -39,21 +48,64 @@ def _get_y_axis_label(group_by: GroupBy) -> str:
         raise RuntimeError(f"group_by='{group_by}'が対象外です。")
 
 
+def _only_selective_attribute(columns: list[AttributeValueKey]) -> list[AttributeValueKey]:
+    """
+    選択肢系の属性に対応する列のみ抽出する。
+    属性値の個数が多い場合、非選択肢系の属性（トラッキングIDやアノテーションリンクなど）の可能性があるため、それらを除外する。
+    CSVの列数を増やしすぎないための対策。
+    """
+    SELECTIVE_ATTRIBUTE_VALUE_MAX_COUNT = 20
+    attribute_name_list: list[AttributeNameKey] = []
+    for (label, attribute_name, _) in columns:
+        attribute_name_list.append((label, attribute_name))
+
+    non_selective_attribute_names = {
+        key
+        for key, value in collections.Counter(attribute_name_list).items()
+        if value > SELECTIVE_ATTRIBUTE_VALUE_MAX_COUNT
+    }
+
+    if len(non_selective_attribute_names) > 0:
+        logger.debug(
+            f"以下の属性は値の個数が{SELECTIVE_ATTRIBUTE_VALUE_MAX_COUNT}を超えていたため、集計しません。 :: " f"{non_selective_attribute_names}"
+        )
+
+    return [
+        (label, attribute_name, attribute_value)
+        for (label, attribute_name, attribute_value) in columns
+        if (label, attribute_name) not in non_selective_attribute_names
+    ]
+
+
 def plot_label_histogram(
     counter_list: Sequence[AnnotationCounter],
     group_by: GroupBy,
     output_file: Path,
-    target_labels: Optional[list[Any]] = None,
+    *,
+    prior_keys: Optional[list[str]] = None,
     bins: int = 20,
 ):
-    df = pandas.DataFrame([e.annotation_count_by_label for e in counter_list])
-    if target_labels is not None:
-        df = df[target_labels]
+    """
+    ラベルごとのアノテーション数のヒストグラムを出力する。
+
+    Args:
+        prior_keys: 優先して表示するcounter_listのキーlist
+    """
+    all_label_key_set = {key for c in counter_list for key in c.annotation_count_by_label}
+    if prior_keys is not None:
+        remaining_columns = sorted(all_label_key_set - set(prior_keys))
+        columns = prior_keys + remaining_columns
+    else:
+        columns = sorted(all_label_key_set)
+
+    df = pandas.DataFrame([e.annotation_count_by_label for e in counter_list], columns=columns)
     df.fillna(0, inplace=True)
 
     figure_list = []
 
     y_axis_label = _get_y_axis_label(group_by)
+
+    logger.debug(f"{len(df.columns)}個のラベルごとのヒストグラムを出力します。")
     for col in df.columns:
         # numpy.histogramで20のビンに分割
         hist, bin_edges = numpy.histogram(df[col], bins)
@@ -93,17 +145,27 @@ def plot_attribute_histogram(
     counter_list: Sequence[AnnotationCounter],
     group_by: GroupBy,
     output_file: Path,
-    target_attributes: Optional[list[AttributesKey]] = None,
+    *,
+    prior_keys: Optional[list[AttributeValueKey]] = None,
     bins: int = 20,
 ):
-    df = pandas.DataFrame([e.annotation_count_by_attribute for e in counter_list])
-    if target_attributes is not None:
-        df = df[target_attributes]
+
+    all_key_set = {key for c in counter_list for key in c.annotation_count_by_attribute}
+    if prior_keys is not None:
+        remaining_columns = list(all_key_set - set(prior_keys))
+        remaining_columns_selective_attribute = sorted(_only_selective_attribute(remaining_columns))
+        columns = prior_keys + remaining_columns_selective_attribute
+    else:
+        remaining_columns_selective_attribute = sorted(_only_selective_attribute(list(all_key_set)))
+        columns = remaining_columns_selective_attribute
+
+    df = pandas.DataFrame([e.annotation_count_by_attribute for e in counter_list], columns=columns)
     df.fillna(0, inplace=True)
 
     figure_list = []
     y_axis_label = _get_y_axis_label(group_by)
 
+    logger.debug(f"{len(df.columns)}個の属性値ごとのヒストグラムを出力します。")
     for col in sorted(df.columns):
         hist, bin_edges = numpy.histogram(df[col], bins)
 
@@ -138,28 +200,43 @@ def plot_attribute_histogram(
 
 
 class VisualizeAnnotationCount(AbstractCommandLineInterface):
+    COMMON_MESSAGE = "annofabcli statistics list_annotation_count: error:"
+
+    def validate(self, args: argparse.Namespace) -> bool:
+        if args.project_id is None and args.annotation is None:
+            print(
+                f"{self.COMMON_MESSAGE} argument --project_id: '--annotation'が未指定のときは、'--project_id' を指定してください。",  # noqa: E501
+                file=sys.stderr,
+            )
+            return False
+
+        return True
+
     def visualize_annotation_count(
         self,
-        project_id: str,
         group_by: GroupBy,
         annotation_path: Path,
         output_dir: Path,
         bins: int,
+        *,
+        project_id: Optional[str] = None,
         target_task_ids: Optional[Collection[str]] = None,
         task_query: Optional[TaskQuery] = None,
     ):
         labels_count_html = output_dir / "labels_count.html"
         attributes_count_html = output_dir / "attributes_count.html"
 
-        main_obj = ListAnnotationCountMain(self.service)
-
         # 集計対象の属性を、選択肢系の属性にする
-        _, attribute_columns = main_obj.get_target_columns(project_id)
+        annotation_specs: Optional[AnnotationSpecs] = None
+        non_selective_attribute_name_keys: Optional[list[AttributeNameKey]] = None
+        if project_id is not None:
+            annotation_specs = AnnotationSpecs(self.service, project_id)
+            non_selective_attribute_name_keys = annotation_specs.non_selective_attribute_name_keys()
 
         counter_list: Sequence[AnnotationCounter] = []
         if group_by == GroupBy.INPUT_DATA_ID:
             counter_list = ListAnnotationCounterByInputData(
-                target_attributes=attribute_columns,
+                non_target_attribute_names=non_selective_attribute_name_keys,
             ).get_annotation_counter_list(
                 annotation_path,
                 target_task_ids=target_task_ids,
@@ -168,7 +245,7 @@ class VisualizeAnnotationCount(AbstractCommandLineInterface):
 
         elif group_by == GroupBy.TASK_ID:
             counter_list = ListAnnotationCounterByTask(
-                target_attributes=attribute_columns,
+                non_target_attribute_names=non_selective_attribute_name_keys,
             ).get_annotation_counter_list(
                 annotation_path,
                 target_task_ids=target_task_ids,
@@ -178,19 +255,36 @@ class VisualizeAnnotationCount(AbstractCommandLineInterface):
         else:
             raise RuntimeError(f"group_by='{group_by}'が対象外です。")
 
-        plot_label_histogram(counter_list, group_by=group_by, output_file=labels_count_html, bins=bins)
-        if len(attribute_columns) == 0:
-            logger.info(f"アノテーション仕様に集計対象の属性が定義されていないため、{attributes_count_html} は出力しません。")
-        else:
-            plot_attribute_histogram(counter_list, group_by=group_by, output_file=attributes_count_html, bins=bins)
+        label_keys: Optional[list[str]] = None
+        attribute_value_keys: Optional[list[AttributeValueKey]] = None
+        if annotation_specs is not None:
+            label_keys = annotation_specs.label_keys()
+            attribute_value_keys = annotation_specs.selective_attribute_value_keys()
+
+        plot_label_histogram(
+            counter_list, group_by=group_by, output_file=labels_count_html, bins=bins, prior_keys=label_keys
+        )
+        plot_attribute_histogram(
+            counter_list,
+            group_by=group_by,
+            output_file=attributes_count_html,
+            bins=bins,
+            prior_keys=attribute_value_keys,
+        )
 
     def main(self):
         args = self.args
 
-        project_id = args.project_id
-        output_dir: Path = args.output_dir
-        super().validate_project(project_id, project_member_roles=None)
+        if not self.validate(args):
+            sys.exit(COMMAND_LINE_ERROR_STATUS_CODE)
 
+        project_id: Optional[str] = args.project_id
+        if project_id is not None:
+            super().validate_project(
+                project_id, project_member_roles=[ProjectMemberRole.OWNER, ProjectMemberRole.TRAINING_DATA_USER]
+            )
+
+        output_dir: Path = args.output_dir
         annotation_path = Path(args.annotation) if args.annotation is not None else None
 
         task_id_list = annofabcli.common.cli.get_list_from_args(args.task_id) if args.task_id is not None else None
@@ -203,6 +297,7 @@ class VisualizeAnnotationCount(AbstractCommandLineInterface):
         group_by = GroupBy(args.group_by)
 
         if annotation_path is None:
+            assert project_id is not None
             with tempfile.NamedTemporaryFile() as f:
                 annotation_path = Path(f.name)
                 downloading_obj = DownloadingFile(self.service)
@@ -235,10 +330,21 @@ class VisualizeAnnotationCount(AbstractCommandLineInterface):
 def parse_args(parser: argparse.ArgumentParser):
     argument_parser = ArgumentParser(parser)
 
-    argument_parser.add_project_id()
     parser.add_argument(
-        "--annotation", type=str, help="アノテーションzip、またはzipを展開したディレクトリを指定します。" "指定しない場合はAnnofabからダウンロードします。"
+        "--annotation",
+        type=str,
+        required=False,
+        help="アノテーションzip、またはzipを展開したディレクトリを指定します。" "指定しない場合はAnnofabからダウンロードします。",
     )
+
+    parser.add_argument(
+        "-p",
+        "--project_id",
+        type=str,
+        required=False,
+        help="project_id。``--annotation`` が未指定のときは必須です。``--annotation`` が指定されているときに ``--project_id`` を指定すると、アノテーション仕様を参照して、集計対象の属性やグラフの順番が決まります。",  # noqa: E501
+    )
+
     parser.add_argument("-o", "--output_dir", type=Path, required=True, help="出力先ディレクトリのパス")
 
     parser.add_argument(
@@ -284,6 +390,9 @@ def add_parser(subparsers: Optional[argparse._SubParsersAction] = None):
     subcommand_name = "visualize_annotation_count"
     subcommand_help = "各ラベル、各属性値のアノテーション数をヒストグラムで可視化します。"
     description = "各ラベル、各属性値のアノテーション数をヒストグラムで可視化したファイルを出力します。"
-    parser = annofabcli.common.cli.add_parser(subparsers, subcommand_name, subcommand_help, description=description)
+    epilog = "オーナロールまたはアノテーションユーザロールを持つユーザで実行してください。"
+    parser = annofabcli.common.cli.add_parser(
+        subparsers, subcommand_name, subcommand_help, description=description, epilog=epilog
+    )
     parse_args(parser)
     return parser
