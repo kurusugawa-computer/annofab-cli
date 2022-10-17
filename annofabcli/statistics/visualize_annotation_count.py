@@ -3,6 +3,7 @@ from __future__ import annotations
 import argparse
 import collections
 import logging
+import sys
 import tempfile
 from pathlib import Path
 from typing import Collection, Optional, Sequence
@@ -10,12 +11,18 @@ from typing import Collection, Optional, Sequence
 import bokeh
 import numpy
 import pandas
+from annofabapi.models import ProjectMemberRole
 from bokeh.models import HoverTool, Title
 from bokeh.plotting import ColumnDataSource, figure
 
 import annofabcli
 import annofabcli.common.cli
-from annofabcli.common.cli import AbstractCommandLineInterface, ArgumentParser, build_annofabapi_resource_and_login
+from annofabcli.common.cli import (
+    COMMAND_LINE_ERROR_STATUS_CODE,
+    AbstractCommandLineInterface,
+    ArgumentParser,
+    build_annofabapi_resource_and_login,
+)
 from annofabcli.common.download import DownloadingFile
 from annofabcli.common.facade import AnnofabApiFacade, TaskQuery
 from annofabcli.statistics.histogram import get_sub_title_from_series
@@ -78,19 +85,21 @@ def plot_label_histogram(
     Args:
         prior_keys: 優先して表示するcounter_listのキーlist
     """
-    df = pandas.DataFrame([e.annotation_count_by_label for e in counter_list])
+    all_label_key_set = {key for c in counter_list for key in c.annotation_count_by_label}
     if prior_keys is not None:
-        remaining_columns = sorted(set(df.columns) - set(prior_keys))
+        remaining_columns = sorted(all_label_key_set - set(prior_keys))
         columns = prior_keys + remaining_columns
     else:
-        columns = sorted(df.columns)
-    df = df[columns]
+        columns = sorted(all_label_key_set)
 
+    df = pandas.DataFrame([e.annotation_count_by_label for e in counter_list], columns=columns)
     df.fillna(0, inplace=True)
 
     figure_list = []
 
     y_axis_label = _get_y_axis_label(group_by)
+
+    logger.debug(f"{len(df.columns)}個のラベルごとヒストグラムを出力します。")
     for col in df.columns:
         # numpy.histogramで20のビンに分割
         hist, bin_edges = numpy.histogram(df[col], bins)
@@ -134,22 +143,23 @@ def plot_attribute_histogram(
     prior_keys: Optional[list[AttributeValueKey]] = None,
     bins: int = 20,
 ):
-    df = pandas.DataFrame([e.annotation_count_by_attribute for e in counter_list])
+
+    all_key_set = {key for c in counter_list for key in c.annotation_count_by_attribute}
     if prior_keys is not None:
-        remaining_columns = list(set(df.columns) - set(prior_keys))
+        remaining_columns = list(all_key_set - set(prior_keys))
         remaining_columns_selective_attribute = sorted(_only_selective_attribute(remaining_columns))
         columns = prior_keys + remaining_columns_selective_attribute
     else:
-        remaining_columns_selective_attribute = sorted(_only_selective_attribute(df.columns))
+        remaining_columns_selective_attribute = sorted(_only_selective_attribute(list(all_key_set)))
         columns = remaining_columns_selective_attribute
 
-    df = df[columns]
-
+    df = pandas.DataFrame([e.annotation_count_by_attribute for e in counter_list], columns=columns)
     df.fillna(0, inplace=True)
 
     figure_list = []
     y_axis_label = _get_y_axis_label(group_by)
 
+    logger.debug(f"{len(df.columns)}個の属性値ごとヒストグラムを出力します。")
     for col in sorted(df.columns):
         hist, bin_edges = numpy.histogram(df[col], bins)
 
@@ -184,6 +194,18 @@ def plot_attribute_histogram(
 
 
 class VisualizeAnnotationCount(AbstractCommandLineInterface):
+    COMMON_MESSAGE = "annofabcli statistics list_annotation_count: error:"
+
+    def validate(self, args: argparse.Namespace) -> bool:
+        if args.project_id is None and args.annotation is None:
+            print(
+                f"{self.COMMON_MESSAGE} argument --project_id: '--annotation'が未指定のときは、'--project_id' を指定してください。",  # noqa: E501
+                file=sys.stderr,
+            )
+            return False
+
+        return True
+
     def visualize_annotation_count(
         self,
         group_by: GroupBy,
@@ -247,10 +269,16 @@ class VisualizeAnnotationCount(AbstractCommandLineInterface):
     def main(self):
         args = self.args
 
-        project_id = args.project_id
-        output_dir: Path = args.output_dir
-        super().validate_project(project_id, project_member_roles=None)
+        if not self.validate(args):
+            sys.exit(COMMAND_LINE_ERROR_STATUS_CODE)
 
+        project_id: Optional[str] = args.project_id
+        if project_id is not None:
+            super().validate_project(
+                project_id, project_member_roles=[ProjectMemberRole.OWNER, ProjectMemberRole.TRAINING_DATA_USER]
+            )
+
+        output_dir: Path = args.output_dir
         annotation_path = Path(args.annotation) if args.annotation is not None else None
 
         task_id_list = annofabcli.common.cli.get_list_from_args(args.task_id) if args.task_id is not None else None
@@ -263,6 +291,7 @@ class VisualizeAnnotationCount(AbstractCommandLineInterface):
         group_by = GroupBy(args.group_by)
 
         if annotation_path is None:
+            assert project_id is not None
             with tempfile.NamedTemporaryFile() as f:
                 annotation_path = Path(f.name)
                 downloading_obj = DownloadingFile(self.service)
@@ -355,6 +384,9 @@ def add_parser(subparsers: Optional[argparse._SubParsersAction] = None):
     subcommand_name = "visualize_annotation_count"
     subcommand_help = "各ラベル、各属性値のアノテーション数をヒストグラムで可視化します。"
     description = "各ラベル、各属性値のアノテーション数をヒストグラムで可視化したファイルを出力します。"
-    parser = annofabcli.common.cli.add_parser(subparsers, subcommand_name, subcommand_help, description=description)
+    epilog = "オーナロールまたはアノテーションユーザロールを持つユーザで実行してください。"
+    parser = annofabcli.common.cli.add_parser(
+        subparsers, subcommand_name, subcommand_help, description=description, epilog=epilog
+    )
     parse_args(parser)
     return parser

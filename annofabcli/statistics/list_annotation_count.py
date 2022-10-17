@@ -1,3 +1,4 @@
+# pylint: disable=too-many-lines
 from __future__ import annotations
 
 import abc
@@ -1019,12 +1020,12 @@ class ListAnnotationCount(AbstractCommandLineInterface):
     アノテーション数情報を出力する。
     """
 
-    COMMON_MESSAGE = "annofabcli statistics list_annotation_count:"
+    COMMON_MESSAGE = "annofabcli statistics list_annotation_count: error:"
 
     def validate(self, args: argparse.Namespace) -> bool:
         if args.project_id is None and args.annotation is None:
             print(
-                f"{self.COMMON_MESSAGE} error: argument --project_id: '--annotation'が未指定のときは、'--project_id' を指定してください。",  # noqa: E501
+                f"{self.COMMON_MESSAGE} argument --project_id: '--annotation'が未指定のときは、'--project_id' を指定してください。",  # noqa: E501
                 file=sys.stderr,
             )
             return False
