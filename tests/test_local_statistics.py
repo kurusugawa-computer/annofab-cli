@@ -15,11 +15,6 @@ from annofabcli.statistics.list_worktime import WorktimeFromTaskHistoryEvent, ge
 from annofabcli.statistics.summarize_task_count import SimpleTaskStatus, get_step_for_current_phase
 from annofabcli.statistics.summarize_task_count_by_task_id_group import create_task_count_summary_df, get_task_id_prefix
 from annofabcli.statistics.table import Table
-from annofabcli.statistics.visualization.dataframe.cumulative_productivity import (
-    AcceptorCumulativeProductivity,
-    AnnotatorCumulativeProductivity,
-    InspectorCumulativeProductivity,
-)
 from annofabcli.statistics.visualization.dataframe.productivity_per_date import (
     AcceptorProductivityPerDate,
     AnnotatorProductivityPerDate,
@@ -246,63 +241,6 @@ class TestAnnotatorProductivityPerDate:
 
     def test_plot_input_data_metrics(self):
         self.obj.plot_input_data_metrics(self.output_dir / "折れ線-横軸_教師付開始日-縦軸_入力データあたりの指標-教師付者用.html")
-
-
-class TestAnnotatorCumulativeProductivity:
-    @classmethod
-    def setup_class(cls):
-        cls.output_dir = out_path / "visualization"
-        cls.output_dir.mkdir(exist_ok=True, parents=True)
-
-        task = Task.from_csv(data_path / "task.csv")
-        cls.obj = AnnotatorCumulativeProductivity.from_task(task)
-
-    def test_plot_annotation_metrics(self):
-        self.obj.plot_annotation_metrics(self.output_dir / "累積折れ線-横軸_アノテーション数-教師付者用")
-
-    def test_plot_input_data_metrics(self):
-        self.obj.plot_input_data_metrics(self.output_dir / "累積折れ線-横軸_入力データ数-教師付者用")
-
-    def test_plot_task_metrics(self):
-        self.obj.plot_task_metrics(self.output_dir / "累積折れ線-横軸_タスク数-教師付者用")
-
-
-class TestInspectorCumulativeProductivity:
-    @classmethod
-    def setup_class(cls):
-        cls.output_dir = out_path / "visualization"
-        cls.output_dir.mkdir(exist_ok=True, parents=True)
-
-        df_task = pandas.read_csv(str(data_path / "task.csv"))
-        cls.obj = InspectorCumulativeProductivity(df_task)
-
-    def test_plot_annotation_metrics(self):
-        self.obj.plot_annotation_metrics(self.output_dir / "累積折れ線-横軸_アノテーション数-検査者用")
-
-    def test_plot_input_data_metrics(self):
-        self.obj.plot_input_data_metrics(self.output_dir / "累積折れ線-横軸_入力データ数-検査者用")
-
-    def test_plot_task_metrics(self):
-        self.obj.plot_task_metrics(self.output_dir / "累積折れ線-横軸_タスク数-検査者用")
-
-
-class TestAcceptorCumulativeProductivity:
-    @classmethod
-    def setup_class(cls):
-        cls.output_dir = out_path / "visualization"
-        cls.output_dir.mkdir(exist_ok=True, parents=True)
-
-        df_task = pandas.read_csv(str(data_path / "task.csv"))
-        cls.obj = AcceptorCumulativeProductivity(df_task)
-
-    def test_plot_annotation_metrics(self):
-        self.obj.plot_annotation_metrics(self.output_dir / "累積折れ線-横軸_アノテーション数-受入者用")
-
-    def test_plot_input_data_metrics(self):
-        self.obj.plot_input_data_metrics(self.output_dir / "累積折れ線-横軸_入力データ数-受入者用")
-
-    def test_plot_task_metrics(self):
-        self.obj.plot_task_metrics(self.output_dir / "累積折れ線-横軸_タスク数-受入者用")
 
 
 class TestListWorktime:

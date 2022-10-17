@@ -5,9 +5,10 @@ from pathlib import Path
 import annofabapi
 import pandas
 import pytest
+
 from annofabcli.__main__ import main
 from annofabcli.statistics.visualization.dataframe.worktime_per_date import WorktimePerDate
-import pytest
+
 # webapiにアクセスするテストモジュール
 pytestmark = pytest.mark.access_webapi
 

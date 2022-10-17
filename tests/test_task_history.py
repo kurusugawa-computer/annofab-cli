@@ -3,9 +3,10 @@ import os
 from pathlib import Path
 
 import annofabapi
+import pytest
 
 from annofabcli.__main__ import main
-import pytest
+
 # webapiにアクセスするテストモジュール
 pytestmark = pytest.mark.access_webapi
 
