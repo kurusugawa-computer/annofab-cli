@@ -1,6 +1,10 @@
+import configparser
+import os
 from pathlib import Path
 
+import annofabapi
 import pandas
+import pytest
 
 from annofabcli.statistics.visualization.dataframe.worktime_per_date import WorktimePerDate
 
@@ -39,3 +43,29 @@ class TestWorktimePerDate:
 
         merged_obj = WorktimePerDate.merge(empty, self.obj)
         assert len(merged_obj.df) == len(self.obj.df)
+
+
+os.chdir(os.path.dirname(os.path.abspath(__file__)) + "/../../../../")
+inifile = configparser.ConfigParser()
+inifile.read("./pytest.ini", "UTF-8")
+annofab_config = dict(inifile.items("annofab"))
+project_id = annofab_config["project_id"]
+
+
+@pytest.mark.access_webapi
+class TestWorktimePerDate_webapi:
+
+    service: annofabapi.Resource
+
+    @classmethod
+    def setup_class(cls):
+        cls.service = annofabapi.build()
+
+    def test_from_webapi(self):
+        actual = WorktimePerDate.from_webapi(self.service, project_id)
+        assert len(actual.df) > 0
+
+    def test_from_webapi_with_labor(self):
+        df_labor = pandas.read_csv(str(data_dir / "labor-df.csv"))
+        actual = WorktimePerDate.from_webapi(self.service, project_id, df_labor=df_labor)
+        assert len(actual.df) > 0

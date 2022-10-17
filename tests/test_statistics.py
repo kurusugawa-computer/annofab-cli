@@ -3,11 +3,9 @@ import os
 from pathlib import Path
 
 import annofabapi
-import pandas
 import pytest
 
 from annofabcli.__main__ import main
-from annofabcli.statistics.visualization.dataframe.worktime_per_date import WorktimePerDate
 
 # webapiにアクセスするテストモジュール
 pytestmark = pytest.mark.access_webapi
@@ -127,14 +125,3 @@ class TestCommandLine:
                 str(out_dir / "list-worktime-out.csv"),
             ]
         )
-
-
-class TestWorktimePerDate:
-    def test_from_webapi(self):
-        actual = WorktimePerDate.from_webapi(service, project_id)
-        assert len(actual.df) > 0
-
-    def test_from_webapi_with_labor(self):
-        df_labor = pandas.read_csv(str(data_dir / "labor-df.csv"))
-        actual = WorktimePerDate.from_webapi(service, project_id, df_labor=df_labor)
-        assert len(actual.df) > 0
