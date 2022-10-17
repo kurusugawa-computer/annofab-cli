@@ -12,8 +12,6 @@ output_dir = Path("./tests/out/statistics/list_annotation_count")
 data_dir = Path("./tests/data/statistics/")
 output_dir.mkdir(exist_ok=True, parents=True)
 
-project_id = "12345678-abcd-1234-abcd-1234abcd5678"
-
 
 class TestListAnnotationCounterByInputData:
     def test_get_annotation_counter(self):

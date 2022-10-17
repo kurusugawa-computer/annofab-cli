@@ -43,7 +43,6 @@ from annofabcli.statistics.visualization.dataframe.whole_productivity_per_date i
 from annofabcli.statistics.visualization.dataframe.worktime_per_date import WorktimePerDate
 from annofabcli.statistics.visualization.model import WorktimeColumn
 from annofabcli.statistics.visualization.project_dir import ProjectDir
-from annofabcli.statistics.visualize_annotation_count import plot_attribute_histogram, plot_label_histogram
 from annofabcli.task_history_event.list_worktime import SimpleTaskHistoryEvent
 
 out_path = Path("./tests/out/statistics")
@@ -505,28 +504,6 @@ class TestProjectPerformance:
         assert numpy.isnan(row[("project_title", "")])
         assert numpy.isnan(row[("start_date", "")])
         assert row[("actual_worktime_hour", "sum")] == 0
-
-
-class TestVisualizeAnnotationCount:
-    def test_plot_label_histogram(self):
-        counter_list = ListAnnotationCounterByInputData().get_annotation_counter_list(
-            data_path / "simple-annotations.zip"
-        )
-
-        plot_label_histogram(
-            counter_list,
-            group_by=GroupBy.INPUT_DATA_ID,
-            output_file=out_path / "visualize_annotation_count/labels_count_by_input_data.html",
-        )
-
-    def test_plot_attribute_histogram(self):
-        counter_list = ListAnnotationCounterByTask().get_annotation_counter_list(data_path / "simple-annotations.zip")
-
-        plot_attribute_histogram(
-            counter_list,
-            group_by=GroupBy.TASK_ID,
-            output_file=out_path / "visualize_annotation_count/attributes_count_by_task.html",
-        )
 
 
 class TestTask:
