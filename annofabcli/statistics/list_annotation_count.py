@@ -445,8 +445,10 @@ class AttributeCountCsv:
             if value > self.selective_attribute_value_max_count
         }
         if len(non_selective_attribute_names) > 0:
-            logger.debug(f"以下の属性は値の個数が{self.selective_attribute_value_max_count}を超えていたため、集計しません。 :: "
-            f"{non_selective_attribute_names}")
+            logger.debug(
+                f"以下の属性は値の個数が{self.selective_attribute_value_max_count}を超えていたため、集計しません。 :: "
+                f"{non_selective_attribute_names}"
+            )
 
         return [
             (label, attribute_name, attribute_value)
