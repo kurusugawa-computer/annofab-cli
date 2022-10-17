@@ -15,11 +15,6 @@ from annofabcli.statistics.list_worktime import WorktimeFromTaskHistoryEvent, ge
 from annofabcli.statistics.summarize_task_count import SimpleTaskStatus, get_step_for_current_phase
 from annofabcli.statistics.summarize_task_count_by_task_id_group import create_task_count_summary_df, get_task_id_prefix
 from annofabcli.statistics.table import Table
-from annofabcli.statistics.visualization.dataframe.productivity_per_date import (
-    AcceptorProductivityPerDate,
-    AnnotatorProductivityPerDate,
-    InspectorProductivityPerDate,
-)
 from annofabcli.statistics.visualization.dataframe.project_performance import (
     ProjectPerformance,
     ProjectWorktimePerMonth,
@@ -163,84 +158,6 @@ class TestWholeProductivityPerCompletedDate:
             WholeProductivityPerCompletedDate(df1), WholeProductivityPerCompletedDate(df2)
         )
         sum_obj.to_csv(self.output_dir / "merge-productivity-per-date.csv")
-
-
-class TestAnnotatorProductivityPerDate:
-    @classmethod
-    def setup_class(cls):
-        cls.output_dir = out_path / "visualization"
-        cls.output_dir.mkdir(exist_ok=True, parents=True)
-
-        df_task = pandas.read_csv(str(data_path / "task.csv"))
-        cls.obj = AnnotatorProductivityPerDate.from_df_task(df_task)
-
-    def test_to_csv(self):
-        self.obj.to_csv(self.output_dir / "教師付開始日ごとの教師付者の生産性.csv")
-
-    def test_plot_annotation_metrics(self):
-        self.obj.plot_annotation_metrics(self.output_dir / "折れ線-横軸_教師付開始日-縦軸_アノテーションあたりの指標-教師付者用.html")
-
-    def test_plot_input_data_metrics(self):
-        self.obj.plot_input_data_metrics(self.output_dir / "折れ線-横軸_教師付開始日-縦軸_入力データあたりの指標-教師付者用.html")
-
-
-class TestInspectorProductivityPerDate:
-    @classmethod
-    def setup_class(cls):
-        cls.output_dir = out_path / "visualization"
-        cls.output_dir.mkdir(exist_ok=True, parents=True)
-
-        df_task = pandas.read_csv(str(data_path / "task.csv"))
-
-        cls.obj = InspectorProductivityPerDate.from_df_task(df_task)
-
-    def test_to_csv(self):
-        self.obj.to_csv(self.output_dir / "検査開始日ごとの検査者の生産性.csv")
-
-    def test_plot_annotation_metrics(self):
-        self.obj.plot_annotation_metrics(self.output_dir / "折れ線-横軸_検査開始日-縦軸_アノテーションあたりの指標-検査者用.html")
-
-    def test_plot_input_data_metrics(self):
-        self.obj.plot_input_data_metrics(self.output_dir / "折れ線-横軸_検査開始日-縦軸_入力データあたりの指標-検査者用.html")
-
-
-class TestAcceptorProductivityPerDate:
-    @classmethod
-    def setup_class(cls):
-        cls.output_dir = out_path / "visualization"
-        cls.output_dir.mkdir(exist_ok=True, parents=True)
-
-        df_task = pandas.read_csv(str(data_path / "task.csv"))
-
-        cls.obj = AcceptorProductivityPerDate.from_df_task(df_task)
-
-    def test_to_csv(self):
-        self.obj.to_csv(self.output_dir / "受入開始日ごとの受入者の生産性.csv")
-
-    def test_plot_annotation_metrics(self):
-        self.obj.plot_annotation_metrics(self.output_dir / "折れ線-横軸_受入開始日-縦軸_アノテーションあたりの指標-受入者用.html")
-
-    def test_plot_input_data_metrics(self):
-        self.obj.plot_input_data_metrics(self.output_dir / "折れ線-横軸_受入開始日-縦軸_入力データあたりの指標-受入者用.html")
-
-
-class TestAnnotatorProductivityPerDate:
-    @classmethod
-    def setup_class(cls):
-        cls.output_dir = out_path / "visualization"
-        cls.output_dir.mkdir(exist_ok=True, parents=True)
-
-        df_task = pandas.read_csv(str(data_path / "task.csv"))
-        cls.obj = AnnotatorProductivityPerDate.from_df_task(df_task)
-
-    def test_to_csv(self):
-        self.obj.to_csv(self.output_dir / "教師付開始日ごとの教師付者の生産性.csv")
-
-    def test_plot_annotation_metrics(self):
-        self.obj.plot_annotation_metrics(self.output_dir / "折れ線-横軸_教師付開始日-縦軸_アノテーションあたりの指標-教師付者用.html")
-
-    def test_plot_input_data_metrics(self):
-        self.obj.plot_input_data_metrics(self.output_dir / "折れ線-横軸_教師付開始日-縦軸_入力データあたりの指標-教師付者用.html")
 
 
 class TestListWorktime:
