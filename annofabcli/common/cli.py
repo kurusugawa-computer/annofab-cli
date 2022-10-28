@@ -101,8 +101,11 @@ def add_parser(
         group.add_argument("--yes", action="store_true", help="処理中に現れる問い合わせに対して、常に ``yes`` と回答します。")
 
         group.add_argument(
-            "--endpoint_url", type=str, help=f"Annofab WebAPIのエンドポイントを指定します。", default=DEFAULT_ENDPOINT_URL
+            "--endpoint_url", type=str, help="Annofab WebAPIのエンドポイントを指定します。", default=DEFAULT_ENDPOINT_URL
         )
+
+        group.add_argument("--annofab_user_id", type=str, help="Annofabにログインする際のユーザーID")
+        group.add_argument("--annofab_password", type=str, help="Annofabにログインする際のパスワード")
 
         group.add_argument(
             "--logdir",
@@ -309,6 +312,18 @@ def build_annofabapi_resource(args: argparse.Namespace) -> annofabapi.Resource:
     endpoint_url = get_endpoint_url(args)
     if endpoint_url != DEFAULT_ENDPOINT_URL:
         logger.info(f"Annofab WebAPIのエンドポイントURL: {endpoint_url}")
+
+    # コマンドライン引数からユーザーIDが指定された場合
+    if args.annofab_user_id is not None:
+        login_user_id: str = args.annofab_user_id
+        if args.annofab_password is not None:
+            return annofabapi.build(login_user_id, args.annofab_password, endpoint_url=endpoint_url)
+        else:
+            # コマンドライン引数にパスワードが指定されなければ、標準入力からパスワードを取得する
+            login_password = ""
+            while login_password == "":
+                login_password = getpass.getpass("Enter Annofab Password: ")
+            return annofabapi.build(login_user_id, login_password, endpoint_url=endpoint_url)
 
     try:
         return annofabapi.build_from_netrc(endpoint_url)
