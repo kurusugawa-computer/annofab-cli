@@ -4,10 +4,29 @@ Configurations
 
 認証情報の設定
 ==================================================================
-Annofabの認証情報を設定する方法は2つあります。
+Annofabの認証情報を設定する方法は3つあります。
 
+* コマンドライン引数 ``--annofab_user_id`` , ``--annofab_password``
 * ``.netrc`` ファイル
 * 環境変数 ``ANNOFAB_USER_ID`` , ``ANNOFAB_PASSWORD``
+
+コマンドライン引数
+----------------------------------------------------------------
+
+コマンドライン引数 ``--annofab_user_id`` , ``--annofab_password`` で、認証情報を指定できます。
+
+.. code-block::
+    
+    $ annofabcli my_account get --annofab_user_id alice --annofab_password password
+
+
+``--annofab_user_id`` のみ指定した場合は、標準入力からパスワードの入力を求められます。
+
+
+.. code-block::
+    
+    $ annofabcli my_account get --annofab_user_id alice
+    Enter Annofab Password:
 
 
 .netrc ファイル
@@ -52,10 +71,11 @@ For Windows
 
 優先順位
 ----------------------------------------------------------------
-Annofabの認証情報の優先順位は以下の通りです。
+Annofabの認証情報の設定方法を、優先順位が高い順に並べました。
 
-* 環境変数
-* .netrcファイル
+1. コマンドライン引数
+2. ``.netrc`` ファイル
+3. 環境変数
 
 
 エンドポイントURLの設定（開発者用）
