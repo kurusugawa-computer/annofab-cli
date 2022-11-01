@@ -108,8 +108,8 @@ def mask_visualization_dir(
     exclude_masked_user_for_line_graph: bool = False,
 ) -> None:
     user_performance = project_dir.read_user_performance()
-    if user_performance.empty():
-        logger.warning(f"メンバごとの生産性と品質情報が空であるため、ユーザー情報をマスクできません。終了します。")
+    if user_performance.is_empty():
+        logger.warning("メンバごとの生産性と品質情報が空であるため、ユーザー情報をマスクできません。終了します。")
         return
 
     # マスクするユーザの情報を取得する
