@@ -336,7 +336,6 @@ class AddProps:
         * input_data_count
 
         以下のキーを削除する。
-        * work_time_span
         * number_of_rejections
 
 
@@ -350,8 +349,6 @@ class AddProps:
 
         self._add_user_info(task)
         task["worktime_hour"] = self.millisecond_to_hour(task["work_time_span"])
-        # worktime_hourと重複するので削除
-        task.pop("work_time_span")
 
         histories = [self._add_user_info(e) for e in task["histories_by_phase"]]
         task["histories_by_phase"] = histories
