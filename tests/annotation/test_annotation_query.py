@@ -1,6 +1,7 @@
 import pytest
+from annofabapi.dataclass.annotation import AdditionalDataV1
 
-from annofabcli.annotation.annotation_query import AdditionalData, AnnotationQueryForCLI
+from annofabcli.annotation.annotation_query import AnnotationQueryForCLI
 
 
 class TestAnnotationQueryForCLI:
@@ -111,21 +112,21 @@ class TestAnnotationQueryForCLI:
         assert actual.label_id == "9d6cca8d-3f5a-4808-a6c9-0ae18a478176"
 
         expected_attributes = [
-            AdditionalData(
+            AdditionalDataV1(
                 additional_data_definition_id="cbb0155f-1631-48e1-8fc3-43c5f254b6f2",
                 flag=None,
                 comment=None,
                 integer=None,
                 choice="c07f9702-4760-4e7c-824d-b87bac356a80",
             ),
-            AdditionalData(
+            AdditionalDataV1(
                 additional_data_definition_id="ec27de5d-122c-40e7-89bc-5500e37bae6a",
                 flag=None,
                 comment=None,
                 integer=1,
                 choice=None,
             ),
-            AdditionalData(
+            AdditionalDataV1(
                 additional_data_definition_id="d349e76d-b59a-44cd-94b4-713a00b2e84d",
                 flag=None,
                 comment="foo",
@@ -141,7 +142,7 @@ class TestAnnotationQueryForCLI:
         assert actual.label_id == "39d05700-7c12-4732-bc35-02d65367cc3e"
 
         expected_attributes = [
-            AdditionalData(
+            AdditionalDataV1(
                 additional_data_definition_id="69a20a12-ef5f-446f-a03e-0c4ab487ff90",
                 flag=True,
                 comment=None,
@@ -158,7 +159,7 @@ class TestAnnotationQueryForCLI:
         assert actual.label_id == "9d6cca8d-3f5a-4808-a6c9-0ae18a478176"
 
         expected_attributes = [
-            AdditionalData(
+            AdditionalDataV1(
                 additional_data_definition_id="cbb0155f-1631-48e1-8fc3-43c5f254b6f2",
                 flag=None,
                 comment=None,

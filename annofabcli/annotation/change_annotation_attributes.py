@@ -11,12 +11,12 @@ from pathlib import Path
 from typing import Any, Dict, List, Optional
 
 import annofabapi
+from annofabapi.dataclass.annotation import AdditionalDataV1
 from annofabapi.dataclass.task import Task
 from annofabapi.models import ProjectMemberRole, TaskStatus
 
 import annofabcli
 from annofabcli.annotation.annotation_query import (
-    AdditionalData,
     AnnotationQueryForAPI,
     AnnotationQueryForCLI,
     convert_attributes_from_cli_to_api,
@@ -59,7 +59,7 @@ class ChangeAnnotationAttributesMain(AbstractCommandLineWithConfirmInterface):
         self.dump_annotation_obj = DumpAnnotationMain(service, project_id)
 
     def change_annotation_attributes(
-        self, annotation_list: List[Dict[str, Any]], attributes: List[AdditionalData]
+        self, annotation_list: List[Dict[str, Any]], attributes: List[AdditionalDataV1]
     ) -> Optional[List[Dict[str, Any]]]:
         """
         アノテーション属性値を変更する。
@@ -117,7 +117,7 @@ class ChangeAnnotationAttributesMain(AbstractCommandLineWithConfirmInterface):
         self,
         task_id: str,
         annotation_query: AnnotationQueryForAPI,
-        attributes: List[AdditionalData],
+        attributes: List[AdditionalDataV1],
         backup_dir: Optional[Path] = None,
         task_index: Optional[int] = None,
     ) -> bool:
@@ -173,7 +173,7 @@ class ChangeAnnotationAttributesMain(AbstractCommandLineWithConfirmInterface):
         self,
         tpl: tuple[int, str],
         annotation_query: AnnotationQueryForAPI,
-        attributes: List[AdditionalData],
+        attributes: List[AdditionalDataV1],
         backup_dir: Optional[Path] = None,
     ) -> bool:
         task_index, task_id = tpl
@@ -193,7 +193,7 @@ class ChangeAnnotationAttributesMain(AbstractCommandLineWithConfirmInterface):
         self,
         task_id_list: List[str],
         annotation_query: AnnotationQueryForAPI,
-        attributes: List[AdditionalData],
+        attributes: List[AdditionalDataV1],
         backup_dir: Optional[Path] = None,
         parallelism: Optional[int] = None,
     ):
@@ -267,7 +267,7 @@ class ChangeAttributesOfAnnotation(AbstractCommandLineInterface):
     @classmethod
     def get_attributes_for_api(
         cls, str_attributes: str, annotation_specs: dict[str, Any], label_id: str
-    ) -> list[AdditionalData]:
+    ) -> list[AdditionalDataV1]:
         """
         CLIから受け取った`--attributes`の値から、APIに渡す属性情報を返す。
         """

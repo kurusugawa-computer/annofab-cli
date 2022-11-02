@@ -12,7 +12,7 @@ from pathlib import Path
 from typing import Any, Dict, Iterator, List, Optional, Union
 
 import annofabapi
-from annofabapi.dataclass.annotation import AdditionalData, AnnotationDetail
+from annofabapi.dataclass.annotation import AdditionalDataV1, AnnotationDetailV1
 from annofabapi.models import (
     AdditionalDataDefinitionType,
     AdditionalDataDefinitionV1,
@@ -161,15 +161,15 @@ class ImportAnnotationMain(AbstractCommandLineWithConfirmInterface):
                 return AnnotationDataHoldingType.OUTER
         return AnnotationDataHoldingType.INNER
 
-    def _to_additional_data_list(self, attributes: Dict[str, Any], label_info: LabelV1) -> List[AdditionalData]:
-        additional_data_list: List[AdditionalData] = []
+    def _to_additional_data_list(self, attributes: Dict[str, Any], label_info: LabelV1) -> List[AdditionalDataV1]:
+        additional_data_list: List[AdditionalDataV1] = []
         for key, value in attributes.items():
             specs_additional_data = self._get_additional_data_from_attribute_name(key, label_info)
             if specs_additional_data is None:
                 logger.warning(f"アノテーション仕様に attribute_name={key} が存在しません。")
                 continue
 
-            additional_data = AdditionalData(
+            additional_data = AdditionalDataV1(
                 additional_data_definition_id=specs_additional_data["additional_data_definition_id"],
                 flag=None,
                 integer=None,
@@ -200,7 +200,7 @@ class ImportAnnotationMain(AbstractCommandLineWithConfirmInterface):
 
     def _to_annotation_detail_for_request(
         self, parser: SimpleAnnotationParser, detail: ImportedSimpleAnnotationDetail, now_datetime: str
-    ) -> Optional[AnnotationDetail]:
+    ) -> Optional[AnnotationDetailV1]:
         """
         Request Bodyに渡すDataClassに変換する。塗りつぶし画像があれば、それをS3にアップロードする。
 
@@ -233,7 +233,7 @@ class ImportAnnotationMain(AbstractCommandLineWithConfirmInterface):
 
         data_holding_type = self._get_data_holding_type_from_data(label_info)
 
-        dest_obj = AnnotationDetail(
+        dest_obj = AnnotationDetailV1(
             label_id=label_info["label_id"],
             annotation_id=_get_annotation_id(label_info),
             account_id=self.service.api.account_id,
