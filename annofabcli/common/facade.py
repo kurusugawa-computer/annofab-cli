@@ -5,7 +5,7 @@ from typing import Any, Callable, Dict, List, Optional, Tuple
 import annofabapi
 import annofabapi.utils
 import more_itertools
-from annofabapi.dataclass.annotation import AdditionalData
+from annofabapi.dataclass.annotation import AdditionalDataV1
 from annofabapi.dataclass.input import InputData
 from annofabapi.dataclass.task import Task
 from annofabapi.models import (
@@ -30,7 +30,7 @@ class AnnotationQuery(DataClassJsonMixin):
     """
 
     label_id: str
-    attributes: Optional[List[AdditionalData]] = None
+    attributes: Optional[List[AdditionalDataV1]] = None
 
 
 @dataclass
