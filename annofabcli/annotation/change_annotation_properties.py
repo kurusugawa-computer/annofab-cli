@@ -100,7 +100,7 @@ class ChangePropertiesOfAnnotationMain(AbstractCommandLineWithConfirmInterface):
                 annotation["project_id"],
                 annotation["task_id"],
                 annotation["input_data_id"],
-                {
+                request_body={
                     "project_id": annotation["project_id"],
                     "task_id": annotation["task_id"],
                     "input_data_id": annotation["input_data_id"],
