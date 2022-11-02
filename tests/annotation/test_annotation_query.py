@@ -1,6 +1,7 @@
 import pytest
 from annofabapi.dataclass.annotation import AdditionalDataV1
-from annofabcli.annotation.annotation_query import  AnnotationQueryForCLI
+
+from annofabcli.annotation.annotation_query import AnnotationQueryForCLI
 
 
 class TestAnnotationQueryForCLI:

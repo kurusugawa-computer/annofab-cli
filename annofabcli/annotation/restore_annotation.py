@@ -9,7 +9,7 @@ from pathlib import Path
 from typing import Any, Dict, Iterator, List, Optional
 
 import annofabapi
-from annofabapi.dataclass.annotation import AnnotationV1, AnnotationDetailV1
+from annofabapi.dataclass.annotation import AnnotationDetailV1, AnnotationV1
 from annofabapi.models import AnnotationDataHoldingType, ProjectMemberRole, TaskStatus
 from annofabapi.parser import (
     SimpleAnnotationParser,

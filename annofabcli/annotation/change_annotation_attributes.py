@@ -11,12 +11,11 @@ from pathlib import Path
 from typing import Any, Dict, List, Optional
 
 import annofabapi
+from annofabapi.dataclass.annotation import AdditionalDataV1
 from annofabapi.dataclass.task import Task
 from annofabapi.models import ProjectMemberRole, TaskStatus
 
 import annofabcli
-from annofabapi.dataclass.annotation import AdditionalDataV1
-
 from annofabcli.annotation.annotation_query import (
     AnnotationQueryForAPI,
     AnnotationQueryForCLI,
