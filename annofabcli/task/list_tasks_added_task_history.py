@@ -5,6 +5,7 @@ import asyncio
 import json
 import logging
 import sys
+import tempfile
 from pathlib import Path
 from typing import Any, Dict, List, Optional, Set
 
@@ -20,16 +21,16 @@ from annofabcli.common.cli import (
     AbstractCommandLineInterface,
     ArgumentParser,
     build_annofabapi_resource_and_login,
-    get_json_from_args,
-    get_wait_options_from_args,
 )
 from annofabcli.common.dataclasses import WaitOptions
 from annofabcli.common.download import DownloadingFile
 from annofabcli.common.enums import FormatArgument
 from annofabcli.common.facade import AnnofabApiFacade, TaskQuery, match_task_with_query
+from annofabcli.common.utils import print_csv, print_json
 from annofabcli.common.visualize import AddProps
 
 logger = logging.getLogger(__name__)
+
 
 TaskHistoryDict = Dict[str, List[TaskHistory]]
 """タスク履歴の辞書（key: task_id, value: タスク履歴一覧）"""
@@ -52,6 +53,32 @@ def get_completed_datetime(task: dict[str, Any], task_histories: list[TaskHistor
         return task_histories[-1]["ended_datetime"]
     else:
         return None
+
+
+def get_task_created_datetime(task_histories: list[TaskHistory]) -> Optional[str]:
+    """タスクの作成日時を取得する。
+
+    Args:
+        task_histories (List[TaskHistory]): タスク履歴
+
+    Returns:
+        タスクの作成日時
+    """
+    # 受入フェーズで完了日時がnot Noneの場合は、受入を合格したか差し戻したとき。
+    # したがって、後続のタスク履歴を見て、初めて受入完了状態になった日時を取得する。
+    if len(task_histories) == 0:
+        return None
+
+    first_history = task_histories[0]
+    # 2020年以前は、先頭のタスク履歴はタスク作成ではなく、教師付けの履歴である。2020年以前はタスク作成日時を取得できないのでNoneを返す。
+    # https://annofab.com/docs/releases/2020.html#v01020
+    if (
+        first_history["account_id"] is None
+        and first_history["accumulated_labor_time_milliseconds"] == "PT0S"
+        and first_history["phase"] == TaskPhase.ANNOTATION.value
+    ):
+        return first_history["started_datetime"]
+    return None
 
 
 def get_first_acceptance_completed_datetime(task_histories: list[TaskHistory]) -> Optional[str]:
@@ -253,6 +280,9 @@ class AddingAdditionalInfoToTask:
             task_histories (list[TaskHistory]): タスク履歴
 
         """
+        # タスク作成日時
+        task["created_datetime"] = get_task_created_datetime(task_histories)
+
         # フェーズごとのタスク履歴情報を追加する
         self._add_task_history_info_by_phase(task, task_histories, phase=TaskPhase.ANNOTATION)
         self._add_task_history_info_by_phase(task, task_histories, phase=TaskPhase.INSPECTION)
@@ -303,6 +333,7 @@ class ListTasksAddedTaskHistory(AbstractCommandLineInterface):
             "phase",
             "phase_stage",
             "status",
+            "created_datetime",
             "started_datetime",
             "updated_datetime",
             "operation_updated_datetime",
@@ -340,13 +371,12 @@ class ListTasksAddedTaskHistory(AbstractCommandLineInterface):
         task_json_path: Path,
         task_history_json_path: Path,
         is_latest: bool,
-        wait_options: WaitOptions,
     ):
         loop = asyncio.get_event_loop()
         downloading_obj = DownloadingFile(self.service)
         gather = asyncio.gather(
             downloading_obj.download_task_json_with_async(
-                project_id, dest_path=str(task_json_path), is_latest=is_latest, wait_options=wait_options
+                project_id, dest_path=str(task_json_path), is_latest=is_latest
             ),
             downloading_obj.download_task_history_json_with_async(
                 project_id,
@@ -400,6 +430,59 @@ class ListTasksAddedTaskHistory(AbstractCommandLineInterface):
         ]
         return filtered_task_list
 
+    def print_task_list(
+        self,
+        project_id: str,
+        task_json_path: Optional[Path],
+        task_history_json_path: Optional[Path],
+        is_latest: bool,
+        task_id_list: Optional[list[str]],
+        task_query: Optional[TaskQuery],
+        arg_format: FormatArgument,
+        output: Path,
+    ):
+        super().validate_project(project_id, [ProjectMemberRole.OWNER, ProjectMemberRole.TRAINING_DATA_USER])
+
+        downloading_obj = DownloadingFile(self.service)
+
+        if task_json_path is not None:
+            with task_json_path.open(encoding="utf-8") as f:
+                task_list = json.load(f)
+        else:
+            with tempfile.NamedTemporaryFile() as tmp_file:
+                downloading_obj.download_task_json(project_id, tmp_file.name, is_latest=is_latest)
+                with open(tmp_file.name, encoding="utf-8") as f:
+                    task_list = json.load(f)
+
+        if task_history_json_path is not None:
+            with task_history_json_path.open(encoding="utf-8") as f:
+                task_history_dict = json.load(f)
+        else:
+            with tempfile.NamedTemporaryFile() as tmp_file:
+                downloading_obj.download_task_history_json(project_id, tmp_file.name)
+                with open(tmp_file.name, encoding="utf-8") as f:
+                    task_history_dict = json.load(f)
+
+        filtered_task_list = self.filter_task_list(
+            project_id, task_list, task_id_list=task_id_list, task_query=task_query
+        )
+
+        logger.debug(f"タスク履歴に関する付加的情報を取得しています。")
+        detail_task_list = self.get_detail_task_list(
+            project_id=project_id, task_list=filtered_task_list, task_history_dict=task_history_dict
+        )
+
+        if arg_format == FormatArgument.CSV:
+            df_task = pandas.DataFrame(detail_task_list)
+            print_csv(
+                df_task[self._get_output_target_columns()],
+                output=self.output,
+            )
+        elif arg_format == FormatArgument.JSON:
+            print_json(detail_task_list, is_pretty=False, output=output)
+        elif arg_format == FormatArgument.PRETTY_JSON:
+            print_json(detail_task_list, is_pretty=True, output=output)
+
     def main(self):
         args = self.args
         if not self.validate(args):
@@ -414,46 +497,15 @@ class ListTasksAddedTaskHistory(AbstractCommandLineInterface):
             else None
         )
 
-        super().validate_project(project_id, [ProjectMemberRole.OWNER, ProjectMemberRole.TRAINING_DATA_USER])
-
-        if args.task_json is not None and args.task_history_json is not None:
-            task_json_path = args.task_json
-            task_history_json_path = args.task_history_json
-        else:
-            wait_options = get_wait_options_from_args(get_json_from_args(args.wait_options), DEFAULT_WAIT_OPTIONS)
-            cache_dir = annofabcli.common.utils.get_cache_dir()
-            task_json_path = cache_dir / f"{project_id}-task.json"
-            task_history_json_path = cache_dir / f"{project_id}-task_history.json"
-            self.download_json_files(
-                project_id,
-                task_json_path=task_json_path,
-                task_history_json_path=task_history_json_path,
-                is_latest=args.latest,
-                wait_options=wait_options,
-            )
-
-        with open(task_json_path, encoding="utf-8") as f:
-            task_list = json.load(f)
-
-        with open(task_history_json_path, encoding="utf-8") as f:
-            task_history_dict = json.load(f)
-
-        filtered_task_list = self.filter_task_list(
-            project_id, task_list, task_id_list=task_id_list, task_query=task_query
-        )
-
-        logger.debug(f"タスク履歴に関する付加的情報を取得しています。")
-        detail_task_list = self.get_detail_task_list(
-            project_id=project_id, task_list=filtered_task_list, task_history_dict=task_history_dict
-        )
-
-        df_task = pandas.DataFrame(detail_task_list)
-
-        annofabcli.common.utils.print_according_to_format(
-            df_task[self._get_output_target_columns()],
-            arg_format=FormatArgument(FormatArgument.CSV),
-            output=self.output,
-            csv_format=self.csv_format,
+        self.print_task_list(
+            project_id,
+            task_json_path=args.task_json,
+            task_history_json_path=args.task_history_json,
+            is_latest=args.latest,
+            task_id_list=task_id_list,
+            task_query=task_query,
+            arg_format=FormatArgument(args.format),
+            output=args.output,
         )
 
 
@@ -472,15 +524,15 @@ def parse_args(parser: argparse.ArgumentParser):
     parser.add_argument(
         "--task_json",
         type=str,
-        help="タスク情報が記載されたJSONファイルのパスを指定すると、JSONに記載された情報を元に出力します。指定しない場合はJSONファイルをダウンロードします。"
-        "JSONファイルは`$ annofabcli task download`コマンドで取得できます。",
+        help="タスク情報が記載されたJSONファイルのパスを指定すると、JSONに記載された情報を元に出力します。指定しない場合はJSONファイルをダウンロードします。\n"
+        "JSONファイルは ``$ annofabcli task download`` コマンドで取得できます。",
     )
 
     parser.add_argument(
         "--task_history_json",
         type=str,
-        help="タスク履歴情報が記載されたJSONファイルのパスを指定すると、JSONに記載された情報を元に出力します。指定しない場合はJSONファイルをダウンロードします。"
-        "JSONファイルは`$ annofabcli task_history download`コマンドで取得できます。",
+        help="タスク履歴情報が記載されたJSONファイルのパスを指定すると、JSONに記載された情報を元に出力します。指定しない場合はJSONファイルをダウンロードします。\n"
+        "JSONファイルは ``$ annofabcli task_history download`` コマンドで取得できます。",
     )
 
     parser.add_argument(
@@ -489,18 +541,12 @@ def parse_args(parser: argparse.ArgumentParser):
         help="タスク一覧ファイルの更新が完了するまで待って、最新のファイルをダウンロードします（タスク履歴ファイルはWebAPIの都合上更新されません）。" "JSONファイルを指定しなかったときに有効です。",
     )
 
-    parser.add_argument(
-        "--wait_options",
-        type=str,
-        help="タスク一覧ファイルの更新が完了するまで待つ際のオプションを、JSON形式で指定してください。"
-        "`file://`を先頭に付けるとjsonファイルを指定できます。"
-        'デフォルは`{"interval":60, "max_tries":360}` です。'
-        "`interval`:完了したかを問い合わせる間隔[秒], "
-        "`max_tires`:完了したかの問い合わせを最大何回行うか。",
-    )
-
     argument_parser.add_output()
-    argument_parser.add_csv_format()
+
+    argument_parser.add_format(
+        choices=[FormatArgument.CSV, FormatArgument.JSON, FormatArgument.PRETTY_JSON],
+        default=FormatArgument.CSV,
+    )
 
     parser.set_defaults(subcommand_func=main)
 
@@ -508,7 +554,7 @@ def parse_args(parser: argparse.ArgumentParser):
 def add_parser(subparsers: Optional[argparse._SubParsersAction] = None):
     subcommand_name = "list_added_task_history"
     subcommand_help = "タスク履歴情報を加えたタスク一覧を出力します。"
-    description = "タスク履歴情報（フェーズごとの作業時間、担当者、開始日時）を加えたタスク一覧をCSV形式で出力します。"
+    description = "タスク履歴情報（フェーズごとの作業時間、担当者、開始日時）を加えたタスク一覧を出力します。"
     epilog = "アノテーションユーザ/オーナロールを持つユーザで実行してください。"
     parser = annofabcli.common.cli.add_parser(subparsers, subcommand_name, subcommand_help, description, epilog=epilog)
     parse_args(parser)

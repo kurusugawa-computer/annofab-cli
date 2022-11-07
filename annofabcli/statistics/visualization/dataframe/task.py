@@ -244,6 +244,8 @@ class Task:
             "status",
             "number_of_rejections_by_inspection",
             "number_of_rejections_by_acceptance",
+            # タスク作成時
+            "created_datetime",
             # 1回目の教師付フェーズ
             "first_annotation_user_id",
             "first_annotation_username",
