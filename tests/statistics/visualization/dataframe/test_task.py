@@ -22,3 +22,10 @@ class TestTask:
 
     def test_plot_histogram_of_others(self):
         self.obj.plot_histogram_of_others(output_dir / "ヒストグラム.html")
+
+    def test_empty(self):
+        empty = Task.empty()
+        assert empty.is_empty()
+
+        merged_obj = Task.merge(empty, self.obj)
+        assert len(self.obj.df) == len(merged_obj.df)

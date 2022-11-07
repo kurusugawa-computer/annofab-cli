@@ -225,6 +225,8 @@ class UserPerformance:
         df[("monitored_worktime_hour", "sum")] = df[[("monitored_worktime_hour", phase) for phase in phase_list]].sum(
             axis=1
         )
+        if len(phase_list) == 0:
+            df[("monitored_worktime_hour", TaskPhase.ANNOTATION.value)] = 0
 
         if len(df_worktime_ratio) > 0:
             df_agg_production = df_worktime_ratio.pivot_table(
@@ -262,7 +264,8 @@ class UserPerformance:
 
         # 不要な列を削除する
         tmp_phase_list = copy.deepcopy(phase_list)
-        tmp_phase_list.remove(TaskPhase.ANNOTATION.value)
+        if TaskPhase.ANNOTATION.value in tmp_phase_list:
+            tmp_phase_list.remove(TaskPhase.ANNOTATION.value)
 
         dropped_column = [("pointed_out_inspection_comment_count", phase) for phase in tmp_phase_list] + [
             ("rejected_count", phase) for phase in tmp_phase_list

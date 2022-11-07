@@ -71,7 +71,12 @@ class ProjectDir(DataClassJsonMixin):
 
     def read_task_list(self) -> Task:
         """`タスクlist.csv`を読み込む。"""
-        return Task.from_csv(self.project_dir / self.FILENAME_TASK_LIST)
+        file = self.project_dir / self.FILENAME_TASK_LIST
+        if file.exists():
+            return Task.from_csv(file)
+        else:
+            logger.warning(f"'{str(file)}'を読み込もうとしましたが、ファイルは存在しません。")
+            return Task.empty()
 
     def write_task_list(self, obj: Task):
         """`タスクlist.csv`を書き込む。"""
