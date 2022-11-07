@@ -522,15 +522,15 @@ def parse_args(parser: argparse.ArgumentParser):
     parser.add_argument(
         "--task_json",
         type=str,
-        help="タスク情報が記載されたJSONファイルのパスを指定すると、JSONに記載された情報を元に出力します。指定しない場合はJSONファイルをダウンロードします。"
-        "JSONファイルは`$ annofabcli task download`コマンドで取得できます。",
+        help="タスク情報が記載されたJSONファイルのパスを指定すると、JSONに記載された情報を元に出力します。指定しない場合はJSONファイルをダウンロードします。\n"
+        "JSONファイルは ``$ annofabcli task download`` コマンドで取得できます。",
     )
 
     parser.add_argument(
         "--task_history_json",
         type=str,
-        help="タスク履歴情報が記載されたJSONファイルのパスを指定すると、JSONに記載された情報を元に出力します。指定しない場合はJSONファイルをダウンロードします。"
-        "JSONファイルは`$ annofabcli task_history download`コマンドで取得できます。",
+        help="タスク履歴情報が記載されたJSONファイルのパスを指定すると、JSONに記載された情報を元に出力します。指定しない場合はJSONファイルをダウンロードします。\n"
+        "JSONファイルは ``$ annofabcli task_history download`` コマンドで取得できます。",
     )
 
     parser.add_argument(
@@ -552,7 +552,7 @@ def parse_args(parser: argparse.ArgumentParser):
 def add_parser(subparsers: Optional[argparse._SubParsersAction] = None):
     subcommand_name = "list_added_task_history"
     subcommand_help = "タスク履歴情報を加えたタスク一覧を出力します。"
-    description = "タスク履歴情報（フェーズごとの作業時間、担当者、開始日時）を加えたタスク一覧をCSV形式で出力します。"
+    description = "タスク履歴情報（フェーズごとの作業時間、担当者、開始日時）を加えたタスク一覧を出力します。"
     epilog = "アノテーションユーザ/オーナロールを持つユーザで実行してください。"
     parser = annofabcli.common.cli.add_parser(subparsers, subcommand_name, subcommand_help, description, epilog=epilog)
     parse_args(parser)
