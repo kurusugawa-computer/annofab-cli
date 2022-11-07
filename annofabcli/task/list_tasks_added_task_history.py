@@ -5,6 +5,7 @@ import asyncio
 import json
 import logging
 import sys
+import tempfile
 from pathlib import Path
 from typing import Any, Dict, List, Optional, Set
 
@@ -20,8 +21,6 @@ from annofabcli.common.cli import (
     AbstractCommandLineInterface,
     ArgumentParser,
     build_annofabapi_resource_and_login,
-    get_json_from_args,
-    get_wait_options_from_args,
 )
 from annofabcli.common.dataclasses import WaitOptions
 from annofabcli.common.download import DownloadingFile
@@ -427,44 +426,36 @@ class ListTasksAddedTaskHistory(AbstractCommandLineInterface):
         ]
         return filtered_task_list
 
-    # def print_task_list(self):
-
-
-    def main(self):
-        args = self.args
-        if not self.validate(args):
-            sys.exit(COMMAND_LINE_ERROR_STATUS_CODE)
-
-        project_id = args.project_id
-
-        task_id_list = annofabcli.common.cli.get_list_from_args(args.task_id) if args.task_id is not None else None
-        task_query = (
-            TaskQuery.from_dict(annofabcli.common.cli.get_json_from_args(args.task_query))
-            if args.task_query is not None
-            else None
-        )
-
+    def print_task_list(
+        self,
+        project_id: str,
+        task_json_path: Optional[Path],
+        task_history_json_path: Optional[Path],
+        is_latest: bool,
+        task_id_list: Optional[list[str]],
+        task_query: Optional[TaskQuery],
+    ):
         super().validate_project(project_id, [ProjectMemberRole.OWNER, ProjectMemberRole.TRAINING_DATA_USER])
 
-        if args.task_json is not None and args.task_history_json is not None:
-            task_json_path = args.task_json
-            task_history_json_path = args.task_history_json
+        downloading_obj = DownloadingFile(self.service)
+
+        if task_json_path is not None:
+            with task_json_path.open(encoding="utf-8") as f:
+                task_list = json.load(f)
         else:
-            cache_dir = annofabcli.common.utils.get_cache_dir()
-            task_json_path = cache_dir / f"{project_id}-task.json"
-            task_history_json_path = cache_dir / f"{project_id}-task_history.json"
-            self.download_json_files(
-                project_id,
-                task_json_path=task_json_path,
-                task_history_json_path=task_history_json_path,
-                is_latest=args.latest,
-            )
+            with tempfile.NamedTemporaryFile() as tmp_file:
+                downloading_obj.download_task_json(project_id, tmp_file.name)
+                with open(tmp_file.name, encoding="utf-8") as f:
+                    task_list = json.load(f)
 
-        with open(task_json_path, encoding="utf-8") as f:
-            task_list = json.load(f)
-
-        with open(task_history_json_path, encoding="utf-8") as f:
-            task_history_dict = json.load(f)
+        if task_history_json_path is not None:
+            with task_history_json_path.open(encoding="utf-8") as f:
+                task_history_dict = json.load(f)
+        else:
+            with tempfile.NamedTemporaryFile() as tmp_file:
+                downloading_obj.download_task_history_json(project_id, tmp_file.name)
+                with open(tmp_file.name, encoding="utf-8") as f:
+                    task_history_dict = json.load(f)
 
         filtered_task_list = self.filter_task_list(
             project_id, task_list, task_id_list=task_id_list, task_query=task_query
@@ -482,6 +473,29 @@ class ListTasksAddedTaskHistory(AbstractCommandLineInterface):
             arg_format=FormatArgument(FormatArgument.CSV),
             output=self.output,
             csv_format=self.csv_format,
+        )
+
+    def main(self):
+        args = self.args
+        if not self.validate(args):
+            sys.exit(COMMAND_LINE_ERROR_STATUS_CODE)
+
+        project_id = args.project_id
+
+        task_id_list = annofabcli.common.cli.get_list_from_args(args.task_id) if args.task_id is not None else None
+        task_query = (
+            TaskQuery.from_dict(annofabcli.common.cli.get_json_from_args(args.task_query))
+            if args.task_query is not None
+            else None
+        )
+
+        self.print_task_list(
+            project_id,
+            task_json_path=args.task_json,
+            task_history_json_path=args.task_history_json,
+            is_latest=args.latest,
+            task_id_list=task_id_list,
+            task_query=task_query,
         )
 
 
