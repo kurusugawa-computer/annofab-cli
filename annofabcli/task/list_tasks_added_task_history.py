@@ -54,6 +54,30 @@ def get_completed_datetime(task: dict[str, Any], task_histories: list[TaskHistor
         return None
 
 
+def get_task_created_datetime(task_histories: list[TaskHistory]) -> Optional[str]:
+    """タスクの作成日時を取得する。
+
+    Args:
+        task_histories (List[TaskHistory]): タスク履歴
+
+    Returns:
+        タスクの作成日時
+    """
+    # 受入フェーズで完了日時がnot Noneの場合は、受入を合格したか差し戻したとき。
+    # したがって、後続のタスク履歴を見て、初めて受入完了状態になった日時を取得する。
+    if len(task_histories) == 0:
+        return None
+
+    first_history = task_histories[0]
+    # 確か2020年以前は、一番最初のタスク履歴はタスク作成とは関係なかったので、念の為assertする
+    assert (
+        first_history["account_id"] is None
+        and first_history["accumulated_labor_time_milliseconds"] == "PT0S"
+        and first_history["phase"] == TaskPhase.ANNOTATION.value
+    )
+    return first_history["started_datetime"]
+
+
 def get_first_acceptance_completed_datetime(task_histories: list[TaskHistory]) -> Optional[str]:
     """はじめて受入完了状態になった日時を取得する。
 
@@ -253,6 +277,9 @@ class AddingAdditionalInfoToTask:
             task_histories (list[TaskHistory]): タスク履歴
 
         """
+        # タスク作成日時
+        task["created_datetime"] = get_task_created_datetime(task_histories)
+
         # フェーズごとのタスク履歴情報を追加する
         self._add_task_history_info_by_phase(task, task_histories, phase=TaskPhase.ANNOTATION)
         self._add_task_history_info_by_phase(task, task_histories, phase=TaskPhase.INSPECTION)
@@ -303,6 +330,7 @@ class ListTasksAddedTaskHistory(AbstractCommandLineInterface):
             "phase",
             "phase_stage",
             "status",
+            "created_datetime",
             "started_datetime",
             "updated_datetime",
             "operation_updated_datetime",
@@ -340,13 +368,12 @@ class ListTasksAddedTaskHistory(AbstractCommandLineInterface):
         task_json_path: Path,
         task_history_json_path: Path,
         is_latest: bool,
-        wait_options: WaitOptions,
     ):
         loop = asyncio.get_event_loop()
         downloading_obj = DownloadingFile(self.service)
         gather = asyncio.gather(
             downloading_obj.download_task_json_with_async(
-                project_id, dest_path=str(task_json_path), is_latest=is_latest, wait_options=wait_options
+                project_id, dest_path=str(task_json_path), is_latest=is_latest
             ),
             downloading_obj.download_task_history_json_with_async(
                 project_id,
@@ -400,6 +427,9 @@ class ListTasksAddedTaskHistory(AbstractCommandLineInterface):
         ]
         return filtered_task_list
 
+    # def print_task_list(self):
+
+
     def main(self):
         args = self.args
         if not self.validate(args):
@@ -420,7 +450,6 @@ class ListTasksAddedTaskHistory(AbstractCommandLineInterface):
             task_json_path = args.task_json
             task_history_json_path = args.task_history_json
         else:
-            wait_options = get_wait_options_from_args(get_json_from_args(args.wait_options), DEFAULT_WAIT_OPTIONS)
             cache_dir = annofabcli.common.utils.get_cache_dir()
             task_json_path = cache_dir / f"{project_id}-task.json"
             task_history_json_path = cache_dir / f"{project_id}-task_history.json"
@@ -429,7 +458,6 @@ class ListTasksAddedTaskHistory(AbstractCommandLineInterface):
                 task_json_path=task_json_path,
                 task_history_json_path=task_history_json_path,
                 is_latest=args.latest,
-                wait_options=wait_options,
             )
 
         with open(task_json_path, encoding="utf-8") as f:
@@ -487,16 +515,6 @@ def parse_args(parser: argparse.ArgumentParser):
         "--latest",
         action="store_true",
         help="タスク一覧ファイルの更新が完了するまで待って、最新のファイルをダウンロードします（タスク履歴ファイルはWebAPIの都合上更新されません）。" "JSONファイルを指定しなかったときに有効です。",
-    )
-
-    parser.add_argument(
-        "--wait_options",
-        type=str,
-        help="タスク一覧ファイルの更新が完了するまで待つ際のオプションを、JSON形式で指定してください。"
-        "`file://`を先頭に付けるとjsonファイルを指定できます。"
-        'デフォルは`{"interval":60, "max_tries":360}` です。'
-        "`interval`:完了したかを問い合わせる間隔[秒], "
-        "`max_tires`:完了したかの問い合わせを最大何回行うか。",
     )
 
     argument_parser.add_output()

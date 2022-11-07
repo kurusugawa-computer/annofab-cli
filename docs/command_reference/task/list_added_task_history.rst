@@ -73,6 +73,7 @@ CSV出力
 
 出力されたCSVの以下の列は、タスク履歴から取得した情報です。
 
+* created_datetime: タスクの作成日時
 * annotation_worktime_hour: 教師付フェーズの作業時間[hour]
 * inspection_worktime_hour: 検査フェーズの作業時間[hour]
 * acceptance_worktime_hour: 受入フェーズの作業時間[hour]
