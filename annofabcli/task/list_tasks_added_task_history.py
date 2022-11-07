@@ -70,13 +70,15 @@ def get_task_created_datetime(task_histories: list[TaskHistory]) -> Optional[str
         return None
 
     first_history = task_histories[0]
-    # 確か2020年以前は、一番最初のタスク履歴はタスク作成とは関係なかったので、念の為assertする
-    assert (
+    # 2020年以前は、先頭のタスク履歴はタスク作成ではなく、教師付けの履歴である。2020年以前はタスク作成日時を取得できないのでNoneを返す。
+    # https://annofab.com/docs/releases/2020.html#v01020
+    if (
         first_history["account_id"] is None
         and first_history["accumulated_labor_time_milliseconds"] == "PT0S"
         and first_history["phase"] == TaskPhase.ANNOTATION.value
-    )
-    return first_history["started_datetime"]
+    ):
+        return first_history["started_datetime"]
+    return None
 
 
 def get_first_acceptance_completed_datetime(task_histories: list[TaskHistory]) -> Optional[str]:
