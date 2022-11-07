@@ -26,9 +26,11 @@ from annofabcli.common.dataclasses import WaitOptions
 from annofabcli.common.download import DownloadingFile
 from annofabcli.common.enums import FormatArgument
 from annofabcli.common.facade import AnnofabApiFacade, TaskQuery, match_task_with_query
+from annofabcli.common.utils import print_csv, print_json
 from annofabcli.common.visualize import AddProps
 
 logger = logging.getLogger(__name__)
+
 
 TaskHistoryDict = Dict[str, List[TaskHistory]]
 """タスク履歴の辞書（key: task_id, value: タスク履歴一覧）"""
@@ -434,6 +436,8 @@ class ListTasksAddedTaskHistory(AbstractCommandLineInterface):
         is_latest: bool,
         task_id_list: Optional[list[str]],
         task_query: Optional[TaskQuery],
+        arg_format: FormatArgument,
+        output: Path,
     ):
         super().validate_project(project_id, [ProjectMemberRole.OWNER, ProjectMemberRole.TRAINING_DATA_USER])
 
@@ -444,7 +448,7 @@ class ListTasksAddedTaskHistory(AbstractCommandLineInterface):
                 task_list = json.load(f)
         else:
             with tempfile.NamedTemporaryFile() as tmp_file:
-                downloading_obj.download_task_json(project_id, tmp_file.name)
+                downloading_obj.download_task_json(project_id, tmp_file.name, is_latest=is_latest)
                 with open(tmp_file.name, encoding="utf-8") as f:
                     task_list = json.load(f)
 
@@ -466,14 +470,16 @@ class ListTasksAddedTaskHistory(AbstractCommandLineInterface):
             project_id=project_id, task_list=filtered_task_list, task_history_dict=task_history_dict
         )
 
-        df_task = pandas.DataFrame(detail_task_list)
-
-        annofabcli.common.utils.print_according_to_format(
-            df_task[self._get_output_target_columns()],
-            arg_format=FormatArgument(FormatArgument.CSV),
-            output=self.output,
-            csv_format=self.csv_format,
-        )
+        if arg_format == FormatArgument.CSV:
+            df_task = pandas.DataFrame(detail_task_list)
+            print_csv(
+                df_task[self._get_output_target_columns()],
+                output=self.output,
+            )
+        elif arg_format == FormatArgument.JSON:
+            print_json(detail_task_list, is_pretty=False, output=output)
+        elif arg_format == FormatArgument.PRETTY_JSON:
+            print_json(detail_task_list, is_pretty=True, output=output)
 
     def main(self):
         args = self.args
@@ -496,6 +502,8 @@ class ListTasksAddedTaskHistory(AbstractCommandLineInterface):
             is_latest=args.latest,
             task_id_list=task_id_list,
             task_query=task_query,
+            arg_format=FormatArgument(args.format),
+            output=args.output,
         )
 
 
@@ -532,7 +540,11 @@ def parse_args(parser: argparse.ArgumentParser):
     )
 
     argument_parser.add_output()
-    argument_parser.add_csv_format()
+
+    argument_parser.add_format(
+        choices=[FormatArgument.CSV, FormatArgument.JSON, FormatArgument.PRETTY_JSON],
+        default=FormatArgument.CSV,
+    )
 
     parser.set_defaults(subcommand_func=main)
 
