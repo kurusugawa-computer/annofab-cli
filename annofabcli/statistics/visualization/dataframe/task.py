@@ -8,6 +8,7 @@ import bokeh.layouts
 import bokeh.palettes
 import pandas
 import pytz
+from annofabapi.models import TaskPhase
 
 from annofabcli.common.utils import print_csv
 from annofabcli.statistics.histogram import get_histogram_figure, get_sub_title_from_series
@@ -26,6 +27,52 @@ class Task:
             logger.warning(f"データが0件のため、{output_file} は出力しません。")
             return False
         return True
+
+    def is_empty(self) -> bool:
+        """
+        空のデータフレームを持つかどうかを返します。
+
+        Returns:
+            空のデータフレームを持つかどうか
+        """
+        return len(self.df) == 0
+
+    @classmethod
+    def empty(cls) -> Task:
+        """空のデータフレームを持つインスタンスを生成します。"""
+
+        df_dtype: dict[str, str] = {
+            "project_id": "string",
+            "task_id": "string",
+            "phase": "string",
+            "phase_stage": "int64",
+            "status": "string",
+            "number_of_rejections_by_inspection": "int64",
+            "number_of_rejections_by_acceptance": "int64",
+            "created_datetime": "string",
+            "first_acceptance_completed_datetime": "string",
+            "worktime_hour": "float64",
+            "annotation_worktime_hour": "float64",
+            "inspection_worktime_hour": "float64",
+            "acceptance_worktime_hour": "float64",
+            "input_data_count": "int64",
+            "inspection_comment_count": "int64",
+            "annotation_count": "int64",
+            "inspection_is_skipped": "boolean",
+            "acceptance_is_skipped": "boolean",
+        }
+        for phase in TaskPhase:
+            df_dtype.update(
+                {
+                    f"first_{phase.value}_user_id": "string",
+                    f"first_{phase.value}_username": "string",
+                    f"first_{phase.value}_worktime_hour": "int64",
+                    f"first_{phase.value}_started_datetime": "string",
+                }
+            )
+
+        df = pandas.DataFrame(columns=df_dtype.keys()).astype(df_dtype)
+        return cls(df)
 
     @classmethod
     def from_csv(cls, csv_file: Path) -> Task:
