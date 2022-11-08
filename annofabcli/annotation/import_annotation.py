@@ -140,17 +140,26 @@ class ImportAnnotationMain(AbstractCommandLineWithConfirmInterface):
 
     @classmethod
     def _is_3dpc_segment_label(cls, label_info: Dict[str, Any]) -> bool:
+        # TODO 暫定対応(3次元アノテーションならばという判定が必要)
+        if label_info["annotation_type"] in {"user_instance_segment", "user_semantic_segment"}:
+            return True
+
         if label_info["annotation_type"] != DefaultAnnotationType.CUSTOM.value:
             return False
 
         metadata = label_info["metadata"]
         if metadata.get("type") == "SEGMENT":
             return True
+
+
+        # TODO 暫定対応(3次元アノテーションならばという判定が必要)
+        if label_info["annotation_type"] in {"user_instance_segment", "user_semantic_segment"}:
+            return True
+
         return False
 
     @classmethod
     def _get_data_holding_type_from_data(cls, label_info: Dict[str, Any]) -> AnnotationDataHoldingType:
-
         annotation_type = label_info["annotation_type"]
         if annotation_type in [DefaultAnnotationType.SEGMENTATION.value, DefaultAnnotationType.SEGMENTATION_V2.value]:
             return AnnotationDataHoldingType.OUTER
@@ -159,6 +168,10 @@ class ImportAnnotationMain(AbstractCommandLineWithConfirmInterface):
         if annotation_type == DefaultAnnotationType.CUSTOM.value:
             if cls._is_3dpc_segment_label(label_info):
                 return AnnotationDataHoldingType.OUTER
+
+        # TODO 暫定対応(3次元アノテーションならばという判定が必要)
+        if annotation_type in {"user_instance_segment", "user_semantic_segment"}:
+            return AnnotationDataHoldingType.OUTER
         return AnnotationDataHoldingType.INNER
 
     def _to_additional_data_list(self, attributes: Dict[str, Any], label_info: LabelV1) -> List[AdditionalDataV1]:
