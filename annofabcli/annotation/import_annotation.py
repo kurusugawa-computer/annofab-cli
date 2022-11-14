@@ -28,6 +28,7 @@ from annofabapi.parser import (
     lazy_parse_simple_annotation_dir_by_task,
     lazy_parse_simple_annotation_zip_by_task,
 )
+from annofabapi.plugin import ThreeDimensionAnnotationType
 from annofabapi.utils import can_put_annotation, str_now
 from dataclasses_json import DataClassJsonMixin
 from more_itertools import first_true
@@ -140,21 +141,23 @@ class ImportAnnotationMain(AbstractCommandLineWithConfirmInterface):
 
     @classmethod
     def _is_3dpc_segment_label(cls, label_info: Dict[str, Any]) -> bool:
-        # TODO 暫定対応(3次元アノテーションならばという判定が必要)
-        if label_info["annotation_type"] in {"user_instance_segment", "user_semantic_segment"}:
+        """
+        3次元のセグメントかどうか
+        """
+        # 理想はプラグイン情報を見て、3次元アノテーションの種類かどうか判定した方がよい
+        # が、当分は文字列判定だけでも十分なので、文字列で判定する
+        if label_info["annotation_type"] in {
+            ThreeDimensionAnnotationType.INSTANCE_SEGMENT.value,
+            ThreeDimensionAnnotationType.SEMANTIC_SEGMENT.value,
+        }:
             return True
 
-        if label_info["annotation_type"] != DefaultAnnotationType.CUSTOM.value:
-            return False
-
-        metadata = label_info["metadata"]
-        if metadata.get("type") == "SEGMENT":
-            return True
-
-
-        # TODO 暫定対応(3次元アノテーションならばという判定が必要)
-        if label_info["annotation_type"] in {"user_instance_segment", "user_semantic_segment"}:
-            return True
+        # 標準の3次元アノテーション仕様用のプラグインを利用していない場合
+        # TODO すべての3次元プロジェクトが、標準の3次元アノテーション仕様用のプラグインを利用するようになったら、この処理を削除する
+        if label_info["annotation_type"] == DefaultAnnotationType.CUSTOM.value:
+            metadata = label_info["metadata"]
+            if metadata.get("type") == "SEGMENT":
+                return True
 
         return False
 
@@ -165,13 +168,9 @@ class ImportAnnotationMain(AbstractCommandLineWithConfirmInterface):
             return AnnotationDataHoldingType.OUTER
 
         # TODO: 3dpc editorに依存したコード。annofab側でSimple Annotationのフォーマットが改善されたら、このコードを削除する
-        if annotation_type == DefaultAnnotationType.CUSTOM.value:
-            if cls._is_3dpc_segment_label(label_info):
-                return AnnotationDataHoldingType.OUTER
-
-        # TODO 暫定対応(3次元アノテーションならばという判定が必要)
-        if annotation_type in {"user_instance_segment", "user_semantic_segment"}:
+        if cls._is_3dpc_segment_label(label_info):
             return AnnotationDataHoldingType.OUTER
+
         return AnnotationDataHoldingType.INNER
 
     def _to_additional_data_list(self, attributes: Dict[str, Any], label_info: LabelV1) -> List[AdditionalDataV1]:
