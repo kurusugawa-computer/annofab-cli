@@ -87,7 +87,6 @@ class ListAllComment(AbstractCommandLineInterface):
 
         logger.info(f"コメントの件数: {len(comment_list)}")
         df = pandas.json_normalize(comment_list)
-        print(f"{df.columns=}")
         self.print_according_to_format(df)
 
 
