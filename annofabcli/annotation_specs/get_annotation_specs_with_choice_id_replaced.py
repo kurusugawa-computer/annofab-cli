@@ -63,7 +63,9 @@ class ReplacingChoiceId(AbstractCommandLineWithConfirmInterface):
 
             choice_list = attribute["choices"]
 
-            if not self.confirm_processing(f"属性英語名='{attribute_name_en}'の{len(choice_list)}個の選択肢IDを、選択肢英語名に変更しますか？"):
+            if not self.confirm_processing(
+                f"属性英語名='{attribute_name_en}'の{len(choice_list)}個の選択肢IDを、" "選択肢英語名に変更したアノテーション仕様のJSONを出力しますか？"
+            ):
                 continue
 
             replaced_choice_id_count = 0
