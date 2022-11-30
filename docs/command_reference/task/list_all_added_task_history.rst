@@ -1,5 +1,5 @@
 ==========================================
-task list_added_task_history
+task list_all_added_task_history
 ==========================================
 
 Description
@@ -24,14 +24,14 @@ Examples
 
 .. code-block::
 
-    $ annofabcli task list_added_task_history --project_id prj1 --output task.csv
+    $ annofabcli task list_all_added_task_history --project_id prj1 --output task.csv
 
 
 タスク全件ファイルを指定する場合は ``--task_json`` 、タスク履歴全件ファイルを指定する場合は ``--task_history_json`` を指定してください。
 
 .. code-block::
 
-    $ annofabcli task list_added_task_history --project_id prj1 --output task.csv \
+    $ annofabcli task list_all_added_task_history --project_id prj1 --output task.csv \
     --task_json task.json --task_history_json task_history.json
 
 タスク全件ファイルは `annofabcli task download <../task/download.html>`_ コマンド、タスク履歴全件ファイルは、`annofabcli task_history download <../task_history/download.html>`_ コマンドでダウンロードできます。
@@ -45,10 +45,10 @@ Examples
 
 .. code-block::
 
-    $ annofabcli task list_added_task_history --project_id prj1 \
+    $ annofabcli task list_all_added_task_history --project_id prj1 \
      --task_query '{"status":"complete", "phase":"not_started"}'
 
-    $ annofabcli task list_added_task_history --project_id prj1 \
+    $ annofabcli task list_all_added_task_history --project_id prj1 \
      --task_id file://task_id.txt
 
 
@@ -147,23 +147,13 @@ JSON出力
 
 
 
-CSV出力
-----------------------------------------------
-
-.. code-block::
-
-    $ annofabcli task list_added_task_history --project_id prj1 --output out.csv
-
-
-`out.csv <https://github.com/kurusugawa-computer/annofab-cli/blob/main/docs/command_reference/task/list_added_task_history/out.csv>`_
-
 
 
 Usage Details
 =================================
 
 .. argparse::
-   :ref: annofabcli.task.list_tasks_added_task_history.add_parser
-   :prog: annofabcli task list_added_task_history
+   :ref: annofabcli.task.list_all_tasks_added_task_history.add_parser
+   :prog: annofabcli task list_all_added_task_history
    :nosubcommands:
    :nodefaultconst:

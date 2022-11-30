@@ -24,7 +24,7 @@ Available Commands
    download
    list
    list_all
-   list_added_task_history
+   list_all_added_task_history
    put
    put_by_count
    reject

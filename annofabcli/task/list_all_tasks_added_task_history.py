@@ -439,7 +439,6 @@ class ListTasksAddedTaskHistory(AbstractCommandLineInterface):
         project_id: str,
         task_json_path: Optional[Path],
         task_history_json_path: Optional[Path],
-        is_latest: bool,
         task_id_list: Optional[list[str]],
         task_query: Optional[TaskQuery],
         arg_format: FormatArgument,
@@ -454,7 +453,7 @@ class ListTasksAddedTaskHistory(AbstractCommandLineInterface):
                 task_list = json.load(f)
         else:
             with tempfile.NamedTemporaryFile() as tmp_file:
-                downloading_obj.download_task_json(project_id, tmp_file.name, is_latest=is_latest)
+                downloading_obj.download_task_json(project_id, tmp_file.name)
                 with open(tmp_file.name, encoding="utf-8") as f:
                     task_list = json.load(f)
 
@@ -505,7 +504,6 @@ class ListTasksAddedTaskHistory(AbstractCommandLineInterface):
             project_id,
             task_json_path=args.task_json,
             task_history_json_path=args.task_history_json,
-            is_latest=args.latest,
             task_id_list=task_id_list,
             task_query=task_query,
             arg_format=FormatArgument(args.format),
@@ -539,12 +537,6 @@ def parse_args(parser: argparse.ArgumentParser):
         "JSONファイルは ``$ annofabcli task_history download`` コマンドで取得できます。",
     )
 
-    parser.add_argument(
-        "--latest",
-        action="store_true",
-        help="タスク一覧ファイルの更新が完了するまで待って、最新のファイルをダウンロードします（タスク履歴ファイルはWebAPIの都合上更新されません）。" "JSONファイルを指定しなかったときに有効です。",
-    )
-
     argument_parser.add_output()
 
     argument_parser.add_format(
@@ -556,9 +548,9 @@ def parse_args(parser: argparse.ArgumentParser):
 
 
 def add_parser(subparsers: Optional[argparse._SubParsersAction] = None):
-    subcommand_name = "list_added_task_history"
-    subcommand_help = "タスク履歴情報を加えたタスク一覧を出力します。"
-    description = "タスク履歴情報（フェーズごとの作業時間、担当者、開始日時）を加えたタスク一覧を出力します。"
+    subcommand_name = "list_all_added_task_history"
+    subcommand_help = "タスク履歴情報を加えたタスク一覧のすべてを出力します。"
+    description = "タスク履歴情報（フェーズごとの作業時間、担当者、開始日時）を加えたタスク一覧のすべてを出力します。"
     epilog = "アノテーションユーザ/オーナロールを持つユーザで実行してください。"
     parser = annofabcli.common.cli.add_parser(subparsers, subcommand_name, subcommand_help, description, epilog=epilog)
     parse_args(parser)

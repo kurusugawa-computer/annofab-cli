@@ -9,7 +9,7 @@ import annofabcli
 from annofabcli.common.facade import AnnofabApiFacade
 from annofabcli.common.utils import isoduration_to_hour
 from annofabcli.statistics.database import Database
-from annofabcli.task.list_tasks_added_task_history import AddingAdditionalInfoToTask
+from annofabcli.task.list_all_tasks_added_task_history import AddingAdditionalInfoToTask
 
 logger = logging.getLogger(__name__)
 
