@@ -55,7 +55,7 @@ def get_completed_datetime(task: dict[str, Any], task_histories: list[TaskHistor
         return None
 
 
-def get_task_created_datetime(task_histories: list[TaskHistory]) -> Optional[str]:
+def get_task_created_datetime(task: dict[str, Any], task_histories: list[TaskHistory]) -> Optional[str]:
     """タスクの作成日時を取得する。
 
     Args:
@@ -77,6 +77,10 @@ def get_task_created_datetime(task_histories: list[TaskHistory]) -> Optional[str
         and first_history["accumulated_labor_time_milliseconds"] == "PT0S"
         and first_history["phase"] == TaskPhase.ANNOTATION.value
     ):
+        if len(task_histories) == 1:
+            # 一度も作業されていないタスクは、先頭のタスク履歴のstarted_datetimeはNoneである
+            # 替わりにタスクの`operation_updated_datetime`をタスク作成日時とする
+            return task["operation_updated_datetime"]
         return first_history["started_datetime"]
     return None
 
@@ -281,7 +285,7 @@ class AddingAdditionalInfoToTask:
 
         """
         # タスク作成日時
-        task["created_datetime"] = get_task_created_datetime(task_histories)
+        task["created_datetime"] = get_task_created_datetime(task, task_histories)
 
         # フェーズごとのタスク履歴情報を追加する
         self._add_task_history_info_by_phase(task, task_histories, phase=TaskPhase.ANNOTATION)
