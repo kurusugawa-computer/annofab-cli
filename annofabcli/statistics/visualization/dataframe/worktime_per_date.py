@@ -298,7 +298,16 @@ class WorktimePerDate:
         df = df.merge(self.df, how="left", on=["date", "user_id"], suffixes=(None, "_tmp"))[self.columns]
 
         # 作業時間関係の列を0で埋める
-        df.fillna(0, inplace=True)
+        df.fillna(
+            {
+                "actual_worktime_hour": 0,
+                "monitored_worktime_hour": 0,
+                "monitored_annotation_worktime_hour": 0,
+                "monitored_inspection_worktime_hour": 0,
+                "monitored_acceptance_worktime_hour": 0,
+            },
+            inplace=True,
+        )
 
         return df
 

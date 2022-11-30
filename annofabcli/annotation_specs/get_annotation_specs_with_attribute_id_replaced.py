@@ -119,7 +119,7 @@ class ReplacingAttributeId(AbstractCommandLineWithConfirmInterface):
                 )
                 continue
 
-            if not self.confirm_processing(f"属性ID='{attribute_id}'を'{attribute_name_en}'に変更しますか？"):
+            if not self.confirm_processing(f"属性ID='{attribute_id}'を'{attribute_name_en}'に変更したアノテーション仕様のJSONを出力しますか？"):
                 continue
 
             attribute["additional_data_definition_id"] = attribute_name_en

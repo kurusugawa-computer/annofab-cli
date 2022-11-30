@@ -11,6 +11,7 @@ from pathlib import Path
 from typing import Any, Collection, Optional
 
 import annofabapi
+import pandas
 from annofabapi.models import CommentType
 
 import annofabcli
@@ -85,7 +86,8 @@ class ListAllComment(AbstractCommandLineInterface):
         )
 
         logger.info(f"コメントの件数: {len(comment_list)}")
-        self.print_according_to_format(comment_list)
+        df = pandas.json_normalize(comment_list)
+        self.print_according_to_format(df)
 
 
 def parse_args(parser: argparse.ArgumentParser):

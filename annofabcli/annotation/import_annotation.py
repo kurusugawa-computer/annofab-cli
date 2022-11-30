@@ -28,6 +28,7 @@ from annofabapi.parser import (
     lazy_parse_simple_annotation_dir_by_task,
     lazy_parse_simple_annotation_zip_by_task,
 )
+from annofabapi.plugin import ThreeDimensionAnnotationType
 from annofabapi.utils import can_put_annotation, str_now
 from dataclasses_json import DataClassJsonMixin
 from more_itertools import first_true
@@ -102,7 +103,7 @@ class ImportAnnotationMain(AbstractCommandLineWithConfirmInterface):
             if label_name_en is not None and label_name_en == label_name:
                 return label
 
-        logger.warning(f"アノテーション仕様に label_name={label_name} のラベルが存在しません。")
+        logger.warning(f"アノテーション仕様に label_name='{label_name}' のラベルが存在しません。")
         return None
 
     def _get_additional_data_from_attribute_name(
@@ -140,25 +141,36 @@ class ImportAnnotationMain(AbstractCommandLineWithConfirmInterface):
 
     @classmethod
     def _is_3dpc_segment_label(cls, label_info: Dict[str, Any]) -> bool:
-        if label_info["annotation_type"] != DefaultAnnotationType.CUSTOM.value:
-            return False
-
-        metadata = label_info["metadata"]
-        if metadata.get("type") == "SEGMENT":
+        """
+        3次元のセグメントかどうか
+        """
+        # 理想はプラグイン情報を見て、3次元アノテーションの種類かどうか判定した方がよい
+        # が、当分は文字列判定だけでも十分なので、文字列で判定する
+        if label_info["annotation_type"] in {
+            ThreeDimensionAnnotationType.INSTANCE_SEGMENT.value,
+            ThreeDimensionAnnotationType.SEMANTIC_SEGMENT.value,
+        }:
             return True
+
+        # 標準の3次元アノテーション仕様用のプラグインを利用していない場合
+        # TODO すべての3次元プロジェクトが、標準の3次元アノテーション仕様用のプラグインを利用するようになったら、この処理を削除する
+        if label_info["annotation_type"] == DefaultAnnotationType.CUSTOM.value:
+            metadata = label_info["metadata"]
+            if metadata.get("type") == "SEGMENT":
+                return True
+
         return False
 
     @classmethod
     def _get_data_holding_type_from_data(cls, label_info: Dict[str, Any]) -> AnnotationDataHoldingType:
-
         annotation_type = label_info["annotation_type"]
         if annotation_type in [DefaultAnnotationType.SEGMENTATION.value, DefaultAnnotationType.SEGMENTATION_V2.value]:
             return AnnotationDataHoldingType.OUTER
 
         # TODO: 3dpc editorに依存したコード。annofab側でSimple Annotationのフォーマットが改善されたら、このコードを削除する
-        if annotation_type == DefaultAnnotationType.CUSTOM.value:
-            if cls._is_3dpc_segment_label(label_info):
-                return AnnotationDataHoldingType.OUTER
+        if cls._is_3dpc_segment_label(label_info):
+            return AnnotationDataHoldingType.OUTER
+
         return AnnotationDataHoldingType.INNER
 
     def _to_additional_data_list(self, attributes: Dict[str, Any], label_info: LabelV1) -> List[AdditionalDataV1]:
@@ -166,7 +178,7 @@ class ImportAnnotationMain(AbstractCommandLineWithConfirmInterface):
         for key, value in attributes.items():
             specs_additional_data = self._get_additional_data_from_attribute_name(key, label_info)
             if specs_additional_data is None:
-                logger.warning(f"アノテーション仕様に attribute_name={key} が存在しません。")
+                logger.warning(f"アノテーション仕様に attribute_name='{key}' が存在しません。")
                 continue
 
             additional_data = AdditionalDataV1(
@@ -191,7 +203,7 @@ class ImportAnnotationMain(AbstractCommandLineWithConfirmInterface):
             elif additional_data_type in [AdditionalDataDefinitionType.CHOICE, AdditionalDataDefinitionType.SELECT]:
                 additional_data.choice = self._get_choice_id_from_name(value, specs_additional_data["choices"])
             else:
-                logger.warning(f"additional_data_type={additional_data_type}が不正です。")
+                logger.warning(f"additional_data_type='{additional_data_type}'が不正です。")
                 continue
 
             additional_data_list.append(additional_data)
@@ -275,7 +287,7 @@ class ImportAnnotationMain(AbstractCommandLineWithConfirmInterface):
             except Exception:
                 logger.warning(
                     f"{parser.task_id}/{parser.input_data_id} :: アノテーションをrequest_bodyに変換するのに失敗しました。 :: "
-                    f"annotation_id={detail.annotation_id}, label={detail.label}",
+                    f"annotation_id='{detail.annotation_id}', label='{detail.label}'",
                     exc_info=True,
                 )
                 continue
@@ -322,7 +334,7 @@ class ImportAnnotationMain(AbstractCommandLineWithConfirmInterface):
             except Exception:
                 logger.warning(
                     f"{parser.task_id}/{parser.input_data_id} :: アノテーションをrequest_bodyに変換するのに失敗しました。 :: "
-                    f"annotation_id={detail.annotation_id}, label={detail.label}",
+                    f"annotation_id='{detail.annotation_id}', label='{detail.label}'",
                     exc_info=True,
                 )
                 continue
@@ -399,7 +411,7 @@ class ImportAnnotationMain(AbstractCommandLineWithConfirmInterface):
                     success_count += 1
             except Exception:  # pylint: disable=broad-except
                 logger.warning(
-                    f"task_id={parser.task_id}, input_data_id={parser.input_data_id} の" f"アノテーションのインポートに失敗しました。",
+                    f"task_id='{parser.task_id}', input_data_id='{parser.input_data_id}' の" f"アノテーションのインポートに失敗しました。",
                     exc_info=True,
                 )
 
@@ -476,7 +488,7 @@ class ImportAnnotationMain(AbstractCommandLineWithConfirmInterface):
         try:
             return self.execute_task(task_parser, task_index=task_index)
         except Exception:  # pylint: disable=broad-except
-            logger.warning(f"task_id={task_parser.task_id} のアノテーションのインポートに失敗しました。", exc_info=True)
+            logger.warning(f"task_id='{task_parser.task_id}' のアノテーションのインポートに失敗しました。", exc_info=True)
             return False
 
     def main(
@@ -514,7 +526,7 @@ class ImportAnnotationMain(AbstractCommandLineWithConfirmInterface):
                     if result:
                         success_count += 1
                 except Exception:
-                    logger.warning(f"task_id={task_parser.task_id} のアノテーションのインポートに失敗しました。", exc_info=True)
+                    logger.warning(f"task_id='{task_parser.task_id}' のアノテーションのインポートに失敗しました。", exc_info=True)
                     continue
                 finally:
                     task_count += 1

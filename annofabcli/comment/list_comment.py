@@ -2,6 +2,7 @@ import argparse
 import logging
 from typing import List, Optional
 
+import pandas
 import requests
 from annofabapi.models import Comment, CommentType
 
@@ -53,7 +54,8 @@ class ListingComments(AbstractCommandLineInterface):
 
         visualize = AddProps(self.service, project_id)
         all_comments = [visualize.add_properties_to_comment(e) for e in all_comments]
-        self.print_according_to_format(all_comments)
+        df = pandas.json_normalize(all_comments)
+        self.print_according_to_format(df)
 
     def main(self):
         args = self.args

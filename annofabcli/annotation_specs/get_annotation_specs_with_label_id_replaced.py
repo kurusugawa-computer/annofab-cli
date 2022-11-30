@@ -97,7 +97,7 @@ class ReplacingLabelId(AbstractCommandLineWithConfirmInterface):
                 )
                 continue
 
-            if not self.confirm_processing(f"label_id='{label_id}'を'{label_name_en}'に変更しますか？"):
+            if not self.confirm_processing(f"label_id='{label_id}'を'{label_name_en}'に変更したアノテーション仕様のJSONを出力しますか？"):
                 continue
 
             # ラベル内のlabel_idを変更する

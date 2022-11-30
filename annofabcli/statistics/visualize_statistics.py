@@ -436,44 +436,44 @@ class VisualizeStatistics(AbstractCommandLineInterface):
                 output_only_text=args.output_only_text,
             )
 
-        if len(project_id_list) == 1:
-            main_obj.visualize_statistics(project_id_list[0], root_output_dir)
-            if args.merge:
-                logger.warning(f"出力した統計情報は1件以下なので、`merge`ディレクトリを出力しません。")
-
-        else:
-            # project_idが複数指定された場合は、project_titleのディレクトリに統計情報を出力する
-            output_project_dir_list = main_obj.visualize_statistics_for_project_list(
-                project_id_list=project_id_list,
-                root_output_dir=root_output_dir,
-                parallelism=args.parallelism,
-            )
-
-            if args.merge:
-                merge_visualization_dir(
-                    project_dir_list=[ProjectDir(e) for e in output_project_dir_list],
-                    output_project_dir=ProjectDir(root_output_dir / "merge"),
-                    user_id_list=user_id_list,
-                    minimal_output=args.minimal,
-                )
-
-            if len(output_project_dir_list) > 0:
-                project_dir_list = [ProjectDir(e) for e in output_project_dir_list]
-                project_performance = ProjectPerformance.from_project_dirs(project_dir_list)
-                project_performance.to_csv(root_output_dir / "プロジェクトごとの生産性と品質.csv")
-
-                project_actual_worktime = ProjectWorktimePerMonth.from_project_dirs(
-                    project_dir_list, WorktimeColumn.ACTUAL_WORKTIME_HOUR
-                )
-                project_actual_worktime.to_csv(root_output_dir / "プロジェクごとの毎月の実績作業時間.csv")
-
-                project_monitored_worktime = ProjectWorktimePerMonth.from_project_dirs(
-                    project_dir_list, WorktimeColumn.MONITORED_WORKTIME_HOUR
-                )
-                project_monitored_worktime.to_csv(root_output_dir / "プロジェクごとの毎月の計測作業時間.csv")
+            if len(project_id_list) == 1:
+                main_obj.visualize_statistics(project_id_list[0], root_output_dir)
+                if args.merge:
+                    logger.warning(f"出力した統計情報は1件以下なので、`merge`ディレクトリを出力しません。")
 
             else:
-                logger.warning(f"出力した統計情報は0件なので、`プロジェクトごとの生産性と品質.csv`を出力しません。")
+                # project_idが複数指定された場合は、project_titleのディレクトリに統計情報を出力する
+                output_project_dir_list = main_obj.visualize_statistics_for_project_list(
+                    project_id_list=project_id_list,
+                    root_output_dir=root_output_dir,
+                    parallelism=args.parallelism,
+                )
+
+                if args.merge:
+                    merge_visualization_dir(
+                        project_dir_list=[ProjectDir(e) for e in output_project_dir_list],
+                        output_project_dir=ProjectDir(root_output_dir / "merge"),
+                        user_id_list=user_id_list,
+                        minimal_output=args.minimal,
+                    )
+
+                if len(output_project_dir_list) > 0:
+                    project_dir_list = [ProjectDir(e) for e in output_project_dir_list]
+                    project_performance = ProjectPerformance.from_project_dirs(project_dir_list)
+                    project_performance.to_csv(root_output_dir / "プロジェクトごとの生産性と品質.csv")
+
+                    project_actual_worktime = ProjectWorktimePerMonth.from_project_dirs(
+                        project_dir_list, WorktimeColumn.ACTUAL_WORKTIME_HOUR
+                    )
+                    project_actual_worktime.to_csv(root_output_dir / "プロジェクごとの毎月の実績作業時間.csv")
+
+                    project_monitored_worktime = ProjectWorktimePerMonth.from_project_dirs(
+                        project_dir_list, WorktimeColumn.MONITORED_WORKTIME_HOUR
+                    )
+                    project_monitored_worktime.to_csv(root_output_dir / "プロジェクごとの毎月の計測作業時間.csv")
+
+                else:
+                    logger.warning(f"出力した統計情報は0件なので、`プロジェクトごとの生産性と品質.csv`を出力しません。")
 
 
 def main(args):
