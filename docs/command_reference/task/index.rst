@@ -23,6 +23,7 @@ Available Commands
    delete
    download
    list
+   list_added_task_history
    list_all
    list_all_added_task_history
    put
