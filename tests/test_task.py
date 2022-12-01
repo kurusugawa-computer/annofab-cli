@@ -54,6 +54,21 @@ class TestCommandLine:
             ]
         )
 
+    def test_list_all_added_task_history(self):
+        out_file = str(out_dir / "list_all_added_task_history.csv")
+        main(
+            [
+                self.command_name,
+                "list_all_added_task_history",
+                "--project_id",
+                project_id,
+                "--task_id",
+                task_id,
+                "--output",
+                out_file,
+            ]
+        )
+
     def test_list_added_task_history(self):
         out_file = str(out_dir / "list_added_task_history.csv")
         main(
@@ -62,6 +77,8 @@ class TestCommandLine:
                 "list_added_task_history",
                 "--project_id",
                 project_id,
+                "--task_id",
+                task_id,
                 "--output",
                 out_file,
             ]
