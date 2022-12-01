@@ -1,31 +1,22 @@
 from __future__ import annotations
 
 import argparse
-import asyncio
-import json
 import logging
-import sys
-import tempfile
 from pathlib import Path
-from typing import Any, Dict, List, Optional, Set
+from typing import Any, Dict, List, Optional
 
 import annofabapi
 import more_itertools
 import pandas
-from annofabapi.models import ProjectMemberRole, Task, TaskHistory, TaskPhase, TaskStatus
+from annofabapi.models import Task, TaskHistory, TaskPhase, TaskStatus
+from annofabcli.task.list_tasks import ListTasksMain
 from annofabapi.utils import get_task_history_index_skipped_acceptance, get_task_history_index_skipped_inspection
 
 import annofabcli
-from annofabcli.common.cli import (
-    COMMAND_LINE_ERROR_STATUS_CODE,
-    AbstractCommandLineInterface,
-    ArgumentParser,
-    build_annofabapi_resource_and_login,
-)
+from annofabcli.common.cli import AbstractCommandLineInterface, ArgumentParser, build_annofabapi_resource_and_login
 from annofabcli.common.dataclasses import WaitOptions
-from annofabcli.common.download import DownloadingFile
 from annofabcli.common.enums import FormatArgument
-from annofabcli.common.facade import AnnofabApiFacade, TaskQuery, match_task_with_query
+from annofabcli.common.facade import AnnofabApiFacade
 from annofabcli.common.utils import print_csv, print_json
 from annofabcli.common.visualize import AddProps
 
@@ -303,31 +294,39 @@ class AddingAdditionalInfoToTask:
         task["acceptance_is_skipped"] = is_acceptance_phase_skipped(task_histories)
 
 
-class ListTasksAddedTaskHistory(AbstractCommandLineInterface):
-    """
-    タスクの一覧を表示する
-    """
+class ListTasksAddedTaskHistoryMain:
+    def __init__(self, service: annofabapi.Resource, project_id: str) -> None:
+        self.service = service
+        self.project_id = project_id
 
-    def get_detail_task_list(
-        self,
-        task_list: List[Dict[str, Any]],
-        task_history_dict: TaskHistoryDict,
-        project_id: str,
-    ):
-        obj = AddingAdditionalInfoToTask(self.service, project_id=project_id)
+    def main(self, *, task_query: Optional[dict[str, Any]], task_id_list: Optional[list[str]]):
+        list_task_obj = ListTasksMain(self.service, self.project_id)
+        task_list = list_task_obj.get_task_list(self.project_id, task_id_list=task_id_list, task_query=task_query)
 
-        for task in task_list:
+        obj = AddingAdditionalInfoToTask(self.service, project_id=self.project_id)
+
+        for index, task in enumerate(task_list):
+            if (index + 1) % 1000 == 0:
+                logger.debug(f"{index+1} 件目のタスク履歴情報を取得します。")
 
             obj.add_additional_info_to_task(task)
-
             task_id = task["task_id"]
-            task_histories = task_history_dict.get(task_id)
-            if task_histories is None:
-                logger.warning(f"task_id='{task_id}' に紐づくタスク履歴情報は存在しないので、タスク履歴の付加的情報はタスクに追加しません。")
-                continue
-            obj.add_task_history_additional_info_to_task(task, task_histories)
+
+            try:
+                task_histories, _ = self.service.api.get_task_histories(self.project_id, task_id)
+                # タスク履歴から取得した情報をtaskに設定する
+                obj.add_task_history_additional_info_to_task(task, task_histories)
+            except Exception:
+                logger.warning(f"task_id='{task_id}' :: タスク履歴に関する情報を取得するのに失敗しました。", exc_info=True)
 
         return task_list
+
+
+class TasksAddedTaskHistoryOutput:
+    """出力用のクラス"""
+
+    def __init__(self, task_list: list[dict[str, Any]]):
+        self.task_list = task_list
 
     @staticmethod
     def _get_output_target_columns() -> List[str]:
@@ -369,146 +368,33 @@ class ListTasksAddedTaskHistory(AbstractCommandLineInterface):
 
         return base_columns + task_history_columns
 
-    def download_json_files(
-        self,
-        project_id: str,
-        task_json_path: Path,
-        task_history_json_path: Path,
-        is_latest: bool,
-    ):
-        loop = asyncio.get_event_loop()
-        downloading_obj = DownloadingFile(self.service)
-        gather = asyncio.gather(
-            downloading_obj.download_task_json_with_async(
-                project_id, dest_path=str(task_json_path), is_latest=is_latest
-            ),
-            downloading_obj.download_task_history_json_with_async(
-                project_id,
-                dest_path=str(task_history_json_path),
-            ),
-        )
-        loop.run_until_complete(gather)
-
-    @staticmethod
-    def validate(args: argparse.Namespace) -> bool:
-        COMMON_MESSAGE = "annofabcli task list_merged_task_history: error:"
-        if (args.task_json is None and args.task_history_json is not None) or (
-            args.task_json is not None and args.task_history_json is None
-        ):
-            print(
-                f"{COMMON_MESSAGE} '--task_json'と'--task_history_json'の両方を指定する必要があります。",
-                file=sys.stderr,
-            )
-            return False
-
-        return True
-
-    @staticmethod
-    def match_task_with_conditions(
-        task: Dict[str, Any],
-        task_id_set: Optional[Set[str]] = None,
-        task_query: Optional[TaskQuery] = None,
-    ) -> bool:
-        result = True
-
-        dc_task = annofabapi.dataclass.task.Task.from_dict(task)
-        result = result and match_task_with_query(dc_task, task_query)
-        if task_id_set is not None:
-            result = result and (dc_task.task_id in task_id_set)
-        return result
-
-    def filter_task_list(
-        self,
-        project_id: str,
-        task_list: List[Dict[str, Any]],
-        task_id_list: Optional[List[str]] = None,
-        task_query: Optional[TaskQuery] = None,
-    ) -> List[Dict[str, Any]]:
-        if task_query is not None:
-            task_query = self.facade.set_account_id_of_task_query(project_id, task_query)
-
-        task_id_set = set(task_id_list) if task_id_list is not None else None
-        logger.debug(f"出力対象のタスクを抽出しています。")
-        filtered_task_list = [
-            e for e in task_list if self.match_task_with_conditions(e, task_query=task_query, task_id_set=task_id_set)
-        ]
-        return filtered_task_list
-
-    def print_task_list(
-        self,
-        project_id: str,
-        task_json_path: Optional[Path],
-        task_history_json_path: Optional[Path],
-        task_id_list: Optional[list[str]],
-        task_query: Optional[TaskQuery],
-        arg_format: FormatArgument,
-        output: Path,
-    ):
-        super().validate_project(project_id, [ProjectMemberRole.OWNER, ProjectMemberRole.TRAINING_DATA_USER])
-
-        downloading_obj = DownloadingFile(self.service)
-
-        if task_json_path is not None:
-            with task_json_path.open(encoding="utf-8") as f:
-                task_list = json.load(f)
-        else:
-            with tempfile.NamedTemporaryFile() as tmp_file:
-                downloading_obj.download_task_json(project_id, tmp_file.name)
-                with open(tmp_file.name, encoding="utf-8") as f:
-                    task_list = json.load(f)
-
-        if task_history_json_path is not None:
-            with task_history_json_path.open(encoding="utf-8") as f:
-                task_history_dict = json.load(f)
-        else:
-            with tempfile.NamedTemporaryFile() as tmp_file:
-                downloading_obj.download_task_history_json(project_id, tmp_file.name)
-                with open(tmp_file.name, encoding="utf-8") as f:
-                    task_history_dict = json.load(f)
-
-        filtered_task_list = self.filter_task_list(
-            project_id, task_list, task_id_list=task_id_list, task_query=task_query
-        )
-
-        logger.debug(f"タスク履歴に関する付加的情報を取得しています。")
-        detail_task_list = self.get_detail_task_list(
-            project_id=project_id, task_list=filtered_task_list, task_history_dict=task_history_dict
-        )
-
-        if arg_format == FormatArgument.CSV:
-            df_task = pandas.DataFrame(detail_task_list)
+    def output(self, output_path: Path, output_format: FormatArgument):
+        task_list = self.task_list
+        logger.debug(f"タスク一覧の件数: {len(task_list)}")
+        if output_format == FormatArgument.CSV:
+            df_task = pandas.DataFrame(task_list)
             print_csv(
                 df_task[self._get_output_target_columns()],
-                output=self.output,
+                output=output_path,
             )
-        elif arg_format == FormatArgument.JSON:
-            print_json(detail_task_list, is_pretty=False, output=output)
-        elif arg_format == FormatArgument.PRETTY_JSON:
-            print_json(detail_task_list, is_pretty=True, output=output)
+        elif output_format == FormatArgument.JSON:
+            print_json(task_list, is_pretty=False, output=output_path)
+        elif output_format == FormatArgument.PRETTY_JSON:
+            print_json(task_list, is_pretty=True, output=output_path)
 
+
+class ListTasksAddedTaskHistory(AbstractCommandLineInterface):
     def main(self):
         args = self.args
-        if not self.validate(args):
-            sys.exit(COMMAND_LINE_ERROR_STATUS_CODE)
-
-        project_id = args.project_id
 
         task_id_list = annofabcli.common.cli.get_list_from_args(args.task_id) if args.task_id is not None else None
-        task_query = (
-            TaskQuery.from_dict(annofabcli.common.cli.get_json_from_args(args.task_query))
-            if args.task_query is not None
-            else None
-        )
+        task_query = annofabcli.common.cli.get_json_from_args(args.task_query) if args.task_query is not None else None
 
-        self.print_task_list(
-            project_id,
-            task_json_path=args.task_json,
-            task_history_json_path=args.task_history_json,
-            task_id_list=task_id_list,
-            task_query=task_query,
-            arg_format=FormatArgument(args.format),
-            output=args.output,
-        )
+        main_obj = ListTasksAddedTaskHistoryMain(self.service, project_id=args.project_id)
+        task_list = main_obj.main(task_query=task_query, task_id_list=task_id_list)
+
+        output_obj = TasksAddedTaskHistoryOutput(task_list)
+        output_obj.output(args.output, output_format=FormatArgument(args.format))
 
 
 def main(args):
@@ -520,21 +406,28 @@ def main(args):
 def parse_args(parser: argparse.ArgumentParser):
     argument_parser = ArgumentParser(parser)
     argument_parser.add_project_id()
-    argument_parser.add_task_query()
-    argument_parser.add_task_id(required=False)
 
-    parser.add_argument(
-        "--task_json",
+    query_group = parser.add_mutually_exclusive_group()
+
+    # タスク検索クエリ
+    query_group.add_argument(
+        "-tq",
+        "--task_query",
         type=str,
-        help="タスク情報が記載されたJSONファイルのパスを指定すると、JSONに記載された情報を元に出力します。指定しない場合はJSONファイルをダウンロードします。\n"
-        "JSONファイルは ``$ annofabcli task download`` コマンドで取得できます。",
+        help="タスクの検索クエリをJSON形式で指定します。指定しない場合は、すべてのタスクを取得します。"
+        " ``file://`` を先頭に付けると、JSON形式のファイルを指定できます。"
+        "クエリのフォーマットは、`getTasks <https://annofab.com/docs/api/#operation/getTasks>`_ APIのクエリパラメータと同じです。"
+        "さらに追加で、``user_id`` , ``previous_user_id`` キーも指定できます。"
+        "ただし ``page`` , ``limit`` キーは指定できません。",
     )
 
-    parser.add_argument(
-        "--task_history_json",
+    query_group.add_argument(
+        "-t",
+        "--task_id",
         type=str,
-        help="タスク履歴情報が記載されたJSONファイルのパスを指定すると、JSONに記載された情報を元に出力します。指定しない場合はJSONファイルをダウンロードします。\n"
-        "JSONファイルは ``$ annofabcli task_history download`` コマンドで取得できます。",
+        nargs="+",
+        help="対象のタスクのtask_idを指定します。 ``--task_query`` 引数とは同時に指定できません。"
+        " ``file://`` を先頭に付けると、task_idの一覧が記載されたファイルを指定できます。",
     )
 
     argument_parser.add_output()
@@ -548,10 +441,9 @@ def parse_args(parser: argparse.ArgumentParser):
 
 
 def add_parser(subparsers: Optional[argparse._SubParsersAction] = None):
-    subcommand_name = "list_all_added_task_history"
-    subcommand_help = "タスク履歴に関する情報を加えたタスク一覧のすべてを出力します。"
-    description = "タスク履歴に関する情報（フェーズごとの作業時間、担当者、開始日時）を加えたタスク一覧のすべてを出力します。"
-    epilog = "アノテーションユーザ/オーナロールを持つユーザで実行してください。"
-    parser = annofabcli.common.cli.add_parser(subparsers, subcommand_name, subcommand_help, description, epilog=epilog)
+    subcommand_name = "list_added_task_history"
+    subcommand_help = "タスク履歴に関する情報を加えたタスク一覧を出力します。"
+    description = "タスク履歴に関する情報（フェーズごとの作業時間、担当者、開始日時）を加えたタスク一覧を出力します。"
+    parser = annofabcli.common.cli.add_parser(subparsers, subcommand_name, subcommand_help, description)
     parse_args(parser)
     return parser
