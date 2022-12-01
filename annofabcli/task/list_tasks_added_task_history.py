@@ -3,154 +3,23 @@ from __future__ import annotations
 import argparse
 import logging
 from pathlib import Path
-from typing import Any, Dict, List, Optional
+from typing import Any, List, Optional
 
 import annofabapi
 import more_itertools
 import pandas
 from annofabapi.models import Task, TaskHistory, TaskPhase, TaskStatus
-from annofabcli.task.list_tasks import ListTasksMain
 from annofabapi.utils import get_task_history_index_skipped_acceptance, get_task_history_index_skipped_inspection
 
 import annofabcli
 from annofabcli.common.cli import AbstractCommandLineInterface, ArgumentParser, build_annofabapi_resource_and_login
-from annofabcli.common.dataclasses import WaitOptions
 from annofabcli.common.enums import FormatArgument
 from annofabcli.common.facade import AnnofabApiFacade
 from annofabcli.common.utils import print_csv, print_json
 from annofabcli.common.visualize import AddProps
+from annofabcli.task.list_tasks import ListTasksMain
 
 logger = logging.getLogger(__name__)
-
-
-TaskHistoryDict = Dict[str, List[TaskHistory]]
-"""タスク履歴の辞書（key: task_id, value: タスク履歴一覧）"""
-
-DEFAULT_WAIT_OPTIONS = WaitOptions(interval=60, max_tries=360)
-
-
-def get_completed_datetime(task: dict[str, Any], task_histories: list[TaskHistory]) -> Optional[str]:
-    """受入完了状態になった日時を取得する。
-
-    Args:
-        task_histories (List[TaskHistory]): [description]
-
-    Returns:
-        str: 受入完了状態になった日時
-    """
-    # 受入完了日時を設定
-    if task["phase"] == TaskPhase.ACCEPTANCE.value and task["status"] == TaskStatus.COMPLETE.value:
-        assert len(task_histories) > 0
-        return task_histories[-1]["ended_datetime"]
-    else:
-        return None
-
-
-def get_task_created_datetime(task: dict[str, Any], task_histories: list[TaskHistory]) -> Optional[str]:
-    """タスクの作成日時を取得する。
-
-    Args:
-        task_histories (List[TaskHistory]): タスク履歴
-
-    Returns:
-        タスクの作成日時
-    """
-    # 受入フェーズで完了日時がnot Noneの場合は、受入を合格したか差し戻したとき。
-    # したがって、後続のタスク履歴を見て、初めて受入完了状態になった日時を取得する。
-    if len(task_histories) == 0:
-        return None
-
-    first_history = task_histories[0]
-    # 2020年以前は、先頭のタスク履歴はタスク作成ではなく、教師付けの履歴である。2020年以前はタスク作成日時を取得できないのでNoneを返す。
-    # https://annofab.com/docs/releases/2020.html#v01020
-    if (
-        first_history["account_id"] is None
-        and first_history["accumulated_labor_time_milliseconds"] == "PT0S"
-        and first_history["phase"] == TaskPhase.ANNOTATION.value
-    ):
-        if len(task_histories) == 1:
-            # 一度も作業されていないタスクは、先頭のタスク履歴のstarted_datetimeはNoneである
-            # 替わりにタスクの`operation_updated_datetime`をタスク作成日時とする
-            return task["operation_updated_datetime"]
-        return first_history["started_datetime"]
-    return None
-
-
-def get_first_acceptance_completed_datetime(task_histories: list[TaskHistory]) -> Optional[str]:
-    """はじめて受入完了状態になった日時を取得する。
-
-    Args:
-        task_histories (List[TaskHistory]): [description]
-
-    Returns:
-        str: はじめて受入完了状態になった日時
-    """
-    # 受入フェーズで完了日時がnot Noneの場合は、受入を合格したか差し戻したとき。
-    # したがって、後続のタスク履歴を見て、初めて受入完了状態になった日時を取得する。
-
-    for index, history in enumerate(task_histories):
-        if history["phase"] != TaskPhase.ACCEPTANCE.value or history["ended_datetime"] is None:
-            continue
-
-        if index == len(task_histories) - 1:
-            # 末尾履歴なら、受入完了状態
-            return history["ended_datetime"]
-
-        next_history = task_histories[index + 1]
-        if next_history["phase"] == TaskPhase.ACCEPTANCE.value:
-            # 受入完了後、受入取り消し実行
-            return history["ended_datetime"]
-        # そうでなければ、受入フェーズでの差し戻し
-
-    return None
-
-
-def is_acceptance_phase_skipped(task_histories: list[TaskHistory]) -> bool:
-    """抜取受入によって、受入フェーズでスキップされたことがあるかを取得する。
-
-    Args:
-        task_histories (List[TaskHistory]): タスク履歴
-
-    Returns:
-        bool: 受入フェーズでスキップされたことがあるかどうか
-    """
-    task_history_index_list = get_task_history_index_skipped_acceptance(task_histories)
-    if len(task_history_index_list) == 0:
-        return False
-
-    # スキップされた履歴より後に受入フェーズがなければ、受入がスキップされたタスクとみなす
-    # ただし、スキップされた履歴より後で、「アノテーション一覧で修正された」受入フェーズがある場合（account_id is None）は、スキップされた受入とみなす。
-    last_task_history_index = task_history_index_list[-1]
-    return (
-        more_itertools.first_true(
-            task_histories[last_task_history_index + 1 :],
-            pred=lambda e: e["phase"] == TaskPhase.ACCEPTANCE.value and e["account_id"] is not None,
-        )
-        is None
-    )
-
-
-def is_inspection_phase_skipped(task_histories: list[TaskHistory]) -> bool:
-    """抜取検査によって、検査フェーズでスキップされたことがあるかを取得する。
-
-    Args:
-        task_histories (List[TaskHistory]): タスク履歴
-
-    Returns:
-        bool: 検査フェーズでスキップされたことがあるかどうか
-    """
-    task_history_index_list = get_task_history_index_skipped_inspection(task_histories)
-    if len(task_history_index_list) == 0:
-        return False
-
-    # スキップされた履歴より後に検査フェーズがなければ、検査がスキップされたタスクとみなす
-    last_task_history_index = task_history_index_list[-1]
-    return (
-        more_itertools.first_true(
-            task_histories[last_task_history_index + 1 :], pred=lambda e: e["phase"] == TaskPhase.INSPECTION.value
-        )
-        is None
-    )
 
 
 class AddingAdditionalInfoToTask:
@@ -166,6 +35,130 @@ class AddingAdditionalInfoToTask:
         self.service = service
         self.project_id = project_id
         self.visualize = AddProps(self.service, project_id)
+
+    @staticmethod
+    def get_completed_datetime(task: dict[str, Any], task_histories: list[TaskHistory]) -> Optional[str]:
+        """受入完了状態になった日時を取得する。
+
+        Args:
+            task_histories (List[TaskHistory]): [description]
+
+        Returns:
+            str: 受入完了状態になった日時
+        """
+        # 受入完了日時を設定
+        if task["phase"] == TaskPhase.ACCEPTANCE.value and task["status"] == TaskStatus.COMPLETE.value:
+            assert len(task_histories) > 0
+            return task_histories[-1]["ended_datetime"]
+        else:
+            return None
+
+    @staticmethod
+    def get_task_created_datetime(task: dict[str, Any], task_histories: list[TaskHistory]) -> Optional[str]:
+        """タスクの作成日時を取得する。
+
+        Args:
+            task_histories (List[TaskHistory]): タスク履歴
+
+        Returns:
+            タスクの作成日時
+        """
+        # 受入フェーズで完了日時がnot Noneの場合は、受入を合格したか差し戻したとき。
+        # したがって、後続のタスク履歴を見て、初めて受入完了状態になった日時を取得する。
+        if len(task_histories) == 0:
+            return None
+
+        first_history = task_histories[0]
+        # 2020年以前は、先頭のタスク履歴はタスク作成ではなく、教師付けの履歴である。2020年以前はタスク作成日時を取得できないのでNoneを返す。
+        # https://annofab.com/docs/releases/2020.html#v01020
+        if (
+            first_history["account_id"] is None
+            and first_history["accumulated_labor_time_milliseconds"] == "PT0S"
+            and first_history["phase"] == TaskPhase.ANNOTATION.value
+        ):
+            if len(task_histories) == 1:
+                # 一度も作業されていないタスクは、先頭のタスク履歴のstarted_datetimeはNoneである
+                # 替わりにタスクの`operation_updated_datetime`をタスク作成日時とする
+                return task["operation_updated_datetime"]
+            return first_history["started_datetime"]
+        return None
+
+    @staticmethod
+    def get_first_acceptance_completed_datetime(task_histories: list[TaskHistory]) -> Optional[str]:
+        """はじめて受入完了状態になった日時を取得する。
+
+        Args:
+            task_histories (List[TaskHistory]): [description]
+
+        Returns:
+            str: はじめて受入完了状態になった日時
+        """
+        # 受入フェーズで完了日時がnot Noneの場合は、受入を合格したか差し戻したとき。
+        # したがって、後続のタスク履歴を見て、初めて受入完了状態になった日時を取得する。
+
+        for index, history in enumerate(task_histories):
+            if history["phase"] != TaskPhase.ACCEPTANCE.value or history["ended_datetime"] is None:
+                continue
+
+            if index == len(task_histories) - 1:
+                # 末尾履歴なら、受入完了状態
+                return history["ended_datetime"]
+
+            next_history = task_histories[index + 1]
+            if next_history["phase"] == TaskPhase.ACCEPTANCE.value:
+                # 受入完了後、受入取り消し実行
+                return history["ended_datetime"]
+            # そうでなければ、受入フェーズでの差し戻し
+
+        return None
+
+    @staticmethod
+    def is_acceptance_phase_skipped(task_histories: list[TaskHistory]) -> bool:
+        """抜取受入によって、受入フェーズでスキップされたことがあるかを取得する。
+
+        Args:
+            task_histories (List[TaskHistory]): タスク履歴
+
+        Returns:
+            bool: 受入フェーズでスキップされたことがあるかどうか
+        """
+        task_history_index_list = get_task_history_index_skipped_acceptance(task_histories)
+        if len(task_history_index_list) == 0:
+            return False
+
+        # スキップされた履歴より後に受入フェーズがなければ、受入がスキップされたタスクとみなす
+        # ただし、スキップされた履歴より後で、「アノテーション一覧で修正された」受入フェーズがある場合（account_id is None）は、スキップされた受入とみなす。
+        last_task_history_index = task_history_index_list[-1]
+        return (
+            more_itertools.first_true(
+                task_histories[last_task_history_index + 1 :],
+                pred=lambda e: e["phase"] == TaskPhase.ACCEPTANCE.value and e["account_id"] is not None,
+            )
+            is None
+        )
+
+    @staticmethod
+    def is_inspection_phase_skipped(task_histories: list[TaskHistory]) -> bool:
+        """抜取検査によって、検査フェーズでスキップされたことがあるかを取得する。
+
+        Args:
+            task_histories (List[TaskHistory]): タスク履歴
+
+        Returns:
+            bool: 検査フェーズでスキップされたことがあるかどうか
+        """
+        task_history_index_list = get_task_history_index_skipped_inspection(task_histories)
+        if len(task_history_index_list) == 0:
+            return False
+
+        # スキップされた履歴より後に検査フェーズがなければ、検査がスキップされたタスクとみなす
+        last_task_history_index = task_history_index_list[-1]
+        return (
+            more_itertools.first_true(
+                task_histories[last_task_history_index + 1 :], pred=lambda e: e["phase"] == TaskPhase.INSPECTION.value
+            )
+            is None
+        )
 
     def _add_task_history_info(self, task: Task, task_history: Optional[TaskHistory], column_prefix: str) -> Task:
         """
@@ -276,7 +269,7 @@ class AddingAdditionalInfoToTask:
 
         """
         # タスク作成日時
-        task["created_datetime"] = get_task_created_datetime(task, task_histories)
+        task["created_datetime"] = self.get_task_created_datetime(task, task_histories)
 
         # フェーズごとのタスク履歴情報を追加する
         self._add_task_history_info_by_phase(task, task_histories, phase=TaskPhase.ANNOTATION)
@@ -284,14 +277,14 @@ class AddingAdditionalInfoToTask:
         self._add_task_history_info_by_phase(task, task_histories, phase=TaskPhase.ACCEPTANCE)
 
         # 初めて受入が完了した日時
-        task["first_acceptance_completed_datetime"] = get_first_acceptance_completed_datetime(task_histories)
+        task["first_acceptance_completed_datetime"] = self.get_first_acceptance_completed_datetime(task_histories)
 
         # 受入完了日時を設定
-        task["completed_datetime"] = get_completed_datetime(task, task_histories)
+        task["completed_datetime"] = self.get_completed_datetime(task, task_histories)
 
         # 抜取検査/受入によって、スキップされたかどうか
-        task["inspection_is_skipped"] = is_inspection_phase_skipped(task_histories)
-        task["acceptance_is_skipped"] = is_acceptance_phase_skipped(task_histories)
+        task["inspection_is_skipped"] = self.is_inspection_phase_skipped(task_histories)
+        task["acceptance_is_skipped"] = self.is_acceptance_phase_skipped(task_histories)
 
 
 class ListTasksAddedTaskHistoryMain:

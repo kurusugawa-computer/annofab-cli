@@ -12,8 +12,8 @@ import annofabcli.task.delete_tasks
 import annofabcli.task.download_task_json
 import annofabcli.task.list_all_tasks
 import annofabcli.task.list_all_tasks_added_task_history
-import annofabcli.task.list_tasks_added_task_history
 import annofabcli.task.list_tasks
+import annofabcli.task.list_tasks_added_task_history
 import annofabcli.task.put_tasks
 import annofabcli.task.put_tasks_by_count
 import annofabcli.task.reject_tasks

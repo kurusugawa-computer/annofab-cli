@@ -1,7 +1,6 @@
 from __future__ import annotations
 
 import argparse
-import asyncio
 import json
 import logging
 import sys
@@ -10,10 +9,7 @@ from pathlib import Path
 from typing import Any, Dict, List, Optional, Set
 
 import annofabapi
-import more_itertools
-import pandas
-from annofabapi.models import ProjectMemberRole, Task, TaskHistory, TaskPhase, TaskStatus
-from annofabapi.utils import get_task_history_index_skipped_acceptance, get_task_history_index_skipped_inspection
+from annofabapi.models import ProjectMemberRole, TaskHistory
 
 import annofabcli
 from annofabcli.common.cli import (
@@ -26,8 +22,7 @@ from annofabcli.common.dataclasses import WaitOptions
 from annofabcli.common.download import DownloadingFile
 from annofabcli.common.enums import FormatArgument
 from annofabcli.common.facade import AnnofabApiFacade, TaskQuery, match_task_with_query
-from annofabcli.common.utils import print_csv, print_json
-from annofabcli.common.visualize import AddProps
+from annofabcli.task.list_tasks_added_task_history import AddingAdditionalInfoToTask, TasksAddedTaskHistoryOutput
 
 logger = logging.getLogger(__name__)
 
@@ -38,283 +33,19 @@ TaskHistoryDict = Dict[str, List[TaskHistory]]
 DEFAULT_WAIT_OPTIONS = WaitOptions(interval=60, max_tries=360)
 
 
-def get_completed_datetime(task: dict[str, Any], task_histories: list[TaskHistory]) -> Optional[str]:
-    """受入完了状態になった日時を取得する。
-
-    Args:
-        task_histories (List[TaskHistory]): [description]
-
-    Returns:
-        str: 受入完了状態になった日時
-    """
-    # 受入完了日時を設定
-    if task["phase"] == TaskPhase.ACCEPTANCE.value and task["status"] == TaskStatus.COMPLETE.value:
-        assert len(task_histories) > 0
-        return task_histories[-1]["ended_datetime"]
-    else:
-        return None
-
-
-def get_task_created_datetime(task: dict[str, Any], task_histories: list[TaskHistory]) -> Optional[str]:
-    """タスクの作成日時を取得する。
-
-    Args:
-        task_histories (List[TaskHistory]): タスク履歴
-
-    Returns:
-        タスクの作成日時
-    """
-    # 受入フェーズで完了日時がnot Noneの場合は、受入を合格したか差し戻したとき。
-    # したがって、後続のタスク履歴を見て、初めて受入完了状態になった日時を取得する。
-    if len(task_histories) == 0:
-        return None
-
-    first_history = task_histories[0]
-    # 2020年以前は、先頭のタスク履歴はタスク作成ではなく、教師付けの履歴である。2020年以前はタスク作成日時を取得できないのでNoneを返す。
-    # https://annofab.com/docs/releases/2020.html#v01020
-    if (
-        first_history["account_id"] is None
-        and first_history["accumulated_labor_time_milliseconds"] == "PT0S"
-        and first_history["phase"] == TaskPhase.ANNOTATION.value
-    ):
-        if len(task_histories) == 1:
-            # 一度も作業されていないタスクは、先頭のタスク履歴のstarted_datetimeはNoneである
-            # 替わりにタスクの`operation_updated_datetime`をタスク作成日時とする
-            return task["operation_updated_datetime"]
-        return first_history["started_datetime"]
-    return None
-
-
-def get_first_acceptance_completed_datetime(task_histories: list[TaskHistory]) -> Optional[str]:
-    """はじめて受入完了状態になった日時を取得する。
-
-    Args:
-        task_histories (List[TaskHistory]): [description]
-
-    Returns:
-        str: はじめて受入完了状態になった日時
-    """
-    # 受入フェーズで完了日時がnot Noneの場合は、受入を合格したか差し戻したとき。
-    # したがって、後続のタスク履歴を見て、初めて受入完了状態になった日時を取得する。
-
-    for index, history in enumerate(task_histories):
-        if history["phase"] != TaskPhase.ACCEPTANCE.value or history["ended_datetime"] is None:
-            continue
-
-        if index == len(task_histories) - 1:
-            # 末尾履歴なら、受入完了状態
-            return history["ended_datetime"]
-
-        next_history = task_histories[index + 1]
-        if next_history["phase"] == TaskPhase.ACCEPTANCE.value:
-            # 受入完了後、受入取り消し実行
-            return history["ended_datetime"]
-        # そうでなければ、受入フェーズでの差し戻し
-
-    return None
-
-
-def is_acceptance_phase_skipped(task_histories: list[TaskHistory]) -> bool:
-    """抜取受入によって、受入フェーズでスキップされたことがあるかを取得する。
-
-    Args:
-        task_histories (List[TaskHistory]): タスク履歴
-
-    Returns:
-        bool: 受入フェーズでスキップされたことがあるかどうか
-    """
-    task_history_index_list = get_task_history_index_skipped_acceptance(task_histories)
-    if len(task_history_index_list) == 0:
-        return False
-
-    # スキップされた履歴より後に受入フェーズがなければ、受入がスキップされたタスクとみなす
-    # ただし、スキップされた履歴より後で、「アノテーション一覧で修正された」受入フェーズがある場合（account_id is None）は、スキップされた受入とみなす。
-    last_task_history_index = task_history_index_list[-1]
-    return (
-        more_itertools.first_true(
-            task_histories[last_task_history_index + 1 :],
-            pred=lambda e: e["phase"] == TaskPhase.ACCEPTANCE.value and e["account_id"] is not None,
-        )
-        is None
-    )
-
-
-def is_inspection_phase_skipped(task_histories: list[TaskHistory]) -> bool:
-    """抜取検査によって、検査フェーズでスキップされたことがあるかを取得する。
-
-    Args:
-        task_histories (List[TaskHistory]): タスク履歴
-
-    Returns:
-        bool: 検査フェーズでスキップされたことがあるかどうか
-    """
-    task_history_index_list = get_task_history_index_skipped_inspection(task_histories)
-    if len(task_history_index_list) == 0:
-        return False
-
-    # スキップされた履歴より後に検査フェーズがなければ、検査がスキップされたタスクとみなす
-    last_task_history_index = task_history_index_list[-1]
-    return (
-        more_itertools.first_true(
-            task_histories[last_task_history_index + 1 :], pred=lambda e: e["phase"] == TaskPhase.INSPECTION.value
-        )
-        is None
-    )
-
-
-class AddingAdditionalInfoToTask:
-    """タスクに付加的な情報を追加するためのクラス
-
-    Args:
-        service: annofabapiにアクセスするためのインスタンス
-        project_id: プロジェクトID
-
-    """
-
+class ListAllTasksAddedTaskHistoryMain:
     def __init__(self, service: annofabapi.Resource, project_id: str):
         self.service = service
         self.project_id = project_id
-        self.visualize = AddProps(self.service, project_id)
-
-    def _add_task_history_info(self, task: Task, task_history: Optional[TaskHistory], column_prefix: str) -> Task:
-        """
-        1個のタスク履歴情報を、タスクに設定する。
-
-        Args:
-            task:
-            task_history:
-            column_prefix:
-
-        Returns:
-
-        """
-        if task_history is None:
-            task.update(
-                {
-                    f"{column_prefix}_user_id": None,
-                    f"{column_prefix}_username": None,
-                    f"{column_prefix}_started_datetime": None,
-                    f"{column_prefix}_worktime_hour": None,
-                }
-            )
-            return task
-
-        account_id = task_history["account_id"]
-        task.update(
-            {
-                f"{column_prefix}_started_datetime": task_history["started_datetime"],
-                f"{column_prefix}_worktime_hour": annofabcli.common.utils.isoduration_to_hour(
-                    task_history["accumulated_labor_time_milliseconds"]
-                ),
-            }
-        )
-
-        organization_member = self.visualize.get_project_member_from_account_id(account_id)
-        if organization_member is not None:
-            task.update(
-                {
-                    f"{column_prefix}_user_id": organization_member["user_id"],
-                    f"{column_prefix}_username": organization_member["username"],
-                }
-            )
-        else:
-            task.update({f"{column_prefix}_user_id": None, f"{column_prefix}_username": None})
-
-        return task
-
-    def _add_task_history_info_by_phase(
-        self, task: dict[str, Any], task_histories: list[TaskHistory], phase: TaskPhase
-    ) -> Task:
-        if task_histories is not None:
-            task_history_by_phase = [
-                e
-                for e in task_histories
-                if e["phase"] == phase.value
-                and e["account_id"] is not None
-                and annofabcli.common.utils.isoduration_to_hour(e["accumulated_labor_time_milliseconds"]) > 0
-            ]
-        else:
-            task_history_by_phase = []
-
-        # 最初の対象フェーズに関する情報を設定
-        first_task_history = task_history_by_phase[0] if len(task_history_by_phase) > 0 else None
-        self._add_task_history_info(task, first_task_history, column_prefix=f"first_{phase.value}")
-
-        # 作業時間に関する情報を設定
-        task[f"{phase.value}_worktime_hour"] = sum(
-            annofabcli.common.utils.isoduration_to_hour(e["accumulated_labor_time_milliseconds"])
-            for e in task_history_by_phase
-        )
-
-        return task
-
-    def add_additional_info_to_task(self, task: dict[str, Any]):
-        """タスクの付加的情報を、タスクに追加する。
-        以下の列を追加する。
-        * user_id
-        * username
-        * number_of_rejections_by_inspection
-        * number_of_rejections_by_acceptance
-        * worktime_hour
-
-
-        Args:
-            task (dict[str,Any]): (IN/OUT) タスク情報
-
-        """
-        # タスク情報から取得できる、付加的な情報を追加する
-        self.visualize.add_properties_to_task(task)
-
-    def add_task_history_additional_info_to_task(self, task: dict[str, Any], task_histories: list[TaskHistory]):
-        """タスク履歴から取得できる付加的情報を、タスクに追加する。
-        以下の列を追加する。
-        * annotation_worktime_hour
-        * first_annotation_user_id
-        * first_annotation_username
-        * first_annotation_started_datetime
-        ... inspection, acceptanceも同様
-
-        * first_acceptance_completed_datetime
-        * completed_datetime
-        * inspection_is_skipped
-        * acceptance_is_skipped
-
-        Args:
-            task (dict[str,Any]): (IN/OUT) タスク情報
-            task_histories (list[TaskHistory]): タスク履歴
-
-        """
-        # タスク作成日時
-        task["created_datetime"] = get_task_created_datetime(task, task_histories)
-
-        # フェーズごとのタスク履歴情報を追加する
-        self._add_task_history_info_by_phase(task, task_histories, phase=TaskPhase.ANNOTATION)
-        self._add_task_history_info_by_phase(task, task_histories, phase=TaskPhase.INSPECTION)
-        self._add_task_history_info_by_phase(task, task_histories, phase=TaskPhase.ACCEPTANCE)
-
-        # 初めて受入が完了した日時
-        task["first_acceptance_completed_datetime"] = get_first_acceptance_completed_datetime(task_histories)
-
-        # 受入完了日時を設定
-        task["completed_datetime"] = get_completed_datetime(task, task_histories)
-
-        # 抜取検査/受入によって、スキップされたかどうか
-        task["inspection_is_skipped"] = is_inspection_phase_skipped(task_histories)
-        task["acceptance_is_skipped"] = is_acceptance_phase_skipped(task_histories)
-
-
-class ListTasksAddedTaskHistory(AbstractCommandLineInterface):
-    """
-    タスクの一覧を表示する
-    """
+        self.downloading_obj = DownloadingFile(self.service)
+        self.facade = AnnofabApiFacade(self.service)
 
     def get_detail_task_list(
         self,
-        task_list: List[Dict[str, Any]],
+        task_list: list[dict[str, Any]],
         task_history_dict: TaskHistoryDict,
-        project_id: str,
     ):
-        obj = AddingAdditionalInfoToTask(self.service, project_id=project_id)
+        obj = AddingAdditionalInfoToTask(self.service, project_id=self.project_id)
 
         for task in task_list:
 
@@ -329,79 +60,25 @@ class ListTasksAddedTaskHistory(AbstractCommandLineInterface):
 
         return task_list
 
-    @staticmethod
-    def _get_output_target_columns() -> List[str]:
-        base_columns = [
-            # タスクの基本情報
-            "task_id",
-            "phase",
-            "phase_stage",
-            "status",
-            "created_datetime",
-            "started_datetime",
-            "updated_datetime",
-            "operation_updated_datetime",
-            "account_id",
-            "user_id",
-            "username",
-            "input_data_count",
-            "metadata",
-            "sampling",
-            # 作業時間情報
-            "worktime_hour",
-            "annotation_worktime_hour",
-            "inspection_worktime_hour",
-            "acceptance_worktime_hour",
-            # 差し戻し回数
-            "number_of_rejections_by_inspection",
-            "number_of_rejections_by_acceptance",
-            "first_acceptance_completed_datetime",
-            "completed_datetime",
-            "inspection_is_skipped",
-            "acceptance_is_skipped",
-        ]
+    def load_task_list(self, task_json_path: Optional[Path]) -> list[dict[str, Any]]:
+        if task_json_path is not None:
+            with task_json_path.open(encoding="utf-8") as f:
+                return json.load(f)
 
-        task_history_columns = [
-            f"first_{phase.value}_{info}"
-            for phase in [TaskPhase.ANNOTATION, TaskPhase.INSPECTION, TaskPhase.ACCEPTANCE]
-            for info in ["user_id", "username", "started_datetime", "worktime_hour"]
-        ]
+        with tempfile.NamedTemporaryFile() as tmp_file:
+            self.downloading_obj.download_task_json(self.project_id, tmp_file.name)
+            with open(tmp_file.name, encoding="utf-8") as f:
+                return json.load(f)
 
-        return base_columns + task_history_columns
-
-    def download_json_files(
-        self,
-        project_id: str,
-        task_json_path: Path,
-        task_history_json_path: Path,
-        is_latest: bool,
-    ):
-        loop = asyncio.get_event_loop()
-        downloading_obj = DownloadingFile(self.service)
-        gather = asyncio.gather(
-            downloading_obj.download_task_json_with_async(
-                project_id, dest_path=str(task_json_path), is_latest=is_latest
-            ),
-            downloading_obj.download_task_history_json_with_async(
-                project_id,
-                dest_path=str(task_history_json_path),
-            ),
-        )
-        loop.run_until_complete(gather)
-
-    @staticmethod
-    def validate(args: argparse.Namespace) -> bool:
-        COMMON_MESSAGE = "annofabcli task list_merged_task_history: error:"
-        if (args.task_json is None and args.task_history_json is not None) or (
-            args.task_json is not None and args.task_history_json is None
-        ):
-            print(
-                f"{COMMON_MESSAGE} '--task_json'と'--task_history_json'の両方を指定する必要があります。",
-                file=sys.stderr,
-            )
-            return False
-
-        return True
+    def load_task_history_dict(self, task_history_json_path: Optional[Path]) -> TaskHistoryDict:
+        if task_history_json_path is not None:
+            with task_history_json_path.open(encoding="utf-8") as f:
+                return json.load(f)
+        else:
+            with tempfile.NamedTemporaryFile() as tmp_file:
+                self.downloading_obj.download_task_history_json(self.project_id, tmp_file.name)
+                with open(tmp_file.name, encoding="utf-8") as f:
+                    return json.load(f)
 
     @staticmethod
     def match_task_with_conditions(
@@ -419,13 +96,12 @@ class ListTasksAddedTaskHistory(AbstractCommandLineInterface):
 
     def filter_task_list(
         self,
-        project_id: str,
         task_list: List[Dict[str, Any]],
         task_id_list: Optional[List[str]] = None,
         task_query: Optional[TaskQuery] = None,
     ) -> List[Dict[str, Any]]:
         if task_query is not None:
-            task_query = self.facade.set_account_id_of_task_query(project_id, task_query)
+            task_query = self.facade.set_account_id_of_task_query(self.project_id, task_query)
 
         task_id_set = set(task_id_list) if task_id_list is not None else None
         logger.debug(f"出力対象のタスクを抽出しています。")
@@ -434,57 +110,46 @@ class ListTasksAddedTaskHistory(AbstractCommandLineInterface):
         ]
         return filtered_task_list
 
-    def print_task_list(
+    def get_task_list_added_task_history(
         self,
-        project_id: str,
         task_json_path: Optional[Path],
         task_history_json_path: Optional[Path],
         task_id_list: Optional[list[str]],
         task_query: Optional[TaskQuery],
-        arg_format: FormatArgument,
-        output: Path,
     ):
-        super().validate_project(project_id, [ProjectMemberRole.OWNER, ProjectMemberRole.TRAINING_DATA_USER])
-
-        downloading_obj = DownloadingFile(self.service)
-
-        if task_json_path is not None:
-            with task_json_path.open(encoding="utf-8") as f:
-                task_list = json.load(f)
-        else:
-            with tempfile.NamedTemporaryFile() as tmp_file:
-                downloading_obj.download_task_json(project_id, tmp_file.name)
-                with open(tmp_file.name, encoding="utf-8") as f:
-                    task_list = json.load(f)
-
-        if task_history_json_path is not None:
-            with task_history_json_path.open(encoding="utf-8") as f:
-                task_history_dict = json.load(f)
-        else:
-            with tempfile.NamedTemporaryFile() as tmp_file:
-                downloading_obj.download_task_history_json(project_id, tmp_file.name)
-                with open(tmp_file.name, encoding="utf-8") as f:
-                    task_history_dict = json.load(f)
+        """
+        タスク履歴情報を加えたタスク一覧を取得する。
+        """
+        task_list = self.load_task_list(task_json_path)
+        task_history_dict = self.load_task_history_dict(task_history_json_path)
 
         filtered_task_list = self.filter_task_list(
-            project_id, task_list, task_id_list=task_id_list, task_query=task_query
+            task_list, task_id_list=task_id_list, task_query=task_query
         )
 
         logger.debug(f"タスク履歴に関する付加的情報を取得しています。")
-        detail_task_list = self.get_detail_task_list(
-            project_id=project_id, task_list=filtered_task_list, task_history_dict=task_history_dict
-        )
+        detail_task_list = self.get_detail_task_list(task_list=filtered_task_list, task_history_dict=task_history_dict)
+        return detail_task_list
 
-        if arg_format == FormatArgument.CSV:
-            df_task = pandas.DataFrame(detail_task_list)
-            print_csv(
-                df_task[self._get_output_target_columns()],
-                output=self.output,
+
+class ListAllTasksAddedTaskHistory(AbstractCommandLineInterface):
+    """
+    タスクの一覧を表示する
+    """
+
+    @staticmethod
+    def validate(args: argparse.Namespace) -> bool:
+        COMMON_MESSAGE = "annofabcli task list_merged_task_history: error:"
+        if (args.task_json is None and args.task_history_json is not None) or (
+            args.task_json is not None and args.task_history_json is None
+        ):
+            print(
+                f"{COMMON_MESSAGE} '--task_json'と'--task_history_json'の両方を指定する必要があります。",
+                file=sys.stderr,
             )
-        elif arg_format == FormatArgument.JSON:
-            print_json(detail_task_list, is_pretty=False, output=output)
-        elif arg_format == FormatArgument.PRETTY_JSON:
-            print_json(detail_task_list, is_pretty=True, output=output)
+            return False
+
+        return True
 
     def main(self):
         args = self.args
@@ -500,21 +165,25 @@ class ListTasksAddedTaskHistory(AbstractCommandLineInterface):
             else None
         )
 
-        self.print_task_list(
-            project_id,
+        self.validate_project(project_id, [ProjectMemberRole.OWNER, ProjectMemberRole.TRAINING_DATA_USER])
+
+        task_list = ListAllTasksAddedTaskHistoryMain(self.service, project_id).get_task_list_added_task_history(
             task_json_path=args.task_json,
             task_history_json_path=args.task_history_json,
             task_id_list=task_id_list,
             task_query=task_query,
-            arg_format=FormatArgument(args.format),
-            output=args.output,
+        )
+
+        logger.info(f"タスク一覧の件数: {len(task_list)}")
+        TasksAddedTaskHistoryOutput(task_list).output(
+            output_path=args.output, output_format=FormatArgument(args.format)
         )
 
 
 def main(args):
     service = build_annofabapi_resource_and_login(args)
     facade = AnnofabApiFacade(service)
-    ListTasksAddedTaskHistory(service, facade, args).main()
+    ListAllTasksAddedTaskHistory(service, facade, args).main()
 
 
 def parse_args(parser: argparse.ArgumentParser):
