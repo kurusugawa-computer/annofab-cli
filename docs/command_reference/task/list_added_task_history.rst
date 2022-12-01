@@ -4,13 +4,14 @@ task list_added_task_history
 
 Description
 =================================
-`annofabcli task list <../task/list.html>`_ コマンドで取得できるタスク一覧に、タスク履歴から取得した以下の情報を追加した上で出力します。
+タスク一覧に、タスク履歴に関する情報に加えたものを出力します。
+タスク履歴に関する情報は、たとえば以下のような情報です。
 
 * フェーズごとの作業時間
 * 各フェーズの最初の担当者と開始日時
 * 各フェーズの最後の担当者と開始日時
 
-最初に教師付けを開始した日時や担当者などを調べるのに利用できます。
+最初に教師付けを開始した日時や担当者などを調べるのに、便利です。
 
 
 Examples
@@ -20,27 +21,26 @@ Examples
 基本的な使い方
 --------------------------
 
-以下のコマンドは、タスク全件ファイルとタスク履歴全件ファイルをダウンロードしてから、タスク一覧を出力します。
-
 .. code-block::
 
     $ annofabcli task list_added_task_history --project_id prj1 --output task.csv
 
 
-タスク全件ファイルを指定する場合は ``--task_json`` 、タスク履歴全件ファイルを指定する場合は ``--task_history_json`` を指定してください。
+.. warning::
 
-.. code-block::
-
-    $ annofabcli task list_added_task_history --project_id prj1 --output task.csv \
-    --task_json task.json --task_history_json task_history.json
-
-タスク全件ファイルは `annofabcli task download <../task/download.html>`_ コマンド、タスク履歴全件ファイルは、`annofabcli task_history download <../task_history/download.html>`_ コマンドでダウンロードできます。
+    WebAPIの都合上、タスクは10,000件までしか出力できません。
+    10,000件以上のタスクを出力する場合は、`annofabcli task list_all_added_task_history <../task/list_all_added_task_history.html>`_ コマンドを使用してください。
 
 
-タスクの絞り込み
+
+タスクのフェーズやステータスなどで絞り込む
 ----------------------------------------------
+``--task_query`` を指定すると、タスクのフェーズやステータスなどで絞り込めます。
 
-``--task_query`` 、 ``--task_id`` で、タスクを絞り込むことができます。
+``--task_query`` に渡す値は、https://annofab.com/docs/api/#operation/getTasks のクエリパラメータとほとんど同じです。
+さらに追加で、``user_id`` , ``previous_user_id`` キーも指定できます。
+
+以下のコマンドは、受入フェーズで完了状態のタスク一覧を出力します。
 
 
 .. code-block::
@@ -48,10 +48,16 @@ Examples
     $ annofabcli task list_added_task_history --project_id prj1 \
      --task_query '{"status":"complete", "phase":"not_started"}'
 
+
+
+task_id絞り込む
+--------------------------------------------------------------------------------------------
+``--task_id`` を指定すると、タスクIDで絞り込むことができます。
+
+.. code-block::
+
     $ annofabcli task list_added_task_history --project_id prj1 \
-     --task_id file://task_id.txt
-
-
+     --task_id task1 task2
 
 
 
@@ -146,16 +152,6 @@ JSON出力
 * last_acceptance_started_datetime: 最後の受入フェーズを開始した日時
 
 
-
-CSV出力
-----------------------------------------------
-
-.. code-block::
-
-    $ annofabcli task list_added_task_history --project_id prj1 --output out.csv
-
-
-`out.csv <https://github.com/kurusugawa-computer/annofab-cli/blob/main/docs/command_reference/task/list_added_task_history/out.csv>`_
 
 
 
