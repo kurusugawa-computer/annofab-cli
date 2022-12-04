@@ -6,7 +6,6 @@ from typing import Optional
 
 import annofabapi
 import pyquery
-from annofabapi.models import ProjectMemberRole
 
 import annofabcli
 from annofabcli.common.cli import (
