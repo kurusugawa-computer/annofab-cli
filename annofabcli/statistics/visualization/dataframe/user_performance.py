@@ -409,7 +409,7 @@ class UserPerformance:
         print_csv(self.df[columns], str(output_file))
 
     @staticmethod
-    def _plot_average_line(fig: bokeh.plotting.Figure, value: float, dimension: str):
+    def _plot_average_line(fig: bokeh.plotting.figure, value: float, dimension: str):
         span_average_line = bokeh.models.Span(
             location=value,
             dimension=dimension,
@@ -419,11 +419,11 @@ class UserPerformance:
         fig.add_layout(span_average_line)
 
     @staticmethod
-    def _plot_quartile_line(fig: bokeh.plotting.Figure, quartile: tuple[float, float, float], dimension: str):
+    def _plot_quartile_line(fig: bokeh.plotting.figure, quartile: tuple[float, float, float], dimension: str):
         """
 
         Args:
-            fig (bokeh.plotting.Figure):
+            fig (bokeh.plotting.figure):
             quartile (tuple[float, float, float]): 四分位数。tuple[25%値, 50%値, 75%値]
             dimension (str): [description]: width or height
         """
@@ -467,7 +467,7 @@ class UserPerformance:
         )
 
     @staticmethod
-    def _set_legend(fig: bokeh.plotting.Figure) -> None:
+    def _set_legend(fig: bokeh.plotting.figure) -> None:
         """
         凡例の設定。
         """
@@ -561,7 +561,7 @@ class UserPerformance:
         # numpy.inf が含まれていると散布図を出力できないので置換する
         df = self.df.replace(numpy.inf, numpy.nan)
 
-        def create_figure(title: str) -> bokeh.plotting.Figure:
+        def create_figure(title: str) -> bokeh.plotting.figure:
             return figure(
                 plot_width=self.PLOT_WIDTH,
                 plot_height=self.PLOT_HEIGHT,
@@ -678,7 +678,7 @@ class UserPerformance:
         # numpy.inf が含まれていると散布図を出力できないので置換する
         df = self.df.replace(numpy.inf, numpy.nan)
 
-        def create_figure(title: str, x_axis_label: str, y_axis_label: str) -> bokeh.plotting.Figure:
+        def create_figure(title: str, x_axis_label: str, y_axis_label: str) -> bokeh.plotting.figure:
             return figure(
                 plot_width=self.PLOT_WIDTH,
                 plot_height=self.PLOT_HEIGHT,
@@ -788,7 +788,7 @@ class UserPerformance:
         作業時間を元に算出した生産性と品質の関係を、メンバごとにプロットする
         """
 
-        def create_figure(title: str, x_axis_label: str, y_axis_label: str) -> bokeh.plotting.Figure:
+        def create_figure(title: str, x_axis_label: str, y_axis_label: str) -> bokeh.plotting.figure:
             return figure(
                 plot_width=self.PLOT_WIDTH,
                 plot_height=self.PLOT_HEIGHT,
