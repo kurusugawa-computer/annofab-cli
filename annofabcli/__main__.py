@@ -1,7 +1,9 @@
+from __future__ import annotations
+
 import argparse
 import logging
 import sys
-from typing import Optional, Sequence
+from typing import Optional
 
 import annofabcli.annotation.subcommand_annotation
 import annofabcli.annotation_specs.subcommand_annotation_specs
@@ -28,7 +30,7 @@ import annofabcli.task_history_event.subcommand_task_history_event
 logger = logging.getLogger(__name__)
 
 
-def main(arguments: Optional[Sequence[str]] = None):
+def main(arguments: Optional[list[str]] = None):
     """
     annofabcliコマンドのメイン処理
     注意： `deprecated`なツールは、サブコマンド化しない。
@@ -47,7 +49,10 @@ def main(arguments: Optional[Sequence[str]] = None):
     if hasattr(args, "subcommand_func"):
         try:
             annofabcli.common.cli.load_logging_config_from_args(args)
-            logger.info(f"sys.argv='{sys.argv}'")
+            argv = sys.argv
+            if arguments is not None:
+                argv = ["annofabcli"] + list(arguments)
+            logger.info(f"argv={argv}")
             args.subcommand_func(args)
         except Exception as e:
             logger.exception(e)
