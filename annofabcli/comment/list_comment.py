@@ -1,6 +1,8 @@
+from __future__ import annotations
+
 import argparse
 import logging
-from typing import List, Optional
+from typing import Any, List, Optional
 
 import pandas
 import requests
@@ -11,6 +13,7 @@ import annofabcli.common.cli
 from annofabcli.common.cli import AbstractCommandLineInterface, ArgumentParser, build_annofabapi_resource_and_login
 from annofabcli.common.enums import FormatArgument
 from annofabcli.common.facade import AnnofabApiFacade
+from annofabcli.common.utils import print_according_to_format, print_csv
 from annofabcli.common.visualize import AddProps
 
 logger = logging.getLogger(__name__)
@@ -21,9 +24,9 @@ class ListingComments(AbstractCommandLineInterface):
         comments, _ = self.service.api.get_comments(project_id, task_id, input_data_id, query_params={"v": "2"})
         return comments
 
-    def list_comments(
+    def get_comment_list(
         self, project_id: str, task_id_list: List[str], *, comment_type: Optional[CommentType], exclude_reply: bool
-    ):
+    ) -> list[dict[str, Any]]:
         all_comments: List[Comment] = []
 
         for task_id in task_id_list:
@@ -50,19 +53,27 @@ class ListingComments(AbstractCommandLineInterface):
             except requests.HTTPError:
                 logger.warning(f"タスク task_id = {task_id} のコメントを取得できませんでした。", exc_info=True)
 
-        logger.info(f"コメントの件数: {len(all_comments)}")
-
         visualize = AddProps(self.service, project_id)
         all_comments = [visualize.add_properties_to_comment(e) for e in all_comments]
-        df = pandas.json_normalize(all_comments)
-        self.print_according_to_format(df)
+        return all_comments
 
     def main(self):
         args = self.args
         task_id_list = annofabcli.common.cli.get_list_from_args(args.task_id)
         comment_type = CommentType(args.comment_type) if args.comment_type is not None else None
 
-        self.list_comments(args.project_id, task_id_list, comment_type=comment_type, exclude_reply=args.exclude_reply)
+        comment_list = self.get_comment_list(
+            args.project_id, task_id_list, comment_type=comment_type, exclude_reply=args.exclude_reply
+        )
+
+        logger.info(f"コメントの件数: {len(comment_list)}")
+
+        output_format = FormatArgument(args.format)
+        if output_format == FormatArgument.CSV:
+            df = pandas.json_normalize(comment_list)
+            print_csv(df, output=args.output)
+        else:
+            print_according_to_format(comment_list, output_format, output=args.output)
 
 
 def main(args: argparse.Namespace):
