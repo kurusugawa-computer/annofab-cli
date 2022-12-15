@@ -20,6 +20,7 @@ from annofabcli.common.cli import AbstractCommandLineInterface, ArgumentParser, 
 from annofabcli.common.download import DownloadingFile
 from annofabcli.common.enums import FormatArgument
 from annofabcli.common.facade import AnnofabApiFacade
+from annofabcli.common.utils import print_csv, print_json
 from annofabcli.common.visualize import AddProps
 
 logger = logging.getLogger(__name__)
@@ -86,8 +87,12 @@ class ListAllComment(AbstractCommandLineInterface):
         )
 
         logger.info(f"コメントの件数: {len(comment_list)}")
-        df = pandas.json_normalize(comment_list)
-        self.print_according_to_format(df)
+        output_format = FormatArgument(args.format)
+        if output_format == FormatArgument.CSV:
+            df = pandas.json_normalize(comment_list)
+            print_csv(df)
+        elif output_format in [FormatArgument.JSON, FormatArgument.PRETTY_JSON]:
+            print_json(comment_list)
 
 
 def parse_args(parser: argparse.ArgumentParser):
