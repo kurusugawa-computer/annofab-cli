@@ -245,7 +245,6 @@ def draw_annotation_all(
     for parser in iter_parser:
         logger.debug(f"{parser.json_file_path} を読み込みます。")
         if is_target_parser_func is not None and not is_target_parser_func(parser):
-            logger.debug(f"{parser.json_file_path} の画像化をスキップします。")
             continue
 
         total_count += 1
