@@ -34,7 +34,6 @@ def _get_worktime_dict_from_event(event: WorktimeFromTaskHistoryEvent) -> Workti
         worktime_hour = (dt_end - dt_start).total_seconds() / 3600
         dict_result[(str(dt_start.date()), event.account_id, event.phase)] = worktime_hour
     else:
-
         jst_tzinfo = datetime.timezone(datetime.timedelta(hours=9))
         dt_tmp_start = dt_start
 
@@ -121,7 +120,6 @@ class ListWorktimeFromTaskHistoryEvent(AbstractCommandLineInterface):
         project_id: str,
         task_history_event_json: Optional[Path],
     ):
-
         super().validate_project(project_id, project_member_roles=None)
 
         main_obj = ListWorktimeFromTaskHistoryEventMain(self.service, project_id=project_id)

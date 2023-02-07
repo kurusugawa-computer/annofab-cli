@@ -95,7 +95,6 @@ class RestoreAnnotationMain(AbstractCommandLineWithConfirmInterface):
         return request_body
 
     def put_annotation_for_input_data(self, parser: SimpleAnnotationParser) -> bool:
-
         task_id = parser.task_id
         input_data_id = parser.input_data_id
 
@@ -110,7 +109,6 @@ class RestoreAnnotationMain(AbstractCommandLineWithConfirmInterface):
         return True
 
     def put_annotation_for_task(self, task_parser: SimpleAnnotationParserByTask) -> int:
-
         logger.info(f"タスク'{task_parser.task_id}' のアノテーションをリストアします。")
 
         success_count = 0
@@ -269,7 +267,6 @@ class RestoreAnnotation(AbstractCommandLineInterface):
     COMMON_MESSAGE = "annofabcli annotation restore: error:"
 
     def validate(self, args: argparse.Namespace) -> bool:
-
         if args.parallelism is not None and not args.yes:
             print(
                 f"{self.COMMON_MESSAGE} argument --parallelism: '--parallelism'を指定するときは、必ず '--yes' を指定してください。",

@@ -5,7 +5,6 @@ from annofabcli.annotation.annotation_query import AnnotationQueryForCLI
 
 
 class TestAnnotationQueryForCLI:
-
     ANNOTATION_SPECS = {
         "labels": [
             {

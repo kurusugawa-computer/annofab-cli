@@ -38,7 +38,6 @@ class ListAllCommentMain:
         comment_type: Optional[CommentType],
         exclude_reply: bool,
     ) -> list[dict[str, Any]]:
-
         if comment_json is None:
             downloading_obj = DownloadingFile(self.service)
             with tempfile.NamedTemporaryFile() as temp_file:

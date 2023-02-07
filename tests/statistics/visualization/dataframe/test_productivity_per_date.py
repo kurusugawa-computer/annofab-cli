@@ -38,7 +38,6 @@ class TestInspectorProductivityPerDate:
 
     @classmethod
     def setup_class(cls):
-
         df_task = pandas.read_csv(str(data_dir / "task.csv"))
 
         cls.obj = InspectorProductivityPerDate.from_df_task(df_task)
@@ -58,7 +57,6 @@ class TestAcceptorProductivityPerDate:
 
     @classmethod
     def setup_class(cls):
-
         df_task = pandas.read_csv(str(data_dir / "task.csv"))
 
         cls.obj = AcceptorProductivityPerDate.from_df_task(df_task)

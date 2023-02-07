@@ -112,7 +112,6 @@ class ReplacingLabelId(AbstractCommandLineWithConfirmInterface):
 
 class GetAnnotationSpecsWithLabelIdReplaced(AbstractCommandLineInterface):
     def main(self):
-
         args = self.args
         project_id: str = args.project_id
         super().validate_project(project_id)

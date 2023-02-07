@@ -423,7 +423,6 @@ class WritingCsv:
         self.user_ids = user_ids
 
     def write(self, df: pandas.DataFrame, csv_basename: str, output_dir: Path):
-
         print_csv(df, str(output_dir / f"{csv_basename}.csv"))
 
         # 偏差値のCSVを出力

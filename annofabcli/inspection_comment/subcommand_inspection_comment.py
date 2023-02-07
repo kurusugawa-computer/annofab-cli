@@ -11,7 +11,6 @@ import annofabcli.inspection_comment.put_inspection_comments_simply
 
 
 def parse_args(parser: argparse.ArgumentParser):
-
     subparsers = parser.add_subparsers(dest="subcommand_name")
 
     # サブコマンドの定義

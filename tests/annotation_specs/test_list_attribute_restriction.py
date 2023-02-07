@@ -66,7 +66,6 @@ class TestListAttributeRestrictionMain:
         )
 
     def test_get_restriction_text__imply(self):
-
         attribute_id = "54fa5e97-6f88-49a4-aeb0-a91a15d11528"
         condition = {
             "premise": {
@@ -84,7 +83,6 @@ class TestListAttributeRestrictionMain:
         )
 
     def test_get_restriction_text__equals_not_exist_attribute(self):
-
         attribute_id = "not-exist"
         condition = {"value": "foo", "_type": "Equals"}
 

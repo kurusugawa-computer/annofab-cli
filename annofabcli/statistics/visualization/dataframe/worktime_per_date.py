@@ -241,7 +241,6 @@ class WorktimePerDate:
 
     @classmethod
     def merge(cls, obj1: WorktimePerDate, obj2: WorktimePerDate) -> WorktimePerDate:
-
         df_tmp = pandas.concat([obj1.df, obj2.df])
 
         df = df_tmp.groupby(["date", "user_id"])[

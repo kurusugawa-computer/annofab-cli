@@ -313,7 +313,6 @@ class ImportAnnotationMain(AbstractCommandLineWithConfirmInterface):
         details: List[ImportedSimpleAnnotationDetail],
         old_annotation: Dict[str, Any],
     ) -> Dict[str, Any]:
-
         old_details = old_annotation["details"]
         old_dict_detail = {}
         INDEX_KEY = "_index"
@@ -363,7 +362,6 @@ class ImportAnnotationMain(AbstractCommandLineWithConfirmInterface):
         return request_body
 
     def put_annotation_for_input_data(self, parser: SimpleAnnotationParser) -> bool:
-
         task_id = parser.task_id
         input_data_id = parser.input_data_id
 
@@ -401,7 +399,6 @@ class ImportAnnotationMain(AbstractCommandLineWithConfirmInterface):
         return True
 
     def put_annotation_for_task(self, task_parser: SimpleAnnotationParserByTask) -> int:
-
         logger.info(f"タスク'{task_parser.task_id}'に対してアノテーションを登録します。")
 
         success_count = 0

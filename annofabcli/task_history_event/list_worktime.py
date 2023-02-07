@@ -241,7 +241,6 @@ class ListWorktimeFromTaskHistoryEvent(AbstractCommandLineInterface):
         user_id_list: Optional[list[str]],
         arg_format: FormatArgument,
     ):
-
         super().validate_project(project_id, project_member_roles=None)
 
         main_obj = ListWorktimeFromTaskHistoryEventMain(self.service, project_id=project_id)

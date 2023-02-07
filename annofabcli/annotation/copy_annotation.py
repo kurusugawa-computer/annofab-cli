@@ -126,7 +126,6 @@ class CopyAnnotationMain(AbstractCommandLineWithConfirmInterface):
     def __init__(
         self, service: annofabapi.Resource, *, project_id: str, all_yes: bool, overwrite: bool, merge: bool, force: bool
     ):
-
         self.service = service
         self.project_id = project_id
         self.overwrite = overwrite

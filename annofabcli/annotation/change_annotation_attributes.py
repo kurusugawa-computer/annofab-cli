@@ -216,9 +216,7 @@ class ChangeAnnotationAttributesMain(AbstractCommandLineWithConfirmInterface):
                 success_count = len([e for e in result_bool_list if e])
 
         else:
-
             for task_index, task_id in enumerate(task_id_list):
-
                 try:
                     result = self.change_attributes_for_task(
                         task_id,

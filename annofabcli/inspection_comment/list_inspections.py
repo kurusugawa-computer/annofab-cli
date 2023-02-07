@@ -147,7 +147,6 @@ class PrintInspections(AbstractCommandLineInterface):
                 input_data_id_list = task["input_data_id_list"]
                 logger.info(f"タスク '{task_id}' に紐づく検査コメントを取得します。input_dataの個数 = {len(input_data_id_list)}")
                 for input_data_index, input_data_id in enumerate(input_data_id_list):
-
                     inspections = self.get_inspections_by_input_data(
                         project_id, task_id, input_data_id, input_data_index
                     )

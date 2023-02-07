@@ -21,7 +21,6 @@ import annofabcli.task.update_metadata_of_task
 
 
 def parse_args(parser: argparse.ArgumentParser):
-
     subparsers = parser.add_subparsers(dest="subcommand_name")
 
     # サブコマンドの定義

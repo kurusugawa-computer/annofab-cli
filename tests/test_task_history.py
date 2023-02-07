@@ -38,7 +38,6 @@ class TestCommandLine:
         )
 
     def test_list_task_history(self):
-
         main(
             [
                 "task_history",

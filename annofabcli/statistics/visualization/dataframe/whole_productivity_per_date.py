@@ -670,7 +670,6 @@ class WholeProductivityPerCompletedDate:
             return line_graph
 
         def create_input_data_line_graph() -> LineGraph:
-
             line_graph = create_line_graph(
                 title="日ごとの累積入力データ数と累積作業時間",
                 y_axis_label="入力データ数",
@@ -725,7 +724,6 @@ class WholeProductivityPerCompletedDate:
             return line_graph
 
         def create_worktime_line_graph() -> LineGraph:
-
             line_graph = create_line_graph(
                 title="日ごとの累積作業時間",
                 y_axis_label="作業時間[hour]",
@@ -1142,7 +1140,6 @@ class WholeProductivityPerFirstAnnotationStartedDate:
             return line_graph
 
         def create_input_data_graph() -> LineGraph:
-
             line_graph = create_line_graph(
                 title="教師付開始日ごとの入力データ数と計測作業時間",
                 y_axis_label="入力データ数",

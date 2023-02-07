@@ -28,7 +28,6 @@ class TestReplacingLabelId:
     ]
 
     def test_replace_label_id_of_restrictions(self):
-
         restriction_list = copy.deepcopy(self.restriction_list)
         ReplacingLabelId().replace_label_id_of_restrictions("id1", "new_label1", restriction_list)
         labels: list[str] = restriction_list[0]["condition"]["condition"]["labels"]  # type: ignore

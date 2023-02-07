@@ -54,7 +54,6 @@ project_id = annofab_config["project_id"]
 
 @pytest.mark.access_webapi
 class TestWorktimePerDate_webapi:
-
     service: annofabapi.Resource
 
     @classmethod

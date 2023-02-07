@@ -56,7 +56,7 @@ def _only_selective_attribute(columns: list[AttributeValueKey]) -> list[Attribut
     """
     SELECTIVE_ATTRIBUTE_VALUE_MAX_COUNT = 20
     attribute_name_list: list[AttributeNameKey] = []
-    for (label, attribute_name, _) in columns:
+    for label, attribute_name, _ in columns:
         attribute_name_list.append((label, attribute_name))
 
     non_selective_attribute_names = {
@@ -149,7 +149,6 @@ def plot_attribute_histogram(
     prior_keys: Optional[list[AttributeValueKey]] = None,
     bins: int = 20,
 ):
-
     all_key_set = {key for c in counter_list for key in c.annotation_count_by_attribute}
     if prior_keys is not None:
         remaining_columns = list(all_key_set - set(prior_keys))

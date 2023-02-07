@@ -125,7 +125,6 @@ class SubPutInputData:
     def put_input_data(
         self, project_id: str, csv_input_data: InputDataForPut, last_updated_datetime: Optional[str] = None
     ):
-
         request_body: Dict[str, Any] = {"last_updated_datetime": last_updated_datetime}
 
         file_path = get_file_scheme_path(csv_input_data.input_data_path)
@@ -184,7 +183,6 @@ class SubPutInputData:
         return self.confirm_processing(message_for_confirm)
 
     def put_input_data_main(self, project_id: str, csv_input_data: CsvInputData, overwrite: bool = False) -> bool:
-
         input_data = InputDataForPut(
             input_data_name=csv_input_data.input_data_name,
             input_data_path=csv_input_data.input_data_path,

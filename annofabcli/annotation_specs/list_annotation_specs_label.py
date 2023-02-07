@@ -100,7 +100,6 @@ class PrintAnnotationSpecsLabel(AbstractCommandLineInterface):
         return history["history_id"]
 
     def main(self):
-
         args = self.args
 
         if args.before is not None:
