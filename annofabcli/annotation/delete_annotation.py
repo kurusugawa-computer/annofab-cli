@@ -70,7 +70,7 @@ class DeleteAnnotationMain(AbstractCommandLineWithConfirmInterface):
             }
 
         request_body = [_to_request_body_elm(annotation) for annotation in annotation_list]
-        self.service.api.batch_update_annotations(self.project_id, request_body)
+        self.service.api.batch_update_annotations(self.project_id, request_body=request_body)
 
     def get_annotation_list_for_task(
         self, task_id: str, annotation_query: Optional[AnnotationQueryForAPI]

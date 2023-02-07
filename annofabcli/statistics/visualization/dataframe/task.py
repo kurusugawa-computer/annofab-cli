@@ -108,19 +108,19 @@ class Task:
         logger.debug(f"{output_file} を出力します。")
         df = self.df
         histogram_list = [
-            dict(
-                title="教師付作業時間",
-                column="annotation_worktime_hour",
-            ),
-            dict(
-                title="検査作業時間",
-                column="inspection_worktime_hour",
-            ),
-            dict(
-                title="受入作業時間",
-                column="acceptance_worktime_hour",
-            ),
-            dict(title="総作業時間", column="worktime_hour"),
+            {
+                "title": "教師付作業時間",
+                "column": "annotation_worktime_hour",
+            },
+            {
+                "title": "検査作業時間",
+                "column": "inspection_worktime_hour",
+            },
+            {
+                "title": "受入作業時間",
+                "column": "acceptance_worktime_hour",
+            },
+            {"title": "総作業時間", "column": "worktime_hour"},
         ]
 
         figure_list = []
@@ -217,36 +217,36 @@ class Task:
         )
 
         histogram_list = [
-            dict(column="annotation_count", x_axis_label="アノテーション数", title="アノテーション数"),
-            dict(column="input_data_count", x_axis_label="入力データ数", title="入力データ数"),
-            dict(column="inspection_comment_count", x_axis_label="検査コメント数", title="検査コメント数"),
+            {"column": "annotation_count", "x_axis_label": "アノテーション数", "title": "アノテーション数"},
+            {"column": "input_data_count", "x_axis_label": "入力データ数", "title": "入力データ数"},
+            {"column": "inspection_comment_count", "x_axis_label": "検査コメント数", "title": "検査コメント数"},
             # 経過日数
-            dict(
-                column="diff_days_to_first_inspection_started",
-                x_axis_label="最初の検査を着手するまでの日数",
-                title="最初の検査を着手するまでの日数",
-            ),
-            dict(
-                column="diff_days_to_first_acceptance_started",
-                x_axis_label="最初の受入を着手するまでの日数",
-                title="最初の受入を着手するまでの日数",
-            ),
-            dict(
-                column="diff_days_to_first_acceptance_completed",
-                x_axis_label="初めて受入完了状態になるまでの日数",
-                title="初めて受入完了状態になるまでの日数",
-            ),
+            {
+                "column": "diff_days_to_first_inspection_started",
+                "x_axis_label": "最初の検査を着手するまでの日数",
+                "title": "最初の検査を着手するまでの日数",
+            },
+            {
+                "column": "diff_days_to_first_acceptance_started",
+                "x_axis_label": "最初の受入を着手するまでの日数",
+                "title": "最初の受入を着手するまでの日数",
+            },
+            {
+                "column": "diff_days_to_first_acceptance_completed",
+                "x_axis_label": "初めて受入完了状態になるまでの日数",
+                "title": "初めて受入完了状態になるまでの日数",
+            },
             # 差し戻し回数
-            dict(
-                column="number_of_rejections_by_inspection",
-                x_axis_label="検査フェーズでの差し戻し回数",
-                title="検査フェーズでの差し戻し回数",
-            ),
-            dict(
-                column="number_of_rejections_by_acceptance",
-                x_axis_label="受入フェーズでの差し戻し回数",
-                title="受入フェーズでの差し戻し回数",
-            ),
+            {
+                "column": "number_of_rejections_by_inspection",
+                "x_axis_label": "検査フェーズでの差し戻し回数",
+                "title": "検査フェーズでの差し戻し回数",
+            },
+            {
+                "column": "number_of_rejections_by_acceptance",
+                "x_axis_label": "受入フェーズでの差し戻し回数",
+                "title": "受入フェーズでの差し戻し回数",
+            },
         ]
 
         figure_list = []

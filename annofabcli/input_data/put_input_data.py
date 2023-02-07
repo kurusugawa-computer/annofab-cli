@@ -211,7 +211,7 @@ class SubPutInputData:
                 logger.warning(f"{input_data.input_data_path} は存在しません。")
                 return False
 
-        if not self.confirm_put_input_data(input_data, already_exists=(last_updated_datetime is not None)):
+        if not self.confirm_put_input_data(input_data, already_exists=last_updated_datetime is not None):
             return False
 
         # 入力データを登録
@@ -505,7 +505,7 @@ def parse_args(parser: argparse.ArgumentParser):
         ),
     )
 
-    file_group.add_argument("--zip", type=Path, help=("入力データとして登録するzipファイルのパスを指定してください。"))
+    file_group.add_argument("--zip", type=Path, help="入力データとして登録するzipファイルのパスを指定してください。")
 
     parser.add_argument(
         "--overwrite",
@@ -529,7 +529,7 @@ def parse_args(parser: argparse.ArgumentParser):
         ),
     )
 
-    parser.add_argument("--wait", action="store_true", help=("入力データの登録が完了するまで待ちます。" " ``--zip`` を指定したときのみ有効なオプションです。"))
+    parser.add_argument("--wait", action="store_true", help="入力データの登録が完了するまで待ちます。" " ``--zip`` を指定したときのみ有効なオプションです。")
 
     parser.add_argument(
         "--wait_options",
