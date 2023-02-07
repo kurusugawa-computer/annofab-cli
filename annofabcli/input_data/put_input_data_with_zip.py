@@ -124,7 +124,7 @@ def parse_args(parser: argparse.ArgumentParser):
 
     argument_parser.add_project_id()
 
-    parser.add_argument("--zip", type=Path, help=("入力データとして登録するzipファイルのパスを指定してください。"))
+    parser.add_argument("--zip", type=Path, help="入力データとして登録するzipファイルのパスを指定してください。")
 
     parser.add_argument(
         "--input_data_name_prefix",
@@ -132,7 +132,7 @@ def parse_args(parser: argparse.ArgumentParser):
         help="入力データとして登録するzipファイルのinput_data_nameを指定してください。省略した場合、 ``--zip`` のパスになります。",
     )
 
-    parser.add_argument("--wait", action="store_true", help=("入力データの登録が完了するまで待ちます。"))
+    parser.add_argument("--wait", action="store_true", help="入力データの登録が完了するまで待ちます。")
 
     parser.set_defaults(subcommand_func=main)
 
