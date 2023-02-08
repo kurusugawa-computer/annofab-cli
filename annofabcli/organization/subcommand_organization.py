@@ -7,7 +7,6 @@ import annofabcli.organization.list_organization
 
 
 def parse_args(parser: argparse.ArgumentParser):
-
     subparsers = parser.add_subparsers(dest="subcommand_name")
 
     # サブコマンドの定義

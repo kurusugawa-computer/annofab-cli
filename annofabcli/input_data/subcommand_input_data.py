@@ -14,7 +14,6 @@ import annofabcli.input_data.update_metadata_of_input_data
 
 
 def parse_args(parser: argparse.ArgumentParser):
-
     subparsers = parser.add_subparsers(dest="subcommand_name")
 
     # サブコマンドの定義

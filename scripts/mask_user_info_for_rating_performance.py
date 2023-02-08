@@ -27,7 +27,6 @@ def execute_mask_user_info_command(csv_path: Path, output_csv: Path, remainder_o
 
 
 def mask_user_info_for_dir(root_dir: Path, output_dir: Path, remainder_options: Optional[list[str]]) -> None:
-
     for sub_dirname in [
         "annotation_productivity",
         "inspection_acceptance_productivity",

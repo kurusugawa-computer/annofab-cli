@@ -25,7 +25,6 @@ class PutProject(AbstractCommandLineInterface):
         overview: Optional[str],
         plugin_id: Optional[str],
     ):
-
         new_project_id = project_id if project_id is not None else str(uuid.uuid4())
 
         request_body = {

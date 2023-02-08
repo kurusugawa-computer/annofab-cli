@@ -110,7 +110,6 @@ class CompleteTasksMain(AbstractCommandLineWithConfirmInterface):
         comment_list: List[dict[str, Any]],
         comment_status: CommentStatus,
     ):
-
         if comment_list is None or len(comment_list) == 0:
             logger.warning(f"変更対象の検査コメントはなかった。task_id = {task.task_id}, input_data_id = {input_data_id}")
             return
@@ -301,7 +300,6 @@ class CompleteTasksMain(AbstractCommandLineWithConfirmInterface):
         task: Task,
         inspection_status: Optional[CommentStatus] = None,
     ) -> bool:
-
         unprocessed_inspection_list_dict: Dict[str, List[Inspection]] = {}
         for input_data_id in task.input_data_id_list:
             unprocessed_inspection_list = self.get_unprocessed_inspection_list(task, input_data_id)

@@ -150,7 +150,6 @@ class WriteCsvGraph:
         acceptor_obj = AcceptorCumulativeProductivity(df_task)
 
         if not self.output_only_text:
-
             self.project_dir.write_cumulative_line_graph(
                 annotator_obj, phase=TaskPhase.ANNOTATION, user_id_list=user_id_list, minimal_output=self.minimal_output
             )
@@ -364,7 +363,6 @@ class VisualizingStatisticsMain:
         *,
         parallelism: Optional[int] = None,
     ) -> List[Path]:
-
         output_project_dir_list: List[Path] = []
 
         wrap = functools.partial(self.visualize_statistics_wrapper, root_output_dir=root_output_dir)
@@ -420,7 +418,6 @@ class VisualizeStatistics(AbstractCommandLineInterface):
         df_labor = pandas.read_csv(args.labor_csv) if args.labor_csv is not None else None
 
         with tempfile.TemporaryDirectory() as str_temp_dir:
-
             main_obj = VisualizingStatisticsMain(
                 service=self.service,
                 temp_dir=Path(str_temp_dir),
@@ -483,7 +480,6 @@ def main(args):
 
 
 def parse_args(parser: argparse.ArgumentParser):
-
     parser.add_argument(
         "-p",
         "--project_id",

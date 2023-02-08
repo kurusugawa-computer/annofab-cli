@@ -229,7 +229,6 @@ class DeleteComment(AbstractCommandLineInterface):
     COMMON_MESSAGE = "annofabcli comment delete: error:"
 
     def validate(self, args: argparse.Namespace) -> bool:
-
         if args.parallelism is not None and not args.yes:
             print(
                 f"{self.COMMON_MESSAGE} argument --parallelism: '--parallelism'を指定するときは、必ず '--yes' を指定してください。",

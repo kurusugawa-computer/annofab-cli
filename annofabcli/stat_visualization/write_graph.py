@@ -74,7 +74,6 @@ class WritingGraph:
             )
 
     def main(self):
-
         try:
             # メンバのパフォーマンスを散布図で出力する
             self.output_project_dir.write_user_performance_scatter_plot(self.project_dir.read_user_performance())
@@ -122,7 +121,6 @@ def main(args):
 
 
 def parse_args(parser: argparse.ArgumentParser):
-
     parser.add_argument(
         "--dir",
         type=Path,

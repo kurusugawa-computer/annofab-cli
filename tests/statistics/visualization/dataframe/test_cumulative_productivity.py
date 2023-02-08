@@ -57,7 +57,6 @@ class TestAcceptorCumulativeProductivity:
 
     @classmethod
     def setup_class(cls):
-
         df_task = pandas.read_csv(str(data_dir / "task.csv"))
         cls.obj = AcceptorCumulativeProductivity(df_task)
 

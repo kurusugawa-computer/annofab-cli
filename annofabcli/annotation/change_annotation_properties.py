@@ -248,7 +248,6 @@ class ChangePropertiesOfAnnotationMain(AbstractCommandLineWithConfirmInterface):
         backup_dir: Optional[Path] = None,
         parallelism: Optional[int] = None,
     ):
-
         project_title = self.facade.get_project_title(self.project_id)
         logger.info(f"プロジェクト'{project_title}'に対して、タスク{len(task_id_list)} 件のアノテーションのプロパティを変更します")
 

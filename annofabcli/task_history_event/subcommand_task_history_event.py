@@ -8,7 +8,6 @@ from annofabcli.common.cli import add_parser as common_add_parser
 
 
 def parse_args(parser: argparse.ArgumentParser):
-
     subparsers = parser.add_subparsers(dest="subcommand_name")
 
     # サブコマンドの定義

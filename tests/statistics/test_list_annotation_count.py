@@ -89,7 +89,6 @@ class TestLabelCountCsv:
         )
 
     def test_print_labels_count_csv(self):
-
         counter_list = ListAnnotationCounterByTask().get_annotation_counter_list(data_dir / "simple-annotations.zip")
 
         LabelCountCsv().print_csv_by_task(

@@ -37,7 +37,6 @@ class DrawingOptions(DataClassJsonMixin):
 
 
 class DrawingAnnotationForOneImage:
-
     _COLOR_PALETTE = [
         "red",
         "maroon",
@@ -177,7 +176,6 @@ class DrawingAnnotationForOneImage:
         assert image_file is not None or image_size is not None
 
         if image_file is not None:
-
             with Image.open(image_file) as image:
                 draw = ImageDraw.Draw(image)
                 self._draw_annotations(draw, parser)

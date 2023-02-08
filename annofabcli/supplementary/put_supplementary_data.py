@@ -77,7 +77,6 @@ class SubPutSupplementaryData:
         self.supplementary_data_cache: Dict[str, List[SupplementaryData]] = {}
 
     def put_supplementary_data(self, project_id: str, supplementary_data: SupplementaryDataForPut):
-
         file_path = get_file_scheme_path(supplementary_data.supplementary_data_path)
         if file_path is not None:
             request_body = {

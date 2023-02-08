@@ -397,7 +397,6 @@ class UserPerformance:
         return prior_columns
 
     def to_csv(self, output_file: Path) -> None:
-
         if not self._validate_df_for_output(output_file):
             return
 

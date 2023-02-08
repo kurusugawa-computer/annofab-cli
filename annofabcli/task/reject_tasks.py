@@ -366,7 +366,6 @@ class RejectTasks(AbstractCommandLineInterface):
     COMMON_MESSAGE = "annofabcli task reject: error:"
 
     def validate(self, args: argparse.Namespace) -> bool:
-
         if args.parallelism is not None and not args.yes:
             print(
                 f"{self.COMMON_MESSAGE} argument --parallelism: '--parallelism'を指定するときは、'--yes' を指定してください。",

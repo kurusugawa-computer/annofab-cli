@@ -476,7 +476,6 @@ class AnnotatorProductivityPerDate(AbstractPhaseProductivityPerDate):
         self._plot(line_graph_list, output_file)
 
     def to_csv(self, output_file: Path) -> None:
-
         if not self._validate_df_for_output(output_file):
             return
 

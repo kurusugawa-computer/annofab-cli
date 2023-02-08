@@ -175,7 +175,6 @@ class PutCommentSimplyMain(AbstractCommandLineWithConfirmInterface):
         comment_info: AddedSimpleComment,
         parallelism: Optional[int] = None,
     ) -> None:
-
         logger.info(f"{len(task_ids)} 件のタスクに{self.comment_type_name}を付与します。")
 
         if parallelism is not None:

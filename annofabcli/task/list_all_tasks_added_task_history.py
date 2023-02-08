@@ -48,7 +48,6 @@ class ListAllTasksAddedTaskHistoryMain:
         obj = AddingAdditionalInfoToTask(self.service, project_id=self.project_id)
 
         for task in task_list:
-
             obj.add_additional_info_to_task(task)
 
             task_id = task["task_id"]

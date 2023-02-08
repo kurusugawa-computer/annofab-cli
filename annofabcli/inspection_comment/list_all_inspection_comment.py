@@ -72,7 +72,6 @@ class ListInspectionCommentWithJsonMain:
         only_reply: bool,
         exclude_reply: bool,
     ) -> List[Inspection]:
-
         if inspection_comment_json is None:
             downloading_obj = DownloadingFile(self.service)
             cache_dir = annofabcli.common.utils.get_cache_dir()
