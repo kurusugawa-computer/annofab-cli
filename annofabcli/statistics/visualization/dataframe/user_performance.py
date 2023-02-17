@@ -2,13 +2,14 @@
 各ユーザの合計の生産性と品質
 """
 from __future__ import annotations
-
+from bokeh.models.annotations import Span
 import copy
 import logging
 from enum import Enum
 from pathlib import Path
 from typing import Any, Optional
 
+from bokeh.models.widgets.markups import Div
 import bokeh
 import bokeh.layouts
 import bokeh.palettes
@@ -408,8 +409,8 @@ class UserPerformance:
         print_csv(self.df[columns], str(output_file))
 
     @staticmethod
-    def _plot_average_line(fig: bokeh.plotting.Figure, value: float, dimension: str):
-        span_average_line = bokeh.models.Span(
+    def _plot_average_line(fig: figure, value: float, dimension: str):
+        span_average_line = Span(
             location=value,
             dimension=dimension,
             line_color="red",
@@ -418,7 +419,7 @@ class UserPerformance:
         fig.add_layout(span_average_line)
 
     @staticmethod
-    def _plot_quartile_line(fig: bokeh.plotting.Figure, quartile: tuple[float, float, float], dimension: str):
+    def _plot_quartile_line(fig: figure, quartile: tuple[float, float, float], dimension: str):
         """
 
         Args:
@@ -428,7 +429,7 @@ class UserPerformance:
         """
 
         for value in quartile:
-            span_average_line = bokeh.models.Span(
+            span_average_line = Span(
                 location=value,
                 dimension=dimension,
                 line_color="blue",
@@ -454,11 +455,11 @@ class UserPerformance:
             return None
 
     @staticmethod
-    def _create_div_element() -> bokeh.models.Div:
+    def _create_div_element() -> Div:
         """
         HTMLページの先頭に付与するdiv要素を生成する。
         """
-        return bokeh.models.Div(
+        return Div(
             text="""<h4>グラフの見方</h4>
             <span style="color:red;">赤線</span>：平均値<br>
             <span style="color:blue;">青線</span>：四分位数<br>
@@ -466,7 +467,7 @@ class UserPerformance:
         )
 
     @staticmethod
-    def _set_legend(fig: bokeh.plotting.Figure) -> None:
+    def _set_legend(fig: figure) -> None:
         """
         凡例の設定。
         """
@@ -560,7 +561,7 @@ class UserPerformance:
         # numpy.inf が含まれていると散布図を出力できないので置換する
         df = self.df.replace(numpy.inf, numpy.nan)
 
-        def create_figure(title: str) -> bokeh.plotting.Figure:
+        def create_figure(title: str) -> figure:
             return figure(
                 plot_width=self.PLOT_WIDTH,
                 plot_height=self.PLOT_HEIGHT,
@@ -677,7 +678,7 @@ class UserPerformance:
         # numpy.inf が含まれていると散布図を出力できないので置換する
         df = self.df.replace(numpy.inf, numpy.nan)
 
-        def create_figure(title: str, x_axis_label: str, y_axis_label: str) -> bokeh.plotting.Figure:
+        def create_figure(title: str, x_axis_label: str, y_axis_label: str) -> figure:
             return figure(
                 plot_width=self.PLOT_WIDTH,
                 plot_height=self.PLOT_HEIGHT,
@@ -787,7 +788,7 @@ class UserPerformance:
         作業時間を元に算出した生産性と品質の関係を、メンバごとにプロットする
         """
 
-        def create_figure(title: str, x_axis_label: str, y_axis_label: str) -> bokeh.plotting.Figure:
+        def create_figure(title: str, x_axis_label: str, y_axis_label: str) -> figure:
             return figure(
                 plot_width=self.PLOT_WIDTH,
                 plot_height=self.PLOT_HEIGHT,

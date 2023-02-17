@@ -3,7 +3,7 @@
 全体の日ごとの生産性
 """
 from __future__ import annotations
-
+from bokeh.models.widgets.markups import Div
 import logging
 from pathlib import Path
 from typing import Optional
@@ -308,11 +308,11 @@ class WholeProductivityPerCompletedDate:
         return WholeProductivityPerCompletedDate(sum_df.reset_index())
 
     @staticmethod
-    def _create_div_element() -> bokeh.models.Div:
+    def _create_div_element() -> Div:
         """
         HTMLページの先頭に付与するdiv要素を生成する。
         """
-        return bokeh.models.Div(
+        return Div(
             text="""<h4>用語</h4>
             <p>「X日のタスク数」とは、X日に初めて受入完了状態になったタスクの個数です。</p>
             """
@@ -1077,11 +1077,11 @@ class WholeProductivityPerFirstAnnotationStartedDate:
                         get_weekly_sum(df[f"{numerator}_hour"]) * 60 / get_weekly_sum(df[denominator])
                     )
 
-        def create_div_element() -> bokeh.models.Div:
+        def create_div_element() -> Div:
             """
             HTMLページの先頭に付与するdiv要素を生成する。
             """
-            return bokeh.models.Div(
+            return Div(
                 text="""<h4>注意</h4>
                 <p>「X日の作業時間」とは、「X日に教師付開始したタスクにかけた作業時間」です。
                 「X日に作業した時間」ではありません。

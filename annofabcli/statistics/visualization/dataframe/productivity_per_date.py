@@ -3,7 +3,7 @@
 日ごとユーザごとの生産性
 """
 from __future__ import annotations
-
+from bokeh.models.widgets.widget import Widget
 import abc
 import logging
 from pathlib import Path
@@ -55,7 +55,7 @@ class AbstractPhaseProductivityPerDate(abc.ABC):
         for line_graph in line_graph_list:
             line_graph.process_after_adding_glyphs()
 
-            widget_list = []
+            widget_list: list[Widget] = []
             hide_all_button = line_graph.create_button_hiding_showing_all_lines(is_hiding=True)
             show_all_button = line_graph.create_button_hiding_showing_all_lines(is_hiding=False)
             widget_list.append(hide_all_button)
