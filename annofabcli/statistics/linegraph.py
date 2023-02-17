@@ -13,13 +13,13 @@ import bokeh.layouts
 import bokeh.palettes
 import pandas
 from bokeh.core.properties import Color
+from bokeh.models.widgets.buttons import Button
+from bokeh.models.widgets.groups import CheckboxGroup
+from bokeh.models.renderers.glyph_renderer import GlyphRenderer
 from bokeh.models import (
-    Button,
-    CheckboxGroup,
     CrosshairTool,
     CustomJS,
     DataRange1d,
-    GlyphRenderer,
     HoverTool,
     LinearAxis,
 )
@@ -305,12 +305,12 @@ def get_weekly_sum(series: pandas.Series) -> pandas.Series:
     return series.rolling(MOVING_WINDOW_DAYS, min_periods=MIN_WINDOW_DAYS).sum()
 
 
-def get_color_from_palette(index: int) -> Color:
+def get_color_from_palette(index: int) -> str:
     my_palette = bokeh.palettes.Category20[20]
     return my_palette[index % len(my_palette)]
 
 
-def get_color_from_small_palette(index: int) -> Color:
+def get_color_from_small_palette(index: int) -> str:
     my_palette = bokeh.palettes.Category10[10]
     return my_palette[index % len(my_palette)]
 

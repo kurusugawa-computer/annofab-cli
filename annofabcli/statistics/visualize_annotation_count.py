@@ -12,7 +12,8 @@ import bokeh
 import numpy
 import pandas
 from annofabapi.models import ProjectMemberRole
-from bokeh.models import HoverTool, Title
+from bokeh.models import HoverTool
+from bokeh.models.annotations.labels import Title
 from bokeh.plotting import ColumnDataSource, figure
 
 import annofabcli

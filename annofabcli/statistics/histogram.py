@@ -3,8 +3,9 @@ from typing import Optional
 
 import numpy
 import pandas
-from bokeh.models import HoverTool, Title
-from bokeh.plotting import ColumnDataSource, Figure, figure
+from bokeh.models import HoverTool
+from bokeh.models.annotations.labels import Title
+from bokeh.plotting import ColumnDataSource, figure
 
 logger = logging.getLogger(__name__)
 
