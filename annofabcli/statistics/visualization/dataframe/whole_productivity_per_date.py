@@ -368,8 +368,8 @@ class WholeProductivityPerCompletedDate:
 
         def create_line_graph(title: str, y_axis_label: str, tooltip_columns: list[str]) -> LineGraph:
             return LineGraph(
-                plot_width=1200,
-                plot_height=600,
+                width=1200,
+                height=600,
                 title=title,
                 x_axis_label="日",
                 x_axis_type="datetime",
@@ -604,8 +604,8 @@ class WholeProductivityPerCompletedDate:
 
         def create_line_graph(title: str, y_axis_label: str, tooltip_columns: list[str]) -> LineGraph:
             return LineGraph(
-                plot_width=1200,
-                plot_height=600,
+                width=1200,
+                height=600,
                 title=title,
                 x_axis_label="日",
                 x_axis_type="datetime",
@@ -1091,8 +1091,8 @@ class WholeProductivityPerFirstAnnotationStartedDate:
 
         def create_line_graph(title: str, y_axis_label: str, tooltip_columns: list[str]) -> LineGraph:
             return LineGraph(
-                plot_width=1200,
-                plot_height=600,
+                width=1200,
+                height=600,
                 title=title,
                 x_axis_label="教師付開始日",
                 x_axis_type="datetime",

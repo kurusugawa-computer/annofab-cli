@@ -118,8 +118,8 @@ def plot_label_histogram(
 
         source = ColumnDataSource(df_histogram)
         fig = figure(
-            plot_width=400,
-            plot_height=300,
+            width=400,
+            height=300,
             x_axis_label="アノテーション数",
             y_axis_label=y_axis_label,
         )
@@ -176,8 +176,8 @@ def plot_attribute_histogram(
 
         source = ColumnDataSource(df_histogram)
         fig = figure(
-            plot_width=400,
-            plot_height=300,
+            width=400,
+            height=300,
             x_axis_label="アノテーション数",
             y_axis_label=y_axis_label,
         )

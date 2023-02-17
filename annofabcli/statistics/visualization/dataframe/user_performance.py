@@ -8,7 +8,7 @@ import logging
 from enum import Enum
 from pathlib import Path
 from typing import Any, Optional
-
+from bokeh.core.properties import String
 from bokeh.models.widgets.markups import Div
 import bokeh
 import bokeh.layouts
@@ -563,8 +563,8 @@ class UserPerformance:
 
         def create_figure(title: str) -> figure:
             return figure(
-                plot_width=self.PLOT_WIDTH,
-                plot_height=self.PLOT_HEIGHT,
+                width=self.PLOT_WIDTH,
+                height=self.PLOT_HEIGHT,
                 title=title,
                 x_axis_label="累計作業時間[hour]",
                 y_axis_label="アノテーションあたり作業時間[minute/annotation]",
@@ -680,8 +680,8 @@ class UserPerformance:
 
         def create_figure(title: str, x_axis_label: str, y_axis_label: str) -> figure:
             return figure(
-                plot_width=self.PLOT_WIDTH,
-                plot_height=self.PLOT_HEIGHT,
+                width=self.PLOT_WIDTH,
+                height=self.PLOT_HEIGHT,
                 title=title,
                 x_axis_label=x_axis_label,
                 y_axis_label=y_axis_label,
@@ -790,8 +790,8 @@ class UserPerformance:
 
         def create_figure(title: str, x_axis_label: str, y_axis_label: str) -> figure:
             return figure(
-                plot_width=self.PLOT_WIDTH,
-                plot_height=self.PLOT_HEIGHT,
+                width=self.PLOT_WIDTH,
+                height=self.PLOT_HEIGHT,
                 title=title,
                 x_axis_label=x_axis_label,
                 y_axis_label=y_axis_label,
@@ -914,7 +914,7 @@ class UserPerformance:
         set_tooltip()
 
         div_element = self._create_div_element()
-        div_element.text += """円の大きさ：作業時間<br>"""
+        div_element.text = div_element.text + """円の大きさ：作業時間<br>"""
         write_bokeh_graph(bokeh.layouts.column([div_element] + figure_list), output_file)
 
 

@@ -66,8 +66,8 @@ class LineGraph:
         title: str,
         x_axis_label: str,
         y_axis_label: str,
-        plot_width: int = 1200,
-        plot_height: int = 1000,
+        width: int = 1200,
+        height: int = 1000,
         tooltip_columns: Optional[list[str]] = None,
         **figure_kwargs,
     ) -> None:
@@ -75,8 +75,8 @@ class LineGraph:
             title=title,
             x_axis_label=x_axis_label,
             y_axis_label=y_axis_label,
-            plot_width=plot_width,
-            plot_height=plot_height,
+            width=width,
+            height=height,
             **figure_kwargs,
         )
         self.title = title
