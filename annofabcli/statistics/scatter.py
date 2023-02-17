@@ -11,7 +11,7 @@ import bokeh.palettes
 import numpy
 from bokeh.core.properties import Color
 from bokeh.models import HoverTool
-from bokeh.plotting import ColumnDataSource
+from bokeh.plotting import ColumnDataSource, figure
 
 logger = logging.getLogger(__name__)
 
@@ -24,13 +24,13 @@ def write_bokeh_graph(bokeh_obj, output_file: Path):
     logger.debug(f"'{output_file}'を出力しました。")
 
 
-def get_color_from_palette(index: int) -> Color:
+def get_color_from_palette(index: int) -> str:
     my_palette = bokeh.palettes.Category10[10]
     return my_palette[index % len(my_palette)]
 
 
 def plot_bubble(
-    fig: bokeh.plotting.Figure,
+    fig: figure,
     source: ColumnDataSource,
     x_column_name: str,
     y_column_name: str,
@@ -98,7 +98,7 @@ def plot_bubble(
 
 
 def plot_scatter(
-    fig: bokeh.plotting.Figure,
+    fig: figure,
     source: ColumnDataSource,
     x_column_name: str,
     y_column_name: str,
