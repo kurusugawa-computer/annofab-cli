@@ -3,7 +3,7 @@
 日ごとユーザごとの生産性
 """
 from __future__ import annotations
-from bokeh.models.widgets.widget import Widget
+
 import abc
 import logging
 from pathlib import Path
@@ -14,6 +14,7 @@ import bokeh.layouts
 import bokeh.palettes
 import pandas
 from annofabapi.models import TaskPhase
+from bokeh.models.widgets.widget import Widget
 from bokeh.plotting import ColumnDataSource
 from dateutil.parser import parse
 
