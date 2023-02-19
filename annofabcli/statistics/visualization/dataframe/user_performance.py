@@ -2,20 +2,21 @@
 各ユーザの合計の生産性と品質
 """
 from __future__ import annotations
-from bokeh.models.annotations import Span
+
 import copy
 import logging
 from enum import Enum
 from pathlib import Path
 from typing import Any, Optional
-from bokeh.core.properties import String
-from bokeh.models.widgets.markups import Div
+
 import bokeh
 import bokeh.layouts
 import bokeh.palettes
 import numpy
 import pandas
 from annofabapi.models import TaskPhase
+from bokeh.models.annotations import Span
+from bokeh.models.widgets.markups import Div
 from bokeh.plotting import ColumnDataSource, figure
 
 from annofabcli.common.utils import print_csv, read_multiheader_csv

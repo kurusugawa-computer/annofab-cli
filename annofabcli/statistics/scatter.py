@@ -9,7 +9,6 @@ import bokeh
 import bokeh.layouts
 import bokeh.palettes
 import numpy
-from bokeh.core.properties import Color
 from bokeh.models import HoverTool
 from bokeh.plotting import ColumnDataSource, figure
 

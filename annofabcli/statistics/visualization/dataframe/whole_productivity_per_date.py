@@ -3,7 +3,7 @@
 全体の日ごとの生産性
 """
 from __future__ import annotations
-from bokeh.models.widgets.markups import Div
+
 import logging
 from pathlib import Path
 from typing import Optional
@@ -15,6 +15,7 @@ import numpy
 import pandas
 from annofabapi.models import TaskStatus
 from bokeh.models import DataRange1d
+from bokeh.models.widgets.markups import Div
 from bokeh.plotting import ColumnDataSource
 from dateutil.parser import parse
 

@@ -12,17 +12,10 @@ import bokeh
 import bokeh.layouts
 import bokeh.palettes
 import pandas
-from bokeh.core.properties import Color
+from bokeh.models import CrosshairTool, CustomJS, DataRange1d, HoverTool, LinearAxis
+from bokeh.models.renderers.glyph_renderer import GlyphRenderer
 from bokeh.models.widgets.buttons import Button
 from bokeh.models.widgets.groups import CheckboxGroup
-from bokeh.models.renderers.glyph_renderer import GlyphRenderer
-from bokeh.models import (
-    CrosshairTool,
-    CustomJS,
-    DataRange1d,
-    HoverTool,
-    LinearAxis,
-)
 from bokeh.plotting import ColumnDataSource, figure
 
 logger = logging.getLogger(__name__)
