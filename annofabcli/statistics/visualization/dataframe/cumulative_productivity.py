@@ -118,8 +118,6 @@ class AbstractPhaseCumulativeProductivity(abc.ABC):
                 logger.debug(f"dataframe is empty. user_id = {user_id}")
                 continue
 
-            print(f"{df_subset[required_columns].dtypes=}")
-            print(df_subset[required_columns])
             source = ColumnDataSource(df_subset[required_columns])
             color = get_color_from_palette(user_index)
             username = df_subset.iloc[0][f"first_{self.phase.value}_username"]
@@ -210,6 +208,10 @@ class AnnotatorCumulativeProductivity(AbstractPhaseCumulativeProductivity):
         # `YYYY-MM-DDThh:mm:ss.sss+09:00`から`YYYY-MM-DD`を取得する
         # キャストする理由: 全部nanだとfloat型になって、".str"にアクセスできないため
         df["first_annotation_started_date"] = df["first_annotation_started_datetime"].astype("string").str[:10]
+        # bokeh3.0.3では、string型の列を持つpandas.DataFrameを描画できないため、改めてobject型に戻す
+        # TODO この問題が解決されたら、削除する
+        # https://qiita.com/yuji38kwmt/items/b5da6ed521e827620186
+        df["first_annotation_started_date"] = df["first_annotation_started_date"].astype("object")
 
         # 元に戻す
         df = df.drop(["task_count"], axis=1)
@@ -448,6 +450,11 @@ class InspectorCumulativeProductivity(AbstractPhaseCumulativeProductivity):
         # キャストする理由: 全部nanだとfloat型になって、".str"にアクセスできないため
         df["first_inspection_started_date"] = df["first_inspection_started_datetime"].astype("string").str[:10]
 
+        # bokeh3.0.3では、string型の列を持つpandas.DataFrameを描画できないため、改めてobject型に戻す
+        # TODO この問題が解決されたら、削除する
+        # https://qiita.com/yuji38kwmt/items/b5da6ed521e827620186
+        df["first_inspection_started_date"] = df["first_inspection_started_date"].astype("object")
+
         # 元に戻す
         df = df.drop(["task_count"], axis=1)
 
@@ -636,6 +643,10 @@ class AcceptorCumulativeProductivity(AbstractPhaseCumulativeProductivity):
         # `YYYY-MM-DDThh:mm:ss.sss+09:00`から`YYYY-MM-DD`を取得する
         # キャストする理由: 全部nanだとfloat型になって、".str"にアクセスできないため
         df["first_acceptance_started_date"] = df["first_acceptance_started_datetime"].astype("string").str[:10]
+        # bokeh3.0.3では、string型の列を持つpandas.DataFrameを描画できないため、改めてobject型に戻す
+        # TODO この問題が解決されたら、削除する
+        # https://qiita.com/yuji38kwmt/items/b5da6ed521e827620186
+        df["first_acceptance_started_date"] = df["first_acceptance_started_date"].astype("object")
 
         # 元に戻す
         df = df.drop(["task_count"], axis=1)
