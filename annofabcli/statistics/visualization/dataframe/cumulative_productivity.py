@@ -84,8 +84,10 @@ class AbstractPhaseCumulativeProductivity(abc.ABC):
         折れ線グラフを、HTMLファイルに出力します。
 
         Args:
-            columns_list
+            line_graph_list: 描画する折れ線グラフのlist。
+            columns_list: 描画する折れ線グラフのX軸とY軸のキー(tuple)のlist。
         """
+        assert len(line_graph_list) == len(columns_list)
 
         def get_required_columns() -> list[str]:
             """
@@ -116,6 +118,8 @@ class AbstractPhaseCumulativeProductivity(abc.ABC):
                 logger.debug(f"dataframe is empty. user_id = {user_id}")
                 continue
 
+            print(f"{df_subset[required_columns].dtypes=}")
+            print(df_subset[required_columns])
             source = ColumnDataSource(df_subset[required_columns])
             color = get_color_from_palette(user_index)
             username = df_subset.iloc[0][f"first_{self.phase.value}_username"]
@@ -676,7 +680,7 @@ class AcceptorCumulativeProductivity(AbstractPhaseCumulativeProductivity):
                     "task_id",
                     "first_acceptance_user_id",
                     "first_acceptance_username",
-                    "first_acceptance_started_datetime",
+                    "first_acceptance_started_date",
                     "acceptance_worktime_hour",
                     "annotation_count",
                     "inspection_comment_count",
@@ -724,7 +728,7 @@ class AcceptorCumulativeProductivity(AbstractPhaseCumulativeProductivity):
                     "task_id",
                     "first_acceptance_user_id",
                     "first_acceptance_username",
-                    "first_acceptance_started_datetime",
+                    "first_acceptance_started_date",
                     "acceptance_worktime_hour",
                     "input_data_count",
                     "inspection_comment_count",
@@ -770,7 +774,7 @@ class AcceptorCumulativeProductivity(AbstractPhaseCumulativeProductivity):
                     "task_id",
                     "first_acceptance_user_id",
                     "first_acceptance_username",
-                    "first_acceptance_started_datetime",
+                    "first_acceptance_started_date",
                     "acceptance_worktime_hour",
                     "inspection_comment_count",
                 ],
