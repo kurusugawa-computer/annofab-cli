@@ -260,7 +260,7 @@ class LineGraph:
         args = {"glyph_list": glyph_list}
         str_is_visible = "false" if is_hiding else "true"
         code = f"for (let glyph of glyph_list) {{glyph.visible = {str_is_visible} }}"
-        button.js_on_click(CustomJS(code=code, args=args))
+        button.js_on_event("button_click", CustomJS(code=code, args=args))
         return button
 
     def create_checkbox_displaying_markers(self) -> CheckboxGroup:
@@ -279,7 +279,7 @@ class LineGraph:
                 glyph.radius = radius
             }
         """
-        checkbox_group.js_on_click(CustomJS(code=code, args=args))
+        checkbox_group.js_on_event("button_click", CustomJS(code=code, args=args))
         return checkbox_group
 
 
