@@ -84,6 +84,7 @@ class TestCommandLine__put:
                 ]
             )
 
+class TestCommandLine__put_with_json:
     @pytest.mark.submitting_job
     def test_put_input_data_with_zip(self):
         # 注意：ジョブ登録される
