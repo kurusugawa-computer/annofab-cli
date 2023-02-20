@@ -34,7 +34,6 @@ def main(args):
 
 
 def parse_args(parser: argparse.ArgumentParser):
-
     argument_parser = ArgumentParser(parser)
 
     argument_parser.add_project_id()

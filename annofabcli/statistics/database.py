@@ -297,6 +297,10 @@ class Database:
                     self.wait_for_completion_updated_task_json(project_id)
 
     def _write_task_histories_json(self):
+        """
+        タスク履歴取得APIを1個ずつ実行して、全タスクのタスク履歴が格納されたJSONを出力します。
+        事前に、タスク全件ファイルをダウンロードする必要がある。
+        """
         task_list = self.read_tasks_from_json()
         task_histories_dict = self.get_task_histories_dict(task_list)
         with self.task_histories_json_path.open(mode="w", encoding="utf-8") as f:
@@ -359,15 +363,18 @@ class Database:
 
         if is_get_task_histories_one_of_each:
             # タスク履歴APIを一つずつ実行して、JSONファイルを生成する
-            self._write_task_histories_json()
+            # 先にタスク全件ファイルをダウンロードする必要がある
             coroutines.pop(DOWNLOADED_FILE_COUNT - 1)
+            gather = asyncio.gather(*coroutines, return_exceptions=True)
+            results = loop.run_until_complete(gather)
+            self._write_task_histories_json()
+
         else:
             coroutines[TASK_HISTORY_JSON_INDEX] = downloading_obj.download_task_history_json_with_async(
                 self.project_id, dest_path=str(self.task_histories_json_path)
             )
-
-        gather = asyncio.gather(*coroutines, return_exceptions=True)
-        results = loop.run_until_complete(gather)
+            gather = asyncio.gather(*coroutines, return_exceptions=True)
+            results = loop.run_until_complete(gather)
 
         if isinstance(results[COMMENT_JSON_INDEX], DownloadingFileNotFoundError):
             # 空のJSONファイルを作り、検査コメント0件として処理する

@@ -56,7 +56,6 @@ class TestReplacingAttributeId:
     ]
 
     def test_replace_attribute_id_of_restrictions(self):
-
         restriction_list = copy.deepcopy(self.restriction_list)
         ReplacingAttributeId().replace_attribute_id_of_restrictions("attr1", "new_attr1", restriction_list)
         restriction = restriction_list[0]
@@ -65,7 +64,6 @@ class TestReplacingAttributeId:
         assert restriction["condition"]["premise"]["additional_data_definition_id"] == "attr2"  # type: ignore
 
     def test_replace_attribute_id_of_labels(self):
-
         label_list = copy.deepcopy(self.label_list)
         ReplacingAttributeId().replace_attribute_id_of_labels("attr1", "new_attr1", label_list)
         label = label_list[0]

@@ -171,7 +171,6 @@ def main(args):
 
 
 def parse_args(parser: argparse.ArgumentParser):
-
     parser.add_argument(
         "-p",
         "--project_id",

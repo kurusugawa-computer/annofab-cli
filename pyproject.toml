@@ -1,6 +1,6 @@
 [tool.poetry]
 name = "annofabcli"
-version = "1.74.2"
+version = "1.74.4"
 description = "Utility Command Line Interface for AnnoFab"
 authors = ["yuji38kwmt"]
 license = "MIT"
@@ -35,7 +35,7 @@ isodate = "*"
 annofabapi = ">=0.67.1"
 python-datauri = "*"
 pandas = "*"
-bokeh = "^2.4"
+bokeh = "^3.0"
 Pillow = "*"
 
 

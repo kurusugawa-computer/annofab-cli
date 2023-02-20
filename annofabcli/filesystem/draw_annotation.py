@@ -37,7 +37,6 @@ class DrawingOptions(DataClassJsonMixin):
 
 
 class DrawingAnnotationForOneImage:
-
     _COLOR_PALETTE = [
         "red",
         "maroon",
@@ -177,7 +176,6 @@ class DrawingAnnotationForOneImage:
         assert image_file is not None or image_size is not None
 
         if image_file is not None:
-
             with Image.open(image_file) as image:
                 draw = ImageDraw.Draw(image)
                 self._draw_annotations(draw, parser)
@@ -245,7 +243,6 @@ def draw_annotation_all(
     for parser in iter_parser:
         logger.debug(f"{parser.json_file_path} を読み込みます。")
         if is_target_parser_func is not None and not is_target_parser_func(parser):
-            logger.debug(f"{parser.json_file_path} の画像化をスキップします。")
             continue
 
         total_count += 1

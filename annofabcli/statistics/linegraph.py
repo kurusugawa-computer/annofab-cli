@@ -12,17 +12,10 @@ import bokeh
 import bokeh.layouts
 import bokeh.palettes
 import pandas
-from bokeh.core.properties import Color
-from bokeh.models import (
-    Button,
-    CheckboxGroup,
-    CrosshairTool,
-    CustomJS,
-    DataRange1d,
-    GlyphRenderer,
-    HoverTool,
-    LinearAxis,
-)
+from bokeh.models import CrosshairTool, CustomJS, DataRange1d, HoverTool, LinearAxis
+from bokeh.models.renderers.glyph_renderer import GlyphRenderer
+from bokeh.models.widgets.buttons import Button
+from bokeh.models.widgets.groups import CheckboxGroup
 from bokeh.plotting import ColumnDataSource, figure
 
 logger = logging.getLogger(__name__)
@@ -66,8 +59,8 @@ class LineGraph:
         title: str,
         x_axis_label: str,
         y_axis_label: str,
-        plot_width: int = 1200,
-        plot_height: int = 1000,
+        width: int = 1200,
+        height: int = 1000,
         tooltip_columns: Optional[list[str]] = None,
         **figure_kwargs,
     ) -> None:
@@ -75,8 +68,8 @@ class LineGraph:
             title=title,
             x_axis_label=x_axis_label,
             y_axis_label=y_axis_label,
-            plot_width=plot_width,
-            plot_height=plot_height,
+            width=width,
+            height=height,
             **figure_kwargs,
         )
         self.title = title
@@ -121,12 +114,12 @@ class LineGraph:
             "right",
         )
         if secondary_y_axis_range is not None:
-            self.figure.extra_y_ranges = {self._SECONDARY_Y_RANGE_NAME: secondary_y_axis_range}
+            self.figure.extra_y_ranges = {self._SECONDARY_Y_RANGE_NAME: secondary_y_axis_range}  # type: ignore
         else:
-            self.figure.extra_y_ranges = {self._SECONDARY_Y_RANGE_NAME: DataRange1d()}
+            self.figure.extra_y_ranges = {self._SECONDARY_Y_RANGE_NAME: DataRange1d()}  # type: ignore
 
         if primary_y_axis_range is not None:
-            self.figure.y_range = primary_y_axis_range
+            self.figure.y_range = primary_y_axis_range  # type: ignore
 
         self.exists_secondary_y_axis = True
 
@@ -260,7 +253,7 @@ class LineGraph:
         args = {"glyph_list": glyph_list}
         str_is_visible = "false" if is_hiding else "true"
         code = f"for (let glyph of glyph_list) {{glyph.visible = {str_is_visible} }}"
-        button.js_on_click(CustomJS(code=code, args=args))
+        button.js_on_event("button_click", CustomJS(code=code, args=args))
         return button
 
     def create_checkbox_displaying_markers(self) -> CheckboxGroup:
@@ -279,7 +272,7 @@ class LineGraph:
                 glyph.radius = radius
             }
         """
-        checkbox_group.js_on_click(CustomJS(code=code, args=args))
+        checkbox_group.js_on_event("button_click", CustomJS(code=code, args=args))
         return checkbox_group
 
 
@@ -305,12 +298,12 @@ def get_weekly_sum(series: pandas.Series) -> pandas.Series:
     return series.rolling(MOVING_WINDOW_DAYS, min_periods=MIN_WINDOW_DAYS).sum()
 
 
-def get_color_from_palette(index: int) -> Color:
+def get_color_from_palette(index: int) -> str:
     my_palette = bokeh.palettes.Category20[20]
     return my_palette[index % len(my_palette)]
 
 
-def get_color_from_small_palette(index: int) -> Color:
+def get_color_from_small_palette(index: int) -> str:
     my_palette = bokeh.palettes.Category10[10]
     return my_palette[index % len(my_palette)]
 

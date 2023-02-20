@@ -14,6 +14,7 @@ import bokeh.layouts
 import bokeh.palettes
 import pandas
 from annofabapi.models import TaskPhase
+from bokeh.models.widgets.widget import Widget
 from bokeh.plotting import ColumnDataSource
 from dateutil.parser import parse
 
@@ -55,7 +56,7 @@ class AbstractPhaseProductivityPerDate(abc.ABC):
         for line_graph in line_graph_list:
             line_graph.process_after_adding_glyphs()
 
-            widget_list = []
+            widget_list: list[Widget] = []
             hide_all_button = line_graph.create_button_hiding_showing_all_lines(is_hiding=True)
             show_all_button = line_graph.create_button_hiding_showing_all_lines(is_hiding=False)
             widget_list.append(hide_all_button)
@@ -67,7 +68,7 @@ class AbstractPhaseProductivityPerDate(abc.ABC):
                 widget_list.append(checkbox_group)
 
             widgets = bokeh.layouts.column(widget_list)
-            graph_group = bokeh.layouts.row([line_graph.figure, widgets])
+            graph_group = bokeh.layouts.row([line_graph.figure, widgets])  # type: ignore
             graph_group_list.append(graph_group)
 
         write_bokeh_graph(bokeh.layouts.layout(graph_group_list), output_file)
@@ -476,7 +477,6 @@ class AnnotatorProductivityPerDate(AbstractPhaseProductivityPerDate):
         self._plot(line_graph_list, output_file)
 
     def to_csv(self, output_file: Path) -> None:
-
         if not self._validate_df_for_output(output_file):
             return
 

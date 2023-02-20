@@ -90,7 +90,7 @@ class ChangeAnnotationAttributesMain(AbstractCommandLineWithConfirmInterface):
 
         attributes_for_dict: List[Dict[str, Any]] = [dataclasses.asdict(e) for e in attributes]
         request_body = [_to_request_body_elm(annotation) for annotation in annotation_list]
-        return self.service.api.batch_update_annotations(self.project_id, request_body)[0]
+        return self.service.api.batch_update_annotations(self.project_id, request_body=request_body)[0]
 
     def get_annotation_list_for_task(
         self, task_id: str, annotation_query: AnnotationQueryForAPI
@@ -216,9 +216,7 @@ class ChangeAnnotationAttributesMain(AbstractCommandLineWithConfirmInterface):
                 success_count = len([e for e in result_bool_list if e])
 
         else:
-
             for task_index, task_id in enumerate(task_id_list):
-
                 try:
                     result = self.change_attributes_for_task(
                         task_id,

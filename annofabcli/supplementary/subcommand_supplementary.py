@@ -9,7 +9,6 @@ import annofabcli.supplementary.put_supplementary_data
 
 
 def parse_args(parser: argparse.ArgumentParser):
-
     subparsers = parser.add_subparsers(dest="subcommand_name")
 
     # サブコマンドの定義

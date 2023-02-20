@@ -11,7 +11,6 @@ import annofabcli.job.wait_job
 
 
 def parse_args(parser: argparse.ArgumentParser):
-
     subparsers = parser.add_subparsers(dest="subcommand_name")
 
     # サブコマンドの定義

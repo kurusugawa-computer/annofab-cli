@@ -112,7 +112,6 @@ class AnnotationCounter(abc.ABC):
 
 @dataclass(frozen=True)
 class AnnotationCounterByTask(AnnotationCounter, DataClassJsonMixin):
-
     task_id: str
     status: TaskStatus
     phase: TaskPhase
@@ -178,7 +177,6 @@ class ListAnnotationCounterByInputData:
         non_target_attribute_names: Optional[Collection[AttributeNameKey]] = None,
         frame_no_map: Optional[dict[tuple[str, str], int]] = None,
     ):
-
         self.target_labels = set(target_labels) if target_labels is not None else None
         self.target_attribute_names = set(target_attribute_names) if target_attribute_names is not None else None
         self.non_target_labels = set(non_target_labels) if non_target_labels is not None else None
@@ -373,7 +371,6 @@ class ListAnnotationCounterByTask:
         target_task_ids: Optional[Collection[str]] = None,
         task_query: Optional[TaskQuery] = None,
     ) -> list[AnnotationCounterByTask]:
-
         """
         アノテーションzipまたはそれを展開したディレクトリから、ラベルごと/属性ごとのアノテーション数を集計情報を取得する。
 
@@ -436,7 +433,7 @@ class AttributeCountCsv:
         CSVの列数を増やしすぎないための対策。
         """
         attribute_name_list: list[AttributeNameKey] = []
-        for (label, attribute_name, _) in columns:
+        for label, attribute_name, _ in columns:
             attribute_name_list.append((label, attribute_name))
 
         non_selective_attribute_names = {

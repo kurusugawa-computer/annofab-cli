@@ -125,7 +125,6 @@ class SubPutInputData:
     def put_input_data(
         self, project_id: str, csv_input_data: InputDataForPut, last_updated_datetime: Optional[str] = None
     ):
-
         request_body: Dict[str, Any] = {"last_updated_datetime": last_updated_datetime}
 
         file_path = get_file_scheme_path(csv_input_data.input_data_path)
@@ -184,7 +183,6 @@ class SubPutInputData:
         return self.confirm_processing(message_for_confirm)
 
     def put_input_data_main(self, project_id: str, csv_input_data: CsvInputData, overwrite: bool = False) -> bool:
-
         input_data = InputDataForPut(
             input_data_name=csv_input_data.input_data_name,
             input_data_path=csv_input_data.input_data_path,
@@ -211,7 +209,7 @@ class SubPutInputData:
                 logger.warning(f"{input_data.input_data_path} は存在しません。")
                 return False
 
-        if not self.confirm_put_input_data(input_data, already_exists=(last_updated_datetime is not None)):
+        if not self.confirm_put_input_data(input_data, already_exists=last_updated_datetime is not None):
             return False
 
         # 入力データを登録
@@ -505,7 +503,7 @@ def parse_args(parser: argparse.ArgumentParser):
         ),
     )
 
-    file_group.add_argument("--zip", type=Path, help=("入力データとして登録するzipファイルのパスを指定してください。"))
+    file_group.add_argument("--zip", type=Path, help="入力データとして登録するzipファイルのパスを指定してください。")
 
     parser.add_argument(
         "--overwrite",
@@ -529,7 +527,7 @@ def parse_args(parser: argparse.ArgumentParser):
         ),
     )
 
-    parser.add_argument("--wait", action="store_true", help=("入力データの登録が完了するまで待ちます。" " ``--zip`` を指定したときのみ有効なオプションです。"))
+    parser.add_argument("--wait", action="store_true", help="入力データの登録が完了するまで待ちます。" " ``--zip`` を指定したときのみ有効なオプションです。")
 
     parser.add_argument(
         "--wait_options",

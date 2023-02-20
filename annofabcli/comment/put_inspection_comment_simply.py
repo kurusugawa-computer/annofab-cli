@@ -22,7 +22,6 @@ logger = logging.getLogger(__name__)
 
 
 class PutInspectionCommentSimply(AbstractCommandLineInterface):
-
     COMMON_MESSAGE = "annofabcli comment put_inspection_simply: error:"
 
     def validate(self, args: argparse.Namespace) -> bool:

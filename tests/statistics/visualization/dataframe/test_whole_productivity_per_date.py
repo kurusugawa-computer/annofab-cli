@@ -17,7 +17,6 @@ class TestWholeProductivityPerCompletedDate:
 
     @classmethod
     def setup_class(cls):
-
         df_task = pandas.read_csv(str(data_dir / "task.csv"))
         df_worktime = pandas.read_csv(str(data_dir / "ユーザ_日付list-作業時間.csv"))
 

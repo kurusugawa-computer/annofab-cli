@@ -12,7 +12,8 @@ import bokeh
 import numpy
 import pandas
 from annofabapi.models import ProjectMemberRole
-from bokeh.models import HoverTool, Title
+from bokeh.models import HoverTool
+from bokeh.models.annotations.labels import Title
 from bokeh.plotting import ColumnDataSource, figure
 
 import annofabcli
@@ -56,7 +57,7 @@ def _only_selective_attribute(columns: list[AttributeValueKey]) -> list[Attribut
     """
     SELECTIVE_ATTRIBUTE_VALUE_MAX_COUNT = 20
     attribute_name_list: list[AttributeNameKey] = []
-    for (label, attribute_name, _) in columns:
+    for label, attribute_name, _ in columns:
         attribute_name_list.append((label, attribute_name))
 
     non_selective_attribute_names = {
@@ -117,8 +118,8 @@ def plot_label_histogram(
 
         source = ColumnDataSource(df_histogram)
         fig = figure(
-            plot_width=400,
-            plot_height=300,
+            width=400,
+            height=300,
             x_axis_label="アノテーション数",
             y_axis_label=y_axis_label,
         )
@@ -133,7 +134,7 @@ def plot_label_histogram(
         fig.add_tools(hover)
         figure_list.append(fig)
 
-    bokeh_obj = bokeh.layouts.gridplot(figure_list, ncols=4)
+    bokeh_obj = bokeh.layouts.gridplot(figure_list, ncols=4)  # type: ignore
     output_file.parent.mkdir(exist_ok=True, parents=True)
     bokeh.plotting.reset_output()
     bokeh.plotting.output_file(output_file, title=output_file.stem)
@@ -149,7 +150,6 @@ def plot_attribute_histogram(
     prior_keys: Optional[list[AttributeValueKey]] = None,
     bins: int = 20,
 ):
-
     all_key_set = {key for c in counter_list for key in c.annotation_count_by_attribute}
     if prior_keys is not None:
         remaining_columns = list(all_key_set - set(prior_keys))
@@ -176,8 +176,8 @@ def plot_attribute_histogram(
 
         source = ColumnDataSource(df_histogram)
         fig = figure(
-            plot_width=400,
-            plot_height=300,
+            width=400,
+            height=300,
             x_axis_label="アノテーション数",
             y_axis_label=y_axis_label,
         )
@@ -191,7 +191,7 @@ def plot_attribute_histogram(
         fig.add_tools(hover)
         figure_list.append(fig)
 
-    bokeh_obj = bokeh.layouts.gridplot(figure_list, ncols=4)
+    bokeh_obj = bokeh.layouts.gridplot(figure_list, ncols=4)  # type: ignore
     output_file.parent.mkdir(exist_ok=True, parents=True)
     bokeh.plotting.reset_output()
     bokeh.plotting.output_file(output_file, title=output_file.stem)

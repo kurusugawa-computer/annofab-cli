@@ -210,7 +210,6 @@ class CancelAcceptance(AbstractCommandLineInterface):
 
     @classmethod
     def validate(cls, args: argparse.Namespace) -> bool:
-
         if args.parallelism is not None and not args.yes:
             print(
                 f"{cls.COMMON_MESSAGE} argument --parallelism: '--parallelism'を指定するときは、'--yes' を指定してください。",

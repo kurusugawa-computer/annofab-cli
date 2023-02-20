@@ -21,7 +21,6 @@ logger = logging.getLogger(__name__)
 
 
 class PutOnholdCommentSimply(AbstractCommandLineInterface):
-
     COMMON_MESSAGE = "annofabcli comment put_onhold_simply: error:"
 
     def validate(self, args: argparse.Namespace) -> bool:

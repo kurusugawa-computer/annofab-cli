@@ -11,7 +11,6 @@ import annofabcli.filesystem.write_annotation_image
 
 
 def parse_args(parser: argparse.ArgumentParser):
-
     subparsers = parser.add_subparsers()
 
     # サブコマンドの定義
