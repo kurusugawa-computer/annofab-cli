@@ -114,12 +114,12 @@ class LineGraph:
             "right",
         )
         if secondary_y_axis_range is not None:
-            self.figure.extra_y_ranges = {self._SECONDARY_Y_RANGE_NAME: secondary_y_axis_range}
+            self.figure.extra_y_ranges = {self._SECONDARY_Y_RANGE_NAME: secondary_y_axis_range}  # type: ignore
         else:
-            self.figure.extra_y_ranges = {self._SECONDARY_Y_RANGE_NAME: DataRange1d()}
+            self.figure.extra_y_ranges = {self._SECONDARY_Y_RANGE_NAME: DataRange1d()}  # type: ignore
 
         if primary_y_axis_range is not None:
-            self.figure.y_range = primary_y_axis_range
+            self.figure.y_range = primary_y_axis_range  # type: ignore
 
         self.exists_secondary_y_axis = True
 

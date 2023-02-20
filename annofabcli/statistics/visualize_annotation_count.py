@@ -134,7 +134,7 @@ def plot_label_histogram(
         fig.add_tools(hover)
         figure_list.append(fig)
 
-    bokeh_obj = bokeh.layouts.gridplot(figure_list, ncols=4)
+    bokeh_obj = bokeh.layouts.gridplot(figure_list, ncols=4)  # type: ignore
     output_file.parent.mkdir(exist_ok=True, parents=True)
     bokeh.plotting.reset_output()
     bokeh.plotting.output_file(output_file, title=output_file.stem)
@@ -191,7 +191,7 @@ def plot_attribute_histogram(
         fig.add_tools(hover)
         figure_list.append(fig)
 
-    bokeh_obj = bokeh.layouts.gridplot(figure_list, ncols=4)
+    bokeh_obj = bokeh.layouts.gridplot(figure_list, ncols=4)  # type: ignore
     output_file.parent.mkdir(exist_ok=True, parents=True)
     bokeh.plotting.reset_output()
     bokeh.plotting.output_file(output_file, title=output_file.stem)

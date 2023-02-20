@@ -915,7 +915,7 @@ class UserPerformance:
         set_tooltip()
 
         div_element = self._create_div_element()
-        div_element.text = div_element.text + """円の大きさ：作業時間<br>"""
+        div_element.text = div_element.text + """円の大きさ：作業時間<br>"""  # type: ignore
         write_bokeh_graph(bokeh.layouts.column([div_element] + figure_list), output_file)
 
 
