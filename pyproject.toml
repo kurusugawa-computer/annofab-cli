@@ -58,6 +58,7 @@ pylint = "*"
 
 # Document library
 sphinx = "^6.1"
+# https://github.com/pydata/pydata-sphinx-theme/issues/1094 に対応したバージョンを利用したいので、RC版を採用した
 pydata-sphinx-theme = ">=0.13.0rc3"
 sphinx-last-updated-by-git = "*"
 sphinx-argparse = "*"
