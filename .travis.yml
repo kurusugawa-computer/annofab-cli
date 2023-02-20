@@ -1,20 +1,26 @@
-dist: xenial
+dist: focal
 language: python
 python:
-  - "3.7"
   - "3.8"
   - "3.9"
+  - "3.10"
 install:
-  - pip install poetry
+  # pipをアップグレードする理由: pipのバージョンが古いと、pillowなど環境ごとにwheelを提供しているライブラリのインストールに失敗する可能性があるため
+  - pip install pip --upgrade
+  # poetry1.2.0だと、pillowのインストールで失敗する(https://app.travis-ci.com/github/kurusugawa-computer/annowork-cli/jobs/581658649#L932)ので、poetry1.2.0未満にする
+  - pip install "poetry<1.2"
   - travis_retry poetry install
 script:
    - make lint
-   - poetry run pytest tests/test_local*.py
+     # webapiにアクセスするテストは実行しないようにする
+   - poetry run pytest -n auto -m "not access_webapi"
+
 branches:
   only:
-  - master
+  - main
 env:
   # `poetry install`時に`Max retries exceeded with`が発生しないようにするため、タイムアウト時間を指定する
-  - PIP_DEFAULT_TIMEOUT=300
+  # 認証情報がテストに失敗するため、適当な認証情報を設定する
+  - PIP_DEFAULT_TIMEOUT=300 ANNOFAB_USER_ID=foo ANNOFAB_PASSWORD=bar
 
 cache: pip

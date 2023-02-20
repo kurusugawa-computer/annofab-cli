@@ -16,9 +16,11 @@ Available Commands
    :titlesonly:
 
    delete
+   download
    list
-   list_with_json
+   list_all
    put
+   put_simply
 
 Usage Details
 =================================

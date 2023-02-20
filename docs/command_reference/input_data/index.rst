@@ -16,10 +16,12 @@ Available Commands
    :titlesonly:
 
    delete
+   download
    list
+   list_all
    list_merged_task
-   list_with_json
    put
+   put_with_zip
    update_metadata
 
 Usage Details

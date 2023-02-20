@@ -7,9 +7,9 @@ import annofabapi
 from annofabapi.models import InputData, Task
 
 import annofabcli
-from annofabcli import AnnofabApiFacade
 from annofabcli.common.cli import AbstractCommandLineInterface, ArgumentParser, build_annofabapi_resource_and_login
 from annofabcli.common.enums import FormatArgument
+from annofabcli.common.facade import AnnofabApiFacade
 from annofabcli.common.visualize import AddProps
 
 logger = logging.getLogger(__name__)
@@ -202,7 +202,7 @@ def parse_args(parser: argparse.ArgumentParser):
         type=str,
         help="入力データの検索クエリをJSON形式で指定します。"
         " ``file://`` を先頭に付けると、JSON形式のファイルを指定できます。"
-        "クエリのフォーマットは、[getInputDataList API](https://annofab.com/docs/api/#operation/getInputDataList)のクエリパラメータと同じです。"
+        "クエリのフォーマットは、`getInputDataList <https://annofab.com/docs/api/#operation/getInputDataList>`_ APIのクエリパラメータと同じです。"
         "ただし ``page`` , ``limit`` キーは指定できません。",
     )
 
@@ -215,7 +215,9 @@ def parse_args(parser: argparse.ArgumentParser):
         " ``file://`` を先頭に付けると、input_data_idの一覧が記載されたファイルを指定できます。",
     )
 
-    parser.add_argument("--add_details", action="store_true", help="入力データの詳細情報を表示します（`parent_task_id_list`）")
+    parser.add_argument(
+        "--add_details", action="store_true", help="入力データの詳細情報を表示します。以下の列を追加します。\n" "\n" " * parent_task_id_list"
+    )
 
     parser.add_argument(
         "--average_input_data_id_length",
@@ -245,7 +247,7 @@ def parse_args(parser: argparse.ArgumentParser):
 def add_parser(subparsers: Optional[argparse._SubParsersAction] = None):
     subcommand_name = "list"
     subcommand_help = "入力データ一覧を出力します。"
-    description = "入力データ一覧を出力します。AnnoFabの制約上、10,000件までしか出力されません。"
+    description = "入力データ一覧を出力します。Annofabの制約上、10,000件までしか出力されません。"
 
     parser = annofabcli.common.cli.add_parser(subparsers, subcommand_name, subcommand_help, description)
     parse_args(parser)

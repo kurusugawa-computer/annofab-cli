@@ -33,8 +33,18 @@ class FormatArgument(Enum):
     #: inspection_idの一覧
     INSPECTION_ID_LIST = "inspection_id_list"
 
+    #: comment_idの一覧
+    COMMENT_ID_LIST = "comment_id_list"
+
     #: user_idの一覧
     USER_ID_LIST = "user_id_list"
 
     #: project_idの一覧
     PROJECT_ID_LIST = "project_id_list"
+
+
+class CustomProjectType(Enum):
+    """カスタムプロジェクトの場合、検査コメントのフォーマットが分からないため、カスタムプロジェクトの種類をannofabcliで定義する。"""
+
+    THREE_DIMENSION_POINT_CLOUD = "3dpc"
+    """3DPCプロジェクト"""

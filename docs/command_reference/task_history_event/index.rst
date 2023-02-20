@@ -16,7 +16,8 @@ Available Commands
    :maxdepth: 1
    :titlesonly:
 
-   list_with_json
+   download
+   list_all
    list_worktime
 
 Usage Details

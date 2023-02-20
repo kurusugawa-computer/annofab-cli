@@ -34,14 +34,14 @@ img要素のsrc属性がローカルの画像を参照している場合（http,
     $ annofabcli instruction upload --project_id prj1 --html instruction.html
 
 
-補足：ConfluenceのページをAnnoFabの作業ガイドとして登録する
+補足：ConfluenceのページをAnnofabの作業ガイドとして登録する
 ------------------------------------------------------------------------
 以下の手順に従って、HTMLファイルを作成してください。
 
 1. Confluenceのエクスポート機能で、作業ガイドに登録したいページをエクスポートする。
-2. エクスポートしたzipに格納されている ``site.css`` を https://raw.githubusercontent.com/kurusugawa-computer/annofab-cli/master/docs/command_reference/instruction/upload/site.css に置き換える。
+2. エクスポートしたzipに格納されている ``site.css`` を https://raw.githubusercontent.com/kurusugawa-computer/annofab-cli/main/docs/command_reference/instruction/upload/site.css に置き換える。
    デフォルトの状態では、表の罫線や背景色が表示されていないため。
-3. エクスポートしたHTMLのスタイルを、style属性に反映する。AnnoFabの作業ガイドには、スタイルシートを登録できないため。
+3. エクスポートしたHTMLのスタイルを、style属性に反映する。Annofabの作業ガイドには、スタイルシートを登録できないため。
 
    1. エクスポートしたファイルをChromeで開く。
    2. Chrome開発ツールのConfoleタブで以下のJavaScriptを実行して、表関係の要素スタイルをstyle属性に反映させる。

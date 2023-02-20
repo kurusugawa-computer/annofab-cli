@@ -1,17 +1,25 @@
 import argparse
-import copy
 import logging
+import sys
 from enum import Enum
-from typing import Any, Dict, List, Optional
+from typing import List, Optional
 
 import annofabapi
 import pandas
 from annofabapi.models import SingleAnnotation
 
 import annofabcli
-from annofabcli import AnnofabApiFacade
+from annofabcli.annotation.annotation_query import AnnotationQueryForCLI
 from annofabcli.annotation.list_annotation import ListAnnotationMain
-from annofabcli.common.cli import AbstractCommandLineInterface, ArgumentParser, build_annofabapi_resource_and_login
+from annofabcli.common.cli import (
+    COMMAND_LINE_ERROR_STATUS_CODE,
+    AbstractCommandLineInterface,
+    ArgumentParser,
+    build_annofabapi_resource_and_login,
+    get_json_from_args,
+    get_list_from_args,
+)
+from annofabcli.common.facade import AnnofabApiFacade
 from annofabcli.common.visualize import AddProps
 
 logger = logging.getLogger(__name__)
@@ -23,6 +31,8 @@ class GroupBy(Enum):
 
 
 class ListAnnotationCount(AbstractCommandLineInterface):
+    COMMON_MESSAGE = "annofabcli annotation list_count: error:"
+
     def __init__(self, service: annofabapi.Resource, facade: AnnofabApiFacade, args: argparse.Namespace):
         super().__init__(service, facade, args)
         self.visualize = AddProps(self.service, args.project_id)
@@ -43,69 +53,42 @@ class ListAnnotationCount(AbstractCommandLineInterface):
         else:
             return pandas.DataFrame()
 
-    def get_annotations(
-        self, project_id: str, annotation_query: Optional[Dict[str, Any]], task_id: Optional[str] = None
-    ) -> List[SingleAnnotation]:
-        if annotation_query is not None:
-            new_annotation_query = copy.deepcopy(annotation_query)
-        else:
-            new_annotation_query = {}
-
-        if task_id is not None:
-            new_annotation_query.update({"task_id": task_id, "exact_match_task_id": True})
-
-        logger.debug(f"annotation_query: {new_annotation_query}")
-        annotation_list = self.service.wrapper.get_all_annotation_list(
-            project_id, query_params={"query": new_annotation_query}
-        )
-        return annotation_list
-
-    def list_annotations(
-        self, project_id: str, annotation_query: Optional[Dict[str, Any]], group_by: GroupBy, task_id_list: List[str]
-    ):
-        """
-        アノテーション一覧を出力する
-        """
-
-        super().validate_project(project_id, project_member_roles=None)
-
-        all_annotations = []
-        if len(task_id_list) > 0:
-            for task_id in task_id_list:
-                annotations = self.get_annotations(project_id, annotation_query, task_id)
-                logger.debug(f"タスク {task_id} のアノテーション一覧の件数: {len(annotations)}")
-                if len(annotations) == 10000:
-                    logger.warning("アノテーション一覧は10,000件で打ち切られている可能性があります。")
-                all_annotations.extend(annotations)
-        else:
-            annotations = self.get_annotations(project_id, annotation_query)
-            if len(annotations) == 10000:
-                logger.warning("アノテーション一覧は10,000件で打ち切られている可能性があります。")
-            all_annotations.extend(annotations)
-
-        logger.debug(f"アノテーション一覧の件数: {len(all_annotations)}")
-        if len(all_annotations) > 0:
-            df = self.aggregate_annotations(all_annotations, group_by)
-            self.print_csv(df)
-        else:
-            logger.info(f"アノテーション一覧が0件のため出力しません。")
-            return
-
     def main(self):
         args = self.args
         project_id = args.project_id
 
         if args.annotation_query is not None:
-            cli_annotation_query = annofabcli.common.cli.get_json_from_args(args.annotation_query)
-            annotation_query = self.list_annotation_main_obj.modify_annotation_query(project_id, cli_annotation_query)
+            annotation_specs, _ = self.service.api.get_annotation_specs(project_id, query_params={"v": "2"})
+            try:
+                dict_annotation_query = get_json_from_args(args.annotation_query)
+                annotation_query_for_cli = AnnotationQueryForCLI.from_dict(dict_annotation_query)
+                annotation_query = annotation_query_for_cli.to_query_for_api(annotation_specs)
+            except ValueError as e:
+                print(f"{self.COMMON_MESSAGE} argument '--annotation_query' の値が不正です。{e}", file=sys.stderr)
+                sys.exit(COMMAND_LINE_ERROR_STATUS_CODE)
         else:
             annotation_query = None
 
-        group_by = GroupBy(args.group_by)
-        task_id_list = annofabcli.common.cli.get_list_from_args(args.task_id)
-        self.list_annotations(
-            args.project_id, annotation_query=annotation_query, group_by=group_by, task_id_list=task_id_list
+        task_id_list = get_list_from_args(args.task_id) if args.task_id is not None else None
+        input_data_id_list = get_list_from_args(args.input_data_id) if args.input_data_id is not None else None
+
+        super().validate_project(project_id, project_member_roles=None)
+        all_annotation_list = self.list_annotation_main_obj.get_all_annotation_list(
+            project_id,
+            annotation_query=annotation_query,
+            task_id_list=task_id_list,
+            input_data_id_list=input_data_id_list,
         )
+
+        group_by = GroupBy(args.group_by)
+
+        logger.debug(f"アノテーション一覧の件数: {len(all_annotation_list)}")
+        if len(all_annotation_list) > 0:
+            df = self.aggregate_annotations(all_annotation_list, group_by)
+            self.print_csv(df)
+        else:
+            logger.info(f"アノテーション一覧が0件のため出力しません。")
+            return
 
 
 def main(args):
@@ -123,19 +106,23 @@ def parse_args(parser: argparse.ArgumentParser):
         "-aq",
         "--annotation_query",
         type=str,
-        help="アノテーションの検索クエリをJSON形式で指定します。"
-        " ``file://`` を先頭に付けると、JSON形式のファイルを指定できます。"
-        "クエリのフォーマットは、[getAnnotationList API](https://annofab.com/docs/api/#operation/getAnnotationList)のクエリパラメータの ``query`` キー配下と同じです。"  # noqa: E501
-        "さらに追加で、 ``label_name_en`` , ``additional_data_definition_name_en`` , ``choice_name_en`` キーも指定できます。",  # noqa: E501
+        help="アノテーションの検索クエリをJSON形式で指定します。" " ``file://`` を先頭に付けると、JSON形式のファイルを指定できます。",
     )
 
-    argument_parser.add_task_id(
-        required=False,
-        help_message=(
-            "対象のタスクのtask_idを指定します。"
-            " ``file://`` を先頭に付けると、task_idの一覧が記載されたファイルを指定できます。"
-            "指定した場合、``--annotation_query`` のtask_id, exact_match_task_idが上書きされます"
-        ),
+    id_group = parser.add_mutually_exclusive_group()
+
+    id_group.add_argument(
+        "-t",
+        "--task_id",
+        nargs="+",
+        help=("対象のタスクのtask_idを指定します。" " ``file://`` を先頭に付けると、task_idの一覧が記載されたファイルを指定できます。"),
+    )
+
+    id_group.add_argument(
+        "-i",
+        "--input_data_id",
+        nargs="+",
+        help=("対象の入力データのinput_data_idを指定します。" " ``file://`` を先頭に付けると、input_data_idの一覧が記載されたファイルを指定できます。"),
     )
 
     parser.add_argument(

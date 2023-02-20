@@ -15,20 +15,54 @@ Examples
 基本的な使い方
 --------------------------
 
-アノテーションzipをダウンロードして、アノテーション数が記載されたCSVファイルを出力します。
-
-
-.. code-block::
-
-    $ annofabcli statistics list_annotation_count --project_id prj1 --output_dir out_dir/
-
+ラベルごと/属性値ごとのアノテーション数が記載されたファイルを出力します。
+アノテーション数は、ダウンロードしたアノテーションZIPから算出します。
 
 .. code-block::
 
-    out_dir/ 
-    ├── labels_count.csv                ラベルごとのアノテーション数が記載されたCSV
-    ├── attributes_count.csv            属性ごとのアノテーション数が記載されたCSV
-    │
+    $ annofabcli statistics list_annotation_count --project_id prj1 --output out.json --format pretty_json
+
+
+.. code-block:: json
+    :caption: out.json
+
+    [
+    {
+        "annotation_count": 130,
+        "annotation_count_by_label": {
+            "car": 60,
+            "bike": 10,
+        },
+        "annotation_count_by_attribute": {
+            "car": {
+                "occlusion": {
+                    "false": 10,
+                    "true": 20
+                },
+                "type": {
+                    "normal": 10,
+                    "bus":20
+                }
+            },
+            "bike": {
+                "occlusion": {
+                    "false": 10,
+                    "true": 20
+                }
+            }
+        },
+        "task_id": "task1",
+        "status": "complete",
+        "phase": "acceptance",
+        "phase_stage": 1,
+        "input_data_count": 10
+    }
+    ]  
+
+
+* ``annotation_count_by_label`` : ラベルごとのアノテーション数（ ``{label_name: annotation_count}``）
+* ``annotation_count_by_attribute`` : 属性値ごとのアノテーション数（ ``{label_name: {attribute_name: {attribute_value: annotation_count}}}``）
+
 
 集計対象の属性の種類は以下の通りです。
 
@@ -37,13 +71,7 @@ Examples
 * チェックボックス
 
 
-デフォルトではタスクごとにアノテーション数を集計します。入力データごとに集計する場合は、 ``--group_by input_data_id`` を指定してください。
-
-.. code-block::
-
-    $ annofabcli statistics list_annotation_count --project_id prj1 --output_dir out_dir/ \
-    --group_by input_data_id
-
+デフォルトではタスク単位でアノテーション数を集計します。入力データ単位に集計する場合は、 ``--group_by input_data_id`` を指定してください。
 
 ``--annotation`` にアノテーションzipまたはzipを展開したディレクトリを指定できます。
 
@@ -53,85 +81,178 @@ Examples
     --annotation annotation.zip
 
 
+CSV出力
+--------------------------
+
+CSVを出力する場合は、``--type`` でラベルごとのアノテーション数（``--type label``）か、属性値ごとのアノテーション数（``--type attribute``）かを指定してください。
+デフォルトでは、ラベルごとのアノテーション数が出力されます。
+
+
 
 出力結果
 =================================
 
-タスクごとにアノテーション数を集計
+
+JSON出力
 ----------------------------------------------
 
-.. code-block::
-
-    $ annofabcli statistics list_annotation_count --project_id prj1 --output_dir out_by_task/ \
-    --group_by task_id
-
-`out_by_task <https://github.com/kurusugawa-computer/annofab-cli/blob/master/docs/command_reference/statistics/list_annotation_count/out_by_task>`_
-
+タスクごとのアノテーション数
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
 .. code-block::
 
-    out_by_task/
-    ├── labels_count.csv
-    ├── attributes_count.csv
+    $ annofabcli statistics list_annotation_count --project_id prj1 --group_by task_id \
+    --format pretty_json --output out_by_task.json 
 
 
+.. code-block:: json
+    :caption: out_by_task.json
 
-.. csv-table:: labels_count.csv
-   :header: task_id,task_status,task_phase,task_phase_stage,input_data_count,Cat,...
+    [
+    {
+        "annotation_count": 130,
+        "annotation_count_by_label": {
+            "car": 60,
+            "bike": 10,
+        },
+        "annotation_count_by_attribute": {
+            "car": {
+                "occlusion": {
+                    "false": 10,
+                    "true": 20
+                },
+                "type": {
+                    "normal": 10,
+                    "bus":20
+                }
+            },
+            "bike": {
+                "occlusion": {
+                    "false": 10,
+                    "true": 20
+                }
+            }
+        },
+        "task_id": "task1",
+        "status": "complete",
+        "phase": "acceptance",
+        "phase_stage": 1,
+        "input_data_count": 10
+    }
+    ]  
 
-    task1,break,annotation,1,5,20,...
-    task2,complete,acceptance,1,5,12,...
+
+入力データごとのアノテーション数
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
 
+.. code-block::
 
-.. csv-table:: attributes_count.csv
-    :header: ,,,,Cat,Cat,...
-
-    ,,,,occluded,occluded,...
-    task_id,task_status,task_phase,task_phase_stage,input_data_count,True,False,...
-    task1,break,acceptance,1,5,2,0,...
-    task2,complete,acceptance,1,5,2,0,...
+    $ annofabcli statistics list_annotation_count --project_id prj1 --group_by input_data_id \
+    --format pretty_json --output out_by_input_data.json 
 
 
+.. code-block:: json
+    :caption: out_by_input_data.json
+
+    [
+    {
+        "annotation_count": 130,
+        "annotation_count_by_label": {
+            "car": 60,
+            "bike": 10,
+        },
+        "annotation_count_by_attribute": {
+            "car": {
+                "occlusion": {
+                    "false": 10,
+                    "true": 20
+                },
+                "type": {
+                    "normal": 10,
+                    "bus":20
+                }
+            },
+            "bike": {
+                "occlusion": {
+                    "false": 10,
+                    "true": 20
+                }
+            }
+        },
+        "task_id": "task1",
+        "status": "complete",
+        "phase": "acceptance",
+        "phase_stage": 1,
+        "input_data_id": "input1",
+        "input_data_name": "input1"
+    }
+    ]  
 
 
-
-入力データごとにアノテーション数を集計
+CSV出力
 ----------------------------------------------
 
-
-.. code-block::
-
-    $ annofabcli statistics list_annotation_count --project_id prj1 --output_dir out_by_input_data/ \
-    --group_by input_data_id
-
-`out_by_input_data <https://github.com/kurusugawa-computer/annofab-cli/blob/master/docs/command_reference/statistics/list_annotation_count/out_by_input_data>`_
+タスクごとラベルごとのアノテーション数
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
 
 .. code-block::
 
-    out_by_input_data/
-    ├── labels_count.csv
-    ├── attributes_count.csv
+    $ annofabcli statistics list_annotation_count --project_id prj1 --group_by task_id \
+    --format csv --type label --output out_by_task_label.csv 
+
+
+.. csv-table:: out_by_task_label.csv 
+    :header-rows: 1
+    :file: list_annotation_count/out_by_task_label.csv
+
+
+タスクごと属性ごとのアノテーション数
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+.. code-block::
+
+    $ annofabcli statistics list_annotation_count --project_id prj1 --group_by task_id \
+    --format csv --type attribute --output out_by_task_attribute.csv 
+
+
+.. csv-table:: out_by_task_attribute.csv 
+    :header-rows: 1
+    :file: list_annotation_count/out_by_task_attribute.csv
+
+
+入力データごとラベルごとのアノテーション数
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+
+.. code-block::
+
+    $ annofabcli statistics list_annotation_count --project_id prj1 --group_by input_data_id \
+    --format csv --type label --output out_by_input_data_label.csv 
+
+
+.. csv-table:: out_by_input_data_label.csv 
+    :header-rows: 1
+    :file: list_annotation_count/out_by_input_data_label.csv
+
+
+入力データごと属性ごとのアノテーション数
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+.. code-block::
+
+    $ annofabcli statistics list_annotation_count --project_id prj1 --group_by input_data_id \
+    --format csv --type attribute --output out_by_input_data_attribute.csv 
+
+
+.. csv-table:: out_by_input_data_attribute.csv
+    :header-rows: 1
+    :file: list_annotation_count/out_by_input_data_attribute.csv
 
 
 
-.. csv-table:: labels_count.csv
-   :header: input_data_id,input_data_name,task_id,task_status,task_phase,task_phase_stage,label_Cat,...
 
-    input1,input1,task1,break,acceptance,1,12
-    input2,input2,task2,complete,acceptance,1,12
-
-
-
-
-.. csv-table:: attributes_count.csv
-    :header: ,,,,,,Cat,Cat,...
-
-    ,,,,,,occluded,occluded,...
-    input_data_id,input_data_name,task_id,task_status,task_phase,task_phase_stage,True,False,...
-    input1,input1,task1,break,acceptance,1,10,5,...
-    input2,input2,task2,complete,acceptance,1,10,5,...
 
 Usage Details
 =================================
@@ -141,3 +262,4 @@ Usage Details
    :prog: annofabcli statistics list_annotation_count
    :nosubcommands:
    :nodefaultconst:
+

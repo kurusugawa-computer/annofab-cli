@@ -14,6 +14,11 @@ Description
 * ``SegmentationV2`` （塗りつぶしv2）
 
 
+.. warning::
+
+    ``filesystem write_annotation_image`` コマンドは非推奨です。2022-12-01以降に廃止する予定です。
+    替わりに ``filesystem draw_image`` コマンドを利用してください。
+
 
 Examples
 =================================
@@ -22,13 +27,13 @@ Examples
 基本的な使い方
 --------------------------
 
-``--annotation`` には、AnnoFabからダウンロードしたアノテーションzipか、アノテーションzipを展開したディレクトリを指定してください。
-アノテーションzipは、`annofabcli project download <../project/download.html>`_ コマンドでダウンロードできます。
+``--annotation`` には、Annofabからダウンロードしたアノテーションzipか、アノテーションzipを展開したディレクトリを指定してください。
+アノテーションzipは、`annofabcli annotation download <../annotation/download.html>`_ コマンドでダウンロードできます。
 
 .. code-block::
 
     # アノテーションzipをダウンロードする。
-    $ annofabcli project download simple_annotation --project_id prj1 --output annotation.zip
+    $ annofabcli annotation download --project_id prj1 --output annotation.zip
 
 
 
@@ -134,7 +139,7 @@ Examples
 
 .. code-block::
 
-    $ annfoabcli project download input_data --project_id prj1 --output input_data.json
+    $ annfoabcli input_data download --project_id prj1 --output input_data.json
 
 
 ``--input_data_json`` に、入力データ全件ファイルを指定してください。入力データのプロパティ ``system_metadata.original_resolution`` を参照して画像サイズを取得します。
@@ -210,6 +215,5 @@ See also
 =================================
 
 * `アノテーションzipの構造 <https://annofab.com/docs/api/#section/Simple-Annotation-ZIP>`_
-* `annofabcli project download <../project/download.html>`_
 * `annofabcli annotation_specs list_label_color <../annotation_specs/list_label_color.html>`_
 

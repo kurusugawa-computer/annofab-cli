@@ -12,9 +12,9 @@ from annofabapi.parser import SimpleAnnotationZipParser
 
 import annofabcli
 import annofabcli.common.cli
-from annofabcli import AnnofabApiFacade
 from annofabcli.common.cli import AbstractCommandLineInterface, ArgumentParser, build_annofabapi_resource_and_login
 from annofabcli.common.download import DownloadingFile
+from annofabcli.common.facade import AnnofabApiFacade
 
 logger = logging.getLogger(__name__)
 
@@ -39,8 +39,8 @@ class ListOutOfRangeAnnotationForMovieMain:
         if len(range_list) == 0:
             return 0, 0
         else:
-            max_begin = max([e[0] for e in range_list]) / 1000
-            max_end = max([e[1] for e in range_list]) / 1000
+            max_begin = max(e[0] for e in range_list) / 1000
+            max_end = max(e[1] for e in range_list) / 1000
             return max_begin, max_end
 
     @staticmethod
@@ -50,8 +50,8 @@ class ListOutOfRangeAnnotationForMovieMain:
         if len(range_list) == 0:
             return 0, 0
         else:
-            max_begin = max([e[0] for e in range_list]) / 1000
-            max_end = max([e[1] for e in range_list]) / 1000
+            max_begin = max(e[0] for e in range_list) / 1000
+            max_end = max(e[1] for e in range_list) / 1000
             return max_begin, max_end
 
     def create_dataframe(
@@ -125,7 +125,7 @@ class ListOutOfRangeAnnotationForMovieMain:
     def list_out_of_range_annotation_for_movie(
         self, project_id: str, task_id_list: Optional[List[str]], parse_annotation_zip: bool = False
     ) -> pandas.DataFrame:
-        cache_dir = annofabcli.utils.get_cache_dir()
+        cache_dir = annofabcli.common.utils.get_cache_dir()
         downloading_obj = DownloadingFile(self.service)
 
         input_data_json_path = cache_dir / f"input_data-{project_id}.json"
@@ -152,10 +152,10 @@ class ListOutOfRangeAnnotationForMovieMain:
         loop = asyncio.get_event_loop()
         loop.run_until_complete(gather)
 
-        with input_data_json_path.open() as f:
+        with input_data_json_path.open(encoding="utf-8") as f:
             input_data_list = json.load(f)
 
-        with task_json_path.open() as f:
+        with task_json_path.open(encoding="utf-8") as f:
             task_list = json.load(f)
             if task_id_list is not None:
                 task_list = self.filter_task_list(task_list, task_id_list)

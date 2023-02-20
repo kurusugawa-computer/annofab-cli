@@ -20,17 +20,23 @@ import yaml
 from annofabapi.api import DEFAULT_ENDPOINT_URL
 from annofabapi.exceptions import AnnofabApiException
 from annofabapi.models import OrganizationMemberRole, ProjectMemberRole
+from more_itertools import first_true
 
-import annofabcli
 from annofabcli.common.dataclasses import WaitOptions
 from annofabcli.common.enums import FormatArgument
-from annofabcli.common.exceptions import AnnofabCliException
+from annofabcli.common.exceptions import AnnofabCliException, AuthenticationError
 from annofabcli.common.facade import AnnofabApiFacade
 from annofabcli.common.typing import InputDataSize
+from annofabcli.common.utils import (
+    DEFAULT_CSV_FORMAT,
+    get_file_scheme_path,
+    print_according_to_format,
+    print_csv,
+    read_lines_except_blank_line,
+)
 
 logger = logging.getLogger(__name__)
 
-DEFAULT_CSV_FORMAT = {"encoding": "utf_8_sig", "index": False}
 
 COMMAND_LINE_ERROR_STATUS_CODE = 2
 """コマンドラインエラーが発生したときに返すステータスコード"""
@@ -56,7 +62,7 @@ def build_annofabapi_resource_and_login(args: argparse.Namespace) -> annofabapi.
 
     except requests.exceptions.HTTPError as e:
         if e.response.status_code == requests.codes.unauthorized:
-            raise annofabcli.exceptions.AuthenticationError(service.api.login_user_id)
+            raise AuthenticationError(service.api.login_user_id) from e
         raise e
 
 
@@ -64,7 +70,7 @@ def add_parser(
     subparsers: Optional[argparse._SubParsersAction],
     command_name: str,
     command_help: str,
-    description: str,
+    description: Optional[str] = None,
     is_subcommand: bool = True,
     epilog: Optional[str] = None,
 ) -> argparse.ArgumentParser:
@@ -75,7 +81,7 @@ def add_parser(
         subparsers:
         command_name:
         command_help: 1階層上のコマンドヘルプに表示される コマンドの説明（簡易的な説明）
-        description: ヘルプ出力に表示される説明（詳細な説明）
+        description: ヘルプ出力に表示される説明（詳細な説明）。未指定の場合は command_help と同じ値です。
         is_subcommand: サブコマンドかどうか. `annofabcli project`はコマンド、`annofabcli project list`はサブコマンドとみなす。
         epilog: ヘルプ出力後に表示される内容。デフォルトはNoneです。
 
@@ -83,6 +89,36 @@ def add_parser(
         サブコマンドのparser
 
     """
+    GLOBAL_OPTIONAL_ARGUMENTS_TITLE = "global optional arguments"
+
+    def create_parent_parser() -> argparse.ArgumentParser:
+        """
+        共通の引数セットを生成する。
+        """
+        parent_parser = argparse.ArgumentParser(add_help=False)
+        group = parent_parser.add_argument_group(GLOBAL_OPTIONAL_ARGUMENTS_TITLE)
+
+        group.add_argument("--yes", action="store_true", help="処理中に現れる問い合わせに対して、常に ``yes`` と回答します。")
+
+        group.add_argument(
+            "--endpoint_url", type=str, help="Annofab WebAPIのエンドポイントを指定します。", default=DEFAULT_ENDPOINT_URL
+        )
+
+        group.add_argument("--annofab_user_id", type=str, help="Annofabにログインする際のユーザーID")
+        group.add_argument("--annofab_password", type=str, help="Annofabにログインする際のパスワード")
+
+        group.add_argument(
+            "--logdir",
+            type=Path,
+            default=".log",
+            help="ログファイルを保存するディレクトリを指定します。",
+        )
+
+        group.add_argument("--disable_log", action="store_true", help="ログを無効にします。")
+
+        group.add_argument("--debug", action="store_true", help="HTTPリクエストの内容やレスポンスのステータスコードなど、デバッグ用のログが出力されます。")
+
+        return parent_parser
 
     if subparsers is None:
         subparsers = argparse.ArgumentParser().add_subparsers()
@@ -91,37 +127,25 @@ def add_parser(
     parser = subparsers.add_parser(
         command_name,
         parents=parents,
-        description=description,
+        description=description if description is not None else command_help,
         help=command_help,
         epilog=epilog,
         formatter_class=PrettyHelpFormatter,
     )
     parser.set_defaults(command_help=parser.print_help)
+
+    # 引数グループに"global optional group"がある場合は、"--help"オプションをデフォルトの"optional"グループから、"global optional arguments"グループに移動する
+    # https://ja.stackoverflow.com/a/57313/19524
+    global_optional_argument_group = first_true(
+        parser._action_groups, pred=lambda e: e.title == GLOBAL_OPTIONAL_ARGUMENTS_TITLE
+    )
+    if global_optional_argument_group is not None:
+        # optional グループの 0番目が help なので取り出す
+        help_action = parser._optionals._group_actions.pop(0)
+        assert help_action.dest == "help"
+        # global optional group の 先頭にhelpを追加
+        global_optional_argument_group._group_actions.insert(0, help_action)
     return parser
-
-
-def create_parent_parser() -> argparse.ArgumentParser:
-    """
-    共通の引数セットを生成する。
-    """
-    parent_parser = argparse.ArgumentParser(add_help=False)
-    group = parent_parser.add_argument_group("global optional arguments")
-
-    group.add_argument("--yes", action="store_true", help="処理中に現れる問い合わせに対して、常に ``yes`` と回答します。")
-
-    group.add_argument(
-        "--endpoint_url", type=str, help=f"AnnoFab WebAPIのエンドポイントを指定します。指定しない場合は ``{DEFAULT_ENDPOINT_URL}`` です。"
-    )
-
-    group.add_argument(
-        "--logdir", type=Path, default=".log", help="ログファイルを保存するディレクトリを指定します。指定しない場合は ``.log`` ディレクトリ'にログファイルが保存されます。"
-    )
-
-    group.add_argument("--disable_log", action="store_true", help="ログを無効にします。")
-
-    group.add_argument("--debug", action="store_true", help="HTTPリクエストの内容やレスポンスのステータスコードなど、デバッグ用のログが出力されます。")
-
-    return parent_parser
 
 
 def get_list_from_args(str_list: Optional[List[str]] = None) -> List[str]:
@@ -143,9 +167,9 @@ def get_list_from_args(str_list: Optional[List[str]] = None) -> List[str]:
         return str_list
 
     str_value = str_list[0]
-    path = annofabcli.utils.get_file_scheme_path(str_value)
+    path = get_file_scheme_path(str_value)
     if path is not None:
-        return annofabcli.utils.read_lines_except_blank_line(path)
+        return read_lines_except_blank_line(path)
     else:
         return str_list
 
@@ -173,7 +197,7 @@ def get_json_from_args(target: Optional[str] = None) -> Any:
     if target is None:
         return None
 
-    path = annofabcli.utils.get_file_scheme_path(target)
+    path = get_file_scheme_path(target)
     if path is not None:
         with open(path, encoding="utf-8") as f:
             return json.load(f)
@@ -247,7 +271,7 @@ def load_logging_config_from_args(args: argparse.Namespace) -> None:
 
 def get_endpoint_url(args: argparse.Namespace) -> str:
     """
-    AnnoFab WebAPIのエンドポイントURLを、以下の優先順位で取得する。
+    Annofab WebAPIのエンドポイントURLを、以下の優先順位で取得する。
 
     1. コマンドライン引数 ``--endpoint_url``
     2. 環境変数 ``ANNOFAB_ENDPOINT_URL``
@@ -258,7 +282,7 @@ def get_endpoint_url(args: argparse.Namespace) -> str:
         args: コマンドライン引数情報
 
     Returns:
-        AnnoFab WebAPIのエンドポイントURL
+        Annofab WebAPIのエンドポイントURL
 
     """
     endpoint_url = args.endpoint_url
@@ -275,7 +299,7 @@ def get_endpoint_url(args: argparse.Namespace) -> str:
 def build_annofabapi_resource(args: argparse.Namespace) -> annofabapi.Resource:
     """
     annofabapi.Resourceインスタンスを生成する。
-    以下の順にAnnoFabの認証情報を読み込む。
+    以下の順にAnnofabの認証情報を読み込む。
     1. `.netrc`ファイル
     2. 環境変数`ANNOFAB_USER_ID` , `ANNOFAB_PASSWORD`
 
@@ -287,7 +311,19 @@ def build_annofabapi_resource(args: argparse.Namespace) -> annofabapi.Resource:
     """
     endpoint_url = get_endpoint_url(args)
     if endpoint_url != DEFAULT_ENDPOINT_URL:
-        logger.info(f"AnnoFab WebAPIのエンドポイントURL: {endpoint_url}")
+        logger.info(f"Annofab WebAPIのエンドポイントURL: {endpoint_url}")
+
+    # コマンドライン引数からユーザーIDが指定された場合
+    if args.annofab_user_id is not None:
+        login_user_id: str = args.annofab_user_id
+        if args.annofab_password is not None:
+            return annofabapi.build(login_user_id, args.annofab_password, endpoint_url=endpoint_url)
+        else:
+            # コマンドライン引数にパスワードが指定されなければ、標準入力からパスワードを取得する
+            login_password = ""
+            while login_password == "":
+                login_password = getpass.getpass("Enter Annofab Password: ")
+            return annofabapi.build(login_user_id, login_password, endpoint_url=endpoint_url)
 
     try:
         return annofabapi.build_from_netrc(endpoint_url)
@@ -303,11 +339,11 @@ def build_annofabapi_resource(args: argparse.Namespace) -> annofabapi.Resource:
     # 標準入力から入力させる
     login_user_id = ""
     while login_user_id == "":
-        login_user_id = input("Enter AnnoFab User ID: ")
+        login_user_id = input("Enter Annofab User ID: ")
 
     login_password = ""
     while login_password == "":
-        login_password = getpass.getpass("Enter AnnoFab Password: ")
+        login_password = getpass.getpass("Enter Annofab Password: ")
 
     return annofabapi.build(login_user_id, login_password, endpoint_url=endpoint_url)
 
@@ -338,7 +374,7 @@ def prompt_yesnoall(msg: str) -> Tuple[bool, bool]:
         msg: 確認メッセージ
 
     Returns:
-        Tuple[yesno, allflag]. yesno:Trueならyes. allflag: Trueならall.
+        Tuple[yesno, all_flag]. yesno:Trueならyes. all_flag: Trueならall.
 
     """
     while True:
@@ -393,7 +429,7 @@ class ArgumentParser:
         '--format` 引数を追加
         """
         if help_message is None:
-            help_message = f"出力フォーマットを指定します。指定しない場合は、{default.value} フォーマットになります。"
+            help_message = f"出力フォーマットを指定します。"
 
         self.parser.add_argument(
             "-f", "--format", type=str, choices=[e.value for e in choices], default=default.value, help=help_message
@@ -405,9 +441,9 @@ class ArgumentParser:
         """
         if help_message is None:
             help_message = (
-                "CSVのフォーマットをJSON形式で指定します。 ``--format`` が ``csv`` でないときは、このオプションは無視されます。"
-                " ``file://`` を先頭に付けると、JSON形式のファイルを指定できます。"
-                "指定した値は、`pandas.DataFrame.to_csv <https://pandas.pydata.org/pandas-docs/stable/reference/api/pandas.DataFrame.to_csv.html>`_ の引数として渡されます。"  # noqa: E501
+                "CSVのフォーマットをJSON形式で指定します。 ``--format`` が ``csv`` でないときは、このオプションは無視されます。\n"
+                "``file://`` を先頭に付けると、JSON形式のファイルを指定できます。\n"
+                "指定した値は ``pandas.DataFrame.to_csv`` の引数として渡されます。"
             )
 
         self.parser.add_argument("--csv_format", type=str, help=help_message)
@@ -417,7 +453,7 @@ class ArgumentParser:
         '--output` 引数を追加
         """
         if help_message is None:
-            help_message = "出力先のファイルパスを指定します。指定しない場合は、標準出力に出力されます。"
+            help_message = "出力先のファイルパスを指定します。未指定の場合は、標準出力に出力されます。"
 
         self.parser.add_argument("-o", "--output", type=str, required=required, help=help_message)
 
@@ -434,9 +470,15 @@ class ArgumentParser:
         if help_message is None:
             help_message = (
                 "タスクを絞り込むためのクエリ条件をJSON形式で指定します。"
-                " ``file://`` を先頭に付けると、JSON形式のファイルを指定できます。"
-                "使用できるキーは、``task_id`` , ``phase`` , ``phase_stage`` , ``status`` , ``user_id`` ,"
-                " ``account_id`` , ``no_user``  (bool値)  のみです。"
+                " ``file://`` を先頭に付けると、JSON形式のファイルを指定できます。\n"
+                "以下のキーを指定できます。\n\n"
+                " * ``task_id``\n"
+                " * ``phase``\n"
+                " * ``phase_stage``\n"
+                " * ``status``\n"
+                " * ``user_id``\n"
+                " * ``account_id``\n"
+                " * ``no_user``"
             )
         self.parser.add_argument("-tq", "--task_query", type=str, required=required, help=help_message)
 
@@ -501,7 +543,7 @@ class AbstractCommandLineWithoutWebapiInterface(abc.ABC):
             self.query = args.query
 
         if hasattr(args, "csv_format"):
-            self.csv_format = annofabcli.common.cli.get_csv_format_from_args(args.csv_format)
+            self.csv_format = get_csv_format_from_args(args.csv_format)
 
         if hasattr(args, "output"):
             self.output = args.output
@@ -574,12 +616,12 @@ class AbstractCommandLineWithoutWebapiInterface(abc.ABC):
         return target
 
     def print_csv(self, df: pandas.DataFrame):
-        annofabcli.utils.print_csv(df, output=self.output, to_csv_kwargs=self.csv_format)
+        print_csv(df, output=self.output, to_csv_kwargs=self.csv_format)
 
     def print_according_to_format(self, target: Any):
         target = self.search_with_jmespath_expression(target)
 
-        annofabcli.utils.print_according_to_format(
+        print_according_to_format(
             target, arg_format=FormatArgument(self.str_format), output=self.output, csv_format=self.csv_format
         )
 
@@ -591,10 +633,14 @@ class PrettyHelpFormatter(argparse.RawTextHelpFormatter, argparse.ArgumentDefaul
         return super()._format_action(action) + "\n"
 
     def _get_help_string(self, action):
+        # 必須な引数には、引数の説明の後ろに"(required)"を付ける
+        help = action.help  # pylint: disable=redefined-builtin
+        if action.required:
+            help += " (required)"
+
         # 不要なデフォルト値（--debug や オプショナルな引数）を表示させないようにする
         # super()._get_help_string の中身を、そのまま持ってきた。
         # https://qiita.com/yuji38kwmt/items/c7c4d487e3188afd781e 参照
-        help = action.help  # pylint: disable=redefined-builtin
         if "%(default)" not in action.help:
             if action.default is not argparse.SUPPRESS:
                 defaulting_nargs = [argparse.OPTIONAL, argparse.ZERO_OR_MORE]

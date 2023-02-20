@@ -39,6 +39,15 @@ Examples
     $ annofabcli task delete --project_id prj1 --task_id file://task_id.txt --force
 
 
+``--delete_input_data`` を指定すれば、タスクが参照している入力データとそれに紐づく補助情報も削除されます。ただし、他のタスクから参照されている入力データは、削除されません。
+
+
+.. code-block::
+
+    $ annofabcli task delete --project_id prj1 --task_id file://task_id.txt --delete_input_data
+
+
+
 
 タスクのフェーズやステータスなどで絞り込み
 ----------------------------------------------

@@ -1,3 +1,5 @@
+from __future__ import annotations
+
 import enum
 from typing import Any, Dict, List, Optional
 
@@ -37,14 +39,48 @@ class AddProps:
     def __init__(self, service: annofabapi.Resource, project_id: str):
         self.service = service
         self.project_id = project_id
-        self.organization_name = self._get_organization_name_from_project_id(project_id)
 
-        # [REMOVE_V2_PARAM]
-        annotation_specs, _ = self.service.api.get_annotation_specs(project_id, query_params={"v": "2"})
-        self.specs_labels: List[Dict[str, Any]] = convert_annotation_specs_labels_v2_to_v1(
+        self._specs_labels: Optional[list[dict[str, Any]]] = None
+        self._specs_inspection_phrases: Optional[list[dict[str, Any]]] = None
+
+    def _set_annotation_specs(self):
+        """
+        アノテーション仕様に関する情報をインスタンス変数に格納します。
+        """
+        annotation_specs, _ = self.service.api.get_annotation_specs(self.project_id, query_params={"v": "2"})
+        self._specs_labels = convert_annotation_specs_labels_v2_to_v1(
             labels_v2=annotation_specs["labels"], additionals_v2=annotation_specs["additionals"]
         )
-        self.specs_inspection_phrases: List[Dict[str, Any]] = annotation_specs["inspection_phrases"]
+        self._specs_inspection_phrases = annotation_specs["inspection_phrases"]
+
+    @property
+    def specs_labels(self) -> list[dict[str, Any]]:
+        """
+        アノテーション仕様のラベルのlistを返します。
+        ラベルの中に属性情報が格納されています。
+
+        Returns:
+            アノテーション仕様のラベルlist
+        """
+        if self._specs_labels is not None:
+            return self._specs_labels
+
+        self._set_annotation_specs()
+        return self.specs_labels
+
+    @property
+    def specs_inspection_phrases(self) -> list[dict[str, Any]]:
+        """
+        アノテーション仕様の定型指摘のlistを返します。
+
+        Returns:
+            アノテーション仕様の定型指摘のlist
+        """
+        if self._specs_inspection_phrases is not None:
+            return self._specs_inspection_phrases
+
+        self._set_annotation_specs()
+        return self.specs_inspection_phrases
 
     @staticmethod
     def millisecond_to_hour(millisecond: int):
@@ -215,6 +251,49 @@ class AddProps:
 
         return inspection
 
+    def add_properties_to_comment(self, comment: Dict[str, Any]) -> Dict[str, Any]:
+        """
+        検査コメントに、以下のキーを追加する.
+        user_id
+        username
+        phrase_names_en
+        phrase_names_ja
+        label_name_en
+        label_name_en
+
+        Args:
+            comment:
+
+        Returns:
+
+        """
+
+        def add_commenter_info():
+            commenter_user_id = None
+            commenter_username = None
+
+            commenter_account_id = comment["account_id"]
+            if commenter_account_id is not None:
+                member = self.get_project_member_from_account_id(commenter_account_id)
+                if member is not None:
+                    commenter_user_id = member["user_id"]
+                    commenter_username = member["username"]
+
+            comment["user_id"] = commenter_user_id
+            comment["username"] = commenter_username
+
+        add_commenter_info()
+
+        comment["phrase_names_en"] = [self.get_phrase_name(e, MessageLocale.EN) for e in comment["phrases"]]
+        comment["phrase_names_ja"] = [self.get_phrase_name(e, MessageLocale.JA) for e in comment["phrases"]]
+
+        comment_node = comment["comment_node"]
+        if "label_id" in comment_node:
+            comment_node["label_name_en"] = self.get_label_name(comment_node["label_id"], MessageLocale.EN)
+            comment_node["label_name_ja"] = self.get_label_name(comment_node["label_id"], MessageLocale.JA)
+
+        return comment
+
     def add_properties_to_single_annotation(self, annotation: SingleAnnotation) -> SingleAnnotation:
         """
         アノテーション情報（details）検査コメントに、以下のキーを追加する.
@@ -254,6 +333,11 @@ class AddProps:
         * worktime_hour
         * number_of_rejections_by_inspection
         * number_of_rejections_by_acceptance
+        * input_data_count
+
+        以下のキーを削除する。
+        * number_of_rejections
+
 
         Args:
             task:
@@ -274,6 +358,8 @@ class AddProps:
 
         # number_of_rejectionsは非推奨なプロパティで、number_of_rejections_by_inspection/number_of_rejections_by_acceptanceと矛盾する場合があるので、削除する
         task.pop("number_of_rejections", None)
+
+        task["input_data_count"] = len(task["input_data_id_list"])
         return task
 
     def add_properties_to_task_history(self, task_history: TaskHistory) -> TaskHistory:

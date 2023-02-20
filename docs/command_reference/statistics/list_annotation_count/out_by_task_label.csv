@@ -1,0 +1,3 @@
+task_id,status,phase,phase_stage,input_data_count,annotation_count,car,bike
+task1,break,annotation,1,5,100,20,10
+task2,complete,acceptance,1,5,80,12,5

@@ -37,7 +37,6 @@ Examples
 
     $ annofabcli task reject --project_id prj1 --task_id file://task_id.txt
 
-完了状態のタスクを差し戻すには、先に受入取り消し（`annofabcli task cancel_acceptance <../task/cancel_acceptance.html>`_）を実行する必要があります。
 受入取り消しと差し戻しを同時に行う場合は、``--cancel_acceptance`` を指定してください。
 
 .. code-block::
@@ -64,45 +63,21 @@ Examples
      --comment "weather属性を見直してください。" \
      --comment_data '{"x":10,"y":10,"_type":"Point"}'
 
-``--comment_data`` に渡す形式は、https://annofab.com/docs/api/#operation/batchUpdateInspections APIのリクエストボディ ``data`` を参照してください。
+``--comment_data`` に渡す形式は、https://annofab-cli.readthedocs.io/ja/latest/command_reference/inspection_comment/put_simply.html を参照してください。
 
-以下は、``--comment_data`` に渡すJSON文字列のサンプルです。
+``--comment_data`` を指定しない場合は、以下の検査コメントが付与されます。
 
-.. code-block:: json
-    :caption: 画像プロジェクト：(x=0,y=0)の位置に点
+* 画像プロジェクト： 点。先頭画像の左上に位置する。
+* 動画プロジェクト： 区間。動画の先頭に位置する。
+* カスタムプロジェクト（3dpc）： 辺が1の立方体。先頭フレームの原点に位置する。
 
-    {
-        "x":0,
-        "y":0,
-        "_type": "Point"
-    }
+ただし、カスタムプロジェクトの場合は ``--csutom_project_type`` が必須です。
 
+.. code-block::
 
-.. code-block:: json
-    :caption: 動画プロジェクト：0〜100ミリ秒の区間
-
-    {
-        "start":0,
-        "end":100,
-        "_type": "Time"
-    }
-
-
-.. code-block:: json
-    :caption: カスタムプロジェクト（3dpc editor）：原点付近に辺が1の立方体
-
-    {
-        "data": "{\"kind\": \"CUBOID\", \"shape\": {\"dimensions\": {\"width\": 1.0, \"height\": 1.0, \"depth\": 1.0}, \"location\": {\"x\": 0.0, \"y\": 0.0, \"z\": 0.0}, \"rotation\": {\"x\": 0.0, \"y\": 0.0, \"z\": 0.0}, \"direction\": {\"front\": {\"x\": 1.0, \"y\": 0.0, \"z\": 0.0}, \"up\": {\"x\": 0.0, \"y\": 0.0, \"z\": 1.0}}}, \"version\": \"2\"}",
-        "_type": "Custom"    
-    }
-
-
-``--comment_data`` を指定しない場合は、以下の値になります。
-
-* 画像プロジェクト： ``{"x":0, "y":0, "_type": "Point"}``
-* 動画プロジェクト： ``{"start":0, "end":100, "_type": "Time"}``
-
-カスタムプロジェクトの場合は、検査コメントの位置を決められないので、 ``--comment_data`` は必須です。
+    $ annofabcli task reject --project_id prj1 --task_id task1 \
+     --comment "weather属性を見直してください。" \
+     --custom_project_type 3dpc
 
 
 差し戻したタスクの担当者を指定する
@@ -160,3 +135,5 @@ Usage Details
    :prog: annofabcli task reject
    :nosubcommands:
    :nodefaultconst:
+
+

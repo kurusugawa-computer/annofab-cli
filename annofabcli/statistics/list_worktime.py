@@ -11,8 +11,8 @@ import pandas
 from dateutil.parser import parse
 
 import annofabcli
-from annofabcli import AnnofabApiFacade
 from annofabcli.common.cli import AbstractCommandLineInterface, ArgumentParser, build_annofabapi_resource_and_login
+from annofabcli.common.facade import AnnofabApiFacade
 from annofabcli.task_history_event.list_worktime import (
     ListWorktimeFromTaskHistoryEventMain,
     WorktimeFromTaskHistoryEvent,
@@ -34,7 +34,6 @@ def _get_worktime_dict_from_event(event: WorktimeFromTaskHistoryEvent) -> Workti
         worktime_hour = (dt_end - dt_start).total_seconds() / 3600
         dict_result[(str(dt_start.date()), event.account_id, event.phase)] = worktime_hour
     else:
-
         jst_tzinfo = datetime.timezone(datetime.timedelta(hours=9))
         dt_tmp_start = dt_start
 
@@ -121,7 +120,6 @@ class ListWorktimeFromTaskHistoryEvent(AbstractCommandLineInterface):
         project_id: str,
         task_history_event_json: Optional[Path],
     ):
-
         super().validate_project(project_id, project_member_roles=None)
 
         main_obj = ListWorktimeFromTaskHistoryEventMain(self.service, project_id=project_id)
@@ -165,7 +163,7 @@ def parse_args(parser: argparse.ArgumentParser):
         type=Path,
         help="タスク履歴イベント全件ファイルパスを指定すると、JSONに記載された情報を元にタスク履歴イベント一覧を出力します。\n"
         "指定しない場合は、タスク履歴イベント全件ファイルをダウンロードします。\n"
-        "JSONファイルは ``$ annofabcli project download task_history_event`` コマンドで取得できます。",
+        "JSONファイルは ``$ annofabcli task_history_event download`` コマンドで取得できます。",
     )
 
     argument_parser.add_output()

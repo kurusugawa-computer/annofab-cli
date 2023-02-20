@@ -33,7 +33,7 @@ Examples
 
 
 
-削除するアノテーションを絞り込む場合は、``--annotation_query`` を指定してください。フォーマットは https://annofab.com/docs/api/#section/AnnotationQuery とほとんど同じです。
+削除するアノテーションを絞り込む場合は、``--annotation_query`` を指定してください。
 ``--annotation_query`` のサンプルは、`Command line options <../../user_guide/command_line_options.html#annotation-query-aq>`_ を参照してください。
 
 以下のコマンドは、ラベル名（英語）の値が"car"で、属性名(英語)が"occluded"である値をfalse（"occluded"チェックボックスをOFF）であるアノテーションを削除します。
@@ -42,7 +42,7 @@ Examples
 .. code-block::
 
     $ annofabcli annotation delete --project_id prj1 --task_id file://task.txt \ 
-    --annotation_query '{"label_name_en": "car", "attributes":[{"additional_data_definition_name_en": "occluded", "flag": false}]}' \
+    --annotation_query '{"label": "car", "attributes":{"occluded": false}}' \
     --backup backup_dir/
 
 

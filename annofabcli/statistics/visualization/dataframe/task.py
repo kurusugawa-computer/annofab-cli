@@ -7,7 +7,10 @@ import bokeh
 import bokeh.layouts
 import bokeh.palettes
 import pandas
+import pytz
+from annofabapi.models import TaskPhase
 
+from annofabcli.common.utils import print_csv
 from annofabcli.statistics.histogram import get_histogram_figure, get_sub_title_from_series
 
 logger = logging.getLogger(__name__)
@@ -24,6 +27,69 @@ class Task:
             logger.warning(f"データが0件のため、{output_file} は出力しません。")
             return False
         return True
+
+    def is_empty(self) -> bool:
+        """
+        空のデータフレームを持つかどうかを返します。
+
+        Returns:
+            空のデータフレームを持つかどうか
+        """
+        return len(self.df) == 0
+
+    @classmethod
+    def empty(cls) -> Task:
+        """空のデータフレームを持つインスタンスを生成します。"""
+
+        df_dtype: dict[str, str] = {
+            "project_id": "string",
+            "task_id": "string",
+            "phase": "string",
+            "phase_stage": "int64",
+            "status": "string",
+            "number_of_rejections_by_inspection": "int64",
+            "number_of_rejections_by_acceptance": "int64",
+            "created_datetime": "string",
+            "first_acceptance_completed_datetime": "string",
+            "worktime_hour": "float64",
+            "annotation_worktime_hour": "float64",
+            "inspection_worktime_hour": "float64",
+            "acceptance_worktime_hour": "float64",
+            "input_data_count": "int64",
+            "inspection_comment_count": "int64",
+            "annotation_count": "int64",
+            "inspection_is_skipped": "boolean",
+            "acceptance_is_skipped": "boolean",
+        }
+        for phase in TaskPhase:
+            df_dtype.update(
+                {
+                    f"first_{phase.value}_user_id": "string",
+                    f"first_{phase.value}_username": "string",
+                    f"first_{phase.value}_worktime_hour": "int64",
+                    f"first_{phase.value}_started_datetime": "string",
+                }
+            )
+
+        df = pandas.DataFrame(columns=df_dtype.keys()).astype(df_dtype)
+        return cls(df)
+
+    @classmethod
+    def from_csv(cls, csv_file: Path) -> Task:
+        df = pandas.read_csv(str(csv_file))
+        return cls(df)
+
+    @staticmethod
+    def merge(*obj: Task) -> Task:
+        """
+        複数のインスタンスをマージします。
+
+        Notes:
+            pandas.DataFrameのインスタンス生成のコストを減らすため、複数の引数を受け取れるようにした。
+        """
+        df_list = [task.df for task in obj]
+        df_merged = pandas.concat(df_list)
+        return Task(df_merged)
 
     def plot_histogram_of_worktime(
         self,
@@ -42,19 +108,19 @@ class Task:
         logger.debug(f"{output_file} を出力します。")
         df = self.df
         histogram_list = [
-            dict(
-                title="教師付作業時間",
-                column="annotation_worktime_hour",
-            ),
-            dict(
-                title="検査作業時間",
-                column="inspection_worktime_hour",
-            ),
-            dict(
-                title="受入作業時間",
-                column="acceptance_worktime_hour",
-            ),
-            dict(title="総作業時間", column="sum_worktime_hour"),
+            {
+                "title": "教師付作業時間",
+                "column": "annotation_worktime_hour",
+            },
+            {
+                "title": "検査作業時間",
+                "column": "inspection_worktime_hour",
+            },
+            {
+                "title": "受入作業時間",
+                "column": "acceptance_worktime_hour",
+            },
+            {"title": "総作業時間", "column": "worktime_hour"},
         ]
 
         figure_list = []
@@ -100,11 +166,12 @@ class Task:
             )
         )
 
-        bokeh_obj = bokeh.layouts.gridplot(figure_list, ncols=3)
+        bokeh_obj = bokeh.layouts.gridplot(figure_list, ncols=3)  # type: ignore
         output_file.parent.mkdir(exist_ok=True, parents=True)
         bokeh.plotting.reset_output()
         bokeh.plotting.output_file(output_file, title=output_file.stem)
         bokeh.plotting.save(bokeh_obj)
+        logger.debug(f"'{output_file}'を出力しました。")
 
     def plot_histogram_of_others(
         self,
@@ -117,48 +184,69 @@ class Task:
             output_file (Path): [description]
             bins (int, optional): [description]. Defaults to 20.
         """
+
+        def diff_days(s1: pandas.Series, s2: pandas.Series) -> pandas.Series:
+            dt1 = pandas.to_datetime(s1)
+            dt2 = pandas.to_datetime(s2)
+
+            # タイムゾーンを指定している理由::
+            # すべてがNaNのseriesをdatetimeに変換すると、型にタイムゾーンが指定されない。
+            # その状態で加算すると、`TypeError: DatetimeArray subtraction must have the same timezones or no timezones`というエラーが発生するため  # noqa:E501
+            if not isinstance(dt1.dtype, pandas.DatetimeTZDtype):
+                dt1 = dt1.dt.tz_localize(pytz.FixedOffset(540))
+            if not isinstance(dt2.dtype, pandas.DatetimeTZDtype):
+                dt2 = dt2.dt.tz_localize(pytz.FixedOffset(540))
+
+            return (dt1 - dt2).dt.total_seconds() / 3600 / 24
+
         if not self._validate_df_for_output(output_file):
             return
 
         logger.debug(f"{output_file} を出力します。")
-        df = self.df
+        df = self.df.copy()
+
+        df["diff_days_to_first_inspection_started"] = diff_days(
+            df["first_inspection_started_datetime"], df["first_annotation_started_datetime"]
+        )
+        df["diff_days_to_first_acceptance_started"] = diff_days(
+            df["first_acceptance_started_datetime"], df["first_annotation_started_datetime"]
+        )
+
+        df["diff_days_to_first_acceptance_completed"] = diff_days(
+            df["first_acceptance_completed_datetime"], df["first_annotation_started_datetime"]
+        )
 
         histogram_list = [
-            dict(column="annotation_count", x_axis_label="アノテーション数", title="アノテーション数"),
-            dict(column="input_data_count", x_axis_label="画像枚数", title="画像枚数"),
-            dict(column="inspection_count", x_axis_label="検査コメント数", title="検査コメント数"),
-            dict(
-                column="input_data_count_of_inspection",
-                x_axis_label="指摘を受けた画像枚数",
-                title="指摘を受けた画像枚数",
-            ),
+            {"column": "annotation_count", "x_axis_label": "アノテーション数", "title": "アノテーション数"},
+            {"column": "input_data_count", "x_axis_label": "入力データ数", "title": "入力データ数"},
+            {"column": "inspection_comment_count", "x_axis_label": "検査コメント数", "title": "検査コメント数"},
             # 経過日数
-            dict(
-                column="diff_days_to_first_inspection_started",
-                x_axis_label="最初の検査を着手するまでの日数",
-                title="最初の検査を着手するまでの日数",
-            ),
-            dict(
-                column="diff_days_to_first_acceptance_started",
-                x_axis_label="最初の受入を着手するまでの日数",
-                title="最初の受入を着手するまでの日数",
-            ),
-            dict(
-                column="diff_days_to_first_acceptance_completed",
-                x_axis_label="初めて受入完了状態になるまでの日数",
-                title="初めて受入完了状態になるまでの日数",
-            ),
+            {
+                "column": "diff_days_to_first_inspection_started",
+                "x_axis_label": "最初の検査を着手するまでの日数",
+                "title": "最初の検査を着手するまでの日数",
+            },
+            {
+                "column": "diff_days_to_first_acceptance_started",
+                "x_axis_label": "最初の受入を着手するまでの日数",
+                "title": "最初の受入を着手するまでの日数",
+            },
+            {
+                "column": "diff_days_to_first_acceptance_completed",
+                "x_axis_label": "初めて受入完了状態になるまでの日数",
+                "title": "初めて受入完了状態になるまでの日数",
+            },
             # 差し戻し回数
-            dict(
-                column="number_of_rejections_by_inspection",
-                x_axis_label="検査フェーズでの差し戻し回数",
-                title="検査フェーズでの差し戻し回数",
-            ),
-            dict(
-                column="number_of_rejections_by_acceptance",
-                x_axis_label="受入フェーズでの差し戻し回数",
-                title="受入フェーズでの差し戻し回数",
-            ),
+            {
+                "column": "number_of_rejections_by_inspection",
+                "x_axis_label": "検査フェーズでの差し戻し回数",
+                "title": "検査フェーズでの差し戻し回数",
+            },
+            {
+                "column": "number_of_rejections_by_acceptance",
+                "x_axis_label": "受入フェーズでの差し戻し回数",
+                "title": "受入フェーズでの差し戻し回数",
+            },
         ]
 
         figure_list = []
@@ -174,8 +262,66 @@ class Task:
             )
             figure_list.append(fig)
 
-        bokeh_obj = bokeh.layouts.gridplot(figure_list, ncols=4)
+        bokeh_obj = bokeh.layouts.gridplot(figure_list, ncols=4)  # type: ignore
         output_file.parent.mkdir(exist_ok=True, parents=True)
         bokeh.plotting.reset_output()
         bokeh.plotting.output_file(output_file, title=output_file.stem)
         bokeh.plotting.save(bokeh_obj)
+        logger.debug(f"'{output_file}'を出力しました。")
+
+    def to_csv(self, output_file: Path) -> None:
+        """
+        タスク一覧をTSVで出力する
+        Args:
+            arg_df:
+            dropped_columns:
+
+        Returns:
+
+        """
+
+        if not self._validate_df_for_output(output_file):
+            return
+
+        columns = [
+            "project_id",
+            "task_id",
+            "phase",
+            "phase_stage",
+            "status",
+            "number_of_rejections_by_inspection",
+            "number_of_rejections_by_acceptance",
+            # タスク作成時
+            "created_datetime",
+            # 1回目の教師付フェーズ
+            "first_annotation_user_id",
+            "first_annotation_username",
+            "first_annotation_worktime_hour",
+            "first_annotation_started_datetime",
+            # 1回目の検査フェーズ
+            "first_inspection_user_id",
+            "first_inspection_username",
+            "first_inspection_worktime_hour",
+            "first_inspection_started_datetime",
+            # 1回目の受入フェーズ
+            "first_acceptance_user_id",
+            "first_acceptance_username",
+            "first_acceptance_worktime_hour",
+            "first_acceptance_started_datetime",
+            # 最後の受入
+            "first_acceptance_completed_datetime",
+            # 作業時間に関する内容
+            "worktime_hour",
+            "annotation_worktime_hour",
+            "inspection_worktime_hour",
+            "acceptance_worktime_hour",
+            # 個数
+            "input_data_count",
+            "annotation_count",
+            "inspection_comment_count",
+            # タスクの状態
+            "inspection_is_skipped",
+            "acceptance_is_skipped",
+        ]
+
+        print_csv(self.df[columns], str(output_file))

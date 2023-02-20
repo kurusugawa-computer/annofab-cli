@@ -6,14 +6,12 @@ import os
 import re
 import sys
 from pathlib import Path
-from typing import Any, Callable, Dict, List, Optional, Set, TypeVar
+from typing import Any, Callable, Dict, List, Optional, Set, TypeVar, Union
 
 import dateutil.parser
 import isodate
 import pandas
 
-import annofabcli
-from annofabcli.common.cli import DEFAULT_CSV_FORMAT
 from annofabcli.common.enums import FormatArgument
 
 logger = logging.getLogger(__name__)
@@ -21,9 +19,14 @@ logger = logging.getLogger(__name__)
 T = TypeVar("T")  # Can be anything
 
 
+DEFAULT_CSV_FORMAT = {"encoding": "utf_8_sig", "index": False}
+
+
 def read_lines(filepath: str) -> List[str]:
     """ファイルを行単位で読み込む。改行コードを除く"""
-    with open(filepath, encoding="utf-8") as f:
+    # BOM付きUTF-8のファイルも読み込めるようにする
+    # annofabcliが出力するCSVはデフォルトでBOM付きUTF-8。これを加工してannofabcliに読み込ませる場合もあるので、BOM付きUTF-8に対応させた
+    with open(filepath, encoding="utf-8-sig") as f:
         lines = f.readlines()
     return [e.rstrip("\r\n") for e in lines]
 
@@ -47,7 +50,7 @@ def duplicated_set(target_list: List[T]) -> Set[T]:
     return {x for x in set(target_list) if target_list.count(x) > 1}
 
 
-def output_string(target: str, output: Optional[str] = None) -> None:
+def output_string(target: str, output: Optional[Union[str, Path]] = None) -> None:
     """
     文字列を出力する。
 
@@ -58,13 +61,14 @@ def output_string(target: str, output: Optional[str] = None) -> None:
     if output is None:
         print(target)
     else:
-        Path(output).parent.mkdir(parents=True, exist_ok=True)
-        with open(output, mode="w", encoding="utf_8") as f:
+        p_output = output if isinstance(output, Path) else Path(output)
+        p_output.parent.mkdir(parents=True, exist_ok=True)
+        with p_output.open(mode="w", encoding="utf_8") as f:
             f.write(target)
             logger.info(f"{output} を出力しました。")
 
 
-def print_json(target: Any, is_pretty: bool = False, output: Optional[str] = None) -> None:
+def print_json(target: Any, is_pretty: bool = False, output: Optional[Union[str, Path]] = None) -> None:
     """
     JSONを出力する。
 
@@ -80,11 +84,13 @@ def print_json(target: Any, is_pretty: bool = False, output: Optional[str] = Non
         output_string(json.dumps(target, ensure_ascii=False), output)
 
 
-def print_csv(df: pandas.DataFrame, output: Optional[str] = None, to_csv_kwargs: Optional[Dict[str, Any]] = None):
+def print_csv(
+    df: pandas.DataFrame, output: Optional[Union[str, Path]] = None, to_csv_kwargs: Optional[Dict[str, Any]] = None
+):
     if output is not None:
         Path(output).parent.mkdir(parents=True, exist_ok=True)
 
-    path_or_buf = sys.stdout if output is None else output
+    path_or_buf = sys.stdout if output is None else str(output)
 
     kwargs = copy.deepcopy(DEFAULT_CSV_FORMAT)
     if to_csv_kwargs is None:
@@ -97,13 +103,16 @@ def print_csv(df: pandas.DataFrame, output: Optional[str] = None, to_csv_kwargs:
         logger.info(f"{output} を出力しました。")
 
 
-def print_id_list(id_list: List[Any], output: Optional[str]):
+def print_id_list(id_list: List[Any], output: Optional[Union[str, Path]]):
     s = "\n".join(id_list)
     output_string(s, output)
 
 
 def print_according_to_format(
-    target: Any, arg_format: FormatArgument, output: Optional[str] = None, csv_format: Optional[Dict[str, Any]] = None
+    target: Any,
+    arg_format: FormatArgument,
+    output: Optional[Union[str, Path]] = None,
+    csv_format: Optional[Dict[str, Any]] = None,
 ):
     """
     コマンドライン引数 ``--format`` の値にしたがって、内容を出力する。
@@ -118,14 +127,14 @@ def print_according_to_format(
     """
 
     if arg_format == FormatArgument.PRETTY_JSON:
-        annofabcli.utils.print_json(target, is_pretty=True, output=output)
+        print_json(target, is_pretty=True, output=output)
 
     elif arg_format == FormatArgument.JSON:
-        annofabcli.utils.print_json(target, is_pretty=False, output=output)
+        print_json(target, is_pretty=False, output=output)
 
     elif arg_format == FormatArgument.CSV:
         df = pandas.DataFrame(target)
-        annofabcli.utils.print_csv(df, output=output, to_csv_kwargs=csv_format)
+        print_csv(df, output=output, to_csv_kwargs=csv_format)
 
     elif arg_format == FormatArgument.TASK_ID_LIST:
         task_id_list = [e["task_id"] for e in target]

@@ -82,13 +82,6 @@ Examples
     2021-04-02,12345678-abcd-1234-abcd-1234abcd5678,6.5,prj1
 
 
-.. warning::
-
-    2021-10-01 時点で、AnnoFabに実績作業時間を格納することができます。AnnoFabに可能されている実績作業時間を参照する場合は、``--get_labor`` を指定してください。
-    ただし、``--get_labor`` は将来的に廃止します。AnnoFabには実績作業時間は、いずれ参照できなくなるためです。
-    替わりに ``--labor_csv`` を利用してください。
-    
-
 
 
 
@@ -130,7 +123,7 @@ Examples
 
     $ annofabcli statistics visualize --project_id prj1 --output_dir out_dir --minimal
 
-`out_dir <https://github.com/kurusugawa-computer/annofab-cli/blob/master/docs/command_reference/statistics/visualize/out_dir>`_
+`out_dir <https://github.com/kurusugawa-computer/annofab-cli/blob/main/docs/command_reference/statistics/visualize/out_dir>`_
 
 
 .. code-block::
@@ -139,7 +132,7 @@ Examples
     ├── histogram
     │   ├── ヒストグラム-作業時間.html
     │   └── ヒストグラム.html
-    ├── ${project_title}.json
+    ├── project_info.json
     ├── line-graph
     │   ├── 教師付者用
     │   │   └── 累積折れ線-横軸_アノテーション数-教師付者用.html

@@ -13,7 +13,7 @@ Examples
 基本的な使い方
 --------------------------------------
 
-入力データを個別に指定する場合（CSV）
+CSVファイルを指定する場合
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 タスクに含まれる入力データを記載したCSVを指定して、タスクを作成することができます。
 
@@ -22,8 +22,7 @@ CSVのフォーマットは以下の通りです。
 * カンマ区切り
 * ヘッダ行なし
 * 1列目: task_id
-* 2列目: 空欄（どんな値でもよい）
-* 3列目: input_data_id
+* 2列目: input_data_id
 
 
 以下はCSVのサンプルです。
@@ -31,10 +30,10 @@ CSVのフォーマットは以下の通りです。
 .. code-block::
     :caption: task.csv
 
-    task_1,,12345678-abcd-1234-abcd-1234abcd5678
-    task_1,,22345678-abcd-1234-abcd-1234abcd5678
-    task_2,,32345678-abcd-1234-abcd-1234abcd5678
-    task_2,,42345678-abcd-1234-abcd-1234abcd5678
+    task_1,input_data_1
+    task_1,input_data_2
+    task_2,input_data_3
+    task_2,input_data_4
 
 
 ``--csv`` に、CSVファイルのパスを指定してください。
@@ -45,7 +44,7 @@ CSVのフォーマットは以下の通りです。
     $ annofabcli task put --project_id prj1 --csv task.csv
 
 
-入力データを個別に指定する場合（JSON）
+JSON文字列を指定する場合
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 タスクと入力データの関係を表したJSONを指定して、タスクを作成することができます。
 
@@ -69,19 +68,18 @@ JSON形式の文字列、またはJSONファイルのパスは ``--json`` に渡
     $ annofabcli task put --project_id prj1 --json '{"task1":["input1","input2"]}'
 
 
-入力データの個数を指定する場合
-^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-タスクに含まれる入力データの個数を指定して、タスクを作成することができます。
+タスクを生成するWebAPIを指定する
+--------------------------------------
+タスクを生成するWebAPIは2つあります。
 
-``--by_count`` に、タスクに含まれる入力データの個数などの情報を、JSON形式で指定してください。
-フォーマットは、 `initiateTasksGeneration <https://annofab.com/docs/api/#operation/initiateTasksGeneration>`_  APIのリクエストボディ ``task_generate_rule`` を参照してください。
+* ``put_task`` ： タスクを1個ずつ作成します。
+* ``initiate_tasks_generation`` ： タスクを一括で生成します。タスク作成ジョブが登録され、ジョブが終了するまで数分待ちます。1個のタスク生成に失敗した場合、すべてのタスクは生成されません。
 
-以下のコマンドは、「1タスクに含まれる入力データの個数を10、task_idのプレフィックスを"sample"」にしてタスクを作成します。
+使用するWebAPIは ``--api`` で指定できます。
+デフォルトでは、作成するタスク数が少ないときは ``put_task`` WebAPI、 タスク数が多いときは ``initiate_tasks_generation`` WebAPIが実行されます。
 
-.. code-block::
-
-    $ annofabcli task  put --project_id prj1 \
-    --by_count '{"task_id_prefix":"sample","input_data_count":10}' 
+``initiate_tasks_generation`` WebAPIでは、1個のタスク生成に失敗した場合、すべてのタスクは生成されません。
+タスク生成に失敗に関わらず、できるだけ多くのタスクを生成したい場合は、 ``--api put_task`` を指定することを推奨します。
 
 
 
@@ -95,14 +93,6 @@ JSON形式の文字列、またはJSONファイルのパスは ``--json`` に渡
     $ annofabcli task put --project_id prj1 --csv task.csv --wait
 
 
-完了確認の間隔や確認回数の上限を指定する場合は、``--wait_options`` を指定してください。
-
-以下のコマンドは、タスク作成処理が完了したかを30秒ごとに確認し、最大10回問い合わせます（5分間待待つ）。
-
-.. code-block::
-
-    $ annofabcli task put --project_id prj1 --csv task.csv --wait \
-    --wait_options '{"interval":30, "max_tries":10}'
 
 Usage Details
 =================================

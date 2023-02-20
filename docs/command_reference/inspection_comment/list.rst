@@ -7,6 +7,11 @@ Description
 検査コメントの一覧を出力します。
 
 
+.. warning::
+
+    非推奨なコマンドです。2022/12/01以降に廃止する予定です。
+    替わりに `annofabcli comment list <../comment/list.html>`_ コマンドを使用してください。
+
 
 Examples
 =================================
@@ -51,7 +56,7 @@ CSV出力
     $ annofabcli inspection_comment list --project_id prj1 --task_id task1 \
      --format csv --output out.csv
 
-`out.csv <https://github.com/kurusugawa-computer/annofab-cli/blob/master/docs/command_reference/inspection_comment/list/out.csv>`_
+`out.csv <https://github.com/kurusugawa-computer/annofab-cli/blob/main/docs/command_reference/inspection_comment/list/out.csv>`_
 
 JSON出力
 ----------------------------------------------
@@ -111,6 +116,6 @@ Usage Details
 
 See also
 =================================
-* `annofabcli inspection_comment list_with_json <../inspection_comment/list_with_json.html>`_     
+* `annofabcli inspection_comment list_all <../inspection_comment/list_all.html>`_     
 
 

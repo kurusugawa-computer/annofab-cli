@@ -11,7 +11,6 @@ import pandas
 from annofabapi.dataclass.input import InputData
 
 import annofabcli
-from annofabcli import AnnofabApiFacade
 from annofabcli.common.cli import (
     COMMAND_LINE_ERROR_STATUS_CODE,
     AbstractCommandLineInterface,
@@ -24,7 +23,7 @@ from annofabcli.common.cli import (
 from annofabcli.common.dataclasses import WaitOptions
 from annofabcli.common.download import DownloadingFile
 from annofabcli.common.enums import FormatArgument
-from annofabcli.common.facade import InputDataQuery, match_input_data_with_query
+from annofabcli.common.facade import AnnofabApiFacade, InputDataQuery, match_input_data_with_query
 
 logger = logging.getLogger(__name__)
 
@@ -78,6 +77,8 @@ class ListInputDataMergedTaskMain:
         self,
         input_data_list: List[Dict[str, Any]],
         task_list: List[Dict[str, Any]],
+        is_not_used_by_task: bool = False,
+        is_used_by_multiple_task: bool = False,
     ):
         new_task_list = self._to_task_list_based_input_data(task_list)
 
@@ -86,6 +87,15 @@ class ListInputDataMergedTaskMain:
         df_task = pandas.DataFrame(new_task_list)
 
         df_merged = pandas.merge(df_input_data, df_task, how="left", on="input_data_id")
+
+        assert not (is_not_used_by_task and is_used_by_multiple_task)
+        if is_not_used_by_task:
+            df_merged = df_merged[df_merged["task_id"].isna()]
+
+        if is_used_by_multiple_task:
+            tmp = df_merged["input_data_id"].value_counts()
+            input_data_ids = {input_data_id for (input_data_id, count) in tmp.items() if count >= 2}
+            df_merged = df_merged[df_merged["input_data_id"].isin(input_data_ids)]
 
         return df_merged
 
@@ -151,7 +161,7 @@ class ListInputDataMergedTask(AbstractCommandLineInterface):
         if project_id is not None:
             super().validate_project(project_id, None)
             wait_options = get_wait_options_from_args(get_json_from_args(args.wait_options), DEFAULT_WAIT_OPTIONS)
-            cache_dir = annofabcli.utils.get_cache_dir()
+            cache_dir = annofabcli.common.utils.get_cache_dir()
             self.download_json_files(project_id, cache_dir, args.latest, wait_options)
             task_json_path = cache_dir / "task.json"
             input_data_json_path = cache_dir / "input_data.json"
@@ -183,6 +193,8 @@ class ListInputDataMergedTask(AbstractCommandLineInterface):
         df_merged = main_obj.create_input_data_merged_task(
             input_data_list=filtered_input_data_list,
             task_list=task_list,
+            is_not_used_by_task=args.not_used_by_task,
+            is_used_by_multiple_task=args.used_by_multiple_task,
         )
 
         logger.debug(f"一覧の件数: {len(df_merged)}")
@@ -207,18 +219,46 @@ def parse_args(parser: argparse.ArgumentParser):
         "-p", "--project_id", type=str, help="対象のプロジェクトのproject_idを指定してください。" "指定すると、入力データ一覧ファイル、タスク一覧ファイルをダウンロードします。"
     )
 
+    parser.add_argument("-i", "--input_data_id", type=str, nargs="+", help="指定したinput_data_idに完全一致する入力データを絞り込みます。")
+    parser.add_argument(
+        "--input_data_name", type=str, nargs="+", help="指定したinput_data_nameに部分一致(大文字小文字区別しない）する入力データを絞り込みます。"
+    )
+
+    parser.add_argument(
+        "-iq",
+        "--input_data_query",
+        type=str,
+        help="入力データの検索クエリをJSON形式で指定します。"
+        " ``file://`` を先頭に付けると、JSON形式のファイルを指定できます。"
+        "指定できるキーは、``input_data_id`` , ``input_data_name`` , ``input_data_path`` です。",
+    )
+
+    used_by_task_group = parser.add_mutually_exclusive_group()
+
+    used_by_task_group.add_argument(
+        "--not_used_by_task",
+        action="store_true",
+        help="タスクから使われていない入力データのみ出力します。",
+    )
+
+    used_by_task_group.add_argument(
+        "--used_by_multiple_task",
+        action="store_true",
+        help="複数のタスクから使われている入力データのみ出力します。",
+    )
+
     parser.add_argument(
         "--input_data_json",
         type=str,
         help="入力データ情報が記載されたJSONファイルのパスを指定してください。JSONに記載された情報を元に出力します。"
-        "JSONファイルは ``$ annofabcli project download input_data`` コマンドで取得できます。",
+        "JSONファイルは ``$ annofabcli input_data download`` コマンドで取得できます。",
     )
 
     parser.add_argument(
         "--task_json",
         type=str,
         help="タスク情報が記載されたJSONファイルのパスを指定してください。JSONに記載された情報を元に出力します。"
-        "JSONファイルは ``$ annofabcli project download task`` コマンドで取得できます。",
+        "JSONファイルは ``$ annofabcli task download`` コマンドで取得できます。",
     )
 
     parser.add_argument(
@@ -235,20 +275,6 @@ def parse_args(parser: argparse.ArgumentParser):
         'デフォルトは ``{"interval":60, "max_tries":360}`` です。'
         "``interval`` :完了したかを問い合わせる間隔[秒], "
         "``max_tires`` :完了したかの問い合わせを最大何回行うか。",
-    )
-
-    parser.add_argument("-i", "--input_data_id", type=str, nargs="+", help="指定したinput_data_idに完全一致する入力データを絞り込みます。")
-    parser.add_argument(
-        "--input_data_name", type=str, nargs="+", help="指定したinput_data_nameに部分一致(大文字小文字区別しない）する入力データを絞り込みます。"
-    )
-
-    parser.add_argument(
-        "-iq",
-        "--input_data_query",
-        type=str,
-        help="入力データの検索クエリをJSON形式で指定します。"
-        " ``file://`` を先頭に付けると、JSON形式のファイルを指定できます。"
-        "指定できるキーは、``input_data_id`` , ``input_data_name`` , ``input_data_path`` です。",
     )
 
     argument_parser.add_format(

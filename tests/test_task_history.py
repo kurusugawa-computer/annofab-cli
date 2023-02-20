@@ -3,8 +3,12 @@ import os
 from pathlib import Path
 
 import annofabapi
+import pytest
 
 from annofabcli.__main__ import main
+
+# webapiにアクセスするテストモジュール
+pytestmark = pytest.mark.access_webapi
 
 out_dir = Path("./tests/out/task_history")
 data_dir = Path("./tests/data/task_history")
@@ -21,8 +25,19 @@ service = annofabapi.build()
 
 
 class TestCommandLine:
-    def test_list_task_history(self):
+    def test_download(self):
+        main(
+            [
+                "task_history",
+                "download",
+                "--project_id",
+                project_id,
+                "--output",
+                str(out_dir / "download.json"),
+            ]
+        )
 
+    def test_list_task_history(self):
         main(
             [
                 "task_history",
@@ -38,18 +53,18 @@ class TestCommandLine:
             ]
         )
 
-    def test_list_with_json(self):
+    def test_list_all(self):
         main(
             [
                 "task_history",
-                "list_with_json",
+                "list_all",
                 "--project_id",
                 project_id,
                 "--task_id",
                 "test1",
                 "test2",
                 "--output",
-                str(out_dir / "list_with_json-out.csv"),
+                str(out_dir / "list_all-out.csv"),
                 "--format",
                 "csv",
             ]

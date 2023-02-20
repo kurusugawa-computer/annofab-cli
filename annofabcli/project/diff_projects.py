@@ -16,9 +16,8 @@ from annofabapi.models import ProjectMemberRole
 
 import annofabcli
 import annofabcli.common.cli
-from annofabcli import AnnofabApiFacade
 from annofabcli.common.cli import AbstractCommandLineInterface, build_annofabapi_resource_and_login
-from annofabcli.common.facade import convert_annotation_specs_labels_v2_to_v1
+from annofabcli.common.facade import AnnofabApiFacade, convert_annotation_specs_labels_v2_to_v1
 
 DiffResult = Tuple[bool, str]
 """差分があるかどうかと、差分メッセージ"""
@@ -141,8 +140,8 @@ class DiffProjects(AbstractCommandLineInterface):
 
         diff_message = ""
 
-        duplicated_set1 = annofabcli.utils.duplicated_set(label_names1)
-        duplicated_set2 = annofabcli.utils.duplicated_set(label_names2)
+        duplicated_set1 = annofabcli.common.utils.duplicated_set(label_names1)
+        duplicated_set2 = annofabcli.common.utils.duplicated_set(label_names2)
 
         flag = False
         if len(duplicated_set1) > 0:
@@ -424,7 +423,7 @@ def main(args):
 def add_parser(subparsers: Optional[argparse._SubParsersAction] = None):
     subcommand_name = "diff"
     subcommand_help = "プロジェクト間の差分を表示する。"
-    description = "プロジェクト間の差分を表示する。" + "ただし、AnnoFabで生成されるIDや、変化する日時などは比較しない。"
+    description = "プロジェクト間の差分を表示する。" + "ただし、Annofabで生成されるIDや、変化する日時などは比較しない。"
     epilog = "オーナ、チェッカーロールのいずれかを持つユーザで実行してください。"
 
     parser = annofabcli.common.cli.add_parser(subparsers, subcommand_name, subcommand_help, description, epilog=epilog)

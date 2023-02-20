@@ -17,13 +17,17 @@ Available Commands
 
    cancel_acceptance
    change_operator
+   change_status_to_break
    complete
    copy
    delete
+   download
    list
-   list_with_json
    list_added_task_history
+   list_all
+   list_all_added_task_history
    put
+   put_by_count
    reject
    update_metadata
 

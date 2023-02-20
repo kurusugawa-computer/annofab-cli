@@ -93,7 +93,6 @@ class FilterAnnotation:
             zip_filepath_dict = create_outer_filepath_dict(zip_file.namelist())
             count = 0
             for parser in lazy_parse_simple_annotation_zip(annotation_zip):
-
                 if not match_query(parser.load_json(), filter_query):
                     continue
 
@@ -201,7 +200,6 @@ def main(args):
 
 
 def parse_args(parser: argparse.ArgumentParser):
-
     parser.add_argument("--annotation", type=Path, required=True, help="アノテーションzip、またはzipを展開したディレクトリ")
 
     parser.add_argument(

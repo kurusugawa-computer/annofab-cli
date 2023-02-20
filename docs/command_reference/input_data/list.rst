@@ -23,7 +23,7 @@ Examples
 .. warning::
 
     WebAPIの都合上、10,000件までしか出力できません。
-    10,000件以上の入力データを出力する場合は、`annofabcli input_data list_with_json <../input_data/list_with_json.html>`_ コマンドを使用してください。
+    10,000件以上の入力データを出力する場合は、`annofabcli input_data list_all <../input_data/list_all.html>`_ コマンドを使用してください。
 
 
 
@@ -79,7 +79,7 @@ CSV出力
 
     $ annofabcli input_data list --format csv --output out.csv
 
-`out.csv <https://github.com/kurusugawa-computer/annofab-cli/blob/master/docs/command_reference/input_data/list/out.csv>`_
+`out.csv <https://github.com/kurusugawa-computer/annofab-cli/blob/main/docs/command_reference/input_data/list/out.csv>`_
 
 JSON出力
 ----------------------------------------------
@@ -108,10 +108,11 @@ JSON出力
             "sign_required": false,
             "metadata": {},
             "system_metadata": {
-            "resized_resolution": null,
-            "original_resolution": {
-                "width": 128,
-                "height": 128
+                "resized_resolution": null,
+                "original_resolution": {
+                    "width": 128,
+                    "height": 128
+                }
             },
             "_type": "Image"
         },
@@ -148,6 +149,6 @@ Usage Details
 
 See also
 =================================
-* `annofabcli input_data list_with_json <../input_data/list_with_json.html>`_     
+* `annofabcli input_data list_all <../input_data/list_all.html>`_     
 
 

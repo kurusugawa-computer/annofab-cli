@@ -7,21 +7,20 @@ import annofabcli.stat_visualization.merge_visualization_dir
 import annofabcli.statistics.list_annotation_count
 import annofabcli.statistics.list_worktime
 import annofabcli.statistics.summarize_task_count
-import annofabcli.statistics.summarize_task_count_by_task_id
+import annofabcli.statistics.summarize_task_count_by_task_id_group
 import annofabcli.statistics.summarize_task_count_by_user
 import annofabcli.statistics.visualize_annotation_count
 import annofabcli.statistics.visualize_statistics
 
 
 def parse_args(parser: argparse.ArgumentParser):
-
     subparsers = parser.add_subparsers(dest="subcommand_name")
 
     # サブコマンドの定義
     annofabcli.statistics.list_annotation_count.add_parser(subparsers)
     annofabcli.statistics.list_worktime.add_parser(subparsers)
     annofabcli.statistics.summarize_task_count.add_parser(subparsers)
-    annofabcli.statistics.summarize_task_count_by_task_id.add_parser(subparsers)
+    annofabcli.statistics.summarize_task_count_by_task_id_group.add_parser(subparsers)
     annofabcli.statistics.summarize_task_count_by_user.add_parser(subparsers)
     annofabcli.statistics.visualize_statistics.add_parser(subparsers)
     annofabcli.statistics.visualize_annotation_count.add_parser(subparsers)

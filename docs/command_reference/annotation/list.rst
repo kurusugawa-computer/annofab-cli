@@ -30,9 +30,7 @@ Examples
     WebAPIの都合上、集計対象のアノテーションは10,000個までしか検索できません。
 
 
-``--annotation_query`` で、アノテーションを検索するする条件を指定することができます。。フォーマットは https://annofab.com/docs/api/#section/AnnotationQuery とほとんど同じです。
-さらに追加で ``label_name_en`` , ``additional_data_definition_name_en`` , ``choice_name_en`` キーも指定できます。``label_id`` または ``label_name_en`` のいずれかは必ず指定してください。
-
+``--annotation_query`` で、アノテーションを検索するする条件を指定することができます。
 ``--annotation_query`` のサンプルは、`Command line options <../../user_guide/command_line_options.html#annotation-query-aq>`_ を参照してください。
 
 
@@ -41,7 +39,7 @@ Examples
 .. code-block::
 
     $ annofabcli annotation list --project_id prj1 \
-    --annotation_query '{"label_name_en": "car"}' 
+    --annotation_query '{"label": "car"}' 
 
 
 
@@ -115,7 +113,7 @@ CSV出力
 
     $ annofabcli annotation list --format csv --output out.csv
 
-`out.csv <https://github.com/kurusugawa-computer/annofab-cli/blob/master/docs/command_reference/annotation/list/out.csv>`_
+`out.csv <https://github.com/kurusugawa-computer/annofab-cli/blob/main/docs/command_reference/annotation/list/out.csv>`_
 
 Usage Details
 =================================

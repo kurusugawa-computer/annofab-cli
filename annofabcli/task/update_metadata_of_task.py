@@ -12,7 +12,6 @@ from annofabapi.models import ProjectMemberRole
 
 import annofabcli
 import annofabcli.common.cli
-from annofabcli import AnnofabApiFacade
 from annofabcli.common.cli import (
     COMMAND_LINE_ERROR_STATUS_CODE,
     AbstractCommandLineInterface,
@@ -20,6 +19,7 @@ from annofabcli.common.cli import (
     ArgumentParser,
     build_annofabapi_resource_and_login,
 )
+from annofabcli.common.facade import AnnofabApiFacade
 
 logger = logging.getLogger(__name__)
 
@@ -53,7 +53,6 @@ class UpdateMetadataOfTaskMain(AbstractCommandLineWithConfirmInterface):
         task_index: Optional[int] = None,
     ) -> bool:
         logging_prefix = f"{task_index+1} 件目" if task_index is not None else ""
-
         task = self.service.wrapper.get_task_or_none(project_id, task_id)
         if task is None:
             logger.warning(f"{logging_prefix} タスク '{task_id}' は存在しないのでスキップします。")
@@ -74,14 +73,18 @@ class UpdateMetadataOfTaskMain(AbstractCommandLineWithConfirmInterface):
         logger.debug(f"{logging_prefix} タスク '{task_id}' のメタデータを更新しました。")
         return True
 
-    def set_metadata_to_task_wrapper(self, tpl: tuple[int, str], project_id: str, metadata: Dict[str, Any]):
+    def set_metadata_to_task_wrapper(self, tpl: tuple[int, str], project_id: str, metadata: Dict[str, Any]) -> bool:
         task_index, task_id = tpl
-        return self.set_metadata_to_task(
-            project_id,
-            task_id,
-            metadata=metadata,
-            task_index=task_index,
-        )
+        try:
+            return self.set_metadata_to_task(
+                project_id,
+                task_id,
+                metadata=metadata,
+                task_index=task_index,
+            )
+        except Exception:
+            logger.warning(f"タスク'{task_id}'のメタデータの更新に失敗しました。", exc_info=True)
+            return False
 
     def update_metadata_of_task(
         self,
@@ -111,14 +114,18 @@ class UpdateMetadataOfTaskMain(AbstractCommandLineWithConfirmInterface):
             else:
                 # 逐次処理
                 for task_index, task_id in enumerate(task_ids):
-                    result = self.set_metadata_to_task(
-                        project_id,
-                        task_id,
-                        metadata=metadata,
-                        task_index=task_index,
-                    )
-                    if result:
-                        success_count += 1
+                    try:
+                        result = self.set_metadata_to_task(
+                            project_id,
+                            task_id,
+                            metadata=metadata,
+                            task_index=task_index,
+                        )
+                        if result:
+                            success_count += 1
+                    except Exception:
+                        logger.warning(f"タスク'{task_id}'のメタデータの更新に失敗しました。", exc_info=True)
+                        continue
 
             logger.info(f"{success_count} / {len(task_ids)} 件のタスクのmetadataを変更しました。")
 
@@ -176,7 +183,7 @@ class UpdateMetadataOfTask(AbstractCommandLineInterface):
 
         if args.parallelism is not None and not args.yes:
             print(
-                f"{COMMON_MESSAGE} argument --parallelism: '--parallelism' を指定するときは、必ず  ``--yes``  を指定してください。",
+                f"{COMMON_MESSAGE} argument --parallelism: '--parallelism' を指定するときは、必ず  '--yes'  を指定してください。",
                 file=sys.stderr,
             )
             return False

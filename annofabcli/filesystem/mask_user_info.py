@@ -9,7 +9,6 @@ import pandas
 
 import annofabcli
 from annofabcli.common.cli import AbstractCommandLineWithoutWebapiInterface, ArgumentParser, get_list_from_args
-from annofabcli.common.exceptions import AnnofabCliException
 from annofabcli.common.utils import read_multiheader_csv
 
 logger = logging.getLogger(__name__)
@@ -107,7 +106,8 @@ def get_replaced_user_id_set_from_biography(
     else:
         filtered_df = df[df["biography"].map(lambda e: e not in not_masked_location_set)]
 
-    return set(filtered_df["user_id"])
+    # user_id列にnanが含まれている可能性があるので、それを除外する
+    return set(filtered_df[filtered_df["user_id"].notna()]["user_id"])
 
 
 def _get_header_row_count(df: pandas.DataFrame) -> int:
@@ -135,7 +135,18 @@ def _get_tuple_column(df: pandas.DataFrame, column: str) -> Union[str, Tuple]:
         return column
 
 
-def replace_by_columns(df, replacement_dict: Dict[str, str], main_column: Any, sub_columns: Optional[List[Any]] = None):
+def replace_by_columns(
+    df: pandas.DataFrame, replacement_dict: Dict[str, str], main_column: Any, sub_columns: Optional[List[Any]] = None
+):
+    """引数dfの中のユーザ情報を、指定した列名を元に置換します。
+
+    Args:
+        df (pandas.DataFrame): _description_
+        replacement_dict (Dict[str, str]): 置換対象のuser_idと置換後のuser_id(username)。key: 置換対象のuser_id, value: 置換後のuser_id
+        main_column: 置換対象の列名(ex: user_id)
+        sub_column: main_columnと同じ値で置換する列(ex: username)
+    """
+
     def _get_username(row, main_column: Any, sub_column: Any) -> str:
         if row[main_column] in replacement_dict:
             return replacement_dict[row[main_column]]
@@ -188,6 +199,9 @@ def get_replaced_biography_set(df: pandas.DataFrame, not_masked_location_set: Op
     biography_set = set(df["biography"])
     if numpy.nan in biography_set:
         biography_set.remove(numpy.nan)
+
+    if pandas.NA in biography_set:
+        biography_set.remove(pandas.NA)
 
     if not_masked_location_set is None:
         return biography_set
@@ -287,25 +301,27 @@ def create_masked_user_info_df(
     not_masked_user_id_set: Optional[Set[str]] = None,
 ) -> pandas.DataFrame:
     if "user_id" not in df:
-        raise AnnofabCliException(f"`user_id`列が存在しないため、ユーザ情報をマスクできません。")
+        logger.warning("引数`df`に`user_id`列が存在しないため、ユーザ情報をマスクできません。")
+        return df
 
+    df_output = df.copy()
     replacement_dict_by_user_id = create_replacement_dict_by_user_id(
         df, not_masked_biography_set=not_masked_biography_set, not_masked_user_id_set=not_masked_user_id_set
     )
 
-    if "biography" in df:
+    if "biography" in df_output:
         replacement_dict_by_biography = create_replacement_dict_by_biography(
-            df, not_masked_biography_set=not_masked_biography_set
+            df_output, not_masked_biography_set=not_masked_biography_set
         )
         replace_biography(
-            df,
+            df_output,
             replacement_dict_by_biography=replacement_dict_by_biography,
             replacement_dict_by_user_id=replacement_dict_by_user_id,
         )
 
-    replace_user_info_by_user_id(df, replacement_dict_by_user_id)
+    replace_user_info_by_user_id(df_output, replacement_dict_by_user_id)
 
-    return df
+    return df_output
 
 
 class MaskUserInfo(AbstractCommandLineWithoutWebapiInterface):

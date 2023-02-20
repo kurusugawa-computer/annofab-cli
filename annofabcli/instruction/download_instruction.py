@@ -6,16 +6,15 @@ from typing import Optional
 
 import annofabapi
 import pyquery
-from annofabapi.models import ProjectMemberRole
 
 import annofabcli
-from annofabcli import AnnofabApiFacade
 from annofabcli.common.cli import (
     COMMAND_LINE_ERROR_STATUS_CODE,
     AbstractCommandLineInterface,
     ArgumentParser,
     build_annofabapi_resource_and_login,
 )
+from annofabcli.common.facade import AnnofabApiFacade
 
 logger = logging.getLogger(__name__)
 
@@ -113,7 +112,7 @@ class DownloadInstructionMain:
             )
 
         output_html = output_dir / "index.html"
-        output_html.write_text(str_instruction_html)
+        output_html.write_text(str_instruction_html, encoding="utf-8")
         logger.debug(f"{output_html} をダウンロードしました。")
 
 
@@ -133,7 +132,7 @@ class DownloadInstruction(AbstractCommandLineInterface):
         args = self.args
 
         project_id = args.project_id
-        super().validate_project(project_id, project_member_roles=[ProjectMemberRole.OWNER])
+        super().validate_project(project_id)
 
         if args.before is not None:
             history_id = self.get_history_id_from_before_index(args.project_id, args.before)
@@ -199,7 +198,6 @@ def add_parser(subparsers: Optional[argparse._SubParsersAction] = None):
     subcommand_name = "download"
     subcommand_help = "作業ガイドをダウンロードします。"
     description = "作業ガイドをダウンロードします。HTMLファイルにはbodyタグの内部が記載されています。"
-    epilog = "オーナロールを持つユーザで実行してください。"
-    parser = annofabcli.common.cli.add_parser(subparsers, subcommand_name, subcommand_help, description, epilog=epilog)
+    parser = annofabcli.common.cli.add_parser(subparsers, subcommand_name, subcommand_help, description)
     parse_args(parser)
     return parser

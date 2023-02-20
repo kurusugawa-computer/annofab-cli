@@ -3,11 +3,10 @@ import logging
 from typing import Optional
 
 import annofabapi
-from annofabapi.models import JobStatus, ProjectJobType
+from annofabapi.models import ProjectJobType
 
 import annofabcli
 import annofabcli.common.cli
-from annofabcli import AnnofabApiFacade
 from annofabcli.common.cli import (
     AbstractCommandLineInterface,
     ArgumentParser,
@@ -16,6 +15,7 @@ from annofabcli.common.cli import (
     get_wait_options_from_args,
 )
 from annofabcli.common.dataclasses import WaitOptions
+from annofabcli.common.facade import AnnofabApiFacade
 
 logger = logging.getLogger(__name__)
 
@@ -25,31 +25,21 @@ class WaitJobMain:
         self.service = service
         self.facade = AnnofabApiFacade(service)
 
-    def is_job_progress(self, project_id: str, job_type: ProjectJobType) -> bool:
-        job_list = self.service.api.get_project_job(project_id, query_params={"type": job_type.value})[0]["list"]
-        if len(job_list) > 0:
-            if job_list[0]["job_status"] == JobStatus.PROGRESS.value:
-                return True
-
-        return False
-
-    def wait_job(self, project_id: str, job_type: ProjectJobType, wait_options: WaitOptions):
-        if not self.is_job_progress(project_id, job_type):
-            logger.info(f"job_type='{job_type.value}'の実行中のジョブはないので、終了します。")
-            return
-
+    def wait_job(
+        self, project_id: str, job_type: ProjectJobType, wait_options: WaitOptions, job_id: Optional[str] = None
+    ):
         MAX_WAIT_MINUTE = wait_options.max_tries * wait_options.interval / 60
-        logger.info(f"ダウンロード対象の最新化処理が完了するまで、最大{MAX_WAIT_MINUTE}分間待ちます。")
-        result = self.service.wrapper.wait_for_completion(
+        logger.info(f"job_type='{job_type.value}', job_id='{job_id}' :: ジョブが完了するまで、最大{MAX_WAIT_MINUTE}分間待ちます。")
+        result = self.service.wrapper.wait_until_job_finished(
             project_id,
             job_type=job_type,
+            job_id=job_id,
             job_access_interval=wait_options.interval,
             max_job_access=wait_options.max_tries,
         )
-        if result:
-            logger.info(f"job_type='{job_type.value}'のジョブが終了しました。")
-        else:
-            logger.info(f"job_type='{job_type.value}'のジョブが失敗したか、または {MAX_WAIT_MINUTE} 分待っても処理が終了しませんでした。")
+        if result is None:
+            logger.warning(f"job_type='{job_type.value}', job_id='{job_id}' :: ジョブは存在しませんでした。")
+            return
 
 
 class WaitJob(AbstractCommandLineInterface):
@@ -62,7 +52,7 @@ class WaitJob(AbstractCommandLineInterface):
         wait_options = get_wait_options_from_args(get_json_from_args(args.wait_options), DEFAULT_WAIT_OPTIONS)
 
         main_obj = WaitJobMain(self.service)
-        main_obj.wait_job(project_id, job_type=job_type, wait_options=wait_options)
+        main_obj.wait_job(project_id, job_type=job_type, job_id=args.job_id, wait_options=wait_options)
 
 
 def main(args):
@@ -78,6 +68,8 @@ def parse_args(parser: argparse.ArgumentParser):
 
     job_choices = [e.value for e in ProjectJobType]
     parser.add_argument("--job_type", type=str, choices=job_choices, required=True, help="ジョブタイプを指定します。")
+
+    parser.add_argument("--job_id", type=str, help="ジョブIDを指定します。未指定の場合は、最新のジョブが終了するまで待ちます。")
 
     parser.add_argument(
         "--wait_options",

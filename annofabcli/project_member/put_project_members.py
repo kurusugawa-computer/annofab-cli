@@ -12,8 +12,8 @@ from annofabapi.models import ProjectMemberRole, ProjectMemberStatus
 from dataclasses_json import DataClassJsonMixin
 
 import annofabcli
-from annofabcli import AnnofabApiFacade
 from annofabcli.common.cli import AbstractCommandLineInterface, ArgumentParser, build_annofabapi_resource_and_login
+from annofabcli.common.facade import AnnofabApiFacade
 
 logger = logging.getLogger(__name__)
 
@@ -166,6 +166,8 @@ class PutProjectMembers(AbstractCommandLineInterface):
             sep=",",
             header=None,
             names=("user_id", "member_role", "sampling_inspection_rate", "sampling_acceptance_rate"),
+            # IDは必ず文字列として読み込むようにする
+            dtype={"user_id": str},
         ).replace({numpy.nan: None})
         members = [create_member(e) for e in df.itertuples()]
         return members

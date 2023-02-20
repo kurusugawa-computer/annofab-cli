@@ -3,11 +3,18 @@ import os
 from pathlib import Path
 
 import annofabapi
+import pytest
 
 from annofabcli.__main__ import main
 
+# webapiにアクセスするテストモジュール
+pytestmark = pytest.mark.access_webapi
+
+
 out_dir = Path("./tests/out/statistics")
 data_dir = Path("./tests/data/statistics")
+out_dir.mkdir(exist_ok=True, parents=True)
+
 
 # プロジェクトトップに移動する
 os.chdir(os.path.dirname(os.path.abspath(__file__)) + "/../")
@@ -21,32 +28,36 @@ service = annofabapi.build()
 
 class TestCommandLine:
     def test_list_annotation_count_by_task(self):
-        output_dir = str(out_dir / "list_annotation_count_by_task-out")
         main(
             [
                 "statistics",
                 "list_annotation_count",
                 "--project_id",
                 project_id,
-                "--output_dir",
-                output_dir,
+                "--output",
+                str(out_dir / "list_annotation_count_by_task-out.json"),
                 "--group_by",
                 "task_id",
+                "--format",
+                "pretty_json",
             ]
         )
 
     def test_list_annotation_count_by_input_data(self):
-        output_dir = str(out_dir / "list_annotation_count_by_input_data-out")
         main(
             [
                 "statistics",
                 "list_annotation_count",
                 "--project_id",
                 project_id,
-                "--output_dir",
-                output_dir,
+                "--output",
+                str(out_dir / "list_annotation_count_by_input_data-out.csv"),
                 "--group_by",
-                "task_id",
+                "input_data_id",
+                "--type",
+                "attribute",
+                "--format",
+                "csv",
             ]
         )
 
@@ -62,15 +73,17 @@ class TestCommandLine:
             ]
         )
 
-    def test_summarize_task_count_by_task_id(self):
+    def test_summarize_task_count_by_task_id_group(self):
         main(
             [
                 "statistics",
-                "summarize_task_count_by_task_id",
+                "summarize_task_count_by_task_id_group",
                 "--project_id",
                 project_id,
+                "--task_id_delimiter",
+                "_",
                 "--output",
-                str(out_dir / "summarize_task_count_by_task_id.csv"),
+                str(out_dir / "summarize_task_count_by_task_id_group.csv"),
             ]
         )
 
@@ -112,23 +125,3 @@ class TestCommandLine:
                 str(out_dir / "list-worktime-out.csv"),
             ]
         )
-
-
-# class TestListSubmittedTaskCountMain:
-#     main_obj = None
-#
-#     @classmethod
-#     def setup_class(cls):
-#         cls.main_obj = ListSubmittedTaskCountMain(service)
-#
-#     def test_create_labor_df(self):
-#         df = self.main_obj.create_labor_df(project_id)
-#         df.to_csv("labor_df.csv")
-#
-#     def test_create_account_statistics_df(self):
-#         df = self.main_obj.create_account_statistics_df(project_id)
-#         df.to_csv("account_statistics.csv")
-#
-#     def test_create_user_df(self):
-#         df = self.main_obj.create_user_df(project_id)
-#         df.to_csv("user.csv")

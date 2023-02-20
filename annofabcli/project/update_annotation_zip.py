@@ -10,7 +10,6 @@ from annofabapi.models import JobStatus, ProjectJobType, ProjectMemberRole
 
 import annofabcli
 import annofabcli.common.cli
-from annofabcli import AnnofabApiFacade
 from annofabcli.common.cli import (
     AbstractCommandLineInterface,
     build_annofabapi_resource_and_login,
@@ -18,6 +17,7 @@ from annofabcli.common.cli import (
     get_wait_options_from_args,
 )
 from annofabcli.common.dataclasses import WaitOptions
+from annofabcli.common.facade import AnnofabApiFacade
 
 logger = logging.getLogger(__name__)
 
@@ -229,10 +229,9 @@ def parse_args(parser: argparse.ArgumentParser):
 
 def add_parser(subparsers: Optional[argparse._SubParsersAction] = None):
     subcommand_name = "update_annotation_zip"
-    subcommand_help = "アノテーションzipを更新します。"
-    description = "アノテーションzipを更新します。"
+    subcommand_help = "複数のプロジェクトのアノテーションzipを更新します。"
     epilog = "対象プロジェクトに対して、オーナまたはアノテーションユーザロールを持つユーザで実行してください。"
 
-    parser = annofabcli.common.cli.add_parser(subparsers, subcommand_name, subcommand_help, description, epilog=epilog)
+    parser = annofabcli.common.cli.add_parser(subparsers, subcommand_name, subcommand_help, epilog=epilog)
     parse_args(parser)
     return parser

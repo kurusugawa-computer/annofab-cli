@@ -1,6 +1,6 @@
 [tool.poetry]
 name = "annofabcli"
-version = "1.56.3"
+version = "1.74.4"
 description = "Utility Command Line Interface for AnnoFab"
 authors = ["yuji38kwmt"]
 license = "MIT"
@@ -14,16 +14,16 @@ classifiers = [
         "Environment :: Console",
         "Programming Language :: Python",
         "Programming Language :: Python :: 3 :: Only",
-        "Programming Language :: Python :: 3.7",
         "Programming Language :: Python :: 3.8",
         "Programming Language :: Python :: 3.9",
+        "Programming Language :: Python :: 3.10",        
         "Topic :: Utilities",
         "Operating System :: OS Independent",
 ]
 
 
 [tool.poetry.dependencies]
-python = "^3.7.1"
+python = "^3.8"
 requests = "*"
 pillow = "*"
 pyyaml = "*"
@@ -32,10 +32,11 @@ more-itertools = "*"
 jmespath = "*"
 pyquery = "*"
 isodate = "*"
-annofabapi = ">=0.52.4"
+annofabapi = ">=0.67.1"
 python-datauri = "*"
 pandas = "*"
-bokeh = "^2.4"
+bokeh = "^3.0"
+Pillow = "*"
 
 
 [tool.poetry.dev-dependencies]
@@ -43,11 +44,12 @@ bokeh = "^2.4"
 pytest = "*"
 pytest-xdist = "*"
 pytest-cov = "*"
+types-pytz = "*"
 
 # format library
 isort = "*"
 autoflake = "*"
-black = {version = "^21.12b0", allow-prereleases = true}
+black = "*"
 
 # lint library
 flake8 = "*"
@@ -55,8 +57,10 @@ mypy = "*"
 pylint = "*"
 
 # Document library
-sphinx = "*"
-pydata-sphinx-theme = "*"
+# sphinx 4.4.0, pydata-sphinx-theme 0.8.0 では、 テーブルの幅が大きいときに、横スクロールバーが表示されないので、バージョンを固定する
+# 例: `command_reference/statistics/summarize_task_count_by_task_id_group.rst`
+sphinx = "~4.2"
+pydata-sphinx-theme = "~0.6"
 sphinx-last-updated-by-git = "*"
 sphinx-argparse = "*"
 

@@ -1,10 +1,11 @@
 import argparse
 from typing import Optional
 
-import annofabcli
 import annofabcli.annotation.change_annotation_attributes
+import annofabcli.annotation.change_annotation_properties
 import annofabcli.annotation.copy_annotation
 import annofabcli.annotation.delete_annotation
+import annofabcli.annotation.download_annotation_zip
 import annofabcli.annotation.dump_annotation
 import annofabcli.annotation.import_annotation
 import annofabcli.annotation.list_annotation
@@ -14,13 +15,14 @@ import annofabcli.common.cli
 
 
 def parse_args(parser: argparse.ArgumentParser):
-
     subparsers = parser.add_subparsers(dest="subcommand_name")
 
     # サブコマンドの定義
     annofabcli.annotation.change_annotation_attributes.add_parser(subparsers)
+    annofabcli.annotation.change_annotation_properties.add_parser(subparsers)
     annofabcli.annotation.copy_annotation.add_parser(subparsers)
     annofabcli.annotation.delete_annotation.add_parser(subparsers)
+    annofabcli.annotation.download_annotation_zip.add_parser(subparsers)
     annofabcli.annotation.dump_annotation.add_parser(subparsers)
     annofabcli.annotation.import_annotation.add_parser(subparsers)
     annofabcli.annotation.list_annotation.add_parser(subparsers)

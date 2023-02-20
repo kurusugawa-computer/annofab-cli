@@ -3,8 +3,13 @@ import os
 from pathlib import Path
 
 import annofabapi
+import pytest
 
 from annofabcli.__main__ import main
+
+# webapiにアクセスするテストモジュール
+pytestmark = pytest.mark.access_webapi
+
 
 out_dir = Path("./tests/out/project_member")
 data_dir = Path("./tests/data/project_member")

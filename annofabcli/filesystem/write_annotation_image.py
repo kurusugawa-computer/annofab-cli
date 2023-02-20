@@ -53,7 +53,7 @@ class WriteAnnotationImage:
 
     @staticmethod
     def get_input_data_dict(input_data_json: Path) -> Dict[str, InputData]:
-        with input_data_json.open() as f:
+        with input_data_json.open(encoding="utf-8") as f:
             logger.debug(f"{input_data_json} を読み込み中")
             input_data_list = json.load(f)
             logger.debug(f"{len(input_data_list)} 件をDictに変換中")
@@ -130,7 +130,7 @@ def parse_args(parser: argparse.ArgumentParser):
         type=Path,
         help="入力データ情報が記載されたJSONファイルのパスを指定してください。"
         "入力データのプロパティ ``system_metadata.original_resolution`` を参照して画像サイズを決めます。"
-        "JSONファイルは ``$ annofabcli project download input_data`` コマンドで取得できます。",
+        "JSONファイルは ``$ annofabcli input_data download`` コマンドで取得できます。",
     )
 
     parser.add_argument(
@@ -198,9 +198,11 @@ def parse_args(parser: argparse.ArgumentParser):
 def add_parser(subparsers: Optional[argparse._SubParsersAction] = None):
     subcommand_name = "write_annotation_image"
 
-    subcommand_help = "アノテーションzipを展開したディレクトリから、アノテーションの画像（Semantic Segmentation用）を生成する。"
+    subcommand_help = "[DEPRECATED] アノテーションzipを展開したディレクトリから、アノテーションの画像（Semantic Segmentation用）を生成します。"
 
-    description = "アノテーションzipを展開したディレクトリから、アノテーションの画像（Semantic Segmentation用）を生成する。" + "矩形、ポリゴン、塗りつぶし、塗りつぶしv2が対象。"
+    description = (
+        "[DEPRECATED] アノテーションzipを展開したディレクトリから、アノテーションの画像（Semantic Segmentation用）を生成する。" + "矩形、ポリゴン、塗りつぶし、塗りつぶしv2が対象。"
+    )
 
     parser = annofabcli.common.cli.add_parser(subparsers, subcommand_name, subcommand_help, description)
     parse_args(parser)

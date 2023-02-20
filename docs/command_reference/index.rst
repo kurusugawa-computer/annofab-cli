@@ -10,12 +10,15 @@ Command Reference
 
    annotation/index
    annotation_specs/index
+   comment/index
    experimental/index
    filesystem/index
    input_data/index
    inspection_comment/index
    instruction/index
    job/index
+   my_account/index
+   organization/index
    organization_member/index
    project/index
    project_member/index

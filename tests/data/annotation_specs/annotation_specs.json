@@ -1,0 +1,347 @@
+{
+    "labels": [
+      {
+        "label_id": "car_label_id",
+        "label_name": {
+          "messages": [
+            {
+              "lang": "ja-JP",
+              "message": "car"
+            },
+            {
+              "lang": "en-US",
+              "message": "car"
+            }
+          ],
+          "default_lang": "ja-JP"
+        },
+        "keybind": [],
+        "annotation_type": "bounding_box",
+        "bounding_box_metadata": null,
+        "segmentation_metadata": null,
+        "additional_data_definitions": [
+          "54fa5e97-6f88-49a4-aeb0-a91a15d11528",
+          "15235360-4f46-42ac-927d-0e046bf52ddd",
+          "71620647-98cf-48ad-b43b-4af425a24f32",
+          "f12a0b59-dfce-4241-bb87-4b2c0259fc6f"
+        ],
+        "color": {
+          "red": 255,
+          "green": 0,
+          "blue": 0
+        },
+        "annotation_editor_feature": {
+          "append": false,
+          "erase": false,
+          "freehand": false,
+          "rectangle_fill": false,
+          "polygon_fill": false,
+          "fill_near": false
+        },
+        "allow_out_of_image_bounds": true,
+        "metadata": {}
+      },
+      {
+        "label_id": "40f7796b-3722-4eed-9c0c-04a27f9165d2",
+        "label_name": {
+          "messages": [
+            {
+              "lang": "ja-JP",
+              "message": "bike"
+            },
+            {
+              "lang": "en-US",
+              "message": "bike"
+            }
+          ],
+          "default_lang": "ja-JP"
+        },
+        "keybind": [],
+        "annotation_type": "bounding_box",
+        "bounding_box_metadata": null,
+        "segmentation_metadata": null,
+        "additional_data_definitions": [],
+        "color": {
+          "red": 67,
+          "green": 1,
+          "blue": 140
+        },
+        "annotation_editor_feature": {
+          "append": false,
+          "erase": false,
+          "freehand": false,
+          "rectangle_fill": false,
+          "polygon_fill": false,
+          "fill_near": false
+        },
+        "allow_out_of_image_bounds": true,
+        "metadata": {}
+      },
+      {
+        "label_id": "22b5189b-af7b-4d9c-83a5-b92f122170ec",
+        "label_name": {
+          "messages": [
+            {
+              "lang": "ja-JP",
+              "message": "bus"
+            },
+            {
+              "lang": "en-US",
+              "message": "bus"
+            }
+          ],
+          "default_lang": "ja-JP"
+        },
+        "keybind": [],
+        "annotation_type": "bounding_box",
+        "bounding_box_metadata": null,
+        "segmentation_metadata": null,
+        "additional_data_definitions": [],
+        "color": {
+          "red": 93,
+          "green": 42,
+          "blue": 123
+        },
+        "annotation_editor_feature": {
+          "append": false,
+          "erase": false,
+          "freehand": false,
+          "rectangle_fill": false,
+          "polygon_fill": false,
+          "fill_near": false
+        },
+        "allow_out_of_image_bounds": true,
+        "metadata": {}
+      }
+    ],
+    "additionals": [
+      {
+        "additional_data_definition_id": "54fa5e97-6f88-49a4-aeb0-a91a15d11528",
+        "read_only": false,
+        "name": {
+          "messages": [
+            {
+              "lang": "ja-JP",
+              "message": "comment"
+            },
+            {
+              "lang": "en-US",
+              "message": "comment"
+            }
+          ],
+          "default_lang": "ja-JP"
+        },
+        "keybind": [],
+        "type": "comment",
+        "default": "",
+        "choices": [],
+        "metadata": {}
+      },
+      {
+        "additional_data_definition_id": "15235360-4f46-42ac-927d-0e046bf52ddd",
+        "read_only": false,
+        "name": {
+          "messages": [
+            {
+              "lang": "ja-JP",
+              "message": "link"
+            },
+            {
+              "lang": "en-US",
+              "message": "link"
+            }
+          ],
+          "default_lang": "ja-JP"
+        },
+        "keybind": [],
+        "type": "link",
+        "default": "",
+        "choices": [],
+        "metadata": {}
+      },
+      {
+        "additional_data_definition_id": "71620647-98cf-48ad-b43b-4af425a24f32",
+        "read_only": false,
+        "name": {
+          "messages": [
+            {
+              "lang": "ja-JP",
+              "message": "type"
+            },
+            {
+              "lang": "en-US",
+              "message": "type"
+            }
+          ],
+          "default_lang": "ja-JP"
+        },
+        "keybind": [],
+        "type": "select",
+        "default": "",
+        "choices": [
+          {
+            "choice_id": "08ec927c-18e6-4bba-837a-b16de7061580",
+            "name": {
+              "messages": [
+                {
+                  "lang": "ja-JP",
+                  "message": "large"
+                },
+                {
+                  "lang": "en-US",
+                  "message": "large"
+                }
+              ],
+              "default_lang": "ja-JP"
+            },
+            "keybind": []
+          },
+          {
+            "choice_id": "b690fa1a-7b3d-4181-95d8-f5c75927c3fc",
+            "name": {
+              "messages": [
+                {
+                  "lang": "ja-JP",
+                  "message": "medium"
+                },
+                {
+                  "lang": "en-US",
+                  "message": "medium"
+                }
+              ],
+              "default_lang": "ja-JP"
+            },
+            "keybind": []
+          },
+          {
+            "choice_id": "74691a87-7962-4fa9-ba52-7cc466ecd982",
+            "name": {
+              "messages": [
+                {
+                  "lang": "ja-JP",
+                  "message": "small"
+                },
+                {
+                  "lang": "en-US",
+                  "message": "small"
+                }
+              ],
+              "default_lang": "ja-JP"
+            },
+            "keybind": []
+          }
+        ],
+        "metadata": {}
+      },
+      {
+        "additional_data_definition_id": "f12a0b59-dfce-4241-bb87-4b2c0259fc6f",
+        "read_only": false,
+        "name": {
+          "messages": [
+            {
+              "lang": "ja-JP",
+              "message": "unclear"
+            },
+            {
+              "lang": "en-US",
+              "message": "unclear"
+            }
+          ],
+          "default_lang": "ja-JP"
+        },
+        "keybind": [],
+        "type": "flag",
+        "default": "",
+        "choices": [],
+        "metadata": {}
+      }
+    ],
+    "restrictions": [
+      {
+        "additional_data_definition_id": "54fa5e97-6f88-49a4-aeb0-a91a15d11528",
+        "condition": {
+          "enable": false,
+          "_type": "CanInput"
+        }
+      },
+      {
+        "additional_data_definition_id": "54fa5e97-6f88-49a4-aeb0-a91a15d11528",
+        "condition": {
+          "value": "",
+          "_type": "NotEquals"
+        }
+      },
+      {
+        "additional_data_definition_id": "54fa5e97-6f88-49a4-aeb0-a91a15d11528",
+        "condition": {
+          "value": "foo",
+          "_type": "Equals"
+        }
+      },
+      {
+        "additional_data_definition_id": "54fa5e97-6f88-49a4-aeb0-a91a15d11528",
+        "condition": {
+          "value": "bar",
+          "_type": "NotEquals"
+        }
+      },
+      {
+        "additional_data_definition_id": "54fa5e97-6f88-49a4-aeb0-a91a15d11528",
+        "condition": {
+          "value": "[abc]+",
+          "_type": "Matches"
+        }
+      },
+      {
+        "additional_data_definition_id": "54fa5e97-6f88-49a4-aeb0-a91a15d11528",
+        "condition": {
+          "value": "[0-9]+",
+          "_type": "NotMatches"
+        }
+      },
+      {
+          "additional_data_definition_id": "71620647-98cf-48ad-b43b-4af425a24f32",
+          "condition": {
+            "value": "b690fa1a-7b3d-4181-95d8-f5c75927c3fc",
+            "_type": "Equals"
+          }
+      },
+      {
+        "additional_data_definition_id": "15235360-4f46-42ac-927d-0e046bf52ddd",
+        "condition": {
+          "labels": [
+            "40f7796b-3722-4eed-9c0c-04a27f9165d2",
+            "22b5189b-af7b-4d9c-83a5-b92f122170ec"
+          ],
+          "_type": "HasLabel"
+        }
+      },
+      {
+        "additional_data_definition_id": "54fa5e97-6f88-49a4-aeb0-a91a15d11528",
+        "condition": {
+          "premise": {
+            "additional_data_definition_id": "f12a0b59-dfce-4241-bb87-4b2c0259fc6f",
+            "condition": {
+              "value": "true",
+              "_type": "Equals"
+            }
+          },
+          "condition": {
+            "value": "[0-9]",
+            "_type": "Matches"
+          },
+          "_type": "Imply"
+        }
+      }
+    ],
+    "inspection_phrases": [],
+    "comment": null,
+    "auto_marking": false,
+    "format_version": "2.1.0",
+    "last_updated_datetime": "2022-03-09T15:48:53.587+09:00",
+    "option": {
+      "can_overwrap": true
+    },
+    "metadata": {}
+  }
+  

@@ -150,7 +150,7 @@ def write_annotation_image(
 ):
     """
     JSONファイルに記載されているアノテーション情報を、画像化する。
-    JSONファイルは、AnnoFabからダウンロードしたアノテーションzipに含まれるファイルを想定している。
+    JSONファイルは、Annofabからダウンロードしたアノテーションzipに含まれるファイルを想定している。
 
     Args:
         parser: parser: Simple Annotationのparser
@@ -197,11 +197,11 @@ def write_annotation_images_from_path(
     is_target_parser_func: Optional[IsParserFunc] = None,
 ) -> bool:
     """
-    AnnoFabからダウンロードしたアノテーションzipファイル、またはそのzipを展開したディレクトリから、アノテーション情報を画像化します。
+    Annofabからダウンロードしたアノテーションzipファイル、またはそのzipを展開したディレクトリから、アノテーション情報を画像化します。
     `image_size` or `input_data_dict` のいずれかを指定する必要があります。
 
     Args:
-        annotation_path: AnnoFabからダウンロードしたアノテーションzipファイル、またはそのzipを展開したディレクトリのパス
+        annotation_path: Annofabからダウンロードしたアノテーションzipファイル、またはそのzipを展開したディレクトリのパス
         label_color_dict: label_nameとRGBを対応付けたdict. Key:label_name, Value: Tuple(R,G,B)
         output_dir_path: 画像の出力先のディレクトリのパス
         image_size: 画像のサイズ. Tuple[width, height]

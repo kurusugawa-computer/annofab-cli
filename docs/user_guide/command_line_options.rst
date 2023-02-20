@@ -117,9 +117,9 @@ Command line options
 
 特に指定がない限り、以下のキーが利用可能です。
 
-* ``input_data_id`` : 指定した値をinput_data_idに含むタスク（大文字小文字を区別しない）
-* ``input_data_name`` : 指定した値を入力データ名に含むタスク（大文字小文字を区別しない）
-* ``input_data_path`` : 指定した値を入力データパスに含むタスク（大文字小文字を区別する）
+* ``input_data_id`` : 指定した値をinput_data_idに含む入力データ（大文字小文字を区別しない）
+* ``input_data_name`` : 指定した値を入力データ名に含む入力データ（大文字小文字を区別しない）
+* ``input_data_path`` : 指定した値を入力データパスに含む入力データ（大文字小文字を区別する）
 
 
 .. code-block::
@@ -138,51 +138,27 @@ Command line options
 ------------------------------------
 アノテーションを絞り込む条件をJSON形式で指定します。
 
-特に指定がない限り、以下のキーが利用可能です。
+以下のキーが利用可能です。
 
-* ``label_name_en`` : 指定したラベル名(英語)に一致するアノテーション
-* ``label_id`` : 指定したlabel_idに一致するアノテーション
+* ``label`` : 指定したラベル名(英語)に一致するアノテーション（必須）
 * ``attributes`` : 指定した属性の検索条件に一致するアノテーション
-
-  * ``additional_data_definition_name_en`` : 属性名
-  * ``additional_data_definition_id`` : 属性ID
-  * ``flag`` : 真偽値で属性値（チェックボックスの値）
-  * ``integer`` : 整数の属性値
-  * ``choice`` : 選択された項目のchoice_id
-  * ``choice_name_en`` : 選択された項目の英語名（ドロップダウン、ラジオボタンの値）
-  * ``comment`` : 文字列の属性値（自由記述、アノテーションリンク、トラッキングIDの値）
-    
-
-.. note::
-
-    ``label_id`` または ``label_name_en`` のいずれかは必ず指定する必要があります。
 
 .. code-block::
 
     # ラベル名（英語)が"bike"のアノテーション
-    {"label_name_en": "bike"}
+    {"label": "bike"}
 
 
     # ラベル名（英語)が"car"で、属性(英語名)"occluded"の値がtrueである（チェックボックス）アノテーション
-    {"label_name_en": "car", "attributes":[{"additional_data_definition_name_en": "occluded", "flag": true}]}
+    {"label": "car", "attributes":{"occluded":true}}
 
 
-    # ラベル名（英語)が"car"で、属性(英語名)"count"の値が"1"であるアノテーション
-    {"label_name_en": "car", "attributes":[{"additional_data_definition_name_en": "count", "integer": 1}]}
+    # ラベル名（英語)が"car"で、属性(英語名)"count"の値が"1" AND 属性(英語名)"note"の値が"comment"であるアノテーション
+    {"label": "car", "attributes":{"count":1, "note":"comment"}}
 
 
-    # ラベル名（英語)が"car"で、属性(英語名)"note"の値が"test"であるアノテーション
-    {"label_name_en": "car", "attributes":[{"additional_data_definition_name_en": "note", "comment": "test"}]}
-
-
-    # ラベル名（英語)が"car"で、属性(英語名)"weather"の値が"sunny"である（ラジオボタンまたはドロップダウン）アノテーション
-    {"label_name_en": "car", "attributes":[{"additional_data_definition_name_en": "weather", "choice_name_en": "sunny"}]}
-
-
-    # ラベル名（英語)が"car"で、属性(英語名)"occluded"の値がtrue AND 属性(英語名)"weather"の値が"sunny"であるアノテーション
-    {"label_name_en": "car", "attributes":[{"additional_data_definition_name_en": "occluded", "flag": true}, 
-     {"additional_data_definition_name_en": "weather", "choice_name_en": "sunny"}]}
-
+    # ラベル名（英語)が"car"で、属性(英語名)"weather"の選択肢名(英語)が"sunny"であるアノテーション
+    {"label": "car", "attributes":{"weather": "sunny"}}
 
 
 パスを指定するオプション

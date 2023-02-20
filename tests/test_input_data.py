@@ -1,4 +1,5 @@
 import configparser
+import datetime
 import json
 import os
 from pathlib import Path
@@ -7,6 +8,9 @@ import annofabapi
 import pytest
 
 from annofabcli.__main__ import main
+
+# webapiにアクセスするテストモジュール
+pytestmark = pytest.mark.access_webapi
 
 # プロジェクトトップに移動する
 os.chdir(os.path.dirname(os.path.abspath(__file__)) + "/../")
@@ -22,193 +26,10 @@ inifile.read("./pytest.ini", "UTF-8")
 annofab_config = dict(inifile.items("annofab"))
 
 project_id = annofab_config["project_id"]
-task_id = annofab_config["task_id"]
 annofab_service = annofabapi.build()
-
-task, _ = annofab_service.api.get_task(project_id, task_id)
-input_data_id = task["input_data_id_list"][0]
-
-
-class TestCommandLine__delete:
-    def test_delete_input_data(self):
-        main(["input_data", "delete", "--project_id", project_id, "--input_data_id", "foo", "--yes"])
-
-
-class TestCommandLine__list:
-    def test_list_input_data(self):
-        out_file = str(out_dir / "input_data.json")
-        main(
-            [
-                "input_data",
-                "list",
-                "--project_id",
-                project_id,
-                "--input_data_query",
-                '{"input_data_name": "abcdefg"}',
-                "--add_details",
-                "--output",
-                out_file,
-            ]
-        )
-
-
-class TestCommandLine__list_merged_task:
-    def test_list_input_data_merged_task(self):
-        out_file = str(out_dir / "input_data.csv")
-        main(
-            [
-                "input_data",
-                "list_merged_task",
-                "--project_id",
-                project_id,
-                "--output",
-                out_file,
-            ]
-        )
-
-
-class TestCommandLine__list_with_json:
-    def test_list_input_data_with_json(self):
-        out_file = str(out_dir / "input_data.csv")
-        main(
-            [
-                "input_data",
-                "list_with_json",
-                "--project_id",
-                project_id,
-                "--input_data_query",
-                '{"input_data_name": "abcdefg"}',
-                "--input_data_id",
-                "test1",
-                "test2",
-                "--output",
-                out_file,
-            ]
-        )
 
 
 class TestCommandLine__put:
-    def test_put_input_data__with_csv(self):
-        csv_file = str(data_dir / "input_data2.csv")
-        main(
-            [
-                "input_data",
-                "put",
-                "--project_id",
-                project_id,
-                "--csv",
-                csv_file,
-                "--overwrite",
-                "--yes",
-                "--parallelism",
-                "2",
-            ]
-        )
-
-    def test_put_input_data__with_csv_duplicated(self):
-        csv_file = str(data_dir / "input_data_duplicated.csv")
-        main(
-            [
-                "input_data",
-                "put",
-                "--project_id",
-                project_id,
-                "--csv",
-                csv_file,
-                "--overwrite",
-                "--yes",
-                "--parallelism",
-                "2",
-                "--allow_duplicated_input_data",
-            ]
-        )
-
-    def test_put_input_data__with_csv_duplicated_name(self):
-        csv_file = str(data_dir / "input_data_duplicated_name.csv")
-        with pytest.raises(Exception):
-            main(
-                [
-                    "input_data",
-                    "put",
-                    "--project_id",
-                    project_id,
-                    "--csv",
-                    csv_file,
-                    "--overwrite",
-                    "--yes",
-                    "--parallelism",
-                    "2",
-                ]
-            )
-
-    def test_put_input_data__with_csv_duplicated_path(self):
-        csv_file = str(data_dir / "input_data_duplicated_path.csv")
-        with pytest.raises(Exception):
-            main(
-                [
-                    "input_data",
-                    "put",
-                    "--project_id",
-                    project_id,
-                    "--csv",
-                    csv_file,
-                    "--overwrite",
-                    "--yes",
-                    "--parallelism",
-                    "2",
-                ]
-            )
-
-    def test_put_input_data__with_json(self):
-        json_args = [
-            {
-                "input_data_name": "test",
-                "input_data_path": "file://tests/data/lenna.png",
-                "unknown_field": "foo",
-            }
-        ]
-        main(
-            [
-                "input_data",
-                "put",
-                "--project_id",
-                project_id,
-                "--json",
-                json.dumps(json_args),
-                "--overwrite",
-                "--yes",
-                "--parallelism",
-                "2",
-            ]
-        )
-
-    def test_put_input_data__with_json__duplicated_input_data(self):
-        json_args = [
-            {
-                "input_data_name": "test1",
-                "input_data_path": "file://tests/data/lenna.png",
-            },
-            {
-                "input_data_name": "test1",
-                "input_data_path": "file://tests/data/lenna.png",
-            },
-        ]
-        main(
-            [
-                "input_data",
-                "put",
-                "--project_id",
-                project_id,
-                "--json",
-                json.dumps(json_args),
-                "--overwrite",
-                "--yes",
-                "--parallelism",
-                "2",
-                "--allow_duplicated_input_data",
-            ]
-        )
-
     def test_put_input_data__with_json__duplicated_input_data_path__error(self):
         json_args = [
             {
@@ -270,7 +91,7 @@ class TestCommandLine__put:
         main(
             [
                 "input_data",
-                "put",
+                "put_with_zip",
                 "--project_id",
                 project_id,
                 "--zip",
@@ -281,8 +102,31 @@ class TestCommandLine__put:
         )
 
 
-class TestCommandLine__update_metadata:
-    def test_update_metadata(self):
+class TestCommandLine:
+    def test_scenario(self):
+        input_data_id = f"test-{str(datetime.datetime.now().timestamp())}"
+
+        json_args = [
+            {
+                "input_data_name": f"{input_data_id}--input_data_name",
+                "input_data_path": "file://tests/data/small-lenna.png",
+                "input_data_id": input_data_id,
+            }
+        ]
+        main(
+            [
+                "input_data",
+                "put",
+                "--project_id",
+                project_id,
+                "--json",
+                json.dumps(json_args),
+                "--yes",
+            ]
+        )
+        assert annofab_service.wrapper.get_input_data_or_none(project_id, input_data_id) is not None
+
+        # メタデータの更新
         main(
             [
                 "input_data",
@@ -294,5 +138,63 @@ class TestCommandLine__update_metadata:
                 "--metadata",
                 '{"attr1":"foo"}',
                 "--yes",
+            ]
+        )
+        input_data, _ = annofab_service.api.get_input_data(project_id, input_data_id)
+        assert input_data["metadata"] == {"attr1": "foo"}
+
+        # 入力データの削除
+        main(["input_data", "delete", "--project_id", project_id, "--input_data_id", input_data_id, "--yes"])
+        assert annofab_service.wrapper.get_input_data_or_none(project_id, input_data_id) is None
+
+    def test_download(self):
+        out_file = str(out_dir / "input_data-download.json")
+        main(
+            [
+                "input_data",
+                "download",
+                "--project_id",
+                project_id,
+                "--output",
+                out_file,
+            ]
+        )
+
+    def test_list_input_data(self):
+        out_file = str(out_dir / "input_data.json")
+        main(
+            [
+                "input_data",
+                "list",
+                "--project_id",
+                project_id,
+                "--output",
+                out_file,
+            ]
+        )
+
+    def test_list_input_data_with_json(self):
+        out_file = str(out_dir / "list_all_input_data.csv")
+        main(
+            [
+                "input_data",
+                "list_all",
+                "--project_id",
+                project_id,
+                "--output",
+                out_file,
+            ]
+        )
+
+    def test_list_input_data_merged_task(self):
+        out_file = str(out_dir / "input_data.csv")
+        main(
+            [
+                "input_data",
+                "list_merged_task",
+                "--project_id",
+                project_id,
+                "--output",
+                out_file,
             ]
         )

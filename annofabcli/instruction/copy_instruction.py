@@ -8,8 +8,8 @@ from annofabapi.models import ProjectMemberRole
 from pyquery import PyQuery
 
 import annofabcli
-from annofabcli import AnnofabApiFacade
 from annofabcli.common.cli import AbstractCommandLineInterface, build_annofabapi_resource_and_login
+from annofabcli.common.facade import AnnofabApiFacade
 
 logger = logging.getLogger(__name__)
 
@@ -70,9 +70,6 @@ class CopyInstruction(AbstractCommandLineInterface):
         logger.debug(f"コピー元プロジェクトの {src_instruction_image_url} を、コピー先プロジェクトにアップロードします。")
         instruction_image_id = self.get_instruction_image_id_from_url(src_instruction_image_url)
 
-        # alt属性値にファイル名が設定されている
-        content_type = self._get_mime_type_from_filename(pq_img.attr["alt"])
-
         try:
             response_image = self.service.api._request_get_with_cookie(src_project_id, src_instruction_image_url)
         except requests.exceptions.RequestException as e:
@@ -80,7 +77,10 @@ class CopyInstruction(AbstractCommandLineInterface):
             return None
 
         dest_instruction_image_url = self.service.wrapper.upload_data_as_instruction_image(
-            dest_project_id, instruction_image_id, data=response_image.content, content_type=content_type
+            dest_project_id,
+            instruction_image_id,
+            data=response_image.content,
+            content_type=response_image.headers["Content-Type"],
         )
         return dest_instruction_image_url
 

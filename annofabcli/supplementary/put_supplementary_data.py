@@ -17,7 +17,6 @@ from dataclasses_json import DataClassJsonMixin
 from more_itertools import first_true
 
 import annofabcli
-from annofabcli import AnnofabApiFacade
 from annofabcli.common.cli import (
     COMMAND_LINE_ERROR_STATUS_CODE,
     AbstractCommandLineInterface,
@@ -26,6 +25,7 @@ from annofabcli.common.cli import (
     get_json_from_args,
     prompt_yesnoall,
 )
+from annofabcli.common.facade import AnnofabApiFacade
 from annofabcli.common.utils import get_file_scheme_path
 
 logger = logging.getLogger(__name__)
@@ -77,7 +77,6 @@ class SubPutSupplementaryData:
         self.supplementary_data_cache: Dict[str, List[SupplementaryData]] = {}
 
     def put_supplementary_data(self, project_id: str, supplementary_data: SupplementaryDataForPut):
-
         file_path = get_file_scheme_path(supplementary_data.supplementary_data_path)
         if file_path is not None:
             request_body = {
@@ -181,6 +180,11 @@ class SubPutSupplementaryData:
         input_data_id = csv_supplementary_data.input_data_id
         supplementary_data_id = csv_supplementary_data.supplementary_data_id
         supplementary_data_path = csv_supplementary_data.supplementary_data_path
+
+        # input_data_idの存在確認
+        if self.service.wrapper.get_input_data_or_none(project_id, input_data_id) is None:
+            logger.warning(f"input_data_id='{input_data_id}'である入力データは存在しないため、補助情報の登録をスキップします。")
+            return False
 
         if supplementary_data_id is not None:
             old_supplementary_data_key = f"supplementary_data_id={supplementary_data_id}"
@@ -327,6 +331,8 @@ class PutSupplementaryData(AbstractCommandLineInterface):
                 "supplementary_data_id",
                 "supplementary_data_type",
             ),
+            # IDは必ず文字列として読み込むようにする
+            dtype={"input_data_id": str, "supplementary_data_id": str, "supplementary_data_name": str},
         )
         supplementary_data_list = [create_supplementary_data(e) for e in df.itertuples()]
         return supplementary_data_list
@@ -391,13 +397,17 @@ def parse_args(parser: argparse.ArgumentParser):
         "--csv",
         type=str,
         help=(
-            "補助情報が記載されたCVファイルのパスを指定してください。"
-            "CSVのフォーマットは、「1列目:input_data_id(required), 2列目:supplementary_data_number(required), "
-            "3列目:supplementary_data_name(required), 4列目:supplementary_data_path(required), 5列目:supplementary_data_id, "
-            "6列目:supplementary_data_type, ヘッダ行なし, カンマ区切り」です。"
-            "supplementary_data_pathの先頭が ``file://`` の場合、ローカルのファイルを補助情報として登録します。 "
-            "supplementary_data_idが空の場合はUUIDv4になります。"
-            "各項目の詳細は ``putSupplementaryData`` API を参照してください。"
+            "補助情報が記載されたCVファイルのパスを指定してください。CSVのフォーマットは、以下の通りです。\n"
+            "\n"
+            " * ヘッダ行なし, カンマ区切り\n"
+            " * 1列目: input_data_id (required)\n"
+            " * 2列目: supplementary_data_number (required)\n"
+            " * 3列目: supplementary_data_name (required)\n"
+            " * 4列目: supplementary_data_path (required)\n"
+            " * 5列目: supplementary_data_id\n"
+            " * 6列目: supplementary_data_type\n"
+            "\n"
+            "各項目の詳細は https://annofab-cli.readthedocs.io/ja/latest/command_reference/supplementary/put.html を参照してください。"
         ),
     )
 
@@ -413,9 +423,11 @@ def parse_args(parser: argparse.ArgumentParser):
         "--json",
         type=str,
         help=(
-            "登録対象の補助情報データをJSON形式で指定してください。"
-            f"(ex) '{json.dumps(JSON_SAMPLE)}' "
-            "JSONの各キーは'--csv'に渡すCSVの各列に対応しています。"
+            "登録対象の補助情報データをJSON形式で指定してください。\n"
+            "\n"
+            f"(ex) ``{json.dumps(JSON_SAMPLE)}`` \n"
+            "\n"
+            "JSONの各キーは ``--csv`` に渡すCSVの各列に対応しています。"
             " ``file://`` を先頭に付けるとjsonファイルを指定できます。"
         ),
     )
