@@ -84,8 +84,10 @@ class AbstractPhaseCumulativeProductivity(abc.ABC):
         折れ線グラフを、HTMLファイルに出力します。
 
         Args:
-            columns_list
+            line_graph_list: 描画する折れ線グラフのlist。
+            columns_list: 描画する折れ線グラフのX軸とY軸のキー(tuple)のlist。
         """
+        assert len(line_graph_list) == len(columns_list)
 
         def get_required_columns() -> list[str]:
             """
@@ -136,7 +138,7 @@ class AbstractPhaseCumulativeProductivity(abc.ABC):
             checkbox_group = line_graph.create_checkbox_displaying_markers()
 
             widgets = bokeh.layouts.column([hide_all_button, show_all_button, checkbox_group])
-            graph_group = bokeh.layouts.row([line_graph.figure, widgets])
+            graph_group = bokeh.layouts.row([line_graph.figure, widgets])  # type: ignore
             graph_group_list.append(graph_group)
 
         write_bokeh_graph(bokeh.layouts.layout(graph_group_list), output_file)
@@ -206,6 +208,10 @@ class AnnotatorCumulativeProductivity(AbstractPhaseCumulativeProductivity):
         # `YYYY-MM-DDThh:mm:ss.sss+09:00`から`YYYY-MM-DD`を取得する
         # キャストする理由: 全部nanだとfloat型になって、".str"にアクセスできないため
         df["first_annotation_started_date"] = df["first_annotation_started_datetime"].astype("string").str[:10]
+        # bokeh3.0.3では、string型の列を持つpandas.DataFrameを描画できないため、改めてobject型に戻す
+        # TODO この問題が解決されたら、削除する
+        # https://qiita.com/yuji38kwmt/items/b5da6ed521e827620186
+        df["first_annotation_started_date"] = df["first_annotation_started_date"].astype("object")
 
         # 元に戻す
         df = df.drop(["task_count"], axis=1)
@@ -444,6 +450,11 @@ class InspectorCumulativeProductivity(AbstractPhaseCumulativeProductivity):
         # キャストする理由: 全部nanだとfloat型になって、".str"にアクセスできないため
         df["first_inspection_started_date"] = df["first_inspection_started_datetime"].astype("string").str[:10]
 
+        # bokeh3.0.3では、string型の列を持つpandas.DataFrameを描画できないため、改めてobject型に戻す
+        # TODO この問題が解決されたら、削除する
+        # https://qiita.com/yuji38kwmt/items/b5da6ed521e827620186
+        df["first_inspection_started_date"] = df["first_inspection_started_date"].astype("object")
+
         # 元に戻す
         df = df.drop(["task_count"], axis=1)
 
@@ -632,6 +643,10 @@ class AcceptorCumulativeProductivity(AbstractPhaseCumulativeProductivity):
         # `YYYY-MM-DDThh:mm:ss.sss+09:00`から`YYYY-MM-DD`を取得する
         # キャストする理由: 全部nanだとfloat型になって、".str"にアクセスできないため
         df["first_acceptance_started_date"] = df["first_acceptance_started_datetime"].astype("string").str[:10]
+        # bokeh3.0.3では、string型の列を持つpandas.DataFrameを描画できないため、改めてobject型に戻す
+        # TODO この問題が解決されたら、削除する
+        # https://qiita.com/yuji38kwmt/items/b5da6ed521e827620186
+        df["first_acceptance_started_date"] = df["first_acceptance_started_date"].astype("object")
 
         # 元に戻す
         df = df.drop(["task_count"], axis=1)
@@ -676,7 +691,7 @@ class AcceptorCumulativeProductivity(AbstractPhaseCumulativeProductivity):
                     "task_id",
                     "first_acceptance_user_id",
                     "first_acceptance_username",
-                    "first_acceptance_started_datetime",
+                    "first_acceptance_started_date",
                     "acceptance_worktime_hour",
                     "annotation_count",
                     "inspection_comment_count",
@@ -724,7 +739,7 @@ class AcceptorCumulativeProductivity(AbstractPhaseCumulativeProductivity):
                     "task_id",
                     "first_acceptance_user_id",
                     "first_acceptance_username",
-                    "first_acceptance_started_datetime",
+                    "first_acceptance_started_date",
                     "acceptance_worktime_hour",
                     "input_data_count",
                     "inspection_comment_count",
@@ -770,7 +785,7 @@ class AcceptorCumulativeProductivity(AbstractPhaseCumulativeProductivity):
                     "task_id",
                     "first_acceptance_user_id",
                     "first_acceptance_username",
-                    "first_acceptance_started_datetime",
+                    "first_acceptance_started_date",
                     "acceptance_worktime_hour",
                     "inspection_comment_count",
                 ],

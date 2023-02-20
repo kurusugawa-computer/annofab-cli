@@ -15,6 +15,7 @@ import numpy
 import pandas
 from annofabapi.models import TaskStatus
 from bokeh.models import DataRange1d
+from bokeh.models.widgets.markups import Div
 from bokeh.plotting import ColumnDataSource
 from dateutil.parser import parse
 
@@ -308,11 +309,11 @@ class WholeProductivityPerCompletedDate:
         return WholeProductivityPerCompletedDate(sum_df.reset_index())
 
     @staticmethod
-    def _create_div_element() -> bokeh.models.Div:
+    def _create_div_element() -> Div:
         """
         HTMLページの先頭に付与するdiv要素を生成する。
         """
-        return bokeh.models.Div(
+        return Div(
             text="""<h4>用語</h4>
             <p>「X日のタスク数」とは、X日に初めて受入完了状態になったタスクの個数です。</p>
             """
@@ -368,8 +369,8 @@ class WholeProductivityPerCompletedDate:
 
         def create_line_graph(title: str, y_axis_label: str, tooltip_columns: list[str]) -> LineGraph:
             return LineGraph(
-                plot_width=1200,
-                plot_height=600,
+                width=1200,
+                height=600,
                 title=title,
                 x_axis_label="日",
                 x_axis_type="datetime",
@@ -604,8 +605,8 @@ class WholeProductivityPerCompletedDate:
 
         def create_line_graph(title: str, y_axis_label: str, tooltip_columns: list[str]) -> LineGraph:
             return LineGraph(
-                plot_width=1200,
-                plot_height=600,
+                width=1200,
+                height=600,
                 title=title,
                 x_axis_label="日",
                 x_axis_type="datetime",
@@ -1077,11 +1078,11 @@ class WholeProductivityPerFirstAnnotationStartedDate:
                         get_weekly_sum(df[f"{numerator}_hour"]) * 60 / get_weekly_sum(df[denominator])
                     )
 
-        def create_div_element() -> bokeh.models.Div:
+        def create_div_element() -> Div:
             """
             HTMLページの先頭に付与するdiv要素を生成する。
             """
-            return bokeh.models.Div(
+            return Div(
                 text="""<h4>注意</h4>
                 <p>「X日の作業時間」とは、「X日に教師付開始したタスクにかけた作業時間」です。
                 「X日に作業した時間」ではありません。
@@ -1091,8 +1092,8 @@ class WholeProductivityPerFirstAnnotationStartedDate:
 
         def create_line_graph(title: str, y_axis_label: str, tooltip_columns: list[str]) -> LineGraph:
             return LineGraph(
-                plot_width=1200,
-                plot_height=600,
+                width=1200,
+                height=600,
                 title=title,
                 x_axis_label="教師付開始日",
                 x_axis_type="datetime",

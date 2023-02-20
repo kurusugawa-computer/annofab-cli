@@ -26,7 +26,9 @@ class TestUserPerformance:
         )
 
     def test_from_df_with_empty(self):
-        df_task_history = pandas.read_csv(str(data_dir / "task-history-df-empty.csv"))
+        df_task_history = pandas.read_csv(
+            str(data_dir / "task-history-df-empty.csv"), dtype={"worktime_hour": "float64"}
+        )
         df_worktime_ratio = pandas.read_csv(str(data_dir / "annotation-count-ratio-df-empty.csv"))
         df_labor = pandas.read_csv(str(data_dir / "labor-df.csv"))
         df_user = pandas.read_csv(str(data_dir / "user.csv"))

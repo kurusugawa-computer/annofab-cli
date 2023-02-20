@@ -166,7 +166,7 @@ class Task:
             )
         )
 
-        bokeh_obj = bokeh.layouts.gridplot(figure_list, ncols=3)
+        bokeh_obj = bokeh.layouts.gridplot(figure_list, ncols=3)  # type: ignore
         output_file.parent.mkdir(exist_ok=True, parents=True)
         bokeh.plotting.reset_output()
         bokeh.plotting.output_file(output_file, title=output_file.stem)
@@ -262,7 +262,7 @@ class Task:
             )
             figure_list.append(fig)
 
-        bokeh_obj = bokeh.layouts.gridplot(figure_list, ncols=4)
+        bokeh_obj = bokeh.layouts.gridplot(figure_list, ncols=4)  # type: ignore
         output_file.parent.mkdir(exist_ok=True, parents=True)
         bokeh.plotting.reset_output()
         bokeh.plotting.output_file(output_file, title=output_file.stem)

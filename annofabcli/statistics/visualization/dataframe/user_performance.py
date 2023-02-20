@@ -15,6 +15,8 @@ import bokeh.palettes
 import numpy
 import pandas
 from annofabapi.models import TaskPhase
+from bokeh.models.annotations import Span
+from bokeh.models.widgets.markups import Div
 from bokeh.plotting import ColumnDataSource, figure
 
 from annofabcli.common.utils import print_csv, read_multiheader_csv
@@ -408,8 +410,8 @@ class UserPerformance:
         print_csv(self.df[columns], str(output_file))
 
     @staticmethod
-    def _plot_average_line(fig: bokeh.plotting.Figure, value: float, dimension: str):
-        span_average_line = bokeh.models.Span(
+    def _plot_average_line(fig: figure, value: float, dimension: str):
+        span_average_line = Span(
             location=value,
             dimension=dimension,
             line_color="red",
@@ -418,7 +420,7 @@ class UserPerformance:
         fig.add_layout(span_average_line)
 
     @staticmethod
-    def _plot_quartile_line(fig: bokeh.plotting.Figure, quartile: tuple[float, float, float], dimension: str):
+    def _plot_quartile_line(fig: figure, quartile: tuple[float, float, float], dimension: str):
         """
 
         Args:
@@ -428,7 +430,7 @@ class UserPerformance:
         """
 
         for value in quartile:
-            span_average_line = bokeh.models.Span(
+            span_average_line = Span(
                 location=value,
                 dimension=dimension,
                 line_color="blue",
@@ -454,11 +456,11 @@ class UserPerformance:
             return None
 
     @staticmethod
-    def _create_div_element() -> bokeh.models.Div:
+    def _create_div_element() -> Div:
         """
         HTMLページの先頭に付与するdiv要素を生成する。
         """
-        return bokeh.models.Div(
+        return Div(
             text="""<h4>グラフの見方</h4>
             <span style="color:red;">赤線</span>：平均値<br>
             <span style="color:blue;">青線</span>：四分位数<br>
@@ -466,7 +468,7 @@ class UserPerformance:
         )
 
     @staticmethod
-    def _set_legend(fig: bokeh.plotting.Figure) -> None:
+    def _set_legend(fig: figure) -> None:
         """
         凡例の設定。
         """
@@ -560,10 +562,10 @@ class UserPerformance:
         # numpy.inf が含まれていると散布図を出力できないので置換する
         df = self.df.replace(numpy.inf, numpy.nan)
 
-        def create_figure(title: str) -> bokeh.plotting.Figure:
+        def create_figure(title: str) -> figure:
             return figure(
-                plot_width=self.PLOT_WIDTH,
-                plot_height=self.PLOT_HEIGHT,
+                width=self.PLOT_WIDTH,
+                height=self.PLOT_HEIGHT,
                 title=title,
                 x_axis_label="累計作業時間[hour]",
                 y_axis_label="アノテーションあたり作業時間[minute/annotation]",
@@ -677,10 +679,10 @@ class UserPerformance:
         # numpy.inf が含まれていると散布図を出力できないので置換する
         df = self.df.replace(numpy.inf, numpy.nan)
 
-        def create_figure(title: str, x_axis_label: str, y_axis_label: str) -> bokeh.plotting.Figure:
+        def create_figure(title: str, x_axis_label: str, y_axis_label: str) -> figure:
             return figure(
-                plot_width=self.PLOT_WIDTH,
-                plot_height=self.PLOT_HEIGHT,
+                width=self.PLOT_WIDTH,
+                height=self.PLOT_HEIGHT,
                 title=title,
                 x_axis_label=x_axis_label,
                 y_axis_label=y_axis_label,
@@ -787,10 +789,10 @@ class UserPerformance:
         作業時間を元に算出した生産性と品質の関係を、メンバごとにプロットする
         """
 
-        def create_figure(title: str, x_axis_label: str, y_axis_label: str) -> bokeh.plotting.Figure:
+        def create_figure(title: str, x_axis_label: str, y_axis_label: str) -> figure:
             return figure(
-                plot_width=self.PLOT_WIDTH,
-                plot_height=self.PLOT_HEIGHT,
+                width=self.PLOT_WIDTH,
+                height=self.PLOT_HEIGHT,
                 title=title,
                 x_axis_label=x_axis_label,
                 y_axis_label=y_axis_label,
@@ -913,7 +915,7 @@ class UserPerformance:
         set_tooltip()
 
         div_element = self._create_div_element()
-        div_element.text += """円の大きさ：作業時間<br>"""
+        div_element.text = div_element.text + """円の大きさ：作業時間<br>"""  # type: ignore
         write_bokeh_graph(bokeh.layouts.column([div_element] + figure_list), output_file)
 
 
