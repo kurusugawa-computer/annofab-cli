@@ -425,7 +425,7 @@ def parse_args(parser: argparse.ArgumentParser):
     parser.add_argument(
         "--overwrite",
         action="store_true",
-        help="指定した場合、input_data_idがすでに存在していたら上書きします。指定しなければ、スキップします。" " ``--csv`` , `--json`` を指定したときのみ有効なオプションです。",
+        help="指定した場合、input_data_idがすでに存在していたら上書きします。指定しなければ、スキップします。" " ``--csv`` , ``--json`` を指定したときのみ有効なオプションです。",
     )
 
     parser.add_argument(
@@ -433,7 +433,7 @@ def parse_args(parser: argparse.ArgumentParser):
         action="store_true",
         help=(
             "``--csv`` , ``--json`` に渡した入力データの重複（input_data_name, input_data_path）を許可します。\n"
-            "``--csv`` , ``--json` `を指定したときのみ有効なオプションです。"
+            "``--csv`` , ``--json`` を指定したときのみ有効なオプションです。"
         ),
     )
 
