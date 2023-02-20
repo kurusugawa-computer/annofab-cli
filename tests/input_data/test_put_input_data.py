@@ -1,4 +1,3 @@
-import pydata_sphinx_theme
 import os
 from pathlib import Path
 
