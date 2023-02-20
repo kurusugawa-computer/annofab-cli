@@ -67,7 +67,7 @@ html_theme_options = {
     "use_edit_page_button": True,
     "footer_items": [],  # footerを空にする
     # "last_updated" を footerに配置すると広告に重なるので、"last_updated"は右側に配置する
-    "page_sidebar_items": ["page-toc", "edit-this-page", "last-updated"],
+    "secondary_sidebar_items": ["page-toc", "edit-this-page", "last-updated"],
 }
 
 html_context = {

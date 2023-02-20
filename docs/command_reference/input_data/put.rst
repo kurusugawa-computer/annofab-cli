@@ -97,37 +97,6 @@ JSONのキーは、``--csv`` に指定するCSVファイルの列に対応しま
 
 
 
-zipファイルから入力データを作成する
---------------------------------------
-画像や動画ファイルが格納されたzipファイルから、入力データを作成します。
-``--zip`` にzipファイルのパスを指定してください。
-
-.. code-block::
-
-    $ annofabcli input_data put --project_id prj1 --zip input_data.zip
-
-
-デフォルトでは、入力データ名の先頭にはzipファイルのパスになります。別の名前を付ける場合は、``--input_data_name_for_zip`` を指定してください。
-
-
-.. code-block::
-
-    $ annofabcli input_data put --project_id prj1 --zip input_data.zip \
-    --input_data_name_for_zip foo.zip
-
-
-
-``--wait`` を指定すると、入力データの作成が完了するまで待ちます。
-
-
-.. code-block::
-
-    $ annofabcli input_data put --project_id prj1 --zip input_data.zip --wait
-
-
-
-
-
 並列処理
 ----------------------------------------------
 

@@ -33,8 +33,8 @@ class PrintLabelColor(AbstractCommandLineInterface):
         """
         今のアノテーション仕様から、label名とRGBを紐付ける
         """
-        # [REMOVE_V2_PARAM]
-        annotation_specs, _ = self.service.api.get_annotation_specs(project_id, query_params={"v": "2"})
+        # [REMOVE_V3_PARAM]
+        annotation_specs, _ = self.service.api.get_annotation_specs(project_id, query_params={"v": "3"})
         labels = annotation_specs["labels"]
 
         label_color_dict = {self.facade.get_label_name_en(label): self.get_rgb(label) for label in labels}
@@ -72,11 +72,7 @@ def add_parser(subparsers: Optional[argparse._SubParsersAction] = None):
 
     subcommand_help = "label_name(英名)とRGBの関係をJSONで出力します。"
 
-    description = (
-        "label_name(英名)とRGBの関係をJSONで出力します。"
-        "出力された内容は、 ``write_annotation_image`` ツールに利用します。"
-        "出力内容は`Dict[LabelName, [R,G,B]]`です。"
-    )
+    description = "label_name(英名)とRGBの関係をJSONで出力します。\n出力内容は`Dict[LabelName, [R,G,B]]`です。"
 
     parser = annofabcli.common.cli.add_parser(subparsers, subcommand_name, subcommand_help, description)
     parse_args(parser)

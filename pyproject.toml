@@ -1,6 +1,6 @@
 [tool.poetry]
 name = "annofabcli"
-version = "1.74.4"
+version = "1.75.0"
 description = "Utility Command Line Interface for AnnoFab"
 authors = ["yuji38kwmt"]
 license = "MIT"
@@ -57,10 +57,9 @@ mypy = "*"
 pylint = "*"
 
 # Document library
-# sphinx 4.4.0, pydata-sphinx-theme 0.8.0 では、 テーブルの幅が大きいときに、横スクロールバーが表示されないので、バージョンを固定する
-# 例: `command_reference/statistics/summarize_task_count_by_task_id_group.rst`
-sphinx = "~4.2"
-pydata-sphinx-theme = "~0.6"
+sphinx = "^6.1"
+# https://github.com/pydata/pydata-sphinx-theme/issues/1094 に対応したバージョンを利用したいので、RC版を採用した
+pydata-sphinx-theme = ">=0.13.0rc3"
 sphinx-last-updated-by-git = "*"
 sphinx-argparse = "*"
 

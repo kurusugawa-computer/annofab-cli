@@ -30,28 +30,6 @@ class TestCommandLine:
             ]
         )
 
-    def test_write_annotation_image(self):
-        zip_path = data_dir / "simple-annotation.zip"
-        label_color_file = data_dir / "label_color.json"
-        output_image_dir = out_dir / "annotation-image"
-
-        main(
-            [
-                "filesystem",
-                "write_annotation_image",
-                "--annotation",
-                str(zip_path),
-                "--output_dir",
-                str(output_image_dir),
-                "--image_size",
-                "64x64",
-                "--label_color",
-                f"file://{str(label_color_file)}",
-                "--image_extension",
-                "jpg",
-            ]
-        )
-
     def test_filter_annotation(self):
         zip_path = data_dir / "simple-annotation.zip"
         output_dir = out_dir / "filter-annotation-output"
