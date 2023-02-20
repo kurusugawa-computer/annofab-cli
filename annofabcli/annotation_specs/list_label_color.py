@@ -72,7 +72,7 @@ def add_parser(subparsers: Optional[argparse._SubParsersAction] = None):
 
     subcommand_help = "label_name(英名)とRGBの関係をJSONで出力します。"
 
-    description = "label_name(英名)とRGBの関係をJSONで出力します。" "出力内容は`Dict[LabelName, [R,G,B]]`です。"
+    description = "label_name(英名)とRGBの関係をJSONで出力します。\n出力内容は`Dict[LabelName, [R,G,B]]`です。"
 
     parser = annofabcli.common.cli.add_parser(subparsers, subcommand_name, subcommand_help, description)
     parse_args(parser)

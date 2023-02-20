@@ -7,7 +7,7 @@ python:
 install:
   # pipをアップグレードする理由: pipのバージョンが古いと、pillowなど環境ごとにwheelを提供しているライブラリのインストールに失敗する可能性があるため
   - pip install pip --upgrade
-  - pip install "poetry==1.3"
+  - pip install "poetry<1.4"
   - travis_retry poetry install
 script:
    - make lint

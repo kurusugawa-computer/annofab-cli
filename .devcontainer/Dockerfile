@@ -76,7 +76,7 @@ RUN set -x \
         setuptools \
         requests \
     && python -m pip install \
-        "poetry<=1.3"
+        "poetry<1.4"
 
 # Add user / Grant sudo privileges
 RUN useradd -m -s /bin/bash -u 5000 -U vscode \
