@@ -1,4 +1,4 @@
-# pylint disable=too-many-lines
+# pylint: disable=too-many-lines
 """
 各ユーザの合計の生産性と品質
 """
