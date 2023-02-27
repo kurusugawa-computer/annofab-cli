@@ -1,5 +1,5 @@
 sphinx==4.2.0
 pydata-sphinx-theme==0.6.3
-sphinx_last_updated_by_git==0.3.0
+sphinx_last_updated_by_git==0.3.4
 sphinx-argparse==0.2.5
 
