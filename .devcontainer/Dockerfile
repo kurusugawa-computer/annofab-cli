@@ -33,13 +33,15 @@ RUN set -x \
     # for docker
     && curl -fsSL https://download.docker.com/linux/ubuntu/gpg | apt-key add - \
     && add-apt-repository "deb [arch=amd64] https://download.docker.com/linux/ubuntu $(lsb_release -cs) stable" \
+    # Python3.11をインストールするために、deadsnakes PPAを追加
+    && add-apt-repository ppa:deadsnakes/ppa \
     # Install packages
     && apt-get update \
     && apt-get install -y --no-install-recommends \
         # docker
         docker-ce-cli \
         # python
-        python3.10-dev \
+        python3.11-dev \
         python3-pip \
         # common tools
         bash-completion \
@@ -63,7 +65,7 @@ RUN set -x \
 
 
 # Python / pip
-RUN ln -s $(which python3.10) /usr/bin/python
+RUN ln -s $(which python3.11) /usr/bin/python
 ENV PYTHONDONTWRITEBYTECODE=1 \
     PIP_DEFAULT_TIMEOUT=100 \
     PIP_NO_CACHE_DIR=on \
