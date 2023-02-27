@@ -1,4 +1,3 @@
-import asyncio
 import datetime
 import json
 import logging
@@ -296,7 +295,7 @@ class Database:
                     self.annofab_service.api.post_project_tasks_update(project_id)
                     self.wait_for_completion_updated_task_json(project_id)
 
-    def _write_task_histories_json(self):
+    def _write_task_histories_json_with_executing_api_one_of_each(self):
         """
         タスク履歴取得APIを1個ずつ実行して、全タスクのタスク履歴が格納されたJSONを出力します。
         事前に、タスク全件ファイルをダウンロードする必要がある。
@@ -339,59 +338,37 @@ class Database:
 
         wait_options = WaitOptions(interval=60, max_tries=360)
 
-        DOWNLOADED_FILE_COUNT = 4
-
-        TASK_JSON_INDEX = 0
-        ANNOTATION_ZIP_INDEX = 1
-        COMMENT_JSON_INDEX = 2
-        TASK_HISTORY_JSON_INDEX = 3
-
-        loop = asyncio.get_event_loop()
-        coroutines: List[Any] = [None] * DOWNLOADED_FILE_COUNT
-        coroutines[TASK_JSON_INDEX] = downloading_obj.download_task_json_with_async(
+        downloading_obj.download_task_json(
             self.project_id, dest_path=str(self.tasks_json_path), is_latest=is_latest, wait_options=wait_options
         )
-        coroutines[ANNOTATION_ZIP_INDEX] = downloading_obj.download_annotation_zip_with_async(
+        downloading_obj.download_annotation_zip(
             self.project_id,
             dest_path=str(self.annotations_zip_path),
             is_latest=is_latest,
             wait_options=wait_options,
         )
-        coroutines[COMMENT_JSON_INDEX] = downloading_obj.download_comment_json_with_async(
-            self.project_id, dest_path=str(self.comment_json_path)
-        )
+
+        try:
+            downloading_obj.download_comment_json(self.project_id, dest_path=str(self.comment_json_path))
+        except DownloadingFileNotFoundError:
+            # プロジェクトを作成した日だと、検査コメントファイルが作成されていないので、DownloadingFileNotFoundErrorが発生する
+            # その場合でも、処理は継続できるので、空listのJSONファイルを作成しておく
+            self.comment_json_path.write_text("[]", encoding="utf-8")
 
         if is_get_task_histories_one_of_each:
             # タスク履歴APIを一つずつ実行して、JSONファイルを生成する
             # 先にタスク全件ファイルをダウンロードする必要がある
-            coroutines.pop(DOWNLOADED_FILE_COUNT - 1)
-            gather = asyncio.gather(*coroutines, return_exceptions=True)
-            results = loop.run_until_complete(gather)
-            self._write_task_histories_json()
+            self._write_task_histories_json_with_executing_api_one_of_each()
 
         else:
-            coroutines[TASK_HISTORY_JSON_INDEX] = downloading_obj.download_task_history_json_with_async(
-                self.project_id, dest_path=str(self.task_histories_json_path)
-            )
-            gather = asyncio.gather(*coroutines, return_exceptions=True)
-            results = loop.run_until_complete(gather)
-
-        if isinstance(results[COMMENT_JSON_INDEX], DownloadingFileNotFoundError):
-            # 空のJSONファイルを作り、検査コメント0件として処理する
-            self.comment_json_path.write_text("{}", encoding="utf-8")
-        elif isinstance(results[COMMENT_JSON_INDEX], Exception):
-            raise results[COMMENT_JSON_INDEX]
-
-        if not is_get_task_histories_one_of_each:
-            if isinstance(results[TASK_HISTORY_JSON_INDEX], DownloadingFileNotFoundError):
-                # タスク履歴APIを一つずつ実行して、JSONファイルを生成する
-                self._write_task_histories_json()
-            elif isinstance(results[TASK_HISTORY_JSON_INDEX], Exception):
-                raise results[TASK_HISTORY_JSON_INDEX]
-
-        for result in [results[TASK_JSON_INDEX], results[ANNOTATION_ZIP_INDEX]]:
-            if isinstance(result, Exception):
-                raise result
+            try:
+                downloading_obj.download_task_history_json(
+                    self.project_id, dest_path=str(self.task_histories_json_path)
+                )
+            except DownloadingFileNotFoundError:
+                # プロジェクトを作成した日だと、タスク履歴全県ファイルが作成されていないので、DownloadingFileNotFoundErrorが発生する
+                # その場合でも、処理は継続できるので、タスク履歴APIを１個ずつ実行して、タスク履歴ファイルを作成する
+                self._write_task_histories_json_with_executing_api_one_of_each()
 
     @staticmethod
     def _to_datetime_with_tz(str_date: str) -> datetime.datetime:

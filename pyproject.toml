@@ -1,6 +1,6 @@
 [tool.poetry]
 name = "annofabcli"
-version = "1.75.0"
+version = "1.75.1"
 description = "Utility Command Line Interface for AnnoFab"
 authors = ["yuji38kwmt"]
 license = "MIT"
@@ -17,15 +17,17 @@ classifiers = [
         "Programming Language :: Python :: 3.8",
         "Programming Language :: Python :: 3.9",
         "Programming Language :: Python :: 3.10",        
+        "Programming Language :: Python :: 3.11",        
         "Topic :: Utilities",
         "Operating System :: OS Independent",
 ]
 
 
 [tool.poetry.dependencies]
-python = "^3.8"
+
+# 3.8.1まで指定している理由: flake8 v6.0.0を利用するため、Python3.8.0のサポートを落とした
+python = "^3.8.1"
 requests = "*"
-pillow = "*"
 pyyaml = "*"
 dictdiffer = "*"
 more-itertools = "*"
@@ -52,7 +54,10 @@ autoflake = "*"
 black = "*"
 
 # lint library
-flake8 = "*"
+# 原因は不明だが、pycodestyleの関係でバージョンが下がるときがあるので、明示的に指定する
+flake8 = ">=6"
+pycodestyle = "*"
+
 mypy = "*"
 pylint = "*"
 
@@ -70,11 +75,11 @@ types-python-dateutil = "*"
 types-PyYAML = "*"
 
 ipython = "*"
-jedi = "*"
 pyinstaller = "^4.5.1"
 
 [tool.poetry.scripts]
 annofabcli = "annofabcli.__main__:main"
+
 
 [tool.isort]
 profile = "black"

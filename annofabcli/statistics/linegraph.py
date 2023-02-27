@@ -85,7 +85,9 @@ class LineGraph:
 
         self.exists_secondary_y_axis = False
         self.line_glyphs: dict[str, GlyphRenderer] = {}
+        """key:凡例, value: 描画している折れ線"""
         self.marker_glyphs: dict[str, GlyphRenderer] = {}
+        """key:凡例, value: 描画しているマーカー"""
 
     def add_secondary_y_axis(
         self,
