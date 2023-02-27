@@ -24,7 +24,9 @@ classifiers = [
 
 
 [tool.poetry.dependencies]
-python = "^3.8"
+
+# 3.8.1まで指定している理由: flake8 v6.0.0を利用するため、Python3.8.0のサポートを落とした
+python = "^3.8.1"
 requests = "*"
 pyyaml = "*"
 dictdiffer = "*"
@@ -52,7 +54,10 @@ autoflake = "*"
 black = "*"
 
 # lint library
-flake8 = "*"
+# 原因は不明だが、pycodestyleの関係でバージョンが下がるときがあるので、明示的に指定する
+flake8 = ">=6"
+pycodestyle = "*"
+
 mypy = "*"
 pylint = "*"
 
@@ -74,6 +79,7 @@ pyinstaller = "^4.5.1"
 
 [tool.poetry.scripts]
 annofabcli = "annofabcli.__main__:main"
+
 
 [tool.isort]
 profile = "black"
