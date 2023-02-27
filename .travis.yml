@@ -4,6 +4,7 @@ python:
   - "3.8"
   - "3.9"
   - "3.10"
+  - "3.11"
 install:
   # pipをアップグレードする理由: pipのバージョンが古いと、pillowなど環境ごとにwheelを提供しているライブラリのインストールに失敗する可能性があるため
   - pip install pip --upgrade
