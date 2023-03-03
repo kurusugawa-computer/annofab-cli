@@ -420,7 +420,6 @@ def parse_args(parser: argparse.ArgumentParser):
         ),
     )
 
-    file_group.add_argument("--zip", type=Path, help="入力データとして登録するzipファイルのパスを指定してください。")
 
     parser.add_argument(
         "--overwrite",
