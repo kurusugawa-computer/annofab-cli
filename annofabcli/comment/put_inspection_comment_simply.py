@@ -4,6 +4,7 @@ import sys
 from typing import Optional
 
 from annofabapi.models import CommentType, InputDataType, ProjectMemberRole
+from annofabapi.plugin import EditorPluginId
 
 import annofabcli
 import annofabcli.common.cli
@@ -54,14 +55,18 @@ class PutInspectionCommentSimply(AbstractCommandLineInterface):
                 # 注意：少なくとも0.1秒以上の区間にしないと、Annofab上で検査コメントを確認できない
                 comment_data = {"start": 0, "end": 100, "_type": "Time"}
             elif project["input_data_type"] == InputDataType.CUSTOM.value:
-                if custom_project_type == CustomProjectType.THREE_DIMENSION_POINT_CLOUD:
+                editor_plugin_id = project["configuration"]["plugin_id"]
+                if (
+                    editor_plugin_id == EditorPluginId.THREE_DIMENSION.value
+                    or custom_project_type == CustomProjectType.THREE_DIMENSION_POINT_CLOUD
+                ):
                     comment_data = {
                         "data": '{"kind": "CUBOID", "shape": {"dimensions": {"width": 1.0, "height": 1.0, "depth": 1.0}, "location": {"x": 0.0, "y": 0.0, "z": 0.0}, "rotation": {"x": 0.0, "y": 0.0, "z": 0.0}, "direction": {"front": {"x": 1.0, "y": 0.0, "z": 0.0}, "up": {"x": 0.0, "y": 0.0, "z": 1.0}}}, "version": "2"}',  # noqa: E501
                         "_type": "Custom",
                     }
                 else:
                     print(
-                        f"{self.COMMON_MESSAGE}: カスタムプロジェクトに検査コメントを付与する場合は、'--comment_data' または '--custom_project_type'を指定してください。",  # noqa: E501
+                        f"{self.COMMON_MESSAGE}: カスタムプロジェクト（ビルトインのエディタプラグインを使用していない）に検査コメントを付与する場合は、'--comment_data' または '--custom_project_type'を指定してください。",  # noqa: E501
                         file=sys.stderr,
                     )
                     sys.exit(COMMAND_LINE_ERROR_STATUS_CODE)
@@ -123,8 +128,7 @@ def parse_args(parser: argparse.ArgumentParser):
         "--custom_project_type",
         type=str,
         choices=[e.value for e in CustomProjectType],
-        help="[BETA] カスタムプロジェクトの種類を指定します。カスタムプロジェクトに対して、検査コメントの位置を指定しない場合は必須です。\n"
-        "※ Annofabの情報だけでは'3dpc'プロジェクトかどうかが分からないため、指定する必要があります。",
+        help="[BETA] ビルトインのエディタプラグインを使用していないカスタムプロジェクトの種類を指定します。カスタムプロジェクトに対して、検査コメントの位置を指定しない場合は必須です。\n",
     )
 
     parser.add_argument(
