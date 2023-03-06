@@ -14,7 +14,6 @@ Command Reference
    experimental/index
    filesystem/index
    input_data/index
-   inspection_comment/index
    instruction/index
    job/index
    my_account/index

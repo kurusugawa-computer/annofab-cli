@@ -68,6 +68,11 @@ html_theme_options = {
     "footer_items": [],  # footerを空にする
     # "last_updated" を footerに配置すると広告に重なるので、"last_updated"は右側に配置する
     "secondary_sidebar_items": ["page-toc", "edit-this-page", "last-updated"],
+    
+    # icon_links`を指定しないと、pydata-sphinx-theme v0.13.0で
+    # Handler <function update_config at 0x7f0333cb1430> for event 'builder-inited' threw an exception (exception: 'icon_links') というエラーが発生する
+    # https://github.com/pydata/pydata-sphinx-theme/issues/1220
+    "icon_links": [],
 }
 
 html_context = {
