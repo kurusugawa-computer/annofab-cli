@@ -152,6 +152,11 @@ def write_annotation_image(
     JSONファイルに記載されているアノテーション情報を、画像化する。
     JSONファイルは、Annofabからダウンロードしたアノテーションzipに含まれるファイルを想定している。
 
+    Notes:
+        この関数はannofabcliのコードからは呼び出されていません。
+        しかし、2023/03時点でこの関数を直接利用しているユーザーがいるので、この関数は削除せずに残しています。
+        削除を検討するときは、作成者に確認してください。
+
     Args:
         parser: parser: Simple Annotationのparser
         image_size: 画像のサイズ. Tuple[width, height]
