@@ -420,8 +420,6 @@ def parse_args(parser: argparse.ArgumentParser):
         ),
     )
 
-    file_group.add_argument("--zip", type=Path, help="入力データとして登録するzipファイルのパスを指定してください。")
-
     parser.add_argument(
         "--overwrite",
         action="store_true",
@@ -449,7 +447,7 @@ def parse_args(parser: argparse.ArgumentParser):
 def add_parser(subparsers: Optional[argparse._SubParsersAction] = None):
     subcommand_name = "put"
     subcommand_help = "入力データを登録します。"
-    description = "CSVに記載された入力データ情報やzipファイルを、入力データとして登録します。"
+    description = "CSVに記載された情報から、入力データを登録します。"
     epilog = "オーナロールを持つユーザで実行してください。"
 
     parser = annofabcli.common.cli.add_parser(subparsers, subcommand_name, subcommand_help, description, epilog=epilog)
