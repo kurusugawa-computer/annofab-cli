@@ -452,7 +452,7 @@ def parse_args(parser: argparse.ArgumentParser):
         "--comment",
         type=str,
         help="差し戻すときに付与する検査コメントを指定します。検査コメントはタスク内の先頭画像に付与します。付与する位置は ``--comment_data`` で指定できます。\n"
-            "未指定の場合は、検査コメントを付与せずに差し戻します。",
+        "未指定の場合は、検査コメントを付与せずに差し戻します。",
     )
 
     parser.add_argument(
