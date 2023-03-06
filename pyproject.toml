@@ -1,6 +1,16 @@
+[build-system]
+requires = ["poetry>=0.12", "setuptools>=45", "setuptools_scm[toml]>=6.2"]
+build-backend = "poetry.masonry.api"
+
+[project]
+dynamic = ["version"]
+
+[tool.setuptools_scm]
+write_to = "annofabcli/__version__.py"
+
 [tool.poetry]
 name = "annofabcli"
-version = "1.75.1"
+# version = "1.75.1"
 description = "Utility Command Line Interface for AnnoFab"
 authors = ["yuji38kwmt"]
 license = "MIT"
@@ -93,8 +103,4 @@ line-length = 120
 ignore_missing_imports = true
 
 check_untyped_defs = true
-
-[build-system]
-requires = ["poetry>=0.12"]
-build-backend = "poetry.masonry.api"
 
