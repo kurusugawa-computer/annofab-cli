@@ -10,5 +10,5 @@ Annofabの拡張機能である「3次元アノテーションエディタ」に
    :maxdepth: 1
    :titlesonly:
 
-   ../command_reference/inspection_comment/put
+   ../command_reference/comment/put_inspection_simply
    ../command_reference/task/reject
