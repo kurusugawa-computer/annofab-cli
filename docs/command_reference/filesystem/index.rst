@@ -20,7 +20,6 @@ Available Commands
    filter_annotation
    mask_user_info
    merge_annotation
-   write_annotation_image
 
 Usage Details
 =================================

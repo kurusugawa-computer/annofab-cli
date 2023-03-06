@@ -22,16 +22,21 @@ from annofabapi.exceptions import AnnofabApiException
 from annofabapi.models import OrganizationMemberRole, ProjectMemberRole
 from more_itertools import first_true
 
-import annofabcli
 from annofabcli.common.dataclasses import WaitOptions
 from annofabcli.common.enums import FormatArgument
-from annofabcli.common.exceptions import AnnofabCliException
+from annofabcli.common.exceptions import AnnofabCliException, AuthenticationError
 from annofabcli.common.facade import AnnofabApiFacade
 from annofabcli.common.typing import InputDataSize
+from annofabcli.common.utils import (
+    DEFAULT_CSV_FORMAT,
+    get_file_scheme_path,
+    print_according_to_format,
+    print_csv,
+    read_lines_except_blank_line,
+)
 
 logger = logging.getLogger(__name__)
 
-DEFAULT_CSV_FORMAT = {"encoding": "utf_8_sig", "index": False}
 
 COMMAND_LINE_ERROR_STATUS_CODE = 2
 """コマンドラインエラーが発生したときに返すステータスコード"""
@@ -57,7 +62,7 @@ def build_annofabapi_resource_and_login(args: argparse.Namespace) -> annofabapi.
 
     except requests.exceptions.HTTPError as e:
         if e.response.status_code == requests.codes.unauthorized:
-            raise annofabcli.exceptions.AuthenticationError(service.api.login_user_id)
+            raise AuthenticationError(service.api.login_user_id) from e
         raise e
 
 
@@ -96,14 +101,17 @@ def add_parser(
         group.add_argument("--yes", action="store_true", help="処理中に現れる問い合わせに対して、常に ``yes`` と回答します。")
 
         group.add_argument(
-            "--endpoint_url", type=str, help=f"Annofab WebAPIのエンドポイントを指定します。指定しない場合は ``{DEFAULT_ENDPOINT_URL}`` です。"
+            "--endpoint_url", type=str, help="Annofab WebAPIのエンドポイントを指定します。", default=DEFAULT_ENDPOINT_URL
         )
+
+        group.add_argument("--annofab_user_id", type=str, help="Annofabにログインする際のユーザーID")
+        group.add_argument("--annofab_password", type=str, help="Annofabにログインする際のパスワード")
 
         group.add_argument(
             "--logdir",
             type=Path,
             default=".log",
-            help="ログファイルを保存するディレクトリを指定します。指定しない場合は ``.log`` ディレクトリ'にログファイルが保存されます。",
+            help="ログファイルを保存するディレクトリを指定します。",
         )
 
         group.add_argument("--disable_log", action="store_true", help="ログを無効にします。")
@@ -159,9 +167,9 @@ def get_list_from_args(str_list: Optional[List[str]] = None) -> List[str]:
         return str_list
 
     str_value = str_list[0]
-    path = annofabcli.utils.get_file_scheme_path(str_value)
+    path = get_file_scheme_path(str_value)
     if path is not None:
-        return annofabcli.utils.read_lines_except_blank_line(path)
+        return read_lines_except_blank_line(path)
     else:
         return str_list
 
@@ -189,7 +197,7 @@ def get_json_from_args(target: Optional[str] = None) -> Any:
     if target is None:
         return None
 
-    path = annofabcli.utils.get_file_scheme_path(target)
+    path = get_file_scheme_path(target)
     if path is not None:
         with open(path, encoding="utf-8") as f:
             return json.load(f)
@@ -305,6 +313,18 @@ def build_annofabapi_resource(args: argparse.Namespace) -> annofabapi.Resource:
     if endpoint_url != DEFAULT_ENDPOINT_URL:
         logger.info(f"Annofab WebAPIのエンドポイントURL: {endpoint_url}")
 
+    # コマンドライン引数からユーザーIDが指定された場合
+    if args.annofab_user_id is not None:
+        login_user_id: str = args.annofab_user_id
+        if args.annofab_password is not None:
+            return annofabapi.build(login_user_id, args.annofab_password, endpoint_url=endpoint_url)
+        else:
+            # コマンドライン引数にパスワードが指定されなければ、標準入力からパスワードを取得する
+            login_password = ""
+            while login_password == "":
+                login_password = getpass.getpass("Enter Annofab Password: ")
+            return annofabapi.build(login_user_id, login_password, endpoint_url=endpoint_url)
+
     try:
         return annofabapi.build_from_netrc(endpoint_url)
     except AnnofabApiException:
@@ -354,7 +374,7 @@ def prompt_yesnoall(msg: str) -> Tuple[bool, bool]:
         msg: 確認メッセージ
 
     Returns:
-        Tuple[yesno, allflag]. yesno:Trueならyes. allflag: Trueならall.
+        Tuple[yesno, all_flag]. yesno:Trueならyes. all_flag: Trueならall.
 
     """
     while True:
@@ -409,7 +429,7 @@ class ArgumentParser:
         '--format` 引数を追加
         """
         if help_message is None:
-            help_message = f"出力フォーマットを指定します。指定しない場合は、{default.value} フォーマットになります。"
+            help_message = f"出力フォーマットを指定します。"
 
         self.parser.add_argument(
             "-f", "--format", type=str, choices=[e.value for e in choices], default=default.value, help=help_message
@@ -421,9 +441,9 @@ class ArgumentParser:
         """
         if help_message is None:
             help_message = (
-                "CSVのフォーマットをJSON形式で指定します。 ``--format`` が ``csv`` でないときは、このオプションは無視されます。"
-                " ``file://`` を先頭に付けると、JSON形式のファイルを指定できます。"
-                "指定した値は、`pandas.DataFrame.to_csv <https://pandas.pydata.org/pandas-docs/stable/reference/api/pandas.DataFrame.to_csv.html>`_ の引数として渡されます。"  # noqa: E501
+                "CSVのフォーマットをJSON形式で指定します。 ``--format`` が ``csv`` でないときは、このオプションは無視されます。\n"
+                "``file://`` を先頭に付けると、JSON形式のファイルを指定できます。\n"
+                "指定した値は ``pandas.DataFrame.to_csv`` の引数として渡されます。"
             )
 
         self.parser.add_argument("--csv_format", type=str, help=help_message)
@@ -433,7 +453,7 @@ class ArgumentParser:
         '--output` 引数を追加
         """
         if help_message is None:
-            help_message = "出力先のファイルパスを指定します。指定しない場合は、標準出力に出力されます。"
+            help_message = "出力先のファイルパスを指定します。未指定の場合は、標準出力に出力されます。"
 
         self.parser.add_argument("-o", "--output", type=str, required=required, help=help_message)
 
@@ -450,9 +470,15 @@ class ArgumentParser:
         if help_message is None:
             help_message = (
                 "タスクを絞り込むためのクエリ条件をJSON形式で指定します。"
-                " ``file://`` を先頭に付けると、JSON形式のファイルを指定できます。"
-                "使用できるキーは、``task_id`` , ``phase`` , ``phase_stage`` , ``status`` , ``user_id`` ,"
-                " ``account_id`` , ``no_user``  (bool値)  のみです。"
+                " ``file://`` を先頭に付けると、JSON形式のファイルを指定できます。\n"
+                "以下のキーを指定できます。\n\n"
+                " * ``task_id``\n"
+                " * ``phase``\n"
+                " * ``phase_stage``\n"
+                " * ``status``\n"
+                " * ``user_id``\n"
+                " * ``account_id``\n"
+                " * ``no_user``"
             )
         self.parser.add_argument("-tq", "--task_query", type=str, required=required, help=help_message)
 
@@ -517,7 +543,7 @@ class AbstractCommandLineWithoutWebapiInterface(abc.ABC):
             self.query = args.query
 
         if hasattr(args, "csv_format"):
-            self.csv_format = annofabcli.common.cli.get_csv_format_from_args(args.csv_format)
+            self.csv_format = get_csv_format_from_args(args.csv_format)
 
         if hasattr(args, "output"):
             self.output = args.output
@@ -590,12 +616,12 @@ class AbstractCommandLineWithoutWebapiInterface(abc.ABC):
         return target
 
     def print_csv(self, df: pandas.DataFrame):
-        annofabcli.utils.print_csv(df, output=self.output, to_csv_kwargs=self.csv_format)
+        print_csv(df, output=self.output, to_csv_kwargs=self.csv_format)
 
     def print_according_to_format(self, target: Any):
         target = self.search_with_jmespath_expression(target)
 
-        annofabcli.utils.print_according_to_format(
+        print_according_to_format(
             target, arg_format=FormatArgument(self.str_format), output=self.output, csv_format=self.csv_format
         )
 

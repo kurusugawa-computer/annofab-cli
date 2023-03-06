@@ -1,0 +1,12 @@
+{
+  "project_id": "12345678-abcd-1234-abcd-1234abcd5678",
+  "project_title": "test-project",
+  "input_data_type": "image",
+  "measurement_datetime": "2022-06-14T15:56:10.634+09:00",
+  "query": {
+    "task_query": null,
+    "task_ids": null,
+    "start_date": null,
+    "end_date": null
+  }
+}

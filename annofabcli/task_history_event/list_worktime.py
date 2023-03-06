@@ -15,7 +15,6 @@ from dataclasses_json import DataClassJsonMixin
 from dateutil.parser import parse
 
 import annofabcli
-from annofabcli import AnnofabApiFacade
 from annofabcli.common.cli import (
     AbstractCommandLineInterface,
     ArgumentParser,
@@ -24,6 +23,7 @@ from annofabcli.common.cli import (
 )
 from annofabcli.common.download import DownloadingFile
 from annofabcli.common.enums import FormatArgument
+from annofabcli.common.facade import AnnofabApiFacade
 from annofabcli.common.visualize import AddProps
 
 logger = logging.getLogger(__name__)
@@ -75,14 +75,14 @@ class ListWorktimeFromTaskHistoryEventMain:
     ) -> list[dict[str, Any]]:
         if task_history_event_json is None:
             downloading_obj = DownloadingFile(self.service)
-            cache_dir = annofabcli.utils.get_cache_dir()
+            cache_dir = annofabcli.common.utils.get_cache_dir()
             json_path = cache_dir / f"{project_id}-task_history_event.json"
 
             downloading_obj.download_task_history_event_json(project_id, str(json_path))
         else:
             json_path = task_history_event_json
 
-        with json_path.open() as f:
+        with json_path.open(encoding="utf-8") as f:
             all_task_history_event_list = json.load(f)
 
         return all_task_history_event_list
@@ -241,7 +241,6 @@ class ListWorktimeFromTaskHistoryEvent(AbstractCommandLineInterface):
         user_id_list: Optional[list[str]],
         arg_format: FormatArgument,
     ):
-
         super().validate_project(project_id, project_member_roles=None)
 
         main_obj = ListWorktimeFromTaskHistoryEventMain(self.service, project_id=project_id)
@@ -321,7 +320,7 @@ def parse_args(parser: argparse.ArgumentParser):
         type=Path,
         help="タスク履歴イベント全件ファイルパスを指定すると、JSONに記載された情報を元にタスク履歴イベント一覧を出力します。\n"
         "指定しない場合は、タスク履歴イベント全件ファイルをダウンロードします。\n"
-        "JSONファイルは ``$ annofabcli project download task_history_event`` コマンドで取得できます。",
+        "JSONファイルは ``$ annofabcli task_history_event download`` コマンドで取得できます。",
     )
 
     argument_parser.add_format(

@@ -12,7 +12,6 @@ from annofabapi.dataclass.task import Task
 from annofabapi.models import ProjectMemberRole, TaskStatus
 
 import annofabcli
-from annofabcli import AnnofabApiFacade
 from annofabcli.annotation.annotation_query import AnnotationQueryForAPI, AnnotationQueryForCLI
 from annofabcli.annotation.dump_annotation import DumpAnnotationMain
 from annofabcli.common.cli import (
@@ -23,6 +22,7 @@ from annofabcli.common.cli import (
     build_annofabapi_resource_and_login,
     get_json_from_args,
 )
+from annofabcli.common.facade import AnnofabApiFacade
 
 logger = logging.getLogger(__name__)
 
@@ -70,7 +70,7 @@ class DeleteAnnotationMain(AbstractCommandLineWithConfirmInterface):
             }
 
         request_body = [_to_request_body_elm(annotation) for annotation in annotation_list]
-        self.service.api.batch_update_annotations(self.project_id, request_body)
+        self.service.api.batch_update_annotations(self.project_id, request_body=request_body)
 
     def get_annotation_list_for_task(
         self, task_id: str, annotation_query: Optional[AnnotationQueryForAPI]

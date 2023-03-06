@@ -13,7 +13,6 @@ import annofabapi
 from annofabapi.utils import can_put_annotation
 
 import annofabcli
-from annofabcli import AnnofabApiFacade
 from annofabcli.common.cli import (
     COMMAND_LINE_ERROR_STATUS_CODE,
     AbstractCommandLineInterface,
@@ -22,6 +21,7 @@ from annofabcli.common.cli import (
     build_annofabapi_resource_and_login,
     get_list_from_args,
 )
+from annofabcli.common.facade import AnnofabApiFacade
 
 logger = logging.getLogger(__name__)
 
@@ -126,7 +126,6 @@ class CopyAnnotationMain(AbstractCommandLineWithConfirmInterface):
     def __init__(
         self, service: annofabapi.Resource, *, project_id: str, all_yes: bool, overwrite: bool, merge: bool, force: bool
     ):
-
         self.service = service
         self.project_id = project_id
         self.overwrite = overwrite

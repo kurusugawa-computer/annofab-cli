@@ -3,8 +3,9 @@ from typing import Optional
 
 import numpy
 import pandas
-from bokeh.models import HoverTool, Title
-from bokeh.plotting import ColumnDataSource, Figure, figure
+from bokeh.models import HoverTool
+from bokeh.models.annotations.labels import Title
+from bokeh.plotting import ColumnDataSource, figure
 
 logger = logging.getLogger(__name__)
 
@@ -23,10 +24,10 @@ def get_histogram_figure(
     y_axis_label: str,
     title: str,
     sub_title: Optional[str] = None,
-    plot_width: int = 400,
-    plot_height: int = 300,
+    width: int = 400,
+    height: int = 300,
     bins: int = 20,
-) -> Figure:
+) -> figure:
     hist, bin_edges = numpy.histogram(ser, bins)
 
     df_histogram = pandas.DataFrame({"frequency": hist, "left": bin_edges[:-1], "right": bin_edges[1:]})
@@ -36,8 +37,8 @@ def get_histogram_figure(
 
     source = ColumnDataSource(df_histogram)
     fig = figure(
-        plot_width=plot_width,
-        plot_height=plot_height,
+        width=width,
+        height=height,
         x_axis_label=x_axis_label,
         y_axis_label=y_axis_label,
     )

@@ -1,6 +1,6 @@
 [tool.poetry]
 name = "annofabcli"
-version = "1.64.0"
+version = "1.75.1"
 description = "Utility Command Line Interface for AnnoFab"
 authors = ["yuji38kwmt"]
 license = "MIT"
@@ -14,28 +14,31 @@ classifiers = [
         "Environment :: Console",
         "Programming Language :: Python",
         "Programming Language :: Python :: 3 :: Only",
-        "Programming Language :: Python :: 3.7",
         "Programming Language :: Python :: 3.8",
         "Programming Language :: Python :: 3.9",
+        "Programming Language :: Python :: 3.10",        
+        "Programming Language :: Python :: 3.11",        
         "Topic :: Utilities",
         "Operating System :: OS Independent",
 ]
 
 
 [tool.poetry.dependencies]
-python = "^3.7.1"
+
+# 3.8.1まで指定している理由: flake8 v6.0.0を利用するため、Python3.8.0のサポートを落とした
+python = "^3.8.1"
 requests = "*"
-pillow = "*"
 pyyaml = "*"
 dictdiffer = "*"
 more-itertools = "*"
 jmespath = "*"
 pyquery = "*"
 isodate = "*"
-annofabapi = ">=0.60.3"
+annofabapi = ">=0.67.1"
 python-datauri = "*"
 pandas = "*"
-bokeh = "^2.4"
+bokeh = "^3.0"
+Pillow = "*"
 
 
 [tool.poetry.dev-dependencies]
@@ -43,6 +46,7 @@ bokeh = "^2.4"
 pytest = "*"
 pytest-xdist = "*"
 pytest-cov = "*"
+types-pytz = "*"
 
 # format library
 isort = "*"
@@ -50,14 +54,17 @@ autoflake = "*"
 black = "*"
 
 # lint library
-flake8 = "*"
+# 原因は不明だが、pycodestyleの関係でバージョンが下がるときがあるので、明示的に指定する
+flake8 = ">=6"
+pycodestyle = "*"
+
 mypy = "*"
 pylint = "*"
 
 # Document library
-# sphinx 4.4.0, pydata-sphinx-theme 0.8.0 では、 テーブルの幅が大きいときに、横スクロールバーが表示されないので、バージョンを固定する
-sphinx = "~4.2"
-pydata-sphinx-theme = "~0.6"
+sphinx = "^6.1"
+# https://github.com/pydata/pydata-sphinx-theme/issues/1094 に対応したバージョンを利用したいので、RC版を採用した
+pydata-sphinx-theme = ">=0.13.0rc3"
 sphinx-last-updated-by-git = "*"
 sphinx-argparse = "*"
 
@@ -68,11 +75,11 @@ types-python-dateutil = "*"
 types-PyYAML = "*"
 
 ipython = "*"
-jedi = "*"
 pyinstaller = "^4.5.1"
 
 [tool.poetry.scripts]
 annofabcli = "annofabcli.__main__:main"
+
 
 [tool.isort]
 profile = "black"

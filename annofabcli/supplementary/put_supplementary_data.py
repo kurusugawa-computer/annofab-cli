@@ -17,7 +17,6 @@ from dataclasses_json import DataClassJsonMixin
 from more_itertools import first_true
 
 import annofabcli
-from annofabcli import AnnofabApiFacade
 from annofabcli.common.cli import (
     COMMAND_LINE_ERROR_STATUS_CODE,
     AbstractCommandLineInterface,
@@ -26,6 +25,7 @@ from annofabcli.common.cli import (
     get_json_from_args,
     prompt_yesnoall,
 )
+from annofabcli.common.facade import AnnofabApiFacade
 from annofabcli.common.utils import get_file_scheme_path
 
 logger = logging.getLogger(__name__)
@@ -77,7 +77,6 @@ class SubPutSupplementaryData:
         self.supplementary_data_cache: Dict[str, List[SupplementaryData]] = {}
 
     def put_supplementary_data(self, project_id: str, supplementary_data: SupplementaryDataForPut):
-
         file_path = get_file_scheme_path(supplementary_data.supplementary_data_path)
         if file_path is not None:
             request_body = {
@@ -181,6 +180,11 @@ class SubPutSupplementaryData:
         input_data_id = csv_supplementary_data.input_data_id
         supplementary_data_id = csv_supplementary_data.supplementary_data_id
         supplementary_data_path = csv_supplementary_data.supplementary_data_path
+
+        # input_data_idの存在確認
+        if self.service.wrapper.get_input_data_or_none(project_id, input_data_id) is None:
+            logger.warning(f"input_data_id='{input_data_id}'である入力データは存在しないため、補助情報の登録をスキップします。")
+            return False
 
         if supplementary_data_id is not None:
             old_supplementary_data_key = f"supplementary_data_id={supplementary_data_id}"

@@ -1,5 +1,4 @@
 from dataclasses import dataclass
-from typing import Any, Dict
 
 from dataclasses_json import DataClassJsonMixin
 
@@ -15,19 +14,3 @@ class WaitOptions(DataClassJsonMixin):
 
     max_tries: int
     """最大ジョブに何回アクセスするか"""
-
-
-@dataclass
-class SimpleAnnotationDetail4Import(DataClassJsonMixin):
-    """
-    アノテーションインポート用の　``SimpleAnnotationDetail`` クラス。
-    """
-
-    label: str
-    """アノテーション仕様のラベル名(英語)です。 """
-
-    data: Dict[str, Any]
-    """"""
-
-    attributes: Dict[str, Any]
-    """キーに属性の名前、値に各属性の値が入った辞書構造です。 """

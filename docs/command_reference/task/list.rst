@@ -7,6 +7,8 @@ Description
 タスク一覧を出力します。
 
 
+
+
 Examples
 =================================
 
@@ -27,7 +29,7 @@ Examples
 .. warning::
 
     WebAPIの都合上、10,000件までしか出力できません。
-    10,000件以上のタスクを出力する場合は、`annofabcli task list_with_json <../task/list_with_json.html>`_ コマンドを使用してください。
+    10,000件以上のタスクを出力する場合は、`annofabcli task list_all <../task/list_all.html>`_ コマンドを使用してください。
 
 タスクのフェーズやステータスなどで絞り込む
 ----------------------------------------------
@@ -124,6 +126,7 @@ JSON出力
         "phase": "acceptance",
         "phase_stage": 1,
         "status": "complete",
+        "input_data_count": 1,
         "input_data_id_list": [
           "input1"
         ],
@@ -139,7 +142,6 @@ JSON出力
           },
           ...
         ],
-        "work_time_span": 8924136,
         "started_datetime": "2020-11-24T16:21:27.753+09:00",
         "updated_datetime": "2020-11-24T16:29:29.381+09:00",
         "sampling": null,
@@ -180,5 +182,5 @@ Usage Details
 
 See also
 =================================
-* `annofabcli task list_with_json <../task/list_with_json.html>`_
+* `annofabcli task list_all <../task/list_all.html>`_
 

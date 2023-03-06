@@ -7,9 +7,9 @@ import pandas
 from annofabapi.models import Task
 
 import annofabcli
-from annofabcli import AnnofabApiFacade
 from annofabcli.common.cli import AbstractCommandLineInterface, ArgumentParser, build_annofabapi_resource_and_login
 from annofabcli.common.enums import FormatArgument
+from annofabcli.common.facade import AnnofabApiFacade
 from annofabcli.common.utils import get_columns_with_priority
 from annofabcli.common.visualize import AddProps
 
@@ -119,6 +119,7 @@ class ListTasksMain:
     def get_task_list(
         self,
         project_id: str,
+        *,
         task_id_list: Optional[List[str]] = None,
         task_query: Optional[Dict[str, Any]] = None,
         user_id_list: Optional[List[str]] = None,
@@ -160,12 +161,17 @@ class ListTasks(AbstractCommandLineInterface):
         "status",
         "started_datetime",
         "updated_datetime",
+        "operation_updated_datetime",
+        "account_id",
         "user_id",
         "username",
         "worktime_hour",
-        "metadata",
         "number_of_rejections_by_inspection",
         "number_of_rejections_by_acceptance",
+        "metadata",
+        "sampling",
+        "input_data_count",
+        "input_data_id_list",
     ]
 
     def main(self):

@@ -9,7 +9,7 @@ from pathlib import Path
 from typing import Any, Dict, Iterator, List, Optional
 
 import annofabapi
-from annofabapi.dataclass.annotation import Annotation, AnnotationDetail
+from annofabapi.dataclass.annotation import AnnotationDetailV1, AnnotationV1
 from annofabapi.models import AnnotationDataHoldingType, ProjectMemberRole, TaskStatus
 from annofabapi.parser import (
     SimpleAnnotationParser,
@@ -19,7 +19,6 @@ from annofabapi.parser import (
 from annofabapi.utils import can_put_annotation
 
 import annofabcli
-from annofabcli import AnnofabApiFacade
 from annofabcli.common.cli import (
     COMMAND_LINE_ERROR_STATUS_CODE,
     AbstractCommandLineInterface,
@@ -27,6 +26,7 @@ from annofabcli.common.cli import (
     ArgumentParser,
     build_annofabapi_resource_and_login,
 )
+from annofabcli.common.facade import AnnofabApiFacade
 
 logger = logging.getLogger(__name__)
 
@@ -47,8 +47,8 @@ class RestoreAnnotationMain(AbstractCommandLineWithConfirmInterface):
         self.is_force = is_force
 
     def _to_annotation_detail_for_request(
-        self, parser: SimpleAnnotationParser, detail: AnnotationDetail
-    ) -> AnnotationDetail:
+        self, parser: SimpleAnnotationParser, detail: AnnotationDetailV1
+    ) -> AnnotationDetailV1:
         """
         Request Bodyに渡すDataClassに変換する。塗りつぶし画像があれば、それをS3にアップロードする。
 
@@ -75,9 +75,9 @@ class RestoreAnnotationMain(AbstractCommandLineWithConfirmInterface):
         return detail
 
     def parser_to_request_body(self, parser: SimpleAnnotationParser) -> Dict[str, Any]:
-        # infer_missing=Trueを指定する理由：Optional型のキーが存在しない場合でも、Annotationデータクラスのインスタンスを生成できるようにするため
+        # infer_missing=Trueを指定する理由：Optional型のキーが存在しない場合でも、AnnotationV1データクラスのインスタンスを生成できるようにするため
         # https://qiita.com/yuji38kwmt/items/c5b56f70da3b8a70ba31
-        annotation: Annotation = Annotation.from_dict(parser.load_json(), infer_missing=True)
+        annotation: AnnotationV1 = AnnotationV1.from_dict(parser.load_json(), infer_missing=True)
         request_details: List[Dict[str, Any]] = []
         for detail in annotation.details:
             request_detail = self._to_annotation_detail_for_request(parser, detail)
@@ -95,7 +95,6 @@ class RestoreAnnotationMain(AbstractCommandLineWithConfirmInterface):
         return request_body
 
     def put_annotation_for_input_data(self, parser: SimpleAnnotationParser) -> bool:
-
         task_id = parser.task_id
         input_data_id = parser.input_data_id
 
@@ -110,7 +109,6 @@ class RestoreAnnotationMain(AbstractCommandLineWithConfirmInterface):
         return True
 
     def put_annotation_for_task(self, task_parser: SimpleAnnotationParserByTask) -> int:
-
         logger.info(f"タスク'{task_parser.task_id}' のアノテーションをリストアします。")
 
         success_count = 0
@@ -269,7 +267,6 @@ class RestoreAnnotation(AbstractCommandLineInterface):
     COMMON_MESSAGE = "annofabcli annotation restore: error:"
 
     def validate(self, args: argparse.Namespace) -> bool:
-
         if args.parallelism is not None and not args.yes:
             print(
                 f"{self.COMMON_MESSAGE} argument --parallelism: '--parallelism'を指定するときは、必ず '--yes' を指定してください。",

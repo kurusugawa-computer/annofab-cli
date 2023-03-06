@@ -2,9 +2,7 @@ import argparse
 import logging
 import sys
 import uuid
-import zipfile
 from dataclasses import dataclass
-from distutils.util import strtobool  # pylint: disable=import-error,no-name-in-module
 from functools import partial
 from multiprocessing import Pool
 from pathlib import Path
@@ -14,21 +12,20 @@ import annofabapi
 import pandas
 import requests
 from annofabapi.exceptions import CheckSumError
-from annofabapi.models import ProjectJobType, ProjectMemberRole
+from annofabapi.models import ProjectMemberRole
 from dataclasses_json import DataClassJsonMixin
 
 import annofabcli
-from annofabcli import AnnofabApiFacade
 from annofabcli.common.cli import (
     COMMAND_LINE_ERROR_STATUS_CODE,
     AbstractCommandLineInterface,
     ArgumentParser,
     build_annofabapi_resource_and_login,
     get_json_from_args,
-    get_wait_options_from_args,
     prompt_yesnoall,
 )
 from annofabcli.common.dataclasses import WaitOptions
+from annofabcli.common.facade import AnnofabApiFacade
 from annofabcli.common.utils import get_file_scheme_path
 
 logger = logging.getLogger(__name__)
@@ -126,7 +123,6 @@ class SubPutInputData:
     def put_input_data(
         self, project_id: str, csv_input_data: InputDataForPut, last_updated_datetime: Optional[str] = None
     ):
-
         request_body: Dict[str, Any] = {"last_updated_datetime": last_updated_datetime}
 
         file_path = get_file_scheme_path(csv_input_data.input_data_path)
@@ -185,7 +181,6 @@ class SubPutInputData:
         return self.confirm_processing(message_for_confirm)
 
     def put_input_data_main(self, project_id: str, csv_input_data: CsvInputData, overwrite: bool = False) -> bool:
-
         input_data = InputDataForPut(
             input_data_name=csv_input_data.input_data_name,
             input_data_path=csv_input_data.input_data_path,
@@ -212,7 +207,7 @@ class SubPutInputData:
                 logger.warning(f"{input_data.input_data_path} は存在しません。")
                 return False
 
-        if not self.confirm_put_input_data(input_data, already_exists=(last_updated_datetime is not None)):
+        if not self.confirm_put_input_data(input_data, already_exists=last_updated_datetime is not None):
             return False
 
         # 入力データを登録
@@ -294,7 +289,7 @@ class PutInputData(AbstractCommandLineInterface):
     def get_input_data_list_from_df(df: pandas.DataFrame) -> List[CsvInputData]:
         def create_input_data(e):
             input_data_id = e.input_data_id if not pandas.isna(e.input_data_id) else None
-            sign_required = bool(strtobool(str(e.sign_required))) if not pandas.isna(e.sign_required) else None
+            sign_required: Optional[bool] = e.sign_required if pandas.notna(e.sign_required) else None
             return CsvInputData(
                 input_data_name=e.input_data_name,
                 input_data_path=e.input_data_path,
@@ -330,84 +325,13 @@ class PutInputData(AbstractCommandLineInterface):
 
         return CsvInputData.schema().load(input_data_dict_list, many=True, unknown="exclude")
 
-    def put_input_data_from_zip_file(
-        self,
-        project_id: str,
-        zip_file: Path,
-        wait_options: WaitOptions,
-        input_data_name_for_zip: Optional[str] = None,
-        wait: bool = False,
-    ) -> None:
-        """
-        zipファイルを入力データとして登録する
-
-        Args:
-            project_id: 入力データの登録先プロジェクトのプロジェクトID
-            zip_file: 入力データとして登録するzipファイルのパス
-            input_data_name_for_zip: zipファイルのinput_data_name
-            wait: 入力データの登録が完了するまで待つかどうか
-
-        """
-
-        project_title = self.facade.get_project_title(project_id)
-        logger.info(f"{project_title} に、{str(zip_file)} を登録します。")
-
-        request_body = {}
-        if input_data_name_for_zip is not None:
-            request_body["input_data_name"] = input_data_name_for_zip
-
-        self.service.wrapper.put_input_data_from_file(
-            project_id,
-            input_data_id=str(uuid.uuid4()),
-            file_path=str(zip_file),
-            content_type="application/zip",
-            request_body=request_body,
-        )
-        logger.info(f"入力データの登録中です（サーバ側の処理）。")
-
-        if wait:
-            MAX_WAIT_MINUTE = wait_options.max_tries * wait_options.interval / 60
-            logger.info(f"最大{MAX_WAIT_MINUTE}分間、処理が終了するまで待ちます。")
-
-            result = self.service.wrapper.wait_for_completion(
-                project_id,
-                job_type=ProjectJobType.GEN_INPUTS,
-                job_access_interval=wait_options.interval,
-                max_job_access=wait_options.max_tries,
-            )
-            if result:
-                logger.info(f"入力データの登録が完了しました。")
-            else:
-                logger.warning(f"入力データの登録に失敗しました。または、{MAX_WAIT_MINUTE}分間待っても、入力データの登録が完了しませんでした。")
-
     def validate(self, args: argparse.Namespace) -> bool:
-        if args.zip is not None:
-            if not Path(args.zip).exists():
-                print(f"{self.COMMON_MESSAGE} argument --zip: ファイルパスが存在しません。 '{args.zip}'", file=sys.stderr)
-                return False
-
-            if not zipfile.is_zipfile(args.zip):
-                print(f"{self.COMMON_MESSAGE} argument --zip: zipファイルではありません。 '{args.zip}'", file=sys.stderr)
-                return False
-
-            if args.overwrite:
-                logger.warning(f"'--zip'オプションを指定しているとき、'--overwrite'オプションは無視されます。")
-
-            if args.parallelism is not None:
-                logger.warning(f"'--zip'オプションを指定しているとき、'--parallelism'オプションは無視されます。")
-
         if args.csv is not None:
             if not Path(args.csv).exists():
                 print(f"{self.COMMON_MESSAGE} argument --csv: ファイルパスが存在しません。 '{args.csv}'", file=sys.stderr)
                 return False
 
         if args.csv is not None or args.json is not None:
-            if args.wait:
-                logger.warning(f"'--csv'/'--json'オプションを指定しているとき、'--wait'オプションは無視されます。")
-
-            if args.input_data_name_for_zip:
-                logger.warning(f"'--csv'/'--json'オプションを指定しているとき、'--input_data_name_for_zip'オプションは無視されます。")
-
             if args.parallelism is not None and not args.yes:
                 print(
                     f"{self.COMMON_MESSAGE} argument --parallelism: '--parallelism'を指定するときは、必ず '--yes' を指定してください。",
@@ -448,16 +372,6 @@ class PutInputData(AbstractCommandLineInterface):
             )
             self.put_input_data_list(
                 project_id, input_data_list=input_data_list, overwrite=args.overwrite, parallelism=args.parallelism
-            )
-
-        elif args.zip is not None:
-            wait_options = get_wait_options_from_args(get_json_from_args(args.wait_options), DEFAULT_WAIT_OPTIONS)
-            self.put_input_data_from_zip_file(
-                project_id,
-                zip_file=args.zip,
-                input_data_name_for_zip=args.input_data_name_for_zip,
-                wait=args.wait,
-                wait_options=wait_options,
             )
 
         else:
@@ -506,19 +420,12 @@ def parse_args(parser: argparse.ArgumentParser):
         ),
     )
 
-    file_group.add_argument("--zip", type=Path, help=("入力データとして登録するzipファイルのパスを指定してください。"))
+    file_group.add_argument("--zip", type=Path, help="入力データとして登録するzipファイルのパスを指定してください。")
 
     parser.add_argument(
         "--overwrite",
         action="store_true",
-        help="指定した場合、input_data_idがすでに存在していたら上書きします。指定しなければ、スキップします。" " ``--csv`` , `--json`` を指定したときのみ有効なオプションです。",
-    )
-
-    parser.add_argument(
-        "--input_data_name_for_zip",
-        type=str,
-        help="入力データとして登録するzipファイルのinput_data_nameを指定してください。省略した場合、 ``--zip`` のパスになります。"
-        " ``--zip`` を指定したときのみ有効なオプションです。",
+        help="指定した場合、input_data_idがすでに存在していたら上書きします。指定しなければ、スキップします。" " ``--csv`` , ``--json`` を指定したときのみ有効なオプションです。",
     )
 
     parser.add_argument(
@@ -526,20 +433,8 @@ def parse_args(parser: argparse.ArgumentParser):
         action="store_true",
         help=(
             "``--csv`` , ``--json`` に渡した入力データの重複（input_data_name, input_data_path）を許可します。\n"
-            "``--csv`` , ``--json` `を指定したときのみ有効なオプションです。"
+            "``--csv`` , ``--json`` を指定したときのみ有効なオプションです。"
         ),
-    )
-
-    parser.add_argument("--wait", action="store_true", help=("入力データの登録が完了するまで待ちます。" " ``--zip`` を指定したときのみ有効なオプションです。"))
-
-    parser.add_argument(
-        "--wait_options",
-        type=str,
-        help="入力データの登録が完了するまで待つ際のオプションをJSON形式で指定してください。 ``--wait`` を指定したときのみ有効なオプションです。"
-        " ``file://`` を先頭に付けるとjsonファイルを指定できます。"
-        'デフォルとは ``{"interval":60, "max_tries":360}`` です。'
-        "``interval`` :完了したかを問い合わせる間隔[秒], "
-        "``max_tires`` :完了したかの問い合わせを最大何回行うか。",
     )
 
     parser.add_argument(

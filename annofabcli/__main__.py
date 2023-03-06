@@ -1,7 +1,9 @@
+from __future__ import annotations
+
 import argparse
 import logging
 import sys
-from typing import Optional, Sequence
+from typing import Optional
 
 import annofabcli.annotation.subcommand_annotation
 import annofabcli.annotation_specs.subcommand_annotation_specs
@@ -10,9 +12,10 @@ import annofabcli.common.cli
 import annofabcli.experimental.subcommand_experimental
 import annofabcli.filesystem.subcommand_filesystem
 import annofabcli.input_data.subcommand_input_data
-import annofabcli.inspection_comment.subcommand_inspection_comment
 import annofabcli.instruction.subcommand_instruction
 import annofabcli.job.subcommand_job
+import annofabcli.my_account.subcommand_my_account
+import annofabcli.organization.subcommand_organization
 import annofabcli.organization_member.subcommand_organization_member
 import annofabcli.project.subcommand_project
 import annofabcli.project_member.subcommand_project_member
@@ -26,7 +29,7 @@ import annofabcli.task_history_event.subcommand_task_history_event
 logger = logging.getLogger(__name__)
 
 
-def main(arguments: Optional[Sequence[str]] = None):
+def main(arguments: Optional[list[str]] = None):
     """
     annofabcliコマンドのメイン処理
     注意： `deprecated`なツールは、サブコマンド化しない。
@@ -44,8 +47,11 @@ def main(arguments: Optional[Sequence[str]] = None):
 
     if hasattr(args, "subcommand_func"):
         try:
-            annofabcli.cli.load_logging_config_from_args(args)
-            logger.info(f"sys.argv='{sys.argv}'")
+            annofabcli.common.cli.load_logging_config_from_args(args)
+            argv = sys.argv
+            if arguments is not None:
+                argv = ["annofabcli"] + list(arguments)
+            logger.info(f"argv={argv}")
             args.subcommand_func(args)
         except Exception as e:
             logger.exception(e)
@@ -69,9 +75,10 @@ def create_parser() -> argparse.ArgumentParser:
     annofabcli.annotation_specs.subcommand_annotation_specs.add_parser(subparsers)
     annofabcli.comment.subcommand_comment.add_parser(subparsers)
     annofabcli.input_data.subcommand_input_data.add_parser(subparsers)
-    annofabcli.inspection_comment.subcommand_inspection_comment.add_parser(subparsers)
     annofabcli.instruction.subcommand_instruction.add_parser(subparsers)
     annofabcli.job.subcommand_job.add_parser(subparsers)
+    annofabcli.my_account.subcommand_my_account.add_parser(subparsers)
+    annofabcli.organization.subcommand_organization.add_parser(subparsers)
     annofabcli.organization_member.subcommand_organization_member.add_parser(subparsers)
     annofabcli.project.subcommand_project.add_parser(subparsers)
     annofabcli.project_member.subcommand_project_member.add_parser(subparsers)

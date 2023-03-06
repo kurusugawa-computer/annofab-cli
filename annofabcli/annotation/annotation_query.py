@@ -4,7 +4,7 @@ from dataclasses import dataclass
 from typing import Any, Dict, List, Optional, Union
 
 import more_itertools
-from annofabapi.dataclass.annotation import AdditionalData
+from annofabapi.dataclass.annotation import AdditionalDataV1
 from annofabapi.models import AdditionalDataDefinitionType
 from annofabapi.utils import get_message_for_i18n
 from dataclasses_json import DataClassJsonMixin
@@ -12,7 +12,7 @@ from dataclasses_json import DataClassJsonMixin
 AttributeValue = Optional[Union[str, int, bool]]
 
 
-def _get_attribute_to_api(additional_data: dict[str, Any], attribute_value: AttributeValue) -> AdditionalData:
+def _get_attribute_to_api(additional_data: dict[str, Any], attribute_value: AttributeValue) -> AdditionalDataV1:
     """API用の属性情報を取得する。
 
     Args:
@@ -34,7 +34,7 @@ def _get_attribute_to_api(additional_data: dict[str, Any], attribute_value: Attr
         "additional_data_definition_id": additional_data_definition_id,
     }
     if attribute_value is None:
-        return AdditionalData.from_dict(result, infer_missing=True)
+        return AdditionalDataV1.from_dict(result, infer_missing=True)
 
     additional_data_type: str = additional_data["type"]
     if additional_data_type == AdditionalDataDefinitionType.FLAG.value:
@@ -75,12 +75,12 @@ def _get_attribute_to_api(additional_data: dict[str, Any], attribute_value: Attr
         choice_info = tmp[0]
         result["choice"] = choice_info["choice_id"]
 
-    return AdditionalData.from_dict(result, infer_missing=True)
+    return AdditionalDataV1.from_dict(result, infer_missing=True)
 
 
 def convert_attributes_from_cli_to_api(
     attributes: dict[str, AttributeValue], annotation_specs: dict[str, Any], label_id: Optional[str] = None
-) -> list[AdditionalData]:
+) -> list[AdditionalDataV1]:
     """
     CLI用の属性をAPI用の属性に変換します。
 
@@ -113,7 +113,7 @@ def convert_attributes_from_cli_to_api(
             if e["additional_data_definition_id"] in tmp_additional_data_definition_ids
         ]
 
-    attributes_for_webapi: list[AdditionalData] = []
+    attributes_for_webapi: list[AdditionalDataV1] = []
     for attribute_name, attribute_value in attributes.items():
         additional_data = more_itertools.first_true(
             tmp_additionals,
@@ -154,7 +154,7 @@ class AnnotationQueryForCLI(DataClassJsonMixin):
     label: str
     """ラベル名（英語）"""
 
-    # attributes: Optional[List[AdditionalData]] = None
+    # attributes: Optional[List[AdditionalDataV1]] = None
     attributes: Optional[Dict[str, AttributeValue]] = None
     """
     keyが属性名(英語),valueが属性値のdict。
@@ -198,5 +198,5 @@ class AnnotationQueryForAPI(DataClassJsonMixin):
     label_id: str
     """ラベルID"""
 
-    attributes: Optional[List[AdditionalData]] = None
+    attributes: Optional[List[AdditionalDataV1]] = None
     """属性IDと属性値のList"""

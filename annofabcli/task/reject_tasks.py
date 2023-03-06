@@ -16,7 +16,6 @@ from annofabapi.models import InputDataType, ProjectMemberRole, TaskPhase, TaskS
 
 import annofabcli
 import annofabcli.common.cli
-from annofabcli import AnnofabApiFacade
 from annofabcli.common.cli import (
     COMMAND_LINE_ERROR_STATUS_CODE,
     AbstractCommandLineInterface,
@@ -24,7 +23,8 @@ from annofabcli.common.cli import (
     ArgumentParser,
     build_annofabapi_resource_and_login,
 )
-from annofabcli.common.facade import TaskQuery, match_task_with_query
+from annofabcli.common.enums import CustomProjectType
+from annofabcli.common.facade import AnnofabApiFacade, TaskQuery, match_task_with_query
 from annofabcli.common.utils import add_dryrun_prefix
 
 logger = logging.getLogger(__name__)
@@ -131,7 +131,7 @@ class RejectTasksMain(AbstractCommandLineWithConfirmInterface):
     ):
         task_id = task["task_id"]
         if task["phase"] == TaskPhase.ANNOTATION.value:
-            logger.warning(f"task_id = {task_id}: annofation phaseのため、差し戻しできません。")
+            logger.warning(f"task_id = {task_id}: annotation phaseのため、差し戻しできません。")
             return False
 
         if task["status"] == TaskStatus.WORKING.value:
@@ -366,7 +366,6 @@ class RejectTasks(AbstractCommandLineInterface):
     COMMON_MESSAGE = "annofabcli task reject: error:"
 
     def validate(self, args: argparse.Namespace) -> bool:
-
         if args.parallelism is not None and not args.yes:
             print(
                 f"{self.COMMON_MESSAGE} argument --parallelism: '--parallelism'を指定するときは、'--yes' を指定してください。",
@@ -393,6 +392,10 @@ class RejectTasks(AbstractCommandLineInterface):
         task_query: Optional[TaskQuery] = TaskQuery.from_dict(dict_task_query) if dict_task_query is not None else None
 
         comment_data = annofabcli.common.cli.get_json_from_args(args.comment_data)
+        custom_project_type = (
+            CustomProjectType(args.custom_project_type) if args.custom_project_type is not None else None
+        )
+
         project, _ = self.service.api.get_project(args.project_id)
         if args.comment is not None and comment_data is None:
             if project["input_data_type"] == InputDataType.IMAGE.value:
@@ -402,11 +405,17 @@ class RejectTasks(AbstractCommandLineInterface):
                 comment_data = {"start": 0, "end": 100, "_type": "Time"}
             elif project["input_data_type"] == InputDataType.CUSTOM.value:
                 # customプロジェクト
-                print(
-                    f"{self.COMMON_MESSAGE} argument --comment_data: カスタムプロジェクトに検査コメントを付与する場合は必須です。",
-                    file=sys.stderr,
-                )
-                sys.exit(COMMAND_LINE_ERROR_STATUS_CODE)
+                if custom_project_type == CustomProjectType.THREE_DIMENSION_POINT_CLOUD:
+                    comment_data = {
+                        "data": '{"kind": "CUBOID", "shape": {"dimensions": {"width": 1.0, "height": 1.0, "depth": 1.0}, "location": {"x": 0.0, "y": 0.0, "z": 0.0}, "rotation": {"x": 0.0, "y": 0.0, "z": 0.0}, "direction": {"front": {"x": 1.0, "y": 0.0, "z": 0.0}, "up": {"x": 0.0, "y": 0.0, "z": 1.0}}}, "version": "2"}',  # noqa: E501
+                        "_type": "Custom",
+                    }
+                else:
+                    print(
+                        f"{self.COMMON_MESSAGE}: カスタムプロジェクトに検査コメントを付与する場合は、'--comment_data' または '--custom_project_type'を指定してください。",  # noqa: E501
+                        file=sys.stderr,
+                    )
+                    sys.exit(COMMAND_LINE_ERROR_STATUS_CODE)
 
         main_obj = RejectTasksMain(self.service, comment_data=comment_data, all_yes=self.all_yes)
         main_obj.reject_task_list(
@@ -444,11 +453,22 @@ def parse_args(parser: argparse.ArgumentParser):
     parser.add_argument(
         "--comment_data",
         type=str,
-        help="検査コメントを付与する位置や区間をJSON形式で指定します。"
-        "指定方法は https://annofab-cli.readthedocs.io/ja/latest/command_reference/task/reject.html を参照してください。"
-        " ``file://`` を先頭に付けると、JSON形式のファイルを指定できます。"
-        "デフォルトでは画像プロジェクトならば画像の左上(x=0,y=0)、動画プロジェクトなら動画の先頭（start=0, end=100)に付与します。"
-        "カスタムプロジェクトに検査コメントを付与する場合は必須です。",
+        help="検査コメントの種類や付与する位置をJSON形式で指定します。"
+        "指定方法は https://annofab-cli.readthedocs.io/ja/latest/command_reference/task/reject.html を参照してください。\n"
+        "``file://`` を先頭に付けると、JSON形式のファイルを指定できます。\n"
+        "デフォルトの検査コメントの種類と位置は以下の通りです。\n"
+        "\n"
+        " * 画像プロジェクト：点。先頭画像の左上\n"
+        " * 動画プロジェクト：区間。動画の先頭\n"
+        " * カスタムプロジェクト(3dpc)：辺が1の立方体。原点\n",
+    )
+
+    parser.add_argument(
+        "--custom_project_type",
+        type=str,
+        choices=[e.value for e in CustomProjectType],
+        help="[BETA] カスタムプロジェクトの種類を指定します。カスタムプロジェクトに対して、検査コメントの位置を指定しない場合は必須です。\n"
+        "※ Annofabの情報だけでは'3dpc'プロジェクトかどうかが分からないため、指定する必要があります。",
     )
 
     # 差し戻したタスクの担当者の割当に関して

@@ -17,7 +17,6 @@ from more_itertools import first_true
 
 import annofabcli
 import annofabcli.common.cli
-from annofabcli import AnnofabApiFacade
 from annofabcli.common.cli import (
     COMMAND_LINE_ERROR_STATUS_CODE,
     AbstractCommandLineInterface,
@@ -25,7 +24,7 @@ from annofabcli.common.cli import (
     ArgumentParser,
     build_annofabapi_resource_and_login,
 )
-from annofabcli.common.facade import TaskQuery, match_task_with_query
+from annofabcli.common.facade import AnnofabApiFacade, TaskQuery, match_task_with_query
 
 logger = logging.getLogger(__name__)
 
@@ -111,7 +110,6 @@ class CompleteTasksMain(AbstractCommandLineWithConfirmInterface):
         comment_list: List[dict[str, Any]],
         comment_status: CommentStatus,
     ):
-
         if comment_list is None or len(comment_list) == 0:
             logger.warning(f"変更対象の検査コメントはなかった。task_id = {task.task_id}, input_data_id = {input_data_id}")
             return
@@ -268,7 +266,7 @@ class CompleteTasksMain(AbstractCommandLineWithConfirmInterface):
             unanswered_comment_list = self.get_unanswered_comment_list(task, input_data_id)
             unanswered_comment_list_dict[input_data_id] = unanswered_comment_list
 
-        unanswered_comment_count_for_task = sum([len(e) for e in unanswered_comment_list_dict.values()])
+        unanswered_comment_count_for_task = sum(len(e) for e in unanswered_comment_list_dict.values())
 
         logger.debug(f"{task.task_id}: 未回答の検査コメントが {unanswered_comment_count_for_task} 件あります。")
         if unanswered_comment_count_for_task > 0:
@@ -302,13 +300,12 @@ class CompleteTasksMain(AbstractCommandLineWithConfirmInterface):
         task: Task,
         inspection_status: Optional[CommentStatus] = None,
     ) -> bool:
-
         unprocessed_inspection_list_dict: Dict[str, List[Inspection]] = {}
         for input_data_id in task.input_data_id_list:
             unprocessed_inspection_list = self.get_unprocessed_inspection_list(task, input_data_id)
             unprocessed_inspection_list_dict[input_data_id] = unprocessed_inspection_list
 
-        unprocessed_inspection_count = sum([len(e) for e in unprocessed_inspection_list_dict.values()])
+        unprocessed_inspection_count = sum(len(e) for e in unprocessed_inspection_list_dict.values())
 
         logger.debug(f"{task.task_id}: 未処置の検査コメントが {unprocessed_inspection_count} 件あります。")
         if unprocessed_inspection_count > 0:

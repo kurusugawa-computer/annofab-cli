@@ -15,6 +15,9 @@ from annofabapi.utils import get_message_for_i18n
 
 from annofabcli.__main__ import main
 
+# webapiにアクセスするテストモジュール
+pytestmark = pytest.mark.access_webapi
+
 # プロジェクトトップに移動する
 os.chdir(os.path.dirname(os.path.abspath(__file__)) + "/../")
 
@@ -85,7 +88,7 @@ class TestCommandLine:
         """
         assert (
             self._validate_annotation_specs_for_scenario_test()
-        ), "アノテーション仕様がシナリオテストを実行できる状態でありません。矩形の'car'ラベルを追加して、その下に'turncation'チェックボックスを追加してください。"
+        ), "アノテーション仕様がシナリオテストを実行できる状態でありません。矩形の'car'ラベルを追加して、その下に'truncation'チェックボックスを追加してください。"
 
         task_id = target_task["task_id"]
         # インポート用のアノテーションを生成して、アノテーションをインポートする

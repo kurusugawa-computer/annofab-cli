@@ -15,7 +15,14 @@ Available Commands
    :maxdepth: 1
    :titlesonly:
 
+   delete
    download
+   list
+   list_all
+   put_inspection
+   put_inspection_simply
+   put_onhold
+   put_onhold_simply
 
 Usage Details
 =================================

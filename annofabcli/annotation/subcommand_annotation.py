@@ -1,7 +1,6 @@
 import argparse
 from typing import Optional
 
-import annofabcli
 import annofabcli.annotation.change_annotation_attributes
 import annofabcli.annotation.change_annotation_properties
 import annofabcli.annotation.copy_annotation
@@ -16,7 +15,6 @@ import annofabcli.common.cli
 
 
 def parse_args(parser: argparse.ArgumentParser):
-
     subparsers = parser.add_subparsers(dest="subcommand_name")
 
     # サブコマンドの定義

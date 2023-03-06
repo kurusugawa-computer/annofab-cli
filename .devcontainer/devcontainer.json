@@ -30,17 +30,22 @@
 	],
 	"containerEnv": {
 		"CONTAINER_WORKSPACE": "${containerWorkspaceFolder}",
-		"LOCAL_WORKSPACE": "${localWorkspaceFolder}",
+		"LOCAL_WORKSPACE": "${localWorkspaceFolder}"
 	},
 	"postStartCommand": "poetry install",
-	"extensions": [
-		"mosapride.zenkaku",
-		"ms-python.python",
-		"ms-python.vscode-pylance",
-		"streetsidesoftware.code-spell-checker",
-		"bungcip.better-toml",
-		"njpwerner.autodocstring",
-		"mechatroner.rainbow-csv",
-		"lextudio.restructuredtext"
-	]
+
+	"customizations": {
+		"vscode": {			
+			"extensions": [
+				"mosapride.zenkaku",
+				"ms-python.python",
+				"ms-python.vscode-pylance",
+				"streetsidesoftware.code-spell-checker",
+				"bungcip.better-toml",
+				"njpwerner.autodocstring",
+				"mechatroner.rainbow-csv",
+				"lextudio.restructuredtext"
+			]
+		}
+	}
 }

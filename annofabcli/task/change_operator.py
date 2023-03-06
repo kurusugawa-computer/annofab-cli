@@ -12,7 +12,6 @@ from annofabapi.models import ProjectMemberRole, TaskStatus
 
 import annofabcli
 import annofabcli.common.cli
-from annofabcli import AnnofabApiFacade
 from annofabcli.common.cli import (
     COMMAND_LINE_ERROR_STATUS_CODE,
     AbstractCommandLineInterface,
@@ -20,7 +19,7 @@ from annofabcli.common.cli import (
     build_annofabapi_resource_and_login,
     prompt_yesnoall,
 )
-from annofabcli.common.facade import TaskQuery, match_task_with_query
+from annofabcli.common.facade import AnnofabApiFacade, TaskQuery, match_task_with_query
 
 logger = logging.getLogger(__name__)
 

@@ -15,12 +15,12 @@ Examples
 --------------------------
 
 ``--annotation`` には、Annofabからダウンロードしたアノテーションzipか、アノテーションzipを展開したディレクトリを指定してください。
-アノテーションzipは、`annofabcli project download <../project/download.html>`_ コマンドでダウンロードできます。
+アノテーションzipは、`annofabcli annotation download <../annotation/download.html>`_ コマンドでダウンロードできます。
 
 .. code-block::
 
     # アノテーションzipをダウンロードする。
-    $ annofabcli project download simple_annotation --project_id prj1 --output annotation.zip
+    $ annofabcli annotation download --project_id prj1 --output annotation.zip
 
 
 ``--image_dir`` には、画像が格納されているディレクトリを指定してください。
@@ -81,6 +81,18 @@ CSVのフォーマットは以下の通りです。
 
 
 .. image:: draw_annotation/output_image.png
+
+
+アノテーションのみを描画する
+----------------------------------------------------
+アノテーションのみを描画する場合は、``--default_image_size`` を指定してください。
+
+.. code-block::
+
+    $ annofabcli filesystem draw_annotation  --annotation annotation.zip \
+    --default_image_size 1280x720 \
+    --output_dir out/
+
 
 
 ポリラインの描画方法
@@ -227,6 +239,5 @@ See also
 =================================
 
 * `アノテーションzipの構造 <https://annofab.com/docs/api/#section/Simple-Annotation-ZIP>`_
-* `annofabcli project download <../project/download.html>`_
 * `annofabcli annotation_specs list_label_color <../annotation_specs/list_label_color.html>`_
 

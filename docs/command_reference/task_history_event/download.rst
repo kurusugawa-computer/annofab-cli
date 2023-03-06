@@ -26,6 +26,52 @@ Examples
 
 
 
+
+.. code-block::
+
+    $ annofabcli task_history_event download --output out.json
+    $ jq . out.json > out-pretty.json
+
+
+.. code-block::
+    :caption: out-pretty.json
+
+    [
+        {
+            "project_id": "prj1",
+            "task_id": "task1",
+            "task_history_id": "17724ca4-6cdd-4351-86e6-16c19d50233e",
+            "created_datetime": "2021-05-20T13:37:52.281+09:00",
+            "phase": "annotation",
+            "phase_stage": 1,
+            "status": "working",
+            "account_id": "user1",
+            "request": {
+            "status": "working",
+            "account_id": "user1",
+            "last_updated_datetime": "2021-05-20T13:37:28.179+09:00",
+            "force": false
+            },
+        },
+        {
+            "project_id": "prj1",
+            "task_id": "task1",
+            "task_history_id": "c22ec069-a6a9-42f9-8438-53bd6145b91f",
+            "created_datetime": "2021-05-20T14:16:23.534+09:00",
+            "phase": "annotation",
+            "phase_stage": 1,
+            "status": "on_hold",
+            "account_id": "user1",
+            "request": {
+            "status": "on_hold",
+            "account_id": "user1",
+            "last_updated_datetime": "2021-05-20T13:37:52.296+09:00",
+            "force": false
+            },
+        }
+    ]
+
+
 Usage Details
 =================================
 

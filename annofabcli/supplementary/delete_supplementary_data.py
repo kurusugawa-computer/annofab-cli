@@ -12,7 +12,6 @@ from annofabapi.models import ProjectMemberRole
 from more_itertools import first_true
 
 import annofabcli
-from annofabcli import AnnofabApiFacade
 from annofabcli.common.cli import (
     COMMAND_LINE_ERROR_STATUS_CODE,
     AbstractCommandLineInterface,
@@ -20,6 +19,7 @@ from annofabcli.common.cli import (
     ArgumentParser,
     build_annofabapi_resource_and_login,
 )
+from annofabcli.common.facade import AnnofabApiFacade
 
 logger = logging.getLogger(__name__)
 
@@ -186,10 +186,9 @@ class DeleteSupplementaryDataMain(AbstractCommandLineWithConfirmInterface):
         for input_data_id in input_data_id_list:
             input_data = self.service.wrapper.get_input_data_or_none(project_id, input_data_id)
             if input_data is None:
-                logger.warning(f"input_data_id={input_data_id} の入力データは存在しません。")
-                input_data_name = None
-            else:
-                input_data_name = input_data["input_data_name"]
+                logger.warning(f"input_data_id={input_data_id} の入力データは存在しないので、補助情報の削除をスキップします。")
+                continue
+            input_data_name = input_data["input_data_name"]
 
             supplementary_data_list, _ = self.service.api.get_supplementary_data_list(project_id, input_data_id)
             if len(supplementary_data_list) == 0:

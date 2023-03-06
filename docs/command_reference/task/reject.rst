@@ -37,7 +37,6 @@ Examples
 
     $ annofabcli task reject --project_id prj1 --task_id file://task_id.txt
 
-完了状態のタスクを差し戻すには、先に受入取り消し（`annofabcli task cancel_acceptance <../task/cancel_acceptance.html>`_）を実行する必要があります。
 受入取り消しと差し戻しを同時に行う場合は、``--cancel_acceptance`` を指定してください。
 
 .. code-block::
@@ -66,12 +65,19 @@ Examples
 
 ``--comment_data`` に渡す形式は、https://annofab-cli.readthedocs.io/ja/latest/command_reference/inspection_comment/put_simply.html を参照してください。
 
-``--comment_data`` を指定しない場合は、以下の値になります。
+``--comment_data`` を指定しない場合は、以下の検査コメントが付与されます。
 
-* 画像プロジェクト： ``{"x":0, "y":0, "_type": "Point"}``
-* 動画プロジェクト： ``{"start":0, "end":100, "_type": "Time"}``
+* 画像プロジェクト： 点。先頭画像の左上に位置する。
+* 動画プロジェクト： 区間。動画の先頭に位置する。
+* カスタムプロジェクト（3dpc）： 辺が1の立方体。先頭フレームの原点に位置する。
 
-カスタムプロジェクトの場合は、検査コメントの位置を決められないので、 ``--comment_data`` は必須です。
+ただし、カスタムプロジェクトの場合は ``--csutom_project_type`` が必須です。
+
+.. code-block::
+
+    $ annofabcli task reject --project_id prj1 --task_id task1 \
+     --comment "weather属性を見直してください。" \
+     --custom_project_type 3dpc
 
 
 差し戻したタスクの担当者を指定する
@@ -129,3 +135,5 @@ Usage Details
    :prog: annofabcli task reject
    :nosubcommands:
    :nodefaultconst:
+
+

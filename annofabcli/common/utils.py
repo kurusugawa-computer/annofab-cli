@@ -12,13 +12,14 @@ import dateutil.parser
 import isodate
 import pandas
 
-import annofabcli
-from annofabcli.common.cli import DEFAULT_CSV_FORMAT
 from annofabcli.common.enums import FormatArgument
 
 logger = logging.getLogger(__name__)
 
 T = TypeVar("T")  # Can be anything
+
+
+DEFAULT_CSV_FORMAT = {"encoding": "utf_8_sig", "index": False}
 
 
 def read_lines(filepath: str) -> List[str]:
@@ -126,14 +127,14 @@ def print_according_to_format(
     """
 
     if arg_format == FormatArgument.PRETTY_JSON:
-        annofabcli.utils.print_json(target, is_pretty=True, output=output)
+        print_json(target, is_pretty=True, output=output)
 
     elif arg_format == FormatArgument.JSON:
-        annofabcli.utils.print_json(target, is_pretty=False, output=output)
+        print_json(target, is_pretty=False, output=output)
 
     elif arg_format == FormatArgument.CSV:
         df = pandas.DataFrame(target)
-        annofabcli.utils.print_csv(df, output=output, to_csv_kwargs=csv_format)
+        print_csv(df, output=output, to_csv_kwargs=csv_format)
 
     elif arg_format == FormatArgument.TASK_ID_LIST:
         task_id_list = [e["task_id"] for e in target]

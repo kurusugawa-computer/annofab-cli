@@ -12,12 +12,12 @@ from pathlib import Path
 from typing import Any, Dict, Iterator, List, Optional, Union
 
 import annofabapi
-from annofabapi.dataclass.annotation import AdditionalData, AnnotationDetail
+from annofabapi.dataclass.annotation import AdditionalDataV1, AnnotationDetailV1
 from annofabapi.models import (
     AdditionalDataDefinitionType,
     AdditionalDataDefinitionV1,
     AnnotationDataHoldingType,
-    AnnotationType,
+    DefaultAnnotationType,
     LabelV1,
     ProjectMemberRole,
     TaskStatus,
@@ -28,12 +28,12 @@ from annofabapi.parser import (
     lazy_parse_simple_annotation_dir_by_task,
     lazy_parse_simple_annotation_zip_by_task,
 )
+from annofabapi.plugin import ThreeDimensionAnnotationType
 from annofabapi.utils import can_put_annotation, str_now
 from dataclasses_json import DataClassJsonMixin
 from more_itertools import first_true
 
 import annofabcli
-from annofabcli import AnnofabApiFacade
 from annofabcli.common.cli import (
     COMMAND_LINE_ERROR_STATUS_CODE,
     AbstractCommandLineInterface,
@@ -41,6 +41,7 @@ from annofabcli.common.cli import (
     ArgumentParser,
     build_annofabapi_resource_and_login,
 )
+from annofabcli.common.facade import AnnofabApiFacade
 from annofabcli.common.visualize import AddProps, MessageLocale
 
 logger = logging.getLogger(__name__)
@@ -102,7 +103,7 @@ class ImportAnnotationMain(AbstractCommandLineWithConfirmInterface):
             if label_name_en is not None and label_name_en == label_name:
                 return label
 
-        logger.warning(f"アノテーション仕様に label_name={label_name} のラベルが存在しません。")
+        logger.warning(f"アノテーション仕様に label_name='{label_name}' のラベルが存在しません。")
         return None
 
     def _get_additional_data_from_attribute_name(
@@ -134,41 +135,53 @@ class ImportAnnotationMain(AbstractCommandLineWithConfirmInterface):
         """
         data_uri = annotation_data["data"]
         # この時点で data_uriは f"./{input_data_id}/{annotation_id}"
-        # paraser.open_data_uriメソッドに渡す値は、先頭のinput_data_idは不要なので、これを取り除く
+        # parser.open_data_uriメソッドに渡す値は、先頭のinput_data_idは不要なので、これを取り除く
         path = Path(data_uri)
         return str(path.relative_to(path.parts[0]))
 
     @classmethod
     def _is_3dpc_segment_label(cls, label_info: Dict[str, Any]) -> bool:
-        if label_info["annotation_type"] != AnnotationType.CUSTOM.value:
-            return False
-
-        metadata = label_info["metadata"]
-        if metadata.get("type") == "SEGMENT":
+        """
+        3次元のセグメントかどうか
+        """
+        # 理想はプラグイン情報を見て、3次元アノテーションの種類かどうか判定した方がよい
+        # が、当分は文字列判定だけでも十分なので、文字列で判定する
+        if label_info["annotation_type"] in {
+            ThreeDimensionAnnotationType.INSTANCE_SEGMENT.value,
+            ThreeDimensionAnnotationType.SEMANTIC_SEGMENT.value,
+        }:
             return True
+
+        # 標準の3次元アノテーション仕様用のプラグインを利用していない場合
+        # TODO すべての3次元プロジェクトが、標準の3次元アノテーション仕様用のプラグインを利用するようになったら、この処理を削除する
+        if label_info["annotation_type"] == DefaultAnnotationType.CUSTOM.value:
+            metadata = label_info["metadata"]
+            if metadata.get("type") == "SEGMENT":
+                return True
+
         return False
 
     @classmethod
     def _get_data_holding_type_from_data(cls, label_info: Dict[str, Any]) -> AnnotationDataHoldingType:
-        annotation_type = AnnotationType(label_info["annotation_type"])
-        if annotation_type in [AnnotationType.SEGMENTATION, AnnotationType.SEGMENTATION_V2]:
+        annotation_type = label_info["annotation_type"]
+        if annotation_type in [DefaultAnnotationType.SEGMENTATION.value, DefaultAnnotationType.SEGMENTATION_V2.value]:
             return AnnotationDataHoldingType.OUTER
 
         # TODO: 3dpc editorに依存したコード。annofab側でSimple Annotationのフォーマットが改善されたら、このコードを削除する
-        if annotation_type == AnnotationType.CUSTOM:
-            if cls._is_3dpc_segment_label(label_info):
-                return AnnotationDataHoldingType.OUTER
+        if cls._is_3dpc_segment_label(label_info):
+            return AnnotationDataHoldingType.OUTER
+
         return AnnotationDataHoldingType.INNER
 
-    def _to_additional_data_list(self, attributes: Dict[str, Any], label_info: LabelV1) -> List[AdditionalData]:
-        additional_data_list: List[AdditionalData] = []
+    def _to_additional_data_list(self, attributes: Dict[str, Any], label_info: LabelV1) -> List[AdditionalDataV1]:
+        additional_data_list: List[AdditionalDataV1] = []
         for key, value in attributes.items():
             specs_additional_data = self._get_additional_data_from_attribute_name(key, label_info)
             if specs_additional_data is None:
-                logger.warning(f"アノテーション仕様に attribute_name={key} が存在しません。")
+                logger.warning(f"アノテーション仕様に attribute_name='{key}' が存在しません。")
                 continue
 
-            additional_data = AdditionalData(
+            additional_data = AdditionalDataV1(
                 additional_data_definition_id=specs_additional_data["additional_data_definition_id"],
                 flag=None,
                 integer=None,
@@ -190,7 +203,7 @@ class ImportAnnotationMain(AbstractCommandLineWithConfirmInterface):
             elif additional_data_type in [AdditionalDataDefinitionType.CHOICE, AdditionalDataDefinitionType.SELECT]:
                 additional_data.choice = self._get_choice_id_from_name(value, specs_additional_data["choices"])
             else:
-                logger.warning(f"additional_data_type={additional_data_type}が不正です。")
+                logger.warning(f"additional_data_type='{additional_data_type}'が不正です。")
                 continue
 
             additional_data_list.append(additional_data)
@@ -199,7 +212,7 @@ class ImportAnnotationMain(AbstractCommandLineWithConfirmInterface):
 
     def _to_annotation_detail_for_request(
         self, parser: SimpleAnnotationParser, detail: ImportedSimpleAnnotationDetail, now_datetime: str
-    ) -> Optional[AnnotationDetail]:
+    ) -> Optional[AnnotationDetailV1]:
         """
         Request Bodyに渡すDataClassに変換する。塗りつぶし画像があれば、それをS3にアップロードする。
 
@@ -219,7 +232,7 @@ class ImportAnnotationMain(AbstractCommandLineWithConfirmInterface):
             if detail.annotation_id is not None:
                 return detail.annotation_id
             else:
-                if arg_label_info["annotation_type"] == AnnotationType.CLASSIFICATION.value:
+                if arg_label_info["annotation_type"] == DefaultAnnotationType.CLASSIFICATION.value:
                     # 全体アノテーションの場合、annotation_idはlabel_idである必要がある
                     return arg_label_info["label_id"]
                 else:
@@ -232,7 +245,7 @@ class ImportAnnotationMain(AbstractCommandLineWithConfirmInterface):
 
         data_holding_type = self._get_data_holding_type_from_data(label_info)
 
-        dest_obj = AnnotationDetail(
+        dest_obj = AnnotationDetailV1(
             label_id=label_info["label_id"],
             annotation_id=_get_annotation_id(label_info),
             account_id=self.service.api.account_id,
@@ -269,7 +282,15 @@ class ImportAnnotationMain(AbstractCommandLineWithConfirmInterface):
         request_details: List[Dict[str, Any]] = []
         now_datetime = str_now()
         for detail in details:
-            request_detail = self._to_annotation_detail_for_request(parser, detail, now_datetime=now_datetime)
+            try:
+                request_detail = self._to_annotation_detail_for_request(parser, detail, now_datetime=now_datetime)
+            except Exception:
+                logger.warning(
+                    f"{parser.task_id}/{parser.input_data_id} :: アノテーションをrequest_bodyに変換するのに失敗しました。 :: "
+                    f"annotation_id='{detail.annotation_id}', label='{detail.label}'",
+                    exc_info=True,
+                )
+                continue
 
             if request_detail is not None:
                 request_details.append(request_detail.to_dict(encode_json=True))
@@ -292,11 +313,14 @@ class ImportAnnotationMain(AbstractCommandLineWithConfirmInterface):
         details: List[ImportedSimpleAnnotationDetail],
         old_annotation: Dict[str, Any],
     ) -> Dict[str, Any]:
-
         old_details = old_annotation["details"]
         old_dict_detail = {}
         INDEX_KEY = "_index"
         for index, old_detail in enumerate(old_details):
+            if old_detail["data_holding_type"] == AnnotationDataHoldingType.OUTER.value:
+                # 外部アノテーションを利用する際はurlが不要でpathが必要なので、対応する
+                old_detail.pop("url", None)
+
             # 一時的にインデックスを格納
             old_detail.update({INDEX_KEY: index})
             old_dict_detail[old_detail["annotation_id"]] = old_detail
@@ -304,7 +328,15 @@ class ImportAnnotationMain(AbstractCommandLineWithConfirmInterface):
         new_request_details: List[Dict[str, Any]] = []
         now_datetime = str_now()
         for detail in details:
-            request_detail = self._to_annotation_detail_for_request(parser, detail, now_datetime=now_datetime)
+            try:
+                request_detail = self._to_annotation_detail_for_request(parser, detail, now_datetime=now_datetime)
+            except Exception:
+                logger.warning(
+                    f"{parser.task_id}/{parser.input_data_id} :: アノテーションをrequest_bodyに変換するのに失敗しました。 :: "
+                    f"annotation_id='{detail.annotation_id}', label='{detail.label}'",
+                    exc_info=True,
+                )
+                continue
 
             if request_detail is None:
                 continue
@@ -317,18 +349,19 @@ class ImportAnnotationMain(AbstractCommandLineWithConfirmInterface):
                 # アノテーションの追加
                 new_request_details.append(request_detail.to_dict(encode_json=True))
 
+        new_details = old_details + new_request_details
+
         request_body = {
             "project_id": self.project_id,
             "task_id": parser.task_id,
             "input_data_id": parser.input_data_id,
-            "details": old_details + new_request_details,
+            "details": new_details,
             "updated_datetime": old_annotation["updated_datetime"],
         }
 
         return request_body
 
     def put_annotation_for_input_data(self, parser: SimpleAnnotationParser) -> bool:
-
         task_id = parser.task_id
         input_data_id = parser.input_data_id
 
@@ -366,7 +399,6 @@ class ImportAnnotationMain(AbstractCommandLineWithConfirmInterface):
         return True
 
     def put_annotation_for_task(self, task_parser: SimpleAnnotationParserByTask) -> int:
-
         logger.info(f"タスク'{task_parser.task_id}'に対してアノテーションを登録します。")
 
         success_count = 0
@@ -376,7 +408,7 @@ class ImportAnnotationMain(AbstractCommandLineWithConfirmInterface):
                     success_count += 1
             except Exception:  # pylint: disable=broad-except
                 logger.warning(
-                    f"task_id={parser.task_id}, input_data_id={parser.input_data_id} の" f"アノテーションのインポートに失敗しました。",
+                    f"task_id='{parser.task_id}', input_data_id='{parser.input_data_id}' の" f"アノテーションのインポートに失敗しました。",
                     exc_info=True,
                 )
 
@@ -453,7 +485,7 @@ class ImportAnnotationMain(AbstractCommandLineWithConfirmInterface):
         try:
             return self.execute_task(task_parser, task_index=task_index)
         except Exception:  # pylint: disable=broad-except
-            logger.warning(f"task_id={task_parser.task_id} のアノテーションのインポートに失敗しました。", exc_info=True)
+            logger.warning(f"task_id='{task_parser.task_id}' のアノテーションのインポートに失敗しました。", exc_info=True)
             return False
 
     def main(
@@ -491,7 +523,7 @@ class ImportAnnotationMain(AbstractCommandLineWithConfirmInterface):
                     if result:
                         success_count += 1
                 except Exception:
-                    logger.warning(f"task_id={task_parser.task_id} のアノテーションのインポートに失敗しました。", exc_info=True)
+                    logger.warning(f"task_id='{task_parser.task_id}' のアノテーションのインポートに失敗しました。", exc_info=True)
                     continue
                 finally:
                     task_count += 1
@@ -524,9 +556,7 @@ class ImportAnnotation(AbstractCommandLineInterface):
             )
             return False
 
-        elif (annotation_path.is_file() and not zipfile.is_zipfile(str(annotation_path))) or (
-            not annotation_path.is_dir()
-        ):
+        elif not (zipfile.is_zipfile(str(annotation_path)) or annotation_path.is_dir()):
             print(f"{COMMON_MESSAGE} argument --annotation: ZIPファイルまたはディレクトリを指定してください。", file=sys.stderr)
             return False
 

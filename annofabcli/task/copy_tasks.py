@@ -13,7 +13,6 @@ from annofabapi.models import ProjectMemberRole
 
 import annofabcli
 import annofabcli.common.cli
-from annofabcli import AnnofabApiFacade
 from annofabcli.common.cli import (
     COMMAND_LINE_ERROR_STATUS_CODE,
     AbstractCommandLineInterface,
@@ -21,6 +20,7 @@ from annofabcli.common.cli import (
     ArgumentParser,
     build_annofabapi_resource_and_login,
 )
+from annofabcli.common.facade import AnnofabApiFacade
 
 logger = logging.getLogger(__name__)
 
@@ -143,8 +143,10 @@ class CopyTasksMain(AbstractCommandLineWithConfirmInterface):
                     )
                     if result:
                         success_count += 1
-                except Exception as e:  # pylint: disable=broad-except
-                    logger.warning(f"タスク'{copy_target.src_task_id}'を'{copy_target.dest_task_id}'にコピーする際に失敗しました。", e)
+                except Exception:  # pylint: disable=broad-except
+                    logger.warning(
+                        f"タスク'{copy_target.src_task_id}'を'{copy_target.dest_task_id}'にコピーする際に失敗しました。", exc_info=True
+                    )
                     continue
 
         logger.info(f"{success_count} / {len(copy_target_list)} 件 タスクをコピーしました。")
@@ -154,7 +156,6 @@ class CopyTasks(AbstractCommandLineInterface):
     COMMON_MESSAGE = "annofabcli task copy: error:"
 
     def validate(self, args: argparse.Namespace) -> bool:
-
         if args.parallelism is not None and not args.yes:
             print(
                 f"{self.COMMON_MESSAGE} argument --parallelism: '--parallelism'を指定するときは、必ず '--yes' を指定してください。",

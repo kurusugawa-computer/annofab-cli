@@ -13,16 +13,15 @@ import annofabapi
 import bokeh
 import bokeh.layouts
 import bokeh.palettes
+import numpy
 import pandas
-from bokeh.plotting import ColumnDataSource, figure
+from bokeh.plotting import ColumnDataSource
 
 from annofabcli.common.utils import print_csv
 from annofabcli.statistics.linegraph import (
-    add_legend_to_figure,
-    create_hover_tool,
+    LineGraph,
     get_color_from_palette,
     get_plotted_user_id_list,
-    plot_line_and_circle,
     write_bokeh_graph,
 )
 from annofabcli.statistics.list_worktime import get_worktime_dict_from_event_list
@@ -35,11 +34,49 @@ logger = logging.getLogger(__name__)
 
 
 class WorktimePerDate:
-    PLOT_WIDTH = 1200
-    PLOT_HEIGHT = 600
+    """
+    日ごとユーザごとの作業時間情報
+    """
 
     def __init__(self, df: pandas.DataFrame):
         self.df = df
+
+    _df_dtype = {
+        "date": "string",
+        "user_id": "string",
+        "username": "string",
+        "biography": "string",
+        "actual_worktime_hour": "float64",
+        "monitored_worktime_hour": "float64",
+        "monitored_annotation_worktime_hour": "float64",
+        "monitored_inspection_worktime_hour": "float64",
+        "monitored_acceptance_worktime_hour": "float64",
+    }
+
+    def is_empty(self) -> bool:
+        """
+        空のデータフレームを持つかどうかを返します。
+
+        Returns:
+            空のデータフレームを持つかどうか
+        """
+        return len(self.df) == 0
+
+    @property
+    def columns(self) -> list[str]:
+        return list(self._df_dtype.keys())
+
+    @classmethod
+    def from_csv(cls, csv_file: Path) -> WorktimePerDate:
+        """CSVファイルからインスタンスを生成します。"""
+        df = pandas.read_csv(str(csv_file), dtype=cls._df_dtype)
+        return cls(df)
+
+    @classmethod
+    def empty(cls) -> WorktimePerDate:
+        """空のデータフレームを持つインスタンスを生成します。"""
+        df = pandas.DataFrame(columns=cls._df_dtype.keys()).astype(cls._df_dtype)
+        return cls(df)
 
     @classmethod
     def get_df_worktime(
@@ -145,7 +182,12 @@ class WorktimePerDate:
 
     @classmethod
     def from_webapi(
-        cls, service: annofabapi.Resource, project_id: str, df_labor: Optional[pandas.DataFrame] = None
+        cls,
+        service: annofabapi.Resource,
+        project_id: str,
+        df_labor: Optional[pandas.DataFrame] = None,
+        start_date: Optional[str] = None,
+        end_date: Optional[str] = None,
     ) -> WorktimePerDate:
         """
 
@@ -153,6 +195,8 @@ class WorktimePerDate:
             service (annofabapi.Resource): [description]
             project_id (str): [description]
             df_labor: 実績作業時間が格納されたDataFrame。date, account_id, actual_worktime_hour 列を参照する。
+            start_date: 指定した日以降で絞り込みます
+            end_date: 指定した日以前で絞り込みます
 
         Returns:
             WorktimePerDate: [description]
@@ -166,28 +210,38 @@ class WorktimePerDate:
         df_member = cls._get_df_member(service, project_id)
 
         df = cls.get_df_worktime(worktime_list, df_member, df_labor=df_labor)
+        if start_date is not None:
+            df = df[df["date"] >= start_date]
+        if end_date is not None:
+            df = df[df["date"] <= end_date]
         return cls(df)
 
-    def _get_cumulative_dataframe(self) -> pandas.DataFrame:
+    @staticmethod
+    def _get_cumulative_dataframe(df: pandas.DataFrame) -> pandas.DataFrame:
         """
         累積情報が格納されたDataFrameを生成する。
         """
         # 教師付の開始時刻でソートして、indexを更新する
-        df = self.df.sort_values(["user_id", "date"]).reset_index(drop=True)
-        groupby_obj = df.groupby("user_id")
+        df_result = df.sort_values(["user_id", "date"]).reset_index(drop=True)
+        groupby_obj = df_result.groupby("user_id")
 
         # 作業時間の累積値
-        df["cumulative_actual_worktime_hour"] = groupby_obj["actual_worktime_hour"].cumsum()
-        df["cumulative_monitored_worktime_hour"] = groupby_obj["monitored_worktime_hour"].cumsum()
-        df["cumulative_monitored_annotation_worktime_hour"] = groupby_obj["monitored_annotation_worktime_hour"].cumsum()
-        df["cumulative_monitored_acceptance_worktime_hour"] = groupby_obj["monitored_acceptance_worktime_hour"].cumsum()
-        df["cumulative_monitored_inspection_worktime_hour"] = groupby_obj["monitored_inspection_worktime_hour"].cumsum()
+        df_result["cumulative_actual_worktime_hour"] = groupby_obj["actual_worktime_hour"].cumsum()
+        df_result["cumulative_monitored_worktime_hour"] = groupby_obj["monitored_worktime_hour"].cumsum()
+        df_result["cumulative_monitored_annotation_worktime_hour"] = groupby_obj[
+            "monitored_annotation_worktime_hour"
+        ].cumsum()
+        df_result["cumulative_monitored_acceptance_worktime_hour"] = groupby_obj[
+            "monitored_acceptance_worktime_hour"
+        ].cumsum()
+        df_result["cumulative_monitored_inspection_worktime_hour"] = groupby_obj[
+            "monitored_inspection_worktime_hour"
+        ].cumsum()
 
-        return df
+        return df_result
 
     @classmethod
     def merge(cls, obj1: WorktimePerDate, obj2: WorktimePerDate) -> WorktimePerDate:
-
         df_tmp = pandas.concat([obj1.df, obj2.df])
 
         df = df_tmp.groupby(["date", "user_id"])[
@@ -215,7 +269,47 @@ class WorktimePerDate:
         return True
 
     def _get_default_user_id_list(self) -> list[str]:
-        return self.df.sort_values(by=f"date", ascending=False)[f"user_id"].dropna().unique().tolist()
+        return list(self.df.sort_values(by=f"date", ascending=False)[f"user_id"].dropna().unique())
+
+    def _get_continuous_date_dataframe(self) -> pandas.DataFrame:
+        """
+        日付が連続しているDataFrameを生成する。そうしないと、折れ線グラフが正しくなくなるため。
+        """
+
+        groupby_obj = self.df.groupby("user_id")
+        min_series = groupby_obj["date"].min()
+        max_series = groupby_obj["date"].max()
+
+        date_list = []
+        user_id_list = []
+        for user_id, min_date in min_series.items():
+            max_date = max_series[user_id]
+            # 日付の一覧を生成
+            sub_date_list = [e.strftime("%Y-%m-%d") for e in pandas.date_range(min_date, max_date)]
+            date_list.extend(sub_date_list)
+            user_id_list.extend([user_id] * len(sub_date_list))
+
+        df = pandas.DataFrame({"date": date_list, "user_id": user_id_list})
+
+        # ユーザ情報のjoin
+        df_user = self.df.drop_duplicates(subset=["user_id"])[["user_id", "username", "biography"]]
+        # suffixesを付ける理由, username, biographyの列名にx,yが付くため
+        df = df.merge(df_user, how="left", on="user_id", suffixes=("_tmp", None))
+        df = df.merge(self.df, how="left", on=["date", "user_id"], suffixes=(None, "_tmp"))[self.columns]
+
+        # 作業時間関係の列を0で埋める
+        df.fillna(
+            {
+                "actual_worktime_hour": 0,
+                "monitored_worktime_hour": 0,
+                "monitored_annotation_worktime_hour": 0,
+                "monitored_inspection_worktime_hour": 0,
+                "monitored_acceptance_worktime_hour": 0,
+            },
+            inplace=True,
+        )
+
+        return df
 
     def plot_cumulatively(
         self,
@@ -238,44 +332,81 @@ class WorktimePerDate:
 
         user_id_list = get_plotted_user_id_list(user_id_list)
 
-        fig_info_list = [
-            dict(
+        x_axis_label = "日"
+        x_column = "dt_date"
+        tooltip_columns = [
+            "date",
+            "user_id",
+            "username",
+            "biography",
+            "actual_worktime_hour",
+            "monitored_worktime_hour",
+            "monitored_annotation_worktime_hour",
+            "monitored_inspection_worktime_hour",
+            "monitored_acceptance_worktime_hour",
+        ]
+
+        line_graph_list = [
+            LineGraph(
                 title="実績作業時間の累積値",
-                y_column_name="cumulative_actual_worktime_hour",
+                y_axis_label="作業時間[hour]",
+                tooltip_columns=tooltip_columns,
+                x_axis_label=x_axis_label,
+                x_axis_type="datetime",
             ),
-            dict(
+            LineGraph(
                 title="計測作業時間の累積値",
-                y_column_name="cumulative_monitored_worktime_hour",
+                y_axis_label="作業時間[hour]",
+                tooltip_columns=tooltip_columns,
+                x_axis_label=x_axis_label,
+                x_axis_type="datetime",
             ),
-            dict(
-                title="教師付計測作業時間の累積値",
-                y_column_name="cumulative_monitored_annotation_worktime_hour",
+            LineGraph(
+                title="計測作業時間(教師付)の累積値",
+                y_axis_label="作業時間[hour]",
+                tooltip_columns=tooltip_columns,
+                x_axis_label=x_axis_label,
+                x_axis_type="datetime",
             ),
-            dict(
-                title="検査計測作業時間の累積値",
-                y_column_name="cumulative_monitored_inspection_worktime_hour",
+            LineGraph(
+                title="計測作業時間(検査)の累積値",
+                y_axis_label="作業時間[hour]",
+                tooltip_columns=tooltip_columns,
+                x_axis_label=x_axis_label,
+                x_axis_type="datetime",
             ),
-            dict(
-                title="受入計測作業時間の累積値",
-                y_column_name="cumulative_monitored_acceptance_worktime_hour",
+            LineGraph(
+                title="計測作業時間(受入)の累積値",
+                y_axis_label="作業時間[hour]",
+                tooltip_columns=tooltip_columns,
+                x_axis_label=x_axis_label,
+                x_axis_type="datetime",
             ),
         ]
 
-        figs: list[bokeh.plotting.Figure] = []
-        for fig_info in fig_info_list:
-            figs.append(
-                figure(
-                    plot_width=self.PLOT_WIDTH,
-                    plot_height=self.PLOT_HEIGHT,
-                    title=fig_info["title"],
-                    x_axis_label="日",
-                    x_axis_type="datetime",
-                    y_axis_label="作業時間[hour]",
-                )
-            )
+        x_column = "dt_date"
+        columns_list = [
+            (x_column, "cumulative_actual_worktime_hour"),
+            (x_column, "cumulative_monitored_worktime_hour"),
+            (x_column, "cumulative_monitored_annotation_worktime_hour"),
+            (x_column, "cumulative_monitored_inspection_worktime_hour"),
+            (x_column, "cumulative_monitored_acceptance_worktime_hour"),
+        ]
 
-        df_cumulative = self._get_cumulative_dataframe()
+        df_continuous_date = self._get_continuous_date_dataframe()
+        df_cumulative = self._get_cumulative_dataframe(df_continuous_date)
         df_cumulative["dt_date"] = df_cumulative["date"].map(lambda e: datetime.datetime.fromisoformat(e).date())
+
+        # bokeh3.0.3では、string型の列を持つpandas.DataFrameを描画できないため、改めてobject型に戻す
+        # またpandas.NAを持つDataFrameも描画できないので、numpy.nanに変換する
+        # TODO この問題が解決されたら、削除する
+        # https://qiita.com/yuji38kwmt/items/b5da6ed521e827620186
+        df_cumulative = df_cumulative.astype(
+            {"date": "object", "user_id": "object", "username": "object", "biography": "object"}
+        )
+        df_cumulative.replace(pandas.NA, numpy.nan, inplace=True)
+
+        line_count = 0
         for user_index, user_id in enumerate(user_id_list):
             df_subset = df_cumulative[df_cumulative["user_id"] == user_id]
             if df_subset.empty:
@@ -286,52 +417,37 @@ class WorktimePerDate:
             color = get_color_from_palette(user_index)
             username = df_subset.iloc[0]["username"]
 
-            for fig, fig_info in zip(figs, fig_info_list):
-                plot_line_and_circle(
-                    fig,
-                    x_column_name="dt_date",
-                    y_column_name=fig_info["y_column_name"],
+            line_count += 1
+            for line_graph, (x_column, y_column) in zip(line_graph_list, columns_list):
+                line_graph.add_line(
                     source=source,
+                    x_column=x_column,
+                    y_column=y_column,
                     legend_label=username,
                     color=color,
                 )
 
-        hover_tool = create_hover_tool(
-            [
-                "date",
-                "user_id",
-                "username",
-                "biography",
-                "monitored_worktime_hour",
-                "monitored_annotation_worktime_hour",
-                "monitored_inspection_worktime_hour",
-                "monitored_acceptance_worktime_hour",
-            ]
-        )
-        for fig in figs:
-            fig.add_tools(hover_tool)
-            add_legend_to_figure(fig)
+        graph_group_list = []
+        for line_graph in line_graph_list:
+            line_graph.process_after_adding_glyphs()
+            hide_all_button = line_graph.create_button_hiding_showing_all_lines(is_hiding=True)
+            show_all_button = line_graph.create_button_hiding_showing_all_lines(is_hiding=False)
+            checkbox_group = line_graph.create_checkbox_displaying_markers()
 
-        write_bokeh_graph(bokeh.layouts.column(figs), output_file)
+            widgets = bokeh.layouts.column([hide_all_button, show_all_button, checkbox_group])  # type: ignore
+            graph_group = bokeh.layouts.row([line_graph.figure, widgets])  # type: ignore
+            graph_group_list.append(graph_group)
+
+        if line_count == 0:
+            logger.warning(f"プロットするデータがなかっため、'{output_file}'は出力しません。")
+            return
+
+        write_bokeh_graph(bokeh.layouts.layout(graph_group_list), output_file)
 
     def to_csv(self, output_file: Path) -> None:
         if not self._validate_df_for_output(output_file):
             return
 
-        date_user_columns = [
-            "date",
-            "user_id",
-            "username",
-            "biography",
-        ]
-        worktime_columns = [
-            "actual_worktime_hour",
-            "monitored_worktime_hour",
-            "monitored_annotation_worktime_hour",
-            "monitored_inspection_worktime_hour",
-            "monitored_acceptance_worktime_hour",
-        ]
-
-        columns = date_user_columns + worktime_columns
+        columns = self._df_dtype.keys()
 
         print_csv(self.df[columns], output=str(output_file))

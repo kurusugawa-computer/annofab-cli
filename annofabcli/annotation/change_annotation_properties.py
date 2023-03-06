@@ -15,7 +15,6 @@ from annofabapi.utils import can_put_annotation, str_now
 from dataclasses_json import DataClassJsonMixin
 
 import annofabcli
-from annofabcli import AnnofabApiFacade
 from annofabcli.annotation.annotation_query import AnnotationQueryForAPI, AnnotationQueryForCLI
 from annofabcli.annotation.dump_annotation import DumpAnnotationMain
 from annofabcli.common.cli import (
@@ -26,6 +25,7 @@ from annofabcli.common.cli import (
     build_annofabapi_resource_and_login,
     get_json_from_args,
 )
+from annofabcli.common.facade import AnnofabApiFacade
 
 logger = logging.getLogger(__name__)
 
@@ -100,7 +100,7 @@ class ChangePropertiesOfAnnotationMain(AbstractCommandLineWithConfirmInterface):
                 annotation["project_id"],
                 annotation["task_id"],
                 annotation["input_data_id"],
-                {
+                request_body={
                     "project_id": annotation["project_id"],
                     "task_id": annotation["task_id"],
                     "input_data_id": annotation["input_data_id"],
@@ -248,7 +248,6 @@ class ChangePropertiesOfAnnotationMain(AbstractCommandLineWithConfirmInterface):
         backup_dir: Optional[Path] = None,
         parallelism: Optional[int] = None,
     ):
-
         project_title = self.facade.get_project_title(self.project_id)
         logger.info(f"プロジェクト'{project_title}'に対して、タスク{len(task_id_list)} 件のアノテーションのプロパティを変更します")
 

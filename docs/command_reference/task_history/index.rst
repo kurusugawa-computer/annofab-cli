@@ -17,7 +17,7 @@ Available Commands
 
    download
    list
-   list_with_json
+   list_all
 
 Usage Details
 =================================

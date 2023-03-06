@@ -7,11 +7,9 @@ import annofabcli.filesystem.draw_annotation
 import annofabcli.filesystem.filter_annotation
 import annofabcli.filesystem.mask_user_info
 import annofabcli.filesystem.merge_annotation
-import annofabcli.filesystem.write_annotation_image
 
 
 def parse_args(parser: argparse.ArgumentParser):
-
     subparsers = parser.add_subparsers()
 
     # サブコマンドの定義
@@ -19,7 +17,6 @@ def parse_args(parser: argparse.ArgumentParser):
     annofabcli.filesystem.filter_annotation.add_parser(subparsers)
     annofabcli.filesystem.mask_user_info.add_parser(subparsers)
     annofabcli.filesystem.merge_annotation.add_parser(subparsers)
-    annofabcli.filesystem.write_annotation_image.add_parser(subparsers)
 
 
 def add_parser(subparsers: Optional[argparse._SubParsersAction] = None):

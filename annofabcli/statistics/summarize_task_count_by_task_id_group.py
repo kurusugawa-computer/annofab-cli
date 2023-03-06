@@ -11,7 +11,6 @@ from annofabapi.models import ProjectMemberRole, Task, TaskPhase, TaskStatus
 
 import annofabcli
 import annofabcli.common.cli
-from annofabcli import AnnofabApiFacade
 from annofabcli.common.cli import (
     AbstractCommandLineInterface,
     ArgumentParser,
@@ -22,6 +21,7 @@ from annofabcli.common.cli import (
 from annofabcli.common.dataclasses import WaitOptions
 from annofabcli.common.download import DownloadingFile
 from annofabcli.common.enums import FormatArgument
+from annofabcli.common.facade import AnnofabApiFacade
 from annofabcli.statistics.summarize_task_count import get_step_for_current_phase
 
 logger = logging.getLogger(__name__)
@@ -145,7 +145,7 @@ def create_task_count_summary_df(
 class SummarizeTaskCountByTaskId(AbstractCommandLineInterface):
     def print_summarize_task_count(self, df: pandas.DataFrame) -> None:
         columns = ["task_id_group"] + [status.value for status in TaskStatusForSummary] + ["sum"]
-        annofabcli.utils.print_according_to_format(
+        annofabcli.common.utils.print_according_to_format(
             df[columns],
             arg_format=FormatArgument(FormatArgument.CSV),
             output=self.output,
@@ -161,7 +161,7 @@ class SummarizeTaskCountByTaskId(AbstractCommandLineInterface):
             task_json_path = args.task_json
         else:
             wait_options = get_wait_options_from_args(get_json_from_args(args.wait_options), DEFAULT_WAIT_OPTIONS)
-            cache_dir = annofabcli.utils.get_cache_dir()
+            cache_dir = annofabcli.common.utils.get_cache_dir()
             task_json_path = cache_dir / f"{project_id}-task.json"
 
             downloading_obj = DownloadingFile(self.service)
@@ -185,7 +185,7 @@ def parse_args(parser: argparse.ArgumentParser):
     parser.add_argument(
         "--task_json",
         type=str,
-        help="タスク情報が記載されたJSONファイルのパスを指定してます。JSONファイルは ``$ annofabcli project download task`` コマンドで取得できます。"
+        help="タスク情報が記載されたJSONファイルのパスを指定してます。JSONファイルは ``$ annofabcli task download`` コマンドで取得できます。"
         "指定しない場合は、Annofabからタスク全件ファイルをダウンロードします。",
     )
 

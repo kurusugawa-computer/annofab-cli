@@ -17,6 +17,8 @@ Command Reference
    inspection_comment/index
    instruction/index
    job/index
+   my_account/index
+   organization/index
    organization_member/index
    project/index
    project_member/index

@@ -7,9 +7,9 @@ from annofabapi.models import ProjectMemberRole
 
 import annofabcli
 import annofabcli.common.cli
-from annofabcli import AnnofabApiFacade
 from annofabcli.common.cli import AbstractCommandLineInterface, build_annofabapi_resource_and_login
 from annofabcli.common.download import DownloadingFile
+from annofabcli.common.facade import AnnofabApiFacade
 
 logger = logging.getLogger(__name__)
 
@@ -52,11 +52,19 @@ def parse_args(parser: argparse.ArgumentParser):
 
 def add_parser(subparsers: Optional[argparse._SubParsersAction] = None):
     subcommand_name = "download"
-    subcommand_help = "検査コメント全件ファイルをダウンロードします。"
+    subcommand_help = "[DEPRECATED] 検査コメント全件ファイルをダウンロードします。"
+    description = (
+        "[DEPRECATED] 検査コメント全件ファイルをダウンロードします。"
+        "2022/12/01以降に廃止する予定です。替わりに ``annofabcli comment download`` コマンドを利用してください。"
+    )
     epilog = "オーナロールまたはアノテーションユーザロールを持つユーザで実行してください。"
 
     parser = annofabcli.common.cli.add_parser(
-        subparsers, subcommand_name, subcommand_help, description=subcommand_help, epilog=epilog
+        subparsers,
+        subcommand_name,
+        subcommand_help,
+        description=description,
+        epilog=epilog,
     )
     parse_args(parser)
     return parser

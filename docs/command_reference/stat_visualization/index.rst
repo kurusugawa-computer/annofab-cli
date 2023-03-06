@@ -20,11 +20,8 @@ Available Commands
     mask_user_info
     merge
     summarise_whole_performance_csv
-    write_linegraph_per_user
-    write_performance_scatter_per_user
     write_performance_rating_csv
-    write_task_histogram
-    write_whole_linegraph
+    write_graph
 
 Usage Details
 =================================

@@ -1,4 +1,3 @@
-import asyncio
 import datetime
 import json
 import logging
@@ -7,14 +6,14 @@ from collections import defaultdict
 from dataclasses import dataclass
 from functools import partial
 from pathlib import Path
-from typing import Any, Dict, List, Optional, Set
+from typing import Any, Collection, Dict, List, Optional
 
 import annofabapi.utils
 import dateutil
 import dateutil.parser
 import more_itertools
 from annofabapi.dataclass.task import Task as DcTask
-from annofabapi.models import InputDataId, Inspection, JobStatus, ProjectJobType, Task, TaskHistory
+from annofabapi.models import CommentStatus, InputDataId, JobStatus, ProjectJobType, Task, TaskHistory
 from annofabapi.parser import lazy_parse_simple_annotation_zip
 
 from annofabcli.common.dataclasses import WaitOptions
@@ -39,20 +38,9 @@ class Query:
     """
 
     task_query: Optional[TaskQuery] = None
-    task_id_set: Optional[Set[str]] = None
-    ignored_task_id_set: Optional[Set[str]] = None
-    """集計対象タスクのtask_idのSet"""
+    task_ids: Optional[Collection[str]] = None
     start_date: Optional[str] = None
     end_date: Optional[str] = None
-
-
-@dataclass(frozen=True)
-class PseudoInputData:
-    """
-    入力データの必要なプロパティのみ定義したクラス
-    """
-
-    input_duration_seconds: Optional[float] = None
 
 
 class Database:
@@ -91,11 +79,10 @@ class Database:
         self.query = query if query is not None else Query()
 
         # ダウンロードした一括情報
-        self.tasks_json_path = self.temp_dir / "tasks.json"
-        self.input_data_json_path = temp_dir / "input_data.json"
-        self.inspection_json_path = temp_dir / "inspections.json"
-        self.task_histories_json_path = temp_dir / "task_histories.json"
-        self.annotations_zip_path = temp_dir / "simple-annotations.zip"
+        self.tasks_json_path = self.temp_dir / f"{self.project_id}__tasks.json"
+        self.comment_json_path = temp_dir / f"{self.project_id}__comments.json"
+        self.task_histories_json_path = temp_dir / f"{self.project_id}__task_histories.json"
+        self.annotations_zip_path = temp_dir / f"{self.project_id}__simple-annotations.zip"
 
         self.logging_prefix = f"project_id={project_id}"
 
@@ -108,60 +95,57 @@ class Database:
             return True
 
     def get_annotation_count_by_task(self) -> Dict[str, int]:
-        logger.debug(f"{self.logging_prefix}: reading '{str(self.annotations_zip_path)}'")
+        logger.debug(f"{self.logging_prefix}: アノテーションZIPを読み込みます。file='{str(self.annotations_zip_path)}'")
 
         result: Dict[str, int] = defaultdict(int)
         for index, parser in enumerate(lazy_parse_simple_annotation_zip(self.annotations_zip_path)):
-            if (index + 1) % 1000 == 0:
-                logger.debug(f"{self.logging_prefix}: {index+1} 件目を読み込み中")
-
             simple_annotation: Dict[str, Any] = parser.load_json()
             annotation_count = len(simple_annotation["details"])
-
             result[parser.task_id] += annotation_count
+            if (index + 1) % 10000 == 0:
+                logger.debug(f"{self.logging_prefix}: {index+1} 件の入力データに含まれているアノテーション情報を読み込みました。")
 
         return result
 
-    def read_inspections_from_json(self, task_id_list: List[str]) -> Dict[str, Dict[InputDataId, List[Inspection]]]:
-        logger.debug(f"{self.logging_prefix}: reading '{self.inspection_json_path}'")
+    def get_inspection_comment_count_by_task(self) -> Dict[str, int]:
+        """
+        タスクごとに指摘を受けた検査コメント数を取得します。
 
-        with open(str(self.inspection_json_path), encoding="utf-8") as f:
-            all_inspections = json.load(f)
+        Returns:
+            key: task_id, value: 指摘を受けた検査コメント数のdictです。
+        """
 
-        tasks_dict: Dict[str, Dict[InputDataId, List[Inspection]]] = {}
+        def is_target_comment(comment: Dict[str, Any]) -> bool:
+            """
+            指摘を受けたコメントか否か
+            """
+            if comment["comment_type"] != "inspection":
+                return False
 
-        for inspection in all_inspections:
-            task_id = inspection["task_id"]
-            if task_id not in task_id_list:
-                continue
+            comment_node = comment["comment_node"]
+            if comment_node["_type"] != "Root":
+                return False
 
-            input_data_id = inspection["input_data_id"]
+            if comment_node["status"] != CommentStatus.RESOLVED.value:
+                return False
+            return True
 
-            input_data_dict: Dict[InputDataId, List[Inspection]] = tasks_dict.get(task_id, {})
+        logger.debug(f"{self.logging_prefix}: コメント全件ファイルを読み込みます。file='{self.comment_json_path}'")
 
-            inspection_list: List[Inspection] = input_data_dict.get(input_data_id, [])
+        with open(str(self.comment_json_path), encoding="utf-8") as f:
+            all_comments = json.load(f)
 
-            inspection_list.append(inspection)
+        tasks_dict: Dict[str, int] = defaultdict(int)
 
-            input_data_dict[input_data_id] = inspection_list
-            tasks_dict[task_id] = input_data_dict
+        for comment in all_comments:
+            task_id = comment["task_id"]
+            if is_target_comment(comment):
+                tasks_dict[task_id] += 1
 
         return tasks_dict
 
-    def read_input_data_from_json(self) -> Dict[str, PseudoInputData]:
-        path = self.input_data_json_path
-        logger.debug(f"{self.logging_prefix}: reading '{path}'")
-        with open(str(path), encoding="utf-8") as f:
-            all_input_data_list = json.load(f)
-
-        all_input_data_dict = {
-            e["input_data_id"]: PseudoInputData(input_duration_seconds=e["system_metadata"].get("input_duration"))
-            for e in all_input_data_list
-        }
-        return all_input_data_dict
-
     def read_task_histories_from_json(self, task_id_list: Optional[List[str]] = None) -> Dict[str, List[TaskHistory]]:
-        logger.debug(f"{self.logging_prefix}: reading '{self.task_histories_json_path}'")
+        logger.debug(f"{self.logging_prefix}: タスク履歴全件ファイルを読み込みます。file='{self.task_histories_json_path}'")
         with open(str(self.task_histories_json_path), encoding="utf-8") as f:
             task_histories_dict = json.load(f)
 
@@ -175,7 +159,7 @@ class Database:
     def wait_for_completion_updated_annotation(self, project_id):
         MAX_JOB_ACCESS = 120
         JOB_ACCESS_INTERVAL = 60
-        MAX_WAIT_MINUTU = MAX_JOB_ACCESS * JOB_ACCESS_INTERVAL / 60
+        MAX_WAIT_MINUTE = MAX_JOB_ACCESS * JOB_ACCESS_INTERVAL / 60
         result = self.annofab_service.wrapper.wait_for_completion(
             project_id,
             job_type=ProjectJobType.GEN_ANNOTATION,
@@ -185,13 +169,13 @@ class Database:
         if result:
             logger.info(f"{self.logging_prefix}: アノテーションの更新が完了しました。")
         else:
-            logger.info(f"{self.logging_prefix}: アノテーションの更新に失敗しました or {MAX_WAIT_MINUTU} 分待っても、更新が完了しませんでした。")
+            logger.info(f"{self.logging_prefix}: アノテーションの更新に失敗しました or {MAX_WAIT_MINUTE} 分待っても、更新が完了しませんでした。")
             return
 
     def wait_for_completion_updated_task_json(self, project_id):
         MAX_JOB_ACCESS = 120
         JOB_ACCESS_INTERVAL = 60
-        MAX_WAIT_MINUTU = MAX_JOB_ACCESS * JOB_ACCESS_INTERVAL / 60
+        MAX_WAIT_MINUTE = MAX_JOB_ACCESS * JOB_ACCESS_INTERVAL / 60
         result = self.annofab_service.wrapper.wait_for_completion(
             project_id,
             job_type=ProjectJobType.GEN_TASKS_LIST,
@@ -201,7 +185,7 @@ class Database:
         if result:
             logger.info(f"{self.logging_prefix}: タスク全件ファイルの更新が完了しました。")
         else:
-            logger.info(f"{self.logging_prefix}: タスク全件ファイルの更新に失敗しました or {MAX_WAIT_MINUTU} 分待っても、更新が完了しませんでした。")
+            logger.info(f"{self.logging_prefix}: タスク全件ファイルの更新に失敗しました or {MAX_WAIT_MINUTE} 分待っても、更新が完了しませんでした。")
             return
 
     def update_annotation_zip(self, project_id: str, should_update_annotation_zip: bool = False):
@@ -311,7 +295,11 @@ class Database:
                     self.annofab_service.api.post_project_tasks_update(project_id)
                     self.wait_for_completion_updated_task_json(project_id)
 
-    def _write_task_histories_json(self):
+    def _write_task_histories_json_with_executing_api_one_of_each(self):
+        """
+        タスク履歴取得APIを1個ずつ実行して、全タスクのタスク履歴が格納されたJSONを出力します。
+        事前に、タスク全件ファイルをダウンロードする必要がある。
+        """
         task_list = self.read_tasks_from_json()
         task_histories_dict = self.get_task_histories_dict(task_list)
         with self.task_histories_json_path.open(mode="w", encoding="utf-8") as f:
@@ -350,63 +338,37 @@ class Database:
 
         wait_options = WaitOptions(interval=60, max_tries=360)
 
-        DOWNLOADED_FILE_COUNT = 5
-
-        TASK_JSON_INDEX = 0
-        INPUT_DATA_JSON_INDEX = 1
-        ANNOTATION_ZIP_INDEX = 2
-        INSPECTION_JSON_INDEX = 3
-        TASK_HISTORY_JSON_INDEX = 4
-
-        loop = asyncio.get_event_loop()
-        coroutines: List[Any] = [None] * DOWNLOADED_FILE_COUNT
-        coroutines[TASK_JSON_INDEX] = downloading_obj.download_task_json_with_async(
+        downloading_obj.download_task_json(
             self.project_id, dest_path=str(self.tasks_json_path), is_latest=is_latest, wait_options=wait_options
         )
-        coroutines[INPUT_DATA_JSON_INDEX] = downloading_obj.download_input_data_json_with_async(
-            self.project_id,
-            dest_path=str(self.input_data_json_path),
-            is_latest=is_latest,
-            wait_options=wait_options,
-        )
-        coroutines[ANNOTATION_ZIP_INDEX] = downloading_obj.download_annotation_zip_with_async(
+        downloading_obj.download_annotation_zip(
             self.project_id,
             dest_path=str(self.annotations_zip_path),
             is_latest=is_latest,
             wait_options=wait_options,
         )
-        coroutines[INSPECTION_JSON_INDEX] = downloading_obj.download_inspection_json_with_async(
-            self.project_id, dest_path=str(self.inspection_json_path)
-        )
+
+        try:
+            downloading_obj.download_comment_json(self.project_id, dest_path=str(self.comment_json_path))
+        except DownloadingFileNotFoundError:
+            # プロジェクトを作成した日だと、検査コメントファイルが作成されていないので、DownloadingFileNotFoundErrorが発生する
+            # その場合でも、処理は継続できるので、空listのJSONファイルを作成しておく
+            self.comment_json_path.write_text("[]", encoding="utf-8")
 
         if is_get_task_histories_one_of_each:
             # タスク履歴APIを一つずつ実行して、JSONファイルを生成する
-            self._write_task_histories_json()
-            coroutines.pop(DOWNLOADED_FILE_COUNT - 1)
+            # 先にタスク全件ファイルをダウンロードする必要がある
+            self._write_task_histories_json_with_executing_api_one_of_each()
+
         else:
-            coroutines[TASK_HISTORY_JSON_INDEX] = downloading_obj.download_task_history_json_with_async(
-                self.project_id, dest_path=str(self.task_histories_json_path)
-            )
-
-        gather = asyncio.gather(*coroutines, return_exceptions=True)
-        results = loop.run_until_complete(gather)
-
-        if isinstance(results[INSPECTION_JSON_INDEX], DownloadingFileNotFoundError):
-            # 空のJSONファイルを作り、検査コメント0件として処理する
-            self.inspection_json_path.write_text("{}", encoding="utf-8")
-        elif isinstance(results[INSPECTION_JSON_INDEX], Exception):
-            raise results[INSPECTION_JSON_INDEX]
-
-        if not is_get_task_histories_one_of_each:
-            if isinstance(results[TASK_HISTORY_JSON_INDEX], DownloadingFileNotFoundError):
-                # タスク履歴APIを一つずつ実行して、JSONファイルを生成する
-                self._write_task_histories_json()
-            elif isinstance(results[TASK_HISTORY_JSON_INDEX], Exception):
-                raise results[TASK_HISTORY_JSON_INDEX]
-
-        for result in [results[TASK_JSON_INDEX], results[INPUT_DATA_JSON_INDEX], results[ANNOTATION_ZIP_INDEX]]:
-            if isinstance(result, Exception):
-                raise result
+            try:
+                downloading_obj.download_task_history_json(
+                    self.project_id, dest_path=str(self.task_histories_json_path)
+                )
+            except DownloadingFileNotFoundError:
+                # プロジェクトを作成した日だと、タスク履歴全県ファイルが作成されていないので、DownloadingFileNotFoundErrorが発生する
+                # その場合でも、処理は継続できるので、タスク履歴APIを１個ずつ実行して、タスク履歴ファイルを作成する
+                self._write_task_histories_json_with_executing_api_one_of_each()
 
     @staticmethod
     def _to_datetime_with_tz(str_date: str) -> datetime.datetime:
@@ -445,20 +407,17 @@ class Database:
             if query.task_query is not None:
                 flag = flag and match_task_with_query(DcTask.from_dict(arg_task), query.task_query)
 
-            if query.task_id_set is not None:
-                flag = flag and arg_task["task_id"] in query.task_id_set
+            if query.task_ids is not None:
+                flag = flag and arg_task["task_id"] in query.task_ids
 
             # 終了日で絞り込む
             # 開始日の絞り込み条件はタスク履歴を見る
             if dt_end_date is not None:
                 flag = flag and (dateutil.parser.parse(arg_task["updated_datetime"]) < dt_end_date)
 
-            if query.ignored_task_id_set is not None:
-                flag = flag and arg_task["task_id"] not in query.ignored_task_id_set
-
             return flag
 
-        logger.debug(f"{self.logging_prefix}: reading '{self.tasks_json_path}'")
+        logger.debug(f"{self.logging_prefix}: タスク全件ファイルを読み込みます。file='{self.tasks_json_path}'")
         with open(str(self.tasks_json_path), encoding="utf-8") as f:
             all_tasks = json.load(f)
 

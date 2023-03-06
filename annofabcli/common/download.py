@@ -298,13 +298,13 @@ class DownloadingFile:
 
     async def download_comment_json_with_async(self, project_id: str, dest_path: str):
         """
-        非同期で検査コメント全件ファイルをダウンロードする。
+        非同期でコメント全件ファイルをダウンロードする。
 
         Raises:
             DownloadingFileNotFoundError:
         """
 
-        return self.download_inspection_comment_json(project_id, dest_path=dest_path)
+        return self.download_comment_json(project_id, dest_path=dest_path)
 
     def download_comment_json(self, project_id: str, dest_path: str):
         """

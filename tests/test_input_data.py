@@ -9,6 +9,9 @@ import pytest
 
 from annofabcli.__main__ import main
 
+# webapiにアクセスするテストモジュール
+pytestmark = pytest.mark.access_webapi
+
 # プロジェクトトップに移動する
 os.chdir(os.path.dirname(os.path.abspath(__file__)) + "/../")
 
@@ -81,6 +84,8 @@ class TestCommandLine__put:
                 ]
             )
 
+
+class TestCommandLine__put_with_json:
     @pytest.mark.submitting_job
     def test_put_input_data_with_zip(self):
         # 注意：ジョブ登録される
@@ -88,7 +93,7 @@ class TestCommandLine__put:
         main(
             [
                 "input_data",
-                "put",
+                "put_with_zip",
                 "--project_id",
                 project_id,
                 "--zip",
@@ -171,11 +176,11 @@ class TestCommandLine:
         )
 
     def test_list_input_data_with_json(self):
-        out_file = str(out_dir / "input_data.csv")
+        out_file = str(out_dir / "list_all_input_data.csv")
         main(
             [
                 "input_data",
-                "list_with_json",
+                "list_all",
                 "--project_id",
                 project_id,
                 "--output",
