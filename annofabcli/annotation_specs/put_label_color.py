@@ -1,6 +1,8 @@
 from __future__ import annotations
+
 import argparse
 import logging
+from dataclasses import dataclass
 from typing import Any, Dict, Optional, Tuple
 
 import annofabapi
@@ -14,7 +16,6 @@ from annofabcli.common.cli import (
     build_annofabapi_resource_and_login,
     get_json_from_args,
 )
-from dataclasses import dataclass
 from annofabcli.common.facade import AnnofabApiFacade
 
 logger = logging.getLogger(__name__)
@@ -52,14 +53,19 @@ class PuttingLabelColorMain(AbstractCommandLineWithConfirmInterface):
             if len(target_labels) == 0:
                 logger.warning(f"label_name_en='{label_name_en}'であるラベルは存在しません。")
                 continue
-            elif len(target_labels) == 2:
+            if len(target_labels) == 2:
                 logger.warning(f"label_name_en='{label_name_en}'であるラベルは複数存在します。")
 
             for target_label in target_labels:
                 new_color = {"red": color[0], "green": color[1], "blue": color[2]}
                 if target_label["color"] != new_color:
                     target_label["color"] = new_color
-                    changed_labels.append(target_label)
+                    changed_labels.append(
+                        Label(
+                            label_id=target_label["label_id"],
+                            label_name_en=AnnofabApiFacade.get_label_name_en(target_label),
+                        )
+                    )
 
         return request_body, changed_labels
 
@@ -80,7 +86,7 @@ class PuttingLabelColorMain(AbstractCommandLineWithConfirmInterface):
             return
 
         if comment is None:
-            tmp_str_labels = ",".join([e.label_name_en for e in changed_labels])
+            tmp_str_labels = ", ".join([e.label_name_en for e in changed_labels])
             comment = f"以下のラベルの色を変更しました。\n{tmp_str_labels}"
 
         request_body["comment"] = comment
@@ -137,7 +143,7 @@ def main(args):
 def add_parser(subparsers: Optional[argparse._SubParsersAction] = None):
     subcommand_name = "put_label_color"
 
-    subcommand_help = "ラベルの色情報を設定します。"
+    subcommand_help = "ラベルの色を変更します。"
 
     epilog = "チェッカーロール、オーナーロールを持つユーザで実行してください。"
     parser = annofabcli.common.cli.add_parser(subparsers, subcommand_name, subcommand_help, epilog=epilog)
