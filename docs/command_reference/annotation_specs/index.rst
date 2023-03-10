@@ -22,6 +22,7 @@ Available Commands
    list_history
    list_label
    list_label_color
+   put_label_color
 
 Usage Details
 =================================
