@@ -182,7 +182,7 @@ class DiffProjects(AbstractCommandLineInterface):
         is_duplicated, duplicated_message = self.validate_duplicated(label_names1, label_names2)
         diff_message += duplicated_message
         if is_duplicated:
-            diff_message += f"ラベル名(en)が重複しているので、アノテーションラベル情報の差分は確認しません。\n"
+            diff_message += "ラベル名(en)が重複しているので、アノテーションラベル情報の差分は確認しません。\n"
 
         if label_names1 != label_names2:
             diff_message += (

@@ -76,7 +76,7 @@ class PutInputData(AbstractCommandLineInterface):
                 max_job_access=wait_options.max_tries,
             )
             if result:
-                logger.info(f"入力データの登録が完了しました。")
+                logger.info("入力データの登録が完了しました。")
             else:
                 logger.warning(f"入力データの登録に失敗しました。または、{MAX_WAIT_MINUTE}分間待っても、入力データの登録が完了しませんでした。")
 

@@ -93,7 +93,7 @@ class DownloadingFile:
                 download_annotation_zip()
             except requests.HTTPError as e:
                 if e.response.status_code == requests.codes.not_found:
-                    logger.info(f"アノテーションzipが存在しなかったので、アノテーションzipファイルの更新処理を実行します。")
+                    logger.info("アノテーションzipが存在しなかったので、アノテーションzipファイルの更新処理を実行します。")
                     self.wait_until_updated_annotation_zip(project_id, wait_options)
                     download_annotation_zip()
                 else:

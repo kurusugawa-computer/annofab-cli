@@ -897,12 +897,12 @@ class UserPerformance:
 
         figure_list = [
             create_figure(
-                title=f"アノテーションあたり作業時間とタスクあたり差し戻し回数の関係",
+                title="アノテーションあたり作業時間とタスクあたり差し戻し回数の関係",
                 x_axis_label="アノテーションあたり作業時間[minute/annotation]",
                 y_axis_label="タスクあたり差し戻し回数",
             ),
             create_figure(
-                title=f"アノテーションあたり作業時間とアノテーションあたり検査コメント数の関係",
+                title="アノテーションあたり作業時間とアノテーションあたり検査コメント数の関係",
                 x_axis_label="アノテーションあたり作業時間[minute/annotation]",
                 y_axis_label="アノテーションあたり検査コメント数",
             ),

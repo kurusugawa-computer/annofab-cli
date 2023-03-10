@@ -212,7 +212,7 @@ class ChangeOperator(AbstractCommandLineInterface):
         elif args.not_assign:
             user_id = None
         else:
-            logger.error(f"タスクの担当者の指定方法が正しくありません。")
+            logger.error("タスクの担当者の指定方法が正しくありません。")
             return
 
         dict_task_query = annofabcli.common.cli.get_json_from_args(args.task_query)

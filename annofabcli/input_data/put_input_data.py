@@ -321,7 +321,7 @@ class PutInputData(AbstractCommandLineInterface):
                 f"`input_data_path`が重複しています。\n" f"{df_duplicated_input_data_path['input_data_path'].unique()}"
             )
             if not allow_duplicated_input_data:
-                raise RuntimeError(f"`input_data_path`が重複しています。")
+                raise RuntimeError("`input_data_path`が重複しています。")
 
         return CsvInputData.schema().load(input_data_dict_list, many=True, unknown="exclude")
 
