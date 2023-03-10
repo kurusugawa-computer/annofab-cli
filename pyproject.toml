@@ -92,12 +92,18 @@ ignore_missing_imports = true
 check_untyped_defs = true
 
 [tool.ruff]
-# ignore = ["F541"]
+ignore = [
+    # strict引数はPython3.10以降しか使えないので無視する
+    # "zip-without-explicit-strict"
+    "B905",
+]
+
 line-length = 120
 select = [
     "E",
     "F",
     "W",
+    "B"
 ]
 
 
