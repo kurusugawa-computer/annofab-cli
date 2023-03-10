@@ -1,4 +1,7 @@
 import configparser
+import copy
+import datetime
+import json
 import os
 from pathlib import Path
 
@@ -52,8 +55,11 @@ class TestCommandLine:
         out_file = str(out_dir / "annotation_specs_list_label.json")
         main([self.command_name, "list_label", "--project_id", project_id, "--before", "1", "--output", out_file])
 
-    def test_annotation_specs_list_label_color(self):
-        out_file = str(out_dir / "annotation_specs_list_label_color.json")
+    def test_scenario_label_color(self):
+        """
+        label_colorに関するシナリオテスト。
+        """
+        out_file = out_dir / f"annotation_specs_list_label_color--{str(datetime.datetime.now().timestamp())}.json"
         main(
             [
                 self.command_name,
@@ -63,7 +69,59 @@ class TestCommandLine:
                 "--format",
                 "json",
                 "--output",
-                out_file,
+                str(out_file),
+            ]
+        )
+        with out_file.open() as f:
+            old_label_color = json.load(f)
+
+        label_color = copy.deepcopy(old_label_color)
+        key = list(label_color.keys())[0]
+        color = label_color[key]
+        new_color = (color[0], color[1], (color[2] + 1) % 256)
+        label_color[key] = new_color
+
+        main(
+            [
+                self.command_name,
+                "put_label_color",
+                "--project_id",
+                project_id,
+                "--json",
+                json.dumps(label_color),
+                "--yes",
+            ]
+        )
+
+        out_file2 = out_dir / f"annotation_specs_list_label_color--{str(datetime.datetime.now().timestamp())}.json"
+        main(
+            [
+                self.command_name,
+                "list_label_color",
+                "--project_id",
+                project_id,
+                "--format",
+                "json",
+                "--output",
+                str(out_file2),
+            ]
+        )
+
+        with out_file2.open() as f:
+            new_label_color = json.load(f)
+
+        assert new_label_color[key] == list(new_color)
+
+        # 元の色に戻す
+        main(
+            [
+                self.command_name,
+                "put_label_color",
+                "--project_id",
+                project_id,
+                "--json",
+                json.dumps(old_label_color),
+                "--yes",
             ]
         )
 
