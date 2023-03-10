@@ -138,7 +138,7 @@ class DownloadingFile:
                 self.service.wrapper.download_project_inputs_url(project_id, dest_path)
             except requests.HTTPError as e:
                 if e.response.status_code == requests.codes.not_found:
-                    logger.info(f"入力データ全件ファイルが存在しなかったので、入力データ全件ファイルの更新処理を実行します。")
+                    logger.info("入力データ全件ファイルが存在しなかったので、入力データ全件ファイルの更新処理を実行します。")
                     self.wait_until_updated_input_data_json(project_id, wait_options)
                     self.service.wrapper.download_project_inputs_url(project_id, dest_path)
                 else:
@@ -182,7 +182,7 @@ class DownloadingFile:
                 self.service.wrapper.download_project_tasks_url(project_id, dest_path)
             except requests.HTTPError as e:
                 if e.response.status_code == requests.codes.not_found:
-                    logger.info(f"タスク全件ファイルが存在しなかったので、タスク全件ファイルの更新処理を実行します。")
+                    logger.info("タスク全件ファイルが存在しなかったので、タスク全件ファイルの更新処理を実行します。")
                     self.wait_until_updated_task_json(project_id, wait_options)
                     self.service.wrapper.download_project_tasks_url(project_id, dest_path)
                 else:

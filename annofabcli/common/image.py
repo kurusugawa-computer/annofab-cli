@@ -249,7 +249,7 @@ def write_annotation_images_from_path(
             return _get_image_size_from_system_metadata(input_data)
 
         else:
-            raise ValueError(f"引数`image_size`または`input_data_dict`のどちらかはnot Noneである必要があります。")
+            raise ValueError("引数`image_size`または`input_data_dict`のどちらかはnot Noneである必要があります。")
 
     if not annotation_path.exists():
         logger.warning(f"annotation_path: '{annotation_path}' は存在しません。")

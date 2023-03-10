@@ -87,7 +87,7 @@ class ListAnnotationCount(AbstractCommandLineInterface):
             df = self.aggregate_annotations(all_annotation_list, group_by)
             self.print_csv(df)
         else:
-            logger.info(f"アノテーション一覧が0件のため出力しません。")
+            logger.info("アノテーション一覧が0件のため出力しません。")
             return
 
 

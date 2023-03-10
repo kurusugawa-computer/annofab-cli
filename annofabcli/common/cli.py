@@ -429,7 +429,7 @@ class ArgumentParser:
         '--format` 引数を追加
         """
         if help_message is None:
-            help_message = f"出力フォーマットを指定します。"
+            help_message = "出力フォーマットを指定します。"
 
         self.parser.add_argument(
             "-f", "--format", type=str, choices=[e.value for e in choices], default=default.value, help=help_message

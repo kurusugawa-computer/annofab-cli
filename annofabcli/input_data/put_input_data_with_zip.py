@@ -63,7 +63,7 @@ class PutInputData(AbstractCommandLineInterface):
             content_type="application/zip",
             request_body=request_body,
         )
-        logger.info(f"入力データの登録中です（サーバ側の処理）。")
+        logger.info("入力データの登録中です（サーバ側の処理）。")
 
         if wait:
             MAX_WAIT_MINUTE = wait_options.max_tries * wait_options.interval / 60
@@ -110,7 +110,7 @@ class PutInputData(AbstractCommandLineInterface):
             )
 
         else:
-            print(f"引数が不正です。", file=sys.stderr)
+            print("引数が不正です。", file=sys.stderr)
 
 
 def main(args):

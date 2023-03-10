@@ -195,7 +195,7 @@ class ListAnnotation(AbstractCommandLineInterface):
             else:
                 self.print_according_to_format(annotation_list)
         else:
-            logger.info(f"アノテーション一覧の件数が0件のため、出力しません。")
+            logger.info("アノテーション一覧の件数が0件のため、出力しません。")
 
 
 def main(args):

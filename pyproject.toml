@@ -92,7 +92,7 @@ ignore_missing_imports = true
 check_untyped_defs = true
 
 [tool.ruff]
-ignore = ["F541"]
+# ignore = ["F541"]
 line-length = 120
 select = [
     "E",

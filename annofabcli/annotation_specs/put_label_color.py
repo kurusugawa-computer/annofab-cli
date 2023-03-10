@@ -82,7 +82,7 @@ class PuttingLabelColorMain(AbstractCommandLineWithConfirmInterface):
         request_body, changed_labels = self.create_request_body(label_color)
 
         if len(changed_labels) == 0:
-            logger.info(f"変更対象のラベルがなかった（`--json`で指定されたラベルの色は、アノテーション仕様と同じだった）ので、終了します。")
+            logger.info("変更対象のラベルがなかった（`--json`で指定されたラベルの色は、アノテーション仕様と同じだった）ので、終了します。")
             return
 
         if comment is None:
@@ -94,7 +94,7 @@ class PuttingLabelColorMain(AbstractCommandLineWithConfirmInterface):
             return
 
         self.service.api.put_annotation_specs(self.project_id, query_params={"v": 3}, request_body=request_body)
-        logger.info(f"アノテーション仕様のラベルの色を変更しました。")
+        logger.info("アノテーション仕様のラベルの色を変更しました。")
 
 
 class PutLabelColor(AbstractCommandLineInterface):
