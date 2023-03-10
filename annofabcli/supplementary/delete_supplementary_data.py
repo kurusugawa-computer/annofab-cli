@@ -192,7 +192,7 @@ class DeleteSupplementaryDataMain(AbstractCommandLineWithConfirmInterface):
 
             supplementary_data_list, _ = self.service.api.get_supplementary_data_list(project_id, input_data_id)
             if len(supplementary_data_list) == 0:
-                logger.debug(f"入力データに紐づく補助情報は存在しないので、削除をスキップします。")
+                logger.debug("入力データに紐づく補助情報は存在しないので、削除をスキップします。")
                 continue
 
             message_for_confirm = (

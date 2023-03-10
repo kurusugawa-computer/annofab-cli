@@ -145,7 +145,7 @@ class SummarizeTaskCountByUser(AbstractCommandLineInterface):
         if len(df) > 0:
             self.print_summarize_df(df)
         else:
-            logger.error(f"出力対象データが0件のため、出力しません。")
+            logger.error("出力対象データが0件のため、出力しません。")
 
 
 def parse_args(parser: argparse.ArgumentParser):

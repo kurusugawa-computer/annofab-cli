@@ -269,7 +269,7 @@ class WorktimePerDate:
         return True
 
     def _get_default_user_id_list(self) -> list[str]:
-        return list(self.df.sort_values(by=f"date", ascending=False)[f"user_id"].dropna().unique())
+        return list(self.df.sort_values(by="date", ascending=False)["user_id"].dropna().unique())
 
     def _get_continuous_date_dataframe(self) -> pandas.DataFrame:
         """

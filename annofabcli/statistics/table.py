@@ -232,7 +232,7 @@ class Table:
             df = df.drop(["histories_by_phase"], axis=1)
             return df
         else:
-            logger.warning(f"タスク一覧が0件です。")
+            logger.warning("タスク一覧が0件です。")
 
             numeric_columns = [
                 "worktime_hour",
@@ -323,7 +323,7 @@ class Table:
             {"worktime_hour": "sum"}
         )
         if len(group_obj) == 0:
-            logger.warning(f"タスク履歴情報に作業しているタスクがありませんでした。タスク履歴全件ファイルが更新されていない可能性があります。")
+            logger.warning("タスク履歴情報に作業しているタスクがありませんでした。タスク履歴全件ファイルが更新されていない可能性があります。")
             return pandas.DataFrame(
                 columns=[
                     "task_id",

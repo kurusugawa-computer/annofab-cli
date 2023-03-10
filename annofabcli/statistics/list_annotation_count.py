@@ -287,7 +287,7 @@ class ListAnnotationCounterByInputData:
 
         iter_parser = lazy_parse_simple_annotation_by_input_data(annotation_path)
 
-        logger.debug(f"アノテーションzip/ディレクトリを読み込み中")
+        logger.debug("アノテーションzip/ディレクトリを読み込み中")
         for index, parser in enumerate(iter_parser):
             if (index + 1) % 1000 == 0:
                 logger.debug(f"{index+1}  件目のJSONを読み込み中")
@@ -387,7 +387,7 @@ class ListAnnotationCounterByTask:
 
         target_task_ids = set(target_task_ids) if target_task_ids is not None else None
 
-        logger.debug(f"アノテーションzip/ディレクトリを読み込み中")
+        logger.debug("アノテーションzip/ディレクトリを読み込み中")
         for task_index, task_parser in enumerate(iter_task_parser):
             if (task_index + 1) % 1000 == 0:
                 logger.debug(f"{task_index+1}  件目のタスクディレクトリを読み込み中")

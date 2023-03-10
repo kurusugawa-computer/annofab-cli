@@ -524,7 +524,7 @@ def parse_args(parser: argparse.ArgumentParser):
         "--dir",
         type=Path,
         required=True,
-        help=f"プロジェクトディレクトリが存在するディレクトリを指定してください。",
+        help="プロジェクトディレクトリが存在するディレクトリを指定してください。",
     )
 
     parser.add_argument(

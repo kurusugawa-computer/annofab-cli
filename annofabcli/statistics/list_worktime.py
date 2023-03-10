@@ -135,7 +135,7 @@ class ListWorktimeFromTaskHistoryEvent(AbstractCommandLineInterface):
         if len(worktime_list) > 0:
             self.print_csv(df)
         else:
-            logger.warning(f"データ件数が0件であるため、出力しません。")
+            logger.warning("データ件数が0件であるため、出力しません。")
             return
 
     def main(self):

@@ -124,7 +124,7 @@ class ListAllTasksAddedTaskHistoryMain:
 
         filtered_task_list = self.filter_task_list(task_list, task_id_list=task_id_list, task_query=task_query)
 
-        logger.debug(f"タスク履歴に関する付加的情報を取得しています。")
+        logger.debug("タスク履歴に関する付加的情報を取得しています。")
         detail_task_list = self.get_detail_task_list(task_list=filtered_task_list, task_history_dict=task_history_dict)
         return detail_task_list
 
