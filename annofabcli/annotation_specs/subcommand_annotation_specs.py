@@ -9,6 +9,7 @@ import annofabcli.annotation_specs.list_annotation_specs_history
 import annofabcli.annotation_specs.list_annotation_specs_label
 import annofabcli.annotation_specs.list_attribute_restriction
 import annofabcli.annotation_specs.list_label_color
+import annofabcli.annotation_specs.put_label_color
 import annofabcli.common.cli
 
 
@@ -23,6 +24,7 @@ def parse_args(parser: argparse.ArgumentParser):
     annofabcli.annotation_specs.list_annotation_specs_history.add_parser(subparsers)
     annofabcli.annotation_specs.list_annotation_specs_label.add_parser(subparsers)
     annofabcli.annotation_specs.list_label_color.add_parser(subparsers)
+    annofabcli.annotation_specs.put_label_color.add_parser(subparsers)
 
 
 def add_parser(subparsers: Optional[argparse._SubParsersAction] = None):
