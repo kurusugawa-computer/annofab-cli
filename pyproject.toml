@@ -41,7 +41,7 @@ bokeh = "^3.0"
 Pillow = "*"
 
 
-[tool.poetry.dev-dependencies]
+[tool.poetry.group.dev.dependencies]
 # test library
 pytest = "*"
 pytest-xdist = "*"
@@ -54,10 +54,7 @@ autoflake = "*"
 black = "*"
 
 # lint library
-# 原因は不明だが、pycodestyleの関係でバージョンが下がるときがあるので、明示的に指定する
-flake8 = ">=6"
-pycodestyle = "*"
-
+ruff = ">=0.0.254"
 mypy = "*"
 pylint = "*"
 
