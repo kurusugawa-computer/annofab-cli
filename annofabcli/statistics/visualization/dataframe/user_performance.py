@@ -84,7 +84,7 @@ class UserPerformance:
                     return row[("monitored_worktime_hour", phase)] / row[("monitored_worktime_hour", "sum")]
 
             # Annofab時間の比率
-            df[("monitored_worktime_ratio", phase)] = df.apply(get_monitored_worktime_ratio, axis=1)
+            df[("monitored_worktime_ratio", phase)] = df.apply(get_monitored_worktime_ratio, axis=1)  # noqa: function-uses-loop-variable	
 
             # Annofab時間の比率から、Annowork時間を予測する
             df[("actual_worktime_hour", phase)] = (
