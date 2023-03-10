@@ -76,15 +76,15 @@ class UserPerformance:
                 計測作業時間の合計値が0により、monitored_worktime_ratioはnanになる場合は、教師付の実績作業時間を実績作業時間の合計値になるようなmonitored_worktime_ratioに変更する
                 """
                 if row[("monitored_worktime_hour", "sum")] == 0:
-                    if phase == TaskPhase.ANNOTATION.value:
+                    if phase == TaskPhase.ANNOTATION.value:  # noqa: function-uses-loop-variable
                         return 1
                     else:
                         return 0
                 else:
-                    return row[("monitored_worktime_hour", phase)] / row[("monitored_worktime_hour", "sum")]
+                    return row[("monitored_worktime_hour", phase)] / row[("monitored_worktime_hour", "sum")]  # noqa: function-uses-loop-variable
 
             # Annofab時間の比率
-            df[("monitored_worktime_ratio", phase)] = df.apply(get_monitored_worktime_ratio, axis=1)  # noqa: function-uses-loop-variable	
+            df[("monitored_worktime_ratio", phase)] = df.apply(get_monitored_worktime_ratio, axis=1)
 
             # Annofab時間の比率から、Annowork時間を予測する
             df[("actual_worktime_hour", phase)] = (
