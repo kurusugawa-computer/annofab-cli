@@ -122,6 +122,7 @@ ignore = [
     "PTH", #pathlibを使わないコードが多いので、除外する
     "ISC", #flake8-implicit-str-concat
     "N", # pep8-naming
+    "PT", # flake8-pytest-style
 ]
 
 line-length = 120
