@@ -97,7 +97,7 @@ class CopyProject(AbstractCommandLineInterface):
         )
 
         self.service.api.initiate_project_copy(src_project_id, request_body=request_body)
-        logger.info(f"プロジェクトのコピーを実施しています。")
+        logger.info("プロジェクトのコピーを実施しています。")
 
         if wait_for_completion:
             MAX_WAIT_MINUTE = DEFAULT_WAIT_OPTIONS.max_tries * DEFAULT_WAIT_OPTIONS.interval / 60
@@ -110,11 +110,11 @@ class CopyProject(AbstractCommandLineInterface):
                 max_job_access=DEFAULT_WAIT_OPTIONS.max_tries,
             )
             if result:
-                logger.info(f"プロジェクトのコピーが完了しました。")
+                logger.info("プロジェクトのコピーが完了しました。")
             else:
-                logger.info(f"プロジェクトのコピーは実行中 または 失敗しました。")
+                logger.info("プロジェクトのコピーは実行中 または 失敗しました。")
         else:
-            logger.info(f"コピーの完了を待たずに終了します。")
+            logger.info("コピーの完了を待たずに終了します。")
 
     @staticmethod
     def _get_completion_copied_targets(copied_targets: Collection[CopiedTarget]) -> set[CopiedTarget]:

@@ -63,7 +63,7 @@ class ListInputDataWithJsonMain:
             with json_path.open(encoding="utf-8") as f:
                 input_data_list = json.load(f)
 
-        logger.debug(f"入力データを絞り込み中")
+        logger.debug("入力データを絞り込み中")
         input_data_id_set = set(input_data_id_list) if input_data_id_list is not None else None
         filtered_input_data_list = [
             e
@@ -105,7 +105,7 @@ class ListInputDataWithJson(AbstractCommandLineInterface):
         if len(input_data_list) > 0:
             self.print_according_to_format(input_data_list)
         else:
-            logger.info(f"入力データ一覧の件数が0件のため、出力しません。")
+            logger.info("入力データ一覧の件数が0件のため、出力しません。")
 
 
 def main(args):

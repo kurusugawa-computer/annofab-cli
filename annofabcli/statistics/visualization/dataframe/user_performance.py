@@ -76,12 +76,15 @@ class UserPerformance:
                 計測作業時間の合計値が0により、monitored_worktime_ratioはnanになる場合は、教師付の実績作業時間を実績作業時間の合計値になるようなmonitored_worktime_ratioに変更する
                 """
                 if row[("monitored_worktime_hour", "sum")] == 0:
-                    if phase == TaskPhase.ANNOTATION.value:
+                    if phase == TaskPhase.ANNOTATION.value:  # noqa: function-uses-loop-variable
                         return 1
                     else:
                         return 0
                 else:
-                    return row[("monitored_worktime_hour", phase)] / row[("monitored_worktime_hour", "sum")]
+                    return (
+                        row[("monitored_worktime_hour", phase)]  # noqa: function-uses-loop-variable
+                        / row[("monitored_worktime_hour", "sum")]
+                    )
 
             # Annofab時間の比率
             df[("monitored_worktime_ratio", phase)] = df.apply(get_monitored_worktime_ratio, axis=1)
@@ -219,7 +222,7 @@ class UserPerformance:
             df["last_working_date"] = None
 
         phase_list = get_phase_list(list(df.columns))
-        df = df[["actual_worktime_hour", "last_working_date"] + phase_list].copy()
+        df = df[["actual_worktime_hour", "last_working_date", *phase_list]].copy()
         df.columns = pandas.MultiIndex.from_tuples(
             [("actual_worktime_hour", "sum"), ("last_working_date", "")]
             + [("monitored_worktime_hour", phase) for phase in phase_list]
@@ -663,7 +666,7 @@ class UserPerformance:
             self._set_legend(fig)
 
         div_element = self._create_div_element()
-        write_bokeh_graph(bokeh.layouts.column([div_element] + figure_list), output_file)
+        write_bokeh_graph(bokeh.layouts.column([div_element, *figure_list]), output_file)
 
     def plot_productivity_from_monitored_worktime(self, output_file: Path):
         """
@@ -704,9 +707,9 @@ class UserPerformance:
         logger.debug(f"{output_file} を出力します。")
 
         figure_list = [
-            create_figure(title=f"タスクあたり差し戻し回数とタスク数の関係", x_axis_label="タスク数", y_axis_label="タスクあたり差し戻し回数"),
+            create_figure(title="タスクあたり差し戻し回数とタスク数の関係", x_axis_label="タスク数", y_axis_label="タスクあたり差し戻し回数"),
             create_figure(
-                title=f"アノテーションあたり検査コメント数とアノテーション数の関係", x_axis_label="アノテーション数", y_axis_label="アノテーションあたり検査コメント数"
+                title="アノテーションあたり検査コメント数とアノテーション数の関係", x_axis_label="アノテーション数", y_axis_label="アノテーションあたり検査コメント数"
             ),
         ]
         column_pair_list = [
@@ -789,7 +792,7 @@ class UserPerformance:
             self._set_legend(fig)
 
         div_element = self._create_div_element()
-        write_bokeh_graph(bokeh.layouts.column([div_element] + figure_list), output_file)
+        write_bokeh_graph(bokeh.layouts.column([div_element, *figure_list]), output_file)
 
     def plot_quality_and_productivity_from_actual_worktime(
         self,
@@ -897,12 +900,12 @@ class UserPerformance:
 
         figure_list = [
             create_figure(
-                title=f"アノテーションあたり作業時間とタスクあたり差し戻し回数の関係",
+                title="アノテーションあたり作業時間とタスクあたり差し戻し回数の関係",
                 x_axis_label="アノテーションあたり作業時間[minute/annotation]",
                 y_axis_label="タスクあたり差し戻し回数",
             ),
             create_figure(
-                title=f"アノテーションあたり作業時間とアノテーションあたり検査コメント数の関係",
+                title="アノテーションあたり作業時間とアノテーションあたり検査コメント数の関係",
                 x_axis_label="アノテーションあたり作業時間[minute/annotation]",
                 y_axis_label="アノテーションあたり検査コメント数",
             ),
@@ -953,8 +956,8 @@ class UserPerformance:
         set_tooltip()
 
         div_element = self._create_div_element()
-        div_element.text = div_element.text + """円の大きさ：作業時間<br>"""  # type: ignore
-        write_bokeh_graph(bokeh.layouts.column([div_element] + figure_list), output_file)
+        div_element.text = div_element.text + """円の大きさ：作業時間<br>"""  # type: ignore[operator]
+        write_bokeh_graph(bokeh.layouts.column([div_element, *figure_list]), output_file)
 
 
 class WholePerformance:

@@ -106,12 +106,11 @@ class CancelAcceptanceMain(AbstractCommandLineWithConfirmInterface):
 
             logger.debug(
                 f"{logging_prefix}: task_id = {task_id} のタスクの受入完了状態を取り消します。"
-                + (
-                    f"タスクの担当者は {actual_acceptor.username}({actual_acceptor.user_id}) です。"
-                    if actual_acceptor is not None
-                    else "タスクの担当者は未割り当てです。"
-                )  # noqa: E501
-            )
+                f"タスクの担当者は {actual_acceptor.username}({actual_acceptor.user_id}) です。"
+                if actual_acceptor is not None
+                else "タスクの担当者は未割り当てです。"
+            )  # noqa: E501
+
             operator_account_id = actual_acceptor.account_id if actual_acceptor is not None else None
             if not dryrun:
                 self.service.wrapper.cancel_completed_task(

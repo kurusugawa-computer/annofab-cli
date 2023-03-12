@@ -138,7 +138,7 @@ class AbstractPhaseCumulativeProductivity(abc.ABC):
             checkbox_group = line_graph.create_checkbox_displaying_markers()
 
             widgets = bokeh.layouts.column([hide_all_button, show_all_button, checkbox_group])
-            graph_group = bokeh.layouts.row([line_graph.figure, widgets])  # type: ignore
+            graph_group = bokeh.layouts.row([line_graph.figure, widgets])  # type: ignore[list-item]
             graph_group_list.append(graph_group)
 
         write_bokeh_graph(bokeh.layouts.layout(graph_group_list), output_file)

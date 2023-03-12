@@ -146,7 +146,7 @@ class SummarizeTaskCount(AbstractCommandLineInterface):
 
         task_list = self.get_task_list(project_id, task_json_path, is_latest=is_latest, wait_options=wait_options)
         if len(task_list) == 0:
-            logger.info(f"タスクが0件のため、出力しません。")
+            logger.info("タスクが0件のため、出力しません。")
             return
 
         number_of_inspections = self.get_number_of_inspections_for_project(project_id)

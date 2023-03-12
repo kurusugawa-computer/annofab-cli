@@ -84,7 +84,7 @@ class RejectTasksMain(AbstractCommandLineWithConfirmInterface):
         elif assigned_annotator_user_id is not None:
             confirm_message += f"ユーザ '{assigned_annotator_user_id}' を担当者に割り当てます。"
         else:
-            confirm_message += f"担当者は割り当てません。"
+            confirm_message += "担当者は割り当てません。"
 
         return self.confirm_processing(confirm_message)
 

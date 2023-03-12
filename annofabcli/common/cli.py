@@ -429,7 +429,7 @@ class ArgumentParser:
         '--format` 引数を追加
         """
         if help_message is None:
-            help_message = f"出力フォーマットを指定します。"
+            help_message = "出力フォーマットを指定します。"
 
         self.parser.add_argument(
             "-f", "--format", type=str, choices=[e.value for e in choices], default=default.value, help=help_message
@@ -483,7 +483,7 @@ class ArgumentParser:
         self.parser.add_argument("-tq", "--task_query", type=str, required=required, help=help_message)
 
 
-class AbstractCommandLineWithConfirmInterface(abc.ABC):
+class AbstractCommandLineWithConfirmInterface(abc.ABC):  # noqa: abstract-base-class-without-abstract-method
     """
     コマンドライン上でpromptを表示するときのインターフェイス
     """
@@ -634,9 +634,9 @@ class PrettyHelpFormatter(argparse.RawTextHelpFormatter, argparse.ArgumentDefaul
 
     def _get_help_string(self, action):
         # 必須な引数には、引数の説明の後ろに"(required)"を付ける
-        help = action.help  # pylint: disable=redefined-builtin
+        help = action.help  # noqa: builtin-variable-shadowing # pylint: disable=redefined-builtin
         if action.required:
-            help += " (required)"
+            help += " (required)"  # noqa: builtin-variable-shadowing
 
         # 不要なデフォルト値（--debug や オプショナルな引数）を表示させないようにする
         # super()._get_help_string の中身を、そのまま持ってきた。
@@ -647,7 +647,7 @@ class PrettyHelpFormatter(argparse.RawTextHelpFormatter, argparse.ArgumentDefaul
                 if action.option_strings or action.nargs in defaulting_nargs:
                     # 以下の条件だけ、annofabcli独自の設定
                     if action.default is not None and not action.const:
-                        help += " (default: %(default)s)"
+                        help += " (default: %(default)s)"  # noqa: builtin-variable-shadowing
         return help
 
 

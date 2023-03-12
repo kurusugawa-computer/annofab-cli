@@ -160,9 +160,9 @@ class ListProject(AbstractCommandLineInterface):
     def validate(args: argparse.Namespace) -> bool:
         if args.project_id is not None:
             if args.project_query is not None:
-                logger.warning(f"`--project_id`と`--project_query`は同時に指定できません。")
+                logger.warning("`--project_id`と`--project_query`は同時に指定できません。")
             if args.include_not_joined_project:
-                logger.warning(f"`--project_id`と`--include_not_joined_project`は同時に指定できません。")
+                logger.warning("`--project_id`と`--include_not_joined_project`は同時に指定できません。")
 
         return True
 

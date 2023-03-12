@@ -281,7 +281,7 @@ def draw_annotation_all(
         label_name: ImageColor.getrgb(color) if isinstance(color, str) else color
         for label_name, color in drawing.label_color_dict.items()
     }
-    logger.info(f"label_color=" + json.dumps(new_label_color_dict, ensure_ascii=False))
+    logger.info(f"label_color={json.dumps(new_label_color_dict, ensure_ascii=False)}")
 
 
 class DrawAnnotation(AbstractCommandLineWithoutWebapiInterface):

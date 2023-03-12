@@ -71,7 +71,7 @@ def get_df_worktime(
         dict_worktime.values(),
         index=pandas.MultiIndex.from_tuples(dict_worktime.keys(), names=("date", "account_id", "phase")),
     )
-    df = s.unstack()
+    df = s.unstack()  # noqa: PD010 : pandas.Seriesにはpivot_tableがないので、警告を無視する
     df.reset_index(inplace=True)
     df.rename(
         columns={
@@ -135,7 +135,7 @@ class ListWorktimeFromTaskHistoryEvent(AbstractCommandLineInterface):
         if len(worktime_list) > 0:
             self.print_csv(df)
         else:
-            logger.warning(f"データ件数が0件であるため、出力しません。")
+            logger.warning("データ件数が0件であるため、出力しません。")
             return
 
     def main(self):

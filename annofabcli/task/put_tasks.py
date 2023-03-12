@@ -114,7 +114,7 @@ class PuttingTaskMain:
             return False
 
     def put_task_list(self, task_relation_dict: TaskInputRelation):
-        logger.debug(f"'put_task' WebAPIを用いてタスクを生成します。")
+        logger.debug("'put_task' WebAPIを用いてタスクを生成します。")
         success_count = 0
         if self.parallelism is None:
             for task_id, input_data_id_list in task_relation_dict.items():
@@ -140,7 +140,7 @@ class PuttingTaskMain:
             project_id:
             csv_file: タスク登録に関する情報が記載されたCSV
         """
-        logger.debug(f"'initiate_tasks_generation' WebAPIを用いてタスクを生成します。")
+        logger.debug("'initiate_tasks_generation' WebAPIを用いてタスクを生成します。")
         content = self.service.wrapper.initiate_tasks_generation_by_csv(self.project_id, csvfile_path=str(csv_file))
         job = content["job"]
         logger.info(
@@ -276,7 +276,7 @@ def parse_args(parser: argparse.ArgumentParser):
         "--api",
         type=str,
         choices=[e.value for e in ApiWithCreatingTask],
-        help=f"タスク作成に使うWebAPIを指定できます。 ``--csv`` or ``--json`` を指定したときのみ有効なオプションです。\n"
+        help="タスク作成に使うWebAPIを指定できます。 ``--csv`` or ``--json`` を指定したときのみ有効なオプションです。\n"
         "未指定の場合は、作成するタスク数に応じて、適切なWebAPIを選択します。\n",
     )
 

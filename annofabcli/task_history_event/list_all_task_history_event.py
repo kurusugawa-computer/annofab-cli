@@ -93,7 +93,7 @@ class ListTaskHistoryEventWithJson(AbstractCommandLineInterface):
             else:
                 self.print_according_to_format(task_history_event_list)
         else:
-            logger.warning(f"タスク履歴イベント一覧の件数が0件であるため、出力しません。")
+            logger.warning("タスク履歴イベント一覧の件数が0件であるため、出力しません。")
             return
 
     def main(self):

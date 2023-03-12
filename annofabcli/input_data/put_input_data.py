@@ -313,7 +313,7 @@ class PutInputData(AbstractCommandLineInterface):
                 f"`input_data_name`が重複しています。\n" f"{df_duplicated_input_data_name['input_data_name'].unique()}"
             )
             if not allow_duplicated_input_data:
-                raise RuntimeError(f"`input_data_name`が重複しています。")
+                raise RuntimeError("`input_data_name`が重複しています。")
 
         df_duplicated_input_data_path = df[df["input_data_path"].duplicated()]
         if len(df_duplicated_input_data_path) > 0:
@@ -321,7 +321,7 @@ class PutInputData(AbstractCommandLineInterface):
                 f"`input_data_path`が重複しています。\n" f"{df_duplicated_input_data_path['input_data_path'].unique()}"
             )
             if not allow_duplicated_input_data:
-                raise RuntimeError(f"`input_data_path`が重複しています。")
+                raise RuntimeError("`input_data_path`が重複しています。")
 
         return CsvInputData.schema().load(input_data_dict_list, many=True, unknown="exclude")
 
@@ -375,7 +375,7 @@ class PutInputData(AbstractCommandLineInterface):
             )
 
         else:
-            print(f"引数が不正です。", file=sys.stderr)
+            print("引数が不正です。", file=sys.stderr)
 
 
 def main(args):

@@ -23,7 +23,7 @@ def parse_args(parser: argparse.ArgumentParser):
         "--dir",
         type=Path,
         required=True,
-        help=f"プロジェクトディレクトリが存在するディレクトリを指定してください。",
+        help="プロジェクトディレクトリが存在するディレクトリを指定してください。",
     )
 
     parser.add_argument("-o", "--output", type=Path, required=True, help="出力先のファイルパスを指定します。")
@@ -34,7 +34,7 @@ def parse_args(parser: argparse.ArgumentParser):
 def add_parser(subparsers: Optional[argparse._SubParsersAction] = None):
     subcommand_name = "summarise_whole_performance_csv"
     subcommand_help = (
-        f"``annofabcli statistics visualize`` コマンドの出力結果であるプロジェクトディレクトリから、プロジェクトごとの生産性や品質の一覧を出力します。。"  # noqa: E501
+        "``annofabcli statistics visualize`` コマンドの出力結果であるプロジェクトディレクトリから、プロジェクトごとの生産性や品質の一覧を出力します。。"  # noqa: E501
     )
     parser = annofabcli.common.cli.add_parser(subparsers, subcommand_name, subcommand_help, description=subcommand_help)
     parse_args(parser)

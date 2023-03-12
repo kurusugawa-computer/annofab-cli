@@ -50,7 +50,7 @@ def main(arguments: Optional[list[str]] = None):
             annofabcli.common.cli.load_logging_config_from_args(args)
             argv = sys.argv
             if arguments is not None:
-                argv = ["annofabcli"] + list(arguments)
+                argv = ["annofabcli", *list(arguments)]
             logger.info(f"argv={argv}")
             args.subcommand_func(args)
         except Exception as e:

@@ -166,7 +166,7 @@ class ListInputData(AbstractCommandLineInterface):
         if len(input_data_list) > 0:
             self.print_according_to_format(input_data_list)
         else:
-            logger.info(f"入力データの件数が0件のため、出力しません。")
+            logger.info("入力データの件数が0件のため、出力しません。")
 
     def main(self):
         args = self.args

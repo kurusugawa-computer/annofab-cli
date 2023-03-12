@@ -91,7 +91,7 @@ class WorktimePerDate:
             dict_worktime.values(),
             index=pandas.MultiIndex.from_tuples(dict_worktime.keys(), names=("date", "account_id", "phase")),
         )
-        df = s.unstack()
+        df = s.unstack()  # noqa: PD010 : pandas.Seriesにはpivot_tableがないので、警告を無視する
         df.reset_index(inplace=True)
         df.rename(
             columns={
@@ -269,7 +269,7 @@ class WorktimePerDate:
         return True
 
     def _get_default_user_id_list(self) -> list[str]:
-        return list(self.df.sort_values(by=f"date", ascending=False)[f"user_id"].dropna().unique())
+        return list(self.df.sort_values(by="date", ascending=False)["user_id"].dropna().unique())
 
     def _get_continuous_date_dataframe(self) -> pandas.DataFrame:
         """
@@ -434,8 +434,8 @@ class WorktimePerDate:
             show_all_button = line_graph.create_button_hiding_showing_all_lines(is_hiding=False)
             checkbox_group = line_graph.create_checkbox_displaying_markers()
 
-            widgets = bokeh.layouts.column([hide_all_button, show_all_button, checkbox_group])  # type: ignore
-            graph_group = bokeh.layouts.row([line_graph.figure, widgets])  # type: ignore
+            widgets = bokeh.layouts.column([hide_all_button, show_all_button, checkbox_group])  # type: ignore[list-item] # noqa: E501
+            graph_group = bokeh.layouts.row([line_graph.figure, widgets])  # type: ignore[list-item]
             graph_group_list.append(graph_group)
 
         if line_count == 0:

@@ -50,7 +50,7 @@ class LineGraph:
             tool_tip_items = []
 
         detail_tooltips = [(e, f"@{{{e}}}") for e in tool_tip_items]
-        hover_tool = HoverTool(tooltips=[("(x,y)", "($x, $y)")] + detail_tooltips)
+        hover_tool = HoverTool(tooltips=[("(x,y)", "($x, $y)"), *detail_tooltips])
         return hover_tool
 
     def __init__(
@@ -116,12 +116,12 @@ class LineGraph:
             "right",
         )
         if secondary_y_axis_range is not None:
-            self.figure.extra_y_ranges = {self._SECONDARY_Y_RANGE_NAME: secondary_y_axis_range}  # type: ignore
+            self.figure.extra_y_ranges = {self._SECONDARY_Y_RANGE_NAME: secondary_y_axis_range}  # type: ignore[assignment]  # noqa: E501
         else:
-            self.figure.extra_y_ranges = {self._SECONDARY_Y_RANGE_NAME: DataRange1d()}  # type: ignore
+            self.figure.extra_y_ranges = {self._SECONDARY_Y_RANGE_NAME: DataRange1d()}  # type: ignore[assignment]
 
         if primary_y_axis_range is not None:
-            self.figure.y_range = primary_y_axis_range  # type: ignore
+            self.figure.y_range = primary_y_axis_range  # type: ignore[assignment]
 
         self.exists_secondary_y_axis = True
 

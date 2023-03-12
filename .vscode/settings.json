@@ -18,9 +18,6 @@
     "python.linting.pylintArgs": [
         "--rcfile setup.cfg",
     ],
-    "python.linting.flake8Enabled": true,
-    "python.linting.flake8Path": ".venv/bin/flake8",
-    "python.linting.flake8Args": [],
     "python.linting.mypyEnabled": true,
     "python.linting.mypyPath": ".venv/bin/mypy",
     "python.linting.mypyArgs": [],
@@ -52,7 +49,9 @@
         "docs/_build/": true,
         "htmlcov/": true,
         "out/": true,
-        "*.egg-info/": true
+        "*.egg-info/": true,
+        ".devcontainer/.extensions/": true,
+        ".devcontainer/venv/": true
     },
     "editor.minimap.enabled": false,
 }

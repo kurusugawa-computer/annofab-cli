@@ -261,7 +261,7 @@ class ListWorktimeFromTaskHistoryEvent(AbstractCommandLineInterface):
             else:
                 self.print_according_to_format(dict_worktime_list)
         else:
-            logger.warning(f"作業時間一覧の件数が0件であるため、出力しません。")
+            logger.warning("作業時間一覧の件数が0件であるため、出力しません。")
             return
 
     def main(self):

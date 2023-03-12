@@ -413,7 +413,7 @@ class VisualizeStatistics(AbstractCommandLineInterface):
         root_output_dir: Path = args.output_dir
 
         if args.labor_csv is None:
-            logger.warning(f"'--labor_csv'が指定されていないので、実績作業時間に関する情報は出力されません。")
+            logger.warning("'--labor_csv'が指定されていないので、実績作業時間に関する情報は出力されません。")
 
         df_labor = pandas.read_csv(args.labor_csv) if args.labor_csv is not None else None
 
@@ -436,7 +436,7 @@ class VisualizeStatistics(AbstractCommandLineInterface):
             if len(project_id_list) == 1:
                 main_obj.visualize_statistics(project_id_list[0], root_output_dir)
                 if args.merge:
-                    logger.warning(f"出力した統計情報は1件以下なので、`merge`ディレクトリを出力しません。")
+                    logger.warning("出力した統計情報は1件以下なので、`merge`ディレクトリを出力しません。")
 
             else:
                 # project_idが複数指定された場合は、project_titleのディレクトリに統計情報を出力する
@@ -470,7 +470,7 @@ class VisualizeStatistics(AbstractCommandLineInterface):
                     project_monitored_worktime.to_csv(root_output_dir / "プロジェクごとの毎月の計測作業時間.csv")
 
                 else:
-                    logger.warning(f"出力した統計情報は0件なので、`プロジェクトごとの生産性と品質.csv`を出力しません。")
+                    logger.warning("出力した統計情報は0件なので、`プロジェクトごとの生産性と品質.csv`を出力しません。")
 
 
 def main(args):

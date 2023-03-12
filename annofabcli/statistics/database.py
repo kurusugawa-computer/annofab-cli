@@ -480,7 +480,7 @@ class Database:
         """
 
         # 残すべきファイル
-        self.filename_timestamp = datetime.datetime.now().strftime("%Y%m%d-%H%M%S")
+        self.filename_timestamp = datetime.datetime.now().strftime("%Y%m%d-%H%M%S")  # noqa: DTZ005
 
         # DB用のJSONファイルをダウンロードする
         self._download_db_file(is_latest, is_get_task_histories_one_of_each=is_get_task_histories_one_of_each)

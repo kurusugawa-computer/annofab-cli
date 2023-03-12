@@ -49,7 +49,7 @@ class ListAttributeRestrictionMain:
         self,
         labels: list[dict[str, Any]],
         additionals: list[dict[str, Any]],
-        format: FormatArgument = FormatArgument.DETAILED_TEXT,  # pylint: disable=redefined-builtin
+        format: FormatArgument = FormatArgument.DETAILED_TEXT,  # noqa: builtin-argument-shadowing # pylint: disable=redefined-builtin
     ):
         self.attribute_dict = {e["additional_data_definition_id"]: e for e in additionals}
         self.label_dict = {e["label_id"]: e for e in labels}

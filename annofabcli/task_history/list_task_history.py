@@ -102,7 +102,7 @@ class ListTaskHistory(AbstractCommandLineInterface):
             if len(all_task_history_list) > 0:
                 self.print_according_to_format(all_task_history_list)
             else:
-                logger.warning(f"タスク履歴情報が0件のため、出力しません。")
+                logger.warning("タスク履歴情報が0件のため、出力しません。")
         else:
             self.print_according_to_format(task_history_dict)
 

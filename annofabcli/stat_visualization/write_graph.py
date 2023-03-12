@@ -125,7 +125,7 @@ def parse_args(parser: argparse.ArgumentParser):
         "--dir",
         type=Path,
         required=True,
-        help=f"``annofabcli statistics visualize`` コマンドの出力結果であるプロジェクトのディレクトリを指定してください。",  # noqa: E501
+        help="``annofabcli statistics visualize`` コマンドの出力結果であるプロジェクトのディレクトリを指定してください。",  # noqa: E501
     )
     parser.add_argument(
         "-u",

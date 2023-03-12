@@ -166,7 +166,7 @@ class Task:
             )
         )
 
-        bokeh_obj = bokeh.layouts.gridplot(figure_list, ncols=3)  # type: ignore
+        bokeh_obj = bokeh.layouts.gridplot(figure_list, ncols=3)  # type: ignore[arg-type]
         output_file.parent.mkdir(exist_ok=True, parents=True)
         bokeh.plotting.reset_output()
         bokeh.plotting.output_file(output_file, title=output_file.stem)
@@ -191,7 +191,7 @@ class Task:
 
             # タイムゾーンを指定している理由::
             # すべてがNaNのseriesをdatetimeに変換すると、型にタイムゾーンが指定されない。
-            # その状態で加算すると、`TypeError: DatetimeArray subtraction must have the same timezones or no timezones`というエラーが発生するため  # noqa:E501
+            # その状態で加算すると、`TypeError: DatetimeArray subtraction must have the same timezones or no timezones`というエラーが発生するため  # noqa: E501
             if not isinstance(dt1.dtype, pandas.DatetimeTZDtype):
                 dt1 = dt1.dt.tz_localize(pytz.FixedOffset(540))
             if not isinstance(dt2.dtype, pandas.DatetimeTZDtype):
@@ -262,7 +262,7 @@ class Task:
             )
             figure_list.append(fig)
 
-        bokeh_obj = bokeh.layouts.gridplot(figure_list, ncols=4)  # type: ignore
+        bokeh_obj = bokeh.layouts.gridplot(figure_list, ncols=4)  # type: ignore[arg-type]
         output_file.parent.mkdir(exist_ok=True, parents=True)
         bokeh.plotting.reset_output()
         bokeh.plotting.output_file(output_file, title=output_file.stem)

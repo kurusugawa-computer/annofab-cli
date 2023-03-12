@@ -164,7 +164,7 @@ def write_annotation_image(
         output_image_file: 出力先の画像ファイルのパス
         background_color: アノテーション画像の背景色.
             (ex) "rgb(173, 216, 230)", "#add8e6", "lightgray", (173,216,230)
-            フォーマットは`ImageColor Module <https://hhsprings.bitbucket.io/docs/programming/examples/python/PIL/ImageColor.html>`_  # noqa: E501
+            フォーマットは`ImageColor Module <https://hhsprings.bitbucket.io/docs/programming/examples/python/PIL/ImageColor.html>`_
             '指定しない場合は、黒（rgb(0,0,0)）になります。'))
         label_name_list: 画像化対象のlabel_name. Noneの場合は、すべてのlabel_nameが画像化対象です。
 
@@ -179,7 +179,7 @@ def write_annotation_image(
             write_annotation_image(parser=parser, image_size=(64,64), label_color_dict=label_color_dict,
                                output_image_file=Path("out.png"), background_color=(64,64,64))
 
-    """
+    """  # noqa: E501
 
     image = PIL.Image.new(mode="RGB", size=image_size, color=background_color)
     draw = PIL.ImageDraw.Draw(image)
@@ -214,7 +214,7 @@ def write_annotation_images_from_path(
         output_image_extension: 出力する画像ファイルの拡張子. 指定しない場合は"png"です。
         background_color: アノテーション画像の背景色.
             (ex) "rgb(173, 216, 230)", "#add8e6", "lightgray", (173,216,230)
-            フォーマットは`ImageColor Module <https://hhsprings.bitbucket.io/docs/programming/examples/python/PIL/ImageColor.html>`_  # noqa: E501
+            フォーマットは`ImageColor Module <https://hhsprings.bitbucket.io/docs/programming/examples/python/PIL/ImageColor.html>`_
             '指定しない場合は、黒（rgb(0,0,0)）になります。'))
         label_name_list: 画像化対象のlabel_name. Noneの場合は、すべてのlabel_nameが画像化対象です。
         is_target_parser_func: 画像化する条件を関数で指定できます。Noneの場合は、すべてを画像化します。関数の引数は`SimpleAnnotationParser`で、戻り値がbooleanです。戻り値がTrueならば画像化対象です。
@@ -222,7 +222,7 @@ def write_annotation_images_from_path(
     Returns:
         True: アノテーション情報の画像化に成功した。False: アノテーション情報の画像化に失敗した。
 
-    """
+    """  # noqa: E501
 
     def _get_image_size(input_data_id: str) -> Optional[InputDataSize]:
         def _get_image_size_from_system_metadata(arg_input_data: Dict[str, Any]):
@@ -249,7 +249,7 @@ def write_annotation_images_from_path(
             return _get_image_size_from_system_metadata(input_data)
 
         else:
-            raise ValueError(f"引数`image_size`または`input_data_dict`のどちらかはnot Noneである必要があります。")
+            raise ValueError("引数`image_size`または`input_data_dict`のどちらかはnot Noneである必要があります。")
 
     if not annotation_path.exists():
         logger.warning(f"annotation_path: '{annotation_path}' は存在しません。")

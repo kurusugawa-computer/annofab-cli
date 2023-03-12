@@ -203,7 +203,7 @@ class ListTasks(AbstractCommandLineInterface):
             else:
                 self.print_according_to_format(task_list)
         else:
-            logger.info(f"タスク一覧の件数が0件のため、出力しません。")
+            logger.info("タスク一覧の件数が0件のため、出力しません。")
 
 
 def main(args):

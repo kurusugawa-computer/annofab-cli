@@ -41,7 +41,7 @@ bokeh = "^3.0"
 Pillow = "*"
 
 
-[tool.poetry.dev-dependencies]
+[tool.poetry.group.dev.dependencies]
 # test library
 pytest = "*"
 pytest-xdist = "*"
@@ -54,10 +54,7 @@ autoflake = "*"
 black = "*"
 
 # lint library
-# 原因は不明だが、pycodestyleの関係でバージョンが下がるときがあるので、明示的に指定する
-flake8 = ">=6"
-pycodestyle = "*"
-
+ruff = ">=0.0.254"
 mypy = "*"
 pylint = "*"
 
@@ -93,6 +90,54 @@ line-length = 120
 ignore_missing_imports = true
 
 check_untyped_defs = true
+
+[tool.ruff]
+target-version = "py38"
+
+ignore = [
+    "G004", # `logging-f-string` : loggingでf-stringを使いたいので無視する
+    "PD901", #すでに`df`という変数をいろんなところで使っているため
+    "PD002", #すでにpandasで`inplace=True`はいろんなところで使っているため
+    "RUF001", # 全角記号など`ambiguous unicode character`も使いたいため
+    "RUF002",# 全角記号など`ambiguous unicode character`も使いたいため
+    "RUF003",# 全角記号など`ambiguous unicode character`も使いたいため
+    "RUF100", # `Unused `noqa` directive`のコードがたくさんあるので、一旦無視する
+
+
+    "PL", # pylintに関する警告がたくさんあって対応できなかったので、除外する
+    "ERA", # : 役立つこともあるが、コメントアウトしていないコードも警告されるので無視する
+    "UP", # `pyupgrade`を指定したいのだがPython3.8で利用できないコードが提案されるので、除外した
+
+    # 以下のルールはannofabcliのコードに合っていないので無効化した
+    "RSE", # flake8-raise
+    "D", # pydocstyle, Docstringを中途半端にしか書いていないので、除外する
+    "C90", # mccabe 
+    "T20", # flake8-print
+    "SLF", #  flake8-self
+    "BLE", # flake8-blind-except
+    "FBT", # flake8-boolean-trap
+    "TRY", # tryceratops 
+    "COM", # flake8-commas 
+    "ANN", # flake8-annotations
+    "S", # flake8-bandit
+    "EM",#flake8-errmsg
+    "EXE", # flake8-executable
+    "ICN", # flake8-import-conventions
+    "RET",#flake8-return
+    "SIM",#flake8-simplify
+    "TCH", # flake8-type-checking
+    "PTH", #pathlibを使わないコードが多いので、除外する
+    "ISC", #flake8-implicit-str-concat
+    "N", # pep8-naming
+]
+
+line-length = 120
+select = [
+    "ALL"
+]
+
+[tool.ruff.pydocstyle]
+convention = "google"
 
 [build-system]
 requires = ["poetry>=0.12"]
