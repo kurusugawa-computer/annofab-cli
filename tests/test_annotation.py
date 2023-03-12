@@ -169,7 +169,7 @@ class TestCommandLine:
         # 属性を確認するためにSimpleアノテーションを取得する
         simple_annotation, _ = service.api.get_annotation(project_id, task_id, input_data_id)
         detail = simple_annotation["details"][0]
-        assert detail["attributes"]["truncation"] == False
+        assert detail["attributes"]["truncation"] is False
 
         # is_protected プロパティを変更する
         main(
@@ -188,7 +188,7 @@ class TestCommandLine:
 
         editor_annotation, _ = service.api.get_editor_annotation(project_id, task_id, input_data_id)
         detail = editor_annotation["details"][0]
-        assert detail["is_protected"] == True
+        assert detail["is_protected"] is True
 
     def _execute_dump_delete_restore(self, task_id: str, input_data_id: str):
         """
@@ -255,7 +255,7 @@ class TestCommandLine:
         assert len(simple_annotation["details"]) == 1
         detail = simple_annotation["details"][0]
         detail["label"] == "car"
-        assert detail["attributes"]["truncation"] == True
+        assert detail["attributes"]["truncation"] is True
 
     def _execute_copy(self, src_task_id: str, input_data_id: str):
         """
