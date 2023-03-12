@@ -325,7 +325,6 @@ class DiffProjects(AbstractCommandLineInterface):
         config1 = self.service.api.get_project(project_id1)[0]["configuration"]
         config2 = self.service.api.get_project(project_id2)[0]["configuration"]
 
-        # ignored_key = {"updated_datetime", "created_datetime", "project_id"}
         diff_result = list(dictdiffer.diff(config1, config2))
         if len(diff_result) > 0:
             diff_message += f"### プロジェクト設定に差分あり\n" f"{pprint.pformat(diff_result)}\n"

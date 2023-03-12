@@ -155,7 +155,6 @@ class AnnotationQueryForCLI(DataClassJsonMixin):
     label: str
     """ラベル名（英語）"""
 
-    # attributes: Optional[List[AdditionalDataV1]] = None
     attributes: Optional[Dict[str, AttributeValue]] = None
     """
     keyが属性名(英語),valueが属性値のdict。
