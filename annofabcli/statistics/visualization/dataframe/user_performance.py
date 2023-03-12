@@ -81,7 +81,9 @@ class UserPerformance:
                     else:
                         return 0
                 else:
-                    return row[("monitored_worktime_hour", phase)] / row[("monitored_worktime_hour", "sum")]  # noqa: function-uses-loop-variable
+                    return (
+                        row[("monitored_worktime_hour", phase)] / row[("monitored_worktime_hour", "sum")]
+                    )  # noqa: function-uses-loop-variable
 
             # Annofab時間の比率
             df[("monitored_worktime_ratio", phase)] = df.apply(get_monitored_worktime_ratio, axis=1)
@@ -219,7 +221,7 @@ class UserPerformance:
             df["last_working_date"] = None
 
         phase_list = get_phase_list(list(df.columns))
-        df = df[["actual_worktime_hour", "last_working_date"] + phase_list].copy()
+        df = df[["actual_worktime_hour", "last_working_date", *phase_list]].copy()
         df.columns = pandas.MultiIndex.from_tuples(
             [("actual_worktime_hour", "sum"), ("last_working_date", "")]
             + [("monitored_worktime_hour", phase) for phase in phase_list]
@@ -663,7 +665,7 @@ class UserPerformance:
             self._set_legend(fig)
 
         div_element = self._create_div_element()
-        write_bokeh_graph(bokeh.layouts.column([div_element] + figure_list), output_file)
+        write_bokeh_graph(bokeh.layouts.column([div_element, *figure_list]), output_file)
 
     def plot_productivity_from_monitored_worktime(self, output_file: Path):
         """
@@ -789,7 +791,7 @@ class UserPerformance:
             self._set_legend(fig)
 
         div_element = self._create_div_element()
-        write_bokeh_graph(bokeh.layouts.column([div_element] + figure_list), output_file)
+        write_bokeh_graph(bokeh.layouts.column([div_element, *figure_list]), output_file)
 
     def plot_quality_and_productivity_from_actual_worktime(
         self,
@@ -954,7 +956,7 @@ class UserPerformance:
 
         div_element = self._create_div_element()
         div_element.text = div_element.text + """円の大きさ：作業時間<br>"""  # type: ignore
-        write_bokeh_graph(bokeh.layouts.column([div_element] + figure_list), output_file)
+        write_bokeh_graph(bokeh.layouts.column([div_element, *figure_list]), output_file)
 
 
 class WholePerformance:

@@ -61,8 +61,11 @@ class PrintAnnotationSpecsLabel(AbstractCommandLineInterface):
         for label in labels:
             output_lines.append(
                 "\t".join(
-                    [label["label_id"], label["annotation_type"]]
-                    + PrintAnnotationSpecsLabel._get_name_list(label["label_name"]["messages"])
+                    [
+                        label["label_id"],
+                        label["annotation_type"],
+                        *PrintAnnotationSpecsLabel._get_name_list(label["label_name"]["messages"]),
+                    ]
                 )
             )
             for additional_data_definition in label["additional_data_definitions"]:
@@ -72,16 +75,21 @@ class PrintAnnotationSpecsLabel(AbstractCommandLineInterface):
                             "",
                             additional_data_definition["additional_data_definition_id"],
                             additional_data_definition["type"],
+                            *PrintAnnotationSpecsLabel._get_name_list(additional_data_definition["name"]["messages"]),
                         ]
-                        + PrintAnnotationSpecsLabel._get_name_list(additional_data_definition["name"]["messages"])
                     )
                 )
                 if additional_data_definition["type"] in ["choice", "select"]:
                     for choice in additional_data_definition["choices"]:
                         output_lines.append(
                             "\t".join(
-                                ["", "", choice["choice_id"], ""]
-                                + PrintAnnotationSpecsLabel._get_name_list(choice["name"]["messages"])
+                                [
+                                    "",
+                                    "",
+                                    choice["choice_id"],
+                                    "",
+                                    *PrintAnnotationSpecsLabel._get_name_list(choice["name"]["messages"]),
+                                ]
                             )
                         )
 

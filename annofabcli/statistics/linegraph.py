@@ -50,7 +50,7 @@ class LineGraph:
             tool_tip_items = []
 
         detail_tooltips = [(e, f"@{{{e}}}") for e in tool_tip_items]
-        hover_tool = HoverTool(tooltips=[("(x,y)", "($x, $y)")] + detail_tooltips)
+        hover_tool = HoverTool(tooltips=[("(x,y)", "($x, $y)"), *detail_tooltips])
         return hover_tool
 
     def __init__(

@@ -91,7 +91,7 @@ class WorktimePerDate:
             dict_worktime.values(),
             index=pandas.MultiIndex.from_tuples(dict_worktime.keys(), names=("date", "account_id", "phase")),
         )
-        df = s.unstack()  # noqa: PD010 : pandas.Seriesにはpivot_tableがないので、警告を無視する 
+        df = s.unstack()  # noqa: PD010 : pandas.Seriesにはpivot_tableがないので、警告を無視する
         df.reset_index(inplace=True)
         df.rename(
             columns={

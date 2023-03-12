@@ -856,20 +856,18 @@ class WholeProductivityPerCompletedDate:
             for denominator in ["input_data_count", "annotation_count"]
         ]
 
-        columns = (
-            [
-                "date",
-                "cumsum_task_count",
-                "cumsum_input_data_count",
-                "cumsum_actual_worktime_hour",
-                "cumsum_monitored_worktime_hour",
-            ]
-            + production_columns
-            + worktime_columns
-            + velocity_columns
-            + velocity_details_columns
-            + ["working_user_count"]
-        )
+        columns = [
+            "date",
+            "cumsum_task_count",
+            "cumsum_input_data_count",
+            "cumsum_actual_worktime_hour",
+            "cumsum_monitored_worktime_hour",
+            *production_columns,
+            *worktime_columns,
+            *velocity_columns,
+            *velocity_details_columns,
+            "working_user_count",
+        ]
 
         print_csv(self.df[columns], output=str(output_file))
 
@@ -1273,7 +1271,7 @@ class WholeProductivityPerFirstAnnotationStartedDate:
                     color=color,
                 )
 
-        line_graph_list = [create_task_graph(), create_input_data_graph()] + line_graph_list
+        line_graph_list = [create_task_graph(), create_input_data_graph(), *line_graph_list]
 
         for line_graph in line_graph_list:
             line_graph.process_after_adding_glyphs()

@@ -367,7 +367,7 @@ def create_deviation_df(
 
     df_rank["mean_of_deviation"] = df_rank[project_columns].mean(axis=1)
     df_rank["count_of_project"] = df_rank[project_columns].count(axis=1)
-    df = df_rank[list(user_columns) + [("mean_of_deviation", ""), ("count_of_project", "")] + list(project_columns)]
+    df = df_rank[*list(user_columns), ("mean_of_deviation", ""), ("count_of_project", ""), list(project_columns)]
     if user_ids is not None:
         return df[df[("user_id", "")].isin(user_ids)]
     else:
