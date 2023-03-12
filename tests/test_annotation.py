@@ -255,7 +255,7 @@ class TestCommandLine:
         assert len(simple_annotation["details"]) == 1
         detail = simple_annotation["details"][0]
         detail["label"] == "car"
-        detail["attributes"]["truncation"] == True
+        assert detail["attributes"]["truncation"] == True
 
     def _execute_copy(self, src_task_id: str, input_data_id: str):
         """
