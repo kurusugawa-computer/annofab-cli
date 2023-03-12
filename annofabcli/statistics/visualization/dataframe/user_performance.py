@@ -82,7 +82,8 @@ class UserPerformance:
                         return 0
                 else:
                     return (
-                        row[("monitored_worktime_hour", phase)] / row[("monitored_worktime_hour", "sum")]  # noqa: function-uses-loop-variable
+                        row[("monitored_worktime_hour", phase)]  # noqa: function-uses-loop-variable
+                        / row[("monitored_worktime_hour", "sum")]
                     )
 
             # Annofab時間の比率
