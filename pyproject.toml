@@ -100,7 +100,6 @@ ignore = [
 
     "PL", # pylintに関する警告がたくさんあって対応できなかったので、除外する
     "ERA", # : 役立つこともあるが、コメントアウトしていないコードも警告されるので無視する
-    "UP", # `pyupgrade`を指定したいのだがPython3.8で利用できないコードが提案されるので、除外した
 
     # 以下のルールはannofabcliのコードに合っていないので無効化した
     "RSE", # flake8-raise
@@ -132,6 +131,11 @@ select = [
 
 [tool.ruff.pydocstyle]
 convention = "google"
+
+[tool.ruff.pyupgrade]
+# Python3.8をサポートしているため、`typing.List`などの型ヒントは警告しないようにする
+# https://beta.ruff.rs/docs/settings/#keep-runtime-typing
+keep-runtime-typing = true
 
 [build-system]
 requires = ["poetry>=0.12"]
