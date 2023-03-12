@@ -13,7 +13,8 @@ from annofabcli.common.cli import AbstractCommandLineInterface, ArgumentParser, 
 from annofabcli.common.dataclasses import WaitOptions
 from annofabcli.common.facade import AnnofabApiFacade
 
-DEFAULT_WAIT_OPTIONS = WaitOptions(interval=60, max_tries=360)
+# 入力データをコピーしなければ1分以内にコピーが完了したので、intervalを60秒以下にした
+DEFAULT_WAIT_OPTIONS = WaitOptions(interval=30, max_tries=360)
 
 logger = logging.getLogger(__name__)
 
