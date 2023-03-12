@@ -41,10 +41,8 @@ class TestListAttributeRestrictionMain:
         attribute_id = "71620647-98cf-48ad-b43b-4af425a24f32"
         condition = {"value": "b690fa1a-7b3d-4181-95d8-f5c75927c3fc", "_type": "Equals"}
         actual = self.obj.get_restriction_text(attribute_id, condition)
-        assert (
-            actual
-            == "'type' (id='71620647-98cf-48ad-b43b-4af425a24f32', type='select') EQUALS 'b690fa1a-7b3d-4181-95d8-f5c75927c3fc' (name='medium')"
-        )
+        assert actual == "'type' (id='71620647-98cf-48ad-b43b-4af425a24f32', type='select') EQUALS 'b690fa1a-7b3d-4181-95d8-f5c75927c3fc' (name='medium')" # noqa: E501
+          
 
     def test_get_restriction_text__caninput(self):
         attribute_id = "54fa5e97-6f88-49a4-aeb0-a91a15d11528"
@@ -60,10 +58,8 @@ class TestListAttributeRestrictionMain:
         }
 
         actual = self.obj.get_restriction_text(attribute_id, condition)
-        assert (
-            actual
-            == "'link' (id='15235360-4f46-42ac-927d-0e046bf52ddd', type='link') HAS LABEL 'bike' (id='40f7796b-3722-4eed-9c0c-04a27f9165d2'), 'bus' (id='22b5189b-af7b-4d9c-83a5-b92f122170ec')"
-        )
+        assert actual == "'link' (id='15235360-4f46-42ac-927d-0e046bf52ddd', type='link') HAS LABEL 'bike' (id='40f7796b-3722-4eed-9c0c-04a27f9165d2'), 'bus' (id='22b5189b-af7b-4d9c-83a5-b92f122170ec')"  # noqa: E501
+        
 
     def test_get_restriction_text__imply(self):
         attribute_id = "54fa5e97-6f88-49a4-aeb0-a91a15d11528"
@@ -79,7 +75,7 @@ class TestListAttributeRestrictionMain:
         actual = self.obj.get_restriction_text(attribute_id, condition)
         assert (
             actual
-            == "'comment' (id='54fa5e97-6f88-49a4-aeb0-a91a15d11528', type='comment') MATCHES '[0-9]' IF 'unclear' (id='f12a0b59-dfce-4241-bb87-4b2c0259fc6f', type='flag') EQUALS 'true'"
+            == "'comment' (id='54fa5e97-6f88-49a4-aeb0-a91a15d11528', type='comment') MATCHES '[0-9]' IF 'unclear' (id='f12a0b59-dfce-4241-bb87-4b2c0259fc6f', type='flag') EQUALS 'true'"  # noqa: E501
         )
 
     def test_get_restriction_text__equals_not_exist_attribute(self):
