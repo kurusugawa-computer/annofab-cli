@@ -573,10 +573,10 @@ class WholeProductivityPerCompletedDate:
         source = ColumnDataSource(data=df)
 
         for fig_info in fig_info_list:
-            y_info_list: list[dict[str, str]] = fig_info["y_info_list"]  # type: ignore
+            y_info_list: list[dict[str, str]] = fig_info["y_info_list"]  # type: ignore[assignment]
             for index, y_info in enumerate(y_info_list):
                 color = get_color_from_small_palette(index)
-                line_graph: LineGraph = fig_info["line_graph"]  # type: ignore
+                line_graph: LineGraph = fig_info["line_graph"]  # type: ignore[assignment]
                 _plot_and_moving_average(
                     line_graph=line_graph,
                     x_column="dt_date",
@@ -590,7 +590,7 @@ class WholeProductivityPerCompletedDate:
             create_task_line_graph(),
             create_input_data_line_graph(),
         ]
-        line_graph_list.extend([info["line_graph"] for info in fig_info_list])  # type: ignore
+        line_graph_list.extend([info["line_graph"] for info in fig_info_list])  # type: ignore[misc]
 
         for line_graph in line_graph_list:
             line_graph.process_after_adding_glyphs()
@@ -1258,7 +1258,7 @@ class WholeProductivityPerFirstAnnotationStartedDate:
         source = ColumnDataSource(data=df)
 
         for line_graph, fig_info in zip(line_graph_list, fig_info_list):
-            y_info_list: list[dict[str, str]] = fig_info["y_info_list"]  # type: ignore
+            y_info_list: list[dict[str, str]] = fig_info["y_info_list"]  # type: ignore[assignment]
             for index, y_info in enumerate(y_info_list):
                 color = get_color_from_small_palette(index)
 
