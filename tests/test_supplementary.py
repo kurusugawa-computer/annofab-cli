@@ -43,7 +43,7 @@ class TestCommandLine:
         new_input_data_id = f"test-{str(int(datetime.datetime.now().timestamp()))}"
         # 入力データの作成
         input_data = annofab_service.wrapper.put_input_data_from_file(
-            project_id, new_input_data_id, file_path=str("tests/data/small-lenna.png")
+            project_id, new_input_data_id, file_path="tests/data/small-lenna.png"
         )
         yield input_data
         # 入力データの削除
