@@ -61,7 +61,7 @@ class UploadInstruction(AbstractCommandLineInterface):
             if src_value is None:
                 continue
 
-            if src_value.startswith("http:") or src_value.startswith("https:"):
+            if src_value.startswith(("http:","https:")):
                 continue
 
             if src_value.startswith("data:"):
