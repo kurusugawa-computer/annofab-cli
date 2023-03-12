@@ -48,7 +48,7 @@ class TaskStatusForSummary(Enum):
     """休憩中/作業中/2回目移行の各フェーズの未着手状態"""
 
     @staticmethod
-    def _get_not_started_status(task: Task) -> "TaskStatusForSummary":
+    def _get_not_started_status(task: Task) -> TaskStatusForSummary:
         # `number_of_inspections=1`を指定する理由：多段検査を無視して、検査フェーズが１回目かどうかを知りたいため
         step = get_step_for_current_phase(task, number_of_inspections=1)
         if step == 1:
@@ -65,7 +65,17 @@ class TaskStatusForSummary(Enum):
             return TaskStatusForSummary.OTHER
 
     @staticmethod
-    def from_task(task: Task) -> "TaskStatusForSummary":
+    def from_task(task: Task) -> TaskStatusForSummary:
+        """
+        タスク情報(dict)からインスタンスを生成します。
+        Args:
+            task: APIから取得したタスク情報. 以下のkeyが必要です。
+                * status
+                * phase
+                * phase_stage
+                * histories_by_phase
+
+        """
         status = TaskStatus(task["status"])
         if status == TaskStatus.COMPLETE:
             return TaskStatusForSummary.COMPLETE
