@@ -12,21 +12,13 @@ classifiers = [
         "Intended Audience :: Developers",
         "License :: OSI Approved :: MIT License",
         "Environment :: Console",
-        "Programming Language :: Python",
-        "Programming Language :: Python :: 3 :: Only",
-        "Programming Language :: Python :: 3.8",
-        "Programming Language :: Python :: 3.9",
-        "Programming Language :: Python :: 3.10",        
-        "Programming Language :: Python :: 3.11",        
         "Topic :: Utilities",
         "Operating System :: OS Independent",
 ]
 
 
 [tool.poetry.dependencies]
-
-# 3.8.1まで指定している理由: flake8 v6.0.0を利用するため、Python3.8.0のサポートを落とした
-python = "^3.8.1"
+python = "^3.8"
 requests = "*"
 pyyaml = "*"
 dictdiffer = "*"
@@ -40,42 +32,44 @@ pandas = "*"
 bokeh = "^3.0"
 Pillow = "*"
 
-
-[tool.poetry.group.dev.dependencies]
-# test library
-pytest = "*"
+[tool.poetry.group.test.dependencies]
+pytest = "^7"
 pytest-xdist = "*"
 pytest-cov = "*"
-types-pytz = "*"
 
-# format library
-isort = "*"
-autoflake = "*"
+[tool.poetry.group.formatter.dependencies]
+isort = "*"  # TODO ruffに置き換え
+autoflake = "*" # TODO ruffに置き換え
 black = "*"
 
-# lint library
+[tool.poetry.group.linter.dependencies]
 ruff = ">=0.0.254"
-mypy = "*"
-pylint = "*"
+mypy = "^1"
+pylint = "^2"
 
-# Document library
+[tool.poetry.group.documentation.dependencies]
 sphinx = "^6.1"
 pydata-sphinx-theme = ">=0.13"
 sphinx-last-updated-by-git = "*"
 sphinx-argparse = "*"
 
-
-# type stub package
+[tool.poetry.group.typeshed.dependencies]
+types-pytz = "*"
 types-requests = "*"
 types-python-dateutil = "*"
 types-PyYAML = "*"
 
+[tool.poetry.group.dev.dependencies]
+# 開発するときのみ必要なライブラリ
 ipython = "*"
+
+[tool.poetry.group.publish.dependencies]
+# 公開時に必要なツール
+# GitHubでリリース時に、 GitHub Actionでannofabcliのexeを公開している
 pyinstaller = "^4.5.1"
 
 [tool.poetry.scripts]
 annofabcli = "annofabcli.__main__:main"
-
 
 [tool.isort]
 profile = "black"
