@@ -40,6 +40,7 @@
 				"mosapride.zenkaku",
 				"ms-python.python",
 				"ms-python.vscode-pylance",
+				"charliermarsh.ruff",
 				"streetsidesoftware.code-spell-checker",
 				"bungcip.better-toml",
 				"njpwerner.autodocstring",
