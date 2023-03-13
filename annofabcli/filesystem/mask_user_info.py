@@ -297,6 +297,7 @@ def replace_biography(
 
 def create_masked_user_info_df(
     df: pandas.DataFrame,
+    *,
     not_masked_biography_set: Optional[Set[str]] = None,
     not_masked_user_id_set: Optional[Set[str]] = None,
 ) -> pandas.DataFrame:

@@ -22,11 +22,22 @@ class TestWholeProductivityPerCompletedDate:
 
         cls.main_obj = WholeProductivityPerCompletedDate.from_df(df_task, df_worktime)
 
-    def test_create3(self):
+    def test_from_df__df_worktime引数が空でもインスタンスを生成できることを確認する(self):
         # 完了タスクが１つもない状態で試す
         df_task = pandas.read_csv(str(data_dir / "task.csv"))
-        df_labor = pandas.DataFrame()
-        obj = WholeProductivityPerCompletedDate.from_df(df_task, df_labor)
+        df_worktime = pandas.DataFrame()
+        obj = WholeProductivityPerCompletedDate.from_df(df_task, df_worktime)
+        df_actual = obj.df
+
+        # 日毎の完了したタスク数が一致していることの確認
+        assert df_actual["task_count"].sum() == 3
+        assert df_actual[df_actual["date"] == "2019-11-14"].iloc[0]["task_count"] == 1
+        assert df_actual[df_actual["date"] == "2019-11-15"].iloc[0]["task_count"] == 1
+        assert df_actual[df_actual["date"] == "2019-11-25"].iloc[0]["task_count"] == 1
+
+        # df_worktimeが空なので作業時間は0であることを確認する
+        assert df_actual["actual_worktime_hour"].sum() == 0
+        assert df_actual["monitored_worktime_hour"].sum() == 0
 
     def test_to_csv(self):
         self.main_obj.to_csv(output_dir / "日ごとの生産量と生産性.csv")

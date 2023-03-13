@@ -1,3 +1,5 @@
+import pandas
+
 from annofabcli.statistics.list_worktime import WorktimeFromTaskHistoryEvent, get_df_worktime
 from annofabcli.task_history_event.list_worktime import SimpleTaskHistoryEvent
 
@@ -43,4 +45,15 @@ class TestListWorktime:
             {"account_id": "alice", "user_id": "alice", "username": "Alice", "biography": "U.S."},
             {"account_id": "bob", "user_id": "bob", "username": "Bob", "biography": "Japan"},
         ]
-        df = get_df_worktime(event_list, member_list)
+        df_actual = get_df_worktime(event_list, member_list)
+        df_expected = pandas.DataFrame(
+            {
+                "date": ["2019-01-01", "2019-01-02", "2019-01-03"],
+                "user_id": ["alice", "alice", "bob"],
+                "annotation_worktime_hour": [1.0, 2.0, 0],
+                "acceptance_worktime_hour": [0, 0, 1.0],
+            }
+        )
+        assert df_actual[["date", "user_id", "annotation_worktime_hour", "acceptance_worktime_hour"]].equals(
+            df_expected[["date", "user_id", "annotation_worktime_hour", "acceptance_worktime_hour"]]
+        )

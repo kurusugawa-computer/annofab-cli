@@ -11,8 +11,8 @@ data_path = Path("./tests/data/utils")
 
 
 def test_is_file_scheme():
-    assert is_file_scheme("file://sample.jpg") == True
-    assert is_file_scheme("https://localhost/sample.jpg") == False
+    assert is_file_scheme("file://sample.jpg") is True
+    assert is_file_scheme("https://localhost/sample.jpg") is False
 
 
 def test_get_file_scheme_path():

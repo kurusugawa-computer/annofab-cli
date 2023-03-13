@@ -7,13 +7,13 @@ class TestChangeProjectMembers:
             ChangeProjectMembers.validate_member_info(
                 {"sampling_inspection_rate": 10, "sampling_acceptance_rate": 20, "foo": "bar"}
             )
-            == True
+            is True  # noqa: E501
         )
 
-        assert ChangeProjectMembers.validate_member_info({"sampling_inspection_rate": 10}) == True
+        assert ChangeProjectMembers.validate_member_info({"sampling_inspection_rate": 10}) is True
 
-        assert ChangeProjectMembers.validate_member_info({"sampling_acceptance_rate": 20}) == True
+        assert ChangeProjectMembers.validate_member_info({"sampling_acceptance_rate": 20}) is True
 
-        assert ChangeProjectMembers.validate_member_info({}) == False
+        assert ChangeProjectMembers.validate_member_info({}) is False
 
-        assert ChangeProjectMembers.validate_member_info({"foo": "bar"}) == False
+        assert ChangeProjectMembers.validate_member_info({"foo": "bar"}) is False
