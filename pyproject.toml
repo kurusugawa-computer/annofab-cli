@@ -38,7 +38,7 @@ pytest-xdist = "*"
 pytest-cov = "*"
 
 [tool.poetry.group.formatter.dependencies]
-isort = "*"  # TODO ruffに置き換え
+isort = "*"  # TODO https://github.com/charliermarsh/ruff/issues/3477 が解決したら削除する
 black = "*"
 
 [tool.poetry.group.linter.dependencies]
