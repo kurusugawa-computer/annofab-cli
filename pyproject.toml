@@ -39,7 +39,6 @@ pytest-cov = "*"
 
 [tool.poetry.group.formatter.dependencies]
 isort = "*"  # TODO ruffに置き換え
-autoflake = "*" # TODO ruffに置き換え
 black = "*"
 
 [tool.poetry.group.linter.dependencies]
