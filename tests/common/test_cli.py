@@ -4,7 +4,7 @@ from annofabcli.common.cli import get_json_from_args, get_list_from_args
 def test_get_json_from_args():
     expected = {"foo": 1}
     assert get_json_from_args('{"foo": 1}') == expected
-    assert get_json_from_args(f"file://tests/data/arg.json") == expected
+    assert get_json_from_args("file://tests/data/arg.json") == expected
     assert get_json_from_args(None) is None
 
 
