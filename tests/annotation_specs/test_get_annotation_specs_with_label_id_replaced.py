@@ -1,3 +1,4 @@
+from __future__ import annotations
 import copy
 
 from annofabcli.annotation_specs.get_annotation_specs_with_label_id_replaced import ReplacingLabelId
