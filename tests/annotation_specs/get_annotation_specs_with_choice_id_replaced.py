@@ -39,5 +39,5 @@ class TestReplacingChoiceId:
         ReplacingChoiceId(all_yes=True).main(annotation_specs)
         attribtue = annotation_specs["additionals"][0]
         assert attribtue["default"] == "front"
-        assert attribtue["choices"][0]["choice_id"] == "front"  # type: ignore
-        assert attribtue["choices"][1]["choice_id"] == "rear"  # type: ignore
+        assert attribtue["choices"][0]["choice_id"] == "front"  # type: ignore[index]
+        assert attribtue["choices"][1]["choice_id"] == "rear"  # type: ignore[index]
