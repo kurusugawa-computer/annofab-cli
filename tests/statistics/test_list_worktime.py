@@ -1,7 +1,7 @@
 import pandas
+
 from annofabcli.statistics.list_worktime import WorktimeFromTaskHistoryEvent, get_df_worktime
 from annofabcli.task_history_event.list_worktime import SimpleTaskHistoryEvent
-import pandas
 
 
 class TestListWorktime:
