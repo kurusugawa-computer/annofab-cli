@@ -40,4 +40,4 @@ class TestReplacingLabelId:
         }
         ReplacingLabelId(all_yes=True).main(annotation_specs)
         assert annotation_specs["labels"][0]["label_id"] == "name_en1"
-        assert annotation_specs["restrictions"][0]["condition"]["condition"]["labels"][0] == "name_en1"  # type: ignore[index]
+        assert annotation_specs["restrictions"][0]["condition"]["condition"]["labels"][0] == "name_en1"  # type: ignore[index] # noqa: E501
