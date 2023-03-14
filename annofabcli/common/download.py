@@ -232,7 +232,7 @@ class DownloadingFile:
             if e.response.status_code == requests.codes.not_found:
                 raise DownloadingFileNotFoundError(
                     f"project_id='{project_id}'のプロジェクトに、タスク履歴全件ファイルが存在しないため、ダウンロードできませんでした。"
-                ) from e  # noqa: E501
+                ) from e
             raise e
 
     def download_task_history_event_json(self, project_id: str, dest_path: str):
@@ -254,7 +254,7 @@ class DownloadingFile:
             if e.response.status_code == requests.codes.not_found:
                 raise DownloadingFileNotFoundError(
                     f"project_id='{project_id}'のプロジェクトに、タスク履歴イベント全件ファイルが存在しないため、ダウンロードできませんでした。"
-                ) from e  # noqa: E501
+                ) from e
             raise e
 
     async def download_task_history_event_json_with_async(self, project_id: str, dest_path: str):
@@ -293,7 +293,7 @@ class DownloadingFile:
             if e.response.status_code == requests.codes.not_found:
                 raise DownloadingFileNotFoundError(
                     f"project_id='{project_id}'のプロジェクトに、検査コメント全件ファイルが存在しないため、ダウンロードできませんでした。"
-                ) from e  # noqa: E501
+                ) from e
             raise e
 
     async def download_comment_json_with_async(self, project_id: str, dest_path: str):
@@ -320,5 +320,5 @@ class DownloadingFile:
             if e.response.status_code == requests.codes.not_found:
                 raise DownloadingFileNotFoundError(
                     f"project_id='{project_id}'のプロジェクトに、コメント全件ファイルが存在しないため、ダウンロードできませんでした。"
-                ) from e  # noqa: E501
+                ) from e
             raise e

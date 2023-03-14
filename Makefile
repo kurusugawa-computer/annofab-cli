@@ -21,8 +21,8 @@ format:
 lint:
 	poetry run ruff ${SOURCE_FILES}
 	# テストコードはチェックを緩和する
-	# pygrep-hooks, flake8-datetimez, line-too-long
-	poetry run ruff check ${TEST_FILES} --ignore PGH,DTZ,E501
+	# pygrep-hooks, flake8-datetimez, line-too-long, unused-noqa
+	poetry run ruff check ${TEST_FILES} --ignore PGH,DTZ,E501,RUF100
 	poetry run mypy ${SOURCE_FILES} ${TEST_FILES}
 	# テストコードはチェックを緩和するためpylintは実行しない
 	poetry run pylint --jobs=0 ${SOURCE_FILES}
