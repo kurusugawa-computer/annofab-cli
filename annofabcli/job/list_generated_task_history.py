@@ -50,7 +50,7 @@ class ListTaskCreationHistory(AbstractCommandLineInterface):
             self.print_according_to_format(data_list)
 
 
-def main(args):
+def main(args: argparse.Namespace):
     service = build_annofabapi_resource_and_login(args)
     facade = AnnofabApiFacade(service)
     ListTaskCreationHistory(service, facade, args).main()

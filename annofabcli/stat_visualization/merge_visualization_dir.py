@@ -227,7 +227,7 @@ def validate(args: argparse.Namespace) -> bool:
     return True
 
 
-def main(args):
+def main(args: argparse.Namespace):
     if not validate(args):
         sys.exit(COMMAND_LINE_ERROR_STATUS_CODE)
 

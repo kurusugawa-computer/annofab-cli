@@ -373,7 +373,7 @@ class CopyAnnotation(AbstractCommandLineInterface):
         main_obj.copy_annotations(copy_target_list, parallelism=args.parallelism)
 
 
-def main(args):
+def main(args: argparse.Namespace):
     service = build_annofabapi_resource_and_login(args)
     facade = AnnofabApiFacade(service)
     CopyAnnotation(service, facade, args).main()

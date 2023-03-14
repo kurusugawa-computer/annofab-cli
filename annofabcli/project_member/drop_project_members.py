@@ -94,7 +94,7 @@ class DropProjectMembers(AbstractCommandLineInterface):
             main_obj.drop_role_with_project_id(project_id_list, user_id_list)
 
 
-def main(args):
+def main(args: argparse.Namespace):
     service = build_annofabapi_resource_and_login(args)
     facade = AnnofabApiFacade(service)
     DropProjectMembers(service, facade, args).main()

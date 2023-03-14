@@ -79,7 +79,7 @@ class ChangeOrganizationMember(AbstractCommandLineInterface):
         main_obj.main(organization_name=args.organization, user_ids=user_id_list, role=args.role)
 
 
-def main(args):
+def main(args: argparse.Namespace):
     service = build_annofabapi_resource_and_login(args)
     facade = AnnofabApiFacade(service)
     ChangeOrganizationMember(service, facade, args).main()

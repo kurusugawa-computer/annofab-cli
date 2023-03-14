@@ -167,7 +167,7 @@ class CopyProjectMembers(AbstractCommandLineInterface):
         self.copy_project_members(args.src_project_id, args.dest_project_id, delete_dest=args.delete_dest)
 
 
-def main(args):
+def main(args: argparse.Namespace):
     service = build_annofabapi_resource_and_login(args)
     facade = AnnofabApiFacade(service)
     CopyProjectMembers(service, facade, args).main()

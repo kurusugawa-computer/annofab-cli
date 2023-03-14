@@ -85,7 +85,7 @@ class ListUser(AbstractCommandLineInterface):
             self.print_according_to_format(project_members)
 
 
-def main(args):
+def main(args: argparse.Namespace):
     service = build_annofabapi_resource_and_login(args)
     facade = AnnofabApiFacade(service)
     ListUser(service, facade, args).main()

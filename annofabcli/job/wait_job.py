@@ -55,7 +55,7 @@ class WaitJob(AbstractCommandLineInterface):
         main_obj.wait_job(project_id, job_type=job_type, job_id=args.job_id, wait_options=wait_options)
 
 
-def main(args):
+def main(args: argparse.Namespace):
     service = build_annofabapi_resource_and_login(args)
     facade = AnnofabApiFacade(service)
     WaitJob(service, facade, args).main()

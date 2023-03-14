@@ -604,7 +604,7 @@ class ImportAnnotation(AbstractCommandLineInterface):
         main_obj.main(iter_task_parser, target_task_ids=target_task_ids, parallelism=args.parallelism)
 
 
-def main(args):
+def main(args: argparse.Namespace):
     service = build_annofabapi_resource_and_login(args)
     facade = AnnofabApiFacade(service)
     ImportAnnotation(service, facade, args).main()

@@ -176,7 +176,7 @@ class ListOutOfRangeAnnotationForMovie(AbstractCommandLineInterface):
         self.print_csv(df)
 
 
-def main(args):
+def main(args: argparse.Namespace):
     service = build_annofabapi_resource_and_login(args)
     facade = AnnofabApiFacade(service)
     ListOutOfRangeAnnotationForMovie(service, facade, args).main()

@@ -105,7 +105,7 @@ class InviteUser(AbstractCommandLineInterface):
             main_obj.assign_role_with_project_id(project_id_list, user_id_list, ProjectMemberRole(args.role))
 
 
-def main(args):
+def main(args: argparse.Namespace):
     service = build_annofabapi_resource_and_login(args)
     facade = AnnofabApiFacade(service)
     InviteUser(service, facade, args).main()

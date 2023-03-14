@@ -195,7 +195,7 @@ class FilterAnnotation:
             sys.exit(COMMAND_LINE_ERROR_STATUS_CODE)
 
 
-def main(args):
+def main(args: argparse.Namespace):
     FilterAnnotation().main(args)
 
 

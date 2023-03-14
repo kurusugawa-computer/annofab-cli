@@ -118,7 +118,7 @@ class ListTaskHistoryEventWithJson(AbstractCommandLineInterface):
         return all_task_history_event_list
 
 
-def main(args):
+def main(args: argparse.Namespace):
     service = build_annofabapi_resource_and_login(args)
     facade = AnnofabApiFacade(service)
     ListTaskHistoryEventWithJson(service, facade, args).main()

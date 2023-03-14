@@ -37,7 +37,7 @@ class AnnotationSpecsHistories(AbstractCommandLineInterface):
         self.list_annotation_specs_histories(args.project_id)
 
 
-def main(args):
+def main(args: argparse.Namespace):
     service = build_annofabapi_resource_and_login(args)
     facade = AnnofabApiFacade(service)
     AnnotationSpecsHistories(service, facade, args).main()

@@ -113,7 +113,7 @@ class PutTaskByCount(AbstractCommandLineInterface):
         )
 
 
-def main(args):
+def main(args: argparse.Namespace):
     service = build_annofabapi_resource_and_login(args)
     facade = AnnofabApiFacade(service)
     PutTaskByCount(service, facade, args).main()

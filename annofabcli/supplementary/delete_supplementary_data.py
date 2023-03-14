@@ -256,7 +256,7 @@ class DeleteSupplementaryData(AbstractCommandLineInterface):
             main_obj.delete_supplementary_data_list_by_input_data_id(project_id, input_data_id_list=input_data_id_list)
 
 
-def main(args):
+def main(args: argparse.Namespace):
     service = build_annofabapi_resource_and_login(args)
     facade = AnnofabApiFacade(service)
     DeleteSupplementaryData(service, facade, args).main()

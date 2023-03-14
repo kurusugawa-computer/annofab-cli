@@ -362,7 +362,7 @@ class DrawAnnotation(AbstractCommandLineWithoutWebapiInterface):
         )
 
 
-def main(args):
+def main(args: argparse.Namespace):
     DrawAnnotation(args).main()
 
 

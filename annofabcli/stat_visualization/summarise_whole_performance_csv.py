@@ -10,7 +10,7 @@ from annofabcli.statistics.visualization.project_dir import ProjectDir
 logger = logging.getLogger(__name__)
 
 
-def main(args):
+def main(args: argparse.Namespace):
     root_dir: Path = args.dir
     project_dir_list = [ProjectDir(elm) for elm in root_dir.iterdir() if elm.is_dir()]
 

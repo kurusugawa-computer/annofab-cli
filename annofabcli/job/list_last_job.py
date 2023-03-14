@@ -127,7 +127,7 @@ class ListLastJob(AbstractCommandLineInterface):
         self.print_job_list(project_id_list, job_type=job_type, add_details=args.add_details)
 
 
-def main(args):
+def main(args: argparse.Namespace):
     service = build_annofabapi_resource_and_login(args)
     facade = AnnofabApiFacade(service)
     ListLastJob(service, facade, args).main()

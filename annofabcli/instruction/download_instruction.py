@@ -151,7 +151,7 @@ class DownloadInstruction(AbstractCommandLineInterface):
         )
 
 
-def main(args):
+def main(args: argparse.Namespace):
     service = build_annofabapi_resource_and_login(args)
     facade = AnnofabApiFacade(service)
     DownloadInstruction(service, facade, args).main()

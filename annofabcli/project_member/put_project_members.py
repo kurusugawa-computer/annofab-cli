@@ -178,7 +178,7 @@ class PutProjectMembers(AbstractCommandLineInterface):
         self.put_project_members(args.project_id, members=members, delete=args.delete)
 
 
-def main(args):
+def main(args: argparse.Namespace):
     service = build_annofabapi_resource_and_login(args)
     facade = AnnofabApiFacade(service)
     PutProjectMembers(service, facade, args).main()

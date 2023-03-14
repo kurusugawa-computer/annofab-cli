@@ -62,7 +62,7 @@ class ListOrganizationMember(AbstractCommandLineInterface):
             self.print_according_to_format(organization_member_list)
 
 
-def main(args):
+def main(args: argparse.Namespace):
     service = build_annofabapi_resource_and_login(args)
     facade = AnnofabApiFacade(service)
     ListOrganizationMember(service, facade, args).main()

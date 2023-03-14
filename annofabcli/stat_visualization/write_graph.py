@@ -109,7 +109,7 @@ class WritingGraph:
             logger.warning("'ユーザ_日付list-作業時間.csv'から生成できるグラフの出力に失敗しました。", exc_info=True)
 
 
-def main(args):
+def main(args: argparse.Namespace):
     user_id_list = get_list_from_args(args.user_id) if args.user_id is not None else None
     main_obj = WritingGraph(
         project_dir=ProjectDir(args.dir),

@@ -207,7 +207,7 @@ class DeleteAnnotation(AbstractCommandLineInterface):
         main_obj.delete_annotation_for_task_list(task_id_list, annotation_query=annotation_query, backup_dir=backup_dir)
 
 
-def main(args):
+def main(args: argparse.Namespace):
     service = build_annofabapi_resource_and_login(args)
     facade = AnnofabApiFacade(service)
     DeleteAnnotation(service, facade, args).main()

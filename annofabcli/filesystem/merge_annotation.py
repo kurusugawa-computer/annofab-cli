@@ -226,7 +226,7 @@ class MergeAnnotation(AbstractCommandLineWithoutWebapiInterface):
         )
 
 
-def main(args):
+def main(args: argparse.Namespace):
     MergeAnnotation(args).main()
 
 

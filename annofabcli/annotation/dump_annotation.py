@@ -127,7 +127,7 @@ class DumpAnnotation(AbstractCommandLineInterface):
         main_obj.dump_annotation(task_id_list, output_dir=output_dir, parallelism=args.parallelism)
 
 
-def main(args):
+def main(args: argparse.Namespace):
     service = build_annofabapi_resource_and_login(args)
     facade = AnnofabApiFacade(service)
     DumpAnnotation(service, facade, args).main()
