@@ -23,7 +23,7 @@ logger = logging.getLogger(__name__)
 
 
 class UpdateMetadataMain(AbstractCommandLineWithConfirmInterface):
-    def __init__(self, service: annofabapi.Resource, all_yes: bool = False):
+    def __init__(self, service: annofabapi.Resource, all_yes: bool = False) -> None:
         self.service = service
         AbstractCommandLineWithConfirmInterface.__init__(self, all_yes)
 

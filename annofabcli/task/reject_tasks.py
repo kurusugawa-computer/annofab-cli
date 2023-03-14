@@ -32,7 +32,7 @@ logger = logging.getLogger(__name__)
 
 
 class RejectTasksMain(AbstractCommandLineWithConfirmInterface):
-    def __init__(self, service: annofabapi.Resource, *, comment_data: Optional[dict[str, Any]], all_yes: bool = False):
+    def __init__(self, service: annofabapi.Resource, *, comment_data: Optional[dict[str, Any]], all_yes: bool = False) -> None:
         self.service = service
         self.facade = AnnofabApiFacade(service)
         self.comment_data = comment_data

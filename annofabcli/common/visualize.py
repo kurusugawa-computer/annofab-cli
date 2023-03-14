@@ -36,7 +36,7 @@ class AddProps:
     _organization_members: Optional[List[OrganizationMember]] = None
     _project_member_list: Optional[List[ProjectMember]] = None
 
-    def __init__(self, service: annofabapi.Resource, project_id: str):
+    def __init__(self, service: annofabapi.Resource, project_id: str) -> None:
         self.service = service
         self.project_id = project_id
 
@@ -133,7 +133,7 @@ class AddProps:
         organization, _ = self.service.api.get_organization_of_project(project_id)
         return organization["organization_name"]
 
-    def get_phrase_name(self, phrase_id, locale: MessageLocale) -> Optional[str]:
+    def get_phrase_name(self, phrase_id: str, locale: MessageLocale) -> Optional[str]:
         phrase: Optional[Dict[str, Any]] = more_itertools.first_true(
             self.specs_inspection_phrases, pred=lambda e: e["id"] == phrase_id
         )

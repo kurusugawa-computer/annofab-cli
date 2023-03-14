@@ -68,7 +68,7 @@ class WriteCsvGraph:
         end_date: Optional[str] = None,
         minimal_output: bool = False,
         output_only_text: bool = False,
-    ):
+    ) -> None:
         self.service = service
         self.project_id = project_id
         self.output_dir = output_dir
@@ -229,7 +229,7 @@ class VisualizingStatisticsMain:
         is_get_task_histories_one_of_each: bool = False,
         df_labor: Optional[pandas.DataFrame],
         user_ids: Optional[List[str]],
-    ):
+    ) -> None:
         self.service = service
         self.facade = AnnofabApiFacade(service)
         self.temp_dir = temp_dir

@@ -18,7 +18,7 @@ class AnnotationSpecsHistories(AbstractCommandLineInterface):
     アノテーション仕様の変更履歴を出力する。
     """
 
-    def __init__(self, service: annofabapi.Resource, facade: AnnofabApiFacade, args: argparse.Namespace):
+    def __init__(self, service: annofabapi.Resource, facade: AnnofabApiFacade, args: argparse.Namespace) -> None:
         super().__init__(service, facade, args)
         self.visualize = AddProps(self.service, args.project_id)
 

@@ -39,7 +39,7 @@ class RestoreAnnotationMain(AbstractCommandLineWithConfirmInterface):
         project_id: str,
         is_force: bool,
         all_yes: bool,
-    ):
+    ) -> None:
         self.service = service
         AbstractCommandLineWithConfirmInterface.__init__(self, all_yes)
 

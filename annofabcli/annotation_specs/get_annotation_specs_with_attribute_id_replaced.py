@@ -25,7 +25,7 @@ logger = logging.getLogger(__name__)
 class ReplacingAttributeId(AbstractCommandLineWithConfirmInterface):
     @staticmethod
     def replace_attribute_id_of_restrictions(
-        old_attribute_id:str, new_attribute_id:str, restriction_list: list[dict[str, Any]]
+        old_attribute_id: str, new_attribute_id: str, restriction_list: list[dict[str, Any]]
     ) -> None:
         """
         制約情報の中で使用されている属性IDを新しい属性IDに変更する
@@ -50,7 +50,9 @@ class ReplacingAttributeId(AbstractCommandLineWithConfirmInterface):
             _replace_attribute_id_in_condition(restriction["condition"])
 
     @staticmethod
-    def replace_attribute_id_of_labels(old_attribute_id:str, new_attribute_id:str, label_list: list[dict[str, Any]]) -> None:
+    def replace_attribute_id_of_labels(
+        old_attribute_id: str, new_attribute_id: str, label_list: list[dict[str, Any]]
+    ) -> None:
         """
         ラベル情報の中で使用されている属性IDを新しい属性IDに変更する
 

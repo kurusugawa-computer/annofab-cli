@@ -23,7 +23,7 @@ class InviteOrganizationMemberMain(AbstractCommandLineWithConfirmInterface):
         service: annofabapi.Resource,
         *,
         all_yes: bool = False,
-    ):
+    ) -> None:
         self.service = service
         self.facade = AnnofabApiFacade(service)
         super().__init__(all_yes)

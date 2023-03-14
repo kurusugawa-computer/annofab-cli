@@ -27,7 +27,7 @@ logger = logging.getLogger(__name__)
 
 
 class ListTaskHistoryEventWithJsonMain:
-    def __init__(self, service: annofabapi.Resource):
+    def __init__(self, service: annofabapi.Resource) -> None:
         self.service = service
 
     @staticmethod

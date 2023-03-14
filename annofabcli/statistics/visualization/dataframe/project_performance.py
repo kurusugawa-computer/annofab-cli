@@ -19,7 +19,7 @@ class ProjectPerformance:
     プロジェクトごとの生産性と品質
     """
 
-    def __init__(self, df: pandas.DataFrame):
+    def __init__(self, df: pandas.DataFrame) -> None:
         self.df = df
 
     def _validate_df_for_output(self, output_file: Path) -> bool:
@@ -160,7 +160,7 @@ class ProjectWorktimePerMonth:
     行方向にプロジェクト、列方向に月ごとの作業時間を出力する。
     """
 
-    def __init__(self, df: pandas.DataFrame):
+    def __init__(self, df: pandas.DataFrame) -> None:
         self.df = df
 
     def _validate_df_for_output(self, output_file: Path) -> bool:

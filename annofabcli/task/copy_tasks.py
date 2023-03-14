@@ -65,7 +65,7 @@ class CopyTasksMain(AbstractCommandLineWithConfirmInterface):
         all_yes: bool,
         is_copy_annotations: bool = False,
         is_copy_metadata: bool = False,
-    ):
+    ) -> None:
         self.service = service
         self.facade = AnnofabApiFacade(service)
         AbstractCommandLineWithConfirmInterface.__init__(self, all_yes)

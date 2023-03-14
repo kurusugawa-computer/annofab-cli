@@ -87,7 +87,7 @@ class PuttingTaskMain:
         *,
         parallelism: Optional[int],
         should_wait: bool = False,
-    ):
+    ) -> None:
         self.service = service
         self.facade = AnnofabApiFacade(service)
         self.project_id = project_id

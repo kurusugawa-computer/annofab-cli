@@ -125,7 +125,7 @@ def get_copy_target_list(str_copy_target_list: list[str]) -> list[CopyTarget]:
 class CopyAnnotationMain(AbstractCommandLineWithConfirmInterface):
     def __init__(
         self, service: annofabapi.Resource, *, project_id: str, all_yes: bool, overwrite: bool, merge: bool, force: bool
-    ):
+    ) -> None:
         self.service = service
         self.project_id = project_id
         self.overwrite = overwrite

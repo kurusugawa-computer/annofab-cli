@@ -19,7 +19,7 @@ logger = logging.getLogger(__name__)
 
 
 class DumpAnnotationMain:
-    def __init__(self, service: annofabapi.Resource, project_id: str):
+    def __init__(self, service: annofabapi.Resource, project_id: str) -> None:
         self.service = service
         self.facade = AnnofabApiFacade(service)
         self.project_id = project_id

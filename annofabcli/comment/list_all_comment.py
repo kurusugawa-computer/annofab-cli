@@ -27,7 +27,7 @@ logger = logging.getLogger(__name__)
 
 
 class ListAllCommentMain:
-    def __init__(self, service: annofabapi.Resource):
+    def __init__(self, service: annofabapi.Resource) -> None:
         self.service = service
 
     def get_all_comment(

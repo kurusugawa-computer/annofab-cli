@@ -25,7 +25,7 @@ logger = logging.getLogger(__name__)
 
 
 class ChangeOperatorMain:
-    def __init__(self, service: annofabapi.Resource, all_yes: bool):
+    def __init__(self, service: annofabapi.Resource, all_yes: bool) -> None:
         self.service = service
         self.facade = AnnofabApiFacade(service)
         self.all_yes = all_yes

@@ -35,7 +35,7 @@ def millisecond_to_hour(millisecond: int):
 
 
 class ListInputDataMergedTaskMain:
-    def __init__(self, service: annofabapi.Resource):
+    def __init__(self, service: annofabapi.Resource) -> None:
         self.service = service
         self.facade = AnnofabApiFacade(service)
 

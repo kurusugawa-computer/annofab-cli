@@ -43,7 +43,7 @@ class ProjectDir(DataClassJsonMixin):
     FILENAME_PROJECT_INFO = "project_info.json"
     FILENAME_MERGE_INFO = "merge_info.json"
 
-    def __init__(self, project_dir: Path):
+    def __init__(self, project_dir: Path) -> None:
         self.project_dir = project_dir
 
     def __repr__(self) -> str:

@@ -33,7 +33,7 @@ class UpdateMetadataOfTaskMain(AbstractCommandLineWithConfirmInterface):
         is_overwrite_metadata: bool,
         parallelism: Optional[int] = None,
         all_yes: bool = False,
-    ):
+    ) -> None:
         self.service = service
         self.is_overwrite_metadata = is_overwrite_metadata
         self.parallelism = parallelism

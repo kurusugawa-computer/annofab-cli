@@ -18,7 +18,7 @@ logger = logging.getLogger(__name__)
 
 
 class DeleteJobMain:
-    def __init__(self, service: annofabapi.Resource):
+    def __init__(self, service: annofabapi.Resource) -> None:
         self.service = service
         self.facade = AnnofabApiFacade(service)
 

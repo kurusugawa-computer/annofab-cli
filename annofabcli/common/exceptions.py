@@ -20,7 +20,7 @@ class AuthenticationError(AnnofabCliException):
     Annofabの認証エラー
     """
 
-    def __init__(self, loing_user_id: str):
+    def __init__(self, loing_user_id: str) -> None:
         msg = f"Annofabにログインできませんでした。User ID: {loing_user_id}"
         super().__init__(msg)
 
@@ -46,7 +46,7 @@ class ProjectAuthorizationError(AuthorizationError):
     Annofabプロジェクトに関する認可エラー
     """
 
-    def __init__(self, project_title: str, roles: List[ProjectMemberRole]):
+    def __init__(self, project_title: str, roles: List[ProjectMemberRole]) -> None:
         role_values = [e.value for e in roles]
         msg = f"プロジェクト: {project_title} に、ロール: {role_values} のいずれかが付与されていません。"
         super().__init__(msg)
@@ -57,7 +57,7 @@ class OrganizationAuthorizationError(AuthorizationError):
     Annofab組織に関する認可エラー
     """
 
-    def __init__(self, organization_name: str, roles: List[OrganizationMemberRole]):
+    def __init__(self, organization_name: str, roles: List[OrganizationMemberRole]) -> None:
         role_values = [e.value for e in roles]
         msg = f"組織: {organization_name} に、ロール: {role_values} のいずれかが付与されていません。"
         super().__init__(msg)

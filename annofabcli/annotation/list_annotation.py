@@ -28,7 +28,7 @@ logger = logging.getLogger(__name__)
 
 
 class ListAnnotationMain:
-    def __init__(self, service: annofabapi.Resource, project_id: str):
+    def __init__(self, service: annofabapi.Resource, project_id: str) -> None:
         self.service = service
         self.facade = AnnofabApiFacade(service)
         self.visualize = AddProps(self.service, project_id)
@@ -151,7 +151,7 @@ class ListAnnotation(AbstractCommandLineInterface):
                 columns.remove(c)
         return columns
 
-    def __init__(self, service: annofabapi.Resource, facade: AnnofabApiFacade, args: argparse.Namespace):
+    def __init__(self, service: annofabapi.Resource, facade: AnnofabApiFacade, args: argparse.Namespace) -> None:
         super().__init__(service, facade, args)
         self.visualize = AddProps(self.service, args.project_id)
 

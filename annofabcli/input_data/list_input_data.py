@@ -23,7 +23,7 @@ class ListInputData(AbstractCommandLineInterface):
     #: 入力データIDの平均長さ
     average_input_data_id_length: int = 36
 
-    def __init__(self, service: annofabapi.Resource, facade: AnnofabApiFacade, args: argparse.Namespace):
+    def __init__(self, service: annofabapi.Resource, facade: AnnofabApiFacade, args: argparse.Namespace) -> None:
         super().__init__(service, facade, args)
         self.visualize = AddProps(self.service, args.project_id)
         self.average_input_data_id_length = args.average_input_data_id_length

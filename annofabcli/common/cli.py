@@ -394,7 +394,7 @@ class ArgumentParser:
     共通のコマンドライン引数を追加するためのクラス
     """
 
-    def __init__(self, parser: argparse.ArgumentParser):
+    def __init__(self, parser: argparse.ArgumentParser) -> None:
         self.parser = parser
 
     def add_project_id(self, help_message: Optional[str] = None):
@@ -488,7 +488,7 @@ class AbstractCommandLineWithConfirmInterface(abc.ABC):  # noqa: abstract-base-c
     コマンドライン上でpromptを表示するときのインターフェイス
     """
 
-    def __init__(self, all_yes: bool = False):
+    def __init__(self, all_yes: bool = False) -> None:
         self.all_yes = all_yes
 
     def confirm_processing(self, confirm_message: str) -> bool:
@@ -528,7 +528,7 @@ class AbstractCommandLineWithoutWebapiInterface(abc.ABC):
     #: 出力フォーマット
     str_format: Optional[str] = None
 
-    def __init__(self, args: argparse.Namespace):
+    def __init__(self, args: argparse.Namespace) -> None:
         self.args = args
         self.process_common_args(args)
 
@@ -632,7 +632,7 @@ class PrettyHelpFormatter(argparse.RawTextHelpFormatter, argparse.ArgumentDefaul
         # https://qiita.com/yuji38kwmt/items/c7c4d487e3188afd781e 参照
         return super()._format_action(action) + "\n"
 
-    def _get_help_string(self, action):
+    def _get_help_string(self, action):  # noqa: ANN001
         # 必須な引数には、引数の説明の後ろに"(required)"を付ける
         help = action.help  # noqa: builtin-variable-shadowing # pylint: disable=redefined-builtin
         if action.required:
@@ -662,7 +662,7 @@ class AbstractCommandLineInterface(AbstractCommandLineWithoutWebapiInterface):
     #: AnnofabApiFacadeインスタンス
     facade: AnnofabApiFacade
 
-    def __init__(self, service: annofabapi.Resource, facade: AnnofabApiFacade, args: argparse.Namespace):
+    def __init__(self, service: annofabapi.Resource, facade: AnnofabApiFacade, args: argparse.Namespace) -> None:
         self.service = service
         self.facade = facade
         super().__init__(args)

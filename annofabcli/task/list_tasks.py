@@ -17,7 +17,7 @@ logger = logging.getLogger(__name__)
 
 
 class ListTasksMain:
-    def __init__(self, service: annofabapi.Resource, project_id: str):
+    def __init__(self, service: annofabapi.Resource, project_id: str) -> None:
         self.service = service
         self.facade = AnnofabApiFacade(service)
         self.project_id = project_id
@@ -149,7 +149,7 @@ class ListTasks(AbstractCommandLineInterface):
     タスクの一覧を表示する
     """
 
-    def __init__(self, service: annofabapi.Resource, facade: AnnofabApiFacade, args: argparse.Namespace):
+    def __init__(self, service: annofabapi.Resource, facade: AnnofabApiFacade, args: argparse.Namespace) -> None:
         super().__init__(service, facade, args)
         self.visualize = AddProps(self.service, args.project_id)
 

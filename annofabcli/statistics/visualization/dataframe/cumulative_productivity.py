@@ -168,7 +168,7 @@ class AbstractPhaseCumulativeProductivity(abc.ABC):
 
 
 class AnnotatorCumulativeProductivity(AbstractPhaseCumulativeProductivity):
-    def __init__(self, df: pandas.DataFrame):
+    def __init__(self, df: pandas.DataFrame) -> None:
         super().__init__(df, phase=TaskPhase.ANNOTATION)
 
     @classmethod
@@ -412,7 +412,7 @@ class AnnotatorCumulativeProductivity(AbstractPhaseCumulativeProductivity):
 
 
 class InspectorCumulativeProductivity(AbstractPhaseCumulativeProductivity):
-    def __init__(self, df: pandas.DataFrame):
+    def __init__(self, df: pandas.DataFrame) -> None:
         super().__init__(df, phase=TaskPhase.INSPECTION)
 
     @classmethod
@@ -611,7 +611,7 @@ class InspectorCumulativeProductivity(AbstractPhaseCumulativeProductivity):
 
 
 class AcceptorCumulativeProductivity(AbstractPhaseCumulativeProductivity):
-    def __init__(self, df: pandas.DataFrame):
+    def __init__(self, df: pandas.DataFrame) -> None:
         super().__init__(df, phase=TaskPhase.ACCEPTANCE)
 
     @classmethod

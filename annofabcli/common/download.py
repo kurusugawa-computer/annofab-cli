@@ -31,7 +31,7 @@ def _get_annofab_error_message(http_error: requests.HTTPError) -> Optional[str]:
 
 
 class DownloadingFile:
-    def __init__(self, service: annofabapi.Resource):
+    def __init__(self, service: annofabapi.Resource) -> None:
         self.service = service
 
     @staticmethod

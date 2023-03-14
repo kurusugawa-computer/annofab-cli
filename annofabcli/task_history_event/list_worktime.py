@@ -51,7 +51,7 @@ class WorktimeFromTaskHistoryEvent(DataClassJsonMixin):
 
 
 class ListWorktimeFromTaskHistoryEventMain:
-    def __init__(self, service: annofabapi.Resource, *, project_id: str):
+    def __init__(self, service: annofabapi.Resource, *, project_id: str) -> None:
         self.service = service
         self.visualize = AddProps(service, project_id)
 

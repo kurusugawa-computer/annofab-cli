@@ -43,7 +43,7 @@ class ChangePropertiesOfAnnotationMain(AbstractCommandLineWithConfirmInterface):
         *,
         is_force: bool,
         all_yes: bool,
-    ):
+    ) -> None:
         self.service = service
         self.facade = AnnofabApiFacade(service)
         self.is_force = is_force

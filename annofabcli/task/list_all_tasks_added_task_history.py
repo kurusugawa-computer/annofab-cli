@@ -34,7 +34,7 @@ DEFAULT_WAIT_OPTIONS = WaitOptions(interval=60, max_tries=360)
 
 
 class ListAllTasksAddedTaskHistoryMain:
-    def __init__(self, service: annofabapi.Resource, project_id: str):
+    def __init__(self, service: annofabapi.Resource, project_id: str) -> None:
         self.service = service
         self.project_id = project_id
         self.downloading_obj = DownloadingFile(self.service)

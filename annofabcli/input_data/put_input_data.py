@@ -115,7 +115,7 @@ class SubPutInputData:
         all_yes:
     """
 
-    def __init__(self, service: annofabapi.Resource, facade: AnnofabApiFacade, all_yes: bool = False):
+    def __init__(self, service: annofabapi.Resource, facade: AnnofabApiFacade, all_yes: bool = False) -> None:
         self.service = service
         self.facade = facade
         self.all_yes = all_yes

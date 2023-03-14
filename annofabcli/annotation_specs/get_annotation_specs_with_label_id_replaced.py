@@ -24,7 +24,9 @@ logger = logging.getLogger(__name__)
 
 class ReplacingLabelId(AbstractCommandLineWithConfirmInterface):
     @staticmethod
-    def replace_label_id_of_restrictions(old_label_id:str, new_label_id:str, restriction_list: list[dict[str, Any]]) -> None:
+    def replace_label_id_of_restrictions(
+        old_label_id: str, new_label_id: str, restriction_list: list[dict[str, Any]]
+    ) -> None:
         """
         制約情報の中で使用されているlabel_idを新しいlabel_idに変更する
 

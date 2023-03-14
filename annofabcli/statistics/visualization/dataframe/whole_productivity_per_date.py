@@ -875,7 +875,7 @@ class WholeProductivityPerCompletedDate:
 class WholeProductivityPerFirstAnnotationStartedDate:
     """教師付開始日ごとの全体の生産量と生産性に関する情報"""
 
-    def __init__(self, df: pandas.DataFrame):
+    def __init__(self, df: pandas.DataFrame) -> None:
         self.df = df
 
     @classmethod

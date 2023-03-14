@@ -31,7 +31,7 @@ class DeleteTaskMain(AbstractCommandLineWithConfirmInterface):
         dryrun: bool = False,
         force: bool = False,
         should_delete_input_data: bool = False,
-    ):
+    ) -> None:
         self.service = service
         self.facade = AnnofabApiFacade(service)
         self.project_id = project_id

@@ -48,7 +48,7 @@ class ChangeAnnotationAttributesMain(AbstractCommandLineWithConfirmInterface):
         project_id: str,
         is_force: bool,
         all_yes: bool,
-    ):
+    ) -> None:
         self.service = service
         self.facade = AnnofabApiFacade(service)
         AbstractCommandLineWithConfirmInterface.__init__(self, all_yes)

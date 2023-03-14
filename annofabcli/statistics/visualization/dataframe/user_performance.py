@@ -50,7 +50,7 @@ class UserPerformance:
     PLOT_WIDTH = 1200
     PLOT_HEIGHT = 800
 
-    def __init__(self, df: pandas.DataFrame):
+    def __init__(self, df: pandas.DataFrame) -> None:
         self.phase_list = self.get_phase_list(df.columns)
         self.df = df
 
@@ -186,7 +186,7 @@ class UserPerformance:
 
         """
 
-        def get_phase_list(columns:list[str]) -> list[str]:
+        def get_phase_list(columns: list[str]) -> list[str]:
             phase_list = []
 
             for phase in TaskPhase:
@@ -968,7 +968,7 @@ class WholePerformance:
         series: 全体の生産性と品質が格納されたpandas.Series
     """
 
-    def __init__(self, series: pandas.Series):
+    def __init__(self, series: pandas.Series) -> None:
         self.series = series
 
     def _validate_df_for_output(self, output_file: Path) -> bool:

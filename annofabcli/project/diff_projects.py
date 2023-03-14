@@ -67,7 +67,7 @@ class DiffProjects(AbstractCommandLineInterface):
     プロジェクト間の差分を表示する
     """
 
-    def __init__(self, service: annofabapi.Resource, facade: AnnofabApiFacade, args: argparse.Namespace):
+    def __init__(self, service: annofabapi.Resource, facade: AnnofabApiFacade, args: argparse.Namespace) -> None:
         super().__init__(service, facade, args)
 
         project_id1 = args.project_id1

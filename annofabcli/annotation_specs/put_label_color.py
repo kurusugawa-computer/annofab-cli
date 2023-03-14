@@ -32,7 +32,7 @@ class Label:
 
 
 class PuttingLabelColorMain(AbstractCommandLineWithConfirmInterface):
-    def __init__(self, service: annofabapi.Resource, project_id: str, *, all_yes: bool):
+    def __init__(self, service: annofabapi.Resource, project_id: str, *, all_yes: bool) -> None:
         self.service = service
         self.facade = AnnofabApiFacade(service)
         self.project_id = project_id

@@ -31,7 +31,7 @@ class AddingAdditionalInfoToTask:
 
     """
 
-    def __init__(self, service: annofabapi.Resource, project_id: str):
+    def __init__(self, service: annofabapi.Resource, project_id: str) -> None:
         self.service = service
         self.project_id = project_id
         self.visualize = AddProps(self.service, project_id)
@@ -318,7 +318,7 @@ class ListTasksAddedTaskHistoryMain:
 class TasksAddedTaskHistoryOutput:
     """出力用のクラス"""
 
-    def __init__(self, task_list: list[dict[str, Any]]):
+    def __init__(self, task_list: list[dict[str, Any]]) -> None:
         self.task_list = task_list
 
     @staticmethod

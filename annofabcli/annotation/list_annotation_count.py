@@ -33,7 +33,7 @@ class GroupBy(Enum):
 class ListAnnotationCount(AbstractCommandLineInterface):
     COMMON_MESSAGE = "annofabcli annotation list_count: error:"
 
-    def __init__(self, service: annofabapi.Resource, facade: AnnofabApiFacade, args: argparse.Namespace):
+    def __init__(self, service: annofabapi.Resource, facade: AnnofabApiFacade, args: argparse.Namespace) -> None:
         super().__init__(service, facade, args)
         self.visualize = AddProps(self.service, args.project_id)
         self.list_annotation_main_obj = ListAnnotationMain(service, project_id=args.project_id)

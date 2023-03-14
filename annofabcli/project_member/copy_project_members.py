@@ -17,7 +17,7 @@ class CopyProjectMembers(AbstractCommandLineInterface):
     プロジェクトメンバをコピーする
     """
 
-    def __init__(self, service: annofabapi.Resource, facade: AnnofabApiFacade, args: argparse.Namespace):
+    def __init__(self, service: annofabapi.Resource, facade: AnnofabApiFacade, args: argparse.Namespace) -> None:
         super().__init__(service, facade, args)
 
         src_project_id = args.src_project_id

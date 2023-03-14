@@ -36,7 +36,7 @@ class Table:
     def __init__(
         self,
         database: Database,
-    ):
+    ) -> None:
         self.annofab_service = database.annofab_service
         self.annofab_facade = AnnofabApiFacade(database.annofab_service)
         self.database = database

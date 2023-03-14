@@ -29,7 +29,7 @@ def _get_time_range(str_data: str):
 
 
 class ListOutOfRangeAnnotationForMovieMain:
-    def __init__(self, service: annofabapi.Resource):
+    def __init__(self, service: annofabapi.Resource) -> None:
         self.service = service
 
     @staticmethod

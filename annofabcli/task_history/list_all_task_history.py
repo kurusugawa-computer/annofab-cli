@@ -22,7 +22,7 @@ TaskHistoryDict = Dict[str, List[TaskHistory]]
 
 
 class ListTaskHistoryWithJsonMain:
-    def __init__(self, service: annofabapi.Resource):
+    def __init__(self, service: annofabapi.Resource) -> None:
         self.service = service
         self.facade = AnnofabApiFacade(service)
 

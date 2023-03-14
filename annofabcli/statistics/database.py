@@ -66,7 +66,7 @@ class Database:
         project_id: str,
         temp_dir: Path,
         query: Optional[Query] = None,
-    ):
+    ) -> None:
         """
         環境変数'ANNOFAB_USER_ID', 'ANNOFAB_PASSWORD'から情報を読み込み、AnnofabApiインスタンスを生成する。
         Args:

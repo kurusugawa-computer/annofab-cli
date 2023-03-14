@@ -22,7 +22,7 @@ logger = logging.getLogger(__name__)
 
 
 class ListTasksWithJsonMain:
-    def __init__(self, service: annofabapi.Resource):
+    def __init__(self, service: annofabapi.Resource) -> None:
         self.service = service
         self.facade = AnnofabApiFacade(service)
 

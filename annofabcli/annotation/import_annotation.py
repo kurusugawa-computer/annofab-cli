@@ -86,7 +86,7 @@ class ImportAnnotationMain(AbstractCommandLineWithConfirmInterface):
         is_force: bool,
         is_merge: bool,
         is_overwrite: bool,
-    ):
+    ) -> None:
         self.service = service
         self.facade = AnnofabApiFacade(service)
         AbstractCommandLineWithConfirmInterface.__init__(self, all_yes)
@@ -541,7 +541,7 @@ class ImportAnnotation(AbstractCommandLineInterface):
     アノテーションをインポートする
     """
 
-    def __init__(self, service: annofabapi.Resource, facade: AnnofabApiFacade, args: argparse.Namespace):
+    def __init__(self, service: annofabapi.Resource, facade: AnnofabApiFacade, args: argparse.Namespace) -> None:
         super().__init__(service, facade, args)
         self.visualize = AddProps(self.service, args.project_id)
 

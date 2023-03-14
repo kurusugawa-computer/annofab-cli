@@ -31,7 +31,7 @@ class SubUpdateAnnotationZip:
     `ArgumentParser`を除いたクラスを作成した。
     """
 
-    def __init__(self, service: annofabapi.Resource, facade: AnnofabApiFacade):
+    def __init__(self, service: annofabapi.Resource, facade: AnnofabApiFacade) -> None:
         self.service = service
         self.facade = facade
 

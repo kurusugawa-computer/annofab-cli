@@ -176,7 +176,7 @@ class ListAnnotationCounterByInputData:
         target_attribute_names: Optional[Collection[AttributeNameKey]] = None,
         non_target_attribute_names: Optional[Collection[AttributeNameKey]] = None,
         frame_no_map: Optional[dict[tuple[str, str], int]] = None,
-    ):
+    ) -> None:
         self.target_labels = set(target_labels) if target_labels is not None else None
         self.target_attribute_names = set(target_attribute_names) if target_attribute_names is not None else None
         self.non_target_labels = set(non_target_labels) if non_target_labels is not None else None
@@ -316,7 +316,7 @@ class ListAnnotationCounterByTask:
         non_target_labels: Optional[Collection[str]] = None,
         target_attribute_names: Optional[Collection[AttributeNameKey]] = None,
         non_target_attribute_names: Optional[Collection[AttributeNameKey]] = None,
-    ):
+    ) -> None:
         self.counter_by_input_data = ListAnnotationCounterByInputData(
             target_labels=target_labels,
             non_target_labels=non_target_labels,
@@ -782,7 +782,7 @@ class AnnotationSpecs:
 
 
 class ListAnnotationCountMain:
-    def __init__(self, service: annofabapi.Resource):
+    def __init__(self, service: annofabapi.Resource) -> None:
         self.service = service
 
     @staticmethod

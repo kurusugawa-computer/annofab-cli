@@ -94,7 +94,7 @@ class AbstractPhaseProductivityPerDate(abc.ABC):
 class AnnotatorProductivityPerDate(AbstractPhaseProductivityPerDate):
     """教師付開始日ごとの教師付者の生産性に関する情報"""
 
-    def __init__(self, df: pandas.DataFrame):
+    def __init__(self, df: pandas.DataFrame) -> None:
         super().__init__(df, phase=TaskPhase.ANNOTATION)
 
     @classmethod
@@ -512,7 +512,7 @@ class AnnotatorProductivityPerDate(AbstractPhaseProductivityPerDate):
 class InspectorProductivityPerDate(AbstractPhaseProductivityPerDate):
     """検査開始日ごとの検査者の生産性に関する情報"""
 
-    def __init__(self, df: pandas.DataFrame):
+    def __init__(self, df: pandas.DataFrame) -> None:
         super().__init__(df, phase=TaskPhase.INSPECTION)
 
     @classmethod
@@ -859,7 +859,7 @@ class InspectorProductivityPerDate(AbstractPhaseProductivityPerDate):
 class AcceptorProductivityPerDate(AbstractPhaseProductivityPerDate):
     """受入開始日ごとの受入者の生産性に関する情報"""
 
-    def __init__(self, df: pandas.DataFrame):
+    def __init__(self, df: pandas.DataFrame) -> None:
         super().__init__(df, phase=TaskPhase.ACCEPTANCE)
 
     @classmethod
