@@ -56,7 +56,7 @@ class PrintAnnotationSpecsLabel(AbstractCommandLineInterface):
         return [ja_name, en_name]
 
     @staticmethod
-    def _print_text_format_labels(labels, output: Optional[str] = None):
+    def _print_text_format_labels(labels:list[dict[str, Any]], output: Optional[str] = None):
         output_lines = []
         for label in labels:
             output_lines.append(
