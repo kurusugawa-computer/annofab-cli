@@ -41,10 +41,10 @@ class PutProjectMembers(AbstractCommandLineInterface):
         return member
 
     @staticmethod
-    def member_exists(members: List[Dict[str, Any]], user_id) -> bool:
+    def member_exists(members: List[Dict[str, Any]], user_id: str) -> bool:
         return PutProjectMembers.find_member(members, user_id) is not None
 
-    def invite_project_member(self, project_id, member: Member, old_project_members: List[Dict[str, Any]]):
+    def invite_project_member(self, project_id: str, member: Member, old_project_members: List[Dict[str, Any]]):
         old_member = self.find_member(old_project_members, member.user_id)
         last_updated_datetime = old_member["updated_datetime"] if old_member is not None else None
 
@@ -153,7 +153,7 @@ class PutProjectMembers(AbstractCommandLineInterface):
 
     @staticmethod
     def get_members_from_csv(csv_path: Path) -> List[Member]:
-        def create_member(e):
+        def create_member(e):  # noqa: ANN001
             return Member(
                 user_id=e.user_id,
                 member_role=ProjectMemberRole(e.member_role),

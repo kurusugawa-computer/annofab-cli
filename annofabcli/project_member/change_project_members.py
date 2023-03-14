@@ -1,7 +1,7 @@
 import argparse
 import logging
 import sys
-from typing import Any, Dict, List, Optional
+from typing import Any, Dict, List, Optional, Collection
 
 import requests
 from annofabapi.models import ProjectMember, ProjectMemberRole, ProjectMemberStatus
@@ -46,7 +46,7 @@ class ChangeProjectMembers(AbstractCommandLineInterface):
 
         """
 
-        def get_value(key):
+        def get_value(key: str):
             if member_info is None:
                 return old_member[key]
 
@@ -71,7 +71,7 @@ class ChangeProjectMembers(AbstractCommandLineInterface):
     def change_project_members(
         self,
         project_id: str,
-        user_id_list,
+        user_id_list: Collection[str],
         member_role: Optional[ProjectMemberRole] = None,
         member_info: Optional[Dict[str, Any]] = None,
     ):

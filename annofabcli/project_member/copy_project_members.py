@@ -1,3 +1,4 @@
+from __future__ import annotations
 import argparse
 import logging
 from typing import Any, Dict, List, Optional
@@ -52,7 +53,7 @@ class CopyProjectMembers(AbstractCommandLineInterface):
 
         return None
 
-    def put_project_members(self, project_id, project_members: List[Dict[str, Any]]) -> List[ProjectMember]:
+    def put_project_members(self, project_id: str, project_members: List[Dict[str, Any]]) -> List[ProjectMember]:
         """
         複数のプロジェクトメンバを追加/更新/削除する.
 
@@ -142,7 +143,7 @@ class CopyProjectMembers(AbstractCommandLineInterface):
             src_account_ids = [e["account_id"] for e in src_project_members]
             deleted_dest_members = [e for e in dest_project_members if e["account_id"] not in src_account_ids]
 
-            def to_inactive(arg_member):
+            def to_inactive(arg_member: dict[str, Any]):
                 arg_member["member_status"] = "inactive"
                 return arg_member
 
