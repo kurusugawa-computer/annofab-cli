@@ -14,7 +14,7 @@ init:
 format:
 	poetry run black ${SOURCE_FILES} ${TEST_FILES}
 	poetry run ruff check ${SOURCE_FILES} ${TEST_FILES} --fix-only 
-	# isortはruffに置き換えられるはずだが、`F811`が修正されなかったので、ruffが以下のissueに対応されるまではisortも実行する
+	# ruffのF811が修正されないときがあるので、isortも利用する
 	# https://github.com/charliermarsh/ruff/issues/3477
 	poetry run isort ${SOURCE_FILES} ${TEST_FILES}
 

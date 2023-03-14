@@ -38,11 +38,13 @@ pytest-xdist = "*"
 pytest-cov = "*"
 
 [tool.poetry.group.formatter.dependencies]
-isort = "*"  # TODO https://github.com/charliermarsh/ruff/issues/3477 が解決したら削除する
+# ruffのF811が修正されないときがあるので、isortも利用する
+# https://github.com/charliermarsh/ruff/issues/3477
+isort = "*"
 black = "*"
 
 [tool.poetry.group.linter.dependencies]
-ruff = ">=0.0.254"
+ruff = ">=0.0.255"
 mypy = "^1"
 pylint = "^2"
 
@@ -94,7 +96,7 @@ ignore = [
     "RUF001", # 全角記号など`ambiguous unicode character`も使いたいため
     "RUF002",# 全角記号など`ambiguous unicode character`も使いたいため
     "RUF003",# 全角記号など`ambiguous unicode character`も使いたいため
-    "RUF100", # `Unused `noqa` directive`のコードがたくさんあるので、一旦無視する
+    # "RUF100", # `Unused `noqa` directive`のコードがたくさんあるので、一旦無視する
 
 
     "PL", # pylintに関する警告がたくさんあって対応できなかったので、除外する
