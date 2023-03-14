@@ -139,7 +139,7 @@ def merge_visualization_dir(  # pylint: disable=too-many-statements
         else:
             logger.warning(
                 f"マージ対象のタスク情報は存在しないため、'{output_project_dir.FILENAME_TASK_LIST}'とそのCSVから生成されるヒストグラム出力しません。"
-            )  # noqa: E501
+            )
             return None
 
     @_catch_exception

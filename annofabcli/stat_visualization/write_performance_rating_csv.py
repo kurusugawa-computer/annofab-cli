@@ -563,7 +563,7 @@ def parse_args(parser: argparse.ArgumentParser):
     THRESHOLD_SETTINGS_SAMPLE = {
         "dirname1": {"annotation": {"threshold_worktime": 20}},
         "dirname2": {"inspection_acceptance": {"threshold_task_count": 5}},
-    }  # noqa: E501
+    }
     parser.add_argument(
         "--threshold_settings",
         type=str,
