@@ -46,7 +46,7 @@ def _plot_and_moving_average(
     x_column: str,
     y_column: str,
     legend_name: str,
-    color,
+    color: str,
     is_secondary_y_axis: bool = False,
     **kwargs,
 ):

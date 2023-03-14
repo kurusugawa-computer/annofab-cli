@@ -186,7 +186,7 @@ class UserPerformance:
 
         """
 
-        def get_phase_list(columns) -> list[str]:
+        def get_phase_list(columns:list[str]) -> list[str]:
             phase_list = []
 
             for phase in TaskPhase:

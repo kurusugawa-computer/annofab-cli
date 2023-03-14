@@ -76,7 +76,7 @@ class RejectTasksMain(AbstractCommandLineWithConfirmInterface):
         )[0]
 
     def confirm_reject_task(
-        self, task_id, assign_last_annotator: bool, assigned_annotator_user_id: Optional[str]
+        self, task_id: str, assign_last_annotator: bool, assigned_annotator_user_id: Optional[str]
     ) -> bool:
         confirm_message = f"task_id = {task_id} のタスクを差し戻しますか？"
         if assign_last_annotator:

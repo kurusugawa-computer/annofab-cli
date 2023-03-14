@@ -49,7 +49,7 @@ class ListTaskHistoryMain:
 
         return task_history_dict
 
-    def get_all_task_id_list(self, project_id) -> List[str]:
+    def get_all_task_id_list(self, project_id: str) -> List[str]:
         all_task_list = self.service.wrapper.get_all_tasks(project_id)
         return [e["task_id"] for e in all_task_list]
 

@@ -80,7 +80,7 @@ class DeleteTaskMain(AbstractCommandLineWithConfirmInterface):
 
         return deleted_count
 
-    def confirm_deleting_input_data(self, task_id, input_data_id: str, input_data_name: str) -> bool:
+    def confirm_deleting_input_data(self, task_id: str, input_data_id: str, input_data_name: str) -> bool:
         message_for_confirm = (
             f"task_id='{task_id}'のタスクから参照されている入力データと補助情報を削除しますか？  :: "
             f"input_data_id='{input_data_id}', "
