@@ -96,9 +96,8 @@ ignore = [
     "RUF001", # 全角記号など`ambiguous unicode character`も使いたいため
     "RUF002",# 全角記号など`ambiguous unicode character`も使いたいため
     "RUF003",# 全角記号など`ambiguous unicode character`も使いたいため
-
-
-    "PL", # pylintに関する警告がたくさんあって対応できなかったので、除外する
+    "PLC1901", # compare-to-empty-string : `if a == "`のように空文字列で直接比較したいときがあるため
+    "PLR2004", # magic-value-comparison: listのサイズで判定するときがよくあるため
     "ERA", # : 役立つこともあるが、コメントアウトしていないコードも警告されるので無視する
 
     # 以下のルールはannofabcliのコードに合っていないので無効化した
@@ -137,6 +136,9 @@ convention = "google"
 # Python3.8をサポートしているため、`typing.List`などの型ヒントは警告しないようにする
 # https://beta.ruff.rs/docs/settings/#keep-runtime-typing
 keep-runtime-typing = true
+
+[tool.ruff.pylint]
+max-args = 10
 
 [build-system]
 requires = ["poetry>=0.12"]
