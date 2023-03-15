@@ -90,7 +90,7 @@ class TaskStatusForSummary(Enum):
             return TaskStatusForSummary.OTHER
 
 
-def get_task_id_prefix(task_id: str, delimiter: str):
+def get_task_id_prefix(task_id: str, delimiter: str) -> str:
     tmp_list = task_id.split(delimiter)
     if len(tmp_list) <= 1:
         return TASK_ID_GROUP_UNKNOWN

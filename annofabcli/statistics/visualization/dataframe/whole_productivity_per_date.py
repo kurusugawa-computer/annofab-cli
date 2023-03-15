@@ -598,7 +598,7 @@ class WholeProductivityPerCompletedDate:
         div_element = self._create_div_element()
         write_bokeh_graph(bokeh.layouts.column([div_element] + [e.figure for e in line_graph_list]), output_file)
 
-    def plot_cumulatively(self, output_file: Path):
+    def plot_cumulatively(self, output_file: Path) -> None:
         """
         全体の生産量や作業時間の累積折れ線グラフを出力する
         """

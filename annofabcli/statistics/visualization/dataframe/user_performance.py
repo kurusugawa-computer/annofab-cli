@@ -676,19 +676,19 @@ class UserPerformance:
         div_element = self._create_div_element()
         write_bokeh_graph(bokeh.layouts.column([div_element, *figure_list]), output_file)
 
-    def plot_productivity_from_monitored_worktime(self, output_file: Path):
+    def plot_productivity_from_monitored_worktime(self, output_file: Path) -> None:
         """
         Annofab計測時間とAnnofab計測時間を元に算出した生産性を、メンバごとにプロットする
         """
         self._plot_productivity(output_file, worktime_type=WorktimeType.MONITORED)
 
-    def plot_productivity_from_actual_worktime(self, output_file: Path):
+    def plot_productivity_from_actual_worktime(self, output_file: Path) -> None:
         """
         実績作業時間と実績作業時間を元に算出した生産性を、メンバごとにプロットする
         """
         self._plot_productivity(output_file, worktime_type=WorktimeType.ACTUAL)
 
-    def plot_quality(self, output_file: Path):
+    def plot_quality(self, output_file: Path) -> None:
         """
         メンバごとに品質を散布図でプロットする
 
@@ -834,7 +834,7 @@ class UserPerformance:
                 y_axis_label=y_axis_label,
             )
 
-        def plot_average_and_quartile_line():
+        def plot_average_and_quartile_line() -> None:
             x_average_hour = self._get_average_value(
                 df,
                 numerator_column=(f"{worktime_type.value}_worktime_hour", phase),

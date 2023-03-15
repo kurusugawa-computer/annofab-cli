@@ -155,15 +155,15 @@ class AbstractPhaseCumulativeProductivity(abc.ABC):
         raise NotImplementedError()
 
     @abc.abstractmethod
-    def plot_annotation_metrics(self, output_file: Path, target_user_id_list: Optional[list[str]] = None):
+    def plot_annotation_metrics(self, output_file: Path, target_user_id_list: Optional[list[str]] = None) -> None:
         raise NotImplementedError()
 
     @abc.abstractmethod
-    def plot_input_data_metrics(self, output_file: Path, target_user_id_list: Optional[list[str]] = None):
+    def plot_input_data_metrics(self, output_file: Path, target_user_id_list: Optional[list[str]] = None) -> None:
         raise NotImplementedError()
 
     @abc.abstractmethod
-    def plot_task_metrics(self, output_file: Path, target_user_id_list: Optional[list[str]] = None):
+    def plot_task_metrics(self, output_file: Path, target_user_id_list: Optional[list[str]] = None) -> None:
         raise NotImplementedError()
 
 
