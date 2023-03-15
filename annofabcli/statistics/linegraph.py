@@ -278,7 +278,7 @@ class LineGraph:
         return checkbox_group
 
 
-def write_bokeh_graph(bokeh_obj: Any, output_file: Path):  # noqa: ANN401
+def write_bokeh_graph(bokeh_obj: Any, output_file: Path) -> None:  # noqa: ANN401
     """
     bokeh
     """

@@ -185,7 +185,7 @@ class WriteCsvGraph:
                 productivity_per_started_date_obj
             )
 
-    def write_user_productivity_per_date(self, user_id_list: Optional[List[str]] = None):
+    def write_user_productivity_per_date(self, user_id_list: Optional[List[str]] = None) -> None:
         """ユーザごとの日ごとの生産性情報を出力する。"""
         df_task = self._get_task_df()
 
@@ -245,7 +245,7 @@ class VisualizingStatisticsMain:
         self.df_labor = df_labor
         self.user_ids = user_ids
 
-    def write_project_info_json(self, project_id: str, project_dir: ProjectDir):
+    def write_project_info_json(self, project_id: str, project_dir: ProjectDir) -> None:
         """
         プロジェクト情報をJSONファイルに出力します。
         """

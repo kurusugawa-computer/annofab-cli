@@ -36,7 +36,7 @@ class WritingGraph:
         self.user_id_list = user_id_list
         self.minimal_output = minimal_output
 
-    def write_line_graph(self, task: Task):
+    def write_line_graph(self, task: Task) -> None:
         df = task.df.copy()
 
         self.output_project_dir.write_cumulative_line_graph(

@@ -122,7 +122,7 @@ class TestCommandLine:
             ]
         )
 
-    def write_simple_annotation(self, task_id: str, input_data_id: str, annotation_dir: Path):
+    def write_simple_annotation(self, task_id: str, input_data_id: str, annotation_dir: Path) -> None:
         # インポート用のアノテーションを生成
         simple_annotation = {
             "details": [
