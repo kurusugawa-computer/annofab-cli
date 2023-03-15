@@ -8,7 +8,7 @@ import copy
 import logging
 from enum import Enum
 from pathlib import Path
-from typing import Any, Optional
+from typing import Any, Optional, Union
 
 import bokeh
 import bokeh.layouts
@@ -301,7 +301,7 @@ class UserPerformance:
 
     @staticmethod
     def merge(obj1: UserPerformance, obj2: UserPerformance) -> UserPerformance:
-        def max_last_working_date(date1: union[float, str], date2: union[float, str]) -> union[float, str]:
+        def max_last_working_date(date1: Union[float, str], date2: Union[float, str]) -> Union[float, str]:
             """
             最新の作業日の新しい方を返す。
 
