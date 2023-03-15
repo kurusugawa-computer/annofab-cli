@@ -356,7 +356,7 @@ class MaskUserInfo(AbstractCommandLineWithoutWebapiInterface):
         self.print_csv(df)
 
 
-def main(args: argparse.Namespace):
+def main(args: argparse.Namespace) -> None:
     MaskUserInfo(args).main()
 
 

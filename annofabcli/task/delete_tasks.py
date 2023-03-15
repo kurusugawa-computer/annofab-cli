@@ -280,7 +280,7 @@ class DeleteTask(AbstractCommandLineInterface):
         main_obj.delete_task_list(task_id_list=task_id_list, task_query=task_query)
 
 
-def main(args: argparse.Namespace):
+def main(args: argparse.Namespace) -> None:
     service = build_annofabapi_resource_and_login(args)
     facade = AnnofabApiFacade(service)
     DeleteTask(service, facade, args).main()

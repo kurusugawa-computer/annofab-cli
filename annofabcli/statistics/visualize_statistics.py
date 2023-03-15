@@ -473,7 +473,7 @@ class VisualizeStatistics(AbstractCommandLineInterface):
                     logger.warning("出力した統計情報は0件なので、`プロジェクトごとの生産性と品質.csv`を出力しません。")
 
 
-def main(args: argparse.Namespace):
+def main(args: argparse.Namespace) -> None:
     service = build_annofabapi_resource_and_login(args)
     facade = AnnofabApiFacade(service)
     VisualizeStatistics(service, facade, args).main()

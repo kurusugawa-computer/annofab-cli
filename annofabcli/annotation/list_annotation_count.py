@@ -91,7 +91,7 @@ class ListAnnotationCount(AbstractCommandLineInterface):
             return
 
 
-def main(args: argparse.Namespace):
+def main(args: argparse.Namespace) -> None:
     service = build_annofabapi_resource_and_login(args)
     facade = AnnofabApiFacade(service)
     ListAnnotationCount(service, facade, args).main()

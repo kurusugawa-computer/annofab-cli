@@ -288,7 +288,7 @@ class ListWorktimeFromTaskHistoryEvent(AbstractCommandLineInterface):
         return all_task_history_event_list
 
 
-def main(args: argparse.Namespace):
+def main(args: argparse.Namespace) -> None:
     service = build_annofabapi_resource_and_login(args)
     facade = AnnofabApiFacade(service)
     ListWorktimeFromTaskHistoryEvent(service, facade, args).main()

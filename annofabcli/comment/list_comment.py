@@ -76,7 +76,7 @@ class ListingComments(AbstractCommandLineInterface):
             print_according_to_format(comment_list, output_format, output=args.output)
 
 
-def main(args: argparse.Namespace):
+def main(args: argparse.Namespace) -> None:
     service = build_annofabapi_resource_and_login(args)
     facade = AnnofabApiFacade(service)
     ListingComments(service, facade, args).main()

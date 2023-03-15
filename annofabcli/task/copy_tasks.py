@@ -188,7 +188,7 @@ class CopyTasks(AbstractCommandLineInterface):
         main_obj.main(project_id, copy_target_list=copy_target_list, parallelism=args.parallelism)
 
 
-def main(args: argparse.Namespace):
+def main(args: argparse.Namespace) -> None:
     service = build_annofabapi_resource_and_login(args)
     facade = AnnofabApiFacade(service)
     CopyTasks(service, facade, args).main()

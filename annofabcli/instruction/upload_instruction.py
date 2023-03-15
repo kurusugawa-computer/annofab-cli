@@ -120,7 +120,7 @@ class UploadInstruction(AbstractCommandLineInterface):
             self.upload_html_to_instruction(args.project_id, Path(args.html), temp_dir=Path(str_temp_dir))
 
 
-def main(args: argparse.Namespace):
+def main(args: argparse.Namespace) -> None:
     service = build_annofabapi_resource_and_login(args)
     facade = AnnofabApiFacade(service)
     UploadInstruction(service, facade, args).main()

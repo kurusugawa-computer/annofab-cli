@@ -138,7 +138,7 @@ class CopyInstruction(AbstractCommandLineInterface):
         self.copy_instruction(src_project_id=args.src_project_id, dest_project_id=args.dest_project_id)
 
 
-def main(args: argparse.Namespace):
+def main(args: argparse.Namespace) -> None:
     service = build_annofabapi_resource_and_login(args)
     facade = AnnofabApiFacade(service)
     CopyInstruction(service, facade, args).main()

@@ -378,7 +378,7 @@ class PutInputData(AbstractCommandLineInterface):
             print("引数が不正です。", file=sys.stderr)
 
 
-def main(args: argparse.Namespace):
+def main(args: argparse.Namespace) -> None:
     service = build_annofabapi_resource_and_login(args)
     facade = AnnofabApiFacade(service)
     PutInputData(service, facade, args).main()

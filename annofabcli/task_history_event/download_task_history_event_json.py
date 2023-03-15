@@ -36,7 +36,7 @@ class DownloadingTaskHistoryEvent(AbstractCommandLineInterface):
         )
 
 
-def main(args: argparse.Namespace):
+def main(args: argparse.Namespace) -> None:
     service = build_annofabapi_resource_and_login(args)
     facade = AnnofabApiFacade(service)
     DownloadingTaskHistoryEvent(service, facade, args).main()

@@ -162,7 +162,7 @@ def mask_visualization_dir(
     logger.debug(f"'{project_dir}'のマスクした結果を'{output_project_dir}'に出力しました。")
 
 
-def main(args: argparse.Namespace):
+def main(args: argparse.Namespace) -> None:
     not_masked_biography_set = (
         set(get_list_from_args(args.not_masked_biography)) if args.not_masked_biography is not None else None
     )

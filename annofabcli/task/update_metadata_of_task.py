@@ -205,7 +205,7 @@ class UpdateMetadataOfTask(AbstractCommandLineInterface):
         main_obj.update_metadata_of_task(args.project_id, task_ids=task_id_list, metadata=metadata)
 
 
-def main(args: argparse.Namespace):
+def main(args: argparse.Namespace) -> None:
     service = build_annofabapi_resource_and_login(args)
     facade = AnnofabApiFacade(service)
     UpdateMetadataOfTask(service, facade, args).main()

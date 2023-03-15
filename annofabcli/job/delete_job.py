@@ -53,7 +53,7 @@ class DeleteJob(AbstractCommandLineInterface):
         main_obj.delete_job_list(args.project_id, job_type=job_type, job_id_list=job_id_list)
 
 
-def main(args: argparse.Namespace):
+def main(args: argparse.Namespace) -> None:
     service = build_annofabapi_resource_and_login(args)
     facade = AnnofabApiFacade(service)
     DeleteJob(service, facade, args).main()

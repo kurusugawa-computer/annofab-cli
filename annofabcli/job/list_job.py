@@ -59,7 +59,7 @@ class ListJob(AbstractCommandLineInterface):
         self.print_job_list(args.project_id, job_type=job_type, job_query=None)
 
 
-def main(args: argparse.Namespace):
+def main(args: argparse.Namespace) -> None:
     service = build_annofabapi_resource_and_login(args)
     facade = AnnofabApiFacade(service)
     ListJob(service, facade, args).main()

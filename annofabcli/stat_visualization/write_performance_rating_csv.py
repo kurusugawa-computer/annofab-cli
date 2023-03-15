@@ -575,7 +575,7 @@ def parse_args(parser: argparse.ArgumentParser):
     parser.set_defaults(subcommand_func=main)
 
 
-def main(args: argparse.Namespace):
+def main(args: argparse.Namespace) -> None:
     WritePerformanceRatingCsv(args).main()
 
 

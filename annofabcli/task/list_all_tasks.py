@@ -110,7 +110,7 @@ class ListTasksWithJson(AbstractCommandLineInterface):
             logger.info("タスク一覧の件数が0件のため、出力しません。")
 
 
-def main(args: argparse.Namespace):
+def main(args: argparse.Namespace) -> None:
     service = build_annofabapi_resource_and_login(args)
     facade = AnnofabApiFacade(service)
     ListTasksWithJson(service, facade, args).main()
