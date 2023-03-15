@@ -83,7 +83,7 @@ class AddProps:
         return self.specs_inspection_phrases
 
     @staticmethod
-    def millisecond_to_hour(millisecond: int):
+    def millisecond_to_hour(millisecond: int) -> float:
         return millisecond / 1000 / 3600
 
     @staticmethod

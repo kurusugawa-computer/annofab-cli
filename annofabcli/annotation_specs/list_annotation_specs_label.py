@@ -47,16 +47,16 @@ class PrintAnnotationSpecsLabel(AbstractCommandLineInterface):
             )
 
     @staticmethod
-    def _get_name_list(messages: List[Dict[str, Any]]):
+    def _get_name_tuple(messages: List[Dict[str, Any]]) -> tuple[str, str]:
         """
-        日本語名、英語名のリスト（サイズ2）を取得する。日本語名が先頭に格納されている。
+        日本語名、英語名のタプルを取得する。
         """
         ja_name = [e["message"] for e in messages if e["lang"] == "ja-JP"][0]
         en_name = [e["message"] for e in messages if e["lang"] == "en-US"][0]
-        return [ja_name, en_name]
+        return (ja_name, en_name)
 
     @staticmethod
-    def _print_text_format_labels(labels: list[dict[str, Any]], output: Optional[str] = None):
+    def _print_text_format_labels(labels: list[dict[str, Any]], output: Optional[str] = None) -> None:
         output_lines = []
         for label in labels:
             output_lines.append(
@@ -64,7 +64,7 @@ class PrintAnnotationSpecsLabel(AbstractCommandLineInterface):
                     [
                         label["label_id"],
                         label["annotation_type"],
-                        *PrintAnnotationSpecsLabel._get_name_list(label["label_name"]["messages"]),
+                        *PrintAnnotationSpecsLabel._get_name_tuple(label["label_name"]["messages"]),
                     ]
                 )
             )
@@ -75,7 +75,7 @@ class PrintAnnotationSpecsLabel(AbstractCommandLineInterface):
                             "",
                             additional_data_definition["additional_data_definition_id"],
                             additional_data_definition["type"],
-                            *PrintAnnotationSpecsLabel._get_name_list(additional_data_definition["name"]["messages"]),
+                            *PrintAnnotationSpecsLabel._get_name_tuple(additional_data_definition["name"]["messages"]),
                         ]
                     )
                 )
@@ -88,7 +88,7 @@ class PrintAnnotationSpecsLabel(AbstractCommandLineInterface):
                                     "",
                                     choice["choice_id"],
                                     "",
-                                    *PrintAnnotationSpecsLabel._get_name_list(choice["name"]["messages"]),
+                                    *PrintAnnotationSpecsLabel._get_name_tuple(choice["name"]["messages"]),
                                 ]
                             )
                         )

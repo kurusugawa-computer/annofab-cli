@@ -64,7 +64,7 @@ class UserPerformance:
         return len(self.df) == 0
 
     @staticmethod
-    def _add_ratio_column_for_productivity_per_user(df: pandas.DataFrame, phase_list: list[str]):
+    def _add_ratio_column_for_productivity_per_user(df: pandas.DataFrame, phase_list: list[str]) -> None:
         """
         ユーザーの生産性に関する列を、DataFrameに追加します。
         """
@@ -420,7 +420,7 @@ class UserPerformance:
         print_csv(self.df[columns], str(output_file))
 
     @staticmethod
-    def _plot_average_line(fig: figure, value: float, dimension: str):
+    def _plot_average_line(fig: figure, value: float, dimension: str) -> None:
         span_average_line = Span(
             location=value,
             dimension=dimension,
@@ -430,7 +430,7 @@ class UserPerformance:
         fig.add_layout(span_average_line)
 
     @staticmethod
-    def _plot_quartile_line(fig: figure, quartile: tuple[float, float, float], dimension: str):
+    def _plot_quartile_line(fig: figure, quartile: tuple[float, float, float], dimension: str) -> None:
         """
 
         Args:
@@ -490,7 +490,7 @@ class UserPerformance:
             fig.add_layout(legend, "left")
 
     @staticmethod
-    def _add_ratio_key_for_whole_productivity(series: pandas.Series, phase_list: list[str]):
+    def _add_ratio_key_for_whole_productivity(series: pandas.Series, phase_list: list[str]) -> None:
         """
         プロジェクト全体の生産性に関するkeyを、pandas.Seriesに追加します。
         """

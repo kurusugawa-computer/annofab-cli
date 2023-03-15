@@ -144,7 +144,7 @@ class ChangeProjectMembers(AbstractCommandLineInterface):
             return True
 
     @staticmethod
-    def validate_member_info(member_info: Dict[str, Any]):
+    def validate_member_info(member_info: Dict[str, Any]) -> bool:
         KEYS = ["sampling_inspection_rate", "sampling_acceptance_rate"]
         return any(k in member_info for k in KEYS)
 

@@ -88,7 +88,7 @@ def create_outer_filepath_dict(namelist: List[str]) -> Dict[str, List[str]]:
 
 class FilterAnnotation:
     @staticmethod
-    def filter_annotation_zip(annotation_zip: Path, filter_query: FilterQuery, output_dir: Path):
+    def filter_annotation_zip(annotation_zip: Path, filter_query: FilterQuery, output_dir: Path) -> None:
         with zipfile.ZipFile(str(annotation_zip)) as zip_file:
             zip_filepath_dict = create_outer_filepath_dict(zip_file.namelist())
             count = 0
@@ -111,7 +111,7 @@ class FilterAnnotation:
             logger.info(f"{count} 件のJSONファイルとそれに紐づく塗りつぶし画像を {output_dir} に展開しました。")
 
     @staticmethod
-    def filter_annotation_dir(annotation_dir: Path, filter_query: FilterQuery, output_dir: Path):
+    def filter_annotation_dir(annotation_dir: Path, filter_query: FilterQuery, output_dir: Path) -> None:
         count = 0
         for parser in lazy_parse_simple_annotation_dir(annotation_dir):
             if not match_query(parser.load_json(), filter_query):

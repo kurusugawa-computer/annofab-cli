@@ -35,7 +35,7 @@ class DownloadingFile:
         self.service = service
 
     @staticmethod
-    def get_max_wait_minutes(wait_options: WaitOptions):
+    def get_max_wait_minutes(wait_options: WaitOptions) -> float:
         return wait_options.max_tries * wait_options.interval / 60
 
     def _wait_for_completion(

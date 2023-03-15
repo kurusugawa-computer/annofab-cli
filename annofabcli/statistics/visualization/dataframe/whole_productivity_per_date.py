@@ -215,7 +215,7 @@ class WholeProductivityPerCompletedDate:
         return cls(df_date)
 
     @classmethod
-    def _add_velocity_columns(cls, df: pandas.DataFrame):
+    def _add_velocity_columns(cls, df: pandas.DataFrame) -> None:
         """
         生産性情報などの列を追加する。
         """
@@ -885,7 +885,7 @@ class WholeProductivityPerFirstAnnotationStartedDate:
         return cls(df)
 
     @classmethod
-    def _add_velocity_columns(cls, df: pandas.DataFrame):
+    def _add_velocity_columns(cls, df: pandas.DataFrame) -> None:
         """
         日毎の全体の生産量から、累計情報、生産性の列を追加する。
         """

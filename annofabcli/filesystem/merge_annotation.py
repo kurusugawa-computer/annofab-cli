@@ -40,7 +40,7 @@ class MergeAnnotationMain:
             raise RuntimeError(f"{annotation_path} はサポート対象外です。")
 
     @staticmethod
-    def _write_outer_file(parser: SimpleAnnotationParser, anno: Dict[str, Any], output_json: Path):
+    def _write_outer_file(parser: SimpleAnnotationParser, anno: Dict[str, Any], output_json: Path) -> None:
         data_uri = anno["data"]["data_uri"]
 
         with parser.open_outer_file(data_uri) as src_f:
@@ -51,7 +51,7 @@ class MergeAnnotationMain:
                 dest_f.write(data)
 
     @staticmethod
-    def _is_segmentation(anno: Dict[str, Any]):
+    def _is_segmentation(anno: Dict[str, Any]) -> bool:
         return anno["data"]["_type"] in ["Segmentation", "SegmentationV2"]
 
     def write_merged_annotation(

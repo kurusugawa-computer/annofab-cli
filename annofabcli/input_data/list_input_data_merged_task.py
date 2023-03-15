@@ -59,7 +59,7 @@ class ListInputDataMergedTaskMain:
         df_input_data: pandas.DataFrame,
         input_data_id_list: Optional[List[str]] = None,
         input_data_name_list: Optional[List[str]] = None,
-    ):
+    ) -> pandas.DataFrame:
         df = df_input_data
         if input_data_id_list is not None:
             df = df[df["input_data_id"].isin(input_data_id_list)]

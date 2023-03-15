@@ -134,7 +134,7 @@ class Table:
         return project_members_dict
 
     @classmethod
-    def set_task_histories(cls, task: Task, task_histories: List[TaskHistory]):
+    def set_task_histories(cls, task: Task, task_histories: List[TaskHistory]) -> Task:
         """
         タスク履歴関係の情報を設定する
         """
