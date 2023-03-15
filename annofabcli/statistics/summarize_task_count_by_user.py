@@ -148,7 +148,7 @@ class SummarizeTaskCountByUser(AbstractCommandLineInterface):
             logger.error("出力対象データが0件のため、出力しません。")
 
 
-def parse_args(parser: argparse.ArgumentParser):
+def parse_args(parser: argparse.ArgumentParser) -> None:
     argument_parser = ArgumentParser(parser)
 
     argument_parser.add_project_id()

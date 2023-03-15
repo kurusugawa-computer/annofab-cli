@@ -100,7 +100,7 @@ def main(args: argparse.Namespace) -> None:
     DropProjectMembers(service, facade, args).main()
 
 
-def parse_args(parser: argparse.ArgumentParser):
+def parse_args(parser: argparse.ArgumentParser) -> None:
     parser.add_argument(
         "-u",
         "--user_id",

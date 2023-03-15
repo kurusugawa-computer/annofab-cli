@@ -199,7 +199,7 @@ def main(args: argparse.Namespace) -> None:
     FilterAnnotation().main(args)
 
 
-def parse_args(parser: argparse.ArgumentParser):
+def parse_args(parser: argparse.ArgumentParser) -> None:
     parser.add_argument("--annotation", type=Path, required=True, help="アノテーションzip、またはzipを展開したディレクトリ")
 
     parser.add_argument(

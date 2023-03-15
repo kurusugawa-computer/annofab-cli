@@ -111,7 +111,7 @@ def main(args: argparse.Namespace) -> None:
     InviteUser(service, facade, args).main()
 
 
-def parse_args(parser: argparse.ArgumentParser):
+def parse_args(parser: argparse.ArgumentParser) -> None:
     role_choices = [
         ProjectMemberRole.OWNER.value,
         ProjectMemberRole.WORKER.value,

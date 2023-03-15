@@ -209,7 +209,7 @@ def main(args: argparse.Namespace) -> None:
     ListProject(service, facade, args).main()
 
 
-def parse_args(parser: argparse.ArgumentParser):
+def parse_args(parser: argparse.ArgumentParser) -> None:
     argument_parser = ArgumentParser(parser)
 
     query_group = parser.add_mutually_exclusive_group(required=True)

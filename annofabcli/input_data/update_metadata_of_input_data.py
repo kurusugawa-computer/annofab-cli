@@ -151,7 +151,7 @@ def main(args: argparse.Namespace) -> None:
     UpdateMetadata(service, facade, args).main()
 
 
-def parse_args(parser: argparse.ArgumentParser):
+def parse_args(parser: argparse.ArgumentParser) -> None:
     argument_parser = ArgumentParser(parser)
     argument_parser.add_project_id()
     argument_parser.add_input_data_id(required=True)

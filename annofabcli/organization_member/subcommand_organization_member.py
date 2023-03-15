@@ -9,7 +9,7 @@ import annofabcli.organization_member.invite_organization_member
 import annofabcli.organization_member.list_organization_member
 
 
-def parse_args(parser: argparse.ArgumentParser):
+def parse_args(parser: argparse.ArgumentParser) -> None:
     subparsers = parser.add_subparsers(dest="subcommand_name")
 
     # サブコマンドの定義

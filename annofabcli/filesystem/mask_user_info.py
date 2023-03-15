@@ -360,7 +360,7 @@ def main(args: argparse.Namespace) -> None:
     MaskUserInfo(args).main()
 
 
-def parse_args(parser: argparse.ArgumentParser):
+def parse_args(parser: argparse.ArgumentParser) -> None:
     argument_parser = ArgumentParser(parser)
 
     parser.add_argument("--csv", type=Path, required=True, help="ユーザ情報が記載されたCSVファイルを指定してください。CSVには`user_id`列が必要です。")

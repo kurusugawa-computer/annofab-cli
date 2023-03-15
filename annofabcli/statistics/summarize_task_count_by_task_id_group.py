@@ -188,7 +188,7 @@ class SummarizeTaskCountByTaskId(AbstractCommandLineInterface):
         self.print_summarize_task_count(df)
 
 
-def parse_args(parser: argparse.ArgumentParser):
+def parse_args(parser: argparse.ArgumentParser) -> None:
     argument_parser = ArgumentParser(parser)
 
     argument_parser.add_project_id()

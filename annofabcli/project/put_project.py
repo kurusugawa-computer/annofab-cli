@@ -59,7 +59,7 @@ def main(args: argparse.Namespace) -> None:
     PutProject(service, facade, args).main()
 
 
-def parse_args(parser: argparse.ArgumentParser):
+def parse_args(parser: argparse.ArgumentParser) -> None:
     parser.add_argument("-org", "--organization", type=str, required=True, help="プロジェクトの所属先組織")
 
     parser.add_argument("--title", type=str, required=True, help="作成するプロジェクトのタイトル")

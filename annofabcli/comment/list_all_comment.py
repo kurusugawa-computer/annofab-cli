@@ -95,7 +95,7 @@ class ListAllComment(AbstractCommandLineInterface):
             print_according_to_format(comment_list, output_format, output=args.output)
 
 
-def parse_args(parser: argparse.ArgumentParser):
+def parse_args(parser: argparse.ArgumentParser) -> None:
     argument_parser = ArgumentParser(parser)
 
     argument_parser.add_project_id()

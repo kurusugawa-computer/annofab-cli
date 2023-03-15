@@ -135,7 +135,7 @@ class ChangeOperatorMain:
         new_user_id: Optional[str] = None,
         task_query: Optional[TaskQuery] = None,
         parallelism: Optional[int] = None,
-    ):
+    ) -> None:
         """
         検査コメントを付与して、タスクを差し戻す
         Args:
@@ -237,7 +237,7 @@ def main(args: argparse.Namespace) -> None:
     ChangeOperator(service, facade, args).main()
 
 
-def parse_args(parser: argparse.ArgumentParser):
+def parse_args(parser: argparse.ArgumentParser) -> None:
     argument_parser = ArgumentParser(parser)
 
     argument_parser.add_project_id()

@@ -106,7 +106,7 @@ class PutLabelColor(AbstractCommandLineInterface):
         main_obj.main(label_color, comment=args.comment)
 
 
-def parse_args(parser: argparse.ArgumentParser):
+def parse_args(parser: argparse.ArgumentParser) -> None:
     argument_parser = ArgumentParser(parser)
 
     argument_parser.add_project_id()

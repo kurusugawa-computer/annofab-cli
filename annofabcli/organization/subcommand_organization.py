@@ -6,7 +6,7 @@ import annofabcli.common.cli
 import annofabcli.organization.list_organization
 
 
-def parse_args(parser: argparse.ArgumentParser):
+def parse_args(parser: argparse.ArgumentParser) -> None:
     subparsers = parser.add_subparsers(dest="subcommand_name")
 
     # サブコマンドの定義

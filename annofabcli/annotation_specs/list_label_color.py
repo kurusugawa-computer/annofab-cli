@@ -47,7 +47,7 @@ class PrintLabelColor(AbstractCommandLineInterface):
         self.print_label_color(args.project_id)
 
 
-def parse_args(parser: argparse.ArgumentParser):
+def parse_args(parser: argparse.ArgumentParser) -> None:
     argument_parser = ArgumentParser(parser)
 
     argument_parser.add_project_id()

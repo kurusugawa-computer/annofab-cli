@@ -120,7 +120,7 @@ def main(args: argparse.Namespace) -> None:
     main_obj.main()
 
 
-def parse_args(parser: argparse.ArgumentParser):
+def parse_args(parser: argparse.ArgumentParser) -> None:
     parser.add_argument(
         "--dir",
         type=Path,

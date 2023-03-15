@@ -479,7 +479,7 @@ def main(args: argparse.Namespace) -> None:
     VisualizeStatistics(service, facade, args).main()
 
 
-def parse_args(parser: argparse.ArgumentParser):
+def parse_args(parser: argparse.ArgumentParser) -> None:
     parser.add_argument(
         "-p",
         "--project_id",

@@ -128,7 +128,7 @@ class GetAnnotationSpecsWithLabelIdReplaced(AbstractCommandLineInterface):
         self.print_according_to_format(annotation_specs)
 
 
-def parse_args(parser: argparse.ArgumentParser):
+def parse_args(parser: argparse.ArgumentParser) -> None:
     argument_parser = ArgumentParser(parser)
 
     argument_parser.add_project_id()

@@ -390,7 +390,7 @@ class DiffProjects(AbstractCommandLineInterface):
         print(diff_message)
 
 
-def parse_args(parser: argparse.ArgumentParser):
+def parse_args(parser: argparse.ArgumentParser) -> None:
     parser.add_argument("project_id1", type=str, help="比較対象のプロジェクトのproject_id")
 
     parser.add_argument("project_id2", type=str, help="比較対象のプロジェクトのproject_id")

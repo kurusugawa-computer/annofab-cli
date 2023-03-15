@@ -9,7 +9,7 @@ import annofabcli.filesystem.mask_user_info
 import annofabcli.filesystem.merge_annotation
 
 
-def parse_args(parser: argparse.ArgumentParser):
+def parse_args(parser: argparse.ArgumentParser) -> None:
     subparsers = parser.add_subparsers()
 
     # サブコマンドの定義

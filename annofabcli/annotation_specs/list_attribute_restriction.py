@@ -274,7 +274,7 @@ class ListAttributeRestriction(AbstractCommandLineInterface):
         annofabcli.common.utils.output_string("\n".join(restriction_text_list), args.output)
 
 
-def parse_args(parser: argparse.ArgumentParser):
+def parse_args(parser: argparse.ArgumentParser) -> None:
     argument_parser = ArgumentParser(parser)
 
     argument_parser.add_project_id()

@@ -91,7 +91,7 @@ def main(args: argparse.Namespace) -> None:
     ListUser(service, facade, args).main()
 
 
-def parse_args(parser: argparse.ArgumentParser):
+def parse_args(parser: argparse.ArgumentParser) -> None:
     argument_parser = ArgumentParser(parser)
 
     list_group = parser.add_mutually_exclusive_group(required=True)

@@ -519,7 +519,7 @@ class WritePerformanceRatingCsv(AbstractCommandLineWithoutWebapiInterface):
         result.project_monitored_worktime.to_csv(output_dir / "プロジェクごとの毎月の計測作業時間.csv")
 
 
-def parse_args(parser: argparse.ArgumentParser):
+def parse_args(parser: argparse.ArgumentParser) -> None:
     parser.add_argument(
         "--dir",
         type=Path,

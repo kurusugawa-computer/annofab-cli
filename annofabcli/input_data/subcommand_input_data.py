@@ -13,7 +13,7 @@ import annofabcli.input_data.put_input_data_with_zip
 import annofabcli.input_data.update_metadata_of_input_data
 
 
-def parse_args(parser: argparse.ArgumentParser):
+def parse_args(parser: argparse.ArgumentParser) -> None:
     subparsers = parser.add_subparsers(dest="subcommand_name")
 
     # サブコマンドの定義

@@ -18,7 +18,7 @@ def main(args: argparse.Namespace) -> None:
     project_performance.to_csv(args.output)
 
 
-def parse_args(parser: argparse.ArgumentParser):
+def parse_args(parser: argparse.ArgumentParser) -> None:
     parser.add_argument(
         "--dir",
         type=Path,

@@ -42,7 +42,7 @@ def main(args: argparse.Namespace) -> None:
     DownloadingComment(service, facade, args).main()
 
 
-def parse_args(parser: argparse.ArgumentParser):
+def parse_args(parser: argparse.ArgumentParser) -> None:
     parser.add_argument("-p", "--project_id", type=str, required=True, help="対象のプロジェクトのproject_idを指定します。")
 
     parser.add_argument("-o", "--output", type=Path, required=True, help="ダウンロード先を指定します。")

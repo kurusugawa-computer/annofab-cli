@@ -71,7 +71,7 @@ def main(args: argparse.Namespace) -> None:
     InviteOrganizationMember(service, facade, args).main()
 
 
-def parse_args(parser: argparse.ArgumentParser):
+def parse_args(parser: argparse.ArgumentParser) -> None:
     parser.add_argument("-org", "--organization", required=True, type=str, help="対象の組織の組織名を指定してください。")
 
     parser.add_argument(

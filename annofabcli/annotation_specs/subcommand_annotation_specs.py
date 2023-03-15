@@ -13,7 +13,7 @@ import annofabcli.annotation_specs.put_label_color
 import annofabcli.common.cli
 
 
-def parse_args(parser: argparse.ArgumentParser):
+def parse_args(parser: argparse.ArgumentParser) -> None:
     subparsers = parser.add_subparsers(dest="subcommand_name")
 
     # サブコマンドの定義

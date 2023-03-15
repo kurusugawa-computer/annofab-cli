@@ -59,7 +59,7 @@ def main(args: argparse.Namespace) -> None:
     DeleteJob(service, facade, args).main()
 
 
-def parse_args(parser: argparse.ArgumentParser):
+def parse_args(parser: argparse.ArgumentParser) -> None:
     argument_parser = ArgumentParser(parser)
 
     job_choices = [e.value for e in ProjectJobType]

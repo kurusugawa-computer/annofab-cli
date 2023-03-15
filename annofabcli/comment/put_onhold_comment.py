@@ -60,7 +60,7 @@ def main(args: argparse.Namespace) -> None:
     PutInspectionComment(service, facade, args).main()
 
 
-def parse_args(parser: argparse.ArgumentParser):
+def parse_args(parser: argparse.ArgumentParser) -> None:
     argument_parser = ArgumentParser(parser)
 
     argument_parser.add_project_id()

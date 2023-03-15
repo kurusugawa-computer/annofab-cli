@@ -6,7 +6,7 @@ import annofabcli.common.cli
 from annofabcli.experimental import list_out_of_range_annotation_for_movie
 
 
-def parse_args(parser: argparse.ArgumentParser):
+def parse_args(parser: argparse.ArgumentParser) -> None:
     subparsers = parser.add_subparsers(dest="subcommand_name")
 
     # サブコマンドの定義

@@ -8,7 +8,7 @@ import annofabcli.task_history.list_all_task_history
 import annofabcli.task_history.list_task_history
 
 
-def parse_args(parser: argparse.ArgumentParser):
+def parse_args(parser: argparse.ArgumentParser) -> None:
     subparsers = parser.add_subparsers(dest="subcommand_name")
 
     # サブコマンドの定義

@@ -9,7 +9,7 @@ import annofabcli.instruction.list_instruction_history
 import annofabcli.instruction.upload_instruction
 
 
-def parse_args(parser: argparse.ArgumentParser):
+def parse_args(parser: argparse.ArgumentParser) -> None:
     subparsers = parser.add_subparsers(dest="subcommand_name")
 
     # サブコマンドの定義

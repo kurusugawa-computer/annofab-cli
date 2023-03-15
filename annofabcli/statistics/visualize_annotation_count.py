@@ -327,7 +327,7 @@ class VisualizeAnnotationCount(AbstractCommandLineInterface):
             )
 
 
-def parse_args(parser: argparse.ArgumentParser):
+def parse_args(parser: argparse.ArgumentParser) -> None:
     argument_parser = ArgumentParser(parser)
 
     parser.add_argument(
