@@ -82,7 +82,7 @@ def create_masked_name(name: str) -> str:
             hash_value = (31 * hash_value + ord(c)) & 18446744073709551615
         return hash_value
 
-    def _num2alpha(num):
+    def _num2alpha(num: int) -> str:
         """
         1以上の整数を大文字アルファベットに変換する
         """
@@ -147,7 +147,7 @@ def replace_by_columns(
         sub_column: main_columnと同じ値で置換する列(ex: username)
     """
 
-    def _get_username(row, main_column: Any, sub_column: Any) -> str:
+    def _get_username(row: pandas.Series, main_column: Any, sub_column: Any) -> str:
         if row[main_column] in replacement_dict:
             return replacement_dict[row[main_column]]
         else:
@@ -170,7 +170,7 @@ def get_masked_username_series(df: pandas.DataFrame, replace_dict_by_user_id: Di
     user_id_column = _get_tuple_column(df, "user_id")
     username_column = _get_tuple_column(df, "username")
 
-    def _get_username(row) -> str:
+    def _get_username(row: pandas.Series) -> str:
         if row[user_id_column] in replace_dict_by_user_id:
             return replace_dict_by_user_id[row[user_id_column]]
         else:
@@ -186,7 +186,7 @@ def get_masked_account_id(df: pandas.DataFrame, replace_dict_by_user_id: Dict[st
     user_id_column = _get_tuple_column(df, "user_id")
     account_id_column = _get_tuple_column(df, "account_id")
 
-    def _get_account_id(row) -> str:
+    def _get_account_id(row: pandas.Series) -> str:
         if row[user_id_column] in replace_dict_by_user_id:
             return replace_dict_by_user_id[row[user_id_column]]
         else:
@@ -280,7 +280,7 @@ def replace_biography(
     user_id_column = _get_tuple_column(df, "user_id")
     biography_column = _get_tuple_column(df, "biography")
 
-    def _get_biography(row, user_id_column: Any, biography_column: Any) -> str:
+    def _get_biography(row: pandas.Series, user_id_column: Any, biography_column: Any) -> str:
         if row[user_id_column] in replacement_dict_by_user_id:
             # マスク対象のユーザなら biographyをマスクする
             biography = row[biography_column]

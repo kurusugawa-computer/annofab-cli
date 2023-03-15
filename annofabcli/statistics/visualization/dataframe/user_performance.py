@@ -301,7 +301,13 @@ class UserPerformance:
 
     @staticmethod
     def merge(obj1: UserPerformance, obj2: UserPerformance) -> UserPerformance:
-        def max_last_working_date(date1, date2):
+        def max_last_working_date(date1: union[float, str], date2: union[float, str]) -> union[float, str]:
+            """
+            最新の作業日の新しい方を返す。
+
+            Returns:
+                date1, date2が両方ともnumpy.nanならば、numpy.nanを返す
+            """
             if not isinstance(date1, str) and numpy.isnan(date1):
                 date1 = ""
             if not isinstance(date2, str) and numpy.isnan(date2):

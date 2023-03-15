@@ -118,7 +118,7 @@ class CollectingPerformanceInfo:
 
         return ThresholdInfo(threshold_worktime=worktime, threshold_task_count=task_count)
 
-    def filter_df_with_threshold(self, df:pandas.DataFrame, phase: TaskPhase, threshold_info: ThresholdInfo):
+    def filter_df_with_threshold(self, df: pandas.DataFrame, phase: TaskPhase, threshold_info: ThresholdInfo):
         if threshold_info.threshold_worktime is not None:
             df = df[df[(self.worktime_type.value, phase.value)] > threshold_info.threshold_worktime]
 

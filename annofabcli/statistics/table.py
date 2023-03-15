@@ -294,23 +294,23 @@ class Table:
             for _, row in task_df.iterrows()
         }
 
-        def get_inspection_comment_count(row) -> float:
+        def get_inspection_comment_count(row: pandas.Series) -> float:
             task_id = row.name[0]
             inspection_comment_count = annotation_count_dict[task_id]["inspection_comment_count"]
             return row["worktime_ratio_by_task"] * inspection_comment_count
 
-        def get_rejected_count(row) -> float:
+        def get_rejected_count(row: pandas.Series) -> float:
             task_id = row.name[0]
             rejected_count = annotation_count_dict[task_id]["rejected_count"]
             return row["worktime_ratio_by_task"] * rejected_count
 
-        def get_annotation_count(row) -> float:
+        def get_annotation_count(row: pandas.Series) -> float:
             task_id = row.name[0]
             annotation_count = annotation_count_dict[task_id]["annotation_count"]
             result = row["worktime_ratio_by_task"] * annotation_count
             return result
 
-        def get_input_data_count(row) -> float:
+        def get_input_data_count(row: pandas.Series) -> float:
             task_id = row.name[0]
             annotation_count = annotation_count_dict[task_id]["input_data_count"]
             return row["worktime_ratio_by_task"] * annotation_count

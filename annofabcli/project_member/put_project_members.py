@@ -60,7 +60,7 @@ class PutProjectMembers(AbstractCommandLineInterface):
         )[0]
         return updated_project_member
 
-    def delete_project_member(self, project_id, deleted_member: Dict[str, Any]):
+    def delete_project_member(self, project_id: str, deleted_member: Dict[str, Any]):
         request_body = {
             "member_status": ProjectMemberStatus.INACTIVE.value,
             "member_role": deleted_member["member_role"],

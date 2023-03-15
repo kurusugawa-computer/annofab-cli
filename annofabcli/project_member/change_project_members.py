@@ -1,7 +1,7 @@
 import argparse
 import logging
 import sys
-from typing import Any, Dict, List, Optional, Collection
+from typing import Any, Collection, Dict, List, Optional
 
 import requests
 from annofabapi.models import ProjectMember, ProjectMemberRole, ProjectMemberStatus

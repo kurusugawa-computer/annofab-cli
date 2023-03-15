@@ -1058,7 +1058,7 @@ class WholeProductivityPerFirstAnnotationStartedDate:
         全体の生産量や生産性をプロットする
         """
 
-        def add_velocity_and_weekly_moving_average_columns(df):
+        def add_velocity_and_weekly_moving_average_columns(df: pandas.DataFrame) -> None:
             for column in [
                 "task_count",
                 "input_data_count",

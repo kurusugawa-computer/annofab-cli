@@ -108,7 +108,7 @@ class ListOutOfRangeAnnotationForMovieMain:
 
     @staticmethod
     def filter_task_list(task_list: List[Dict[str, Any]], task_id_list: List[str]) -> List[Dict[str, Any]]:
-        def _exists(task_id) -> bool:
+        def _exists(task_id: str) -> bool:
             if task_id in task_id_set:
                 task_id_set.remove(task_id)
                 return True
