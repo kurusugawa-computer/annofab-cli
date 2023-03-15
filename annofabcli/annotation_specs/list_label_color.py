@@ -29,7 +29,7 @@ class PrintLabelColor(AbstractCommandLineInterface):
         color = label["color"]
         return color["red"], color["green"], color["blue"]
 
-    def print_label_color(self, project_id: str):
+    def print_label_color(self, project_id: str) -> None:
         """
         今のアノテーション仕様から、label名とRGBを紐付ける
         """

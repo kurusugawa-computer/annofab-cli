@@ -103,7 +103,7 @@ def print_csv(
         logger.info(f"{output} を出力しました。")
 
 
-def print_id_list(id_list: List[Any], output: Optional[Union[str, Path]]):
+def print_id_list(id_list: List[Any], output: Optional[Union[str, Path]]) -> None:
     s = "\n".join(id_list)
     output_string(s, output)
 

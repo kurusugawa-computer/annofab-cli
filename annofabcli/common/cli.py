@@ -615,10 +615,10 @@ class AbstractCommandLineWithoutWebapiInterface(abc.ABC):
             return jmespath.search(self.query, target)
         return target
 
-    def print_csv(self, df: pandas.DataFrame):
+    def print_csv(self, df: pandas.DataFrame) -> None:
         print_csv(df, output=self.output, to_csv_kwargs=self.csv_format)
 
-    def print_according_to_format(self, target: Any):  # noqa: ANN401
+    def print_according_to_format(self, target: Any) -> None:  # noqa: ANN401
         target = self.search_with_jmespath_expression(target)
 
         print_according_to_format(

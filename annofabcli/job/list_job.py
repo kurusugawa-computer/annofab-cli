@@ -36,7 +36,7 @@ class ListJob(AbstractCommandLineInterface):
         job_list = self.service.wrapper.get_all_project_job(project_id, query_params=query_params)
         return job_list
 
-    def print_job_list(self, project_id: str, job_type: ProjectJobType, job_query: Optional[Dict[str, Any]] = None):
+    def print_job_list(self, project_id: str, job_type: ProjectJobType, job_query: Optional[Dict[str, Any]] = None) -> None:
         """
         ジョブ一覧を出力する
 
