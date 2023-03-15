@@ -205,7 +205,7 @@ def parse_args(parser: argparse.ArgumentParser) -> None:
     parser.set_defaults(subcommand_func=main)
 
 
-def add_parser(subparsers: Optional[argparse._SubParsersAction] = None):
+def add_parser(subparsers: Optional[argparse._SubParsersAction] = None) -> None:
     subcommand_name = "change"
     subcommand_help = "プロジェクトメンバを変更します。"
     description = "複数のプロジェクトメンバに対して、メンバ情報を変更します。ただし、自分自身は変更できません。"

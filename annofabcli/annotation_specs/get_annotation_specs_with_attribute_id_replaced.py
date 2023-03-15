@@ -185,7 +185,7 @@ def main(args: argparse.Namespace) -> None:
     GetAnnotationSpecsWithAttributeIdReplaced(service, facade, args).main()
 
 
-def add_parser(subparsers: Optional[argparse._SubParsersAction] = None):
+def add_parser(subparsers: Optional[argparse._SubParsersAction] = None) -> None:
     subcommand_name = "get_with_attribute_id_replaced_english_name"
 
     subcommand_help = "属性IDをUUIDから英語名に置換したアノテーション仕様のJSONを出力します。"

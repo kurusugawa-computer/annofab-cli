@@ -150,7 +150,7 @@ def parse_args(parser: argparse.ArgumentParser) -> None:
     parser.set_defaults(subcommand_func=main)
 
 
-def add_parser(subparsers: Optional[argparse._SubParsersAction] = None):
+def add_parser(subparsers: Optional[argparse._SubParsersAction] = None) -> None:
     subcommand_name = "dump"
     subcommand_help = "アノテーション情報をファイルに保存します。"
     description = "指定したタスク配下のアノテーション情報をディレクトリに保存します。アノテーションをバックアップしたいときなどに利用できます。"

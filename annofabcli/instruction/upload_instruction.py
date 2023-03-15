@@ -138,7 +138,7 @@ def parse_args(parser: argparse.ArgumentParser) -> None:
     parser.set_defaults(subcommand_func=main)
 
 
-def add_parser(subparsers: Optional[argparse._SubParsersAction] = None):
+def add_parser(subparsers: Optional[argparse._SubParsersAction] = None) -> None:
     subcommand_name = "upload"
     subcommand_help = "HTMLファイルを作業ガイドとして登録します。"
     description = (

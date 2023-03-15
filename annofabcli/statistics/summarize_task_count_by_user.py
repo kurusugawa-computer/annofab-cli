@@ -185,7 +185,7 @@ def main(args: argparse.Namespace) -> None:
     SummarizeTaskCountByUser(service, facade, args).main()
 
 
-def add_parser(subparsers: Optional[argparse._SubParsersAction] = None):
+def add_parser(subparsers: Optional[argparse._SubParsersAction] = None) -> None:
     subcommand_name = "summarize_task_count_by_user"
     subcommand_help = "ユーザごとに、担当しているタスク数を出力します。"
     description = "ユーザごとに、担当しているタスク数をCSV形式で出力します。"

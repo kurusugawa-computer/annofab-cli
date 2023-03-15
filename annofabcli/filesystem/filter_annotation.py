@@ -258,7 +258,7 @@ def parse_args(parser: argparse.ArgumentParser) -> None:
     parser.set_defaults(subcommand_func=main)
 
 
-def add_parser(subparsers: Optional[argparse._SubParsersAction] = None):
+def add_parser(subparsers: Optional[argparse._SubParsersAction] = None) -> None:
     subcommand_name = "filter_annotation"
 
     subcommand_help = "アノテーションzipから特定のファイルを絞り込んで、zip展開します。"

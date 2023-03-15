@@ -384,7 +384,7 @@ def parse_args(parser: argparse.ArgumentParser) -> None:
     parser.set_defaults(subcommand_func=main)
 
 
-def add_parser(subparsers: Optional[argparse._SubParsersAction] = None):
+def add_parser(subparsers: Optional[argparse._SubParsersAction] = None) -> None:
     subcommand_name = "mask_user_info"
     subcommand_help = "CSVに記載されたユーザ情報をマスクします。"
     description = "CSVに記載されたユーザ情報をマスクします。CSVの`user_id`,`username`,`biography`,`account_id` 列をマスクします。"

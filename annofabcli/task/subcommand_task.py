@@ -41,7 +41,7 @@ def parse_args(parser: argparse.ArgumentParser) -> None:
     annofabcli.task.update_metadata_of_task.add_parser(subparsers)
 
 
-def add_parser(subparsers: Optional[argparse._SubParsersAction] = None):
+def add_parser(subparsers: Optional[argparse._SubParsersAction] = None) -> None:
     subcommand_name = "task"
     subcommand_help = "タスク関係のサブコマンド"
     description = "タスク関係のサブコマンド"

@@ -262,7 +262,7 @@ def parse_args(parser: argparse.ArgumentParser) -> None:
     parser.set_defaults(subcommand_func=main)
 
 
-def add_parser(subparsers: Optional[argparse._SubParsersAction] = None):
+def add_parser(subparsers: Optional[argparse._SubParsersAction] = None) -> None:
     subcommand_name = "list"
     subcommand_help = "プロジェクト一覧を出力します。"
     description = "プロジェクト一覧を出力します。"

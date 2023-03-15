@@ -85,7 +85,7 @@ def parse_args(parser: argparse.ArgumentParser) -> None:
     parser.set_defaults(subcommand_func=main)
 
 
-def add_parser(subparsers: Optional[argparse._SubParsersAction] = None):
+def add_parser(subparsers: Optional[argparse._SubParsersAction] = None) -> None:
     subcommand_name = "put_onhold_simply"
     subcommand_help = "``comment put_onhold`` コマンドよりも、簡単に保留コメントを付与します。"
 

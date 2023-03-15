@@ -326,7 +326,7 @@ def main(args: argparse.Namespace) -> None:
     ListAttributeRestriction(service, facade, args).main()
 
 
-def add_parser(subparsers: Optional[argparse._SubParsersAction] = None):
+def add_parser(subparsers: Optional[argparse._SubParsersAction] = None) -> None:
     subcommand_name = "list_attribute_restriction"
 
     subcommand_help = "アノテーション仕様の属性の制約情報を出力します。"

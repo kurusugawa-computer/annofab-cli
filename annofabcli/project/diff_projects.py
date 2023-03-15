@@ -419,7 +419,7 @@ def main(args: argparse.Namespace) -> None:
     DiffProjects(service, facade, args).main()
 
 
-def add_parser(subparsers: Optional[argparse._SubParsersAction] = None):
+def add_parser(subparsers: Optional[argparse._SubParsersAction] = None) -> None:
     subcommand_name = "diff"
     subcommand_help = "プロジェクト間の差分を表示する。"
     description = "プロジェクト間の差分を表示する。" + "ただし、Annofabで生成されるIDや、変化する日時などは比較しない。"

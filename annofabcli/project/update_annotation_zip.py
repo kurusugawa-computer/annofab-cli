@@ -227,7 +227,7 @@ def parse_args(parser: argparse.ArgumentParser) -> None:
     parser.set_defaults(subcommand_func=main)
 
 
-def add_parser(subparsers: Optional[argparse._SubParsersAction] = None):
+def add_parser(subparsers: Optional[argparse._SubParsersAction] = None) -> None:
     subcommand_name = "update_annotation_zip"
     subcommand_help = "複数のプロジェクトのアノテーションzipを更新します。"
     epilog = "対象プロジェクトに対して、オーナまたはアノテーションユーザロールを持つユーザで実行してください。"

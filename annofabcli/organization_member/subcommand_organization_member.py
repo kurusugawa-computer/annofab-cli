@@ -19,7 +19,7 @@ def parse_args(parser: argparse.ArgumentParser) -> None:
     annofabcli.organization_member.list_organization_member.add_parser(subparsers)
 
 
-def add_parser(subparsers: Optional[argparse._SubParsersAction] = None):
+def add_parser(subparsers: Optional[argparse._SubParsersAction] = None) -> None:
     subcommand_name = "organization_member"
     subcommand_help = "組織メンバ関係のサブコマンド"
     description = "組織メンバ関係のサブコマンド"

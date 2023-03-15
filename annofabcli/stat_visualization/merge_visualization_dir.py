@@ -263,7 +263,7 @@ def parse_args(parser: argparse.ArgumentParser) -> None:
     parser.set_defaults(subcommand_func=main)
 
 
-def add_parser(subparsers: Optional[argparse._SubParsersAction] = None):
+def add_parser(subparsers: Optional[argparse._SubParsersAction] = None) -> None:
     subcommand_name = "merge"
     subcommand_help = "``annofabcli statistics visualize`` コマンドの出力結果をマージします。"
     description = "``annofabcli statistics visualize`` コマンドの出力結果をマージします。"

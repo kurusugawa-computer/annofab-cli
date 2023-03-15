@@ -194,7 +194,7 @@ def parse_args(parser: argparse.ArgumentParser) -> None:
     parser.set_defaults(subcommand_func=main)
 
 
-def add_parser(subparsers: Optional[argparse._SubParsersAction] = None):
+def add_parser(subparsers: Optional[argparse._SubParsersAction] = None) -> None:
     subcommand_name = "download"
     subcommand_help = "作業ガイドをダウンロードします。"
     description = "作業ガイドをダウンロードします。HTMLファイルにはbodyタグの内部が記載されています。"

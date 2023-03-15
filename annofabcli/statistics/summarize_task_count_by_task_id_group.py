@@ -239,7 +239,7 @@ def main(args: argparse.Namespace) -> None:
     SummarizeTaskCountByTaskId(service, facade, args).main()
 
 
-def add_parser(subparsers: Optional[argparse._SubParsersAction] = None):
+def add_parser(subparsers: Optional[argparse._SubParsersAction] = None) -> None:
     subcommand_name = "summarize_task_count_by_task_id_group"
     subcommand_help = "task_idのグループごとにタスク数を集計します。"
     epilog = "アノテーションユーザまたはオーナロールを持つユーザで実行してください。"

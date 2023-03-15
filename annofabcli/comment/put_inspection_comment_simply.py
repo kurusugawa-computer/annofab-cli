@@ -138,7 +138,7 @@ def parse_args(parser: argparse.ArgumentParser) -> None:
     parser.set_defaults(subcommand_func=main)
 
 
-def add_parser(subparsers: Optional[argparse._SubParsersAction] = None):
+def add_parser(subparsers: Optional[argparse._SubParsersAction] = None) -> None:
     subcommand_name = "put_inspection_simply"
     subcommand_help = "``comment put_inspection`` コマンドよりも、簡単に検査コメントを付与します。"
     epilog = "チェッカーロールまたはオーナロールを持つユーザで実行してください。"

@@ -210,7 +210,7 @@ def parse_args(parser: argparse.ArgumentParser) -> None:
     parser.set_defaults(subcommand_func=main)
 
 
-def add_parser(subparsers: Optional[argparse._SubParsersAction] = None):
+def add_parser(subparsers: Optional[argparse._SubParsersAction] = None) -> None:
     subcommand_name = "change_status_to_break"
     subcommand_help = "タスクのステータスを休憩中に変更します。"
     description = "タスクのステータスを休憩中に変更します。ただし、操作対象のタスクは作業中か保留中である必要があります。"

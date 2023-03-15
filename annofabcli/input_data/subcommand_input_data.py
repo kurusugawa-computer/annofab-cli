@@ -27,7 +27,7 @@ def parse_args(parser: argparse.ArgumentParser) -> None:
     annofabcli.input_data.update_metadata_of_input_data.add_parser(subparsers)
 
 
-def add_parser(subparsers: Optional[argparse._SubParsersAction] = None):
+def add_parser(subparsers: Optional[argparse._SubParsersAction] = None) -> None:
     subcommand_name = "input_data"
     subcommand_help = "入力データ関係のサブコマンド"
     description = "入力データ関係のサブコマンド"

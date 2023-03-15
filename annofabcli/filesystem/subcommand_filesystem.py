@@ -19,7 +19,7 @@ def parse_args(parser: argparse.ArgumentParser) -> None:
     annofabcli.filesystem.merge_annotation.add_parser(subparsers)
 
 
-def add_parser(subparsers: Optional[argparse._SubParsersAction] = None):
+def add_parser(subparsers: Optional[argparse._SubParsersAction] = None) -> None:
     subcommand_name = "filesystem"
     subcommand_help = "ファイル操作関係（Web APIにアクセスしない）のサブコマンド"
     description = "ファイル操作関係（Web APIにアクセスしない）のサブコマンド"

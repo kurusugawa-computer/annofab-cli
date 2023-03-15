@@ -197,7 +197,7 @@ def parse_args(parser: argparse.ArgumentParser) -> None:
     parser.set_defaults(subcommand_func=main)
 
 
-def add_parser(subparsers: Optional[argparse._SubParsersAction] = None):
+def add_parser(subparsers: Optional[argparse._SubParsersAction] = None) -> None:
     subcommand_name = "change_status"
     subcommand_help = "プロジェクトのステータスを変更します。"
     description = "プロジェクトのステータスを変更します。"

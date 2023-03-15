@@ -85,7 +85,7 @@ def parse_args(parser: argparse.ArgumentParser) -> None:
     parser.set_defaults(subcommand_func=main)
 
 
-def add_parser(subparsers: Optional[argparse._SubParsersAction] = None):
+def add_parser(subparsers: Optional[argparse._SubParsersAction] = None) -> None:
     subcommand_name = "put"
     subcommand_help = "プロジェクトを作成します。"
     epilog = "組織管理者、組織オーナを持つユーザで実行してください。"

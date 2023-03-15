@@ -244,7 +244,7 @@ def parse_args(parser: argparse.ArgumentParser) -> None:
     parser.set_defaults(subcommand_func=main)
 
 
-def add_parser(subparsers: Optional[argparse._SubParsersAction] = None):
+def add_parser(subparsers: Optional[argparse._SubParsersAction] = None) -> None:
     subcommand_name = "list"
     subcommand_help = "入力データ一覧を出力します。"
     description = "入力データ一覧を出力します。Annofabの制約上、10,000件までしか出力されません。"

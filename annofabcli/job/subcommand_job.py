@@ -22,7 +22,7 @@ def parse_args(parser: argparse.ArgumentParser) -> None:
     annofabcli.job.wait_job.add_parser(subparsers)
 
 
-def add_parser(subparsers: Optional[argparse._SubParsersAction] = None):
+def add_parser(subparsers: Optional[argparse._SubParsersAction] = None) -> None:
     subcommand_name = "job"
     subcommand_help = "ジョブ関係のサブコマンド"
     description = "ジョブ関係のサブコマンド"

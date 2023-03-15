@@ -326,7 +326,7 @@ def parse_args(parser: argparse.ArgumentParser) -> None:
     parser.set_defaults(subcommand_func=main)
 
 
-def add_parser(subparsers: Optional[argparse._SubParsersAction] = None):
+def add_parser(subparsers: Optional[argparse._SubParsersAction] = None) -> None:
     subcommand_name = "restore"
     subcommand_help = "'annotation dump'コマンドで保存したファイルから、アノテーション情報をリストアします。"
     description = "'annotation dump'コマンドで保存したファイルから、アノテーション情報をリストアします。ただし、作業中/完了状態のタスクはリストアできません。"

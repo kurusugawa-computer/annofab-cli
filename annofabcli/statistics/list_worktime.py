@@ -172,7 +172,7 @@ def parse_args(parser: argparse.ArgumentParser) -> None:
     parser.set_defaults(subcommand_func=main)
 
 
-def add_parser(subparsers: Optional[argparse._SubParsersAction] = None):
+def add_parser(subparsers: Optional[argparse._SubParsersAction] = None) -> None:
     subcommand_name = "list_worktime"
     subcommand_help = "日ごとユーザごとの作業時間の一覧を出力します。"
     description = "タスク履歴イベント全件ファイルから、日ごとユーザごとの作業時間の一覧を出力します。"

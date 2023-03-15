@@ -1165,7 +1165,7 @@ def main(args: argparse.Namespace) -> None:
     ListAnnotationCount(service, facade, args).main()
 
 
-def add_parser(subparsers: Optional[argparse._SubParsersAction] = None):
+def add_parser(subparsers: Optional[argparse._SubParsersAction] = None) -> None:
     subcommand_name = "list_annotation_count"
     subcommand_help = "各ラベル、各属性値のアノテーション数を出力します。"
     description = "各ラベル、各属性値のアノテーション数を、タスクごと/入力データごとに出力します。"

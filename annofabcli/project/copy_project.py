@@ -174,7 +174,7 @@ def parse_args(parser: argparse.ArgumentParser) -> None:
     parser.set_defaults(subcommand_func=main)
 
 
-def add_parser(subparsers: Optional[argparse._SubParsersAction] = None):
+def add_parser(subparsers: Optional[argparse._SubParsersAction] = None) -> None:
     subcommand_name = "copy"
     subcommand_help = "プロジェクトをコピーします。"
     description = "プロジェクトをコピーします。'プロジェクト設定', 'プロジェクトメンバー', 'アノテーション仕様'は必ずコピーされます。"
