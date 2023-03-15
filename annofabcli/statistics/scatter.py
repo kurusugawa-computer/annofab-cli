@@ -36,7 +36,7 @@ def plot_bubble(
     text_column_name: str,
     size_column_name: str,
     legend_label: str,
-    color: Any,
+    color: str,
     func_get_bubble_size: Optional[Callable[[Any], int]] = None,
 ) -> None:
     """
@@ -103,7 +103,7 @@ def plot_scatter(
     y_column_name: str,
     text_column_name: str,
     legend_label: str,
-    color: Any,
+    color: str,
 ) -> None:
     """
     丸でプロットして、ユーザ名を表示する。

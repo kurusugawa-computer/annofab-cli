@@ -14,7 +14,7 @@ from dataclasses import dataclass, field
 from enum import Enum
 from functools import partial
 from pathlib import Path
-from typing import Any, Collection, Counter, Iterator, Optional, Tuple
+from typing import Any, Collection, Counter, Iterator, Optional, Tuple, Union
 
 import annofabapi
 import pandas
@@ -196,7 +196,7 @@ class ListAnnotationCounterByInputData:
             simple_annotation: JSONファイルの内容
         """
 
-        def convert_attribute_value_to_key(value: Any) -> str:
+        def convert_attribute_value_to_key(value: Union[bool,str,int,float]) -> str:
             if isinstance(value, bool):
                 # bool値をCSVの列名やJSONのキーとして扱う場合、`True/False`だとPythonに依存したように見えてしまうので（本当？）、`true/false`に変換する
                 if value:

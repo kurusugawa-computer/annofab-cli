@@ -287,7 +287,7 @@ class PutInputData(AbstractCommandLineInterface):
 
     @staticmethod
     def get_input_data_list_from_df(df: pandas.DataFrame) -> List[CsvInputData]:
-        def create_input_data(e: Any):
+        def create_input_data(e: Any):  # noqa: ANN401
             input_data_id = e.input_data_id if not pandas.isna(e.input_data_id) else None
             sign_required: Optional[bool] = e.sign_required if pandas.notna(e.sign_required) else None
             return CsvInputData(

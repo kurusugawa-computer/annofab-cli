@@ -136,7 +136,7 @@ def _get_tuple_column(df: pandas.DataFrame, column: str) -> Union[str, Tuple]:
 
 
 def replace_by_columns(
-    df: pandas.DataFrame, replacement_dict: Dict[str, str], main_column: Any, sub_columns: Optional[List[Any]] = None
+    df: pandas.DataFrame, replacement_dict: Dict[str, str], main_column: Union[str, Tuple], sub_columns: Optional[List[Any]] = None
 ):
     """引数dfの中のユーザ情報を、指定した列名を元に置換します。
 
@@ -147,7 +147,7 @@ def replace_by_columns(
         sub_column: main_columnと同じ値で置換する列(ex: username)
     """
 
-    def _get_username(row: pandas.Series, main_column: Any, sub_column: Any) -> str:
+    def _get_username(row: pandas.Series, main_column: Union[str, Tuple], sub_column: Union[str, Tuple]) -> str:
         if row[main_column] in replacement_dict:
             return replacement_dict[row[main_column]]
         else:
@@ -280,7 +280,7 @@ def replace_biography(
     user_id_column = _get_tuple_column(df, "user_id")
     biography_column = _get_tuple_column(df, "biography")
 
-    def _get_biography(row: pandas.Series, user_id_column: Any, biography_column: Any) -> str:
+    def _get_biography(row: pandas.Series, user_id_column: Union[str, Tuple], biography_column: Union[str, Tuple]) -> str:
         if row[user_id_column] in replacement_dict_by_user_id:
             # マスク対象のユーザなら biographyをマスクする
             biography = row[biography_column]
