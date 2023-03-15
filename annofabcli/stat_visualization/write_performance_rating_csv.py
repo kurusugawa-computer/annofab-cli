@@ -118,7 +118,7 @@ class CollectingPerformanceInfo:
 
         return ThresholdInfo(threshold_worktime=worktime, threshold_task_count=task_count)
 
-    def filter_df_with_threshold(self, df, phase: TaskPhase, threshold_info: ThresholdInfo):
+    def filter_df_with_threshold(self, df:pandas.DataFrame, phase: TaskPhase, threshold_info: ThresholdInfo):
         if threshold_info.threshold_worktime is not None:
             df = df[df[(self.worktime_type.value, phase.value)] > threshold_info.threshold_worktime]
 
@@ -298,7 +298,7 @@ class CollectingPerformanceInfo:
 def to_rank(series: pandas.Series) -> pandas.Series:
     quantile = list(series.quantile([0.25, 0.5, 0.75]))
 
-    def _to_point(value):
+    def _to_point(value: float):
         if numpy.isnan(value):
             return numpy.nan
         elif value < quantile[0]:

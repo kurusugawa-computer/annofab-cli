@@ -15,7 +15,7 @@ from bokeh.plotting import ColumnDataSource, figure
 logger = logging.getLogger(__name__)
 
 
-def write_bokeh_graph(bokeh_obj, output_file: Path):
+def write_bokeh_graph(bokeh_obj: Any, output_file: Path):
     output_file.parent.mkdir(exist_ok=True, parents=True)
     bokeh.plotting.reset_output()
     bokeh.plotting.output_file(output_file, title=output_file.stem)
