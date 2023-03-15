@@ -109,7 +109,7 @@ def parse_args(parser: argparse.ArgumentParser) -> None:
     parser.set_defaults(subcommand_func=main)
 
 
-def add_parser(subparsers: Optional[argparse._SubParsersAction] = None) -> None:
+def add_parser(subparsers: Optional[argparse._SubParsersAction] = None) -> argparse.ArgumentParser:
     # 2022/01時点でロールしか変更できないのに、change_roleという名前でなくchangeという名前にしたのは、将来的にロール以外も変更できるようにするため
     subcommand_name = "change"
     subcommand_help = "組織メンバの情報（ロールなど）を変更します。"

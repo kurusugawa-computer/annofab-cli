@@ -140,7 +140,7 @@ def main(args: argparse.Namespace) -> None:
     PutLabelColor(service, facade, args).main()
 
 
-def add_parser(subparsers: Optional[argparse._SubParsersAction] = None) -> None:
+def add_parser(subparsers: Optional[argparse._SubParsersAction] = None) -> argparse.ArgumentParser:
     subcommand_name = "put_label_color"
 
     subcommand_help = "ラベルの色を変更します。"

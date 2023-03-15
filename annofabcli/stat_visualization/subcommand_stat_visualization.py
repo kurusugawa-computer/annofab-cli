@@ -19,7 +19,7 @@ def parse_args(parser: argparse.ArgumentParser) -> None:
     annofabcli.stat_visualization.write_performance_rating_csv.add_parser(subparsers)
 
 
-def add_parser(subparsers: Optional[argparse._SubParsersAction] = None) -> None:
+def add_parser(subparsers: Optional[argparse._SubParsersAction] = None) -> argparse.ArgumentParser:
     subcommand_name = "stat_visualization"
     subcommand_help = "`annofabcli statistics visualization` コマンドの出力結果を加工するサブコマンド（アルファ版）"
     description = "`annofabcli statistics visualization` コマンドの出力結果を加工するサブコマンド（アルファ版）"

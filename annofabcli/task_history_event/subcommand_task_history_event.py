@@ -16,7 +16,7 @@ def parse_args(parser: argparse.ArgumentParser) -> None:
     annofabcli.task_history_event.list_worktime.add_parser(subparsers)
 
 
-def add_parser(subparsers: Optional[argparse._SubParsersAction] = None) -> None:
+def add_parser(subparsers: Optional[argparse._SubParsersAction] = None) -> argparse.ArgumentParser:
     subcommand_name = "task_history_event"
     subcommand_help = "タスク履歴イベント関係のサブコマンド"
     description = "タスク履歴イベント関係のサブコマンド。task_history_eventコマンドはベータ版です。予告なく変更される場合があります。"

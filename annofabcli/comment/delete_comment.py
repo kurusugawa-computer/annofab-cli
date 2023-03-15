@@ -279,7 +279,7 @@ def parse_args(parser: argparse.ArgumentParser) -> None:
     parser.set_defaults(subcommand_func=main)
 
 
-def add_parser(subparsers: Optional[argparse._SubParsersAction] = None) -> None:
+def add_parser(subparsers: Optional[argparse._SubParsersAction] = None) -> argparse.ArgumentParser:
     subcommand_name = "delete"
     subcommand_help = "コメントを削除します。"
     description = "コメントを削除します。\n【注意】他人の付けたコメントも削除できてしまいます。"

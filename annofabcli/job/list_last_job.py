@@ -171,7 +171,7 @@ def parse_args(parser: argparse.ArgumentParser) -> None:
     parser.set_defaults(subcommand_func=main)
 
 
-def add_parser(subparsers: Optional[argparse._SubParsersAction] = None) -> None:
+def add_parser(subparsers: Optional[argparse._SubParsersAction] = None) -> argparse.ArgumentParser:
     subcommand_name = "list_last"
     subcommand_help = "複数のプロジェクトに対して、最新のジョブを出力します。"
     description = "複数のプロジェクトに対して、最新のジョブを出力します。"

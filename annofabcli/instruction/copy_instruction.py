@@ -150,7 +150,7 @@ def parse_args(parser: argparse.ArgumentParser) -> None:
     parser.set_defaults(subcommand_func=main)
 
 
-def add_parser(subparsers: Optional[argparse._SubParsersAction] = None) -> None:
+def add_parser(subparsers: Optional[argparse._SubParsersAction] = None) -> argparse.ArgumentParser:
     subcommand_name = "copy"
     subcommand_help = "作業ガイドをコピーします。"
     description = "作業ガイドを別プロジェクトにコピーします。"

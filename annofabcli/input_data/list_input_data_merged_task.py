@@ -291,7 +291,7 @@ def parse_args(parser: argparse.ArgumentParser) -> None:
     parser.set_defaults(subcommand_func=main)
 
 
-def add_parser(subparsers: Optional[argparse._SubParsersAction] = None) -> None:
+def add_parser(subparsers: Optional[argparse._SubParsersAction] = None) -> argparse.ArgumentParser:
     subcommand_name = "list_merged_task"
     subcommand_help = "タスク一覧と結合した入力データ一覧の情報を出力します。"
     description = "タスク一覧と結合した入力データ一覧の情報を出力します。"

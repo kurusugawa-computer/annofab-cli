@@ -386,7 +386,7 @@ def main(args: argparse.Namespace) -> None:
     VisualizeAnnotationCount(service, facade, args).main()
 
 
-def add_parser(subparsers: Optional[argparse._SubParsersAction] = None) -> None:
+def add_parser(subparsers: Optional[argparse._SubParsersAction] = None) -> argparse.ArgumentParser:
     subcommand_name = "visualize_annotation_count"
     subcommand_help = "各ラベル、各属性値のアノテーション数をヒストグラムで可視化します。"
     description = "各ラベル、各属性値のアノテーション数をヒストグラムで可視化したファイルを出力します。"

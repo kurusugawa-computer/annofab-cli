@@ -71,7 +71,7 @@ def parse_args(parser: argparse.ArgumentParser) -> None:
     parser.set_defaults(subcommand_func=main)
 
 
-def add_parser(subparsers: Optional[argparse._SubParsersAction] = None) -> None:
+def add_parser(subparsers: Optional[argparse._SubParsersAction] = None) -> argparse.ArgumentParser:
     subcommand_name = "list_task_creation_history"
     subcommand_help = "タスクの作成履歴一覧を出力します。"
     description = "タスクの作成履歴一覧を出力します。"

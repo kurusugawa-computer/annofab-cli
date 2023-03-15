@@ -23,7 +23,7 @@ def parse_args(parser: argparse.ArgumentParser) -> None:
     annofabcli.project_member.put_project_members.add_parser(subparsers)
 
 
-def add_parser(subparsers: Optional[argparse._SubParsersAction] = None) -> None:
+def add_parser(subparsers: Optional[argparse._SubParsersAction] = None) -> argparse.ArgumentParser:
     subcommand_name = "project_member"
     subcommand_help = "プロジェクトメンバ関係のサブコマンド"
     description = "プロジェクトメンバ関係のサブコマンド"

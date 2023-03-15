@@ -144,7 +144,7 @@ def main(args: argparse.Namespace) -> None:
     ListAllComment(service, facade, args).main()
 
 
-def add_parser(subparsers: Optional[argparse._SubParsersAction] = None) -> None:
+def add_parser(subparsers: Optional[argparse._SubParsersAction] = None) -> argparse.ArgumentParser:
     subcommand_name = "list_all"
     subcommand_help = "すべてのコメントの一覧を出力します。"
     description = (

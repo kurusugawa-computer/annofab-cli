@@ -67,7 +67,7 @@ def main(args: argparse.Namespace) -> None:
     PrintLabelColor(service, facade, args).main()
 
 
-def add_parser(subparsers: Optional[argparse._SubParsersAction] = None) -> None:
+def add_parser(subparsers: Optional[argparse._SubParsersAction] = None) -> argparse.ArgumentParser:
     subcommand_name = "list_label_color"
 
     subcommand_help = "label_name(英名)とRGBの関係をJSONで出力します。"

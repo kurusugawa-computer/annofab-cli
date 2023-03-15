@@ -579,7 +579,7 @@ def main(args: argparse.Namespace) -> None:
     WritePerformanceRatingCsv(args).main()
 
 
-def add_parser(subparsers: Optional[argparse._SubParsersAction] = None) -> None:
+def add_parser(subparsers: Optional[argparse._SubParsersAction] = None) -> argparse.ArgumentParser:
     subcommand_name = "write_performance_rating_csv"
     subcommand_help = "プロジェクトごとユーザごとにパフォーマンスを評価できる複数のCSVを出力します。"
     description = "プロジェクトごとユーザごとにパフォーマンスを評価できる複数のCSVを出力します。"

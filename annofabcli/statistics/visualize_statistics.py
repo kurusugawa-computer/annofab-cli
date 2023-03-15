@@ -578,7 +578,7 @@ def parse_args(parser: argparse.ArgumentParser) -> None:
     parser.set_defaults(subcommand_func=main)
 
 
-def add_parser(subparsers: Optional[argparse._SubParsersAction] = None) -> None:
+def add_parser(subparsers: Optional[argparse._SubParsersAction] = None) -> argparse.ArgumentParser:
     subcommand_name = "visualize"
     subcommand_help = "生産性に関するCSVファイルやグラフを出力します。"
     description = "生産性に関するCSVファイルやグラフを出力します。"

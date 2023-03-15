@@ -17,7 +17,7 @@ def parse_args(parser: argparse.ArgumentParser) -> None:
     annofabcli.supplementary.put_supplementary_data.add_parser(subparsers)
 
 
-def add_parser(subparsers: Optional[argparse._SubParsersAction] = None) -> None:
+def add_parser(subparsers: Optional[argparse._SubParsersAction] = None) -> argparse.ArgumentParser:
     subcommand_name = "supplementary"
     subcommand_help = "補助情報関係のサブコマンド"
     description = "補助情報関係のサブコマンド"

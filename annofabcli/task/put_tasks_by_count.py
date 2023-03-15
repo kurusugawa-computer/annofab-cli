@@ -145,7 +145,7 @@ def parse_args(parser: argparse.ArgumentParser) -> None:
     parser.set_defaults(subcommand_func=main)
 
 
-def add_parser(subparsers: Optional[argparse._SubParsersAction] = None) -> None:
+def add_parser(subparsers: Optional[argparse._SubParsersAction] = None) -> argparse.ArgumentParser:
     subcommand_name = "put_by_count"
     subcommand_help = "タスクに割り当てる入力データの個数を指定して、タスクを作成します。"
     epilog = "オーナロールを持つユーザで実行してください。"

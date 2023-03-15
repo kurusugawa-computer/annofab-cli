@@ -308,7 +308,7 @@ def parse_args(parser: argparse.ArgumentParser) -> None:
     parser.set_defaults(subcommand_func=main)
 
 
-def add_parser(subparsers: Optional[argparse._SubParsersAction] = None) -> None:
+def add_parser(subparsers: Optional[argparse._SubParsersAction] = None) -> argparse.ArgumentParser:
     subcommand_name = "cancel_acceptance"
     subcommand_help = "受入が完了したタスクに対して、受入を取り消します。"
     description = "受入が完了したタスクに対して、受入を取り消します。"

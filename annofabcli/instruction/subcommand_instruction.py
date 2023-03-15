@@ -19,7 +19,7 @@ def parse_args(parser: argparse.ArgumentParser) -> None:
     annofabcli.instruction.upload_instruction.add_parser(subparsers)
 
 
-def add_parser(subparsers: Optional[argparse._SubParsersAction] = None) -> None:
+def add_parser(subparsers: Optional[argparse._SubParsersAction] = None) -> argparse.ArgumentParser:
     subcommand_name = "instruction"
     subcommand_help = "作業ガイド関係のサブコマンド"
     description = "作業ガイド関係のサブコマンド"

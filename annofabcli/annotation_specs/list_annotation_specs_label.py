@@ -177,7 +177,7 @@ def main(args: argparse.Namespace) -> None:
     PrintAnnotationSpecsLabel(service, facade, args).main()
 
 
-def add_parser(subparsers: Optional[argparse._SubParsersAction] = None) -> None:
+def add_parser(subparsers: Optional[argparse._SubParsersAction] = None) -> argparse.ArgumentParser:
     subcommand_name = "list_label"
 
     subcommand_help = "アノテーション仕様のラベル情報を出力する"

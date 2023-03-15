@@ -602,7 +602,7 @@ def main(args: argparse.Namespace) -> None:
     CompleteTasks(service, facade, args).main()
 
 
-def add_parser(subparsers: Optional[argparse._SubParsersAction] = None) -> None:
+def add_parser(subparsers: Optional[argparse._SubParsersAction] = None) -> argparse.ArgumentParser:
     subcommand_name = "complete"
     subcommand_help = "タスクを完了状態にして次のフェーズに進めます。（教師付の提出、検査/受入の合格）"
     description = (

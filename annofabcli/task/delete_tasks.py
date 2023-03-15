@@ -303,7 +303,7 @@ def parse_args(parser: argparse.ArgumentParser) -> None:
     parser.set_defaults(subcommand_func=main)
 
 
-def add_parser(subparsers: Optional[argparse._SubParsersAction] = None) -> None:
+def add_parser(subparsers: Optional[argparse._SubParsersAction] = None) -> argparse.ArgumentParser:
     subcommand_name = "delete"
     subcommand_help = "タスクを削除します。"
     description = "タスクを削除します。ただし、作業中/完了状態のタスクは削除できません。デフォルトは、アノテーションが付与されているタスクは削除できません。"
