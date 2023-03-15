@@ -155,7 +155,7 @@ class ChanegProjectStatusMain:
 
 
 class ChangeProjectStatus(AbstractCommandLineInterface):
-    def main(self):
+    def main(self) -> None:
         args = self.args
         project_id_list = annofabcli.common.cli.get_list_from_args(args.project_id)
         main_obj = ChanegProjectStatusMain(self.service)

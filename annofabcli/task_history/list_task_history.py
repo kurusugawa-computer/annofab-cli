@@ -106,7 +106,7 @@ class ListTaskHistory(AbstractCommandLineInterface):
         else:
             self.print_according_to_format(task_history_dict)
 
-    def main(self):
+    def main(self) -> None:
         args = self.args
 
         task_id_list = annofabcli.common.cli.get_list_from_args(args.task_id) if args.task_id is not None else None

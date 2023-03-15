@@ -152,7 +152,7 @@ class ListInputDataMergedTask(AbstractCommandLineInterface):
         )
         loop.run_until_complete(gather)
 
-    def main(self):
+    def main(self) -> None:
         args = self.args
         if not self.validate(args):
             sys.exit(COMMAND_LINE_ERROR_STATUS_CODE)

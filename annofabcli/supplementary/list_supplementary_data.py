@@ -70,7 +70,7 @@ class ListSupplementaryData(AbstractCommandLineInterface):
         logger.info(f"補助情報一覧の件数: {len(supplementary_data_list)}")
         self.print_according_to_format(supplementary_data_list)
 
-    def main(self):
+    def main(self) -> None:
         args = self.args
         input_data_id_list = (
             annofabcli.common.cli.get_list_from_args(args.input_data_id) if args.input_data_id is not None else None

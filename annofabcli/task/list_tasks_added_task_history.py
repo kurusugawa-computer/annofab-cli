@@ -377,7 +377,7 @@ class TasksAddedTaskHistoryOutput:
 
 
 class ListTasksAddedTaskHistory(AbstractCommandLineInterface):
-    def main(self):
+    def main(self) -> None:
         args = self.args
 
         task_id_list = annofabcli.common.cli.get_list_from_args(args.task_id) if args.task_id is not None else None

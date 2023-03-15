@@ -32,7 +32,7 @@ class DownloadingAnnotationZip(AbstractCommandLineInterface):
         )
         logger.info(f"アノテーションZIPをダウンロードしました。output={output_zip}")
 
-    def main(self):
+    def main(self) -> None:
         args = self.args
 
         self.download_annotation_zip(

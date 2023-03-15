@@ -148,7 +148,7 @@ class ChangeProjectMembers(AbstractCommandLineInterface):
         KEYS = ["sampling_inspection_rate", "sampling_acceptance_rate"]
         return any(k in member_info for k in KEYS)
 
-    def main(self):
+    def main(self) -> None:
         args = self.args
         project_id = args.project_id
         if args.all_user:

@@ -137,7 +137,7 @@ class ReplacingAttributeId(AbstractCommandLineWithConfirmInterface):
 
 
 class GetAnnotationSpecsWithAttributeIdReplaced(AbstractCommandLineInterface):
-    def main(self):
+    def main(self) -> None:
         args = self.args
         project_id: str = args.project_id
         super().validate_project(project_id)

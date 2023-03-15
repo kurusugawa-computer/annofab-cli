@@ -74,7 +74,7 @@ class ListInputDataWithJsonMain:
 
 
 class ListInputDataWithJson(AbstractCommandLineInterface):
-    def main(self):
+    def main(self) -> None:
         args = self.args
 
         input_data_id_list = (

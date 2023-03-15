@@ -28,7 +28,7 @@ class DownloadingTaskJson(AbstractCommandLineInterface):
         )
         logger.info(f"タスク全件ファイルをダウンロードしました。output={output_file}")
 
-    def main(self):
+    def main(self) -> None:
         args = self.args
 
         self.download_task_json(

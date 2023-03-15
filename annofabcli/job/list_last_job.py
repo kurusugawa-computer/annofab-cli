@@ -110,7 +110,7 @@ class ListLastJob(AbstractCommandLineInterface):
         )
         return [e["project_id"] for e in project_list]
 
-    def main(self):
+    def main(self) -> None:
         args = self.args
         job_type = ProjectJobType(args.job_type)
 

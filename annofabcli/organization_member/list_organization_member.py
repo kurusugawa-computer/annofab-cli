@@ -40,7 +40,7 @@ class ListOrganizationMember(AbstractCommandLineInterface):
             organization_member["organization_name"] = organization_name
         return organization_member_list
 
-    def main(self):
+    def main(self) -> None:
         args = self.args
         organization_name_list = annofabcli.common.cli.get_list_from_args(args.organization)
 

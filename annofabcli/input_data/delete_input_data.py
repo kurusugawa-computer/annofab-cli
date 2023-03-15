@@ -155,7 +155,7 @@ class DeleteInputData(AbstractCommandLineInterface):
 
         logger.info(f"プロジェクト'{project_title}'から 、{count_delete_input_data}/{len(input_data_id_list)} 件の入力データを削除しました。")
 
-    def main(self):
+    def main(self) -> None:
         args = self.args
         input_data_id_list = annofabcli.common.cli.get_list_from_args(args.input_data_id)
         self.delete_input_data_list(

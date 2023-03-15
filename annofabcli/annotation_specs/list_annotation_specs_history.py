@@ -32,7 +32,7 @@ class AnnotationSpecsHistories(AbstractCommandLineInterface):
         annotation_specs_histories = self.get_annotation_specs_histories(project_id)
         self.print_according_to_format(annotation_specs_histories)
 
-    def main(self):
+    def main(self) -> None:
         args = self.args
         self.list_annotation_specs_histories(args.project_id)
 

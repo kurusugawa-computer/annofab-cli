@@ -56,7 +56,7 @@ class InviteOrganizationMemberMain(AbstractCommandLineWithConfirmInterface):
 
 
 class InviteOrganizationMember(AbstractCommandLineInterface):
-    def main(self):
+    def main(self) -> None:
         args = self.args
 
         user_id_list = annofabcli.common.cli.get_list_from_args(args.user_id)

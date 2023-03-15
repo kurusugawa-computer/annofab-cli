@@ -73,7 +73,7 @@ class WritingGraph:
                 acceptor_per_date_obj, phase=TaskPhase.ACCEPTANCE, user_id_list=self.user_id_list
             )
 
-    def main(self):
+    def main(self) -> None:
         try:
             # メンバのパフォーマンスを散布図で出力する
             self.output_project_dir.write_user_performance_scatter_plot(self.project_dir.read_user_performance())

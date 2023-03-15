@@ -98,7 +98,7 @@ class PuttingLabelColorMain(AbstractCommandLineWithConfirmInterface):
 
 
 class PutLabelColor(AbstractCommandLineInterface):
-    def main(self):
+    def main(self) -> None:
         args = self.args
         label_color = get_json_from_args(args.json)
 

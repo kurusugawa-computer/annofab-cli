@@ -53,7 +53,7 @@ class ListJob(AbstractCommandLineInterface):
         logger.info(f"ジョブ一覧の件数: {len(job_list)}")
         self.print_according_to_format(job_list)
 
-    def main(self):
+    def main(self) -> None:
         args = self.args
         job_type = ProjectJobType(args.job_type)
         self.print_job_list(args.project_id, job_type=job_type, job_query=None)

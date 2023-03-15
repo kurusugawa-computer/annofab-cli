@@ -256,7 +256,7 @@ class DeleteTask(AbstractCommandLineInterface):
     タスクを削除する
     """
 
-    def main(self):
+    def main(self) -> None:
         args = self.args
 
         if args.dryrun:

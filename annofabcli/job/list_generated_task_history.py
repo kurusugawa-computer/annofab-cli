@@ -37,7 +37,7 @@ class ListTaskCreationHistoryMain:
 
 
 class ListTaskCreationHistory(AbstractCommandLineInterface):
-    def main(self):
+    def main(self) -> None:
         args = self.args
         main_obj = ListTaskCreationHistoryMain(self.service)
         data_list = main_obj.get_data_list(args.project_id)

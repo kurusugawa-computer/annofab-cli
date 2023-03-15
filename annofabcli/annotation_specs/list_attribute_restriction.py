@@ -237,7 +237,7 @@ class ListAttributeRestriction(AbstractCommandLineInterface):
         history = histories[-(before + 1)]
         return history["history_id"]
 
-    def main(self):
+    def main(self) -> None:
         args = self.args
 
         history_id = None

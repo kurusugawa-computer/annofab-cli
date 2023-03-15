@@ -57,7 +57,7 @@ class ListingComments(AbstractCommandLineInterface):
         all_comments = [visualize.add_properties_to_comment(e) for e in all_comments]
         return all_comments
 
-    def main(self):
+    def main(self) -> None:
         args = self.args
         task_id_list = annofabcli.common.cli.get_list_from_args(args.task_id)
         comment_type = CommentType(args.comment_type) if args.comment_type is not None else None

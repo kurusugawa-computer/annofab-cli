@@ -190,7 +190,7 @@ class UpdateMetadataOfTask(AbstractCommandLineInterface):
 
         return True
 
-    def main(self):
+    def main(self) -> None:
         args = self.args
 
         if not self.validate(args):

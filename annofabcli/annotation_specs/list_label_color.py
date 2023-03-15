@@ -41,7 +41,7 @@ class PrintLabelColor(AbstractCommandLineInterface):
 
         self.print_according_to_format(label_color_dict)
 
-    def main(self):
+    def main(self) -> None:
         args = self.args
 
         self.print_label_color(args.project_id)

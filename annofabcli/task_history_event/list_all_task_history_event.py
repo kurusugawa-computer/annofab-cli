@@ -96,7 +96,7 @@ class ListTaskHistoryEventWithJson(AbstractCommandLineInterface):
             logger.warning("タスク履歴イベント一覧の件数が0件であるため、出力しません。")
             return
 
-    def main(self):
+    def main(self) -> None:
         args = self.args
 
         task_id_list = get_list_from_args(args.task_id) if args.task_id is not None else None

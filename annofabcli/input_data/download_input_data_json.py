@@ -28,7 +28,7 @@ class DownloadingInputData(AbstractCommandLineInterface):
         )
         logger.info(f"入力データ全件ファイルをダウンロードしました。output={output_file}")
 
-    def main(self):
+    def main(self) -> None:
         args = self.args
 
         self.download_input_data_json(

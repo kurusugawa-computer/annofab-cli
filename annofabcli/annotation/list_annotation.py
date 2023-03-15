@@ -155,7 +155,7 @@ class ListAnnotation(AbstractCommandLineInterface):
         super().__init__(service, facade, args)
         self.visualize = AddProps(self.service, args.project_id)
 
-    def main(self):
+    def main(self) -> None:
         args = self.args
 
         project_id = args.project_id

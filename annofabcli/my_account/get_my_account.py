@@ -17,7 +17,7 @@ logger = logging.getLogger(__name__)
 
 
 class GetMyAccount(AbstractCommandLineInterface):
-    def main(self):
+    def main(self) -> None:
         account, _ = self.service.api.get_my_account()
         self.print_according_to_format(account)
 

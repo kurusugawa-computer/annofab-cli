@@ -172,7 +172,7 @@ class PutProjectMembers(AbstractCommandLineInterface):
         members = [create_member(e) for e in df.itertuples()]
         return members
 
-    def main(self):
+    def main(self) -> None:
         args = self.args
         members = self.get_members_from_csv(Path(args.csv))
         self.put_project_members(args.project_id, members=members, delete=args.delete)

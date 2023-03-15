@@ -53,7 +53,7 @@ class ListAnnotationCount(AbstractCommandLineInterface):
         else:
             return pandas.DataFrame()
 
-    def main(self):
+    def main(self) -> None:
         args = self.args
         project_id = args.project_id
 

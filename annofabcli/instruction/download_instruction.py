@@ -128,7 +128,7 @@ class DownloadInstruction(AbstractCommandLineInterface):
         history = histories[before]
         return history["history_id"]
 
-    def main(self):
+    def main(self) -> None:
         args = self.args
 
         project_id = args.project_id

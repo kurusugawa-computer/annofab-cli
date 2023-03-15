@@ -272,7 +272,7 @@ class VisualizeAnnotationCount(AbstractCommandLineInterface):
             prior_keys=attribute_value_keys,
         )
 
-    def main(self):
+    def main(self) -> None:
         args = self.args
 
         if not self.validate(args):

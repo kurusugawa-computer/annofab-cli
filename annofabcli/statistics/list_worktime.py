@@ -138,7 +138,7 @@ class ListWorktimeFromTaskHistoryEvent(AbstractCommandLineInterface):
             logger.warning("データ件数が0件であるため、出力しません。")
             return
 
-    def main(self):
+    def main(self) -> None:
         args = self.args
 
         self.print_worktime_list(

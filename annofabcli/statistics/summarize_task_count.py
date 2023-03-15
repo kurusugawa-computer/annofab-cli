@@ -172,7 +172,7 @@ class SummarizeTaskCount(AbstractCommandLineInterface):
             task_list = json.load(f)
             return task_list
 
-    def main(self):
+    def main(self) -> None:
         args = self.args
         project_id = args.project_id
         wait_options = get_wait_options_from_args(get_json_from_args(args.wait_options), DEFAULT_WAIT_OPTIONS)

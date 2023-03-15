@@ -43,7 +43,7 @@ class WaitJobMain:
 
 
 class WaitJob(AbstractCommandLineInterface):
-    def main(self):
+    def main(self) -> None:
         args = self.args
         project_id = args.project_id
         job_type = ProjectJobType(args.job_type)

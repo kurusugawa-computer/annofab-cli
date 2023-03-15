@@ -272,7 +272,7 @@ class ChangeAttributesOfAnnotation(AbstractCommandLineInterface):
         dict_attributes = get_json_from_args(str_attributes)
         return convert_attributes_from_cli_to_api(dict_attributes, annotation_specs, label_id=label_id)
 
-    def main(self):
+    def main(self) -> None:
         args = self.args
 
         if not self.validate(args):

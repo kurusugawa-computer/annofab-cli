@@ -27,7 +27,7 @@ class DownloadingTaskHistoryEvent(AbstractCommandLineInterface):
         )
         logger.info(f"タスク履歴イベント全件ファイルをダウンロードしました。output={output_file}")
 
-    def main(self):
+    def main(self) -> None:
         args = self.args
 
         self.download_task_history_event_json(

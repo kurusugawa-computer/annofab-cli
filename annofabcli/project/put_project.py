@@ -41,7 +41,7 @@ class PutProject(AbstractCommandLineInterface):
             f"title='{new_project['title']}', input_data_type='{new_project['input_data_type']}'"
         )
 
-    def main(self):
+    def main(self) -> None:
         args = self.args
         self.put_project(
             args.organization,

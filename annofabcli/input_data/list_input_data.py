@@ -168,7 +168,7 @@ class ListInputData(AbstractCommandLineInterface):
         else:
             logger.info("入力データの件数が0件のため、出力しません。")
 
-    def main(self):
+    def main(self) -> None:
         args = self.args
         input_data_id_list = (
             annofabcli.common.cli.get_list_from_args(args.input_data_id) if args.input_data_id is not None else None

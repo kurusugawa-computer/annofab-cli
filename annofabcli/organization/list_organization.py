@@ -11,7 +11,7 @@ logger = logging.getLogger(__name__)
 
 
 class ListOrganization(AbstractCommandLineInterface):
-    def main(self):
+    def main(self) -> None:
         organization_list = self.service.wrapper.get_all_my_organizations()
         logger.info(f"組織一覧の件数: {len(organization_list)}")
         self.print_according_to_format(organization_list)

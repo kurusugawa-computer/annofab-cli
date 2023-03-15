@@ -18,7 +18,7 @@ class ListInstructionHistories(AbstractCommandLineInterface):
         visualize = AddProps(self.service, project_id)
         return [visualize.add_properties_to_instruction(e) for e in histories]
 
-    def main(self):
+    def main(self) -> None:
         args = self.args
         project_id = args.project_id
         super().validate_project(project_id)

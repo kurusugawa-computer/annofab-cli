@@ -136,7 +136,7 @@ class CopyProject(AbstractCommandLineInterface):
 
         return result
 
-    def main(self):
+    def main(self) -> None:
         args = self.args
         dest_project_id = args.dest_project_id if args.dest_project_id is not None else str(uuid.uuid4())
         copied_targets = {CopiedTarget(e) for e in args.copied_target} if args.copied_target is not None else None

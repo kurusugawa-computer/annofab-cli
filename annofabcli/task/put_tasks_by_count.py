@@ -94,7 +94,7 @@ class PuttingTaskByCountMain:
 
 
 class PutTaskByCount(AbstractCommandLineInterface):
-    def main(self):
+    def main(self) -> None:
         args = self.args
         project_id = args.project_id
         super().validate_project(project_id, [ProjectMemberRole.OWNER])

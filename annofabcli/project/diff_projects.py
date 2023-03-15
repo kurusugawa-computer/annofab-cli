@@ -380,7 +380,7 @@ class DiffProjects(AbstractCommandLineInterface):
             )
         return is_different, diff_message
 
-    def main(self):
+    def main(self) -> None:
         args = self.args
         project_id1 = args.project_id1
         project_id2 = args.project_id2

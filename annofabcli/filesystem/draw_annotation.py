@@ -295,7 +295,7 @@ class DrawAnnotation(AbstractCommandLineWithoutWebapiInterface):
                 label_color_dict[label_name] = tuple(color)
         return label_color_dict
 
-    def main(self):
+    def main(self) -> None:
         args = self.args
 
         default_image_size: Optional[tuple[int, int]] = None

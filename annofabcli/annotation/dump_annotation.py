@@ -115,7 +115,7 @@ class DumpAnnotation(AbstractCommandLineInterface):
     アノテーション情報をダンプする
     """
 
-    def main(self):
+    def main(self) -> None:
         args = self.args
         project_id = args.project_id
         task_id_list = annofabcli.common.cli.get_list_from_args(args.task_id)

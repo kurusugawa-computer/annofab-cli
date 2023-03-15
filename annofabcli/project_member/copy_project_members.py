@@ -164,7 +164,7 @@ class CopyProjectMembers(AbstractCommandLineInterface):
         else:
             logger.info(f"{self.dest_project_title}のプロジェクトメンバに追加/更新はありません。")
 
-    def main(self):
+    def main(self) -> None:
         args = self.args
         self.copy_project_members(args.src_project_id, args.dest_project_id, delete_dest=args.delete_dest)
 

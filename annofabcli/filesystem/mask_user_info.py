@@ -331,7 +331,7 @@ def create_masked_user_info_df(
 
 
 class MaskUserInfo(AbstractCommandLineWithoutWebapiInterface):
-    def main(self):
+    def main(self) -> None:
         args = self.args
 
         not_masked_biography_set = (

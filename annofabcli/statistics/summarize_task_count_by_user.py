@@ -121,7 +121,7 @@ class SummarizeTaskCountByUser(AbstractCommandLineInterface):
             csv_format=self.csv_format,
         )
 
-    def main(self):
+    def main(self) -> None:
         args = self.args
         project_id = args.project_id
         super().validate_project(project_id, [ProjectMemberRole.OWNER, ProjectMemberRole.TRAINING_DATA_USER])
