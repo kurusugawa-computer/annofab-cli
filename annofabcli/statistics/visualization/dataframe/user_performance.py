@@ -8,7 +8,7 @@ import copy
 import logging
 from enum import Enum
 from pathlib import Path
-from typing import Any, Optional, Union
+from typing import Optional, Union
 
 import bokeh
 import bokeh.layouts
@@ -449,7 +449,9 @@ class UserPerformance:
             fig.add_layout(span_average_line)
 
     @staticmethod
-    def _get_average_value(df: pandas.DataFrame, numerator_column: tuple[str,str], denominator_column: tuple[str,str]) -> Optional[float]:
+    def _get_average_value(
+        df: pandas.DataFrame, numerator_column: tuple[str, str], denominator_column: tuple[str, str]
+    ) -> Optional[float]:
         numerator = df[numerator_column].sum()
         denominator = df[denominator_column].sum()
         if denominator > 0:
@@ -458,7 +460,7 @@ class UserPerformance:
             return None
 
     @staticmethod
-    def _get_quartile_value(df: pandas.DataFrame, column: tuple[str,str]) -> Optional[tuple[float, float, float]]:
+    def _get_quartile_value(df: pandas.DataFrame, column: tuple[str, str]) -> Optional[tuple[float, float, float]]:
         tmp = df[column].describe()
         if tmp["count"] > 3:
             return (tmp["25%"], tmp["50%"], tmp["75%"])

@@ -188,7 +188,7 @@ def get_csv_format_from_args(target: Optional[str] = None) -> Dict[str, Any]:
     return csv_format
 
 
-def get_json_from_args(target: Optional[str] = None) -> Any:
+def get_json_from_args(target: Optional[str] = None) -> Any:  # noqa: ANN401
     """
     JSON形式をPythonオブジェクトに変換する。
     プレフィックスが`file://`ならば、ファイルパスとしてファイルを読み込み、Pythonオブジェクトを返す。
@@ -601,7 +601,7 @@ class AbstractCommandLineWithoutWebapiInterface(abc.ABC):
 
         return True
 
-    def search_with_jmespath_expression(self, target: Any) -> Any:
+    def search_with_jmespath_expression(self, target: Any) -> Any:  # noqa: ANN401
         """
         インスタンスで保持しているJMespath情報で、targetの中身を探す。
         Args:
@@ -618,7 +618,7 @@ class AbstractCommandLineWithoutWebapiInterface(abc.ABC):
     def print_csv(self, df: pandas.DataFrame):
         print_csv(df, output=self.output, to_csv_kwargs=self.csv_format)
 
-    def print_according_to_format(self, target: Any):
+    def print_according_to_format(self, target: Any):  # noqa: ANN401
         target = self.search_with_jmespath_expression(target)
 
         print_according_to_format(

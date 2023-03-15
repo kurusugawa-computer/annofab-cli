@@ -100,7 +100,7 @@ class AddProps:
         target["project_title"] = project_title
         return target
 
-    def _add_user_info(self, target: dict[str,Any]) -> dict[str,Any]:
+    def _add_user_info(self, target: dict[str, Any]) -> dict[str, Any]:
         user_id = None
         username = None
 
