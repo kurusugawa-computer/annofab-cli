@@ -114,7 +114,7 @@ class CopyTasksMain(AbstractCommandLineWithConfirmInterface):
             logger.warning(f"タスク'{copy_target.src_task_id}'を'{copy_target.dest_task_id}'にコピーする際に失敗しました。", exc_info=True)
             return False
 
-    def main(self, project_id: str, copy_target_list: list[CopyTarget], parallelism: Optional[int] = None):
+    def main(self, project_id: str, copy_target_list: list[CopyTarget], parallelism: Optional[int] = None) -> None:
         """
         タスクをコピーします
 

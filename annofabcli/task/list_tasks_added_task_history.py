@@ -292,7 +292,7 @@ class ListTasksAddedTaskHistoryMain:
         self.service = service
         self.project_id = project_id
 
-    def main(self, *, task_query: Optional[dict[str, Any]], task_id_list: Optional[list[str]]):
+    def main(self, *, task_query: Optional[dict[str, Any]], task_id_list: Optional[list[str]]) -> None:
         list_task_obj = ListTasksMain(self.service, self.project_id)
         task_list = list_task_obj.get_task_list(self.project_id, task_id_list=task_id_list, task_query=task_query)
 

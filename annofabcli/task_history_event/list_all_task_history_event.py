@@ -76,7 +76,7 @@ class ListTaskHistoryEventWithJson(AbstractCommandLineInterface):
         task_history_event_json: Optional[Path],
         task_id_list: Optional[list[str]],
         arg_format: FormatArgument,
-    ):
+    ) -> None:
         super().validate_project(project_id, project_member_roles=None)
 
         main_obj = ListTaskHistoryEventWithJsonMain(self.service)

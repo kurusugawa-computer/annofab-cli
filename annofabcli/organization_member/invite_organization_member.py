@@ -28,7 +28,7 @@ class InviteOrganizationMemberMain(AbstractCommandLineWithConfirmInterface):
         self.facade = AnnofabApiFacade(service)
         super().__init__(all_yes)
 
-    def main(self, organization_name: str, user_ids: Collection[str], role: str):
+    def main(self, organization_name: str, user_ids: Collection[str], role: str) -> None:
         logger.info(f"{len(user_ids)} 件のユーザを組織'{organization_name}'に招待して、ロール'{role}'を付与します。")
 
         organization_member_list = self.service.wrapper.get_all_organization_members(organization_name)

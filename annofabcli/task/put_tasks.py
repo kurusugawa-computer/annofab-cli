@@ -56,7 +56,7 @@ def get_task_relation_dict(csv_file: Path) -> TaskInputRelation:
     return result
 
 
-def create_task_relation_csv(task_relation_dict: TaskInputRelation, csv_file: Path):
+def create_task_relation_csv(task_relation_dict: TaskInputRelation, csv_file: Path) -> None:
     """task_idとinput_data_idの関係を持つdictから、``initiate_tasks_generation`` APIに渡すCSVを生成します。
 
 

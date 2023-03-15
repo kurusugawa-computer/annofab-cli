@@ -29,7 +29,7 @@ import annofabcli.task_history_event.subcommand_task_history_event
 logger = logging.getLogger(__name__)
 
 
-def main(arguments: Optional[list[str]] = None):
+def main(arguments: Optional[list[str]] = None) -> None:
     """
     annofabcliコマンドのメイン処理
     注意： `deprecated`なツールは、サブコマンド化しない。

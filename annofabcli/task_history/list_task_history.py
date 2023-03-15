@@ -82,7 +82,7 @@ class ListTaskHistory(AbstractCommandLineInterface):
         project_id: str,
         task_id_list: Optional[List[str]],
         arg_format: FormatArgument,
-    ):
+    ) -> None:
         """
         タスク一覧を出力する
 

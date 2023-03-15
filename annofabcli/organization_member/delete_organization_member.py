@@ -34,7 +34,7 @@ class DeleteOrganizationMemberMain(AbstractCommandLineWithConfirmInterface):
     def get_member(organization_member_list: list[dict[str, Any]], user_id: str) -> Optional[dict[str, Any]]:
         return more_itertools.first_true(organization_member_list, pred=lambda e: e["user_id"] == user_id)
 
-    def main(self, organization_name: str, user_ids: Collection[str]):
+    def main(self, organization_name: str, user_ids: Collection[str]) -> None:
         logger.info(f"{len(user_ids)} 件のユーザを組織'{organization_name}'から脱退させます。")
 
         member_list = self.service.wrapper.get_all_organization_members(organization_name)

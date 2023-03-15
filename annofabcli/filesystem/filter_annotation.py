@@ -177,7 +177,7 @@ class FilterAnnotation:
             exclude_input_data_name_set=exclude_input_data_name_set,
         )
 
-    def main(self, args: argparse.Namespace):
+    def main(self, args: argparse.Namespace) -> None:
         logger.info(f"args: {args}")
         COMMON_MESSAGE = "annofabcli filesystem filter_annotation:"
 
