@@ -116,7 +116,6 @@ ignore = [
     "FBT", # flake8-boolean-trap
     "TRY", # tryceratops 
     "COM", # flake8-commas 
-    # "ANN", # flake8-annotations
     "S", # flake8-bandit
     "EM",#flake8-errmsg
     "EXE", # flake8-executable
