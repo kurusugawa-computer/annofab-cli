@@ -19,7 +19,7 @@ logger = logging.getLogger(__name__)
 
 
 class DumpAnnotationMain:
-    def __init__(self, service: annofabapi.Resource, project_id: str):
+    def __init__(self, service: annofabapi.Resource, project_id: str) -> None:
         self.service = service
         self.facade = AnnofabApiFacade(service)
         self.project_id = project_id
@@ -115,7 +115,7 @@ class DumpAnnotation(AbstractCommandLineInterface):
     アノテーション情報をダンプする
     """
 
-    def main(self):
+    def main(self) -> None:
         args = self.args
         project_id = args.project_id
         task_id_list = annofabcli.common.cli.get_list_from_args(args.task_id)
@@ -127,13 +127,13 @@ class DumpAnnotation(AbstractCommandLineInterface):
         main_obj.dump_annotation(task_id_list, output_dir=output_dir, parallelism=args.parallelism)
 
 
-def main(args):
+def main(args: argparse.Namespace) -> None:
     service = build_annofabapi_resource_and_login(args)
     facade = AnnofabApiFacade(service)
     DumpAnnotation(service, facade, args).main()
 
 
-def parse_args(parser: argparse.ArgumentParser):
+def parse_args(parser: argparse.ArgumentParser) -> None:
     argument_parser = ArgumentParser(parser)
 
     argument_parser.add_project_id()
@@ -150,7 +150,7 @@ def parse_args(parser: argparse.ArgumentParser):
     parser.set_defaults(subcommand_func=main)
 
 
-def add_parser(subparsers: Optional[argparse._SubParsersAction] = None):
+def add_parser(subparsers: Optional[argparse._SubParsersAction] = None) -> argparse.ArgumentParser:
     subcommand_name = "dump"
     subcommand_help = "アノテーション情報をファイルに保存します。"
     description = "指定したタスク配下のアノテーション情報をディレクトリに保存します。アノテーションをバックアップしたいときなどに利用できます。"

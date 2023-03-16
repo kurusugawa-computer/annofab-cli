@@ -32,7 +32,9 @@ logger = logging.getLogger(__name__)
 
 
 class RejectTasksMain(AbstractCommandLineWithConfirmInterface):
-    def __init__(self, service: annofabapi.Resource, *, comment_data: Optional[dict[str, Any]], all_yes: bool = False):
+    def __init__(
+        self, service: annofabapi.Resource, *, comment_data: Optional[dict[str, Any]], all_yes: bool = False
+    ) -> None:
         self.service = service
         self.facade = AnnofabApiFacade(service)
         self.comment_data = comment_data
@@ -76,7 +78,7 @@ class RejectTasksMain(AbstractCommandLineWithConfirmInterface):
         )[0]
 
     def confirm_reject_task(
-        self, task_id, assign_last_annotator: bool, assigned_annotator_user_id: Optional[str]
+        self, task_id: str, assign_last_annotator: bool, assigned_annotator_user_id: Optional[str]
     ) -> bool:
         confirm_message = f"task_id = {task_id} のタスクを差し戻しますか？"
         if assign_last_annotator:
@@ -376,7 +378,7 @@ class RejectTasks(AbstractCommandLineInterface):
 
         return True
 
-    def main(self):
+    def main(self) -> None:
         args = self.args
         if not self.validate(args):
             sys.exit(COMMAND_LINE_ERROR_STATUS_CODE)
@@ -435,13 +437,13 @@ class RejectTasks(AbstractCommandLineInterface):
         )
 
 
-def main(args: argparse.Namespace):
+def main(args: argparse.Namespace) -> None:
     service = build_annofabapi_resource_and_login(args)
     facade = AnnofabApiFacade(service)
     RejectTasks(service, facade, args).main()
 
 
-def parse_args(parser: argparse.ArgumentParser):
+def parse_args(parser: argparse.ArgumentParser) -> None:
     argument_parser = ArgumentParser(parser)
 
     argument_parser.add_project_id()
@@ -500,7 +502,7 @@ def parse_args(parser: argparse.ArgumentParser):
     parser.set_defaults(subcommand_func=main)
 
 
-def add_parser(subparsers: Optional[argparse._SubParsersAction] = None):
+def add_parser(subparsers: Optional[argparse._SubParsersAction] = None) -> argparse.ArgumentParser:
     subcommand_name = "reject"
     subcommand_help = "タスクを差し戻します。"
     description = (

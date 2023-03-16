@@ -90,7 +90,7 @@ class TaskStatusForSummary(Enum):
             return TaskStatusForSummary.OTHER
 
 
-def get_task_id_prefix(task_id: str, delimiter: str):
+def get_task_id_prefix(task_id: str, delimiter: str) -> str:
     tmp_list = task_id.split(delimiter)
     if len(tmp_list) <= 1:
         return TASK_ID_GROUP_UNKNOWN
@@ -162,7 +162,7 @@ class SummarizeTaskCountByTaskId(AbstractCommandLineInterface):
             csv_format=self.csv_format,
         )
 
-    def main(self):
+    def main(self) -> None:
         args = self.args
         project_id = args.project_id
         super().validate_project(project_id, [ProjectMemberRole.OWNER, ProjectMemberRole.TRAINING_DATA_USER])
@@ -188,7 +188,7 @@ class SummarizeTaskCountByTaskId(AbstractCommandLineInterface):
         self.print_summarize_task_count(df)
 
 
-def parse_args(parser: argparse.ArgumentParser):
+def parse_args(parser: argparse.ArgumentParser) -> None:
     argument_parser = ArgumentParser(parser)
 
     argument_parser.add_project_id()
@@ -233,13 +233,13 @@ def parse_args(parser: argparse.ArgumentParser):
     parser.set_defaults(subcommand_func=main)
 
 
-def main(args):
+def main(args: argparse.Namespace) -> None:
     service = build_annofabapi_resource_and_login(args)
     facade = AnnofabApiFacade(service)
     SummarizeTaskCountByTaskId(service, facade, args).main()
 
 
-def add_parser(subparsers: Optional[argparse._SubParsersAction] = None):
+def add_parser(subparsers: Optional[argparse._SubParsersAction] = None) -> argparse.ArgumentParser:
     subcommand_name = "summarize_task_count_by_task_id_group"
     subcommand_help = "task_idのグループごとにタスク数を集計します。"
     epilog = "アノテーションユーザまたはオーナロールを持つユーザで実行してください。"

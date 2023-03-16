@@ -15,7 +15,7 @@ logger = logging.getLogger(__name__)
 
 
 class DropProjectMembersMain:
-    def __init__(self, service: annofabapi.Resource):
+    def __init__(self, service: annofabapi.Resource) -> None:
         self.service = service
         self.facade = AnnofabApiFacade(service)
 
@@ -81,7 +81,7 @@ class DropProjectMembers(AbstractCommandLineInterface):
     ユーザをプロジェクトから削除する
     """
 
-    def main(self):
+    def main(self) -> None:
         args = self.args
         user_id_list = annofabcli.common.cli.get_list_from_args(args.user_id)
 
@@ -94,13 +94,13 @@ class DropProjectMembers(AbstractCommandLineInterface):
             main_obj.drop_role_with_project_id(project_id_list, user_id_list)
 
 
-def main(args):
+def main(args: argparse.Namespace) -> None:
     service = build_annofabapi_resource_and_login(args)
     facade = AnnofabApiFacade(service)
     DropProjectMembers(service, facade, args).main()
 
 
-def parse_args(parser: argparse.ArgumentParser):
+def parse_args(parser: argparse.ArgumentParser) -> None:
     parser.add_argument(
         "-u",
         "--user_id",
@@ -126,7 +126,7 @@ def parse_args(parser: argparse.ArgumentParser):
     parser.set_defaults(subcommand_func=main)
 
 
-def add_parser(subparsers: Optional[argparse._SubParsersAction] = None):
+def add_parser(subparsers: Optional[argparse._SubParsersAction] = None) -> argparse.ArgumentParser:
     subcommand_name = "delete"
     subcommand_help = "複数のプロジェクトから、ユーザを脱退させます。"
     description = "複数のプロジェクトから、ユーザを脱退させます。"

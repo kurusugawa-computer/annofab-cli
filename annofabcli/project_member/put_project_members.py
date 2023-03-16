@@ -41,10 +41,10 @@ class PutProjectMembers(AbstractCommandLineInterface):
         return member
 
     @staticmethod
-    def member_exists(members: List[Dict[str, Any]], user_id) -> bool:
+    def member_exists(members: List[Dict[str, Any]], user_id: str) -> bool:
         return PutProjectMembers.find_member(members, user_id) is not None
 
-    def invite_project_member(self, project_id, member: Member, old_project_members: List[Dict[str, Any]]):
+    def invite_project_member(self, project_id: str, member: Member, old_project_members: List[Dict[str, Any]]):
         old_member = self.find_member(old_project_members, member.user_id)
         last_updated_datetime = old_member["updated_datetime"] if old_member is not None else None
 
@@ -60,7 +60,7 @@ class PutProjectMembers(AbstractCommandLineInterface):
         )[0]
         return updated_project_member
 
-    def delete_project_member(self, project_id, deleted_member: Dict[str, Any]):
+    def delete_project_member(self, project_id: str, deleted_member: Dict[str, Any]):
         request_body = {
             "member_status": ProjectMemberStatus.INACTIVE.value,
             "member_role": deleted_member["member_role"],
@@ -153,7 +153,7 @@ class PutProjectMembers(AbstractCommandLineInterface):
 
     @staticmethod
     def get_members_from_csv(csv_path: Path) -> List[Member]:
-        def create_member(e):
+        def create_member(e):  # noqa: ANN001
             return Member(
                 user_id=e.user_id,
                 member_role=ProjectMemberRole(e.member_role),
@@ -172,19 +172,19 @@ class PutProjectMembers(AbstractCommandLineInterface):
         members = [create_member(e) for e in df.itertuples()]
         return members
 
-    def main(self):
+    def main(self) -> None:
         args = self.args
         members = self.get_members_from_csv(Path(args.csv))
         self.put_project_members(args.project_id, members=members, delete=args.delete)
 
 
-def main(args):
+def main(args: argparse.Namespace) -> None:
     service = build_annofabapi_resource_and_login(args)
     facade = AnnofabApiFacade(service)
     PutProjectMembers(service, facade, args).main()
 
 
-def parse_args(parser: argparse.ArgumentParser):
+def parse_args(parser: argparse.ArgumentParser) -> None:
     argument_parser = ArgumentParser(parser)
 
     argument_parser.add_project_id()
@@ -208,7 +208,7 @@ def parse_args(parser: argparse.ArgumentParser):
     parser.set_defaults(subcommand_func=main)
 
 
-def add_parser(subparsers: Optional[argparse._SubParsersAction] = None):
+def add_parser(subparsers: Optional[argparse._SubParsersAction] = None) -> argparse.ArgumentParser:
     subcommand_name = "put"
     subcommand_help = "プロジェクトメンバを登録する。"
     description = "プロジェクトメンバを登録する。"

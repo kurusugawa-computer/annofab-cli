@@ -9,7 +9,7 @@ import annofabcli.organization_member.invite_organization_member
 import annofabcli.organization_member.list_organization_member
 
 
-def parse_args(parser: argparse.ArgumentParser):
+def parse_args(parser: argparse.ArgumentParser) -> None:
     subparsers = parser.add_subparsers(dest="subcommand_name")
 
     # サブコマンドの定義
@@ -19,7 +19,7 @@ def parse_args(parser: argparse.ArgumentParser):
     annofabcli.organization_member.list_organization_member.add_parser(subparsers)
 
 
-def add_parser(subparsers: Optional[argparse._SubParsersAction] = None):
+def add_parser(subparsers: Optional[argparse._SubParsersAction] = None) -> argparse.ArgumentParser:
     subcommand_name = "organization_member"
     subcommand_help = "組織メンバ関係のサブコマンド"
     description = "組織メンバ関係のサブコマンド"

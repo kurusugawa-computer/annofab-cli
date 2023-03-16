@@ -70,7 +70,7 @@ class SubPutSupplementaryData:
         all_yes:
     """
 
-    def __init__(self, service: annofabapi.Resource, facade: AnnofabApiFacade, all_yes: bool = False):
+    def __init__(self, service: annofabapi.Resource, facade: AnnofabApiFacade, all_yes: bool = False) -> None:
         self.service = service
         self.facade = facade
         self.all_yes = all_yes
@@ -307,7 +307,7 @@ class PutSupplementaryData(AbstractCommandLineInterface):
 
     @staticmethod
     def get_supplementary_data_list_from_csv(csv_path: Path) -> List[CsvSupplementaryData]:
-        def create_supplementary_data(e):
+        def create_supplementary_data(e: Any):  # noqa: ANN401
             supplementary_data_id = e.supplementary_data_id if not pandas.isna(e.supplementary_data_id) else None
             supplementary_data_type = e.supplementary_data_type if not pandas.isna(e.supplementary_data_type) else None
             return CsvSupplementaryData(
@@ -354,7 +354,7 @@ class PutSupplementaryData(AbstractCommandLineInterface):
 
         return True
 
-    def main(self):
+    def main(self) -> None:
         args = self.args
         if not self.validate(args):
             sys.exit(COMMAND_LINE_ERROR_STATUS_CODE)
@@ -381,13 +381,13 @@ class PutSupplementaryData(AbstractCommandLineInterface):
         )
 
 
-def main(args):
+def main(args: argparse.Namespace) -> None:
     service = build_annofabapi_resource_and_login(args)
     facade = AnnofabApiFacade(service)
     PutSupplementaryData(service, facade, args).main()
 
 
-def parse_args(parser: argparse.ArgumentParser):
+def parse_args(parser: argparse.ArgumentParser) -> None:
     argument_parser = ArgumentParser(parser)
 
     argument_parser.add_project_id()
@@ -443,7 +443,7 @@ def parse_args(parser: argparse.ArgumentParser):
     parser.set_defaults(subcommand_func=main)
 
 
-def add_parser(subparsers: Optional[argparse._SubParsersAction] = None):
+def add_parser(subparsers: Optional[argparse._SubParsersAction] = None) -> argparse.ArgumentParser:
     subcommand_name = "put"
     subcommand_help = "補助情報を登録します。"
     description = "補助情報を登録します。"

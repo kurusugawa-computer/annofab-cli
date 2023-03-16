@@ -32,7 +32,7 @@ class Label:
 
 
 class PuttingLabelColorMain(AbstractCommandLineWithConfirmInterface):
-    def __init__(self, service: annofabapi.Resource, project_id: str, *, all_yes: bool):
+    def __init__(self, service: annofabapi.Resource, project_id: str, *, all_yes: bool) -> None:
         self.service = service
         self.facade = AnnofabApiFacade(service)
         self.project_id = project_id
@@ -98,7 +98,7 @@ class PuttingLabelColorMain(AbstractCommandLineWithConfirmInterface):
 
 
 class PutLabelColor(AbstractCommandLineInterface):
-    def main(self):
+    def main(self) -> None:
         args = self.args
         label_color = get_json_from_args(args.json)
 
@@ -106,7 +106,7 @@ class PutLabelColor(AbstractCommandLineInterface):
         main_obj.main(label_color, comment=args.comment)
 
 
-def parse_args(parser: argparse.ArgumentParser):
+def parse_args(parser: argparse.ArgumentParser) -> None:
     argument_parser = ArgumentParser(parser)
 
     argument_parser.add_project_id()
@@ -133,14 +133,14 @@ def parse_args(parser: argparse.ArgumentParser):
     parser.set_defaults(subcommand_func=main)
 
 
-def main(args):
+def main(args: argparse.Namespace) -> None:
     service = build_annofabapi_resource_and_login(args)
     facade = AnnofabApiFacade(service)
 
     PutLabelColor(service, facade, args).main()
 
 
-def add_parser(subparsers: Optional[argparse._SubParsersAction] = None):
+def add_parser(subparsers: Optional[argparse._SubParsersAction] = None) -> argparse.ArgumentParser:
     subcommand_name = "put_label_color"
 
     subcommand_help = "ラベルの色を変更します。"

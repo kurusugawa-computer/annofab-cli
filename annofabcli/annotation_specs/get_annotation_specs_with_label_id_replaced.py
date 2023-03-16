@@ -24,7 +24,9 @@ logger = logging.getLogger(__name__)
 
 class ReplacingLabelId(AbstractCommandLineWithConfirmInterface):
     @staticmethod
-    def replace_label_id_of_restrictions(old_label_id, new_label_id, restriction_list: list[dict[str, Any]]) -> None:
+    def replace_label_id_of_restrictions(
+        old_label_id: str, new_label_id: str, restriction_list: list[dict[str, Any]]
+    ) -> None:
         """
         制約情報の中で使用されているlabel_idを新しいlabel_idに変更する
 
@@ -111,7 +113,7 @@ class ReplacingLabelId(AbstractCommandLineWithConfirmInterface):
 
 
 class GetAnnotationSpecsWithLabelIdReplaced(AbstractCommandLineInterface):
-    def main(self):
+    def main(self) -> None:
         args = self.args
         project_id: str = args.project_id
         super().validate_project(project_id)
@@ -126,7 +128,7 @@ class GetAnnotationSpecsWithLabelIdReplaced(AbstractCommandLineInterface):
         self.print_according_to_format(annotation_specs)
 
 
-def parse_args(parser: argparse.ArgumentParser):
+def parse_args(parser: argparse.ArgumentParser) -> None:
     argument_parser = ArgumentParser(parser)
 
     argument_parser.add_project_id()
@@ -151,13 +153,13 @@ def parse_args(parser: argparse.ArgumentParser):
     parser.set_defaults(subcommand_func=main)
 
 
-def main(args):
+def main(args: argparse.Namespace) -> None:
     service = build_annofabapi_resource_and_login(args)
     facade = AnnofabApiFacade(service)
     GetAnnotationSpecsWithLabelIdReplaced(service, facade, args).main()
 
 
-def add_parser(subparsers: Optional[argparse._SubParsersAction] = None):
+def add_parser(subparsers: Optional[argparse._SubParsersAction] = None) -> argparse.ArgumentParser:
     subcommand_name = "get_with_label_id_replaced_english_name"
 
     subcommand_help = "label_idをUUIDから英語名に置換したアノテーション仕様のJSONを出力します。"

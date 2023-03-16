@@ -101,7 +101,7 @@ class ReplacingChoiceId(AbstractCommandLineWithConfirmInterface):
 
 
 class GetAnnotationSpecsWithAttributeIdReplaced(AbstractCommandLineInterface):
-    def main(self):
+    def main(self) -> None:
         args = self.args
         project_id: str = args.project_id
         super().validate_project(project_id)
@@ -118,7 +118,7 @@ class GetAnnotationSpecsWithAttributeIdReplaced(AbstractCommandLineInterface):
         self.print_according_to_format(annotation_specs)
 
 
-def parse_args(parser: argparse.ArgumentParser):
+def parse_args(parser: argparse.ArgumentParser) -> None:
     argument_parser = ArgumentParser(parser)
 
     argument_parser.add_project_id()
@@ -143,13 +143,13 @@ def parse_args(parser: argparse.ArgumentParser):
     parser.set_defaults(subcommand_func=main)
 
 
-def main(args):
+def main(args: argparse.Namespace) -> None:
     service = build_annofabapi_resource_and_login(args)
     facade = AnnofabApiFacade(service)
     GetAnnotationSpecsWithAttributeIdReplaced(service, facade, args).main()
 
 
-def add_parser(subparsers: Optional[argparse._SubParsersAction] = None):
+def add_parser(subparsers: Optional[argparse._SubParsersAction] = None) -> argparse.ArgumentParser:
     subcommand_name = "get_with_choice_id_replaced_english_name"
 
     subcommand_help = "選択肢IDをUUIDから英語名に置換したアノテーション仕様のJSONを出力します。"

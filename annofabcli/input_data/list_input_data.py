@@ -23,7 +23,7 @@ class ListInputData(AbstractCommandLineInterface):
     #: 入力データIDの平均長さ
     average_input_data_id_length: int = 36
 
-    def __init__(self, service: annofabapi.Resource, facade: AnnofabApiFacade, args: argparse.Namespace):
+    def __init__(self, service: annofabapi.Resource, facade: AnnofabApiFacade, args: argparse.Namespace) -> None:
         super().__init__(service, facade, args)
         self.visualize = AddProps(self.service, args.project_id)
         self.average_input_data_id_length = args.average_input_data_id_length
@@ -168,7 +168,7 @@ class ListInputData(AbstractCommandLineInterface):
         else:
             logger.info("入力データの件数が0件のため、出力しません。")
 
-    def main(self):
+    def main(self) -> None:
         args = self.args
         input_data_id_list = (
             annofabcli.common.cli.get_list_from_args(args.input_data_id) if args.input_data_id is not None else None
@@ -183,13 +183,13 @@ class ListInputData(AbstractCommandLineInterface):
         )
 
 
-def main(args):
+def main(args: argparse.Namespace) -> None:
     service = build_annofabapi_resource_and_login(args)
     facade = AnnofabApiFacade(service)
     ListInputData(service, facade, args).main()
 
 
-def parse_args(parser: argparse.ArgumentParser):
+def parse_args(parser: argparse.ArgumentParser) -> None:
     argument_parser = ArgumentParser(parser)
 
     argument_parser.add_project_id()
@@ -244,7 +244,7 @@ def parse_args(parser: argparse.ArgumentParser):
     parser.set_defaults(subcommand_func=main)
 
 
-def add_parser(subparsers: Optional[argparse._SubParsersAction] = None):
+def add_parser(subparsers: Optional[argparse._SubParsersAction] = None) -> argparse.ArgumentParser:
     subcommand_name = "list"
     subcommand_help = "入力データ一覧を出力します。"
     description = "入力データ一覧を出力します。Annofabの制約上、10,000件までしか出力されません。"

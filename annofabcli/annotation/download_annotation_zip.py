@@ -32,7 +32,7 @@ class DownloadingAnnotationZip(AbstractCommandLineInterface):
         )
         logger.info(f"アノテーションZIPをダウンロードしました。output={output_zip}")
 
-    def main(self):
+    def main(self) -> None:
         args = self.args
 
         self.download_annotation_zip(
@@ -43,13 +43,13 @@ class DownloadingAnnotationZip(AbstractCommandLineInterface):
         )
 
 
-def main(args: argparse.Namespace):
+def main(args: argparse.Namespace) -> None:
     service = build_annofabapi_resource_and_login(args)
     facade = AnnofabApiFacade(service)
     DownloadingAnnotationZip(service, facade, args).main()
 
 
-def parse_args(parser: argparse.ArgumentParser):
+def parse_args(parser: argparse.ArgumentParser) -> None:
     parser.add_argument("-p", "--project_id", type=str, required=True, help="対象のプロジェクトのproject_idを指定します。")
 
     parser.add_argument("-o", "--output", type=Path, required=True, help="ダウンロード先を指定します。")
@@ -69,7 +69,7 @@ def parse_args(parser: argparse.ArgumentParser):
     parser.set_defaults(subcommand_func=main)
 
 
-def add_parser(subparsers: Optional[argparse._SubParsersAction] = None):
+def add_parser(subparsers: Optional[argparse._SubParsersAction] = None) -> argparse.ArgumentParser:
     subcommand_name = "download"
     subcommand_help = "アノテーションZIPをダウンロードします。"
     description = "アノテーションZIPをダウンロードします。"

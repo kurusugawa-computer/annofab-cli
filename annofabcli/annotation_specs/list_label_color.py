@@ -29,7 +29,7 @@ class PrintLabelColor(AbstractCommandLineInterface):
         color = label["color"]
         return color["red"], color["green"], color["blue"]
 
-    def print_label_color(self, project_id: str):
+    def print_label_color(self, project_id: str) -> None:
         """
         今のアノテーション仕様から、label名とRGBを紐付ける
         """
@@ -41,13 +41,13 @@ class PrintLabelColor(AbstractCommandLineInterface):
 
         self.print_according_to_format(label_color_dict)
 
-    def main(self):
+    def main(self) -> None:
         args = self.args
 
         self.print_label_color(args.project_id)
 
 
-def parse_args(parser: argparse.ArgumentParser):
+def parse_args(parser: argparse.ArgumentParser) -> None:
     argument_parser = ArgumentParser(parser)
 
     argument_parser.add_project_id()
@@ -61,13 +61,13 @@ def parse_args(parser: argparse.ArgumentParser):
     parser.set_defaults(subcommand_func=main)
 
 
-def main(args):
+def main(args: argparse.Namespace) -> None:
     service = build_annofabapi_resource_and_login(args)
     facade = AnnofabApiFacade(service)
     PrintLabelColor(service, facade, args).main()
 
 
-def add_parser(subparsers: Optional[argparse._SubParsersAction] = None):
+def add_parser(subparsers: Optional[argparse._SubParsersAction] = None) -> argparse.ArgumentParser:
     subcommand_name = "list_label_color"
 
     subcommand_help = "label_name(英名)とRGBの関係をJSONで出力します。"

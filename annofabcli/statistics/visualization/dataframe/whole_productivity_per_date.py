@@ -46,7 +46,7 @@ def _plot_and_moving_average(
     x_column: str,
     y_column: str,
     legend_name: str,
-    color,
+    color: str,
     is_secondary_y_axis: bool = False,
     **kwargs,
 ):
@@ -215,7 +215,7 @@ class WholeProductivityPerCompletedDate:
         return cls(df_date)
 
     @classmethod
-    def _add_velocity_columns(cls, df: pandas.DataFrame):
+    def _add_velocity_columns(cls, df: pandas.DataFrame) -> None:
         """
         生産性情報などの列を追加する。
         """
@@ -598,7 +598,7 @@ class WholeProductivityPerCompletedDate:
         div_element = self._create_div_element()
         write_bokeh_graph(bokeh.layouts.column([div_element] + [e.figure for e in line_graph_list]), output_file)
 
-    def plot_cumulatively(self, output_file: Path):
+    def plot_cumulatively(self, output_file: Path) -> None:
         """
         全体の生産量や作業時間の累積折れ線グラフを出力する
         """
@@ -875,7 +875,7 @@ class WholeProductivityPerCompletedDate:
 class WholeProductivityPerFirstAnnotationStartedDate:
     """教師付開始日ごとの全体の生産量と生産性に関する情報"""
 
-    def __init__(self, df: pandas.DataFrame):
+    def __init__(self, df: pandas.DataFrame) -> None:
         self.df = df
 
     @classmethod
@@ -885,7 +885,7 @@ class WholeProductivityPerFirstAnnotationStartedDate:
         return cls(df)
 
     @classmethod
-    def _add_velocity_columns(cls, df: pandas.DataFrame):
+    def _add_velocity_columns(cls, df: pandas.DataFrame) -> None:
         """
         日毎の全体の生産量から、累計情報、生産性の列を追加する。
         """
@@ -1058,7 +1058,7 @@ class WholeProductivityPerFirstAnnotationStartedDate:
         全体の生産量や生産性をプロットする
         """
 
-        def add_velocity_and_weekly_moving_average_columns(df):
+        def add_velocity_and_weekly_moving_average_columns(df: pandas.DataFrame) -> None:
             for column in [
                 "task_count",
                 "input_data_count",

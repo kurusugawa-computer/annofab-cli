@@ -33,7 +33,7 @@ class PutOnholdCommentSimply(AbstractCommandLineInterface):
 
         return True
 
-    def main(self):
+    def main(self) -> None:
         args = self.args
         if not self.validate(args):
             sys.exit(COMMAND_LINE_ERROR_STATUS_CODE)
@@ -51,13 +51,13 @@ class PutOnholdCommentSimply(AbstractCommandLineInterface):
         )
 
 
-def main(args: argparse.Namespace):
+def main(args: argparse.Namespace) -> None:
     service = build_annofabapi_resource_and_login(args)
     facade = AnnofabApiFacade(service)
     PutOnholdCommentSimply(service, facade, args).main()
 
 
-def parse_args(parser: argparse.ArgumentParser):
+def parse_args(parser: argparse.ArgumentParser) -> None:
     argument_parser = ArgumentParser(parser)
 
     argument_parser.add_project_id()
@@ -85,7 +85,7 @@ def parse_args(parser: argparse.ArgumentParser):
     parser.set_defaults(subcommand_func=main)
 
 
-def add_parser(subparsers: Optional[argparse._SubParsersAction] = None):
+def add_parser(subparsers: Optional[argparse._SubParsersAction] = None) -> argparse.ArgumentParser:
     subcommand_name = "put_onhold_simply"
     subcommand_help = "``comment put_onhold`` コマンドよりも、簡単に保留コメントを付与します。"
 

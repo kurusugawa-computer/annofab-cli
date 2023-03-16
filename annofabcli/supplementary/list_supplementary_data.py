@@ -70,7 +70,7 @@ class ListSupplementaryData(AbstractCommandLineInterface):
         logger.info(f"補助情報一覧の件数: {len(supplementary_data_list)}")
         self.print_according_to_format(supplementary_data_list)
 
-    def main(self):
+    def main(self) -> None:
         args = self.args
         input_data_id_list = (
             annofabcli.common.cli.get_list_from_args(args.input_data_id) if args.input_data_id is not None else None
@@ -82,13 +82,13 @@ class ListSupplementaryData(AbstractCommandLineInterface):
         )
 
 
-def main(args):
+def main(args: argparse.Namespace) -> None:
     service = build_annofabapi_resource_and_login(args)
     facade = AnnofabApiFacade(service)
     ListSupplementaryData(service, facade, args).main()
 
 
-def parse_args(parser: argparse.ArgumentParser):
+def parse_args(parser: argparse.ArgumentParser) -> None:
     argument_parser = ArgumentParser(parser)
     argument_parser.add_project_id()
 
@@ -118,7 +118,7 @@ def parse_args(parser: argparse.ArgumentParser):
     parser.set_defaults(subcommand_func=main)
 
 
-def add_parser(subparsers: Optional[argparse._SubParsersAction] = None):
+def add_parser(subparsers: Optional[argparse._SubParsersAction] = None) -> argparse.ArgumentParser:
     subcommand_name = "list"
     subcommand_help = "補助情報一覧を出力します。"
     description = "補助情報一覧を出力します。"

@@ -38,7 +38,7 @@ class WorktimePerDate:
     日ごとユーザごとの作業時間情報
     """
 
-    def __init__(self, df: pandas.DataFrame):
+    def __init__(self, df: pandas.DataFrame) -> None:
         self.df = df
 
     _df_dtype = {

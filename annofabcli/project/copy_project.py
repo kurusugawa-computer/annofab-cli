@@ -136,7 +136,7 @@ class CopyProject(AbstractCommandLineInterface):
 
         return result
 
-    def main(self):
+    def main(self) -> None:
         args = self.args
         dest_project_id = args.dest_project_id if args.dest_project_id is not None else str(uuid.uuid4())
         copied_targets = {CopiedTarget(e) for e in args.copied_target} if args.copied_target is not None else None
@@ -150,13 +150,13 @@ class CopyProject(AbstractCommandLineInterface):
         )
 
 
-def main(args):
+def main(args: argparse.Namespace) -> None:
     service = build_annofabapi_resource_and_login(args)
     facade = AnnofabApiFacade(service)
     CopyProject(service, facade, args).main()
 
 
-def parse_args(parser: argparse.ArgumentParser):
+def parse_args(parser: argparse.ArgumentParser) -> None:
     argument_parser = ArgumentParser(parser)
 
     argument_parser.add_project_id(help_message="コピー元のプロジェクトのproject_idを指定してください。")
@@ -174,7 +174,7 @@ def parse_args(parser: argparse.ArgumentParser):
     parser.set_defaults(subcommand_func=main)
 
 
-def add_parser(subparsers: Optional[argparse._SubParsersAction] = None):
+def add_parser(subparsers: Optional[argparse._SubParsersAction] = None) -> argparse.ArgumentParser:
     subcommand_name = "copy"
     subcommand_help = "プロジェクトをコピーします。"
     description = "プロジェクトをコピーします。'プロジェクト設定', 'プロジェクトメンバー', 'アノテーション仕様'は必ずコピーされます。"

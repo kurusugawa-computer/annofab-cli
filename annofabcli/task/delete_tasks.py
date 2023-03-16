@@ -31,7 +31,7 @@ class DeleteTaskMain(AbstractCommandLineWithConfirmInterface):
         dryrun: bool = False,
         force: bool = False,
         should_delete_input_data: bool = False,
-    ):
+    ) -> None:
         self.service = service
         self.facade = AnnofabApiFacade(service)
         self.project_id = project_id
@@ -80,7 +80,7 @@ class DeleteTaskMain(AbstractCommandLineWithConfirmInterface):
 
         return deleted_count
 
-    def confirm_deleting_input_data(self, task_id, input_data_id: str, input_data_name: str) -> bool:
+    def confirm_deleting_input_data(self, task_id: str, input_data_id: str, input_data_name: str) -> bool:
         message_for_confirm = (
             f"task_id='{task_id}'のタスクから参照されている入力データと補助情報を削除しますか？  :: "
             f"input_data_id='{input_data_id}', "
@@ -256,7 +256,7 @@ class DeleteTask(AbstractCommandLineInterface):
     タスクを削除する
     """
 
-    def main(self):
+    def main(self) -> None:
         args = self.args
 
         if args.dryrun:
@@ -280,13 +280,13 @@ class DeleteTask(AbstractCommandLineInterface):
         main_obj.delete_task_list(task_id_list=task_id_list, task_query=task_query)
 
 
-def main(args):
+def main(args: argparse.Namespace) -> None:
     service = build_annofabapi_resource_and_login(args)
     facade = AnnofabApiFacade(service)
     DeleteTask(service, facade, args).main()
 
 
-def parse_args(parser: argparse.ArgumentParser):
+def parse_args(parser: argparse.ArgumentParser) -> None:
     argument_parser = ArgumentParser(parser)
 
     argument_parser.add_project_id()
@@ -303,7 +303,7 @@ def parse_args(parser: argparse.ArgumentParser):
     parser.set_defaults(subcommand_func=main)
 
 
-def add_parser(subparsers: Optional[argparse._SubParsersAction] = None):
+def add_parser(subparsers: Optional[argparse._SubParsersAction] = None) -> argparse.ArgumentParser:
     subcommand_name = "delete"
     subcommand_help = "タスクを削除します。"
     description = "タスクを削除します。ただし、作業中/完了状態のタスクは削除できません。デフォルトは、アノテーションが付与されているタスクは削除できません。"

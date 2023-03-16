@@ -68,7 +68,7 @@ def output_string(target: str, output: Optional[Union[str, Path]] = None) -> Non
             logger.info(f"{output} を出力しました。")
 
 
-def print_json(target: Any, is_pretty: bool = False, output: Optional[Union[str, Path]] = None) -> None:
+def print_json(target: Any, is_pretty: bool = False, output: Optional[Union[str, Path]] = None) -> None:  # noqa: ANN401
     """
     JSONを出力する。
 
@@ -103,13 +103,13 @@ def print_csv(
         logger.info(f"{output} を出力しました。")
 
 
-def print_id_list(id_list: List[Any], output: Optional[Union[str, Path]]):
+def print_id_list(id_list: List[Any], output: Optional[Union[str, Path]]) -> None:
     s = "\n".join(id_list)
     output_string(s, output)
 
 
 def print_according_to_format(
-    target: Any,
+    target: Any,  # noqa: ANN401
     arg_format: FormatArgument,
     output: Optional[Union[str, Path]] = None,
     csv_format: Optional[Dict[str, Any]] = None,

@@ -18,7 +18,7 @@ logger = logging.getLogger(__name__)
 
 
 class DeleteJobMain:
-    def __init__(self, service: annofabapi.Resource):
+    def __init__(self, service: annofabapi.Resource) -> None:
         self.service = service
         self.facade = AnnofabApiFacade(service)
 
@@ -41,7 +41,7 @@ class DeleteJobMain:
 
 
 class DeleteJob(AbstractCommandLineInterface):
-    def main(self):
+    def main(self) -> None:
         args = self.args
         project_id = args.project_id
         super().validate_project(project_id, project_member_roles=[ProjectMemberRole.OWNER])
@@ -53,13 +53,13 @@ class DeleteJob(AbstractCommandLineInterface):
         main_obj.delete_job_list(args.project_id, job_type=job_type, job_id_list=job_id_list)
 
 
-def main(args):
+def main(args: argparse.Namespace) -> None:
     service = build_annofabapi_resource_and_login(args)
     facade = AnnofabApiFacade(service)
     DeleteJob(service, facade, args).main()
 
 
-def parse_args(parser: argparse.ArgumentParser):
+def parse_args(parser: argparse.ArgumentParser) -> None:
     argument_parser = ArgumentParser(parser)
 
     job_choices = [e.value for e in ProjectJobType]
@@ -77,7 +77,7 @@ def parse_args(parser: argparse.ArgumentParser):
     parser.set_defaults(subcommand_func=main)
 
 
-def add_parser(subparsers: Optional[argparse._SubParsersAction] = None):
+def add_parser(subparsers: Optional[argparse._SubParsersAction] = None) -> argparse.ArgumentParser:
     subcommand_name = "delete"
     subcommand_help = "ジョブを削除する。"
     description = "ジョブを削除する。"

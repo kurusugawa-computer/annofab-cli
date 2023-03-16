@@ -33,7 +33,7 @@ def create_minimal_dataframe(project_list: List[Project]):
 
 
 class ChanegProjectStatusMain:
-    def __init__(self, service: annofabapi.Resource):
+    def __init__(self, service: annofabapi.Resource) -> None:
         self.service = service
         self.facade = AnnofabApiFacade(service)
 
@@ -155,7 +155,7 @@ class ChanegProjectStatusMain:
 
 
 class ChangeProjectStatus(AbstractCommandLineInterface):
-    def main(self):
+    def main(self) -> None:
         args = self.args
         project_id_list = annofabcli.common.cli.get_list_from_args(args.project_id)
         main_obj = ChanegProjectStatusMain(self.service)
@@ -164,13 +164,13 @@ class ChangeProjectStatus(AbstractCommandLineInterface):
         )
 
 
-def main(args):
+def main(args: argparse.Namespace) -> None:
     service = build_annofabapi_resource_and_login(args)
     facade = AnnofabApiFacade(service)
     ChangeProjectStatus(service, facade, args).main()
 
 
-def parse_args(parser: argparse.ArgumentParser):
+def parse_args(parser: argparse.ArgumentParser) -> None:
     parser.add_argument(
         "-p",
         "--project_id",
@@ -197,7 +197,7 @@ def parse_args(parser: argparse.ArgumentParser):
     parser.set_defaults(subcommand_func=main)
 
 
-def add_parser(subparsers: Optional[argparse._SubParsersAction] = None):
+def add_parser(subparsers: Optional[argparse._SubParsersAction] = None) -> argparse.ArgumentParser:
     subcommand_name = "change_status"
     subcommand_help = "プロジェクトのステータスを変更します。"
     description = "プロジェクトのステータスを変更します。"

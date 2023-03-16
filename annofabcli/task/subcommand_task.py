@@ -20,7 +20,7 @@ import annofabcli.task.reject_tasks
 import annofabcli.task.update_metadata_of_task
 
 
-def parse_args(parser: argparse.ArgumentParser):
+def parse_args(parser: argparse.ArgumentParser) -> None:
     subparsers = parser.add_subparsers(dest="subcommand_name")
 
     # サブコマンドの定義
@@ -41,7 +41,7 @@ def parse_args(parser: argparse.ArgumentParser):
     annofabcli.task.update_metadata_of_task.add_parser(subparsers)
 
 
-def add_parser(subparsers: Optional[argparse._SubParsersAction] = None):
+def add_parser(subparsers: Optional[argparse._SubParsersAction] = None) -> argparse.ArgumentParser:
     subcommand_name = "task"
     subcommand_help = "タスク関係のサブコマンド"
     description = "タスク関係のサブコマンド"

@@ -13,16 +13,13 @@ init:
 
 format:
 	poetry run black ${SOURCE_FILES} ${TEST_FILES}
-	poetry run ruff check ${SOURCE_FILES} ${TEST_FILES} --fix-only 
-	# isortはruffに置き換えられるはずだが、`F811`が修正されなかったので、ruffが以下のissueに対応されるまではisortも実行する
-	# https://github.com/charliermarsh/ruff/issues/3477
-	poetry run isort ${SOURCE_FILES} ${TEST_FILES}
+	poetry run ruff check ${SOURCE_FILES} ${TEST_FILES} --fix-only --exit-zero
 
 lint:
 	poetry run ruff ${SOURCE_FILES}
 	# テストコードはチェックを緩和する
-	# pygrep-hooks, flake8-datetimez, line-too-long
-	poetry run ruff check ${TEST_FILES} --ignore PGH,DTZ,E501
+	# pygrep-hooks, flake8-datetimez, line-too-long, flake8-annotations, unused-noqa
+	poetry run ruff check ${TEST_FILES} --ignore PGH,DTZ,E501,ANN,RUF100
 	poetry run mypy ${SOURCE_FILES} ${TEST_FILES}
 	# テストコードはチェックを緩和するためpylintは実行しない
 	poetry run pylint --jobs=0 ${SOURCE_FILES}

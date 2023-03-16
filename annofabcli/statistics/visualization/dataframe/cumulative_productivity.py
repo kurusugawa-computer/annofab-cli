@@ -155,20 +155,20 @@ class AbstractPhaseCumulativeProductivity(abc.ABC):
         raise NotImplementedError()
 
     @abc.abstractmethod
-    def plot_annotation_metrics(self, output_file: Path, target_user_id_list: Optional[list[str]] = None):
+    def plot_annotation_metrics(self, output_file: Path, target_user_id_list: Optional[list[str]] = None) -> None:
         raise NotImplementedError()
 
     @abc.abstractmethod
-    def plot_input_data_metrics(self, output_file: Path, target_user_id_list: Optional[list[str]] = None):
+    def plot_input_data_metrics(self, output_file: Path, target_user_id_list: Optional[list[str]] = None) -> None:
         raise NotImplementedError()
 
     @abc.abstractmethod
-    def plot_task_metrics(self, output_file: Path, target_user_id_list: Optional[list[str]] = None):
+    def plot_task_metrics(self, output_file: Path, target_user_id_list: Optional[list[str]] = None) -> None:
         raise NotImplementedError()
 
 
 class AnnotatorCumulativeProductivity(AbstractPhaseCumulativeProductivity):
-    def __init__(self, df: pandas.DataFrame):
+    def __init__(self, df: pandas.DataFrame) -> None:
         super().__init__(df, phase=TaskPhase.ANNOTATION)
 
     @classmethod
@@ -412,7 +412,7 @@ class AnnotatorCumulativeProductivity(AbstractPhaseCumulativeProductivity):
 
 
 class InspectorCumulativeProductivity(AbstractPhaseCumulativeProductivity):
-    def __init__(self, df: pandas.DataFrame):
+    def __init__(self, df: pandas.DataFrame) -> None:
         super().__init__(df, phase=TaskPhase.INSPECTION)
 
     @classmethod
@@ -611,7 +611,7 @@ class InspectorCumulativeProductivity(AbstractPhaseCumulativeProductivity):
 
 
 class AcceptorCumulativeProductivity(AbstractPhaseCumulativeProductivity):
-    def __init__(self, df: pandas.DataFrame):
+    def __init__(self, df: pandas.DataFrame) -> None:
         super().__init__(df, phase=TaskPhase.ACCEPTANCE)
 
     @classmethod

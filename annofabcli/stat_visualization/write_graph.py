@@ -36,7 +36,7 @@ class WritingGraph:
         self.user_id_list = user_id_list
         self.minimal_output = minimal_output
 
-    def write_line_graph(self, task: Task):
+    def write_line_graph(self, task: Task) -> None:
         df = task.df.copy()
 
         self.output_project_dir.write_cumulative_line_graph(
@@ -73,7 +73,7 @@ class WritingGraph:
                 acceptor_per_date_obj, phase=TaskPhase.ACCEPTANCE, user_id_list=self.user_id_list
             )
 
-    def main(self):
+    def main(self) -> None:
         try:
             # メンバのパフォーマンスを散布図で出力する
             self.output_project_dir.write_user_performance_scatter_plot(self.project_dir.read_user_performance())
@@ -109,7 +109,7 @@ class WritingGraph:
             logger.warning("'ユーザ_日付list-作業時間.csv'から生成できるグラフの出力に失敗しました。", exc_info=True)
 
 
-def main(args):
+def main(args: argparse.Namespace) -> None:
     user_id_list = get_list_from_args(args.user_id) if args.user_id is not None else None
     main_obj = WritingGraph(
         project_dir=ProjectDir(args.dir),
@@ -120,12 +120,12 @@ def main(args):
     main_obj.main()
 
 
-def parse_args(parser: argparse.ArgumentParser):
+def parse_args(parser: argparse.ArgumentParser) -> None:
     parser.add_argument(
         "--dir",
         type=Path,
         required=True,
-        help="``annofabcli statistics visualize`` コマンドの出力結果であるプロジェクトのディレクトリを指定してください。",  # noqa: E501
+        help="``annofabcli statistics visualize`` コマンドの出力結果であるプロジェクトのディレクトリを指定してください。",
     )
     parser.add_argument(
         "-u",
@@ -149,7 +149,7 @@ def parse_args(parser: argparse.ArgumentParser):
     parser.set_defaults(subcommand_func=main)
 
 
-def add_parser(subparsers: Optional[argparse._SubParsersAction] = None):
+def add_parser(subparsers: Optional[argparse._SubParsersAction] = None) -> argparse.ArgumentParser:
     subcommand_name = "write_graph"
     subcommand_help = "`annofabcli statistics visualize` コマンドの出力結果であるプロジェクトのディレクトリから、グラフを出力します。"
     parser = annofabcli.common.cli.add_parser(subparsers, subcommand_name, subcommand_help, description=subcommand_help)

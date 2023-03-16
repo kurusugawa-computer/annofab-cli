@@ -41,7 +41,7 @@ class PutProject(AbstractCommandLineInterface):
             f"title='{new_project['title']}', input_data_type='{new_project['input_data_type']}'"
         )
 
-    def main(self):
+    def main(self) -> None:
         args = self.args
         self.put_project(
             args.organization,
@@ -53,13 +53,13 @@ class PutProject(AbstractCommandLineInterface):
         )
 
 
-def main(args):
+def main(args: argparse.Namespace) -> None:
     service = build_annofabapi_resource_and_login(args)
     facade = AnnofabApiFacade(service)
     PutProject(service, facade, args).main()
 
 
-def parse_args(parser: argparse.ArgumentParser):
+def parse_args(parser: argparse.ArgumentParser) -> None:
     parser.add_argument("-org", "--organization", type=str, required=True, help="プロジェクトの所属先組織")
 
     parser.add_argument("--title", type=str, required=True, help="作成するプロジェクトのタイトル")
@@ -85,7 +85,7 @@ def parse_args(parser: argparse.ArgumentParser):
     parser.set_defaults(subcommand_func=main)
 
 
-def add_parser(subparsers: Optional[argparse._SubParsersAction] = None):
+def add_parser(subparsers: Optional[argparse._SubParsersAction] = None) -> argparse.ArgumentParser:
     subcommand_name = "put"
     subcommand_help = "プロジェクトを作成します。"
     epilog = "組織管理者、組織オーナを持つユーザで実行してください。"

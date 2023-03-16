@@ -17,18 +17,18 @@ logger = logging.getLogger(__name__)
 
 
 class GetMyAccount(AbstractCommandLineInterface):
-    def main(self):
+    def main(self) -> None:
         account, _ = self.service.api.get_my_account()
         self.print_according_to_format(account)
 
 
-def main(args):
+def main(args: argparse.Namespace) -> None:
     service = build_annofabapi_resource_and_login(args)
     facade = AnnofabApiFacade(service)
     GetMyAccount(service, facade, args).main()
 
 
-def parse_args(parser: argparse.ArgumentParser):
+def parse_args(parser: argparse.ArgumentParser) -> None:
     argument_parser = ArgumentParser(parser)
 
     argument_parser.add_format(
@@ -44,7 +44,7 @@ def parse_args(parser: argparse.ArgumentParser):
     parser.set_defaults(subcommand_func=main)
 
 
-def add_parser(subparsers: Optional[argparse._SubParsersAction] = None):
+def add_parser(subparsers: Optional[argparse._SubParsersAction] = None) -> argparse.ArgumentParser:
     subcommand_name = "get"
     subcommand_help = "自分のアカウント情報を出力します。"
 

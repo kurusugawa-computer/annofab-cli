@@ -10,7 +10,7 @@ import annofabcli.job.list_last_job
 import annofabcli.job.wait_job
 
 
-def parse_args(parser: argparse.ArgumentParser):
+def parse_args(parser: argparse.ArgumentParser) -> None:
     subparsers = parser.add_subparsers(dest="subcommand_name")
 
     # サブコマンドの定義
@@ -22,7 +22,7 @@ def parse_args(parser: argparse.ArgumentParser):
     annofabcli.job.wait_job.add_parser(subparsers)
 
 
-def add_parser(subparsers: Optional[argparse._SubParsersAction] = None):
+def add_parser(subparsers: Optional[argparse._SubParsersAction] = None) -> argparse.ArgumentParser:
     subcommand_name = "job"
     subcommand_help = "ジョブ関係のサブコマンド"
     description = "ジョブ関係のサブコマンド"

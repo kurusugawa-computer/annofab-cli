@@ -18,7 +18,7 @@ TaskHistoryDict = Dict[str, List[TaskHistory]]
 
 
 class ListTaskHistoryMain:
-    def __init__(self, service: annofabapi.Resource):
+    def __init__(self, service: annofabapi.Resource) -> None:
         self.service = service
         self.facade = AnnofabApiFacade(service)
 
@@ -49,7 +49,7 @@ class ListTaskHistoryMain:
 
         return task_history_dict
 
-    def get_all_task_id_list(self, project_id) -> List[str]:
+    def get_all_task_id_list(self, project_id: str) -> List[str]:
         all_task_list = self.service.wrapper.get_all_tasks(project_id)
         return [e["task_id"] for e in all_task_list]
 
@@ -82,7 +82,7 @@ class ListTaskHistory(AbstractCommandLineInterface):
         project_id: str,
         task_id_list: Optional[List[str]],
         arg_format: FormatArgument,
-    ):
+    ) -> None:
         """
         タスク一覧を出力する
 
@@ -106,7 +106,7 @@ class ListTaskHistory(AbstractCommandLineInterface):
         else:
             self.print_according_to_format(task_history_dict)
 
-    def main(self):
+    def main(self) -> None:
         args = self.args
 
         task_id_list = annofabcli.common.cli.get_list_from_args(args.task_id) if args.task_id is not None else None
@@ -118,13 +118,13 @@ class ListTaskHistory(AbstractCommandLineInterface):
         )
 
 
-def main(args):
+def main(args: argparse.Namespace) -> None:
     service = build_annofabapi_resource_and_login(args)
     facade = AnnofabApiFacade(service)
     ListTaskHistory(service, facade, args).main()
 
 
-def parse_args(parser: argparse.ArgumentParser):
+def parse_args(parser: argparse.ArgumentParser) -> None:
     argument_parser = ArgumentParser(parser)
 
     argument_parser.add_project_id()
@@ -146,7 +146,7 @@ def parse_args(parser: argparse.ArgumentParser):
     parser.set_defaults(subcommand_func=main)
 
 
-def add_parser(subparsers: Optional[argparse._SubParsersAction] = None):
+def add_parser(subparsers: Optional[argparse._SubParsersAction] = None) -> argparse.ArgumentParser:
     subcommand_name = "list"
     subcommand_help = "タスク履歴の一覧を出力します。"
     description = "タスク履歴の一覧を出力します。"

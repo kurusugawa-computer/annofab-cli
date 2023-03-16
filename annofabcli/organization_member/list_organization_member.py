@@ -40,7 +40,7 @@ class ListOrganizationMember(AbstractCommandLineInterface):
             organization_member["organization_name"] = organization_name
         return organization_member_list
 
-    def main(self):
+    def main(self) -> None:
         args = self.args
         organization_name_list = annofabcli.common.cli.get_list_from_args(args.organization)
 
@@ -62,13 +62,13 @@ class ListOrganizationMember(AbstractCommandLineInterface):
             self.print_according_to_format(organization_member_list)
 
 
-def main(args):
+def main(args: argparse.Namespace) -> None:
     service = build_annofabapi_resource_and_login(args)
     facade = AnnofabApiFacade(service)
     ListOrganizationMember(service, facade, args).main()
 
 
-def parse_args(parser: argparse.ArgumentParser):
+def parse_args(parser: argparse.ArgumentParser) -> None:
     argument_parser = ArgumentParser(parser)
 
     parser.add_argument(
@@ -90,7 +90,7 @@ def parse_args(parser: argparse.ArgumentParser):
     parser.set_defaults(subcommand_func=main)
 
 
-def add_parser(subparsers: Optional[argparse._SubParsersAction] = None):
+def add_parser(subparsers: Optional[argparse._SubParsersAction] = None) -> argparse.ArgumentParser:
     subcommand_name = "list"
     subcommand_help = "組織メンバ一覧を出力します。"
     description = "組織メンバ一覧を出力します。"

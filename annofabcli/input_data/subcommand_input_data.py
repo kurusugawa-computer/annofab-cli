@@ -13,7 +13,7 @@ import annofabcli.input_data.put_input_data_with_zip
 import annofabcli.input_data.update_metadata_of_input_data
 
 
-def parse_args(parser: argparse.ArgumentParser):
+def parse_args(parser: argparse.ArgumentParser) -> None:
     subparsers = parser.add_subparsers(dest="subcommand_name")
 
     # サブコマンドの定義
@@ -27,7 +27,7 @@ def parse_args(parser: argparse.ArgumentParser):
     annofabcli.input_data.update_metadata_of_input_data.add_parser(subparsers)
 
 
-def add_parser(subparsers: Optional[argparse._SubParsersAction] = None):
+def add_parser(subparsers: Optional[argparse._SubParsersAction] = None) -> argparse.ArgumentParser:
     subcommand_name = "input_data"
     subcommand_help = "入力データ関係のサブコマンド"
     description = "入力データ関係のサブコマンド"

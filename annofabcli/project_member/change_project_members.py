@@ -1,7 +1,7 @@
 import argparse
 import logging
 import sys
-from typing import Any, Dict, List, Optional
+from typing import Any, Collection, Dict, List, Optional
 
 import requests
 from annofabapi.models import ProjectMember, ProjectMemberRole, ProjectMemberStatus
@@ -46,7 +46,7 @@ class ChangeProjectMembers(AbstractCommandLineInterface):
 
         """
 
-        def get_value(key):
+        def get_value(key: str):
             if member_info is None:
                 return old_member[key]
 
@@ -71,7 +71,7 @@ class ChangeProjectMembers(AbstractCommandLineInterface):
     def change_project_members(
         self,
         project_id: str,
-        user_id_list,
+        user_id_list: Collection[str],
         member_role: Optional[ProjectMemberRole] = None,
         member_info: Optional[Dict[str, Any]] = None,
     ):
@@ -144,11 +144,11 @@ class ChangeProjectMembers(AbstractCommandLineInterface):
             return True
 
     @staticmethod
-    def validate_member_info(member_info: Dict[str, Any]):
+    def validate_member_info(member_info: Dict[str, Any]) -> bool:
         KEYS = ["sampling_inspection_rate", "sampling_acceptance_rate"]
         return any(k in member_info for k in KEYS)
 
-    def main(self):
+    def main(self) -> None:
         args = self.args
         project_id = args.project_id
         if args.all_user:
@@ -167,13 +167,13 @@ class ChangeProjectMembers(AbstractCommandLineInterface):
         )
 
 
-def main(args):
+def main(args: argparse.Namespace) -> None:
     service = build_annofabapi_resource_and_login(args)
     facade = AnnofabApiFacade(service)
     ChangeProjectMembers(service, facade, args).main()
 
 
-def parse_args(parser: argparse.ArgumentParser):
+def parse_args(parser: argparse.ArgumentParser) -> None:
     argument_parser = ArgumentParser(parser)
     role_choices = [e.value for e in ProjectMemberRole]
 
@@ -205,7 +205,7 @@ def parse_args(parser: argparse.ArgumentParser):
     parser.set_defaults(subcommand_func=main)
 
 
-def add_parser(subparsers: Optional[argparse._SubParsersAction] = None):
+def add_parser(subparsers: Optional[argparse._SubParsersAction] = None) -> argparse.ArgumentParser:
     subcommand_name = "change"
     subcommand_help = "プロジェクトメンバを変更します。"
     description = "複数のプロジェクトメンバに対して、メンバ情報を変更します。ただし、自分自身は変更できません。"

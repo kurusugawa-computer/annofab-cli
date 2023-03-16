@@ -48,7 +48,7 @@ class AbstractPhaseProductivityPerDate(abc.ABC):
         return True
 
     @staticmethod
-    def _plot(line_graph_list: list[LineGraph], output_file: Path):
+    def _plot(line_graph_list: list[LineGraph], output_file: Path) -> None:
         """
         折れ線グラフを、HTMLファイルに出力します。
         """
@@ -83,18 +83,18 @@ class AbstractPhaseProductivityPerDate(abc.ABC):
         raise NotImplementedError()
 
     @abc.abstractmethod
-    def plot_input_data_metrics(self, output_file: Path, target_user_id_list: Optional[list[str]] = None):
+    def plot_input_data_metrics(self, output_file: Path, target_user_id_list: Optional[list[str]] = None) -> None:
         raise NotImplementedError()
 
     @abc.abstractmethod
-    def plot_annotation_metrics(self, output_file: Path, target_user_id_list: Optional[list[str]] = None):
+    def plot_annotation_metrics(self, output_file: Path, target_user_id_list: Optional[list[str]] = None) -> None:
         raise NotImplementedError()
 
 
 class AnnotatorProductivityPerDate(AbstractPhaseProductivityPerDate):
     """教師付開始日ごとの教師付者の生産性に関する情報"""
 
-    def __init__(self, df: pandas.DataFrame):
+    def __init__(self, df: pandas.DataFrame) -> None:
         super().__init__(df, phase=TaskPhase.ANNOTATION)
 
     @classmethod
@@ -512,7 +512,7 @@ class AnnotatorProductivityPerDate(AbstractPhaseProductivityPerDate):
 class InspectorProductivityPerDate(AbstractPhaseProductivityPerDate):
     """検査開始日ごとの検査者の生産性に関する情報"""
 
-    def __init__(self, df: pandas.DataFrame):
+    def __init__(self, df: pandas.DataFrame) -> None:
         super().__init__(df, phase=TaskPhase.INSPECTION)
 
     @classmethod
@@ -859,7 +859,7 @@ class InspectorProductivityPerDate(AbstractPhaseProductivityPerDate):
 class AcceptorProductivityPerDate(AbstractPhaseProductivityPerDate):
     """受入開始日ごとの受入者の生産性に関する情報"""
 
-    def __init__(self, df: pandas.DataFrame):
+    def __init__(self, df: pandas.DataFrame) -> None:
         super().__init__(df, phase=TaskPhase.ACCEPTANCE)
 
     @classmethod

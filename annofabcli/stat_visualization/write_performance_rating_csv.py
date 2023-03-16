@@ -118,7 +118,7 @@ class CollectingPerformanceInfo:
 
         return ThresholdInfo(threshold_worktime=worktime, threshold_task_count=task_count)
 
-    def filter_df_with_threshold(self, df, phase: TaskPhase, threshold_info: ThresholdInfo):
+    def filter_df_with_threshold(self, df: pandas.DataFrame, phase: TaskPhase, threshold_info: ThresholdInfo):
         if threshold_info.threshold_worktime is not None:
             df = df[df[(self.worktime_type.value, phase.value)] > threshold_info.threshold_worktime]
 
@@ -298,7 +298,7 @@ class CollectingPerformanceInfo:
 def to_rank(series: pandas.Series) -> pandas.Series:
     quantile = list(series.quantile([0.25, 0.5, 0.75]))
 
-    def _to_point(value):
+    def _to_point(value: float):
         if numpy.isnan(value):
             return numpy.nan
         elif value < quantile[0]:
@@ -519,7 +519,7 @@ class WritePerformanceRatingCsv(AbstractCommandLineWithoutWebapiInterface):
         result.project_monitored_worktime.to_csv(output_dir / "プロジェクごとの毎月の計測作業時間.csv")
 
 
-def parse_args(parser: argparse.ArgumentParser):
+def parse_args(parser: argparse.ArgumentParser) -> None:
     parser.add_argument(
         "--dir",
         type=Path,
@@ -563,7 +563,7 @@ def parse_args(parser: argparse.ArgumentParser):
     THRESHOLD_SETTINGS_SAMPLE = {
         "dirname1": {"annotation": {"threshold_worktime": 20}},
         "dirname2": {"inspection_acceptance": {"threshold_task_count": 5}},
-    }  # noqa: E501
+    }
     parser.add_argument(
         "--threshold_settings",
         type=str,
@@ -575,11 +575,11 @@ def parse_args(parser: argparse.ArgumentParser):
     parser.set_defaults(subcommand_func=main)
 
 
-def main(args):
+def main(args: argparse.Namespace) -> None:
     WritePerformanceRatingCsv(args).main()
 
 
-def add_parser(subparsers: Optional[argparse._SubParsersAction] = None):
+def add_parser(subparsers: Optional[argparse._SubParsersAction] = None) -> argparse.ArgumentParser:
     subcommand_name = "write_performance_rating_csv"
     subcommand_help = "プロジェクトごとユーザごとにパフォーマンスを評価できる複数のCSVを出力します。"
     description = "プロジェクトごとユーザごとにパフォーマンスを評価できる複数のCSVを出力します。"

@@ -7,7 +7,7 @@ class TestChangeProjectMembers:
             ChangeProjectMembers.validate_member_info(
                 {"sampling_inspection_rate": 10, "sampling_acceptance_rate": 20, "foo": "bar"}
             )
-            is True  # noqa: E501
+            is True
         )
 
         assert ChangeProjectMembers.validate_member_info({"sampling_inspection_rate": 10}) is True

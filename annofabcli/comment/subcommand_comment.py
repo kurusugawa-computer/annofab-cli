@@ -13,7 +13,7 @@ import annofabcli.comment.put_onhold_comment_simply
 import annofabcli.common.cli
 
 
-def parse_args(parser: argparse.ArgumentParser):
+def parse_args(parser: argparse.ArgumentParser) -> None:
     subparsers = parser.add_subparsers(dest="subcommand_name")
 
     # サブコマンドの定義
@@ -27,7 +27,7 @@ def parse_args(parser: argparse.ArgumentParser):
     annofabcli.comment.put_onhold_comment_simply.add_parser(subparsers)
 
 
-def add_parser(subparsers: Optional[argparse._SubParsersAction] = None):
+def add_parser(subparsers: Optional[argparse._SubParsersAction] = None) -> argparse.ArgumentParser:
     subcommand_name = "comment"
     subcommand_help = "コメント関係のサブコマンド"
 

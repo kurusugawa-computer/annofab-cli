@@ -138,19 +138,19 @@ class CopyInstruction(AbstractCommandLineInterface):
         self.copy_instruction(src_project_id=args.src_project_id, dest_project_id=args.dest_project_id)
 
 
-def main(args):
+def main(args: argparse.Namespace) -> None:
     service = build_annofabapi_resource_and_login(args)
     facade = AnnofabApiFacade(service)
     CopyInstruction(service, facade, args).main()
 
 
-def parse_args(parser: argparse.ArgumentParser):
+def parse_args(parser: argparse.ArgumentParser) -> None:
     parser.add_argument("src_project_id", type=str, help="コピー元のプロジェクトのproject_id")
     parser.add_argument("dest_project_id", type=str, help="コピー先のプロジェクトのproject_id")
     parser.set_defaults(subcommand_func=main)
 
 
-def add_parser(subparsers: Optional[argparse._SubParsersAction] = None):
+def add_parser(subparsers: Optional[argparse._SubParsersAction] = None) -> argparse.ArgumentParser:
     subcommand_name = "copy"
     subcommand_help = "作業ガイドをコピーします。"
     description = "作業ガイドを別プロジェクトにコピーします。"

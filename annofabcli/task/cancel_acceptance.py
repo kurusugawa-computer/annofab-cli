@@ -37,7 +37,7 @@ class User:
 
 
 class CancelAcceptanceMain(AbstractCommandLineWithConfirmInterface):
-    def __init__(self, service: annofabapi.Resource, project_id: str, all_yes: bool = False):
+    def __init__(self, service: annofabapi.Resource, project_id: str, all_yes: bool = False) -> None:
         self.service = service
         self.project_id = project_id
         self.facade = AnnofabApiFacade(service)
@@ -109,7 +109,7 @@ class CancelAcceptanceMain(AbstractCommandLineWithConfirmInterface):
                 f"タスクの担当者は {actual_acceptor.username}({actual_acceptor.user_id}) です。"
                 if actual_acceptor is not None
                 else "タスクの担当者は未割り当てです。"
-            )  # noqa: E501
+            )
 
             operator_account_id = actual_acceptor.account_id if actual_acceptor is not None else None
             if not dryrun:
@@ -218,7 +218,7 @@ class CancelAcceptance(AbstractCommandLineInterface):
 
         return True
 
-    def main(self):
+    def main(self) -> None:
         args = self.args
         if not self.validate(args):
             sys.exit(COMMAND_LINE_ERROR_STATUS_CODE)
@@ -264,13 +264,13 @@ class CancelAcceptance(AbstractCommandLineInterface):
         )
 
 
-def main(args: argparse.Namespace):
+def main(args: argparse.Namespace) -> None:
     service = build_annofabapi_resource_and_login(args)
     facade = AnnofabApiFacade(service)
     CancelAcceptance(service, facade, args).main()
 
 
-def parse_args(parser: argparse.ArgumentParser):
+def parse_args(parser: argparse.ArgumentParser) -> None:
     argument_parser = ArgumentParser(parser)
 
     parser.add_argument("-p", "--project_id", type=str, required=True, help="対象のプロジェクトのproject_idを指定します。")
@@ -308,7 +308,7 @@ def parse_args(parser: argparse.ArgumentParser):
     parser.set_defaults(subcommand_func=main)
 
 
-def add_parser(subparsers: Optional[argparse._SubParsersAction] = None):
+def add_parser(subparsers: Optional[argparse._SubParsersAction] = None) -> argparse.ArgumentParser:
     subcommand_name = "cancel_acceptance"
     subcommand_help = "受入が完了したタスクに対して、受入を取り消します。"
     description = "受入が完了したタスクに対して、受入を取り消します。"

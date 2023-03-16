@@ -8,7 +8,7 @@ import annofabcli.stat_visualization.write_performance_rating_csv
 from annofabcli.stat_visualization import summarise_whole_performance_csv
 
 
-def parse_args(parser: argparse.ArgumentParser):
+def parse_args(parser: argparse.ArgumentParser) -> None:
     subparsers = parser.add_subparsers(dest="subcommand_name")
 
     # サブコマンドの定義
@@ -19,7 +19,7 @@ def parse_args(parser: argparse.ArgumentParser):
     annofabcli.stat_visualization.write_performance_rating_csv.add_parser(subparsers)
 
 
-def add_parser(subparsers: Optional[argparse._SubParsersAction] = None):
+def add_parser(subparsers: Optional[argparse._SubParsersAction] = None) -> argparse.ArgumentParser:
     subcommand_name = "stat_visualization"
     subcommand_help = "`annofabcli statistics visualization` コマンドの出力結果を加工するサブコマンド（アルファ版）"
     description = "`annofabcli statistics visualization` コマンドの出力結果を加工するサブコマンド（アルファ版）"

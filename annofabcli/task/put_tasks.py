@@ -56,7 +56,7 @@ def get_task_relation_dict(csv_file: Path) -> TaskInputRelation:
     return result
 
 
-def create_task_relation_csv(task_relation_dict: TaskInputRelation, csv_file: Path):
+def create_task_relation_csv(task_relation_dict: TaskInputRelation, csv_file: Path) -> None:
     """task_idとinput_data_idの関係を持つdictから、``initiate_tasks_generation`` APIに渡すCSVを生成します。
 
 
@@ -87,7 +87,7 @@ class PuttingTaskMain:
         *,
         parallelism: Optional[int],
         should_wait: bool = False,
-    ):
+    ) -> None:
         self.service = service
         self.facade = AnnofabApiFacade(service)
         self.project_id = project_id
@@ -210,7 +210,7 @@ class PuttingTaskMain:
 
 
 class PutTask(AbstractCommandLineInterface):
-    def main(self):
+    def main(self) -> None:
         args = self.args
         project_id = args.project_id
         super().validate_project(project_id, [ProjectMemberRole.OWNER])
@@ -234,13 +234,13 @@ class PutTask(AbstractCommandLineInterface):
             main_obj.generate_task(api_with_creating_task, task_relation_dict)
 
 
-def main(args):
+def main(args: argparse.Namespace) -> None:
     service = build_annofabapi_resource_and_login(args)
     facade = AnnofabApiFacade(service)
     PutTask(service, facade, args).main()
 
 
-def parse_args(parser: argparse.ArgumentParser):
+def parse_args(parser: argparse.ArgumentParser) -> None:
     argument_parser = ArgumentParser(parser)
 
     argument_parser.add_project_id()
@@ -293,7 +293,7 @@ def parse_args(parser: argparse.ArgumentParser):
     parser.set_defaults(subcommand_func=main)
 
 
-def add_parser(subparsers: Optional[argparse._SubParsersAction] = None):
+def add_parser(subparsers: Optional[argparse._SubParsersAction] = None) -> argparse.ArgumentParser:
     subcommand_name = "put"
     subcommand_help = "タスクを作成します。"
     description = "タスクを作成します。"

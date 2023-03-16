@@ -110,7 +110,7 @@ class ListLastJob(AbstractCommandLineInterface):
         )
         return [e["project_id"] for e in project_list]
 
-    def main(self):
+    def main(self) -> None:
         args = self.args
         job_type = ProjectJobType(args.job_type)
 
@@ -127,13 +127,13 @@ class ListLastJob(AbstractCommandLineInterface):
         self.print_job_list(project_id_list, job_type=job_type, add_details=args.add_details)
 
 
-def main(args):
+def main(args: argparse.Namespace) -> None:
     service = build_annofabapi_resource_and_login(args)
     facade = AnnofabApiFacade(service)
     ListLastJob(service, facade, args).main()
 
 
-def parse_args(parser: argparse.ArgumentParser):
+def parse_args(parser: argparse.ArgumentParser) -> None:
     argument_parser = ArgumentParser(parser)
 
     job_choices = [e.value for e in ProjectJobType]
@@ -171,7 +171,7 @@ def parse_args(parser: argparse.ArgumentParser):
     parser.set_defaults(subcommand_func=main)
 
 
-def add_parser(subparsers: Optional[argparse._SubParsersAction] = None):
+def add_parser(subparsers: Optional[argparse._SubParsersAction] = None) -> argparse.ArgumentParser:
     subcommand_name = "list_last"
     subcommand_help = "複数のプロジェクトに対して、最新のジョブを出力します。"
     description = "複数のプロジェクトに対して、最新のジョブを出力します。"

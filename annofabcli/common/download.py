@@ -31,11 +31,11 @@ def _get_annofab_error_message(http_error: requests.HTTPError) -> Optional[str]:
 
 
 class DownloadingFile:
-    def __init__(self, service: annofabapi.Resource):
+    def __init__(self, service: annofabapi.Resource) -> None:
         self.service = service
 
     @staticmethod
-    def get_max_wait_minutes(wait_options: WaitOptions):
+    def get_max_wait_minutes(wait_options: WaitOptions) -> float:
         return wait_options.max_tries * wait_options.interval / 60
 
     def _wait_for_completion(
@@ -232,7 +232,7 @@ class DownloadingFile:
             if e.response.status_code == requests.codes.not_found:
                 raise DownloadingFileNotFoundError(
                     f"project_id='{project_id}'のプロジェクトに、タスク履歴全件ファイルが存在しないため、ダウンロードできませんでした。"
-                ) from e  # noqa: E501
+                ) from e
             raise e
 
     def download_task_history_event_json(self, project_id: str, dest_path: str):
@@ -254,7 +254,7 @@ class DownloadingFile:
             if e.response.status_code == requests.codes.not_found:
                 raise DownloadingFileNotFoundError(
                     f"project_id='{project_id}'のプロジェクトに、タスク履歴イベント全件ファイルが存在しないため、ダウンロードできませんでした。"
-                ) from e  # noqa: E501
+                ) from e
             raise e
 
     async def download_task_history_event_json_with_async(self, project_id: str, dest_path: str):
@@ -293,7 +293,7 @@ class DownloadingFile:
             if e.response.status_code == requests.codes.not_found:
                 raise DownloadingFileNotFoundError(
                     f"project_id='{project_id}'のプロジェクトに、検査コメント全件ファイルが存在しないため、ダウンロードできませんでした。"
-                ) from e  # noqa: E501
+                ) from e
             raise e
 
     async def download_comment_json_with_async(self, project_id: str, dest_path: str):
@@ -320,5 +320,5 @@ class DownloadingFile:
             if e.response.status_code == requests.codes.not_found:
                 raise DownloadingFileNotFoundError(
                     f"project_id='{project_id}'のプロジェクトに、コメント全件ファイルが存在しないため、ダウンロードできませんでした。"
-                ) from e  # noqa: E501
+                ) from e
             raise e

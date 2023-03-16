@@ -8,7 +8,7 @@ import annofabcli.supplementary.list_supplementary_data
 import annofabcli.supplementary.put_supplementary_data
 
 
-def parse_args(parser: argparse.ArgumentParser):
+def parse_args(parser: argparse.ArgumentParser) -> None:
     subparsers = parser.add_subparsers(dest="subcommand_name")
 
     # サブコマンドの定義
@@ -17,7 +17,7 @@ def parse_args(parser: argparse.ArgumentParser):
     annofabcli.supplementary.put_supplementary_data.add_parser(subparsers)
 
 
-def add_parser(subparsers: Optional[argparse._SubParsersAction] = None):
+def add_parser(subparsers: Optional[argparse._SubParsersAction] = None) -> argparse.ArgumentParser:
     subcommand_name = "supplementary"
     subcommand_help = "補助情報関係のサブコマンド"
     description = "補助情報関係のサブコマンド"

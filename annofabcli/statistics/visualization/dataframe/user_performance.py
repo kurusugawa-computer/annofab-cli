@@ -8,7 +8,7 @@ import copy
 import logging
 from enum import Enum
 from pathlib import Path
-from typing import Any, Optional
+from typing import Optional, Union
 
 import bokeh
 import bokeh.layouts
@@ -50,7 +50,7 @@ class UserPerformance:
     PLOT_WIDTH = 1200
     PLOT_HEIGHT = 800
 
-    def __init__(self, df: pandas.DataFrame):
+    def __init__(self, df: pandas.DataFrame) -> None:
         self.phase_list = self.get_phase_list(df.columns)
         self.df = df
 
@@ -64,7 +64,7 @@ class UserPerformance:
         return len(self.df) == 0
 
     @staticmethod
-    def _add_ratio_column_for_productivity_per_user(df: pandas.DataFrame, phase_list: list[str]):
+    def _add_ratio_column_for_productivity_per_user(df: pandas.DataFrame, phase_list: list[str]) -> None:
         """
         ユーザーの生産性に関する列を、DataFrameに追加します。
         """
@@ -186,7 +186,7 @@ class UserPerformance:
 
         """
 
-        def get_phase_list(columns) -> list[str]:
+        def get_phase_list(columns: list[str]) -> list[str]:
             phase_list = []
 
             for phase in TaskPhase:
@@ -301,7 +301,13 @@ class UserPerformance:
 
     @staticmethod
     def merge(obj1: UserPerformance, obj2: UserPerformance) -> UserPerformance:
-        def max_last_working_date(date1, date2):
+        def max_last_working_date(date1: Union[float, str], date2: Union[float, str]) -> Union[float, str]:
+            """
+            最新の作業日の新しい方を返す。
+
+            Returns:
+                date1, date2が両方ともnumpy.nanならば、numpy.nanを返す
+            """
             if not isinstance(date1, str) and numpy.isnan(date1):
                 date1 = ""
             if not isinstance(date2, str) and numpy.isnan(date2):
@@ -414,7 +420,7 @@ class UserPerformance:
         print_csv(self.df[columns], str(output_file))
 
     @staticmethod
-    def _plot_average_line(fig: figure, value: float, dimension: str):
+    def _plot_average_line(fig: figure, value: float, dimension: str) -> None:
         span_average_line = Span(
             location=value,
             dimension=dimension,
@@ -424,7 +430,7 @@ class UserPerformance:
         fig.add_layout(span_average_line)
 
     @staticmethod
-    def _plot_quartile_line(fig: figure, quartile: tuple[float, float, float], dimension: str):
+    def _plot_quartile_line(fig: figure, quartile: tuple[float, float, float], dimension: str) -> None:
         """
 
         Args:
@@ -443,7 +449,9 @@ class UserPerformance:
             fig.add_layout(span_average_line)
 
     @staticmethod
-    def _get_average_value(df: pandas.DataFrame, numerator_column: Any, denominator_column: Any) -> Optional[float]:
+    def _get_average_value(
+        df: pandas.DataFrame, numerator_column: tuple[str, str], denominator_column: tuple[str, str]
+    ) -> Optional[float]:
         numerator = df[numerator_column].sum()
         denominator = df[denominator_column].sum()
         if denominator > 0:
@@ -452,7 +460,7 @@ class UserPerformance:
             return None
 
     @staticmethod
-    def _get_quartile_value(df: pandas.DataFrame, column: Any) -> Optional[tuple[float, float, float]]:
+    def _get_quartile_value(df: pandas.DataFrame, column: tuple[str, str]) -> Optional[tuple[float, float, float]]:
         tmp = df[column].describe()
         if tmp["count"] > 3:
             return (tmp["25%"], tmp["50%"], tmp["75%"])
@@ -484,7 +492,7 @@ class UserPerformance:
             fig.add_layout(legend, "left")
 
     @staticmethod
-    def _add_ratio_key_for_whole_productivity(series: pandas.Series, phase_list: list[str]):
+    def _add_ratio_key_for_whole_productivity(series: pandas.Series, phase_list: list[str]) -> None:
         """
         プロジェクト全体の生産性に関するkeyを、pandas.Seriesに追加します。
         """
@@ -668,19 +676,19 @@ class UserPerformance:
         div_element = self._create_div_element()
         write_bokeh_graph(bokeh.layouts.column([div_element, *figure_list]), output_file)
 
-    def plot_productivity_from_monitored_worktime(self, output_file: Path):
+    def plot_productivity_from_monitored_worktime(self, output_file: Path) -> None:
         """
         Annofab計測時間とAnnofab計測時間を元に算出した生産性を、メンバごとにプロットする
         """
         self._plot_productivity(output_file, worktime_type=WorktimeType.MONITORED)
 
-    def plot_productivity_from_actual_worktime(self, output_file: Path):
+    def plot_productivity_from_actual_worktime(self, output_file: Path) -> None:
         """
         実績作業時間と実績作業時間を元に算出した生産性を、メンバごとにプロットする
         """
         self._plot_productivity(output_file, worktime_type=WorktimeType.ACTUAL)
 
-    def plot_quality(self, output_file: Path):
+    def plot_quality(self, output_file: Path) -> None:
         """
         メンバごとに品質を散布図でプロットする
 
@@ -826,7 +834,7 @@ class UserPerformance:
                 y_axis_label=y_axis_label,
             )
 
-        def plot_average_and_quartile_line():
+        def plot_average_and_quartile_line() -> None:
             x_average_hour = self._get_average_value(
                 df,
                 numerator_column=(f"{worktime_type.value}_worktime_hour", phase),
@@ -968,7 +976,7 @@ class WholePerformance:
         series: 全体の生産性と品質が格納されたpandas.Series
     """
 
-    def __init__(self, series: pandas.Series):
+    def __init__(self, series: pandas.Series) -> None:
         self.series = series
 
     def _validate_df_for_output(self, output_file: Path) -> bool:

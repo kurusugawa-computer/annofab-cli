@@ -27,7 +27,7 @@ class PuttingTaskByCountMain:
         self,
         service: annofabapi.Resource,
         project_id: str,
-    ):
+    ) -> None:
         self.service = service
         self.project_id = project_id
 
@@ -94,7 +94,7 @@ class PuttingTaskByCountMain:
 
 
 class PutTaskByCount(AbstractCommandLineInterface):
-    def main(self):
+    def main(self) -> None:
         args = self.args
         project_id = args.project_id
         super().validate_project(project_id, [ProjectMemberRole.OWNER])
@@ -113,13 +113,13 @@ class PutTaskByCount(AbstractCommandLineInterface):
         )
 
 
-def main(args):
+def main(args: argparse.Namespace) -> None:
     service = build_annofabapi_resource_and_login(args)
     facade = AnnofabApiFacade(service)
     PutTaskByCount(service, facade, args).main()
 
 
-def parse_args(parser: argparse.ArgumentParser):
+def parse_args(parser: argparse.ArgumentParser) -> None:
     argument_parser = ArgumentParser(parser)
 
     argument_parser.add_project_id()
@@ -145,7 +145,7 @@ def parse_args(parser: argparse.ArgumentParser):
     parser.set_defaults(subcommand_func=main)
 
 
-def add_parser(subparsers: Optional[argparse._SubParsersAction] = None):
+def add_parser(subparsers: Optional[argparse._SubParsersAction] = None) -> argparse.ArgumentParser:
     subcommand_name = "put_by_count"
     subcommand_help = "タスクに割り当てる入力データの個数を指定して、タスクを作成します。"
     epilog = "オーナロールを持つユーザで実行してください。"

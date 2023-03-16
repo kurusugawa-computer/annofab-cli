@@ -36,7 +36,9 @@ class ListJob(AbstractCommandLineInterface):
         job_list = self.service.wrapper.get_all_project_job(project_id, query_params=query_params)
         return job_list
 
-    def print_job_list(self, project_id: str, job_type: ProjectJobType, job_query: Optional[Dict[str, Any]] = None):
+    def print_job_list(
+        self, project_id: str, job_type: ProjectJobType, job_query: Optional[Dict[str, Any]] = None
+    ) -> None:
         """
         ジョブ一覧を出力する
 
@@ -53,19 +55,19 @@ class ListJob(AbstractCommandLineInterface):
         logger.info(f"ジョブ一覧の件数: {len(job_list)}")
         self.print_according_to_format(job_list)
 
-    def main(self):
+    def main(self) -> None:
         args = self.args
         job_type = ProjectJobType(args.job_type)
         self.print_job_list(args.project_id, job_type=job_type, job_query=None)
 
 
-def main(args):
+def main(args: argparse.Namespace) -> None:
     service = build_annofabapi_resource_and_login(args)
     facade = AnnofabApiFacade(service)
     ListJob(service, facade, args).main()
 
 
-def parse_args(parser: argparse.ArgumentParser):
+def parse_args(parser: argparse.ArgumentParser) -> None:
     argument_parser = ArgumentParser(parser)
 
     job_choices = [e.value for e in ProjectJobType]
@@ -83,7 +85,7 @@ def parse_args(parser: argparse.ArgumentParser):
     parser.set_defaults(subcommand_func=main)
 
 
-def add_parser(subparsers: Optional[argparse._SubParsersAction] = None):
+def add_parser(subparsers: Optional[argparse._SubParsersAction] = None) -> argparse.ArgumentParser:
     subcommand_name = "list"
     subcommand_help = "ジョブ一覧を出力します。"
     description = "ジョブ一覧を出力します。"

@@ -33,7 +33,7 @@ class GroupBy(Enum):
 class ListAnnotationCount(AbstractCommandLineInterface):
     COMMON_MESSAGE = "annofabcli annotation list_count: error:"
 
-    def __init__(self, service: annofabapi.Resource, facade: AnnofabApiFacade, args: argparse.Namespace):
+    def __init__(self, service: annofabapi.Resource, facade: AnnofabApiFacade, args: argparse.Namespace) -> None:
         super().__init__(service, facade, args)
         self.visualize = AddProps(self.service, args.project_id)
         self.list_annotation_main_obj = ListAnnotationMain(service, project_id=args.project_id)
@@ -53,7 +53,7 @@ class ListAnnotationCount(AbstractCommandLineInterface):
         else:
             return pandas.DataFrame()
 
-    def main(self):
+    def main(self) -> None:
         args = self.args
         project_id = args.project_id
 
@@ -91,13 +91,13 @@ class ListAnnotationCount(AbstractCommandLineInterface):
             return
 
 
-def main(args):
+def main(args: argparse.Namespace) -> None:
     service = build_annofabapi_resource_and_login(args)
     facade = AnnofabApiFacade(service)
     ListAnnotationCount(service, facade, args).main()
 
 
-def parse_args(parser: argparse.ArgumentParser):
+def parse_args(parser: argparse.ArgumentParser) -> None:
     argument_parser = ArgumentParser(parser)
 
     argument_parser.add_project_id()
@@ -139,7 +139,7 @@ def parse_args(parser: argparse.ArgumentParser):
     parser.set_defaults(subcommand_func=main)
 
 
-def add_parser(subparsers: Optional[argparse._SubParsersAction] = None):
+def add_parser(subparsers: Optional[argparse._SubParsersAction] = None) -> argparse.ArgumentParser:
     subcommand_name = "list_count"
     subcommand_help = "task_idまたはinput_data_idで集約したアノテーションの個数を出力します。"
     description = "task_idまたはinput_data_idで集約したアノテーションの個数を出力します。"

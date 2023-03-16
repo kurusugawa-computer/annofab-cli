@@ -121,7 +121,7 @@ class SummarizeTaskCountByUser(AbstractCommandLineInterface):
             csv_format=self.csv_format,
         )
 
-    def main(self):
+    def main(self) -> None:
         args = self.args
         project_id = args.project_id
         super().validate_project(project_id, [ProjectMemberRole.OWNER, ProjectMemberRole.TRAINING_DATA_USER])
@@ -148,7 +148,7 @@ class SummarizeTaskCountByUser(AbstractCommandLineInterface):
             logger.error("出力対象データが0件のため、出力しません。")
 
 
-def parse_args(parser: argparse.ArgumentParser):
+def parse_args(parser: argparse.ArgumentParser) -> None:
     argument_parser = ArgumentParser(parser)
 
     argument_parser.add_project_id()
@@ -179,13 +179,13 @@ def parse_args(parser: argparse.ArgumentParser):
     parser.set_defaults(subcommand_func=main)
 
 
-def main(args):
+def main(args: argparse.Namespace) -> None:
     service = build_annofabapi_resource_and_login(args)
     facade = AnnofabApiFacade(service)
     SummarizeTaskCountByUser(service, facade, args).main()
 
 
-def add_parser(subparsers: Optional[argparse._SubParsersAction] = None):
+def add_parser(subparsers: Optional[argparse._SubParsersAction] = None) -> argparse.ArgumentParser:
     subcommand_name = "summarize_task_count_by_user"
     subcommand_help = "ユーザごとに、担当しているタスク数を出力します。"
     description = "ユーザごとに、担当しているタスク数をCSV形式で出力します。"

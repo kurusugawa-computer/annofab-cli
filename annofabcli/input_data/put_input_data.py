@@ -115,7 +115,7 @@ class SubPutInputData:
         all_yes:
     """
 
-    def __init__(self, service: annofabapi.Resource, facade: AnnofabApiFacade, all_yes: bool = False):
+    def __init__(self, service: annofabapi.Resource, facade: AnnofabApiFacade, all_yes: bool = False) -> None:
         self.service = service
         self.facade = facade
         self.all_yes = all_yes
@@ -287,7 +287,7 @@ class PutInputData(AbstractCommandLineInterface):
 
     @staticmethod
     def get_input_data_list_from_df(df: pandas.DataFrame) -> List[CsvInputData]:
-        def create_input_data(e):
+        def create_input_data(e: Any):  # noqa: ANN401
             input_data_id = e.input_data_id if not pandas.isna(e.input_data_id) else None
             sign_required: Optional[bool] = e.sign_required if pandas.notna(e.sign_required) else None
             return CsvInputData(
@@ -341,7 +341,7 @@ class PutInputData(AbstractCommandLineInterface):
 
         return True
 
-    def main(self):
+    def main(self) -> None:
         args = self.args
         if not self.validate(args):
             sys.exit(COMMAND_LINE_ERROR_STATUS_CODE)
@@ -378,13 +378,13 @@ class PutInputData(AbstractCommandLineInterface):
             print("引数が不正です。", file=sys.stderr)
 
 
-def main(args):
+def main(args: argparse.Namespace) -> None:
     service = build_annofabapi_resource_and_login(args)
     facade = AnnofabApiFacade(service)
     PutInputData(service, facade, args).main()
 
 
-def parse_args(parser: argparse.ArgumentParser):
+def parse_args(parser: argparse.ArgumentParser) -> None:
     argument_parser = ArgumentParser(parser)
 
     argument_parser.add_project_id()
@@ -444,7 +444,7 @@ def parse_args(parser: argparse.ArgumentParser):
     parser.set_defaults(subcommand_func=main)
 
 
-def add_parser(subparsers: Optional[argparse._SubParsersAction] = None):
+def add_parser(subparsers: Optional[argparse._SubParsersAction] = None) -> argparse.ArgumentParser:
     subcommand_name = "put"
     subcommand_help = "入力データを登録します。"
     description = "CSVに記載された情報から、入力データを登録します。"

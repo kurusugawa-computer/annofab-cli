@@ -33,7 +33,7 @@ class UpdateMetadataOfTaskMain(AbstractCommandLineWithConfirmInterface):
         is_overwrite_metadata: bool,
         parallelism: Optional[int] = None,
         all_yes: bool = False,
-    ):
+    ) -> None:
         self.service = service
         self.is_overwrite_metadata = is_overwrite_metadata
         self.parallelism = parallelism
@@ -190,7 +190,7 @@ class UpdateMetadataOfTask(AbstractCommandLineInterface):
 
         return True
 
-    def main(self):
+    def main(self) -> None:
         args = self.args
 
         if not self.validate(args):
@@ -205,13 +205,13 @@ class UpdateMetadataOfTask(AbstractCommandLineInterface):
         main_obj.update_metadata_of_task(args.project_id, task_ids=task_id_list, metadata=metadata)
 
 
-def main(args):
+def main(args: argparse.Namespace) -> None:
     service = build_annofabapi_resource_and_login(args)
     facade = AnnofabApiFacade(service)
     UpdateMetadataOfTask(service, facade, args).main()
 
 
-def parse_args(parser: argparse.ArgumentParser):
+def parse_args(parser: argparse.ArgumentParser) -> None:
     argument_parser = ArgumentParser(parser)
     argument_parser.add_project_id()
     argument_parser.add_task_id(required=True)
@@ -237,7 +237,7 @@ def parse_args(parser: argparse.ArgumentParser):
     parser.set_defaults(subcommand_func=main)
 
 
-def add_parser(subparsers: Optional[argparse._SubParsersAction] = None):
+def add_parser(subparsers: Optional[argparse._SubParsersAction] = None) -> argparse.ArgumentParser:
     subcommand_name = "update_metadata"
     subcommand_help = "タスクのメタデータを更新します。"
     description = "タスクのメタデータを上書きして更新します。"

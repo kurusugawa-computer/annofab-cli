@@ -1,3 +1,5 @@
+from __future__ import annotations
+
 import logging
 from dataclasses import dataclass
 from typing import Any, Callable, Dict, List, Optional, Tuple
@@ -230,7 +232,7 @@ def convert_annotation_specs_labels_v2_to_v1(
             additionals_v2, pred=lambda e: e["additional_data_definition_id"] == additional_data_definition_id
         )
 
-    def to_label_v1(label_v2) -> Dict[str, Any]:
+    def to_label_v1(label_v2: dict[str, Any]) -> Dict[str, Any]:
         additional_data_definition_id_list = label_v2["additional_data_definitions"]
         new_additional_data_definitions = []
         for additional_data_definition_id in additional_data_definition_id_list:
@@ -259,7 +261,7 @@ class AnnofabApiFacade:
     _project_members_dict: Dict[str, List[ProjectMember]] = {}
     """プロジェクトメンバ一覧の情報。key:project_id, value:プロジェクトメンバ一覧"""
 
-    def __init__(self, service: annofabapi.Resource):
+    def __init__(self, service: annofabapi.Resource) -> None:
         self.service = service
 
     @staticmethod
@@ -514,7 +516,7 @@ class AnnofabApiFacade:
 
     def validate_project(
         self,
-        project_id,
+        project_id: str,
         project_member_roles: Optional[List[ProjectMemberRole]] = None,
         organization_member_roles: Optional[List[OrganizationMemberRole]] = None,
     ):

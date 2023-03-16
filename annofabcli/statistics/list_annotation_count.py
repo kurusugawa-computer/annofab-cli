@@ -14,7 +14,7 @@ from dataclasses import dataclass, field
 from enum import Enum
 from functools import partial
 from pathlib import Path
-from typing import Any, Collection, Counter, Iterator, Optional, Tuple
+from typing import Any, Collection, Counter, Iterator, Optional, Tuple, Union
 
 import annofabapi
 import pandas
@@ -176,7 +176,7 @@ class ListAnnotationCounterByInputData:
         target_attribute_names: Optional[Collection[AttributeNameKey]] = None,
         non_target_attribute_names: Optional[Collection[AttributeNameKey]] = None,
         frame_no_map: Optional[dict[tuple[str, str], int]] = None,
-    ):
+    ) -> None:
         self.target_labels = set(target_labels) if target_labels is not None else None
         self.target_attribute_names = set(target_attribute_names) if target_attribute_names is not None else None
         self.non_target_labels = set(non_target_labels) if non_target_labels is not None else None
@@ -196,7 +196,7 @@ class ListAnnotationCounterByInputData:
             simple_annotation: JSONファイルの内容
         """
 
-        def convert_attribute_value_to_key(value: Any) -> str:
+        def convert_attribute_value_to_key(value: Union[bool, str, int, float]) -> str:
             if isinstance(value, bool):
                 # bool値をCSVの列名やJSONのキーとして扱う場合、`True/False`だとPythonに依存したように見えてしまうので（本当？）、`true/false`に変換する
                 if value:
@@ -316,7 +316,7 @@ class ListAnnotationCounterByTask:
         non_target_labels: Optional[Collection[str]] = None,
         target_attribute_names: Optional[Collection[AttributeNameKey]] = None,
         non_target_attribute_names: Optional[Collection[AttributeNameKey]] = None,
-    ):
+    ) -> None:
         self.counter_by_input_data = ListAnnotationCounterByInputData(
             target_labels=target_labels,
             non_target_labels=non_target_labels,
@@ -782,7 +782,7 @@ class AnnotationSpecs:
 
 
 class ListAnnotationCountMain:
-    def __init__(self, service: annofabapi.Resource):
+    def __init__(self, service: annofabapi.Resource) -> None:
         self.service = service
 
     @staticmethod
@@ -1035,7 +1035,7 @@ class ListAnnotationCount(AbstractCommandLineInterface):
 
         return True
 
-    def main(self):
+    def main(self) -> None:
         args = self.args
 
         if not self.validate(args):
@@ -1101,7 +1101,7 @@ class ListAnnotationCount(AbstractCommandLineInterface):
                 func(annotation_path=annotation_path)
 
 
-def parse_args(parser: argparse.ArgumentParser):
+def parse_args(parser: argparse.ArgumentParser) -> None:
     argument_parser = ArgumentParser(parser)
 
     parser.add_argument(
@@ -1159,13 +1159,13 @@ def parse_args(parser: argparse.ArgumentParser):
     parser.set_defaults(subcommand_func=main)
 
 
-def main(args):
+def main(args: argparse.Namespace) -> None:
     service = build_annofabapi_resource_and_login(args)
     facade = AnnofabApiFacade(service)
     ListAnnotationCount(service, facade, args).main()
 
 
-def add_parser(subparsers: Optional[argparse._SubParsersAction] = None):
+def add_parser(subparsers: Optional[argparse._SubParsersAction] = None) -> argparse.ArgumentParser:
     subcommand_name = "list_annotation_count"
     subcommand_help = "各ラベル、各属性値のアノテーション数を出力します。"
     description = "各ラベル、各属性値のアノテーション数を、タスクごと/入力データごとに出力します。"

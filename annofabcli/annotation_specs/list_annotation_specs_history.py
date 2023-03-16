@@ -18,7 +18,7 @@ class AnnotationSpecsHistories(AbstractCommandLineInterface):
     アノテーション仕様の変更履歴を出力する。
     """
 
-    def __init__(self, service: annofabapi.Resource, facade: AnnofabApiFacade, args: argparse.Namespace):
+    def __init__(self, service: annofabapi.Resource, facade: AnnofabApiFacade, args: argparse.Namespace) -> None:
         super().__init__(service, facade, args)
         self.visualize = AddProps(self.service, args.project_id)
 
@@ -32,18 +32,18 @@ class AnnotationSpecsHistories(AbstractCommandLineInterface):
         annotation_specs_histories = self.get_annotation_specs_histories(project_id)
         self.print_according_to_format(annotation_specs_histories)
 
-    def main(self):
+    def main(self) -> None:
         args = self.args
         self.list_annotation_specs_histories(args.project_id)
 
 
-def main(args):
+def main(args: argparse.Namespace) -> None:
     service = build_annofabapi_resource_and_login(args)
     facade = AnnofabApiFacade(service)
     AnnotationSpecsHistories(service, facade, args).main()
 
 
-def parse_args(parser: argparse.ArgumentParser):
+def parse_args(parser: argparse.ArgumentParser) -> None:
     argument_parser = ArgumentParser(parser)
 
     argument_parser.add_project_id()
@@ -58,7 +58,7 @@ def parse_args(parser: argparse.ArgumentParser):
     parser.set_defaults(subcommand_func=main)
 
 
-def add_parser(subparsers: Optional[argparse._SubParsersAction] = None):
+def add_parser(subparsers: Optional[argparse._SubParsersAction] = None) -> argparse.ArgumentParser:
     subcommand_name = "list_history"
     subcommand_help = "アノテーション仕様の変更履歴を表示する。"
     description = "アノテーション仕様の変更履歴を表示する。"

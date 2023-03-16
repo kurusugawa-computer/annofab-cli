@@ -48,7 +48,7 @@ class ChangeAnnotationAttributesMain(AbstractCommandLineWithConfirmInterface):
         project_id: str,
         is_force: bool,
         all_yes: bool,
-    ):
+    ) -> None:
         self.service = service
         self.facade = AnnofabApiFacade(service)
         AbstractCommandLineWithConfirmInterface.__init__(self, all_yes)
@@ -272,7 +272,7 @@ class ChangeAttributesOfAnnotation(AbstractCommandLineInterface):
         dict_attributes = get_json_from_args(str_attributes)
         return convert_attributes_from_cli_to_api(dict_attributes, annotation_specs, label_id=label_id)
 
-    def main(self):
+    def main(self) -> None:
         args = self.args
 
         if not self.validate(args):
@@ -319,13 +319,13 @@ class ChangeAttributesOfAnnotation(AbstractCommandLineInterface):
         )
 
 
-def main(args):
+def main(args: argparse.Namespace) -> None:
     service = build_annofabapi_resource_and_login(args)
     facade = AnnofabApiFacade(service)
     ChangeAttributesOfAnnotation(service, facade, args).main()
 
 
-def parse_args(parser: argparse.ArgumentParser):
+def parse_args(parser: argparse.ArgumentParser) -> None:
     argument_parser = ArgumentParser(parser)
 
     argument_parser.add_project_id()

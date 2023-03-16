@@ -137,9 +137,7 @@ def merge_visualization_dir(  # pylint: disable=too-many-statements
             return merged_obj
 
         else:
-            logger.warning(
-                f"マージ対象のタスク情報は存在しないため、'{output_project_dir.FILENAME_TASK_LIST}'とそのCSVから生成されるヒストグラム出力しません。"
-            )  # noqa: E501
+            logger.warning(f"マージ対象のタスク情報は存在しないため、'{output_project_dir.FILENAME_TASK_LIST}'とそのCSVから生成されるヒストグラム出力しません。")
             return None
 
     @_catch_exception
@@ -227,7 +225,7 @@ def validate(args: argparse.Namespace) -> bool:
     return True
 
 
-def main(args):
+def main(args: argparse.Namespace) -> None:
     if not validate(args):
         sys.exit(COMMAND_LINE_ERROR_STATUS_CODE)
 
@@ -241,7 +239,7 @@ def main(args):
     )
 
 
-def parse_args(parser: argparse.ArgumentParser):
+def parse_args(parser: argparse.ArgumentParser) -> None:
     parser.add_argument("--dir", type=Path, nargs="+", required=True, help="マージ対象ディレクトリ。2つ以上指定してください。")
     parser.add_argument("-o", "--output_dir", type=Path, required=True, help="出力先ディレクトリ。配下にプロジェクト名のディレクトリが出力される。")
 
@@ -265,7 +263,7 @@ def parse_args(parser: argparse.ArgumentParser):
     parser.set_defaults(subcommand_func=main)
 
 
-def add_parser(subparsers: Optional[argparse._SubParsersAction] = None):
+def add_parser(subparsers: Optional[argparse._SubParsersAction] = None) -> argparse.ArgumentParser:
     subcommand_name = "merge"
     subcommand_help = "``annofabcli statistics visualize`` コマンドの出力結果をマージします。"
     description = "``annofabcli statistics visualize`` コマンドの出力結果をマージします。"

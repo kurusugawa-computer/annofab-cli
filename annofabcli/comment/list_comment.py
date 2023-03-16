@@ -57,7 +57,7 @@ class ListingComments(AbstractCommandLineInterface):
         all_comments = [visualize.add_properties_to_comment(e) for e in all_comments]
         return all_comments
 
-    def main(self):
+    def main(self) -> None:
         args = self.args
         task_id_list = annofabcli.common.cli.get_list_from_args(args.task_id)
         comment_type = CommentType(args.comment_type) if args.comment_type is not None else None
@@ -76,13 +76,13 @@ class ListingComments(AbstractCommandLineInterface):
             print_according_to_format(comment_list, output_format, output=args.output)
 
 
-def main(args: argparse.Namespace):
+def main(args: argparse.Namespace) -> None:
     service = build_annofabapi_resource_and_login(args)
     facade = AnnofabApiFacade(service)
     ListingComments(service, facade, args).main()
 
 
-def parse_args(parser: argparse.ArgumentParser):
+def parse_args(parser: argparse.ArgumentParser) -> None:
     argument_parser = ArgumentParser(parser)
 
     argument_parser.add_project_id()
@@ -118,7 +118,7 @@ def parse_args(parser: argparse.ArgumentParser):
     parser.set_defaults(subcommand_func=main)
 
 
-def add_parser(subparsers: Optional[argparse._SubParsersAction] = None):
+def add_parser(subparsers: Optional[argparse._SubParsersAction] = None) -> argparse.ArgumentParser:
     subcommand_name = "list"
     subcommand_help = "コメント一覧を出力します。"
 

@@ -38,11 +38,10 @@ pytest-xdist = "*"
 pytest-cov = "*"
 
 [tool.poetry.group.formatter.dependencies]
-isort = "*"  # TODO https://github.com/charliermarsh/ruff/issues/3477 が解決したら削除する
 black = "*"
 
 [tool.poetry.group.linter.dependencies]
-ruff = ">=0.0.254"
+ruff = ">=0.0.255"
 mypy = "^1"
 pylint = "^2"
 
@@ -94,11 +93,18 @@ ignore = [
     "RUF001", # 全角記号など`ambiguous unicode character`も使いたいため
     "RUF002",# 全角記号など`ambiguous unicode character`も使いたいため
     "RUF003",# 全角記号など`ambiguous unicode character`も使いたいため
-    "RUF100", # `Unused `noqa` directive`のコードがたくさんあるので、一旦無視する
-
-
-    "PL", # pylintに関する警告がたくさんあって対応できなかったので、除外する
+    "PLC1901", # compare-to-empty-string : `if a == "`のように空文字列で直接比較したいときがあるため
+    "PLR2004", # magic-value-comparison: listのサイズで判定するときがよくあるため
+    "ANN101", # missing-type-self: 引数selfには型ヒントは付けていないため
+    "ANN102", # missing-type-cls: 引数clsには型ヒントは付けていないため
+    "ANN002", # missing-type-args
+    "ANN003", # missing-type-kwargs
     "ERA", # : 役立つこともあるが、コメントアウトしていないコードも警告されるので無視する
+
+    # いずれ無視しないようにする
+    "ANN201", # missing-return-type-public-function: 
+    "ANN202", # missing-return-type-private-function:
+    "PLR",  # pylint Refactor 
 
     # 以下のルールはannofabcliのコードに合っていないので無効化した
     "RSE", # flake8-raise
@@ -110,7 +116,7 @@ ignore = [
     "FBT", # flake8-boolean-trap
     "TRY", # tryceratops 
     "COM", # flake8-commas 
-    "ANN", # flake8-annotations
+    # "ANN", # flake8-annotations
     "S", # flake8-bandit
     "EM",#flake8-errmsg
     "EXE", # flake8-executable
@@ -137,7 +143,10 @@ convention = "google"
 # https://beta.ruff.rs/docs/settings/#keep-runtime-typing
 keep-runtime-typing = true
 
+[tool.ruff.pylint]
+max-args = 10
+
 [build-system]
-requires = ["poetry>=0.12"]
-build-backend = "poetry.masonry.api"
+requires = ["poetry-core>=1.0.0"]
+build-backend = "poetry.core.masonry.api"
 

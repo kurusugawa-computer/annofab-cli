@@ -18,7 +18,7 @@ class ListInstructionHistories(AbstractCommandLineInterface):
         visualize = AddProps(self.service, project_id)
         return [visualize.add_properties_to_instruction(e) for e in histories]
 
-    def main(self):
+    def main(self) -> None:
         args = self.args
         project_id = args.project_id
         super().validate_project(project_id)
@@ -27,13 +27,13 @@ class ListInstructionHistories(AbstractCommandLineInterface):
         self.print_according_to_format(histories)
 
 
-def main(args):
+def main(args: argparse.Namespace) -> None:
     service = build_annofabapi_resource_and_login(args)
     facade = AnnofabApiFacade(service)
     ListInstructionHistories(service, facade, args).main()
 
 
-def parse_args(parser: argparse.ArgumentParser):
+def parse_args(parser: argparse.ArgumentParser) -> None:
     argument_parser = ArgumentParser(parser)
 
     argument_parser.add_project_id()
@@ -49,7 +49,7 @@ def parse_args(parser: argparse.ArgumentParser):
     parser.set_defaults(subcommand_func=main)
 
 
-def add_parser(subparsers: Optional[argparse._SubParsersAction] = None):
+def add_parser(subparsers: Optional[argparse._SubParsersAction] = None) -> argparse.ArgumentParser:
     subcommand_name = "list_history"
     subcommand_help = "作業ガイドの変更履歴を出力します。"
     description = "作業ガイドの変更履歴を出力します。"

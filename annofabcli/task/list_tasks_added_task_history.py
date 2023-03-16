@@ -31,7 +31,7 @@ class AddingAdditionalInfoToTask:
 
     """
 
-    def __init__(self, service: annofabapi.Resource, project_id: str):
+    def __init__(self, service: annofabapi.Resource, project_id: str) -> None:
         self.service = service
         self.project_id = project_id
         self.visualize = AddProps(self.service, project_id)
@@ -292,7 +292,7 @@ class ListTasksAddedTaskHistoryMain:
         self.service = service
         self.project_id = project_id
 
-    def main(self, *, task_query: Optional[dict[str, Any]], task_id_list: Optional[list[str]]):
+    def main(self, *, task_query: Optional[dict[str, Any]], task_id_list: Optional[list[str]]) -> list[dict[str, Any]]:
         list_task_obj = ListTasksMain(self.service, self.project_id)
         task_list = list_task_obj.get_task_list(self.project_id, task_id_list=task_id_list, task_query=task_query)
 
@@ -318,7 +318,7 @@ class ListTasksAddedTaskHistoryMain:
 class TasksAddedTaskHistoryOutput:
     """出力用のクラス"""
 
-    def __init__(self, task_list: list[dict[str, Any]]):
+    def __init__(self, task_list: list[dict[str, Any]]) -> None:
         self.task_list = task_list
 
     @staticmethod
@@ -377,7 +377,7 @@ class TasksAddedTaskHistoryOutput:
 
 
 class ListTasksAddedTaskHistory(AbstractCommandLineInterface):
-    def main(self):
+    def main(self) -> None:
         args = self.args
 
         task_id_list = annofabcli.common.cli.get_list_from_args(args.task_id) if args.task_id is not None else None
@@ -390,13 +390,13 @@ class ListTasksAddedTaskHistory(AbstractCommandLineInterface):
         output_obj.output(args.output, output_format=FormatArgument(args.format))
 
 
-def main(args):
+def main(args: argparse.Namespace) -> None:
     service = build_annofabapi_resource_and_login(args)
     facade = AnnofabApiFacade(service)
     ListTasksAddedTaskHistory(service, facade, args).main()
 
 
-def parse_args(parser: argparse.ArgumentParser):
+def parse_args(parser: argparse.ArgumentParser) -> None:
     argument_parser = ArgumentParser(parser)
     argument_parser.add_project_id()
 
@@ -433,7 +433,7 @@ def parse_args(parser: argparse.ArgumentParser):
     parser.set_defaults(subcommand_func=main)
 
 
-def add_parser(subparsers: Optional[argparse._SubParsersAction] = None):
+def add_parser(subparsers: Optional[argparse._SubParsersAction] = None) -> argparse.ArgumentParser:
     subcommand_name = "list_added_task_history"
     subcommand_help = "タスク履歴に関する情報を加えたタスク一覧を出力します。"
     description = "タスク履歴に関する情報（フェーズごとの作業時間、担当者、開始日時）を加えたタスク一覧を出力します。"

@@ -40,7 +40,7 @@ class MergeAnnotationMain:
             raise RuntimeError(f"{annotation_path} はサポート対象外です。")
 
     @staticmethod
-    def _write_outer_file(parser: SimpleAnnotationParser, anno: Dict[str, Any], output_json: Path):
+    def _write_outer_file(parser: SimpleAnnotationParser, anno: Dict[str, Any], output_json: Path) -> None:
         data_uri = anno["data"]["data_uri"]
 
         with parser.open_outer_file(data_uri) as src_f:
@@ -51,7 +51,7 @@ class MergeAnnotationMain:
                 dest_f.write(data)
 
     @staticmethod
-    def _is_segmentation(anno: Dict[str, Any]):
+    def _is_segmentation(anno: Dict[str, Any]) -> bool:
         return anno["data"]["_type"] in ["Segmentation", "SegmentationV2"]
 
     def write_merged_annotation(
@@ -214,7 +214,7 @@ class MergeAnnotation(AbstractCommandLineWithoutWebapiInterface):
                     return False
         return True
 
-    def main(self):
+    def main(self) -> None:
         args = self.args
         if not self.validate(args):
             sys.exit(COMMAND_LINE_ERROR_STATUS_CODE)
@@ -226,11 +226,11 @@ class MergeAnnotation(AbstractCommandLineWithoutWebapiInterface):
         )
 
 
-def main(args):
+def main(args: argparse.Namespace) -> None:
     MergeAnnotation(args).main()
 
 
-def parse_args(parser: argparse.ArgumentParser):
+def parse_args(parser: argparse.ArgumentParser) -> None:
     argument_parser = ArgumentParser(parser)
 
     parser.add_argument(
@@ -253,7 +253,7 @@ def parse_args(parser: argparse.ArgumentParser):
     parser.set_defaults(subcommand_func=main)
 
 
-def add_parser(subparsers: Optional[argparse._SubParsersAction] = None):
+def add_parser(subparsers: Optional[argparse._SubParsersAction] = None) -> argparse.ArgumentParser:
     subcommand_name = "merge_annotation"
 
     subcommand_help = "2つのアノテーションzip（またはzipを展開したディレクトリ）をマージします。"

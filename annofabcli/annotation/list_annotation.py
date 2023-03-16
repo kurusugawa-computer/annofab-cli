@@ -28,7 +28,7 @@ logger = logging.getLogger(__name__)
 
 
 class ListAnnotationMain:
-    def __init__(self, service: annofabapi.Resource, project_id: str):
+    def __init__(self, service: annofabapi.Resource, project_id: str) -> None:
         self.service = service
         self.facade = AnnofabApiFacade(service)
         self.visualize = AddProps(self.service, project_id)
@@ -151,11 +151,11 @@ class ListAnnotation(AbstractCommandLineInterface):
                 columns.remove(c)
         return columns
 
-    def __init__(self, service: annofabapi.Resource, facade: AnnofabApiFacade, args: argparse.Namespace):
+    def __init__(self, service: annofabapi.Resource, facade: AnnofabApiFacade, args: argparse.Namespace) -> None:
         super().__init__(service, facade, args)
         self.visualize = AddProps(self.service, args.project_id)
 
-    def main(self):
+    def main(self) -> None:
         args = self.args
 
         project_id = args.project_id
@@ -198,13 +198,13 @@ class ListAnnotation(AbstractCommandLineInterface):
             logger.info("アノテーション一覧の件数が0件のため、出力しません。")
 
 
-def main(args):
+def main(args: argparse.Namespace) -> None:
     service = build_annofabapi_resource_and_login(args)
     facade = AnnofabApiFacade(service)
     ListAnnotation(service, facade, args).main()
 
 
-def parse_args(parser: argparse.ArgumentParser):
+def parse_args(parser: argparse.ArgumentParser) -> None:
     argument_parser = ArgumentParser(parser)
 
     argument_parser.add_project_id()
@@ -243,7 +243,7 @@ def parse_args(parser: argparse.ArgumentParser):
     parser.set_defaults(subcommand_func=main)
 
 
-def add_parser(subparsers: Optional[argparse._SubParsersAction] = None):
+def add_parser(subparsers: Optional[argparse._SubParsersAction] = None) -> argparse.ArgumentParser:
     subcommand_name = "list"
     subcommand_help = "アノテーションの一覧を出力します。"
     description = "アノテーションの一覧を出力します。"

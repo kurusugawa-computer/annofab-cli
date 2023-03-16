@@ -29,7 +29,7 @@ def _get_time_range(str_data: str):
 
 
 class ListOutOfRangeAnnotationForMovieMain:
-    def __init__(self, service: annofabapi.Resource):
+    def __init__(self, service: annofabapi.Resource) -> None:
         self.service = service
 
     @staticmethod
@@ -108,7 +108,7 @@ class ListOutOfRangeAnnotationForMovieMain:
 
     @staticmethod
     def filter_task_list(task_list: List[Dict[str, Any]], task_id_list: List[str]) -> List[Dict[str, Any]]:
-        def _exists(task_id) -> bool:
+        def _exists(task_id: str) -> bool:
             if task_id in task_id_set:
                 task_id_set.remove(task_id)
                 return True
@@ -167,7 +167,7 @@ class ListOutOfRangeAnnotationForMovieMain:
 
 
 class ListOutOfRangeAnnotationForMovie(AbstractCommandLineInterface):
-    def main(self):
+    def main(self) -> None:
         args = self.args
 
         task_id_list = annofabcli.common.cli.get_list_from_args(args.task_id) if args.task_id is not None else None
@@ -176,13 +176,13 @@ class ListOutOfRangeAnnotationForMovie(AbstractCommandLineInterface):
         self.print_csv(df)
 
 
-def main(args):
+def main(args: argparse.Namespace) -> None:
     service = build_annofabapi_resource_and_login(args)
     facade = AnnofabApiFacade(service)
     ListOutOfRangeAnnotationForMovie(service, facade, args).main()
 
 
-def parse_args(parser: argparse.ArgumentParser):
+def parse_args(parser: argparse.ArgumentParser) -> None:
     argument_parser = ArgumentParser(parser)
     argument_parser.add_project_id()
     argument_parser.add_task_id(required=False)

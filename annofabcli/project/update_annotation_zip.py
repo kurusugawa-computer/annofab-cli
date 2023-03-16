@@ -31,7 +31,7 @@ class SubUpdateAnnotationZip:
     `ArgumentParser`を除いたクラスを作成した。
     """
 
-    def __init__(self, service: annofabapi.Resource, facade: AnnofabApiFacade):
+    def __init__(self, service: annofabapi.Resource, facade: AnnofabApiFacade) -> None:
         self.service = service
         self.facade = facade
 
@@ -177,7 +177,7 @@ class UpdateAnnotationZip(AbstractCommandLineInterface):
         with multiprocessing.Pool(processes) as pool:
             pool.map(partial_func, project_id_list)
 
-    def main(self):
+    def main(self) -> None:
         args = self.args
 
         project_id_list = annofabcli.common.cli.get_list_from_args(args.project_id)
@@ -191,13 +191,13 @@ class UpdateAnnotationZip(AbstractCommandLineInterface):
         )
 
 
-def main(args: argparse.Namespace):
+def main(args: argparse.Namespace) -> None:
     service = build_annofabapi_resource_and_login(args)
     facade = AnnofabApiFacade(service)
     UpdateAnnotationZip(service, facade, args).main()
 
 
-def parse_args(parser: argparse.ArgumentParser):
+def parse_args(parser: argparse.ArgumentParser) -> None:
     parser.add_argument(
         "-p",
         "--project_id",
@@ -227,7 +227,7 @@ def parse_args(parser: argparse.ArgumentParser):
     parser.set_defaults(subcommand_func=main)
 
 
-def add_parser(subparsers: Optional[argparse._SubParsersAction] = None):
+def add_parser(subparsers: Optional[argparse._SubParsersAction] = None) -> argparse.ArgumentParser:
     subcommand_name = "update_annotation_zip"
     subcommand_help = "複数のプロジェクトのアノテーションzipを更新します。"
     epilog = "対象プロジェクトに対して、オーナまたはアノテーションユーザロールを持つユーザで実行してください。"

@@ -155,7 +155,7 @@ class DeleteInputData(AbstractCommandLineInterface):
 
         logger.info(f"プロジェクト'{project_title}'から 、{count_delete_input_data}/{len(input_data_id_list)} 件の入力データを削除しました。")
 
-    def main(self):
+    def main(self) -> None:
         args = self.args
         input_data_id_list = annofabcli.common.cli.get_list_from_args(args.input_data_id)
         self.delete_input_data_list(
@@ -166,13 +166,13 @@ class DeleteInputData(AbstractCommandLineInterface):
         )
 
 
-def main(args):
+def main(args: argparse.Namespace) -> None:
     service = build_annofabapi_resource_and_login(args)
     facade = AnnofabApiFacade(service)
     DeleteInputData(service, facade, args).main()
 
 
-def parse_args(parser: argparse.ArgumentParser):
+def parse_args(parser: argparse.ArgumentParser) -> None:
     argument_parser = ArgumentParser(parser)
 
     argument_parser.add_project_id()
@@ -192,7 +192,7 @@ def parse_args(parser: argparse.ArgumentParser):
     parser.set_defaults(subcommand_func=main)
 
 
-def add_parser(subparsers: Optional[argparse._SubParsersAction] = None):
+def add_parser(subparsers: Optional[argparse._SubParsersAction] = None) -> argparse.ArgumentParser:
     subcommand_name = "delete"
     subcommand_help = "入力データを削除します。"
     description = "入力データを削除します。"

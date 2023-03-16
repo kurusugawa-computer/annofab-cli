@@ -50,7 +50,7 @@ class ListAttributeRestrictionMain:
         labels: list[dict[str, Any]],
         additionals: list[dict[str, Any]],
         format: FormatArgument = FormatArgument.DETAILED_TEXT,  # noqa: builtin-argument-shadowing # pylint: disable=redefined-builtin
-    ):
+    ) -> None:
         self.attribute_dict = {e["additional_data_definition_id"]: e for e in additionals}
         self.label_dict = {e["label_id"]: e for e in labels}
         self.format = format
@@ -237,7 +237,7 @@ class ListAttributeRestriction(AbstractCommandLineInterface):
         history = histories[-(before + 1)]
         return history["history_id"]
 
-    def main(self):
+    def main(self) -> None:
         args = self.args
 
         history_id = None
@@ -274,7 +274,7 @@ class ListAttributeRestriction(AbstractCommandLineInterface):
         annofabcli.common.utils.output_string("\n".join(restriction_text_list), args.output)
 
 
-def parse_args(parser: argparse.ArgumentParser):
+def parse_args(parser: argparse.ArgumentParser) -> None:
     argument_parser = ArgumentParser(parser)
 
     argument_parser.add_project_id()
@@ -320,13 +320,13 @@ def parse_args(parser: argparse.ArgumentParser):
     parser.set_defaults(subcommand_func=main)
 
 
-def main(args):
+def main(args: argparse.Namespace) -> None:
     service = build_annofabapi_resource_and_login(args)
     facade = AnnofabApiFacade(service)
     ListAttributeRestriction(service, facade, args).main()
 
 
-def add_parser(subparsers: Optional[argparse._SubParsersAction] = None):
+def add_parser(subparsers: Optional[argparse._SubParsersAction] = None) -> argparse.ArgumentParser:
     subcommand_name = "list_attribute_restriction"
 
     subcommand_help = "アノテーション仕様の属性の制約情報を出力します。"

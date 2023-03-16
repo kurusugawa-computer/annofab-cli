@@ -15,7 +15,7 @@ from bokeh.plotting import ColumnDataSource, figure
 logger = logging.getLogger(__name__)
 
 
-def write_bokeh_graph(bokeh_obj, output_file: Path):
+def write_bokeh_graph(bokeh_obj: Any, output_file: Path) -> None:  # noqa: ANN401
     output_file.parent.mkdir(exist_ok=True, parents=True)
     bokeh.plotting.reset_output()
     bokeh.plotting.output_file(output_file, title=output_file.stem)
@@ -36,7 +36,7 @@ def plot_bubble(
     text_column_name: str,
     size_column_name: str,
     legend_label: str,
-    color: Any,
+    color: str,
     func_get_bubble_size: Optional[Callable[[Any], int]] = None,
 ) -> None:
     """
@@ -103,7 +103,7 @@ def plot_scatter(
     y_column_name: str,
     text_column_name: str,
     legend_label: str,
-    color: Any,
+    color: str,
 ) -> None:
     """
     丸でプロットして、ユーザ名を表示する。

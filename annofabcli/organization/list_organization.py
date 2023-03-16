@@ -11,19 +11,19 @@ logger = logging.getLogger(__name__)
 
 
 class ListOrganization(AbstractCommandLineInterface):
-    def main(self):
+    def main(self) -> None:
         organization_list = self.service.wrapper.get_all_my_organizations()
         logger.info(f"組織一覧の件数: {len(organization_list)}")
         self.print_according_to_format(organization_list)
 
 
-def main(args):
+def main(args: argparse.Namespace) -> None:
     service = build_annofabapi_resource_and_login(args)
     facade = AnnofabApiFacade(service)
     ListOrganization(service, facade, args).main()
 
 
-def parse_args(parser: argparse.ArgumentParser):
+def parse_args(parser: argparse.ArgumentParser) -> None:
     argument_parser = ArgumentParser(parser)
 
     argument_parser.add_format(
@@ -40,7 +40,7 @@ def parse_args(parser: argparse.ArgumentParser):
     parser.set_defaults(subcommand_func=main)
 
 
-def add_parser(subparsers: Optional[argparse._SubParsersAction] = None):
+def add_parser(subparsers: Optional[argparse._SubParsersAction] = None) -> argparse.ArgumentParser:
     subcommand_name = "list"
     subcommand_help = "所属している組織の一覧を出力します。"
 

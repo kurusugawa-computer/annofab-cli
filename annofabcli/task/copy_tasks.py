@@ -65,7 +65,7 @@ class CopyTasksMain(AbstractCommandLineWithConfirmInterface):
         all_yes: bool,
         is_copy_annotations: bool = False,
         is_copy_metadata: bool = False,
-    ):
+    ) -> None:
         self.service = service
         self.facade = AnnofabApiFacade(service)
         AbstractCommandLineWithConfirmInterface.__init__(self, all_yes)
@@ -114,7 +114,7 @@ class CopyTasksMain(AbstractCommandLineWithConfirmInterface):
             logger.warning(f"タスク'{copy_target.src_task_id}'を'{copy_target.dest_task_id}'にコピーする際に失敗しました。", exc_info=True)
             return False
 
-    def main(self, project_id: str, copy_target_list: list[CopyTarget], parallelism: Optional[int] = None):
+    def main(self, project_id: str, copy_target_list: list[CopyTarget], parallelism: Optional[int] = None) -> None:
         """
         タスクをコピーします
 
@@ -165,7 +165,7 @@ class CopyTasks(AbstractCommandLineInterface):
 
         return True
 
-    def main(self):
+    def main(self) -> None:
         args = self.args
 
         if not self.validate(args):
@@ -188,13 +188,13 @@ class CopyTasks(AbstractCommandLineInterface):
         main_obj.main(project_id, copy_target_list=copy_target_list, parallelism=args.parallelism)
 
 
-def main(args: argparse.Namespace):
+def main(args: argparse.Namespace) -> None:
     service = build_annofabapi_resource_and_login(args)
     facade = AnnofabApiFacade(service)
     CopyTasks(service, facade, args).main()
 
 
-def parse_args(parser: argparse.ArgumentParser):
+def parse_args(parser: argparse.ArgumentParser) -> None:
     argument_parser = ArgumentParser(parser)
 
     argument_parser.add_project_id()
@@ -216,7 +216,7 @@ def parse_args(parser: argparse.ArgumentParser):
     parser.set_defaults(subcommand_func=main)
 
 
-def add_parser(subparsers: Optional[argparse._SubParsersAction] = None):
+def add_parser(subparsers: Optional[argparse._SubParsersAction] = None) -> argparse.ArgumentParser:
     subcommand_name = "copy"
     subcommand_help = "タスクをコピーします。"
     description = "タスクをコピーします。"

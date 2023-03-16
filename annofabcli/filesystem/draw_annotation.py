@@ -295,7 +295,7 @@ class DrawAnnotation(AbstractCommandLineWithoutWebapiInterface):
                 label_color_dict[label_name] = tuple(color)
         return label_color_dict
 
-    def main(self):
+    def main(self) -> None:
         args = self.args
 
         default_image_size: Optional[tuple[int, int]] = None
@@ -362,11 +362,11 @@ class DrawAnnotation(AbstractCommandLineWithoutWebapiInterface):
         )
 
 
-def main(args):
+def main(args: argparse.Namespace) -> None:
     DrawAnnotation(args).main()
 
 
-def parse_args(parser: argparse.ArgumentParser):
+def parse_args(parser: argparse.ArgumentParser) -> None:
     argument_parser = ArgumentParser(parser)
 
     parser.add_argument(
@@ -451,7 +451,7 @@ def parse_args(parser: argparse.ArgumentParser):
     parser.set_defaults(subcommand_func=main)
 
 
-def add_parser(subparsers: Optional[argparse._SubParsersAction] = None):
+def add_parser(subparsers: Optional[argparse._SubParsersAction] = None) -> argparse.ArgumentParser:
     subcommand_name = "draw_annotation"
 
     subcommand_help = "画像にアノテーションを描画します。"

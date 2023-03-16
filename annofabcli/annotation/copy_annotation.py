@@ -125,7 +125,7 @@ def get_copy_target_list(str_copy_target_list: list[str]) -> list[CopyTarget]:
 class CopyAnnotationMain(AbstractCommandLineWithConfirmInterface):
     def __init__(
         self, service: annofabapi.Resource, *, project_id: str, all_yes: bool, overwrite: bool, merge: bool, force: bool
-    ):
+    ) -> None:
         self.service = service
         self.project_id = project_id
         self.overwrite = overwrite
@@ -349,7 +349,7 @@ class CopyAnnotation(AbstractCommandLineInterface):
 
         return True
 
-    def main(self):
+    def main(self) -> None:
         args = self.args
         if not self.validate(args):
             sys.exit(COMMAND_LINE_ERROR_STATUS_CODE)
@@ -373,13 +373,13 @@ class CopyAnnotation(AbstractCommandLineInterface):
         main_obj.copy_annotations(copy_target_list, parallelism=args.parallelism)
 
 
-def main(args):
+def main(args: argparse.Namespace) -> None:
     service = build_annofabapi_resource_and_login(args)
     facade = AnnofabApiFacade(service)
     CopyAnnotation(service, facade, args).main()
 
 
-def parse_args(parser: argparse.ArgumentParser):
+def parse_args(parser: argparse.ArgumentParser) -> None:
     argument_parser = ArgumentParser(parser)
     argument_parser.add_project_id()
 
@@ -418,7 +418,7 @@ def parse_args(parser: argparse.ArgumentParser):
     parser.set_defaults(subcommand_func=main)
 
 
-def add_parser(subparsers: Optional[argparse._SubParsersAction] = None):
+def add_parser(subparsers: Optional[argparse._SubParsersAction] = None) -> argparse.ArgumentParser:
     subcommand_name = "copy"
     subcommand_help = "アノテーションをコピーします．"
     description = "タスク単位または入力データ単位で、アノテーションをコピーします。"

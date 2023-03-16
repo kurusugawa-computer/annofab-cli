@@ -35,7 +35,7 @@ def millisecond_to_hour(millisecond: int):
 
 
 class ListInputDataMergedTaskMain:
-    def __init__(self, service: annofabapi.Resource):
+    def __init__(self, service: annofabapi.Resource) -> None:
         self.service = service
         self.facade = AnnofabApiFacade(service)
 
@@ -59,7 +59,7 @@ class ListInputDataMergedTaskMain:
         df_input_data: pandas.DataFrame,
         input_data_id_list: Optional[List[str]] = None,
         input_data_name_list: Optional[List[str]] = None,
-    ):
+    ) -> pandas.DataFrame:
         df = df_input_data
         if input_data_id_list is not None:
             df = df[df["input_data_id"].isin(input_data_id_list)]
@@ -152,7 +152,7 @@ class ListInputDataMergedTask(AbstractCommandLineInterface):
         )
         loop.run_until_complete(gather)
 
-    def main(self):
+    def main(self) -> None:
         args = self.args
         if not self.validate(args):
             sys.exit(COMMAND_LINE_ERROR_STATUS_CODE)
@@ -206,13 +206,13 @@ class ListInputDataMergedTask(AbstractCommandLineInterface):
             self.print_according_to_format(result)
 
 
-def main(args):
+def main(args: argparse.Namespace) -> None:
     service = build_annofabapi_resource_and_login(args)
     facade = AnnofabApiFacade(service)
     ListInputDataMergedTask(service, facade, args).main()
 
 
-def parse_args(parser: argparse.ArgumentParser):
+def parse_args(parser: argparse.ArgumentParser) -> None:
     argument_parser = ArgumentParser(parser)
 
     parser.add_argument(
@@ -291,7 +291,7 @@ def parse_args(parser: argparse.ArgumentParser):
     parser.set_defaults(subcommand_func=main)
 
 
-def add_parser(subparsers: Optional[argparse._SubParsersAction] = None):
+def add_parser(subparsers: Optional[argparse._SubParsersAction] = None) -> argparse.ArgumentParser:
     subcommand_name = "list_merged_task"
     subcommand_help = "タスク一覧と結合した入力データ一覧の情報を出力します。"
     description = "タスク一覧と結合した入力データ一覧の情報を出力します。"

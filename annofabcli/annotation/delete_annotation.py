@@ -41,7 +41,7 @@ class DeleteAnnotationMain(AbstractCommandLineWithConfirmInterface):
         *,
         is_force: bool,
         all_yes: bool,
-    ):
+    ) -> None:
         self.service = service
         self.facade = AnnofabApiFacade(service)
         self.is_force = is_force
@@ -176,7 +176,7 @@ class DeleteAnnotation(AbstractCommandLineInterface):
 
     COMMON_MESSAGE = "annofabcli annotation delete: error:"
 
-    def main(self):
+    def main(self) -> None:
         args = self.args
         project_id = args.project_id
         task_id_list = annofabcli.common.cli.get_list_from_args(args.task_id)
@@ -207,13 +207,13 @@ class DeleteAnnotation(AbstractCommandLineInterface):
         main_obj.delete_annotation_for_task_list(task_id_list, annotation_query=annotation_query, backup_dir=backup_dir)
 
 
-def main(args):
+def main(args: argparse.Namespace) -> None:
     service = build_annofabapi_resource_and_login(args)
     facade = AnnofabApiFacade(service)
     DeleteAnnotation(service, facade, args).main()
 
 
-def parse_args(parser: argparse.ArgumentParser):
+def parse_args(parser: argparse.ArgumentParser) -> None:
     argument_parser = ArgumentParser(parser)
 
     argument_parser.add_project_id()
@@ -241,7 +241,7 @@ def parse_args(parser: argparse.ArgumentParser):
     parser.set_defaults(subcommand_func=main)
 
 
-def add_parser(subparsers: Optional[argparse._SubParsersAction] = None):
+def add_parser(subparsers: Optional[argparse._SubParsersAction] = None) -> argparse.ArgumentParser:
     subcommand_name = "delete"
     subcommand_help = "アノテーションを削除します。"
     description = (

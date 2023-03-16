@@ -68,7 +68,7 @@ class WriteCsvGraph:
         end_date: Optional[str] = None,
         minimal_output: bool = False,
         output_only_text: bool = False,
-    ):
+    ) -> None:
         self.service = service
         self.project_id = project_id
         self.output_dir = output_dir
@@ -185,7 +185,7 @@ class WriteCsvGraph:
                 productivity_per_started_date_obj
             )
 
-    def write_user_productivity_per_date(self, user_id_list: Optional[List[str]] = None):
+    def write_user_productivity_per_date(self, user_id_list: Optional[List[str]] = None) -> None:
         """ユーザごとの日ごとの生産性情報を出力する。"""
         df_task = self._get_task_df()
 
@@ -229,7 +229,7 @@ class VisualizingStatisticsMain:
         is_get_task_histories_one_of_each: bool = False,
         df_labor: Optional[pandas.DataFrame],
         user_ids: Optional[List[str]],
-    ):
+    ) -> None:
         self.service = service
         self.facade = AnnofabApiFacade(service)
         self.temp_dir = temp_dir
@@ -245,7 +245,7 @@ class VisualizingStatisticsMain:
         self.df_labor = df_labor
         self.user_ids = user_ids
 
-    def write_project_info_json(self, project_id: str, project_dir: ProjectDir):
+    def write_project_info_json(self, project_id: str, project_dir: ProjectDir) -> None:
         """
         プロジェクト情報をJSONファイルに出力します。
         """
@@ -397,7 +397,7 @@ class VisualizeStatistics(AbstractCommandLineInterface):
 
         return True
 
-    def main(self):
+    def main(self) -> None:
         args = self.args
         if not self.validate(args):
             sys.exit(COMMAND_LINE_ERROR_STATUS_CODE)
@@ -473,13 +473,13 @@ class VisualizeStatistics(AbstractCommandLineInterface):
                     logger.warning("出力した統計情報は0件なので、`プロジェクトごとの生産性と品質.csv`を出力しません。")
 
 
-def main(args):
+def main(args: argparse.Namespace) -> None:
     service = build_annofabapi_resource_and_login(args)
     facade = AnnofabApiFacade(service)
     VisualizeStatistics(service, facade, args).main()
 
 
-def parse_args(parser: argparse.ArgumentParser):
+def parse_args(parser: argparse.ArgumentParser) -> None:
     parser.add_argument(
         "-p",
         "--project_id",
@@ -578,7 +578,7 @@ def parse_args(parser: argparse.ArgumentParser):
     parser.set_defaults(subcommand_func=main)
 
 
-def add_parser(subparsers: Optional[argparse._SubParsersAction] = None):
+def add_parser(subparsers: Optional[argparse._SubParsersAction] = None) -> argparse.ArgumentParser:
     subcommand_name = "visualize"
     subcommand_help = "生産性に関するCSVファイルやグラフを出力します。"
     description = "生産性に関するCSVファイルやグラフを出力します。"

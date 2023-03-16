@@ -21,7 +21,7 @@ logger = logging.getLogger(__name__)
 
 
 class WaitJobMain:
-    def __init__(self, service: annofabapi.Resource):
+    def __init__(self, service: annofabapi.Resource) -> None:
         self.service = service
         self.facade = AnnofabApiFacade(service)
 
@@ -43,7 +43,7 @@ class WaitJobMain:
 
 
 class WaitJob(AbstractCommandLineInterface):
-    def main(self):
+    def main(self) -> None:
         args = self.args
         project_id = args.project_id
         job_type = ProjectJobType(args.job_type)
@@ -55,13 +55,13 @@ class WaitJob(AbstractCommandLineInterface):
         main_obj.wait_job(project_id, job_type=job_type, job_id=args.job_id, wait_options=wait_options)
 
 
-def main(args):
+def main(args: argparse.Namespace) -> None:
     service = build_annofabapi_resource_and_login(args)
     facade = AnnofabApiFacade(service)
     WaitJob(service, facade, args).main()
 
 
-def parse_args(parser: argparse.ArgumentParser):
+def parse_args(parser: argparse.ArgumentParser) -> None:
     argument_parser = ArgumentParser(parser)
 
     argument_parser.add_project_id()
@@ -84,7 +84,7 @@ def parse_args(parser: argparse.ArgumentParser):
     parser.set_defaults(subcommand_func=main)
 
 
-def add_parser(subparsers: Optional[argparse._SubParsersAction] = None):
+def add_parser(subparsers: Optional[argparse._SubParsersAction] = None) -> argparse.ArgumentParser:
     subcommand_name = "wait"
     subcommand_help = "ジョブの終了を待ちます。"
     description = "ジョブの終了を待ちます。"

@@ -67,7 +67,7 @@ class DiffProjects(AbstractCommandLineInterface):
     プロジェクト間の差分を表示する
     """
 
-    def __init__(self, service: annofabapi.Resource, facade: AnnofabApiFacade, args: argparse.Namespace):
+    def __init__(self, service: annofabapi.Resource, facade: AnnofabApiFacade, args: argparse.Namespace) -> None:
         super().__init__(service, facade, args)
 
         project_id1 = args.project_id1
@@ -380,7 +380,7 @@ class DiffProjects(AbstractCommandLineInterface):
             )
         return is_different, diff_message
 
-    def main(self):
+    def main(self) -> None:
         args = self.args
         project_id1 = args.project_id1
         project_id2 = args.project_id2
@@ -390,7 +390,7 @@ class DiffProjects(AbstractCommandLineInterface):
         print(diff_message)
 
 
-def parse_args(parser: argparse.ArgumentParser):
+def parse_args(parser: argparse.ArgumentParser) -> None:
     parser.add_argument("project_id1", type=str, help="比較対象のプロジェクトのproject_id")
 
     parser.add_argument("project_id2", type=str, help="比較対象のプロジェクトのproject_id")
@@ -413,13 +413,13 @@ def parse_args(parser: argparse.ArgumentParser):
     parser.set_defaults(subcommand_func=main)
 
 
-def main(args):
+def main(args: argparse.Namespace) -> None:
     service = build_annofabapi_resource_and_login(args)
     facade = AnnofabApiFacade(service)
     DiffProjects(service, facade, args).main()
 
 
-def add_parser(subparsers: Optional[argparse._SubParsersAction] = None):
+def add_parser(subparsers: Optional[argparse._SubParsersAction] = None) -> argparse.ArgumentParser:
     subcommand_name = "diff"
     subcommand_help = "プロジェクト間の差分を表示する。"
     description = "プロジェクト間の差分を表示する。" + "ただし、Annofabで生成されるIDや、変化する日時などは比較しない。"

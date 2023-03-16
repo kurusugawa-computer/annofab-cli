@@ -6,14 +6,14 @@ import annofabcli.common.cli
 import annofabcli.my_account.get_my_account
 
 
-def parse_args(parser: argparse.ArgumentParser):
+def parse_args(parser: argparse.ArgumentParser) -> None:
     subparsers = parser.add_subparsers(dest="subcommand_name")
 
     # サブコマンドの定義
     annofabcli.my_account.get_my_account.add_parser(subparsers)
 
 
-def add_parser(subparsers: Optional[argparse._SubParsersAction] = None):
+def add_parser(subparsers: Optional[argparse._SubParsersAction] = None) -> argparse.ArgumentParser:
     subcommand_name = "my_account"
     subcommand_help = "自分のアカウント関係のサブコマンド"
 

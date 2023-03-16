@@ -66,7 +66,7 @@ class Database:
         project_id: str,
         temp_dir: Path,
         query: Optional[Query] = None,
-    ):
+    ) -> None:
         """
         環境変数'ANNOFAB_USER_ID', 'ANNOFAB_PASSWORD'から情報を読み込み、AnnofabApiインスタンスを生成する。
         Args:
@@ -156,7 +156,7 @@ class Database:
 
         return task_histories_dict
 
-    def wait_for_completion_updated_annotation(self, project_id):
+    def wait_for_completion_updated_annotation(self, project_id: str):
         MAX_JOB_ACCESS = 120
         JOB_ACCESS_INTERVAL = 60
         MAX_WAIT_MINUTE = MAX_JOB_ACCESS * JOB_ACCESS_INTERVAL / 60
@@ -172,7 +172,7 @@ class Database:
             logger.info(f"{self.logging_prefix}: アノテーションの更新に失敗しました or {MAX_WAIT_MINUTE} 分待っても、更新が完了しませんでした。")
             return
 
-    def wait_for_completion_updated_task_json(self, project_id):
+    def wait_for_completion_updated_task_json(self, project_id: str):
         MAX_JOB_ACCESS = 120
         JOB_ACCESS_INTERVAL = 60
         MAX_WAIT_MINUTE = MAX_JOB_ACCESS * JOB_ACCESS_INTERVAL / 60

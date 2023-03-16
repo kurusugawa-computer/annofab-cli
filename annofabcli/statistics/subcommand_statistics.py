@@ -13,7 +13,7 @@ import annofabcli.statistics.visualize_annotation_count
 import annofabcli.statistics.visualize_statistics
 
 
-def parse_args(parser: argparse.ArgumentParser):
+def parse_args(parser: argparse.ArgumentParser) -> None:
     subparsers = parser.add_subparsers(dest="subcommand_name")
 
     # サブコマンドの定義
@@ -26,7 +26,7 @@ def parse_args(parser: argparse.ArgumentParser):
     annofabcli.statistics.visualize_annotation_count.add_parser(subparsers)
 
 
-def add_parser(subparsers: Optional[argparse._SubParsersAction] = None):
+def add_parser(subparsers: Optional[argparse._SubParsersAction] = None) -> argparse.ArgumentParser:
     subcommand_name = "statistics"
     subcommand_help = "統計関係のサブコマンド"
     description = "統計関係のサブコマンド"

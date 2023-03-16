@@ -16,7 +16,7 @@ logger = logging.getLogger(__name__)
 
 
 class InviteProjectMemberMain:
-    def __init__(self, service: annofabapi.Resource):
+    def __init__(self, service: annofabapi.Resource) -> None:
         self.service = service
         self.facade = AnnofabApiFacade(service)
 
@@ -91,7 +91,7 @@ class InviteUser(AbstractCommandLineInterface):
     ユーザをプロジェクトに招待する
     """
 
-    def main(self):
+    def main(self) -> None:
         args = self.args
 
         user_id_list = annofabcli.common.cli.get_list_from_args(args.user_id)
@@ -105,13 +105,13 @@ class InviteUser(AbstractCommandLineInterface):
             main_obj.assign_role_with_project_id(project_id_list, user_id_list, ProjectMemberRole(args.role))
 
 
-def main(args):
+def main(args: argparse.Namespace) -> None:
     service = build_annofabapi_resource_and_login(args)
     facade = AnnofabApiFacade(service)
     InviteUser(service, facade, args).main()
 
 
-def parse_args(parser: argparse.ArgumentParser):
+def parse_args(parser: argparse.ArgumentParser) -> None:
     role_choices = [
         ProjectMemberRole.OWNER.value,
         ProjectMemberRole.WORKER.value,
@@ -143,7 +143,7 @@ def parse_args(parser: argparse.ArgumentParser):
     parser.set_defaults(subcommand_func=main)
 
 
-def add_parser(subparsers: Optional[argparse._SubParsersAction] = None):
+def add_parser(subparsers: Optional[argparse._SubParsersAction] = None) -> argparse.ArgumentParser:
     subcommand_name = "invite"
     subcommand_help = "複数のプロジェクトに、ユーザを招待します。"
     description = "複数のプロジェクトに、ユーザを招待します。"

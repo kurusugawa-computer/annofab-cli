@@ -138,7 +138,7 @@ class ListWorktimeFromTaskHistoryEvent(AbstractCommandLineInterface):
             logger.warning("データ件数が0件であるため、出力しません。")
             return
 
-    def main(self):
+    def main(self) -> None:
         args = self.args
 
         self.print_worktime_list(
@@ -147,13 +147,13 @@ class ListWorktimeFromTaskHistoryEvent(AbstractCommandLineInterface):
         )
 
 
-def main(args):
+def main(args: argparse.Namespace) -> None:
     service = build_annofabapi_resource_and_login(args)
     facade = AnnofabApiFacade(service)
     ListWorktimeFromTaskHistoryEvent(service, facade, args).main()
 
 
-def parse_args(parser: argparse.ArgumentParser):
+def parse_args(parser: argparse.ArgumentParser) -> None:
     argument_parser = ArgumentParser(parser)
 
     argument_parser.add_project_id()
@@ -172,7 +172,7 @@ def parse_args(parser: argparse.ArgumentParser):
     parser.set_defaults(subcommand_func=main)
 
 
-def add_parser(subparsers: Optional[argparse._SubParsersAction] = None):
+def add_parser(subparsers: Optional[argparse._SubParsersAction] = None) -> argparse.ArgumentParser:
     subcommand_name = "list_worktime"
     subcommand_help = "日ごとユーザごとの作業時間の一覧を出力します。"
     description = "タスク履歴イベント全件ファイルから、日ごとユーザごとの作業時間の一覧を出力します。"

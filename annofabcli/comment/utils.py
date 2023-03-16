@@ -1,7 +1,7 @@
 from annofabapi.models import CommentType
 
 
-def get_comment_type_name(comment_type) -> str:
+def get_comment_type_name(comment_type: CommentType) -> str:
     if comment_type == CommentType.INSPECTION:
         return "検査コメント"
     elif comment_type == CommentType.ONHOLD:

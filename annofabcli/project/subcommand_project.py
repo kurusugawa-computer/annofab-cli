@@ -10,7 +10,7 @@ import annofabcli.project.update_annotation_zip
 from annofabcli.common.cli import add_parser as common_add_parser
 
 
-def parse_args(parser: argparse.ArgumentParser):
+def parse_args(parser: argparse.ArgumentParser) -> None:
     subparsers = parser.add_subparsers(dest="subcommand_name")
 
     # サブコマンドの定義
@@ -22,7 +22,7 @@ def parse_args(parser: argparse.ArgumentParser):
     annofabcli.project.update_annotation_zip.add_parser(subparsers)
 
 
-def add_parser(subparsers: Optional[argparse._SubParsersAction] = None):
+def add_parser(subparsers: Optional[argparse._SubParsersAction] = None) -> argparse.ArgumentParser:
     subcommand_name = "project"
     subcommand_help = "プロジェクト関係のサブコマンド"
     description = "プロジェクト関係のサブコマンド"

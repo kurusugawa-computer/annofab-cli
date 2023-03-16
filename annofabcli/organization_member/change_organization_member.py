@@ -26,7 +26,7 @@ class ChangeOrganizationMemberMain(AbstractCommandLineWithConfirmInterface):
         service: annofabapi.Resource,
         *,
         all_yes: bool = False,
-    ):
+    ) -> None:
         self.service = service
         self.facade = AnnofabApiFacade(service)
         super().__init__(all_yes)
@@ -35,7 +35,7 @@ class ChangeOrganizationMemberMain(AbstractCommandLineWithConfirmInterface):
     def get_member(organization_member_list: list[dict[str, Any]], user_id: str) -> Optional[dict[str, Any]]:
         return more_itertools.first_true(organization_member_list, pred=lambda e: e["user_id"] == user_id)
 
-    def main(self, organization_name: str, user_ids: Collection[str], role: str):
+    def main(self, organization_name: str, user_ids: Collection[str], role: str) -> None:
         logger.info(f"{len(user_ids)} 件の組織メンバのロールを'{role}'に変更します。")
 
         member_list = self.service.wrapper.get_all_organization_members(organization_name)
@@ -70,7 +70,7 @@ class ChangeOrganizationMemberMain(AbstractCommandLineWithConfirmInterface):
 
 
 class ChangeOrganizationMember(AbstractCommandLineInterface):
-    def main(self):
+    def main(self) -> None:
         args = self.args
 
         user_id_list = annofabcli.common.cli.get_list_from_args(args.user_id)
@@ -79,13 +79,13 @@ class ChangeOrganizationMember(AbstractCommandLineInterface):
         main_obj.main(organization_name=args.organization, user_ids=user_id_list, role=args.role)
 
 
-def main(args):
+def main(args: argparse.Namespace) -> None:
     service = build_annofabapi_resource_and_login(args)
     facade = AnnofabApiFacade(service)
     ChangeOrganizationMember(service, facade, args).main()
 
 
-def parse_args(parser: argparse.ArgumentParser):
+def parse_args(parser: argparse.ArgumentParser) -> None:
     parser.add_argument("-org", "--organization", required=True, type=str, help="対象の組織の組織名を指定してください。")
 
     parser.add_argument(
@@ -109,7 +109,7 @@ def parse_args(parser: argparse.ArgumentParser):
     parser.set_defaults(subcommand_func=main)
 
 
-def add_parser(subparsers: Optional[argparse._SubParsersAction] = None):
+def add_parser(subparsers: Optional[argparse._SubParsersAction] = None) -> argparse.ArgumentParser:
     # 2022/01時点でロールしか変更できないのに、change_roleという名前でなくchangeという名前にしたのは、将来的にロール以外も変更できるようにするため
     subcommand_name = "change"
     subcommand_help = "組織メンバの情報（ロールなど）を変更します。"
