@@ -199,12 +199,7 @@ def get_masked_account_id(df: pandas.DataFrame, replace_dict_by_user_id: Dict[st
 
 
 def get_replaced_biography_set(df: pandas.DataFrame, not_masked_location_set: Optional[Set[str]] = None) -> Set[str]:
-    biography_set = set(df["biography"])
-    if numpy.nan in biography_set:
-        biography_set.remove(numpy.nan)
-
-    if pandas.NA in biography_set:
-        biography_set.remove(pandas.NA)
+    biography_set = set(df["biography"].dropna())
 
     if not_masked_location_set is None:
         return biography_set
@@ -244,6 +239,7 @@ def create_replacement_dict_by_biography(
     keyが置換対象のbiography、valueが置換後のマスクされた biography であるdictを作成する。
     """
     replaced_biography_set = get_replaced_biography_set(df, not_masked_location_set=not_masked_biography_set)
+    print(f"{replaced_biography_set=}")
     tmp_replace_dict_by_biography = _create_replaced_dict(replaced_biography_set)
     return {key: f"category-{value}" for key, value in tmp_replace_dict_by_biography.items()}
 
