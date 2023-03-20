@@ -7,7 +7,7 @@
         ".venv/lib/python3.8/site-packages/"
     ],
     // "poetry run"コマンドで実行することを想定しているので、venv環境を自動的にactivateしないようにする
-    "python.terminal.activateEnvironment":false,
+    "python.terminal.activateEnvironment":true,
 
     "python.formatting.blackPath": ".venv/bin/black",
     "python.formatting.provider": "black",
@@ -54,8 +54,5 @@
         ".devcontainer/venv/": true
     },
     "editor.minimap.enabled": false,
-    "ruff.args": [
-        "--config=pyproject.toml"
-    ],
     
 }
