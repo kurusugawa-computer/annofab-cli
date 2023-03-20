@@ -32,10 +32,23 @@
 		"CONTAINER_WORKSPACE": "${containerWorkspaceFolder}",
 		"LOCAL_WORKSPACE": "${localWorkspaceFolder}"
 	},
+	"workspaceMount": "source=${localWorkspaceFolder},target=/workspaces/annofab-cli,type=bind,consistency=cached",
+	"workspaceFolder": "/workspaces/annofab-cli",
 	"postStartCommand": "poetry install",
-
 	"customizations": {
-		"vscode": {			
+		"vscode": {
+			"python.languageServer": "Pylance",
+			"[python]": {
+				"editor.defaultFormatter": "ms-python.black-formatter",
+				"editor.formatOnSave": true,
+				"editor.formatOnSaveMode": "file",
+				"editor.formatOnPaste": false,
+				"editor.codeActionsOnSave": {
+					"source.organizeImports": true,
+					"source.fixAll": true
+				}
+			},
+			"ruff.path": ["./.venv/bin/ruff"],
 			"extensions": [
 				"mosapride.zenkaku",
 				"ms-python.python",
