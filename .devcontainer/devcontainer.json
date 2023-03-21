@@ -48,7 +48,6 @@
 					"source.fixAll": true
 				}
 			},
-			"ruff.path": ["./.venv/bin/ruff"],
 			"extensions": [
 				"mosapride.zenkaku",
 				"ms-python.python",
