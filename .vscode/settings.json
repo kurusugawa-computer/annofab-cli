@@ -1,14 +1,14 @@
 {
     "terminal.integrated.allowChords": false, // terminal上でEmacsキーバインドを使うための設定
-    "python.pythonPath": ".venv/bin/python",
     "python.languageServer": "Pylance",
-    "python.autoComplete.addBrackets": true,
     "python.autoComplete.extraPaths": [
-        ".venv/lib/python3.8/site-packages/"
+        ".venv/lib/python3.11/site-packages/"
     ],
     // "poetry run"コマンドで実行することを想定しているので、venv環境を自動的にactivateしないようにする
-    "python.terminal.activateEnvironment":false,
-
+    "python.terminal.activateEnvironment": false,
+    "ruff.path": [
+        ".venv/bin/ruff"
+    ],
     "python.formatting.blackPath": ".venv/bin/black",
     "python.formatting.provider": "black",
     "python.linting.enabled": true,
@@ -36,10 +36,8 @@
         ".venv/lib/python3.8/site-packages/"
     ],
     "python.analysis.completeFunctionParens": true,
-    "[python]": {
-    },
+    "[python]": {},
     "python.testing.autoTestDiscoverOnSaveEnabled": false,
-    "restructuredtext.confPath": "${workspaceFolder}/docs",
     "files.exclude": {
         ".coverage*": true,
         "**/__pycache__": true,

@@ -32,10 +32,11 @@
 		"CONTAINER_WORKSPACE": "${containerWorkspaceFolder}",
 		"LOCAL_WORKSPACE": "${localWorkspaceFolder}"
 	},
+	"workspaceMount": "source=${localWorkspaceFolder},target=/workspaces/annofab-cli,type=bind,consistency=cached",
+	"workspaceFolder": "/workspaces/annofab-cli",
 	"postStartCommand": "poetry install",
-
 	"customizations": {
-		"vscode": {			
+		"vscode": {
 			"extensions": [
 				"mosapride.zenkaku",
 				"ms-python.python",

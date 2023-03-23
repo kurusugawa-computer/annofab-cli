@@ -6,11 +6,6 @@ ifndef TEST_FILES
 endif
 .PHONY: docs lint test format publish_test publish
 
-
-init:
-	pip install poetry --upgrade
-	poetry install
-
 format:
 	poetry run black ${SOURCE_FILES} ${TEST_FILES}
 	poetry run ruff check ${SOURCE_FILES} ${TEST_FILES} --fix-only --exit-zero
