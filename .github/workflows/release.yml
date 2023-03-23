@@ -18,11 +18,10 @@ jobs:
 
       - name: Upgrade pip, and install poetry, pyinstaller
         run: |
-          python -m pip install --upgrade pip poetry
-          poetry add "pyinstaller==4.5.1" --lock
+          python -m pip install --upgrade pip 
+          python -m pip install "poetry<1.5"
       - name: poetry install
-        run: poetry install --no-dev
-
+        run: poetry install --only main,publish
       - name: create executable file
         run: |
           mv annofabcli\__main__.py annofabcli\annofabcli.py

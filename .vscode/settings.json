@@ -54,4 +54,8 @@
         ".devcontainer/venv/": true
     },
     "editor.minimap.enabled": false,
+    "ruff.args": [
+        "--config=pyproject.toml"
+    ],
+    
 }
