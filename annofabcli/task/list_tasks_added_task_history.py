@@ -48,9 +48,10 @@ class AddingAdditionalInfoToTask:
         """
         # 受入完了日時を設定
         if task["phase"] == TaskPhase.ACCEPTANCE.value and task["status"] == TaskStatus.COMPLETE.value:
-            assert (
-                len(task_histories) == 0
-            ), f"task_id='{task['task_id']}'のタスク履歴が0件です。参照しているタスク履歴情報が古い可能性があります。 :: phase='{task['phase']}', status='{task['status']}'"
+            assert len(task_histories) == 0, (
+                f"task_id='{task['task_id']}'のタスク履歴が0件です。参照しているタスク履歴情報が古い可能性があります。 "
+                f":: phase='{task['phase']}', status='{task['status']}'"
+            )
             return task_histories[-1]["ended_datetime"]
         else:
             return None
