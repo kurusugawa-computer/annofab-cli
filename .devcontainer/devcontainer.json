@@ -37,17 +37,6 @@
 	"postStartCommand": "poetry install",
 	"customizations": {
 		"vscode": {
-			"python.languageServer": "Pylance",
-			"[python]": {
-				"editor.defaultFormatter": "ms-python.black-formatter",
-				"editor.formatOnSave": true,
-				"editor.formatOnSaveMode": "file",
-				"editor.formatOnPaste": false,
-				"editor.codeActionsOnSave": {
-					"source.organizeImports": true,
-					"source.fixAll": true
-				}
-			},
 			"extensions": [
 				"mosapride.zenkaku",
 				"ms-python.python",

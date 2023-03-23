@@ -26,6 +26,6 @@ disable=
   # annofabcli setting
   no-else-return,
   f-string-without-interpolation,
-  broad-except
+  broad-except,
   
   unused-argument, # ruffの"ARG002"でチェックしているため
