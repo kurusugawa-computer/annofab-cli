@@ -10,7 +10,7 @@ install:
   - pip install pip --upgrade
   - pip install "poetry<1.5"
   # 必要なライブラリだけインストールする
-  - travis_retry poetry install --without formatter,documentation,dev
+  - travis_retry poetry install --only main,linter,test,typeshed
 
 script:
    - make lint

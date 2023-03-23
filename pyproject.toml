@@ -18,7 +18,8 @@ classifiers = [
 
 
 [tool.poetry.dependencies]
-python = "^3.8"
+# `<3.12`を指定している理由: pyinstallerがこのように記述しているので、それに合わせた。
+python = ">=3.8,<3.12"
 requests = "*"
 pyyaml = "*"
 dictdiffer = "*"
@@ -57,14 +58,20 @@ types-requests = "*"
 types-python-dateutil = "*"
 types-PyYAML = "*"
 
+[tool.poetry.group.dev]
+# 開発するときのみ必要なライブラリ。インストールしなくても開発はできるので、オプショナルにする
+optional = true
+
 [tool.poetry.group.dev.dependencies]
-# 開発するときのみ必要なライブラリ
 ipython = "*"
 
+[tool.poetry.group.publish]
+# リリース時に必要なツール。インストールしなくても開発できるので、オプショナルにする
+optional = true
+
 [tool.poetry.group.publish.dependencies]
-# 公開時に必要なツール
 # GitHubでリリース時に、 GitHub Actionでannofabcliのexeを公開している
-pyinstaller = "^4.5.1"
+pyinstaller = "^5.9"
 
 [tool.poetry.scripts]
 annofabcli = "annofabcli.__main__:main"
