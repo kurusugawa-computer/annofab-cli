@@ -28,3 +28,4 @@ disable=
   f-string-without-interpolation,
   broad-except
   
+  unused-argument, # ruffの"ARG002"でチェックしているため
