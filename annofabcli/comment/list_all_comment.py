@@ -40,6 +40,8 @@ class ListAllCommentMain:
     ) -> list[dict[str, Any]]:
         if comment_json is None:
             downloading_obj = DownloadingFile(self.service)
+            # `NamedTemporaryFile`を使わない理由: Windowsで`PermissionError`が発生するため
+            # https://qiita.com/yuji38kwmt/items/c6f50e1fc03dafdcdda0 参考
             with tempfile.TemporaryDirectory() as str_temp_dir:
                 json_path = Path(str_temp_dir) / f"{project_id}__comment.json"
                 downloading_obj.download_comment_json(project_id, str(json_path))
@@ -66,7 +68,7 @@ class ListAllCommentMain:
         comment_list = [visualize.add_properties_to_comment(e) for e in comment_list]
         return comment_list
 
-
+ 
 class ListAllComment(AbstractCommandLineInterface):
     def main(self) -> None:
         args = self.args
