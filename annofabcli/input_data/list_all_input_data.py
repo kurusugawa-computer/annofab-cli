@@ -50,13 +50,16 @@ class ListInputDataWithJsonMain:
     ) -> List[Dict[str, Any]]:
         if input_data_json is None:
             downloading_obj = DownloadingFile(self.service)
-            with tempfile.NamedTemporaryFile() as temp_file:
+            # `NamedTemporaryFile`を使わない理由: Windowsで`PermissionError`が発生するため
+            # https://qiita.com/yuji38kwmt/items/c6f50e1fc03dafdcdda0 参考
+            with tempfile.TemporaryDirectory() as str_temp_dir:
+                json_path = Path(str_temp_dir) / f"{project_id}__input_data.json"
                 downloading_obj.download_input_data_json(
                     project_id,
-                    temp_file.name,
+                    str(json_path),
                     is_latest=is_latest,
                 )
-                with open(temp_file.name, encoding="utf-8") as f:
+                with json_path.open(encoding="utf-8") as f:
                     input_data_list = json.load(f)
         else:
             json_path = input_data_json
