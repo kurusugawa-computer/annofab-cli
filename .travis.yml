@@ -47,7 +47,7 @@ jobs:
         - travis_retry poetry install --only main,linter,test
       script:
         - poetry run pytest -n auto -m "not access_webapi"
-      # env: PATH=/c/Python311:/c/Python311/Scripts:$PATH
+      env: PATH=/c/Python311:/c/Python311/Scripts:$PATH PIP_DEFAULT_TIMEOUT=300 ANNOFAB_USER_ID=foo ANNOFAB_PASSWORD=bar
 
 install:
   # pipをアップグレードする理由: pipのバージョンが古いと、pillowなど環境ごとにwheelを提供しているライブラリのインストールに失敗する可能性があるため
