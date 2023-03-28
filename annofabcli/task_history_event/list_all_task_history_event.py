@@ -53,7 +53,7 @@ class ListTaskHistoryEventWithJsonMain:
             # `NamedTemporaryFile`を使わない理由: Windowsで`PermissionError`が発生するため
             # https://qiita.com/yuji38kwmt/items/c6f50e1fc03dafdcdda0 参考
             with tempfile.TemporaryDirectory() as str_temp_dir:
-                tmp_json_file = Path(str_temp_dir) / f"{self.project_id}__task_history_event.json"
+                tmp_json_file = Path(str_temp_dir) / "task_history_event.json"
                 downloading_obj.download_task_history_event_json(project_id, str(tmp_json_file))
                 with tmp_json_file.open(encoding="utf-8") as f:
                     all_task_history_event_list = json.load(f)
