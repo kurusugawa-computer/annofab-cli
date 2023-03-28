@@ -1,10 +1,25 @@
-dist: focal
 language: python
-python:
-  - "3.8"
-  - "3.9"
-  - "3.10"
-  - "3.11"
+
+jobs:
+  include:
+    - os: linux
+      dist: focal
+      python: 3.8
+    - os: linux
+      dist: focal
+      python: 3.9
+    - os: linux
+      dist: focal
+      python: 3.10
+    - os: linux
+      dist: focal
+      python: 3.11
+    # Windowsは最新のPythonバージョンのみテストする。
+    # 最新でないPythonバージョンのテストはすでに実施できているので。
+    # このテストはWindows特有のバグが発生しないことを確認する
+    - os: windows
+      python: 3.11
+
 install:
   # pipをアップグレードする理由: pipのバージョンが古いと、pillowなど環境ごとにwheelを提供しているライブラリのインストールに失敗する可能性があるため
   - pip install pip --upgrade
