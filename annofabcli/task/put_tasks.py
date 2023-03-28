@@ -169,9 +169,12 @@ class PuttingTaskMain:
         logger.info(f"{len(task_relation_dict)}件のタスクを生成します。")
         if api is None:
             if len(task_relation_dict) > TASK_THRESHOLD_FOR_JSON:
-                with tempfile.NamedTemporaryFile() as f:
-                    create_task_relation_csv(task_relation_dict, Path(f.name))
-                    self.put_task_from_csv_file(Path(f.name))
+                # `NamedTemporaryFile`を使わない理由: Windowsで`PermissionError`が発生するため
+                # https://qiita.com/yuji38kwmt/items/c6f50e1fc03dafdcdda0 参考
+                with tempfile.TemporaryDirectory() as str_temp_dir:
+                    csv_path = Path(str_temp_dir) / f"{self.project_id}.csv"
+                    create_task_relation_csv(task_relation_dict, csv_path)
+                    self.put_task_from_csv_file(csv_path)
             else:
                 self.put_task_list(task_relation_dict)
 
@@ -179,9 +182,12 @@ class PuttingTaskMain:
             self.put_task_list(task_relation_dict)
 
         elif api == ApiWithCreatingTask.INITIATE_TASKS_GENERATION:
-            with tempfile.NamedTemporaryFile() as f:
-                create_task_relation_csv(task_relation_dict, Path(f.name))
-                self.put_task_from_csv_file(Path(f.name))
+            # `NamedTemporaryFile`を使わない理由: Windowsで`PermissionError`が発生するため
+            # https://qiita.com/yuji38kwmt/items/c6f50e1fc03dafdcdda0 参考
+            with tempfile.TemporaryDirectory() as str_temp_dir:
+                csv_path = Path(str_temp_dir) / f"{self.project_id}.csv"
+                create_task_relation_csv(task_relation_dict, csv_path)
+                self.put_task_from_csv_file(csv_path)
 
     def wait_for_completion(self, job_id: str) -> None:
         """

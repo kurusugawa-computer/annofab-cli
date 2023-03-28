@@ -1,21 +1,60 @@
-dist: focal
 language: python
-python:
-  - "3.8"
-  - "3.9"
-  - "3.10"
-  - "3.11"
+
+jobs:
+  include:
+    - name: Run test
+      os: linux
+      dist: focal
+      python: 3.8
+      script:
+        - poetry run pytest -n auto -m "not access_webapi"
+    - name: Run test
+      os: linux
+      dist: focal
+      python: 3.9
+      script:
+        - poetry run pytest -n auto -m "not access_webapi"
+    - name: Run test
+      os: linux
+      dist: focal
+      python: 3.10
+      script:
+        - poetry run pytest -n auto -m "not access_webapi"
+    - name: Run test and lint
+      os: linux
+      dist: focal
+      python: 3.11
+      script:
+        - poetry run pytest -n auto -m "not access_webapi"
+        # 最新バージョンではlintを実行する
+        - make lint
+    # Windowsは最新のPythonバージョンのみテストする。
+    # 最新でないPythonバージョンのテストはすでに実施できているので。
+    # このテストはWindows特有のバグが発生しないことを確認する
+    - name: Run test
+      os: windows
+      python: 3.11
+      language: shell  # 'language: python' is an error on Travis CI Windows
+      install:
+        - choco install python --version 3.11
+        - python -m pip install --upgrade pip
+        - pip3 install "poetry<1.5"
+        # 以下の環境変数が設定されないと、poetry install時に"A specified logon session does not exist. It may already have been terminated."というエラーが発生する
+        # https://stackoverflow.com/questions/74392324/poetry-install-throws-winerror-1312-when-running-over-ssh-on-windows-10
+        - export PYTHON_KEYRING_BACKEND=keyring.backends.null.Keyring
+        # UTF-8 Modeを利用する。これを設定しないと、"UnicodeEncodeError: 'charmap' codec can't encode characters in position 128-135: character maps to <undefined>"というエラーが発生する
+        - export PYTHONUTF8=1
+        - travis_retry poetry install --only main,linter,test
+      script:
+        - poetry run pytest -n auto -m "not access_webapi"
+      env: PATH=/c/Python311:/c/Python311/Scripts:$PATH PIP_DEFAULT_TIMEOUT=300 ANNOFAB_USER_ID=foo ANNOFAB_PASSWORD=bar
+
 install:
   # pipをアップグレードする理由: pipのバージョンが古いと、pillowなど環境ごとにwheelを提供しているライブラリのインストールに失敗する可能性があるため
   - pip install pip --upgrade
   - pip install "poetry<1.5"
   # 必要なライブラリだけインストールする
-  - travis_retry poetry install --only main,linter,test,typeshed
-
-script:
-   - make lint
-     # webapiにアクセスするテストは実行しないようにする
-   - poetry run pytest -n auto -m "not access_webapi"
+  - travis_retry poetry install --only main,linter,test
 
 branches:
   only:

@@ -64,9 +64,12 @@ class ListAllTasksAddedTaskHistoryMain:
             with task_json_path.open(encoding="utf-8") as f:
                 return json.load(f)
 
-        with tempfile.NamedTemporaryFile() as tmp_file:
-            self.downloading_obj.download_task_json(self.project_id, tmp_file.name)
-            with open(tmp_file.name, encoding="utf-8") as f:
+        # `NamedTemporaryFile`を使わない理由: Windowsで`PermissionError`が発生するため
+        # https://qiita.com/yuji38kwmt/items/c6f50e1fc03dafdcdda0 参考
+        with tempfile.TemporaryDirectory() as str_temp_dir:
+            task_json_path = Path(str_temp_dir) / f"{self.project_id}__task.json"
+            self.downloading_obj.download_task_json(self.project_id, str(task_json_path))
+            with task_json_path.open(encoding="utf-8") as f:
                 return json.load(f)
 
     def load_task_history_dict(self, task_history_json_path: Optional[Path]) -> TaskHistoryDict:
@@ -74,9 +77,12 @@ class ListAllTasksAddedTaskHistoryMain:
             with task_history_json_path.open(encoding="utf-8") as f:
                 return json.load(f)
         else:
-            with tempfile.NamedTemporaryFile() as tmp_file:
-                self.downloading_obj.download_task_history_json(self.project_id, tmp_file.name)
-                with open(tmp_file.name, encoding="utf-8") as f:
+            # `NamedTemporaryFile`を使わない理由: Windowsで`PermissionError`が発生するため
+            # https://qiita.com/yuji38kwmt/items/c6f50e1fc03dafdcdda0 参考
+            with tempfile.TemporaryDirectory() as str_temp_dir:
+                task_history_json_path = Path(str_temp_dir) / f"{self.project_id}__task_history.json"
+                self.downloading_obj.download_task_history_json(self.project_id, str(task_history_json_path))
+                with task_history_json_path.open(encoding="utf-8") as f:
                     return json.load(f)
 
     @staticmethod

@@ -50,9 +50,12 @@ class ListTasksWithJsonMain:
     ) -> List[Dict[str, Any]]:
         if task_json is None:
             downloading_obj = DownloadingFile(self.service)
-            with tempfile.NamedTemporaryFile() as temp_file:
-                downloading_obj.download_task_json(project_id, temp_file.name, is_latest=is_latest)
-                with open(temp_file.name, encoding="utf-8") as f:
+            # `NamedTemporaryFile`を使わない理由: Windowsで`PermissionError`が発生するため
+            # https://qiita.com/yuji38kwmt/items/c6f50e1fc03dafdcdda0 参考
+            with tempfile.TemporaryDirectory() as str_temp_dir:
+                json_path = Path(str_temp_dir) / f"{project_id}__task.json"
+                downloading_obj.download_task_json(project_id, str(json_path), is_latest=is_latest)
+                with json_path.open(encoding="utf-8") as f:
                     task_list = json.load(f)
 
         else:

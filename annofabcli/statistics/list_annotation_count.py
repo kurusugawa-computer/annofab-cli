@@ -1064,10 +1064,12 @@ class ListAnnotationCount(AbstractCommandLineInterface):
 
         downloading_obj = DownloadingFile(self.service)
 
-        with tempfile.NamedTemporaryFile() as f1:
+        # `NamedTemporaryFile`を使わない理由: Windowsで`PermissionError`が発生するため
+        # https://qiita.com/yuji38kwmt/items/c6f50e1fc03dafdcdda0 参考
+        with tempfile.TemporaryDirectory() as str_temp_dir:
             # タスク全件ファイルは、フレーム番号を参照するのに利用する
             if project_id is not None:
-                task_json_path = Path(f1.name)
+                task_json_path = Path(str_temp_dir) / f"{project_id}__task.json"
                 downloading_obj.download_task_json(
                     project_id,
                     dest_path=str(task_json_path),
@@ -1089,14 +1091,13 @@ class ListAnnotationCount(AbstractCommandLineInterface):
 
             if annotation_path is None:
                 assert project_id is not None
-                with tempfile.NamedTemporaryFile() as f:
-                    annotation_path = Path(f.name)
-                    downloading_obj.download_annotation_zip(
-                        project_id,
-                        dest_path=str(annotation_path),
-                        is_latest=args.latest,
-                    )
-                    func(annotation_path=annotation_path)
+                annotation_path = Path(str_temp_dir) / f"{project_id}__annotation.zip"
+                downloading_obj.download_annotation_zip(
+                    project_id,
+                    dest_path=str(annotation_path),
+                    is_latest=args.latest,
+                )
+                func(annotation_path=annotation_path)
             else:
                 func(annotation_path=annotation_path)
 

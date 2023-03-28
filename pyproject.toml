@@ -1,6 +1,6 @@
 [tool.poetry]
 name = "annofabcli"
-version = "1.76.1"
+version = "1.76.2"
 description = "Utility Command Line Interface for AnnoFab"
 authors = ["yuji38kwmt"]
 license = "MIT"
@@ -46,17 +46,17 @@ ruff = ">=0.0.255"
 mypy = "^1"
 pylint = "^2"
 
+types-pytz = "*"
+types-requests = "*"
+types-python-dateutil = "*"
+types-PyYAML = "*"
+
 [tool.poetry.group.documentation.dependencies]
 sphinx = "^6.1"
 pydata-sphinx-theme = ">=0.13"
 sphinx-last-updated-by-git = "*"
 sphinx-argparse = "*"
 
-[tool.poetry.group.typeshed.dependencies]
-types-pytz = "*"
-types-requests = "*"
-types-python-dateutil = "*"
-types-PyYAML = "*"
 
 [tool.poetry.group.dev]
 # 開発するときのみ必要なライブラリ。インストールしなくても開発はできるので、オプショナルにする

@@ -40,8 +40,10 @@ class ListAllCommentMain:
     ) -> list[dict[str, Any]]:
         if comment_json is None:
             downloading_obj = DownloadingFile(self.service)
-            with tempfile.NamedTemporaryFile() as temp_file:
-                json_path = Path(temp_file.name)
+            # `NamedTemporaryFile`を使わない理由: Windowsで`PermissionError`が発生するため
+            # https://qiita.com/yuji38kwmt/items/c6f50e1fc03dafdcdda0 参考
+            with tempfile.TemporaryDirectory() as str_temp_dir:
+                json_path = Path(str_temp_dir) / f"{project_id}__comment.json"
                 downloading_obj.download_comment_json(project_id, str(json_path))
                 with json_path.open(encoding="utf-8") as f:
                     comment_list = json.load(f)

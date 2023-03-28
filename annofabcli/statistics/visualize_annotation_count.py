@@ -298,8 +298,10 @@ class VisualizeAnnotationCount(AbstractCommandLineInterface):
 
         if annotation_path is None:
             assert project_id is not None
-            with tempfile.NamedTemporaryFile() as f:
-                annotation_path = Path(f.name)
+            # `NamedTemporaryFile`を使わない理由: Windowsで`PermissionError`が発生するため
+            # https://qiita.com/yuji38kwmt/items/c6f50e1fc03dafdcdda0 参考
+            with tempfile.TemporaryDirectory() as str_temp_dir:
+                annotation_path = Path(str_temp_dir) / f"{project_id}__annotation.zip"
                 downloading_obj = DownloadingFile(self.service)
                 downloading_obj.download_annotation_zip(
                     project_id,
