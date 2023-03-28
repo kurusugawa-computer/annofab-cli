@@ -6,22 +6,22 @@ jobs:
       dist: focal
       python: 3.8
       script:
-        - ./.travis/test.sh
+        - poetry run pytest -n auto -m "not access_webapi"
     - os: linux
       dist: focal
       python: 3.9
       script:
-        - ./.travis/test.sh
+        - poetry run pytest -n auto -m "not access_webapi"
     - os: linux
       dist: focal
       python: 3.10
       script:
-        - ./.travis/test.sh
+        - poetry run pytest -n auto -m "not access_webapi"
     - os: linux
       dist: focal
       python: 3.11
       script:
-        - ./.travis/test.sh
+        - poetry run pytest -n auto -m "not access_webapi"
         # 最新バージョンではlintを実行する
         - make lint
     # Windowsは最新のPythonバージョンのみテストする。
@@ -37,7 +37,7 @@ jobs:
         - export PYTHON_KEYRING_BACKEND=keyring.backends.null.Keyring
         - travis_retry poetry install --only main,linter,test
       script:
-        - ./.travis/test.sh
+        - poetry run pytest -n auto -m "not access_webapi"
       env: PATH=/c/Python311:/c/Python311/Scripts:$PATH
 
 install:
