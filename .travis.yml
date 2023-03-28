@@ -2,22 +2,26 @@ language: python
 
 jobs:
   include:
-    - os: linux
+    - name: Run test
+      os: linux
       dist: focal
       python: 3.8
       script:
         - poetry run pytest -n auto -m "not access_webapi"
-    - os: linux
+    - name: Run test
+      os: linux
       dist: focal
       python: 3.9
       script:
         - poetry run pytest -n auto -m "not access_webapi"
-    - os: linux
+    - name: Run test
+      os: linux
       dist: focal
       python: 3.10
       script:
         - poetry run pytest -n auto -m "not access_webapi"
-    - os: linux
+    - name: Run test and lint
+      os: linux
       dist: focal
       python: 3.11
       script:
@@ -27,7 +31,8 @@ jobs:
     # Windowsは最新のPythonバージョンのみテストする。
     # 最新でないPythonバージョンのテストはすでに実施できているので。
     # このテストはWindows特有のバグが発生しないことを確認する
-    - os: windows
+    - name: Run test
+      os: windows
       python: 3.11
       language: shell  # 'language: python' is an error on Travis CI Windows
       install:
