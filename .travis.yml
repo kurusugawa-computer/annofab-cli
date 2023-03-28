@@ -24,6 +24,7 @@ jobs:
         - choco install python --version 3.11
         - python -m pip install --upgrade pip
         - pip3 install "poetry<1.5"
+        - SET PYTHON_KEYRING_BACKEND=keyring.backends.null.Keyring
         - travis_retry poetry install --only main,linter,test,typeshed
       env: PATH=/c/Python311:/c/Python311/Scripts:$PATH
 
