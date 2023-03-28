@@ -2,18 +2,28 @@ language: python
 
 jobs:
   include:
-    # - os: linux
-    #   dist: focal
-    #   python: 3.8
-    # - os: linux
-    #   dist: focal
-    #   python: 3.9
-    # - os: linux
-    #   dist: focal
-    #   python: 3.10
+    - os: linux
+      dist: focal
+      python: 3.8
+      script:
+        - ./.travis/test.sh
+    - os: linux
+      dist: focal
+      python: 3.9
+      script:
+        - ./.travis/test.sh
+    - os: linux
+      dist: focal
+      python: 3.10
+      script:
+        - ./.travis/test.sh
     - os: linux
       dist: focal
       python: 3.11
+      script:
+        - ./.travis/test.sh
+        # 最新バージョンではlintを実行する
+        - make lint
     # Windowsは最新のPythonバージョンのみテストする。
     # 最新でないPythonバージョンのテストはすでに実施できているので。
     # このテストはWindows特有のバグが発生しないことを確認する
@@ -25,7 +35,9 @@ jobs:
         - python -m pip install --upgrade pip
         - pip3 install "poetry<1.5"
         - export PYTHON_KEYRING_BACKEND=keyring.backends.null.Keyring
-        - travis_retry poetry install --only main,linter,test,typeshed
+        - travis_retry poetry install --only main,linter,test
+      script:
+        - ./.travis/test.sh
       env: PATH=/c/Python311:/c/Python311/Scripts:$PATH
 
 install:
@@ -33,12 +45,7 @@ install:
   - pip install pip --upgrade
   - pip install "poetry<1.5"
   # 必要なライブラリだけインストールする
-  - travis_retry poetry install --only main,linter,test,typeshed
-
-script:
-   - make lint
-     # webapiにアクセスするテストは実行しないようにする
-   - poetry run pytest -n auto -m "not access_webapi"
+  - travis_retry poetry install --only main,linter,test
 
 branches:
   only:
