@@ -39,11 +39,15 @@ jobs:
         - choco install python --version 3.11
         - python -m pip install --upgrade pip
         - pip3 install "poetry<1.5"
-        - export PYTHON_KEYRING_BACKEND=keyring.backends.null.Keyring PYTHONUTF8=1
+        # 以下の環境変数が設定されないと、poetry install時に"A specified logon session does not exist. It may already have been terminated."というエラーが発生する
+        # https://stackoverflow.com/questions/74392324/poetry-install-throws-winerror-1312-when-running-over-ssh-on-windows-10
+        - export PYTHON_KEYRING_BACKEND=keyring.backends.null.Keyring
+        # UTF-8 Modeを利用する。これを設定しないと、"UnicodeEncodeError: 'charmap' codec can't encode characters in position 128-135: character maps to <undefined>"というエラーが発生する
+        - export PYTHONUTF8=1
         - travis_retry poetry install --only main,linter,test
       script:
         - poetry run pytest -n auto -m "not access_webapi"
-      env: PATH=/c/Python311:/c/Python311/Scripts:$PATH
+      # env: PATH=/c/Python311:/c/Python311/Scripts:$PATH
 
 install:
   # pipをアップグレードする理由: pipのバージョンが古いと、pillowなど環境ごとにwheelを提供しているライブラリのインストールに失敗する可能性があるため
