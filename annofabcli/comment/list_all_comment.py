@@ -68,7 +68,7 @@ class ListAllCommentMain:
         comment_list = [visualize.add_properties_to_comment(e) for e in comment_list]
         return comment_list
 
- 
+
 class ListAllComment(AbstractCommandLineInterface):
     def main(self) -> None:
         args = self.args
