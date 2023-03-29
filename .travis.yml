@@ -45,6 +45,9 @@ jobs:
         # UTF-8 Modeを利用する。これを設定しないと、"UnicodeEncodeError: 'charmap' codec can't encode characters in position 128-135: character maps to <undefined>"というエラーが発生する
         - export PYTHONUTF8=1
         - travis_retry poetry install --only main,linter,test
+        - echo $LOCALE
+        - localectl
+        - systeminfo
       script:
         - python foo.py
         - poetry run pytest -n auto -m "not access_webapi"
