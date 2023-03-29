@@ -46,6 +46,7 @@ jobs:
         - export PYTHONUTF8=1
         - travis_retry poetry install --only main,linter,test
       script:
+        - python foo.py
         - poetry run pytest -n auto -m "not access_webapi"
       env: PATH=/c/Python311:/c/Python311/Scripts:$PATH PIP_DEFAULT_TIMEOUT=300 ANNOFAB_USER_ID=foo ANNOFAB_PASSWORD=bar
 
