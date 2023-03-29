@@ -46,7 +46,7 @@ jobs:
         - export PYTHONUTF8=1
         - travis_retry poetry install --only main,linter,test
         - echo $LOCALE
-        - localectl
+        - printenv
         - systeminfo
       script:
         - python foo.py
