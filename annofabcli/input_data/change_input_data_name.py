@@ -49,7 +49,7 @@ class ChangeInputDataNameMain(AbstractCommandLineWithConfirmInterface):
         """
         1個の入力データの名前を変更します。
         """
-        old_input_data = self.service.wrapper.get_input_data(project_id, input_data_id)
+        old_input_data = self.service.wrapper.get_input_data_or_none(project_id, input_data_id)
         if old_input_data is None:
             logger.warning(f"input_data_id='{input_data_id}'である入力データは存在しません。")
             return False
@@ -64,7 +64,7 @@ class ChangeInputDataNameMain(AbstractCommandLineWithConfirmInterface):
         request_body["last_updated_datetime"] = old_input_data["updated_datetime"]
         request_body["input_data_name"] = new_input_data_name
 
-        self.service.api.put_input_data(self.project_id, input_data_id, request_body=request_body)
+        self.service.api.put_input_data(project_id, input_data_id, request_body=request_body)
         return True
 
     def change_input_data_name_list_sequentially(
@@ -85,7 +85,7 @@ class ChangeInputDataNameMain(AbstractCommandLineWithConfirmInterface):
                 result = self.change_input_data_name(
                     project_id,
                     changed_input_data.input_data_id,
-                    new_input_data_name=changed_input_data.new_input_data_name,
+                    new_input_data_name=changed_input_data.input_data_name,
                 )
                 if result:
                     success_count += 1
@@ -110,7 +110,7 @@ class ChangeInputDataNameMain(AbstractCommandLineWithConfirmInterface):
                 return self.change_input_data_name(
                     project_id,
                     input_data_id=changed_input_data.input_data_id,
-                    new_input_data_name=changed_input_data.new_input_data_name,
+                    new_input_data_name=changed_input_data.input_data_name,
                 )
             except Exception:
                 logger.warning(
