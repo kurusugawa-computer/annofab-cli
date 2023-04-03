@@ -1,14 +1,17 @@
 from __future__ import annotations
-from pathlib import Path
+
 import argparse
 import logging
 import multiprocessing
 import sys
+from dataclasses import dataclass
 from functools import partial
-from typing import Any, Dict, List, Optional, Tuple
+from pathlib import Path
+from typing import Optional
 
 import annofabapi
-from annofabapi.models import ProjectMemberRole
+import pandas
+from dataclasses_json import DataClassJsonMixin
 
 import annofabcli
 import annofabcli.common.cli
@@ -18,39 +21,9 @@ from annofabcli.common.cli import (
     AbstractCommandLineWithConfirmInterface,
     ArgumentParser,
     build_annofabapi_resource_and_login,
-    get_json_from_args
-)
-from annofabcli.common.facade import AnnofabApiFacade
-
-import argparse
-import logging
-import sys
-import uuid
-from dataclasses import dataclass
-from functools import partial
-from multiprocessing import Pool
-from pathlib import Path
-from typing import Any, Dict, List, Optional
-
-import annofabapi
-import pandas
-import requests
-from annofabapi.exceptions import CheckSumError
-from annofabapi.models import ProjectMemberRole
-from dataclasses_json import DataClassJsonMixin
-
-import annofabcli
-from annofabcli.common.cli import (
-    COMMAND_LINE_ERROR_STATUS_CODE,
-    AbstractCommandLineInterface,
-    ArgumentParser,
-    build_annofabapi_resource_and_login,
     get_json_from_args,
-    prompt_yesnoall,
 )
-from annofabcli.common.dataclasses import WaitOptions
 from annofabcli.common.facade import AnnofabApiFacade
-from annofabcli.common.utils import get_file_scheme_path
 
 logger = logging.getLogger(__name__)
 
@@ -60,12 +33,11 @@ class ChangedInputData(DataClassJsonMixin):
     """
     変更される入力データ
     """
+
     input_data_id: str
     """変更対象の入力データを表すID"""
     input_data_name: str
     """変更後の入力データ名"""
-
-
 
 
 class ChangeInputDataNameMain(AbstractCommandLineWithConfirmInterface):
@@ -73,8 +45,7 @@ class ChangeInputDataNameMain(AbstractCommandLineWithConfirmInterface):
         self.service = service
         AbstractCommandLineWithConfirmInterface.__init__(self, all_yes)
 
-    def change_input_data_name(self, project_id:str, input_data_id: str, new_input_data_name:str) -> bool:
-
+    def change_input_data_name(self, project_id: str, input_data_id: str, new_input_data_name: str) -> bool:
         """
         1個の入力データの名前を変更します。
         """
@@ -83,8 +54,10 @@ class ChangeInputDataNameMain(AbstractCommandLineWithConfirmInterface):
             logger.warning(f"input_data_id='{input_data_id}'である入力データは存在しません。")
             return False
 
-        if not self.confirm_processing(f"input_data_id='{input_data_id}' :: "
-            f"input_data_name='{old_input_data['input_data_name']}'を'{new_input_data_name}'に変更しますか？"):
+        if not self.confirm_processing(
+            f"input_data_id='{input_data_id}' :: "
+            f"input_data_name='{old_input_data['input_data_name']}'を'{new_input_data_name}'に変更しますか？"
+        ):
             return False
 
         request_body = old_input_data
@@ -94,35 +67,33 @@ class ChangeInputDataNameMain(AbstractCommandLineWithConfirmInterface):
         self.service.api.put_input_data(self.project_id, input_data_id, request_body=request_body)
         return True
 
-
-
     def change_input_data_name_list_sequentially(
         self,
         project_id: str,
         changed_input_data_list: list[ChangedInputData],
     ) -> None:
-        """複数の入力データの名前を逐次的に変更します。
-        """
+        """複数の入力データの名前を逐次的に変更します。"""
         success_count = 0
 
         logger.info(f"{len(changed_input_data_list)} 件の入力データの名前を変更します。")
 
         for input_data_index, changed_input_data in enumerate(changed_input_data_list):
-            if (input_data_index+1) % 100 == 0:
+            if (input_data_index + 1) % 100 == 0:
                 logger.info(f"{input_data_index+1}件目の入力データの名前を変更します。")
 
             try:
                 result = self.change_input_data_name(
                     project_id,
                     changed_input_data.input_data_id,
-                    new_input_data_name=changed_input_data.new_input_data_name
+                    new_input_data_name=changed_input_data.new_input_data_name,
                 )
                 if result:
                     success_count += 1
             except Exception:
-                logger.warning(f"input_data_id='{changed_input_data.input_data_id}'の入力データの名前を変更するのに失敗しました。", exc_info=True)
+                logger.warning(
+                    f"input_data_id='{changed_input_data.input_data_id}'の入力データの名前を変更するのに失敗しました。", exc_info=True
+                )
                 continue
-
 
         logger.info(f"{success_count} / {len(changed_input_data_list)} 件の入力データの名前を変更しました。")
 
@@ -132,20 +103,19 @@ class ChangeInputDataNameMain(AbstractCommandLineWithConfirmInterface):
         changed_input_data_list: list[ChangedInputData],
         parallelism: int,
     ) -> None:
-        """複数の入力データの名前を並列的に変更します。
-        """
+        """複数の入力データの名前を並列的に変更します。"""
 
-        def wrapper(
-            changed_input_data: ChangedInputData, project_id: str
-        ) -> bool:
+        def wrapper(changed_input_data: ChangedInputData, project_id: str) -> bool:
             try:
                 return self.change_input_data_name(
                     project_id,
                     input_data_id=changed_input_data.input_data_id,
-                    new_input_data_name=changed_input_data.new_input_data_name
+                    new_input_data_name=changed_input_data.new_input_data_name,
                 )
             except Exception:
-                logger.warning(f"input_data_id='{changed_input_data.input_data_id}'の入力データの名前を変更するのに失敗しました。", exc_info=True)
+                logger.warning(
+                    f"input_data_id='{changed_input_data.input_data_id}'の入力データの名前を変更するのに失敗しました。", exc_info=True
+                )
                 return False
 
         success_count = 0
@@ -162,10 +132,34 @@ class ChangeInputDataNameMain(AbstractCommandLineWithConfirmInterface):
             success_count = len([e for e in result_bool_list if e])
 
         logger.info(f"{success_count} / {len(changed_input_data_list)} 件の入力データの名前を変更しました。")
-        
 
 
+def create_changed_input_data_list_from_dict(input_data_dict_list: list[dict[str, str]]) -> list[ChangedInputData]:
+    return ChangedInputData.schema().load(input_data_dict_list, many=True, unknown="exclude")
 
+
+def create_changed_input_data_list_from_csv(csv_file: Path) -> list[ChangedInputData]:
+    """入力データの情報が記載されているCSVを読み込み、ChangedInputDataのlistを返します。
+    CSVには以下の列が存在します。
+    * input_data_id
+    * input_data_name
+
+    Args:
+        csv_file (Path): CSVファイルのパス
+
+    Returns:
+        変更対象の入力データのlist
+    """
+    df_input_data = pandas.read_csv(
+        str(csv_file),
+        header=None,
+        names=("input_data_id", "input_data_name"),
+        # 文字列として読み込むようにする
+        dtype={"input_data_id": str, "input_data_name": str},
+    )
+
+    input_data_dict_list = df_input_data.to_dict("records")
+    return ChangedInputData.schema().load(input_data_dict_list, many=True, unknown="exclude")
 
 
 class ChangeInputDataName(AbstractCommandLineInterface):
@@ -187,44 +181,24 @@ class ChangeInputDataName(AbstractCommandLineInterface):
         if not self.validate(args):
             sys.exit(COMMAND_LINE_ERROR_STATUS_CODE)
 
-        if args.csv is not None:
-            df = read_input_data_csv(args.csv)
-            is_duplicated = is_duplicated_input_data(df)
-            if not args.allow_duplicated_input_data and is_duplicated:
-                print(
-                    f"{self.COMMON_MESSAGE} argument --csv: '{args.csv}' に記載されている'input_data_name'または'input_data_path'が重複しているため、入力データを登録しません。"  # noqa: E501
-                    f"重複している状態で入力データを登録する際は、'--allow_duplicated_input_data'を指定してください。",
-                    file=sys.stderr,
-                )
-                sys.exit(COMMAND_LINE_ERROR_STATUS_CODE)
+        main_obj = ChangeInputDataNameMain(self.service, all_yes=self.all_yes)
 
-            input_data_list = self.get_input_data_list_from_df(df)
-            self.put_input_data_list(
-                project_id, input_data_list=input_data_list, overwrite=args.overwrite, parallelism=args.parallelism
-            )
+        if args.csv is not None:
+            changed_input_data_list = create_changed_input_data_list_from_csv(args.csv)
 
         elif args.json is not None:
-            input_data_dict_list: list[dict[str,str]] = get_json_from_args(args.json)
-            input_data_list = self.get_input_data_list_from_dict(
-                input_data_dict_list, allow_duplicated_input_data=args.allow_duplicated_input_data
+            input_data_dict_list: list[dict[str, str]] = get_json_from_args(args.json)
+            changed_input_data_list = create_changed_input_data_list_from_dict(input_data_dict_list)
+
+        project_id: str = args.project_id
+        if args.parallelism is not None:
+            main_obj.change_input_data_name_list_in_parallel(
+                project_id, changed_input_data_list=changed_input_data_list, parallelism=args.parallelism
             )
-            self.put_input_data_list(
-                project_id, input_data_list=input_data_list, overwrite=args.overwrite, parallelism=args.parallelism
+        else:
+            main_obj.change_input_data_name_list_sequentially(
+                project_id, changed_input_data_list=changed_input_data_list
             )
-
-
-
-        input_data_id_list = annofabcli.common.cli.get_list_from_args(args.input_data_id)
-        metadata = annofabcli.common.cli.get_json_from_args(args.metadata)
-        super().validate_project(args.project_id, [ProjectMemberRole.OWNER])
-        main_obj = UpdateMetadataMain(self.service, all_yes=args.yes)
-        main_obj.update_metadata_of_input_data(
-            args.project_id,
-            input_data_id_list,
-            metadata,
-            overwrite_metadata=args.overwrite,
-            parallelism=args.parallelism,
-        )
 
 
 def main(args: argparse.Namespace) -> None:
@@ -268,8 +242,6 @@ def parse_args(parser: argparse.ArgumentParser) -> None:
         ),
     )
 
-
-
     parser.add_argument(
         "--parallelism", type=int, help="使用するプロセス数（並列度）を指定してください。指定する場合は必ず ``--yes`` を指定してください。指定しない場合は、逐次的に処理します。"
     )
@@ -281,8 +253,6 @@ def add_parser(subparsers: Optional[argparse._SubParsersAction] = None) -> argpa
     subcommand_name = "change_name"
     subcommand_help = "入力データ名を変更します。"
     epilog = "オーナロールを持つユーザで実行してください。"
-    parser = annofabcli.common.cli.add_parser(
-        subparsers, subcommand_name, subcommand_help, epilog=epilog
-    )
+    parser = annofabcli.common.cli.add_parser(subparsers, subcommand_name, subcommand_help, epilog=epilog)
     parse_args(parser)
     return parser
