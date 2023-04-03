@@ -97,6 +97,17 @@ class ChangeInputDataNameMain(AbstractCommandLineWithConfirmInterface):
 
         logger.info(f"{success_count} / {len(changed_input_data_list)} 件の入力データの名前を変更しました。")
 
+    def _change_input_data_name_wrapper(self, changed_input_data: ChangedInputData, project_id: str) -> bool:
+        try:
+            return self.change_input_data_name(
+                project_id,
+                input_data_id=changed_input_data.input_data_id,
+                new_input_data_name=changed_input_data.input_data_name,
+            )
+        except Exception:
+            logger.warning(f"input_data_id='{changed_input_data.input_data_id}'の入力データの名前を変更するのに失敗しました。", exc_info=True)
+            return False
+
     def change_input_data_name_list_in_parallel(
         self,
         project_id: str,
@@ -105,30 +116,13 @@ class ChangeInputDataNameMain(AbstractCommandLineWithConfirmInterface):
     ) -> None:
         """複数の入力データの名前を並列的に変更します。"""
 
-        def wrapper(changed_input_data: ChangedInputData, project_id: str) -> bool:
-            try:
-                return self.change_input_data_name(
-                    project_id,
-                    input_data_id=changed_input_data.input_data_id,
-                    new_input_data_name=changed_input_data.input_data_name,
-                )
-            except Exception:
-                logger.warning(
-                    f"input_data_id='{changed_input_data.input_data_id}'の入力データの名前を変更するのに失敗しました。", exc_info=True
-                )
-                return False
-
         success_count = 0
 
         logger.info(f"{len(changed_input_data_list)} 件の入力データの名前を変更します。{parallelism}個のプロセスを使用して並列でに実行します。")
 
-        partial_func = partial(
-            wrapper,
-            project_id=project_id,
-        )
-
+        partial_func = partial(self._change_input_data_name_wrapper, project_id=project_id)
         with multiprocessing.Pool(parallelism) as pool:
-            result_bool_list = pool.map(partial_func, enumerate(changed_input_data_list))
+            result_bool_list = pool.map(partial_func, changed_input_data_list)
             success_count = len([e for e in result_bool_list if e])
 
         logger.info(f"{success_count} / {len(changed_input_data_list)} 件の入力データの名前を変更しました。")
