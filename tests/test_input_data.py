@@ -128,6 +128,24 @@ class TestCommandLine:
         )
         assert annofab_service.wrapper.get_input_data_or_none(project_id, input_data_id) is not None
 
+        # 入力データ名の変更
+        new_input_data_name = f"{input_data_id}--new_name"
+        json_args_for_change_name = [{"input_data_id": input_data_id, "input_data_name": new_input_data_name}]
+
+        main(
+            [
+                "input_data",
+                "change_name",
+                "--project_id",
+                project_id,
+                "--json",
+                json.dumps(json_args_for_change_name),
+                "--yes",
+            ]
+        )
+        input_data, _ = annofab_service.api.get_input_data(project_id, input_data_id)
+        assert input_data["input_data_name"] == new_input_data_name
+
         # メタデータの更新
         main(
             [
