@@ -216,26 +216,21 @@ def parse_args(parser: argparse.ArgumentParser) -> None:
         "--csv",
         type=Path,
         help=(
-            "入力データが記載されたCSVファイルのパスを指定してください。\n"
+            "変更対象の入力データが記載されたCSVファイルのパスを指定してください。\n"
             "CSVのフォーマットは以下の通りです。"
-            "詳細は https://annofab-cli.readthedocs.io/ja/latest/command_reference/input_data/put.html を参照してください。\n"
             "\n"
             " * ヘッダ行なし, カンマ区切り\n"
-            " * 1列目: input_data_name (required)\n"
-            " * 2列目: input_data_path (required)\n"
-            " * 3列目: input_data_id\n"
-            " * 4列目: sign_required (bool)\n"
+            " * 1列目: input_data_id (required)\n"
+            " * 2列目: input_data_name (required)\n"
         ),
     )
 
-    JSON_SAMPLE = (
-        '[{"input_data_name":"", "input_data_path":"file://lenna.png", "input_data_id":"foo","sign_required":false}]'
-    )
+    JSON_SAMPLE = '[{"input_data_id":"id", "input_data_name":"new_name"}]'
     file_group.add_argument(
         "--json",
         type=str,
         help=(
-            "登録対象の入力データをJSON形式で指定してください。\n"
+            "変更対象の入力データと変更後の名前をJSON形式で指定してください。\n"
             "JSONの各キーは ``--csv`` に渡すCSVの各列に対応しています。\n"
             "``file://`` を先頭に付けるとjsonファイルを指定できます。\n"
             f"(ex) ``{JSON_SAMPLE}``"
