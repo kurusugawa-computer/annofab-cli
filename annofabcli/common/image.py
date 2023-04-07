@@ -195,7 +195,7 @@ def write_annotation_grayscale_image(
     image_size: InputDataSize,
     output_image_file: Path,
     label_name_list: Optional[List[str]] = None,
-):
+) -> None:
     """
     JSONファイルに記載されているアノテーション情報を、グレースケール(8bit 1channel)で画像化します。
     グレースケールの値は0〜255です。0が背景です。それ以外は`details`のlistの降順で 1〜255の値が割り当てられます。
