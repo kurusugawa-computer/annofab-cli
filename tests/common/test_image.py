@@ -2,10 +2,16 @@ import os
 import zipfile
 from pathlib import Path
 
+import numpy
+import PIL
 import pytest
 from annofabapi.parser import SimpleAnnotationDirParser, SimpleAnnotationParser, SimpleAnnotationZipParser
 
-from annofabcli.common.image import write_annotation_image, write_annotation_images_from_path
+from annofabcli.common.image import (
+    write_annotation_grayscale_image,
+    write_annotation_image,
+    write_annotation_images_from_path,
+)
 
 # プロジェクトトップに移動する
 os.chdir(os.path.dirname(os.path.abspath(__file__)) + "/../../")
@@ -24,7 +30,7 @@ label_color_dict = {
 }
 
 
-def test_write_image():
+def test_write_annotation_image():
     zip_path = test_dir / "simple-annotation.zip"
     output_image_file = out_dir / "annotation.png"
 
@@ -40,7 +46,7 @@ def test_write_image():
         )
 
 
-def test_write_image_wihtout_outer_file():
+def test_write_annotation_image__wihtout_outer_file():
     output_image_file = out_dir / "annotation_without_painting.png"
 
     # 外部ファイルが見つからない状態で画像を生成する。
@@ -52,6 +58,25 @@ def test_write_image_wihtout_outer_file():
         output_image_file=output_image_file,
         background_color=(64, 64, 64),
     )
+
+
+class Test__write_annotation_grayscale_image:
+    def test_ok(self):
+        zip_path = test_dir / "simple-annotation.zip"
+        output_image_file = out_dir / "annotation_grayscale.png"
+
+        with zipfile.ZipFile(zip_path) as zip_file:
+            parser = SimpleAnnotationZipParser(zip_file, "sample_1/c6e1c2ec-6c7c-41c6-9639-4244c2ed2839.json")
+
+            write_annotation_grayscale_image(
+                parser=parser,
+                image_size=(64, 64),
+                output_image_file=output_image_file,
+            )
+
+        data = numpy.array(PIL.Image.open(output_image_file).conert("L"))
+        assert data.min() == 0
+        assert data.max() == 7
 
 
 class Test_write_annotation_images_from_path:
