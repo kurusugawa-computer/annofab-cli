@@ -179,7 +179,7 @@ def write_annotation_image(
             write_annotation_image(parser=parser, image_size=(64,64), label_color_dict=label_color_dict,
                                output_image_file=Path("out.png"), background_color=(64,64,64))
 
-    """  # noqa: E501
+    """
 
     image = PIL.Image.new(mode="RGB", size=image_size, color=background_color)
     draw = PIL.ImageDraw.Draw(image)
@@ -188,6 +188,91 @@ def write_annotation_image(
 
     output_image_file.parent.mkdir(parents=True, exist_ok=True)
     image.save(output_image_file)
+
+
+
+
+def write_annotation_grayscale_image(
+    parser: SimpleAnnotationParser,
+    image_size: InputDataSize,
+    output_image_file: Path,
+    label_name_list: Optional[List[str]] = None,
+):
+    """
+    JSONファイルに記載されているアノテーション情報を、グレースケール(8bit 1channel)で画像化する。
+    グレースケールの値は
+    JSONファイルは、Annofabからダウンロードしたアノテーションzipに含まれるファイルを想定している。
+
+    Notes:
+        この関数はannofabcliのコードからは呼び出されていません。
+        しかし、2023/03時点でこの関数を直接利用しているユーザーがいるので、この関数は削除せずに残しています。
+        削除を検討するときは、作成者に確認してください。
+
+    Args:
+        parser: parser: Simple Annotationのparser
+        image_size: 画像のサイズ. Tuple[width, height]
+        label_color_dict: label_nameとRGBを対応付けたdict
+        output_image_file: 出力先の画像ファイルのパス
+        background_color: アノテーション画像の背景色.
+            (ex) "rgb(173, 216, 230)", "#add8e6", "lightgray", (173,216,230)
+            フォーマットは`ImageColor Module <https://hhsprings.bitbucket.io/docs/programming/examples/python/PIL/ImageColor.html>`_
+            '指定しない場合は、黒（rgb(0,0,0)）になります。'))
+        label_name_list: 画像化対象のlabel_name. Noneの場合は、すべてのlabel_nameが画像化対象です。
+
+    Examples:
+        "simple-annotation.json" を読み込み、"out.png"画像を生成する。
+
+
+            from pathlib import Path
+            from annofabapi.parser import SimpleAnnotationDirParser
+            parser = SimpleAnnotationDirParser( "simple-annotation.json")
+            label_color_dict = {"dog": (255,0,0), "bird": (0,255,0)}
+            write_annotation_image(parser=parser, image_size=(64,64), label_color_dict=label_color_dict,
+                               output_image_file=Path("out.png"), background_color=(64,64,64))
+
+    """
+    image = PIL.Image.new(mode="L", size=image_size)
+    draw = PIL.ImageDraw.Draw(image)
+
+    simple_annotation = parser.load_json()
+
+    # 下層レイヤにあるアノテーションから順に画像化する
+    # reversed関数を使う理由：`simple_annotation.details`は上層レイヤのアノテーションから順に格納されているため
+    if label_name_list is not None:
+        annotation_list = [elm for elm in reversed(simple_annotation["details"]) if elm.label in set(label_name_list)]
+    else:
+        annotation_list = list(reversed(simple_annotation["details"]))
+
+    for index, annotation in enumerate(annotation_list):
+        color = index + 1
+        data = annotation["data"]
+        if data is None:
+            # 画像全体アノテーション
+            continue
+
+        data_type = data["_type"]
+        if data_type == "BoundingBox":
+            xy = [(data["left_top"]["x"], data["left_top"]["y"]), (data["right_bottom"]["x"], data["right_bottom"]["y"])]
+            draw.rectangle(xy, fill=color)
+
+        elif data_type == "Points":
+            # Polygon or Polyline
+            # 本当はPolylineのときは描画したくないのだが、Simple Annotationだけでは判断できないので、とりあえず描画する
+            xy = [(e["x"], e["y"]) for e in data["points"]]
+            draw.polygon(xy, fill=color)
+
+        elif data_type in ["SegmentationV2", "Segmentation"]:
+            # 塗りつぶしv2 or 塗りつぶし
+            with parser.open_outer_file(data["data_uri"]) as f:
+                outer_image = PIL.Image.open(f)
+                draw.bitmap([0, 0], outer_image, fill=color)
+        else:
+            continue
+
+
+    output_image_file.parent.mkdir(parents=True, exist_ok=True)
+    image.save(output_image_file)
+
 
 
 def write_annotation_images_from_path(
