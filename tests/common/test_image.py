@@ -74,9 +74,9 @@ class Test__write_annotation_grayscale_image:
                 output_image_file=output_image_file,
             )
 
-        data = numpy.array(PIL.Image.open(output_image_file).conert("L"))
+        data = numpy.array(PIL.Image.open(output_image_file).convert("L"))
         assert data.min() == 0
-        assert data.max() == 7
+        assert data.max() == 5
 
 
 class Test_write_annotation_images_from_path:

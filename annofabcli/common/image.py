@@ -240,32 +240,31 @@ def write_annotation_grayscale_image(
         # channel depthは8bitなので、255個のアノテーションまでしか描画できない
         raise ValueError(f"アノテーションは255個までしか描画できません。アノテーションの数={len(annotation_list)}")
 
-    for index, annotation in enumerate(annotation_list):
-        color = index + 1
+    color = 1
+    for annotation in annotation_list:
         data = annotation["data"]
-        if data is None:
-            # 画像全体アノテーション
-            continue
-
-        data_type = data["_type"]
+        data_type = annotation["data"]["_type"]
         if data_type == "BoundingBox":
             xy = [
                 (data["left_top"]["x"], data["left_top"]["y"]),
                 (data["right_bottom"]["x"], data["right_bottom"]["y"]),
             ]
             draw.rectangle(xy, fill=color)
+            color += 1
 
         elif data_type == "Points":
             # Polygon or Polyline
             # 本当はPolylineのときは描画したくないのだが、Simple Annotationだけでは判断できないので、とりあえず描画する
             xy = [(e["x"], e["y"]) for e in data["points"]]
             draw.polygon(xy, fill=color)
+            color += 1
 
         elif data_type in ["SegmentationV2", "Segmentation"]:
             # 塗りつぶしv2 or 塗りつぶし
             with parser.open_outer_file(data["data_uri"]) as f:
                 outer_image = PIL.Image.open(f)
                 draw.bitmap([0, 0], outer_image, fill=color)
+                color += 1
         else:
             continue
 
