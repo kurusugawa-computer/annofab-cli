@@ -190,6 +190,88 @@ def write_annotation_image(
     image.save(output_image_file)
 
 
+def write_annotation_grayscale_image(
+    parser: SimpleAnnotationParser,
+    image_size: InputDataSize,
+    output_image_file: Path,
+    label_name_list: Optional[List[str]] = None,
+) -> None:
+    """
+    JSONファイルに記載されているアノテーション情報を、グレースケール(8bit 1channel)で画像化します。
+    グレースケールの値は0〜255です。0が背景です。それ以外は`details`のlistの降順で 1〜255の値が割り当てられます。
+
+    Notes:
+        この関数はannofabcliのコードからは呼び出されていません。
+        しかし、2023/03時点でこの関数を直接利用しているユーザーがいるので、この関数は削除せずに残しています。
+        削除を検討するときは、作成者に確認してください。
+
+    Args:
+        parser: parser: Simple Annotationのparser
+        image_size: 画像のサイズ. Tuple[width, height]
+        output_image_file: 出力先の画像ファイルのパス
+        label_name_list: 画像化対象のlabel_name. Noneの場合は、すべてのlabel_nameが画像化対象です。
+
+    Raise:
+        ValueError: `details`のlistの長さが255を超えている場合
+
+    """
+    image = PIL.Image.new(mode="L", size=image_size)
+    draw = PIL.ImageDraw.Draw(image)
+
+    simple_annotation = parser.load_json()
+
+    # 下層レイヤにあるアノテーションから順に画像化する
+    # reversed関数を使う理由：`simple_annotation.details`は上層レイヤのアノテーションから順に格納されているため
+    if label_name_list is not None:
+        annotation_list = [
+            elm for elm in reversed(simple_annotation["details"]) if elm["label"] in set(label_name_list)
+        ]
+    else:
+        annotation_list = list(reversed(simple_annotation["details"]))
+
+    # 描画対象のアノテーションを絞り込む
+    annotation_list = [
+        e
+        for e in annotation_list
+        if e["data"] is not None and e["data"]["_type"] in ["BoundingBox", "Points", "SegmentationV2", "Segmentation"]
+    ]
+
+    if len(annotation_list) > 255:
+        # channel depthは8bitなので、255個のアノテーションまでしか描画できない
+        raise ValueError(f"アノテーションは255個までしか描画できません。アノテーションの数={len(annotation_list)}")
+
+    color = 1
+    for annotation in annotation_list:
+        data = annotation["data"]
+        data_type = annotation["data"]["_type"]
+        if data_type == "BoundingBox":
+            xy = [
+                (data["left_top"]["x"], data["left_top"]["y"]),
+                (data["right_bottom"]["x"], data["right_bottom"]["y"]),
+            ]
+            draw.rectangle(xy, fill=color)
+            color += 1
+
+        elif data_type == "Points":
+            # Polygon or Polyline
+            # 本当はPolylineのときは描画したくないのだが、Simple Annotationだけでは判断できないので、とりあえず描画する
+            xy = [(e["x"], e["y"]) for e in data["points"]]
+            draw.polygon(xy, fill=color)
+            color += 1
+
+        elif data_type in ["SegmentationV2", "Segmentation"]:
+            # 塗りつぶしv2 or 塗りつぶし
+            with parser.open_outer_file(data["data_uri"]) as f:
+                outer_image = PIL.Image.open(f)
+                draw.bitmap([0, 0], outer_image, fill=color)
+                color += 1
+        else:
+            continue
+
+    output_image_file.parent.mkdir(parents=True, exist_ok=True)
+    image.save(output_image_file)
+
+
 def write_annotation_images_from_path(
     annotation_path: Path,
     label_color_dict: Dict[str, RGB],
