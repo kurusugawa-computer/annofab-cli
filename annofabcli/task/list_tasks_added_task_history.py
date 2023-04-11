@@ -366,6 +366,10 @@ class TasksAddedTaskHistoryOutput:
 
     def output(self, output_path: Path, output_format: FormatArgument):
         task_list = self.task_list
+        if len(task_list) == 0:
+            logger.info("タスク一覧の件数が0件のため、出力しません。")
+            return
+
         logger.debug(f"タスク一覧の件数: {len(task_list)}")
         if output_format == FormatArgument.CSV:
             df_task = pandas.DataFrame(task_list)
