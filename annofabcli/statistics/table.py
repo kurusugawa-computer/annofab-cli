@@ -127,8 +127,9 @@ class Table:
 
     def _get_project_members_dict(self) -> Dict[str, Any]:
         project_members_dict = {}
-
-        project_members = self.annofab_service.wrapper.get_all_project_members(self.project_id)
+        project_members = self.annofab_service.wrapper.get_all_project_members(
+            self.project_id, query_params={"include_inactive_member": True}
+        )
         for member in project_members:
             project_members_dict[member["account_id"]] = member
         return project_members_dict
