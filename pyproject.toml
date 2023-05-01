@@ -41,7 +41,8 @@ pytest-cov = "*"
 black = "*"
 
 [tool.poetry.group.linter.dependencies]
-ruff = ">=0.0.255"
+# ruffをバージョンアップすると別のエラーが出るので、一旦固定する
+ruff = "==0.0.256"
 mypy = "^1"
 pylint = "^2"
 
