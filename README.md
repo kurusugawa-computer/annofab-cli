@@ -8,9 +8,9 @@
 [![Documentation Status](https://readthedocs.org/projects/annofab-cli/badge/?version=latest)](https://annofab-cli.readthedocs.io/ja/latest/?badge=latest)
 
 
-* **Annofab:** https://annofab.com/
-* **Documentation:** https://annofab-cli.readthedocs.io/ja/latest/
-
+* [Annofab](https://annofab.com/)
+* [annofab-cliのドキュメント](https://annofab-cli.readthedocs.io/ja/latest/)
+* [開発用ドキュメント](https://github.com/kurusugawa-computer/annofab-cli/blob/main/README_for_developer.md)
 
 
 
