@@ -1,6 +1,5 @@
 import asyncio
 import logging.config
-import warnings
 from functools import partial
 from typing import Optional
 
