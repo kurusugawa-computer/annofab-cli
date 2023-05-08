@@ -266,7 +266,6 @@ class DownloadingFile:
         Raises:
             DownloadingFileNotFoundError:
         """
-        warnings.warn("deprecated", DeprecationWarning)
         return self.download_task_history_event_json(project_id, dest_path=dest_path)
 
     async def download_inspection_json_with_async(self, project_id: str, dest_path: str):
