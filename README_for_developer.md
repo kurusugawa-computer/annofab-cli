@@ -2,12 +2,6 @@
 開発者用のドキュメントです。
 ソースコードの生成、テスト実行、リリース手順などを記載します。
 
-# Requirements
-* Bash
-* python 3.8+
-
-
-
 # 開発方法
 VSCodeのdevcotainerを利用して開発します。
 https://code.visualstudio.com/docs/remote/containers
@@ -41,51 +35,14 @@ annofabcliのバージョンは以下のファイルで定義しています。
 * `annofabcli/__version__.py`
 * `pyproject.toml`
 
+# Release
+GitHubのReleasesからリリースしてください。
+バージョンはSemantic Versioningに従います。
+リリースすると、以下の状態になります。
 
-# PyPIへのリリース方法
-
-## 事前作業
-
-### PyPIのアカウントを作成
-1. 以下のURLにアクセスして、PyPIのアカウントを作成する。
-https://pypi.org/account/register/
-
-2. 管理者に連絡して、Collaboratorsとして招待してもらう
-https://pypi.org/project/annofabcli/
-
-## リリース方法
-以下のコマンドを実行してください。PyPIのユーザ名とパスワードの入力が求められます。
-
-```
-$ make publish
-```
-
+* ソース内のバージョン情報（`pyproject.toml`, `__version__.py`）は、https://github.com/mtkennerly/poetry-dynamic-versioning でGitHubのバージョンタグから生成されます。
+* 自動でPyPIに公開されます。
 
 # 開発フロー
 * mainブランチを元にしてブランチを作成して、プルリクを作成してください。mainブランチへの直接pushすることはGitHub上で禁止しています。
-* リリース時のソースはGitHubのRelease機能、またはPyPIからダウンロードしてください。
-
-
-
-
------------------
-# リリースする手順
-
-### 1.テストの実施
-「テストの実行方法」を参照してください。
-
-### 2.versionを上げる
-「Versioning」を参照して、バージョンを上げたプルリクを作成してください。TavisCIが通ったらマージしてください。
-
-### 3.PyPIへパッケージをアップロード
-「PyPIへのリリース方法」を参照してください。
-
-### 4.GitHubのリリースページに追加
-GitHubのReleaseページで、リリースを作成してください。
-https://github.com/kurusugawa-computer/annofab-cli
-
-
-
-
-
 
