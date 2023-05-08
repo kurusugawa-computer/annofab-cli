@@ -1,6 +1,6 @@
 [tool.poetry]
 name = "annofabcli"
-version = "1.77.2"
+version = "1.77.3"
 description = "Utility Command Line Interface for AnnoFab"
 authors = ["yuji38kwmt"]
 license = "MIT"
@@ -18,8 +18,7 @@ classifiers = [
 
 
 [tool.poetry.dependencies]
-# `<3.12`を指定している理由: pyinstallerがこのように記述しているので、それに合わせた。
-python = ">=3.8,<3.12"
+python = "^3.8"
 requests = "*"
 pyyaml = "*"
 dictdiffer = "*"
@@ -42,7 +41,8 @@ pytest-cov = "*"
 black = "*"
 
 [tool.poetry.group.linter.dependencies]
-ruff = ">=0.0.255"
+# ruffをバージョンアップすると別のエラーが出るので、一旦固定する
+ruff = "==0.0.256"
 mypy = "^1"
 pylint = "^2"
 
@@ -71,7 +71,9 @@ optional = true
 
 [tool.poetry.group.publish.dependencies]
 # GitHubでリリース時に、 GitHub Actionでannofabcliのexeを公開している
-pyinstaller = "^5.9"
+# pythonバージョンを指定している理由: pyinstaller5.9はPython3.12未満までしかサポートしていない。
+# pythonバージョンを指定しないと、annofabcli自体のpython requirementが3.12未満になってしまうため。
+pyinstaller = { version = "^5.9", python = "<3.12" }
 
 [tool.poetry.scripts]
 annofabcli = "annofabcli.__main__:main"
