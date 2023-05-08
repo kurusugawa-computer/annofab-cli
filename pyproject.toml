@@ -28,8 +28,8 @@ pyquery = "*"
 isodate = "*"
 annofabapi = ">=0.67.1"
 python-datauri = "*"
-pandas = "*"
-bokeh = "^3.0"
+pandas = "^2.0"
+bokeh = "^3.1"
 Pillow = "*"
 
 [tool.poetry.group.test.dependencies]
