@@ -38,11 +38,15 @@ pytest-xdist = "*"
 pytest-cov = "*"
 
 [tool.poetry.group.formatter.dependencies]
-black = "*"
+black = "^23.3"
 
 [tool.poetry.group.linter.dependencies]
-# ruffをバージョンアップすると別のエラーが出るので、一旦固定する
-ruff = "==0.0.256"
+# ruffのバージョンの上限を指定する理由: 
+# ruffは0.0.260から"line-width"の計算を"character count"から"unicode width"に変更した。
+# black 23.3(通常版)は"line-width"を"character count"で計算している。
+# ruffとblackで"line-with"の計算が異なってしまうので、ruffのバージョンの上限を指定した。
+# https://qiita.com/yuji38kwmt/items/04208d2d2cafe1218287
+ruff = "<0.0.260"
 mypy = "^1"
 pylint = "^2"
 
