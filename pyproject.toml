@@ -55,7 +55,7 @@ types-python-dateutil = "*"
 types-PyYAML = "*"
 
 [tool.poetry.group.documentation.dependencies]
-sphinx = "^6.1"
+sphinx = ">=6.1,<8.0"
 pydata-sphinx-theme = ">=0.13"
 sphinx-last-updated-by-git = "*"
 sphinx-argparse = "*"
