@@ -93,7 +93,7 @@ Usage Details
 =================================
 
 .. argparse::
-   :ref: annofabcli.input_data.change_name.add_parser
+   :ref: annofabcli.input_data.change_input_data_name.add_parser
    :prog: annofabcli input_data change_name
    :nosubcommands:
    :nodefaultconst:
