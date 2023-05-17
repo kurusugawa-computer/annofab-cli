@@ -28,7 +28,9 @@ isodate = "*"
 annofabapi = ">=0.67.1"
 python-datauri = "*"
 pandas = "^2.0"
-bokeh = "^3.1"
+# 以下のissueが解決されるまでは、bokehのバージョンの上限を指定する
+# https://github.com/bokeh/bokeh/issues/13133
+bokeh = "^3.0,<3.1"
 Pillow = "*"
 
 [tool.poetry.group.test.dependencies]
