@@ -29,6 +29,9 @@ logger = logging.getLogger(__name__)
 class ResultDataframe:
     annotation_productivity: pandas.DataFrame
     inspection_acceptance_productivity: pandas.DataFrame
+    annotation_quality: pandas.DataFrame
+
+    # TODO あとで削除
     quality_with_task_rejected_count: pandas.DataFrame
     quality_with_inspection_comment: pandas.DataFrame
 
@@ -56,6 +59,26 @@ class PerformanceUnit(Enum):
 
     ANNOTATION_COUNT = "annotation_count"
     INPUT_DATA_COUNT = "input_data_count"
+
+
+class ProductivityIndicator(Enum):
+    """
+    生産性の指標
+    """
+
+    MONITORED_WORKTIME_HOUR_PER_INPUT_DATA_COUNT = "monitored_worktime_hour/input_data_count"
+    ACTUAL_WORKTIME_HOUR_PER_INPUT_DATA_COUNT = "actual_worktime_hour/input_data_count"
+    MONITORED_WORKTIME_HOUR_PER_ANNOTATION_COUNT = "monitored_worktime_hour/annotation_count"
+    ACTUAL_WORKTIME_HOUR_PER_ANNOTATION_COUNT = "actual_worktime_hour/annotation_count"
+
+
+class QualityIndicator(Enum):
+    """
+    品質の指標
+    """
+
+    POINTED_OUT_INSPECTION_COMMENT_COUNT_PER_ANNOTATION_COUNT = "pointed_out_inspection_comment_count/annotation_count"
+    REJECTED_COUNT_PER_TASK_COUNT = "rejected_count/task_count"
 
 
 class ProductivityType(Enum):
@@ -88,13 +111,16 @@ class CollectingPerformanceInfo:
 
     def __init__(
         self,
+        *,
         worktime_type: WorktimeColumn,
         performance_unit: PerformanceUnit,
+        annotation_quality_indicator: QualityIndicator,
         threshold_info: ThresholdInfo,
         threshold_infos_per_project: ThresholdInfoSettings,
     ) -> None:
         self.worktime_type = worktime_type
         self.performance_unit = performance_unit
+        self.annotation_quality_indicator = annotation_quality_indicator
         self.threshold_info = threshold_info
         self.threshold_infos_per_project = threshold_infos_per_project
 
@@ -183,6 +209,21 @@ class CollectingPerformanceInfo:
 
         return df
 
+    def join_annotation_quality(
+        self, df: pandas.DataFrame, df_performance: pandas.DataFrame, project_title: str, threshold_info: ThresholdInfo
+    ) -> pandas.DataFrame:
+        """
+        引数`df_performance`から教師付の品質を抽出して、引数`df`にjoinしたDataFrameを生成する。
+        """
+        df_joined = df_performance
+
+        df_joined = self.filter_df_with_threshold(df_joined, phase=TaskPhase.ANNOTATION, threshold_info=threshold_info)
+
+        df_tmp = df_joined[[(self.annotation_quality_indicator, "annotation")]]
+
+        df_tmp.columns = pandas.MultiIndex.from_tuples([(project_title, "rejected_count/task_count")])
+        return df.join(df_tmp)
+
     def join_quality_with_task_rejected_count(
         self, df: pandas.DataFrame, df_performance: pandas.DataFrame, project_title: str, threshold_info: ThresholdInfo
     ) -> pandas.DataFrame:
@@ -220,6 +261,9 @@ class CollectingPerformanceInfo:
         """対象ディレクトリから、評価対象の指標になる情報を取得します。"""
         df_annotation_productivity = df_user
         df_inspection_acceptance_productivity = df_user
+        df_annotation_quality = df_user
+
+        # TODO あとでけす
         df_quality_per_task = df_user
         df_quality_per_annotation = df_user
 
@@ -252,6 +296,14 @@ class CollectingPerformanceInfo:
                 threshold_info=annotation_threshold_info,
             )
 
+            df_annotation_quality = self.join_annotation_quality(
+                df_annotation_quality,
+                df_performance,
+                project_title=project_title,
+                threshold_info=annotation_threshold_info,
+            )
+
+            # TODO あとで消す
             df_quality_per_task = self.join_quality_with_task_rejected_count(
                 df_quality_per_task,
                 df_performance,
@@ -287,6 +339,7 @@ class CollectingPerformanceInfo:
         return ResultDataframe(
             annotation_productivity=df_annotation_productivity.reset_index(),
             inspection_acceptance_productivity=df_inspection_acceptance_productivity.reset_index(),
+            annotation_quality=df_annotation_quality.reset_index(),
             quality_with_task_rejected_count=df_quality_per_task.reset_index(),
             quality_with_inspection_comment=df_quality_per_annotation.reset_index(),
             project_performance=project_performance,
@@ -475,6 +528,7 @@ class WritePerformanceRatingCsv(AbstractCommandLineWithoutWebapiInterface):
         result = CollectingPerformanceInfo(
             worktime_type=WorktimeColumn.ACTUAL_WORKTIME_HOUR,
             performance_unit=performance_unit,
+            annotation_quality_indicator=QualityIndicator(args.quality_indicator),
             threshold_info=ThresholdInfo(
                 threshold_worktime=args.threshold_worktime,
                 threshold_task_count=args.threshold_task_count,
@@ -501,17 +555,11 @@ class WritePerformanceRatingCsv(AbstractCommandLineWithoutWebapiInterface):
             csv_basename="inspection_acceptance_productivity",
             output_dir=output_dir / "inspection_acceptance_productivity",
         )
-        # タスクの差し戻し回数を品質の指標にしたファイルを出力
+        # 教師付作業の品質に関するファイルを出力
         obj.write(
-            result.quality_with_task_rejected_count,
-            csv_basename="annotation_quality_task_rejected_count",
-            output_dir=output_dir / "annotation_quality_task_rejected_count",
-        )
-        # 検査コメント数を品質の指標にしたファイルを出力
-        obj.write(
-            result.quality_with_inspection_comment,
-            csv_basename="annotation_quality_inspection_comment",
-            output_dir=output_dir / "annotation_quality_inspection_comment",
+            result.annotation_quality,
+            csv_basename="annotation_quality_task",
+            output_dir=output_dir / "annotation_quality",
         )
 
         result.project_performance.to_csv(output_dir / "プロジェクごとの生産性と品質.csv")
@@ -543,15 +591,31 @@ def parse_args(parser: argparse.ArgumentParser) -> None:
         help="評価指標の単位",
     )
 
+    # parser.add_argument(
+    #     "--productivity_indicator",
+    #     type=str,
+    #     choices=[e.value for e in PerformanceUnit],
+    #     default=PerformanceUnit.ANNOTATION_COUNT.value,
+    #     help="生産性の指標にする列名",
+    # )
+
+    parser.add_argument(
+        "--quality_indicator",
+        type=str,
+        choices=[e.value for e in QualityIndicator],
+        default=QualityIndicator.POINTED_OUT_INSPECTION_COMMENT_COUNT_PER_ANNOTATION_COUNT.value,
+        help="品質の指標",
+    )
+
     parser.add_argument(
         "--threshold_worktime",
         type=int,
-        help="作業時間の閾値。指定した時間以下の作業者は除外する。",
+        help="作業時間の閾値。作業時間が指定した時間以下である作業者を除外する。",
     )
     parser.add_argument(
         "--threshold_task_count",
         type=int,
-        help="作業したタスク数の閾値。作業したタスク数が指定した数以下作業者は除外する。 ",
+        help="作業したタスク数の閾値。作業したタスク数が指定した数以下である作業者を除外する。 ",
     )
     parser.add_argument(
         "--threshold_deviation_user_count",
