@@ -78,6 +78,14 @@ class ProductivityIndicator(Enum):
     MONITORED_WORKTIME_HOUR_PER_ANNOTATION_COUNT = "monitored_worktime_hour/annotation_count"
     ACTUAL_WORKTIME_HOUR_PER_ANNOTATION_COUNT = "actual_worktime_hour/annotation_count"
 
+    @property
+    def worktime_type(self) -> WorktimeType:
+        """
+        作業時間の種類
+        """
+        denominator = self.value.split("/")[0]
+        return WorktimeType(denominator)
+
 
 class QualityIndicator(Enum):
     """
@@ -110,7 +118,6 @@ class CollectingPerformanceInfo:
     メンバごとの生産性と品質.csv からパフォーマンスの指標となる情報を収集します。
 
     Args:
-        worktime_type: 作業時間の種類
         performance_unit: 生産性の単位
         threshold_info: 閾値の情報
         threshold_infos_per_project: プロジェクトごとの閾値の情報。`threshold_info`より優先される
@@ -119,14 +126,12 @@ class CollectingPerformanceInfo:
     def __init__(
         self,
         *,
-        worktime_type: WorktimeColumn,
         performance_unit: PerformanceUnit,
         productivity_indicator: ProductivityIndicator,
         quality_indicator: QualityIndicator,
         threshold_info: ThresholdInfo,
         threshold_infos_per_project: ThresholdInfoSettings,
     ) -> None:
-        self.worktime_type = worktime_type
         self.performance_unit = performance_unit
         self.quality_indicator = quality_indicator
         self.productivity_indicator = productivity_indicator
@@ -155,7 +160,9 @@ class CollectingPerformanceInfo:
 
     def filter_df_with_threshold(self, df: pandas.DataFrame, phase: TaskPhase, threshold_info: ThresholdInfo):
         if threshold_info.threshold_worktime is not None:
-            df = df[df[(self.worktime_type.value, phase.value)] > threshold_info.threshold_worktime]
+            df = df[
+                df[(self.productivity_indicator.worktime_type.value, phase.value)] > threshold_info.threshold_worktime
+            ]
 
         if threshold_info.threshold_task_count is not None:
             df = df[df[("task_count", phase.value)] > threshold_info.threshold_task_count]
@@ -486,7 +493,6 @@ class WritePerformanceRatingCsv(AbstractCommandLineWithoutWebapiInterface):
 
         performance_unit = PerformanceUnit(args.performance_unit)
         result = CollectingPerformanceInfo(
-            worktime_type=WorktimeColumn.ACTUAL_WORKTIME_HOUR,
             performance_unit=performance_unit,
             quality_indicator=QualityIndicator(args.quality_indicator),
             productivity_indicator=ProductivityIndicator(args.productivity_indicator),
