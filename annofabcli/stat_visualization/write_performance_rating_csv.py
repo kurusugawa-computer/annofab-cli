@@ -219,37 +219,9 @@ class CollectingPerformanceInfo:
 
         df_tmp = df_joined[[(self.annotation_quality_indicator.value, "annotation")]]
 
-        df_tmp.columns = pandas.MultiIndex.from_tuples([(project_title, "rejected_count/task_count")])
+        df_tmp.columns = pandas.MultiIndex.from_tuples([(project_title, self.annotation_quality_indicator.value)])
         return df.join(df_tmp)
 
-    def join_quality_with_task_rejected_count(
-        self, df: pandas.DataFrame, df_performance: pandas.DataFrame, project_title: str, threshold_info: ThresholdInfo
-    ) -> pandas.DataFrame:
-        """タスクの差し戻し回数を品質の指標にしたDataFrameを生成する。"""
-        df_joined = df_performance
-
-        df_joined = self.filter_df_with_threshold(df_joined, phase=TaskPhase.ANNOTATION, threshold_info=threshold_info)
-
-        df_tmp = df_joined[[("rejected_count/task_count", "annotation")]]
-
-        df_tmp.columns = pandas.MultiIndex.from_tuples([(project_title, "rejected_count/task_count")])
-        return df.join(df_tmp)
-
-    def join_quality_with_inspection_comment(
-        self, df: pandas.DataFrame, df_performance: pandas.DataFrame, project_title: str, threshold_info: ThresholdInfo
-    ) -> pandas.DataFrame:
-        """検査コメント数を品質の指標にしたDataFrameを生成する。"""
-
-        df_joined = df_performance
-
-        df_joined = self.filter_df_with_threshold(df_joined, phase=TaskPhase.ANNOTATION, threshold_info=threshold_info)
-
-        df_tmp = df_joined[[(f"pointed_out_inspection_comment_count/{self.performance_unit.value}", "annotation")]]
-
-        df_tmp.columns = pandas.MultiIndex.from_tuples(
-            [(project_title, f"pointed_out_inspection_comment_count/{self.performance_unit.value}")]
-        )
-        return df.join(df_tmp)
 
     def create_rating_df(
         self,
