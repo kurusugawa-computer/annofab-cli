@@ -28,13 +28,11 @@ logger = logging.getLogger(__name__)
 @dataclass
 class ResultDataframe:
     annotation_productivity: pandas.DataFrame
+    """教師付作業の生産性"""
     inspection_acceptance_productivity: pandas.DataFrame
+    """検査/受入作業の品質"""
     annotation_quality: pandas.DataFrame
-
-    # TODO あとで削除
-    quality_with_task_rejected_count: pandas.DataFrame
-    quality_with_inspection_comment: pandas.DataFrame
-
+    """教師付作業の品質"""
     project_performance: ProjectPerformance
     """プロジェクトごとの生産性と品質"""
 
@@ -219,7 +217,7 @@ class CollectingPerformanceInfo:
 
         df_joined = self.filter_df_with_threshold(df_joined, phase=TaskPhase.ANNOTATION, threshold_info=threshold_info)
 
-        df_tmp = df_joined[[(self.annotation_quality_indicator, "annotation")]]
+        df_tmp = df_joined[[(self.annotation_quality_indicator.value, "annotation")]]
 
         df_tmp.columns = pandas.MultiIndex.from_tuples([(project_title, "rejected_count/task_count")])
         return df.join(df_tmp)
@@ -263,10 +261,6 @@ class CollectingPerformanceInfo:
         df_inspection_acceptance_productivity = df_user
         df_annotation_quality = df_user
 
-        # TODO あとでけす
-        df_quality_per_task = df_user
-        df_quality_per_annotation = df_user
-
         project_dir_list: list[ProjectDir] = []
         for p_project_dir in target_dir.iterdir():
             if not p_project_dir.is_dir():
@@ -303,20 +297,6 @@ class CollectingPerformanceInfo:
                 threshold_info=annotation_threshold_info,
             )
 
-            # TODO あとで消す
-            df_quality_per_task = self.join_quality_with_task_rejected_count(
-                df_quality_per_task,
-                df_performance,
-                project_title=project_title,
-                threshold_info=annotation_threshold_info,
-            )
-            df_quality_per_annotation = self.join_quality_with_inspection_comment(
-                df_quality_per_annotation,
-                df_performance,
-                project_title=project_title,
-                threshold_info=annotation_threshold_info,
-            )
-
             # 閾値が教師付と検査/受入で別れている理由：作業を評価するのに必要な作業時間/タスク数は、教師付作業とは異なるため
             inspection_acceptance_threshold_info = self.get_threshold_info(
                 project_title, ProductivityType.INSPECTION_ACCEPTANCE
@@ -340,8 +320,6 @@ class CollectingPerformanceInfo:
             annotation_productivity=df_annotation_productivity.reset_index(),
             inspection_acceptance_productivity=df_inspection_acceptance_productivity.reset_index(),
             annotation_quality=df_annotation_quality.reset_index(),
-            quality_with_task_rejected_count=df_quality_per_task.reset_index(),
-            quality_with_inspection_comment=df_quality_per_annotation.reset_index(),
             project_performance=project_performance,
             project_actual_worktime=project_actual_worktime,
             project_monitored_worktime=project_monitored_worktime,
@@ -558,7 +536,7 @@ class WritePerformanceRatingCsv(AbstractCommandLineWithoutWebapiInterface):
         # 教師付作業の品質に関するファイルを出力
         obj.write(
             result.annotation_quality,
-            csv_basename="annotation_quality_task",
+            csv_basename="annotation_quality",
             output_dir=output_dir / "annotation_quality",
         )
 
