@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import argparse
+import json
 import logging
 from dataclasses import dataclass
 from enum import Enum
@@ -11,6 +12,7 @@ import numpy
 import pandas
 from annofabapi.models import TaskPhase
 from dataclasses_json import DataClassJsonMixin
+from typing_extensions import TypeAlias
 
 import annofabcli
 from annofabcli.common.cli import AbstractCommandLineWithoutWebapiInterface, get_json_from_args, get_list_from_args
@@ -105,11 +107,19 @@ class ProductivityType(Enum):
     """検査または受入"""
 
 
-ThresholdInfoSettings = Dict[Tuple[str, ProductivityType], ThresholdInfo]
+ThresholdInfoSettings: TypeAlias = Dict[Tuple[str, ProductivityType], ThresholdInfo]
 """
 閾値の設定情報
 key: tuple(ディレクトリ名, 生産性の種類)
 value: 閾値情報
+"""
+
+
+ProductivityIndicatorByDirectory: TypeAlias = dict[tuple[str, ProductivityType], ProductivityIndicator]
+"""
+ディレクトリごとの生産性の指標
+key: tuple(ディレクトリ名, 生産性の種類)
+value: 生産性の指標
 """
 
 
@@ -118,7 +128,6 @@ class CollectingPerformanceInfo:
     メンバごとの生産性と品質.csv からパフォーマンスの指標となる情報を収集します。
 
     Args:
-        performance_unit: 生産性の単位
         threshold_info: 閾値の情報
         threshold_infos_per_project: プロジェクトごとの閾値の情報。`threshold_info`より優先される
     """
@@ -126,17 +135,17 @@ class CollectingPerformanceInfo:
     def __init__(
         self,
         *,
-        performance_unit: PerformanceUnit,
         productivity_indicator: ProductivityIndicator,
         quality_indicator: QualityIndicator,
         threshold_info: ThresholdInfo,
         threshold_infos_per_project: ThresholdInfoSettings,
+        productivity_indicator_by_directory: ProductivityIndicatorByDirectory,
     ) -> None:
-        self.performance_unit = performance_unit
         self.quality_indicator = quality_indicator
         self.productivity_indicator = productivity_indicator
         self.threshold_info = threshold_info
         self.threshold_infos_per_project = threshold_infos_per_project
+        self.productivity_indicator_by_directory = productivity_indicator_by_directory
 
     def get_threshold_info(self, project_title: str, productivity_type: ProductivityType) -> ThresholdInfo:
         """指定したプロジェクト名に対応する、閾値情報を取得する。"""
@@ -179,9 +188,12 @@ class CollectingPerformanceInfo:
 
         df_joined = self.filter_df_with_threshold(df_joined, phase, threshold_info=threshold_info)
 
-        df_tmp = df_joined[[(self.productivity_indicator.value, phase.value)]]
+        productivity_indicator = self.productivity_indicator_by_directory.get(
+            (project_title, ProductivityType.ANNOTATION), self.productivity_indicator
+        )
+        df_tmp = df_joined[[(productivity_indicator.value, phase.value)]]
         df_tmp.columns = pandas.MultiIndex.from_tuples(
-            [(project_title, f"{self.productivity_indicator.value}__{phase.value}")]
+            [(project_title, f"{productivity_indicator.value}__{phase.value}")]
         )
         return df.join(df_tmp)
 
@@ -189,6 +201,9 @@ class CollectingPerformanceInfo:
         self, df: pandas.DataFrame, df_performance: pandas.DataFrame, project_title: str, threshold_info: ThresholdInfo
     ) -> pandas.DataFrame:
         """検査,受入生産性の指標を抽出してdfにjoinする"""
+        productivity_indicator = self.productivity_indicator_by_directory.get(
+            (project_title, ProductivityType.INSPECTION_ACCEPTANCE), self.productivity_indicator
+        )
 
         def _join_inspection():
             phase = TaskPhase.INSPECTION
@@ -198,24 +213,24 @@ class CollectingPerformanceInfo:
             df_joined = df_performance
             df_joined = self.filter_df_with_threshold(df_joined, phase, threshold_info=threshold_info)
 
-            df_tmp = df_joined[[(self.productivity_indicator.value, phase.value)]]
+            df_tmp = df_joined[[(productivity_indicator.value, phase.value)]]
             df_tmp.columns = pandas.MultiIndex.from_tuples(
-                [(project_title, f"{self.productivity_indicator.value}__{phase.value}")]
+                [(project_title, f"{productivity_indicator.value}__{phase.value}")]
             )
 
             return df.join(df_tmp)
 
         def _join_acceptance():
             phase = TaskPhase.ACCEPTANCE
-            if (self.productivity_indicator.value, phase.value) not in df_performance.columns:
+            if (productivity_indicator.value, phase.value) not in df_performance.columns:
                 return df
 
             df_joined = df_performance
             df_joined = self.filter_df_with_threshold(df_joined, phase, threshold_info=threshold_info)
 
-            df_tmp = df_joined[[(self.productivity_indicator.value, phase.value)]]
+            df_tmp = df_joined[[(productivity_indicator.value, phase.value)]]
             df_tmp.columns = pandas.MultiIndex.from_tuples(
-                [(project_title, f"{self.productivity_indicator.value}__{phase.value}")]
+                [(project_title, f"{productivity_indicator.value}__{phase.value}")]
             )
 
             return df.join(df_tmp)
@@ -467,6 +482,24 @@ class WritingCsv:
         )
 
 
+def create_productivity_indicator_by_directory(
+    dict_productivity_indicator_by_directory: Optional[dict[str, Any]]
+) -> ProductivityIndicatorByDirectory:
+    """
+    コマンドラインから渡された文字列を、ProductivityIndicatorByDirectoryに変換する。
+    """
+    if dict_productivity_indicator_by_directory is None:
+        return {}
+
+    result = {}
+    for dirname, infos in dict_productivity_indicator_by_directory.items():
+        for str_productivity_type, str_indicator in infos.items():
+            productivity_type = ProductivityType(str_productivity_type)
+            indicator = ProductivityIndicator(str_indicator)
+            result[(dirname, productivity_type)] = indicator
+    return result
+
+
 class WritePerformanceRatingCsv(AbstractCommandLineWithoutWebapiInterface):
     @staticmethod
     def get_threshold_infos_per_project(dict_threshold_settings: Optional[dict[str, Any]]) -> ThresholdInfoSettings:
@@ -491,11 +524,14 @@ class WritePerformanceRatingCsv(AbstractCommandLineWithoutWebapiInterface):
         dict_threshold_settings = get_json_from_args(args.threshold_settings)
         threshold_infos_per_project = self.get_threshold_infos_per_project(dict_threshold_settings)
 
-        performance_unit = PerformanceUnit(args.performance_unit)
+        productivity_indicator_by_directory = create_productivity_indicator_by_directory(
+            get_json_from_args(args.productivity_indicator_by_directory)
+        )
+
         result = CollectingPerformanceInfo(
-            performance_unit=performance_unit,
             quality_indicator=QualityIndicator(args.quality_indicator),
             productivity_indicator=ProductivityIndicator(args.productivity_indicator),
+            productivity_indicator_by_directory=productivity_indicator_by_directory,
             threshold_info=ThresholdInfo(
                 threshold_worktime=args.threshold_worktime,
                 threshold_task_count=args.threshold_task_count,
@@ -551,19 +587,23 @@ def parse_args(parser: argparse.ArgumentParser) -> None:
     )
 
     parser.add_argument(
-        "--performance_unit",
-        type=str,
-        choices=[e.value for e in PerformanceUnit],
-        default=PerformanceUnit.ANNOTATION_COUNT.value,
-        help="評価指標の単位",
-    )
-
-    parser.add_argument(
         "--productivity_indicator",
         type=str,
         choices=[e.value for e in PerformanceUnit],
         default=ProductivityIndicator.ACTUAL_WORKTIME_HOUR_PER_ANNOTATION_COUNT.value,
         help="生産性の指標",
+    )
+
+    PRODUCTIVITY_INDICATOR_BY_DIRECTORY_SAMPLE = {
+        "dirname1": {"annotation": "monitored_worktime_hour/annotation_count"},
+        "dirname2": {"inspection_acceptance": "actual_worktime_hour/annotation_count"},
+    }
+    parser.add_argument(
+        "--productivity_indicator_by_directory",
+        type=str,
+        help="生産性の指標をディレクトリごとに指定します。JSON形式で指定してください。\n"
+        "``--productivity_indicator`` で指定した値よりも優先されます。\n"
+        f"(ex) ``{json.dumps(PRODUCTIVITY_INDICATOR_BY_DIRECTORY_SAMPLE)}``",
     )
 
     parser.add_argument(
@@ -598,7 +638,7 @@ def parse_args(parser: argparse.ArgumentParser) -> None:
     parser.add_argument(
         "--threshold_settings",
         type=str,
-        help="JSON形式で、ディレクトリ名ごとに閾値を指定してください。\n" f"(ex) ``{THRESHOLD_SETTINGS_SAMPLE}``",
+        help="JSON形式で、ディレクトリ名ごとに閾値を指定してください。\n" f"(ex) ``{json.dumps(THRESHOLD_SETTINGS_SAMPLE)}``",
     )
 
     parser.add_argument("-o", "--output_dir", required=True, type=Path, help="出力ディレクトリ")
