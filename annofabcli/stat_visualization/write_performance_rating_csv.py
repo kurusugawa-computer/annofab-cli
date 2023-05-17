@@ -488,7 +488,8 @@ class WritePerformanceRatingCsv(AbstractCommandLineWithoutWebapiInterface):
         result = CollectingPerformanceInfo(
             worktime_type=WorktimeColumn.ACTUAL_WORKTIME_HOUR,
             performance_unit=performance_unit,
-            annotation_quality_indicator=QualityIndicator(args.quality_indicator),
+            quality_indicator=QualityIndicator(args.quality_indicator),
+            productivity_indicator=ProductivityIndicator(args.productivity_indicator),
             threshold_info=ThresholdInfo(
                 threshold_worktime=args.threshold_worktime,
                 threshold_task_count=args.threshold_task_count,
