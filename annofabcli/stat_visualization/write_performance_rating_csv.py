@@ -59,6 +59,15 @@ class PerformanceUnit(Enum):
     INPUT_DATA_COUNT = "input_data_count"
 
 
+class WorktimeType(Enum):
+    """作業時間を表す列"""
+
+    ACTUAL_WORKTIME_HOUR = "actual_worktime_hour"
+    """実績作業時間"""
+    MONITORED_WORKTIME_HOUR = "monitored_worktime_hour"
+    """計測作業時間"""
+
+
 class ProductivityIndicator(Enum):
     """
     生産性の指標
@@ -112,13 +121,15 @@ class CollectingPerformanceInfo:
         *,
         worktime_type: WorktimeColumn,
         performance_unit: PerformanceUnit,
-        annotation_quality_indicator: QualityIndicator,
+        productivity_indicator: ProductivityIndicator,
+        quality_indicator: QualityIndicator,
         threshold_info: ThresholdInfo,
         threshold_infos_per_project: ThresholdInfoSettings,
     ) -> None:
         self.worktime_type = worktime_type
         self.performance_unit = performance_unit
-        self.annotation_quality_indicator = annotation_quality_indicator
+        self.quality_indicator = quality_indicator
+        self.productivity_indicator = productivity_indicator
         self.threshold_info = threshold_info
         self.threshold_infos_per_project = threshold_infos_per_project
 
@@ -161,9 +172,9 @@ class CollectingPerformanceInfo:
 
         df_joined = self.filter_df_with_threshold(df_joined, phase, threshold_info=threshold_info)
 
-        df_tmp = df_joined[[(f"{self.worktime_type.value}/{self.performance_unit.value}", phase.value)]]
+        df_tmp = df_joined[[(self.productivity_indicator.value, phase.value)]]
         df_tmp.columns = pandas.MultiIndex.from_tuples(
-            [(project_title, f"{self.worktime_type.value}/{self.performance_unit.value}__{phase.value}")]
+            [(project_title, f"{self.productivity_indicator.value}__{phase.value}")]
         )
         return df.join(df_tmp)
 
@@ -174,30 +185,30 @@ class CollectingPerformanceInfo:
 
         def _join_inspection():
             phase = TaskPhase.INSPECTION
-            if (f"{self.worktime_type.value}/{self.performance_unit.value}", phase.value) not in df_performance.columns:
+            if (self.productivity_indicator.value, phase.value) not in df_performance.columns:
                 return df
 
             df_joined = df_performance
             df_joined = self.filter_df_with_threshold(df_joined, phase, threshold_info=threshold_info)
 
-            df_tmp = df_joined[[(f"{self.worktime_type.value}/{self.performance_unit.value}", phase.value)]]
+            df_tmp = df_joined[[(self.productivity_indicator.value, phase.value)]]
             df_tmp.columns = pandas.MultiIndex.from_tuples(
-                [(project_title, f"{self.worktime_type.value}/{self.performance_unit.value}__{phase.value}")]
+                [(project_title, f"{self.productivity_indicator.value}__{phase.value}")]
             )
 
             return df.join(df_tmp)
 
         def _join_acceptance():
             phase = TaskPhase.ACCEPTANCE
-            if (f"{self.worktime_type.value}/{self.performance_unit.value}", phase.value) not in df_performance.columns:
+            if (self.productivity_indicator.value, phase.value) not in df_performance.columns:
                 return df
 
             df_joined = df_performance
             df_joined = self.filter_df_with_threshold(df_joined, phase, threshold_info=threshold_info)
 
-            df_tmp = df_joined[[(f"{self.worktime_type.value}/{self.performance_unit.value}", phase.value)]]
+            df_tmp = df_joined[[(self.productivity_indicator.value, phase.value)]]
             df_tmp.columns = pandas.MultiIndex.from_tuples(
-                [(project_title, f"{self.worktime_type.value}/{self.performance_unit.value}__{phase.value}")]
+                [(project_title, f"{self.productivity_indicator.value}__{phase.value}")]
             )
 
             return df.join(df_tmp)
@@ -217,11 +228,10 @@ class CollectingPerformanceInfo:
 
         df_joined = self.filter_df_with_threshold(df_joined, phase=TaskPhase.ANNOTATION, threshold_info=threshold_info)
 
-        df_tmp = df_joined[[(self.annotation_quality_indicator.value, "annotation")]]
+        df_tmp = df_joined[[(self.quality_indicator.value, "annotation")]]
 
-        df_tmp.columns = pandas.MultiIndex.from_tuples([(project_title, self.annotation_quality_indicator.value)])
+        df_tmp.columns = pandas.MultiIndex.from_tuples([(project_title, self.quality_indicator.value)])
         return df.join(df_tmp)
-
 
     def create_rating_df(
         self,
@@ -541,13 +551,13 @@ def parse_args(parser: argparse.ArgumentParser) -> None:
         help="評価指標の単位",
     )
 
-    # parser.add_argument(
-    #     "--productivity_indicator",
-    #     type=str,
-    #     choices=[e.value for e in PerformanceUnit],
-    #     default=PerformanceUnit.ANNOTATION_COUNT.value,
-    #     help="生産性の指標にする列名",
-    # )
+    parser.add_argument(
+        "--productivity_indicator",
+        type=str,
+        choices=[e.value for e in PerformanceUnit],
+        default=ProductivityIndicator.ACTUAL_WORKTIME_HOUR_PER_ANNOTATION_COUNT.value,
+        help="生産性の指標",
+    )
 
     parser.add_argument(
         "--quality_indicator",
