@@ -29,6 +29,10 @@ logger = logging.getLogger(__name__)
 
 @dataclass
 class ResultDataframe:
+    """
+    出力対象であるDataFrameを格納するためのクラス
+    """
+
     annotation_productivity: pandas.DataFrame
     """教師付作業の生産性"""
     inspection_acceptance_productivity: pandas.DataFrame
@@ -53,12 +57,6 @@ class ThresholdInfo(DataClassJsonMixin):
     threshold_task_count: Optional[int] = None
     """作業したタスク数の閾値。作業したタスク数が指定した数以下作業者は除外する。"""
 
-
-class PerformanceUnit(Enum):
-    """生産性の単位"""
-
-    ANNOTATION_COUNT = "annotation_count"
-    INPUT_DATA_COUNT = "input_data_count"
 
 
 class WorktimeType(Enum):
@@ -136,31 +134,41 @@ class CollectingPerformanceInfo:
     メンバごとの生産性と品質.csv からパフォーマンスの指標となる情報を収集します。
 
     Args:
+        productivity_indicator: 生産性の指標
+        quality_indicator: 品質の指標
         threshold_info: 閾値の情報
+        productivity_indicator_by_directory: ディレクトリごとの生産性の指標。
+        quality_indicator_by_directory: ディレクトリごとの品質の指標。
         threshold_infos_per_project: プロジェクトごとの閾値の情報。`threshold_info`より優先される
     """
 
     def __init__(
         self,
         *,
-        productivity_indicator: ProductivityIndicator,
-        quality_indicator: QualityIndicator,
-        threshold_info: ThresholdInfo,
-        threshold_infos_per_project: ThresholdInfoSettings,
-        productivity_indicator_by_directory: ProductivityIndicatorByDirectory,
-        quality_indicator_by_directory: QualityIndicatorByDirectory,
+        productivity_indicator: ProductivityIndicator = ProductivityIndicator.ACTUAL_WORKTIME_HOUR_PER_ANNOTATION_COUNT,
+        quality_indicator: QualityIndicator = QualityIndicator.POINTED_OUT_INSPECTION_COMMENT_COUNT_PER_ANNOTATION_COUNT,
+        threshold_info: Optional[ThresholdInfo] = None,
+        productivity_indicator_by_directory: Optional[ProductivityIndicatorByDirectory] = None,
+        quality_indicator_by_directory: Optional[QualityIndicatorByDirectory] = None,
+        threshold_infos_by_directory: Optional[ThresholdInfoSettings] = None,
     ) -> None:
         self.quality_indicator = quality_indicator
         self.productivity_indicator = productivity_indicator
-        self.threshold_info = threshold_info
-        self.threshold_infos_per_project = threshold_infos_per_project
-        self.productivity_indicator_by_directory = productivity_indicator_by_directory
-        self.quality_indicator_by_directory = quality_indicator_by_directory
+        self.threshold_info = threshold_info if threshold_info is not None else ThresholdInfo()
+        self.threshold_infos_by_directory = (
+            threshold_infos_by_directory if threshold_infos_by_directory is not None else {}
+        )
+        self.productivity_indicator_by_directory = (
+            productivity_indicator_by_directory if productivity_indicator_by_directory is not None else {}
+        )
+        self.quality_indicator_by_directory = (
+            quality_indicator_by_directory if quality_indicator_by_directory is not None else {}
+        )
 
     def get_threshold_info(self, project_title: str, productivity_type: ProductivityType) -> ThresholdInfo:
         """指定したプロジェクト名に対応する、閾値情報を取得する。"""
         global_info = self.threshold_info
-        local_info = self.threshold_infos_per_project.get((project_title, productivity_type))
+        local_info = self.threshold_infos_by_directory.get((project_title, productivity_type))
         if local_info is None:
             return global_info
 
@@ -526,20 +534,21 @@ def create_quality_indicator_by_directory(
     return result
 
 
+def create_threshold_infos_per_project(value: Optional[str]) -> ThresholdInfoSettings:
+    if value is None:
+        return {}
+
+    dict_value = get_json_from_args(value)
+    result = {}
+    for dirname, infos in dict_value.items():
+        for str_productivity_type, info in infos.items():
+            productivity_type = ProductivityType(str_productivity_type)
+            threshold_info = ThresholdInfo.from_dict(info)
+            result[(dirname, productivity_type)] = threshold_info
+    return result
+
+
 class WritePerformanceRatingCsv(AbstractCommandLineWithoutWebapiInterface):
-    @staticmethod
-    def get_threshold_infos_per_project(dict_threshold_settings: Optional[dict[str, Any]]) -> ThresholdInfoSettings:
-        if dict_threshold_settings is None:
-            return {}
-
-        result = {}
-        for dirname, infos in dict_threshold_settings.items():
-            for str_productivity_type, info in infos.items():
-                productivity_type = ProductivityType(str_productivity_type)
-                threshold_info = ThresholdInfo.from_dict(info)
-                result[(dirname, productivity_type)] = threshold_info
-        return result
-
     def main(self) -> None:
         args = self.args
 
@@ -547,23 +556,18 @@ class WritePerformanceRatingCsv(AbstractCommandLineWithoutWebapiInterface):
         user_id_list = get_list_from_args(args.user_id) if args.user_id is not None else None
         df_user = create_user_df(target_dir)
 
-        dict_threshold_settings = get_json_from_args(args.threshold_settings)
-        threshold_infos_per_project = self.get_threshold_infos_per_project(dict_threshold_settings)
-
         result = CollectingPerformanceInfo(
             productivity_indicator=ProductivityIndicator(args.productivity_indicator),
             productivity_indicator_by_directory=create_productivity_indicator_by_directory(
-                get_json_from_args(args.productivity_indicator_by_directory)
+                args.productivity_indicator_by_directory
             ),
             quality_indicator=QualityIndicator(args.quality_indicator),
-            quality_indicator_by_directory=create_quality_indicator_by_directory(
-                get_json_from_args(args.quality_indicator_by_directory)
-            ),
+            quality_indicator_by_directory=create_quality_indicator_by_directory(args.quality_indicator_by_directory),
             threshold_info=ThresholdInfo(
                 threshold_worktime=args.threshold_worktime,
                 threshold_task_count=args.threshold_task_count,
             ),
-            threshold_infos_per_project=threshold_infos_per_project,
+            threshold_infos_by_directory=create_threshold_infos_per_project(args.threshold_settings),
         ).create_rating_df(
             df_user,
             target_dir,
@@ -616,7 +620,7 @@ def parse_args(parser: argparse.ArgumentParser) -> None:
     parser.add_argument(
         "--productivity_indicator",
         type=str,
-        choices=[e.value for e in PerformanceUnit],
+        choices=[e.value for e in ProductivityIndicator],
         default=ProductivityIndicator.ACTUAL_WORKTIME_HOUR_PER_ANNOTATION_COUNT.value,
         help="生産性の指標",
     )
