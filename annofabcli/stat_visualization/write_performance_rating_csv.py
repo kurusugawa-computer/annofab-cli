@@ -495,17 +495,34 @@ class WritingCsv:
 
 
 def create_productivity_indicator_by_directory(
-    dict_productivity_indicator_by_directory: Optional[dict[str, Any]]
+    value: Optional[str],
 ) -> ProductivityIndicatorByDirectory:
     """
-    コマンドラインから渡された文字列を、ProductivityIndicatorByDirectoryに変換する。
+    コマンドライン引数`--productivity_indicator_by_directory`から渡された文字列を、ProductivityIndicatorByDirectoryに変換する。
     """
-    if dict_productivity_indicator_by_directory is None:
+    if value is None:
         return {}
 
+    dict_value = get_json_from_args(value)
     result = {}
-    for dirname, str_indicator in dict_productivity_indicator_by_directory.items():
+    for dirname, str_indicator in dict_value.items():
         result[dirname] = ProductivityIndicator(str_indicator)
+    return result
+
+
+def create_quality_indicator_by_directory(
+    value: Optional[str],
+) -> QualityIndicatorByDirectory:
+    """
+    コマンドライン引数`--quality_indicator_by_directory`から渡された文字列を、ProductivityIndicatorByDirectoryに変換する。
+    """
+    if value is None:
+        return {}
+
+    dict_value = get_json_from_args(value)
+    result = {}
+    for dirname, str_indicator in dict_value.items():
+        result[dirname] = QualityIndicator(str_indicator)
     return result
 
 
@@ -533,14 +550,15 @@ class WritePerformanceRatingCsv(AbstractCommandLineWithoutWebapiInterface):
         dict_threshold_settings = get_json_from_args(args.threshold_settings)
         threshold_infos_per_project = self.get_threshold_infos_per_project(dict_threshold_settings)
 
-        productivity_indicator_by_directory = create_productivity_indicator_by_directory(
-            get_json_from_args(args.productivity_indicator_by_directory)
-        )
-
         result = CollectingPerformanceInfo(
-            quality_indicator=QualityIndicator(args.quality_indicator),
             productivity_indicator=ProductivityIndicator(args.productivity_indicator),
-            productivity_indicator_by_directory=productivity_indicator_by_directory,
+            productivity_indicator_by_directory=create_productivity_indicator_by_directory(
+                get_json_from_args(args.productivity_indicator_by_directory)
+            ),
+            quality_indicator=QualityIndicator(args.quality_indicator),
+            quality_indicator_by_directory=create_quality_indicator_by_directory(
+                get_json_from_args(args.quality_indicator_by_directory)
+            ),
             threshold_info=ThresholdInfo(
                 threshold_worktime=args.threshold_worktime,
                 threshold_task_count=args.threshold_task_count,
