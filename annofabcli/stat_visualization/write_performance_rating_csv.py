@@ -502,26 +502,26 @@ class WritingCsv:
         self.user_ids = user_ids
 
     def write(self, df: pandas.DataFrame, csv_basename: str, output_dir: Path):
-        print_csv(df, str(output_dir / f"{csv_basename}.csv"))
+        print_csv(df, str(output_dir / f"{csv_basename}__original.csv"))
 
         # 偏差値のCSVを出力
         print_csv(
             create_deviation_df(
                 df, threshold_deviation_user_count=self.threshold_deviation_user_count, user_ids=self.user_ids
             ),
-            str(output_dir / f"{csv_basename}_deviation.csv"),
+            str(output_dir / f"{csv_basename}__deviation.csv"),
         )
 
         # A,B,C,DでランクされたCSVを出力
         print_csv(
             create_rank_df(df, user_ids=self.user_ids),
-            str(output_dir / f"{csv_basename}_rank.csv"),
+            str(output_dir / f"{csv_basename}__rank.csv"),
         )
 
         # プロジェクトごとのサマリを出力
         print_csv(
             create_basic_statistics_df(df),
-            str(output_dir / f"{csv_basename}_summary.csv"),
+            str(output_dir / f"{csv_basename}__summary.csv"),
             to_csv_kwargs={"index": True},
         )
 
