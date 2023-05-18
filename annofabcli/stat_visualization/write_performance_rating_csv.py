@@ -196,13 +196,21 @@ class CollectingPerformanceInfo:
         return df
 
     def join_annotation_productivity(
-        self, df: pandas.DataFrame, df_performance: pandas.DataFrame, project_title: str, threshold_info: ThresholdInfo
+        self, df: pandas.DataFrame, df_performance: pandas.DataFrame, project_title: str
     ) -> pandas.DataFrame:
-        """教師付生産性の指標を抽出してdfにjoinする"""
+        """
+        引数`df_performance`から教師付生産性を抽出して引数`df`にjoinした結果を返す
+
+        Args:
+            df: 教師付生産性が格納されたDataFrame。行方向にユーザー、列方向にプロジェクトが並んでいる。
+            project_title: 引数`df`にjoinする対象のプロジェクト名。列名に使用する。
+            df_performance: 引数`project_title`のユーザーごとの生産性と品質が格納されたDataFrame。
+        """
         phase = TaskPhase.ANNOTATION
 
         df_joined = df_performance
 
+        threshold_info = self.get_threshold_info(project_title, ProductivityType.ANNOTATION)
         df_joined = self.filter_df_with_threshold(df_joined, phase, threshold_info=threshold_info)
 
         productivity_indicator = self.productivity_indicator_by_directory.get(
@@ -215,12 +223,21 @@ class CollectingPerformanceInfo:
         return df.join(df_tmp)
 
     def join_inspection_acceptance_productivity(
-        self, df: pandas.DataFrame, df_performance: pandas.DataFrame, project_title: str, threshold_info: ThresholdInfo
+        self, df: pandas.DataFrame, df_performance: pandas.DataFrame, project_title: str
     ) -> pandas.DataFrame:
-        """検査,受入生産性の指標を抽出してdfにjoinする"""
+        """
+        引数`df_performance`から検査/受入の生産性を抽出して引数`df`にjoinした結果を返す
+
+        Args:
+            df: 検査/受入の生産性が格納されたDataFrame。行方向にユーザー、列方向にプロジェクトが並んでいる。
+            project_title: 引数`df`にjoinする対象のプロジェクト名。列名に使用する。
+            df_performance: 引数`project_title`のユーザーごとの生産性と品質が格納されたDataFrame。
+        """
+
         productivity_indicator = self.productivity_indicator_by_directory.get(
             project_title, self.productivity_indicator
         )
+        threshold_info = self.get_threshold_info(project_title, ProductivityType.INSPECTION_ACCEPTANCE)
 
         def _join_inspection():
             phase = TaskPhase.INSPECTION
@@ -258,13 +275,20 @@ class CollectingPerformanceInfo:
         return df
 
     def join_annotation_quality(
-        self, df: pandas.DataFrame, df_performance: pandas.DataFrame, project_title: str, threshold_info: ThresholdInfo
+        self, df: pandas.DataFrame, df_performance: pandas.DataFrame, project_title: str
     ) -> pandas.DataFrame:
         """
-        引数`df_performance`から教師付の品質を抽出して、引数`df`にjoinしたDataFrameを生成する。
+        引数`df_performance`から教師付の品質を抽出して引数`df`にjoinした結果を返す
+
+        Args:
+            df: 教師付の品質が格納されたDataFrame。行方向にユーザー、列方向にプロジェクトが並んでいる。
+            project_title: 引数`df`にjoinする対象のプロジェクト名。列名に使用する。
+            df_performance: 引数`project_title`のユーザーごとの生産性と品質が格納されたDataFrame。
         """
+
         df_joined = df_performance
 
+        threshold_info = self.get_threshold_info(project_title, ProductivityType.ANNOTATION)
         df_joined = self.filter_df_with_threshold(df_joined, phase=TaskPhase.ANNOTATION, threshold_info=threshold_info)
 
         quality_indicator = self.quality_indicator_by_directory.get(project_title, self.productivity_indicator)
@@ -305,30 +329,22 @@ class CollectingPerformanceInfo:
             df_performance = user_performance.df.copy()
             df_performance.set_index("user_id", inplace=True)
 
-            annotation_threshold_info = self.get_threshold_info(project_title, ProductivityType.ANNOTATION)
             df_annotation_productivity = self.join_annotation_productivity(
                 df_annotation_productivity,
                 df_performance,
                 project_title=project_title,
-                threshold_info=annotation_threshold_info,
             )
 
             df_annotation_quality = self.join_annotation_quality(
                 df_annotation_quality,
                 df_performance,
                 project_title=project_title,
-                threshold_info=annotation_threshold_info,
             )
 
-            # 閾値が教師付と検査/受入で別れている理由：作業を評価するのに必要な作業時間/タスク数は、教師付作業とは異なるため
-            inspection_acceptance_threshold_info = self.get_threshold_info(
-                project_title, ProductivityType.INSPECTION_ACCEPTANCE
-            )
             df_inspection_acceptance_productivity = self.join_inspection_acceptance_productivity(
                 df_inspection_acceptance_productivity,
                 df_performance,
                 project_title=project_title,
-                threshold_info=inspection_acceptance_threshold_info,
             )
 
         # プロジェクトの生産性と品質のDataFrameを生成する
