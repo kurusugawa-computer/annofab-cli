@@ -192,7 +192,7 @@ class CollectingPerformanceInfo:
         if phase == TaskPhase.ANNOTATION:
             productivity_type = ProductivityType.ANNOTATION
         elif phase in {TaskPhase.INSPECTION, TaskPhase.ACCEPTANCE}:
-            productivity_type = ProductivityType.ANNOTATION
+            productivity_type = ProductivityType.INSPECTION_ACCEPTANCE
         else:
             raise RuntimeError(f"未対応のフェーズです。phase={phase}")
 
@@ -227,7 +227,6 @@ class CollectingPerformanceInfo:
         productivity_indicator = self.productivity_indicator_by_directory.get(
             project_title, self.productivity_indicator
         )
-        print(f"in join_annotation_productivity :: {df_joined=}")
         df_tmp = df_joined[[(productivity_indicator.value, phase.value)]]
         df_tmp.columns = pandas.MultiIndex.from_tuples(
             [(project_title, f"{productivity_indicator.value}__{phase.value}")]
