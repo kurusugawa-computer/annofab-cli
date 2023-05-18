@@ -197,7 +197,6 @@ class CollectingPerformanceInfo:
             raise RuntimeError(f"未対応のフェーズです。phase={phase}")
 
         threshold_info = self.get_threshold_info(project_title, productivity_type)
-
         if threshold_info.threshold_worktime is not None:
             df = df[
                 df[(self.productivity_indicator.worktime_type.value, phase.value)] > threshold_info.threshold_worktime

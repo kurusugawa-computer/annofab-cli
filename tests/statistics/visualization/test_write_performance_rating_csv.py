@@ -8,6 +8,7 @@ from annofabcli.stat_visualization.write_performance_rating_csv import (
     ProductivityIndicator,
     ProductivityType,
     QualityIndicator,
+    TaskPhase,
     ThresholdInfo,
     create_productivity_indicator_by_directory,
     create_quality_indicator_by_directory,
@@ -131,7 +132,6 @@ class TestCollectingPerformanceInfo:
         df_actual = obj.join_annotation_quality(
             df=df_user, df_performance=user_performance.df, project_title="project1"
         )
-        print(df_actual)
         assert df_actual.columns[3] == ("project1", "pointed_out_inspection_comment_count/annotation_count__annotation")
         assert df_actual.iloc[0][
             ("project1", "pointed_out_inspection_comment_count/annotation_count__annotation")
@@ -152,3 +152,30 @@ class TestCollectingPerformanceInfo:
             df=df_user, df_performance=user_performance.df, project_title="project1"
         )
         assert df_actual3.columns[3] == ("project1", "rejected_count/task_count__annotation")
+
+    def test__filter_df_with_threshold(self):
+        # threshold_worktime で絞り込み
+        obj = CollectingPerformanceInfo(threshold_info=ThresholdInfo(threshold_worktime=6, threshold_task_count=None))
+        df_actual = obj.filter_df_with_threshold(
+            df=user_performance.df, phase=TaskPhase.ANNOTATION, project_title="project1"
+        )
+        assert list(df_actual["user_id"]) == ["KX"]
+
+        # threshold_task_count で絞り込み
+        obj = CollectingPerformanceInfo(threshold_info=ThresholdInfo(threshold_worktime=None, threshold_task_count=40))
+        df_actual = obj.filter_df_with_threshold(
+            df=user_performance.df, phase=TaskPhase.ANNOTATION, project_title="project1"
+        )
+        assert list(df_actual["user_id"]) == ["BH"]
+
+        # threshold_task_count で絞り込み
+        obj = CollectingPerformanceInfo(
+            threshold_info=ThresholdInfo(threshold_worktime=100, threshold_task_count=100),
+            threshold_infos_by_directory={
+                ("project1", ProductivityType.ANNOTATION): ThresholdInfo(threshold_worktime=6, threshold_task_count=0)
+            },
+        )
+        df_actual = obj.filter_df_with_threshold(
+            df=user_performance.df, phase=TaskPhase.ANNOTATION, project_title="project1"
+        )
+        assert list(df_actual["user_id"]) == ["KX"]
