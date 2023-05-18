@@ -113,7 +113,7 @@ value: 閾値情報
 """
 
 
-ProductivityIndicatorByDirectory: TypeAlias = dict[str, ProductivityIndicator]
+ProductivityIndicatorByDirectory: TypeAlias = Dict[str, ProductivityIndicator]
 """
 ディレクトリごとの生産性の指標
 key: ディレクトリ名
@@ -121,7 +121,7 @@ value: 生産性の指標
 """
 
 
-QualityIndicatorByDirectory: TypeAlias = dict[str, QualityIndicator]
+QualityIndicatorByDirectory: TypeAlias = Dict[str, QualityIndicator]
 """
 ディレクトリごとの品質の指標
 key: ディレクトリ名
