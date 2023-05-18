@@ -115,10 +115,18 @@ value: 閾値情報
 """
 
 
-ProductivityIndicatorByDirectory: TypeAlias = dict[tuple[str, ProductivityType], ProductivityIndicator]
+ProductivityIndicatorByDirectory: TypeAlias = dict[str, ProductivityIndicator]
 """
 ディレクトリごとの生産性の指標
-key: tuple(ディレクトリ名, 生産性の種類)
+key: ディレクトリ名
+value: 生産性の指標
+"""
+
+
+QualityIndicatorByDirectory: TypeAlias = dict[str, QualityIndicator]
+"""
+ディレクトリごとの品質の指標
+key: ディレクトリ名
 value: 生産性の指標
 """
 
@@ -140,12 +148,14 @@ class CollectingPerformanceInfo:
         threshold_info: ThresholdInfo,
         threshold_infos_per_project: ThresholdInfoSettings,
         productivity_indicator_by_directory: ProductivityIndicatorByDirectory,
+        quality_indicator_by_directory: QualityIndicatorByDirectory,
     ) -> None:
         self.quality_indicator = quality_indicator
         self.productivity_indicator = productivity_indicator
         self.threshold_info = threshold_info
         self.threshold_infos_per_project = threshold_infos_per_project
         self.productivity_indicator_by_directory = productivity_indicator_by_directory
+        self.quality_indicator_by_directory = quality_indicator_by_directory
 
     def get_threshold_info(self, project_title: str, productivity_type: ProductivityType) -> ThresholdInfo:
         """指定したプロジェクト名に対応する、閾値情報を取得する。"""
@@ -189,7 +199,7 @@ class CollectingPerformanceInfo:
         df_joined = self.filter_df_with_threshold(df_joined, phase, threshold_info=threshold_info)
 
         productivity_indicator = self.productivity_indicator_by_directory.get(
-            (project_title, ProductivityType.ANNOTATION), self.productivity_indicator
+            project_title, self.productivity_indicator
         )
         df_tmp = df_joined[[(productivity_indicator.value, phase.value)]]
         df_tmp.columns = pandas.MultiIndex.from_tuples(
@@ -202,7 +212,7 @@ class CollectingPerformanceInfo:
     ) -> pandas.DataFrame:
         """検査,受入生産性の指標を抽出してdfにjoinする"""
         productivity_indicator = self.productivity_indicator_by_directory.get(
-            (project_title, ProductivityType.INSPECTION_ACCEPTANCE), self.productivity_indicator
+            project_title, self.productivity_indicator
         )
 
         def _join_inspection():
@@ -250,9 +260,11 @@ class CollectingPerformanceInfo:
 
         df_joined = self.filter_df_with_threshold(df_joined, phase=TaskPhase.ANNOTATION, threshold_info=threshold_info)
 
-        df_tmp = df_joined[[(self.quality_indicator.value, "annotation")]]
+        quality_indicator = self.quality_indicator_by_directory.get(project_title, self.productivity_indicator)
 
-        df_tmp.columns = pandas.MultiIndex.from_tuples([(project_title, self.quality_indicator.value)])
+        df_tmp = df_joined[[(quality_indicator.value, "annotation")]]
+
+        df_tmp.columns = pandas.MultiIndex.from_tuples([(project_title, quality_indicator.value)])
         return df.join(df_tmp)
 
     def create_rating_df(
@@ -492,11 +504,8 @@ def create_productivity_indicator_by_directory(
         return {}
 
     result = {}
-    for dirname, infos in dict_productivity_indicator_by_directory.items():
-        for str_productivity_type, str_indicator in infos.items():
-            productivity_type = ProductivityType(str_productivity_type)
-            indicator = ProductivityIndicator(str_indicator)
-            result[(dirname, productivity_type)] = indicator
+    for dirname, str_indicator in dict_productivity_indicator_by_directory.items():
+        result[dirname] = ProductivityIndicator(str_indicator)
     return result
 
 
@@ -595,8 +604,7 @@ def parse_args(parser: argparse.ArgumentParser) -> None:
     )
 
     PRODUCTIVITY_INDICATOR_BY_DIRECTORY_SAMPLE = {
-        "dirname1": {"annotation": "monitored_worktime_hour/annotation_count"},
-        "dirname2": {"inspection_acceptance": "actual_worktime_hour/annotation_count"},
+        "dirname1": "monitored_worktime_hour/annotation_count",
     }
     parser.add_argument(
         "--productivity_indicator_by_directory",
@@ -612,6 +620,17 @@ def parse_args(parser: argparse.ArgumentParser) -> None:
         choices=[e.value for e in QualityIndicator],
         default=QualityIndicator.POINTED_OUT_INSPECTION_COMMENT_COUNT_PER_ANNOTATION_COUNT.value,
         help="品質の指標",
+    )
+
+    QUALITY_INDICATOR_BY_DIRECTORY_SAMPLE = {
+        "dirname1": "rejected_count/task_count",
+    }
+    parser.add_argument(
+        "--quality_indicator_by_directory",
+        type=str,
+        help="品質の指標をディレクトリごとに指定します。JSON形式で指定してください。\n"
+        "``--quality_indicator`` で指定した値よりも優先されます。\n"
+        f"(ex) ``{json.dumps(QUALITY_INDICATOR_BY_DIRECTORY_SAMPLE)}``",
     )
 
     parser.add_argument(
