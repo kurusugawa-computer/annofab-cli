@@ -125,3 +125,30 @@ class TestCollectingPerformanceInfo:
             df=df_user, df_performance=user_performance.df, project_title="project1"
         )
         assert df_actual3.columns[3] == ("project1", "monitored_worktime_hour/annotation_count__acceptance")
+
+    def test__join_annotation_quality(self):
+        obj = CollectingPerformanceInfo()
+        df_actual = obj.join_annotation_quality(
+            df=df_user, df_performance=user_performance.df, project_title="project1"
+        )
+        print(df_actual)
+        assert df_actual.columns[3] == ("project1", "pointed_out_inspection_comment_count/annotation_count__annotation")
+        assert df_actual.iloc[0][
+            ("project1", "pointed_out_inspection_comment_count/annotation_count__annotation")
+        ] == approx(0.000854, rel=1e-2)
+
+        obj2 = CollectingPerformanceInfo(quality_indicator=QualityIndicator.REJECTED_COUNT_PER_TASK_COUNT)
+        df_actual2 = obj2.join_annotation_quality(
+            df=df_user, df_performance=user_performance.df, project_title="project1"
+        )
+        assert df_actual2.columns[3] == ("project1", "rejected_count/task_count__annotation")
+
+        # quality_indicator_by_directoryが優先されることを確認
+        obj3 = CollectingPerformanceInfo(
+            quality_indicator=QualityIndicator.POINTED_OUT_INSPECTION_COMMENT_COUNT_PER_INPUT_DATA_COUNT,
+            quality_indicator_by_directory={"project1": QualityIndicator.REJECTED_COUNT_PER_TASK_COUNT},
+        )
+        df_actual3 = obj3.join_annotation_quality(
+            df=df_user, df_performance=user_performance.df, project_title="project1"
+        )
+        assert df_actual3.columns[3] == ("project1", "rejected_count/task_count__annotation")

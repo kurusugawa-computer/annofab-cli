@@ -92,6 +92,7 @@ class QualityIndicator(Enum):
     """
 
     POINTED_OUT_INSPECTION_COMMENT_COUNT_PER_ANNOTATION_COUNT = "pointed_out_inspection_comment_count/annotation_count"
+    POINTED_OUT_INSPECTION_COMMENT_COUNT_PER_INPUT_DATA_COUNT = "pointed_out_inspection_comment_count/input_data_count"
     REJECTED_COUNT_PER_TASK_COUNT = "rejected_count/task_count"
 
 
@@ -184,7 +185,19 @@ class CollectingPerformanceInfo:
 
         return ThresholdInfo(threshold_worktime=worktime, threshold_task_count=task_count)
 
-    def filter_df_with_threshold(self, df: pandas.DataFrame, phase: TaskPhase, threshold_info: ThresholdInfo):
+    def filter_df_with_threshold(self, df: pandas.DataFrame, phase: TaskPhase, project_title: str):
+        """
+        引数`df`をインタンスとして持っている閾値情報でフィルタリングする。
+        """
+        if phase == TaskPhase.ANNOTATION:
+            productivity_type = ProductivityType.ANNOTATION
+        elif phase in {TaskPhase.INSPECTION, TaskPhase.ACCEPTANCE}:
+            productivity_type = ProductivityType.ANNOTATION
+        else:
+            raise RuntimeError(f"未対応のフェーズです。phase={phase}")
+
+        threshold_info = self.get_threshold_info(project_title, productivity_type)
+
         if threshold_info.threshold_worktime is not None:
             df = df[
                 df[(self.productivity_indicator.worktime_type.value, phase.value)] > threshold_info.threshold_worktime
@@ -210,8 +223,7 @@ class CollectingPerformanceInfo:
 
         df_joined = df_performance
 
-        threshold_info = self.get_threshold_info(project_title, ProductivityType.ANNOTATION)
-        df_joined = self.filter_df_with_threshold(df_joined, phase, threshold_info=threshold_info)
+        df_joined = self.filter_df_with_threshold(df_joined, phase, project_title=project_title)
 
         productivity_indicator = self.productivity_indicator_by_directory.get(
             project_title, self.productivity_indicator
@@ -237,7 +249,6 @@ class CollectingPerformanceInfo:
         productivity_indicator = self.productivity_indicator_by_directory.get(
             project_title, self.productivity_indicator
         )
-        threshold_info = self.get_threshold_info(project_title, ProductivityType.INSPECTION_ACCEPTANCE)
 
         def _join_inspection():
             phase = TaskPhase.INSPECTION
@@ -245,7 +256,7 @@ class CollectingPerformanceInfo:
                 return df
 
             df_joined = df_performance
-            df_joined = self.filter_df_with_threshold(df_joined, phase, threshold_info=threshold_info)
+            df_joined = self.filter_df_with_threshold(df_joined, phase, project_title=project_title)
 
             df_tmp = df_joined[[(productivity_indicator.value, phase.value)]]
             df_tmp.columns = pandas.MultiIndex.from_tuples(
@@ -260,7 +271,7 @@ class CollectingPerformanceInfo:
                 return df
 
             df_joined = df_performance
-            df_joined = self.filter_df_with_threshold(df_joined, phase, threshold_info=threshold_info)
+            df_joined = self.filter_df_with_threshold(df_joined, phase, project_title=project_title)
 
             df_tmp = df_joined[[(productivity_indicator.value, phase.value)]]
             df_tmp.columns = pandas.MultiIndex.from_tuples(
@@ -285,17 +296,16 @@ class CollectingPerformanceInfo:
             project_title: 引数`df`にjoinする対象のプロジェクト名。列名に使用する。
             df_performance: 引数`project_title`のユーザーごとの生産性と品質が格納されたDataFrame。
         """
-
+        phase = TaskPhase.ANNOTATION
         df_joined = df_performance
 
-        threshold_info = self.get_threshold_info(project_title, ProductivityType.ANNOTATION)
-        df_joined = self.filter_df_with_threshold(df_joined, phase=TaskPhase.ANNOTATION, threshold_info=threshold_info)
+        df_joined = self.filter_df_with_threshold(df_joined, phase=TaskPhase.ANNOTATION, project_title=project_title)
 
-        quality_indicator = self.quality_indicator_by_directory.get(project_title, self.productivity_indicator)
+        quality_indicator = self.quality_indicator_by_directory.get(project_title, self.quality_indicator)
 
-        df_tmp = df_joined[[(quality_indicator.value, "annotation")]]
+        df_tmp = df_joined[[(quality_indicator.value, phase.value)]]
 
-        df_tmp.columns = pandas.MultiIndex.from_tuples([(project_title, quality_indicator.value)])
+        df_tmp.columns = pandas.MultiIndex.from_tuples([(project_title, f"{quality_indicator.value}__{phase.value}")])
         return df.join(df_tmp)
 
     def create_rating_df(
