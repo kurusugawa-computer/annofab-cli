@@ -58,7 +58,6 @@ class ThresholdInfo(DataClassJsonMixin):
     """作業したタスク数の閾値。作業したタスク数が指定した数以下作業者は除外する。"""
 
 
-
 class WorktimeType(Enum):
     """作業時間を表す列"""
 
@@ -146,7 +145,7 @@ class CollectingPerformanceInfo:
         self,
         *,
         productivity_indicator: ProductivityIndicator = ProductivityIndicator.ACTUAL_WORKTIME_HOUR_PER_ANNOTATION_COUNT,
-        quality_indicator: QualityIndicator = QualityIndicator.POINTED_OUT_INSPECTION_COMMENT_COUNT_PER_ANNOTATION_COUNT,
+        quality_indicator: QualityIndicator = QualityIndicator.POINTED_OUT_INSPECTION_COMMENT_COUNT_PER_ANNOTATION_COUNT,  # noqa: E501
         threshold_info: Optional[ThresholdInfo] = None,
         productivity_indicator_by_directory: Optional[ProductivityIndicatorByDirectory] = None,
         quality_indicator_by_directory: Optional[QualityIndicatorByDirectory] = None,
