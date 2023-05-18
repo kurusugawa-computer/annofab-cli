@@ -1,3 +1,4 @@
+import os
 from pathlib import Path
 
 import pandas
@@ -15,6 +16,10 @@ from annofabcli.stat_visualization.write_performance_rating_csv import (
     create_threshold_infos_per_project,
 )
 from annofabcli.statistics.visualization.project_dir import ProjectDir
+
+# プロジェクトトップに移動する
+os.chdir(os.path.dirname(os.path.abspath(__file__)) + "/../../../")
+
 
 data_dir = Path("tests/data/stat_visualization")
 
@@ -43,14 +48,10 @@ df_user = pandas.DataFrame(
         ("biography", ""): ["category-KK", "category-KT", "category-KT", "category-KT"],
     }
 )
-print(f"{df_user=}")
-print(f"{df_user.columns=}")
-
 project_dir = ProjectDir(data_dir / "visualization-dir")
 
 user_performance = project_dir.read_user_performance()
-print(f"{user_performance.df=}")
-print(f"{user_performance.df.columns=}")
+
 
 class TestCollectingPerformanceInfo:
     def test__get_threshold_info(self):
@@ -105,7 +106,6 @@ class TestCollectingPerformanceInfo:
         df_actual = obj.join_inspection_acceptance_productivity(
             df=df_user, df_performance=user_performance.df, project_title="project1"
         )
-        print(f"in test__join_inspection_acceptance_productivity :: {df_actual=}")
         assert df_actual.columns[3] == ("project1", "actual_worktime_hour/annotation_count__acceptance")
         assert df_actual.iloc[1][("project1", "actual_worktime_hour/annotation_count__acceptance")] == approx(
             0.000145, rel=1e-2
@@ -136,7 +136,6 @@ class TestCollectingPerformanceInfo:
         df_actual = obj.join_annotation_quality(
             df=df_user, df_performance=user_performance.df, project_title="project1"
         )
-        print(f"in test__join_annotation_quality :: {df_actual=}")
         assert df_actual.columns[3] == ("project1", "pointed_out_inspection_comment_count/annotation_count__annotation")
         assert df_actual.iloc[0][
             ("project1", "pointed_out_inspection_comment_count/annotation_count__annotation")
