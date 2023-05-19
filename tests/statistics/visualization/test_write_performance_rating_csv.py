@@ -1,4 +1,3 @@
-import os
 from pathlib import Path
 
 import pandas
@@ -16,10 +15,6 @@ from annofabcli.stat_visualization.write_performance_rating_csv import (
     create_threshold_infos_per_project,
 )
 from annofabcli.statistics.visualization.project_dir import ProjectDir
-
-# プロジェクトトップに移動する
-os.chdir(os.path.dirname(os.path.abspath(__file__)) + "/../../../")
-
 
 data_dir = Path("tests/data/stat_visualization")
 

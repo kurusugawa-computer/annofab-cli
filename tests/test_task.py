@@ -3,7 +3,6 @@ from __future__ import annotations
 import configparser
 import datetime
 import json
-import os
 from pathlib import Path
 
 import annofabapi
@@ -15,15 +14,10 @@ from annofabcli.__main__ import main
 # webapiにアクセスするテストモジュール
 pytestmark = pytest.mark.access_webapi
 
-# プロジェクトトップに移動する
-os.chdir(os.path.dirname(os.path.abspath(__file__)) + "/../")
-
 data_dir = Path("./tests/data/task")
 out_dir = Path("./tests/out/task")
 out_dir.mkdir(exist_ok=True, parents=True)
 
-# プロジェクトトップに移動する
-os.chdir(os.path.dirname(os.path.abspath(__file__)) + "/../")
 inifile = configparser.ConfigParser()
 inifile.read("./pytest.ini", "UTF-8")
 annofab_config = dict(inifile.items("annofab"))

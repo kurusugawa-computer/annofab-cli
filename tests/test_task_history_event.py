@@ -1,5 +1,4 @@
 import configparser
-import os
 from pathlib import Path
 
 import annofabapi
@@ -14,8 +13,6 @@ pytestmark = pytest.mark.access_webapi
 out_dir = Path("./tests/out/task_history_event")
 data_dir = Path("./tests/data/task_history_event")
 
-# プロジェクトトップに移動する
-os.chdir(os.path.dirname(os.path.abspath(__file__)) + "/../")
 inifile = configparser.ConfigParser()
 inifile.read("./pytest.ini", "UTF-8")
 annofab_config = dict(inifile.items("annofab"))

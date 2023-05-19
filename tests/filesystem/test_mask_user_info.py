@@ -1,13 +1,9 @@
-import os
 from pathlib import Path
 
 import pandas
 
 from annofabcli.common.utils import read_multiheader_csv
 from annofabcli.filesystem.mask_user_info import create_masked_name, create_masked_user_info_df
-
-# プロジェクトトップに移動する
-os.chdir(os.path.dirname(os.path.abspath(__file__)) + "/../../")
 
 data_dir = Path("./tests/data/filesystem")
 

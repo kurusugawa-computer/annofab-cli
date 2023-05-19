@@ -1,12 +1,8 @@
-import os
 from pathlib import Path
 
 from annofabapi.models import ProjectMemberRole
 
 from annofabcli.project_member.put_project_members import Member, PutProjectMembers
-
-# プロジェクトトップに移動する
-os.chdir(os.path.dirname(os.path.abspath(__file__)) + "/../")
 
 data_dir = Path("./tests/data/project_member")
 
