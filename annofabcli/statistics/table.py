@@ -342,7 +342,7 @@ class Table:
 
         group_obj["worktime_ratio_by_task"] = group_obj.groupby(
             level=["task_id", "phase", "phase_stage"], group_keys=False
-        ).apply(lambda e: e / float(e.sum()))
+        ).apply(lambda e: e / e / e["worktime_hour"].sum())
         group_obj["annotation_count"] = group_obj.apply(get_annotation_count, axis="columns")
         group_obj["input_data_count"] = group_obj.apply(get_input_data_count, axis="columns")
         group_obj["pointed_out_inspection_comment_count"] = group_obj.apply(
