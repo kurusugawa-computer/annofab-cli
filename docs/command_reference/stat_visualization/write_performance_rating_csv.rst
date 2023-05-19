@@ -58,17 +58,17 @@ Examples
 
     out_dir2/
     ├── annotation_productivity
-    │   ├── annotation_productivity.csv
+    │   ├── annotation_productivity__original.csv
     │   ├── annotation_productivity__deviation.csv
     │   ├── annotation_productivity__rank.csv
     │   └── annotation_productivity__summary.csv
     ├── annotation_quality
-    │   ├── annotation_quality.csv
+    │   ├── annotation_quality__original.csv
     │   ├── annotation_quality__deviation.csv
     │   ├── annotation_quality__rank.csv
     │   └── annotation_quality__summary.csv
     └── inspection_acceptance_
-        ├── inspection_acceptance_productivity.csv
+        ├── inspection_acceptance_productivity__original.csv
         ├── inspection_acceptance_productivity__deviation.csv
         ├── inspection_acceptance_productivity__rank.csv
         └── inspection_acceptance_productivity__summary.csv
