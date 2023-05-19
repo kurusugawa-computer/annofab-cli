@@ -1,10 +1,6 @@
-import os
 from pathlib import Path
 
 from annofabcli.input_data.put_input_data import CsvInputData, PutInputData, read_input_data_csv
-
-# プロジェクトトップに移動する
-os.chdir(os.path.dirname(os.path.abspath(__file__)) + "/../../")
 
 test_dir = Path("./tests/data/input_data")
 

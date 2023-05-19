@@ -1,6 +1,5 @@
 import asyncio
 import configparser
-import os
 from pathlib import Path
 
 import annofabapi
@@ -12,8 +11,6 @@ from annofabcli.common.download import DownloadingFile
 # webapiにアクセスするテストモジュール
 pytestmark = pytest.mark.access_webapi
 
-# プロジェクトトップに移動する
-os.chdir(os.path.dirname(os.path.abspath(__file__)) + "/../../")
 inifile = configparser.ConfigParser()
 inifile.read("./pytest.ini", "UTF-8")
 annofab_config = dict(inifile.items("annofab"))

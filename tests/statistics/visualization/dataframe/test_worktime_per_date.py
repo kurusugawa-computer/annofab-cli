@@ -1,5 +1,4 @@
 import configparser
-import os
 from pathlib import Path
 
 import annofabapi
@@ -45,7 +44,6 @@ class TestWorktimePerDate:
         assert len(merged_obj.df) == len(self.obj.df)
 
 
-os.chdir(os.path.dirname(os.path.abspath(__file__)) + "/../../../../")
 inifile = configparser.ConfigParser()
 inifile.read("./pytest.ini", "UTF-8")
 annofab_config = dict(inifile.items("annofab"))

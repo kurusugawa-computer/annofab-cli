@@ -1,4 +1,3 @@
-import os
 import zipfile
 from pathlib import Path
 
@@ -12,9 +11,6 @@ from annofabcli.common.image import (
     write_annotation_image,
     write_annotation_images_from_path,
 )
-
-# プロジェクトトップに移動する
-os.chdir(os.path.dirname(os.path.abspath(__file__)) + "/../../")
 
 test_dir = Path("./tests/data")
 out_dir = Path("./tests/out")

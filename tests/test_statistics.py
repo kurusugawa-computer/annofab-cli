@@ -1,5 +1,4 @@
 import configparser
-import os
 from pathlib import Path
 
 import annofabapi
@@ -16,8 +15,6 @@ data_dir = Path("./tests/data/statistics")
 out_dir.mkdir(exist_ok=True, parents=True)
 
 
-# プロジェクトトップに移動する
-os.chdir(os.path.dirname(os.path.abspath(__file__)) + "/../")
 inifile = configparser.ConfigParser()
 inifile.read("./pytest.ini", "UTF-8")
 annofab_config = dict(inifile.items("annofab"))

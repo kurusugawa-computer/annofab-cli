@@ -1,14 +1,10 @@
 from __future__ import annotations
 
 import json
-import os
 from pathlib import Path
 from typing import Any
 
 from annofabcli.annotation_specs.list_attribute_restriction import FormatArgument, ListAttributeRestrictionMain
-
-# プロジェクトトップに移動する
-os.chdir(os.path.dirname(os.path.abspath(__file__)) + "/../../")
 
 data_dir = Path("./tests/data/annotation_specs")
 out_dir = Path("./tests/out/annotation_specs")
