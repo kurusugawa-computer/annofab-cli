@@ -639,6 +639,18 @@ class UserPerformance:
                 df[(f"{worktime_type.value}_worktime_hour/{performance_unit.value}", phase)] * 60
             )
 
+        # bokeh3.0.3では、string型の列を持つpandas.DataFrameを描画できないため、改めてobject型に戻す
+        # TODO この問題が解決されたら、削除する
+        # https://qiita.com/yuji38kwmt/items/b5da6ed521e827620186
+        df = df.astype(
+            {
+                ("user_id", ""): "object",
+                ("username", ""): "object",
+                ("biography", ""): "object",
+                ("last_working_date", ""): "object",
+            }
+        )
+
         for biography_index, biography in enumerate(sorted(set(df["biography"]))):
             for fig, phase in zip(figure_list, self.phase_list):
                 filtered_df = df[
@@ -733,6 +745,18 @@ class UserPerformance:
         ]
 
         phase = "annotation"
+
+        # bokeh3.0.3では、string型の列を持つpandas.DataFrameを描画できないため、改めてobject型に戻す
+        # TODO この問題が解決されたら、削除する
+        # https://qiita.com/yuji38kwmt/items/b5da6ed521e827620186
+        df = df.astype(
+            {
+                ("user_id", ""): "object",
+                ("username", ""): "object",
+                ("biography", ""): "object",
+                ("last_working_date", ""): "object",
+            }
+        )
 
         df["biography"] = df["biography"].fillna("")
         for biography_index, biography in enumerate(sorted(set(df["biography"]))):
@@ -908,6 +932,18 @@ class UserPerformance:
         ]
         phase = TaskPhase.ANNOTATION.value
         df["biography"] = df["biography"].fillna("")
+
+        # bokeh3.0.3では、string型の列を持つpandas.DataFrameを描画できないため、改めてobject型に戻す
+        # TODO この問題が解決されたら、削除する
+        # https://qiita.com/yuji38kwmt/items/b5da6ed521e827620186
+        df = df.astype(
+            {
+                ("user_id", ""): "object",
+                ("username", ""): "object",
+                ("biography", ""): "object",
+                ("last_working_date", ""): "object",
+            }
+        )
 
         for biography_index, biography in enumerate(sorted(set(df["biography"]))):
             for fig, column_pair in zip(figure_list, column_pair_list):

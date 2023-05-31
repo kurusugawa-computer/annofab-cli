@@ -126,7 +126,6 @@ class WriteCsvGraph:
         annotation_count_ratio_df = self.table_obj.create_annotation_count_ratio_df(
             df_task_history, self._get_task_df()
         )
-        annotation_count_ratio_df.to_csv("annotation_count_ratio_df.csv")
         df_user = pandas.DataFrame(self.table_obj.project_members_dict.values())
 
         # タスク、フェーズ、ユーザごとの作業時間を出力する
