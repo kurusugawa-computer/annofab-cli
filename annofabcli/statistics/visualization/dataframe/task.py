@@ -186,8 +186,8 @@ class Task:
         """
 
         def diff_days(s1: pandas.Series, s2: pandas.Series) -> pandas.Series:
-            dt1 = pandas.to_datetime(s1)
-            dt2 = pandas.to_datetime(s2)
+            dt1 = pandas.to_datetime(s1, format="ISO8601")
+            dt2 = pandas.to_datetime(s2, format="ISO8601")
 
             # タイムゾーンを指定している理由::
             # すべてがNaNのseriesをdatetimeに変換すると、型にタイムゾーンが指定されない。
