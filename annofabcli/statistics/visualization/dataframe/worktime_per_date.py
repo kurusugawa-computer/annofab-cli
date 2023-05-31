@@ -397,6 +397,13 @@ class WorktimePerDate:
         df_cumulative = self._get_cumulative_dataframe(df_continuous_date)
         df_cumulative["dt_date"] = df_cumulative["date"].map(lambda e: datetime.datetime.fromisoformat(e).date())
 
+        # bokeh3.0.3では、string型の列を持つpandas.DataFrameを描画できないため、改めてobject型に戻す
+        # またpandas.NAを持つDataFrameも描画できないので、numpy.nanに変換する
+        # TODO この問題が解決されたら、削除する
+        # https://qiita.com/yuji38kwmt/items/b5da6ed521e827620186
+        df_cumulative = df_cumulative.astype(
+            {"date": "object", "user_id": "object", "username": "object", "biography": "object"}
+        )
         df_cumulative.replace(pandas.NA, numpy.nan, inplace=True)
 
         line_count = 0
