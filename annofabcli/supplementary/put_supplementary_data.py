@@ -303,7 +303,7 @@ class PutSupplementaryData(AbstractCommandLineInterface):
     def get_supplementary_data_list_from_dict(
         supplementary_data_dict_list: List[Dict[str, Any]]
     ) -> List[CsvSupplementaryData]:
-        return CsvSupplementaryData.schema().load(supplementary_data_dict_list, many=True, unknown="exclude")
+        return [CsvSupplementaryData.from_dict(e) for e in supplementary_data_dict_list]
 
     @staticmethod
     def get_supplementary_data_list_from_csv(csv_path: Path) -> List[CsvSupplementaryData]:

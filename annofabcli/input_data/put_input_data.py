@@ -323,7 +323,7 @@ class PutInputData(AbstractCommandLineInterface):
             if not allow_duplicated_input_data:
                 raise RuntimeError("`input_data_path`が重複しています。")
 
-        return CsvInputData.schema().load(input_data_dict_list, many=True, unknown="exclude")
+        return [CsvInputData.from_dict(e) for e in input_data_dict_list]
 
     def validate(self, args: argparse.Namespace) -> bool:
         if args.csv is not None:

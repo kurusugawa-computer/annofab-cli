@@ -129,7 +129,7 @@ class ChangeInputDataNameMain(AbstractCommandLineWithConfirmInterface):
 
 
 def create_changed_input_data_list_from_dict(input_data_dict_list: list[dict[str, str]]) -> list[ChangedInputData]:
-    return ChangedInputData.schema().load(input_data_dict_list, many=True, unknown="exclude")
+    return [ChangedInputData.from_dict(e) for e in input_data_dict_list]
 
 
 def create_changed_input_data_list_from_csv(csv_file: Path) -> list[ChangedInputData]:
@@ -153,7 +153,7 @@ def create_changed_input_data_list_from_csv(csv_file: Path) -> list[ChangedInput
     )
 
     input_data_dict_list = df_input_data.to_dict("records")
-    return ChangedInputData.schema().load(input_data_dict_list, many=True, unknown="exclude")
+    return [ChangedInputData.from_dict(e) for e in input_data_dict_list]
 
 
 class ChangeInputDataName(AbstractCommandLineInterface):
