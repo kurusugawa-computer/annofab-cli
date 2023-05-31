@@ -21,7 +21,7 @@ from annofabcli.statistics.visualization.dataframe.productivity_per_date import 
     AnnotatorProductivityPerDate,
     InspectorProductivityPerDate,
 )
-from annofabcli.statistics.visualization.dataframe.task import Task
+from annofabcli.statistics.visualization.dataframe.task import Task, TaskWorktimeByPhaseUser
 from annofabcli.statistics.visualization.dataframe.user_performance import UserPerformance, WholePerformance
 from annofabcli.statistics.visualization.dataframe.whole_productivity_per_date import (
     WholeProductivityPerCompletedDate,
@@ -141,6 +141,24 @@ def merge_visualization_dir(  # pylint: disable=too-many-statements
             return None
 
     @_catch_exception
+    def merge_task_worktime_list() -> None:
+        tmp_list: list[TaskWorktimeByPhaseUser] = []
+        for project_dir in project_dir_list:
+            try:
+                tmp_obj = project_dir.read_task_worktime_list()
+                tmp_list.append(tmp_obj)
+            except Exception:
+                logger.warning(f"'{project_dir}'からタスク情報の取得に失敗しました。", exc_info=True)
+                continue
+
+        if len(tmp_list) > 0:
+            merged_obj = TaskWorktimeByPhaseUser.merge(*tmp_list)
+            output_project_dir.write_task_worktime_list(merged_obj)
+
+        else:
+            logger.warning(f"マージ対象のタスク情報は存在しないため、'{output_project_dir.FILENAME_TASK_WORKTIME_LIST}'は出力しません。")
+
+    @_catch_exception
     def write_merge_info_json() -> None:
         """マージ情報に関するJSONファイルを出力する。"""
         target_dir_list = [str(e.project_dir) for e in project_dir_list]
@@ -207,6 +225,7 @@ def merge_visualization_dir(  # pylint: disable=too-many-statements
     execute_merge_performance_per_date()
     merge_performance_per_first_annotation_started_date()
     merge_worktime_per_date()
+    merge_task_worktime_list()
     task = merge_task_list()
     if task is not None:
         write_cumulative_line_graph(task)

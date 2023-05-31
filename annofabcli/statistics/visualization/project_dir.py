@@ -13,8 +13,13 @@ from annofabcli.common.utils import print_json
 from annofabcli.statistics.database import Query
 from annofabcli.statistics.visualization.dataframe.cumulative_productivity import AbstractPhaseCumulativeProductivity
 from annofabcli.statistics.visualization.dataframe.productivity_per_date import AbstractPhaseProductivityPerDate
-from annofabcli.statistics.visualization.dataframe.task import Task
-from annofabcli.statistics.visualization.dataframe.user_performance import UserPerformance, WholePerformance
+from annofabcli.statistics.visualization.dataframe.task import Task, TaskWorktimeByPhaseUser
+from annofabcli.statistics.visualization.dataframe.user_performance import (
+    PerformanceUnit,
+    UserPerformance,
+    WholePerformance,
+    WorktimeType,
+)
 from annofabcli.statistics.visualization.dataframe.whole_productivity_per_date import (
     WholeProductivityPerCompletedDate,
     WholeProductivityPerFirstAnnotationStartedDate,
@@ -39,7 +44,7 @@ class ProjectDir(DataClassJsonMixin):
 
     FILENAME_WORKTIME_PER_DATE_USER = "ユーザ_日付list-作業時間.csv"
     FILENAME_TASK_LIST = "タスクlist.csv"
-
+    FILENAME_TASK_WORKTIME_LIST = "task-worktime-list-by-user-phase.csv"
     FILENAME_PROJECT_INFO = "project_info.json"
     FILENAME_MERGE_INFO = "merge_info.json"
 
@@ -81,6 +86,19 @@ class ProjectDir(DataClassJsonMixin):
     def write_task_list(self, obj: Task) -> None:
         """`タスクlist.csv`を書き込む。"""
         obj.to_csv(self.project_dir / self.FILENAME_TASK_LIST)
+
+    def read_task_worktime_list(self) -> TaskWorktimeByPhaseUser:
+        """`task-worktime-list.csv`を読み込む。"""
+        file = self.project_dir / self.FILENAME_TASK_WORKTIME_LIST
+        if file.exists():
+            return TaskWorktimeByPhaseUser.from_csv(file)
+        else:
+            logger.warning(f"'{str(file)}'を読み込もうとしましたが、ファイルは存在しません。")
+            return TaskWorktimeByPhaseUser.empty()
+
+    def write_task_worktime_list(self, obj: TaskWorktimeByPhaseUser) -> None:
+        """`task-worktime-list.csv`を書き込む。"""
+        obj.to_csv(self.project_dir / self.FILENAME_TASK_WORKTIME_LIST)
 
     def write_task_histogram(self, obj: Task) -> None:
         """
@@ -224,21 +242,55 @@ class ProjectDir(DataClassJsonMixin):
         """
         output_dir = self.project_dir / "scatter"
         obj.plot_quality(output_dir / "散布図-教師付者の品質と作業量の関係.html")
-        obj.plot_productivity_from_monitored_worktime(output_dir / "散布図-アノテーションあたり作業時間と累計作業時間の関係-計測時間.html")
-        obj.plot_quality_and_productivity_from_monitored_worktime(
-            output_dir / "散布図-アノテーションあたり作業時間と品質の関係-計測時間-教師付者用.html"
+        obj.plot_productivity(
+            output_dir / "散布図-アノテーションあたり作業時間と累計作業時間の関係-計測時間.html",
+            worktime_type=WorktimeType.MONITORED,
+            performance_unit=PerformanceUnit.ANNOTATION_COUNT,
+        )
+        obj.plot_productivity(
+            output_dir / "散布図-入力データあたり作業時間と累計作業時間の関係-計測時間.html",
+            worktime_type=WorktimeType.MONITORED,
+            performance_unit=PerformanceUnit.INPUT_DATA_COUNT,
+        )
+        obj.plot_quality_and_productivity(
+            output_dir / "散布図-アノテーションあたり作業時間と品質の関係-計測時間-教師付者用.html",
+            worktime_type=WorktimeType.MONITORED,
+            performance_unit=PerformanceUnit.ANNOTATION_COUNT,
+        )
+        obj.plot_quality_and_productivity(
+            output_dir / "散布図-入力データあたり作業時間と品質の関係-計測時間-教師付者用.html",
+            worktime_type=WorktimeType.MONITORED,
+            performance_unit=PerformanceUnit.INPUT_DATA_COUNT,
         )
 
         if obj.actual_worktime_exists():
-            obj.plot_productivity_from_actual_worktime(output_dir / "散布図-アノテーションあたり作業時間と累計作業時間の関係-実績時間.html")
-            obj.plot_quality_and_productivity_from_actual_worktime(
-                output_dir / "散布図-アノテーションあたり作業時間と品質の関係-実績時間-教師付者用.html"
+            obj.plot_productivity(
+                output_dir / "散布図-アノテーションあたり作業時間と累計作業時間の関係-実績時間.html",
+                worktime_type=WorktimeType.ACTUAL,
+                performance_unit=PerformanceUnit.ANNOTATION_COUNT,
             )
+            obj.plot_productivity(
+                output_dir / "散布図-入力データあたり作業時間と累計作業時間の関係-実績時間.html",
+                worktime_type=WorktimeType.ACTUAL,
+                performance_unit=PerformanceUnit.INPUT_DATA_COUNT,
+            )
+
+            obj.plot_quality_and_productivity(
+                output_dir / "散布図-アノテーションあたり作業時間と品質の関係-実績時間-教師付者用.html",
+                worktime_type=WorktimeType.ACTUAL,
+                performance_unit=PerformanceUnit.ANNOTATION_COUNT,
+            )
+            obj.plot_quality_and_productivity(
+                output_dir / "散布図-入力データあたり作業時間と品質の関係-実績時間-教師付者用.html",
+                worktime_type=WorktimeType.ACTUAL,
+                performance_unit=PerformanceUnit.INPUT_DATA_COUNT,
+            )
+
         else:
             logger.warning(
                 f"実績作業時間の合計値が0なので、実績作業時間関係の次のグラフを'{output_dir}'に出力しません。:: "
-                "'散布図-アノテーションあたり作業時間と累計作業時間の関係-実績時間.html',"
-                "'散布図-アノテーションあたり作業時間と品質の関係-実績時間-教師付者用'"
+                "'散布図-{unit}あたり作業時間と累計作業時間の関係-実績時間.html',"
+                "'散布図-{unit}あたり作業時間と品質の関係-実績時間-教師付者用'"
             )
 
     def read_worktime_per_date_user(self) -> WorktimePerDate:

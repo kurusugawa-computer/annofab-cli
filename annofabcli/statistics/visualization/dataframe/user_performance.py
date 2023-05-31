@@ -40,6 +40,35 @@ class WorktimeType(Enum):
     ACTUAL = "actual"
     MONITORED = "monitored"
 
+    @property
+    def worktime_type_name(self):
+        if self.value == "actual":
+            worktime_name = "実績時間"
+        elif self.value == "monitored":
+            worktime_name = "計測時間"
+        else:
+            raise RuntimeError(f"'{self.name}'は未対応です。")
+        return worktime_name
+
+
+class PerformanceUnit(Enum):
+    """
+    生産性の単位
+    """
+
+    ANNOTATION_COUNT = "annotation_count"
+    INPUT_DATA_COUNT = "input_data_count"
+
+    @property
+    def performance_unit_name(self):
+        if self.value == "annotation_count":
+            performance_unit_name = "アノテーション"
+        elif self.value == "input_data_count":
+            performance_unit_name = "入力データ"
+        else:
+            raise RuntimeError(f"'{self.name}'は未対応です。")
+        return performance_unit_name
+
 
 class UserPerformance:
     """
@@ -237,7 +266,7 @@ class UserPerformance:
         if len(df_worktime_ratio) > 0:
             df_agg_production = df_worktime_ratio.pivot_table(
                 values=[
-                    "worktime_ratio_by_task",
+                    "task_count",
                     "input_data_count",
                     "annotation_count",
                     "pointed_out_inspection_comment_count",
@@ -251,7 +280,7 @@ class UserPerformance:
             df_agg_production = pandas.DataFrame(
                 columns=pandas.MultiIndex.from_tuples(
                     [
-                        ("worktime_ratio_by_task", "annotation"),
+                        ("task_count", "annotation"),
                         ("input_data_count", "annotation"),
                         ("annotation_count", "annotation"),
                         ("pointed_out_inspection_comment_count", "annotation"),
@@ -260,7 +289,6 @@ class UserPerformance:
                 )
             )
 
-        df_agg_production.rename(columns={"worktime_ratio_by_task": "task_count"}, inplace=True)
         df = df.join(df_agg_production)
         # 数値列のNaNを0にする(df_agg_productionが0件のときの対応)
         df.fillna(0, inplace=True)
@@ -565,7 +593,9 @@ class UserPerformance:
 
         return sum_series
 
-    def _plot_productivity(self, output_file: Path, worktime_type: WorktimeType):
+    def plot_productivity(
+        self, output_file: Path, worktime_type: WorktimeType, performance_unit: PerformanceUnit
+    ) -> None:
         """作業時間と生産性の関係をメンバごとにプロットする。"""
 
         if not self._validate_df_for_output(output_file):
@@ -574,19 +604,16 @@ class UserPerformance:
         # numpy.inf が含まれていると散布図を出力できないので置換する
         df = self.df.replace(numpy.inf, numpy.nan)
 
+        performance_unit_name = performance_unit.performance_unit_name
+
         def create_figure(title: str) -> figure:
             return figure(
                 width=self.PLOT_WIDTH,
                 height=self.PLOT_HEIGHT,
                 title=title,
                 x_axis_label="累計作業時間[hour]",
-                y_axis_label="アノテーションあたり作業時間[minute/annotation]",
+                y_axis_label=f"{performance_unit_name}あたり作業時間[minute/annotation]",
             )
-
-        if worktime_type == WorktimeType.ACTUAL:
-            worktime_name = "実績時間"
-        elif worktime_type == WorktimeType.MONITORED:
-            worktime_name = "計測時間"
 
         logger.debug(f"{output_file} を出力します。")
 
@@ -596,18 +623,20 @@ class UserPerformance:
             TaskPhase.ACCEPTANCE.value: "受入",
         }
         figure_list = [
-            create_figure(f"{DICT_PHASE_NAME[phase]}のアノテーションあたり作業時間と累計作業時間の関係({worktime_name})")
+            create_figure(
+                f"{DICT_PHASE_NAME[phase]}の{performance_unit_name}あたり作業時間と累計作業時間の関係({worktime_type.worktime_type_name})"
+            )
             for phase in self.phase_list
         ]
 
         df["biography"] = df["biography"].fillna("")
 
         x_column = f"{worktime_type.value}_worktime_hour"
-        y_column = f"{worktime_type.value}_worktime_minute/annotation_count"
+        y_column = f"{worktime_type.value}_worktime_minute/{performance_unit.value}"
         # 分単位の生産性を算出する
         for phase in self.phase_list:
-            df[(f"{worktime_type.value}_worktime_minute/annotation_count", phase)] = (
-                df[(f"{worktime_type.value}_worktime_hour/annotation_count", phase)] * 60
+            df[(f"{worktime_type.value}_worktime_minute/{performance_unit.value}", phase)] = (
+                df[(f"{worktime_type.value}_worktime_hour/{performance_unit.value}", phase)] * 60
             )
 
         for biography_index, biography in enumerate(sorted(set(df["biography"]))):
@@ -632,13 +661,15 @@ class UserPerformance:
             average_hour = self._get_average_value(
                 df,
                 numerator_column=(f"{worktime_type.value}_worktime_hour", phase),
-                denominator_column=("annotation_count", phase),
+                denominator_column=(performance_unit.value, phase),
             )
             if average_hour is not None:
                 average_minute = average_hour * 60
                 self._plot_average_line(fig, average_minute, dimension="width")
 
-            quartile = self._get_quartile_value(df, (f"{worktime_type.value}_worktime_minute/annotation_count", phase))
+            quartile = self._get_quartile_value(
+                df, (f"{worktime_type.value}_worktime_minute/{performance_unit.value}", phase)
+            )
             if quartile is not None:
                 self._plot_quartile_line(fig, quartile, dimension="width")
 
@@ -663,18 +694,6 @@ class UserPerformance:
 
         div_element = self._create_div_element()
         write_bokeh_graph(bokeh.layouts.column([div_element, *figure_list]), output_file)
-
-    def plot_productivity_from_monitored_worktime(self, output_file: Path) -> None:
-        """
-        Annofab計測時間とAnnofab計測時間を元に算出した生産性を、メンバごとにプロットする
-        """
-        self._plot_productivity(output_file, worktime_type=WorktimeType.MONITORED)
-
-    def plot_productivity_from_actual_worktime(self, output_file: Path) -> None:
-        """
-        実績作業時間と実績作業時間を元に算出した生産性を、メンバごとにプロットする
-        """
-        self._plot_productivity(output_file, worktime_type=WorktimeType.ACTUAL)
 
     def plot_quality(self, output_file: Path) -> None:
         """
@@ -778,25 +797,9 @@ class UserPerformance:
         div_element = self._create_div_element()
         write_bokeh_graph(bokeh.layouts.column([div_element, *figure_list]), output_file)
 
-    def plot_quality_and_productivity_from_actual_worktime(
-        self,
-        output_file: Path,
+    def plot_quality_and_productivity(
+        self, output_file: Path, worktime_type: WorktimeType, performance_unit: PerformanceUnit
     ):
-        """
-        実績作業時間を元に算出した生産性と品質の関係を、メンバごとにプロットする
-        """
-        self._plot_quality_and_productivity(output_file, worktime_type=WorktimeType.ACTUAL)
-
-    def plot_quality_and_productivity_from_monitored_worktime(
-        self,
-        output_file: Path,
-    ):
-        """
-        計測作業時間を元に算出した生産性と品質の関係を、メンバごとにプロットする
-        """
-        self._plot_quality_and_productivity(output_file, worktime_type=WorktimeType.MONITORED)
-
-    def _plot_quality_and_productivity(self, output_file: Path, worktime_type: WorktimeType):
         """
         作業時間を元に算出した生産性と品質の関係を、メンバごとにプロットする
         """
@@ -814,12 +817,12 @@ class UserPerformance:
             x_average_hour = self._get_average_value(
                 df,
                 numerator_column=(f"{worktime_type.value}_worktime_hour", phase),
-                denominator_column=("annotation_count", phase),
+                denominator_column=(performance_unit.value, phase),
             )
             x_average_minute = x_average_hour * 60 if x_average_hour is not None else None
 
             for column_pair, fig in zip(
-                [("rejected_count", "task_count"), ("pointed_out_inspection_comment_count", "annotation_count")],
+                [("rejected_count", "task_count"), ("pointed_out_inspection_comment_count", performance_unit.value)],
                 figure_list,
             ):
                 if x_average_minute is not None:
@@ -834,10 +837,10 @@ class UserPerformance:
                     self._plot_average_line(fig, y_average, dimension="width")
 
             x_quartile = self._get_quartile_value(
-                df, (f"{worktime_type.value}_worktime_minute/annotation_count", phase)
+                df, (f"{worktime_type.value}_worktime_minute/{performance_unit.value}", phase)
             )
             for column, fig in zip(
-                ["rejected_count/task_count", "pointed_out_inspection_comment_count/annotation_count"],
+                ["rejected_count/task_count", f"pointed_out_inspection_comment_count/{performance_unit.value}"],
                 figure_list,
             ):
                 if x_quartile is not None:
@@ -876,29 +879,31 @@ class UserPerformance:
         # numpy.inf が含まれていると散布図を出力できないので置換する
         df = self.df.replace(numpy.inf, numpy.nan)
         for phase in self.phase_list:
-            df[(f"{worktime_type.value}_worktime_minute/annotation_count", phase)] = (
-                df[(f"{worktime_type.value}_worktime_hour/annotation_count", phase)] * 60
+            df[(f"{worktime_type.value}_worktime_minute/{performance_unit.value}", phase)] = (
+                df[(f"{worktime_type.value}_worktime_hour/{performance_unit.value}", phase)] * 60
             )
 
         logger.debug(f"{output_file} を出力します。")
 
+        performance_unit_name = performance_unit.performance_unit_name
+        worktime_type_name = worktime_type.worktime_type_name
         figure_list = [
             create_figure(
-                title="アノテーションあたり作業時間とタスクあたり差し戻し回数の関係",
-                x_axis_label="アノテーションあたり作業時間[minute/annotation]",
+                title=f"{performance_unit_name}あたり作業時間({worktime_type_name})とタスクあたり差し戻し回数の関係",
+                x_axis_label=f"{performance_unit_name}あたり作業時間[minute/{performance_unit.value}]",
                 y_axis_label="タスクあたり差し戻し回数",
             ),
             create_figure(
-                title="アノテーションあたり作業時間とアノテーションあたり検査コメント数の関係",
-                x_axis_label="アノテーションあたり作業時間[minute/annotation]",
-                y_axis_label="アノテーションあたり検査コメント数",
+                title=f"{performance_unit_name}あたり作業時間({worktime_type_name})と{performance_unit_name}あたり検査コメント数の関係",
+                x_axis_label=f"{performance_unit_name}あたり作業時間[minute/{performance_unit.value}]",
+                y_axis_label=f"{performance_unit_name}あたり検査コメント数",
             ),
         ]
         column_pair_list = [
-            (f"{worktime_type.value}_worktime_minute/annotation_count", "rejected_count/task_count"),
+            (f"{worktime_type.value}_worktime_minute/{performance_unit.value}", "rejected_count/task_count"),
             (
-                f"{worktime_type.value}_worktime_minute/annotation_count",
-                "pointed_out_inspection_comment_count/annotation_count",
+                f"{worktime_type.value}_worktime_minute/{performance_unit.value}",
+                f"pointed_out_inspection_comment_count/{performance_unit.value}",
             ),
         ]
         phase = TaskPhase.ANNOTATION.value

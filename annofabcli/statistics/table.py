@@ -298,23 +298,23 @@ class Table:
         def get_inspection_comment_count(row: pandas.Series) -> float:
             task_id = row.name[0]
             inspection_comment_count = annotation_count_dict[task_id]["inspection_comment_count"]
-            return row["worktime_ratio_by_task"] * inspection_comment_count
+            return row["task_count"] * inspection_comment_count
 
         def get_rejected_count(row: pandas.Series) -> float:
             task_id = row.name[0]
             rejected_count = annotation_count_dict[task_id]["rejected_count"]
-            return row["worktime_ratio_by_task"] * rejected_count
+            return row["task_count"] * rejected_count
 
         def get_annotation_count(row: pandas.Series) -> float:
             task_id = row.name[0]
             annotation_count = annotation_count_dict[task_id]["annotation_count"]
-            result = row["worktime_ratio_by_task"] * annotation_count
+            result = row["task_count"] * annotation_count
             return result
 
         def get_input_data_count(row: pandas.Series) -> float:
             task_id = row.name[0]
             annotation_count = annotation_count_dict[task_id]["input_data_count"]
-            return row["worktime_ratio_by_task"] * annotation_count
+            return row["task_count"] * annotation_count
 
         if len(task_df) == 0:
             logger.warning("タスク一覧が0件です。")
@@ -323,6 +323,9 @@ class Table:
         group_obj = task_history_df.groupby(["task_id", "phase", "phase_stage", "account_id"]).agg(
             {"worktime_hour": "sum"}
         )
+        # 担当者だけ変更して作業していないケースを除外する
+        group_obj = group_obj[group_obj["worktime_hour"] > 0]
+
         if len(group_obj) == 0:
             logger.warning("タスク履歴情報に作業しているタスクがありませんでした。タスク履歴全件ファイルが更新されていない可能性があります。")
             return pandas.DataFrame(
@@ -332,7 +335,7 @@ class Table:
                     "phase_stage",
                     "account_id",
                     "worktime_hour",
-                    "worktime_ratio_by_task",
+                    "task_count",
                     "annotation_count",
                     "input_data_count",
                     "pointed_out_inspection_comment_count",
@@ -340,9 +343,9 @@ class Table:
                 ]
             )
 
-        group_obj["worktime_ratio_by_task"] = group_obj.groupby(
-            level=["task_id", "phase", "phase_stage"], group_keys=False
-        ).apply(lambda e: e / e / e["worktime_hour"].sum())
+        group_obj["task_count"] = group_obj.groupby(level=["task_id", "phase", "phase_stage"], group_keys=False).apply(
+            lambda e: e / e / e["worktime_hour"].sum()
+        )
         group_obj["annotation_count"] = group_obj.apply(get_annotation_count, axis="columns")
         group_obj["input_data_count"] = group_obj.apply(get_input_data_count, axis="columns")
         group_obj["pointed_out_inspection_comment_count"] = group_obj.apply(

@@ -271,13 +271,7 @@ class Task:
 
     def to_csv(self, output_file: Path) -> None:
         """
-        タスク一覧をTSVで出力する
-        Args:
-            arg_df:
-            dropped_columns:
-
-        Returns:
-
+        タスク一覧をCSVで出力する
         """
 
         if not self._validate_df_for_output(output_file):
@@ -325,3 +319,108 @@ class Task:
         ]
 
         print_csv(self.df[columns], str(output_file))
+
+
+class TaskWorktimeByPhaseUser:
+    """
+    タスクの作業時間をユーザーごとフェーズごとに並べたDataFrameをラップしたクラス
+    """
+
+    def __init__(self, df: pandas.DataFrame) -> None:
+        self.df = df
+
+    def _validate_df_for_output(self, output_file: Path) -> bool:
+        if len(self.df) == 0:
+            logger.warning(f"データが0件のため、{output_file} は出力しません。")
+            return False
+        return True
+
+    @classmethod
+    def from_df(
+        cls, df_worktime_ratio: pandas.DataFrame, df_user: pandas.DataFrame, project_id: str
+    ) -> TaskWorktimeByPhaseUser:
+        """
+        AnnoWorkの実績時間から、作業者ごとに生産性を算出する。
+
+        Args:
+            df_worktime_ratio: 作業したタスク数を、作業時間で按分した値が格納されたDataFrame. 以下の列を参照する。
+            df_user:
+
+
+        """
+        df = df_worktime_ratio.merge(df_user, on="account_id", how="left")
+        df["project_id"] = project_id
+        return cls(df)
+
+    def to_csv(self, output_file: Path) -> None:
+        if not self._validate_df_for_output(output_file):
+            return
+
+        columns = [
+            "project_id",
+            "task_id",
+            "phase",
+            "phase_stage",
+            "account_id",
+            "user_id",
+            "username",
+            "biography",
+            "worktime_hour",
+            "task_count",
+            "input_data_count",
+            "annotation_count",
+            "pointed_out_inspection_comment_count",
+            "rejected_count",
+        ]
+
+        print_csv(self.df[columns], str(output_file))
+
+    @staticmethod
+    def merge(*obj: TaskWorktimeByPhaseUser) -> TaskWorktimeByPhaseUser:
+        """
+        複数のインスタンスをマージします。
+
+
+        """
+        df_list = [e.df for e in obj]
+        df_merged = pandas.concat(df_list)
+        return TaskWorktimeByPhaseUser(df_merged)
+
+    @classmethod
+    def empty(cls) -> TaskWorktimeByPhaseUser:
+        """空のデータフレームを持つインスタンスを生成します。"""
+
+        df_dtype: dict[str, str] = {
+            "project_id": "string",
+            "task_id": "string",
+            "phase": "string",
+            "phase_stage": "int64",
+            "status": "string",
+            "account_id": "string",
+            "user_id": "string",
+            "username": "string",
+            "biography": "string",
+            "worktime_hour": "float64",
+            "task_count": "float64",
+            "input_data_count": "float64",
+            "annotation_count": "float64",
+            "pointed_out_inspection_comment_count": "float64",
+            "rejected_count": "float64",
+        }
+
+        df = pandas.DataFrame(columns=df_dtype.keys()).astype(df_dtype)
+        return cls(df)
+
+    def is_empty(self) -> bool:
+        """
+        空のデータフレームを持つかどうかを返します。
+
+        Returns:
+            空のデータフレームを持つかどうか
+        """
+        return len(self.df) == 0
+
+    @classmethod
+    def from_csv(cls, csv_file: Path) -> TaskWorktimeByPhaseUser:
+        df = pandas.read_csv(str(csv_file))
+        return cls(df)

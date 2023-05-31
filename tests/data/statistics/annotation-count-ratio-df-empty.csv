@@ -1,1 +1,1 @@
-task_id,phase,phase_stage,account_id,worktime_hour,worktime_ratio_by_task,annotation_count,input_data_count,pointed_out_inspection_comment_count,rejected_count
+task_id,phase,phase_stage,account_id,worktime_hour,task_count,annotation_count,input_data_count,pointed_out_inspection_comment_count,rejected_count
