@@ -518,9 +518,7 @@ class AttributeCountCsv:
         columns = get_columns()
         df = pandas.DataFrame([to_cell(e) for e in counter_list], columns=pandas.MultiIndex.from_tuples(columns))
 
-        # NaNを0に変換する
-        # 列が重複していると`ValueError: cannot handle a non-unique multi-index!`が発生するため、列を指定せずに`fillna`関数を実行する
-        # `basic_columns`は必ずnanではないので、問題ないはず
+        # `task_id`列など`basic_columns`も`fillna`対象だが、nanではないはずので問題ない
         df.fillna(0, inplace=True)
 
         print_csv(df, output=str(output_file), to_csv_kwargs=self.csv_format)
@@ -563,10 +561,7 @@ class AttributeCountCsv:
         columns = get_columns()
         df = pandas.DataFrame([to_cell(e) for e in counter_list], columns=pandas.MultiIndex.from_tuples(columns))
 
-        # NaNを0に変換する
-        # 列が重複していると`
-        # `が発生するため、列を指定せずに`fillna`関数を実行する
-        # `basic_columns`は必ずnanではないので、問題ないはず
+        # `task_id`列など`basic_columns`も`fillna`対象だが、nanではないはずので問題ない
         df.fillna(0, inplace=True)
 
         print_csv(df, output=str(output_file), to_csv_kwargs=self.csv_format)
