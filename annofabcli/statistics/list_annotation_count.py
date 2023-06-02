@@ -461,7 +461,7 @@ class AttributeCountCsv:
             remaining_columns = sorted(all_attr_key_set - set(prior_attribute_columns))
             remaining_columns_only_selective_attribute = self._only_selective_attribute(remaining_columns)
 
-            # `remaining_columns_only_selective_attribute`には、属性値が空である列が格納されている
+            # `remaining_columns_only_selective_attribute`には、属性値が空である列などが格納されている
             # `remaining_columns_only_selective_attribute`を、`value_columns`の関連している位置に挿入する。
             value_columns = copy.deepcopy(prior_attribute_columns)
             for remaining_column in remaining_columns_only_selective_attribute:
