@@ -4,6 +4,7 @@ from __future__ import annotations
 import abc
 import argparse
 import collections
+import copy
 import json
 import logging
 import sys
@@ -460,11 +461,29 @@ class AttributeCountCsv:
         if prior_attribute_columns is not None:
             remaining_columns = sorted(all_attr_key_set - set(prior_attribute_columns))
             remaining_columns_only_selective_attribute = self._only_selective_attribute(remaining_columns)
-            value_columns = prior_attribute_columns + remaining_columns_only_selective_attribute
+
+            # `remaining_columns_only_selective_attribute`には、属性値が空である列などが格納されている
+            # `remaining_columns_only_selective_attribute`を、`value_columns`の関連している位置に挿入する。
+            value_columns = copy.deepcopy(prior_attribute_columns)
+            for remaining_column in remaining_columns_only_selective_attribute:
+                is_inserted = False
+                for i in range(len(value_columns) - 1, -1, -1):
+                    col = value_columns[i]
+                    if col[0:2] == remaining_column[0:2]:
+                        value_columns.insert(i + 1, remaining_column)
+                        is_inserted = True
+                        break
+                if not is_inserted:
+                    value_columns.append(remaining_column)
+
+            assert len(value_columns) == len(prior_attribute_columns) + len(remaining_columns_only_selective_attribute)
+
         else:
             remaining_columns = sorted(all_attr_key_set)
             value_columns = self._only_selective_attribute(remaining_columns)
 
+        # 重複している場合は、重複要素を取り除く。ただし元の順番は維持する
+        value_columns = list(dict.fromkeys(value_columns).keys())
         return value_columns
 
     def print_csv_by_task(
@@ -500,9 +519,7 @@ class AttributeCountCsv:
         columns = get_columns()
         df = pandas.DataFrame([to_cell(e) for e in counter_list], columns=pandas.MultiIndex.from_tuples(columns))
 
-        # NaNを0に変換する
-        # 列が重複していると`ValueError: cannot handle a non-unique multi-index!`が発生するため、列を指定せずに`fillna`関数を実行する
-        # `basic_columns`は必ずnanではないので、問題ないはず
+        # `task_id`列など`basic_columns`も`fillna`対象だが、nanではないはずので問題ない
         df.fillna(0, inplace=True)
 
         print_csv(df, output=str(output_file), to_csv_kwargs=self.csv_format)
@@ -545,9 +562,7 @@ class AttributeCountCsv:
         columns = get_columns()
         df = pandas.DataFrame([to_cell(e) for e in counter_list], columns=pandas.MultiIndex.from_tuples(columns))
 
-        # NaNを0に変換する
-        # 列が重複していると`ValueError: cannot handle a non-unique multi-index!`が発生するため、列を指定せずに`fillna`関数を実行する
-        # `basic_columns`は必ずnanではないので、問題ないはず
+        # `task_id`列など`basic_columns`も`fillna`対象だが、nanではないはずので問題ない
         df.fillna(0, inplace=True)
 
         print_csv(df, output=str(output_file), to_csv_kwargs=self.csv_format)
@@ -680,7 +695,7 @@ class AnnotationSpecs:
         result = [to_label_name(label) for label in self._labels_v1]
         duplicated_labels = [key for key, value in collections.Counter(result).items() if value > 1]
         if len(duplicated_labels) > 0:
-            logger.warning(f"アノテーション仕様のラベル英語名が重複しています。:: {duplicated_labels}")
+            logger.warning(f"アノテーション仕様のラベル英語名が重複しています。アノテーション個数が正しく算出できない可能性があります。:: {duplicated_labels}")
         return result
 
     def selective_attribute_value_keys(self) -> list[AttributeValueKey]:
@@ -721,7 +736,9 @@ class AnnotationSpecs:
             key for key, value in collections.Counter(target_attribute_value_keys).items() if value > 1
         ]
         if len(duplicated_attributes) > 0:
-            logger.warning(f"アノテーション仕様の属性情報（ラベル英語名、属性英語名、選択肢英語名）が重複しています。:: {duplicated_attributes}")
+            logger.warning(
+                f"アノテーション仕様の属性情報（ラベル英語名、属性英語名、選択肢英語名）が重複しています。アノテーション個数が正しく算出できない可能性があります。:: {duplicated_attributes}"
+            )
 
         return target_attribute_value_keys
 
