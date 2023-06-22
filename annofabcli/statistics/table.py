@@ -282,8 +282,17 @@ class Table:
         Args:
 
         Returns:
-
-
+            以下の列を持つDataFrame
+                "task_id",
+                "phase",
+                "phase_stage",
+                "account_id",
+                "worktime_hour",
+                "task_count",
+                "annotation_count",
+                "input_data_count",
+                "pointed_out_inspection_comment_count",
+                "rejected_count",            
         """
         annotation_count_dict = {
             row["task_id"]: {
@@ -318,7 +327,18 @@ class Table:
 
         if len(task_df) == 0:
             logger.warning("タスク一覧が0件です。")
-            return pandas.DataFrame()
+            return pandas.DataFrame(columns=[
+                    "task_id",
+                    "phase",
+                    "phase_stage",
+                    "account_id",
+                    "worktime_hour",
+                    "task_count",
+                    "annotation_count",
+                    "input_data_count",
+                    "pointed_out_inspection_comment_count",
+                    "rejected_count",
+                ])
 
         group_obj = task_history_df.groupby(["task_id", "phase", "phase_stage", "account_id"]).agg(
             {"worktime_hour": "sum"}
@@ -359,4 +379,5 @@ class Table:
         new_df["rejected_count"] = new_df["rejected_count"] * new_df["phase"].apply(
             lambda e: 1 if e == TaskPhase.ANNOTATION.value else 0
         )
+
         return new_df
