@@ -15,9 +15,6 @@
     "python.linting.lintOnSave": true,
     "python.linting.pylintEnabled": true,
     "python.linting.pylintPath": ".venv/bin/pylint",
-    "python.linting.pylintArgs": [
-        "--rcfile setup.cfg",
-    ],
     "python.linting.mypyEnabled": true,
     "python.linting.mypyPath": ".venv/bin/mypy",
     "python.linting.mypyArgs": [],
@@ -33,7 +30,7 @@
         "tests/**/*.py",
     ],
     "python.analysis.extraPaths": [
-        ".venv/lib/python3.8/site-packages/"
+        ".venv/lib/python3.11/site-packages/"
     ],
     "python.analysis.completeFunctionParens": true,
     "[python]": {},
