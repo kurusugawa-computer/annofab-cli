@@ -292,8 +292,21 @@ class Table:
                 "annotation_count",
                 "input_data_count",
                 "pointed_out_inspection_comment_count",
-                "rejected_count",            
+                "rejected_count",
         """
+        DTYPES = {
+            "task_id": "string",
+            "phase": "string",
+            "phase_stage": "int64",
+            "account_id": "string",
+            "worktime_hour": "float64",
+            "task_count": "float64",
+            "annotation_count": "float64",
+            "input_data_count": "float64",
+            "pointed_out_inspection_comment_count": "float64",
+            "rejected_count": "float64",
+        }
+
         annotation_count_dict = {
             row["task_id"]: {
                 "annotation_count": row["annotation_count"],
@@ -327,18 +340,7 @@ class Table:
 
         if len(task_df) == 0:
             logger.warning("タスク一覧が0件です。")
-            return pandas.DataFrame(columns=[
-                    "task_id",
-                    "phase",
-                    "phase_stage",
-                    "account_id",
-                    "worktime_hour",
-                    "task_count",
-                    "annotation_count",
-                    "input_data_count",
-                    "pointed_out_inspection_comment_count",
-                    "rejected_count",
-                ])
+            return pandas.DataFrame(columns=DTYPES.keys()).astype(DTYPES)
 
         group_obj = task_history_df.groupby(["task_id", "phase", "phase_stage", "account_id"]).agg(
             {"worktime_hour": "sum"}
@@ -348,20 +350,8 @@ class Table:
 
         if len(group_obj) == 0:
             logger.warning("タスク履歴情報に作業しているタスクがありませんでした。タスク履歴全件ファイルが更新されていない可能性があります。")
-            return pandas.DataFrame(
-                columns=[
-                    "task_id",
-                    "phase",
-                    "phase_stage",
-                    "account_id",
-                    "worktime_hour",
-                    "task_count",
-                    "annotation_count",
-                    "input_data_count",
-                    "pointed_out_inspection_comment_count",
-                    "rejected_count",
-                ]
-            )
+            return pandas.DataFrame(columns=DTYPES.keys()).astype(DTYPES)
+
 
         group_obj["task_count"] = group_obj.groupby(level=["task_id", "phase", "phase_stage"], group_keys=False).apply(
             lambda e: e / e["worktime_hour"].sum()
