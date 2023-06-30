@@ -217,26 +217,22 @@ class SubPutInputData:
                 f"入力データを登録しました。 :: "
                 f"input_data_id='{input_data.input_data_id}', "
                 f"input_data_name='{input_data.input_data_name}'"
-                f"input_data_name='{input_data.input_data_name}'"
             )
             return True
 
-        except requests.exceptions.HTTPError as e:
-            logger.warning(e)
+        except requests.exceptions.HTTPError:
             logger.warning(
                 f"入力データの登録に失敗しました。"
-                f"input_data_id={input_data.input_data_id}, "
-                f"input_data_name={input_data.input_data_name}"
+                f"input_data_id='{input_data.input_data_id}', "
+                f"input_data_name='{input_data.input_data_name}'", exc_info=True
             )
             return False
-        except CheckSumError as e:
-            logger.warning(e)
+        except CheckSumError:
             logger.warning(
                 f"入力データを登録しましたが、データが破損している可能性があります。"
-                f"input_data_id={input_data.input_data_id}, "
-                f"input_data_name={input_data.input_data_name},"
-                f"input_data_name={input_data.input_data_path},"
-            )
+                f"input_data_id='{input_data.input_data_id}', "
+                f"input_data_name='{input_data.input_data_name}',"
+            , exc_info=True)
             return False
 
 
@@ -407,7 +403,7 @@ def parse_args(parser: argparse.ArgumentParser) -> None:
     )
 
     JSON_SAMPLE = (
-        '[{"input_data_name":"", "input_data_path":"file://lenna.png", "input_data_id":"foo","sign_required":false}]'
+        '[{"input_data_name":"data1", "input_data_path":"file://lenna.png"}]'
     )
     file_group.add_argument(
         "--json",
