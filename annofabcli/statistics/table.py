@@ -352,7 +352,6 @@ class Table:
             logger.warning("タスク履歴情報に作業しているタスクがありませんでした。タスク履歴全件ファイルが更新されていない可能性があります。")
             return pandas.DataFrame(columns=DTYPES.keys()).astype(DTYPES)
 
-
         group_obj["task_count"] = group_obj.groupby(level=["task_id", "phase", "phase_stage"], group_keys=False).apply(
             lambda e: e / e["worktime_hour"].sum()
         )
