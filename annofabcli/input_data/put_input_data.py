@@ -224,15 +224,17 @@ class SubPutInputData:
             logger.warning(
                 f"入力データの登録に失敗しました。"
                 f"input_data_id='{input_data.input_data_id}', "
-                f"input_data_name='{input_data.input_data_name}'", exc_info=True
+                f"input_data_name='{input_data.input_data_name}'",
+                exc_info=True,
             )
             return False
         except CheckSumError:
             logger.warning(
                 f"入力データを登録しましたが、データが破損している可能性があります。"
                 f"input_data_id='{input_data.input_data_id}', "
-                f"input_data_name='{input_data.input_data_name}',"
-            , exc_info=True)
+                f"input_data_name='{input_data.input_data_name}',",
+                exc_info=True,
+            )
             return False
 
 
@@ -402,9 +404,7 @@ def parse_args(parser: argparse.ArgumentParser) -> None:
         ),
     )
 
-    JSON_SAMPLE = (
-        '[{"input_data_name":"data1", "input_data_path":"file://lenna.png"}]'
-    )
+    JSON_SAMPLE = '[{"input_data_name":"data1", "input_data_path":"file://lenna.png"}]'
     file_group.add_argument(
         "--json",
         type=str,
