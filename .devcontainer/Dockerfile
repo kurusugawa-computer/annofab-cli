@@ -23,23 +23,17 @@ ENV LANG ja_JP.UTF-8
 ENV LC_ALL ja_JP.UTF-8
 ENV LC_CTYPE ja_JP.UTF-8
 
-# ミラーは遅いのが混じっているので好きなリポジトリに変更すべき
+
 RUN set -x \
     && sed -i.bak -r 's!(deb|deb-src) \S+!\1 mirror://mirrors.ubuntu.com/mirrors.txt!' /etc/apt/sources.list
 
 # Install Ubuntu packages
 RUN set -x \
-    # Add repositories
-    # for docker
-    && curl -fsSL https://download.docker.com/linux/ubuntu/gpg | apt-key add - \
-    && add-apt-repository "deb [arch=amd64] https://download.docker.com/linux/ubuntu $(lsb_release -cs) stable" \
     # Python3.11をインストールするために、deadsnakes PPAを追加
     && add-apt-repository ppa:deadsnakes/ppa \
     # Install packages
     && apt-get update \
     && apt-get install -y --no-install-recommends \
-        # docker
-        docker-ce-cli \
         # python
         python3.11-dev \
         python3-pip \
@@ -78,24 +72,12 @@ RUN set -x \
         setuptools \
         requests \
     && python -m pip install \
-        "poetry<1.5"
+        "poetry<1.6"
 
 # Add user / Grant sudo privileges
 RUN useradd -m -s /bin/bash -u 5000 -U vscode \
-    && echo "vscode ALL=(ALL) NOPASSWD:ALL" >> /etc/sudoers.d/ALL \
-    && groupadd --gid 999 docker \
-    && usermod -aG docker vscode
-
-ADD entrypoint.sh /entrypoint.sh
+    && echo "vscode ALL=(ALL) NOPASSWD:ALL" >> /etc/sudoers.d/ALL 
 
 USER vscode
 
 RUN poetry config virtualenvs.in-project true
-
-# vscode extensions cache
-# https://code.visualstudio.com/docs/remote/containers-advanced#_avoiding-extension-reinstalls-on-container-rebuild
-RUN set -x \
-    && mkdir -p /home/vscode/.vscode-server/extensions /home/vscode/.vscode-server-insiders \
-    && ln -s /home/vscode/.vscode-server/extensions /home/vscode/.vscode-server-insiders/extensions
-
-ENTRYPOINT [ "bash", "/entrypoint.sh" ]

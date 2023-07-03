@@ -38,7 +38,7 @@ jobs:
       install:
         - choco install python --version 3.11
         - python -m pip install --upgrade pip
-        - pip3 install "poetry<1.5"
+        - pip3 install "poetry<1.6"
         # 以下の環境変数が設定されないと、poetry install時に"A specified logon session does not exist. It may already have been terminated."というエラーが発生する
         # https://stackoverflow.com/questions/74392324/poetry-install-throws-winerror-1312-when-running-over-ssh-on-windows-10
         - export PYTHON_KEYRING_BACKEND=keyring.backends.null.Keyring
