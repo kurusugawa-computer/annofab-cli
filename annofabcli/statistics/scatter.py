@@ -142,5 +142,5 @@ def create_hover_tool(tool_tip_items: list[str]) -> HoverTool:
         return "_".join(tmp[0 : len(tmp) - 1])
 
     detail_tooltips = [(exclude_phase_name(e), f"@{{{e}}}") for e in tool_tip_items]
-    hover_tool = HoverTool(tooltips=detail_tooltips)
+    hover_tool = HoverTool(tooltips=[("(x,y)", "($x, $y)"), *detail_tooltips])
     return hover_tool
