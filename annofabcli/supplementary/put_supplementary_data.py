@@ -89,7 +89,7 @@ class SubPutSupplementaryData:
                 request_body.update({"supplementary_data_type": supplementary_data.supplementary_data_type})
 
             logger.debug(
-                f"'{file_path}'を補助情報として登録します。supplementary_data_name={supplementary_data.supplementary_data_name}"
+                f"'{file_path}'を補助情報として登録します。supplementary_data_name='{supplementary_data.supplementary_data_name}'"
             )
             self.service.wrapper.put_supplementary_data_from_file(
                 project_id,
@@ -205,17 +205,17 @@ class SubPutSupplementaryData:
 
         if old_supplementary_data is not None:
             if overwrite:
-                logger.debug(f"{old_supplementary_data_key} はすでに存在します。")
+                logger.debug(f"'{old_supplementary_data_key}' はすでに存在します。")
                 last_updated_datetime = old_supplementary_data["updated_datetime"]
             else:
-                logger.debug(f"{old_supplementary_data_key} がすでに存在するのでスキップします。")
+                logger.debug(f"'{old_supplementary_data_key}' がすでに存在するのでスキップします。")
                 return False
 
         file_path = get_file_scheme_path(supplementary_data_path)
-        logger.debug(f"csv_supplementary_data={csv_supplementary_data}")
+        logger.debug(f"csv_supplementary_data='{csv_supplementary_data}'")
         if file_path is not None:
             if not Path(file_path).exists():
-                logger.warning(f"{supplementary_data_path} は存在しません。")
+                logger.warning(f"'{supplementary_data_path}' は存在しません。")
                 return False
 
         if not self.confirm_put_supplementary_data(
@@ -237,19 +237,19 @@ class SubPutSupplementaryData:
             self.put_supplementary_data(project_id, supplementary_data_for_put)
             logger.debug(
                 f"補助情報を登録しました。"
-                f"input_data_id={supplementary_data_for_put.input_data_id},"
-                f"supplementary_data_id={supplementary_data_for_put.supplementary_data_id}, "
-                f"supplementary_data_name={supplementary_data_for_put.supplementary_data_name}"
+                f"input_data_id='{supplementary_data_for_put.input_data_id}',"
+                f"supplementary_data_id='{supplementary_data_for_put.supplementary_data_id}', "
+                f"supplementary_data_name='{supplementary_data_for_put.supplementary_data_name}'"
             )
             return True
 
-        except requests.exceptions.HTTPError as e:
-            logger.warning(e)
+        except requests.exceptions.HTTPError:
             logger.warning(
                 f"補助情報の登録に失敗しました。"
-                f"input_data_id={supplementary_data_for_put.input_data_id},"
-                f"supplementary_data_id={supplementary_data_for_put.supplementary_data_id}, "
-                f"supplementary_data_name={supplementary_data_for_put.supplementary_data_name}"
+                f"input_data_id='{supplementary_data_for_put.input_data_id}',"
+                f"supplementary_data_id='{supplementary_data_for_put.supplementary_data_id}', "
+                f"supplementary_data_name='{supplementary_data_for_put.supplementary_data_name}'",
+                exc_info=True,
             )
             return False
 
