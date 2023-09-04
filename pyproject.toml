@@ -48,7 +48,7 @@ black = "^23.3"
 # black 23.3(通常版)は"line-width"を"character count"で計算している。
 # ruffとblackで"line-with"の計算が異なってしまうので、ruffのバージョンの上限を指定した。
 # https://qiita.com/yuji38kwmt/items/04208d2d2cafe1218287
-ruff = "<0.0.260"
+ruff = "<0.0.288"
 mypy = "^1"
 pylint = "^2"
 
