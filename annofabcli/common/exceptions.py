@@ -63,11 +63,11 @@ class OrganizationAuthorizationError(AuthorizationError):
         super().__init__(msg)
 
 
-class NotSupportedUserError(AnnofabCliException):
+class MfaEnabledUserExecutionError(AnnofabCliException):
     """
     annofabcliの実行をサポートされていないユーザーによる実行の場合のエラー
     """
 
-    def __init__(self, loing_user_id: str, message: str) -> None:
-        msg = f"Annofabにログインできませんでした。User ID: {loing_user_id}, Message: {message}"
+    def __init__(self, login_user_id: str) -> None:
+        msg = f"ユーザー(User ID: {login_user_id})はMFAが有効化されているため、annofabcliを使用できません。"
         super().__init__(msg)
