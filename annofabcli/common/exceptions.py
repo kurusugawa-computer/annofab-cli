@@ -65,7 +65,7 @@ class OrganizationAuthorizationError(AuthorizationError):
 
 class MfaEnabledUserExecutionError(AnnofabCliException):
     """
-    annofabcliの実行をサポートされていないユーザーによる実行の場合のエラー
+    MFAが有効化されているユーザーが実行したことを示すエラー
     """
 
     def __init__(self, login_user_id: str) -> None:
