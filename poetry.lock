@@ -41,14 +41,14 @@ files = [
 
 [[package]]
 name = "annofabapi"
-version = "0.71.0"
+version = "0.71.1"
 description = "Python Clinet Library of Annofab WebAPI (https://annofab.com/docs/api/)"
 category = "main"
 optional = false
 python-versions = ">=3.8,<4.0"
 files = [
-    {file = "annofabapi-0.71.0-py3-none-any.whl", hash = "sha256:27dd06f77d2e3a7f0423ff1d2db9658d492755eae1be450a1077c5060f95fd52"},
-    {file = "annofabapi-0.71.0.tar.gz", hash = "sha256:f43e4ad384a416257b6fc2dde023cd5ea95d9aafcae0e57df23c836697207459"},
+    {file = "annofabapi-0.71.1-py3-none-any.whl", hash = "sha256:9aec4ed1e950e1b6d995839f1a0eb4b3a34d7c5e83764936ea1e64e21c949a52"},
+    {file = "annofabapi-0.71.1.tar.gz", hash = "sha256:867db56ab0e848373f29eea40c82479bf7aec9124751877e155c06b59c75c420"},
 ]
 
 [package.dependencies]
@@ -2404,4 +2404,4 @@ testing = ["big-O", "flake8 (<5)", "jaraco.functools", "jaraco.itertools", "more
 [metadata]
 lock-version = "2.0"
 python-versions = "^3.8"
-content-hash = "76b4428ab97dc630a3acc7a061d48e8aca82397e962a021f5e2843dc12f69269"
+content-hash = "f118987805630fc1c7b82786ec5e4f754abcfcbdd4fb08182bb0e1cb81c0fada"
