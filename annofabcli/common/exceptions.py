@@ -61,3 +61,13 @@ class OrganizationAuthorizationError(AuthorizationError):
         role_values = [e.value for e in roles]
         msg = f"組織: {organization_name} に、ロール: {role_values} のいずれかが付与されていません。"
         super().__init__(msg)
+
+
+class NotSupportedUserError(AnnofabCliException):
+    """
+    annofabcliの実行をサポートされていないユーザーによる実行の場合のエラー
+    """
+
+    def __init__(self, loing_user_id: str, message: str) -> None:
+        msg = f"Annofabにログインできませんでした。User ID: {loing_user_id}, Message: {message}"
+        super().__init__(msg)
