@@ -61,3 +61,13 @@ class OrganizationAuthorizationError(AuthorizationError):
         role_values = [e.value for e in roles]
         msg = f"組織: {organization_name} に、ロール: {role_values} のいずれかが付与されていません。"
         super().__init__(msg)
+
+
+class MfaEnabledUserExecutionError(AnnofabCliException):
+    """
+    MFAが有効化されているユーザーが実行したことを示すエラー
+    """
+
+    def __init__(self, login_user_id: str) -> None:
+        msg = f"ユーザー(User ID: {login_user_id})はMFAが有効化されているため、annofabcliを使用できません。"
+        super().__init__(msg)
