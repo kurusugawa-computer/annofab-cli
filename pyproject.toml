@@ -25,7 +25,7 @@ more-itertools = "*"
 jmespath = "*"
 pyquery = "*"
 isodate = "*"
-annofabapi = ">=0.71.1"
+annofabapi = {path = "../annofab-api-python-client"}
 python-datauri = "*"
 pandas = "*"
 # 以下のissueが解決されるまで、bokehのバージョンを3.1未満にする
