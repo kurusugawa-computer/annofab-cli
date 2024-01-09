@@ -58,7 +58,10 @@ def build_annofabapi_resource_and_login(args: argparse.Namespace) -> annofabapi.
     service = build_annofabapi_resource(args)
 
     try:
-        service.api.login()
+        if args.mfa_code is not None:
+            service.api.login(mfa_code=args.mfa_code)
+        else:
+            service.api.login()
         return service
 
     except requests.exceptions.HTTPError as e:
@@ -109,6 +112,7 @@ def add_parser(
 
         group.add_argument("--annofab_user_id", type=str, help="Annofabにログインする際のユーザーID")
         group.add_argument("--annofab_password", type=str, help="Annofabにログインする際のパスワード")
+        group.add_argument("--mfa_code", type=str, help="Annofabにログインする際のMFAコード")
 
         group.add_argument(
             "--logdir",
