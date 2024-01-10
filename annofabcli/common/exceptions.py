@@ -20,8 +20,8 @@ class AuthenticationError(AnnofabCliException):
     Annofabの認証エラー
     """
 
-    def __init__(self, loing_user_id: str) -> None:
-        msg = f"Annofabにログインできませんでした。User ID: {loing_user_id}"
+    def __init__(self, login_user_id: str) -> None:
+        msg = f"Annofabにログインできませんでした。User ID: {login_user_id}"
         super().__init__(msg)
 
 
@@ -69,5 +69,5 @@ class MfaEnabledUserExecutionError(AnnofabCliException):
     """
 
     def __init__(self, login_user_id: str) -> None:
-        msg = f"ユーザー(User ID: {login_user_id})はMFAが有効化されているため、ログインできません。コマンドライン引数 `--mfa_code` にMFAコードを指定してください。"
+        msg = f"MFAによるログインで失敗しました。User ID: {login_user_id}"
         super().__init__(msg)
