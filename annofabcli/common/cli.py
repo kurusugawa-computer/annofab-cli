@@ -68,8 +68,18 @@ def build_annofabapi_resource_and_login(args: argparse.Namespace) -> annofabapi.
         if e.response.status_code == requests.codes.unauthorized:
             raise AuthenticationError(service.api.login_user_id) from e
         raise e
-    except AnnofabApiMfaEnabledUserExecutionError as e:
-        raise MfaEnabledUserExecutionError(service.api.login_user_id) from e
+
+    except AnnofabApiMfaEnabledUserExecutionError:
+        # 標準入力からMFAコードを入力させる
+        inputted_mfa_code = ""
+        while inputted_mfa_code == "":
+            inputted_mfa_code = input("Enter MFA Code: ")
+
+        try:
+            service.api.login(mfa_code=inputted_mfa_code)
+            return service
+        except AnnofabApiMfaEnabledUserExecutionError as e:
+            raise MfaEnabledUserExecutionError(service.api.login_user_id) from e
 
 
 def add_parser(
