@@ -69,5 +69,5 @@ class MfaEnabledUserExecutionError(AnnofabCliException):
     """
 
     def __init__(self, login_user_id: str) -> None:
-        msg = f"ユーザー(User ID: {login_user_id})はMFAが有効化されているため、annofabcliを使用できません。"
+        msg = f"ユーザー(User ID: {login_user_id})はMFAが有効化されているため、ログインできません。コマンドライン引数 `--mfa_code` にMFAコードを指定してください。"
         super().__init__(msg)
