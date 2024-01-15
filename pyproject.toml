@@ -27,7 +27,7 @@ pyquery = "*"
 isodate = "*"
 annofabapi = ">=0.72.0"
 python-datauri = "*"
-pandas = "*"
+pandas = ">=2"
 # 以下のissueが解決されるまで、bokehのバージョンを3.1未満にする
 # https://github.com/bokeh/bokeh/issues/13133#event-9277282834
 bokeh = "~3.0.0"
