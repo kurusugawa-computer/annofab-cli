@@ -28,13 +28,13 @@ RUN set -x \
 
 # Install Ubuntu packages
 RUN set -x \
-    # Python3.11をインストールするために、deadsnakes PPAを追加
+    # Python3.12をインストールするために、deadsnakes PPAを追加
     && add-apt-repository ppa:deadsnakes/ppa \
     # Install packages
     && apt-get update \
     && apt-get install -y --no-install-recommends \
         # python
-        python3.11-dev \
+        python3.12-dev \
         python3-pip \
         # common tools
         bash-completion \
@@ -58,7 +58,7 @@ RUN set -x \
 
 
 # Python / pip
-RUN ln -s $(which python3.11) /usr/bin/python
+RUN ln -s $(which python3.12) /usr/bin/python
 ENV PYTHONDONTWRITEBYTECODE=1 \
     PIP_DEFAULT_TIMEOUT=100 \
     PIP_NO_CACHE_DIR=on \
