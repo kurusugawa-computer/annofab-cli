@@ -317,8 +317,8 @@ def build_annofabapi_resource(args: argparse.Namespace) -> annofabapi.Resource:
     """
     annofabapi.Resourceインスタンスを生成する。
     以下の順にAnnofabの認証情報を読み込む。
-    1. `.netrc`ファイル
-    2. 環境変数`ANNOFAB_USER_ID` , `ANNOFAB_PASSWORD`
+    1. 環境変数`ANNOFAB_USER_ID` , `ANNOFAB_PASSWORD`
+    2. `.netrc`ファイル
 
     認証情報を読み込めなかった場合は、標準入力からUser IDとパスワードを入力させる。
 
@@ -342,16 +342,19 @@ def build_annofabapi_resource(args: argparse.Namespace) -> annofabapi.Resource:
                 login_password = getpass.getpass("Enter Annofab Password: ")
             return annofabapi.build(login_user_id, login_password, endpoint_url=endpoint_url)
 
-    try:
-        return annofabapi.build_from_netrc(endpoint_url)
-    except AnnofabApiException:
-        pass
 
     # 環境変数から認証情報を取得する
     try:
         return annofabapi.build_from_env(endpoint_url)
     except AnnofabApiException:
         pass
+
+    # .netrcファイルから認証情報を取得する
+    try:
+        return annofabapi.build_from_netrc(endpoint_url)
+    except AnnofabApiException:
+        pass
+
 
     # 標準入力から入力させる
     login_user_id = ""
