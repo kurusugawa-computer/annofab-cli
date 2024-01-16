@@ -659,7 +659,7 @@ def add_parser(subparsers: Optional[argparse._SubParsersAction] = None) -> argpa
     description = (
         "アノテーションをインポートします。アノテーションのフォーマットは、Simpleアノテーションと同じフォルダ構成のzipファイルまたはディレクトリです。ただし、作業中/完了状態のタスクはインポートできません。"
     )
-    epilog = "チェッカーまたはオーナロールを持つユーザで実行してください。"
+    epilog = "オーナロールを持つユーザで実行してください。"
 
     parser = annofabcli.common.cli.add_parser(subparsers, subcommand_name, subcommand_help, description, epilog=epilog)
     parse_args(parser)
