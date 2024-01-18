@@ -25,8 +25,6 @@ from annofabcli.common.facade import AnnofabApiFacade
 
 logger = logging.getLogger(__name__)
 
-DEFAULT_WAIT_OPTIONS = WaitOptions(interval=60, max_tries=360)
-
 
 class SimpleTaskStatus(Enum):
     """
@@ -154,7 +152,7 @@ class SummarizeTaskCount(AbstractCommandLineInterface):
         annofabcli.common.utils.print_csv(task_count_df, output=self.output, to_csv_kwargs=self.csv_format)
 
     def get_task_list(
-        self, project_id: str, task_json_path: Optional[Path], is_latest: bool, wait_options: WaitOptions
+        self, project_id: str, task_json_path: Optional[Path], is_latest: bool
     ) -> List[Task]:
         if task_json_path is None:
             cache_dir = annofabcli.common.utils.get_cache_dir()
@@ -165,7 +163,6 @@ class SummarizeTaskCount(AbstractCommandLineInterface):
                 project_id,
                 dest_path=str(task_json_path),
                 is_latest=is_latest,
-                wait_options=wait_options,
             )
 
         with task_json_path.open(encoding="utf-8") as f:
@@ -175,10 +172,9 @@ class SummarizeTaskCount(AbstractCommandLineInterface):
     def main(self) -> None:
         args = self.args
         project_id = args.project_id
-        wait_options = get_wait_options_from_args(get_json_from_args(args.wait_options), DEFAULT_WAIT_OPTIONS)
         task_json_path = Path(args.task_json) if args.task_json is not None else None
         self.summarize_task_count(
-            project_id, task_json_path=task_json_path, is_latest=args.latest, wait_options=wait_options
+            project_id, task_json_path=task_json_path, is_latest=args.latest
         )
 
 
@@ -195,16 +191,6 @@ def parse_args(parser: argparse.ArgumentParser) -> None:
 
     parser.add_argument(
         "--latest", action="store_true", help="最新のタスク一覧ファイルを参照します。このオプションを指定すると、タスク一覧ファイルを更新するのに数分待ちます。"
-    )
-
-    parser.add_argument(
-        "--wait_options",
-        type=str,
-        help="タスク一覧ファイルの更新が完了するまで待つ際のオプションを、JSON形式で指定してください。"
-        "`file://`を先頭に付けるとjsonファイルを指定できます。"
-        'デフォルは`{"interval":60, "max_tries":360}` です。'
-        "`interval`:完了したかを問い合わせる間隔[秒], "
-        "`max_tires`:完了したかの問い合わせを最大何回行うか。",
     )
 
     argument_parser.add_csv_format()
