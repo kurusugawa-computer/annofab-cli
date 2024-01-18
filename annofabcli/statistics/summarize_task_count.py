@@ -204,7 +204,7 @@ def parse_args(parser: argparse.ArgumentParser) -> None:
     parser.add_argument(
         "--execute_get_tasks_api",
         action="store_true",
-        help="``getTasks`` APIを実行して、タスク情報を参照します。タスク数が少ない（10,000件以下）プロジェクトで、最新のタスク情報を参照したいときに利用できます。",
+        help="[EXPERIMENTAL] ``getTasks`` APIを実行して、タスク情報を参照します。タスク数が少ない（10,000件以下）プロジェクトで、最新のタスク情報を参照したいときに利用できます。",
     )
 
     argument_parser.add_csv_format()
