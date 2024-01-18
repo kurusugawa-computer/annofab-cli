@@ -223,7 +223,7 @@ def add_parser(subparsers: Optional[argparse._SubParsersAction] = None) -> argpa
     subcommand_name = "summarize_task_count"
     subcommand_help = "タスクのフェーズ、ステータス、ステップごとにタスク数を出力します。"
     description = "タスクのフェーズ、ステータス、ステップごとにタスク数を、CSV形式で出力します。"
-    epilog = "アノテーションユーザまたはオーナロールを持つユーザで実行してください。"
+    epilog = "アノテーションユーザまたはオーナロールを持つユーザで実行できます。ただし``--execute_get_tasks_api``を指定した場合は、どのロールでも実行できます。"
     parser = annofabcli.common.cli.add_parser(
         subparsers, subcommand_name, subcommand_help, description=description, epilog=epilog
     )
