@@ -16,10 +16,7 @@ from annofabcli.common.cli import (
     AbstractCommandLineInterface,
     ArgumentParser,
     build_annofabapi_resource_and_login,
-    get_json_from_args,
-    get_wait_options_from_args,
 )
-from annofabcli.common.dataclasses import WaitOptions
 from annofabcli.common.download import DownloadingFile
 from annofabcli.common.facade import AnnofabApiFacade
 
@@ -136,13 +133,21 @@ class SummarizeTaskCount(AbstractCommandLineInterface):
         return project["configuration"]["number_of_inspections"]
 
     def summarize_task_count(
-        self, project_id: str, task_json_path: Optional[Path], is_latest: bool, wait_options: WaitOptions
+        self, project_id: str, *, task_json_path: Optional[Path], is_latest: bool, is_execute_get_tasks_api: bool
     ) -> None:
-        super().validate_project(
-            project_id, project_member_roles=[ProjectMemberRole.OWNER, ProjectMemberRole.TRAINING_DATA_USER]
-        )
+        if is_execute_get_tasks_api:
+            super().validate_project(project_id)
+        else:
+            # タスク全件ファイルをダウンロードするので、オーナロールかアノテーションユーザロールであることを確認する。
+            super().validate_project(
+                project_id, project_member_roles=[ProjectMemberRole.OWNER, ProjectMemberRole.TRAINING_DATA_USER]
+            )
 
-        task_list = self.get_task_list(project_id, task_json_path, is_latest=is_latest, wait_options=wait_options)
+        if is_execute_get_tasks_api:
+            task_list = self.service.wrapper.get_all_tasks(project_id)
+        else:
+            task_list = self.get_task_list_with_downloading_file(project_id, task_json_path, is_latest=is_latest)
+
         if len(task_list) == 0:
             logger.info("タスクが0件のため、出力しません。")
             return
@@ -151,7 +156,7 @@ class SummarizeTaskCount(AbstractCommandLineInterface):
         task_count_df = create_task_count_summary(task_list, number_of_inspections=number_of_inspections)
         annofabcli.common.utils.print_csv(task_count_df, output=self.output, to_csv_kwargs=self.csv_format)
 
-    def get_task_list(
+    def get_task_list_with_downloading_file(
         self, project_id: str, task_json_path: Optional[Path], is_latest: bool
     ) -> List[Task]:
         if task_json_path is None:
@@ -174,7 +179,10 @@ class SummarizeTaskCount(AbstractCommandLineInterface):
         project_id = args.project_id
         task_json_path = Path(args.task_json) if args.task_json is not None else None
         self.summarize_task_count(
-            project_id, task_json_path=task_json_path, is_latest=args.latest
+            project_id,
+            task_json_path=task_json_path,
+            is_latest=args.latest,
+            is_execute_get_tasks_api=args.execute_get_tasks_api,
         )
 
 
@@ -191,6 +199,12 @@ def parse_args(parser: argparse.ArgumentParser) -> None:
 
     parser.add_argument(
         "--latest", action="store_true", help="最新のタスク一覧ファイルを参照します。このオプションを指定すると、タスク一覧ファイルを更新するのに数分待ちます。"
+    )
+
+    parser.add_argument(
+        "--execute_get_tasks_api",
+        action="store_true",
+        help="``getTasks`` APIを実行して、タスク情報を参照します。タスク数が少ない（10,000件以下）プロジェクトで、最新のタスク情報を参照したいときに利用できます。",
     )
 
     argument_parser.add_csv_format()
