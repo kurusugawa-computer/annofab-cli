@@ -342,7 +342,6 @@ def build_annofabapi_resource(args: argparse.Namespace) -> annofabapi.Resource:
                 login_password = getpass.getpass("Enter Annofab Password: ")
             return annofabapi.build(login_user_id, login_password, endpoint_url=endpoint_url)
 
-
     # 環境変数から認証情報を取得する
     try:
         return annofabapi.build_from_env(endpoint_url)
@@ -354,7 +353,6 @@ def build_annofabapi_resource(args: argparse.Namespace) -> annofabapi.Resource:
         return annofabapi.build_from_netrc(endpoint_url)
     except AnnofabApiException:
         pass
-
 
     # 標準入力から入力させる
     login_user_id = ""
