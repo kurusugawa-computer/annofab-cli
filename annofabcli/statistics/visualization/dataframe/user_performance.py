@@ -287,8 +287,7 @@ class UserPerformance:
                 * level0がpointed_out_inspection_comment_countで、level1がinspection, acceptanceの列
                 * level0がrejected_countで、level1がinspection, acceptanceの列
             """
-            tmp_phases = set(phase_list) - set(TaskPhase.ANNOTATION.value)
-
+            tmp_phases = set(phase_list) - {TaskPhase.ANNOTATION.value}
             dropped_column = []
             dropped_column.extend([("pointed_out_inspection_comment_count", phase) for phase in tmp_phases])
             dropped_column.extend([("rejected_count", phase) for phase in tmp_phases])
