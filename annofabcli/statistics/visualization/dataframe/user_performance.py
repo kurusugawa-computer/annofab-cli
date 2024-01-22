@@ -4,7 +4,6 @@
 """
 from __future__ import annotations
 
-import copy
 import logging
 from enum import Enum
 from pathlib import Path
@@ -206,8 +205,16 @@ class UserPerformance:
 
         Args:
             df_task_history: タスク履歴のDataFrame
-            df_worktime_ratio: 作業したタスク数を、作業時間で按分した値が格納されたDataFrame. 以下の列を参照する。
-                account_id, phase, worktime_hour
+            df_worktime_ratio: 作業したタスク数などの情報を、作業時間で按分した値が格納されたDataFrame. 以下の列を参照する。
+                * account_id
+                * phase
+                * worktime_hour
+                * task_count
+                * input_data_count
+                * annotation_count
+                * rejected_count.
+                * pointed_out_inspection_comment_count
+
             df_labor: 実績作業時間のDataFrame。以下の列を参照する
                 actual_worktime_hour, date, account_id
 
@@ -215,13 +222,83 @@ class UserPerformance:
 
         """
 
+        def join_various_counts(df: pandas.DataFrame) -> pandas.DataFrame:
+            """
+            生産量や指摘数などの個数情報を引数`df`に結合して、そのDataFrameを返します。
+
+            Args:
+                df: multiindexの列を持つDataFrame
+
+            Returns: 生成されるDataFrame
+                columns(level0): task_count, input_data_count, annotation_count, pointed_out_inspection_comment_count, rejected_count
+                columns(level1): ${phase}
+                index: account_id
+            """  # noqa: E501
+            if len(df_worktime_ratio) == 0:
+                # 集計対象のタスクが0件の場合など
+                # 生産量、指摘の量の情報は、生産性/品質の列を算出するのに必要なので追加する
+                phase = TaskPhase.ANNOTATION.value
+                df2 = df.copy()
+                df2[("task_count", phase)] = 0
+                df2[("input_data_count", phase)] = 0
+                df2[("annotation_count", phase)] = 0
+                df2[("pointed_out_inspection_comment_count", phase)] = 0
+                df2[("rejected_count", phase)] = 0
+                return df2
+
+            df_agg_production = df_worktime_ratio.pivot_table(
+                values=[
+                    "task_count",
+                    "input_data_count",
+                    "annotation_count",
+                    "pointed_out_inspection_comment_count",
+                    "rejected_count",
+                ],
+                columns="phase",
+                index="account_id",
+                aggfunc=numpy.sum,
+            ).fillna(0)
+
+            # 特定のフェーズの生産量の列が存在しないときは、列を追加する
+            # 理由：たとえば受入フェーズが着手されていないときは、受入フェーズの時間の列は存在するが、生産量(~_count)の列は存在しない。生産量の列は生産性の算出に必要なので、列を追加する
+            for phase in phase_list:
+                for production_amount in ["task_count", "input_data_count", "annotation_count"]:
+                    if (production_amount, phase) not in df_agg_production.columns:
+                        df_agg_production[(production_amount, phase)] = 0
+
+            df2 = df.join(df_agg_production)
+            return df2
+
+        def join_user_info(df: pandas.DataFrame) -> pandas.DataFrame:
+            """
+            ユーザー情報を引数`df`に結合して、そのDataFrameを返します。
+            """
+            tmp_df_user = df_user.set_index("account_id")[["user_id", "username", "biography"]]
+            tmp_df_user.columns = pandas.MultiIndex.from_tuples([("user_id", ""), ("username", ""), ("biography", "")])
+            return df.join(tmp_df_user)
+
+        def drop_unnecessary_columns(df: pandas.DataFrame) -> pandas.DataFrame:
+            """
+            出力しない列を削除したDataFrameを返します。
+
+            Returns:
+                以下の列を削除します。
+                * level0がpointed_out_inspection_comment_countで、level1がinspection, acceptanceの列
+                * level0がrejected_countで、level1がinspection, acceptanceの列
+            """
+            tmp_phases = set(phase_list) - {TaskPhase.ANNOTATION.value}
+            dropped_column = []
+            dropped_column.extend([("pointed_out_inspection_comment_count", phase) for phase in tmp_phases])
+            dropped_column.extend([("rejected_count", phase) for phase in tmp_phases])
+            # 'errors="ignore"を指定する理由：削除する列が存在しないときでも、処理を継続するため
+            return df.drop(dropped_column, axis=1, errors="ignore")
+
         def get_phase_list(columns: list[str]) -> list[str]:
             phase_list = []
 
             for phase in TaskPhase:
                 if phase.value in columns:
                     phase_list.append(phase.value)
-
             return phase_list
 
         df_agg_task_history = df_task_history.pivot_table(
@@ -263,53 +340,17 @@ class UserPerformance:
         if len(phase_list) == 0:
             df[("monitored_worktime_hour", TaskPhase.ANNOTATION.value)] = 0
 
-        if len(df_worktime_ratio) > 0:
-            df_agg_production = df_worktime_ratio.pivot_table(
-                values=[
-                    "task_count",
-                    "input_data_count",
-                    "annotation_count",
-                    "pointed_out_inspection_comment_count",
-                    "rejected_count",
-                ],
-                columns="phase",
-                index="account_id",
-                aggfunc=numpy.sum,
-            ).fillna(0)
-        else:
-            df_agg_production = pandas.DataFrame(
-                columns=pandas.MultiIndex.from_tuples(
-                    [
-                        ("task_count", "annotation"),
-                        ("input_data_count", "annotation"),
-                        ("annotation_count", "annotation"),
-                        ("pointed_out_inspection_comment_count", "annotation"),
-                        ("rejected_count", "annotation"),
-                    ]
-                )
-            )
-
-        df = df.join(df_agg_production)
-        # 数値列のNaNを0にする(df_agg_productionが0件のときの対応)
-        df.fillna(0, inplace=True)
+        # 生産量などの情報をdfに結合する
+        df = join_various_counts(df)
 
         # 比例関係の列を計算して追加する
         cls._add_ratio_column_for_productivity_per_user(df, phase_list=phase_list)
 
-        # 不要な列を削除する
-        tmp_phase_list = copy.deepcopy(phase_list)
-        if TaskPhase.ANNOTATION.value in tmp_phase_list:
-            tmp_phase_list.remove(TaskPhase.ANNOTATION.value)
+        # 出力に不要な列を削除する
+        df = drop_unnecessary_columns(df)
 
-        dropped_column = [("pointed_out_inspection_comment_count", phase) for phase in tmp_phase_list] + [
-            ("rejected_count", phase) for phase in tmp_phase_list
-        ]
-        df = df.drop(dropped_column, axis=1)
-
-        # ユーザ情報を取得
-        tmp_df_user = df_user.set_index("account_id")[["user_id", "username", "biography"]]
-        tmp_df_user.columns = pandas.MultiIndex.from_tuples([("user_id", ""), ("username", ""), ("biography", "")])
-        df = df.join(tmp_df_user)
+        # ユーザ情報を結合する
+        df = join_user_info(df)
         return cls(df)
 
     @classmethod
