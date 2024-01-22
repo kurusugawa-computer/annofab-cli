@@ -224,6 +224,43 @@ class UserPerformance:
 
             return phase_list
 
+        def create_df_agg_production() -> pandas.DataFrame:
+            """生産量を集計したDataFrameを生成します。"""
+            if len(df_worktime_ratio) > 0:
+                df_agg_production = df_worktime_ratio.pivot_table(
+                    values=[
+                        "task_count",
+                        "input_data_count",
+                        "annotation_count",
+                        "pointed_out_inspection_comment_count",
+                        "rejected_count",
+                    ],
+                    columns="phase",
+                    index="account_id",
+                    aggfunc=numpy.sum,
+                ).fillna(0)
+
+                # 特定のフェーズの生産量の列が存在しないときは、列を追加する
+                # 理由：たとえば受入フェーズが着手されていないときは、受入フェーズの時間の列は存在するが、生産量(~_count)の列は存在しない。生産量の列は生産性の算出に必要なので、列を追加する
+                for phase in phase_list:
+                    for production_amount in ["task_count", "input_data_count", "annotation_count"]:
+                        if (production_amount, phase) not in df_agg_production.columns:
+                            df_agg_production[(production_amount, phase)] = 0
+
+            else:
+                df_agg_production = pandas.DataFrame(
+                    columns=pandas.MultiIndex.from_tuples(
+                        [
+                            ("task_count", "annotation"),
+                            ("input_data_count", "annotation"),
+                            ("annotation_count", "annotation"),
+                            ("pointed_out_inspection_comment_count", "annotation"),
+                            ("rejected_count", "annotation"),
+                        ]
+                    )
+                )
+            return df_agg_production
+
         df_agg_task_history = df_task_history.pivot_table(
             values="worktime_hour", columns="phase", index="account_id", aggfunc=numpy.sum
         ).fillna(0)
@@ -263,33 +300,8 @@ class UserPerformance:
         if len(phase_list) == 0:
             df[("monitored_worktime_hour", TaskPhase.ANNOTATION.value)] = 0
 
-        if len(df_worktime_ratio) > 0:
-            df_agg_production = df_worktime_ratio.pivot_table(
-                values=[
-                    "task_count",
-                    "input_data_count",
-                    "annotation_count",
-                    "pointed_out_inspection_comment_count",
-                    "rejected_count",
-                ],
-                columns="phase",
-                index="account_id",
-                aggfunc=numpy.sum,
-            ).fillna(0)
-        else:
-            df_agg_production = pandas.DataFrame(
-                columns=pandas.MultiIndex.from_tuples(
-                    [
-                        ("task_count", "annotation"),
-                        ("input_data_count", "annotation"),
-                        ("annotation_count", "annotation"),
-                        ("pointed_out_inspection_comment_count", "annotation"),
-                        ("rejected_count", "annotation"),
-                    ]
-                )
-            )
-
-        df = df.join(df_agg_production)
+        # 生産量情報を集計して、dfに結合する
+        df = df.join(create_df_agg_production())
         # 数値列のNaNを0にする(df_agg_productionが0件のときの対応)
         df.fillna(0, inplace=True)
 
