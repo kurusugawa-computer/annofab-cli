@@ -4,7 +4,6 @@
 """
 from __future__ import annotations
 
-import copy
 import logging
 from enum import Enum
 from pathlib import Path
@@ -225,7 +224,14 @@ class UserPerformance:
             return phase_list
 
         def create_df_agg_production() -> pandas.DataFrame:
-            """生産量を集計したDataFrameを生成します。"""
+            """
+            生産量を集計したDataFrameを生成します。
+
+            Returns: 生成されるDataFrame
+                columns(level0): task_count, input_data_count, annotation_count, pointed_out_inspection_comment_count, rejected_count
+                columns(level1): ${phase}
+                index: account_id
+            """# noqa: E501
             if len(df_worktime_ratio) > 0:
                 df_agg_production = df_worktime_ratio.pivot_table(
                     values=[
@@ -260,6 +266,25 @@ class UserPerformance:
                     )
                 )
             return df_agg_production
+
+        def drop_unnecessary_columns(df: pandas.DataFrame) -> pandas.DataFrame:
+            """
+            出力しない列を削除したDataFrameを返します。
+
+            Returns:
+                以下の列を削除します。
+                * level0がpointed_out_inspection_comment_countで、level1がinspection, acceptanceの列
+                * level0がrejected_countで、level1がinspection, acceptanceの列
+            """
+            tmp_phases = set(phase_list) - set(TaskPhase.ANNOTATION.value)
+
+            dropped_column = []
+            dropped_column.extend([("pointed_out_inspection_comment_count", phase) for phase in tmp_phases])
+            dropped_column.extend([
+                ("rejected_count", phase) for phase in tmp_phases
+            ])
+            # 'errors="ignore"を指定する理由：削除する列が存在しないときでも、処理を継続するため
+            return df.drop(dropped_column, axis=1, errors="ignore")
 
         df_agg_task_history = df_task_history.pivot_table(
             values="worktime_hour", columns="phase", index="account_id", aggfunc=numpy.sum
@@ -309,14 +334,7 @@ class UserPerformance:
         cls._add_ratio_column_for_productivity_per_user(df, phase_list=phase_list)
 
         # 不要な列を削除する
-        tmp_phase_list = copy.deepcopy(phase_list)
-        if TaskPhase.ANNOTATION.value in tmp_phase_list:
-            tmp_phase_list.remove(TaskPhase.ANNOTATION.value)
-
-        dropped_column = [("pointed_out_inspection_comment_count", phase) for phase in tmp_phase_list] + [
-            ("rejected_count", phase) for phase in tmp_phase_list
-        ]
-        df = df.drop(dropped_column, axis=1)
+        df = drop_unnecessary_columns(df)
 
         # ユーザ情報を取得
         tmp_df_user = df_user.set_index("account_id")[["user_id", "username", "biography"]]
