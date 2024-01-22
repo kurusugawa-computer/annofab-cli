@@ -222,15 +222,6 @@ class UserPerformance:
 
         """
 
-        def get_phase_list(columns: list[str]) -> list[str]:
-            phase_list = []
-
-            for phase in TaskPhase:
-                if phase.value in columns:
-                    phase_list.append(phase.value)
-
-            return phase_list
-
         def join_various_counts(df: pandas.DataFrame) -> pandas.DataFrame:
             """
             生産量や指摘数などの個数情報を引数`df`に結合して、そのDataFrameを返します。
@@ -278,6 +269,14 @@ class UserPerformance:
             df2 = df.join(df_agg_production)
             return df2
 
+        def join_user_info(df: pandas.DataFrame) -> pandas.DataFrame:
+            """
+            ユーザー情報を引数`df`に結合して、そのDataFrameを返します。
+            """
+            tmp_df_user = df_user.set_index("account_id")[["user_id", "username", "biography"]]
+            tmp_df_user.columns = pandas.MultiIndex.from_tuples([("user_id", ""), ("username", ""), ("biography", "")])
+            return df.join(tmp_df_user)
+
         def drop_unnecessary_columns(df: pandas.DataFrame) -> pandas.DataFrame:
             """
             出力しない列を削除したDataFrameを返します。
@@ -320,7 +319,7 @@ class UserPerformance:
             df["actual_worktime_hour"] = 0
             df["last_working_date"] = None
 
-        phase_list = get_phase_list(list(df.columns))
+        phase_list = UserPerformance.get_phase_list(list(df.columns))
         df = df[["actual_worktime_hour", "last_working_date", *phase_list]].copy()
         df.columns = pandas.MultiIndex.from_tuples(
             [("actual_worktime_hour", "sum"), ("last_working_date", "")]
@@ -342,10 +341,8 @@ class UserPerformance:
         # 出力に不要な列を削除する
         df = drop_unnecessary_columns(df)
 
-        # ユーザ情報を取得
-        tmp_df_user = df_user.set_index("account_id")[["user_id", "username", "biography"]]
-        tmp_df_user.columns = pandas.MultiIndex.from_tuples([("user_id", ""), ("username", ""), ("biography", "")])
-        df = df.join(tmp_df_user)
+        # ユーザ情報を結合する
+        df = join_user_info(df)
         return cls(df)
 
     @classmethod
