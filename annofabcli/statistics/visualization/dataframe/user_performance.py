@@ -304,9 +304,11 @@ class UserPerformance:
         # タスク履歴の作業時間を集計する
         # `["worktime_hour"]>0]`を指定している理由：受入フェーズのタスクは存在するが、一度も受入作業が実施されていないときに、df_agg_task_historyに"acceptance"の列を含まないようにするため
         # 受入作業が実施されていないのに、"acceptance"列が存在すると、bokehなどでwarningが発生する。それを回避するため
-        df_agg_task_history = df_task_history[df_task_history["worktime_hour"]>0].pivot_table(
-            values="worktime_hour", columns="phase", index="account_id", aggfunc=numpy.sum
-        ).fillna(0)
+        df_agg_task_history = (
+            df_task_history[df_task_history["worktime_hour"] > 0]
+            .pivot_table(values="worktime_hour", columns="phase", index="account_id", aggfunc=numpy.sum)
+            .fillna(0)
+        )
 
         if df_labor is not None and len(df_labor) > 0:
             df_agg_labor = df_labor.pivot_table(values="actual_worktime_hour", index="account_id", aggfunc=numpy.sum)
