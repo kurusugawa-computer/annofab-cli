@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import argparse
+import copy
 import logging
 import sys
 from typing import Optional
@@ -29,6 +30,20 @@ import annofabcli.task_history_event.subcommand_task_history_event
 logger = logging.getLogger(__name__)
 
 
+def mask_argv(argv: list[str]) -> list[str]:
+    """
+    `argv`にセンシティブな情報が含まれている場合は、`***`に置き換える。
+    """
+    tmp_argv = copy.deepcopy(argv)
+    for masked_option in ["--annofab_user_id", "--annofab_password"]:
+        try:
+            index = tmp_argv.index(masked_option)
+            tmp_argv[index + 1] = "***"
+        except ValueError:
+            continue
+    return tmp_argv
+
+
 def main(arguments: Optional[list[str]] = None) -> None:
     """
     annofabcliコマンドのメイン処理
@@ -51,7 +66,7 @@ def main(arguments: Optional[list[str]] = None) -> None:
             argv = sys.argv
             if arguments is not None:
                 argv = ["annofabcli", *list(arguments)]
-            logger.info(f"argv={argv}")
+            logger.info(f"argv={mask_argv(argv)}")
             args.subcommand_func(args)
         except Exception as e:
             logger.exception(e)
