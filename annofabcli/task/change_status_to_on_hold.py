@@ -79,6 +79,27 @@ class ChangingStatusToOnHoldMain(AbstractCommandLineWithConfirmInterface):
             comment: 保留用のコメント
 
         """
+
+        def preprocess() -> bool:
+            if not match_task_with_query(task, task_query):
+                logger.debug(
+                    f"{logging_prefix} : task_id = {task_id} : `--task_query` の条件にマッチしないため、スキップします。 :: "
+                    f"task_query={task_query}"
+                )
+                return False
+
+            if task.status not in [TaskStatus.NOT_STARTED, TaskStatus.BREAK]:
+                logger.warning(
+                    f"{logging_prefix}: task_id = '{task_id}' のタスクのステータスが未着手または休憩中でないので、スキップします。 :: "
+                    f"status='{task.status.value}'"
+                )
+                return False
+
+            if not self.confirm_change_status_to_on_hold(task):
+                return False
+
+            return True
+
         logging_prefix = f"{task_index+1} 件目" if task_index is not None else ""
         dict_task = self.service.wrapper.get_task_or_none(self.project_id, task_id)
         if dict_task is None:
@@ -87,21 +108,7 @@ class ChangingStatusToOnHoldMain(AbstractCommandLineWithConfirmInterface):
 
         task: Task = Task.from_dict(dict_task)
 
-        if not match_task_with_query(task, task_query):
-            logger.debug(
-                f"{logging_prefix} : task_id = {task_id} : `--task_query` の条件にマッチしないため、スキップします。 :: "
-                f"task_query={task_query}"
-            )
-            return False
-
-        if task.status not in [TaskStatus.NOT_STARTED, TaskStatus.BREAK]:
-            logger.warning(
-                f"{logging_prefix}: task_id = '{task_id}' のタスクのステータスが未着手または休憩中でないので、スキップします。 :: "
-                f"status='{task.status.value}'"
-            )
-            return False
-
-        if not self.confirm_change_status_to_on_hold(task):
+        if not preprocess():
             return False
 
         task_user_id = None
