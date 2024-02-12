@@ -27,12 +27,32 @@ pyquery = "*"
 isodate = "*"
 annofabapi = ">=0.72.0"
 python-datauri = "*"
-pandas = ">=2"
-# 以下のissueが解決されるまで、bokehのバージョンを3.1未満にする
+
+pandas = "^2"
+# bokehのバージョンを3.0に固定している理由
+# 3.2以上だとPython3.8をサポートしていない
+# しかし3.1だと、以下のバグがあって正しくグラフを描画できないため
 # https://github.com/bokeh/bokeh/issues/13133#event-9277282834
 bokeh = "~3.0.0"
 Pillow = "*"
 typing-extensions="^4.5"
+
+[tool.poetry.group.dev-only.dependencies]
+# 開発時のみバージョンを指定したライブラリを記載する
+
+
+# pandsaのCopy-on-Writeの警告を出すために、pandas2.2以上を利用する
+# https://pandas.pydata.org/docs/user_guide/copy_on_write.html
+pandas = [
+    {version=">=2.2", python=">=3.11"}
+]
+
+# pandas 2.2以上を利用する場合、numpyのバージョンを指定しないとpoetryが依存解決できないので、panda2.2が要求するnumpyのバージョンを指定する
+# 補足: numpy1.26.0はPython3.8に対応していない。したがって、"python>=3.11"という条件を指定して、numpy1.26.0を指定する必要がある
+numpy = [
+    {version=">=1.26.0", python=">=3.11"}
+]
+
 
 [tool.poetry.group.test.dependencies]
 pytest = "^7"
@@ -43,7 +63,7 @@ pytest-cov = "*"
 black = "^23.3"
 
 [tool.poetry.group.linter.dependencies]
-# ruffのバージョンの上限を指定する理由: 
+# ruffのバージョンの上限を指定する理由:
 # ruffは0.0.260から"line-width"の計算を"character count"から"unicode width"に変更した。
 # black 23.3(通常版)は"line-width"を"character count"で計算している。
 # ruffとblackで"line-with"の計算が異なってしまうので、ruffのバージョンの上限を指定した。
@@ -62,6 +82,7 @@ sphinx = "^6.1"
 pydata-sphinx-theme = ">=0.13"
 sphinx-last-updated-by-git = "*"
 sphinx-argparse = "*"
+
 
 
 [tool.poetry.group.dev]
@@ -117,20 +138,20 @@ ignore = [
     "ERA", # : 役立つこともあるが、コメントアウトしていないコードも警告されるので無視する
 
     # いずれ無視しないようにする
-    "ANN201", # missing-return-type-public-function: 
+    "ANN201", # missing-return-type-public-function:
     "ANN202", # missing-return-type-private-function:
-    "PLR",  # pylint Refactor 
+    "PLR",  # pylint Refactor
 
     # 以下のルールはannofabcliのコードに合っていないので無効化した
     "RSE", # flake8-raise
     "D", # pydocstyle, Docstringを中途半端にしか書いていないので、除外する
-    "C90", # mccabe 
+    "C90", # mccabe
     "T20", # flake8-print
     "SLF", #  flake8-self
     "BLE", # flake8-blind-except
     "FBT", # flake8-boolean-trap
-    "TRY", # tryceratops 
-    "COM", # flake8-commas 
+    "TRY", # tryceratops
+    "COM", # flake8-commas
     "S", # flake8-bandit
     "EM",#flake8-errmsg
     "EXE", # flake8-executable

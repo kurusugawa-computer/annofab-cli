@@ -5,8 +5,7 @@
 	"build": {
 		"dockerfile": "Dockerfile",
 		"context": ".",
-		"args": {},
-		"target": "devcontainer"
+		"args": {}
 	},
 	"containerUser": "vscode",
 	"remoteUser": "vscode",
@@ -14,7 +13,6 @@
 	// マウント対象のディレクトリを事前に作成する
 	"initializeCommand": "mkdir -p ${localWorkspaceFolder}/.devcontainer/venv",
 	"mounts": [
-		"source=${localEnv:DATA_DIR},target=/data,type=bind",
 		// ホスト側のvenvとコンテン側のvenvを分類して、ホスト側でpoetryコマンドを利用できるようにする
 		"source=${localWorkspaceFolder}/.devcontainer/venv,target=${containerWorkspaceFolder}/.venv,type=bind"
 	],
