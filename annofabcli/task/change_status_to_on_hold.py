@@ -38,8 +38,8 @@ class ChangingStatusToOnHoldMain(AbstractCommandLineWithConfirmInterface):
         if task.account_id is not None:
             user_id = self.facade.get_user_id_from_account_id(self.project_id, task.account_id)
 
-        confirm_message = f"task_id='{task.task_id}' のタスクのステータスを保留中に変更しますか？"
-        f"(status='{task.status.value}, phase='{task.phase.value}', user_id='{user_id}')"
+        confirm_message = (f"task_id='{task.task_id}' のタスクのステータスを保留中に変更しますか？"
+        f"(status='{task.status.value}, phase='{task.phase.value}', user_id='{user_id}')")
         return self.confirm_processing(confirm_message)
 
     def change_status_to_on_hold_for_task(
