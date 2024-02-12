@@ -284,7 +284,7 @@ def parse_args(parser: argparse.ArgumentParser) -> None:
 
     argument_parser.add_task_query()
 
-    parser.add_argument("--comment", type=str, help="保留コメントを指定してください。保留コメントは先頭の入力データの付与されます。")
+    parser.add_argument("--comment", type=str, help="保留コメントを指定してください。保留コメントは先頭の入力データに付与します。")
 
     parser.add_argument(
         "--parallelism", type=int, help="使用するプロセス数（並列度）を指定してください。指定する場合は必ず ``--yes`` を指定してください。指定しない場合は、逐次的に処理します。"
