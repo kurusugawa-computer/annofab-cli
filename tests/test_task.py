@@ -303,6 +303,38 @@ class TestCommandLine:
         task, _ = service.api.get_task(project_id, task_id)
         assert task["account_id"] == service.api.account_id
 
+    def _execute_change_status_to_on_hold(self, task_id: str):
+        """保留中状態に変更する"""
+        main(
+            [
+                self.command_name,
+                "change_status_to_on_hold",
+                "--project_id",
+                project_id,
+                "--task_id",
+                task_id,
+                "--yes",
+            ]
+        )
+        task, _ = service.api.get_task(project_id, task_id)
+        assert task["status"] == "on_hold"
+
+    def _execute_change_status_to_break(self, task_id: str):
+        """休憩中状態に変更する"""
+        main(
+            [
+                self.command_name,
+                "change_status_to_break",
+                "--project_id",
+                project_id,
+                "--task_id",
+                task_id,
+                "--yes",
+            ]
+        )
+        task, _ = service.api.get_task(project_id, task_id)
+        assert task["status"] == "break"
+
     def test_scenario(self, target_task):
         """
         タスク関係のコマンドのシナリオテスト
@@ -322,6 +354,10 @@ class TestCommandLine:
 
         # 担当者の変更
         self._execute_change_operator(task_id)
+
+        # 状態を変更するコマンドの確認
+        self._execute_change_status_on_hold(task_id)
+        self._execute_change_status_to_break(task_id)
 
     def test_create_and_delete_task(self):
         """
