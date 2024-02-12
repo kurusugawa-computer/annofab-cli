@@ -356,7 +356,7 @@ class TestCommandLine:
         self._execute_change_operator(task_id)
 
         # 状態を変更するコマンドの確認
-        self._execute_change_status_on_hold(task_id)
+        self._execute_change_status_to_on_hold(task_id)
         self._execute_change_status_to_break(task_id)
 
     def test_create_and_delete_task(self):
