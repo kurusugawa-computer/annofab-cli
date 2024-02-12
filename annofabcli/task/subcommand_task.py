@@ -6,6 +6,7 @@ import annofabcli.common.cli
 import annofabcli.task.cancel_acceptance
 import annofabcli.task.change_operator
 import annofabcli.task.change_status_to_break
+import annofabcli.task.change_status_to_on_hold
 import annofabcli.task.complete_tasks
 import annofabcli.task.copy_tasks
 import annofabcli.task.delete_tasks
@@ -27,6 +28,7 @@ def parse_args(parser: argparse.ArgumentParser) -> None:
     annofabcli.task.cancel_acceptance.add_parser(subparsers)
     annofabcli.task.change_operator.add_parser(subparsers)
     annofabcli.task.change_status_to_break.add_parser(subparsers)
+    annofabcli.task.change_status_to_on_hold.add_parser(subparsers)
     annofabcli.task.complete_tasks.add_parser(subparsers)
     annofabcli.task.copy_tasks.add_parser(subparsers)
     annofabcli.task.delete_tasks.add_parser(subparsers)
