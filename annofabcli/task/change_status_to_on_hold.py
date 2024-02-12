@@ -51,16 +51,18 @@ class ChangingStatusToOnHoldMain(AbstractCommandLineWithConfirmInterface):
 
         タスクは作業中状態である必要があります。
         """
-        request_body = [{
-            "comment": comment,
-            "comment_id": str(uuid.uuid4()),
-            "phase": task.phase.value,
-            "phase_stage": task.phase_stage,
-            "comment_type": "onhold",
-            "account_id": self.service.api.account_id,
-            "comment_node": {"status": "open", "_type": "Root"},
-            "_type": "Put",
-        }]
+        request_body = [
+            {
+                "comment": comment,
+                "comment_id": str(uuid.uuid4()),
+                "phase": task.phase.value,
+                "phase_stage": task.phase_stage,
+                "comment_type": "onhold",
+                "account_id": self.service.api.account_id,
+                "comment_node": {"status": "open", "_type": "Root"},
+                "_type": "Put",
+            }
+        ]
         input_data_id = task.input_data_id_list[0]
         self.service.api.batch_update_comments(self.project_id, task.task_id, input_data_id, request_body=request_body)
 
