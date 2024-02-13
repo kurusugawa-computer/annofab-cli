@@ -28,7 +28,7 @@ Examples
 
 .. code-block::
 
-    $ annofabcli task change_operator_to_break --project_id prj1 --task_id t1
+    $ annofabcli task change_status_to_break --project_id prj1 --task_id t1
 
 
 タスクのフェーズやステータスなどで絞り込み
@@ -41,7 +41,7 @@ Examples
 
 .. code-block::
 
-    $ annofabcli task change_operator_to_break --project_id prj1 --task_id file://task_id.txt \
+    $ annofabcli task change_status_to_break --project_id prj1 --task_id file://task_id.txt \
      --task_query '{"phase":"acceptance"}'
 
 
@@ -53,7 +53,7 @@ Examples
 
 .. code-block::
 
-    $  annofabcli task change_operator_to_break --project_id prj1 --task_id file://task.txt \
+    $  annofabcli task change_status_to_break --project_id prj1 --task_id file://task.txt \
     --parallelism 4 --yes
 
 Usage Details
