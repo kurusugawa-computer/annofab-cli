@@ -428,7 +428,7 @@ class UserPerformance:
                 return max_date
 
         def merge_row(row1: pandas.Series, row2: pandas.Series) -> pandas.Series:
-            string_column_list = ["username", "biography", "last_working_date"]
+            string_column_list = ["user_id", "username", "biography", "last_working_date"]
             # `string_column_list`に対応する列は加算できないので、除外した上で加算する
             # `infer_objects(copy=False)`を実行している理由：以下の警告に対応するため
             # FutureWarning: Downcasting object dtype arrays on .fillna, .ffill, .bfill is deprecated and will change in a future version.  # noqa: E501
@@ -436,6 +436,7 @@ class UserPerformance:
                 labels=string_column_list, level=0
             ).infer_objects(copy=False).fillna(0)
 
+            sum_row.loc["user_id", ""] = row1.loc["user_id", ""]
             sum_row.loc["username", ""] = row1.loc["username", ""]
             sum_row.loc["biography", ""] = row1.loc["biography", ""]
             sum_row.loc["last_working_date", ""] = max_last_working_date(
@@ -446,18 +447,18 @@ class UserPerformance:
         df1 = obj1.df
         df2 = obj2.df
 
-        user_id_set = set(df1["user_id"]) | set(df2["user_id"])
-        sum_df = df1.set_index("user_id").copy()
-        added_df = df2.set_index("user_id")
+        account_id_set = set(df1["account_id"]) | set(df2["account_id"])
+        sum_df = df1.set_index("account_id").copy()
+        added_df = df2.set_index("account_id")
 
-        for user_id in user_id_set:
-            if user_id not in added_df.index:
+        for account_id in account_id_set:
+            if account_id not in added_df.index:
                 continue
 
-            if user_id in sum_df.index:
-                sum_df.loc[user_id] = merge_row(sum_df.loc[user_id], added_df.loc[user_id])
+            if account_id in sum_df.index:
+                sum_df.loc[account_id] = merge_row(sum_df.loc[account_id], added_df.loc[account_id])
             else:
-                sum_df.loc[user_id] = added_df.loc[user_id]
+                sum_df.loc[account_id] = added_df.loc[account_id]
 
         sum_df.reset_index(inplace=True)
         # DataFrameを一旦Seriesに変換することで、列の型情報がすべてobjectになるので、再度正しい列の型に変換する
@@ -465,8 +466,8 @@ class UserPerformance:
 
         phase_list = UserPerformance.get_phase_list(sum_df.columns)
         UserPerformance._add_ratio_column_for_productivity_per_user(sum_df, phase_list=phase_list)
-        sum_df.sort_values(["user_id"], inplace=True)
-        return UserPerformance(sum_df)
+
+        return UserPerformance(sum_df.sort_values(["user_id"]))
 
     def _validate_df_for_output(self, output_file: Path) -> bool:
         if len(self.df) == 0:
@@ -476,9 +477,23 @@ class UserPerformance:
 
     @staticmethod
     def get_productivity_columns(phase_list: list[str]) -> list[tuple[str, str]]:
+        """
+        生産性に関する情報（作業時間、生産量、生産量あたり作業時間）の列を取得します。
+        """
+        # `phase_list`を参照しない理由： `phase_list`は集計対象のタスクから求めた作業時間を元に決めている
+        # `real_monitored_worktime_hour`は実際に作業した時間を表すため、`phase_list`を参照していない。
+        # `phase_list`を参照しないことで、以下のケースにも対応できる
+        #   * 実際には受入作業しているが、受入作業を実施したタスクが集計対象でない
+        real_monitored_worktime_columns = [
+            ("real_monitored_worktime_hour", "sum"),
+            ("real_monitored_worktime_hour", "annotation"),
+            ("real_monitored_worktime_hour", "inspection"),
+            ("real_monitored_worktime_hour", "acceptance"),
+        ]
+
         monitored_worktime_columns = (
-            [("monitored_worktime_hour", phase) for phase in phase_list]
-            + [("monitored_worktime_hour", "sum")]
+            [("monitored_worktime_hour", "sum")]
+            + [("monitored_worktime_hour", phase) for phase in phase_list]
             + [("monitored_worktime_ratio", phase) for phase in phase_list]
         )
         production_columns = (
@@ -510,7 +525,8 @@ class UserPerformance:
         ]
 
         prior_columns = (
-            monitored_worktime_columns
+            real_monitored_worktime_columns
+            + monitored_worktime_columns
             + production_columns
             + actual_worktime_columns
             + productivity_columns
