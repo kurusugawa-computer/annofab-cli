@@ -245,7 +245,7 @@ class WorktimePerDate:
     def merge(cls, obj1: WorktimePerDate, obj2: WorktimePerDate) -> WorktimePerDate:
         df_tmp = pandas.concat([obj1.df, obj2.df])
 
-        df = df_tmp.groupby(["date", "user_id"])[
+        df = df_tmp.groupby(["date", "account_id"])[
             [
                 "actual_worktime_hour",
                 "monitored_worktime_hour",
@@ -256,9 +256,9 @@ class WorktimePerDate:
         ].sum()
         df.reset_index(inplace=True)
 
-        df_user = df_tmp.drop_duplicates(subset="user_id")[["user_id", "username", "biography"]]
+        df_user = df_tmp.drop_duplicates(subset="account_id")[["account_id", "user_id", "username", "biography"]]
 
-        df = df.merge(df_user, on="user_id", how="left")
+        df = df.merge(df_user, on="account_id", how="left")
 
         return cls(df)
 
