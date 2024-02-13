@@ -172,16 +172,22 @@ class UserPerformance:
         """空のデータフレームを持つインスタンスを生成します。"""
 
         df_dtype: dict[tuple[str, str], str] = {
+            ("account_id", ""): "string",
             ("user_id", ""): "string",
             ("username", ""): "string",
             ("biography", ""): "string",
             ("last_working_date", ""): "string",
+            ("real_monitored_worktime_hour", "sum"): "float64",
+            ("real_monitored_worktime_hour", "annotation"): "float64",
+            ("real_monitored_worktime_hour", "inspection"): "float64",
+            ("real_monitored_worktime_hour", "acceptance"): "float64",
             # phaseがinspection, acceptanceの列は出力されない可能性があるので、絶対出力される"sum", "annotation"の列のみ定義する
             ("monitored_worktime_hour", "annotation"): "float64",
             ("monitored_worktime_hour", "sum"): "float64",
             ("task_count", "annotation"): "float64",
             ("input_data_count", "annotation"): "float64",
             ("annotation_count", "annotation"): "float64",
+            ("real_actual_worktime_hour", "sum"): "float64",
             ("actual_worktime_hour", "sum"): "float64",
             ("actual_worktime_hour", "annotation"): "float64",
             ("pointed_out_inspection_comment_count", "annotation"): "float64",
@@ -243,6 +249,15 @@ class UserPerformance:
                 aggfunc="sum",
             )
 
+            # 列をMultiIndexに変更する
+            df_agg_worktime = df_agg_worktime[
+                [
+                    "monitored_worktime_hour",
+                    "monitored_annotation_worktime_hour",
+                    "monitored_inspection_worktime_hour",
+                    "monitored_acceptance_worktime_hour",
+                ]
+            ]
             df_agg_worktime.columns = pandas.MultiIndex.from_tuples(
                 [
                     ("real_monitored_worktime_hour", "sum"),
@@ -288,7 +303,7 @@ class UserPerformance:
                 ],
                 columns="phase",
                 index="account_id",
-                aggfunc=numpy.sum,
+                aggfunc="sum",
             ).fillna(0)
 
             # 特定のフェーズの生産量の列が存在しないときは、列を追加する
@@ -377,6 +392,9 @@ class UserPerformance:
         if len(phase_list) == 0:
             df[("monitored_worktime_hour", TaskPhase.ANNOTATION.value)] = 0
 
+        # TODO
+        df[(("real_actual_worktime_hour", "sum"))] = df[(("actual_worktime_hour", "sum"))]
+
         # 実際の計測作業時間情報（集計タスクに影響されない作業時間）を結合する
         df = join_real_monitored_worktime_hour(df)
 
@@ -391,7 +409,9 @@ class UserPerformance:
 
         # ユーザ情報を結合する
         df = join_user_info(df)
-        return cls(df)
+
+        # `df.reset_index()`を実行する理由：indexである`account_id`を列にするため
+        return cls(df.reset_index())
 
     @classmethod
     def _convert_column_dtypes(cls, df: pandas.DataFrame) -> pandas.DataFrame:
@@ -401,7 +421,13 @@ class UserPerformance:
 
         columns = set(df.columns)
         # 列ヘッダに相当する列名
-        basic_columns = [("user_id", ""), ("username", ""), ("biography", ""), ("last_working_date", "")]
+        basic_columns = [
+            ("account_id", ""),
+            ("user_id", ""),
+            ("username", ""),
+            ("biography", ""),
+            ("last_working_date", ""),
+        ]
 
         value_columns = columns - set(basic_columns)
         dtypes = {col: "string" for col in basic_columns}
@@ -502,7 +528,7 @@ class UserPerformance:
             + [("annotation_count", phase) for phase in phase_list]
         )
 
-        actual_worktime_columns = [("actual_worktime_hour", "sum")] + [
+        actual_worktime_columns = [("real_actual_worktime_hour", "sum"), ("actual_worktime_hour", "sum")] + [
             ("actual_worktime_hour", phase) for phase in phase_list
         ]
 
@@ -542,7 +568,13 @@ class UserPerformance:
 
         value_columns = self.get_productivity_columns(self.phase_list)
 
-        user_columns = [("user_id", ""), ("username", ""), ("biography", ""), ("last_working_date", "")]
+        user_columns = [
+            ("account_id", ""),
+            ("user_id", ""),
+            ("username", ""),
+            ("biography", ""),
+            ("last_working_date", ""),
+        ]
         columns = user_columns + value_columns
 
         print_csv(self.df[columns], str(output_file))
@@ -676,10 +708,12 @@ class UserPerformance:
 
         """
         columns_for_sum = [
+            "real_monitored_worktime_hour",
             "monitored_worktime_hour",
             "task_count",
             "input_data_count",
             "annotation_count",
+            "real_actual_worktime_hour",
             "actual_worktime_hour",
             "pointed_out_inspection_comment_count",
             "rejected_count",
