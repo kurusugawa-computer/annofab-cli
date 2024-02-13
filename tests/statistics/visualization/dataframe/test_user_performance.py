@@ -26,8 +26,13 @@ class TestUserPerformance:
         df_labor = pandas.read_csv(str(data_dir / "labor-df.csv"))
         df_user = pandas.read_csv(str(data_dir / "user.csv"))
         df_worktime_ratio = pandas.read_csv(str(data_dir / "annotation-count-ratio-df.csv"))
+        df_worktime_per_date = pandas.read_csv(str(data_dir / "worktime-per-date.csv"))
         UserPerformance.from_df(
-            df_task_history, df_worktime_ratio=df_worktime_ratio, df_user=df_user, df_labor=df_labor
+            df_task_history,
+            df_worktime_ratio=df_worktime_ratio,
+            df_user=df_user,
+            df_worktime_per_date=df_worktime_per_date,
+            df_labor=df_labor,
         )
 
     def test_from_df_with_empty(self):
@@ -37,8 +42,13 @@ class TestUserPerformance:
         df_worktime_ratio = pandas.read_csv(str(data_dir / "annotation-count-ratio-df-empty.csv"))
         df_labor = pandas.read_csv(str(data_dir / "labor-df.csv"))
         df_user = pandas.read_csv(str(data_dir / "user.csv"))
+        df_worktime_per_date = pandas.read_csv(str(data_dir / "worktime-per-date.csv"))
         obj = UserPerformance.from_df(
-            df_task_history, df_worktime_ratio=df_worktime_ratio, df_user=df_user, df_labor=df_labor
+            df_task_history,
+            df_worktime_ratio=df_worktime_ratio,
+            df_user=df_user,
+            df_worktime_per_date=df_worktime_per_date,
+            df_labor=df_labor,
         )
         obj.to_csv(Path("out/user.csv"))
 

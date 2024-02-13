@@ -54,8 +54,6 @@ def get_project_output_dir(project_title: str) -> str:
 
 
 class WriteCsvGraph:
-    task_df: Optional[pandas.DataFrame] = None
-    task_history_df: Optional[pandas.DataFrame] = None
 
     def __init__(
         self,
@@ -81,6 +79,10 @@ class WriteCsvGraph:
 
         self.project_dir = ProjectDir(output_dir)
 
+        self.task_df: Optional[pandas.DataFrame] = None
+        self.task_history_df: Optional[pandas.DataFrame] = None
+        self.worktime_per_date:Optional[WorktimePerDate] = None
+
     def _catch_exception(self, function: Callable[..., Any]) -> Callable[..., Any]:
         """
         Exceptionをキャッチしてログにstacktraceを出力する。
@@ -104,6 +106,13 @@ class WriteCsvGraph:
         if self.task_history_df is None:
             self.task_history_df = self.table_obj.create_task_history_df()
         return self.task_history_df
+
+    def _get_worktime_per_date(self) -> WorktimePerDate:
+        if self.worktime_per_date is None:
+            self.worktime_per_date = WorktimePerDate.from_webapi(
+                self.service, self.project_id, self.df_labor, start_date=self.start_date, end_date=self.end_date
+            )
+        return self.worktime_per_date
 
     def write_task_info(self) -> None:
         """
@@ -136,6 +145,7 @@ class WriteCsvGraph:
             df_task_history=df_task_history,
             df_worktime_ratio=annotation_count_ratio_df,
             df_user=df_user,
+            df_worktime_per_date=self._get_worktime_per_date().df,
             df_labor=self.df_labor,
         )
 
@@ -168,9 +178,7 @@ class WriteCsvGraph:
 
     def write_worktime_per_date(self, user_id_list: Optional[List[str]] = None) -> None:
         """日ごとの作業時間情報を出力する。"""
-        worktime_per_date_obj = WorktimePerDate.from_webapi(
-            self.service, self.project_id, self.df_labor, start_date=self.start_date, end_date=self.end_date
-        )
+        worktime_per_date_obj = self._get_worktime_per_date()
 
         self.project_dir.write_worktime_per_date_user(worktime_per_date_obj)
 

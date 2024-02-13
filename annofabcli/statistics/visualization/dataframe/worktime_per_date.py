@@ -43,6 +43,7 @@ class WorktimePerDate:
 
     _df_dtype = {
         "date": "string",
+        "account_id": "string",
         "user_id": "string",
         "username": "string",
         "biography": "string",

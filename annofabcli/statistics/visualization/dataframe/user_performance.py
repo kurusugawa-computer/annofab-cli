@@ -198,6 +198,7 @@ class UserPerformance:
         df_task_history: pandas.DataFrame,
         df_worktime_ratio: pandas.DataFrame,
         df_user: pandas.DataFrame,
+        df_worktime_per_date: pandas.DataFrame,
         df_labor: Optional[pandas.DataFrame] = None,
     ) -> UserPerformance:
         """
@@ -215,12 +216,40 @@ class UserPerformance:
                 * rejected_count.
                 * pointed_out_inspection_comment_count
 
+            df_user: ユーザー情報が格納されたDataFrame
+            df_worktime_per_date: 日ごとの作業時間が記載されたDataFrame
             df_labor: 実績作業時間のDataFrame。以下の列を参照する
                 actual_worktime_hour, date, account_id
 
         Returns:
 
         """
+
+        def join_real_monitored_worktime_hour(df: pandas.DataFrame) -> pandas.DataFrame:
+            """
+            集計対象タスクに影響されない実際の計測作業時間を、引数`df`に結合して、そのたDataFrameを返します。
+            """
+            df_agg_worktime = df_worktime_per_date.pivot_table(
+                values=[
+                    "monitored_worktime_hour",
+                    "monitored_annotation_worktime_hour",
+                    "monitored_inspection_worktime_hour",
+                    "monitored_acceptance_worktime_hour",
+                ],
+                index="account_id",
+                aggfunc="sum",
+            )
+
+            df_agg_worktime.columns = pandas.MultiIndex.from_tuples(
+                [
+                    ("real_monitored_worktime_hour", "sum"),
+                    ("real_monitored_worktime_hour", "annotation"),
+                    ("real_monitored_worktime_hour", "inspection"),
+                    ("real_monitored_worktime_hour", "acceptance"),
+                ]
+            )
+
+            return df.join(df_agg_worktime)
 
         def join_various_counts(df: pandas.DataFrame) -> pandas.DataFrame:
             """
@@ -344,6 +373,9 @@ class UserPerformance:
         )
         if len(phase_list) == 0:
             df[("monitored_worktime_hour", TaskPhase.ANNOTATION.value)] = 0
+
+        # 実際の計測作業時間情報（集計タスクに影響されない作業時間）を結合する
+        df = join_real_monitored_worktime_hour(df)
 
         # 生産量などの情報をdfに結合する
         df = join_various_counts(df)
