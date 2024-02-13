@@ -96,6 +96,14 @@ class UserPerformance:
         """
         ユーザーの生産性に関する列を、DataFrameに追加します。
         """
+        df[("real_monitored_worktime_hour/real_actual_worktime_hour", "sum")] = (
+            df[("real_monitored_worktime_hour", "sum")] / df[("real_actual_worktime_hour", "sum")]
+        )
+        df[("actual_worktime_hour", "sum")] = (
+            df[("real_actual_worktime_hour", "sum")]
+            * df[("real_monitored_worktime_hour/real_actual_worktime_hour", "sum")]
+        )
+
         for phase in phase_list:
 
             def get_monitored_worktime_ratio(row: pandas.Series) -> float:
@@ -188,6 +196,7 @@ class UserPerformance:
             ("input_data_count", "annotation"): "float64",
             ("annotation_count", "annotation"): "float64",
             ("real_actual_worktime_hour", "sum"): "float64",
+            ("real_monitored_worktime_hour/real_actual_worktime_hour", "sum"): "float64",
             ("actual_worktime_hour", "sum"): "float64",
             ("actual_worktime_hour", "annotation"): "float64",
             ("pointed_out_inspection_comment_count", "annotation"): "float64",
@@ -357,6 +366,7 @@ class UserPerformance:
             .fillna(0)
         )
 
+        # TODO 見直す。 `df_labor`は不要だと思う
         if df_labor is not None and len(df_labor) > 0:
             df_agg_labor = df_labor.pivot_table(values="actual_worktime_hour", index="account_id", aggfunc="sum")
             df_tmp = df_labor[df_labor["actual_worktime_hour"] > 0].pivot_table(
@@ -528,7 +538,11 @@ class UserPerformance:
             + [("annotation_count", phase) for phase in phase_list]
         )
 
-        actual_worktime_columns = [("real_actual_worktime_hour", "sum"), ("actual_worktime_hour", "sum")] + [
+        real_actual_worktime_columns = [
+            ("real_actual_worktime_hour", "sum"),
+            ("real_monitored_worktime_hour/real_actual_worktime_hour", "sum"),
+        ]
+        actual_worktime_columns = [("actual_worktime_hour", "sum")] + [
             ("actual_worktime_hour", phase) for phase in phase_list
         ]
 
@@ -554,6 +568,7 @@ class UserPerformance:
             real_monitored_worktime_columns
             + monitored_worktime_columns
             + production_columns
+            + real_actual_worktime_columns
             + actual_worktime_columns
             + productivity_columns
             + inspection_comment_columns
@@ -658,6 +673,10 @@ class UserPerformance:
         """
         # ゼロ割の警告を無視する
         with numpy.errstate(divide="ignore", invalid="ignore"):
+            series[("real_monitored_worktime_hour/real_actual_worktime_hour", "sum")] = (
+                series[("real_monitored_worktime_hour", "sum")] / series[("real_actual_worktime_hour", "sum")]
+            )
+
             for phase in phase_list:
                 # Annofab時間の比率を算出
                 # 計測作業時間の合計値が0により、monitored_worktime_ratioはnanになる場合は、教師付の実績作業時間を実績作業時間の合計値になるようなmonitored_worktime_ratioに変更する
