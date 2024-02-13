@@ -54,7 +54,6 @@ def get_project_output_dir(project_title: str) -> str:
 
 
 class WriteCsvGraph:
-
     def __init__(
         self,
         service: annofabapi.Resource,
@@ -81,7 +80,7 @@ class WriteCsvGraph:
 
         self.task_df: Optional[pandas.DataFrame] = None
         self.task_history_df: Optional[pandas.DataFrame] = None
-        self.worktime_per_date:Optional[WorktimePerDate] = None
+        self.worktime_per_date: Optional[WorktimePerDate] = None
 
     def _catch_exception(self, function: Callable[..., Any]) -> Callable[..., Any]:
         """

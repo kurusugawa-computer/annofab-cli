@@ -148,9 +148,12 @@ class UserPerformance:
 
     @staticmethod
     def get_phase_list(columns: list[tuple[str, str]]) -> list[str]:
-        # multiindexの2段目を取得する
-        tmp_set = {c[1] for c in columns}
+        """
+        サポートしているフェーズのlistを取得します。
+        `monitored_worktime_hour`列情報を見て、サポートしているフェーズを判断します。
 
+        """
+        tmp_set = {c1 for c0, c1 in columns if c0 == "monitored_worktime_hour"}
         phase_list = []
 
         for phase in TaskPhase:
@@ -335,14 +338,14 @@ class UserPerformance:
         # 受入作業が実施されていないのに、"acceptance"列が存在すると、bokehなどでwarningが発生する。それを回避するため
         df_agg_task_history = (
             df_task_history[df_task_history["worktime_hour"] > 0]
-            .pivot_table(values="worktime_hour", columns="phase", index="account_id", aggfunc=numpy.sum)
+            .pivot_table(values="worktime_hour", columns="phase", index="account_id", aggfunc="sum")
             .fillna(0)
         )
 
         if df_labor is not None and len(df_labor) > 0:
-            df_agg_labor = df_labor.pivot_table(values="actual_worktime_hour", index="account_id", aggfunc=numpy.sum)
+            df_agg_labor = df_labor.pivot_table(values="actual_worktime_hour", index="account_id", aggfunc="sum")
             df_tmp = df_labor[df_labor["actual_worktime_hour"] > 0].pivot_table(
-                values="date", index="account_id", aggfunc=numpy.max
+                values="date", index="account_id", aggfunc="max"
             )
             if len(df_tmp) > 0:
                 df_agg_labor["last_working_date"] = df_tmp
@@ -457,7 +460,7 @@ class UserPerformance:
         # DataFrameを一旦Seriesに変換することで、列の型情報がすべてobjectになるので、再度正しい列の型に変換する
         sum_df = UserPerformance._convert_column_dtypes(sum_df)
 
-        phase_list = UserPerformance.get_phase_list(list(sum_df["monitored_worktime_hour"].columns))
+        phase_list = UserPerformance.get_phase_list(sum_df.columns)
         UserPerformance._add_ratio_column_for_productivity_per_user(sum_df, phase_list=phase_list)
         sum_df.sort_values(["user_id"], inplace=True)
         return UserPerformance(sum_df)
