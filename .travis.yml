@@ -1,38 +1,25 @@
 language: python
+dist: focal
+
+script:
+  - poetry run pytest -n auto -m "not access_webapi"
 
 jobs:
   include:
-    - name: Run test
-      os: linux
-      dist: focal
-      python: 3.8
+    - python: 3.8
+    - python: 3.9
+    - python: 3.10
+    - python: 3.11
       script:
         - poetry run pytest -n auto -m "not access_webapi"
-    - name: Run test
-      os: linux
-      dist: focal
-      python: 3.9
-      script:
-        - poetry run pytest -n auto -m "not access_webapi"
-    - name: Run test
-      os: linux
-      dist: focal
-      python: 3.10
-      script:
-        - poetry run pytest -n auto -m "not access_webapi"
-    - name: Run test and lint
-      os: linux
-      dist: focal
-      python: 3.11
-      script:
-        - poetry run pytest -n auto -m "not access_webapi"
-        # 最新バージョンではlintを実行する
+        # 開発環境と同じバージョンではlintを実行する
         - make lint
+    - python: 3.12
+
     # Windowsは最新のPythonバージョンのみテストする。
     # 最新でないPythonバージョンのテストはすでに実施できているので。
     # このテストはWindows特有のバグが発生しないことを確認する
-    - name: Run test
-      os: windows
+    - os: windows
       python: 3.11
       language: shell  # 'language: python' is an error on Travis CI Windows
       install:
@@ -44,7 +31,7 @@ jobs:
         - export PYTHON_KEYRING_BACKEND=keyring.backends.null.Keyring
         # UTF-8 Modeを利用する。これを設定しないと、"UnicodeEncodeError: 'charmap' codec can't encode characters in position 128-135: character maps to <undefined>"というエラーが発生する
         - export PYTHONUTF8=1
-        - travis_retry poetry install --only main,linter,test
+        - travis_retry poetry install
       script:
         - poetry run pytest -n auto -m "not access_webapi"
       env: PATH=/c/Python311:/c/Python311/Scripts:$PATH PIP_DEFAULT_TIMEOUT=300 ANNOFAB_USER_ID=foo ANNOFAB_PASSWORD=bar
@@ -53,8 +40,7 @@ install:
   # pipをアップグレードする理由: pipのバージョンが古いと、pillowなど環境ごとにwheelを提供しているライブラリのインストールに失敗する可能性があるため
   - pip install pip --upgrade
   - pip install "poetry<1.8"
-  # 必要なライブラリだけインストールする
-  - travis_retry poetry install --only main,linter,test
+  - travis_retry poetry install
 
 branches:
   only:
