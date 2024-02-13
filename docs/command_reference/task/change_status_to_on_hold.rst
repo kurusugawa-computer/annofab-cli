@@ -28,7 +28,7 @@ Examples
 
 .. code-block::
 
-    $ annofabcli task change_operator_to_on_hold --project_id prj1 --task_id t1
+    $ annofabcli task change_status_to_on_hold --project_id prj1 --task_id t1
 
 
 保留コメントの付与
@@ -38,7 +38,7 @@ Examples
 
 .. code-block::
 
-    $ annofabcli task change_operator_to_on_hold --project_id prj1 --task_id t1 \
+    $ annofabcli task change_status_to_on_hold --project_id prj1 --task_id t1 \
      --comment 画像が壊れているため作業できません
 
 
@@ -54,7 +54,7 @@ Examples
 
 .. code-block::
 
-    $ annofabcli task change_operator_to_on_hold --project_id prj1 --task_id file://task_id.txt \
+    $ annofabcli task change_status_to_on_hold --project_id prj1 --task_id file://task_id.txt \
      --task_query '{"phase":"acceptance"}'
 
 
@@ -66,7 +66,7 @@ Examples
 
 .. code-block::
 
-    $  annofabcli task change_operator_to_on_hold --project_id prj1 --task_id file://task.txt \
+    $  annofabcli task change_status_to_on_hold --project_id prj1 --task_id file://task.txt \
     --parallelism 4 --yes
 
 
@@ -74,7 +74,7 @@ Usage Details
 =================================
 
 .. argparse::
-   :ref: annofabcli.task.change_operator_to_on_hold.add_parser
+   :ref: annofabcli.task.change_status_to_on_hold.add_parser
    :prog: annofabcli task
    :nosubcommands:
    :nodefaultconst:
