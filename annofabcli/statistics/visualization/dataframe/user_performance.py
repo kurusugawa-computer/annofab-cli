@@ -429,9 +429,12 @@ class UserPerformance:
 
         def merge_row(row1: pandas.Series, row2: pandas.Series) -> pandas.Series:
             string_column_list = ["username", "biography", "last_working_date"]
-            sum_row = row1.drop(labels=string_column_list, level=0).fillna(0) + row2.drop(
+            # `string_column_list`に対応する列は加算できないので、除外した上で加算する
+            # `infer_objects(copy=False)`を実行している理由：以下の警告に対応するため
+            # FutureWarning: Downcasting object dtype arrays on .fillna, .ffill, .bfill is deprecated and will change in a future version.  # noqa: E501
+            sum_row = row1.drop(labels=string_column_list, level=0).infer_objects(copy=False).fillna(0) + row2.drop(
                 labels=string_column_list, level=0
-            ).fillna(0)
+            ).infer_objects(copy=False).fillna(0)
 
             sum_row.loc["username", ""] = row1.loc["username", ""]
             sum_row.loc["biography", ""] = row1.loc["biography", ""]
