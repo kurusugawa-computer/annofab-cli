@@ -9,26 +9,6 @@
     "ruff.path": [
         ".venv/bin/ruff"
     ],
-    "python.formatting.blackPath": ".venv/bin/black",
-    "python.formatting.provider": "black",
-    "python.linting.enabled": true,
-    "python.linting.lintOnSave": true,
-    "python.linting.pylintEnabled": true,
-    "python.linting.pylintPath": ".venv/bin/pylint",
-    "python.linting.mypyEnabled": true,
-    "python.linting.mypyPath": ".venv/bin/mypy",
-    "python.linting.mypyArgs": [],
-    "python.linting.banditEnabled": false,
-    "python.linting.pylamaEnabled": false,
-    "python.linting.prospectorEnabled": false,
-    "python.linting.pydocstyleEnabled": false,
-    "python.linting.pycodestyleEnabled": false,
-    "python.linting.ignorePatterns": [
-        ".vscode/*.py",
-        "**/site-packages/**/*.py",
-        "docs/**/*.py",
-        "tests/**/*.py",
-    ],
     "python.analysis.extraPaths": [
         ".venv/lib/python3.11/site-packages/"
     ],
@@ -49,8 +29,8 @@
         ".devcontainer/venv/": true
     },
     "editor.minimap.enabled": false,
-    "ruff.args": [
+    "ruff.lint.args": [
         "--config=pyproject.toml"
     ],
-    
+
 }
