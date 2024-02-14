@@ -1,4 +1,8 @@
-﻿monitored_worktime_hour,annotation,699.5509044444445
+﻿real_monitored_worktime_hour,sum,1567.3623775000003
+real_monitored_worktime_hour,annotation,699.5509044444445
+real_monitored_worktime_hour,inspection,560.3284872222223
+real_monitored_worktime_hour,acceptance,307.4829858333335
+monitored_worktime_hour,annotation,699.5509044444445
 monitored_worktime_hour,inspection,560.3284872222223
 monitored_worktime_hour,acceptance,307.4829858333335
 monitored_worktime_hour,sum,1567.3623775000003
@@ -14,6 +18,7 @@ input_data_count,acceptance,9574.0
 annotation_count,annotation,112816.0
 annotation_count,inspection,112816.0
 annotation_count,acceptance,102200.0
+real_actual_worktime_hour,sum,1667.1500000000005
 actual_worktime_hour,sum,1667.1500000000005
 actual_worktime_hour,annotation,744.0884808047882
 actual_worktime_hour,inspection,596.0023354411084

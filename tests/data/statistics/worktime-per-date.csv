@@ -1,0 +1,4 @@
+date,account_id,user_id,username,biography,actual_worktime_hour,monitored_worktime_hour,monitored_annotation_worktime_hour,monitored_inspection_worktime_hour,monitored_acceptance_worktime_hour
+2021/11/1,alice,alice,Alice,U.S.,3,2.357476389,2.357476389,0,0
+2021/11/1,bob,bob,Bob,Japan,5,4.376513889,3.433653333,0,0.942860556
+2021/11/2,alice,alice,Alice,U.S.,3,2.332470833,2.332470833,0,0
