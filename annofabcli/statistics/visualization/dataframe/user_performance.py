@@ -259,12 +259,18 @@ class UserPerformance:
 
         def join_stdev(df: pandas.DataFrame) -> pandas.DataFrame:
             """
-            標準偏差を結合する
+            単位量あたり作業時間の標準偏差の情報を結合する。
             """
             if len(df_worktime_ratio) == 0:
-                # 集計対象のタスクが0件の場合など
-                # TODO
-                return df
+                # 集計対象のタスクが0件のとき
+                # `to_csv()`で出力したときにKeyErrorが発生内容にするため、事前に列を追加しておく
+                phase = TaskPhase.ANNOTATION.value
+                df2 = df.copy()
+                df2[("stdev__monitored_worktime_hour/input_data_count", phase)] = numpy.nan
+                df2[("stdev__monitored_worktime_hour/annotation_count", phase)] = numpy.nan
+                df2[("stdev__actual_worktime_hour/input_data_count", phase)] = numpy.nan
+                df2[("stdev__actual_worktime_hour/annotation_count", phase)] = numpy.nan
+                return df2
 
             df_worktime_ratio2 = df_worktime_ratio.copy()
             df_worktime_ratio2["worktime_hour/input_data_count"] = (
@@ -499,6 +505,26 @@ class UserPerformance:
 
     @staticmethod
     def merge(obj1: UserPerformance, obj2: UserPerformance) -> UserPerformance:
+        def get_addable_columns(df: pandas.DataFrame) -> list[tuple[str, str]]:
+            """
+            加算可能な列を取得する。たとえば以下の情報である。
+                * 作業時間
+                * 生産量
+                * 指摘数、差し戻し回数
+            """
+            level0_columns = [
+                "real_monitored_worktime_hour",
+                "monitored_worktime_hour",
+                "task_count",
+                "input_data_count",
+                "annotation_count",
+                "real_actual_worktime_hour",
+                "actual_worktime_hour",
+                "pointed_out_inspection_comment_count",
+                "rejected_count",
+            ]
+            return [(c0, c1) for c0, c1 in df.columns if c0 in level0_columns]
+
         def max_last_working_date(date1: Union[float, str], date2: Union[float, str]) -> Union[float, str]:
             """
             最新の作業日の新しい方を返す。
@@ -517,13 +543,11 @@ class UserPerformance:
                 return max_date
 
         def merge_row(row1: pandas.Series, row2: pandas.Series) -> pandas.Series:
-            string_column_list = ["user_id", "username", "biography", "last_working_date"]
-            # `string_column_list`に対応する列は加算できないので、除外した上で加算する
             # `infer_objects(copy=False)`を実行している理由：以下の警告に対応するため
             # FutureWarning: Downcasting object dtype arrays on .fillna, .ffill, .bfill is deprecated and will change in a future version.  # noqa: E501
-            sum_row = row1.drop(labels=string_column_list, level=0).infer_objects(copy=False).fillna(0) + row2.drop(
-                labels=string_column_list, level=0
-            ).infer_objects(copy=False).fillna(0)
+            sum_row = row1[addable_columns].infer_objects(copy=False).fillna(0) + row2[addable_columns].infer_objects(
+                copy=False
+            ).fillna(0)
 
             sum_row.loc["user_id", ""] = row1.loc["user_id", ""]
             sum_row.loc["username", ""] = row1.loc["username", ""]
@@ -538,7 +562,17 @@ class UserPerformance:
 
         account_id_set = set(df1["account_id"]) | set(df2["account_id"])
         sum_df = df1.set_index("account_id").copy()
-        added_df = df2.set_index("account_id")
+        added_df = df2.set_index("account_id").copy()
+
+        # 加算可能な列を求める（df1とdf2で対象フェーズが異なる場合があるので、集合和を求める）
+        addable_columns = list(set(get_addable_columns(df1)) + set(get_addable_columns(df2)))
+
+        # 加算できるように、加算可能な列が存在しないときは事前に追加しておく
+        for column in addable_columns:
+            if column not in sum_df.columns:
+                sum_df[column] = 0
+            if column not in added_df.columns:
+                added_df[column] = 0
 
         for account_id in account_id_set:
             if account_id not in added_df.index:

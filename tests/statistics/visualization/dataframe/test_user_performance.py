@@ -83,16 +83,23 @@ class TestUserPerformance:
             performance_unit=PerformanceUnit.INPUT_DATA_COUNT,
         )
 
-    def test_get_summary(self):
+    def test__get_summary(self):
         ser = self.obj.get_summary()
-        assert int(ser[("task_count", "annotation")]) == 45481
+        assert int(ser[("task_count", "annotation")]) == 470
 
-    def test_merge(self):
+    def test__merge(self):
         merged_obj = UserPerformance.merge(self.obj, self.obj)
-        row = merged_obj.df[merged_obj.df["user_id"] == "KD"].iloc[0]
-        assert row[("task_count", "annotation")] == 30
+        # 先頭行のみチェックする
+        row = merged_obj.df[merged_obj.df["user_id"] == "MI"].iloc[0]
+        assert row[("task_count", "annotation")] == 38 * 2
 
-    def test_empty(self):
+    def test__merge__emptyオブジェクトに対してマージ(self):
+        empty = UserPerformance.empty()
+        merged_obj = UserPerformance.merge(empty, self.obj)
+        row = merged_obj.df[merged_obj.df["user_id"] == "MI"].iloc[0]
+        assert row[("task_count", "annotation")] == 38
+
+    def test__get_summary__emptyオブジェクトに対して(self):
         empty = UserPerformance.empty()
         assert empty.is_empty()
         summary = empty.get_summary()
@@ -100,10 +107,6 @@ class TestUserPerformance:
         assert summary[("monitored_worktime_hour", "annotation")] == 0
         assert summary[("actual_worktime_hour", "annotation")] == 0
         assert summary[("monitored_worktime_ratio", "annotation")] == 1
-
-        merged_obj = UserPerformance.merge(empty, self.obj)
-        row = merged_obj.df[merged_obj.df["user_id"] == "KD"].iloc[0]
-        assert row[("task_count", "annotation")] == 15
 
 
 class TestWholePerformance:
