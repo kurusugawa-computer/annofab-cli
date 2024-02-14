@@ -224,6 +224,41 @@ class UserPerformance:
         """実績作業時間が入力されているか否か"""
         return self.df[("actual_worktime_hour", "sum")].sum() > 0
 
+    @staticmethod
+    def create_df_stdev_worktime(df_worktime_ratio: pandas.DataFrame) -> pandas.DataFrame:
+        """
+        単位量あたり作業時間の標準偏差のDataFrameを生成する
+
+        TODO 重複しているので見直す
+        """
+        df_worktime_ratio2 = df_worktime_ratio.copy()
+        df_worktime_ratio2["worktime_hour/input_data_count"] = (
+            df_worktime_ratio2["worktime_hour"] / df_worktime_ratio2["input_data_count"]
+        )
+        df_worktime_ratio2["worktime_hour/annotation_count"] = (
+            df_worktime_ratio2["worktime_hour"] / df_worktime_ratio2["annotation_count"]
+        )
+
+        # 母標準偏差を算出する
+        df_stdev = df_worktime_ratio2.groupby(["account_id", "phase"])[
+            ["worktime_hour/input_data_count", "worktime_hour/annotation_count"]
+        ].std(ddof=0)
+
+        df_stdev2 = pandas.pivot_table(
+            df_stdev,
+            values=["worktime_hour/input_data_count", "worktime_hour/annotation_count"],
+            index="account_id",
+            columns="phase",
+        )
+        df_stdev3 = df_stdev2.rename(
+            columns={
+                "worktime_hour/input_data_count": "stdev__monitored_worktime_hour/input_data_count",
+                "worktime_hour/annotation_count": "stdev__monitored_worktime_hour/annotation_count",
+            }
+        )
+
+        return df_stdev3
+
     @classmethod
     def from_df(
         cls,
@@ -257,7 +292,7 @@ class UserPerformance:
 
         """
 
-        def join_stdev(df: pandas.DataFrame) -> pandas.DataFrame:
+        def join_stdev_worktime(df: pandas.DataFrame) -> pandas.DataFrame:
             """
             単位量あたり作業時間の標準偏差の情報を結合する。
             """
@@ -465,7 +500,7 @@ class UserPerformance:
         # 実際の計測作業時間情報（集計タスクに影響されない作業時間）を結合する
         df = join_real_monitored_worktime_hour(df)
 
-        df = join_stdev(df)
+        df = join_stdev_worktime(df)
 
         # 生産量などの情報をdfに結合する
         df = join_various_counts(df)
@@ -504,7 +539,10 @@ class UserPerformance:
         return df.astype(dtypes)
 
     @staticmethod
-    def merge(obj1: UserPerformance, obj2: UserPerformance) -> UserPerformance:
+    def merge(obj1: UserPerformance, obj2: UserPerformance, df_worktime_ratio: pandas.DataFrame) -> UserPerformance:
+        """
+        TODO 引数を見直す
+        """
         def get_addable_columns(df: pandas.DataFrame) -> list[tuple[str, str]]:
             """
             加算可能な列を取得する。たとえば以下の情報である。
@@ -542,52 +580,66 @@ class UserPerformance:
             else:
                 return max_date
 
-        def merge_row(row1: pandas.Series, row2: pandas.Series) -> pandas.Series:
-            # `infer_objects(copy=False)`を実行している理由：以下の警告に対応するため
-            # FutureWarning: Downcasting object dtype arrays on .fillna, .ffill, .bfill is deprecated and will change in a future version.  # noqa: E501
-            sum_row = row1[addable_columns].infer_objects(copy=False).fillna(0) + row2[addable_columns].infer_objects(
-                copy=False
-            ).fillna(0)
+        # def merge_row(row1: pandas.Series, row2: pandas.Series) -> pandas.Series:
+        #     # `infer_objects(copy=False)`を実行している理由：以下の警告に対応するため
+        #     # FutureWarning: Downcasting object dtype arrays on .fillna, .ffill, .bfill is deprecated and will change in a future version.  # noqa: E501
+        #     sum_row = row1[addable_columns].infer_objects(copy=False).fillna(0) + row2[addable_columns].infer_objects(
+        #         copy=False
+        #     ).fillna(0)
 
-            sum_row.loc["user_id", ""] = row1.loc["user_id", ""]
-            sum_row.loc["username", ""] = row1.loc["username", ""]
-            sum_row.loc["biography", ""] = row1.loc["biography", ""]
-            sum_row.loc["last_working_date", ""] = max_last_working_date(
-                row1.loc["last_working_date", ""], row2.loc["last_working_date", ""]
-            )
-            return sum_row
+        #     sum_row.loc["user_id", ""] = row1.loc["user_id", ""]
+        #     sum_row.loc["username", ""] = row1.loc["username", ""]
+        #     sum_row.loc["biography", ""] = row1.loc["biography", ""]
+        #     sum_row.loc["last_working_date", ""] = max_last_working_date(
+        #         row1.loc["last_working_date", ""], row2.loc["last_working_date", ""]
+        #     )
+        #     return sum_row
 
         df1 = obj1.df
         df2 = obj2.df
 
         account_id_set = set(df1["account_id"]) | set(df2["account_id"])
+
+        # 加算可能な列のみ残す
         sum_df = df1.set_index("account_id").copy()
+        sum_df = sum_df[get_addable_columns(sum_df)]
         added_df = df2.set_index("account_id").copy()
+        added_df = added_df[get_addable_columns(added_df)]
 
-        # 加算可能な列を求める（df1とdf2で対象フェーズが異なる場合があるので、集合和を求める）
-        addable_columns = list(set(get_addable_columns(df1)) + set(get_addable_columns(df2)))
+        # pandas.DataFrame.addで加算できるようにまとめる
+        sum_df = sum_df.add(added_df, fill_value=0)
 
-        # 加算できるように、加算可能な列が存在しないときは事前に追加しておく
-        for column in addable_columns:
-            if column not in sum_df.columns:
-                sum_df[column] = 0
-            if column not in added_df.columns:
-                added_df[column] = 0
+        df_user = pandas.concat([df1, df2]).drop_duplicates(subset=[("account_id",""), ("user_id",""), ("username",""), ("biography","")])
+        df_user = df_user[[("account_id",""), ("user_id",""), ("username",""), ("biography","")]].set_index("account_id")
+        sum_df = sum_df.join(df_user)
 
-        for account_id in account_id_set:
-            if account_id not in added_df.index:
-                continue
+        df_stdev = UserPerformance.create_df_stdev_worktime(df_worktime_ratio)
+        sum_df = sum_df.join(df_stdev)
+        # # # 加算可能な列を求める（df1とdf2で対象フェーズが異なる場合があるので、集合和を求める）
+        # # addable_columns = list(set(get_addable_columns(df1)) + set(get_addable_columns(df2)))
 
-            if account_id in sum_df.index:
-                sum_df.loc[account_id] = merge_row(sum_df.loc[account_id], added_df.loc[account_id])
-            else:
-                sum_df.loc[account_id] = added_df.loc[account_id]
+        # # # 加算できるように、加算可能な列が存在しないときは事前に追加しておく
+        # # for column in addable_columns:
+        # #     if column not in sum_df.columns:
+        # #         sum_df[column] = 0
+        # #     if column not in added_df.columns:
+        # #         added_df[column] = 0
+
+        # for account_id in account_id_set:
+        #     if account_id not in added_df.index:
+        #         continue
+
+        #     if account_id in sum_df.index:
+        #         sum_df.loc[account_id] = merge_row(sum_df.loc[account_id], added_df.loc[account_id])
+        #     else:
+        #         sum_df.loc[account_id] = added_df.loc[account_id]
 
         sum_df.reset_index(inplace=True)
-        # DataFrameを一旦Seriesに変換することで、列の型情報がすべてobjectになるので、再度正しい列の型に変換する
-        sum_df = UserPerformance._convert_column_dtypes(sum_df)
+        # # DataFrameを一旦Seriesに変換することで、列の型情報がすべてobjectになるので、再度正しい列の型に変換する
+        # sum_df = UserPerformance._convert_column_dtypes(sum_df)
 
         phase_list = UserPerformance.get_phase_list(sum_df.columns)
+        print(f"{sum_df.columns=}")
         UserPerformance._add_ratio_column_for_productivity_per_user(sum_df, phase_list=phase_list)
 
         return UserPerformance(sum_df.sort_values(["user_id"]))
@@ -683,7 +735,8 @@ class UserPerformance:
             ("user_id", ""),
             ("username", ""),
             ("biography", ""),
-            ("last_working_date", ""),
+            # TODO あとで元に戻す
+            # ("last_working_date", ""),
         ]
         columns = user_columns + value_columns
 

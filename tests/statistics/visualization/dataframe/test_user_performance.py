@@ -88,14 +88,16 @@ class TestUserPerformance:
         assert int(ser[("task_count", "annotation")]) == 470
 
     def test__merge(self):
-        merged_obj = UserPerformance.merge(self.obj, self.obj)
+        df_worktime_ratio = pandas.read_csv(str(data_dir / "annotation-count-ratio-df-empty.csv"))
+        merged_obj = UserPerformance.merge(self.obj, self.obj, df_worktime_ratio)
         # 先頭行のみチェックする
         row = merged_obj.df[merged_obj.df["user_id"] == "MI"].iloc[0]
         assert row[("task_count", "annotation")] == 38 * 2
 
     def test__merge__emptyオブジェクトに対してマージ(self):
+        df_worktime_ratio = pandas.read_csv(str(data_dir / "annotation-count-ratio-df-empty.csv"))
         empty = UserPerformance.empty()
-        merged_obj = UserPerformance.merge(empty, self.obj)
+        merged_obj = UserPerformance.merge(empty, self.obj, df_worktime_ratio)
         row = merged_obj.df[merged_obj.df["user_id"] == "MI"].iloc[0]
         assert row[("task_count", "annotation")] == 38
 

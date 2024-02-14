@@ -40,7 +40,7 @@ def merge_visualization_dir(  # pylint: disable=too-many-statements
     minimal_output: bool = False,
 ):
     @_catch_exception
-    def execute_merge_performance_per_user():
+    def execute_merge_performance_per_user(task_worktime_list: TaskWorktimeByPhaseUser):
         merged_user_performance: Optional[UserPerformance] = None
         for project_dir in project_dir_list:
             try:
@@ -52,7 +52,7 @@ def merge_visualization_dir(  # pylint: disable=too-many-statements
             if merged_user_performance is None:
                 merged_user_performance = user_performance
             else:
-                merged_user_performance = UserPerformance.merge(merged_user_performance, user_performance)
+                merged_user_performance = UserPerformance.merge(merged_user_performance, user_performance, df_worktime_ratio=task_worktime_list.df)
 
         if merged_user_performance is not None:
             output_project_dir.write_user_performance(merged_user_performance)
@@ -141,7 +141,7 @@ def merge_visualization_dir(  # pylint: disable=too-many-statements
             return None
 
     @_catch_exception
-    def merge_task_worktime_list() -> None:
+    def merge_task_worktime_list() -> TaskWorktimeByPhaseUser:
         tmp_list: list[TaskWorktimeByPhaseUser] = []
         for project_dir in project_dir_list:
             try:
@@ -154,7 +154,7 @@ def merge_visualization_dir(  # pylint: disable=too-many-statements
         if len(tmp_list) > 0:
             merged_obj = TaskWorktimeByPhaseUser.merge(*tmp_list)
             output_project_dir.write_task_worktime_list(merged_obj)
-
+            return merged_obj
         else:
             logger.warning(f"マージ対象のタスク情報は存在しないため、'{output_project_dir.FILENAME_TASK_WORKTIME_LIST}'は出力しません。")
 
@@ -221,11 +221,13 @@ def merge_visualization_dir(  # pylint: disable=too-many-statements
             acceptor_per_date_obj, phase=TaskPhase.ACCEPTANCE, user_id_list=user_id_list
         )
 
-    execute_merge_performance_per_user()
     execute_merge_performance_per_date()
     merge_performance_per_first_annotation_started_date()
     merge_worktime_per_date()
-    merge_task_worktime_list()
+    task_worktime_list = merge_task_worktime_list()
+    print(f"{task_worktime_list.df=}")
+    print(f"{task_worktime_list.df.columns=}")
+    execute_merge_performance_per_user(task_worktime_list)
     task = merge_task_list()
     if task is not None:
         write_cumulative_line_graph(task)
