@@ -99,9 +99,13 @@ class UserPerformance:
         df[("real_monitored_worktime_hour/real_actual_worktime_hour", "sum")] = (
             df[("real_monitored_worktime_hour", "sum")] / df[("real_actual_worktime_hour", "sum")]
         )
+
+        # TODO
+        # 集計対象タスクから算出した計測作業時間（`monitored_worktime_hour`）に対応する実績作業時間を推定で算出する
+        # 具体的には、実際の計測作業時間と十先作業時間の比（`real_monitored_worktime_hour/real_actual_worktime_hour`）になるように按分する
         df[("actual_worktime_hour", "sum")] = (
-            df[("real_actual_worktime_hour", "sum")]
-            * df[("real_monitored_worktime_hour/real_actual_worktime_hour", "sum")]
+            df[("monitored_worktime_hour", "sum")]
+            / df[("real_monitored_worktime_hour/real_actual_worktime_hour", "sum")]
         )
 
         for phase in phase_list:
@@ -143,6 +147,16 @@ class UserPerformance:
             )
             df[("actual_worktime_hour/annotation_count", phase)] = (
                 df[("actual_worktime_hour", phase)] / df[("annotation_count", phase)]
+            )
+
+            ratio__actual_vs_monitored_worktime = (
+                df[("actual_worktime_hour", phase)] / df[("monitored_worktime_hour", phase)]
+            )
+            df[("stdev__actual_worktime_hour/input_data_count", phase)] = (
+                df[("stdev__monitored_worktime_hour/input_data_count", phase)] * ratio__actual_vs_monitored_worktime
+            )
+            df[("stdev__actual_worktime_hour/annotation_count", phase)] = (
+                df[("stdev__monitored_worktime_hour/annotation_count", phase)] * ratio__actual_vs_monitored_worktime
             )
 
         phase = TaskPhase.ANNOTATION.value
@@ -242,6 +256,43 @@ class UserPerformance:
         Returns:
 
         """
+
+        def join_stdev(df: pandas.DataFrame) -> pandas.DataFrame:
+            """
+            標準偏差を結合する
+            """
+            if len(df_worktime_ratio) == 0:
+                # 集計対象のタスクが0件の場合など
+                # TODO
+                return df
+
+            df_worktime_ratio2 = df_worktime_ratio.copy()
+            df_worktime_ratio2["worktime_hour/input_data_count"] = (
+                df_worktime_ratio2["worktime_hour"] / df_worktime_ratio2["input_data_count"]
+            )
+            df_worktime_ratio2["worktime_hour/annotation_count"] = (
+                df_worktime_ratio2["worktime_hour"] / df_worktime_ratio2["annotation_count"]
+            )
+
+            # 母標準偏差を算出する
+            df_stdev = df_worktime_ratio2.groupby(["account_id", "phase"])[
+                ["worktime_hour/input_data_count", "worktime_hour/annotation_count"]
+            ].std(ddof=0)
+
+            df_stdev2 = pandas.pivot_table(
+                df_stdev,
+                values=["worktime_hour/input_data_count", "worktime_hour/annotation_count"],
+                index="account_id",
+                columns="phase",
+            )
+            df_stdev3 = df_stdev2.rename(
+                columns={
+                    "worktime_hour/input_data_count": "stdev__monitored_worktime_hour/input_data_count",
+                    "worktime_hour/annotation_count": "stdev__monitored_worktime_hour/annotation_count",
+                }
+            )
+
+            return df.join(df_stdev3)
 
         def join_real_monitored_worktime_hour(df: pandas.DataFrame) -> pandas.DataFrame:
             """
@@ -408,6 +459,8 @@ class UserPerformance:
         # 実際の計測作業時間情報（集計タスクに影響されない作業時間）を結合する
         df = join_real_monitored_worktime_hour(df)
 
+        df = join_stdev(df)
+
         # 生産量などの情報をdfに結合する
         df = join_various_counts(df)
 
@@ -564,6 +617,13 @@ class UserPerformance:
             ("rejected_count/task_count", TaskPhase.ANNOTATION.value),
         ]
 
+        stdev_columns = (
+            [("stdev__monitored_worktime_hour/input_data_count", phase) for phase in phase_list]
+            + [("stdev__actual_worktime_hour/input_data_count", phase) for phase in phase_list]
+            + [("stdev__monitored_worktime_hour/annotation_count", phase) for phase in phase_list]
+            + [("stdev__actual_worktime_hour/annotation_count", phase) for phase in phase_list]
+        )
+
         prior_columns = (
             real_monitored_worktime_columns
             + monitored_worktime_columns
@@ -573,6 +633,7 @@ class UserPerformance:
             + productivity_columns
             + inspection_comment_columns
             + rejected_count_columns
+            + stdev_columns
         )
 
         return prior_columns
@@ -1175,6 +1236,20 @@ class WholePerformance:
         indexes = UserPerformance.get_productivity_columns(phase_list) + [
             ("working_user_count", phase) for phase in phase_list
         ]
+        # TODO 標準偏差は求められないので削除する
+        for phase in phase_list:
+            for key in [
+                "stdev__monitored_worktime_hour/input_data_count",
+                "stdev__monitored_worktime_hour/annotation_count",
+                "stdev__actual_worktime_hour/input_data_count",
+                "stdev__actual_worktime_hour/annotation_count",
+            ]:
+                try:
+                    indexes.remove((key, phase))
+                except ValueError:
+                    continue
+
+        indexes = [index for index in indexes if "stdev" not in index[0]]
         series = self.series[indexes]
 
         output_file.parent.mkdir(exist_ok=True, parents=True)
