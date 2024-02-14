@@ -343,7 +343,6 @@ class MaskUserInfo(AbstractCommandLineWithoutWebapiInterface):
         else:
             original_df = read_multiheader_csv(str(csv_path), header_row_count=csv_header)
 
-        print(original_df.columns)
         df = create_masked_user_info_df(
             df=original_df,
             not_masked_biography_set=not_masked_biography_set,
