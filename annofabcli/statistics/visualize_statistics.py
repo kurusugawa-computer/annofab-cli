@@ -137,7 +137,9 @@ class WriteCsvGraph:
         df_user = pandas.DataFrame(self.table_obj.project_members_dict.values())
 
         # タスク、フェーズ、ユーザごとの作業時間を出力する
-        task_worktime_obj = TaskWorktimeByPhaseUser.from_df(annotation_count_ratio_df, df_user, self.project_id)
+        task_worktime_obj = TaskWorktimeByPhaseUser.from_df(
+            annotation_count_ratio_df, df_user=df_user, df_task=self._get_task_df(), project_id=self.project_id
+        )
         self.project_dir.write_task_worktime_list(task_worktime_obj)
 
         user_performance = UserPerformance.from_df(
