@@ -7,7 +7,7 @@ from __future__ import annotations
 import logging
 from enum import Enum
 from pathlib import Path
-from typing import Optional, Union
+from typing import Optional
 
 import bokeh
 import bokeh.layouts
@@ -436,10 +436,7 @@ class UserPerformance:
             / df_agg_worktime[("real_actual_worktime_hour", "sum")]
         )
 
-
-
         return df_agg_worktime
-
 
     @staticmethod
     def _create_df_working_period(worktime_per_date: WorktimePerDate) -> pandas.DataFrame:
@@ -456,26 +453,20 @@ class UserPerformance:
                     ("working_days", "")
         """
         df = worktime_per_date.df
-        df_max = df[df["monitored_worktime_hour"] > 0].pivot_table(
-            values="date", index="account_id", aggfunc="max"
-        )
-        df_max = df_max.rename(columns={"date":"last_working_date"})
+        df_max = df[df["monitored_worktime_hour"] > 0].pivot_table(values="date", index="account_id", aggfunc="max")
+        df_max = df_max.rename(columns={"date": "last_working_date"})
 
-        df_min = df[df["monitored_worktime_hour"] > 0].pivot_table(
-            values="date", index="account_id", aggfunc="min"
-        )
-        df_min = df_min.rename(columns={"date":"first_working_date"})
+        df_min = df[df["monitored_worktime_hour"] > 0].pivot_table(values="date", index="account_id", aggfunc="min")
+        df_min = df_min.rename(columns={"date": "first_working_date"})
 
-        df_count = df[df["monitored_worktime_hour"] > 0].pivot_table(
-            values="date", index="account_id", aggfunc="count"
-        )
-        df_count = df_count.rename(columns={"date":"working_days"})
+        df_count = df[df["monitored_worktime_hour"] > 0].pivot_table(values="date", index="account_id", aggfunc="count")
+        df_count = df_count.rename(columns={"date": "working_days"})
 
         df2 = df_min.join(df_max).join(df_count)
-        df2.columns = pandas.MultiIndex.from_tuples([("first_working_date", ""), ("last_working_date", ""), ("working_days", "")])
+        df2.columns = pandas.MultiIndex.from_tuples(
+            [("first_working_date", ""), ("last_working_date", ""), ("working_days", "")]
+        )
         return df2
-
-
 
     @staticmethod
     def _create_df_user(worktime_per_date: WorktimePerDate) -> pandas.DataFrame:
@@ -596,7 +587,6 @@ class UserPerformance:
         dtypes = {col: "string" for col in basic_columns}
         dtypes.update({col: "float64" for col in value_columns})
         return df.astype(dtypes)
-
 
     def _validate_df_for_output(self, output_file: Path) -> bool:
         if len(self.df) == 0:
