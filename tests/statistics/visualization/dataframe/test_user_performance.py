@@ -46,6 +46,13 @@ class TestUserPerformance:
         )
         actual.to_csv(output_dir / "test__from_df__集計対象タスクが0件のとき.csv")
 
+
+    def test___create_df_working_period(self):
+        worktime_per_date = WorktimePerDate.from_csv(data_dir / "worktime-per-date.csv")
+        df_actual = UserPerformance._create_df_working_period(worktime_per_date)
+        assert df_actual["last_working_date"].loc["alice"] == "2021-11-02"
+        assert df_actual["working_days"].loc["bob"] == 1
+
     def test_to_csv(self):
         self.obj.to_csv(output_dir / "メンバごとの生産性と品質.csv")
 

@@ -398,7 +398,8 @@ class UserPerformance:
                     ("real_monitored_worktime_hour/real_actual_worktime_hour", "sum")
 
         """
-        df_agg_worktime = worktime_per_date.df.pivot_table(
+        df = worktime_per_date.df
+        df_agg_worktime = df.pivot_table(
             values=[
                 "actual_worktime_hour",
                 "monitored_worktime_hour",
@@ -435,7 +436,46 @@ class UserPerformance:
             / df_agg_worktime[("real_actual_worktime_hour", "sum")]
         )
 
+
+
         return df_agg_worktime
+
+
+    @staticmethod
+    def _create_df_working_period(worktime_per_date: WorktimePerDate) -> pandas.DataFrame:
+        """
+        作業期間情報を含むDataFrameを生成します。
+        作業期間は計測作業時間から算出します。
+
+        Returns:
+            以下の情報を持つDataFrame
+                index: account_id
+                columns:
+                    ("first_working_date", "")
+                    ("last_working_date", "")
+                    ("working_days", "")
+        """
+        df = worktime_per_date.df
+        df_max = df[df["monitored_worktime_hour"] > 0].pivot_table(
+            values="date", index="account_id", aggfunc="max"
+        )
+        df_max = df_max.rename(columns={"date":"last_working_date"})
+
+        df_min = df[df["monitored_worktime_hour"] > 0].pivot_table(
+            values="date", index="account_id", aggfunc="min"
+        )
+        df_min = df_min.rename(columns={"date":"first_working_date"})
+
+        df_count = df[df["monitored_worktime_hour"] > 0].pivot_table(
+            values="date", index="account_id", aggfunc="count"
+        )
+        df_count = df_count.rename(columns={"date":"working_days"})
+
+        df2 = df_min.join(df_max).join(df_count)
+        df2.columns = pandas.MultiIndex.from_tuples([("first_working_date", ""), ("last_working_date", ""), ("working_days", "")])
+        return df2
+
+
 
     @staticmethod
     def _create_df_user(worktime_per_date: WorktimePerDate) -> pandas.DataFrame:
@@ -527,8 +567,8 @@ class UserPerformance:
         # ユーザ情報を結合する
         df = df.join(cls._create_df_user(worktime_per_date))
 
-        # TODO 仮で設定する
-        df[("last_working_date", "")] = numpy.nan
+        # 作業期間に関する情報を算出する
+        df = df.join(cls._create_df_working_period(worktime_per_date))
 
         df = df.sort_values(["user_id"])
         # `df.reset_index()`を実行する理由：indexである`account_id`を列にするため
@@ -547,7 +587,9 @@ class UserPerformance:
             ("user_id", ""),
             ("username", ""),
             ("biography", ""),
+            ("first_working_date", ""),
             ("last_working_date", ""),
+            ("working_days", ""),
         ]
 
         value_columns = columns - set(basic_columns)
@@ -555,115 +597,6 @@ class UserPerformance:
         dtypes.update({col: "float64" for col in value_columns})
         return df.astype(dtypes)
 
-    @staticmethod
-    def merge(obj1: UserPerformance, obj2: UserPerformance, df_worktime_ratio: pandas.DataFrame) -> UserPerformance:
-        """
-        TODO 引数を見直す
-        """
-
-        def get_addable_columns(df: pandas.DataFrame) -> list[tuple[str, str]]:
-            """
-            加算可能な列を取得する。たとえば以下の情報である。
-                * 作業時間
-                * 生産量
-                * 指摘数、差し戻し回数
-            """
-            level0_columns = [
-                "real_monitored_worktime_hour",
-                "monitored_worktime_hour",
-                "task_count",
-                "input_data_count",
-                "annotation_count",
-                "real_actual_worktime_hour",
-                "actual_worktime_hour",
-                "pointed_out_inspection_comment_count",
-                "rejected_count",
-            ]
-            return [(c0, c1) for c0, c1 in df.columns if c0 in level0_columns]
-
-        def max_last_working_date(date1: Union[float, str], date2: Union[float, str]) -> Union[float, str]:
-            """
-            最新の作業日の新しい方を返す。
-
-            Returns:
-                date1, date2が両方ともnumpy.nanならば、numpy.nanを返す
-            """
-            if not isinstance(date1, str) and numpy.isnan(date1):
-                date1 = ""
-            if not isinstance(date2, str) and numpy.isnan(date2):
-                date2 = ""
-            max_date = max(date1, date2)
-            if max_date == "":
-                return numpy.nan
-            else:
-                return max_date
-
-        # def merge_row(row1: pandas.Series, row2: pandas.Series) -> pandas.Series:
-        #     # `infer_objects(copy=False)`を実行している理由：以下の警告に対応するため
-        #     # FutureWarning: Downcasting object dtype arrays on .fillna, .ffill, .bfill is deprecated and will change in a future version.  # noqa: E501
-        #     sum_row = row1[addable_columns].infer_objects(copy=False).fillna(0) + row2[addable_columns].infer_objects(
-        #         copy=False
-        #     ).fillna(0)
-
-        #     sum_row.loc["user_id", ""] = row1.loc["user_id", ""]
-        #     sum_row.loc["username", ""] = row1.loc["username", ""]
-        #     sum_row.loc["biography", ""] = row1.loc["biography", ""]
-        #     sum_row.loc["last_working_date", ""] = max_last_working_date(
-        #         row1.loc["last_working_date", ""], row2.loc["last_working_date", ""]
-        #     )
-        #     return sum_row
-
-        df1 = obj1.df
-        df2 = obj2.df
-
-        set(df1["account_id"]) | set(df2["account_id"])
-
-        # 加算可能な列のみ残す
-        sum_df = df1.set_index("account_id").copy()
-        sum_df = sum_df[get_addable_columns(sum_df)]
-        added_df = df2.set_index("account_id").copy()
-        added_df = added_df[get_addable_columns(added_df)]
-
-        # pandas.DataFrame.addで加算できるようにまとめる
-        sum_df = sum_df.add(added_df, fill_value=0)
-
-        df_user = pandas.concat([df1, df2]).drop_duplicates(
-            subset=[("account_id", ""), ("user_id", ""), ("username", ""), ("biography", "")]
-        )
-        df_user = df_user[[("account_id", ""), ("user_id", ""), ("username", ""), ("biography", "")]].set_index(
-            "account_id"
-        )
-        sum_df = sum_df.join(df_user)
-
-        df_stdev = UserPerformance.create_df_stdev_worktime(df_worktime_ratio)
-        sum_df = sum_df.join(df_stdev)
-        # # # 加算可能な列を求める（df1とdf2で対象フェーズが異なる場合があるので、集合和を求める）
-        # # addable_columns = list(set(get_addable_columns(df1)) + set(get_addable_columns(df2)))
-
-        # # # 加算できるように、加算可能な列が存在しないときは事前に追加しておく
-        # # for column in addable_columns:
-        # #     if column not in sum_df.columns:
-        # #         sum_df[column] = 0
-        # #     if column not in added_df.columns:
-        # #         added_df[column] = 0
-
-        # for account_id in account_id_set:
-        #     if account_id not in added_df.index:
-        #         continue
-
-        #     if account_id in sum_df.index:
-        #         sum_df.loc[account_id] = merge_row(sum_df.loc[account_id], added_df.loc[account_id])
-        #     else:
-        #         sum_df.loc[account_id] = added_df.loc[account_id]
-
-        sum_df.reset_index(inplace=True)
-        # # DataFrameを一旦Seriesに変換することで、列の型情報がすべてobjectになるので、再度正しい列の型に変換する
-        # sum_df = UserPerformance._convert_column_dtypes(sum_df)
-
-        phase_list = UserPerformance.get_phase_list(sum_df.columns)
-        UserPerformance._add_ratio_column_for_productivity_per_user(sum_df, phase_list=phase_list)
-
-        return UserPerformance(sum_df.sort_values(["user_id"]))
 
     def _validate_df_for_output(self, output_file: Path) -> bool:
         if len(self.df) == 0:
@@ -756,7 +689,9 @@ class UserPerformance:
             ("user_id", ""),
             ("username", ""),
             ("biography", ""),
+            ("first_working_date", ""),
             ("last_working_date", ""),
+            ("working_days", ""),
         ]
         columns = user_columns + value_columns
 
