@@ -46,7 +46,6 @@ class TestUserPerformance:
         )
         actual.to_csv(output_dir / "test__from_df__集計対象タスクが0件のとき.csv")
 
-
     def test___create_df_working_period(self):
         worktime_per_date = WorktimePerDate.from_csv(data_dir / "worktime-per-date.csv")
         df_actual = UserPerformance._create_df_working_period(worktime_per_date)
