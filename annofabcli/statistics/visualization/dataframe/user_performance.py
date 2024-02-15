@@ -288,15 +288,17 @@ class UserPerformance:
             # 集計対象のタスクが0件の場合など
             # 生産量、指摘の量の情報は、生産性や品質の列を算出するのに必要なので、columnsに追加する
             phase = TaskPhase.ANNOTATION.value
-            columns = [
-                ("monitored_worktime_hour", "sum"),
-                ("monitored_worktime_hour", phase),
-                ("task_count", phase),
-                ("input_data_count", phase),
-                ("annotation_count", phase),
-                ("pointed_out_inspection_comment_count", phase),
-                ("rejected_count", phase),
-            ]
+            columns = pandas.MultiIndex.from_tuples(
+                [
+                    ("monitored_worktime_hour", "sum"),
+                    ("monitored_worktime_hour", phase),
+                    ("task_count", phase),
+                    ("input_data_count", phase),
+                    ("annotation_count", phase),
+                    ("pointed_out_inspection_comment_count", phase),
+                    ("rejected_count", phase),
+                ]
+            )
 
             df_empty = pandas.DataFrame(columns=columns, index=pandas.Index([], name="account_id"), dtype="float64")
             return df_empty
@@ -346,10 +348,12 @@ class UserPerformance:
             # 集計対象のタスクが0件のとき
             # `to_csv()`で出力したときにKeyErrorが発生内容にするため、事前に列を追加しておく
             phase = TaskPhase.ANNOTATION.value
-            columns = [
-                ("stdev__monitored_worktime_hour/input_data_count", phase),
-                ("stdev__monitored_worktime_hour/annotation_count", phase),
-            ]
+            columns = pandas.MultiIndex.from_tuples(
+                [
+                    ("stdev__monitored_worktime_hour/input_data_count", phase),
+                    ("stdev__monitored_worktime_hour/annotation_count", phase),
+                ]
+            )
             df_empty = pandas.DataFrame(columns=columns, index=pandas.Index([], name="account_id"), dtype="float64")
             return df_empty
 
@@ -518,7 +522,6 @@ class UserPerformance:
         df = cls._create_df_real_worktime(worktime_per_date)
 
         # 集計対象タスクから計測作業時間や生産量を算出する
-        # `how="outer"`を指定する理由：
         df = df.join(cls._create_df_monitored_worktime_and_production_amount(task_worktime_by_phase_user))
         # 左結合でjoinした結果、生産量や指摘回数がNaNになる可能性があるので、fillnaで0を埋める
         df = fillna_for_production_amount(df)
