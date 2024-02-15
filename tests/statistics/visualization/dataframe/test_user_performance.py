@@ -2,38 +2,46 @@ from pathlib import Path
 
 import pandas
 
+from annofabcli.statistics.visualization.dataframe.task import TaskWorktimeByPhaseUser
 from annofabcli.statistics.visualization.dataframe.user_performance import (
     PerformanceUnit,
     UserPerformance,
     WholePerformance,
     WorktimeType,
 )
+from annofabcli.statistics.visualization.dataframe.worktime_per_date import WorktimePerDate
 
 output_dir = Path("./tests/out/statistics/visualization/dataframe")
 data_dir = Path("./tests/data/statistics")
 output_dir.mkdir(exist_ok=True, parents=True)
+
+pandas.set_option("display.max_rows", None)
+pandas.set_option("display.max_columns", None)
 
 
 class TestUserPerformance:
     obj: UserPerformance
 
     @classmethod
-    def setup_class(cls):
+    def setup_class(cls) -> None:
         cls.obj = UserPerformance.from_csv(data_dir / "productivity-per-user2.csv")
 
-    def test_from_df(self):
-        df_task_history = pandas.read_csv(str(data_dir / "task-history-df.csv"))
-        df_labor = pandas.read_csv(str(data_dir / "labor-df.csv"))
+    def test__from_df__to_csv(self):
         df_user = pandas.read_csv(str(data_dir / "user.csv"))
-        df_worktime_ratio = pandas.read_csv(str(data_dir / "annotation-count-ratio-df.csv"))
-        df_worktime_per_date = pandas.read_csv(str(data_dir / "worktime-per-date.csv"))
-        UserPerformance.from_df(
-            df_task_history,
-            df_worktime_ratio=df_worktime_ratio,
+        task_worktime_by_phase_user = TaskWorktimeByPhaseUser.from_csv(data_dir / "annotation-count-ratio-df.csv")
+        worktime_per_date = WorktimePerDate.from_csv(data_dir / "worktime-per-date.csv")
+
+        actual = UserPerformance.from_df(
             df_user=df_user,
-            df_worktime_per_date=df_worktime_per_date,
-            df_labor=df_labor,
+            task_worktime_by_phase_user=task_worktime_by_phase_user,
+            worktime_per_date=worktime_per_date,
         )
+        assert len(actual.df) == 2
+        assert actual.df[("user_id", "")][0] == "alice"
+        assert actual.df[("real_actual_worktime_hour", "sum")][0] == 6
+        assert actual.df[("task_count", "annotation")][0] == 2
+
+        actual.to_csv(output_dir / "test__from_df__to_csv.csv")
 
     def test_from_df_with_empty(self):
         df_task_history = pandas.read_csv(

@@ -73,7 +73,15 @@ class PerformanceUnit(Enum):
 
 class UserPerformance:
     """
-    各ユーザの合計の生産性と品質
+    各ユーザの合計の生産性と品質。
+    以下の情報が含まれています。
+        * ユーザー情報
+        * ユーザーの作業時間（実績作業時間、計測作業時間）
+        * ユーザーの作業量（タスク数、入力データ数、アノテーション数）
+        * ユーザーが指摘されたコメント数や差し戻された回数
+        * 単位量あたりの作業時間
+        * 品質の指標（アノテーションあたり指摘されたコメント数、タスクあたり差し戻された回数）
+        * 単位量あたりの作業時間の標準偏差
 
     """
 
@@ -320,48 +328,7 @@ class UserPerformance:
         return df2
 
     @staticmethod
-    def _create_df_monitored_worktime_from_target_task(
-        task_worktime_by_phase_user: TaskWorktimeByPhaseUser,
-    ) -> pandas.DataFrame:
-        """
-        集計対象タスクから算出した計測作業時間が格納されたDataFrameを生成します。
-
-        Returns:
-            以下の情報を持つDataFrame
-                index: account_id
-                columns:
-                    ("monitored_worktime_hour", "sum")
-                    ("monitored_worktime_hour", "annotation")
-                    ("monitored_worktime_hour", "inspection")
-                    ("monitored_worktime_hour", "acceptance")
-        """
-        df = task_worktime_by_phase_user.df
-        if len(df) == 0:
-            # 作業時間が0なのに、annotationフェーズの計測作業時間の列を追加する理由：このクラスではphaseは1つ以上存在することを前提としているため。
-            # annotationフェーズが存在しないと、後続の処理で失敗する。
-            columns = [("monitored_worktime_hour", "sum"), ("monitored_worktime_hour", "annotation")]
-            df_empty = pandas.DataFrame(columns=columns, index=pandas.Index([], name="account_id"), dtype="float64")
-            return df_empty
-
-        # `["worktime_hour"]>0]`を指定している理由：受入フェーズのタスクは存在するが、一度も受入作業が実施されていないときに、df2に"acceptance"列を含めないようにするため
-        # 受入作業が実施されていないのに、"acceptance"列が存在すると、bokehなどでwarningが発生する。それを回避するため
-        df2 = (
-            df[df["worktime_hour"] > 0]
-            .pivot_table(values="worktime_hour", columns="phase", index="account_id", aggfunc="sum")
-            .fillna(0)
-        )
-
-        phase_list = df2.columns
-
-        # 列をMultiIndexに変更する
-        df2.columns = pandas.MultiIndex.from_tuples([("monitored_worktime_hour", phase) for phase in phase_list])
-
-        df2[("monitored_worktime_hour", "sum")] = df2[[("monitored_worktime_hour", phase) for phase in phase_list]].sum(
-            axis=1
-        )
-        return df2
-
-    def create_df_stdev_monitored_worktime(task_worktime_by_phase_user: TaskWorktimeByPhaseUser) -> pandas.DataFrame:
+    def _create_df_stdev_monitored_worktime(task_worktime_by_phase_user: TaskWorktimeByPhaseUser) -> pandas.DataFrame:
         """
         単位量あたり計測作業時間の標準偏差が格納されたDataFrameを生成します。
 
@@ -469,8 +436,6 @@ class UserPerformance:
     @classmethod
     def from_df(
         cls,
-        df_task_history: pandas.DataFrame,
-        df_worktime_ratio: pandas.DataFrame,
         df_user: pandas.DataFrame,
         task_worktime_by_phase_user: TaskWorktimeByPhaseUser,
         worktime_per_date: WorktimePerDate,
@@ -490,20 +455,32 @@ class UserPerformance:
                 * rejected_count.
                 * pointed_out_inspection_comment_count
 
-            df_user: ユーザー情報が格納されたDataFrame
+            df_user: ユーザー情報が格納されたDataFrame。以下の列を参照します。
+                * account_id
+                * user_id
+                * username
+                * biography
             worktime_per_date: 日ごとの作業時間が記載されたDataFrame
 
         Returns:
 
         """
 
-        def join_user_info(df: pandas.DataFrame) -> pandas.DataFrame:
+        def create_df_user_with_multiindex_columns(df: pandas.DataFrame) -> pandas.DataFrame:
             """
-            ユーザー情報を引数`df`に結合して、そのDataFrameを返します。
+            ユーザー情報が格納されたDataFrameを生成します。ただし列はMultiIndexです。
+
+            Returns:
+                column0:
+                    ("user_id", "")
+                    ("username", "")
+                    ("biography", "")
+                column1: ""
+                index: account_id
             """
-            tmp_df_user = df_user.set_index("account_id")[["user_id", "username", "biography"]]
-            tmp_df_user.columns = pandas.MultiIndex.from_tuples([("user_id", ""), ("username", ""), ("biography", "")])
-            return df.join(tmp_df_user)
+            df2 = df.set_index("account_id")[["user_id", "username", "biography"]]
+            df2.columns = pandas.MultiIndex.from_tuples([("user_id", ""), ("username", ""), ("biography", "")])
+            return df2
 
         def drop_unnecessary_columns(df: pandas.DataFrame) -> pandas.DataFrame:
             """
@@ -521,26 +498,35 @@ class UserPerformance:
             # 'errors="ignore"を指定する理由：削除する列が存在しないときでも、処理を継続するため
             return df.drop(dropped_column, axis=1, errors="ignore")
 
-        def get_phase_list(columns: list[str]) -> list[str]:
-            phase_list = []
+        def fillna_for_production_amount(df: pandas.DataFrame) -> pandas.DataFrame:
+            """
+            生産量や指摘数などの情報が欠損している場合は、0で埋めます。そうしないと、生産性や品質情報を計算する際にエラーになるためです。
+            """
+            level0_columns = [
+                "monitored_worktime_hour",
+                "task_count",
+                "input_data_count",
+                "annotation_count",
+                "pointed_out_inspection_comment_count",
+                "rejected_count",
+            ]
+            columns = [(c0, c1) for c0, c1 in df.columns if c0 in level0_columns]
 
-            for phase in TaskPhase:
-                if phase.value in columns:
-                    phase_list.append(phase.value)
-            return phase_list
+            return df.fillna({col: 0 for col in columns})
 
         # 実際の計測作業時間情報（集計タスクに影響されない作業時間）と実績作業時間を算出する
         df = cls._create_df_real_worktime(worktime_per_date)
 
         # 集計対象タスクから計測作業時間や生産量を算出する
-        df = df.join(cls._create_df_monitored_worktime_from_target_task(task_worktime_by_phase_user))
+        # `how="outer"`を指定する理由：
+        df = df.join(cls._create_df_monitored_worktime_and_production_amount(task_worktime_by_phase_user))
+        # 左結合でjoinした結果、生産量や指摘回数がNaNになる可能性があるので、fillnaで0を埋める
+        df = fillna_for_production_amount(df)
 
-        phase_list = get_phase_list(list(df.columns))
-
-        # TODO fillna実施する
+        phase_list = cls.get_phase_list(list(df.columns))
 
         # 集計対象タスクから単位量あたり計測作業時間の標準偏差を算出する
-        df = df.join(cls.create_df_stdev_monitored_worktime(task_worktime_by_phase_user))
+        df = df.join(cls._create_df_stdev_monitored_worktime(task_worktime_by_phase_user))
 
         # 比例関係の列を計算して追加する
         cls._add_ratio_column_for_productivity_per_user(df, phase_list=phase_list)
@@ -549,8 +535,12 @@ class UserPerformance:
         df = drop_unnecessary_columns(df)
 
         # ユーザ情報を結合する
-        df = join_user_info(df)
+        df = df.join(create_df_user_with_multiindex_columns(df_user))
 
+        # TODO 仮で設定する
+        df[("last_working_date", "")] = numpy.nan
+
+        df = df.sort_values(["user_id"])
         # `df.reset_index()`を実行する理由：indexである`account_id`を列にするため
         return cls(df.reset_index())
 
@@ -681,7 +671,6 @@ class UserPerformance:
         # sum_df = UserPerformance._convert_column_dtypes(sum_df)
 
         phase_list = UserPerformance.get_phase_list(sum_df.columns)
-        print(f"{sum_df.columns=}")
         UserPerformance._add_ratio_column_for_productivity_per_user(sum_df, phase_list=phase_list)
 
         return UserPerformance(sum_df.sort_values(["user_id"]))
@@ -777,8 +766,7 @@ class UserPerformance:
             ("user_id", ""),
             ("username", ""),
             ("biography", ""),
-            # TODO あとで元に戻す
-            # ("last_working_date", ""),
+            ("last_working_date", ""),
         ]
         columns = user_columns + value_columns
 

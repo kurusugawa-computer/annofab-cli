@@ -143,11 +143,9 @@ class WriteCsvGraph:
         self.project_dir.write_task_worktime_list(task_worktime_obj)
 
         user_performance = UserPerformance.from_df(
-            df_task_history=df_task_history,
-            df_worktime_ratio=annotation_count_ratio_df,
             df_user=df_user,
-            df_worktime_per_date=self._get_worktime_per_date().df,
-            df_labor=self.df_labor,
+            task_worktime_by_phase_user=task_worktime_obj,
+            worktime_per_date=self._get_worktime_per_date(),
         )
 
         self.project_dir.write_user_performance(user_performance)
