@@ -437,54 +437,40 @@ class UserPerformance:
 
         return df_agg_worktime
 
+    def _create_df_user(worktime_per_date: WorktimePerDate) -> pandas.DataFrame:
+        """
+        ユーザー情報が格納されたDataFrameを生成します。ただし列はMultiIndexです。
+
+        Returns:
+            column0:
+                ("user_id", "")
+                ("username", "")
+                ("biography", "")
+            column1: ""
+            index: account_id
+        """
+        df = worktime_per_date.df
+        df2 = df[["account_id", "user_id", "username", "biography"]]
+        df2 = df2.drop_duplicates()
+        df2 = df2.set_index("account_id")
+        df2.columns = pandas.MultiIndex.from_tuples([("user_id", ""), ("username", ""), ("biography", "")])
+        return df2
+
     @classmethod
     def from_df(
         cls,
-        df_user: pandas.DataFrame,
-        task_worktime_by_phase_user: TaskWorktimeByPhaseUser,
         worktime_per_date: WorktimePerDate,
+        task_worktime_by_phase_user: TaskWorktimeByPhaseUser,
     ) -> UserPerformance:
         """
-        AnnoWorkの実績時間から、作業者ごとに生産性を算出する。
+        pandas.DataFrameをラップしたオブジェクトから、インスタンスを生成します。
 
         Args:
-            df_task_history: タスク履歴のDataFrame
-            df_worktime_ratio: 作業したタスク数などの情報を、作業時間で按分した値が格納されたDataFrame. 以下の列を参照する。
-                * account_id
-                * phase
-                * worktime_hour
-                * task_count
-                * input_data_count
-                * annotation_count
-                * rejected_count.
-                * pointed_out_inspection_comment_count
+            worktime_per_date: 日ごとの作業時間が記載されたDataFrameを格納したオブジェクト。ユーザー情報の取得や、実際の作業時間（集計タスクに影響しない）の算出に利用します。
+            task_worktime_by_phase_user: タスク、フェーズ、ユーザーごとの作業時間や生産量が格納されたオブジェクト。生産量やタスクにかかった作業時間の取得に利用します。
 
-            df_user: ユーザー情報が格納されたDataFrame。以下の列を参照します。
-                * account_id
-                * user_id
-                * username
-                * biography
-            worktime_per_date: 日ごとの作業時間が記載されたDataFrame
-
-        Returns:
 
         """
-
-        def create_df_user_with_multiindex_columns(df: pandas.DataFrame) -> pandas.DataFrame:
-            """
-            ユーザー情報が格納されたDataFrameを生成します。ただし列はMultiIndexです。
-
-            Returns:
-                column0:
-                    ("user_id", "")
-                    ("username", "")
-                    ("biography", "")
-                column1: ""
-                index: account_id
-            """
-            df2 = df.set_index("account_id")[["user_id", "username", "biography"]]
-            df2.columns = pandas.MultiIndex.from_tuples([("user_id", ""), ("username", ""), ("biography", "")])
-            return df2
 
         def drop_unnecessary_columns(df: pandas.DataFrame) -> pandas.DataFrame:
             """
@@ -538,7 +524,7 @@ class UserPerformance:
         df = drop_unnecessary_columns(df)
 
         # ユーザ情報を結合する
-        df = df.join(create_df_user_with_multiindex_columns(df_user))
+        df = df.join(cls._create_df_user(worktime_per_date))
 
         # TODO 仮で設定する
         df[("last_working_date", "")] = numpy.nan

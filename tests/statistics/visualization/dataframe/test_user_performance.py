@@ -27,12 +27,10 @@ class TestUserPerformance:
         cls.obj = UserPerformance.from_csv(data_dir / "productivity-per-user2.csv")
 
     def test__from_df__to_csv(self):
-        df_user = pandas.read_csv(str(data_dir / "user.csv"))
         task_worktime_by_phase_user = TaskWorktimeByPhaseUser.from_csv(data_dir / "annotation-count-ratio-df.csv")
         worktime_per_date = WorktimePerDate.from_csv(data_dir / "worktime-per-date.csv")
 
         actual = UserPerformance.from_df(
-            df_user=df_user,
             task_worktime_by_phase_user=task_worktime_by_phase_user,
             worktime_per_date=worktime_per_date,
         )
@@ -44,13 +42,10 @@ class TestUserPerformance:
         actual.to_csv(output_dir / "test__from_df__to_csv.csv")
 
     def test__from_df__集計対象タスクが0件のとき(self):
-        df_user = pandas.read_csv(str(data_dir / "user.csv"))
-
         task_worktime_by_phase_user = TaskWorktimeByPhaseUser.from_csv(data_dir / "annotation-count-ratio-df-empty.csv")
         worktime_per_date = WorktimePerDate.from_csv(data_dir / "worktime-per-date.csv")
 
         actual = UserPerformance.from_df(
-            df_user=df_user,
             task_worktime_by_phase_user=task_worktime_by_phase_user,
             worktime_per_date=worktime_per_date,
         )
