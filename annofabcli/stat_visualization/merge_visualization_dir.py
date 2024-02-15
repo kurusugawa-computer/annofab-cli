@@ -227,7 +227,7 @@ def merge_visualization_dir(  # pylint: disable=too-many-statements
     task = merging_obj.merge_task_list()
     worktime_per_date = merging_obj.merge_worktime_per_date()
 
-    user_performance = UserPerformance.from_df(
+    user_performance = UserPerformance.from_df_wrapper(
         task_worktime_by_phase_user=task_worktime_by_phase_user, worktime_per_date=worktime_per_date
     )
 

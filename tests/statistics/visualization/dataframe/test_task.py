@@ -36,9 +36,12 @@ class TestTaskWorktimeByPhaseUser:
 
     @classmethod
     def setup_class(cls) -> None:
-        df_worktime_ration = pandas.read_csv(str(data_dir / "annotation-count-ratio-df.csv"))
+        df_worktime_ratio = pandas.read_csv(str(data_dir / "annotation-count-ratio-df.csv"))
         df_user = pandas.read_csv(str(data_dir / "user.csv"))
-        cls.obj = TaskWorktimeByPhaseUser.from_df(df_worktime_ration, df_user, project_id="prj1")
+        df_task = pandas.read_csv(str(data_dir / "tasak.csv"))
+        cls.obj = TaskWorktimeByPhaseUser.from_df(
+            df_worktime_ratio=df_worktime_ratio, df_user=df_user, df_task=df_task, project_id="prj1"
+        )
 
     def test__to_csv(self):
         self.obj.to_csv(output_dir / "task-worktime-by-user-phase.csv")

@@ -1,7 +1,5 @@
 from pathlib import Path
 
-import pandas
-
 from annofabcli.statistics.visualization.dataframe.task import TaskWorktimeByPhaseUser
 from annofabcli.statistics.visualization.dataframe.user_performance import (
     PerformanceUnit,
@@ -15,9 +13,6 @@ output_dir = Path("./tests/out/statistics/visualization/dataframe")
 data_dir = Path("./tests/data/statistics")
 output_dir.mkdir(exist_ok=True, parents=True)
 
-pandas.set_option("display.max_rows", None)
-pandas.set_option("display.max_columns", None)
-
 
 class TestUserPerformance:
     obj: UserPerformance
@@ -26,11 +21,11 @@ class TestUserPerformance:
     def setup_class(cls) -> None:
         cls.obj = UserPerformance.from_csv(data_dir / "productivity-per-user2.csv")
 
-    def test__from_df__to_csv(self):
+    def test__from_df_wrapper__to_csv(self):
         task_worktime_by_phase_user = TaskWorktimeByPhaseUser.from_csv(data_dir / "annotation-count-ratio-df.csv")
         worktime_per_date = WorktimePerDate.from_csv(data_dir / "worktime-per-date.csv")
 
-        actual = UserPerformance.from_df(
+        actual = UserPerformance.from_df_wrapper(
             task_worktime_by_phase_user=task_worktime_by_phase_user,
             worktime_per_date=worktime_per_date,
         )
@@ -41,11 +36,11 @@ class TestUserPerformance:
 
         actual.to_csv(output_dir / "test__from_df__to_csv.csv")
 
-    def test__from_df__集計対象タスクが0件のとき(self):
+    def test__from_df_wrapper__集計対象タスクが0件のとき(self):
         task_worktime_by_phase_user = TaskWorktimeByPhaseUser.from_csv(data_dir / "annotation-count-ratio-df-empty.csv")
         worktime_per_date = WorktimePerDate.from_csv(data_dir / "worktime-per-date.csv")
 
-        actual = UserPerformance.from_df(
+        actual = UserPerformance.from_df_wrapper(
             task_worktime_by_phase_user=task_worktime_by_phase_user,
             worktime_per_date=worktime_per_date,
         )
@@ -85,20 +80,6 @@ class TestUserPerformance:
     def test__get_summary(self):
         ser = self.obj.get_summary()
         assert int(ser[("task_count", "annotation")]) == 470
-
-    def test__merge(self):
-        df_worktime_ratio = pandas.read_csv(str(data_dir / "annotation-count-ratio-df-empty.csv"))
-        merged_obj = UserPerformance.merge(self.obj, self.obj, df_worktime_ratio)
-        # 先頭行のみチェックする
-        row = merged_obj.df[merged_obj.df["user_id"] == "MI"].iloc[0]
-        assert row[("task_count", "annotation")] == 38 * 2
-
-    def test__merge__emptyオブジェクトに対してマージ(self):
-        df_worktime_ratio = pandas.read_csv(str(data_dir / "annotation-count-ratio-df-empty.csv"))
-        empty = UserPerformance.empty()
-        merged_obj = UserPerformance.merge(empty, self.obj, df_worktime_ratio)
-        row = merged_obj.df[merged_obj.df["user_id"] == "MI"].iloc[0]
-        assert row[("task_count", "annotation")] == 38
 
     def test__get_summary__emptyオブジェクトに対して(self):
         empty = UserPerformance.empty()

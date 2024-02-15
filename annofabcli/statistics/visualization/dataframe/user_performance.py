@@ -437,6 +437,7 @@ class UserPerformance:
 
         return df_agg_worktime
 
+    @staticmethod
     def _create_df_user(worktime_per_date: WorktimePerDate) -> pandas.DataFrame:
         """
         ユーザー情報が格納されたDataFrameを生成します。ただし列はMultiIndexです。
@@ -457,7 +458,7 @@ class UserPerformance:
         return df2
 
     @classmethod
-    def from_df(
+    def from_df_wrapper(
         cls,
         worktime_per_date: WorktimePerDate,
         task_worktime_by_phase_user: TaskWorktimeByPhaseUser,
