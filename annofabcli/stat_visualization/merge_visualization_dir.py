@@ -52,7 +52,9 @@ def merge_visualization_dir(  # pylint: disable=too-many-statements
             if merged_user_performance is None:
                 merged_user_performance = user_performance
             else:
-                merged_user_performance = UserPerformance.merge(merged_user_performance, user_performance, df_worktime_ratio=task_worktime_list.df)
+                merged_user_performance = UserPerformance.merge(
+                    merged_user_performance, user_performance, df_worktime_ratio=task_worktime_list.df
+                )
 
         if merged_user_performance is not None:
             output_project_dir.write_user_performance(merged_user_performance)

@@ -323,7 +323,11 @@ class Task:
 
 class TaskWorktimeByPhaseUser:
     """
-    タスクの作業時間をユーザーごとフェーズごとに並べたDataFrameをラップしたクラス
+    タスクの作業時間をユーザーごとフェーズごとに並べたDataFrameをラップしたクラス。
+    task_id, phase, phase_value, account_idごとに、以下の情報が格納されています。
+        * 計測作業時間
+        * 生産量（タスク数、入力データ数、アノテーション数）
+        * 品質情報（指摘コメント数、差し戻し回数）
     """
 
     def __init__(self, df: pandas.DataFrame) -> None:
