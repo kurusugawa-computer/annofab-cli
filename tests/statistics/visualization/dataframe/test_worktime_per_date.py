@@ -55,7 +55,7 @@ class TestWorktimePerDate_webapi:
     service: annofabapi.Resource
 
     @classmethod
-    def setup_class(cls):
+    def setup_class(cls) -> None:
         cls.service = annofabapi.build()
 
     def test_from_webapi(self):
@@ -66,3 +66,4 @@ class TestWorktimePerDate_webapi:
         df_labor = pandas.read_csv(str(data_dir / "labor-df.csv"))
         actual = WorktimePerDate.from_webapi(self.service, project_id, df_labor=df_labor)
         assert len(actual.df) > 0
+        actual.to_csv(output_dir / "from_webapi_with_labor.csv")

@@ -239,7 +239,6 @@ def create_replacement_dict_by_biography(
     keyが置換対象のbiography、valueが置換後のマスクされた biography であるdictを作成する。
     """
     replaced_biography_set = get_replaced_biography_set(df, not_masked_location_set=not_masked_biography_set)
-    print(f"{replaced_biography_set=}")
     tmp_replace_dict_by_biography = _create_replaced_dict(replaced_biography_set)
     return {key: f"category-{value}" for key, value in tmp_replace_dict_by_biography.items()}
 

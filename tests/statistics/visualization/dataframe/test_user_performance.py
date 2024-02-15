@@ -1,13 +1,13 @@
 from pathlib import Path
 
-import pandas
-
+from annofabcli.statistics.visualization.dataframe.task import TaskWorktimeByPhaseUser
 from annofabcli.statistics.visualization.dataframe.user_performance import (
     PerformanceUnit,
     UserPerformance,
     WholePerformance,
     WorktimeType,
 )
+from annofabcli.statistics.visualization.dataframe.worktime_per_date import WorktimePerDate
 
 output_dir = Path("./tests/out/statistics/visualization/dataframe")
 data_dir = Path("./tests/data/statistics")
@@ -18,39 +18,39 @@ class TestUserPerformance:
     obj: UserPerformance
 
     @classmethod
-    def setup_class(cls):
+    def setup_class(cls) -> None:
         cls.obj = UserPerformance.from_csv(data_dir / "productivity-per-user2.csv")
 
-    def test_from_df(self):
-        df_task_history = pandas.read_csv(str(data_dir / "task-history-df.csv"))
-        df_labor = pandas.read_csv(str(data_dir / "labor-df.csv"))
-        df_user = pandas.read_csv(str(data_dir / "user.csv"))
-        df_worktime_ratio = pandas.read_csv(str(data_dir / "annotation-count-ratio-df.csv"))
-        df_worktime_per_date = pandas.read_csv(str(data_dir / "worktime-per-date.csv"))
-        UserPerformance.from_df(
-            df_task_history,
-            df_worktime_ratio=df_worktime_ratio,
-            df_user=df_user,
-            df_worktime_per_date=df_worktime_per_date,
-            df_labor=df_labor,
-        )
+    def test__from_df_wrapper__to_csv(self):
+        task_worktime_by_phase_user = TaskWorktimeByPhaseUser.from_csv(data_dir / "annotation-count-ratio-df.csv")
+        worktime_per_date = WorktimePerDate.from_csv(data_dir / "worktime-per-date.csv")
 
-    def test_from_df_with_empty(self):
-        df_task_history = pandas.read_csv(
-            str(data_dir / "task-history-df-empty.csv"), dtype={"worktime_hour": "float64"}
+        actual = UserPerformance.from_df_wrapper(
+            task_worktime_by_phase_user=task_worktime_by_phase_user,
+            worktime_per_date=worktime_per_date,
         )
-        df_worktime_ratio = pandas.read_csv(str(data_dir / "annotation-count-ratio-df-empty.csv"))
-        df_labor = pandas.read_csv(str(data_dir / "labor-df.csv"))
-        df_user = pandas.read_csv(str(data_dir / "user.csv"))
-        df_worktime_per_date = pandas.read_csv(str(data_dir / "worktime-per-date.csv"))
-        obj = UserPerformance.from_df(
-            df_task_history,
-            df_worktime_ratio=df_worktime_ratio,
-            df_user=df_user,
-            df_worktime_per_date=df_worktime_per_date,
-            df_labor=df_labor,
+        assert len(actual.df) == 2
+        assert actual.df[("user_id", "")][0] == "alice"
+        assert actual.df[("real_actual_worktime_hour", "sum")][0] == 6
+        assert actual.df[("task_count", "annotation")][0] == 2
+
+        actual.to_csv(output_dir / "test__from_df__to_csv.csv")
+
+    def test__from_df_wrapper__集計対象タスクが0件のとき(self):
+        task_worktime_by_phase_user = TaskWorktimeByPhaseUser.from_csv(data_dir / "annotation-count-ratio-df-empty.csv")
+        worktime_per_date = WorktimePerDate.from_csv(data_dir / "worktime-per-date.csv")
+
+        actual = UserPerformance.from_df_wrapper(
+            task_worktime_by_phase_user=task_worktime_by_phase_user,
+            worktime_per_date=worktime_per_date,
         )
-        obj.to_csv(Path("out/user.csv"))
+        actual.to_csv(output_dir / "test__from_df__集計対象タスクが0件のとき.csv")
+
+    def test___create_df_working_period(self):
+        worktime_per_date = WorktimePerDate.from_csv(data_dir / "worktime-per-date.csv")
+        df_actual = UserPerformance._create_df_working_period(worktime_per_date)
+        assert df_actual["last_working_date"].loc["alice"] == "2021-11-02"
+        assert df_actual["working_days"].loc["bob"] == 1
 
     def test_to_csv(self):
         self.obj.to_csv(output_dir / "メンバごとの生産性と品質.csv")
@@ -83,16 +83,11 @@ class TestUserPerformance:
             performance_unit=PerformanceUnit.INPUT_DATA_COUNT,
         )
 
-    def test_get_summary(self):
+    def test__get_summary(self):
         ser = self.obj.get_summary()
-        assert int(ser[("task_count", "annotation")]) == 45481
+        assert int(ser[("task_count", "annotation")]) == 470
 
-    def test_merge(self):
-        merged_obj = UserPerformance.merge(self.obj, self.obj)
-        row = merged_obj.df[merged_obj.df["user_id"] == "KD"].iloc[0]
-        assert row[("task_count", "annotation")] == 30
-
-    def test_empty(self):
+    def test__get_summary__emptyオブジェクトに対して(self):
         empty = UserPerformance.empty()
         assert empty.is_empty()
         summary = empty.get_summary()
@@ -100,10 +95,6 @@ class TestUserPerformance:
         assert summary[("monitored_worktime_hour", "annotation")] == 0
         assert summary[("actual_worktime_hour", "annotation")] == 0
         assert summary[("monitored_worktime_ratio", "annotation")] == 1
-
-        merged_obj = UserPerformance.merge(empty, self.obj)
-        row = merged_obj.df[merged_obj.df["user_id"] == "KD"].iloc[0]
-        assert row[("task_count", "annotation")] == 15
 
 
 class TestWholePerformance:

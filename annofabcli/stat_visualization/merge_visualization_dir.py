@@ -33,35 +33,140 @@ from annofabcli.statistics.visualization.project_dir import MergingInfo, Project
 logger = logging.getLogger(__name__)
 
 
+class WritingVisualizationFile:
+    def __init__(
+        self,
+        output_project_dir: ProjectDir,
+        *,
+        user_id_list: Optional[List[str]] = None,
+        minimal_output: bool = False,
+    ) -> None:
+        self.output_project_dir = output_project_dir
+        self.user_id_list = user_id_list
+        self.minimal_output = minimal_output
+
+    @_catch_exception
+    def write_user_performance(self, user_performance: UserPerformance):
+        """ユーザごとの生産性と品質に関するファイルを出力する。"""
+
+        self.output_project_dir.write_user_performance(user_performance)
+        whole_performance = WholePerformance.from_user_performance(user_performance)
+        self.output_project_dir.write_whole_performance(whole_performance)
+
+        # ユーザーごとの散布図を出力
+        self.output_project_dir.write_user_performance_scatter_plot(user_performance)
+
+    @_catch_exception
+    def write_cumulative_line_graph(self, task: Task) -> None:
+        """ユーザごとにプロットした累積折れ線グラフを出力する。"""
+        df = task.df.copy()
+
+        self.output_project_dir.write_cumulative_line_graph(
+            AnnotatorCumulativeProductivity(df),
+            phase=TaskPhase.ANNOTATION,
+            user_id_list=self.user_id_list,
+            minimal_output=self.minimal_output,
+        )
+        self.output_project_dir.write_cumulative_line_graph(
+            InspectorCumulativeProductivity(df),
+            phase=TaskPhase.INSPECTION,
+            user_id_list=self.user_id_list,
+            minimal_output=self.minimal_output,
+        )
+        self.output_project_dir.write_cumulative_line_graph(
+            AcceptorCumulativeProductivity(df),
+            phase=TaskPhase.ACCEPTANCE,
+            user_id_list=self.user_id_list,
+            minimal_output=self.minimal_output,
+        )
+
+    @_catch_exception
+    def write_line_graph(self, task: Task) -> None:
+        """ユーザごとにプロットした折れ線グラフを出力する。"""
+
+        annotator_per_date_obj = AnnotatorProductivityPerDate.from_df_task(task.df)
+        inspector_per_date_obj = InspectorProductivityPerDate.from_df_task(task.df)
+        acceptor_per_date_obj = AcceptorProductivityPerDate.from_df_task(task.df)
+
+        self.output_project_dir.write_performance_per_started_date_csv(
+            annotator_per_date_obj, phase=TaskPhase.ANNOTATION
+        )
+        self.output_project_dir.write_performance_per_started_date_csv(
+            inspector_per_date_obj, phase=TaskPhase.INSPECTION
+        )
+        self.output_project_dir.write_performance_per_started_date_csv(
+            acceptor_per_date_obj, phase=TaskPhase.ACCEPTANCE
+        )
+
+        # 折れ線グラフを出力
+        self.output_project_dir.write_performance_line_graph_per_date(
+            annotator_per_date_obj, phase=TaskPhase.ANNOTATION, user_id_list=self.user_id_list
+        )
+        self.output_project_dir.write_performance_line_graph_per_date(
+            inspector_per_date_obj, phase=TaskPhase.INSPECTION, user_id_list=self.user_id_list
+        )
+        self.output_project_dir.write_performance_line_graph_per_date(
+            acceptor_per_date_obj, phase=TaskPhase.ACCEPTANCE, user_id_list=self.user_id_list
+        )
+
+    @_catch_exception
+    def write_task_list_and_histogram(self, task: Task) -> None:
+        self.output_project_dir.write_task_list(task)
+        self.output_project_dir.write_task_histogram(task)
+
+    @_catch_exception
+    def write_worktime_per_date(self, worktime_per_date: WorktimePerDate) -> None:
+        self.output_project_dir.write_worktime_per_date_user(worktime_per_date)
+        self.output_project_dir.write_worktime_line_graph(worktime_per_date, user_id_list=self.user_id_list)
+
+    @_catch_exception
+    def write_task_worktime_by_phase_user(self, task_worktime_by_phase_user: TaskWorktimeByPhaseUser) -> None:
+        self.output_project_dir.write_task_worktime_list(task_worktime_by_phase_user)
+
+
+class MergingVisualizationFile:
+    def __init__(self, project_dir_list: List[ProjectDir]) -> None:
+        self.project_dir_list = project_dir_list
+
+    # TODO 読み込みに失敗したときを考慮する
+
+    def merge_worktime_per_date(self) -> WorktimePerDate:
+        merged_obj: Optional[WorktimePerDate] = None
+        for project_dir in self.project_dir_list:
+            tmp_obj = project_dir.read_worktime_per_date_user()
+
+            if merged_obj is None:
+                merged_obj = tmp_obj
+            else:
+                merged_obj = WorktimePerDate.merge(merged_obj, tmp_obj)
+        assert merged_obj is not None
+        return merged_obj
+
+    def merge_task_list(self) -> Task:
+        task_list: list[Task] = []
+        for project_dir in self.project_dir_list:
+            tmp_obj = project_dir.read_task_list()
+            task_list.append(tmp_obj)
+
+        merged_obj = Task.merge(*task_list)
+        return merged_obj
+
+    def merge_task_worktime_by_phase_user(self) -> TaskWorktimeByPhaseUser:
+        tmp_list: list[TaskWorktimeByPhaseUser] = []
+        for project_dir in self.project_dir_list:
+            tmp_obj = project_dir.read_task_worktime_list()
+            tmp_list.append(tmp_obj)
+
+        merged_obj = TaskWorktimeByPhaseUser.merge(*tmp_list)
+        return merged_obj
+
+
 def merge_visualization_dir(  # pylint: disable=too-many-statements
     project_dir_list: List[ProjectDir],
     output_project_dir: ProjectDir,
     user_id_list: Optional[List[str]] = None,
     minimal_output: bool = False,
 ):
-    @_catch_exception
-    def execute_merge_performance_per_user():
-        merged_user_performance: Optional[UserPerformance] = None
-        for project_dir in project_dir_list:
-            try:
-                user_performance = project_dir.read_user_performance()
-            except Exception:
-                logger.warning(f"'{project_dir}'のメンバごとの生産性と品質の取得に失敗しました。", exc_info=True)
-                continue
-
-            if merged_user_performance is None:
-                merged_user_performance = user_performance
-            else:
-                merged_user_performance = UserPerformance.merge(merged_user_performance, user_performance)
-
-        if merged_user_performance is not None:
-            output_project_dir.write_user_performance(merged_user_performance)
-            whole_performance = WholePerformance.from_user_performance(merged_user_performance)
-            output_project_dir.write_whole_performance(whole_performance)
-
-            # ユーザーごとの散布図を出力
-            output_project_dir.write_user_performance_scatter_plot(merged_user_performance)
-
     @_catch_exception
     def execute_merge_performance_per_date():
         merged_obj: Optional[WholeProductivityPerCompletedDate] = None
@@ -101,64 +206,6 @@ def merge_visualization_dir(  # pylint: disable=too-many-statements
             output_project_dir.write_whole_productivity_line_graph_per_annotation_started_date(merged_obj)
 
     @_catch_exception
-    def merge_worktime_per_date():
-        merged_obj: Optional[WorktimePerDate] = None
-        for project_dir in project_dir_list:
-            try:
-                tmp_obj = project_dir.read_worktime_per_date_user()
-            except Exception:
-                logger.warning(f"'{project_dir}'からユーザごと日ごとの作業時間の取得に失敗しました。", exc_info=True)
-                continue
-
-            if merged_obj is None:
-                merged_obj = tmp_obj
-            else:
-                merged_obj = WorktimePerDate.merge(merged_obj, tmp_obj)
-
-        if merged_obj is not None:
-            output_project_dir.write_worktime_per_date_user(merged_obj)
-            output_project_dir.write_worktime_line_graph(merged_obj, user_id_list=user_id_list)
-
-    @_catch_exception
-    def merge_task_list() -> Optional[Task]:
-        task_list: list[Task] = []
-        for project_dir in project_dir_list:
-            try:
-                tmp_obj = project_dir.read_task_list()
-                task_list.append(tmp_obj)
-            except Exception:
-                logger.warning(f"'{project_dir}'からタスク情報の取得に失敗しました。", exc_info=True)
-                continue
-
-        if len(task_list) > 0:
-            merged_obj = Task.merge(*task_list)
-            output_project_dir.write_task_list(merged_obj)
-            output_project_dir.write_task_histogram(merged_obj)
-            return merged_obj
-
-        else:
-            logger.warning(f"マージ対象のタスク情報は存在しないため、'{output_project_dir.FILENAME_TASK_LIST}'とそのCSVから生成されるヒストグラム出力しません。")
-            return None
-
-    @_catch_exception
-    def merge_task_worktime_list() -> None:
-        tmp_list: list[TaskWorktimeByPhaseUser] = []
-        for project_dir in project_dir_list:
-            try:
-                tmp_obj = project_dir.read_task_worktime_list()
-                tmp_list.append(tmp_obj)
-            except Exception:
-                logger.warning(f"'{project_dir}'からタスク情報の取得に失敗しました。", exc_info=True)
-                continue
-
-        if len(tmp_list) > 0:
-            merged_obj = TaskWorktimeByPhaseUser.merge(*tmp_list)
-            output_project_dir.write_task_worktime_list(merged_obj)
-
-        else:
-            logger.warning(f"マージ対象のタスク情報は存在しないため、'{output_project_dir.FILENAME_TASK_WORKTIME_LIST}'は出力しません。")
-
-    @_catch_exception
     def write_merge_info_json() -> None:
         """マージ情報に関するJSONファイルを出力する。"""
         target_dir_list = [str(e.project_dir) for e in project_dir_list]
@@ -174,62 +221,28 @@ def merge_visualization_dir(  # pylint: disable=too-many-statements
         merge_info = MergingInfo(target_dir_list=target_dir_list, project_info_list=project_info_list)
         output_project_dir.write_merge_info(merge_info)
 
-    @_catch_exception
-    def write_cumulative_line_graph(task: Task) -> None:
-        """ユーザごとにプロットした累積折れ線グラフを出力する。"""
-        df = task.df.copy()
+    merging_obj = MergingVisualizationFile(project_dir_list)
+    # 基本となるCSVファイルを読み込みマージする
+    task_worktime_by_phase_user = merging_obj.merge_task_worktime_by_phase_user()
+    task = merging_obj.merge_task_list()
+    worktime_per_date = merging_obj.merge_worktime_per_date()
 
-        output_project_dir.write_cumulative_line_graph(
-            AnnotatorCumulativeProductivity(df),
-            phase=TaskPhase.ANNOTATION,
-            user_id_list=user_id_list,
-            minimal_output=minimal_output,
-        )
-        output_project_dir.write_cumulative_line_graph(
-            InspectorCumulativeProductivity(df),
-            phase=TaskPhase.INSPECTION,
-            user_id_list=user_id_list,
-            minimal_output=minimal_output,
-        )
-        output_project_dir.write_cumulative_line_graph(
-            AcceptorCumulativeProductivity(df),
-            phase=TaskPhase.ACCEPTANCE,
-            user_id_list=user_id_list,
-            minimal_output=minimal_output,
-        )
+    user_performance = UserPerformance.from_df_wrapper(
+        task_worktime_by_phase_user=task_worktime_by_phase_user, worktime_per_date=worktime_per_date
+    )
 
-    @_catch_exception
-    def write_line_graph(task: Task) -> None:
-        """ユーザごとにプロットした折れ線グラフを出力する。"""
+    writing_obj = WritingVisualizationFile(output_project_dir, user_id_list=user_id_list, minimal_output=minimal_output)
 
-        annotator_per_date_obj = AnnotatorProductivityPerDate.from_df_task(task.df)
-        inspector_per_date_obj = InspectorProductivityPerDate.from_df_task(task.df)
-        acceptor_per_date_obj = AcceptorProductivityPerDate.from_df_task(task.df)
+    writing_obj.write_task_list_and_histogram(task)
+    writing_obj.write_worktime_per_date(worktime_per_date)
+    writing_obj.write_task_worktime_by_phase_user(task_worktime_by_phase_user)
+    writing_obj.write_user_performance(user_performance)
 
-        output_project_dir.write_performance_per_started_date_csv(annotator_per_date_obj, phase=TaskPhase.ANNOTATION)
-        output_project_dir.write_performance_per_started_date_csv(inspector_per_date_obj, phase=TaskPhase.INSPECTION)
-        output_project_dir.write_performance_per_started_date_csv(acceptor_per_date_obj, phase=TaskPhase.ACCEPTANCE)
+    writing_obj.write_cumulative_line_graph(task)
+    writing_obj.write_line_graph(task)
 
-        # 折れ線グラフを出力
-        output_project_dir.write_performance_line_graph_per_date(
-            annotator_per_date_obj, phase=TaskPhase.ANNOTATION, user_id_list=user_id_list
-        )
-        output_project_dir.write_performance_line_graph_per_date(
-            inspector_per_date_obj, phase=TaskPhase.INSPECTION, user_id_list=user_id_list
-        )
-        output_project_dir.write_performance_line_graph_per_date(
-            acceptor_per_date_obj, phase=TaskPhase.ACCEPTANCE, user_id_list=user_id_list
-        )
-
-    execute_merge_performance_per_user()
     execute_merge_performance_per_date()
     merge_performance_per_first_annotation_started_date()
-    merge_worktime_per_date()
-    merge_task_worktime_list()
-    task = merge_task_list()
-    if task is not None:
-        write_cumulative_line_graph(task)
-        write_line_graph(task)
 
     # info.jsonを出力
     write_merge_info_json()

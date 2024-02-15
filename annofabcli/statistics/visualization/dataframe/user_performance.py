@@ -7,7 +7,7 @@ from __future__ import annotations
 import logging
 from enum import Enum
 from pathlib import Path
-from typing import Optional, Union
+from typing import Optional
 
 import bokeh
 import bokeh.layouts
@@ -27,6 +27,8 @@ from annofabcli.statistics.scatter import (
     plot_scatter,
     write_bokeh_graph,
 )
+from annofabcli.statistics.visualization.dataframe.task import TaskWorktimeByPhaseUser
+from annofabcli.statistics.visualization.dataframe.worktime_per_date import WorktimePerDate
 
 logger = logging.getLogger(__name__)
 
@@ -71,7 +73,15 @@ class PerformanceUnit(Enum):
 
 class UserPerformance:
     """
-    各ユーザの合計の生産性と品質
+    各ユーザの合計の生産性と品質。
+    以下の情報が含まれています。
+        * ユーザー情報
+        * ユーザーの作業時間（実績作業時間、計測作業時間）
+        * ユーザーの作業量（タスク数、入力データ数、アノテーション数）
+        * ユーザーが指摘されたコメント数や差し戻された回数
+        * 単位量あたりの作業時間
+        * 品質の指標（アノテーションあたり指摘されたコメント数、タスクあたり差し戻された回数）
+        * 単位量あたりの作業時間の標準偏差
 
     """
 
@@ -96,11 +106,7 @@ class UserPerformance:
         """
         ユーザーの生産性に関する列を、DataFrameに追加します。
         """
-        df[("real_monitored_worktime_hour/real_actual_worktime_hour", "sum")] = (
-            df[("real_monitored_worktime_hour", "sum")] / df[("real_actual_worktime_hour", "sum")]
-        )
 
-        # TODO
         # 集計対象タスクから算出した計測作業時間（`monitored_worktime_hour`）に対応する実績作業時間を推定で算出する
         # 具体的には、実際の計測作業時間と十先作業時間の比（`real_monitored_worktime_hour/real_actual_worktime_hour`）になるように按分する
         df[("actual_worktime_hour", "sum")] = (
@@ -224,165 +230,279 @@ class UserPerformance:
         """実績作業時間が入力されているか否か"""
         return self.df[("actual_worktime_hour", "sum")].sum() > 0
 
-    @classmethod
-    def from_df(
-        cls,
-        df_task_history: pandas.DataFrame,
-        df_worktime_ratio: pandas.DataFrame,
-        df_user: pandas.DataFrame,
-        df_worktime_per_date: pandas.DataFrame,
-        df_labor: Optional[pandas.DataFrame] = None,
-    ) -> UserPerformance:
+    @staticmethod
+    def create_df_stdev_worktime(df_worktime_ratio: pandas.DataFrame) -> pandas.DataFrame:
         """
-        AnnoWorkの実績時間から、作業者ごとに生産性を算出する。
+        単位量あたり作業時間の標準偏差のDataFrameを生成する
 
-        Args:
-            df_task_history: タスク履歴のDataFrame
-            df_worktime_ratio: 作業したタスク数などの情報を、作業時間で按分した値が格納されたDataFrame. 以下の列を参照する。
-                * account_id
-                * phase
-                * worktime_hour
+        TODO 重複しているので見直す
+        """
+        df_worktime_ratio2 = df_worktime_ratio.copy()
+        df_worktime_ratio2["worktime_hour/input_data_count"] = (
+            df_worktime_ratio2["worktime_hour"] / df_worktime_ratio2["input_data_count"]
+        )
+        df_worktime_ratio2["worktime_hour/annotation_count"] = (
+            df_worktime_ratio2["worktime_hour"] / df_worktime_ratio2["annotation_count"]
+        )
+
+        # 母標準偏差を算出する
+        df_stdev = df_worktime_ratio2.groupby(["account_id", "phase"])[
+            ["worktime_hour/input_data_count", "worktime_hour/annotation_count"]
+        ].std(ddof=0)
+
+        df_stdev2 = pandas.pivot_table(
+            df_stdev,
+            values=["worktime_hour/input_data_count", "worktime_hour/annotation_count"],
+            index="account_id",
+            columns="phase",
+        )
+        df_stdev3 = df_stdev2.rename(
+            columns={
+                "worktime_hour/input_data_count": "stdev__monitored_worktime_hour/input_data_count",
+                "worktime_hour/annotation_count": "stdev__monitored_worktime_hour/annotation_count",
+            }
+        )
+
+        return df_stdev3
+
+    @staticmethod
+    def _create_df_monitored_worktime_and_production_amount(
+        task_worktime_by_phase_user: TaskWorktimeByPhaseUser,
+    ) -> pandas.DataFrame:
+        """
+        タスク情報から算出した計測作業時間や生産量、指摘数などの情報が格納されたDataFrameを生成します。
+
+        Returns: 生成されるDataFrame
+            columns(level0):
+                * monitored_worktime_hour
                 * task_count
                 * input_data_count
                 * annotation_count
-                * rejected_count.
                 * pointed_out_inspection_comment_count
+                * rejected_count
+            columns(level1): ${phase}
+            index: account_id
+        """
+        df = task_worktime_by_phase_user.df
+        if len(df) == 0:
+            # 集計対象のタスクが0件の場合など
+            # 生産量、指摘の量の情報は、生産性や品質の列を算出するのに必要なので、columnsに追加する
+            phase = TaskPhase.ANNOTATION.value
+            columns = pandas.MultiIndex.from_tuples(
+                [
+                    ("monitored_worktime_hour", "sum"),
+                    ("monitored_worktime_hour", phase),
+                    ("task_count", phase),
+                    ("input_data_count", phase),
+                    ("annotation_count", phase),
+                    ("pointed_out_inspection_comment_count", phase),
+                    ("rejected_count", phase),
+                ]
+            )
 
-            df_user: ユーザー情報が格納されたDataFrame
-            df_worktime_per_date: 日ごとの作業時間が記載されたDataFrame
-            df_labor: 実績作業時間のDataFrame。以下の列を参照する
-                actual_worktime_hour, date, account_id
+            df_empty = pandas.DataFrame(columns=columns, index=pandas.Index([], name="account_id"), dtype="float64")
+            return df_empty
+
+        # TODO もしかしたら  `["worktime_hour"]>0]`を指定する必要があるかもしれない。分からないので、いったん指定しない
+        df2 = df.pivot_table(
+            values=[
+                "worktime_hour",
+                "task_count",
+                "input_data_count",
+                "annotation_count",
+                "pointed_out_inspection_comment_count",
+                "rejected_count",
+            ],
+            columns="phase",
+            index="account_id",
+            aggfunc="sum",
+        ).fillna(0)
+
+        df2 = df2.rename(columns={"worktime_hour": "monitored_worktime_hour"})
+
+        phase_list = list(df2["monitored_worktime_hour"].columns)
+
+        # 計測作業時間の合計値を算出する
+        df2[("monitored_worktime_hour", "sum")] = df2[[("monitored_worktime_hour", phase) for phase in phase_list]].sum(
+            axis=1
+        )
+
+        return df2
+
+    @staticmethod
+    def _create_df_stdev_monitored_worktime(task_worktime_by_phase_user: TaskWorktimeByPhaseUser) -> pandas.DataFrame:
+        """
+        単位量あたり計測作業時間の標準偏差が格納されたDataFrameを生成します。
 
         Returns:
+            以下の情報を持つDataFrame
+                index: account_id
+                column0:
+                    * stdev__monitored_worktime_hour/input_data_count
+                    * stdev__monitored_worktime_hour/annotation_count
+                column1: ${phase}
 
         """
-
-        def join_stdev(df: pandas.DataFrame) -> pandas.DataFrame:
-            """
-            標準偏差を結合する
-            """
-            if len(df_worktime_ratio) == 0:
-                # 集計対象のタスクが0件の場合など
-                # TODO
-                return df
-
-            df_worktime_ratio2 = df_worktime_ratio.copy()
-            df_worktime_ratio2["worktime_hour/input_data_count"] = (
-                df_worktime_ratio2["worktime_hour"] / df_worktime_ratio2["input_data_count"]
-            )
-            df_worktime_ratio2["worktime_hour/annotation_count"] = (
-                df_worktime_ratio2["worktime_hour"] / df_worktime_ratio2["annotation_count"]
-            )
-
-            # 母標準偏差を算出する
-            df_stdev = df_worktime_ratio2.groupby(["account_id", "phase"])[
-                ["worktime_hour/input_data_count", "worktime_hour/annotation_count"]
-            ].std(ddof=0)
-
-            df_stdev2 = pandas.pivot_table(
-                df_stdev,
-                values=["worktime_hour/input_data_count", "worktime_hour/annotation_count"],
-                index="account_id",
-                columns="phase",
-            )
-            df_stdev3 = df_stdev2.rename(
-                columns={
-                    "worktime_hour/input_data_count": "stdev__monitored_worktime_hour/input_data_count",
-                    "worktime_hour/annotation_count": "stdev__monitored_worktime_hour/annotation_count",
-                }
-            )
-
-            return df.join(df_stdev3)
-
-        def join_real_monitored_worktime_hour(df: pandas.DataFrame) -> pandas.DataFrame:
-            """
-            集計対象タスクに影響されない実際の計測作業時間を、引数`df`に結合して、そのたDataFrameを返します。
-            """
-            df_agg_worktime = df_worktime_per_date.pivot_table(
-                values=[
-                    "monitored_worktime_hour",
-                    "monitored_annotation_worktime_hour",
-                    "monitored_inspection_worktime_hour",
-                    "monitored_acceptance_worktime_hour",
-                ],
-                index="account_id",
-                aggfunc="sum",
-            )
-
-            # 列をMultiIndexに変更する
-            df_agg_worktime = df_agg_worktime[
+        df = task_worktime_by_phase_user.df
+        if len(df) == 0:
+            # 集計対象のタスクが0件のとき
+            # `to_csv()`で出力したときにKeyErrorが発生内容にするため、事前に列を追加しておく
+            phase = TaskPhase.ANNOTATION.value
+            columns = pandas.MultiIndex.from_tuples(
                 [
-                    "monitored_worktime_hour",
-                    "monitored_annotation_worktime_hour",
-                    "monitored_inspection_worktime_hour",
-                    "monitored_acceptance_worktime_hour",
-                ]
-            ]
-            df_agg_worktime.columns = pandas.MultiIndex.from_tuples(
-                [
-                    ("real_monitored_worktime_hour", "sum"),
-                    ("real_monitored_worktime_hour", "annotation"),
-                    ("real_monitored_worktime_hour", "inspection"),
-                    ("real_monitored_worktime_hour", "acceptance"),
+                    ("stdev__monitored_worktime_hour/input_data_count", phase),
+                    ("stdev__monitored_worktime_hour/annotation_count", phase),
                 ]
             )
+            df_empty = pandas.DataFrame(columns=columns, index=pandas.Index([], name="account_id"), dtype="float64")
+            return df_empty
 
-            return df.join(df_agg_worktime)
+        df2 = df.copy()
+        df2["worktime_hour/input_data_count"] = df2["worktime_hour"] / df2["input_data_count"]
+        df2["worktime_hour/annotation_count"] = df2["worktime_hour"] / df2["annotation_count"]
 
-        def join_various_counts(df: pandas.DataFrame) -> pandas.DataFrame:
-            """
-            生産量や指摘数などの個数情報を引数`df`に結合して、そのDataFrameを返します。
+        # 母標準偏差(ddof=0)を算出する
+        df_stdev = df2.groupby(["account_id", "phase"])[
+            ["worktime_hour/input_data_count", "worktime_hour/annotation_count"]
+        ].std(ddof=0)
 
-            Args:
-                df: multiindexの列を持つDataFrame
+        df_stdev2 = pandas.pivot_table(
+            df_stdev,
+            values=["worktime_hour/input_data_count", "worktime_hour/annotation_count"],
+            index="account_id",
+            columns="phase",
+        )
+        df_stdev3 = df_stdev2.rename(
+            columns={
+                "worktime_hour/input_data_count": "stdev__monitored_worktime_hour/input_data_count",
+                "worktime_hour/annotation_count": "stdev__monitored_worktime_hour/annotation_count",
+            }
+        )
 
-            Returns: 生成されるDataFrame
-                columns(level0): task_count, input_data_count, annotation_count, pointed_out_inspection_comment_count, rejected_count
-                columns(level1): ${phase}
+        return df_stdev3
+
+    @staticmethod
+    def _create_df_real_worktime(worktime_per_date: WorktimePerDate) -> pandas.DataFrame:
+        """
+        集計対象タスクに影響されない実際の計測作業時間と実績作業時間が格納されたDataFrameを生成します。
+
+        Returns:
+            以下の情報を持つDataFrame
                 index: account_id
-            """  # noqa: E501
-            if len(df_worktime_ratio) == 0:
-                # 集計対象のタスクが0件の場合など
-                # 生産量、指摘の量の情報は、生産性/品質の列を算出するのに必要なので追加する
-                phase = TaskPhase.ANNOTATION.value
-                df2 = df.copy()
-                df2[("task_count", phase)] = 0
-                df2[("input_data_count", phase)] = 0
-                df2[("annotation_count", phase)] = 0
-                df2[("pointed_out_inspection_comment_count", phase)] = 0
-                df2[("rejected_count", phase)] = 0
-                return df2
+                columns:
+                    ("real_actual_worktime_hour", "sum")
+                    ("real_monitored_worktime_hour", "sum")
+                    ("real_monitored_worktime_hour", "annotation")
+                    ("real_monitored_worktime_hour", "inspection")
+                    ("real_monitored_worktime_hour", "acceptance")
+                    ("real_monitored_worktime_hour/real_actual_worktime_hour", "sum")
 
-            df_agg_production = df_worktime_ratio.pivot_table(
-                values=[
-                    "task_count",
-                    "input_data_count",
-                    "annotation_count",
-                    "pointed_out_inspection_comment_count",
-                    "rejected_count",
-                ],
-                columns="phase",
-                index="account_id",
-                aggfunc="sum",
-            ).fillna(0)
+        """
+        df = worktime_per_date.df
+        df_agg_worktime = df.pivot_table(
+            values=[
+                "actual_worktime_hour",
+                "monitored_worktime_hour",
+                "monitored_annotation_worktime_hour",
+                "monitored_inspection_worktime_hour",
+                "monitored_acceptance_worktime_hour",
+            ],
+            index="account_id",
+            aggfunc="sum",
+        )
 
-            # 特定のフェーズの生産量の列が存在しないときは、列を追加する
-            # 理由：たとえば受入フェーズが着手されていないときは、受入フェーズの時間の列は存在するが、生産量(~_count)の列は存在しない。生産量の列は生産性の算出に必要なので、列を追加する
-            for phase in phase_list:
-                for production_amount in ["task_count", "input_data_count", "annotation_count"]:
-                    if (production_amount, phase) not in df_agg_production.columns:
-                        df_agg_production[(production_amount, phase)] = 0
+        # 列をMultiIndexに変更する
+        df_agg_worktime = df_agg_worktime[
+            [
+                "actual_worktime_hour",
+                "monitored_worktime_hour",
+                "monitored_annotation_worktime_hour",
+                "monitored_inspection_worktime_hour",
+                "monitored_acceptance_worktime_hour",
+            ]
+        ]
+        df_agg_worktime.columns = pandas.MultiIndex.from_tuples(
+            [
+                ("real_actual_worktime_hour", "sum"),
+                ("real_monitored_worktime_hour", "sum"),
+                ("real_monitored_worktime_hour", "annotation"),
+                ("real_monitored_worktime_hour", "inspection"),
+                ("real_monitored_worktime_hour", "acceptance"),
+            ]
+        )
 
-            df2 = df.join(df_agg_production)
-            return df2
+        df_agg_worktime[("real_monitored_worktime_hour/real_actual_worktime_hour", "sum")] = (
+            df_agg_worktime[("real_monitored_worktime_hour", "sum")]
+            / df_agg_worktime[("real_actual_worktime_hour", "sum")]
+        )
 
-        def join_user_info(df: pandas.DataFrame) -> pandas.DataFrame:
-            """
-            ユーザー情報を引数`df`に結合して、そのDataFrameを返します。
-            """
-            tmp_df_user = df_user.set_index("account_id")[["user_id", "username", "biography"]]
-            tmp_df_user.columns = pandas.MultiIndex.from_tuples([("user_id", ""), ("username", ""), ("biography", "")])
-            return df.join(tmp_df_user)
+        return df_agg_worktime
+
+    @staticmethod
+    def _create_df_working_period(worktime_per_date: WorktimePerDate) -> pandas.DataFrame:
+        """
+        作業期間情報を含むDataFrameを生成します。
+        作業期間は計測作業時間から算出します。
+
+        Returns:
+            以下の情報を持つDataFrame
+                index: account_id
+                columns:
+                    ("first_working_date", "")
+                    ("last_working_date", "")
+                    ("working_days", "")
+        """
+        df = worktime_per_date.df
+        df_max = df[df["monitored_worktime_hour"] > 0].pivot_table(values="date", index="account_id", aggfunc="max")
+        df_max = df_max.rename(columns={"date": "last_working_date"})
+
+        df_min = df[df["monitored_worktime_hour"] > 0].pivot_table(values="date", index="account_id", aggfunc="min")
+        df_min = df_min.rename(columns={"date": "first_working_date"})
+
+        df_count = df[df["monitored_worktime_hour"] > 0].pivot_table(values="date", index="account_id", aggfunc="count")
+        df_count = df_count.rename(columns={"date": "working_days"})
+
+        df2 = df_min.join(df_max).join(df_count)
+        df2.columns = pandas.MultiIndex.from_tuples(
+            [("first_working_date", ""), ("last_working_date", ""), ("working_days", "")]
+        )
+        return df2
+
+    @staticmethod
+    def _create_df_user(worktime_per_date: WorktimePerDate) -> pandas.DataFrame:
+        """
+        ユーザー情報が格納されたDataFrameを生成します。ただし列はMultiIndexです。
+
+        Returns:
+            column0:
+                ("user_id", "")
+                ("username", "")
+                ("biography", "")
+            column1: ""
+            index: account_id
+        """
+        df = worktime_per_date.df
+        df2 = df[["account_id", "user_id", "username", "biography"]]
+        df2 = df2.drop_duplicates()
+        df2 = df2.set_index("account_id")
+        df2.columns = pandas.MultiIndex.from_tuples([("user_id", ""), ("username", ""), ("biography", "")])
+        return df2
+
+    @classmethod
+    def from_df_wrapper(
+        cls,
+        worktime_per_date: WorktimePerDate,
+        task_worktime_by_phase_user: TaskWorktimeByPhaseUser,
+    ) -> UserPerformance:
+        """
+        pandas.DataFrameをラップしたオブジェクトから、インスタンスを生成します。
+
+        Args:
+            worktime_per_date: 日ごとの作業時間が記載されたDataFrameを格納したオブジェクト。ユーザー情報の取得や、実際の作業時間（集計タスクに影響しない）の算出に利用します。
+            task_worktime_by_phase_user: タスク、フェーズ、ユーザーごとの作業時間や生産量が格納されたオブジェクト。生産量やタスクにかかった作業時間の取得に利用します。
+
+
+        """
 
         def drop_unnecessary_columns(df: pandas.DataFrame) -> pandas.DataFrame:
             """
@@ -400,69 +520,34 @@ class UserPerformance:
             # 'errors="ignore"を指定する理由：削除する列が存在しないときでも、処理を継続するため
             return df.drop(dropped_column, axis=1, errors="ignore")
 
-        def get_phase_list(columns: list[str]) -> list[str]:
-            phase_list = []
+        def fillna_for_production_amount(df: pandas.DataFrame) -> pandas.DataFrame:
+            """
+            生産量や指摘数などの情報が欠損している場合は、0で埋めます。そうしないと、生産性や品質情報を計算する際にエラーになるためです。
+            """
+            level0_columns = [
+                "monitored_worktime_hour",
+                "task_count",
+                "input_data_count",
+                "annotation_count",
+                "pointed_out_inspection_comment_count",
+                "rejected_count",
+            ]
+            columns = [(c0, c1) for c0, c1 in df.columns if c0 in level0_columns]
 
-            for phase in TaskPhase:
-                if phase.value in columns:
-                    phase_list.append(phase.value)
-            return phase_list
+            return df.fillna({col: 0 for col in columns})
 
-        # タスク履歴の作業時間を集計する
-        # `["worktime_hour"]>0]`を指定している理由：受入フェーズのタスクは存在するが、一度も受入作業が実施されていないときに、df_agg_task_historyに"acceptance"の列を含まないようにするため
-        # 受入作業が実施されていないのに、"acceptance"列が存在すると、bokehなどでwarningが発生する。それを回避するため
-        df_agg_task_history = (
-            df_task_history[df_task_history["worktime_hour"] > 0]
-            .pivot_table(values="worktime_hour", columns="phase", index="account_id", aggfunc="sum")
-            .fillna(0)
-        )
+        # 実際の計測作業時間情報（集計タスクに影響されない作業時間）と実績作業時間を算出する
+        df = cls._create_df_real_worktime(worktime_per_date)
 
-        # TODO 見直す。 `df_labor`は不要だと思う
-        if df_labor is not None and len(df_labor) > 0:
-            df_agg_labor = df_labor.pivot_table(values="actual_worktime_hour", index="account_id", aggfunc="sum")
-            df_tmp = df_labor[df_labor["actual_worktime_hour"] > 0].pivot_table(
-                values="date", index="account_id", aggfunc="max"
-            )
-            if len(df_tmp) > 0:
-                df_agg_labor["last_working_date"] = df_tmp
-            else:
-                df_agg_labor["last_working_date"] = numpy.nan
+        # 集計対象タスクから計測作業時間や生産量を算出する
+        df = df.join(cls._create_df_monitored_worktime_and_production_amount(task_worktime_by_phase_user))
+        # 左結合でjoinした結果、生産量や指摘回数がNaNになる可能性があるので、fillnaで0を埋める
+        df = fillna_for_production_amount(df)
 
-            if len(df_agg_task_history) > 0:
-                df = df_agg_task_history.join(df_agg_labor)
-            else:
-                # Annofabで作業していないけど実績がある状態
-                df = df_agg_labor.copy()
-                # 教師付作業時間を0にする
-                df["annotation"] = 0
-        else:
-            df = df_agg_task_history
-            df["actual_worktime_hour"] = 0
-            df["last_working_date"] = None
+        phase_list = cls.get_phase_list(list(df.columns))
 
-        phase_list = get_phase_list(list(df.columns))
-        df = df[["actual_worktime_hour", "last_working_date", *phase_list]].copy()
-        df.columns = pandas.MultiIndex.from_tuples(
-            [("actual_worktime_hour", "sum"), ("last_working_date", "")]
-            + [("monitored_worktime_hour", phase) for phase in phase_list]
-        )
-
-        df[("monitored_worktime_hour", "sum")] = df[[("monitored_worktime_hour", phase) for phase in phase_list]].sum(
-            axis=1
-        )
-        if len(phase_list) == 0:
-            df[("monitored_worktime_hour", TaskPhase.ANNOTATION.value)] = 0
-
-        # TODO
-        df[(("real_actual_worktime_hour", "sum"))] = df[(("actual_worktime_hour", "sum"))]
-
-        # 実際の計測作業時間情報（集計タスクに影響されない作業時間）を結合する
-        df = join_real_monitored_worktime_hour(df)
-
-        df = join_stdev(df)
-
-        # 生産量などの情報をdfに結合する
-        df = join_various_counts(df)
+        # 集計対象タスクから単位量あたり計測作業時間の標準偏差を算出する
+        df = df.join(cls._create_df_stdev_monitored_worktime(task_worktime_by_phase_user))
 
         # 比例関係の列を計算して追加する
         cls._add_ratio_column_for_productivity_per_user(df, phase_list=phase_list)
@@ -471,8 +556,12 @@ class UserPerformance:
         df = drop_unnecessary_columns(df)
 
         # ユーザ情報を結合する
-        df = join_user_info(df)
+        df = df.join(cls._create_df_user(worktime_per_date))
 
+        # 作業期間に関する情報を算出する
+        df = df.join(cls._create_df_working_period(worktime_per_date))
+
+        df = df.sort_values(["user_id"])
         # `df.reset_index()`を実行する理由：indexである`account_id`を列にするため
         return cls(df.reset_index())
 
@@ -489,74 +578,15 @@ class UserPerformance:
             ("user_id", ""),
             ("username", ""),
             ("biography", ""),
+            ("first_working_date", ""),
             ("last_working_date", ""),
+            ("working_days", ""),
         ]
 
         value_columns = columns - set(basic_columns)
         dtypes = {col: "string" for col in basic_columns}
         dtypes.update({col: "float64" for col in value_columns})
         return df.astype(dtypes)
-
-    @staticmethod
-    def merge(obj1: UserPerformance, obj2: UserPerformance) -> UserPerformance:
-        def max_last_working_date(date1: Union[float, str], date2: Union[float, str]) -> Union[float, str]:
-            """
-            最新の作業日の新しい方を返す。
-
-            Returns:
-                date1, date2が両方ともnumpy.nanならば、numpy.nanを返す
-            """
-            if not isinstance(date1, str) and numpy.isnan(date1):
-                date1 = ""
-            if not isinstance(date2, str) and numpy.isnan(date2):
-                date2 = ""
-            max_date = max(date1, date2)
-            if max_date == "":
-                return numpy.nan
-            else:
-                return max_date
-
-        def merge_row(row1: pandas.Series, row2: pandas.Series) -> pandas.Series:
-            string_column_list = ["user_id", "username", "biography", "last_working_date"]
-            # `string_column_list`に対応する列は加算できないので、除外した上で加算する
-            # `infer_objects(copy=False)`を実行している理由：以下の警告に対応するため
-            # FutureWarning: Downcasting object dtype arrays on .fillna, .ffill, .bfill is deprecated and will change in a future version.  # noqa: E501
-            sum_row = row1.drop(labels=string_column_list, level=0).infer_objects(copy=False).fillna(0) + row2.drop(
-                labels=string_column_list, level=0
-            ).infer_objects(copy=False).fillna(0)
-
-            sum_row.loc["user_id", ""] = row1.loc["user_id", ""]
-            sum_row.loc["username", ""] = row1.loc["username", ""]
-            sum_row.loc["biography", ""] = row1.loc["biography", ""]
-            sum_row.loc["last_working_date", ""] = max_last_working_date(
-                row1.loc["last_working_date", ""], row2.loc["last_working_date", ""]
-            )
-            return sum_row
-
-        df1 = obj1.df
-        df2 = obj2.df
-
-        account_id_set = set(df1["account_id"]) | set(df2["account_id"])
-        sum_df = df1.set_index("account_id").copy()
-        added_df = df2.set_index("account_id")
-
-        for account_id in account_id_set:
-            if account_id not in added_df.index:
-                continue
-
-            if account_id in sum_df.index:
-                sum_df.loc[account_id] = merge_row(sum_df.loc[account_id], added_df.loc[account_id])
-            else:
-                sum_df.loc[account_id] = added_df.loc[account_id]
-
-        sum_df.reset_index(inplace=True)
-        # DataFrameを一旦Seriesに変換することで、列の型情報がすべてobjectになるので、再度正しい列の型に変換する
-        sum_df = UserPerformance._convert_column_dtypes(sum_df)
-
-        phase_list = UserPerformance.get_phase_list(sum_df.columns)
-        UserPerformance._add_ratio_column_for_productivity_per_user(sum_df, phase_list=phase_list)
-
-        return UserPerformance(sum_df.sort_values(["user_id"]))
 
     def _validate_df_for_output(self, output_file: Path) -> bool:
         if len(self.df) == 0:
@@ -649,7 +679,9 @@ class UserPerformance:
             ("user_id", ""),
             ("username", ""),
             ("biography", ""),
+            ("first_working_date", ""),
             ("last_working_date", ""),
+            ("working_days", ""),
         ]
         columns = user_columns + value_columns
 
