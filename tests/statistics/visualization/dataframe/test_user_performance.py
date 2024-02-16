@@ -29,12 +29,11 @@ class TestUserPerformance:
             task_worktime_by_phase_user=task_worktime_by_phase_user,
             worktime_per_date=worktime_per_date,
         )
+        actual.to_csv(output_dir / "test__from_df__to_csv.csv")
         assert len(actual.df) == 2
         assert actual.df[("user_id", "")][0] == "alice"
         assert actual.df[("real_actual_worktime_hour", "sum")][0] == 6
-        assert actual.df[("task_count", "annotation")][0] == 2
-
-        actual.to_csv(output_dir / "test__from_df__to_csv.csv")
+        assert actual.df[("task_count", "annotation")][0] == 1
 
     def test__from_df_wrapper__集計対象タスクが0件のとき(self):
         task_worktime_by_phase_user = TaskWorktimeByPhaseUser.from_csv(data_dir / "annotation-count-ratio-df-empty.csv")
@@ -111,3 +110,17 @@ class TestWholePerformance:
     def test_empty(self):
         empty = WholePerformance.empty()
         assert empty.series[("task_count", "annotation")] == 0
+
+    def test__from_df_wrapper__to_csv(self):
+        task_worktime_by_phase_user = TaskWorktimeByPhaseUser.from_csv(data_dir / "annotation-count-ratio-df.csv")
+        worktime_per_date = WorktimePerDate.from_csv(data_dir / "worktime-per-date.csv")
+
+        actual = WholePerformance.from_df_wrapper(
+            task_worktime_by_phase_user=task_worktime_by_phase_user,
+            worktime_per_date=worktime_per_date,
+        )
+        actual.to_csv(output_dir / "test__from_df__to_csv.csv")
+
+        assert actual.series[("real_monitored_worktime_hour", "sum")] == 8
+        assert actual.series[("task_count", "annotation")] == 2
+        assert actual.series[("working_user_count", "annotation")] == 2

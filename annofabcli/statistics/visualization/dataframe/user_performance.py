@@ -315,7 +315,6 @@ class UserPerformance:
             index="account_id",
             aggfunc="sum",
         ).fillna(0)
-
         df2 = df2.rename(columns={"worktime_hour": "monitored_worktime_hour"})
 
         phase_list = list(df2["monitored_worktime_hour"].columns)
@@ -1241,11 +1240,15 @@ class WholePerformance:
             task_worktime_by_phase_user: タスク、フェーズ、ユーザーごとの作業時間や生産量が格納されたオブジェクト。生産量やタスクにかかった作業時間の取得に利用します。
 
         """
-        # 引数で渡されたDataFrame内の`account_id`を疑似的な値`all`に変更して、全体の生産性などを算出する
         df_worktime_per_date = worktime_per_date.df.copy()
-        df_worktime_per_date["account_id"] = "all"
         df_task_worktime_by_phase_user = task_worktime_by_phase_user.df.copy()
-        df_task_worktime_by_phase_user["account_id"] = "all"
+
+        # 引数で渡されたDataFrame内のユーザー情報を疑似的な値に変更する。
+        # そうすれば1人のユーザーが作業したときの生産性情報が算出できる。その結果が全体の生産性情報になる。
+        for column in ["account_id", "user_id", "username", "biography"]:
+            df_worktime_per_date[column] = "pseudo_value"
+            df_task_worktime_by_phase_user[column] = "pseudo_value"
+
         all_user_performance = UserPerformance.from_df_wrapper(
             worktime_per_date=WorktimePerDate(df_worktime_per_date),
             task_worktime_by_phase_user=TaskWorktimeByPhaseUser(df_task_worktime_by_phase_user),
@@ -1254,14 +1257,23 @@ class WholePerformance:
         df_all = all_user_performance.df
         assert len(df_all) == 1
 
-        # 作業している人数をカウントする
-        for phase in all_user_performance.phase_list:
-            df_all[("working_user_count", phase)] = (df_all[("real_monitored_worktime_hour", phase)] > 0).sum()
+        # 作業している人数をカウントする（実際の計測作業時間でカウントする）
+        df_worktime2 = worktime_per_date.df.groupby("account_id")[
+            [
+                "monitored_annotation_worktime_hour",
+                "monitored_inspection_worktime_hour",
+                "monitored_acceptance_worktime_hour",
+            ]
+        ].sum()
+        for phase in TaskPhase:
+            df_all[("working_user_count", phase.value)] = (
+                df_worktime2[f"monitored_{phase.value}_worktime_hour"] > 0
+            ).sum()
 
         df_all = df_all.drop(
             [("account_id", ""), ("user_id", ""), ("username", ""), ("biography", "")], axis=1, errors="ignore"
         )
-        return df_all.iloc[0]
+        return cls(df_all.iloc[0])
 
     @classmethod
     def from_user_performance(cls, user_performance: UserPerformance) -> WholePerformance:
@@ -1292,23 +1304,13 @@ class WholePerformance:
 
         # 列の順番を整える
         phase_list = UserPerformance.get_phase_list(self.series.index)
-        indexes = UserPerformance.get_productivity_columns(phase_list) + [
-            ("working_user_count", phase) for phase in phase_list
+        indexes = [
+            *UserPerformance.get_productivity_columns(phase_list),
+            ("working_user_count", TaskPhase.ANNOTATION.value),
+            ("working_user_count", TaskPhase.INSPECTION.value),
+            ("working_user_count", TaskPhase.ACCEPTANCE.value),
         ]
-        # TODO 標準偏差は求められないので削除する
-        for phase in phase_list:
-            for key in [
-                "stdev__monitored_worktime_hour/input_data_count",
-                "stdev__monitored_worktime_hour/annotation_count",
-                "stdev__actual_worktime_hour/input_data_count",
-                "stdev__actual_worktime_hour/annotation_count",
-            ]:
-                try:
-                    indexes.remove((key, phase))
-                except ValueError:
-                    continue
 
-        indexes = [index for index in indexes if "stdev" not in index[0]]
         series = self.series[indexes]
 
         output_file.parent.mkdir(exist_ok=True, parents=True)
