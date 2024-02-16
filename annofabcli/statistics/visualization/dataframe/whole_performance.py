@@ -10,7 +10,7 @@ import numpy
 import pandas
 from annofabapi.models import TaskPhase
 
-from annofabcli.statistics.visualization.dataframe.task import TaskWorktimeByPhaseUser
+from annofabcli.statistics.visualization.dataframe.task_worktime_by_phase_user import TaskWorktimeByPhaseUser
 from annofabcli.statistics.visualization.dataframe.user_performance import UserPerformance
 from annofabcli.statistics.visualization.dataframe.worktime_per_date import WorktimePerDate
 

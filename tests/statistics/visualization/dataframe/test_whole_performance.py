@@ -1,6 +1,6 @@
 from pathlib import Path
 
-from annofabcli.statistics.visualization.dataframe.task import TaskWorktimeByPhaseUser
+from annofabcli.statistics.visualization.dataframe.task_worktime_by_phase_user import TaskWorktimeByPhaseUser
 from annofabcli.statistics.visualization.dataframe.whole_performance import (
     WholePerformance,
 )
