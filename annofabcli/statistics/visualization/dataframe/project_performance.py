@@ -8,6 +8,7 @@ import pandas
 
 from annofabcli.common.utils import print_csv
 from annofabcli.statistics.visualization.dataframe.user_performance import UserPerformance
+from annofabcli.statistics.visualization.dataframe.whole_performance import WholePerformance
 from annofabcli.statistics.visualization.model import WorktimeColumn
 from annofabcli.statistics.visualization.project_dir import ProjectDir
 
@@ -27,26 +28,6 @@ class ProjectPerformance:
             logger.warning(f"データが0件のため、{output_file} は出力しません。")
             return False
         return True
-
-    @classmethod
-    def _get_start_date_end_date(cls, project_dir: ProjectDir) -> pandas.Series:
-        index = pandas.MultiIndex.from_tuples(
-            [
-                ("start_date", ""),
-                ("end_date", ""),
-            ]
-        )
-
-        try:
-            worktime_per_date_user_obj = project_dir.read_worktime_per_date_user()
-            df = worktime_per_date_user_obj.df
-            df2 = df[df["actual_worktime_hour"] > 0]
-            if len(df2) == 0:
-                return pandas.Series([numpy.nan, numpy.nan], index=index)
-            return pandas.Series([df2["date"].min(), df2["date"].max()], index=index)
-        except Exception:
-            logger.warning(f"'{project_dir}'のユーザごと日ごとの作業時間から`start_date`,`end_date`を取得するのに失敗しました。", exc_info=True)
-            return pandas.Series([numpy.nan, numpy.nan], index=index)
 
     @classmethod
     def _get_project_info(cls, project_dir: ProjectDir) -> pandas.Series:
@@ -91,36 +72,14 @@ class ProjectPerformance:
         # プロジェクトの基本情報を取得
         project_info_series = cls._get_project_info(project_dir)
         series = pandas.concat([series, project_info_series])
-        date_series = cls._get_start_date_end_date(project_dir)
-        series = pandas.concat([series, date_series])
         # プロジェクトの生産性と品質を取得
         try:
             whole_performance_obj = project_dir.read_whole_performance()
             series = pandas.concat([series, whole_performance_obj.series])
         except Exception:
             logger.warning(f"'{project_dir}'の全体の生産性と品質を取得するのに失敗しました。", exc_info=True)
-            value_index = UserPerformance.get_productivity_columns(["annotation"])
-            value_index.append(("working_user_count", "annotation"))
-            series = pandas.concat([series, pandas.Series([numpy.nan] * len(value_index), index=value_index)])
+            series = pandas.concat([series, WholePerformance.empty().series])
 
-        return series
-
-    @classmethod
-    def _get_empty_series(cls, dirname: str) -> pandas.Series:
-        series = pandas.Series([dirname], index=pandas.MultiIndex.from_tuples([("dirname", "")]))
-
-        header_index = [
-            ("project_title", ""),
-            ("project_id", ""),
-            ("input_data_type", ""),
-            ("start_date", ""),
-            ("end_date", ""),
-        ]
-        value_index = UserPerformance.get_productivity_columns(["annotation"])
-        index = header_index + value_index
-
-        for key in index:
-            series[key] = numpy.nan
         return series
 
     @classmethod
@@ -140,17 +99,10 @@ class ProjectPerformance:
 
         phase_list = UserPerformance.get_phase_list(self.df)
 
-        first_columns = [
-            ("dirname", ""),
-            ("project_title", ""),
-            ("project_id", ""),
-            ("input_data_type", ""),
-            ("start_date", ""),
-            ("end_date", ""),
-        ]
-        value_columns = UserPerformance.get_productivity_columns(phase_list)
+        first_columns = [("dirname", ""), ("project_title", ""), ("project_id", ""), ("input_data_type", "")]
+        value_columns = WholePerformance.get_series_index(phase_list)
 
-        columns = first_columns + value_columns + [("working_user_count", phase) for phase in phase_list]
+        columns = first_columns + value_columns
         print_csv(self.df[columns], output=str(output_file))
 
 

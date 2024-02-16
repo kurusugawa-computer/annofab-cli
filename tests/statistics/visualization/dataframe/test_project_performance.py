@@ -9,41 +9,38 @@ from annofabcli.statistics.visualization.dataframe.project_performance import (
 from annofabcli.statistics.visualization.model import WorktimeColumn
 from annofabcli.statistics.visualization.project_dir import ProjectDir
 
-output_dir = Path("./tests/out/statistics/visualization/dataframe")
+output_dir = Path("./tests/out/statistics/visualization/dataframe/project_performance")
 data_dir = Path("./tests/data/statistics")
 output_dir.mkdir(exist_ok=True, parents=True)
 
 
 class TestProjectPerformance:
-    obj: ProjectPerformance
-
-    @classmethod
-    def setup_class(cls):
-        cls.obj = ProjectPerformance.from_project_dirs([ProjectDir(data_dir / "visualization-dir1")])
-
-    def test_to_csv(self):
-        self.obj.to_csv(output_dir / "プロジェクごとの生産性と品質.csv")
-
-    def test_instance(self):
-        df = self.obj.df
+    def test__from_project_dirs__and__to_csv(self):
+        actual = ProjectPerformance.from_project_dirs([ProjectDir(data_dir / "visualization-dir1")])
+        df = actual.df
         assert len(df) == 1
         row = df.iloc[0]
-        # メインの項目をアサートする
+
+        # メインの項目だけチェックする
         assert row[("dirname", "")] == "visualization-dir1"
         assert row[("project_title", "")] == "test-project"
-        assert row[("start_date", "")] == "2022-01-01"
-        assert row[("actual_worktime_hour", "sum")] == 4503
+        assert row[("input_data_type", "")] == "image"
+        assert row[("first_working_date", "")] == "2023-10-25"
 
-    def test_from_project_dirs_with_empty(self):
-        obj = ProjectPerformance.from_project_dirs([ProjectDir(data_dir / "empty")])
-        df = obj.df
+        actual.to_csv(output_dir / "test__from_project_dirs__and__to_csv.csv")
+
+    def test__from_project_dirs__空ディレクトから生成する(self):
+        actual = ProjectPerformance.from_project_dirs([ProjectDir(data_dir / "empty")])
+        df = actual.df
         assert len(df) == 1
         row = df.iloc[0]
         # メインの項目をアサートする
         assert row[("dirname", "")] == "empty"
         assert numpy.isnan(row[("project_title", "")])
-        assert numpy.isnan(row[("start_date", "")])
+        assert numpy.isnan(row[("first_working_date", "")])
         assert row[("actual_worktime_hour", "sum")] == 0
+
+        actual.to_csv(output_dir / "test__from_project_dirs__空ディレクトから生成する.csv")
 
 
 class TestProjectWorktimePerMonth:

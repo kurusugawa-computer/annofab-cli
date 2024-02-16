@@ -227,7 +227,20 @@ class WholePerformance:
 
         # 列の順番を整える
         phase_list = UserPerformance.get_phase_list(self.series.index)
-        indexes = [
+        indexes = self.get_series_index(phase_list)
+        series = self.series[indexes]
+
+        output_file.parent.mkdir(exist_ok=True, parents=True)
+        logger.debug(f"{str(output_file)} を出力します。")
+        series.to_csv(str(output_file), sep=",", encoding="utf_8_sig", header=False)
+
+    @staticmethod
+    def get_series_index(phase_list: list[str]) -> list[tuple[str, str]]:
+        """
+        格納しているpandas.Seriesのindexを取得する。
+        """
+        # 列の順番を整える
+        return [
             ("first_working_date", ""),
             ("last_working_date", ""),
             ("working_days", ""),
@@ -236,9 +249,3 @@ class WholePerformance:
             ("working_user_count", TaskPhase.INSPECTION.value),
             ("working_user_count", TaskPhase.ACCEPTANCE.value),
         ]
-
-        series = self.series[indexes]
-
-        output_file.parent.mkdir(exist_ok=True, parents=True)
-        logger.debug(f"{str(output_file)} を出力します。")
-        series.to_csv(str(output_file), sep=",", encoding="utf_8_sig", header=False)
