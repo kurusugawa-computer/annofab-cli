@@ -44,7 +44,7 @@ class TestProjectPerformance:
 
 
 class TestProjectWorktimePerMonth:
-    def test_from_project_dirs(self):
+    def test__from_project_dirs__and_to_csv(self):
         actual_worktime = ProjectWorktimePerMonth.from_project_dirs(
             [ProjectDir(data_dir / "visualization-dir1")], worktime_column=WorktimeColumn.ACTUAL_WORKTIME_HOUR
         )
@@ -55,7 +55,9 @@ class TestProjectWorktimePerMonth:
         assert row["2022-01"] == 3
         assert row["2022-02"] == 7
 
-    def test_from_project_dirs_empty_dir(self):
+        actual_worktime.to_csv(output_dir / "test__from_project_dirs__and_to_csv.csv")
+
+    def test__from_project_dirs__空ディレクトリから生成(self):
         actual_worktime = ProjectWorktimePerMonth.from_project_dirs(
             [ProjectDir(data_dir / "empty")], worktime_column=WorktimeColumn.ACTUAL_WORKTIME_HOUR
         )
@@ -63,3 +65,5 @@ class TestProjectWorktimePerMonth:
         assert len(df) == 1
         row = df.iloc[0]
         assert row["dirname"] == "empty"
+
+        actual_worktime.to_csv(output_dir / "test__from_project_dirs__空ディレクトリから生成.csv")
