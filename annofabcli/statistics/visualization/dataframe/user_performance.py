@@ -674,7 +674,6 @@ class UserPerformance:
             ("working_days", ""),
         ]
         columns = user_columns + value_columns
-
         print_csv(self.df[columns], str(output_file))
 
     @staticmethod
@@ -803,31 +802,6 @@ class UserPerformance:
             series[("rejected_count/task_count", phase)] = (
                 series[("rejected_count", phase)] / series[("task_count", phase)]
             )
-
-    def get_summary(self) -> pandas.Series:
-        """
-        全体の生産性と品質が格納された pandas.Series を取得する。
-
-        """
-        columns_for_sum = [
-            "real_monitored_worktime_hour",
-            "monitored_worktime_hour",
-            "task_count",
-            "input_data_count",
-            "annotation_count",
-            "real_actual_worktime_hour",
-            "actual_worktime_hour",
-            "pointed_out_inspection_comment_count",
-            "rejected_count",
-        ]
-        sum_series = self.df[columns_for_sum].sum()
-        self._add_ratio_key_for_whole_productivity(sum_series, phase_list=self.phase_list)
-
-        # 作業している人数をカウントする
-        for phase in self.phase_list:
-            sum_series[("working_user_count", phase)] = (self.df[("task_count", phase)] > 0).sum()
-
-        return sum_series
 
     def plot_productivity(
         self, output_file: Path, worktime_type: WorktimeType, performance_unit: PerformanceUnit

@@ -232,7 +232,7 @@ def merge_visualization_dir(  # pylint: disable=too-many-statements
     user_performance = UserPerformance.from_df_wrapper(
         task_worktime_by_phase_user=task_worktime_by_phase_user, worktime_per_date=worktime_per_date
     )
-    whole_performance =WholePerformance.from_df_wrapper(
+    whole_performance = WholePerformance.from_df_wrapper(
         task_worktime_by_phase_user=task_worktime_by_phase_user, worktime_per_date=worktime_per_date
     )
     writing_obj = WritingVisualizationFile(output_project_dir, user_id_list=user_id_list, minimal_output=minimal_output)

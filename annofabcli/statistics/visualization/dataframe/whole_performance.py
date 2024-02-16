@@ -1,12 +1,12 @@
-# pylint: disable=too-many-lines
 """
-各ユーザの合計の生産性と品質
+全体の生産性と品質
 """
 from __future__ import annotations
 
 import logging
 from pathlib import Path
 
+import numpy
 import pandas
 from annofabapi.models import TaskPhase
 
@@ -86,7 +86,61 @@ class WholePerformance:
     @classmethod
     def empty(cls) -> WholePerformance:
         """空のデータフレームを持つインスタンスを生成します。"""
-        return cls.from_user_performance(UserPerformance.empty())
+        phase = TaskPhase.ANNOTATION.value
+
+        worktime_columns = [
+            ("real_monitored_worktime_hour", "sum"),
+            # 常に全フェーズを出力する
+            ("real_monitored_worktime_hour", "annotation"),
+            ("real_monitored_worktime_hour", "inspection"),
+            ("real_monitored_worktime_hour", "acceptance"),
+            ("real_actual_worktime_hour", "sum"),
+            ("monitored_worktime_hour", "sum"),
+            ("monitored_worktime_hour", phase),
+            ("actual_worktime_hour", "sum"),
+            ("actual_worktime_hour", phase),
+        ]
+
+        count_columns = [
+            ("task_count", phase),
+            ("input_data_count", phase),
+            ("annotation_count", phase),
+            ("pointed_out_inspection_comment_count", phase),
+            ("rejected_count", phase),
+            # 常に全フェーズを出力する
+            ("working_user_count", "annotation"),
+            ("working_user_count", "inspection"),
+            ("working_user_count", "acceptance"),
+        ]
+
+        ratio_columns = [
+            ("monitored_worktime_ratio", phase),
+            ("real_monitored_worktime_hour/real_actual_worktime_hour", "sum"),
+            ("monitored_worktime_hour/input_data_count", phase),
+            ("actual_worktime_hour/input_data_count", phase),
+            ("monitored_worktime_hour/annotation_count", phase),
+            ("actual_worktime_hour/annotation_count", phase),
+            ("pointed_out_inspection_comment_count/input_data_count", phase),
+            ("pointed_out_inspection_comment_count/annotation_count", phase),
+            ("rejected_count/task_count", phase),
+        ]
+
+        stdev_columns = [
+            ("stdev__monitored_worktime_hour/input_data_count", phase),
+            ("stdev__actual_worktime_hour/input_data_count", phase),
+            ("stdev__monitored_worktime_hour/annotation_count", phase),
+            ("stdev__actual_worktime_hour/annotation_count", phase),
+        ]
+
+        date_columns = [
+            ("first_working_date", ""),
+            ("last_working_date", ""),
+        ]
+
+        data = {key: 0 for key in worktime_columns + count_columns}
+        data.update({key: numpy.nan for key in ratio_columns + stdev_columns + date_columns})
+
+        return cls(pandas.Series(data))
 
     @classmethod
     def from_csv(cls, csv_file: Path) -> WholePerformance:

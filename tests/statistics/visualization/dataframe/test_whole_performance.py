@@ -35,7 +35,7 @@ class TestWholePerformance:
 
     def test__empty__to_csv(self):
         empty = WholePerformance.empty()
-        empty.to_csv(output_dir / "test__from_df__to_csv.csv")
+        empty.to_csv(output_dir / "test__empty__to_csv.csv")
         assert empty.series[("real_monitored_worktime_hour", "sum")] == 0
         assert empty.series[("task_count", "annotation")] == 0
 
