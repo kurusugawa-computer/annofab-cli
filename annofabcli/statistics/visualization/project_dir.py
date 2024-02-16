@@ -17,9 +17,9 @@ from annofabcli.statistics.visualization.dataframe.task import Task, TaskWorktim
 from annofabcli.statistics.visualization.dataframe.user_performance import (
     PerformanceUnit,
     UserPerformance,
-    WholePerformance,
     WorktimeType,
 )
+from annofabcli.statistics.visualization.dataframe.whole_performance import WholePerformance
 from annofabcli.statistics.visualization.dataframe.whole_productivity_per_date import (
     WholeProductivityPerCompletedDate,
     WholeProductivityPerFirstAnnotationStartedDate,

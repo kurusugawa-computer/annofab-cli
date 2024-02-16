@@ -4,7 +4,6 @@ from annofabcli.statistics.visualization.dataframe.task import TaskWorktimeByPha
 from annofabcli.statistics.visualization.dataframe.user_performance import (
     PerformanceUnit,
     UserPerformance,
-    WholePerformance,
     WorktimeType,
 )
 from annofabcli.statistics.visualization.dataframe.worktime_per_date import WorktimePerDate

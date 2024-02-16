@@ -22,7 +22,8 @@ from annofabcli.statistics.visualization.dataframe.productivity_per_date import 
     InspectorProductivityPerDate,
 )
 from annofabcli.statistics.visualization.dataframe.task import Task, TaskWorktimeByPhaseUser
-from annofabcli.statistics.visualization.dataframe.user_performance import UserPerformance, WholePerformance
+from annofabcli.statistics.visualization.dataframe.user_performance import UserPerformance
+from annofabcli.statistics.visualization.dataframe.whole_performance import WholePerformance
 from annofabcli.statistics.visualization.dataframe.whole_productivity_per_date import (
     WholeProductivityPerCompletedDate,
     WholeProductivityPerFirstAnnotationStartedDate,
@@ -48,13 +49,14 @@ class WritingVisualizationFile:
     @_catch_exception
     def write_user_performance(self, user_performance: UserPerformance):
         """ユーザごとの生産性と品質に関するファイルを出力する。"""
-
         self.output_project_dir.write_user_performance(user_performance)
-        whole_performance = WholePerformance.from_user_performance(user_performance)
-        self.output_project_dir.write_whole_performance(whole_performance)
-
         # ユーザーごとの散布図を出力
         self.output_project_dir.write_user_performance_scatter_plot(user_performance)
+
+    @_catch_exception
+    def write_whole_performance(self, whole_performance: WholePerformance):
+        """全体の生産性と品質に関するファイルを出力する。"""
+        self.output_project_dir.write_whole_performance(whole_performance)
 
     @_catch_exception
     def write_cumulative_line_graph(self, task: Task) -> None:
@@ -230,13 +232,16 @@ def merge_visualization_dir(  # pylint: disable=too-many-statements
     user_performance = UserPerformance.from_df_wrapper(
         task_worktime_by_phase_user=task_worktime_by_phase_user, worktime_per_date=worktime_per_date
     )
-
+    whole_performance =WholePerformance.from_df_wrapper(
+        task_worktime_by_phase_user=task_worktime_by_phase_user, worktime_per_date=worktime_per_date
+    )
     writing_obj = WritingVisualizationFile(output_project_dir, user_id_list=user_id_list, minimal_output=minimal_output)
 
     writing_obj.write_task_list_and_histogram(task)
     writing_obj.write_worktime_per_date(worktime_per_date)
     writing_obj.write_task_worktime_by_phase_user(task_worktime_by_phase_user)
     writing_obj.write_user_performance(user_performance)
+    writing_obj.write_whole_performance(whole_performance)
 
     writing_obj.write_cumulative_line_graph(task)
     writing_obj.write_line_graph(task)
