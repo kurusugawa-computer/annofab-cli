@@ -453,16 +453,7 @@ class UserPerformance:
                     ("working_days", "")
         """
         df = worktime_per_date.df
-        df_max = df[df["monitored_worktime_hour"] > 0].pivot_table(values="date", index="account_id", aggfunc="max")
-        df_max = df_max.rename(columns={"date": "last_working_date"})
-
-        df_min = df[df["monitored_worktime_hour"] > 0].pivot_table(values="date", index="account_id", aggfunc="min")
-        df_min = df_min.rename(columns={"date": "first_working_date"})
-
-        df_count = df[df["monitored_worktime_hour"] > 0].pivot_table(values="date", index="account_id", aggfunc="count")
-        df_count = df_count.rename(columns={"date": "working_days"})
-
-        df2 = df_min.join(df_max).join(df_count)
+        df2 = df[df["monitored_worktime_hour"] > 0].pivot_table(values="date", index="account_id", aggfunc=["min","max","count"])
         df2.columns = pandas.MultiIndex.from_tuples(
             [("first_working_date", ""), ("last_working_date", ""), ("working_days", "")]
         )
