@@ -136,6 +136,7 @@ class WholePerformance:
         date_columns = [
             ("first_working_date", ""),
             ("last_working_date", ""),
+            ("working_days", ""),
         ]
 
         data: dict[tuple[str, str], float] = {key: 0 for key in worktime_columns + count_columns}
