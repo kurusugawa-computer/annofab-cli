@@ -37,6 +37,63 @@ class WholePerformance:
             return False
         return True
 
+    @staticmethod
+    def _create_all_user_performance(
+        worktime_per_date: WorktimePerDate,
+        task_worktime_by_phase_user: TaskWorktimeByPhaseUser,
+    ) -> UserPerformance:
+        """
+        1人が作業した場合のパフォーマンス情報を生成します。
+        ユーザー情報である以下の列には、`pseudo_value`が設定されています。
+        * account_id
+        * user_id
+        * username
+        * biography
+        """
+        df_worktime_per_date = worktime_per_date.df.copy()
+        df_task_worktime_by_phase_user = task_worktime_by_phase_user.df.copy()
+
+        PSEUDO_VALUE = "pseudo_value"
+        user_info_columns = ["account_id", "user_id", "username", "biography"]
+        # 引数で渡されたDataFrame内のユーザー情報を疑似的な値に変更する。
+        # そうすれば1人のユーザーが作業したときの生産性情報が算出できる。その結果が全体の生産性情報になる。
+        for column in user_info_columns:
+            df_worktime_per_date[column] = "pseudo_value"
+            df_task_worktime_by_phase_user[column] = "pseudo_value"
+
+        unique_keys_for_worktime = ["date"]
+        addable_columns_for_worktime = list(
+            set(df_worktime_per_date.columns) - set(user_info_columns) - set(unique_keys_for_worktime)
+        )
+        df_worktime_per_date = df_worktime_per_date.groupby(unique_keys_for_worktime)[
+            addable_columns_for_worktime
+        ].sum()
+        df_worktime_per_date[user_info_columns] = PSEUDO_VALUE
+        df_worktime_per_date = df_worktime_per_date.reset_index()
+
+        # `status`はあとで結合するため、`df_task`を作る
+        df_task = df_task_worktime_by_phase_user[["project_id", "task_id", "status"]].drop_duplicates()
+
+        unique_keys_for_worktime = ["project_id", "task_id", "phase", "phase_stage"]
+        addable_columns_for_task = list(
+            set(df_task_worktime_by_phase_user.columns)
+            - set(user_info_columns)
+            - set(unique_keys_for_worktime)
+            - {"status"}
+        )
+        df_task_worktime_by_phase_user = df_task_worktime_by_phase_user.groupby(unique_keys_for_worktime)[
+            addable_columns_for_task
+        ].sum()
+        df_task_worktime_by_phase_user[user_info_columns] = PSEUDO_VALUE
+        df_task_worktime_by_phase_user = df_task_worktime_by_phase_user.reset_index()
+        # status情報を結合する
+        df_task_worktime_by_phase_user = df_task_worktime_by_phase_user.merge(df_task, on=["project_id", "task_id"])
+
+        return UserPerformance.from_df_wrapper(
+            worktime_per_date=WorktimePerDate(df_worktime_per_date),
+            task_worktime_by_phase_user=TaskWorktimeByPhaseUser(df_task_worktime_by_phase_user),
+        )
+
     @classmethod
     def from_df_wrapper(
         cls,
@@ -51,20 +108,8 @@ class WholePerformance:
             task_worktime_by_phase_user: タスク、フェーズ、ユーザーごとの作業時間や生産量が格納されたオブジェクト。生産量やタスクにかかった作業時間の取得に利用します。
 
         """
-        df_worktime_per_date = worktime_per_date.df.copy()
-        df_task_worktime_by_phase_user = task_worktime_by_phase_user.df.copy()
-
-        user_info_columns = ["account_id", "user_id", "username", "biography"]
-        # 引数で渡されたDataFrame内のユーザー情報を疑似的な値に変更する。
-        # そうすれば1人のユーザーが作業したときの生産性情報が算出できる。その結果が全体の生産性情報になる。
-        for column in user_info_columns:
-            df_worktime_per_date[column] = "pseudo_value"
-            df_task_worktime_by_phase_user[column] = "pseudo_value"
-
-        all_user_performance = UserPerformance.from_df_wrapper(
-            worktime_per_date=WorktimePerDate(df_worktime_per_date),
-            task_worktime_by_phase_user=TaskWorktimeByPhaseUser(df_task_worktime_by_phase_user),
-        )
+        # 1人が作業した場合のパフォーマンス情報を生成する
+        all_user_performance = cls._create_all_user_performance(worktime_per_date, task_worktime_by_phase_user)
 
         df_all = all_user_performance.df
         assert len(df_all) == 1

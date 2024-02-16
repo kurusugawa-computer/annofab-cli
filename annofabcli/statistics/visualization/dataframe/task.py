@@ -17,9 +17,24 @@ logger = logging.getLogger(__name__)
 
 
 class Task:
-    """'タスクlist.csv'に該当するデータフレームをラップしたクラス"""
+    """
+    'タスクlist.csv'に該当するデータフレームをラップしたクラス
+
+    `project_id`,`task_id`のペアがユニークなキーです。
+    """
+
+    @staticmethod
+    def _duplicated_keys(df: pandas.DataFrame) -> bool:
+        """
+        DataFrameに重複したキーがあるかどうかを返します。
+        """
+        duplicated = df.duplicated(subset=["project_id", "task_id"])
+        return duplicated.any()
 
     def __init__(self, df: pandas.DataFrame) -> None:
+        if self._duplicated_keys(df):
+            logger.warning("引数`df`に重複したキー（project_id, task_id）が含まれています。")
+
         self.df = df
 
     def _validate_df_for_output(self, output_file: Path) -> bool:

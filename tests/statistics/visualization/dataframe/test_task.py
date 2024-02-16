@@ -2,9 +2,9 @@ from pathlib import Path
 
 import pandas
 
-from annofabcli.statistics.visualization.dataframe.task import Task, TaskWorktimeByPhaseUser
+from annofabcli.statistics.visualization.dataframe.task import Task
 
-output_dir = Path("./tests/out/statistics/visualization/dataframe")
+output_dir = Path("./tests/out/statistics/visualization/dataframe/task")
 data_dir = Path("./tests/data/statistics")
 output_dir.mkdir(exist_ok=True, parents=True)
 
@@ -28,27 +28,4 @@ class TestTask:
         assert empty.is_empty()
 
         merged_obj = Task.merge(empty, self.obj)
-        assert len(self.obj.df) == len(merged_obj.df)
-
-
-class TestTaskWorktimeByPhaseUser:
-    obj: TaskWorktimeByPhaseUser
-
-    @classmethod
-    def setup_class(cls) -> None:
-        df_worktime_ratio = pandas.read_csv(str(data_dir / "annotation-count-ratio-df.csv"))
-        df_user = pandas.read_csv(str(data_dir / "user.csv"))
-        df_task = pandas.read_csv(str(data_dir / "tasak.csv"))
-        cls.obj = TaskWorktimeByPhaseUser.from_df(
-            df_worktime_ratio=df_worktime_ratio, df_user=df_user, df_task=df_task, project_id="prj1"
-        )
-
-    def test__to_csv(self):
-        self.obj.to_csv(output_dir / "task-worktime-by-user-phase.csv")
-
-    def test_empty(self):
-        empty = TaskWorktimeByPhaseUser.empty()
-        assert empty.is_empty()
-
-        merged_obj = TaskWorktimeByPhaseUser.merge(empty, self.obj)
         assert len(self.obj.df) == len(merged_obj.df)
