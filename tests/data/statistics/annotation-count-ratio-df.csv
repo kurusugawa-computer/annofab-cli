@@ -1,6 +1,6 @@
-project_id,task_id,status,phase,phase_stage,account_id,worktime_hour,task_count,annotation_count,input_data_count,pointed_out_inspection_comment_count,rejected_count
-prj1,task1,complete,annotation,1,alice,2,1,100,2,5,1
-prj1,task1,complete,inspection,1,bob,0.5,0.5,50,1,0,0
-prj1,task2,complete,annotation,1,bob,2,1,200,4,6,1
-prj1,task2,complete,inspection,1,alice,0.5,0.5,100,2,0,0
-prj1,task2,complete,acceptance,1,alice,0.1,1,200,4,0,0
+project_id,task_id,phase,phase_stage,account_id,worktime_hour,task_count,annotation_count,input_data_count,pointed_out_inspection_comment_count,rejected_count
+prj1,task1,annotation,1,alice,2,1,100,2,5,1
+prj1,task1,inspection,1,bob,0.5,0.5,50,1,0,0
+prj1,task2,annotation,1,bob,2,1,200,4,6,1
+prj1,task2,inspection,1,alice,0.5,0.5,100,2,0,0
+prj1,task2,acceptance,1,alice,0.1,1,200,4,0,0
