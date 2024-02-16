@@ -234,8 +234,6 @@ class UserPerformance:
     def create_df_stdev_worktime(df_worktime_ratio: pandas.DataFrame) -> pandas.DataFrame:
         """
         単位量あたり作業時間の標準偏差のDataFrameを生成する
-
-        TODO 重複しているので見直す
         """
         df_worktime_ratio2 = df_worktime_ratio.copy()
         df_worktime_ratio2["worktime_hour/input_data_count"] = (
@@ -453,7 +451,9 @@ class UserPerformance:
                     ("working_days", "")
         """
         df = worktime_per_date.df
-        df2 = df[df["monitored_worktime_hour"] > 0].pivot_table(values="date", index="account_id", aggfunc=["min","max","count"])
+        df2 = df[df["monitored_worktime_hour"] > 0].pivot_table(
+            values="date", index="account_id", aggfunc=["min", "max", "count"]
+        )
         df2.columns = pandas.MultiIndex.from_tuples(
             [("first_working_date", ""), ("last_working_date", ""), ("working_days", "")]
         )
@@ -1226,6 +1226,42 @@ class WholePerformance:
             logger.warning(f"データが0件のため、{output_file} は出力しません。")
             return False
         return True
+
+    @classmethod
+    def from_df_wrapper(
+        cls,
+        worktime_per_date: WorktimePerDate,
+        task_worktime_by_phase_user: TaskWorktimeByPhaseUser,
+    ) -> WholePerformance:
+        """
+        pandas.DataFrameをラップしたオブジェクトから、インスタンスを生成します。
+
+        Args:
+            worktime_per_date: 日ごとの作業時間が記載されたDataFrameを格納したオブジェクト。ユーザー情報の取得や、実際の作業時間（集計タスクに影響しない）の算出に利用します。
+            task_worktime_by_phase_user: タスク、フェーズ、ユーザーごとの作業時間や生産量が格納されたオブジェクト。生産量やタスクにかかった作業時間の取得に利用します。
+
+        """
+        # 引数で渡されたDataFrame内の`account_id`を疑似的な値`all`に変更して、全体の生産性などを算出する
+        df_worktime_per_date = worktime_per_date.df.copy()
+        df_worktime_per_date["account_id"] = "all"
+        df_task_worktime_by_phase_user = task_worktime_by_phase_user.df.copy()
+        df_task_worktime_by_phase_user["account_id"] = "all"
+        all_user_performance = UserPerformance.from_df_wrapper(
+            worktime_per_date=WorktimePerDate(df_worktime_per_date),
+            task_worktime_by_phase_user=TaskWorktimeByPhaseUser(df_task_worktime_by_phase_user),
+        )
+
+        df_all = all_user_performance.df
+        assert len(df_all) == 1
+
+        # 作業している人数をカウントする
+        for phase in all_user_performance.phase_list:
+            df_all[("working_user_count", phase)] = (df_all[("real_monitored_worktime_hour", phase)] > 0).sum()
+
+        df_all = df_all.drop(
+            [("account_id", ""), ("user_id", ""), ("username", ""), ("biography", "")], axis=1, errors="ignore"
+        )
+        return df_all.iloc[0]
 
     @classmethod
     def from_user_performance(cls, user_performance: UserPerformance) -> WholePerformance:
