@@ -25,6 +25,9 @@ class WholePerformance:
         series: 全体の生産性と品質が格納されたpandas.Series
     """
 
+    STRING_KEYS = {("first_working_date", ""), ("last_working_date", "")}
+    """文字列が格納されているキー"""
+
     def __init__(self, series: pandas.Series) -> None:
         self.series = series
 
@@ -150,7 +153,24 @@ class WholePerformance:
         df = pandas.read_csv(str(csv_file), header=None, index_col=[0, 1])
         # 3列目を値としたpandas.Series を取得する。
         series = df[2]
-        return cls(series)
+
+        data = {}
+        # CSVファイル読み込み直後では、数値も文字列として格納されているので、文字列情報以外は数値に変換する
+        for key, value in series.items():
+            # `first_working_date`など2列目が空欄の場合は、key[1]がnumpy.nanになるため、keyを変換する
+            if isinstance(key[1], float) and numpy.isnan(key[1]):
+                key2 = (key[0], "")
+            else:
+                key2 = key
+
+            if key2 in cls.STRING_KEYS:
+                value2 = value
+            else:
+                value2 = float(value)
+
+            data[key2] = value2
+
+        return cls(pandas.Series(data))
 
     def to_csv(self, output_file: Path) -> None:
         """

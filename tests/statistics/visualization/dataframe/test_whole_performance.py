@@ -12,7 +12,6 @@ output_dir.mkdir(exist_ok=True, parents=True)
 
 
 class TestWholePerformance:
-
     def test__from_df_wrapper__to_csv(self):
         task_worktime_by_phase_user = TaskWorktimeByPhaseUser.from_csv(data_dir / "annotation-count-ratio-df.csv")
         worktime_per_date = WorktimePerDate.from_csv(data_dir / "worktime-per-date.csv")
@@ -35,5 +34,6 @@ class TestWholePerformance:
 
     def test__from_csv__to_csv(self):
         actual = WholePerformance.from_csv(data_dir / "全体の生産性と品質.csv")
+
         assert actual.series["task_count"]["annotation"] == 110.0
-        self.obj.to_csv(output_dir / "test__from_csv__to_csv.csv")
+        actual.to_csv(output_dir / "test__from_csv__to_csv.csv")
