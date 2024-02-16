@@ -51,9 +51,10 @@ class WholePerformance:
         df_worktime_per_date = worktime_per_date.df.copy()
         df_task_worktime_by_phase_user = task_worktime_by_phase_user.df.copy()
 
+        user_info_columns = ["account_id", "user_id", "username", "biography"]
         # 引数で渡されたDataFrame内のユーザー情報を疑似的な値に変更する。
         # そうすれば1人のユーザーが作業したときの生産性情報が算出できる。その結果が全体の生産性情報になる。
-        for column in ["account_id", "user_id", "username", "biography"]:
+        for column in user_info_columns:
             df_worktime_per_date[column] = "pseudo_value"
             df_task_worktime_by_phase_user[column] = "pseudo_value"
 
