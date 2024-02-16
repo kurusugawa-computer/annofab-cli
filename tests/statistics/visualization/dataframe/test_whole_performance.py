@@ -39,5 +39,8 @@ class TestWholePerformance:
         assert empty.series[("real_monitored_worktime_hour", "sum")] == 0
         assert empty.series[("task_count", "annotation")] == 0
 
-    def test_to_csv(self):
+    def test__from_csv__to_csv(self):
+        actual = WholePerformance.from_csv(data_dir / "全体の生産性と品質.csv")
+        assert actual.series["task_count"]["annotation"] == 1051
+
         self.obj.to_csv(output_dir / "全体の生産性と品質.csv")

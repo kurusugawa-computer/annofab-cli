@@ -137,7 +137,7 @@ class WholePerformance:
             ("last_working_date", ""),
         ]
 
-        data = {key: 0 for key in worktime_columns + count_columns}
+        data: dict[tuple[str, str], float] = {key: 0 for key in worktime_columns + count_columns}
         data.update({key: numpy.nan for key in ratio_columns + stdev_columns + date_columns})
 
         return cls(pandas.Series(data))
@@ -161,6 +161,9 @@ class WholePerformance:
         # 列の順番を整える
         phase_list = UserPerformance.get_phase_list(self.series.index)
         indexes = [
+            ("first_working_date", ""),
+            ("last_working_date", ""),
+            ("working_days", ""),
             *UserPerformance.get_productivity_columns(phase_list),
             ("working_user_count", TaskPhase.ANNOTATION.value),
             ("working_user_count", TaskPhase.INSPECTION.value),

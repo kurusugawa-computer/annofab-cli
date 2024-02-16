@@ -451,12 +451,17 @@ class UserPerformance:
         """
         df = worktime_per_date.df
         df2 = df[df["monitored_worktime_hour"] > 0].pivot_table(
-            values="date", index="account_id", aggfunc=["min", "max", "count"]
+            values="date", index="account_id", aggfunc=["min", "max"]
         )
-        df2.columns = pandas.MultiIndex.from_tuples(
-            [("first_working_date", ""), ("last_working_date", ""), ("working_days", "")]
-        )
-        return df2
+        df2.columns = pandas.MultiIndex.from_tuples([("first_working_date", ""), ("last_working_date", "")])
+
+        # 元のDataFrame`df`が`account_id`,`date`のペアでユニークになっていない可能性も考えて、事前に`account_id`と`date`で集計する
+        df3 = df.groupby(["account_id", "date"])[["monitored_worktime_hour"]].sum()
+        # 作業日数を算出する
+        df3 = df3[df3["monitored_worktime_hour"] > 0].groupby("account_id").count()
+        df3.columns = pandas.MultiIndex.from_tuples([("working_days", "")])
+
+        return df2.join(df3)
 
     @staticmethod
     def _create_df_user(worktime_per_date: WorktimePerDate) -> pandas.DataFrame:
