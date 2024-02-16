@@ -37,7 +37,8 @@ from annofabcli.statistics.visualization.dataframe.project_performance import (
     ProjectWorktimePerMonth,
 )
 from annofabcli.statistics.visualization.dataframe.task import Task, TaskWorktimeByPhaseUser
-from annofabcli.statistics.visualization.dataframe.user_performance import UserPerformance, WholePerformance
+from annofabcli.statistics.visualization.dataframe.user_performance import UserPerformance
+from annofabcli.statistics.visualization.dataframe.whole_performance import WholePerformance
 from annofabcli.statistics.visualization.dataframe.whole_productivity_per_date import (
     WholeProductivityPerCompletedDate,
     WholeProductivityPerFirstAnnotationStartedDate,
@@ -149,7 +150,10 @@ class WriteCsvGraph:
 
         self.project_dir.write_user_performance(user_performance)
 
-        whole_performance = WholePerformance.from_user_performance(user_performance)
+        whole_performance = WholePerformance.from_df_wrapper(
+            task_worktime_by_phase_user=task_worktime_obj,
+            worktime_per_date=self._get_worktime_per_date(),
+        )
         self.project_dir.write_whole_performance(whole_performance)
 
         if not self.output_only_text:

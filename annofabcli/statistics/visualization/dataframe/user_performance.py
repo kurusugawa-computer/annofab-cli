@@ -234,8 +234,6 @@ class UserPerformance:
     def create_df_stdev_worktime(df_worktime_ratio: pandas.DataFrame) -> pandas.DataFrame:
         """
         単位量あたり作業時間の標準偏差のDataFrameを生成する
-
-        TODO 重複しているので見直す
         """
         df_worktime_ratio2 = df_worktime_ratio.copy()
         df_worktime_ratio2["worktime_hour/input_data_count"] = (
@@ -317,7 +315,6 @@ class UserPerformance:
             index="account_id",
             aggfunc="sum",
         ).fillna(0)
-
         df2 = df2.rename(columns={"worktime_hour": "monitored_worktime_hour"})
 
         phase_list = list(df2["monitored_worktime_hour"].columns)
@@ -453,20 +450,18 @@ class UserPerformance:
                     ("working_days", "")
         """
         df = worktime_per_date.df
-        df_max = df[df["monitored_worktime_hour"] > 0].pivot_table(values="date", index="account_id", aggfunc="max")
-        df_max = df_max.rename(columns={"date": "last_working_date"})
-
-        df_min = df[df["monitored_worktime_hour"] > 0].pivot_table(values="date", index="account_id", aggfunc="min")
-        df_min = df_min.rename(columns={"date": "first_working_date"})
-
-        df_count = df[df["monitored_worktime_hour"] > 0].pivot_table(values="date", index="account_id", aggfunc="count")
-        df_count = df_count.rename(columns={"date": "working_days"})
-
-        df2 = df_min.join(df_max).join(df_count)
-        df2.columns = pandas.MultiIndex.from_tuples(
-            [("first_working_date", ""), ("last_working_date", ""), ("working_days", "")]
+        df2 = df[df["monitored_worktime_hour"] > 0].pivot_table(
+            values="date", index="account_id", aggfunc=["min", "max"]
         )
-        return df2
+        df2.columns = pandas.MultiIndex.from_tuples([("first_working_date", ""), ("last_working_date", "")])
+
+        # 元のDataFrame`df`が`account_id`,`date`のペアでユニークになっていない可能性も考えて、事前に`account_id`と`date`で集計する
+        df3 = df.groupby(["account_id", "date"])[["monitored_worktime_hour"]].sum()
+        # 作業日数を算出する
+        df3 = df3[df3["monitored_worktime_hour"] > 0].groupby("account_id").count()
+        df3.columns = pandas.MultiIndex.from_tuples([("working_days", "")])
+
+        return df2.join(df3)
 
     @staticmethod
     def _create_df_user(worktime_per_date: WorktimePerDate) -> pandas.DataFrame:
@@ -684,7 +679,6 @@ class UserPerformance:
             ("working_days", ""),
         ]
         columns = user_columns + value_columns
-
         print_csv(self.df[columns], str(output_file))
 
     @staticmethod
@@ -813,31 +807,6 @@ class UserPerformance:
             series[("rejected_count/task_count", phase)] = (
                 series[("rejected_count", phase)] / series[("task_count", phase)]
             )
-
-    def get_summary(self) -> pandas.Series:
-        """
-        全体の生産性と品質が格納された pandas.Series を取得する。
-
-        """
-        columns_for_sum = [
-            "real_monitored_worktime_hour",
-            "monitored_worktime_hour",
-            "task_count",
-            "input_data_count",
-            "annotation_count",
-            "real_actual_worktime_hour",
-            "actual_worktime_hour",
-            "pointed_out_inspection_comment_count",
-            "rejected_count",
-        ]
-        sum_series = self.df[columns_for_sum].sum()
-        self._add_ratio_key_for_whole_productivity(sum_series, phase_list=self.phase_list)
-
-        # 作業している人数をカウントする
-        for phase in self.phase_list:
-            sum_series[("working_user_count", phase)] = (self.df[("task_count", phase)] > 0).sum()
-
-        return sum_series
 
     def plot_productivity(
         self, output_file: Path, worktime_type: WorktimeType, performance_unit: PerformanceUnit
@@ -1217,73 +1186,3 @@ class UserPerformance:
         div_element = self._create_div_element()
         div_element.text = div_element.text + """円の大きさ：作業時間<br>"""  # type: ignore[operator]
         write_bokeh_graph(bokeh.layouts.column([div_element, *figure_list]), output_file)
-
-
-class WholePerformance:
-    """
-    全体の生産性と品質の情報
-
-    Attributes:
-        series: 全体の生産性と品質が格納されたpandas.Series
-    """
-
-    def __init__(self, series: pandas.Series) -> None:
-        self.series = series
-
-    def _validate_df_for_output(self, output_file: Path) -> bool:
-        if len(self.series) == 0:
-            logger.warning(f"データが0件のため、{output_file} は出力しません。")
-            return False
-        return True
-
-    @classmethod
-    def from_user_performance(cls, user_performance: UserPerformance) -> WholePerformance:
-        """`メンバごとの生産性と品質.csv`に相当する情報から、インスタンスを生成します。"""
-        series = user_performance.get_summary()
-        return cls(series)
-
-    @classmethod
-    def empty(cls) -> WholePerformance:
-        """空のデータフレームを持つインスタンスを生成します。"""
-        return cls.from_user_performance(UserPerformance.empty())
-
-    @classmethod
-    def from_csv(cls, csv_file: Path) -> WholePerformance:
-        """CSVファイルからインスタンスを生成します。"""
-        df = pandas.read_csv(str(csv_file), header=None, index_col=[0, 1])
-        # 3列目を値としたpandas.Series を取得する。
-        series = df[2]
-        return cls(series)
-
-    def to_csv(self, output_file: Path) -> None:
-        """
-        全体の生産性と品質が格納されたCSVを出力します。
-
-        """
-        if not self._validate_df_for_output(output_file):
-            return
-
-        # 列の順番を整える
-        phase_list = UserPerformance.get_phase_list(self.series.index)
-        indexes = UserPerformance.get_productivity_columns(phase_list) + [
-            ("working_user_count", phase) for phase in phase_list
-        ]
-        # TODO 標準偏差は求められないので削除する
-        for phase in phase_list:
-            for key in [
-                "stdev__monitored_worktime_hour/input_data_count",
-                "stdev__monitored_worktime_hour/annotation_count",
-                "stdev__actual_worktime_hour/input_data_count",
-                "stdev__actual_worktime_hour/annotation_count",
-            ]:
-                try:
-                    indexes.remove((key, phase))
-                except ValueError:
-                    continue
-
-        indexes = [index for index in indexes if "stdev" not in index[0]]
-        series = self.series[indexes]
-
-        output_file.parent.mkdir(exist_ok=True, parents=True)
-        logger.debug(f"{str(output_file)} を出力します。")
-        series.to_csv(str(output_file), sep=",", encoding="utf_8_sig", header=False)

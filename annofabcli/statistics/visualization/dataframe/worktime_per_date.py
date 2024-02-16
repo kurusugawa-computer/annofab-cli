@@ -36,6 +36,11 @@ logger = logging.getLogger(__name__)
 class WorktimePerDate:
     """
     日ごとユーザごとの作業時間情報
+    以下の情報を持つDataFrameを格納しています。
+        * ユーザー情報
+        * 実績作業時間
+        * 計測作業時間
+    `date`,`account_id`がユニークなキーです。
     """
 
     def __init__(self, df: pandas.DataFrame) -> None:
