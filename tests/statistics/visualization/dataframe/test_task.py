@@ -1,54 +1,35 @@
 from pathlib import Path
 
-import pandas
+from annofabcli.statistics.visualization.dataframe.task import Task
 
-from annofabcli.statistics.visualization.dataframe.task import Task, TaskWorktimeByPhaseUser
-
-output_dir = Path("./tests/out/statistics/visualization/dataframe")
+output_dir = Path("./tests/out/statistics/visualization/dataframe/task")
 data_dir = Path("./tests/data/statistics")
 output_dir.mkdir(exist_ok=True, parents=True)
 
 
 class TestTask:
-    obj: Task
+    def test__from_csv__and__to_csv(cls) -> None:
+        actual = Task.from_csv(data_dir / "task.csv")
+        assert len(actual.df) == 5
+        actual.to_csv(output_dir / "test__from_csv__and__to_csv.csv")
 
-    @classmethod
-    def setup_class(cls) -> None:
-        df_task = pandas.read_csv(str(data_dir / "task.csv"))
-        cls.obj = Task(df_task)
+    def test__plot_histogram_of_worktime(self):
+        obj = Task.from_csv(data_dir / "task.csv")
+        obj.plot_histogram_of_worktime(output_dir / "ヒストグラム-作業時間.html")
 
-    def test_plot_histogram_of_worktime(self):
-        self.obj.plot_histogram_of_worktime(output_dir / "ヒストグラム-作業時間.html")
+    def test__plot_histogram_of_others(self):
+        obj = Task.from_csv(data_dir / "task.csv")
+        obj.plot_histogram_of_others(output_dir / "ヒストグラム.html")
 
-    def test_plot_histogram_of_others(self):
-        self.obj.plot_histogram_of_others(output_dir / "ヒストグラム.html")
+    def test__merge(self):
+        obj = Task.from_csv(data_dir / "task.csv")
+        actual = Task.merge(obj, obj)
+        assert len(actual.df) == 10
 
-    def test_empty(self):
+    def test__merge__emptyオブジェクトに対して(self):
+        obj = Task.from_csv(data_dir / "task.csv")
         empty = Task.empty()
         assert empty.is_empty()
 
-        merged_obj = Task.merge(empty, self.obj)
-        assert len(self.obj.df) == len(merged_obj.df)
-
-
-class TestTaskWorktimeByPhaseUser:
-    obj: TaskWorktimeByPhaseUser
-
-    @classmethod
-    def setup_class(cls) -> None:
-        df_worktime_ratio = pandas.read_csv(str(data_dir / "annotation-count-ratio-df.csv"))
-        df_user = pandas.read_csv(str(data_dir / "user.csv"))
-        df_task = pandas.read_csv(str(data_dir / "tasak.csv"))
-        cls.obj = TaskWorktimeByPhaseUser.from_df(
-            df_worktime_ratio=df_worktime_ratio, df_user=df_user, df_task=df_task, project_id="prj1"
-        )
-
-    def test__to_csv(self):
-        self.obj.to_csv(output_dir / "task-worktime-by-user-phase.csv")
-
-    def test_empty(self):
-        empty = TaskWorktimeByPhaseUser.empty()
-        assert empty.is_empty()
-
-        merged_obj = TaskWorktimeByPhaseUser.merge(empty, self.obj)
-        assert len(self.obj.df) == len(merged_obj.df)
+        merged_obj = Task.merge(empty, obj)
+        assert len(obj.df) == len(merged_obj.df)

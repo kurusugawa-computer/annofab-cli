@@ -1,6 +1,6 @@
 from pathlib import Path
 
-from annofabcli.statistics.visualization.dataframe.task import TaskWorktimeByPhaseUser
+from annofabcli.statistics.visualization.dataframe.task_worktime_by_phase_user import TaskWorktimeByPhaseUser
 from annofabcli.statistics.visualization.dataframe.user_performance import (
     PerformanceUnit,
     UserPerformance,
@@ -21,7 +21,7 @@ class TestUserPerformance:
         cls.obj = UserPerformance.from_csv(data_dir / "productivity-per-user2.csv")
 
     def test__from_df_wrapper__to_csv(self):
-        task_worktime_by_phase_user = TaskWorktimeByPhaseUser.from_csv(data_dir / "annotation-count-ratio-df.csv")
+        task_worktime_by_phase_user = TaskWorktimeByPhaseUser.from_csv(data_dir / "task-worktime-by-user-phase.csv")
         worktime_per_date = WorktimePerDate.from_csv(data_dir / "worktime-per-date.csv")
 
         actual = UserPerformance.from_df_wrapper(

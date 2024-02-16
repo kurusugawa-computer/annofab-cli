@@ -10,7 +10,7 @@ import numpy
 import pandas
 from annofabapi.models import TaskPhase
 
-from annofabcli.statistics.visualization.dataframe.task import TaskWorktimeByPhaseUser
+from annofabcli.statistics.visualization.dataframe.task_worktime_by_phase_user import TaskWorktimeByPhaseUser
 from annofabcli.statistics.visualization.dataframe.user_performance import UserPerformance
 from annofabcli.statistics.visualization.dataframe.worktime_per_date import WorktimePerDate
 
@@ -25,6 +25,9 @@ class WholePerformance:
         series: 全体の生産性と品質が格納されたpandas.Series
     """
 
+    STRING_KEYS = {("first_working_date", ""), ("last_working_date", "")}
+    """文字列が格納されているキー"""
+
     def __init__(self, series: pandas.Series) -> None:
         self.series = series
 
@@ -33,6 +36,63 @@ class WholePerformance:
             logger.warning(f"データが0件のため、{output_file} は出力しません。")
             return False
         return True
+
+    @staticmethod
+    def _create_all_user_performance(
+        worktime_per_date: WorktimePerDate,
+        task_worktime_by_phase_user: TaskWorktimeByPhaseUser,
+    ) -> UserPerformance:
+        """
+        1人が作業した場合のパフォーマンス情報を生成します。
+        ユーザー情報である以下の列には、`pseudo_value`が設定されています。
+        * account_id
+        * user_id
+        * username
+        * biography
+        """
+        df_worktime_per_date = worktime_per_date.df.copy()
+        df_task_worktime_by_phase_user = task_worktime_by_phase_user.df.copy()
+
+        PSEUDO_VALUE = "pseudo_value"
+        user_info_columns = ["account_id", "user_id", "username", "biography"]
+        # 引数で渡されたDataFrame内のユーザー情報を疑似的な値に変更する。
+        # そうすれば1人のユーザーが作業したときの生産性情報が算出できる。その結果が全体の生産性情報になる。
+        for column in user_info_columns:
+            df_worktime_per_date[column] = "pseudo_value"
+            df_task_worktime_by_phase_user[column] = "pseudo_value"
+
+        unique_keys_for_worktime = ["date"]
+        addable_columns_for_worktime = list(
+            set(df_worktime_per_date.columns) - set(user_info_columns) - set(unique_keys_for_worktime)
+        )
+        df_worktime_per_date = df_worktime_per_date.groupby(unique_keys_for_worktime)[
+            addable_columns_for_worktime
+        ].sum()
+        df_worktime_per_date[user_info_columns] = PSEUDO_VALUE
+        df_worktime_per_date = df_worktime_per_date.reset_index()
+
+        # `status`はあとで結合するため、`df_task`を作る
+        df_task = df_task_worktime_by_phase_user[["project_id", "task_id", "status"]].drop_duplicates()
+
+        unique_keys_for_worktime = ["project_id", "task_id", "phase", "phase_stage"]
+        addable_columns_for_task = list(
+            set(df_task_worktime_by_phase_user.columns)
+            - set(user_info_columns)
+            - set(unique_keys_for_worktime)
+            - {"status"}
+        )
+        df_task_worktime_by_phase_user = df_task_worktime_by_phase_user.groupby(unique_keys_for_worktime)[
+            addable_columns_for_task
+        ].sum()
+        df_task_worktime_by_phase_user[user_info_columns] = PSEUDO_VALUE
+        df_task_worktime_by_phase_user = df_task_worktime_by_phase_user.reset_index()
+        # status情報を結合する
+        df_task_worktime_by_phase_user = df_task_worktime_by_phase_user.merge(df_task, on=["project_id", "task_id"])
+
+        return UserPerformance.from_df_wrapper(
+            worktime_per_date=WorktimePerDate(df_worktime_per_date),
+            task_worktime_by_phase_user=TaskWorktimeByPhaseUser(df_task_worktime_by_phase_user),
+        )
 
     @classmethod
     def from_df_wrapper(
@@ -48,20 +108,8 @@ class WholePerformance:
             task_worktime_by_phase_user: タスク、フェーズ、ユーザーごとの作業時間や生産量が格納されたオブジェクト。生産量やタスクにかかった作業時間の取得に利用します。
 
         """
-        df_worktime_per_date = worktime_per_date.df.copy()
-        df_task_worktime_by_phase_user = task_worktime_by_phase_user.df.copy()
-
-        user_info_columns = ["account_id", "user_id", "username", "biography"]
-        # 引数で渡されたDataFrame内のユーザー情報を疑似的な値に変更する。
-        # そうすれば1人のユーザーが作業したときの生産性情報が算出できる。その結果が全体の生産性情報になる。
-        for column in user_info_columns:
-            df_worktime_per_date[column] = "pseudo_value"
-            df_task_worktime_by_phase_user[column] = "pseudo_value"
-
-        all_user_performance = UserPerformance.from_df_wrapper(
-            worktime_per_date=WorktimePerDate(df_worktime_per_date),
-            task_worktime_by_phase_user=TaskWorktimeByPhaseUser(df_task_worktime_by_phase_user),
-        )
+        # 1人が作業した場合のパフォーマンス情報を生成する
+        all_user_performance = cls._create_all_user_performance(worktime_per_date, task_worktime_by_phase_user)
 
         df_all = all_user_performance.df
         assert len(df_all) == 1
@@ -136,6 +184,7 @@ class WholePerformance:
         date_columns = [
             ("first_working_date", ""),
             ("last_working_date", ""),
+            ("working_days", ""),
         ]
 
         data: dict[tuple[str, str], float] = {key: 0 for key in worktime_columns + count_columns}
@@ -149,7 +198,24 @@ class WholePerformance:
         df = pandas.read_csv(str(csv_file), header=None, index_col=[0, 1])
         # 3列目を値としたpandas.Series を取得する。
         series = df[2]
-        return cls(series)
+
+        data = {}
+        # CSVファイル読み込み直後では、数値も文字列として格納されているので、文字列情報以外は数値に変換する
+        for key, value in series.items():
+            # `first_working_date`など2列目が空欄の場合は、key[1]がnumpy.nanになるため、keyを変換する
+            if isinstance(key[1], float) and numpy.isnan(key[1]):
+                key2 = (key[0], "")
+            else:
+                key2 = key
+
+            if key2 in cls.STRING_KEYS:
+                value2 = value
+            else:
+                value2 = float(value)
+
+            data[key2] = value2
+
+        return cls(pandas.Series(data))
 
     def to_csv(self, output_file: Path) -> None:
         """

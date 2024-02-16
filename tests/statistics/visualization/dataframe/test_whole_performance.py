@@ -1,6 +1,6 @@
 from pathlib import Path
 
-from annofabcli.statistics.visualization.dataframe.task import TaskWorktimeByPhaseUser
+from annofabcli.statistics.visualization.dataframe.task_worktime_by_phase_user import TaskWorktimeByPhaseUser
 from annofabcli.statistics.visualization.dataframe.whole_performance import (
     WholePerformance,
 )
@@ -12,15 +12,8 @@ output_dir.mkdir(exist_ok=True, parents=True)
 
 
 class TestWholePerformance:
-    obj: WholePerformance
-
-    @classmethod
-    def setup_class(cls) -> None:
-        cls.obj = WholePerformance.from_csv(data_dir / "全体の生産性と品質.csv")
-        assert cls.obj.series["task_count"]["annotation"] == 1051
-
     def test__from_df_wrapper__to_csv(self):
-        task_worktime_by_phase_user = TaskWorktimeByPhaseUser.from_csv(data_dir / "annotation-count-ratio-df.csv")
+        task_worktime_by_phase_user = TaskWorktimeByPhaseUser.from_csv(data_dir / "task-worktime-by-user-phase.csv")
         worktime_per_date = WorktimePerDate.from_csv(data_dir / "worktime-per-date.csv")
 
         actual = WholePerformance.from_df_wrapper(
@@ -41,6 +34,15 @@ class TestWholePerformance:
 
     def test__from_csv__to_csv(self):
         actual = WholePerformance.from_csv(data_dir / "全体の生産性と品質.csv")
-        assert actual.series["task_count"]["annotation"] == 1051
 
-        self.obj.to_csv(output_dir / "全体の生産性と品質.csv")
+        assert actual.series["task_count"]["annotation"] == 110.0
+        actual.to_csv(output_dir / "test__from_csv__to_csv.csv")
+
+    def test___create_all_user_performance(self):
+        task_worktime_by_phase_user = TaskWorktimeByPhaseUser.from_csv(data_dir / "task-worktime-by-user-phase.csv")
+        worktime_per_date = WorktimePerDate.from_csv(data_dir / "worktime-per-date.csv")
+        actual = WholePerformance._create_all_user_performance(
+            task_worktime_by_phase_user=task_worktime_by_phase_user,
+            worktime_per_date=worktime_per_date,
+        )
+        assert len(actual.df) == 1

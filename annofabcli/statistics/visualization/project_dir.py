@@ -13,7 +13,8 @@ from annofabcli.common.utils import print_json
 from annofabcli.statistics.database import Query
 from annofabcli.statistics.visualization.dataframe.cumulative_productivity import AbstractPhaseCumulativeProductivity
 from annofabcli.statistics.visualization.dataframe.productivity_per_date import AbstractPhaseProductivityPerDate
-from annofabcli.statistics.visualization.dataframe.task import Task, TaskWorktimeByPhaseUser
+from annofabcli.statistics.visualization.dataframe.task import Task
+from annofabcli.statistics.visualization.dataframe.task_worktime_by_phase_user import TaskWorktimeByPhaseUser
 from annofabcli.statistics.visualization.dataframe.user_performance import (
     PerformanceUnit,
     UserPerformance,

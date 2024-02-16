@@ -36,7 +36,8 @@ from annofabcli.statistics.visualization.dataframe.project_performance import (
     ProjectPerformance,
     ProjectWorktimePerMonth,
 )
-from annofabcli.statistics.visualization.dataframe.task import Task, TaskWorktimeByPhaseUser
+from annofabcli.statistics.visualization.dataframe.task import Task
+from annofabcli.statistics.visualization.dataframe.task_worktime_by_phase_user import TaskWorktimeByPhaseUser
 from annofabcli.statistics.visualization.dataframe.user_performance import UserPerformance
 from annofabcli.statistics.visualization.dataframe.whole_performance import WholePerformance
 from annofabcli.statistics.visualization.dataframe.whole_productivity_per_date import (
