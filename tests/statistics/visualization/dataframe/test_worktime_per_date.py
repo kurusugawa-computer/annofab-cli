@@ -7,27 +7,27 @@ import pytest
 
 from annofabcli.statistics.visualization.dataframe.worktime_per_date import WorktimePerDate
 
-output_dir = Path("./tests/out/statistics/visualization/dataframe")
+output_dir = Path("./tests/out/statistics/visualization/dataframe/worktime_per_date")
 data_dir = Path("./tests/data/statistics")
 output_dir.mkdir(exist_ok=True, parents=True)
 
 
 class TestWorktimePerDate:
-    obj: WorktimePerDate
+    def test__from_csv__and__to_csv(self):
+        actual = WorktimePerDate.from_csv(data_dir / "ユーザ_日付list-作業時間.csv")
+        actual_first_row = actual.df.iloc[0]
+        assert actual_first_row["date"] == "2021-11-01"
+        assert actual_first_row["user_id"] == "alice"
 
-    @classmethod
-    def setup_class(cls):
-        df = pandas.read_csv(str(data_dir / "ユーザ_日付list-作業時間.csv"))
-        cls.obj = WorktimePerDate(df)
+        actual.to_csv(output_dir / "test__from_csv__and__to_csv.csv")
 
-    def test_to_csv(self):
-        self.obj.to_csv(output_dir / "ユーザ_日付list-作業時間.csv")
+    def test__plot_cumulatively(self):
+        actual = WorktimePerDate.from_csv(data_dir / "ユーザ_日付list-作業時間.csv")
+        actual.plot_cumulatively(output_dir / "累積折れ線-横軸_日-縦軸_作業時間.html")
 
-    def test_plot_cumulatively(self):
-        self.obj.plot_cumulatively(output_dir / "累積折れ線-横軸_日-縦軸_作業時間.html")
-
-    def test_merge(self):
-        merged_obj = WorktimePerDate.merge(self.obj, self.obj)
+    def test__merge(self):
+        original_obj = WorktimePerDate.from_csv(data_dir / "ユーザ_日付list-作業時間.csv")
+        merged_obj = WorktimePerDate.merge(original_obj,original_obj)
         df = merged_obj.df
         assert df[(df["date"] == "2021-11-02") & (df["user_id"] == "alice")].iloc[0]["actual_worktime_hour"] == 6
         merged_obj.to_csv(output_dir / "merged-ユーザ_日付list-作業時間.csv")
@@ -40,8 +40,24 @@ class TestWorktimePerDate:
         empty.to_csv(output_dir / "empty.csv")
         empty.plot_cumulatively(output_dir / "empty.html")
 
-        merged_obj = WorktimePerDate.merge(empty, self.obj)
-        assert len(merged_obj.df) == len(self.obj.df)
+        original_object = WorktimePerDate.from_csv(data_dir / "ユーザ_日付list-作業時間.csv")
+        merged_obj = WorktimePerDate.merge(empty, original_object)
+        assert len(merged_obj.df) == len(original_object.df)
+
+    def test__mask_user_info(self):
+        obj = WorktimePerDate.from_csv(data_dir / "ユーザ_日付list-作業時間.csv")
+        masked_obj = obj.mask_user_info(
+            to_replace_for_user_id={"alice": "masked_user_id"},
+            to_replace_for_username={"Alice": "masked_username"},
+            to_replace_for_account_id={"alice": "masked_account_id"},
+            to_replace_for_biography={"U.S.": "masked_biography"},
+        )
+
+        actual_first_row = masked_obj.df.iloc[0]
+        assert actual_first_row["account_id"] == "masked_account_id"
+        assert actual_first_row["user_id"] == "masked_user_id"
+        assert actual_first_row["username"] == "masked_username"
+        assert actual_first_row["biography"] == "masked_biography"
 
 
 inifile = configparser.ConfigParser()
