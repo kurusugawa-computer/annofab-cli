@@ -10,17 +10,6 @@ output_dir.mkdir(exist_ok=True, parents=True)
 
 
 class TestTaskWorktimeByPhaseUser:
-    obj: TaskWorktimeByPhaseUser
-
-    @classmethod
-    def setup_class(cls) -> None:
-        df_worktime_ratio = pandas.read_csv(str(data_dir / "annotation-count-ratio-df.csv"))
-        df_user = pandas.read_csv(str(data_dir / "user.csv"))
-        df_task = pandas.read_csv(str(data_dir / "task.csv"))
-        cls.obj = TaskWorktimeByPhaseUser.from_df(
-            df_worktime_ratio=df_worktime_ratio, df_user=df_user, df_task=df_task, project_id="prj1"
-        )
-
     def test__from_df__and__to_csv(self):
         df_worktime_ratio = pandas.read_csv(str(data_dir / "annotation-count-ratio-df.csv"))
         df_user = pandas.read_csv(str(data_dir / "user.csv"))
@@ -54,8 +43,24 @@ class TestTaskWorktimeByPhaseUser:
         assert len(actual.df) == 10
 
     def test__merge__emptyオブジェクトに対して(self):
+        original = TaskWorktimeByPhaseUser.from_csv(data_dir / "task-worktime-by-user-phase.csv")
         empty = TaskWorktimeByPhaseUser.empty()
         assert empty.is_empty()
 
-        merged_obj = TaskWorktimeByPhaseUser.merge(empty, self.obj)
-        assert len(self.obj.df) == len(merged_obj.df)
+        merged_obj = TaskWorktimeByPhaseUser.merge(empty, original)
+        assert len(original.df) == len(merged_obj.df)
+
+    def test__mask_user_info(self):
+        obj = TaskWorktimeByPhaseUser.from_csv(data_dir / "task-worktime-by-user-phase.csv")
+        masked_obj = obj.mask_user_info(
+            to_replace_for_user_id={"alice": "masked_user_id"},
+            to_replace_for_username={"Alice": "masked_username"},
+            to_replace_for_account_id={"alice": "masked_account_id"},
+            to_replace_for_biography={"USA": "masked_biography"},
+        )
+
+        actual_first_row = masked_obj.df.iloc[0]
+        assert actual_first_row["account_id"] == "masked_account_id"
+        assert actual_first_row["user_id"] == "masked_user_id"
+        assert actual_first_row["username"] == "masked_username"
+        assert actual_first_row["biography"] == "masked_biography"
