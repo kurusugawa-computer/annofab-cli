@@ -27,7 +27,7 @@ class TestWorktimePerDate:
 
     def test__merge(self):
         original_obj = WorktimePerDate.from_csv(data_dir / "ユーザ_日付list-作業時間.csv")
-        merged_obj = WorktimePerDate.merge(original_obj,original_obj)
+        merged_obj = WorktimePerDate.merge(original_obj, original_obj)
         df = merged_obj.df
         assert df[(df["date"] == "2021-11-02") & (df["user_id"] == "alice")].iloc[0]["actual_worktime_hour"] == 6
         merged_obj.to_csv(output_dir / "merged-ユーザ_日付list-作業時間.csv")

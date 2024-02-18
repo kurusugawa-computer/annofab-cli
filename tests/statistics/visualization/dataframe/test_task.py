@@ -33,3 +33,15 @@ class TestTask:
 
         merged_obj = Task.merge(empty, obj)
         assert len(obj.df) == len(merged_obj.df)
+
+    def test__mask_user_info(self):
+        obj = Task.from_csv(data_dir / "task.csv")
+        masked_obj = obj.mask_user_info(
+            to_replace_for_user_id={"user1": "masked_user_id"},
+            to_replace_for_username={"user1": "masked_username"},
+        )
+
+        actual_first_row = masked_obj.df.iloc[0]
+        # 一部の列だけ置換されていることを確認する
+        assert actual_first_row["first_annotation_user_id"] == "masked_user_id"
+        assert actual_first_row["first_annotation_username"] == "masked_username"

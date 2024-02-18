@@ -2,6 +2,7 @@ from __future__ import annotations
 
 import logging
 from pathlib import Path
+from typing import Optional
 
 import bokeh
 import bokeh.layouts
@@ -334,3 +335,27 @@ class Task:
         ]
 
         print_csv(self.df[columns], str(output_file))
+
+    def mask_user_info(
+        self,
+        to_replace_for_user_id: Optional[dict[str, str]] = None,
+        to_replace_for_username: Optional[dict[str, str]] = None,
+    ) -> Task:
+        """
+        引数から渡された情報を元に、インスタンス変数`df`内のユーザー情報をマスクして、新しいインスタンスを返します。
+
+        Args:
+            to_replace_for_user_id: user_idを置換するためのdict。keyは置換前のuser_id, valueは置換後のuser_id。
+            to_replace_for_username: usernameを置換するためのdict。keyは置換前のusername, valueは置換後のusername。
+
+        """
+        to_replace_info = {
+            "first_annotation_user_id": to_replace_for_user_id,
+            "first_inspection_user_id": to_replace_for_user_id,
+            "first_acceptance_user_id": to_replace_for_user_id,
+            "first_annotation_username": to_replace_for_username,
+            "first_inspection_username": to_replace_for_username,
+            "first_acceptance_username": to_replace_for_username,
+        }
+        df = self.df.replace(to_replace_info)
+        return Task(df)
