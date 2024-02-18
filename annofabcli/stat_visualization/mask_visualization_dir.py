@@ -1,14 +1,17 @@
 import argparse
 import logging
+from dataclasses import dataclass
 from pathlib import Path
 from typing import Dict, List, Optional, Set
 
+import pandas
 from annofabapi.models import TaskPhase
 
 import annofabcli
 from annofabcli.common.cli import get_list_from_args
 from annofabcli.filesystem.mask_user_info import (
     create_masked_user_info_df,
+    create_replacement_dict_by_biography,
     create_replacement_dict_by_user_id,
     replace_by_columns,
 )
@@ -28,6 +31,63 @@ from annofabcli.statistics.visualization.dataframe.worktime_per_date import Work
 from annofabcli.statistics.visualization.project_dir import ProjectDir
 
 logger = logging.getLogger(__name__)
+
+
+@dataclass(frozen=True)
+class ReplacementDict:
+    """
+    ユーザー情報を置換するための情報。
+    各プロパティは、keyが置換前の値、valueが置換後の値を持つdict。
+    """
+
+    user_id: Dict[str, str]
+    username: Dict[str, str]
+    account_id: Dict[str, str]
+    biography: Dict[str, str]
+
+
+def create_replacement_dict(
+    df_user: pandas.DataFrame,
+    *,
+    not_masked_biography_set: Optional[Set[str]],
+    not_masked_user_id_set: Optional[Set[str]],
+) -> ReplacementDict:
+    """
+    ユーザー情報を置換するためのインスタンスを生成します。
+
+    Args:
+        df_user: ユーザー情報が格納されたDataFrame。以下の列が必要です。
+            * user_id
+            * username
+            * account_id
+            * biography
+        not_masked_user_id_set: マスクしないuser_idの集合。
+        not_masked_biography_set: マスクしないbiographyの集合。指定したbiographyに該当するユーザーのuser_id,username,account_idはマスクしません。
+    """
+
+    assert {"user_id", "username", "account_id", "biography"} - set(
+        df_user.columns
+    ) == set(), "df_userには'user_id','username','account_id','biography'の列が必要です。"
+
+    replacement_dict_for_user_id = create_replacement_dict_by_user_id(
+        df_user, not_masked_biography_set=not_masked_biography_set, not_masked_user_id_set=not_masked_user_id_set
+    )
+
+    df2 = df_user.set_index("user_id")
+    df3 = df2.loc[replacement_dict_for_user_id.keys()]
+    replacement_dict_for_username = dict(zip(df3["username"], replacement_dict_for_user_id.values()))
+    replacement_dict_for_account_id = dict(zip(df3["account_id"], replacement_dict_for_user_id.values()))
+
+    replacement_dict_by_biography = create_replacement_dict_by_biography(
+        df_user, not_masked_biography_set=not_masked_biography_set
+    )
+
+    return ReplacementDict(
+        user_id=replacement_dict_for_user_id,
+        username=replacement_dict_for_username,
+        account_id=replacement_dict_for_account_id,
+        biography=replacement_dict_by_biography,
+    )
 
 
 def _replace_df_task(task: Task, replacement_dict_by_user_id: Dict[str, str]) -> Task:
@@ -57,22 +117,20 @@ def _replace_df_task(task: Task, replacement_dict_by_user_id: Dict[str, str]) ->
 def write_line_graph(
     task: Task, output_project_dir: ProjectDir, user_id_list: Optional[List[str]] = None, minimal_output: bool = False
 ):
-    df = task.df.copy()
-
     output_project_dir.write_cumulative_line_graph(
-        AnnotatorCumulativeProductivity(df),
+        AnnotatorCumulativeProductivity.from_task(task),
         phase=TaskPhase.ANNOTATION,
         user_id_list=user_id_list,
         minimal_output=minimal_output,
     )
     output_project_dir.write_cumulative_line_graph(
-        InspectorCumulativeProductivity(df),
+        InspectorCumulativeProductivity.from_task(task),
         phase=TaskPhase.INSPECTION,
         user_id_list=user_id_list,
         minimal_output=minimal_output,
     )
     output_project_dir.write_cumulative_line_graph(
-        AcceptorCumulativeProductivity(df),
+        AcceptorCumulativeProductivity.from_task(task),
         phase=TaskPhase.ACCEPTANCE,
         user_id_list=user_id_list,
         minimal_output=minimal_output,
