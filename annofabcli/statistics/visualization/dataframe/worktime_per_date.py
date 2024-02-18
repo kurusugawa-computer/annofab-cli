@@ -419,7 +419,7 @@ class WorktimePerDate:
         # TODO この問題が解決されたら、削除する
         # https://qiita.com/yuji38kwmt/items/b5da6ed521e827620186
         df_cumulative = df_cumulative.astype(
-            {"date": "object", "user_id": "object", "username": "object", "biography": "object"}
+            {"date": "object", "account_id":"object", "user_id": "object", "username": "object", "biography": "object"}
         )
         df_cumulative.replace(pandas.NA, numpy.nan, inplace=True)
 
@@ -430,6 +430,7 @@ class WorktimePerDate:
                 logger.debug(f"dataframe is empty. user_id = {user_id}")
                 continue
 
+            print(f"{user_id=}, {df_subset.dtypes=}")
             source = ColumnDataSource(data=df_subset)
             color = get_color_from_palette(user_index)
             username = df_subset.iloc[0]["username"]
