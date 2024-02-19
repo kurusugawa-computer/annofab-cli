@@ -435,8 +435,16 @@ class VisualizeStatistics(AbstractCommandLineInterface):
 
         if args.labor_csv is None:
             logger.warning("'--labor_csv'が指定されていないので、実績作業時間に関する情報は出力されません。")
-
-        actual_worktime = ActualWorktime.from_csv(args.labor_csv) if args.labor_csv is not None else None
+            actual_worktime = ActualWorktime.empty()
+        else:
+            df_actual_worktime = pandas.read_csv(args.labor_csv)
+            if not ActualWorktime.required_columns_exist(df_actual_worktime):
+                logger.error(
+                    "引数`--labor_csv`のCSVには以下の列が存在しないので、終了します。\n"
+                    "`project_id`, `date`, `account_id`, `actual_worktime_hour`"
+                )
+                sys.exit(COMMAND_LINE_ERROR_STATUS_CODE)
+            actual_worktime = ActualWorktime(df_actual_worktime)
 
         with tempfile.TemporaryDirectory() as str_temp_dir:
             main_obj = VisualizingStatisticsMain(
@@ -568,7 +576,7 @@ def parse_args(parser: argparse.ArgumentParser) -> None:
             "* date\n"
             "* account_id\n"
             "* actual_worktime_hour\n"
-            "* project_id (optional: ``--project_id`` に複数の値を指定したときは必須です) \n"
+            "* project_id \n"
         ),
     )
 

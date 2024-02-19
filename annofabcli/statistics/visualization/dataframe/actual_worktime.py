@@ -21,7 +21,19 @@ class ActualWorktime:
 
     columns = ["project_id", "date", "account_id", "actual_worktime_hour"]
 
+    @staticmethod
+    def required_columns_exist(df: pandas.DataFrame) -> bool:
+        """
+        必須の列が存在するかどうかを返します。
+
+        Returns:
+            必須の列が存在するかどうか
+        """
+        return len(set(ActualWorktime.columns) - set(df.columns)) == 0
+
     def __init__(self, df: pandas.DataFrame) -> None:
+        if not self.required_columns_exist(df):
+            ValueError(f"引数`df`には、{ActualWorktime.columns}の列が必要です。")
         self.df = df
 
     def is_empty(self) -> bool:
