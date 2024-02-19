@@ -10,6 +10,7 @@ from annofabapi.models import TaskPhase
 from annofabcli.common.utils import print_csv
 from annofabcli.statistics.visualization.dataframe.task import Task
 from annofabcli.statistics.visualization.dataframe.task_history import TaskHistory
+from annofabcli.statistics.visualization.dataframe.user import User
 
 logger = logging.getLogger(__name__)
 
@@ -45,22 +46,20 @@ class TaskWorktimeByPhaseUser:
 
     @classmethod
     def from_df_wrapper(
-        cls, task_history: TaskHistory, df_user: pandas.DataFrame, task: Task, project_id: str
+        cls, task_history: TaskHistory, user: User, task: Task, project_id: str
     ) -> TaskWorktimeByPhaseUser:
         """
         AnnoWorkの実績時間から、作業者ごとに生産性を算出する。
 
         Args:
             df_worktime_ratio: 作業したタスク数を、作業時間で按分した値が格納されたDataFrame. 以下の列を参照する。
-            df_user: ユーザー情報が格納されたDataFrame
-            df_task: タスク情報が格納されたDataFrame。以下の列を参照します。
-                * task_id
-                * status
+            user: ユーザー情報が格納されたDataFrameをラップするクラスのインスタンス
+            task: タスク情報が格納されたDataFrameをラップするクラスのインスタンス
             project_id
         """
         df_task = task.df
         df_worktime_ratio = cls._create_annotation_count_ratio_df(task_history.df, task.df)
-        df = df_worktime_ratio.merge(df_user, on="account_id", how="left")
+        df = df_worktime_ratio.merge(user.df, on="account_id", how="left")
         df = df.merge(df_task[["task_id", "status"]], on="task_id", how="left")
         df["project_id"] = project_id
         return cls(df)

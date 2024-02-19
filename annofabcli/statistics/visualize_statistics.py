@@ -40,6 +40,7 @@ from annofabcli.statistics.visualization.dataframe.project_performance import (
 from annofabcli.statistics.visualization.dataframe.task import Task
 from annofabcli.statistics.visualization.dataframe.task_history import TaskHistory
 from annofabcli.statistics.visualization.dataframe.task_worktime_by_phase_user import TaskWorktimeByPhaseUser
+from annofabcli.statistics.visualization.dataframe.user import User
 from annofabcli.statistics.visualization.dataframe.user_performance import UserPerformance
 from annofabcli.statistics.visualization.dataframe.whole_performance import WholePerformance
 from annofabcli.statistics.visualization.dataframe.whole_productivity_per_date import (
@@ -144,7 +145,7 @@ class WriteCsvGraph:
         # タスク、フェーズ、ユーザごとの作業時間を出力する
         task_worktime_obj = TaskWorktimeByPhaseUser.from_df_wrapper(
             task_history=TaskHistory(df_task_history),
-            df_user=df_user,
+            user=User(df_user),
             task=Task(self._get_task_df()),
             project_id=self.project_id,
         )
