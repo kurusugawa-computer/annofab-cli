@@ -2,6 +2,7 @@ from __future__ import annotations
 
 import logging
 from pathlib import Path
+from typing import Optional
 
 import pandas
 
@@ -132,3 +133,29 @@ class TaskWorktimeByPhaseUser:
     def from_csv(cls, csv_file: Path) -> TaskWorktimeByPhaseUser:
         df = pandas.read_csv(str(csv_file))
         return cls(df)
+
+    def mask_user_info(
+        self,
+        to_replace_for_user_id: Optional[dict[str, str]] = None,
+        to_replace_for_username: Optional[dict[str, str]] = None,
+        to_replace_for_account_id: Optional[dict[str, str]] = None,
+        to_replace_for_biography: Optional[dict[str, str]] = None,
+    ) -> TaskWorktimeByPhaseUser:
+        """
+        引数から渡された情報を元に、インスタンス変数`df`内のユーザー情報をマスクして、新しいインスタンスを返します。
+
+        Args:
+            to_replace_for_user_id: user_idを置換するためのdict。keyは置換前のuser_id, valueは置換後のuser_id。
+            to_replace_for_username: usernameを置換するためのdict。keyは置換前のusername, valueは置換後のusername。
+            to_replace_for_account_id: account_idを置換するためのdict。keyは置換前のaccount_id, valueは置換後のaccount_id。
+            to_replace_for_biography: biographyを置換するためのdict。keyは置換前のbiography, valueは置換後のbiography。
+
+        """
+        to_replace_info = {
+            "user_id": to_replace_for_user_id,
+            "username": to_replace_for_username,
+            "account_id": to_replace_for_account_id,
+            "biography": to_replace_for_biography,
+        }
+        df = self.df.replace(to_replace_info)
+        return TaskWorktimeByPhaseUser(df)

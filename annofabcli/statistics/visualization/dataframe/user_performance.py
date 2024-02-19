@@ -859,9 +859,11 @@ class UserPerformance:
         # https://qiita.com/yuji38kwmt/items/b5da6ed521e827620186
         df = df.astype(
             {
+                ("account_id", ""): "object",
                 ("user_id", ""): "object",
                 ("username", ""): "object",
                 ("biography", ""): "object",
+                ("first_working_date", ""): "object",
                 ("last_working_date", ""): "object",
             }
         )
@@ -966,9 +968,11 @@ class UserPerformance:
         # https://qiita.com/yuji38kwmt/items/b5da6ed521e827620186
         df = df.astype(
             {
+                ("account_id", ""): "object",
                 ("user_id", ""): "object",
                 ("username", ""): "object",
                 ("biography", ""): "object",
+                ("first_working_date", ""): "object",
                 ("last_working_date", ""): "object",
             }
         )
@@ -1153,9 +1157,11 @@ class UserPerformance:
         # https://qiita.com/yuji38kwmt/items/b5da6ed521e827620186
         df = df.astype(
             {
+                ("account_id", ""): "object",
                 ("user_id", ""): "object",
                 ("username", ""): "object",
                 ("biography", ""): "object",
+                ("first_working_date", ""): "object",
                 ("last_working_date", ""): "object",
             }
         )

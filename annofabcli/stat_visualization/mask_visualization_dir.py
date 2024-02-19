@@ -1,16 +1,19 @@
+from __future__ import annotations
+
 import argparse
 import logging
+from dataclasses import dataclass
 from pathlib import Path
 from typing import Dict, List, Optional, Set
 
+import pandas
 from annofabapi.models import TaskPhase
 
 import annofabcli
 from annofabcli.common.cli import get_list_from_args
 from annofabcli.filesystem.mask_user_info import (
-    create_masked_user_info_df,
+    create_replacement_dict_by_biography,
     create_replacement_dict_by_user_id,
-    replace_by_columns,
 )
 from annofabcli.statistics.visualization.dataframe.cumulative_productivity import (
     AcceptorCumulativeProductivity,
@@ -23,6 +26,7 @@ from annofabcli.statistics.visualization.dataframe.productivity_per_date import 
     InspectorProductivityPerDate,
 )
 from annofabcli.statistics.visualization.dataframe.task import Task
+from annofabcli.statistics.visualization.dataframe.task_worktime_by_phase_user import TaskWorktimeByPhaseUser
 from annofabcli.statistics.visualization.dataframe.user_performance import UserPerformance
 from annofabcli.statistics.visualization.dataframe.worktime_per_date import WorktimePerDate
 from annofabcli.statistics.visualization.project_dir import ProjectDir
@@ -30,49 +34,80 @@ from annofabcli.statistics.visualization.project_dir import ProjectDir
 logger = logging.getLogger(__name__)
 
 
-def _replace_df_task(task: Task, replacement_dict_by_user_id: Dict[str, str]) -> Task:
-    df_output = task.df.copy()
+@dataclass(frozen=True)
+class ReplacementDict:
+    """
+    ユーザー情報を置換するための情報。
+    各プロパティは、keyが置換前の値、valueが置換後の値を持つdict。
+    """
 
-    replace_by_columns(
-        df_output,
-        replacement_dict_by_user_id,
-        main_column="first_annotation_user_id",
-        sub_columns=["first_annotation_username"],
+    user_id: Dict[str, str]
+    username: Dict[str, str]
+    account_id: Dict[str, str]
+    biography: Dict[str, str]
+
+
+def create_replacement_dict(
+    df_user: pandas.DataFrame,
+    *,
+    not_masked_biography_set: Optional[Set[str]],
+    not_masked_user_id_set: Optional[Set[str]],
+) -> ReplacementDict:
+    """
+    ユーザー情報を置換するためのインスタンスを生成します。
+
+    Args:
+        df_user: ユーザー情報が格納されたDataFrame。以下の列が必要です。
+            * user_id
+            * username
+            * account_id
+            * biography
+        not_masked_user_id_set: マスクしないuser_idの集合。
+        not_masked_biography_set: マスクしないbiographyの集合。指定したbiographyに該当するユーザーのuser_id,username,account_idはマスクしません。
+    """
+
+    assert {"user_id", "username", "account_id", "biography"} - set(
+        df_user.columns
+    ) == set(), "df_userには'user_id','username','account_id','biography'の列が必要です。"
+
+    replacement_dict_for_user_id = create_replacement_dict_by_user_id(
+        df_user, not_masked_biography_set=not_masked_biography_set, not_masked_user_id_set=not_masked_user_id_set
     )
-    replace_by_columns(
-        df_output,
-        replacement_dict_by_user_id,
-        main_column="first_inspection_user_id",
-        sub_columns=["first_inspection_username"],
+
+    df2 = df_user.set_index("user_id")
+    df3 = df2.loc[replacement_dict_for_user_id.keys()]
+    replacement_dict_for_username = dict(zip(df3["username"], replacement_dict_for_user_id.values()))
+    replacement_dict_for_account_id = dict(zip(df3["account_id"], replacement_dict_for_user_id.values()))
+
+    replacement_dict_by_biography = create_replacement_dict_by_biography(
+        df_user, not_masked_biography_set=not_masked_biography_set
     )
-    replace_by_columns(
-        df_output,
-        replacement_dict_by_user_id,
-        main_column="first_acceptance_user_id",
-        sub_columns=["first_acceptance_username"],
+
+    return ReplacementDict(
+        user_id=replacement_dict_for_user_id,
+        username=replacement_dict_for_username,
+        account_id=replacement_dict_for_account_id,
+        biography=replacement_dict_by_biography,
     )
-    return Task(df_output)
 
 
 def write_line_graph(
     task: Task, output_project_dir: ProjectDir, user_id_list: Optional[List[str]] = None, minimal_output: bool = False
 ):
-    df = task.df.copy()
-
     output_project_dir.write_cumulative_line_graph(
-        AnnotatorCumulativeProductivity(df),
+        AnnotatorCumulativeProductivity.from_task(task),
         phase=TaskPhase.ANNOTATION,
         user_id_list=user_id_list,
         minimal_output=minimal_output,
     )
     output_project_dir.write_cumulative_line_graph(
-        InspectorCumulativeProductivity(df),
+        InspectorCumulativeProductivity.from_task(task),
         phase=TaskPhase.INSPECTION,
         user_id_list=user_id_list,
         minimal_output=minimal_output,
     )
     output_project_dir.write_cumulative_line_graph(
-        AcceptorCumulativeProductivity(df),
+        AcceptorCumulativeProductivity.from_task(task),
         phase=TaskPhase.ACCEPTANCE,
         user_id_list=user_id_list,
         minimal_output=minimal_output,
@@ -98,6 +133,25 @@ def write_line_graph(
         )
 
 
+def create_df_user(
+    worktime_per_date_user: WorktimePerDate, task_worktime_by_phase_user: TaskWorktimeByPhaseUser
+) -> pandas.DataFrame:
+    """
+    ユーザー情報が格納されているDataFrameを生成します。
+
+    Returns:
+        以下の列が含まれているDataFrame
+        * user_id
+        * account_id
+        * username
+        * biography
+    """
+    df_user1 = worktime_per_date_user.df[["user_id", "username", "account_id", "biography"]]
+    df_user2 = task_worktime_by_phase_user.df[["user_id", "username", "account_id", "biography"]]
+    df_user = pandas.concat([df_user1, df_user2])
+    return df_user.drop_duplicates()
+
+
 def mask_visualization_dir(
     project_dir: ProjectDir,
     output_project_dir: ProjectDir,
@@ -107,57 +161,58 @@ def mask_visualization_dir(
     minimal_output: bool = False,
     exclude_masked_user_for_line_graph: bool = False,
 ) -> None:
-    user_performance = project_dir.read_user_performance()
-    if user_performance.is_empty():
-        logger.warning("メンバごとの生産性と品質情報が空であるため、ユーザー情報をマスクできません。終了します。")
-        return
-
-    # マスクするユーザの情報を取得する
-    replacement_dict_by_user_id = create_replacement_dict_by_user_id(
-        user_performance.df,
+    worktime_per_date = project_dir.read_worktime_per_date_user()
+    task_worktime_by_phase_user = project_dir.read_task_worktime_list()
+    df_user = create_df_user(worktime_per_date, task_worktime_by_phase_user)
+    replacement_dict = create_replacement_dict(
+        df_user,
         not_masked_biography_set=not_masked_biography_set,
         not_masked_user_id_set=not_masked_user_id_set,
     )
-    not_masked_user_id_set = set(user_performance.df[("user_id", "")]) - set(replacement_dict_by_user_id.keys())
+
+    masked_worktime_per_date = worktime_per_date.mask_user_info(
+        to_replace_for_account_id=replacement_dict.account_id,
+        to_replace_for_biography=replacement_dict.biography,
+        to_replace_for_user_id=replacement_dict.user_id,
+        to_replace_for_username=replacement_dict.username,
+    )
+    masked_task_worktime_by_phase_user = task_worktime_by_phase_user.mask_user_info(
+        to_replace_for_account_id=replacement_dict.account_id,
+        to_replace_for_biography=replacement_dict.biography,
+        to_replace_for_user_id=replacement_dict.user_id,
+        to_replace_for_username=replacement_dict.username,
+    )
 
     # CSVのユーザ情報をマスクする
-    masked_df_member_performance = create_masked_user_info_df(
-        user_performance.df,
-        not_masked_biography_set=not_masked_biography_set,
-        not_masked_user_id_set=not_masked_user_id_set,
+    masked_user_performance = UserPerformance.from_df_wrapper(
+        masked_worktime_per_date, masked_task_worktime_by_phase_user
     )
-    masked_user_performance = UserPerformance(masked_df_member_performance)
     output_project_dir.write_user_performance(masked_user_performance)
 
     # メンバのパフォーマンスを散布図で出力する
     output_project_dir.write_user_performance_scatter_plot(masked_user_performance)
 
-    user_id_list: Optional[List[str]] = None
+    user_id_list: Optional[list[str]] = None
     if exclude_masked_user_for_line_graph:
         user_id_list = list(not_masked_user_id_set)
 
-    # TODO: validation
-    task = project_dir.read_task_list()
-    masked_task = _replace_df_task(task, replacement_dict_by_user_id=replacement_dict_by_user_id)
+    masked_task = project_dir.read_task_list().mask_user_info(
+        to_replace_for_user_id=replacement_dict.user_id, to_replace_for_username=replacement_dict.username
+    )
     output_project_dir.write_task_list(masked_task)
 
     write_line_graph(masked_task, output_project_dir, user_id_list=user_id_list, minimal_output=minimal_output)
 
-    worktime_per_date_user = project_dir.read_worktime_per_date_user()
-    if not worktime_per_date_user.is_empty():
-        df_masked_worktime = create_masked_user_info_df(
-            worktime_per_date_user.df,
-            not_masked_biography_set=not_masked_biography_set,
-            not_masked_user_id_set=not_masked_user_id_set,
-        )
-        masked_worktime_per_date_user = WorktimePerDate(df_masked_worktime)
-        output_project_dir.write_worktime_per_date_user(masked_worktime_per_date_user)
-        output_project_dir.write_worktime_line_graph(masked_worktime_per_date_user, user_id_list=user_id_list)
+    if not masked_worktime_per_date.is_empty():
+        output_project_dir.write_worktime_per_date_user(masked_worktime_per_date)
+        output_project_dir.write_worktime_line_graph(masked_worktime_per_date, user_id_list=user_id_list)
     else:
         logger.warning(
             f"'{project_dir.project_dir / project_dir.FILENAME_WORKTIME_PER_DATE_USER}'が存在しないかデータがないため、"
             f"'{project_dir.FILENAME_WORKTIME_PER_DATE_USER}'から生成できるファイルを出力しません。"
         )
+
+    output_project_dir.write_task_worktime_list(masked_task_worktime_by_phase_user)
 
     logger.debug(f"'{project_dir}'のマスクした結果を'{output_project_dir}'に出力しました。")
 

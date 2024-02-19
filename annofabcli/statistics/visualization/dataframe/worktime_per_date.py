@@ -419,7 +419,7 @@ class WorktimePerDate:
         # TODO この問題が解決されたら、削除する
         # https://qiita.com/yuji38kwmt/items/b5da6ed521e827620186
         df_cumulative = df_cumulative.astype(
-            {"date": "object", "user_id": "object", "username": "object", "biography": "object"}
+            {"date": "object", "account_id": "object", "user_id": "object", "username": "object", "biography": "object"}
         )
         df_cumulative.replace(pandas.NA, numpy.nan, inplace=True)
 
@@ -468,3 +468,29 @@ class WorktimePerDate:
         columns = self._df_dtype.keys()
 
         print_csv(self.df[columns], output=str(output_file))
+
+    def mask_user_info(
+        self,
+        to_replace_for_user_id: Optional[dict[str, str]] = None,
+        to_replace_for_username: Optional[dict[str, str]] = None,
+        to_replace_for_account_id: Optional[dict[str, str]] = None,
+        to_replace_for_biography: Optional[dict[str, str]] = None,
+    ) -> WorktimePerDate:
+        """
+        引数から渡された情報を元に、インスタンス変数`df`内のユーザー情報をマスクして、新しいインスタンスを返します。
+
+        Args:
+            to_replace_for_user_id: user_idを置換するためのdict。keyは置換前のuser_id, valueは置換後のuser_id。
+            to_replace_for_username: usernameを置換するためのdict。keyは置換前のusername, valueは置換後のusername。
+            to_replace_for_account_id: account_idを置換するためのdict。keyは置換前のaccount_id, valueは置換後のaccount_id。
+            to_replace_for_biography: biographyを置換するためのdict。keyは置換前のbiography, valueは置換後のbiography。
+
+        """
+        to_replace_info = {
+            "user_id": to_replace_for_user_id,
+            "username": to_replace_for_username,
+            "account_id": to_replace_for_account_id,
+            "biography": to_replace_for_biography,
+        }
+        df = self.df.replace(to_replace_info)
+        return WorktimePerDate(df)
