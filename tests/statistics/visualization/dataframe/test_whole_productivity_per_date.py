@@ -32,7 +32,6 @@ class TestWholeProductivityPerCompletedDate:
         worktime_per_date = WorktimePerDate.from_csv(data_dir / "ユーザ_日付list-作業時間.csv")
         WholeProductivityPerCompletedDate.from_df_wrapper(task, worktime_per_date)
 
-
     def test_from_df__df_worktime引数が空でもインスタンスを生成できることを確認する(self):
         # 完了タスクが１つもない状態で試す
         task = Task.from_csv(data_dir / "task.csv")

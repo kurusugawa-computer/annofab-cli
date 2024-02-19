@@ -206,11 +206,14 @@ class WholeProductivityPerCompletedDate:
                     "monitored_acceptance_worktime_hour",
                     "unmonitored_worktime_hour",
                     "working_user_count",
-                ]
+                ],
+                dtype="float",
+                index=pandas.Index([], name="date", dtype="string"),
             )
 
         # 日付の一覧を生成
         df_date_base = cls._create_df_date(df_agg_sub_task.index, df_agg_labor.index)
+
         df_date = df_date_base.join(df_agg_sub_task).join(df_agg_labor).fillna(0)
         df_date["date"] = df_date.index
 
