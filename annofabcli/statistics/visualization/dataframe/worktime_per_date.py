@@ -25,6 +25,7 @@ from annofabcli.statistics.linegraph import (
     write_bokeh_graph,
 )
 from annofabcli.statistics.list_worktime import get_worktime_dict_from_event_list
+from annofabcli.statistics.visualization.dataframe.actual_worktime import ActualWorktime
 from annofabcli.task_history_event.list_worktime import (
     ListWorktimeFromTaskHistoryEventMain,
     WorktimeFromTaskHistoryEvent,
@@ -100,7 +101,7 @@ class WorktimePerDate:
         cls,
         task_history_event_list: list[WorktimeFromTaskHistoryEvent],
         df_member: pandas.DataFrame,
-        df_labor: Optional[pandas.DataFrame] = None,
+        actual_worktime: ActualWorktime,
     ) -> pandas.DataFrame:
         dict_worktime = get_worktime_dict_from_event_list(task_history_event_list)
 
@@ -145,9 +146,11 @@ class WorktimePerDate:
             + df["monitored_acceptance_worktime_hour"]
         )
 
-        if df_labor is not None and len(df_labor) > 0:
+        if not actual_worktime.is_empty():
             df = df.merge(
-                df_labor[["date", "actual_worktime_hour", "account_id"]], how="outer", on=["date", "account_id"]
+                actual_worktime.df[["date", "actual_worktime_hour", "account_id"]],
+                how="outer",
+                on=["date", "account_id"],
             )
         else:
             df["actual_worktime_hour"] = 0
@@ -202,7 +205,8 @@ class WorktimePerDate:
         cls,
         service: annofabapi.Resource,
         project_id: str,
-        df_labor: Optional[pandas.DataFrame] = None,
+        actual_worktime: ActualWorktime,
+        *,
         start_date: Optional[str] = None,
         end_date: Optional[str] = None,
     ) -> WorktimePerDate:
@@ -211,7 +215,7 @@ class WorktimePerDate:
         Args:
             service (annofabapi.Resource): [description]
             project_id (str): [description]
-            df_labor: 実績作業時間が格納されたDataFrame。date, account_id, actual_worktime_hour 列を参照する。
+            actual_worktime: 実績作業時間が格納されたDataFrameをラップしたクラス
             start_date: 指定した日以降で絞り込みます
             end_date: 指定した日以前で絞り込みます
 
@@ -226,7 +230,7 @@ class WorktimePerDate:
 
         df_member = cls._get_df_member(service, project_id)
 
-        df = cls.get_df_worktime(worktime_list, df_member, df_labor=df_labor)
+        df = cls.get_df_worktime(worktime_list, df_member, actual_worktime=actual_worktime)
         if start_date is not None:
             df = df[df["date"] >= start_date]
         if end_date is not None:

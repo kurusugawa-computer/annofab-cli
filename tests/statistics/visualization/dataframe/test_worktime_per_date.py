@@ -5,6 +5,7 @@ import annofabapi
 import pandas
 import pytest
 
+from annofabcli.statistics.visualization.dataframe.actual_worktime import ActualWorktime
 from annofabcli.statistics.visualization.dataframe.worktime_per_date import WorktimePerDate
 
 output_dir = Path("./tests/out/statistics/visualization/dataframe/worktime_per_date")
@@ -75,11 +76,12 @@ class TestWorktimePerDate_webapi:
         cls.service = annofabapi.build()
 
     def test_from_webapi(self):
-        actual = WorktimePerDate.from_webapi(self.service, project_id)
+        actual = WorktimePerDate.from_webapi(self.service, project_id, actual_worktime=ActualWorktime.empty())
         assert len(actual.df) > 0
 
     def test_from_webapi_with_labor(self):
         df_labor = pandas.read_csv(str(data_dir / "labor-df.csv"))
-        actual = WorktimePerDate.from_webapi(self.service, project_id, df_labor=df_labor)
+        df_labor["project_id"] = project_id
+        actual = WorktimePerDate.from_webapi(self.service, project_id, actual_worktime=ActualWorktime(df_labor))
         assert len(actual.df) > 0
         actual.to_csv(output_dir / "from_webapi_with_labor.csv")

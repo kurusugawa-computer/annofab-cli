@@ -22,6 +22,7 @@ from annofabcli.common.facade import AnnofabApiFacade, TaskQuery
 from annofabcli.stat_visualization.merge_visualization_dir import merge_visualization_dir
 from annofabcli.statistics.database import Database, Query
 from annofabcli.statistics.table import Table
+from annofabcli.statistics.visualization.dataframe.actual_worktime import ActualWorktime
 from annofabcli.statistics.visualization.dataframe.cumulative_productivity import (
     AcceptorCumulativeProductivity,
     AnnotatorCumulativeProductivity,
@@ -62,7 +63,7 @@ class WriteCsvGraph:
         project_id: str,
         table_obj: Table,
         output_dir: Path,
-        df_labor: Optional[pandas.DataFrame],
+        actual_worktime: ActualWorktime,
         start_date: Optional[str] = None,
         end_date: Optional[str] = None,
         minimal_output: bool = False,
@@ -72,7 +73,7 @@ class WriteCsvGraph:
         self.project_id = project_id
         self.output_dir = output_dir
         self.table_obj = table_obj
-        self.df_labor = df_labor
+        self.actual_worktime = actual_worktime
         self.start_date = start_date
         self.end_date = end_date
         self.minimal_output = minimal_output
@@ -111,7 +112,11 @@ class WriteCsvGraph:
     def _get_worktime_per_date(self) -> WorktimePerDate:
         if self.worktime_per_date is None:
             self.worktime_per_date = WorktimePerDate.from_webapi(
-                self.service, self.project_id, self.df_labor, start_date=self.start_date, end_date=self.end_date
+                self.service,
+                self.project_id,
+                actual_worktime=self.actual_worktime,
+                start_date=self.start_date,
+                end_date=self.end_date,
             )
         return self.worktime_per_date
 
@@ -244,7 +249,7 @@ class VisualizingStatisticsMain:
         # その他
         download_latest: bool = False,
         is_get_task_histories_one_of_each: bool = False,
-        df_labor: Optional[pandas.DataFrame],
+        actual_worktime: Optional[ActualWorktime],
         user_ids: Optional[List[str]],
     ) -> None:
         self.service = service
@@ -259,7 +264,7 @@ class VisualizingStatisticsMain:
         self.output_only_text = output_only_text
         self.download_latest = download_latest
         self.is_get_task_histories_one_of_each = is_get_task_histories_one_of_each
-        self.df_labor = df_labor
+        self.actual_worktime = actual_worktime
         self.user_ids = user_ids
 
     def write_project_info_json(self, project_id: str, project_dir: ProjectDir) -> None:
@@ -319,26 +324,25 @@ class VisualizingStatisticsMain:
 
         table_obj = Table(database)
 
-        if self.df_labor is not None:
+        if self.actual_worktime is not None:
             # project_id列がある場合（複数のproject_id列を指定した場合）はproject_idで絞り込む
-            if "project_id" in self.df_labor:
-                df_labor = self.df_labor[self.df_labor["project_id"] == project_id]
-            else:
-                df_labor = self.df_labor
+            df_actual_worktime = self.actual_worktime.df
+            df_actual_worktime = df_actual_worktime[df_actual_worktime["project_id"] == project_id]
+
             if self.start_date is not None:
-                df_labor = df_labor[df_labor["date"] >= self.start_date]
+                df_actual_worktime = df_actual_worktime[df_actual_worktime["date"] >= self.start_date]
             if self.end_date is not None:
-                df_labor = df_labor[df_labor["date"] <= self.end_date]
+                df_actual_worktime = df_actual_worktime[df_actual_worktime["date"] <= self.end_date]
 
         else:
-            df_labor = None
+            df_actual_worktime = ActualWorktime.empty()
 
         write_obj = WriteCsvGraph(
             self.service,
             project_id,
             table_obj,
             output_project_dir,
-            df_labor=df_labor,
+            actual_worktime=ActualWorktime(df_actual_worktime),
             start_date=self.start_date,
             end_date=self.end_date,
             minimal_output=self.minimal_output,
@@ -432,7 +436,7 @@ class VisualizeStatistics(AbstractCommandLineInterface):
         if args.labor_csv is None:
             logger.warning("'--labor_csv'が指定されていないので、実績作業時間に関する情報は出力されません。")
 
-        df_labor = pandas.read_csv(args.labor_csv) if args.labor_csv is not None else None
+        actual_worktime = ActualWorktime.from_csv(args.labor_csv) if args.labor_csv is not None else None
 
         with tempfile.TemporaryDirectory() as str_temp_dir:
             main_obj = VisualizingStatisticsMain(
@@ -441,7 +445,7 @@ class VisualizeStatistics(AbstractCommandLineInterface):
                 task_query=task_query,
                 task_ids=task_id_list,
                 user_ids=user_id_list,
-                df_labor=df_labor,
+                actual_worktime=actual_worktime,
                 download_latest=args.latest,
                 is_get_task_histories_one_of_each=args.get_task_histories_one_of_each,
                 start_date=args.start_date,
