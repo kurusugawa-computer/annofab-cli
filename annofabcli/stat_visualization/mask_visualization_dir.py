@@ -237,7 +237,7 @@ def mask_visualization_dir(
             f"'{project_dir.FILENAME_WORKTIME_PER_DATE_USER}'から生成できるファイルを出力しません。"
         )
 
-    project_dir.write_task_worktime_list(masked_task_worktime_by_phase_user)
+    output_project_dir.write_task_worktime_list(masked_task_worktime_by_phase_user)
 
     logger.debug(f"'{project_dir}'のマスクした結果を'{output_project_dir}'に出力しました。")
 

@@ -430,7 +430,6 @@ class WorktimePerDate:
                 logger.debug(f"dataframe is empty. user_id = {user_id}")
                 continue
 
-            print(f"{user_id=}, {df_subset.dtypes=}")
             source = ColumnDataSource(data=df_subset)
             color = get_color_from_palette(user_index)
             username = df_subset.iloc[0]["username"]
