@@ -564,7 +564,7 @@ class AttributeCountCsv:
 
         # アノテーション数の列のNaNを0に変換する
         value_columns = self._value_columns(counter_list, prior_attribute_columns)
-        df = df.fillna({column:0 for column in value_columns})
+        df = df.fillna({column: 0 for column in value_columns})
 
         print_csv(df, output=str(output_file), to_csv_kwargs=self.csv_format)
 
@@ -669,7 +669,7 @@ class LabelCountCsv:
 
         # アノテーション数列のNaNを0に変換する
         value_columns = self._value_columns(counter_list, prior_label_columns)
-        df = df.fillna({column:0 for column in value_columns})
+        df = df.fillna({column: 0 for column in value_columns})
 
         print_csv(df, output=str(output_file), to_csv_kwargs=self.csv_format)
 
