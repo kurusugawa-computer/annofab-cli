@@ -16,7 +16,7 @@ class TestTaskWorktimeByPhaseUser:
     def test__from_df__and__to_csv(self):
         task_history = TaskHistory(pandas.read_csv(str(data_dir / "task-history-df.csv")))
         user = User(pandas.read_csv(str(data_dir / "user.csv")))
-        task = Task.from_csv(str(data_dir / "task.csv"))
+        task = Task.from_csv(data_dir / "task.csv")
         actual = TaskWorktimeByPhaseUser.from_df_wrapper(
             task_history=task_history, user=user, task=task, project_id="prj1"
         )

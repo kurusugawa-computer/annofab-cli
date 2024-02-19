@@ -20,6 +20,16 @@ class User:
     columns = ["user_id", "account_id", "username", "biography"]
 
     @staticmethod
+    def _duplicated_keys(df: pandas.DataFrame) -> bool:
+        """
+        DataFrameに重複したキーがあるかどうかを返します。
+        """
+        duplicated1 = df.duplicated(subset=["user_id"])
+        duplicated2 = df.duplicated(subset=["account_id"])
+        return duplicated1.any() or duplicated2.any()
+
+
+    @staticmethod
     def required_columns_exist(df: pandas.DataFrame) -> bool:
         """
         必須の列が存在するかどうかを返します。
@@ -32,6 +42,10 @@ class User:
     def __init__(self, df: pandas.DataFrame) -> None:
         if not self.required_columns_exist(df):
             ValueError(f"引数`df`には、{User.columns}の列が必要です。")
+
+        if self._duplicated_keys(df):
+            logger.warning("引数`df`の`user_id`列または`account_id`が重複しています。")
+
         self.df = df
 
     def is_empty(self) -> bool:

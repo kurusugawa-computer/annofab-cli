@@ -12,13 +12,15 @@ class TaskHistory:
     タスク履歴情報が格納されたDataFrameをラップしたクラスです。
     DataFrameには以下の列が存在します。
     * project_id
-    * date
+    * task_id
+    * phase
+    * phase_stage
     * account_id
-    * actual_worktime_hour
-    `project_id`,`date`, `account_id`のペアがユニークなキーです。
+    * worktime_hour
     """
 
-    columns = ["project_id", "date", "account_id", "actual_worktime_hour"]
+    columns = ["project_id", "task_id", "phase", "phase_stage", "account_id", "worktime_hour"]
+
 
     @staticmethod
     def required_columns_exist(df: pandas.DataFrame) -> bool:
@@ -33,6 +35,7 @@ class TaskHistory:
     def __init__(self, df: pandas.DataFrame) -> None:
         if not self.required_columns_exist(df):
             ValueError(f"引数`df`には、{TaskHistory.columns}の列が必要です。")
+
         self.df = df
 
     def is_empty(self) -> bool:

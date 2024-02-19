@@ -20,7 +20,6 @@ class Table:
     チェックポイントファイルがあること前提
 
     Attributes:
-        label_dict: label_idとその名前の辞書
         inspection_phrases_dict: 定型指摘IDとそのコメント
         project_members_dict: account_idとプロジェクトメンバ情報
 
