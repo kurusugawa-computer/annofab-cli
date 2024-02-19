@@ -336,8 +336,10 @@ class Task:
 
         print_csv(self.df[columns], str(output_file))
 
-    def mask_user_info(
         self,
+
+    def mask_user_info(
+            self,
         to_replace_for_user_id: Optional[dict[str, str]] = None,
         to_replace_for_username: Optional[dict[str, str]] = None,
     ) -> Task:
