@@ -336,12 +336,12 @@ class MaskUserInfo(AbstractCommandLineWithoutWebapiInterface):
             set(get_list_from_args(args.not_masked_user_id)) if args.not_masked_user_id is not None else None
         )
 
-        csv_header: int = args.csv_header
+        csv_header_row_count: int = args.csv_header_row_count
         csv_path: Path = args.csv
-        if csv_header == 1:
+        if csv_header_row_count == 1:
             original_df = pandas.read_csv(str(csv_path))
         else:
-            original_df = read_multiheader_csv(str(csv_path), header_row_count=csv_header)
+            original_df = read_multiheader_csv(str(csv_path), header_row_count=csv_header_row_count)
 
         df = create_masked_user_info_df(
             df=original_df,
@@ -371,7 +371,7 @@ def parse_args(parser: argparse.ArgumentParser) -> None:
         nargs="+",
         help="マスクしないユーザの`user_id`を指定してください。",
     )
-    parser.add_argument("--csv_header", type=int, help="CSVのヘッダ行数", default=1)
+    parser.add_argument("--csv_header_row_count", type=int, help="CSVのヘッダ行数", default=1)
 
     argument_parser.add_output()
     argument_parser.add_csv_format()
