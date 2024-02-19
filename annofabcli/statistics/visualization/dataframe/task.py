@@ -339,7 +339,7 @@ class Task:
         self,
 
     def mask_user_info(
-            self,
+        self,
         to_replace_for_user_id: Optional[dict[str, str]] = None,
         to_replace_for_username: Optional[dict[str, str]] = None,
     ) -> Task:

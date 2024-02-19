@@ -7,27 +7,27 @@ out_dir = Path("./tests/out/stat_visualization")
 
 
 class TestCommandLine:
-    def test_mask_user_info(self):
+    def test__mask_user_info(self):
         main(
             [
                 "stat_visualization",
                 "mask_user_info",
                 "--dir",
-                str(data_dir / "visualization-dir"),
+                str(data_dir / "mask_visualization_dir/visualization1"),
                 "--output_dir",
                 str(out_dir / "mask_user_info-out"),
                 "--minimal",
             ]
         )
 
-    def test_merge(self):
+    def test__merge(self):
         main(
             [
                 "stat_visualization",
                 "merge",
                 "--dir",
-                str(data_dir / "visualization-dir"),
-                str(data_dir / "visualization-dir"),
+                str(data_dir / "merge_visualization_dir/visualization1"),
+                str(data_dir / "merge_visualization_dir/visualization1"),
                 "--output_dir",
                 str(out_dir / "merge-out"),
                 "--minimal",

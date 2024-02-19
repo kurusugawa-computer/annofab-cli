@@ -1,0 +1,7 @@
+﻿project_id,task_id,status,phase,phase_stage,account_id,user_id,username,biography,worktime_hour,task_count,input_data_count,annotation_count,pointed_out_inspection_comment_count,rejected_count
+prj1,task1,complete,acceptance,1,alice,alice,alice,Japan,0.547898611111111,1,10,20,0,0
+prj1,task1,complete,annotation,1,bob,bob,bob,U.S.,0.185208888888889,1,10,20,0,0
+prj1,task2,complete,acceptance,1,alice,alice,alice,Japan,0.317856944444444,1,10,20,0,0
+prj1,task2,complete,annotation,1,bob,bob,bob,U.S.,0.220598611111111,1,10,20,1,1
+prj1,task3,complete,acceptance,1,chris,chris,chris,Germany,1.03664777777778,1,10,20,0,0
+prj1,task3,complete,annotation,1,bob,bob,bob,U.S.,0.324384722222222,1,10,20,2,1

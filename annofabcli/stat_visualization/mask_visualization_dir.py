@@ -14,7 +14,6 @@ from annofabcli.common.cli import get_list_from_args
 from annofabcli.filesystem.mask_user_info import (
     create_replacement_dict_by_biography,
     create_replacement_dict_by_user_id,
-    replace_by_columns,
 )
 from annofabcli.statistics.visualization.dataframe.cumulative_productivity import (
     AcceptorCumulativeProductivity,
@@ -90,30 +89,6 @@ def create_replacement_dict(
         account_id=replacement_dict_for_account_id,
         biography=replacement_dict_by_biography,
     )
-
-
-def _replace_df_task(task: Task, replacement_dict_by_user_id: Dict[str, str]) -> Task:
-    df_output = task.df.copy()
-
-    replace_by_columns(
-        df_output,
-        replacement_dict_by_user_id,
-        main_column="first_annotation_user_id",
-        sub_columns=["first_annotation_username"],
-    )
-    replace_by_columns(
-        df_output,
-        replacement_dict_by_user_id,
-        main_column="first_inspection_user_id",
-        sub_columns=["first_inspection_username"],
-    )
-    replace_by_columns(
-        df_output,
-        replacement_dict_by_user_id,
-        main_column="first_acceptance_user_id",
-        sub_columns=["first_acceptance_username"],
-    )
-    return Task(df_output)
 
 
 def write_line_graph(
