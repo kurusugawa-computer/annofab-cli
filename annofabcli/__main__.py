@@ -6,6 +6,8 @@ import logging
 import sys
 from typing import Optional
 
+import pandas
+
 import annofabcli.annotation.subcommand_annotation
 import annofabcli.annotation_specs.subcommand_annotation_specs
 import annofabcli.comment.subcommand_comment
@@ -26,7 +28,6 @@ import annofabcli.supplementary.subcommand_supplementary
 import annofabcli.task.subcommand_task
 import annofabcli.task_history.subcommand_task_history
 import annofabcli.task_history_event.subcommand_task_history_event
-import pandas
 
 logger = logging.getLogger(__name__)
 
