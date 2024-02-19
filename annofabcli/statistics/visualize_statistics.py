@@ -38,6 +38,7 @@ from annofabcli.statistics.visualization.dataframe.project_performance import (
     ProjectWorktimePerMonth,
 )
 from annofabcli.statistics.visualization.dataframe.task import Task
+from annofabcli.statistics.visualization.dataframe.task_history import TaskHistory
 from annofabcli.statistics.visualization.dataframe.task_worktime_by_phase_user import TaskWorktimeByPhaseUser
 from annofabcli.statistics.visualization.dataframe.user_performance import UserPerformance
 from annofabcli.statistics.visualization.dataframe.whole_performance import WholePerformance
@@ -138,14 +139,14 @@ class WriteCsvGraph:
         """
 
         df_task_history = self._get_task_history_df()
-        annotation_count_ratio_df = self.table_obj.create_annotation_count_ratio_df(
-            df_task_history, self._get_task_df()
-        )
         df_user = pandas.DataFrame(self.table_obj.project_members_dict.values())
 
         # タスク、フェーズ、ユーザごとの作業時間を出力する
-        task_worktime_obj = TaskWorktimeByPhaseUser.from_df(
-            annotation_count_ratio_df, df_user=df_user, df_task=self._get_task_df(), project_id=self.project_id
+        task_worktime_obj = TaskWorktimeByPhaseUser.from_df_wrapper(
+            task_history=TaskHistory(df_task_history),
+            df_user=df_user,
+            task=Task(self._get_task_df()),
+            project_id=self.project_id,
         )
         self.project_dir.write_task_worktime_list(task_worktime_obj)
 

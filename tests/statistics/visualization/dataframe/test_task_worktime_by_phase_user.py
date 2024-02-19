@@ -14,7 +14,7 @@ class TestTaskWorktimeByPhaseUser:
         df_worktime_ratio = pandas.read_csv(str(data_dir / "annotation-count-ratio-df.csv"))
         df_user = pandas.read_csv(str(data_dir / "user.csv"))
         df_task = pandas.read_csv(str(data_dir / "task.csv"))
-        actual = TaskWorktimeByPhaseUser.from_df(
+        actual = TaskWorktimeByPhaseUser.from_df_wrapper(
             df_worktime_ratio=df_worktime_ratio, df_user=df_user, df_task=df_task, project_id="prj1"
         )
 
