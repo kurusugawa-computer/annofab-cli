@@ -19,7 +19,7 @@ Available Commands
 
     mask_user_info
     merge
-    summarise_whole_performance_csv
+    summarize_whole_performance_csv
     write_performance_rating_csv
     write_graph
 
