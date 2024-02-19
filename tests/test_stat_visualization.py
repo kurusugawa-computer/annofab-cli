@@ -52,7 +52,7 @@ class TestCommandLine:
                 "stat_visualization",
                 "write_performance_rating_csv",
                 "--dir",
-                str(data_dir),
+                str(data_dir/"write_performance_rating_csv"),
                 "--output_dir",
                 str(out_dir / "write_performance_rating_csv-out"),
             ]
