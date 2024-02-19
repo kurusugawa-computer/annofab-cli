@@ -88,6 +88,12 @@ def create_task_count_summary(task_list: List[Task], number_of_inspections: int)
         number_of_inspections: プロジェクト設定から取得した検査フェーズの回数
 
     Returns:
+        以下の列を持つDataFrame
+        * step
+        * phase
+        * phase_stage
+        * simple_status
+        * task_count
 
     """
     for task in task_list:
@@ -112,8 +118,11 @@ def create_task_count_summary(task_list: List[Task], number_of_inspections: int)
         ],
     )
 
+    # `observed=True`を指定する理由：以下の警告に対応するため
+    # FutureWarning: The default value of observed=False is deprecated and will change to observed=True in a future version of pandas.  # noqa: E501
+    # Specify observed=False to silence this warning and retain the current behavior
     summary_df = df.pivot_table(
-        values="task_id", index=["step", "phase", "phase_stage", "simple_status"], aggfunc="count"
+        values="task_id", index=["step", "phase", "phase_stage", "simple_status"], aggfunc="count", observed=False
     ).reset_index()
     summary_df.rename(columns={"task_id": "task_count"}, inplace=True)
 

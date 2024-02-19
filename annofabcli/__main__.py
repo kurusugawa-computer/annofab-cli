@@ -6,6 +6,8 @@ import logging
 import sys
 from typing import Optional
 
+import pandas
+
 import annofabcli.annotation.subcommand_annotation
 import annofabcli.annotation_specs.subcommand_annotation_specs
 import annofabcli.comment.subcommand_comment
@@ -28,6 +30,17 @@ import annofabcli.task_history.subcommand_task_history
 import annofabcli.task_history_event.subcommand_task_history_event
 
 logger = logging.getLogger(__name__)
+
+
+def warn_pandas_copy_on_write() -> None:
+    """
+    pandas2.2以上ならば、Copy-on-Writeの警告を出す。
+    pandas 3.0で予期しない挙動になるのを防ぐため。
+    https://pandas.pydata.org/docs/user_guide/copy_on_write.html
+    """
+    major, minor, _ = pandas.__version__.split(".")
+    if int(major) >= 2 and int(minor) >= 2:
+        pandas.options.mode.copy_on_write = "warn"
 
 
 def mask_argv(argv: list[str]) -> list[str]:
@@ -111,4 +124,5 @@ def create_parser() -> argparse.ArgumentParser:
 
 
 if __name__ == "__main__":
+    warn_pandas_copy_on_write()
     main()
