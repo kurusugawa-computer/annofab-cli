@@ -126,12 +126,26 @@ class WritingVisualizationFile:
     def write_task_worktime_by_phase_user(self, task_worktime_by_phase_user: TaskWorktimeByPhaseUser) -> None:
         self.output_project_dir.write_task_worktime_list(task_worktime_by_phase_user)
 
+    @_catch_exception
+    def write_performance_per_first_annotation_started_date(self, task: Task) -> None:
+        obj = WholeProductivityPerFirstAnnotationStartedDate.from_task(task)
+        self.output_project_dir.write_whole_productivity_per_first_annotation_started_date(obj)
+        self.output_project_dir.write_whole_productivity_line_graph_per_annotation_started_date(obj)
+
+    @_catch_exception
+    def write_merge_performance_per_date(self, task: Task, worktime_per_date: WorktimePerDate) -> None:
+        obj = WholeProductivityPerCompletedDate.from_df_wrapper(task, worktime_per_date)
+        self.output_project_dir.write_whole_productivity_per_date(obj)
+        self.output_project_dir.write_whole_productivity_line_graph_per_date(obj)
+
+    @_catch_exception
+    def write_merge_info(self, merging_info: MergingInfo) -> None:
+        self.output_project_dir.write_merge_info(merging_info)
+
 
 class MergingVisualizationFile:
     def __init__(self, project_dir_list: List[ProjectDir]) -> None:
         self.project_dir_list = project_dir_list
-
-    # TODO 読み込みに失敗したときを考慮する
 
     def merge_worktime_per_date(self) -> WorktimePerDate:
         merged_obj: Optional[WorktimePerDate] = None
@@ -163,6 +177,19 @@ class MergingVisualizationFile:
         merged_obj = TaskWorktimeByPhaseUser.merge(*tmp_list)
         return merged_obj
 
+    def create_merging_info(self) -> MergingInfo:
+        """
+        `project_info.json`の内容から、どのようにマージしたかを示す情報を作成する。
+        """
+        target_dir_list = [str(e.project_dir) for e in self.project_dir_list]
+        project_info_list = []
+        for project_dir in self.project_dir_list:
+            project_info = project_dir.read_project_info()
+            project_info_list.append(project_info)
+
+        merge_info = MergingInfo(target_dir_list=target_dir_list, project_info_list=project_info_list)
+        return merge_info
+
 
 def merge_visualization_dir(  # pylint: disable=too-many-statements
     project_dir_list: List[ProjectDir],
@@ -170,60 +197,6 @@ def merge_visualization_dir(  # pylint: disable=too-many-statements
     user_id_list: Optional[List[str]] = None,
     minimal_output: bool = False,
 ):
-    @_catch_exception
-    def execute_merge_performance_per_date():
-        merged_obj: Optional[WholeProductivityPerCompletedDate] = None
-        for project_dir in project_dir_list:
-            try:
-                tmp_obj = project_dir.read_whole_productivity_per_date()
-            except Exception:
-                logger.warning(f"'{project_dir}'の日ごとの生産量と生産性の取得に失敗しました。", exc_info=True)
-                continue
-
-            if merged_obj is None:
-                merged_obj = tmp_obj
-            else:
-                merged_obj = WholeProductivityPerCompletedDate.merge(merged_obj, tmp_obj)
-
-        if merged_obj is not None:
-            output_project_dir.write_whole_productivity_per_date(merged_obj)
-            output_project_dir.write_whole_productivity_line_graph_per_date(merged_obj)
-
-    @_catch_exception
-    def merge_performance_per_first_annotation_started_date():
-        merged_obj: Optional[WholeProductivityPerFirstAnnotationStartedDate] = None
-        for project_dir in project_dir_list:
-            try:
-                tmp_obj = project_dir.read_whole_productivity_per_first_annotation_started_date()
-            except Exception:
-                logger.warning(f"'{project_dir}'の教師付開始日ごとの生産量と生産性の取得に失敗しました。", exc_info=True)
-                continue
-
-            if merged_obj is None:
-                merged_obj = tmp_obj
-            else:
-                merged_obj = WholeProductivityPerFirstAnnotationStartedDate.merge(merged_obj, tmp_obj)
-
-        if merged_obj is not None:
-            output_project_dir.write_whole_productivity_per_first_annotation_started_date(merged_obj)
-            output_project_dir.write_whole_productivity_line_graph_per_annotation_started_date(merged_obj)
-
-    @_catch_exception
-    def write_merge_info_json() -> None:
-        """マージ情報に関するJSONファイルを出力する。"""
-        target_dir_list = [str(e.project_dir) for e in project_dir_list]
-        project_info_list = []
-        for project_dir in project_dir_list:
-            try:
-                project_info = project_dir.read_project_info()
-                project_info_list.append(project_info)
-            except Exception:
-                logger.warning(f"'{project_dir}'からプロジェクト情報の取得に失敗しました。", exc_info=True)
-                continue
-
-        merge_info = MergingInfo(target_dir_list=target_dir_list, project_info_list=project_info_list)
-        output_project_dir.write_merge_info(merge_info)
-
     merging_obj = MergingVisualizationFile(project_dir_list)
     # 基本となるCSVファイルを読み込みマージする
     task_worktime_by_phase_user = merging_obj.merge_task_worktime_by_phase_user()
@@ -247,11 +220,12 @@ def merge_visualization_dir(  # pylint: disable=too-many-statements
     writing_obj.write_cumulative_line_graph(task)
     writing_obj.write_line_graph(task)
 
-    execute_merge_performance_per_date()
-    merge_performance_per_first_annotation_started_date()
+    writing_obj.write_merge_performance_per_date(task, worktime_per_date)
+    writing_obj.write_performance_per_first_annotation_started_date(task)
 
     # info.jsonを出力
-    write_merge_info_json()
+    merging_info = merging_obj.create_merging_info()
+    writing_obj.write_merge_info(merging_info)
 
 
 def validate(args: argparse.Namespace) -> bool:
