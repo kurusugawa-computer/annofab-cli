@@ -134,7 +134,7 @@ def create_task_count_summary_df(
     if task_id_delimiter is not None:
         df_task["task_id_group"] = df_task["task_id"].map(lambda e: get_task_id_prefix(e, delimiter=task_id_delimiter))
 
-    df_task["task_id_group"].fillna(TASK_ID_GROUP_UNKNOWN, inplace=True)
+    df_task.fillna({"task_id_group":TASK_ID_GROUP_UNKNOWN}, inplace=True)
 
     df_summary = df_task.pivot_table(
         values="task_id", index=["task_id_group"], columns=["status_for_summary"], aggfunc="count", fill_value=0

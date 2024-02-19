@@ -562,8 +562,9 @@ class AttributeCountCsv:
         columns = get_columns()
         df = pandas.DataFrame([to_cell(e) for e in counter_list], columns=pandas.MultiIndex.from_tuples(columns))
 
-        # `task_id`列など`basic_columns`も`fillna`対象だが、nanではないはずので問題ない
-        df.fillna(0, inplace=True)
+        # アノテーション数の列のNaNを0に変換する
+        value_columns = self._value_columns(counter_list, prior_attribute_columns)
+        df = df.fillna({column:0 for column in value_columns})
 
         print_csv(df, output=str(output_file), to_csv_kwargs=self.csv_format)
 
@@ -666,9 +667,10 @@ class LabelCountCsv:
         columns = get_columns()
         df = pandas.DataFrame([to_dict(e) for e in counter_list], columns=columns)
 
-        # NaNを0に変換する
-        # `basic_columns`は必ずnanではないので、すべての列に対してfillnaを実行しても問題ないはず
-        df.fillna(0, inplace=True)
+        # アノテーション数列のNaNを0に変換する
+        value_columns = self._value_columns(counter_list, prior_label_columns)
+        df = df.fillna({column:0 for column in value_columns})
+
         print_csv(df, output=str(output_file), to_csv_kwargs=self.csv_format)
 
 
