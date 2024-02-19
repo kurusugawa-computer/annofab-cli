@@ -1,0 +1,12 @@
+{
+  "project_id": "prj1",
+  "project_title": "PRJECT1",
+  "input_data_type": "image",
+  "measurement_datetime": "2024-02-17T01:22:54.025+09:00",
+  "query": {
+    "task_query": null,
+    "task_ids": null,
+    "start_date": null,
+    "end_date": null
+  }
+}
