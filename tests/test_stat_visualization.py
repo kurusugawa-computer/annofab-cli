@@ -34,15 +34,15 @@ class TestCommandLine:
             ]
         )
 
-    def test_summarise_whole_performance_csv(self):
+    def test__summarize_whole_performance_csv(self):
         main(
             [
                 "stat_visualization",
-                "summarise_whole_performance_csv",
+                "summarize_whole_performance_csv",
                 "--dir",
-                str(data_dir),
+                str(data_dir / "summarize_whole_performance_csv"),
                 "--output",
-                str(out_dir / "summarise_whole_performance_csv-out.csv"),
+                str(out_dir / "summarize_whole_performance_csv-out.csv"),
             ]
         )
 

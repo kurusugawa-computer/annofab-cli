@@ -1,5 +1,5 @@
 ====================================================================================
-stat_visualization summarise_whole_performance_csv
+stat_visualization summarize_whole_performance_csv
 ====================================================================================
 
 Description
@@ -23,7 +23,7 @@ Examples
     $ annofabcli statistics visualize --project_id prj1 --output_dir out/prj1_dir/
     $ annofabcli statistics visualize --project_id prj2 --output_dir out/prj2_dir/
 
-    $ annofabcli stat_visualization summarise_whole_performance_csv --dir out/ \
+    $ annofabcli stat_visualization summarize_whole_performance_csv --dir out/ \
      --output プロジェクトごとの生産性と品質.csv
 
 
@@ -35,17 +35,17 @@ Examples
 
 .. code-block::
 
-    $ annofabcli stat_visualization summarise_whole_performance_csv --dir out/ \
+    $ annofabcli stat_visualization summarize_whole_performance_csv --dir out/ \
      --output プロジェクトごとの生産性と品質.csv
 
-`プロジェクトごとの生産性と品質.csv <https://github.com/kurusugawa-computer/annofab-cli/blob/main/docs/command_reference/stat_visualization/summarise_whole_performance_csv/プロジェクトごとの生産性と品質.csv>`_
+`プロジェクトごとの生産性と品質.csv <https://github.com/kurusugawa-computer/annofab-cli/blob/main/docs/command_reference/stat_visualization/summarize_whole_performance_csv/プロジェクトごとの生産性と品質.csv>`_
 
 Usage Details
 =================================
 
 .. argparse::
-   :ref: annofabcli.stat_visualization.summarise_whole_performance_csv.add_parser
-   :prog: annofabcli stat_visualization summarise_whole_performance_csv
+   :ref: annofabcli.stat_visualization.summarize_whole_performance_csv.add_parser
+   :prog: annofabcli stat_visualization summarize_whole_performance_csv
    :nosubcommands:
    :nodefaultconst:
 

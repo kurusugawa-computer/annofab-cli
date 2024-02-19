@@ -5,7 +5,7 @@ import annofabcli.stat_visualization.mask_visualization_dir
 import annofabcli.stat_visualization.merge_visualization_dir
 import annofabcli.stat_visualization.write_graph
 import annofabcli.stat_visualization.write_performance_rating_csv
-from annofabcli.stat_visualization import summarise_whole_performance_csv
+from annofabcli.stat_visualization import summarize_whole_performance_csv
 
 
 def parse_args(parser: argparse.ArgumentParser) -> None:
@@ -14,7 +14,7 @@ def parse_args(parser: argparse.ArgumentParser) -> None:
     # サブコマンドの定義
     annofabcli.stat_visualization.mask_visualization_dir.add_parser(subparsers)
     annofabcli.stat_visualization.merge_visualization_dir.add_parser(subparsers)
-    summarise_whole_performance_csv.add_parser(subparsers)
+    summarize_whole_performance_csv.add_parser(subparsers)
     annofabcli.stat_visualization.write_graph.add_parser(subparsers)
     annofabcli.stat_visualization.write_performance_rating_csv.add_parser(subparsers)
 
