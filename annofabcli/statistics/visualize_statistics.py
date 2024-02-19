@@ -185,14 +185,14 @@ class WriteCsvGraph:
 
         self.project_dir.write_worktime_per_date_user(worktime_per_date_obj)
 
-        df_task = self._get_task_df()
-        productivity_per_completed_date_obj = WholeProductivityPerCompletedDate.from_df(
-            df_task, worktime_per_date_obj.df
+        task = Task(self._get_task_df())
+        productivity_per_completed_date_obj = WholeProductivityPerCompletedDate.from_df_wrapper(
+            task, worktime_per_date_obj
         )
 
         self.project_dir.write_whole_productivity_per_date(productivity_per_completed_date_obj)
 
-        productivity_per_started_date_obj = WholeProductivityPerFirstAnnotationStartedDate.from_df(df_task)
+        productivity_per_started_date_obj = WholeProductivityPerFirstAnnotationStartedDate.from_task(task)
         self.project_dir.write_whole_productivity_per_first_annotation_started_date(productivity_per_started_date_obj)
 
         if not self.output_only_text:
