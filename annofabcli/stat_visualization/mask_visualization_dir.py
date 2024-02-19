@@ -159,7 +159,6 @@ def mask_visualization_dir(
     not_masked_biography_set: Optional[Set[str]] = None,
     not_masked_user_id_set: Optional[Set[str]] = None,
     minimal_output: bool = False,
-    exclude_masked_user_for_line_graph: bool = False,
 ) -> None:
     worktime_per_date = project_dir.read_worktime_per_date_user()
     task_worktime_by_phase_user = project_dir.read_task_worktime_list()
@@ -192,20 +191,16 @@ def mask_visualization_dir(
     # メンバのパフォーマンスを散布図で出力する
     output_project_dir.write_user_performance_scatter_plot(masked_user_performance)
 
-    user_id_list: Optional[list[str]] = None
-    if exclude_masked_user_for_line_graph:
-        user_id_list = list(not_masked_user_id_set)
-
     masked_task = project_dir.read_task_list().mask_user_info(
         to_replace_for_user_id=replacement_dict.user_id, to_replace_for_username=replacement_dict.username
     )
     output_project_dir.write_task_list(masked_task)
 
-    write_line_graph(masked_task, output_project_dir, user_id_list=user_id_list, minimal_output=minimal_output)
+    write_line_graph(masked_task, output_project_dir, minimal_output=minimal_output)
 
     if not masked_worktime_per_date.is_empty():
         output_project_dir.write_worktime_per_date_user(masked_worktime_per_date)
-        output_project_dir.write_worktime_line_graph(masked_worktime_per_date, user_id_list=user_id_list)
+        output_project_dir.write_worktime_line_graph(masked_worktime_per_date)
     else:
         logger.warning(
             f"'{project_dir.project_dir / project_dir.FILENAME_WORKTIME_PER_DATE_USER}'が存在しないかデータがないため、"
@@ -231,7 +226,6 @@ def main(args: argparse.Namespace) -> None:
         not_masked_biography_set=not_masked_biography_set,
         not_masked_user_id_set=not_masked_user_id_set,
         minimal_output=args.minimal,
-        exclude_masked_user_for_line_graph=args.exclude_masked_user_for_line_graph,
     )
 
 
@@ -261,12 +255,6 @@ def parse_args(parser: argparse.ArgumentParser) -> None:
         "--minimal",
         action="store_true",
         help="必要最小限のファイルを出力します。",
-    )
-
-    parser.add_argument(
-        "--exclude_masked_user_for_line_graph",
-        action="store_true",
-        help="折れ線グラフに、マスクされたユーザをプロットしません。",
     )
 
     parser.add_argument("-o", "--output_dir", type=Path, required=True, help="出力先ディレクトリ。")
