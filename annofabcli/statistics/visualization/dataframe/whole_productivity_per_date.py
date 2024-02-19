@@ -27,6 +27,7 @@ from annofabcli.statistics.linegraph import (
     get_weekly_sum,
     write_bokeh_graph,
 )
+from annofabcli.statistics.visualization.dataframe.task import Task
 
 logger = logging.getLogger(__name__)
 
@@ -155,7 +156,7 @@ class WholeProductivityPerCompletedDate:
         df_agg_sub_task = df_sub_task.pivot_table(
             values=value_columns,
             index="first_acceptance_completed_date",
-            aggfunc=numpy.sum,
+            aggfunc="sum",
         ).fillna(0)
         if len(df_agg_sub_task) > 0:
             df_agg_sub_task["task_count"] = df_sub_task.pivot_table(
@@ -175,7 +176,7 @@ class WholeProductivityPerCompletedDate:
                     "monitored_acceptance_worktime_hour",
                 ],
                 index="date",
-                aggfunc=numpy.sum,
+                aggfunc="sum",
             ).fillna(0)
 
             # 作業したユーザ数を算出
@@ -909,7 +910,8 @@ class WholeProductivityPerFirstAnnotationStartedDate:
         add_velocity_column(df, numerator_column="acceptance_worktime_hour", denominator_column="annotation_count")
 
     @classmethod
-    def from_df(cls, df_task: pandas.DataFrame) -> WholeProductivityPerFirstAnnotationStartedDate:
+    def from_task(cls, task: Task) -> WholeProductivityPerFirstAnnotationStartedDate:
+        df_task = task.df
         df_sub_task = df_task[df_task["status"] == TaskStatus.COMPLETE.value][
             [
                 "task_id",
@@ -937,7 +939,7 @@ class WholeProductivityPerFirstAnnotationStartedDate:
         df_agg_sub_task = df_sub_task.pivot_table(
             values=value_columns,
             index="first_annotation_started_date",
-            aggfunc=numpy.sum,
+            aggfunc="sum",
         ).fillna(0)
         if len(df_agg_sub_task) > 0:
             df_agg_sub_task["task_count"] = df_sub_task.pivot_table(

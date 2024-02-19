@@ -2,12 +2,13 @@ from pathlib import Path
 
 import pandas
 
+from annofabcli.statistics.visualization.dataframe.task import Task
 from annofabcli.statistics.visualization.dataframe.whole_productivity_per_date import (
     WholeProductivityPerCompletedDate,
     WholeProductivityPerFirstAnnotationStartedDate,
 )
 
-output_dir = Path("./tests/out/statistics/visualization/dataframe")
+output_dir = Path("./tests/out/statistics/visualization/dataframe/whole_productivity_per_date")
 data_dir = Path("./tests/data/statistics")
 output_dir.mkdir(exist_ok=True, parents=True)
 
@@ -58,23 +59,26 @@ class TestWholeProductivityPerCompletedDate:
 
 
 class TestWholeProductivityPerFirstAnnotationStartedDate:
-    main_obj: WholeProductivityPerFirstAnnotationStartedDate
+    output_dir: Path
 
     @classmethod
-    def setup_class(cls):
-        df_task = pandas.read_csv(str(data_dir / "task.csv"))
-        cls.main_obj = WholeProductivityPerFirstAnnotationStartedDate.from_df(df_task)
+    def setup_class(cls) -> None:
+        cls.output_dir = output_dir / "WholeProductivityPerFirstAnnotationStartedDate"
+        cls.output_dir.mkdir(exist_ok=True, parents=True)
 
-    def test_plot(self):
-        self.main_obj.plot(output_dir / "教師付開始日ごとの生産量と生産性.html")
+    def test__from_task__and__to_csv(self):
+        task = Task.from_csv(data_dir / "task.csv")
+        obj = WholeProductivityPerFirstAnnotationStartedDate.from_task(task)
+        obj.to_csv(self.output_dir / "test__from_task__and__to_csv.csv")
 
-    def test_to_csv(self):
-        self.main_obj.to_csv(output_dir / "教師付開始日ごとの生産量と生産性.csv")
+    def test__from_task__and__plot(self):
+        task = Task.from_csv(data_dir / "task.csv")
+        obj = WholeProductivityPerFirstAnnotationStartedDate.from_task(task)
+        obj.plot(self.output_dir / "test__from_task__and__plot.html")
 
-    def test_merge(self):
-        df1 = pandas.read_csv(str(data_dir / "教師付開始日毎の生産量と生産性.csv"))
-        df2 = pandas.read_csv(str(data_dir / "教師付開始日毎の生産量と生産性2.csv"))
-        merged_obj = WholeProductivityPerFirstAnnotationStartedDate.merge(
-            WholeProductivityPerFirstAnnotationStartedDate(df1), WholeProductivityPerFirstAnnotationStartedDate(df2)
-        )
-        merged_obj.to_csv(output_dir / "merge-教師付開始日毎の生産量と生産性.csv")
+    def test__merge(self):
+        obj1 = WholeProductivityPerFirstAnnotationStartedDate.from_csv(data_dir / "教師付開始日毎の生産量と生産性.csv")
+        obj2 = WholeProductivityPerFirstAnnotationStartedDate.from_csv(data_dir / "教師付開始日毎の生産量と生産性2.csv")
+        merged_obj = WholeProductivityPerFirstAnnotationStartedDate.merge(obj1, obj2)
+        merged_obj.to_csv(self.output_dir / "test__merge.csv")
+        merged_obj.plot(self.output_dir / "test__merge.html")
