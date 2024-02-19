@@ -6,6 +6,7 @@ from pathlib import Path
 import numpy
 import pandas
 
+from annofabcli.common.pandas import get_frequency_of_monthend
 from annofabcli.common.utils import print_csv
 from annofabcli.statistics.visualization.dataframe.user_performance import UserPerformance
 from annofabcli.statistics.visualization.dataframe.whole_performance import WholePerformance
@@ -128,7 +129,10 @@ class ProjectWorktimePerMonth:
         """
         df = project_dir.read_worktime_per_date_user().df.copy()
         df["dt_date"] = pandas.to_datetime(df["date"], format="ISO8601")
-        series = df.groupby(pandas.Grouper(key="dt_date", freq="ME")).sum(numeric_only=True)[worktime_column.value]
+
+        series = df.groupby(pandas.Grouper(key="dt_date", freq=get_frequency_of_monthend())).sum(numeric_only=True)[
+            worktime_column.value
+        ]
         # indexを"2022-04"という形式にする
         new_index = [str(dt)[0:7] for dt in series.index]
         result = pandas.Series(series.values, index=new_index)
