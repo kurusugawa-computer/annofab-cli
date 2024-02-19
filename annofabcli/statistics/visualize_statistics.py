@@ -186,7 +186,7 @@ class WriteCsvGraph:
         self.project_dir.write_worktime_per_date_user(worktime_per_date_obj)
 
         df_task = self._get_task_df()
-        productivity_per_completed_date_obj = WholeProductivityPerCompletedDate.from_df(
+        productivity_per_completed_date_obj = WholeProductivityPerCompletedDate.from_df_wrapper(
             df_task, worktime_per_date_obj.df
         )
 

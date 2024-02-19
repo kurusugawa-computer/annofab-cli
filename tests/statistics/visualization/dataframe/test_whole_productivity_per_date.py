@@ -7,6 +7,7 @@ from annofabcli.statistics.visualization.dataframe.whole_productivity_per_date i
     WholeProductivityPerCompletedDate,
     WholeProductivityPerFirstAnnotationStartedDate,
 )
+from annofabcli.statistics.visualization.dataframe.worktime_per_date import WorktimePerDate
 
 output_dir = Path("./tests/out/statistics/visualization/dataframe/whole_productivity_per_date")
 data_dir = Path("./tests/data/statistics")
@@ -15,19 +16,27 @@ output_dir.mkdir(exist_ok=True, parents=True)
 
 class TestWholeProductivityPerCompletedDate:
     main_obj: WholeProductivityPerCompletedDate
+    output_dir: Path
 
     @classmethod
-    def setup_class(cls):
-        df_task = pandas.read_csv(str(data_dir / "task.csv"))
-        df_worktime = pandas.read_csv(str(data_dir / "ユーザ_日付list-作業時間.csv"))
+    def setup_class(cls) -> None:
+        task = Task.from_csv(data_dir / "task.csv")
+        worktime_per_date = WorktimePerDate.from_csv(data_dir / "ユーザ_日付list-作業時間.csv")
+        cls.main_obj = WholeProductivityPerCompletedDate.from_df_wrapper(task, worktime_per_date)
 
-        cls.main_obj = WholeProductivityPerCompletedDate.from_df(df_task, df_worktime)
+        cls.output_dir = output_dir / "WholeProductivityPerCompletedDate"
+        cls.output_dir.mkdir(exist_ok=True, parents=True)
+
+    def test__from_df_wrapper(cls):
+        task = Task.from_csv(data_dir / "task.csv")
+        worktime_per_date = WorktimePerDate.from_csv(data_dir / "ユーザ_日付list-作業時間.csv")
+        WholeProductivityPerCompletedDate.from_df_wrapper(task, worktime_per_date)
+
 
     def test_from_df__df_worktime引数が空でもインスタンスを生成できることを確認する(self):
         # 完了タスクが１つもない状態で試す
-        df_task = pandas.read_csv(str(data_dir / "task.csv"))
-        df_worktime = pandas.DataFrame()
-        obj = WholeProductivityPerCompletedDate.from_df(df_task, df_worktime)
+        task = Task.from_csv(data_dir / "task.csv")
+        obj = WholeProductivityPerCompletedDate.from_df_wrapper(task, WorktimePerDate.empty())
         df_actual = obj.df
 
         # 日毎の完了したタスク数が一致していることの確認
@@ -40,14 +49,14 @@ class TestWholeProductivityPerCompletedDate:
         assert df_actual["actual_worktime_hour"].sum() == 0
         assert df_actual["monitored_worktime_hour"].sum() == 0
 
-    def test_to_csv(self):
-        self.main_obj.to_csv(output_dir / "日ごとの生産量と生産性.csv")
+    def test__to_csv(self):
+        self.main_obj.to_csv(self.output_dir / "test_to_csv.csv")
 
-    def test_plot(self):
-        self.main_obj.plot(output_dir / "折れ線-横軸_日-全体.html")
+    def test__plot(self):
+        self.main_obj.plot(self.output_dir / "test__plot.html")
 
-    def test_plot_cumulatively(self):
-        self.main_obj.plot_cumulatively(output_dir / "累積折れ線-横軸_日-全体.html")
+    def test__plot_cumulatively(self):
+        self.main_obj.plot_cumulatively(self.output_dir / "test__plot_cumulatively.html")
 
     def test_merge(self):
         df1 = pandas.read_csv(str(data_dir / "productivity-per-date.csv"))
@@ -55,7 +64,7 @@ class TestWholeProductivityPerCompletedDate:
         sum_obj = WholeProductivityPerCompletedDate.merge(
             WholeProductivityPerCompletedDate(df1), WholeProductivityPerCompletedDate(df2)
         )
-        sum_obj.to_csv(output_dir / "merge-productivity-per-date.csv")
+        sum_obj.to_csv(self.output_dir / "merge-productivity-per-date.csv")
 
 
 class TestWholeProductivityPerFirstAnnotationStartedDate:

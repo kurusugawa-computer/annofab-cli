@@ -11,7 +11,6 @@ from typing import Optional
 import bokeh
 import bokeh.layouts
 import bokeh.palettes
-import numpy
 import pandas
 from annofabapi.models import TaskStatus
 from bokeh.models import DataRange1d
@@ -28,6 +27,7 @@ from annofabcli.statistics.linegraph import (
     write_bokeh_graph,
 )
 from annofabcli.statistics.visualization.dataframe.task import Task
+from annofabcli.statistics.visualization.dataframe.worktime_per_date import WorktimePerDate
 
 logger = logging.getLogger(__name__)
 
@@ -121,13 +121,13 @@ class WholeProductivityPerCompletedDate:
         return pandas.DataFrame(index=[e.strftime("%Y-%m-%d") for e in pandas.date_range(start_date, end_date)])
 
     @classmethod
-    def from_df(cls, df_task: pandas.DataFrame, df_worktime: pandas.DataFrame) -> WholeProductivityPerCompletedDate:
+    def from_df_wrapper(cls, task: Task, worktime_per_date: WorktimePerDate) -> WholeProductivityPerCompletedDate:
         """
         受入完了日毎の全体の生産量、生産性を算出する。
 
         Args:
-            df_task: タスク情報が格納されたDataFrame
-            df_worktime: ユーザごと日ごとの作業時間が格納されたDataFrame。以下の列を参照する
+            task: タスク情報が格納されたDataFrameをラップするクラスのインスタンス
+            worktime_per_date: ユーザごと日ごとの作業時間が格納されたDataFrameをラップするクラスのインスタンス。以下の列を参照する
                 date
                 user_id
                 actual_worktime_hour
@@ -136,7 +136,8 @@ class WholeProductivityPerCompletedDate:
                 monitored_inspection_worktime_hour
                 monitored_acceptance_worktime_hour
         """
-        df_sub_task = df_task[
+
+        df_sub_task = task.df[
             [
                 "task_id",
                 "first_acceptance_completed_datetime",
@@ -166,6 +167,7 @@ class WholeProductivityPerCompletedDate:
             # 列だけ作る
             df_agg_sub_task = df_agg_sub_task.assign(**{key: 0 for key in value_columns}, task_count=0)
 
+        df_worktime = worktime_per_date.df
         if len(df_worktime) > 0:
             df_agg_labor = df_worktime.pivot_table(
                 values=[
