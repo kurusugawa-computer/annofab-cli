@@ -130,7 +130,7 @@ class ProjectWorktimePerMonth:
         df = project_dir.read_worktime_per_date_user().df.copy()
         df["dt_date"] = pandas.to_datetime(df["date"], format="ISO8601")
 
-        series = df.groupby(pandas.Grouper(key="dt_date", freq="MonthEnd")).sum(numeric_only=True)[
+        series = df.groupby(pandas.Grouper(key="dt_date", freq=get_frequency_of_monthend())).sum(numeric_only=True)[
             worktime_column.value
         ]
         # indexを"2022-04"という形式にする
