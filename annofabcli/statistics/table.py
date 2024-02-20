@@ -9,7 +9,6 @@ import annofabcli
 from annofabcli.common.facade import AnnofabApiFacade
 from annofabcli.common.utils import isoduration_to_hour
 from annofabcli.statistics.database import Database
-from annofabcli.statistics.visualization.dataframe.task_history import TaskHistory
 from annofabcli.task.list_all_tasks_added_task_history import AddingAdditionalInfoToTask
 
 logger = logging.getLogger(__name__)
@@ -150,16 +149,6 @@ class Table:
     @staticmethod
     def _get_task_from_task_id(task_list: List[Task], task_id: str) -> Optional[Task]:
         return more_itertools.first_true(task_list, pred=lambda e: e["task_id"] == task_id)
-
-    def create_task_history_df(self) -> TaskHistory:
-        """
-        タスク履歴の一覧のDataFrameを出力する。
-
-        Returns:
-
-        """
-        task_histories_dict = self._get_task_histories_dict()
-        return TaskHistory.from_api_response(task_histories_dict)
 
     def create_task_df(self) -> pandas.DataFrame:
         """

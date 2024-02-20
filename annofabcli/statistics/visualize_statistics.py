@@ -84,7 +84,6 @@ class WriteCsvGraph:
         self.project_dir = ProjectDir(output_dir)
 
         self.task_df: Optional[pandas.DataFrame] = None
-        self.task_history: Optional[TaskHistory] = None
         self.worktime_per_date: Optional[WorktimePerDate] = None
 
     def _catch_exception(self, function: Callable[..., Any]) -> Callable[..., Any]:
@@ -105,11 +104,6 @@ class WriteCsvGraph:
         if self.task_df is None:
             self.task_df = self.table_obj.create_task_df()
         return self.task_df
-
-    def _get_task_history_df(self) -> pandas.DataFrame:
-        if self.task_history is None:
-            self.task_history = self.table_obj.create_task_history_df()
-        return self.task_history
 
     def _get_worktime_per_date(self) -> WorktimePerDate:
         if self.worktime_per_date is None:
