@@ -63,13 +63,14 @@ class UpdateMetadataOfTaskMain(AbstractCommandLineWithConfirmInterface):
         if not self.confirm_processing(self.get_confirm_message(task_id, metadata)):
             return False
 
-        task["last_updated_datetime"] = task["updated_datetime"]
         if self.is_overwrite_metadata:
-            task["metadata"] = metadata
+            new_metadata = metadata
         else:
-            task["metadata"].update(metadata)
+            new_metadata = {**task["metadata"], **metadata}
 
-        self.service.api.put_task(project_id, task_id, request_body=task)
+        request_body = {task_id: new_metadata}
+        self.service.api.patch_tasks_metadata(project_id, request_body=request_body)
+
         logger.debug(f"{logging_prefix} タスク '{task_id}' のメタデータを更新しました。")
         return True
 
@@ -146,7 +147,6 @@ class UpdateMetadataOfTaskMain(AbstractCommandLineWithConfirmInterface):
 
         # 1000件以上の大量のタスクを一度に更新しようとするとwebapiが失敗するので、何回かに分けてメタデータを更新するようにする。
         BATCH_SIZE = 500
-        logger.info(f"{len(task_ids)} 件のタスクのmetadataを{metadata} に、{BATCH_SIZE}個ずつ変更します。")
         first_index = 0
         task_id_list = list(task_ids)
 
