@@ -84,7 +84,7 @@ class WriteCsvGraph:
         self.project_dir = ProjectDir(output_dir)
 
         self.task_df: Optional[pandas.DataFrame] = None
-        self.task_history_df: Optional[pandas.DataFrame] = None
+        self.task_history: Optional[TaskHistory] = None
         self.worktime_per_date: Optional[WorktimePerDate] = None
 
     def _catch_exception(self, function: Callable[..., Any]) -> Callable[..., Any]:
@@ -107,9 +107,9 @@ class WriteCsvGraph:
         return self.task_df
 
     def _get_task_history_df(self) -> pandas.DataFrame:
-        if self.task_history_df is None:
-            self.task_history_df = self.table_obj.create_task_history_df()
-        return self.task_history_df
+        if self.task_history is None:
+            self.task_history = self.table_obj.create_task_history_df()
+        return self.task_history
 
     def _get_worktime_per_date(self) -> WorktimePerDate:
         if self.worktime_per_date is None:
@@ -139,12 +139,12 @@ class WriteCsvGraph:
         ユーザごとの生産性と品質に関する情報を出力する。
         """
 
-        df_task_history = self._get_task_history_df()
+        task_history = TaskHistory.from_api_response(self.table_obj._get_task_histories_dict())
         df_user = pandas.DataFrame(self.table_obj.project_members_dict.values())
 
         # タスク、フェーズ、ユーザごとの作業時間を出力する
         task_worktime_obj = TaskWorktimeByPhaseUser.from_df_wrapper(
-            task_history=TaskHistory(df_task_history),
+            task_history=task_history,
             user=User(df_user),
             task=Task(self._get_task_df()),
             project_id=self.project_id,

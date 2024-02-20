@@ -154,6 +154,9 @@ class Database:
             for task_id in removed_task_id_set:
                 del task_histories_dict[task_id]
 
+        if len(task_histories_dict) == 0:
+            logger.warning("{self.logging_prefix}: タスク履歴の件数が0件です。")
+
         return task_histories_dict
 
     def wait_for_completion_updated_annotation(self, project_id: str):

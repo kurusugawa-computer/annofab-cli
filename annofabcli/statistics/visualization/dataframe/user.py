@@ -28,7 +28,6 @@ class User:
         duplicated2 = df.duplicated(subset=["account_id"])
         return duplicated1.any() or duplicated2.any()
 
-
     @staticmethod
     def required_columns_exist(df: pandas.DataFrame) -> bool:
         """

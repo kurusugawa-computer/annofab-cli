@@ -3,12 +3,13 @@ from typing import Any, Dict, List, Optional
 
 import more_itertools
 import pandas
-from annofabapi.models import Task, TaskHistory, TaskPhase
+from annofabapi.models import Task, TaskPhase
 
 import annofabcli
 from annofabcli.common.facade import AnnofabApiFacade
 from annofabcli.common.utils import isoduration_to_hour
 from annofabcli.statistics.database import Database
+from annofabcli.statistics.visualization.dataframe.task_history import TaskHistory
 from annofabcli.task.list_all_tasks_added_task_history import AddingAdditionalInfoToTask
 
 logger = logging.getLogger(__name__)
@@ -30,7 +31,7 @@ class Table:
     #############################################
 
     _task_list: Optional[List[Task]] = None
-    _task_histories_dict: Optional[Dict[str, List[TaskHistory]]] = None
+    _task_histories_dict: Optional[Dict[str, List[dict[str, Any]]]] = None
 
     def __init__(
         self,
@@ -56,7 +57,7 @@ class Table:
             self._task_list = task_list
             return self._task_list
 
-    def _get_task_histories_dict(self) -> Dict[str, List[TaskHistory]]:
+    def _get_task_histories_dict(self) -> Dict[str, List[dict[str, Any]]]:
         if self._task_histories_dict is not None:
             return self._task_histories_dict
         else:
@@ -65,7 +66,7 @@ class Table:
             return self._task_histories_dict
 
     @staticmethod
-    def operator_is_changed_by_phase(task_history_list: List[TaskHistory], phase: TaskPhase) -> bool:
+    def operator_is_changed_by_phase(task_history_list: List[dict[str, Any]], phase: TaskPhase) -> bool:
         """
         フェーズ内の作業者が途中で変わったかどうか
 
@@ -134,7 +135,7 @@ class Table:
         return project_members_dict
 
     @classmethod
-    def set_task_histories(cls, task: Task, task_histories: List[TaskHistory]) -> Task:
+    def set_task_histories(cls, task: Task, task_histories: List[dict[str, Any]]) -> Task:
         """
         タスク履歴関係の情報を設定する
         """
@@ -150,7 +151,7 @@ class Table:
     def _get_task_from_task_id(task_list: List[Task], task_id: str) -> Optional[Task]:
         return more_itertools.first_true(task_list, pred=lambda e: e["task_id"] == task_id)
 
-    def create_task_history_df(self) -> pandas.DataFrame:
+    def create_task_history_df(self) -> TaskHistory:
         """
         タスク履歴の一覧のDataFrameを出力する。
 
@@ -158,43 +159,7 @@ class Table:
 
         """
         task_histories_dict = self._get_task_histories_dict()
-        task_list = self._get_task_list()
-
-        all_task_history_list = []
-        for task_id, task_history_list in task_histories_dict.items():
-            task = self._get_task_from_task_id(task_list, task_id)
-            if task is None:
-                continue
-
-            for history in task_history_list:
-                account_id = history["account_id"]
-                history["user_id"] = self._get_user_id(account_id)
-                history["username"] = self._get_username(account_id)
-                history["biography"] = self._get_biography(account_id)
-                history["worktime_hour"] = annofabcli.common.utils.isoduration_to_hour(
-                    history["accumulated_labor_time_milliseconds"]
-                )
-                # task statusがあると分析しやすいので追加する
-                history["task_status"] = task["status"]
-                all_task_history_list.append(history)
-
-        df = pandas.DataFrame(
-            all_task_history_list,
-            columns=[
-                "project_id",
-                "task_id",
-                "phase",
-                "phase_stage",
-                "account_id",
-                "user_id",
-                "username",
-                "biography",
-                "worktime_hour",
-            ],
-        )
-        if len(df) == 0:
-            logger.warning("タスク履歴の件数が0件です。")
-        return df
+        return TaskHistory.from_api_response(task_histories_dict)
 
     def create_task_df(self) -> pandas.DataFrame:
         """
