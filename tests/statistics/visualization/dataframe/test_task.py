@@ -1,5 +1,12 @@
+import json
 from pathlib import Path
 
+import annofabapi
+import pandas
+import pytest
+
+from annofabcli.statistics.visualization.dataframe.annotation_count import AnnotationCount
+from annofabcli.statistics.visualization.dataframe.inspection_comment_count import InspectionCommentCount
 from annofabcli.statistics.visualization.dataframe.task import Task
 
 output_dir = Path("./tests/out/statistics/visualization/dataframe/task")
@@ -8,6 +15,45 @@ output_dir.mkdir(exist_ok=True, parents=True)
 
 
 class TestTask:
+    @pytest.mark.access_webapi
+    def test__from_api_content(self):
+        with open(data_dir / "task.json") as f:
+            tasks = json.load(f)
+
+        with open(data_dir / "task-history.json") as f:
+            task_histories = json.load(f)
+
+        project_id = "1186bb00-16e6-4d20-8e24-310322911850"
+
+        df_annotation_count = pandas.DataFrame(
+            {"project_id": [project_id, project_id], "task_id": ["sample_0", "sample_1"], "annotation_count": [10, 20]}
+        )
+        annotation_count = AnnotationCount(df_annotation_count)
+
+        df_inspection_comment_count = pandas.DataFrame(
+            {
+                "project_id": [project_id, project_id],
+                "task_id": ["sample_0", "sample_1"],
+                "inspection_comment_count": [5, 7],
+                "inspection_comment_count_in_inspection_phase": [2, 3],
+                "inspection_comment_count_in_acceptance_phase": [3, 4],
+            }
+        )
+        inspection_comment_count = InspectionCommentCount(df_inspection_comment_count)
+        actual = Task.from_api_content(
+            tasks,
+            task_histories,
+            annotation_count=annotation_count,
+            inspection_comment_count=inspection_comment_count,
+            project_id=project_id,
+            annofab_service=annofabapi.build(),
+        )
+        actual.df.to_csv("out/df.csv")
+        assert len(actual.df) == 2
+        row = actual.df.iloc[0]
+        assert row["annotation_count"] == 10
+        assert row["inspection_comment_count"] == 5
+
     def test__from_csv__and__to_csv(cls) -> None:
         actual = Task.from_csv(data_dir / "task.csv")
         assert len(actual.df) == 5

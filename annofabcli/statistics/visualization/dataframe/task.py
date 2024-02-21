@@ -121,15 +121,10 @@ class Task:
             adding_obj.add_additional_info_to_task(task)
 
             task_id = task["task_id"]
-            task_histories = task_histories.get(task_id, [])
-
-            task["input_data_count"] = len(task["input_data_id_list"])
+            sub_task_histories = task_histories.get(task_id, [])
 
             # タスク履歴から取得できる付加的な情報を追加する
-            adding_obj.add_task_history_additional_info_to_task(task, task_histories)
-
-            # task["annotation_count"] = annotations_dict.get(task_id, 0)
-            # task["inspection_comment_count"] = inspections_dict.get(task_id, 0)
+            adding_obj.add_task_history_additional_info_to_task(task, sub_task_histories)
 
         df = pandas.DataFrame(tasks)
         if len(df) == 0:
