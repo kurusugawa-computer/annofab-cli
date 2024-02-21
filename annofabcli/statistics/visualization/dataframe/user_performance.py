@@ -461,7 +461,10 @@ class UserPerformance:
         df3 = df3[df3["monitored_worktime_hour"] > 0].groupby("account_id").count()
         df3.columns = pandas.MultiIndex.from_tuples([("working_days", "")])
 
-        return df2.join(df3)
+        # joinしない理由: レベル1の列名が空文字のDataFrameをjoinすると、Python3.12のpandas2.2.0で、列名が期待通りにならないため
+        # https://github.com/pandas-dev/pandas/issues/57500
+        # return df2.join(df3)
+        return pandas.concat([df2,df3], axis=1)
 
     @staticmethod
     def _create_df_user(worktime_per_date: WorktimePerDate) -> pandas.DataFrame:
@@ -551,7 +554,10 @@ class UserPerformance:
         df = drop_unnecessary_columns(df)
 
         # ユーザ情報を結合する
-        df = df.join(cls._create_df_user(worktime_per_date))
+        # joinしない理由: レベル1の列名が空文字のDataFrameをjoinすると、Python3.12のpandas2.2.0で、列名が期待通りにならないため
+        # https://github.com/pandas-dev/pandas/issues/57500
+        # df = df.join(cls._create_df_user(worktime_per_date))
+        df = pandas.concat([df, cls._create_df_user(worktime_per_date)], axis=1)
 
         # 作業期間に関する情報を算出する
         df = df.join(cls._create_df_working_period(worktime_per_date))
