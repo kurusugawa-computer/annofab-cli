@@ -36,7 +36,7 @@ class ListInputData(AbstractCommandLineInterface):
         task_id_list = []
         for task in task_list:
             if input_data_id in task["input_data_id_list"]:
-                task_id_list.append(task["task_id"])
+                task_id_list.append(task["task_id"])  # noqa: PERF401
         return task_id_list
 
     def get_input_data_from_input_data_id(self, project_id: str, input_data_id_list: List[str]) -> List[InputData]:

@@ -64,7 +64,7 @@ class ListWorktimeFromTaskHistoryEventMain:
             task_id_set = set(task_id_list)
             for event in task_history_event_list:
                 if event["task_id"] in task_id_set:
-                    result.append(event)
+                    result.append(event)  # noqa: PERF401
 
             return result
 

@@ -173,7 +173,7 @@ class UserPerformance:
 
         for phase in TaskPhase:
             if phase.value in tmp_set:
-                phase_list.append(phase.value)
+                phase_list.append(phase.value)  # noqa: PERF401
 
         return phase_list
 

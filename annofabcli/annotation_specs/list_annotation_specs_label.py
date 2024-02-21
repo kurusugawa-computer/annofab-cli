@@ -74,7 +74,7 @@ class PrintAnnotationSpecsLabel(AbstractCommandLineInterface):
                 )
                 if additional_data_definition["type"] in ["choice", "select"]:
                     for choice in additional_data_definition["choices"]:
-                        output_lines.append(
+                        output_lines.append(  # noqa: PERF401
                             "\t".join(
                                 [
                                     "",

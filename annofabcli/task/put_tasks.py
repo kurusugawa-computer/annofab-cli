@@ -68,7 +68,7 @@ def create_task_relation_csv(task_relation_dict: TaskInputRelation, csv_file: Pa
     tmp_list = []
     for task_id, input_data_id_list in task_relation_dict.items():
         for input_data_id in input_data_id_list:
-            tmp_list.append({"task_id": task_id, "input_data_id": input_data_id})
+            tmp_list.append({"task_id": task_id, "input_data_id": input_data_id})  # noqa: PERF401
     df = pandas.DataFrame(tmp_list)
 
     # webapiの都合上、2列目は空文字でないといけない

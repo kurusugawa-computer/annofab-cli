@@ -85,7 +85,7 @@ class ProjectPerformance:
     def from_project_dirs(cls, project_dir_list: list[ProjectDir]) -> ProjectPerformance:
         row_list: list[pandas.Series] = []
         for project_dir in project_dir_list:
-            row_list.append(cls._get_series_from_project_dir(project_dir))
+            row_list.append(cls._get_series_from_project_dir(project_dir))  # noqa: PERF401
 
         return cls(pandas.DataFrame(row_list))
 
