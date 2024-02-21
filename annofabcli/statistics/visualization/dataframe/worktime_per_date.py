@@ -44,6 +44,16 @@ class WorktimePerDate:
     `date`,`account_id`がユニークなキーです。
     """
 
+    @classmethod
+    def required_columns_exist(cls, df: pandas.DataFrame) -> bool:
+        """
+        必須の列が存在するかどうかを返します。
+
+        Returns:
+            必須の列が存在するかどうか
+        """
+        return len(set(cls.columns) - set(df.columns)) == 0
+
     @staticmethod
     def _duplicated_keys(df: pandas.DataFrame) -> bool:
         """
@@ -53,6 +63,9 @@ class WorktimePerDate:
         return duplicated.any()
 
     def __init__(self, df: pandas.DataFrame) -> None:
+        if not self.required_columns_exist(df):
+            raise ValueError(f"引数`df`には、{self.columns}の列が必要です。 :: {df.columns=}")
+
         if self._duplicated_keys(df):
             logger.warning("引数`df`に重複したキー（date, account_id）が含まれています。")
 
@@ -71,6 +84,19 @@ class WorktimePerDate:
         "monitored_acceptance_worktime_hour": "float64",
     }
 
+    columns = [
+        "date",
+        "account_id",
+        "user_id",
+        "username",
+        "biography",
+        "actual_worktime_hour",
+        "monitored_worktime_hour",
+        "monitored_annotation_worktime_hour",
+        "monitored_inspection_worktime_hour",
+        "monitored_acceptance_worktime_hour",
+    ]
+
     def is_empty(self) -> bool:
         """
         空のデータフレームを持つかどうかを返します。
@@ -79,10 +105,6 @@ class WorktimePerDate:
             空のデータフレームを持つかどうか
         """
         return len(self.df) == 0
-
-    @property
-    def columns(self) -> list[str]:
-        return list(self._df_dtype.keys())
 
     @classmethod
     def from_csv(cls, csv_file: Path) -> WorktimePerDate:

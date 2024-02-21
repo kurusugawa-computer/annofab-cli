@@ -1,9 +1,12 @@
 from __future__ import annotations
 
+import copy
 import logging
 from typing import Any
 
 import pandas
+
+from annofabcli.common.utils import isoduration_to_hour
 
 logger = logging.getLogger(__name__)
 
@@ -22,19 +25,19 @@ class TaskHistory:
 
     columns = ["project_id", "task_id", "phase", "phase_stage", "account_id", "worktime_hour"]
 
-    @staticmethod
-    def required_columns_exist(df: pandas.DataFrame) -> bool:
+    @classmethod
+    def required_columns_exist(cls, df: pandas.DataFrame) -> bool:
         """
         必須の列が存在するかどうかを返します。
 
         Returns:
             必須の列が存在するかどうか
         """
-        return len(set(TaskHistory.columns) - set(df.columns)) == 0
+        return len(set(cls.columns) - set(df.columns)) == 0
 
     def __init__(self, df: pandas.DataFrame) -> None:
         if not self.required_columns_exist(df):
-            raise ValueError(f"引数`df`には、{TaskHistory.columns}の列が必要です。")
+            raise ValueError(f"引数`df`には、{self.columns}の列が必要です。 :: {df.columns=}")
 
         self.df = df
 
@@ -59,7 +62,12 @@ class TaskHistory:
 
         all_task_history_list = []
         for task_history_list in task_histories.values():
-            all_task_history_list.extend(task_history_list)
+            for task_history in task_history_list:
+                new_task_history = copy.deepcopy(task_history)
+                new_task_history["worktime_hour"] = isoduration_to_hour(
+                    task_history["accumulated_labor_time_milliseconds"]
+                )
+                all_task_history_list.append(new_task_history)
 
         df = pandas.DataFrame(all_task_history_list)
         return cls(df)

@@ -24,6 +24,34 @@ class TaskWorktimeByPhaseUser:
         * 品質情報（指摘コメント数、差し戻し回数）
     """
 
+    columns = [
+        "project_id",
+        "task_id",
+        "status",
+        "phase",
+        "phase_stage",
+        "account_id",
+        "user_id",
+        "username",
+        "biography",
+        "worktime_hour",
+        "task_count",
+        "input_data_count",
+        "annotation_count",
+        "pointed_out_inspection_comment_count",
+        "rejected_count",
+    ]
+
+    @classmethod
+    def required_columns_exist(cls, df: pandas.DataFrame) -> bool:
+        """
+        必須の列が存在するかどうかを返します。
+
+        Returns:
+            必須の列が存在するかどうか
+        """
+        return len(set(cls.columns) - set(df.columns)) == 0
+
     @staticmethod
     def _duplicated_keys(df: pandas.DataFrame) -> bool:
         """
@@ -35,6 +63,9 @@ class TaskWorktimeByPhaseUser:
     def __init__(self, df: pandas.DataFrame) -> None:
         if self._duplicated_keys(df):
             logger.warning("引数`df`に重複したキー（project_id, task_id, phase, phase_stage, account_id）が含まれています。")
+
+        if not self.required_columns_exist(df):
+            raise ValueError(f"引数`df`には、{self.columns}の列が必要です。 :: {df.columns=}")
 
         self.df = df
 
@@ -68,25 +99,7 @@ class TaskWorktimeByPhaseUser:
         if not self._validate_df_for_output(output_file):
             return
 
-        columns = [
-            "project_id",
-            "task_id",
-            "status",
-            "phase",
-            "phase_stage",
-            "account_id",
-            "user_id",
-            "username",
-            "biography",
-            "worktime_hour",
-            "task_count",
-            "input_data_count",
-            "annotation_count",
-            "pointed_out_inspection_comment_count",
-            "rejected_count",
-        ]
-
-        print_csv(self.df[columns], str(output_file))
+        print_csv(self.df[self.columns], str(output_file))
 
     @staticmethod
     def merge(*obj: TaskWorktimeByPhaseUser) -> TaskWorktimeByPhaseUser:

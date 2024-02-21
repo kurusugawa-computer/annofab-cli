@@ -21,19 +21,19 @@ class ActualWorktime:
 
     columns = ["project_id", "date", "account_id", "actual_worktime_hour"]
 
-    @staticmethod
-    def required_columns_exist(df: pandas.DataFrame) -> bool:
+    @classmethod
+    def required_columns_exist(cls, df: pandas.DataFrame) -> bool:
         """
         必須の列が存在するかどうかを返します。
 
         Returns:
             必須の列が存在するかどうか
         """
-        return len(set(ActualWorktime.columns) - set(df.columns)) == 0
+        return len(set(cls.columns) - set(df.columns)) == 0
 
     def __init__(self, df: pandas.DataFrame) -> None:
         if not self.required_columns_exist(df):
-            raise ValueError(f"引数`df`には、{ActualWorktime.columns}の列が必要です。")
+            raise ValueError(f"引数`df`には、{self.columns}の列が必要です。 :: {df.columns=}")
         self.df = df
 
     def is_empty(self) -> bool:
@@ -56,7 +56,7 @@ class ActualWorktime:
 
         df_dtype: dict[str, str] = {
             "project_id": "string",
-            "task_id": "string",
+            "date": "string",
             "account_id": "string",
             "actual_worktime_hour": "float64",
         }
