@@ -196,7 +196,7 @@ class SubPutSupplementaryData:
                 logger.warning(f"'{supplementary_data_path}' は存在しません。")
                 return False
 
-        if not self.confirm_put_supplementary_data(csv_supplementary_data, already_exists=(last_updated_datetime is not None)):
+        if not self.confirm_put_supplementary_data(csv_supplementary_data, already_exists=last_updated_datetime is not None):
             return False
 
         # 補助情報を登録

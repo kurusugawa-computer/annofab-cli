@@ -420,7 +420,7 @@ class VisualizeStatistics(AbstractCommandLineInterface):
             df_actual_worktime = pandas.read_csv(args.labor_csv)
             if not ActualWorktime.required_columns_exist(df_actual_worktime):
                 logger.error(
-                    "引数`--labor_csv`のCSVには以下の列が存在しないので、終了します。\n" "`project_id`, `date`, `account_id`, `actual_worktime_hour`"
+                    "引数`--labor_csv`のCSVには以下の列が存在しないので、終了します。\n`project_id`, `date`, `account_id`, `actual_worktime_hour`"
                 )
                 sys.exit(COMMAND_LINE_ERROR_STATUS_CODE)
             actual_worktime = ActualWorktime(df_actual_worktime)
