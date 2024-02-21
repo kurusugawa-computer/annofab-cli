@@ -70,7 +70,7 @@ html_theme_options = {
     "secondary_sidebar_items": ["page-toc", "edit-this-page", "last-updated"],
     
     # icon_links`を指定しないと、pydata-sphinx-theme v0.13.0で
-    # Handler <function update_config at 0x7f0333cb1430> for event 'builder-inited' threw an exception (exception: 'icon_links') というエラーが発生する
+    # Handler <function update_config at 0x7f0333cb1430> for event 'builder-inited' threw an exception (exception: 'icon_links') というエラーが発生する  # noqa: E501
     # https://github.com/pydata/pydata-sphinx-theme/issues/1220
     "icon_links": [],
 }

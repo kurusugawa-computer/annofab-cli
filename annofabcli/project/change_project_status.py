@@ -187,7 +187,7 @@ def parse_args(parser: argparse.ArgumentParser) -> None:
     parser.add_argument(
         "--force",
         action="store_true",
-        help=f"`--status {ProjectStatus.SUSPENDED.value}`を指定している状態で、 ``--force`` を指定した場合、作業中タスクが残っていても停止状態に変更します。",
+        help=f"`--status {ProjectStatus.SUSPENDED.value}`を指定している状態で、 ``--force`` を指定した場合、作業中タスクが残っていても停止状態に変更します。",  # noqa: E501
     )
 
     parser.set_defaults(subcommand_func=main)

@@ -251,7 +251,7 @@ class PutSupplementaryData(AbstractCommandLineInterface):
             overwrite: Trueならば、supplementary_data_id（省略時はsupplementary_data_number）がすでに存在していたら上書きします。Falseならばスキップします。
             parallelism: 並列度
 
-        """
+        """  # noqa: E501
 
         project_title = self.facade.get_project_title(project_id)
         logger.info(f"{project_title} に、{len(supplementary_data_list)} 件の補助情報を登録します。")

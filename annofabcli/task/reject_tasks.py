@@ -424,7 +424,7 @@ def parse_args(parser: argparse.ArgumentParser) -> None:
         "-c",
         "--comment",
         type=str,
-        help="差し戻すときに付与する検査コメントを指定します。検査コメントはタスク内の先頭画像に付与します。付与する位置は ``--comment_data`` で指定できます。\n"
+        help="差し戻すときに付与する検査コメントを指定します。検査コメントはタスク内の先頭画像に付与します。付与する位置は ``--comment_data`` で指定できます。\n"  # noqa: E501
         "未指定の場合は、検査コメントを付与せずに差し戻します。",
     )
 
@@ -445,7 +445,7 @@ def parse_args(parser: argparse.ArgumentParser) -> None:
         "--custom_project_type",
         type=str,
         choices=[e.value for e in CustomProjectType],
-        help="[BETA] カスタムプロジェクトの種類を指定します。ビルトインのエディタプラグインを使用していないカスタムプロジェクトに対して、検査コメントの位置を指定しない場合は必須です。\n",
+        help="[BETA] カスタムプロジェクトの種類を指定します。ビルトインのエディタプラグインを使用していないカスタムプロジェクトに対して、検査コメントの位置を指定しない場合は必須です。\n",  # noqa: E501
     )
 
     # 差し戻したタスクの担当者の割当に関して
@@ -470,7 +470,7 @@ def parse_args(parser: argparse.ArgumentParser) -> None:
     parser.add_argument(
         "--parallelism",
         type=int,
-        help="使用するプロセス数（並列度）を指定してください。指定する場合は必ず ``--yes`` を指定してください。指定しない場合は、逐次的に処理します。",
+        help="使用するプロセス数（並列度）を指定してください。指定する場合は必ず ``--yes`` を指定してください。指定しない場合は、逐次的に処理します。",  # noqa: E501
     )
     parser.add_argument("--dryrun", action="store_true", help="差し戻しが行われた時の結果を表示しますが、実際はタスクを差し戻しません。")
 

@@ -163,7 +163,7 @@ class ListWorktimeFromTaskHistoryEventMain:
         while i < len(task_history_event_list):
             event = task_history_event_list[i]
             # account_idを判定している理由：
-            # 受入完了状態のタスクで作成されたアノテーションを、アノテーション一覧画面からオーナーが一括編集すると、account_idがnullのタスク履歴イベントが生成されるため
+            # 受入完了状態のタスクで作成されたアノテーションを、アノテーション一覧画面からオーナーが一括編集すると、account_idがnullのタスク履歴イベントが生成されるため  # noqa: E501
             if event["status"] != TaskStatus.WORKING.value or event["account_id"] is None:
                 i += 1
                 continue

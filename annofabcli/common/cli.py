@@ -151,7 +151,7 @@ def add_parser(
     )
     parser.set_defaults(command_help=parser.print_help)
 
-    # 引数グループに"global optional group"がある場合は、"--help"オプションをデフォルトの"optional"グループから、"global optional arguments"グループに移動する
+    # 引数グループに"global optional group"がある場合は、"--help"オプションをデフォルトの"optional"グループから、"global optional arguments"グループに移動する  # noqa: E501
     # https://ja.stackoverflow.com/a/57313/19524
     global_optional_argument_group = first_true(parser._action_groups, pred=lambda e: e.title == GLOBAL_OPTIONAL_ARGUMENTS_TITLE)
     if global_optional_argument_group is not None:

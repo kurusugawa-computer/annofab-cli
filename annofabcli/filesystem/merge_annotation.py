@@ -252,7 +252,7 @@ def add_parser(subparsers: Optional[argparse._SubParsersAction] = None) -> argpa
 
     subcommand_help = "2つのアノテーションzip（またはzipを展開したディレクトリ）をマージします。"
 
-    description = "2つのアノテーションzip（またはzipを展開したディレクトリ）をマージします。具体的にはアノテーションjsonの'details'キー配下の情報をマージします。"
+    description = "2つのアノテーションzip（またはzipを展開したディレクトリ）をマージします。具体的にはアノテーションjsonの'details'キー配下の情報をマージします。"  # noqa: E501
 
     parser = annofabcli.common.cli.add_parser(subparsers, subcommand_name, subcommand_help, description)
     parse_args(parser)

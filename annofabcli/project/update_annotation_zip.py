@@ -101,7 +101,7 @@ class SubUpdateAnnotationZip:
             logger.info(f"project_id={project_id}: アノテーションzipの更新が完了しました。")
         else:
             logger.info(
-                f"project_id={project_id}: アノテーションzipの更新に失敗、または{MAX_WAIT_MINUTU}分待ってもアノテーションzipの更新が終了しませんでした。"
+                f"project_id={project_id}: アノテーションzipの更新に失敗、または{MAX_WAIT_MINUTU}分待ってもアノテーションzipの更新が終了しませんでした。"  # noqa: E501
             )
         return result
 

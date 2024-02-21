@@ -362,7 +362,7 @@ class ImportAnnotationMain(AbstractCommandLineWithConfirmInterface):
         simple_annotation: ImportedSimpleAnnotation = ImportedSimpleAnnotation.from_dict(parser.load_json())
         if len(simple_annotation.details) == 0:
             logger.debug(
-                f"task_id={task_id}, input_data_id={input_data_id} : インポート元にアノテーションデータがないため、アノテーションの登録をスキップします。"
+                f"task_id={task_id}, input_data_id={input_data_id} : インポート元にアノテーションデータがないため、アノテーションの登録をスキップします。"  # noqa: E501
             )
             return False
 
@@ -650,7 +650,7 @@ def parse_args(parser: argparse.ArgumentParser) -> None:
 def add_parser(subparsers: Optional[argparse._SubParsersAction] = None) -> argparse.ArgumentParser:
     subcommand_name = "import"
     subcommand_help = "アノテーションをインポートします。"
-    description = "アノテーションをインポートします。アノテーションのフォーマットは、Simpleアノテーションと同じフォルダ構成のzipファイルまたはディレクトリです。ただし、作業中/完了状態のタスクはインポートできません。"
+    description = "アノテーションをインポートします。アノテーションのフォーマットは、Simpleアノテーションと同じフォルダ構成のzipファイルまたはディレクトリです。ただし、作業中/完了状態のタスクはインポートできません。"  # noqa: E501
     epilog = "オーナロールを持つユーザで実行してください。"
 
     parser = annofabcli.common.cli.add_parser(subparsers, subcommand_name, subcommand_help, description, epilog=epilog)

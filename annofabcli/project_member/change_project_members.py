@@ -193,7 +193,7 @@ def parse_args(parser: argparse.ArgumentParser) -> None:
     parser.add_argument(
         "--member_info",
         type=str,
-        help="プロジェクトメンバに対して設定するメンバ情報を、JSON形式で指定します。 ``file://`` を先頭に付けると、JSON形式のファイルを指定できます。 "
+        help="プロジェクトメンバに対して設定するメンバ情報を、JSON形式で指定します。 ``file://`` を先頭に付けると、JSON形式のファイルを指定できます。 "  # noqa: E501
         "以下のキーが指定可能です。sampling_inspection_rate, sampling_acceptance_rate, "
         "未設定にする場合は、値にnullを指定してください。"
         "詳細は https://annofab.com/docs/api/#operation/putProjectMember を参照ください。 ",

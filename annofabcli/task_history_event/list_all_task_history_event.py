@@ -158,7 +158,7 @@ def parse_args(parser: argparse.ArgumentParser) -> None:
 def add_parser(subparsers: Optional[argparse._SubParsersAction] = None) -> argparse.ArgumentParser:
     subcommand_name = "list_all"
     subcommand_help = "すべてのタスク履歴イベントの一覧を出力します。"
-    description = "すべてのタスク履歴イベントの一覧を出力します。\n出力されるタスク履歴イベントは、コマンドを実行した日の02:00(JST)頃の状態です。最新の情報を出力する方法はありません。"
+    description = "すべてのタスク履歴イベントの一覧を出力します。\n出力されるタスク履歴イベントは、コマンドを実行した日の02:00(JST)頃の状態です。最新の情報を出力する方法はありません。"  # noqa: E501
 
     parser = annofabcli.common.cli.add_parser(subparsers, subcommand_name, subcommand_help, description)
     parse_args(parser)

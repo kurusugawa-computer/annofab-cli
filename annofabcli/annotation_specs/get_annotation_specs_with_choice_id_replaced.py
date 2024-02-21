@@ -43,7 +43,7 @@ class ReplacingChoiceId(AbstractCommandLineWithConfirmInterface):
             annotation_specs: (IN/OUT) アノテーション仕様情報。中身が変更されます。
             target_attribute_names: 変更対象のラジオボタン/ドロップダウン属性の英語名。Noneならすべてのラジオボタン/ドロップダウン属性の選択肢IDを変更します。
 
-        """
+        """  # noqa: E501
         attribute_list = annotation_specs["additionals"]
 
         replaced_count = 0

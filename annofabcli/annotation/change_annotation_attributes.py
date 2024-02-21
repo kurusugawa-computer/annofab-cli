@@ -349,7 +349,7 @@ def parse_args(parser: argparse.ArgumentParser) -> None:
         "--backup",
         type=str,
         required=False,
-        help="アノテーションのバックアップを保存するディレクトリを指定してください。アノテーションの復元は ``annotation restore`` コマンドで実現できます。",
+        help="アノテーションのバックアップを保存するディレクトリを指定してください。アノテーションの復元は ``annotation restore`` コマンドで実現できます。",  # noqa: E501
     )
     parser.add_argument(
         "--parallelism",

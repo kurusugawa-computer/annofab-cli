@@ -295,7 +295,7 @@ def parse_args(parser: argparse.ArgumentParser) -> None:
     parser.add_argument(
         "--parallelism",
         type=int,
-        help="使用するプロセス数（並列度）を指定してください。指定する場合は必ず ``--yes`` を指定してください。指定しない場合は、逐次的に処理します。",
+        help="使用するプロセス数（並列度）を指定してください。指定する場合は必ず ``--yes`` を指定してください。指定しない場合は、逐次的に処理します。",  # noqa: E501
     )
 
     parser.add_argument("--dryrun", action="store_true", help="取り消しが行われた時の結果を表示しますが、実際は受け入れを取り消しません。")

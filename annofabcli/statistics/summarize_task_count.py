@@ -207,7 +207,7 @@ def parse_args(parser: argparse.ArgumentParser) -> None:
     parser.add_argument(
         "--execute_get_tasks_api",
         action="store_true",
-        help="[EXPERIMENTAL] ``getTasks`` APIを実行して、タスク情報を参照します。タスク数が少ないプロジェクトで、最新のタスク情報を参照したいときに利用できます。",
+        help="[EXPERIMENTAL] ``getTasks`` APIを実行して、タスク情報を参照します。タスク数が少ないプロジェクトで、最新のタスク情報を参照したいときに利用できます。",  # noqa: E501
     )
 
     argument_parser.add_csv_format()
@@ -226,7 +226,7 @@ def add_parser(subparsers: Optional[argparse._SubParsersAction] = None) -> argpa
     subcommand_name = "summarize_task_count"
     subcommand_help = "タスクのフェーズ、ステータス、ステップごとにタスク数を出力します。"
     description = "タスクのフェーズ、ステータス、ステップごとにタスク数を、CSV形式で出力します。"
-    epilog = "アノテーションユーザまたはオーナロールを持つユーザで実行できます。ただし``--execute_get_tasks_api``を指定した場合は、どのロールでも実行できます。"
+    epilog = "アノテーションユーザまたはオーナロールを持つユーザで実行できます。ただし``--execute_get_tasks_api``を指定した場合は、どのロールでも実行できます。"  # noqa: E501
     parser = annofabcli.common.cli.add_parser(subparsers, subcommand_name, subcommand_help, description=description, epilog=epilog)
     parse_args(parser)
     return parser

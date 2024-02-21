@@ -388,7 +388,7 @@ def parse_args(parser: argparse.ArgumentParser) -> None:
         "--backup",
         type=str,
         required=False,
-        help="アノテーションのバックアップを保存するディレクトリを指定してください。アノテーションの復元は ``annotation restore`` コマンドで実現できます。",
+        help="アノテーションのバックアップを保存するディレクトリを指定してください。アノテーションの復元は ``annotation restore`` コマンドで実現できます。",  # noqa: E501
     )
 
     parser.add_argument(
@@ -405,7 +405,7 @@ def add_parser(subparsers: Optional[argparse._SubParsersAction] = None) -> argpa
     subcommand_help = "アノテーションのプロパティを変更します。"
     description = (
         "アノテーションのプロパティを一括で変更します。ただし、作業中状態のタスクのアノテーションのプロパティは変更できません。"
-        "間違えてアノテーションのプロパティを変更したときに復元できるようにするため、 ``--backup`` でバックアップ用のディレクトリを指定することを推奨します。"
+        "間違えてアノテーションのプロパティを変更したときに復元できるようにするため、 ``--backup`` でバックアップ用のディレクトリを指定することを推奨します。"  # noqa: E501
     )
     epilog = "オーナロールを持つユーザで実行してください。"
 

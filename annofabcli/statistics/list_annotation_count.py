@@ -197,7 +197,7 @@ class ListAnnotationCounterByInputData:
 
         def convert_attribute_value_to_key(value: Union[bool, str, int, float]) -> str:
             if isinstance(value, bool):
-                # bool値をCSVの列名やJSONのキーとして扱う場合、`True/False`だとPythonに依存したように見えてしまうので（本当？）、`true/false`に変換する
+                # bool値をCSVの列名やJSONのキーとして扱う場合、`True/False`だとPythonに依存したように見えてしまうので（本当？）、`true/false`に変換する  # noqa: E501
                 if value:
                     return "true"
                 elif not value:
@@ -413,7 +413,7 @@ class AttributeCountCsv:
     Args:
         selective_attribute_value_max_count: 選択肢系の属性の値の個数の上限。これを超えた場合は、非選択肢系属性（トラッキングIDやアノテーションリンクなど）とみなす
 
-    """
+    """  # noqa: E501
 
     def __init__(self, selective_attribute_value_max_count: int = 20, csv_format: Optional[dict[str, Any]] = None) -> None:
         self.csv_format = csv_format
@@ -727,7 +727,7 @@ class AnnotationSpecs:
         duplicated_attributes = [key for key, value in collections.Counter(target_attribute_value_keys).items() if value > 1]
         if len(duplicated_attributes) > 0:
             logger.warning(
-                f"アノテーション仕様の属性情報（ラベル英語名、属性英語名、選択肢英語名）が重複しています。アノテーション個数が正しく算出できない可能性があります。:: {duplicated_attributes}"
+                f"アノテーション仕様の属性情報（ラベル英語名、属性英語名、選択肢英語名）が重複しています。アノテーション個数が正しく算出できない可能性があります。:: {duplicated_attributes}"  # noqa: E501
             )
 
         return target_attribute_value_keys
@@ -1149,7 +1149,7 @@ def parse_args(parser: argparse.ArgumentParser) -> None:
     parser.add_argument(
         "--latest",
         action="store_true",
-        help="``--annotation`` を指定しないとき、最新のアノテーションzipを参照します。このオプションを指定すると、アノテーションzipを更新するのに数分待ちます。",
+        help="``--annotation`` を指定しないとき、最新のアノテーションzipを参照します。このオプションを指定すると、アノテーションzipを更新するのに数分待ちます。",  # noqa: E501
     )
 
     parser.set_defaults(subcommand_func=main)

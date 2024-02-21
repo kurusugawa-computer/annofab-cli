@@ -346,7 +346,7 @@ class AddProps:
         task["number_of_rejections_by_inspection"] = get_number_of_rejections(histories, TaskPhase.INSPECTION)
         task["number_of_rejections_by_acceptance"] = get_number_of_rejections(histories, TaskPhase.ACCEPTANCE)
 
-        # number_of_rejectionsは非推奨なプロパティで、number_of_rejections_by_inspection/number_of_rejections_by_acceptanceと矛盾する場合があるので、削除する
+        # number_of_rejectionsは非推奨なプロパティで、number_of_rejections_by_inspection/number_of_rejections_by_acceptanceと矛盾する場合があるので、削除する  # noqa: E501
         task.pop("number_of_rejections", None)
 
         task["input_data_count"] = len(task["input_data_id_list"])

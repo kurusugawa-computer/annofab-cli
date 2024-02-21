@@ -162,13 +162,13 @@ def parse_args(parser: argparse.ArgumentParser) -> None:
     parser.add_argument(
         "--overwrite",
         action="store_true",
-        help="指定した場合、メタデータを上書きして更新します（すでに設定されているメタデータは削除されます）。指定しない場合、 ``--metadata`` に指定されたキーのみ更新されます。",
+        help="指定した場合、メタデータを上書きして更新します（すでに設定されているメタデータは削除されます）。指定しない場合、 ``--metadata`` に指定されたキーのみ更新されます。",  # noqa: E501
     )
 
     parser.add_argument(
         "--parallelism",
         type=int,
-        help="使用するプロセス数（並列度）を指定してください。指定する場合は必ず ``--yes`` を指定してください。指定しない場合は、逐次的に処理します。",
+        help="使用するプロセス数（並列度）を指定してください。指定する場合は必ず ``--yes`` を指定してください。指定しない場合は、逐次的に処理します。",  # noqa: E501
     )
 
     parser.set_defaults(subcommand_func=main)

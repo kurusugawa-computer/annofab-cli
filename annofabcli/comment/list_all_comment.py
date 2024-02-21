@@ -149,7 +149,7 @@ def add_parser(subparsers: Optional[argparse._SubParsersAction] = None) -> argpa
     subcommand_help = "すべてのコメントの一覧を出力します。"
     description = (
         "すべてのコメントの一覧を出力します。\n"
-        "コメント一覧は、コマンドを実行した日の02:00(JST)頃の状態です。最新のコメント情報を取得したい場合は、 ``annofabcli comment list`` コマンドを実行してください。"
+        "コメント一覧は、コマンドを実行した日の02:00(JST)頃の状態です。最新のコメント情報を取得したい場合は、 ``annofabcli comment list`` コマンドを実行してください。"  # noqa: E501
     )
 
     parser = annofabcli.common.cli.add_parser(subparsers, subcommand_name, subcommand_help, description=description)

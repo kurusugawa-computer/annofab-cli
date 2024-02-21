@@ -476,7 +476,7 @@ class UserPerformance:
             task_worktime_by_phase_user: タスク、フェーズ、ユーザーごとの作業時間や生産量が格納されたオブジェクト。生産量やタスクにかかった作業時間の取得に利用します。
 
 
-        """
+        """  # noqa: E501
 
         def drop_unnecessary_columns(df: pandas.DataFrame) -> pandas.DataFrame:
             """
@@ -744,7 +744,7 @@ class UserPerformance:
 
             for phase in phase_list:
                 # Annofab時間の比率を算出
-                # 計測作業時間の合計値が0により、monitored_worktime_ratioはnanになる場合は、教師付の実績作業時間を実績作業時間の合計値になるようなmonitored_worktime_ratioに変更する
+                # 計測作業時間の合計値が0により、monitored_worktime_ratioはnanになる場合は、教師付の実績作業時間を実績作業時間の合計値になるようなmonitored_worktime_ratioに変更する  # noqa: E501
                 if series[("monitored_worktime_hour", "sum")] == 0:
                     if phase == TaskPhase.ANNOTATION.value:
                         series[("monitored_worktime_ratio", phase)] = 1

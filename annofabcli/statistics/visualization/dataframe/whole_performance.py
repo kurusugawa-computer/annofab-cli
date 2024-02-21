@@ -98,7 +98,7 @@ class WholePerformance:
             worktime_per_date: 日ごとの作業時間が記載されたDataFrameを格納したオブジェクト。ユーザー情報の取得や、実際の作業時間（集計タスクに影響しない）の算出に利用します。
             task_worktime_by_phase_user: タスク、フェーズ、ユーザーごとの作業時間や生産量が格納されたオブジェクト。生産量やタスクにかかった作業時間の取得に利用します。
 
-        """
+        """  # noqa: E501
         # 1人が作業した場合のパフォーマンス情報を生成する
         all_user_performance = cls._create_all_user_performance(worktime_per_date, task_worktime_by_phase_user)
 

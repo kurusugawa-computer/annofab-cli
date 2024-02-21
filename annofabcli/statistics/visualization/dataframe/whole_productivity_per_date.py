@@ -495,7 +495,7 @@ class WholeProductivityPerCompletedDate:
             ("monitored_acceptance_worktime", "計測作業時間(受入)"),
         ]
         if df["actual_worktime_hour"].sum() > 0:
-            # 条件分岐の理由：実績作業時間がないときは、非計測作業時間がマイナス値になり、分かりづらいグラフになるため。必要なときのみ非計測作業時間をプロットする
+            # 条件分岐の理由：実績作業時間がないときは、非計測作業時間がマイナス値になり、分かりづらいグラフになるため。必要なときのみ非計測作業時間をプロットする  # noqa: E501
             phase_prefix.append(("unmonitored_worktime", "非計測作業時間"))
 
         fig_info_list = [

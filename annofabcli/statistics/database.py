@@ -235,14 +235,14 @@ class Database:
                 elif job_status == JobStatus.SUCCEEDED:
                     if dateutil.parser.parse(job["updated_datetime"]) < dateutil.parser.parse(last_tasks_updated_datetime):
                         logger.info(
-                            f"{self.logging_prefix}: タスクの最新更新日時よりアノテーションzipの最終更新日時の方が古いので、アノテーションzipを更新します。"
+                            f"{self.logging_prefix}: タスクの最新更新日時よりアノテーションzipの最終更新日時の方が古いので、アノテーションzipを更新します。"  # noqa: E501
                         )
                         self.annofab_service.api.post_annotation_archive_update(project_id)
                         self.wait_for_completion_updated_annotation(project_id)
 
                     elif dateutil.parser.parse(job["updated_datetime"]) < dateutil.parser.parse(annotation_specs_updated_datetime):
                         logger.info(
-                            f"{self.logging_prefix}: アノテーション仕様の更新日時よりアノテーションzipの最終更新日時の方が古いので、アノテーションzipを更新します。"
+                            f"{self.logging_prefix}: アノテーション仕様の更新日時よりアノテーションzipの最終更新日時の方が古いので、アノテーションzipを更新します。"  # noqa: E501
                         )
                         self.annofab_service.api.post_annotation_archive_update(project_id)
                         self.wait_for_completion_updated_annotation(project_id)

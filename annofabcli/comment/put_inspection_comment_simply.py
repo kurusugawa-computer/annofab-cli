@@ -124,13 +124,13 @@ def parse_args(parser: argparse.ArgumentParser) -> None:
         "--custom_project_type",
         type=str,
         choices=[e.value for e in CustomProjectType],
-        help="[BETA] ビルトインのエディタプラグインを使用していないカスタムプロジェクトの種類を指定します。カスタムプロジェクトに対して、検査コメントの位置を指定しない場合は必須です。\n",
+        help="[BETA] ビルトインのエディタプラグインを使用していないカスタムプロジェクトの種類を指定します。カスタムプロジェクトに対して、検査コメントの位置を指定しない場合は必須です。\n",  # noqa: E501
     )
 
     parser.add_argument(
         "--parallelism",
         type=int,
-        help="使用するプロセス数（並列度）を指定してください。指定する場合は必ず ``--yes`` を指定してください。指定しない場合は、逐次的に処理します。",
+        help="使用するプロセス数（並列度）を指定してください。指定する場合は必ず ``--yes`` を指定してください。指定しない場合は、逐次的に処理します。",  # noqa: E501
     )
 
     parser.set_defaults(subcommand_func=main)
