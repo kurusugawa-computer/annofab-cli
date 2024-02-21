@@ -132,7 +132,9 @@ ignore = [
     "ANN002", # missing-type-args
     "ANN003", # missing-type-kwargs
     "ERA", # : 役立つこともあるが、コメントアウトしていないコードも警告されるので無視する
-    "PERF203", # try-except-in-loop: ループ内でtry-exceptを使うこともあるため無視する。
+    "PERF203", # try-except-in-loop: ループ内でtry-exceptを使うこともあるため無視する。またPython3.11以降ｈ
+    "FIX", # TODOやFIXMEを使うため無視する
+    "TD", # TODOコメントの書き方に気にしていないので無視する
 
     # いずれ無視しないようにする
     "ANN201", # missing-return-type-public-function:
