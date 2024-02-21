@@ -35,9 +35,22 @@ class Task:
         duplicated = df.duplicated(subset=["project_id", "task_id"])
         return duplicated.any()
 
+    @classmethod
+    def required_columns_exist(cls, df: pandas.DataFrame) -> bool:
+        """
+        必須の列が存在するかどうかを返します。
+
+        Returns:
+            必須の列が存在するかどうか
+        """
+        return len(set(cls.columns()) - set(df.columns)) == 0
+
     def __init__(self, df: pandas.DataFrame) -> None:
         if self._duplicated_keys(df):
             logger.warning("引数`df`に重複したキー（project_id, task_id）が含まれています。")
+
+        if not self.required_columns_exist(df):
+            raise ValueError(f"引数`df`には、{self.columns()}の列が必要です。 :: {df.columns=}")
 
         self.df = df
 
