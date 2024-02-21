@@ -187,9 +187,7 @@ class WriteCsvGraph:
         self.project_dir.write_worktime_per_date_user(worktime_per_date_obj)
 
         task = Task(self._get_task_df())
-        productivity_per_completed_date_obj = WholeProductivityPerCompletedDate.from_df_wrapper(
-            task, worktime_per_date_obj
-        )
+        productivity_per_completed_date_obj = WholeProductivityPerCompletedDate.from_df_wrapper(task, worktime_per_date_obj)
 
         self.project_dir.write_whole_productivity_per_date(productivity_per_completed_date_obj)
 
@@ -199,9 +197,7 @@ class WriteCsvGraph:
         if not self.output_only_text:
             self.project_dir.write_worktime_line_graph(worktime_per_date_obj, user_id_list=user_id_list)
             self.project_dir.write_whole_productivity_line_graph_per_date(productivity_per_completed_date_obj)
-            self.project_dir.write_whole_productivity_line_graph_per_annotation_started_date(
-                productivity_per_started_date_obj
-            )
+            self.project_dir.write_whole_productivity_line_graph_per_annotation_started_date(productivity_per_started_date_obj)
 
     def write_user_productivity_per_date(self, user_id_list: Optional[List[str]] = None) -> None:
         """ユーザごとの日ごとの生産性情報を出力する。"""
@@ -217,15 +213,9 @@ class WriteCsvGraph:
         self.project_dir.write_performance_per_started_date_csv(acceptor_per_date_obj, phase=TaskPhase.ACCEPTANCE)
 
         if not self.output_only_text:
-            self.project_dir.write_performance_line_graph_per_date(
-                annotator_per_date_obj, phase=TaskPhase.ANNOTATION, user_id_list=user_id_list
-            )
-            self.project_dir.write_performance_line_graph_per_date(
-                inspector_per_date_obj, phase=TaskPhase.INSPECTION, user_id_list=user_id_list
-            )
-            self.project_dir.write_performance_line_graph_per_date(
-                acceptor_per_date_obj, phase=TaskPhase.ACCEPTANCE, user_id_list=user_id_list
-            )
+            self.project_dir.write_performance_line_graph_per_date(annotator_per_date_obj, phase=TaskPhase.ANNOTATION, user_id_list=user_id_list)
+            self.project_dir.write_performance_line_graph_per_date(inspector_per_date_obj, phase=TaskPhase.INSPECTION, user_id_list=user_id_list)
+            self.project_dir.write_performance_line_graph_per_date(acceptor_per_date_obj, phase=TaskPhase.ACCEPTANCE, user_id_list=user_id_list)
 
 
 class VisualizingStatisticsMain:
@@ -276,9 +266,7 @@ class VisualizingStatisticsMain:
             project_title=project_title,
             input_data_type=project_info["input_data_type"],
             measurement_datetime=annofabapi.utils.str_now(),
-            query=Query(
-                task_query=self.task_query, task_ids=self.task_ids, start_date=self.start_date, end_date=self.end_date
-            ),
+            query=Query(task_query=self.task_query, task_ids=self.task_ids, start_date=self.start_date, end_date=self.end_date),
         )
         project_dir.write_project_info(project_summary)
 
@@ -296,9 +284,7 @@ class VisualizingStatisticsMain:
 
         """
 
-        self.facade.validate_project(
-            project_id, project_member_roles=[ProjectMemberRole.OWNER, ProjectMemberRole.TRAINING_DATA_USER]
-        )
+        self.facade.validate_project(project_id, project_member_roles=[ProjectMemberRole.OWNER, ProjectMemberRole.TRAINING_DATA_USER])
 
         project_dir = ProjectDir(output_project_dir)
         self.write_project_info_json(project_id=project_id, project_dir=project_dir)
@@ -314,9 +300,7 @@ class VisualizingStatisticsMain:
                 end_date=self.end_date,
             ),
         )
-        database.update_db(
-            self.download_latest, is_get_task_histories_one_of_each=self.is_get_task_histories_one_of_each
-        )
+        database.update_db(self.download_latest, is_get_task_histories_one_of_each=self.is_get_task_histories_one_of_each)
 
         table_obj = Table(database)
 
@@ -436,8 +420,7 @@ class VisualizeStatistics(AbstractCommandLineInterface):
             df_actual_worktime = pandas.read_csv(args.labor_csv)
             if not ActualWorktime.required_columns_exist(df_actual_worktime):
                 logger.error(
-                    "引数`--labor_csv`のCSVには以下の列が存在しないので、終了します。\n"
-                    "`project_id`, `date`, `account_id`, `actual_worktime_hour`"
+                    "引数`--labor_csv`のCSVには以下の列が存在しないので、終了します。\n" "`project_id`, `date`, `account_id`, `actual_worktime_hour`"
                 )
                 sys.exit(COMMAND_LINE_ERROR_STATUS_CODE)
             actual_worktime = ActualWorktime(df_actual_worktime)
@@ -484,14 +467,10 @@ class VisualizeStatistics(AbstractCommandLineInterface):
                     project_performance = ProjectPerformance.from_project_dirs(project_dir_list)
                     project_performance.to_csv(root_output_dir / "プロジェクトごとの生産性と品質.csv")
 
-                    project_actual_worktime = ProjectWorktimePerMonth.from_project_dirs(
-                        project_dir_list, WorktimeColumn.ACTUAL_WORKTIME_HOUR
-                    )
+                    project_actual_worktime = ProjectWorktimePerMonth.from_project_dirs(project_dir_list, WorktimeColumn.ACTUAL_WORKTIME_HOUR)
                     project_actual_worktime.to_csv(root_output_dir / "プロジェクごとの毎月の実績作業時間.csv")
 
-                    project_monitored_worktime = ProjectWorktimePerMonth.from_project_dirs(
-                        project_dir_list, WorktimeColumn.MONITORED_WORKTIME_HOUR
-                    )
+                    project_monitored_worktime = ProjectWorktimePerMonth.from_project_dirs(project_dir_list, WorktimeColumn.MONITORED_WORKTIME_HOUR)
                     project_monitored_worktime.to_csv(root_output_dir / "プロジェクごとの毎月の計測作業時間.csv")
 
                 else:
@@ -547,7 +526,11 @@ def parse_args(parser: argparse.ArgumentParser) -> None:
         help="集計対象のタスクのtask_idを指定します。\n" + "``file://`` を先頭に付けると、task_idの一覧が記載されたファイルを指定できます。",
     )
 
-    parser.add_argument("--start_date", type=str, help="指定した日付（ ``YYYY-MM-DD`` ）以降に教師付を開始したタスクから生産性を算出します。")
+    parser.add_argument(
+        "--start_date",
+        type=str,
+        help="指定した日付（ ``YYYY-MM-DD`` ）以降に教師付を開始したタスクから生産性を算出します。",
+    )
     parser.add_argument("--end_date", type=str, help="指定した日付（ ``YYYY-MM-DD`` ）以前に更新されたタスクから生産性を算出します。")
 
     parser.add_argument(

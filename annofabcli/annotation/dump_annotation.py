@@ -54,7 +54,7 @@ class DumpAnnotationMain:
         Returns:
             アノテーション情報をファイルに保存したかどうか。
         """
-        logger_prefix = f"{str(task_index+1)} 件目: " if task_index is not None else ""
+        logger_prefix = f"{task_index+1!s} 件目: " if task_index is not None else ""
         task = self.service.wrapper.get_task_or_none(self.project_id, task_id)
         if task is None:
             logger.warning(f"task_id = '{task_id}' のタスクは存在しません。スキップします。")
@@ -70,7 +70,10 @@ class DumpAnnotationMain:
             try:
                 self.dump_annotation_for_input_data(task_id, input_data_id, task_dir=task_dir)
             except Exception:
-                logger.warning(f"タスク'{task_id}', 入力データ'{input_data_id}' のアノテーション情報のダンプに失敗しました。", exc_info=True)
+                logger.warning(
+                    f"タスク'{task_id}', 入力データ'{input_data_id}' のアノテーション情報のダンプに失敗しました。",
+                    exc_info=True,
+                )
                 is_failure = True
                 continue
 

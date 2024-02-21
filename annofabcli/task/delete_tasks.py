@@ -46,9 +46,7 @@ class DeleteTaskMain(AbstractCommandLineWithConfirmInterface):
         if len(supplementary_data_list) == 0:
             return 0
 
-        logger.debug(
-            f"task_id='{task_id}', input_data_id='{input_data_id}' :: 補助情報 {len(supplementary_data_list)} 件を削除します。"
-        )
+        logger.debug(f"task_id='{task_id}', input_data_id='{input_data_id}' :: 補助情報 {len(supplementary_data_list)} 件を削除します。")
 
         deleted_count = 0
         for supplementary_data in supplementary_data_list:
@@ -157,9 +155,7 @@ class DeleteTaskMain(AbstractCommandLineWithConfirmInterface):
 
         return True
 
-    def delete_task(
-        self, task_id: str, task_query: Optional[TaskQuery] = None, task_index: Optional[int] = None
-    ) -> bool:
+    def delete_task(self, task_id: str, task_query: Optional[TaskQuery] = None, task_index: Optional[int] = None) -> bool:
         """
         タスクを削除します。
 
@@ -186,10 +182,7 @@ class DeleteTaskMain(AbstractCommandLineWithConfirmInterface):
             logger.warning(f"{log_prefix} :: タスクは存在しません。")
             return False
 
-        logger.debug(
-            f"{log_prefix} :: status={task['status']}, "
-            f"phase={task['phase']}, updated_datetime={task['updated_datetime']}"
-        )
+        logger.debug(f"{log_prefix} :: status={task['status']}, " f"phase={task['phase']}, updated_datetime={task['updated_datetime']}")
 
         if not self._should_delete_task(task, log_prefix, task_query=task_query):
             return False
@@ -207,7 +200,8 @@ class DeleteTaskMain(AbstractCommandLineWithConfirmInterface):
                         deleted_input_data_count += 1
                 except Exception:  # pylint: disable=broad-except
                     logger.warning(
-                        f"{log_prefix} :: 入力データの削除に失敗しました。 :: input_data_id='{input_data_id}'", exc_info=True
+                        f"{log_prefix} :: 入力データの削除に失敗しました。 :: input_data_id='{input_data_id}'",
+                        exc_info=True,
                     )
                 continue
             if deleted_input_data_count > 0:
@@ -306,7 +300,9 @@ def parse_args(parser: argparse.ArgumentParser) -> None:
 def add_parser(subparsers: Optional[argparse._SubParsersAction] = None) -> argparse.ArgumentParser:
     subcommand_name = "delete"
     subcommand_help = "タスクを削除します。"
-    description = "タスクを削除します。ただし、作業中/完了状態のタスクは削除できません。デフォルトは、アノテーションが付与されているタスクは削除できません。"
+    description = (
+        "タスクを削除します。ただし、作業中/完了状態のタスクは削除できません。デフォルトは、アノテーションが付与されているタスクは削除できません。"
+    )
     epilog = "オーナロールを持つユーザで実行してください。"
 
     parser = annofabcli.common.cli.add_parser(subparsers, subcommand_name, subcommand_help, description, epilog=epilog)

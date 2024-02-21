@@ -64,9 +64,7 @@ class TaskHistory:
         for task_history_list in task_histories.values():
             for task_history in task_history_list:
                 new_task_history = copy.deepcopy(task_history)
-                new_task_history["worktime_hour"] = isoduration_to_hour(
-                    task_history["accumulated_labor_time_milliseconds"]
-                )
+                new_task_history["worktime_hour"] = isoduration_to_hour(task_history["accumulated_labor_time_milliseconds"])
                 all_task_history_list.append(new_task_history)
 
         if len(all_task_history_list) > 0:

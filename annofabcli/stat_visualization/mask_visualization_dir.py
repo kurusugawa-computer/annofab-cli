@@ -79,9 +79,7 @@ def create_replacement_dict(
     replacement_dict_for_username = dict(zip(df3["username"], replacement_dict_for_user_id.values()))
     replacement_dict_for_account_id = dict(zip(df3["account_id"], replacement_dict_for_user_id.values()))
 
-    replacement_dict_by_biography = create_replacement_dict_by_biography(
-        df_user, not_masked_biography_set=not_masked_biography_set
-    )
+    replacement_dict_by_biography = create_replacement_dict_by_biography(df_user, not_masked_biography_set=not_masked_biography_set)
 
     return ReplacementDict(
         user_id=replacement_dict_for_user_id,
@@ -91,9 +89,7 @@ def create_replacement_dict(
     )
 
 
-def write_line_graph(
-    task: Task, output_project_dir: ProjectDir, user_id_list: Optional[List[str]] = None, minimal_output: bool = False
-):
+def write_line_graph(task: Task, output_project_dir: ProjectDir, user_id_list: Optional[List[str]] = None, minimal_output: bool = False):
     output_project_dir.write_cumulative_line_graph(
         AnnotatorCumulativeProductivity.from_task(task),
         phase=TaskPhase.ANNOTATION,
@@ -122,20 +118,12 @@ def write_line_graph(
     output_project_dir.write_performance_per_started_date_csv(acceptor_per_date_obj, phase=TaskPhase.ACCEPTANCE)
 
     if not minimal_output:
-        output_project_dir.write_performance_line_graph_per_date(
-            annotator_per_date_obj, phase=TaskPhase.ANNOTATION, user_id_list=user_id_list
-        )
-        output_project_dir.write_performance_line_graph_per_date(
-            inspector_per_date_obj, phase=TaskPhase.INSPECTION, user_id_list=user_id_list
-        )
-        output_project_dir.write_performance_line_graph_per_date(
-            acceptor_per_date_obj, phase=TaskPhase.ACCEPTANCE, user_id_list=user_id_list
-        )
+        output_project_dir.write_performance_line_graph_per_date(annotator_per_date_obj, phase=TaskPhase.ANNOTATION, user_id_list=user_id_list)
+        output_project_dir.write_performance_line_graph_per_date(inspector_per_date_obj, phase=TaskPhase.INSPECTION, user_id_list=user_id_list)
+        output_project_dir.write_performance_line_graph_per_date(acceptor_per_date_obj, phase=TaskPhase.ACCEPTANCE, user_id_list=user_id_list)
 
 
-def create_df_user(
-    worktime_per_date_user: WorktimePerDate, task_worktime_by_phase_user: TaskWorktimeByPhaseUser
-) -> pandas.DataFrame:
+def create_df_user(worktime_per_date_user: WorktimePerDate, task_worktime_by_phase_user: TaskWorktimeByPhaseUser) -> pandas.DataFrame:
     """
     ユーザー情報が格納されているDataFrameを生成します。
 
@@ -183,9 +171,7 @@ def mask_visualization_dir(
     )
 
     # CSVのユーザ情報をマスクする
-    masked_user_performance = UserPerformance.from_df_wrapper(
-        masked_worktime_per_date, masked_task_worktime_by_phase_user
-    )
+    masked_user_performance = UserPerformance.from_df_wrapper(masked_worktime_per_date, masked_task_worktime_by_phase_user)
     output_project_dir.write_user_performance(masked_user_performance)
 
     # メンバのパフォーマンスを散布図で出力する
@@ -213,12 +199,8 @@ def mask_visualization_dir(
 
 
 def main(args: argparse.Namespace) -> None:
-    not_masked_biography_set = (
-        set(get_list_from_args(args.not_masked_biography)) if args.not_masked_biography is not None else None
-    )
-    not_masked_user_id_set = (
-        set(get_list_from_args(args.not_masked_user_id)) if args.not_masked_user_id is not None else None
-    )
+    not_masked_biography_set = set(get_list_from_args(args.not_masked_biography)) if args.not_masked_biography is not None else None
+    not_masked_user_id_set = set(get_list_from_args(args.not_masked_user_id)) if args.not_masked_user_id is not None else None
 
     mask_visualization_dir(
         project_dir=ProjectDir(args.dir),

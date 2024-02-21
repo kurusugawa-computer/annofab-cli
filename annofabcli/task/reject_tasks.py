@@ -32,9 +32,7 @@ logger = logging.getLogger(__name__)
 
 
 class RejectTasksMain(AbstractCommandLineWithConfirmInterface):
-    def __init__(
-        self, service: annofabapi.Resource, *, comment_data: Optional[dict[str, Any]], all_yes: bool = False
-    ) -> None:
+    def __init__(self, service: annofabapi.Resource, *, comment_data: Optional[dict[str, Any]], all_yes: bool = False) -> None:
         self.service = service
         self.facade = AnnofabApiFacade(service)
         self.comment_data = comment_data
@@ -73,13 +71,9 @@ class RejectTasksMain(AbstractCommandLineWithConfirmInterface):
             }
         ]
 
-        return self.service.api.batch_update_comments(
-            project_id, task["task_id"], first_input_data_id, request_body=req_inspection
-        )[0]
+        return self.service.api.batch_update_comments(project_id, task["task_id"], first_input_data_id, request_body=req_inspection)[0]
 
-    def confirm_reject_task(
-        self, task_id: str, assign_last_annotator: bool, assigned_annotator_user_id: Optional[str]
-    ) -> bool:
+    def confirm_reject_task(self, task_id: str, assign_last_annotator: bool, assigned_annotator_user_id: Optional[str]) -> bool:
         confirm_message = f"task_id = {task_id} のタスクを差し戻しますか？"
         if assign_last_annotator:
             confirm_message += "最後のannotation phaseの担当者を割り当てます。"
@@ -115,9 +109,7 @@ class RejectTasksMain(AbstractCommandLineWithConfirmInterface):
                 last_updated_datetime = _task["updated_datetime"]
                 logger.debug(f"{task_id}: 担当者を自分自身に変更しました。")
 
-            changed_task = self.service.wrapper.change_task_status_to_working(
-                project_id, task_id, last_updated_datetime=last_updated_datetime
-            )
+            changed_task = self.service.wrapper.change_task_status_to_working(project_id, task_id, last_updated_datetime=last_updated_datetime)
             return changed_task
 
         except requests.HTTPError:
@@ -152,9 +144,7 @@ class RejectTasksMain(AbstractCommandLineWithConfirmInterface):
             logger.debug(f"task_id = {task_id} : `--task_query`の条件にマッチしないため、スキップします。task_query={task_query}")
             return False
 
-        if not self.confirm_reject_task(
-            task_id, assign_last_annotator=assign_last_annotator, assigned_annotator_user_id=assigned_annotator_user_id
-        ):
+        if not self.confirm_reject_task(task_id, assign_last_annotator=assign_last_annotator, assigned_annotator_user_id=assigned_annotator_user_id):
             return False
 
         return True
@@ -203,17 +193,13 @@ class RejectTasksMain(AbstractCommandLineWithConfirmInterface):
                 try:
                     self.add_inspection_comment(project_id, task, inspection_comment)
                     # 作業時間が増えすぎないようにするため、すぐに休憩中状態にする
-                    task = self.service.wrapper.change_task_status_to_break(
-                        project_id, task_id, last_updated_datetime=task["updated_datetime"]
-                    )
+                    task = self.service.wrapper.change_task_status_to_break(project_id, task_id, last_updated_datetime=task["updated_datetime"])
                     logger.debug(f"{logging_prefix} : task_id = {task_id}, 検査コメントを付与しました。")
                     return task
                 except requests.exceptions.HTTPError:
                     logger.warning(f"{logging_prefix} : task_id = {task_id} 検査コメントの付与に失敗しました。", exc_info=True)
                     # 作業時間が増えすぎないようにするため、すぐに休憩中状態にする
-                    self.service.wrapper.change_task_status_to_break(
-                        project_id, task_id, last_updated_datetime=task["updated_datetime"]
-                    )
+                    self.service.wrapper.change_task_status_to_break(project_id, task_id, last_updated_datetime=task["updated_datetime"])
                     raise
             else:
                 task, _ = self.service.api.get_task(project_id, task_id)
@@ -227,11 +213,7 @@ class RejectTasksMain(AbstractCommandLineWithConfirmInterface):
             logger.warning(f"{logging_prefix} : task_id='{task_id}'のタスクをは存在しないので、スキップします。")
             return False
 
-        logger.debug(
-            f"{logging_prefix} : task_id = {task['task_id']}, "
-            f"status = {task['status']}, "
-            f"phase = {task['phase']}, "
-        )
+        logger.debug(f"{logging_prefix} : task_id = {task['task_id']}, " f"status = {task['status']}, " f"phase = {task['phase']}, ")
 
         if not self._can_reject_task(
             task=task,
@@ -251,9 +233,7 @@ class RejectTasksMain(AbstractCommandLineWithConfirmInterface):
             if not dryrun:
                 # タスクを差し戻す
                 # 担当者やステータスに関係なく差し戻すため、`force=True`を指定する
-                self.service.wrapper.reject_task(
-                    project_id, task_id, force=True, last_updated_datetime=task["updated_datetime"]
-                )
+                self.service.wrapper.reject_task(project_id, task_id, force=True, last_updated_datetime=task["updated_datetime"])
 
             if assign_last_annotator:
                 logger.info(f"{logging_prefix} : task_id = {task_id} のタスクを差し戻しました。タスクの担当者は直前の教師付フェーズの担当者です。")
@@ -267,13 +247,9 @@ class RejectTasksMain(AbstractCommandLineWithConfirmInterface):
                 )
 
                 if not dryrun:
-                    self.service.wrapper.change_task_operator(
-                        project_id, task_id, operator_account_id=assigned_annotator_account_id
-                    )
+                    self.service.wrapper.change_task_operator(project_id, task_id, operator_account_id=assigned_annotator_account_id)
 
-                logger.info(
-                    f"{logging_prefix} : task_id = {task_id} のタスクを差し戻しました。タスクの担当者: {assigned_annotator_user_id}"
-                )
+                logger.info(f"{logging_prefix} : task_id = {task_id} のタスクを差し戻しました。タスクの担当者: {assigned_annotator_user_id}")
                 return True
 
         except requests.exceptions.HTTPError:
@@ -395,9 +371,7 @@ class RejectTasks(AbstractCommandLineInterface):
         task_query: Optional[TaskQuery] = TaskQuery.from_dict(dict_task_query) if dict_task_query is not None else None
 
         comment_data = annofabcli.common.cli.get_json_from_args(args.comment_data)
-        custom_project_type = (
-            CustomProjectType(args.custom_project_type) if args.custom_project_type is not None else None
-        )
+        custom_project_type = CustomProjectType(args.custom_project_type) if args.custom_project_type is not None else None
 
         project, _ = self.service.api.get_project(args.project_id)
         if args.comment is not None and comment_data is None:
@@ -408,10 +382,7 @@ class RejectTasks(AbstractCommandLineInterface):
                 comment_data = {"start": 0, "end": 100, "_type": "Time"}
             elif project["input_data_type"] == InputDataType.CUSTOM.value:
                 editor_plugin_id = project["configuration"]["plugin_id"]
-                if (
-                    editor_plugin_id == EditorPluginId.THREE_DIMENSION.value
-                    or custom_project_type == CustomProjectType.THREE_DIMENSION_POINT_CLOUD
-                ):
+                if editor_plugin_id == EditorPluginId.THREE_DIMENSION.value or custom_project_type == CustomProjectType.THREE_DIMENSION_POINT_CLOUD:
                     comment_data = {
                         "data": '{"kind": "CUBOID", "shape": {"dimensions": {"width": 1.0, "height": 1.0, "depth": 1.0}, "location": {"x": 0.0, "y": 0.0, "z": 0.0}, "rotation": {"x": 0.0, "y": 0.0, "z": 0.0}, "direction": {"front": {"x": 1.0, "y": 0.0, "z": 0.0}, "up": {"x": 0.0, "y": 0.0, "z": 1.0}}}, "version": "2"}',  # noqa: E501
                         "_type": "Custom",
@@ -481,7 +452,9 @@ def parse_args(parser: argparse.ArgumentParser) -> None:
     assign_group = parser.add_mutually_exclusive_group()
 
     assign_group.add_argument(
-        "--not_assign", action="store_true", help="差し戻したタスクに担当者を割り当てません。" "指定しない場合は、最後のannotation phaseの担当者が割り当てられます。"
+        "--not_assign",
+        action="store_true",
+        help="差し戻したタスクに担当者を割り当てません。" "指定しない場合は、最後のannotation phaseの担当者が割り当てられます。",
     )
 
     assign_group.add_argument(
@@ -495,7 +468,9 @@ def parse_args(parser: argparse.ArgumentParser) -> None:
     argument_parser.add_task_query()
 
     parser.add_argument(
-        "--parallelism", type=int, help="使用するプロセス数（並列度）を指定してください。指定する場合は必ず ``--yes`` を指定してください。指定しない場合は、逐次的に処理します。"
+        "--parallelism",
+        type=int,
+        help="使用するプロセス数（並列度）を指定してください。指定する場合は必ず ``--yes`` を指定してください。指定しない場合は、逐次的に処理します。",
     )
     parser.add_argument("--dryrun", action="store_true", help="差し戻しが行われた時の結果を表示しますが、実際はタスクを差し戻しません。")
 

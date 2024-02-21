@@ -90,9 +90,7 @@ class WritingGraph:
             logger.warning("'タスクlist.csv'から生成できるグラフの出力に失敗しました。", exc_info=True)
 
         try:
-            self.output_project_dir.write_whole_productivity_line_graph_per_date(
-                self.project_dir.read_whole_productivity_per_date()
-            )
+            self.output_project_dir.write_whole_productivity_line_graph_per_date(self.project_dir.read_whole_productivity_per_date())
         except Exception:
             logger.warning("'日毎の生産量と生産性.csv'から生成できるグラフの出力に失敗しました。", exc_info=True)
 
@@ -144,7 +142,13 @@ def parse_args(parser: argparse.ArgumentParser) -> None:
         help="必要最小限のファイルを出力します。",
     )
 
-    parser.add_argument("-o", "--output_dir", type=Path, required=True, help="出力先ディレクトリ。配下にプロジェクトディレクトリが生成されます。")
+    parser.add_argument(
+        "-o",
+        "--output_dir",
+        type=Path,
+        required=True,
+        help="出力先ディレクトリ。配下にプロジェクトディレクトリが生成されます。",
+    )
 
     parser.set_defaults(subcommand_func=main)
 

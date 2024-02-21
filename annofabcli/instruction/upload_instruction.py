@@ -39,7 +39,7 @@ def save_image_from_data_uri_scheme(value: str, temp_dir: Path) -> Path:
     with Image.open(io.BytesIO(uri.data)) as img:
         image_file_path = temp_dir / image_file_name
         img.save(str(image_file_path), extension.upper())
-        logger.debug(f"Data URI Schemeの画像を {str(image_file_path)} に保存しました。")
+        logger.debug(f"Data URI Schemeの画像を {image_file_path!s} に保存しました。")
         return image_file_path
 
 
@@ -132,7 +132,10 @@ def parse_args(parser: argparse.ArgumentParser) -> None:
     argument_parser.add_project_id()
 
     parser.add_argument(
-        "--html", type=str, required=True, help="作業ガイドとして登録するHTMLファイルのパスを指定します。body要素があればbody要素の中身をアップロードします。"
+        "--html",
+        type=str,
+        required=True,
+        help="作業ガイドとして登録するHTMLファイルのパスを指定します。body要素があればbody要素の中身をアップロードします。",
     )
 
     parser.set_defaults(subcommand_func=main)
@@ -142,7 +145,9 @@ def add_parser(subparsers: Optional[argparse._SubParsersAction] = None) -> argpa
     subcommand_name = "upload"
     subcommand_help = "HTMLファイルを作業ガイドとして登録します。"
     description = (
-        "HTMLファイルを作業ガイドとして登録します。" + "img要素のsrc属性がローカルの画像を参照している場合（http, https, dataスキーマが付与されていない）、" "画像もアップロードします。"
+        "HTMLファイルを作業ガイドとして登録します。"
+        + "img要素のsrc属性がローカルの画像を参照している場合（http, https, dataスキーマが付与されていない）、"
+        "画像もアップロードします。"
     )
     epilog = "チェッカーまたはオーナロールを持つユーザで実行してください。"
     parser = annofabcli.common.cli.add_parser(subparsers, subcommand_name, subcommand_help, description, epilog=epilog)

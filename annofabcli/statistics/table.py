@@ -79,9 +79,7 @@ class Table:
         account_id_list = [
             e["account_id"]
             for e in task_history_list
-            if TaskPhase(e["phase"]) == phase
-            and e["account_id"] is not None
-            and isoduration_to_hour(e["accumulated_labor_time_milliseconds"]) > 0
+            if TaskPhase(e["phase"]) == phase and e["account_id"] is not None and isoduration_to_hour(e["accumulated_labor_time_milliseconds"]) > 0
         ]
         return len(set(account_id_list)) >= 2
 
@@ -126,9 +124,7 @@ class Table:
 
     def _get_project_members_dict(self) -> Dict[str, Any]:
         project_members_dict = {}
-        project_members = self.annofab_service.wrapper.get_all_project_members(
-            self.project_id, query_params={"include_inactive_member": True}
-        )
+        project_members = self.annofab_service.wrapper.get_all_project_members(self.project_id, query_params={"include_inactive_member": True})
         for member in project_members:
             project_members_dict[member["account_id"]] = member
         return project_members_dict
@@ -139,10 +135,7 @@ class Table:
         タスク履歴関係の情報を設定する
         """
 
-        task["worktime_hour"] = sum(
-            annofabcli.common.utils.isoduration_to_hour(e["accumulated_labor_time_milliseconds"])
-            for e in task_histories
-        )
+        task["worktime_hour"] = sum(annofabcli.common.utils.isoduration_to_hour(e["accumulated_labor_time_milliseconds"]) for e in task_histories)
 
         return task
 

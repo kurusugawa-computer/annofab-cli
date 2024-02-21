@@ -45,9 +45,7 @@ class DeleteCommentMain(AbstractCommandLineWithConfirmInterface):
 
         AbstractCommandLineWithConfirmInterface.__init__(self, all_yes)
 
-    def _create_request_body(
-        self, task: Dict[str, Any], input_data_id: str, comment_ids: List[str]
-    ) -> List[Dict[str, Any]]:
+    def _create_request_body(self, task: Dict[str, Any], input_data_id: str, comment_ids: List[str]) -> List[Dict[str, Any]]:
         """batch_update_comments に渡すリクエストボディを作成する。"""
 
         def _convert(comment_id: str) -> Dict[str, Any]:
@@ -56,16 +54,13 @@ class DeleteCommentMain(AbstractCommandLineWithConfirmInterface):
                 "_type": "Delete",
             }
 
-        old_comment_list, _ = self.service.api.get_comments(
-            self.project_id, task["task_id"], input_data_id, query_params={"v": "2"}
-        )
+        old_comment_list, _ = self.service.api.get_comments(self.project_id, task["task_id"], input_data_id, query_params={"v": "2"})
         old_comment_ids = {e["comment_id"] for e in old_comment_list}
         request_body = []
         for comment_id in comment_ids:
             if comment_id not in old_comment_ids:
                 logger.warning(
-                    f"task_id={task['task_id']}, input_data_id={input_data_id}: "
-                    f"comment_id='{comment_id}'のコメントは存在しません。",
+                    f"task_id={task['task_id']}, input_data_id={input_data_id}: " f"comment_id='{comment_id}'のコメントは存在しません。",
                 )
                 continue
             request_body.append(_convert(comment_id))
@@ -132,11 +127,7 @@ class DeleteCommentMain(AbstractCommandLineWithConfirmInterface):
             logger.warning(f"{logging_prefix} : task_id='{task_id}' のタスクは存在しないので、スキップします。")
             return 0
 
-        logger.debug(
-            f"{logging_prefix} : task_id = {task['task_id']}, "
-            f"status = {task['status']}, "
-            f"phase = {task['phase']}, "
-        )
+        logger.debug(f"{logging_prefix} : task_id = {task['task_id']}, " f"status = {task['status']}, " f"phase = {task['phase']}, ")
 
         if not self._can_delete_comment(
             task=task,
@@ -151,23 +142,16 @@ class DeleteCommentMain(AbstractCommandLineWithConfirmInterface):
         added_comments_count = 0
         for input_data_id, comment_ids in comment_ids_for_task.items():
             if input_data_id not in task["input_data_id_list"]:
-                logger.warning(
-                    f"{logging_prefix} : task_id='{task_id}'のタスクに input_data_id='{input_data_id}'の入力データは存在しません。"
-                )
+                logger.warning(f"{logging_prefix} : task_id='{task_id}'のタスクに input_data_id='{input_data_id}'の入力データは存在しません。")
                 continue
             try:
                 # コメントを削除
-                request_body = self._create_request_body(
-                    task=changed_task, input_data_id=input_data_id, comment_ids=comment_ids
-                )
+                request_body = self._create_request_body(task=changed_task, input_data_id=input_data_id, comment_ids=comment_ids)
                 if len(request_body) > 0:
-                    self.service.api.batch_update_comments(
-                        self.project_id, task_id, input_data_id, request_body=request_body
-                    )
+                    self.service.api.batch_update_comments(self.project_id, task_id, input_data_id, request_body=request_body)
                     added_comments_count += 1
                     logger.debug(
-                        f"{logging_prefix} : task_id={task_id}, input_data_id={input_data_id}: "
-                        f"{len(request_body)}件のコメントを削除しました。"
+                        f"{logging_prefix} : task_id={task_id}, input_data_id={input_data_id}: " f"{len(request_body)}件のコメントを削除しました。"
                     )
                 else:
                     logger.warning(
@@ -188,9 +172,7 @@ class DeleteCommentMain(AbstractCommandLineWithConfirmInterface):
         tpl: Tuple[int, Tuple[str, DeletedCommentsForTask]],
     ) -> int:
         task_index, (task_id, comment_ids_for_task) = tpl
-        return self.delete_comments_for_task(
-            task_id=task_id, comment_ids_for_task=comment_ids_for_task, task_index=task_index
-        )
+        return self.delete_comments_for_task(task_id=task_id, comment_ids_for_task=comment_ids_for_task, task_index=task_index)
 
     def delete_comments_for_task_list(
         self,
@@ -202,9 +184,7 @@ class DeleteCommentMain(AbstractCommandLineWithConfirmInterface):
 
         if parallelism is not None:
             with multiprocessing.Pool(parallelism) as pool:
-                result_bool_list = pool.map(
-                    self.delete_comments_for_task_wrapper, enumerate(comment_ids_for_task_list.items())
-                )
+                result_bool_list = pool.map(self.delete_comments_for_task_wrapper, enumerate(comment_ids_for_task_list.items()))
                 added_comments_count = sum(e for e in result_bool_list)
 
         else:
@@ -273,7 +253,9 @@ def parse_args(parser: argparse.ArgumentParser) -> None:
     )
 
     parser.add_argument(
-        "--parallelism", type=int, help="使用するプロセス数（並列度）を指定してください。指定する場合は必ず '--yes' を指定してください。指定しない場合は、逐次的に処理します。"
+        "--parallelism",
+        type=int,
+        help="使用するプロセス数（並列度）を指定してください。指定する場合は必ず '--yes' を指定してください。指定しない場合は、逐次的に処理します。",
     )
 
     parser.set_defaults(subcommand_func=main)

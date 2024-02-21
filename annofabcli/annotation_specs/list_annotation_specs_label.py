@@ -29,23 +29,15 @@ class PrintAnnotationSpecsLabel(AbstractCommandLineInterface):
 
     COMMON_MESSAGE = "annofabcli annotation_specs list_label: error:"
 
-    def print_annotation_specs_label(
-        self, project_id: str, arg_format: str, output: Optional[str] = None, history_id: Optional[str] = None
-    ):
+    def print_annotation_specs_label(self, project_id: str, arg_format: str, output: Optional[str] = None, history_id: Optional[str] = None):
         # [REMOVE_V2_PARAM]
-        annotation_specs, _ = self.service.api.get_annotation_specs(
-            project_id, query_params={"history_id": history_id, "v": "2"}
-        )
-        labels_v1 = convert_annotation_specs_labels_v2_to_v1(
-            labels_v2=annotation_specs["labels"], additionals_v2=annotation_specs["additionals"]
-        )
+        annotation_specs, _ = self.service.api.get_annotation_specs(project_id, query_params={"history_id": history_id, "v": "2"})
+        labels_v1 = convert_annotation_specs_labels_v2_to_v1(labels_v2=annotation_specs["labels"], additionals_v2=annotation_specs["additionals"])
         if arg_format == "text":
             self._print_text_format_labels(labels_v1, output=output)
 
         elif arg_format in [FormatArgument.JSON.value, FormatArgument.PRETTY_JSON.value]:
-            annofabcli.common.utils.print_according_to_format(
-                target=labels_v1, arg_format=FormatArgument(arg_format), output=output
-            )
+            annofabcli.common.utils.print_according_to_format(target=labels_v1, arg_format=FormatArgument(arg_format), output=output)
 
     @staticmethod
     def _get_name_tuple(messages: List[Dict[str, Any]]) -> tuple[str, str]:
@@ -103,8 +95,7 @@ class PrintAnnotationSpecsLabel(AbstractCommandLineInterface):
             return None
         history = histories[-(before + 1)]
         logger.info(
-            f"{history['updated_datetime']}のアノテーション仕様を出力します。"
-            f"history_id={history['history_id']}, comment={history['comment']}"
+            f"{history['updated_datetime']}のアノテーション仕様を出力します。" f"history_id={history['history_id']}, comment={history['comment']}"
         )
         return history["history_id"]
 
@@ -123,9 +114,7 @@ class PrintAnnotationSpecsLabel(AbstractCommandLineInterface):
             # args.beforeがNoneならば、必ずargs.history_idはNoneでない
             history_id = args.history_id
 
-        self.print_annotation_specs_label(
-            args.project_id, arg_format=args.format, output=args.output, history_id=history_id
-        )
+        self.print_annotation_specs_label(args.project_id, arg_format=args.format, output=args.output, history_id=history_id)
 
 
 def parse_args(parser: argparse.ArgumentParser) -> None:

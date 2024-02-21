@@ -81,9 +81,7 @@ class DownloadInstructionMain:
 
         return pq.outer_html()
 
-    def download_instruction(
-        self, project_id: str, output_dir: Path, history_id: Optional[str] = None, is_download_image: bool = False
-    ):
+    def download_instruction(self, project_id: str, output_dir: Path, history_id: Optional[str] = None, is_download_image: bool = False):
         """
         作業ガイドをダウンロードする
 
@@ -107,9 +105,7 @@ class DownloadInstructionMain:
 
         output_dir.mkdir(exist_ok=True, parents=True)
         if is_download_image:
-            str_instruction_html = self.download_images(
-                project_id, str_instruction_html=str_instruction_html, output_dir=output_dir
-            )
+            str_instruction_html = self.download_images(project_id, str_instruction_html=str_instruction_html, output_dir=output_dir)
 
         output_html = output_dir / "index.html"
         output_html.write_text(str_instruction_html, encoding="utf-8")
@@ -146,9 +142,7 @@ class DownloadInstruction(AbstractCommandLineInterface):
             history_id = args.history_id
 
         main_obj = DownloadInstructionMain(self.service)
-        main_obj.download_instruction(
-            project_id, output_dir=args.output_dir, history_id=history_id, is_download_image=args.download_image
-        )
+        main_obj.download_instruction(project_id, output_dir=args.output_dir, history_id=history_id, is_download_image=args.download_image)
 
 
 def main(args: argparse.Namespace) -> None:
@@ -186,7 +180,9 @@ def parse_args(parser: argparse.ArgumentParser) -> None:
     )
 
     parser.add_argument(
-        "--download_image", action="store_true", help="作業ガイド画像もダウンロードします。指定した場合、img要素のsrc属性はローカルのファイルを参照するようになります。"
+        "--download_image",
+        action="store_true",
+        help="作業ガイド画像もダウンロードします。指定した場合、img要素のsrc属性はローカルのファイルを参照するようになります。",
     )
 
     parser.add_argument("-o", "--output_dir", type=Path, required=True, help="出力先ディレクトリのパスを指定してください。")

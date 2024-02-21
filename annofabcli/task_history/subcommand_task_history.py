@@ -22,8 +22,6 @@ def add_parser(subparsers: Optional[argparse._SubParsersAction] = None) -> argpa
     subcommand_help = "タスク履歴関係のサブコマンド"
     description = "タスク履歴関係のサブコマンド"
 
-    parser = annofabcli.common.cli.add_parser(
-        subparsers, subcommand_name, subcommand_help, description, is_subcommand=False
-    )
+    parser = annofabcli.common.cli.add_parser(subparsers, subcommand_name, subcommand_help, description, is_subcommand=False)
     parse_args(parser)
     return parser

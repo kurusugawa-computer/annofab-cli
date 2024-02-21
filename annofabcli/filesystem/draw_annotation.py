@@ -128,9 +128,7 @@ class DrawingAnnotationForOneImage:
         # 下層レイヤにあるアノテーションから順に画像化する
         # reversed関数を使う理由：`simple_annotation.details`は上層レイヤのアノテーションから順に格納されているため
         if self.target_label_names is not None:
-            annotation_list = [
-                e for e in reversed(simple_annotation["details"]) if e["label"] in self.target_label_names
-            ]
+            annotation_list = [e for e in reversed(simple_annotation["details"]) if e["label"] in self.target_label_names]
         else:
             annotation_list = list(reversed(simple_annotation["details"]))
         for annotation in annotation_list:
@@ -268,8 +266,7 @@ def draw_annotation_all(
         try:
             drawing.main(parser, image_file=image_file, output_file=output_file, image_size=default_image_size)
             logger.debug(
-                f"{success_count+1}件目: {str(output_file)} を出力しました。image_file={image_file}, "
-                f"アノテーションJSON={parser.json_file_path}"
+                f"{success_count+1}件目: {output_file!s} を出力しました。image_file={image_file}, " f"アノテーションJSON={parser.json_file_path}"
             )
             success_count += 1
         except Exception:  # pylint: disable=broad-except
@@ -278,8 +275,7 @@ def draw_annotation_all(
     logger.info(f"{success_count} / {total_count} 件、アノテーションを描画しました。")
 
     new_label_color_dict = {
-        label_name: ImageColor.getrgb(color) if isinstance(color, str) else color
-        for label_name, color in drawing.label_color_dict.items()
+        label_name: ImageColor.getrgb(color) if isinstance(color, str) else color for label_name, color in drawing.label_color_dict.items()
     }
     logger.info(f"label_color={json.dumps(new_label_color_dict, ensure_ascii=False)}")
 
@@ -339,11 +335,7 @@ class DrawAnnotation(AbstractCommandLineWithoutWebapiInterface):
             )
             input_data_id_relation_dict = dict(zip(df["input_data_id"], df["image_path"]))
 
-        task_query = (
-            TaskQuery.from_dict(annofabcli.common.cli.get_json_from_args(args.task_query))
-            if args.task_query is not None
-            else None
-        )
+        task_query = TaskQuery.from_dict(annofabcli.common.cli.get_json_from_args(args.task_query)) if args.task_query is not None else None
 
         draw_annotation_all(
             iter_parser=iter_parser,
@@ -355,9 +347,7 @@ class DrawAnnotation(AbstractCommandLineWithoutWebapiInterface):
             label_color_dict=self._create_label_color(args.label_color) if args.label_color is not None else None,
             target_label_names=get_list_from_args(args.label_name) if args.label_name is not None else None,
             polyline_labels=get_list_from_args(args.polyline_label) if args.polyline_label is not None else None,
-            drawing_options=DrawingOptions.from_dict(get_json_from_args(args.drawing_options))
-            if args.drawing_options is not None
-            else None,
+            drawing_options=DrawingOptions.from_dict(get_json_from_args(args.drawing_options)) if args.drawing_options is not None else None,
             default_image_size=default_image_size,
         )
 
@@ -370,10 +360,17 @@ def parse_args(parser: argparse.ArgumentParser) -> None:
     argument_parser = ArgumentParser(parser)
 
     parser.add_argument(
-        "--annotation", type=Path, required=True, help="Annofabからダウンロードしたアノテーションzip、またはzipを展開したディレクトリを指定してください。"
+        "--annotation",
+        type=Path,
+        required=True,
+        help="Annofabからダウンロードしたアノテーションzip、またはzipを展開したディレクトリを指定してください。",
     )
 
-    parser.add_argument("--image_dir", type=Path, help="画像が存在するディレクトリを指定してください。\n" "'--input_data_id_csv'を指定したときは必須です。")
+    parser.add_argument(
+        "--image_dir",
+        type=Path,
+        help="画像が存在するディレクトリを指定してください。\n" "'--input_data_id_csv'を指定したときは必須です。",
+    )
 
     parser.add_argument(
         "--input_data_id_csv",
@@ -385,7 +382,9 @@ def parse_args(parser: argparse.ArgumentParser) -> None:
     )
 
     parser.add_argument(
-        "--default_image_size", type=str, help="デフォルトの画像サイズ。 ``--input_data_id_csv`` を指定しないときは必須です。\n" "(例) 1280x720"
+        "--default_image_size",
+        type=str,
+        help="デフォルトの画像サイズ。 ``--input_data_id_csv`` を指定しないときは必須です。\n" "(例) 1280x720",
     )
 
     LABEL_COLOR_SAMPLE = {"dog": [255, 128, 64], "cat": "blue"}
@@ -398,7 +397,11 @@ def parse_args(parser: argparse.ArgumentParser) -> None:
     )
 
     parser.add_argument(
-        "-o", "--output_dir", type=Path, required=True, help="出力先ディレクトリのパスを指定してください。ディレクトリの構造はアノテーションzipと同じです。"
+        "-o",
+        "--output_dir",
+        type=Path,
+        required=True,
+        help="出力先ディレクトリのパスを指定してください。ディレクトリの構造はアノテーションzipと同じです。",
     )
 
     parser.add_argument(

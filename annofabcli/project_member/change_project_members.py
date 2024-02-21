@@ -110,12 +110,8 @@ class ChangeProjectMembers(AbstractCommandLineInterface):
 
             # メンバを登録
             try:
-                self.put_project_member(
-                    project_id, user_id, old_member, member_role=member_role, member_info=member_info
-                )
-                logger.debug(
-                    f"user_id = {user_id} のプロジェクトメンバ情報を変更しました。member_role={member_role}, member_info={member_info}"
-                )
+                self.put_project_member(project_id, user_id, old_member, member_role=member_role, member_info=member_info)
+                logger.debug(f"user_id = {user_id} のプロジェクトメンバ情報を変更しました。member_role={member_role}, member_info={member_info}")
                 count_invite_members += 1
 
             except requests.exceptions.HTTPError as e:
@@ -133,7 +129,10 @@ class ChangeProjectMembers(AbstractCommandLineInterface):
     def validate(args: argparse.Namespace, member_info: Optional[Dict[str, Any]] = None) -> bool:
         COMMON_MESSAGE = "annofabcli project_member change: error:"
         if args.role is None and args.member_info is None:
-            print(f"{COMMON_MESSAGE} argument `--role`または`--member_info`のどちらかは、必ず指定してください。", file=sys.stderr)
+            print(
+                f"{COMMON_MESSAGE} argument `--role`または`--member_info`のどちらかは、必ず指定してください。",
+                file=sys.stderr,
+            )
             return False
 
         elif member_info is not None and not ChangeProjectMembers.validate_member_info(member_info):
@@ -162,9 +161,7 @@ class ChangeProjectMembers(AbstractCommandLineInterface):
         if not self.validate(args, member_info):
             sys.exit(COMMAND_LINE_ERROR_STATUS_CODE)
 
-        self.change_project_members(
-            args.project_id, user_id_list=user_id_list, member_role=member_role, member_info=member_info
-        )
+        self.change_project_members(args.project_id, user_id_list=user_id_list, member_role=member_role, member_info=member_info)
 
 
 def main(args: argparse.Namespace) -> None:
@@ -190,7 +187,10 @@ def parse_args(parser: argparse.ArgumentParser) -> None:
     user_group.add_argument("--all_user", action="store_true", help="自分以外のすべてのプロジェクトメンバを変更します。")
 
     parser.add_argument(
-        "--role", type=str, choices=role_choices, help="プロジェクトメンバにユーザに割り当てるロールを指定します。指定しない場合は、ロールは変更されません。"
+        "--role",
+        type=str,
+        choices=role_choices,
+        help="プロジェクトメンバにユーザに割り当てるロールを指定します。指定しない場合は、ロールは変更されません。",
     )
 
     parser.add_argument(

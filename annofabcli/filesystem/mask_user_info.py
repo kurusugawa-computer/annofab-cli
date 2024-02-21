@@ -98,9 +98,7 @@ def create_masked_name(name: str) -> str:
     return _num2alpha(hash_value)
 
 
-def get_replaced_user_id_set_from_biography(
-    df: pandas.DataFrame, not_masked_location_set: Optional[Set[str]] = None
-) -> Set[str]:
+def get_replaced_user_id_set_from_biography(df: pandas.DataFrame, not_masked_location_set: Optional[Set[str]] = None) -> Set[str]:
     if not_masked_location_set is None:
         filtered_df = df
     else:
@@ -220,9 +218,7 @@ def create_replacement_dict_by_user_id(
     keyが置換対象のuser_id、valueが置換後のマスクされたuser_idであるdictを作成する。
     """
     if "biography" in df:
-        replaced_user_id_set = get_replaced_user_id_set_from_biography(
-            df, not_masked_location_set=not_masked_biography_set
-        )
+        replaced_user_id_set = get_replaced_user_id_set_from_biography(df, not_masked_location_set=not_masked_biography_set)
     else:
         replaced_user_id_set = set()
     if not_masked_user_id_set is not None:
@@ -264,9 +260,7 @@ def replace_user_info_by_user_id(df: pandas.DataFrame, replacement_dict_by_user_
     replace_by_columns(df, replacement_dict_by_user_id, main_column=user_id_column, sub_columns=sub_columns)
 
 
-def replace_biography(
-    df: pandas.DataFrame, replacement_dict_by_user_id: Dict[str, str], replacement_dict_by_biography: Dict[str, str]
-):
+def replace_biography(df: pandas.DataFrame, replacement_dict_by_user_id: Dict[str, str], replacement_dict_by_biography: Dict[str, str]):
     """
     biography 列を, マスクする。
 
@@ -278,9 +272,7 @@ def replace_biography(
     user_id_column = _get_tuple_column(df, "user_id")
     biography_column = _get_tuple_column(df, "biography")
 
-    def _get_biography(
-        row: pandas.Series, user_id_column: Union[str, Tuple], biography_column: Union[str, Tuple]
-    ) -> str:
+    def _get_biography(row: pandas.Series, user_id_column: Union[str, Tuple], biography_column: Union[str, Tuple]) -> str:
         if row[user_id_column] in replacement_dict_by_user_id:
             # マスク対象のユーザなら biographyをマスクする
             biography = row[biography_column]
@@ -311,9 +303,7 @@ def create_masked_user_info_df(
     )
 
     if "biography" in df_output:
-        replacement_dict_by_biography = create_replacement_dict_by_biography(
-            df_output, not_masked_biography_set=not_masked_biography_set
-        )
+        replacement_dict_by_biography = create_replacement_dict_by_biography(df_output, not_masked_biography_set=not_masked_biography_set)
         replace_biography(
             df_output,
             replacement_dict_by_biography=replacement_dict_by_biography,
@@ -329,12 +319,8 @@ class MaskUserInfo(AbstractCommandLineWithoutWebapiInterface):
     def main(self) -> None:
         args = self.args
 
-        not_masked_biography_set = (
-            set(get_list_from_args(args.not_masked_biography)) if args.not_masked_biography is not None else None
-        )
-        not_masked_user_id_set = (
-            set(get_list_from_args(args.not_masked_user_id)) if args.not_masked_user_id is not None else None
-        )
+        not_masked_biography_set = set(get_list_from_args(args.not_masked_biography)) if args.not_masked_biography is not None else None
+        not_masked_user_id_set = set(get_list_from_args(args.not_masked_user_id)) if args.not_masked_user_id is not None else None
 
         csv_header_row_count: int = args.csv_header_row_count
         csv_path: Path = args.csv
@@ -358,7 +344,12 @@ def main(args: argparse.Namespace) -> None:
 def parse_args(parser: argparse.ArgumentParser) -> None:
     argument_parser = ArgumentParser(parser)
 
-    parser.add_argument("--csv", type=Path, required=True, help="ユーザ情報が記載されたCSVファイルを指定してください。CSVには`user_id`列が必要です。")
+    parser.add_argument(
+        "--csv",
+        type=Path,
+        required=True,
+        help="ユーザ情報が記載されたCSVファイルを指定してください。CSVには`user_id`列が必要です。",
+    )
     parser.add_argument(
         "--not_masked_biography",
         type=str,

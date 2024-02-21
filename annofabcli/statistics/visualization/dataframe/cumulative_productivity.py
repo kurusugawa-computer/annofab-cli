@@ -52,9 +52,7 @@ class AbstractPhaseCumulativeProductivity(abc.ABC):
 
     def _get_default_user_id_list(self) -> list[str]:
         return (
-            self.df.sort_values(by=f"first_{self.phase.value}_started_datetime", ascending=False)[
-                f"first_{self.phase.value}_user_id"
-            ]
+            self.df.sort_values(by=f"first_{self.phase.value}_started_datetime", ascending=False)[f"first_{self.phase.value}_user_id"]
             .dropna()
             .unique()
             .tolist()
@@ -99,11 +97,7 @@ class AbstractPhaseCumulativeProductivity(abc.ABC):
             """
             xy_columns = set(itertools.chain.from_iterable(columns for columns in columns_list))
             tooltip_columns = set(
-                itertools.chain.from_iterable(
-                    line_graph.tooltip_columns
-                    for line_graph in line_graph_list
-                    if line_graph.tooltip_columns is not None
-                )
+                itertools.chain.from_iterable(line_graph.tooltip_columns for line_graph in line_graph_list if line_graph.tooltip_columns is not None)
             )
             return list(xy_columns | tooltip_columns)
 
@@ -183,9 +177,7 @@ class AnnotatorCumulativeProductivity(AbstractPhaseCumulativeProductivity):
         累積情報が格納されたDataFrameを生成する。
         """
         # 教師付の開始時刻でソートして、indexを更新する
-        df = self.df.sort_values(["first_annotation_user_id", "first_annotation_started_datetime"]).reset_index(
-            drop=True
-        )
+        df = self.df.sort_values(["first_annotation_user_id", "first_annotation_started_datetime"]).reset_index(drop=True)
         # タスクの累計数を取得するために設定する
         df["task_count"] = 1
         # 教師付の作業者でgroupby
@@ -428,9 +420,7 @@ class InspectorCumulativeProductivity(AbstractPhaseCumulativeProductivity):
         Args:
             task_df: タスク一覧のDataFrame. 列が追加される
         """
-        df = self.df.sort_values(["first_inspection_user_id", "first_inspection_started_datetime"]).reset_index(
-            drop=True
-        )
+        df = self.df.sort_values(["first_inspection_user_id", "first_inspection_started_datetime"]).reset_index(drop=True)
 
         # タスクの累計数を取得するために設定する
         df["task_count"] = 1
@@ -625,9 +615,7 @@ class AcceptorCumulativeProductivity(AbstractPhaseCumulativeProductivity):
         """
         最初のアノテーション作業の開始時刻の順にソートして、受入者に関する累計値を算出する
         """
-        df = self.df.sort_values(["first_acceptance_user_id", "first_acceptance_started_datetime"]).reset_index(
-            drop=True
-        )
+        df = self.df.sort_values(["first_acceptance_user_id", "first_acceptance_started_datetime"]).reset_index(drop=True)
         # タスクの累計数を取得するために設定する
         df["task_count"] = 1
 

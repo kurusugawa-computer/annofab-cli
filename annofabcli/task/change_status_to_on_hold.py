@@ -126,9 +126,7 @@ class ChangingStatusToOnHoldMain(AbstractCommandLineWithConfirmInterface):
             # 休憩中または未着手状態から保留中状態にするには、一旦作業中状態に変更する必要がある
             # 作業中状態にするには、担当者が自分でないといけないので、担当者も自分自身に変更する
             if task.account_id != self.service.api.account_id:
-                updated_task = self.service.wrapper.change_task_operator(
-                    self.project_id, task.task_id, self.service.api.account_id
-                )
+                updated_task = self.service.wrapper.change_task_operator(self.project_id, task.task_id, self.service.api.account_id)
                 task_last_updated_datetime = updated_task["updated_datetime"]
                 logger.debug(f"{logging_prefix}: task_id='{task_id}' のタスクの担当者を'{task_user_id}'から自分自身に変更しました。")
 
@@ -139,7 +137,10 @@ class ChangingStatusToOnHoldMain(AbstractCommandLineWithConfirmInterface):
             logger.debug(f"{logging_prefix}: task_id='{task_id}'のタスクのステータスを作業中に変更しました。")
 
         except requests.exceptions.HTTPError:
-            logger.warning(f"{logging_prefix} : task_id='{task_id}' のステータスを作業中に変更するのに失敗しました。", exc_info=True)
+            logger.warning(
+                f"{logging_prefix} : task_id='{task_id}' のステータスを作業中に変更するのに失敗しました。",
+                exc_info=True,
+            )
             return False
 
         # 保留コメントを付与する
@@ -155,14 +156,15 @@ class ChangingStatusToOnHoldMain(AbstractCommandLineWithConfirmInterface):
 
         try:
             # ステータスを保留中状態に変更する
-            self.service.wrapper.change_task_status_to_on_hold(
-                self.project_id, task_id, last_updated_datetime=task_last_updated_datetime
-            )
+            self.service.wrapper.change_task_status_to_on_hold(self.project_id, task_id, last_updated_datetime=task_last_updated_datetime)
             logger.debug(f"{logging_prefix} : task_id='{task_id}' のタスクのステータスを保留中に変更しました。")
             return True
 
         except requests.exceptions.HTTPError:
-            logger.warning(f"{logging_prefix} : task_id = {task_id} のステータスの保留中に変更するのに失敗しました。", exc_info=True)
+            logger.warning(
+                f"{logging_prefix} : task_id = {task_id} のステータスの保留中に変更するのに失敗しました。",
+                exc_info=True,
+            )
             # 作業中状態のまま放置すると、作業時間が増え続けるので、作業中状態ならば休憩中状態に変更する
             self.service.wrapper.change_task_status_to_break(self.project_id, task_id)
             logger.warning(f"{logging_prefix} : task_id='{task_id}' のステータスを休憩中に変更しました。")
@@ -266,9 +268,7 @@ class ChangingStatusToOnHold(AbstractCommandLineInterface):
         task_query: Optional[TaskQuery] = TaskQuery.from_dict(dict_task_query) if dict_task_query is not None else None
 
         project_id = args.project_id
-        super().validate_project(
-            project_id, [ProjectMemberRole.OWNER, ProjectMemberRole.ACCEPTER, ProjectMemberRole.WORKER]
-        )
+        super().validate_project(project_id, [ProjectMemberRole.OWNER, ProjectMemberRole.ACCEPTER, ProjectMemberRole.WORKER])
 
         main_obj = ChangingStatusToOnHoldMain(self.service, project_id=project_id, all_yes=self.all_yes)
         main_obj.change_status_to_on_hold(
@@ -296,7 +296,9 @@ def parse_args(parser: argparse.ArgumentParser) -> None:
     parser.add_argument("--comment", type=str, help="保留コメントを指定してください。保留コメントは先頭の入力データに付与します。")
 
     parser.add_argument(
-        "--parallelism", type=int, help="使用するプロセス数（並列度）を指定してください。指定する場合は ``--yes`` を指定してください。指定しない場合は、逐次的に処理します。"
+        "--parallelism",
+        type=int,
+        help="使用するプロセス数（並列度）を指定してください。指定する場合は ``--yes`` を指定してください。指定しない場合は、逐次的に処理します。",
     )
 
     parser.set_defaults(subcommand_func=main)

@@ -66,10 +66,7 @@ class ListInputDataMergedTaskMain:
 
         if input_data_name_list is not None:
             df = pandas.concat(
-                [
-                    df[df["input_data_name"].str.lower().str.contains(input_data_name.lower())]
-                    for input_data_name in input_data_name_list
-                ]
+                [df[df["input_data_name"].str.lower().str.contains(input_data_name.lower())] for input_data_name in input_data_name_list]
             )
         return df
 
@@ -125,9 +122,7 @@ class ListInputDataMergedTask(AbstractCommandLineInterface):
             )
             return False
 
-        if (args.input_data_json is None and args.task_json is not None) or (
-            args.input_data_json is not None and args.task_json is None
-        ):
+        if (args.input_data_json is None and args.task_json is not None) or (args.input_data_json is not None and args.task_json is None):
             print(
                 f"{COMMON_MESSAGE} '--task_json'と'--input_data_json'の両方を指定する必要があります。",
                 file=sys.stderr,
@@ -179,14 +174,10 @@ class ListInputDataMergedTask(AbstractCommandLineInterface):
 
         input_data_id_set = set(get_list_from_args(args.input_data_id)) if args.input_data_id is not None else None
         input_data_query = (
-            InputDataQuery.from_dict(annofabcli.common.cli.get_json_from_args(args.input_data_query))
-            if args.input_data_query is not None
-            else None
+            InputDataQuery.from_dict(annofabcli.common.cli.get_json_from_args(args.input_data_query)) if args.input_data_query is not None else None
         )
         filtered_input_data_list = [
-            e
-            for e in input_data_list
-            if match_input_data(e, input_data_query=input_data_query, input_data_id_set=input_data_id_set)
+            e for e in input_data_list if match_input_data(e, input_data_query=input_data_query, input_data_id_set=input_data_id_set)
         ]
 
         main_obj = ListInputDataMergedTaskMain(self.service)
@@ -216,12 +207,24 @@ def parse_args(parser: argparse.ArgumentParser) -> None:
     argument_parser = ArgumentParser(parser)
 
     parser.add_argument(
-        "-p", "--project_id", type=str, help="対象のプロジェクトのproject_idを指定してください。" "指定すると、入力データ一覧ファイル、タスク一覧ファイルをダウンロードします。"
+        "-p",
+        "--project_id",
+        type=str,
+        help="対象のプロジェクトのproject_idを指定してください。" "指定すると、入力データ一覧ファイル、タスク一覧ファイルをダウンロードします。",
     )
 
-    parser.add_argument("-i", "--input_data_id", type=str, nargs="+", help="指定したinput_data_idに完全一致する入力データを絞り込みます。")
     parser.add_argument(
-        "--input_data_name", type=str, nargs="+", help="指定したinput_data_nameに部分一致(大文字小文字区別しない）する入力データを絞り込みます。"
+        "-i",
+        "--input_data_id",
+        type=str,
+        nargs="+",
+        help="指定したinput_data_idに完全一致する入力データを絞り込みます。",
+    )
+    parser.add_argument(
+        "--input_data_name",
+        type=str,
+        nargs="+",
+        help="指定したinput_data_nameに部分一致(大文字小文字区別しない）する入力データを絞り込みます。",
     )
 
     parser.add_argument(
@@ -264,7 +267,8 @@ def parse_args(parser: argparse.ArgumentParser) -> None:
     parser.add_argument(
         "--latest",
         action="store_true",
-        help="入力データ一覧ファイル、タスク一覧ファイルの更新が完了するまで待って、最新のファイルをダウンロードします。" " ``--project_id`` を指定したときのみ有効です。",
+        help="入力データ一覧ファイル、タスク一覧ファイルの更新が完了するまで待って、最新のファイルをダウンロードします。"
+        " ``--project_id`` を指定したときのみ有効です。",
     )
 
     parser.add_argument(

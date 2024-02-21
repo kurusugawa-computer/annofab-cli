@@ -64,7 +64,10 @@ class ChangeOrganizationMemberMain(AbstractCommandLineWithConfirmInterface):
                 success_count += 1
 
             except Exception:  # pylint: disable=broad-except
-                logger.warning(f"user_id='{user_id}'のユーザの組織メンバロールを'{role}'に変更させるのに失敗しました。", exc_info=True)
+                logger.warning(
+                    f"user_id='{user_id}'のユーザの組織メンバロールを'{role}'に変更させるのに失敗しました。",
+                    exc_info=True,
+                )
 
         logger.info(f"{success_count} / {len(user_ids)} 件のユーザの組織メンバロールを'{role}'に変更しました。")
 
@@ -116,8 +119,6 @@ def add_parser(subparsers: Optional[argparse._SubParsersAction] = None) -> argpa
     description = "組織メンバの情報（ロールなど）を変更します。"
     epilog = "組織オーナまたは組織管理者ロールを持つユーザで実行してください。"
 
-    parser = annofabcli.common.cli.add_parser(
-        subparsers, subcommand_name, command_help=subcommand_help, description=description, epilog=epilog
-    )
+    parser = annofabcli.common.cli.add_parser(subparsers, subcommand_name, command_help=subcommand_help, description=description, epilog=epilog)
     parse_args(parser)
     return parser

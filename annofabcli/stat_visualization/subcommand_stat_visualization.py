@@ -24,8 +24,6 @@ def add_parser(subparsers: Optional[argparse._SubParsersAction] = None) -> argpa
     subcommand_help = "`annofabcli statistics visualization` コマンドの出力結果を加工するサブコマンド（アルファ版）"
     description = "`annofabcli statistics visualization` コマンドの出力結果を加工するサブコマンド（アルファ版）"
 
-    parser = annofabcli.common.cli.add_parser(
-        subparsers, subcommand_name, subcommand_help, description, is_subcommand=False
-    )
+    parser = annofabcli.common.cli.add_parser(subparsers, subcommand_name, subcommand_help, description, is_subcommand=False)
     parse_args(parser)
     return parser

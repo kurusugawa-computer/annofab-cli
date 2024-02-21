@@ -113,9 +113,7 @@ class DownloadingFile:
             else:
                 raise e
 
-        self._wait_for_completion(
-            project_id, job_type=ProjectJobType.GEN_ANNOTATION, wait_options=wait_options, job_id=job_id
-        )
+        self._wait_for_completion(project_id, job_type=ProjectJobType.GEN_ANNOTATION, wait_options=wait_options, job_id=job_id)
 
     async def download_input_data_json_with_async(
         self, project_id: str, dest_path: str, is_latest: bool = False, wait_options: Optional[WaitOptions] = None
@@ -125,9 +123,7 @@ class DownloadingFile:
         result = await loop.run_in_executor(None, partial_func)
         return result
 
-    def download_input_data_json(
-        self, project_id: str, dest_path: str, is_latest: bool = False, wait_options: Optional[WaitOptions] = None
-    ):
+    def download_input_data_json(self, project_id: str, dest_path: str, is_latest: bool = False, wait_options: Optional[WaitOptions] = None):
         if is_latest:
             self.wait_until_updated_input_data_json(project_id, wait_options)
             self.service.wrapper.download_project_inputs_url(project_id, dest_path)
@@ -157,9 +153,7 @@ class DownloadingFile:
             else:
                 raise e
 
-        self._wait_for_completion(
-            project_id, job_type=ProjectJobType.GEN_INPUTS_LIST, wait_options=wait_options, job_id=job_id
-        )
+        self._wait_for_completion(project_id, job_type=ProjectJobType.GEN_INPUTS_LIST, wait_options=wait_options, job_id=job_id)
 
     async def download_task_json_with_async(
         self, project_id: str, dest_path: str, is_latest: bool = False, wait_options: Optional[WaitOptions] = None
@@ -169,9 +163,7 @@ class DownloadingFile:
         result = await loop.run_in_executor(None, partial_func)
         return result
 
-    def download_task_json(
-        self, project_id: str, dest_path: str, is_latest: bool = False, wait_options: Optional[WaitOptions] = None
-    ):
+    def download_task_json(self, project_id: str, dest_path: str, is_latest: bool = False, wait_options: Optional[WaitOptions] = None):
         if is_latest:
             self.wait_until_updated_task_json(project_id, wait_options)
             self.service.wrapper.download_project_tasks_url(project_id, dest_path)
@@ -201,9 +193,7 @@ class DownloadingFile:
             else:
                 raise e
 
-        self._wait_for_completion(
-            project_id, job_type=ProjectJobType.GEN_TASKS_LIST, wait_options=wait_options, job_id=job_id
-        )
+        self._wait_for_completion(project_id, job_type=ProjectJobType.GEN_TASKS_LIST, wait_options=wait_options, job_id=job_id)
 
     async def download_task_history_json_with_async(self, project_id: str, dest_path: str):
         """

@@ -81,9 +81,7 @@ class ListAnnotationMain:
         elif input_data_id_list is not None:
             for input_data_id in input_data_id_list:
                 try:
-                    annotation_list = self.get_annotation_list(
-                        project_id, annotation_query, input_data_id=input_data_id
-                    )
+                    annotation_list = self.get_annotation_list(project_id, annotation_query, input_data_id=input_data_id)
                 except Exception:
                     logger.warning(f"入力データ'{input_data_id}'のアノテーションの一覧の取得に失敗しました。", exc_info=True)
                     continue
@@ -229,7 +227,9 @@ def parse_args(parser: argparse.ArgumentParser) -> None:
         "-i",
         "--input_data_id",
         nargs="+",
-        help=("対象の入力データのinput_data_idを指定します。" " ``file://`` を先頭に付けると、input_data_idの一覧が記載されたファイルを指定できます。"),
+        help=(
+            "対象の入力データのinput_data_idを指定します。" " ``file://`` を先頭に付けると、input_data_idの一覧が記載されたファイルを指定できます。"
+        ),
     )
 
     argument_parser.add_format(

@@ -61,18 +61,12 @@ class InviteProjectMemberMain:
                     f"{project_title}({project_id}) のプロジェクトメンバに、{user_id} を {member_role.value} ロールで追加できませんでした。"
                 )
 
-    def assign_role_with_organization(
-        self, organization_name: str, user_id_list: List[str], member_role: ProjectMemberRole
-    ):
-        projects = self.service.wrapper.get_all_projects_of_organization(
-            organization_name, query_params={"account_id": self.service.api.account_id}
-        )
+    def assign_role_with_organization(self, organization_name: str, user_id_list: List[str], member_role: ProjectMemberRole):
+        projects = self.service.wrapper.get_all_projects_of_organization(organization_name, query_params={"account_id": self.service.api.account_id})
         project_id_list = [e["project_id"] for e in projects]
         self.assign_role_with_project_id(project_id_list, user_id_list=user_id_list, member_role=member_role)
 
-    def assign_role_with_project_id(
-        self, project_id_list: List[str], user_id_list: List[str], member_role: ProjectMemberRole
-    ):
+    def assign_role_with_project_id(self, project_id_list: List[str], user_id_list: List[str], member_role: ProjectMemberRole):
         for project_id in project_id_list:
             try:
                 if not self.facade.my_role_is_owner(project_id):
@@ -138,7 +132,12 @@ def parse_args(parser: argparse.ArgumentParser) -> None:
         nargs="+",
         help="招待するプロジェクトのproject_idを指定してください。 ``file://`` を先頭に付けると、一覧が記載されたファイルを指定できます。",
     )
-    assign_group.add_argument("-org", "--organization", type=str, help="組織名を指定すると、組織配下のすべてのプロジェクト（自分が所属している）に招待します。")
+    assign_group.add_argument(
+        "-org",
+        "--organization",
+        type=str,
+        help="組織名を指定すると、組織配下のすべてのプロジェクト（自分が所属している）に招待します。",
+    )
 
     parser.set_defaults(subcommand_func=main)
 

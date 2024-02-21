@@ -53,7 +53,7 @@ class TestCommandLine:
         """
         label_colorに関するシナリオテスト。
         """
-        out_file = out_dir / f"annotation_specs_list_label_color--{str(datetime.datetime.now().timestamp())}.json"
+        out_file = out_dir / f"annotation_specs_list_label_color--{datetime.datetime.now().timestamp()!s}.json"
         main(
             [
                 self.command_name,
@@ -87,7 +87,7 @@ class TestCommandLine:
             ]
         )
 
-        out_file2 = out_dir / f"annotation_specs_list_label_color--{str(datetime.datetime.now().timestamp())}.json"
+        out_file2 = out_dir / f"annotation_specs_list_label_color--{datetime.datetime.now().timestamp()!s}.json"
         main(
             [
                 self.command_name,

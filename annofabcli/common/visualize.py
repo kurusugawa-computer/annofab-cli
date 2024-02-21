@@ -117,9 +117,7 @@ class AddProps:
 
     def get_project_member_from_account_id(self, account_id: str) -> Optional[ProjectMember]:
         if self._project_member_list is None:
-            project_member_list = self.service.wrapper.get_all_project_members(
-                self.project_id, query_params={"include_inactive_member": True}
-            )
+            project_member_list = self.service.wrapper.get_all_project_members(self.project_id, query_params={"include_inactive_member": True})
             self._project_member_list = project_member_list
         else:
             project_member_list = self._project_member_list
@@ -134,9 +132,7 @@ class AddProps:
         return organization["organization_name"]
 
     def get_phrase_name(self, phrase_id: str, locale: MessageLocale) -> Optional[str]:
-        phrase: Optional[Dict[str, Any]] = more_itertools.first_true(
-            self.specs_inspection_phrases, pred=lambda e: e["id"] == phrase_id
-        )
+        phrase: Optional[Dict[str, Any]] = more_itertools.first_true(self.specs_inspection_phrases, pred=lambda e: e["id"] == phrase_id)
         if phrase is None:
             return None
 
@@ -149,9 +145,7 @@ class AddProps:
 
         return self.get_message(label["label_name"], locale)
 
-    def get_additional_data_name(
-        self, additional_data_definition_id: str, locale: MessageLocale, label_id: Optional[str] = None
-    ) -> Optional[str]:
+    def get_additional_data_name(self, additional_data_definition_id: str, locale: MessageLocale, label_id: Optional[str] = None) -> Optional[str]:
         def _get_additional_data_name(arg_additional_data_definitions: List[Dict[str, Any]]) -> Optional[str]:
             additional_data = more_itertools.first_true(
                 arg_additional_data_definitions,
@@ -175,9 +169,7 @@ class AddProps:
 
             return None
 
-    def add_properties_to_annotation_specs_history(
-        self, annotation_specs_history: AnnotationSpecsHistory
-    ) -> AnnotationSpecsHistory:
+    def add_properties_to_annotation_specs_history(self, annotation_specs_history: AnnotationSpecsHistory) -> AnnotationSpecsHistory:
         """
         アノテーション仕様の履歴に、以下のキーを追加する.
         user_id
@@ -205,9 +197,7 @@ class AddProps:
         """
         return self._add_user_info(instruction_history)
 
-    def add_properties_to_inspection(
-        self, inspection: Inspection, detail: Optional[Dict[str, Any]] = None
-    ) -> Inspection:
+    def add_properties_to_inspection(self, inspection: Inspection, detail: Optional[Dict[str, Any]] = None) -> Inspection:
         """
         検査コメントに、以下のキーを追加する.
         commenter_user_id

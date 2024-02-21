@@ -18,9 +18,7 @@ class ListJob(AbstractCommandLineInterface):
     ジョブ一覧を表示する。
     """
 
-    def get_job_list(
-        self, project_id: str, job_type: ProjectJobType, job_query: Optional[Dict[str, Any]] = None
-    ) -> List[ProjectJobInfo]:
+    def get_job_list(self, project_id: str, job_type: ProjectJobType, job_query: Optional[Dict[str, Any]] = None) -> List[ProjectJobInfo]:
         """
         ジョブ一覧を取得する。
         """
@@ -36,9 +34,7 @@ class ListJob(AbstractCommandLineInterface):
         job_list = self.service.wrapper.get_all_project_job(project_id, query_params=query_params)
         return job_list
 
-    def print_job_list(
-        self, project_id: str, job_type: ProjectJobType, job_query: Optional[Dict[str, Any]] = None
-    ) -> None:
+    def print_job_list(self, project_id: str, job_type: ProjectJobType, job_query: Optional[Dict[str, Any]] = None) -> None:
         """
         ジョブ一覧を出力する
 
@@ -75,9 +71,7 @@ def parse_args(parser: argparse.ArgumentParser) -> None:
 
     parser.add_argument("--job_type", type=str, choices=job_choices, required=True, help="ジョブタイプを指定します。")
 
-    argument_parser.add_format(
-        choices=[FormatArgument.CSV, FormatArgument.JSON, FormatArgument.PRETTY_JSON], default=FormatArgument.CSV
-    )
+    argument_parser.add_format(choices=[FormatArgument.CSV, FormatArgument.JSON, FormatArgument.PRETTY_JSON], default=FormatArgument.CSV)
     argument_parser.add_output()
     argument_parser.add_csv_format()
 

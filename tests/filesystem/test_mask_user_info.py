@@ -60,9 +60,7 @@ class TestMaskUserInfo:
 
     def test_create_masked_user_info_df__not_masked_user_id_setとnot_masked_biography_set引数を指定する(self):
         df_original = read_multiheader_csv(str(data_dir / "user2.csv"), header_row_count=2)
-        df_masked = create_masked_user_info_df(
-            df_original, not_masked_biography_set={"China"}, not_masked_user_id_set={"bob"}
-        )
+        df_masked = create_masked_user_info_df(df_original, not_masked_biography_set={"China"}, not_masked_user_id_set={"bob"})
 
         # user_idが"bob", biographyが"China"の行はマスクされていないこと、それ以外はマスクされていることの確認
         not_masked_row_indexes = [1, 2]

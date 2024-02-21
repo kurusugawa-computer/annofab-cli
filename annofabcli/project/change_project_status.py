@@ -122,9 +122,7 @@ class ChanegProjectStatusMain:
         self.service.api.put_project(project_id, request_body=project)
         return True
 
-    def change_status_for_project_list(
-        self, project_id_list: List[str], status: ProjectStatus, force_suspend: bool = False
-    ):
+    def change_status_for_project_list(self, project_id_list: List[str], status: ProjectStatus, force_suspend: bool = False):
         """
         複数のプロジェクトに対して、プロジェクトのステータスを変更する。
 
@@ -159,9 +157,7 @@ class ChangeProjectStatus(AbstractCommandLineInterface):
         args = self.args
         project_id_list = annofabcli.common.cli.get_list_from_args(args.project_id)
         main_obj = ChanegProjectStatusMain(self.service)
-        main_obj.change_status_for_project_list(
-            project_id_list=project_id_list, status=ProjectStatus(args.status), force_suspend=args.force
-        )
+        main_obj.change_status_for_project_list(project_id_list=project_id_list, status=ProjectStatus(args.status), force_suspend=args.force)
 
 
 def main(args: argparse.Namespace) -> None:

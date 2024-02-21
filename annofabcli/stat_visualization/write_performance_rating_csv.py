@@ -146,7 +146,7 @@ class CollectingPerformanceInfo:
         self,
         *,
         productivity_indicator: ProductivityIndicator = ProductivityIndicator.ACTUAL_WORKTIME_HOUR_PER_ANNOTATION_COUNT,
-        quality_indicator: QualityIndicator = QualityIndicator.POINTED_OUT_INSPECTION_COMMENT_COUNT_PER_ANNOTATION_COUNT,  # noqa: E501
+        quality_indicator: QualityIndicator = QualityIndicator.POINTED_OUT_INSPECTION_COMMENT_COUNT_PER_ANNOTATION_COUNT,
         threshold_info: Optional[ThresholdInfo] = None,
         productivity_indicator_by_directory: Optional[ProductivityIndicatorByDirectory] = None,
         quality_indicator_by_directory: Optional[QualityIndicatorByDirectory] = None,
@@ -155,15 +155,9 @@ class CollectingPerformanceInfo:
         self.quality_indicator = quality_indicator
         self.productivity_indicator = productivity_indicator
         self.threshold_info = threshold_info if threshold_info is not None else ThresholdInfo()
-        self.threshold_infos_by_directory = (
-            threshold_infos_by_directory if threshold_infos_by_directory is not None else {}
-        )
-        self.productivity_indicator_by_directory = (
-            productivity_indicator_by_directory if productivity_indicator_by_directory is not None else {}
-        )
-        self.quality_indicator_by_directory = (
-            quality_indicator_by_directory if quality_indicator_by_directory is not None else {}
-        )
+        self.threshold_infos_by_directory = threshold_infos_by_directory if threshold_infos_by_directory is not None else {}
+        self.productivity_indicator_by_directory = productivity_indicator_by_directory if productivity_indicator_by_directory is not None else {}
+        self.quality_indicator_by_directory = quality_indicator_by_directory if quality_indicator_by_directory is not None else {}
 
     def get_threshold_info(self, project_title: str, productivity_type: ProductivityType) -> ThresholdInfo:
         """指定したプロジェクト名に対応する、閾値情報を取得する。"""
@@ -172,16 +166,8 @@ class CollectingPerformanceInfo:
         if local_info is None:
             return global_info
 
-        worktime = (
-            local_info.threshold_worktime
-            if local_info.threshold_worktime is not None
-            else global_info.threshold_worktime
-        )
-        task_count = (
-            local_info.threshold_task_count
-            if local_info.threshold_task_count is not None
-            else global_info.threshold_task_count
-        )
+        worktime = local_info.threshold_worktime if local_info.threshold_worktime is not None else global_info.threshold_worktime
+        task_count = local_info.threshold_task_count if local_info.threshold_task_count is not None else global_info.threshold_task_count
 
         return ThresholdInfo(threshold_worktime=worktime, threshold_task_count=task_count)
 
@@ -198,18 +184,14 @@ class CollectingPerformanceInfo:
 
         threshold_info = self.get_threshold_info(project_title, productivity_type)
         if threshold_info.threshold_worktime is not None:
-            df = df[
-                df[(self.productivity_indicator.worktime_type.value, phase.value)] > threshold_info.threshold_worktime
-            ]
+            df = df[df[(self.productivity_indicator.worktime_type.value, phase.value)] > threshold_info.threshold_worktime]
 
         if threshold_info.threshold_task_count is not None:
             df = df[df[("task_count", phase.value)] > threshold_info.threshold_task_count]
 
         return df
 
-    def join_annotation_productivity(
-        self, df: pandas.DataFrame, df_performance: pandas.DataFrame, project_title: str
-    ) -> pandas.DataFrame:
+    def join_annotation_productivity(self, df: pandas.DataFrame, df_performance: pandas.DataFrame, project_title: str) -> pandas.DataFrame:
         """
         引数`df_performance`から教師付生産性を抽出して引数`df`にjoinした結果を返す
 
@@ -224,18 +206,12 @@ class CollectingPerformanceInfo:
 
         df_joined = self.filter_df_with_threshold(df_joined, phase, project_title=project_title)
 
-        productivity_indicator = self.productivity_indicator_by_directory.get(
-            project_title, self.productivity_indicator
-        )
+        productivity_indicator = self.productivity_indicator_by_directory.get(project_title, self.productivity_indicator)
         df_tmp = df_joined[[(productivity_indicator.value, phase.value)]]
-        df_tmp.columns = pandas.MultiIndex.from_tuples(
-            [(project_title, f"{productivity_indicator.value}__{phase.value}")]
-        )
+        df_tmp.columns = pandas.MultiIndex.from_tuples([(project_title, f"{productivity_indicator.value}__{phase.value}")])
         return df.join(df_tmp)
 
-    def join_inspection_acceptance_productivity(
-        self, df: pandas.DataFrame, df_performance: pandas.DataFrame, project_title: str
-    ) -> pandas.DataFrame:
+    def join_inspection_acceptance_productivity(self, df: pandas.DataFrame, df_performance: pandas.DataFrame, project_title: str) -> pandas.DataFrame:
         """
         引数`df_performance`から検査/受入の生産性を抽出して引数`df`にjoinした結果を返す
 
@@ -245,9 +221,7 @@ class CollectingPerformanceInfo:
             df_performance: 引数`project_title`のユーザーごとの生産性と品質が格納されたDataFrame。
         """
 
-        productivity_indicator = self.productivity_indicator_by_directory.get(
-            project_title, self.productivity_indicator
-        )
+        productivity_indicator = self.productivity_indicator_by_directory.get(project_title, self.productivity_indicator)
 
         def _join_inspection():
             phase = TaskPhase.INSPECTION
@@ -258,9 +232,7 @@ class CollectingPerformanceInfo:
             df_joined = self.filter_df_with_threshold(df_joined, phase, project_title=project_title)
 
             df_tmp = df_joined[[(productivity_indicator.value, phase.value)]]
-            df_tmp.columns = pandas.MultiIndex.from_tuples(
-                [(project_title, f"{productivity_indicator.value}__{phase.value}")]
-            )
+            df_tmp.columns = pandas.MultiIndex.from_tuples([(project_title, f"{productivity_indicator.value}__{phase.value}")])
 
             return df.join(df_tmp)
 
@@ -273,9 +245,7 @@ class CollectingPerformanceInfo:
             df_joined = self.filter_df_with_threshold(df_joined, phase, project_title=project_title)
 
             df_tmp = df_joined[[(productivity_indicator.value, phase.value)]]
-            df_tmp.columns = pandas.MultiIndex.from_tuples(
-                [(project_title, f"{productivity_indicator.value}__{phase.value}")]
-            )
+            df_tmp.columns = pandas.MultiIndex.from_tuples([(project_title, f"{productivity_indicator.value}__{phase.value}")])
 
             return df.join(df_tmp)
 
@@ -284,9 +254,7 @@ class CollectingPerformanceInfo:
 
         return df
 
-    def join_annotation_quality(
-        self, df: pandas.DataFrame, df_performance: pandas.DataFrame, project_title: str
-    ) -> pandas.DataFrame:
+    def join_annotation_quality(self, df: pandas.DataFrame, df_performance: pandas.DataFrame, project_title: str) -> pandas.DataFrame:
         """
         引数`df_performance`から教師付の品質を抽出して引数`df`にjoinした結果を返す
 
@@ -358,12 +326,8 @@ class CollectingPerformanceInfo:
 
         # プロジェクトの生産性と品質のDataFrameを生成する
         project_performance = ProjectPerformance.from_project_dirs(project_dir_list)
-        project_actual_worktime = ProjectWorktimePerMonth.from_project_dirs(
-            project_dir_list, WorktimeColumn.ACTUAL_WORKTIME_HOUR
-        )
-        project_monitored_worktime = ProjectWorktimePerMonth.from_project_dirs(
-            project_dir_list, WorktimeColumn.MONITORED_WORKTIME_HOUR
-        )
+        project_actual_worktime = ProjectWorktimePerMonth.from_project_dirs(project_dir_list, WorktimeColumn.ACTUAL_WORKTIME_HOUR)
+        project_monitored_worktime = ProjectWorktimePerMonth.from_project_dirs(project_dir_list, WorktimeColumn.MONITORED_WORKTIME_HOUR)
         return ResultDataframe(
             annotation_productivity=df_annotation_productivity.reset_index(),
             inspection_acceptance_productivity=df_inspection_acceptance_productivity.reset_index(),
@@ -398,9 +362,7 @@ def to_rank(series: pandas.Series) -> pandas.Series:
 
 
 def to_deviation(series: pandas.Series, threshold_deviation_user_count: Optional[int] = None) -> pandas.Series:
-    if series.count() == 0 or (
-        threshold_deviation_user_count is not None and series.count() <= threshold_deviation_user_count
-    ):
+    if series.count() == 0 or (threshold_deviation_user_count is not None and series.count() <= threshold_deviation_user_count):
         return pandas.Series([numpy.nan] * len(series))
     else:
         std = series.std(ddof=0)
@@ -495,9 +457,7 @@ def create_user_df(target_dir: Path) -> pandas.DataFrame:
 
 
 class WritingCsv:
-    def __init__(
-        self, threshold_deviation_user_count: Optional[int] = None, user_ids: Optional[Collection[str]] = None
-    ) -> None:
+    def __init__(self, threshold_deviation_user_count: Optional[int] = None, user_ids: Optional[Collection[str]] = None) -> None:
         self.threshold_deviation_user_count = threshold_deviation_user_count
         self.user_ids = user_ids
 
@@ -506,9 +466,7 @@ class WritingCsv:
 
         # 偏差値のCSVを出力
         print_csv(
-            create_deviation_df(
-                df, threshold_deviation_user_count=self.threshold_deviation_user_count, user_ids=self.user_ids
-            ),
+            create_deviation_df(df, threshold_deviation_user_count=self.threshold_deviation_user_count, user_ids=self.user_ids),
             str(output_dir / f"{csv_basename}__deviation.csv"),
         )
 
@@ -582,9 +540,7 @@ class WritePerformanceRatingCsv(AbstractCommandLineWithoutWebapiInterface):
 
         result = CollectingPerformanceInfo(
             productivity_indicator=ProductivityIndicator(args.productivity_indicator),
-            productivity_indicator_by_directory=create_productivity_indicator_by_directory(
-                args.productivity_indicator_by_directory
-            ),
+            productivity_indicator_by_directory=create_productivity_indicator_by_directory(args.productivity_indicator_by_directory),
             quality_indicator=QualityIndicator(args.quality_indicator),
             quality_indicator_by_directory=create_quality_indicator_by_directory(args.quality_indicator_by_directory),
             threshold_info=ThresholdInfo(

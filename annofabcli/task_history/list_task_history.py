@@ -53,9 +53,7 @@ class ListTaskHistoryMain:
         all_task_list = self.service.wrapper.get_all_tasks(project_id)
         return [e["task_id"] for e in all_task_list]
 
-    def get_task_history_dict_for_output(
-        self, project_id: str, task_id_list: Optional[List[str]] = None
-    ) -> TaskHistoryDict:
+    def get_task_history_dict_for_output(self, project_id: str, task_id_list: Optional[List[str]] = None) -> TaskHistoryDict:
         """出力対象のタスク履歴情報を取得する"""
         if task_id_list is None:
             task_id_list = self.get_all_task_id_list(project_id)

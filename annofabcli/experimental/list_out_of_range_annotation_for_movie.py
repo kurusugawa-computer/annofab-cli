@@ -66,16 +66,14 @@ class ListOutOfRangeAnnotationForMovieMain:
             for task_index, task in enumerate(task_list):
                 task["worktime_hour"] = _millisecond_to_hour(task["work_time_span"])
                 task["input_data_id"] = task["input_data_id_list"][0]
-                annotation, _ = self.service.api.get_editor_annotation(
-                    project_id, task["task_id"], task["input_data_id"]
-                )
+                annotation, _ = self.service.api.get_editor_annotation(project_id, task["task_id"], task["input_data_id"])
                 max_seconds = self.get_max_seconds_for_webapi(annotation)
                 task["max_begin_second"] = max_seconds[0]
                 task["max_end_second"] = max_seconds[1]
                 if (task_index + 1) % 100 == 0:
                     logger.info(f"{task_index+1} 件のアノテーション情報を取得しました。")
         else:
-            logger.info(f"{len(task_list)} 件のアノテーション情報を {str(annotation_zip)} から取得します。")
+            logger.info(f"{len(task_list)} 件のアノテーション情報を {annotation_zip!s} から取得します。")
             with zipfile.ZipFile(str(annotation_zip), "r") as zip_file:
                 for task_index, task in enumerate(task_list):
                     task["worktime_hour"] = _millisecond_to_hour(task["work_time_span"])
@@ -160,9 +158,7 @@ class ListOutOfRangeAnnotationForMovieMain:
             if task_id_list is not None:
                 task_list = self.filter_task_list(task_list, task_id_list)
 
-        df = self.create_dataframe(
-            project_id, task_list=task_list, input_data_list=input_data_list, annotation_zip=annotation_zip_path
-        )
+        df = self.create_dataframe(project_id, task_list=task_list, input_data_list=input_data_list, annotation_zip=annotation_zip_path)
         return df
 
 
@@ -189,7 +185,9 @@ def parse_args(parser: argparse.ArgumentParser) -> None:
     argument_parser.add_output()
 
     parser.add_argument(
-        "--parse_annotation_zip", action="store_true", help="アノテーションzipから範囲外のアノテーション情報を取得します。ただし、範囲外の終了時間は存在しません。"
+        "--parse_annotation_zip",
+        action="store_true",
+        help="アノテーションzipから範囲外のアノテーション情報を取得します。ただし、範囲外の終了時間は存在しません。",
     )
 
     parser.set_defaults(subcommand_func=main)

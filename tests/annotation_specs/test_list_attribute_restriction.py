@@ -93,9 +93,7 @@ class TestListAttributeRestrictionMain:
         assert actual == "'type' (id='71620647-98cf-48ad-b43b-4af425a24f32', type='select') EQUALS ''"
 
     def test_get_restriction_text_list(self):
-        actual1 = self.obj.get_restriction_text_list(
-            self.annotation_specs["restrictions"], target_attribute_names=["link"]
-        )
+        actual1 = self.obj.get_restriction_text_list(self.annotation_specs["restrictions"], target_attribute_names=["link"])
         assert len(actual1) == 1
 
         actual2 = self.obj.get_restriction_text_list(self.annotation_specs["restrictions"], target_label_names=["car"])

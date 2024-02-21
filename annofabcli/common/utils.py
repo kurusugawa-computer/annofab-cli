@@ -84,9 +84,7 @@ def print_json(target: Any, is_pretty: bool = False, output: Optional[Union[str,
         output_string(json.dumps(target, ensure_ascii=False), output)
 
 
-def print_csv(
-    df: pandas.DataFrame, output: Optional[Union[str, Path]] = None, to_csv_kwargs: Optional[Dict[str, Any]] = None
-):
+def print_csv(df: pandas.DataFrame, output: Optional[Union[str, Path]] = None, to_csv_kwargs: Optional[Dict[str, Any]] = None):
     if output is not None:
         Path(output).parent.mkdir(parents=True, exist_ok=True)
 
@@ -247,7 +245,7 @@ def read_multiheader_csv(csv_file: str, header_row_count: int = 2, **kwargs) -> 
     """
     kwargs["header"] = list(range(header_row_count))
     df = pandas.read_csv(csv_file, **kwargs)
-    for level in range(0, header_row_count):
+    for level in range(header_row_count):
         columns = df.columns.levels[level]
         rename_columns = {c: "" for c in columns if re.fullmatch(r"Unnamed: .*", c) is not None}
         df.rename(
@@ -304,11 +302,7 @@ def add_dryrun_prefix(lgr: logging.Logger) -> None:
     # オリジナルのフォーマットを探す
     fmt_original = logging.BASIC_FORMAT
     for handler in parent.handlers:
-        if (
-            isinstance(handler, logging.StreamHandler)
-            and handler.formatter is not None
-            and handler.formatter._fmt is not None
-        ):
+        if isinstance(handler, logging.StreamHandler) and handler.formatter is not None and handler.formatter._fmt is not None:
             fmt_original = handler.formatter._fmt
 
     log_formatter = logging.Formatter(fmt_original.replace("%(message)s", "[DRYRUN] %(message)s"))

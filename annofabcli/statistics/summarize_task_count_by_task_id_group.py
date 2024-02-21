@@ -122,11 +122,7 @@ def create_task_count_summary_df(
 
     if task_id_groups is not None:
         df_tmp = pandas.DataFrame(
-            [
-                (task_id_group, task_id)
-                for task_id_group, task_id_list in task_id_groups.items()
-                for task_id in task_id_list
-            ],
+            [(task_id_group, task_id) for task_id_group, task_id_list in task_id_groups.items() for task_id in task_id_list],
             columns=("task_id_group", "task_id"),
         )
         df_task = df_task.merge(df_tmp, on="task_id", how="left")
@@ -144,9 +140,7 @@ def create_task_count_summary_df(
         add_columns_if_not_exists(df_summary, status.value)
 
     df_summary["sum"] = (
-        df_task.pivot_table(values="task_id", index=["task_id_group"], aggfunc="count", fill_value=0)
-        .reset_index()
-        .fillna(0)["task_id"]
+        df_task.pivot_table(values="task_id", index=["task_id_group"], aggfunc="count", fill_value=0).reset_index().fillna(0)["task_id"]
     )
 
     return df_summary
@@ -175,16 +169,12 @@ class SummarizeTaskCountByTaskId(AbstractCommandLineInterface):
             task_json_path = cache_dir / f"{project_id}-task.json"
 
             downloading_obj = DownloadingFile(self.service)
-            downloading_obj.download_task_json(
-                project_id, dest_path=str(task_json_path), is_latest=args.latest, wait_options=wait_options
-            )
+            downloading_obj.download_task_json(project_id, dest_path=str(task_json_path), is_latest=args.latest, wait_options=wait_options)
 
         with open(task_json_path, encoding="utf-8") as f:
             task_list = json.load(f)
 
-        df = create_task_count_summary_df(
-            task_list, task_id_delimiter=args.task_id_delimiter, task_id_groups=get_json_from_args(args.task_id_groups)
-        )
+        df = create_task_count_summary_df(task_list, task_id_delimiter=args.task_id_delimiter, task_id_groups=get_json_from_args(args.task_id_groups))
         self.print_summarize_task_count(df)
 
 
@@ -214,7 +204,9 @@ def parse_args(parser: argparse.ArgumentParser) -> None:
     )
 
     parser.add_argument(
-        "--latest", action="store_true", help="最新のタスク一覧ファイルを参照します。このオプションを指定すると、タスク一覧ファイルを更新するのに数分待ちます。"
+        "--latest",
+        action="store_true",
+        help="最新のタスク一覧ファイルを参照します。このオプションを指定すると、タスク一覧ファイルを更新するのに数分待ちます。",
     )
 
     parser.add_argument(

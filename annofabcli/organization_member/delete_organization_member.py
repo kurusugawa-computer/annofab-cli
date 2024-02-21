@@ -52,16 +52,17 @@ class DeleteOrganizationMemberMain(AbstractCommandLineWithConfirmInterface):
             ):
                 continue
 
-            logger.debug(
-                f"user_id='{user_id}'のユーザを組織から脱退させます。 :: username='{member['username']}', role='{member['role']}'"
-            )
+            logger.debug(f"user_id='{user_id}'のユーザを組織から脱退させます。 :: username='{member['username']}', role='{member['role']}'")
             try:
                 self.service.api.delete_organization_member(organization_name, user_id)
                 logger.debug(f"user_id='{user_id}'のユーザを組織'{organization_name}'から脱退させました。")
                 success_count += 1
 
             except Exception:  # pylint: disable=broad-except
-                logger.warning(f"user_id='{user_id}'のユーザを組織'{organization_name}'から脱退させるのに失敗しました。", exc_info=True)
+                logger.warning(
+                    f"user_id='{user_id}'のユーザを組織'{organization_name}'から脱退させるのに失敗しました。",
+                    exc_info=True,
+                )
 
         logger.info(f"{success_count} / {len(user_ids)} 件のユーザを組織'{organization_name}'から脱退させました。")
 
@@ -103,8 +104,6 @@ def add_parser(subparsers: Optional[argparse._SubParsersAction] = None) -> argpa
     description = "組織からユーザを脱退させます。"
     epilog = "組織オーナまたは組織管理者ロールを持つユーザで実行してください。"
 
-    parser = annofabcli.common.cli.add_parser(
-        subparsers, subcommand_name, command_help=subcommand_help, description=description, epilog=epilog
-    )
+    parser = annofabcli.common.cli.add_parser(subparsers, subcommand_name, command_help=subcommand_help, description=description, epilog=epilog)
     parse_args(parser)
     return parser

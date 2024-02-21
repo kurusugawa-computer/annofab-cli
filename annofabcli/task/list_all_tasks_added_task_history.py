@@ -110,9 +110,7 @@ class ListAllTasksAddedTaskHistoryMain:
 
         task_id_set = set(task_id_list) if task_id_list is not None else None
         logger.debug("出力対象のタスクを抽出しています。")
-        filtered_task_list = [
-            e for e in task_list if self.match_task_with_conditions(e, task_query=task_query, task_id_set=task_id_set)
-        ]
+        filtered_task_list = [e for e in task_list if self.match_task_with_conditions(e, task_query=task_query, task_id_set=task_id_set)]
         return filtered_task_list
 
     def get_task_list_added_task_history(
@@ -143,9 +141,7 @@ class ListAllTasksAddedTaskHistory(AbstractCommandLineInterface):
     @staticmethod
     def validate(args: argparse.Namespace) -> bool:
         COMMON_MESSAGE = "annofabcli task list_merged_task_history: error:"
-        if (args.task_json is None and args.task_history_json is not None) or (
-            args.task_json is not None and args.task_history_json is None
-        ):
+        if (args.task_json is None and args.task_history_json is not None) or (args.task_json is not None and args.task_history_json is None):
             print(
                 f"{COMMON_MESSAGE} '--task_json'と'--task_history_json'の両方を指定する必要があります。",
                 file=sys.stderr,
@@ -162,11 +158,7 @@ class ListAllTasksAddedTaskHistory(AbstractCommandLineInterface):
         project_id = args.project_id
 
         task_id_list = annofabcli.common.cli.get_list_from_args(args.task_id) if args.task_id is not None else None
-        task_query = (
-            TaskQuery.from_dict(annofabcli.common.cli.get_json_from_args(args.task_query))
-            if args.task_query is not None
-            else None
-        )
+        task_query = TaskQuery.from_dict(annofabcli.common.cli.get_json_from_args(args.task_query)) if args.task_query is not None else None
 
         self.validate_project(project_id, [ProjectMemberRole.OWNER, ProjectMemberRole.TRAINING_DATA_USER])
 
@@ -178,9 +170,7 @@ class ListAllTasksAddedTaskHistory(AbstractCommandLineInterface):
         )
 
         logger.info(f"タスク一覧の件数: {len(task_list)}")
-        TasksAddedTaskHistoryOutput(task_list).output(
-            output_path=args.output, output_format=FormatArgument(args.format)
-        )
+        TasksAddedTaskHistoryOutput(task_list).output(output_path=args.output, output_format=FormatArgument(args.format))
 
 
 def main(args: argparse.Namespace) -> None:

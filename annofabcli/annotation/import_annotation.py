@@ -106,9 +106,7 @@ class ImportAnnotationMain(AbstractCommandLineWithConfirmInterface):
         logger.warning(f"アノテーション仕様に label_name='{label_name}' のラベルが存在しません。")
         return None
 
-    def _get_additional_data_from_attribute_name(
-        self, attribute_name: str, label_info: LabelV1
-    ) -> Optional[AdditionalDataDefinitionV1]:
+    def _get_additional_data_from_attribute_name(self, attribute_name: str, label_info: LabelV1) -> Optional[AdditionalDataDefinitionV1]:
         for additional_data in label_info["additional_data_definitions"]:
             additional_data_name_en = self.visualize.get_additional_data_name(
                 additional_data["additional_data_definition_id"], MessageLocale.EN, label_id=label_info["label_id"]
@@ -262,11 +260,7 @@ class ImportAnnotationMain(AbstractCommandLineWithConfirmInterface):
 
         if data_holding_type == AnnotationDataHoldingType.OUTER:
             # TODO: 3dpc editorに依存したコード。annofab側でSimple Annotationのフォーマットが改善されたら、このコードを削除する
-            data_uri = (
-                detail.data["data_uri"]
-                if not self._is_3dpc_segment_label(label_info)
-                else self._get_3dpc_segment_data_uri(detail.data)
-            )
+            data_uri = detail.data["data_uri"] if not self._is_3dpc_segment_label(label_info) else self._get_3dpc_segment_data_uri(detail.data)
             with parser.open_outer_file(data_uri) as f:
                 s3_path = self.service.wrapper.upload_data_to_s3(self.project_id, f, content_type="image/png")
                 dest_obj.path = s3_path
@@ -389,9 +383,7 @@ class ImportAnnotationMain(AbstractCommandLineWithConfirmInterface):
 
         logger.info(f"task_id={task_id}, input_data_id={input_data_id} : アノテーションを登録します。")
         if self.is_merge:
-            request_body = self.parser_to_request_body_with_merge(
-                parser, simple_annotation.details, old_annotation=old_annotation
-            )
+            request_body = self.parser_to_request_body_with_merge(parser, simple_annotation.details, old_annotation=old_annotation)
         else:
             request_body = self.parser_to_request_body(parser, simple_annotation.details, old_annotation=old_annotation)
 
@@ -429,7 +421,7 @@ class ImportAnnotationMain(AbstractCommandLineWithConfirmInterface):
         if not self.confirm_processing(f"task_id={task_id} のアノテーションをインポートしますか？"):
             return False
 
-        logger_prefix = f"{str(task_index+1)} 件目: " if task_index is not None else ""
+        logger_prefix = f"{task_index+1!s} 件目: " if task_index is not None else ""
         logger.info(f"{logger_prefix}task_id={task_id} に対して処理します。")
 
         task = self.service.wrapper.get_task_or_none(self.project_id, task_id)
@@ -551,13 +543,16 @@ class ImportAnnotation(AbstractCommandLineInterface):
         annotation_path = Path(args.annotation)
         if not annotation_path.exists():
             print(
-                f"{COMMON_MESSAGE} argument --annotation: ZIPファイルまたはディレクトリが存在しません。'{str(annotation_path)}'",
+                f"{COMMON_MESSAGE} argument --annotation: ZIPファイルまたはディレクトリが存在しません。'{annotation_path!s}'",
                 file=sys.stderr,
             )
             return False
 
         elif not (zipfile.is_zipfile(str(annotation_path)) or annotation_path.is_dir()):
-            print(f"{COMMON_MESSAGE} argument --annotation: ZIPファイルまたはディレクトリを指定してください。", file=sys.stderr)
+            print(
+                f"{COMMON_MESSAGE} argument --annotation: ZIPファイルまたはディレクトリを指定してください。",
+                file=sys.stderr,
+            )
             return False
 
         if args.parallelism is not None and not args.yes:
@@ -579,9 +574,7 @@ class ImportAnnotation(AbstractCommandLineInterface):
 
         super().validate_project(project_id, [ProjectMemberRole.OWNER])
 
-        target_task_ids = (
-            set(annofabcli.common.cli.get_list_from_args(args.task_id)) if args.task_id is not None else None
-        )
+        target_task_ids = set(annofabcli.common.cli.get_list_from_args(args.task_id)) if args.task_id is not None else None
 
         # Simpleアノテーションの読み込み
         if annotation_path.is_dir():
@@ -619,7 +612,8 @@ def parse_args(parser: argparse.ArgumentParser) -> None:
         "--annotation",
         type=Path,
         required=True,
-        help="Simpleアノテーションと同じフォルダ構成のzipファイル or ディレクトリのパスを指定してください。" "タスクの状態が作業中/完了の場合はインポートしません。",
+        help="Simpleアノテーションと同じフォルダ構成のzipファイル or ディレクトリのパスを指定してください。"
+        "タスクの状態が作業中/完了の場合はインポートしません。",
     )
 
     argument_parser.add_task_id(required=False)
@@ -629,7 +623,8 @@ def parse_args(parser: argparse.ArgumentParser) -> None:
     overwrite_merge_group.add_argument(
         "--overwrite",
         action="store_true",
-        help="アノテーションが存在する場合、 ``--overwrite`` を指定していれば、すでに存在するアノテーションを削除してインポートします。" "指定しなければ、アノテーションのインポートをスキップします。",
+        help="アノテーションが存在する場合、 ``--overwrite`` を指定していれば、すでに存在するアノテーションを削除してインポートします。"
+        "指定しなければ、アノテーションのインポートをスキップします。",
     )
 
     overwrite_merge_group.add_argument(
@@ -641,7 +636,9 @@ def parse_args(parser: argparse.ArgumentParser) -> None:
     )
 
     parser.add_argument(
-        "--force", action="store_true", help="過去に割り当てられていて現在の担当者が自分自身でない場合、タスクの担当者を自分自身に変更してからアノテーションをインポートします。"
+        "--force",
+        action="store_true",
+        help="過去に割り当てられていて現在の担当者が自分自身でない場合、タスクの担当者を自分自身に変更してからアノテーションをインポートします。",
     )
 
     parser.add_argument(
@@ -656,9 +653,7 @@ def parse_args(parser: argparse.ArgumentParser) -> None:
 def add_parser(subparsers: Optional[argparse._SubParsersAction] = None) -> argparse.ArgumentParser:
     subcommand_name = "import"
     subcommand_help = "アノテーションをインポートします。"
-    description = (
-        "アノテーションをインポートします。アノテーションのフォーマットは、Simpleアノテーションと同じフォルダ構成のzipファイルまたはディレクトリです。ただし、作業中/完了状態のタスクはインポートできません。"
-    )
+    description = "アノテーションをインポートします。アノテーションのフォーマットは、Simpleアノテーションと同じフォルダ構成のzipファイルまたはディレクトリです。ただし、作業中/完了状態のタスクはインポートできません。"
     epilog = "オーナロールを持つユーザで実行してください。"
 
     parser = annofabcli.common.cli.add_parser(subparsers, subcommand_name, subcommand_help, description, epilog=epilog)

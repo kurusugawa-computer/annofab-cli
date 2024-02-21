@@ -57,9 +57,7 @@ class PuttingTaskByCountMain:
         }
         content, _ = self.service.api.initiate_tasks_generation(self.project_id, request_body=request_body)
         job = content["job"]
-        logger.info(
-            f"Annofab上でタスク作成処理が開始されました。 :: task_id_prefix='{task_id_prefix}', input_data_count='input_data_count'"
-        )
+        logger.info(f"Annofab上でタスク作成処理が開始されました。 :: task_id_prefix='{task_id_prefix}', input_data_count='input_data_count'")
         if should_wait:
             self.wait_for_completion(job["job_id"])
         else:
@@ -126,10 +124,17 @@ def parse_args(parser: argparse.ArgumentParser) -> None:
 
     parser.add_argument("--task_id_prefix", type=str, required=True, help="生成するタスクIDのプレフィックス")
 
-    parser.add_argument("--input_data_count", type=int, required=True, help="タスクに割り当てる入力データの個数。動画プロジェクトの場合は1を指定してください。")
+    parser.add_argument(
+        "--input_data_count",
+        type=int,
+        required=True,
+        help="タスクに割り当てる入力データの個数。動画プロジェクトの場合は1を指定してください。",
+    )
 
     parser.add_argument(
-        "--allow_duplicate_input_data", action="store_true", help="指定すると、既にタスクに使われている入力データを使ってタスクを作成します。"
+        "--allow_duplicate_input_data",
+        action="store_true",
+        help="指定すると、既にタスクに使われている入力データを使ってタスクを作成します。",
     )
 
     parser.add_argument(

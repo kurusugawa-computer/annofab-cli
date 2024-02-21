@@ -82,9 +82,7 @@ class CopyProjectMembers(AbstractCommandLineInterface):
                 "sampling_acceptance_rate": member.get("sampling_acceptance_rate"),
                 "last_updated_datetime": last_updated_datetime,
             }
-            updated_project_member = self.service.api.put_project_member(
-                project_id, member["user_id"], request_body=request_body
-            )[0]
+            updated_project_member = self.service.api.put_project_member(project_id, member["user_id"], request_body=request_body)[0]
             updated_project_members.append(updated_project_member)
 
             command_name = "追加" if last_updated_datetime is None else "更新"
@@ -110,9 +108,7 @@ class CopyProjectMembers(AbstractCommandLineInterface):
         src_project_members = self.service.wrapper.get_all_project_members(src_project_id)
         src_organization_members = self.get_organization_members_from_project_id(src_project_id)
         # 組織外のメンバが含まれている可能性があるので、除去する
-        src_project_members = [
-            e for e in src_project_members if self.find_member(src_organization_members, e["account_id"]) is not None
-        ]
+        src_project_members = [e for e in src_project_members if self.find_member(src_organization_members, e["account_id"]) is not None]
 
         dest_project_members = self.service.wrapper.get_all_project_members(dest_project_id)
         dest_organization_members = self.get_organization_members_from_project_id(dest_project_id)
@@ -179,7 +175,11 @@ def parse_args(parser: argparse.ArgumentParser) -> None:
     parser.add_argument("src_project_id", type=str, help="コピー元のプロジェクトのproject_id")
     parser.add_argument("dest_project_id", type=str, help="コピー先のプロジェクトのproject_id")
 
-    parser.add_argument("--delete_dest", action="store_true", help="コピー先のプロジェクトにしか存在しないプロジェクトメンバを削除します。")
+    parser.add_argument(
+        "--delete_dest",
+        action="store_true",
+        help="コピー先のプロジェクトにしか存在しないプロジェクトメンバを削除します。",
+    )
 
     parser.set_defaults(subcommand_func=main)
 

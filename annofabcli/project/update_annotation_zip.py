@@ -57,9 +57,7 @@ class SubUpdateAnnotationZip:
         annotation_specs_updated_datetime = annotation_specs_history[-1]["updated_datetime"]
         logger.debug(f"project_id={project_id}: アノテーション仕様の最終更新日時={annotation_specs_updated_datetime}")
 
-        job_list = self.service.api.get_project_job(
-            project_id, query_params={"type": ProjectJobType.GEN_ANNOTATION.value, "limit": 1}
-        )[0]["list"]
+        job_list = self.service.api.get_project_job(project_id, query_params={"type": ProjectJobType.GEN_ANNOTATION.value, "limit": 1})[0]["list"]
 
         if len(job_list) == 0:
             return True
@@ -74,9 +72,7 @@ class SubUpdateAnnotationZip:
             if dateutil.parser.parse(job["updated_datetime"]) < dateutil.parser.parse(last_tasks_updated_datetime):
                 return True
 
-            elif dateutil.parser.parse(job["updated_datetime"]) < dateutil.parser.parse(
-                annotation_specs_updated_datetime
-            ):
+            elif dateutil.parser.parse(job["updated_datetime"]) < dateutil.parser.parse(annotation_specs_updated_datetime):
                 return True
             else:
                 logger.debug(
@@ -104,13 +100,13 @@ class SubUpdateAnnotationZip:
         if result:
             logger.info(f"project_id={project_id}: アノテーションzipの更新が完了しました。")
         else:
-            logger.info(f"project_id={project_id}: アノテーションzipの更新に失敗、または{MAX_WAIT_MINUTU}分待ってもアノテーションzipの更新が終了しませんでした。")
+            logger.info(
+                f"project_id={project_id}: アノテーションzipの更新に失敗、または{MAX_WAIT_MINUTU}分待ってもアノテーションzipの更新が終了しませんでした。"
+            )
         return result
 
     def _update_annotation_zip_for_project(self, project_id: str) -> None:
-        job_list = self.service.api.get_project_job(
-            project_id, query_params={"type": ProjectJobType.GEN_ANNOTATION.value, "limit": 1}
-        )[0]["list"]
+        job_list = self.service.api.get_project_job(project_id, query_params={"type": ProjectJobType.GEN_ANNOTATION.value, "limit": 1})[0]["list"]
         if len(job_list) > 0:
             job = job_list[0]
             if job["job_status"] == JobStatus.PROGRESS.value:
@@ -120,9 +116,7 @@ class SubUpdateAnnotationZip:
         self.service.api.post_annotation_archive_update(project_id)
         logger.info(f"project_id={project_id}: アノテーションzipの更新処理が開始されました。")
 
-    def execute_for_project(
-        self, project_id: str, force: bool = False, wait: bool = False, wait_options: Optional[WaitOptions] = None
-    ) -> None:
+    def execute_for_project(self, project_id: str, force: bool = False, wait: bool = False, wait_options: Optional[WaitOptions] = None) -> None:
         """
         1つのプロジェクトに対して、アノテーションzipを更新して、必要なら更新が完了するまで待ちます。
         """
@@ -132,9 +126,7 @@ class SubUpdateAnnotationZip:
             return
 
         logger.debug(f"project_id={project_id}: project_title='{project['title']}'")
-        if not self.facade.contains_any_project_member_role(
-            project_id, [ProjectMemberRole.OWNER, ProjectMemberRole.TRAINING_DATA_USER]
-        ):
+        if not self.facade.contains_any_project_member_role(project_id, [ProjectMemberRole.OWNER, ProjectMemberRole.TRAINING_DATA_USER]):
             logger.warning(f"project_id={project_id}: オーナロールまたはアノテーションユーザロールでないため、アノテーションzipを更新できません。")
             return
 
@@ -208,7 +200,9 @@ def parse_args(parser: argparse.ArgumentParser) -> None:
     )
 
     parser.add_argument(
-        "--force", action="store_true", help="アノテーションzipを常に更新します。指定しない場合は、アノテーションzipを更新する必要がなければ更新しません。"
+        "--force",
+        action="store_true",
+        help="アノテーションzipを常に更新します。指定しない場合は、アノテーションzipを更新する必要がなければ更新しません。",
     )
 
     parser.add_argument("--wait", action="store_true", help="アノテーションzipの更新が完了するまで待ちます。")

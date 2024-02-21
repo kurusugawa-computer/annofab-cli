@@ -54,9 +54,9 @@ class TestListAnnotationCounterByInputData:
             }
         )
 
-        counter2 = ListAnnotationCounterByInputData(
-            target_labels=["climatic"], target_attribute_names=[("bird", "occluded")]
-        ).get_annotation_counter(annotation)
+        counter2 = ListAnnotationCounterByInputData(target_labels=["climatic"], target_attribute_names=[("bird", "occluded")]).get_annotation_counter(
+            annotation
+        )
         assert counter2.annotation_count_by_label == collections.Counter({"climatic": 1})
         assert counter2.annotation_count_by_attribute == collections.Counter(
             {
@@ -65,9 +65,7 @@ class TestListAnnotationCounterByInputData:
         )
 
     def test_get_annotation_counter_list(self):
-        counter_list = ListAnnotationCounterByInputData().get_annotation_counter_list(
-            data_dir / "simple-annotations.zip"
-        )
+        counter_list = ListAnnotationCounterByInputData().get_annotation_counter_list(data_dir / "simple-annotations.zip")
         assert len(counter_list) == 4
 
 
@@ -79,9 +77,7 @@ class TestListAnnotationCounterByTask:
 
 class TestLabelCountCsv:
     def test_print_csv_by_input_data(self):
-        counter_list = ListAnnotationCounterByInputData().get_annotation_counter_list(
-            data_dir / "simple-annotations.zip"
-        )
+        counter_list = ListAnnotationCounterByInputData().get_annotation_counter_list(data_dir / "simple-annotations.zip")
         LabelCountCsv().print_csv_by_input_data(
             counter_list,
             output_file=output_dir / "labels_count_by_input_data.csv",
@@ -100,9 +96,7 @@ class TestLabelCountCsv:
 
 class TestAttributeCountCsv:
     def test_print_csv_by_input_data(self):
-        counter_list = ListAnnotationCounterByInputData().get_annotation_counter_list(
-            data_dir / "simple-annotations.zip"
-        )
+        counter_list = ListAnnotationCounterByInputData().get_annotation_counter_list(data_dir / "simple-annotations.zip")
         AttributeCountCsv().print_csv_by_input_data(
             counter_list,
             output_file=output_dir / "list_annotation_count/attributes_count_by_input_data.csv",
