@@ -111,7 +111,7 @@ def convert_attributes_from_cli_to_api(
     for attribute_name, attribute_value in attributes.items():
         additional_data = more_itertools.first_true(
             tmp_additionals,
-            pred=lambda e: get_message_for_i18n(e["name"]) == attribute_name,  # noqa: function-uses-loop-variable  # pylint: disable=cell-var-from-loop
+            pred=lambda e: get_message_for_i18n(e["name"]) == attribute_name,  # noqa: function-uses-loop-variable  # pylint: disable=cell-var-from-loop  # noqa: B023
         )
         tmp = [e for e in tmp_additionals if get_message_for_i18n(e["name"]) == attribute_name]
         if len(tmp) == 0:

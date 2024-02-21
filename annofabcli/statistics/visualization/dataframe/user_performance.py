@@ -121,13 +121,13 @@ class UserPerformance:
                 計測作業時間の合計値が0により、monitored_worktime_ratioはnanになる場合は、教師付の実績作業時間を実績作業時間の合計値になるようなmonitored_worktime_ratioに変更する
                 """
                 if row[("monitored_worktime_hour", "sum")] == 0:
-                    if phase == TaskPhase.ANNOTATION.value:  # noqa: function-uses-loop-variable
+                    if phase == TaskPhase.ANNOTATION.value:  # noqa: function-uses-loop-variable  # noqa: B023
                         return 1
                     else:
                         return 0
                 else:
                     return (
-                        row[("monitored_worktime_hour", phase)]  # noqa: function-uses-loop-variable
+                        row[("monitored_worktime_hour", phase)]  # noqa: function-uses-loop-variable  # noqa: B023
                         / row[("monitored_worktime_hour", "sum")]
                     )
 
