@@ -76,6 +76,6 @@ class TestReplacingAttributeId:
             "restrictions": copy.deepcopy(self.restriction_list),
         }
         ReplacingAttributeId(all_yes=True).main(annotation_specs)
-        assert annotation_specs["additionals"][0]["additional_data_definition_id"] == "new_attr1"  # type: ignore[index] # noqa: E501
-        assert annotation_specs["labels"][0]["additional_data_definitions"] == ["new_attr1", "attr2"]  # type: ignore[index] # noqa: E501
-        assert annotation_specs["restrictions"][0]["additional_data_definition_id"] == "new_attr1"  # type: ignore[index] # noqa: E501
+        assert annotation_specs["additionals"][0]["additional_data_definition_id"] == "new_attr1"  # type: ignore[index]
+        assert annotation_specs["labels"][0]["additional_data_definitions"] == ["new_attr1", "attr2"]  # type: ignore[index]
+        assert annotation_specs["restrictions"][0]["additional_data_definition_id"] == "new_attr1"  # type: ignore[index]

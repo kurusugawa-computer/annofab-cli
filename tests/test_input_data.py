@@ -100,7 +100,7 @@ class TestCommandLine__put_with_json:
 
 class TestCommandLine:
     def test_scenario(self):
-        input_data_id = f"test-{str(datetime.datetime.now().timestamp())}"
+        input_data_id = f"test-{datetime.datetime.now().timestamp()!s}"
 
         json_args = [
             {

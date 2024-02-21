@@ -114,7 +114,7 @@ class TestCommandLine:
 
     @pytest.mark.submitting_job
     def test_put_task_by_count(self):
-        task_id_prefix = f"test-{str(int(datetime.datetime.now().timestamp()))}"
+        task_id_prefix = f"test-{int(datetime.datetime.now().timestamp())!s}"
         main(
             [
                 self.command_name,
@@ -137,7 +137,7 @@ class TestCommandLine:
             作成したタスク
         """
         # タスクの作成
-        new_task_id = f"test-{str(int(datetime.datetime.now().timestamp()))}"
+        new_task_id = f"test-{int(datetime.datetime.now().timestamp())!s}"
         task, _ = service.api.put_task(project_id, new_task_id, request_body={"input_data_id_list": [input_data_id]})
         yield task
         # タスクの削除
@@ -364,7 +364,7 @@ class TestCommandLine:
         `task put`コマンドでタスクを作成するテスト
         """
 
-        task_id = f"test-{str(datetime.datetime.now().timestamp())}"
+        task_id = f"test-{datetime.datetime.now().timestamp()!s}"
 
         # タスクの作成
         json_args = {task_id: [input_data_id]}
